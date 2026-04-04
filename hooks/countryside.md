@@ -1,6 +1,6 @@
 # Countryside Hooks
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 COUNTRYSIDE HOOKS:
 
 These hooks take place out in the countryside, mostly in the hamlet / village district where the PCs live.

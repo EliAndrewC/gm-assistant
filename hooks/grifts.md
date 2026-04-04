@@ -1,6 +1,6 @@
 # Grifts and Scams
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 GRIFTS AND SCAMS:
 
 During one of the adventures, the PCs will meet a pair of traveling merchants named Shinjiro and Tsubasa who will ask the PCs to help them with a series of business endeavors, which are increasingly sketchy.

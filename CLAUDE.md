@@ -8,22 +8,22 @@ This project is a Legend of the Five Rings tabletop RPG worldbuilding environmen
 
 The GM maintains a canonical notes file at https://raw.githubusercontent.com/EliAndrewC/l7r/refs/heads/master/ai/l7r.txt A local copy is saved at `/notes/canonical-source.txt` as a snapshot of what was last parsed. When the GM indicates the canonical source has been updated, or at the start of a session when asked:
 
-1. Fetch the current version from the remote URL.
+1. Fetch the current version using the GitHub API (not raw.githubusercontent.com, which has aggressive CDN caching that serves stale content). Use: `curl -sL "https://api.github.com/repos/EliAndrewC/l7r/contents/ai/l7r.txt?ref=master"` and base64-decode the `content` field.
 2. Diff against `/notes/canonical-source.txt` to identify what changed.
-3. Propagate changes to the appropriate downstream files (skill files, reference directories, etc.) — updating the GM's words within their `SOURCE: GM NOTES` markers to match the new canonical version.
+3. Propagate changes to the appropriate downstream files (skill files, reference directories, etc.) - updating the GM's words within their `SOURCE: GM NOTES` markers to match the new canonical version.
 4. Overwrite `/notes/canonical-source.txt` with the new version so it's ready for the next diff.
 
 This is the one exception to the "don't modify the GM's words" rule: when the canonical source itself has changed, downstream copies must be updated to match.
 
 ### Protecting the GM's Writing
 
-Content between `<!-- SOURCE: GM NOTES — DO NOT MODIFY -->` and `<!-- END SOURCE -->` markers is the GM's original writing. These sections must NEVER be modified, rephrased, summarized, reworded, or "improved" in any way. Only the GM may edit these sections, and only when they explicitly instruct you to do so.
+Content between `<!-- SOURCE: GM NOTES - DO NOT MODIFY -->` and `<!-- END SOURCE -->` markers is the GM's original writing. These sections must NEVER be modified, rephrased, summarized, reworded, or "improved" in any way. Only the GM may edit these sections, and only when they explicitly instruct you to do so.
 
-The sole exception is syncing from the canonical source (see above) — if the GM has updated their original notes, the downstream copies must be updated to match exactly.
+The sole exception is syncing from the canonical source (see above) - if the GM has updated their original notes, the downstream copies must be updated to match exactly.
 
 AI-generated content (preferences, generation instructions, examples of liked/disliked output) lives outside these markers and can be updated as the GM's preferences evolve.
 
-This convention applies to ALL files in the project — both skill files and reference directory files.
+This convention applies to ALL files in the project - both skill files and reference directory files.
 
 ### File Organization
 
@@ -35,11 +35,11 @@ Each skill lives in `/.claude/skills/<skill-name>/SKILL.md` with YAML frontmatte
 
 Reference directories hold organized source material and context. Each directory has its own `CLAUDE.md` that indexes and explains its contents. Skills should reference these directories when they need shared context.
 
-- `/setting/` — Demographics, castes, currency, samurai ranks, government structure (Six Ministries), geography, lineage system, merchant families, ashigaru, experience levels
-- `/campaigns/` — Campaign-specific material: Karmic Inquisitors, First Toshi Ranbo, Hidden Way, Wasp Bounty Hunters, timelines, PC/NPC backstories, the Order of Lord Moon
-- `/hooks/` — Adventure hooks organized by type (countryside, town, city, caravan, prison camp), grifts and scams
-- `/cosmology/` — Lord Moon's heavenly court, mythological stories/fables, maho & bloodspeakers, "between places", gaijin religions (Uru, Burning Sands), Fortune theology, soothsaying
-- `/notes/` — The canonical source snapshot and any material not yet organized elsewhere
+- `/setting/` - Demographics, castes, currency, samurai ranks, government structure (Six Ministries), geography, lineage system, merchant families, ashigaru, experience levels
+- `/campaigns/` - Campaign-specific material: Karmic Inquisitors, First Toshi Ranbo, Hidden Way, Wasp Bounty Hunters, timelines, PC/NPC backstories, the Order of Lord Moon
+- `/hooks/` - Adventure hooks organized by type (countryside, town, city, caravan, prison camp), grifts and scams
+- `/cosmology/` - Lord Moon's heavenly court, mythological stories/fables, maho & bloodspeakers, "between places", gaijin religions (Uru, Burning Sands), Fortune theology, soothsaying
+- `/notes/` - The canonical source snapshot and any material not yet organized elsewhere
 
 ### Generation Behavior
 

@@ -1,6 +1,6 @@
 # The Fortunes
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 THE FORTUNES:
 
 While some historical polytheistic religions have a concept of gods who are basically just humans with superpowers, I don't want that at all for my fictional setting of Rokugan.  The idea that the fortunes are part of the fabric of reality is a core part of the theology of my worldbuilding.
@@ -11,7 +11,7 @@ Kitsu Okura wrote the book "On the Relationship between Man and the Fortunes" 30
 
 Here is the introduction to that book, which I wrote as a "primary source document" for my players to read.  Hopefully this will help explain these concepts as well for the purpose of generating vows:
 
-We seek to know the will of the fortunes, to follow their guidance, to gain their favor, and to teach our children to do the same.  Few accomplish any part of this undertaking, for the ways of the fortunes are inscrutable.  Even those lucky and unlucky few whom the fortunes contact directly seldom comprehend the messages they’ve received.
+We seek to know the will of the fortunes, to follow their guidance, to gain their favor, and to teach our children to do the same.  Few accomplish any part of this undertaking, for the ways of the fortunes are inscrutable.  Even those lucky and unlucky few whom the fortunes contact directly seldom comprehend the messages they've received.
 
 Why should this be?  Why do the fortunes not communicate their desires more clearly?  When their instructions are misunderstood, their wishes often go unfulfilled.
 
@@ -43,9 +43,9 @@ Many stories about fortunes involve a human becoming a fortune after their death
 
 In most cases of a human becoming a fortune, the person was so in tune with a particular fortune that upon their death their soul does not descend into Jigoku (the underworld) but instead becomes one with the fortune.  The Emperor will then officially recognize this, and thereafter anyone referring to that fortune will have a name that can be used to identify and connect to that fortune in their religious practices.
 
-In other cases, the Emperor may use his divine power to elevate a person’s soul, causing them to become one with a fortune after their death.  This helps someone who is deemed worthy but whose life was too short to have reached this point on their own.  This helps both the person and all of humanity by providing the world with a name to which they can direct their prayers and offerings.
+In other cases, the Emperor may use his divine power to elevate a person's soul, causing them to become one with a fortune after their death.  This helps someone who is deemed worthy but whose life was too short to have reached this point on their own.  This helps both the person and all of humanity by providing the world with a name to which they can direct their prayers and offerings.
 
-In both situations, the fortune existed prior to the death of the human and being given a human name.  Many fortunes went by multiple other names in the days before the Great Ancestors brought civilization to humanity.  Although it is not heretical to refer to fortunes by other names, it’s considered uncultured and demonstrates ignorance of proper doctrine.
+In both situations, the fortune existed prior to the death of the human and being given a human name.  Many fortunes went by multiple other names in the days before the Great Ancestors brought civilization to humanity.  Although it is not heretical to refer to fortunes by other names, it's considered uncultured and demonstrates ignorance of proper doctrine.
 
 This is my way as the GM of resolving all of the stories of people "becoming" a fortune upon their death.  when a human "becomes" a fortune, it's more about the human's soul merging with, or becoming aligned with, a pre-existing facet of reality represented by the fortune. The individual doesn't create a new fortune, but rather becomes part of an existing one, which reflects their deep connection with the principle or aspect of life that the fortune embodies. The naming of fortunes, whether through recognition by the Emperor or association with a particular human, is a way for people to more easily understand, relate to, and connect with these complex and profound forces.
 
@@ -61,13 +61,13 @@ Okura:  Suppose that you were touched by the Fortune of obedience, whom I shall 
 
 Shizue (frowning):  Is there such a Fortune?  I have not encountered such in my studies, not in any library in the Empire.
 
-Okura:  Pfaw!  I spoke the word ‘obedience’ and you felt my meaning.  Are you foolish enough to doubt the existence of its Fortune simply because lesser scholars have failed to learn his name?
+Okura:  Pfaw!  I spoke the word 'obedience' and you felt my meaning.  Are you foolish enough to doubt the existence of its Fortune simply because lesser scholars have failed to learn his name?
 
 Shizue:  Apologies.  What effect would result from being touched by the great Fortune of obedience?
 
-Okura (sharply):  Did you not tell me you’d studied such things?
+Okura (sharply):  Did you not tell me you'd studied such things?
 
-Shizue:  Yes of course.  I imagine... my loyalty to my lord would increase, while my subordinates’ loyalty to me would likewise increase.
+Shizue:  Yes of course.  I imagine... my loyalty to my lord would increase, while my subordinates' loyalty to me would likewise increase.
 
 Okura:  Ha!  You assume a human sensibility from a divine being.  Obedience is not loyalty, and it is loyalty rather than obedience which Akodo identifies as a virtue of bushido.  And your Fortune would care nothing for any virtue, only that you obey your orders without thought, question, or hesitation.
 
@@ -75,13 +75,13 @@ Shizue:  I see.  I would need to cleave my own judgement apart from my loyalty, 
 
 Okura:  And what do you imagine your reward would be?
 
-Shizue:  Good luck and prosperity, especially in the sphere of the fortune’s influence.  My lord would know I would never betray him - could never betray him - and would grant me authority over many households.  Those under me would find themselves possessed of a share of the same obedience I cultivate in myself.
+Shizue:  Good luck and prosperity, especially in the sphere of the fortune's influence.  My lord would know I would never betray him - could never betray him - and would grant me authority over many households.  Those under me would find themselves possessed of a share of the same obedience I cultivate in myself.
 
 Okura (amused):  You are not... entirely wrong.  Yet you underestimate the cost of your service, as well as its rewards.  Tell me, if your obedience increased beyond normal human capacity, what pieces of yourself do you imagine would likewise decrease?
 
 Shizue:  Certainly all forms of treachery... but that would not be enough.  By choosing dumb obedience, I would sacrifice away my capacity to pass judgement and decide right from wrong.  Taken far enough, I may lose even the ability to comprehend what outcomes my actions may have, since all that would matter to me is that I obey my lord.
 
-Okura:  Indeed.  You would find yourself with the contentment of the Enlightened, blissfully instrumenting your daimyo’s will.  Yet you might also struggle to remember, as you looked at the faces of your children, what it means when they smile or frown.
+Okura:  Indeed.  You would find yourself with the contentment of the Enlightened, blissfully instrumenting your daimyo's will.  Yet you might also struggle to remember, as you looked at the faces of your children, what it means when they smile or frown.
 
 Shizue:  Oh my.  Can any balance be struck?
 
@@ -91,7 +91,7 @@ Shizue:  Oh.  I suppose not.  If my daimyo wished otherwise, I might be unable t
 
 Okura:  Are you a gambler?  If you find such consequences unacceptable, would you still choose this path on the wager that you escape them?
 
-Shizue:  … for the sake of my family I would sacrifice anything.  Even my humanity, though I pray this shall not be required of me.
+Shizue:  ... for the sake of my family I would sacrifice anything.  Even my humanity, though I pray this shall not be required of me.
 
 Okura:  Then answer me this: what separates the Seven Fortunes of Good Luck from the remainder of the Thousand Fortunes?
 
@@ -107,7 +107,7 @@ Shizue:  Romantic Love.  Strength.  Contentment.  Wealth.  Longevity.  Honest Wo
 
 Okura:  A strange assortment of things.
 
-Shizue:  I’d never considered... how were these Seven selected?
+Shizue:  I'd never considered... how were these Seven selected?
 
 Okura:  As you know, by the Hantei in consultation with the Shinsei through wisdom far beyond either of us.  But you ask the wrong question.
 
@@ -121,9 +121,9 @@ Okura:  All extremes lead to disaster.  The Fortunes are extremity itself.  Yet 
 
 Shizue:  I... can see the disaster in tragic love, the immoral acquisition of wealth, the brutality of war... but certainly there is greatness as well as disaster.
 
-Okura:  Indeed.  And that is the balance you seek.  Not between the Fortune’s values and your own, but between greatness and disaster.  And not the middle ground between them, but the future which encompasses both in equal measure.  Is that what you seek?
+Okura:  Indeed.  And that is the balance you seek.  Not between the Fortune's values and your own, but between greatness and disaster.  And not the middle ground between them, but the future which encompasses both in equal measure.  Is that what you seek?
 
-Shizue:  I... don’t know.
+Shizue:  I... don't know.
 
 Okura:  Had you given any other answer, I would have sent you away.  But I think I can see the shape of your future.  I shall describe your destiny to you, and then you may decide whether to walk away.
 

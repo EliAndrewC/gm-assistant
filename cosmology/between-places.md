@@ -1,6 +1,6 @@
 # Between Places
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 BETWEEN PLACES:
 
 Now let's refocus on Rokugan itself, specifically talking about some miscellaneous setting details which I find interesting and which reflect my vision for the setting.

@@ -1,35 +1,35 @@
 # Samurai Lineages
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 SAMURAI LINEAGES:
 
 Every samurai retainer belongs to a noble lineage.  These are not simply bloodlines, but well-defined political coalitions.  Each lineage whose population makes up at least 10% of the samurai in the domain generally has a representative on the house Chancellary, which sets policy through its advice given to the daimyo.  The "ruling" lineage bears the name of the house, e.g. the Wakashi house is ruled by a daimyo from the Wakashi lineage, and one of the daimyo's close family members (often a spouse or sibling or child) will be the Wakashi chancellor.
 
 As an example, let's consider the Ryusei domain of the Mirumoto family of the Dragon clan.  The Ryusei domain is a roughly-average-sized House with a population of about 4,200 samurai out of a total of 210,000 humans (remember that the median domain has 5,00 samurai out of 250,000 humans, so this is a fairly typical domain).
 
-The Ryusei House Chancellary is comprised of representatives from its six largest lineages, which collectively make up almost 90% of the domain. The ruling lineage (i.e. the daimyo’s lineage) is the Ryusei lineage, and it and the others are listed below:
+The Ryusei House Chancellary is comprised of representatives from its six largest lineages, which collectively make up almost 90% of the domain. The ruling lineage (i.e. the daimyo's lineage) is the Ryusei lineage, and it and the others are listed below:
 
-Lineage	    Chancellor	                Governors and Magistrates	Ministry Officials	    % of Domain
-Ryusei	    Mirumoto no Ryusei Maino	4	                        11	                    17%
-Isa	        Mirumoto no Ryusei Saharu	5	                        12	                    16%
-Sasara	    Mirumoto no Ryusei Kazuchi	2	                        12	                    16%
-Moe	        Mirumoto no Ryusei Yumiyo	9	                        13	                    15%
-Tokino	    Mirumoto no Ryusei Biei	    4	                        9	                    14%
-Joji	    Mirumoto no Ryusei Kyono	7	                        9	                    11%
+Lineage        Chancellor                    Governors and Magistrates    Ministry Officials        % of Domain
+Ryusei        Mirumoto no Ryusei Maino    4                            11                        17%
+Isa            Mirumoto no Ryusei Saharu    5                            12                        16%
+Sasara        Mirumoto no Ryusei Kazuchi    2                            12                        16%
+Moe            Mirumoto no Ryusei Yumiyo    9                            13                        15%
+Tokino        Mirumoto no Ryusei Biei        4                            9                        14%
+Joji        Mirumoto no Ryusei Kyono    7                            9                        11%
 
 There are three smaller lineages which make up most of the rest of the remaining samurai in the domain: the Shun, the Meguri, and the Noa.
 
 Of the lineages mentioned, three are significant for not having originally been part of the Ryusei House: the Isa, the Joji, and the Meguri. They were originally made up Mirumoto samurai displaced by the return of the Unicorn.
 
-Here’s a breakdown of how many ministers and deputy ministers at the domain and provincial level each Ryusei lineage has in each ministry:
+Here's a breakdown of how many ministers and deputy ministers at the domain and provincial level each Ryusei lineage has in each ministry:
 
-Lineage	    Works	Justice	    Retainers	Rites	Revenue	    War
-Ryusei	    1	    4	        2	        0	    3	        1
-Isa	        3	    0	        1	        2	    2	        4
-Sasara	    2	    1	        1	        5	    1	        3
-Moe	        4	    3	        1	        2	    2	        1
-Tokino	    0	    2	        2	        1	    2	        2
-Joji	    2	    2	        2	        1	    1	        1
+Lineage        Works    Justice        Retainers    Rites    Revenue        War
+Ryusei        1        4            2            0        3            1
+Isa            3        0            1            2        2            4
+Sasara        2        1            1            5        1            3
+Moe            4        3            1            2        2            1
+Tokino        0        2            2            1        2            2
+Joji        2        2            2            1        1            1
 
 Note that these numbers reflect the nature and character of the lineages, as is usually the case for most domains.  Some examples:
 
@@ -43,12 +43,12 @@ Provinces:
 
 House Ryusei has five provinces, which are listed below, along with their governor, the lineage of their governor, and the number of counties.
 
-Province	Governor	                    Counties
-Honshu	    Mirumoto no Ryusei Fumiyuki	    5
-Kansai	    Mirumoto no Ryusei Reishi	    6
-Maebashi	Mirumoto no Ryusei Seitaro	    7
-Nagano	    Mirumoto no Ryusei Urumi	    7
-Yokohama	Mirumoto no Ryusei Yayoi	    4
+Province    Governor                        Counties
+Honshu        Mirumoto no Ryusei Fumiyuki        5
+Kansai        Mirumoto no Ryusei Reishi        6
+Maebashi    Mirumoto no Ryusei Seitaro        7
+Nagano        Mirumoto no Ryusei Urumi        7
+Yokohama    Mirumoto no Ryusei Yayoi        4
 
 Note that in Ryusei lands, all of the lineages are "cosmopolitan lineages" and there are no "provincial lineages" or "dynasty provinces".  To define these terms:
 

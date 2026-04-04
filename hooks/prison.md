@@ -1,6 +1,6 @@
 # Prison Camp Hooks
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 PRISON CAMP HOOKS:
 
 The PCs may end up going to a prison labor camp for some amount of time, depending on how often they break the law.  If they do, they'll meet some fellow prisoners with a lot more freedoms than most of the laborers, who will offer to cut them in on some arrangements they have with some unscrupulous guards.

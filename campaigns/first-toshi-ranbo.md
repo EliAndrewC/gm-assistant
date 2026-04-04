@@ -1,6 +1,6 @@
 # The First Toshi Ranbo Campaign
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 THE FIRST TOSHI RANBO CAMPAIGN:
 
 The "Karmic Inquisitors" campaign was actually the second time that I've set a campaign in the Damasu domain.  An earlier campaign was set in Toshi Ranbo, and here was my campaign overview at that time:

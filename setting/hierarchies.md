@@ -1,6 +1,6 @@
 # Hierarchies
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 HIERARCHIES:
 
 Most of the land in Rokugan is divided between the 7 Great Clans, though there are additional holdings administered directly by Imperial families and a handful of Minor Clans.

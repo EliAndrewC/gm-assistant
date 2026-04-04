@@ -1,61 +1,61 @@
 # Mythological Stories
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
-Here is a story of Lord Moon (and Lady Sun), told by Soshi Saibankan during his time as an Imperial Magistrate.  The story is part of a transcript of a famous Saibankan ruling, to give an idea of how he talked. Many magistrates to this day model their own rulings after Saibankan’s way of speaking.
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
+Here is a story of Lord Moon (and Lady Sun), told by Soshi Saibankan during his time as an Imperial Magistrate.  The story is part of a transcript of a famous Saibankan ruling, to give an idea of how he talked. Many magistrates to this day model their own rulings after Saibankan's way of speaking.
 
 Here are the facts of this case:
 
-→ Kakita Masao and Matsu Asahi were drinking in the same restaurant in Otosan Uchi.
+-> Kakita Masao and Matsu Asahi were drinking in the same restaurant in Otosan Uchi.
 
-→ Both men were very drunk, but Asahi had arrived much earlier and was therefore significantly more intoxicated.
+-> Both men were very drunk, but Asahi had arrived much earlier and was therefore significantly more intoxicated.
 
-→ The two of them exchanged words and ended up insulting one another, which led to a drunken fight.
+-> The two of them exchanged words and ended up insulting one another, which led to a drunken fight.
 
-→ Asahi was widely understood to be the superior fighter, being a veteran and accomplished duelist, while Masao was still young and inexperienced. However, despite being drunk himself, Masao knocked Asahi unconscious, probably due to the older man’s heavier intoxication.
+-> Asahi was widely understood to be the superior fighter, being a veteran and accomplished duelist, while Masao was still young and inexperienced. However, despite being drunk himself, Masao knocked Asahi unconscious, probably due to the older man's heavier intoxication.
 
-→ Masao proceeded to brag to the entire bar that Asahi was lucky that this was merely a brawl and not a real duel, declared himself the superior fighter, proclaiming that in any real duel he would have surely killed Asahi.
+-> Masao proceeded to brag to the entire bar that Asahi was lucky that this was merely a brawl and not a real duel, declared himself the superior fighter, proclaiming that in any real duel he would have surely killed Asahi.
 
-→ Asahi challenged him to a duel to the death the next day, in repayment for the insult. Masao apologized profusely, publicly said he knew Asahi was the superior opponent, and begged Masao to pretend that he had never said those things. Asahi petitioned the Office of the Emerald Champion to have a magistrate rule that Masao must accept his challenge.
+-> Asahi challenged him to a duel to the death the next day, in repayment for the insult. Masao apologized profusely, publicly said he knew Asahi was the superior opponent, and begged Masao to pretend that he had never said those things. Asahi petitioned the Office of the Emerald Champion to have a magistrate rule that Masao must accept his challenge.
 
-→ Masao argued that they were both drunk, that he had apologized and publicly set the record straight, and that even if a duel was warranted, it should be to submission rather than to the death. Masao declared that he was happy to submit to a superior opponent, possibly after simply seeing his opponent show his stance, if indeed Asahi turned out to be as skilled as his reputation suggested.
+-> Masao argued that they were both drunk, that he had apologized and publicly set the record straight, and that even if a duel was warranted, it should be to submission rather than to the death. Masao declared that he was happy to submit to a superior opponent, possibly after simply seeing his opponent show his stance, if indeed Asahi turned out to be as skilled as his reputation suggested.
 
-Here was Saibankan’s ruling, in which he characteristically told a fable and then explained how it informed his ruling:
+Here was Saibankan's ruling, in which he characteristically told a fable and then explained how it informed his ruling:
 
-When the blood of Onnotangu (Lord Moon) mixed with the tears of Amaterasu (Lady Sun) in the dust of the earth, the mixture created the human race. During this time, the two of them discussed how to shape the human creatures they had created. However, Lord Moon was still wounded from his fight with their son Hantei, leaving him unable to override any of his consort’s wishes.
+When the blood of Onnotangu (Lord Moon) mixed with the tears of Amaterasu (Lady Sun) in the dust of the earth, the mixture created the human race. During this time, the two of them discussed how to shape the human creatures they had created. However, Lord Moon was still wounded from his fight with their son Hantei, leaving him unable to override any of his consort's wishes.
 
-“These humans should draw their strength from acting alone, and those who stand together should scatter helplessly before those who go their own way,” suggested Lord Moon.
+"These humans should draw their strength from acting alone, and those who stand together should scatter helplessly before those who go their own way," suggested Lord Moon.
 
-“No,” replied Lady Sun. “They shall be stronger together, and draw strength from family and hierarchical order.”
+"No," replied Lady Sun. "They shall be stronger together, and draw strength from family and hierarchical order."
 
-“Then they should be at their best when acting on impulse, and letting their passions rule,” suggested Lord Moon.
+"Then they should be at their best when acting on impulse, and letting their passions rule," suggested Lord Moon.
 
-“No,” replied Lady Sun. “They should benefit from study and practice, and those among them who act from reason and wisdom shall prevail.”
+"No," replied Lady Sun. "They should benefit from study and practice, and those among them who act from reason and wisdom shall prevail."
 
-“Then those who do win should despise their enemies,” suggested Lord Moon, “and the nobility of victors shall be shown by the contempt they display for their defeated opponents.”
+"Then those who do win should despise their enemies," suggested Lord Moon, "and the nobility of victors shall be shown by the contempt they display for their defeated opponents."
 
-“No,” replied Lady Sun. “The most noble among them shall hold the skill and prowess of their enemies in high regard, bettering themselves by cultivating the admirable traits even of those who oppose them.”
+"No," replied Lady Sun. "The most noble among them shall hold the skill and prowess of their enemies in high regard, bettering themselves by cultivating the admirable traits even of those who oppose them."
 
-“But you shall leave nothing of me in these humans,” complained Lord Moon. “Do you wish to see them move through the world without any of my will reflected in them? I know you wish them to be creatures of order and harmony, but would it not make you sad to see their world bereft of my influence?”
+"But you shall leave nothing of me in these humans," complained Lord Moon. "Do you wish to see them move through the world without any of my will reflected in them? I know you wish them to be creatures of order and harmony, but would it not make you sad to see their world bereft of my influence?"
 
-“Very well,” replied Lady Sun. “So long as order and harmony and wisdom and respect make them stronger, and as long as they know this, I will allow you to shape some aspect of their nature.”
+"Very well," replied Lady Sun. "So long as order and harmony and wisdom and respect make them stronger, and as long as they know this, I will allow you to shape some aspect of their nature."
 
-“In that case,” said Lord Moon, “it shall be exactly as you say. They shall always be stronger together than apart. They shall benefit from study and practice. They shall be improved when recognizing the greatness contained even in their most hated enemies. Those among them who keep themselves ordered and obedient shall prevail over the chaotic and impulsive. And they shall know all of this about themselves. I shall not alter any of this with my influence.”
+"In that case," said Lord Moon, "it shall be exactly as you say. They shall always be stronger together than apart. They shall benefit from study and practice. They shall be improved when recognizing the greatness contained even in their most hated enemies. Those among them who keep themselves ordered and obedient shall prevail over the chaotic and impulsive. And they shall know all of this about themselves. I shall not alter any of this with my influence."
 
-“Then how shall you affect their nature?” asked Lady Sun.
+"Then how shall you affect their nature?" asked Lady Sun.
 
-“I shall give them an instinctive desire that none of this should be true,” answered Lord Moon. “They shall know what is best, but yearn for things which contradict their understanding.”
+"I shall give them an instinctive desire that none of this should be true," answered Lord Moon. "They shall know what is best, but yearn for things which contradict their understanding."
 
-Lady Sun considered this. She understood that mortal man would rise to even greater heights if she did not allow Lord Moon to burden them with impulses contrary to their interests. But she also understood that her consort was right, and it would sadden her greatly for their mortal children to have nothing of her lover’s influence. So she agreed to his request, and thus humanity came to its present condition.
+Lady Sun considered this. She understood that mortal man would rise to even greater heights if she did not allow Lord Moon to burden them with impulses contrary to their interests. But she also understood that her consort was right, and it would sadden her greatly for their mortal children to have nothing of her lover's influence. So she agreed to his request, and thus humanity came to its present condition.
 
 With that in mind, let us consider the factors at play in this case. Both men were drunk and behaved on impulse rather than considered action. However, does this matter? A samurai owns every word he speaks. And while we may often need to act in an instant, the years of training which precede those instants is what separates untrained fumbling from expert skill. So too do we train ourselves to honorable conduct, so that we may not stumble even in our least guarded instants.
 
-Thus, the conduct of both men should be judged without consideration for their inebriation, and Asahi’s challenge to Masao is legitimate and must be answered. And so we must consider the nature of the duel, specifically whether it must be fought to the death. We’ve have already established that the particulars of this exchange should determine this answer, including the specific words used by each man, no matter how drunk they were.
+Thus, the conduct of both men should be judged without consideration for their inebriation, and Asahi's challenge to Masao is legitimate and must be answered. And so we must consider the nature of the duel, specifically whether it must be fought to the death. We've have already established that the particulars of this exchange should determine this answer, including the specific words used by each man, no matter how drunk they were.
 
-Masao is attested by several witnesses to have specifically said that he would “kill” his opponent in “any duel”. He is now asking for a duel in which no one will be killed. If he wanted this outcome, then he should have displayed more respect, both for his opponent and for his own words. Indeed, it is important for all humans to understand our own nature, that we should cultivate proper attitudes and habits in ourselves. For we all have within us baser impulses which must be overridden through willpower and discipline, and we court disaster when we forget this.
+Masao is attested by several witnesses to have specifically said that he would "kill" his opponent in "any duel". He is now asking for a duel in which no one will be killed. If he wanted this outcome, then he should have displayed more respect, both for his opponent and for his own words. Indeed, it is important for all humans to understand our own nature, that we should cultivate proper attitudes and habits in ourselves. For we all have within us baser impulses which must be overridden through willpower and discipline, and we court disaster when we forget this.
 
-Magistrates and judges must always keep this tension in the forefront of our minds. Masao has told the court what was in his heart, what he intended to convey to his audience, and has apologized for the ways in which his intentions differed from what he actually said and did. And indeed, any magistrate must weigh the intentions of all parties. But people must be reminded at all times that words and actions may not be taken back, and that they will be judged based on what they have said and done. Masao’s intention was clearly to express dominance, and the particulars of his words allow for only one possible response.
+Magistrates and judges must always keep this tension in the forefront of our minds. Masao has told the court what was in his heart, what he intended to convey to his audience, and has apologized for the ways in which his intentions differed from what he actually said and did. And indeed, any magistrate must weigh the intentions of all parties. But people must be reminded at all times that words and actions may not be taken back, and that they will be judged based on what they have said and done. Masao's intention was clearly to express dominance, and the particulars of his words allow for only one possible response.
 
-Indeed, one error that both men have made here is in asking for me to use my judgment and apply my discretion to do what is right. But the particulars of this case allow for no other ruling than that Masao must answer Asahi’s challenge, and fight him to the death.
+Indeed, one error that both men have made here is in asking for me to use my judgment and apply my discretion to do what is right. But the particulars of this case allow for no other ruling than that Masao must answer Asahi's challenge, and fight him to the death.
 
 (end of ruling)
 
@@ -158,17 +158,17 @@ One cycle, after many such journeys, Suro approached Ryoshun with a new request.
 
 Ryoshun regarded Suro thoughtfully as he closed shut the passages with an application of his will.  "Perhaps eventually, Suro - but I'd wager, not this time."
 
-Suro blinked, surprised.  “You would deny me passage?  I have Lord Moon’s permission.”
+Suro blinked, surprised.  "You would deny me passage?  I have Lord Moon's permission."
 
-Ryoshun remained still, his eyes unwavering as he spoke. “You do indeed, but I have watched closely.  Your star-metal coins are warm now, infused with the stolen heat and energy of Lady Sun's domain.  They carry within them now the strength of those that touched them in her realm.  You did not take any object from the Realm of Day, but you have stolen some of its warmth.  Even now I see Kagutsuchi massaging his aching hands over the heat of his forge, and Hikarimitsu shivering even in the warmth of her gardens.”
+Ryoshun remained still, his eyes unwavering as he spoke. "You do indeed, but I have watched closely.  Your star-metal coins are warm now, infused with the stolen heat and energy of Lady Sun's domain.  They carry within them now the strength of those that touched them in her realm.  You did not take any object from the Realm of Day, but you have stolen some of its warmth.  Even now I see Kagutsuchi massaging his aching hands over the heat of his forge, and Hikarimitsu shivering even in the warmth of her gardens."
 
-A slow smile spread across Suro's face. "It seems nothing escapes your watchful gaze, Ryoshun.  But what of it?  Perhaps Lord Moon himself would approve of such a subtle theft.”
+A slow smile spread across Suro's face. "It seems nothing escapes your watchful gaze, Ryoshun.  But what of it?  Perhaps Lord Moon himself would approve of such a subtle theft."
 
-“Perhaps,” replied Ryoshun. “But your leave is to spread the influence of Lord Moon in the mortal realm, not the power of his consort. The warmth you have stolen does not belong to our lord, and thus, these altered coins would upset the balance between night and day, a balance I am sworn to protect. Therefore, I cannot allow you to pass."
+"Perhaps," replied Ryoshun. "But your leave is to spread the influence of Lord Moon in the mortal realm, not the power of his consort. The warmth you have stolen does not belong to our lord, and thus, these altered coins would upset the balance between night and day, a balance I am sworn to protect. Therefore, I cannot allow you to pass."
 
 "Very well," Suro conceded. "I shall return and leave the coins behind before I descend to earth."  He turned to go, but then glanced back with a chuckle. "But we shall see, old friend, what will happen now that I have reason to sneak past you.  Perhaps I will simply find another way to the mortal realm, one that eludes even your sight."
 
-Ryoshun’s gaze met his, calm and certain.  “Perhaps eventually, Suro - but I’d wager, not this time.”
+Ryoshun's gaze met his, calm and certain.  "Perhaps eventually, Suro - but I'd wager, not this time."
 
 (end of story)
 

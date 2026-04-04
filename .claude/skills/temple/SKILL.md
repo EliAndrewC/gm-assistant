@@ -9,32 +9,32 @@ Generate temple descriptions, relics, monk characters, and daily routines consis
 
 ## Source Material - Temple Organization
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 TEMPLE ORGANIZATION:
 
 When the Shinsei was advising the Hantei on the new Empire being created, part of his guidance was the identification of the 7 Major Fortunes whose favor would bring good luck and prosperity to humanity:
 
-Fortune:	    Domain
-Benten:	        The fortune of romantic love
-Bishamon:	    The fortune of strength
-Daikoku:	    The fortune of wealth
-Ebisu:	        The fortune of honest work
-Fukurokujin:	The fortune of wisdom and mercy
-Hotei:	        The fortune of contentment
-Jurojin:	    The fortune of longevity
+Fortune:        Domain
+Benten:            The fortune of romantic love
+Bishamon:        The fortune of strength
+Daikoku:        The fortune of wealth
+Ebisu:            The fortune of honest work
+Fukurokujin:    The fortune of wisdom and mercy
+Hotei:            The fortune of contentment
+Jurojin:        The fortune of longevity
 
 The Shinsei further recommended that each clan cultivate 2 major Fortunes to be their patrons, ensuring that every city within the clan have a temple to each of their 2 patron Fortunes.
 
-Clan:	    Patron Fortunes
-Crab:	    Bishamon + Ebisu
-Crane:	    Benten + Daikoku
-Dragon:	    Hotei + Ebisu
-Lion:	    Bishamon + Daikoku
-Phoenix:	Fukurokujin + Hotei
-Scorpion:	Benten + Jurojin
-Unicorn:	Fukurokujin + Jurojin
+Clan:        Patron Fortunes
+Crab:        Bishamon + Ebisu
+Crane:        Benten + Daikoku
+Dragon:        Hotei + Ebisu
+Lion:        Bishamon + Daikoku
+Phoenix:    Fukurokujin + Hotei
+Scorpion:    Benten + Jurojin
+Unicorn:    Fukurokujin + Jurojin
 
-In the late 3rd century, Hantei the Tenth formalized the system of the Six Ministries, and along with it codified the requirement that each of the Empire’s cities contain a temple to each of its clan’s patron fortunes.
+In the late 3rd century, Hantei the Tenth formalized the system of the Six Ministries, and along with it codified the requirement that each of the Empire's cities contain a temple to each of its clan's patron fortunes.
 
 The temples in Toshi Ranbo are unusually large and well-funded, due to Toshi Ranbo being the 3rd-largest city in the Empire, but the general structure is the same commonly-used way to organize temples which exists everywhere.
 
@@ -58,7 +58,7 @@ With that being said, religious orders must necessarily have a hierarchy in orde
 
 -> A Senior Monk has been deemed worthy to be put in charge of directing the work of other monks, such as being put in charge of the custodians who clean the temple grounds, or being tasked with overseeing the temple kitchens. One of the requirements to attain the position of Senior Monk is a vow of celibacy, and senior monks therefore may not be married. This means that once a monk attains the position of Adept Monk, they must choose between starting a family and attaining a higher position within the temple.
 
--> Each major temple has a council of Stewards, each responsible for a division of the temple’s responsibilities, such as the temple’s treasury and budgeting, or its education of members, or the overseeing of religious ceremonies.
+-> Each major temple has a council of Stewards, each responsible for a division of the temple's responsibilities, such as the temple's treasury and budgeting, or its education of members, or the overseeing of religious ceremonies.
 
 -> Any provincial city will have an Abbot in charge, and even temples in the capital will be run by an abbot if they do not oversee other temples out in the provinces.
 
@@ -70,125 +70,125 @@ First, some terminology about what we mean by an Order vs a Temple.
 
 The Order of Bishamon refers to the network of temples, monasteries, and shrines devoted to Bishamon throughout Damasu lands. Each domain in Lion lands has its own Order of Bishamon with its own Grand Abbot.
 
-Sometimes people refer to “the Order of Bishamon” and mean the general system of all Bishamon-related religious institutions across the entire Empire, but most of the time anyone talking any particular Order is referring to the institution within that domain.
+Sometimes people refer to "the Order of Bishamon" and mean the general system of all Bishamon-related religious institutions across the entire Empire, but most of the time anyone talking any particular Order is referring to the institution within that domain.
 
 Although the Order of Bishamon in Damasu lands will sometimes send gifts and offerings to the Order of Bishamon in the Akodo domain, this is more infrequent and informal than the rigid expectation of taxes which exist between the Damasu house government and the ruling Akodo house.
 
 The Temple of Bishamon in Toshi Ranbo is also formally referred to as the sovereign temple, while the smaller provincial temples in each of the provincial cities of the Damasu provinces are also formally referred to as subordinate temples.
 
-To summarize, anytime this explanation refers to the Order of Bishamon, we’re talking about the broader network of all Bishamon temples/monasteries/shrines in Damasu lands, and when this page refers to the Temple of Bishamon, we’re talking about the sovereign temple in the Damasu capital of Toshi Ranbo.
+To summarize, anytime this explanation refers to the Order of Bishamon, we're talking about the broader network of all Bishamon temples/monasteries/shrines in Damasu lands, and when this page refers to the Temple of Bishamon, we're talking about the sovereign temple in the Damasu capital of Toshi Ranbo.
 
 The Temple of Bishamon in Toshi Ranbo is one of the largest in the Empire, with over 200 monks living in the temple complex.  Because this is unusually large, it's not necessarily representative of most major temples in most major cities, but here are the rough numbers for the monks in each category in the temple:
 
-Position	    Count
-Novices	        80-100
-Acolytes	    60-80
-Junior Monks	40-60
-Adept Monks	    30-40
-Senior Monks	20-30
-Stewards	    10-20
-Grand Abbot	    1
+Position        Count
+Novices            80-100
+Acolytes        60-80
+Junior Monks    40-60
+Adept Monks        30-40
+Senior Monks    20-30
+Stewards        10-20
+Grand Abbot        1
 
-Most of the monks in all of the above categories live in the Temple of Bishamon complex. This does not include most of the initiates, who have begun their study, usually part-time while working their existing jobs and handling their normal family obligations. As the Shinsei said of the monastic life, “many are called, few are chosen” – there are generally 200-500 initiates, more in number than all other categories combined!
+Most of the monks in all of the above categories live in the Temple of Bishamon complex. This does not include most of the initiates, who have begun their study, usually part-time while working their existing jobs and handling their normal family obligations. As the Shinsei said of the monastic life, "many are called, few are chosen" - there are generally 200-500 initiates, more in number than all other categories combined!
 
-Here’s a rough outline of the Order of Bishamon’s standing over the past decade and a half:
+Here's a rough outline of the Order of Bishamon's standing over the past decade and a half:
 
-Under the old Damasu regime, the Temple of Bishamon was the biggest, richest, most influential temple in Damasu lands, due to the centrality of the fortune Bishamon in Lion life. A majority of the governments temple funding went to the Order of Bishamon, which made up roughly 50% of the Temple’s funding.
+Under the old Damasu regime, the Temple of Bishamon was the biggest, richest, most influential temple in Damasu lands, due to the centrality of the fortune Bishamon in Lion life. A majority of the governments temple funding went to the Order of Bishamon, which made up roughly 50% of the Temple's funding.
 
 12 years ago (in the year 1117), the Tsume house invaded Toshi Ranbo and conquered the city from the Damasu house. Although during this time they would not have dared defile the temple (due to not wanting to offend Bishamon), they did raid the temple treasury, and their subsequent donations made back to the temple came nowhere close to recouping those losses.
 
-Over the next several years of Tsume occupation, the city was in bad shape, with repeated riots over food shortages and other conditions. The Tsume government cut the city’s finding of the Order of Bishamon down to almost nothing, funneling their money instead to the Order of Daikoku and to the Order of Benten which they quickly expanded using monies which otherwise would have been directed to the Order of Bishamon. They also seized all of the “temple estates”, i.e. properties owned by the temple from which it collected rent.
+Over the next several years of Tsume occupation, the city was in bad shape, with repeated riots over food shortages and other conditions. The Tsume government cut the city's finding of the Order of Bishamon down to almost nothing, funneling their money instead to the Order of Daikoku and to the Order of Benten which they quickly expanded using monies which otherwise would have been directed to the Order of Bishamon. They also seized all of the "temple estates", i.e. properties owned by the temple from which it collected rent.
 
-The Temple of Bishamon thus not only had to contend with the emptying of its treasury, but also losing over half of its funding overnight, putting the temple’s finances in dire straits. The disorder within the city, combined with the Tsume pillaging of the temple’s normal roster of wealthy patrons made this problem worse. Additionally, the temple’s budget shortfalls led to a massive scaling back of its charitable endeavors, which further strained the ability of the city’s population to cope with the new regime. Many monks were dismissed from the Temple during this time, reassigned to the provinces or to other domains, and many of these formed the early cadre of the Baitenist movement.
+The Temple of Bishamon thus not only had to contend with the emptying of its treasury, but also losing over half of its funding overnight, putting the temple's finances in dire straits. The disorder within the city, combined with the Tsume pillaging of the temple's normal roster of wealthy patrons made this problem worse. Additionally, the temple's budget shortfalls led to a massive scaling back of its charitable endeavors, which further strained the ability of the city's population to cope with the new regime. Many monks were dismissed from the Temple during this time, reassigned to the provinces or to other domains, and many of these formed the early cadre of the Baitenist movement.
 
-Almost 4 years after the Tsume invasion, the Lion clan retook the city (in the year 1121), and it reverted to the Damasu. The Lion clan investigated the temple’s finances and found them lacking, and instead of depleting them further restored their government funding, though they did not have the resources to restore its treasury to its previous levels at this time, due to the ongoing war with the Crane clan.
+Almost 4 years after the Tsume invasion, the Lion clan retook the city (in the year 1121), and it reverted to the Damasu. The Lion clan investigated the temple's finances and found them lacking, and instead of depleting them further restored their government funding, though they did not have the resources to restore its treasury to its previous levels at this time, due to the ongoing war with the Crane clan.
 
-About 6 years later, the Lion/Crane war ended (the peace treaty was officially signed in the year 1128), and the peace treaty involved large payments to the Lion clan. The Damasu were flush with coin, and donated generously to the Temple. In the past year, after the peace treaty was signed, the Temple’s income is double what it was even under the previous Damasu regime.
+About 6 years later, the Lion/Crane war ended (the peace treaty was officially signed in the year 1128), and the peace treaty involved large payments to the Lion clan. The Damasu were flush with coin, and donated generously to the Temple. In the past year, after the peace treaty was signed, the Temple's income is double what it was even under the previous Damasu regime.
 
-The Temple of Bishamon’s annual income before the fall of the previous Damasu regime was roughly 10,000 koku/year, which was sourced as follows:
+The Temple of Bishamon's annual income before the fall of the previous Damasu regime was roughly 10,000 koku/year, which was sourced as follows:
 
 Here is a rough breakdown of what a typical year of income was for the Temple of Bishamon prior to the fall of the Damasu:
 
-Koku/year	Percent	Source
-~4,000	    ~40%	government funding
-~2,500	    ~25%	donations from the city’s population
-~1,500	    ~15%	income from performing religious services and ceremonies
-~1000	    ~10%	income from land, property, and other investments
-~500	    ~5%	    income from the sale of non-religious goods and services
-~500	    ~5%	    offerings from subordinate temples, monasteries, and shrines in the provinces
+Koku/year    Percent    Source
+~4,000        ~40%    government funding
+~2,500        ~25%    donations from the city's population
+~1,500        ~15%    income from performing religious services and ceremonies
+~1000        ~10%    income from land, property, and other investments
+~500        ~5%        income from the sale of non-religious goods and services
+~500        ~5%        offerings from subordinate temples, monasteries, and shrines in the provinces
 
-Note that all of these numbers are extremely approximate, but they should each offer a rough order of magnitude of the Temple of Bishamon’s income from various sources. One other point of interest is that the Temple of Bishamon in the capital distributes more monies in a typical year to its subordinate temples than it receives, so the 5% of “revenue” is misleading and could just as easily be expressed as a negative.
+Note that all of these numbers are extremely approximate, but they should each offer a rough order of magnitude of the Temple of Bishamon's income from various sources. One other point of interest is that the Temple of Bishamon in the capital distributes more monies in a typical year to its subordinate temples than it receives, so the 5% of "revenue" is misleading and could just as easily be expressed as a negative.
 
-Here’s roughly what the temple has historically done with that income each year:
+Here's roughly what the temple has historically done with that income each year:
 
-Koku/year	Percent	Category
-~2,000	    ~20%	Religious ceremonies, events, and festivals
-~1,500	    ~15%	Savings, investments, loans, land and property management
-~1,000	    ~10%	Maintenance, cleaning, repair, and renovations to the Temple
-~1000	    ~10%	Donations to the needy and other community projects
-~1000	    ~10%	Gifts to patrons, public relations, offerings to other temples, and other forms of diplomacy
-~1000	    ~10%	Funds for subordinate temples, monasteries, and shrines, as well as pilgrimages to these and other destinations
-~1000	    ~10%	Scholarly pursuits, acquisition and upkeep of books, ink, paper, and other religious artifacts and symbols
-~1000	    ~5%	    Room and board for the temple monks
+Koku/year    Percent    Category
+~2,000        ~20%    Religious ceremonies, events, and festivals
+~1,500        ~15%    Savings, investments, loans, land and property management
+~1,000        ~10%    Maintenance, cleaning, repair, and renovations to the Temple
+~1000        ~10%    Donations to the needy and other community projects
+~1000        ~10%    Gifts to patrons, public relations, offerings to other temples, and other forms of diplomacy
+~1000        ~10%    Funds for subordinate temples, monasteries, and shrines, as well as pilgrimages to these and other destinations
+~1000        ~10%    Scholarly pursuits, acquisition and upkeep of books, ink, paper, and other religious artifacts and symbols
+~1000        ~5%        Room and board for the temple monks
 
 Remember that these are all the approximate baseline numbers before everything changed when Toshi Ranbo fell to the Tsume invasion, and the Temple fell on extremely hard times for several years afterwards. This had rippling effects not immediately reflecting in high-level budget numbers.
 
-For example, there is no line item for clothing on this budget breakdown. Partially this is because a monk’s initial set of robes would be provided out of the “room and board” budget, and replacements often come either out of the budget of the senior monk overseeing the job a monk is working, or donated by members of the community. For example, Adept monks who teach the city’s initiates often take up collections from their students in order to buy new sandals or undergarments or robes.
+For example, there is no line item for clothing on this budget breakdown. Partially this is because a monk's initial set of robes would be provided out of the "room and board" budget, and replacements often come either out of the budget of the senior monk overseeing the job a monk is working, or donated by members of the community. For example, Adept monks who teach the city's initiates often take up collections from their students in order to buy new sandals or undergarments or robes.
 
-When the Lion took over the city, few new robes were purchased by the temple for several years, and the poor state of the temple’s finances was apparent from the increasingly worn robes which were being constantly patched and mended rather than replaced.
+When the Lion took over the city, few new robes were purchased by the temple for several years, and the poor state of the temple's finances was apparent from the increasingly worn robes which were being constantly patched and mended rather than replaced.
 
-The above sections detail the temple’s hierarchy and budget, but this doesn’t quite describe what most of the monks are doing day-to-day. This is only somewhat reflected in how the temple receives and spends its money, since some things are mostly free and others cost enormous amounts of money.
+The above sections detail the temple's hierarchy and budget, but this doesn't quite describe what most of the monks are doing day-to-day. This is only somewhat reflected in how the temple receives and spends its money, since some things are mostly free and others cost enormous amounts of money.
 
-Because monks tend to perform many roles, there’s not a simple or clear breakdown of who is doing what. For example, consider the role of education in the temple. While it’s true that some Adept monks might spend most of their time educating initiates, teaching and learning does not stop at any rank. Some senior monks will be active in continuing instruction of the junior monks under their authority, while others will be mainly concerned with temple operations. Some scribes and librarians will be fully occupied with copying and cataloging, while others will use their expertise to guide the education of the temple’s most senior members.
+Because monks tend to perform many roles, there's not a simple or clear breakdown of who is doing what. For example, consider the role of education in the temple. While it's true that some Adept monks might spend most of their time educating initiates, teaching and learning does not stop at any rank. Some senior monks will be active in continuing instruction of the junior monks under their authority, while others will be mainly concerned with temple operations. Some scribes and librarians will be fully occupied with copying and cataloging, while others will use their expertise to guide the education of the temple's most senior members.
 
-Because of these shared roles and responsibilities, any breakdown of temple work will add up to well over 100%. However, this is still useful to help understand how the Temple of Bishamon’s monks spend their days:
+Because of these shared roles and responsibilities, any breakdown of temple work will add up to well over 100%. However, this is still useful to help understand how the Temple of Bishamon's monks spend their days:
 
-Percent	Role	            Work
-~33%	Clergy	            Performing religious ceremonies, rituals, and prayers, as well as guiding others in meditation, study, and training. Some monks specialize in specific aspects of the faith or in performing particular rituals.
-~25%	Educators	        The most common task is recruiting and instructing initiates who have not yet been chosen to join the temple, followed by the continuing education of the temple’s novices, acolytes, and junior monks.
-~20%	Custodians	        This not only includes those who clean the temple but also the skilled work responsible for doing maintenance and repair work. In some cases this will require bringing in and overseeing outside contractors for extremely specialized labor.
-~20%	Cooks	            The kitchen staff needs to be large to serve multiple meals per day to hundreds of monks, and this figure also includes those who work in community kitchens which exist as part of the Temple of Bishamon’s charitable outreach.
-~15%	Scribes/Scholars	The temple librarians copy religious texts, maintain the temple’s library and archives, and engage in scholarly pursuits related to the temple’s religious teachings and history. Making new copies of the Tao (and other religious texts) in particular is such an incredibly time consuming and important work which many monks devote their entire lives to it.
-~10%	Administrators	    Responsible for managing the temple’s finances, resources, and personnel, the stewards and senior monks in these positions also liaise with the city government (particularly the Damasu Ministry of Rites), handle correspondence with other temples, and manage temple visitors and pilgrims.
-~10%	Philanthropy	    Those who oversee and distribute the temple’s charitable donations, which include not only direct donations to the poor but also things like soup kitchens and the like.
-~10%	Security	        Responsible for maintaining safety and order within the temple grounds and protecting the temple’s valuable religious artifacts and sacred spaces. Counterintuitively, the Temple of Bishamon actually has fewer monks in this role than other temples, because martial training is so much more common as part of the Order of Bishamon’s religious education. Thus, while some other temples require a larger staff specifically devoted to security, the Temple of Bishamon has a smaller percentage of its members specifically designated in this role.
-~10%	Pilgrims	        This includes not only the holy journeys we think of when talking about pilgrimages, but also coordinating with the subordinate temples in the provinces and managing the offerings and donations which flow in both directions.
+Percent    Role                Work
+~33%    Clergy                Performing religious ceremonies, rituals, and prayers, as well as guiding others in meditation, study, and training. Some monks specialize in specific aspects of the faith or in performing particular rituals.
+~25%    Educators            The most common task is recruiting and instructing initiates who have not yet been chosen to join the temple, followed by the continuing education of the temple's novices, acolytes, and junior monks.
+~20%    Custodians            This not only includes those who clean the temple but also the skilled work responsible for doing maintenance and repair work. In some cases this will require bringing in and overseeing outside contractors for extremely specialized labor.
+~20%    Cooks                The kitchen staff needs to be large to serve multiple meals per day to hundreds of monks, and this figure also includes those who work in community kitchens which exist as part of the Temple of Bishamon's charitable outreach.
+~15%    Scribes/Scholars    The temple librarians copy religious texts, maintain the temple's library and archives, and engage in scholarly pursuits related to the temple's religious teachings and history. Making new copies of the Tao (and other religious texts) in particular is such an incredibly time consuming and important work which many monks devote their entire lives to it.
+~10%    Administrators        Responsible for managing the temple's finances, resources, and personnel, the stewards and senior monks in these positions also liaise with the city government (particularly the Damasu Ministry of Rites), handle correspondence with other temples, and manage temple visitors and pilgrims.
+~10%    Philanthropy        Those who oversee and distribute the temple's charitable donations, which include not only direct donations to the poor but also things like soup kitchens and the like.
+~10%    Security            Responsible for maintaining safety and order within the temple grounds and protecting the temple's valuable religious artifacts and sacred spaces. Counterintuitively, the Temple of Bishamon actually has fewer monks in this role than other temples, because martial training is so much more common as part of the Order of Bishamon's religious education. Thus, while some other temples require a larger staff specifically devoted to security, the Temple of Bishamon has a smaller percentage of its members specifically designated in this role.
+~10%    Pilgrims            This includes not only the holy journeys we think of when talking about pilgrimages, but also coordinating with the subordinate temples in the provinces and managing the offerings and donations which flow in both directions.
 
 There are other miscellaneous specialized roles within the temple not listed here, but the above should give a decent idea of the overall categories. Remember that the above percentages add up to much more than 100% due to the fact that many monks perform multiple roles at different times.
 
 Another way to think about temple life is to think about what a typical day looks like for monks in the Temple of Bishamon.
 
-Considering the various roles and jobs which exist in the temple, this varies considerably from monk to monk, but I’ll list a few examples to give a general sense of the rhythm and flow of temple life.
+Considering the various roles and jobs which exist in the temple, this varies considerably from monk to monk, but I'll list a few examples to give a general sense of the rhythm and flow of temple life.
 
-First let’s consider the daily routine of Kenta, who reports to the Custodian of the Temple Grounds.
+First let's consider the daily routine of Kenta, who reports to the Custodian of the Temple Grounds.
 
-Hour	Task	Description
-Hour of the Tiger (4-6am)	Waking and morning prayers	Like most temple monks, Kenta often wakes before dawn to begin his day. After waking, Kenta hurries to attend the temple’s communal morning prayers.
-Hour of the Hare (6-8am)	Cleaning duties	Kenta begins his custodial work early in the day, with tasks like sweeping the grounds, cleaning the main hall, and especially any tasks which are best performed while the day’s weather is still cool.
-Hour of the Dragon (8-10am)	Breakfast and rest	The temple provides a daily communal breakfast, typically rice and vegetables. After eating, Kenta spends some time in daily meditation, which provides him with the physical rest and spiritual centering that will prepare him for the remainder of the day.
-Hour of the Serpent (10am-noon)	Cleaning duties	As the day heats up, Kenta tends to focus on indoor tasks. Note that this cycle of indoor/outdoor tasks is often reversed between the summer and winter, as snow on the ground usually makes it more advisable to perform indoor tasks in the early hours and outdoor tasks at midday.
-Hour of the Horse (noon-2pm)	Midday prayers and lunch	At midday Kenta participates in another period of communal prayers and meditation, followed by the temple lunch, which is similar to breakfast in its simplicity.
-Hour of the Goat (2-4pm)	Personal time	While many of the custodial staff use this time for afternoon naps, Kenta uses this time for continuing education. He aspires to become an Adept monk, but first he must improve his reading and writing abilities, which he does by attending classes taught by the Teacher of Bishamon’s Wisdom. Once his literacy has improved, he will “graduate” to begin receiving direct instruction from the Senior monk who oversees him.
-Hour of the Monkey (4-6pm)	Cleaning duties	As the day cools down, Kenta either resumes his outdoor cleaning (in the summer) or his indoor tasks (in the winter).
-Hour of the Rooster (6-8pm)	Evening prayers and dinner	Just as the day begins with prayers, so does it end. Kenta looks forward to the temple dinners, which are larger and fuller meals than the simple breakfasts and lunches. Dinner may involve soup, noodles, pickles, bean curd, seitan, and on some nights the kitchen serves fried tempura or a piece of fresh fruit as a dessert.
-Hour of the Dog (8-10pm)	Bathing and personal time	While some of the other young monks venture out into the city for entertainment during this time, Kenta usually spends a few minutes relaxing his thoughts and then turning in about 60 minutes before the Hour of the Boar, when most of the temple turns in for the night. Once his literacy improves enough for it to be practical, he plans to spend this time reading the Tao and whatever other texts his sensei recommends to him.
+Hour    Task    Description
+Hour of the Tiger (4-6am)    Waking and morning prayers    Like most temple monks, Kenta often wakes before dawn to begin his day. After waking, Kenta hurries to attend the temple's communal morning prayers.
+Hour of the Hare (6-8am)    Cleaning duties    Kenta begins his custodial work early in the day, with tasks like sweeping the grounds, cleaning the main hall, and especially any tasks which are best performed while the day's weather is still cool.
+Hour of the Dragon (8-10am)    Breakfast and rest    The temple provides a daily communal breakfast, typically rice and vegetables. After eating, Kenta spends some time in daily meditation, which provides him with the physical rest and spiritual centering that will prepare him for the remainder of the day.
+Hour of the Serpent (10am-noon)    Cleaning duties    As the day heats up, Kenta tends to focus on indoor tasks. Note that this cycle of indoor/outdoor tasks is often reversed between the summer and winter, as snow on the ground usually makes it more advisable to perform indoor tasks in the early hours and outdoor tasks at midday.
+Hour of the Horse (noon-2pm)    Midday prayers and lunch    At midday Kenta participates in another period of communal prayers and meditation, followed by the temple lunch, which is similar to breakfast in its simplicity.
+Hour of the Goat (2-4pm)    Personal time    While many of the custodial staff use this time for afternoon naps, Kenta uses this time for continuing education. He aspires to become an Adept monk, but first he must improve his reading and writing abilities, which he does by attending classes taught by the Teacher of Bishamon's Wisdom. Once his literacy has improved, he will "graduate" to begin receiving direct instruction from the Senior monk who oversees him.
+Hour of the Monkey (4-6pm)    Cleaning duties    As the day cools down, Kenta either resumes his outdoor cleaning (in the summer) or his indoor tasks (in the winter).
+Hour of the Rooster (6-8pm)    Evening prayers and dinner    Just as the day begins with prayers, so does it end. Kenta looks forward to the temple dinners, which are larger and fuller meals than the simple breakfasts and lunches. Dinner may involve soup, noodles, pickles, bean curd, seitan, and on some nights the kitchen serves fried tempura or a piece of fresh fruit as a dessert.
+Hour of the Dog (8-10pm)    Bathing and personal time    While some of the other young monks venture out into the city for entertainment during this time, Kenta usually spends a few minutes relaxing his thoughts and then turning in about 60 minutes before the Hour of the Boar, when most of the temple turns in for the night. Once his literacy improves enough for it to be practical, he plans to spend this time reading the Tao and whatever other texts his sensei recommends to him.
 
 As another example, consider the daily routine of Mizuki, who serves as the Scribe of the Eternal Tao. She is a senior monk who oversees the all copying of the Tao performed by all scribes in the temple library.
 
-Hour	Task	Description
-Hour of the Tiger (4-6am)	Waking and morning prayers	Rather than answering the call to morning prayers rung by the Herald of the Bell, Mizuki instead calls together her scribes to lead them in directed prayer and meditation based on what parts of the Tao will be copied on this day. She invites them to consider the koans and riddles and wisdom of the Shinsei they are about to transcribe, and has each of her scribes select a single word related to their day’s work which shall be the focus of their centering prayer.
-Hour of the Hare (6-8am)	Planning and organizing	Mizuki begins her workday by reviewing the day’s tasks and planning any special projects that must be handled, such as messages, correspondence, purchases, meetings, deliveries, etc.
-Hour of the Dragon (8-10am)	Breakfast and review of work	After a simple communal breakfast of rice and vegetables, Mizuki reviews the previous day’s transcriptions, looking for errors or areas of improvement in her scribes’ copying and calligraphy. During this time, she will mentor the junior scribes based on their previous day’s output, to help them learn and improve.
-Hour of the Serpent (10am-noon)	Management and oversight	Mizuki typically splits this time between providing guidance and advice as needed to her scribes and performing transcription herself. These two tasks are related, as demonstrating how such things are properly done serves as a useful form of instruction for the junior monks.
-Hour of the Horse (noon-2pm)	Lunch and administrative duties	Mizuki is typically too busy to join her workers for midday prayers and meditation, and often works through lunch without noticing her own hunger. This is the time when she continues the day’s special projects now that there is sufficient light to write correspondence, order new materials, and update her team’s financial records. When the temple was suffering financially under the Tsume and in the aftermath of the Damasu retaking the city, Mizuki’s team couldn’t afford the cost of the candles and lanterns necessary to do this work in the early morning or late evening, and now that the temple’s treasury has been restored to its former glory she is slowly re-accustoming herself to the new normal.
+Hour    Task    Description
+Hour of the Tiger (4-6am)    Waking and morning prayers    Rather than answering the call to morning prayers rung by the Herald of the Bell, Mizuki instead calls together her scribes to lead them in directed prayer and meditation based on what parts of the Tao will be copied on this day. She invites them to consider the koans and riddles and wisdom of the Shinsei they are about to transcribe, and has each of her scribes select a single word related to their day's work which shall be the focus of their centering prayer.
+Hour of the Hare (6-8am)    Planning and organizing    Mizuki begins her workday by reviewing the day's tasks and planning any special projects that must be handled, such as messages, correspondence, purchases, meetings, deliveries, etc.
+Hour of the Dragon (8-10am)    Breakfast and review of work    After a simple communal breakfast of rice and vegetables, Mizuki reviews the previous day's transcriptions, looking for errors or areas of improvement in her scribes' copying and calligraphy. During this time, she will mentor the junior scribes based on their previous day's output, to help them learn and improve.
+Hour of the Serpent (10am-noon)    Management and oversight    Mizuki typically splits this time between providing guidance and advice as needed to her scribes and performing transcription herself. These two tasks are related, as demonstrating how such things are properly done serves as a useful form of instruction for the junior monks.
+Hour of the Horse (noon-2pm)    Lunch and administrative duties    Mizuki is typically too busy to join her workers for midday prayers and meditation, and often works through lunch without noticing her own hunger. This is the time when she continues the day's special projects now that there is sufficient light to write correspondence, order new materials, and update her team's financial records. When the temple was suffering financially under the Tsume and in the aftermath of the Damasu retaking the city, Mizuki's team couldn't afford the cost of the candles and lanterns necessary to do this work in the early morning or late evening, and now that the temple's treasury has been restored to its former glory she is slowly re-accustoming herself to the new normal.
 
-Mizuki’s scribes are not allowed the normal midday break. Unlike cooks and custodians and lecturers, Mizuki’s team needs sunlight to for their work, and so they work with few breaks throughout the daylight hours, taking their personal time in the morning and evening.
-Hour of the Goat (2-4pm)	Personal study	During this time, Mizuki continues to oversee her team, but shifts her own work from transcription to study, diving deeper into the Tao to gain the understanding which only comes with intense and continued study, contemplation, meditation, and prayer. During this time, she especially contemplates any questions she has recently been posed, either by members of her team or students she instructs, or by those she has met with from outside the temple.
-Hour of the Monkey (4-6pm)	Oversight and teaching	In addition to the normal oversight and review of the work being performed by her scribes, Mizuki spends some of this time lecturing and leading members of the temple in prayer and meditation, usually based on some of the teachings having been transcribed earlier in the day. Her students consist of a combination of members of the temple library and monks from other parts of the Temple of Bishamon. Occasionally a visiting samurai or pilgrim to the temple will join her lectures, which some have referred to as “one of the temple’s hidden gems”.
-Hour of the Rooster (6-8pm)	Dinner and personal time	With the sun’s light fading, Mizuki ends her day’s work by enjoying the temple dinner, which is especially welcome on days when she found herself working through lunch. Sometimes she eats outside the temple with patrons and benefactors, often samurai who have commissioned copies of the Tao, to whom she often repeats snippets from her lectures.
+Mizuki's scribes are not allowed the normal midday break. Unlike cooks and custodians and lecturers, Mizuki's team needs sunlight to for their work, and so they work with few breaks throughout the daylight hours, taking their personal time in the morning and evening.
+Hour of the Goat (2-4pm)    Personal study    During this time, Mizuki continues to oversee her team, but shifts her own work from transcription to study, diving deeper into the Tao to gain the understanding which only comes with intense and continued study, contemplation, meditation, and prayer. During this time, she especially contemplates any questions she has recently been posed, either by members of her team or students she instructs, or by those she has met with from outside the temple.
+Hour of the Monkey (4-6pm)    Oversight and teaching    In addition to the normal oversight and review of the work being performed by her scribes, Mizuki spends some of this time lecturing and leading members of the temple in prayer and meditation, usually based on some of the teachings having been transcribed earlier in the day. Her students consist of a combination of members of the temple library and monks from other parts of the Temple of Bishamon. Occasionally a visiting samurai or pilgrim to the temple will join her lectures, which some have referred to as "one of the temple's hidden gems".
+Hour of the Rooster (6-8pm)    Dinner and personal time    With the sun's light fading, Mizuki ends her day's work by enjoying the temple dinner, which is especially welcome on days when she found herself working through lunch. Sometimes she eats outside the temple with patrons and benefactors, often samurai who have commissioned copies of the Tao, to whom she often repeats snippets from her lectures.
 
 On days when Mizuki needs to leave the temple to purchase additional supplies or handle other business, this is generally the time when she does so.
-Hour of the Dog (8-10pm)	Personal time, bathing, and preparing for the next day	Depending on the hardships of the day, Mizuki might spend this time in additional study, having evening tea with her closest friends in the temple, or finishing up the day’s work by candlelight now that the Temple of Bishamon can once again afford candles.
+Hour of the Dog (8-10pm)    Personal time, bathing, and preparing for the next day    Depending on the hardships of the day, Mizuki might spend this time in additional study, having evening tea with her closest friends in the temple, or finishing up the day's work by candlelight now that the Temple of Bishamon can once again afford candles.
 
 Hopefully the similarities and differences between Kenta and Mizuki can help give an idea of the general rhythm of temple life.
 
@@ -198,11 +198,11 @@ For married monks (remember that only Adept monks and below can marry, while Sen
 
 ## Source Material - Temple Relics
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 
 As a servant of Yozo, the fortune of legal justice, Masayoshi has tracked her this far, learning much of the story of how she came to exist from her descendants among the foxes and bloodspeakers of the Daidoji domain. He has struck a bargain with them to work together for the common purpose of finally putting their ancestor to rest. The bloodspeakers provided a powerful artifact of great name to act as bait, while the foxes set to work searching for the telltale signs of a life had fallen out of the world to locate someone those close to someone she had replaced.
 
-The PCs were the only people found who perfectly fit the criteria of people most suitable for battling the Nameless One. They were lightly connected to the previous county magistrate of Kanto, having served him for only a few months before he was eaten. They later became close friends with Maku. That combination of being connected with weak-but-still-present ties to someone eaten and strong ties to someone who “replaced” that person was ideal for warding them against being eaten themselves, though the danger would still be great.
+The PCs were the only people found who perfectly fit the criteria of people most suitable for battling the Nameless One. They were lightly connected to the previous county magistrate of Kanto, having served him for only a few months before he was eaten. They later became close friends with Maku. That combination of being connected with weak-but-still-present ties to someone eaten and strong ties to someone who "replaced" that person was ideal for warding them against being eaten themselves, though the danger would still be great.
 
 Masayoshi set wards and traps around a totem of great name provided by the bloodspeakers of the Daidoji domain. He knew his wards and traps could only delay rather than ensnare the Nameless One, who laughed at traps even in the days when she was merely a clever fox. But they would stall her long enough for the PCs to confront her and cleave away the names she had eaten, allowing her soul to finally descend into the underworld and continue on its journey through the cycle of death and rebirth.
 
@@ -212,21 +212,21 @@ The generic term I use for things like dream quests are "spirit encounters", sin
 
 Here's a little more information from my notes on Spirit Encounters, which I hope will help provide context for future work when I ask you to help me generate content.
 
-Spirit encounters are divided into “scenes”. Much like scenes from a dream, the PCs will usually understand where they are and have some sense of what’s happening around them, even if they don’t remember how they specifically arrived in their current location or how they could get back to it later. Scenes are divided into rounds – sometimes a scene will last until an objective is completed, an other times a scene will last for a predefined number of rounds.
+Spirit encounters are divided into "scenes". Much like scenes from a dream, the PCs will usually understand where they are and have some sense of what's happening around them, even if they don't remember how they specifically arrived in their current location or how they could get back to it later. Scenes are divided into rounds - sometimes a scene will last until an objective is completed, an other times a scene will last for a predefined number of rounds.
 
 Every character takes a single action each round. In the first round of a scene, each PC chooses a single physical ring: Water, Fire, Earth, or Air. The round progresses through those rings in that order. Spirit encounters are turbulent, and PCs take ongoing damage as the encounter continues, though this damage depends on which Ring is chosen.
 
-→ Water: these actions always include the “evaluate options” action, which helps the party discern what actions they have available to them. It’s advisable for someone in the party to take this action early in an encounter. Other Water actions let the PCs influence the scene directly. A PCs who chooses the Path of Water automatically takes 5 damage per round, in addition to any additional wounds taken by the action they choose.
+-> Water: these actions always include the "evaluate options" action, which helps the party discern what actions they have available to them. It's advisable for someone in the party to take this action early in an encounter. Other Water actions let the PCs influence the scene directly. A PCs who chooses the Path of Water automatically takes 5 damage per round, in addition to any additional wounds taken by the action they choose.
 
-→ Fire: these actions are the most directly effective, but also the most dangerous. They always include things which directly accomplish the goals of the scene, but you take the most damage. People who choose the Path of Fire add an extra die to their pool of rolled dice, and automatically set that die to a 10, which is then rerolled as normal, but also takes 10 damage in addition to any wounds taken from the action they choose.
+-> Fire: these actions are the most directly effective, but also the most dangerous. They always include things which directly accomplish the goals of the scene, but you take the most damage. People who choose the Path of Fire add an extra die to their pool of rolled dice, and automatically set that die to a 10, which is then rerolled as normal, but also takes 10 damage in addition to any wounds taken from the action they choose.
 
-→ Earth: these actions have their rolls divided in half, making them less effective than other rolls, and sometimes may only give bonuses to someone else’s action rather than directly accomplishing anything. However, these actions tend to cause less damage to the person who takes them, and people who choose the Path of Earth take no automatic damage.
+-> Earth: these actions have their rolls divided in half, making them less effective than other rolls, and sometimes may only give bonuses to someone else's action rather than directly accomplishing anything. However, these actions tend to cause less damage to the person who takes them, and people who choose the Path of Earth take no automatic damage.
 
-→ Air: these actions usually react to what others are doing, whether that means giving more information about the scene, reducing damage dealt to another PC, or boosting their roll like an Earth action would. Players who choose the Path of Air take 5 damage if they take an action, however since Air is the final element to resolve its actions a player who chooses this path may choose to forgo their action and take no damage.
+-> Air: these actions usually react to what others are doing, whether that means giving more information about the scene, reducing damage dealt to another PC, or boosting their roll like an Earth action would. Players who choose the Path of Air take 5 damage if they take an action, however since Air is the final element to resolve its actions a player who chooses this path may choose to forgo their action and take no damage.
 
 PCs choose their elemental path at the beginning of the round, but they are not required to choose the specific action within that path until their turn. Thus, PCs acting in later paths may use information gained in the earlier paths to inform their decision of which action to take.
 
-At the end of each round, players choose the path they take on the next round, with one restriction: they may choose any ring other than the one "opposing" their path on the previous round. In other words, someone who chose the Path of Water may choose any path other than the Path of Fire for the next round. The exception is that any PC may choose the Path of Void to go to an opposite ring (e.g. Air to Earth) – if they do this then the skills they roll will be chosen randomly.  This randomness could hurt, but it could also help by enabling a PC to choose an action which uses skills they don't possess, and allowing them to count on the randomness of the Path of Void to hopefully increase their chances of success.
+At the end of each round, players choose the path they take on the next round, with one restriction: they may choose any ring other than the one "opposing" their path on the previous round. In other words, someone who chose the Path of Water may choose any path other than the Path of Fire for the next round. The exception is that any PC may choose the Path of Void to go to an opposite ring (e.g. Air to Earth) - if they do this then the skills they roll will be chosen randomly.  This randomness could hurt, but it could also help by enabling a PC to choose an action which uses skills they don't possess, and allowing them to count on the randomness of the Path of Void to hopefully increase their chances of success.
 
 The idea above is to incorporate the various underlying concepts behind the 5 rings into these rules.  The references to "damage" and "wounds" is spiritual rather than physical, and is what I meant when I talked about impairing someone psychically to raise the stakes.
 
@@ -276,7 +276,7 @@ Consider the case of of Doji no Tsume Toyohiro, a legionnaire in the 1st Imperia
 
 Toyohiro distinguished himself in military service during the Lion/Crane war in the northern front. In particular, he commanded a company that repeled a group of tunnelers who were trying to literally undermine the walls of Kyuden Tsume itself. Most of his comrades died, and Toyohiro frequently sees both them and sometimes his opponents as he goes about his day.
 
-Lately he’s taken to following where they lead, listening to what they have to say, and speaking with them. This has frequently taken him into the 6th Battalion, but the Lion have ultimately decided that he is the only Crane allowed to wander freely through their territory, because anyone who struck him down or even interfered with his journey might find themselves haunted by the same ghosts which pull him along. Matsu no Moyu Kazushi visited each Lion company to counsel this policy of non-interference, though he has suffered some mockery from non-Lion companies as a result.
+Lately he's taken to following where they lead, listening to what they have to say, and speaking with them. This has frequently taken him into the 6th Battalion, but the Lion have ultimately decided that he is the only Crane allowed to wander freely through their territory, because anyone who struck him down or even interfered with his journey might find themselves haunted by the same ghosts which pull him along. Matsu no Moyu Kazushi visited each Lion company to counsel this policy of non-interference, though he has suffered some mockery from non-Lion companies as a result.
 
 Note how Toyohiro is seeing ghosts which other people do not see.  This plays upon themes I emphasize regarding ambiguity of the supernatural.  Tsume Toyohiro seeing ghosts which no one else sees could be interpreted as someone who isn't even haunted, but who has hallucinations due to what a modern person might diagnose as PTSD.  I've read that Roman legionnaires were sometimes described as being haunted by the ghosts of their former comrades - this doesn't fit the definition of modern PTSD as described in the DSM, but it does sound very much like a trauma response.
 
@@ -296,13 +296,13 @@ Or we could go back to the story of Otaku Mirai, another officer in the 1st Impe
 
 Starting the night of his gempukku, Mirai was tormented in dreams by a mujina. This curse followed him to his first assignment as a sergeant in the 1st Imperial legion. At times he would go weeks without being able to sleep through the night.
 
-One evening, an old man appeared in the Mirai’s dreams, identifying himself as the spirit of a neglected sword. Shockingly, the man was a gaijin who named himself Heartseeker. The old man additionally stated that he was unable to leave his scabbard as he had been defiled by dirty human hands. Most importantly, the spirit told Mirai that should he wish to permanently rid himself of the hateful mujina, he should clean the blade of its rust.
+One evening, an old man appeared in the Mirai's dreams, identifying himself as the spirit of a neglected sword. Shockingly, the man was a gaijin who named himself Heartseeker. The old man additionally stated that he was unable to leave his scabbard as he had been defiled by dirty human hands. Most importantly, the spirit told Mirai that should he wish to permanently rid himself of the hateful mujina, he should clean the blade of its rust.
 
 Mirai tracked down all of the gaijin swords in the legion, of which there were many, and identified and acquired Heartseeker from captain Otaku Hiyu, who had left it languishing in a crate of old antiques not considered worthy of display. It had originally been taken from a slain gaijin bandit many centuries ago.
 
 Desperate to be able to sleep well again, Mirai carefully cleaned the blade. As he finished his eyes fell upon the decorative leg of a brazier in his room. In the flickering light it suddenly resembled the imp in his dreams! The freshly cleansed sword then moved by itself to lop off that decorative leg, thus freeing Mirai from his nightly torment.
 
-Mirai carries this sword with him at all times, strapped to his back in the manner of a barbarian. When in his tent it occupies a place of honor at a shrine he has built for it back at camp, but he never travels without it. Being a courtier and thus not able to duel, he has taken to practicing with it and has developed his own fighting style. He has spoken of plans to eventually make a warriors pilgrimage to join Moto Gaheris’ army to better learn its techniques and adapt to other more civilized weapons, though many doubt that he will follow through on such plans, as many take this as the boastful talk of a teenager.
+Mirai carries this sword with him at all times, strapped to his back in the manner of a barbarian. When in his tent it occupies a place of honor at a shrine he has built for it back at camp, but he never travels without it. Being a courtier and thus not able to duel, he has taken to practicing with it and has developed his own fighting style. He has spoken of plans to eventually make a warriors pilgrimage to join Moto Gaheris' army to better learn its techniques and adapt to other more civilized weapons, though many doubt that he will follow through on such plans, as many take this as the boastful talk of a teenager.
 
 This is based on a real historical anecdote, but modern readers might not read that anecdote and think that a sword was really haunted by an imp.  Rather, they might believe that someone had a strange dream, then saw something in the flickering shadows, then thought that they had defeated some supernatural force, and then that belief was self-reinforcing and so he found himself no longer worried about being afflicted and was therefore no longer afflicted.
 
@@ -310,7 +310,7 @@ Even someone in Rokugan, who certainly believes that supernatural things exist, 
 
 Or consider the story of Kakita Korihime:
 
-Korihime is the daughter of Kakita Yariga, who was the executioner to Kakita Toshimo. She took up her father’s role as executioner, but found herself unusually susceptible to hauntings. After performing only a handful of executions, she took a demotion in order to serve as a platoon lieutenant in the 1st Imperial legion.
+Korihime is the daughter of Kakita Yariga, who was the executioner to Kakita Toshimo. She took up her father's role as executioner, but found herself unusually susceptible to hauntings. After performing only a handful of executions, she took a demotion in order to serve as a platoon lieutenant in the 1st Imperial legion.
 
 As far as she knows, all of the vengeful ghosts who were previously haunted her eventually made their way into Jigoku, and she reports no sightings after arriving at Chai Sedo, though she spends a considerable amount of the week of the Bon Festival in the temple.
 
@@ -322,9 +322,9 @@ One of the things I would like you to help with in my worldbuilding, in addition
 
 Here's the backstory for the famous sword Yamaoroshi:
 
-The origins of this sword are unknown. Its known history begins with Mirumoto Tsuki, who was part of the army that defeated the Maw at the Battle of the Cresting Wave. Her own sword destroyed, she pulled the sword of a fallen comrade out of the Maw’s hide. The sword seemed to move under its own power, hacking and slicing into the Maw, especially when striking from west to east. When the final coordinated strike from the remaining warriors finally slew the Maw, Tsuki was the only member of the Dragon clan to help deal the killing blow.
+The origins of this sword are unknown. Its known history begins with Mirumoto Tsuki, who was part of the army that defeated the Maw at the Battle of the Cresting Wave. Her own sword destroyed, she pulled the sword of a fallen comrade out of the Maw's hide. The sword seemed to move under its own power, hacking and slicing into the Maw, especially when striking from west to east. When the final coordinated strike from the remaining warriors finally slew the Maw, Tsuki was the only member of the Dragon clan to help deal the killing blow.
 
-She named the sword Yamaoroshi – “Wind Blowing Down the Mountain”. As the sword that slew the Maw, it gained great renown, and 150 years later made its way into the hands of a duelist named Mirumoto Tetsushi, who used it to defeat Kakita Senri, chief instructor of the Kakita dueling academy. Already an underdog in the fight, Tetsushi chose to face east into the morning sun, practically blinding him in the garden where they fought. Yet he emerged victorious, explaining afterwards that just as the Wind Blows Down the Mountain, so too does this sword desire to be striking in the direction from higher elevation to lower elevation, even when its wielder is standing on flat ground.
+She named the sword Yamaoroshi - "Wind Blowing Down the Mountain". As the sword that slew the Maw, it gained great renown, and 150 years later made its way into the hands of a duelist named Mirumoto Tetsushi, who used it to defeat Kakita Senri, chief instructor of the Kakita dueling academy. Already an underdog in the fight, Tetsushi chose to face east into the morning sun, practically blinding him in the garden where they fought. Yet he emerged victorious, explaining afterwards that just as the Wind Blows Down the Mountain, so too does this sword desire to be striking in the direction from higher elevation to lower elevation, even when its wielder is standing on flat ground.
 
 Yamaoroshi later became the family sword of Agasha Shigeaki, one of the companions of Agasha Kitsuki, and struck down several of the assassins bent on murdering Mirumoto Januko, the daimyo of the Mirumoto family when the Unicorn returned. Agasha Kitsuki was granted his own Family name, and so Shigeaki then became Kitsuki Shigeaki, and Yamaoroshi has stayed with the Kitsuki family ever since.
 
@@ -336,11 +336,11 @@ Again, my point here is not to suggest that the claims about the sword are wrong
 
 As another example, consider a supposedly cursed item: the Armor of Fool's Regret, which is in the possession of Ikoma Akaho, a platoon lieutenant in the 6th battalion of the 1st Imperial legion.
 
-The Armor of Fool’s Regret is a cursed suit of armor possessed by a kansen (usually an elemental spirit which has been corrupted by its own anger or some past wrong or circumstance) which has been in Akaho’s family’s possession for centuries. It has been determined that to destroy the armor would free the kansen to wreak havoc elsewhere. And when the kansen is not “fed” it grows angry and reaches out to cause mischief in its surroundings.
+The Armor of Fool's Regret is a cursed suit of armor possessed by a kansen (usually an elemental spirit which has been corrupted by its own anger or some past wrong or circumstance) which has been in Akaho's family's possession for centuries. It has been determined that to destroy the armor would free the kansen to wreak havoc elsewhere. And when the kansen is not "fed" it grows angry and reaches out to cause mischief in its surroundings.
 
-However, those who wear the armor (when the kansen is well-fed) are protected by the kansen’s presence. Wearers of this armor have never (yet) fallen in battle, even when suffering grievous wounds.
+However, those who wear the armor (when the kansen is well-fed) are protected by the kansen's presence. Wearers of this armor have never (yet) fallen in battle, even when suffering grievous wounds.
 
-The kansen demands blood, and specifically hungers for being worn while the wearer is injured. Akaho’s platoon is therefore the dumping ground for troublemakers, and its members are punished by being beaten while wearing the armor. Those transferred to the platoon are beaten this way as an initiation. When a long enough time goes by without any disciplinary actions being required, members of the platoon take turns donning the armor and being struck to appease the bloodlust of the armor's kansen inhabitant.
+The kansen demands blood, and specifically hungers for being worn while the wearer is injured. Akaho's platoon is therefore the dumping ground for troublemakers, and its members are punished by being beaten while wearing the armor. Those transferred to the platoon are beaten this way as an initiation. When a long enough time goes by without any disciplinary actions being required, members of the platoon take turns donning the armor and being struck to appease the bloodlust of the armor's kansen inhabitant.
 
 While some new recruits suggest that the armor should be destroyed, this is rarely a good idea with cursed items, as that would let its resident spirit loose in the world to cause mischief elsewhere, with there no longer being any convenient way to keep it bound.
 
@@ -379,9 +379,9 @@ The Staff of Bishamon:
 
 This is the first holy relic ever possessed by the Order of Bishamon, and may be the oldest relic of Bishamon in the entire Empire. Displayed prominently in its own special prayer hall, this intricately carved staff is made from ancient cherry wood, carved from the branch of a tree blessed by Bishamon himself. Inscribed with symbols and inscriptions of the Seven Virtues of Bushido.
 
-Legend tells that the staff was found a thousand years ago by the temple’s first “high monk” – so called because this predates the title of Grand Abbot! “High Monk Fujita” came across the staff during a pilgrimage to the Isawa Woodlands, where it lay unclaimed beside a spring said to be touched by the gods. The monk took this as a sign of Bishamon’s blessing and brought the staff back to the temple, where it has been preserved and venerated ever since.
+Legend tells that the staff was found a thousand years ago by the temple's first "high monk" - so called because this predates the title of Grand Abbot! "High Monk Fujita" came across the staff during a pilgrimage to the Isawa Woodlands, where it lay unclaimed beside a spring said to be touched by the gods. The monk took this as a sign of Bishamon's blessing and brought the staff back to the temple, where it has been preserved and venerated ever since.
 
-Supplicants commonly report feeling a deep sense of peace and courage when they meditate near the staff. In times of crisis, the staff has been known to glow faintly, allowing the temple monks to be guided by Bishamon’s wisdom and protection. In particular, monks will sit in the prayer room in worship, occasionally looking upon the staff when inspiration strikes or a moment of clarity seems to descend. If the staff has been lit up by the sun, or better yet if it seems to be generating its own light (as many have witnessed), that confirms that the thoughts and plans they were forming when they gazed upon the staff are indeed favored by Bishamon.
+Supplicants commonly report feeling a deep sense of peace and courage when they meditate near the staff. In times of crisis, the staff has been known to glow faintly, allowing the temple monks to be guided by Bishamon's wisdom and protection. In particular, monks will sit in the prayer room in worship, occasionally looking upon the staff when inspiration strikes or a moment of clarity seems to descend. If the staff has been lit up by the sun, or better yet if it seems to be generating its own light (as many have witnessed), that confirms that the thoughts and plans they were forming when they gazed upon the staff are indeed favored by Bishamon.
 
 This is not used only by the Grand Abbot for large undertakings, but also by individuals for their own personal journeys. For example, a monk trying to decide whether to swear a vow of celibacy and advance to the rank of Senior Monk might first think upon the joys of marriage and parenthood, and then contemplate the path of the Shinsei and the contentment of the enlightened. After considering each path and praying to Bishamon for guidance, they would raise their head and open their eyes and gaze upon the staff and take not of how much light shines upon ir (or from within it, for those who have perceived such things). Bishamon is said to hide sunbeams behind a cloud when an unfavorable path is being considered, and to instead ask Lady Sun to shine more brightly when the more meritorious action is being prayed upon. Monks and samurai and pilgrims will often come to the temple begging and waiting for a chance to meditate and pray along with the staff, which focuses and attunes its accuracy and calibration.
 
@@ -389,9 +389,9 @@ The Pillar of Ten Thousand Names:
 
 Rising majestically within the expansive central courtyard of the Temple of Bishamon, this monumental stone pillar is the first thing seen by visitors to the temple complex after they pass through the two statues of Bishamon which guard the temple gates.
 
-The Pillar of Ten Thousand Names is an impressive, smooth monolith, standing at twelve feet in height. Carved meticulously onto its surface are the countless names of bushi who have valiantly fallen in battle. The most recent additions are closer to the base, while the oldest, worn down by time and elements, adorn the top. Surrounding the pillar’s foot are a series of simple stone altars where incense perpetually burns, releasing a fragrant aroma that fills the courtyard, accompanied by the gentle hum of prayers from monks and samurai in reverence.
+The Pillar of Ten Thousand Names is an impressive, smooth monolith, standing at twelve feet in height. Carved meticulously onto its surface are the countless names of bushi who have valiantly fallen in battle. The most recent additions are closer to the base, while the oldest, worn down by time and elements, adorn the top. Surrounding the pillar's foot are a series of simple stone altars where incense perpetually burns, releasing a fragrant aroma that fills the courtyard, accompanied by the gentle hum of prayers from monks and samurai in reverence.
 
-Samurai pilgrims come to the Pillar of Ten Thousand Names before heading into battle. They kneel at its base, offering incense, while reciting prayers and mantras to Bishamon and the spirits of the departed. As they gaze up the pillar, it’s customary to touch a name and meditate upon it, seeking inspiration and guidance from that fallen warrior’s spirit. By connecting with the memories and legacies inscribed on the stone, samurai hope to call upon the valor and fortitude of those who have gone before them. Many bushi who have prayed at the pillar report the presence of ancient samurai guiding them in combat.
+Samurai pilgrims come to the Pillar of Ten Thousand Names before heading into battle. They kneel at its base, offering incense, while reciting prayers and mantras to Bishamon and the spirits of the departed. As they gaze up the pillar, it's customary to touch a name and meditate upon it, seeking inspiration and guidance from that fallen warrior's spirit. By connecting with the memories and legacies inscribed on the stone, samurai hope to call upon the valor and fortitude of those who have gone before them. Many bushi who have prayed at the pillar report the presence of ancient samurai guiding them in combat.
 
 On quiet nights, some hear faint whispers around the pillar. This happens most frequently after a battle in which those who have prayed before the pillar have died, as the spirits whose names are engraved on the pillar welcome the fallen dead into their ranks.
 
@@ -403,37 +403,37 @@ The beads are strung together with a durable silk thread, each bead separated by
 
 When one prays and meditates with the Prayer Beads of the Guardian Spirit, certain beads may change in temperature, becoming noticeably warmer or even chillingly cold to the touch. Alternatively, individual beads may feel significantly larger to the touch, or in rare cases appear missing when passing the beads through the hands, only to reappear as soon as the supplicant gazes upon the prayer beads.
 
-These variations signify the messages and warnings of the guardian spirits. Monks are trained to take note of the beads that stand out during their prayers, recording their numbers to later consult the temple’s extensive manuals. These manuals, which have been maintained and updated over countless generations, contain interpretations of the various combinations of beads that might react.
+These variations signify the messages and warnings of the guardian spirits. Monks are trained to take note of the beads that stand out during their prayers, recording their numbers to later consult the temple's extensive manuals. These manuals, which have been maintained and updated over countless generations, contain interpretations of the various combinations of beads that might react.
 
-Pilgrims who are granted the privileged of praying with these prayer beads are tested to ensure that they can keep an accurate count of the beads, as they are expected to touch each bead and note any variations. If a poorly educated pilgrim couldn’t say for sure whether an anomaly occurred at the 78th or 79th bead then the prayer beads would be wasted on them.
+Pilgrims who are granted the privileged of praying with these prayer beads are tested to ensure that they can keep an accurate count of the beads, as they are expected to touch each bead and note any variations. If a poorly educated pilgrim couldn't say for sure whether an anomaly occurred at the 78th or 79th bead then the prayer beads would be wasted on them.
 
 The Sword of the First Vow:
 
 Also know as the Sword of the Vanquished Warlord, this sword rests prominently on a stone pedestal within a chamber adorned with hanging silk tapestries depicting the heroic feats of the original Akodo Damasu.
 
-The blade reflects an ancient design and is made from beaten rather than folded steel. A serene blue tassel is affixed to the pommel, intricately woven from the hair of the warlord’s betrothed, who tragically passed before their union could be sealed. A bronze guard, etched with the dynamic dance of two koi fish, completes the sword.
+The blade reflects an ancient design and is made from beaten rather than folded steel. A serene blue tassel is affixed to the pommel, intricately woven from the hair of the warlord's betrothed, who tragically passed before their union could be sealed. A bronze guard, etched with the dynamic dance of two koi fish, completes the sword.
 
-This sword did not belong to the revered Akodo Damasu but rather to his most formidable adversary – a warlord whose very name has been struck from the Akodo histories as a punishment for his refusal to join with Lord Akodo. In a pivotal battle, Akodo Damasu triumphed over the warlord and took the sword as a symbol of his victory.
+This sword did not belong to the revered Akodo Damasu but rather to his most formidable adversary - a warlord whose very name has been struck from the Akodo histories as a punishment for his refusal to join with Lord Akodo. In a pivotal battle, Akodo Damasu triumphed over the warlord and took the sword as a symbol of his victory.
 
 Within his personal journal, discovered posthumously, Damasu revealed a profound ambivalence about his continued loyalty to Lord Akodo, considering the option of consolidating his power within the safety of the stronghold rather than riding off to additional wars in the west. Before the sworn of his defeated enemy, his journal reveals that he mustered the courage to swear a secret vow to Bishamon, resolving to channel all his might and spirit into upholding his allegiance to Lord Akodo, never allowing his resolve to falter. He swore this vow in secret, not wanting to reveal in life that he had struggled over the question of loyalty to his daimyo.
 
-Those preparing for a duel or any significant challenge come to the chamber to draw inspiration from Akodo Damasu’s determination and to offer their prayers to Damasu, Bishamon, Lord Akodo, and/or their ancestors. They kneel in the sword’s presence, either making their silent prayer or, should they choose, swear a secret vow upon it.
+Those preparing for a duel or any significant challenge come to the chamber to draw inspiration from Akodo Damasu's determination and to offer their prayers to Damasu, Bishamon, Lord Akodo, and/or their ancestors. They kneel in the sword's presence, either making their silent prayer or, should they choose, swear a secret vow upon it.
 
-Given the sanctity of the ritual, the vow—if sworn—is never spoken aloud. Instead, emulating the original Akodo Damasu, the supplicant may only (if they so choose) write their promise, sealing it away to be discovered posthumously. Legend holds that those whose vows come to light prematurely are doomed to see their intentions thwarted.
+Given the sanctity of the ritual, the vow-if sworn-is never spoken aloud. Instead, emulating the original Akodo Damasu, the supplicant may only (if they so choose) write their promise, sealing it away to be discovered posthumously. Legend holds that those whose vows come to light prematurely are doomed to see their intentions thwarted.
 
-While no overt power radiates from the sword, those who have silently sworn (or even just prayed) in its presence often describe a newfound clarity and inner fire driving them forward. In duels that permit submission, achieving victory is the most frequent aim of these secret vows. Implicit in such a pledge is an unwavering resolve, even if it means meeting one’s end in the quest for that victory.
+While no overt power radiates from the sword, those who have silently sworn (or even just prayed) in its presence often describe a newfound clarity and inner fire driving them forward. In duels that permit submission, achieving victory is the most frequent aim of these secret vows. Implicit in such a pledge is an unwavering resolve, even if it means meeting one's end in the quest for that victory.
 
 The Helm of Discerning Valor:
 
-Resting upon an ornate pedestal of carved ebony wood, within a chamber softly illuminated by lantern light, is a helm of striking distinction. Constructed from burnished bronze, its design is inspired by the dance between patience and action. The helm’s ridge portrays a serene landscape, symbolizing moments of calm deliberation and strategic waiting. In contrast, the faceplate intricately details a roaring tempest with infantry soldiers charging forward in a decisive moment of action. An emerald-tinted plume, a beacon of leadership and unity, rises proudly from the helm’s crest, subtly shimmering in the chamber’s ambient light.
+Resting upon an ornate pedestal of carved ebony wood, within a chamber softly illuminated by lantern light, is a helm of striking distinction. Constructed from burnished bronze, its design is inspired by the dance between patience and action. The helm's ridge portrays a serene landscape, symbolizing moments of calm deliberation and strategic waiting. In contrast, the faceplate intricately details a roaring tempest with infantry soldiers charging forward in a decisive moment of action. An emerald-tinted plume, a beacon of leadership and unity, rises proudly from the helm's crest, subtly shimmering in the chamber's ambient light.
 
-The Helm of Discerning Valor was commissioned to honor Akodo Kaizen, a revered infantry commander of the Lion Clan. In a time of great strife during the era of the Gozoku, the Crane Clan laid siege to Toshi Ranbo. With the city’s walls under relentless assault and victory for the Crane seeming inevitable, Akodo Kaizen discerned the perfect moment to sally forth, leading a charge that shattered the Crane’s forces scaling the city walls, turning the tide of the siege and cementing his legacy.
+The Helm of Discerning Valor was commissioned to honor Akodo Kaizen, a revered infantry commander of the Lion Clan. In a time of great strife during the era of the Gozoku, the Crane Clan laid siege to Toshi Ranbo. With the city's walls under relentless assault and victory for the Crane seeming inevitable, Akodo Kaizen discerned the perfect moment to sally forth, leading a charge that shattered the Crane's forces scaling the city walls, turning the tide of the siege and cementing his legacy.
 
-After this legendary defense, the helm was crafted in recognition of his brilliant tactics. Over time, as Akodo Kaizen’s descendants drew strength and insight from it, the helm became revered beyond the Akodo family, eventually earning its place as a sacred relic within the Temple of Bishamon.
+After this legendary defense, the helm was crafted in recognition of his brilliant tactics. Over time, as Akodo Kaizen's descendants drew strength and insight from it, the helm became revered beyond the Akodo family, eventually earning its place as a sacred relic within the Temple of Bishamon.
 
-On the brink of leading their infantry into battle, military commanders come to the chamber to invoke Akodo Kaizen’s strategic genius. With permission from the Custodian of the Sacred Relics (currently Steward Iori), a commander dons the helm. As they kneel, they silently meditate, seeking clarity on when to exercise patience and when to charge with unwavering might.
+On the brink of leading their infantry into battle, military commanders come to the chamber to invoke Akodo Kaizen's strategic genius. With permission from the Custodian of the Sacred Relics (currently Steward Iori), a commander dons the helm. As they kneel, they silently meditate, seeking clarity on when to exercise patience and when to charge with unwavering might.
 
-Connecting with the helm, commanders endeavor to absorb the essence of Akodo Kaizen’s discernment, hoping to emulate his understanding of the delicate balance between waiting and action on the battlefield. Infantry troops often recount tales of their leaders emerging from the chamber with newfound clarity and resolve. On the battlefield, commanders who have invoked the helm’s wisdom are said to possess an unparalleled intuition, making decisions that often defy conventional tactics yet lead to remarkable victories.
+Connecting with the helm, commanders endeavor to absorb the essence of Akodo Kaizen's discernment, hoping to emulate his understanding of the delicate balance between waiting and action on the battlefield. Infantry troops often recount tales of their leaders emerging from the chamber with newfound clarity and resolve. On the battlefield, commanders who have invoked the helm's wisdom are said to possess an unparalleled intuition, making decisions that often defy conventional tactics yet lead to remarkable victories.
 
 The Eternal Wisdom Tree:
 
@@ -443,9 +443,9 @@ Those who meditate under its shade receive whispers of wisdom and are blessed wi
 
 The Chamber of Celestial Echoes:
 
-Deep within the heart of the temple complex lies a room that resonates with an otherworldly aura. While the temple has many ancient holy relics, the Chamber of Celestial Echoes is the temple’s crown jewel. Its entrance is framed by intricately carved arches that depict celestial beings in harmonious dance with samurai and monks, a symbol of the divine interplay between the mortal and immortal realms.
+Deep within the heart of the temple complex lies a room that resonates with an otherworldly aura. While the temple has many ancient holy relics, the Chamber of Celestial Echoes is the temple's crown jewel. Its entrance is framed by intricately carved arches that depict celestial beings in harmonious dance with samurai and monks, a symbol of the divine interplay between the mortal and immortal realms.
 
-As one steps into the chamber, the outside world seems to fade away. Many pilgrims hear the gentle, omnipresent hum when they are worthy and prepared to hear the echoes of Lady Sun’s far-off celestial choir. This ethereal sound emanates from the very walls, which are adorned with golden frescoes that tell stories of Bishamon’s valor and benevolence.
+As one steps into the chamber, the outside world seems to fade away. Many pilgrims hear the gentle, omnipresent hum when they are worthy and prepared to hear the echoes of Lady Sun's far-off celestial choir. This ethereal sound emanates from the very walls, which are adorned with golden frescoes that tell stories of Bishamon's valor and benevolence.
 
 Dominating the center of the chamber is a raised dais, upon which sits a series of platforms and containers, each nested within the other. Each level is guarded by intricately carved statues of celestial beings, animals, and legendary samurai.
 
@@ -453,31 +453,31 @@ Outer Platform: The largest and first platform is shaped in a perfect circle and
 
 Second Platform: Resting atop the first, this hexagonal platform is constructed of polished obsidian, catching and reflecting the dim light of the room in unpredictable patterns. Surrounding this platform are statues of six revered monks, each holding a different symbolic item: a staff, a scroll, a lotus, a bell, a sword, and a bowl.
 
-Third Platform: Smaller still, this platform is triangular and made of pure, translucent crystal. It seems to glow from within, casting gentle prisms around the room. Guarding this platform are three celestial ki-rin. These are not the ki-rin of the Unicorn clan, but the celestial ki-rin of Lady Sun’s court, with the torso of a deer, the tail of an ox, the hooves of a horse, and wings outspread, each bearing a sapphire in its beak.
+Third Platform: Smaller still, this platform is triangular and made of pure, translucent crystal. It seems to glow from within, casting gentle prisms around the room. Guarding this platform are three celestial ki-rin. These are not the ki-rin of the Unicorn clan, but the celestial ki-rin of Lady Sun's court, with the torso of a deer, the tail of an ox, the hooves of a horse, and wings outspread, each bearing a sapphire in its beak.
 
 Final Container: Upon the crystal platform rests the Vault of Celestial Echoes, a meticulously crafted reliquary made of silver and gold. Intricate designs of dragons and phoenixes dance around its surface, intertwined in a complex, mesmerizing pattern. Its lid, though unsealed, is heavy and bears a single golden lotus at its center, symbolizing purity and divine connection.
 
-The Reliquary: Inside the Vault of Celestial Echoes, visible only to those who dare lift the lid, is the inner reliquary. Fashioned from pale, iridescent pearl and adorned with a singular motif of Bishamon’s symbol, it rests upon a cushion of velvet, deep red in hue. Though it is closed, there is no lock, no seal, and it has not been opened in at least five centuries, possibly more.
+The Reliquary: Inside the Vault of Celestial Echoes, visible only to those who dare lift the lid, is the inner reliquary. Fashioned from pale, iridescent pearl and adorned with a singular motif of Bishamon's symbol, it rests upon a cushion of velvet, deep red in hue. Though it is closed, there is no lock, no seal, and it has not been opened in at least five centuries, possibly more.
 
-Around the dais, there are always at least two monks in deep meditation. Their role is not merely physical protectors – few would dare to disturb this chamber – but as spiritual conduits, their meditations and prayers maintaining the chamber’s connection to the celestial heavens.
+Around the dais, there are always at least two monks in deep meditation. Their role is not merely physical protectors - few would dare to disturb this chamber - but as spiritual conduits, their meditations and prayers maintaining the chamber's connection to the celestial heavens.
 
 Although the exact contents of the inner reliquary are unknown, there is an extensive list of of artifacts which are likely held within. Although some of these may only be legends, and the exact list is said to be unknown even at the highest levels of the temple, the list supposedly includes:
 
 - the Whispering Crystal
 - a fragment of the Shield of Resolve
-- the Vial of Bishamon’s Vigor
+- the Vial of Bishamon's Vigor
 - Breath of the Divine Wind
-- Bishamon’s Solemn Knot
+- Bishamon's Solemn Knot
 - the Orb of Hallowed Visions
 - the Celestial Quill
-- the Warrior’s Heartbeat
+- the Warrior's Heartbeat
 - Tears of the Sunlit Path
 
 Stolen Relics:
 
-The Tsume family held the city of Toshi Ranbo for 3 years. After they took the city, they plundered it for its treasures, including the Temple of Bishamon’s stored coinage, amounting to many thousands of koku.
+The Tsume family held the city of Toshi Ranbo for 3 years. After they took the city, they plundered it for its treasures, including the Temple of Bishamon's stored coinage, amounting to many thousands of koku.
 
-After the initial attempt by the Akodo to retake the city failed, the Tsume went a step further and took several of the temple’s relics, which they transported to other temples in Crane lands. They also plundered numerous pieces of temple artwork, as the Temple of Bishamon contains many priceless pieces of historical artwork which are not listed on this page.
+After the initial attempt by the Akodo to retake the city failed, the Tsume went a step further and took several of the temple's relics, which they transported to other temples in Crane lands. They also plundered numerous pieces of temple artwork, as the Temple of Bishamon contains many priceless pieces of historical artwork which are not listed on this page.
 
 The Damasu hoped that all stolen relics and artwork would be returned as part of the peace treaty negotiated at the end of the Lion/Crane war, but in his wisdom, Akodo Toturi decided to prioritize other terms and concessions from the Crane.
 
@@ -485,13 +485,13 @@ Below is the list of 3 relics which were taken.
 
 The Tooth of the Shinsei:
 
-The Shrine of Divine Light was the location which safeguarded this relic within the temple, before it was taken by the Tsume. This tooth was one of the Shinsei’s childhood teeth, kept by his mother, and recovered after his death once he had already cemented his place in history. The tooth, small and unassuming, was housed within a delicate crystal reliquary, suspended by golden chains amidst a soft, eternal light.
+The Shrine of Divine Light was the location which safeguarded this relic within the temple, before it was taken by the Tsume. This tooth was one of the Shinsei's childhood teeth, kept by his mother, and recovered after his death once he had already cemented his place in history. The tooth, small and unassuming, was housed within a delicate crystal reliquary, suspended by golden chains amidst a soft, eternal light.
 
 Pilgrims and samurai would seek guidance, wisdom, and blessings in the Shrine of Divine Light, since a prayer uttered in the presence of the tooth is said to be heard directly by the Shinsei in the celestial realms. While the relic empowered legitimate rule and righteous path-following, the Tsume broke with this when they plundered it from the temple. It has been relocated to Kyuden Doji.
 
 The Jade Shinsei
 
-Residing within the Shrine of Harmonious Spirit is a venerated statue crafted from a single, flawless piece of jade, depicting Shinsei in a serene, meditative pose. The statue is adorned with intricately crafted garments, which are changed three times per year in a solemn and intricate ceremony performed by “the daimyo” (previously the daimyo who ruled over Toshi Ranbo) or a designated representative.
+Residing within the Shrine of Harmonious Spirit is a venerated statue crafted from a single, flawless piece of jade, depicting Shinsei in a serene, meditative pose. The statue is adorned with intricately crafted garments, which are changed three times per year in a solemn and intricate ceremony performed by "the daimyo" (previously the daimyo who ruled over Toshi Ranbo) or a designated representative.
 
 Each garment represents a different aspect and season of life (though notable the 3 seasons do not correspond to the 4 yearly seasons): renewal and growth, abundance and prosperity, and withdrawal and introspection.
 
@@ -499,7 +499,7 @@ The Tsume put considerable effort into moving this statue, which is almost 9 fee
 
 The Chime of Harmony:
 
-The above stolen relics are not particular to Bishamon – the Chime of Harmony is a much less significant relic, though in a sense is the most offensive to have been taken, because it is a relic specifically of Bishamon rather than of the Shinsei.
+The above stolen relics are not particular to Bishamon - the Chime of Harmony is a much less significant relic, though in a sense is the most offensive to have been taken, because it is a relic specifically of Bishamon rather than of the Shinsei.
 <!-- END SOURCE -->
 
 ## Generation Preferences

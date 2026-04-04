@@ -1,6 +1,6 @@
 # Town Hooks
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 TOWN HOOKS:
 
 These hooks take place in the town at the center of the county while the PCs are there for market day and working their weekly jobs:
