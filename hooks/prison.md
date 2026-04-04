@@ -1,0 +1,27 @@
+# Prison Camp Hooks
+
+<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+PRISON CAMP HOOKS:
+
+The PCs may end up going to a prison labor camp for some amount of time, depending on how often they break the law.  If they do, they'll meet some fellow prisoners with a lot more freedoms than most of the laborers, who will offer to cut them in on some arrangements they have with some unscrupulous guards.
+
+1) One of the bushi guards has a minor post working for the local County Magistrate.  He lends the PCs a valuable bracelet and tells them to try to sell it to a local vendor for well below it's apparent value.  The bushi will then accost the vendor with the PCs "in custody" as thieves and search the vendor to find the stolen goods.  A bribe will then be solicited for the vendor to avoid arrest.
+
+2) Some samurai kimono, daisho, and travel papers have come into the posession of some of these labor camp prisoners (they decline to say how, though it should be obvious that they were probably murdered).  The PCs are instructed to don the kimono and run towards a peasant in the countryside to commandeer their horses for an emergency, claiming the horses will be returned later.  The peasants will probably accept this unless they are willing to risk the wrath of samurai, and then the PCs can turn the horses over to their confederates for sale.
+
+Using the aforementioned travel papers, the PCs are instructed to visit some local merchants and take out a sizable loan.  This should work, so long as the PCs have enough education to fool the canny merchants into thinking they're really traveling samurai from another House.
+
+3) If the PCs prove willing and trustworthy, they may be asked to commit a murder.  They have the perfect alibi, since they will officially by in the labor camp during the time of the murder, and both their guard and fellow inmates will vouch for them.
+
+TAKEAWAYS:
+
+I mentioned before that peasants lead interesting lives, and the main point of this campaign was the drive that home!  We had just as much fun playing as farmers as when we were playing as samurai, and I think that reflects not only the worldbuilding of Rokugan but also an important point about how the narrative isn't only interesting when it's about the wealthy and powerful.
+
+
+
+
+<!-- END SOURCE -->
+
+## Notes
+
+(AI-generated context, cross-references, and supplementary notes will be added here as the project develops.)
