@@ -1,6 +1,6 @@
 # Caravan Hooks
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 CARAVAN HOOKS:
 
 These hooks take place after the PCs have gained enough seniority that they begin to go on caravan trips as guards.

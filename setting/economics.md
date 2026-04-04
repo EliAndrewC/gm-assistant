@@ -1,6 +1,6 @@
 # Money and Merchant Families
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 MONEY:
 
 Rokugan's unit of currency is the koku, which is a gold coin.  1 koku also refers to "the amount of rice needed to feed a man for a year", which is approximately 40 gallons of rice.  Rokugan can be said to be on the "rice standard" in that regardless of the current market value of rice (i.e. how much it would cost to buy 40 gallons of rice in a city), 40 gallons of rice and 1 koku gold coin are always legally equivalent for the purpose of paying rent or taxes, by Imperial decree.

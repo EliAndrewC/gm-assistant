@@ -1,6 +1,6 @@
 # City Hooks
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 CITY HOOKS:
 
 These hooks take place after the PCs have moved into the provincial city of Koishi and started working for a large merchant family:

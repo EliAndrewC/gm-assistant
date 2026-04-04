@@ -1,15 +1,15 @@
 # Wasp Bounty Hunters Campaign
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 WASP BOUNTY HUNTERS
 
 As of this writing, my current campaign is the Wasp Bounty Hunters campaign, which has this three-paragraph description:
 
-It’s been 15 years since Tsuruchi, first of his name, founded the Wasp clan, a minor clan whose charter authorizes all Wasp samurai to pursue Imperial bounties. Because most Imperial magistrates are reluctant to create major political incidents over minor bounties, the Wasp have already settled into an important niche within the landscape of the Emerald Empire.
+It's been 15 years since Tsuruchi, first of his name, founded the Wasp clan, a minor clan whose charter authorizes all Wasp samurai to pursue Imperial bounties. Because most Imperial magistrates are reluctant to create major political incidents over minor bounties, the Wasp have already settled into an important niche within the landscape of the Emerald Empire.
 
-As a tiny minor clan, the bounties which would be a pittance to even an average-sized House represent a significant fraction of the Wasp Clan’s income. This creates a constant tension between the pursuit of unflinching justice and the temptation of unscrupulous profit. The actions taken by the clan’s samurai in these formative years may determine whether the Tsuruchi name represents honorable enforcers or desperate mercenaries.
+As a tiny minor clan, the bounties which would be a pittance to even an average-sized House represent a significant fraction of the Wasp Clan's income. This creates a constant tension between the pursuit of unflinching justice and the temptation of unscrupulous profit. The actions taken by the clan's samurai in these formative years may determine whether the Tsuruchi name represents honorable enforcers or desperate mercenaries.
 
-The Wasp now stand at the top of the “Three Man Alliance,” a pact between the Wasp, Fox, and Sparrow clans in the southeastern reaches of Rokugan. The PCs serve as yoriki (assistants) to Tsuruchi Kyoma, a close friend of the Wasp daimyo who has been tasked with overseeing bounty operations among their southern allies. While Kyoma focuses on cementing the bonds of the Three Man Alliance through long nights of fellowship and shared cups, his yoriki are left to carry the heavy mantle of administrative and moral authority. Their decisions about which bounties are pursued and how the law is applied will shape the legacy of the Wasp in the eyes of the Empire.
+The Wasp now stand at the top of the "Three Man Alliance," a pact between the Wasp, Fox, and Sparrow clans in the southeastern reaches of Rokugan. The PCs serve as yoriki (assistants) to Tsuruchi Kyoma, a close friend of the Wasp daimyo who has been tasked with overseeing bounty operations among their southern allies. While Kyoma focuses on cementing the bonds of the Three Man Alliance through long nights of fellowship and shared cups, his yoriki are left to carry the heavy mantle of administrative and moral authority. Their decisions about which bounties are pursued and how the law is applied will shape the legacy of the Wasp in the eyes of the Empire.
 
 Here's my writeup on the creation of the Wasp clan:
 
@@ -194,7 +194,7 @@ While no battles were fought in Wasp lands, both Wasp and Fox samurai contribute
 
 THE CRANE WIVES
 
-After the founding of the Wasp clan, Tsuruchi’s allies in the offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellary, which is referred to by many in the Wasp clan as “the crane wives”.
+After the founding of the Wasp clan, Tsuruchi's allies in the offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellary, which is referred to by many in the Wasp clan as "the crane wives".
 
 Whether this the allusion to the famous fable is unfortunate or fitting or both depends on your view of the moral of that story, and this question is a subject of spirited debate within the Wasp clan.
 
@@ -224,33 +224,33 @@ Naomi is the youngest daughter of Doji Kuwanen, the Crane Clan Champion (i.e. da
 
 Kakita Yoshi arranged the marriage to cement the relationship between the Crane and Wasp clans, and to ensure that the new Wasp clan would be shaped by a talented and connected Crane courtier.
 
-The eldest son of Tsuruchi and Naomi is currently 12 years old. His childhood name is Ichiro (“first son”), though unlike most children called Ichiro from birth, he plans to choose the name Tsuruchi Ichiro at his gempukku, as he is not only the “first son” of his parents but the first son of the Wasp.
+The eldest son of Tsuruchi and Naomi is currently 12 years old. His childhood name is Ichiro ("first son"), though unlike most children called Ichiro from birth, he plans to choose the name Tsuruchi Ichiro at his gempukku, as he is not only the "first son" of his parents but the first son of the Wasp.
 
-As Ichiro nears his gempukku, Naomi has announced that she will begin the long process of matchmaking this year (1130). She hopes to consult with Kaori, the Imperial matchmaker, but has initially found that her Crane relatives are attempting to block this access; they would prefer Ichiro to be matched with a Crane wife and for Naomi to remove from consideration the possibility of a Lion or Scorpion marriage. This caused some degree of tension in the previous season’s Winter Court of 1129 (held at Ryoko Owari), and Naomi has already begun researching alternatives in case her Crane relatives block her access to Kaori.
+As Ichiro nears his gempukku, Naomi has announced that she will begin the long process of matchmaking this year (1130). She hopes to consult with Kaori, the Imperial matchmaker, but has initially found that her Crane relatives are attempting to block this access; they would prefer Ichiro to be matched with a Crane wife and for Naomi to remove from consideration the possibility of a Lion or Scorpion marriage. This caused some degree of tension in the previous season's Winter Court of 1129 (held at Ryoko Owari), and Naomi has already begun researching alternatives in case her Crane relatives block her access to Kaori.
 
 TSURUCHI AMI
 
-Tsuruchi Ami is the chancellor of the new Ami lineage of the Wasp, known colloquially as “the peasantborn lineage”. When she was still Doji no Tsume Ami, she was married to Tsuruchi Takuan, the most accomplished peasant informant in Tsuruchi’s employ. Takuan was instrumental in finding reliable mercenaries who could be relied upon to keep to the secret mission of infiltrating Hachinaga Keep.
+Tsuruchi Ami is the chancellor of the new Ami lineage of the Wasp, known colloquially as "the peasantborn lineage". When she was still Doji no Tsume Ami, she was married to Tsuruchi Takuan, the most accomplished peasant informant in Tsuruchi's employ. Takuan was instrumental in finding reliable mercenaries who could be relied upon to keep to the secret mission of infiltrating Hachinaga Keep.
 
 Takuan himself was not made chancellor, as his background made him unsuitable for such work, and so his wife was given the position. Takuan now serves as the Wasp Minister of Retainers.
 
 TSURUCHI HITOMI
 
-After the founding of the Wasp clan, Tsuruchi’s allies in the offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellary, which is referred to by many in the Wasp clan as “the crane wives”. (Whether this the allusion to the famous fable is unfortunate or fitting or both depends on your view of the moral of that story, and this question is a subject of spirited debate within the Wasp clan.)
+After the founding of the Wasp clan, Tsuruchi's allies in the offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellary, which is referred to by many in the Wasp clan as "the crane wives". (Whether this the allusion to the famous fable is unfortunate or fitting or both depends on your view of the moral of that story, and this question is a subject of spirited debate within the Wasp clan.)
 
-Hitomi’s elder brother, Kakita Daini, inherited “the ink-flight scrolls”, an series of silk hangings painted with fine calligraphy by the legendary archer-poet Kakita Akechi, who famously stated “the path of the arrow is the most perfect line ever drawn”.
+Hitomi's elder brother, Kakita Daini, inherited "the ink-flight scrolls", an series of silk hangings painted with fine calligraphy by the legendary archer-poet Kakita Akechi, who famously stated "the path of the arrow is the most perfect line ever drawn".
 
-The “Akechi Scrolls” (also known as the Ink-Flight scrolls) had their calligraphy and illustrations painted using the fletching of arrows. Akechi would dip his arrows in ink and shoot them with such precision that the feathers would “paint” the strokes of kanji onto the silk as they passed or struck.
+The "Akechi Scrolls" (also known as the Ink-Flight scrolls) had their calligraphy and illustrations painted using the fletching of arrows. Akechi would dip his arrows in ink and shoot them with such precision that the feathers would "paint" the strokes of kanji onto the silk as they passed or struck.
 
-Twenty years ago, the daimyo of the Masao vassal house of the Matsu family was visiting Kyuden Kakita with his eldest son (and heir to the Masao domain), Matsu Agetoki. Kakita Daini was the best archer in the Kakita house, and Aketoki – an accomplished archer himself – challenged him to an archery contest. The two of them spent the afternoon each challenging the other to impromptu feats of precision, naming certain shots for the other to make, and arguing with increasing tempers about the fairness of the challenges, or the trickery (as in trick-shooting) of each other’s accomplishments.
+Twenty years ago, the daimyo of the Masao vassal house of the Matsu family was visiting Kyuden Kakita with his eldest son (and heir to the Masao domain), Matsu Agetoki. Kakita Daini was the best archer in the Kakita house, and Aketoki - an accomplished archer himself - challenged him to an archery contest. The two of them spent the afternoon each challenging the other to impromptu feats of precision, naming certain shots for the other to make, and arguing with increasing tempers about the fairness of the challenges, or the trickery (as in trick-shooting) of each other's accomplishments.
 
-Finally, Agetoki angrily declared that Daini hit a human-sized target with reliability from even such a distance as across the Kakita castle courtyard. Daini furiously declared that he certainly could, and the two of them made a wager. Agetoki would stand “just as I am now” on one side of the courtyard, and Daini would take aim and shoot at him. Then Daini would stand “just as you are now” and let Agetoki do the same. Then they would repeat. Whichever man backed out or first rendered unable to stand would forfeit.
+Finally, Agetoki angrily declared that Daini hit a human-sized target with reliability from even such a distance as across the Kakita castle courtyard. Daini furiously declared that he certainly could, and the two of them made a wager. Agetoki would stand "just as I am now" on one side of the courtyard, and Daini would take aim and shoot at him. Then Daini would stand "just as you are now" and let Agetoki do the same. Then they would repeat. Whichever man backed out or first rendered unable to stand would forfeit.
 
 Agetoki wagered the Owari province of the Masao domain (once he succeeded his father and became the Masao daimyo) against the ink-flight scrolls. Daini sneeringly agreed, laughing at the fact that if Agetoki survived his arrow, he would likely be disowned and removed from the line of succeession so that his family could keep the province, and that he might as well prepare to commit seppuku.
 
-Daini’s arrow struck true, to Agetoki’s chest... at which point Agetoki was revealed to have slipped a metal sheet underneath his clothing. Agetoki took aim on his turn, offering Daini a chance to forfeit. Daini refused, accusing Agetoki of both shameful deceit and (worse!) showing bad manners to his Crane hosts if he refused to cancel the wager. Agetoki fired, his arrow striking true, and Daini fell to the ground.
+Daini's arrow struck true, to Agetoki's chest... at which point Agetoki was revealed to have slipped a metal sheet underneath his clothing. Agetoki took aim on his turn, offering Daini a chance to forfeit. Daini refused, accusing Agetoki of both shameful deceit and (worse!) showing bad manners to his Crane hosts if he refused to cancel the wager. Agetoki fired, his arrow striking true, and Daini fell to the ground.
 
-Agetoki’s father seemed perhaps even more furious than the Kakita, and he took his leave, declaring that he and his son took would leave without the Akechi Scrolls. However, as they departed Kyuden Kakita, a messenger from Kakita Toshimo (at that time the daimyo of the Kakita family) brought to them the Akechi Scrolls, along with a message that the terms of the wager had been met, and the honor of the Crane clan would not permit them to keep possession of this great heirloom after staking a wager in good faith.
+Agetoki's father seemed perhaps even more furious than the Kakita, and he took his leave, declaring that he and his son took would leave without the Akechi Scrolls. However, as they departed Kyuden Kakita, a messenger from Kakita Toshimo (at that time the daimyo of the Kakita family) brought to them the Akechi Scrolls, along with a message that the terms of the wager had been met, and the honor of the Crane clan would not permit them to keep possession of this great heirloom after staking a wager in good faith.
 
 Daini died the following morning from his wounds. His sister chose the name Hitomi for herself a few years later at her gempukku, pledging to reclaim the lost faimly heirlooms. Unfortunately, the Lion/Crane war deterred those plans, and at this point the goal seems further away than ever.
 
@@ -380,15 +380,15 @@ Tsuruchi Byakuya:
 
 As the Distinguished Plenipotentiary to the Southern Allies of the Wasp, Tsuruchi Kyoma must maintain a residence in both Shinden Kitsune and in Shiro Suzume. And a man of his stature requires a Household Steward even when he is present. While the PCs manage the affairs of his office, his household stewards manage his personal affairs.
 
-Byakuya is an old friend of Kyoma’s, a relative from the Maiko lineage of the Kyo house – the Scorpion domain that both Tsuruchi and Kyoma are originally from. Byakuya disgraced himself by fathering a child with Kyo Osei, a woman already engaged to be married to another man. Osei’s engagement was broken off when her pregnancy was discovered, and after she died in childbirth, Byakuyu asserted his parental rights to raise the daughter whose birth had killed her mother.
+Byakuya is an old friend of Kyoma's, a relative from the Maiko lineage of the Kyo house - the Scorpion domain that both Tsuruchi and Kyoma are originally from. Byakuya disgraced himself by fathering a child with Kyo Osei, a woman already engaged to be married to another man. Osei's engagement was broken off when her pregnancy was discovered, and after she died in childbirth, Byakuyu asserted his parental rights to raise the daughter whose birth had killed her mother.
 
-Before this matter could be brought to Seppun Shizuko to resolve, Kyoma accompanied his friend Byakuya to where the baby was being kept. “I regret to inform you that I will be removing a member of your household,” Kyoma cheerfully informed Osei’s family, placing his hand on his sword. “Surely there’s no need to force me to remove more, my dear cousins.”
+Before this matter could be brought to Seppun Shizuko to resolve, Kyoma accompanied his friend Byakuya to where the baby was being kept. "I regret to inform you that I will be removing a member of your household," Kyoma cheerfully informed Osei's family, placing his hand on his sword. "Surely there's no need to force me to remove more, my dear cousins."
 
-Kyoma’s former lineage members were recalcitrant, though fortunately only two of them were killed in the ensuring fight. Kyoma and Byakuya left with the baby, and Kyoma offered his friend a posting in the Wasp clan. Kyoma’s wife Tsuruchi Hitomi wrote a letter to Kyo Haruka, the daimyo of the Kyo house, petitioning for Byakuya to be released from his blood oath of fealty and granted permission to join the Wasp clan.
+Kyoma's former lineage members were recalcitrant, though fortunately only two of them were killed in the ensuring fight. Kyoma and Byakuya left with the baby, and Kyoma offered his friend a posting in the Wasp clan. Kyoma's wife Tsuruchi Hitomi wrote a letter to Kyo Haruka, the daimyo of the Kyo house, petitioning for Byakuya to be released from his blood oath of fealty and granted permission to join the Wasp clan.
 
-…despite the persistent whispers that the Kyo house maintains animosity toward the Wasp clan, we will continue to quell such scurrilous notions. Gifts such as the ones delivered with this letter demonstrate the friendship of the Wasp, and the release of Kyo Byakuya shall further prove the emptiness of the troublesome notion that the Kyo opposes His Imperial Majesty’s wisdom in chartering a new minor clan…
+...despite the persistent whispers that the Kyo house maintains animosity toward the Wasp clan, we will continue to quell such scurrilous notions. Gifts such as the ones delivered with this letter demonstrate the friendship of the Wasp, and the release of Kyo Byakuya shall further prove the emptiness of the troublesome notion that the Kyo opposes His Imperial Majesty's wisdom in chartering a new minor clan...
 
-Byakuya runs Kyoma’s household in Sparrow lands, while raising his young daugher Hatsuko.
+Byakuya runs Kyoma's household in Sparrow lands, while raising his young daugher Hatsuko.
 
 
 

@@ -9,7 +9,7 @@ Generate named swords with rich histories, clan associations, and legendary prop
 
 ## Source Material
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 FAMOUS SWORDS:
 
 The PCs in the Karmic Inquisitors campaign asked for a list of famous swords in and around the domain, with particular attention to swords in Damasu lands or in Crane possession nearby.  They suspected that a powerful sword might be responsible for the affliction of the domain.
@@ -22,7 +22,7 @@ This is the ancestral sword of the Damasu, currently wielded by their daimyo, Ak
 
 This sword was not forged by human hands, and was given to Akodo Damasu during a trance he entered while praying to his ancestors.  It is adorned with symbols of the heavens - clouds and stars - etched along its blade, and regardless of whether exposed to sunlight or moonlight, its blade glints and gleams with the light of the stars.
 
-It’s particularly noted for its role in the Battle of the Shifting Mists, the final battle in which Akodo Damasu fought, leading his men directly into the middle of the enemy forces, splitting them in two, forcing a retreat, and saving the army of Lord Akodo himself from a disastrous ambush at its flank.  Akodo Damasu died a hero shortly thereafter of wounds sustained in that battle, and the sword's glint intensified at the moment of his death, forever solidifying the connection between the first Damasu and this blade.
+It's particularly noted for its role in the Battle of the Shifting Mists, the final battle in which Akodo Damasu fought, leading his men directly into the middle of the enemy forces, splitting them in two, forcing a retreat, and saving the army of Lord Akodo himself from a disastrous ambush at its flank.  Akodo Damasu died a hero shortly thereafter of wounds sustained in that battle, and the sword's glint intensified at the moment of his death, forever solidifying the connection between the first Damasu and this blade.
 
 Akodo Damasu's wisdom is channeled through this blade, and brings clarity in leadership to all who have come after him, guiding its wielder through political turmoil and battle alike with an almost preternatural foresight.  The sword was lost when the Tsume took the city of Toshi Ranbo, and it was taken as a trophy by Tsume Yasujiro who became the governor of Toshi Ranbo under Tsume occupation.
 

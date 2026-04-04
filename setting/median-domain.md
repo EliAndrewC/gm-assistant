@@ -1,6 +1,6 @@
 # The Median Domain
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 THE MEDIAN DOMAIN:
 
 The median domain is around 3,750 square miles of land, which would be a little over 70 miles across if the domain were circular - no domain is actually shaped this way, but "70 miles across" is a good first approximation of the size of the median domain.

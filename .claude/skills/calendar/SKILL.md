@@ -9,7 +9,7 @@ Generate seasonal content, festival details, and agricultural events consistent 
 
 ## Source Material
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 ROKUGAN'S CALENDAR:
 
 First of all, because Rokugan is not a real place on earth and has a different cosmology, we have given it a 360 day solar year.  This avoids us needing to worry about months of different lengths or leap years or interregnum days or anything complicated like that.
@@ -72,7 +72,7 @@ Twelve Earthly Branches:
 12 gai/i Boar
 
 12 Hours of the Day
-An “hour” in the traditional Rokugani system is a twelfth of a day, or two hours. The twelve hours of the day use the Twelve Earthly Branches.
+An "hour" in the traditional Rokugani system is a twelfth of a day, or two hours. The twelve hours of the day use the Twelve Earthly Branches.
 Hare 0600 - 0800
 Dragon 0800 - 1000
 Serpent 1000 - 1200
@@ -88,7 +88,7 @@ Tiger 0400 - 0600
 
 This is all based on historical Chinese calendar that the Japanese Imperial Court adopted in the seventh century C.E. though obviously some modifications have been made.
 
-Before diving into the calendar, it is helpful to give a “big picture” of the planting and harvest seasons
+Before diving into the calendar, it is helpful to give a "big picture" of the planting and harvest seasons
 for the major crops.
 
 The staples of Rokugan are the Five Grains: rice, wheat or barley, soybeans, sweet red azuki beans,
@@ -112,22 +112,22 @@ As I explained before, the Rokugani solar year is 360 days, with 30-day lunar cy
 
 The Rokugani calendar is divided into twelve lunar months of 30 days each. The month begins with the new moon, and the full moon occurs on the 15th day of each month. Each month has a seasonal or
 agricultural connotation fixed to the climate and ritual holidays of that month. In addition, each month is also aligned to a zodiacal sign. The Rokugani year begins in the spring. In Rokugan, the seasons are
-centered on the equinoxes and solstices, rather than beginning and ending on the equinoxes and solstices – for example, the Vernal Equinox occurs in the middle of the second month of spring, instead of at the beginning of spring. This means that the Rokugani spring begins in a cold and potentially snowy time of year.
+centered on the equinoxes and solstices, rather than beginning and ending on the equinoxes and solstices - for example, the Vernal Equinox occurs in the middle of the second month of spring, instead of at the beginning of spring. This means that the Rokugani spring begins in a cold and potentially snowy time of year.
 
-The most important festival days tend to occur on the 15th days of months and on “double odd” days,
+The most important festival days tend to occur on the 15th days of months and on "double odd" days,
 such as the first day of the first month, the third day of the third month, and so on. Each month also brings its seasonal flowers and colors. This manifests itself in many ways, especially in poetry, clothing, and decorations.
 
 Here's a breakdown of the 1st month of the Rokugani calendar.  This description lists the real-world calendar days which are roughly equivalent to the days on the Rokugani calendar, to help the reader account for the fact that the 1st day of the Rokugani year is the first day of spring, which represents a considerable offset from our own calendar.
 
-1st Month: Mutsuki (“affection month”), Month of the Hare
-4 February – 5 March
+1st Month: Mutsuki ("affection month"), Month of the Hare
+4 February - 5 March
 Seasonal color: Red blossom plum combination (crimson and purple)
 Flowers of Spring: tsubaki camelia, aomugi green barley, sumire violets, harunokusa spring grasses and herbs, tanpopo dandelions, seri dropwort, yomogi mugwort, wakame seaweed
 Flowers of Mutsuki: ume plum, kobai red plum, shitamoe and kusanome sprouting grass and flowers, Norine seaweed
 
-The first month is called the “month of affection” or “friendly month” because of the tradition of paying respects to one's superiors and gathering with friends and family during the New Year's holidays. The New Year's festival of Oshogatsu (“first month”) fills the first fifteen days of the first month. It's considered unlucky to cook during Oshogatsu (there is a taboo on the kitchen), so people eat a variety of special foods prepared in the previous month, such as rice cakes, roasted chestnuts, dried fish, and pickles beyond count.
+The first month is called the "month of affection" or "friendly month" because of the tradition of paying respects to one's superiors and gathering with friends and family during the New Year's holidays. The New Year's festival of Oshogatsu ("first month") fills the first fifteen days of the first month. It's considered unlucky to cook during Oshogatsu (there is a taboo on the kitchen), so people eat a variety of special foods prepared in the previous month, such as rice cakes, roasted chestnuts, dried fish, and pickles beyond count.
 
-Many of the “firsts” of the year are special – the first visit to a shrine, the first snow, the first flowers, the first martial arts practice, and so on. Typically, people participate as a group, in varying degrees of formality, to do their “firsts” together.
+Many of the "firsts" of the year are special - the first visit to a shrine, the first snow, the first flowers, the first martial arts practice, and so on. Typically, people participate as a group, in varying degrees of formality, to do their "firsts" together.
 
 1st Day (4 Feb): Risshun (first day of spring)
 In the solar calendar, Risshun marks the first day of spring.
@@ -145,7 +145,7 @@ On the fifth day, new ranks are bestowed to those who have been promoted. Nobles
 
 For samurai and nobles, a new rank may mean new living quarters, new clothing, and other coveted benefits.
 
-For farmers, laborers, and eta, this is a day to pay one's respects to one's new superiors with effusive congratulations and gifts.
+For farmers, laborers, and burakumin, this is a day to pay one's respects to one's new superiors with effusive congratulations and gifts.
 
 7th Day (10 Feb): Wakana no sekku or Nanakusa no sekku (Festival of Young Herbs)
 
@@ -155,7 +155,7 @@ On the seventh day, people gather the seven auspicious herbs (seri water dropwor
 
 In the Imperial Court and the castles of daimyo, this day includes a special excursion to pick the seven herbs. Peasant villages are also likely to pick the herbs. Townspeople may have to pick the herbs ahead of time, or buy them in shops.
 
-The Imperial Court also celebrates the Aouma no Sekki (Ceremony of Blue Horses) on this day, with a parade of auspicious “blue” gray horses from the Imperial stables. Horses are yang animals, and blue horses are especially yang. This promotes good health and good fortune for the coming year.
+The Imperial Court also celebrates the Aouma no Sekki (Ceremony of Blue Horses) on this day, with a parade of auspicious "blue" gray horses from the Imperial stables. Horses are yang animals, and blue horses are especially yang. This promotes good health and good fortune for the coming year.
 Pine decorations are placed in households. In some homes, a pine tree is erected in the courtyard or in front of the house. The pine is auspicious and yang because it is an evergreen.
 
 15th Day: Mochigayu (Full Moon Porridge)
@@ -176,13 +176,13 @@ On the eighteenth day, the Imperial Palace holds an archery competition between 
 30th Day (5 Mar): Keichitsu (insects awaken)
 In the solar calendar, Keichitsu (insects awaken) marks the time when it is warm enough that hibernating insects have begun to emerge from the earth and trees.
 
-2nd Month: Kisaragi (“changing”), Month of the Dragon
-6 March – 4 April
+2nd Month: Kisaragi ("changing"), Month of the Dragon
+6 March - 4 April
 Seasonal color: Peach combination (peach and khaki)
 Flowers of Spring: tsubaki camelia, aomugi green barley, sumire violets, harunokusa spring grasses and herbs, tanpopo dandelions, seri dropwort, yomogi mugwort, wakame seaweed
 Flowers of Kisaragi: sakura early cherry blossoms, konome tree buds, ryuujo willow fluff, tsukushi horsetail, warabi fiddlehead fern, shunran spring orchid, tsubana reed ears, mukusa waterweeds, ashinotsuno reed sprouts
 
-The second month is called the “month of changing” because nature is changing into the bright colors of new leaves and flowers, and people are changing into lighter clothes.
+The second month is called the "month of changing" because nature is changing into the bright colors of new leaves and flowers, and people are changing into lighter clothes.
 
 4th Day: Kinensai (Spring Prayers)
 On the fourth day of the second month, the governmental Ministries of Rites hold rituals and prayers to call the Rice God down from the hills and pray for good crops. Farmers hold similar rituals.
@@ -199,15 +199,15 @@ The fifteenth day of the second month is Shunbun, the Vernal Equinox, the halfwa
 18th Day: End of Haru Higan
 The eighteenth day of the second month is the last day of the Haru Higan spring festival. Even if daily temple services are inconvenient, almost everybody attends a temple service on this final day of the festival.
 
-3rd Month: Yayoi (“new life”), Month of the Serpent
-5 April – 5 May
+3rd Month: Yayoi ("new life"), Month of the Serpent
+5 April - 5 May
 Seasonal color: Cherry combination (white and burgundy)
 Flowers of Spring: tsubaki camelia, aomugi green barley, sumire violets, harunokusa spring grasses and herbs, tanpopo dandelions, seri dropwort, yomogi mugwort, wakame seaweed
-Flowers of Yayoi: sakura cherry, tsutsuji azalea, fuji wisteria, yamabuki mountain rose, momo peach, wakamidori young green plants, kuwa mulberry, yanagi willow, takenoaki “bamboo autumn,” nanohana rape flowers, daikon radish, mame beans, genge vetch, sakurasoo primrose, shibazakura phlox
+Flowers of Yayoi: sakura cherry, tsutsuji azalea, fuji wisteria, yamabuki mountain rose, momo peach, wakamidori young green plants, kuwa mulberry, yanagi willow, takenoaki "bamboo autumn," nanohana rape flowers, daikon radish, mame beans, genge vetch, sakurasoo primrose, shibazakura phlox
 
-The third month is called “Yayoi” because of the profusion of flowers and new growth in the natural world. The star of Yayoi is the sakura, or cherry, which blooms for a brief two weeks before falling away. Hanami flower-viewing parties to see the cherry blossoms and the other beauties of Yayoi are near-universal. Clothing invariably incorporates the white and red colors of the cherries.
+The third month is called "Yayoi" because of the profusion of flowers and new growth in the natural world. The star of Yayoi is the sakura, or cherry, which blooms for a brief two weeks before falling away. Hanami flower-viewing parties to see the cherry blossoms and the other beauties of Yayoi are near-universal. Clothing invariably incorporates the white and red colors of the cherries.
 Yayoi is also when farmers begin to plant rice in single-cropping regions of Rokugan. This is also the month to plant spring wheat and summer soybeans. (Summer soybeans are preferred in both southern and northern climates; they are a short season crop with a long flowering period.)
-In contrast to the many blooming flowers, Yayoi is the time of “bamboo autumn,” when most species of bamboo shed their leaves. The bamboo leaves turn yellow, and fall in the next month, before growing back anew.
+In contrast to the many blooming flowers, Yayoi is the time of "bamboo autumn," when most species of bamboo shed their leaves. The bamboo leaves turn yellow, and fall in the next month, before growing back anew.
 
 1st Day (5 Apr): Seimei (clear and bright)
 In the solar calendar, seimei marks a period of spring when the weather is usually sunny and cloudless.
@@ -230,13 +230,13 @@ In the solar calendar, kokuu marks the waning of spring and the time when farmer
 28th Day (2 May): Hachijuuhachiya (88 nights since spring)
 Hachijuuhachiya marks the time when new planted rice is safe from even the most freakish spring frost.
 
-4th Month: Uzuki (“unohana” or “deutzia”), Month of the Horse
-6 May – 5 June
+4th Month: Uzuki ("unohana" or "deutzia"), Month of the Horse
+6 May - 5 June
 Seasonal color: Orange flower combination (deadleaf yellow and purple)
 Flowers of Summer: aogiri phoenix tree, natsukusa summer grasses and herbs, aoashi green reeds, mugura burweed, makomo water oats, ukikusa duckweed
 Flowers of Uzuki: botan peony, wakakaede young maple leaves, tokiwagi ochiba fallen evergreen leaves, unohana deutzia flower, ibara multiflora rose, kiri pawlonia, takeochiba fallen bamboo leaves, yuri lily, takenoko bamboo shoots, fuki buterburr, mugi barley
 
-The fourth month is called the “unohana month” for the unohana flower, or deutzia, that blooms seasonally. Summer begins in the fourth month.
+The fourth month is called the "unohana month" for the unohana flower, or deutzia, that blooms seasonally. Summer begins in the fourth month.
 Uzuki is an even-numbered month when people are busy with farming, so it has a relatively clear calendar. However, there are many flowers and plants to enjoy in this month, and people acutely aware of the approaching rainy season will make time to enjoy nature.
 Uzuki is also the month for harvesting winter wheat and picking tea leaves, and the time for harvesting winter barley in temperate areas.
 
@@ -250,13 +250,13 @@ The seventh day of the fourth month is the Hollyhock Festival, which includes di
 17th Day: Shouman (grain full)
 In the solar calendar, shouman marks a time when barleycorns should be full and plump.
 
-5th Month: Satsuki (“sprout”), Month of the Goat
-6 June – 6 July
+5th Month: Satsuki ("sprout"), Month of the Goat
+6 June - 6 July
 Seasonal color: Artemisia combination (sprout green and yellow)
 Flowers of Summer: aogiri phoenix tree, natsukusa summer grasses and herbs, aoashi green reeds, mugura burweed, makomo water oats, ukikusa duckweed
 Flowers of Satsuki: tachibana mandarin orange, aoume green plum fruits, kakitsubata blue flag iris, ayame wild iris, shaobu Japanese iris, sanae young rice plants
 
-Satsuki, the “sprout month,” is the time when new rice plants begin to sprout. It is also the beginning of the rainy season, when torrential rains fill rice paddies and overflood riverbanks. The significant Iris Festival is held in this month.
+Satsuki, the "sprout month," is the time when new rice plants begin to sprout. It is also the beginning of the rainy season, when torrential rains fill rice paddies and overflood riverbanks. The significant Iris Festival is held in this month.
 In the latter half of the month, women begin harvesting silk cocoons. After harvesting, women will gather in workshops or family groups to boil the cocoons and spin them into thread. In the cottage industry, weaving is done mainly in the winter, but in shops and in more ambitious families, weaving is done year round, sometimes even through the night.
 Satsuki is also the time for harvesting winter barley in the northernmost areas of Rokugan, and the beginning of harvest for the early rice crop in double cropping areas in years with good weather.
 
@@ -282,13 +282,13 @@ In the solar calendar, the fifteenth day of the fifth month is the Summer Solsti
 26th Day (2 Jul): Hangesho (5-day break from farming)
 On the twenty-sixth day of the fifth month, farmers in many regions observe Hangesho, a five-day break from the backbreaking work of farming.
 
-6th Month: Minazuki (“dry”), Month of the Monkey
-7 July – 7 August
+6th Month: Minazuki ("dry"), Month of the Monkey
+7 July - 7 August
 Seasonal color: Lily combination (red and deadleaf yellow)
 Flowers of Summer: aogiri phoenix tree, natsukusa summer grasses and herbs, aoashi green reeds, mugura burweed, makomo water oats, ukikusa duckweed
 Flowers of Minazuki: himawari sunflower, nadeshiko pinks, yuugao moonflowers, uri melon, nasu eggplant, hasu lotus, kusaikire rank-smelling weeds
 
-Minazuki, the “dry month,” brings the end of the rainy season and the beginning of summer heat.
+Minazuki, the "dry month," brings the end of the rainy season and the beginning of summer heat.
 Late Minazuki is the beginning of the harvests for spring wheat and summer soybeans. In temperate areas, farmers begin to plant autumn soybeans in Minazuki or as late as next month. (Autumn soybeans are a longer season crop preferred in temperate climates; they have a short flowering season and they tend to grow as vines.) Minazuki is also the time for harvesting early rice in double cropping areas, in good weather years.
 
 1st Day (7 Jul): Shousho (lesser heat)
@@ -305,13 +305,13 @@ The thirtieth day of the sixth month is Setsubun, the eve before the beginning o
 This day of reckoning is also a day of atonement, when the Emperor performs the sacred and ancient ceremony of Oharae, the Great Purification. The Oharae rituals echo the Heavenly Grotto myth, in which Amaterasu secluded herself in a grotto and emerged after being coaxed and worshipped by the heavenly hosts. The rituals include use of sacred regalia bestowed by the kami (mirrors, swords, jewels, and silk scarves), and powerful magic such as spirit-calling (shoukon) and spirit-shaking (tamafuri). The Oharae cleanses major sins committed in the past year, such as taboo defilements of sacred spaces, croplands, and relationships.
 In ancient times, the Oharae may have included human sacrifices. Some tsukai and Bloodspeakers perform human sacrifices and rites of defilement on this day, such as flaying piebald horses in the reverse direction, to weaken kami and call oni.
 
-7th Month: Fumizuki (“poetry”), Month of the Rooster
-8 August – 7 September
+7th Month: Fumizuki ("poetry"), Month of the Rooster
+8 August - 7 September
 Seasonal color: Cicada wing combination (cedar bark and sky blue)
 Flowers of Autumn: nashi pear, konomi nuts and seeds, tsuta ivy, bashoo inedible banana, keitoo cockscomb, kiku chrysanthemums, imo yam, ine mature rice plants, kusanohana flowering grasses, susuki pampas grass
-Flowers of Fumizuki: mukuge rose of sharon, momo peach fruit, kiri hitoha falling pawlonia leaves, asagao morning glories, hagi bush clover, kuzu kudzu, kikyoo bellflower, ominaeshi yellow valerian, akanomanma knotgrass, fujibakama “purple trousers” boneset
+Flowers of Fumizuki: mukuge rose of sharon, momo peach fruit, kiri hitoha falling pawlonia leaves, asagao morning glories, hagi bush clover, kuzu kudzu, kikyoo bellflower, ominaeshi yellow valerian, akanomanma knotgrass, fujibakama "purple trousers" boneset
 
-Fumizuki, the “poetry month” or “month of literature,” is the first month of autumn. It is a bountiful time of flowers and vegetables. It also brings two sacred holidays, the the Tanabata Star Festival and the Obon Festival.
+Fumizuki, the "poetry month" or "month of literature," is the first month of autumn. It is a bountiful time of flowers and vegetables. It also brings two sacred holidays, the the Tanabata Star Festival and the Obon Festival.
 Summer soybeans may be harvested as late as early Fumizuki; autumn soybeans are planted no later than early Fumizuki.
 
 1st Day (7 Aug): Risshuu (first day of autumn)
@@ -337,17 +337,17 @@ The twenty-fifth day of the seventh month is the 210th day since Spring. Around 
 30th Day: Sumo Wrestling
 On the thirtieth day of the seventh month, sumo wrestling matches are held to protect the rice harvest and honor the rice god.
 
-8th Month: Hazuki (“leaf”), Month of the Dog
-8 September – 7 October
+8th Month: Hazuki ("leaf"), Month of the Dog
+8 September - 7 October
 Seasonal color: Aster combination (lavender and burgundy)
 Flowers of Autumn: nashi pear, konomi nuts and seeds, tsuta ivy, bashoo inedible banana, keitoo cockscomb, kiku chrysanthemums, imo yam, ine mature rice plants, kusanohana flowering grasses, susuki pampas grass
 Flowers of Hazuki: yanagi chiru falling willow leaves, ran orchid, wase early rice
 
-Hazuki, the “leaf month,” is the last month before the harvest. It includes the seven-day Shinseist autumn festival, the Autumnal Equinox, and the best night of the year for moon viewing.
+Hazuki, the "leaf month," is the last month before the harvest. It includes the seven-day Shinseist autumn festival, the Autumnal Equinox, and the best night of the year for moon viewing.
 Hazuki is also the month for harvesting millet.
 
 1st Day (7 Sep): Hakuro (white dew)
-In the solar calendar, Hakuro marks the time when dew condenses on grass and leaves in the early morning chill. It is a cliché of autumn that people who walk in the early morning, such as a lover returning home from a secret tryst, get their clothes covered in dew.
+In the solar calendar, Hakuro marks the time when dew condenses on grass and leaves in the early morning chill. It is a cliche of autumn that people who walk in the early morning, such as a lover returning home from a secret tryst, get their clothes covered in dew.
 
 4th Day (11 Sep): Nihyakuhatsuka (220 days since Spring)
 The fifth day of the eighth month is the 220th day since Spring, another important milestone approaching the rice harvest.
@@ -360,16 +360,16 @@ In the solar calendar, Shuubun is the Autumnal Equinox.
 On the fifteenth day of the eighth month, the Hojoe, or Great Liberation, is held at shrines throughout the land. Birds, fish, turtles, and other animals are released into appropriate places in the wild. This is done to respect the Shinseist injunction against captivity or killing of sentient beings.
 The fifteenth day of the eighth month is also famous for moon viewing, since the autumn moon is considered to be the most beautiful, and since the autumn nights are likely to have clear weather. It is almost universal for people to go out at night with friends to gaze at the moon, compose poems, and enjoy food and wine. It is traditional to offer dumplings and roasted yams to the moon on this night.
 
-9th Month: Nagatsuki (“long”), Month of the Boar
-8 October – 6 November
+9th Month: Nagatsuki ("long"), Month of the Boar
+8 October - 6 November
 Seasonal color: Bush clover combination (rose and slate blue)
 Flowers of Autumn: nashi pear, konomi nuts and seeds, tsuta ivy, bashoo inedible banana, keitoo cockscomb, kiku chrysanthemums, imo yam, ine mature rice plants, kusanohana flowering grasses, susuki pampas grass
 Flowers of Nagatsuki: kaki persimmon, ringo apple, kuri chestnuts, yuzu citron, momoji red momiji maple leaves, kaede red maple leaves, kinoko mushrooms
 
-Nagatsuki, the “long month,” is named because the rice has grown long. This is the month of the harvest. Rice farmers work their hardest to complete the tasks of reaping, threshing, and drying the year's single crop rice and the late rice of double cropping regions.
+Nagatsuki, the "long month," is named because the rice has grown long. This is the month of the harvest. Rice farmers work their hardest to complete the tasks of reaping, threshing, and drying the year's single crop rice and the late rice of double cropping regions.
 In southern areas that single crop rice, after the rice crop, farmers plant winter wheat.
 Nagatsuki is also a month of fantastic natural beauty, when many trees, especially maple, show beautiful fall colors. There is no special holiday to view the fall leaves, but it is virtually universal for friends to join for improptu trips to go leaf viewing, with the usual merriments of wine, poetry, and music. Of course, for rice farmers, there will be no time to set aside for leaf viewing in this harvest month.
-The Chrysanthemum Festival – the last of the five Gosechi holidays - is celebrated in the ninth month.
+The Chrysanthemum Festival - the last of the five Gosechi holidays - is celebrated in the ninth month.
 
 1st Day (8 Oct): Kanro (cold dew)
 In the solar calendar, Kanro marks the last section of the year before farmers can expect frost. Farmers must harvest their crops in the next fourteen days, or risk losing them to frost.
@@ -379,7 +379,7 @@ On the seventh day of the ninth month, Ministers of Revenue present reports to t
 
 9th Day (16 Oct): Choyo no sekku (Chrysanthemum Festival)
 The Chrysanthemum Festival is the last of the five Gosechi holidays.
-The ninth day of the ninth month is Choyo no sekku, the Chrysanthemum Festival. Gardens, temples, shrines, and fine homes display fine specimens of the seasonal flowers, including unusual “doll chrysanthemums” grown in the shape of a human figure doll. People drink wine steeped with chrysanthemum petals on this day, to promote longevity and good health.
+The ninth day of the ninth month is Choyo no sekku, the Chrysanthemum Festival. Gardens, temples, shrines, and fine homes display fine specimens of the seasonal flowers, including unusual "doll chrysanthemums" grown in the shape of a human figure doll. People drink wine steeped with chrysanthemum petals on this day, to promote longevity and good health.
 The Imperial Court also holds an inspection of chrysanthemums, followed by court dances and a banquet featuring chrysanthemum infused wine and dishes of white trout.
 
 13th Day (20 Oct): Aki no douyou (preparing the ground for autumn)
@@ -387,14 +387,14 @@ The Imperial Court also holds an inspection of chrysanthemums, followed by court
 16th Day (23 Oct): Soukou (frost descends)
 In the solar calendar, Soukou marks the time of the year when night temperatures dip below freezing and farmers can expect frost. Delaying harvest past this point risks crop loss.
 
-10th Month: Kaminazuki (“no gods”), Month of the Rat
-7 November – 6 December
+10th Month: Kaminazuki ("no gods"), Month of the Rat
+7 November - 6 December
 Seasonal color: Maple combination (vermillion and gray-green)
 Flowers of Winter: senryoo hermit smartweed berries, manryoo spearflower berries, nanten nandin berries, ochiba fallen leaves, kangiku cold mums, karehasu withered lotus, fuyuna winter greens, daikon radish, negi onion, kabu turnip, fuyukusa winter grasses, yabukooji spearflower berries
 Flowers of Kaminazuki: sazanka sasanqua, chanohana tea flowers
 
 The tenth month is the first month of winter. Many vegetables and greens become ready in winter, but for the most part, flowers and foliage wither and fall, and the only colors to be seen in nature will be red berries and white snow. However, this is the month to harvest autumn soybeans, which tend to be planted in temperate regions in central Rokugan.
-The tenth month is called Kaminazuki, the “month without gods,” because the kami gather at the greatest shrine in the land in this month.
+The tenth month is called Kaminazuki, the "month without gods," because the kami gather at the greatest shrine in the land in this month.
 
 1st Day (7 Nov): Rittou (first day of winter)
 In the solar calendar, Rittou is the first day of winter. This time of the year may be the last chance to travel. Merchants, granaries, and remote villages evaluate their stores and acquire and supplies that will be needed to make it through the winter.
@@ -406,13 +406,13 @@ The Emperor and daimyo present the ladies of their courts with boxes of glutinou
 16th Day (22 Nov): Shousetsu (lesser snow)
 In the solar calendar, Shousetsu marks the time when at least light snow is expected. In some areas, such as northern lands and mountain domains, roads will soon become impassable until spring. Most daimyo who will hold a Winter Court will invite their guests to arrive no later than Shousetsu.
 
-11th Month: Shimotsuki (“frost”), Month of the Ox
-7 December – 4 January
+11th Month: Shimotsuki ("frost"), Month of the Ox
+7 December - 4 January
 Seasonal color: Chrysanthemum combination (lavender and deep blue)
 Flowers of Winter: senryoo hermit smartweed berries, manryoo spearflower berries, nanten nandin berries, ochiba fallen leaves, kangiku cold mums, karehasu withered lotus, fuyuna winter greens, daikon radish, negi onion, kabu turnip, fuyukusa winter grasses, yabukooji spearflower berries
 Flowers of Shimotsuki: None
 
-The eleventh month, Shimotsuki (“frost month”), is the time when snow falls heavily (except in the south). The Festival of the First Fruits and the Gosechi Dances are held in honor of the gods for the harvest, and the rice from this year's harvest may be eaten for the first time.
+The eleventh month, Shimotsuki ("frost month"), is the time when snow falls heavily (except in the south). The Festival of the First Fruits and the Gosechi Dances are held in honor of the gods for the harvest, and the rice from this year's harvest may be eaten for the first time.
 Many places become snowbound in the eleventh month. Farmers often take odd jobs to supplement their income, such as by taking jobs in towns, mining, working in forges, or making shoes, umbrellas, rope, and other goods.
 
 1st Day (7 Dec): Taisetsu (great snow)
@@ -428,13 +428,13 @@ On the fifth day of the eleventh month, following the Niinamesai, the Imperial C
 In the solar calendar, Touji is the Winter Solstice. The solar year begins and ends with this event. The New Year is reckoned as the second new moon after Touji.
 It is traditional on the eve of Touji to eat squash and bathe in citron infused water.
 
-12th Month: Shiwasu (“priests running”), Month of the Tiger
-5 January – 3 February
+12th Month: Shiwasu ("priests running"), Month of the Tiger
+5 January - 3 February
 Seasonal color: Pine combination (sprout green and deep purple)
 Flowers of Winter: senryoo hermit smartweed berries, manryoo spearflower berries, nanten nandin berries, ochiba fallen leaves, kangiku cold mums, karehasu withered lotus, fuyuna winter greens, daikon radish, negi onion, kabu turnip, fuyukusa winter grasses, yabukooji spearflower berries
 Flowers of Shiwasu: soobai early plum blossoms, kantsubaki winter camelia, suisen narcissus
 
-The twelfth month, Shiwasu (“priests running”), is named for the flurry of activity by the priests of temples and shrines. Special services are held to prepare for the New Year, and significant activity is needed just to prepare temples and shrines for the crowds who will come for the Setsubun observances and next year's Oshogatsu (New Year's) observances.
+The twelfth month, Shiwasu ("priests running"), is named for the flurry of activity by the priests of temples and shrines. Special services are held to prepare for the New Year, and significant activity is needed just to prepare temples and shrines for the crowds who will come for the Setsubun observances and next year's Oshogatsu (New Year's) observances.
 
 1st Day (5 Jan): Shoukan (lesser cold)
 13th Day: Fuyu no douyou (preparing the ground for winter)

@@ -9,7 +9,7 @@ Generate bounties, bounty hunter scenarios, and minor clan content (Wasp, Sparro
 
 ## Source Material - Bounties
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 BOUNTIES
 
 The Wasp Clan Charter grants all Wasp samurai the authority to pursue Imperial bounties.  How do those work?
@@ -125,7 +125,7 @@ This is far from the most questionable type of bounty collection which might tem
 
 ## Source Material - Minor Clans
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 THE SPARROW CLAN
 
 After his Imperial Majesty Hantei the Tenth gifted his Empire with the then-new system of the "Six Ministries":https://karmicinquisitors.obsidianportal.com/wikis/six-ministries, some within the great clans wrestled with the various ways to apply this new structure upon their existing way of life.
@@ -170,7 +170,7 @@ For both practical and spiritual reasons, Sparrow village overseers swear a vow 
 
 bq). I am [full name], child of [personal names of parents], of the lineage of [lineage name].  I stand before you as the appointed village overseer of [village district] within the Sparrow Hills.  I swear this vow to Daikoku, the Fortune of Wealth and Bounty, whose favor sustains the earth and whose wisdom guides its stewards.  For the duration of my service in this post, I renounce all pursuit of personal riches and solemnly swear to maintain no personal wealth in excess of one gold koku, nor shall I possess more than one singular item of any category of belonging.  Should I be granted any item that creates a duality in my possession, or any gift that exceeds this singular necessity, I vow to immediately surrender the duplicate to the farmers under my authority.
 
-bq). I vow to live among my neighbors, taking no shelter and consuming no grain of higher quality than that which the peasants of this district use to sustain their own lives.  In return, I beseech Daikoku’s grace: grant me the discernment to manage our thin soil wisely and the vision to see opportunities for our village to flourish, even in lean years.  I swear this vow with a pure heart and sincere intentions, in the name of Daikoku and in the light of our radiant Lady Sun.
+bq). I vow to live among my neighbors, taking no shelter and consuming no grain of higher quality than that which the peasants of this district use to sustain their own lives.  In return, I beseech Daikoku's grace: grant me the discernment to manage our thin soil wisely and the vision to see opportunities for our village to flourish, even in lean years.  I swear this vow with a pure heart and sincere intentions, in the name of Daikoku and in the light of our radiant Lady Sun.
 
 
 

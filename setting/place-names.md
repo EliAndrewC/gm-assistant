@@ -1,6 +1,6 @@
 # Place Names
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 PLACE NAMES:
 
 Although there are a few exceptions, we generally use the same names for:

@@ -1,6 +1,6 @@
 # Ogres
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 OGRES:
 
 Every year hundreds of ogres manage to enter Rokugan by making it over the Kaiu Wall or through the Burning Sands Desert.  About 1000 ogres live in Crab lands, and another 1000 have settled into Unicorn, Scorpion, and Crane lands.

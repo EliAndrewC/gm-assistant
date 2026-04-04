@@ -1,6 +1,6 @@
 # Damasu Relic Seekers
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 RELIC SEEKERS
 
 During the Karmic Inquisitors campaign, the PCs tasked a large staff to look into "relic seekers" - i.e. pilgrims who come to the temple looking to pray before and even be granted private audiences with many Temple relics.  This page contains an alphabetically sorted list of all the people whose names are recorded as having:
@@ -26,7 +26,7 @@ The Taizo lineage was previously one of the major lineages on the Damasu chancel
 
 After the Day of Thunder later occurred, and Baiten was proven correct, Tomoko was disgraced, and as the highest ranking member of the Taizo lineage, her influence reflected poorly on all who chose to continue to affiliate with the Taizo. When the Damasu domain was retaken, many Taizo samurai took the opportunity to affiliate themselves with other lineages.
 
-However, Tomoko’s talents and accomplishments during the Lion/Crane war are so indisputable that she was still appointed the new Damasu Minister of Retainers when the Lion retook the city, making her the highest ranking member of the diminishing Taizo lineage, a position which Akkuhiko will one day inherit even if the position of Minister of Retainers passes to another.
+However, Tomoko's talents and accomplishments during the Lion/Crane war are so indisputable that she was still appointed the new Damasu Minister of Retainers when the Lion retook the city, making her the highest ranking member of the diminishing Taizo lineage, a position which Akkuhiko will one day inherit even if the position of Minister of Retainers passes to another.
 
 Akuhiko began seeking access to temple relics last year following her gempukku, as it would have been premature to do so before that time.
 
@@ -102,7 +102,7 @@ h3. **Bayushi no Akiko Maiko**
 
 Wielder of the feared sword Tamashikari (Soul Anchor) - see the Famous swords section for details.
 
-Maiko arrived the week before Setsuban last year on a warrior's pilgrimage.  She has stayed in the city testing herself in local dojos and working her way through the Order of Bishamon’s Temple relics to pray and further strengthen herself for whatever future trials lie ahead of her now that her work hunting moon cultists in Scorpion lands has been declared to be complete.
+Maiko arrived the week before Setsuban last year on a warrior's pilgrimage.  She has stayed in the city testing herself in local dojos and working her way through the Order of Bishamon's Temple relics to pray and further strengthen herself for whatever future trials lie ahead of her now that her work hunting moon cultists in Scorpion lands has been declared to be complete.
 
 Of course, with the Scorpion clan, it's impossible to tell whether anything that has been declared to be true is actually truthful, and Maiko's past experience as a moon cultist hunter has made some in the temple nervous.  However, she has never had any affiliation with the Crystal Champion, as her past duties purely involved seeking vengeance towards those who betrayed the Scorpion clan specifically - though it would be in line with Scorpion clan spycraft to hold such a title in secret.
 
@@ -230,7 +230,7 @@ It is unclear whether Setsuko is currently in the city, though she did return af
 
 h3. **Shiba Asayo**
 
-Asayo is a courtier who was assigned to the 3rd Imperial Legion who met the customary skepticism that most bushi feel for any courtier assigned to the Wall.  Many feel nervous about going into battle alongside a man who isn’t a warrior, far preferring bushi comrades who are maximally trained in combat.  They were further suspicious of his seemingly foppish nature, as his main interests are playwriting and painting.  However, he proved himself in battle and in the dojo enough times that no one who has fought against or alongside him has any concern about his worthiness.
+Asayo is a courtier who was assigned to the 3rd Imperial Legion who met the customary skepticism that most bushi feel for any courtier assigned to the Wall.  Many feel nervous about going into battle alongside a man who isn't a warrior, far preferring bushi comrades who are maximally trained in combat.  They were further suspicious of his seemingly foppish nature, as his main interests are playwriting and painting.  However, he proved himself in battle and in the dojo enough times that no one who has fought against or alongside him has any concern about his worthiness.
 
 Before each mission or undertaking of any sort - such as going into the Shadowlands when he was assigned there - Asayo paints one half of a painting, then  finishes it after his return.  The first half is itself a complete (if spare) work, and the second half fills in details which often change the overall meaning of the piece.  As he progresses in mastery of his art, Asayo increasingly finds himself in a sublime and almost trancelike state as he paints, as the process of the great masters has been described.  Just as a swordsman is told to strike with no thought, so too has Asayo begun to create with a clear mind and let the brush move of its own accord.  Eventually he began noticing details in his half-finished works that he does not remember adding, which he recognizes as a sign that he is on the path to becoming one of the transcendent masters.
 

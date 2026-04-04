@@ -1,6 +1,6 @@
 # Large Cities
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 LARGE CITIES:
 
 "Zipf's law" is a real-world rule of thumb which indicates that the Nth-largest city is roughly 1/Nth the size of the largest city.  We tend to follow that for our demographic depiction of Rokugan.

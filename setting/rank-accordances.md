@@ -1,6 +1,6 @@
 # The Measure of Standing and the Accordances of Rank
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 THE MEASURE OF STANDING AND THE ACCORDANCES OF RANK
 
 The Wasp Bounty Hunters campaign is one in which the specifics of rank and money are especially important, even by the standards of Rokugan.  Here are some notes about this:

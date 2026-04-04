@@ -17,7 +17,7 @@ The primary source material for legal cases lives in the campaign files. This sk
 
 ## Source Material - Justice System Structure
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 THE MINISTRY OF JUSTICE:
 
 The Ministry of Justice oversees street policing, bandit patrols, magistrates, courts, jails, and other aspects of both the civil and criminal justice systems.

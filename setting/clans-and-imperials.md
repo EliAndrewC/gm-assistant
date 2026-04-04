@@ -1,6 +1,6 @@
 # Imperials and Clan Populations
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 IMPERIALS:
 
 Each domain has an appointed Imperial samurai (and spouse/children if applicable) acting as an Emerald Magistrate.  They have a staff of around ten yoriki (samurai assistants) with them, who are typically from other clans, with perhaps 1-2 being from one of the Imperial families.  The magistrate and yoriki live in the domain's capital but might visit the domain's other cities on the extremely rare occasion when it is necessary to "travel into the provinces".

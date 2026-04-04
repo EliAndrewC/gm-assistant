@@ -1,13 +1,13 @@
 # Karmic Inquisitors Campaign
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 Now let's talk about the "Karmic Inquisitors" campaign, which is an older campaign I ran which takes place in Damasu lands, i.e. the domain whose capital is Toshi Ranbo, the third-largest city in the Empire.
 
 CAMPAIGN DESCRIPTION:
 
 Positioned at the crossroads between Lion, Dragon, Phoenix, Crane, and Imperial lands, Toshi Ranbo is the third largest city in the Empire and capital of the Damasu domain of the Akodo family.
 
-Last year, the dreaded fungal blight kumosaya destroyed half of the domain’s rice and soybean crop. Normally such blights start small and worsen over a period of years, but this one came seemingly out of nowhere. Further, it was not heralded by any omens or portents which should have forewarned the government of the coming disaster.
+Last year, the dreaded fungal blight kumosaya destroyed half of the domain's rice and soybean crop. Normally such blights start small and worsen over a period of years, but this one came seemingly out of nowhere. Further, it was not heralded by any omens or portents which should have forewarned the government of the coming disaster.
 
 The suddenness of the blight combined with the lack of any divine warnings can mean only one thing: some great sin has caused the gods to bring punishment upon the domain. The PCs are sworn members of the Order of Bishamon, and have been tasked as karmic inquisitors to root out what specific sin needs to be rectified before the disfavor of the gods brings even greater disaster in the coming year.
 
@@ -19,21 +19,21 @@ The Order of Lord Moon is referred to as The Order in conversation, so that anyo
 
 Members and roles:
 
-There are always 12 members of The Order, most of which don’t have any official title. Each official position within The Order has an abbreviated name which it is always called in conversation outside of rituals and ceremonies.
+There are always 12 members of The Order, most of which don't have any official title. Each official position within The Order has an abbreviated name which it is always called in conversation outside of rituals and ceremonies.
 
 -> Master of the Lunar Way, aka the Master of the Way. This is the head of The Order (currently Reiji), who leads ceremonies, prayers, rituals, and calls meetings to order.
 
--> Seeker of the Moon’s Chosen, aka the Seeker. This member (currently Eiwa) is responsible for identifying potential recruits.
+-> Seeker of the Moon's Chosen, aka the Seeker. This member (currently Eiwa) is responsible for identifying potential recruits.
 
 -> Teacher of the Astral Ways, aka the Teacher. This member (currently Umiko) is responsible for training new initiates.
 
--> Steward of the Secret Cache, aka the Steward. The Order’s ceremonies require many implements, and these things must be kept hidden and brought to ceremonies by the Steward (currently Osei).
+-> Steward of the Secret Cache, aka the Steward. The Order's ceremonies require many implements, and these things must be kept hidden and brought to ceremonies by the Steward (currently Osei).
 
 Below are the backstories for the senior members of The Order of Lord Moon:
 
 Reiji, Master of the Lunar Way (aka "Master of The Way"):
 
-By day, Reiji’s role in the Temple of Bishamon is that of Warden of the Five Gates. By night, he is the Master of the Lunar Way, the head of The Order of Lord Moon.
+By day, Reiji's role in the Temple of Bishamon is that of Warden of the Five Gates. By night, he is the Master of the Lunar Way, the head of The Order of Lord Moon.
 
 The previous Master of the Lunar Way was Kaito, who served in the Temple of Bishamon as the Master of the Inner Sanctum. Kaito was executed by Matsu Gohei and Hantei Daigotsu when the Office of the Crystal Champion came to Toshi Ranbo after the attempted assassination of the Emperor.
 
@@ -47,33 +47,33 @@ Reiji is more cautious than his predecessor, now that the Order has reason to fe
 
 Eiwa, Seeker of the Moon's Chosen (aka "the seeker"):
 
-The day of Eiwa’s gempukku, he woke early from a dream in which he was flying high above the countryside into the night sky, waking as his spirit fell back to earth into his human body. Excited for the ceremony ahead, he walked outside and saw that sticking out above the doorway into his family home was lodged a fine arrow, pointing downwards into the home, as if fired in an arc from a great distance. This was well before the war, and the fletching of the arrow was made of the finest multicolored feathers that Eiwa had ever seen.
+The day of Eiwa's gempukku, he woke early from a dream in which he was flying high above the countryside into the night sky, waking as his spirit fell back to earth into his human body. Excited for the ceremony ahead, he walked outside and saw that sticking out above the doorway into his family home was lodged a fine arrow, pointing downwards into the home, as if fired in an arc from a great distance. This was well before the war, and the fletching of the arrow was made of the finest multicolored feathers that Eiwa had ever seen.
 
-Confused and concerned, he crept out in the silence of the crack of dawn to seek out those who might have fired this arrow, be they samurai or bandits. Though the previous night’s rain left the ground wet and muddy, he found no fresh footprints anywhere on the outskirts of the hamlet where he and his family lived, not anywhere from which the arrow could have been fired, nor around the homes of his neighbors.
+Confused and concerned, he crept out in the silence of the crack of dawn to seek out those who might have fired this arrow, be they samurai or bandits. Though the previous night's rain left the ground wet and muddy, he found no fresh footprints anywhere on the outskirts of the hamlet where he and his family lived, not anywhere from which the arrow could have been fired, nor around the homes of his neighbors.
 
 Increasingly unsettled, he returned home to find that the arrow was gone, and his now-awake family had not seen it, nor heard anyone else approach their home. The new mark made by the arrow above the doorway was the only sign that the arrow had ever been present.
 
-Their country monk immediately recognized this as a sign from Bishamon, given his frequently depiction as an archer. The monk immediately began to educate Eiwa as an acolyte, and Eiwa later traveled to Toshi Ranbo to join the temple there, in fulfillment of Bishamon’s calling.
+Their country monk immediately recognized this as a sign from Bishamon, given his frequently depiction as an archer. The monk immediately began to educate Eiwa as an acolyte, and Eiwa later traveled to Toshi Ranbo to join the temple there, in fulfillment of Bishamon's calling.
 
-Thankfully, neither the country monk nor the first few members of the Temple of Bishamon in Toshi Ranbo who heard this story recognized the significance of Eiwa’s dream of flying, but the previous Seeker of the Chosen instantly realized this as a divine invitation from Lord Moon himself. Eiwa ascended to this position upon the death of the previous seeker almost 20 years ago.
+Thankfully, neither the country monk nor the first few members of the Temple of Bishamon in Toshi Ranbo who heard this story recognized the significance of Eiwa's dream of flying, but the previous Seeker of the Chosen instantly realized this as a divine invitation from Lord Moon himself. Eiwa ascended to this position upon the death of the previous seeker almost 20 years ago.
 
 Umiko, Teacher of the Astral Ways (aka "the teacher"):
 
-The Tsume initially took Toshi Ranbo without fear of an immediate Lion counter-invasion because of a devastating flood which affected the eastern and southern provinces of Damasu lands. This flood was not only a catastrophe for the armies of the Lion, but for the peasants as well – thankfully this flood occurred after the Autumn harvest, so the year’s crop was not ruined, but months of intense work lay ahead to set right the fields and paddies and fix the network of irrigated streams which had all been overrun.
+The Tsume initially took Toshi Ranbo without fear of an immediate Lion counter-invasion because of a devastating flood which affected the eastern and southern provinces of Damasu lands. This flood was not only a catastrophe for the armies of the Lion, but for the peasants as well - thankfully this flood occurred after the Autumn harvest, so the year's crop was not ruined, but months of intense work lay ahead to set right the fields and paddies and fix the network of irrigated streams which had all been overrun.
 
 While tending to this task, Umiko found herself shoveling the deposit of a mudslide which had inadvertently dammed a nearby irrigated ditch which fed water into one of the village rice paddies. In the midst of this effort, she spied an object partially exposed by the landslide. As she drew closer, she discovered it was a bell, green with the patina of age, but its shape was unmistakable. This was a shrine bell, she realized, its origins lost to time until this moment. Intrigued, she set her shovel aside to unearth the bell.
 
-As she worked, her attention was drawn by a movement at the corner of her vision. At a distance, a fox was engaged in a tense standoff with a circling hawk. The fox was clearly guarding something hidden in the tall grass – perhaps its kits. The hawk, a far larger predator, continued its threatening display.
+As she worked, her attention was drawn by a movement at the corner of her vision. At a distance, a fox was engaged in a tense standoff with a circling hawk. The fox was clearly guarding something hidden in the tall grass - perhaps its kits. The hawk, a far larger predator, continued its threatening display.
 
-Umiko watched as the fox, despite its smaller size, faced the hawk fearlessly, its fur standing on end in an attempt to appear larger. Then, as if deciding the hawk was no longer a threat, the fox turned and disappeared into the grass. The hawk, perhaps dissuaded by the fox’s determination, flew away.
+Umiko watched as the fox, despite its smaller size, faced the hawk fearlessly, its fur standing on end in an attempt to appear larger. Then, as if deciding the hawk was no longer a threat, the fox turned and disappeared into the grass. The hawk, perhaps dissuaded by the fox's determination, flew away.
 
 As the fox emerged from the grass, it turned to look at Umiko. In that moment, the sun broke through the cloud cover, and the light hit the fox in such a way that it appeared to glow, its fur glistening like a field of golden rice under the autumn sun.
 
-Suddenly, she remembered the bell. Lifting it out of the earth, she brushed off the remaining mud. That’s when she noticed it: The curve of the bell, along with its reflection in a puddle created by the recent rainfall, formed a perfect crescent shape. It was a mirrored crescent, she realized, just as the moon was currently in its crescent phase. The alignment of these events, the discovery of the shrine bell, the appearance of the fox, and the mirrored crescent, was too much to be mere coincidence.
+Suddenly, she remembered the bell. Lifting it out of the earth, she brushed off the remaining mud. That's when she noticed it: The curve of the bell, along with its reflection in a puddle created by the recent rainfall, formed a perfect crescent shape. It was a mirrored crescent, she realized, just as the moon was currently in its crescent phase. The alignment of these events, the discovery of the shrine bell, the appearance of the fox, and the mirrored crescent, was too much to be mere coincidence.
 
-Umiko was unusually educated for a young peasant from her village, and she understood this as a sign from Inari, the Fortune of rice and foxes. She was able to easily interpret the fox’s actions a message: to protect the innocent and the helpless, much like the fox had done with its young (or whatever unknown entities it had guarded).
+Umiko was unusually educated for a young peasant from her village, and she understood this as a sign from Inari, the Fortune of rice and foxes. She was able to easily interpret the fox's actions a message: to protect the innocent and the helpless, much like the fox had done with its young (or whatever unknown entities it had guarded).
 
-Spurred by this revelation, Umiko left her village to join the Temple of Bishamon. Eiwa, the current Seeker of the Moon’s Chosen, was able to identify the mirrored crescent as a sign from Lord Moon, and recruited her into The Order, where she devoured all knowledge and wisdom, eventually being appointed as the Teacher of the Astral Ways.
+Spurred by this revelation, Umiko left her village to join the Temple of Bishamon. Eiwa, the current Seeker of the Moon's Chosen, was able to identify the mirrored crescent as a sign from Lord Moon, and recruited her into The Order, where she devoured all knowledge and wisdom, eventually being appointed as the Teacher of the Astral Ways.
 
 Her experience with the old shrine bell also led to her being named the Herald of the Bell for the Temple of Bishamon, and it is Umiko who rings the temple bell to call the temple to prayer.
 
@@ -81,19 +81,19 @@ Of the members of The Order, Umiko is the most adamant about using the present c
 
 Osei, the Steward of the Sacred Cache (aka "the steward"):
 
-The Order’s ceremonies require many implements, including porcelain masks, obsidian knives, black robes, white/black/red/blue candles, incense, etc. These things must be kept hidden and brought to ceremonies by the Steward.
+The Order's ceremonies require many implements, including porcelain masks, obsidian knives, black robes, white/black/red/blue candles, incense, etc. These things must be kept hidden and brought to ceremonies by the Steward.
 
 Part of this job involves having good hiding places for these things, including:
 
-→ Under the floorboards in rooms of the Temple of Bishamon where they are unlikely to be discovered.
+-> Under the floorboards in rooms of the Temple of Bishamon where they are unlikely to be discovered.
 
-→ Buried in a cemetery, where they can be retrieved and where it is unlikely that they will be found.
+-> Buried in a cemetery, where they can be retrieved and where it is unlikely that they will be found.
 
-→ In a hidden cache in the wilderness outside the city, close to where the nighttime rituals of The Order will be performed.
+-> In a hidden cache in the wilderness outside the city, close to where the nighttime rituals of The Order will be performed.
 
-→ Under the false bottom of a trunk or chest.
+-> Under the false bottom of a trunk or chest.
 
-Osei’s personal history is itself shrouded in mystery. She was recruited by the previous Seeker of the Moon’s Chosen, and while she passed every test and evaluation put to her by The Order, the previous Seeker declined to share what details of her life story she revealed to him when he was inquiring into her past.
+Osei's personal history is itself shrouded in mystery. She was recruited by the previous Seeker of the Moon's Chosen, and while she passed every test and evaluation put to her by The Order, the previous Seeker declined to share what details of her life story she revealed to him when he was inquiring into her past.
 
 Here's the backstory of Tsukimichi, a member of The Order and one of the PCs of the "Karmic Inquisitors" campaign:
 
@@ -115,7 +115,7 @@ Here's the backstory of Haru, another member of The Order:
 
 During the Lion/Crane war, in accordance with the treaty between the Tsume house and the Shiba family, the Phoenix clan declared war on the Lion clan.
 
-However, the Phoenix clan is famously pacifistic (by samurai standards), and no battles were fought – not one single Lion was killed by a Phoenix or vice versa. However, the Phoenix clan did provide significant aid, by allowing Crane troops to travel through Phoenix lands to evade Lion armies, while refusing entry into their lands by Lion wishing to do the same. This gave the Tsume a significant advantage, as the Lion clan did not wish to test the resolve of the Phoenix by invading their lands – a war in which the Southern Armies of the Phoenix were added to those of the Northern Armies of the Crane could have been a disaster for the Lion clan.
+However, the Phoenix clan is famously pacifistic (by samurai standards), and no battles were fought - not one single Lion was killed by a Phoenix or vice versa. However, the Phoenix clan did provide significant aid, by allowing Crane troops to travel through Phoenix lands to evade Lion armies, while refusing entry into their lands by Lion wishing to do the same. This gave the Tsume a significant advantage, as the Lion clan did not wish to test the resolve of the Phoenix by invading their lands - a war in which the Southern Armies of the Phoenix were added to those of the Northern Armies of the Crane could have been a disaster for the Lion clan.
 
 Occupying the southwestern corner of Phoenix lands, the Asako family vigilantly patrolled their borders, overlooking both sides of the war from Morning Glory Castle (aka Kyuden Asako, their capital).
 
@@ -123,29 +123,29 @@ With that being said, the Lion would have been foolish to not send scouts into P
 
 One advantage the Lion had was that the Phoenix are as pious as they are pacifistic, and thus they were unwilling to turn away pilgrims, even when those pilgrims were openly Lion clan samurai who clearly wished to gather intelligence on the movement of Crane troops and Phoenix patrols. However, the Phoenix clan mitigated these concerns by assigning escorts, and also forcing Lion pilgrims to take more roundabout routes than any other clan would take.
 
-This was still worthwhile for the Lion clan, and Akodo no Sugiwara Ippei was one of many “pilgrims” who went through Asako lands to reach the Isawa woodlands, ostensibly to visit the Sacred Pool of Kaimetsu-Uo.
+This was still worthwhile for the Lion clan, and Akodo no Sugiwara Ippei was one of many "pilgrims" who went through Asako lands to reach the Isawa woodlands, ostensibly to visit the Sacred Pool of Kaimetsu-Uo.
 
 Located deep in the Isawa woodlands, this crystal clear pool of water is a revered place of tranquility and healing. The pool is named after Kaimetsu-Uo, a legendary figure in Isawa history from before the dawn of the Empire, said to have been healed in these waters after a brutal battle against an oni. It is common for those seeking healing or purification to journey here, either for themselves or on behalf of others. Pilgrims often leave small, symbolic offerings at the edge of the pool, and the Order of Kaimetsu-Uo maintains a series of baths which pilgrims must use both before and after bathing in the pool.
 
 However, Ippei never made it to the sacred pool. Asako Haru was assigned as his escort, and Haru was ordered to take a circuitous route, entering the Isawa woodlands from the west rather than from the south, to limit the amount of information Ippei would be able to gather. Unfortunately, the group of pilgrims soon found themselves lost in the forest.
 
-Strangely, the forest was completely silent by day, and only came alive at night with the squawking of birds and the crashing movements of large animals through the brush. The emptiness of the day made hunting difficult, which the party needed to restore their dwindling food supply. As an accomplished scout and hunter who intended his trip to be short, Ippei neither expected to need extensive provisions nor thought he would have any difficulty finding food in the forest even if they did run out. As the days dragged on and hunger ravaged the pilgrims, the few birds they were able to kill with stones seemed to do nothing to nourish or satisfy the party’s increasingly desperate hunger.
+Strangely, the forest was completely silent by day, and only came alive at night with the squawking of birds and the crashing movements of large animals through the brush. The emptiness of the day made hunting difficult, which the party needed to restore their dwindling food supply. As an accomplished scout and hunter who intended his trip to be short, Ippei neither expected to need extensive provisions nor thought he would have any difficulty finding food in the forest even if they did run out. As the days dragged on and hunger ravaged the pilgrims, the few birds they were able to kill with stones seemed to do nothing to nourish or satisfy the party's increasingly desperate hunger.
 
 Eventually, through patience and careful planning, Ippei deployed his men to direct and trap some of the wild boar which they had heard but not been able to spot for days. However, these were no ordinary pigs, and their massive tusks and hooves caused devastating injuries to the hunters. Still, the military discipline of the Lion held strong, and a boar was slain, and the other enormous beasts fled into the night.
 
-Unfortunately, this seemingly successful hunt took the group’s circumstances from bad to worse. To a man, all who consumed the boar meat found themselves hungrier than they were before they began. Only Akodo no Sugiwara Genjo, who was so wounded that he no longer had any appetite as he lay dying, was unaffected.
+Unfortunately, this seemingly successful hunt took the group's circumstances from bad to worse. To a man, all who consumed the boar meat found themselves hungrier than they were before they began. Only Akodo no Sugiwara Genjo, who was so wounded that he no longer had any appetite as he lay dying, was unaffected.
 
-Haru tended to Genjo’s wounds, and while he did not know any of the rites and prayers given to the dying, he invented Phoenix rituals on the spot in order to comfort the dying man. As the end drew near, Genjo urged his companions to consume his body for nourishment after he passed, offering himself to his friends and comrades. The others all reacted with disgust, even though Genjo reminded them of the story of Lord Moon consuming his own children – in this strange place, imitating the ways of the King of the Night Sky would surely be appropriate (Genjo argued), or at least forgivable.
+Haru tended to Genjo's wounds, and while he did not know any of the rites and prayers given to the dying, he invented Phoenix rituals on the spot in order to comfort the dying man. As the end drew near, Genjo urged his companions to consume his body for nourishment after he passed, offering himself to his friends and comrades. The others all reacted with disgust, even though Genjo reminded them of the story of Lord Moon consuming his own children - in this strange place, imitating the ways of the King of the Night Sky would surely be appropriate (Genjo argued), or at least forgivable.
 
-As the Lion now believed Haru to be an expert in Phoenix prayers and rituals, he was asked to administer funerary rites to Genjo’s body after he passed, while the others continued to scout and attempt to find a path out of this place. Haru found himself so overwhelmed with hunger that he prayed to Lord Moon as he decided to accept Genjo’s offer:
+As the Lion now believed Haru to be an expert in Phoenix prayers and rituals, he was asked to administer funerary rites to Genjo's body after he passed, while the others continued to scout and attempt to find a path out of this place. Haru found himself so overwhelmed with hunger that he prayed to Lord Moon as he decided to accept Genjo's offer:
 
 Lord Moon, who consumed his own in primal times, I seek your understanding as I am pushed to echo your actions. Let this act of necessity honor your celestial cycle, as death gives way to life. Guide us from this forest and into your shimmering light, as we traverse these uncharted depths.
 
 Haru thought that he was unseen and unheard, but Akodo Ippei had remained behind, tending to his wounds and praying to his own ancestors. He said nothing directly to Haru, but after Ippei was buried, one of the scouts returned, having miraculously found a westward path.
 
-The party reconvened, marked Genjo’s grave, and set out on the westward path. As night began to fall, the path emerged out of the forest, and the survivors were able to nourish themselves once again.
+The party reconvened, marked Genjo's grave, and set out on the westward path. As night began to fall, the path emerged out of the forest, and the survivors were able to nourish themselves once again.
 
-Ippei spoke privately afterwards to Haru, revealing that he had seen what Haru had done, though it was clear that he had not heard Haru’s prayer. Instead, Ippei spoke as if Haru must be ravaged with guilt and self-loathing, for he had consumed human flesh practically moments before the group was saved. Ippei and the other Lion credited their victory to the ancestral spirit of Genjo guiding them out of the forest, and only Haru understood that it was his own prayers and “feast” to Lord Moon which had saved them all from death.
+Ippei spoke privately afterwards to Haru, revealing that he had seen what Haru had done, though it was clear that he had not heard Haru's prayer. Instead, Ippei spoke as if Haru must be ravaged with guilt and self-loathing, for he had consumed human flesh practically moments before the group was saved. Ippei and the other Lion credited their victory to the ancestral spirit of Genjo guiding them out of the forest, and only Haru understood that it was his own prayers and "feast" to Lord Moon which had saved them all from death.
 
 Regardless, Ippei spoke with compassion, explaining that he had no intention of shaming Haru for his failings. Although he has so far kept this secret, he has also asked Haru for assistance on occasion, and clearly considers Haru to be in his debt. Whether and under what specific circumstances he would ever divulge what he saw remains unclear.
 

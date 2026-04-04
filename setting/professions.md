@@ -1,6 +1,6 @@
 # Ashigaru, Monks, Entertainers, and Bandits
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 ASHIGARU:
 
 One male from every family of farmers with at least two males in the countryside recieves martial training at least once per month.

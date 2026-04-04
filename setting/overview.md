@@ -1,6 +1,6 @@
 # Setting Overview
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 
 I'm the GM for a Legend of the Five Rings campaign.  My version of Rokugan is based on how the setting is portrayed in the original L5R source books, but with many additional details added and in some cases things which have outright changed.
 

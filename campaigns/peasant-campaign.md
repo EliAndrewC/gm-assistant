@@ -1,6 +1,6 @@
 # The Peasant Campaign
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 THE PEASANT CAMPAIGN:
 
 Another campaign I ran was the "Peasant camaign".  We've spent so long talking about samurai culture, but samurai are only 2% of the human population in Rokugan!  There's so much of society that is basically invisible to samurai, but is worth exploring, for narrative and worldbuilding reasons.  Here was my writeup of the peasant campaign:
