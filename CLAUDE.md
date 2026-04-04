@@ -8,10 +8,20 @@ This project is a Legend of the Five Rings tabletop RPG worldbuilding environmen
 
 The GM maintains a canonical notes file at https://raw.githubusercontent.com/EliAndrewC/l7r/refs/heads/master/ai/l7r.txt A local copy is saved at `/notes/canonical-source.txt` as a snapshot of what was last parsed. When the GM indicates the canonical source has been updated, or at the start of a session when asked:
 
-1. Fetch the current version using the GitHub API (not raw.githubusercontent.com, which has aggressive CDN caching that serves stale content). Use: `curl -sL "https://api.github.com/repos/EliAndrewC/l7r/contents/ai/l7r.txt?ref=master"` and base64-decode the `content` field.
-2. Diff against `/notes/canonical-source.txt` to identify what changed.
+1. Fetch the current version using the GitHub API (not raw.githubusercontent.com, which has aggressive CDN caching that serves stale content). Use this exact command to fetch and decode:
+   ```
+   curl -sL "https://api.github.com/repos/EliAndrewC/l7r/contents/ai/l7r.txt?ref=master" | python3 -c "
+   import sys, json, base64
+   data = json.load(sys.stdin)
+   content = base64.b64decode(data['content']).decode('utf-8')
+   with open('/tmp/new-canonical-api.txt', 'w') as f:
+       f.write(content)
+   "
+   ```
+   IMPORTANT: Always use `/tmp/new-canonical-api.txt` as the freshly fetched file for all subsequent steps. Never diff or compare against a file fetched via raw.githubusercontent.com or any previously cached download. If you have already fetched the file earlier in the conversation, fetch it again — do not reuse a previous download.
+2. Diff `/tmp/new-canonical-api.txt` against `/notes/canonical-source.txt` to identify what changed.
 3. Propagate changes to the appropriate downstream files (skill files, reference directories, etc.) - updating the GM's words within their `SOURCE: GM NOTES` markers to match the new canonical version.
-4. Overwrite `/notes/canonical-source.txt` with the new version so it's ready for the next diff.
+4. Overwrite `/notes/canonical-source.txt` with `/tmp/new-canonical-api.txt` so it's ready for the next diff. Do NOT update the snapshot until all downstream files have been verified as correct.
 
 This is the one exception to the "don't modify the GM's words" rule: when the canonical source itself has changed, downstream copies must be updated to match.
 
