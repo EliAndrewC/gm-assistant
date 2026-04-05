@@ -71,6 +71,7 @@ Reference directories hold organized source material and context. Each directory
 | `/fortune` | Generate cosmological content, soothsaying, omens, Fortune theology |
 | `/moto` | Generate Moto culture content, Yassa rulings, horse culture, Burning Sands |
 | `/bounty` | Generate bounties, Wasp clan content, minor clan details |
+| `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[male\|female] [x<N>]` |
 
 ## Reference Directories
 
