@@ -28,12 +28,6 @@ def load_pool(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
-def save_pool(path, entries):
-    with open(path, "w") as f:
-        for entry in entries:
-            f.write(json.dumps(entry) + "\n")
-
-
 def load_campaign_names():
     if not os.path.exists(CAMPAIGN_NAMES):
         return []
@@ -73,19 +67,9 @@ def pick(gender, count):
         chosen = random.choice(valid)
         results.append(chosen)
 
-        # Remove from pool
-        pool = [e for e in pool if e["name"] != chosen["name"]]
-        save_pool(pool_path, pool)
-
     # Output results
     for r in results:
         print(json.dumps(r))
-
-    # Pool size warning
-    for g_check, path in [("male", MALE_POOL), ("female", FEMALE_POOL)]:
-        remaining = len(load_pool(path))
-        if remaining < 20:
-            print(json.dumps({"warning": f"Only {remaining} {g_check} names left in pool. Consider refilling."}), file=sys.stderr)
 
 
 if __name__ == "__main__":
