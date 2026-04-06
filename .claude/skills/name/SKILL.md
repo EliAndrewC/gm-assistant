@@ -22,24 +22,13 @@ Then proceed to serve the name request as described below.
 
 On subsequent invocations in the same session, skip both steps and go straight to serving the request.
 
-## How to Parse Arguments
-
-Arguments can appear in any order and are optional:
-- `male` or `female` - specifies gender. If omitted, randomly choose 50/50.
-- `peasant` - only select names suitable for peasant characters (heimin, hinin). If omitted, select from the full pool.
-- `x<N>` (e.g. `x3`, `x5`) - generate N names. If omitted, generate 1.
-
-Examples: `/name`, `/name male`, `/name x5`, `/name female x3`, `/name x3 male`, `/name peasant`, `/name peasant x2`, `/name x3 male peasant`
-
 ## How to Serve a Name Request
 
-1. **Parse arguments** to determine gender (or null for random) and count (default 1).
-
-2. **Run the picker script**:
+1. **Pass the user's arguments directly to the picker script** — do not parse them yourself. The script handles all argument parsing including shorthand:
    ```
-   cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py [male|female] [peasant] <count>
+   cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py <user args>
    ```
-   Omit the gender argument if unspecified (the script randomizes). The script outputs one JSON object per line with `name`, `gender`, `format`, `explanation`, and `notes` fields.
+   The script accepts: `male`/`female`/`m`/`f` for gender, `peasant`/`p` for caste, numbers or `x<N>` for count, and concatenated shorthand like `pf3`, `m2`, `3mp`. Order doesn't matter. The script outputs one JSON object per line with `name`, `gender`, `format`, `explanation`, and `notes` fields.
 
 3. **Display the results** to the user in a clean format (not raw JSON). Show the name and explanation first, then a separate *Notes:* line with the real-world analysis from the `notes` field. Example:
 
