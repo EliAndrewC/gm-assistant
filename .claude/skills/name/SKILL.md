@@ -26,9 +26,10 @@ On subsequent invocations in the same session, skip both steps and go straight t
 
 Arguments can appear in any order and are optional:
 - `male` or `female` - specifies gender. If omitted, randomly choose 50/50.
+- `peasant` - only select names suitable for peasant characters (heimin, hinin). If omitted, select from the full pool.
 - `x<N>` (e.g. `x3`, `x5`) - generate N names. If omitted, generate 1.
 
-Examples: `/name`, `/name male`, `/name x5`, `/name female x3`, `/name x3 male`
+Examples: `/name`, `/name male`, `/name x5`, `/name female x3`, `/name x3 male`, `/name peasant`, `/name peasant x2`, `/name x3 male peasant`
 
 ## How to Serve a Name Request
 
@@ -36,7 +37,7 @@ Examples: `/name`, `/name male`, `/name x5`, `/name female x3`, `/name x3 male`
 
 2. **Run the picker script**:
    ```
-   cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py [male|female] <count>
+   cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py [male|female] [peasant] <count>
    ```
    Omit the gender argument if unspecified (the script randomizes). The script outputs one JSON object per line with `name`, `gender`, `format`, `explanation`, and `notes` fields.
 
