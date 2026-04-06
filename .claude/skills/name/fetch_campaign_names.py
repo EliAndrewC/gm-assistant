@@ -2,6 +2,7 @@
 """Fetch NPC names from Obsidian Portal using browser session cookies.
 Based on the approach from https://github.com/EliAndrewC/chargen"""
 
+import os
 import sys
 import requests
 from bs4 import BeautifulSoup
@@ -9,7 +10,28 @@ from bs4 import BeautifulSoup
 CAMPAIGN_URL = "https://waspbountyhunters.obsidianportal.com"
 CHARACTERS_URL = f"{CAMPAIGN_URL}/characters"
 
-SESSION_COOKIE = "SCRUBBED_SESSION_COOKIE_SEE_DOT_ENV"
+SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(SKILL_DIR, ".env")
+
+def load_session_cookie():
+    """Load session cookie from .env file or environment variable."""
+    # Check environment variable first
+    cookie = os.environ.get("OBSIDIAN_SESSION_COOKIE")
+    if cookie:
+        return cookie
+    # Fall back to .env file
+    if os.path.exists(ENV_PATH):
+        with open(ENV_PATH) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("OBSIDIAN_SESSION_COOKIE="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+    print("ERROR: No session cookie found.", file=sys.stderr)
+    print(f"Set OBSIDIAN_SESSION_COOKIE in {ENV_PATH} or as an environment variable.", file=sys.stderr)
+    print(f"Example: echo 'OBSIDIAN_SESSION_COOKIE=your_cookie_here' > {ENV_PATH}", file=sys.stderr)
+    sys.exit(1)
+
+SESSION_COOKIE = load_session_cookie()
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
