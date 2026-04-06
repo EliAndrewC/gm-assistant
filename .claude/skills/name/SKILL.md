@@ -11,6 +11,17 @@ Generate personal names (given names only, not family/house names) for character
 
 Names are pre-generated into a pool and selected via script to ensure they don't collide with existing campaign NPCs.
 
+## First Invocation in a Session
+
+When this skill is first invoked in a session, do TWO things:
+
+1. **Ensure dependencies are installed**: Run `${CLAUDE_SKILL_DIR}/setup.sh` to install pip and Python packages if needed.
+2. **Start the background cache updater**: Use `/loop 1h update name cache` to periodically refresh the campaign name cache from Obsidian Portal. This keeps the similarity filter up to date if the GM adds new NPCs during the session.
+
+Then proceed to serve the name request as described below.
+
+On subsequent invocations in the same session, skip both steps and go straight to serving the request.
+
 ## How to Parse Arguments
 
 Arguments can appear in any order and are optional:
@@ -29,7 +40,7 @@ Examples: `/name`, `/name male`, `/name x5`, `/name female x3`, `/name x3 male`
    ```
    Omit the gender argument if unspecified (the script randomizes). The script outputs one JSON object per line with `name`, `gender`, `format`, and `explanation` fields.
 
-3. **Display the results** to the user in a clean format — just the name and explanation, not the JSON.
+3. **Display the results** to the user in a clean format -- just the name and explanation, not the JSON.
 
 4. **If the script reports a warning** about low pool size, inform the user: "The name pool is running low. Say 'refill names' to generate more."
 
@@ -39,18 +50,24 @@ Examples: `/name`, `/name male`, `/name x5`, `/name female x3`, `/name x3 male`
 
 When the user says "refill names" or the pool is empty:
 
-1. Generate 50 male and 50 female names using the direct generation method below.
-2. For each name, produce a JSON object: `{"name": "...", "gender": "male|female", "format": N, "explanation": "..."}`
-3. Append to `${CLAUDE_SKILL_DIR}/pool-male.jsonl` and `${CLAUDE_SKILL_DIR}/pool-female.jsonl` respectively.
-4. Before adding, check each name against `${CLAUDE_SKILL_DIR}/campaign-names.txt` using the similarity rules to avoid adding names that would be filtered out anyway.
+1. First run `${CLAUDE_SKILL_DIR}/setup.sh` to ensure dependencies are present.
+2. Load ALL existing names from both `pool-male.jsonl` and `pool-female.jsonl`, plus all names from `campaign-names.txt`. These are the "excluded names" -- every new name must pass the similarity check against ALL of them.
+3. Generate names one at a time using the direct generation method below. For each name:
+   a. Check it against the full excluded list using `similarity.is_too_similar()`.
+   b. If it passes, add it to the appropriate pool file AND add it to the excluded list before generating the next name.
+   c. If it fails, discard it and generate a replacement.
+4. Each name is a JSON object: `{"name": "...", "gender": "male|female", "format": N, "explanation": "..."}`
+5. Continue until each pool has at least 50 names.
+6. After generation, run `cd ${CLAUDE_SKILL_DIR} && python3 validate_pool.py` to confirm zero conflicts.
+7. If validation fails, run `cd ${CLAUDE_SKILL_DIR} && python3 fix_pool.py` and then re-validate.
 
 ## How to Update the Campaign Name Cache
 
-When the user says "update name cache":
+When the user says "update name cache" (or when triggered by /loop):
 
-Run: `python3 ${CLAUDE_SKILL_DIR}/fetch_campaign_names.py`
-
-This scrapes the current NPC list from Obsidian Portal and saves it. The session cookie may expire periodically — if the script fails, ask the user for updated cookies.
+1. Run: `cd ${CLAUDE_SKILL_DIR} && python3 fetch_campaign_names.py`
+2. This scrapes the current NPC list from Obsidian Portal and saves it to `campaign-names.txt`.
+3. The session cookie may expire periodically -- if the script fails with an authentication error, ask the user for updated cookies from Chrome DevTools.
 
 ## How to Generate Directly (Fallback / Pool Refill)
 
@@ -70,12 +87,12 @@ For EACH name to generate:
 
 ## Important Guidelines
 
-- Names should feel like they belong in Rokugan — draw on the setting's culture, values, history, and cosmology
+- Names should feel like they belong in Rokugan -- draw on the setting's culture, values, history, and cosmology
 - Male names typically end in consonants or -o, -u, -i (e.g. Takeshi, Haruto, Kenshin)
 - Female names often end in -ko, -mi, -e, -ka, -na, -yo (e.g. Yoshiko, Kazumi, Hanae)
 - Explanations should reference Rokugani concepts (bushido virtues, the Fortunes, clan culture, the Tao, etc.) when natural to do so, but not forced into every single name
-- When a format references a historical figure, event, or place, it MUST be consistent with the GM's setting notes — consult `/campaigns/` and `/setting/` files if needed
-- Keep explanations concise — one to three sentences matching the format template
+- When a format references a historical figure, event, or place, it MUST be consistent with the GM's setting notes -- consult `/campaigns/` and `/setting/` files if needed
+- Keep explanations concise -- one to three sentences matching the format template
 
 ## Similarity Rules
 
@@ -85,9 +102,9 @@ Names are rejected if they are too similar to existing campaign NPC names. "Too 
 
 The similarity logic is in `${CLAUDE_SKILL_DIR}/similarity.py`.
 
-## Source Material — Name Formats
+## Source Material -- Name Formats
 
-<!-- SOURCE: GM NOTES — DO NOT MODIFY -->
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 FORMAT #1:
 {NAME} - This name represents {DEFINITION} and is often chosen by those who are {EXAMPLE} or who are expected to {OTHER EXAMPLE}.
 
@@ -156,7 +173,7 @@ FORMAT #20:
 ## References
 
 - See `/setting/castes.md` for social context that affects naming
-- See `/setting/clans-and-imperials.md` for clan/family names (these are NOT generated by this skill — only personal names)
+- See `/setting/clans-and-imperials.md` for clan/family names (these are NOT generated by this skill -- only personal names)
 - See `/.claude/skills/calendar/SKILL.md` for calendar events (relevant to Format #20)
 - See `/cosmology/fortunes.md` for Fortune references
 - See `/campaigns/` for historical figures and events (relevant to Formats #7, #11, #13, #18, #19)
