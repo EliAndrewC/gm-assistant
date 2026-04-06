@@ -71,7 +71,14 @@ Reference directories hold organized source material and context. Each directory
 | `/fortune` | Generate cosmological content, soothsaying, omens, Fortune theology |
 | `/moto` | Generate Moto culture content, Yassa rulings, horse culture, Burning Sands |
 | `/bounty` | Generate bounties, Wasp clan content, minor clan details |
-| `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[male\|female] [x<N>]` |
+| `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[m\|f] [p] [N]` — supports shorthand and concatenation (e.g. `pf3`) |
+
+## Testing
+
+- **Framework:** pytest with pytest-cov
+- **Location:** Tests live alongside the code they test as `test_<module>.py`
+- **Coverage target:** 100% line coverage for pure logic. External boundaries (HTTP requests, browser sessions) are tested via saved fixtures, not mocks of the transport layer.
+- **Running:** `pytest <skill-dir> -v` for a specific skill, or `pytest --cov=<skill-dir> --cov-report=term-missing` for coverage
 
 ## Reference Directories
 
