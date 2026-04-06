@@ -2,9 +2,10 @@
 """Pick names from the pre-generated pool, filtering out names too similar to campaign names.
 
 Usage:
-    python3 pick_name.py [male|female] [N]
+    python3 pick_name.py [male|female] [peasant] [N]
 
     If gender is omitted, picks randomly.
+    If peasant is specified, only picks from peasant-suitable names.
     If N is omitted, picks 1.
 """
 
@@ -35,7 +36,7 @@ def load_campaign_names():
         return [line.strip() for line in f if line.strip()]
 
 
-def pick(gender, count):
+def pick(gender, count, peasant=False):
     campaign_names = load_campaign_names()
 
     results = []
@@ -49,8 +50,13 @@ def pick(gender, count):
         pool_path = MALE_POOL if g == "male" else FEMALE_POOL
         pool = load_pool(pool_path)
 
+        # Filter to peasant-suitable names if requested
+        if peasant:
+            pool = [e for e in pool if e.get("peasant", False)]
+
         if not pool:
-            print(json.dumps({"error": f"No {g} names in pool. Run pool generation first."}))
+            label = f"peasant {g}" if peasant else g
+            print(json.dumps({"error": f"No {label} names in pool. Run pool generation first."}))
             continue
 
         # Filter out names too similar to campaign names or already-picked names
@@ -75,11 +81,14 @@ def pick(gender, count):
 if __name__ == "__main__":
     gender = None
     count = 1
+    peasant = False
 
     for arg in sys.argv[1:]:
         if arg in ("male", "female"):
             gender = arg
+        elif arg == "peasant":
+            peasant = True
         elif arg.isdigit():
             count = int(arg)
 
-    pick(gender, count)
+    pick(gender, count, peasant=peasant)
