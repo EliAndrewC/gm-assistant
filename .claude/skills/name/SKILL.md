@@ -38,9 +38,13 @@ Examples: `/name`, `/name male`, `/name x5`, `/name female x3`, `/name x3 male`
    ```
    cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py [male|female] <count>
    ```
-   Omit the gender argument if unspecified (the script randomizes). The script outputs one JSON object per line with `name`, `gender`, `format`, and `explanation` fields.
+   Omit the gender argument if unspecified (the script randomizes). The script outputs one JSON object per line with `name`, `gender`, `format`, `explanation`, and `notes` fields.
 
-3. **Display the results** to the user in a clean format -- just the name and explanation, not the JSON.
+3. **Display the results** to the user in a clean format (not raw JSON). Show the name and explanation first, then a separate *Notes:* line with the real-world analysis from the `notes` field. Example:
+
+   **Wakizaka** — The name Wakizaka is associated with the famous Battle of White Shore, in which...
+
+   *Notes: Wakizaka is a real Japanese surname (most notably Wakizaka Yasuharu, a daimyo at Sekigahara) but uncommon as a given name. The explanation is fictional Rokugani history.*
 
 4. **If the script reports a warning** about low pool size, inform the user: "The name pool is running low. Say 'refill names' to generate more."
 
