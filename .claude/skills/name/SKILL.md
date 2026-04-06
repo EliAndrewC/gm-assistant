@@ -28,13 +28,9 @@ On subsequent invocations in the same session, skip both steps and go straight t
    ```
    cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py <user args>
    ```
-   The script accepts: `male`/`female`/`m`/`f` for gender, `peasant`/`p` for caste, numbers or `x<N>` for count, and concatenated shorthand like `pf3`, `m2`, `3mp`. Order doesn't matter. The script outputs one JSON object per line with `name`, `gender`, `format`, `explanation`, and `notes` fields.
+   The script accepts: `male`/`female`/`m`/`f` for gender, `peasant`/`p` for caste, numbers or `x<N>` for count, and concatenated shorthand like `pf3`, `m2`, `3mp`. Order doesn't matter. The script outputs pre-formatted markdown ready to display.
 
-3. **Display the results** to the user in a clean format (not raw JSON). Show the name and explanation first, then a separate *Notes:* line with the real-world analysis from the `notes` field. Example:
-
-   **Wakizaka** — The name Wakizaka is associated with the famous Battle of White Shore, in which...
-
-   *Notes: Wakizaka is a real Japanese surname (most notably Wakizaka Yasuharu, a daimyo at Sekigahara) but uncommon as a given name. The explanation is fictional Rokugani history.*
+2. **Display the script's output directly** — no parsing or reformatting needed.
 
 4. **If the script reports a warning** about low pool size, inform the user: "The name pool is running low. Say 'refill names' to generate more."
 

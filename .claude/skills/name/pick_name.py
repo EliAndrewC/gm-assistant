@@ -80,8 +80,12 @@ def pick(gender, count, peasant=False):
         results.append(chosen)
 
     # Output results
-    for r in results:
-        print(json.dumps(r))
+    for i, r in enumerate(results):
+        if i > 0:
+            print("\n---\n")
+        print(f"**{r['name']}** — {r['explanation']}")
+        if r.get("notes"):
+            print(f"\n*Notes: {r['notes']}*")
 
 
 def parse_args(argv):
