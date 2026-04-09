@@ -1,7 +1,7 @@
 ---
 name: name
 description: Generate Rokugani personal names with meanings and explanations in varied formats
-argument-hint: [male|female] [x<N>]
+argument-hint: [m|f] [p] [N]
 allowed-tools: Bash Read
 ---
 
