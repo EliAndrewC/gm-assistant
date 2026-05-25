@@ -35,6 +35,20 @@ AI-generated content (preferences, generation instructions, examples of liked/di
 
 This convention applies to ALL files in the project - both skill files and reference directory files.
 
+### Single Canonical Home for Source Blocks
+
+Each piece of GM source content has exactly **one** canonical home — a single `SOURCE: GM NOTES` block in one file. Other files that conceptually relate to that content link to the canonical home by reference rather than duplicating the block.
+
+This keeps canonical-source syncs surgical: when the GM updates their notes, only one downstream file needs to change per concept. It also prevents drift, since there is no second copy to fall out of sync.
+
+When deciding the canonical home for a given source block:
+
+- If the content is primarily *generation guidance* (how to write a kind of thing, with examples) → it belongs in the relevant skill's `SKILL.md`
+- If the content is primarily *setting reference* (demographics, geography, hierarchies, fixed facts) → it belongs in a file under the appropriate reference directory
+- If both, pick whichever the content leans toward more heavily and have the other side reference it
+
+**Exception:** `/notes/canonical-source.txt` is a sync baseline (the diff target for canonical-source updates from GitHub), not a reference document. It mirrors the canonical source from the GM's GitHub repository by design, and the duplication there is intentional and necessary for the sync workflow described above.
+
 ### File Organization
 
 #### Skills (invocable as /slash-commands)
@@ -63,7 +77,8 @@ Reference directories hold organized source material and context. Each directory
 | Skill | Purpose |
 |-------|---------|
 | `/sword` | Generate famous swords with histories and properties |
-| `/temple` | Generate temples, relics, monk NPCs, temple daily life |
+| `/temple` | Generate temples, monk NPCs, temple daily life |
+| `/relic` | Generate temple relics, cursed items, supposedly-supernatural objects |
 | `/vow` | Generate oaths and vows for various orders and roles |
 | `/village` | Generate farming villages, hamlets, village headsmen |
 | `/calendar` | Generate seasonal details, festivals, agricultural events |

@@ -23,9 +23,11 @@ h3. **Akodo no Damasu Akuhiko**
 The eldest daughter of Damasu Tomoko, the Minister of Retainers for the entire Damasu domain, Akuhiko will be the highest ranking member of the Taizo lineage once her mother retires and she inherits that responsibility.
 
 The Taizo lineage was previously one of the major lineages on the Damasu chancellary. The Taizo have fallen into disfavor due to having spoken out so harshly against the prophet Baiten, who proclaimed that the Day of Thunder was at hand. After the murder of the prophet was announced in Kyuden Akodo, Tomoko publicly declared that this should put a stop to the nonsense talk, and that at least the Tsume family had finally done one worthwhile thing in their miserable existence.
+<!-- END SOURCE -->
 
-After the Day of Thunder later occurred, and Baiten was proven correct, Tomoko was disgraced, and as the highest ranking member of the Taizo lineage, her influence reflected poorly on all who chose to continue to affiliate with the Taizo. When the Damasu domain was retaken, many Taizo samurai took the opportunity to affiliate themselves with other lineages.
+Tomoko's disgrace after the Day of Thunder and the broader Taizo fall from grace are described canonically in [`/campaigns/damasu-domain.md`](damasu-domain.md) under "The Taizo lineage."
 
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 However, Tomoko's talents and accomplishments during the Lion/Crane war are so indisputable that she was still appointed the new Damasu Minister of Retainers when the Lion retook the city, making her the highest ranking member of the diminishing Taizo lineage, a position which Akkuhiko will one day inherit even if the position of Minister of Retainers passes to another.
 
 Akuhiko began seeking access to temple relics last year following her gempukku, as it would have been premature to do so before that time.
@@ -85,11 +87,11 @@ Steward Iori regards her with some amount of disfavor for 2 main reasons.  First
 Admittedly, Sachi is not only interested in relics, as she spends perhaps more time with the Order of Sadahako than with all other temples combined, and they are so new that they have no significant relics to speak of.  However, she seems especially interested in those who personally knew the prophet Baiten, which Iori takes to only confirm his theory that she is seeking closeness to greatness rather than earnestly trying to put in the hard work to make herself great.
 
 h3. **Atsumaru**
+<!-- END SOURCE -->
 
-In the years before the Tsume invasion, the county magistrate of Hikobayashi was Akodo no Damasu Atsumaru.  During the 22 years that he served as county magistrate, he earned a reputation among the peasants for fairness and generosity.  He was especially adept at mediating disputes between peasants, and his subjects never hesitated to bring their conflicts to him for arbitration.
+Atsumaru's pre-invasion biography — his 22 years as county magistrate of Hikobayashi, his retirement to monastic life, and the Tsume seizure of the monastery — has its canonical home in [`/campaigns/first-toshi-ranbo.md`](first-toshi-ranbo.md). The text below picks up from there with the version of events relevant to the relic-seekers investigation (one minor difference: in this version, the Order of Bishamon intervenes on Atsumaru's behalf rather than the abbot personally).
 
-A few years before the invasion, he retired to the life of a monk in the monastery just outside the town, leaving his daughter to succeed him.  When the Tsume attacked, they quickly took control of the town and its surrounding villages, searching the monastery and seizing those within.  The samurai in town all died fighting, but the monastery was seized and secured before Atsumaru even knew what was happening.
-
+<!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 When Atsumaru's status as a former Damasu bushi was discovered, the Tsume came close to having him executed or exiled, but the Order of Bishamon intervened on his behalf.  Not wanting to offend mighty Bishamon, the Tsume allowed Atsumaru to stay, after extracting his word that he would remain a peaceful and obedient subject of the new government.  Atsumaru explained that he wished to spend the remainder of his old age seeking spiritual enlightenment, though he said he would reluctantly pick up his daisho again and duel any Tsume bushi who took it upon himself to issue a challenge.
 
 Atsumaru remained a thorn in the side of the Tsume, not in violation of his commitment, but because the peasants continued bringing him their disputes rather than the Tsume magistrate, Doji no Tsume Horobinu.  The Imperial Board of Justice eventually had Horobinu removed, due to recognition of Atsumaru's righteousness.

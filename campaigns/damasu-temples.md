@@ -1,34 +1,10 @@
 # Damasu Temples
 
+The four major temples in Toshi Ranbo (Bishamon, Daikoku, Sadahako, Benten) and their political/religious dynamics under the Damasu vs. Tsume regimes.
+
+For the broader framework (the Seven Fortunes, clan patronage, temple organization), see [`/.claude/skills/temple/SKILL.md`](../.claude/skills/temple/SKILL.md). Per project convention (see [`/workspace/CLAUDE.md`](../CLAUDE.md) → "Single Canonical Home for Source Blocks"), the Fortune list and temple-hierarchy preamble are not duplicated here.
+
 <!-- SOURCE: GM NOTES - DO NOT MODIFY -->
-DAMASU TEMPLES:
-
-Since the PCs are members of the Brotherhood of Shinsei, let's talk about the significant temples in Damasu lands.
-
-When the Shinsei was advising the Hantei on the new Empire being created, part of his guidance was the identification of the 7 Major Fortunes whose favor would bring good luck and prosperity to humanity:
-
-Fortune    Domain
-Benten    The fortune of romantic love
-Bishamon    The fortune of strength
-Daikoku    The fortune of wealth
-Ebisu    The fortune of honest work
-Fukurokujin    The fortune of wisdom and mercy
-Hotei    The fortune of contentment
-Jurojin    The fortune of longevity
-
-The Shinsei further recommended that each clan cultivate 2 major Fortunes to be their patrons, ensuring that every city within the clan have a temple to each of their 2 patron Fortunes.
-
-Clan    Patron Fortunes
-Crab    Bishamon + Ebisu
-Crane    Benten + Daikoku
-Dragon    Hotei + Ebisu
-Lion    Bishamon + Daikoku
-Phoenix    Fukurokujin + Hotei
-Scorpion    Benten + Jurojin
-Unicorn    Fukurokujin + Jurojin
-
-In the late 3rd century, Hantei the Tenth formalized the system of the Six Ministries, and along with it codified the requirement that each of the Empire's cities contain a temple to each of its clan's patron fortunes.
-
 In addition to the required temples to Bishamon and Daikoku that every Lion city contains, there are two other significant temples in Toshi Ranbo. Each of the four major temples in the city is described in a section below.
 
 The Temple of Bishamon
@@ -58,11 +34,6 @@ The Temple of Benten
 There was no major Temple to Benten before the Tsume occupation, but the Crane clan established a major temple here in accordance with the Imperial direction that all cities in the Empire should have temples to each of their clan's patron fortunes.
 
 The Damasu administration have mainly left this temple alone, as they do not wish to offend Benten by deconsecrating her temple, but neither are they bolstering it with city funds. The temple itself remains a destination for those wishing to make an offering to Benten to ensure a good marriage for themselves or their children, but otherwise this temple has largely fallen into obscurity.
-
-
-
-
-
 <!-- END SOURCE -->
 
 ## Notes

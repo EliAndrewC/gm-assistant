@@ -250,9 +250,9 @@ Dry garden (which some uncultured samurai might confuse with a rock garden) comp
 Waving Lawn Garden:
 
 A shrub garden whose intent is to showcase all of the plants capable of growing in this climate without transplanted soil or other similar interventions. This is the largest garden and is not walled - by design it's somewhat unclear precisely where the garden begins and ends at each of its edges. It's commonly visited by legionnaires, especially walked through at night when it is well-lit by various types of lanterns.
-
-The most common lantern is the hexagonal firebox with two openings and carvings of deer. These lanterns stand on a single solid pillar.
 <!-- END SOURCE -->
+
+For the specific types of lanterns used in the garden (hexagonal fireboxes with deer carvings, snow-viewing lanterns, hanging lanterns), see `/campaigns/dark-moto.md` — the canonical home for that material.
 
 ## Notes
 
