@@ -1,0 +1,66 @@
+{% extends "_layout.html" %}
+
+{% block title %}{{ relic.name }} — Relics — L7R Toolkit{% endblock %}
+
+{% block content %}
+<nav class="container detail-nav">
+  <a class="back-link" href="/relics">← back to the pool</a>
+</nav>
+
+<section class="container">
+  <header class="detail-hero">
+    <p class="detail-hero__supertitle">Of {{ fortune.name }} &middot; {{ fortune.domain }}</p>
+    <h1 class="detail-hero__kanji" lang="ja">{{ relic.japanese_kanji }}</h1>
+    <p class="detail-hero__romaji">{{ relic.japanese_romaji }}</p>
+    <h2 class="detail-hero__name">{{ relic.name }}</h2>
+  </header>
+
+  <dl class="detail-meta">
+    <div class="detail-meta__field">
+      <dt class="detail-meta__label">Fortune</dt>
+      <dd class="detail-meta__value"><span class="jp" lang="ja">{{ fortune.kanji }}</span><strong>{{ fortune.name }}</strong></dd>
+    </div>
+    <div class="detail-meta__field">
+      <dt class="detail-meta__label">Clan</dt>
+      <dd class="detail-meta__value">{{ relic.clan|clan_label }}</dd>
+    </div>
+    <div class="detail-meta__field">
+      <dt class="detail-meta__label">Type</dt>
+      <dd class="detail-meta__value">{{ relic.relic_type }}</dd>
+    </div>
+    <div class="detail-meta__field">
+      <dt class="detail-meta__label">Resides at</dt>
+      <dd class="detail-meta__value">{{ relic.temple }}</dd>
+    </div>
+    <div class="detail-meta__field">
+      <dt class="detail-meta__label">Tied to</dt>
+      <dd class="detail-meta__value">{{ relic.named_entity }}</dd>
+    </div>
+  </dl>
+</section>
+
+<article class="container">
+  <div class="detail-prose">
+    {{ relic.description|description_html }}
+  </div>
+</article>
+
+<footer class="container">
+  <div class="detail-footer">
+    <div class="detail-footer__nav">
+      {% if prev_relic %}
+        <a class="detail-footer__link detail-footer__link--prev" href="/relics/{{ prev_relic.slug }}">
+          <strong>← previous of {{ fortune.name }}</strong>
+          {{ prev_relic.name }}
+        </a>
+      {% endif %}
+      {% if next_relic %}
+        <a class="detail-footer__link detail-footer__link--next" href="/relics/{{ next_relic.slug }}">
+          <strong>next of {{ fortune.name }} →</strong>
+          {{ next_relic.name }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</footer>
+{% endblock %}

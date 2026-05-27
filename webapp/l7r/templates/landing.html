@@ -1,0 +1,48 @@
+{% extends "_layout.html" %}
+
+{% block title %}L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="landing">
+    <div class="landing__hero">
+      <p class="landing__supertitle">A working set of GM tools</p>
+      <h1 class="landing__title">The L7R <em>Toolkit</em></h1>
+      <p class="landing__lede">
+        A pool of generated content and a character workshop for a custom
+        Legend of the Five Rings campaign. <em>Browse</em> the relic catalog,
+        roll up a character, and draw from the names pool.
+      </p>
+    </div>
+    <ul class="landing__sections">
+      {% for section in SECTIONS %}
+        {% if section.enabled %}
+          <li>
+            <a class="landing__card" href="{{ section.path }}">
+              <p class="landing__card-label">Open</p>
+              <h2 class="landing__card-name">{{ section.label }}</h2>
+              {% if section.slug == 'chargen' %}
+                <p class="landing__card-blurb">Generate samurai, monks, and peasants. Compose a portrait. Upload to Obsidian Portal.</p>
+              {% elif section.slug == 'relics' %}
+                <p class="landing__card-blurb">Browse 42 pre-saved temple relics organized by Fortune. Each tied to a named hand; each kept by a Custodian.</p>
+              {% elif section.slug == 'names' %}
+                <p class="landing__card-blurb">Browse 200 pre-generated Rokugani names, each with a meaning drawn from one of twenty traditional formats.</p>
+              {% else %}
+                <p class="landing__card-blurb">Open this section.</p>
+              {% endif %}
+            </a>
+          </li>
+        {% else %}
+          <li>
+            <div class="landing__card landing__card--disabled" aria-disabled="true">
+              <p class="landing__card-label">Coming soon</p>
+              <h2 class="landing__card-name">{{ section.label }} <em>— coming soon</em></h2>
+              <p class="landing__card-blurb">The {{ section.label|lower }} section arrives in the next iteration.</p>
+            </div>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "_layout.html" %}
+
+{% block title %}Auth not configured — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="auth-card auth-card--denied">
+    <p class="auth-card__supertitle">Configuration missing</p>
+    <h1 class="auth-card__title">Discord auth isn't set up yet</h1>
+    <p class="auth-card__lede">{{ detail }}</p>
+    <p class="auth-card__fineprint">
+      The server is running but Discord OAuth credentials are not configured. The
+      GM needs to set <code>[discord]</code>, <code>[auth]</code>, and
+      <code>[discord_whitelist]</code> in <code>development-secrets.ini</code>.
+    </p>
+  </div>
+</section>
+{% endblock %}

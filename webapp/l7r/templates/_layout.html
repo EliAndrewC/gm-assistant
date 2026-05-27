@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}L7R Toolkit{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/l7r.css" />
+  <script src="/static/js/l7r.js" defer></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body{% if body_class %} class="{{ body_class }}"{% endif %}>
+
+<header class="app-nav">
+  <div class="container app-nav__inner">
+    <a class="app-nav__brand" href="/">L7R <em>Toolkit</em></a>
+    <nav>
+      <ul class="app-nav__sections">
+        {% for section in SECTIONS %}
+          {% if section.enabled %}
+            <li>
+              <a class="app-nav__link{% if current_section == section.slug %} app-nav__link--active{% endif %}"
+                 href="{{ section.path }}">{{ section.label }}</a>
+            </li>
+          {% else %}
+            <li>
+              <a class="app-nav__link app-nav__link--disabled"
+                 href="{{ section.path }}"
+                 aria-disabled="true">{{ section.label }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </nav>
+    {% if current_user %}
+      <div class="app-nav__user">
+        <span class="app-nav__user-name">{{ current_user.name }}</span>
+        <a class="app-nav__user-logout" href="/auth/logout">sign out</a>
+      </div>
+    {% endif %}
+  </div>
+</header>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="container footer">
+  {% block footer %}
+    <p><em>L7R Toolkit</em> — a working set of GM tools for a custom Legend of the Five Rings campaign.</p>
+  {% endblock %}
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Fly.io app config for the L7R Toolkit.
+# Deploy with: `flyctl deploy` (env loads FLY_API_TOKEN from .env)
+# See: https://fly.io/docs/reference/configuration/
+
+app = "l7r-gm-assistant"
+primary_region = "iad"  # Ashburn, VA — ~30mi from DC, closest to the GM's East Coast home
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 50
+    soft_limit = 25
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

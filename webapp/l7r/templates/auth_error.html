@@ -1,0 +1,16 @@
+{% extends "_layout.html" %}
+
+{% block title %}Sign-in problem — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="auth-card auth-card--denied">
+    <p class="auth-card__supertitle">Sign-in problem</p>
+    <h1 class="auth-card__title">Something went wrong</h1>
+    <p class="auth-card__lede">{{ detail }}</p>
+    <a class="auth-card__button" href="/auth/login">
+      <span class="auth-card__button-label">Try again</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

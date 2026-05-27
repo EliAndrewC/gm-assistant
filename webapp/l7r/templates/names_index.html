@@ -1,0 +1,78 @@
+{% extends "_layout.html" %}
+
+{% block title %}Names — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="masthead">
+    <div class="masthead__copy">
+      <p class="masthead__supertitle">A pool of pregenerated names</p>
+      <h1 class="masthead__title">Names</h1>
+      <p class="masthead__lede">
+        {{ filtered_count }} of {{ total_count }} names, each with a meaning drawn from one of twenty traditional formats. <em>Pick one for your next character</em>.
+      </p>
+    </div>
+    <span class="masthead__watermark" lang="ja" aria-hidden="true">名</span>
+  </div>
+</section>
+
+<section class="fortunes">
+  <div class="container">
+    <div class="fortunes__rail" role="toolbar" aria-label="Filter names">
+      <a class="seal{% if active_gender == 'all' and active_caste == 'all' %} seal--active{% endif %}"
+         href="/names" aria-pressed="{{ 'true' if active_gender == 'all' and active_caste == 'all' else 'false' }}">
+        <span class="seal__circle">all</span>
+        <span class="seal__name">all</span>
+      </a>
+      <a class="seal{% if active_gender == 'male' %} seal--active{% endif %}"
+         href="/names?gender=male" aria-pressed="{{ 'true' if active_gender == 'male' else 'false' }}">
+        <span class="seal__circle" lang="ja">男</span>
+        <span class="seal__name">male</span>
+      </a>
+      <a class="seal{% if active_gender == 'female' %} seal--active{% endif %}"
+         href="/names?gender=female" aria-pressed="{{ 'true' if active_gender == 'female' else 'false' }}">
+        <span class="seal__circle" lang="ja">女</span>
+        <span class="seal__name">female</span>
+      </a>
+      <a class="seal{% if active_caste == 'samurai' %} seal--active{% endif %}"
+         href="/names?caste=samurai" aria-pressed="{{ 'true' if active_caste == 'samurai' else 'false' }}">
+        <span class="seal__circle" lang="ja">侍</span>
+        <span class="seal__name">samurai</span>
+      </a>
+      <a class="seal{% if active_caste == 'peasant' %} seal--active{% endif %}"
+         href="/names?caste=peasant" aria-pressed="{{ 'true' if active_caste == 'peasant' else 'false' }}">
+        <span class="seal__circle" lang="ja">民</span>
+        <span class="seal__name">peasant</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  {% if names %}
+    <ul class="names-list">
+      {% for entry in names %}
+        <li class="name-card" data-gender="{{ entry.gender }}" data-peasant="{{ 'true' if entry.peasant else 'false' }}">
+          <div class="name-card__head">
+            <h2 class="name-card__name">{{ entry.name }}</h2>
+            <span class="name-card__tags">
+              <span class="name-card__tag name-card__tag--{{ entry.gender }}">{{ entry.gender }}</span>
+              <span class="name-card__tag name-card__tag--{{ 'peasant' if entry.peasant else 'samurai' }}">{{ 'peasant' if entry.peasant else 'samurai' }}</span>
+              <span class="name-card__tag name-card__tag--format">format {{ entry.format }}</span>
+            </span>
+          </div>
+          <p class="name-card__explanation">{{ entry.explanation }}</p>
+          {% if entry.notes %}
+            <details class="name-card__notes">
+              <summary>notes on authenticity</summary>
+              <p>{{ entry.notes }}</p>
+            </details>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">No names match those filters.</p>
+  {% endif %}
+</div>
+{% endblock %}

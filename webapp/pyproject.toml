@@ -1,0 +1,116 @@
+[project]
+name = "l7r-toolkit"
+version = "0.1.0"
+description = "L7R Toolkit — character generator, relic catalog, and content tools for a custom L5R tabletop campaign"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# Ruff is the single canonical lint tool per Principle X.
+# E,F = pycodestyle/pyflakes baseline. W = pycodestyle warnings.
+# I = isort. UP = pyupgrade. B = flake8-bugbear (catches swallowed excepts).
+# SIM = flake8-simplify. RET = flake8-return.
+# T20 = flake8-print (no print in production per Principle X).
+# PT = flake8-pytest-style.
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+
+# Existing chargen code has the one-time grace period to migrate (Principle X).
+# As we modernize each module, remove it from this ignore list.
+[tool.ruff.lint.per-file-ignores]
+# Chargen legacy modules — grace period.
+"chargen/art.py"         = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"chargen/character.py"   = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"chargen/constants.py"   = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"chargen/ministry.py"    = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"chargen/op.py"          = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"chargen/website.py"     = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"chargen/__init__.py"    = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"authorize_op.py"        = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"orgchart.py"            = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+# Tests may use `print` for diagnostics.
+"**/test_*.py"           = ["T20"]
+"tests/**"               = ["T20"]
+# screenshot.py and dom_audit.py embed JS that exceeds line length.
+"tests/dom_audit.py"     = ["T20", "E501"]
+"tests/screenshot.py"    = ["T20"]
+
+[tool.ruff.format]
+quote-style = "single"  # match chargen convention per its CLAUDE.md
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+# Strict mypy on production modules. Legacy chargen modules get the one-time
+# grace period per Principle X — they're ignored (not excluded; ignored means
+# their types don't have to be right, but imports against them are tolerated
+# without poisoning typed callers via `follow_imports = silent` below).
+follow_imports = "silent"
+
+# Legacy chargen modules — grace period (Principle X).
+[[tool.mypy.overrides]]
+module = [
+    "chargen.art",
+    "chargen.character",
+    "chargen.constants",
+    "chargen.ministry",
+    "chargen.op",
+    "chargen.website",
+    "chargen",
+    "authorize_op",
+    "orgchart",
+]
+ignore_errors = true
+
+# Third-party libraries without complete type stubs.
+[[tool.mypy.overrides]]
+module = [
+    "configobj.*",
+    "cherrypy.*",
+    "validate.*",
+    "cv2.*",
+    "PIL.*",
+    "bs4.*",
+    "yaml.*",
+    "requests",
+    "requests.*",
+]
+ignore_missing_imports = true
+
+# cherrypy.expose is an untyped decorator. We allow it on routing modules so
+# CherryPy handlers can still be typed strictly. Same module also touches
+# cherrypy.config, which is partially typed.
+[[tool.mypy.overrides]]
+module = ["l7r.app", "l7r.auth_routes"]
+disallow_untyped_decorators = false
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests", "chargen"]
+python_files = ["test_*.py"]
+
+[tool.coverage.run]
+# Coverage applies to NEW production code; legacy chargen is excluded during
+# the grace period and will be brought in module-by-module as we modernize it.
+source = ["l7r"]
+omit = [
+    "chargen/art.py",
+    "chargen/character.py",
+    "chargen/constants.py",
+    "chargen/ministry.py",
+    "chargen/op.py",
+    "chargen/website.py",
+    "chargen/__init__.py",
+    "authorize_op.py",
+    "orgchart.py",
+    "**/test_*.py",
+    "**/conftest.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 100

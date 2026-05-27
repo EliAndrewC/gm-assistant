@@ -1,0 +1,16 @@
+env/
+__pycache__/
+development-secrets.ini
+
+# Fly deploy token. NEVER commit. Also has chmod 600.
+.env
+
+# Bundled pool data — Docker build artifact, synced by `make prepare-deploy`.
+skills/
+
+# Test + tooling caches.
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/

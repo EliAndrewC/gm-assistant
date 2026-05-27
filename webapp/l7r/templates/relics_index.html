@@ -1,0 +1,70 @@
+{% extends "_layout.html" %}
+
+{% block title %}Relics — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="masthead">
+    <div class="masthead__copy">
+      <p class="masthead__supertitle">Of the seven fortunes</p>
+      <h1 class="masthead__title">Relics</h1>
+      <p class="masthead__lede">
+        A working pool of sacred objects, drawn from across the Empire. Each tied to a named hand; each kept by a Custodian. <em>Choose one for your story</em>.
+      </p>
+    </div>
+    <span class="masthead__watermark" lang="ja" aria-hidden="true">福</span>
+  </div>
+</section>
+
+<section class="fortunes">
+  <div class="container">
+    <div class="fortunes__rail" role="toolbar" aria-label="Filter by fortune">
+      <button class="seal" type="button" data-fortune="all" aria-pressed="true">
+        <span class="seal__circle">all</span>
+        <span class="seal__name">all</span>
+      </button>
+      {% for fortune_slug, fortune in FORTUNES.items() %}
+        <button class="seal" type="button" data-fortune="{{ fortune_slug }}" aria-pressed="false" title="{{ fortune.domain }}">
+          <span class="seal__circle" lang="ja">{{ fortune.kanji }}</span>
+          <span class="seal__name">{{ fortune.name }}</span>
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  {% for fortune_slug, fortune in FORTUNES.items() %}
+    {% set this_fortune_relics = relics_by_fortune[fortune_slug] %}
+    {% if this_fortune_relics %}
+      <section class="fortune-section" id="fortune-{{ fortune_slug }}" data-fortune="{{ fortune_slug }}">
+        <header class="fortune-section__header">
+          <div class="fortune-section__kanji" lang="ja">{{ fortune.kanji }}</div>
+          <div class="fortune-section__title-group">
+            <h2 class="fortune-section__name">{{ fortune.name }}</h2>
+            <p class="fortune-section__domain">{{ fortune.domain }}</p>
+          </div>
+        </header>
+        <div class="cards">
+          {% for relic in this_fortune_relics %}
+            <a class="card" href="/relics/{{ relic.slug }}" data-fortune="{{ relic.fortune }}" data-clan="{{ relic.clan }}">
+              <div class="card__top">
+                <span class="card__type" title="{{ relic.relic_type }}">{{ relic.relic_type|relic_type_short }}</span>
+                <span class="card__clan" data-clan="{{ relic.clan }}">{{ relic.clan|clan_label }}</span>
+              </div>
+              <div class="card__hero">
+                <span class="card__kanji" lang="ja">{{ relic.japanese_kanji }}</span>
+                <p class="card__romaji">{{ relic.japanese_romaji }}</p>
+              </div>
+              <div class="card__foot">
+                <h3 class="card__name">{{ relic.name }}</h3>
+                <p class="card__entity">{{ relic.named_entity }}</p>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

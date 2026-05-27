@@ -1,0 +1,44 @@
+{% extends "_layout.html" %}
+
+{% block title %}Privacy Policy — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <article class="legal-doc">
+    <p class="legal-doc__supertitle">Last updated 2026-05-27</p>
+    <h1 class="legal-doc__title">Privacy Policy</h1>
+
+    <p>The <em>L7R Toolkit</em> is a private hobby application for a single tabletop role-playing campaign. We collect as little data as possible.</p>
+
+    <h2>What we receive from Discord</h2>
+    <p>When you sign in with Discord, we request the <code>identify</code> OAuth scope only. That gives us:</p>
+    <ul>
+      <li>your Discord <em>user ID</em> — used solely to check the campaign whitelist;</li>
+      <li>your Discord <em>display name</em> — shown in the toolkit's navigation so you can see you're signed in.</li>
+    </ul>
+    <p>We do <strong>not</strong> request or receive your email address, your servers, your friends, or your connections.</p>
+
+    <h2>What we store on our servers</h2>
+    <p>Nothing. The session cookie we issue is HMAC-signed and contains your Discord ID and an expiry timestamp. It is stored only in your browser. We keep no server-side database of users, requests, or activity.</p>
+
+    <p>The whitelist of allowed Discord IDs and display names is held in a configuration file readable only by the toolkit process. It is not sent to third parties.</p>
+
+    <h2>Cookies</h2>
+    <p>We set two cookies on your browser:</p>
+    <ul>
+      <li><code>l7r_session</code> — your signed sign-in token. 30-day lifetime. Removed when you sign out.</li>
+      <li><code>l7r_oauth_state</code> — a short-lived CSRF token used only during the login round-trip. 10-minute lifetime.</li>
+    </ul>
+    <p>Both are marked HttpOnly, SameSite=Lax, and Secure (when served over HTTPS).</p>
+
+    <h2>Third parties</h2>
+    <p>We talk to <a href="https://discord.com/privacy" rel="noopener">Discord</a> during sign-in. We do not use analytics, advertising, tracking pixels, or any other third-party data services. The character-art feature, when used, sends a text prompt to Google's Gemini API and receives a generated image; no Discord information is sent.</p>
+
+    <h2>Data deletion</h2>
+    <p>Ask the GM to remove you from the whitelist. Your Discord ID and display name are then no longer stored in the application configuration. Any existing session cookies in your browser become useless immediately, even before they expire.</p>
+
+    <h2>Contact</h2>
+    <p>For privacy questions, contact the GM directly through the campaign Discord.</p>
+  </article>
+</section>
+{% endblock %}

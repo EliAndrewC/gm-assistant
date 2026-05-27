@@ -1,0 +1,17 @@
+beautifulsoup4
+cherrypy
+configobj
+google-genai
+jinja2
+opencv-python-headless
+pillow
+pyyaml
+requests
+requests-oauthlib
+
+# Dev / verification (per Principle X / VI)
+mypy
+playwright
+pytest
+pytest-cov
+ruff

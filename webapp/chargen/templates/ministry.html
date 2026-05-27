@@ -1,0 +1,726 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Ministry Generator</title>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/4.6.1/lodash.js"></script>
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+        <script src="//cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                max-width: 1400px;
+            }
+            .form-section {
+                margin-bottom: 30px;
+                padding: 20px;
+                background: #f5f5f5;
+                border-radius: 5px;
+            }
+            .character-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                margin-top: 20px;
+            }
+            .character-card {
+                border: 2px solid #ccc;
+                padding: 15px;
+                border-radius: 8px;
+                background: white;
+            }
+            .character-card.uploading {
+                border-color: #ffa500;
+                background-color: #fff8e1;
+            }
+            .character-card.success {
+                border-color: #28a745;
+                background-color: #d4edda;
+            }
+            .character-card.error {
+                border-color: #dc3545;
+                background-color: #f8d7da;
+            }
+            .character-card h3 {
+                margin-top: 0;
+            }
+            .badge {
+                display: inline-block;
+                padding: 4px 8px;
+                margin: 2px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            .ministry-badge {
+                background: #007bff;
+                color: white;
+            }
+            .rank-badge {
+                background: #6c757d;
+                color: white;
+            }
+            .field-group {
+                margin: 10px 0;
+            }
+            .field-group label {
+                display: block;
+                font-weight: bold;
+                margin-bottom: 3px;
+                font-size: 12px;
+            }
+            .field-group input,
+            .field-group textarea {
+                width: 100%;
+                padding: 5px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                font-family: inherit;
+            }
+            .field-group textarea {
+                resize: vertical;
+            }
+            .art-section {
+                margin-top: 15px;
+                padding: 10px;
+                background: #f9f9f9;
+                border-radius: 5px;
+            }
+            .art-section button {
+                margin: 5px 5px 5px 0;
+            }
+            .art-preview {
+                max-width: 100%;
+                max-height: 300px;
+                border: 1px solid #ccc;
+                margin-top: 10px;
+            }
+            .art-images {
+                display: flex;
+                gap: 15px;
+                align-items: flex-start;
+                margin-top: 10px;
+            }
+            .cropper-container-wrapper {
+                max-width: 250px;
+            }
+            .cropper-container-wrapper img {
+                max-width: 100%;
+                display: block;
+            }
+            .headshot-preview {
+                width: 100px;
+                height: 100px;
+                border: 1px solid #ccc;
+                object-fit: cover;
+                background: #f0f0f0;
+            }
+            .headshot-label {
+                font-size: 11px;
+                color: #666;
+                margin-bottom: 3px;
+            }
+            .art-loading {
+                display: none;
+                color: #666;
+                font-style: italic;
+            }
+            .art-loading.active {
+                display: inline;
+            }
+            .bulk-actions {
+                margin-top: 30px;
+                padding: 20px;
+                background: #e8f4f8;
+                border-radius: 5px;
+                text-align: center;
+            }
+            .bulk-actions button {
+                font-size: 16px;
+                padding: 10px 20px;
+                background: #28a745;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            .bulk-actions button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+            .upload-progress {
+                margin-top: 15px;
+                display: none;
+            }
+            .upload-progress.active {
+                display: block;
+            }
+            .upload-progress progress {
+                width: 300px;
+                height: 25px;
+            }
+            .status-message {
+                margin-top: 10px;
+                padding: 8px;
+                border-radius: 4px;
+                display: none;
+            }
+            .status-message.active {
+                display: block;
+            }
+            .status-message.success {
+                background: #d4edda;
+                color: #155724;
+            }
+            .status-message.error {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            select, button {
+                padding: 8px 12px;
+                margin-right: 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+            button {
+                background: #007bff;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+            button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+            button:hover:not(:disabled) {
+                opacity: 0.9;
+            }
+            .results {
+                margin-top: 20px;
+            }
+            .result-item {
+                padding: 10px;
+                margin: 5px 0;
+                border-radius: 4px;
+            }
+            .result-item.success {
+                background: #d4edda;
+            }
+            .result-item.error {
+                background: #f8d7da;
+            }
+        </style>
+        <script>
+            var config = {{ config|tojson }};
+
+            String.prototype.title = function () {
+                return this.substring(0, 1).toUpperCase() + this.substring(1);
+            };
+
+            var dom = {};
+            var characters = [];
+            var croppers = {};  // Track Cropper.js instances by character index
+
+            $(function () {
+                // Initialize DOM references
+                $.each(['base_rank', 'clan', 'family', 'house', 'generate_roster', 'character_grid', 'bulk_actions', 'upload_all', 'upload_progress', 'upload_progress_bar', 'upload_progress_text', 'results'], function (i, s) {
+                    dom['$' + s] = $('#' + s);
+                });
+
+                dom.$generate_roster.prop('disabled', true);
+                dom.$upload_all.prop('disabled', true);
+
+                // Cascading dropdown logic
+                var dropdownPopulator = function (src, dest) {
+                    var $src = dom['$' + src],
+                        $dest = dom['$' + dest];
+                    $src.on('change', function () {
+                        $dest.empty();
+                        $dest.append('<option value="">' + dest.title() + '</option>');
+                        _.each(_.get(config[src], $src.val()), function (ignored, val) {
+                            $dest.append(
+                                $('<option></option>').attr('value', val).text(val.title()));
+                        });
+                        checkFormReady();
+                    });
+                };
+
+                dropdownPopulator('clan', 'family');
+                dropdownPopulator('family', 'house');
+
+                // Enable generate button when rank is selected
+                dom.$base_rank.on('change', checkFormReady);
+
+                function checkFormReady() {
+                    dom.$generate_roster.prop('disabled', !dom.$base_rank.val());
+                }
+
+                // Generate ministry roster
+                dom.$generate_roster.on('click', function () {
+                    var params = {
+                        base_rank: dom.$base_rank.val(),
+                        clan: dom.$clan.val() || '',
+                        family: dom.$family.val() || '',
+                        house: dom.$house.val() || ''
+                    };
+
+                    dom.$generate_roster.prop('disabled', true);
+                    dom.$character_grid.empty();
+
+                    $.getJSON('ministry_generate', params, function (resp) {
+                        if (resp.error) {
+                            alert(resp.error);
+                            dom.$generate_roster.prop('disabled', false);
+                        } else {
+                            characters = resp.characters;
+                            renderCharacterCards();
+                            dom.$bulk_actions.show();
+                            dom.$upload_all.prop('disabled', true); // Disable until art generation completes
+
+                            // Auto-generate prompts and art for all characters
+                            autoGenerateAllArt();
+                        }
+                    });
+                });
+
+                // Render character cards
+                function renderCharacterCards() {
+                    dom.$character_grid.empty();
+                    $.each(characters, function (idx, char) {
+                        var $card = createCharacterCard(char, idx);
+                        dom.$character_grid.append($card);
+                    });
+                    dom.$character_grid.show();
+                }
+
+                // Create a single character card
+                function createCharacterCard(char, idx) {
+                    var $card = $('<div></div>')
+                        .addClass('character-card')
+                        .attr('id', 'card-' + idx);
+
+                    // Header with badges
+                    var $header = $('<div></div>');
+                    $header.append($('<h3></h3>').text(char.ministry));
+                    $header.append($('<span></span>')
+                        .addClass('badge ministry-badge')
+                        .text(char.ministry));
+                    $header.append($('<span></span>')
+                        .addClass('badge rank-badge')
+                        .text(char.ministry_rank));
+                    $card.append($header);
+
+                    // Name field
+                    var $nameField = $('<div class="field-group"></div>');
+                    $nameField.append($('<label>Name</label>'));
+                    $nameField.append($('<input type="text">')
+                        .attr('id', 'name-' + idx)
+                        .val(char.full_name)
+                        .on('change', function() {
+                            characters[idx].full_name = $(this).val();
+                        }));
+                    $card.append($nameField);
+
+                    // Summary field
+                    var $summaryField = $('<div class="field-group"></div>');
+                    $summaryField.append($('<label>Summary</label>'));
+                    $summaryField.append($('<input type="text">')
+                        .attr('id', 'summary-' + idx)
+                        .val(char.summary || '')
+                        .on('change', function() {
+                            characters[idx].summary = $(this).val();
+                        }));
+                    $card.append($summaryField);
+
+                    // Tags field
+                    var $tagsField = $('<div class="field-group"></div>');
+                    $tagsField.append($('<label>Tags</label>'));
+                    $tagsField.append($('<input type="text">')
+                        .attr('id', 'tags-' + idx)
+                        .val(char.tags.join(', '))
+                        .on('change', function() {
+                            characters[idx].tags = $(this).val().split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+                        }));
+                    $card.append($tagsField);
+
+                    // Public description
+                    var $publicField = $('<div class="field-group"></div>');
+                    $publicField.append($('<label>Public Description</label>'));
+                    $publicField.append($('<textarea rows="8">')
+                        .attr('id', 'public-' + idx)
+                        .text(char.public)
+                        .on('change', function() {
+                            characters[idx].public = $(this).val();
+                        }));
+                    $card.append($publicField);
+
+                    // Private notes
+                    var $privateField = $('<div class="field-group"></div>');
+                    $privateField.append($('<label>Private Notes (GM Only)</label>'));
+                    $privateField.append($('<textarea rows="4">')
+                        .attr('id', 'private-' + idx)
+                        .text(char.private)
+                        .on('change', function() {
+                            characters[idx].private = $(this).val();
+                        }));
+                    $card.append($privateField);
+
+                    // Art section
+                    var $artSection = $('<div class="art-section"></div>');
+                    $artSection.append($('<strong>Character Art</strong>'));
+                    $artSection.append($('<br>'));
+
+                    var $promptArea = $('<textarea rows="4" style="width: 100%; margin-top: 5px;"></textarea>')
+                        .attr('id', 'prompt-' + idx)
+                        .val('Generating prompt...');
+                    $artSection.append($promptArea);
+                    $artSection.append($('<br>'));
+
+                    var $promptBtn = $('<button></button>')
+                        .text('Regenerate Prompt')
+                        .attr('id', 'prompt-btn-' + idx)
+                        .on('click', function() {
+                            generatePrompt(idx);
+                        });
+                    $artSection.append($promptBtn);
+
+                    var $generateArtBtn = $('<button></button>')
+                        .text('Regenerate Art')
+                        .attr('id', 'generate-art-' + idx)
+                        .on('click', function() {
+                            generateArt(idx, null);
+                        });
+                    $artSection.append($generateArtBtn);
+
+                    var $artLoading = $('<span class="art-loading"></span>')
+                        .attr('id', 'art-loading-' + idx)
+                        .text('Generating...');
+                    $artSection.append($artLoading);
+
+                    // Container for full image and headshot preview side by side
+                    var $artImages = $('<div class="art-images" style="display: none;"></div>')
+                        .attr('id', 'art-images-' + idx);
+
+                    // Full image with cropper
+                    var $fullImageDiv = $('<div></div>');
+                    $fullImageDiv.append($('<div class="headshot-label">Full Image (drag box to adjust headshot):</div>'));
+                    var $cropperWrapper = $('<div class="cropper-container-wrapper"></div>')
+                        .attr('id', 'cropper-wrapper-' + idx);
+                    var $artImage = $('<img>')
+                        .attr('id', 'art-image-' + idx);
+                    $cropperWrapper.append($artImage);
+                    $fullImageDiv.append($cropperWrapper);
+                    $artImages.append($fullImageDiv);
+
+                    // Headshot preview
+                    var $headshotDiv = $('<div></div>');
+                    $headshotDiv.append($('<div class="headshot-label">Avatar Preview:</div>'));
+                    var $headshotPreview = $('<img class="headshot-preview">')
+                        .attr('id', 'headshot-preview-' + idx);
+                    $headshotDiv.append($headshotPreview);
+                    $artImages.append($headshotDiv);
+
+                    $artSection.append($artImages);
+
+                    $card.append($artSection);
+
+                    // Status message
+                    var $status = $('<div class="status-message"></div>')
+                        .attr('id', 'status-' + idx);
+                    $card.append($status);
+
+                    return $card;
+                }
+
+                // Generate art prompt for a character
+                function generatePrompt(idx) {
+                    var char = characters[idx];
+                    $('#prompt-btn-' + idx).prop('disabled', true);
+
+                    $.getJSON('art_prompt', {
+                        gender: char.gender,
+                        clan: char.clan || '',
+                        school: char.school || '',
+                        xp: char.xp || 200,
+                        traits: (char.traits || []).join(', '),
+                        collects_art: char.collects_art || ''
+                    }, function(resp) {
+                        $('#prompt-' + idx).val(resp.prompt).show();
+                        $('#generate-art-' + idx).show();
+                        $('#prompt-btn-' + idx).prop('disabled', false);
+                    });
+                }
+
+                // Generate art for a character
+                function generateArt(idx, callback) {
+                    var prompt = $('#prompt-' + idx).val();
+                    $('#generate-art-' + idx).prop('disabled', true);
+                    $('#art-loading-' + idx).addClass('active');
+                    $('#art-images-' + idx).hide();
+
+                    // Destroy existing cropper if any
+                    if (croppers[idx]) {
+                        croppers[idx].destroy();
+                        delete croppers[idx];
+                    }
+
+                    $.getJSON('generate_art', {prompt: prompt}, function(resp) {
+                        $('#art-loading-' + idx).removeClass('active');
+                        $('#generate-art-' + idx).prop('disabled', false);
+
+                        if (resp.error) {
+                            alert('Art generation failed for ' + characters[idx].ministry + ': ' + resp.error);
+                            if (callback) callback();
+                        } else {
+                            characters[idx].image_data = resp.image;
+                            characters[idx].headshot_crop = resp.headshot_crop;
+
+                            var $img = $('#art-image-' + idx);
+                            $img.attr('src', 'data:image/png;base64,' + resp.image);
+                            $('#art-images-' + idx).show();
+
+                            // Initialize cropper after image loads
+                            $img.one('load', function() {
+                                var img = this;
+                                var crop = resp.headshot_crop;
+
+                                croppers[idx] = new Cropper(img, {
+                                    viewMode: 1,
+                                    dragMode: 'move',
+                                    autoCropArea: 1,
+                                    restore: false,
+                                    guides: true,
+                                    center: true,
+                                    highlight: true,
+                                    cropBoxMovable: true,
+                                    cropBoxResizable: true,
+                                    toggleDragModeOnDblclick: false,
+                                    ready: function() {
+                                        if (crop) {
+                                            this.cropper.setData({
+                                                x: crop.x,
+                                                y: crop.y,
+                                                width: crop.width,
+                                                height: crop.height
+                                            });
+                                        }
+                                        updateHeadshotPreview(idx);
+                                    },
+                                    crop: function() {
+                                        updateHeadshotPreview(idx);
+                                    }
+                                });
+
+                                if (callback) callback();
+                            });
+                        }
+                    });
+                }
+
+                // Update headshot preview for a character
+                function updateHeadshotPreview(idx) {
+                    if (!croppers[idx]) return;
+                    try {
+                        var canvas = croppers[idx].getCroppedCanvas({
+                            width: 100,
+                            height: 100,
+                            imageSmoothingEnabled: true,
+                            imageSmoothingQuality: 'high'
+                        });
+                        if (canvas) {
+                            $('#headshot-preview-' + idx).attr('src', canvas.toDataURL());
+                            // Update stored crop data
+                            var cropData = croppers[idx].getData(true);
+                            characters[idx].headshot_crop = {
+                                x: cropData.x,
+                                y: cropData.y,
+                                width: cropData.width,
+                                height: cropData.height
+                            };
+                        }
+                    } catch (e) {
+                        // Ignore errors during cropper initialization
+                    }
+                }
+
+                // Auto-generate prompts and art for all characters
+                function autoGenerateAllArt() {
+                    dom.$generate_roster.prop('disabled', true);
+
+                    // First, generate all prompts sequentially
+                    var promptIndex = 0;
+                    function generateNextPrompt() {
+                        if (promptIndex >= characters.length) {
+                            // All prompts generated, now generate art
+                            generateAllArt();
+                            return;
+                        }
+
+                        var idx = promptIndex;
+                        var char = characters[idx];
+                        $('#prompt-' + idx).val('Loading prompt...');
+
+                        $.getJSON('art_prompt', {
+                            gender: char.gender,
+                            clan: char.clan || '',
+                            school: char.school || '',
+                            xp: char.xp || 200,
+                            traits: (char.traits || []).join(', '),
+                            collects_art: char.collects_art || ''
+                        }, function(resp) {
+                            $('#prompt-' + idx).val(resp.prompt).show();
+                            $('#generate-art-' + idx).show();
+                            promptIndex++;
+                            generateNextPrompt();
+                        });
+                    }
+
+                    // Generate art for all characters sequentially
+                    var artIndex = 0;
+                    function generateAllArt() {
+                        function generateNextArt() {
+                            if (artIndex >= characters.length) {
+                                // All art generated, enable upload
+                                dom.$upload_all.prop('disabled', false);
+                                dom.$generate_roster.prop('disabled', false);
+                                return;
+                            }
+
+                            var idx = artIndex;
+                            $('#art-loading-' + idx).text('Generating art ' + (idx + 1) + '/6...').addClass('active');
+                            artIndex++;
+
+                            generateArt(idx, generateNextArt);
+                        }
+
+                        generateNextArt();
+                    }
+
+                    generateNextPrompt();
+                }
+
+                // Bulk upload all characters
+                dom.$upload_all.on('click', function() {
+                    dom.$upload_all.prop('disabled', true);
+                    dom.$upload_progress.addClass('active');
+                    dom.$results.empty();
+
+                    // Prepare character data for upload
+                    var uploadData = [];
+                    $.each(characters, function(idx, char) {
+                        // Get current crop data from cropper if active
+                        var headshot_crop = null;
+                        if (croppers[idx]) {
+                            var cropData = croppers[idx].getData(true);
+                            headshot_crop = {
+                                x: cropData.x,
+                                y: cropData.y,
+                                width: cropData.width,
+                                height: cropData.height
+                            };
+                        } else if (char.headshot_crop) {
+                            headshot_crop = char.headshot_crop;
+                        }
+
+                        uploadData.push({
+                            name: $('#name-' + idx).val(),
+                            summary: $('#summary-' + idx).val(),
+                            tags: $('#tags-' + idx).val().split(',').map(function(t) { return t.trim(); }).filter(Boolean),
+                            public: $('#public-' + idx).val(),
+                            private: $('#private-' + idx).val(),
+                            image_data: char.image_data || '',
+                            headshot_crop: headshot_crop
+                        });
+                    });
+
+                    // Upload via AJAX POST
+                    $.ajax({
+                        url: 'ministry_upload_bulk',
+                        type: 'POST',
+                        data: JSON.stringify({characters: uploadData}),
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(resp) {
+                            dom.$upload_progress.removeClass('active');
+
+                            // Display results
+                            $.each(resp.results, function(idx, result) {
+                                var $card = $('#card-' + idx);
+                                var $status = $('#status-' + idx);
+
+                                if (result.success) {
+                                    $card.addClass('success');
+                                    $status.addClass('active success')
+                                        .html('<strong>Uploaded!</strong> <a href="' + result.view_url + '" target="_blank">View</a> | <a href="' + result.edit_url + '" target="_blank">Edit</a>');
+                                } else {
+                                    $card.addClass('error');
+                                    $status.addClass('active error')
+                                        .html('<strong>Upload failed:</strong> ' + result.error);
+                                }
+                            });
+
+                            // Show summary
+                            var successCount = _.filter(resp.results, {success: true}).length;
+                            var failCount = resp.results.length - successCount;
+
+                            var $summary = $('<div class="result-item"></div>')
+                                .addClass(failCount > 0 ? 'error' : 'success')
+                                .html('<strong>Upload Complete:</strong> ' + successCount + ' succeeded, ' + failCount + ' failed');
+                            dom.$results.append($summary);
+                        },
+                        error: function(xhr, status, error) {
+                            dom.$upload_progress.removeClass('active');
+                            dom.$upload_all.prop('disabled', false);
+                            alert('Bulk upload failed: ' + error);
+                        }
+                    });
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <h1>Ministry Generator</h1>
+        <p>Generate a complete ministry roster for your province or minor clan. Select a rank and optional clan/family/house, then generate 6 ministers (one for each ministry).</p>
+
+        <div class="form-section">
+            <h2>Generate Ministry Roster</h2>
+            <select id="base_rank">
+                <option value="">Select Rank</option>
+                <option value="6">Deputy Provincial Minister</option>
+                <option value="7">Provincial Minister</option>
+                <option value="9">Deputy Minister</option>
+                <option value="10">Minister</option>
+            </select>
+            <select id="clan">
+                <option value="">Clan (Optional)</option>
+                {% for clan in config.clans %}
+                    <option value="{{ clan }}">{{ clan|title }}</option>
+                {% endfor %}
+            </select>
+            <select id="family">
+                <option value="">Family (Optional)</option>
+            </select>
+            <select id="house">
+                <option value="">House (Optional)</option>
+            </select>
+            <button id="generate_roster">Generate Ministry Roster</button>
+        </div>
+
+        <div id="character_grid" class="character-grid" style="display: none;">
+            <!-- Character cards will be inserted here -->
+        </div>
+
+        <div id="bulk_actions" class="bulk-actions" style="display: none;">
+            <button id="upload_all">Upload All Ministers</button>
+            <div id="upload_progress" class="upload-progress">
+                <p>Uploading characters to Obsidian Portal...</p>
+                <progress id="upload_progress_bar" max="6" value="0"></progress>
+                <span id="upload_progress_text">Uploading...</span>
+            </div>
+        </div>
+
+        <div id="results" class="results"></div>
+    </body>
+</html>

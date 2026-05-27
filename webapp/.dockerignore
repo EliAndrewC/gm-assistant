@@ -1,0 +1,38 @@
+# Fly deploy token — image must never carry it.
+.env
+
+# NOTE: development-secrets.ini IS included in the image per the deploy decision.
+# The image is private to the Fly account; rotating any secret requires a
+# rebuild + redeploy.
+
+# Build / test artifacts.
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor / VCS.
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# Local virtualenvs.
+env/
+venv/
+.venv/
+
+# Tests + dev tools — not needed at runtime.
+tests/
+Makefile
+pyproject.toml
+README.md
+LICENSE
+
+# Existing chargen avatars (local-only generated content).
+avatars/
+orgchart.png

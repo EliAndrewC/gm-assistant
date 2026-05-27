@@ -1,0 +1,19 @@
+{% extends "_layout.html" %}
+
+{% block title %}Access denied — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="auth-card auth-card--denied">
+    <p class="auth-card__supertitle">Access denied</p>
+    <h1 class="auth-card__title">Not on the guest list</h1>
+    <p class="auth-card__lede">
+      Hello, <strong>{{ display_name }}</strong>. Your Discord account is not on the
+      campaign whitelist. If this is a mistake, ask the GM to add you.
+    </p>
+    <a class="auth-card__button auth-card__button--secondary" href="/auth/logout">
+      <span class="auth-card__button-label">Sign out</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

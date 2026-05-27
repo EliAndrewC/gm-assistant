@@ -1,0 +1,23 @@
+{% extends "_layout.html" %}
+
+{% block title %}Sign in — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="auth-card">
+    <p class="auth-card__supertitle">For invited players only</p>
+    <h1 class="auth-card__title">Sign in to the <em>Toolkit</em></h1>
+    <p class="auth-card__lede">
+      Authentication is handled through Discord. Click below to verify your account.
+      Only invited players from the campaign Discord can access the toolkit.
+    </p>
+    <a class="auth-card__button" href="/auth/start">
+      <span class="auth-card__button-label">Continue with Discord</span>
+    </a>
+    <p class="auth-card__fineprint">
+      We only request your basic Discord profile (id + display name). We do not see your
+      email, your servers, or your friends.
+    </p>
+  </div>
+</section>
+{% endblock %}

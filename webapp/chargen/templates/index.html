@@ -1,0 +1,280 @@
+{% extends "_layout.html" %}
+
+{% block title %}Characters — L7R Toolkit{% endblock %}
+
+{% block head_extra %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/4.6.1/lodash.js"></script>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script>
+    var types = {{ types|tojson }},
+        config = {{ config|tojson }};
+
+    String.prototype.title = function () {
+        return this.substring(0, 1).toUpperCase() + this.substring(1);
+    };
+
+    var dropdownPopulator = function (src, dest) {
+        var $src = dom['$' + src],
+            $dest = dom['$' + dest];
+        $src.on('change', function () {
+            $dest.empty();
+            $dest.append('<option value="">' + dest.title() + '</option>');
+            _.each(_.get(config[src], $src.val()), function (ignored, val) {
+                $dest.append(
+                    $('<option></option>').attr('value', val).text(val.title()));
+            });
+            var options = $dest.find('option[value!=""]');
+            if (options.length === 1) {
+                $dest.val(options.first().val()).change();
+            }
+        });
+    };
+
+    var dom = {};
+    var currentCharacter = null;
+    var currentImageData = null;
+    var cropper = null;
+
+    $(function () {
+        $.each(['base_rank', 'type', 'generate', 'upload', 'fields', 'clan', 'family', 'house', 'lineage', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container'], function (i, s) {
+            dom['$' + s] = $('#' + s);
+        });
+        dom.$upload.prop('disabled', true);
+        dom.$generate_art.prop('disabled', true);
+
+        _.each(types, function (type) {
+            dom.$type.append($('<option></option>').attr('value', type).text(type.title()));
+        });
+        _.each(config.base_ranks, function (ignored, rank) {
+            dom.$base_rank.append($('<option></option>').attr('value', rank).text(rank.title()));
+        });
+
+        dropdownPopulator('clan', 'family');
+        dropdownPopulator('family', 'house');
+        dropdownPopulator('house', 'lineage');
+
+        dom.$generate.on('click', function () {
+            var params = {};
+            _(['base_rank', 'type', 'clan', 'family', 'house', 'lineage']).each(function (field) {
+                params[field] = dom['$' + field].val();
+            });
+            $.getJSON('/chargen/generate', _.pickBy(params), function (character) {
+                if (character.error) {
+                    alert(character.error);
+                } else {
+                    currentCharacter = character;
+                    currentImageData = null;
+                    if (cropper) {
+                        cropper.destroy();
+                        cropper = null;
+                    }
+                    dom.$fields.empty();
+                    dom.$upload.prop('disabled', false);
+
+                    var fields = [
+                        $('<input type="text" id="name" />').val(character.full_name),
+                        $('<input type="text" id="summary" />'),
+                        $('<input type="text" id="tags" />').val(character.tags.join(', ')),
+                        $('<textarea rows="12" id="public" />').text(character.public),
+                        $('<textarea rows="12" id="private" />').text(character.private)
+                    ];
+                    $.each(fields, function(i, $field) {
+                        dom.$fields.append(
+                            $field.css("width", "100%")
+                        ).append("<br/>");
+                    });
+                    $('#summary').focus();
+
+                    dom.$art_section.show();
+                    dom.$art_result.hide();
+                    dom.$art_prompt.val('Loading prompt...');
+                    dom.$generate_art.prop('disabled', true);
+
+                    $.getJSON('/chargen/art_prompt', {
+                        gender: character.gender,
+                        clan: character.clan || '',
+                        school: character.school || '',
+                        xp: character.xp || 150,
+                        traits: (character.traits || []).join(', '),
+                        collects_art: character.collects_art || ''
+                    }, function(resp) {
+                        dom.$art_prompt.val(resp.prompt);
+                        dom.$generate_art.prop('disabled', false);
+                    });
+                }
+            });
+        });
+
+        dom.$generate_art.on('click', function () {
+            var prompt = dom.$art_prompt.val();
+            dom.$generate_art.prop('disabled', true);
+            dom.$art_loading.show();
+            dom.$art_result.hide();
+
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+
+            $.getJSON('/chargen/generate_art', {prompt: prompt}, function(resp) {
+                dom.$art_loading.hide();
+                dom.$generate_art.prop('disabled', false);
+
+                if (resp.error) {
+                    alert('Art generation failed: ' + resp.error);
+                } else {
+                    currentImageData = resp.image;
+                    dom.$art_image.attr('src', 'data:image/png;base64,' + resp.image);
+                    dom.$art_result.show();
+
+                    dom.$art_image.one('load', function() {
+                        var img = dom.$art_image[0];
+                        var crop = resp.headshot_crop;
+
+                        cropper = new Cropper(img, {
+                            viewMode: 1,
+                            dragMode: 'move',
+                            autoCropArea: 1,
+                            restore: false,
+                            guides: true,
+                            center: true,
+                            highlight: true,
+                            cropBoxMovable: true,
+                            cropBoxResizable: true,
+                            toggleDragModeOnDblclick: false,
+                            ready: function() {
+                                if (crop) {
+                                    this.cropper.setData({
+                                        x: crop.x,
+                                        y: crop.y,
+                                        width: crop.width,
+                                        height: crop.height
+                                    });
+                                }
+                                updateHeadshotPreview();
+                            },
+                            crop: function() {
+                                updateHeadshotPreview();
+                            }
+                        });
+                    });
+                }
+            });
+        });
+
+        function updateHeadshotPreview() {
+            if (!cropper) return;
+            try {
+                var canvas = cropper.getCroppedCanvas({
+                    width: 150,
+                    height: 150,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
+                if (canvas) {
+                    dom.$headshot_preview.attr('src', canvas.toDataURL());
+                }
+            } catch (e) {
+            }
+        }
+
+        dom.$upload.on('click', function() {
+            var params = {};
+            $.each(['name', 'summary', 'tags', 'public', 'private'], function(i, param) {
+                params[param] = $('#' + param).val();
+            });
+            if (currentImageData) {
+                params.image_data = currentImageData;
+                if (cropper) {
+                    var cropData = cropper.getData(true);
+                    params.headshot_crop = {
+                        x: cropData.x,
+                        y: cropData.y,
+                        width: cropData.width,
+                        height: cropData.height
+                    };
+                }
+            }
+            $.ajax({
+                url: '/chargen/upload',
+                type: 'POST',
+                data: JSON.stringify(params),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(resp) {
+                    if (resp.error) {
+                        alert(resp.error);
+                    } else {
+                        alert('Uploaded: ' + resp.url);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Upload failed: ' + error);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="container chargen-shell">
+  <header class="chargen-shell__header">
+    <p class="chargen-shell__supertitle">Character workshop</p>
+    <h1 class="chargen-shell__title">Generate a character</h1>
+    <p class="chargen-shell__lede">Pick a type and a rank, optionally narrow by clan and family, then generate. Edit the fields, generate art if you like, and upload to Obsidian Portal.</p>
+  </header>
+
+  <div class="chargen-shell__controls">
+    <select id="type"></select>
+    <select id="base_rank">
+        <option value="">Rank</option>
+    </select>
+    <select id="clan">
+        <option value="">Clan</option>
+        {% for clan in config.clans %}
+            <option value="{{ clan }}">{{ clan|title }}</option>
+        {% endfor %}
+    </select>
+    <select id="family">
+        <option value="">Family</option>
+    </select>
+    <select id="house">
+        <option value="">House</option>
+    </select>
+    <select id="lineage">
+        <option value="">Lineage</option>
+    </select>
+    <button id="generate">Generate</button>
+    <button id="upload">Upload</button>
+  </div>
+  <div id="fields" style="margin-right:40%"></div>
+
+  <div id="art_section" style="margin-top: 20px; display: none;">
+      <h3>Character Art</h3>
+      <p>Edit the prompt below if desired, then click Generate Art:</p>
+      <textarea id="art_prompt" rows="8" style="width: 100%; max-width: 600px;"></textarea>
+      <br/>
+      <button id="generate_art">Generate Art</button>
+      <span id="art_loading" style="display: none; margin-left: 10px;">Generating image, please wait...</span>
+      <div id="art_result" style="margin-top: 15px; display: none;">
+          <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+              <div>
+                  <p style="margin: 0 0 5px 0;"><strong>Full Image</strong> (for bio) - drag the box to select headshot:</p>
+                  <div id="cropper_container" style="max-width: 512px; max-height: 512px;">
+                      <img id="art_image" style="max-width: 100%; display: block;" />
+                  </div>
+              </div>
+              <div>
+                  <p style="margin: 0 0 5px 0;"><strong>Avatar Preview</strong> (headshot):</p>
+                  <img id="headshot_preview" style="width: 150px; height: 150px; border: 1px solid #ccc; object-fit: cover; background: #f0f0f0;" />
+              </div>
+          </div>
+          <br/>
+          <small>Adjust the crop box to select the headshot region for the avatar. If you don't like the image, edit the prompt above and click Generate Art again.</small>
+      </div>
+  </div>
+</section>
+{% endblock %}
