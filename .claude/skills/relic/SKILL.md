@@ -315,7 +315,128 @@ The above stolen relics are not particular to Bishamon - the Chime of Harmony is
 
 ## Generation Preferences
 
-(To be developed through iteration with the GM. This section will capture what the GM likes and dislikes about generated relic content, and why.)
+When generating a new relic, work from the principles below. The Source Material above contains the GM's worked examples (Candle of Tears, Staff of Bishamon, Pillar of Ten Thousand Names, Prayer Beads of the Guardian Spirits, Sword of the First Vow, Helm of Discerning Valor, Eternal Wisdom Tree, Chamber of Celestial Echoes, the stolen relics, Yamaoroshi sword, Armor of Fool's Regret) — consult those when a worked example helps clarify a principle.
+
+The broader principles of supernatural ambiguity in Rokugan (the "low fantasy" framing, the modern-reader test, the Toyohiro/Mirai/Korihime stories, connection damage) are part of the same source block and apply to relics as a subset of the general supernatural. The principles below are the relic-specific layer on top of that.
+
+### The three core qualities
+
+A good relic has all three. The GM stated these explicitly when describing the Candle of Tears as an exemplar:
+
+1. **Ambiguity.** Every supernatural claim about the relic should have a plausible mundane explanation — power of suggestion, ordinary coincidence, natural physical phenomena. The "proof" should not hold up to skeptical scrutiny. If a modern reader looking at primary-source descriptions of the relic would conclude something supernatural *definitely* happened, the relic is too high-fantasy for the setting.
+
+2. **Usefulness.** People in the setting must have a genuine reason to seek out and use the relic, beyond mere superstition. Rokugani medicine is primitive, battle is high-stakes, important decisions are hard to make alone — the relic should address a real need that justifies its standing.
+
+3. **Necessity / stickiness.** There should be an obligation structure attached. The relic can't simply be destroyed (releasing a bound spirit would be worse), or can't be ignored without consequence, or comes with rituals that must be observed. Even skeptics have to engage with the relic carefully, which keeps it active in the social fabric.
+
+### Relic-specific properties
+
+These are what distinguishes relics from generic supernatural items:
+
+4. **Tied to a named entity.** A relic channels a specific being — a Fortune (Bishamon, Inari, Ebisu, etc.), an ancestor (Akodo Kaizen), a founder (Shinsei), or even a defeated enemy whose power was inherited (the warlord whose name was struck from Akodo histories). Generic "magic items" are not relics. The named connection determines who venerates the relic, why, and through which institution.
+
+5. **Historical provenance.** A relic comes with a chain of custody and a pedigree of deeds. Yamaoroshi has 150+ years of named wielders. The Staff of Bishamon was found by High Monk Fujita beside a sacred spring. The Pillar of Ten Thousand Names accumulates its own provenance through the carved names. The weight of past use is part of what the present user feels — and does some of the work the relic's "supernatural" properties claim to do.
+
+6. **Institutional stewardship.** Major relics belong to institutions — temples, great families, clan treasuries. They have a named custodian (Steward Iori as Custodian of the Sacred Relics). Access is gated by ritual permission, social standing, or both. Loss or theft is a political event with broader consequences (e.g., the stolen Tooth of the Shinsei wounded the Order of Bishamon's standing as much as its collection).
+
+7. **Distinctive, vivid physical presentation.** Each relic has particular, sensory-rich physical description — specific materials, distinctive carvings or markings, ornate display setup. The cherry wood staff inscribed with the Seven Virtues; the bronze helm with patience-landscape on its ridge and storm-charge on its faceplate; the 12-foot stone pillar with names worn down at the top. Physical specificity grounds the supernatural ambiguity in concrete reality.
+
+8. **Ritual / procedural framing.** Each relic has its proper usage protocols. The Sword of the First Vow requires the vow be *written and sealed* for posthumous discovery, never spoken aloud. The Helm of Discerning Valor requires the Custodian's permission and a kneeling meditation. The Prayer Beads require literacy enough to track which bead reacted at which numbered position. The protocol shapes the encounter and produces the orientation and focus that might (mundanely) be the source of the relic's apparent effect.
+
+### Techniques for achieving good ambiguity
+
+These are not principles in themselves but are *how* the GM tends to write supernatural claims that pass the ambiguity test:
+
+- **Layered evidence, each piece individually thin.** The Staff of Bishamon glows faintly (or the sun catches it); Bishamon "hides sunbeams behind a cloud" when an unfavorable path is considered; monks return from meditation with newfound clarity. Each piece of evidence is unconvincing in isolation — sun catches things, clouds happen, focused meditation produces clarity. The cumulative pattern is convincing to believers. No single observation should be strong proof.
+
+- **Variability over reliability.** A relic whose effect is always observed in a fixed way would be easily tested and falsified. Instead, attested effects are unpredictable in timing, frequency, or intensity — but they accumulate over generations of witness. Stewards may perform ritual observations of the relic (grain counts, weighings, watching the flame), but the outcomes vary, and variations are interpreted in light of the supplicant's alignment, the season, or the celestial calendar.
+
+### Voice and framing — how the temple speaks about its relics
+
+These are critical for getting the tone right. The supernatural ambiguity exists for the *modern reader* and perhaps for a skeptical samurai of an unsympathetic clan — *not* for the temple itself.
+
+- **The temple is a believer.** The monks who tend a relic — Custodians, Stewards, the High Monk or Grand Abbot — believe in it. They do not privately acknowledge a mundane mechanism while letting the laity believe a supernatural one. When they describe how the relic works, they frame everything in theological terms appropriate to the Fortune the relic serves. If a magistrate using the Honest Masu understands that a guilty conscience produces a shaking hand, the theological framing is that *Ebisu, Fortune of honest work, will not steady the hand of one whose work is dishonest* — same observation, different voice. Avoid lines like "the Custodian's office quietly acknowledges that pilgrims select for the prepared" or "the temple knows perfectly well that confirmation bias explains the effect." That is the *outside* perspective, not the temple's.
+
+- **Write in the temple's own voice — state, do not frame.** The relic description should read as if a senior monk is explaining the relic to a visitor at the temple. State what the relic does, what its omens mean, what its history is — directly, as fact, the way the monk would. **Avoid distancing framings** like "the temple holds that…," "the temple believes that…," "tradition says that…," "the monks understand that…" These introduce critical distance and undercut the claim being made. Write *"Ebisu steadies the hand of the righteous"* — not *"the temple holds that Ebisu steadies the hand of the righteous."* Write *"an auspicious omen, signifying that Bunsuke has accepted the offering"* — not *"an auspicious omen, which the temple holds to mean that Bunsuke has accepted the offering."* The ambiguity for the modern reader lives in the layered evidence, the unfalsifiability of the claims, and the variability of attested effects — *not* in distancing framings. The temple speaks as itself, not as something being described from outside.
+
+- **Avoid claims that are easily falsified.** Supernatural claims about a relic should be soft enough that any single failure can be explained as the supplicant's deficiency rather than the relic's. Prefer "may," "tradition holds that," "those who are worthy," "graced with," "auspicious to those whose intent is sincere." Avoid "will," "always," "every," "without fail." A claim like "pilgrims who complete the ritual will have one season of safety" would be falsified the first time a pilgrim suffered, undermining the relic. A claim like "the mantle is held to confer Ebisu's regard on those whose work honors his nature" cannot be falsified — a sufferer was not aligned. This is also how real-world religious traditions actually work.
+
+- **The relic supports judgment, not replaces it.** A magistrate using a relic-based test treats it as one input among many; the magistrate's discernment remains the source of the verdict. The Honest Masu surfaces a guilty conscience through composure under sacred pressure, but the magistrate weighs that signal alongside the merchant's reputation, witnesses, account books, and other evidence. Avoid framings where the relic *is* the verdict — that flattens the legal and social fabric the relic actually operates within.
+
+- **Subjective experiences are auspicious omens, not belief-vs-skepticism markers.** The default for a visiting pilgrim is no special experience. The *rare* experience is graced, blessed, or auspicious. Some pilgrims are graced with finding the bowl warm to the touch when they leave their grain — this is taken as an omen that the relic's spirit has accepted their offering and that Ebisu's favor follows them. **Do not** write "the bowl feels warm to believers and cold to skeptics" — that frames the experience as a test of belief rather than as a gift selectively bestowed.
+
+- **Theological framing of mundane mechanisms.** When you find yourself wanting to write "the temple knows it's psychological" or "the temple knows it's selection effect" — translate that into the temple's own voice. *"Magistrates understand that a guilty conscience may produce a shaking hand which Ebisu, Fortune of honest work, will not steady."* *"A conscientious fisherman is one whose physical and spiritual preparations alike are in order; those who skip the prayers are also those who skip the inspections, and so it is no surprise that Ebisu's mantle protects the diligent."* The mundane mechanism and the theological explanation are the *same observation*; the temple just speaks the theological version.
+
+### Cross-references to other skills
+
+Build relics into the existing temple framework rather than inventing parallel structures. Before writing a relic, verify against:
+
+- **`/.claude/skills/temple/SKILL.md`** — for the monk hierarchy (Initiate through Grand Abbot, or archaic Sangō titles like High Monk where appropriate), the Steward/Custodian roles, and the structure of sovereign vs. subordinate temples. **A "sovereign temple" is simply the head temple of an Order within a given domain — typically the one in the domain capital, with subordinate temples in the provincial cities. It is not "elevated" to sovereign status; it is sovereign by being the head temple.** A gift to a sovereign temple may be foundational or politically significant, but it does not change the temple's status.
+- **`/cosmology/fortunes.md`** — for the Fortune the relic is tied to, its domain, and the kinds of supplicants who would venerate it
+- **`/setting/clans-and-imperials.md`** — for clan patronage of specific Fortunes (e.g., Crab patrons Bishamon + Ebisu)
+
+### A checklist for new relics
+
+When generating a new relic, verify the following before considering it done:
+
+- [ ] Three core qualities present (ambiguity, usefulness, necessity)
+- [ ] Tied to a named entity (Fortune, ancestor, founder, or other specific being)
+- [ ] Has a provenance story (origin, chain of custody, named historical use)
+- [ ] Belongs to an institution (temple, family, clan); has a custodian or custodian role
+- [ ] Has a vivid, distinctive physical description (materials, markings, display setup)
+- [ ] Has at least one ritual or procedural usage protocol
+- [ ] Supernatural claims are layered and survive disconfirmation (no "will / always / every")
+- [ ] Subjective experiences framed as auspicious gifts, not as belief-vs-skepticism
+- [ ] The temple itself is a believer; mundane mechanisms are described in theological voice
+- [ ] The relic supports human judgment rather than replacing it
+- [ ] Institutional context aligned with the temple skill (sovereign vs. subordinate, etc.)
+- [ ] Passes the modern-reader test — a skeptic could explain every effect mundanely, but the temple wouldn't say so
+
+## The Relic Pool
+
+Generated relics are stored as individual markdown files under [`pool/`](pool/), organized into one subdirectory per Major Fortune:
+
+```
+pool/
+├── benten/
+├── bishamon/
+├── daikoku/
+├── ebisu/
+├── fukurokujin/
+├── hotei/
+└── jurojin/
+```
+
+Each relic is a single markdown file with YAML frontmatter followed by the relic's full prose description. The frontmatter carries the metadata needed to script over the pool (filter by Fortune, by relic type, etc.); the body carries the prose that can be presented to the GM verbatim or adapted to a specific temple.
+
+### File format
+
+```markdown
+---
+name: <English name of the relic>
+japanese_romaji: <transliteration, e.g. Makoto-no-Masu>
+japanese_kanji: <kanji, e.g. 誠の升>
+fortune: <one of: benten, bishamon, daikoku, ebisu, fukurokujin, hotei, jurojin>
+temple_suggestion: <a specific temple where the relic could plausibly reside>
+named_entity: <the historical or legendary figure the relic is tied to>
+relic_type: <short tag like "implement (rice-measure)", "vessel (rice-bowl)", "garment (mantle)", "pair (river stones)", etc.>
+---
+
+<full prose description in the temple's voice, multi-paragraph as needed>
+```
+
+### Goals for the pool
+
+- **Variety per Fortune.** Each Fortune's subdirectory should hold ~6 relics that vary across:
+  - *Physical type* — implements, vessels, garments, weapons, written materials, natural objects, paired items
+  - *Named entity* — Fortune-direct, ancestor, founder, monk, peasant hero, defeated enemy, married couple
+  - *Supplicant type* — samurai, peasant, magistrate, merchant, military commander, married pair, pilgrim of any rank
+  - *Ritual rhythm* — continuous (almsgiving circuit), seasonal (mending ceremony), one-time petition, court-summoned, processional
+  - *Temple location* — drawn from different clans so that no one clan dominates a Fortune's pool
+
+- **Scriptable.** Each file is parseable with any YAML+markdown library. Future tooling (a `pick_relic.py` analog to `pick_name.py`) can iterate the directories and filter on frontmatter.
+
+- **Editable.** Files live outside GM SOURCE markers and may be revised freely as the GM's preferences develop.
 
 ## References
 
