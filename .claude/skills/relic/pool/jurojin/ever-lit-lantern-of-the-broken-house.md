@@ -3,7 +3,8 @@ name: The Ever-Lit Lantern of the Broken House
 japanese_romaji: Tomoshibi-no-Toro
 japanese_kanji: 灯し火の燈籠
 fortune: jurojin
-temple_suggestion: sovereign Temple of Jurojin, Ryoko Owari (Bayushi-vassal city, Scorpion clan)
+clan: scorpion
+temple: a temple of Jurojin in Scorpion lands
 named_entity: Shosuro Genbei (Bayushi-vassal merchant, who outlived all seven of his children and ran his trading house into its second century)
 relic_type: stone lantern (continuously lit)
 ---

@@ -104,3 +104,38 @@ Reference directories hold organized source material and context. Each directory
 | `/hooks/` | Adventure hooks by setting type |
 | `/cosmology/` | Moon court, stories, maho, gaijin religion, Fortune theology |
 | `/notes/` | Canonical source snapshot |
+
+## Development Workflow
+
+This project uses spec-driven development governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (currently v1.1.0, 10 principles, 3 NON-NEGOTIABLE). The constitution is the higher-level authority; this CLAUDE.md operationalizes it.
+
+**When to use spec-kit:**
+
+- **Feature work** (new sections of the webapp, new skills, new generators, the upcoming Python backend) → invoke `/speckit-specify` and follow through plan → tasks → implement. The Constitution Check section in `.specify/templates/plan-template.md` is the gate that enforces the constitution at plan-time; skipping spec-kit on feature work means skipping that gate.
+- **Tweaks and iteration** (CSS adjustments, wording fixes, regenerating one item, fixing one bug) → just do the work directly. The constitution still applies, but the formal spec/plan/tasks flow is overkill.
+- **Ambiguous cases** → ask before chain-firing `/speckit-specify`.
+
+**Verification before reporting "done"** (per Principle VI of the constitution):
+
+- **UI changes**: run `/workspace/webapp-prototype/relics/screenshot.py` (or analogous) — captures screenshots at GM-100 (1850×1050), GM-200 (925×525), tablet (800×1100), and mobile (390×844) viewports and runs a DOM-overflow audit. The user uses Chrome at 200% zoom; UI must be clean at that zoom.
+- **Python changes**: `ruff check` + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` on pure-logic packages (Principle X).
+- **Delegated work**: spot-check actual artifacts before relaying success to the user. "The subagent said it was done" is not sufficient.
+
+**Spec-kit hooks**: `.specify/extensions.yml` defines auto-commit hooks before each spec-kit step. Per the project's git-safety convention, do not auto-execute those — surface them and let the user confirm each time.
+
+**Key paths**:
+
+- `.specify/memory/constitution.md` — the constitution
+- `.specify/templates/plan-template.md` — Constitution Check gate lives here
+- `/workspace/webapp-prototype/` — static frontend prototypes (current: relics index + detail)
+- `/workspace/webapp/` — **L7R Toolkit** (CherryPy + Jinja2). Run with `cherryd --import l7r` from this dir. Routes: `/` landing, `/relics`, `/relics/<slug>`, `/names` (with `?gender=` / `?caste=` filters), `/chargen/*` (legacy chargen mounted as a sub-app). New code under `l7r/` package; legacy chargen modules on Principle X grace period.
+- `/workspace/webapp/Makefile` — `make done` runs ruff + format check + mypy --strict + pytest + 100% coverage gate
+- `/workspace/webapp/tests/screenshot.py` and `tests/dom_audit.py` — Playwright suite for Principle I verification at GM-100 / GM-200 / tablet / mobile
+- `/workspace/.claude/skills/relic/pool/` — exemplar of the pool data convention (Principle III)
+- `/workspace/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` — the 200-name pool consumed by the `/names` section
+
+<!-- SPECKIT START -->
+Current active plan: [`specs/001-toolkit-shell/plan.md`](specs/001-toolkit-shell/plan.md)
+Active feature: L7R Toolkit Phase 1 — App Shell + Chargen + Relics
+Feature directory: `specs/001-toolkit-shell/`
+<!-- SPECKIT END -->

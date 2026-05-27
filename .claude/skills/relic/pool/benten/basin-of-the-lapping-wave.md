@@ -3,7 +3,8 @@ name: The Basin of the Lapping Wave
 japanese_romaji: Sazanami-no-Tarai
 japanese_kanji: 漣の盥
 fortune: benten
-temple_suggestion: sovereign Temple of Benten, Kaimetsu Toshi (Yoritomo family, Mantis clan, Islands of Spice and Silk)
+clan: mantis
+temple: a temple of Benten in Mantis lands
 named_entity: Benten herself, whose emergence from the spring at Onogawa is locally attested; and the peasant pair Toshimi and Heigo, the salt-makers whose forty-year marriage outlasted shipwreck and exile
 relic_type: water-feature (stone basin fed by a sacred spring)
 ---

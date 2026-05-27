@@ -3,7 +3,8 @@ name: The Antler of the Stag of Mercy
 japanese_romaji: Jihi-no-Tsuno
 japanese_kanji: 慈悲の角
 fortune: fukurokujin
-temple_suggestion: Temple of Fukurokujin at Otosan Uchi (the Emperor's capital; the temple closest to the Imperial Board of Justice)
+clan: any
+temple: a temple of Fukurokujin, in any city of the Empire
 named_entity: Fukurokujin himself, by way of a stag the Fortune is said to have ridden in the founding age
 relic_type: natural object (antler shed, mounted on dark wood)
 ---

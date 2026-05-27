@@ -3,7 +3,8 @@ name: The Knotted Cane of Old Tarobei
 japanese_romaji: Fushi-no-Tsue
 japanese_kanji: 節の杖
 fortune: jurojin
-temple_suggestion: subordinate Temple of Jurojin, Shiro Iuchi no Yasen (Iuchi vassal city, Unicorn clan)
+clan: any
+temple: a temple of Jurojin, in any city of the Empire
 named_entity: Tarobei (peasant farmer of the Yasen plain, who survived three famines and lived to his ninety-seventh year)
 relic_type: implement (walking cane)
 ---

@@ -3,14 +3,15 @@ name: The Kabuto of Hida Morinosuke
 japanese_romaji: Iwakabe-no-Kabuto
 japanese_kanji: 岩壁の兜
 fortune: bishamon
-temple_suggestion: sovereign Temple of Bishamon, Kyuden Hida (Hida family, Crab clan)
+clan: crab
+temple: a temple of Bishamon in Crab lands
 named_entity: Hida Morinosuke (Hida wall-captain of the late third century, defender of the Stone Gate)
 relic_type: armor piece (kabuto, war-helm)
 ---
 
 A heavy iron *kabuto* of the old Hida pattern — five overlapping plates riveted to the bowl, a deep neck-guard of laced iron scales, a half-mask of beaten iron with the lower jaw left bare. The crest is a single rough boar's-tusk of cracked ivory, set into a bronze socket at the brow. The bowl is dented inward over the left ear in a fist-sized hollow that has not been hammered out — the blow that made it killed the oni that struck it, and the Hida who recovered the helm afterward chose to leave the dent. The kabuto sits on a heavy oaken stand within a stone alcove off the temple's commanders' hall, where a single iron lamp burns above it day and night.
 
-Hida Morinosuke was a wall-captain at the Stone Gate of Kyuden Hida in the late third century, in a generation when the gate was still raw stone and the inner courses had not yet been finished by Kaiu engineers. During the assault that the Hida call the Year of the Three Onis, Morinosuke held the gate's inner court for four days against a host that had broken the outer wall, refusing to fall back to the keep though his daimyo had given him leave to do so. On the fourth day he met the largest of the three onis at the inner gate itself, and the helm took the stroke that the oni had meant for his skull. He killed the oni with the broken end of his yari and lived long enough to see the relief column climb the steps. He died of his wounds before the gate was secured, the helm still on his head; the Kaiu who unbuckled it afterward could not pry the dent back into shape, and ordered the helm sent to the Order of Bishamon rather than reforged.
+Hida Morinosuke was a wall-captain at the Stone Gate in the late third century, in a generation when the gate was still raw stone and the inner courses had not yet been finished by Kaiu engineers. During the assault that the Hida call the Year of the Three Onis, Morinosuke held the gate's inner court for four days against a host that had broken the outer wall, refusing to fall back to the keep though his daimyo had given him leave to do so. On the fourth day he met the largest of the three onis at the inner gate itself, and the helm took the stroke that the oni had meant for his skull. He killed the oni with the broken end of his yari and lived long enough to see the relief column climb the steps. He died of his wounds before the gate was secured, the helm still on his head; the Kaiu who unbuckled it afterward could not pry the dent back into shape, and ordered the helm sent to the Order of Bishamon rather than reforged.
 
 A Hida wall-captain who is to take command of a contested gate, a section of the Wall under assault, or a fortified pass in the southern marches may petition the Custodian of Sacred Relics for the **Wearing of the Helm**. The Custodian leads the captain into the alcove, lifts the helm from its stand, and places it on the captain's head with the cords loose. The captain kneels with the helm and meditates for the duration of a stick of incense. Morinosuke's resolve attends the meditation, and the captain who is to hold a gate may take into himself some measure of the resolve by which Morinosuke held his.
 

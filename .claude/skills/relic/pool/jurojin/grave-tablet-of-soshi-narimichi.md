@@ -3,7 +3,8 @@ name: The Grave Tablet of Soshi Narimichi
 japanese_romaji: Narimichi-no-Ihai
 japanese_kanji: 業道の位牌
 fortune: jurojin
-temple_suggestion: subordinate Temple of Jurojin, Kakkimine hermitage (a small Scorpion mountain temple in the highlands east of Ryoko Owari)
+clan: scorpion
+temple: a temple of Jurojin in Scorpion lands
 named_entity: Soshi Narimichi (Scorpion shugenja who returned alive from the Burning Sands after thirty-one years, and lived to his hundred-and-second year)
 relic_type: funeral implement (ancestral memorial tablet)
 ---

@@ -3,7 +3,8 @@ name: The Half-Mirror of Soshi Otomi
 japanese_romaji: Wakare-Kagami
 japanese_kanji: 別れ鏡
 fortune: benten
-temple_suggestion: subordinate Temple of Benten, Ryoko Owari (Shosuro family, Michio house, Scorpion clan)
+clan: scorpion
+temple: a temple of Benten in Scorpion lands
 named_entity: Soshi Otomi (Scorpion shugenja-widow of the early seventh century, who carried her husband's name forty years and was reunited with his half of their wedding mirror only at her death)
 relic_type: token (half of a broken bronze hand-mirror, paired with its mate)
 ---

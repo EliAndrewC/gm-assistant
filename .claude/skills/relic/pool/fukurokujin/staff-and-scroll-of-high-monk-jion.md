@@ -3,7 +3,8 @@ name: The Staff and Scroll of High Monk Jion
 japanese_romaji: Jion-no-Tsue
 japanese_kanji: 慈恩の杖
 fortune: fukurokujin
-temple_suggestion: sovereign Temple of Fukurokujin, Kyuden Kitsune (Fox clan)
+clan: fox
+temple: a temple of Fukurokujin in Fox lands
 named_entity: High Monk Jion (Fox monk three centuries past, famed for road-mercy)
 relic_type: implement (staff with attached scroll)
 ---

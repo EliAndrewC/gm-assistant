@@ -2,3 +2,12 @@ __pycache__
 *.lock
 .env
 .coverage
+
+# Local virtualenv + test runner caches.
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Per-machine Claude Code permission grants — gitignored by convention.
+.claude/settings.local.json

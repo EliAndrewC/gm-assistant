@@ -3,7 +3,8 @@ name: The Net of Yasuki Rokuemon
 japanese_romaji: Manjiki-no-Ami
 japanese_kanji: 満食の網
 fortune: ebisu
-temple_suggestion: subordinate Temple of Ebisu, Yasuki Yashiki (Yasuki coast, Hida vassal, Crab clan)
+clan: crab
+temple: a temple of Ebisu in Crab lands
 named_entity: Yasuki Rokuemon (Yasuki-vassal fisherman of the coastal hamlets, second century of the Yasuki domain)
 relic_type: implement (fishing net)
 ---

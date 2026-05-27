@@ -3,7 +3,8 @@ name: The Foreign Coin of Yasuki Tomomichi
 japanese_romaji: Ihou-no-Zeni
 japanese_kanji: 異邦の銭
 fortune: daikoku
-temple_suggestion: Temple of Daikoku, Yasuki Estates (Yasuki merchant family, Crab clan)
+clan: crab
+temple: a temple of Daikoku in Crab lands
 named_entity: Yasuki Tomomichi (Yasuki harbor merchant, sixth century, who broke the Pearl Coast cartel through honest dealing)
 relic_type: implement (foreign coin in display case)
 ---

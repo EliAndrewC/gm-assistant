@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Relics — Of the Seven Fortunes</title>
+<link rel="stylesheet" href="styles.css" />
+<script src="relics.js" defer></script>
+<script src="main.js" defer></script>
+</head>
+<body>
+
+  <header class="nav">
+    <div class="container nav__inner">
+      <a class="nav__brand" href="index.html">Relics <em>of the Seven Fortunes</em></a>
+      <div class="nav__seals" id="seals" role="toolbar" aria-label="Filter by fortune">
+        <!-- seals injected by main.js -->
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="container">
+      <div class="masthead">
+        <div class="masthead__copy">
+          <p class="masthead__supertitle">Of the seven fortunes</p>
+          <h1 class="masthead__title">Relics</h1>
+          <p class="masthead__lede">
+            A working pool of sacred objects, drawn from across the Empire. Each tied to a named hand; each kept by a Custodian. <em>Choose one for your story</em>, or generate another.
+          </p>
+        </div>
+        <span class="masthead__watermark" lang="ja" aria-hidden="true">福</span>
+      </div>
+    </section>
+
+    <div class="container" id="sections-root">
+      <!-- per-fortune sections injected by main.js -->
+    </div>
+
+    <footer class="container footer">
+      <p>Forty-two relics across seven fortunes. Press a seal above to focus a single fortune; the rest will fall away.</p>
+      <p><em>The pool is a starting point. Every entry can be placed in any plausible temple of its Fortune — within the clan's lands if a clan is named, anywhere in the Empire if marked </em>any<em>.</em></p>
+    </footer>
+  </main>
+
+</body>
+</html>

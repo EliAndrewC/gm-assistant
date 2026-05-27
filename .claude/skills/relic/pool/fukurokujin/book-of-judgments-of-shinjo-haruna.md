@@ -3,7 +3,8 @@ name: The Book of Judgments of Shinjo Haruna
 japanese_romaji: Onjou-no-Sho
 japanese_kanji: 温情の書
 fortune: fukurokujin
-temple_suggestion: sovereign Temple of Fukurokujin, Kyuden Shinjo (Shinjo family, Unicorn clan)
+clan: unicorn
+temple: a temple of Fukurokujin in Unicorn lands
 named_entity: Shinjo Haruna (Unicorn provincial judge of the fourth century, called the Bending Judge)
 relic_type: written material (bound book of rulings)
 ---

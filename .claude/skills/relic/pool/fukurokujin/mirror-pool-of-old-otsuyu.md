@@ -3,7 +3,8 @@ name: The Mirror-Pool of Old Otsuyu
 japanese_romaji: Otsuyu-no-Ike
 japanese_kanji: お露の池
 fortune: fukurokujin
-temple_suggestion: subordinate Temple of Fukurokujin, Yoki-mura (a market town in Iuchi Province, Unicorn lands)
+clan: unicorn
+temple: a temple of Fukurokujin in Unicorn lands
 named_entity: Otsuyu (peasant woman of Yoki-mura, six generations past, whose counsel the village headsmen would seek)
 relic_type: natural object (small stone basin holding a still pool of rainwater)
 ---

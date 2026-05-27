@@ -417,13 +417,16 @@ name: <English name of the relic>
 japanese_romaji: <transliteration, e.g. Makoto-no-Masu>
 japanese_kanji: <kanji, e.g. 誠の升>
 fortune: <one of: benten, bishamon, daikoku, ebisu, fukurokujin, hotei, jurojin>
-temple_suggestion: <a specific temple where the relic could plausibly reside>
-named_entity: <the historical or legendary figure the relic is tied to>
+clan: <clan slug ("crab", "crane", "dragon", "fox", "lion", "phoenix", "scorpion", "unicorn", "mantis", "sparrow", "wasp", etc.) — or "any" if the relic isn't clan-locked>
+temple: <generic description of where the relic plausibly resides, e.g. "a temple of Ebisu in Crab lands" or "a temple of Hotei, in any city of the Empire". Do NOT name a specific city; the GM places it.>
+named_entity: <the historical or legendary figure the relic is tied to; can include clan family names but should not lock to a specific city>
 relic_type: <short tag like "implement (rice-measure)", "vessel (rice-bowl)", "garment (mantle)", "pair (river stones)", etc.>
 ---
 
 <full prose description in the temple's voice, multi-paragraph as needed>
 ```
+
+**Important**: Pool relics should be reusable across campaigns. Unless a specific city is essential to the relic's character, do not name one in either the frontmatter or the prose. Clan family names are fine in `named_entity` (they justify the `clan` tag); specific castles/temple-cities (Kyuden X, Shiro X, Shinden X) are not.
 
 ### Goals for the pool
 

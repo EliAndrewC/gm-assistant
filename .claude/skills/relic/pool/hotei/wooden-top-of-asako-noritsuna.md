@@ -3,7 +3,8 @@ name: The Wooden Top of Asako Noritsuna
 japanese_romaji: Noritsuna-no-Koma
 japanese_kanji: 紀綱の独楽
 fortune: hotei
-temple_suggestion: subordinate Temple of Hotei in an Asako provincial town (Asako house, Phoenix clan)
+clan: phoenix
+temple: a temple of Hotei in Phoenix lands
 named_entity: Asako Noritsuna (Asako scholar of the fifth century, who gave away his property after the death of his small son)
 relic_type: implement (child's wooden spinning top)
 ---

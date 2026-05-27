@@ -3,7 +3,8 @@ name: The Shuttle of Mirumoto Ohatsu
 japanese_romaji: Hata-no-Hi
 japanese_kanji: 機の梭
 fortune: ebisu
-temple_suggestion: subordinate Temple of Ebisu, Kitsuki Yashiki (Kitsuki family, Dragon clan)
+clan: dragon
+temple: a temple of Ebisu in Dragon lands
 named_entity: Mirumoto Ohatsu (Mirumoto-vassal weaver of the Kitsuki river-towns, fifth century after the founding of the Kitsuki line)
 relic_type: implement (weaver's shuttle)
 ---

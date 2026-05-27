@@ -3,7 +3,8 @@ name: The Naginata of the Nun Tomohime
 japanese_romaji: Sugara-no-Naginata
 japanese_kanji: 縋らの薙刀
 fortune: bishamon
-temple_suggestion: subordinate Temple of Bishamon, Shiro Matsu (Matsu family, Lion clan)
+clan: lion
+temple: a temple of Bishamon in Lion lands
 named_entity: the nun Tomohime (Matsu-born widow who took monastic vows and was twice called to trial-by-arms)
 relic_type: weapon (naginata)
 ---

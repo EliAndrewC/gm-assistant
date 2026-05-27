@@ -3,14 +3,15 @@ name: The Long Shell of Bayushi Akemi
 japanese_romaji: Nagaki-no-Kora
 japanese_kanji: 長きの甲羅
 fortune: jurojin
-temple_suggestion: sovereign Temple of Jurojin, Kyuden Bayushi (Bayushi family, Scorpion clan)
+clan: scorpion
+temple: a temple of Jurojin in Scorpion lands
 named_entity: Bayushi Akemi (Scorpion courtier of the late fourth century, who outlived four daimyo and every rival she ever knew)
 relic_type: natural object (turtle-shell amulet)
 ---
 
 The shell of a mountain turtle, the size of a woman's open hand, polished so that the dark plates of its back catch the lamplight like wet stone. Along the rim a thread of pale silk has been knotted through five small holes drilled by Akemi's own hand; from the silk depends a single carved bead of bone, which the old courtier kept against her breast for sixty-two years. The shell rests on a black-lacquered tray in a narrow chamber off the temple's eastern colonnade, beside a brass stand on which a brazier of long-burning charcoal is kept warm at all hours. The chamber smells of pine resin and old ink.
 
-Bayushi Akemi was a courtier of the late fourth century, and the longest-lived woman of her generation in the Bayushi house. She entered Kyuden Bayushi's court in her seventeenth year and did not leave it until her ninety-first, having served four daimyo of the Scorpion in succession. She had no children of her own, no husband whose name survives in the family records, and no enemies left living to mourn her — a circumstance she is reported to have remarked upon in her final winter with neither pleasure nor regret. The shell she carried she had taken from the riverbank of the Drowned Merchant's Tributary on the day of her gempukku, when an old turtle had hauled itself up onto the stones to die. Akemi remarked that the shell would carry her past her enemies as it had carried its first owner past many seasons, and she fastened it to her sash that same evening.
+Bayushi Akemi was a courtier of the late fourth century, and the longest-lived woman of her generation in the Bayushi house. She entered the Scorpion court in her seventeenth year and did not leave it until her ninety-first, having served four daimyo of the Scorpion in succession. She had no children of her own, no husband whose name survives in the family records, and no enemies left living to mourn her — a circumstance she is reported to have remarked upon in her final winter with neither pleasure nor regret. The shell she carried she had taken from the riverbank of the Drowned Merchant's Tributary on the day of her gempukku, when an old turtle had hauled itself up onto the stones to die. Akemi remarked that the shell would carry her past her enemies as it had carried its first owner past many seasons, and she fastened it to her sash that same evening.
 
 The shell came to the temple by the bequest of her granddaughter-in-law, who had received it from Akemi's hand on the night before the old courtier's death. The bequest noted only: *for those who would yet endure*.
 

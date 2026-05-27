@@ -3,7 +3,8 @@ name: The Decade Beads of Shosuro Emiko
 japanese_romaji: Junen-Juzu
 japanese_kanji: 十年数珠
 fortune: jurojin
-temple_suggestion: subordinate Temple of Jurojin, Shiro Shosuro (Shosuro vassal city, Scorpion clan)
+clan: scorpion
+temple: a temple of Jurojin in Scorpion lands
 named_entity: Shosuro Emiko (Scorpion widow of the late third century, who outlived her husband by sixty-one years and kept the count of her widowhood on these beads)
 relic_type: implement (prayer beads numbered by decade)
 ---

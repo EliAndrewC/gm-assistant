@@ -3,7 +3,8 @@ name: The War-Drum of the Ashigaru Tarobei
 japanese_romaji: Tarobei-no-Taiko
 japanese_kanji: 太郎兵衛の太鼓
 fortune: bishamon
-temple_suggestion: shrine of Bishamon at the Hiruma garrison-outpost of Sunda Mizu, on the Kaiu Wall (Hiruma vassal of Hida, Crab clan)
+clan: crab
+temple: a temple of Bishamon in Crab lands
 named_entity: Tarobei (peasant ashigaru drummer of the Kaiu Wall levy, mid-fifth century)
 relic_type: implement (war-drum, taiko)
 ---
