@@ -13,10 +13,9 @@
 <header class="app-nav">
   <div class="container app-nav__inner">
     <a class="app-nav__brand" href="/">L7R <em>Toolkit</em></a>
-    {# Section nav only renders for authenticated users. Public pages
-       (auth/login, terms, privacy) keep the brand wordmark but drop
-       link targets the unauthenticated user can't reach. #}
-    {% if current_user %}
+    {# Section nav renders for everyone. Login-gated sections (chargen)
+       redirect to /auth/login on click, which is more discoverable than
+       hiding them — anonymous visitors can see what the toolkit offers. #}
     <nav>
       <ul class="app-nav__sections">
         {% for section in SECTIONS %}
@@ -35,11 +34,17 @@
         {% endfor %}
       </ul>
     </nav>
-    {% endif %}
     {% if current_user %}
       <div class="app-nav__user">
         <span class="app-nav__user-name">{{ current_user.name }}</span>
+        {% if current_user.role == 'gm' %}
+          <span class="app-nav__user-badge" title="Game master">GM</span>
+        {% endif %}
         <a class="app-nav__user-logout" href="/auth/logout">sign out</a>
+      </div>
+    {% else %}
+      <div class="app-nav__user">
+        <a class="app-nav__user-signin" href="/auth/login">sign in</a>
       </div>
     {% endif %}
   </div>

@@ -12,7 +12,13 @@ from pathlib import Path
 import cherrypy
 import pytest
 
-from l7r.app import Root, _error_page_handler, _group_relics_by_fortune, make_app
+from l7r.app import (
+    Root,
+    _error_page_handler,
+    _forbidden_handler,
+    _group_relics_by_fortune,
+    make_app,
+)
 from l7r.names import load_names
 from l7r.pool import load_relics
 
@@ -209,6 +215,78 @@ def test_error_page_handler_renders_404_template() -> None:
     html = _error_page_handler(404, 'Not Found', '', 'cherrypy/0').decode('utf-8')
     assert '404' in html
     assert 'L7R' in html
+
+
+def test_forbidden_handler_renders_403_template() -> None:
+    html = _forbidden_handler(403, 'Forbidden', '', 'cherrypy/0').decode('utf-8')
+    assert 'GM' in html
+    assert 'L7R' in html
+
+
+# ---------------------------------------------------------------------------
+# /archive/save — GM-only stub
+# ---------------------------------------------------------------------------
+
+
+def _stub_request_body(payload_bytes: bytes) -> None:
+    """Install a one-shot request body that returns the given bytes."""
+
+    class _Body:
+        def __init__(self, data: bytes) -> None:
+            self._data = data
+
+        def read(self) -> bytes:
+            return self._data
+
+    cherrypy.request.body = _Body(payload_bytes)
+    cherrypy.request.method = 'POST'
+    # response.headers exists on the thread-local response; reset to a fresh
+    # dict so the handler's Content-Type assignment doesn't bleed across tests.
+    cherrypy.response.headers = {}
+    # Some test paths read response.cookie even without setting it; provide one.
+    import http.cookies
+
+    cherrypy.response.cookie = http.cookies.SimpleCookie()
+
+
+def test_archive_save_returns_stub_ok_for_valid_post(root: Root) -> None:
+    import json
+
+    _stub_request_body(b'{"name": "Test Character", "type": "samurai"}')
+    body = root.archive(action='save').decode('utf-8')
+    payload = json.loads(body)
+    assert payload['ok'] is True
+    assert 'stub' in payload['note'].lower()
+
+
+def test_archive_save_handles_empty_body(root: Root) -> None:
+    import json
+
+    _stub_request_body(b'')
+    payload = json.loads(root.archive(action='save').decode('utf-8'))
+    assert payload['ok'] is True
+
+
+def test_archive_save_returns_400_on_invalid_json(root: Root) -> None:
+    _stub_request_body(b'{not valid json')
+    with pytest.raises(cherrypy.HTTPError) as exc:
+        root.archive(action='save')
+    assert exc.value.status == 400
+
+
+def test_archive_with_unknown_action_returns_404(root: Root) -> None:
+    _stub_request_body(b'{}')
+    with pytest.raises(cherrypy.HTTPError) as exc:
+        root.archive(action='unknown')
+    assert exc.value.status == 404
+
+
+def test_archive_save_rejects_get(root: Root) -> None:
+    _stub_request_body(b'{}')
+    cherrypy.request.method = 'GET'
+    with pytest.raises(cherrypy.HTTPError) as exc:
+        root.archive(action='save')
+    assert exc.value.status == 405
 
 
 def test_load_secrets_returns_empty_dict_when_file_missing(

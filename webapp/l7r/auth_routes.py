@@ -22,10 +22,13 @@ from l7r.auth import (
     CurrentUser,
     DiscordClient,
     RealDiscordClient,
+    Role,
     authenticate_request,
     build_authorize_url,
     make_session_cookie,
     new_state,
+    role_for,
+    role_meets,
 )
 from l7r.sections import SECTIONS
 
@@ -91,20 +94,40 @@ def _read_cookie(name: str) -> str | None:
 def install_auth_tool(config: AuthConfig) -> None:
     """Register the global `tools.l7r_auth` CherryPy tool.
 
-    Apps that want auth gating set `'tools.l7r_auth.on': True` in their config.
+    Apps that want auth gating set `'tools.l7r_auth.on': True` in their
+    config. The default `min_role` is `'player'` — a route that opts into
+    the tool without specifying min_role still requires a logged-in
+    whitelisted user, so a forgotten mount config fails closed, not open.
+
+    Per-mount min_role examples:
+        '/':         'anonymous'  → never blocks; attaches user if present
+        '/chargen':  'player'     → must be a logged-in whitelisted player
+        '/archive':  'gm'         → must be in [gm_whitelist]
     """
 
-    def check() -> None:
+    def check(min_role: Role = 'player') -> None:
         path = cherrypy.request.path_info
         if _is_public_path(path):
             return
         if not config.is_configured:
+            # Anonymous-only routes shouldn't 503 the catalog just because
+            # Discord OAuth isn't configured for this deployment.
+            if min_role == 'anonymous':
+                return
             raise cherrypy.HTTPError(503, 'authentication not configured')
         user = authenticate_request(_read_cookie(SESSION_COOKIE_NAME), config)
+        # Attach the user (or absence thereof) so handlers and templates
+        # can render auth-aware UI on anonymous routes too.
+        if user is not None:
+            cherrypy.request.l7r_user = user
+        if min_role == 'anonymous':
+            return
         if user is None:
             raise cherrypy.HTTPRedirect('/auth/login')
-        # Attach for handlers + templates.
-        cherrypy.request.l7r_user = user
+        if not role_meets(user.role, min_role):
+            # Logged in, but not at the required level. Login won't help —
+            # 403, rendered through the app's error_page.403 handler.
+            raise cherrypy.HTTPError(403, 'forbidden')
 
     cherrypy.tools.l7r_auth = cherrypy.Tool('before_handler', check, priority=70)
 
@@ -203,7 +226,7 @@ class AuthRoot:
         if not discord_id:
             cherrypy.response.status = 502
             return self._render('auth_error.html', detail='Discord did not return an account id.')
-        if not self._config.whitelist.is_allowed(discord_id):
+        if role_for(discord_id, self._config) is None:
             display = user_data.get('global_name') or user_data.get('username') or '(unknown)'
             logger.info('access denied for discord id %s (%s)', discord_id, display)
             cherrypy.response.status = 403

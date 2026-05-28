@@ -22,6 +22,8 @@ from l7r.auth import (
     new_state,
     parse_session_cookie,
     parse_whitelist_section,
+    role_for,
+    role_meets,
     to_jsonable,
 )
 
@@ -187,14 +189,29 @@ def test_load_auth_config_full() -> None:
         'discord': {'client_id': '"abc"', 'client_secret': "'shh'"},
         'auth': {'session_secret': 'super-secret'},
         'discord_whitelist': {'123': 'Alice', '456': 'Bob'},
+        'gm_whitelist': {'123': 'Alice'},
     }
     cfg = load_auth_config(secrets_data)
     assert cfg.discord_client_id == 'abc'
     assert cfg.discord_client_secret == 'shh'
     assert cfg.session_secret == 'super-secret'
     assert cfg.is_configured is True
-    assert cfg.whitelist.is_allowed('123')
-    assert cfg.whitelist.is_allowed('456')
+    assert cfg.player_whitelist.is_allowed('123')
+    assert cfg.player_whitelist.is_allowed('456')
+    assert cfg.gm_whitelist.is_allowed('123')
+    assert not cfg.gm_whitelist.is_allowed('456')
+
+
+def test_load_auth_config_handles_missing_gm_whitelist_section() -> None:
+    # gm_whitelist is optional — older deployments without the section
+    # should still load cleanly with an empty GM whitelist.
+    secrets_data = {
+        'discord': {'client_id': 'abc', 'client_secret': 'shh'},
+        'auth': {'session_secret': 's'},
+        'discord_whitelist': {'123': 'Alice'},
+    }
+    cfg = load_auth_config(secrets_data)
+    assert cfg.gm_whitelist.entries == ()
 
 
 def test_load_auth_config_is_not_configured_when_empty() -> None:
@@ -213,10 +230,12 @@ def test_load_auth_config_handles_none_section_values() -> None:
             'discord': None,
             'auth': None,
             'discord_whitelist': None,
+            'gm_whitelist': None,
         }
     )
     assert cfg.is_configured is False
-    assert cfg.whitelist.entries == ()
+    assert cfg.player_whitelist.entries == ()
+    assert cfg.gm_whitelist.entries == ()
 
 
 def test_default_redirect_uri_localhost(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -259,13 +278,19 @@ def test_new_state_is_unique() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _config_with_whitelist(*entries: tuple[str, str]) -> AuthConfig:
+def _config_with_whitelist(
+    *entries: tuple[str, str],
+    gm_entries: tuple[tuple[str, str], ...] = (),
+) -> AuthConfig:
     return AuthConfig(
         discord_client_id='cid',
         discord_client_secret='csec',
         session_secret='secret',
-        whitelist=Whitelist(
+        player_whitelist=Whitelist(
             entries=tuple(WhitelistEntry(discord_id=i, name=n) for i, n in entries)
+        ),
+        gm_whitelist=Whitelist(
+            entries=tuple(WhitelistEntry(discord_id=i, name=n) for i, n in gm_entries)
         ),
         redirect_uri='http://127.0.0.1:8080/auth/callback',
     )
@@ -275,7 +300,15 @@ def test_authenticate_request_happy_path() -> None:
     cfg = _config_with_whitelist(('123', 'Alice'))
     cookie = make_session_cookie('123', 'secret')
     user = authenticate_request(cookie, cfg)
-    assert user == CurrentUser(discord_id='123', name='Alice')
+    assert user == CurrentUser(discord_id='123', name='Alice', role='player')
+
+
+def test_authenticate_request_attaches_gm_role_for_gm_member() -> None:
+    cfg = _config_with_whitelist(('123', 'Alice'), gm_entries=(('123', 'Alice'),))
+    cookie = make_session_cookie('123', 'secret')
+    user = authenticate_request(cookie, cfg)
+    assert user is not None
+    assert user.role == 'gm'
 
 
 def test_authenticate_request_returns_none_when_not_configured() -> None:
@@ -283,7 +316,8 @@ def test_authenticate_request_returns_none_when_not_configured() -> None:
         discord_client_id='',
         discord_client_secret='',
         session_secret='',
-        whitelist=Whitelist(entries=()),
+        player_whitelist=Whitelist(entries=()),
+        gm_whitelist=Whitelist(entries=()),
         redirect_uri='',
     )
     assert authenticate_request('whatever', cfg) is None
@@ -307,6 +341,62 @@ def test_authenticate_request_returns_none_when_user_removed_from_whitelist() ->
     assert authenticate_request(cookie, cfg) is None
 
 
+def test_authenticate_request_promotes_gm_only_member_to_gm() -> None:
+    # Degenerate config: discord_id is on gm_whitelist but NOT on
+    # player_whitelist. role_for promotes to 'gm' since gm ≥ player; the
+    # display name falls back to the gm_whitelist entry.
+    cfg = _config_with_whitelist(gm_entries=(('999', 'Eli'),))
+    cookie = make_session_cookie('999', 'secret')
+    user = authenticate_request(cookie, cfg)
+    assert user is not None
+    assert user.discord_id == '999'
+    assert user.name == 'Eli'
+    assert user.role == 'gm'
+
+
+# ---------------------------------------------------------------------------
+# role_for / role_meets
+# ---------------------------------------------------------------------------
+
+
+def test_role_for_returns_none_for_non_member() -> None:
+    cfg = _config_with_whitelist(('123', 'Alice'))
+    assert role_for('999', cfg) is None
+
+
+def test_role_for_returns_player_for_player_only() -> None:
+    cfg = _config_with_whitelist(('123', 'Alice'))
+    assert role_for('123', cfg) == 'player'
+
+
+def test_role_for_returns_gm_for_member_of_both_whitelists() -> None:
+    cfg = _config_with_whitelist(('123', 'Alice'), gm_entries=(('123', 'Alice'),))
+    assert role_for('123', cfg) == 'gm'
+
+
+def test_role_for_returns_gm_when_only_on_gm_whitelist() -> None:
+    cfg = _config_with_whitelist(gm_entries=(('999', 'Eli'),))
+    assert role_for('999', cfg) == 'gm'
+
+
+def test_role_meets_self() -> None:
+    assert role_meets('player', 'player')
+    assert role_meets('gm', 'gm')
+    assert role_meets('anonymous', 'anonymous')
+
+
+def test_role_meets_hierarchy() -> None:
+    assert role_meets('gm', 'player')
+    assert role_meets('gm', 'anonymous')
+    assert role_meets('player', 'anonymous')
+
+
+def test_role_meets_rejects_below() -> None:
+    assert not role_meets('anonymous', 'player')
+    assert not role_meets('anonymous', 'gm')
+    assert not role_meets('player', 'gm')
+
+
 # ---------------------------------------------------------------------------
 # Misc helpers
 # ---------------------------------------------------------------------------
@@ -317,9 +407,10 @@ def test_to_jsonable_anonymous() -> None:
 
 
 def test_to_jsonable_for_user() -> None:
-    s = to_jsonable(CurrentUser(discord_id='123', name='Alice'))
+    s = to_jsonable(CurrentUser(discord_id='123', name='Alice', role='player'))
     assert '"id": "123"' in s
     assert '"name": "Alice"' in s
+    assert '"role": "player"' in s
 
 
 def test_real_discord_client_is_constructible() -> None:
@@ -330,7 +421,7 @@ def test_real_discord_client_is_constructible() -> None:
 
 
 def test_current_user_is_immutable() -> None:
-    user = CurrentUser(discord_id='1', name='A')
+    user = CurrentUser(discord_id='1', name='A', role='player')
     with pytest.raises((AttributeError, TypeError)):
         user.discord_id = '2'  # type: ignore[misc]
 

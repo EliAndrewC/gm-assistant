@@ -25,7 +25,7 @@ import logging
 import secrets
 import time
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 from urllib.parse import urlencode
 
 import requests
@@ -41,6 +41,25 @@ SESSION_COOKIE_NAME = 'l7r_session'
 STATE_COOKIE_NAME = 'l7r_oauth_state'
 DEFAULT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60  # 30 days
 STATE_TTL_SECONDS = 10 * 60  # 10 minutes — for completing the OAuth round trip
+
+
+# Role hierarchy used both as a gate config (`min_role` on the auth tool)
+# and as the role stamped on an authenticated CurrentUser. 'anonymous' is
+# only ever a min_role value — by convention, CurrentUser.role is always
+# 'player' or 'gm' since the absence of a CurrentUser already conveys
+# "anonymous". role_meets() encodes the ordering: gm ≥ player ≥ anonymous.
+Role = Literal['anonymous', 'player', 'gm']
+
+_ROLE_RANK: dict[Role, int] = {
+    'anonymous': 0,
+    'player': 1,
+    'gm': 2,
+}
+
+
+def role_meets(actual: Role, required: Role) -> bool:
+    """True if `actual` satisfies `required` under the role hierarchy."""
+    return _ROLE_RANK[actual] >= _ROLE_RANK[required]
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +92,7 @@ class CurrentUser:
 
     discord_id: str
     name: str
+    role: Role
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,7 +102,14 @@ class AuthConfig:
     discord_client_id: str
     discord_client_secret: str
     session_secret: str
-    whitelist: Whitelist
+    # Discord IDs allowed to log in. Membership here grants the 'player'
+    # role. The OAuth callback denies session issuance to anyone not on
+    # this list, so a logged-in user is always at least a player.
+    player_whitelist: Whitelist
+    # Subset of player_whitelist (by convention) that gets the 'gm' role.
+    # Membership in gm_whitelist alone — without also being on
+    # player_whitelist — still resolves to 'gm', since gm ≥ player.
+    gm_whitelist: Whitelist
     redirect_uri: str
 
     @property
@@ -236,11 +263,13 @@ def load_auth_config(secrets_dict: dict[str, Any]) -> AuthConfig:
     Expected sections:
       [discord]            client_id, client_secret
       [auth]               session_secret
-      [discord_whitelist]  <discord_id> = <display name>
+      [discord_whitelist]  <discord_id> = <display name>  (players)
+      [gm_whitelist]       <discord_id> = <display name>  (GMs; optional)
     """
     discord = secrets_dict.get('discord', {}) or {}
     auth = secrets_dict.get('auth', {}) or {}
-    whitelist_raw = secrets_dict.get('discord_whitelist', {}) or {}
+    player_whitelist_raw = secrets_dict.get('discord_whitelist', {}) or {}
+    gm_whitelist_raw = secrets_dict.get('gm_whitelist', {}) or {}
     return AuthConfig(
         discord_client_id=str(discord.get('client_id', '') or '').strip().strip('"').strip("'"),
         discord_client_secret=str(discord.get('client_secret', '') or '')
@@ -248,7 +277,8 @@ def load_auth_config(secrets_dict: dict[str, Any]) -> AuthConfig:
         .strip('"')
         .strip("'"),
         session_secret=str(auth.get('session_secret', '') or '').strip().strip('"').strip("'"),
-        whitelist=parse_whitelist_section(whitelist_raw),
+        player_whitelist=parse_whitelist_section(player_whitelist_raw),
+        gm_whitelist=parse_whitelist_section(gm_whitelist_raw),
         redirect_uri=default_redirect_uri(),
     )
 
@@ -286,6 +316,23 @@ def new_state() -> str:
 # ---------------------------------------------------------------------------
 
 
+def role_for(discord_id: str, config: AuthConfig) -> Role | None:
+    """Resolve the role for a Discord ID, or None if they have no access.
+
+    Returns 'gm' if on either or both whitelists with gm membership; 'player'
+    if on the player whitelist only; None if on neither. GM membership
+    promotes to 'gm' even without explicit player_whitelist membership, since
+    gm ≥ player and a GM never needs less access than a player.
+    """
+    on_gm = config.gm_whitelist.is_allowed(discord_id)
+    on_player = config.player_whitelist.is_allowed(discord_id)
+    if on_gm:
+        return 'gm'
+    if on_player:
+        return 'player'
+    return None
+
+
 def authenticate_request(cookie_value: str | None, config: AuthConfig) -> CurrentUser | None:
     """Given a raw cookie value, return the authenticated user or None."""
     if not cookie_value or not config.is_configured:
@@ -293,15 +340,22 @@ def authenticate_request(cookie_value: str | None, config: AuthConfig) -> Curren
     discord_id = parse_session_cookie(cookie_value, config.session_secret)
     if discord_id is None:
         return None
-    name = config.whitelist.name_for(discord_id)
-    if name is None:
-        # User was on the whitelist when they signed in but has been removed since.
+    role = role_for(discord_id, config)
+    if role is None:
+        # User was on a whitelist when they signed in but has been removed since.
         return None
-    return CurrentUser(discord_id=discord_id, name=name)
+    # Prefer the player_whitelist's display name; fall back to gm_whitelist
+    # for GM-only entries that aren't duplicated in player_whitelist.
+    # role_for() above already confirmed the user is on at least one
+    # whitelist, and parse_whitelist_section enforces non-empty names, so
+    # at least one of these lookups must return a non-empty string.
+    name = config.player_whitelist.name_for(discord_id) or config.gm_whitelist.name_for(discord_id)
+    assert name is not None  # noqa: S101 — invariant guaranteed by role_for
+    return CurrentUser(discord_id=discord_id, name=name, role=role)
 
 
 def to_jsonable(user: CurrentUser | None) -> str:
     """Render a user for logging (no secrets)."""
     if user is None:
         return 'anonymous'
-    return json.dumps({'id': user.discord_id, 'name': user.name})
+    return json.dumps({'id': user.discord_id, 'name': user.name, 'role': user.role})

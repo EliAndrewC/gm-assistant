@@ -53,13 +53,17 @@ def cp_request() -> Any:
 def _make_config(
     configured: bool = True,
     whitelist: tuple[tuple[str, str], ...] = (('123', 'Alice'),),
+    gm_whitelist: tuple[tuple[str, str], ...] = (),
 ) -> AuthConfig:
     return AuthConfig(
         discord_client_id='cid' if configured else '',
         discord_client_secret='csec' if configured else '',
         session_secret='secret' if configured else '',
-        whitelist=Whitelist(
+        player_whitelist=Whitelist(
             entries=tuple(WhitelistEntry(discord_id=i, name=n) for i, n in whitelist)
+        ),
+        gm_whitelist=Whitelist(
+            entries=tuple(WhitelistEntry(discord_id=i, name=n) for i, n in gm_whitelist)
         ),
         redirect_uri='http://127.0.0.1:8080/auth/callback',
     )
@@ -232,6 +236,88 @@ def test_auth_tool_sets_request_user_for_valid_session(cp_request: Any) -> None:
     assert user is not None
     assert user.discord_id == '123'
     assert user.name == 'Alice'
+    # Default role is 'player' since this user is on player_whitelist only.
+    assert user.role == 'player'
+
+
+# ---------------------------------------------------------------------------
+# Role-aware gating (min_role)
+# ---------------------------------------------------------------------------
+
+
+def test_auth_tool_defaults_to_player_min_role(cp_request: Any) -> None:
+    # Regression: a mount that forgets to set min_role must fail closed.
+    # The tool's default min_role is 'player', so an anonymous request
+    # should still be redirected to login.
+    cfg = _make_config()
+    install_auth_tool(cfg)
+    cherrypy.request.path_info = '/'
+    with pytest.raises(cherrypy.HTTPRedirect):
+        cherrypy.tools.l7r_auth.callable()  # no min_role kwarg
+
+
+def test_auth_tool_anonymous_min_role_allows_logged_out(cp_request: Any) -> None:
+    cfg = _make_config()
+    install_auth_tool(cfg)
+    cherrypy.request.path_info = '/'
+    # No session cookie. Must not raise.
+    cherrypy.tools.l7r_auth.callable(min_role='anonymous')
+    assert current_user() is None
+
+
+def test_auth_tool_anonymous_min_role_attaches_user_when_logged_in(cp_request: Any) -> None:
+    # Anonymous-allowed routes still attach current_user when a valid
+    # session cookie is present — the nav needs this to render the user pill.
+    cfg = _make_config()
+    install_auth_tool(cfg)
+    cherrypy.request.path_info = '/'
+    cherrypy.request.cookie[SESSION_COOKIE_NAME] = make_session_cookie('123', 'secret')
+    cherrypy.tools.l7r_auth.callable(min_role='anonymous')
+    user = current_user()
+    assert user is not None
+    assert user.role == 'player'
+
+
+def test_auth_tool_anonymous_min_role_503_skipped_when_not_configured(
+    cp_request: Any,
+) -> None:
+    # A public catalog shouldn't 503 just because Discord OAuth isn't
+    # configured for this deployment.
+    cfg = _make_config(configured=False)
+    install_auth_tool(cfg)
+    cherrypy.request.path_info = '/'
+    cherrypy.tools.l7r_auth.callable(min_role='anonymous')  # must not raise
+
+
+def test_auth_tool_gm_min_role_blocks_player(cp_request: Any) -> None:
+    cfg = _make_config()
+    install_auth_tool(cfg)
+    cherrypy.request.path_info = '/archive/save'
+    cherrypy.request.cookie[SESSION_COOKIE_NAME] = make_session_cookie('123', 'secret')
+    with pytest.raises(cherrypy.HTTPError) as exc:
+        cherrypy.tools.l7r_auth.callable(min_role='gm')
+    assert exc.value.status == 403
+
+
+def test_auth_tool_gm_min_role_allows_gm(cp_request: Any) -> None:
+    cfg = _make_config(gm_whitelist=(('123', 'Alice'),))
+    install_auth_tool(cfg)
+    cherrypy.request.path_info = '/archive/save'
+    cherrypy.request.cookie[SESSION_COOKIE_NAME] = make_session_cookie('123', 'secret')
+    cherrypy.tools.l7r_auth.callable(min_role='gm')  # must not raise
+    user = current_user()
+    assert user is not None
+    assert user.role == 'gm'
+
+
+def test_auth_tool_gm_min_role_redirects_anonymous_to_login(cp_request: Any) -> None:
+    # A logged-out user hitting a GM route gets sent to login (where they
+    # might still be denied, but the redirect is the right first step).
+    cfg = _make_config()
+    install_auth_tool(cfg)
+    cherrypy.request.path_info = '/archive/save'
+    with pytest.raises(cherrypy.HTTPRedirect):
+        cherrypy.tools.l7r_auth.callable(min_role='gm')
 
 
 # ---------------------------------------------------------------------------

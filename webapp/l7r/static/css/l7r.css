@@ -1348,9 +1348,18 @@ a { color: inherit; }
 /* Action buttons row */
 .chargen-shell__actions {
   display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0 0 2rem;
+}
+
+/* Primary actions (Generate, Upload) form their own visual cluster
+   with a tight gap, separate from the GM-only archive sibling. */
+.chargen-shell__primary-actions {
+  display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-  margin: 0 0 2rem;
 }
 
 .chargen-button,
@@ -1824,6 +1833,39 @@ a { color: inherit; }
 }
 
 .app-nav__user-logout:hover {
+  color: var(--vermillion-deep);
+  text-decoration: underline;
+}
+
+/* GM badge — small role indicator next to the user name.
+   Parent .app-nav__user uses align-items: baseline so name + sign-out
+   sit on the same text baseline; the badge is a bordered box, so its
+   own baseline is its bottom edge, which would visually sag below the
+   name. align-self: center overrides the parent to optically center
+   the chip against the name's x-height. */
+.app-nav__user-badge {
+  align-self: center;
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--vermillion);
+  border-radius: 0.15rem;
+  color: var(--vermillion);
+  font-size: 0.62rem;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+}
+
+/* "Sign in" link mirrors the sign-out treatment for visual symmetry. */
+.app-nav__user-signin {
+  text-decoration: none;
+  color: var(--vermillion);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+}
+
+.app-nav__user-signin:hover {
   color: var(--vermillion-deep);
   text-decoration: underline;
 }

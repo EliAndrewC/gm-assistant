@@ -38,18 +38,31 @@
     var cropper = null;
 
     $(function () {
-        $.each(['base_rank', 'type', 'generate', 'upload', 'fields', 'clan', 'family', 'house', 'lineage', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container'], function (i, s) {
+        $.each(['base_rank', 'type', 'generate', 'upload', 'archive', 'fields', 'clan', 'family', 'house', 'lineage', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         dom.$upload.prop('disabled', true);
+        // dom.$archive is empty for non-GM users (button isn't rendered).
+        // jQuery silently no-ops on empty sets, so the disabled flag is safe.
+        dom.$archive.prop('disabled', true);
         dom.$generate_art.prop('disabled', true);
 
         _.each(types, function (type) {
             dom.$type.append($('<option></option>').attr('value', type).text(type.title()));
         });
-        _.each(config.base_ranks, function (ignored, rank) {
-            dom.$base_rank.append($('<option></option>').attr('value', rank).text(rank.title()));
-        });
+
+        // Rank dropdown cascades off type. config.ranks is keyed by type
+        // (Samurai / Monk / Peasant / Legionnaire); each value is {N: label}.
+        var populateRanks = function () {
+            dom.$base_rank.empty().append('<option value="">— any —</option>');
+            var ranksForType = _.get(config.ranks, dom.$type.val()) || {};
+            _.each(ranksForType, function (label, rank) {
+                dom.$base_rank.append(
+                    $('<option></option>').attr('value', rank).text(rank + '. ' + label));
+            });
+        };
+        dom.$type.on('change', populateRanks);
+        populateRanks();  // initial populate for the default-selected type
 
         dropdownPopulator('clan', 'family');
         dropdownPopulator('family', 'house');
@@ -72,6 +85,7 @@
                     }
                     dom.$fields.empty();
                     dom.$upload.prop('disabled', false);
+                    dom.$archive.prop('disabled', false);
 
                     var fields = [
                         $('<input type="text" id="name" />').val(character.full_name),
@@ -215,6 +229,25 @@
                 }
             });
         });
+
+        // GM-only "Save to archive". The button isn't rendered for non-GMs,
+        // so binding to an empty set is a safe no-op for them.
+        dom.$archive.on('click', function() {
+            if (!currentCharacter) return;
+            $.ajax({
+                url: '/archive/save',
+                type: 'POST',
+                data: JSON.stringify(currentCharacter),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(resp) {
+                    alert(resp.note || (resp.ok ? 'Saved.' : 'Save failed.'));
+                },
+                error: function(xhr, status, error) {
+                    alert('Save failed: ' + (xhr.status === 403 ? 'forbidden' : error));
+                }
+            });
+        });
     });
 </script>
 {% endblock %}
@@ -268,8 +301,16 @@
   </div>
 
   <div class="chargen-shell__actions">
-    <button id="generate" class="chargen-button">Generate</button>
-    <button id="upload" class="chargen-button">Upload</button>
+    {# Generate / Upload form one visual group; the GM-only archive
+       action is a separate sibling with extra gap so it never reads
+       as a third peer of the primary actions. #}
+    <div class="chargen-shell__primary-actions">
+      <button id="generate" class="chargen-button">Generate</button>
+      <button id="upload" class="chargen-button">Upload</button>
+    </div>
+    {% if current_user and current_user.role == 'gm' %}
+      <button id="archive" class="chargen-button">Save to archive</button>
+    {% endif %}
   </div>
 
   <div id="fields"></div>

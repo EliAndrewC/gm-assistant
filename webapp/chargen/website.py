@@ -12,6 +12,18 @@ from chargen import config, op, art, constants as c
 from chargen.character import Character
 from chargen import ministry
 
+# `current_user` is supplied by the l7r auth tool when chargen is mounted
+# inside the l7r toolkit. We import it lazily so chargen still imports
+# standalone (the legacy `cherryd --import chargen` path), in which case
+# every request looks anonymous to the templates.
+try:
+    from l7r.auth_routes import current_user as _l7r_current_user
+except ImportError:  # pragma: no cover — only hit by the standalone path
+
+    def _l7r_current_user():  # type: ignore[no-redef]
+        return None
+
+
 jinja_loader = jinja2.FileSystemLoader(os.path.join(c.HERE, 'templates'))
 jinja_env = jinja2.Environment(loader=jinja_loader)
 
@@ -31,12 +43,40 @@ def ajax(func):
     return wrapped
 
 
+# Sections that ConfigObj merges in from development-secrets.ini and that
+# the chargen frontend does NOT need. Filtered out before the config dict
+# is serialized into the HTML so secrets don't leak via view-source.
+# Add new secret sections here whenever development-secrets.ini grows.
+_SECRET_CONFIG_SECTIONS = frozenset(
+    {
+        'auth',
+        'discord',
+        'discord_whitelist',
+        'gemini',
+        'gm_whitelist',
+        'obsidian_portal',
+    }
+)
+
+
+def _safe_config_for_frontend() -> dict:
+    """Return the chargen config dict with secret sections stripped."""
+    full = config.dict()
+    return {k: v for k, v in full.items() if k not in _SECRET_CONFIG_SECTIONS}
+
+
 class Root:
     @cherrypy.expose
     def index(self):
         return (
             jinja_env.get_template('index.html')
-            .render({'config': config.dict(), 'types': list(Character.types().keys())})
+            .render(
+                {
+                    'config': _safe_config_for_frontend(),
+                    'types': list(Character.types().keys()),
+                    'current_user': _l7r_current_user(),
+                }
+            )
             .encode('UTF-8')
         )
 
@@ -166,7 +206,8 @@ class Root:
             jinja_env.get_template('ministry.html')
             .render(
                 {
-                    'config': config.dict(),
+                    'config': _safe_config_for_frontend(),
+                    'current_user': _l7r_current_user(),
                 }
             )
             .encode('UTF-8')

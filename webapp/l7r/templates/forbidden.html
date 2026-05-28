@@ -1,0 +1,23 @@
+{% extends "_layout.html" %}
+
+{% block title %}Forbidden — L7R Toolkit{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="auth-card auth-card--denied">
+    <p class="auth-card__supertitle">Forbidden</p>
+    <h1 class="auth-card__title">GM-only</h1>
+    <p class="auth-card__lede">
+      {% if current_user %}
+        Hello, <strong>{{ current_user.name }}</strong>. This page is reserved
+        for the GM, and your account isn&rsquo;t on that list.
+      {% else %}
+        This page is reserved for the GM.
+      {% endif %}
+    </p>
+    <a class="auth-card__button auth-card__button--secondary" href="/">
+      <span class="auth-card__button-label">Back to the toolkit</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

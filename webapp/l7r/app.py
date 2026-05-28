@@ -11,6 +11,7 @@ Routes:
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -124,6 +125,29 @@ class Root:
     def privacy(self) -> bytes:
         return self._render('privacy.html', current_section='')
 
+    # POST /archive/save — GM-only stub. The gm gate is applied via the
+    # mount config (tools.l7r_auth.min_role='gm' for the '/archive' prefix);
+    # this handler can assume the caller is a GM.
+    @cherrypy.expose
+    def archive(self, action: str = '', **_kwargs: Any) -> bytes:
+        if action != 'save':
+            raise cherrypy.HTTPError(404)
+        if cherrypy.request.method != 'POST':
+            raise cherrypy.HTTPError(405)
+        body = cherrypy.request.body.read()
+        try:
+            payload = json.loads(body) if body else {}
+        except json.JSONDecodeError:
+            raise cherrypy.HTTPError(400, 'invalid JSON body') from None
+        user = current_user()
+        logger.info(
+            'archive stub save by %s: %s',
+            user.discord_id if user else '<unknown>',
+            json.dumps(payload)[:500],
+        )
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        return json.dumps({'ok': True, 'note': 'archive stub — not yet persisted'}).encode('utf-8')
+
     # GET /names
     @cherrypy.expose
     def names(self, gender: str | None = None, caste: str | None = None) -> bytes:
@@ -170,6 +194,15 @@ def _error_page_handler(status: int, message: str, traceback: str, version: str)
     """Render the 404 page for missing routes inside the shared shell."""
     env = build_environment()
     template = env.get_template('_404.html')
+    return template.render(
+        SECTIONS=SECTIONS, current_section='', current_user=current_user()
+    ).encode('utf-8')
+
+
+def _forbidden_handler(status: int, message: str, traceback: str, version: str) -> bytes:
+    """Render the 403 page when the auth tool blocks a non-GM user."""
+    env = build_environment()
+    template = env.get_template('forbidden.html')
     return template.render(
         SECTIONS=SECTIONS, current_section='', current_user=current_user()
     ).encode('utf-8')
@@ -235,13 +268,20 @@ def mount_application() -> None:
 
     auth_config = _auth_config()
     install_auth_tool(auth_config)
-    auth_tool_config = {'/': {'tools.l7r_auth.on': True}}
+
+    # Chargen is the character generator — logged-in players and GMs only.
+    chargen_config = {
+        '/': {
+            'tools.l7r_auth.on': True,
+            'tools.l7r_auth.min_role': 'player',
+        }
+    }
 
     try:
         from chargen import website as chargen_website
 
         chargen_website.jinja_env = build_environment()
-        cherrypy.tree.mount(chargen_website.Root(), '/chargen', config=auth_tool_config)
+        cherrypy.tree.mount(chargen_website.Root(), '/chargen', config=chargen_config)
     except ImportError:
         logger.warning('chargen not importable; /chargen section will be unavailable')
 
@@ -259,7 +299,16 @@ def mount_application() -> None:
         config={
             '/': {
                 'error_page.404': _error_page_handler,
+                'error_page.403': _forbidden_handler,
                 'tools.l7r_auth.on': True,
+                # Landing, relics catalog, names catalog: public. The tool
+                # still attaches current_user on these routes if a valid
+                # session is present, so the nav can render the user pill.
+                'tools.l7r_auth.min_role': 'anonymous',
+            },
+            # GM-only archive endpoints (currently just /archive/save).
+            '/archive': {
+                'tools.l7r_auth.min_role': 'gm',
             },
             '/static': {
                 'tools.staticdir.on': True,
