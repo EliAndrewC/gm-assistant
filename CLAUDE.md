@@ -127,6 +127,14 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 
 **Spec-kit hooks**: `.specify/extensions.yml` defines auto-commit hooks before each spec-kit step. Per the project's git-safety convention, do not auto-execute those — surface them and let the user confirm each time.
 
+**Container memory persistence**: Claude Code's auto-memory loader reads from `/home/agent/.claude/projects/-workspace/memory/`, which is on the container's overlay-FS upper dir and gets wiped on rebuild. To survive rebuilds, the actual memory files live in this repo at `/workspace/.claude/memory/` (ext4-mounted, persistent), and `/workspace/.claude/bootstrap-container.sh` symlinks the loader path to that persistent dir. Run it once after starting a fresh container:
+
+```
+bash /workspace/.claude/bootstrap-container.sh
+```
+
+The script is idempotent. Without it, the loader sees an empty directory and prior memories aren't surfaced — so first thing in a fresh container, run it. (Existing containers where the symlink already resolves correctly need no action.)
+
 **Key paths**:
 
 - `.specify/memory/constitution.md` — the constitution
@@ -138,6 +146,8 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 - `/workspace/.claude/agents/frontend-review.md` — independent design-review subagent. Invoke before declaring a UI change done if the same agent implemented AND reviewed.
 - `/workspace/.claude/skills/relic/pool/` — exemplar of the pool data convention (Principle III)
 - `/workspace/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` — the 200-name pool consumed by the `/names` section
+- `/workspace/.claude/memory/` — persistent Claude Code memory store (see Container memory persistence above)
+- `/workspace/.claude/bootstrap-container.sh` — run once per fresh container to link the memory dir into the loader path
 
 <!-- SPECKIT START -->
 Current active plan: [`specs/001-toolkit-shell/plan.md`](specs/001-toolkit-shell/plan.md)
