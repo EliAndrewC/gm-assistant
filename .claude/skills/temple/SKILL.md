@@ -209,3 +209,4 @@ For married monks (remember that only Adept monks and below can marry, while Sen
 - See `/campaigns/damasu-temples.md` for the four temples of Toshi Ranbo
 - See `/.claude/skills/relic/SKILL.md` for temple relic generation (split out from this skill)
 - See `/campaigns/temple-relics.md` for Temple of Bishamon's specific relics in campaign context
+- See `/.specify/memory/constitution.md` **Principle XI (Japanese Authenticity)**: temple names and monk names in kanji must pass the kanji ↔ romaji ↔ meaning triangle (real characters, plausible reading, English meaning that connects).

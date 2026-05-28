@@ -148,3 +148,4 @@ With this work complete, Maiko came to Toshi Ranbo last winter on a warrior's pi
 - See `/campaigns/damasu-domain.md` for Damasu lineage context (many swords are tied to lineages)
 - See `/setting/lineages.md` for how lineage politics shapes sword histories
 - See `/campaigns/temple-relics.md` for the Ohari sword vow and other temple-held weapons
+- See `/.specify/memory/constitution.md` **Principle XI (Japanese Authenticity)**: any kanji name for a sword MUST pass the kanji ↔ romaji ↔ meaning triangle. Sword names that surface in the webapp or are quoted to the GM must be real Japanese — meaningful kanji, plausible reading, English title that visibly maps back to the kanji.

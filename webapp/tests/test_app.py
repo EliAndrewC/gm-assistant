@@ -146,6 +146,31 @@ def test_names_filters_by_caste_samurai(root: Root) -> None:
     assert 'Goro' not in html
 
 
+def test_names_filters_compose_gender_and_caste(root: Root) -> None:
+    # fixture: Akiko + Hanae (female/samurai), Hiroshi + Toshiro (male/samurai), Goro (male/peasant)
+    html = root.names(gender='female', caste='samurai').decode('utf-8')
+    assert 'Akiko' in html
+    assert 'Hanae' in html
+    assert 'Hiroshi' not in html
+    assert 'Goro' not in html
+    assert '2 of 5' in html
+
+
+def test_names_filters_compose_to_empty(root: Root) -> None:
+    # No female peasant in the fixture.
+    html = root.names(gender='female', caste='peasant').decode('utf-8')
+    assert '0 of 5' in html
+    assert 'No names match' in html
+
+
+def test_names_template_preserves_other_axis_in_links(root: Root) -> None:
+    # When viewing ?gender=female, the caste filter links should still carry gender=female,
+    # so picking samurai vs peasant doesn't reset the gender choice.
+    html = root.names(gender='female').decode('utf-8')
+    assert 'href="/names?caste=samurai&amp;gender=female"' in html
+    assert 'href="/names?caste=peasant&amp;gender=female"' in html
+
+
 def test_names_ignores_unknown_gender(root: Root) -> None:
     html = root.names(gender='other').decode('utf-8')
     assert '5 of 5' in html

@@ -1,12 +1,12 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 1.1.0
-MINOR: New principle added (X. Python Discipline, NON-NEGOTIABLE) and
-expanded enforcement guidance in Technical Standards and Development Workflow.
-No principles removed or redefined.
+Version change: 1.1.0 → 1.2.0
+MINOR: New principle added (XI. Japanese Authenticity, NON-NEGOTIABLE)
+covering kanji ↔ romaji ↔ meaning alignment across all content pools and
+generators that emit Japanese script. No existing principles redefined.
 
-Principles (10):
+Principles (11):
   I.   Accessibility-First Viewports (NON-NEGOTIABLE)        [unchanged]
   II.  Bold, Intentional Design                              [unchanged]
   III. Pool Data Conventions                                 [unchanged]
@@ -16,27 +16,30 @@ Principles (10):
   VII. De-Localized Generation by Default                    [unchanged]
   VIII.Direct Voice Over Framing Distance                    [unchanged]
   IX.  Setting Integration                                   [unchanged]
-  X.   Python Discipline (NON-NEGOTIABLE)                    [ADDED]
+  X.   Python Discipline (NON-NEGOTIABLE)                    [unchanged]
+  XI.  Japanese Authenticity (NON-NEGOTIABLE)                [ADDED]
 
 Sections updated:
-  - Core Principles: Principle X added.
-  - Technical Standards: concrete Python tooling now named (ruff, mypy,
-    pytest-cov, uv pip compile, configobj, pydantic-settings).
-  - Development Workflow: Python "done" checklist added (ruff check +
-    ruff format + mypy --strict + pytest + coverage threshold).
+  - Core Principles: Principle XI added.
 
 Templates requiring review/update:
-  ✅ .specify/templates/plan-template.md — Constitution Check section
-                                         extended with a Principle X gate.
-  ✅ .specify/templates/spec-template.md — No structural change.
-  ✅ .specify/templates/tasks-template.md — No structural change.
-  ⚠  README / runtime guidance: still served by CLAUDE.md; no update needed
-                              for this amendment (CLAUDE.md remains the
-                              operational counterpart to this constitution).
+  ⚠  .specify/templates/plan-template.md — Constitution Check should
+     add a Principle XI gate for any feature that emits Japanese script.
+     Deferred: applies to next /speckit-specify invocation that touches
+     a kanji-bearing pool.
+  ⚠  /workspace/.claude/skills/relic/SKILL.md, name/SKILL.md,
+     sword/SKILL.md, temple/SKILL.md, vow/SKILL.md, moto/SKILL.md
+     — should reference Principle XI as a generation gate. Updated alongside
+     this amendment.
 
 Deferred TODOs: none.
 
 ------------------------------------------------------------
+Version 1.1.0 history (amended 2026-05-27):
+  Principle X (Python Discipline) added; Technical Standards / Workflow
+  expanded with concrete tooling (ruff, mypy, pytest-cov, uv pip compile,
+  configobj, pydantic-settings).
+
 Version 1.0.0 history (initial ratification on 2026-05-27):
   Introduced Principles I–IX, the Technical Standards / Development
   Workflow / Governance sections, and the Constitution Check gate in the
@@ -292,6 +295,60 @@ any single rule is reason enough to refuse "done" status.
     other legacy paths; pydantic-settings for env-var-driven new code.
     Magic strings and environment-dependent constants MUST NOT be
     hardcoded in production paths.
+
+### XI. Japanese Authenticity (NON-NEGOTIABLE)
+
+Any content this project generates or surfaces in Japanese script — relic
+names, sword names, given names, place names, temple titles, vow refrains,
+filter labels, decorative kanji — MUST satisfy a three-way alignment:
+
+1. **The kanji are real Japanese characters.** Not Chinese-only characters
+   absent from Japanese use, not invented glyphs, not mojibake. Each
+   character must be one a Japanese reader could parse.
+
+2. **The romaji is a plausible reading of the kanji.** A native speaker
+   reading the kanji aloud could arrive at the romaji. On-yomi vs kun-yomi
+   compounds are both acceptable; sokuon / rendaku contractions (e.g.,
+   `鉄 + 旋 → tessen`) are acceptable; truly non-existent readings are not.
+   The project's romaji convention strips long-vowel macrons (`ō` → `ou`,
+   `ū` → `uu`); follow that style for consistency.
+
+3. **The English name connects to the kanji's meaning.** Not necessarily a
+   literal gloss — poetic translation is welcome — but a reader who knew
+   what the kanji meant should be able to see the connection. "The Half-
+   Mirror" rendered as `別れ鏡 / Wakare-Kagami` ("Parting Mirror") works:
+   the English name takes the kanji's image and renders it idiomatically.
+   `五代 / Goshu` would not work: the romaji simply does not match.
+
+**Compound nouns** SHOULD be real Japanese words where possible. Constructed
+compounds are permitted when the constituent characters carry meanings that
+combine sensibly *and* the construction is explained in surrounding prose
+(see `鉄旋 / Tessen` in `ebisu/sandals-of-the-walking-monk-tessen.md`, where
+the prose names the character `旋 'circuit, turning'` as part of the monk's
+identity). A constructed compound with no in-fiction explanation is a
+violation.
+
+**Stylized name readings** (a kun-yomi reading where Sino-Japanese would be
+expected, an obscure kanji choice for a personal name) are permitted but
+should be deliberate — preferably explained in prose if they would surprise
+a reader. `業道 / Narimichi` is borderline-acceptable as a Buddhist-themed
+monastic name; the same reading without monastic framing would not be.
+
+**Hiragana-only words** (e.g., `お露 / Otsuyu` mixing honorific お with the
+kanji 露) are acceptable when they reflect real Japanese naming or naming-
+adjacent conventions. Avoid katakana except for explicitly foreign elements.
+
+**Enforcement**: every kanji-bearing entry — every relic, every sword, every
+generated name — MUST pass the kanji ↔ romaji ↔ meaning triangle. When
+generating new content, the skill MUST verify each entry against the triangle
+before adding it to a pool. When reviewing an existing pool (e.g., after
+this constitution was amended), entries that fail are content bugs to be
+fixed, not stylistic preferences to be argued.
+
+This principle is NON-NEGOTIABLE because the project's stated aesthetic
+(Principle II) is built on Japanese cultural authenticity; a relic catalog
+that says one thing in kanji, another in romaji, and a third in English
+undermines the whole reading experience for any player who knows Japanese.
 
 ## Technical Standards
 

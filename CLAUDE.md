@@ -71,6 +71,7 @@ Reference directories hold organized source material and context. Each directory
 - Preference feedback from the GM is captured in memory and incorporated into skill files over time.
 - Never invent setting details that contradict the GM's source notes.
 - Skills should reference the relevant reference directories for shared context (e.g., `/temple` should draw on `/setting/` for demographics and `/cosmology/` for Fortune theology).
+- **Constitution Principle XI** (Japanese Authenticity): any kanji that surfaces in generated content — relic names, sword names, given names, temple titles, vow refrains, decorative stamps — must pass the kanji ↔ romaji ↔ meaning triangle. Real characters, plausible reading, English meaning that maps back. Stylized readings are allowed when explained in surrounding prose.
 
 ## Skills
 

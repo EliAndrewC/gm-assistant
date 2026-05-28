@@ -1,7 +1,7 @@
 ---
 name: The Naginata of the Nun Tomohime
-japanese_romaji: Sugara-no-Naginata
-japanese_kanji: 縋らの薙刀
+japanese_romaji: Sugari-no-Naginata
+japanese_kanji: 縋りの薙刀
 fortune: bishamon
 clan: lion
 temple: a temple of Bishamon in Lion lands

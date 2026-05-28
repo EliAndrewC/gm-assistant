@@ -428,6 +428,20 @@ relic_type: <short tag like "implement (rice-measure)", "vessel (rice-bowl)", "g
 
 **Important**: Pool relics should be reusable across campaigns. Unless a specific city is essential to the relic's character, do not name one in either the frontmatter or the prose. Clan family names are fine in `named_entity` (they justify the `clan` tag); specific castles/temple-cities (Kyuden X, Shiro X, Shinden X) are not.
 
+### Japanese authenticity (Constitution Principle XI)
+
+Every relic file MUST pass the **kanji ↔ romaji ↔ meaning triangle** before being added to the pool:
+
+1. **Kanji are real Japanese characters** — not invented glyphs, not Chinese-only characters.
+2. **Romaji is a plausible reading of the kanji** — a Japanese reader could arrive at it. Sokuon/rendaku contractions (e.g., `鉄 + 旋 → tessen`) are fine; truly non-existent readings are not. Project convention: strip long-vowel macrons (`ō` → `ou`, `ū` → `uu`).
+3. **English `name` connects to the kanji's meaning** — poetic translation is welcome but the connection must be visible. `五代 / Goshu` would fail because the romaji simply does not match (五代 reads `godai`).
+
+**Compound nouns** should be real Japanese words where possible. A constructed compound (`鉄旋` "iron-circuit", not a standard word) is permitted only when the prose explains the construction in-fiction (the Tessen sandals do this explicitly by naming the character `旋 'circuit, turning'` in the relic's description). A constructed compound with no in-fiction explanation is a violation.
+
+**Stylized name readings** — kun-yomi where Sino-Japanese would be expected, obscure kanji for a personal name — are permitted but should be deliberate. Prefer to explain unusual readings in the prose so a player who knows Japanese isn't pulled out of the moment.
+
+Before writing a new relic, sketch the triangle on the worksheet: literal kanji meaning → romaji reading → English title. If any leg fails, fix it before committing. When reviewing existing entries, treat triangle violations as content bugs, not stylistic preferences.
+
 ### Goals for the pool
 
 - **Variety per Fortune.** Each Fortune's subdirectory should hold ~6 relics that vary across:

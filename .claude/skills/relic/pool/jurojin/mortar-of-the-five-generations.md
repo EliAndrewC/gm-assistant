@@ -1,6 +1,6 @@
 ---
 name: The Mortar of the Five Generations
-japanese_romaji: Goshu-no-Suribachi
+japanese_romaji: Godai-no-Suribachi
 japanese_kanji: 五代の擂鉢
 fortune: jurojin
 clan: unicorn

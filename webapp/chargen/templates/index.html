@@ -228,29 +228,51 @@
   </header>
 
   <div class="chargen-shell__controls">
-    <select id="type"></select>
-    <select id="base_rank">
-        <option value="">Rank</option>
-    </select>
-    <select id="clan">
-        <option value="">Clan</option>
+    <label class="chargen-field">
+      <span class="chargen-field__label">Type</span>
+      <select id="type" class="chargen-field__select"></select>
+    </label>
+    <label class="chargen-field">
+      <span class="chargen-field__label">Rank</span>
+      <select id="base_rank" class="chargen-field__select">
+        <option value="">— any —</option>
+      </select>
+    </label>
+    <label class="chargen-field">
+      <span class="chargen-field__label">Clan</span>
+      <select id="clan" class="chargen-field__select">
+        <option value="">— any —</option>
         {% for clan in config.clans %}
-            <option value="{{ clan }}">{{ clan|title }}</option>
+          <option value="{{ clan }}">{{ clan|title }}</option>
         {% endfor %}
-    </select>
-    <select id="family">
-        <option value="">Family</option>
-    </select>
-    <select id="house">
-        <option value="">House</option>
-    </select>
-    <select id="lineage">
-        <option value="">Lineage</option>
-    </select>
-    <button id="generate">Generate</button>
-    <button id="upload">Upload</button>
+      </select>
+    </label>
+    <label class="chargen-field">
+      <span class="chargen-field__label">Family</span>
+      <select id="family" class="chargen-field__select">
+        <option value="">— any —</option>
+      </select>
+    </label>
+    <label class="chargen-field">
+      <span class="chargen-field__label">House</span>
+      <select id="house" class="chargen-field__select">
+        <option value="">— any —</option>
+      </select>
+    </label>
+    <label class="chargen-field">
+      <span class="chargen-field__label">Lineage</span>
+      <select id="lineage" class="chargen-field__select">
+        <option value="">— any —</option>
+      </select>
+    </label>
   </div>
-  <div id="fields" style="margin-right:40%"></div>
+
+  <div class="chargen-shell__actions">
+    <button id="generate" class="chargen-button">Generate</button>
+    <button id="upload" class="chargen-button">Upload</button>
+  </div>
+
+  <div id="fields"></div>
 
   <div id="art_section" style="margin-top: 20px; display: none;">
       <h3>Character Art</h3>

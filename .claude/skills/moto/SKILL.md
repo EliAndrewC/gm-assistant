@@ -923,3 +923,4 @@ That was the second scene of the dream quest.  Here there were deeper secrets to
 - See `/cosmology/maho.md` for maho context relevant to Dark Moto
 - See `/campaigns/dark-moto.md` for Dark Moto skeletal riders and secret histories
 - See `/campaigns/hidden-way.md` for the 1st Imperial Legion at the Gateway to the Burning Sands
+- See `/.specify/memory/constitution.md` **Principle XI (Japanese Authenticity)**: Moto names that surface in kanji must pass the kanji ↔ romaji ↔ meaning triangle. (Moto culture is the L5R clan most distant from Japanese; most names will be transliterated from Mongol/gaijin originals, but the kanji rule applies to the Rokugani-adopted half of the family.)

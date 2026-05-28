@@ -185,16 +185,12 @@ a { color: inherit; }
   letter-spacing: -0.02em;
 }
 
+/* `all` seal uses the kanji 全 to stay visually consistent with the fortune
+   stamps; previously it was a pill which read as a different control. */
 .seal[data-fortune='all'] .seal__circle {
-  width: auto;
-  height: 2.6rem;
-  padding: 0 0.9rem;
-  border-radius: 999px;
-  font-family: var(--font-display);
-  font-variation-settings: 'opsz' 24, 'wght' 500;
-  font-style: italic;
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
+  font-family: var(--font-jp);
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 
 .seal__name {
@@ -296,7 +292,7 @@ a { color: inherit; }
 .masthead__watermark {
   font-family: var(--font-jp);
   font-weight: 800;
-  font-size: clamp(5rem, 10vw, 9rem);
+  font-size: clamp(3.5rem, 7vw, 9rem);
   line-height: 0.85;
   color: var(--vermillion);
   opacity: 0.22;
@@ -306,7 +302,9 @@ a { color: inherit; }
   letter-spacing: -0.04em;
 }
 
-@media (max-width: 900px) {
+/* GM-200 (effective ~925px) doesn't have room for the decorative kanji
+   without cramping the lede; hide it below the chargen+laptop threshold. */
+@media (max-width: 1100px) {
   .masthead {
     grid-template-columns: 1fr;
     gap: 0.8rem;
@@ -1059,6 +1057,9 @@ a { color: inherit; }
   pointer-events: none;
 }
 
+/* Small kicker label on the landing cards. Reused for "coming soon"
+   placeholders; on enabled cards the directional ↗ in .landing__card::after
+   communicates "tap-to-open" more clearly than a redundant "open" word. */
 .landing__card-label {
   font-family: var(--font-body);
   font-variant-caps: all-small-caps;
@@ -1066,6 +1067,26 @@ a { color: inherit; }
   font-size: 0.72rem;
   color: var(--ink-faded);
   margin: 0 0 0.5rem;
+}
+
+.landing__card {
+  position: relative;
+}
+
+.landing__card:not(.landing__card--disabled)::after {
+  content: '↗';
+  position: absolute;
+  top: 0.95rem;
+  right: 1.1rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--ink-ghost);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.landing__card:not(.landing__card--disabled):hover::after {
+  color: var(--vermillion);
+  transform: translate(2px, -2px);
 }
 
 .landing__card-name {
@@ -1162,24 +1183,251 @@ a { color: inherit; }
   text-decoration: underline;
 }
 
-/* Chargen page — give it a card-shell container while preserving its inner form structure */
+/* =========================================================================
+   Chargen — form layout inside the toolkit design system
+   ========================================================================= */
+
 .chargen-shell {
   padding: 2.5rem 0 4rem;
 }
 
-.chargen-shell h2 {
+.chargen-shell__header {
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.8rem;
+}
+
+.chargen-shell__supertitle {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.36em;
+  font-size: 0.78rem;
+  color: var(--vermillion);
+  margin: 0 0 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chargen-shell__supertitle::after {
+  content: '';
+  flex: 1;
+  max-width: 180px;
+  height: 1px;
+  background: var(--vermillion);
+}
+
+.chargen-shell__title {
   font-family: var(--font-display);
   font-variation-settings: 'opsz' 96, 'SOFT' 30, 'wght' 500;
-  font-size: clamp(2rem, 4.5vw, 3rem);
-  margin: 0 0 0.5rem;
+  font-weight: 500;
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  letter-spacing: -0.015em;
+  margin: 0 0 0.6rem;
+  color: var(--ink);
+  line-height: 1.05;
+}
+
+.chargen-shell__lede {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 56ch;
+  line-height: 1.55;
+}
+
+/* Cascading form controls — Type/Rank/Clan/Family/House/Lineage. */
+.chargen-shell__controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 0.85rem 1rem;
+  margin: 0 0 1.5rem;
+  max-width: 60rem;
+}
+
+.chargen-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.chargen-field__label {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--ink-faded);
+}
+
+/* Native select restyled to feel hand-set. */
+.chargen-field__select,
+.chargen-shell select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.55rem 2rem 0.55rem 0.75rem;
+  background: var(--paper-warm, var(--paper-deep));
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  color: var(--ink);
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-faded) 50%),
+    linear-gradient(135deg, var(--ink-faded) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 10px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chargen-field__select:hover,
+.chargen-shell select:hover {
+  border-color: var(--ink-soft);
+}
+
+.chargen-field__select:focus-visible,
+.chargen-shell select:focus-visible {
+  outline: none;
+  border-color: var(--vermillion);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+/* Action buttons row */
+.chargen-shell__actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 0 2rem;
+}
+
+.chargen-button,
+.chargen-shell button {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.16em;
+  font-size: 0.88rem;
+  padding: 0.7rem 1.5rem;
+  background: var(--vermillion);
+  color: var(--paper);
+  border: 1px solid var(--vermillion-deep);
+  border-radius: 2px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--vermillion-deep);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chargen-button:hover:not(:disabled),
+.chargen-shell button:hover:not(:disabled) {
+  background: var(--vermillion-deep);
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--vermillion-deep);
+}
+
+.chargen-button:disabled,
+.chargen-shell button:disabled {
+  background: transparent;
+  color: var(--ink-ghost);
+  border-color: var(--hairline);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+#upload {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink-soft);
+  box-shadow: 2px 2px 0 var(--ink-soft);
+}
+
+#upload:hover:not(:disabled) {
+  background: rgba(20, 17, 14, 0.05);
+  color: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 1px 1px 0 var(--ink-soft);
+}
+
+/* The character bio fields container — jQuery dynamically appends inputs/textareas */
+#fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0 0 2rem;
+  max-width: 55rem;
+}
+
+#fields input[type='text'],
+#fields textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+#fields input[type='text']:focus-visible,
+#fields textarea:focus-visible {
+  outline: none;
+  border-color: var(--vermillion);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+#fields textarea {
+  resize: vertical;
+  min-height: 8rem;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+/* Art-generation section — drop the inline style burden onto the rules below */
+#art_section {
+  margin-top: 0 !important;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--hairline);
+}
+
+#art_section h3 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 72, 'SOFT' 80, 'wght' 450;
+  font-size: 1.5rem;
+  margin: 0 0 0.75rem;
   color: var(--ink);
 }
 
-.chargen-shell p.lede {
-  font-family: var(--font-display);
+#art_prompt {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  color: var(--ink);
+  line-height: 1.5;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+#art_prompt:focus-visible {
+  outline: none;
+  border-color: var(--vermillion);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+#art_loading {
   font-style: italic;
-  color: var(--ink-soft);
-  margin: 0 0 2rem;
+  color: var(--ink-ghost);
 }
 
 /* =========================================================================
@@ -1310,6 +1558,43 @@ a { color: inherit; }
 }
 
 /* =========================================================================
+   `.fortunes__rail` — horizontal filter rail used on /relics + /names.
+   Previously had no CSS, so seals stacked vertically (browser default).
+   ========================================================================= */
+
+.fortunes {
+  margin: 0 0 1.4rem;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.fortunes__rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  align-items: flex-start;
+  padding: 1.2rem 0 1rem;
+}
+
+/* Below ~700px wrapping makes the rail too tall; switch to horizontal scroll
+   so the page can show relic cards above the fold on a phone. */
+@media (max-width: 700px) {
+  .fortunes__rail {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline) transparent;
+    padding-bottom: 1.1rem;
+  }
+  .fortunes__rail::-webkit-scrollbar { height: 4px; }
+  .fortunes__rail::-webkit-scrollbar-thumb {
+    background: var(--hairline);
+    border-radius: 2px;
+  }
+  .fortunes__rail .seal { flex-shrink: 0; }
+}
+
+/* =========================================================================
    Auth pages — login, access-denied, error, misconfigured
    ========================================================================= */
 
@@ -1434,16 +1719,17 @@ a { color: inherit; }
   background: var(--ink-soft);
 }
 
-/* Current-user pill in the nav */
+/* Current-user pill in the nav. Sits at the right edge of the container,
+   with explicit right padding so it never touches the viewport border. */
 .app-nav__user {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
+  gap: 0.65rem;
   font-family: var(--font-body);
   font-size: 0.8rem;
   color: var(--ink-soft);
   margin-left: auto;
-  padding-left: 1rem;
+  padding: 0 0.1rem 0 1rem;
 }
 
 .app-nav__user-name {
@@ -1487,7 +1773,7 @@ a { color: inherit; }
   font-size: 0.72rem;
   font-variant-caps: all-small-caps;
   letter-spacing: 0.32em;
-  color: var(--vermillion);
+  color: var(--ink-ghost);
   margin: 0 0 1rem;
 }
 
@@ -1537,4 +1823,44 @@ a { color: inherit; }
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
+}
+
+/* =========================================================================
+   Filter rows — for sections with multiple independent filter axes (e.g.
+   /names, which has gender + caste).
+   ========================================================================= */
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0 0 0.4rem;
+  flex-wrap: wrap;
+}
+
+.filter-row__label {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.22em;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  flex: 0 0 5rem;
+}
+
+.filter-row .fortunes__rail {
+  flex: 1 1 auto;
+  padding: 0.5rem 0;
+  border-bottom: none;
+}
+
+/* On narrow viewports, stack label above its rail. */
+@media (max-width: 700px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+  .filter-row__label {
+    flex: none;
+  }
 }

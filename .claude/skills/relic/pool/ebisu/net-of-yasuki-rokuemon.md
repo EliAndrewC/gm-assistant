@@ -1,7 +1,7 @@
 ---
 name: The Net of Yasuki Rokuemon
-japanese_romaji: Manjiki-no-Ami
-japanese_kanji: 満食の網
+japanese_romaji: Tairyou-no-Ami
+japanese_kanji: 大漁の網
 fortune: ebisu
 clan: crab
 temple: a temple of Ebisu in Crab lands

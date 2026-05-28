@@ -577,3 +577,4 @@ In this act, I shall remember the people, the land, and the divine strength that
 - See `/cosmology/fortunes.md` for Fortune theology (vows are often sworn to specific Fortunes)
 - See `/cosmology/moon-court.md` for Order of Lord Moon vow context
 - See `/setting/government.md` for ministerial roles that swear official oaths
+- See `/.specify/memory/constitution.md` **Principle XI (Japanese Authenticity)**: any kanji refrain or formal vow name must pass the kanji ↔ romaji ↔ meaning triangle (real characters, plausible reading, English meaning that connects).

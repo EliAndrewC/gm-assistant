@@ -1,7 +1,7 @@
 ---
 name: The Hammer of Hida Katsuro
-japanese_romaji: Tetsuchi-no-Tsuchi
-japanese_kanji: 鉄槌の槌
+japanese_romaji: Tetsu-no-Tsuchi
+japanese_kanji: 鉄の槌
 fortune: ebisu
 clan: crab
 temple: a temple of Ebisu in Crab lands

@@ -83,6 +83,7 @@ For EACH name to generate:
 - Explanations should reference Rokugani concepts (bushido virtues, the Fortunes, clan culture, the Tao, etc.) when natural to do so, but not forced into every single name
 - When a format references a historical figure, event, or place, it MUST be consistent with the GM's setting notes -- consult `/campaigns/` and `/setting/` files if needed
 - Keep explanations concise -- one to three sentences matching the format template
+- **Constitution Principle XI** (Japanese Authenticity): when the explanation cites kanji or kanji-derived meaning, the kanji MUST be real Japanese characters, the meaning MUST match how a Japanese speaker would parse them, and the romanization of the name MUST be a plausible reading. The `notes` field in pool entries is the place to flag any non-obvious or stylized reading.
 
 ## Similarity Rules
 
