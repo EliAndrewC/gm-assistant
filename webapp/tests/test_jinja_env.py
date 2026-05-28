@@ -1,9 +1,17 @@
 """Tests for l7r.jinja_env — template environment and filters."""
 
+from pathlib import Path
+
 import pytest
 from markupsafe import Markup
 
-from l7r.jinja_env import build_environment, description_html, relic_type_short
+from l7r.jinja_env import (
+    build_environment,
+    description_html,
+    relic_type_short,
+    static_url,
+    static_version,
+)
 
 
 def test_description_html_wraps_paragraphs_in_p_tags() -> None:
@@ -60,3 +68,32 @@ def test_environment_has_globals_registered() -> None:
     assert 'SECTIONS' in env.globals
     assert 'FORTUNES' in env.globals
     assert 'CLANS' in env.globals
+    assert 'STATIC_VERSION' in env.globals
+    assert 'static_url' in env.globals
+
+
+def test_static_version_returns_dev_when_dir_missing(tmp_path: Path) -> None:
+    # When the static directory doesn't exist, the helper degrades to 'dev'.
+    assert static_version(tmp_path / 'nope') == 'dev'
+
+
+def test_static_version_hashes_real_dir_contents(tmp_path: Path) -> None:
+    static_dir = tmp_path / 'static'
+    static_dir.mkdir()
+    (static_dir / 'a.css').write_text('body { color: red; }')
+    (static_dir / 'b.js').write_text('console.log("hi");')
+    v1 = static_version(static_dir)
+    assert v1 != 'dev'
+    assert len(v1) == 12  # truncated SHA1
+    # Same content → same hash.
+    assert v1 == static_version(static_dir)
+    # Changed content → different hash.
+    (static_dir / 'a.css').write_text('body { color: blue; }')
+    v2 = static_version(static_dir)
+    assert v2 != v1
+
+
+def test_static_url_appends_version_query() -> None:
+    assert static_url('css/l7r.css', 'abc123') == '/static/css/l7r.css?v=abc123'
+    # Tolerate either a leading slash or not on input.
+    assert static_url('/css/l7r.css', 'abc123') == '/static/css/l7r.css?v=abc123'

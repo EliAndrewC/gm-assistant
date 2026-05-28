@@ -168,6 +168,11 @@ a { color: inherit; }
   transition: color 0.18s ease;
   font-size: inherit;
   border-radius: 4px;
+  /* Equal-width cells so multi-char kanji (毘沙門, 福禄寿) don't make their
+     column wider than single-char kanji (全, 男). The cell width is just a
+     bit larger than the circle to leave room for the small-caps name below. */
+  min-width: 4.6rem;
+  text-decoration: none;
 }
 
 .seal__circle {
@@ -183,6 +188,19 @@ a { color: inherit; }
   color: inherit;
   transition: all 0.28s cubic-bezier(0.2, 0.7, 0.4, 1);
   letter-spacing: -0.02em;
+  overflow: hidden;
+}
+
+/* 3-character kanji (福禄寿, 毘沙門, 寿老人) need a smaller font to fit
+   inside the same 2.6rem circle as the 1- and 2-character stamps. */
+.seal__circle:has(> :only-child) {
+  /* CSS :has fallback — leave the default for browsers without :has. */
+}
+.seal[data-fortune='fukurokujin'] .seal__circle,
+.seal[data-fortune='bishamon'] .seal__circle,
+.seal[data-fortune='jurojin'] .seal__circle {
+  font-size: 0.72rem;
+  letter-spacing: -0.05em;
 }
 
 /* `all` seal uses the kanji 全 to stay visually consistent with the fortune
@@ -228,7 +246,7 @@ a { color: inherit; }
    ===================================================================== */
 
 .masthead {
-  padding: 2rem 0 1.8rem;
+  padding: 1.4rem 0 1.2rem;
   border-bottom: 1px solid var(--hairline);
   position: relative;
   overflow: hidden;
@@ -242,11 +260,11 @@ a { color: inherit; }
 
 .masthead__supertitle {
   font-family: var(--font-body);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-variant-caps: all-small-caps;
   letter-spacing: 0.38em;
   color: var(--vermillion);
-  margin: 0 0 1rem;
+  margin: 0 0 0.6rem;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -264,10 +282,10 @@ a { color: inherit; }
   font-family: var(--font-display);
   font-variation-settings: 'opsz' 144, 'SOFT' 0, 'wght' 500;
   font-weight: 500;
-  font-size: clamp(2.4rem, 5.5vw, 4.6rem);
+  font-size: clamp(2rem, 5vw, 4.2rem);
   line-height: 0.92;
   letter-spacing: -0.022em;
-  margin: 0 0 1rem;
+  margin: 0 0 0.65rem;
   color: var(--ink);
 }
 
@@ -307,8 +325,8 @@ a { color: inherit; }
 @media (max-width: 1100px) {
   .masthead {
     grid-template-columns: 1fr;
-    gap: 0.8rem;
-    padding: 1.5rem 0 1.5rem;
+    gap: 0.6rem;
+    padding: 1.1rem 0 1rem;
   }
   .masthead__watermark { display: none; }
 }
@@ -431,7 +449,9 @@ a { color: inherit; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Top strip: clan + type */
+/* Top strip: clan + type. Clan promoted to a stronger scan target —
+   Eli's most common filter motion is "find the Crab one" or "the Lion
+   one" so the clan stamp needs to be visible without reading the card. */
 .card__top {
   display: flex;
   justify-content: space-between;
@@ -442,7 +462,7 @@ a { color: inherit; }
   font-family: var(--font-body);
   font-variant-caps: all-small-caps;
   letter-spacing: 0.16em;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: var(--ink-faded);
   border-bottom: 1px solid var(--hairline);
   min-width: 0;
@@ -450,11 +470,13 @@ a { color: inherit; }
 
 .card__clan {
   color: var(--vermillion);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.18em;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .card__clan::before {
@@ -534,10 +556,11 @@ a { color: inherit; }
 }
 
 .card__entity {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-style: italic;
-  font-size: 0.92rem;
-  color: var(--ink-faded);
+  font-variation-settings: 'opsz' 36, 'SOFT' 60, 'wght' 400;
+  font-size: 1rem;
+  color: var(--ink-soft);
   margin: 0;
   line-height: 1.4;
 }
@@ -615,14 +638,17 @@ a { color: inherit; }
    ===================================================================== */
 
 .footer {
-  padding: 4rem 0 5rem;
+  padding: 2rem 0 2.5rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--hairline);
   font-family: var(--font-body);
-  font-size: 0.88rem;
-  color: var(--ink-faded);
-  line-height: 1.7;
+  font-size: 0.82rem;
+  color: var(--ink-ghost);
+  line-height: 1.6;
+  text-align: center;
 }
 
-.footer p { margin: 0.3rem 0; max-width: 60ch; }
+.footer p { margin: 0.3rem auto; max-width: 60ch; }
 .footer em { color: var(--vermillion); font-style: italic; }
 
 /* =====================================================================
@@ -636,20 +662,23 @@ a { color: inherit; }
 .back-link {
   font-family: var(--font-body);
   font-variant-caps: all-small-caps;
-  letter-spacing: 0.32em;
-  font-size: 0.7rem;
-  color: var(--ink-faded);
+  letter-spacing: 0.22em;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
   text-decoration: none;
   transition: color 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  padding: 0.4rem 0;
 }
 
-.back-link:hover { color: var(--vermillion); }
+.back-link:hover {
+  color: var(--vermillion);
+}
 
 .detail-hero {
-  padding: 3rem 0 2.5rem;
+  padding: 1.5rem 0 1.5rem;
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
@@ -661,9 +690,9 @@ a { color: inherit; }
   font-family: var(--font-body);
   font-variant-caps: all-small-caps;
   letter-spacing: 0.36em;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--vermillion);
-  margin: 0 0 2rem;
+  margin: 0 0 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -681,7 +710,10 @@ a { color: inherit; }
 .detail-hero__kanji {
   font-family: var(--font-jp);
   font-weight: 800;
-  font-size: clamp(4.5rem, 11vw, 9rem);
+  /* Smaller at narrow widths so the kanji + romaji + English title triad
+     fits as one visual unit in the first fold at GM-200 instead of the
+     kanji alone eating the entire 525px viewport. */
+  font-size: clamp(3rem, 8vw, 7.5rem);
   line-height: 0.95;
   letter-spacing: -0.04em;
   color: var(--ink);
@@ -696,9 +728,9 @@ a { color: inherit; }
   font-family: var(--font-display);
   font-style: italic;
   font-variation-settings: 'opsz' 72, 'SOFT' 80, 'wght' 350;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   color: var(--vermillion);
-  margin: 1.2rem 0 0.4rem;
+  margin: 0.4rem 0 0.2rem;  /* tight gap binds kanji + romaji as one triad */
   letter-spacing: 0.01em;
 }
 
@@ -706,7 +738,7 @@ a { color: inherit; }
   font-family: var(--font-display);
   font-variation-settings: 'opsz' 96, 'SOFT' 30, 'wght' 450;
   font-weight: 400;
-  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
   line-height: 1.15;
   letter-spacing: -0.012em;
   margin: 0 auto;
@@ -835,12 +867,18 @@ a { color: inherit; }
 
 .detail-footer__link {
   text-decoration: none;
-  color: var(--ink-soft);
+  color: var(--ink);
   font-style: italic;
-  font-size: 1rem;
+  font-size: 1.1rem;
   transition: color 0.2s ease;
   flex: 1 1 240px;
   min-width: 0;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.detail-footer__link:hover {
+  color: var(--vermillion);
 }
 
 @media (max-width: 700px) {
@@ -968,16 +1006,16 @@ a { color: inherit; }
   }
 }
 
-/* Landing page */
+/* Landing page — single vertical column. Previously a 2-col grid where the
+   short hero on the left and the tall 3-card stack on the right produced
+   massive dead space below the hero at narrow viewports (Constitution
+   Principle I, layout balance rule). Now: hero stacked above a horizontal
+   card grid. */
 .landing {
-  padding: 3rem 0 4rem;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2.5rem;
-}
-
-@media (min-width: 900px) {
-  .landing { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: center; }
+  padding: 2rem 0 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
 }
 
 .landing__hero {
@@ -1029,7 +1067,7 @@ a { color: inherit; }
 
 .landing__sections {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 1rem;
   list-style: none;
   padding: 0;
@@ -1188,22 +1226,22 @@ a { color: inherit; }
    ========================================================================= */
 
 .chargen-shell {
-  padding: 2.5rem 0 4rem;
+  padding: 1.4rem 0 3rem;
 }
 
 .chargen-shell__header {
   border-bottom: 1px solid var(--hairline);
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.8rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.2rem;
 }
 
 .chargen-shell__supertitle {
   font-family: var(--font-body);
   font-variant-caps: all-small-caps;
   letter-spacing: 0.36em;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--vermillion);
-  margin: 0 0 0.85rem;
+  margin: 0 0 0.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1221,9 +1259,9 @@ a { color: inherit; }
   font-family: var(--font-display);
   font-variation-settings: 'opsz' 96, 'SOFT' 30, 'wght' 500;
   font-weight: 500;
-  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-size: clamp(1.7rem, 4vw, 2.8rem);
   letter-spacing: -0.015em;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.4rem;
   color: var(--ink);
   line-height: 1.05;
 }
@@ -1231,20 +1269,29 @@ a { color: inherit; }
 .chargen-shell__lede {
   font-family: var(--font-body);
   font-style: italic;
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   color: var(--ink-soft);
   margin: 0;
   max-width: 56ch;
   line-height: 1.55;
 }
 
-/* Cascading form controls — Type/Rank/Clan/Family/House/Lineage. */
+/* Cascading form controls — Type/Rank/Clan/Family/House/Lineage.
+   Always 3 columns (3×2 grid) so the form has a consistent shape across
+   viewports. A 6-across row at wide viewports leaves the right half of the
+   container empty cream; 3×2 reads as one balanced block. */
 .chargen-shell__controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem 1rem;
   margin: 0 0 1.5rem;
-  max-width: 60rem;
+  max-width: 42rem;
+}
+
+@media (max-width: 520px) {
+  .chargen-shell__controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .chargen-field {
@@ -1329,13 +1376,24 @@ a { color: inherit; }
   box-shadow: 1px 1px 0 var(--vermillion-deep);
 }
 
+/* Disabled state has to read at a glance — not after a click. Visually:
+   washed-out (opacity), no shadow, no hover lift, not-allowed cursor. */
 .chargen-button:disabled,
 .chargen-shell button:disabled {
   background: transparent;
   color: var(--ink-ghost);
   border-color: var(--hairline);
+  border-style: dashed;
   box-shadow: none;
   cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.chargen-button:disabled:hover,
+.chargen-shell button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 #upload {
@@ -1454,6 +1512,9 @@ a { color: inherit; }
   flex-direction: column;
   gap: 0.7rem;
   min-width: 0;
+  /* Equalize card heights inside a row so ragged bottoms don't leave
+     cream gaps between rows in a long scrollable list. */
+  min-height: 13rem;
 }
 
 .name-card__head {
@@ -1551,10 +1612,27 @@ a { color: inherit; }
   color: var(--ink-soft);
 }
 
-/* Active filter pill for the seal rail when used as link */
+/* Active filter pill for the seal rail when used as link — matches the
+   richer button treatment so filters on /names visually equal those on
+   /relics (which use aria-pressed). */
+.seal--active {
+  color: var(--vermillion-deep);
+}
+
 .seal--active .seal__circle {
-  background: var(--vermillion);
   color: var(--paper);
+  background: var(--vermillion);
+  border-color: var(--vermillion);
+  box-shadow:
+    2px 2px 0 var(--vermillion-deep),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  transform: rotate(-3deg) translateY(-2px);
+  filter: contrast(1.05);
+}
+
+.seal--active .seal__name {
+  color: var(--vermillion-deep);
+  font-weight: 600;
 }
 
 /* =========================================================================
@@ -1773,7 +1851,7 @@ a { color: inherit; }
   font-size: 0.72rem;
   font-variant-caps: all-small-caps;
   letter-spacing: 0.32em;
-  color: var(--ink-ghost);
+  color: var(--ink-faded);
   margin: 0 0 1rem;
 }
 
@@ -1788,11 +1866,12 @@ a { color: inherit; }
 
 .legal-doc h2 {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 550;
   font-style: italic;
-  font-size: 1.4rem;
-  letter-spacing: -0.005em;
-  margin: 2.2rem 0 0.6rem;
+  font-size: 1.55rem;
+  font-variation-settings: 'opsz' 72, 'SOFT' 40, 'wght' 550;
+  letter-spacing: -0.008em;
+  margin: 2.4rem 0 0.7rem;
   color: var(--ink);
 }
 
@@ -1812,10 +1891,11 @@ a { color: inherit; }
 
 .legal-doc code {
   font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-  font-size: 0.88em;
-  background: rgba(20, 17, 14, 0.06);
-  padding: 0.05rem 0.35rem;
+  font-size: 0.86em;
+  background: rgba(20, 17, 14, 0.025);
+  padding: 0.02rem 0.3rem;
   border-radius: 2px;
+  color: var(--ink-soft);
 }
 
 .legal-doc a {
@@ -1830,11 +1910,13 @@ a { color: inherit; }
    /names, which has gender + caste).
    ========================================================================= */
 
+/* Filter rows are now compact: label sits hard against the rail rather than
+   in a fixed gutter that wasted horizontal space at GM-200. */
 .filter-row {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  margin: 0 0 0.4rem;
+  gap: 0.9rem;
+  margin: 0 0 0.2rem;
   flex-wrap: wrap;
 }
 
@@ -1844,23 +1926,26 @@ a { color: inherit; }
   letter-spacing: 0.22em;
   font-size: 0.78rem;
   color: var(--ink-soft);
-  flex: 0 0 5rem;
+  flex: 0 0 auto;
+  min-width: 3.5rem;
+  text-align: right;
 }
 
 .filter-row .fortunes__rail {
   flex: 1 1 auto;
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
   border-bottom: none;
 }
 
-/* On narrow viewports, stack label above its rail. */
 @media (max-width: 700px) {
   .filter-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.2rem;
+    gap: 0.15rem;
   }
   .filter-row__label {
     flex: none;
+    text-align: left;
+    min-width: 0;
   }
 }

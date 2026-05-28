@@ -118,7 +118,10 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 
 **Verification before reporting "done"** (per Principle VI of the constitution):
 
-- **UI changes**: run `/workspace/webapp-prototype/relics/screenshot.py` (or analogous) — captures screenshots at GM-100 (1850×1050), GM-200 (925×525), tablet (800×1100), and mobile (390×844) viewports and runs a DOM-overflow audit. The user uses Chrome at 200% zoom; UI must be clean at that zoom.
+- **UI changes** (per Principle I, expanded in v1.3.0):
+  - Run `webapp/tests/screenshot.py` to produce **multi-scroll contact sheets** at GM-100 / GM-200 / tablet / mobile. For pages taller than 1.3× viewport, the script captures 0%/33%/66%/100% scroll positions and stitches them horizontally — so layout asymmetry, dead space, and below-fold problems are visible at a glance.
+  - Run `webapp/tests/dom_audit.py`. It must report **zero issues** across all pages × viewports. The audit now covers BOTH clipping (overflow, ellipsis, line-clamp) AND layout balance (sibling-height ratio inside flex/grid containers must not exceed 2.5×).
+  - **Persona-driven review pass**: before declaring done, examine at least one contact sheet at GM-200 with the user's task in mind (not the implementer's: "Eli is opening this page; what is he trying to do here?"). If the same agent both implemented and reviewed, **invoke the `frontend-review` subagent** (`.claude/agents/frontend-review.md`) to get an independent pass. Author ≠ reliable reviewer.
 - **Python changes**: `ruff check` + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` on pure-logic packages (Principle X).
 - **Delegated work**: spot-check actual artifacts before relaying success to the user. "The subagent said it was done" is not sufficient.
 
@@ -131,7 +134,8 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 - `/workspace/webapp-prototype/` — static frontend prototypes (current: relics index + detail)
 - `/workspace/webapp/` — **L7R Toolkit** (CherryPy + Jinja2). Run with `cherryd --import l7r` from this dir. Routes: `/` landing, `/relics`, `/relics/<slug>`, `/names` (with `?gender=` / `?caste=` filters), `/chargen/*` (legacy chargen mounted as a sub-app). New code under `l7r/` package; legacy chargen modules on Principle X grace period.
 - `/workspace/webapp/Makefile` — `make done` runs ruff + format check + mypy --strict + pytest + 100% coverage gate
-- `/workspace/webapp/tests/screenshot.py` and `tests/dom_audit.py` — Playwright suite for Principle I verification at GM-100 / GM-200 / tablet / mobile
+- `/workspace/webapp/tests/screenshot.py` and `tests/dom_audit.py` — Playwright suite for Principle I verification at GM-100 / GM-200 / tablet / mobile. The screenshot script outputs multi-scroll contact sheets to `/tmp/l7r-shots/sheet-<page>-<viewport>.png`.
+- `/workspace/.claude/agents/frontend-review.md` — independent design-review subagent. Invoke before declaring a UI change done if the same agent implemented AND reviewed.
 - `/workspace/.claude/skills/relic/pool/` — exemplar of the pool data convention (Principle III)
 - `/workspace/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` — the 200-name pool consumed by the `/names` section
 

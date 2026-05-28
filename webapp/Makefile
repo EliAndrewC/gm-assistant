@@ -1,4 +1,5 @@
-.PHONY: lint format types test cov done clean serve prepare-deploy deploy
+.PHONY: lint format types test cov done clean serve prepare-deploy deploy \
+        screenshots dom-audit ui-verify
 
 # The Principle X "done" checklist. A change is not done until `make done` passes.
 done: lint format-check types test cov
@@ -30,6 +31,22 @@ cov:
 
 serve:
 	cherryd --import l7r
+
+# Capture multi-scroll contact sheets at all four standard viewports. Output
+# in /tmp/l7r-shots/sheet-<page>-<viewport>.png. Assumes a server is running
+# at L7R_BASE_URL (default http://127.0.0.1:8080).
+screenshots:
+	python3 tests/screenshot.py
+
+# DOM audit: clipping + layout balance (Constitution Principle I, v1.3.0).
+dom-audit:
+	python3 tests/dom_audit.py
+
+# Full Principle I verification: contact sheets + DOM audit. Assumes a server.
+# After this passes, the persona-driven review pass + frontend-review subagent
+# (if author == reviewer) is the remaining step before declaring a UI change done.
+ui-verify: screenshots dom-audit
+	@echo "[ui-verify] contact sheets in /tmp/l7r-shots/sheet-*.png — review at GM-200 with Eli's task in mind."
 
 # Sync pool data from /workspace/.claude/skills into the Docker build context.
 # `skills/` is gitignored — it's a build artifact, not source code.

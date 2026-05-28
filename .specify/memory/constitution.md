@@ -1,13 +1,16 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.1.0 → 1.2.0
-MINOR: New principle added (XI. Japanese Authenticity, NON-NEGOTIABLE)
-covering kanji ↔ romaji ↔ meaning alignment across all content pools and
-generators that emit Japanese script. No existing principles redefined.
+Version change: 1.2.0 → 1.3.0
+MINOR: Principle I (Accessibility-First Viewports) materially expanded
+to require scroll-through verification and to forbid column-height
+asymmetry past 2.5× ratio. The added requirements were already implicit
+in the principle's intent but had been missed in practice because no
+artifact captured them — the new dom_audit layout-balance rule + the
+multi-scroll contact sheets in screenshot.py now enforce them.
 
-Principles (11):
-  I.   Accessibility-First Viewports (NON-NEGOTIABLE)        [unchanged]
+Principles (11) — unchanged in set; Principle I expanded:
+  I.   Accessibility-First Viewports (NON-NEGOTIABLE)        [EXPANDED]
   II.  Bold, Intentional Design                              [unchanged]
   III. Pool Data Conventions                                 [unchanged]
   IV.  One Canonical Home for GM Source                      [unchanged]
@@ -17,24 +20,32 @@ Principles (11):
   VIII.Direct Voice Over Framing Distance                    [unchanged]
   IX.  Setting Integration                                   [unchanged]
   X.   Python Discipline (NON-NEGOTIABLE)                    [unchanged]
-  XI.  Japanese Authenticity (NON-NEGOTIABLE)                [ADDED]
+  XI.  Japanese Authenticity (NON-NEGOTIABLE)                [unchanged]
 
 Sections updated:
-  - Core Principles: Principle XI added.
+  - Core Principles: Principle I expanded with layout-balance + scroll-
+    through-review rules.
+  - Development Workflow (operational mirror in CLAUDE.md): contact-sheet
+    artifact + persona-based review now required for UI changes.
 
 Templates requiring review/update:
-  ⚠  .specify/templates/plan-template.md — Constitution Check should
-     add a Principle XI gate for any feature that emits Japanese script.
-     Deferred: applies to next /speckit-specify invocation that touches
-     a kanji-bearing pool.
-  ⚠  /workspace/.claude/skills/relic/SKILL.md, name/SKILL.md,
-     sword/SKILL.md, temple/SKILL.md, vow/SKILL.md, moto/SKILL.md
-     — should reference Principle XI as a generation gate. Updated alongside
-     this amendment.
+  ✅ webapp/tests/screenshot.py — produces multi-scroll contact sheets.
+  ✅ webapp/tests/dom_audit.py — adds layout-balance rule (sibling-height
+                              ratio cap inside flex/grid containers).
+  ✅ /workspace/.claude/agents/frontend-review.md — new independent
+                              reviewer agent (Constitution mirror).
+  ⚠  .specify/templates/plan-template.md — Constitution Check entry
+                              for Principle I should now mention "no
+                              dead-space; contact sheet attached".
+                              Deferred until next /speckit-specify run.
 
 Deferred TODOs: none.
 
 ------------------------------------------------------------
+Version 1.2.0 history (amended 2026-05-27):
+  Principle XI (Japanese Authenticity) added covering kanji ↔ romaji ↔
+  meaning alignment.
+
 Version 1.1.0 history (amended 2026-05-27):
   Principle X (Python Discipline) added; Technical Standards / Workflow
   expanded with concrete tooling (ruff, mypy, pytest-cov, uv pip compile,
@@ -64,7 +75,7 @@ The GM uses Chrome at 200% browser zoom on a 1850×1173 outer window
 HTML, embedded previews — MUST be verified at the GM's actual viewport at
 **both 100% and 200% zoom** before being declared done.
 
-The following are violations:
+The following are **clipping** violations:
 - Text truncated by `text-overflow: ellipsis` where the truncated portion
   carries information (clan names, named entities, type descriptors, etc.).
 - Text or visuals clipped by `overflow: hidden` because a child exceeded
@@ -78,9 +89,34 @@ The following are violations:
 - Body / paragraph text smaller than 1rem; small-caps labels smaller than
   0.7rem.
 
-A UI change is not complete until the verification workflow described in
-*Development Workflow* has produced (a) screenshots at the four standard
-viewports and (b) a zero-overflow DOM-audit report.
+The following are **balance** violations (added in v1.3.0):
+- Inside a horizontal flex or grid container ≥600px wide with two or more
+  visible children, sibling-element heights MUST NOT differ by more than
+  **2.5×** when the taller sibling exceeds 200px. (The original failure
+  mode: a short hero column beside a tall card stack produces a column of
+  dead space below the hero when the user scrolls. Either bring the
+  short column up in height or stack the layout vertically.)
+- A vertical region larger than **30% of the viewport height** that is
+  empty of content, decoration, or intentional negative space (no
+  watermark, no rule, no whitespace clearly serving the composition) is
+  itself a violation. Empty space is allowed only as a designed element.
+
+A UI change is not complete until the verification workflow has produced:
+  (a) **screenshots at the four standard viewports** (GM-100 1850×1050,
+      GM-200 925×525, tablet 800×1100, mobile 390×844), captured as
+      **multi-scroll contact sheets** for any page taller than 1.3× the
+      viewport so mid-scroll layout is visible;
+  (b) a **zero-issue DOM-audit report** covering both clipping and
+      layout-balance rules above;
+  (c) a **persona-driven review pass**: the reviewer (whether the same
+      agent, the GM, or the frontend-review subagent at
+      `.claude/agents/frontend-review.md`) MUST consider the page from
+      the user's perspective ("Eli is opening this page; what is he
+      trying to do here?") rather than as a static visual artifact.
+
+The author of a UI change SHOULD NOT also be the sole reviewer. Where
+practical, route the contact sheet to the frontend-review subagent for an
+independent pass. The author rationalizes choices the reviewer would not.
 
 ### II. Bold, Intentional Design
 

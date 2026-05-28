@@ -7,6 +7,7 @@ shared layout.
 
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 from pathlib import Path
@@ -20,6 +21,7 @@ from l7r.sections import SECTIONS
 _HERE = Path(__file__).parent
 _L7R_TEMPLATES = _HERE / 'templates'
 _CHARGEN_TEMPLATES = _HERE.parent / 'chargen' / 'templates'
+_STATIC_DIR = _HERE / 'static'
 
 # Markdown-style *italic* runs. Conservative: no nesting, no asterisks adjacent to spaces.
 _EM_PATTERN = re.compile(r'\*([^*\n]+)\*')
@@ -48,6 +50,30 @@ def relic_type_short(relic_type: str) -> str:
     return relic_type.split('(', 1)[0].strip()
 
 
+def static_version(static_dir: Path = _STATIC_DIR) -> str:
+    """SHA1-hash digest (truncated) of all static asset bytes.
+
+    Used as a `?v=` query string on `/static/...` URLs so the browser drops
+    its cached copy after every deploy. Computed once at app startup.
+    """
+    h = hashlib.sha1()
+    if not static_dir.exists():
+        return 'dev'
+    for path in sorted(static_dir.rglob('*')):
+        if not path.is_file():
+            continue
+        h.update(path.relative_to(static_dir).as_posix().encode('utf-8'))
+        h.update(b'\x00')
+        h.update(path.read_bytes())
+    return h.hexdigest()[:12]
+
+
+def static_url(path: str, version: str) -> str:
+    """Build a versioned URL for a static asset path like 'css/l7r.css'."""
+    path = path.lstrip('/')
+    return f'/static/{path}?v={version}'
+
+
 def build_environment() -> Environment:
     """Construct the shared Jinja2 environment used by all templates."""
     loader = ChoiceLoader(
@@ -68,4 +94,7 @@ def build_environment() -> Environment:
     env.globals['SECTIONS'] = SECTIONS
     env.globals['FORTUNES'] = FORTUNES
     env.globals['CLANS'] = CLANS
+    version = static_version()
+    env.globals['STATIC_VERSION'] = version
+    env.globals['static_url'] = lambda path, _v=version: static_url(path, _v)
     return env
