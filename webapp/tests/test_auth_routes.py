@@ -18,7 +18,6 @@ from l7r.auth import (
 )
 from l7r.auth_routes import (
     AuthRoot,
-    _is_public_path,
     _is_secure_request,
     _read_cookie,
     _set_cookie,
@@ -117,29 +116,6 @@ class FakeDiscordClient:
 
 
 # ---------------------------------------------------------------------------
-# Public path checking
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    ('path', 'expected'),
-    [
-        ('/auth/login', True),
-        ('/auth/callback', True),
-        ('/static/css/l7r.css', True),
-        ('/favicon.ico', True),
-        ('/terms', True),
-        ('/privacy', True),
-        ('/', False),
-        ('/relics', False),
-        ('/chargen/', False),
-    ],
-)
-def test_is_public_path(path: str, expected: bool) -> None:
-    assert _is_public_path(path) is expected
-
-
-# ---------------------------------------------------------------------------
 # Cookie helpers
 # ---------------------------------------------------------------------------
 
@@ -198,14 +174,6 @@ def test_install_auth_tool_creates_global_tool() -> None:
     cfg = _make_config()
     install_auth_tool(cfg)
     assert hasattr(cherrypy.tools, 'l7r_auth')
-
-
-def test_auth_tool_allows_public_paths(cp_request: Any) -> None:
-    cfg = _make_config()
-    install_auth_tool(cfg)
-    cherrypy.request.path_info = '/auth/login'
-    # Should not raise.
-    cherrypy.tools.l7r_auth.callable()
 
 
 def test_auth_tool_returns_503_when_not_configured(cp_request: Any) -> None:

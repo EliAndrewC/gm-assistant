@@ -35,20 +35,6 @@ from l7r.sections import SECTIONS
 logger = logging.getLogger(__name__)
 
 
-# Routes that bypass auth. Order matters: anything under these prefixes is public.
-PUBLIC_PREFIXES: tuple[str, ...] = (
-    '/auth/',
-    '/static/',
-    '/favicon.ico',
-    '/terms',
-    '/privacy',
-)
-
-
-def _is_public_path(path: str) -> bool:
-    return any(path == p.rstrip('/') or path.startswith(p) for p in PUBLIC_PREFIXES)
-
-
 def _is_secure_request() -> bool:
     """True if the original client request was HTTPS.
 
@@ -106,9 +92,6 @@ def install_auth_tool(config: AuthConfig) -> None:
     """
 
     def check(min_role: Role = 'player') -> None:
-        path = cherrypy.request.path_info
-        if _is_public_path(path):
-            return
         if not config.is_configured:
             # Anonymous-only routes shouldn't 503 the catalog just because
             # Discord OAuth isn't configured for this deployment.
