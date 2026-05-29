@@ -49,6 +49,47 @@ def test_relic_carries_all_frontmatter_fields(sample_pool_dir: Path) -> None:
     assert '*emphasis*' in stone.description  # raw markdown; emphasis is rendered by a filter
 
 
+def test_relic_summary_extracts_first_sentence(sample_pool_dir: Path) -> None:
+    relics = load_relics(sample_pool_dir)
+    stone = next(r for r in relics if r.slug == 'sample-benten-stone')
+    # Sample description starts "A small stone used in tests. Its first
+    # paragraph is short."
+    assert stone.summary == 'A small stone used in tests.'
+
+
+def test_relic_summary_strips_markdown_italic_markers() -> None:
+    relic = Relic(
+        slug='x',
+        name='X',
+        japanese_romaji='X',
+        japanese_kanji='x',
+        fortune='benten',
+        clan='any',
+        temple='somewhere',
+        named_entity='someone',
+        relic_type='thing',
+        description='A bowl of *unusually* warm water. Next sentence.',
+    )
+    assert relic.summary == 'A bowl of unusually warm water.'
+
+
+def test_relic_summary_handles_description_with_no_period() -> None:
+    relic = Relic(
+        slug='x',
+        name='X',
+        japanese_romaji='X',
+        japanese_kanji='x',
+        fortune='benten',
+        clan='any',
+        temple='somewhere',
+        named_entity='someone',
+        relic_type='thing',
+        description='A single fragment with no terminating period',
+    )
+    # Falls back to the full body when no sentence terminator is found.
+    assert relic.summary == 'A single fragment with no terminating period'
+
+
 def test_relics_are_immutable() -> None:
     relic = Relic(
         slug='x',

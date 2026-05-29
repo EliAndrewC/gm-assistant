@@ -32,10 +32,13 @@
       <dt class="detail-meta__label">Resides at</dt>
       <dd class="detail-meta__value">{{ relic.temple }}</dd>
     </div>
-    <div class="detail-meta__field">
-      <dt class="detail-meta__label">Tied to</dt>
-      <dd class="detail-meta__value">{{ relic.named_entity }}</dd>
-    </div>
+  </dl>
+  {# "Tied to" is split out into its own row because the named_entity field
+     can run a full paragraph (Benten herself + the salt-makers, etc.),
+     which made the cell tower over its siblings in the 4-up grid. #}
+  <dl class="detail-meta-wide">
+    <dt class="detail-meta__label">Tied to</dt>
+    <dd class="detail-meta__value">{{ relic.named_entity }}</dd>
   </dl>
 </section>
 

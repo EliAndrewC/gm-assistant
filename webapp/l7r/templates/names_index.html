@@ -85,8 +85,7 @@
             <h2 class="name-card__name">{{ entry.name }}</h2>
             <span class="name-card__tags">
               <span class="name-card__tag name-card__tag--{{ entry.gender }}">{{ entry.gender }}</span>
-              <span class="name-card__tag name-card__tag--{{ 'peasant' if entry.peasant else 'samurai' }}">{{ 'peasant' if entry.peasant else 'samurai' }}</span>
-              <span class="name-card__tag name-card__tag--format">format {{ entry.format }}</span>
+              <span class="name-card__tag name-card__tag--{{ 'peasant' if entry.peasant else 'samurai' }}">{{ 'any caste' if entry.peasant else 'samurai' }}</span>
             </span>
           </div>
           <p class="name-card__explanation">{{ entry.explanation }}</p>

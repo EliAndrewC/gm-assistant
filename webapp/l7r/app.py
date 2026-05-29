@@ -66,6 +66,15 @@ def _group_relics_by_fortune(relics: list[Relic]) -> dict[str, list[Relic]]:
     return {slug: relics_for_fortune(relics, slug) for slug in FORTUNES}
 
 
+def _clans_with_relics(relics: list[Relic]) -> list[str]:
+    """Sorted unique clan slugs present in the relic pool.
+
+    Used to render the clan filter rail — only show buttons for clans that
+    actually have at least one relic, so the rail adapts as the pool grows.
+    """
+    return sorted({r.clan for r in relics})
+
+
 class Root:
     """Top-level CherryPy controller for the L7R Toolkit."""
 
@@ -79,6 +88,7 @@ class Root:
         self._names = names if names is not None else []
         self._env = env if env is not None else build_environment()
         self._relics_by_fortune = _group_relics_by_fortune(relics)
+        self._clans_with_relics = _clans_with_relics(relics)
 
     # GET /
     @cherrypy.expose
@@ -93,6 +103,7 @@ class Root:
                 'relics_index.html',
                 current_section='relics',
                 relics_by_fortune=self._relics_by_fortune,
+                clans_with_relics=self._clans_with_relics,
             )
 
         relic = find_relic_by_slug(self._relics, slug)

@@ -241,6 +241,25 @@ a { color: inherit; }
   font-weight: 600;
 }
 
+/* Text-only seal variant — used by the clan filter rail, which has no
+   per-clan kanji stamp. The button still uses the seal's hover/active
+   semantics so pressing it visually matches a Fortune button. */
+.seal--text {
+  min-width: 0;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+}
+
+.seal--text .seal__name {
+  font-size: 0.74rem;
+}
+
+.seal--text[aria-pressed='true'] {
+  border-color: var(--vermillion);
+  background: var(--vermillion-soft);
+}
+
 /* =====================================================================
    Masthead — no archive framing, no count
    ===================================================================== */
@@ -300,10 +319,10 @@ a { color: inherit; }
   margin: 0;
 }
 
+/* Same policy as landing — italics in body copy stay ink-colored. */
 .masthead__lede em {
-  font-style: normal;
-  color: var(--vermillion);
-  font-variation-settings: 'opsz' 36, 'SOFT' 0, 'wght' 500;
+  font-style: italic;
+  color: inherit;
 }
 
 /* Decorative kanji watermark — anchored to the right column, doesn't overlap copy */
@@ -555,14 +574,15 @@ a { color: inherit; }
   hyphens: auto;
 }
 
-.card__entity {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-variation-settings: 'opsz' 36, 'SOFT' 60, 'wght' 400;
-  font-size: 1rem;
+.card__summary {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
   color: var(--ink-soft);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
+  /* Show the full first sentence. Cards within the same row stretch to
+     the tallest sibling (grid default), so rows stay internally even and
+     no content is hidden — long summaries just produce taller rows. */
 }
 
 /* ===== Horizontal card layout for narrow viewports ===== */
@@ -608,7 +628,7 @@ a { color: inherit; }
     margin-bottom: 0.2rem;
     line-height: 1.2;
   }
-  .card__entity {
+  .card__summary {
     font-size: 0.85rem;
     line-height: 1.35;
   }
@@ -746,20 +766,30 @@ a { color: inherit; }
   color: var(--ink);
 }
 
-/* Metadata band */
+/* Metadata band — 4 short fields in a flowing grid. The 5th field
+   ("Tied to") is split into its own .detail-meta-wide row below since
+   its value can run a full paragraph and was towering over its
+   siblings in the grid. */
 .detail-meta {
   border-top: 1px solid var(--hairline);
-  border-bottom: 1px solid var(--hairline);
   padding: 1.4rem 0;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1.5rem;
-  margin: 2rem 0 2.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.4rem 1.5rem;
+  margin: 2rem 0 0;
 }
 
-@media (max-width: 1100px) { .detail-meta { grid-template-columns: repeat(3, 1fr); gap: 1.3rem; } }
-@media (max-width: 700px)  { .detail-meta { grid-template-columns: repeat(2, 1fr); gap: 1.1rem; } }
-@media (max-width: 460px)  { .detail-meta { grid-template-columns: 1fr; } }
+.detail-meta-wide {
+  border-bottom: 1px solid var(--hairline);
+  padding: 1.2rem 0 1.4rem;
+  margin: 0 0 2.5rem;
+  display: grid;
+  /* Label sits in its own column, value fills the rest — same visual
+     vocabulary as the short fields above, just wider. */
+  grid-template-columns: minmax(6rem, max-content) 1fr;
+  gap: 1rem 1.5rem;
+  align-items: baseline;
+}
 
 .detail-meta__field {
   display: flex;
@@ -1059,10 +1089,12 @@ a { color: inherit; }
   margin: 0;
 }
 
+/* Body italics in the landing lede stay ink-colored — the vermillion
+   treatment is reserved for the brand wordmark, so an italic word in
+   paragraph copy doesn't get mistaken for an inline link. */
 .landing__lede em {
-  font-style: normal;
-  color: var(--vermillion);
-  font-variation-settings: 'opsz' 36, 'SOFT' 0, 'wght' 500;
+  font-style: italic;
+  color: inherit;
 }
 
 .landing__sections {
@@ -1687,8 +1719,11 @@ a { color: inherit; }
 
 .auth-card {
   max-width: 32rem;
-  margin: 6rem auto;
-  padding: 2.6rem 2.4rem 2.2rem;
+  /* Top margin used to be 6rem which pushed the CTA off the first fold at
+     GM-200 (525px tall); clamp so the card breathes on big screens but
+     still fits with its button + fineprint inside one screen on a laptop. */
+  margin: clamp(2rem, 6vh, 6rem) auto;
+  padding: 2rem 2.4rem 1.8rem;
   background: var(--paper-warm);
   border: 1px solid var(--hairline);
   border-radius: 2px;
@@ -1738,7 +1773,7 @@ a { color: inherit; }
   font-size: 1.05rem;
   line-height: 1.55;
   color: var(--ink-soft);
-  margin: 0 0 1.8rem;
+  margin: 0 0 1.3rem;
   overflow-wrap: break-word;
 }
 
@@ -1988,6 +2023,13 @@ a { color: inherit; }
   .filter-row__label {
     flex: none;
     text-align: left;
+    min-width: 0;
+  }
+  /* Constrain the rail to its parent's width so its own overflow-x: auto
+     actually scrolls — without this, the rail's content sets the rail's
+     natural width and bleeds out of the container at narrow viewports. */
+  .filter-row .fortunes__rail {
+    width: 100%;
     min-width: 0;
   }
 }

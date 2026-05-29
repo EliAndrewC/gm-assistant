@@ -58,13 +58,35 @@ def test_relics_index_lists_all_fortune_sections(root: Root) -> None:
     assert 'data-fortune="daikoku"' in html
 
 
-def test_relics_index_contains_relic_kanji(root: Root) -> None:
+def test_relics_index_cards_show_summary_not_named_entity(root: Root) -> None:
     html = root.relics().decode('utf-8')
-    # The fixture relics' kanji should appear on the cards.
-    assert '試の盃' in html
-    assert '試の石' in html
-    assert '試の刀' in html
-    assert '試の槌' in html
+    # The card now carries a 1-sentence summary (derived from the
+    # description's first sentence), replacing the prior named-entity line.
+    assert 'card__summary' in html
+    assert 'card__entity' not in html
+    # Sample fixture description starts: "A small stone used in tests."
+    assert 'A small stone used in tests.' in html
+    # The named-entity text is intentionally NOT on the card anymore.
+    assert 'A fictional figure used as a test fixture' not in html
+
+
+def test_relics_index_has_both_filter_rails(root: Root) -> None:
+    html = root.relics().decode('utf-8')
+    # Fortune rail (existing) + clan rail (new) both present.
+    assert 'Filter by fortune' in html
+    assert 'Filter by clan' in html
+    # The "all" button shows up in each rail.
+    assert 'data-fortune="all"' in html
+    assert 'data-clan="all"' in html
+
+
+def test_relics_index_clan_rail_only_lists_clans_with_relics(root: Root) -> None:
+    html = root.relics().decode('utf-8')
+    # Fixture has relics for fox + scorpion + crab + crane (sample pool).
+    # A clan with no relic in the fixture should NOT have a filter button.
+    assert 'data-clan="fox"' in html or 'data-clan="crab"' in html  # at least one fixture clan
+    # 'wasp' has no fixture relic — must not appear in the rail.
+    assert 'data-clan="wasp"' not in html
 
 
 def test_relic_detail_renders(root: Root) -> None:

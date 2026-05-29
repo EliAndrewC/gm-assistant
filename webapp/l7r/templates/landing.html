@@ -6,11 +6,9 @@
 <section class="container">
   <div class="landing">
     <div class="landing__hero">
-      <p class="landing__supertitle">A working set of GM tools</p>
-      <h1 class="landing__title">The L7R <em>Toolkit</em></h1>
       <p class="landing__lede">
         A pool of generated content and a character workshop for a custom
-        Legend of the Five Rings campaign. <em>Browse</em> the relic catalog,
+        Legend of the Five Rings campaign. Browse the relic catalog,
         roll up a character, and draw from the names pool.
       </p>
     </div>
@@ -23,9 +21,9 @@
               {% if section.slug == 'chargen' %}
                 <p class="landing__card-blurb">Generate samurai, monks, and peasants. Compose a portrait. Upload to Obsidian Portal.</p>
               {% elif section.slug == 'relics' %}
-                <p class="landing__card-blurb">Browse 42 pre-saved temple relics organized by Fortune. Each tied to a named hand; each kept by a Custodian.</p>
+                <p class="landing__card-blurb">Browse pre-saved temple relics. Each tied to a named hand; each kept by a Custodian.</p>
               {% elif section.slug == 'names' %}
-                <p class="landing__card-blurb">Browse 200 pre-generated Rokugani names, each with a meaning drawn from one of twenty traditional formats.</p>
+                <p class="landing__card-blurb">Browse pre-generated Rokugani names, each with a meaning drawn from a traditional format.</p>
               {% else %}
                 <p class="landing__card-blurb">Open this section.</p>
               {% endif %}

@@ -6,7 +6,7 @@
 <section class="container">
   <div class="masthead">
     <div class="masthead__copy">
-      <p class="masthead__supertitle">Of the seven fortunes</p>
+      <p class="masthead__supertitle">Sacred objects</p>
       <h1 class="masthead__title">Relics</h1>
       <p class="masthead__lede">
         A working pool of sacred objects — each tied to a named hand, each kept by a Custodian.
@@ -18,17 +18,34 @@
 
 <section class="fortunes">
   <div class="container">
-    <div class="fortunes__rail" role="toolbar" aria-label="Filter by fortune">
-      <button class="seal" type="button" data-fortune="all" aria-pressed="true">
-        <span class="seal__circle" lang="ja">全</span>
-        <span class="seal__name">all</span>
-      </button>
-      {% for fortune_slug, fortune in FORTUNES.items() %}
-        <button class="seal" type="button" data-fortune="{{ fortune_slug }}" aria-pressed="false" title="{{ fortune.domain }}">
-          <span class="seal__circle" lang="ja">{{ fortune.kanji }}</span>
-          <span class="seal__name">{{ fortune.name }}</span>
+    <div class="filter-row">
+      <span class="filter-row__label">Fortune</span>
+      <div class="fortunes__rail" role="toolbar" aria-label="Filter by fortune">
+        <button class="seal" type="button" data-fortune="all" aria-pressed="true">
+          <span class="seal__circle" lang="ja">全</span>
+          <span class="seal__name">all</span>
         </button>
-      {% endfor %}
+        {% for fortune_slug, fortune in FORTUNES.items() %}
+          <button class="seal" type="button" data-fortune="{{ fortune_slug }}" aria-pressed="false" title="{{ fortune.domain }}">
+            <span class="seal__circle" lang="ja">{{ fortune.kanji }}</span>
+            <span class="seal__name">{{ fortune.name }}</span>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <span class="filter-row__label">Clan</span>
+      <div class="fortunes__rail" role="toolbar" aria-label="Filter by clan">
+        <button class="seal seal--text" type="button" data-clan="all" aria-pressed="true">
+          <span class="seal__name">all</span>
+        </button>
+        {% for clan_slug in clans_with_relics %}
+          <button class="seal seal--text" type="button" data-clan="{{ clan_slug }}" aria-pressed="false">
+            <span class="seal__name">{{ clan_slug|clan_label }}</span>
+          </button>
+        {% endfor %}
+      </div>
     </div>
   </div>
 </section>
@@ -49,16 +66,11 @@
           {% for relic in this_fortune_relics %}
             <a class="card" href="/relics/{{ relic.slug }}" data-fortune="{{ relic.fortune }}" data-clan="{{ relic.clan }}">
               <div class="card__top">
-                <span class="card__type" title="{{ relic.relic_type }}">{{ relic.relic_type|relic_type_short }}</span>
                 <span class="card__clan" data-clan="{{ relic.clan }}">{{ relic.clan|clan_label }}</span>
-              </div>
-              <div class="card__hero">
-                <span class="card__kanji" lang="ja">{{ relic.japanese_kanji }}</span>
-                <p class="card__romaji">{{ relic.japanese_romaji }}</p>
               </div>
               <div class="card__foot">
                 <h3 class="card__name">{{ relic.name }}</h3>
-                <p class="card__entity">{{ relic.named_entity }}</p>
+                <p class="card__summary">{{ relic.summary }}</p>
               </div>
             </a>
           {% endfor %}

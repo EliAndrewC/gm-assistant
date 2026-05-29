@@ -49,6 +49,22 @@ class Relic:
     relic_type: str
     description: str
 
+    @property
+    def summary(self) -> str:
+        """First sentence of the description — used as a card-level blurb.
+
+        Relic descriptions consistently open with a physical description of
+        the object ("A bronze hand-mirror...", "Two smooth river stones..."),
+        which is exactly what someone browsing the catalog wants to see.
+        Markdown italic markers (``*``) are stripped since cards don't run
+        the prose through the italic filter.
+        """
+        body = self.description.replace('*', '').strip()
+        for i, ch in enumerate(body):
+            if ch == '.' and (i + 1 >= len(body) or body[i + 1] in ' \n'):
+                return body[: i + 1]
+        return body
+
 
 def load_relics(pool_dir: Path) -> list[Relic]:
     """Load all relics from <pool_dir>/<fortune>/*.md.
