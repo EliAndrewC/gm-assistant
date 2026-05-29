@@ -7,6 +7,7 @@ clan: scorpion
 temple: a temple of Jurojin in Scorpion lands
 named_entity: Soshi Narimichi (Scorpion shugenja who returned alive from the Burning Sands after thirty-one years, and lived to his hundred-and-second year)
 relic_type: funeral implement (ancestral memorial tablet)
+summary: "A dark walnut funeral tablet inscribed in lacquer with the posthumous name of a shugenja who walked alone out of the Burning Sands; those who are the last of their lineage walk four days to spend a night before the open tabernacle, speaking their own dead aloud until dawn."
 ---
 
 A wooden funeral tablet of dark walnut, the length of a forearm, narrow and unadorned save for the posthumous name *Joen-in Choju Koji* (淨園院長寿居士, "Layman of the Pure Garden, Long Life") inscribed down its face in lacquer ink, and the dates of Narimichi's birth and death cut into the reverse with a fine knife. The tablet stands upright in a small wooden tabernacle at the rear of the temple's only prayer hall, behind a low altar where a single stick of sandalwood incense is kept burning. The tabernacle door is opened at dawn and closed at sunset; the tablet is not removed from the tabernacle for any reason save the annual cleaning at the changing of the year.

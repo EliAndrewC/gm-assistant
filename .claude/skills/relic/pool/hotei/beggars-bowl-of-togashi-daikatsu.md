@@ -7,6 +7,7 @@ clan: dragon
 temple: a temple of Hotei in Dragon lands
 named_entity: Togashi Daikatsu (founder of a Hotei temple, an ise-zumi who walked as a beggar for forty years)
 relic_type: vessel (iron alms-bowl)
+summary: "A pitted black iron alms-bowl with a thumb-notch worn into its lip; it rides the Children's Festival procession to collect offerings for the city's beggars, and senior monks may carry it on a forty-day mendicant walk."
 ---
 
 A black iron alms-bowl the size of two cupped hands, beaten rather than cast, the iron pitted and uneven across its outer face. The inside is dark-glazed from forty years of rice, broth, and rainwater. Along the lip on one side is a shallow notch worn smooth where Daikatsu's thumb rested against it — the angle and depth of the notch fit a man's right hand, and pilgrims who hold the bowl correctly find their thumb falling naturally into the place. The bowl bears no inscription, no mark of maker, no decoration of any kind. It rests on a square of unbleached linen on a low cypress shelf in a small unadorned hall near the temple's western gate, the hall through which the Children's Festival procession passes each spring.

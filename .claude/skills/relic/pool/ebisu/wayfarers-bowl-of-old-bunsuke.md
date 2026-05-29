@@ -7,6 +7,7 @@ clan: any
 temple: a temple of Ebisu, in any city of the Empire
 named_entity: Bunsuke (peasant farmer of a small village, three generations past)
 relic_type: vessel (rice-bowl)
+summary: "A simple wood-turned rice bowl at the temple's almsgiving station; pilgrims leave a single grain of rice in honor of Ebisu, which the Steward of Hospitality empties each evening into the next morning's charity meal for the city's poor."
 ---
 
 A simple wood-turned rice bowl, unglazed and undecorated, the diameter of a man's palm. The exterior is the pale color of natural wood; the interior is darker, stained by forty years of rice. A tiny chip on the rim of the foot — exactly the size of a single grain of rice — marks the spot where Bunsuke's wife dropped the bowl on the day of their wedding. It rests on a low table at the temple's almsgiving station, beside the threshold where the daily charity meal is distributed.

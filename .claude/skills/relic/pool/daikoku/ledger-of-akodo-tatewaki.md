@@ -7,6 +7,7 @@ clan: lion
 temple: a temple of Daikoku in Lion lands
 named_entity: Akodo Tatewaki (Lion treasurer of the Akodo daimyo's house, fourth century, who oversaw the rebuilding of the Akodo treasury after the Plague of the Twelfth Year)
 relic_type: written material (bookkeeping ledger)
+summary: "A lacquered-wood ledger filled in a fourth-century treasurer's narrow hand with cinnabar-dated entries and his private corrections; Akodo treasurers come on the seventh-month audit day to read a random page aloud and find their own errors before errors find them."
 ---
 
 A heavy bound ledger, the size of a man's spread hand, two fingers thick. The covers are of dark lacquered wood, joined along the spine with stitched silk, and pierced through each cover with a single small hole through which a brass ring passes — the ring is for hanging the ledger on its peg when not in use. The pages within are pale rice-paper, ruled in faint red lines, and the columns are filled in Tatewaki's narrow hand, with the dates of the entries running down the right-hand margin in cinnabar ink. The first page bears the seal of the Akodo daimyo of the fourth century, and beneath it the seal of the Order of Daikoku of the Akodo lands. The ledger rests on a low writing-desk in the temple's treasury-chamber, a small windowless room off the main hall where the temple's own books are kept. It hangs by its ring from a brass peg above the desk when not in use.

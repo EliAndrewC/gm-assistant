@@ -7,6 +7,7 @@ clan: phoenix
 temple: a temple of Hotei in Phoenix lands
 named_entity: Shiba Akari (Shiba war-captain of the fourth century, who broke her bow after the war of the Yari Pass and took to brewing)
 relic_type: vessel (sake gourd)
+summary: "A pale gold dried gourd stoppered with paulownia wood; widows and widowers of fallen Phoenix bushi are poured a single small cup from it and asked whether it is enough, while each autumn the gourd is refilled as the year's dead are named."
 ---
 
 A dried gourd of pale green-gold, the size of a small child's head, polished smooth by long handling. Its narrow neck is bound with a band of hempen cord; its mouth is stoppered with a plug of pale paulownia wood. Along one side of the gourd's broad belly is a long, faint scar where the rind cracked once in its growing and the gourd healed itself — the temple does not consider this a flaw. The gourd rests on a low cypress stand in a small chamber off the temple's autumn courtyard, beneath a hanging scroll that bears only the character 足 (*taru*, "enough, sufficient") in Akari's own hand. Beside the gourd lies a single shallow sake cup of unglazed clay, the cup small enough that a full draught of it is no more than a swallow.

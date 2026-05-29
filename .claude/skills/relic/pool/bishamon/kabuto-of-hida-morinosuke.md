@@ -7,6 +7,7 @@ clan: crab
 temple: a temple of Bishamon in Crab lands
 named_entity: Hida Morinosuke (Hida wall-captain of the late third century, defender of the Stone Gate)
 relic_type: armor piece (kabuto, war-helm)
+summary: "A dented iron war-helm of the old Hida pattern, the dent left where its wearer took an oni's killing stroke and held the gate anyway; Hida wall-captains kneel beneath it before taking command of a contested gate or pass."
 ---
 
 A heavy iron *kabuto* of the old Hida pattern — five overlapping plates riveted to the bowl, a deep neck-guard of laced iron scales, a half-mask of beaten iron with the lower jaw left bare. The crest is a single rough boar's-tusk of cracked ivory, set into a bronze socket at the brow. The bowl is dented inward over the left ear in a fist-sized hollow that has not been hammered out — the blow that made it killed the oni that struck it, and the Hida who recovered the helm afterward chose to leave the dent. The kabuto sits on a heavy oaken stand within a stone alcove off the temple's commanders' hall, where a single iron lamp burns above it day and night.

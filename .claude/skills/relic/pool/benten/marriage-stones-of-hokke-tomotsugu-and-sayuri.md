@@ -7,6 +7,7 @@ clan: fox
 temple: a temple of Benten in Fox lands
 named_entity: Hokke Tomotsugu (Fox samurai of the ruling lineage) and Sayuri (peasant woman), seven generations past
 relic_type: pair (river stones in lacquered case)
+summary: "Two smooth river stones in a lacquered case beside a basin of running water; betrothed couples, troubled spouses, and pairs whose affection cannot become a marriage exchange the stones before Benten as a quiet witnessing of bonds the families will not bless."
 ---
 
 Two smooth river stones, each the size of a small peach, one slightly darker than the other. They rest in a small lacquered case lined with pale silk. The case is open by day and closed by night, displayed on a low table beside a stone water-basin in a small garden alcove off the temple's main hall — water is Benten's element, and the alcove is built around a slow trickle of stream-water that runs through a copper trough into the basin.

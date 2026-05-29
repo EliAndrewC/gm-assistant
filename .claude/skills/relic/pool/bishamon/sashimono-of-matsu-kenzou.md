@@ -7,6 +7,7 @@ clan: lion
 temple: a temple of Bishamon in Lion lands
 named_entity: Matsu Kenzou (Matsu cavalry commander of the late fourth century, hero of the Pass of White Stones)
 relic_type: banner (back-banner / sashimono)
+summary: "A bloodstained ochre back-banner bearing a tiger's-claw mon, carried by a Matsu cavalry commander through the breaking charge at the Pass of White Stones; Lion commanders march their honor-guard beneath it when leaving the city for decisive campaigns."
 ---
 
 A back-banner of heavy unbleached silk, tall as a kneeling man, mounted on its original lacquered bamboo pole. The field is the ochre-yellow of old Lion campaigns, the mon a single black tiger's claw raked across the silk on a diagonal. The lower third of the banner is dark with the rusted brown of dried blood — Kenzou's own, and the blood of the Matsu cavalry-men who carried his body off the field of White Stones. The pole and banner together rest in a long stone niche behind the main altar of the temple's eastern hall, slanted upright as if planted in the earth.

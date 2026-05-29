@@ -7,6 +7,7 @@ clan: crane
 temple: a temple of Daikoku in Crane lands
 named_entity: High Monk Norikazu (Crane monk and founder of an Order of Daikoku in the eighth century)
 relic_type: implement (mallet)
+summary: "A fist-sized paulownia mallet bound in faded red cord, carved as a grandfather's gift to the monk who founded the Order; merchants bring a sample of a new venture's goods or coin and the Custodian strikes the mallet three times to consecrate the work."
 ---
 
 A small wooden mallet, the size of a man's fist, carved from a single piece of paulownia wood. The head is squat and weighted, marked along its broad face with the character 福 (*fuku*, "good fortune") burned shallow into the grain. The handle is bound in red silk cord, faded now to a pale rose. The mallet rests upon a square of black lacquered wood, set within a shallow brass tray, on a low altar at the front of the temple's petitions hall. Two rice-bales — small, ceremonial, the kind a merchant might carry as a token of good harvest — sit one to each side of the tray.

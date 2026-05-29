@@ -7,6 +7,7 @@ clan: dragon
 temple: a temple of Ebisu in Dragon lands
 named_entity: Mirumoto Ohatsu (Mirumoto-vassal weaver of the Kitsuki river-towns, fifth century after the founding of the Kitsuki line)
 relic_type: implement (weaver's shuttle)
+summary: "A polished mountain-cherry weaver's shuttle marked with seventeen counting-cuts; craftsmen bring the first materials of a weighty commission to be passed beneath it, receiving Ebisu's blessing when the terms are stated honestly, or quiet counsel when a finished work has gone wrong."
 ---
 
 A weaver's shuttle of close-grained mountain-cherry wood, the length of a woman's hand from wrist to fingertip and the breadth of two fingers. The wood has been polished to a soft glow by the passage of warp-thread and the oil of generations of palms; the carved channel for the bobbin is darkened where the silk has worn it. Along one side of the shuttle a single line of small characters has been incised by a thin blade — Ohatsu's own counting-marks for the bolts she finished in her last winter, seventeen marks in all. The shuttle rests on a folded square of unbleached hemp cloth, on a low table at the side of the temple's craftsman-petitions chamber. On the wall above hangs a single bolt of plain cotton, woven by Ohatsu herself in the autumn of her sixty-second year and given to the temple when she could no longer sit at the loom.

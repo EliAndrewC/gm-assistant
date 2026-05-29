@@ -7,6 +7,7 @@ clan: crab
 temple: a temple of Ebisu in Crab lands
 named_entity: Yasuki Rokuemon (Yasuki-vassal fisherman of the coastal hamlets, second century of the Yasuki domain)
 relic_type: implement (fishing net)
+summary: "A small hemp drag-net weighted with river-stones, folded in a pine box above the harbor; fishermen preparing for a difficult voyage are blessed at its chamber so Ebisu lays his regard upon their honest labor at sea."
 ---
 
 A small drag-net of woven hemp cord, the size that a single fisherman would cast from the stern of a flat-bottomed coast-boat. The cord has gone the dark color of old rope, soaked through with sea-salt and fish-oil over generations. The leaden weights along its bottom edge are river-stone rather than lead — Rokuemon's village was too poor for metal in his time, and he tied each stone himself with a fisherman's knot, the knots still visible after these centuries. The net is folded carefully into a low square of unvarnished pine wood, lined with rice-straw, and rests on a stone plinth in a side-chamber of the temple that opens onto the harbor through a wooden lattice. The sound of the tide can be heard from the chamber at all hours.

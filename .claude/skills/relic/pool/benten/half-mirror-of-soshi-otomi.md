@@ -7,6 +7,7 @@ clan: scorpion
 temple: a temple of Benten in Scorpion lands
 named_entity: Soshi Otomi (Scorpion shugenja-widow of the early seventh century, who carried her husband's name forty years and was reunited with his half of their wedding mirror only at her death)
 relic_type: token (half of a broken bronze hand-mirror, paired with its mate)
+summary: "A bronze hand-mirror broken cleanly and rejoined with a silver collar; the widowed, the long-separated, and the estranged are received before it to look into its clouded face, where Benten shows what each pilgrim needs to see of an absent or quarreling spouse."
 ---
 
 A bronze hand-mirror, broken cleanly down its middle along an old fault in the casting, the two halves now joined again and held together by a fine collar of silver wirework that runs around the rim and across the break. The mirrored face is dim with age and shows a clouded image rather than a clear one; the back is incised with a pattern of two cranes flying in opposite directions around a sprig of plum-blossom. The handle is wrapped in dark silk. The mirror rests on a black silk cushion in a shallow tray of polished river-pebbles, in a small chamber at the back of the temple beside the wall that faces the city's eastern river. A single candle burns in a brass holder above the tray. The candle is not relit when it goes out — a new candle is set each evening at the seventh bell, and the chamber takes its light from whichever candle is presently burning.

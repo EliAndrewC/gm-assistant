@@ -7,6 +7,7 @@ clan: scorpion
 temple: a temple of Jurojin in Scorpion lands
 named_entity: Shosuro Genbei (Bayushi-vassal merchant, who outlived all seven of his children and ran his trading house into its second century)
 relic_type: stone lantern (continuously lit)
+summary: "A grey andesite stone lantern pierced with seven small windows, one for each of a merchant's lost children, kept continuously lit for over a century; parents who have buried a child of any age keep a single night's silent vigil at its platform."
 ---
 
 A stone lantern of grey andesite, the height of a kneeling man, set on a low platform of river-rock in the temple's inner courtyard. The lantern's hood is carved with the seven petals of an autumn chrysanthemum; its body bears seven small windows, one for each of Genbei's lost children, and within burns a single oil-lamp wick of twisted hemp, fed from a brass reservoir at the lantern's base. The lantern has been continuously lit for one hundred and fourteen years. The Custodian of the Lamp, a senior monk appointed for life, sleeps in a small cell that opens directly onto the courtyard, so that the lantern may be tended at any hour. A second monk, the *vice-custodian*, sleeps in a cell on the opposite side; if both the lamp and one custodian were to fail in the same night, the second would yet be at hand.

@@ -7,6 +7,7 @@ clan: phoenix
 temple: a temple of Fukurokujin in Phoenix lands
 named_entity: Shiba Mochizuke (Phoenix Master of Mercy, eighth century, who renounced his seat after the famine ruling)
 relic_type: written material (unfinished bound manuscript)
+summary: "A sixty-three-page manuscript whose last sixteen pages are blank, beside a brush and inkstone dry for three centuries; samurai who have come to regret an order or ruling sit alone with it at sunset, examining their own motives in light of Mochizuke's."
 ---
 
 A bound manuscript of sixty-three pages, sewn in the simple Phoenix fashion with pale blue thread, the cover plain dark cloth. The interior pages are filled in a fluent, hurried hand with the dense calligraphy of a scholar writing rapidly toward a conclusion he can see and is racing to reach. The seventeenth page from the back is the last written page. The remaining pages — sixteen of them — are blank. The manuscript rests in a shallow open box of pale wood on a low table in a side chamber off the temple's library, beside a small inkstone and a single brush that have not been used in three centuries. The brush is dry; the inkstone is dry.

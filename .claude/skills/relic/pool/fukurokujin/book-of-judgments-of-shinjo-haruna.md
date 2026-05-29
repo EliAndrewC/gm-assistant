@@ -7,6 +7,7 @@ clan: unicorn
 temple: a temple of Fukurokujin in Unicorn lands
 named_entity: Shinjo Haruna (Unicorn provincial judge of the fourth century, called the Bending Judge)
 relic_type: written material (bound book of rulings)
+summary: "A heavy calfskin-bound book of three hundred seventeen rulings, its pages turned one each morning; magistrates troubled by a case kneel at the reading-stand and consult whatever entry the day has opened, seeking not a verdict but Haruna's reasoning on when the law should bend."
 ---
 
 A heavy book bound in dark calfskin, the size of a man's two hands placed side by side, its pages of thick rice-paper inked in a careful but unornamented hand. The cover is unmarked except for a single character — 温 (*on*, "warmth" or "tenderness") — pressed into the leather with a hot iron. The book rests open on a slanted reading-stand of pale wood in the temple's magistrate-petition hall, beside a low cushion where the petitioner kneels. A small brass paperweight, cast in the shape of a sleeping fawn, holds the open pages flat. The page is turned once each morning by the Custodian of Sacred Relics, in order; the book is read through completely once each year, beginning at the spring equinox.

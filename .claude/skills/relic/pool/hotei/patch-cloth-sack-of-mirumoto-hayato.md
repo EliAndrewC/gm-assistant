@@ -7,6 +7,7 @@ clan: dragon
 temple: a temple of Hotei in Dragon lands
 named_entity: Mirumoto Hayato (retired Mirumoto general of the early sixth century, who laid down his banners and walked to the temple)
 relic_type: vessel (cloth sack of small charms)
+summary: "A drawstring sack of forty-one mismatched cloth squares filled with small carved charms; orphans and other children of the temple draw one charm each at the spring festivals to carry for the year, and weary pilgrims may lift its surprising weight for one breath."
 ---
 
 A worn cloth sack the size of a man's two cupped hands, sewn from forty-one squares of fabric in differing colors and weaves — some indigo cotton, some pale silk, some coarse hempen weave, some patterned in the old Mirumoto sword-and-claw design now faded almost beyond reading. The squares are stitched together with thick linen thread, the seams uneven, the patches not arranged by color or pattern but by no order at all. The sack closes with a simple drawstring of plaited silk. Inside it, on a bed of unbleached cotton, rest one hundred and seven small charms — wooden carvings of animals and household objects, tiny brass bells, polished river-stones with characters scratched on them, small folded paper figures, a few pieces of cheap blue glass smoothed by the sea. The sack hangs from a wooden peg on the wall of the temple's children's hall, at the height of a tall child's reach, beside a low writing-desk where the temple's literate novices teach the children of the city their characters.

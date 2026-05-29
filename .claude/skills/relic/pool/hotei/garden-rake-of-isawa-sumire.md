@@ -7,6 +7,7 @@ clan: phoenix
 temple: a temple of Hotei in Phoenix lands
 named_entity: Isawa Sumire (Isawa scholar of the late fourth century, who burned her library and became a gardener at the temple)
 relic_type: implement (bamboo garden rake)
+summary: "A long bamboo rake with fifteen split-bamboo teeth, kept at the threshold of a gravel garden; pilgrims troubled by attachment rake the garden for one hour while the relic guides their hands toward the thought they have been avoiding."
 ---
 
 A long bamboo-handled rake with a head of fifteen split-bamboo teeth, the bindings of waxed hempen cord. The bamboo of the handle has been polished smooth by hands; the teeth are slightly uneven in length, three of them shorter than the others where they have been replaced over the centuries. The rake is kept upright in a slim wooden rack at the threshold of the temple's gravel garden, beside the worn flat stone where the rake's user removes their sandals. The garden itself is a long rectangle of white river-gravel raked into slow curves around five standing stones, enclosed by a low wall of weathered cedar. From a small bench inside the threshold one can sit and watch the garden without entering it.

@@ -7,6 +7,7 @@ clan: unicorn
 temple: a temple of Fukurokujin in Unicorn lands
 named_entity: Otsuyu (peasant woman of Yoki-mura, six generations past, whose counsel the village headsmen would seek)
 relic_type: natural object (small stone basin holding a still pool of rainwater)
+summary: "A small stone basin of still rainwater set into a covered alcove, fed by the eaves; mothers and families troubled by a difficult choice sit on the bench beside it with the Custodian, who asks slow questions across the water until the petitioner finds her own answer."
 ---
 
 A small basin of dark river-stone, the width of a man's two hands, set into the floor of a covered alcove at the back of the temple's modest courtyard. The basin holds rainwater that the alcove's overhanging roof collects and slowly feeds in through a copper channel; the water is changed by the rains rather than by any human hand, and the level rises and falls with the seasons. The water is always still. The stone of the basin is smooth, worn dark by water and by the hands of generations of women who have knelt beside it. A wooden bench sits before the basin, just wide enough for two to sit together. The alcove is open at the front and screened from the wind on three sides.

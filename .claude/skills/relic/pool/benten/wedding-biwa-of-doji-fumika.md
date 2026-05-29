@@ -7,6 +7,7 @@ clan: crane
 temple: a temple of Benten in Crane lands
 named_entity: Doji Fumika (Crane court composer of the early seventh century, who set the marriage songs still sung at Crane weddings)
 relic_type: instrument (biwa lute)
+summary: "A four-stringed paulownia biwa kept behind a silk curtain in a temple alcove; a senior monk plays one of Fumika's marriage-songs upon it at the spring and autumn festivals, and the Custodian carries it in procession to weddings that join lineages or close estrangements."
 ---
 
 A four-stringed *biwa* of paulownia wood, its body the shape of a teardrop and the color of pale honey, with a narrow neck of darker rosewood and a tortoiseshell plectrum-rest worn smooth by use. The five frets are tied in silk cord that has been replaced perhaps twenty times across the centuries, always by the same workshop in the lower city. The strings are silk, and are restrung at the beginning of each spring at the Mending Ceremony — the old strings are not discarded but kept in a small lacquered box beneath the display, for any one of them may have been the string that sounded a particular blessing in a particular wedding. The biwa rests upright on a low stand of cherry wood, behind a sheer silk curtain, in an alcove off the main hall of the temple. A shallow basin of water set into the stone floor before the alcove catches the candle-light and throws it gently up against the curtain.

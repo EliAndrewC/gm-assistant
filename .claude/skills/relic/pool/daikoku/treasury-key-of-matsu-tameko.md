@@ -7,6 +7,7 @@ clan: lion
 temple: a temple of Daikoku in Lion lands
 named_entity: Matsu Tameko (Matsu daimyo's wife and treasury-keeper of the second century, who defended the family treasury through three lean winters)
 relic_type: implement (iron key)
+summary: "A heavy iron treasury key worn smooth by the grip of a Matsu daimyo's wife who fed peasants, garrison, and temples through three lean winters; it now serves as the ceremonial second-key for the temple's own treasury chamber, opened at quarterly audits and budget petitions."
 ---
 
 A heavy iron key, longer than a man's hand from the heel of the palm to the tip of the middle finger, with a teardrop-shaped bow at the head and a deep-cut ward at the bit. The iron is dark, worn smooth on the shaft where Tameko's grip lay, and pitted along the bow where the cord that once tied it to her sash has long since been removed. From the bow now passes a length of pale yellow silk, knotted in the simple square knot favored by the Matsu of Tameko's century. The key hangs from a small iron hook driven into the cypress beam that runs above the door of the temple's own treasury-chamber — not displayed, but in active use as the ceremonial second-key for the chamber's lock. The temple's working key is kept by the Steward of the Treasury; Tameko's key is brought down only at the audit-days and the petitions days, and is otherwise left on its hook for any monk passing through the corridor to see.

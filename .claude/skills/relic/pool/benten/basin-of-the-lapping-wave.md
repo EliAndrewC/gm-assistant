@@ -7,6 +7,7 @@ clan: mantis
 temple: a temple of Benten in Mantis lands
 named_entity: Benten herself, whose emergence from the spring at Onogawa is locally attested; and the peasant pair Toshimi and Heigo, the salt-makers whose forty-year marriage outlasted shipwreck and exile
 relic_type: water-feature (stone basin fed by a sacred spring)
+summary: "A stone basin of brackish water fed by a sacred spring; betrothed couples drink from it to receive Benten's witness, and magistrates use it to weigh marriage and dowry disputes."
 ---
 
 A round basin of dark-grey stone, knee-high to a standing man and broad enough that a tall woman cannot reach her hands across its diameter without leaning. The stone is rough on its outer face and smooth-worn on its inner; the lip is grooved where the water trickles over a single low notch on the basin's eastern side and runs down a stone channel to the temple's lower garden. The basin sits at the center of an open court paved with grey beach-pebbles, beneath a wooden canopy on four cedar pillars; no walls enclose the court, and the wind from the harbor passes freely through it. The water in the basin is brackish — fed by a small spring beneath the temple foundations that mingles with the sea-water that seeps through the island's stone — and the surface is rarely still, even on windless days, for the spring beneath sends up a slow, irregular bubbling that disturbs the surface in patterns the eye cannot quite predict.

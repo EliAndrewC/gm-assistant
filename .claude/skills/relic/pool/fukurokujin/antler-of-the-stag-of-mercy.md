@@ -7,6 +7,7 @@ clan: any
 temple: a temple of Fukurokujin, in any city of the Empire
 named_entity: Fukurokujin himself, by way of a stag the Fortune is said to have ridden in the founding age
 relic_type: natural object (antler shed, mounted on dark wood)
+summary: "A five-pointed red-stag antler mounted on dark wood in the antechamber to the Imperial Board of Justice; magistrates brush it with their fingertips before entering session, and it is laid on the chamber's table during cases of reconsidered sentence."
 ---
 
 A single shed antler of a great red stag, nearly the length of a man's arm, with five points. It is mounted on a polished slab of dark wood — the wood is plain, not lacquered, and the antler is held by two small bronze brackets that grip it loosely enough that it could be lifted off without effort. The slab rests on a low altar of pale stone in the temple's antechamber, the room that any visitor must pass through before reaching the inner hall. A single oil lamp burns on the altar at all hours. The antler itself is the color of old ivory along its main beam, darker at the points where the stag would have rubbed it against trees in the season before shedding.

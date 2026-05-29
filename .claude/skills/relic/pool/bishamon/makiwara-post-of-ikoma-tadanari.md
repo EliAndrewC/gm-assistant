@@ -7,6 +7,7 @@ clan: lion
 temple: a temple of Bishamon in Lion lands
 named_entity: Ikoma Tadanari (Ikoma bushi and lay-monk, late second century, founder of the Ikoma striking-form)
 relic_type: training implement (makiwara striking-post)
+summary: "A weathered red-oak striking-post wrapped in rice-straw rope, planted in a roofed alcove off the temple's training yard; samurai strike it a hundred times before duels and tournaments, and Ikoma striking-school novices keep the thousand-strike vigil here at their journeyman rite."
 ---
 
 A weathered post of dense red oak, the thickness of a man's thigh, planted upright in a square of packed earth within an open-air alcove off the temple's training yard. The post stands to chest height; its striking face is wrapped in many layers of rice-straw rope, the outermost layer fresh and the inner layers brown and brittle, the whole bound by a single hemp cord knotted at the back. The earth around the post is bare and hard from generations of bare feet. A simple cedar roof on four pillars shelters the post from rain, but the alcove is otherwise open to the air.

@@ -7,6 +7,7 @@ clan: crane
 temple: a temple of Benten in Crane lands
 named_entity: Kakita Hokuto (Kakita ceremonialist of the fourth century, who codified the san-san-kudo cup-ritual still used at Crane weddings)
 relic_type: implement (set of three lacquered wedding cups, nested)
+summary: "A nested set of three red-lacquered wedding cups rimmed in silver, each painted with a flying crane; they are carried out for the san-san-kudo at weddings of unusual import and offered each spring to betrothed couples at the Blessing of the Engaged."
 ---
 
 Three lacquered cups of *urushi* over thin cedar, nested one inside the other, smallest at the top and largest at the base. Each cup is finished in deep red lacquer on the outside and pale gold on the inside; each is rimmed in fine silver. The smallest cup is the diameter of a child's palm, the middle cup the diameter of a woman's palm, the largest the diameter of a tall man's palm. On the gold interior of each cup, painted in the finest brushwork, is a single flying crane — the smallest cup's crane in flight rising, the middle cup's crane in flight level, the largest cup's crane in flight descending. The set rests on a low table of cherrywood in a side chamber off the main hall. A small ewer of unglazed pottery sits beside the cups; it holds the rice-wine used in the ritual when the cups are taken into service.

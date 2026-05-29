@@ -7,6 +7,7 @@ clan: crab
 temple: a temple of Daikoku in Crab lands
 named_entity: Yasuki Tomomichi (Yasuki harbor merchant, sixth century, who broke the Pearl Coast cartel through honest dealing)
 relic_type: implement (foreign coin in display case)
+summary: "A heavy untarnishing silver coin from an unknown foreign mint, gifted by a Yobanjin captain to an honest Yasuki merchant; Yasuki magistrates summon it as silent witness in tax, customs, and cartel disputes, reading the face it shows as omen."
 ---
 
 A single foreign coin, round, the diameter of a man's thumbnail, struck from what the temple's records describe as "silver mixed with another metal not known to Rokugani assayers." The coin is heavier than it looks, and the metal does not tarnish. On one face is the head of a foreign sovereign, crowned with what may be a sun-disc or may be a coil of flame — opinions among the temple's senior monks differ. On the other face is a single character in a foreign script which no one in living memory has read, though the temple's library holds three separate scholarly attempts at translation. The coin rests on a small velvet cushion within a glass-fronted box of black-lacquered wood, displayed at eye level in a niche off the temple's customs-petitions hall — the hall in which the temple receives the customs officials and merchant-house factors of the Yasuki harbor in their professional capacities.

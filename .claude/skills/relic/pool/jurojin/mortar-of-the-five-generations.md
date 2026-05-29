@@ -7,6 +7,7 @@ clan: unicorn
 temple: a temple of Jurojin in Unicorn lands
 named_entity: Iuchi Sarukichi (Unicorn apothecary who returned from the Burning Sands and treated five generations of the Shinjo household)
 relic_type: implement (apothecary's mortar and pestle)
+summary: "A wide-mouthed clay mortar glazed inside by a thousand grindings, paired with a curved oak pestle; before any longevity tonic for a difficult patient, the temple's senior physician works a single ginseng root once around its arc, joining the day's preparation to an apothecary's lifelong practice."
 ---
 
 A wide-mouthed mortar of dark-fired clay, the size of a melon, glazed on the inside with the pale grey film of a thousand grindings of herb and bone. The pestle that rests within it is of pale unfinished oak, worn smooth and slightly curved by Sarukichi's right hand and the right hands of his three apprentices in succession. The grooves on the mortar's inner surface are barely visible to the eye but unmistakable to the touch, faint radiating lines worn by the pestle along its accustomed arc. The mortar rests on a wooden stand in a small chamber off the temple's hospice wing, where the sick of the city are received; the chamber smells of dried angelica and ginseng even when neither herb is being prepared, the long residue of Sarukichi's work having soaked into the wood of the walls.

@@ -7,6 +7,7 @@ clan: crab
 temple: a temple of Bishamon in Crab lands
 named_entity: Tarobei (peasant ashigaru drummer of the Kaiu Wall levy, mid-fifth century)
 relic_type: implement (war-drum, taiko)
+summary: "A medium odaiko of cedar staves and patched bull-hide, kept in the gate-shrine of a Wall garrison; the Custodian beats it at dawn and dusk for the watch, and at the Cadence of the Muster when the alarm horns take up the call along the parapet."
 ---
 
 A medium *odaiko* of cedar staves bound with iron hoops, the drumhead of bull-hide so dark with age it appears black in shadow. The drum is the size of a large rice-cask and stands on a low cedar frame at waist-height, the striking-face turned toward the shrine's outer wall. The hide is patched in four places where it has been struck through; the patches are of paler leather and were sewn in by the drummer's daughter and her descendants, one generation at a time. The shrine is small — three rooms above the inner gate of the Sunda Mizu garrison-outpost — and the drum occupies most of the main room.

@@ -7,6 +7,7 @@ clan: scorpion
 temple: a temple of Jurojin in Scorpion lands
 named_entity: Shosuro Emiko (Scorpion widow of the late third century, who outlived her husband by sixty-one years and kept the count of her widowhood on these beads)
 relic_type: implement (prayer beads numbered by decade)
+summary: "A juzu of one hundred and eight cypress beads strung on iris-dyed silk, with nine darker decade-markers stained by sixty-one years of a widow's count; the recently bereaved tell one full circuit aloud, naming their dead at each marker, and may return year by year to add to the count."
 ---
 
 A string of one hundred and eight prayer beads, larger and more deliberately spaced than the ordinary monastic *juzu*, the beads carved from polished cypress and strung on a heavy silk cord the color of dried iris. Among the hundred and eight are nine larger beads of darker wood, set at regular intervals — one larger bead for every twelve smaller — and a single bead of pale river-pearl at the place where the cord knots into its tassel. The decade-markers are stained darker than the rest from being passed many thousands of times between Emiko's thumb and forefinger over the sixty-one years she carried them. The beads rest in a shallow cedar tray on a low table in a quiet alcove off the temple's bereavement hall, beside an unlit oil lamp that is lit only when the beads are in use.

@@ -7,6 +7,7 @@ clan: crane
 temple: a temple of Daikoku in Crane lands
 named_entity: Daikoku himself, through the unnamed peasant boy who recovered the bale from the floodwaters of the Great Flood of the Daidoji lowlands
 relic_type: vessel (rice-bale)
+summary: "A small old-pattern peasant rice-bale recovered intact from the willows after the Great Flood three centuries past, its weight unchanged across six hundred weighings; lowland peasants bring a single seed-grain to rest within its cords overnight for blessing of planting or harvest."
 ---
 
 A single small rice-bale, *tawara*, of the kind a peasant household keeps for the year's own eating — a third of the size of the merchants' standard bale, bound in the older five-cord pattern that has not been the fashion in the Daidoji rice-country for two hundred years. The straw is dark with age, the color of old tea, and the cords are dry but unbroken. The bale rests on a square of pale silk on a low cedar plinth at the rear of the temple's main hall, behind the Daikoku statue and to its right. Twice a year — at the first day of spring planting and the first day of autumn harvest — the bale is lifted by the Custodian of Sacred Relics and weighed on a small bronze balance kept beside the plinth. The weight is recorded in the temple's weighings-book, which now runs to four volumes and is the second-oldest continuous record kept by the Order of Daikoku in Daidoji.

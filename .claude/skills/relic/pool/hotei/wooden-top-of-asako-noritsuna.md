@@ -7,6 +7,7 @@ clan: phoenix
 temple: a temple of Hotei in Phoenix lands
 named_entity: Asako Noritsuna (Asako scholar of the fifth century, who gave away his property after the death of his small son)
 relic_type: implement (child's wooden spinning top)
+summary: "A small cherrywood spinning top with four worn bands of pigment and a slightly dulled iron point; grieving or exhausted parents spin it once a year on a cypress board, and the length and manner of its wobble carries Hotei's counsel on the child they are holding."
 ---
 
 A small wooden spinning top, the height of a man's thumb-joint, turned from a single piece of pale cherrywood and balanced on an iron point set into its base. Around its widest circumference, four faint bands of pigment circle the wood — once red, blue, green, and yellow, now so worn that the colors can only be told apart when the top is held close to a lamp. The point is slightly dulled with use, and the top no longer spins perfectly true; one watches it wobble slightly as it slows, and the wobble was already present in Noritsuna's last years. The top rests on a small square of dark silk inside a shallow cypress box on a low altar in the temple's family-petitions chamber. The box has no lid; the top is always visible, and may be touched by petitioners who have been received by the Custodian.

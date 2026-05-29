@@ -7,6 +7,7 @@ clan: scorpion
 temple: a temple of Jurojin in Scorpion lands
 named_entity: Bayushi Akemi (Scorpion courtier of the late fourth century, who outlived four daimyo and every rival she ever knew)
 relic_type: natural object (turtle-shell amulet)
+summary: "A polished mountain-turtle shell strung on pale silk with a single carved bone bead; courtiers and magistrates whose positions have grown unsafe keep a wordless vigil with it from the hour of the dog to the hour of the tiger, learning which of their adversaries will not outlast them."
 ---
 
 The shell of a mountain turtle, the size of a woman's open hand, polished so that the dark plates of its back catch the lamplight like wet stone. Along the rim a thread of pale silk has been knotted through five small holes drilled by Akemi's own hand; from the silk depends a single carved bead of bone, which the old courtier kept against her breast for sixty-two years. The shell rests on a black-lacquered tray in a narrow chamber off the temple's eastern colonnade, beside a brass stand on which a brazier of long-burning charcoal is kept warm at all hours. The chamber smells of pine resin and old ink.

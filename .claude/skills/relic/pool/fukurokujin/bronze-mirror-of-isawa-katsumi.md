@@ -7,6 +7,7 @@ clan: phoenix
 temple: a temple of Fukurokujin in Phoenix lands
 named_entity: Isawa Katsumi (Isawa scholar-shugenja, sixth century, master of the Library of Two Doors)
 relic_type: implement (bronze hand-mirror)
+summary: "A small bronze hand-mirror with a stag-and-pool cast on its back; scholars stuck in their work look once into its softened reflection for the length of a breath, that Fukurokujin's wisdom might be granted to those who can steadily hold their own ignorance."
 ---
 
 A bronze hand-mirror the size of a man's palm, with a short handle wrapped in old silk cord. The polished face is darkened with age to the color of an autumn river at dusk; a viewer's reflection is visible, but softened, the features blurred at their edges. The back of the mirror is cast with a low relief of a stag drinking from a forest pool, the antlers extending past the rim of the disc. The mirror rests on a small folded square of pale silk on a low writing-desk in a side study off the temple's main scriptorium, where a single oil lamp is kept burning during the hours when the library is open.

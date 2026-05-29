@@ -7,6 +7,7 @@ clan: crab
 temple: a temple of Ebisu in Crab lands
 named_entity: Hida Katsuro (Hida-vassal smith of the southern foundries, fourth century after the founding of the great Crab castle)
 relic_type: implement (smith's hammer)
+summary: "A forge-blackened smith's hammer on iron pegs above a banked shrine-fire; the Custodian touches it to the working hammers, chisels, and adzes of local craftsmen each seventh month, granting Ebisu's blessing to tools whose intended work is honest."
 ---
 
 A long-hafted smith's hammer, the head a single block of forge-blackened iron with a slight asymmetry to its striking face — the right side a touch wider than the left, from the way Katsuro's grip wore the steel over a working lifetime. The haft is oak, darkened with sweat and quenching-oil to the color of old tea. A short hempen cord is tied around the haft just below the head; into the cord is braided a single thread of red, the color of the apron-stripe of the Hida foundry guild. The hammer rests on a pair of iron pegs driven into the wall of a small forge-shrine adjoining the temple's main hall — a working forge with a banked fire kept always alight, and a low altar of unworked stone beside it where the local smiths leave their offerings.

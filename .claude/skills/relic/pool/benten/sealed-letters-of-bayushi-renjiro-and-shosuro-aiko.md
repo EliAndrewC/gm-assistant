@@ -7,6 +7,7 @@ clan: scorpion
 temple: a temple of Benten in Scorpion lands
 named_entity: Bayushi Renjiro and Shosuro Aiko, an estranged samurai pair of the late sixth century whose reconciliation was discovered only in their letters after both had died
 relic_type: written material (bundled love letters, partly sealed)
+summary: "A bundle of forty-one love letters on undyed washi, twenty-three unsealed and eighteen still wax-shut; thrice a year the Custodian draws one by touch and reads it aloud to pilgrims whose marriages are troubled, leaving each to receive it as their own."
 ---
 
 A bundle of forty-one letters on undyed *washi* paper, tied with a single faded red cord, kept in a black lacquered box on a low table in a small reading-room off the temple's eastern courtyard. The box has no lock. Twenty-three of the letters in the bundle are unsealed, their folds opened and refolded so many times the paper has gone soft at the creases; eighteen remain sealed, the wax red and unbroken, the recipient's name written across each seal in a careful hand. The reading-room is small enough for six listeners and one reader, no more, and the paper screens of its windows are kept closed by day so that the only light is the lamp at the reader's elbow. A second lamp is kept burning in a niche beside the box; this lamp is never allowed to go out.

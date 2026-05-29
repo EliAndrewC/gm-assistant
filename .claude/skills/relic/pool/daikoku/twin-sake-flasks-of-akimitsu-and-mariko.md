@@ -7,6 +7,7 @@ clan: crane
 temple: a temple of Daikoku in Crane lands
 named_entity: Akimitsu and Mariko (peasant rice-brewers of the Kakita lowlands, fifth century, whose household prospered into a great Kakita-vassal sake-house)
 relic_type: pair (sake flasks)
+summary: "A paired set of round tokkuri, one celadon-green and one iron-rust brown, donated by the vassal sake-house descended from a peasant brewing couple; married couples drink a single cup drawn from both flasks and speak one disputed household matter before the Custodian."
 ---
 
 Two earthenware sake-flasks of the round, round-shouldered shape called *tokkuri*, each the height of a man's hand spread thumb-to-little-finger. One is glazed in pale celadon green, the other in a deeper iron-rust brown; together they sit on a low cedar tray on a side altar in the temple's household-prosperity hall, beneath a hanging scroll on which is painted the character 福 (*fuku*, "good fortune") doubled — once in the green of the celadon flask, once in the brown of the iron-rust. A small white porcelain cup rests between the two flasks. The flasks are filled once a year, on the first day of the new year, by the senior brewers of the Kakita-vassal sake-house that descended from the relic's founders; they are emptied each evening by the Custodian, who pours a thimble's worth into the porcelain cup as the day's offering and drinks it himself.

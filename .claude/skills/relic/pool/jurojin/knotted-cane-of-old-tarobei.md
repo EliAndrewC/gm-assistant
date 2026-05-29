@@ -7,6 +7,7 @@ clan: any
 temple: a temple of Jurojin, in any city of the Empire
 named_entity: Tarobei (peasant farmer of the Yasen plain, who survived three famines and lived to his ninety-seventh year)
 relic_type: implement (walking cane)
+summary: "A short mulberry walking cane, oil-blackened and gnarled with eleven knots, its grip bound in faded indigo and its foot capped with iron; the bereaved who doubt they can continue sit one afternoon with the cane across their lap, and elders touch it each year-turning to name the year they have completed."
 ---
 
 A short walking cane of mulberry wood, dark and oil-blackened from a lifetime of handling, the length of a man's arm from elbow to fingertip. The wood is gnarled with eleven distinct knots along its length, and Tarobei is said to have rested his thumb on a different knot each year of his old age, beginning with the lowest in his eighty-seventh year and ending with the highest in his ninety-seventh. The grip-end is bound in faded indigo cloth, replaced by the wife of the village headsman each spring; the foot is shod with a small iron cap, the third such cap, the previous two having worn through. The cane stands in a wooden rack against the wall of a side chamber off the temple's almsgiving hall, beside a low cushion where elderly pilgrims may sit.

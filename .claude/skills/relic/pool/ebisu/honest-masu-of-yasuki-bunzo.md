@@ -7,6 +7,7 @@ clan: crab
 temple: a temple of Ebisu in Crab lands
 named_entity: Yasuki Bunzo (Hida-vassal rice steward, second century of his domain's establishment)
 relic_type: implement (rice-measure)
+summary: "A plain cedar rice-measure burned with the character for honesty; magistrates use it to test grain merchants accused of fraud, since Ebisu steadies the hand of the righteous and lets the deceitful man's measure pile uneven."
 ---
 
 A simple cedar rice-measure (a *masu*) the size of a fist, hand-carved and unadorned, with one small character — 誠 (*makoto*, "honesty") — burned into the inside of one corner. The exterior is the pale color of cedar where the wood is smooth; the interior is darker, oil-soaked from generations of grain. It rests on a low lacquered stand in a side-chamber off the temple's commercial-petitions hall.

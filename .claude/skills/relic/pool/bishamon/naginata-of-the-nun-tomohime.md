@@ -7,6 +7,7 @@ clan: lion
 temple: a temple of Bishamon in Lion lands
 named_entity: the nun Tomohime (Matsu-born widow who took monastic vows and was twice called to trial-by-arms)
 relic_type: weapon (naginata)
+summary: "A long dark-hafted naginata of unusual reach, wielded twice in trial-by-arms by a Matsu widow turned nun; a senior monk now bears it for the Calling of the Naginata when a Matsu magistrate has exhausted every path but combat."
 ---
 
 A naginata of unusual length — the haft of dark oak rather than the more common ash, the blade longer than a man's forearm and curved more deeply than a soldier's pattern. The blade is set into the haft with a long iron collar bound by braided silk cord, the cord now the color of old straw though it was red when it was first wound. The haft is bare of lacquer; six centuries of hands have darkened it to nearly the color of the iron. The naginata rests horizontally on two cedar pegs against the back wall of a small chamber off the temple's judgment-hall, behind a low rope of plaited rice-straw that pilgrims do not cross.

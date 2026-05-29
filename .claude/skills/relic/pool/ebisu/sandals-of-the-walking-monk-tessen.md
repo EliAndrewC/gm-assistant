@@ -7,6 +7,7 @@ clan: dragon
 temple: a temple of Ebisu in Dragon lands
 named_entity: Tessen (mendicant monk of the Mirumoto roads, four generations past, who walked the same circuit for forty-one years)
 relic_type: garment (straw sandals)
+summary: "A worn pair of straw waraji on a cypress shelf at the traveler-hall threshold; pilgrims leave coins or rice in the bowl beneath them, which the daily Walker of the Circuit carries out to the eleven hamlets along Tessen's old road."
 ---
 
 A pair of straw sandals — *waraji* — the kind that any peasant or traveling monk wears for a day or two and then replaces. These are not replaced. They sit side by side on a low cypress shelf at the entrance of the temple's traveler-hall, where pilgrims leave their own sandals before entering the inner rooms. The straw of the original weave is so worn down that the soles are barely a finger's thickness in places; the cord ties are frayed but knotted, and the rear loop of the left sandal has been mended once, in coarser straw than the original. Above the shelf hangs a small wooden plaque painted with the character 旋 (*sen*, "circuit, turning") — the second character of the walking monk's name.

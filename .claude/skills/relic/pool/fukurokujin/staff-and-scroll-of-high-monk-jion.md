@@ -7,6 +7,7 @@ clan: fox
 temple: a temple of Fukurokujin in Fox lands
 named_entity: High Monk Jion (Fox monk three centuries past, famed for road-mercy)
 relic_type: implement (staff with attached scroll)
+summary: "A cedar walking staff bearing a long scroll of Jion's writings on mercy, propped against his old chair; pilgrims marked by the forest or burdened by wrongdoing kneel before it, and the Custodian reads aloud whatever passage their hand on the brass loop has chosen."
 ---
 
 A walking staff and an attached scroll, mounted upright against the back of an old wooden chair in a side chamber of the temple, beside a small altar where seven candles are kept lit at all times.

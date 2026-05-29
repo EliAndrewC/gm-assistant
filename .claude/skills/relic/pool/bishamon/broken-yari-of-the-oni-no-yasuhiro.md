@@ -7,6 +7,7 @@ clan: crab
 temple: a temple of Bishamon in Crab lands
 named_entity: the oni once known as Yasuhiro, defeated at the southern marches by Hiruma Tatsumune in the late second century
 relic_type: weapon (broken spear-haft and head, taken from a defeated enemy)
+summary: "A broken black-hafted yari taken from a tainted samurai four centuries ago, kept caged beneath a lamp; once a year Hiruma captains lay their own weapons against it for the Blessing of the Arms before the campaign season."
 ---
 
 A broken yari of unusual make. The haft is a man's height in length, of a dense black wood that has not been identified by the temple's carvers, snapped clean across two-thirds of the way to the head. The break is recent in appearance though it is over four hundred years old — the splintered fibers within the haft are still pale, as if the break had been made yesterday. The spear-head is of an iron darker than ordinary forge-iron, the edges nicked in three places, the tang bound to the broken haft by iron wire taken from the original binding. The weapon rests on a stone slab within a barred iron cage in the lower chamber of the temple, where the floor is cut from the bedrock and a single lamp of fish-oil burns at all hours.

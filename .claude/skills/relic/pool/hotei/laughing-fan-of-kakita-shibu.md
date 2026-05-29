@@ -7,6 +7,7 @@ clan: crane
 temple: a temple of Hotei in Crane lands
 named_entity: Kakita Shibu (iaijutsu prodigy of the Kakita Academy, late fifth century, who renounced the duel)
 relic_type: implement (folding fan)
+summary: "A simple twelve-rib folding fan painted with the character for ease in an unsteady off-hand; pilgrims weary of striving — failed courtiers, aging duelists, demoted samurai — hold it for a single breath, and the breath reveals what they have been refusing to set down."
 ---
 
 A simple folding fan of bamboo and unbleached *washi* paper, twelve ribs, the standard size of a Kakita teaching fan. On its broad face is painted a single character — 樂 (*raku*, "ease, joy") — in soft black ink. The brushwork is hesitant in places, the strokes uneven; Shibu painted the character with his off-hand, three days after he laid down his sword. The fan rests on a wooden display stand in a small alcove off the temple's main contemplation hall, beside a low window that looks out onto a moss garden.
