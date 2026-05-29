@@ -421,6 +421,7 @@ clan: <clan slug ("crab", "crane", "dragon", "fox", "lion", "phoenix", "scorpion
 temple: <generic description of where the relic plausibly resides, e.g. "a temple of Ebisu in Crab lands" or "a temple of Hotei, in any city of the Empire". Do NOT name a specific city; the GM places it.>
 named_entity: <the historical or legendary figure the relic is tied to; can include clan family names but should not lock to a specific city>
 relic_type: <short tag like "implement (rice-measure)", "vessel (rice-bowl)", "garment (mantle)", "pair (river stones)", etc.>
+summary: <one or two sentences for the L7R Toolkit catalog card. Must cover BOTH (a) what the object physically is and (b) how it is used or its supposed effect. Example: "A brackish stone basin fed by a sacred spring; betrothed couples drink from it to receive Benten's witness, and magistrates use it as a referee in marriage disputes." Keep it tight — this is a browse-time blurb, not an excerpt.>
 ---
 
 <full prose description in the temple's voice, multi-paragraph as needed>

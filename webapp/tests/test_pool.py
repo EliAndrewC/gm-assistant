@@ -90,6 +90,24 @@ def test_relic_summary_handles_description_with_no_period() -> None:
     assert relic.summary == 'A single fragment with no terminating period'
 
 
+def test_relic_summary_prefers_explicit_summary_text() -> None:
+    relic = Relic(
+        slug='x',
+        name='X',
+        japanese_romaji='X',
+        japanese_kanji='x',
+        fortune='benten',
+        clan='any',
+        temple='somewhere',
+        named_entity='someone',
+        relic_type='thing',
+        description='A small bowl. A second sentence about uses.',
+        summary_text='A lacquered bowl used in purification rites.',
+    )
+    # Explicit summary wins over the description fallback.
+    assert relic.summary == 'A lacquered bowl used in purification rites.'
+
+
 def test_relics_are_immutable() -> None:
     relic = Relic(
         slug='x',
