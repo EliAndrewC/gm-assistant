@@ -1277,7 +1277,11 @@ a { color: inherit; }
   align-items: center;
   gap: 2.5rem;
   position: relative;
-  overflow: hidden;
+  /* Right padding gives the watermark glyph slack — some kanji (notably
+     人) have a right-leg stroke that extends past the glyph's advance
+     width, so without this the rightmost stroke gets clipped at the
+     header's right edge. */
+  padding-right: 0.5rem;
 }
 
 .chargen-shell__copy { min-width: 0; }
@@ -1285,16 +1289,20 @@ a { color: inherit; }
 .chargen-shell__watermark {
   font-family: var(--font-jp);
   font-weight: 800;
-  font-size: clamp(4rem, 9vw, 8rem);
+  /* Match the relics/names masthead clamp so the watermark scales
+     identically across the toolkit. */
+  font-size: clamp(3.5rem, 7vw, 9rem);
   line-height: 0.85;
-  color: var(--vermillion-soft);
+  color: var(--vermillion);
+  opacity: 0.22;
   letter-spacing: -0.04em;
   user-select: none;
   pointer-events: none;
 }
 
-@media (max-width: 700px) {
-  .chargen-shell__header { grid-template-columns: 1fr; gap: 0; }
+/* Hide below ~1100px (laptop / GM-200), same threshold as the masthead. */
+@media (max-width: 1100px) {
+  .chargen-shell__header { grid-template-columns: 1fr; gap: 0; padding-right: 0; }
   .chargen-shell__watermark { display: none; }
 }
 
