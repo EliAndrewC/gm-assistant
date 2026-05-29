@@ -1269,6 +1269,33 @@ a { color: inherit; }
   border-bottom: 1px solid var(--hairline);
   padding-bottom: 1rem;
   margin-bottom: 1.2rem;
+  /* Mirror the masthead pattern from /relics and /names: copy on the
+     left, a single kanji watermark on the right. Anchors the header
+     at wide viewports where the form alone leaves the right half empty. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.chargen-shell__copy { min-width: 0; }
+
+.chargen-shell__watermark {
+  font-family: var(--font-jp);
+  font-weight: 800;
+  font-size: clamp(4rem, 9vw, 8rem);
+  line-height: 0.85;
+  color: var(--vermillion-soft);
+  letter-spacing: -0.04em;
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .chargen-shell__header { grid-template-columns: 1fr; gap: 0; }
+  .chargen-shell__watermark { display: none; }
 }
 
 .chargen-shell__supertitle {
@@ -1381,6 +1408,34 @@ a { color: inherit; }
   box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
+/* Pre-generation placeholder — fills the visual space below the form
+   until the user clicks Generate. The hint text isn't load-bearing
+   information; it's a centered focal point so the page doesn't look
+   barren on a wide viewport. JS hides it once a character lands. */
+.chargen-preview-placeholder {
+  border: 1px dashed var(--hairline);
+  border-radius: 2px;
+  padding: 3.5rem 1.5rem;
+  margin: 1rem 0 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.chargen-preview-placeholder__hint {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--ink-faded);
+  margin: 0;
+}
+
+.chargen-preview-placeholder__hint strong {
+  font-style: normal;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.18em;
+  color: var(--vermillion);
+}
+
 /* Action buttons row */
 .chargen-shell__actions {
   display: flex;
@@ -1396,6 +1451,34 @@ a { color: inherit; }
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+/* At narrow viewports the GM-only Save-to-archive button wraps onto
+   its own row alone. The 2.5rem gap above it isn't enough on its own
+   to communicate "different action category" — it just reads as an
+   orphan. A short hairline above it makes the separation intentional. */
+@media (max-width: 600px) {
+  .chargen-shell__actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .chargen-shell__primary-actions {
+    align-self: flex-start;
+  }
+  #archive {
+    align-self: stretch;
+    margin-top: 0.8rem;
+    position: relative;
+  }
+  #archive::before {
+    content: '';
+    position: absolute;
+    top: -0.8rem;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed var(--hairline);
+  }
 }
 
 .chargen-button,
@@ -1422,16 +1505,17 @@ a { color: inherit; }
 }
 
 /* Disabled state has to read at a glance — not after a click. Visually:
-   washed-out (opacity), no shadow, no hover lift, not-allowed cursor. */
+   muted but still legible (ink-faded vs ink-ghost), no shadow, no hover
+   lift, not-allowed cursor. Avoid layering opacity on top of an already-
+   faded color — that's what made the prior pass nearly invisible. */
 .chargen-button:disabled,
 .chargen-shell button:disabled {
   background: transparent;
-  color: var(--ink-ghost);
-  border-color: var(--hairline);
+  color: var(--ink-faded);
+  border-color: var(--ink-ghost);
   border-style: dashed;
   box-shadow: none;
   cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .chargen-button:disabled:hover,

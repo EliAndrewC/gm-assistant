@@ -38,7 +38,7 @@
     var cropper = null;
 
     $(function () {
-        $.each(['base_rank', 'type', 'generate', 'upload', 'archive', 'fields', 'clan', 'family', 'house', 'lineage', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container'], function (i, s) {
+        $.each(['base_rank', 'type', 'generate', 'upload', 'archive', 'fields', 'preview_placeholder', 'clan', 'family', 'house', 'lineage', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         dom.$upload.prop('disabled', true);
@@ -84,6 +84,7 @@
                         cropper = null;
                     }
                     dom.$fields.empty();
+                    dom.$preview_placeholder.hide();
                     dom.$upload.prop('disabled', false);
                     dom.$archive.prop('disabled', false);
 
@@ -255,9 +256,12 @@
 {% block content %}
 <section class="container chargen-shell">
   <header class="chargen-shell__header">
-    <p class="chargen-shell__supertitle">Character workshop</p>
-    <h1 class="chargen-shell__title">Generate a character</h1>
-    <p class="chargen-shell__lede">Pick a type and a rank, optionally narrow by clan and family, then generate. Edit the fields, generate art if you like, and upload to Obsidian Portal.</p>
+    <div class="chargen-shell__copy">
+      <p class="chargen-shell__supertitle">Character workshop</p>
+      <h1 class="chargen-shell__title">Generate a character</h1>
+      <p class="chargen-shell__lede">Generate a Rokugani character. Pick a type and optionally narrow by clan and family, then edit the result.</p>
+    </div>
+    <span class="chargen-shell__watermark" lang="ja" aria-hidden="true">人</span>
   </header>
 
   <div class="chargen-shell__controls">
@@ -311,6 +315,14 @@
     {% if current_user and current_user.role == 'gm' %}
       <button id="archive" class="chargen-button">Save to archive</button>
     {% endif %}
+  </div>
+
+  {# Pre-generation placeholder. The form alone leaves the lower half of
+     wide viewports empty; this gives the page a focal point while the
+     user hasn't generated a character yet. JS hides it on first
+     successful generation. #}
+  <div id="preview_placeholder" class="chargen-preview-placeholder">
+    <p class="chargen-preview-placeholder__hint">Click <strong>Generate</strong> to draft a character.</p>
   </div>
 
   <div id="fields"></div>
