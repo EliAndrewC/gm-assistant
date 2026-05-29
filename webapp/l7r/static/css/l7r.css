@@ -461,6 +461,10 @@ a { color: inherit; }
   box-shadow: 6px 6px 0 0 var(--vermillion);
 }
 
+/* `.card { display: grid }` above wins over the user-agent default
+   `[hidden] { display: none }`, so without these explicit overrides the
+   filter JS (which sets card.hidden / section.hidden) would no-op. */
+.card[hidden],
 .card[data-hidden='true'] { display: none; }
 
 @keyframes cardIn {
