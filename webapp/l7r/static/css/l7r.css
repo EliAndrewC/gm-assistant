@@ -43,11 +43,22 @@
 
 * { box-sizing: border-box; }
 
-html { font-size: 17px; }
+html {
+  font-size: 17px;
+  /* The surface beneath the paper. When body content doesn't fill the
+     viewport (e.g. the chargen pre-generation form), this color shows below
+     the paper's bottom edge, signalling that the page ends with the content
+     rather than the cream extending forever. */
+  background: var(--paper-fold);
+}
 @media (max-width: 720px) { html { font-size: 16px; } }
 
 body {
   margin: 0;
+  /* Anchor for ::before — the grain overlay below is now absolute-positioned
+     so it stays scoped to body's actual extent, not the viewport. That way
+     the area below body (the html surface) renders ungrained. */
+  position: relative;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
@@ -55,14 +66,16 @@ body {
   background-image:
     radial-gradient(ellipse at 12% 8%, rgba(184, 51, 42, 0.06), transparent 45%),
     radial-gradient(ellipse at 88% 88%, rgba(184, 51, 42, 0.04), transparent 55%);
-  min-height: 100vh;
+  /* Soft drop into the underlying surface so short pages read as "a sheet
+     resting on a deeper paper", not as a clipped layout. */
+  box-shadow: 0 4px 22px rgba(20, 17, 14, 0.10);
   line-height: 1.55;
 }
 
 /* Paper grain */
 body::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 100;
@@ -661,20 +674,6 @@ a { color: inherit; }
    Footer
    ===================================================================== */
 
-.footer {
-  padding: 2rem 0 2.5rem;
-  margin-top: 2rem;
-  border-top: 1px solid var(--hairline);
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  color: var(--ink-ghost);
-  line-height: 1.6;
-  text-align: center;
-}
-
-.footer p { margin: 0.3rem auto; max-width: 60ch; }
-.footer em { color: var(--vermillion); font-style: italic; }
-
 /* =====================================================================
    Detail page (v2) — kanji as exhibition art, no archive numbering
    ===================================================================== */
@@ -1262,7 +1261,18 @@ a { color: inherit; }
    ========================================================================= */
 
 .chargen-shell {
-  padding: 1.4rem 0 3rem;
+  /* Longhand on purpose: the `padding` shorthand here used to stomp
+     `.container { padding: 0 var(--gutter) }`, leaving the form fields
+     touching the viewport edge at every width below 62rem (GM-200, tablet,
+     mobile). Using longhand keeps the container's horizontal gutter intact. */
+  padding-top: 1.4rem;
+  padding-bottom: 1.5rem;
+  /* The toolkit container goes to 1560px, but chargen's body is just a
+     form + placeholder — there's no wide card grid to justify that width.
+     Cap the shell near the post-generation #fields width (55rem) so the
+     header watermark, form, buttons, and placeholder read as one centered
+     column, and the layout doesn't reflow when a character lands. */
+  max-width: 62rem;
 }
 
 .chargen-shell__header {
@@ -1306,57 +1316,40 @@ a { color: inherit; }
   .chargen-shell__watermark { display: none; }
 }
 
-.chargen-shell__supertitle {
-  font-family: var(--font-body);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.36em;
-  font-size: 0.72rem;
-  color: var(--vermillion);
-  margin: 0 0 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.chargen-shell__supertitle::after {
-  content: '';
-  flex: 1;
-  max-width: 180px;
-  height: 1px;
-  background: var(--vermillion);
-}
-
 .chargen-shell__title {
   font-family: var(--font-display);
   font-variation-settings: 'opsz' 96, 'SOFT' 30, 'wght' 500;
   font-weight: 500;
   font-size: clamp(1.7rem, 4vw, 2.8rem);
   letter-spacing: -0.015em;
-  margin: 0 0 0.4rem;
+  margin: 0;
   color: var(--ink);
   line-height: 1.05;
 }
 
-.chargen-shell__lede {
+.chargen-shell__sublink {
   font-family: var(--font-body);
   font-style: italic;
-  font-size: 0.98rem;
+  font-size: 0.92rem;
   color: var(--ink-soft);
-  margin: 0;
-  max-width: 56ch;
-  line-height: 1.55;
+  margin: 0.5rem 0 0;
+}
+
+.chargen-shell__sublink a {
+  color: var(--vermillion);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
 }
 
 /* Cascading form controls — Type/Rank/Clan/Family/House/Lineage.
    Always 3 columns (3×2 grid) so the form has a consistent shape across
-   viewports. A 6-across row at wide viewports leaves the right half of the
-   container empty cream; 3×2 reads as one balanced block. */
+   viewports. Width comes from the parent .chargen-shell (62rem), so the
+   grid fills its column without a separate cap. */
 .chargen-shell__controls {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem 1rem;
   margin: 0 0 1.5rem;
-  max-width: 42rem;
 }
 
 @media (max-width: 520px) {
@@ -1416,77 +1409,271 @@ a { color: inherit; }
   box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
-/* Pre-generation placeholder — fills the visual space below the form
-   until the user clicks Generate. The hint text isn't load-bearing
-   information; it's a centered focal point so the page doesn't look
-   barren on a wide viewport. JS hides it once a character lands. */
-.chargen-preview-placeholder {
-  border: 1px dashed var(--hairline);
-  border-radius: 2px;
-  padding: 3.5rem 1.5rem;
-  margin: 1rem 0 2rem;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.chargen-preview-placeholder__hint {
-  font-family: var(--font-body);
-  font-style: italic;
-  font-size: 1rem;
-  color: var(--ink-faded);
-  margin: 0;
-}
-
-.chargen-preview-placeholder__hint strong {
-  font-style: normal;
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.18em;
-  color: var(--vermillion);
-}
-
 /* Action buttons row */
 .chargen-shell__actions {
   display: flex;
-  gap: 2.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
   align-items: center;
   margin: 0 0 2rem;
 }
 
-/* Primary actions (Generate, Upload) form their own visual cluster
-   with a tight gap, separate from the GM-only archive sibling. */
-.chargen-shell__primary-actions {
+/* /chargen/ministry — bulk Six Ministries roster generator. Uses the same
+   shell + button palette as the single-character chargen page, plus a
+   responsive card grid. */
+.roster-shell { max-width: 80rem; }
+
+.roster-lede {
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  margin: 0.6rem 0 0;
+  max-width: 62ch;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.roster-lede a {
+  color: var(--vermillion);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+
+.roster-upload-status {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.4rem;
+  margin: 0 0 2rem;
+}
+
+@media (max-width: 900px) {
+  .roster-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.roster-card {
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  padding: 1.2rem 1.2rem 1rem;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.roster-card--success { border-color: rgba(40, 100, 40, 0.45); background: rgba(40, 100, 40, 0.06); }
+.roster-card--error   { border-color: var(--vermillion); background: rgba(184, 51, 42, 0.06); }
+
+.roster-card__header { margin: 0 0 0.4rem; border-bottom: 1px solid var(--hairline); padding-bottom: 0.6rem; }
+.roster-card__supertitle {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.28em;
+  font-size: 0.7rem;
+  color: var(--vermillion);
+  margin: 0 0 0.2rem;
+}
+.roster-card__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 72, 'SOFT' 40, 'wght' 500;
+  font-size: 1.25rem;
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.roster-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.roster-field__label {
+  font-family: var(--font-body);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+  color: var(--ink-faded);
+}
+.roster-field__input {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  color: var(--ink);
+  line-height: 1.5;
+  width: 100%;
+}
+.roster-field__input:focus-visible {
+  outline: none;
+  border-color: var(--vermillion);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: var(--font-display); }
+
+/* Tagify on roster cards uses the same theming as the single-character page. */
+.roster-card tags.tagify {
+  --tags-border-color: var(--hairline);
+  --tags-hover-border-color: var(--ink-soft);
+  --tags-focus-border-color: var(--vermillion);
+  --tag-bg: var(--vermillion-soft);
+  --tag-hover: rgba(184, 51, 42, 0.18);
+  --tag-text-color: var(--ink);
+  --tag-text-color--edit: var(--ink);
+  --tag-remove-bg: rgba(184, 51, 42, 0.20);
+  --tag-remove-btn-color: var(--vermillion);
+  --tag-pad: 0.25em 0.5em;
+  --tag-inset-shadow-size: 0;
+  --placeholder-color: var(--ink-ghost);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  padding: 0.3rem 0.4rem;
+}
+
+.roster-card__art { margin-top: 0.4rem; padding-top: 0.8rem; border-top: 1px dashed var(--hairline); }
+.roster-card__art-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.4rem 0; }
+.roster-card__art-loading { font-style: italic; color: var(--ink-ghost); font-size: 0.85rem; display: none; }
+.roster-card__art-loading.is-active { display: inline; }
+.roster-card__art-images { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.roster-card__art-hint { font-size: 0.78rem; color: var(--ink-faded); margin: 0 0 0.3rem; }
+.roster-card__cropper { max-width: 250px; }
+.roster-card__cropper img { max-width: 100%; display: block; }
+.roster-card__headshot {
+  width: 100px; height: 100px; object-fit: cover;
+  border: 1px solid var(--hairline); border-radius: 2px;
+  background: var(--paper-deep);
+}
+
+.roster-card__status {
+  margin-top: 0.8rem;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+.roster-card__status a { margin: 0 0.3rem; }
+
+/* Upload-success panel — replaces the working-state UI after a character
+   is uploaded, until the user clicks Generate again. */
+.upload-result {
+  margin: 1.5rem 0 1rem;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  background: rgba(184, 51, 42, 0.04);
+}
+
+.upload-result__heading {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 72, 'SOFT' 50, 'wght' 500;
+  font-size: 1.3rem;
+  margin: 0 0 1rem;
+  color: var(--ink);
+}
+
+.upload-result__heading span {
+  color: var(--vermillion);
+}
+
+.upload-result__links {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  margin: 0 0 1rem;
 }
 
-/* At narrow viewports the GM-only Save-to-archive button wraps onto
-   its own row alone. The 2.5rem gap above it isn't enough on its own
-   to communicate "different action category" — it just reads as an
-   orphan. A short hairline above it makes the separation intentional. */
-@media (max-width: 600px) {
-  .chargen-shell__actions {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 1.2rem;
-  }
-  .chargen-shell__primary-actions {
-    align-self: flex-start;
-  }
-  #archive {
-    align-self: stretch;
-    margin-top: 0.8rem;
-    position: relative;
-  }
-  #archive::before {
-    content: '';
-    position: absolute;
-    top: -0.8rem;
-    left: 0;
-    right: 0;
-    border-top: 1px dashed var(--hairline);
-  }
+.upload-result__links .chargen-button {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.upload-result__hint {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* /chargen/cleanup — GM-only character list with per-row delete buttons. */
+.cleanup-lede {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-soft);
+  margin: 0 0 1.4rem;
+  max-width: 56ch;
+}
+
+.cleanup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.cleanup-table thead th {
+  text-align: left;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--ink-faded);
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.cleanup-table tbody td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgba(20, 17, 14, 0.08);
+  vertical-align: middle;
+}
+
+.cleanup-table tbody tr:hover {
+  background: rgba(184, 51, 42, 0.04);
+}
+
+.cleanup-table__avatar {
+  width: 56px;
+}
+
+.cleanup-table__avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 2px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid var(--hairline);
+  background: var(--paper-deep);
+}
+
+.cleanup-table__tags {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.cleanup-tag {
+  display: inline-block;
+  background: var(--vermillion-soft);
+  color: var(--ink);
+  padding: 0.1em 0.5em;
+  border-radius: 2px;
+  margin: 0 0.3em 0.2em 0;
+  font-size: 0.78rem;
+}
+
+.cleanup-empty {
+  font-style: italic;
+  color: var(--ink-ghost);
+  margin: 1.5rem 0;
 }
 
 .chargen-button,
@@ -1556,6 +1743,13 @@ a { color: inherit; }
   max-width: 55rem;
 }
 
+/* Pre-generation #fields is empty — don't reserve the 2rem trailing margin,
+   otherwise the bottom of the chargen page has a phantom gap before the
+   shell's padding-bottom. */
+#fields:empty {
+  margin: 0;
+}
+
 #fields input[type='text'],
 #fields textarea {
   font-family: var(--font-body);
@@ -1581,6 +1775,69 @@ a { color: inherit; }
   font-family: var(--font-display);
   font-size: 1.02rem;
   line-height: 1.6;
+}
+
+/* Tagify (#tags) — match the other #fields inputs visually: paper-deep
+   background, hairline border, vermillion tag pills consistent with the
+   L7R palette. Tagify exposes its theming via CSS custom properties on the
+   <tags> custom element. */
+#fields tags.tagify {
+  --tags-border-color: var(--hairline);
+  --tags-hover-border-color: var(--ink-soft);
+  --tags-focus-border-color: var(--vermillion);
+  --tag-bg: var(--vermillion-soft);
+  --tag-hover: rgba(184, 51, 42, 0.18);
+  --tag-text-color: var(--ink);
+  --tag-text-color--edit: var(--ink);
+  --tag-remove-bg: rgba(184, 51, 42, 0.20);
+  --tag-remove-btn-color: var(--vermillion);
+  --tag-pad: 0.3em 0.55em;
+  --tag-inset-shadow-size: 0;
+  --placeholder-color: var(--ink-ghost);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  padding: 0.4rem 0.5rem;
+}
+
+#fields tags.tagify:hover { border-color: var(--ink-soft); }
+
+#fields tags.tagify[focused],
+#fields tags.tagify:focus-within {
+  border-color: var(--vermillion);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+#fields tags.tagify .tagify__input {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  padding: 0.25em 0.5em;
+  margin: 0;
+}
+
+/* The dropdown is portaled to <body> (not inside #fields), so its rule
+   isn't scoped to #fields. Style globally. */
+.tagify__dropdown {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.tagify__dropdown__wrapper {
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  box-shadow: 0 6px 20px rgba(20, 17, 14, 0.10);
+}
+
+.tagify__dropdown__item--active {
+  background: var(--vermillion-soft);
+  color: var(--ink);
 }
 
 /* Art-generation section — drop the inline style burden onto the rules below */

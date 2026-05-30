@@ -135,6 +135,18 @@ bash /workspace/.claude/bootstrap-container.sh
 
 The script is idempotent. Without it, the loader sees an empty directory and prior memories aren't surfaced — so first thing in a fresh container, run it. (Existing containers where the symlink already resolves correctly need no action.)
 
+**Running the webapp locally (fresh container)**: prod and dev deps are split into two lockfiles — `requirements.txt` (what the Fly image installs) and `requirements-dev.txt` (ruff/mypy/pytest/pytest-cov/playwright/pip-tools). Install both for `make done` to work. From `/workspace/webapp/`:
+
+```
+pip install --break-system-packages -r requirements.txt -r requirements-dev.txt
+python3 -m playwright install chromium  # one-time browser download
+cherryd --import l7r
+```
+
+Re-lock either file with `pip-compile --output-file=<file>.txt <file>.in` (sources are `requirements.in` and `requirements-dev.in`). The prod lockfile must resolve under Python 3.10 (Docker base); the dev lockfile under whichever Python the container runs.
+
+The server binds to `0.0.0.0:8080` automatically when it detects a container runtime (podman's `/run/.containerenv` or docker's `/.dockerenv`), so podman's `--publish 8080:8080` reaches it from the host. On a bare host (no container markers, no `FLY_APP_NAME`) it stays on the CherryPy default `127.0.0.1`. Fly continues to bind 0.0.0.0 via `FLY_APP_NAME`, and the X-Forwarded-Proto trust setting is still gated on `FLY_APP_NAME` alone — podman doesn't have a TLS-terminating proxy in front, so we don't want cherrypy.url() emitting `https://` URLs there. Logic lives in `l7r/app.py:_apply_server_config`.
+
 **Key paths**:
 
 - `.specify/memory/constitution.md` — the constitution

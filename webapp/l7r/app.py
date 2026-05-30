@@ -246,23 +246,36 @@ def _auth_config() -> AuthConfig:
 def _apply_server_config() -> None:
     """Apply server bind config from the environment.
 
-    On Fly (and any container deploy), we must bind to 0.0.0.0 so the runtime
-    can reach the process. The presence of FLY_APP_NAME (set by Fly) is our
-    container signal. Locally we leave the CherryPy default (127.0.0.1).
+    Inside any container (podman, docker, Fly), bind to 0.0.0.0 so the host
+    can reach the process. The default 127.0.0.1 only accepts traffic on the
+    container's loopback, so a host port-forward (e.g. `podman --publish
+    8080:8080`) lands on the container's external interface where nothing is
+    listening, and the kernel sends RST. Detection is automatic via runtime
+    marker files (/run/.containerenv for podman, /.dockerenv for docker) plus
+    FLY_APP_NAME for Fly.
+
+    Behind a TLS-terminating proxy (Fly), additionally trust X-Forwarded-Proto
+    so cherrypy.url() and HTTPRedirect build https:// URLs. Podman has no such
+    proxy in front, so that setting stays Fly-only.
     """
     import os
 
-    if os.environ.get('FLY_APP_NAME'):
+    in_container = bool(
+        os.environ.get('FLY_APP_NAME')
+        or os.path.exists('/run/.containerenv')
+        or os.path.exists('/.dockerenv')
+    )
+    if in_container:
         cherrypy.config.update(
             {
-                'server.socket_host': '0.0.0.0',  # noqa: S104 — required by Fly
+                'server.socket_host': '0.0.0.0',  # noqa: S104 — required in containers
                 'server.socket_port': int(os.environ.get('PORT', '8080')),
                 'engine.autoreload.on': False,
-                # Fly terminates TLS and forwards as HTTP. Trust X-Forwarded-Proto
-                # so cherrypy.url() and HTTPRedirect build https:// URLs.
-                'tools.proxy.on': True,
             }
         )
+
+    if os.environ.get('FLY_APP_NAME'):
+        cherrypy.config.update({'tools.proxy.on': True})
 
 
 def mount_application() -> None:
@@ -281,11 +294,15 @@ def mount_application() -> None:
     install_auth_tool(auth_config)
 
     # Chargen is the character generator — logged-in players and GMs only.
+    # The /cleanup listing and the /delete action let GMs prune characters
+    # from Obsidian Portal via the OAuth API; restrict them to gm role.
     chargen_config = {
         '/': {
             'tools.l7r_auth.on': True,
             'tools.l7r_auth.min_role': 'player',
-        }
+        },
+        '/cleanup': {'tools.l7r_auth.min_role': 'gm'},
+        '/delete': {'tools.l7r_auth.min_role': 'gm'},
     }
 
     try:

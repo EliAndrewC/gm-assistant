@@ -69,8 +69,12 @@ more-itertools==10.8.0
     #   cherrypy
     #   jaraco-functools
     #   jaraco-text
+numpy==1.26.4
+    # via opencv-python-headless
 oauthlib==3.3.1
     # via requests-oauthlib
+opencv-python-headless==4.10.0.84
+    # via -r requirements.in
 pillow==12.1.0
     # via -r requirements.in
 portend==3.2.1

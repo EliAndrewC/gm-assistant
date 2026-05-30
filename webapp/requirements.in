@@ -8,10 +8,3 @@ pillow
 pyyaml
 requests
 requests-oauthlib
-
-# Dev / verification (per Principle X / VI)
-mypy
-playwright
-pytest
-pytest-cov
-ruff

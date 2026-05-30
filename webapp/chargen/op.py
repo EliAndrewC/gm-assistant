@@ -1,25 +1,32 @@
 """
 Obsidian Portal (op) module for uploading and downloading characters.
 
-This module provides two approaches for interacting with Obsidian Portal:
+This module uses a hybrid OAuth + browser-session approach:
 
-1. BROWSER SESSION APPROACH (WORKING):
-   Since the official API is broken, we simulate browser requests using
-   session cookies extracted from a logged-in browser session. You'll need
-   to periodically update the session_cookie and authenticity_token in
-   development-secrets.ini when they expire.
+1. OAUTH 1.0 API — used for reads and deletes (the bulk of operations).
+   Verified working 2026-05-30 via probe_op_oauth.py.
+   Endpoints:
+     GET    /v1/users/me.json
+     GET    /v1/campaigns/{id}.json
+     GET    /v1/campaigns/{id}/characters.json
+     POST   /v1/campaigns/{id}/characters.json
+     PATCH  /v1/campaigns/{id}/characters/{cid}.json
+     DELETE /v1/campaigns/{id}/characters/{cid}.json
+   Requires consumer_key, consumer_secret, access_token, access_token_secret,
+   campaign_id under [obsidian_portal] in development-secrets.ini. Tokens
+   are obtained once via probe_op_oauth.py --full and don't expire on the
+   normal "sessions rotate" cadence the browser cookie does.
 
-2. OAUTH 1.0 API APPROACH (CURRENTLY BROKEN):
-   The official OAuth 1.0 API documented at:
-       https://help.obsidianportal.com/article/105-api-authentication-oauth
-       https://help.obsidianportal.com/article/99-api-characters
+2. BROWSER SESSION — still needed for character creation when an avatar
+   is attached, and for image uploads (/files and /uploads endpoints).
+   The OAuth API has NO file-upload mechanism: every variant of inline
+   base64 avatar, avatar_upload_id, or avatar_url field is silently
+   accepted but never applied (probed exhaustively, all return 200 with
+   avatar_url=null). So create_character + upload_image + upload_avatar
+   keep using the session_cookie path. These break when the cookie or
+   authenticity_token rotates; update them per the steps below.
 
-   As of January 2025, the API endpoints return 403 Forbidden errors.
-   According to the Obsidian Portal community forums, the API is
-   "currently unusable". The OAuth code is preserved below in case the
-   API is restored in the future.
-
-To set up the browser session approach:
+To refresh the browser-session credentials:
 1. Log into Obsidian Portal in Chrome
 2. Open DevTools (F12) -> Network tab
 3. Navigate to your campaign's "New Character" page
@@ -28,16 +35,17 @@ To set up the browser session approach:
    - The authenticity_token from the page source (search for csrf-token)
 """
 
-import re
-from time import sleep
 from threading import Thread
+from time import sleep
 
 import cherrypy
 import requests
-from bs4 import BeautifulSoup
+from requests_oauthlib import OAuth1Session
 
 from chargen import config
 from chargen import constants as c
+
+API_BASE_URL = 'https://api.obsidianportal.com/v1'
 
 
 # =============================================================================
@@ -288,94 +296,103 @@ def upload_avatar(image_data: bytes, filename: str) -> dict:
         response.raise_for_status()
 
 
-def _scrape_characters_page(session, url):
+def _get_oauth_session():
+    """Build a requests_oauthlib session signed with the configured tokens.
+
+    Tokens come from [obsidian_portal] in development-secrets.ini. The
+    consumer pair is registered at https://www.obsidianportal.com/oauth/clients
+    once and rarely rotates; the access pair is obtained by running
+    probe_op_oauth.py --full and pasting the printed values into the ini.
     """
-    Scrape a single characters listing page and return a list of dicts with
-    name, slug, tags, and description for each character on the page.
-    """
-    response = session.get(url)
-    if response.status_code != 200:
-        cherrypy.log(f'Failed to fetch characters page: {response.status_code}')
-        return [], False
-
-    soup = BeautifulSoup(response.text, 'html.parser')
-    characters = []
-
-    for item in soup.find_all('div', class_='content-list-item'):
-        card = item.find('div', class_='content-info')
-        if not card:
-            continue
-        name_tag = card.find('h4', class_='character-name')
-        if not name_tag:
-            continue
-        link = name_tag.find('a', href=re.compile(r'^/characters/[^/]+$'))
-        if not link or link['href'].endswith('/new'):
-            continue
-
-        name = link.get_text(strip=True)
-        if not name:
-            continue
-
-        slug = link['href'].split('/')[-1]
-        tags = [a['data-tag'] for a in card.find_all('a', class_='tag-link') if a.get('data-tag')]
-        desc_div = card.find('div', class_='description-text')
-        description = desc_div.get('title', '') if desc_div else ''
-
-        img = item.find('img', class_='game-content-image')
-        avatar_url = img['src'] if img and img.get('src') else ''
-
-        characters.append(
-            {
-                'name': name,
-                'slug': slug,
-                'tags': tags,
-                'description': description,
-                'avatar_url': avatar_url,
-            }
+    op_config = config.get('obsidian_portal', {})
+    ck = op_config.get('consumer_key', '')
+    cs = op_config.get('consumer_secret', '')
+    at = op_config.get('access_token', '')
+    ats = op_config.get('access_token_secret', '')
+    missing = [
+        name
+        for name, val in [
+            ('consumer_key', ck),
+            ('consumer_secret', cs),
+            ('access_token', at),
+            ('access_token_secret', ats),
+        ]
+        if not val
+    ]
+    if missing:
+        raise ValueError(
+            f'OAuth credentials not configured: {", ".join(missing)} '
+            f'missing from [obsidian_portal] in development-secrets.ini. '
+            f'Run probe_op_oauth.py --full to obtain access tokens.'
         )
+    return OAuth1Session(ck, client_secret=cs, resource_owner_key=at, resource_owner_secret=ats)
 
-    has_next = soup.find('a', rel='next') is not None
-    return characters, has_next
+
+def _get_campaign_id():
+    """Read campaign_id from [obsidian_portal] or raise with guidance."""
+    op_config = config.get('obsidian_portal', {})
+    cid = op_config.get('campaign_id', '')
+    if not cid:
+        raise ValueError(
+            'campaign_id not configured in [obsidian_portal]. Discover it '
+            'via GET /v1/users/me.json (the "campaigns" array on the response).'
+        )
+    return cid
 
 
 def existing_characters():
-    """
-    Returns a list of dicts for all characters in the campaign, each containing
-    'name', 'slug', 'tags' (list of strings), and 'description'.
+    """Return a list of dicts for all characters in the campaign.
 
-    Scrapes the campaign's /characters listing page which includes tags
-    and tagline for each character. Handles pagination.
+    Each dict has: id, slug, name, character_url, avatar_url, tags
+    (list of strings), description, is_player_character, is_game_master_only.
+
+    Uses the OAuth API — the campaign-wide listing endpoint returns all
+    characters in one request (no pagination needed at our campaign size).
     """
     try:
-        session = _get_browser_session()
-        campaign_url = _get_campaign_base_url()
-        all_characters = []
-        page = 1
-
-        while True:
-            url = f'{campaign_url}/characters'
-            if page > 1:
-                url += f'?page={page}'
-
-            characters, has_next = _scrape_characters_page(session, url)
-            if not characters:
-                break
-
-            all_characters.extend(characters)
-
-            if not has_next:
-                break
-
-            page += 1
-            if page > 100:
-                cherrypy.log('Reached pagination limit of 100 pages')
-                break
-
-        return all_characters
-
+        api = _get_oauth_session()
+        campaign_id = _get_campaign_id()
+        url = f'{API_BASE_URL}/campaigns/{campaign_id}/characters.json'
+        response = api.get(url, timeout=20)
+        response.raise_for_status()
     except Exception as e:
         cherrypy.log(f'Failed to fetch existing characters: {e}')
         return []
+
+    return [
+        {
+            'id': c.get('id', ''),
+            'slug': c.get('slug', ''),
+            'name': c.get('name', ''),
+            'character_url': c.get('character_url', ''),
+            'avatar_url': c.get('avatar_url') or '',
+            'tags': list(c.get('tags') or []),
+            'description': c.get('description') or '',
+            'is_player_character': bool(c.get('is_player_character')),
+            'is_game_master_only': bool(c.get('is_game_master_only')),
+        }
+        for c in (response.json() or [])
+    ]
+
+
+def delete_character(character_id):
+    """Delete a character via the OAuth API.
+
+    Returns True on success (204), False if the character was already gone
+    (404). Any other status raises.
+    """
+    api = _get_oauth_session()
+    campaign_id = _get_campaign_id()
+    url = f'{API_BASE_URL}/campaigns/{campaign_id}/characters/{character_id}.json'
+    response = api.delete(url, timeout=20)
+    if response.status_code == 204:
+        cherrypy.log(f'Deleted character via API: {character_id}')
+        return True
+    if response.status_code == 404:
+        cherrypy.log(f'Character already gone: {character_id}')
+        return False
+    response.raise_for_status()
+    return False
 
 
 def existing_names():

@@ -351,18 +351,76 @@ def test_resolve_default_names_dir_fallback(monkeypatch: pytest.MonkeyPatch) -> 
     assert result.name == 'name'
 
 
+def _no_container_markers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force os.path.exists to report no container marker files.
+
+    The test suite may itself run inside a container (podman/docker), so to
+    isolate "is this code in a container?" branches we have to stub the
+    marker-file checks rather than rely on the real filesystem.
+    """
+    import os
+
+    real_exists = os.path.exists
+    markers = {'/run/.containerenv', '/.dockerenv'}
+    monkeypatch.setattr(os.path, 'exists', lambda p: False if p in markers else real_exists(p))
+
+
 def test_apply_server_config_binds_for_fly(monkeypatch: pytest.MonkeyPatch) -> None:
     import cherrypy
 
     from l7r.app import _apply_server_config
 
+    _no_container_markers(monkeypatch)
     monkeypatch.setenv('FLY_APP_NAME', 'l7r-gm-assistant')
     monkeypatch.setenv('PORT', '8080')
-    # Reset to known state.
-    cherrypy.config.update({'server.socket_host': '127.0.0.1', 'server.socket_port': 9999})
+    cherrypy.config.update(
+        {'server.socket_host': '127.0.0.1', 'server.socket_port': 9999, 'tools.proxy.on': False}
+    )
     _apply_server_config()
     assert cherrypy.config['server.socket_host'] == '0.0.0.0'
     assert cherrypy.config['server.socket_port'] == 8080
+    assert cherrypy.config['tools.proxy.on'] is True
+
+
+def _force_marker(monkeypatch: pytest.MonkeyPatch, present: str) -> None:
+    """Make only `present` return True for the two container marker files."""
+    import os
+
+    real_exists = os.path.exists
+    markers = {'/run/.containerenv', '/.dockerenv'}
+    monkeypatch.setattr(
+        os.path,
+        'exists',
+        lambda p: True if p == present else (False if p in markers else real_exists(p)),
+    )
+
+
+def test_apply_server_config_binds_for_podman(monkeypatch: pytest.MonkeyPatch) -> None:
+    import cherrypy
+
+    from l7r.app import _apply_server_config
+
+    monkeypatch.delenv('FLY_APP_NAME', raising=False)
+    _force_marker(monkeypatch, '/run/.containerenv')
+    cherrypy.config.update(
+        {'server.socket_host': '127.0.0.1', 'server.socket_port': 9999, 'tools.proxy.on': False}
+    )
+    _apply_server_config()
+    assert cherrypy.config['server.socket_host'] == '0.0.0.0'
+    # Podman has no TLS-terminating proxy in front — proxy tool stays off.
+    assert cherrypy.config['tools.proxy.on'] is False
+
+
+def test_apply_server_config_binds_for_docker(monkeypatch: pytest.MonkeyPatch) -> None:
+    import cherrypy
+
+    from l7r.app import _apply_server_config
+
+    monkeypatch.delenv('FLY_APP_NAME', raising=False)
+    _force_marker(monkeypatch, '/.dockerenv')
+    cherrypy.config.update({'server.socket_host': '127.0.0.1'})
+    _apply_server_config()
+    assert cherrypy.config['server.socket_host'] == '0.0.0.0'
 
 
 def test_apply_server_config_noop_locally(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -370,10 +428,12 @@ def test_apply_server_config_noop_locally(monkeypatch: pytest.MonkeyPatch) -> No
 
     from l7r.app import _apply_server_config
 
+    _no_container_markers(monkeypatch)
     monkeypatch.delenv('FLY_APP_NAME', raising=False)
-    cherrypy.config.update({'server.socket_host': '127.0.0.1'})
+    cherrypy.config.update({'server.socket_host': '127.0.0.1', 'tools.proxy.on': False})
     _apply_server_config()
     assert cherrypy.config['server.socket_host'] == '127.0.0.1'
+    assert cherrypy.config['tools.proxy.on'] is False
 
 
 def test_mount_application_handles_missing_chargen(monkeypatch: pytest.MonkeyPatch) -> None:

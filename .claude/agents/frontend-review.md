@@ -27,7 +27,8 @@ When passed a path to a contact sheet (e.g., `/tmp/l7r-shots/sheet-landing-gm-20
 3. **Look for layout asymmetry** — columns of dead space, a tall side and a short side, content buried below empty regions.
 4. **Look for hierarchy inversion** — is the most important thing visually the most important thing functionally?
 5. **Look for things that feel sparse, unfinished, or accidental** — empty cream space that doesn't serve a composition; orphan elements; widows of one card per row.
-6. **Trust your reaction first, then articulate it.** "This feels weird" → describe what specifically is weird. Don't soften it.
+6. **Check the page edges.** Scan every viewport, especially tablet and mobile, for text, form fields, or buttons that touch the left or right edge of the page. Content kissing the viewport edge is a defect, not a style choice — even if a real mobile site somewhere does it. The L7R Toolkit's design system always inserts a gutter (matching `--gutter`). If you see content at the edge, name it; the implementing agent likely used a `padding` shorthand on a `.container`-wrapped element and stomped the container's horizontal padding to 0.
+7. **Trust your reaction first, then articulate it.** "This feels weird" → describe what specifically is weird. Don't soften it.
 
 ## What to ignore
 

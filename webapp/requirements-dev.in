@@ -1,0 +1,19 @@
+# Local development & verification deps. The production Docker image only
+# installs requirements.txt; this file is for developer machines so `make
+# done` can run lint/format/type/test/coverage and the Playwright suites.
+#
+# Dev tools live in their own lockfile so the prod image doesn't carry
+# ruff/mypy/pytest. Install both on a developer machine:
+#
+#   pip install -r requirements.txt -r requirements-dev.txt
+#
+# Re-lock with:
+#   pip-compile --output-file=requirements.txt requirements.in
+#   pip-compile --output-file=requirements-dev.txt requirements-dev.in
+
+mypy
+pip-tools
+playwright
+pytest
+pytest-cov
+ruff

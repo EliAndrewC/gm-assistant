@@ -80,12 +80,83 @@ class Root:
             .encode('UTF-8')
         )
 
+    @cherrypy.expose
+    def cleanup(self):
+        """GM-only character cleanup page.
+
+        Lists every character in the campaign with a delete button per row.
+        Mount-config (l7r/app.py) restricts /cleanup to gm role, so this
+        handler doesn't need its own auth check.
+        """
+        return (
+            jinja_env.get_template('cleanup.html')
+            .render(
+                {
+                    'characters': op.existing_characters(),
+                    'current_user': _l7r_current_user(),
+                }
+            )
+            .encode('UTF-8')
+        )
+
+    @ajax
+    def delete(self, **kwargs):
+        """Delete a character via op.delete_character (OAuth API)."""
+        if cherrypy.request.method == 'POST' and cherrypy.request.headers.get(
+            'Content-Type', ''
+        ).startswith('application/json'):
+            body = cherrypy.request.body.read()
+            data = json.loads(body)
+        else:
+            data = kwargs
+        char_id = (data.get('id') or '').strip()
+        if not char_id:
+            return {'error': 'missing id'}
+        try:
+            existed = op.delete_character(char_id)
+        except Exception as e:
+            cherrypy.log(f'Delete failed for {char_id}: {e}\n{traceback.format_exc()}')
+            return {'error': str(e)}
+        return {'ok': True, 'existed': existed}
+
+    @ajax
+    def tags(self):
+        """Return the sorted, deduped list of tags across all existing characters.
+
+        Feeds the Tagify autocomplete whitelist on the chargen form. Sourced
+        from a live scrape of the Obsidian Portal character listing — same
+        data source as op.existing_characters(). Errors fall back to an
+        empty list (Tagify still works without a whitelist).
+        """
+        all_tags: set[str] = set()
+        try:
+            for char in op.existing_characters():
+                for tag in char.get('tags', []) or []:
+                    t = (tag or '').strip()
+                    if t:
+                        all_tags.add(t)
+        except Exception as e:
+            cherrypy.log(f'Failed to enumerate tags: {e}')
+            return []
+        return sorted(all_tags, key=str.lower)
+
     @ajax
     def generate(self, type: str, **params):
         """
         This is invoked when the frontend wants to make a character; we return a
         randomly generated character of the given type (e.g. "samurai").
+
+        If `base_rank` is omitted (the frontend's `_.pickBy()` strips the
+        "— any —" default before sending), pick a random valid rank from
+        config['ranks'][type]. Peasant has no rank table so it falls back
+        to its own default and the lookup is a no-op.
         """
+        if not params.get('base_rank'):
+            ranks_for_type = config.get('ranks', {}).get(type, {})
+            if ranks_for_type:
+                from random import choice
+
+                params['base_rank'] = choice(list(ranks_for_type.keys()))
         return Character.types()[type](**params).to_dict()
 
     @ajax
@@ -253,6 +324,7 @@ class Root:
 
                 image_embed = ''
                 avatar_upload_id = ''
+                file_id = ''
                 headshot_crop = char_data.get('headshot_crop', None)
                 if image_data:
                     try:
@@ -278,7 +350,7 @@ class Root:
 
                         # Upload full image as file (for bio embed)
                         file_info = op.upload_image(image_bytes, filename)
-                        file_id = file_info.get('id')
+                        file_id = str(file_info.get('id') or '')
                         if file_id:
                             image_embed = (
                                 f'[[File:{file_id} | class=media-item-align-none | {filename}]]'
@@ -302,8 +374,14 @@ class Root:
                     {
                         'success': True,
                         'name': name,
+                        'slug': slug,
                         'view_url': config['campaign_url'] + '/characters/' + slug,
                         'edit_url': config['campaign_url'] + '/characters/' + slug + '/edit',
+                        # Asset IDs exposed so callers can clean up orphaned
+                        # uploads (the OAuth API can delete characters but
+                        # not files/avatars — those need the cookie path).
+                        'avatar_upload_id': avatar_upload_id,
+                        'file_id': file_id,
                         'error': None,
                     }
                 )

@@ -8,6 +8,13 @@ Checks every element for:
    exceed the configured threshold (default 2.5×). This catches the failure
    mode where a 2-column layout has a short hero on the left and a tall
    stack on the right, producing huge dead space below the short side.
+ - **page-edge gutter**: under <main>, no visible text/control element may
+   sit closer to the viewport edge than the configured gutter (12px on
+   narrow viewports, 28px on wide). This catches the failure mode where a
+   later CSS rule's `padding` shorthand resets the horizontal padding of a
+   `.container`-wrapped section to 0, making form fields and text kiss the
+   viewport edge. Overflow checks miss this because the content fits the
+   viewport exactly — the failure is the opposite of overflow.
 
 Per Constitution Principle I.
 
@@ -29,6 +36,14 @@ BASE = os.environ.get('L7R_BASE_URL', 'http://127.0.0.1:8080')
 BALANCE_RATIO_LIMIT = 2.5
 # Don't flag tiny absolute heights — a 10px-vs-30px ratio is 3× but harmless.
 BALANCE_MIN_TALL_SIBLING_PX = 200
+
+# Page-edge gutter thresholds. At narrow viewports (mobile, <600px) we tolerate
+# a tighter 12px gutter; at desktop widths we expect the design system's
+# 28px (= --gutter: 1.75rem). Below the threshold = "content touches the
+# viewport edge," which is the chargen-shell bug class.
+GUTTER_MIN_MOBILE_PX = 12
+GUTTER_MIN_DESKTOP_PX = 28
+GUTTER_MOBILE_BREAKPOINT_PX = 600
 
 VIEWPORTS = [
     ('gm-100', 1850, 1050),
@@ -110,6 +125,53 @@ AUDIT_SCRIPT = r"""
             });
         }
     }
+
+    // Page-edge gutter check. Walk visible text/control elements under <main>,
+    // find the leftmost and rightmost extents, and report once per side if
+    // anything sits closer to the viewport edge than opts.minGutter.
+    // Aggregating (vs flagging every element) keeps reports concise when a
+    // whole section has 0 horizontal padding.
+    const main = document.querySelector('main');
+    if (main) {
+        const vw = window.innerWidth;
+        const textyTags = new Set([
+            'H1','H2','H3','H4','H5','H6','P','LI','TD','LABEL',
+            'BUTTON','INPUT','SELECT','TEXTAREA','A',
+        ]);
+        let minLeft = Infinity, maxRight = -Infinity;
+        let leftCulprit = null, rightCulprit = null;
+        for (const el of main.querySelectorAll('*')) {
+            if (!textyTags.has(el.tagName)) continue;
+            if (el.getAttribute('aria-hidden') === 'true') continue;
+            const cs = getComputedStyle(el);
+            if (cs.position === 'absolute' || cs.position === 'fixed') continue;
+            if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 || r.height === 0) continue;
+            if (r.bottom < 0 || r.top > window.innerHeight * 4) continue;  // off-screen
+            if (r.left < minLeft) { minLeft = r.left; leftCulprit = el; }
+            if (r.right > maxRight) { maxRight = r.right; rightCulprit = el; }
+        }
+        if (leftCulprit && minLeft < opts.minGutter) {
+            issues.push({
+                tag: leftCulprit.tagName,
+                cls: (leftCulprit.className || '').slice(0, 80),
+                kind: 'edge-touch-left',
+                left: Math.round(minLeft),
+                minGutter: opts.minGutter,
+            });
+        }
+        if (rightCulprit && (vw - maxRight) < opts.minGutter) {
+            issues.push({
+                tag: rightCulprit.tagName,
+                cls: (rightCulprit.className || '').slice(0, 80),
+                kind: 'edge-touch-right',
+                rightGap: Math.round(vw - maxRight),
+                minGutter: opts.minGutter,
+            });
+        }
+    }
+
     return issues;
 }
 """
@@ -134,11 +196,20 @@ def _session_cookie_for_eli() -> str | None:
 async def audit() -> int:
     total_issues = 0
     cookie_value = _session_cookie_for_eli()
-    opts = {'ratioLimit': BALANCE_RATIO_LIMIT, 'minTallSibling': BALANCE_MIN_TALL_SIBLING_PX}
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         for page_name, page_url, needs_auth in PAGES:
             for label, w, h in VIEWPORTS:
+                min_gutter = (
+                    GUTTER_MIN_MOBILE_PX
+                    if w < GUTTER_MOBILE_BREAKPOINT_PX
+                    else GUTTER_MIN_DESKTOP_PX
+                )
+                opts = {
+                    'ratioLimit': BALANCE_RATIO_LIMIT,
+                    'minTallSibling': BALANCE_MIN_TALL_SIBLING_PX,
+                    'minGutter': min_gutter,
+                }
                 context = await browser.new_context(viewport={'width': w, 'height': h})
                 if needs_auth and cookie_value:
                     domain_host = (

@@ -70,7 +70,7 @@ class Character:
             # Replace generic trait with specific one
             self.traits[self.traits.index('collector')] = f'collects {item["name"]}'
         self.tags = self.gen_tags()
-        self.id = str(randrange(1e9))
+        self.id = str(randrange(10**9))
 
     @classmethod
     def types(cls):
