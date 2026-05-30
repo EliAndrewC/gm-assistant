@@ -12,6 +12,8 @@ podman run --interactive --tty --rm \
     --env HOME=/home/agent \
     --volume "$(pwd)":/workspace:Z \
     --volume /home/eli/l7r:/host-l7r-repo:Z \
+    --volume "$HOME/.claude":/home/agent/.claude:z \
+    --volume "$HOME/.claude.json":/home/agent/.claude.json:z \
     --workdir /workspace \
     --memory 8g \
     --memory-swap 8G \

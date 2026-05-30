@@ -173,23 +173,16 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 
 **Spec-kit hooks**: `.specify/extensions.yml` defines auto-commit hooks before each spec-kit step. Per the project's git-safety convention, do not auto-execute those — surface them and let the user confirm each time.
 
-**Container memory persistence**: Claude Code's auto-memory loader reads from `/home/agent/.claude/projects/-workspace/memory/`, which is on the container's overlay-FS upper dir and gets wiped on rebuild. To survive rebuilds, the actual memory files live in this repo at `/workspace/.claude/memory/` (ext4-mounted, persistent), and `/workspace/.claude/bootstrap-container.sh` symlinks the loader path to that persistent dir. Run it once after starting a fresh container:
+**Fresh-container init (start here on every new container)**: the container is launched via the podman command in [`/workspace/README.md`](README.md) — it bind-mounts the repo at `/workspace`, the GM's `l7r` repo at `/host-l7r-repo`, and the host's `~/.claude/` + `~/.claude.json` into `/home/agent/` so Claude Code auth, preferences, agents, skills, and per-project memory all persist across container rebuilds. Once you're inside, from `/workspace/webapp/`:
 
 ```
-bash /workspace/.claude/bootstrap-container.sh
+pip install --break-system-packages -r requirements.txt -r requirements-dev.txt # prod + dev deps
+python3 -m playwright install chromium                                          # one-time browser download for Principle I screenshots
 ```
 
-The script is idempotent. Without it, the loader sees an empty directory and prior memories aren't surfaced — so first thing in a fresh container, run it. (Existing containers where the symlink already resolves correctly need no action.)
+After that, `make done` should pass (ruff + format + mypy --strict + pytest + 100% coverage) and `cherryd --import l7r` runs the app at `http://0.0.0.0:8080`.
 
-**Running the webapp locally (fresh container)**: prod and dev deps are split into two lockfiles — `requirements.txt` (what the Fly image installs) and `requirements-dev.txt` (ruff/mypy/pytest/pytest-cov/playwright/pip-tools). Install both for `make done` to work. From `/workspace/webapp/`:
-
-```
-pip install --break-system-packages -r requirements.txt -r requirements-dev.txt
-python3 -m playwright install chromium  # one-time browser download
-cherryd --import l7r
-```
-
-Re-lock either file with `pip-compile --output-file=<file>.txt <file>.in` (sources are `requirements.in` and `requirements-dev.in`). The prod lockfile must resolve under Python 3.10 (Docker base); the dev lockfile under whichever Python the container runs.
+Prod and dev deps are split into two lockfiles — `requirements.txt` (what the Fly image installs) and `requirements-dev.txt` (ruff/mypy/pytest/pytest-cov/playwright/pip-tools). Both lockfiles target **Python 3.13**, which is what ships in both the dev container (`docker.io/docker/sandbox-templates:claude-code`) and the Fly prod image (`python:3.13-slim`, see [`webapp/Dockerfile`](webapp/Dockerfile)). The version is also pinned in `webapp/pyproject.toml` (`requires-python`, ruff `target-version`, mypy `python_version`). Re-lock either file with `pip-compile --upgrade --output-file=<file>.txt <file>.in` from `/workspace/webapp/` (sources are `requirements.in` and `requirements-dev.in`). If you bump the Python version, update all four locations (Dockerfile, pyproject.toml, both lockfiles) together — they're meant to stay aligned.
 
 The server binds to `0.0.0.0:8080` automatically when it detects a container runtime (podman's `/run/.containerenv` or docker's `/.dockerenv`), so podman's `--publish 8080:8080` reaches it from the host. On a bare host (no container markers, no `FLY_APP_NAME`) it stays on the CherryPy default `127.0.0.1`. Fly continues to bind 0.0.0.0 via `FLY_APP_NAME`, and the X-Forwarded-Proto trust setting is still gated on `FLY_APP_NAME` alone — podman doesn't have a TLS-terminating proxy in front, so we don't want cherrypy.url() emitting `https://` URLs there. Logic lives in `l7r/app.py:_apply_server_config`.
 
@@ -204,8 +197,6 @@ The server binds to `0.0.0.0:8080` automatically when it detects a container run
 - `/workspace/.claude/agents/frontend-review.md` — independent design-review subagent. Invoke before declaring a UI change done if the same agent implemented AND reviewed.
 - `/workspace/.claude/skills/relic/pool/` — exemplar of the pool data convention (Principle III)
 - `/workspace/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` — the 200-name pool consumed by the `/names` section
-- `/workspace/.claude/memory/` — persistent Claude Code memory store (see Container memory persistence above)
-- `/workspace/.claude/bootstrap-container.sh` — run once per fresh container to link the memory dir into the loader path
 
 <!-- SPECKIT START -->
 Current active plan: [`specs/001-toolkit-shell/plan.md`](specs/001-toolkit-shell/plan.md)

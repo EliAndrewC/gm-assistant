@@ -1,8 +1,8 @@
 # L7R Toolkit — production image
 #
-# Pinned to Python 3.10 to match pyproject.toml's requires-python and the
-# version chargen was developed against. Slim base to keep the layer small.
-FROM python:3.10-slim AS base
+# Pinned to Python 3.13 to match pyproject.toml's requires-python and the
+# Python that ships in the dev container. Slim base to keep the layer small.
+FROM python:3.13-slim AS base
 
 # System deps: opencv-python-headless and pillow pull in libGL + image codecs.
 RUN apt-get update \

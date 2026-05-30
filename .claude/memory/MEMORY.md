@@ -1,4 +1,0 @@
-- [Commit authorization](feedback_commit_authorization.md) — Eli has standing authorization for me to create local commits without confirming each one.
-- [Git author identity for this repo](reference_git_author_identity.md) — Use Eli Courtwright <eli@courtwright.org> as commit author here.
-- [Container memory budget](project_memory_budget.md) — 6 GB limit on this container; headless Chrome is the heaviest consumer.
-- [Memory persistence setup](reference_memory_persistence_setup.md) — Memory files live in `/workspace/.claude/memory/`; bootstrap script symlinks the loader path on fresh containers.

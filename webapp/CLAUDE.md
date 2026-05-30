@@ -5,7 +5,7 @@ You are an expert Python developer.  You are assisting in building a webapp to
 generate NPCs for the Rokugan setting of the Legend of the Five Rings RPG.
 
 ## Environment & Commands
-- **Python Version**: 3.10
+- **Python Version**: 3.13
 - **Virtual Env**: `./env`
 - **Install**: `./env/bin/pip install -r requirements.txt` (Note: Use pip-compile via requirements.in)
 - **Run Server**: `./env/bin/cherryd --import chargen` (Runs at http://127.0.0.1:8080)
