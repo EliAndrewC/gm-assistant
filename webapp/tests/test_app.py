@@ -212,7 +212,8 @@ def test_names_ignores_unknown_caste(root: Root) -> None:
 def test_group_relics_by_fortune_has_all_fortune_keys(sample_pool_dir: Path) -> None:
     relics = load_relics(sample_pool_dir)
     grouped = _group_relics_by_fortune(relics)
-    # All seven fortunes appear as keys, even if some have no relics.
+    # Every FORTUNES entry — major + minor — appears as a key even if the
+    # fixture pool has no relics for that Fortune.
     assert set(grouped.keys()) == {
         'benten',
         'bishamon',
@@ -221,9 +222,11 @@ def test_group_relics_by_fortune_has_all_fortune_keys(sample_pool_dir: Path) -> 
         'fukurokujin',
         'hotei',
         'jurojin',
+        'inari',
     }
     assert len(grouped['benten']) == 2
     assert len(grouped['daikoku']) == 0
+    assert len(grouped['inari']) == 0
 
 
 def test_make_app_returns_root_with_relics() -> None:

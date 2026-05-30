@@ -224,6 +224,21 @@ a { color: inherit; }
   font-size: 1.05rem;
 }
 
+/* The "Minor Fortunes" meta-seal — kanji 小 ("minor / small") inside the
+   stamp, matched to the same type treatment as the `all` seal so the rail
+   reads as one continuous register of filters. A muted left border marks
+   the visual boundary between major-fortune buttons and the minor block. */
+.seal[data-fortune-category='minor'] .seal__circle {
+  font-family: var(--font-jp);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.seal--minor-group {
+  border-left: 1px solid var(--hairline);
+  padding-left: 0.7rem;
+  margin-left: 0.2rem;
+}
+
 .seal__name {
   font-size: 0.68rem;
   font-variant-caps: all-small-caps;

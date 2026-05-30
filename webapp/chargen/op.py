@@ -395,6 +395,144 @@ def delete_character(character_id):
     return False
 
 
+def update_character(character_id, **fields):
+    """PATCH a character via the OAuth API. Returns the updated character dict.
+
+    Pass any subset of: name, tagline, description, bio, game_master_info,
+    tags (list[str]), is_player_character, is_game_master_only. The API
+    silently drops unknown fields (we probed avatar variants exhaustively —
+    every one returns 200 without taking effect), so only pass real ones.
+    """
+    if not fields:
+        raise ValueError('update_character: no fields supplied')
+    api = _get_oauth_session()
+    campaign_id = _get_campaign_id()
+    url = f'{API_BASE_URL}/campaigns/{campaign_id}/characters/{character_id}.json'
+    response = api.patch(url, json={'character': fields}, timeout=30)
+    response.raise_for_status()
+    cherrypy.log(f'Updated character {character_id}: {list(fields)}')
+    return response.json()
+
+
+# ---------------------------------------------------------------------------
+# Wiki page CRUD (OAuth API). Verified working 2026-05-30 — same endpoint
+# shape as characters, nested under /campaigns/{id}/wikis/.
+# Schema fields the API exposes:
+#   name, slug, body (Textile), body_html, game_master_info,
+#   game_master_info_html, is_game_master_only, tags, post_title,
+#   post_tagline, post_time, wiki_page_url.
+# ---------------------------------------------------------------------------
+
+
+def existing_wiki_pages():
+    """Return a list of dicts for all wiki pages in the campaign.
+
+    Each dict has: id, slug, name, wiki_page_url, tags, is_game_master_only.
+    Doesn't include body — fetch individual pages via get_wiki_page() for
+    that. The listing endpoint gives enough metadata to route an intake
+    to the right page without paying for every page's body.
+    """
+    try:
+        api = _get_oauth_session()
+        campaign_id = _get_campaign_id()
+        url = f'{API_BASE_URL}/campaigns/{campaign_id}/wikis.json'
+        response = api.get(url, timeout=20)
+        response.raise_for_status()
+    except Exception as e:
+        cherrypy.log(f'Failed to fetch wiki pages: {e}')
+        return []
+    return [
+        {
+            'id': p.get('id', ''),
+            'slug': p.get('slug', ''),
+            'name': p.get('name', ''),
+            'wiki_page_url': p.get('wiki_page_url', ''),
+            'tags': list(p.get('tags') or []),
+            'is_game_master_only': bool(p.get('is_game_master_only')),
+        }
+        for p in (response.json() or [])
+    ]
+
+
+def get_wiki_page(page_id):
+    """Fetch a single wiki page with its full body + game_master_info.
+
+    page_id is the API id (NOT the slug). Use existing_wiki_pages() to
+    look up an id by slug if needed.
+    """
+    api = _get_oauth_session()
+    campaign_id = _get_campaign_id()
+    url = f'{API_BASE_URL}/campaigns/{campaign_id}/wikis/{page_id}.json'
+    response = api.get(url, timeout=20)
+    response.raise_for_status()
+    return response.json()
+
+
+def create_wiki_page(name, *, body='', game_master_info='', tags=None, is_game_master_only=False):
+    """Create a wiki page via OAuth API. Returns the new page dict (incl. id, slug).
+
+    `body` is Textile markup (OP's wiki dialect). \\r\\n line endings match
+    existing pages; \\n alone also works.
+    """
+    api = _get_oauth_session()
+    campaign_id = _get_campaign_id()
+    url = f'{API_BASE_URL}/campaigns/{campaign_id}/wikis.json'
+    payload = {
+        'wiki_page': {
+            'name': name,
+            'body': body,
+            'game_master_info': game_master_info,
+            'is_game_master_only': bool(is_game_master_only),
+        }
+    }
+    if tags:
+        payload['wiki_page']['tags'] = list(tags)
+    response = api.post(url, json=payload, timeout=30)
+    response.raise_for_status()
+    page = response.json()
+    cherrypy.log(f'Created wiki page: {name} (id={page.get("id")}, slug={page.get("slug")})')
+    return page
+
+
+def update_wiki_page(page_id, **fields):
+    """PATCH a wiki page via OAuth API. Returns the updated page dict.
+
+    Pass any subset of: name, body, game_master_info, is_game_master_only,
+    tags, post_title, post_tagline, post_time. Unknown fields are silently
+    dropped (same behavior as character PATCH).
+
+    The API returns 200 with an empty body on successful update; we re-GET
+    the page so callers always get back the new state.
+    """
+    if not fields:
+        raise ValueError('update_wiki_page: no fields supplied')
+    api = _get_oauth_session()
+    campaign_id = _get_campaign_id()
+    url = f'{API_BASE_URL}/campaigns/{campaign_id}/wikis/{page_id}.json'
+    response = api.patch(url, json={'wiki_page': fields}, timeout=30)
+    response.raise_for_status()
+    cherrypy.log(f'Updated wiki page {page_id}: {list(fields)}')
+    if not response.text.strip():
+        return get_wiki_page(page_id)
+    return response.json()
+
+
+def delete_wiki_page(page_id):
+    """Delete a wiki page via OAuth API. Returns True on 204, False on 404."""
+    api = _get_oauth_session()
+    campaign_id = _get_campaign_id()
+    url = f'{API_BASE_URL}/campaigns/{campaign_id}/wikis/{page_id}.json'
+    response = api.delete(url, timeout=20)
+    if response.status_code == 204:
+        cherrypy.log(f'Deleted wiki page via API: {page_id}')
+        return True
+    if response.status_code == 404:
+        cherrypy.log(f'Wiki page already gone: {page_id}')
+        return False
+    response.raise_for_status()
+    return False
+
+
 def existing_names():
     """
     Returns a list of all character names for the campaign.

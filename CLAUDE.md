@@ -106,6 +106,52 @@ Reference directories hold organized source material and context. Each directory
 | `/cosmology/` | Moon court, stories, maho, gaijin religion, Fortune theology |
 | `/notes/` | Canonical source snapshot |
 
+## Note Intake Workflow
+
+When the GM hands you raw campaign notes — actions a character took at the table, new lore that came up in play, NPC backstory beats, world-building ideas — your job is to **copy-edit lightly** and **route to the right sinks**. There are three sinks, and most intakes touch more than one.
+
+**The three sinks**:
+
+1. **A specific character's bio or GM-only notes** on Obsidian Portal. Use when the intake is about something a single character did, was, or knows.
+   - Public bio (visible to all players): `op.update_character(id, bio=...)`
+   - GM-only notes: `op.update_character(id, game_master_info=...)`
+   - Also `name`, `tagline`, `description`, `tags`. Avatars/images go via the browser-sim path — the OAuth API silently no-ops on avatar fields.
+   - Listing + lookup: `op.existing_characters()` returns `{id, slug, name, …}` dicts; filter by name/slug to find the target.
+
+2. **A wiki page** on Obsidian Portal. Use when the intake is about a place, faction, institution, ongoing event, or any world-level fact that isn't tied to a single character.
+   - Public body (Textile markup): `op.update_wiki_page(id, body=...)`
+   - GM-only section: `op.update_wiki_page(id, game_master_info=...)`
+   - Also `name`, `tags`, `is_game_master_only`, `post_title`/`post_tagline`/`post_time` (the blog-post fields, for Adventure Log entries).
+   - Listing + lookup: `op.existing_wiki_pages()` returns `{id, slug, name, wiki_page_url, …}`. If no matching page exists, **ask before creating one** — page proliferation is hard to undo.
+   - Body is Textile, not Markdown. Match the conventions of nearby pages (`\r\n` line endings, `bq).` for blockquotes, `[[wiki-slug]]` for internal links).
+
+3. **The canonical `l7r.md`** (the GM's giant unified notes file). Use *in addition to* whichever OP sink fired, so the GM's authoritative source-of-truth captures everything that made it into the campaign.
+   - Path inside this container: **`/host-l7r-repo/ai/l7r.txt`** (the GM's `EliAndrewC/l7r` repo, volume-mounted from the host). If that path doesn't exist, the mount isn't set up; ask before falling back to the snapshot at `/notes/canonical-source.txt`.
+   - After every edit to `/host-l7r-repo/ai/l7r.txt`, ALSO update `/notes/canonical-source.txt` so the sync-from-GitHub diff workflow stays accurate.
+   - The GM commits + pushes the changes from their laptop after the session — you don't run `git` in the mount.
+
+**Routing rules** (decision tree, top-down):
+
+- *"X did Y" / "X said Y" / "X feels Y about Z"* → that character's bio (public-facing thing) or GM-only notes (private/hidden motivation). Look up by name via `existing_characters()`. ALWAYS also reflect in `l7r.md`.
+- *"There's a place / institution / faction / ongoing event called X"* → wiki page. If an existing page matches, PATCH; if not, ask before creating. ALWAYS also reflect in `l7r.md`.
+- *"The setting works like X" / "Here's how Y works in Rokugan"* → wiki page if it has a natural home, otherwise just `l7r.md` (and consider whether this should also seed a new skill or reference doc).
+- *"NPC X is..."* with no character record yet → ask before creating an OP character. Adding a placeholder character is a stronger commitment than appending to `l7r.md`.
+- *Ambiguous or touches multiple sinks* → ask. Don't write to OP without explicit routing approval; the GM's voice in published bios + wiki is load-bearing.
+
+**Copy-edit rules**:
+
+- Preserve the GM's voice. Light grammar/structure only — no rewording for "flow," no smoothing that drifts meaning.
+- Don't add claims the GM didn't make. If a sentence implies more than was said, ask.
+- For wiki sinks: convert to Textile.
+- For `l7r.md`: match the surrounding section's tone (raw notes, not a polished article). When inserting, find the right section by topic; don't append at the end if a better-placed paragraph exists.
+- Always report back where each piece was written — never assume the GM will read the diff blind.
+
+**Implementation pointers**:
+
+- `/workspace/webapp/chargen/op.py` — all the API helpers (`existing_characters`, `update_character`, `existing_wiki_pages`, `get_wiki_page`, `create_wiki_page`, `update_wiki_page`, `delete_wiki_page`). All use the OAuth path. Image uploads remain browser-sim.
+- OAuth creds live in `[obsidian_portal]` of `development-secrets.ini`; rotation via `probe_op_oauth.py --full` (see [`/workspace/webapp/probe_op_oauth.py`](webapp/probe_op_oauth.py)).
+- This workflow is intentionally **documented in CLAUDE.md rather than a skill**. Skills in this project are content *generators*; intake is a routing workflow that should be present in every session's context.
+
 ## Development Workflow
 
 This project uses spec-driven development governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (currently v1.1.0, 10 principles, 3 NON-NEGOTIABLE). The constitution is the higher-level authority; this CLAUDE.md operationalizes it.

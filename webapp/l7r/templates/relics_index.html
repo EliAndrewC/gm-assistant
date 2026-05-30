@@ -21,7 +21,19 @@
           <span class="seal__circle" lang="ja">全</span>
           <span class="seal__name">all</span>
         </button>
-        {% for fortune_slug, fortune in FORTUNES.items() %}
+        {% for fortune_slug, fortune in FORTUNES.items() if fortune.category == 'major' %}
+          <button class="seal" type="button" data-fortune="{{ fortune_slug }}" aria-pressed="false" title="{{ fortune.domain }}">
+            <span class="seal__circle" lang="ja">{{ fortune.kanji }}</span>
+            <span class="seal__name">{{ fortune.name }}</span>
+          </button>
+        {% endfor %}
+        {# Meta-filter: shows every minor-fortune relic in one sweep, sitting
+           alongside the individual minor-fortune seals that follow it. #}
+        <button class="seal seal--minor-group" type="button" data-fortune-category="minor" aria-pressed="false" title="All Minor Fortunes">
+          <span class="seal__circle" lang="ja">小</span>
+          <span class="seal__name">Minor Fortunes</span>
+        </button>
+        {% for fortune_slug, fortune in FORTUNES.items() if fortune.category == 'minor' %}
           <button class="seal" type="button" data-fortune="{{ fortune_slug }}" aria-pressed="false" title="{{ fortune.domain }}">
             <span class="seal__circle" lang="ja">{{ fortune.kanji }}</span>
             <span class="seal__name">{{ fortune.name }}</span>
@@ -50,7 +62,7 @@
   {% for fortune_slug, fortune in FORTUNES.items() %}
     {% set this_fortune_relics = relics_by_fortune[fortune_slug] %}
     {% if this_fortune_relics %}
-      <section class="fortune-section" id="fortune-{{ fortune_slug }}" data-fortune="{{ fortune_slug }}">
+      <section class="fortune-section" id="fortune-{{ fortune_slug }}" data-fortune="{{ fortune_slug }}" data-fortune-category="{{ fortune.category }}">
         <header class="fortune-section__header">
           <div class="fortune-section__kanji" lang="ja">{{ fortune.kanji }}</div>
           <div class="fortune-section__title-group">
@@ -60,7 +72,7 @@
         </header>
         <div class="cards">
           {% for relic in this_fortune_relics %}
-            <a class="card" href="/relics/{{ relic.slug }}" data-fortune="{{ relic.fortune }}" data-clan="{{ relic.clan }}">
+            <a class="card" href="/relics/{{ relic.slug }}" data-fortune="{{ relic.fortune }}" data-fortune-category="{{ fortune.category }}" data-clan="{{ relic.clan }}">
               <div class="card__top">
                 <span class="card__clan" data-clan="{{ relic.clan }}">{{ relic.clan|clan_label }}</span>
               </div>
