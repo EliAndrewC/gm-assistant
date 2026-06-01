@@ -1,0 +1,403 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="Georgia, 'Times New Roman', serif">
+  <!-- ============================================================ -->
+  <!-- Ochiba County Magistracy — top-down diagrammatic plan         -->
+  <!-- North at top, main gate facing south (bottom).                -->
+  <!-- ============================================================ -->
+
+  <defs>
+    <!-- Diagonal hatching for the colonnade (covered open-air work area) -->
+    <pattern id="colonnade-hatch" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#C97A5C"/>
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#8C4A30" stroke-width="1.2"/>
+    </pattern>
+    <!-- Tatami-style stipple for the garden / open courtyards -->
+    <pattern id="garden-stipple" patternUnits="userSpaceOnUse" width="14" height="14">
+      <rect width="14" height="14" fill="#BFCFA0"/>
+      <circle cx="3" cy="3" r="0.8" fill="#7A8C5C"/>
+      <circle cx="10" cy="9" r="0.8" fill="#7A8C5C"/>
+    </pattern>
+    <!-- Inner-court ground (compacted earth) -->
+    <pattern id="court-earth" patternUnits="userSpaceOnUse" width="16" height="16">
+      <rect width="16" height="16" fill="#D9C28E"/>
+      <circle cx="4" cy="6" r="0.6" fill="#A88E58"/>
+      <circle cx="12" cy="2" r="0.6" fill="#A88E58"/>
+      <circle cx="9" cy="13" r="0.6" fill="#A88E58"/>
+    </pattern>
+    <!-- Oshirasu (white-sand hearing court) -->
+    <pattern id="oshirasu-sand" patternUnits="userSpaceOnUse" width="12" height="12">
+      <rect width="12" height="12" fill="#F2EAD0"/>
+      <circle cx="3" cy="4" r="0.5" fill="#C9B884"/>
+      <circle cx="8" cy="2" r="0.5" fill="#C9B884"/>
+      <circle cx="10" cy="9" r="0.5" fill="#C9B884"/>
+      <circle cx="5" cy="10" r="0.5" fill="#C9B884"/>
+      <circle cx="1" cy="8" r="0.5" fill="#C9B884"/>
+    </pattern>
+    <!-- Vented slat texture for kome-gura (raised granary) -->
+    <pattern id="granary-slats" patternUnits="userSpaceOnUse" width="14" height="6">
+      <rect width="14" height="6" fill="#D9B47A"/>
+      <line x1="0" y1="0" x2="14" y2="0" stroke="#7A5430" stroke-width="0.8"/>
+      <line x1="0" y1="3" x2="14" y2="3" stroke="#A88454" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+
+  <!-- Outer land (surrounding countryside / town outskirts) -->
+  <rect x="0" y="0" width="1200" height="900" fill="#EFE3C2"/>
+
+  <!-- Imperial road approaching the south gate -->
+  <g>
+    <path d="M 600 900 L 600 750" stroke="#B89060" stroke-width="22" stroke-linecap="butt" opacity="0.55"/>
+    <path d="M 600 900 L 600 750" stroke="#9C7448" stroke-width="22" stroke-dasharray="14 12" fill="none" opacity="0.4"/>
+    <text x="635" y="870" font-size="13" fill="#6B4F2A" font-style="italic">to the Imperial road</text>
+  </g>
+
+  <!-- Title block -->
+  <text x="600" y="44" text-anchor="middle" font-size="30" font-weight="bold" fill="#3A2E1C">Ochiba County Magistracy</text>
+  <text x="600" y="68" text-anchor="middle" font-size="14" font-style="italic" fill="#6B4F2A">Minami province, Fox Clan lands — seat of County Magistrate Kitsune Tatsuya</text>
+  <text x="600" y="90" text-anchor="middle" font-size="11" fill="#8C7048">Walled two-courtyard compound · main gate south</text>
+
+  <!-- Compass rose top-right -->
+  <g transform="translate(1110, 130)">
+    <circle r="28" fill="#F7EFD8" stroke="#6B4F2A" stroke-width="1.2"/>
+    <path d="M 0 -24 L 5 0 L 0 24 L -5 0 Z" fill="#6B4F2A"/>
+    <text y="-32" text-anchor="middle" font-size="12" font-weight="bold" fill="#3A2E1C">N</text>
+    <text y="42" text-anchor="middle" font-size="12" fill="#3A2E1C">S</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- THE COMPOUND WALL                                              -->
+  <!-- Outer rectangle x=200..1000, y=150..750                        -->
+  <!-- South wall is broken by the main gate at x=560..640            -->
+  <!-- ============================================================ -->
+  <!-- compound interior fill (earth) -->
+  <rect x="200" y="150" width="800" height="600" fill="url(#court-earth)"/>
+
+  <!-- Wall as four segments (so the south gate opening is clean) -->
+  <g stroke="#2D2A24" stroke-width="9" fill="none" stroke-linecap="square">
+    <!-- North -->
+    <line x1="200" y1="150" x2="1000" y2="150"/>
+    <!-- West -->
+    <line x1="200" y1="150" x2="200" y2="750"/>
+    <!-- East -->
+    <line x1="1000" y1="150" x2="1000" y2="750"/>
+    <!-- South, west of gate -->
+    <line x1="200" y1="750" x2="560" y2="750"/>
+    <!-- South, east of gate -->
+    <line x1="640" y1="750" x2="1000" y2="750"/>
+  </g>
+
+  <!-- Gate posts (flank the south gate opening) -->
+  <g fill="#2D2A24">
+    <rect x="552" y="744" width="16" height="14"/>
+    <rect x="632" y="744" width="16" height="14"/>
+  </g>
+
+  <!-- THE THRESHOLD STONE (senior Pact-Bowl checkpoint) at south gate -->
+  <g>
+    <rect x="586" y="748" width="28" height="14" fill="#A03020" stroke="#5C0A04" stroke-width="1.2"/>
+    <text x="600" y="789" text-anchor="middle" font-size="10" fill="#5C0A04" font-style="italic">threshold stone</text>
+    <text x="600" y="801" text-anchor="middle" font-size="9" fill="#5C0A04" font-style="italic">(senior Pact-Bowl checkpoint)</text>
+  </g>
+
+  <!-- Internal divider wall between outer (south) and inner (north) courts -->
+  <g stroke="#3F3A30" stroke-width="6" fill="none" stroke-dasharray="0">
+    <line x1="200" y1="450" x2="560" y2="450"/>
+    <line x1="640" y1="450" x2="1000" y2="450"/>
+  </g>
+  <!-- Internal gate posts -->
+  <g fill="#3F3A30">
+    <rect x="554" y="446" width="10" height="10"/>
+    <rect x="636" y="446" width="10" height="10"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- OUTER COURT (south half) — public / administrative            -->
+  <!-- y = 450 to y = 750                                             -->
+  <!-- ============================================================ -->
+  <text x="600" y="475" text-anchor="middle" font-size="13" font-weight="bold" fill="#5C4830" letter-spacing="2">OUTER COURT</text>
+
+  <!-- Stables (SW corner) -->
+  <g>
+    <rect x="220" y="660" width="160" height="80" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
+    <!-- stall divisions -->
+    <line x1="260" y1="660" x2="260" y2="740" stroke="#6B4F2A" stroke-width="1"/>
+    <line x1="300" y1="660" x2="300" y2="740" stroke="#6B4F2A" stroke-width="1"/>
+    <line x1="340" y1="660" x2="340" y2="740" stroke="#6B4F2A" stroke-width="1"/>
+    <text x="300" y="705" text-anchor="middle" font-size="12" font-weight="bold" fill="#3A2E1C">stables</text>
+  </g>
+
+  <!-- Tithe archive (W side) -->
+  <g>
+    <rect x="220" y="500" width="160" height="140" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1.5"/>
+    <text x="300" y="560" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">tithe-archive</text>
+    <text x="300" y="580" text-anchor="middle" font-size="10" fill="#5C4830" font-style="italic">grain ledgers</text>
+    <text x="300" y="595" text-anchor="middle" font-size="10" fill="#5C4830" font-style="italic">case rolls</text>
+  </g>
+
+  <!-- Magistrate's pavilion (engawa overlooking the oshirasu) — narrow raised platform along the north side -->
+  <g>
+    <rect x="420" y="485" width="360" height="55" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2.5"/>
+    <line x1="420" y1="498" x2="780" y2="498" stroke="#6B4F2A" stroke-width="1"/>
+    <!-- The magistrate's tatami dais (centered) -->
+    <rect x="555" y="503" width="90" height="32" fill="#8C6F3E" stroke="#4A3318" stroke-width="1"/>
+    <text x="600" y="524" text-anchor="middle" font-size="10" fill="#FFFAE6" font-weight="bold">magistrate's dais</text>
+    <!-- Clerks' positions flanking the dais -->
+    <rect x="455" y="508" width="80" height="22" fill="#B89868" stroke="#5C4830" stroke-width="0.5"/>
+    <text x="495" y="523" text-anchor="middle" font-size="9" fill="#3A2E1C">clerk</text>
+    <rect x="665" y="508" width="80" height="22" fill="#B89868" stroke="#5C4830" stroke-width="0.5"/>
+    <text x="705" y="523" text-anchor="middle" font-size="9" fill="#3A2E1C">clerk</text>
+  </g>
+
+  <!-- Oshirasu (white-sand hearing court) — the open sanded courtyard the dais overlooks -->
+  <g>
+    <rect x="420" y="545" width="360" height="145" fill="url(#oshirasu-sand)" stroke="#9C7A40" stroke-width="1.2" stroke-dasharray="2 2"/>
+    <text x="600" y="572" text-anchor="middle" font-size="14" font-weight="bold" fill="#5C4318" letter-spacing="1">HEARING COURT</text>
+    <text x="600" y="590" text-anchor="middle" font-size="10" font-style="italic" fill="#7A5C30">defendants kneel on the sand below the magistrate's dais</text>
+    <text x="600" y="604" text-anchor="middle" font-size="9" font-style="italic" fill="#7A5C30">Fox-Fire Lantern brought to the dais at evening</text>
+    <!-- Defendant / petitioner positions on the sand (kneeling marks) -->
+    <g fill="#A88454" stroke="#7A5430" stroke-width="0.5" opacity="0.85">
+      <rect x="540" y="640" width="30" height="14"/>
+      <rect x="580" y="640" width="30" height="14"/>
+      <rect x="620" y="640" width="30" height="14"/>
+      <rect x="660" y="640" width="30" height="14"/>
+    </g>
+    <text x="600" y="670" text-anchor="middle" font-size="8" font-style="italic" fill="#7A5C30">witness / defendant positions</text>
+  </g>
+
+  <!-- Kome-gura (rice granary, raised storehouse) — E upper -->
+  <g>
+    <rect x="820" y="490" width="160" height="135" fill="url(#granary-slats)" stroke="#5A3F1E" stroke-width="2"/>
+    <!-- raised stilts at corners (small dark blocks under the structure) -->
+    <rect x="822" y="620" width="10" height="8" fill="#4A3318"/>
+    <rect x="894" y="620" width="10" height="8" fill="#4A3318"/>
+    <rect x="968" y="620" width="10" height="8" fill="#4A3318"/>
+    <text x="900" y="540" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">rice granary</text>
+    <text x="900" y="558" text-anchor="middle" font-size="10" font-style="italic" fill="#5C4830">tithe-grain storage</text>
+    <text x="900" y="574" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">raised on stilts</text>
+    <text x="900" y="586" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">vented walls</text>
+  </g>
+
+  <!-- Holding cell (single small lattice-cage block, SE) -->
+  <g>
+    <rect x="820" y="650" width="70" height="80" fill="#B89868" stroke="#5C4318" stroke-width="1.5"/>
+    <!-- lattice indication -->
+    <line x1="828" y1="660" x2="828" y2="724" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="838" y1="660" x2="838" y2="724" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="848" y1="660" x2="848" y2="724" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="858" y1="660" x2="858" y2="724" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="868" y1="660" x2="868" y2="724" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="878" y1="660" x2="878" y2="724" stroke="#3A2010" stroke-width="0.6"/>
+    <text x="855" y="697" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">cell</text>
+    <text x="855" y="712" text-anchor="middle" font-size="8" font-style="italic" fill="#FFFAE6">(lattice)</text>
+  </g>
+
+  <!-- Bushi / ashigaru barracks (E edge, smaller) -->
+  <g>
+    <rect x="900" y="650" width="80" height="90" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
+    <line x1="940" y1="650" x2="940" y2="740" stroke="#6B4F2A" stroke-width="1"/>
+    <text x="940" y="690" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">barracks</text>
+    <text x="940" y="704" text-anchor="middle" font-size="8" fill="#5C4830" font-style="italic">junior bushi</text>
+    <text x="940" y="715" text-anchor="middle" font-size="8" fill="#5C4830" font-style="italic">standing</text>
+    <text x="940" y="725" text-anchor="middle" font-size="8" fill="#5C4830" font-style="italic">ashigaru</text>
+  </g>
+
+  <!-- Outer-court latrine, tucked along W wall between tithe-archive and stables -->
+  <g>
+    <rect x="206" y="642" width="20" height="14" fill="#7E726A" stroke="#3A2E1C" stroke-width="0.8"/>
+    <text x="216" y="635" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
+  </g>
+
+  <!-- Stables well — just east of stables, in the open courtyard -->
+  <g>
+    <rect x="390" y="684" width="22" height="22" fill="#9C8C70" stroke="#5C4830" stroke-width="1.2"/>
+    <circle cx="401" cy="695" r="6" fill="#2D2A24"/>
+    <text x="401" y="722" text-anchor="middle" font-size="9" font-style="italic" fill="#3A2E1C">well</text>
+  </g>
+
+  <!-- Gatehouse (just inside the south gate) -->
+  <g>
+    <rect x="540" y="700" width="120" height="42" fill="#8C6F3E" stroke="#4A3318" stroke-width="1.5"/>
+    <text x="600" y="726" text-anchor="middle" font-size="11" font-weight="bold" fill="#FFFAE6">gatehouse</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- INNER COURT (north half) — residence and shrine               -->
+  <!-- y = 150 to y = 450                                             -->
+  <!-- ============================================================ -->
+  <text x="600" y="174" text-anchor="middle" font-size="13" font-weight="bold" fill="#5C4830" letter-spacing="2">INNER COURT</text>
+
+  <!-- Residence wing (along the entire north range) -->
+  <g>
+    <rect x="220" y="184" width="760" height="110" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2.5"/>
+    <!-- internal division markers (sliding screens between sections) -->
+    <line x1="380" y1="184" x2="380" y2="294" stroke="#6B4F2A" stroke-width="0.8" stroke-dasharray="4 3"/>
+    <line x1="540" y1="184" x2="540" y2="294" stroke="#6B4F2A" stroke-width="0.8" stroke-dasharray="4 3"/>
+    <line x1="700" y1="184" x2="700" y2="294" stroke="#6B4F2A" stroke-width="0.8" stroke-dasharray="4 3"/>
+    <line x1="840" y1="184" x2="840" y2="294" stroke="#6B4F2A" stroke-width="0.8" stroke-dasharray="4 3"/>
+
+    <text x="300" y="225" text-anchor="middle" font-size="11" fill="#3A2E1C">senior</text>
+    <text x="300" y="240" text-anchor="middle" font-size="11" fill="#3A2E1C">retainers</text>
+
+    <text x="460" y="225" text-anchor="middle" font-size="11" fill="#3A2E1C">karo &amp;</text>
+    <text x="460" y="240" text-anchor="middle" font-size="11" fill="#3A2E1C">family</text>
+
+    <text x="620" y="220" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">Tatsuya's quarters</text>
+    <text x="620" y="238" text-anchor="middle" font-size="11" fill="#3A2E1C" font-style="italic">private study</text>
+
+    <text x="770" y="225" text-anchor="middle" font-size="11" fill="#3A2E1C">family</text>
+    <text x="770" y="240" text-anchor="middle" font-size="11" fill="#3A2E1C">quarters</text>
+
+    <text x="910" y="225" text-anchor="middle" font-size="11" fill="#3A2E1C">senior</text>
+    <text x="910" y="240" text-anchor="middle" font-size="11" fill="#3A2E1C">retainers</text>
+
+    <text x="600" y="275" text-anchor="middle" font-size="12" font-weight="bold" fill="#5A3F1E" letter-spacing="3">RESIDENCE WING</text>
+  </g>
+
+  <!-- Kitchen + pantries (west range) -->
+  <g>
+    <rect x="220" y="310" width="160" height="135" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
+    <!-- hearth indication -->
+    <rect x="240" y="325" width="30" height="22" fill="#6B4030" stroke="#3A2010" stroke-width="0.8"/>
+    <circle cx="255" cy="336" r="6" fill="#E68A40"/>
+    <text x="290" y="390" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">kitchen</text>
+    <text x="290" y="408" text-anchor="middle" font-size="11" fill="#3A2E1C">&amp; pantries</text>
+    <!-- Kitchen well (the primary, busiest well — inside the daidokoro floor) -->
+    <rect x="345" y="410" width="22" height="22" fill="#9C8C70" stroke="#5C4830" stroke-width="1.2"/>
+    <circle cx="356" cy="421" r="6" fill="#2D2A24"/>
+    <text x="356" y="442" text-anchor="middle" font-size="8" font-style="italic" fill="#3A2E1C">well</text>
+  </g>
+
+  <!-- Inari shrine hall (east range, upper portion) — two altars under one roof -->
+  <g>
+    <rect x="820" y="200" width="160" height="160" fill="#C9876C" stroke="#6B2A18" stroke-width="2.5"/>
+    <!-- internal rail dividing W (Ta-no-Kami) and E (Myobu) -->
+    <line x1="900" y1="210" x2="900" y2="350" stroke="#5C1A0A" stroke-width="2"/>
+    <!-- vermillion edging -->
+    <rect x="820" y="200" width="160" height="6" fill="#A03020"/>
+    <rect x="820" y="354" width="160" height="6" fill="#A03020"/>
+    <!-- W altar marker (Ta-no-Kami) — a small rice-straw doll silhouette -->
+    <g transform="translate(860, 232)">
+      <rect x="-7" y="-2" width="14" height="22" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="0.8"/>
+      <circle cx="0" cy="-7" r="6" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="0.8"/>
+    </g>
+    <text x="860" y="280" text-anchor="middle" font-size="11" font-weight="bold" fill="#FFFAE6">Ta-no-Kami</text>
+    <text x="860" y="294" text-anchor="middle" font-size="9" font-style="italic" fill="#FFFAE6">(rice)</text>
+    <text x="860" y="320" text-anchor="middle" font-size="9" fill="#FFFAE6">Fox-Fire</text>
+    <text x="860" y="332" text-anchor="middle" font-size="9" fill="#FFFAE6">Lantern</text>
+    <text x="860" y="344" text-anchor="middle" font-size="9" fill="#FFFAE6">at this altar</text>
+
+    <!-- E altar marker (Myobu) — torii silhouette -->
+    <g transform="translate(940, 220)">
+      <line x1="-12" y1="0" x2="12" y2="0" stroke="#FFFAE6" stroke-width="2.5"/>
+      <line x1="-14" y1="6" x2="14" y2="6" stroke="#FFFAE6" stroke-width="2"/>
+      <line x1="-10" y1="6" x2="-10" y2="22" stroke="#FFFAE6" stroke-width="2"/>
+      <line x1="10" y1="6" x2="10" y2="22" stroke="#FFFAE6" stroke-width="2"/>
+    </g>
+    <text x="940" y="265" text-anchor="middle" font-size="11" font-weight="bold" fill="#FFFAE6">Myobu</text>
+    <text x="940" y="278" text-anchor="middle" font-size="9" font-style="italic" fill="#FFFAE6">(fox)</text>
+    <text x="940" y="298" text-anchor="middle" font-size="9" fill="#FFFAE6">Akami-fude</text>
+    <text x="940" y="310" text-anchor="middle" font-size="9" fill="#FFFAE6">Chigiri-no-Chou</text>
+    <text x="940" y="322" text-anchor="middle" font-size="9" fill="#FFFAE6">warding</text>
+    <text x="940" y="334" text-anchor="middle" font-size="9" fill="#FFFAE6">materials</text>
+  </g>
+
+  <!-- Shrine hall label (above) -->
+  <text x="900" y="195" text-anchor="middle" font-size="12" font-weight="bold" fill="#5C1A0A" letter-spacing="1">INARI SHRINE</text>
+
+  <!-- Cinnabar workshop colonnade (south of shrine, hatched to indicate covered open-air) -->
+  <g>
+    <rect x="820" y="365" width="160" height="80" fill="url(#colonnade-hatch)" stroke="#6B2A18" stroke-width="2"/>
+    <!-- post markers -->
+    <circle cx="830" cy="375" r="3" fill="#3A1810"/>
+    <circle cx="900" cy="375" r="3" fill="#3A1810"/>
+    <circle cx="970" cy="375" r="3" fill="#3A1810"/>
+    <circle cx="830" cy="435" r="3" fill="#3A1810"/>
+    <circle cx="900" cy="435" r="3" fill="#3A1810"/>
+    <circle cx="970" cy="435" r="3" fill="#3A1810"/>
+    <!-- river-stones drying (small grey circles) -->
+    <circle cx="848" cy="395" r="4" fill="#7E726A"/>
+    <circle cx="862" cy="402" r="4" fill="#7E726A"/>
+    <circle cx="848" cy="412" r="4" fill="#7E726A"/>
+    <!-- bowls drying (small lacquer-black circles) -->
+    <circle cx="935" cy="395" r="5" fill="#1A1410" stroke="#3A2418" stroke-width="0.6"/>
+    <circle cx="955" cy="412" r="5" fill="#1A1410" stroke="#3A2418" stroke-width="0.6"/>
+    <text x="900" y="425" text-anchor="middle" font-size="11" font-weight="bold" fill="#FFFAE6">Cinnabar Workshop</text>
+    <text x="900" y="438" text-anchor="middle" font-size="9" font-style="italic" fill="#FFFAE6">(colonnade)</text>
+  </g>
+
+  <!-- Inner garden / open space (center of inner court) -->
+  <g>
+    <rect x="395" y="310" width="415" height="135" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
+    <!-- a small ornamental pond -->
+    <ellipse cx="600" cy="380" rx="42" ry="22" fill="#9CB4C8" stroke="#5C7488" stroke-width="1.2"/>
+    <text x="540" y="430" text-anchor="middle" font-size="10" font-style="italic" fill="#3A2E1C">inner garden</text>
+  </g>
+
+  <!-- Bath house (yuya) — small detached pavilion in the NW of the garden -->
+  <g>
+    <rect x="435" y="325" width="78" height="48" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
+    <!-- small steam plume suggestion -->
+    <path d="M 445 320 q 3 -8 -2 -14 M 458 320 q 3 -8 -2 -14" stroke="#A8B4C8" stroke-width="1" fill="none" opacity="0.7"/>
+    <text x="474" y="353" text-anchor="middle" font-size="12" font-weight="bold" fill="#3A2E1C">bath</text>
+  </g>
+
+  <!-- Well (with stone curb) — east side of garden -->
+  <g>
+    <rect x="730" y="395" width="24" height="24" fill="#9C8C70" stroke="#5C4830" stroke-width="1.2"/>
+    <circle cx="742" cy="407" r="7" fill="#2D2A24"/>
+    <text x="742" y="438" text-anchor="middle" font-size="9" font-style="italic" fill="#3A2E1C">well</text>
+  </g>
+
+  <!-- Inner-court latrine — tucked against W wall, south of kitchen -->
+  <g>
+    <rect x="206" y="395" width="14" height="22" fill="#7E726A" stroke="#3A2E1C" stroke-width="0.8"/>
+    <text x="213" y="388" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
+  </g>
+
+  <!-- Formal entry porch to the residence — small projection south from residence center -->
+  <g>
+    <rect x="585" y="294" width="40" height="14" fill="#C9A57A" stroke="#5A3F1E" stroke-width="1.2"/>
+    <text x="605" y="319" text-anchor="middle" font-size="8" font-style="italic" fill="#3A2E1C">entry porch</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- ANNOTATION LINES (link interior features to outer text)        -->
+  <!-- ============================================================ -->
+
+  <!-- Threshold stone annotation -->
+  <g stroke="#5C0A04" stroke-width="0.8" fill="none">
+    <path d="M 600 762 L 600 815"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- LEGEND (bottom-left)                                           -->
+  <!-- ============================================================ -->
+  <g transform="translate(40, 760)">
+    <rect x="0" y="0" width="290" height="125" fill="#F7EFD8" stroke="#6B4F2A" stroke-width="1.2"/>
+    <text x="145" y="20" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">Sizing notes</text>
+    <text x="10" y="40" font-size="10" fill="#3A2E1C">~15 useful samurai in Ochiba town</text>
+    <text x="10" y="54" font-size="10" fill="#3A2E1C">(per median-domain reckoning); most on-grounds.</text>
+    <text x="10" y="72" font-size="10" fill="#3A2E1C">Approx. residents on the manor:</text>
+    <text x="10" y="86" font-size="10" fill="#3A2E1C">  · Tatsuya + family + senior retainers — residence wing</text>
+    <text x="10" y="100" font-size="10" fill="#3A2E1C">  · junior bushi + standing ashigaru — south barracks</text>
+    <text x="10" y="114" font-size="10" fill="#3A2E1C">  · cooks, grooms, servants — kitchen wing &amp; stables</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- KEY (bottom-right)                                             -->
+  <!-- ============================================================ -->
+  <g transform="translate(870, 760)">
+    <rect x="0" y="0" width="290" height="125" fill="#F7EFD8" stroke="#6B4F2A" stroke-width="1.2"/>
+    <text x="145" y="20" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">Key</text>
+    <!-- swatches -->
+    <rect x="10" y="32" width="18" height="12" fill="#DDB87A" stroke="#5A3F1E" stroke-width="1"/>
+    <text x="34" y="42" font-size="10" fill="#3A2E1C">lord's buildings (residence, magistrate's pavilion)</text>
+    <rect x="10" y="50" width="18" height="12" fill="#C9876C" stroke="#6B2A18" stroke-width="1"/>
+    <text x="34" y="60" font-size="10" fill="#3A2E1C">Inari shrine (vermillion-edged)</text>
+    <rect x="10" y="68" width="18" height="12" fill="url(#colonnade-hatch)" stroke="#6B2A18" stroke-width="1"/>
+    <text x="34" y="78" font-size="10" fill="#3A2E1C">cinnabar workshop (covered open-air)</text>
+    <rect x="10" y="86" width="18" height="12" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1"/>
+    <text x="34" y="96" font-size="10" fill="#3A2E1C">inner garden</text>
+    <rect x="10" y="104" width="18" height="12" fill="#A03020" stroke="#5C0A04" stroke-width="1"/>
+    <text x="34" y="114" font-size="10" fill="#3A2E1C">threshold stone (buried Pact-Bowl beneath)</text>
+  </g>
+</svg>

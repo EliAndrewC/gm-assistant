@@ -4,50 +4,21 @@ This project is a Legend of the Five Rings tabletop RPG worldbuilding environmen
 
 ## Core Rules
 
-### Canonical Source and Syncing
+### Canonical Source
 
-The GM maintains a canonical notes file at https://raw.githubusercontent.com/EliAndrewC/l7r/refs/heads/master/ai/l7r.txt A local copy is saved at `/notes/canonical-source.txt` as a snapshot of what was last parsed. When the GM indicates the canonical source has been updated, or at the start of a session when asked:
+The GM's canonical notes file is `/host-l7r-repo/ai/l7r.md` — the GM's `EliAndrewC/l7r` repo, bind-mounted from the host. This file is the master record of campaign and setting notes. The GM appends to it directly from their laptop, and you append to it via the [Note Intake Workflow](#note-intake-workflow) below when the GM pastes notes into the chat. If the mount is not present, the container was not launched per [`/workspace/README.md`](README.md) — ask the GM rather than guessing.
 
-1. Fetch the current version using the GitHub API (not raw.githubusercontent.com, which has aggressive CDN caching that serves stale content). Use this exact command to fetch and decode:
-   ```
-   curl -sL "https://api.github.com/repos/EliAndrewC/l7r/contents/ai/l7r.txt?ref=master" | python3 -c "
-   import sys, json, base64
-   data = json.load(sys.stdin)
-   content = base64.b64decode(data['content']).decode('utf-8')
-   with open('/tmp/new-canonical-api.txt', 'w') as f:
-       f.write(content)
-   "
-   ```
-   IMPORTANT: Always use `/tmp/new-canonical-api.txt` as the freshly fetched file for all subsequent steps. Never diff or compare against a file fetched via raw.githubusercontent.com or any previously cached download. If you have already fetched the file earlier in the conversation, fetch it again — do not reuse a previous download.
-2. Diff `/tmp/new-canonical-api.txt` against `/notes/canonical-source.txt` to identify what changed.
-3. Propagate changes to the appropriate downstream files (skill files, reference directories, etc.) - updating the GM's words within their `SOURCE: GM NOTES` markers to match the new canonical version.
-4. Overwrite `/notes/canonical-source.txt` with `/tmp/new-canonical-api.txt` so it's ready for the next diff. Do NOT update the snapshot until all downstream files have been verified as correct.
-
-This is the one exception to the "don't modify the GM's words" rule: when the canonical source itself has changed, downstream copies must be updated to match.
+The GM handles all git operations (`add`, `commit`, `push`) from their laptop. From inside the container, **never run `git commit` or `git push`** against the mount; read-only operations like `git log` / `git diff` are fine if you need historical context.
 
 ### Protecting the GM's Writing
 
 Content between `<!-- SOURCE: GM NOTES - DO NOT MODIFY -->` and `<!-- END SOURCE -->` markers is the GM's original writing. These sections must NEVER be modified, rephrased, summarized, reworded, or "improved" in any way. Only the GM may edit these sections, and only when they explicitly instruct you to do so.
 
-The sole exception is syncing from the canonical source (see above) - if the GM has updated their original notes, the downstream copies must be updated to match exactly.
+These blocks are **frozen historical excerpts**: they capture what the GM wrote at the time the downstream file was created and are not kept in sync with subsequent edits to `/host-l7r-repo/ai/l7r.md`. Drift between a downstream `SOURCE` block and the current canonical is expected and intentional — the block is a point-in-time snapshot, not a live mirror. The canonical for any topic is always `l7r.md`.
 
 AI-generated content (preferences, generation instructions, examples of liked/disliked output) lives outside these markers and can be updated as the GM's preferences evolve.
 
 This convention applies to ALL files in the project - both skill files and reference directory files.
-
-### Single Canonical Home for Source Blocks
-
-Each piece of GM source content has exactly **one** canonical home — a single `SOURCE: GM NOTES` block in one file. Other files that conceptually relate to that content link to the canonical home by reference rather than duplicating the block.
-
-This keeps canonical-source syncs surgical: when the GM updates their notes, only one downstream file needs to change per concept. It also prevents drift, since there is no second copy to fall out of sync.
-
-When deciding the canonical home for a given source block:
-
-- If the content is primarily *generation guidance* (how to write a kind of thing, with examples) → it belongs in the relevant skill's `SKILL.md`
-- If the content is primarily *setting reference* (demographics, geography, hierarchies, fixed facts) → it belongs in a file under the appropriate reference directory
-- If both, pick whichever the content leans toward more heavily and have the other side reference it
-
-**Exception:** `/notes/canonical-source.txt` is a sync baseline (the diff target for canonical-source updates from GitHub), not a reference document. It mirrors the canonical source from the GM's GitHub repository by design, and the duplication there is intentional and necessary for the sync workflow described above.
 
 ### File Organization
 
@@ -63,7 +34,7 @@ Reference directories hold organized source material and context. Each directory
 - `/campaigns/` - Campaign-specific material: Karmic Inquisitors, First Toshi Ranbo, Hidden Way, Wasp Bounty Hunters, timelines, PC/NPC backstories, the Order of Lord Moon
 - `/hooks/` - Adventure hooks organized by type (countryside, town, city, caravan, prison camp), grifts and scams
 - `/cosmology/` - Lord Moon's heavenly court, mythological stories/fables, maho & bloodspeakers, "between places", gaijin religions (Uru, Burning Sands), Fortune theology, soothsaying
-- `/notes/` - The canonical source snapshot and any material not yet organized elsewhere
+- `/notes/` - Miscellaneous source material not yet organized into a dedicated reference directory
 
 ### Generation Behavior
 
@@ -88,6 +59,7 @@ Reference directories hold organized source material and context. Each directory
 | `/moto` | Generate Moto culture content, Yassa rulings, horse culture, Burning Sands |
 | `/bounty` | Generate bounties, Wasp clan content, minor clan details |
 | `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[m\|f] [p] [N]` — supports shorthand and concatenation (e.g. `pf3`) |
+| `/diagram` | Generate SVG top-down diagrams of L5R locations (manor plans, village layouts, temple plans, etc.) and render to PNG |
 
 ## Testing
 
@@ -104,47 +76,32 @@ Reference directories hold organized source material and context. Each directory
 | `/campaigns/` | Campaign timelines, NPC/PC backstories, Order of Lord Moon |
 | `/hooks/` | Adventure hooks by setting type |
 | `/cosmology/` | Moon court, stories, maho, gaijin religion, Fortune theology |
-| `/notes/` | Canonical source snapshot |
+| `/notes/` | Miscellaneous source material, not yet organized into a dedicated reference directory |
 
 ## Note Intake Workflow
 
-When the GM hands you raw campaign notes — actions a character took at the table, new lore that came up in play, NPC backstory beats, world-building ideas — your job is to **copy-edit lightly** and **route to the right sinks**. There are three sinks, and most intakes touch more than one.
+When the GM pastes raw campaign notes into the chat — actions a character took at the table, new lore that came up in play, NPC backstory beats, world-building ideas — your job is to **copy-edit for presentability** and **write the notes to two destinations**:
 
-**The three sinks**:
+1. **`/host-l7r-repo/ai/l7r.md`** — always, no exceptions. You decide where in the file to insert based on topic. Don't append at the end if a better-placed paragraph exists. Match the tone of the surrounding section.
 
-1. **A specific character's bio or GM-only notes** on Obsidian Portal. Use when the intake is about something a single character did, was, or knows.
-   - Public bio (visible to all players): `op.update_character(id, bio=...)`
-   - GM-only notes: `op.update_character(id, game_master_info=...)`
-   - Also `name`, `tagline`, `description`, `tags`. Avatars/images go via the browser-sim path — the OAuth API silently no-ops on avatar fields.
-   - Listing + lookup: `op.existing_characters()` returns `{id, slug, name, …}` dicts; filter by name/slug to find the target.
+2. **Obsidian Portal** — exactly one of these, as specified by the GM at intake time:
+   - **A specific character's record** — the GM names the character AND specifies whether the note goes to **GM-only notes** (`game_master_info`) or to the public **Wish Lists and Goals** section of the bio (`bio`, edited as a Textile heading-anchored subsection). Look up via `op.existing_characters()` (returns `{id, slug, name, …}`). To edit the Wish Lists and Goals subsection: read the current `bio`, locate the `Wish Lists and Goals` heading, splice your addition under it, then send the full updated body via `op.update_character(id, bio=...)`. Avatars/images go via the browser-sim path — the OAuth API silently no-ops on avatar fields.
+   - **A wiki page** — the GM says "wiki." You decide which page based on topic. Look up via `op.existing_wiki_pages()` (returns `{id, slug, name, wiki_page_url, …}`). Update via `op.update_wiki_page(id, ...)` with `body` (public Textile), `game_master_info` (GM-only), or `name` / `tags` / `is_game_master_only`. Adventure Log entries also use the blog-post fields `post_title` / `post_tagline` / `post_time`. **If no existing page is a good fit, ask before creating a new one** — page proliferation is hard to undo.
 
-2. **A wiki page** on Obsidian Portal. Use when the intake is about a place, faction, institution, ongoing event, or any world-level fact that isn't tied to a single character.
-   - Public body (Textile markup): `op.update_wiki_page(id, body=...)`
-   - GM-only section: `op.update_wiki_page(id, game_master_info=...)`
-   - Also `name`, `tags`, `is_game_master_only`, `post_title`/`post_tagline`/`post_time` (the blog-post fields, for Adventure Log entries).
-   - Listing + lookup: `op.existing_wiki_pages()` returns `{id, slug, name, wiki_page_url, …}`. If no matching page exists, **ask before creating one** — page proliferation is hard to undo.
-   - Body is Textile, not Markdown. Match the conventions of nearby pages (`\r\n` line endings, `bq).` for blockquotes, `[[wiki-slug]]` for internal links).
+**Routing is your judgment call, not the GM's.** Make a best-guess routing decision based on the content — propose specific destinations rather than asking "where does this go?" Notes may be split across multiple destinations (different paragraphs going to different wiki pages, or some content to the wiki + some to a character record) — splitting is expected and fine. If you're highly confident in the routing (e.g. "more Imperial bounties" → the bounties skill/data), proceed and report exactly what you did. If you have any uncertainty about a destination, **present your proposed routing and ask for confirmation before writing** — phrased as "I think this goes to X, confirm?", never as an open-ended "where does this go?". When the GM is explicit about destination (e.g. "save this to character Akodo Toturi, GM-only"), use what they said; for character intake, you still need both the character name AND whether the content is GM-only vs Wish Lists/Goals — if either is missing, ask with a guess.
 
-3. **The canonical `l7r.md`** (the GM's giant unified notes file). Use *in addition to* whichever OP sink fired, so the GM's authoritative source-of-truth captures everything that made it into the campaign.
-   - Path inside this container: **`/host-l7r-repo/ai/l7r.txt`** (the GM's `EliAndrewC/l7r` repo, volume-mounted from the host). If that path doesn't exist, the mount isn't set up; ask before falling back to the snapshot at `/notes/canonical-source.txt`.
-   - After every edit to `/host-l7r-repo/ai/l7r.txt`, ALSO update `/notes/canonical-source.txt` so the sync-from-GitHub diff workflow stays accurate.
-   - The GM commits + pushes the changes from their laptop after the session — you don't run `git` in the mount.
-
-**Routing rules** (decision tree, top-down):
-
-- *"X did Y" / "X said Y" / "X feels Y about Z"* → that character's bio (public-facing thing) or GM-only notes (private/hidden motivation). Look up by name via `existing_characters()`. ALWAYS also reflect in `l7r.md`.
-- *"There's a place / institution / faction / ongoing event called X"* → wiki page. If an existing page matches, PATCH; if not, ask before creating. ALWAYS also reflect in `l7r.md`.
-- *"The setting works like X" / "Here's how Y works in Rokugan"* → wiki page if it has a natural home, otherwise just `l7r.md` (and consider whether this should also seed a new skill or reference doc).
-- *"NPC X is..."* with no character record yet → ask before creating an OP character. Adding a placeholder character is a stronger commitment than appending to `l7r.md`.
-- *Ambiguous or touches multiple sinks* → ask. Don't write to OP without explicit routing approval; the GM's voice in published bios + wiki is load-bearing.
+**Granularity of routing proposals**: work at the **page / destination level**, not the section-within-page level. Say "the Fox Clan page for most, the Three Man Alliance page for the cash/rice paragraph," not "this paragraph at h3 X, that paragraph between h3 Y and h3 Z." The GM trusts you to decide section/paragraph placement within a page once the destination is confirmed — don't ask them to approve those choices individually.
 
 **Copy-edit rules**:
 
-- Preserve the GM's voice. Light grammar/structure only — no rewording for "flow," no smoothing that drifts meaning.
-- Don't add claims the GM didn't make. If a sentence implies more than was said, ask.
-- For wiki sinks: convert to Textile.
-- For `l7r.md`: match the surrounding section's tone (raw notes, not a polished article). When inserting, find the right section by topic; don't append at the end if a better-placed paragraph exists.
-- Always report back where each piece was written — never assume the GM will read the diff blind.
+- Raw input → readable prose. Fix grammar, punctuation, sentence structure, fragments. Expand shorthand into full sentences. The result should be presentable, not a transcript.
+- Preserve meaning and voice. The GM's register is laconic and matter-of-fact; don't add flowery elaboration, don't smooth into marketing tone, don't introduce claims or implications the source didn't make.
+- If a fragment is too cryptic to interpret with confidence, stop and ask rather than guess.
+- **Tone matches `l7r.md` at both destinations.** Read nearby sections of `l7r.md` to calibrate before writing to either `l7r.md` itself or to OP. Don't shift register based on audience — what's good for `l7r.md` is good for the wiki/character bio too.
+- For OP destinations: convert to Textile (not Markdown). Match nearby pages' conventions (`\r\n` line endings, `bq).` for blockquotes, `[[wiki-slug]]` for internal links).
+- **Silently correct known GM-typos** in any text you write or any existing wiki/character content you happen to be editing:
+  - "Chancellary" → "Chancellery"
+- Always report back exactly where each piece was written (which page or `l7r.md` section; which character record; public Wish Lists/Goals vs GM-only) — never assume the GM will read the diff blind.
 
 **Implementation pointers**:
 

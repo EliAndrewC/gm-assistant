@@ -80,4 +80,13 @@ Heimen:
 
 ## Notes
 
-(AI-generated context, cross-references, and supplementary notes will be added here as the project develops.)
+### Night-soil collection in practice
+
+The SOURCE block above lists "Owaiya" (night-soil handlers) as a burakumin profession. The practical scope of that work in L7R:
+
+- **For samurai households and wealthy merchant compounds**: burakumin Owaiya are hired (or maintained on a standing arrangement) to empty the kawaya cesspits on a regular cycle, typically every few weeks to a couple of months depending on household size. The collected night soil is sold or distributed as fertilizer.
+- **For ordinary farming villages**: farmers handle their own night soil. Tenant peasants cannot plausibly afford to hire burakumin for this, and the fertilizer value of night soil is too high to give up — it goes directly onto the farmer's own paddies and gardens. This matches historical practice in pre-modern Japan, where night-soil collection was a peasant trade tied to the rice cycle. L7R diverges from that for the samurai/wealthy-merchant tier specifically, in line with L5R canon.
+
+### Terminology
+
+L5R-era source material occasionally used "eta" for the caste this file calls burakumin. L7R has dropped "eta" entirely because it functions as a real-world slur. Use "burakumin" in all generated content. When updating older content that contains "eta," silently correct it to "burakumin" (per the silent-correction convention in [`/workspace/CLAUDE.md`](../CLAUDE.md)).
