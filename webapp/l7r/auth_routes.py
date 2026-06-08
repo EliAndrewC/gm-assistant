@@ -57,7 +57,7 @@ def _set_cookie(name: str, value: str, max_age: int, http_only: bool = True) -> 
         cookie[name]['httponly'] = True
     if _is_secure_request():
         cookie[name]['secure'] = True
-    # SameSite=Lax — required for the OAuth redirect back to us with the session
+    # SameSite=Lax - required for the OAuth redirect back to us with the session
     # cookie present. Strict would drop the cookie on the redirect from Discord.
     cookie[name]['SameSite'] = 'Lax'
 
@@ -81,7 +81,7 @@ def install_auth_tool(config: AuthConfig) -> None:
     """Register the global `tools.l7r_auth` CherryPy tool.
 
     Apps that want auth gating set `'tools.l7r_auth.on': True` in their
-    config. The default `min_role` is `'player'` — a route that opts into
+    config. The default `min_role` is `'player'` - a route that opts into
     the tool without specifying min_role still requires a logged-in
     whitelisted user, so a forgotten mount config fails closed, not open.
 
@@ -108,7 +108,7 @@ def install_auth_tool(config: AuthConfig) -> None:
         if user is None:
             raise cherrypy.HTTPRedirect('/auth/login')
         if not role_meets(user.role, min_role):
-            # Logged in, but not at the required level. Login won't help —
+            # Logged in, but not at the required level. Login won't help -
             # 403, rendered through the app's error_page.403 handler.
             raise cherrypy.HTTPError(403, 'forbidden')
 
@@ -148,7 +148,7 @@ class AuthRoot:
             raise cherrypy.HTTPRedirect('/')
         return self._render('login.html')
 
-    # GET /auth/start — generates state, redirects to Discord
+    # GET /auth/start - generates state, redirects to Discord
     @cherrypy.expose
     def start(self) -> None:
         if not self._config.is_configured:
@@ -214,7 +214,7 @@ class AuthRoot:
             logger.info('access denied for discord id %s (%s)', discord_id, display)
             cherrypy.response.status = 403
             return self._render('access_denied.html', display_name=display)
-        # Success — issue session.
+        # Success - issue session.
         session_cookie = make_session_cookie(discord_id, self._config.session_secret)
         _set_cookie(SESSION_COOKIE_NAME, session_cookie, max_age=DEFAULT_SESSION_TTL_SECONDS)
         logger.info('login success: %s', discord_id)

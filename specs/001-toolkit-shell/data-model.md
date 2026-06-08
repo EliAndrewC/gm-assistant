@@ -37,7 +37,7 @@ class Relic:
 
 ### Fortune
 
-A lookup record. Defined as a module-level constant — not loaded from files.
+A lookup record. Defined as a module-level constant - not loaded from files.
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -111,8 +111,8 @@ SECTIONS: tuple[Section, ...] = (
 A small dict-like object passed to all template renders. Built by `make_context()`.
 
 Keys:
-- `nav_sections`: `tuple[Section, ...]` — the registry, used by `_layout.html` to render nav
-- `current_section`: `str` — the slug of the currently-active section (`"landing"`, `"chargen"`, `"relics"`, `"names"`); used to highlight the active nav link
+- `nav_sections`: `tuple[Section, ...]` - the registry, used by `_layout.html` to render nav
+- `current_section`: `str` - the slug of the currently-active section (`"landing"`, `"chargen"`, `"relics"`, `"names"`); used to highlight the active nav link
 - per-page extras (e.g., `relics_by_fortune`, `relic`, `prev_relic`, `next_relic`)
 
 ## Relationships

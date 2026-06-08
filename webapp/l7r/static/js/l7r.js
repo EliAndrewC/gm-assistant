@@ -1,5 +1,5 @@
 /* =========================================================================
-   L7R Toolkit — Shared client JS
+   L7R Toolkit - Shared client JS
    - Seal-filter behavior on /relics (fortune AND clan, composed with AND)
    - Smooth scroll to fortune section on fortune-filter click
    ========================================================================= */
@@ -9,8 +9,8 @@
 
   function initRelicsFilter() {
     // Two kinds of fortune filters:
-    //   data-fortune="<slug|all>"   — single-fortune buttons + the "all" reset
-    //   data-fortune-category="..." — meta-button (e.g. "Minor Fortunes")
+    //   data-fortune="<slug|all>"   - single-fortune buttons + the "all" reset
+    //   data-fortune-category="..." - meta-button (e.g. "Minor Fortunes")
     //                                 matching every card with that category
     const fortuneSeals = document.querySelectorAll('.seal[data-fortune], .seal[data-fortune-category]');
     const clanSeals = document.querySelectorAll('.seal[data-clan]');
@@ -35,7 +35,7 @@
         const clanMatch = currentClan === 'all' || card.dataset.clan === currentClan;
         card.hidden = !(fortuneMatches(card) && clanMatch);
       });
-      // A fortune section hides if every card inside it is hidden — keeps the
+      // A fortune section hides if every card inside it is hidden - keeps the
       // page from showing empty-named headers like "Daikoku" with no relics.
       sections.forEach(function (s) {
         const visible = s.querySelectorAll('.card:not([hidden])');
@@ -93,15 +93,98 @@
           s.setAttribute('aria-pressed', String(s === seal));
         });
         applyFilters();
-        // Don't scroll on clan changes — the filter applies in place and a
+        // Don't scroll on clan changes - the filter applies in place and a
         // jump back to top would feel disorienting when narrowing by clan.
       });
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initRelicsFilter);
-  } else {
+  // ---------------------------------------------------------------------
+  // /places detail: scale toggle + copy-paste description
+  // ---------------------------------------------------------------------
+
+  function scalePhrase(scale) {
+    if (scale === 'province') return 'a province';
+    if (scale === 'town') return 'a county town';
+    if (scale === 'village') return 'a village';
+    if (scale === 'hamlet') return 'a hamlet';
+    return 'a ' + scale;
+  }
+
+  function renderDescription(box, scale) {
+    const name = box.dataset.name || '';
+    const kanji = box.dataset.kanji || '';
+    const meaning = box.dataset.meaning || '';
+    const suffixNote = box.dataset.suffixNote || '';
+    const entryNotes = box.dataset.entryNotes || '';
+    let line = name + ' (' + kanji + ", '" + meaning + "') is " + scalePhrase(scale) + '.';
+    if (suffixNote) line += ' ' + suffixNote;
+    if (entryNotes) line += ' ' + entryNotes;
+    return line;
+  }
+
+  function initPlacesDetail() {
+    const box = document.querySelector('.places-copy');
+    if (!box) return;
+    const textarea = box.querySelector('.places-copy__text');
+    const toggleBtns = box.querySelectorAll('.places-copy__scale-btn');
+    const copyBtn = box.querySelector('.places-copy__copy-btn');
+    const labelEl = box.querySelector('.places-copy__scale-label');
+
+    function activeScale() {
+      const active = box.querySelector('.places-copy__scale-btn--active');
+      if (active) return active.dataset.scale;
+      if (labelEl) return labelEl.textContent.trim();
+      return 'village';
+    }
+
+    function refresh() {
+      textarea.value = renderDescription(box, activeScale());
+    }
+
+    toggleBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        toggleBtns.forEach(function (b) {
+          const isActive = b === btn;
+          b.classList.toggle('places-copy__scale-btn--active', isActive);
+          b.setAttribute('aria-checked', String(isActive));
+        });
+        refresh();
+      });
+    });
+
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        textarea.select();
+        // navigator.clipboard is async and may be unavailable in older browsers
+        // or when not served over HTTPS. document.execCommand is the fallback.
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(textarea.value).catch(function () {
+            try { document.execCommand('copy'); } catch (e) { /* swallow */ }
+          });
+        } else {
+          try { document.execCommand('copy'); } catch (e) { /* swallow */ }
+        }
+        const label = copyBtn.querySelector('span:last-child');
+        if (label) {
+          const original = label.textContent;
+          label.textContent = 'Copied!';
+          setTimeout(function () { label.textContent = original; }, 1200);
+        }
+      });
+    }
+
+    refresh();
+  }
+
+  function init() {
     initRelicsFilter();
+    initPlacesDetail();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();

@@ -4,7 +4,7 @@ Background: ``chargen/templates/index.html`` and ``ministry.html`` inline
 the full config dict into the page via ``{{ config|tojson }}`` so the
 frontend JavaScript can build dropdowns from it. Before the fix being
 guarded here, that included every section ConfigObj had merged in from
-``development-secrets.ini`` — Gemini API key, Discord OAuth client secret,
+``development-secrets.ini`` - Gemini API key, Discord OAuth client secret,
 Obsidian Portal session cookie, the ``[auth]`` HMAC key, and the
 ``[discord_whitelist]`` allowlist. Anyone with the URL could view-source
 and read them. The view now filters those sections before serialization;
@@ -27,8 +27,8 @@ from l7r.jinja_env import build_environment
 
 # Sections this test treats as secret. Kept as a literal tuple here (not
 # imported from chargen.website) so the assertions stay coupled to the
-# *security boundary* — "these section names must not appear in rendered
-# HTML" — rather than to the implementation symbol that enforces it. If
+# *security boundary* - "these section names must not appear in rendered
+# HTML" - rather than to the implementation symbol that enforces it. If
 # development-secrets.ini gains a new section, add it here too.
 _EXPECTED_SECRET_SECTIONS: tuple[str, ...] = (
     'auth',
@@ -77,7 +77,7 @@ def _live_secret_values() -> list[str]:
 
 
 def _render(method_name: str) -> str:
-    # chargen is on the Principle X grace period — its return types are Any
+    # chargen is on the Principle X grace period - its return types are Any
     # to mypy, so the decode() result is Any too. Cast to str at the boundary.
     raw = getattr(Root(), method_name)()
     decoded: str = raw.decode('utf-8')
@@ -115,7 +115,7 @@ class TestRenderedHTMLDoesNotLeakSecrets:
         # section so the key-name check would pass, a live credential
         # value showing up in the page would still fail this assertion.
         for value in _live_secret_values():
-            # Skip very short values — single tokens like "true" or short
+            # Skip very short values - single tokens like "true" or short
             # numeric IDs would produce false positives against incidental
             # substrings in the markup. Real credentials are all longer.
             if len(value) >= 12:

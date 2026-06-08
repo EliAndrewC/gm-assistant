@@ -1,0 +1,7 @@
+{"name": "Owari", "kanji": "尾張", "meaning": "the tail end", "place_types": ["province", "town", "village", "hamlet"], "commonality": "very_common", "regional": [], "suffix": null, "notes": "Like Springfield in the US."}
+{"name": "Yuhimura", "kanji": "夕日村", "meaning": "sunset village", "place_types": ["village"], "commonality": "common", "regional": [], "suffix": "-mura", "notes": ""}
+{"name": "Yuhi", "kanji": "夕日", "meaning": "sunset", "place_types": ["hamlet"], "commonality": "common", "regional": [], "suffix": null, "notes": "Paired with Yuhimura."}
+{"name": "Aozawa", "kanji": "青沢", "meaning": "green marsh stream", "place_types": ["village", "hamlet"], "commonality": "common", "regional": ["riverine"], "suffix": "-sawa", "notes": ""}
+{"name": "Yamashiro", "kanji": "山城", "meaning": "mountain castle", "place_types": ["province", "town"], "commonality": "very_common", "regional": ["mountain_bordering"], "suffix": null, "notes": ""}
+{"name": "Mori-tono", "kanji": "森殿", "meaning": "forest lord's village", "place_types": ["village"], "commonality": "rare", "regional": ["forested"], "suffix": "-tono", "notes": "Hunting lodge village."}
+{"name": "Hon-machi", "kanji": "本町", "meaning": "main town district", "place_types": ["town"], "commonality": "very_common", "regional": [], "suffix": "-machi", "notes": ""}

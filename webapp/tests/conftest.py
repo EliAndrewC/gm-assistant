@@ -2,7 +2,7 @@
 
 The `sample_pool` fixture points at a hand-crafted set of relic markdown
 files under tests/fixtures/pool_sample/. Tests use this instead of mocking
-filesystem calls — per Constitution Principle X.5, external boundaries are
+filesystem calls - per Constitution Principle X.5, external boundaries are
 tested with real fixture files, not transport-layer mocks.
 """
 

@@ -1,4 +1,4 @@
-# Feature Specification: L7R Toolkit Phase 1 — App Shell + Chargen + Relics
+# Feature Specification: L7R Toolkit Phase 1 - App Shell + Chargen + Relics
 
 **Feature Branch**: `001-toolkit-shell`
 
@@ -6,11 +6,11 @@
 
 **Status**: Draft
 
-**Input**: User description: "Fold the existing chargen Python webapp into a 'real' multi-section app called the L7R Toolkit. Phase 1 delivers an app shell with cross-section navigation plus two sections: a modernized chargen (preserving its existing functionality) and a relics catalog (porting the static prototype into the chargen CherryPy backend). Modernize in place — CherryPy stays. Localhost only; no auth in Phase 1."
+**Input**: User description: "Fold the existing chargen Python webapp into a 'real' multi-section app called the L7R Toolkit. Phase 1 delivers an app shell with cross-section navigation plus two sections: a modernized chargen (preserving its existing functionality) and a relics catalog (porting the static prototype into the chargen CherryPy backend). Modernize in place - CherryPy stays. Localhost only; no auth in Phase 1."
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Browse the relic pool with the prototype's look and feel (Priority: P1)
+### User Story 1 - Browse the relic pool with the prototype's look and feel (Priority: P1)
 
 The GM opens the L7R Toolkit in a browser and navigates to the Relics section. The catalog shows all 42 pre-saved relics grouped by Fortune, with the same visual identity as the static prototype that was previously built: vermillion-stamped kanji headers per Fortune, kanji-dominant cards, clan tags. A sticky filter rail of hanko-style seals lets the GM narrow to a single Fortune. Clicking a relic opens a detail page with the kanji-as-exhibition treatment, the full prose, a meta band of Fortune/Clan/Type/Resides-at/Tied-to, and previous/next navigation within the same Fortune.
 
@@ -28,13 +28,13 @@ The GM opens the L7R Toolkit in a browser and navigates to the Relics section. T
 
 ---
 
-### User Story 2 — Use the existing character generator with the new visual identity (Priority: P2)
+### User Story 2 - Use the existing character generator with the new visual identity (Priority: P2)
 
 The GM clicks the Character Generator nav link from any section and lands on the chargen page. The page uses the same shared shell as the rest of the toolkit (the warm-paper / sumi-ink / vermillion palette, the Fraunces + EB Garamond + Shippori Mincho typography, the same nav). The chargen UI's form fields, dropdowns, AJAX behavior, art-generation flow, and Obsidian Portal upload all work exactly as they did in the standalone chargen app.
 
-**Why this priority**: Chargen's existing function must keep working — it's the GM's existing tool. Modernizing it visually is important but the functional regression risk is what makes this P2 rather than P1: any regression here breaks an established workflow.
+**Why this priority**: Chargen's existing function must keep working - it's the GM's existing tool. Modernizing it visually is important but the functional regression risk is what makes this P2 rather than P1: any regression here breaks an established workflow.
 
-**Independent Test**: Open `/chargen` (or whichever the route ends up being). Generate a Samurai character; verify the form fields populate. Generate art via the existing Gemini integration; verify the image appears with the existing crop UI. Submit an upload to the test Obsidian Portal campaign; verify it succeeds (or fails gracefully with the existing error path). Compare against the standalone chargen — functionally identical, visually new.
+**Independent Test**: Open `/chargen` (or whichever the route ends up being). Generate a Samurai character; verify the form fields populate. Generate art via the existing Gemini integration; verify the image appears with the existing crop UI. Submit an upload to the test Obsidian Portal campaign; verify it succeeds (or fails gracefully with the existing error path). Compare against the standalone chargen - functionally identical, visually new.
 
 **Acceptance Scenarios**:
 
@@ -45,7 +45,7 @@ The GM clicks the Character Generator nav link from any section and lands on the
 
 ---
 
-### User Story 3 — Land on a coherent toolkit homepage with discoverable sections (Priority: P3)
+### User Story 3 - Land on a coherent toolkit homepage with discoverable sections (Priority: P3)
 
 The GM visits the root URL and sees a landing page that names the toolkit, briefly explains what it is, and provides clear navigation to each section. The Names section appears in the nav as a placeholder (so the structure is visible) but indicates it is forthcoming.
 
@@ -64,7 +64,7 @@ The GM visits the root URL and sees a landing page that names the toolkit, brief
 ### Edge Cases
 
 - **Long kanji on a relic card**: The relic with the 7-character kanji "太郎兵衛の太鼓" must render without clipping at the 200%-zoom viewport. The prototype already solved this by allowing the kanji to wrap to two lines; the live app preserves that behavior.
-- **Long relic prose**: Some entity descriptions are 150–200 characters. The detail page must show the full prose; cards must not truncate the named-entity text.
+- **Long relic prose**: Some entity descriptions are 150-200 characters. The detail page must show the full prose; cards must not truncate the named-entity text.
 - **Pool file changes**: If a relic file is added/edited in `/workspace/.claude/skills/relic/pool/`, the catalog must reflect that on the next request (re-read at request time, or re-load at process start with a known way to refresh).
 - **A pool file with malformed YAML frontmatter**: Skipping the file with a logged warning is preferred over crashing the catalog page.
 - **The chargen `development-secrets.ini` is missing or invalid**: Chargen has its own behavior here; the new shell should not regress that path. Non-chargen sections (Relics, Names) MUST function regardless of chargen-secrets state.
@@ -106,7 +106,7 @@ The GM visits the root URL and sees a landing page that names the toolkit, brief
 
 #### Accessibility and verification
 
-- **FR-017**: At GM-100 (1850×1050 viewport, 100% zoom) and GM-200 (925×525 viewport, 200% zoom), as well as at tablet (800×1100) and mobile (390×844) breakpoints, every page in the toolkit MUST pass the screenshot/overflow audit defined by the project's Playwright suite — no `text-overflow: ellipsis` truncation on substantive content, no `overflow: hidden` clipping of meaningful elements, no element where `scrollWidth/scrollHeight` exceeds the corresponding offset dimension.
+- **FR-017**: At GM-100 (1850×1050 viewport, 100% zoom) and GM-200 (925×525 viewport, 200% zoom), as well as at tablet (800×1100) and mobile (390×844) breakpoints, every page in the toolkit MUST pass the screenshot/overflow audit defined by the project's Playwright suite - no `text-overflow: ellipsis` truncation on substantive content, no `overflow: hidden` clipping of meaningful elements, no element where `scrollWidth/scrollHeight` exceeds the corresponding offset dimension.
 - **FR-018**: All interactive controls (nav links, seal filter buttons, card links, detail-page footer links, chargen form controls) MUST have visible focus states (per the existing `:focus-visible` rule in the prototype CSS).
 - **FR-019**: All pages MUST render with the canonical typographic stack from Google Fonts loaded over the network (Fraunces, EB Garamond, Shippori Mincho).
 
@@ -134,7 +134,7 @@ The GM visits the root URL and sees a landing page that names the toolkit, brief
 - **SC-003**: A round-trip "find a relic and read its detail" task takes the GM no more than four interactions (visit `/`, click Relics, click a Fortune seal, click a card).
 - **SC-004**: All 42 pool relics appear in the live catalog; none is missing because of parser errors.
 - **SC-005**: Zero text truncation or container overflow is reported by the Playwright DOM audit at any of the four standard viewports.
-- **SC-006**: Existing chargen functionality (character generation, art generation, OP upload) shows no regression compared to the standalone chargen app — the GM's existing manual flow continues to work as a smoke test.
+- **SC-006**: Existing chargen functionality (character generation, art generation, OP upload) shows no regression compared to the standalone chargen app - the GM's existing manual flow continues to work as a smoke test.
 - **SC-007**: The `make done` target passes on the new `l7r/` package with 100% coverage and no lint, format, or type errors.
 
 ---

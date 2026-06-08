@@ -6,10 +6,10 @@ MINOR: Principle I (Accessibility-First Viewports) materially expanded
 to require scroll-through verification and to forbid column-height
 asymmetry past 2.5× ratio. The added requirements were already implicit
 in the principle's intent but had been missed in practice because no
-artifact captured them — the new dom_audit layout-balance rule + the
+artifact captured them - the new dom_audit layout-balance rule + the
 multi-scroll contact sheets in screenshot.py now enforce them.
 
-Principles (11) — unchanged in set; Principle I expanded:
+Principles (11) - unchanged in set; Principle I expanded:
   I.   Accessibility-First Viewports (NON-NEGOTIABLE)        [EXPANDED]
   II.  Bold, Intentional Design                              [unchanged]
   III. Pool Data Conventions                                 [unchanged]
@@ -29,12 +29,12 @@ Sections updated:
     artifact + persona-based review now required for UI changes.
 
 Templates requiring review/update:
-  ✅ webapp/tests/screenshot.py — produces multi-scroll contact sheets.
-  ✅ webapp/tests/dom_audit.py — adds layout-balance rule (sibling-height
+  ✅ webapp/tests/screenshot.py - produces multi-scroll contact sheets.
+  ✅ webapp/tests/dom_audit.py - adds layout-balance rule (sibling-height
                               ratio cap inside flex/grid containers).
-  ✅ /workspace/.claude/agents/frontend-review.md — new independent
+  ✅ /workspace/.claude/agents/frontend-review.md - new independent
                               reviewer agent (Constitution mirror).
-  ⚠  .specify/templates/plan-template.md — Constitution Check entry
+  ⚠  .specify/templates/plan-template.md - Constitution Check entry
                               for Principle I should now mention "no
                               dead-space; contact sheet attached".
                               Deferred until next /speckit-specify run.
@@ -52,14 +52,14 @@ Version 1.1.0 history (amended 2026-05-27):
   configobj, pydantic-settings).
 
 Version 1.0.0 history (initial ratification on 2026-05-27):
-  Introduced Principles I–IX, the Technical Standards / Development
+  Introduced Principles I-IX, the Technical Standards / Development
   Workflow / Governance sections, and the Constitution Check gate in the
   plan template.
 -->
 
 # L7R Toolkit Constitution
 
-This constitution governs the L7R toolkit project — a working setup of Claude
+This constitution governs the L7R toolkit project - a working setup of Claude
 Code skills, generated content pools, and a forthcoming webapp frontend for a
 custom Legend of the Five Rings tabletop RPG setting. It is the highest-level
 guide for how Claude Code agents and human contributors collaborate on this
@@ -71,8 +71,8 @@ with the principles below.
 ### I. Accessibility-First Viewports (NON-NEGOTIABLE)
 
 The GM uses Chrome at 200% browser zoom on a 1850×1173 outer window
-(effective CSS viewport ≈ 925×525). All UI work — webapp pages, generated
-HTML, embedded previews — MUST be verified at the GM's actual viewport at
+(effective CSS viewport ≈ 925×525). All UI work - webapp pages, generated
+HTML, embedded previews - MUST be verified at the GM's actual viewport at
 **both 100% and 200% zoom** before being declared done.
 
 The following are **clipping** violations:
@@ -139,7 +139,7 @@ Generated content of a kind that recurs (relics, names, vows, swords, etc.)
 lives as individual markdown files with YAML frontmatter, organized into
 per-category directories under `/.claude/skills/<skill>/pool/<category>/`.
 Each entry's frontmatter MUST carry the fields needed for scriptable
-filtering — at minimum a category slug (e.g. `fortune`) and a clan
+filtering - at minimum a category slug (e.g. `fortune`) and a clan
 designator (`clan: any | crab | crane | ...`).
 
 Pool entries MUST be reusable across campaigns. They MUST NOT bake in
@@ -150,8 +150,8 @@ entity, use `clan: any`.
 
 ### IV. One Canonical Home for GM Source
 
-Each piece of GM source content — text inside `<!-- SOURCE: GM NOTES - DO
-NOT MODIFY -->` markers — has exactly **one** canonical home file. Other
+Each piece of GM source content - text inside `<!-- SOURCE: GM NOTES - DO
+NOT MODIFY -->` markers - has exactly **one** canonical home file. Other
 files that need that content reference it by path and section rather than
 duplicating the SOURCE block. This keeps canonical-source syncs surgical:
 when the GM updates their notes, only one downstream file must change per
@@ -219,13 +219,13 @@ the household level when no specific household is requested.
 Specific scoping (Kyuden X, the Reiji domain, named PCs/NPCs, specific
 campaign hooks) is permitted only when the user explicitly requests it.
 When the user gives a specific scoping for in-session use, the resulting
-content is for that session — it does not enter the pool until it has
+content is for that session - it does not enter the pool until it has
 been de-localized.
 
 ### VIII. Direct Voice Over Framing Distance
 
-When writing in-world content — especially relic descriptions, vows, temple
-material, and other quasi-religious or institutional writing — the
+When writing in-world content - especially relic descriptions, vows, temple
+material, and other quasi-religious or institutional writing - the
 institution's own voice is used as direct statement of fact. Avoid
 meta-narrational framings that hold the supernatural at distance:
 
@@ -256,7 +256,7 @@ Setting facts that are established in those notes MUST NOT be contradicted.
 
 Skills SHOULD cross-reference reference directories rather than duplicate
 their content. The CLAUDE.md files inside reference directories serve as
-indexes — consult them before writing new content of an indexed kind, and
+indexes - consult them before writing new content of an indexed kind, and
 update them when adding new files.
 
 When a relic, vow, or temple references a Fortune, clan family, lineage,
@@ -268,8 +268,8 @@ or with established figures in the GM's notes.
 
 ### X. Python Discipline (NON-NEGOTIABLE)
 
-Python code in this project — the chargen webapp, the skill helpers, the
-forthcoming backend service — MUST meet the following standards. Failing
+Python code in this project - the chargen webapp, the skill helpers, the
+forthcoming backend service - MUST meet the following standards. Failing
 any single rule is reason enough to refuse "done" status.
 
 1. **Lint passes**: `ruff check` MUST pass on all production paths. The
@@ -334,9 +334,9 @@ any single rule is reason enough to refuse "done" status.
 
 ### XI. Japanese Authenticity (NON-NEGOTIABLE)
 
-Any content this project generates or surfaces in Japanese script — relic
+Any content this project generates or surfaces in Japanese script - relic
 names, sword names, given names, place names, temple titles, vow refrains,
-filter labels, decorative kanji — MUST satisfy a three-way alignment:
+filter labels, decorative kanji - MUST satisfy a three-way alignment:
 
 1. **The kanji are real Japanese characters.** Not Chinese-only characters
    absent from Japanese use, not invented glyphs, not mojibake. Each
@@ -350,7 +350,7 @@ filter labels, decorative kanji — MUST satisfy a three-way alignment:
    `ū` → `uu`); follow that style for consistency.
 
 3. **The English name connects to the kanji's meaning.** Not necessarily a
-   literal gloss — poetic translation is welcome — but a reader who knew
+   literal gloss - poetic translation is welcome - but a reader who knew
    what the kanji meant should be able to see the connection. "The Half-
    Mirror" rendered as `別れ鏡 / Wakare-Kagami` ("Parting Mirror") works:
    the English name takes the kanji's image and renders it idiomatically.
@@ -366,7 +366,7 @@ violation.
 
 **Stylized name readings** (a kun-yomi reading where Sino-Japanese would be
 expected, an obscure kanji choice for a personal name) are permitted but
-should be deliberate — preferably explained in prose if they would surprise
+should be deliberate - preferably explained in prose if they would surprise
 a reader. `業道 / Narimichi` is borderline-acceptable as a Buddhist-themed
 monastic name; the same reading without monastic framing would not be.
 
@@ -374,8 +374,8 @@ monastic name; the same reading without monastic framing would not be.
 kanji 露) are acceptable when they reflect real Japanese naming or naming-
 adjacent conventions. Avoid katakana except for explicitly foreign elements.
 
-**Enforcement**: every kanji-bearing entry — every relic, every sword, every
-generated name — MUST pass the kanji ↔ romaji ↔ meaning triangle. When
+**Enforcement**: every kanji-bearing entry - every relic, every sword, every
+generated name - MUST pass the kanji ↔ romaji ↔ meaning triangle. When
 generating new content, the skill MUST verify each entry against the triangle
 before adding it to a pool. When reviewing an existing pool (e.g., after
 this constitution was amended), entries that fail are content bugs to be
@@ -390,7 +390,7 @@ undermines the whole reading experience for any player who knows Japanese.
 
 **Languages and runtimes**
 - Python 3.13 (system Python on the dev sandbox; the chargen webapp's
-  CLAUDE.md still pins 3.10 — that is the chargen-specific constraint,
+  CLAUDE.md still pins 3.10 - that is the chargen-specific constraint,
   not a project-wide one).
 - Node.js for headless-browser tooling (Playwright bundles its own
   Chromium binary; do not assume a system Chrome).
@@ -471,8 +471,8 @@ modified package:
 5. `pytest --cov-fail-under=100` (on pure-logic packages)
 
 Subagents and skills MUST run all five before reporting Python work
-done. The TDD order — write failing test, watch it fail, implement,
-watch it pass, refactor — is the working mode for new code.
+done. The TDD order - write failing test, watch it fail, implement,
+watch it pass, refactor - is the working mode for new code.
 
 **Delegation**
 Subagents are used for parallel generation and large-context work.

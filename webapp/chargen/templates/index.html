@@ -56,7 +56,7 @@
 
         // Prefetch the campaign-wide tag pool for Tagify autocomplete. The
         // fetch hits Obsidian Portal, so it can take a moment; if the user
-        // clicks Generate before it lands, the tags field still works — the
+        // clicks Generate before it lands, the tags field still works - the
         // whitelist updates in place once data arrives.
         $.getJSON('/chargen/tags', function (resp) {
             tagWhitelist = resp || [];
@@ -70,7 +70,7 @@
         // Rank dropdown cascades off type. config.ranks is keyed by type
         // (Samurai / Monk / Peasant / Legionnaire); each value is {N: label}.
         var populateRanks = function () {
-            dom.$base_rank.empty().append('<option value="">— any —</option>');
+            dom.$base_rank.empty().append('<option value="">- any -</option>');
             var ranksForType = _.get(config.ranks, dom.$type.val()) || {};
             _.each(ranksForType, function (label, rank) {
                 dom.$base_rank.append(
@@ -304,13 +304,13 @@
     <label class="chargen-field">
       <span class="chargen-field__label">Rank</span>
       <select id="base_rank" class="chargen-field__select">
-        <option value="">— any —</option>
+        <option value="">- any -</option>
       </select>
     </label>
     <label class="chargen-field">
       <span class="chargen-field__label">Clan</span>
       <select id="clan" class="chargen-field__select">
-        <option value="">— any —</option>
+        <option value="">- any -</option>
         {% for clan in config.clans %}
           <option value="{{ clan }}">{{ clan|title }}</option>
         {% endfor %}
@@ -319,19 +319,19 @@
     <label class="chargen-field">
       <span class="chargen-field__label">Family</span>
       <select id="family" class="chargen-field__select">
-        <option value="">— any —</option>
+        <option value="">- any -</option>
       </select>
     </label>
     <label class="chargen-field">
       <span class="chargen-field__label">House</span>
       <select id="house" class="chargen-field__select">
-        <option value="">— any —</option>
+        <option value="">- any -</option>
       </select>
     </label>
     <label class="chargen-field">
       <span class="chargen-field__label">Lineage</span>
       <select id="lineage" class="chargen-field__select">
-        <option value="">— any —</option>
+        <option value="">- any -</option>
       </select>
     </label>
   </div>

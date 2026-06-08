@@ -40,12 +40,12 @@ DISCORD_SCOPE = 'identify'
 SESSION_COOKIE_NAME = 'l7r_session'
 STATE_COOKIE_NAME = 'l7r_oauth_state'
 DEFAULT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60  # 30 days
-STATE_TTL_SECONDS = 10 * 60  # 10 minutes — for completing the OAuth round trip
+STATE_TTL_SECONDS = 10 * 60  # 10 minutes - for completing the OAuth round trip
 
 
 # Role hierarchy used both as a gate config (`min_role` on the auth tool)
 # and as the role stamped on an authenticated CurrentUser. 'anonymous' is
-# only ever a min_role value — by convention, CurrentUser.role is always
+# only ever a min_role value - by convention, CurrentUser.role is always
 # 'player' or 'gm' since the absence of a CurrentUser already conveys
 # "anonymous". role_meets() encodes the ordering: gm ≥ player ≥ anonymous.
 Role = Literal['anonymous', 'player', 'gm']
@@ -107,8 +107,8 @@ class AuthConfig:
     # this list, so a logged-in user is always at least a player.
     player_whitelist: Whitelist
     # Subset of player_whitelist (by convention) that gets the 'gm' role.
-    # Membership in gm_whitelist alone — without also being on
-    # player_whitelist — still resolves to 'gm', since gm ≥ player.
+    # Membership in gm_whitelist alone - without also being on
+    # player_whitelist - still resolves to 'gm', since gm ≥ player.
     gm_whitelist: Whitelist
     redirect_uri: str
 
@@ -175,7 +175,7 @@ def _sign(payload: str, secret: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Discord client (boundary — injectable for tests)
+# Discord client (boundary - injectable for tests)
 # ---------------------------------------------------------------------------
 
 
@@ -350,7 +350,7 @@ def authenticate_request(cookie_value: str | None, config: AuthConfig) -> Curren
     # whitelist, and parse_whitelist_section enforces non-empty names, so
     # at least one of these lookups must return a non-empty string.
     name = config.player_whitelist.name_for(discord_id) or config.gm_whitelist.name_for(discord_id)
-    assert name is not None  # noqa: S101 — invariant guaranteed by role_for
+    assert name is not None  # noqa: S101 - invariant guaranteed by role_for
     return CurrentUser(discord_id=discord_id, name=name, role=role)
 
 

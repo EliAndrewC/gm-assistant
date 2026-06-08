@@ -18,7 +18,7 @@ from chargen import ministry
 # every request looks anonymous to the templates.
 try:
     from l7r.auth_routes import current_user as _l7r_current_user
-except ImportError:  # pragma: no cover — only hit by the standalone path
+except ImportError:  # pragma: no cover - only hit by the standalone path
 
     def _l7r_current_user():  # type: ignore[no-redef]
         return None
@@ -124,7 +124,7 @@ class Root:
         """Return the sorted, deduped list of tags across all existing characters.
 
         Feeds the Tagify autocomplete whitelist on the chargen form. Sourced
-        from a live scrape of the Obsidian Portal character listing — same
+        from a live scrape of the Obsidian Portal character listing - same
         data source as op.existing_characters(). Errors fall back to an
         empty list (Tagify still works without a whitelist).
         """
@@ -147,7 +147,7 @@ class Root:
         randomly generated character of the given type (e.g. "samurai").
 
         If `base_rank` is omitted (the frontend's `_.pickBy()` strips the
-        "— any —" default before sending), pick a random valid rank from
+        "- any -" default before sending), pick a random valid rank from
         config['ranks'][type]. Peasant has no rank table so it falls back
         to its own default and the lookup is a no-op.
         """
@@ -379,7 +379,7 @@ class Root:
                         'edit_url': config['campaign_url'] + '/characters/' + slug + '/edit',
                         # Asset IDs exposed so callers can clean up orphaned
                         # uploads (the OAuth API can delete characters but
-                        # not files/avatars — those need the cookie path).
+                        # not files/avatars - those need the cookie path).
                         'avatar_upload_id': avatar_upload_id,
                         'file_id': file_id,
                         'error': None,

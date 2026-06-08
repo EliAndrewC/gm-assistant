@@ -24,6 +24,8 @@
                 <p class="landing__card-blurb">Browse pre-saved temple relics. Each tied to a named hand; each kept by a Custodian.</p>
               {% elif section.slug == 'names' %}
                 <p class="landing__card-blurb">Browse pre-generated Rokugani names, each with a meaning drawn from a traditional format.</p>
+              {% elif section.slug == 'places' %}
+                <p class="landing__card-blurb">Browse pre-generated place names across four scales. Filter by region, commonality, and suffix; roll a random one for your next county.</p>
               {% else %}
                 <p class="landing__card-blurb">Open this section.</p>
               {% endif %}
@@ -33,7 +35,7 @@
           <li>
             <div class="landing__card landing__card--disabled" aria-disabled="true">
               <p class="landing__card-label">Coming soon</p>
-              <h2 class="landing__card-name">{{ section.label }} <em>— coming soon</em></h2>
+              <h2 class="landing__card-name">{{ section.label }} <em>- coming soon</em></h2>
               <p class="landing__card-blurb">The {{ section.label|lower }} section arrives in the next iteration.</p>
             </div>
           </li>

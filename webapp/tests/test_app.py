@@ -1,6 +1,6 @@
 """Integration tests for the CherryPy Root.
 
-These exercise the Root class directly — we do not stand up a real HTTP
+These exercise the Root class directly - we do not stand up a real HTTP
 server. CherryPy `expose`d methods are plain callables; we call them and
 inspect the returned HTML bytes.
 """
@@ -85,7 +85,7 @@ def test_relics_index_clan_rail_only_lists_clans_with_relics(root: Root) -> None
     # Fixture has relics for fox + scorpion + crab + crane (sample pool).
     # A clan with no relic in the fixture should NOT have a filter button.
     assert 'data-clan="fox"' in html or 'data-clan="crab"' in html  # at least one fixture clan
-    # 'wasp' has no fixture relic — must not appear in the rail.
+    # 'wasp' has no fixture relic - must not appear in the rail.
     assert 'data-clan="wasp"' not in html
 
 
@@ -212,7 +212,7 @@ def test_names_ignores_unknown_caste(root: Root) -> None:
 def test_group_relics_by_fortune_has_all_fortune_keys(sample_pool_dir: Path) -> None:
     relics = load_relics(sample_pool_dir)
     grouped = _group_relics_by_fortune(relics)
-    # Every FORTUNES entry — major + minor — appears as a key even if the
+    # Every FORTUNES entry - major + minor - appears as a key even if the
     # fixture pool has no relics for that Fortune.
     assert set(grouped.keys()) == {
         'benten',
@@ -230,10 +230,15 @@ def test_group_relics_by_fortune_has_all_fortune_keys(sample_pool_dir: Path) -> 
 
 
 def test_make_app_returns_root_with_relics() -> None:
-    app = make_app(pool_dir=Path('/nonexistent'), names_dir=Path('/nonexistent'))
+    app = make_app(
+        pool_dir=Path('/nonexistent'),
+        names_dir=Path('/nonexistent'),
+        places_dir=Path('/nonexistent'),
+    )
     assert isinstance(app, Root)
     assert app._relics == []
     assert app._names == []
+    assert app._places == []
 
 
 def test_error_page_handler_renders_404_template() -> None:
@@ -249,7 +254,7 @@ def test_forbidden_handler_renders_403_template() -> None:
 
 
 # ---------------------------------------------------------------------------
-# /archive/save — GM-only stub
+# /archive/save - GM-only stub
 # ---------------------------------------------------------------------------
 
 
@@ -354,6 +359,21 @@ def test_resolve_default_names_dir_fallback(monkeypatch: pytest.MonkeyPatch) -> 
     assert result.name == 'name'
 
 
+def test_resolve_default_places_dir_uses_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    from l7r.app import _resolve_default_places_dir
+
+    monkeypatch.setenv('L7R_PLACES_DIR', '/some/places')
+    assert _resolve_default_places_dir() == Path('/some/places')
+
+
+def test_resolve_default_places_dir_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    from l7r.app import _resolve_default_places_dir
+
+    monkeypatch.delenv('L7R_PLACES_DIR', raising=False)
+    result = _resolve_default_places_dir()
+    assert result.name == 'place-names'
+
+
 def _no_container_markers(monkeypatch: pytest.MonkeyPatch) -> None:
     """Force os.path.exists to report no container marker files.
 
@@ -410,7 +430,7 @@ def test_apply_server_config_binds_for_podman(monkeypatch: pytest.MonkeyPatch) -
     )
     _apply_server_config()
     assert cherrypy.config['server.socket_host'] == '0.0.0.0'
-    # Podman has no TLS-terminating proxy in front — proxy tool stays off.
+    # Podman has no TLS-terminating proxy in front - proxy tool stays off.
     assert cherrypy.config['tools.proxy.on'] is False
 
 

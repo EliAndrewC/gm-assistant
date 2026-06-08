@@ -1,0 +1,167 @@
+{% extends "_layout.html" %}
+
+{% block title %}L7R places{% endblock %}
+
+{% block content %}
+{# Compose query strings that preserve the OTHER axes when one filter changes. #}
+{% macro qs_excluding(skip) -%}
+  {%- set parts = [] -%}
+  {%- if active_place_type and skip != 'place_type' %}{% set _ = parts.append('place_type=' + active_place_type) %}{% endif -%}
+  {%- if active_commonality and skip != 'commonality' %}{% set _ = parts.append('commonality=' + active_commonality) %}{% endif -%}
+  {%- if active_regional and skip != 'regional' %}{% set _ = parts.append('regional=' + active_regional) %}{% endif -%}
+  {%- if active_suffix and skip != 'suffix' %}{% set _ = parts.append('suffix=' + active_suffix) %}{% endif -%}
+  {{- parts|join('&') -}}
+{%- endmacro %}
+
+{% macro filter_url(axis, value) -%}
+  {%- set base = qs_excluding(axis) -%}
+  {%- if value -%}
+    /places?{{ axis }}={{ value }}{% if base %}&{{ base }}{% endif %}
+  {%- else -%}
+    /places{% if base %}?{{ base }}{% endif %}
+  {%- endif -%}
+{%- endmacro %}
+
+{% set random_qs = qs_excluding('') %}
+{% set random_url = '/places?random=1' + ('&' + random_qs if random_qs else '') %}
+
+<section class="container">
+  <div class="masthead masthead--with-action">
+    <div class="masthead__copy">
+      <p class="masthead__supertitle">A pool of place names</p>
+      <h1 class="masthead__title">Places</h1>
+      <p class="masthead__lede">
+        {{ filtered_count }} of {{ total_count }} place names - four scales, suffix-aware, ready for your next domain.
+      </p>
+    </div>
+    <div class="masthead__action">
+      <a class="places-random" href="{{ random_url }}">
+        <span lang="ja" aria-hidden="true">籤</span>
+        <span>Random pick</span>
+      </a>
+    </div>
+    <span class="masthead__watermark" lang="ja" aria-hidden="true">里</span>
+  </div>
+</section>
+
+<section class="fortunes">
+  <div class="container">
+
+    <div class="filter-row">
+      <span class="filter-row__label">Scale</span>
+      <div class="fortunes__rail" role="toolbar" aria-label="Filter by place type">
+        <a class="seal seal--text{% if not active_place_type %} seal--active{% endif %}"
+           href="{{ filter_url('place_type', '') }}"
+           aria-pressed="{{ 'true' if not active_place_type else 'false' }}">
+          <span class="seal__name">all</span>
+        </a>
+        {% for pt in place_types %}
+          <a class="seal seal--text{% if active_place_type == pt %} seal--active{% endif %}"
+             href="{{ filter_url('place_type', pt) }}"
+             aria-pressed="{{ 'true' if active_place_type == pt else 'false' }}">
+            <span class="seal__name">{{ pt }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <span class="filter-row__label">Commonality</span>
+      <div class="fortunes__rail" role="toolbar" aria-label="Filter by commonality">
+        <a class="seal seal--text{% if not active_commonality %} seal--active{% endif %}"
+           href="{{ filter_url('commonality', '') }}"
+           aria-pressed="{{ 'true' if not active_commonality else 'false' }}">
+          <span class="seal__name">all</span>
+        </a>
+        {% for c in commonalities %}
+          <a class="seal seal--text{% if active_commonality == c %} seal--active{% endif %}"
+             href="{{ filter_url('commonality', c) }}"
+             aria-pressed="{{ 'true' if active_commonality == c else 'false' }}">
+            <span class="seal__name">{{ c.replace('_', ' ') }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <span class="filter-row__label">Region</span>
+      <div class="fortunes__rail" role="toolbar" aria-label="Filter by regional context">
+        <a class="seal seal--text{% if not active_regional %} seal--active{% endif %}"
+           href="{{ filter_url('regional', '') }}"
+           aria-pressed="{{ 'true' if not active_regional else 'false' }}">
+          <span class="seal__name">all</span>
+        </a>
+        {% for r in regional_contexts %}
+          <a class="seal seal--text{% if active_regional == r %} seal--active{% endif %}"
+             href="{{ filter_url('regional', r) }}"
+             aria-pressed="{{ 'true' if active_regional == r else 'false' }}">
+            <span class="seal__name">{{ r.replace('_', ' ') }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <span class="filter-row__label">Suffix</span>
+      <div class="fortunes__rail" role="toolbar" aria-label="Filter by suffix">
+        <a class="seal seal--text{% if not active_suffix %} seal--active{% endif %}"
+           href="{{ filter_url('suffix', '') }}"
+           aria-pressed="{{ 'true' if not active_suffix else 'false' }}">
+          <span class="seal__name">all</span>
+        </a>
+        <a class="seal seal--text{% if active_suffix == 'none' %} seal--active{% endif %}"
+           href="{{ filter_url('suffix', 'none') }}"
+           aria-pressed="{{ 'true' if active_suffix == 'none' else 'false' }}">
+          <span class="seal__name">no suffix</span>
+        </a>
+        {% for s in suffixes %}
+          <a class="seal seal--text{% if active_suffix == s %} seal--active{% endif %}"
+             href="{{ filter_url('suffix', s) }}"
+             aria-pressed="{{ 'true' if active_suffix == s else 'false' }}">
+            <span class="seal__name">{{ s }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="container">
+  {% if places %}
+    <ul class="places-list">
+      {% for place in places %}
+        <li class="place-card"
+            id="card-{{ place.slug }}"
+            data-place-type="{{ place.place_types|join(' ') }}"
+            data-commonality="{{ place.commonality }}"
+            data-suffix="{{ place.suffix or 'none' }}">
+          <a class="place-card__link" href="/places/{{ place.slug }}{% if filter_qs %}?{{ filter_qs }}{% endif %}">
+            <div class="place-card__head">
+              <span class="place-card__kanji" lang="ja">{{ place.kanji }}</span>
+              <div class="place-card__title-group">
+                <h2 class="place-card__name">{{ place.name }}</h2>
+                <p class="place-card__meaning">{{ place.meaning }}</p>
+              </div>
+            </div>
+            <div class="place-card__tags">
+              {% for pt in place.place_types %}
+                <span class="place-card__tag place-card__tag--scale">{{ pt }}</span>
+              {% endfor %}
+              <span class="place-card__tag place-card__tag--commonality">{{ place.commonality.replace('_', ' ') }}</span>
+              {% if place.suffix %}
+                <span class="place-card__tag place-card__tag--suffix">{{ place.suffix }}</span>
+              {% endif %}
+              {% for r in place.regional %}
+                <span class="place-card__tag place-card__tag--region">{{ r.replace('_', ' ') }}</span>
+              {% endfor %}
+            </div>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">No places match those filters.</p>
+  {% endif %}
+</div>
+{% endblock %}

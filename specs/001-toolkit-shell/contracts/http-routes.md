@@ -1,4 +1,4 @@
-# HTTP Routes — L7R Toolkit Phase 1
+# HTTP Routes - L7R Toolkit Phase 1
 
 The L7R Toolkit serves HTML responses (no JSON API in Phase 1). Static assets are served by CherryPy's `tools.staticdir`. The contract is the set of routes, their methods, and what they render.
 
@@ -40,7 +40,7 @@ Chargen's frontend JS must be updated to call `/chargen/<endpoint>` paths.
 ## CherryPy integration
 
 ```python
-# l7r/app.py — top-level Root
+# l7r/app.py - top-level Root
 class Root:
     def __init__(self, relics: list[Relic]) -> None: ...
 

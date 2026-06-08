@@ -1,4 +1,4 @@
-"""Fortune and clan lookup registries — module-level constants.
+"""Fortune and clan lookup registries - module-level constants.
 
 These are not loaded from files; they encode the canonical Rokugani
 cosmology that the rest of the app refers to. Changes here are deliberate
@@ -15,7 +15,7 @@ class Fortune:
     """One Fortune of the Rokugani pantheon.
 
     `category` is 'major' (the seven Major Fortunes) or 'minor' (every other
-    venerated Fortune — Inari, Koshin, and so on). The category drives the
+    venerated Fortune - Inari, Koshin, and so on). The category drives the
     relics page's filter grouping: each individual Fortune is its own filter,
     and "Minor Fortunes" is a meta-filter spanning all minor entries.
     """
@@ -37,7 +37,7 @@ FORTUNES: dict[str, Fortune] = {
     ),
     'hotei': Fortune('hotei', 'Hotei', 'Fortune of contentment', '布袋', 'major'),
     'jurojin': Fortune('jurojin', 'Jurojin', 'Fortune of longevity', '寿老人', 'major'),
-    # Minor Fortunes — venerated in their own right but outside the canonical
+    # Minor Fortunes - venerated in their own right but outside the canonical
     # seven. Listed after the majors so dict-iteration order on the relics
     # page renders them in a coherent block beneath the major sections.
     'inari': Fortune('inari', 'Inari', 'Fortune of rice and foxes', '稲荷', 'minor'),

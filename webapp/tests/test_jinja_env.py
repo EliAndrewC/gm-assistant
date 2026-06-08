@@ -1,4 +1,4 @@
-"""Tests for l7r.jinja_env — template environment and filters."""
+"""Tests for l7r.jinja_env - template environment and filters."""
 
 from pathlib import Path
 

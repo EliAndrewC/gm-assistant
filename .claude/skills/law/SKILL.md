@@ -17,7 +17,7 @@ The primary source material for legal cases lives in the campaign files. This sk
 
 ## Justice System Structure
 
-The GM source material on the Ministry of Justice — Imperial / Clan / Family / domain magistrate structures, the Emerald Champion and Test of the Emerald Champion, which magistrate hears which kind of dispute — has its canonical home in [`/setting/government.md`](../../../setting/government.md). It is referenced rather than duplicated here per project convention (see `/workspace/CLAUDE.md` → "Single Canonical Home for Source Blocks").
+The GM source material on the Ministry of Justice - Imperial / Clan / Family / domain magistrate structures, the Emerald Champion and Test of the Emerald Champion, which magistrate hears which kind of dispute - has its canonical home in [`/setting/government.md`](../../../setting/government.md). It is referenced rather than duplicated here per project convention (see `/workspace/CLAUDE.md` → "Single Canonical Home for Source Blocks").
 
 When generating legal content, consult `/setting/government.md` for the structural framework that determines which magistrate hears a given dispute.
 

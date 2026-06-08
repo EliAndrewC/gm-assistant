@@ -8,18 +8,18 @@
 
 **Decision**: Use `pyyaml` to parse frontmatter, regex to split frontmatter from body.
 
-**Rationale**: The pool files all use a simple frontmatter block (`---\nkey: value\n---\nbody`). Full markdown parsing isn't needed — body content is rendered as paragraphs with `*italic*` runs. `pyyaml.safe_load()` handles the frontmatter cleanly with proper type-aware parsing (strings, lists if we add them later). Lighter than `python-frontmatter` and we already have it.
+**Rationale**: The pool files all use a simple frontmatter block (`---\nkey: value\n---\nbody`). Full markdown parsing isn't needed - body content is rendered as paragraphs with `*italic*` runs. `pyyaml.safe_load()` handles the frontmatter cleanly with proper type-aware parsing (strings, lists if we add them later). Lighter than `python-frontmatter` and we already have it.
 
 **Alternatives considered**:
 - *Hand-rolled parser per line*: works but doesn't handle quoted values, lists, multi-line strings well. Rejected.
-- *python-frontmatter package*: adds a dep for a thin wrapper around pyyaml. Rejected — we control the format and pyyaml is plenty.
+- *python-frontmatter package*: adds a dep for a thin wrapper around pyyaml. Rejected - we control the format and pyyaml is plenty.
 - *Full markdown parser (`markdown-it-py` or `mistune`)*: overkill for the body content, which is paragraph + `*em*`. Rejected.
 
 ### 2. CherryPy routing strategy
 
 **Decision**: Single top-level `Root` class in `l7r.app`. Sub-mount the legacy chargen `Root` instance at `/chargen` via `cherrypy.tree.mount` or as a sub-controller attribute.
 
-**Rationale**: This separates routing concerns cleanly. The new `l7r.app:Root` owns `/`, `/relics*`, `/names`. Chargen's `Root` owns `/chargen*`. The two are constructed independently and either can be tested independently. The cost is updating chargen's frontend AJAX URLs from `/generate` to `/chargen/generate` — but this is mechanical and small.
+**Rationale**: This separates routing concerns cleanly. The new `l7r.app:Root` owns `/`, `/relics*`, `/names`. Chargen's `Root` owns `/chargen*`. The two are constructed independently and either can be tested independently. The cost is updating chargen's frontend AJAX URLs from `/generate` to `/chargen/generate` - but this is mechanical and small.
 
 **Alternatives considered**:
 - *Keep chargen routes at root*: Convenient for chargen but creates a confused single Root class that's "L7R" but contains chargen-specific endpoints. Rejected.

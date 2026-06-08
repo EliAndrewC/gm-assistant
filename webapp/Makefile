@@ -53,9 +53,10 @@ ui-verify: screenshots dom-audit
 prepare-deploy:
 	@echo "[deploy] syncing pool data into webapp/skills/"
 	@rm -rf skills
-	@mkdir -p skills/relic skills/name
+	@mkdir -p skills/relic skills/name skills/place-names
 	@cp -r ../.claude/skills/relic/pool skills/relic/pool
 	@cp ../.claude/skills/name/pool-male.jsonl ../.claude/skills/name/pool-female.jsonl skills/name/
+	@cp ../.claude/skills/place-names/pool.jsonl skills/place-names/pool.jsonl
 	@echo "[deploy] context ready: $$(find skills -type f | wc -l) files"
 
 # Deploy to Fly.io. Reads FLY_API_TOKEN from .env (handled by grep, not `source`,

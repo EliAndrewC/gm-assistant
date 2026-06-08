@@ -1,4 +1,4 @@
-"""Tests for l7r.fortunes — Fortune and Clan registries."""
+"""Tests for l7r.fortunes - Fortune and Clan registries."""
 
 import pytest
 

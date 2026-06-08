@@ -1,5 +1,5 @@
 /* =========================================================================
-   Relics — Design System (v2)
+   Relics - Design System (v2)
    A pool of sacred objects, drawn for use. Editorial, vital, opinionated.
    Palette:   warm cream paper, sumi ink, vermillion (used liberally)
    Type:      Fraunces (display) + EB Garamond (body) + Shippori Mincho (JP)
@@ -34,7 +34,7 @@
   --reading-max: 42rem;
 }
 
-/* Focus ring — visible on every interactive element */
+/* Focus ring - visible on every interactive element */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
@@ -228,7 +228,7 @@ a { color: inherit; }
 }
 
 /* =====================================================================
-   Masthead — no archive framing, no count
+   Masthead - no archive framing, no count
    ===================================================================== */
 
 .masthead {
@@ -292,7 +292,7 @@ a { color: inherit; }
   font-variation-settings: 'opsz' 36, 'SOFT' 0, 'wght' 500;
 }
 
-/* Decorative kanji watermark — anchored to the right column, doesn't overlap copy */
+/* Decorative kanji watermark - anchored to the right column, doesn't overlap copy */
 .masthead__watermark {
   font-family: var(--font-jp);
   font-weight: 800;
@@ -326,7 +326,7 @@ a { color: inherit; }
 
 .fortune-section[hidden] { display: none; }
 
-/* Header as one horizontal band — kanji and title feel unified */
+/* Header as one horizontal band - kanji and title feel unified */
 .fortune-section__header {
   display: flex;
   align-items: center;
@@ -379,7 +379,7 @@ a { color: inherit; }
 }
 
 .fortune-section__romaji {
-  /* hidden — redundant when section name is right next to it */
+  /* hidden - redundant when section name is right next to it */
   display: none;
 }
 
@@ -390,7 +390,7 @@ a { color: inherit; }
 }
 
 /* =====================================================================
-   Relic cards (v2) — kanji-dominant, clan-tagged
+   Relic cards (v2) - kanji-dominant, clan-tagged
    ===================================================================== */
 
 .cards {
@@ -625,7 +625,7 @@ a { color: inherit; }
 .footer em { color: var(--vermillion); font-style: italic; }
 
 /* =====================================================================
-   Detail page (v2) — kanji as exhibition art, no archive numbering
+   Detail page (v2) - kanji as exhibition art, no archive numbering
    ===================================================================== */
 
 .detail-nav {

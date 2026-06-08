@@ -14,7 +14,7 @@ Checks every element for:
    later CSS rule's `padding` shorthand resets the horizontal padding of a
    `.container`-wrapped section to 0, making form fields and text kiss the
    viewport edge. Overflow checks miss this because the content fits the
-   viewport exactly — the failure is the opposite of overflow.
+   viewport exactly - the failure is the opposite of overflow.
 
 Per Constitution Principle I.
 
@@ -34,7 +34,7 @@ BASE = os.environ.get('L7R_BASE_URL', 'http://127.0.0.1:8080')
 # A 2.5× ratio with 3+ siblings is the threshold where the layout starts to
 # read as broken rather than intentional.
 BALANCE_RATIO_LIMIT = 2.5
-# Don't flag tiny absolute heights — a 10px-vs-30px ratio is 3× but harmless.
+# Don't flag tiny absolute heights - a 10px-vs-30px ratio is 3× but harmless.
 BALANCE_MIN_TALL_SIBLING_PX = 200
 
 # Page-edge gutter thresholds. At narrow viewports (mobile, <600px) we tolerate
@@ -58,6 +58,8 @@ PAGES = [
     ('relic-detail', '/relics/basin-of-the-lapping-wave', True),
     ('chargen', '/chargen/', True),
     ('names', '/names', True),
+    ('places', '/places', True),
+    ('place-detail', '/places/owari?via=random', True),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),
     ('privacy', '/privacy', False),

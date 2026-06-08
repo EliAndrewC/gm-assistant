@@ -3,7 +3,7 @@ Obsidian Portal (op) module for uploading and downloading characters.
 
 This module uses a hybrid OAuth + browser-session approach:
 
-1. OAUTH 1.0 API — used for reads and deletes (the bulk of operations).
+1. OAUTH 1.0 API - used for reads and deletes (the bulk of operations).
    Verified working 2026-05-30 via probe_op_oauth.py.
    Endpoints:
      GET    /v1/users/me.json
@@ -17,7 +17,7 @@ This module uses a hybrid OAuth + browser-session approach:
    are obtained once via probe_op_oauth.py --full and don't expire on the
    normal "sessions rotate" cadence the browser cookie does.
 
-2. BROWSER SESSION — still needed for character creation when an avatar
+2. BROWSER SESSION - still needed for character creation when an avatar
    is attached, and for image uploads (/files and /uploads endpoints).
    The OAuth API has NO file-upload mechanism: every variant of inline
    base64 avatar, avatar_upload_id, or avatar_url field is silently
@@ -346,7 +346,7 @@ def existing_characters():
     Each dict has: id, slug, name, character_url, avatar_url, tags
     (list of strings), description, is_player_character, is_game_master_only.
 
-    Uses the OAuth API — the campaign-wide listing endpoint returns all
+    Uses the OAuth API - the campaign-wide listing endpoint returns all
     characters in one request (no pagination needed at our campaign size).
     """
     try:
@@ -400,7 +400,7 @@ def update_character(character_id, **fields):
 
     Pass any subset of: name, tagline, description, bio, game_master_info,
     tags (list[str]), is_player_character, is_game_master_only. The API
-    silently drops unknown fields (we probed avatar variants exhaustively —
+    silently drops unknown fields (we probed avatar variants exhaustively -
     every one returns 200 without taking effect), so only pass real ones.
     """
     if not fields:
@@ -415,7 +415,7 @@ def update_character(character_id, **fields):
 
 
 # ---------------------------------------------------------------------------
-# Wiki page CRUD (OAuth API). Verified working 2026-05-30 — same endpoint
+# Wiki page CRUD (OAuth API). Verified working 2026-05-30 - same endpoint
 # shape as characters, nested under /campaigns/{id}/wikis/.
 # Schema fields the API exposes:
 #   name, slug, body (Textile), body_html, game_master_info,
@@ -428,7 +428,7 @@ def existing_wiki_pages():
     """Return a list of dicts for all wiki pages in the campaign.
 
     Each dict has: id, slug, name, wiki_page_url, tags, is_game_master_only.
-    Doesn't include body — fetch individual pages via get_wiki_page() for
+    Doesn't include body - fetch individual pages via get_wiki_page() for
     that. The listing endpoint gives enough metadata to route an intake
     to the right page without paying for every page's body.
     """

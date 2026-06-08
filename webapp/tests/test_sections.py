@@ -1,4 +1,4 @@
-"""Tests for l7r.sections — nav registry."""
+"""Tests for l7r.sections - nav registry."""
 
 import pytest
 

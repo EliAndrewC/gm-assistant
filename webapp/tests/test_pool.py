@@ -1,4 +1,4 @@
-"""Tests for l7r.pool — frontmatter parsing and relic loading."""
+"""Tests for l7r.pool - frontmatter parsing and relic loading."""
 
 from pathlib import Path
 

@@ -1,5 +1,5 @@
 /* =========================================================================
-   Relics — Client (v2)
+   Relics - Client (v2)
    Renders the per-Fortune index or the detail page from window.RELICS_BUNDLE.
    ========================================================================= */
 
@@ -179,7 +179,7 @@
     }
 
     const f = fortuneOf(relic.fortune);
-    document.title = relic.name + ' — Relics';
+    document.title = relic.name + ' - Relics';
 
     const sameFortune = RELICS.filter(function (r) { return r.fortune === relic.fortune; });
     const idx = sameFortune.findIndex(function (r) { return r.slug === slug; });

@@ -38,13 +38,13 @@
             $.each(tagifies, function (idx, t) { t.whitelist = tagWhitelist; });
         });
 
-        // Cascading dropdowns — clan → family → house. Every change cascades
+        // Cascading dropdowns - clan → family → house. Every change cascades
         // downstream and rechecks the form's overall readiness.
         //
         // House is special: most families in the config have no house
         // subdivisions (only matsu, bayushi, tsuruchi, fox, sparrow do). When
         // the chosen family has no houses defined, an empty house value is
-        // valid — the form is "ready" without house selection.
+        // valid - the form is "ready" without house selection.
         function houseOptionCount() {
             return dom.$house.find('option[value!=""]').length;
         }
@@ -65,9 +65,9 @@
                 var optCount = options ? Object.keys(options).length : 0;
                 $dest.empty();
                 // Placeholder text reflects whether there are real options:
-                // "— select —" when the user needs to pick, "— (none) —"
+                // "- select -" when the user needs to pick, "- (none) -"
                 // when the parent has no sub-options.
-                var placeholder = optCount === 0 ? '— (none for this ' + src + ') —' : '— select —';
+                var placeholder = optCount === 0 ? '- (none for this ' + src + ') -' : '- select -';
                 $dest.append($('<option value=""></option>').text(placeholder));
                 _.each(options, function (ignored, val) {
                     $dest.append(
@@ -144,7 +144,7 @@
                 .addClass('roster-card')
                 .attr('id', 'card-' + idx);
 
-            // Header — ministry name + rank
+            // Header - ministry name + rank
             $card.append($('<header class="roster-card__header"></header>')
                 .append($('<p class="roster-card__supertitle"></p>').text(char.ministry_rank))
                 .append($('<h2 class="roster-card__title"></h2>').text(char.ministry)));
@@ -360,7 +360,7 @@
                         succ + ' uploaded' + (fail ? ', ' + fail + ' failed' : '') + '.'
                     );
                     dom.$upload_all.text('Upload All Ministers');
-                    // Leave upload_all disabled — the roster is already
+                    // Leave upload_all disabled - the roster is already
                     // committed; user should Generate again for a new round.
                 },
                 error: function (xhr, status, error) {
@@ -381,7 +381,7 @@
       <p class="roster-lede">
         Generate one minister for each of the Six Ministries, all sharing
         the same rank, clan, family, and (where the family has houses) house
-        — because a real ministry is staffed from one house, not a random
+        - because a real ministry is staffed from one house, not a random
         scattering of clans. Art is generated automatically for all six;
         tweak then bulk-upload to Obsidian Portal.
         <a href="/chargen">← single character generator</a>
@@ -394,7 +394,7 @@
     <label class="chargen-field">
       <span class="chargen-field__label">Rank</span>
       <select id="base_rank" class="chargen-field__select">
-        <option value="">— select —</option>
+        <option value="">- select -</option>
         <option value="6">6. Deputy Provincial Minister</option>
         <option value="7">7. Provincial Minister</option>
         <option value="9">9. Deputy Minister</option>
@@ -404,7 +404,7 @@
     <label class="chargen-field">
       <span class="chargen-field__label">Clan</span>
       <select id="clan" class="chargen-field__select">
-        <option value="">— select —</option>
+        <option value="">- select -</option>
         {% for clan in config.clans %}
           <option value="{{ clan }}">{{ clan|title }}</option>
         {% endfor %}
@@ -413,13 +413,13 @@
     <label class="chargen-field">
       <span class="chargen-field__label">Family</span>
       <select id="family" class="chargen-field__select">
-        <option value="">— select —</option>
+        <option value="">- select -</option>
       </select>
     </label>
     <label class="chargen-field">
       <span class="chargen-field__label">House</span>
       <select id="house" class="chargen-field__select">
-        <option value="">— select —</option>
+        <option value="">- select -</option>
       </select>
     </label>
   </div>

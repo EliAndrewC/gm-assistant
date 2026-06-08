@@ -1,4 +1,4 @@
-"""Tests for l7r.names — JSONL pool loading."""
+"""Tests for l7r.names - JSONL pool loading."""
 
 from __future__ import annotations
 

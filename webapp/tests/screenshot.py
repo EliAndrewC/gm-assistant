@@ -5,7 +5,7 @@ For pages taller than 1.3× viewport height, captures four scroll positions
 issues mid-scroll (layout asymmetry, dead space, awkward stacking) are
 visible at a glance.
 
-The contact sheet is the Principle I verification artifact — UI changes
+The contact sheet is the Principle I verification artifact - UI changes
 are not "done" until a contact sheet has been reviewed at the GM's viewport.
 
 Assumes `cherryd --import l7r` is running at http://127.0.0.1:8080/.
@@ -39,6 +39,8 @@ PAGES = [
     ('relic-detail', '/relics/basin-of-the-lapping-wave', True),
     ('chargen', '/chargen/', True),
     ('names', '/names', True),
+    ('places', '/places', True),
+    ('place-detail', '/places/owari?via=random', True),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),
     ('privacy', '/privacy', False),

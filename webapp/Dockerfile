@@ -34,6 +34,7 @@ ENV FLY_APP_NAME=l7r-gm-assistant
 ENV PYTHONUNBUFFERED=1
 ENV L7R_RELIC_POOL_DIR=/app/skills/relic/pool
 ENV L7R_NAMES_DIR=/app/skills/name
+ENV L7R_PLACES_DIR=/app/skills/place-names
 
 EXPOSE 8080
 

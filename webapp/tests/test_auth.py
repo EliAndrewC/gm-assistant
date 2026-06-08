@@ -1,4 +1,4 @@
-"""Tests for l7r.auth — pure logic only (signing, parsing, config loading)."""
+"""Tests for l7r.auth - pure logic only (signing, parsing, config loading)."""
 
 from __future__ import annotations
 
@@ -203,7 +203,7 @@ def test_load_auth_config_full() -> None:
 
 
 def test_load_auth_config_handles_missing_gm_whitelist_section() -> None:
-    # gm_whitelist is optional — older deployments without the section
+    # gm_whitelist is optional - older deployments without the section
     # should still load cleanly with an empty GM whitelist.
     secrets_data = {
         'discord': {'client_id': 'abc', 'client_secret': 'shh'},
@@ -415,7 +415,7 @@ def test_to_jsonable_for_user() -> None:
 
 def test_real_discord_client_is_constructible() -> None:
     # Smoke: real client constructs without arguments. We don't exercise the
-    # HTTP calls here — those are tested via the boundary in auth_routes tests.
+    # HTTP calls here - those are tested via the boundary in auth_routes tests.
     client = RealDiscordClient(timeout=1.0)
     assert client is not None
 
@@ -433,7 +433,7 @@ def test_authconfig_is_immutable() -> None:
 
 
 # ---------------------------------------------------------------------------
-# RealDiscordClient — uses requests but tested with a session-style fixture
+# RealDiscordClient - uses requests but tested with a session-style fixture
 # (verifies the request shape end-to-end via a urllib-level monkeypatch).
 # ---------------------------------------------------------------------------
 

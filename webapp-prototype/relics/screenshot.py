@@ -5,7 +5,7 @@ Usage:
     python3 screenshot.py 1440 900    # custom width/height
 
 Requires playwright + chromium installed (one-time: python3 -m playwright install chromium).
-Assumes the prototype is being served at http://127.0.0.1:8123/ — start with:
+Assumes the prototype is being served at http://127.0.0.1:8123/ - start with:
     python3 -m http.server 8123 --directory /workspace/webapp-prototype/relics
 """
 

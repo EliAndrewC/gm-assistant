@@ -1,4 +1,4 @@
-"""Tests for fetch_campaign_names.py — HTML parsing only, no HTTP requests."""
+"""Tests for fetch_campaign_names.py - HTML parsing only, no HTTP requests."""
 
 from fetch_campaign_names import extract_personal_names, scrape_characters_page
 import requests

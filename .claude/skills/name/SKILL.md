@@ -24,13 +24,13 @@ On subsequent invocations in the same session, skip both steps and go straight t
 
 ## How to Serve a Name Request
 
-1. **Pass the user's arguments directly to the picker script** — do not parse them yourself. The script handles all argument parsing including shorthand:
+1. **Pass the user's arguments directly to the picker script** - do not parse them yourself. The script handles all argument parsing including shorthand:
    ```
    cd ${CLAUDE_SKILL_DIR} && python3 pick_name.py <user args>
    ```
    The script accepts: `male`/`female`/`m`/`f` for gender, `peasant`/`p` for caste, numbers or `x<N>` for count, and concatenated shorthand like `pf3`, `m2`, `3mp`. Order doesn't matter. The script outputs pre-formatted markdown ready to display.
 
-2. **Display the script's output directly** — no parsing or reformatting needed.
+2. **Display the script's output directly** - no parsing or reformatting needed.
 
 4. **If the script reports a warning** about low pool size, inform the user: "The name pool is running low. Say 'refill names' to generate more."
 

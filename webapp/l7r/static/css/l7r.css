@@ -1,5 +1,5 @@
 /* =========================================================================
-   Relics — Design System (v2)
+   Relics - Design System (v2)
    A pool of sacred objects, drawn for use. Editorial, vital, opinionated.
    Palette:   warm cream paper, sumi ink, vermillion (used liberally)
    Type:      Fraunces (display) + EB Garamond (body) + Shippori Mincho (JP)
@@ -34,7 +34,7 @@
   --reading-max: 42rem;
 }
 
-/* Focus ring — visible on every interactive element */
+/* Focus ring - visible on every interactive element */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
@@ -55,7 +55,7 @@ html {
 
 body {
   margin: 0;
-  /* Anchor for ::before — the grain overlay below is now absolute-positioned
+  /* Anchor for ::before - the grain overlay below is now absolute-positioned
      so it stays scoped to body's actual extent, not the viewport. That way
      the area below body (the html surface) renders ungrained. */
   position: relative;
@@ -207,7 +207,7 @@ a { color: inherit; }
 /* 3-character kanji (福禄寿, 毘沙門, 寿老人) need a smaller font to fit
    inside the same 2.6rem circle as the 1- and 2-character stamps. */
 .seal__circle:has(> :only-child) {
-  /* CSS :has fallback — leave the default for browsers without :has. */
+  /* CSS :has fallback - leave the default for browsers without :has. */
 }
 .seal[data-fortune='fukurokujin'] .seal__circle,
 .seal[data-fortune='bishamon'] .seal__circle,
@@ -224,7 +224,7 @@ a { color: inherit; }
   font-size: 1.05rem;
 }
 
-/* The "Minor Fortunes" meta-seal — kanji 小 ("minor / small") inside the
+/* The "Minor Fortunes" meta-seal - kanji 小 ("minor / small") inside the
    stamp, matched to the same type treatment as the `all` seal so the rail
    reads as one continuous register of filters. A muted left border marks
    the visual boundary between major-fortune buttons and the minor block. */
@@ -269,7 +269,7 @@ a { color: inherit; }
   font-weight: 600;
 }
 
-/* Text-only seal variant — used by the clan filter rail, which has no
+/* Text-only seal variant - used by the clan filter rail, which has no
    per-clan kanji stamp. The button still uses the seal's hover/active
    semantics so pressing it visually matches a Fortune button. */
 .seal--text {
@@ -289,7 +289,7 @@ a { color: inherit; }
 }
 
 /* =====================================================================
-   Masthead — no archive framing, no count
+   Masthead - no archive framing, no count
    ===================================================================== */
 
 .masthead {
@@ -347,13 +347,13 @@ a { color: inherit; }
   margin: 0;
 }
 
-/* Same policy as landing — italics in body copy stay ink-colored. */
+/* Same policy as landing - italics in body copy stay ink-colored. */
 .masthead__lede em {
   font-style: italic;
   color: inherit;
 }
 
-/* Decorative kanji watermark — anchored to the right column, doesn't overlap copy */
+/* Decorative kanji watermark - anchored to the right column, doesn't overlap copy */
 .masthead__watermark {
   font-family: var(--font-jp);
   font-weight: 800;
@@ -389,7 +389,7 @@ a { color: inherit; }
 
 .fortune-section[hidden] { display: none; }
 
-/* Header as one horizontal band — kanji and title feel unified */
+/* Header as one horizontal band - kanji and title feel unified */
 .fortune-section__header {
   display: flex;
   align-items: center;
@@ -442,7 +442,7 @@ a { color: inherit; }
 }
 
 .fortune-section__romaji {
-  /* hidden — redundant when section name is right next to it */
+  /* hidden - redundant when section name is right next to it */
   display: none;
 }
 
@@ -453,7 +453,7 @@ a { color: inherit; }
 }
 
 /* =====================================================================
-   Relic cards (v2) — kanji-dominant, clan-tagged
+   Relic cards (v2) - kanji-dominant, clan-tagged
    ===================================================================== */
 
 .cards {
@@ -500,7 +500,7 @@ a { color: inherit; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Top strip: clan + type. Clan promoted to a stronger scan target —
+/* Top strip: clan + type. Clan promoted to a stronger scan target -
    Eli's most common filter motion is "find the Crab one" or "the Lion
    one" so the clan stamp needs to be visible without reading the card. */
 .card__top {
@@ -614,7 +614,7 @@ a { color: inherit; }
   line-height: 1.45;
   /* Show the full first sentence. Cards within the same row stretch to
      the tallest sibling (grid default), so rows stay internally even and
-     no content is hidden — long summaries just produce taller rows. */
+     no content is hidden - long summaries just produce taller rows. */
 }
 
 /* ===== Horizontal card layout for narrow viewports ===== */
@@ -690,11 +690,11 @@ a { color: inherit; }
    ===================================================================== */
 
 /* =====================================================================
-   Detail page (v2) — kanji as exhibition art, no archive numbering
+   Detail page (v2) - kanji as exhibition art, no archive numbering
    ===================================================================== */
 
 .detail-nav {
-  padding: 1.6rem 0 0;
+  padding-top: 1.6rem;
 }
 
 .back-link {
@@ -784,7 +784,7 @@ a { color: inherit; }
   color: var(--ink);
 }
 
-/* Metadata band — 4 short fields in a flowing grid. The 5th field
+/* Metadata band - 4 short fields in a flowing grid. The 5th field
    ("Tied to") is split into its own .detail-meta-wide row below since
    its value can run a full paragraph and was towering over its
    siblings in the grid. */
@@ -802,7 +802,7 @@ a { color: inherit; }
   padding: 1.2rem 0 1.4rem;
   margin: 0 0 2.5rem;
   display: grid;
-  /* Label sits in its own column, value fills the rest — same visual
+  /* Label sits in its own column, value fills the rest - same visual
      vocabulary as the short fields above, just wider. */
   grid-template-columns: minmax(6rem, max-content) 1fr;
   gap: 1rem 1.5rem;
@@ -959,7 +959,7 @@ a { color: inherit; }
 }
 
 /* =====================================================================
-   App shell — shared across all sections
+   App shell - shared across all sections
    ===================================================================== */
 
 .app-nav {
@@ -1054,7 +1054,7 @@ a { color: inherit; }
   }
 }
 
-/* Landing page — single vertical column. Previously a 2-col grid where the
+/* Landing page - single vertical column. Previously a 2-col grid where the
    short hero on the left and the tall 3-card stack on the right produced
    massive dead space below the hero at narrow viewports (Constitution
    Principle I, layout balance rule). Now: hero stacked above a horizontal
@@ -1107,7 +1107,7 @@ a { color: inherit; }
   margin: 0;
 }
 
-/* Body italics in the landing lede stay ink-colored — the vermillion
+/* Body italics in the landing lede stay ink-colored - the vermillion
    treatment is reserved for the brand wordmark, so an italic word in
    paragraph copy doesn't get mistaken for an inline link. */
 .landing__lede em {
@@ -1272,7 +1272,7 @@ a { color: inherit; }
 }
 
 /* =========================================================================
-   Chargen — form layout inside the toolkit design system
+   Chargen - form layout inside the toolkit design system
    ========================================================================= */
 
 .chargen-shell {
@@ -1283,7 +1283,7 @@ a { color: inherit; }
   padding-top: 1.4rem;
   padding-bottom: 1.5rem;
   /* The toolkit container goes to 1560px, but chargen's body is just a
-     form + placeholder — there's no wide card grid to justify that width.
+     form + placeholder - there's no wide card grid to justify that width.
      Cap the shell near the post-generation #fields width (55rem) so the
      header watermark, form, buttons, and placeholder read as one centered
      column, and the layout doesn't reflow when a character lands. */
@@ -1302,7 +1302,7 @@ a { color: inherit; }
   align-items: center;
   gap: 2.5rem;
   position: relative;
-  /* Right padding gives the watermark glyph slack — some kanji (notably
+  /* Right padding gives the watermark glyph slack - some kanji (notably
      人) have a right-leg stroke that extends past the glyph's advance
      width, so without this the rightmost stroke gets clipped at the
      header's right edge. */
@@ -1356,7 +1356,7 @@ a { color: inherit; }
   border-bottom: 1px solid currentColor;
 }
 
-/* Cascading form controls — Type/Rank/Clan/Family/House/Lineage.
+/* Cascading form controls - Type/Rank/Clan/Family/House/Lineage.
    Always 3 columns (3×2 grid) so the form has a consistent shape across
    viewports. Width comes from the parent .chargen-shell (62rem), so the
    grid fills its column without a separate cap. */
@@ -1433,7 +1433,7 @@ a { color: inherit; }
   margin: 0 0 2rem;
 }
 
-/* /chargen/ministry — bulk Six Ministries roster generator. Uses the same
+/* /chargen/ministry - bulk Six Ministries roster generator. Uses the same
    shell + button palette as the single-character chargen page, plus a
    responsive card grid. */
 .roster-shell { max-width: 80rem; }
@@ -1577,7 +1577,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
 }
 .roster-card__status a { margin: 0 0.3rem; }
 
-/* Upload-success panel — replaces the working-state UI after a character
+/* Upload-success panel - replaces the working-state UI after a character
    is uploaded, until the user clicks Generate again. */
 .upload-result {
   margin: 1.5rem 0 1rem;
@@ -1619,7 +1619,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   margin: 0;
 }
 
-/* /chargen/cleanup — GM-only character list with per-row delete buttons. */
+/* /chargen/cleanup - GM-only character list with per-row delete buttons. */
 .cleanup-lede {
   font-family: var(--font-body);
   font-style: italic;
@@ -1714,10 +1714,10 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   box-shadow: 1px 1px 0 var(--vermillion-deep);
 }
 
-/* Disabled state has to read at a glance — not after a click. Visually:
+/* Disabled state has to read at a glance - not after a click. Visually:
    muted but still legible (ink-faded vs ink-ghost), no shadow, no hover
    lift, not-allowed cursor. Avoid layering opacity on top of an already-
-   faded color — that's what made the prior pass nearly invisible. */
+   faded color - that's what made the prior pass nearly invisible. */
 .chargen-button:disabled,
 .chargen-shell button:disabled {
   background: transparent;
@@ -1749,7 +1749,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   box-shadow: 1px 1px 0 var(--ink-soft);
 }
 
-/* The character bio fields container — jQuery dynamically appends inputs/textareas */
+/* The character bio fields container - jQuery dynamically appends inputs/textareas */
 #fields {
   display: flex;
   flex-direction: column;
@@ -1758,7 +1758,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   max-width: 55rem;
 }
 
-/* Pre-generation #fields is empty — don't reserve the 2rem trailing margin,
+/* Pre-generation #fields is empty - don't reserve the 2rem trailing margin,
    otherwise the bottom of the chargen page has a phantom gap before the
    shell's padding-bottom. */
 #fields:empty {
@@ -1792,7 +1792,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   line-height: 1.6;
 }
 
-/* Tagify (#tags) — match the other #fields inputs visually: paper-deep
+/* Tagify (#tags) - match the other #fields inputs visually: paper-deep
    background, hairline border, vermillion tag pills consistent with the
    L7R palette. Tagify exposes its theming via CSS custom properties on the
    <tags> custom element. */
@@ -1855,7 +1855,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   color: var(--ink);
 }
 
-/* Art-generation section — drop the inline style burden onto the rules below */
+/* Art-generation section - drop the inline style burden onto the rules below */
 #art_section {
   margin-top: 0 !important;
   padding-top: 1.5rem;
@@ -1898,7 +1898,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
 }
 
 /* =========================================================================
-   Names — index page
+   Names - index page
    ========================================================================= */
 
 .names-list {
@@ -2021,7 +2021,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   color: var(--ink-soft);
 }
 
-/* Active filter pill for the seal rail when used as link — matches the
+/* Active filter pill for the seal rail when used as link - matches the
    richer button treatment so filters on /names visually equal those on
    /relics (which use aria-pressed). */
 .seal--active {
@@ -2045,7 +2045,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
 }
 
 /* =========================================================================
-   `.fortunes__rail` — horizontal filter rail used on /relics + /names.
+   `.fortunes__rail` - horizontal filter rail used on /relics + /names.
    Previously had no CSS, so seals stacked vertically (browser default).
    ========================================================================= */
 
@@ -2082,7 +2082,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
 }
 
 /* =========================================================================
-   Auth pages — login, access-denied, error, misconfigured
+   Auth pages - login, access-denied, error, misconfigured
    ========================================================================= */
 
 .auth-card {
@@ -2240,7 +2240,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   text-decoration: underline;
 }
 
-/* GM badge — small role indicator next to the user name.
+/* GM badge - small role indicator next to the user name.
    Parent .app-nav__user uses align-items: baseline so name + sign-out
    sit on the same text baseline; the badge is a bordered box, so its
    own baseline is its bottom edge, which would visually sag below the
@@ -2351,7 +2351,7 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
 }
 
 /* =========================================================================
-   Filter rows — for sections with multiple independent filter axes (e.g.
+   Filter rows - for sections with multiple independent filter axes (e.g.
    /names, which has gender + caste).
    ========================================================================= */
 
@@ -2394,10 +2394,423 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
     min-width: 0;
   }
   /* Constrain the rail to its parent's width so its own overflow-x: auto
-     actually scrolls — without this, the rail's content sets the rail's
+     actually scrolls - without this, the rail's content sets the rail's
      natural width and bleeds out of the container at narrow viewports. */
   .filter-row .fortunes__rail {
     width: 100%;
     min-width: 0;
   }
+}
+
+/* =========================================================================
+   Places (/places) - list, cards, filters, detail
+   ========================================================================= */
+
+.places-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.places-random {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border: 1.5px solid var(--vermillion);
+  border-radius: 4px;
+  background: var(--vermillion-soft);
+  color: var(--vermillion-deep);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.places-random:hover {
+  background: var(--vermillion);
+  color: var(--paper);
+}
+
+.places-random [lang='ja'] {
+  font-family: var(--font-jp);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.places-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 3rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.place-card {
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px var(--shadow-ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.place-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-ink);
+}
+
+.place-card__link {
+  display: block;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.place-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.place-card__kanji {
+  font-family: var(--font-jp);
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: var(--vermillion-deep);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.place-card__title-group {
+  min-width: 0;
+  flex: 1;
+}
+
+.place-card__name {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 48, 'wght' 600;
+  font-size: 1.15rem;
+  margin: 0 0 0.15rem;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.place-card__meaning {
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--ink-faded);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.place-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.place-card__tag {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink-faded);
+  border: 1px solid var(--hairline);
+  white-space: nowrap;
+}
+
+.place-card__tag--scale {
+  background: var(--vermillion-soft);
+  color: var(--vermillion-deep);
+  border-color: rgba(184, 51, 42, 0.25);
+}
+
+.place-card__tag--suffix {
+  font-family: var(--font-jp), var(--font-body);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Detail page additions reuse .detail-hero, .detail-meta, etc. */
+
+.places-note {
+  margin: 1.25rem 0;
+  padding: 1rem 1.2rem;
+  background: var(--paper-deep);
+  border-left: 3px solid var(--vermillion);
+  border-radius: 0 4px 4px 0;
+}
+
+.places-note--entry {
+  border-left-color: var(--ink-faded);
+}
+
+.places-note__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 24, 'wght' 600;
+  font-size: 0.95rem;
+  margin: 0 0 0.35rem;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.places-note__body {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.places-copy {
+  margin: 1.5rem 0 3rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+}
+
+.places-copy__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.places-copy__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 24, 'wght' 600;
+  font-size: 0.95rem;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.places-copy__scale-toggle {
+  display: inline-flex;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.places-copy__scale-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink-faded);
+  border-right: 1px solid var(--hairline);
+}
+
+.places-copy__scale-btn:last-child {
+  border-right: none;
+}
+
+.places-copy__scale-btn--active {
+  background: var(--vermillion);
+  color: var(--paper);
+}
+
+.places-copy__scale-label {
+  font-size: 0.85rem;
+  color: var(--ink-faded);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.places-copy__text {
+  width: 100%;
+  resize: vertical;
+  padding: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  line-height: 1.55;
+}
+
+.places-copy__copy-btn {
+  margin-top: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.places-copy__copy-btn:hover {
+  background: var(--vermillion-deep);
+}
+
+.empty-state {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  text-align: center;
+  font-style: italic;
+  color: var(--ink-faded);
+  background: var(--paper-deep);
+  border-radius: 4px;
+}
+
+@media (max-width: 720px) {
+  .places-list { grid-template-columns: 1fr; }
+  .places-copy__head { flex-direction: column; align-items: flex-start; }
+  .places-copy__scale-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    width: 100%;
+  }
+  .places-copy__scale-toggle {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .places-copy__scale-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* The /places filter rails carry many more buttons than /names or /relics
+   (scale + commonality + region + suffix). Force them to wrap onto multiple
+   rows below ~700px so they stay inside the viewport, rather than scrolling
+   horizontally (which lets the rightmost buttons sit off-screen and trips
+   the Principle I dom-audit edge-touch-right check). */
+@media (max-width: 700px) {
+  .filter-row .fortunes__rail {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 0.4rem;
+  }
+}
+
+/* Places-specific masthead with right-aligned random action button. */
+.masthead--with-action {
+  position: relative;
+}
+.masthead__action {
+  position: absolute;
+  top: 1.25rem;
+  right: 1rem;
+  z-index: 2;
+}
+
+/* Tighter filter rails on the places page so cards appear above the fold. */
+.places-filter-row {
+  margin-bottom: 0;
+}
+
+/* Chip strip used on the place-detail page instead of a definition list. */
+.places-chips {
+  list-style: none;
+  padding: 0;
+  margin: 0.6rem 0 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.places-chip {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.22rem 0.55rem;
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink-faded);
+  border: 1px solid var(--hairline);
+}
+.places-chip--commonality {
+  background: var(--vermillion-soft);
+  color: var(--vermillion-deep);
+  border-color: rgba(184, 51, 42, 0.25);
+}
+.places-chip--suffix {
+  font-family: var(--font-jp), var(--font-body);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* "Describe as:" hint that labels the scale toggle on the detail page. */
+.places-copy__scale-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.places-copy__scale-hint {
+  font-size: 0.78rem;
+  color: var(--ink-faded);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Force two-column tablet grid for places cards (frontend-review caught a
+   single-column widow at 800px). The auto-fill minmax in the base rule was
+   producing 1 column at this width; lock to 2 explicitly. */
+@media (max-width: 900px) and (min-width: 721px) {
+  .places-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .masthead__action {
+    position: static;
+    margin: 0.6rem 0 0;
+  }
+}
+
+/* Detail-page back-link row hosts an "Another random pick" pill on the right
+   when the GM arrived via random pick. Flex layout keeps them on one line
+   on desktop and lets the pill wrap below on mobile if room is tight. */
+.detail-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+.places-random--detail {
+  /* Slightly smaller than the masthead's primary action button so it sits
+     more comfortably alongside the back-link breadcrumb. */
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+/* When the GM returns from a detail page via the back-link, the URL carries
+   a #card-<slug> fragment so the browser auto-scrolls to the card they were
+   just on. A brief soft halo confirms which card they were viewing without
+   being noisy. The animation runs once, on initial load only. */
+.place-card:target {
+  outline: 2px solid var(--vermillion);
+  outline-offset: 2px;
+  animation: place-card-flash 1.4s ease-out 1;
+}
+@keyframes place-card-flash {
+  0%   { box-shadow: 0 0 0 6px var(--vermillion-soft); }
+  100% { box-shadow: 0 1px 3px var(--shadow-ink); }
 }

@@ -13,8 +13,8 @@
     <h2>What we receive from Discord</h2>
     <p>When you sign in with Discord, we request the <code>identify</code> OAuth scope only. That gives us:</p>
     <ul>
-      <li>your Discord <em>user ID</em> — used solely to check the campaign whitelist;</li>
-      <li>your Discord <em>display name</em> — shown in the toolkit's navigation so you can see you're signed in.</li>
+      <li>your Discord <em>user ID</em> - used solely to check the campaign whitelist;</li>
+      <li>your Discord <em>display name</em> - shown in the toolkit's navigation so you can see you're signed in.</li>
     </ul>
     <p>We do <strong>not</strong> request or receive your email address, your servers, your friends, or your connections.</p>
 
@@ -26,8 +26,8 @@
     <h2>Cookies</h2>
     <p>We set two cookies on your browser:</p>
     <ul>
-      <li><code>l7r_session</code> — your signed sign-in token. 30-day lifetime. Removed when you sign out.</li>
-      <li><code>l7r_oauth_state</code> — a short-lived CSRF token used only during the login round-trip. 10-minute lifetime.</li>
+      <li><code>l7r_session</code> - your signed sign-in token. 30-day lifetime. Removed when you sign out.</li>
+      <li><code>l7r_oauth_state</code> - a short-lived CSRF token used only during the login round-trip. 10-minute lifetime.</li>
     </ul>
     <p>Both are marked HttpOnly, SameSite=Lax, and Secure (when served over HTTPS).</p>
 

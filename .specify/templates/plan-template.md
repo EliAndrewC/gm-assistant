@@ -74,7 +74,7 @@ approval before /speckit-tasks may run.
   canonical-source sync workflow described in `/workspace/CLAUDE.md`.
 
 - **VI. Verify Before Reporting Done**: The plan MUST list the verification
-  steps each task will run before being marked complete — pytest for Python
+  steps each task will run before being marked complete - pytest for Python
   logic, screenshot suite + DOM audit for UI, spot-check of delegated work.
 
 - **VII. De-Localized Generation by Default**: If the feature generates pool

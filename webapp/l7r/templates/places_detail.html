@@ -1,0 +1,89 @@
+{% extends "_layout.html" %}
+
+{% block title %}L7R places: {{ place.name }}{% endblock %}
+
+{% block content %}
+<nav class="container detail-nav">
+  <a class="back-link" href="/places{% if filter_qs %}?{{ filter_qs }}{% endif %}#card-{{ place.slug }}">← back to the pool</a>
+  {% if from_random %}
+    <a class="places-random places-random--detail"
+       href="/places?random=1{% if filter_qs %}&{{ filter_qs }}{% endif %}">
+      <span lang="ja" aria-hidden="true">籤</span>
+      <span>Another random pick</span>
+    </a>
+  {% endif %}
+</nav>
+
+<section class="container">
+  <header class="detail-hero">
+    <p class="detail-hero__supertitle">
+      {% for pt in place.place_types %}{{ pt }}{% if not loop.last %} &middot; {% endif %}{% endfor %}
+    </p>
+    <h1 class="detail-hero__kanji" lang="ja">{{ place.kanji }}</h1>
+    <p class="detail-hero__romaji">{{ place.name }}</p>
+    <h2 class="detail-hero__name">{{ place.meaning }}</h2>
+  </header>
+
+  <ul class="places-chips" aria-label="Tags">
+    <li class="places-chip places-chip--commonality">{{ place.commonality.replace('_', ' ') }}</li>
+    {% if place.suffix %}
+      <li class="places-chip places-chip--suffix">{{ place.suffix }}</li>
+    {% endif %}
+    {% for r in place.regional %}
+      <li class="places-chip places-chip--region">{{ r.replace('_', ' ') }}</li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if place.suffix_note %}
+  <section class="container">
+    <div class="places-note">
+      <h3 class="places-note__title">About the {{ place.suffix }} suffix</h3>
+      <p class="places-note__body">{{ place.suffix_note }}</p>
+    </div>
+  </section>
+{% endif %}
+
+{% if place.notes %}
+  <section class="container">
+    <div class="places-note places-note--entry">
+      <h3 class="places-note__title">Notes</h3>
+      <p class="places-note__body">{{ place.notes }}</p>
+    </div>
+  </section>
+{% endif %}
+
+<section class="container">
+  <div class="places-copy"
+       data-name="{{ place.name }}"
+       data-kanji="{{ place.kanji }}"
+       data-meaning="{{ place.meaning }}"
+       data-suffix-note="{{ place.suffix_note }}"
+       data-entry-notes="{{ place.notes }}">
+    <div class="places-copy__head">
+      <h3 class="places-copy__title">Copy-paste description</h3>
+      {% if place.place_types|length > 1 %}
+        <div class="places-copy__scale-wrap">
+          <span class="places-copy__scale-hint">Describe as:</span>
+          <div class="places-copy__scale-toggle" role="radiogroup" aria-label="Scale to describe">
+            {% for pt in place.place_types %}
+              <button type="button"
+                      class="places-copy__scale-btn{% if loop.first %} places-copy__scale-btn--active{% endif %}"
+                      data-scale="{{ pt }}"
+                      role="radio"
+                      aria-checked="{{ 'true' if loop.first else 'false' }}">{{ pt }}</button>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <span class="places-copy__scale-label">{{ place.place_types[0] }}</span>
+      {% endif %}
+    </div>
+    <textarea class="places-copy__text" readonly rows="4" aria-label="Description text"></textarea>
+    <button type="button" class="places-copy__copy-btn">
+      <span aria-hidden="true">📋</span>
+      <span>Copy to clipboard</span>
+    </button>
+  </div>
+</section>
+{% endblock %}

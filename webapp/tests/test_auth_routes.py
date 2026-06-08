@@ -1,4 +1,4 @@
-"""Tests for l7r.auth_routes — CherryPy auth controller + gating tool."""
+"""Tests for l7r.auth_routes - CherryPy auth controller + gating tool."""
 
 from __future__ import annotations
 
@@ -235,7 +235,7 @@ def test_auth_tool_anonymous_min_role_allows_logged_out(cp_request: Any) -> None
 
 def test_auth_tool_anonymous_min_role_attaches_user_when_logged_in(cp_request: Any) -> None:
     # Anonymous-allowed routes still attach current_user when a valid
-    # session cookie is present — the nav needs this to render the user pill.
+    # session cookie is present - the nav needs this to render the user pill.
     cfg = _make_config()
     install_auth_tool(cfg)
     cherrypy.request.path_info = '/'
@@ -289,7 +289,7 @@ def test_auth_tool_gm_min_role_redirects_anonymous_to_login(cp_request: Any) -> 
 
 
 # ---------------------------------------------------------------------------
-# AuthRoot — full flow
+# AuthRoot - full flow
 # ---------------------------------------------------------------------------
 
 

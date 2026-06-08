@@ -95,7 +95,7 @@ def main(dry_run: bool = False):
             elif len(clans) == 1:
                 clan_tag = clans[0]
             else:
-                # multiple clans — pick the first one mentioned in named_entity
+                # multiple clans - pick the first one mentioned in named_entity
                 # if any; else just first detected.
                 in_named = [c for c in clans if any(
                     re.search(r"\b" + re.escape(fam) + r"\b", named)

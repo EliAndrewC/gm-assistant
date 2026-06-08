@@ -1,4 +1,4 @@
-# Quickstart — L7R Toolkit Phase 1
+# Quickstart - L7R Toolkit Phase 1
 
 ## Run locally
 
@@ -37,11 +37,11 @@ python3 screenshot.py
 
 ## What you should see
 
-1. `/` — landing page with the L7R Toolkit name, a brief description, and nav to Characters / Relics / Names.
-2. `/relics` — 7 Fortune sections with vermillion-stamped kanji headers and 6 cards each (42 total).
-3. `/relics/<slug>` — detail view of one relic; prev/next within Fortune at the foot.
-4. `/chargen` — the existing chargen UI inside the new shell; generate-and-upload flows unchanged.
-5. `/names` — coming-soon placeholder card.
+1. `/` - landing page with the L7R Toolkit name, a brief description, and nav to Characters / Relics / Names.
+2. `/relics` - 7 Fortune sections with vermillion-stamped kanji headers and 6 cards each (42 total).
+3. `/relics/<slug>` - detail view of one relic; prev/next within Fortune at the foot.
+4. `/chargen` - the existing chargen UI inside the new shell; generate-and-upload flows unchanged.
+5. `/names` - coming-soon placeholder card.
 
 ## Stop the server
 

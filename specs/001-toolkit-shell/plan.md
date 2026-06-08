@@ -1,4 +1,4 @@
-# Implementation Plan: L7R Toolkit Phase 1 — App Shell + Chargen + Relics
+# Implementation Plan: L7R Toolkit Phase 1 - App Shell + Chargen + Relics
 
 **Branch**: `001-toolkit-shell` | **Date**: 2026-05-27 | **Spec**: [spec.md](spec.md)
 
@@ -14,7 +14,7 @@ Modernize the existing chargen CherryPy webapp in place into a multi-section L7R
 
 **Primary Dependencies**: CherryPy 18.x, Jinja2 3.x, ConfigObj (legacy chargen); Pillow, opencv-python-headless, google-genai (chargen art); requests, requests-oauthlib (chargen OP upload). New code adds: pyyaml (for parsing frontmatter; lighter than full markdown).
 
-**Storage**: Filesystem — pool markdown files at `/workspace/.claude/skills/relic/pool/<fortune>/*.md`; no database. Chargen's existing Obsidian Portal upload is the only persistent storage and is preserved.
+**Storage**: Filesystem - pool markdown files at `/workspace/.claude/skills/relic/pool/<fortune>/*.md`; no database. Chargen's existing Obsidian Portal upload is the only persistent storage and is preserved.
 
 **Testing**: pytest + pytest-cov for Python; Playwright (Python async API) with bundled Chromium for UI verification at four standard viewports.
 
@@ -83,19 +83,19 @@ specs/001-toolkit-shell/
 
 ```text
 /workspace/webapp/
-├── pyproject.toml              # Ruff + mypy + pytest config (Phase 0 — exists)
-├── Makefile                    # done / lint / format / types / test / cov / serve (Phase 0 — exists)
-├── requirements.in             # Source-of-truth deps (Phase 0 — exists)
+├── pyproject.toml              # Ruff + mypy + pytest config (Phase 0 - exists)
+├── Makefile                    # done / lint / format / types / test / cov / serve (Phase 0 - exists)
+├── requirements.in             # Source-of-truth deps (Phase 0 - exists)
 ├── requirements.txt            # Compiled deps
 ├── development-defaults.ini    # Existing chargen config
 ├── development-secrets.ini     # Gitignored secrets
-├── chargen/                    # Legacy chargen package — grace period
+├── chargen/                    # Legacy chargen package - grace period
 │   ├── __init__.py
 │   ├── website.py              # Updated: routes stay at root; class wired into l7r app
 │   ├── templates/
 │   │   └── index.html          # Updated to extend l7r/templates/_layout.html (or its own variant)
 │   └── ...                     # Other chargen modules unchanged
-├── l7r/                        # NEW package — full Principle X discipline
+├── l7r/                        # NEW package - full Principle X discipline
 │   ├── __init__.py
 │   ├── app.py                  # CherryPy Root for landing/relics/names + mounts chargen
 │   ├── pool.py                 # Relic dataclass + load_relics() reader
@@ -119,7 +119,7 @@ specs/001-toolkit-shell/
 │   ├── test_slugs.py
 │   ├── test_sections.py
 │   └── test_app.py
-└── orgchart.py                 # Legacy chargen utility — grace period
+└── orgchart.py                 # Legacy chargen utility - grace period
 ```
 
 **Structure Decision**: Single-project layout. New `l7r/` package alongside legacy `chargen/` package. Both packages imported into the same CherryPy process. The `l7r.app:Root` is the top-level mount; chargen routes stay at their existing paths via CherryPy's tree mounting.
@@ -128,14 +128,14 @@ specs/001-toolkit-shell/
 
 1. **Two packages, one process.** `l7r/` and `chargen/` coexist. They share a Jinja2 environment so chargen's template can extend the shared `_layout.html`.
 
-2. **Pool data loaded once at startup, cached in memory.** `load_relics()` parses all `pool/<fortune>/*.md` files into a `list[Relic]`. The CherryPy `Root` is constructed with the pool injected. Pool changes require a server restart — acceptable for localhost.
+2. **Pool data loaded once at startup, cached in memory.** `load_relics()` parses all `pool/<fortune>/*.md` files into a `list[Relic]`. The CherryPy `Root` is constructed with the pool injected. Pool changes require a server restart - acceptable for localhost.
 
 3. **Routing.**
    - `/` → `landing.html`
    - `/relics` → `relics_index.html`
    - `/relics/<slug>` → `relic_detail.html` (or 404)
    - `/names` → `names_placeholder.html`
-   - Chargen's existing routes (`/`, `/generate`, `/upload`, etc.) — **decision change**: chargen's `Root.index` is no longer at root; root is now the L7R landing page. Chargen moves to `/chargen`. Chargen template's AJAX URLs (which currently call `/generate`, `/upload`) MUST be updated to call `/chargen/generate`, `/chargen/upload`. This is one small JS change.
+   - Chargen's existing routes (`/`, `/generate`, `/upload`, etc.) - **decision change**: chargen's `Root.index` is no longer at root; root is now the L7R landing page. Chargen moves to `/chargen`. Chargen template's AJAX URLs (which currently call `/generate`, `/upload`) MUST be updated to call `/chargen/generate`, `/chargen/upload`. This is one small JS change.
 
 4. **Static assets**: CherryPy `tools.staticdir` for `/static` pointing at `l7r/static/`.
 
@@ -143,7 +143,7 @@ specs/001-toolkit-shell/
 
 6. **Template context**: a small helper `make_context(section_slug, **extra)` returns the standard context (nav_sections, current_section, extras). Templates extend `_layout.html`.
 
-7. **Section registry**: `sections.py` defines `SECTIONS` — a tuple of `Section` dataclasses with `slug`, `label`, `path`, `enabled`. Single source of truth for the nav.
+7. **Section registry**: `sections.py` defines `SECTIONS` - a tuple of `Section` dataclasses with `slug`, `label`, `path`, `enabled`. Single source of truth for the nav.
 
 ## Complexity Tracking
 

@@ -174,7 +174,7 @@ As another example, here are the signs which the Damasu know to look for which w
 
 ## Fortune Theology
 
-The GM source material on Fortune theology — the six doctrines of why the Fortunes do not give clearer direction, the relationship between man and Fortune, and the broader cosmological worldview — has its canonical home in [`/cosmology/fortunes.md`](../../../cosmology/fortunes.md). It is referenced rather than duplicated here per project convention (see `/workspace/CLAUDE.md` → "Single Canonical Home for Source Blocks").
+The GM source material on Fortune theology - the six doctrines of why the Fortunes do not give clearer direction, the relationship between man and Fortune, and the broader cosmological worldview - has its canonical home in [`/cosmology/fortunes.md`](../../../cosmology/fortunes.md). It is referenced rather than duplicated here per project convention (see `/workspace/CLAUDE.md` → "Single Canonical Home for Source Blocks").
 
 When generating Fortune-related content, consult `/cosmology/fortunes.md` for the theological framework.
 

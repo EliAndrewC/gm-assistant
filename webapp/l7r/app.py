@@ -1,12 +1,14 @@
 """CherryPy application root for the L7R Toolkit.
 
 Routes:
-- GET /           landing page
-- GET /relics     all 42 relics grouped by Fortune
-- GET /relics/<slug>  single relic detail
-- GET /names      placeholder for Phase 1.5
-- /chargen/*      mounted chargen Root (legacy)
-- /static/*       static assets
+- GET /                landing page
+- GET /relics          all 42 relics grouped by Fortune
+- GET /relics/<slug>   single relic detail
+- GET /names           pre-generated Rokugani names with filters
+- GET /places          pre-generated place names with filters
+- GET /places/<slug>   single place detail
+- /chargen/*           mounted chargen Root (legacy)
+- /static/*            static assets
 """
 
 from __future__ import annotations
@@ -24,6 +26,16 @@ from l7r.auth_routes import AuthRoot, current_user, install_auth_tool
 from l7r.fortunes import FORTUNES
 from l7r.jinja_env import build_environment
 from l7r.names import GeneratedName, load_names
+from l7r.places import (
+    COMMONALITIES,
+    PLACE_TYPES,
+    REGIONAL_CONTEXTS,
+    Place,
+    filter_places,
+    find_place_by_slug,
+    load_places,
+    random_place,
+)
 from l7r.pool import Relic, load_relics
 from l7r.sections import SECTIONS
 from l7r.slugs import find_relic_by_slug, neighbors_in_fortune, relics_for_fortune
@@ -57,8 +69,19 @@ def _resolve_default_names_dir() -> Path:
     return (_HERE.parent.parent / '.claude' / 'skills' / 'name').resolve()
 
 
+def _resolve_default_places_dir() -> Path:
+    """Resolve the places pool directory."""
+    import os
+
+    env_override = os.environ.get('L7R_PLACES_DIR')
+    if env_override:
+        return Path(env_override)
+    return (_HERE.parent.parent / '.claude' / 'skills' / 'place-names').resolve()
+
+
 _DEFAULT_POOL_DIR = _resolve_default_pool_dir()
 _DEFAULT_NAMES_DIR = _resolve_default_names_dir()
+_DEFAULT_PLACES_DIR = _resolve_default_places_dir()
 
 
 def _group_relics_by_fortune(relics: list[Relic]) -> dict[str, list[Relic]]:
@@ -66,10 +89,35 @@ def _group_relics_by_fortune(relics: list[Relic]) -> dict[str, list[Relic]]:
     return {slug: relics_for_fortune(relics, slug) for slug in FORTUNES}
 
 
+def _build_filter_qs(
+    *,
+    place_type: str | None,
+    commonality: str | None,
+    regional: str | None,
+    suffix: str | None,
+) -> str:
+    """Build the canonical query string for active /places filters.
+
+    Action params (random, via) are excluded - this is the filter context only,
+    used by templates to build links that preserve filter state across
+    navigation between the index and detail pages.
+    """
+    parts: list[str] = []
+    if place_type:
+        parts.append(f'place_type={place_type}')
+    if commonality:
+        parts.append(f'commonality={commonality}')
+    if regional:
+        parts.append(f'regional={regional}')
+    if suffix:
+        parts.append(f'suffix={suffix}')
+    return '&'.join(parts)
+
+
 def _clans_with_relics(relics: list[Relic]) -> list[str]:
     """Sorted unique clan slugs present in the relic pool.
 
-    Used to render the clan filter rail — only show buttons for clans that
+    Used to render the clan filter rail - only show buttons for clans that
     actually have at least one relic, so the rail adapts as the pool grows.
     """
     return sorted({r.clan for r in relics})
@@ -82,10 +130,12 @@ class Root:
         self,
         relics: list[Relic],
         names: list[GeneratedName] | None = None,
+        places: list[Place] | None = None,
         env: Environment | None = None,
     ) -> None:
         self._relics = relics
         self._names = names if names is not None else []
+        self._places = places if places is not None else []
         self._env = env if env is not None else build_environment()
         self._relics_by_fortune = _group_relics_by_fortune(relics)
         self._clans_with_relics = _clans_with_relics(relics)
@@ -126,17 +176,17 @@ class Root:
             next_relic=next_relic,
         )
 
-    # GET /terms — public (linked from Discord OAuth consent screen)
+    # GET /terms - public (linked from Discord OAuth consent screen)
     @cherrypy.expose
     def terms(self) -> bytes:
         return self._render('terms.html', current_section='')
 
-    # GET /privacy — public (linked from Discord OAuth consent screen)
+    # GET /privacy - public (linked from Discord OAuth consent screen)
     @cherrypy.expose
     def privacy(self) -> bytes:
         return self._render('privacy.html', current_section='')
 
-    # POST /archive/save — GM-only stub. The gm gate is applied via the
+    # POST /archive/save - GM-only stub. The gm gate is applied via the
     # mount config (tools.l7r_auth.min_role='gm' for the '/archive' prefix);
     # this handler can assume the caller is a GM.
     @cherrypy.expose
@@ -157,7 +207,7 @@ class Root:
             json.dumps(payload)[:500],
         )
         cherrypy.response.headers['Content-Type'] = 'application/json'
-        return json.dumps({'ok': True, 'note': 'archive stub — not yet persisted'}).encode('utf-8')
+        return json.dumps({'ok': True, 'note': 'archive stub - not yet persisted'}).encode('utf-8')
 
     # GET /names
     @cherrypy.expose
@@ -179,6 +229,90 @@ class Root:
             active_caste=caste if caste in {'peasant', 'samurai'} else 'all',
         )
 
+    # GET /places, GET /places/<slug>
+    @cherrypy.expose
+    def places(
+        self,
+        slug: str | None = None,
+        place_type: str | None = None,
+        commonality: str | None = None,
+        regional: str | None = None,
+        suffix: str | None = None,
+        random: str | None = None,
+        via: str | None = None,
+    ) -> bytes:
+        active_place_type = place_type if place_type in PLACE_TYPES else None
+        active_commonality = commonality if commonality in COMMONALITIES else None
+        active_regional = regional if regional in REGIONAL_CONTEXTS else None
+        active_suffix = suffix if suffix else None
+
+        # filter_qs is the canonical query string carrying the active filter
+        # axes only - no random/via action params. Both the index and detail
+        # templates use it to build links that preserve the filter context
+        # across navigation, so clicking a card and then "back to the pool"
+        # returns the GM to the same filtered view they came from.
+        filter_qs = _build_filter_qs(
+            place_type=active_place_type,
+            commonality=active_commonality,
+            regional=active_regional,
+            suffix=active_suffix,
+        )
+
+        if slug is not None:
+            place = find_place_by_slug(self._places, slug)
+            if place is None:
+                return self._render_404()
+            return self._render(
+                'places_detail.html',
+                current_section='places',
+                place=place,
+                filter_qs=filter_qs,
+                from_random=(via == 'random'),
+            )
+
+        filtered = filter_places(
+            self._places,
+            place_type=active_place_type,
+            commonality=active_commonality,
+            regional=active_regional,
+            suffix=active_suffix,
+        )
+
+        # When the random query param is set, pick one entry from the filter
+        # result and redirect to its detail page. The redirect carries
+        # via=random so the detail page can render an "Another random pick"
+        # button, plus filter_qs so further random picks stay within the same
+        # filtered subset. If the filter result is empty we silently fall
+        # through to render the empty index so the user can adjust filters.
+        if random is not None:
+            picked = random_place(filtered)
+            if picked is not None:
+                url = f'/places/{picked.slug}?via=random'
+                if filter_qs:
+                    url += '&' + filter_qs
+                raise cherrypy.HTTPRedirect(url)
+
+        suffixes_present = sorted(
+            {p.suffix for p in self._places if p.suffix is not None},
+        )
+
+        return self._render(
+            'places_index.html',
+            current_section='places',
+            places=filtered,
+            total_count=len(self._places),
+            filtered_count=len(filtered),
+            place_types=PLACE_TYPES,
+            commonalities=COMMONALITIES,
+            regional_contexts=REGIONAL_CONTEXTS,
+            suffixes=suffixes_present,
+            active_place_type=active_place_type,
+            active_commonality=active_commonality,
+            active_regional=active_regional,
+            active_suffix=active_suffix,
+            filter_qs=filter_qs,
+        )
+
     # ---- internals ----
 
     def _render(self, template_name: str, **context: Any) -> bytes:
@@ -194,11 +328,17 @@ class Root:
 def make_app(
     pool_dir: Path | None = None,
     names_dir: Path | None = None,
+    places_dir: Path | None = None,
 ) -> Root:
-    """Construct a wired Root with relics and names loaded from disk."""
+    """Construct a wired Root with relics, names, and places loaded from disk."""
     pool_src = pool_dir if pool_dir is not None else _DEFAULT_POOL_DIR
     names_src = names_dir if names_dir is not None else _DEFAULT_NAMES_DIR
-    return Root(relics=load_relics(pool_src), names=load_names(names_src))
+    places_src = places_dir if places_dir is not None else _DEFAULT_PLACES_DIR
+    return Root(
+        relics=load_relics(pool_src),
+        names=load_names(names_src),
+        places=load_places(places_src),
+    )
 
 
 def _error_page_handler(status: int, message: str, traceback: str, version: str) -> bytes:
@@ -268,7 +408,7 @@ def _apply_server_config() -> None:
     if in_container:
         cherrypy.config.update(
             {
-                'server.socket_host': '0.0.0.0',  # noqa: S104 — required in containers
+                'server.socket_host': '0.0.0.0',  # noqa: S104 - required in containers
                 'server.socket_port': int(os.environ.get('PORT', '8080')),
                 'engine.autoreload.on': False,
             }
@@ -293,7 +433,7 @@ def mount_application() -> None:
     auth_config = _auth_config()
     install_auth_tool(auth_config)
 
-    # Chargen is the character generator — logged-in players and GMs only.
+    # Chargen is the character generator - logged-in players and GMs only.
     # The /cleanup listing and the /delete action let GMs prune characters
     # from Obsidian Portal via the OAuth API; restrict them to gm role.
     chargen_config = {
@@ -319,7 +459,7 @@ def mount_application() -> None:
     cherrypy.tree.mount(
         auth_root,
         '/auth',
-        config={'/': {}},  # explicitly no auth tool — auth routes must be reachable
+        config={'/': {}},  # explicitly no auth tool - auth routes must be reachable
     )
     cherrypy.tree.mount(
         root,

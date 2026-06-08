@@ -1,4 +1,4 @@
-"""Toolkit section registry — the single source of truth for nav items.
+"""Toolkit section registry - the single source of truth for nav items.
 
 Adding a new top-level section (e.g., names becoming functional in Phase 1.5)
 is a one-line edit here plus the route + template work.
@@ -23,6 +23,7 @@ SECTIONS: tuple[Section, ...] = (
     Section(slug='chargen', label='Characters', path='/chargen', enabled=True),
     Section(slug='relics', label='Relics', path='/relics', enabled=True),
     Section(slug='names', label='Names', path='/names', enabled=True),
+    Section(slug='places', label='Places', path='/places', enabled=True),
 )
 
 

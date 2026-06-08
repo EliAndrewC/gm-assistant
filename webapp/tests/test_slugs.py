@@ -1,4 +1,4 @@
-"""Tests for l7r.slugs — relic lookup helpers."""
+"""Tests for l7r.slugs - relic lookup helpers."""
 
 from pathlib import Path
 

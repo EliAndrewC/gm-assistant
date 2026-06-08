@@ -78,7 +78,7 @@ Of course, this is not necessarily a bad thing, and although Yokijiro has sought
 
 h4. **Kasai Tsume** (Fire Claw)
 
-This is the ancestral sword of the Tsume.  While every daimyo in the Empire has an ancestral sword of their house, there are around 350 domains, and not all of them have an impressive enough sword for anyone outside of their domain to have any regard for it, making most ancestral swords "locally famous" rather than actually famous.
+This is the ancestral sword of the Tsume.  While every daimyo in the Empire has an ancestral sword of their house, there are currently 284 domains, and not all of them have an impressive enough sword for anyone outside of their domain to have any regard for it, making most ancestral swords "locally famous" rather than actually famous.
 
 Kasai Tsume is **actually** famous, with a well-earned reputation.  It was used by Doji Tsume to conquer the castle that eventually grew into Kyuden Tsume.  Doji Tsume later made a pilgrimage to Morning Glory Castle, where the visiting Master of Fire advised him to climb to the peak of Asako Mountain and pray for heaven's strength.
 
@@ -148,4 +148,4 @@ With this work complete, Maiko came to Toshi Ranbo last winter on a warrior's pi
 - See `/campaigns/damasu-domain.md` for Damasu lineage context (many swords are tied to lineages)
 - See `/setting/lineages.md` for how lineage politics shapes sword histories
 - See `/campaigns/temple-relics.md` for the Ohari sword vow and other temple-held weapons
-- See `/.specify/memory/constitution.md` **Principle XI (Japanese Authenticity)**: any kanji name for a sword MUST pass the kanji ↔ romaji ↔ meaning triangle. Sword names that surface in the webapp or are quoted to the GM must be real Japanese — meaningful kanji, plausible reading, English title that visibly maps back to the kanji.
+- See `/.specify/memory/constitution.md` **Principle XI (Japanese Authenticity)**: any kanji name for a sword MUST pass the kanji ↔ romaji ↔ meaning triangle. Sword names that surface in the webapp or are quoted to the GM must be real Japanese - meaningful kanji, plausible reading, English title that visibly maps back to the kanji.

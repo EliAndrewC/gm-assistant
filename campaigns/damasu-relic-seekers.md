@@ -89,7 +89,7 @@ Admittedly, Sachi is not only interested in relics, as she spends perhaps more t
 h3. **Atsumaru**
 <!-- END SOURCE -->
 
-Atsumaru's pre-invasion biography — his 22 years as county magistrate of Hikobayashi, his retirement to monastic life, and the Tsume seizure of the monastery — has its canonical home in [`/campaigns/first-toshi-ranbo.md`](first-toshi-ranbo.md). The text below picks up from there with the version of events relevant to the relic-seekers investigation (one minor difference: in this version, the Order of Bishamon intervenes on Atsumaru's behalf rather than the abbot personally).
+Atsumaru's pre-invasion biography - his 22 years as county magistrate of Hikobayashi, his retirement to monastic life, and the Tsume seizure of the monastery - has its canonical home in [`/campaigns/first-toshi-ranbo.md`](first-toshi-ranbo.md). The text below picks up from there with the version of events relevant to the relic-seekers investigation (one minor difference: in this version, the Order of Bishamon intervenes on Atsumaru's behalf rather than the abbot personally).
 
 <!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 When Atsumaru's status as a former Damasu bushi was discovered, the Tsume came close to having him executed or exiled, but the Order of Bishamon intervened on his behalf.  Not wanting to offend mighty Bishamon, the Tsume allowed Atsumaru to stay, after extracting his word that he would remain a peaceful and obedient subject of the new government.  Atsumaru explained that he wished to spend the remainder of his old age seeking spiritual enlightenment, though he said he would reluctantly pick up his daisho again and duel any Tsume bushi who took it upon himself to issue a challenge.

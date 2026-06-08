@@ -133,7 +133,7 @@ class TestPick:
         return tmp_path
 
     def _extract_names(self, output):
-        """Extract bold name from markdown output lines like **Name** — ..."""
+        """Extract bold name from markdown output lines like **Name** - ..."""
         import re
         return re.findall(r"\*\*(\w+)\*\*", output)
 
@@ -152,7 +152,7 @@ class TestPick:
         assert names[0] in ("Hanako", "Kimiko")
 
     def test_pick_peasant_only(self, pool_dir, capsys):
-        # Pick 2 male peasant names — should never get Noboru (peasant=False)
+        # Pick 2 male peasant names - should never get Noboru (peasant=False)
         pick("male", 2, peasant=True)
         output = capsys.readouterr().out
         names = self._extract_names(output)
@@ -161,7 +161,7 @@ class TestPick:
 
     def test_campaign_name_excluded(self, pool_dir, capsys, monkeypatch):
         """Names similar to campaign names should be filtered out."""
-        # Add "Takesh" to campaign names — edit distance 1 from Takeshi
+        # Add "Takesh" to campaign names - edit distance 1 from Takeshi
         campaign = pool_dir / "campaign-names.txt"
         campaign.write_text("Takesh\n")
         monkeypatch.setattr("pick_name.CAMPAIGN_NAMES", str(campaign))
