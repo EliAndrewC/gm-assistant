@@ -2801,11 +2801,13 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   font-size: 0.85rem;
 }
 
-/* When the GM returns from a detail page via the back-link, the URL carries
-   a #card-<slug> fragment so the browser auto-scrolls to the card they were
-   just on. A brief soft halo confirms which card they were viewing without
-   being noisy. The animation runs once, on initial load only. */
-.place-card:target {
+/* When the GM returns from a detail page via the back-link (or lands on a
+   random pick), the URL carries a #card-<slug> fragment so the browser
+   auto-scrolls to the picked card. A brief soft halo confirms which card
+   they were viewing without being noisy. Applies to both /places
+   (.place-card) and /names (.name-card). The animation runs once on load. */
+.place-card:target,
+.name-card:target {
   outline: 2px solid var(--vermillion);
   outline-offset: 2px;
   animation: place-card-flash 1.4s ease-out 1;

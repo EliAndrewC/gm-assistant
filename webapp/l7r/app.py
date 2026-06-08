@@ -25,7 +25,12 @@ from l7r.auth import AuthConfig, load_auth_config
 from l7r.auth_routes import AuthRoot, current_user, install_auth_tool
 from l7r.fortunes import FORTUNES
 from l7r.jinja_env import build_environment
-from l7r.names import GeneratedName, load_names
+from l7r.names import (
+    GeneratedName,
+    find_name_by_slug,
+    load_names,
+    random_name,
+)
 from l7r.places import (
     COMMONALITIES,
     PLACE_TYPES,
@@ -111,6 +116,23 @@ def _build_filter_qs(
         parts.append(f'regional={regional}')
     if suffix:
         parts.append(f'suffix={suffix}')
+    return '&'.join(parts)
+
+
+def _build_names_filter_qs(
+    *,
+    gender: str | None,
+    caste: str | None,
+) -> str:
+    """Build the canonical query string for active /names filters.
+
+    Same role as _build_filter_qs but for the names axes (gender, caste).
+    """
+    parts: list[str] = []
+    if gender:
+        parts.append(f'gender={gender}')
+    if caste:
+        parts.append(f'caste={caste}')
     return '&'.join(parts)
 
 
@@ -211,14 +233,49 @@ class Root:
 
     # GET /names
     @cherrypy.expose
-    def names(self, gender: str | None = None, caste: str | None = None) -> bytes:
+    def names(
+        self,
+        gender: str | None = None,
+        caste: str | None = None,
+        random: str | None = None,
+        picked: str | None = None,
+    ) -> bytes:
+        active_gender = gender if gender in {'male', 'female'} else None
+        active_caste = caste if caste in {'peasant', 'samurai'} else None
+
         filtered = self._names
-        if gender in {'male', 'female'}:
-            filtered = [n for n in filtered if n.gender == gender]
-        if caste == 'peasant':
+        if active_gender:
+            filtered = [n for n in filtered if n.gender == active_gender]
+        if active_caste == 'peasant':
             filtered = [n for n in filtered if n.peasant]
-        elif caste == 'samurai':
+        elif active_caste == 'samurai':
             filtered = [n for n in filtered if not n.peasant]
+
+        filter_qs = _build_names_filter_qs(gender=active_gender, caste=active_caste)
+
+        # Random pick: pick from the currently-filtered list and redirect to
+        # /names?picked=<slug>&<filters>#card-<slug> so the browser scrolls
+        # to the picked card and the page can morph the masthead button into
+        # "Another random pick" with the same filter context preserved.
+        if random is not None:
+            picked_name_for_random = random_name(filtered)
+            if picked_name_for_random is not None:
+                slug = picked_name_for_random.slug
+                url = f'/names?picked={slug}'
+                if filter_qs:
+                    url += '&' + filter_qs
+                url += f'#card-{slug}'
+                raise cherrypy.HTTPRedirect(url)
+
+        # The picked slug only counts if it resolves to a real name and
+        # survives the current filters. If the GM lands on /names?picked=foo
+        # but switches filters to one that excludes foo, we clear the pick
+        # rather than leaving a phantom "Another random pick" label.
+        picked_name = None
+        if picked is not None:
+            picked_name = find_name_by_slug(filtered, picked)
+        picked_slug = picked_name.slug if picked_name else None
+
         return self._render(
             'names_index.html',
             current_section='names',
@@ -227,6 +284,8 @@ class Root:
             filtered_count=len(filtered),
             active_gender=gender if gender in {'male', 'female'} else 'all',
             active_caste=caste if caste in {'peasant', 'samurai'} else 'all',
+            filter_qs=filter_qs,
+            picked_slug=picked_slug,
         )
 
     # GET /places, GET /places/<slug>

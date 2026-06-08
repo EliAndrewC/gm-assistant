@@ -11,12 +11,27 @@ from __future__ import annotations
 
 import json
 import logging
+import random as _random
 from dataclasses import dataclass
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 _REQUIRED_FIELDS = ('name', 'gender', 'format', 'explanation')
+
+
+def _slugify(text: str) -> str:
+    """Lowercase + alphanumeric-only slug, with non-word runs collapsed to hyphens."""
+    out: list[str] = []
+    last_was_dash = True
+    for ch in text.lower():
+        if ch.isalnum():
+            out.append(ch)
+            last_was_dash = False
+        elif not last_was_dash:
+            out.append('-')
+            last_was_dash = True
+    return ''.join(out).strip('-')
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +44,36 @@ class GeneratedName:
     explanation: str
     peasant: bool
     notes: str
+
+    @property
+    def slug(self) -> str:
+        """Stable URL slug for this entry, used by the picked-pick anchor.
+
+        Format: <gender>-<name>. Distinct genders disambiguate any name that
+        happens to appear in both pools. The format/peasant axes are not part
+        of the slug because the GM picks names by *meaning*, not by which
+        traditional naming format was used - showing the first hit is fine.
+        """
+        return f'{self.gender}-{_slugify(self.name)}'
+
+
+def find_name_by_slug(names: list[GeneratedName], slug: str) -> GeneratedName | None:
+    """Return the first GeneratedName whose slug matches, or None."""
+    for name in names:
+        if name.slug == slug:
+            return name
+    return None
+
+
+def random_name(
+    names: list[GeneratedName],
+    rng: _random.Random | None = None,
+) -> GeneratedName | None:
+    """Pick one name uniformly at random. Returns None if the list is empty."""
+    if not names:
+        return None
+    chooser = rng if rng is not None else _random
+    return chooser.choice(names)
 
 
 def load_names(pool_dir: Path) -> list[GeneratedName]:

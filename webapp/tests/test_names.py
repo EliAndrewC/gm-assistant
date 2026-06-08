@@ -99,3 +99,66 @@ def test_generated_name_is_immutable() -> None:
     )
     with pytest.raises((AttributeError, TypeError)):
         name.name = 'Y'  # type: ignore[misc]
+
+
+# ---------------------- slug, random, lookup ----------------------
+
+
+def test_slug_combines_gender_and_slugified_name() -> None:
+    n = GeneratedName(
+        name='Hiroshi', gender='male', format=1, explanation='', peasant=False, notes=''
+    )
+    assert n.slug == 'male-hiroshi'
+
+
+def test_slug_handles_punctuation_in_name() -> None:
+    n = GeneratedName(
+        name="O'Hana", gender='female', format=1, explanation='', peasant=False, notes=''
+    )
+    assert n.slug == 'female-o-hana'
+
+
+def test_find_name_by_slug_returns_match(sample_names_dir: Path) -> None:
+    import random as r
+
+    from l7r.names import find_name_by_slug
+
+    names = load_names(sample_names_dir)
+    found = find_name_by_slug(names, 'male-hiroshi')
+    assert found is not None
+    assert found.name == 'Hiroshi'
+    _ = r  # keep import alive for the next test in the same file
+
+
+def test_find_name_by_slug_returns_none_for_miss(sample_names_dir: Path) -> None:
+    from l7r.names import find_name_by_slug
+
+    names = load_names(sample_names_dir)
+    assert find_name_by_slug(names, 'nope') is None
+
+
+def test_random_name_picks_from_list(sample_names_dir: Path) -> None:
+    import random as r
+
+    from l7r.names import random_name
+
+    names = load_names(sample_names_dir)
+    picked = random_name(names, rng=r.Random(0))
+    assert picked is not None
+    assert picked in names
+
+
+def test_random_name_uses_module_random_when_none(sample_names_dir: Path) -> None:
+    # Verify the unseeded branch runs without crashing and returns a valid entry.
+    from l7r.names import random_name
+
+    names = load_names(sample_names_dir)
+    picked = random_name(names)
+    assert picked is not None
+    assert picked in names
+
+
+def test_random_name_returns_none_for_empty() -> None:
+    from l7r.names import random_name
+
+    assert random_name([]) is None

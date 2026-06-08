@@ -153,7 +153,11 @@ These conventions govern any edit to `/host-l7r-repo/setting/l7r.md` - both copy
 - `people` IS correct when specifically referring to samurai (e.g. *"most people in significant government posts"* is fine because those posts are held by samurai).
 - `people` is also fine in narrative/lore voice ("the people of Toshi Ranbo worry about a city-destroying fire"), in-character dialogue, vow text, festival descriptions, and folktale content - same exceptions as the "I/we" rule above.  The constraint applies primarily to **demographic, statistical, and analytical contexts**.
 
-**Punctuation and formatting**:
+**Use "domain" instead of "demesne"**:
+
+- L7R uses `domain` for the territory administered by a daimyo, governor, or magistrate at any tier - never `demesne` (the medieval European term).
+- Applies to all compound usages too: "Imperial domain" (not "Imperial demesne"), "personal domain" (not "personal demesne"), "Hantei lands" rather than "Hantei demesne", etc.
+- Silently fix `demesne` → `domain` in any text being edited.
 
 - Hyphens only. No em-dashes (U+2014) or en-dashes (U+2013) anywhere.
 - Two spaces after a period is house style. Preserve it.

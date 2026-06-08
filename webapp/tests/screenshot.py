@@ -39,6 +39,7 @@ PAGES = [
     ('relic-detail', '/relics/basin-of-the-lapping-wave', True),
     ('chargen', '/chargen/', True),
     ('names', '/names', True),
+    ('names-picked', '/names?picked=male-hiroshi', True),
     ('places', '/places', True),
     ('place-detail', '/places/owari?via=random', True),
     ('auth-login', '/auth/login', False),

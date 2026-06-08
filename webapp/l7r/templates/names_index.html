@@ -10,13 +10,20 @@
 {% set gender_only = ('?gender=' + active_gender) if active_gender in ['male', 'female'] else '' %}
 
 <section class="container">
-  <div class="masthead">
+  <div class="masthead masthead--with-action">
     <div class="masthead__copy">
       <p class="masthead__supertitle">A pool of pregenerated names</p>
       <h1 class="masthead__title">Names</h1>
       <p class="masthead__lede">
         {{ filtered_count }} of {{ total_count }} names - each with a meaning, ready for your next character.
       </p>
+    </div>
+    <div class="masthead__action">
+      {% set names_filter_qs = filter_qs if filter_qs is defined else '' %}
+      <a class="places-random" href="/names?random=1{% if names_filter_qs %}&{{ names_filter_qs }}{% endif %}">
+        <span lang="ja" aria-hidden="true">籤</span>
+        <span>{{ 'Another random pick' if picked_slug else 'Random pick' }}</span>
+      </a>
     </div>
     <span class="masthead__watermark" lang="ja" aria-hidden="true">名</span>
   </div>
@@ -80,7 +87,7 @@
   {% if names %}
     <ul class="names-list">
       {% for entry in names %}
-        <li class="name-card" data-gender="{{ entry.gender }}" data-peasant="{{ 'true' if entry.peasant else 'false' }}">
+        <li class="name-card" id="card-{{ entry.slug }}" data-gender="{{ entry.gender }}" data-peasant="{{ 'true' if entry.peasant else 'false' }}">
           <div class="name-card__head">
             <h2 class="name-card__name">{{ entry.name }}</h2>
             <span class="name-card__tags">

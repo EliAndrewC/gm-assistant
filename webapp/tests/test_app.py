@@ -209,6 +209,74 @@ def test_names_ignores_unknown_caste(root: Root) -> None:
     assert '5 of 5' in html
 
 
+def test_names_default_button_label_is_random_pick(root: Root) -> None:
+    html = root.names().decode('utf-8')
+    # No pick yet: pill reads "Random pick".
+    assert '>Random pick<' in html
+    assert 'Another random pick' not in html
+
+
+def test_names_with_valid_picked_morphs_button_label(root: Root) -> None:
+    html = root.names(picked='male-hiroshi').decode('utf-8')
+    # A confirmed pick switches the masthead pill label.
+    assert 'Another random pick' in html
+    # The picked card has an anchor target the browser can scroll to.
+    assert 'id="card-male-hiroshi"' in html
+
+
+def test_names_with_unknown_picked_falls_back_to_default_label(root: Root) -> None:
+    # A bogus picked slug shouldn't leave the button stuck on "Another...".
+    html = root.names(picked='nope-nope').decode('utf-8')
+    assert '>Random pick<' in html
+    assert 'Another random pick' not in html
+
+
+def test_names_random_redirects_with_picked_and_anchor(root: Root) -> None:
+    with pytest.raises(cherrypy.HTTPRedirect) as exc:
+        root.names(random='1')
+    url = exc.value.urls[0]
+    assert '/names?picked=' in url
+    # Fragment for browser auto-scroll to the picked card.
+    assert '#card-' in url
+
+
+def test_names_random_redirects_preserve_filter_qs(root: Root) -> None:
+    with pytest.raises(cherrypy.HTTPRedirect) as exc:
+        root.names(random='1', gender='female', caste='samurai')
+    url = exc.value.urls[0]
+    assert 'gender=female' in url
+    assert 'caste=samurai' in url
+
+
+def test_names_random_with_empty_filter_renders_index(root: Root) -> None:
+    # No female peasants in the fixture; random should be a no-op.
+    html = root.names(random='1', gender='female', caste='peasant').decode('utf-8')
+    assert 'No names match' in html
+
+
+def test_names_picked_outside_current_filter_is_cleared(root: Root) -> None:
+    # male-hiroshi is a samurai name; filtering to peasants should drop the pick.
+    html = root.names(picked='male-hiroshi', caste='peasant').decode('utf-8')
+    # Hiroshi isn't in the peasant filter, so the button reverts to "Random pick".
+    assert '>Random pick<' in html
+    assert 'Another random pick' not in html
+
+
+def test_names_card_has_anchor_id(root: Root) -> None:
+    html = root.names().decode('utf-8')
+    # Every name card carries an id so the picked-pick anchor works.
+    assert 'id="card-male-hiroshi"' in html
+    assert 'id="card-female-akiko"' in html
+
+
+def test_build_names_filter_qs_skips_empty_axes() -> None:
+    from l7r.app import _build_names_filter_qs
+
+    assert _build_names_filter_qs(gender='female', caste=None) == 'gender=female'
+    assert _build_names_filter_qs(gender=None, caste='peasant') == 'caste=peasant'
+    assert _build_names_filter_qs(gender=None, caste=None) == ''
+
+
 def test_group_relics_by_fortune_has_all_fortune_keys(sample_pool_dir: Path) -> None:
     relics = load_relics(sample_pool_dir)
     grouped = _group_relics_by_fortune(relics)
