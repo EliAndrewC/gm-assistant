@@ -311,6 +311,16 @@ The Tsume put considerable effort into moving this statue, which is almost 9 fee
 The Chime of Harmony:
 
 The above stolen relics are not particular to Bishamon - the Chime of Harmony is a much less significant relic, though in a sense is the most offensive to have been taken, because it is a relic specifically of Bishamon rather than of the Shinsei.
+
+This graceful instrument was previously suspended from a stand of fine polished ebony in the window of the temple's main prayer room. Its main body is a circular ring made from a blend of rare metals, with seven elongated, slender tines hanging from it. Every tine is engraved with symbols of protection and valor, each corresponding to a significant battle or sacrifice where Bishamon's presence was felt.
+
+When struck, the Chime produces a sound of crystalline clarity that seems to echo through the very walls of the temple and into the hearts of those present. However, the beauty of its sound is its subjectivity; each listener might hear a different tone. To one, the chime may resonate with a harmonious note, indicating alignment with the path of righteousness, while to another, the very same strike might sound dissonant, suggesting a need for inner reflection.
+
+The true magic of the Chime of Harmony is not just in its sound, but in its resonance. While the clarity or dissonance of the note is subjective to each listener, the duration of its echo seems universally consistent to all listeners. A harmonious chime, indicative of right action or intent, will resonate for what feels like an eternity, while a note suggesting misalignment is said to fade more rapidly, signaling the need for reconsideration or a change of heart. Temple monks therefore would strike the chime when considering different courses of action, to determine which one will keep them on the third path of the Shinsei.
+
+On tranquil nights, the Chime occasionally sounded of its own accord - a spontaneous offering of Bishamon's guidance... or perhaps in some cases an expression of greater cosmic harmony. Whether moved by the hand of a monk, a pilgrim, or an unseen force, the Chime of Harmony stood as a beacon of introspection and spiritual alignment within the temple.
+
+The pilfering of such a sacred artifact of Bishamon was thus even more egregious than moving the Tooth of the Shinsei and the Jade Shinsei, which at least are not actual artifacts of Bishamon specifically.
 <!-- END SOURCE -->
 
 ## Generation Preferences
