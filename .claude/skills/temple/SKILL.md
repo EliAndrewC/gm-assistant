@@ -23,7 +23,7 @@ Fukurokujin:    The fortune of wisdom and mercy
 Hotei:            The fortune of contentment
 Jurojin:        The fortune of longevity
 
-The Shinsei further recommended that each clan cultivate 2 major Fortunes to be their patrons, ensuring that every city within the clan have a temple to each of their 2 patron Fortunes.
+The Shinsei further recommended that each clan cultivates two major Fortunes to be their patrons, ensuring that every city within the clan has a temple to each of their two patron Fortunes.
 
 Clan:        Patron Fortunes
 Crab:        Bishamon + Ebisu
@@ -34,7 +34,7 @@ Phoenix:    Fukurokujin + Hotei
 Scorpion:    Benten + Jurojin
 Unicorn:    Fukurokujin + Jurojin
 
-In the late 3rd century, Hantei the Tenth formalized the system of the Six Ministries, and along with it codified the requirement that each of the Empire's cities contain a temple to each of its clan's patron fortunes.
+In the late 3rd century, Hantei the Tenth formalized the system of the Six Ministries, and along with it codified the requirement that each of the Empire's cities contains a temple to each of its clan's patron fortunes.
 
 The temples in Toshi Ranbo are unusually large and well-funded, due to Toshi Ranbo being the 3rd-largest city in the Empire, but the general structure is the same commonly-used way to organize temples which exists everywhere.
 
@@ -46,9 +46,9 @@ However, monks exist outside the Celestial Order, walking with one foot in the w
 
 With that being said, religious orders must necessarily have a hierarchy in order to run a large organization. Here is what that typically looks like:
 
--> An Initiate is one who has begun the process of joining a religious order but is not yet a full member. Many who become initiates decide against joining an order, and this never attain any higher standing within any temple.
+-> An Initiate is one who has begun the process of joining a religious order but is not yet a full member. Many who become initiates decide against joining an order, and thus never attain any higher standing within any temple.
 
--> A Novice is the lowest level of monk, who has joined an order but not yet sworn all of of their religious vows. A novice would typically have sworn only a vow of obedience to the order, but not any of the more significant vows which help them on their path to enlightenment and spiritual development.
+-> A Novice is the lowest level of monk, who has joined an order but not yet sworn all of their religious vows. A novice would typically have sworn only a vow of obedience to the order, but not any of the more significant vows which help them on their path to enlightenment and spiritual development.
 
 -> An Acolyte has progressed enough in their religious education within the order that they have sworn a vow of devotion to the Fortune worshiped by the order. It would be foolish to have novices swear such vows until such time as they can be trusted to keep to them, lest the broken vows bring disaster upon the order.
 
@@ -66,17 +66,17 @@ With that being said, religious orders must necessarily have a hierarchy in orde
 
 ORDERS AND TEMPLES:
 
-First, some terminology about what we mean by an Order vs a Temple.
+First, some terminology distinguishing an Order from a Temple.
 
 The Order of Bishamon refers to the network of temples, monasteries, and shrines devoted to Bishamon throughout Damasu lands. Each domain in Lion lands has its own Order of Bishamon with its own Grand Abbot.
 
-Sometimes people refer to "the Order of Bishamon" and mean the general system of all Bishamon-related religious institutions across the entire Empire, but most of the time anyone talking any particular Order is referring to the institution within that domain.
+Sometimes people refer to "the Order of Bishamon" and mean the general system of all Bishamon-related religious institutions across the entire Empire, but most of the time anyone talking about any particular Order is referring to the institution within that domain.
 
-Although the Order of Bishamon in Damasu lands will sometimes send gifts and offerings to the Order of Bishamon in the Akodo domain, this is more infrequent and informal than the rigid expectation of taxes which exist between the Damasu house government and the ruling Akodo house.
+Although the Order of Bishamon in Damasu lands will sometimes send gifts and offerings to the Order of Bishamon in the Akodo domain, this is more infrequent and informal than the rigid expectation of taxes which exists between the Damasu house government and the ruling Akodo house.
 
 The Temple of Bishamon in Toshi Ranbo is also formally referred to as the sovereign temple, while the smaller provincial temples in each of the provincial cities of the Damasu provinces are also formally referred to as subordinate temples.
 
-To summarize, anytime this explanation refers to the Order of Bishamon, we're talking about the broader network of all Bishamon temples/monasteries/shrines in Damasu lands, and when this page refers to the Temple of Bishamon, we're talking about the sovereign temple in the Damasu capital of Toshi Ranbo.
+To summarize, the Order of Bishamon refers to the broader network of all Bishamon temples/monasteries/shrines in Damasu lands, while the Temple of Bishamon refers to the sovereign temple in the Damasu capital of Toshi Ranbo.
 
 The Temple of Bishamon in Toshi Ranbo is one of the largest in the Empire, with over 200 monks living in the temple complex.  Because this is unusually large, it's not necessarily representative of most major temples in most major cities, but here are the rough numbers for the monks in each category in the temple:
 
@@ -93,11 +93,11 @@ Most of the monks in all of the above categories live in the Temple of Bishamon 
 
 Here's a rough outline of the Order of Bishamon's standing over the past decade and a half:
 
-Under the old Damasu regime, the Temple of Bishamon was the biggest, richest, most influential temple in Damasu lands, due to the centrality of the fortune Bishamon in Lion life. A majority of the governments temple funding went to the Order of Bishamon, which made up roughly 50% of the Temple's funding.
+Under the old Damasu regime, the Temple of Bishamon was the biggest, richest, most influential temple in Damasu lands, due to the centrality of the fortune Bishamon in Lion life. A majority of the government's temple funding went to the Order of Bishamon, which made up roughly 50% of the Temple's funding.
 
 12 years ago (in the year 1117), the Tsume house invaded Toshi Ranbo and conquered the city from the Damasu house. Although during this time they would not have dared defile the temple (due to not wanting to offend Bishamon), they did raid the temple treasury, and their subsequent donations made back to the temple came nowhere close to recouping those losses.
 
-Over the next several years of Tsume occupation, the city was in bad shape, with repeated riots over food shortages and other conditions. The Tsume government cut the city's finding of the Order of Bishamon down to almost nothing, funneling their money instead to the Order of Daikoku and to the Order of Benten which they quickly expanded using monies which otherwise would have been directed to the Order of Bishamon. They also seized all of the "temple estates", i.e. properties owned by the temple from which it collected rent.
+Over the next several years of Tsume occupation, the city was in bad shape, with repeated riots over food shortages and other conditions. The Tsume government cut the city's funding of the Order of Bishamon down to almost nothing, funneling their money instead to the Order of Daikoku and to the Order of Benten which they quickly expanded using monies which otherwise would have been directed to the Order of Bishamon. They also seized all of the "temple estates", i.e. properties owned by the temple from which it collected rent.
 
 The Temple of Bishamon thus not only had to contend with the emptying of its treasury, but also losing over half of its funding overnight, putting the temple's finances in dire straits. The disorder within the city, combined with the Tsume pillaging of the temple's normal roster of wealthy patrons made this problem worse. Additionally, the temple's budget shortfalls led to a massive scaling back of its charitable endeavors, which further strained the ability of the city's population to cope with the new regime. Many monks were dismissed from the Temple during this time, reassigned to the provinces or to other domains, and many of these formed the early cadre of the Baitenist movement.
 
@@ -131,7 +131,7 @@ Koku/year    Percent    Category
 ~1000        ~10%    Scholarly pursuits, acquisition and upkeep of books, ink, paper, and other religious artifacts and symbols
 ~1000        ~5%        Room and board for the temple monks
 
-Remember that these are all the approximate baseline numbers before everything changed when Toshi Ranbo fell to the Tsume invasion, and the Temple fell on extremely hard times for several years afterwards. This had rippling effects not immediately reflecting in high-level budget numbers.
+Remember that these are all the approximate baseline numbers before everything changed when Toshi Ranbo fell to the Tsume invasion, and the Temple fell on extremely hard times for several years afterwards. This had rippling effects not immediately reflected in high-level budget numbers.
 
 For example, there is no line item for clothing on this budget breakdown. Partially this is because a monk's initial set of robes would be provided out of the "room and board" budget, and replacements often come either out of the budget of the senior monk overseeing the job a monk is working, or donated by members of the community. For example, Adept monks who teach the city's initiates often take up collections from their students in order to buy new sandals or undergarments or robes.
 
@@ -148,17 +148,17 @@ Percent    Role                Work
 ~25%    Educators            The most common task is recruiting and instructing initiates who have not yet been chosen to join the temple, followed by the continuing education of the temple's novices, acolytes, and junior monks.
 ~20%    Custodians            This not only includes those who clean the temple but also the skilled work responsible for doing maintenance and repair work. In some cases this will require bringing in and overseeing outside contractors for extremely specialized labor.
 ~20%    Cooks                The kitchen staff needs to be large to serve multiple meals per day to hundreds of monks, and this figure also includes those who work in community kitchens which exist as part of the Temple of Bishamon's charitable outreach.
-~15%    Scribes/Scholars    The temple librarians copy religious texts, maintain the temple's library and archives, and engage in scholarly pursuits related to the temple's religious teachings and history. Making new copies of the Tao (and other religious texts) in particular is such an incredibly time consuming and important work which many monks devote their entire lives to it.
+~15%    Scribes/Scholars    The temple librarians copy religious texts, maintain the temple's library and archives, and engage in scholarly pursuits related to the temple's religious teachings and history. Making new copies of the Tao (and other religious texts) in particular is such incredibly time consuming and important work that many monks devote their entire lives to it.
 ~10%    Administrators        Responsible for managing the temple's finances, resources, and personnel, the stewards and senior monks in these positions also liaise with the city government (particularly the Damasu Ministry of Rites), handle correspondence with other temples, and manage temple visitors and pilgrims.
 ~10%    Philanthropy        Those who oversee and distribute the temple's charitable donations, which include not only direct donations to the poor but also things like soup kitchens and the like.
 ~10%    Security            Responsible for maintaining safety and order within the temple grounds and protecting the temple's valuable religious artifacts and sacred spaces. Counterintuitively, the Temple of Bishamon actually has fewer monks in this role than other temples, because martial training is so much more common as part of the Order of Bishamon's religious education. Thus, while some other temples require a larger staff specifically devoted to security, the Temple of Bishamon has a smaller percentage of its members specifically designated in this role.
-~10%    Pilgrims            This includes not only the holy journeys we think of when talking about pilgrimages, but also coordinating with the subordinate temples in the provinces and managing the offerings and donations which flow in both directions.
+~10%    Pilgrims            This includes not only the holy journeys typically thought of when talking about pilgrimages, but also coordinating with the subordinate temples in the provinces and managing the offerings and donations which flow in both directions.
 
 There are other miscellaneous specialized roles within the temple not listed here, but the above should give a decent idea of the overall categories. Remember that the above percentages add up to much more than 100% due to the fact that many monks perform multiple roles at different times.
 
 Another way to think about temple life is to think about what a typical day looks like for monks in the Temple of Bishamon.
 
-Considering the various roles and jobs which exist in the temple, this varies considerably from monk to monk, but I'll list a few examples to give a general sense of the rhythm and flow of temple life.
+Considering the various roles and jobs which exist in the temple, this varies considerably from monk to monk, but a few examples give a general sense of the rhythm and flow of temple life.
 
 First let's consider the daily routine of Kenta, who reports to the Custodian of the Temple Grounds.
 
@@ -173,7 +173,7 @@ Hour of the Monkey (4-6pm)    Cleaning duties    As the day cools down, Kenta ei
 Hour of the Rooster (6-8pm)    Evening prayers and dinner    Just as the day begins with prayers, so does it end. Kenta looks forward to the temple dinners, which are larger and fuller meals than the simple breakfasts and lunches. Dinner may involve soup, noodles, pickles, bean curd, seitan, and on some nights the kitchen serves fried tempura or a piece of fresh fruit as a dessert.
 Hour of the Dog (8-10pm)    Bathing and personal time    While some of the other young monks venture out into the city for entertainment during this time, Kenta usually spends a few minutes relaxing his thoughts and then turning in about 60 minutes before the Hour of the Boar, when most of the temple turns in for the night. Once his literacy improves enough for it to be practical, he plans to spend this time reading the Tao and whatever other texts his sensei recommends to him.
 
-As another example, consider the daily routine of Mizuki, who serves as the Scribe of the Eternal Tao. She is a senior monk who oversees the all copying of the Tao performed by all scribes in the temple library.
+As another example, consider the daily routine of Mizuki, who serves as the Scribe of the Eternal Tao. She is a senior monk who oversees all the copying of the Tao performed by all scribes in the temple library.
 
 Hour    Task    Description
 Hour of the Tiger (4-6am)    Waking and morning prayers    Rather than answering the call to morning prayers rung by the Herald of the Bell, Mizuki instead calls together her scribes to lead them in directed prayer and meditation based on what parts of the Tao will be copied on this day. She invites them to consider the koans and riddles and wisdom of the Shinsei they are about to transcribe, and has each of her scribes select a single word related to their day's work which shall be the focus of their centering prayer.
@@ -182,7 +182,7 @@ Hour of the Dragon (8-10am)    Breakfast and review of work    After a simple co
 Hour of the Serpent (10am-noon)    Management and oversight    Mizuki typically splits this time between providing guidance and advice as needed to her scribes and performing transcription herself. These two tasks are related, as demonstrating how such things are properly done serves as a useful form of instruction for the junior monks.
 Hour of the Horse (noon-2pm)    Lunch and administrative duties    Mizuki is typically too busy to join her workers for midday prayers and meditation, and often works through lunch without noticing her own hunger. This is the time when she continues the day's special projects now that there is sufficient light to write correspondence, order new materials, and update her team's financial records. When the temple was suffering financially under the Tsume and in the aftermath of the Damasu retaking the city, Mizuki's team couldn't afford the cost of the candles and lanterns necessary to do this work in the early morning or late evening, and now that the temple's treasury has been restored to its former glory she is slowly re-accustoming herself to the new normal.
 
-Mizuki's scribes are not allowed the normal midday break. Unlike cooks and custodians and lecturers, Mizuki's team needs sunlight to for their work, and so they work with few breaks throughout the daylight hours, taking their personal time in the morning and evening.
+Mizuki's scribes are not allowed the normal midday break. Unlike cooks and custodians and lecturers, Mizuki's team needs sunlight for their work, and so they work with few breaks throughout the daylight hours, taking their personal time in the morning and evening.
 Hour of the Goat (2-4pm)    Personal study    During this time, Mizuki continues to oversee her team, but shifts her own work from transcription to study, diving deeper into the Tao to gain the understanding which only comes with intense and continued study, contemplation, meditation, and prayer. During this time, she especially contemplates any questions she has recently been posed, either by members of her team or students she instructs, or by those she has met with from outside the temple.
 Hour of the Monkey (4-6pm)    Oversight and teaching    In addition to the normal oversight and review of the work being performed by her scribes, Mizuki spends some of this time lecturing and leading members of the temple in prayer and meditation, usually based on some of the teachings having been transcribed earlier in the day. Her students consist of a combination of members of the temple library and monks from other parts of the Temple of Bishamon. Occasionally a visiting samurai or pilgrim to the temple will join her lectures, which some have referred to as "one of the temple's hidden gems".
 Hour of the Rooster (6-8pm)    Dinner and personal time    With the sun's light fading, Mizuki ends her day's work by enjoying the temple dinner, which is especially welcome on days when she found herself working through lunch. Sometimes she eats outside the temple with patrons and benefactors, often samurai who have commissioned copies of the Tao, to whom she often repeats snippets from her lectures.
