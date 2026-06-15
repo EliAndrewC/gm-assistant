@@ -9,7 +9,7 @@ These hooks take place after the PCs have gained enough seniority that they begi
 
 2) While staying in a flophouse, some other caravan guards witness some gamblers winning a lot of money from some farmers.  The guards believe the gamblers might have been cheating, though they cannot prove it, and they certainly heard them lying about the odds to the uneducated.  The guards decide to attack the gamblers and return their illegal gains to the farmers, along with a warning not to gamble.  The PCs must decide whether to help, try to stop this from happening, or just not get involved.
 
-3) While crossing a bridge, the bridge collapses, sending several wagons full of tea into the river below.  The caravan master offers a 1 koku reward for every crate of tea saved.  This leads some who are bad at swimming to try to jump into the river, and the PCs might have to decide whether to go after tea crates of their fellow caravan guards.
+3) While crossing a bridge, the bridge collapses, sending several wagons full of tea into the river below.  The caravan master offers a 1 koku reward for every crate of tea saved.  This leads some who are bad at swimming to try to jump into the river, and the PCs might have to decide whether to go after tea crates or their fellow caravan guards.
 
 As their three wagons are separated from the rest of the caravan, the PCs are confronted by a bandit gang, who apparently sabotaged the bridge.  They demand one of the wagons as tribute, and the PCs have to decide whether to fight or capitulate.
 

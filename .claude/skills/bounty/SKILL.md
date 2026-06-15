@@ -236,11 +236,27 @@ h3. The Fox clan's economy
 
 Although the Fox have less than half the farmland of an average domain, they are quite wealthy from the bounty of their vast forest.  Their priests meticulously track and measure the holy places within the forest which must remain forever free from logging.  That still leaves enough trees to supply the lumber for the entire region, accounting for easily ten thousand koku of income per year just from what can be transported by cart, with significantly more being shipped downriver.
 
+The forest's bounty makes the Fox a significantly richer clan than they would otherwise be, and that wealth is regulated through the Ministries of Rites and Revenue.  The Ministry of Revenue oversees lumber and ordinary charcoal; the Ministry of Rites oversees incense and "shrine-grade" white charcoal.  Many other forest resources are split between the two ministries along similar lines.  Each is a significant source of income on its own; there is no single dominant source of Fox wealth, but the many smaller sources together add up to a great deal.
+
 Charcoal is even more in demand, and is significantly easier to transport.  Fox clan charcoal burners are more numerous than farmers, easily identified by their soot-stained clothes.  White charcoal made from sacred oak is a specialty, highly sought-after for its odorless and practically smokeless flame.  The specialists who make such "shrine-grade" charcoal can be identified by their reddened "kiln eyes" and white-dusted clothing.
 
 Incense is even more profitable, with less overall demand but significantly easier transport costs.  The oleoresins and pinewood of the forest are perfect for making "Kitsune-Koh" (fox scent) incense, highly sought after throughout the Empire.
 
+As one example of the many smaller sources of Fox wealth: Inari is the Fortune of rice and of foxes, and Fox rice is widely considered the most spiritually proper grain for offerings at Inari shrines anywhere in Rokugan.  The Kitsune family quietly tends a small "Inari paddy" reserve each year whose harvest is purchased in bulk by Inari shrines from Crab to Phoenix lands, at well above market rate.  The volume is too small to move the needle on Fox finances overall, but it is one among many such small endeavors that together net the clan several thousand extra koku per year.
+
+While the Ministries regulate the use of the forest's resources, the Seven Temples oversee the actual extraction of most of them: incense production, mushroom gathering, lumber milling, medicinal herbs and berries, charcoal burning, and so forth.  Hunting is the one exception - hunting rights and the prosecution of poachers are handled at the provincial level.  The Ministries of Rites and Revenue distribute usufruct rights over sections of the forest to the temples of the Seven Fortunes of Good Luck, which are organized in a nontraditional fashion.  (The Fox would say their temples are organized in a fashion so deeply traditional that the tradition predates the more common temple organization structures.)
+
 Fox lands have a higher population than their farmland could support because of the bounty of the forest.  Wild game, shelf mushrooms, and fruits and nuts support not only those who live on the forest's edge but the many hermits and other forest-dwellers who make their lives there.  That said, such foragers cannot afford to eat the best mushrooms, especially matsutake "pine mushrooms" which grow wild in symbiosis with the roots of pine trees.  Even more common wood-ear and shitake mushrooms are widely understood to have superior spiritual essence and purity when wild-harvested rather than cultivated.
+
+h3. Fox Temples
+
+There are no Grand Abbots in Fox lands; each temple has a "High Monk" instead, an archaic term that has not been used in over a thousand years in most other parts of the Empire.  Where other temples have Stewards, Fox temples have "Shika" (Knowers of Guests); and where other temples have a Council of Stewards, Fox temples have the "Three Bonds" who actually run the temple and its affairs:
+
+* The **High Monk**, equivalent to a Grand Abbot.
+* The **Temple Master**, the chief administrator of the temple's budget and operations.
+* The **Chief of Discipline**, who manages the monks themselves.
+
+These three are the only monks in a Fox temple required to be celibate.  No other position carries a vow of celibacy, and as a result the temple's revenue sources are effectively family businesses passed down along bloodlines within the temple.  Within Fox lands, the question is therefore not "which merchant families do X" but "which temples do X."  This includes moneylending, which is handled by the temples of Fukurokujin and Ebisu - except for loans specifically to fund weddings and dowries, which the Temple of Benten offers.
 
 
 

@@ -15,7 +15,7 @@ Each province is divided into counties, administered by a County Magistrate, who
 
 Each county is divided into Village Districts, overseen by a peasant Village Headsman who lives in the main village.
 
-Each village district usually has a number of small outlying farming communities known as hamlets.  (Hamlet here just refers to a small farming community.  The word in Europe originally referred to a farming community organized around orchards rather than farms, but we don't use it that way, and here it simply refers to a small cluster of farms which belongs to a village district and is overseen by a village headsman who is lives in the main village and not in the hamlet.)
+Each village district usually has a number of small outlying farming communities known as hamlets.  (Hamlet here just refers to a small farming community.  The word in Europe originally referred to a farming community organized around orchards rather than farms, but in Rokugan it simply refers to a small cluster of farms which belongs to a village district and is overseen by a village headsman who lives in the main village and not in the hamlet.)
 
 <!-- END SOURCE -->
 

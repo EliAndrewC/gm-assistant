@@ -16,6 +16,6 @@ Foundational worldbuilding for Rokugan: demographics, government, economics, and
 - [demographics.md](demographics.md) - XP distribution, detailed population breakdowns for hamlets/villages/towns/provincial cities/capitals by caste and occupation
 - [large-cities.md](large-cities.md) - Zipf's law city sizes from Otosan Uchi (1M) down to Shinden Togashi (50K). Kyuden/Shiro/Shinden designations.
 - [village-headsmen.md](village-headsmen.md) - Role, selection, compensation, loyalty dynamics, land management, dispute resolution. Key reference for `/village` skill.
-- [government.md](government.md) - Six Ministries (Rites, Revenue, Retainers, War, Works, Justice) at domain/clan/imperial levels. Chancellary system, tax collection, budgeting.
-- [lineages.md](lineages.md) - Lineage politics, chancellary representation, cosmopolitan vs provincial lineages. Ryusei domain as worked example.
+- [government.md](government.md) - Six Ministries (Rites, Revenue, Retainers, War, Works, Justice) at domain/clan/imperial levels. Chancellery system, tax collection, budgeting.
+- [lineages.md](lineages.md) - Lineage politics, chancellery representation, cosmopolitan vs provincial lineages. Ryusei domain as worked example.
 - [rank-accordances.md](rank-accordances.md) - 15-rank system, gift-giving protocols, rank-based interaction rules, Doctrine of Three Steps

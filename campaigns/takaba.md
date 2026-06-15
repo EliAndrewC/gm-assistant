@@ -22,7 +22,7 @@ patterns in a single coven such that with successful investigation
 rolls he can discern the next city in the chain.  He won't know where
 in the city to look, but when combined with his first ability, it
 should be significantly easier to find the "needle in the haystack"
-and the continue the process.
+and continue the process.
 
 3) Witch Hunters already know the following things about Bloodspeaker covens:
 
@@ -53,7 +53,7 @@ took them up on this that most bloodspeaker covens that exist today
 can be traced back to the peasants who accepted this offer.
 
 Interestingly, Isamu had no idea that any of this was true, but in the
-Classrooms of the Great Masters this was presented as being existing
+Classrooms of the Great Masters this was presented as existing
 knowledge already well understood by the Witch Hunters, which implies
 that for whatever reason this is a part of history which is kept
 secret even from most Witch Hunters.  Isamu has no idea why this would
@@ -71,7 +71,7 @@ Great Teacher who gave this lecture promised that this was somehow the
 key to truly understanding bloodspeakers (though this claim seems hard
 to believe).
 
-However, as we've discussed, there are advantages as well as drawbacks to seeing the world more clearly.  Isamu lost "three aspects" of the underworld skill, though each aspect
+However, as established earlier, there are advantages as well as drawbacks to seeing the world more clearly.  Isamu lost "three aspects" of the underworld skill, though each aspect
 of perception he lost is cross-cutting and relates to other skills as
 well.  It will take him quite a lot of time to figure all of this out,
 but here's what he'll come to understand about what he lost within the
@@ -115,16 +115,16 @@ capable of explaining himself on things related to underworld, this is
 further evidence that he hasn't "lost" anything but is instead now
 operating on a higher level than everyone else.  The reason why he
 cannot engage in persuasive argumentation might be that he now
-possesses an understand deeper than language can express, and he
+possesses an understanding deeper than language can express, and he
 therefore cannot use this understanding to persuade anyone who lacks
 his insight into the true nature of the world.
 
 3) PERCEPTION
 
 Isamu can no longer perceive physical contraband.  In other words, if
-a physical object is illegal, he won't be able to perceive it's
+a physical object is illegal, he won't be able to perceive its
 existence.  He could be standing next to a giant pile of opium or
-watching people gamble over a dice game or look directly at an
+watching people gamble over a dice game or looking directly at an
 obsidian sword and have no idea that anything illegal was in his
 presence.
 
@@ -140,9 +140,9 @@ first few years of living with these newfound perks and quirks.
 
 
 
-Now let's synthesize some concepts we've discussed with some more examples I find interesting.  One thing I strive for in my worldbuilding is consistency.  I'd like to be able to introduce new concepts without contradicting existing principles.  Or alternatively, if something is introduced which appears to be a contradiction, then I want that to appear to be a big deal, since a new thing of that nature should cause characters to be shocked and unsure what to believe or think.  I sometimes discard ideas which don't seem to be consistent with the setting.
+The following synthesizes some of the concepts discussed above with some more examples.  One thing this worldbuilding strives for is consistency: new concepts shouldn't contradict existing principles.  Or alternatively, if something is introduced which appears to be a contradiction, that contradiction should feel like a big deal - a new thing of that nature should cause characters to be shocked and unsure what to believe or think.  Ideas which don't seem to be consistent with the setting are sometimes discarded.
 
-On the other hand, cool and "wild" ideas can still work if they are integrated well into the underlying concepts.  Here's another plot hook that I use in a past campaign which I was happy with, so hopefully you can help me evaluate whether it fits well into the setting.  This was the follow up to the backstory of Kitsuki Fu, an NPC in a previous campaign:
+On the other hand, cool and "wild" ideas can still work if they are integrated well into the underlying concepts.  Here's another plot hook that I used in a past campaign which I was happy with, so hopefully you can help me evaluate whether it fits well into the setting.  This was the follow up to the backstory of Kitsuki Fu, an NPC in a previous campaign:
 
 Eight centuries ago, there was a tsukai who lived in the forest east of the Shrine of Perfect Contentment, in what is now the Takaba falconry preserve. Masayoshi (the monk who is the Bearer of the Golden Seal of Amaterasu) suspects that Takaba was this tsukai's name, because this was the name of the forest before it became a preserve for falcons, and the origin of that name has been lost while most other names from the region can be found in the Daidoji histories.
 
@@ -154,7 +154,7 @@ When Takaba returned to his forest cottage, he found that his silver chalice was
 
 Takaba set about studying the ways of wards and traps, experimenting with different principles and practices to fortify the protections he had set. Still, every time he left to recover a stolen object, he would find another possession missing.
 
-This continued for years, as Takaba drove himself to master the art of warding. One day he returned and found that one of his magical snares had succeeded in catching the fox which had been burgling his home. However, even after years of offenses, Takaba could not hate the fox, who had only been acting according to her playful and mischievous nature. She offered him "a fox's promise" that that if he let her go, she would never trouble him again.
+This continued for years, as Takaba drove himself to master the art of warding. One day he returned and found that one of his magical snares had succeeded in catching the fox which had been burgling his home. However, even after years of offenses, Takaba could not hate the fox, who had only been acting according to her playful and mischievous nature. She offered him "a fox's promise" that if he let her go, she would never trouble him again.
 
 Takaba knew what a fox's promise was worth, but he still set her free, unable to bring himself to harm her.
 
@@ -185,6 +185,14 @@ It is unknown how she was trapped by the Emperor's agents. A prison for the Name
 Several years ago, Moto Tsume led an attack on the Forgotten Tomb, attempting to enter it through its entrance in Yomi, the realm of the honored dead. He failed, retreating with his forces in tatters, the honored ancestors who guard the tomb emerging victorious. However, his spiritual assault sent dark energies of death into the Forgotten Tomb, rocking its foundations, and weakening the prison for the Nameless One enough for her to escape.
 
 She first ate a legionnaire at Beiden Pass, who was tracked by Kitsuki Fu. She ate a few others as she regained her strength, eventually making her way home to the Takaba falconry preserve, where she ate the County Magistrate of Kanto in the province of Akishi. Daidoji Maku subsequently replaced him, with no one having any memory of his predecessor.
+
+As a servant of Yozo, the fortune of legal justice, Masayoshi has tracked her this far, learning much of the story of how she came to exist from her descendants among the foxes and bloodspeakers of the Daidoji domain.  He has struck a bargain with them to work together for the common purpose of finally putting their ancestor to rest.  The bloodspeakers provided a powerful artifact of great name to act as bait, while the foxes set to work searching for the telltale signs of a life that had fallen out of the world, to locate someone close to someone she had replaced.
+
+The PCs were the only people found who perfectly fit the criteria of people most suitable for battling the Nameless One.  They were lightly connected to the previous county magistrate of Kanto, having served him for only a few months before he was eaten.  They later became close friends with Maku.  That combination of being connected with weak-but-still-present ties to someone eaten and strong ties to someone who "replaced" that person was ideal for warding them against being eaten themselves, though the danger would still be great.
+
+Masayoshi set wards and traps around a totem of great name provided by the bloodspeakers of the Daidoji domain.  He knew his wards and traps could only delay rather than ensnare the Nameless One, who laughed at traps even in the days when she was merely a clever fox.  But they would stall her long enough for the PCs to confront her and cleave away the names she had eaten, allowing her soul to finally descend into the underworld and continue on its journey through the cycle of death and rebirth.
+
+Everything I just wrote was the setup to a supernatural adventure which I was happy with.  I did have some concerns about how some of the details violated existing lore or established principles of the setting.  Consistency is key, however I hoped that by making the violations so shocking in-universe, it would emphasize that the general principles of the world stand, but that sometimes things still occur which are beyond our understanding.  Hopefully this indicates not that established doctrines and principles are wrong, but rather that human understanding of them is incomplete, and supposedly "impossible" things are still possible (but extremely rare), such as the existence of a Nameless Fox, or her actions evading the Sight of the Emperor's most gifted prophets.
 
 <!-- END SOURCE -->
 

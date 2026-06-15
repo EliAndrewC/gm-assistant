@@ -5,7 +5,7 @@ THE FORTUNES:
 
 While some historical polytheistic religions have a concept of gods who are basically just humans with superpowers, I don't want that at all for my fictional setting of Rokugan.  The idea that the fortunes are part of the fabric of reality is a core part of the theology of my worldbuilding.
 
-In my version of Rokugan, one question which arises is why the fortunes do not give clearer direction to humanity.  Of course, this is a question real-world theologans have also had to grapple with in basically every world religion, and Rokugan is (as a reminder) intended to be "the kind of of world historical people genuinely believed themselves to be living in".
+In my version of Rokugan, one question which arises is why the fortunes do not give clearer direction to humanity.  Of course, this is a question real-world theologians have also had to grapple with in basically every world religion, and Rokugan is (as a reminder) intended to be "the kind of world historical people genuinely believed themselves to be living in".
 
 Kitsu Okura wrote the book "On the Relationship between Man and the Fortunes" 300 years ago, which sought to tackle this question.  He identifies what he calls "the six doctrines" which attempt to explain this mystery.
 
@@ -21,7 +21,7 @@ What follows is a brief summary of the six doctrines, each corresponding to the 
 
 1) Just as we cannot truly comprehend the will and nature of the fortunes, they struggle to understand our limited minds.  Being so vast in their existence, the fortunes speak to us as we might attempt to communicate with worms.  The more attention and effort is brought to bear, the more danger the worm may be crushed by the weight of the superior being.
 
-2) The fortunes push against one another with their very existence.  Consider the forces which direct human behavior.  Fear, desire, regret.  Loyalty, compassion, courage.  Love, hate, joy.  When we break our normal routine to attempt some great endeavor, it means those forces within ourselves are out of proportion and an overflowing of some emotion spurs us to action.  So too with the fortunes, who collectively maintain the balance of the world itself.  When a fortune commands mortals to act, their instructions are muddied by the thousand other fortunes pulling with a thousand other directions.
+2) The fortunes push against one another with their very existence.  Consider the forces which direct human behavior.  Fear, desire, regret.  Loyalty, compassion, courage.  Love, hate, joy.  When we break our normal routine to attempt some great endeavor, it means those forces within ourselves are out of proportion and an overflowing of some emotion spurs us to action.  So too with the fortunes, who collectively maintain the balance of the world itself.  When a fortune commands mortals to act, their instructions are muddied by the thousand other fortunes pulling in a thousand other directions.
 
 3) Our struggle to better understand their instructions is what the fortunes truly desire.  When the teacher sends his pupil on a pilgrimage, it is often the journey and not the destination which matters.  Likewise, after completing some great enterprise on behalf of the fortunes, we must consider whether the task itself was their goal, or the result it produced within us as we struggled to obey them.
 
@@ -33,13 +33,13 @@ What follows is a brief summary of the six doctrines, each corresponding to the 
 
 (end of introduction)
 
-Note that all of the above continues the running theme of the fortunes as cycle/connection entities which make up the fabric of reality.  Moreover, these doctrines highlight the dynamic nature of the relationship between the fortunes and humans. Whether it's the struggle to understand their instructions, the selective rewarding of their most dedicated followers, or the transformative impact of undertaking tasks on their behalf, these doctrines suggest that the relationship with the fortunes is not just about receiving clear, direct guidance, but also about personal growth, self-discovery, and connection with the deeper truths of existence.
+Note that all of the above continues the running theme of the fortunes as cycle/connection entities which make up the fabric of reality.  Moreover, these doctrines highlight the dynamic nature of the relationship between the fortunes and humans.  Whether it's the struggle to understand their instructions, the selective rewarding of their most dedicated followers, or the transformative impact of undertaking tasks on their behalf, these doctrines suggest that the relationship with the fortunes is not just about receiving clear, direct guidance, but also about personal growth, self-discovery, and connection with the deeper truths of existence.
 
 This makes the concept of swearing a vow to a fortune all the more significant, as it's not just a promise to an individual deity, but a commitment to engage with a fundamental aspect of reality and existence. This commitment is not just about following a set of rules or achieving specific outcomes, but also about embracing the challenge, uncertainty, and transformation inherent in the process.
 
-Here's some extra information about the names of fortunes in my setting, in case it matters.
+Some extra information about the names of fortunes in this setting follows, in case it matters.
 
-Many stories about fortunes involve a human becoming a fortune after their death.  This can be confusing because the aspect the fortunes represent always predate the death of that human.  So when we talk about a human becoming a fortune, this generally means one of two things.
+Many stories about fortunes involve a human becoming a fortune after their death.  This can be confusing because the aspect the fortunes represent always predates the death of that human.  When a human becomes a fortune, this generally means one of two things.
 
 In most cases of a human becoming a fortune, the person was so in tune with a particular fortune that upon their death their soul does not descend into Jigoku (the underworld) but instead becomes one with the fortune.  The Emperor will then officially recognize this, and thereafter anyone referring to that fortune will have a name that can be used to identify and connect to that fortune in their religious practices.
 
@@ -47,11 +47,11 @@ In other cases, the Emperor may use his divine power to elevate a person's soul,
 
 In both situations, the fortune existed prior to the death of the human and being given a human name.  Many fortunes went by multiple other names in the days before the Great Ancestors brought civilization to humanity.  Although it is not heretical to refer to fortunes by other names, it's considered uncultured and demonstrates ignorance of proper doctrine.
 
-This is my way as the GM of resolving all of the stories of people "becoming" a fortune upon their death.  when a human "becomes" a fortune, it's more about the human's soul merging with, or becoming aligned with, a pre-existing facet of reality represented by the fortune. The individual doesn't create a new fortune, but rather becomes part of an existing one, which reflects their deep connection with the principle or aspect of life that the fortune embodies. The naming of fortunes, whether through recognition by the Emperor or association with a particular human, is a way for people to more easily understand, relate to, and connect with these complex and profound forces.
+This is my way as the GM of resolving all of the stories of people "becoming" a fortune upon their death.  When a human "becomes" a fortune, it's more about the human's soul merging with, or becoming aligned with, a pre-existing facet of reality represented by the fortune. The individual doesn't create a new fortune, but rather becomes part of an existing one, which reflects their deep connection with the principle or aspect of life that the fortune embodies. The naming of fortunes, whether through recognition by the Emperor or association with a particular human, is a way for people to more easily understand, relate to, and connect with these complex and profound forces.
 
 In other cases a fortune has been identified by name without using a name which once belonged to a human.  For example, Bishamon, the Fortune of Strength, has always been known as Bishamon, rather than being named for any specific, identifiable human with that name.
 
-I mentioned "Doji Shizue and the Secrets of Calligraphy" before, and in Rokugan there is a play with that title.  In the play Shizue has sought out the advice of the shugenja Kitsu Okura.  The family line of Kitsu Okura denounces this scene, which is the only scene in which Kitsu Okura appears, though his descendents have declined to say which specific part is not accurate to fails to reflect their family understanding of the fortunes.
+I mentioned "Doji Shizue and the Secrets of Calligraphy" before, and in Rokugan there is a play with that title.  In the play Shizue has sought out the advice of the shugenja Kitsu Okura.  The family line of Kitsu Okura denounces this scene, which is the only scene in which Kitsu Okura appears, though his descendants have declined to say which specific part is not accurate or fails to reflect their family understanding of the fortunes.
 
 Here is the scene, which I wrote as an in-universe example of how some people talk about the fortunes:
 

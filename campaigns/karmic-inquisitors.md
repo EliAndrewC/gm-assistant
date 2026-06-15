@@ -1,7 +1,7 @@
 # Karmic Inquisitors Campaign
 
 <!-- SOURCE: GM NOTES - DO NOT MODIFY -->
-Now let's talk about the "Karmic Inquisitors" campaign, which is an older campaign I ran which takes place in Damasu lands, i.e. the domain whose capital is Toshi Ranbo, the third-largest city in the Empire.
+The "Karmic Inquisitors" campaign is an older campaign set in Damasu lands, the domain whose capital is Toshi Ranbo, the third-largest city in the Empire.
 
 CAMPAIGN DESCRIPTION:
 
@@ -19,7 +19,7 @@ The Order of Lord Moon is referred to as The Order in conversation, so that anyo
 
 Members and roles:
 
-There are always 12 members of The Order, most of which don't have any official title. Each official position within The Order has an abbreviated name which it is always called in conversation outside of rituals and ceremonies.
+There are always 12 members of The Order, most of whom don't have any official title. Each official position within The Order has an abbreviated name which it is always called in conversation outside of rituals and ceremonies.
 
 -> Master of the Lunar Way, aka the Master of the Way. This is the head of The Order (currently Reiji), who leads ceremonies, prayers, rituals, and calls meetings to order.
 
@@ -27,7 +27,7 @@ There are always 12 members of The Order, most of which don't have any official 
 
 -> Teacher of the Astral Ways, aka the Teacher. This member (currently Umiko) is responsible for training new initiates.
 
--> Steward of the Secret Cache, aka the Steward. The Order's ceremonies require many implements, and these things must be kept hidden and brought to ceremonies by the Steward (currently Osei).
+-> Steward of the Sacred Cache, aka the Steward. The Order's ceremonies require many implements, and these things must be kept hidden and brought to ceremonies by the Steward (currently Osei).
 
 Below are the backstories for the senior members of The Order of Lord Moon:
 
@@ -39,7 +39,7 @@ The previous Master of the Lunar Way was Kaito, who served in the Temple of Bish
 
 Also caught and executed was Ishikawa, the Champion of the Sparring Circle for the Temple of Bishamon, who served the Teacher of the Astral Ways for the Order.
 
-Reiji was first drawn to the Temple of Bishamon when he saw a Golden Koi swimming upstream through the village creek. He abandoned his work in the fields to give chase, but it stayed just ahead of him as he followed it through the network of irrigated streams and waterways of his village. By the time he caught up with it, night was beginning to fall, and as the fish turned around to face him, it turned from gold to silver. He stepped backwards in surprised and fell on his back, and in that moment as the stars came out, he witnessed the brief shape of a celestial temple in the twilight sky, the outline of which was traced by the first few hundred starts to appear as the sun set below the horizon.
+Reiji was first drawn to the Temple of Bishamon when he saw a Golden Koi swimming upstream through the village creek. He abandoned his work in the fields to give chase, but it stayed just ahead of him as he followed it through the network of irrigated streams and waterways of his village. By the time he caught up with it, night was beginning to fall, and as the fish turned around to face him, it turned from gold to silver. He stepped backwards in surprise and fell on his back, and in that moment as the stars came out, he witnessed the brief shape of a celestial temple in the twilight sky, the outline of which was traced by the first few hundred stars to appear as the sun set below the horizon.
 
 This set Reiji on his path to becoming a monk, and as he later learned, a golden koi swimming upstream is a well-known sign which embodies the strength and perseverance of Bishamon, though it was many years later that he realized that the koi turning from gold to silver represented his path through the Order of Bishamon to the secret Order of Lord Moon.
 
@@ -53,7 +53,7 @@ Confused and concerned, he crept out in the silence of the crack of dawn to seek
 
 Increasingly unsettled, he returned home to find that the arrow was gone, and his now-awake family had not seen it, nor heard anyone else approach their home. The new mark made by the arrow above the doorway was the only sign that the arrow had ever been present.
 
-Their country monk immediately recognized this as a sign from Bishamon, given his frequently depiction as an archer. The monk immediately began to educate Eiwa as an acolyte, and Eiwa later traveled to Toshi Ranbo to join the temple there, in fulfillment of Bishamon's calling.
+Their country monk immediately recognized this as a sign from Bishamon, given his frequent depiction as an archer. The monk immediately began to educate Eiwa as an acolyte, and Eiwa later traveled to Toshi Ranbo to join the temple there, in fulfillment of Bishamon's calling.
 
 Thankfully, neither the country monk nor the first few members of the Temple of Bishamon in Toshi Ranbo who heard this story recognized the significance of Eiwa's dream of flying, but the previous Seeker of the Chosen instantly realized this as a divine invitation from Lord Moon himself. Eiwa ascended to this position upon the death of the previous seeker almost 20 years ago.
 
@@ -71,7 +71,7 @@ As the fox emerged from the grass, it turned to look at Umiko. In that moment, t
 
 Suddenly, she remembered the bell. Lifting it out of the earth, she brushed off the remaining mud. That's when she noticed it: The curve of the bell, along with its reflection in a puddle created by the recent rainfall, formed a perfect crescent shape. It was a mirrored crescent, she realized, just as the moon was currently in its crescent phase. The alignment of these events, the discovery of the shrine bell, the appearance of the fox, and the mirrored crescent, was too much to be mere coincidence.
 
-Umiko was unusually educated for a young peasant from her village, and she understood this as a sign from Inari, the Fortune of rice and foxes. She was able to easily interpret the fox's actions a message: to protect the innocent and the helpless, much like the fox had done with its young (or whatever unknown entities it had guarded).
+Umiko was unusually educated for a young peasant from her village, and she understood this as a sign from Inari, the Fortune of rice and foxes. She was able to easily interpret the fox's actions as a message: to protect the innocent and the helpless, much like the fox had done with its young (or whatever unknown entities it had guarded).
 
 Spurred by this revelation, Umiko left her village to join the Temple of Bishamon. Eiwa, the current Seeker of the Moon's Chosen, was able to identify the mirrored crescent as a sign from Lord Moon, and recruited her into The Order, where she devoured all knowledge and wisdom, eventually being appointed as the Teacher of the Astral Ways.
 
@@ -97,13 +97,13 @@ Osei's personal history is itself shrouded in mystery. She was recruited by the 
 
 Here's the backstory of Tsukimichi, a member of The Order and one of the PCs of the "Karmic Inquisitors" campaign:
 
-The nightmares started with my monthly cycles. At first they were vague and clouded, with the occasional flash of gore or horror- sharp snapping teeth, the blood stained tip of a knife. But over time, patterns of images became clear. Until on the night before my gempuku, I found myself at the base of a impossibly steep mountain path leading straight east. The largest full moon I had ever seen was rising over the path as if it led all the way to the moon itself. Light from the moon illuminated the pathway and showed it to be covered in loose scree, some of it quite sharp and already tinged with the blood of previous travelers.  I looked down at my bare feet and despaired of making any headway along that path. But oh how I wanted to. It wasnt that I felt some sort of call to the moon or to adventure. But rather this vicious challenge had been set in front of me and I felt more forlorn than I ever had at even the thought that I might not master it. I could see myself tripping lightly from rock to precariously placed stone on my tiptoes like the most graceful of dancers and I knew in that moment I had to make it happen. So the next day when I passed my challenges and became an adult, I chose the name Tsukimichi or Moon Path for the challenge that had been set before me that I did not understand but had vowed to nevertheless, conquer. 
+The nightmares started with my monthly cycles. At first they were vague and clouded, with the occasional flash of gore or horror- sharp snapping teeth, the blood stained tip of a knife. But over time, patterns of images became clear. Until on the night before my gempukku, I found myself at the base of an impossibly steep mountain path leading straight east. The largest full moon I had ever seen was rising over the path as if it led all the way to the moon itself. Light from the moon illuminated the pathway and showed it to be covered in loose scree, some of it quite sharp and already tinged with the blood of previous travelers.  I looked down at my bare feet and despaired of making any headway along that path. But oh how I wanted to. It wasn't that I felt some sort of call to the moon or to adventure. But rather this vicious challenge had been set in front of me and I felt more forlorn than I ever had at even the thought that I might not master it. I could see myself tripping lightly from rock to precariously placed stone on my tiptoes like the most graceful of dancers and I knew in that moment I had to make it happen. So the next day when I passed my challenges and became an adult, I chose the name Tsukimichi or Moon Path for the challenge that had been set before me that I did not understand but had vowed to nevertheless, conquer. 
 
-If I had hoped this would turn some sort of tide with my nightmares, I was disappointed. Images became more fractured, sleep more disjointed.  But I was disciplined.  I was trained as a courtier and demanded perfection from myself in my professional life. I was as skilled at hiding my own weaknesses as I was at exploiting the weaknesses of opponents.  But my haunted mind did not make it easy for me. I presume I began sleepwalking. I would fall asleep in my bed and awaken in strange locations with no memory of having gotten there. Objects would disappear from my rooms and appear in the rooms of professional rivals. Or sometimes vice versa. I started suspected a darker hand at work when those rivals would occasionally sicken at opportune times for my own professional development. Each time, my dreams would clear and I would catch a glimpse of the gleaming mountain moon path, and I would wake with cuts on my feet and bloody gravel in my bed. 
+If I had hoped this would turn some sort of tide with my nightmares, I was disappointed. Images became more fractured, sleep more disjointed.  But I was disciplined.  I was trained as a courtier and demanded perfection from myself in my professional life. I was as skilled at hiding my own weaknesses as I was at exploiting the weaknesses of opponents.  But my haunted mind did not make it easy for me. I presume I began sleepwalking. I would fall asleep in my bed and awaken in strange locations with no memory of having gotten there. Objects would disappear from my rooms and appear in the rooms of professional rivals. Or sometimes vice versa. I started suspecting a darker hand at work when those rivals would occasionally sicken at opportune times for my own professional development. Each time, my dreams would clear and I would catch a glimpse of the gleaming mountain moon path, and I would wake with cuts on my feet and bloody gravel in my bed. 
 
 The night everything turned, I awoke from a dream of gnashing teeth to find myself in an alley with a murdered woman. I didn't check who she was but I believe she was yet another professional rival. My hands were clean, but my feet were bloody. I had no memory of getting there. I was wearing my nightclothes and appeared to be unarmed. In my terror I ran for the river. The full moon cast a silvery path across the water and in my panic and hysteria I thought that perhaps all this time I had been destined to follow a different moon path to the end of my days. It would certainly be easier to traverse gracefully.
 
- I was on the verge of throwing myself into the river and into this new path when a kind stranger named Karinsu laid a hand upon my shoulder and pulled me back. At the time I thought him merely to be a concerned passerby. But it soon became obvious he was much more- perhaps even a boddishatvha- as he explained to me that my life was destined for a different path, in fact many different paths. As he showed me how to nature of truth and life winds around on itself creating a variety of paths of reality which can be traveled singly or together. He showed my the path that would be created if I had never been born, or the path that would be created if I took my own life that night. And then he showed me some of the possible paths the future might take if I were to keep living. He told me to see to my strength and my friends.  And he disappeared.  
+ I was on the verge of throwing myself into the river and into this new path when a kind stranger named Karinsu laid a hand upon my shoulder and pulled me back. At the time I thought him merely to be a concerned passerby. But it soon became obvious he was much more- perhaps even a bodhisattva- as he explained to me that my life was destined for a different path, in fact many different paths. He showed me how the nature of truth and life winds around on itself creating a variety of paths of reality which can be traveled singly or together. He showed me the path that would be created if I had never been born, or the path that would be created if I took my own life that night. And then he showed me some of the possible paths the future might take if I were to keep living. He told me to see to my strength and my friends.  And he disappeared.  
 
 A few days later, I was tapped for a diplomatic mission to Toshi Ranbo, which had just fallen to the Crane. The woman who was supposed to lead our contingent had gone out drinking to celebrate her promotion and never returned. It was presumed she had sufficiently shamed herself and was lying low, trying to come up with face saving measures before she rejoined polite society.  To my knowledge,  they never did find her. 
 
@@ -141,7 +141,7 @@ As the Lion now believed Haru to be an expert in Phoenix prayers and rituals, he
 
 Lord Moon, who consumed his own in primal times, I seek your understanding as I am pushed to echo your actions. Let this act of necessity honor your celestial cycle, as death gives way to life. Guide us from this forest and into your shimmering light, as we traverse these uncharted depths.
 
-Haru thought that he was unseen and unheard, but Akodo Ippei had remained behind, tending to his wounds and praying to his own ancestors. He said nothing directly to Haru, but after Ippei was buried, one of the scouts returned, having miraculously found a westward path.
+Haru thought that he was unseen and unheard, but Akodo Ippei had remained behind, tending to his wounds and praying to his own ancestors. He said nothing directly to Haru, but after Genjo was buried, one of the scouts returned, having miraculously found a westward path.
 
 The party reconvened, marked Genjo's grave, and set out on the westward path. As night began to fall, the path emerged out of the forest, and the survivors were able to nourish themselves once again.
 
