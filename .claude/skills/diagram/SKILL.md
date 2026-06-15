@@ -162,14 +162,23 @@ Very small grey rects (~14-20 px square), labeled `latrine`. Place against walls
 
 ## Mode B: Settlement maps (villages and hamlets)
 
-Settlement maps are landscape plans - a village or hamlet sitting in its fields - not interior building plans. They reuse every shared convention above and add the vocabulary and workflow below. Canonical example: [`pool/kikuta-village.svg`](pool/kikuta-village.svg), built by [`pool/kikuta-village.gen.py`](pool/kikuta-village.gen.py) and gated by [`check_village.py`](check_village.py).
+Settlement maps are landscape plans - a village or hamlet sitting in its fields - not interior building plans. They reuse every shared convention above and add the vocabulary and workflow below.
 
-### Workflow (generator + validator)
+### Architecture: a shared library + thin per-village specs
 
-Settlement maps are produced by a parametric Python generator, not hand-placed, because realistic density (~50 houses) plus irregular clipped fields are impractical by hand. The generator emits a paired `.svg` and a `.json` manifest that an automated validator checks. The loop:
+The common machinery lives in [`settlement.py`](settlement.py) (the `Settlement` class). A specific settlement is a **thin spec** that imports it, declares its fields/water/shrine/houses, and calls `finish()`. Two worked examples:
 
-1. Pre-design conversation with the GM (scale, fields, civic features, the residing NPC), grounded in the setting numbers below.
-2. Write/adjust the generator (copy `pool/kikuta-village.gen.py` as the starting point). It writes the `.svg` and `.json` next to itself.
+- [`pool/kikuta-village.gen.py`](pool/kikuta-village.gen.py) - an average village, **pond-fed**, TWO staggered common fields, hill-top Benten shrine with 7 torii, fallow fields ringed by abandoned houses.
+- [`pool/hikari-no-sato.gen.py`](pool/hikari-no-sato.gen.py) - an average village, **stream-fed** (no pond), ONE great V-shaped common field with an internal fallow patch (no abandonment), a ring of small fields fed field-to-field, a modest 2-torii Benten shrine CENTRAL in the crook of the V (NOT on a hill), and a second Bishamon shrine in the southwest.
+
+**What is COMMON (lives in `settlement.py`, do not duplicate per village):** the palette and SVG defs; organic field outlines (bbox-based OR an arbitrary base polygon like a V) with non-uniform crop basins and per-plot angled rows; the south-facing pitched-roof house glyph; size-aware, corridor-aware, field-blocking house placement; hills + summit shrines + torii; ponds, off-map streams, and winding channels; tax-free plot picking (interior-validated); the manifest emission. When you need a NEW shared capability (a new field shape, a new building type), add it to the library, not to one village.
+
+**What is VILLAGE-SPECIFIC (declared in the thin spec + echoed into `manifest["meta"]`):** field count/shape/placement; the irrigation **source** (pond vs stream vs field-to-field) - water *must exist*, but the kind varies by region (a pond/*tameike* suits a dry locale; a stream diversion suits a river valley - not every village had a pond); torii count; whether the main shrine sits on a hill or stands central on flat ground; whether blight left abandoned houses (Kikuta yes, Hikari no); additional shrines; settlement scale (village vs hamlet). The validator reads `meta` and each channel's `frm`/`to` anchors, so it adapts per village instead of assuming one layout.
+
+### Workflow (spec → validator → persona)
+
+1. Pre-design conversation with the GM (scale, fields, water source, civic features, the residing NPC), grounded in the setting numbers below.
+2. Write a thin spec - copy `kikuta-village.gen.py` (pond, two fields) or `hikari-no-sato.gen.py` (stream, one V-field) as the closer starting point. It writes the `.svg` and `.json` next to itself. Only touch `settlement.py` if you need a genuinely new shared capability.
 3. Run `python3 check_village.py <manifest>.json` - the machine gate. It must report ALL CHECKS PASSED before going further.
 4. Render to PNG: `rsvg-convert -w 2600 pool/<subject>.svg -o pool/<subject>.png`. Settlement maps need 2600px+ for the small labels.
 5. Read the PNG yourself - the persona pass the gate cannot do (coherent village? legible? balanced?). Per Constitution Principle I, get an independent review if you both built and reviewed.
@@ -182,14 +191,15 @@ Pull from `/workspace/setting/median-domain.md`, `demographics.md`, `village-hea
 - Average village: 200-500 people = 40-100 households (median household ~5 over 2-3 generations). Draw ~50 houses, a few larger (the ~5% wealthy-landowner farmers) plus the headman's house (largest in the village).
 - Hamlet: 50-100 people = 10-20 households; no named civic buildings and no headman of its own (hamlets fall under the village district's headman).
 - Villages and hamlets are peasant-only - no resident samurai (samurai live in the county town).
+- **Non-standard size:** for a larger-than-usual village (say 500 people / ~80 houses), declare `meta(target_houses=N)` and the gate's count band follows it (~N ±15%). House count is bounded by field perimeter (houses ring fields at ~56px spacing), so to actually *seat* that many: enlarge the canvas (`Settlement(W=..., H=...)`) and give bigger/more fields, then raise the `ring()` counts. A second concentric house ring is a small library addition if one ring around the fields can't hold them.
 
 ### Fields
 
 - Outlines are terrain-following: organic lobes (outgrowths) and bays (indentations) off a semi-rectangular core. Never clean rectangles.
 - Interior paddies are a mosaic of bunded basins of **non-uniform size** (vary the cell widths - break the grid), with wavy bunds, not straight. Each cell reads as its crop: flooded rice basins show transplant rows, soybeans grow as rows on the raised bunds (nitrogen-fixing), and ~1 in 6 plots is a dry/hedge crop (furrowed) guarding against blight.
 - Crop rows are **regular within a plot but angled differently between plots** - each basin has its own row orientation, never one global east-west direction.
-- Do not place two large fields of similar size and orientation side by side. Vary orientation (one long E-W, one long N-S) and stagger diagonally. Spread smaller fields around the settlement (e.g. SW, SE, middle-north).
-- Every field is ringed by farmhouses; fallow fields ring abandoned farmhouses. All houses field-adjacent.
+- Field arrangement is village-specific - it might be two staggered fields of differing orientation (Kikuta) or one great V-shaped field ringed by small ones (Hikari). The universal rule: when there ARE two large common fields, do not make them similar size and orientation side by side (vary and stagger); and spread the smaller fields around the settlement.
+- Every field is ringed by farmhouses, all field-adjacent. Whether blight leaves **abandoned houses** is village-specific: Kikuta's fallow fields are ringed by abandoned houses; Hikari's blight is an internal fallow patch of the main field with no abandonment. (Declared via `meta.fallow_implies_abandoned`.)
 - No paddy on hills (upland rice exists but is not chosen when flat land is available). Hills carry grass, woods, and shrines only.
 - Strip-allocation (usufruct, per `village-headsmen.md`): the headman doles non-contiguous strips across the common fields; show via subtle subdivision and the religious figure's tax-free allocation highlighted as non-contiguous **plots** (a vermillion tint + outline - high-contrast against the greens, and thematically the shrine's sacred color; a thin gold outline blends into the tan bunds and was hard to spot). That allocation is law-bounded to ~2 households worth (**2-3 plots**, scattered across the common fields) - gated by `check_village.py`.
 
@@ -202,14 +212,18 @@ Pull from `/workspace/setting/median-domain.md`, `demographics.md`, `village-hea
 
 ### Water, religion, state markers
 
-- Villages need a water source: an irrigation POND (Japanese tameike), never "tank." Size it larger than a house, on flat ground, set back from steep hills (erosion). Feed paddies via channels that route AROUND buildings (never through the headman's house) and take a near-direct path. Each channel must **start inside the pond and end well inside its field** (so the field paints over the end - a visible connection, not a line stopping in the gap before the field), and should **wind gently** rather than run dead straight.
-- Each village district has one tax-free religious figure (country monk or priestess); their dwelling may double as the shrine. A shrine sits ON the hill summit, never overhanging the edge; torii ascents wind across the open hill face, gates spread out, none hidden under the shrine.
+- Villages **must** have a water source, but its KIND is village-specific (regional). Historically not every paddy village had a pond: a reservoir **pond** (*tameike*, never "tank") suits a dry/rain-shadow locale (Kikuta); a **stream diversion** from off-map feeding the main field, which then feeds the smaller fields field-to-field, suits a river valley (Hikari). A pond, if used, must be larger than a house, on flat ground, set back from steep hills (erosion). Channels route AROUND buildings (never through the headman's house), take a near-direct path, **wind gently** (not dead straight), and must be **anchored at both ends** - each end starts/ends inside its source (pond / off-map edge / another field) and well inside its target field, so the field paints over the end (a visible connection, not a line stopping in the gap). Anchors are declared per channel as `frm`/`to` in the manifest.
+- **Villages have SHRINES, never temples.** A village/hamlet religious site is a Shinto shrine - always label "Shrine to <Fortune>" / "village shrine," never "Temple to X" (temples, with their monastic organization, belong at a larger scale - see the `/temple` skill). If the GM says "temple" for a village, silently correct it to "shrine."
+- The main shrine's placement is village-specific: it may sit on a **hill** (Kikuta's Benten, reached by a torii ascent) OR stand **on flat ground** reached by a torii gateway (Hikari's Benten sits at the southern entry path - a recent addition belongs at the village edge/gateway where there is room, not displacing an established structure). If on a hill it sits ON the summit, never overhanging the edge, with the torii ascent winding across the open face. Torii **count varies by village** (Kikuta 7, Hikari 2); whatever the count, they stay clear of the shrine hall and spread out. Each village district has one tax-free religious figure whose dwelling may double as the shrine.
 - Fallow field: dry stipple, dashed organic outline (post-blight). Abandoned house: greyed and dashed with a collapse mark, clustered around the afflicted fields. Lanes and irrigation channels are no-build corridors.
-- **No legend/key box.** A settlement map should be self-evident; the few non-obvious elements (fallow fields, the religious figure's tax-free plots, named buildings) are labeled inline instead.
+- **No legend/key box, and do not label what is visually evident.** A settlement map should be self-evident; the few non-obvious elements (fallow fields, the tax-free plots, named buildings) are labeled inline. Do NOT state counts the reader can see (e.g. "2 torii" / "7 torii") - the torii are drawn. **No two body labels may overlap** (gated by `no_label_overlaps`).
 
 ### The validator (`check_village.py`)
 
-The generator emits a manifest the validator asserts against; it must pass before a settlement map is presented. Current checks: no farmhouse overlaps (rotated-rect SAT); nothing on a lane/channel; all houses field-adjacent; every field ringed; fallow fields ring abandoned houses; no cultivation on the hill; shrine seated on the summit; pond larger than the headman's house and clear of the hill; irrigation directness; house count in the average-village band; tax-free plots law-bounded (2-3); the headman's house is the largest; houses face south; the two common fields differ in orientation; 7 torii that are clear of the shrine, on the hill, and spread out; and each irrigation channel starts inside the pond, ends well inside its field, and winds gently.
+The generator emits a manifest the validator asserts against; it must pass before a settlement map is presented. It works for **any** village/hamlet, not just Kikuta: the UNIVERSAL invariants are always checked, while the VILLAGE-SPECIFIC expectations are read from `manifest["meta"]` and from each channel's `frm`/`to` anchors.
+
+- **Universal (always):** no farmhouse overlaps (rotated-rect SAT); nothing on a lane/channel; all houses field-adjacent; every field ringed; no cultivation on a hill; houses face south; the headman's house is the largest; no two body labels overlap; each channel is anchored at both ends, winds gently, and is reasonably direct; any torii are clear of the shrine and spread out.
+- **Meta-driven (per village):** house-count band (village 40-80 vs hamlet 10-30, from `meta.scale`); tax-free plots 2-3 (villages); fallow fields ring abandoned houses ONLY if `meta.fallow_implies_abandoned`; the two largest common fields differ in orientation ONLY when there are two; shrine-on-summit + torii-on-hill ONLY if `meta.shrine_on_hill`; torii count == `meta.torii_expected`; pond checks ONLY if a pond exists; channel source anchored to pond / off-map edge / field per its declared `frm`.
 
 **Two disciplines this gate has taught us:**
 
@@ -272,8 +286,10 @@ Before declaring done:
 ## References
 
 - [`pool/ochiba-magistracy.svg`](pool/ochiba-magistracy.svg) - canonical Mode A worked example; template for compound/building plans
-- [`pool/kikuta-village.svg`](pool/kikuta-village.svg) - canonical Mode B worked example (an average village); built by [`pool/kikuta-village.gen.py`](pool/kikuta-village.gen.py)
-- [`check_village.py`](check_village.py) - Mode B automated validator (the machine gate); run before presenting a settlement map
+- [`settlement.py`](settlement.py) - the shared Mode B library (`Settlement` class); all common machinery lives here
+- [`pool/kikuta-village.gen.py`](pool/kikuta-village.gen.py) - Mode B example A: pond-fed, two staggered fields, 7-torii hill shrine, fallow-with-abandonment
+- [`pool/hikari-no-sato.gen.py`](pool/hikari-no-sato.gen.py) - Mode B example B: stream-fed, one V-shaped field, internal fallow patch, flat-ground Benten shrine at the southern torii gateway, standalone Bishamon shrine
+- [`check_village.py`](check_village.py) - Mode B automated validator (the machine gate); meta-driven so it works for any village/hamlet; run before presenting a settlement map
 - `/workspace/setting/village-headsmen.md` - village structure, strip-allocation/usufruct, headman role (Mode B grounding)
 - `/workspace/setting/median-domain.md` - sizing data (samurai per town, etc.)
 - `/workspace/setting/government.md` - role hierarchies (ministries, magistrates, etc.)

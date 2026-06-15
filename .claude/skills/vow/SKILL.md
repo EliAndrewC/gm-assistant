@@ -388,7 +388,7 @@ Here are some miscellaneous facts about the Empire's roads:
 
 -> In addition to the roads themselves, the Emperor mandated waystations.  Approximately ~5,000 waystations are distributed across the network, at irregular but worthwhile intervals - averaging ~10 miles apart on the major trunk routes, denser at junctions and dangerous terrain, sparser on minor branches and frontier extensions.  Their function is to protect against bandits, ensure safe passage for travelers, and support the Imperial courier-relay system that connects Otosan Uchi to every domain in the Empire.
 
--> The Emperor spends approximately ~7-9 million koku per year on road upkeep, construction, waystation staffing, and the supporting infrastructure (see [`budgets.md` - The Imperial Budget](budgets.md#the-imperial-budget) for the detailed line-item breakdown).
+-> The Emperor spends approximately ~7-9 million koku per year on road upkeep, construction, waystation staffing, and the supporting infrastructure (see [`budgets.md` - The Imperial Budget](https://github.com/EliAndrewC/l7r/blob/master/setting/budgets.md#the-imperial-budget) for the detailed line-item breakdown).
 
 -> Koshin was already a minor fortune who had previously been prayed to during local road construction projects. He rose to prominence, especially in Crane lands, whose merchant caravans could now travel the Empire as never before. (Remember that the Yasuki were still part of the Crane at this time.)
 
