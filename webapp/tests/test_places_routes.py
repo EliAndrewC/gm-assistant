@@ -199,6 +199,65 @@ def test_places_detail_single_scale_uses_scale_label(root: Root) -> None:
     assert 'places-copy__scale-label' in html
 
 
+def test_places_detail_preselects_first_scale_by_default(root: Root) -> None:
+    # Aozawa.place_types == ('village', 'hamlet'). With no filter context the
+    # toggle defaults to the first scale (village).
+    html = root.places(slug='aozawa').decode('utf-8')
+    village_active = (
+        '<button type="button"\n                      '
+        'class="places-copy__scale-btn places-copy__scale-btn--active"\n                      '
+        'data-scale="village"'
+    )
+    hamlet_active_aria = (
+        'data-scale="hamlet"\n                      role="radio"\n'
+        '                      aria-checked="true"'
+    )
+    assert village_active in html
+    assert hamlet_active_aria not in html
+
+
+def test_places_detail_preselects_filtered_scale(root: Root) -> None:
+    # Same entry, but the GM came in from the hamlet filter. The hamlet
+    # button should be the preselected one this time.
+    html = root.places(slug='aozawa', place_type='hamlet').decode('utf-8')
+    hamlet_active = (
+        '<button type="button"\n                      '
+        'class="places-copy__scale-btn places-copy__scale-btn--active"\n                      '
+        'data-scale="hamlet"'
+    )
+    village_active = (
+        '<button type="button"\n                      '
+        'class="places-copy__scale-btn places-copy__scale-btn--active"\n                      '
+        'data-scale="village"'
+    )
+    assert hamlet_active in html
+    assert village_active not in html
+
+
+def test_places_detail_falls_back_when_filter_scale_not_in_entry(root: Root) -> None:
+    # Mori-tono is village-only. If the GM filter was hamlet (which mori-tono
+    # is not), the toggle isn't shown at all (single-scale uses the label),
+    # so this just confirms no crash and the scale label still renders.
+    html = root.places(slug='mori-tono', place_type='hamlet').decode('utf-8')
+    assert 'places-copy__scale-label' in html
+    assert 'places-copy__scale-toggle' not in html
+
+
+def test_places_detail_multi_scale_falls_back_when_filter_scale_not_in_entry(
+    root: Root,
+) -> None:
+    # Aozawa is village+hamlet. If the GM came from province filter (not
+    # applicable to this entry), the toggle should default to the first
+    # scale (village), not blow up.
+    html = root.places(slug='aozawa', place_type='province').decode('utf-8')
+    village_active = (
+        '<button type="button"\n                      '
+        'class="places-copy__scale-btn places-copy__scale-btn--active"\n                      '
+        'data-scale="village"'
+    )
+    assert village_active in html
+
+
 def test_places_detail_includes_entry_notes(root: Root) -> None:
     html = root.places(slug='yuhi').decode('utf-8')
     assert 'Paired with Yuhimura.' in html

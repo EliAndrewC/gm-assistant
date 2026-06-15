@@ -62,16 +62,21 @@
        data-entry-notes="{{ place.notes }}">
     <div class="places-copy__head">
       <h3 class="places-copy__title">Copy-paste description</h3>
+      {# Preselect the scale the GM was filtering by - if they came in from
+         "Scale: hamlet" on a village+hamlet entry, the toggle should default
+         to hamlet, not the first listed scale. Falls back to the first scale
+         when no filter is active or the filtered scale doesn't apply here. #}
+      {% set preselected = preselected_scale if preselected_scale in place.place_types else place.place_types[0] %}
       {% if place.place_types|length > 1 %}
         <div class="places-copy__scale-wrap">
           <span class="places-copy__scale-hint">Describe as:</span>
           <div class="places-copy__scale-toggle" role="radiogroup" aria-label="Scale to describe">
             {% for pt in place.place_types %}
               <button type="button"
-                      class="places-copy__scale-btn{% if loop.first %} places-copy__scale-btn--active{% endif %}"
+                      class="places-copy__scale-btn{% if pt == preselected %} places-copy__scale-btn--active{% endif %}"
                       data-scale="{{ pt }}"
                       role="radio"
-                      aria-checked="{{ 'true' if loop.first else 'false' }}">{{ pt }}</button>
+                      aria-checked="{{ 'true' if pt == preselected else 'false' }}">{{ pt }}</button>
             {% endfor %}
           </div>
         </div>

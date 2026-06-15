@@ -327,6 +327,7 @@ class Root:
                 place=place,
                 filter_qs=filter_qs,
                 from_random=(via == 'random'),
+                preselected_scale=active_place_type,
             )
 
         filtered = filter_places(
