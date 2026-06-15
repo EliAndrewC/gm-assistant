@@ -13,13 +13,13 @@ The Lion clan is most known for its formidable military prowess, and Bishamon is
 
 Under the Tsume administration the Order of Bishamon's influence was minimal, but it was restored to its rightful position as most esteemed temple in the city with the return of the Damasu.
 
-The Temple of Daokoku
+The Temple of Daikoku
 
-Grand Abbot Okawa was the head of the Order of Bishamon in Scorpion lands. Although Daikoku is not one of the Fortune patrons to the Scorpion clan, the city of Ryoko Owari boasts the largest Temple of Daikoku in the Empire, and under Okawa's decades-long leadership the temple began to spread its influence throughout Scorpion lands. Okawa himself was blessed with the gift of prophecy, and all who heard his sermons were changed by them.
+Grand Abbot Okawa was the head of the Order of Daikoku in Scorpion lands. Although Daikoku is not one of the patron Fortunes of the Scorpion clan, the city of Ryoko Owari boasts the largest Temple of Daikoku in the Empire, and under Okawa's decades-long leadership the temple began to spread its influence throughout Scorpion lands. Okawa himself was blessed with the gift of prophecy, and all who heard his sermons were changed by them.
 
 Okawa was revealed on the Day of Thunder to be the descendant of Shinsei, and it was he who gathered together the Seven Thunders to defeat Shinjo Jotsu, Lord Moon's Champion. This has spurred the Temple of Daikoku to even greater heights, and after the previous Grand Abbot of Daikoku for Damasu lands died, one of Okawa's disciples was appointed.
 
-It's extraordinarily rare for an outsider to attain such a position, as temples in Damasu lands generally respect the previous Grand Abbot's choice of a successor. However, out of reverence for the Prophet Okawa caused the previously designated successor renounced his claim to the position. It's unclear to those outside the Order of Daikoku the extent to which this is voluntary, but it's widely believed that not only did Akodo no Damasu Chishin strongly push for this in his capacity as the Damasu Minister of Rites, but that Akodo no Damasu Sei personally ordered him to do so as Chancellor of the Sei lineage.
+It's extraordinarily rare for an outsider to attain such a position, as temples in Damasu lands generally respect the previous Grand Abbot's choice of a successor. However, out of reverence for the Prophet, Okawa caused the previously designated successor to renounce his claim to the position. It's unclear to those outside the Order of Daikoku the extent to which this is voluntary, but it's widely believed that not only did Akodo no Damasu Chishin strongly push for this in his capacity as the Damasu Minister of Rites, but that Akodo no Damasu Sei personally ordered him to do so as Chancellor of the Sei lineage.
 
 Daikoku is a patron fortune of both the Crane and Lion clans, and thus this temple was "promoted" to the most esteemed temple under the Tsume administration, replacing the Temple of Bishamon under the Tsume Ministry of Rites during their occupation of Toshi Ranbo. It has since returned to a place of lesser prominence, as the Temple of Bishamon is once again ascendant.
 

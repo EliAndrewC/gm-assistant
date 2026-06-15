@@ -19,13 +19,13 @@ Some notable things in this garden:
 
 -> A hand washing basin composed of several elements that is in the middle of the garden with two stones on either side. A stepping stone path leads towards a large flat stone in front of the basin on which to stand. Water flows into the basin through a bamboo tube, and a lantern at the back of the basin helps to guide the guest towards it in the evening.
 
--> A "music jar" buried upside-down in the ground and covered with cobblestones - as water drips through a hole in the bottom of the jar and hits the standing water in its top, it makes a sound reminiscient of a harp.
+-> A "music jar" buried upside-down in the ground and covered with cobblestones - as water drips through a hole in the bottom of the jar and hits the standing water in its top, it makes a sound reminiscent of a harp.
 
 -> A "deer-scarer", which is that thing where a bamboo pipe is balanced like a seesaw under a source of flowing water and one end of the bamboo pipe is open and the other is closed. When the open end fills with water, the extra weight causes it to snap down onto a stone or wooden block with that very pleasant soft crack as it tips back into place.
 
 Elements of a Pure Land Garden:
 
-A tea garden with one a gate leading up to the pagoda where tea ceremonies are held. Stepping stones run throughout the garden along its various paths, surrounded by mostly evergreen, non-flowering plants.
+A tea garden with a gate leading up to the pagoda where tea ceremonies are held. Stepping stones run throughout the garden along its various paths, surrounded by mostly evergreen, non-flowering plants.
 
 Circle of Here Garden:
 
@@ -48,7 +48,7 @@ Other notes:
 
 -> A collection of Legions is an Army, commanded by an Army General.
 
--> A collection of armies is commanded by someone with the title General of the ____ Armies of the ___,_. For example, Daidoji Uji (daimyo of the Daidoji family) has the title, "General of the Southern Armies of the Crane".
+-> A collection of armies is commanded by someone with the title General of the ____ Armies of the ____. For example, Daidoji Uji (daimyo of the Daidoji family) has the title, "General of the Southern Armies of the Crane".
 
 Companies and Houses:
 
@@ -66,7 +66,7 @@ Each company captain in the 1st Imperial Legion has a several thousand koku budg
 
 -> Several hundred additional koku in feeding the troops and support staff - this reflects an increase in the price of good food this far away from the heart of the Empire.
 
--> Hundreds of koku to pay for the support staff and their expenses - a company has ~50 samurai and about two dozen peasant workers, including unskill or semiskilled labor such as cooks, custodians, launderers, and burakumin, as as well as skill labor such as smiths to maintain the weapons and armor.
+-> Hundreds of koku to pay for the support staff and their expenses - a company has ~50 samurai and about two dozen peasant workers, including unskilled or semiskilled labor such as cooks, custodians, launderers, and burakumin, as well as skilled labor such as smiths to maintain the weapons and armor.
 
 -> Hundreds of koku for equipment. This not only includes the upkeep and replacements of weapons and armor, but also the tents, building materials, ditches and fortifications (these being less common in the 1st legion).
 
@@ -76,9 +76,9 @@ Each company captain in the 1st Imperial Legion has a several thousand koku budg
 
 Layout
 
-The 1st legion is mostly made of of tents rather than wooden barracks, due to the harshness of the climate and its effect on wooden buildings.
+The 1st legion is mostly made of tents rather than wooden barracks, due to the harshness of the climate and its effect on wooden buildings.
 
-The standard sleeping tent is ~10x10 feet wide and 6-8 feed high. A typical company has ~8 of these sleeping tents:
+The standard sleeping tent is ~10x10 feet wide and 6-8 feet high. A typical company has ~8 of these sleeping tents:
 
 -> 4 holding the non-officer legionnaires of the company's 4 platoons (~8 legionnaires in each)
 
@@ -122,7 +122,7 @@ Shiro Moto, which the Moto refer to as Karakoru, is approximately 50 miles west 
 
 The valley is approximately 100 miles to the northwest of the Shinomen forest. It's at the edge of the Zenzan domain, which is the westernmost domain in Shinjo lands, approximately 75 miles from Shiro Zenzan, which is built close to White Shore Lake. The entire valley is technically in the Sanfun province, though historically the Imperial Legion has taken responsibility for the valley itself.
 
-Artistic depictions of the valley often show lush green grass on one side and barren desert on the opposite site. In fact the whole area is semi-arid, with about 16 inches of rainfall per year. This is not enough to support much in the way of trees or farms, but there is plenty of vegetation on both sides of the valley. Still, only about 1% of the land is arable, which is why the local village districts are collectively known as the Three Unfortunate Villages of Sanfun, since the land here is poor and its farms tend to be small and spread out. The Provincial City of Saifun, also called Oshindoka Toshi, is said to be "heaven for men and dogs, hell for women and horses".
+Artistic depictions of the valley often show lush green grass on one side and barren desert on the opposite side. In fact the whole area is semi-arid, with about 16 inches of rainfall per year. This is not enough to support much in the way of trees or farms, but there is plenty of vegetation on both sides of the valley. Still, only about 1% of the land is arable, which is why the local village districts are collectively known as the Three Unfortunate Villages of Sanfun, since the land here is poor and its farms tend to be small and spread out. The Provincial City of Sanfun, also called Oshindoka Toshi, is said to be "heaven for men and dogs, hell for women and horses".
 
 Thus, despite its name, the Gateway to the Land of the Burning Sands is actually about 400 miles east of the Burning Sands Desert, and about 800 miles east of the city of Medin al Salaat.
 
@@ -164,7 +164,7 @@ At this point I feel like I'm mostly just sharing random setting details, but I 
 
 Bayushi Tangen:
 
-Bayushi Tangen was a warrior-poet who was alive during the return of the Unicorn clan. The Emperor famously asked Tangen to write a treatise on on treachery, duplicity and espionage. Tangen called this book "Lies" and this book is said to best capture the philosophy of the Scorpion clan. A representative quote from "Lies":
+Bayushi Tangen was a warrior-poet who was alive during the return of the Unicorn clan. The Emperor famously asked Tangen to write a treatise on treachery, duplicity and espionage. Tangen called this book "Lies" and this book is said to best capture the philosophy of the Scorpion clan. A representative quote from "Lies":
 
 > Akodo speaks eloquently of the virtue of honesty. "No harm can come of the truth," he says, "and a lie kills someone in the world." If a lie were to save the Emperor and the truth doom him, I would ask the Lion what he might choose. A lie does indeed kill someone in the world, but what if it saved the Emperor? Who would not give his life for the Son of Heaven? If Lord Akodo is unwilling to do so, I certainly shall take his place.
 
@@ -172,9 +172,9 @@ and
 
 > You may always trust a peasant over a nobleman. The nobleman is ambitious. The peasant only wants to eat. In other words, the nobleman has betrayal in his blood while the peasant only wishes not to be betrayed.
 
-After the return of the Unicorn, it was quickly noticed that a new threat had emerged in the Shadowlands - skeletal riders calling themselves the Black Guard of the Moto. Tangen did not personally perform any investigations into this phenomenon, but his work "The Dark Moto" is viewed as the authoritative source of the subject, and it appears to be Bayushi Tangen who originated that name. Modern editions contain supplemental chapters drawn from subsequent encounters, with quotes and anecdotes.
+After the return of the Unicorn, it was quickly noticed that a new threat had emerged in the Shadowlands - skeletal riders calling themselves the Black Guard of the Moto. Tangen did not personally perform any investigations into this phenomenon, but his work "The Dark Moto" is viewed as the authoritative source on the subject, and it appears to be Bayushi Tangen who originated that name. Modern editions contain supplemental chapters drawn from subsequent encounters, with quotes and anecdotes.
 
-The copy in Chai Sedo is over 100 years old, and newer editions presumably contain information this copy lacks, though some attached commentaries by past visiting scholars helps to fill in the details.
+The copy in Chai Sedo is over 100 years old, and newer editions presumably contain information this copy lacks, though some attached commentaries by past visiting scholars help to fill in the details.
 
 The Dark Moto:
 
@@ -192,11 +192,11 @@ The most characteristic appeal made by Dark Moto trying to recruit wounded legio
 
 Platoons who successfully turn away the Dark Moto without anyone joining their ranks are often told that "The day will come when you seek us out to beg for our assistance" though it is unclear whether this refers to any particular future threat or merely references the general inevitability of death.
 
-Moto Tsume is the leader of the Dark Moto. Kaiu Yoshizo described an encounter with a platoon of Dark Moto led by Moto Tsume in the aftermath of clearing ogres and goblins out of Hiruma Castle. Tsume wields powerful dark magics, and declared to Yoshizo that it was the magics of death that he wielded, granted to him by the Gods of Death, and that this magic was not maho - a claim somewhat undercut by his being a tainted skeleton man riding out from the Deep Shadowlands. Tsume claimed at this time that he and the Dark Moto were fighting on behalf of humanity and for the furtherence of humanity's interests in the mortal realm against the oni lords of the underworld. This appears to be roughly in line with what Tetsu has read in "The Dark Moto" by Bayushi Tangen.
+Moto Tsume is the leader of the Dark Moto. Kaiu Yoshizo described an encounter with a platoon of Dark Moto led by Moto Tsume in the aftermath of clearing ogres and goblins out of Hiruma Castle. Tsume wields powerful dark magics, and declared to Yoshizo that it was the magics of death that he wielded, granted to him by the Gods of Death, and that this magic was not maho - a claim somewhat undercut by his being a tainted skeleton man riding out from the Deep Shadowlands. Tsume claimed at this time that he and the Dark Moto were fighting on behalf of humanity and for the furtherance of humanity's interests in the mortal realm against the oni lords of the underworld. This appears to be roughly in line with what Tetsu has read in "The Dark Moto" by Bayushi Tangen.
 
 The Secret Histories of the Moto:
 
-Apparently the Yassa is not the only secret writings of the Moto, and they evidently have secret histories as well. Moto Zolzaya and Moto Khunbish have evidently both read some or all of these secret histories, which contain the Moto version of the Black Guard.
+Apparently the Yassa is not the only secret writing of the Moto, and they evidently have secret histories as well. Moto Zolzaya and Moto Khunbish have evidently both read some or all of these secret histories, which contain the Moto version of the Black Guard.
 
 According to Moto Zolzaya, when the Moto returned to their ancestral homelands, they reclaimed ancient shrines such as Bodi Kaikhan. Some of those shrines contained secret teachings and rituals, part of the old ways whose practices had fallen out of use. A man named Moto Tsume was the khan of the Vindicator (Zolzaya informs you that the Vindicator histories place him as their high priest who defied their khan), who performed certain rituals to immortalize himself before he was driven out by the other noble families of the Vindicator. Moto Tsume and his disciples escaped into Jigoku after being surrounded in a siege of Bodi Kaikhan, and evidently one of the chief responsibilities of Vindicator priests is to spiritually ward the walls of Bodi Kaikhan to keep them from being able to re-enter the mortal realm directly from Jigoku. The strength of the Vindicator wards is demonstrated by the fact that the Dark Moto are forced to enter the mortal realm in the Shadowlands, presumably through the Festering Pit of Fu Leng.
 

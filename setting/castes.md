@@ -3,11 +3,11 @@
 <!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 CASTES:
 
-Rokugan has a strict caste system, which is part of the Celestial Order.  The Hantei Emperor is the Son of Heaven, descended from the Sun and Moon, and owns all of the land everywhere in the world, though gaijin barbarians fail to recognize his authority, so taxes are collected within the Emerald Empire.  The samurai (known as "those who make war" or "those who serve") make up the ruling class, and are the only caste with full personhood - samurai are "people", and this is why we often refer to "inhabitants" or "humans" when talking about populations.
+Rokugan has a strict caste system, which is part of the Celestial Order.  The Hantei Emperor is the Son of Heaven, descended from the Sun and Moon, and owns all of the land everywhere in the world, though gaijin barbarians fail to recognize his authority, so taxes are collected only within the Emerald Empire.  The samurai (known as "those who make war" or "those who serve") make up the ruling class, and are the only caste with full personhood - samurai are "people", and this is why "inhabitants" or "humans" is the preferred term when discussing populations.
 
 Heimen are "half-people" and include farmers and merchants.
 
-Hinin are "non-people" and laborers, servants, and entertainers.  The lowest part of the hinin caste are the burakumin, or "untouchables" who perform ritually unclean labor such as mortians and tanners and those who handle "night-soil" (human feces).
+Hinin are "non-people" and include laborers, servants, and entertainers.  The lowest part of the hinin caste are the burakumin, or "untouchables" who perform ritually unclean labor such as morticians and tanners and those who handle "night-soil" (human feces).
 
 Monks exist outside the Celestial Order, walking as the Shinsei did with one foot in this world and one foot in the spiritual realm.  Although monks are a small part of the population (less than 1%) they are enormously influential due to the reverence held by humans of all castes for the gods and their servants and those who preach the Tao of Shinsei.
 
@@ -17,7 +17,7 @@ Hinin:
 -> Entertainers, including these examples:
     Wrestlers
     Musicians
-    Restraunteurs
+    Restaurateurs
     Actors
     Masseurs
     Sex Workers (prostitution is illegal in Rokugan by Imperial decree but such laws are "honored more in breach than observance")
@@ -26,7 +26,7 @@ Hinin:
 -> Laborers, especially these examples:
     Porters
     Servants
-    Palequin Carriers
+    Palanquin Carriers
     Cooks
     Ditch Diggers
     Charcoal burners

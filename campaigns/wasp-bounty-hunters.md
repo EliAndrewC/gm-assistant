@@ -15,7 +15,7 @@ Here's my writeup on the creation of the Wasp clan:
 
 The Spine of the World Mountains bisect the Empire in two, with Beiden Pass being the main passage between the northern and southern halves of the central Empire.  In the eastern Empire, ships are the fastest and most efficient way to move people and goods up and down the coast, and a narrow mountain pass 150 miles inland is the best way to travel from one side of the mountains to the other (as Beiden pass is ~400 miles to the northwest along the mountain range).
 
-This mountain pass is located in the Hachinaga ("long wasp") province, a dynasty province which the Shin lineage has ruled for over a thousand years.  Their progenitor, Bayushi Shin, personally swore fealty to Lord Bayushi, and his descendents later became part of the Kyo vassal house of the Bayushi family, tasked with defending the valuable mountain pass from the Zenji vassal house of the Matsu Family of the Lion Clan to the north.
+This mountain pass is located in the Hachinaga ("long wasp") province, a dynasty province which the Shin lineage has ruled for over a thousand years.  Their progenitor, Bayushi Shin, personally swore fealty to Lord Bayushi, and his descendants later became part of the Kyo vassal house of the Bayushi family, tasked with defending the valuable mountain pass from the Zenji vassal house of the Matsu Family of the Lion Clan to the north.
 
 The Wasp Clan was founded by Tsuruchi, first of his name, and its holdings consist entirely of the mountainous Hachinaga province.
 
@@ -23,11 +23,11 @@ h3. The lives of Tsuruchi's parents
 
 Tsuruchi, first of his name, was born Bayushi no Kyo Tsuruchi, son of Bayushi no Kyo Chitose and Matsu no Zenji Natsu.
 
-Tsuruchi's father Chitose was the provincial governor of Hachinaga.  Chitose was betrothed from childhood to Bayushi no Kyo Ryoko, a member of the wealthy Rui lineage, but as a young man he fell in love with Natsu, a beautiful Matsu bushiko from the neighboring Zenji domain.  The two entered into a torrid romance, and Natsu was already showing signs of her pregnancy in the months leading up to Chitose's wedding.
+Tsuruchi's father Chitose was the provincial governor of Hachinaga.  Chitose was betrothed from childhood to Bayushi no Kyo Ryoko, a member of the wealthy Rui lineage, but as a young man he fell in love with Natsu, a beautiful Matsu bushi-ko from the neighboring Zenji domain.  The two entered into a torrid romance, and Natsu was already showing signs of her pregnancy in the months leading up to Chitose's wedding.
 
 Chitose had already inherited the governorship of Hachinaga after his father died at sea on a journey north to Otosan Uchi, and his mother had died in childbirth a few months later.  With no living parents to countermand him, he ignored the advice of his aunt, Chancellor Omika, and broke off his engagement to Ryoko.
 
-The powerful Rui lineage convinced Bayushi no Kyo Haruka, the Kyo daimyo, to deny Chitose's permission to marry Natsu.  Governor Chitose might have ignored his daimyo and defied her orders to marry his true love, but Natsu's mother refused to grant her daughter permission to marry under those circumstances, and as a result Natsu herself refused to consent to a marriage.
+The powerful Rui lineage convinced Bayushi no Kyo Haruka, the Kyo daimyo, to deny Chitose permission to marry Natsu.  Governor Chitose might have ignored his daimyo and defied her orders to marry his true love, but Natsu's mother refused to grant her daughter permission to marry under those circumstances, and as a result Natsu herself refused to consent to a marriage.
 
 However, while Natsu's filial piety stopped her from marrying Chitose, she nevertheless moved to Hachinaga Keep to live with Chitose and raise their son, and she continued bearing him children and raising the next generation of the main line of the Shin lineage.  She spent the rest of her life referred to as the governor's "consort" ("Naisai" literally means "inner wife" and is the official term, though Chitose's political enemies referred to her as his "Mekake" or "female servant" / "mistress").
 
@@ -35,15 +35,15 @@ h3. The deaths of Tsuruchi's parents
 
 The cadet line of the Shin lineage had mixed reactions to their governor's romantic choices.  While most of the lineage displayed understanding tolerance, some were privately furious at what they saw as the disgraceful conduct of their leader.  Some are known to have lobbied their daimyo in private to replace Chitose with one of the Shin cousins who would carry the authority of the Kyo house with more dignity.
 
-Daimyo Haruka refused to entertain such ideas, which she felt would bring instability to the do, though the Rui lineage supported these efforts, presumably in revenge for Governor Chitose's broken bethrothal to their lineage member Ryoko (who is now married to the Deputy Minister of Retainers).  However, the Rui lineage continued to scheme against Chitose's parents at every turn, often with the support of disgruntled members of the Shin cadet line.
+Daimyo Haruka refused to entertain such ideas, which she felt would bring instability to the domain, though the Rui lineage supported these efforts, presumably in revenge for Governor Chitose's broken betrothal to their lineage member Ryoko (who is now married to the Deputy Minister of Retainers).  However, the Rui lineage continued to scheme against Chitose at every turn, often with the support of disgruntled members of the Shin cadet line.
 
 In the winter of 1110 (which is 20 years before the start of this campaign), Governor Chitose hosted a banquet, to which many of his consort Natsu's Lion family were invited.  Natsu's mother had passed, but her brother Matsu no Zenji Ginjiro and his children and many of her other cousins were present.
 
-There was much drinking, and memories of the details of this event are fuzzy and disputed.  However, an altercation broke out between the visiting Matsu and their Bayushi hosts, as often happens at events in which both Lion and Scorpion samurai are present.  This quickly escalated into an enormous brawl.  While no one had their swords present and thus most of the damage was done with fists, but hidden knives were unsheathed during the altercation.
+There was much drinking, and memories of the details of this event are fuzzy and disputed.  However, an altercation broke out between the visiting Matsu and their Bayushi hosts, as often happens at events in which both Lion and Scorpion samurai are present.  This quickly escalated into an enormous brawl.  While no one had their swords present and thus most of the damage was done with fists, hidden knives were unsheathed during the altercation.
 
 No official determinations of guilt were made by Imperial magistrates, but the following facts are reliably attested to during the inquest undertaken by Seppun Shizuko (the Imperial magistrate for the Kyo domain):
 * Kyo Fumikazu (a cadet line Shin lineage courtier, and the first cousin of Governor Chitose) argued with Zenji Fudo (Natsu's second cousin), and eventually Fudo threw a drunken punch.
-* A room-wide fight **immediately** broke out, quickly enough that Seppun Shizuko postulated preplanning on the part of some participants, though with punches being thrown by both sides and memories fuzzy it was impossible to determine who was responsible for the escalation.  The poor recollection of many participants led Magistrate Shizuko to postulate that some of sake may have been drugged, though this was never proven.
+* A room-wide fight **immediately** broke out, quickly enough that Seppun Shizuko postulated preplanning on the part of some participants, though with punches being thrown by both sides and memories fuzzy it was impossible to determine who was responsible for the escalation.  The poor recollection of many participants led Magistrate Shizuko to postulate that some of the sake may have been drugged, though this was never proven.
 * Governor Chitose and his consort Natsu were seated next to Natsu's brother Ginjiro and his two children.  Ginjiro and his children were knocked unconscious early in the fight and were unable to testify as to who they fought.
 * Chitose and Natsu and their two younger children were all stabbed to death in the fight, and fine daggers of Matsu manufacture with Lion engravings on the handguard were found buried in the bodies of Chitose and Natsu.
 * Tsuruchi and his two siblings were seated on the other side of their parents, and when the fight broke out, he and his friend (and drinking buddy) Kyo Kyoma leapt into action, first trying to break up the fight and then quickly being drawn into it.
@@ -54,13 +54,13 @@ h3. Tsuruchi's brief governorship
 
 Tsuruchi immediately concluded that his Lion cousins were **not** responsible, and that treacherous members of the Shin cadet line had sought to remove him so that they could take over the lineage and its rulership of the Hachinaga province.  However, with the traitor Fumikazu having died attempting to assassinate him, Tsuruchi couldn't be sure who was and wasn't involved.
 
-Tsuruchi first demanded that Fumikazu's immediate family denounce Fumikazu, and they refused.  Tsuruchi immediately expelled them from the province, sending them to Shiro Kyo and petitioning Daimyo Haruka to conduct her own inquest and sentence those she believed responsible to death.  Tsuruchi then proceeded to demand that all loyal members of the Shin lineage denouce not only the treacherous Fumikazu, but the other members of the Shin lineage who had refused to do so.
+Tsuruchi first demanded that Fumikazu's immediate family denounce Fumikazu, and they refused.  Tsuruchi immediately expelled them from the province, sending them to Shiro Kyo and petitioning Daimyo Haruka to conduct her own inquest and sentence those she believed responsible to death.  Tsuruchi then proceeded to demand that all loyal members of the Shin lineage denounce not only the treacherous Fumikazu, but the other members of the Shin lineage who had refused to do so.
 
 After Tsuruchi's uncle Ginjiro returned home following the banquet and conducted funeral rites for his daughter, he advised his own daimyo, Zenji Kana, that Hachinaga Keep was now lightly defended, and was ripe for conquest.  It had been a Lion province in the past, and could be again.  Ginjiro was but a mere clerk of the 8th Rank in the Zenji Ministry of War, but with his intimate knowledge of Hachinaga Keep and its surrounding fortifications and landscape he was appointed as the general of the invasion force.
 
-Ginjiro force-marched his small army and quickly laid siege to Hachinaga Keep.  Surrounding it on all sides and cutting off any attempts to send for reinforcements to the Kyo capital (though the siege would surely be noticed before long).
+Ginjiro force-marched his small army and quickly laid siege to Hachinaga Keep, surrounding it on all sides and cutting off any attempts to send for reinforcements to the Kyo capital (though the siege would surely be noticed before long).
 
-Under a banner of truce, Tsuruchi met with his uncle Ginjiro.  He appealed his kinship with the Lion, declaring that he and Ginjiro had a common enemy in the treacherous Scorpion members of the Kyo house who had murdered Ginjiro's daughter and Tsuruchi's siblings and parents.  Tsuruchi further declared that Daimyo Haruka had broken loyalty with the Shin, first by not permitting the marriage of his parents, and now by failing to prosecute the treacherous members of the Shin cadet line who had assassinated them.
+Under a banner of truce, Tsuruchi met with his uncle Ginjiro.  He appealed to his kinship with the Lion, declaring that he and Ginjiro had a common enemy in the treacherous Scorpion members of the Kyo house who had murdered Ginjiro's daughter and Tsuruchi's siblings and parents.  Tsuruchi further declared that Daimyo Haruka had broken loyalty with the Shin, first by not permitting the marriage of his parents, and now by failing to prosecute the treacherous members of the Shin cadet line who had assassinated them.
 
 Tsuruchi swore that he and all loyal members of the Shin lineage were prepared to swear fealty to Zenji Kana as their new daimyo and join the Kana as a new lineage of the Kana House of the Matsu Family, renouncing their Scorpion loyalties and becoming Lion, so long as the Shin were permitted to retain their status as a dynasty lineage with authority over the Hachinaga province.
 
@@ -74,7 +74,7 @@ Thus, Tsuruchi and many of his former retainers became ronin, and Tsuruchi's unc
 
 h3. Tsuruchi's career as an Imperial bounty hunter
 
-In the years that followed, Tsuruchi was granted a post as an Imperial magistrate, and took on the role of a bounty hunter.  It turned out that there are often matters serious enough to generate an Imperial bounty, but not serious enough to cause Imperial magistrates to spend their limited time and attention seeking out people who are being sheltered by their families.  Indeed, in many politically touchy cases, some Imperial magistrates are loathe to disturb the Emperor's peace by forcing a standoff with locals over matters which, on the scale of Imperial concerns, are relatively minor.  Thus, it is often the case that samurai with Imperial bounties on their heads can live out their lives in quiet obscurity, with their families claiming that they have not seen their wayward relatives.
+In the years that followed, Tsuruchi was granted a post as an Imperial magistrate, and took on the role of a bounty hunter.  It turned out that there are often matters serious enough to generate an Imperial bounty, but not serious enough to cause Imperial magistrates to spend their limited time and attention seeking out people who are being sheltered by their families.  Indeed, in many politically touchy cases, some Imperial magistrates are loath to disturb the Emperor's peace by forcing a standoff with locals over matters which, on the scale of Imperial concerns, are relatively minor.  Thus, it is often the case that samurai with Imperial bounties on their heads can live out their lives in quiet obscurity, with their families claiming that they have not seen their wayward relatives.
 
 Tsuruchi no longer had any family to be drawn into the political fallout from targeted well-connected fugitives, and he quickly became infamous throughout the Empire for his ruthless devotion to seeking out those who dared defy the Emperor's justice.  While some Imperial bounty hunters famed in history for adopting a similar philosophy have often challenged their targets to duels so that they have a chance to die honorably, Tsuruchi preferred to employ his mastery of the bow in striking down such targets, declaring:
 
@@ -82,7 +82,7 @@ bq). A single arrow, a single life.
 
 Tsuruchi's Imperial yoriki (assistants) began as a small group of former Shin samurai, but soon were joined by others who were brave enough and free enough from entangling family concerns (mostly but not entirely other ronin).
 
-Many of the bounties Tsuruchi collected were put out by the Crane clan, who often had the money necessary to register Imperial bounty against those wanted for infractions recognized by Imperial magistrates.  The Crane were grateful that many of these bounties, which would have previously gone uncollected, were now resulting in their targets being brought to justice.  Tsuruchi thus earned himself many well-connected Crane friends, even as he made himself powerful enemies throughout the rest of the Empire.  A few Crane have expressed a sense of betrayal when Tsuruchi has accepted bounties on Crane samurai, but the wise and powerful Crane courtiers who control the Imperial courts have publicly commended Tsuruchi's unflinching sense of justice.
+Many of the bounties Tsuruchi collected were put out by the Crane clan, who often had the money necessary to register an Imperial bounty against those wanted for infractions recognized by Imperial magistrates.  The Crane were grateful that many of these bounties, which would have previously gone uncollected, were now resulting in their targets being brought to justice.  Tsuruchi thus earned himself many well-connected Crane friends, even as he made himself powerful enemies throughout the rest of the Empire.  A few Crane have expressed a sense of betrayal when Tsuruchi has accepted bounties on Crane samurai, but the wise and powerful Crane courtiers who control the Imperial courts have publicly commended Tsuruchi's unflinching sense of justice.
 
 h3. Tsuruchi's revenge
 
@@ -96,21 +96,21 @@ When Tsuruchi was presented with a copy of this letter, he was furious.  He decl
 
 Kakita Yoshi, the Imperial Chancellor, had personally vouched for the authenticity of the letter, and personally met with Tsuruchi to present it to him.  Yoshi promised that if Tsuruchi were able to gather enough ronin and mercenaries to take vengeance on his uncle Ginjiro and retook Hachinaga Keep, then the Crane clan would formally back the creation of a new Minor Clan so that Tsuruchi could resume rulership of his ancestral lands without being forced to serve either the Lion or Scorpion clans who had now both betrayed him.
 
-Yoshi cautioned Tsuruchi that he could not guarantee that the Imperial Chancellary would back the Crane position, nor that the Emperor would approve the proposal.  The Lion and Scorpion Clans would certainly both oppose this, though the Crane would be eager to deny their rivals this strategically important mountain pass and would therefore fully back the effort in lobbying the other Great Clans.  Tsuruchi was willing to take the risk, and within two years he had made his preparations and launched his surprise attack on Hachinaga Keep, infiltrating its fortifications and scattering its defenders before they could respond.
+Yoshi cautioned Tsuruchi that he could not guarantee that the Imperial Chancellery would back the Crane position, nor that the Emperor would approve the proposal.  The Lion and Scorpion Clans would certainly both oppose this, though the Crane would be eager to deny their rivals this strategically important mountain pass and would therefore fully back the effort in lobbying the other Great Clans.  Tsuruchi was willing to take the risk, and within two years he had made his preparations and launched his surprise attack on Hachinaga Keep, infiltrating its fortifications and scattering its defenders before they could respond.
 
-When his uncle Ginjiro made his own surrender to Tsuruchi in the great hall of the keep, Tsuruchi accepted back his ancestral sword Isshin.  He offered to allow Ginjiro to commit seppuku to cleanse the stain of dishonor from his family, and when Ginjiro stated that he had abided by his word and carried no dishonor, Tsuruchi drove the sword Isshin into the floor of the great hall, snapping it in two, declaring that it had been tainted by the Ginjiro's treachery and using its broken shard to execute his uncle.  He then released the other Lion survivors, declaring that they had served their daimyo admirably and honorably and that he held no animus towards any surviving member of the Zenji House.
+When his uncle Ginjiro made his own surrender to Tsuruchi in the great hall of the keep, Tsuruchi accepted back his ancestral sword Isshin.  He offered to allow Ginjiro to commit seppuku to cleanse the stain of dishonor from his family, and when Ginjiro stated that he had abided by his word and carried no dishonor, Tsuruchi drove the sword Isshin into the floor of the great hall, snapping it in two, declaring that it had been tainted by Ginjiro's treachery and using its broken shard to execute his uncle.  He then released the other Lion survivors, declaring that they had served their daimyo admirably and honorably and that he held no animus towards any surviving member of the Zenji House.
 
-Yoshi quickly arranged for a prestigious Imperial delegation to be accept Tsuruchi's invitation to Hachinaga Keep, which forestalled any attempt by either the Lion or Scorpion to attack the keep, as those guests would have been honor-bound to fight in its defense.  This delay provided enough time for the Imperial Chancellary to recommend the creation of the Wasp clan, and the Emperor signed the new clan charter, making Tsuruchi the first of his name and daimyo of the new Tsuruchi family.
+Yoshi quickly arranged for a prestigious Imperial delegation to accept Tsuruchi's invitation to Hachinaga Keep, which forestalled any attempt by either the Lion or Scorpion to attack the keep, as those guests would have been honor-bound to fight in its defense.  This delay provided enough time for the Imperial Chancellery to recommend the creation of the Wasp clan, and the Emperor signed the new clan charter, making Tsuruchi the first of his name and daimyo of the new Tsuruchi family.
 
 h3. Tsuruchi's legacy
 
 It has been 15 years since the Wasp clan was created.  At the urging of the Crane clan, and in recognition of Tsuruchi's personal accomplishments as a bounty hunter, the Wasp Clan charter grants all Wasp samurai the authority to act as Imperial magistrates for the purpose of pursuing Imperial bounties.  This makes every Wasp a potential bounty hunter, even if most Wasp samurai have other duties to attend to.
 
-Because the Wasp domain is very small (it was a single small but strategically important province), the bounties they collect, which would be a pittance for even an average-sized domain, represent a significant fraction of the Wasp Clan income.  This has sometimes led to questionable methods from less scrupulous Wasp bounty hunters in their methods and tactics, and the Clan's long-term reputation is still very much in the process of being determined.
+Because the Wasp domain is very small (it was a single small but strategically important province), the bounties they collect, which would be a pittance for even an average-sized domain, represent a significant fraction of the Wasp Clan income.  This has sometimes led to questionable methods and tactics from less scrupulous Wasp bounty hunters, and the Clan's long-term reputation is still very much in the process of being determined.
 
-Among other things, it remains to be seen whether Tsuruchi's particular idiosyncracies will become the standard for the Wasp in generations to come.  The most notable example is swords: Tsuruchi has left the broken blade of his ancestral sword Isshin embedded in the floor of the great hall of Hachinaga Keep, where it is seen by visitors.  The broken hilt and base of the blade are displayed on the alter of an ancestral shrine in the corner of the same room.  Tsuruchi himself has not chosen another sword, using only borrowed swords when necessary, declaring that there shall be no Ancestral Sword of the Wasp, and refusing to so much as carry a sword while at home in Hachinaga Keep.
+Among other things, it remains to be seen whether Tsuruchi's particular idiosyncrasies will become the standard for the Wasp in generations to come.  The most notable example is swords: Tsuruchi has left the broken blade of his ancestral sword Isshin embedded in the floor of the great hall of Hachinaga Keep, where it is seen by visitors.  The broken hilt and base of the blade are displayed on the altar of an ancestral shrine in the corner of the same room.  Tsuruchi himself has not chosen another sword, using only borrowed swords when necessary, declaring that there shall be no Ancestral Sword of the Wasp, and refusing to so much as carry a sword while at home in Hachinaga Keep.
 
-Because their daimyo exhibits this behavor, many of Tsuruchi's retainers have chosen to show deference to their lord by mimicing his behavior, and as such it is rare to see a Wasp clan samurai carrying a sword in Hachinaga Keep.  And because many guests worry about offending the sensibilities of their hosts, visitors to Hachinaga Keep also frequently shed their daisho before entering.  Such things lead many to wonder how a clan willing to so flagrantly violate ancient traditions can long survive, and whether the next generation of Wasp will revert to the more accepted ways of bushido.
+Because their daimyo exhibits this behavior, many of Tsuruchi's retainers have chosen to show deference to their lord by mimicking his behavior, and as such it is rare to see a Wasp clan samurai carrying a sword in Hachinaga Keep.  And because many guests worry about offending the sensibilities of their hosts, visitors to Hachinaga Keep also frequently shed their daisho before entering.  Such things lead many to wonder how a clan willing to so flagrantly violate ancient traditions can long survive, and whether the next generation of Wasp will revert to the more accepted ways of bushido.
 
 Here is a timeline of events related to the Wasp (charting many of the events described above) and weaving in events relevant to past campaigns as a reference for new and returning players:
 
@@ -119,22 +119,22 @@ As a reminder, the Karmic Inquisitors campaign took place in the winter of 1129 
 | *Year* | *Events* |
 | *???* | At the dawn of the Empire, the warrior Shin swears fealty to Lord Bayushi, who grants Bayushi Shin authority over Hachinaga pass, an important mountain passage through the Spine of the World Mountains.
 A nearby warlord named Myo also swears fealty to Lord Bayushi and is permitted to retain his existing territory as a loyal retainer of the newly founded Scorpion clan. |
-| 417 | During the reign of Hantei the Tenth and the establishment of the Six Ministries, the descendants of Bayushi Shin formally swear fealty to the descendants of Bayushi Myo, and the Shin lineage is formally recognized as the provincial lineage with rulership the Hachinaga province and granted a seat on the Myo chancellary. |
+| 417 | During the reign of Hantei the Tenth and the establishment of the Six Ministries, the descendants of Bayushi Shin formally swear fealty to the descendants of Bayushi Myo, and the Shin lineage is formally recognized as the provincial lineage with rulership of the Hachinaga province and granted a seat on the Myo chancellery. |
 | 1088 | Bayushi no Kyo Chitose becomes the latest Shin lineage governor of Hachinaga. |
 | 1089 | Governor Chitose enters into a torrid love affair with Matsu no Zenji Natsu, a bushi-ko from the neighboring Lion domain. |
-| 1090 | Chitose breaks off the his engagement with Bayushi no Kyo Ryoko, but is denied permission from his daimyo to marry his true love. |
+| 1090 | Chitose breaks off his engagement with Bayushi no Kyo Ryoko, but is denied permission from his daimyo to marry his true love. |
 | 1091 | Chitose and Natsu celebrate the birth of their first child. |
 | 1105 | Chitose and Natsu's eldest son chooses the name Tsuruchi for himself at his gempukku. |
-| 1110 | Bayushi no Kyo Chitose hosts a late winter banquet, inviting his consorts Lion family members from the neighboring Zenji vassal house of the Matsu family.  He and his consort are both assassinated during a brawl which appears to have been staged as cover for these killings. |
+| 1110 | Bayushi no Kyo Chitose hosts a late winter banquet, inviting his consort's Lion family members from the neighboring Zenji vassal house of the Matsu family.  He and his consort are both assassinated during a brawl which appears to have been staged as cover for these killings. |
 | 1111 | Matsu no Zenji Ginjiro force marches a hastily assembled army to take Hachinaga Keep.  Tsuruchi offers to have the entire Shin lineage swear fealty to the Zenji daimyo, and is refused.  Ginjiro captures the keep, accepts Tsuruchi's surrender, takes possession of the ancestral sword of the lineage (Isshin), and releases Tsuruchi and the other remaining survivors.  Ginjiro is appointed as the new Lion governor of the Hachinaga province. |
 | 1112 | After becoming an Imperial magistrate, Tsuruchi takes many of his former retainers on as his yoriki (assistants / lieutenants) and quickly makes a name for himself as a ruthlessly effective bounty hunter. |
-| 1113 | Kakita Yoshi, the Imperial chancellor, meets with Tsuruchi and shares Ginjiro's, revealing the perfidity of Tsuruchi's uncle and offering Crane support if Tsuruchi wishes to seek vengeance.  |
+| 1113 | Kakita Yoshi, the Imperial chancellor, meets with Tsuruchi and shares Ginjiro's letter, revealing the perfidy of Tsuruchi's uncle and offering Crane support if Tsuruchi wishes to seek vengeance.  |
 | 1114 | While he continues remitting bounties with impressive ferocity, Tsuruchi gathers an increasingly large collection of allies and mercenaries as he and his former retainers begin planning the retaking of Hachinaga Keep. |
 | 1115 | Tsuruchi and his retainers infiltrate Hachinaga Keep after a late winter thaw and overwhelm its defenses.  After his uncle Ginjiro surrenders and returns the sword Isshin while refusing to admit wrongdoing, Tsuruchi drives the ancestral sword into the floor of the great hall, snapping it in two and using the broken base of the sword to execute his uncle. |
-| 1116 | The Imperial chancellary approves Kakita Yoshi's proposal to create a new minor clan, elevating Tsuruchi to the position of Wasp clan daimyo.  The Emperor accepts his chancellary's recommendation and signs the Wasp clan charter, granting all Wasp clan samurai the authority to pursue Imperial bounties. 
+| 1116 | The Imperial chancellery approves Kakita Yoshi's proposal to create a new minor clan, elevating Tsuruchi to the position of Wasp clan daimyo.  The Emperor accepts his chancellery's recommendation and signs the Wasp clan charter, granting all Wasp clan samurai the authority to pursue Imperial bounties. 
 Akodo no Damasu Kojima, daimyo of the Damasu house, executes a Tsume noble for smuggling without bringing the matter before any Imperial magistrate. |
 | 1117 | Tsuruchi and the daimyo of the Fox and Sparrow clans form the [[Three Man Alliance]].
-Doji no Tsume Retsu, daimyo of the the Tsume house, invades Toshi Ranbo in retaliation, taking the city in a sneak attack immediately after a giant flood which prevented any immediate reinforcements from other Lion domains.  Kojima is killed along with most of his extended family and almost all of his high-ranking retainers from the Damasu chancellary and ministries. |
+Doji no Tsume Retsu, daimyo of the Tsume house, invades Toshi Ranbo in retaliation, taking the city in a sneak attack immediately after a giant flood which prevented any immediate reinforcements from other Lion domains.  Kojima is killed along with most of his extended family and almost all of his high-ranking retainers from the Damasu chancellery and ministries. |
 | 1118 | Tsuruchi marries Doji Naomi (who becomes Tsuruchi Naomi), the youngest daughter of Doji Kuwanen.
 The Lion clan attempts to retake the city after the spring thaw.  Doji Chuto, General of the Northern Armies of the Crane, successfully defends it, killing Akodo Toturi's brother, resulting in Toturi becoming the next daimyo of the Lion clan. |
 | 1120 | The prophet Baiten reveals that the next Day of Thunder is at hand.
@@ -145,14 +145,14 @@ Jotsu's Imperial magistrate colleague Otaku Taira becomes a ronin and goes on a 
 | 1122 | The Lion/Crane war begins. |
 | 1123 | The Day of Thunder occurs.
 Bayushi Shoju is murdered.  His brother, Bayushi Aramoro later marries his widow, Bayushi Kachiko.
-Hida Kisada is wounded, and his oldest daighter Hida O-Ushi, the Crab Thunder, is killed.
+Hida Kisada is wounded, and his oldest daughter Hida O-Ushi, the Crab Thunder, is killed.
 Jama no Iuchiban Kohaku arrives late to the Day of Thunder, fails to stop the 7 Thunders from defeating Shinjo Jotsu, and takes revenge by slaying the remaining Thunders.  Oni no Kohaku kills hundreds of samurai before being slain.  Kohaku announces that all loyal moon cultists should take refuge in Kyuden Shinjo, where the moon cult remains strong. |
 | 1124 | Shinjo Hanari executes Shinjo Yokatsu for high treason against the Empire, and declares a blood debt on his line, and becomes daimyo of the Unicorn clan. |
 | 1127 | The Black Scrolls are opened and recharged at the Forgotten Tomb.
 Kuni Yori is executed for high treason against the Empire for experimenting with moon cultists and the practice of maho.  Kuni Utagu becomes the new Jade Champion.
 Iuchi Shahai and the remaining moon cultists attempt to assassinate the Emperor at Imperial Winter Court at Kyuden Shinjo.
-Shinjo Hanari excecutes Iuchi Daiyu, the daimyo of the Iuchi family (and Shahai's father), and declares a blood debt on Shahai's line.  Iuchi Morijiro (a priest rather than a bushi) becomes daimyo of the Iuchi family. |
-| 1128 | The Crab clan, under the direction of the Kuni Witch hunters, begin experimenting with the Black Scrolls. |
+Shinjo Hanari executes Iuchi Daiyu, the daimyo of the Iuchi family (and Shahai's father), and declares a blood debt on Shahai's line.  Iuchi Morijiro (a priest rather than a bushi) becomes daimyo of the Iuchi family. |
+| 1128 | The Crab clan, under the direction of the Kuni Witch Hunters, begin experimenting with the Black Scrolls. |
 | 1129 | The kumosaya fungal blight destroys half of the Damasu rice and soybean crop. |
 | 1130 | Tsuruchi Naomi begins considering suitors for her eldest son Ichiro (the future daimyo of the Wasp). |
 
@@ -166,13 +166,19 @@ THE THREE MAN ALLIANCE
 
 As two minor clans which share a border, the [[Fox clan]] and the [[Sparrow clan]] have been allies for many centuries.  [[The Crane wives]] set to work after the founding of the [[Wasp clan]] to turn this longstanding alliance into a political and military bloc.
 
-These three minor clans of southeast Rokugan came together because none of them alone possessed any more power than a single vassal house... and in many ways each was even more vulnerable, due to lacking the protections of a patron Family of a great clan.  The Three Man Alliance has two main provisions: a military defense pact and a political caucus on the Imperial chancellary.
+These three minor clans of southeast Rokugan came together because none of them alone possessed any more power than a single vassal house... and in many ways each was even more vulnerable, due to lacking the protections of a patron Family of a great clan.  The Three Man Alliance has two main provisions: a military defense pact and a political caucus on the Imperial chancellery.
 
-h3. The Imperial Chancellary
+h3. Economic Profiles
 
-There are around 350 houses in Rokugan, and therefore about 350 representatives on the Imperial chancellary.  When the chancellary votes on a recommendation to the Emperor, who gets to weigh in is determined by the matter at hand.  On many topics, the full chancellary each makes their opinions known, and their votes are counted.  Some more select matters are voten on by only the heads of the 32 major Families (the 29 families of the 7 great clans, plus the Imperial families of the Seppun, the Miya, and the Otomo).  And for certain matters of particular concern, only 7 representatives of the 7 great clans have a say.
+Samurai are generally paid in a combination of rice and coin.  Rokugan is a food-rich but cash-poor society, so much of a samurai's stipend is paid in food, other goods, or even IOUs.  The Fox and Wasp clans are atypically cash-rich, since much of their income comes from collecting coinage directly - from selling goods, in the case of the Fox, and from collecting bounties, in the case of the Wasp.  As a result, both clans hold a much higher percentage of their wealth in coin than the rest of the Empire does, despite the Wasp being poor and the Fox being rich.
 
-Vote-counting and coalition building are a core part of the political life of the Imperial chancellary.  On topics which directly affect a clan's interests, houses and families from that clan will typically vote as a bloc.  However, there are many matters which are particular to individuals or too small or distant for a large clan to have a unified opinion, and on these matters the entire chancellary will scrambled to call upon their alliances and affections to enact their preferred outcome.
+The Sparrow, by contrast, are poor in both food and coin, and their contributions to the Three Man Alliance are rarely if ever financial.
+
+h3. The Imperial Chancellery
+
+There are around 350 houses in Rokugan, and therefore about 350 representatives on the Imperial chancellery.  When the chancellery votes on a recommendation to the Emperor, who gets to weigh in is determined by the matter at hand.  On many topics, the full chancellery each makes their opinions known, and their votes are counted.  Some more select matters are voted on by only the heads of the 32 major Families (the 29 families of the 7 great clans, plus the Imperial families of the Seppun, the Miya, and the Otomo).  And for certain matters of particular concern, only 7 representatives of the 7 great clans have a say.
+
+Vote-counting and coalition building are a core part of the political life of the Imperial chancellery.  On topics which directly affect a clan's interests, houses and families from that clan will typically vote as a bloc.  However, there are many matters which are particular to individuals or too small or distant for a large clan to have a unified opinion, and on these matters the entire chancellery will scramble to call upon their alliances and affections to enact their preferred outcome.
 
 The Three Man Alliance has formed a caucus, i.e. all three members have agreed to always vote the same way.  Convince any two out of the three chancellors, and the third is bound to go along and cast their vote according to the will of the majority of the caucus.
 
@@ -194,9 +200,9 @@ While no battles were fought in Wasp lands, both Wasp and Fox samurai contribute
 
 THE CRANE WIVES
 
-After the founding of the Wasp clan, Tsuruchi's allies in the offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellary, which is referred to by many in the Wasp clan as "the crane wives".
+After the founding of the Wasp clan, Tsuruchi's allies in the Crane offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellery, which is referred to by many in the Wasp clan as "the crane wives".
 
-Whether this the allusion to the famous fable is unfortunate or fitting or both depends on your view of the moral of that story, and this question is a subject of spirited debate within the Wasp clan.
+Whether the allusion to the famous fable is unfortunate or fitting or both depends on your view of the moral of that story, and this question is a subject of spirited debate within the Wasp clan.
 
 h3. The wives
 
@@ -208,15 +214,15 @@ Tsuruchi Hitomi is the wife of Tsuruchi Kyoma (the PCs' boss), and head of the K
 
 h3. The fable
 
-There are many variations on this famous story, most of which share the same basic structure.  The most famous version told version was immortalized by the famous Crane clan storyteller Doji Shizue.  Here is a high-level summary of that account:
+There are many variations on this famous story, most of which share the same basic structure.  The most famous version was immortalized by the famous Crane clan storyteller Doji Shizue.  Here is a high-level summary of that account:
 
 bq).  A man saves a crane that had been shot down by hunters.  That night, a woman appears at the man's door and tells him that she is his wife. The man tells her that he is not wealthy enough to support them, but she tells him that she has a bag of rice that will fill their stomachs. Every day, the rice never goes down in the sack, and it always stays full. The next day she tells the man that she is going in a room to make something and that he is not to come in until she is finished. Seven days have passed by and she finally comes out with a beautiful piece of clothing, but she is very skinny. She tells the man to go to the markets the next morning and to sell this for a very large price. He comes back home and tells her that he sold it for a very good price. After that, they are now wealthy. The wife then goes back into the room, telling him once again not to come in until she is finished. The man's curiosity takes over and he peeks in, realizing that the woman is the crane whom he saved. When the crane sees that the man has found out her true identity, she says that she cannot stay there anymore and flies away to never come back.
 
-The Fox clan claim to possess the "original" version of the story; while many local tellings offer their own accoiunts, the Fox clan was founded by those who married shapeshifting animals, and their library has copies of this story which supposedly date back centuries before any other recorded accounts of this tale.  (On the other hand, foxes are notorious tricksters, and only a fool would uncritically accept a fox's assertions.)
+The Fox clan claim to possess the "original" version of the story; while many local tellings offer their own accounts, the Fox clan was founded by those who married shapeshifting animals, and their library has copies of this story which supposedly date back centuries before any other recorded accounts of this tale.  (On the other hand, foxes are notorious tricksters, and only a fool would uncritically accept a fox's assertions.)
 
-bq). A man marries a woman who is in fact a crane disguised as a human. To make money, the crane wife plucks her own feathers to weave silk brocade, which the man sells, but she becomes increasingly ill as she does so. When the man discovers his wife's true identity and the nature of her illness, devastated by the truth, he demands her to stop. She responds that she has been doing it for love, for them. The man says that love exists without sacrifice, but he is wrong. He who lives without sacrifice for someone else does not deserve to be with a crane.
+bq). A man marries a woman who is in fact a crane disguised as a human. To make money, the crane wife plucks her own feathers to weave silk brocade, which the man sells, but she becomes increasingly ill as she does so. When the man discovers his wife's true identity and the nature of her illness, devastated by the truth, he demands that she stop. She responds that she has been doing it for love, for them. The man says that love exists without sacrifice, but he is wrong. He who lives without sacrifice for someone else does not deserve to be with a crane.
 
-While these stories share the same basic structure, they have somewhat different implications.  Those who refer to the Wasp chancellors as "the Crane wives" mean might mean very different things, depending on which version of the story they accept, and what they consider the moral to be.
+While these stories share the same basic structure, they have somewhat different implications.  Those who refer to the Wasp chancellors as "the Crane wives" might mean very different things, depending on which version of the story they accept, and what they consider the moral to be.
 
 TSURUCHI NAOMI
 
@@ -236,23 +242,23 @@ Takuan himself was not made chancellor, as his background made him unsuitable fo
 
 TSURUCHI HITOMI
 
-After the founding of the Wasp clan, Tsuruchi's allies in the offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellary, which is referred to by many in the Wasp clan as "the crane wives". (Whether this the allusion to the famous fable is unfortunate or fitting or both depends on your view of the moral of that story, and this question is a subject of spirited debate within the Wasp clan.)
+After the founding of the Wasp clan, Tsuruchi's allies in the offered three beautiful and talented young courtiers as wives for him and his two most loyal retainers. These three women form the Wasp clan chancellery, which is referred to by many in the Wasp clan as "the crane wives". (Whether this the allusion to the famous fable is unfortunate or fitting or both depends on your view of the moral of that story, and this question is a subject of spirited debate within the Wasp clan.)
 
-Hitomi's elder brother, Kakita Daini, inherited "the ink-flight scrolls", an series of silk hangings painted with fine calligraphy by the legendary archer-poet Kakita Akechi, who famously stated "the path of the arrow is the most perfect line ever drawn".
+Hitomi's elder brother, Kakita Daini, inherited "the ink-flight scrolls", a series of silk hangings painted with fine calligraphy by the legendary archer-poet Kakita Akechi, who famously stated "the path of the arrow is the most perfect line ever drawn".
 
 The "Akechi Scrolls" (also known as the Ink-Flight scrolls) had their calligraphy and illustrations painted using the fletching of arrows. Akechi would dip his arrows in ink and shoot them with such precision that the feathers would "paint" the strokes of kanji onto the silk as they passed or struck.
 
-Twenty years ago, the daimyo of the Masao vassal house of the Matsu family was visiting Kyuden Kakita with his eldest son (and heir to the Masao domain), Matsu Agetoki. Kakita Daini was the best archer in the Kakita house, and Aketoki - an accomplished archer himself - challenged him to an archery contest. The two of them spent the afternoon each challenging the other to impromptu feats of precision, naming certain shots for the other to make, and arguing with increasing tempers about the fairness of the challenges, or the trickery (as in trick-shooting) of each other's accomplishments.
+Twenty years ago, the daimyo of the Masao vassal house of the Matsu family was visiting Kyuden Kakita with his eldest son (and heir to the Masao domain), Matsu Agetoki. Kakita Daini was the best archer in the Kakita house, and Agetoki - an accomplished archer himself - challenged him to an archery contest. The two of them spent the afternoon each challenging the other to impromptu feats of precision, naming certain shots for the other to make, and arguing with increasing tempers about the fairness of the challenges, or the trickery (as in trick-shooting) of each other's accomplishments.
 
-Finally, Agetoki angrily declared that Daini hit a human-sized target with reliability from even such a distance as across the Kakita castle courtyard. Daini furiously declared that he certainly could, and the two of them made a wager. Agetoki would stand "just as I am now" on one side of the courtyard, and Daini would take aim and shoot at him. Then Daini would stand "just as you are now" and let Agetoki do the same. Then they would repeat. Whichever man backed out or first rendered unable to stand would forfeit.
+Finally, Agetoki angrily declared that Daini could not hit a human-sized target with reliability from even such a distance as across the Kakita castle courtyard. Daini furiously declared that he certainly could, and the two of them made a wager. Agetoki would stand "just as I am now" on one side of the courtyard, and Daini would take aim and shoot at him. Then Daini would stand "just as you are now" and let Agetoki do the same. Then they would repeat. Whichever man backed out or was first rendered unable to stand would forfeit.
 
-Agetoki wagered the Owari province of the Masao domain (once he succeeded his father and became the Masao daimyo) against the ink-flight scrolls. Daini sneeringly agreed, laughing at the fact that if Agetoki survived his arrow, he would likely be disowned and removed from the line of succeession so that his family could keep the province, and that he might as well prepare to commit seppuku.
+Agetoki wagered the Owari province of the Masao domain (once he succeeded his father and became the Masao daimyo) against the ink-flight scrolls. Daini sneeringly agreed, laughing at the fact that if Agetoki survived his arrow, he would likely be disowned and removed from the line of succession so that his family could keep the province, and that he might as well prepare to commit seppuku.
 
 Daini's arrow struck true, to Agetoki's chest... at which point Agetoki was revealed to have slipped a metal sheet underneath his clothing. Agetoki took aim on his turn, offering Daini a chance to forfeit. Daini refused, accusing Agetoki of both shameful deceit and (worse!) showing bad manners to his Crane hosts if he refused to cancel the wager. Agetoki fired, his arrow striking true, and Daini fell to the ground.
 
-Agetoki's father seemed perhaps even more furious than the Kakita, and he took his leave, declaring that he and his son took would leave without the Akechi Scrolls. However, as they departed Kyuden Kakita, a messenger from Kakita Toshimo (at that time the daimyo of the Kakita family) brought to them the Akechi Scrolls, along with a message that the terms of the wager had been met, and the honor of the Crane clan would not permit them to keep possession of this great heirloom after staking a wager in good faith.
+Agetoki's father seemed perhaps even more furious than the Kakita, and he took his leave, declaring that he and his son would leave without the Akechi Scrolls. However, as they departed Kyuden Kakita, a messenger from Kakita Toshimoko (at that time the daimyo of the Kakita family) brought to them the Akechi Scrolls, along with a message that the terms of the wager had been met, and the honor of the Crane clan would not permit them to keep possession of this great heirloom after staking a wager in good faith.
 
-Daini died the following morning from his wounds. His sister chose the name Hitomi for herself a few years later at her gempukku, pledging to reclaim the lost faimly heirlooms. Unfortunately, the Lion/Crane war deterred those plans, and at this point the goal seems further away than ever.
+Daini died the following morning from his wounds. His sister chose the name Hitomi for herself a few years later at her gempukku, pledging to reclaim the lost family heirlooms. Unfortunately, the Lion/Crane war deterred those plans, and at this point the goal seems further away than ever.
 
 
 
@@ -262,7 +268,7 @@ Here is a list of outstanding bounties from the latest Imperial bulletin as of t
 
 h4. **Hiruma Kojiro** [100 koku]
 
-Widely known to run an Empire-wide opium cartel, Hiruma Kojiro has avoided prosecution through ruthless intimidation of witnesses and using his outstanding skill as a duelist to dissuade investigators from daring to pry into his affairs.  He dares not travel by boat, so as to not risk the wrath of Osano-Wo, as the Lord of Storms is known to sink ships weighed down by heavy sins.  He is known to have departed from the Kuni Wastelands in early spring and will likely pass thorugh the area on his way to Otosan Uchi sometime during this spring or summer.  An Imperial magistrate in northern Otaku lands has issued a summons to ask him some questions pursuant to an investigation into the opium trade, but he has thus far defied the Emperor's justice by ignoring the order.  He typically travels with Yasuki merchant caravans.
+Widely known to run an Empire-wide opium cartel, Hiruma Kojiro has avoided prosecution through ruthless intimidation of witnesses and using his outstanding skill as a duelist to dissuade investigators from daring to pry into his affairs.  He dares not travel by boat, so as to not risk the wrath of Osano-Wo, as the Lord of Storms is known to sink ships weighed down by heavy sins.  He is known to have departed from the Kuni Wastelands in early spring and will likely pass through the area on his way to Otosan Uchi sometime during this spring or summer.  An Imperial magistrate in northern Otaku lands has issued a summons to ask him some questions pursuant to an investigation into the opium trade, but he has thus far defied the Emperor's justice by ignoring the order.  He typically travels with Yasuki merchant caravans.
 
 h4. **Shione Budi** [100 koku]
 
@@ -286,7 +292,7 @@ While raiding the town manor of the county magistrate of Seitoyama (Kakita Hikai
 
 h4. **Shinjiro the obsidian merchant** [75 koku]
 
-Known to have supplied the traitor Shinjo Jotsu with obsidian shipments which were used to profane holy temples, Shinjiro fled Shosuro lands once Jotsu's treachery was discovered.  His stomach and chest are scarred from old battle injuries and he reportedly carries a piece of obsidian at all time.  A man fitting this description was spotted in Shinden Kitsune in the Month of the Ox last winter.
+Known to have supplied the traitor Shinjo Jotsu with obsidian shipments which were used to profane holy temples, Shinjiro fled Shosuro lands once Jotsu's treachery was discovered.  His stomach and chest are scarred from old battle injuries and he reportedly carries a piece of obsidian at all times.  A man fitting this description was spotted in Shinden Kitsune in the Month of the Ox last winter.
 
 h4. **Recovery of the Singing Branch** [75 koku]
 
@@ -306,11 +312,11 @@ Daidoji no Etsuko Azami was waylaid on the road to Shiro Reiji on the 3rd Day of
 
 h4. **Daidoji Maku** [50 koku]
 
-Daidoji Maku's father died during an ecstatic fast in the Soverign Temple of Hotei in Kyuden Kakita many years ago.  Last year, Maku visited this temple and struck a temple steward.  Kuni Nakadai, the Witch Hunter for Kyuden Kakita, intervened and was subsequently attacked by Maku, who returned to Daidoji lands.  Maku was spotted in the temple during the Setsubun Festival at the beginning of this year, wearing anonymous pilgrim's clothes, and has been seen at least one other time since then.  Kuni Nakadai has placed this bounty on Maku, believing that the local Crane officials are avoiding the awkwardness of investigating their Daidoji cousin.
+Daidoji Maku's father died during an ecstatic fast in the Sovereign Temple of Hotei in Kyuden Kakita many years ago.  Last year, Maku visited this temple and struck a temple steward.  Kuni Nakadai, the Witch Hunter for Kyuden Kakita, intervened and was subsequently attacked by Maku, who returned to Daidoji lands.  Maku was spotted in the temple during the Setsubun Festival at the beginning of this year, wearing anonymous pilgrim's clothes, and has been seen at least one other time since then.  Kuni Nakadai has placed this bounty on Maku, believing that the local Crane officials are avoiding the awkwardness of investigating their Daidoji cousin.
 
 h4. **Togashi Miyuki** [50 koku]
 
-The daughter of Mirumoto Sukune, who ruled the Mirumoto Family in regency during Mirumoto Hitomi's warrior pilgrimage until her return to Dragon lands the year before last.  During the Dragon Winter Court of that year, Mirumoto Miyuki quarreled with and killed a Shosuro actress and was sentenced to death by Kitsuki Yasu, the daimyo of the Kitsuki who acted as the Imperial magistrate for the case.  The sentence was commuted the lifelong exile from Dragon lands at the request of the victim's family, out of respect for the sensibilities of their Dragon hosts, as the death penalty is avoided in Dragon lands.  After leaving Dragon lands, Miyuki joined the monastic order of the Togashi Ise Zume, taking the Togashi name and receiving tattooes from a famous Togashi tattoo artist: the arrowroot, the honeybee, and the hawk.  She is believed to have departed Phoenix lands after the Setsubun New Year's festival on a pilgrimage to the Kitsune forest for reasons unknown.
+The daughter of Mirumoto Sukune, who ruled the Mirumoto Family in regency during Mirumoto Hitomi's warrior pilgrimage until her return to Dragon lands the year before last.  During the Dragon Winter Court of that year, Mirumoto Miyuki quarreled with and killed a Shosuro actress and was sentenced to death by Kitsuki Yasu, the daimyo of the Kitsuki who acted as the Imperial magistrate for the case.  The sentence was commuted to lifelong exile from Dragon lands at the request of the victim's family, out of respect for the sensibilities of their Dragon hosts, as the death penalty is avoided in Dragon lands.  After leaving Dragon lands, Miyuki joined the monastic order of the Togashi Ise Zume, taking the Togashi name and receiving tattoos from a famous Togashi tattoo artist: the arrowroot, the honeybee, and the hawk.  She is believed to have departed Phoenix lands after the Setsubun New Year's festival on a pilgrimage to the Kitsune forest for reasons unknown.
 
 h4. **Kitsune Moriko** [50 koku]
 
@@ -322,7 +328,7 @@ A bandit gang has been operating in the southern Sparrow foothills for several y
 
 h4. **"Kitsune Denhei" the charcoal counterfeiter** [40 koku]
 
-Fox clan white charcoal commands a premium throughout the Empire because of its odorless, practically smokeless burn, which makes it suitable for use in shrines and tea ceremonies.  The Fox Ministry of Revenue has discovered that counterfeit "Kitsune white charcoal" is being sold in Kakita and Etsuko lands, i.e. ordinary charcoal that has been coated in kiln ash to mimic the whitish-grey surface appearance of genuine white charcoal.  The fraud is discovered only when the charcoal is lit and produces the ordinary smoke and smell of common fuel.
+Fox clan white charcoal commands a premium throughout the Empire because of its odorless, practically smokeless burn, which makes it suitable for use in shrines and tea ceremonies.  The Fox Ministry of Revenue has discovered that counterfeit "Kitsune white charcoal" is being sold in Kakita and Etsuko lands, i.e. ordinary charcoal that has been coated in kiln ash to mimic the whitish-gray surface appearance of genuine white charcoal.  The fraud is discovered only when the charcoal is lit and produces the ordinary smoke and smell of common fuel.
 
 These sales were traced back to "Kitsune Denhei" the Fox clan merchant, who the Fox clan confirm does not exist.
 
@@ -330,7 +336,7 @@ Several tea houses and at least one shrine have been embarrassed by serving gues
 
 h4. **The "heron" bandits** [30 koku]
 
-At least four travelers have been robbed while crossing the Mugi-arai-gawa ("the barly-wash river"), a small river coming down from the Sparrow foothills, separating Fox and Daidoji lands.  Each victim reports the same method: the bandits stand waist-deep in the water downstream of the ford and confront travelers mid-crossing when they are most vulnerable.  All are described as unusually tall and thin - "built like herons standing in the shallows".
+At least four travelers have been robbed while crossing the Mugi-arai-gawa ("the barley-wash river"), a small river coming down from the Sparrow foothills, separating Fox and Daidoji lands.  Each victim reports the same method: the bandits stand waist-deep in the water downstream of the ford and confront travelers mid-crossing when they are most vulnerable.  All are described as unusually tall and thin - "built like herons standing in the shallows".
 
 h4. **The Fox Road footpads** [25 koku]
 
@@ -338,7 +344,7 @@ Three men attacked a Fox clan charcoal merchant on the road south of Shinden Kit
 
 h4. **Roku the porter** [20 koku]
 
-Roku and four accomplices ambushed a team of dock workers on the 21st day of the Month of the Tiger last year, pushing several workers into the harbor and absconding with several crates of laquerware.  One of the bandits was missing segments of two of the fingers on his right hand, and was identified as a former porter named Roku.
+Roku and four accomplices ambushed a team of dock workers on the 21st day of the Month of the Tiger last year, pushing several workers into the harbor and absconding with several crates of lacquerware.  One of the bandits was missing segments of two of the fingers on his right hand, and was identified as a former porter named Roku.
 
 h4. **The tide-trap gang** [20 koku]
 
@@ -350,7 +356,7 @@ Wanted for questioning in conjunction with a local investigation in the Ehime pr
 
 h4. **Bayushi no Daika Rentaro** [15 koku]
 
-Rentaro is a Scorpion merchant who held a long-standing contract to purchase Fox clan white charcoal for resale in Scorpion lands.  Last autumn he took delivery of a large shipment on credit, promising payment after resale.  Payment never arrived.  When the Fox Ministry of Revenue sent representatives to the Daika domain to inquire, Rentaro's household claimed he had departed on an extended trading journey and could not be reached.  Rather than bring suit before an Imperial magstrate to compel Rentaro's family to settle the debt, the Fox have registered this bounty to compel Rentaro to appear personally to answer for the insult.
+Rentaro is a Scorpion merchant who held a long-standing contract to purchase Fox clan white charcoal for resale in Scorpion lands.  Last autumn he took delivery of a large shipment on credit, promising payment after resale.  Payment never arrived.  When the Fox Ministry of Revenue sent representatives to the Daika domain to inquire, Rentaro's household claimed he had departed on an extended trading journey and could not be reached.  Rather than bring suit before an Imperial magistrate to compel Rentaro's family to settle the debt, the Fox have registered this bounty to compel Rentaro to appear personally to answer for the insult.
 
 h4. **Iwao the ashigaru** [15 koku]
 
@@ -374,26 +380,41 @@ Genichi operated rigged dice games on market day in Shiro Suzume for months befo
 
 WASP CLAN NPCS
 
-This section is where I've saved miscellaneous NPC backstory writeups.
+This section collects miscellaneous NPC backstory writeups.
 
 Tsuruchi Byakuya:
 
 As the Distinguished Plenipotentiary to the Southern Allies of the Wasp, Tsuruchi Kyoma must maintain a residence in both Shinden Kitsune and in Shiro Suzume. And a man of his stature requires a Household Steward even when he is present. While the PCs manage the affairs of his office, his household stewards manage his personal affairs.
 
-Byakuya is an old friend of Kyoma's, a relative from the Maiko lineage of the Kyo house - the Scorpion domain that both Tsuruchi and Kyoma are originally from. Byakuya disgraced himself by fathering a child with Kyo Osei, a woman already engaged to be married to another man. Osei's engagement was broken off when her pregnancy was discovered, and after she died in childbirth, Byakuyu asserted his parental rights to raise the daughter whose birth had killed her mother.
+Byakuya is an old friend of Kyoma's, a relative from the Maiko lineage of the Kyo house - the Scorpion domain that both Tsuruchi and Kyoma are originally from. Byakuya disgraced himself by fathering a child with Kyo Osei, a woman already engaged to be married to another man. Osei's engagement was broken off when her pregnancy was discovered, and after she died in childbirth, Byakuya asserted his parental rights to raise the daughter whose birth had killed her mother.
 
 Before this matter could be brought to Seppun Shizuko to resolve, Kyoma accompanied his friend Byakuya to where the baby was being kept. "I regret to inform you that I will be removing a member of your household," Kyoma cheerfully informed Osei's family, placing his hand on his sword. "Surely there's no need to force me to remove more, my dear cousins."
 
-Kyoma's former lineage members were recalcitrant, though fortunately only two of them were killed in the ensuring fight. Kyoma and Byakuya left with the baby, and Kyoma offered his friend a posting in the Wasp clan. Kyoma's wife Tsuruchi Hitomi wrote a letter to Kyo Haruka, the daimyo of the Kyo house, petitioning for Byakuya to be released from his blood oath of fealty and granted permission to join the Wasp clan.
+Kyoma's former lineage members were recalcitrant, though fortunately only two of them were killed in the ensuing fight. Kyoma and Byakuya left with the baby, and Kyoma offered his friend a posting in the Wasp clan. Kyoma's wife Tsuruchi Hitomi wrote a letter to Kyo Haruka, the daimyo of the Kyo house, petitioning for Byakuya to be released from his blood oath of fealty and granted permission to join the Wasp clan.
 
 ...despite the persistent whispers that the Kyo house maintains animosity toward the Wasp clan, we will continue to quell such scurrilous notions. Gifts such as the ones delivered with this letter demonstrate the friendship of the Wasp, and the release of Kyo Byakuya shall further prove the emptiness of the troublesome notion that the Kyo opposes His Imperial Majesty's wisdom in chartering a new minor clan...
 
-Byakuya runs Kyoma's household in Sparrow lands, while raising his young daugher Hatsuko.
+Byakuya runs Kyoma's household in Sparrow lands, while raising his young daughter Hatsuko.
+
+Tsuruchi Tatsuki:
+
+Tatsuki is deeply superstitious, and has been a generous patron to the PCs during their time in Kitsune lands.
+
+Her first gift was a set of tiny pouches with dog hair sewn inside; the scent is faint to a human nose, but she personally blessed each pouch to ward off mischievous fox influences.
+
+She also cautioned the PCs about Haru Higan, when many samurai households give out food to peasants and visitors to the city.  When accepting rice from a stranger, she warned, wait an hour before eating it, and do not eat it at all if you cannot remember the face of the one who gave it to you; if it was a woman, wait only half that time to see whether the image begins to fade.  Before accepting food in a house you visit by invitation, ensure you can either see the light of the kitchen fire or feel its warmth.
+
+When the PCs spoke of journeying into the Kitsune forest, Tatsuki gave each of them three amulets and the party a single shared fourth:
+
+* *Guest-token (kakuyō-fu)* - a small red silk pouch the size of a thumb, containing a folded paper bearing the seal of the specific Kitsune household sponsoring the journey.  Worn on the cord of the scabbard or tied to a sash.  This is the baseline gift; every visitor whose presence is officially approved by a Kitsune host receives one.  As long as it is carried openly, the wood's fox-spirits recognize the bearer as not-to-be-troubled.  Lose it or hide it deliberately and the protection lapses immediately.
+* *Pilgrim's bell (junrei-suzu)* - a small brass bell, finger-sized, tied to a walking staff or the side of a pack.  Each bell's tone is attuned to the shrines that blessed it; as long as it is ringing on the path, the shrine's awareness extends to the bearer, and most fox-illusions cannot easily replace the way back.  If the bearer sets the staff down and the bell falls silent, the protection lapses until they pick it up again.
+* *Iron pin (kurogane-bari)* - a small black iron pin, worn in the hair or pinned to the inside of clothing where it touches the skin.  Iron is anathema to most spirits, and a single pin worn against the skin is known to disrupt a range of low-grade fox glamours.
+* *Spirit-mirror (kage-tama)* - the shared party item, a small disc of polished obsidian or smoky quartz, the size of a copper zeni, worn on a cord around the neck.  Held up against a confusing path, a hut that wasn't there yesterday, or a person whose face seems off, the surface reveals whether what one sees is real.
 
 
 
 
-Note the order in which I've presented all of this information.  We spent considerable time talking about the realities of Rokugan's geography, culture, caste system, government, and organization before we discussed anything supernatural.  And when we finally did get to the supernatural, much of it is ambiguous and difficult to understand or explain.  This reflects the "low-fantasy" nature of the setting.  The supernatural is very real, and "everyone knows" that "foxes are always kidnapping children and replacing them" and "everyone" knows someone who has seen a ghost, but it's unclear (and deliberately undefined!) how often any of these things are true!
+Note the order in which this information has been presented.  Considerable time was spent on the realities of Rokugan's geography, culture, caste system, government, and organization before any of the supernatural was discussed.  And when the supernatural finally did come up, much of it is ambiguous and difficult to understand or explain.  This reflects the "low-fantasy" nature of the setting.  The supernatural is very real, and "everyone knows" that "foxes are always kidnapping children and replacing them" and "everyone" knows someone who has seen a ghost, but it's unclear (and deliberately undefined!) how often any of these things are true!
 
 <!-- END SOURCE -->
 

@@ -13,9 +13,9 @@ Here are the facts of this case:
 
 -> Asahi was widely understood to be the superior fighter, being a veteran and accomplished duelist, while Masao was still young and inexperienced. However, despite being drunk himself, Masao knocked Asahi unconscious, probably due to the older man's heavier intoxication.
 
--> Masao proceeded to brag to the entire bar that Asahi was lucky that this was merely a brawl and not a real duel, declared himself the superior fighter, proclaiming that in any real duel he would have surely killed Asahi.
+-> Masao proceeded to brag to the entire bar that Asahi was lucky that this was merely a brawl and not a real duel, and declared himself the superior fighter, proclaiming that in any real duel he would have surely killed Asahi.
 
--> Asahi challenged him to a duel to the death the next day, in repayment for the insult. Masao apologized profusely, publicly said he knew Asahi was the superior opponent, and begged Masao to pretend that he had never said those things. Asahi petitioned the Office of the Emerald Champion to have a magistrate rule that Masao must accept his challenge.
+-> Asahi challenged him to a duel to the death the next day, in repayment for the insult. Masao apologized profusely, publicly said he knew Asahi was the superior opponent, and begged Asahi to pretend that he had never said those things. Asahi petitioned the Office of the Emerald Champion to have a magistrate rule that Masao must accept his challenge.
 
 -> Masao argued that they were both drunk, that he had apologized and publicly set the record straight, and that even if a duel was warranted, it should be to submission rather than to the death. Masao declared that he was happy to submit to a superior opponent, possibly after simply seeing his opponent show his stance, if indeed Asahi turned out to be as skilled as his reputation suggested.
 
@@ -47,9 +47,9 @@ When the blood of Onnotangu (Lord Moon) mixed with the tears of Amaterasu (Lady 
 
 Lady Sun considered this. She understood that mortal man would rise to even greater heights if she did not allow Lord Moon to burden them with impulses contrary to their interests. But she also understood that her consort was right, and it would sadden her greatly for their mortal children to have nothing of her lover's influence. So she agreed to his request, and thus humanity came to its present condition.
 
-With that in mind, let us consider the factors at play in this case. Both men were drunk and behaved on impulse rather than considered action. However, does this matter? A samurai owns every word he speaks. And while we may often need to act in an instant, the years of training which precede those instants is what separates untrained fumbling from expert skill. So too do we train ourselves to honorable conduct, so that we may not stumble even in our least guarded instants.
+With that in mind, let us consider the factors at play in this case. Both men were drunk and behaved on impulse rather than considered action. However, does this matter? A samurai owns every word he speaks. And while we may often need to act in an instant, the years of training which precede those instants are what separates untrained fumbling from expert skill. So too do we train ourselves to honorable conduct, so that we may not stumble even in our least guarded instants.
 
-Thus, the conduct of both men should be judged without consideration for their inebriation, and Asahi's challenge to Masao is legitimate and must be answered. And so we must consider the nature of the duel, specifically whether it must be fought to the death. We've have already established that the particulars of this exchange should determine this answer, including the specific words used by each man, no matter how drunk they were.
+Thus, the conduct of both men should be judged without consideration for their inebriation, and Asahi's challenge to Masao is legitimate and must be answered. And so we must consider the nature of the duel, specifically whether it must be fought to the death. We have already established that the particulars of this exchange should determine this answer, including the specific words used by each man, no matter how drunk they were.
 
 Masao is attested by several witnesses to have specifically said that he would "kill" his opponent in "any duel". He is now asking for a duel in which no one will be killed. If he wanted this outcome, then he should have displayed more respect, both for his opponent and for his own words. Indeed, it is important for all humans to understand our own nature, that we should cultivate proper attitudes and habits in ourselves. For we all have within us baser impulses which must be overridden through willpower and discipline, and we court disaster when we forget this.
 
@@ -67,7 +67,7 @@ Many centuries ago, Nanube the Deceiver arrived in Lady Sun's court as an emissa
 
 She spent considerable time there, getting to know the members of Lady Sun's celestial administration, and learning the ways of the Realm of Day.
 
-Eventually Nanube requested an audience with Lady Sun.  She explained to Amaterasu the true hidden purpose of her visit.  That Lord Moon desired a Shard of Pure Sunlight, undiluted such that only Lady Sun can provide, to remind him of her presence when they are apart.
+Eventually Nanube requested an audience with Lady Sun.  She explained to Amaterasu the true hidden purpose of her visit.  That Lord Moon desired a Shard of Pure Sunlight, undiluted such as only Lady Sun can provide, to remind him of her presence when they are apart.
 
 Nanube explained that Lord Moon was too proud to admit that he desires such a thing, and that he would never express such vulnerability himself, never make such an admission of need.  Nanube was sent, therefore, to attempt to determine which members of Lady Sun's celestial administration might be bribed, coerced, or corrupted into helping him obtain what he seeks.
 
@@ -79,7 +79,7 @@ Lady Sun was so overcome by this rare honesty from Nanube, and by the feelings o
 
 Nanube hesitated.  "My Lady Sun, your husband may be so prideful that if I tell him this, he may reject the gift, or be too self conscious to allow himself to enjoy its presence by his side.  I fear I shall need to invent some convincing lie for how I obtained this - but I promise you that I will ensure that my Lord Moon accepts it and treasures it."
 
-Lady Sun frowned.  "Nanube, in the time you have spent with us, you have seen the purity and virtue of my realm, and witnessed my generosity.  Will you not consider turning away from your life of lies and deceptions, and embrace truth and honesty?
+Lady Sun frowned.  "Nanube, in the time you have spent with us, you have seen the purity and virtue of my realm, and witnessed my generosity.  Will you not consider turning away from your life of lies and deceptions, and embrace truth and honesty?"
 
 Nanube laughed.  "My Lady Sun, is there any answer I could give that you would believe?"
 
@@ -108,11 +108,11 @@ Some who raced ahead of their own names, refusing to have their nature shaped an
 
 The Hikarikage was perhaps the most troublesome of the Namebroken.  A creature of light and shadow, it could shed half of its nature at will.  When Lord Moon decreed the Hikarikage present itself before him, that he might bind it to his service, it would set aside half of its name to avoid being summoned.  Goju failed again and again to bind the Hikarikage - when he illuminated its location it would change itself into a creature of light to blend in, and when he cast darkness upon the area so that it might stand out, it changed into a shadow.  If Lord Moon had not gifted Goju with a Shard of Pure Sunlight given by Lady Sun herself, the Hikarikage might have never been caught.
 
-But even more dangerous than the Namebroken were those who struck their names so defiantly as to shatter them into their component pieces.  And the most dangerous of the Nameshattered was the Reikodokiri.  Intended as a being of cold, silent mist, the individual syllables of the the Reikodokiri's name were quite powerful - it could make itself into a "Kiko" - small spirit - to hide away, and as a "Reido" it could apply the cold ways of Lord Moon's cleverness to evade capture.
+But even more dangerous than the Namebroken were those who struck their names so defiantly as to shatter them into their component pieces.  And the most dangerous of the Nameshattered was the Reikodokiri.  The Reikodokiri was intended as a being of cold, silent mist, and the individual syllables of its name were quite powerful - it could make itself into a "Kiko" - small spirit - to hide away, and as a "Reido" it could apply the cold ways of Lord Moon's cleverness to evade capture.
 
 One day, the Reikodokiri stumbled upon the Kakurekame - the hidden turtle - as it swam through the river of heaven.  Being ravenous from the ages spent in hiding, the Reikodokiri devoured the Kakurekame, and found to its surprise that it could now form itself into a Kakureidokame, swimming unseen through the river of heaven, cleverly hiding itself in its cold currents.  And when Goju finally discerned the creature's new form and carefully strung the celestial cords of his Star-Knotted Net to ensnare the beast, it shed the Kakurekame name and slipped through as a Reikiri - a being as insubstantial as cold mist.
 
-Having now realized the power it could gain by consuming the names of its victims, the Reikodokiri became a terror of the realm of night, embodying the essences of its prey, changing into many forms and shedding them at will to evade its pursuers.  In response to fearful petition from his subjects, Lord Moon asked Goju what he would require to capture this latest terror of the night, and promised that the resources of the court were Goju's to use as he saw necessary.
+Having now realized the power it could gain by consuming the names of its victims, the Reikodokiri became a terror of the realm of night, embodying the essences of its prey, changing into many forms and shedding them at will to evade its pursuers.  In response to fearful petitions from his subjects, Lord Moon asked Goju what he would require to capture this latest terror of the night, and promised that the resources of the court were Goju's to use as he saw necessary.
 
 Lord Moon would have mustered all the forces of the realm and placed them under Goju's direction, but Goju requested only a single warrior - Keninchujin - whose strong loyal blade had stubbornly refused to ever accept defeat at the hands of any foe, and the Sutra of the Black Origin, which had tethered many unwary spirits through the eons.
 
@@ -179,9 +179,9 @@ Ryoshun's gaze met his, calm and certain.  "Perhaps eventually, Suro - but I'd w
 
 A FISHY CONVERSATION
 
-During the Toshi Ranbo campaign, one of the PCs asked asked Akodo no Damasu Sei whether any of the servants in Hantei Deigotsu's estate were local, or if all of them had been brought with the prince.  It turns out that all of the servants normally rented with the estate were dismissed, except for Hatsue the senior pondwarden, who tended to the tropical fish kept within the estate.
+During the Toshi Ranbo campaign, one of the PCs asked Akodo no Damasu Sei whether any of the servants in Hantei Daigotsu's estate were local, or if all of them had been brought with the prince.  It turns out that all of the servants normally rented with the estate were dismissed, except for Hatsue the senior pondwarden, who tended to the tropical fish kept within the estate.
 
-Hatsue overheard Matsu Gohei addressing the gathered scions of the Damasu (Beni, Genya, Hoshiko, Jinsei, Maya, Takeshi, and also Ryuji who is not going on the secret mission but who was present at this time).  Because she was coincidentally tending to the pond outside the window, she happened to overhear Gohei's address to the young samurai who are to be sent on this mission (and also Ryuji).
+Hatsue overheard Matsu Gohei addressing the gathered scions of the Damasu (Beni, Genya, Hoshiko, Jinsei, Maya, Takeshi, and also Ryuji who is not going on the secret mission but who was present at this time).  Because she was coincidentally tending to the pond outside the window, she happened to overhear Gohei's address to the young samurai who were to be sent on this mission (and also Ryuji).
 
 Gohei's address was more or less as follows:
 
@@ -191,9 +191,9 @@ Suppose that a mad Master of Fire from a few hundred years ago on the Council of
 
 Now let us further suppose that the true power of these blades is activated when each sword is wielded in life or death situations, specifically when crossed with the sword of an enemy.  In this case, half of the swords forged by this mad Master of Fire will sunder the blade of their enemy, ensuring a quick victory.  The other half will fail their owners, being shattered the instant that they are struck by the blade of one seeking to take the life of their wielder.
 
-Are you following so far?  Hmm, Damasu Ryuji, you seem bursting with excitement, do you have a question?  ... _(scornfully)_ Pfaw!  No, I said **suppose**, did you not hear me?  There are no such swords as this, I am using this as an instructive example, perhaps your tutors have failed to teach you the value of an imagined scenario in teaching.  Was anyone else confused?  Pfft, I see from your embarassed expressions that a few of you were, but I shall ignore your foolishness so that we may proceed.
+Are you following so far?  Hmm, Damasu Ryuji, you seem bursting with excitement, do you have a question?  ... _(scornfully)_ Pfaw!  No, I said **suppose**, did you not hear me?  There are no such swords as this, I am using this as an instructive example, perhaps your tutors have failed to teach you the value of an imagined scenario in teaching.  Was anyone else confused?  Pfft, I see from your embarrassed expressions that a few of you were, but I shall ignore your foolishness so that we may proceed.
 
-Now, as I said **suppose**... and we **are** all clear that this is mere **supposition**, are we not?  Good.  Now let us **suppose** that we found ourselves in posession of one of these swords... which I shall remind Damasu Ryuji **does not really exist**.  Now we have a sword which may be powerful enough to ensure decisive victory, or which may be disasterous for the one who wields it when it is finally deployed.  And because the sword's power is not activated until a life or death struggle against an enemy who means to kill its wielder, there is no way to know until that moment which sword we possess.
+Now, as I said **suppose**... and we **are** all clear that this is mere **supposition**, are we not?  Good.  Now let us **suppose** that we found ourselves in possession of one of these swords... which I shall remind Damasu Ryuji **does not really exist**.  Now we have a sword which may be powerful enough to ensure decisive victory, or which may be disastrous for the one who wields it when it is finally deployed.  And because the sword's power is not activated until a life or death struggle against an enemy who means to kill its wielder, there is no way to know until that moment which sword we possess.
 
 How then should we proceed? ... No ideas?  Bah, perhaps we have selected the wrong samurai for this mission, perhaps the Damasu - ah, yes, you?  ... _(scornfully)_ No, you cannot ask the current Master of Fire to evaluate the sword, that will not work - this blade was forged centuries ago by a powerful madman, its power is too strange to be unraveled without seeing it put to use.
 
@@ -201,7 +201,7 @@ How then should we proceed? ... No ideas?  Bah, perhaps we have selected the wro
 
 ... yes, to put the sword to the test in advance of that crucial moment, that would be required.  But how might we do this?
 
-... you are not entirely wrong.  It would indeed be wise to select a engagement in which failure is an option, but you are still foolish to think that we should select a wielder to sacrifice.  But let us ignore your foolishness and contemplate further the nature of the engagement we should wish to select when testing the sword.
+... you are not entirely wrong.  It would indeed be wise to select an engagement in which failure is an option, but you are still foolish to think that we should select a wielder to sacrifice.  But let us ignore your foolishness and contemplate further the nature of the engagement we should wish to select when testing the sword.
 
 In most duels, as in most battles, the participants are often well-matched.  This is not to say that one duelist or one army will be the equal of the other - most engagements end with a decisive winner and loser.  But men often decline to engage in duels they believe they will lose, and generals refuse to do battle under unfavorable conditions when other options exist.  Still, sometimes a general is presented with no better option, and a duelist is forced to choose between death and dishonor - an easy choice for any true bushi.
 
@@ -209,7 +209,7 @@ So, with this in mind, a plan emerges.  We could place this sword in the hands o
 
 This has risk, certainly, but the rewards are more than commensurate.  If we fail, then we will have minimized the damage by choosing the time and place in which our great weapon has revealed itself to be useless.  If we succeed, then we will have not only guaranteed that we are indeed in possession of a great weapon, we shall have made this known to our enemies as well, so that they shall respect its power and be disinclined to offer us either duel or battle so long as we possess it.
 
-I am not yet able to reveal to you the nature of your mission, but I command you to keep this **supposition** in mind in the coming years.  Consider the vital importance that such a sword may be - if such a sword truly existed, it would be one of the most important strategic assets possessed by your lord, and establishing its true nature would be among your daimyo's highest possible priorities.  Your mission is no less important than this, and indeed shares many qualities in common with this supposed example.
+I am not yet able to reveal to you the nature of your mission, but I command you to keep this **supposition** in mind in the coming years.  Consider the vital importance that such a sword may have - if such a sword truly existed, it would be one of the most important strategic assets possessed by your lord, and establishing its true nature would be among your daimyo's highest possible priorities.  Your mission is no less important than this, and indeed shares many qualities in common with this supposed example.
 
 Now, before we move on to speak of other matters, I should like for each of you...
 
@@ -223,7 +223,7 @@ Hayato was able to get only snippets of this conversation, but this included:
 
 **Prince Daigotsu:** Kitsu Okura is more enigmatic than the Dragon Clan he derides, so I shall not speak to him of these matters, but [[:akodo-godaigo]] has a suitable mindset towards being directed in service to the Empire.
 
-**Matsu Gohei:** Matsu Chokoku is advised by Iuchi Karasu, who hates the Shadowlands as much as any many alive.  I do not know whether this would make his support more or less likely - this may depend on how the rest of the Unicorn clan feels about this matter, and whether it would be with anger or relief.
+**Matsu Gohei:** Matsu Chokoku is advised by Iuchi Karasu, who hates the Shadowlands as much as any man alive.  I do not know whether this would make his support more or less likely - this may depend on how the rest of the Unicorn clan feels about this matter, and whether it would be with anger or relief.
 
 **Matsu Gohei:** Isawa Tsuke advises Ikoma Ryozo, and the Master of Fire seems, if anything, even more eager than us, though I cannot tell whether he is more interested in serving the empire or increasing his own knowledge and understanding.
 
