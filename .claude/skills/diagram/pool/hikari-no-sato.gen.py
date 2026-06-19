@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
 s = Settlement(seed=31)
-s.meta(name="Hikari no Sato", scale="village", torii_expected=2,
+s.meta(name="Hikari no Sato", scale="village", households=70, torii_expected=2,
        shrine_on_hill=False, fallow_implies_abandoned=False, has_pond=False)
 
 # the great V-shaped common field (point/crook at bottom-centre; arms open upward)
@@ -58,9 +58,11 @@ s.shrine_hall(230, 980, "Shrine to Bishamon", "(still tended)", w=118, h=82)
 
 # houses: headman largest; ring the V field and each small field
 s.headman(*HEADMAN)
-s.ring(("poly", s.field_polys[0]), 46, 26, ["plain"] * 8 + ["big"])
+# two-deep around the great V field, plus a ring on each small field
+s.ring(("poly", s.field_polys[0]), 40, 24, ["plain"] * 8 + ["big"])
+s.ring(("poly", s.field_polys[0]), 18, 58, ["plain"])
 for bb in (NW, NE, SW, SE):
-    s.ring(bb, 14, 16, ["plain"])
+    s.ring(bb, 12, 16, ["plain"])
 
 # labels
 s.label(806, 805, "Headman's House", 13, anchor="end", weight="bold")
@@ -68,8 +70,7 @@ s.label(1135, 408, "blight - fallow patch", 10, italic=True, color="#9C7A40")
 s.label(950, 96, "from the hills (off-map)", 10, "start", italic=True, color="#5C7488")
 s.label(700, 555, "shrine's tax-free plots (vermillion)", 9, italic=True, color="#6B2A18")
 
-s.title("Hikari no Sato", "a farming village - one great V-shaped common field, fed by river channels",
-        "village plan - the Benten shrine at the southern torii gateway; the smaller fields drink from the main field")
+s.title("Hikari no Sato")
 s.compass()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
