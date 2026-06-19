@@ -181,14 +181,23 @@ def main(path):
 
     # ---- village-specific expectations (from meta) ---------------------------
     scale = meta.get("scale", "village")
-    if meta.get("target_houses"):                     # explicit size (e.g. a large 500-pop village)
+    abandoned = sum(1 for h in houses if h["kind"] == "abandoned")
+    occupied = len(houses) - abandoned
+    if meta.get("households"):
+        # occupied farmhouses must portray the declared households. ~5-person homes
+        # span 2-3 generations and extended families share a roof, so houses run
+        # ~0.7-0.9 per household (GM: "~70 households ... at least 50 houses").
+        hh = meta["households"]
+        lo, hi = round(0.68 * hh), round(0.9 * hh)
+        check("households_consistent", lo <= occupied <= hi,
+              f"{occupied} occupied houses for ~{hh} households (expect {lo}-{hi}; +{abandoned} abandoned)")
+    elif meta.get("target_houses"):
         t = meta["target_houses"]
-        lo, hi = round(t * 0.85), round(t * 1.15)
-        band = f"~{t}"
+        lo, hi = round(0.85 * t), round(1.15 * t)
+        check("house_count_in_range", lo <= len(houses) <= hi, f"{len(houses)} houses (expect ~{t})")
     else:
         lo, hi = (40, 80) if scale == "village" else (10, 30)
-        band = f"{lo}-{hi} for a {scale}"
-    check("house_count_in_range", lo <= len(houses) <= hi, f"{len(houses)} houses (expect {band})")
+        check("house_count_in_range", lo <= len(houses) <= hi, f"{len(houses)} houses (expect {lo}-{hi} for a {scale})")
 
     if scale == "village":
         tf = M.get("taxfree", [])

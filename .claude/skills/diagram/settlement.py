@@ -589,10 +589,9 @@ class Settlement:
         self.add(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" '
                  f'font-weight="{weight}"{st} fill="{color}" paint-order="stroke" stroke="{LAND}" stroke-width="3">{text}</text>')
 
-    def title(self, name, subtitle, summary):
-        self.add(f'<text x="{self.W/2}" y="46" text-anchor="middle" font-size="30" font-weight="bold" fill="#2D2A24">{name}</text>')
-        self.add(f'<text x="{self.W/2}" y="68" text-anchor="middle" font-size="14" font-style="italic" fill="#4A4332">{subtitle}</text>')
-        self.add(f'<text x="{self.W/2}" y="86" text-anchor="middle" font-size="11" fill="#4A4332">{summary}</text>')
+    def title(self, name):
+        # just the place name - no subtitle/summary; the map is self-evident
+        self.add(f'<text x="{self.W/2}" y="52" text-anchor="middle" font-size="30" font-weight="bold" fill="#2D2A24">{name}</text>')
 
     def compass(self, x=None, y=128):
         x = x if x is not None else self.W - 72

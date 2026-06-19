@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
 s = Settlement(seed=23)
-s.meta(name="Kikuta", scale="village", torii_expected=7,
+s.meta(name="Kikuta", scale="village", households=70, torii_expected=7,
        shrine_on_hill=True, fallow_implies_abandoned=True, has_pond=True)
 
 # regions
@@ -47,11 +47,20 @@ s.torii_even([(1600, 748), (1470, 712), (1716, 672), (1486, 628), (1714, 600), (
 
 # houses: headman largest; ring every field; fallow fields ring abandoned houses
 s.headman(*HEADMAN)
-s.ring(WEST, 26, 24, ["plain"] * 7 + ["big"])
-s.ring(CENTRAL, 28, 24, ["plain"] * 7 + ["big"])
-s.ring(MIDNORTH, 13, 18, ["plain"])
-s.ring(SW, 12, 18, ["abandoned"] * 4 + ["plain"])
-s.ring(SE, 12, 18, ["abandoned"] * 4 + ["plain"])
+# two-deep around the big fields (a ~70-household village is not a single necklace)
+# the blight's abandoned houses first (before occupied rings can crowd them out), a
+# small count so it stays "some"
+s.ring(SW, 5, 18, ["abandoned"])
+s.ring(SE, 5, 18, ["abandoned"])
+# occupied farmhouses, two-deep around the big fields (a ~70-household village)
+s.ring(WEST, 18, 20, ["plain"] * 7 + ["big"])
+s.ring(WEST, 28, 54, ["plain"])
+s.ring(CENTRAL, 20, 20, ["plain"] * 7 + ["big"])
+s.ring(CENTRAL, 30, 54, ["plain"])
+s.ring(MIDNORTH, 14, 16, ["plain"])
+s.ring(MIDNORTH, 11, 50, ["plain"])
+s.ring(SW, 6, 18, ["plain"])
+s.ring(SE, 6, 18, ["plain"])
 
 # labels
 s.label(HEADMAN[0], 388, "Headman's House", 13, weight="bold")
@@ -66,8 +75,7 @@ s.label(1366, 1080, "fallow - post-blight", 10, italic=True, color="#9C7A40")
 s.label(1006, 600, "Sister Baika's tax-free plots (vermillion)", 9, italic=True, color="#6B2A18")
 s.label(305, 1120, "abandoned after the kumosaya", 10, "start", italic=True, color="#9A3A2A")
 
-s.title("Kikuta", "an average farming village - ~70 households, two common fields",
-        "village plan - irregular paddy basins, Benten shrine of Sister Baika on the eastern hill")
+s.title("Kikuta")
 s.compass()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
