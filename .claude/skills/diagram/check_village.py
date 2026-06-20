@@ -150,7 +150,7 @@ DEFAULT_MANIFEST = {
     "buildings": [], "pastures": [], "forest_patches": [], "religious": [],
     "flower_fields": [], "labels": [], "town_streets": [], "gate_structs": [],
     "pond": None, "hill": None, "summit": None, "shrine": None, "forest": None,
-    "storehouses": [], "road": None, "wall": None, "gate": None,
+    "storehouses": [], "flophouses": [], "road": None, "wall": None, "gate": None,
     "amphitheater": None, "granary": None, "meta": {},
 }
 
@@ -654,6 +654,13 @@ def gate(M, verbose=True):
         # shop's ordinary inventory. Draw them with s.merchant_storehouses(...).
         check("town_has_merchant_storehouses", len(M.get("storehouses", [])) >= 3,
               f"{len(M.get('storehouses', []))} merchant storehouses - a town's merchant quarter should show several attached kura (call s.merchant_storehouses(...))")
+        # a county seat is a market centre: peasants from the far edge of its catchment stay
+        # over on market eve in a cheap communal flophouse (kichin-yado) where travelers arrive
+        # - the gate market of a walled town, the road of an unwalled one. Default-on (>= 1);
+        # meta(flophouses=N) requires more (a busy hub); meta(flophouses=0) opts out.
+        want_flop = meta.get("flophouses", 1)
+        check("town_has_flophouse", len(M.get("flophouses", [])) >= want_flop,
+              f"{len(M.get('flophouses', []))} flophouses, expected >= {want_flop} (cheap market-day lodging via s.flophouse(...); meta(flophouses=N) to change)")
         # every town has an amphitheater unless meta(amphitheater=False); for a walled town
         # it sits INSIDE the walls unless meta(amphitheater="outside")
         amph_meta = meta.get("amphitheater", True)

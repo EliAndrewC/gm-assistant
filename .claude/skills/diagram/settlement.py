@@ -169,8 +169,8 @@ class Settlement:
                   "lane": [], "taxfree": [], "torii": [], "shrines": [], "manors": [],
                   "streams": [], "buildings": [], "pastures": [], "forest_patches": [],
                   "religious": [], "flower_fields": [], "labels": [], "pond": None,
-                  "storehouses": [], "hill": None, "summit": None, "shrine": None,
-                  "forest": None, "road": None,
+                  "storehouses": [], "flophouses": [], "hill": None, "summit": None,
+                  "shrine": None, "forest": None, "road": None,
                   "wall": None, "gate": None, "meta": {"W": W, "H": H}}
         self._header()
 
@@ -802,6 +802,27 @@ class Settlement:
             self.M["storehouses"].append({"x": ox, "y": oy, "w": kw, "h": kh, "of": [b["x"], b["y"]]})
             placed += 1
         return placed
+
+    def flophouse(self, x, y, w=104, h=46, label="flophouse"):
+        """A large, plain communal lodging - a kichin-yado / market flophouse - where peasants
+        who travel a long way to market day sleep on straw under a roof for a sen a night. It is
+        BIGGER and PLAINER than a shophouse (no awning, a long dormitory of plain doorways), set
+        where travelers arrive: the gate market of a walled town, the road of an unwalled one.
+        Default-on for a town (town_has_flophouse); meta(flophouses=N) requires more. Records to
+        M['flophouses'] and blocks houses - place it BEFORE any nearby pack/ring."""
+        x0, y0 = x - w / 2, y - h / 2
+        self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="{h}" rx="2" fill="#CDBE96" stroke="#5A4A30" stroke-width="2"/>')
+        self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="10" fill="#7A6038"/>')   # long roof ridge
+        self.add(f'<line x1="{x0:.0f}" y1="{y:.0f}" x2="{x0+w:.0f}" y2="{y:.0f}" stroke="#5A4A30" stroke-width="0.7"/>')
+        for dx in range(int(x0) + 14, int(x0 + w) - 10, 26):   # a row of plain doorways (a long dormitory)
+            self.add(f'<rect x="{dx}" y="{y+h/2-7:.0f}" width="9" height="7" fill="#5A4A30" opacity="0.8"/>')
+        self.M["flophouses"].append({"x": x, "y": y, "w": w, "h": h, "label": label})
+        self.placed.append((x, y, w, h))
+        bm = 30   # block a RECT + a building-half margin so dwellings keep clear, like the manor
+        self.block_polys.append([(x0 - bm, y0 - bm), (x0 + w + bm, y0 - bm),
+                                 (x0 + w + bm, y0 + h + bm), (x0 - bm, y0 + h + bm)])
+        if label:
+            self.label(x, y0 - 10, label, 11, italic=True, color="#5A4A30")
 
     def forest_patch(self, base, label=None, label_xy=None):
         """A bounded copse (organic polygon), as opposed to forest() which fills to
