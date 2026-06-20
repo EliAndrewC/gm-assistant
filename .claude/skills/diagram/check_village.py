@@ -119,13 +119,39 @@ def polyline_len(poly):
     return sum(math.hypot(poly[i + 1][0] - poly[i][0], poly[i + 1][1] - poly[i][1]) for i in range(len(poly) - 1))
 
 
+def approach_span(mx, my, half, ux, uy, M, w, Wd, Hd):
+    """March from a religious hall's front edge along (ux, uy) to the first HARD terminus - a
+    town street, a field/flower-field, the rampart, or the map edge - and return the clear
+    length. Buildings are deliberately NOT termini: a torii avenue is a cleared processional way
+    (sando) that displaces dwellings, so its length is set by the public street or barrier it
+    reaches, not by whatever housing it pushes aside. Used to size a monastery's torii avenue."""
+    fields = [f["outline"] for f in M.get("fields", [])] + [f["outline"] for f in M.get("flower_fields", [])]
+    streets = [(st["pts"], st.get("w", 24)) for st in M.get("town_streets", [])]
+    start = half + 12
+    s = start
+    while s < start + 600:
+        px, py = mx + ux * s, my + uy * s
+        if not (0 <= px <= Wd and 0 <= py <= Hd):
+            break
+        if w and not point_in_poly(px, py, w):
+            break
+        if any(point_in_poly(px, py, fp) for fp in fields):
+            break
+        if any(seg_dist(px, py, pts[k], pts[k + 1]) < sw / 2 + 4
+               for pts, sw in streets for k in range(len(pts) - 1)):
+            break
+        s += 10
+    return s - start
+
+
 DEFAULT_MANIFEST = {
     "houses": [], "fields": [], "fallow_patches": [], "channels": [], "lane": [],
     "taxfree": [], "torii": [], "shrines": [], "manors": [], "streams": [],
     "buildings": [], "pastures": [], "forest_patches": [], "religious": [],
     "flower_fields": [], "labels": [], "town_streets": [], "gate_structs": [],
     "pond": None, "hill": None, "summit": None, "shrine": None, "forest": None,
-    "road": None, "wall": None, "gate": None, "amphitheater": None, "meta": {},
+    "storehouses": [], "road": None, "wall": None, "gate": None,
+    "amphitheater": None, "granary": None, "meta": {},
 }
 
 
@@ -239,6 +265,23 @@ def gate(M, verbose=True):
                        for k in range(len(sp) - 1) for e in range(4))
         bad_s = [1 for sc in corners for st in streams if on_stream(sc, st["poly"])]
         check("no_structure_on_stream", not bad_s, f"{len(bad_s)} structure(s) overlap a stream")
+
+    # no structure overlaps an irrigation channel - the SAME full-footprint test as a stream.
+    # (houses_off_corridors below also touches channels, but only by house CENTRE distance, so a
+    # channel clipping a farmhouse's corner while its centre stayed clear used to slip through.)
+    channels_struct = M.get("channels", [])
+    if channels_struct:
+        crw = 5   # channel half-width (stroke ~4.2 -> ~2.1) + a little: a corner this close is on it
+
+        def on_channel(sc, sp):
+            if any(seg_dist(cx, cy, sp[k], sp[k + 1]) < crw for (cx, cy) in sc for k in range(len(sp) - 1)):
+                return True
+            if any(point_in_poly(rx, ry, sc) for rx, ry in sp):
+                return True
+            return any(segments_cross(sp[k], sp[k + 1], sc[e], sc[(e + 1) % 4])
+                       for k in range(len(sp) - 1) for e in range(4))
+        bad_c = [1 for sc in corners for c in channels_struct if on_channel(sc, c["poly"])]
+        check("no_structure_on_channel", not bad_c, f"{len(bad_c)} structure(s) overlap an irrigation channel")
 
     # no structure overlaps the town wall (the thick rampart stroke)
     wallpts = M.get("wall")
@@ -598,6 +641,19 @@ def gate(M, verbose=True):
         off_edge = [f["name"] for f in fields if runs_off_edge(f["outline"])]
         check("town_has_field_off_edge", off_edge,
               "a town must have at least one field running off the map edge (more farmland implied)")
+        # a rice-TRANSIT town (meta(granary=True)) shows a distinct tax-rice granary - a row of
+        # fireproof kura where grain gathered from many counties is forwarded up the kick-up
+        # chain. A standard county seat does NOT draw one: its grain sits inside the magistrate's
+        # yamen, implied by the manor. Opt-in, so the default is no check (unlike the gate
+        # market, amphitheater, and monasteries, which are opt-OUT defaults).
+        if meta.get("granary"):
+            check("town_has_granary", bool(M.get("granary")),
+                  "meta(granary=True) declares a rice-transit town - it must draw a granary via s.granary(...)")
+        # a noticeable MINORITY of merchant houses keep a fireproof storehouse (kura) for their
+        # (often absentee) landlords' rent-rice and bulk goods - more than a token 1-2, beyond a
+        # shop's ordinary inventory. Draw them with s.merchant_storehouses(...).
+        check("town_has_merchant_storehouses", len(M.get("storehouses", [])) >= 3,
+              f"{len(M.get('storehouses', []))} merchant storehouses - a town's merchant quarter should show several attached kura (call s.merchant_storehouses(...))")
         # every town has an amphitheater unless meta(amphitheater=False); for a walled town
         # it sits INSIDE the walls unless meta(amphitheater="outside")
         amph_meta = meta.get("amphitheater", True)
@@ -769,6 +825,51 @@ def gate(M, verbose=True):
                         run = 0
             check("wall_hugs_the_town", worst <= EMPTY_RUN,
                   f"~{worst:.0f}px of wall runs more than {MAXGAP}px from any building or terrain (it encloses empty space - draw a tighter wall)")
+
+        # a town monastery fronts a torii AVENUE whose number of arches is set by the open
+        # approach in front of it: a grand monastery with a long clear run to the street shows
+        # several arches; one wedged into a corner (the Benten monastery, hard against the west
+        # wall and the Imperial field) shows a single arch. This fires ONLY for monasteries and
+        # ONLY inside a wall - village SHRINES are exempt (they get 0-1 torii regardless). Each
+        # torii is assigned to its nearest monastery; the approach direction is taken from the
+        # monastery toward that group of torii, and the available span runs to the first street/
+        # field/wall/edge (approach_span, which ignores buildings - the avenue displaces them).
+        monks = [r for r in M.get("religious", []) if r.get("kind") == "monastery"]
+        if monks and torii:
+            PITCH = 55   # approx spacing between arches along a sando
+            bad = []
+            for m in monks:
+                grp = [t for t in torii
+                       if min(monks, key=lambda r: math.hypot(r["x"] - t[0], r["y"] - t[1])) is m]
+                n = len(grp)
+                if n:
+                    cx, cy = sum(t[0] for t in grp) / n, sum(t[1] for t in grp) / n
+                    dlen = math.hypot(cx - m["x"], cy - m["y"]) or 1.0
+                    span = approach_span(m["x"], m["y"], m["h"] / 2,
+                                         (cx - m["x"]) / dlen, (cy - m["y"]) / dlen, M, w, Wd, Hd)
+                else:
+                    span = 0.0
+                lo, hi = max(1, round(span / PITCH) - 1), round(span / PITCH) + 1
+                if not (lo <= n <= hi):
+                    bad.append((m.get("label"), f"{n} torii", f"want {lo}-{hi}", f"~{span:.0f}px"))
+            check("monastery_torii_scale_with_space", not bad,
+                  f"a walled-town monastery's torii avenue should fill its approach space (a roomy approach wants several arches, a cramped one a single arch): {bad}")
+
+        # a walled town almost always accretes a small extramural MARKET (a Chinese guan-xiang)
+        # just outside its gate: the gate is a chokepoint where the rural population trades
+        # without entering the walls, travellers buy services, and vendors dodge the intramural
+        # tax and market regulation. So a few businesses should sit OUTSIDE the wall near the
+        # gate - unless the town opts out with meta(gate_market=False) (a purely military fort,
+        # or a depopulated / suppressed gate).
+        if meta.get("gate_market", True):
+            gate = M.get("gate")
+            if gate and len(w) >= 3:
+                outside_biz = [b for b in M.get("buildings", [])
+                               if b.get("kind") in ("shop", "merchant")
+                               and not point_in_poly(b["x"], b["y"], w)
+                               and math.hypot(b["x"] - gate[0], b["y"] - gate[1]) <= 420]
+                check("walled_town_has_gate_market", len(outside_biz) >= 3,
+                      f"{len(outside_biz)} business(es) outside the gate - a walled town has a small gate market (guan-xiang) of a few shophouses unless meta(gate_market=False)")
 
     if scale == "village":
         tf = M.get("taxfree", [])

@@ -99,6 +99,74 @@ def test_channels_flow_downhill_passes_when_channel_runs_downhill():
     assert "channels_flow_downhill" not in f(M)
 
 
+# ---- monastery_torii_scale_with_space + approach_span ------------------------------------
+def test_approach_span_terminates_at_each_barrier():
+    # March south (0,1) from (500,100) with half-depth 20 (front edge at y132). Each barrier
+    # type must stop the march; with none in range it caps near 600. Buildings are not barriers.
+    cv = check_village
+    base = {"meta": {}}
+    street = cv.approach_span(500, 100, 20, 0, 1, {**base, "town_streets": [{"pts": [[0, 300], [1000, 300]], "w": 24}]}, None, 1000, 1000)
+    field = cv.approach_span(500, 100, 20, 0, 1, {**base, "flower_fields": [{"outline": [[400, 250], [600, 250], [600, 450], [400, 450]]}]}, None, 1000, 1000)
+    walled = cv.approach_span(500, 100, 20, 0, 1, base, [[400, 0], [600, 0], [600, 280], [400, 280]], 1000, 1000)
+    edge = cv.approach_span(500, 100, 20, 0, 1, base, None, 1000, 300)
+    capped = cv.approach_span(500, 100, 20, 0, 1, base, None, 5000, 5000)
+    assert 150 <= street <= 170 and 110 <= field <= 130
+    assert 140 <= walled <= 160 and 160 <= edge <= 180 and capped >= 595
+
+
+def _mon(label, x, y, w=60, h=40):
+    return {"kind": "monastery", "label": f"Monastery of {label}", "x": x, "y": y, "w": w, "h": h}
+
+
+def test_monastery_torii_scale_fires_when_an_avenue_does_not_fit_its_space():
+    # Two monasteries, but every torii clusters at A: A's single arch underfills its long clear
+    # approach, and B has no arch at all. Both ways of mismatching count-to-space must fire.
+    M = {"meta": {"scale": "town", "walled": True, "W": 1000, "H": 1000}, "wall": WALL,
+         "religious": [_mon("A", 200, 200), _mon("B", 800, 800)], "torii": [[200, 320]]}
+    assert "monastery_torii_scale_with_space" in f(M)
+
+
+# ---- walled_town_has_gate_market: the extramural guan-xiang -------------------------------
+def test_walled_town_has_gate_market_fires_when_no_market_outside():
+    # the only business sits INSIDE the wall, so there is no extramural market at the gate
+    M = {"meta": {"scale": "town", "walled": True}, "wall": WALL, "gate": [500, 950],
+         "buildings": [bldg(500, 500, kind="merchant")]}
+    assert "walled_town_has_gate_market" in f(M)
+
+
+def test_walled_town_gate_market_opt_out_suppresses_the_check():
+    # meta(gate_market=False) - a purely military or suppressed gate - skips the requirement
+    M = {"meta": {"scale": "town", "walled": True, "gate_market": False}, "wall": WALL,
+         "gate": [500, 950], "buildings": [bldg(500, 500, kind="merchant")]}
+    assert "walled_town_has_gate_market" not in f(M)
+
+
+# ---- town_has_granary: the opt-in rice-transit granary (default OFF) -----------------------
+def test_town_has_granary_off_by_default():
+    # a standard county seat keeps grain in the yamen - no granary declared, no check
+    assert "town_has_granary" not in f({"meta": {"scale": "town"}})
+
+
+def test_town_has_granary_fires_when_declared_but_not_drawn():
+    assert "town_has_granary" in f({"meta": {"scale": "town", "granary": True}})
+
+
+def test_town_has_granary_passes_when_drawn():
+    M = {"meta": {"scale": "town", "granary": True},
+         "granary": {"x": 500, "y": 500, "n": 3, "stores": [], "label": "granary"}}
+    assert "town_has_granary" not in f(M)
+
+
+# ---- town_has_merchant_storehouses: several attached kura expected -------------------------
+def test_town_has_merchant_storehouses_fires_when_too_few():
+    assert "town_has_merchant_storehouses" in f({"meta": {"scale": "town"}})   # 0 < 3
+
+
+def test_town_has_merchant_storehouses_passes_with_several():
+    M = {"meta": {"scale": "town"}, "storehouses": [{"x": i, "y": 0} for i in range(4)]}
+    assert "town_has_merchant_storehouses" not in f(M)
+
+
 # ---- town_monasteries_dedicated: wrong patron fortunes for the clan ------------------------
 def _monastery(fortune):
     return {"kind": "monastery", "label": f"Monastery of {fortune}", "x": 0, "y": 0, "w": 10, "h": 10}
@@ -165,6 +233,13 @@ def test_no_structure_on_wall_branches():
 
 def test_no_structure_on_street_branch():
     assert "no_structure_on_street" in _feature_overlap({"walled": True}, "town_streets", [{"pts": FEAT, "w": 24}])
+
+
+def test_no_structure_on_channel_branches():
+    # an irrigation channel got the same footprint test as streams (a corner clipping it must
+    # fire, not just a centre on it) - the old houses_off_corridors centre-test missed corners.
+    ch = {"poly": FEAT, "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "x"}}
+    assert "no_structure_on_channel" in _feature_overlap({}, "channels", [ch])
 
 
 # ---- town street-layout FAIL branches -----------------------------------------------------
