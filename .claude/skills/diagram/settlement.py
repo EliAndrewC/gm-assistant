@@ -18,6 +18,9 @@ import json
 import math
 import os
 import random
+import shutil
+import subprocess
+import sys
 
 LAND = '#EFE3C2'
 PADDY_SHADES = ['#A7C49C', '#9FBE93', '#AECBA1', '#9BBA8F', '#B4CCA6']
@@ -46,13 +49,18 @@ def point_in_poly(px, py, poly):
     return inside
 
 
-def seg_dist(px, py, a, b):
+def seg_closest(px, py, a, b):
     ax, ay, bx, by = a[0], a[1], b[0], b[1]
     dx, dy = bx - ax, by - ay
     if dx == dy == 0:
-        return math.hypot(px - ax, py - ay)
+        return ax, ay
     t = max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
-    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+    return ax + t * dx, ay + t * dy
+
+
+def seg_dist(px, py, a, b):
+    cx, cy = seg_closest(px, py, a, b)
+    return math.hypot(px - cx, py - cy)
 
 
 def edge_dist(px, py, poly):
@@ -88,20 +96,25 @@ def smooth_points(pts, steps=10):
     return out
 
 
-def organic_bbox(bbox, amp):
-    """Semi-rectangular core with lobes (outgrowths) and bays (indentations)."""
+def organic_bbox(bbox, amp, flat_edges=()):
+    """Semi-rectangular core with lobes (outgrowths) and bays (indentations).
+    Edges listed in flat_edges (0=N, 1=E, 2=S, 3=W) are kept straight - e.g. a field
+    that must run flush against a town wall flattens the abutting edge."""
     x0, y0, x1, y1 = bbox
     edges = [((x0, y0), (x1, y0), (0, -1)), ((x1, y0), (x1, y1), (1, 0)),
              ((x1, y1), (x0, y1), (0, 1)), ((x0, y1), (x0, y0), (-1, 0))]
     pts = []
-    for (sa, sb, (nx, ny)) in edges:
+    for ei, (sa, sb, (nx, ny)) in enumerate(edges):
         for i in range(4):
             t = i / 4
             bx, by = sa[0] + (sb[0] - sa[0]) * t, sa[1] + (sb[1] - sa[1]) * t
             off = random.uniform(-amp * 0.5, amp)
+            jt = random.uniform(-amp * 0.18, amp * 0.18)   # consume RNG even when flat, to keep placement aligned
+            if ei in flat_edges:
+                pts.append((bx, by))
+                continue
             if i == 0:
                 off *= 0.35
-            jt = random.uniform(-amp * 0.18, amp * 0.18)
             pts.append((bx + nx * off + jt, by + ny * off + jt))
     return pts
 
@@ -143,21 +156,37 @@ class Settlement:
         random.seed(seed)
         self.W, self.H = W, H
         self.out = []
+        self.top = []             # deferred TOP layer (labels, gate furniture) - drawn last, over roads
+        self.bscale = 1.0         # urban-building footprint scale (a large town packs at a finer grain)
         self.placed = []          # (x, y, w, h)
         self.corridors = []       # polylines houses must avoid
         self.field_polys = []     # smoothed outlines used for blocking
-        self.ellipses = []        # (cx, cy, rx, ry) hill/pond - block houses
+        self.ellipses = []        # (cx, cy, rx, ry) hill/pond/manor - block houses
+        self.block_polys = []     # arbitrary no-build polygons (e.g. forest)
         self._clip = 0
         self._nbig = 0
         self.M = {"houses": [], "fields": [], "fallow_patches": [], "channels": [],
-                  "lane": [], "taxfree": [], "torii": [], "shrines": [], "labels": [],
-                  "pond": None, "hill": None, "summit": None, "shrine": None,
-                  "meta": {"W": W, "H": H}}
+                  "lane": [], "taxfree": [], "torii": [], "shrines": [], "manors": [],
+                  "streams": [], "buildings": [], "pastures": [], "forest_patches": [],
+                  "religious": [], "flower_fields": [], "labels": [], "pond": None,
+                  "hill": None, "summit": None, "shrine": None, "forest": None, "road": None,
+                  "wall": None, "gate": None, "meta": {"W": W, "H": H}}
         self._header()
 
     # ---- low level
+    # draw-order index (z): base-layer items keep their position; TOP-layer items get a
+    # huge offset so they always render above the base (roads must pass UNDER them)
+    TOPZ = 10_000_000
+
     def add(self, s):
+        z = len(self.out)
         self.out.append(s)
+        return z
+
+    def add_top(self, s):
+        z = self.TOPZ + len(self.top)
+        self.top.append(s)
+        return z
 
     def _cid(self, prefix):
         self._clip += 1
@@ -245,10 +274,10 @@ class Settlement:
         self.add(f'<path d="{d}" fill="none" stroke="#A98A52" stroke-width="3.5"/>')
         if label:
             lx, ly = label_xy if label_xy else ((x0 + x1) / 2, (y0 + y1) / 2)
-            self._record_label(lx, ly, label, 15, "middle")
-            self.add(f'<text x="{lx:.0f}" y="{ly:.0f}" text-anchor="middle" font-size="15" '
-                     f'font-weight="bold" fill="#33301E" letter-spacing="1.5" '
-                     f'paint-order="stroke" stroke="{LAND}" stroke-width="3.5">{label}</text>')
+            z = self.add_top(f'<text x="{lx:.0f}" y="{ly:.0f}" text-anchor="middle" font-size="15" '
+                             f'font-weight="bold" fill="#33301E" letter-spacing="1.5" '
+                             f'paint-order="stroke" stroke="{LAND}" stroke-width="3.5">{label}</text>')
+            self._record_label(lx, ly, label, 15, "middle", z)
 
     def _rows(self, quad, pts, crop):
         xq = [p[0] for p in quad]
@@ -289,7 +318,7 @@ class Settlement:
                     interior.append((quad, cx, cy))
         n = len(interior)
         if not n:
-            return
+            return   # pragma: no cover - defensive: a real field's single cell centroid is always inside
         idxs = sorted(set(min(n - 1, int(n * (k + 0.5) / (taxfree + 1))) for k in range(taxfree)))
         for i in idxs:
             quad, cx, cy = interior[i]
@@ -331,11 +360,16 @@ class Settlement:
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
-    def stream(self, pts):
-        """A watercourse entering from off-map (a source channels can draw from)."""
+    def stream(self, pts, frm=None, to=None):
+        """A natural watercourse. If frm/to anchors are given (e.g. a forest brook
+        feeding a pond), it is recorded and the gate checks it actually connects
+        them - just like an irrigation channel."""
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
         self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="9" opacity="0.85"/>')
         self.add(f'<path d="{dd}" fill="none" stroke="#5C7488" stroke-width="1.2" stroke-dasharray="2,5"/>')
+        # always recorded so the gate can check it (anchors optional - only some streams connect things)
+        self.M["streams"].append({"poly": [[x, y] for x, y in pts], "frm": frm, "to": to})
+        self.corridors.append(([(x, y) for x, y in pts], 30))   # no-build: keep houses off the stream
 
     def channel(self, start, end, frm, to, amp=15):
         """frm/to are anchor dicts: {'kind':'pond'|'offmap'|'field','name':...}."""
@@ -343,17 +377,29 @@ class Settlement:
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in poly)
         self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="4.2" opacity="0.8"/>')
         self.M["channels"].append({"poly": [[x, y] for x, y in poly], "frm": frm, "to": to})
-        self.corridors.append(poly)
+        self.corridors.append((poly, 22))
 
     def lane(self, pts):
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
         self.add(f'<path d="{dd}" fill="none" stroke="#CBB178" stroke-width="16" opacity="0.65"/>')
         self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
         self.M["lane"] = [[x, y] for x, y in pts]
-        self.corridors.append(pts)
+        self.corridors.append((pts, 22))
+
+    def street(self, pts, width=24, label=None, main=False):
+        """A town street (packed earth): the gate-to-yamen main avenue (main=True) or a
+        cross lane off it. Buildings front it; a no-build corridor runs down its centre."""
+        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
+        z = self.add(f'<path d="{dd}" fill="none" stroke="#B49A66" stroke-width="{width}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#D9C8A0" stroke-width="{width-7}" opacity="1" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.corridors.append((pts, width / 2 + 32))   # buildings front the street but their corners stay off the bed
+        self.M.setdefault("town_streets", []).append({"main": main, "w": width, "pts": [[x, y] for x, y in pts], "z": z})
+        if label:
+            mid = pts[len(pts) // 2]
+            self.label(mid[0] + 38, mid[1], label, 11, italic=True, color="#5A4326")
 
     # ---- hill + shrine + torii
-    def hill(self, cx, cy, rx, ry):
+    def hill(self, cx, cy, rx, ry, steep=False):
         rings = [(cx, cy + 28, rx, ry), (cx, cy, rx * 0.76, ry * 0.76),
                  (cx, cy - 26, rx * 0.52, ry * 0.52), (cx, cy - 44, rx * 0.30, ry * 0.32)]
         self.M["hill"] = [rings[0][0], rings[0][1], rings[0][2], rings[0][3]]
@@ -366,6 +412,15 @@ class Settlement:
             a = 2 * math.pi * k / 30
             ex, ey = ocx + math.cos(a) * orx, ocy + math.sin(a) * ory
             self.add(f'<line x1="{ex:.0f}" y1="{ey:.0f}" x2="{ex+math.cos(a)*9:.0f}" y2="{ey+math.sin(a)*9:.0f}" stroke="#A8995F" stroke-width="0.9"/>')
+        if steep:
+            # emphasized downslope hachures over the steep north back and upper flanks:
+            # closely-spaced, longer ticks read as a steep, undefendable-on-foot slope
+            n = 52
+            for k in range(n + 1):
+                ang = math.radians(195 + (345 - 195) * k / n)
+                ex, ey = ocx + math.cos(ang) * orx, ocy + math.sin(ang) * ory
+                ln = 19 + 5 * math.sin(math.radians(195 + (345 - 195) * k / n) - math.pi / 2)
+                self.add(f'<line x1="{ex:.1f}" y1="{ey:.1f}" x2="{ex+math.cos(ang)*ln:.1f}" y2="{ey+math.sin(ang)*ln:.1f}" stroke="#8F7E48" stroke-width="1.0"/>')
         st = random.getstate()
         random.seed(4)
         for _ in range(15):
@@ -378,12 +433,13 @@ class Settlement:
         random.setstate(st)
         return (cx, cy - 40)   # summit point for the shrine
 
-    def shrine(self, x, y, w=104, h=68):
+    def shrine(self, x, y, w=104, h=68, kind="shrine"):
         self.add(f'<rect x="{x-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="{h}" rx="3" fill="#C9876C" stroke="#6B2A18" stroke-width="2"/>')
         self.add(f'<rect x="{x-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="8" fill="#A03020"/>')
         self.add(f'<rect x="{x-w/2:.0f}" y="{y+h/2-8:.0f}" width="{w}" height="8" fill="#A03020"/>')
         self.add(f'<line x1="{x-w/2:.0f}" y1="{y:.0f}" x2="{x+w/2:.0f}" y2="{y:.0f}" stroke="#6B2A18" stroke-width="0.7"/>')
         self.M["shrine"] = [x - w / 2, y - h / 2, w, h]
+        self.M["religious"].append({"kind": kind, "x": x, "y": y, "w": w, "h": h})
 
     def torii_path(self, ascent):
         """Place one torii at each interior vertex of the ascent polyline; draw the
@@ -412,7 +468,7 @@ class Settlement:
                     return (ascent[i][0] + (ascent[i + 1][0] - ascent[i][0]) * f,
                             ascent[i][1] + (ascent[i + 1][1] - ascent[i][1]) * f)
                 acc += sl
-            return ascent[-1]
+            return ascent[-1]   # pragma: no cover - defensive: t is capped at 0.86, never past the last segment
         dstr = 'M' + ' L'.join(f'{x},{y}' for x, y in ascent)
         self.add(f'<path d="{dstr}" fill="none" stroke="#B89A6A" stroke-width="8" opacity="0.7"/>')
         self.add(f'<path d="{dstr}" fill="none" stroke="#6B4F2A" stroke-width="1" stroke-dasharray="3,5"/>')
@@ -425,13 +481,17 @@ class Settlement:
                      f'<line x1="-12" y1="-7" x2="-12" y2="17" stroke="#A03020" stroke-width="3"/>'
                      f'<line x1="12" y1="-7" x2="12" y2="17" stroke="#A03020" stroke-width="3"/></g>')
 
-    def shrine_hall(self, x, y, label, sublabel="", w=120, h=82, torii=None, primary=False, edge="#6B2A18"):
-        """A standalone village SHRINE building on flat ground (villages have shrines,
-        not temples). A shrine need not sit on a hill - it is often central to the
-        village. primary=True marks it the village's main shrine (sets M['shrine'])."""
+    def shrine_hall(self, x, y, label, sublabel="", w=120, h=82, torii=None, primary=False, edge="#6B2A18", kind="shrine"):
+        """A standalone religious hall on flat ground. The kind follows settlement
+        scale: villages have shrines, towns have monasteries, cities have temples
+        (hamlets have none). primary=True marks the settlement's main one (M['shrine'],
+        used by the torii checks). A torii may stand in front (torii=[(x,y),...])."""
         if torii:
             for (tx, ty) in torii:
                 self.M["torii"].append([round(tx, 1), round(ty, 1)])
+                bm = 32   # block the arch from placement (footprint ~38x28 + a building-half margin)
+                self.block_polys.append([(tx - 19 - bm, ty - 10 - bm), (tx + 19 + bm, ty - 10 - bm),
+                                         (tx + 19 + bm, ty + 18 + bm), (tx - 19 - bm, ty + 18 + bm)])
                 self.add(f'<g transform="translate({tx:.0f},{ty:.0f})">'
                          f'<line x1="-15" y1="0" x2="15" y2="0" stroke="#A03020" stroke-width="3.4"/>'
                          f'<line x1="-18" y1="-7" x2="18" y2="-7" stroke="#A03020" stroke-width="2.8"/>'
@@ -442,13 +502,355 @@ class Settlement:
         self.add(f'<rect x="{x-w/2:.0f}" y="{y+h/2-9:.0f}" width="{w}" height="9" fill="#A03020"/>')
         self.add(f'<line x1="{x-w/2:.0f}" y1="{y:.0f}" x2="{x+w/2:.0f}" y2="{y:.0f}" stroke="{edge}" stroke-width="0.7"/>')
         self.M["shrines"].append({"x": x, "y": y, "w": w, "h": h, "label": label})
+        self.M["religious"].append({"kind": kind, "x": x, "y": y, "w": w, "h": h, "label": label, "sublabel": sublabel})
         if primary:
             self.M["shrine"] = [x - w / 2, y - h / 2, w, h]
-        self.ellipses.append((x, y, w / 2 + 18, h / 2 + 18))
+        bm = 34   # block a RECT + a building-half margin (an ellipse undershot the hall corners)
+        self.block_polys.append([(x - w / 2 - bm, y - h / 2 - bm), (x + w / 2 + bm, y - h / 2 - bm),
+                                 (x + w / 2 + bm, y + h / 2 + bm), (x - w / 2 - bm, y + h / 2 + bm)])
         if label:
             self.label(x, y - h / 2 - 10, label, 13, weight="bold", color=edge)
         if sublabel:
             self.label(x, y + h / 2 + 16, sublabel, 9, italic=True, color=edge)
+
+    # ---- landscape / estate features
+    def forest(self, west_edge, label="", label_xy=None):
+        """A woodland filling east of an irregular tree-line to the canvas edge.
+        Blocks houses. Deterministic tree scatter (RNG saved/restored) so it never
+        perturbs house placement."""
+        pts = list(west_edge) + [(self.W + 12, west_edge[-1][1]), (self.W + 12, west_edge[0][1])]
+        cid = self._cid('forest')
+        d = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in pts) + ' Z'
+        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+        self.add(f'<path d="{d}" fill="#A9B98C"/>')
+        xs = [p[0] for p in pts]
+        ys = [p[1] for p in pts]
+        st = random.getstate()
+        random.seed(9)
+        self.add(f'<g clip-path="url(#{cid})">')
+        yy = min(ys) + 16
+        while yy < max(ys):
+            xx = min(xs) + 16
+            while xx < max(xs):
+                tx, ty = xx + random.uniform(-9, 9), yy + random.uniform(-9, 9)
+                if point_in_poly(tx, ty, pts):
+                    r = random.uniform(6, 9)
+                    self.add(f'<circle cx="{tx:.0f}" cy="{ty:.0f}" r="{r:.1f}" fill="#6E8B4C" stroke="#4E6B3C" stroke-width="0.7"/>')
+                    self.add(f'<circle cx="{tx-1.5:.0f}" cy="{ty-1.5:.0f}" r="{r*0.4:.1f}" fill="#8FA968"/>')
+                xx += 34
+            yy += 30
+        self.add('</g>')
+        random.setstate(st)
+        de = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in west_edge)
+        self.add(f'<path d="{de}" fill="none" stroke="#4E6B3C" stroke-width="2.5"/>')
+        self.block_polys.append(pts)
+        self.M["forest"] = [[round(x, 1), round(y, 1)] for x, y in pts]
+        if label:
+            lx, ly = label_xy if label_xy else (min(xs) + (self.W - min(xs)) / 2, (min(ys) + max(ys)) / 2)
+            self.label(lx, ly, label, 14, italic=True, weight="bold", color="#3E5631")
+
+    def manor(self, x, y, w, h, label, sublabel="", gate_dir="west"):
+        """A walled samurai compound (e.g. a magistrate's manor / hunting lodge) shown
+        as a feature on a settlement map: ONLY the walls + gate + empty court. The
+        interior is deliberately not drawn here - it is the subject of its own Mode A
+        diagram, and drawing speculative interior buildings here would contradict it.
+        gate_dir (north/south/east/west) is the wall the main gate opens through - face it
+        toward whatever the compound fronts (the town, for a manor on a hill). Blocks houses."""
+        x0, y0, x1, y1 = x - w / 2, y - h / 2, x + w / 2, y + h / 2
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="{h}" fill="#E7D9B4"/>')
+        wall = '#2D2A24'
+        sides = {"north": ((x0, y0), (x1, y0), (cx, y0), (0, -1)),
+                 "south": ((x0, y1), (x1, y1), (cx, y1), (0, 1)),
+                 "west": ((x0, y0), (x0, y1), (x0, cy), (-1, 0)),
+                 "east": ((x1, y0), (x1, y1), (x1, cy), (1, 0))}
+        gctr = sides[gate_dir][2]
+        for name, (a, b, (gx, gyy), outv) in sides.items():
+            if name != gate_dir:
+                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
+            elif outv[1] == 0:   # vertical wall (west/east) - gap in y
+                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{a[0]:.0f}" y2="{gyy-34:.0f}" stroke="{wall}" stroke-width="6"/>')
+                self.add(f'<line x1="{b[0]:.0f}" y1="{gyy+34:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
+                for py in (gyy - 34, gyy + 34):
+                    self.add(f'<rect x="{gx-7:.0f}" y="{py-7:.0f}" width="14" height="14" fill="{wall}"/>')
+            else:                # horizontal wall (north/south) - gap in x
+                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{gx-34:.0f}" y2="{a[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
+                self.add(f'<line x1="{gx+34:.0f}" y1="{b[1]:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
+                for px in (gx - 34, gx + 34):
+                    self.add(f'<rect x="{px-7:.0f}" y="{gyy-7:.0f}" width="14" height="14" fill="{wall}"/>')
+        # interior intentionally left blank: the buildings inside (hall, stables, etc.)
+        # belong to a separate Mode A diagram of the manor, not the town/settlement map
+        self.M["manors"].append({"x": x, "y": y, "w": w, "h": h, "label": label,
+                                 "gate": [gctr[0], gctr[1]], "gate_dir": gate_dir})
+        m = 36   # block a RECT (an ellipse undershoots the wall corners) + a building-half margin
+        self.block_polys.append([(x0 - m, y0 - m), (x1 + m, y0 - m), (x1 + m, y1 + m), (x0 - m, y1 + m)])
+        if label:
+            self.label(x, y0 - 12, label, 14, weight="bold")
+        if sublabel:
+            self.label(x, y1 + 18, sublabel, 9, italic=True)
+
+    def road(self, pts, label=None, width=26):
+        """A major road (e.g. an Imperial road) - a bordered roadbed. No-build corridor."""
+        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
+        self.M["road_z"] = self.add(f'<path d="{dd}" fill="none" stroke="#9C7A40" stroke-width="{width}" opacity="0.9"/>')         # edges
+        self.add(f'<path d="{dd}" fill="none" stroke="#D8C49A" stroke-width="{width-8}" opacity="1"/>')          # roadbed
+        self.add(f'<path d="{dd}" fill="none" stroke="#8A6E3E" stroke-width="1.2" stroke-dasharray="12,10" opacity="0.6"/>')
+        self.corridors.append((pts, width / 2 + 32))   # wide road -> larger building setback
+        self.M["road"] = [[x, y] for x, y in pts]
+        self.M["road_width"] = width
+        if label:
+            mid = pts[len(pts) // 2]
+            self.label(mid[0] + 46, mid[1] - 22, label, 12, italic=True, weight="bold", color="#5A4326")
+
+    # urban building palette and default footprints, keyed by town caste/role
+    URBAN = {
+        "shop": ('#D8C49A', '#6B4F2A', 48, 32),        # merchant shophouse (modest)
+        "merchant": ('#DDB87A', '#5A3F1E', 54, 36),    # merchant house+shop
+        "laborer": ('#C2B190', '#6B5A3A', 34, 24),     # laborer dwelling (poorer)
+        "servant": ('#CDBE9C', '#6B5A3A', 30, 22),     # servant quarters (small)
+        "barn": ('#C9A57A', '#6B4F2A', 84, 56),
+        "samurai": ('#DDB87A', '#5A3F1E', 56, 40),
+        "civic": ('#CDB890', '#5A4326', 66, 46),
+        "burakumin": ('#BCB29C', '#7A7058', 38, 26),
+    }
+
+    def building(self, cx, cy, w, h, kind="shop", rot=0):
+        """An urban building (shophouse, laborer dwelling, samurai house, etc.) -
+        boxier than a farmhouse, oriented to the street not the sun. Blocks placement."""
+        fill, edge = self.URBAN.get(kind, self.URBAN["shop"])[:2]
+        x0, y0 = -w / 2, -h / 2
+        dash = ' stroke-dasharray="5,3"' if kind == "burakumin" else ''
+        g = [f'<g transform="translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})">']
+        g.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w}" height="{h}" rx="2" fill="{fill}" stroke="{edge}" stroke-width="1.6"{dash}/>')
+        g.append(f'<line x1="{-w*0.30:.1f}" y1="0" x2="{w*0.30:.1f}" y2="0" stroke="{edge}" stroke-width="0.8" opacity="0.6"/>')
+        if kind in ("shop", "merchant"):
+            # a BUSINESS: a striped awning along the street frontage + a hanging sign, so
+            # commerce reads as visually distinct from plain housing
+            g.append(f'<rect x="{-w*0.5:.1f}" y="{h/2-6:.1f}" width="{w}" height="6.5" fill="#A8472E" opacity="0.95"/>')
+            for sx in range(int(-w * 0.5) + 3, int(w * 0.5), 9):
+                g.append(f'<rect x="{sx:.1f}" y="{h/2-6:.1f}" width="4.5" height="6.5" fill="#E8D2A8" opacity="0.55"/>')
+            g.append(f'<rect x="-5.5" y="{h/2-2:.1f}" width="11" height="9" rx="1" fill="#E8D9A8" stroke="#6B4A22" stroke-width="0.8"/>')  # hanging sign
+        else:
+            g.append(f'<rect x="{-w*0.16:.1f}" y="{h/2-3:.1f}" width="{w*0.32:.1f}" height="3.2" fill="{edge}" opacity="0.8"/>')  # door
+        g.append('</g>')
+        self.add(''.join(g))
+        self.M["buildings"].append({"x": cx, "y": cy, "w": w, "h": h, "kind": kind, "rot": rot})
+        self.placed.append((cx, cy, w, h))
+
+    def _dims(self, kind):
+        w, h = self.URBAN.get(kind, self.URBAN["shop"])[2:]
+        return w * self.bscale, h * self.bscale
+
+    def try_building(self, cx, cy, kind, rot=0):
+        w, h = self._dims(kind)
+        if self._fits(cx, cy, w, h):
+            self.building(cx, cy, w, h, kind, rot)
+            return True
+        return False
+
+    def _face_street_rot(self, x, y):
+        """Rotation that turns a building's frontage toward the nearest street/road, and
+        the distance to it. (None, inf) if there are no streets."""
+        lines = [st["pts"] for st in self.M.get("town_streets", [])]
+        if self.M.get("road"):
+            lines.append(self.M["road"])
+        best, bd = None, 1e18
+        for sp in lines:
+            for k in range(len(sp) - 1):
+                cx, cy = seg_closest(x, y, sp[k], sp[k + 1])
+                d = math.hypot(cx - x, cy - y)
+                if d < bd:
+                    bd, best = d, (cx, cy)
+        if best is None:
+            return None, 1e18
+        dx, dy = best[0] - x, best[1] - y
+        dl = math.hypot(dx, dy) or 1
+        return math.degrees(math.atan2(-dx / dl, dy / dl)), bd
+
+    def pack(self, bbox, items, rot=0, step=46, face_streets=False):
+        """Densely fill a district bbox with a list of building kinds (one building
+        each), grid-scan + jitter, skipping the road, blocked regions, and occupied
+        spots. With face_streets, each building rotates to face its nearest street.
+        Returns the number placed (leftovers are 'off-map')."""
+        x0, y0, x1, y1 = bbox
+        items = list(items)
+        n = 0
+        gy = y0 + step / 2
+        while gy < y1 and items:
+            gx = x0 + step / 2
+            while gx < x1 and items:
+                jx, jy = random.uniform(-step * 0.28, step * 0.28), random.uniform(-step * 0.28, step * 0.28)
+                if face_streets:
+                    fr, fd = self._face_street_rot(gx + jx, gy + jy)
+                    if fr is not None and fd <= 92:
+                        r = fr + random.uniform(-4, 4)          # near a street: face it
+                    elif face_streets == "fill":
+                        r = rot + random.uniform(-6, 6)         # deep block core (e.g. tenement housing)
+                    else:
+                        gx += step                              # businesses only line the frontage
+                        continue
+                else:
+                    r = rot + random.uniform(-6, 6)
+                if self.try_building(gx + jx, gy + jy, items[0], r):
+                    items.pop(0)
+                    n += 1
+                gx += step
+            gy += step
+        return n
+
+    def pasture(self, shape, label=None, amp=40, label_xy=None):
+        """Hayfield / grazing land (pastureland, around the barns) - open grass with
+        the odd hay bale, distinct from the cultivated paddy fields. Blocks placement."""
+        if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
+            outline = organic_bbox(shape, amp)
+        else:
+            outline = organic_poly(shape, amp)
+        sm = smooth_points(outline)
+        d = smooth_closed(outline)
+        cid = self._cid('past')
+        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+        self.add(f'<path d="{d}" fill="#C8CF92" stroke="#9CA86A" stroke-width="2" stroke-dasharray="7,5"/>')
+        xs, ys = [p[0] for p in sm], [p[1] for p in sm]
+        st = random.getstate()
+        random.seed(15)
+        self.add(f'<g clip-path="url(#{cid})">')
+        yy = min(ys) + 14
+        while yy < max(ys):
+            xx = min(xs) + 14
+            while xx < max(xs):
+                tx, ty = xx + random.uniform(-7, 7), yy + random.uniform(-7, 7)
+                if point_in_poly(tx, ty, sm):
+                    if random.random() < 0.10:
+                        self.add(f'<rect x="{tx-6:.0f}" y="{ty-4:.0f}" width="12" height="8" rx="3" fill="#D8C47E" stroke="#A98E54" stroke-width="0.7"/>')
+                    else:
+                        self.add(f'<path d="M{tx-3:.0f},{ty+2:.0f} L{tx:.0f},{ty-4:.0f} L{tx+3:.0f},{ty+2:.0f}" fill="none" stroke="#8FA05E" stroke-width="0.8"/>')
+                xx += 26
+            yy += 24
+        self.add('</g>')
+        random.setstate(st)
+        self.block_polys.append(sm)
+        self.M.setdefault("pastures", []).append([[round(p[0], 1), round(p[1], 1)] for p in sm])
+        if label:
+            lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
+            self.label(lx, ly, label, 12, italic=True, color="#5C6B3A")
+
+    def amphitheater(self, cx, cy, r, label=None):
+        rr = r
+        while rr > 11:
+            self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rr}" ry="{rr*0.82:.0f}" fill="none" stroke="#9C8C70" stroke-width="1.5" opacity="0.85"/>')
+            rr -= 13
+        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="10" ry="8" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.2"/>')
+        self.ellipses.append((cx, cy, r + 10, r * 0.82 + 10))
+        self.M["amphitheater"] = {"x": cx, "y": cy, "r": r}
+        if label:
+            self.label(cx, cy + r * 0.82 + 18, label, 11, italic=True)
+
+    def forest_patch(self, base, label=None, label_xy=None):
+        """A bounded copse (organic polygon), as opposed to forest() which fills to
+        the canvas edge. Blocks houses; deterministic tree scatter."""
+        outline = organic_poly(base, 22)
+        sm = smooth_points(outline)
+        d = smooth_closed(outline)
+        cid = self._cid('copse')
+        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+        self.add(f'<path d="{d}" fill="#A9B98C" stroke="#4E6B3C" stroke-width="1.5"/>')
+        xs = [p[0] for p in sm]
+        ys = [p[1] for p in sm]
+        st = random.getstate()
+        random.seed(12)
+        self.add(f'<g clip-path="url(#{cid})">')
+        yy = min(ys) + 12
+        while yy < max(ys):
+            xx = min(xs) + 12
+            while xx < max(xs):
+                tx, ty = xx + random.uniform(-8, 8), yy + random.uniform(-8, 8)
+                if point_in_poly(tx, ty, sm):
+                    rr = random.uniform(6, 9)
+                    self.add(f'<circle cx="{tx:.0f}" cy="{ty:.0f}" r="{rr:.1f}" fill="#6E8B4C" stroke="#4E6B3C" stroke-width="0.7"/>')
+                    self.add(f'<circle cx="{tx-1.5:.0f}" cy="{ty-1.5:.0f}" r="{rr*0.4:.1f}" fill="#8FA968"/>')
+                xx += 30
+            yy += 28
+        self.add('</g>')
+        random.setstate(st)
+        self.block_polys.append(sm)
+        self.M["forest_patches"].append([[round(x, 1), round(y, 1)] for x, y in sm])
+        if label:
+            lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
+            self.label(lx, ly, label, 12, italic=True, weight="bold", color="#3E5631")
+
+    def wall(self, pts, gate=None, label=None, guardtower=True):
+        """An irregular town rampart (thick polyline; may be an open arc anchored to a
+        hill). gate=(x,y): a gap with posts, a guard station, and an optional guardtower.
+        Recorded so the gate can check the wall and gate exist. No-build corridor."""
+        wc = '#3A352C'
+        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
+        self.add(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
+        if gate:
+            gx, gy = gate
+            self.add(f'<rect x="{gx-36:.0f}" y="{gy-22:.0f}" width="72" height="44" fill="{LAND}"/>')          # gap
+            self.add(f'<rect x="{gx-42:.0f}" y="{gy-24:.0f}" width="14" height="48" fill="{wc}"/>')             # posts
+            self.add(f'<rect x="{gx+28:.0f}" y="{gy-24:.0f}" width="14" height="48" fill="{wc}"/>')
+            # the gatehouse (guard station + tower) goes in the TOP layer: a street running
+            # through the gate passes UNDER it, not over it
+            gz = self.add_top(f'<rect x="{gx-48:.0f}" y="{gy+26:.0f}" width="96" height="46" rx="2" fill="#C9A57A" stroke="#5A4326" stroke-width="1.6"/>')  # guard station
+            self.add_top(f'<line x1="{gx-48:.0f}" y1="{gy+49:.0f}" x2="{gx+48:.0f}" y2="{gy+49:.0f}" stroke="#5A4326" stroke-width="0.8"/>')
+            self.M["gate_structs"] = [{"x": gx, "y": gy + 49, "w": 96, "h": 46, "z": gz}]   # guard station
+            if guardtower:
+                tz = self.add_top(f'<rect x="{gx+50:.0f}" y="{gy-44:.0f}" width="40" height="40" fill="#9C8A66" stroke="{wc}" stroke-width="2.4"/>')   # guardtower
+                self.add_top(f'<rect x="{gx+58:.0f}" y="{gy-36:.0f}" width="24" height="24" fill="#6B5A3A"/>')
+                self.M["gate_structs"].append({"x": gx + 70, "y": gy - 24, "w": 40, "h": 40, "z": tz})
+            # block the guard station / tower from placement (rect + a building-half margin)
+            for gs in self.M["gate_structs"]:
+                bm = 32
+                self.block_polys.append([(gs["x"] - gs["w"] / 2 - bm, gs["y"] - gs["h"] / 2 - bm),
+                                         (gs["x"] + gs["w"] / 2 + bm, gs["y"] - gs["h"] / 2 - bm),
+                                         (gs["x"] + gs["w"] / 2 + bm, gs["y"] + gs["h"] / 2 + bm),
+                                         (gs["x"] - gs["w"] / 2 - bm, gs["y"] + gs["h"] / 2 + bm)])
+            self.M["gate"] = [gx, gy]
+        self.M["wall"] = [[x, y] for x, y in pts]
+        # no-build clearance kept wide enough that even a large building's CORNER (not
+        # just its center) stays off the rampart stroke (half-diagonal of a 60x40 ~36)
+        self.corridors.append(([(x, y) for x, y in pts], 46))
+        if label:
+            self.label(pts[0][0], pts[0][1] - 16, label, 12, italic=True, weight="bold", color=wc)
+
+    def flower_field(self, shape, label=None, amp=30, label_xy=None, kind="chrysanthemum", flat_west=False):
+        """An ornamental flower field (e.g. chrysanthemums - the Imperial flower).
+        Organic outline like a paddy, but rows of gold blooms instead of rice.
+        flat_west keeps the west edge straight so it can run flush against a town wall."""
+        if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
+            outline = organic_bbox(shape, amp, flat_edges=({3} if flat_west else ()))
+        else:
+            outline = organic_poly(shape, amp)
+        sm = smooth_points(outline)
+        d = smooth_closed(outline)
+        cid = self._cid('flower')
+        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+        self.add(f'<g clip-path="url(#{cid})">')
+        self.add(f'<rect x="{min(p[0] for p in sm):.0f}" y="{min(p[1] for p in sm):.0f}" '
+                 f'width="{max(p[0] for p in sm)-min(p[0] for p in sm):.0f}" height="{max(p[1] for p in sm)-min(p[1] for p in sm):.0f}" fill="#B7C089"/>')
+        xs, ys = [p[0] for p in sm], [p[1] for p in sm]
+        st = random.getstate()
+        random.seed(17)
+        yy = min(ys) + 12
+        while yy < max(ys):
+            xx = min(xs) + 12
+            while xx < max(xs):
+                fx, fy = xx + random.uniform(-4, 4), yy + random.uniform(-4, 4)
+                if point_in_poly(fx, fy, sm):
+                    self.add(f'<circle cx="{fx:.0f}" cy="{fy:.0f}" r="3.4" fill="#E8C84C" stroke="#B89A2E" stroke-width="0.5"/>')
+                    self.add(f'<circle cx="{fx:.0f}" cy="{fy:.0f}" r="1.2" fill="#FBF2C4"/>')
+                xx += 15
+            yy += 15
+        self.add('</g>')
+        random.setstate(st)
+        self.add(f'<path d="{d}" fill="none" stroke="#8A8A4A" stroke-width="2.5"/>')
+        self.field_polys.append(sm)
+        self.M["flower_fields"].append({"kind": kind, "outline": [[round(p[0], 1), round(p[1], 1)] for p in sm]})
+        if label:
+            lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
+            self.label(lx, ly, label, 11, italic=True, weight="bold", color="#7A6A1A")
 
     # ---- houses
     def house(self, cx, cy, w, h, kind="plain", rot=0, shed=False):
@@ -481,28 +883,85 @@ class Settlement:
         for poly in self.field_polys:
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < 14:
                 return True
+        for poly in self.block_polys:
+            if point_in_poly(x, y, poly):
+                return True
         for (cx, cy, rx, ry) in self.ellipses:
             if math.hypot((x - cx) / (rx + 12), (y - cy) / (ry + 12)) < 1.0:
                 return True
         return False
 
-    def _near_corridor(self, x, y, thresh=22):
-        for poly in self.corridors:
+    def _near_corridor(self, x, y, skip=None):
+        for poly, clearance in self.corridors:
+            if poly is skip:          # a frontage row may sit against the street it fronts
+                continue
             for k in range(len(poly) - 1):
-                if seg_dist(x, y, poly[k], poly[k + 1]) < thresh:
+                if seg_dist(x, y, poly[k], poly[k + 1]) < clearance:
                     return True
         return False
 
-    def _fits(self, x, y, w, h):
-        if x < 70 or x > self.W - 70 or y < 165 or y > self.H - 26:
+    def _fits(self, x, y, w, h, skip=None):
+        if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:   # keep clear of edges + title
             return False
-        if self._in_blocked(x, y) or self._near_corridor(x, y):
+        if self._in_blocked(x, y) or self._near_corridor(x, y, skip):
             return False
         r = math.hypot(w, h) / 2
         for (px, py, pw, ph) in self.placed:
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:
                 return False
         return True
+
+    def frontage(self, street, items, width=24, setback=10, spacing=58, both=True, rows=1, rowgap=9, jitter=4, skip=None):
+        """Place buildings in row(s) along a street, each rotated so its FRONTAGE faces the
+        street (shophouses lining the road). rows>1 stacks deeper rows behind the front one
+        (still facing the street). Sits against the fronted street (skips that street's own
+        corridor - pass skip=<registered poly> when fronting a sub-stretch of a longer
+        road) but respects walls, other streets, fields, and collisions."""
+        skip = skip if skip is not None else street
+        items = list(items)
+        seg = [math.hypot(street[i + 1][0] - street[i][0], street[i + 1][1] - street[i][1]) for i in range(len(street) - 1)]
+        total = sum(seg)
+        sh = width / 2
+
+        def at(d):
+            acc = 0
+            for i, sl in enumerate(seg):
+                if sl and acc + sl >= d:
+                    f = (d - acc) / sl
+                    return (street[i][0] + (street[i + 1][0] - street[i][0]) * f,
+                            street[i][1] + (street[i + 1][1] - street[i][1]) * f,
+                            (street[i + 1][0] - street[i][0]) / sl, (street[i + 1][1] - street[i][1]) / sl)
+                acc += sl
+            i = len(seg) - 1                                                            # pragma: no cover
+            sl = seg[i] or 1                                                            # pragma: no cover
+            return (street[-1][0], street[-1][1], (street[-1][0] - street[-2][0]) / sl,  # pragma: no cover
+                    (street[-1][1] - street[-2][1]) / sl)   # defensive: while-guard keeps d < total, so a segment always matches
+
+        placed = 0
+        d = spacing * 0.55
+        sides = [1, -1] if both else [1]
+        while d < total and items:
+            x, y, tx, ty = at(d)
+            for s in sides:
+                nx, ny = -ty * s, tx * s                            # outward normal (street -> building)
+                base_rot = math.degrees(math.atan2(nx, -ny))        # frontage faces the street
+                depth = sh + setback
+                for _ in range(rows):
+                    if not items:
+                        break
+                    kind = items[0]
+                    w, h = self._dims(kind)
+                    off = depth + h / 2
+                    bx, by = x + nx * off, y + ny * off
+                    if self._fits(bx, by, w, h, skip=skip):
+                        self.building(bx, by, w, h, kind, base_rot + random.uniform(-jitter, jitter))
+                        items.pop(0)
+                        placed += 1
+                        depth = off + h / 2 + rowgap                # next row sits behind this one
+                    else:
+                        break
+            d += spacing
+        return placed
 
     def try_place(self, x, y, kind, role=None):
         w, h = (60, 40) if kind == "big" else (44, 29)   # south-facing: long axis E-W
@@ -578,16 +1037,18 @@ class Settlement:
                 self._nbig -= 1
 
     # ---- annotation
-    def _record_label(self, x, y, text, size, anchor):
+    def _record_label(self, x, y, text, size, anchor, z):
         w = len(text) * size * 0.55          # rough serif advance; slightly generous so near-misses flag
         x0 = x - w / 2 if anchor == "middle" else (x - w if anchor == "end" else x)
-        self.M["labels"].append([round(x0, 1), round(y - size * 0.8, 1), round(x0 + w, 1), round(y + size * 0.25, 1)])
+        self.M["labels"].append([round(x0, 1), round(y - size * 0.8, 1), round(x0 + w, 1), round(y + size * 0.25, 1), z])
 
     def label(self, x, y, text, size=12, anchor="middle", italic=False, weight="normal", color="#2D2A24"):
-        self._record_label(x, y, text, size, anchor)
+        esc = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         st = ' font-style="italic"' if italic else ''
-        self.add(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" '
-                 f'font-weight="{weight}"{st} fill="{color}" paint-order="stroke" stroke="{LAND}" stroke-width="3">{text}</text>')
+        # labels live in the TOP layer so a road/street can never paint over them
+        z = self.add_top(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" '
+                         f'font-weight="{weight}"{st} fill="{color}" paint-order="stroke" stroke="{LAND}" stroke-width="3">{esc}</text>')
+        self._record_label(x, y, text, size, anchor, z)
 
     def title(self, name):
         # just the place name - no subtitle/summary; the map is self-evident
@@ -602,10 +1063,26 @@ class Settlement:
                  '<text x="0" y="-30" text-anchor="middle" font-size="12" font-weight="bold">N</text>'
                  '<text x="0" y="40" text-anchor="middle" font-size="11">S</text></g>')
 
-    def finish(self, basepath):
-        self.add('</svg>')
+    def finish(self, basepath, render=True, png_width=2600):
+        body = self.out + self.top + ['</svg>']     # TOP layer (labels, gate furniture) renders last
         with open(basepath + '.svg', 'w') as f:
-            f.write('\n'.join(self.out))
+            f.write('\n'.join(body))
         with open(basepath + '.json', 'w') as f:
             json.dump(self.M, f)
+        if render:
+            self.render_png(basepath, png_width)    # keep the .png paired with the .svg automatically
         return len(self.placed)
+
+    def render_png(self, basepath, width=2600):
+        """Rasterize basepath.svg -> basepath.png via rsvg-convert.
+
+        Called from finish() so the PNG can never drift from the SVG: there is no way to
+        regenerate a map's SVG (by hand or via the test harness, which re-runs every gen)
+        without also refreshing its PNG. Settlement maps need ~2600px for the small labels.
+        A no-op (with a warning) when rsvg-convert is absent - the skill cannot render at all
+        without it, so that is a host-setup problem, not a generation bug."""
+        exe = shutil.which('rsvg-convert')
+        if not exe:   # pragma: no cover - depends on the host toolchain, not on any code path
+            sys.stderr.write(f'warning: rsvg-convert not found; {basepath}.png not refreshed\n')
+            return
+        subprocess.run([exe, '-w', str(width), basepath + '.svg', '-o', basepath + '.png'], check=True)
