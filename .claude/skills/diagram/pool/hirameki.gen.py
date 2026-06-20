@@ -24,7 +24,7 @@ s = Settlement(2600, 1820, seed=61)
 # CHANGED HANDS during the Lion/Crane war, so its monasteries are special (override): the
 # main one is to Bishamon (Lion's), and a much smaller, older one to Benten (Crane's) sits
 # on the far side of town - a relic of Crane rule. Hence monastery_fortunes is set explicitly.
-s.meta(name="Hirameki", scale="town", walled=True, torii_expected=2, downhill="south",
+s.meta(name="Hirameki", scale="town", walled=True, torii_expected=5, downhill="south",
        clan="Lion", monastery_fortunes=["Bishamon", "Benten"])
 s.bscale = 0.82   # town-scale building grain (denser than a village)
 
@@ -61,12 +61,16 @@ s.wall(WALL, gate=(1300, 1500))
 s.label(1300, 1560, "front gate (guard station + tower)", 11, italic=True, color="#3A352C")
 
 # ---- INSIDE: chrysanthemum field (abuts west wall), monastery, the zoned urban core
-s.flower_field((666, 1020, 880, 1300), "chrysanthemum field", amp=8, flat_west=True)
-# main town monastery (to Bishamon, the Lion patron), on the east side
-s.shrine_hall(1700, 950, "Monastery of Bishamon", w=150, h=98,
-              kind="monastery", primary=True, torii=[(1700, 1062)])
-# the older, much smaller Benten monastery (Crane patron) on the OPPOSITE (west) side,
-# inside the walls - a relic of the town's time under Crane rule
+CHRYS = (666, 1020, 880, 1300)   # the Imperial chrysanthemum field (x0, y0, x1, y1)
+s.flower_field(CHRYS, "chrysanthemum field", amp=8, flat_west=True)
+# main town monastery (to Bishamon, the Lion patron), on the east side. It has a long, clear
+# approach south to the market cross-street, so it fronts a proper torii AVENUE (sando) of
+# several arches rather than a single gate (monastery_torii_scale_with_space).
+s.shrine_hall(1700, 950, "Monastery of Bishamon", w=150, h=98, kind="monastery", primary=True,
+              torii=[(1700, 1052), (1700, 1102), (1700, 1152), (1700, 1202)])
+# the older, much smaller Benten monastery (Crane patron) on the OPPOSITE (west) side, inside
+# the walls - a relic of the town's time under Crane rule. It is wedged hard against the west
+# rampart and the Imperial chrysanthemum field, so there is room for only a SINGLE torii arch.
 s.shrine_hall(770, 940, "Monastery of Benten", w=60, h=40,
               kind="monastery", primary=False, torii=[(770, 998)])
 
@@ -75,7 +79,13 @@ s.shrine_hall(770, 940, "Monastery of Benten", w=60, h=40,
 # sit as deep tenement blocks with no street frontage (the poor can't afford it) - no
 # speculative back-lanes that would dead-end empty, per `streets_have_buildings`.
 MAIN = [(1300, 1840), (1300, 1568), (1300, 1300), (1300, 1060), (1300, 870)]   # runs out the gate, off the edge
-CROSS = [(740, 1240), (1300, 1225), (1740, 1240)]
+# The market cross-street must start EAST of the Imperial chrysanthemum field: a public street
+# cannot be cut through the protected Imperial planting. This is HIRAMEKI-SPECIFIC (it is the
+# only town with a flower field inside its walls), so it stays a per-map invariant rather than
+# a general check in check_village.py - hence the local assertion below, which fires on every
+# regeneration if a future edit drifts the cross-street back over the field.
+CROSS = [(930, 1238), (1300, 1225), (1740, 1240)]
+assert CROSS[0][0] >= CHRYS[2] + 30, "market cross-street must start clear of the chrysanthemum field"
 s.street(MAIN, width=28, main=True, label="main street")
 s.street(CROSS, width=22)
 
@@ -102,6 +112,9 @@ s.pack((1080, 1600, 1540, 1794), ["merchant"] * 5 + ["shop"] * 5, step=46, face_
 s.label(1300, 1600, "gate market", 10, italic=True, color="#5A4326")
 s.pack((2060, 1500, 2360, 1780), ["burakumin"] * 12, step=44)
 s.label(2210, 1484, "burakumin quarter", 11, italic=True, color="#6B4F2A")
+# a noticeable minority of merchant houses keep a fireproof kura (rent-rice / bulk goods of the
+# absentee landlords whose tenants farm the surrounding land), drawn AFTER the businesses exist
+s.merchant_storehouses(6)
 for bb in (OW1, OE1, OE2, OS):
     s.ring(bb, 12, 16, ["plain"])
     s.ring(bb, 10, 48, ["plain"])

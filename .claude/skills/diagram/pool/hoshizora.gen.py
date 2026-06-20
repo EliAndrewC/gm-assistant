@@ -90,6 +90,10 @@ s.label(1832, 360, "burakumin quarter", 11, italic=True, color="#6B4F2A")
 s.pack((620, 1010, 920, 1295), ["samurai"] * 7, step=58)
 s.label(770, 1301, "samurai houses", 11, italic=True)
 
+# a noticeable minority of merchant houses keep a fireproof kura (the absentee landlords'
+# rent-rice / bulk goods), drawn AFTER the businesses exist
+s.merchant_storehouses(6)
+
 # ---- farmhouses: the town's farmer majority (still the largest single group), packed
 # several-deep around the fields
 for bb in (F1, F2, F3, F4):

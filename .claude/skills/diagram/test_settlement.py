@@ -68,6 +68,24 @@ def test_frontage_runs_out_of_items_mid_row():
     assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant") == 1
 
 
+def test_granary_draws_a_storehouse_row():
+    # opt-in rice-transit granary: a row of n fireproof kura, recorded for town_has_granary
+    s = _town()
+    stores = s.granary(500, 500, n=3)
+    assert len(stores) == 3 and s.M["granary"]["n"] == 3 and s.M["granary"]["label"] == "granary"
+
+
+def test_merchant_storehouses_attaches_behind_shops_and_skips_corridors():
+    # a kura is tucked behind a merchant's shopfront (its back, opposite the awning) unless that
+    # back would land on a street - then it is skipped. rot=0 -> awning faces +y, back faces -y.
+    s = _town()
+    s.street([(100, 470), (900, 470)], width=24)     # sits just behind shop A's back -> A skipped
+    s.building(500, 500, 40, 28, "merchant", rot=0)   # back (-y) runs into the street corridor
+    s.building(300, 800, 40, 28, "merchant", rot=0)   # back faces open ground -> kura attached
+    n = s.merchant_storehouses(count=6)
+    assert n == 1 and len(s.M["storehouses"]) == 1
+
+
 def test_forest_patch_uses_default_label_position():
     s = _town()
     s.forest_patch([(100, 100), (300, 120), (320, 300), (110, 280)], label="copse")   # no label_xy -> default

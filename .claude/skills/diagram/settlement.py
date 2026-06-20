@@ -169,7 +169,8 @@ class Settlement:
                   "lane": [], "taxfree": [], "torii": [], "shrines": [], "manors": [],
                   "streams": [], "buildings": [], "pastures": [], "forest_patches": [],
                   "religious": [], "flower_fields": [], "labels": [], "pond": None,
-                  "hill": None, "summit": None, "shrine": None, "forest": None, "road": None,
+                  "storehouses": [], "hill": None, "summit": None, "shrine": None,
+                  "forest": None, "road": None,
                   "wall": None, "gate": None, "meta": {"W": W, "H": H}}
         self._header()
 
@@ -377,7 +378,10 @@ class Settlement:
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in poly)
         self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="4.2" opacity="0.8"/>')
         self.M["channels"].append({"poly": [[x, y] for x, y in poly], "frm": frm, "to": to})
-        self.corridors.append((poly, 22))
+        # 33 px keeps even a plain farmhouse's FOOTPRINT (half-diagonal ~26) clear of the
+        # channel, not just its centre - 22 left corners clipping the channel (see
+        # no_structure_on_channel). Matches the stream corridor's footprint-aware spacing.
+        self.corridors.append((poly, 33))
 
     def lane(self, pts):
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
@@ -744,6 +748,60 @@ class Settlement:
         self.M["amphitheater"] = {"x": cx, "y": cy, "r": r}
         if label:
             self.label(cx, cy + r * 0.82 + 18, label, 11, italic=True)
+
+    def granary(self, x, y, n=3, w=58, h=34, gap=14, label="granary"):
+        """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
+        town, where grain from many counties is gathered and forwarded up the kick-up chain.
+        White-walled with a dark hip roof. Opt-in (meta(granary=True)): a standard county seat
+        keeps its grain inside the magistrate's yamen, so it is NOT drawn separately. Records to
+        M['granary'] (gated by town_has_granary) and blocks houses, like the manor."""
+        stores = []
+        x0 = x - (n * w + (n - 1) * gap) / 2
+        for i in range(n):
+            cx = x0 + i * (w + gap) + w / 2
+            self.add(f'<rect x="{cx-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="{h}" rx="2" fill="#E8E0CE" stroke="#6B5A3C" stroke-width="2"/>')
+            self.add(f'<rect x="{cx-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="9" fill="#5A4A30"/>')   # dark fireproof hip roof
+            self.add(f'<line x1="{cx:.0f}" y1="{y-h/2+9:.0f}" x2="{cx:.0f}" y2="{y+h/2:.0f}" stroke="#6B5A3C" stroke-width="0.7"/>')
+            stores.append({"x": cx, "y": y, "w": w, "h": h})
+            bm = 30   # block a RECT + a building-half margin so dwellings keep clear, like the manor
+            self.block_polys.append([(cx - w / 2 - bm, y - h / 2 - bm), (cx + w / 2 + bm, y - h / 2 - bm),
+                                     (cx + w / 2 + bm, y + h / 2 + bm), (cx - w / 2 - bm, y + h / 2 + bm)])
+        self.M["granary"] = {"x": x, "y": y, "n": n, "stores": stores, "label": label}
+        if label:
+            self.label(x, y - h / 2 - 10, label, 11, italic=True, color="#6B5A3C")
+        return stores
+
+    def merchant_storehouses(self, count=6, kw=20, kh=14):
+        """Attach a small fireproof storehouse (kura) to the BACK of several merchant houses.
+        Because most Rokugani farmers are TENANTS, the rent-rice and bulk goods of their (often
+        absentee) landlords are kept in town - over and above the ordinary inventory storeroom a
+        shop already has - so a noticeable MINORITY of businesses run a deep lot with a kura
+        behind the shopfront (the classic narrow-front / deep-lot merchant compound). The kura
+        is drawn as an annex behind the building (opposite its street-facing awning), like the
+        farmhouse shed: part of the premises, not a separately-sited structure, so it needs no
+        open ground in the packed quarter. Records to M['storehouses']; call AFTER the
+        businesses are placed. Returns the number attached."""
+        biz = [b for b in self.M["buildings"] if b["kind"] in ("merchant", "shop")]
+        st = random.getstate()        # spread the picks across the quarter without perturbing
+        random.seed(7)                # the main placement RNG (saved/restored, like forest())
+        random.shuffle(biz)
+        random.setstate(st)
+        placed = 0
+        for b in biz:
+            if placed >= count:
+                break
+            th = math.radians(b["rot"])
+            bx, by = math.sin(th), -math.cos(th)            # the building's BACK direction (awning faces -back)
+            off = b["h"] / 2 + kh / 2 - 2                   # tuck the kura just behind the shopfront
+            ox, oy = b["x"] + bx * off, b["y"] + by * off
+            if self._near_corridor(ox, oy):                 # never let a kura sit on a street/channel
+                continue
+            self.add(f'<g transform="translate({ox:.0f},{oy:.0f}) rotate({b["rot"]:.0f})">'
+                     f'<rect x="{-kw/2:.0f}" y="{-kh/2:.0f}" width="{kw}" height="{kh}" rx="1.5" fill="#E8E0CE" stroke="#6B5A3C" stroke-width="1.4"/>'
+                     f'<rect x="{-kw/2:.0f}" y="{-kh/2:.0f}" width="{kw}" height="4.5" fill="#5A4A30"/></g>')   # dark fireproof roof
+            self.M["storehouses"].append({"x": ox, "y": oy, "w": kw, "h": kh, "of": [b["x"], b["y"]]})
+            placed += 1
+        return placed
 
     def forest_patch(self, base, label=None, label_xy=None):
         """A bounded copse (organic polygon), as opposed to forest() which fills to
