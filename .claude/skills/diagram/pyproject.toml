@@ -1,0 +1,16 @@
+# Test + coverage config for the diagram skill's Mode B Python (check_village.py + settlement.py).
+# Coverage is gated at 100% (fail_under) so "we have tests" is mechanically enforced, not just
+# asserted. Run: python3 -m pytest   (from this directory; needs pytest + pytest-cov).
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["check_village", "settlement"]
+omit = ["test_*.py", "pool/*.gen.py"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_also = [
+    "if __name__ == .__main__.:",   # script entry guards are exercised via the CLI, not unit tests
+]

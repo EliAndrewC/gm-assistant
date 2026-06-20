@@ -32,8 +32,7 @@ HEADMAN = (910, 800)       # up by the field's southern point (the headman farms
 SHRINE = (910, 915)        # Benten, at the torii gateway on the southern approach (a recent addition)
 
 # water FIRST (fields paint over the channel ends): a stream diversion from off-map
-# feeds the main field; the main field then feeds the smaller fields
-s.stream([(872, 0), (898, 36), (910, 64)])
+# (the channel enters from the top edge) feeds the main field, which then feeds the rest
 s.channel((910, 28), (910, 650), {"kind": "offmap"}, {"kind": "field", "name": "main"})
 s.channel((560, 400), (250, 385), {"kind": "field", "name": "main"}, {"kind": "field", "name": "nw"})
 s.channel((1260, 400), (1595, 385), {"kind": "field", "name": "main"}, {"kind": "field", "name": "ne"})
@@ -51,7 +50,7 @@ s.paddy_field(SW, "", "sw", amp=30)
 s.paddy_field(SE, "", "se", amp=30)
 
 # the Benten village shrine at the southern torii gateway (a recent addition, NOT on a hill)
-s.shrine_hall(SHRINE[0], SHRINE[1], "Shrine to Benten", "(village shrine)",
+s.shrine_hall(SHRINE[0], SHRINE[1], "Shrine to Benten",
               w=96, h=64, torii=[(910, 1000), (910, 1065)], primary=True)
 # the still-tended Bishamon village shrine, southwest
 s.shrine_hall(230, 980, "Shrine to Bishamon", "(still tended)", w=118, h=82)
@@ -63,6 +62,7 @@ s.ring(("poly", s.field_polys[0]), 40, 24, ["plain"] * 8 + ["big"])
 s.ring(("poly", s.field_polys[0]), 18, 58, ["plain"])
 for bb in (NW, NE, SW, SE):
     s.ring(bb, 12, 16, ["plain"])
+s.ring(SW, 8, 44, ["plain"])   # extra ring on SW's open sides (the Bishamon shrine blocks its west)
 
 # labels
 s.label(806, 805, "Headman's House", 13, anchor="end", weight="bold")

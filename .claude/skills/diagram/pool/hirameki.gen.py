@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Hirameki - a WALLED border town (diagram skill, Mode B, town scale).
+
+A county seat of ~1,200 (per budgets.md), drawn at TOWN scale: a LARGER canvas and a finer
+building grain (s.bscale) than a village, so the rampart encloses the whole town proper.
+Historically a Chinese walled county seat / Japanese jokamachi keeps the urban castes -
+merchants, artisans, LABORERS, servants, and samurai - INSIDE the walls, zoned around the
+magistrate's hilltop citadel; only the farmland/farmhouses, the segregated burakumin
+quarter, and a small guan-xiang gate-market lie outside. The surrounding farmers retreat
+inside during a raid. The hill's steep back defends the north flank; the Imperial
+chrysanthemum field abuts the inside of the west rampart.
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from settlement import Settlement  # noqa: E402
+
+s = Settlement(2600, 1820, seed=61)
+# downhill is SOUTH: the hill/manor sit in the north, so the land falls away southward and
+# the streams flow north-to-south; irrigation channels must run downhill (tap upstream/north
+# of where they feed each field)
+# Clan: LION (current holder) - its patron fortunes are Bishamon + Daikoku. But Hirameki
+# CHANGED HANDS during the Lion/Crane war, so its monasteries are special (override): the
+# main one is to Bishamon (Lion's), and a much smaller, older one to Benten (Crane's) sits
+# on the far side of town - a relic of Crane rule. Hence monastery_fortunes is set explicitly.
+s.meta(name="Hirameki", scale="town", walled=True, torii_expected=2, downhill="south",
+       clan="Lion", monastery_fortunes=["Bishamon", "Benten"])
+s.bscale = 0.82   # town-scale building grain (denser than a village)
+
+# ---- OUTSIDE the walls: streams + farm fields + farmhouses (one field runs off the edge)
+s.stream([(250, -10), (175, 470), (255, 940), (160, 1400), (220, 1830)])
+s.stream([(2430, -10), (2390, 560), (2460, 1100), (2400, 1830)])
+OW1 = (250, 380, 510, 620)
+OW2 = (-120, 1000, 110, 1280)     # off the left edge
+OE1, OE2 = (1990, 440, 2270, 700), (2080, 980, 2360, 1240)
+OS = (640, 1660, 1040, 1815)      # SW of the gate, off the bottom edge (beside the road, not under it)
+# irrigation channels tap the streams to feed the on-map fields (the off-edge fields draw
+# their water off-map); drawn before the fields so each field paints over the channel's end
+s.channel((185, 430), (360, 560), {"kind": "stream"}, {"kind": "field", "name": "w1"})
+s.channel((2390, 490), (2205, 620), {"kind": "stream"}, {"kind": "field", "name": "e1"})
+s.channel((2448, 1030), (2215, 1160), {"kind": "stream"}, {"kind": "field", "name": "e2"})
+for bb, nm in [(OW1, "w1"), (OW2, "w2"), (OE1, "e1"), (OE2, "e2"), (OS, "s1")]:
+    s.paddy_field(bb, "", nm, amp=24)
+
+# ---- the hill (north) with the Magistrate's Manor on top (the citadel)
+sx, sy = s.hill(1300, 480, 560, 360, steep=True)
+s.manor(1300, 415, 360, 216, "Magistrate's Manor", gate_dir="south")   # gate faces the town below
+
+# ---- the irregular rampart (anchored to the hill, climbing both flanks); the gate is
+# south; the west face is a straight run the chrysanthemum field abuts flush
+# the S/SE/E faces hug the built core (the monastery + laborer quarters) rather than
+# enclosing empty corner space - a tighter line is cheaper to build (wall_hugs_the_town).
+# The south face rides just below the laborer blocks, dipping only at the centre for a modest
+# gate forecourt; the east face encloses the cross-street and east quarter, then tapers up to
+# the Bishamon monastery and the hill.
+WALL = [(1000, 500), (820, 720), (660, 960), (660, 1340),
+        (780, 1410), (1100, 1440), (1300, 1500), (1500, 1440), (1800, 1340),
+        (1850, 1040), (1800, 860), (1700, 500)]
+s.wall(WALL, gate=(1300, 1500))
+s.label(1300, 1560, "front gate (guard station + tower)", 11, italic=True, color="#3A352C")
+
+# ---- INSIDE: chrysanthemum field (abuts west wall), monastery, the zoned urban core
+s.flower_field((666, 1020, 880, 1300), "chrysanthemum field", amp=8, flat_west=True)
+# main town monastery (to Bishamon, the Lion patron), on the east side
+s.shrine_hall(1700, 950, "Monastery of Bishamon", w=150, h=98,
+              kind="monastery", primary=True, torii=[(1700, 1062)])
+# the older, much smaller Benten monastery (Crane patron) on the OPPOSITE (west) side,
+# inside the walls - a relic of the town's time under Crane rule
+s.shrine_hall(770, 940, "Monastery of Benten", w=60, h=40,
+              kind="monastery", primary=False, torii=[(770, 998)])
+
+# street plan: the gate-to-yamen main avenue + a market cross-street (both fully built up).
+# The laborer/servant quarters behind them are accessed off the cross-street and otherwise
+# sit as deep tenement blocks with no street frontage (the poor can't afford it) - no
+# speculative back-lanes that would dead-end empty, per `streets_have_buildings`.
+MAIN = [(1300, 1840), (1300, 1568), (1300, 1300), (1300, 1060), (1300, 870)]   # runs out the gate, off the edge
+CROSS = [(740, 1240), (1300, 1225), (1740, 1240)]
+s.street(MAIN, width=28, main=True, label="main street")
+s.street(CROSS, width=22)
+
+# the town's amphitheater, at the FOOT of the hill (south, downhill side) so the townsfolk
+# sit on the hill's slope to watch the performances; offset west of the main-street axis
+s.amphitheater(1080, 910, 80, label="amphitheater")
+
+# samurai quarter: lining the manor's approach, below the hill
+s.pack((940, 880, 1680, 1060), ["samurai"] * 9, step=58)
+s.label(1300, 868, "samurai quarter", 11, italic=True)
+
+# merchants + shops FRONT the main avenue and the market cross-street (facing them)
+s.frontage(MAIN, (["merchant"] * 3 + ["shop"]) * 6, width=28, spacing=46, rows=2)
+s.frontage(CROSS, (["merchant"] * 2 + ["shop"]) * 6, width=22, spacing=46, rows=2)
+# the laborers' and servants' dwellings fill the blocks flanking the core - those next to
+# the cross-street face it; the rest are deep tenement blocks with no street frontage
+s.pack((700, 1090, 1150, 1550), ["servant"] * 5 + ["laborer"] * 13, step=42, face_streets="fill")
+s.pack((1450, 1090, 1780, 1550), ["laborer"] * 17, step=42, face_streets="fill")
+s.label(1300, 1330, "merchant houses & shops", 10, italic=True, color="#5A4326")
+s.label(820, 1430, "labourers' & servants' tenements", 9, italic=True, color="#5A4326")
+
+# ---- OUTSIDE: a small guan-xiang gate-market, the segregated burakumin quarter, farm rings
+s.pack((1080, 1600, 1540, 1794), ["merchant"] * 5 + ["shop"] * 5, step=46, face_streets=True)
+s.label(1300, 1600, "gate market", 10, italic=True, color="#5A4326")
+s.pack((2060, 1500, 2360, 1780), ["burakumin"] * 12, step=44)
+s.label(2210, 1484, "burakumin quarter", 11, italic=True, color="#6B4F2A")
+for bb in (OW1, OE1, OE2, OS):
+    s.ring(bb, 12, 16, ["plain"])
+    s.ring(bb, 10, 48, ["plain"])
+    s.ring(bb, 8, 80, ["plain"])
+
+s.title("Hirameki")
+s.compass()
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+nb = {}
+for b in s.M["buildings"]:
+    nb[b["kind"]] = nb.get(b["kind"], 0) + 1
+print("farmhouses:", len(s.M["houses"]), "| buildings:", nb, "| finish:", s.finish(os.path.join(HERE, "hirameki")))

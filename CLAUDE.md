@@ -123,7 +123,7 @@ These conventions govern any edit to `/host-l7r-repo/setting/l7r.md` - both copy
   - Years/dates: `1117`, `1129`.
   - Ranks: `Rank 5`, `the 5th rank`, `5th-rank samurai`.
   - Fractions and ratios: `1/3`, `1/6`, `2:1`.
-  - **Fixed setting labels**: `the 7 Great Clans`, `the 12 members of The Order`, `the 4 Gods of Death`, `the 4 Bloodswords`, `the 5 Major Fortunes`, `the 7 maho disciplines`, `the 6 Ministries` (a.k.a. `Six Ministries`), `the 4 Imperial families`. The numeral is part of the descriptor.
+  - **Fixed setting labels**: `the 7 Great Clans`, `the 12 members of The Order`, `the 4 Gods of Death`, `the 4 Bloodswords`, `the 5 Major Fortunes`, `the 7 maho disciplines`, `the 6 Ministries` (a.k.a. `Six Ministries`), `the 4 Imperial Families`. The numeral is part of the descriptor.
 - **Always spell out**: numbers that begin a sentence; informal round numbers (`a thousand years`, `several hundred`, `a few`).
 - Setting-canonical labels that *already* use spelled-out form (`the Twelve Months`, `the Ten Heavenly Stems`, `the Twelve Earthly Branches`) stay spelled-out - don't convert these.
 
@@ -158,6 +158,12 @@ These conventions govern any edit to `/host-l7r-repo/setting/l7r.md` - both copy
 - L7R uses `domain` for the territory administered by a daimyo, governor, or magistrate at any tier - never `demesne` (the medieval European term).
 - Applies to all compound usages too: "Imperial domain" (not "Imperial demesne"), "personal domain" (not "personal demesne"), "Hantei lands" rather than "Hantei demesne", etc.
 - Silently fix `demesne` → `domain` in any text being edited.
+
+**Capitalize "Family" and "Clan" as institutions**:
+
+- **Family** (capital F) when it means the institutional house/alliance within a Clan: named Families (`Hida Family`, `Matsu Family`, `Yasuki Family`), the `Family daimyo`, the `Family` kick-up layer, `Family capital`/`Family seat`, the kick-up recipients (`Family, Clan, and Imperial`), and the `Imperial Families` (Hantei, Seppun, Otomo, Miya). Lowercase `family` for the generic/relatives sense: `the daimyo's family`, `family members`, `family households`, `farm/merchant/samurai families`, `family name` (surname), `birth family`, `family connections`.
+- **Clan** (capital C) as part of a clan's name or the institution: `Crab Clan`, `Lion Clan`, the minor clans (`Wasp Clan`, `Fox Clan`), `Clan daimyo`, `Clan capital`, the `Family/Clan/Imperial` kick-up tiers, and the fixed labels `Great Clans` / `Minor Clans`. Lowercase `clan` only in relational/process compounds: `clan-supplied`, `cross-clan`, `inter-clan`, `clan-level`.
+- Quick test: "the daimyo's family" is their parents/siblings/spouse/children; "the daimyo's Family" is e.g. the Hida Family.
 
 - Hyphens only. No em-dashes (U+2014) or en-dashes (U+2013) anywhere.
 - Two spaces after a period is house style. Preserve it.

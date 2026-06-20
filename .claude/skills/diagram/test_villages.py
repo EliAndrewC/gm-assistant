@@ -13,7 +13,7 @@ Works under pytest OR standalone:
 """
 import glob
 import os
-import subprocess
+import runpy
 import sys
 
 import check_village
@@ -24,8 +24,9 @@ GENERATORS = sorted(glob.glob(os.path.join(POOL, "*.gen.py")))
 
 
 def _regen_and_gate(gen):
-    """Run a village generator, then its gate; return True if every check passes."""
-    subprocess.run([sys.executable, gen], check=True, capture_output=True, text=True)
+    """Run a village generator, then its gate; return True if every check passes.
+    Runs the generator IN-PROCESS (not as a subprocess) so coverage measures settlement.py."""
+    runpy.run_path(gen, run_name="__main__")
     manifest = gen[: -len(".gen.py")] + ".json"
     assert os.path.exists(manifest), f"{os.path.basename(gen)} produced no manifest"
     return check_village.main(manifest) == 0
