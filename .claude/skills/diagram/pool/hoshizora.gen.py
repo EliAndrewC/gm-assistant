@@ -63,6 +63,10 @@ s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86,
 # (hall, stables, etc.) is the subject of a separate Mode A diagram
 s.manor(500, 1120, 250, 180, "Magistrate's Manor", "county seat")
 
+# the market flophouse (kichin-yado) by the road on the SW approach, where peasants travelling
+# in for market day arrive - they sleep on straw for a sen a night
+s.flophouse(360, 960)
+
 # ---- the amphitheater + barns (the barns sit in the grazing pasture)
 s.amphitheater(1320, 770, 82, label="amphitheater")
 s.building(1080, 1110, 88, 58, "barn")

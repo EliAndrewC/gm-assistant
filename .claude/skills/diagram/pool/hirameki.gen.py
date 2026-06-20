@@ -110,6 +110,9 @@ s.label(820, 1430, "labourers' & servants' tenements", 9, italic=True, color="#5
 # ---- OUTSIDE: a small guan-xiang gate-market, the segregated burakumin quarter, farm rings
 s.pack((1080, 1600, 1540, 1794), ["merchant"] * 5 + ["shop"] * 5, step=46, face_streets=True)
 s.label(1300, 1600, "gate market", 10, italic=True, color="#5A4326")
+# the market flophouse (kichin-yado), OUTSIDE the gate beside the gate market: far-traveling
+# peasants who reach the town after the gate shuts at dusk sleep here for a sen before market day
+s.flophouse(1690, 1690)
 s.pack((2060, 1500, 2360, 1780), ["burakumin"] * 12, step=44)
 s.label(2210, 1484, "burakumin quarter", 11, italic=True, color="#6B4F2A")
 # a noticeable minority of merchant houses keep a fireproof kura (rent-rice / bulk goods of the

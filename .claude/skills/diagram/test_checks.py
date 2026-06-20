@@ -167,6 +167,20 @@ def test_town_has_merchant_storehouses_passes_with_several():
     assert "town_has_merchant_storehouses" not in f(M)
 
 
+# ---- town_has_flophouse: cheap market-day lodging (default-on, opt-in to more) --------------
+def test_town_has_flophouse_fires_when_absent_by_default():
+    assert "town_has_flophouse" in f({"meta": {"scale": "town"}})              # 0 < default 1
+
+
+def test_town_has_flophouse_requires_more_when_declared():
+    M = {"meta": {"scale": "town", "flophouses": 2}, "flophouses": [{"x": 0, "y": 0}]}
+    assert "town_has_flophouse" in f(M)                                        # 1 < 2
+
+
+def test_town_has_flophouse_opt_out_with_zero():
+    assert "town_has_flophouse" not in f({"meta": {"scale": "town", "flophouses": 0}})
+
+
 # ---- town_monasteries_dedicated: wrong patron fortunes for the clan ------------------------
 def _monastery(fortune):
     return {"kind": "monastery", "label": f"Monastery of {fortune}", "x": 0, "y": 0, "w": 10, "h": 10}
