@@ -173,8 +173,17 @@ def test_town_has_flophouse_fires_when_absent_by_default():
 
 
 def test_town_has_flophouse_requires_more_when_declared():
-    M = {"meta": {"scale": "town", "flophouses": 2}, "flophouses": [{"x": 0, "y": 0}]}
+    M = {"meta": {"scale": "town", "flophouses": 2},
+         "flophouses": [{"x": 500, "y": 500, "w": 104, "h": 46, "rot": 0}]}
     assert "town_has_flophouse" in f(M)                                        # 1 < 2
+
+
+def test_flophouse_on_road_overlaps_like_any_structure():
+    # a standalone civic building (flophouse) is now checked for overlaps too: one sitting on
+    # the road must trip no_structure_on_road, exactly as a shop would.
+    M = {"meta": {"scale": "town"}, "road": [[100, 500], [900, 500]], "road_width": 26,
+         "flophouses": [{"x": 500, "y": 500, "w": 104, "h": 46, "rot": 0}]}
+    assert "no_structure_on_road" in f(M)                                        # 1 < 2
 
 
 def test_town_has_flophouse_opt_out_with_zero():
@@ -329,6 +338,195 @@ def test_house_count_in_range_target_houses_fires():
     houses = [{"x": i * 30, "y": 100, "w": 44, "h": 29, "kind": "plain", "rot": 0} for i in range(10)]
     M = {"meta": {"scale": "village", "target_houses": 60}, "houses": houses}   # 10 vs ~60
     assert "house_count_in_range" in f(M)
+
+
+# ---- provincial-city checks (scale="city"); tango.gen.py is the passing integration ---------
+WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]   # a closed city ring
+
+
+def test_city_required_structures_all_fire_on_an_empty_city():
+    fails = f({"meta": {"scale": "city"}})
+    for name in ("city_has_governor_mansion", "city_has_six_ministries", "city_has_ministry_of_rites",
+                 "city_has_samurai_neighbourhood", "city_has_merchant_district",
+                 "city_has_laborer_neighbourhoods", "city_has_outside_farmland"):
+        assert name in fails
+
+
+def test_city_ministry_of_rites_fires_when_six_but_none_are_rites():
+    mins = [{"x": i * 30, "y": 50, "w": 80, "h": 50, "name": f"Ministry {i}"} for i in range(6)]
+    assert "city_has_ministry_of_rites" in f({"meta": {"scale": "city"}, "ministries": mins})
+
+
+def test_walled_city_structural_checks_fire():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+         "wall": WALLSQ, "gates": [[500, 200]]}   # only ONE gate, no stations / burakumin / estates / road
+    fails = f(M)
+    assert "walled_city_has_wall_and_gates" in fails
+    assert "city_inspection_station_at_each_gate" in fails
+    assert "walled_city_has_burakumin_inside" in fails
+    assert "city_samurai_estates_outside" in fails        # 0 estates, want 5-15
+    assert "city_imperial_road_through" in fails
+
+
+def test_city_samurai_estates_vary_in_size_fires_when_uniform():
+    estates = [{"x": 900 + i * 12, "y": 900, "w": 100, "h": 80} for i in range(6)]   # 6 (in range), all identical
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+         "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "manors": estates}
+    fails = f(M)
+    assert "city_samurai_estates_vary_in_size" in fails
+    assert "city_samurai_estates_outside" not in fails    # 6 IS in the 5-15 range
+
+
+def test_city_streets_have_buildings_fires_on_an_empty_city_street():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "town_streets": [{"pts": [[300, 300], [700, 300]], "w": 20}]}
+    assert "city_streets_have_buildings" in f(M)
+
+
+def test_city_civic_amenity_checks_fire_on_an_empty_city():
+    fails = f({"meta": {"scale": "city"}})
+    for name in ("city_has_merchant_storehouses", "city_has_flophouse", "city_has_amphitheater"):
+        assert name in fails
+
+
+def test_city_streets_connected_and_empty_space_fire():
+    # two town streets far apart with no road -> two disconnected groups; the interior is almost
+    # all empty (no buildings/fields), and a pond sits on a grid point (the pond-as-occupancy path)
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+         "wall": [[100, 100], [900, 100], [900, 900], [100, 900]], "gates": [[500, 100], [500, 900]],
+         "town_streets": [{"pts": [[200, 200], [200, 400]], "w": 18}, {"pts": [[700, 600], [700, 800]], "w": 18}],
+         "pond": [400, 400, 80, 60]}
+    fails = f(M)
+    assert "city_streets_connected" in fails
+    assert "city_no_large_empty_space" in fails
+
+
+def test_city_temples_clear_of_wall_branches():
+    # three temples hitting the three footprint-vs-barrier paths: A contains a wall vertex
+    # (point_in_poly), B is crossed by a wall edge (segments_cross), C's corner sits on it (seg_dist)
+    rel = [{"kind": "temple", "label": "A", "x": 500, "y": 500, "w": 200, "h": 200},
+           {"kind": "temple", "label": "B", "x": 300, "y": 500, "w": 16, "h": 300},
+           {"kind": "temple", "label": "C", "x": 200, "y": 500, "w": 40, "h": 8}]
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+         "wall": [[100, 500], [500, 500], [900, 500]], "gates": [[500, 500], [500, 800]], "religious": rel}
+    assert "city_temples_clear_of_wall_moat" in f(M)
+
+
+def test_city_government_clear_of_wall_moat_fires():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]],
+         "governor_mansion": {"x": 800, "y": 500, "w": 120, "h": 90, "label": "Gov"}}   # straddles the right wall edge
+    assert "city_government_clear_of_wall_moat" in f(M)
+
+
+def test_city_streets_clear_of_wall_moat_fires():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]],
+         "town_streets": [{"pts": [[500, 500], [990, 500]], "w": 18}]}   # a vertex outside the wall
+    assert "city_streets_clear_of_wall_moat" in f(M)
+
+
+def test_city_fields_clear_of_wall_moat_fires():
+    ff = {"name": "ff", "kind": "paddy", "bbox": [700, 400, 900, 600],
+          "outline": [[700, 400], [900, 400], [900, 600], [700, 600]]}   # straddles the right wall edge
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "fields": [ff]}
+    assert "city_fields_clear_of_wall_moat" in f(M)
+
+
+def test_city_governor_mansion_large_fires_when_small():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]],
+         "governor_mansion": {"x": 500, "y": 500, "w": 80, "h": 60, "label": "Gov"},   # tiny
+         "manors": [{"x": 990, "y": 990, "w": 200, "h": 150}]}   # an estate grander than the governor
+    assert "city_governor_mansion_large" in f(M)
+
+
+def test_city_ministries_cluster_fires_on_stray_ministry():
+    M = {"meta": {"scale": "city", "walled": True, "W": 2000, "H": 2000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]],
+         "governor_mansion": {"x": 500, "y": 500, "w": 200, "h": 150, "label": "Gov"},
+         "ministries": [{"x": 1800, "y": 1800, "w": 80, "h": 50, "name": "Ministry of War"}]}   # far from the yamen
+    assert "city_ministries_cluster_at_government" in f(M)
+
+
+def test_city_estates_in_southeast_fires_on_northwest_estate():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "manors": [{"x": 60, "y": 60, "w": 100, "h": 80}]}   # NW, not SE
+    assert "city_estates_in_southeast" in f(M)
+
+
+def test_city_pond_clear_of_wall_moat_fires():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "pond": [800, 500, 60, 40]}   # ellipse straddling the right wall edge
+    assert "city_pond_clear_of_wall_moat" in f(M)
+
+
+def test_city_civic_clear_of_streets_fires():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]],
+         "ministries": [{"x": 500, "y": 500, "w": 90, "h": 60, "name": "Ministry of War"}],
+         "town_streets": [{"pts": [[300, 500], [700, 500]], "w": 20}]}   # the street runs through the ministry
+    assert "city_civic_clear_of_streets" in f(M)
+
+
+def test_city_temples_inside_walls_fires_on_outside_temple():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]],
+         "religious": [{"kind": "temple", "label": "T", "x": 990, "y": 500, "w": 60, "h": 40}]}
+    assert "city_temples_inside_walls" in f(M)
+
+
+def test_city_estates_overlap_and_barrier_fire():
+    est = [{"x": 810, "y": 500, "w": 80, "h": 60}, {"x": 822, "y": 512, "w": 80, "h": 60}]   # overlap + on the wall edge
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "manors": est}
+    fails = f(M)
+    assert "city_estates_no_overlap" in fails
+    assert "city_estates_clear_of_wall_moat" in fails
+
+
+def test_city_outside_field_and_gate_market_fire():
+    ff = {"name": "ff", "kind": "paddy", "bbox": [1500, 1500, 1800, 1800],
+          "outline": [[1500, 1500], [1800, 1500], [1800, 1800], [1500, 1800]]}
+    M = {"meta": {"scale": "city", "walled": True, "W": 2000, "H": 2000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "fields": [ff]}
+    fails = f(M)
+    assert "city_outside_fields_have_farmhouses" in fails
+    assert "city_fields_close_to_city" in fails
+    assert "city_has_gate_market" in fails
+
+
+def test_city_gate_guardhouse_and_moat_irrigation_fire():
+    bigf = {"name": "bf", "kind": "paddy", "bbox": [960, 200, 1180, 900],
+            "outline": [[960, 200], [1180, 200], [1180, 900], [960, 900]]}
+    M = {"meta": {"scale": "city", "walled": True, "W": 1300, "H": 1100},
+         "wall": [[100, 100], [900, 100], [900, 900], [100, 900]], "gates": [[500, 100], [500, 900]],
+         "moat": [[80, 80], [920, 80], [920, 920], [80, 920], [80, 80]], "fields": [bigf]}
+    fails = f(M)
+    assert "city_gate_has_guardhouse" in fails        # no gate structures
+    assert "city_moat_irrigates_fields" in fails       # big outside field, no channel feeds it
+
+
+def test_city_no_inwall_farms_fires_without_agricultural_district():
+    # a field whose centroid sits inside the wall, and no meta(agricultural_district=True)
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+         "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "fields": [_field("f", 400, 400, 600, 600)]}
+    assert "city_no_inwall_farms" in f(M)
+
+
+def test_city_no_inwall_farms_allowed_with_agricultural_district():
+    M = {"meta": {"scale": "city", "walled": True, "agricultural_district": True, "W": 1000, "H": 1000},
+         "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "fields": [_field("f", 400, 400, 600, 600)]}
+    assert "city_no_inwall_farms" not in f(M)
+
+
+def test_city_moat_checks_fire_when_moat_neither_surrounds_nor_is_fed():
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "moat": [[400, 400], [600, 400], [600, 600], [400, 600]]}
+    fails = f(M)
+    assert "city_moat_surrounds_wall" in fails     # a tiny moat INSIDE the wall does not encircle it
+    assert "city_moat_fed_offmap" in fails          # no stream feeds it
 
 
 if __name__ == "__main__":
