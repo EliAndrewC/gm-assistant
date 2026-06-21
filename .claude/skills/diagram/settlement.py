@@ -160,6 +160,7 @@ class Settlement:
         self.bscale = 1.0         # urban-building footprint scale (a large town packs at a finer grain)
         self.placed = []          # (x, y, w, h)
         self.corridors = []       # polylines houses must avoid
+        self.bound = None         # optional bounding polygon: placement stays inside it (city wall)
         self.field_polys = []     # smoothed outlines used for blocking
         self.ellipses = []        # (cx, cy, rx, ry) hill/pond/manor - block houses
         self.block_polys = []     # arbitrary no-build polygons (e.g. forest)
@@ -171,7 +172,9 @@ class Settlement:
                   "religious": [], "flower_fields": [], "labels": [], "pond": None,
                   "storehouses": [], "flophouses": [], "hill": None, "summit": None,
                   "shrine": None, "forest": None, "road": None,
-                  "wall": None, "gate": None, "meta": {"W": W, "H": H}}
+                  "wall": None, "gate": None, "gates": [], "moat": None,
+                  "governor_mansion": None, "ministries": [], "inspection_stations": [],
+                  "meta": {"W": W, "H": H}}
         self._header()
 
     # ---- low level
@@ -762,7 +765,7 @@ class Settlement:
             self.add(f'<rect x="{cx-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="{h}" rx="2" fill="#E8E0CE" stroke="#6B5A3C" stroke-width="2"/>')
             self.add(f'<rect x="{cx-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="9" fill="#5A4A30"/>')   # dark fireproof hip roof
             self.add(f'<line x1="{cx:.0f}" y1="{y-h/2+9:.0f}" x2="{cx:.0f}" y2="{y+h/2:.0f}" stroke="#6B5A3C" stroke-width="0.7"/>')
-            stores.append({"x": cx, "y": y, "w": w, "h": h})
+            stores.append({"x": cx, "y": y, "w": w, "h": h, "rot": 0})
             bm = 30   # block a RECT + a building-half margin so dwellings keep clear, like the manor
             self.block_polys.append([(cx - w / 2 - bm, y - h / 2 - bm), (cx + w / 2 + bm, y - h / 2 - bm),
                                      (cx + w / 2 + bm, y + h / 2 + bm), (cx - w / 2 - bm, y + h / 2 + bm)])
@@ -816,13 +819,103 @@ class Settlement:
         self.add(f'<line x1="{x0:.0f}" y1="{y:.0f}" x2="{x0+w:.0f}" y2="{y:.0f}" stroke="#5A4A30" stroke-width="0.7"/>')
         for dx in range(int(x0) + 14, int(x0 + w) - 10, 26):   # a row of plain doorways (a long dormitory)
             self.add(f'<rect x="{dx}" y="{y+h/2-7:.0f}" width="9" height="7" fill="#5A4A30" opacity="0.8"/>')
-        self.M["flophouses"].append({"x": x, "y": y, "w": w, "h": h, "label": label})
+        self.M["flophouses"].append({"x": x, "y": y, "w": w, "h": h, "rot": 0, "label": label})
         self.placed.append((x, y, w, h))
         bm = 30   # block a RECT + a building-half margin so dwellings keep clear, like the manor
         self.block_polys.append([(x0 - bm, y0 - bm), (x0 + w + bm, y0 - bm),
                                  (x0 + w + bm, y0 + h + bm), (x0 - bm, y0 + h + bm)])
         if label:
             self.label(x, y0 - 10, label, 11, italic=True, color="#5A4A30")
+
+    # ---- provincial-city features (scale="city")
+    def city_wall(self, pts, gates=()):
+        """A CLOSED city rampart (a full ring, unlike the town's open hill-anchored arc), with a
+        gap at each gate in `gates` (each (x,y) on the ring, where the wall runs ~horizontal -
+        the N and S gates the Imperial road passes through). Each gate gets a GUARD HOUSE with an
+        attached INSPECTION STATION (tariff audit) and a GUARD TOWER, all in the top layer so the
+        road passes under them. Records M['wall'], M['gates'], M['gate'], M['gate_structs'] (the
+        guard houses + towers), and M['inspection_stations']."""
+        wc = '#3A352C'
+        ring = list(pts) + [pts[0]]
+        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in ring)
+        self.add(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
+        cx = sum(p[0] for p in pts) / len(pts)
+        cy = sum(p[1] for p in pts) / len(pts)
+        self.M["gate_structs"] = []
+        for gx, gy in gates:
+            self.add(f'<rect x="{gx-36:.0f}" y="{gy-22:.0f}" width="72" height="44" fill="{LAND}"/>')   # gap
+            self.add(f'<rect x="{gx-42:.0f}" y="{gy-26:.0f}" width="14" height="52" fill="{wc}"/>')      # posts
+            self.add(f'<rect x="{gx+28:.0f}" y="{gy-26:.0f}" width="14" height="52" fill="{wc}"/>')
+            dy = 1 if gy < cy else -1                          # toward the inside of the wall
+            iy = gy + dy * 56
+            ghx, ghw, ghh = gx - 80, 66, 44                   # guard house (just inside, west of the road)
+            gz = self.add_top(f'<rect x="{ghx-ghw/2:.0f}" y="{iy-ghh/2:.0f}" width="{ghw}" height="{ghh}" rx="2" fill="#C9A57A" stroke="#5A4326" stroke-width="1.8"/>')
+            self.add_top(f'<line x1="{ghx-ghw/2:.0f}" y1="{iy:.0f}" x2="{ghx+ghw/2:.0f}" y2="{iy:.0f}" stroke="#5A4326" stroke-width="0.8"/>')
+            self.M["gate_structs"].append({"x": ghx, "y": iy, "w": ghw, "h": ghh, "z": gz})
+            isx, isw, ish = ghx - ghw / 2 - 31, 60, 44        # inspection station, ATTACHED west of the guard house
+            iz = self.add_top(f'<rect x="{isx-isw/2:.0f}" y="{iy-ish/2:.0f}" width="{isw}" height="{ish}" rx="2" fill="#D8C49A" stroke="#5A4326" stroke-width="1.8"/>')
+            self.add_top(f'<rect x="{isx-isw/2:.0f}" y="{iy-ish/2:.0f}" width="{isw}" height="8" fill="#8A6E3E"/>')
+            self.add_top(f'<rect x="{isx-3:.0f}" y="{iy-ish/2-13:.0f}" width="11" height="8" fill="#A8472E"/>')   # tariff banner
+            self.M["inspection_stations"].append({"x": isx, "y": iy, "w": isw, "h": ish, "label": "inspection station"})
+            self.M["gate_structs"].append({"x": isx, "y": iy, "w": isw, "h": ish, "z": iz})
+            tx, tw = gx + 78, 40                              # guard tower on the wall, east of the gate
+            tz = self.add_top(f'<rect x="{tx-tw/2:.0f}" y="{gy-tw/2:.0f}" width="{tw}" height="{tw}" fill="#9C8A66" stroke="{wc}" stroke-width="2.4"/>')
+            self.add_top(f'<rect x="{tx-tw/2+8:.0f}" y="{gy-tw/2+8:.0f}" width="{tw-16}" height="{tw-16}" fill="#6B5A3A"/>')
+            self.M["gate_structs"].append({"x": tx, "y": gy, "w": tw, "h": tw, "z": tz})
+            self.label(isx + 14, iy + ish / 2 + 13, "gate guard house + inspection", 9, italic=True, color="#5A4326")
+            for gs in self.M["gate_structs"][-3:]:
+                bm = 30
+                self.block_polys.append([(gs["x"] - gs["w"] / 2 - bm, gs["y"] - gs["h"] / 2 - bm),
+                                         (gs["x"] + gs["w"] / 2 + bm, gs["y"] - gs["h"] / 2 - bm),
+                                         (gs["x"] + gs["w"] / 2 + bm, gs["y"] + gs["h"] / 2 + bm),
+                                         (gs["x"] - gs["w"] / 2 - bm, gs["y"] + gs["h"] / 2 + bm)])
+        self.M["wall"] = [[x, y] for x, y in pts]
+        self.M["gates"] = [[gx, gy] for gx, gy in gates]
+        if gates:
+            self.M["gate"] = [gates[0][0], gates[0][1]]
+        self.corridors.append(([(x, y) for x, y in ring], 46))
+
+    def moat(self, ring, gap=42, width=22):
+        """A water moat encircling the city wall - the wall RING pushed outward from its centroid
+        by `gap`. Records M['moat']. Feed it from off-map with a stream and tap it for irrigation
+        channels to the outside fields. A no-build corridor."""
+        cx = sum(p[0] for p in ring) / len(ring)
+        cy = sum(p[1] for p in ring) / len(ring)
+        mo = []
+        for x, y in ring:
+            dx, dy = x - cx, y - cy
+            d = math.hypot(dx, dy) or 1.0
+            mo.append((x + dx / d * gap, y + dy / d * gap))
+        mo.append(mo[0])
+        dd = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in mo)
+        self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}" opacity="0.85" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#7C98AE" stroke-width="2" opacity="0.55" stroke-linejoin="round" stroke-dasharray="3,5"/>')
+        self.M["moat"] = [[round(x, 1), round(y, 1)] for x, y in mo]
+        self.corridors.append(([(x, y) for x, y in mo], 28))
+        return [(round(x, 1), round(y, 1)) for x, y in mo]
+
+    def governor_mansion(self, x, y, w=320, h=210, label="Governor's Mansion", gate_dir="west"):
+        """The provincial governor's walled mansion - a large compound, grander than a county
+        magistrate's manor. Reuses the manor glyph (walls + gate + empty court; the interior is
+        a separate Mode A diagram) and moves the record to M['governor_mansion']."""
+        self.manor(x, y, w, h, label, gate_dir=gate_dir)
+        self.M["governor_mansion"] = self.M["manors"].pop()   # not an outside samurai estate
+        return self.M["governor_mansion"]
+
+    def ministry(self, x, y, name, w=88, h=58):
+        """A provincial ministry office (one of the SIX). Records to M['ministries'] with its
+        `name`; exactly one city-wide must be the Ministry of Rites (sited in the temple
+        neighbourhood). Official violet roof so it reads apart from housing/commerce."""
+        self.add(f'<rect x="{x-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="{h}" rx="2" fill="#BCA6C4" stroke="#463653" stroke-width="2"/>')
+        self.add(f'<rect x="{x-w/2:.0f}" y="{y-h/2:.0f}" width="{w}" height="9" fill="#6A4A78"/>')
+        self.add(f'<line x1="{x-w*0.3:.0f}" y1="{y:.0f}" x2="{x+w*0.3:.0f}" y2="{y:.0f}" stroke="#463653" stroke-width="0.7" opacity="0.6"/>')
+        self.M["ministries"].append({"x": x, "y": y, "w": w, "h": h, "name": name})
+        self.placed.append((x, y, w, h))
+        bm = 30
+        self.block_polys.append([(x - w / 2 - bm, y - h / 2 - bm), (x + w / 2 + bm, y - h / 2 - bm),
+                                 (x + w / 2 + bm, y + h / 2 + bm), (x - w / 2 - bm, y + h / 2 + bm)])
+        self.label(x, y - h / 2 - 9, name, 9, italic=True, color="#463653")
 
     def forest_patch(self, base, label=None, label_xy=None):
         """A bounded copse (organic polygon), as opposed to forest() which fills to
@@ -981,6 +1074,8 @@ class Settlement:
 
     def _fits(self, x, y, w, h, skip=None):
         if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:   # keep clear of edges + title
+            return False
+        if self.bound and not point_in_poly(x, y, self.bound):       # stay inside a bounding ring (city wall)
             return False
         if self._in_blocked(x, y) or self._near_corridor(x, y, skip):
             return False
