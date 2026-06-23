@@ -1,0 +1,83 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "agricultural_district": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "fields": [
+  {
+   "name": "nw1",
+   "kind": "paddy",
+   "bbox": [
+    350,
+    350,
+    550,
+    550
+   ],
+   "outline": [
+    [
+     350,
+     350
+    ],
+    [
+     550,
+     350
+    ],
+    [
+     550,
+     550
+    ],
+    [
+     350,
+     550
+    ]
+   ]
+  }
+ ],
+ "houses": [
+  {
+   "kind": "plain",
+   "rot": 0,
+   "w": 18,
+   "h": 12,
+   "x": 360,
+   "y": 320
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_interior_fields_farmhouse_density"
+  ],
+  "source": "test_checks.py::test_city_interior_fields_farmhouse_density_fires_when_under_farmed"
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "manors": [
+  {
+   "x": 60,
+   "y": 60,
+   "w": 100,
+   "h": 80
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_estates_in_southeast"
+  ],
+  "source": "test_checks.py::test_city_estates_in_southeast_fires_on_northwest_estate"
+ }
+}

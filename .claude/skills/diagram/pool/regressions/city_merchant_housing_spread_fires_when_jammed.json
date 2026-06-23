@@ -1,0 +1,172 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 316,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 332,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 348,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 364,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 380,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 396,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 412,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  },
+  {
+   "x": 300,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 316,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 332,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 348,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 364,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 380,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 396,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 412,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_merchant_housing_spread"
+  ],
+  "source": "test_checks.py::test_city_merchant_housing_spread_fires_when_jammed"
+ }
+}

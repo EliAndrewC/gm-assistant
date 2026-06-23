@@ -1,0 +1,65 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "merchant_estates": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 78,
+   "h": 58,
+   "gate": [
+    500,
+    529
+   ],
+   "gate_dir": "south"
+  }
+ ],
+ "religious": [
+  {
+   "x": 500,
+   "y": 560,
+   "w": 80,
+   "h": 60,
+   "kind": "temple",
+   "label": "T"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_merchant_estate_gate_clear"
+  ],
+  "source": "test_checks.py::test_city_merchant_estate_gate_clear_fires_when_gate_into_a_temple"
+ }
+}

@@ -1,0 +1,30 @@
+{
+ "meta": {
+  "scale": "town",
+  "clan": "Lion"
+ },
+ "religious": [
+  {
+   "kind": "monastery",
+   "label": "Monastery of Bishamon",
+   "x": 0,
+   "y": 0,
+   "w": 10,
+   "h": 10
+  },
+  {
+   "kind": "monastery",
+   "label": "Monastery of Benten",
+   "x": 0,
+   "y": 0,
+   "w": 10,
+   "h": 10
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_monasteries_dedicated"
+  ],
+  "source": "test_checks.py::test_town_monasteries_dedicated_fires_on_wrong_fortune"
+ }
+}

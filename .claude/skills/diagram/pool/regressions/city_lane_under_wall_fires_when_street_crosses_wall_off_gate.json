@@ -1,0 +1,59 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "wall_z": 5,
+ "town_streets": [
+  {
+   "pts": [
+    [
+     100,
+     500
+    ],
+    [
+     900,
+     500
+    ]
+   ],
+   "w": 18,
+   "z": 50
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_lane_under_wall"
+  ],
+  "source": "test_checks.py::test_city_lane_under_wall_fires_when_street_crosses_wall_off_gate"
+ }
+}

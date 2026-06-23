@@ -1,0 +1,158 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000
+ },
+ "gates": [],
+ "road": [
+  [
+   500,
+   -40
+  ],
+  [
+   500,
+   500
+  ],
+  [
+   500,
+   1040
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 360,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 420,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 480,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 540,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 600,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 660,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 720,
+   "y": 250,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 300,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 360,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 420,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 480,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 540,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 600,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 660,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 720,
+   "y": 750,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_imperial_road_has_commerce"
+  ],
+  "source": "test_checks.py::test_city_imperial_road_has_commerce_generic_for_an_unwalled_city_fires_when_bare"
+ }
+}

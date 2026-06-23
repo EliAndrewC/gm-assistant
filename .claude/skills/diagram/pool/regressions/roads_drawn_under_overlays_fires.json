@@ -1,0 +1,39 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "road": [
+  [
+   100,
+   500
+  ],
+  [
+   900,
+   500
+  ]
+ ],
+ "road_width": 26,
+ "road_z": 1000,
+ "labels": [
+  [
+   480,
+   480,
+   520,
+   520,
+   5
+  ],
+  [
+   100,
+   100,
+   140,
+   140,
+   5
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "roads_drawn_under_overlays"
+  ],
+  "source": "test_checks.py::test_roads_drawn_under_overlays_fires"
+ }
+}

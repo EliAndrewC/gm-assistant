@@ -1,0 +1,44 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "gate": [
+  500,
+  950
+ ],
+ "buildings": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "walled_town_has_gate_market"
+  ],
+  "source": "test_checks.py::test_walled_town_has_gate_market_fires_when_no_market_outside"
+ }
+}

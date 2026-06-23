@@ -1,0 +1,11 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "_regression": {
+  "fires": [
+   "town_has_merchant_storehouses"
+  ],
+  "source": "test_checks.py::test_town_has_merchant_storehouses_fires_when_too_few"
+ }
+}

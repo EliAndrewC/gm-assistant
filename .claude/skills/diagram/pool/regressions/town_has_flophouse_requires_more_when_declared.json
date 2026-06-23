@@ -1,0 +1,21 @@
+{
+ "meta": {
+  "scale": "town",
+  "flophouses": 2
+ },
+ "flophouses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 104,
+   "h": 46,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_has_flophouse"
+  ],
+  "source": "test_checks.py::test_town_has_flophouse_requires_more_when_declared"
+ }
+}

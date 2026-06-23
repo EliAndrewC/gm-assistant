@@ -1,0 +1,77 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   100
+  ],
+  [
+   500,
+   900
+  ]
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     200,
+     200
+    ],
+    [
+     200,
+     400
+    ]
+   ],
+   "w": 18
+  },
+  {
+   "pts": [
+    [
+     700,
+     600
+    ],
+    [
+     700,
+     800
+    ]
+   ],
+   "w": 18
+  }
+ ],
+ "pond": [
+  400,
+  400,
+  80,
+  60
+ ],
+ "_regression": {
+  "fires": [
+   "city_no_large_empty_space",
+   "city_streets_connected"
+  ],
+  "source": "test_checks.py::test_city_streets_connected_and_empty_space_fire"
+ }
+}

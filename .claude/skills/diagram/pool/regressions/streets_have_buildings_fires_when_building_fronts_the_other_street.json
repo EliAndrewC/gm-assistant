@@ -1,0 +1,69 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     700,
+     380
+    ],
+    [
+     700,
+     620
+    ]
+   ],
+   "w": 18
+  },
+  {
+   "pts": [
+    [
+     200,
+     500
+    ],
+    [
+     950,
+     500
+    ]
+   ],
+   "w": 22,
+   "main": true
+  }
+ ],
+ "buildings": [
+  {
+   "x": 760,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "streets_have_buildings"
+  ],
+  "source": "test_checks.py::test_streets_have_buildings_fires_when_building_fronts_the_other_street"
+ }
+}

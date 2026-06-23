@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "religious": [
+  {
+   "kind": "temple",
+   "label": "T",
+   "x": 990,
+   "y": 500,
+   "w": 60,
+   "h": 40
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_temples_inside_walls"
+  ],
+  "source": "test_checks.py::test_city_temples_inside_walls_fires_on_outside_temple"
+ }
+}

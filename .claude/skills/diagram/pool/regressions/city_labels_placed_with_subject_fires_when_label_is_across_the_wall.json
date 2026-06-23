@@ -1,0 +1,78 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 400,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 440,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 420,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  }
+ ],
+ "labels": [
+  [
+   850,
+   492,
+   950,
+   508,
+   0,
+   "samurai neighborhood"
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_labels_placed_with_subject"
+  ],
+  "source": "test_checks.py::test_city_labels_placed_with_subject_fires_when_label_is_across_the_wall"
+ }
+}

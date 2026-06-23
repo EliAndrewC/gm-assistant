@@ -1,0 +1,125 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "population": 3000,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 312,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 324,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 336,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 348,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 360,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 372,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 384,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 396,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 408,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_samurai_housing_sufficient"
+  ],
+  "source": "test_checks.py::test_city_samurai_housing_sufficient_fires_when_too_few"
+ }
+}

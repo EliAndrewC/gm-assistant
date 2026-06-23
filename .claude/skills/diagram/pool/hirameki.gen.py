@@ -25,7 +25,7 @@ s = Settlement(2600, 1820, seed=61)
 # main one is to Bishamon (Lion's), and a much smaller, older one to Benten (Crane's) sits
 # on the far side of town - a relic of Crane rule. Hence monastery_fortunes is set explicitly.
 s.meta(name="Hirameki", scale="town", walled=True, torii_expected=5, downhill="south",
-       clan="Lion", monastery_fortunes=["Bishamon", "Benten"])
+       clan="Lion", monastery_fortunes=["Bishamon", "Benten"], population=720)   # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county
 s.bscale = 0.82   # town-scale building grain (denser than a village)
 
 # ---- OUTSIDE the walls: streams + farm fields + farmhouses (one field runs off the edge)
@@ -51,7 +51,7 @@ s.manor(1300, 415, 360, 216, "Magistrate's Manor", gate_dir="south")   # gate fa
 # south; the west face is a straight run the chrysanthemum field abuts flush
 # the S/SE/E faces hug the built core (the monastery + laborer quarters) rather than
 # enclosing empty corner space - a tighter line is cheaper to build (wall_hugs_the_town).
-# The south face rides just below the laborer blocks, dipping only at the centre for a modest
+# The south face rides just below the laborer blocks, dipping only at the center for a modest
 # gate forecourt; the east face encloses the cross-street and east quarter, then tapers up to
 # the Bishamon monastery and the hill.
 WALL = [(1000, 500), (820, 720), (660, 960), (660, 1340),
@@ -102,10 +102,10 @@ s.frontage(MAIN, (["merchant"] * 3 + ["shop"]) * 6, width=28, spacing=46, rows=2
 s.frontage(CROSS, (["merchant"] * 2 + ["shop"]) * 6, width=22, spacing=46, rows=2)
 # the laborers' and servants' dwellings fill the blocks flanking the core - those next to
 # the cross-street face it; the rest are deep tenement blocks with no street frontage
-s.pack((700, 1090, 1150, 1550), ["servant"] * 5 + ["laborer"] * 13, step=42, face_streets="fill")
+s.pack((700, 1090, 1150, 1550), ["servant"] * 13 + ["laborer"] * 13, step=42, face_streets="fill")
 s.pack((1450, 1090, 1780, 1550), ["laborer"] * 17, step=42, face_streets="fill")
 s.label(1300, 1330, "merchant houses & shops", 10, italic=True, color="#5A4326")
-s.label(820, 1430, "labourers' & servants' tenements", 9, italic=True, color="#5A4326")
+s.label(820, 1430, "laborers' & servants' tenements", 9, italic=True, color="#5A4326")
 
 # ---- OUTSIDE: a small guan-xiang gate-market, the segregated burakumin quarter, farm rings
 s.pack((1080, 1600, 1540, 1794), ["merchant"] * 5 + ["shop"] * 5, step=46, face_streets=True)
@@ -119,9 +119,13 @@ s.label(2210, 1484, "burakumin quarter", 11, italic=True, color="#6B4F2A")
 # absentee landlords whose tenants farm the surrounding land), drawn AFTER the businesses exist
 s.merchant_storehouses(6)
 for bb in (OW1, OE1, OE2, OS):
-    s.ring(bb, 12, 16, ["plain"])
-    s.ring(bb, 10, 48, ["plain"])
-    s.ring(bb, 8, 80, ["plain"])
+    s.ring(bb, 8, 16, ["plain"])
+    s.ring(bb, 7, 48, ["plain"])
+    s.ring(bb, 6, 80, ["plain"])
+# OW2 runs off the left edge: ring it too (densely, since most houses fall off-map) so its on-map
+# strip still shows worked frontage at village density - farmers build close to even a partial field.
+s.ring(OW2, 30, 15, ["plain"])
+s.ring(OW2, 24, 40, ["plain"])
 
 s.title("Hirameki")
 s.compass()

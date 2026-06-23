@@ -1,0 +1,49 @@
+{
+ "fields": [
+  {
+   "name": "f",
+   "kind": "paddy",
+   "bbox": [
+    100,
+    100,
+    400,
+    400
+   ],
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     100,
+     400
+    ]
+   ]
+  }
+ ],
+ "road": [
+  [
+   50,
+   250
+  ],
+  [
+   500,
+   250
+  ]
+ ],
+ "road_width": 26,
+ "_regression": {
+  "fires": [
+   "fields_clear_of_road"
+  ],
+  "source": "test_checks.py::test_fields_clear_of_road_fires"
+ }
+}

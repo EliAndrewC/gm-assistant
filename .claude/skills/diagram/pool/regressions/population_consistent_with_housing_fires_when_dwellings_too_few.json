@@ -1,0 +1,95 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false,
+  "population": 3000
+ },
+ "buildings": [
+  {
+   "x": 120,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 180,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 240,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 300,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 360,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 420,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 480,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 540,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 600,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 660,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "population_consistent_with_housing"
+  ],
+  "source": "test_checks.py::test_population_consistent_with_housing_fires_when_dwellings_too_few"
+ }
+}

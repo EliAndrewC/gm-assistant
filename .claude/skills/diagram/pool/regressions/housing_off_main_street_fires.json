@@ -1,0 +1,56 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     500,
+     120
+    ],
+    [
+     500,
+     800
+    ]
+   ],
+   "w": 20,
+   "main": true
+  }
+ ],
+ "buildings": [
+  {
+   "x": 540,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": -90,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "housing_off_main_street"
+  ],
+  "source": "test_checks.py::test_housing_off_main_street_fires"
+ }
+}

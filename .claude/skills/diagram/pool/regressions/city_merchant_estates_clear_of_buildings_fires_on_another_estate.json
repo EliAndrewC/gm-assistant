@@ -1,0 +1,56 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "merchant_estates": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 78,
+   "h": 58
+  },
+  {
+   "x": 540,
+   "y": 500,
+   "w": 78,
+   "h": 58
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_merchant_estates_clear_of_buildings"
+  ],
+  "source": "test_checks.py::test_city_merchant_estates_clear_of_buildings_fires_on_another_estate"
+ }
+}

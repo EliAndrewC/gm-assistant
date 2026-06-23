@@ -1,0 +1,70 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "road": [
+  [
+   500,
+   150
+  ],
+  [
+   500,
+   850
+  ]
+ ],
+ "road_width": 26,
+ "road_z": 5,
+ "town_streets": [
+  {
+   "pts": [
+    [
+     300,
+     500
+    ],
+    [
+     700,
+     500
+    ]
+   ],
+   "w": 18,
+   "z": 50
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_lanes_layered_by_width"
+  ],
+  "source": "test_checks.py::test_city_lanes_layered_by_width_fires_when_narrow_over_wide"
+ }
+}

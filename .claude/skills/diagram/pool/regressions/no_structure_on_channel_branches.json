@@ -1,0 +1,62 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "buildings": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 200,
+   "h": 200,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 300,
+   "y": 500,
+   "w": 16,
+   "h": 300,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 200,
+   "y": 500,
+   "w": 40,
+   "h": 8,
+   "rot": 0,
+   "kind": "merchant"
+  }
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     100,
+     500
+    ],
+    [
+     500,
+     500
+    ],
+    [
+     900,
+     500
+    ]
+   ],
+   "frm": {
+    "kind": "stream"
+   },
+   "to": {
+    "kind": "field",
+    "name": "x"
+   }
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "no_structure_on_channel"
+  ],
+  "source": "test_checks.py::test_no_structure_on_channel_branches"
+ }
+}

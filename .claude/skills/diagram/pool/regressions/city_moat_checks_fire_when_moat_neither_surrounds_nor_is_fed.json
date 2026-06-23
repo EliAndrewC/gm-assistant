@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "moat": [
+  [
+   400,
+   400
+  ],
+  [
+   600,
+   400
+  ],
+  [
+   600,
+   600
+  ],
+  [
+   400,
+   600
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_moat_fed_offmap",
+   "city_moat_surrounds_wall"
+  ],
+  "source": "test_checks.py::test_city_moat_checks_fire_when_moat_neither_surrounds_nor_is_fed"
+ }
+}

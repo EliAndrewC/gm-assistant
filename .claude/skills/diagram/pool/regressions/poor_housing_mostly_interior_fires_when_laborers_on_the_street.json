@@ -1,0 +1,121 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     250,
+     500
+    ],
+    [
+     750,
+     500
+    ]
+   ],
+   "w": 18
+  }
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 340,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 380,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 420,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 460,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 500,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 540,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 580,
+   "y": 512,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "poor_housing_mostly_interior"
+  ],
+  "source": "test_checks.py::test_poor_housing_mostly_interior_fires_when_laborers_on_the_street"
+ }
+}

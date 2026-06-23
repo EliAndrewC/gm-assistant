@@ -21,7 +21,7 @@ s = Settlement(2000, 1300, seed=53)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.
-s.meta(name="Hoshizora", scale="town", walled=False, torii_expected=1, monastery_fortunes=["Bishamon"])
+s.meta(name="Hoshizora", scale="town", walled=False, torii_expected=1, monastery_fortunes=["Bishamon"], population=600)   # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county
 
 # ---- terrain: a small forest (SE corner) and two grazing pastures, all running OFF
 # the map edge (larger than drawn)
@@ -81,8 +81,8 @@ ROAD_CORE = [(470, 945), (760, 760), (1060, 600), (1360, 450), (1700, 278)]
 s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 11, width=26, setback=16, spacing=48, rows=2, skip=ROAD)
 s.label(1180, 360, "merchant houses & shops (fronting the road)", 11, italic=True, color="#5A4326")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
-s.pack((740, 235, 1320, 448), ["laborer"] * 14, step=44)
-s.pack((1165, 705, 1580, 918), ["servant"] * 5 + ["laborer"] * 13, step=42)
+s.pack((740, 235, 1320, 470), ["laborer"] * 24, step=42)
+s.pack((1165, 705, 1580, 918), ["servant"] * 13 + ["laborer"] * 13, step=42)
 s.label(1010, 224, "laborers' dwellings (set back off the road)", 10, italic=True, color="#5A4326")
 
 # ---- the segregated burakumin quarter (NE edge)

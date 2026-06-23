@@ -1,0 +1,44 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 1000,
+  "H": 1000
+ },
+ "fields": [
+  {
+   "name": "f1",
+   "kind": "paddy",
+   "bbox": [
+    300,
+    300,
+    700,
+    700
+   ],
+   "outline": [
+    [
+     300,
+     300
+    ],
+    [
+     700,
+     300
+    ],
+    [
+     700,
+     700
+    ],
+    [
+     300,
+     700
+    ]
+   ]
+  }
+ ],
+ "houses": [],
+ "_regression": {
+  "fires": [
+   "outside_fields_farmhouse_density"
+  ],
+  "source": "test_checks.py::test_outside_fields_farmhouse_density_fires_on_a_bare_shown_field"
+ }
+}

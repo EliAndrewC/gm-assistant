@@ -1,0 +1,42 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_imperial_road_through",
+   "city_inspection_station_at_each_gate",
+   "city_samurai_estates_outside",
+   "walled_city_has_burakumin_inside",
+   "walled_city_has_wall_and_gates"
+  ],
+  "source": "test_checks.py::test_walled_city_structural_checks_fire"
+ }
+}

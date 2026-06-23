@@ -1,0 +1,17 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "_regression": {
+  "fires": [
+   "city_has_governor_mansion",
+   "city_has_laborer_neighborhoods",
+   "city_has_merchant_district",
+   "city_has_ministry_of_rites",
+   "city_has_outside_farmland",
+   "city_has_samurai_neighborhood",
+   "city_has_six_ministries"
+  ],
+  "source": "test_checks.py::test_city_required_structures_all_fire_on_an_empty_city"
+ }
+}

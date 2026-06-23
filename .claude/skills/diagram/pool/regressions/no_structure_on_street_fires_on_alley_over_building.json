@@ -1,0 +1,55 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "alleys": [
+  {
+   "pts": [
+    [
+     400,
+     500
+    ],
+    [
+     600,
+     500
+    ]
+   ],
+   "w": 10
+  }
+ ],
+ "buildings": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "no_structure_on_street"
+  ],
+  "source": "test_checks.py::test_no_structure_on_street_fires_on_alley_over_building"
+ }
+}
