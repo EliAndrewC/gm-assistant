@@ -1,0 +1,40 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 120,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "wall_hugs_the_town"
+  ],
+  "source": "test_checks.py::test_wall_hugs_the_town_fires_on_empty_corner_space"
+ }
+}

@@ -1,0 +1,57 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "manors": [
+  {
+   "x": 810,
+   "y": 500,
+   "w": 80,
+   "h": 60
+  },
+  {
+   "x": 822,
+   "y": 512,
+   "w": 80,
+   "h": 60
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_estates_clear_of_wall_moat",
+   "city_estates_no_overlap"
+  ],
+  "source": "test_checks.py::test_city_estates_overlap_and_barrier_fire"
+ }
+}

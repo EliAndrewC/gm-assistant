@@ -1,0 +1,62 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "governor_mansion": {
+  "x": 600,
+  "y": 600,
+  "w": 120,
+  "h": 90
+ },
+ "town_streets": [
+  {
+   "pts": [
+    [
+     400,
+     600
+    ],
+    [
+     800,
+     600
+    ]
+   ],
+   "w": 18
+  }
+ ],
+ "kido": [],
+ "_regression": {
+  "fires": [
+   "city_samurai_quarter_gated"
+  ],
+  "source": "test_checks.py::test_city_samurai_quarter_gated_fires_when_no_ward_gates"
+ }
+}

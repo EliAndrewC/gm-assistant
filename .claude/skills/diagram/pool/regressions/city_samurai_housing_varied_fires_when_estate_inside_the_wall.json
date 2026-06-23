@@ -1,0 +1,148 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai_large"
+  },
+  {
+   "x": 330,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai_large"
+  },
+  {
+   "x": 360,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai_large"
+  },
+  {
+   "x": 390,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai_large"
+  },
+  {
+   "x": 300,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 330,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 360,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 390,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 420,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 450,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 480,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 510,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  }
+ ],
+ "manors": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 80,
+   "h": 60
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_samurai_housing_varied"
+  ],
+  "source": "test_checks.py::test_city_samurai_housing_varied_fires_when_estate_inside_the_wall"
+ }
+}

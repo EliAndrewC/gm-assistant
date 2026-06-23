@@ -3,7 +3,7 @@
 
 A second worked example proving the library generalizes. What makes Hikari
 different from Kikuta: ONE enormous V-shaped common field (point/crook at the
-bottom-centre); the blight left an internal FALLOW PATCH in an upper arm (no
+bottom-center); the blight left an internal FALLOW PATCH in an upper arm (no
 abandoned houses); a ring of smaller fields at the corners; NO pond - irrigation
 is a stream diversion from off-map feeding the main field, which then feeds the
 small fields field-to-field; the Benten village shrine is CENTRAL, in the crook
@@ -21,7 +21,7 @@ s = Settlement(seed=31)
 s.meta(name="Hikari no Sato", scale="village", households=70, torii_expected=2,
        shrine_on_hill=False, fallow_implies_abandoned=False, has_pond=False)
 
-# the great V-shaped common field (point/crook at bottom-centre; arms open upward)
+# the great V-shaped common field (point/crook at bottom-center; arms open upward)
 MAIN = [(340, 250), (910, 760), (1480, 250), (1300, 300), (910, 540), (540, 300)]
 FALLOW_PATCH = [(1080, 420), (1200, 435), (1190, 510), (1070, 495)]   # an upper arm, opposite the headman
 NW = (150, 300, 350, 470)

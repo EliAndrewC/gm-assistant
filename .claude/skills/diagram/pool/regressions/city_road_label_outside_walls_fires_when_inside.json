@@ -1,0 +1,46 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "road_label": [
+  500,
+  500
+ ],
+ "_regression": {
+  "fires": [
+   "city_road_label_outside_walls"
+  ],
+  "source": "test_checks.py::test_city_road_label_outside_walls_fires_when_inside"
+ }
+}

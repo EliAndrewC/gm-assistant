@@ -1,0 +1,101 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   320,
+   320
+  ],
+  [
+   680,
+   320
+  ],
+  [
+   680,
+   680
+  ],
+  [
+   320,
+   680
+  ]
+ ],
+ "moat": [
+  [
+   300,
+   300
+  ],
+  [
+   700,
+   300
+  ],
+  [
+   700,
+   700
+  ],
+  [
+   300,
+   700
+  ]
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     500,
+     40
+    ],
+    [
+     500,
+     300
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "moat"
+   }
+  }
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     350,
+     300
+    ],
+    [
+     350,
+     150
+    ]
+   ],
+   "frm": {
+    "kind": "moat"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f"
+   }
+  }
+ ],
+ "gates": [
+  [
+   500,
+   300
+  ],
+  [
+   500,
+   700
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "moat_channels_flow_with_current"
+  ],
+  "source": "test_checks.py::test_moat_channels_flow_with_current_fires_when_against"
+ }
+}

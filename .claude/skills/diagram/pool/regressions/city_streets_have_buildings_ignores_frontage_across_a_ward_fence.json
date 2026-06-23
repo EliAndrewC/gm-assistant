@@ -1,0 +1,146 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     300,
+     500
+    ],
+    [
+     700,
+     500
+    ]
+   ],
+   "w": 20
+  }
+ ],
+ "wards": [
+  {
+   "name": "x",
+   "boundary": [
+    [
+     280,
+     470
+    ],
+    [
+     720,
+     470
+    ]
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "x": 320,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 360,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 400,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 440,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 480,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 520,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 560,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 600,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 640,
+   "y": 440,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_streets_have_buildings"
+  ],
+  "source": "test_checks.py::test_city_streets_have_buildings_ignores_frontage_across_a_ward_fence"
+ }
+}

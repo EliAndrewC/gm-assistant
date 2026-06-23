@@ -1,0 +1,32 @@
+{
+ "channels": [
+  {
+   "poly": [
+    [
+     100,
+     100
+    ],
+    [
+     110,
+     120
+    ],
+    [
+     120,
+     140
+    ]
+   ],
+   "frm": {
+    "kind": "bogus"
+   },
+   "to": {
+    "kind": "offmap"
+   }
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channel_source_anchored[0]"
+  ],
+  "source": "test_checks.py::test_channel_source_anchored_fires_on_bad_anchor"
+ }
+}

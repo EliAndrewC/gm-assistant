@@ -1,0 +1,94 @@
+{
+ "meta": {
+  "scale": "village",
+  "target_houses": 60
+ },
+ "houses": [
+  {
+   "x": 0,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 30,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 60,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 90,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 120,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 150,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 180,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 210,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 240,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 270,
+   "y": 100,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "house_count_in_range"
+  ],
+  "source": "test_checks.py::test_house_count_in_range_target_houses_fires"
+ }
+}

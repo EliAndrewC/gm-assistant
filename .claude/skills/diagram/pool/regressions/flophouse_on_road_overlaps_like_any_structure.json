@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "road": [
+  [
+   100,
+   500
+  ],
+  [
+   900,
+   500
+  ]
+ ],
+ "road_width": 26,
+ "flophouses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 104,
+   "h": 46,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "no_structure_on_road"
+  ],
+  "source": "test_checks.py::test_flophouse_on_road_overlaps_like_any_structure"
+ }
+}

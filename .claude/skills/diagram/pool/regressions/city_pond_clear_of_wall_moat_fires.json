@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "pond": [
+  800,
+  500,
+  60,
+  40
+ ],
+ "_regression": {
+  "fires": [
+   "city_pond_clear_of_wall_moat"
+  ],
+  "source": "test_checks.py::test_city_pond_clear_of_wall_moat_fires"
+ }
+}

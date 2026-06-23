@@ -1,0 +1,13 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "_regression": {
+  "fires": [
+   "city_has_amphitheater",
+   "city_has_flophouse",
+   "city_has_merchant_storehouses"
+  ],
+  "source": "test_checks.py::test_city_civic_amenity_checks_fire_on_an_empty_city"
+ }
+}

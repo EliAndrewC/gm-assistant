@@ -1,0 +1,22 @@
+{
+ "meta": {
+  "scale": "hamlet"
+ },
+ "houses": [
+  {
+   "x": 100,
+   "y": 100,
+   "w": 108,
+   "h": 68,
+   "kind": "big",
+   "rot": 0,
+   "role": "headman"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "hamlet_has_no_headman"
+  ],
+  "source": "test_checks.py::test_hamlet_has_no_headman_fires_when_a_hamlet_has_one"
+ }
+}

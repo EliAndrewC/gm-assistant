@@ -1,0 +1,64 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   100,
+   500
+  ],
+  [
+   500,
+   500
+  ],
+  [
+   900,
+   500
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   500
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "religious": [
+  {
+   "kind": "temple",
+   "label": "A",
+   "x": 500,
+   "y": 500,
+   "w": 200,
+   "h": 200
+  },
+  {
+   "kind": "temple",
+   "label": "B",
+   "x": 300,
+   "y": 500,
+   "w": 16,
+   "h": 300
+  },
+  {
+   "kind": "temple",
+   "label": "C",
+   "x": 200,
+   "y": 500,
+   "w": 40,
+   "h": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_temples_clear_of_wall_moat"
+  ],
+  "source": "test_checks.py::test_city_temples_clear_of_wall_branches"
+ }
+}

@@ -2,18 +2,26 @@
 Art generation for NPC portraits using Google Gemini's image generation API.
 
 This module generates character portrait prompts based on NPC attributes and
-uses Gemini 2.5 Flash Image to create the artwork.
+uses a Gemini image-generation model to create the artwork. The model id is
+configurable via ``[gemini] image_model`` so future model migrations are a
+config edit rather than a code change.
 """
 
 import base64
-import subprocess
-import sys
+from io import BytesIO
 
 from google import genai
 from google.genai import types
+from PIL import Image, ImageOps
 
 from chargen import config
 from chargen import constants as c
+
+#: Gemini image-generation model used when ``[gemini] image_model`` is unset.
+#: Imagen 4 (imagen-4.0-*) was retired by Google on 2026-08-17; the successor
+#: family is the Gemini *-flash-image models, called via generate_content
+#: rather than the Imagen-only generate_images endpoint.
+DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image'
 
 
 def _get_client():
@@ -28,47 +36,78 @@ def _get_client():
     return genai.Client(api_key=api_key)
 
 
+#: Fraction of the full 0-255 channel range within which a pixel counts as
+#: background. Mirrors the ImageMagick `-fuzz 10%` this used to shell out to,
+#: and absorbs the slightly-off-white backgrounds AI image generators produce.
+TRIM_FUZZ = 0.10
+
+#: White padding (in pixels) added back around the trimmed content.
+TRIM_BORDER = 10
+
+#: Connected mask regions smaller than this many pixels are treated as
+#: generator noise - the stray 2-3px specks Gemini image models scatter on an
+#: otherwise-white background - and ignored when computing the crop box. Real
+#: figure parts (even a thin held sword) are orders of magnitude larger, so
+#: this floor removes noise without clipping content.
+TRIM_MIN_COMPONENT_AREA = 64
+
+
 def trim_whitespace(image_data: bytes) -> bytes:
     """
-    Trim whitespace from around an image using ImageMagick.
+    Trim the near-uniform background border from around an image.
 
-    Uses a 10% fuzz factor to handle near-white backgrounds from AI image
-    generators, then adds back 10px of padding for a clean border.
+    The background color is taken from the top-left pixel; any pixel within
+    ``TRIM_FUZZ`` of it (per channel) is treated as background. The remaining
+    foreground is split into connected components, tiny specks below
+    ``TRIM_MIN_COMPONENT_AREA`` (generator background noise) are discarded, and
+    the image is cropped to the union of what survives plus a ``TRIM_BORDER``
+    white margin. Dropping the specks is what keeps a couple of stray edge
+    pixels from inflating the crop box back to the full frame.
+
+    Implemented with Pillow + OpenCV (both already dependencies) rather than
+    shelling out to ImageMagick, so it works wherever the app runs without an
+    external binary. Any failure to decode or process the image propagates
+    rather than being swallowed - a broken trim should be visible, not
+    silently skipped.
 
     Args:
         image_data: The raw PNG image bytes
 
     Returns:
-        bytes: The trimmed PNG image data with 10px padding
+        bytes: The trimmed PNG image data with a white border
     """
-    try:
-        result = subprocess.run(
-            [
-                'convert',
-                'png:-',
-                '-fuzz',
-                '10%',
-                '-trim',
-                '+repage',
-                '-bordercolor',
-                '#FFFFFF',
-                '-border',
-                '10',
-                'png:-',
-            ],
-            input=image_data,
-            capture_output=True,
-        )
+    import cv2
+    import numpy as np
 
-        if result.returncode != 0:
-            print(f'Warning: Failed to trim image: {result.stderr.decode()}', file=sys.stderr)
-            return image_data
+    img = Image.open(BytesIO(image_data)).convert('RGB')
+    arr = np.asarray(img).astype(int)
 
-        return result.stdout
+    # Mask everything that differs from the background (top-left pixel) by more
+    # than the fuzz threshold, per channel.
+    background = arr[0, 0]
+    threshold = int(TRIM_FUZZ * 255)
+    mask = (np.abs(arr - background).max(axis=2) > threshold).astype(np.uint8)
 
-    except FileNotFoundError:
-        print('Warning: ImageMagick not installed, skipping whitespace trim', file=sys.stderr)
-        return image_data
+    # Split into connected components and keep only those big enough to be real
+    # content; isolated noise specks are dropped before computing the box.
+    count, _labels, stats, _centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    keep = [i for i in range(1, count) if stats[i, cv2.CC_STAT_AREA] >= TRIM_MIN_COMPONENT_AREA]
+
+    if keep:
+        x0 = int(min(stats[i, cv2.CC_STAT_LEFT] for i in keep))
+        y0 = int(min(stats[i, cv2.CC_STAT_TOP] for i in keep))
+        x1 = int(max(stats[i, cv2.CC_STAT_LEFT] + stats[i, cv2.CC_STAT_WIDTH] for i in keep))
+        y1 = int(max(stats[i, cv2.CC_STAT_TOP] + stats[i, cv2.CC_STAT_HEIGHT] for i in keep))
+        trimmed = img.crop((x0, y0, x1, y1))
+    else:
+        # Whole image is background (or only noise); keep it as-is.
+        trimmed = img
+
+    bordered = ImageOps.expand(trimmed, border=TRIM_BORDER, fill='#FFFFFF')
+
+    out = BytesIO()
+    bordered.save(out, format='PNG')
+    return out.getvalue()
 
 
 def generate_prompt(character: dict) -> str:
@@ -302,9 +341,41 @@ def generate_prompt(character: dict) -> str:
     return '\n'.join(lines)
 
 
+def _extract_image_bytes(response: types.GenerateContentResponse) -> bytes:
+    """
+    Pull the first inline image out of a generate_content response.
+
+    Gemini image models return the picture as an inline_data part rather than
+    a dedicated images list. If the model refused or answered with text only,
+    that text is surfaced in the error to aid debugging.
+    """
+    text_parts: list[str] = []
+    for candidate in response.candidates or []:
+        content = candidate.content
+        if content is None:
+            continue
+        for part in content.parts or []:
+            blob = part.inline_data
+            if blob is not None and blob.data:
+                return blob.data
+            if part.text:
+                text_parts.append(part.text)
+
+    detail = ' '.join(text_parts).strip()
+    raise ValueError(
+        'No image was generated. The model may have refused the prompt.'
+        + (f' Model response: {detail}' if detail else '')
+    )
+
+
 def generate_image(prompt: str) -> bytes:
     """
-    Generate an image from a prompt using Google Imagen 4.
+    Generate an image from a prompt using a Gemini image-generation model.
+
+    The model id comes from ``[gemini] image_model`` (defaulting to
+    ``DEFAULT_IMAGE_MODEL``). Gemini image models are driven through
+    generate_content with an IMAGE response modality - unlike the retired
+    Imagen 4 endpoints, which used generate_images.
 
     Args:
         prompt: The text prompt describing the image to generate
@@ -312,29 +383,21 @@ def generate_image(prompt: str) -> bytes:
     Returns:
         bytes: The PNG image data
     """
-    from io import BytesIO
-
     client = _get_client()
+    model = config.get('gemini', {}).get('image_model', '') or DEFAULT_IMAGE_MODEL
 
-    response = client.models.generate_images(
-        model='imagen-4.0-generate-001',
-        prompt=prompt,
-        config=types.GenerateImagesConfig(
-            number_of_images=1,
-            aspect_ratio='1:1',  # Square for portraits
+    response = client.models.generate_content(
+        model=model,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_modalities=['IMAGE'],
+            image_config=types.ImageConfig(aspect_ratio='1:1'),  # Square for portraits
         ),
     )
 
-    if not response.generated_images:
-        raise ValueError('No image was generated. The model may have refused the prompt.')
+    image_bytes = _extract_image_bytes(response)
 
-    # Get the PIL image and convert to PNG bytes
-    img = response.generated_images[0].image
-    buffer = BytesIO()
-    img._pil_image.save(buffer, format='PNG')
-    image_bytes = buffer.getvalue()
-
-    # Trim whitespace from around the generated image
+    # Trim whitespace from around the generated image (also normalises to PNG).
     return trim_whitespace(image_bytes)
 
 

@@ -1,0 +1,95 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1300,
+  "H": 1100
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   100
+  ],
+  [
+   500,
+   900
+  ]
+ ],
+ "moat": [
+  [
+   80,
+   80
+  ],
+  [
+   920,
+   80
+  ],
+  [
+   920,
+   920
+  ],
+  [
+   80,
+   920
+  ],
+  [
+   80,
+   80
+  ]
+ ],
+ "fields": [
+  {
+   "name": "bf",
+   "kind": "paddy",
+   "bbox": [
+    960,
+    200,
+    1180,
+    900
+   ],
+   "outline": [
+    [
+     960,
+     200
+    ],
+    [
+     1180,
+     200
+    ],
+    [
+     1180,
+     900
+    ],
+    [
+     960,
+     900
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_gate_has_guardhouse",
+   "city_moat_irrigates_fields"
+  ],
+  "source": "test_checks.py::test_city_gate_guardhouse_and_moat_irrigation_fire"
+ }
+}

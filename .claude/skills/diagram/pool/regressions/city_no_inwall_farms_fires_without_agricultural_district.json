@@ -1,0 +1,72 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "fields": [
+  {
+   "name": "f",
+   "kind": "paddy",
+   "bbox": [
+    400,
+    400,
+    600,
+    600
+   ],
+   "outline": [
+    [
+     400,
+     400
+    ],
+    [
+     600,
+     400
+    ],
+    [
+     600,
+     600
+    ],
+    [
+     400,
+     600
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_no_inwall_farms"
+  ],
+  "source": "test_checks.py::test_city_no_inwall_farms_fires_without_agricultural_district"
+ }
+}

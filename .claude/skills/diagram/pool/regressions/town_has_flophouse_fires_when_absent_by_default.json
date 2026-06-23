@@ -1,0 +1,11 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "_regression": {
+  "fires": [
+   "town_has_flophouse"
+  ],
+  "source": "test_checks.py::test_town_has_flophouse_fires_when_absent_by_default"
+ }
+}

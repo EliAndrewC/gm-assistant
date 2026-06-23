@@ -1,0 +1,32 @@
+{
+ "meta": {
+  "downhill": "south"
+ },
+ "channels": [
+  {
+   "poly": [
+    [
+     200,
+     500
+    ],
+    [
+     260,
+     320
+    ]
+   ],
+   "frm": {
+    "kind": "stream"
+   },
+   "to": {
+    "kind": "field",
+    "name": "x"
+   }
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channels_flow_downhill"
+  ],
+  "source": "test_checks.py::test_channels_flow_downhill_fires_when_channel_runs_uphill"
+ }
+}

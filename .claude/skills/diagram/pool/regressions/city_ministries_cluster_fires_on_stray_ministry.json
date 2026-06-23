@@ -1,0 +1,58 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 2000,
+  "H": 2000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "governor_mansion": {
+  "x": 500,
+  "y": 500,
+  "w": 200,
+  "h": 150,
+  "label": "Gov"
+ },
+ "ministries": [
+  {
+   "x": 1800,
+   "y": 1800,
+   "w": 80,
+   "h": 50,
+   "name": "Ministry of War"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_ministries_cluster_at_government"
+  ],
+  "source": "test_checks.py::test_city_ministries_cluster_fires_on_stray_ministry"
+ }
+}

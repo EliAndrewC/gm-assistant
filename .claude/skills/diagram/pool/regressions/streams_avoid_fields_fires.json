@@ -1,0 +1,52 @@
+{
+ "fields": [
+  {
+   "name": "f",
+   "kind": "paddy",
+   "bbox": [
+    100,
+    100,
+    400,
+    400
+   ],
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     100,
+     400
+    ]
+   ]
+  }
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     200,
+     200
+    ],
+    [
+     200,
+     500
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "streams_avoid_fields"
+  ],
+  "source": "test_checks.py::test_streams_avoid_fields_fires"
+ }
+}

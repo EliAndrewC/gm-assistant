@@ -35,6 +35,30 @@ def test_finish_writes_svg_json_and_renders_png():
         assert os.path.exists(base + ".png")
 
 
+def test_set_view_records_meta_and_crops_viewbox():
+    # a city map crops tight to the walls: set_view records the window in meta (the checks read
+    # it as the map edge) and finish() rewrites the SVG viewBox to that window. title/compass
+    # follow the view so they stay on-canvas.
+    with tempfile.TemporaryDirectory() as d:
+        base = os.path.join(d, "t")
+        s = Settlement(3000, 2000, seed=1)
+        s.set_view(500, 400, 1000, 800)
+        assert s.M["meta"]["view"] == [500, 400, 1000, 800]
+        s.title("Edo")
+        s.compass()
+        s.finish(base, render=False)
+        svg = open(base + ".svg").read()
+        assert 'viewBox="500 400 1000 800"' in svg and 'viewBox="0 0 3000 2000"' not in svg
+
+
+def test_kido_records_ward_gates_in_both_orientations():
+    s = Settlement(1000, 1000, seed=1)
+    s.kido(500, 300, horizontal=True)        # E-W street gate
+    s.kido(300, 500, horizontal=False)       # N-S street gate
+    assert len(s.M["kido"]) == 2
+    assert s.M["kido"][0]["horizontal"] and not s.M["kido"][1]["horizontal"]
+
+
 def test_seg_closest_degenerate_segment():
     assert settlement.seg_closest(0, 0, (5, 5), (5, 5)) == (5, 5)
 

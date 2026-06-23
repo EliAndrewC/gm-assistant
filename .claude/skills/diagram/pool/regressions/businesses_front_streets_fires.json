@@ -1,0 +1,55 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     120,
+     120
+    ],
+    [
+     120,
+     400
+    ]
+   ],
+   "w": 20
+  }
+ ],
+ "buildings": [
+  {
+   "x": 800,
+   "y": 800,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "businesses_front_streets"
+  ],
+  "source": "test_checks.py::test_businesses_front_streets_fires"
+ }
+}

@@ -1,0 +1,59 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "wards": [
+  {
+   "name": "x",
+   "boundary": [
+    [
+     300,
+     205
+    ],
+    [
+     795,
+     500
+    ]
+   ],
+   "z": 100,
+   "wall_caps": []
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_ward_fence_under_wall"
+  ],
+  "source": "test_checks.py::test_city_ward_fence_under_wall_fires_without_a_cap"
+ }
+}

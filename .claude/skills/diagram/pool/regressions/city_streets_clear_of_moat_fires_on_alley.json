@@ -1,0 +1,80 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "moat": [
+  [
+   150,
+   150
+  ],
+  [
+   850,
+   150
+  ],
+  [
+   850,
+   850
+  ],
+  [
+   150,
+   850
+  ],
+  [
+   150,
+   150
+  ]
+ ],
+ "town_streets": [],
+ "alleys": [
+  {
+   "pts": [
+    [
+     500,
+     700
+    ],
+    [
+     500,
+     900
+    ]
+   ],
+   "w": 10
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_streets_clear_of_moat"
+  ],
+  "source": "test_checks.py::test_city_streets_clear_of_moat_fires_on_alley"
+ }
+}

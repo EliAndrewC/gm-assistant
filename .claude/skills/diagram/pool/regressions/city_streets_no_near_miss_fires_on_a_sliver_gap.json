@@ -1,0 +1,70 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     300,
+     400
+    ],
+    [
+     500,
+     400
+    ]
+   ],
+   "w": 18
+  },
+  {
+   "pts": [
+    [
+     515,
+     410
+    ],
+    [
+     515,
+     700
+    ]
+   ],
+   "w": 18
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_streets_no_near_miss"
+  ],
+  "source": "test_checks.py::test_city_streets_no_near_miss_fires_on_a_sliver_gap"
+ }
+}

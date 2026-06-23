@@ -1,0 +1,12 @@
+{
+ "meta": {
+  "scale": "town",
+  "granary": true
+ },
+ "_regression": {
+  "fires": [
+   "town_has_granary"
+  ],
+  "source": "test_checks.py::test_town_has_granary_fires_when_declared_but_not_drawn"
+ }
+}

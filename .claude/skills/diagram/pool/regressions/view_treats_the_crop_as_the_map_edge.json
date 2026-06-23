@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 3000,
+  "H": 2000
+ },
+ "wall": [
+  [
+   1300,
+   300
+  ],
+  [
+   1700,
+   300
+  ],
+  [
+   1700,
+   1700
+  ],
+  [
+   1300,
+   1700
+  ]
+ ],
+ "gates": [
+  [
+   1500,
+   300
+  ],
+  [
+   1500,
+   1700
+  ]
+ ],
+ "road": [
+  [
+   1500,
+   250
+  ],
+  [
+   1500,
+   1750
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_imperial_road_through"
+  ],
+  "source": "test_checks.py::test_view_treats_the_crop_as_the_map_edge"
+ }
+}

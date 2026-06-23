@@ -1,0 +1,66 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "ministries": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 88,
+   "h": 58,
+   "name": "Ministry of War"
+  }
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     250,
+     250
+    ],
+    [
+     350,
+     250
+    ]
+   ],
+   "w": 18
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_ministries_front_a_street"
+  ],
+  "source": "test_checks.py::test_city_ministries_front_a_street_fires_when_floating"
+ }
+}

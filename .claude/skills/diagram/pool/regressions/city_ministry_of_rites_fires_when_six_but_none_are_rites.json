@@ -1,0 +1,55 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "ministries": [
+  {
+   "x": 0,
+   "y": 50,
+   "w": 80,
+   "h": 50,
+   "name": "Ministry 0"
+  },
+  {
+   "x": 30,
+   "y": 50,
+   "w": 80,
+   "h": 50,
+   "name": "Ministry 1"
+  },
+  {
+   "x": 60,
+   "y": 50,
+   "w": 80,
+   "h": 50,
+   "name": "Ministry 2"
+  },
+  {
+   "x": 90,
+   "y": 50,
+   "w": 80,
+   "h": 50,
+   "name": "Ministry 3"
+  },
+  {
+   "x": 120,
+   "y": 50,
+   "w": 80,
+   "h": 50,
+   "name": "Ministry 4"
+  },
+  {
+   "x": 150,
+   "y": 50,
+   "w": 80,
+   "h": 50,
+   "name": "Ministry 5"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_has_ministry_of_rites"
+  ],
+  "source": "test_checks.py::test_city_ministry_of_rites_fires_when_six_but_none_are_rites"
+ }
+}
