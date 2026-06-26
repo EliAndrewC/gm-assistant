@@ -1,0 +1,10 @@
+{
+ "ground_edge_zmax": 50,
+ "ground_bed_zmin": 20,
+ "_regression": {
+  "fires": [
+   "intersections_are_crossroads"
+  ],
+  "source": "test_checks.py::test_intersections_are_crossroads_fires_when_edges_over_beds"
+ }
+}

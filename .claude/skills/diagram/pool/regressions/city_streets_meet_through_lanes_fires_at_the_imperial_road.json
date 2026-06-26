@@ -1,0 +1,66 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "road": [
+  [
+   500,
+   100
+  ],
+  [
+   500,
+   900
+  ]
+ ],
+ "road_width": 26,
+ "town_streets": [
+  {
+   "pts": [
+    [
+     300,
+     500
+    ],
+    [
+     470,
+     500
+    ]
+   ],
+   "w": 18
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_streets_meet_through_lanes"
+  ],
+  "source": "test_checks.py::test_city_streets_meet_through_lanes_fires_at_the_imperial_road"
+ }
+}

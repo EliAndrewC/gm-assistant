@@ -1,0 +1,27 @@
+{
+ "labels": [
+  [
+   150,
+   100,
+   250,
+   120,
+   5,
+   "gate label"
+  ]
+ ],
+ "gate_structs": [
+  {
+   "x": 200,
+   "y": 110,
+   "w": 100,
+   "h": 40,
+   "z": 1000
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_render_on_top"
+  ],
+  "source": "test_checks.py::test_labels_render_on_top_fires_when_a_gate_structure_covers_a_label"
+ }
+}

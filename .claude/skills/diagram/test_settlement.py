@@ -135,6 +135,25 @@ def test_ring_big_falls_back_to_plain_when_capped():
     assert sum(1 for h in s.M["houses"] if h["kind"] == "big") <= 2
 
 
+def test_gapped_ring_merges_when_first_vertex_is_not_a_gate():
+    # a closed wall ring whose FIRST vertex is not a gate: the run after the last gap must merge back
+    # into the first, leaving one continuous subpath (not a spurious break at the start point)
+    s = Settlement(1000, 1000, seed=1)
+    ring = [(100, 100), (300, 100), (300, 300), (100, 300), (100, 100)]   # closed square
+    d = s._gapped_ring(ring, [(300, 100)], gap=20, closed=True)           # one gate, at a NON-first vertex
+    assert d.count("M") == 1
+
+
+def test_wall_walk_crosses_multiple_edges():
+    # walking further than one wall edge: the accumulate-and-step branch must carry across edges. A run
+    # of short 50px edges, gate at index 4, walking 120px west crosses edges 4->3->2 to land at x=180.
+    s = Settlement(1000, 1000, seed=1)
+    pts = [(100, 100), (150, 100), (200, 100), (250, 100), (300, 100), (300, 150)]
+    x, y, ang = s._wall_walk(pts, 4, 120, west=True)
+    assert abs(x - 180) < 1e-6 and abs(y - 100) < 1e-6
+    assert abs(ang - 180) < 1e-6   # the run is horizontal; walking west the edge points in -x
+
+
 if __name__ == "__main__":
     import sys
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

@@ -1,0 +1,31 @@
+{
+ "labels": [
+  [
+   100,
+   100,
+   300,
+   120,
+   5,
+   "Ministry of Retainers"
+  ]
+ ],
+ "kido": [
+  {
+   "x": 200,
+   "y": 110,
+   "z": 1000,
+   "bbox": [
+    150,
+    90,
+    250,
+    130
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_render_on_top"
+  ],
+  "source": "test_checks.py::test_labels_render_on_top_fires_when_a_kido_covers_a_label"
+ }
+}

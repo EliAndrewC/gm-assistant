@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   500,
+   200
+  ],
+  [
+   800,
+   500
+  ],
+  [
+   500,
+   800
+  ],
+  [
+   200,
+   500
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "wall_towers": [
+  {
+   "x": 650,
+   "y": 350,
+   "rot": 0
+  },
+  {
+   "x": 350,
+   "y": 650,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_wall_towers_aligned"
+  ],
+  "source": "test_checks.py::test_city_wall_towers_aligned_fires_when_axis_aligned_on_a_slanted_wall"
+ }
+}

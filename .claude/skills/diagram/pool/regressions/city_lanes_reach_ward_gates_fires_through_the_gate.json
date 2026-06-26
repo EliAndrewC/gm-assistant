@@ -1,0 +1,43 @@
+{
+ "wards": [
+  {
+   "boundary": [
+    [
+     300,
+     500
+    ],
+    [
+     700,
+     500
+    ]
+   ]
+  }
+ ],
+ "governor_mansion": {
+  "x": 500,
+  "y": 640
+ },
+ "alleys": [
+  {
+   "pts": [
+    [
+     500,
+     300
+    ],
+    [
+     500,
+     460
+    ]
+   ]
+  }
+ ],
+ "meta": {
+  "scale": "city"
+ },
+ "_regression": {
+  "fires": [
+   "city_lanes_reach_ward_gates"
+  ],
+  "source": "test_checks.py::test_city_lanes_reach_ward_gates_fires_through_the_gate"
+ }
+}

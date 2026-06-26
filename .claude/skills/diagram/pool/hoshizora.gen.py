@@ -92,7 +92,7 @@ s.label(1832, 360, "burakumin quarter", 11, italic=True, color="#6B4F2A")
 # ---- samurai houses, around the magistrate's manor (SW); their servants live within
 # the manor/samurai compounds, not as separate huts
 s.pack((620, 1010, 920, 1295), ["samurai"] * 7, step=58)
-s.label(770, 1301, "samurai houses", 11, italic=True)
+s.label(770, 1268, "samurai houses", 11, italic=True)   # over the cluster - kept above the bottom image edge (canvas H=1300)
 
 # a noticeable minority of merchant houses keep a fireproof kura (the absentee landlords'
 # rent-rice / bulk goods), drawn AFTER the businesses exist

@@ -1,0 +1,40 @@
+{
+ "town_streets": [
+  {
+   "pts": [
+    [
+     500,
+     300
+    ],
+    [
+     500,
+     480
+    ]
+   ],
+   "w": 18
+  }
+ ],
+ "alleys": [
+  {
+   "pts": [
+    [
+     500,
+     510
+    ],
+    [
+     500,
+     700
+    ]
+   ]
+  }
+ ],
+ "meta": {
+  "scale": "city"
+ },
+ "_regression": {
+  "fires": [
+   "city_lanes_meet_when_aligned"
+  ],
+  "source": "test_checks.py::test_city_lanes_meet_when_aligned_fires_through_the_gate"
+ }
+}

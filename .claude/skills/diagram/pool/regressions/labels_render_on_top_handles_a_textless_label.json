@@ -1,0 +1,30 @@
+{
+ "labels": [
+  [
+   150,
+   100,
+   250,
+   120,
+   5
+  ]
+ ],
+ "kido": [
+  {
+   "x": 200,
+   "y": 110,
+   "z": 1000,
+   "bbox": [
+    150,
+    90,
+    250,
+    130
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_render_on_top"
+  ],
+  "source": "test_checks.py::test_labels_render_on_top_handles_a_textless_label"
+ }
+}
