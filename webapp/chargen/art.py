@@ -333,8 +333,11 @@ def generate_prompt(character: dict) -> str:
             '',
             'Make a colored, photo-realistic, life-like rendering, matching the Legend of '
             'the Five Rings setting of Rokugan, based on Edo-period Japan with period-appropriate '
-            'clothing and possessions being shown. The background must be completely blank '
-            'without any features - use a solid white background.',
+            'clothing and possessions being shown. Show the figure as if cut out and isolated '
+            'on a pure white (#FFFFFF) background: the entire area around the figure on all four '
+            'sides must be uniform solid pure white. Do NOT render any floor, ground, surface, '
+            'horizon line, studio backdrop, vignette, gradient, or cast shadow - the subject '
+            'must appear to float on plain white with no setting of any kind.',
         ]
     )
 

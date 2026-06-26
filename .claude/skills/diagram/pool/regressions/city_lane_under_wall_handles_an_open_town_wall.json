@@ -1,0 +1,46 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "wall": [
+  [
+   200,
+   500
+  ],
+  [
+   500,
+   200
+  ],
+  [
+   800,
+   500
+  ]
+ ],
+ "wall_z": 10,
+ "gate": [
+  500,
+  200
+ ],
+ "town_streets": [
+  {
+   "pts": [
+    [
+     300,
+     600
+    ],
+    [
+     352,
+     352
+    ]
+   ],
+   "w": 18,
+   "z": 100
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_lane_under_wall"
+  ],
+  "source": "test_checks.py::test_city_lane_under_wall_handles_an_open_town_wall"
+ }
+}

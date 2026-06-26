@@ -1,0 +1,40 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_has_ring_road"
+  ],
+  "source": "test_checks.py::test_city_has_ring_road_fires_when_missing"
+ }
+}

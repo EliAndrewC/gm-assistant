@@ -275,16 +275,130 @@ DEFAULT_MANIFEST = {
     "pond": None, "hill": None, "summit": None, "shrine": None, "forest": None,
     "storehouses": [], "flophouses": [], "road": None, "wall": None, "gate": None,
     "gates": [], "moat": None, "governor_mansion": None, "ministries": [],
-    "inspection_stations": [], "amphitheater": None, "granary": None, "meta": {},
+    "inspection_stations": [], "amphitheater": None, "granary": None, "wells": [], "meta": {},
 }
 
 
 # a building's role for the population/frontage maths. A DWELLING houses one ~5-person household;
 # a BUSINESS is a commercial frontage (the merchant's house+shop is BOTH - dual-use); everything
 # else (civic, government, granary kura, barns, gate furniture) houses no one and fronts nothing.
-DWELLING_KINDS = {"laborer", "servant", "burakumin", "samurai", "merchant", "merchant_house", "merchant_large"}
+DWELLING_KINDS = {"laborer", "laborer_large", "servant", "burakumin", "samurai", "merchant", "merchant_house", "merchant_large"}
 BUSINESS_KINDS = {"shop", "merchant"}
 HOUSEHOLD = 5
+
+
+def lane_near_misses(M, maxgap=80.0, eps=4.0, align=0.80, block=18.0):
+    """Endpoints of one lane (street/alley) that HEAD STRAIGHT TOWARD another lane and stop just short
+    with a CLEAR path between - two lanes pointing at each other that don't meet, which should simply
+    connect. Returns [(x, y, gap), ...], one entry per offending endpoint. Filters out: an endpoint that
+    already meets a lane or the (wide) road (a junction/corner, not a dangling end); an end that does not
+    point toward the other lane (within ~37 deg); and a gap something genuinely BLOCKS - a building, a
+    ward fence, or the city wall - since then stopping short is intentional (the lane routes around it)."""
+    lanes = [st["pts"] for st in M.get("town_streets", [])] + \
+            [(al["pts"] if isinstance(al, dict) else al) for al in M.get("alleys", [])]
+    rd = M.get("road")
+    bld = [(b["x"], b["y"]) for b in M.get("buildings", [])] + [(h["x"], h["y"]) for h in M.get("houses", [])]
+    fences = [wd["boundary"] for wd in M.get("wards", [])]
+    wall = M.get("wall") or []
+
+    def to_lane(p, pts):
+        best, bd = (0.0, 0.0), 1e9
+        for k in range(len(pts) - 1):
+            cx, cy = seg_closest(p[0], p[1], pts[k], pts[k + 1])
+            dd = math.hypot(p[0] - cx, p[1] - cy)
+            if dd < bd:
+                bd, best = dd, (cx, cy)
+        return best, bd
+
+    def blocked(a, b):
+        if any(seg_dist(bx, by, a, b) < block for bx, by in bld):
+            return True
+        if any(segments_cross(a, b, fb[k], fb[k + 1]) for fb in fences for k in range(len(fb) - 1)):
+            return True
+        return len(wall) >= 3 and any(segments_cross(a, b, wall[k], wall[(k + 1) % len(wall)]) for k in range(len(wall)))
+
+    hits = []
+    for i, pi in enumerate(lanes):
+        for E, nb in ((pi[0], pi[1]), (pi[-1], pi[-2])):
+            if rd and to_lane(E, rd)[1] < 30:                                  # bed-overlaps the wide road
+                continue
+            if any(to_lane(E, c)[1] < eps for c in lanes if c is not pi):      # already a junction/corner
+                continue
+            for j, pj in enumerate(lanes):
+                if j == i:
+                    continue
+                cp, g = to_lane(E, pj)
+                if not (eps < g < maxgap):
+                    continue
+                dl = math.hypot(E[0] - nb[0], E[1] - nb[1]) or 1.0
+                if (((E[0] - nb[0]) / dl) * (cp[0] - E[0]) + ((E[1] - nb[1]) / dl) * (cp[1] - E[1])) / g < align:
+                    continue                                                   # E is not heading toward pj
+                if blocked(E, cp):
+                    continue
+                hits.append((round(E[0]), round(E[1]), round(g)))
+                break
+    return hits
+
+
+def lane_ward_shortfalls(M, maxgap=60.0, eps=6.0, align=0.80, block=18.0, gate_dist=34.0):
+    """Lane (street/alley) endpoints that head toward a NEIGHBORHOOD wall (a ward fence) but either
+    stop short of it or reach it without a gate. Such a lane should extend to the fence and END AT A
+    KIDO GATE (so e.g. laborers can pass through to work in the samurai quarter). Returns
+    [(x, y, reason), ...]. The MAIN city wall is NOT a target - a lane may stop short of the outer
+    rampart (the city's own boundary); only INTERNAL neighborhood fences pull a lane in to a gate."""
+    fences = [wd["boundary"] for wd in M.get("wards", [])]
+    if not fences:
+        return []
+    lanes = [st["pts"] for st in M.get("town_streets", [])] + \
+            [(al["pts"] if isinstance(al, dict) else al) for al in M.get("alleys", [])]
+    kido = M.get("kido", [])
+    wall = M.get("wall") or []
+    bld = [(b["x"], b["y"]) for b in M.get("buildings", [])] + [(h["x"], h["y"]) for h in M.get("houses", [])]
+    # an INTERIOR anchor (the governor's yamen, else the fences' centroid): a lane endpoint on the same
+    # side of the fence as the anchor is INSIDE the ward (an internal government/samurai lane), which
+    # needs no entry gate - only the COMMONER lanes approaching from OUTSIDE the fence are pulled in.
+    gov = M.get("governor_mansion")
+    if gov:
+        anchor = (gov["x"], gov["y"])
+    else:
+        fpts = [p for fb in fences for p in fb]
+        anchor = (sum(p[0] for p in fpts) / len(fpts), sum(p[1] for p in fpts) / len(fpts))
+
+    def to_fence(p, pts):
+        best, bd, bseg = (0.0, 0.0), 1e9, (pts[0], pts[1])
+        for k in range(len(pts) - 1):
+            cx, cy = seg_closest(p[0], p[1], pts[k], pts[k + 1])
+            dd = math.hypot(p[0] - cx, p[1] - cy)
+            if dd < bd:
+                bd, best, bseg = dd, (cx, cy), (pts[k], pts[k + 1])
+        return best, bd, bseg
+
+    def side(p, a, b):
+        return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+
+    hits = []
+    for pi in lanes:
+        for E, nb in ((pi[0], pi[1]), (pi[-1], pi[-2])):
+            for fb in fences:
+                cp, g, seg = to_fence(E, fb)
+                if g >= maxgap:
+                    continue
+                if side(E, *seg) * side(anchor, *seg) > 0:      # E is INSIDE the ward (an internal lane)
+                    continue
+                dl = math.hypot(E[0] - nb[0], E[1] - nb[1]) or 1.0
+                toward = (((E[0] - nb[0]) / dl) * (cp[0] - E[0]) + ((E[1] - nb[1]) / dl) * (cp[1] - E[1])) / max(g, 1e-6)
+                if g > eps and toward < align:                  # not heading at the fence -> a passer-by, not an entry
+                    continue
+                if any(seg_dist(bx, by, E, cp) < block for bx, by in bld):
+                    continue                                    # a building blocks the way -> the stop is intentional
+                if len(wall) >= 3 and any(segments_cross(E, cp, wall[k], wall[(k + 1) % len(wall)]) for k in range(len(wall))):
+                    continue                                    # the main rampart is between them
+                if g > eps:
+                    hits.append((round(E[0]), round(E[1]), "stops short of the neighborhood wall - extend it to the fence and end at a kido gate"))
+                elif not any(math.hypot(E[0] - gt["x"], E[1] - gt["y"]) < gate_dist for gt in kido):
+                    hits.append((round(E[0]), round(E[1]), "meets the neighborhood wall but has no kido gate there"))
+                break
+    return hits
 
 
 def gate(M, verbose=True):
@@ -427,8 +541,28 @@ def gate(M, verbose=True):
         alleys = [a["pts"] for a in M.get("alleys", [])]
         other = [s["pts"] for s in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
 
+        kido = M.get("kido", [])
+
         def lane_dist(b, pts):
             return min(seg_dist(b["x"], b["y"], pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+
+        def foot(b, pts):
+            return min((seg_closest(b["x"], b["y"], pts[i], pts[i + 1]) for i in range(len(pts) - 1)),
+                       key=lambda c: math.hypot(b["x"] - c[0], b["y"] - c[1]))
+
+        def gate_spur(pts):
+            # a terminal stretch running OUT to a ward GATE past the last served building is a legitimate
+            # gate-access spur (the lane pulls in to a kido), NOT a lane-to-nowhere - so it does not count
+            # toward the serve ratio. Trim it from each gated end (distance from the gate to the nearest
+            # building the lane fronts, measured along the lane).
+            spur = 0.0
+            for E in (pts[0], pts[-1]):
+                if not any(math.hypot(E[0] - g["x"], E[1] - g["y"]) < 20 for g in kido):
+                    continue
+                reach = [math.hypot(E[0] - (c := foot(b, pts))[0], E[1] - c[1]) for b in alley_blds if lane_dist(b, pts) < 60]
+                if reach:
+                    spur += min(reach)
+            return spur
         uniq = [0] * len(alleys)
         for b in alley_blds:
             best_d, best_i = 60.0, None       # only buildings within a frontage band count for any lane
@@ -443,6 +577,7 @@ def gate(M, verbose=True):
         thin = []
         for li, pts in enumerate(alleys):
             length = sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
+            length -= gate_spur(pts)          # the run out to a ward gate is access, not block-service
             if uniq[li] * 30 < length:
                 thin.append((pts[0], uniq[li], round(length)))
         check("alleys_serve_buildings", not thin,
@@ -541,22 +676,53 @@ def gate(M, verbose=True):
                 mislayered.append(f"{narrower[0]} over {wider[0]}")
     check("city_lanes_layered_by_width", not mislayered,
           f"a narrower lane is painted OVER a wider one it crosses (the wider lane must be on top): {sorted(set(mislayered))}")
-    # and where a street/road crosses the city WALL away from a gate, it runs UNDER the rampart (the
-    # wall is painted on top). A lane should only breach the wall at a gate; elsewhere the wall wins.
+    # where lanes meet they form a clean CROSSROADS: the paved BEDS merge into a continuous surface, with
+    # no lane's EDGE (its dark kerb-line) cutting across another lane's bed at the junction. The engine
+    # draws the ground block in sub-layers - all edges, then all beds, then centre-marks - so every edge
+    # sits below every bed; the check guards that invariant (max edge draw-z < min bed draw-z).
+    ez, bz = M.get("ground_edge_zmax"), M.get("ground_bed_zmin")
+    if ez is not None and bz is not None:
+        check("intersections_are_crossroads", ez < bz,
+              "lane edge-strokes render OVER bed-strokes, so a junction shows a line across it instead of a "
+              "merged crossroads - draw all ground edges below all ground beds")
+    # WALLS render OVER the ground lanes: a road/street/alley that runs INTO a wall - touches or crosses
+    # its stroke - must pass UNDER it (the wall has a higher draw z). The settlement draws ramparts in a
+    # dedicated WALL layer above the ground block precisely so this holds; the check guards the invariant
+    # for the city/town wall AND every neighborhood (ward) fence. A lane only breaches a wall at a GATE,
+    # where the wall has a genuine opening (no stroke to render over), so crossings/touches at a gate are
+    # exempt. The wall is a closed ring at city scale, an open hill-anchored arc at town scale.
+    def lanes_over(ring, bz, closed, exempt, near=6.0):
+        edges = [(ring[k], ring[(k + 1) % len(ring)]) for k in (range(len(ring)) if closed else range(len(ring) - 1))]
+
+        def at_gate(x, y):
+            return any(math.hypot(x - ex, y - ey) < 50 for ex, ey in exempt)
+        bad = []
+        for name, pts, w, z in lanes:
+            if z < bz:
+                continue                      # the lane already renders under this wall
+            meets = any(seg_dist(p[0], p[1], a, b) < near + w / 2 and not at_gate(p[0], p[1]) for p in pts for a, b in edges)
+            for k in range(len(pts) - 1):
+                for a, b in edges:
+                    if segments_cross(pts[k], pts[k + 1], a, b):
+                        xy = seg_intersect(pts[k], pts[k + 1], a, b)
+                        if xy and not at_gate(xy[0], xy[1]):
+                            meets = True
+            if meets:
+                bad.append(name)
+        return sorted(set(bad))
     wall, wall_z = M.get("wall"), M.get("wall_z")
     gates = M.get("gates") or ([M["gate"]] if M.get("gate") else [])
     if wall and wall_z is not None and len(wall) >= 3:
-        ring = list(wall) + [wall[0]]
-        over_wall = []
-        for name, pts, w, z in lanes:
-            for a in range(len(pts) - 1):
-                for b in range(len(ring) - 1):
-                    if segments_cross(pts[a], pts[a + 1], ring[b], ring[b + 1]):
-                        xy = seg_intersect(pts[a], pts[a + 1], ring[b], ring[b + 1])
-                        if xy and all(math.hypot(xy[0] - gx, xy[1] - gy) > 55 for gx, gy in gates) and z > wall_z:
-                            over_wall.append(name)
+        over_wall = lanes_over(list(wall), wall_z, scale == "city", gates)
         check("city_lane_under_wall", not over_wall,
-              f"a street/road crosses the wall away from a gate and renders OVER it (a lane must run UNDER the rampart): {sorted(set(over_wall))}")
+              f"a road/street/alley runs INTO the city wall and renders OVER it - a lane must pass UNDER the rampart (it shows through only at a gate opening): {over_wall}")
+    kido_pts = [(k["x"], k["y"]) for k in M.get("kido", [])]
+    over_fence = []
+    for wd in M.get("wards", []):
+        if wd.get("z") is not None and len(wd.get("boundary", [])) >= 2:
+            over_fence += [(wd.get("name", "ward"), n) for n in lanes_over(wd["boundary"], wd["z"], False, kido_pts)]
+    check("city_lanes_under_ward_fences", not over_fence,
+          f"a lane runs into a neighborhood (ward) fence and renders OVER it - lanes pass UNDER the fence (the kido marks the passage): {over_fence}")
 
     # no structure overlaps the (wide) road
     road = M.get("road")
@@ -736,6 +902,41 @@ def gate(M, verbose=True):
           if min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 4
           and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4]
     check("no_label_overlaps", not ov, f"{len(ov)} overlapping label pair(s)")
+
+    # LABELS must stay WITHIN the rendered image. Plenty of things rightly run off the edge - farm
+    # fields, roads, samurai country estates, farmhouses, the countryside continuing beyond the frame -
+    # but a label that spills past the edge is clipped and unreadable, so every label's bounding box
+    # must sit inside the frame. The frame is the cropped view (a city map crops tight to the walls,
+    # so its EX/EY bounds are the viewBox) or, uncropped, the full canvas. The title and compass are
+    # placed directly (not recorded in M["labels"]) and sit inside the frame by construction.
+    off_img = [L[5] if len(L) > 5 else "label" for L in labels
+               if L[0] < EX0 - 1 or L[1] < EY0 - 1 or L[2] > EX1 + 1 or L[3] > EY1 + 1]
+    check("labels_within_image", not off_img,
+          f"label(s) running off the edge of the image - a label must sit fully within the frame (fields/roads/"
+          f"estates/farmhouses may run off, labels may not): {sorted(set(off_img))}")
+
+    # LABEL TEXT renders ON TOP of everything: no part of a label may be covered. Labels live in the
+    # topmost layer (s.add_label), above the TOP-layer structures (gate furniture, kido, torii); the
+    # check guards it - a label overlapped by any structure drawn OVER it (higher draw-z) is covered.
+    occluders = []
+    for gs in M.get("gate_structs", []):
+        if gs.get("z") is not None:
+            occluders.append((gs["x"] - gs["w"] / 2, gs["y"] - gs["h"] / 2, gs["x"] + gs["w"] / 2, gs["y"] + gs["h"] / 2, gs["z"]))
+    for kd in M.get("kido", []):
+        if kd.get("z") is not None and kd.get("bbox"):
+            occluders.append((kd["bbox"][0], kd["bbox"][1], kd["bbox"][2], kd["bbox"][3], kd["z"]))
+    for t in M.get("torii", []):
+        if len(t) >= 3:
+            occluders.append((t[0] - 22, t[1] - 28, t[0] + 22, t[1] + 12, t[2]))   # the arch's drawn extent
+    covered = []
+    for L in labels:
+        lx0, ly0, lx1, ly1, lz = L[0], L[1], L[2], L[3], L[4]
+        for ox0, oy0, ox1, oy1, oz in occluders:
+            if oz > lz and lx0 < ox1 and ox0 < lx1 and ly0 < oy1 and oy0 < ly1:
+                covered.append(L[5] if len(L) > 5 else "label")
+                break
+    check("labels_render_on_top", not covered,
+          f"label text covered by a structure drawn over it (a label must render on top of everything, fully readable): {sorted(set(covered))}")
 
     hill = M.get("hill")
     if hill:
@@ -1254,8 +1455,47 @@ def gate(M, verbose=True):
                   f"governor's mansion is walled within)")
         check("city_has_merchant_district", bk.get("merchant", 0) >= 12,
               f"{bk.get('merchant', 0)} merchant houses - a provincial city needs a merchant district")
-        check("city_has_laborer_neighborhoods", bk.get("laborer", 0) >= 12,
-              f"{bk.get('laborer', 0)} laborer dwellings - a provincial city needs laborer neighborhoods")
+        check("city_has_laborer_neighborhoods", bk.get("laborer", 0) + bk.get("laborer_large", 0) >= 12,
+              f"{bk.get('laborer', 0) + bk.get('laborer_large', 0)} laborer dwellings - a provincial city needs laborer neighborhoods")
+        # LABORER HOUSING VARIES BY WEALTH, like the samurai and merchant tiers: budgets.md's provincial-city
+        # laborer cohort is ~12.5% "master" (rich) laborers, the rest standard - so a MINORITY of larger homes
+        # (kind "laborer_large", the wealthier hinin who line the prime back-street frontage, with room around
+        # them) among the overwhelming majority of small standard dwellings. The exact share is room-limited
+        # (the big homes need street frontage), so the band is generous around the 12.5% target; the point is
+        # that the variety is PRESENT and a clear minority, not that every laborer dwelling is identical.
+        lab_std, lab_big = bk.get("laborer", 0), bk.get("laborer_large", 0)
+        if lab_std + lab_big:
+            big_frac = lab_big / (lab_std + lab_big)
+            check("city_laborer_housing_varied", 0.06 <= big_frac <= 0.20 and lab_std > lab_big,
+                  f"laborer houses don't vary by wealth the way budgets.md expects (~12.5% larger 'master/rich' homes, "
+                  f"the rest standard): {lab_big} large of {lab_std + lab_big} ({big_frac:.0%}; want a clear minority, "
+                  f"~6-20%) - give the wealthier laborers (the ones fronting the back streets, with room) larger homes "
+                  f"(kind 'laborer_large')")
+        # the city's CASTE MIX must match budgets.md, not just the total head-count: a provincial city is
+        # ~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of its ~600 households.
+        # The total-population check alone lets the mix DRIFT (e.g. laborers absorbing everyone else's
+        # slots, servants starved to near-zero because they were appended to the END of a pack list), so
+        # each caste is held within +/-30% of its target. Servants live among the merchants/samurai they
+        # serve - INTERLEAVE them into those packs rather than tacking them on the end.
+        cpop = meta.get("population", 0)
+        if cpop:
+            caste = {
+                "laborer": bk.get("laborer", 0) + bk.get("laborer_large", 0),
+                "servant": bk.get("servant", 0),
+                "merchant": bk.get("merchant", 0) + bk.get("merchant_house", 0) + bk.get("merchant_large", 0) + len(M.get("merchant_estates", [])),
+                "samurai": bk.get("samurai", 0) + bk.get("samurai_large", 0) + len(M.get("manors", [])),
+                "burakumin": bk.get("burakumin", 0),
+            }
+            frac = {"laborer": 0.40, "servant": 0.20, "merchant": 0.25, "samurai": 0.10, "burakumin": 0.05}
+            hh = cpop / HOUSEHOLD
+            off = []
+            for ck, fr in frac.items():
+                tgt = fr * hh
+                if not (0.70 * tgt <= caste[ck] <= 1.30 * tgt):
+                    off.append(f"{ck} {caste[ck]} (want ~{round(tgt)})")
+            check("city_caste_counts_in_band", not off,
+                  f"city caste mix is off the budgets.md targets - each caste should be within +/-30% of "
+                  f"~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of {round(hh)} households: {off}")
         # MERCHANT HOUSING is varied and roomy, UNLIKE the uniform, jammed laborer warren. Behind the
         # storefronts the homes mix sizes by wealth band (budgets.md: very rich -> walled ESTATES, rich
         # -> LARGE houses, the rest -> small houses) and are SPREAD OUT - more room between them than the
@@ -1293,6 +1533,199 @@ def gate(M, verbose=True):
             check("city_amphitheater_larger_than_town", amph.get("r", 0) >= 92,
                   f"the city amphitheater (radius {amph.get('r', 0)}) is no bigger than a town's - a provincial city's is larger (radius >= 92)")
 
+        # A LABEL must not sit on a building it does NOT name. A label may overlap the feature(s) it
+        # names - its own building/compound, or (for a zone/neighbourhood label) any building of that
+        # cluster - and may clip a street-fronting shop or an interleaved servant house (those line every
+        # quarter, so they are never a victim). But where a label spills onto a DIFFERENT-identity
+        # building it tells the reader that building is something it is not (a "flophouse" label over a
+        # merchant house, a "gate guard house" label over a flophouse). Each labelled structure carries a
+        # GROUP; the label text declares which group(s) it may cover - anything else it overlaps fires.
+        LABEL_FREE = {"shop", "servant"}
+
+        def _grp(kind):
+            if kind in ("samurai", "samurai_large"):
+                return "samurai"
+            if kind in ("merchant", "merchant_house", "merchant_large"):
+                return "merchant"
+            if kind == "laborer_large":
+                return "laborer"
+            return kind
+
+        def _bb(it):
+            rot = it.get("rot", 0)
+            hw, hh = it.get("w", 0) / 2, it.get("h", 0) / 2
+            if not rot:
+                return it["x"] - hw, it["y"] - hh, it["x"] + hw, it["y"] + hh
+            a = math.radians(rot)
+            ca, sa = math.cos(a), math.sin(a)
+            xs = [it["x"] + dx * ca - dy * sa for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
+            ys = [it["y"] + dx * sa + dy * ca for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
+            return min(xs), min(ys), max(xs), max(ys)
+
+        vics = [(_grp(b.get("kind", "")), _bb(b)) for b in M.get("buildings", []) if _grp(b.get("kind", "")) not in LABEL_FREE]
+        vics += [("flophouse", _bb(fp)) for fp in M.get("flophouses", [])]
+        vics += [("temple", _bb(r)) for r in M.get("religious", [])]
+        vics += [("ministry", _bb(mi)) for mi in M.get("ministries", [])]
+        vics += [("governor", _bb(M["governor_mansion"]))] if M.get("governor_mansion") else []
+        vics += [("gate", _bb(gs)) for gs in M.get("gate_structs", [])]
+        vics += [("merchant", _bb(e)) for e in M.get("merchant_estates", [])]
+        vics += [("estate", _bb(mn)) for mn in M.get("manors", [])]
+
+        def _label_allows(txt):
+            t = txt.lower()
+            if "guard house" in t or "inspection" in t:
+                return {"gate"}
+            if "flophouse" in t:
+                return {"flophouse"}
+            if "ministry" in t:
+                return {"ministry"}
+            if "governor" in t or "mansion" in t:
+                return {"governor"}
+            if any(w in t for w in ("temple", "shrine", "monastery", "chapel")):
+                return {"temple"}
+            if "samurai" in t:
+                return {"samurai", "estate"}
+            if "laborer" in t or "labourer" in t:
+                return {"laborer", "laborer_large"}
+            if "burakumin" in t:
+                return {"burakumin"}
+            if "agricultur" in t:               # the in-wall farming district also houses burakumin
+                return {"burakumin"}
+            if "merchant" in t:
+                return {"merchant"}
+            return set()                        # road / farmland / market / title labels name no building
+
+        mislabel = []
+        for L in M.get("labels", []):
+            if len(L) <= 5:
+                continue
+            allow = _label_allows(L[5])
+            for g, (x0, y0, x1, y1) in vics:
+                if g in allow:
+                    continue
+                if L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
+                    mislabel.append(f"{L[5]!r} over a {g}")
+                    break
+        check("labels_clear_of_other_buildings", not mislabel,
+              f"label(s) sitting on a building they do not name (a label may cover only the thing it labels, "
+              f"or a fronting shop/servant house): {sorted(set(mislabel))}")
+
+        # A NAMED civic building's label must sit on ITS OWN building, never on a DIFFERENT one of the
+        # same kind. labels_clear_of_other_buildings lumps every ministry into one "ministry" GROUP, so
+        # it permits a ministry label to sit on a SIBLING ministry (the "Ministry of Justice" label
+        # drifted onto the "Ministry of Works" office). This catches that finer case: a label that names
+        # a civic building (a ministry by name, the governor's yamen, a named temple) must not overlap
+        # any OTHER named civic building.
+        civic = [(mi["name"], _bb(mi)) for mi in M.get("ministries", []) if mi.get("name")]
+        _gv = M.get("governor_mansion")
+        if _gv and _gv.get("label"):
+            civic.append((_gv["label"], _bb(_gv)))
+        civic += [(r["label"], _bb(r)) for r in M.get("religious", []) if r.get("label") and r.get("kind") == "temple"]
+        civic_names = {n for n, _ in civic}
+        cross = []
+        for L in M.get("labels", []):
+            if len(L) <= 5 or L[5] not in civic_names:
+                continue
+            for n, (x0, y0, x1, y1) in civic:
+                if n != L[5] and L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
+                    cross.append(f"{L[5]!r} over {n!r}")
+        check("city_civic_label_on_its_own_building", not cross,
+              f"a civic building's label sits on a DIFFERENT civic building (not the one it names): {sorted(set(cross))}")
+
+        # GOVERNMENT OFFICES stand in their own ground - a ministry or the governor's yamen is a large,
+        # important compound and must not ABUT another structure. Ordinary city houses may touch each
+        # other, but a government office keeps a clear gap from every other building/compound around it.
+        OFFICE_GAP = 14
+        offices = ([("the governor's yamen", _gv)] if _gv else []) + [(mi.get("name", "a ministry"), mi) for mi in M.get("ministries", [])]
+        others = (M.get("buildings", []) + M.get("ministries", []) + M.get("religious", [])
+                  + M.get("flophouses", []) + M.get("merchant_estates", []) + ([_gv] if _gv else []))
+
+        def _edge_gap(a, b):
+            ax0, ay0, ax1, ay1 = _bb(a)
+            bx0, by0, bx1, by1 = _bb(b)
+            return math.hypot(max(0.0, ax0 - bx1, bx0 - ax1), max(0.0, ay0 - by1, by0 - ay1))
+
+        abut = []
+        for nm, o in offices:
+            for st in others:
+                if st is not o and "w" in st and _edge_gap(o, st) < OFFICE_GAP:
+                    abut.append(f"{nm!r} abuts {(st.get('name') or st.get('label') or st.get('kind') or 'a building')!r}")
+        check("city_government_offices_dont_abut", not abut,
+              f"government office(s) abutting another structure - a ministry / the yamen must stand clear, not touch ({OFFICE_GAP}px): {sorted(set(abut))}")
+
+        # PUBLIC WELLS: ensuring every commoner could draw water was a defining civic concern of a
+        # premodern city. A communal well (the idobata) served a courtyard / cluster of ~10-20
+        # households, so the warren is dotted with them - one within a short walk of any home. The
+        # underground half of the system (aqueducts, cisterns, rain barrels feeding the shafts) is too
+        # small or literally subterranean and stays OFF the map; only the wellheads show.
+        wells = M.get("wells", [])
+        if wells:
+            wp = M.get("wall") or []
+            inw = (lambda x, y: point_in_poly(x, y, wp)) if len(wp) >= 3 else (lambda x, y: True)   # noqa: E731
+            # WATER ACCESS: every commoner dwelling INSIDE the walls (laborer/burakumin/merchant kinds;
+            # samurai have private wells in their compounds, and a transient gate market outside the wall
+            # is not housing) must have a public well within reach. Servants are interleaved among the
+            # commoners and share the same wells, so they ride along. A dwelling too far from any well is
+            # a neighborhood the water network forgot.
+            REACH = 290
+            COMMON = {"laborer", "laborer_large", "burakumin", "merchant", "merchant_house", "merchant_large"}
+            dry = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", [])
+                   if b.get("kind") in COMMON and inw(b["x"], b["y"])
+                   and min(math.hypot(b["x"] - w["x"], b["y"] - w["y"]) for w in wells) > REACH]
+            check("city_neighborhoods_have_wells", not dry,
+                  f"{len(dry)} commoner dwelling(s) inside the walls more than {REACH}px from any public well - "
+                  f"every neighborhood needs water access; scatter wells through the warren (e.g. {dry[:3]})")
+            # and ENOUGH wells that none is OVER-BURDENED: a communal well historically served a courtyard
+            # / cluster of ~10-20 households, so assigning each commoner dwelling (servants included - they
+            # draw here too) to its NEAREST well, no well should end up doing the work of three. The reach
+            # check guarantees coverage but not density - the AVERAGE can look fine while the busiest wells
+            # in the dense laborer warren are swamped - so this bounds the per-well share. (The nearest-well
+            # split over-counts a little where two wells are nearly equidistant, so the ceiling sits a touch
+            # above the historical 20.)
+            MAX_PER_WELL = 26
+            hh = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in (COMMON | {"servant"}) and inw(b["x"], b["y"])]
+            served = [0] * len(wells)
+            for hx, hy in hh:
+                served[min(range(len(wells)), key=lambda i: math.hypot(hx - wells[i]["x"], hy - wells[i]["y"]))] += 1
+            swamped = [(round(wells[i]["x"]), round(wells[i]["y"]), c) for i, c in enumerate(served) if c > MAX_PER_WELL]
+            check("city_well_density_sufficient", not swamped,
+                  f"public well(s) each the nearest for more than {MAX_PER_WELL} commoner households - too few wells for "
+                  f"the neighborhood (~1 per 10-20 households is realistic); add wells where the warren is densest: {swamped}")
+            # wells sit in a block INTERIOR off the lanes (the idobata was a courtyard, not the avenue),
+            # and a wellhead must not overlap a building or compound. Placement guarantees both (well_at /
+            # place_wells use the same clearance test the houses do), so this is the backstop.
+            wlanes = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])]
+            lane_w = ([st.get("w", 24) for st in M.get("town_streets", [])] + ([M.get("road_width", 26)] if M.get("road") else []) + [10 for _ in M.get("alleys", [])])
+            _gov = M.get("governor_mansion")
+            structs = (M.get("buildings", []) + M.get("flophouses", []) + M.get("religious", [])
+                       + M.get("ministries", []) + M.get("merchant_estates", []) + ([_gov] if _gov else []))
+            bad_well = []
+            for w in wells:
+                wx, wy, wr = w["x"], w["y"], w.get("r", 8)
+                if any(seg_dist(wx, wy, ln[i], ln[i + 1]) < lw / 2 + wr for ln, lw in zip(wlanes, lane_w) for i in range(len(ln) - 1)):
+                    bad_well.append((round(wx), round(wy), "on a lane"))
+                elif any("w" in st and abs(wx - st["x"]) < st["w"] / 2 + wr and abs(wy - st["y"]) < st["h"] / 2 + wr for st in structs):
+                    bad_well.append((round(wx), round(wy), "on a building"))
+            check("city_wells_in_block_interiors", not bad_well,
+                  f"well(s) not sitting clear in a block interior - a wellhead is on a lane or overlaps a structure: {bad_well[:4]}")
+            # the SAMURAI/GOVERNMENT quarter has NO public wells - samurai drew from PRIVATE wells inside
+            # their own walled compounds, and gathering at the communal idobata was a commoner-district
+            # institution (beneath samurai status). So a public wellhead embedded AMONG the samurai
+            # dwellings is wrong; their water is private and stays off-map, like their gardens. A well is
+            # "in the samurai quarter" if the dwellings it actually sits among are mostly samurai - a
+            # relative test, robust where a commoner well sits a block from the quarter across the ward fence.
+            SAMK = {"samurai", "samurai_large"}
+            HOUSEK = {"laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house", "merchant_large"} | SAMK
+            dwl = [(b["x"], b["y"], b.get("kind") in SAMK) for b in M.get("buildings", []) if b.get("kind") in HOUSEK]
+            sam_wells = []
+            for w in wells:
+                near = sorted(dwl, key=lambda d: math.hypot(d[0] - w["x"], d[1] - w["y"]))[:3]
+                if near and sum(1 for d in near if d[2]) * 2 >= len(near):   # most of its nearest neighbours are samurai
+                    sam_wells.append((round(w["x"]), round(w["y"])))
+            check("city_samurai_quarter_has_no_public_wells", not sam_wells,
+                  f"public well(s) sitting among the samurai dwellings: {sam_wells} - the samurai/government quarter has no "
+                  f"communal wells (samurai draw from private wells inside their compounds; the public idobata is a commoner institution)")
+
         # a city ON the Imperial road LINES that road with COMMERCE (shops + traveler inns): the
         # through-road is the city's prime frontage, where caravans and travelers pass, so it must not
         # run bare. This holds for ANY city with an Imperial road, WALLED OR NOT - a city WITHOUT a road
@@ -1326,6 +1759,24 @@ def gate(M, verbose=True):
                   f"only {road_comm} shops/inns front the {round(il)}px of Imperial road running through the city (want >= {need}) - a "
                   f"city on a trade route lines its through-road with commerce to service travelers; don't leave the prime road frontage bare")
 
+        # two lanes (streets/alleys) heading STRAIGHT at each other and stopping just short, with nothing
+        # between them, should simply CONNECT - a near-miss reads as a mistake, not a deliberate dead-end.
+        # (Unlike city_streets_no_near_miss, which only compares street-vs-street segment proximity, this
+        # catches ALLEYS too and the aligned end-to-end / T case, and ignores gaps a building/fence/wall
+        # genuinely blocks.) Generic to any city with lanes, walled or not.
+        misses = lane_near_misses(M)
+        check("city_lanes_meet_when_aligned", not misses,
+              f"lane endpoint(s) stopping a short CLEAR distance from another lane they point straight at - "
+              f"two lanes heading toward each other with nothing between should connect, not stop short: {misses}")
+
+        # a lane heading at a NEIGHBORHOOD wall (a ward fence) should reach it and end at a KIDO GATE - the
+        # commoners' lanes pull in to the gates they pass through to work in the samurai quarter. Stopping a
+        # sliver short, or meeting the fence with no gate, both read as a mistake. (Stopping short of the
+        # MAIN city wall is fine - that is the city's own edge, not a neighborhood boundary.)
+        shortfalls = lane_ward_shortfalls(M)
+        check("city_lanes_reach_ward_gates", not shortfalls,
+              f"lane(s) at a neighborhood (ward) wall that should extend to it and end at a gate: {shortfalls}")
+
         if meta.get("walled"):
             w = M.get("wall") or []
             gates = M.get("gates", [])
@@ -1340,6 +1791,109 @@ def gate(M, verbose=True):
             no_guard = [g for g in gates if sum(1 for s in gstructs if math.hypot(s["x"] - g[0], s["y"] - g[1]) <= 180) < 2]
             check("city_gate_has_guardhouse", len(gates) >= 2 and not no_guard,
                   f"every city gate needs a guard house + guard tower (>= 2 gate structures within ~180px): {len(no_guard)} gate(s) short")
+            # a fortified city is TOWERED for enfilading fire along the wall face: guard towers spaced
+            # at regular intervals around the whole rampart (a bowshot apart), not only at the gates -
+            # so no long bare arc of wall sits uncovered. Spacing is judged by the widest angular gap
+            # between consecutive towers around the wall centroid.
+            towers = M.get("wall_towers", [])
+            wcx, wcy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
+            angs = sorted(math.atan2(t["y"] - wcy, t["x"] - wcx) for t in towers)
+            maxgap = max([angs[i + 1] - angs[i] for i in range(len(angs) - 1)] + [angs[0] + 2 * math.pi - angs[-1]]) if angs else 2 * math.pi
+            check("city_wall_towers_spaced", len(towers) >= 6 and maxgap < math.radians(75),
+                  f"a fortified city needs guard towers spaced around the wall, not just at the gates ({len(towers)} towers, widest bare arc {round(math.degrees(maxgap))} deg, want < 75) - place towers at regular intervals (s.city_wall does this automatically)")
+            # guard towers sit SQUARE to the wall (rotated to its tangent) rather than all axis-aligned -
+            # a tower on a slanted stretch slants with it. Each tower's recorded rotation must match the
+            # angle of the nearest wall edge (mod 90, since a square reads the same every 90 degrees).
+            ring2 = list(w) + [w[0]]
+            misaligned = []
+            for t in towers:
+                ek = min(range(len(ring2) - 1), key=lambda k: seg_dist(t["x"], t["y"], ring2[k], ring2[k + 1]))
+                edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
+                d = (t.get("rot", 0) - edge_ang) % 90
+                if min(d, 90 - d) > 15:
+                    misaligned.append((round(t["x"]), round(t["y"])))
+            check("city_wall_towers_aligned", not misaligned,
+                  f"guard tower(s) not square to the wall - a tower should rotate to the wall's tangent there, not stay axis-aligned: {misaligned}")
+            # the GATE FURNITURE - the guard house + inspection station that sit along the ring road just
+            # inside each gate - is likewise SQUARE TO THE WALL: rotated to the wall's LOCAL tangent at its
+            # own position (NOT the gate vertex's - the wall has already curved away by then), so the ring
+            # road runs lengthwise through it. Each is a rectangle (its long axis runs ALONG the wall), so
+            # its rotation must match the nearest wall edge angle mod 180 (a 180 deg flip is the same, a 90
+            # deg turn would stand it the wrong way across the road). Tolerance is TIGHTER than the towers'
+            # (6 vs 15 deg): the furniture rotation is set from the exact local edge angle, not the towers'
+            # chord-through-neighbours approximation, so a correctly-placed piece matches near-exactly - and
+            # the gates sit on shallow wall stretches (~8 deg), which a 15 deg window would wave through.
+            furn = [g for g in M.get("gate_structs", []) if g.get("kind") in ("guardhouse", "inspection")]
+            fmis = []
+            for g in furn:
+                ek = min(range(len(ring2) - 1), key=lambda k: seg_dist(g["x"], g["y"], ring2[k], ring2[k + 1]))
+                edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
+                d = (g.get("rot", 0) - edge_ang) % 180
+                if min(d, 180 - d) > 6:
+                    fmis.append((round(g["x"]), round(g["y"])))
+            check("city_gate_furniture_aligned", not fmis,
+                  f"gate guard house / inspection station(s) not square to the wall - they should rotate to the wall's LOCAL tangent where they sit (so the ring road runs through them lengthwise), not stay flat: {fmis}")
+            # a walled city has a RING ROAD (順城街) just inside the rampart - the wall-clear patrol zone a
+            # fortified city keeps for moving troops along the wall; the quarters pack INSIDE it (s.ring_road
+            # returns the loop to use as s.bound).
+            ring = M.get("ring_road")
+            check("city_has_ring_road", bool(ring) and len(ring) >= 4,
+                  "a walled city needs a ring road just inside the wall (the wall-clear patrol zone) - s.ring_road(WALL); set s.bound to the loop it returns")
+            # a street running toward a THROUGH-LANE (the Imperial road or the ring road) must MEET it
+            # cleanly at a T-junction: its bed reaches the lane's bed and ENDS there - neither a sliver
+            # SHORT of it (an undershoot, the street appears to dead-end in open ground) nor a sliver
+            # PAST it (an overshoot, the street pokes through to the far side instead of stopping at the
+            # junction). A genuine crossroads, where the street truly continues well past the lane, is
+            # fine - only a short stub poking through is wrong. (The ring road is gated where it crosses
+            # the ward fence, so even the government quarter's lanes may give onto it without un-sealing.)
+            through = []
+            if M.get("road"):
+                through.append((M["road"], (M.get("road_width", 26) - 8) / 2))
+            if ring:
+                through.append((ring, (M.get("ring_road_width", 15) - 6) / 2))
+            bad_meet = []
+            # streets AND alleys: a gravel alley that runs straight at a through-lane and stops a sliver
+            # short of it (the laborer warren's east lane stopping just shy of the east ring road) should
+            # reach it too, just like a paved street
+            meeting_lanes = ([(st["pts"], st.get("w", 18) / 2) for st in M.get("town_streets", [])]
+                             + [(a["pts"], 5.0) for a in M.get("alleys", [])])
+            for pts, sh in meeting_lanes:
+                for E, nb in ((pts[0], pts[1]), (pts[-1], pts[-2])):
+                    for L, bedhalf in through:
+                        cp = min((seg_closest(E[0], E[1], L[i], L[i + 1]) for i in range(len(L) - 1)),
+                                 key=lambda c: math.hypot(E[0] - c[0], E[1] - c[1]))
+                        g = math.hypot(E[0] - cp[0], E[1] - cp[1])
+                        if g > 46:
+                            continue
+                        ip = next((seg_intersect(nb, E, L[i], L[i + 1]) for i in range(len(L) - 1)
+                                   if segments_cross(nb, E, L[i], L[i + 1])), None)
+                        if ip is not None:                       # crosses the lane: must END at the junction, not poke a stub past it
+                            if 3 < math.hypot(E[0] - ip[0], E[1] - ip[1]) < 50:
+                                bad_meet.append((round(E[0]), round(E[1])))
+                        else:                                    # short of the lane: its bed must reach the lane's bed
+                            dl = math.hypot(E[0] - nb[0], E[1] - nb[1]) or 1.0
+                            align = ((E[0] - nb[0]) / dl) * ((cp[0] - E[0]) / max(g, 1e-6)) + ((E[1] - nb[1]) / dl) * ((cp[1] - E[1]) / max(g, 1e-6))
+                            if align > 0.6 and g >= sh + bedhalf:
+                                bad_meet.append((round(E[0]), round(E[1])))
+            check("city_streets_meet_through_lanes", not bad_meet,
+                  f"street/alley(s) not meeting the Imperial road / ring road cleanly at a junction - stopping a sliver short of it or poking a sliver past it: {sorted(set(bad_meet))}")
+            # the RING ROAD is a CLEAR patrol road: it must run clear of buildings, civic compounds
+            # (ministries, the governor's yamen, temples) and fields. The gate guard houses / inspection
+            # stations / towers DO sit along it (wall furniture, not in these lists, so exempt), and a
+            # ward fence may cross it - but only at a gated kido (enforced by city_samurai_ward_sealed,
+            # which has the ring road in its netlines). Overlap = the ring's BED passes through a footprint.
+            if ring:
+                rbed = (M.get("ring_road_width", 15) - 6) / 2
+                rgov = M.get("governor_mansion")
+
+                def _foot(it):
+                    return rect_corners(it) if "rot" in it else rect_corners_xywh(it, 0)
+                on_ring = [it.get("name") or it.get("label") or it.get("kind") or "compound"
+                           for it in (M.get("buildings", []) + M.get("ministries", []) + M.get("religious", []) + ([rgov] if rgov else []))
+                           if footprint_on_line(_foot(it), ring, rbed)]
+                on_ring += ["field:" + f["name"] for f in fields if footprint_on_line(f["outline"], ring, rbed)]
+                check("ring_road_kept_clear", not on_ring,
+                      f"the ring road must run CLEAR of buildings/civic compounds/fields (only the gate guard houses, inspection stations, towers and gated ward fences may sit on it): {sorted(set(on_ring))}")
             buraku_in = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inwall(b["x"], b["y"])]
             check("walled_city_has_burakumin_inside", len(buraku_in) >= 3,
                   f"{len(buraku_in)} burakumin inside the walls - a walled provincial city must keep >= 1 burakumin neighborhood within (they cannot be without burakumin during a siege)")
@@ -1471,7 +2025,7 @@ def gate(M, verbose=True):
             # the road network connects samurai to commoner with no gate between them.
             wards = M.get("wards", [])
             kido = M.get("kido", [])
-            netlines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])]
+            netlines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])] + ([M["ring_road"]] if M.get("ring_road") else [])
             bad_cross, open_end = [], []
             for wd in wards:
                 bnd = wd["boundary"]
@@ -1572,7 +2126,7 @@ def gate(M, verbose=True):
                     return [c for c in ((( f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2) for f in fields) if inwall(*c)], 260, True
                 if "temple" in t:
                     return [(r["x"], r["y"]) for r in M.get("religious", [])], 230, True
-                for key, kinds in (("samurai", {"samurai", "samurai_large"}), ("laborer", {"laborer"}),
+                for key, kinds in (("samurai", {"samurai", "samurai_large"}), ("laborer", {"laborer", "laborer_large"}),
                                    ("burakumin", {"burakumin"}), ("merchant", {"merchant", "merchant_house", "merchant_large"})):
                     if key in t:
                         return [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in kinds], 130, False
@@ -1691,6 +2245,44 @@ def gate(M, verbose=True):
             empty_city_streets = empty_street_runs(M, w)
             check("city_streets_have_buildings", not empty_city_streets,
                   f"city street(s) with a stretch inside the walls with no building fronting it (a street network earns its length from the buildings it serves): {empty_city_streets}")
+            # ROADSIDE LAND on a larger city street is PRIME real estate: a paved through-street in a
+            # commercial/residential quarter must be LINED with buildings (houses, shops, civic halls)
+            # close to it, not left with a long bare margin. This is stricter than city_streets_have_buildings
+            # (which tolerates a building up to ~105px away): here a building must sit WITHIN ~58px of the
+            # street, the way storefronts and house-fronts actually line a road. Only the narrow gravel
+            # ALLEYS that thread the block interiors are exempt (those are the "small streets" that need no
+            # frontage), and so is the GOVERNMENT avenue - its frontage is the spaced ministry compounds,
+            # governed by city_ministries_front_a_street, not shops/houses. (The merchant avenue once read
+            # bare because its storefront frontage was silently blocked by the avenue's own corridor.)
+            line_blds = (M.get("buildings", []) + M.get("religious", []) + M.get("ministries", [])
+                         + M.get("flophouses", []) + ([gov] if gov else []))
+            gov_pts = M.get("ministries", []) + ([gov] if gov else [])
+            LINE_D, LINE_RUN = 58, 140
+            bare_streets = []
+            for st in M.get("town_streets", []):
+                pts = st["pts"]
+                if sum(1 for m in gov_pts
+                       if min(seg_dist(m["x"], m["y"], pts[i], pts[i + 1]) for i in range(len(pts) - 1)) < 70) >= 2:
+                    continue                                  # a government avenue - lined by ministry compounds
+                worst = run = 0
+                for k in range(len(pts) - 1):
+                    a, b = pts[k], pts[k + 1]
+                    steps = max(1, int(math.hypot(b[0] - a[0], b[1] - a[1]) // 20))
+                    for j in range(steps):
+                        t = j / steps
+                        x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+                        if not point_in_poly(x, y, w):
+                            run = 0
+                        elif any((bl["x"] - x) ** 2 + (bl["y"] - y) ** 2 < LINE_D * LINE_D for bl in line_blds):
+                            run = 0
+                        else:
+                            run += 20
+                            worst = max(worst, run)
+                if worst > LINE_RUN:
+                    bare_streets.append(("main" if st.get("main") else f"@{(round(pts[0][0]), round(pts[0][1]))}", worst))
+            check("city_larger_streets_lined", not bare_streets,
+                  f"larger city street(s) with a long bare stretch of roadside land - a commercial/residential through-street should be "
+                  f"LINED with buildings close to it (only narrow alleys may run unlined): {bare_streets}")
             road = M.get("road") or []
             through = bool(road) and any(p[1] < EY0 for p in road) and any(p[1] > EY1 for p in road)
             check("city_imperial_road_through", through,

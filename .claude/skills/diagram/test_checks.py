@@ -576,6 +576,410 @@ def test_city_imperial_road_has_commerce_generic_for_an_unwalled_city_passes_whe
     assert "city_imperial_road_has_commerce" not in f(_unwalled_road_city(shops))
 
 
+# --- city_lanes_meet_when_aligned (two lanes heading at each other should connect) ---
+def _lanes(streets=None, alleys=None, **extra):
+    M = {}
+    if streets is not None:
+        M["town_streets"] = [{"pts": p, "w": 18} for p in streets]
+    if alleys is not None:
+        M["alleys"] = [{"pts": p} for p in alleys]
+    M.update(extra)
+    return M
+
+
+def test_lane_near_misses_flags_a_collinear_clear_gap():
+    # a street and an alley on the same line, heading at each other, a clear 30px gap - should connect
+    M = _lanes(streets=[[[500, 300], [500, 480]]], alleys=[[[500, 510], [500, 700]]])
+    assert check_village.lane_near_misses(M)
+
+
+def test_lane_near_misses_clear_when_lanes_actually_touch():
+    M = _lanes(streets=[[[500, 300], [500, 500]]], alleys=[[[500, 500], [500, 700]]])   # meet at (500,500)
+    assert not check_village.lane_near_misses(M)
+
+
+def test_lane_near_misses_ignores_parallel_ends_not_heading_at_each_other():
+    # two parallel lanes whose ends sit side by side - neither points AT the other, so not a near-miss
+    M = _lanes(streets=[[[300, 400], [500, 400]], [[300, 440], [500, 440]]])
+    assert not check_village.lane_near_misses(M)
+
+
+def test_lane_near_misses_respects_a_building_blocking_the_gap():
+    M = _lanes(streets=[[[500, 300], [500, 480]]], alleys=[[[500, 510], [500, 700]]],
+               buildings=[bldg(500, 495, kind="laborer")])
+    assert not check_village.lane_near_misses(M)
+
+
+def test_lane_near_misses_respects_a_ward_fence_blocking_the_gap():
+    M = _lanes(streets=[[[500, 300], [500, 480]]], alleys=[[[500, 510], [500, 700]]],
+               wards=[{"boundary": [[400, 495], [600, 495]]}])
+    assert not check_village.lane_near_misses(M)
+
+
+def test_lane_near_misses_respects_the_wall_blocking_the_gap():
+    M = _lanes(streets=[[[500, 300], [500, 480]]], alleys=[[[500, 510], [500, 700]]],
+               wall=[[400, 495], [600, 495], [600, 800], [400, 800]])   # top edge crosses the gap
+    assert not check_village.lane_near_misses(M)
+
+
+def test_lane_near_misses_skips_an_endpoint_meeting_the_wide_road():
+    # a street ending against the Imperial road is CONNECTED (the road's job, not a near-miss)
+    M = _lanes(streets=[[[300, 500], [485, 500]]], alleys=[[[600, 500], [800, 500]]],
+               road=[[500, -40], [500, 1040]])
+    assert not check_village.lane_near_misses(M)
+
+
+def test_city_lanes_meet_when_aligned_fires_through_the_gate():
+    M = _lanes(streets=[[[500, 300], [500, 480]]], alleys=[[[500, 510], [500, 700]]], meta={"scale": "city"})
+    assert "city_lanes_meet_when_aligned" in f(M)
+
+
+# --- city_lanes_reach_ward_gates (lanes at a neighborhood wall extend to it and end at a gate) ---
+def _ward_lane(alleys=None, streets=None, fence=None, gov=(500, 640), **extra):
+    M = {"wards": [{"boundary": fence or [[300, 500], [700, 500]]}]}   # a horizontal ward fence at y500
+    if gov:
+        M["governor_mansion"] = {"x": gov[0], "y": gov[1]}             # interior anchor, SOUTH of the fence
+    if alleys is not None:
+        M["alleys"] = [{"pts": p} for p in alleys]
+    if streets is not None:
+        M["town_streets"] = [{"pts": p, "w": 18} for p in streets]
+    M.update(extra)
+    return M
+
+
+def test_lane_ward_shortfalls_flags_a_lane_stopping_short():
+    M = _ward_lane(alleys=[[[500, 300], [500, 460]]])   # heads down at the fence, stops 40px short, no gate
+    assert check_village.lane_ward_shortfalls(M)
+
+
+def test_lane_ward_shortfalls_clear_when_lane_reaches_a_gate():
+    M = _ward_lane(alleys=[[[500, 300], [500, 500]]], kido=[{"x": 500, "y": 500}])
+    assert not check_village.lane_ward_shortfalls(M)
+
+
+def test_lane_ward_shortfalls_flags_a_lane_meeting_the_fence_without_a_gate():
+    M = _ward_lane(alleys=[[[500, 300], [500, 500]]])   # reaches the fence but no kido there
+    assert check_village.lane_ward_shortfalls(M)
+
+
+def test_lane_ward_shortfalls_respects_a_building_blocking_the_approach():
+    M = _ward_lane(alleys=[[[500, 300], [500, 460]]], buildings=[bldg(500, 480, kind="laborer")])
+    assert not check_village.lane_ward_shortfalls(M)
+
+
+def test_lane_ward_shortfalls_respects_the_main_wall_between_lane_and_fence():
+    M = _ward_lane(alleys=[[[500, 300], [500, 460]]], wall=[[300, 480], [700, 480], [700, 800], [300, 800]])
+    assert not check_village.lane_ward_shortfalls(M)
+
+
+def test_lane_ward_shortfalls_ignores_an_interior_ward_lane():
+    M = _ward_lane(alleys=[[[500, 700], [500, 540]]])   # endpoint (500,540) is SOUTH of the fence - inside the ward
+    assert not check_village.lane_ward_shortfalls(M)
+
+
+def test_lane_ward_shortfalls_ignores_a_lane_running_parallel_to_the_fence():
+    M = _ward_lane(alleys=[[[300, 460], [600, 460]]])   # parallel, above the fence - not heading at it
+    assert not check_village.lane_ward_shortfalls(M)
+
+
+def test_lane_ward_shortfalls_uses_fence_centroid_when_no_governor_mansion():
+    # with no yamen to anchor the interior, the fence's own centroid stands in (an L-fence, centroid inside)
+    M = _ward_lane(alleys=[[[500, 300], [500, 460]]], fence=[[300, 500], [700, 500], [700, 700]], gov=None)
+    assert check_village.lane_ward_shortfalls(M)
+
+
+def test_city_lanes_reach_ward_gates_fires_through_the_gate():
+    M = _ward_lane(alleys=[[[500, 300], [500, 460]]], meta={"scale": "city"})
+    assert "city_lanes_reach_ward_gates" in f(M)
+
+
+# --- city_lane_under_wall / city_lanes_under_ward_fences (lanes render UNDER walls) ---
+def _walled(streets=None, alleys=None, **extra):
+    M = {"meta": {"scale": "city"}, "wall": [[200, 200], [800, 200], [800, 800], [200, 800]],
+         "wall_z": 10, "gates": [[500, 200]]}
+    if streets is not None:
+        M["town_streets"] = streets
+    if alleys is not None:
+        M["alleys"] = alleys
+    M.update(extra)
+    return M
+
+
+def test_city_lane_under_wall_fires_when_a_street_touches_the_wall():
+    # a street whose end reaches the wall (z above the rampart's) renders OVER it - away from any gate
+    M = _walled(streets=[{"pts": [[300, 300], [300, 205]], "w": 18, "z": 100}])
+    assert "city_lane_under_wall" in f(M)
+
+
+def test_city_lane_under_wall_fires_when_a_street_crosses_the_wall():
+    M = _walled(streets=[{"pts": [[300, 150], [300, 300]], "w": 18, "z": 100}])   # crosses the top edge off-gate
+    assert "city_lane_under_wall" in f(M)
+
+
+def test_city_lane_under_wall_passes_at_a_gate_opening():
+    # a road through the gate crosses the wall ring there, but the gate is a genuine opening - exempt
+    M = _walled(streets=[{"pts": [[500, 400], [500, 150]], "w": 18, "z": 100}])   # crosses at the gate (500,200)
+    assert "city_lane_under_wall" not in f(M)
+
+
+def test_city_lane_under_wall_passes_when_lane_already_under():
+    M = _walled(streets=[{"pts": [[300, 300], [300, 205]], "w": 18, "z": 5}])     # z below wall_z (10)
+    assert "city_lane_under_wall" not in f(M)
+
+
+def test_city_lane_under_wall_handles_an_open_town_wall():
+    # a town wall is an open arc (not a closed ring); a street touching it off-gate still fires
+    M = {"meta": {"scale": "town"}, "wall": [[200, 500], [500, 200], [800, 500]], "wall_z": 10,
+         "gate": [500, 200], "town_streets": [{"pts": [[300, 600], [352, 352]], "w": 18, "z": 100}]}
+    assert "city_lane_under_wall" in f(M)
+
+
+def test_city_lanes_under_ward_fences_fires_when_a_lane_renders_over_a_fence():
+    M = {"meta": {"scale": "city"}, "wards": [{"name": "samurai", "boundary": [[300, 500], [700, 500]], "z": 10}],
+         "alleys": [{"pts": [[400, 300], [400, 505]], "w": 10, "z": 100}]}
+    assert "city_lanes_under_ward_fences" in f(M)
+
+
+def test_city_lanes_under_ward_fences_passes_when_crossing_at_a_kido():
+    M = {"meta": {"scale": "city"}, "wards": [{"name": "samurai", "boundary": [[300, 500], [700, 500]], "z": 10}],
+         "kido": [{"x": 400, "y": 500}], "alleys": [{"pts": [[400, 300], [400, 505]], "w": 10, "z": 100}]}
+    assert "city_lanes_under_ward_fences" not in f(M)
+
+
+# --- labels_render_on_top (label text is never covered) ---
+def test_labels_render_on_top_fires_when_a_kido_covers_a_label():
+    M = {"labels": [[100, 100, 300, 120, 5, "Ministry of Retainers"]],
+         "kido": [{"x": 200, "y": 110, "z": 1000, "bbox": [150, 90, 250, 130]}]}
+    assert "labels_render_on_top" in f(M)
+
+
+def test_labels_render_on_top_fires_when_a_gate_structure_covers_a_label():
+    M = {"labels": [[150, 100, 250, 120, 5, "gate label"]],
+         "gate_structs": [{"x": 200, "y": 110, "w": 100, "h": 40, "z": 1000}]}
+    assert "labels_render_on_top" in f(M)
+
+
+def test_labels_render_on_top_fires_when_a_torii_covers_a_label():
+    M = {"labels": [[185, 95, 215, 120, 5, "shrine"]], "torii": [[200, 110, 1000]]}
+    assert "labels_render_on_top" in f(M)
+
+
+def test_labels_render_on_top_passes_when_the_label_is_above():
+    # same overlap, but the label's draw-z is higher than the structure's - it renders on top, readable
+    M = {"labels": [[100, 100, 300, 120, 9999, "Ministry of Retainers"]],
+         "kido": [{"x": 200, "y": 110, "z": 1000, "bbox": [150, 90, 250, 130]}]}
+    assert "labels_render_on_top" not in f(M)
+
+
+def test_labels_render_on_top_handles_a_textless_label():
+    M = {"labels": [[150, 100, 250, 120, 5]],   # a field label recorded without text
+         "kido": [{"x": 200, "y": 110, "z": 1000, "bbox": [150, 90, 250, 130]}]}
+    assert "labels_render_on_top" in f(M)
+
+
+# --- labels_within_image (a label must not run off the edge of the rendered frame) ---
+def test_labels_within_image_fires_when_a_label_runs_off_the_edge():
+    # the default canvas is 1820x1180; this label pokes past the right edge
+    M = {"meta": {}, "labels": [[1750, 500, 1900, 512, 1, "off the right edge"]]}
+    assert "labels_within_image" in f(M)
+
+
+def test_labels_within_image_passes_when_inside():
+    M = {"meta": {}, "labels": [[100, 100, 300, 112, 1, "comfortably inside"]]}
+    assert "labels_within_image" not in f(M)
+
+
+def test_labels_within_image_uses_the_cropped_view():
+    # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
+    # (a city map crops tight to the walls) is clipped and fires
+    M = {"meta": {"view": [658, 448, 1884, 1764]}, "labels": [[300, 690, 500, 702, 1, "west of the crop"]]}
+    assert "labels_within_image" in f(M)
+
+
+# --- city_caste_counts_in_band (the caste MIX, not just the total, matches budgets.md) ---
+def _caste_city(**counts):
+    blds = []
+    for kind, n in counts.items():
+        blds += [bldg(300 + i * 10, 300 + (i % 5) * 10, kind=kind) for i in range(n)]
+    return {"meta": {"scale": "city", "population": 300}, "buildings": blds}   # ~60 households
+
+
+def test_city_caste_counts_in_band_fires_when_a_caste_is_off():
+    # ~50 laborers is far over the ~24 target for a 60-household city (and the other castes are absent)
+    assert "city_caste_counts_in_band" in f(_caste_city(laborer=50))
+
+
+def test_city_caste_counts_in_band_passes_with_a_balanced_mix():
+    # ~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of ~60 households
+    M = _caste_city(laborer=24, servant=12, merchant_house=15, samurai=6, burakumin=3)
+    assert "city_caste_counts_in_band" not in f(M)
+
+
+def test_city_laborer_housing_varied_fires_when_uniform():
+    # every laborer identical - no wealthy 'master' tier (0 large homes)
+    assert "city_laborer_housing_varied" in f(_caste_city(laborer=30))
+
+
+def test_city_laborer_housing_varied_passes_with_a_minority_of_large():
+    # ~12.5% of the laborers are larger 'master/rich' homes, the rest standard (budgets.md)
+    assert "city_laborer_housing_varied" not in f(_caste_city(laborer=28, laborer_large=4))
+
+
+def test_city_laborer_housing_varied_fires_when_too_many_large():
+    # half the laborers large - not "a clear minority"
+    assert "city_laborer_housing_varied" in f(_caste_city(laborer=15, laborer_large=15))
+
+
+# --- wall guard towers, ring road, streets reaching the ring road (fortification) ---
+def _fort_city(**extra):
+    M = {"meta": {"scale": "city", "walled": True}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]]}
+    M.update(extra)
+    return M
+
+
+def test_city_wall_towers_spaced_fires_with_only_gate_towers():
+    M = _fort_city(wall_towers=[{"x": 500, "y": 200}, {"x": 500, "y": 800}])   # only the 2 gate towers
+    assert "city_wall_towers_spaced" in f(M)
+
+
+def test_city_wall_towers_spaced_passes_when_ringed():
+    import math
+    towers = [{"x": 500 + 300 * math.cos(i * math.pi / 5), "y": 500 + 300 * math.sin(i * math.pi / 5)} for i in range(10)]
+    assert "city_wall_towers_spaced" not in f(_fort_city(wall_towers=towers))
+
+
+_DIAMOND = [[500, 200], [800, 500], [500, 800], [200, 500]]   # a wall whose edges run at 45 deg
+
+
+def test_city_wall_towers_aligned_fires_when_axis_aligned_on_a_slanted_wall():
+    M = _fort_city(wall=_DIAMOND, wall_towers=[{"x": 650, "y": 350, "rot": 0}, {"x": 350, "y": 650, "rot": 0}])
+    assert "city_wall_towers_aligned" in f(M)
+
+
+def test_city_wall_towers_aligned_passes_when_square_to_the_wall():
+    # both towers sit on a 45 deg wall edge and are rotated 45 deg to match it
+    M = _fort_city(wall=_DIAMOND, wall_towers=[{"x": 650, "y": 350, "rot": 45}, {"x": 350, "y": 650, "rot": 45}])
+    assert "city_wall_towers_aligned" not in f(M)
+
+
+def _gate_furn(rot, wall=None, gates=None):
+    return _fort_city(wall=wall or WALLSQ, gates=gates or [[500, 200], [500, 800]],
+                      gate_structs=[{"x": 420, "y": 256, "w": 66, "h": 44, "rot": rot, "kind": "guardhouse", "z": 1},
+                                    {"x": 360, "y": 256, "w": 60, "h": 44, "rot": rot, "kind": "inspection", "z": 1}])
+
+
+def test_city_gate_furniture_aligned_fires_when_axis_aligned_on_a_slanted_wall():
+    # guard house + inspection station left axis-aligned (rot 0) on a 45 deg wall edge
+    M = _gate_furn(0, wall=_DIAMOND, gates=[[650, 350], [350, 650]])
+    M["gate_structs"] = [{"x": 640, "y": 360, "w": 66, "h": 44, "rot": 0, "kind": "guardhouse", "z": 1},
+                         {"x": 610, "y": 390, "w": 60, "h": 44, "rot": 0, "kind": "inspection", "z": 1}]
+    assert "city_gate_furniture_aligned" in f(M)
+
+
+def test_city_gate_furniture_aligned_passes_when_square_to_the_wall():
+    M = _gate_furn(45, wall=_DIAMOND, gates=[[650, 350], [350, 650]])
+    M["gate_structs"] = [{"x": 640, "y": 360, "w": 66, "h": 44, "rot": 45, "kind": "guardhouse", "z": 1},
+                         {"x": 610, "y": 390, "w": 60, "h": 44, "rot": 45, "kind": "inspection", "z": 1}]
+    assert "city_gate_furniture_aligned" not in f(M)
+
+
+def test_city_gate_furniture_aligned_fires_on_a_90_degree_turn():
+    # on the horizontal top wall a guard house turned 90 deg stands across the road the wrong way
+    assert "city_gate_furniture_aligned" in f(_gate_furn(90))
+
+
+def test_city_gate_furniture_aligned_passes_when_along_the_wall():
+    assert "city_gate_furniture_aligned" not in f(_gate_furn(0))
+
+
+def test_city_has_ring_road_fires_when_missing():
+    assert "city_has_ring_road" in f(_fort_city())
+
+
+_RING = [[240, 240], [760, 240], [760, 760], [240, 760], [240, 240]]
+
+
+def test_city_has_ring_road_passes_when_present():
+    assert "city_has_ring_road" not in f(_fort_city(ring_road=_RING))
+
+
+def _ring_city(streets, **extra):
+    return _fort_city(ring_road=_RING, ring_road_width=15, town_streets=[{"pts": p, "w": 18} for p in streets], **extra)
+
+
+def test_city_streets_meet_through_lanes_fires_when_a_street_undershoots_the_ring():
+    # a street ending 40px short of the ring (its left side sits at x=240), heading at it
+    assert "city_streets_meet_through_lanes" in f(_ring_city([[[400, 500], [280, 500]]]))
+
+
+def test_city_streets_meet_through_lanes_fires_when_a_street_overshoots_the_ring():
+    # a street poking ~6px PAST the ring (ending at x=234, the ring is at x=240) - a stub through the far side
+    assert "city_streets_meet_through_lanes" in f(_ring_city([[[400, 500], [234, 500]]]))
+
+
+def test_city_streets_meet_through_lanes_fires_at_the_imperial_road():
+    # a street stopping short of the Imperial road (road centerline x=500; the street ends at x=470)
+    M = _fort_city(road=[[500, 100], [500, 900]], road_width=26,
+                   town_streets=[{"pts": [[300, 500], [470, 500]], "w": 18}])
+    assert "city_streets_meet_through_lanes" in f(M)
+
+
+def test_city_streets_meet_through_lanes_passes_when_it_meets_the_bed():
+    assert "city_streets_meet_through_lanes" not in f(_ring_city([[[400, 500], [248, 500]]]))   # ends in the ring bed
+
+
+def test_city_streets_meet_through_lanes_fires_when_an_alley_undershoots_the_ring():
+    # the check covers gravel ALLEYS too, not just paved streets - the laborer-warren case the GM caught:
+    # an alley running straight at the ring and stopping ~40px short
+    M = _fort_city(ring_road=_RING, ring_road_width=15, alleys=[{"pts": [[400, 500], [280, 500]]}])
+    assert "city_streets_meet_through_lanes" in f(M)
+
+
+def test_city_streets_meet_through_lanes_passes_when_an_alley_meets_the_ring():
+    M = _fort_city(ring_road=_RING, ring_road_width=15, alleys=[{"pts": [[400, 500], [246, 500]]}])   # ends in the ring bed
+    assert "city_streets_meet_through_lanes" not in f(M)
+
+
+# --- ring_road_kept_clear (no building/civic/field footprint overlaps the ring road bed) ---
+def _on_ring_bldg():   # a 40px dwelling straddling the west ring leg (x=240)
+    return {"kind": "samurai", "x": 240, "y": 500, "w": 40, "h": 40, "rot": 0}
+
+
+def test_ring_road_kept_clear_fires_on_a_building_on_the_ring():
+    assert "ring_road_kept_clear" in f(_fort_city(ring_road=_RING, ring_road_width=15, buildings=[_on_ring_bldg()]))
+
+
+def test_ring_road_kept_clear_fires_on_a_ministry_on_the_ring():
+    M = _fort_city(ring_road=_RING, ring_road_width=15,
+                   ministries=[{"name": "Ministry of Rites", "x": 760, "y": 500, "w": 50, "h": 50}])
+    assert "ring_road_kept_clear" in f(M)
+
+
+def test_ring_road_kept_clear_fires_on_a_field_on_the_ring():
+    field = {"name": "f1", "kind": "dry", "bbox": [220, 480, 260, 520], "outline": [[220, 480], [260, 480], [260, 520], [220, 520]]}   # straddles the west leg
+    assert "ring_road_kept_clear" in f(_fort_city(ring_road=_RING, ring_road_width=15, fields=[field]))
+
+
+def test_ring_road_kept_clear_passes_when_clear():
+    # a dwelling parked in the city center, well inside the ring
+    M = _fort_city(ring_road=_RING, ring_road_width=15,
+                   buildings=[{"kind": "samurai", "x": 500, "y": 500, "w": 40, "h": 40, "rot": 0}])
+    assert "ring_road_kept_clear" not in f(M)
+
+
+def test_ring_road_kept_clear_passes_without_a_ring():
+    assert "ring_road_kept_clear" not in f(_fort_city(buildings=[_on_ring_bldg()]))
+
+
+# --- intersections_are_crossroads (lane beds merge, no edge line across a junction) ---
+def test_intersections_are_crossroads_fires_when_edges_over_beds():
+    assert "intersections_are_crossroads" in f({"ground_edge_zmax": 50, "ground_bed_zmin": 20})
+
+
+def test_intersections_are_crossroads_passes_when_edges_under_beds():
+    assert "intersections_are_crossroads" not in f({"ground_edge_zmax": 19, "ground_bed_zmin": 20})
+
+
 def test_city_merchant_housing_spread_fires_when_jammed():
     # merchant homes jammed as tight as the laborers (same ~16px spacing) - not more spread out
     homes = [bldg(300 + i * 16, 300, kind="merchant_house") for i in range(8)]
@@ -797,6 +1201,33 @@ def test_city_streets_have_buildings_ignores_frontage_across_a_ward_fence():
     assert "city_streets_have_buildings" in f(M)
 
 
+def _street_city(streets, **extra):
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+         "gates": [[500, 200], [500, 800]], "town_streets": streets}
+    M.update(extra)
+    return M
+
+
+def test_city_larger_streets_lined_fires_on_a_bare_street():
+    # a main avenue through open ground inside the wall, no buildings within ~58px of it
+    assert "city_larger_streets_lined" in f(_street_city([{"pts": [[300, 500], [700, 500]], "w": 22, "main": True}]))
+
+
+def test_city_larger_streets_lined_passes_when_lined():
+    # the same avenue, shophouses lining it ~32px off on both sides
+    blds = [bldg(x, 500 + s * 32, kind="shop", w=20, h=14) for x in range(320, 701, 40) for s in (-1, 1)]
+    assert "city_larger_streets_lined" not in f(_street_city([{"pts": [[300, 500], [700, 500]], "w": 22, "main": True}], buildings=blds))
+
+
+def test_city_larger_streets_lined_exempts_a_government_avenue():
+    # a bare avenue, but two ministry compounds front it -> a government avenue, exempt (its frontage
+    # is the spaced ministries, governed by city_ministries_front_a_street, not shops/houses)
+    M = _street_city([{"pts": [[300, 500], [700, 500]], "w": 18}],
+                     ministries=[{"name": "A", "x": 400, "y": 565, "w": 88, "h": 58},
+                                 {"name": "B", "x": 620, "y": 565, "w": 88, "h": 58}])
+    assert "city_larger_streets_lined" not in f(M)
+
+
 def test_city_civic_amenity_checks_fire_on_an_empty_city():
     fails = f({"meta": {"scale": "city"}})
     for name in ("city_has_merchant_storehouses", "city_has_flophouse", "city_has_amphitheater"):
@@ -836,6 +1267,158 @@ def test_city_amphitheater_larger_than_town_fires_when_small():
     M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
          "gates": [[500, 200], [500, 800]], "amphitheater": {"x": 500, "y": 500, "r": 70}}
     assert "city_amphitheater_larger_than_town" in f(M)
+
+
+# --- labels_clear_of_other_buildings (a label may cover only the thing it names) ---
+def _bldg(kind, x=500, y=500, w=40, h=30):
+    return {"kind": kind, "x": x, "y": y, "w": w, "h": h, "rot": 0}
+
+
+def _lbl_city(**extra):
+    M = {"meta": {"scale": "city"}, "labels": [[480, 490, 520, 510, 1, "flophouse"]]}
+    M.update(extra)
+    return M
+
+
+def test_labels_clear_of_other_buildings_fires_when_label_over_a_foreign_building():
+    # a "flophouse" label spilling onto a merchant house next door
+    assert "labels_clear_of_other_buildings" in f(_lbl_city(buildings=[_bldg("merchant_house")]))
+
+
+def test_labels_clear_of_other_buildings_fires_when_guard_label_over_a_flophouse():
+    M = _lbl_city(labels=[[470, 490, 560, 510, 1, "gate guard house + inspection"]],
+                  flophouses=[{"x": 500, "y": 500, "w": 90, "h": 42, "rot": 0}])
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
+def test_labels_clear_of_other_buildings_passes_over_its_own_building():
+    assert "labels_clear_of_other_buildings" not in f(_lbl_city(flophouses=[{"x": 500, "y": 500, "w": 90, "h": 42, "rot": 0}]))
+
+
+def test_labels_clear_of_other_buildings_passes_over_a_fronting_shop():
+    # a market/zone label may clip a street-fronting shop (shops line every quarter)
+    M = _lbl_city(labels=[[480, 490, 520, 510, 1, "gate market"]], buildings=[_bldg("shop")])
+    assert "labels_clear_of_other_buildings" not in f(M)
+
+
+def test_labels_clear_of_other_buildings_passes_for_a_zone_label_over_its_cluster():
+    M = _lbl_city(labels=[[480, 490, 520, 510, 1, "samurai neighborhood"]], buildings=[_bldg("samurai", w=56, h=40)])
+    assert "labels_clear_of_other_buildings" not in f(M)
+
+
+# --- city_civic_label_on_its_own_building (a named civic label may sit only on ITS OWN building) ---
+def test_city_civic_label_on_its_own_building_fires_over_a_sibling_ministry():
+    # the "Ministry of Justice" label drifts onto the "Ministry of Works" office - same group, so
+    # labels_clear_of_other_buildings misses it, but this finer check catches it
+    M = {"meta": {"scale": "city"},
+         "ministries": [{"name": "Ministry of Works", "x": 500, "y": 500, "w": 88, "h": 58},
+                        {"name": "Ministry of Justice", "x": 500, "y": 640, "w": 88, "h": 58}],
+         "labels": [[470, 490, 560, 510, 1, "Ministry of Justice"]]}
+    assert "city_civic_label_on_its_own_building" in f(M)
+    assert "labels_clear_of_other_buildings" not in f(M)   # the coarse check is fooled by the shared group
+
+
+def test_city_civic_label_on_its_own_building_passes_over_its_own():
+    M = {"meta": {"scale": "city"},
+         "ministries": [{"name": "Ministry of Works", "x": 500, "y": 500, "w": 88, "h": 58}],
+         "labels": [[470, 490, 560, 510, 1, "Ministry of Works"]]}
+    assert "city_civic_label_on_its_own_building" not in f(M)
+
+
+# --- city_government_offices_dont_abut (a ministry / the yamen must stand clear of its neighbours) ---
+def test_city_government_offices_dont_abut_fires_when_two_ministries_touch():
+    M = {"meta": {"scale": "city"},
+         "ministries": [{"name": "Ministry of Works", "x": 500, "y": 500, "w": 88, "h": 58},
+                        {"name": "Ministry of Justice", "x": 500, "y": 560, "w": 88, "h": 58}]}   # 2px gap
+    assert "city_government_offices_dont_abut" in f(M)
+
+
+def test_city_government_offices_dont_abut_passes_when_clear():
+    M = {"meta": {"scale": "city"},
+         "ministries": [{"name": "Ministry of Works", "x": 500, "y": 500, "w": 88, "h": 58},
+                        {"name": "Ministry of Justice", "x": 500, "y": 640, "w": 88, "h": 58}]}   # 82px gap
+    assert "city_government_offices_dont_abut" not in f(M)
+
+
+def test_city_government_offices_dont_abut_ignores_ordinary_houses():
+    # ordinary city houses MAY touch - only government offices must stand clear
+    M = {"meta": {"scale": "city"},
+         "buildings": [{"kind": "laborer", "x": 500, "y": 500, "w": 14, "h": 10, "rot": 0},
+                       {"kind": "laborer", "x": 512, "y": 500, "w": 14, "h": 10, "rot": 0}]}
+    assert "city_government_offices_dont_abut" not in f(M)
+
+
+# --- city wells: water access + block-interior placement ---
+def _well_city(**extra):
+    M = {"meta": {"scale": "city"}, "wells": [{"x": 500, "y": 500, "r": 8}]}
+    M.update(extra)
+    return M
+
+
+def test_city_neighborhoods_have_wells_fires_when_a_dwelling_is_dry():
+    # a laborer dwelling 990px from the only well - the water network forgot its neighborhood
+    M = _well_city(buildings=[{"kind": "laborer", "x": 1200, "y": 1200, "w": 28, "h": 18, "rot": 0}])
+    assert "city_neighborhoods_have_wells" in f(M)
+
+
+def test_city_neighborhoods_have_wells_passes_when_in_reach():
+    M = _well_city(buildings=[{"kind": "laborer", "x": 560, "y": 540, "w": 28, "h": 18, "rot": 0}])
+    assert "city_neighborhoods_have_wells" not in f(M)
+
+
+def test_city_neighborhoods_have_wells_ignores_samurai_and_outside_dwellings():
+    # samurai have private wells; a dwelling OUTSIDE the wall (a gate market) is not a residential
+    # neighborhood - neither demands a public well even when far from one
+    M = _well_city(wall=WALLSQ, buildings=[{"kind": "samurai", "x": 500, "y": 500, "w": 56, "h": 40, "rot": 0},
+                                           {"kind": "merchant", "x": 980, "y": 980, "w": 40, "h": 30, "rot": 0}])
+    assert "city_neighborhoods_have_wells" not in f(M)
+
+
+def test_city_wells_in_block_interiors_fires_on_a_lane():
+    M = _well_city(town_streets=[{"pts": [[400, 500], [600, 500]], "w": 18}])
+    assert "city_wells_in_block_interiors" in f(M)
+
+
+def test_city_wells_in_block_interiors_fires_on_a_building():
+    M = _well_city(buildings=[{"kind": "laborer", "x": 505, "y": 505, "w": 40, "h": 30, "rot": 0}])
+    assert "city_wells_in_block_interiors" in f(M)
+
+
+def test_city_wells_in_block_interiors_passes_when_clear():
+    assert "city_wells_in_block_interiors" not in f(_well_city())
+
+
+def _warren(nwells):
+    # 30 laborer dwellings in a tight cluster, served by `nwells` wells spread across it
+    blds = [{"kind": "laborer", "x": 500 + (i % 6) * 15, "y": 500 + (i // 6) * 15, "w": 14, "h": 10, "rot": 0} for i in range(30)]
+    wells = [{"x": 500 + i * (75 // max(1, nwells - 1) if nwells > 1 else 0), "y": 530, "r": 8} for i in range(nwells)]
+    return {"meta": {"scale": "city"}, "buildings": blds, "wells": wells}
+
+
+def test_city_well_density_sufficient_fires_when_a_well_is_overburdened():
+    # 30 households all nearest a single well -> it is the nearest for far more than 26
+    assert "city_well_density_sufficient" in f(_warren(1))
+
+
+def test_city_well_density_sufficient_passes_with_enough_wells():
+    # three wells split the 30 households -> ~10 each, none over-burdened
+    assert "city_well_density_sufficient" not in f(_warren(3))
+
+
+def test_city_samurai_quarter_has_no_public_wells_fires_among_samurai():
+    # a wellhead embedded among samurai dwellings - the samurai quarter has no communal wells
+    M = _well_city(buildings=[{"kind": "samurai", "x": 510, "y": 505, "w": 24, "h": 17, "rot": 0},
+                              {"kind": "samurai", "x": 480, "y": 520, "w": 24, "h": 17, "rot": 0},
+                              {"kind": "laborer", "x": 900, "y": 900, "w": 14, "h": 10, "rot": 0}])
+    assert "city_samurai_quarter_has_no_public_wells" in f(M)
+
+
+def test_city_samurai_quarter_has_no_public_wells_passes_among_commoners():
+    # the same well, but it sits among commoner dwellings (a samurai house is a block away) - fine
+    M = _well_city(buildings=[{"kind": "laborer", "x": 510, "y": 505, "w": 14, "h": 10, "rot": 0},
+                              {"kind": "laborer", "x": 480, "y": 520, "w": 14, "h": 10, "rot": 0},
+                              {"kind": "samurai", "x": 900, "y": 900, "w": 24, "h": 17, "rot": 0}])
+    assert "city_samurai_quarter_has_no_public_wells" not in f(M)
 
 
 def test_city_streets_connected_and_empty_space_fire():

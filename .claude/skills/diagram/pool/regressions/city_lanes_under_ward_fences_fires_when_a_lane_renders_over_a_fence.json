@@ -1,0 +1,43 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wards": [
+  {
+   "name": "samurai",
+   "boundary": [
+    [
+     300,
+     500
+    ],
+    [
+     700,
+     500
+    ]
+   ],
+   "z": 10
+  }
+ ],
+ "alleys": [
+  {
+   "pts": [
+    [
+     400,
+     300
+    ],
+    [
+     400,
+     505
+    ]
+   ],
+   "w": 10,
+   "z": 100
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_lanes_under_ward_fences"
+  ],
+  "source": "test_checks.py::test_city_lanes_under_ward_fences_fires_when_a_lane_renders_over_a_fence"
+ }
+}

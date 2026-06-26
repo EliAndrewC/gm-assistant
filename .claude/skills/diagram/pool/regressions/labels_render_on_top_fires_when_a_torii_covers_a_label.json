@@ -1,0 +1,25 @@
+{
+ "labels": [
+  [
+   185,
+   95,
+   215,
+   120,
+   5,
+   "shrine"
+  ]
+ ],
+ "torii": [
+  [
+   200,
+   110,
+   1000
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "labels_render_on_top"
+  ],
+  "source": "test_checks.py::test_labels_render_on_top_fires_when_a_torii_covers_a_label"
+ }
+}
