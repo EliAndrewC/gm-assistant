@@ -402,22 +402,22 @@ class Settlement:
     def pond(self, cx, cy, rx, ry, stream_curve=None):
         if stream_curve:
             self.add(f'<path d="{stream_curve}" fill="none" stroke="#9CB4C8" stroke-width="7" opacity="0.85"/>')
-            self.add(f'<path d="{stream_curve}" fill="none" stroke="#5C7488" stroke-width="1" stroke-dasharray="2,4"/>')
         self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#9CB4C8" stroke="#5C7488" stroke-width="2.4"/>')
         self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx-12}" ry="{ry-10}" fill="none" stroke="#B6CAD8" stroke-width="1" opacity="0.7"/>')
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
-    def stream(self, pts, frm=None, to=None):
+    def stream(self, pts, frm=None, to=None, width=9):
         """A natural watercourse. If frm/to anchors are given (e.g. a forest brook
         feeding a pond), it is recorded and the gate checks it actually connects
-        them - just like an irrigation channel."""
+        them - just like an irrigation channel. `width` is the water's drawn width
+        (a stream FEEDING A MOAT should be as wide as the moat, by conservation of flow)."""
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
-        self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="9" opacity="0.85"/>')
-        self.add(f'<path d="{dd}" fill="none" stroke="#5C7488" stroke-width="1.2" stroke-dasharray="2,5"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}" opacity="0.85" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#B6CAD8" stroke-width="{max(2, width*0.35):.0f}" opacity="0.6" stroke-linejoin="round"/>')   # a lighter mid-current highlight (NOT a dashed lane line - this is water, not a road)
         # always recorded so the gate can check it (anchors optional - only some streams connect things)
-        self.M["streams"].append({"poly": [[x, y] for x, y in pts], "frm": frm, "to": to})
-        self.corridors.append(([(x, y) for x, y in pts], 30))   # no-build: keep houses off the stream
+        self.M["streams"].append({"poly": [[x, y] for x, y in pts], "frm": frm, "to": to, "w": width})
+        self.corridors.append(([(x, y) for x, y in pts], max(30, width / 2 + 20)))   # no-build: keep houses off the stream
 
     def channel(self, start, end, frm, to, amp=15):
         """frm/to are anchor dicts: {'kind':'pond'|'offmap'|'field','name':...}."""
@@ -592,15 +592,16 @@ class Settlement:
         INTERIOR off the lanes. Records M['wells'] and blocks placement so the quarter's houses flow
         around it - place BEFORE the quarter's pack. The underground end of a city's water system
         (aqueducts, cisterns, rain barrels feeding the shaft) stays off the map; only the head shows."""
-        # the DRAWN wellhead is deliberately small - a wellhead is smaller than a city house, so the
-        # visual is sized below a laborer dwelling (~10px vs ~14px) regardless of the larger COURTYARD
-        # footprint `r` reserves for placement (a well sits in a cleared yard, houses ringing it).
-        vroof, vcurb = 5.0, 3.8
-        self.add(f'<rect x="{x-vroof:.0f}" y="{y-vroof:.0f}" width="{2*vroof:.0f}" height="{2*vroof:.0f}" rx="1.5" '
+        # the DRAWN wellhead SCALES WITH THE MAP GRAIN (bscale), exactly as the buildings do, so it keeps
+        # a consistent ~0.55x a dwelling at every scale - fixed pixels would make it look right in the
+        # dense city but far too small beside a village/town's larger houses. It stays SMALLER than a
+        # house (a wellhead is small) regardless of the larger COURTYARD footprint reserved for placement.
+        vroof, vcurb = 11.9 * self.bscale, 9.0 * self.bscale
+        self.add(f'<rect x="{x-vroof:.1f}" y="{y-vroof:.1f}" width="{2*vroof:.1f}" height="{2*vroof:.1f}" rx="1.5" '
                  f'fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>')   # the well-house roof, light so the curb reads through
-        self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb}" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>')   # stone curb
-        self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb-2:.1f}" fill="#2E4C58"/>')   # dark water in the shaft
-        self.M["wells"].append({"x": round(x, 1), "y": round(y, 1), "r": r})
+        self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb:.1f}" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>')   # stone curb
+        self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb*0.47:.1f}" fill="#2E4C58"/>')   # dark water in the shaft
+        self.M["wells"].append({"x": round(x, 1), "y": round(y, 1), "r": r, "vr": round(vroof, 1)})
         # reserve only a TIGHT courtyard around the small wellhead (not a whole house-plot): houses ring
         # it closely, as in a real tenement court, so a well costs roughly its own footprint, not several
         # dwellings. (`r` stays the recorded clearance radius the checks use; the reserved block is small.)
@@ -619,7 +620,7 @@ class Settlement:
             return True
         return False
 
-    def place_wells(self, bbox, spacing, r=8):
+    def place_wells(self, bbox, spacing, r=8, near=None):
         """Scatter neighbourhood wells across a residential bbox on a grid at ~`spacing` px, keeping
         each in a block INTERIOR: a candidate is dropped if it falls on a lane corridor, outside the
         city bound, on an existing compound (temple/estate/pond), or too near another well (all via
@@ -632,15 +633,22 @@ class Settlement:
         probe = 2 * r + 14   # a modest footprint => wells sit in the courtyards, not crammed on a lane
         d = spacing * 0.26
         offsets = [(0, 0), (d, d), (-d, -d), (d, -d), (-d, d)]
+        # `near`: only place a well that has a DWELLING within `near` px - a well serves the households
+        # around it, so it must sit AMONG the buildings, never out in open countryside. Pass it when the
+        # houses are already placed (the rural tiers: place_wells runs AFTER the field rings); a city's
+        # pack runs after place_wells and fills in around the wells, so the city omits it.
+        dwell = self.M.get("buildings", []) + self.M.get("houses", []) if near is not None else None
         out = []
         yy = y0 + spacing / 2
         while yy <= y1:
             xx = x0 + spacing / 2
             while xx <= x1:
                 for ox, oy in offsets:
-                    if self._fits(xx + ox, yy + oy, probe, probe):
-                        self.well(xx + ox, yy + oy, r)
-                        out.append((xx + ox, yy + oy))
+                    cx, cy = xx + ox, yy + oy
+                    if self._fits(cx, cy, probe, probe) and (dwell is None
+                            or any((b["x"] - cx) ** 2 + (b["y"] - cy) ** 2 < near * near for b in dwell)):
+                        self.well(cx, cy, r)
+                        out.append((cx, cy))
                         break
                 xx += spacing
             yy += spacing
@@ -693,7 +701,8 @@ class Settlement:
         used by the torii checks). A torii may stand in front (torii=[(x,y),...])."""
         if torii:
             for (tx, ty) in torii:
-                bm = 32   # block the arch from placement (footprint ~38x28 + a building-half margin)
+                bm = 20   # block just the arch (footprint ~38x28 + a building-half margin) - kept SMALLER than a
+                #           street corridor so torii on a street don't shove the frontage houses further off it
                 self.block_polys.append([(tx - 19 - bm, ty - 10 - bm), (tx + 19 + bm, ty - 10 - bm),
                                          (tx + 19 + bm, ty + 18 + bm), (tx - 19 - bm, ty + 18 + bm)])
                 tz = self.add_top(f'<g transform="translate({tx:.0f},{ty:.0f})">'           # over any street it crosses
@@ -1069,7 +1078,14 @@ class Settlement:
         self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="{h}" rx="2" fill="#D9B98C" stroke="#5A3F1E" stroke-width="2.2"/>')
         self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="11" fill="#7A5A30"/>')          # roof ridge
         self.add(f'<rect x="{x0:.0f}" y="{y+h/2-4:.0f}" width="{w}" height="4" fill="#7A5A30" opacity="0.55"/>')  # lower eave (2-storey)
-        self.add(f'<rect x="{x-6:.0f}" y="{y0+15:.0f}" width="12" height="11" rx="1.5" fill="#C24A2E" stroke="#5A3F1E" stroke-width="0.8"/>')   # hanging sign
+        for i in range(3):                                                                              # upper-storey lattice windows - a 2-storey timber INN, not a flat shed
+            wx = x0 + w * (0.2 + 0.3 * i)
+            self.add(f'<rect x="{wx:.0f}" y="{y0+14:.0f}" width="10" height="7" fill="#9A7E4E" stroke="#5A3F1E" stroke-width="0.6"/>')
+            self.add(f'<line x1="{wx+5:.0f}" y1="{y0+14:.0f}" x2="{wx+5:.0f}" y2="{y0+21:.0f}" stroke="#D6C49A" stroke-width="0.6"/>')
+        nx, nw = x - w * 0.19, w * 0.38                                                                 # a NOREN (split entrance curtain) at the ground-floor doorway - the mark of an establishment you enter to lodge
+        self.add(f'<rect x="{nx:.0f}" y="{y+h/2:.0f}" width="{nw:.0f}" height="9" rx="1" fill="#2E4A6B" stroke="#1E3450" stroke-width="0.6"/>')
+        for k in (1, 2):
+            self.add(f'<line x1="{nx + nw*k/3:.0f}" y1="{y+h/2:.0f}" x2="{nx + nw*k/3:.0f}" y2="{y+h/2+9:.0f}" stroke="#C9D4E0" stroke-width="0.7"/>')
         self.M["buildings"].append({"x": x, "y": y, "w": w, "h": h, "kind": "inn", "rot": 0})
         self.placed.append((x, y, w, h))
         bm = 24
@@ -1265,8 +1281,9 @@ class Settlement:
         mo.append(mo[0])
         dd = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in mo)
         self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}" opacity="0.85" stroke-linejoin="round" stroke-linecap="round"/>')
-        self.add(f'<path d="{dd}" fill="none" stroke="#7C98AE" stroke-width="2" opacity="0.55" stroke-linejoin="round" stroke-dasharray="3,5"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#B6CAD8" stroke-width="{width*0.4:.0f}" opacity="0.5" stroke-linejoin="round" stroke-linecap="round"/>')   # a lighter mid-water sheen (NOT a dashed lane line - this is water, not a road)
         self.M["moat"] = [[round(x, 1), round(y, 1)] for x, y in mo]
+        self.M["moat_width"] = width
         self.corridors.append(([(x, y) for x, y in mo], 28))
         return [(round(x, 1), round(y, 1)) for x, y in mo]
 

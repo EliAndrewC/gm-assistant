@@ -75,6 +75,10 @@ s.label(1366, 1080, "fallow - post-blight", 10, italic=True, color="#9C7A40")
 s.label(1006, 600, "Sister Baika's tax-free plots (vermillion)", 9, italic=True, color="#6B2A18")
 s.label(305, 1120, "abandoned after the kumosaya", 10, "start", italic=True, color="#9A3A2A")
 
+# communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
+# the rest draw from the irrigation pond/channels/stream
+s.place_wells((160, 110, 1480, 1080), spacing=320, near=85)
+
 s.title("Kikuta")
 s.compass()
 

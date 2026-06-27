@@ -127,6 +127,10 @@ for bb in (OW1, OE1, OE2, OS):
 s.ring(OW2, 30, 15, ["plain"])
 s.ring(OW2, 24, 40, ["plain"])
 
+# communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
+# the rest draw from the irrigation pond/channels/stream
+s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
+
 s.title("Hirameki")
 s.compass()
 

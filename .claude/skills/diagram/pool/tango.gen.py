@@ -55,7 +55,7 @@ s.set_view(CX - RX - 52 - MARGIN, CY - RY - 52 - MARGIN, 2 * (RX + 52 + MARGIN),
 IMPROAD = [(1600, -40), (1600, CY - RY), (1600, 1330), (1600, CY + RY), (1600, 2740)]
 s.road(IMPROAD, label="Imperial Road", label_xy=(1740, 478))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1000) ** 2 + (p[1] - 740) ** 2)   # a moat vertex on the NW
-s.stream([(640, -40), (740, 230), (850, 470), (_mnw[0], _mnw[1])])       # off-map NW source feeding the moat
+s.stream([(640, -40), (740, 230), (850, 470), (_mnw[0], _mnw[1])], width=22)   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
 
 # civic amenities placed FIRST, in the open central cross, so the dense packs flow around them
 s.amphitheater(1450, 1030, 102, label="amphitheater")        # a leisure ground near the center; a CITY amphitheater is larger than a town's (~50% bigger)
@@ -198,7 +198,9 @@ s.governor_mansion(1950, 1758, 248, 168, "Governor's Mansion", gate_dir="west")
 # Bishamon (the warrior fortune) sits in the government district and FRONTS the western end of the
 # government avenue - filling what would otherwise be a bare gated approach between the ward gate and
 # the first ministry. Its torii still stands on the samurai-quarter street that runs up to it.
-s.shrine_hall(1700, 1625, "Temple of Bishamon", w=120, h=80, kind="temple", torii=[(1740, 1712)])
+# the samurai-quarter street runs up to it with clear room, so its torii avenue is THREE arches (the
+# approach space fits them without displacing any house) rather than a lone arch at the gate
+s.shrine_hall(1700, 1625, "Temple of Bishamon", w=120, h=80, kind="temple", torii=[(1740, 1712), (1740, 1758), (1740, 1804)])
 # the five other ministries CLUSTER around the yamen (the government district), as in a Chinese
 # provincial seat / Japanese castle town (Rites is apart, in the SW temple neighborhood)
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
