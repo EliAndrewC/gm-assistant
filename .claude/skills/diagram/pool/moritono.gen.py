@@ -49,6 +49,10 @@ s.ring(NW, 8, 16, ["plain"])
 s.ring(SW, 8, 16, ["plain"])
 s.ring(S, 9, 16, ["plain"])
 
+# a couple of communal WELLS among the farmhouses (placed after them, so they sit in the open gaps);
+# a hamlet's households share these, the rest draw from the irrigation pond/channels
+s.place_wells((360, 320, 900, 1040), spacing=430, near=85)
+
 s.label(950, 546, "irrigation pond", 10, italic=True, color="#5C7488")
 
 s.title("Moritono")

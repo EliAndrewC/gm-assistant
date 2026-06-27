@@ -70,6 +70,10 @@ s.label(1135, 408, "blight - fallow patch", 10, italic=True, color="#9C7A40")
 s.label(950, 96, "from the hills (off-map)", 10, "start", italic=True, color="#5C7488")
 s.label(700, 555, "shrine's tax-free plots (vermillion)", 9, italic=True, color="#6B2A18")
 
+# communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
+# the rest draw from the irrigation pond/channels/stream
+s.place_wells((140, 150, 1700, 1115), spacing=330, near=85)
+
 s.title("Hikari no Sato")
 s.compass()
 

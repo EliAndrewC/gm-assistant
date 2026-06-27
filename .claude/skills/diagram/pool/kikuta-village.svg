@@ -5,7 +5,6 @@
 </defs>
 <rect width="1820" height="1180" fill="#EFE3C2"/>
 <path d="M378,162 C352,122 408,80 372,34" fill="none" stroke="#9CB4C8" stroke-width="7" opacity="0.85"/>
-<path d="M378,162 C352,122 408,80 372,34" fill="none" stroke="#5C7488" stroke-width="1" stroke-dasharray="2,4"/>
 <ellipse cx="378" cy="220" rx="96" ry="58" fill="#9CB4C8" stroke="#5C7488" stroke-width="2.4"/>
 <ellipse cx="378" cy="220" rx="84" ry="48" fill="none" stroke="#B6CAD8" stroke-width="1" opacity="0.7"/>
 <path d="M450.0,228.0 L561.7,250.3 L676.3,227.7 L788.0,250.0" fill="none" stroke="#9CB4C8" stroke-width="4.2" opacity="0.8"/>
@@ -363,6 +362,24 @@
 <g transform="translate(1294,881) rotate(-2)"><rect x="-22.0" y="-14.5" width="44.0" height="14.5" fill="#A98C58"/><rect x="-22.0" y="0" width="44.0" height="14.5" fill="#C6AC76"/><rect x="-22.0" y="-14.5" width="44.0" height="29.0" rx="3" fill="none" stroke="#5A4326" stroke-width="1.5"/><line x1="-13.2" y1="0" x2="13.2" y2="0" stroke="#E2CB98" stroke-width="2"/><rect x="-3.5" y="12.5" width="7" height="3.3" fill="#5A4326" opacity="0.85"/></g>
 <g transform="translate(1402,1097) rotate(-4)"><rect x="-22.0" y="-14.5" width="44.0" height="14.5" fill="#A98C58"/><rect x="-22.0" y="0" width="44.0" height="14.5" fill="#B89A62"/><rect x="-22.0" y="-14.5" width="44.0" height="29.0" rx="3" fill="none" stroke="#5A4326" stroke-width="1.5"/><line x1="-13.2" y1="0" x2="13.2" y2="0" stroke="#E2CB98" stroke-width="2"/><rect x="-3.5" y="12.5" width="7" height="3.3" fill="#5A4326" opacity="0.85"/></g>
 <g transform="translate(1262,1082) rotate(1)"><rect x="-35.2" y="-8.1" width="14.1" height="16.2" rx="2" fill="#A98C58" stroke="#5A4326" stroke-width="1.1"/><rect x="-22.0" y="-14.5" width="44.0" height="14.5" fill="#A98C58"/><rect x="-22.0" y="0" width="44.0" height="14.5" fill="#C2A672"/><rect x="-22.0" y="-14.5" width="44.0" height="29.0" rx="3" fill="none" stroke="#5A4326" stroke-width="1.5"/><line x1="-13.2" y1="0" x2="13.2" y2="0" stroke="#E2CB98" stroke-width="2"/><rect x="-3.5" y="12.5" width="7" height="3.3" fill="#5A4326" opacity="0.85"/></g>
+<rect x="628.1" y="258.1" width="23.8" height="23.8" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>
+<circle cx="640" cy="270" r="9.0" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>
+<circle cx="640" cy="270" r="4.2" fill="#2E4C58"/>
+<rect x="1031.3" y="174.9" width="23.8" height="23.8" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>
+<circle cx="1043" cy="187" r="9.0" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>
+<circle cx="1043" cy="187" r="4.2" fill="#2E4C58"/>
+<rect x="224.9" y="814.9" width="23.8" height="23.8" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>
+<circle cx="237" cy="827" r="9.0" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>
+<circle cx="237" cy="827" r="4.2" fill="#2E4C58"/>
+<rect x="544.9" y="981.3" width="23.8" height="23.8" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>
+<circle cx="557" cy="993" r="9.0" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>
+<circle cx="557" cy="993" r="4.2" fill="#2E4C58"/>
+<rect x="1031.3" y="981.3" width="23.8" height="23.8" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>
+<circle cx="1043" cy="993" r="9.0" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>
+<circle cx="1043" cy="993" r="4.2" fill="#2E4C58"/>
+<rect x="1184.9" y="981.3" width="23.8" height="23.8" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>
+<circle cx="1197" cy="993" r="9.0" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>
+<circle cx="1197" cy="993" r="4.2" fill="#2E4C58"/>
 <g transform="translate(1748,128)"><circle r="26" fill="#EFE3C2" stroke="#2D2A24" stroke-width="1.5"/><polygon points="0,-22 5,0 0,6 -5,0" fill="#2D2A24"/><polygon points="0,22 5,0 0,-6 -5,0" fill="#9C8C70"/><text x="0" y="-30" text-anchor="middle" font-size="12" font-weight="bold">N</text><text x="0" y="40" text-anchor="middle" font-size="11">S</text></g>
 <g transform="translate(1539,731)"><line x1="-16" y1="0" x2="16" y2="0" stroke="#A03020" stroke-width="3.6"/><line x1="-19" y1="-7" x2="19" y2="-7" stroke="#A03020" stroke-width="3"/><line x1="-12" y1="-7" x2="-12" y2="17" stroke="#A03020" stroke-width="3"/><line x1="12" y1="-7" x2="12" y2="17" stroke="#A03020" stroke-width="3"/></g>
 <g transform="translate(1537,701)"><line x1="-16" y1="0" x2="16" y2="0" stroke="#A03020" stroke-width="3.6"/><line x1="-19" y1="-7" x2="19" y2="-7" stroke="#A03020" stroke-width="3"/><line x1="-12" y1="-7" x2="-12" y2="17" stroke="#A03020" stroke-width="3"/><line x1="12" y1="-7" x2="12" y2="17" stroke="#A03020" stroke-width="3"/></g>

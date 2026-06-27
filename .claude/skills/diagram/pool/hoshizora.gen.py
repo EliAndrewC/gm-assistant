@@ -106,6 +106,10 @@ for bb in (F1, F2, F3, F4):
     s.ring(bb, 8, 70, ["plain"])
     s.ring(bb, 7, 44, ["plain"])
 
+# communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
+# the rest draw from the irrigation pond/channels/stream
+s.place_wells((85, 110, 1930, 1260), spacing=290, near=85)
+
 s.title("Hoshizora")
 s.compass()
 

@@ -815,8 +815,8 @@
 <circle cx="1795" cy="1167" r="2.9" fill="#8FA968"/>
 </g>
 <path d="M1500,-10 L1452,180 L1506,400 L1448,620 L1500,840 L1462,1060 L1492,1190" fill="none" stroke="#4E6B3C" stroke-width="2.5"/>
-<path d="M1830,600 L1620,608 L1410,614 L1200,616 L1000,612" fill="none" stroke="#9CB4C8" stroke-width="9" opacity="0.85"/>
-<path d="M1830,600 L1620,608 L1410,614 L1200,616 L1000,612" fill="none" stroke="#5C7488" stroke-width="1.2" stroke-dasharray="2,5"/>
+<path d="M1830,600 L1620,608 L1410,614 L1200,616 L1000,612" fill="none" stroke="#9CB4C8" stroke-width="9" opacity="0.85" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M1830,600 L1620,608 L1410,614 L1200,616 L1000,612" fill="none" stroke="#B6CAD8" stroke-width="3" opacity="0.6" stroke-linejoin="round"/>
 <ellipse cx="950" cy="612" rx="84" ry="54" fill="#9CB4C8" stroke="#5C7488" stroke-width="2.4"/>
 <ellipse cx="950" cy="612" rx="72" ry="44" fill="none" stroke="#B6CAD8" stroke-width="1" opacity="0.7"/>
 <path d="M898.0,580.0 L758.2,500.3 L599.8,461.7 L460.0,382.0" fill="none" stroke="#9CB4C8" stroke-width="4.2" opacity="0.8"/>
@@ -913,6 +913,9 @@
 <g transform="translate(686,855) rotate(-5)"><rect x="-22.0" y="-14.5" width="44.0" height="14.5" fill="#A98C58"/><rect x="-22.0" y="0" width="44.0" height="14.5" fill="#C6AC76"/><rect x="-22.0" y="-14.5" width="44.0" height="29.0" rx="3" fill="none" stroke="#5A4326" stroke-width="1.5"/><line x1="-13.2" y1="0" x2="13.2" y2="0" stroke="#E2CB98" stroke-width="2"/><rect x="-3.5" y="12.5" width="7" height="3.3" fill="#5A4326" opacity="0.85"/></g>
 <g transform="translate(919,984) rotate(3)"><rect x="-22.0" y="-14.5" width="44.0" height="14.5" fill="#A98C58"/><rect x="-22.0" y="0" width="44.0" height="14.5" fill="#C6AC76"/><rect x="-22.0" y="-14.5" width="44.0" height="29.0" rx="3" fill="none" stroke="#5A4326" stroke-width="1.5"/><line x1="-13.2" y1="0" x2="13.2" y2="0" stroke="#E2CB98" stroke-width="2"/><rect x="-3.5" y="12.5" width="7" height="3.3" fill="#5A4326" opacity="0.85"/></g>
 <g transform="translate(703,1069) rotate(0)"><rect x="-22.0" y="-14.5" width="44.0" height="14.5" fill="#A98C58"/><rect x="-22.0" y="0" width="44.0" height="14.5" fill="#C2A672"/><rect x="-22.0" y="-14.5" width="44.0" height="29.0" rx="3" fill="none" stroke="#5A4326" stroke-width="1.5"/><line x1="-13.2" y1="0" x2="13.2" y2="0" stroke="#E2CB98" stroke-width="2"/><rect x="-3.5" y="12.5" width="7" height="3.3" fill="#5A4326" opacity="0.85"/></g>
+<rect x="563.1" y="523.1" width="23.8" height="23.8" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>
+<circle cx="575" cy="535" r="9.0" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>
+<circle cx="575" cy="535" r="4.2" fill="#2E4C58"/>
 <g transform="translate(1748,128)"><circle r="26" fill="#EFE3C2" stroke="#2D2A24" stroke-width="1.5"/><polygon points="0,-22 5,0 0,6 -5,0" fill="#2D2A24"/><polygon points="0,22 5,0 0,-6 -5,0" fill="#9C8C70"/><text x="0" y="-30" text-anchor="middle" font-size="12" font-weight="bold">N</text><text x="0" y="40" text-anchor="middle" font-size="11">S</text></g>
 <text x="1660" y="600" text-anchor="middle" font-size="14" font-weight="bold" font-style="italic" fill="#3E5631" paint-order="stroke" stroke="#EFE3C2" stroke-width="3">Shirin Forest</text>
 <text x="1230" y="203" text-anchor="middle" font-size="14" font-weight="bold" fill="#2D2A24" paint-order="stroke" stroke="#EFE3C2" stroke-width="3">Magistrate's Manor</text>

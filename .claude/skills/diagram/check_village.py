@@ -267,6 +267,44 @@ def approach_span(mx, my, half, ux, uy, M, w, Wd, Hd):
     return s - start
 
 
+def torii_room_for_more(r, grp, M, w, Wd, Hd, pitch=46):
+    """Is there clear space for ANOTHER torii beyond a temple's existing avenue `grp`? Find the street/
+    road the torii sit on, head along it AWAY from the temple, and test the next arch-slot (one `pitch`
+    past the farthest torii): it has room if that point is inside the wall and clear of buildings/fields.
+    Buildings are OBSTACLES, never displaced - the check only fills space that is ALREADY open after all
+    the housing is placed, so it never nudges a rearrangement. A temple whose torii aren't on a street,
+    or whose approach is built up to the avenue's end, has no room and is fine as-is."""
+    tc = (sum(t[0] for t in grp) / len(grp), sum(t[1] for t in grp) / len(grp))
+    lanes = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
+    best = None
+    for pts in lanes:
+        for k in range(len(pts) - 1):
+            d = seg_dist(tc[0], tc[1], pts[k], pts[k + 1])
+            if best is None or d < best[0]:
+                best = (d, pts[k], pts[k + 1])
+    if best is None or best[0] > 40:
+        return False                                       # torii not on a street - no clear approach axis
+    a, b = best[1], best[2]
+    ln = math.hypot(b[0] - a[0], b[1] - a[1]) or 1.0
+    ux, uy = (b[0] - a[0]) / ln, (b[1] - a[1]) / ln
+    if ux * (r["x"] - tc[0]) + uy * (r["y"] - tc[1]) > 0:   # point the axis AWAY from the temple
+        ux, uy = -ux, -uy
+    far = max(grp, key=lambda t: ux * t[0] + uy * t[1])
+    px, py = far[0] + ux * pitch, far[1] + uy * pitch
+    if not (0 <= px <= Wd and 0 <= py <= Hd):
+        return False
+    if w and not point_in_poly(px, py, w):
+        return False
+    if any(point_in_poly(px, py, f["outline"]) for f in M.get("fields", [])):
+        return False
+    # a building within ~a street's frontage distance of the slot means the approach is already a
+    # built-up residential street there (houses LINE it, beside the avenue) - the torii avenue ends
+    # where the frontage begins, so this is NOT open room. A bigger gap = genuinely open ground.
+    CLR = 32
+    return not any(abs(bd["x"] - px) < bd["w"] / 2 + CLR and abs(bd["y"] - py) < bd["h"] / 2 + CLR
+                   for bd in M.get("buildings", []) + M.get("houses", []))
+
+
 DEFAULT_MANIFEST = {
     "houses": [], "fields": [], "fallow_patches": [], "channels": [], "lane": [],
     "taxfree": [], "torii": [], "shrines": [], "manors": [], "streams": [],
@@ -914,6 +952,60 @@ def gate(M, verbose=True):
     check("labels_within_image", not off_img,
           f"label(s) running off the edge of the image - a label must sit fully within the frame (fields/roads/"
           f"estates/farmhouses may run off, labels may not): {sorted(set(off_img))}")
+
+    # every WELL must sit AMONG the dwellings it serves (ANY scale): a communal well is the draw-point
+    # for the households around it, so one out in open countryside with no house beside it is unreal. (A
+    # city's pack fills in around its wells; the rural tiers place wells only near houses via
+    # place_wells(..., near=...), since their grid would otherwise scatter into the fields.)
+    all_wells = M.get("wells", [])
+    if all_wells:
+        dwell_all = M.get("buildings", []) + M.get("houses", [])
+        stray = [(round(wl["x"]), round(wl["y"])) for wl in all_wells
+                 if dwell_all and min(math.hypot(wl["x"] - b["x"], wl["y"] - b["y"]) for b in dwell_all) > 95]
+        check("wells_among_dwellings", not stray,
+              f"well(s) standing in open ground with no building within ~95px - a well serves the households "
+              f"around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}")
+        # a wellhead must be DRAWN at a size proportional to the buildings: it scales with the map grain
+        # (bscale) the way the houses do, so it reads as a consistent ~half-a-dwelling at every tier. A
+        # fixed pixel size looks right in the dense city but shrinks to a speck beside a village/town's
+        # larger houses. Each well records its drawn radius `vr`; the mean well diameter should be a
+        # sensible fraction of the median dwelling.
+        ddims = [max(b["w"], b["h"]) for b in dwell_all if "w" in b and "h" in b]
+        if ddims and any("vr" in wl for wl in all_wells):
+            med = sorted(ddims)[len(ddims) // 2]
+            mean_dia = 2 * sum(wl.get("vr", 5) for wl in all_wells) / len(all_wells)
+            check("wells_sized_to_buildings", 0.35 <= mean_dia / med <= 0.85,
+                  f"wells are mis-sized for this map - drawn at {mean_dia:.0f}px against a ~{med:.0f}px median dwelling "
+                  f"({mean_dia / med:.0%}; want ~40-80%): a wellhead must scale with the map grain (bscale), not a fixed pixel size")
+
+    # WATER ACCESS for the rural tiers (town/village/hamlet): every settlement needs communal WELLS, and
+    # every household must be able to reach water. Wells dot the dwellings (one per ~20-25 households),
+    # but a farm household may instead draw from the irrigation network it sits beside - a channel, the
+    # pond, the stream, the moat - so a dwelling counts as watered if a WELL OR an irrigation watercourse
+    # is within reach. (The CITY tier has its own finer well suite - density, block-interior placement,
+    # the samurai-quarter exemption - so this covers the village/hamlet/town tiers the same way.)
+    if scale in ("town", "village", "hamlet"):
+        wells = M.get("wells", [])
+        dwell = M.get("houses", []) + [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]
+        if dwell:
+            check("settlement_has_wells", len(wells) >= max(1, round(len(dwell) / 25)),
+                  f"a {scale} of {len(dwell)} households has only {len(wells)} communal well(s) - every settlement "
+                  f"keeps wells (about one per 20-25 households); scatter them among the dwellings with s.place_wells(...)")
+            lines = [c["poly"] for c in M.get("channels", [])] + [st["poly"] for st in M.get("streams", [])] + ([M["moat"]] if M.get("moat") else [])
+            pond = M.get("pond")
+            REACH = 380
+            dry = []
+            for h in dwell:
+                d = min((math.hypot(h["x"] - wl["x"], h["y"] - wl["y"]) for wl in wells), default=1e9)
+                for ln in lines:
+                    d = min([d] + [seg_dist(h["x"], h["y"], ln[i], ln[i + 1]) for i in range(len(ln) - 1)])
+                if pond:
+                    d = min(d, abs(math.hypot(h["x"] - pond[0], h["y"] - pond[1]) - max(pond[2], pond[3])))
+                if d > REACH:
+                    dry.append((round(h["x"]), round(h["y"])))
+            check("settlement_dwellings_watered", not dry,
+                  f"{len(dry)} household(s) more than {REACH}px from any water source - a well, or an irrigation "
+                  f"channel / pond / stream / moat: {dry[:4]} - put a well within reach")
 
     # LABEL TEXT renders ON TOP of everything: no part of a label may be covered. Labels live in the
     # topmost layer (s.add_label), above the TOP-layer structures (gate furniture, kido, torii); the
@@ -2301,6 +2393,15 @@ def gate(M, verbose=True):
                           for s in M.get("streams", []))
                 check("city_moat_fed_offmap", fed,
                       "the moat must be fed from an off-map water source (a stream from a map edge reaching the moat)")
+                # the FEEDER must carry the moat's flow: a stream filling the moat is as WIDE as the moat
+                # itself (a trickle cannot keep a full moat supplied) - so any stream reaching the moat must
+                # match its width (within ~25%).
+                mw = M.get("moat_width", 22)
+                feeders = [s for s in M.get("streams", []) if min(poly_dist(q[0], q[1], moat) for q in s["poly"]) <= 32]
+                narrow = [s.get("w", 9) for s in feeders if s.get("w", 9) < 0.75 * mw]
+                check("city_moat_feeder_matches_width", not narrow,
+                      f"the stream feeding the moat is too narrow ({narrow} px vs the {mw}px moat) - a moat's water source "
+                      f"must be about as wide as the moat it supplies (pass s.stream(..., width=<moat width>))")
 
             # the street network must be CONNECTED - one coherent grid wired to the Imperial
             # road, not isolated stubs (ported from the town "no street to nowhere" thinking).
@@ -2390,6 +2491,20 @@ def gate(M, verbose=True):
                     no_torii.append(t.get("label"))
             check("city_temple_approach_has_torii", not no_torii,
                   f"temple(s) a city street runs straight up to, with no torii arch in front: {no_torii}")
+            # and a temple's torii avenue should FILL the clear approach space: where a temple HAS torii
+            # (an established sacred approach) and there is still open room along its street for another
+            # arch - AFTER all the housing is placed - it should be filled. This never asks for a building
+            # to move (the next slot is tested only against EXISTING open ground); a temple with no torii,
+            # or one whose approach is built right up to its avenue, is left alone (0-1 torii is fine).
+            temples = [r for r in M.get("religious", []) if r.get("kind") == "temple"]
+            underfilled = []
+            for r in temples:
+                grp = [t for t in torii if min(temples, key=lambda x: math.hypot(x["x"] - t[0], x["y"] - t[1])) is r]
+                if grp and torii_room_for_more(r, grp, M, w, Wd, Hd):
+                    underfilled.append(r.get("label"))
+            check("city_temple_torii_fill_approach", not underfilled,
+                  f"temple(s) with clear room for MORE torii along their approach street, left unfilled (a temple's "
+                  f"torii avenue fills the open space leading up to it; this never displaces a building): {underfilled}")
             # a torii arch stands OVER the street it spans - the street passes beneath it - so a
             # torii sitting on a street must be drawn after (higher z than) that street, not under it
             to_under = []

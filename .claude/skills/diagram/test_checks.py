@@ -1648,6 +1648,51 @@ def test_city_temple_approach_has_torii_fires_when_street_runs_up_without_one():
     assert "city_temple_approach_has_torii" in f(M)
 
 
+def _torii_fill_city(temple_xy, torii, streets=None, **extra):
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]],
+         "religious": [{"kind": "temple", "label": "T", "x": temple_xy[0], "y": temple_xy[1], "w": 100, "h": 80}],
+         "torii": [[t[0], t[1], 1] for t in torii]}
+    if streets is not None:
+        M["town_streets"] = [{"pts": p, "w": 18} for p in streets]
+    M.update(extra)
+    return M
+
+
+def test_city_temple_torii_fill_approach_fires_when_room_for_more():
+    # one torii on a street running up to the temple, with clear open street beyond - room for more arches
+    M = _torii_fill_city((500, 300), [(500, 400)], streets=[[[500, 700], [500, 420]]])
+    assert "city_temple_torii_fill_approach" in f(M)
+
+
+def test_city_temple_torii_fill_approach_passes_when_built_up():
+    # the next arch-slot is blocked by a building - the approach is built up, leave it alone
+    M = _torii_fill_city((500, 300), [(500, 400)], streets=[[[500, 380], [500, 700]]],
+                         buildings=[{"kind": "laborer", "x": 500, "y": 446, "w": 40, "h": 30, "rot": 0}])
+    assert "city_temple_torii_fill_approach" not in f(M)
+
+
+def test_city_temple_torii_fill_approach_ignores_torii_off_any_street():
+    # the torii isn't on a street, so there's no clear approach axis to extend - exempt
+    M = _torii_fill_city((500, 300), [(500, 400)])
+    assert "city_temple_torii_fill_approach" not in f(M)
+
+
+def test_city_temple_torii_fill_approach_stops_at_the_map_edge():
+    M = _torii_fill_city((500, 80), [(500, 40)], streets=[[[500, 60], [500, 10]]])   # next slot runs off the top edge
+    assert "city_temple_torii_fill_approach" not in f(M)
+
+
+def test_city_temple_torii_fill_approach_stops_at_the_wall():
+    M = _torii_fill_city((500, 500), [(500, 760)], streets=[[[500, 500], [500, 860]]])   # next slot is outside the rampart
+    assert "city_temple_torii_fill_approach" not in f(M)
+
+
+def test_city_temple_torii_fill_approach_stops_at_a_field():
+    fld = {"name": "f", "kind": "dry", "bbox": [470, 420, 530, 480], "outline": [[470, 420], [530, 420], [530, 480], [470, 480]]}
+    M = _torii_fill_city((500, 300), [(500, 400)], streets=[[[500, 380], [500, 700]]], fields=[fld])
+    assert "city_temple_torii_fill_approach" not in f(M)
+
+
 def test_city_temples_clear_of_wall_branches():
     # three temples hitting the three footprint-vs-barrier paths: A contains a wall vertex
     # (point_in_poly), B is crossed by a wall edge (segments_cross), C's corner sits on it (seg_dist)
@@ -1801,6 +1846,75 @@ def test_city_moat_checks_fire_when_moat_neither_surrounds_nor_is_fed():
     fails = f(M)
     assert "city_moat_surrounds_wall" in fails     # a tiny moat INSIDE the wall does not encircle it
     assert "city_moat_fed_offmap" in fails          # no stream feeds it
+
+
+_MOAT = [[160, 160], [840, 160], [840, 840], [160, 840], [160, 160]]   # encircles WALLSQ (200-800)
+
+
+def _feeder_city(stream_w):
+    return {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
+            "gates": [[500, 200], [500, 800]], "moat": _MOAT, "moat_width": 22,
+            "streams": [{"poly": [[80, 500], [165, 500]], "frm": None, "to": None, "w": stream_w}]}
+
+
+def test_city_moat_feeder_matches_width_fires_when_narrow():
+    # a 9px trickle reaching a 22px moat - too thin to keep it supplied
+    assert "city_moat_feeder_matches_width" in f(_feeder_city(9))
+
+
+def test_city_moat_feeder_matches_width_passes_when_matched():
+    assert "city_moat_feeder_matches_width" not in f(_feeder_city(22))
+
+
+# --- settlement wells (town/village/hamlet water access) ---
+def _rural(scale, houses, wells, **extra):
+    M = {"meta": {"scale": scale}, "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for (x, y) in houses],
+         "wells": [{"x": x, "y": y, "r": 8} for (x, y) in wells]}
+    M.update(extra)
+    return M
+
+
+def test_settlement_has_wells_fires_when_too_few():
+    # 40 farm households, no wells at all
+    assert "settlement_has_wells" in f(_rural("village", [(300 + i * 10, 300) for i in range(40)], []))
+
+
+def test_settlement_dwellings_watered_fires_when_a_house_is_dry():
+    # one house 600px from the only well, with no irrigation nearby
+    assert "settlement_dwellings_watered" in f(_rural("village", [(300, 300), (300, 900)], [(300, 300)]))
+
+
+def test_settlement_dwellings_watered_passes_via_irrigation():
+    # the far house has no well within reach but sits beside a stream
+    M = _rural("hamlet", [(300, 900)], [(300, 300)], streams=[{"poly": [[200, 880], [400, 880]], "frm": None, "to": None, "w": 9}])
+    assert "settlement_dwellings_watered" not in f(M)
+
+
+def test_wells_among_dwellings_fires_on_a_stray_well():
+    # a well far out in open country, no house beside it
+    assert "wells_among_dwellings" in f(_rural("village", [(300, 300)], [(900, 900)]))
+
+
+def test_wells_among_dwellings_passes_when_beside_a_house():
+    assert "wells_among_dwellings" not in f(_rural("village", [(300, 300)], [(340, 300)]))
+
+
+def _well_size_city(vr):
+    # two 44px farmhouses with a well of drawn radius `vr` beside them
+    return {"meta": {"scale": "village"},
+            "houses": [{"x": 300, "y": 300, "w": 44, "h": 29, "rot": 0, "kind": "plain"},
+                       {"x": 344, "y": 300, "w": 44, "h": 29, "rot": 0, "kind": "plain"}],
+            "wells": [{"x": 322, "y": 300, "r": 8, "vr": vr}]}
+
+
+def test_wells_sized_to_buildings_fires_when_too_small():
+    # a 10px wellhead (the dense-city size) beside 44px village farmhouses - far too small
+    assert "wells_sized_to_buildings" in f(_well_size_city(5.0))
+
+
+def test_wells_sized_to_buildings_passes_when_proportional():
+    # scaled to the village grain (~24px), about half a farmhouse
+    assert "wells_sized_to_buildings" not in f(_well_size_city(11.9))
 
 
 if __name__ == "__main__":
