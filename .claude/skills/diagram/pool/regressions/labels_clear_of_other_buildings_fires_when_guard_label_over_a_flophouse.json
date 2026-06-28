@@ -1,0 +1,30 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "labels": [
+  [
+   470,
+   490,
+   560,
+   510,
+   1,
+   "gate guard house + inspection"
+  ]
+ ],
+ "flophouses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 90,
+   "h": 42,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_clear_of_other_buildings"
+  ],
+  "source": "test_checks.py::test_labels_clear_of_other_buildings_fires_when_guard_label_over_a_flophouse"
+ }
+}

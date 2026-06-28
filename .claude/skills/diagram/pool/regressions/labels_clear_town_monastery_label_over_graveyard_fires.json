@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "labels": [
+  [
+   480,
+   490,
+   520,
+   510,
+   1,
+   "Monastery of Bishamon"
+  ]
+ ],
+ "cemeteries": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 80,
+   "h": 50,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_clear_of_other_buildings"
+  ],
+  "source": "test_checks.py::test_labels_clear_town_monastery_label_over_graveyard_fires"
+ }
+}

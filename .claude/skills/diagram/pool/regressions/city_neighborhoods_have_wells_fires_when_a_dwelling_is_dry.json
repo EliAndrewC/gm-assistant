@@ -1,0 +1,28 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wells": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 8
+  }
+ ],
+ "buildings": [
+  {
+   "kind": "laborer",
+   "x": 1200,
+   "y": 1200,
+   "w": 28,
+   "h": 18,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_neighborhoods_have_wells"
+  ],
+  "source": "test_checks.py::test_city_neighborhoods_have_wells_fires_when_a_dwelling_is_dry"
+ }
+}

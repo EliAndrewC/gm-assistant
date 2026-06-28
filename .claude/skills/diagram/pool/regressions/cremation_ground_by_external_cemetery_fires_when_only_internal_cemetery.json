@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "cremation_grounds": [
+  {
+   "x": 150,
+   "y": 500,
+   "w": 116,
+   "h": 80,
+   "rot": 0
+  }
+ ],
+ "cemeteries": [
+  {
+   "x": 250,
+   "y": 500,
+   "w": 100,
+   "h": 72,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "cremation_ground_by_external_cemetery"
+  ],
+  "source": "test_checks.py::test_cremation_ground_by_external_cemetery_fires_when_only_internal_cemetery"
+ }
+}

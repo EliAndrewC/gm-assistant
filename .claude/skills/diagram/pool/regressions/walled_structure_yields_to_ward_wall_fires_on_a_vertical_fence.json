@@ -1,0 +1,57 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   3000,
+   100
+  ],
+  [
+   3000,
+   2500
+  ],
+  [
+   100,
+   2500
+  ]
+ ],
+ "wards": [
+  {
+   "name": "samurai",
+   "boundary": [
+    [
+     1535,
+     1200
+    ],
+    [
+     1535,
+     1900
+    ]
+   ],
+   "z": 5
+  }
+ ],
+ "mausoleums": [
+  {
+   "x": 1508,
+   "y": 1556,
+   "w": 54,
+   "h": 40,
+   "rot": 0,
+   "gate_dir": "west",
+   "ward_walls": []
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "walled_structure_yields_to_ward_wall"
+  ],
+  "source": "test_checks.py::test_walled_structure_yields_to_ward_wall_fires_on_a_vertical_fence"
+ }
+}

@@ -42,7 +42,7 @@ s.paddy_field(SW, "", "sw", amp=26)
 s.paddy_field(S, "", "s", amp=28)
 
 # the magistrate's walled hunting lodge, at the forest's edge
-s.manor(1230, 380, 270, 330, "Magistrate's Manor", "hunting lodge by the Shirin Forest")
+s.manor(1230, 380, 270, 330, "Magistrate's Manor", "hunting lodge by the Shirin Forest", gate_dir="west")
 
 # peasant farmhouses ring the three fields (no headman in a hamlet)
 s.ring(NW, 8, 16, ["plain"])
@@ -54,6 +54,12 @@ s.ring(S, 9, 16, ["plain"])
 s.place_wells((360, 320, 900, 1040), spacing=430, near=85)
 
 s.label(950, 546, "irrigation pond", 10, italic=True, color="#5C7488")
+
+# harvest processing: a communal threshing/drying ground (hiroba) on dry ground among the
+# farmhouses, with rice-drying racks (hazakake) beside it
+s.threshing_ground(693, 563, 74, 48, label="threshing ground")
+s.drying_rack(583, 581, 64, 0)
+s.drying_rack(762, 470, 64, 0)
 
 s.title("Moritono")
 s.compass()

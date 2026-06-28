@@ -1,0 +1,45 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "wells": [
+  {
+   "x": 300,
+   "y": 300,
+   "r": 8,
+   "vr": 11.9
+  }
+ ],
+ "threshing": [
+  {
+   "x": 360,
+   "y": 300,
+   "rx": 40,
+   "ry": 30
+  }
+ ],
+ "drying_racks": [
+  {
+   "x": 360,
+   "y": 350,
+   "length": 60,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "settlement_has_drying_racks"
+  ],
+  "source": "test_checks.py::test_settlement_has_drying_racks_fires_when_too_few"
+ }
+}

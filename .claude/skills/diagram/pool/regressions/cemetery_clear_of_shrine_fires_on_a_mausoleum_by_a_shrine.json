@@ -1,0 +1,29 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "mausoleums": [
+  {
+   "x": 540,
+   "y": 520,
+   "w": 74,
+   "h": 58,
+   "rot": 0
+  }
+ ],
+ "religious": [
+  {
+   "kind": "shrine",
+   "x": 500,
+   "y": 500,
+   "w": 100,
+   "h": 68
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "cemetery_clear_of_shrine"
+  ],
+  "source": "test_checks.py::test_cemetery_clear_of_shrine_fires_on_a_mausoleum_by_a_shrine"
+ }
+}

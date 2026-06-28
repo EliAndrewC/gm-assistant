@@ -1,0 +1,29 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "cemeteries": [
+  {
+   "x": 540,
+   "y": 520,
+   "w": 80,
+   "h": 56,
+   "rot": 0
+  }
+ ],
+ "religious": [
+  {
+   "kind": "shrine",
+   "x": 500,
+   "y": 500,
+   "w": 100,
+   "h": 68
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "cemetery_clear_of_shrine"
+  ],
+  "source": "test_checks.py::test_cemetery_clear_of_shrine_fires_when_adjacent"
+ }
+}

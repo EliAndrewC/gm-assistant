@@ -74,6 +74,16 @@ s.label(700, 555, "shrine's tax-free plots (vermillion)", 9, italic=True, color=
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((140, 150, 1700, 1115), spacing=330, near=85)
 
+# harvest processing: the communal threshing/drying ground (hiroba) on the open dry ground west of
+# the V field, with rice-drying racks (hazakake) beside it
+s.threshing_ground(255, 730, 78, 48, label="threshing ground")
+s.drying_rack(210, 648, 66, 0)
+s.drying_rack(305, 648, 66, 0)
+
+# the village burial ground, off at the east edge - well clear of both shrines (a Shinto shrine
+# keeps death-pollution at arm's length)
+s.cemetery(1620, 690, 82, 58, label="village burial ground")
+
 s.title("Hikari no Sato")
 s.compass()
 

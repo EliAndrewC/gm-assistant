@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "road": [
+  [
+   100,
+   200
+  ],
+  [
+   900,
+   200
+  ]
+ ],
+ "religious": [
+  {
+   "x": 300,
+   "y": 500,
+   "w": 132,
+   "h": 86,
+   "rot": 0,
+   "kind": "monastery"
+  }
+ ],
+ "cremation_grounds": [
+  {
+   "x": 300,
+   "y": 360,
+   "w": 116,
+   "h": 80,
+   "rot": 0
+  }
+ ],
+ "cemeteries": [
+  {
+   "x": 300,
+   "y": 470,
+   "w": 100,
+   "h": 72,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "cremation_ground_not_between_temple_and_road"
+  ],
+  "source": "test_checks.py::test_cremation_not_between_temple_and_road_fires_when_between"
+ }
+}

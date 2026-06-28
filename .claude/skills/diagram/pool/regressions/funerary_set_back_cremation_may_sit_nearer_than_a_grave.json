@@ -1,0 +1,38 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "streams": [
+  {
+   "poly": [
+    [
+     200,
+     378
+    ],
+    [
+     600,
+     378
+    ]
+   ],
+   "frm": null,
+   "to": null,
+   "w": 22
+  }
+ ],
+ "cemeteries": [
+  {
+   "x": 300,
+   "y": 310,
+   "w": 50,
+   "h": 36,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "funerary_set_back_from_water"
+  ],
+  "source": "test_checks.py::test_funerary_set_back_cremation_may_sit_nearer_than_a_grave"
+ }
+}

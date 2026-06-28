@@ -1,0 +1,77 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "fields": [
+  {
+   "outline": [
+    [
+     400,
+     400
+    ],
+    [
+     600,
+     400
+    ],
+    [
+     600,
+     550
+    ],
+    [
+     400,
+     550
+    ]
+   ],
+   "bbox": [
+    400,
+    400,
+    600,
+    550
+   ],
+   "name": "f",
+   "kind": "paddy"
+  }
+ ],
+ "houses": [
+  {
+   "x": 500,
+   "y": 680,
+   "w": 30,
+   "h": 24,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "threshing": [
+  {
+   "x": 500,
+   "y": 680,
+   "rx": 62,
+   "ry": 42
+  }
+ ],
+ "drying_racks": [
+  {
+   "x": 500,
+   "y": 500,
+   "length": 60,
+   "rot": 0
+  }
+ ],
+ "labels": [
+  [
+   452,
+   494,
+   548,
+   506,
+   5,
+   "threshing ground"
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "threshing_label_clear_of_racks"
+  ],
+  "source": "test_checks.py::test_threshing_label_clear_of_racks_fires_when_over_a_rack"
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "cemeteries": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 60,
+   "h": 44,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "pond": [
+  400,
+  300,
+  60,
+  40
+ ],
+ "_regression": {
+  "fires": [
+   "funerary_set_back_from_water"
+  ],
+  "source": "test_checks.py::test_funerary_set_back_from_water_fires_near_a_pond"
+ }
+}

@@ -1,0 +1,67 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "manors": [
+  {
+   "x": 900,
+   "y": 900,
+   "w": 120,
+   "h": 90,
+   "gate_dir": "west"
+  },
+  {
+   "x": 1120,
+   "y": 900,
+   "w": 120,
+   "h": 90,
+   "gate_dir": "west"
+  },
+  {
+   "x": 1340,
+   "y": 900,
+   "w": 120,
+   "h": 90,
+   "gate_dir": "west"
+  },
+  {
+   "x": 900,
+   "y": 1120,
+   "w": 120,
+   "h": 90,
+   "gate_dir": "west"
+  },
+  {
+   "x": 1120,
+   "y": 1120,
+   "w": 120,
+   "h": 90,
+   "gate_dir": "west"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_estate_gates_vary"
+  ],
+  "source": "test_checks.py::test_city_estate_gates_vary_fires_when_all_identical"
+ }
+}

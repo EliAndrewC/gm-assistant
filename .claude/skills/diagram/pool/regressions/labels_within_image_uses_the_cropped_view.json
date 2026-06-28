@@ -1,0 +1,26 @@
+{
+ "meta": {
+  "view": [
+   658,
+   448,
+   1884,
+   1764
+  ]
+ },
+ "labels": [
+  [
+   300,
+   690,
+   500,
+   702,
+   1,
+   "west of the crop"
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "labels_within_image"
+  ],
+  "source": "test_checks.py::test_labels_within_image_uses_the_cropped_view"
+ }
+}

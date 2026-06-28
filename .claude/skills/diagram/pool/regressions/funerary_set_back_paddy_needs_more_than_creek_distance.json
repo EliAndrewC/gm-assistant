@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "fields": [
+  {
+   "name": "a",
+   "kind": "paddy",
+   "bbox": [
+    300,
+    330,
+    500,
+    500
+   ],
+   "outline": [
+    [
+     300,
+     330
+    ],
+    [
+     500,
+     330
+    ],
+    [
+     500,
+     500
+    ],
+    [
+     300,
+     500
+    ]
+   ]
+  }
+ ],
+ "cemeteries": [
+  {
+   "x": 300,
+   "y": 277,
+   "w": 50,
+   "h": 36,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "funerary_set_back_from_water"
+  ],
+  "source": "test_checks.py::test_funerary_set_back_paddy_needs_more_than_creek_distance"
+ }
+}

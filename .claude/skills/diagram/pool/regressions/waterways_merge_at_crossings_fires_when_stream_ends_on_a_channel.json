@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "streams": [
+  {
+   "poly": [
+    [
+     505,
+     500
+    ],
+    [
+     900,
+     500
+    ]
+   ],
+   "frm": null,
+   "to": null,
+   "w": 9,
+   "bedz": 25,
+   "sheenz": 30
+  }
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     900
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "offmap"
+   },
+   "bedz": 10,
+   "sheenz": 5
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "waterways_merge_at_crossings"
+  ],
+  "source": "test_checks.py::test_waterways_merge_at_crossings_fires_when_stream_ends_on_a_channel"
+ }
+}

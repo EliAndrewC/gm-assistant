@@ -1,0 +1,29 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "cemeteries": [
+  {
+   "x": 1500,
+   "y": 1500,
+   "w": 80,
+   "h": 56,
+   "rot": 0
+  }
+ ],
+ "religious": [
+  {
+   "kind": "monastery",
+   "x": 500,
+   "y": 500,
+   "w": 120,
+   "h": 80
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "cemetery_in_temple_precinct"
+  ],
+  "source": "test_checks.py::test_cemetery_in_temple_precinct_fires_when_far_from_hall"
+ }
+}

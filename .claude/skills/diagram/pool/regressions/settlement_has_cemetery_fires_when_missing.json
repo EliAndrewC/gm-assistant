@@ -1,0 +1,12 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "cemeteries": [],
+ "_regression": {
+  "fires": [
+   "settlement_has_cemetery"
+  ],
+  "source": "test_checks.py::test_settlement_has_cemetery_fires_when_missing"
+ }
+}

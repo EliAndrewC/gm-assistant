@@ -1,0 +1,25 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "compass": {
+  "x": 300,
+  "y": 300
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 30,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "compass_clear"
+  ],
+  "source": "test_checks.py::test_compass_clear_fires_over_a_building"
+ }
+}

@@ -31,6 +31,43 @@ def rect_corners(h):
             for dx, dy in [(-w / 2, -ht / 2), (w / 2, -ht / 2), (w / 2, ht / 2), (-w / 2, ht / 2)]]
 
 
+def _struct_rect(s):
+    """Normalise any solid footprint feature to a rect for the overlap tests: a building carries
+    w/h(/rot); a threshing ground is an ellipse (rx/ry); a drying rack is a length-by-~18 bar."""
+    if "w" in s:
+        return {"x": s["x"], "y": s["y"], "w": s["w"], "h": s["h"], "rot": s.get("rot", 0)}
+    if "rx" in s:
+        return {"x": s["x"], "y": s["y"], "w": 2 * s["rx"], "h": 2 * s["ry"], "rot": 0}
+    return {"x": s["x"], "y": s["y"], "w": s["length"], "h": 18, "rot": s.get("rot", 0)}
+
+
+# ---- overlap classification registry ---------------------------------------------------------------
+# Every footprint feature (a manifest key holding a list of dicts with positional geometry) must be
+# classified below. The DEFAULT is "must not overlap anything": a SOLID feature joins `structs`, which
+# the no_structure_* checks clear against each other and against the walls / water / roads / fields it
+# should not sit on. Overlaps are OPT-IN - a feature that is meant to overlap something (a label, a
+# bridge over water, a guard tower on the wall) is named in _OVERLAP_EXEMPT with its reason. The
+# `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
+# sets, forcing whoever adds it to declare its overlap behaviour rather than silently skipping it.
+_OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds",
+                    "ossuaries", "threshing", "drying_racks", "ministries")
+# `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
+# `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
+_OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs")
+_OVERLAP_LINEAR = ("fields", "fallow_patches", "flower_fields", "streams", "channels", "town_streets",
+                   "alleys", "wards", "ponds", "pastures", "forests")   # linear / area features structs avoid
+_OVERLAP_EXEMPT = {
+    "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
+    "merchant_estates": "a walled court AROUND an inner building that is itself an overlap-checked struct",
+    "wells": "a small well-head dropped into the open gaps between dwellings (its nominal footprint may kiss a dense-city building)",
+    "wall_towers": "guard towers stand ON the city wall - an intentional overlap - and clear of the interior",
+    "bridges": "a bridge spans a stream/moat to carry a road over it (intentional water + road overlap)",
+    "kido": "a ward gate sits ON the ward fence at the point a lane passes through it",
+    "inspection_stations": "an inspection post sited AT the city gate, part of the gate complex (overlaps the gate furniture)",
+}
+_OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
+
+
 def sat_overlap(p, q):
     for poly in (p, q):
         for i in range(len(poly)):
@@ -113,6 +150,15 @@ def poly_dist(px, py, poly):
     if point_in_poly(px, py, poly):
         return 0.0
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
+
+
+def water_setback(width):
+    """The set-back a BURIAL ground keeps from the EDGE of open water, scaling with the waterway's
+    width: even a narrow STREAM floods graves out, so the floor is a solid ~75px; a moat (a moderate
+    watercourse, ~22px wide -> ~110px) more still, a river or canal most. A burial ground by big water
+    floods out, so the bigger the watercourse the further back the dead must lie. (Thin irrigation
+    channels are not open water and are not checked at all.)"""
+    return max(75, min(140, 5.0 * width))
 
 
 def edge_dist(px, py, poly):
@@ -439,6 +485,26 @@ def lane_ward_shortfalls(M, maxgap=60.0, eps=6.0, align=0.80, block=18.0, gate_d
     return hits
 
 
+def _fronts_route(bx, by, routes, others, road_d=115):
+    """True if (bx, by) is within road_d of a trade route (the Imperial road or a town street) AND no
+    `others` building lies between it and the nearest route point - i.e. it FRONTS the road, not hides
+    behind the shop rows. Used to keep the caravan inn on the road, not buried in the back blocks."""
+    npt, bd = None, 1e18
+    for r in routes:
+        for k in range(len(r) - 1):
+            cx, cy = seg_closest(bx, by, r[k], r[k + 1])
+            d = math.hypot(cx - bx, cy - by)
+            if d < bd:
+                bd, npt = d, (cx, cy)
+    if npt is None or bd > road_d:
+        return False
+    for o in others:
+        oc = rect_corners(_struct_rect(o))
+        if any(segments_cross((bx, by), npt, oc[e], oc[(e + 1) % 4]) for e in range(4)):
+            return False
+    return True
+
+
 def gate(M, verbose=True):
     """Run every check over a manifest dict M and return the list of FAILED check names.
     verbose prints the PASS/FAIL lines. Pass a synthetic M to unit-test a single check."""
@@ -627,20 +693,44 @@ def gate(M, verbose=True):
     # each other / the manor / a hall. (Merchant storehouses are NOT here: they are drawn as
     # annexes deliberately abutting their shop, so they would trip the structure-overlap test.)
     granary = M.get("granary")
-    structs = houses + M.get("buildings", []) + M.get("flophouses", []) + (granary["stores"] if granary else [])
+    # the funerary structures are first-class structures for overlap purposes: a graveyard, mausoleum,
+    # cremation ground, or ossuary must not sit on a building, the wall, the moat, a road, or a street
+    # (they were added late, so it is easy to forget - this is what catches a grave on the moat or a
+    # mausoleum in the street). They carry x/y/w/h/rot like any building.
+    # EVERY solid footprint feature is a first-class structure for overlap purposes (see the
+    # _OVERLAP_STRUCTS registry): houses, civic/urban buildings, the funerary structures, the harvest
+    # grounds (threshing + drying racks), wayside shrines, ministries, inspection stations. They are
+    # normalised to rects (an ellipse threshing / a bar-shaped rack become rects) and then checked,
+    # like any building, against each other and against the wall / moat / road / stream / channel /
+    # street / manor / hall / gate / torii. Adding a new feature here is the DEFAULT; exceptions that
+    # may overlap (annex storehouses, on-wall towers, bridges) live in _OVERLAP_EXEMPT, not here.
+    structs = ([_struct_rect(s) for k in _OVERLAP_STRUCTS for s in M.get(k, [])]
+               + [_struct_rect(s) for s in (granary["stores"] if granary else [])])
     corners = [rect_corners(s) for s in structs]
     bad = [(i, j) for i in range(len(structs)) for j in range(i + 1, len(structs))
            if math.hypot(structs[i]["x"] - structs[j]["x"], structs[i]["y"] - structs[j]["y"]) <= 110
            and sat_overlap(corners[i], corners[j])]
     check("no_structure_overlaps", not bad, f"{len(bad)} overlapping structure pair(s)")
 
-    # no structure overlaps the magistrate's manor walls (an ellipse block undershot the corners)
+    # COMPLETENESS GUARD: every footprint feature in the manifest must be classified for overlap (in the
+    # _OVERLAP_* registry above). The default is MUST-NOT-OVERLAP - a new feature joins _OVERLAP_STRUCTS
+    # and is cleared by the checks above; anything allowed to overlap is named in _OVERLAP_EXEMPT. This
+    # fires when a generator emits a feature key nobody classified, so a new feature can never silently
+    # skip the overlap rules (the recurring trap: threshing/drying racks shipped unchecked).
+    unclassified = sorted(k for k, v in M.items()
+                          if isinstance(v, list) and v and isinstance(v[0], dict)
+                          and any(g in v[0] for g in ("x", "pts", "outline", "boundary", "poly"))
+                          and k not in _OVERLAP_CLASSIFIED)
+    check("every_feature_classified_for_overlap", not unclassified,
+          f"map feature(s) {unclassified} are not classified for overlap. The default is MUST-NOT-OVERLAP: add the key "
+          f"to _OVERLAP_STRUCTS (so the no_structure_* checks clear it) or, if it is MEANT to overlap something (a label, "
+          f"a bridge over water, a guard tower on a wall), to _OVERLAP_EXEMPT with the reason.")
+
+    # no structure overlaps the magistrate's manor walls (a tilted manor uses its rotated corners)
     bad_m = []
     for mn in M.get("manors", []):
-        mx, my, mw, mh = mn["x"], mn["y"], mn["w"], mn["h"]
         e = 4   # wall thickness
-        mc = [(mx - mw / 2 - e, my - mh / 2 - e), (mx + mw / 2 + e, my - mh / 2 - e),
-              (mx + mw / 2 + e, my + mh / 2 + e), (mx - mw / 2 - e, my + mh / 2 + e)]
+        mc = rect_corners({"x": mn["x"], "y": mn["y"], "w": mn["w"] + 2 * e, "h": mn["h"] + 2 * e, "rot": mn.get("rot", 0)})
         bad_m += [1 for sc in corners if sat_overlap(sc, mc)]
     check("no_structure_on_manor", not bad_m, f"{len(bad_m)} structure(s) overlap the manor walls")
 
@@ -762,6 +852,47 @@ def gate(M, verbose=True):
     check("city_lanes_under_ward_fences", not over_fence,
           f"a lane runs into a neighborhood (ward) fence and renders OVER it - lanes pass UNDER the fence (the kido marks the passage): {over_fence}")
 
+    # A walled COMPOUND (mausoleum / manor) whose wall sits ALONG a neighborhood (ward) fence must
+    # YIELD that wall to the fence: the fence is re-stamped on top and IS that side of the compound,
+    # so there is no doubled, clashing parallel wall (s.mausoleum / s.manor do this automatically and
+    # record the yielded sides in "ward_walls"). Verify every geometric abutment is recorded.
+    if M.get("wards"):
+        def _wall_along_fence(a, b, tol=16):
+            ax, ay = a
+            bx, by = b
+            horiz = abs(ax - bx) >= abs(ay - by)
+            for wd in M["wards"]:
+                bnd = wd.get("boundary", [])
+                for k in range(len(bnd) - 1):
+                    px, py = bnd[k]
+                    qx, qy = bnd[k + 1]
+                    if (abs(px - qx) >= abs(py - qy)) != horiz:   # fence segment must run the same way
+                        continue
+                    if horiz and abs(py - ay) <= tol and min(max(ax, bx), max(px, qx)) - max(min(ax, bx), min(px, qx)) >= 10:
+                        return True
+                    if not horiz and abs(px - ax) <= tol and min(max(ay, by), max(py, qy)) - max(min(ay, by), min(py, qy)) >= 10:
+                        return True
+            return False
+        wall_ring = M.get("wall")
+        unyielded = []
+        for s in M.get("mausoleums", []) + M.get("manors", []):
+            if s.get("rot", 0):
+                continue                                          # tilted compound: not axis-aligned to a fence
+            if wall_ring and not point_in_poly(s["x"], s["y"], wall_ring):
+                continue                                          # only compounds INSIDE the city
+            cx, cy, w, h = s["x"], s["y"], s["w"], s["h"]
+            x0, y0, x1, y1 = cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2
+            sides = {"north": ((x0, y0), (x1, y0)), "south": ((x0, y1), (x1, y1)),
+                     "west": ((x0, y0), (x0, y1)), "east": ((x1, y0), (x1, y1))}
+            recorded = set(s.get("ward_walls", []))
+            for name, (a, b) in sides.items():
+                if name != s.get("gate_dir") and _wall_along_fence(a, b) and name not in recorded:
+                    unyielded.append((round(cx), round(cy), name))
+        check("walled_structure_yields_to_ward_wall", not unyielded,
+              f"walled compound(s) draw their own wall OVER a neighborhood (ward) fence instead of yielding to it: {unyielded[:3]} - "
+              f"where a mausoleum/manor wall abuts a ward fence, the FENCE is that side's wall (render the compound's wall UNDER it); "
+              f"s.mausoleum / s.manor do this automatically and record the yielded sides in 'ward_walls'")
+
     # no structure overlaps the (wide) road
     road = M.get("road")
     if road:
@@ -823,6 +954,22 @@ def gate(M, verbose=True):
                        for k in range(len(wallpts) - 1) for e in range(4))
         bad_w = [1 for sc in corners if on_wall(sc)]
         check("no_structure_on_wall", not bad_w, f"{len(bad_w)} structure(s) overlap the town wall")
+
+    # no structure overlaps the MOAT (the water ring outside the wall) - extramural structures (the
+    # common burial ground, the cremation ground, the ossuary, samurai estates) must keep clear of it
+    moatpts = M.get("moat")
+    if moatpts:
+        mhw = M.get("moat_width", 22) / 2 + 4
+
+        def on_moat(sc):
+            if any(seg_dist(cx, cy, moatpts[k], moatpts[k + 1]) < mhw for (cx, cy) in sc for k in range(len(moatpts) - 1)):
+                return True
+            if any(point_in_poly(mx, my, sc) for mx, my in moatpts):
+                return True
+            return any(segments_cross(moatpts[k], moatpts[k + 1], sc[e], sc[(e + 1) % 4])
+                       for k in range(len(moatpts) - 1) for e in range(4))
+        bad_mo = [1 for sc in corners if on_moat(sc)]
+        check("no_structure_on_moat", not bad_mo, f"{len(bad_mo)} structure(s) overlap the moat")
 
     # no structure overlaps a street OR an alley (a paved lane or a gravel alley running over a
     # house is wrong) - alleys are drawn last, so a careless alley can be laid across a building
@@ -936,10 +1083,141 @@ def gate(M, verbose=True):
 
     # no two body labels overlap (title block + compass are excluded by the generator)
     labels = M.get("labels", [])
+    # An overlap is real when the bboxes cross by more than the estimation slack. The horizontal slack
+    # is small (a >2px x-overlap means the glyphs actually touch); the vertical slack stays larger (~4px)
+    # to absorb the descender allowance in the y-bbox, so two cleanly-separated STACKED labels whose boxes
+    # merely kiss (e.g. Tango's "Mausoleum" / "Ministry of Works") are not falsely flagged.
     ov = [(i, j) for i in range(len(labels)) for j in range(i + 1, len(labels))
-          if min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 4
+          if min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 2
           and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4]
     check("no_label_overlaps", not ov, f"{len(ov)} overlapping label pair(s)")
+
+    # the N/S COMPASS is a non-diegetic OVERLAY, so it must sit in empty space - clear of every building,
+    # terrain polygon, road/street/water line, wall, and label - for readability. Move it with s.compass(x, y).
+    comp = M.get("compass")
+    if comp:
+        cb = [(comp["x"] - 28, comp["y"] - 40), (comp["x"] + 28, comp["y"] - 40),
+              (comp["x"] + 28, comp["y"] + 44), (comp["x"] - 28, comp["y"] + 44)]
+        chit = []
+        cfoot = []
+        for k in _OVERLAP_STRUCTS + _OVERLAP_TARGETS + ("merchant_estates", "wall_towers"):
+            cfoot += [s for s in M.get(k, []) if "w" in s]
+        if any(sat_overlap(cb, rect_corners(_struct_rect(s))) for s in cfoot):
+            chit.append("a building")
+        for key in ("fields", "flower_fields", "pastures", "forest_patches"):
+            for fdef in M.get(key, []):
+                ol = fdef.get("outline") if isinstance(fdef, dict) else fdef
+                if ol and (any(point_in_poly(px, py, ol) for px, py in cb) or any(point_in_poly(vx, vy, cb) for vx, vy in ol)
+                           or any(segments_cross(ol[i], ol[(i + 1) % len(ol)], cb[e], cb[(e + 1) % 4]) for i in range(len(ol)) for e in range(4))):
+                    chit.append(key)
+                    break
+        clines = ([(M["road"], M.get("road_width", 26) / 2 + 3)] if M.get("road") else []) \
+            + [(s["poly"], s.get("w", 9) / 2 + 3) for s in M.get("streams", [])] \
+            + [(c["poly"], 6) for c in M.get("channels", [])] \
+            + ([(M["moat"], M.get("moat_width", 22) / 2 + 3)] if M.get("moat") else []) \
+            + [(s["pts"], s["w"] / 2 + 3) for s in M.get("town_streets", [])] \
+            + ([(list(M["wall"]) + [M["wall"][0]], 8)] if M.get("wall") and len(M["wall"]) >= 3 else [])
+        for poly, rw in clines:
+            if (any(seg_dist(px, py, poly[k], poly[k + 1]) < rw for px, py in cb for k in range(len(poly) - 1))
+                    or any(point_in_poly(vx, vy, cb) for vx, vy in poly)
+                    or any(segments_cross(poly[k], poly[k + 1], cb[e], cb[(e + 1) % 4]) for k in range(len(poly) - 1) for e in range(4))):
+                chit.append("a road/water/wall line")
+                break
+        for L in M.get("labels", []):
+            if min(cb[2][0], L[2]) - max(cb[0][0], L[0]) > 2 and min(cb[2][1], L[3]) - max(cb[0][1], L[1]) > 2:
+                chit.append("a label")
+                break
+        check("compass_clear", not chit,
+              f"the N/S compass overlaps {sorted(set(chit))} - it is an overlay, so move it with s.compass(x, y) to an empty corner")
+
+    # A LABEL must not sit on a building/structure it does NOT name (town + city scale, where features
+    # carry distinct identities). A label may overlap the feature(s) it names - its own building/compound,
+    # or (for a zone label) any building of that cluster - and may clip a street-fronting shop or an
+    # interleaved servant house (those line every quarter, so never a victim). But where a label spills
+    # onto a DIFFERENT-identity feature it tells the reader that feature is something it is not (a
+    # "Monastery" label over the graveyard, a "graveyard" label over the monastery). Each labelled feature
+    # carries a GROUP; the label text declares which group(s) it may cover - else it fires.
+    if scale in ("town", "city"):
+        LABEL_FREE = {"shop", "servant"}
+        FUNERARY = {"cemetery", "mausoleum", "cremation", "ossuary"}
+
+        def _grp(kind):
+            if kind in ("samurai", "samurai_large"):
+                return "samurai"
+            if kind in ("merchant", "merchant_house", "merchant_large"):
+                return "merchant"
+            if kind == "laborer_large":
+                return "laborer"
+            return kind
+
+        def _bb(it):
+            rot = it.get("rot", 0)
+            hw, hh = it.get("w", 0) / 2, it.get("h", 0) / 2
+            if not rot:
+                return it["x"] - hw, it["y"] - hh, it["x"] + hw, it["y"] + hh
+            a = math.radians(rot)
+            ca, sa = math.cos(a), math.sin(a)
+            xs = [it["x"] + dx * ca - dy * sa for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
+            ys = [it["y"] + dx * sa + dy * ca for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
+            return min(xs), min(ys), max(xs), max(ys)
+
+        vics = [(_grp(b.get("kind", "")), _bb(b)) for b in M.get("buildings", []) if _grp(b.get("kind", "")) not in LABEL_FREE]
+        vics += [("flophouse", _bb(fp)) for fp in M.get("flophouses", [])]
+        vics += [("temple", _bb(r)) for r in M.get("religious", [])]
+        vics += [("ministry", _bb(mi)) for mi in M.get("ministries", [])]
+        vics += [("governor", _bb(M["governor_mansion"]))] if M.get("governor_mansion") else []
+        vics += [("gate", _bb(gs)) for gs in M.get("gate_structs", [])]
+        vics += [("merchant", _bb(e)) for e in M.get("merchant_estates", [])]
+        vics += [("estate", _bb(mn)) for mn in M.get("manors", [])]
+        vics += [("cemetery", _bb(c)) for c in M.get("cemeteries", [])]
+        vics += [("mausoleum", _bb(mu)) for mu in M.get("mausoleums", [])]
+        vics += [("cremation", _bb(cg)) for cg in M.get("cremation_grounds", [])]
+        vics += [("ossuary", _bb(o)) for o in M.get("ossuaries", [])]
+
+        def _label_allows(txt):
+            t = txt.lower()
+            if "guard" in t or "inspection" in t:   # "guard house" / "guard station" / "front gate (...)"
+                return {"gate"}
+            if "flophouse" in t:
+                return {"flophouse"}
+            if "ministry" in t:
+                return {"ministry"}
+            if "governor" in t or "mansion" in t:
+                return {"governor"}
+            if "manor" in t or "magistrate" in t:
+                return {"estate"}
+            if any(w in t for w in ("temple", "shrine", "monastery", "chapel")):
+                return {"temple"}
+            if any(w in t for w in ("graveyard", "burial", "cemetery", "cremation", "mausoleum", "ossuary")):
+                return FUNERARY          # the funerary structures cluster, so a funerary label may cover any of them
+            if "samurai" in t:
+                return {"samurai", "estate"}
+            if "laborer" in t or "labourer" in t:
+                return {"laborer"}
+            if "burakumin" in t or "agricultur" in t:   # the in-wall farming district also houses burakumin
+                return {"burakumin"}
+            if "barn" in t:
+                return {"barn"}
+            if "merchant" in t:
+                return {"merchant"}
+            if any(w in t for w in ("street", "avenue", "road")):
+                return {"merchant"}      # a street/road label runs along its frontage, so it may clip the storefronts it lines
+            return set()                 # farmland / market / amphitheater / title labels name no building
+
+        mislabel = []
+        for L in M.get("labels", []):
+            if len(L) <= 5:
+                continue
+            allow = _label_allows(L[5])
+            for g, (x0, y0, x1, y1) in vics:
+                if g in allow:
+                    continue
+                if L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
+                    mislabel.append(f"{L[5]!r} over a {g}")
+                    break
+        check("labels_clear_of_other_buildings", not mislabel,
+              f"label(s) sitting on a feature they do not name (a label may cover only the thing it labels, "
+              f"or a fronting shop/servant house): {sorted(set(mislabel))}")
 
     # LABELS must stay WITHIN the rendered image. Plenty of things rightly run off the edge - farm
     # fields, roads, samurai country estates, farmhouses, the countryside continuing beyond the frame -
@@ -1006,6 +1284,274 @@ def gate(M, verbose=True):
             check("settlement_dwellings_watered", not dry,
                   f"{len(dry)} household(s) more than {REACH}px from any water source - a well, or an irrigation "
                   f"channel / pond / stream / moat: {dry[:4]} - put a well within reach")
+
+            # HARVEST PROCESSING: every rice settlement threshes and dries its crop. The communal
+            # THRESHING/DRYING GROUND (the village hiroba) is a tamped earthen floor among the
+            # farmhouses - a DRY surface, so it never sits inside a flooded paddy, and it is a shared
+            # facility, so it sits near the dwelling cluster (not out in a remote spot). The DRYING
+            # RACKS (hazakake) stand by the field edges where the cut rice is hung to dry.
+            fields_ol = [fdef["outline"] for fdef in fields]
+            threshing = M.get("threshing", [])
+            valid_tg = [t for t in threshing
+                        if min(math.hypot(t["x"] - h["x"], t["y"] - h["y"]) for h in dwell) <= 300
+                        and not any(point_in_poly(t["x"], t["y"], ol) for ol in fields_ol)]
+            check("settlement_has_threshing_ground", bool(valid_tg),
+                  f"a {scale} grows and harvests rice but has no threshing/drying ground (the communal hiroba) on dry "
+                  f"ground among its farmhouses - add s.threshing_ground(...) near the dwelling cluster, clear of the paddies")
+            # the hiroba serves the FIELDS, so it sits AT the farmland - not cut off from it by the main
+            # road (you do not cart the harvest across the Imperial road and through the shop rows to thresh
+            # it). Each threshing ground must lie near a field that is reachable WITHOUT crossing the trunk
+            # road. The distance bound is generous (existing maps run ~150-240px); the real fault it catches
+            # is a hiroba marooned on the far side of the road from every field it serves.
+            mainroad = M.get("road")
+
+            def _road_between(t, ol):
+                nv = min(ol, key=lambda v: math.hypot(t["x"] - v[0], t["y"] - v[1]))
+                return bool(mainroad) and any(segments_cross((t["x"], t["y"]), nv, mainroad[k], mainroad[k + 1])
+                                              for k in range(len(mainroad) - 1))
+            marooned = []
+            for t in threshing:
+                reachable = min((poly_dist(t["x"], t["y"], ol) for ol in fields_ol if not _road_between(t, ol)), default=1e9)
+                if reachable > 280:
+                    marooned.append((round(t["x"]), round(t["y"])))
+            if fields_ol:
+                check("threshing_ground_near_farmland", not marooned,
+                      f"threshing ground(s) sit far from the farmland they serve, or are cut off from every field by the main "
+                      f"road: {marooned[:3]} - the communal hiroba belongs AT a field edge among the farmhouses, not across "
+                      f"the Imperial road and the shop rows; place it within ~280px of a field reachable without crossing the trunk road")
+            racks = M.get("drying_racks", [])
+            stray_racks = []
+            for rk in racks:
+                dt = min((math.hypot(rk["x"] - t["x"], rk["y"] - t["y"]) for t in threshing), default=1e9)
+                df = min((poly_dist(rk["x"], rk["y"], ol) for ol in fields_ol), default=1e9)
+                if min(dt, df) > 150:
+                    stray_racks.append((round(rk["x"]), round(rk["y"])))
+            check("settlement_has_drying_racks", len(racks) >= 2 and not stray_racks,
+                  f"a {scale} hangs its cut rice on drying racks (hazakake) by the fields: found {len(racks)} rack(s) "
+                  f"(want >= 2)" + (f"; {len(stray_racks)} sit far from any field or threshing ground: {stray_racks[:3]}" if stray_racks else "")
+                  + " - place s.drying_rack(...) along the field edges")
+            # the threshing floor and the drying racks are DRY-ground harvest features: their FOOTPRINTS
+            # must stay clear of the flooded paddies (a hiroba standing in the water is wrong - the older
+            # center-only test missed a footprint clipping the field edge, as Hoshizora's threshing did).
+            harvest = [_struct_rect(t) for t in threshing] + [_struct_rect(rk) for rk in racks]
+            in_paddy = []
+            for hs in harvest:
+                fc = rect_corners(hs)
+                if any(any(point_in_poly(px, py, ol) for px, py in fc)
+                       or any(point_in_poly(vx, vy, fc) for vx, vy in ol)
+                       or any(segments_cross(fc[e], fc[(e + 1) % 4], ol[k], ol[(k + 1) % len(ol)])
+                              for e in range(4) for k in range(len(ol))) for ol in fields_ol):
+                    in_paddy.append((round(hs["x"]), round(hs["y"])))
+            check("harvest_features_clear_of_paddies", not in_paddy,
+                  f"threshing ground / drying rack footprint(s) sit IN a flooded paddy: {in_paddy[:3]} - the hiroba and "
+                  f"its racks are dry-ground features; keep their whole footprint clear of every field outline")
+            # the threshing-ground LABEL may sit over the threshing floor itself, but it must NOT collide
+            # with the DRYING RACKS beside it - the rack's fine pole/sheaf lines under the label text are
+            # unreadable. (The label vs the floor is fine; this is label-vs-racks only.)
+            rack_rects = [rect_corners(_struct_rect(rk)) for rk in racks]
+            tg_label_on_rack = [str(L[5]) for L in M.get("labels", [])
+                                if len(L) > 5 and "threshing" in str(L[5]).lower()
+                                and any(sat_overlap([(L[0], L[1]), (L[2], L[1]), (L[2], L[3]), (L[0], L[3])], rr) for rr in rack_rects)]
+            check("threshing_label_clear_of_racks", not tg_label_on_rack,
+                  f"the threshing-ground label overlaps a drying rack ({tg_label_on_rack}) - the rack's fine lines under the "
+                  f"text are unreadable; move the label or the racks so the label clears the racks (it may still sit over the floor)")
+
+    # THE DEAD - a full funerary geography. Every settlement above a hamlet buries its cremated dead
+    # (a hamlet's go to the village district's ground, just as it has no shrine or headman). GRAVEYARDS
+    # are temple parish grounds: the state merged Shinsei and Fortune worship, so ANY temple may host
+    # one (a temple opts out with graveyard=False - a new or special-purpose hall). A Shinto SHRINE
+    # keeps death-pollution (kegare) at arm's length, so no grave site sits hard against a shrine. A
+    # CITY additionally shows 2-4 graveyards split inside/outside the walls, the ruling clan's walled
+    # MAUSOLEUM by the samurai quarter, an extramural CREMATION GROUND, and a pauper OSSUARY beside it.
+    if scale in ("village", "town", "city"):
+        cems = M.get("cemeteries", [])
+        maus = M.get("mausoleums", [])
+        crem = M.get("cremation_grounds", [])
+        oss = M.get("ossuaries", [])
+        relig = M.get("religious", [])
+        shrines = [r for r in relig if r.get("kind") in ("shrine", "small_shrine")]
+        temples = [r for r in relig if r.get("kind") in ("monastery", "temple")]
+        wall = M.get("wall")
+
+        def _inside(px, py):
+            return bool(wall) and point_in_poly(px, py, wall)
+
+        # PRESENCE: a village/town has >=1 graveyard; a city shows 2-4 (a few parish grounds,
+        # consolidated over the centuries - not one, not a dozen)
+        if scale == "city":
+            check("city_graveyard_count", 2 <= len(cems) <= 4,
+                  f"a provincial city should show 2-4 temple graveyards; found {len(cems)}")
+        else:
+            check("settlement_has_cemetery", len(cems) >= 1,
+                  f"a {scale} buries its dead but has no graveyard - add s.cemetery(...) "
+                  f"(a hamlet is exempt; its dead go to the village district's burial ground)")
+
+        # KEGARE: no grave SITE (graveyard or mausoleum) sits hard against a Shinto shrine
+        sites = [(c["x"], c["y"]) for c in cems] + [(m2["x"], m2["y"]) for m2 in maus]
+        near_shrine = [(round(sx), round(sy)) for (sx, sy) in sites
+                       if any(math.hypot(sx - r["x"], sy - r["y"]) < 120 for r in shrines)]
+        check("cemetery_clear_of_shrine", not near_shrine,
+              f"grave site(s) sit hard against a Shinto shrine, which must keep death-pollution (kegare) "
+              f"clear: {near_shrine[:3]} - move the burial ground away from the shrine")
+
+        # WATER SET-BACK: burial grounds keep a clear margin from OPEN WATER (the moat, a stream, or a
+        # pond), and that margin SCALES WITH THE WATERWAY'S SIZE (water_setback() - a creek needs little,
+        # a moat/river much more) because a burial ground by big water floods out. The CREMATION ground
+        # may sit NEARER the water (fire/ritual), so the graveyard naturally lands beyond it. Non-overlap
+        # is not enough. (Thin irrigation channels are NOT open water and don't trigger this.)
+        # the moat is OUTSIDE the wall, so an INSIDE-wall ground is shielded from it by the rampart and is
+        # exempt from the moat term (streams/ponds apply regardless of which side they sit on).
+        line_waters = ([(M["moat"], M.get("moat_width", 22), True)] if M.get("moat") else []) \
+            + [(s["poly"], s.get("w", 9), False) for s in M.get("streams", [])]
+        pond = M.get("pond")
+        field_outlines = [f["outline"] for f in M.get("fields", [])] + [f["outline"] for f in M.get("flower_fields", [])]
+        FIELD_SETBACK = 50   # a RICE PADDY is standing water when flooded - a real flood hazard, not a
+        #                      trickle - so a burial ground keeps a clear margin from its edge (more than a creek)
+        crowded = []
+        for site, is_crem in ([(c, False) for c in cems] + [(o, False) for o in oss] + [(cr, True) for cr in crem]):
+            cor = rect_corners(site)
+            inside_wall = bool(wall) and point_in_poly(site["x"], site["y"], wall)
+            near = False
+            for poly, width, is_moat in line_waters:
+                if is_moat and inside_wall:
+                    continue
+                sb = 30 if is_crem else water_setback(width)   # cremation may sit near water; burials scale
+                if min(seg_dist(cx, cy, poly[k], poly[k + 1]) for cx, cy in cor for k in range(len(poly) - 1)) < width / 2 + sb:
+                    near = True
+                    break
+            if not near and pond:
+                sb = 30 if is_crem else 55
+                if min(math.hypot(cx - pond[0], cy - pond[1]) for cx, cy in cor) < max(pond[2], pond[3]) + sb:
+                    near = True
+            # RICE PADDIES flood, so a BURIAL ground keeps a creek-level set-back from any field edge too
+            # (treat the field boundary like a small watercourse). The cremation ground is exempt (a fire
+            # site, not flood-sensitive graves).
+            if not near and not is_crem:
+                for ol in field_outlines:
+                    if min(poly_dist(cx, cy, ol) for cx, cy in cor) < FIELD_SETBACK:
+                        near = True
+                        break
+            if near:
+                crowded.append((round(site["x"]), round(site["y"])))
+        check("funerary_set_back_from_water", not crowded,
+              f"grave site(s) crowd open water OR a flood-prone rice paddy - a burial ground's set-back scales with "
+              f"the waterway (a moat/river needs far more room than a creek; field edges count as creeks): {crowded[:3]}")
+
+        # THE CREMATORY ADJOINS AN EXTERNAL BURIAL GROUND: the body is burned and its cremated bones
+        # interred next door, so a cremation ground sits ADJACENT to an EXTERNAL (outside-the-walls)
+        # cemetery - together they form the extramural funerary complex beyond a gate. (An unwalled
+        # settlement has no walls, so any of its cemeteries counts as external.)
+        if crem:
+            ext_cems = [c for c in cems if not (wall and point_in_poly(c["x"], c["y"], wall))]
+
+            def _edge_gap(a, b):
+                gx = max(0.0, abs(a["x"] - b["x"]) - (a["w"] + b["w"]) / 2)
+                gy = max(0.0, abs(a["y"] - b["y"]) - (a["h"] + b["h"]) / 2)
+                return math.hypot(gx, gy)
+            lonely = [(round(cr["x"]), round(cr["y"])) for cr in crem
+                      if not any(_edge_gap(cr, c) <= 70 for c in ext_cems)]
+            check("cremation_ground_by_external_cemetery", not lonely,
+                  f"cremation ground(s) not adjacent to an external (outside-the-walls) burial ground: {lonely[:3]} - "
+                  f"the body is cremated and its bones interred next door, so the crematory adjoins an extramural cemetery")
+
+            # SET BACK FROM THE MAIN ROAD: the crematory is marginal, polluting land reached by a minor
+            # funeral path, NOT the high street - so it keeps clear of the Imperial / trunk road (town
+            # streets and minor lanes don't count; only the main road). The temple's own parish graveyard
+            # may sit by the temple wherever it is, but the smoking pyre stays off the main thoroughfare.
+            ROAD_SETBACK = 130
+            mainroad = M.get("road")
+            if mainroad:
+                def _rdist(x, y):
+                    return min(seg_dist(x, y, mainroad[k], mainroad[k + 1]) for k in range(len(mainroad) - 1))
+                on_road = [(round(cr["x"]), round(cr["y"])) for cr in crem if _rdist(cr["x"], cr["y"]) < ROAD_SETBACK]
+                check("cremation_ground_set_back_from_main_road", not on_road,
+                      f"cremation ground(s) crowd the main road: {on_road[:3]} - a crematory is marginal land reached "
+                      f"by a minor funeral path, not high-street frontage; keep it >= {ROAD_SETBACK}px off the trunk road")
+                # NOT BETWEEN its temple and the road: you should not walk past the pyre to reach the
+                # monastery. The crematory sits BEHIND or beside its nearest temple (at least as far from
+                # the road as that temple, less a small tolerance), never on the road-side approach to it.
+                # (The temple's own graveyard may still sit road-side by the temple - this is the pyre only.)
+                temples_r = [t for t in M.get("religious", []) if t.get("kind") in ("monastery", "temple")]
+                between = []
+                for cr in crem:
+                    near_t = [t for t in temples_r if math.hypot(t["x"] - cr["x"], t["y"] - cr["y"]) <= 400]
+                    if near_t:
+                        t = min(near_t, key=lambda t: math.hypot(t["x"] - cr["x"], t["y"] - cr["y"]))
+                        if _rdist(cr["x"], cr["y"]) < _rdist(t["x"], t["y"]) - 40:
+                            between.append((round(cr["x"]), round(cr["y"])))
+                check("cremation_ground_not_between_temple_and_road", not between,
+                      f"cremation ground(s) sit between a temple and the road: {between[:3]} - you should not walk past "
+                      f"the pyre to reach the monastery; put the crematory BEHIND or beside its temple, off the road side")
+
+        # PRECINCT: a graveyard is a temple parish ground - it sits by a temple. (At CITY scale only an
+        # INSIDE-wall graveyard must; an OUTSIDE-wall one is the extramural common burial ground, exempt.)
+        if scale in ("town", "city") and cems and temples:
+            # a graveyard must be by a temple UNLESS it is outside a walled settlement's wall (then it
+            # is the extramural common burial ground - exempt). An unwalled town has no outside, so all
+            # its graveyards are parish grounds and must sit by a monastery.
+            stray = [(round(c["x"]), round(c["y"])) for c in cems
+                     if c.get("parish", True) and (not wall or _inside(c["x"], c["y"]))
+                     and not any(math.hypot(c["x"] - r["x"], c["y"] - r["y"]) < 230 for r in temples)]
+            check("cemetery_in_temple_precinct", not stray,
+                  f"graveyard(s) not in any temple precinct: {stray[:3]} - a parish ground sits by its temple "
+                  f"(a walled settlement's extramural common ground, and any parish=False plot, are exempt)")
+
+        # SPLIT: any WALLED settlement (town or city) keeps a graveyard both inside AND outside the
+        # walls - and the EXTERIOR common ground is noticeably larger than the cramped intramural one
+        # (there is room beyond the walls; inside, the temple grounds are hemmed in by the city).
+        if wall and cems:
+            ins = [c for c in cems if _inside(c["x"], c["y"])]
+            out = [c for c in cems if not _inside(c["x"], c["y"])]
+            check("walled_graveyards_inside_and_outside", bool(ins) and bool(out),
+                  f"a walled settlement keeps a graveyard both inside AND outside the walls (inside {len(ins)}, "
+                  f"outside {len(out)}) - keep at least one of each")
+            if ins and out:
+                bi = max(c["w"] * c["h"] for c in ins)
+                bo = max(c["w"] * c["h"] for c in out)
+                check("walled_exterior_cemetery_larger", bo >= 1.3 * bi,
+                      f"the exterior common burial ground should be noticeably larger than the cramped intramural "
+                      f"ground (outside {bo:.0f}px2 vs inside {bi:.0f}px2; want >= 1.3x) - there is room beyond the walls")
+
+        if scale == "city":
+            # every temple that CAN host a graveyard has one in its precinct (graveyard=False opts out)
+            needy = [r for r in temples if r.get("graveyard", True)]
+            unserved = [r.get("label", (round(r["x"]), round(r["y"]))) for r in needy
+                        if not any(math.hypot(c["x"] - r["x"], c["y"] - r["y"]) < 230 for c in cems)]
+            check("city_temples_have_graveyards", not unserved,
+                  f"temple(s) with no graveyard in their precinct: {unserved[:3]} - Shinsei and Fortune worship "
+                  f"are merged, so every temple keeps a burial ground unless it opts out (graveyard=False)")
+            # CLAN MAUSOLEUM: a walled crypt precinct inside the walls, by the samurai/government quarter
+            gov = M.get("governor_mansion")
+            sam = [b for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large")]
+            if gov:
+                anchor = (gov["x"], gov["y"])
+            elif sam:
+                anchor = (sum(b["x"] for b in sam) / len(sam), sum(b["y"] for b in sam) / len(sam))
+            else:
+                anchor = None
+            maus_ok = (bool(maus) and any(_inside(m2["x"], m2["y"]) for m2 in maus)
+                       and (anchor is None or any(math.hypot(m2["x"] - anchor[0], m2["y"] - anchor[1]) < 640 for m2 in maus)))
+            check("city_has_mausoleum", maus_ok,
+                  "a provincial city needs the ruling clan's ancestral MAUSOLEUM (s.mausoleum) inside the "
+                  "walls, by the samurai/government quarter - a walled crypt precinct for the elite dead")
+            # CREMATION GROUND: smoke, fire, and pollution push the crematory OUTSIDE the walls
+            crem_out = [c for c in crem if not _inside(c["x"], c["y"])]
+            check("city_has_cremation_ground", bool(crem_out),
+                  "a city cremates its dead at a CREMATION GROUND (s.cremation_ground) OUTSIDE the walls - "
+                  "monk-run with burakumin assistants; smoke and fire keep it beyond a gate")
+            # PAUPER OSSUARY: outside the walls, beside the cremation ground
+            oss_ok = any(not _inside(o["x"], o["y"]) and any(math.hypot(o["x"] - c["x"], o["y"] - c["y"]) < 320 for c in crem) for o in oss)
+            check("city_has_ossuary", oss_ok,
+                  "a city needs a pauper OSSUARY mound (s.ossuary) outside the walls by the cremation ground - "
+                  "the communal bones of the poor and the unconnected dead (muenbotoke)")
+
+        if scale == "town":
+            # a county town cremates too - a cremation ground at the edge, clear of the dwellings
+            dwell_t = M.get("houses", []) + [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]
+            far_crem = [c for c in crem if all(math.hypot(c["x"] - h["x"], c["y"] - h["y"]) > 120 for h in dwell_t)] if dwell_t else crem
+            check("town_has_cremation_ground", bool(far_crem),
+                  "a county town cremates its dead at a CREMATION GROUND (s.cremation_ground) at the edge, "
+                  "clear of the dwellings - monk-run with burakumin assistants")
 
     # LABEL TEXT renders ON TOP of everything: no part of a label may be covered. Labels live in the
     # topmost layer (s.add_label), above the TOP-layer structures (gate furniture, kido, torii); the
@@ -1108,6 +1654,69 @@ def gate(M, verbose=True):
                     bad_fr.append(f["name"])
                     break
         check("fields_clear_of_road", not bad_fr, f"field(s) run under a road/street: {sorted(set(bad_fr))}")
+
+    # WHERE A ROAD (or town street) CROSSES A WATERCOURSE, a bridge must carry it over - a road does
+    # not simply run through open water. Crossings are road/street segments intersecting a stream, an
+    # irrigation channel, or the city moat (a walled city's approach road crosses the moat at each
+    # gate). Every such crossing must have a recorded bridge near the intersection point. (A road that
+    # merely runs ALONGSIDE water, never intersecting it, needs no bridge - only true crossings count.)
+    bridges = M.get("bridges", [])
+    waters_b = ([s["poly"] for s in M.get("streams", [])]
+                + [c["poly"] for c in M.get("channels", [])]
+                + ([M["moat"]] if M.get("moat") else []))
+    carried_b = ([road] if road else []) + [st["pts"] for st in M.get("town_streets", [])]
+    unbridged = []
+    for rpts in carried_b:
+        for i in range(len(rpts) - 1):
+            ra, rb = rpts[i], rpts[i + 1]
+            for wpts in waters_b:
+                for j in range(len(wpts) - 1):
+                    if segments_cross(ra, rb, wpts[j], wpts[j + 1]):
+                        p = seg_intersect(ra, rb, wpts[j], wpts[j + 1])
+                        if p is not None and not any(math.hypot(b["x"] - p[0], b["y"] - p[1]) <= 40 for b in bridges):
+                            unbridged.append((round(p[0]), round(p[1])))
+    check("roads_bridge_water", not unbridged,
+          f"a road/street crosses water with no bridge at {sorted(set(unbridged))} - carry it over (call s.bridges() after laying all roads and water)")
+
+    # WHERE WATERCOURSES MEET they must MERGE like a confluence, not stack opacity into a dark seam.
+    # All water BEDS render below all water SHEENS (the shared-opacity bed group composites first, the
+    # lighter mid-current group on top), exactly as road beds merge at a crossroads - so at every place
+    # two courses CROSS or one FEEDS INTO another, the higher-drawn course's opaque bed must not paint
+    # over the other's sheen. Checked via the recorded bed/sheen draw positions (bedz / sheenz).
+    ways = [(s["poly"], s.get("bedz"), s.get("sheenz")) for s in M.get("streams", [])]
+    ways += [(c["poly"], c.get("bedz"), c.get("sheenz")) for c in M.get("channels", [])]
+    if M.get("moat") and M.get("moat_layer"):
+        ml = M["moat_layer"]
+        ways.append((M["moat"], ml.get("bedz"), ml.get("sheenz")))
+
+    def _water_meet(pa, pb):
+        for i in range(len(pa) - 1):
+            for j in range(len(pb) - 1):
+                if segments_cross(pa[i], pa[i + 1], pb[j], pb[j + 1]):
+                    return seg_intersect(pa[i], pa[i + 1], pb[j], pb[j + 1])
+        for pt in (pa[0], pa[-1]):                  # a feeder's endpoint sitting ON the other course
+            if poly_dist(pt[0], pt[1], pb) <= 12:
+                return pt
+        for pt in (pb[0], pb[-1]):
+            if poly_dist(pt[0], pt[1], pa) <= 12:
+                return pt
+        return None
+
+    seams = []
+    for i in range(len(ways)):
+        for j in range(i + 1, len(ways)):
+            pa, ba, sa = ways[i]
+            pb, bb, sb = ways[j]
+            if ba is None or bb is None:
+                continue
+            pt = _water_meet(pa, pb)
+            sheens = [z for z in (sa, sb) if z is not None]
+            if pt is not None and sheens and max(ba, bb) > min(sheens):
+                seams.append((round(pt[0]), round(pt[1])))
+    check("waterways_merge_at_crossings", not seams,
+          f"watercourses overlap instead of merging at {sorted(set(seams))} - a higher-drawn bed paints over "
+          f"another course's sheen (stacking into a dark seam); route all water through s.stream / s.channel / "
+          f"s.moat so the shared bed and sheen groups composite it as one confluence")
 
     # no field overlaps the town wall: a field may ABUT the wall but must stay on one
     # side of it (the chrysanthemum field inside the walls touches but never crosses)
@@ -1277,13 +1886,104 @@ def gate(M, verbose=True):
         farmhouses = len(houses)
         bands = {"merchant": (20, 28), "laborer": (25, 35),
                  "servant": (9, 17), "burakumin": (10, 14), "samurai": (5, 10)}
+        # a caste's homes come in size variants (the wealthy get larger houses); count them together
+        VARIANTS = {"merchant": ("merchant", "merchant_house", "merchant_large"),
+                    "laborer": ("laborer", "laborer_large"), "samurai": ("samurai", "samurai_large")}
+        caste_n = {kind: sum(bk.get(k, 0) for k in VARIANTS.get(kind, (kind,))) for kind in bands}
         for kind, (lo, hi) in bands.items():
-            c = bk.get(kind, 0)
+            c = caste_n[kind]
             check(f"town_caste_count[{kind}]", lo <= c <= hi,
                   f"{kind} buildings {c} outside budgets.md band [{lo},{hi}]")
-        non_farmer_max = max((bk.get(k, 0) for k in bands), default=0)
+        non_farmer_max = max(caste_n.values(), default=0)
         check("town_farmers_plurality", farmhouses >= non_farmer_max,
               f"farmhouses {farmhouses} should be the largest single group (max other {non_farmer_max})")
+        # MERCHANT and LABORER housing varies in SIZE by wealth, like a provincial city's (budgets.md
+        # Town wealth tiers): a MINORITY of merchants are very-rich / rich and live in large homes
+        # (~5 of ~24), and a few laborers are 'master/rich' (~2-3 of ~29); the rest live in small/standard
+        # dwellings. Require the larger homes (kind merchant_large / laborer_large) to be PRESENT and a
+        # CLEAR MINORITY - not that every house is one uniform size.
+        m_small = bk.get("merchant", 0) + bk.get("merchant_house", 0)
+        m_big = bk.get("merchant_large", 0)
+        if m_small + m_big:
+            check("town_merchant_housing_varied", m_big >= 2 and m_small > m_big,
+                  f"town merchant housing lacks size variety (budgets.md: ~5 of ~24 merchants are very-rich/rich): "
+                  f"{m_big} large of {m_small + m_big} - give the wealthy merchants larger homes (kind 'merchant_large'), a clear minority")
+        l_small = bk.get("laborer", 0)
+        l_big = bk.get("laborer_large", 0)
+        if l_small + l_big:
+            check("town_laborer_housing_varied", l_big >= 2 and l_small > l_big,
+                  f"town laborer housing lacks size variety (budgets.md: ~2-3 'master/rich' of ~29 laborers): "
+                  f"{l_big} large of {l_small + l_big} - give the wealthier laborers larger homes (kind 'laborer_large'), a clear minority")
+        # MERCHANT RESIDENCES sit BEHIND the merchant BUSINESSES, and CLOSER to the road than the
+        # LABORER housing - a clean radial band: shops front the road, the merchant homes directly
+        # behind them, then a gap, then the laborers set further back. Scoped to road-fronted towns
+        # (those with a trunk M["road"], e.g. unwalled Hoshizora); a walled town's interior grid is laid
+        # out around cross-streets, not one radial axis, so this single-axis test does not apply there.
+        # droad = perpendicular distance from a building to the nearest road segment.
+        rd = M.get("road")
+        if rd:
+            def _droad(b):
+                return min(seg_dist(b["x"], b["y"], rd[k], rd[k + 1]) for k in range(len(rd) - 1))
+            biz = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant")]
+            mres = [b for b in M.get("buildings", []) if b.get("kind") in ("merchant_house", "merchant_large")]
+            labs = [b for b in M.get("buildings", []) if b.get("kind") in ("laborer", "laborer_large")]
+            mh_problems = []
+            if biz and mres:
+                maxbiz = max(_droad(b) for b in biz)
+                in_biz_band = [b for b in mres if _droad(b) <= maxbiz]
+                if in_biz_band:
+                    mh_problems.append(f"{len(in_biz_band)} merchant residence(s) sit within the storefront band, not behind it")
+                maxres = max(_droad(b) for b in mres)
+                if labs:
+                    GAP = 35   # min radial gap (px, centre-to-centre depth) between the merchant-home band and the laborer warren
+                    minlab = min(_droad(b) for b in labs)
+                    if minlab < maxres + GAP:
+                        mh_problems.append(
+                            f"laborer housing not set back beyond the merchant residences with a gap "
+                            f"(nearest laborer {round(minlab)}px from road vs merchant residences out to {round(maxres)}px; want >= {GAP}px clear)")
+                check("merchant_residences_behind_businesses", not mh_problems,
+                      f"a road-fronted town's merchant residences must sit directly BEHIND the shops, with the "
+                      f"laborer housing set FURTHER back and a gap between the two bands: {mh_problems}")
+            # HOUSING DIRECTLY BEHIND A STOREFRONT shares the storefront's ORIENTATION: a home tucked
+            # right behind a shop (a merchant family over/behind its own premises) must lie PARALLEL to
+            # that shop, not askew to it - the block reads as one aligned unit, shopfront then dwelling.
+            # "Directly behind" is judged in ROAD coordinates, not raw distance: project each building onto
+            # the road to get (along, droad). A home H sits directly behind its nearest shop S when it is at
+            # nearly the SAME position ALONG the road (|along_H - along_S| <= ALONG_TOL = in S's radial shadow)
+            # AND one building DEEPER (DEPTH_MIN < droad_H - droad_S <= DEPTH_MAX, i.e. immediately behind S,
+            # not way back in the warren and not merely beside it). This isolates the home-over-its-shop case
+            # from pack-edge dwellings that happen to lie near a shop. Angles compared mod 180 (a 180deg-flipped
+            # footprint is still parallel). Road-fronted only - same single-axis scoping as the band check above.
+            rcum = [0.0]
+            for k in range(len(rd) - 1):
+                rcum.append(rcum[-1] + math.hypot(rd[k + 1][0] - rd[k][0], rd[k + 1][1] - rd[k][1]))
+            def _along(b):
+                bestd, bestt = float("inf"), 0.0
+                for k in range(len(rd) - 1):
+                    cx, cy = seg_closest(b["x"], b["y"], rd[k], rd[k + 1])
+                    d = math.hypot(cx - b["x"], cy - b["y"])
+                    if d < bestd:
+                        bestd, bestt = d, rcum[k] + math.hypot(cx - rd[k][0], cy - rd[k][1])
+                return bestt
+            shops = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant")]
+            homes = [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and b.get("kind") != "merchant"]
+            ALONG_TOL, DEPTH_MIN, DEPTH_MAX, ANG_TOL = 42, 15, 74, 15
+            askew = []
+            for h in homes:
+                near = min(shops, key=lambda s: math.hypot(s["x"] - h["x"], s["y"] - h["y"]), default=None)
+                if near is None:
+                    continue
+                if abs(_along(h) - _along(near)) > ALONG_TOL:   # not in the shop's radial shadow
+                    continue
+                if not (DEPTH_MIN < _droad(h) - _droad(near) <= DEPTH_MAX):   # beside / far back, not directly behind
+                    continue
+                d = abs(h.get("rot", 0) - near.get("rot", 0)) % 180
+                d = min(d, 180 - d)
+                if d > ANG_TOL:
+                    askew.append((round(h["x"]), round(h["y"]), round(d)))
+            check("housing_aligned_behind_storefronts", not askew,
+                  f"housing tucked directly behind a storefront must lie PARALLEL to it (orientation within "
+                  f"{ANG_TOL}deg, mod 180); these homes are askew (x, y, mismatch deg): {askew}")
         check("town_has_magistrate_manor", len(M.get("manors", [])) >= 1,
               "a county-seat town must have the magistrate's manor")
         # a town has hundreds of farmers - we never show all the farmland, so at least
@@ -1311,6 +2011,62 @@ def gate(M, verbose=True):
         want_flop = meta.get("flophouses", 1)
         check("town_has_flophouse", len(M.get("flophouses", [])) >= want_flop,
               f"{len(M.get('flophouses', []))} flophouses, expected >= {want_flop} (cheap market-day lodging via s.flophouse(...); meta(flophouses=N) to change)")
+        # a county town is a stop on the trade route: it needs ONE caravan INN (s.inn) with a STABLES
+        # (s.stables) next to it and OPEN GROUND beside the stables - a pasture for the wagon-train oxen
+        # and horses - exactly like a provincial city's gate caravan facilities, but a single one. The
+        # inn must sit ALONG the road (the Imperial road, or a town street) - the caravans pull up to it -
+        # NOT buried behind the shop rows. A WALLED town keeps it INSIDE the rampart (caravans enter the gate).
+        inns = [b for b in M.get("buildings", []) if b.get("kind") == "inn"]
+        stbl = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
+        cwall = M.get("wall")
+        routes = ([M["road"]] if M.get("road") else []) + [s["pts"] for s in M.get("town_streets", [])]
+        others = [b for b in M.get("buildings", []) if b.get("kind") not in ("inn", "stables")]
+        dwell_t = [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS] + M.get("houses", [])
+        caravan_ok, why = False, f"inn={len(inns)} stables={len(stbl)}"
+        for inn in inns:
+            near_st = [s for s in stbl if math.hypot(s["x"] - inn["x"], s["y"] - inn["y"]) <= 150]
+            if not near_st:
+                why = "the inn has no stables beside it"
+                continue
+            st = near_st[0]
+            if meta.get("walled") and cwall and not (point_in_poly(inn["x"], inn["y"], cwall) and point_in_poly(st["x"], st["y"], cwall)):
+                why = "the caravan inn + stables must be INSIDE the walls"
+                continue
+            crowd = sum(1 for d in dwell_t if math.hypot(d["x"] - st["x"], d["y"] - st["y"]) < 75)
+            if crowd > 4:
+                why = f"the stables is hemmed in by {crowd} dwellings (it needs open ground - a pasture for the animals)"
+                continue
+            if routes and not _fronts_route(inn["x"], inn["y"], routes, others):
+                why = "the inn sits BEHIND the shop rows - it must front the road/main street (caravans pull up to it)"
+                continue
+            caravan_ok = True
+            break
+        check("town_has_caravan_inn", caravan_ok,
+              f"a county town needs ONE caravan INN with a STABLES beside it, OPEN GROUND for the wagon-train animals, and "
+              f"FRONTING the road (inside the walls if walled): {why} - add s.inn(...) + s.stables(...), like a provincial city's gate facilities but a single one")
+        # the inn FACES the road and lies PARALLEL to it - the caravans pull straight up to it - so its
+        # noren front (the +y edge after the inn's `rot`) must point at the nearest route point, which also
+        # makes its long frontage edge run along the road. A diagonal road needs a tilted inn.
+        unaligned = []
+        for inn in inns:
+            npt, bd = None, 1e18
+            for r in routes:
+                for k in range(len(r) - 1):
+                    cx, cy = seg_closest(inn["x"], inn["y"], r[k], r[k + 1])
+                    d = math.hypot(cx - inn["x"], cy - inn["y"])
+                    if d < bd:
+                        bd, npt = d, (cx, cy)
+            if npt is None or bd < 1:
+                continue
+            dx, dy = (npt[0] - inn["x"]) / bd, (npt[1] - inn["y"]) / bd
+            th = math.radians(inn.get("rot", 0))
+            fn = (-math.sin(th), math.cos(th))          # the +y front's outward normal after rot
+            if fn[0] * dx + fn[1] * dy < 0.88:          # within ~28deg of facing the nearest road point
+                unaligned.append((round(inn["x"]), round(inn["y"])))
+        if routes:
+            check("inn_faces_the_road", not unaligned,
+                  f"caravan inn(s) not oriented to FACE the road and lie parallel to it: {unaligned[:3]} - tilt the inn "
+                  f"(s.inn(x, y, rot=...)) so its noren front faces the roadbed and its long edge runs along the road")
         # every town has an amphitheater unless meta(amphitheater=False); for a walled town
         # it sits INSIDE the walls unless meta(amphitheater="outside")
         amph_meta = meta.get("amphitheater", True)
@@ -1357,7 +2113,6 @@ def gate(M, verbose=True):
             manor_hill = next((mn for mn in M.get("manors", [])
                                if math.hypot((mn["x"] - hcx) / hrx, (mn["y"] - hcy) / hry) <= 1.0), None)
         if manor_hill:
-            GATE_OUT = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
             bld = M.get("buildings", [])
             town_dir = None
             if bld:
@@ -1365,9 +2120,7 @@ def gate(M, verbose=True):
                             sum(b["y"] for b in bld) / len(bld) - manor_hill["y"])
                 tl = math.hypot(tvx, tvy) or 1
                 town_dir = (tvx / tl, tvy / tl)
-                ov = GATE_OUT.get(manor_hill.get("gate_dir"), (0, 0))
-                check("manor_gate_faces_town", ov[0] * town_dir[0] + ov[1] * town_dir[1] >= 0.5,
-                      f"the manor's gate ({manor_hill.get('gate_dir')}) should face the town below the hill")
+            # the manor's gate (faces the town) is checked generally below, for any town/hamlet manor
             if amph:
                 t = math.hypot((amph["x"] - hcx) / hrx, (amph["y"] - hcy) / hry)
                 fvx, fvy = amph["x"] - hcx, amph["y"] - hcy
@@ -1376,6 +2129,37 @@ def gate(M, verbose=True):
                 aligned = foot is None or (fvx / fl) * foot[0] + (fvy / fl) * foot[1] >= 0.5
                 check("amphitheater_at_hill_foot", 0.85 <= t <= 1.45 and aligned,
                       "the amphitheater should sit at the foot of the hill on the downhill/town side, so the slope seats the audience")
+
+    # A magistrate's manor sits at the EDGE of its settlement; its gate faces what it fronts - the
+    # town/hamlet it administers (the built-up centroid) OR the Imperial road it sits beside. There is
+    # no fixed default direction (it depends where the town is); SOUTH is the formal fallback. (At CITY
+    # scale M['manors'] are the scattered country estates, which face their own lanes - city_estate_gates_vary.)
+    if scale in ("hamlet", "town") and M.get("manors"):
+        GATE_OUT = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
+        dwell_all = M.get("houses", []) + M.get("buildings", [])
+        mroad = M.get("road")
+        bad_mg = []
+        for mn in M.get("manors", []):
+            o = GATE_OUT.get(mn.get("gate_dir"), (0, 0))
+            ang = math.radians(mn.get("rot", 0))
+            ov = (o[0] * math.cos(ang) - o[1] * math.sin(ang), o[0] * math.sin(ang) + o[1] * math.cos(ang))
+            dirs = []
+            if dwell_all:
+                tvx = sum(b["x"] for b in dwell_all) / len(dwell_all) - mn["x"]
+                tvy = sum(b["y"] for b in dwell_all) / len(dwell_all) - mn["y"]
+                tl = math.hypot(tvx, tvy) or 1
+                dirs.append((tvx / tl, tvy / tl))
+            if mroad:
+                rp = min((seg_closest(mn["x"], mn["y"], mroad[k], mroad[k + 1]) for k in range(len(mroad) - 1)),
+                         key=lambda c: (c[0] - mn["x"]) ** 2 + (c[1] - mn["y"]) ** 2)
+                rvx, rvy = rp[0] - mn["x"], rp[1] - mn["y"]
+                rl = math.hypot(rvx, rvy) or 1
+                dirs.append((rvx / rl, rvy / rl))
+            if dirs and max(ov[0] * d[0] + ov[1] * d[1] for d in dirs) < 0.45:
+                bad_mg.append(mn.get("gate_dir"))
+        check("manor_gate_faces_town", not bad_mg,
+              f"a magistrate's manor gate {bad_mg} faces neither the town it administers nor the road it fronts - "
+              f"it sits at the settlement's edge, so its gate should open toward the town/road (no fixed default; south is the formal fallback)")
 
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")),
@@ -1624,83 +2408,6 @@ def gate(M, verbose=True):
         if amph:
             check("city_amphitheater_larger_than_town", amph.get("r", 0) >= 92,
                   f"the city amphitheater (radius {amph.get('r', 0)}) is no bigger than a town's - a provincial city's is larger (radius >= 92)")
-
-        # A LABEL must not sit on a building it does NOT name. A label may overlap the feature(s) it
-        # names - its own building/compound, or (for a zone/neighbourhood label) any building of that
-        # cluster - and may clip a street-fronting shop or an interleaved servant house (those line every
-        # quarter, so they are never a victim). But where a label spills onto a DIFFERENT-identity
-        # building it tells the reader that building is something it is not (a "flophouse" label over a
-        # merchant house, a "gate guard house" label over a flophouse). Each labelled structure carries a
-        # GROUP; the label text declares which group(s) it may cover - anything else it overlaps fires.
-        LABEL_FREE = {"shop", "servant"}
-
-        def _grp(kind):
-            if kind in ("samurai", "samurai_large"):
-                return "samurai"
-            if kind in ("merchant", "merchant_house", "merchant_large"):
-                return "merchant"
-            if kind == "laborer_large":
-                return "laborer"
-            return kind
-
-        def _bb(it):
-            rot = it.get("rot", 0)
-            hw, hh = it.get("w", 0) / 2, it.get("h", 0) / 2
-            if not rot:
-                return it["x"] - hw, it["y"] - hh, it["x"] + hw, it["y"] + hh
-            a = math.radians(rot)
-            ca, sa = math.cos(a), math.sin(a)
-            xs = [it["x"] + dx * ca - dy * sa for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
-            ys = [it["y"] + dx * sa + dy * ca for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
-            return min(xs), min(ys), max(xs), max(ys)
-
-        vics = [(_grp(b.get("kind", "")), _bb(b)) for b in M.get("buildings", []) if _grp(b.get("kind", "")) not in LABEL_FREE]
-        vics += [("flophouse", _bb(fp)) for fp in M.get("flophouses", [])]
-        vics += [("temple", _bb(r)) for r in M.get("religious", [])]
-        vics += [("ministry", _bb(mi)) for mi in M.get("ministries", [])]
-        vics += [("governor", _bb(M["governor_mansion"]))] if M.get("governor_mansion") else []
-        vics += [("gate", _bb(gs)) for gs in M.get("gate_structs", [])]
-        vics += [("merchant", _bb(e)) for e in M.get("merchant_estates", [])]
-        vics += [("estate", _bb(mn)) for mn in M.get("manors", [])]
-
-        def _label_allows(txt):
-            t = txt.lower()
-            if "guard house" in t or "inspection" in t:
-                return {"gate"}
-            if "flophouse" in t:
-                return {"flophouse"}
-            if "ministry" in t:
-                return {"ministry"}
-            if "governor" in t or "mansion" in t:
-                return {"governor"}
-            if any(w in t for w in ("temple", "shrine", "monastery", "chapel")):
-                return {"temple"}
-            if "samurai" in t:
-                return {"samurai", "estate"}
-            if "laborer" in t or "labourer" in t:
-                return {"laborer", "laborer_large"}
-            if "burakumin" in t:
-                return {"burakumin"}
-            if "agricultur" in t:               # the in-wall farming district also houses burakumin
-                return {"burakumin"}
-            if "merchant" in t:
-                return {"merchant"}
-            return set()                        # road / farmland / market / title labels name no building
-
-        mislabel = []
-        for L in M.get("labels", []):
-            if len(L) <= 5:
-                continue
-            allow = _label_allows(L[5])
-            for g, (x0, y0, x1, y1) in vics:
-                if g in allow:
-                    continue
-                if L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
-                    mislabel.append(f"{L[5]!r} over a {g}")
-                    break
-        check("labels_clear_of_other_buildings", not mislabel,
-              f"label(s) sitting on a building they do not name (a label may cover only the thing it labels, "
-              f"or a fronting shop/servant house): {sorted(set(mislabel))}")
 
         # A NAMED civic building's label must sit on ITS OWN building, never on a DIFFERENT one of the
         # same kind. labels_clear_of_other_buildings lumps every ministry into one "ministry" GROUP, so
@@ -1981,7 +2688,8 @@ def gate(M, verbose=True):
                 def _foot(it):
                     return rect_corners(it) if "rot" in it else rect_corners_xywh(it, 0)
                 on_ring = [it.get("name") or it.get("label") or it.get("kind") or "compound"
-                           for it in (M.get("buildings", []) + M.get("ministries", []) + M.get("religious", []) + ([rgov] if rgov else []))
+                           for it in (M.get("buildings", []) + M.get("ministries", []) + M.get("religious", []) + ([rgov] if rgov else [])
+                                      + M.get("cemeteries", []) + M.get("mausoleums", []) + M.get("cremation_grounds", []) + M.get("ossuaries", []))
                            if footprint_on_line(_foot(it), ring, rbed)]
                 on_ring += ["field:" + f["name"] for f in fields if footprint_on_line(f["outline"], ring, rbed)]
                 check("ring_road_kept_clear", not on_ring,
@@ -1995,6 +2703,14 @@ def gate(M, verbose=True):
             areas = sorted((mn["w"] * mn["h"]) for mn in est_out)
             check("city_samurai_estates_vary_in_size", len(areas) < 2 or areas[-1] >= 1.5 * areas[0],
                   "the samurai estates should vary in size (some larger than others) - largest area >= 1.5x the smallest")
+            # scattered country estates each front their OWN approach lane (not drawn at this scale), so
+            # their depicted (formal) gates do NOT all open the same way - a uniform direction is the
+            # unconsidered default. The formal gate favours the auspicious south; others face the cityward
+            # approach (the cityward service gate, like the governor's, is omitted at this scale).
+            egd = [mn.get("gate_dir") for mn in est_out]
+            check("city_estate_gates_vary", len(egd) < 3 or len(set(egd)) >= 2,
+                  f"all {len(egd)} country estate gates open the same way ({egd[0] if egd else None}) - scattered "
+                  f"estates each front their own approach, so vary the gate_dir (some south, some cityward)")
             moat = M.get("moat")
             # all city temples INSIDE the walls, and clear of the wall stroke and the moat
             rel = M.get("religious", [])

@@ -1,0 +1,319 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "houses": [],
+ "fields": [],
+ "buildings": [
+  {
+   "x": 120,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 180,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 240,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 300,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 360,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 420,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 480,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 540,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 600,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 660,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 720,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 780,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 120,
+   "y": 240,
+   "w": 86,
+   "h": 60,
+   "rot": 0,
+   "kind": "merchant_large"
+  },
+  {
+   "x": 220,
+   "y": 240,
+   "w": 86,
+   "h": 60,
+   "rot": 0,
+   "kind": "merchant_large"
+  },
+  {
+   "x": 320,
+   "y": 240,
+   "w": 86,
+   "h": 60,
+   "rot": 0,
+   "kind": "merchant_large"
+  },
+  {
+   "x": 420,
+   "y": 240,
+   "w": 86,
+   "h": 60,
+   "rot": 0,
+   "kind": "merchant_large"
+  },
+  {
+   "x": 120,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 170,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 220,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 270,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 320,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 370,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 420,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 470,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 520,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 570,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 620,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 670,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 720,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 770,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 820,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 870,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 920,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 970,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 1020,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 1070,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 1120,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 1170,
+   "y": 360,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_laborer_housing_varied"
+  ],
+  "source": "test_checks.py::test_town_laborer_housing_varied_fires_when_uniform"
+ }
+}

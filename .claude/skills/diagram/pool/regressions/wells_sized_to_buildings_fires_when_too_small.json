@@ -1,0 +1,37 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 44,
+   "h": 29,
+   "rot": 0,
+   "kind": "plain"
+  },
+  {
+   "x": 344,
+   "y": 300,
+   "w": 44,
+   "h": 29,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "wells": [
+  {
+   "x": 322,
+   "y": 300,
+   "r": 8,
+   "vr": 5.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "wells_sized_to_buildings"
+  ],
+  "source": "test_checks.py::test_wells_sized_to_buildings_fires_when_too_small"
+ }
+}

@@ -1,0 +1,154 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "houses": [],
+ "fields": [],
+ "road": [
+  [
+   100,
+   0
+  ],
+  [
+   100,
+   1000
+  ]
+ ],
+ "road_width": 26,
+ "buildings": [
+  {
+   "x": 150,
+   "y": 100,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 150,
+   "y": 160,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 150,
+   "y": 220,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 150,
+   "y": 280,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 150,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 150,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 150,
+   "y": 460,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 230,
+   "y": 150,
+   "w": 86,
+   "h": 60,
+   "rot": 0,
+   "kind": "merchant_large"
+  },
+  {
+   "x": 230,
+   "y": 230,
+   "w": 86,
+   "h": 60,
+   "rot": 0,
+   "kind": "merchant_large"
+  },
+  {
+   "x": 230,
+   "y": 310,
+   "w": 86,
+   "h": 60,
+   "rot": 0,
+   "kind": "merchant_large"
+  },
+  {
+   "x": 240,
+   "y": 120,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 240,
+   "y": 170,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 240,
+   "y": 220,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 240,
+   "y": 270,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 240,
+   "y": 320,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 240,
+   "y": 370,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "merchant_residences_behind_businesses"
+  ],
+  "source": "test_checks.py::test_merchant_residences_behind_businesses_fires_when_laborers_crowd_the_homes"
+ }
+}
