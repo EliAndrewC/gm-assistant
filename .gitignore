@@ -11,3 +11,8 @@ __pycache__
 
 # Per-machine Claude Code permission grants — gitignored by convention.
 .claude/settings.local.json
+
+# Rendered /diagram map PNGs are regenerable from their .gen.py/.svg/.json (kept in git),
+# so they are not tracked - this is what keeps them out of git history. Regenerate with
+# `python3 .claude/skills/diagram/pool/<map>.gen.py`.
+.claude/skills/diagram/pool/*.png
