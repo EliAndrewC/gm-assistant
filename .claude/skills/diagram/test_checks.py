@@ -2056,6 +2056,19 @@ def test_harvest_yards_clear_of_paddies_passes_when_clear():
     assert "harvest_yards_clear_of_paddies" not in f(M)
 
 
+def test_harvest_yards_clear_of_structures_fires_on_another_building():
+    # the yard (344,300) overlaps a shop - only its OWN farmhouse (300,300) may underlie it
+    M = _harvest([(300, 300)], [_yard((300, 300))])
+    M["buildings"] = [{"x": 352, "y": 300, "w": 44, "h": 30, "rot": 0, "kind": "shop"}]
+    assert "harvest_yards_clear_of_structures" in f(M)
+
+
+def test_harvest_yards_clear_of_structures_passes_when_only_on_its_own_house():
+    M = _harvest([(300, 300)], [_yard((300, 300))])
+    M["buildings"] = [{"x": 700, "y": 700, "w": 44, "h": 30, "rot": 0, "kind": "shop"}]   # far away
+    assert "harvest_yards_clear_of_structures" not in f(M)
+
+
 # --- waterways merge at crossings (confluence layering) ---
 def _confluence(ch_bedz):
     # a stream (bed+sheen) crossed by a channel; ch_bedz is the channel's bed draw position

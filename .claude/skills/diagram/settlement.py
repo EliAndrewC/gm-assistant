@@ -1101,8 +1101,11 @@ class Settlement:
         (dry ground), and a house is SKIPPED when that spot is not clear (in the water, on a lane, or
         against a neighbour) - the kura pattern, which self-selects the outer-ring farmsteads with open
         room. Independent of the ~30% that carry a shed, so a farmhouse may have neither, either, or both.
-        Records M['threshing_yards'] (an annex abutting its own house, hence overlap-exempt against it).
-        Returns the number attached."""
+        Records M['threshing_yards'] (an annex abutting its own house, hence overlap-exempt against it);
+        where the yard overlaps its house the HOUSE is re-drawn on top so it wins the overlap. The yard
+        footprint scales with bscale, like the farmhouses, so it stays a bit smaller than the house at any
+        scale (incl. a compressed city). Returns the number attached."""
+        yw, yh = yw * self.bscale, yh * self.bscale
         homes = [h for h in self.M["houses"] if h.get("kind") == "plain"]
         if not homes:
             return 0
@@ -1123,16 +1126,22 @@ class Settlement:
                 ax, ay = hx - fcx, hy - fcy
             else:
                 ax, ay = 0, -1
-            if abs(ax) >= abs(ay):        # snap the away-from-field direction to a cardinal, tuck the yard there
-                ox, oy = hx + (1 if ax >= 0 else -1) * (hw / 2 + yw / 2 - 2), hy
+            if abs(ax) >= abs(ay):        # snap the away-from-field direction to a cardinal
+                prim = (1 if ax >= 0 else -1, 0)
             else:
-                ox, oy = hx, hy + (1 if ay >= 0 else -1) * (hh / 2 + yh / 2 - 2)
-            if not self._yard_fits(ox, oy, yw, yh, hx, hy):
-                continue
-            self._draw_threshing_yard(ox, oy, yw, yh)
-            self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0, "of": [hx, hy]})
-            self.placed.append((ox, oy, yw, yh))
-            placed += 1
+                prim = (0, 1 if ay >= 0 else -1)
+            # try the away-from-paddy side first, then the two perpendicular sides (never toward the field),
+            # so a farmstead boxed in on its outward side can still tuck a yard alongside
+            for dx, dy in (prim, (prim[1], prim[0]), (-prim[1], -prim[0])):
+                ox = hx + dx * (hw / 2 + yw / 2 - 2)
+                oy = hy + dy * (hh / 2 + yh / 2 - 2)
+                if self._yard_fits(ox, oy, yw, yh, hx, hy):
+                    self._draw_threshing_yard(ox, oy, yw, yh)
+                    self.house(hx, hy, hw, hh, h["kind"], h["rot"], shed=h.get("shed", False))   # re-draw the house OVER the yard so it wins the overlap
+                    self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0, "of": [hx, hy]})
+                    self.placed.append((ox, oy, yw, yh))
+                    placed += 1
+                    break
         return placed
 
     def cemetery(self, cx, cy, w, h, rot=0, label=None, label_above=False, parish=True):
@@ -1253,7 +1262,6 @@ class Settlement:
         self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="34" ry="22" fill="#9A8A6A" opacity="0.5"/>')                                        # the burned centre
         self.add(f'<rect x="{cx-18:.0f}" y="{cy-12:.0f}" width="36" height="24" rx="2" fill="#8C8470" stroke="#4A463C" stroke-width="1.5"/>')   # stone pyre platform
         self.add(f'<rect x="{cx-13:.0f}" y="{cy-7:.0f}" width="26" height="14" fill="#5A463A"/>')                                       # the ash bed
-        self.add(f'<path d="M{cx:.0f},{cy-12} q -8,-14 2,-26 q 8,-10 -2,-24" fill="none" stroke="#B8B0A2" stroke-width="3" opacity="0.5" stroke-linecap="round"/>')   # a wisp of smoke
         self.add(f'<rect x="{cx+30:.0f}" y="{cy-8:.0f}" width="22" height="16" rx="1.5" fill="#CDB890" stroke="#5A4326" stroke-width="1.2"/>')   # the officiants' shelter
         self.add(f'<rect x="{cx+30:.0f}" y="{cy-8:.0f}" width="22" height="5" fill="#5A4326"/>')
         self.M["cremation_grounds"].append({"x": round(cx, 1), "y": round(cy, 1), "w": 116, "h": 80, "rot": 0})
@@ -1893,16 +1901,17 @@ class Settlement:
         w, h = bw * self.bscale, bh * self.bscale
         if self._fits(x, y, w, h):
             rot = random.uniform(-5, 5)
+            shed = random.random() < 0.3
             self.placed.append((x, y, w, h))
-            self.house(x, y, w, h, kind, rot, shed=(random.random() < 0.3))
-            self.M["houses"].append({"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": rot, "role": role})
+            self.house(x, y, w, h, kind, rot, shed=shed)
+            self.M["houses"].append({"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": rot, "role": role, "shed": shed})
             return True
         return False
 
     def headman(self, x, y, w=108, h=68):
         self.placed.append((x, y, w, h))
         self.house(x, y, w, h, "big", 0)
-        self.M["houses"].append({"x": x, "y": y, "w": w, "h": h, "kind": "big", "rot": 0, "role": "headman"})
+        self.M["houses"].append({"x": x, "y": y, "w": w, "h": h, "kind": "big", "rot": 0, "role": "headman", "shed": False})
 
     def _perim_bbox(self, bbox, n, gap):
         x0, y0, x1, y1 = bbox

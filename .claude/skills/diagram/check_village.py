@@ -1281,12 +1281,13 @@ def gate(M, verbose=True):
                   f"{len(dry)} household(s) more than {REACH}px from any water source - a well, or an irrigation "
                   f"channel / pond / stream / moat: {dry[:4]} - put a well within reach")
 
-            # HARVEST PROCESSING (per-farmstead): a rice settlement threshes and dries its crop at the
-            # FARMHOUSE, not on one communal floor. Each household works its cut rice on its own small
-            # tamped earthen YARD (niwa) beside the house, with a little drying rack. Historically Japan
-            # had no central village threshing ground; processing was household-scale. A MINORITY of
-            # farmsteads show a yard (~1/3, matching the ~30% that carry a shed); the rest imply it / run
-            # off-frame. Drawn as an annex abutting its own house (s.threshing_yards()).
+        # HARVEST PROCESSING (per-farmstead): a rice settlement threshes and dries its crop at the
+        # FARMHOUSE, not on one communal floor. Each household works its cut rice on its own small tamped
+        # earthen YARD (niwa) beside the house, with a little drying rack. Historically Japan had no central
+        # village threshing ground; processing was household-scale. A MINORITY of farmsteads show a yard
+        # (~1/3, matching the ~30% that carry a shed); the rest imply it / run off-frame. Applies wherever
+        # there are farmhouses - town/village/hamlet AND a city's farm rings (in-wall district + outside).
+        if scale in ("town", "village", "hamlet", "city"):
             fields_ol = [fdef["outline"] for fdef in fields]
             yards = M.get("threshing_yards", [])
             need = math.ceil(len(houses) / 3)
@@ -1312,6 +1313,26 @@ def gate(M, verbose=True):
             check("harvest_yards_clear_of_paddies", not in_paddy,
                   f"threshing yard footprint(s) sit IN a flooded paddy: {in_paddy[:3]} - the yard is dry ground; "
                   f"keep its whole footprint clear of every field outline")
+            # the yard abuts its OWN farmhouse (intentional, overlap-exempt) but must touch NOTHING else -
+            # not another farmhouse, a shop, a civic building, or a kura (parent matched by `of`). This is
+            # the dedicated guard the exemption would otherwise skip - a feature placed before the yard
+            # (a shop) OR after it (a hand-placed building) must not end up under it.
+            others = ([s for k in _OVERLAP_STRUCTS for s in M.get(k, [])]
+                      + M.get("storehouses", []) + M.get("merchant_estates", []))
+            fouled = []
+            for t in yards:
+                tc = rect_corners(_struct_rect(t))
+                par = (round(t["of"][0]), round(t["of"][1]))
+                for s in others:
+                    if (round(s["x"]), round(s["y"])) == par:
+                        continue
+                    if abs(s["x"] - t["x"]) + abs(s["y"] - t["y"]) > 140:
+                        continue
+                    if sat_overlap(tc, rect_corners(_struct_rect(s))):
+                        fouled.append((round(t["x"]), round(t["y"])))
+                        break
+            check("harvest_yards_clear_of_structures", not fouled,
+                  f"threshing yard(s) overlap a building other than their own farmhouse: {fouled[:3]} - a yard abuts only its own house")
 
     # THE DEAD - a full funerary geography. Every settlement above a hamlet buries its cremated dead
     # (a hamlet's go to the village district's ground, just as it has no shrine or headman). GRAVEYARDS
