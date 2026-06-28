@@ -9,7 +9,7 @@ import re
 import sys
 from pathlib import Path
 
-POOL = Path("/workspace/.claude/skills/relic/pool")
+POOL = Path("/gm-assistant/.claude/skills/relic/pool")
 
 # Maps clan slug → family/lineage surnames associated with that clan.
 # Used to detect clan from named_entity.

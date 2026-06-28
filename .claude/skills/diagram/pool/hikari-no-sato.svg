@@ -5,11 +5,11 @@
 </defs>
 <rect width="1820" height="1180" fill="#EFE3C2"/>
 <g opacity="0.85">
-<path d="M910.0,28.0 L895.0,235.3 L925.0,442.7 L910.0,650.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
-<path d="M560.0,400.0 L457.4,380.0 L352.6,405.0 L250.0,385.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
-<path d="M1260.0,400.0 L1372.3,410.0 L1482.7,375.0 L1595.0,385.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
-<path d="M760.0,560.0 L637.5,718.4 L552.5,901.6 L430.0,1060.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
-<path d="M1060.0,560.0 L1157.5,733.3 L1292.5,881.7 L1390.0,1055.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
+<path d="M910.0,28.0 L895.0,235.3 L925.0,442.7 L910.0,650.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
+<path d="M560.0,400.0 L457.4,380.0 L352.6,405.0 L250.0,385.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
+<path d="M1260.0,400.0 L1372.3,410.0 L1482.7,375.0 L1595.0,385.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
+<path d="M760.0,560.0 L637.5,718.4 L552.5,901.6 L430.0,1060.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
+<path d="M1060.0,560.0 L1157.5,733.3 L1292.5,881.7 L1390.0,1055.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
 </g>
 <g opacity="0.55">
 </g>

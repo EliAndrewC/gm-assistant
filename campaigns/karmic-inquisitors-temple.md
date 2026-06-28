@@ -2,7 +2,7 @@
 
 The GM source material for Rokugani temple organization - the hierarchy of monks (Initiate through Grand Abbot), the structure of Orders vs. Temples, the Temple of Bishamon in Toshi Ranbo (monk population, budget breakdown, daily routines of Kenta and Mizuki), and the temple's financial history through the Tsume occupation and Lion/Crane war - has its canonical home in [`/.claude/skills/temple/SKILL.md`](../.claude/skills/temple/SKILL.md).
 
-Per project convention (see [`/workspace/CLAUDE.md`](../CLAUDE.md) → "Single Canonical Home for Source Blocks"), this file is retained as a campaign-side discoverability pointer and does not duplicate the source block.
+Per project convention (see [`/gm-assistant/CLAUDE.md`](../CLAUDE.md) → "Single Canonical Home for Source Blocks"), this file is retained as a campaign-side discoverability pointer and does not duplicate the source block.
 
 ## Why this matters for the Karmic Inquisitors campaign
 

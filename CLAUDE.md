@@ -5,12 +5,14 @@ This project is a Legend of the Five Rings tabletop RPG worldbuilding environmen
 <!-- Dev-container config consumed by scripts/launch-container.sh. Format is HOST:CONTAINER. -->
 <!-- container-ports: 8080:8080 8091:8090 -->
 <!-- container-mounts: ..:/host-l7r-repo -->
+<!-- container-workdir: /gm-assistant -->
+<!-- (distinct mount path per repo so Claude memory under ~/.claude/projects/ stays separate across sibling repos) -->
 
 ## Core Rules
 
 ### Canonical Source
 
-The GM's canonical notes file is `/host-l7r-repo/setting/l7r.md` - the GM's `EliAndrewC/l7r` repo, bind-mounted from the host. This file is the master record of campaign and setting notes. The GM appends to it directly from their laptop, and you append to it via the [Note Intake Workflow](#note-intake-workflow) below when the GM pastes notes into the chat. If the mount is not present, the container was not launched per [`/workspace/README.md`](README.md) - ask the GM rather than guessing.
+The GM's canonical notes file is `/host-l7r-repo/setting/l7r.md` - the GM's `EliAndrewC/l7r` repo, bind-mounted from the host. This file is the master record of campaign and setting notes. The GM appends to it directly from their laptop, and you append to it via the [Note Intake Workflow](#note-intake-workflow) below when the GM pastes notes into the chat. If the mount is not present, the container was not launched per [`/gm-assistant/README.md`](README.md) - ask the GM rather than guessing.
 
 The GM handles all git operations (`add`, `commit`, `push`) from their laptop. From inside the container, **never run `git commit` or `git push`** against the mount; read-only operations like `git log` / `git diff` are fine if you need historical context.
 
@@ -111,8 +113,8 @@ When the GM pastes raw campaign notes into the chat - actions a character took a
 
 **Implementation pointers**:
 
-- `/workspace/webapp/chargen/op.py` - all the API helpers (`existing_characters`, `update_character`, `existing_wiki_pages`, `get_wiki_page`, `create_wiki_page`, `update_wiki_page`, `delete_wiki_page`). All use the OAuth path. Image uploads remain browser-sim.
-- OAuth creds live in `[obsidian_portal]` of `development-secrets.ini`; rotation via `probe_op_oauth.py --full` (see [`/workspace/webapp/probe_op_oauth.py`](webapp/probe_op_oauth.py)).
+- `/gm-assistant/webapp/chargen/op.py` - all the API helpers (`existing_characters`, `update_character`, `existing_wiki_pages`, `get_wiki_page`, `create_wiki_page`, `update_wiki_page`, `delete_wiki_page`). All use the OAuth path. Image uploads remain browser-sim.
+- OAuth creds live in `[obsidian_portal]` of `development-secrets.ini`; rotation via `probe_op_oauth.py --full` (see [`/gm-assistant/webapp/probe_op_oauth.py`](webapp/probe_op_oauth.py)).
 - This workflow is intentionally **documented in CLAUDE.md rather than a skill**. Skills in this project are content *generators*; intake is a routing workflow that should be present in every session's context.
 
 ## L7R Style Conventions
@@ -213,9 +215,9 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 
 **Spec-kit hooks**: `.specify/extensions.yml` defines auto-commit hooks before each spec-kit step. Per the project's git-safety convention, do not auto-execute those - surface them and let the user confirm each time.
 
-**Launching the container**: prefer [`scripts/launch-container.sh`](scripts/launch-container.sh) over a hand-edited podman command. Run it from the repo root: if this repo's container is already running it opens a fresh `bash` shell inside that one (and prints the ports it has published); otherwise it starts a new `--rm` container named `claude-<repo-dir>`, mounting the repo at `/workspace` plus the host `~/.claude/` and `~/.claude.json`, and publishing/mounting whatever this file declares. Those declarations are the two greppable HTML comments near the top of this file: `container-ports` (HOST:CONTAINER, primary webapp first, secondary blind-eval webapp second) and `container-mounts` (HOST:CONTAINER). Host and container ports may differ so multiple repos that all serve on 8080 internally can each get a distinct host port; here container 8080 (the toolkit) maps to host 8080 and container 8090 (the bakeoff blind-eval app) maps to host 8091. Mount host paths are resolved relative to the repo root (or `~`, or absolute), so `..:/host-l7r-repo` mounts the repo's parent directory - the GM keeps each project repo as a sibling inside the `l7r` notes repo (`<l7r>/gm-assistant`, `<l7r>/character-sheet`, ...), so the parent is always the canonical `l7r` checkout regardless of where the tree lives. The same script works for the GM's other repos - each just needs its own `container-ports`/`container-mounts` lines. `--fresh` recreates from scratch; `--no-ports` skips publishing; `--no-claude` skips mounting the host `~/.claude*` (use it on a shared/work machine so the container does not inherit that host's default Claude account - log in fresh inside instead; `CLAUDE_SRC=/path` points at a specific config dir).
+**Launching the container**: prefer [`scripts/launch-container.sh`](scripts/launch-container.sh) over a hand-edited podman command. Run it from the repo root: if this repo's container is already running it opens a fresh `bash` shell inside that one (and prints the ports it has published); otherwise it starts a new `--rm` container named `claude-<repo-dir>`, mounting the repo at `/gm-assistant` plus the host `~/.claude/` and `~/.claude.json`, and publishing/mounting whatever this file declares. Those declarations are the two greppable HTML comments near the top of this file: `container-ports` (HOST:CONTAINER, primary webapp first, secondary blind-eval webapp second) and `container-mounts` (HOST:CONTAINER). Host and container ports may differ so multiple repos that all serve on 8080 internally can each get a distinct host port; here container 8080 (the toolkit) maps to host 8080 and container 8090 (the bakeoff blind-eval app) maps to host 8091. Mount host paths are resolved relative to the repo root (or `~`, or absolute), so `..:/host-l7r-repo` mounts the repo's parent directory - the GM keeps each project repo as a sibling inside the `l7r` notes repo (`<l7r>/gm-assistant`, `<l7r>/character-sheet`, ...), so the parent is always the canonical `l7r` checkout regardless of where the tree lives. The same script works for the GM's other repos - each just needs its own `container-ports`/`container-mounts` lines. `--fresh` recreates from scratch; `--no-ports` skips publishing; `--no-claude` skips mounting the host `~/.claude*` (use it on a shared/work machine so the container does not inherit that host's default Claude account - log in fresh inside instead; `CLAUDE_SRC=/path` points at a specific config dir).
 
-**Fresh-container init (start here on every new container)**: the container is launched via [`scripts/launch-container.sh`](scripts/launch-container.sh) (see above; the legacy hand-written podman command in [`/workspace/README.md`](README.md) does the same thing) - it bind-mounts the repo at `/workspace`, the GM's `l7r` repo at `/host-l7r-repo`, and the host's `~/.claude/` + `~/.claude.json` into `/home/agent/` so Claude Code auth, preferences, agents, skills, and per-project memory all persist across container rebuilds. Once you're inside, from `/workspace/webapp/`:
+**Fresh-container init (start here on every new container)**: the container is launched via [`scripts/launch-container.sh`](scripts/launch-container.sh) (see above; the legacy hand-written podman command in [`/gm-assistant/README.md`](README.md) does the same thing) - it bind-mounts the repo at `/gm-assistant`, the GM's `l7r` repo at `/host-l7r-repo`, and the host's `~/.claude/` + `~/.claude.json` into `/home/agent/` so Claude Code auth, preferences, agents, skills, and per-project memory all persist across container rebuilds. Once you're inside, from `/gm-assistant/webapp/`:
 
 ```
 pip install --break-system-packages -r requirements.txt -r requirements-dev.txt # prod + dev deps
@@ -224,7 +226,7 @@ python3 -m playwright install chromium                                          
 
 After that, `make done` should pass (ruff + format + mypy --strict + pytest + 100% coverage) and `cherryd --import l7r` runs the app at `http://0.0.0.0:8080`.
 
-Prod and dev deps are split into two lockfiles - `requirements.txt` (what the Fly image installs) and `requirements-dev.txt` (ruff/mypy/pytest/pytest-cov/playwright/pip-tools). Both lockfiles target **Python 3.13**, which is what ships in both the dev container (`docker.io/docker/sandbox-templates:claude-code`) and the Fly prod image (`python:3.13-slim`, see [`webapp/Dockerfile`](webapp/Dockerfile)). The version is also pinned in `webapp/pyproject.toml` (`requires-python`, ruff `target-version`, mypy `python_version`). Re-lock either file with `pip-compile --upgrade --output-file=<file>.txt <file>.in` from `/workspace/webapp/` (sources are `requirements.in` and `requirements-dev.in`). If you bump the Python version, update all four locations (Dockerfile, pyproject.toml, both lockfiles) together - they're meant to stay aligned.
+Prod and dev deps are split into two lockfiles - `requirements.txt` (what the Fly image installs) and `requirements-dev.txt` (ruff/mypy/pytest/pytest-cov/playwright/pip-tools). Both lockfiles target **Python 3.13**, which is what ships in both the dev container (`docker.io/docker/sandbox-templates:claude-code`) and the Fly prod image (`python:3.13-slim`, see [`webapp/Dockerfile`](webapp/Dockerfile)). The version is also pinned in `webapp/pyproject.toml` (`requires-python`, ruff `target-version`, mypy `python_version`). Re-lock either file with `pip-compile --upgrade --output-file=<file>.txt <file>.in` from `/gm-assistant/webapp/` (sources are `requirements.in` and `requirements-dev.in`). If you bump the Python version, update all four locations (Dockerfile, pyproject.toml, both lockfiles) together - they're meant to stay aligned.
 
 The server binds to `0.0.0.0:8080` automatically when it detects a container runtime (podman's `/run/.containerenv` or docker's `/.dockerenv`), so podman's `--publish 8080:8080` reaches it from the host. On a bare host (no container markers, no `FLY_APP_NAME`) it stays on the CherryPy default `127.0.0.1`. Fly continues to bind 0.0.0.0 via `FLY_APP_NAME`, and the X-Forwarded-Proto trust setting is still gated on `FLY_APP_NAME` alone - podman doesn't have a TLS-terminating proxy in front, so we don't want cherrypy.url() emitting `https://` URLs there. Logic lives in `l7r/app.py:_apply_server_config`.
 
@@ -232,13 +234,13 @@ The server binds to `0.0.0.0:8080` automatically when it detects a container run
 
 - `.specify/memory/constitution.md` - the constitution
 - `.specify/templates/plan-template.md` - Constitution Check gate lives here
-- `/workspace/webapp-prototype/` - static frontend prototypes (current: relics index + detail)
-- `/workspace/webapp/` - **L7R Toolkit** (CherryPy + Jinja2). Run with `cherryd --import l7r` from this dir. Routes: `/` landing, `/relics`, `/relics/<slug>`, `/names` (with `?gender=` / `?caste=` filters), `/chargen/*` (legacy chargen mounted as a sub-app). New code under `l7r/` package; legacy chargen modules on Principle X grace period.
-- `/workspace/webapp/Makefile` - `make done` runs ruff + format check + mypy --strict + pytest + 100% coverage gate
-- `/workspace/webapp/tests/screenshot.py` and `tests/dom_audit.py` - Playwright suite for Principle I verification at GM-100 / GM-200 / tablet / mobile. The screenshot script outputs multi-scroll contact sheets to `/tmp/l7r-shots/sheet-<page>-<viewport>.png`.
-- `/workspace/.claude/agents/frontend-review.md` - independent design-review subagent. Invoke before declaring a UI change done if the same agent implemented AND reviewed.
-- `/workspace/.claude/skills/relic/pool/` - exemplar of the pool data convention (Principle III)
-- `/workspace/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` - the 200-name pool consumed by the `/names` section
+- `/gm-assistant/webapp-prototype/` - static frontend prototypes (current: relics index + detail)
+- `/gm-assistant/webapp/` - **L7R Toolkit** (CherryPy + Jinja2). Run with `cherryd --import l7r` from this dir. Routes: `/` landing, `/relics`, `/relics/<slug>`, `/names` (with `?gender=` / `?caste=` filters), `/chargen/*` (legacy chargen mounted as a sub-app). New code under `l7r/` package; legacy chargen modules on Principle X grace period.
+- `/gm-assistant/webapp/Makefile` - `make done` runs ruff + format check + mypy --strict + pytest + 100% coverage gate
+- `/gm-assistant/webapp/tests/screenshot.py` and `tests/dom_audit.py` - Playwright suite for Principle I verification at GM-100 / GM-200 / tablet / mobile. The screenshot script outputs multi-scroll contact sheets to `/tmp/l7r-shots/sheet-<page>-<viewport>.png`.
+- `/gm-assistant/.claude/agents/frontend-review.md` - independent design-review subagent. Invoke before declaring a UI change done if the same agent implemented AND reviewed.
+- `/gm-assistant/.claude/skills/relic/pool/` - exemplar of the pool data convention (Principle III)
+- `/gm-assistant/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` - the 200-name pool consumed by the `/names` section
 
 <!-- SPECKIT START -->
 Current active plan: [`specs/001-toolkit-shell/plan.md`](specs/001-toolkit-shell/plan.md)

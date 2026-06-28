@@ -1,11 +1,11 @@
-"""Extract the 42 relics from /workspace/.claude/skills/relic/pool/ into a JSON bundle."""
+"""Extract the 42 relics from /gm-assistant/.claude/skills/relic/pool/ into a JSON bundle."""
 
 import json
 import os
 import re
 from pathlib import Path
 
-POOL = Path("/workspace/.claude/skills/relic/pool")
+POOL = Path("/gm-assistant/.claude/skills/relic/pool")
 OUT = Path(__file__).parent / "relics.json"
 
 FORTUNES = {

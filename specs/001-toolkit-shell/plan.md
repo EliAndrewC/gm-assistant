@@ -6,7 +6,7 @@
 
 ## Summary
 
-Modernize the existing chargen CherryPy webapp in place into a multi-section L7R Toolkit with a shared app shell, a relics catalog, and a placeholder for the upcoming Names section. The chargen logic is preserved exactly; only its visual identity joins the new shell. The relics catalog is ported from the static prototype at `/workspace/webapp-prototype/relics/` into server-rendered Jinja2 templates that read from the pool at `/workspace/.claude/skills/relic/pool/`. New Python code lives in an `l7r/` package separate from the legacy `chargen/` package; new code meets Principle X, legacy code retains its grace period.
+Modernize the existing chargen CherryPy webapp in place into a multi-section L7R Toolkit with a shared app shell, a relics catalog, and a placeholder for the upcoming Names section. The chargen logic is preserved exactly; only its visual identity joins the new shell. The relics catalog is ported from the static prototype at `/gm-assistant/webapp-prototype/relics/` into server-rendered Jinja2 templates that read from the pool at `/gm-assistant/.claude/skills/relic/pool/`. New Python code lives in an `l7r/` package separate from the legacy `chargen/` package; new code meets Principle X, legacy code retains its grace period.
 
 ## Technical Context
 
@@ -14,13 +14,13 @@ Modernize the existing chargen CherryPy webapp in place into a multi-section L7R
 
 **Primary Dependencies**: CherryPy 18.x, Jinja2 3.x, ConfigObj (legacy chargen); Pillow, opencv-python-headless, google-genai (chargen art); requests, requests-oauthlib (chargen OP upload). New code adds: pyyaml (for parsing frontmatter; lighter than full markdown).
 
-**Storage**: Filesystem - pool markdown files at `/workspace/.claude/skills/relic/pool/<fortune>/*.md`; no database. Chargen's existing Obsidian Portal upload is the only persistent storage and is preserved.
+**Storage**: Filesystem - pool markdown files at `/gm-assistant/.claude/skills/relic/pool/<fortune>/*.md`; no database. Chargen's existing Obsidian Portal upload is the only persistent storage and is preserved.
 
 **Testing**: pytest + pytest-cov for Python; Playwright (Python async API) with bundled Chromium for UI verification at four standard viewports.
 
 **Target Platform**: Localhost development on Linux/macOS; eventual Fly.io deployment after Phase 1.5 (out of scope for Phase 1).
 
-**Project Type**: Single CherryPy web service at `/workspace/webapp/`.
+**Project Type**: Single CherryPy web service at `/gm-assistant/webapp/`.
 
 **Performance Goals**: Localhost-only, single user. No hard SLA. Page load comfortable on a modern laptop browser at 200% zoom.
 
@@ -79,10 +79,10 @@ specs/001-toolkit-shell/
 └── tasks.md             # Phase 2 output (/speckit-tasks)
 ```
 
-### Source Code (repository root: `/workspace/webapp/`)
+### Source Code (repository root: `/gm-assistant/webapp/`)
 
 ```text
-/workspace/webapp/
+/gm-assistant/webapp/
 ├── pyproject.toml              # Ruff + mypy + pytest config (Phase 0 - exists)
 ├── Makefile                    # done / lint / format / types / test / cov / serve (Phase 0 - exists)
 ├── requirements.in             # Source-of-truth deps (Phase 0 - exists)

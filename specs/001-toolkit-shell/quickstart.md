@@ -3,7 +3,7 @@
 ## Run locally
 
 ```bash
-cd /workspace/webapp
+cd /gm-assistant/webapp
 # install deps (idempotent on the dev sandbox; uses user-site install)
 pip3 install --user --break-system-packages -r requirements.txt
 
@@ -17,7 +17,7 @@ Open <http://127.0.0.1:8080/> in Chrome.
 ## Verify "done"
 
 ```bash
-cd /workspace/webapp
+cd /gm-assistant/webapp
 make done
 # runs ruff check + ruff format --check + mypy --strict + pytest + coverage on l7r/
 ```
@@ -29,7 +29,7 @@ For UI verification:
 make serve
 
 # in another terminal
-cd /workspace/webapp/tests
+cd /gm-assistant/webapp/tests
 python3 screenshot.py
 # captures gm-100, gm-200, tablet, mobile screenshots of every section
 # checks DOM-overflow audit and reports zero / non-zero findings
@@ -49,10 +49,10 @@ python3 screenshot.py
 
 ## Where things live
 
-- New Python code: `/workspace/webapp/l7r/`
-- New tests: `/workspace/webapp/tests/`
-- Static assets: `/workspace/webapp/l7r/static/`
-- Templates (new + shared): `/workspace/webapp/l7r/templates/`
-- Legacy chargen (unchanged behavior, new visual shell): `/workspace/webapp/chargen/`
-- Relic pool (source of truth for relic content): `/workspace/.claude/skills/relic/pool/`
-- Spec/plan/tasks for this work: `/workspace/specs/001-toolkit-shell/`
+- New Python code: `/gm-assistant/webapp/l7r/`
+- New tests: `/gm-assistant/webapp/tests/`
+- Static assets: `/gm-assistant/webapp/l7r/static/`
+- Templates (new + shared): `/gm-assistant/webapp/l7r/templates/`
+- Legacy chargen (unchanged behavior, new visual shell): `/gm-assistant/webapp/chargen/`
+- Relic pool (source of truth for relic content): `/gm-assistant/.claude/skills/relic/pool/`
+- Spec/plan/tasks for this work: `/gm-assistant/specs/001-toolkit-shell/`

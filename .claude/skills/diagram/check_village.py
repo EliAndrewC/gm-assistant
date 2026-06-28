@@ -158,8 +158,8 @@ def poly_dist(px, py, poly):
 
 def water_setback(width):
     """The set-back a BURIAL ground keeps from the EDGE of open water, scaling with the waterway's
-    width: even a narrow STREAM floods graves out, so the floor is a solid ~75px; a moat (a moderate
-    watercourse, ~22px wide -> ~110px) more still, a river or canal most. A burial ground by big water
+    width: even a narrow STREAM floods graves out, so the floor is a solid ~75px; a moat (the heaviest
+    watercourse, ~26px wide -> ~130px) more still, a river or canal most. A burial ground by big water
     floods out, so the bigger the watercourse the further back the dead must lie. (Thin irrigation
     channels are not open water and are not checked at all.)"""
     return max(75, min(140, 5.0 * width))
@@ -932,7 +932,7 @@ def gate(M, verbose=True):
     # channel clipping a farmhouse's corner while its center stayed clear used to slip through.)
     channels_struct = M.get("channels", [])
     if channels_struct:
-        crw = 5   # channel half-width (stroke ~4.2 -> ~2.1) + a little: a corner this close is on it
+        crw = 5   # channel half-width (hairline stroke ~2.5 -> ~1.25) + a little: a corner this close is on it
 
         def on_channel(sc, sp):
             if any(seg_dist(cx, cy, sp[k], sp[k + 1]) < crw for (cx, cy) in sc for k in range(len(sp) - 1)):
@@ -963,7 +963,7 @@ def gate(M, verbose=True):
     # common burial ground, the cremation ground, the ossuary, samurai estates) must keep clear of it
     moatpts = M.get("moat")
     if moatpts:
-        mhw = M.get("moat_width", 22) / 2 + 4
+        mhw = M.get("moat_width", 26) / 2 + 4
 
         def on_moat(sc):
             if any(seg_dist(cx, cy, moatpts[k], moatpts[k + 1]) < mhw for (cx, cy) in sc for k in range(len(moatpts) - 1)):
@@ -974,6 +974,41 @@ def gate(M, verbose=True):
                        for k in range(len(moatpts) - 1) for e in range(4))
         bad_mo = [1 for sc in corners if on_moat(sc)]
         check("no_structure_on_moat", not bad_mo, f"{len(bad_mo)} structure(s) overlap the moat")
+
+    # WATER-WIDTH LADDER. Real wet-rice water systems are a tiered hierarchy whose widths step up
+    # ~2-4x per tier (channel width scales with the sqrt of command-area flow): a field ditch ~0.3 m,
+    # a village creek ~2 m (~6x the ditch), a town river / castle moat ~20 m (~70x the ditch). That
+    # true 250:1 span can't be drawn at schematic scale, so the rendered widths are a deliberate LOG-
+    # COMPRESSION of it - but the ORDERING and the coarse steps must survive: an irrigation ditch is
+    # ALWAYS the thinnest line, a natural watercourse clearly heavier, the city moat heaviest of all.
+    # The clauses below pin that. (Why these numbers: SKILL.md "Water-width ladder" grounding.)
+    chan_ws = [c["w"] for c in M.get("channels", []) if "w" in c]
+    strm_ws = [st["w"] for st in M.get("streams", []) if "w" in st]
+    moat_w = M.get("moat_width")
+    # (1) Irrigation channels are HAIRLINES: at/just above the legibility floor, never fattened toward
+    # stream weight. A ditch drawn as a stout line (the old 4.2 px) reads as a watercourse, not a ditch.
+    if chan_ws:
+        fat = [w for w in chan_ws if not 2.0 <= w <= 3.5]
+        check("irrigation_channels_hairline", not fat,
+              f"channel width(s) {sorted(set(fat))} outside the hairline band [2.0, 3.5] px - a field "
+              f"ditch is the thinnest line on the map (~0.3 m, ~1/300 of the paddy it feeds); keep it at "
+              f"the legibility floor, distinct from any natural watercourse")
+    # (2) The tiers are ORDERED with honest gaps: a creek clearly beats a ditch (>=2.5x), a natural
+    # stream never out-widths the city moat (a moat-feeder may EQUAL it, by conservation of flow), and
+    # the moat dwarfs a ditch (>=4x). Each clause runs only when both features it compares are present.
+    if chan_ws and strm_ws:
+        ok = min(strm_ws) >= 2.5 * max(chan_ws)
+        check("watercourses_wider_than_ditches", ok,
+              f"narrowest stream {min(strm_ws)} px is not >= 2.5x the widest channel {max(chan_ws)} px - "
+              f"a natural creek must read clearly heavier than an irrigation ditch, not as its sibling")
+    if strm_ws and moat_w:
+        check("moat_is_heaviest_watercourse", max(strm_ws) <= moat_w * 1.05,
+              f"a stream ({max(strm_ws)} px) is wider than the city moat ({moat_w} px) - the moat is the "
+              f"heaviest watercourse; a feeder stream may equal it (conservation of flow) but not exceed it")
+    if chan_ws and moat_w:
+        check("moat_dwarfs_ditches", moat_w >= 4.0 * max(chan_ws),
+              f"city moat {moat_w} px is not >= 4x the widest channel {max(chan_ws)} px - a defensive moat "
+              f"(~20-35 m real, ~70x a field ditch) must dwarf an irrigation ditch")
 
     # no structure overlaps a street OR an alley (a paved lane or a gravel alley running over a
     # house is wrong) - alleys are drawn last, so a careless alley can be laid across a building

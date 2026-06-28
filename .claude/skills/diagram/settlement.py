@@ -435,7 +435,9 @@ class Settlement:
     # ---- water
     def pond(self, cx, cy, rx, ry, stream_curve=None):
         if stream_curve:
-            self.add(f'<path d="{stream_curve}" fill="none" stroke="#9CB4C8" stroke-width="7" opacity="0.85"/>')
+            # the pond's feeder runs at the lateral/ditch tier - a thin line near the channel weight,
+            # NOT the heftier natural-stream weight (see the water-width ladder in SKILL.md).
+            self.add(f'<path d="{stream_curve}" fill="none" stroke="#9CB4C8" stroke-width="5" opacity="0.85"/>')
         self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#9CB4C8" stroke="#5C7488" stroke-width="2.4"/>')
         self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx-12}" ry="{ry-10}" fill="none" stroke="#B6CAD8" stroke-width="1" opacity="0.7"/>')
         self.M["pond"] = [cx, cy, rx, ry]
@@ -456,13 +458,16 @@ class Settlement:
             sheen=f'<path d="{dd}" fill="none" stroke="#B6CAD8" stroke-width="{max(2, width*0.35):.0f}" stroke-linejoin="round" stroke-linecap="round"/>')   # lighter mid-current highlight (NOT a dashed lane line - this is water, not a road)
         self.corridors.append(([(x, y) for x, y in pts], max(30, width / 2 + 20)))   # no-build: keep houses off the stream
 
-    def channel(self, start, end, frm, to, amp=15):
-        """frm/to are anchor dicts: {'kind':'pond'|'offmap'|'field','name':...}."""
+    def channel(self, start, end, frm, to, amp=15, width=2.5):
+        """frm/to are anchor dicts: {'kind':'pond'|'offmap'|'field','name':...}. `width` is the drawn
+        bed: a field-level irrigation ditch is the THINNEST line on the map (in reality ~0.3 m, ~1/300
+        of the 1-cho paddy it feeds), so it sits at the legibility floor (~2.5 px) - a hairline, clearly
+        finer than any natural watercourse. See the water-width ladder in SKILL.md historical grounding."""
         poly = winding(start, end, amp=amp)
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in poly)
-        rec = {"poly": [[x, y] for x, y in poly], "frm": frm, "to": to}
+        rec = {"poly": [[x, y] for x, y in poly], "frm": frm, "to": to, "w": width}
         self.M["channels"].append(rec)
-        self._water(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>', rec)   # a channel is a thin bed, no sheen
+        self._water(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}"/>', rec)   # a channel is a thin bed, no sheen
         # 33 px keeps even a plain farmhouse's FOOTPRINT (half-diagonal ~26) clear of the
         # channel, not just its center - 22 left corners clipping the channel (see
         # no_structure_on_channel). Matches the stream corridor's footprint-aware spacing.
@@ -1561,10 +1566,12 @@ class Settlement:
             self.M["gate"] = [gates[0][0], gates[0][1]]
         self.corridors.append(([(x, y) for x, y in ring], 46))
 
-    def moat(self, ring, gap=42, width=22):
+    def moat(self, ring, gap=42, width=26):
         """A water moat encircling the city wall - the wall RING pushed outward from its centroid
-        by `gap`. Records M['moat']. Feed it from off-map with a stream and tap it for irrigation
-        channels to the outside fields. A no-build corridor."""
+        by `gap`. Records M['moat']. Feed it from off-map with a stream (AS WIDE as the moat, by
+        conservation of flow) and tap it for irrigation channels to the outside fields. A no-build
+        corridor. Width ~26 px: a provincial-city defensive moat is the heaviest watercourse on the
+        map (Himeji-tier ~20-35 m real, ~70x a field ditch); see the SKILL.md water-width ladder."""
         cx = sum(p[0] for p in ring) / len(ring)
         cy = sum(p[1] for p in ring) / len(ring)
         mo = []

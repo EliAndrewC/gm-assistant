@@ -6,7 +6,7 @@ Usage:
 
 Requires playwright + chromium installed (one-time: python3 -m playwright install chromium).
 Assumes the prototype is being served at http://127.0.0.1:8123/ - start with:
-    python3 -m http.server 8123 --directory /workspace/webapp-prototype/relics
+    python3 -m http.server 8123 --directory /gm-assistant/webapp-prototype/relics
 """
 
 import sys

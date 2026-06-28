@@ -10,11 +10,11 @@ podman run --interactive --tty --rm \
     --gidmap 1000:0:1 \
     --gidmap 1001:1001:64536 \
     --env HOME=/home/agent \
-    --volume "$(pwd)":/workspace:Z \
+    --volume "$(pwd)":/gm-assistant:Z \
     --volume /home/eli/l7r:/host-l7r-repo:Z \
     --volume "$HOME/.claude":/home/agent/.claude:z \
     --volume "$HOME/.claude.json":/home/agent/.claude.json:z \
-    --workdir /workspace \
+    --workdir /gm-assistant \
     --memory 8g \
     --memory-swap 8G \
     --publish 8080 \

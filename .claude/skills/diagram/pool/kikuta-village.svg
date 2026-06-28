@@ -4,13 +4,13 @@
 <pattern id="fallow" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#D7C49A"/><circle cx="3" cy="4" r="0.9" fill="#A89464"/><circle cx="9" cy="9" r="0.9" fill="#A89464"/><circle cx="11" cy="3" r="0.7" fill="#B7A06C"/></pattern>
 </defs>
 <rect width="1820" height="1180" fill="#EFE3C2"/>
-<path d="M378,162 C352,122 408,80 372,34" fill="none" stroke="#9CB4C8" stroke-width="7" opacity="0.85"/>
+<path d="M378,162 C352,122 408,80 372,34" fill="none" stroke="#9CB4C8" stroke-width="5" opacity="0.85"/>
 <ellipse cx="378" cy="220" rx="96" ry="58" fill="#9CB4C8" stroke="#5C7488" stroke-width="2.4"/>
 <ellipse cx="378" cy="220" rx="84" ry="48" fill="none" stroke="#B6CAD8" stroke-width="1" opacity="0.7"/>
 <g opacity="0.85">
-<path d="M450.0,228.0 L561.7,250.3 L676.3,227.7 L788.0,250.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
-<path d="M388.0,260.0 L401.0,351.2 L457.0,428.8 L470.0,520.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
-<path d="M440.0,248.0 L600.7,360.9 L784.3,435.1 L945.0,548.0" fill="none" stroke="#9CB4C8" stroke-width="4.2"/>
+<path d="M450.0,228.0 L561.7,250.3 L676.3,227.7 L788.0,250.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
+<path d="M388.0,260.0 L401.0,351.2 L457.0,428.8 L470.0,520.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
+<path d="M440.0,248.0 L600.7,360.9 L784.3,435.1 L945.0,548.0" fill="none" stroke="#9CB4C8" stroke-width="2.5"/>
 </g>
 <g opacity="0.55">
 </g>

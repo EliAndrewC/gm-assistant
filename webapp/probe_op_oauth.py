@@ -14,7 +14,7 @@ op.py to use the official API, this script verifies the claim end-to-end:
   Step 3 (--full only): hit GET /campaigns.json with the access tokens
   to confirm end-to-end works.
 
-Usage from /workspace/webapp/:
+Usage from /gm-assistant/webapp/:
     python3 probe_op_oauth.py          # step 1 only
     python3 probe_op_oauth.py --full   # step 1 + 2 + 3 (interactive)
 

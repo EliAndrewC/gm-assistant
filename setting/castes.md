@@ -89,4 +89,4 @@ The SOURCE block above lists "Owaiya" (night-soil handlers) as a burakumin profe
 
 ### Terminology
 
-L5R-era source material occasionally used "eta" for the caste this file calls burakumin. L7R has dropped "eta" entirely because it functions as a real-world slur. Use "burakumin" in all generated content. When updating older content that contains "eta," silently correct it to "burakumin" (per the silent-correction convention in [`/workspace/CLAUDE.md`](../CLAUDE.md)).
+L5R-era source material occasionally used "eta" for the caste this file calls burakumin. L7R has dropped "eta" entirely because it functions as a real-world slur. Use "burakumin" in all generated content. When updating older content that contains "eta," silently correct it to "burakumin" (per the silent-correction convention in [`/gm-assistant/CLAUDE.md`](../CLAUDE.md)).

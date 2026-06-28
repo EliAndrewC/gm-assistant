@@ -55,7 +55,7 @@ s.set_view(CX - RX - 52 - MARGIN, CY - RY - 52 - MARGIN, 2 * (RX + 52 + MARGIN),
 IMPROAD = [(1600, -40), (1600, CY - RY), (1600, 1330), (1600, CY + RY), (1600, 2740)]
 s.road(IMPROAD, label="Imperial Road", label_xy=(1740, 478))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1000) ** 2 + (p[1] - 740) ** 2)   # a moat vertex on the NW
-s.stream([(640, -40), (740, 230), (850, 470), (_mnw[0], _mnw[1])], width=22)   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
+s.stream([(640, -40), (740, 230), (850, 470), (_mnw[0], _mnw[1])], width=26)   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
 
 # civic amenities placed FIRST, in the open central cross, so the dense packs flow around them
 s.amphitheater(1450, 1030, 102, label="amphitheater")        # a leisure ground near the center; a CITY amphitheater is larger than a town's (~50% bigger)
@@ -340,7 +340,7 @@ s.cemetery(756, 2013, 104, 74, label="common burial ground")          # the extr
 s.cemetery(1354, 673, 60, 44, label="graveyard", parish=False)        # Tango-only: an in-wall burial ground in the agricultural district (NOT a temple parish ground)
 s.mausoleum(2246, 1556, 54, 40, label="Mausoleum", gate_dir="west", label_below=True)   # the ruling clan's crypts, above-right of the Ministry of Works
 s.cremation_ground(872, 1969)
-s.ossuary(860, 2050)
+s.ossuary(745, 2090)   # tucked into the open pocket SOUTH of the common burial ground - the wider (26px) city moat pushes its grave set-back out, so it sits well back from the moat (the cremation ground keeps the moat-side spot, exempt from the full set-back)
 
 s.bridges()   # spans the Imperial Road over the moat at the north and south gates
 

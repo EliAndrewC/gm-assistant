@@ -133,7 +133,7 @@ if __name__ == "__main__":
     personal_names = extract_personal_names(full_names)
     unique_personal = sorted(set(personal_names))
 
-    output_path = "/workspace/.claude/skills/name/campaign-names.txt"
+    output_path = "/gm-assistant/.claude/skills/name/campaign-names.txt"
     with open(output_path, "w") as f:
         for name in unique_personal:
             f.write(name + "\n")
