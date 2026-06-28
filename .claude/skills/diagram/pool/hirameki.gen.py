@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(2600, 1820, seed=61)
+s = Settlement(2600, 1820, seed=62)
 # downhill is SOUTH: the hill/manor sit in the north, so the land falls away southward and
 # the streams flow north-to-south; irrigation channels must run downhill (tap upstream/north
 # of where they feed each field)
@@ -93,6 +93,20 @@ s.street(CROSS, width=22)
 # sit on the hill's slope to watch the performances; offset west of the main-street axis
 s.amphitheater(1080, 910, 80, label="amphitheater")
 
+# Big fixed-position buildings go DOWN FIRST, before the packs - the packs' _fits() then flows the small
+# houses AROUND them (a pack placed first fills these spots and the big building lands on a house). The
+# caravan INN + STABLES just inside the front gate (a county town needs the one; a walled town keeps it
+# inside the rampart, fronting the main street, open ground by the stables for the wagon-train animals):
+s.inn(1398, 1024, rot=90)
+s.stables(1510, 1024)
+# a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH / RICH
+# merchants in big homes near the commercial core, and the ~3 MASTER (rich) laborers in larger dwellings
+# among the tenements - the rest live small (the house-size variety a county town shows, like a city).
+for mx, my in [(1034, 1048), (1772, 1168), (1082, 1366), (1400, 1402)]:
+    s.building(mx, my, *s._dims("merchant_large"), "merchant_large")
+for lx, ly in [(1024, 1152), (1174, 1152), (1510, 1152)]:
+    s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
+
 # samurai neighborhood: lining the manor's approach, below the hill
 s.pack((940, 880, 1680, 1060), ["samurai"] * 9, step=58)
 s.label(1300, 868, "samurai neighborhood", 11, italic=True)
@@ -131,27 +145,12 @@ s.ring(OW2, 24, 40, ["plain"])
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
 
-# a caravan INN + STABLES just INSIDE the front gate (caravans enter there), with open ground beside the
-# stables as a pasture for the wagon-train animals - like a provincial city's gate caravan facilities, but
-# a county town needs only the ONE; a WALLED town keeps it inside the rampart, FRONTING the main street
-s.inn(1398, 1024, rot=90)
-s.stables(1510, 1024)
-
 # the graveyard in the Bishamon monastery's precinct (the Buddhist danka parish ground)
 s.cemetery(1786, 1042, 88, 62, label="graveyard")               # the intramural parish ground, by the Bishamon monastery
 s.cemetery(1895, 1255, 120, 88, label="common burial ground")    # the MAIN burial ground (a town of ~1,200 over centuries) - large, extramural, well clear of the paddy
 # the cremation ground ADJOINS the external common ground (body burned, bones interred next door) -
 # the extramural funerary complex; monk-run with burakumin assistants
 s.cremation_ground(1915, 1348)
-
-# a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH /
-# RICH merchants in big homes near the commercial core, and the ~3 MASTER (rich) laborers in larger
-# dwellings among the tenements - the rest live small (the house-size variety a county town shows, like
-# a city); all inside the walls. Hand-placed LAST in pre-cleared gaps so they perturb no seeded pack.
-for mx, my in [(1034, 1048), (1772, 1168), (1082, 1366), (1400, 1402)]:
-    s.building(mx, my, *s._dims("merchant_large"), "merchant_large")
-for lx, ly in [(1024, 1152), (1174, 1152), (1510, 1152)]:
-    s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
