@@ -153,10 +153,8 @@ for mx, my in [(1034, 1048), (1772, 1168), (1082, 1366), (1400, 1402)]:
 for lx, ly in [(1024, 1152), (1174, 1152), (1510, 1152)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy,
-# the house re-drawn over it. Placed LAST so it avoids every other structure (incl. hand-placed buildings).
-s.threshing_yards()
+# draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
+s.farmsteads()
 
 s.title("Hirameki")
 s.compass()

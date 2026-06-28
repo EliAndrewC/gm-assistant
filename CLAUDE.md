@@ -2,6 +2,10 @@
 
 This project is a Legend of the Five Rings tabletop RPG worldbuilding environment. The GM uses Claude Code to generate setting details (NPCs, locations, items, etc.) guided by their extensive setting notes and evolving preferences.
 
+<!-- Dev-container config consumed by scripts/launch-container.sh. Format is HOST:CONTAINER. -->
+<!-- container-ports: 8080:8080 8091:8090 -->
+<!-- container-mounts: ..:/host-l7r-repo -->
+
 ## Core Rules
 
 ### Canonical Source
@@ -44,6 +48,7 @@ Reference directories hold organized source material and context. Each directory
 - Skills should reference the relevant reference directories for shared context (e.g., `/temple` should draw on `/setting/` for demographics and `/cosmology/` for Fortune theology).
 - **Hyphens only - no em-dashes (U+2014) or en-dashes (U+2013) anywhere in the project**, including generated content, webapp templates, skill files, specs, docs, and tests. This applies project-wide, not just to `l7r.md`.
 - **Constitution Principle XI** (Japanese Authenticity): any kanji that surfaces in generated content - relic names, sword names, given names, temple titles, vow refrains, decorative stamps - must pass the kanji ↔ romaji ↔ meaning triangle. Real characters, plausible reading, English meaning that maps back. Stylized readings are allowed when explained in surrounding prose.
+- **Record the "why" of every research-driven rule (REQUIRED).** When historical (or setting) research leads us to a concrete generation rule, automated check, or magic number - "every farmhouse had a work yard," "~30% of farms had a storehouse," "threshing was per-household, not communal" - we MUST capture the *reasoning* alongside the *rule*, not just the rule. Encoding the finding into a check or generator is necessary but **not sufficient**: a bare `count >= 0.3 * n` teaches a future reader nothing about why 0.3. So write the finding down where the rule lives - a "Historical grounding"/research section in the skill's `SKILL.md`, or a comment next to the check - covering what the research found, the decision it drove, and any deliberate departures from literal reality (e.g. features drawn larger than true scale for legibility while keeping *relative* sizes roughly honest). Explicit source citations are optional (usually overkill); the *why* is mandatory. This protects against having to redo the research when memory fades or the context window rolls over. Applies to any generator (skills, the webapp, future tools), not just `/diagram`.
 
 ## Skills
 
@@ -208,7 +213,9 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 
 **Spec-kit hooks**: `.specify/extensions.yml` defines auto-commit hooks before each spec-kit step. Per the project's git-safety convention, do not auto-execute those - surface them and let the user confirm each time.
 
-**Fresh-container init (start here on every new container)**: the container is launched via the podman command in [`/workspace/README.md`](README.md) - it bind-mounts the repo at `/workspace`, the GM's `l7r` repo at `/host-l7r-repo`, and the host's `~/.claude/` + `~/.claude.json` into `/home/agent/` so Claude Code auth, preferences, agents, skills, and per-project memory all persist across container rebuilds. Once you're inside, from `/workspace/webapp/`:
+**Launching the container**: prefer [`scripts/launch-container.sh`](scripts/launch-container.sh) over a hand-edited podman command. Run it from the repo root: if this repo's container is already running it opens a fresh `bash` shell inside that one (and prints the ports it has published); otherwise it starts a new `--rm` container named `claude-<repo-dir>`, mounting the repo at `/workspace` plus the host `~/.claude/` and `~/.claude.json`, and publishing/mounting whatever this file declares. Those declarations are the two greppable HTML comments near the top of this file: `container-ports` (HOST:CONTAINER, primary webapp first, secondary blind-eval webapp second) and `container-mounts` (HOST:CONTAINER). Host and container ports may differ so multiple repos that all serve on 8080 internally can each get a distinct host port; here container 8080 (the toolkit) maps to host 8080 and container 8090 (the bakeoff blind-eval app) maps to host 8091. Mount host paths are resolved relative to the repo root (or `~`, or absolute), so `..:/host-l7r-repo` mounts the repo's parent directory - the GM keeps each project repo as a sibling inside the `l7r` notes repo (`<l7r>/gm-assistant`, `<l7r>/character-sheet`, ...), so the parent is always the canonical `l7r` checkout regardless of where the tree lives. The same script works for the GM's other repos - each just needs its own `container-ports`/`container-mounts` lines. `--fresh` recreates from scratch; `--no-ports` skips publishing; `--no-claude` skips mounting the host `~/.claude*` (use it on a shared/work machine so the container does not inherit that host's default Claude account - log in fresh inside instead; `CLAUDE_SRC=/path` points at a specific config dir).
+
+**Fresh-container init (start here on every new container)**: the container is launched via [`scripts/launch-container.sh`](scripts/launch-container.sh) (see above; the legacy hand-written podman command in [`/workspace/README.md`](README.md) does the same thing) - it bind-mounts the repo at `/workspace`, the GM's `l7r` repo at `/host-l7r-repo`, and the host's `~/.claude/` + `~/.claude.json` into `/home/agent/` so Claude Code auth, preferences, agents, skills, and per-project memory all persist across container rebuilds. Once you're inside, from `/workspace/webapp/`:
 
 ```
 pip install --break-system-packages -r requirements.txt -r requirements-dev.txt # prod + dev deps

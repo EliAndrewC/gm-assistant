@@ -2024,15 +2024,16 @@ def _yard(of, dx=44, dy=0, w=32, h=20):
     return {"x": of[0] + dx, "y": of[1] + dy, "w": w, "h": h, "rot": 0, "of": [of[0], of[1]]}
 
 
-_SIX = [(300, 300), (380, 300), (460, 300), (540, 300), (620, 300), (700, 300)]   # need ceil(6/3) = 2
+_SIX = [(300, 300), (380, 300), (460, 300), (540, 300), (620, 300), (700, 300)]   # the work yard is UNIVERSAL: need all 6
 
 
-def test_harvest_yards_present_fires_when_too_few():
-    assert "harvest_yards_present" in f(_harvest(_SIX, [_yard((300, 300))]))   # only 1 of the needed 2
+def test_harvest_yards_present_fires_when_any_farmhouse_lacks_one():
+    # 5 of 6 yards - even one farmhouse without a yard fails (the work yard was universal)
+    assert "harvest_yards_present" in f(_harvest(_SIX, [_yard(h) for h in _SIX[:5]]))
 
 
-def test_harvest_yards_present_passes_when_a_third_have_yards():
-    assert "harvest_yards_present" not in f(_harvest(_SIX, [_yard((300, 300)), _yard((380, 300))]))
+def test_harvest_yards_present_passes_when_every_farmhouse_has_one():
+    assert "harvest_yards_present" not in f(_harvest(_SIX, [_yard(h) for h in _SIX]))
 
 
 def test_harvest_yards_smaller_than_farmhouse_fires_when_oversize():
@@ -2041,6 +2042,17 @@ def test_harvest_yards_smaller_than_farmhouse_fires_when_oversize():
 
 def test_harvest_yards_smaller_than_farmhouse_passes_when_small():
     assert "harvest_yards_smaller_than_farmhouse" not in f(_harvest([(300, 300)], [_yard((300, 300))]))
+
+
+def test_harvest_yards_on_sunny_side_fires_when_north_of_house():
+    # +y is south; a yard ABOVE its house centre sits on the shady north/back side
+    y = {"x": 300, "y": 260, "w": 32, "h": 20, "rot": 0, "of": [300, 300]}
+    assert "harvest_yards_on_sunny_side" in f(_harvest([(300, 300)], [y]))
+
+
+def test_harvest_yards_on_sunny_side_passes_when_south_of_house():
+    y = {"x": 300, "y": 340, "w": 32, "h": 20, "rot": 0, "of": [300, 300]}
+    assert "harvest_yards_on_sunny_side" not in f(_harvest([(300, 300)], [y]))
 
 
 def test_harvest_yards_clear_of_paddies_fires_when_in_a_paddy():

@@ -174,30 +174,31 @@ def test_wall_walk_crosses_multiple_edges():
     assert abs(ang - 180) < 1e-6   # the run is horizontal; walking west the edge points in -x
 
 
-# --- threshing_yards: branches the rural gens (which all have plain houses + fields) never hit ----
-def test_threshing_yards_returns_zero_without_plain_farmhouses():
+# --- farmsteads(): the deferred draw giving EVERY farmhouse a yard (nudge / drop / bound branches) -----
+def test_try_place_defers_the_farmhouse():
+    # try_place reserves + records the farmhouse but does NOT draw it yet (farmsteads draws it with its yard)
     s = _town()
-    s.M["houses"] = [{"x": 500, "y": 500, "w": 40, "h": 28, "rot": 0, "kind": "big"}]   # no 'plain' farmstead
-    assert s.threshing_yards() == 0
+    assert s.try_place(500, 500, "plain")
+    assert len(s.M["houses"]) == 1 and len(s.M["threshing_yards"]) == 0   # deferred, no yard yet
 
 
-def test_threshing_yards_without_fields_tucks_north():
-    # no fields -> the away-from-paddy direction defaults to north; the yard still attaches
+def test_farmsteads_yard_on_the_sunny_south_front():
     s = _town()
-    s.M["houses"] = [{"x": 500, "y": 500, "w": 40, "h": 28, "rot": 0, "kind": "plain"}]
-    s.placed.append((500, 500, 40, 28))
-    assert s.threshing_yards() == 1
+    assert s.try_place(500, 500, "plain")
+    assert s.farmsteads() == 1
     y = s.M["threshing_yards"][0]
-    assert y["of"] == [500, 500] and y["y"] < 500
+    assert y["of"] == [500, 500] and y["y"] > 500   # the yard sits on the house's south/front (+y) side
 
 
-def test_threshing_yards_skips_a_yard_outside_the_bound():
-    # with a bounding ring (a city wall), a yard that would land outside it is skipped
+def test_farmsteads_drops_a_farmhouse_with_no_yard_room():
+    # a tiny bounding ring around the house leaves no room for a yard on any side (even nudged), so the
+    # farmhouse is dropped - keeping the firm 100%-have-a-yard invariant. Exercises the bound, nudge-None,
+    # and drop branches.
     s = _town()
-    s.bound = [(400, 400), (600, 400), (600, 600), (400, 600)]
-    s.field_polys = [[(400, 400), (600, 400), (600, 600), (400, 600)]]
-    s.M["houses"] = [{"x": 590, "y": 500, "w": 40, "h": 28, "rot": 0, "kind": "plain"}]
-    assert s.threshing_yards() == 0   # the only candidate's yard tucks east, past the bound
+    assert s.try_place(500, 500, "plain")
+    s.bound = [(490, 490), (510, 490), (510, 510), (490, 510)]
+    assert s.farmsteads() == 0
+    assert s.M["houses"] == [] and s.M["threshing_yards"] == []
 
 
 if __name__ == "__main__":

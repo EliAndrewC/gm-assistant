@@ -52,13 +52,14 @@ s.headman(*HEADMAN)
 # small count so it stays "some"
 s.ring(SW, 5, 18, ["abandoned"])
 s.ring(SE, 5, 18, ["abandoned"])
-# occupied farmhouses, two-deep around the big fields (a ~70-household village)
-s.ring(WEST, 18, 20, ["plain"] * 7 + ["big"])
-s.ring(WEST, 32, 54, ["plain"])
-s.ring(CENTRAL, 20, 20, ["plain"] * 7 + ["big"])
-s.ring(CENTRAL, 38, 54, ["plain"])
-s.ring(MIDNORTH, 14, 16, ["plain"])
-s.ring(MIDNORTH, 11, 50, ["plain"])
+# occupied farmhouses, two-deep around the big fields (a ~70-household village) - generously, since
+# each needs room for its threshing yard, so a few get dropped where the warren is too tight
+s.ring(WEST, 20, 20, ["plain"] * 7 + ["big"])
+s.ring(WEST, 40, 54, ["plain"])
+s.ring(CENTRAL, 22, 20, ["plain"] * 7 + ["big"])
+s.ring(CENTRAL, 46, 54, ["plain"])
+s.ring(MIDNORTH, 16, 16, ["plain"])
+s.ring(MIDNORTH, 14, 50, ["plain"])
 s.ring(SW, 6, 18, ["plain"])
 s.ring(SE, 6, 18, ["plain"])
 
@@ -75,17 +76,14 @@ s.label(1366, 1080, "fallow - post-blight", 10, italic=True, color="#9C7A40")
 s.label(1006, 600, "Sister Baika's tax-free plots (vermillion)", 9, italic=True, color="#6B2A18")
 s.label(305, 1120, "abandoned after the kumosaya", 10, "start", italic=True, color="#9A3A2A")
 
-# communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
-# the rest draw from the irrigation pond/channels/stream
-s.place_wells((160, 110, 1480, 1080), spacing=320, near=85)
-
 # the village burial ground, away to the NE - well clear of the shrine (kegare/death-pollution)
 s.cemetery(1340, 300, 80, 56, label="village burial ground")
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy,
-# the house re-drawn over it. Placed LAST so it avoids every other structure.
-s.threshing_yards()
+# draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
+s.farmsteads()
+
+# communal WELLS among the FINAL dwellings (after farmsteads, so they sit among the placed houses)
+s.place_wells((130, 100, 1510, 1110), spacing=270, near=90)
 
 s.title("Kikuta")
 s.compass()

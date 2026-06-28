@@ -19,3 +19,16 @@ generate NPCs for the Rokugan setting of the Legend of the Five Rings RPG.
 - Use the `weighted_choice` utility for randomizing attributes based on config weights.
 - Ensure `to_dict()` is updated if new character attributes are added.
 - Use single quotes for strings and triple-double-quotes for docstrings.
+
+## Current Work: LLM Backstory Synthesis
+
+We are building a "Synthesize Backstory" button for chargen - one click turns a
+generated character's traits into a 1-3 paragraph prose gestalt via a Gemini text
+model (the text twin of the AI portrait button). Backend lives in
+`chargen/synthesis.py` + `chargen/synthesis_brief.md` (model configured via
+`[gemini] text_model`).
+
+Before wiring the button we are running a **blind bakeoff** to decide how much
+setting context the prompt should carry. It is a temporary, local-only harness in
+[`bakeoff/`](bakeoff/) - see [`bakeoff/CLAUDE.md`](bakeoff/CLAUDE.md) for status
+and how to resume. Delete `bakeoff/` once the winning prompt tier is chosen.

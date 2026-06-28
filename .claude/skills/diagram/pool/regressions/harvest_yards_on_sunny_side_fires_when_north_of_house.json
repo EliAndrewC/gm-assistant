@@ -1,0 +1,42 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "wells": [
+  {
+   "x": 300,
+   "y": 300,
+   "r": 8,
+   "vr": 11.9
+  }
+ ],
+ "threshing_yards": [
+  {
+   "x": 300,
+   "y": 260,
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    300,
+    300
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "harvest_yards_on_sunny_side"
+  ],
+  "source": "test_checks.py::test_harvest_yards_on_sunny_side_fires_when_north_of_house"
+ }
+}

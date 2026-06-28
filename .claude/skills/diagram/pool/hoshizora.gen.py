@@ -101,17 +101,13 @@ s.label(770, 1268, "samurai houses", 11, italic=True)   # over the cluster - kep
 # rent-rice / bulk goods), drawn AFTER the businesses exist
 s.merchant_storehouses(6)
 
-# ---- farmhouses: the town's farmer majority (still the largest single group), packed
-# several-deep around the fields
+# ---- farmhouses: the town's farmer majority (still the largest single group), packed several-deep
+# around the fields - generously, since each needs room for its threshing yard (some get dropped)
 for bb in (F1, F2, F3, F4):
-    s.ring(bb, 13, 14, ["plain"])
-    s.ring(bb, 11, 40, ["plain"])
-    s.ring(bb, 8, 70, ["plain"])
-    s.ring(bb, 7, 44, ["plain"])
-
-# communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
-# the rest draw from the irrigation pond/channels/stream
-s.place_wells((85, 110, 1930, 1260), spacing=290, near=85)
+    s.ring(bb, 17, 14, ["plain"])
+    s.ring(bb, 15, 40, ["plain"])
+    s.ring(bb, 13, 66, ["plain"])
+    s.ring(bb, 11, 90, ["plain"])
 
 # a caravan INN + STABLES on the Imperial Road through-route, with open ground beside the stables as a
 # pasture for the wagon-train animals (oxen, horses) - like a provincial city's gate caravan facilities,
@@ -142,10 +138,11 @@ for mx, my, mr in [(1136, 433, -27), (1040, 481, -29), (880, 571, -29), (1260, 6
 for lx, ly in [(1328, 235), (740, 298)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy,
-# the house re-drawn over it. Placed LAST so it avoids every other structure (incl. hand-placed buildings).
-s.threshing_yards()
+# draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
+s.farmsteads()
+
+# communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
+s.place_wells((85, 110, 1930, 1260), spacing=290, near=85)
 
 s.title("Hoshizora")
 s.compass(1950, 50)
