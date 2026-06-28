@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bakeoff - done</title>
+  <style>
+    body { margin: 0; font: 17px/1.6 Georgia, serif; color: #1c1a17; background: #f6f3ec; }
+    main { max-width: 640px; margin: 12vh auto; padding: 0 24px; text-align: center; }
+    h1 { font-size: 28px; }
+    p { color: #4a443b; }
+    code { background: #efe9dc; padding: 2px 6px; border-radius: 4px; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <main>
+    {% if empty %}
+    <h1>No comparison tasks yet</h1>
+    <p>Generate the candidate matrix and build tasks first:</p>
+    <p><code>python3 -m bakeoff.generate</code><br><code>python3 -m bakeoff.build_tasks</code></p>
+    {% else %}
+    <h1>All done - thank you!</h1>
+    <p>You have voted on all {{ total }} comparison tasks.</p>
+    <p>Unblind and tabulate the results with:</p>
+    <p><code>python3 -m bakeoff.analyze</code></p>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bakeoff - blind comparison {{ position }} of {{ total }}</title>
+  <style>
+    :root { --ink: #1c1a17; --muted: #6b6358; --line: #ddd6ca; --bg: #f6f3ec; --card: #fff; --accent: #7a5c2e; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.55 Georgia, "Times New Roman", serif; color: var(--ink); background: var(--bg); }
+    header { position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--line); padding: 12px 20px; z-index: 5; }
+    .progress { color: var(--muted); font-size: 14px; }
+    .bar { height: 5px; background: var(--line); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+    .bar > i { display: block; height: 100%; background: var(--accent); width: {{ (100 * done_n / total) if total else 0 }}%; }
+    main { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .sheet { background: #efe9dc; border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; }
+    .sheet h2 { margin: 0 0 8px; font-size: 17px; }
+    .sheet pre { margin: 0; white-space: pre-wrap; font: 13px/1.5 "DejaVu Sans Mono", Menlo, Consolas, monospace; color: #3a352d; }
+    .hint { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .opt { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; }
+    .opt label.pick { display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+    .opt .badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #efe9dc; border: 1px solid var(--line); font-family: sans-serif; }
+    .opt .body { white-space: pre-wrap; font-size: 15px; }
+    .opt:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(122,92,46,.25); }
+    .tags { margin: 22px 0 8px; }
+    .tags legend { font-weight: bold; padding: 0; }
+    .tags label { display: inline-block; font-size: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px; margin: 6px 8px 0 0; cursor: pointer; }
+    .tags input { margin-right: 6px; }
+    textarea { width: 100%; min-height: 70px; font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 6px; resize: vertical; }
+    .actions { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
+    button { font: inherit; padding: 10px 22px; border-radius: 6px; border: 1px solid var(--accent); cursor: pointer; }
+    button.primary { background: var(--accent); color: #fff; }
+    button.ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+    .err { color: #9a2a2a; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="progress">Blind comparison &mdash; {{ position }} of {{ total }} ({{ done_n }} done)</div>
+    <div class="bar"><i></i></div>
+  </header>
+  <main>
+    <div class="sheet">
+      <h2>{{ character_name }}</h2>
+      <pre>{{ character_sheet }}</pre>
+    </div>
+    <p class="hint">Four backstories were written for this character from the same generated traits. Pick the one you would actually use. The sources are hidden.</p>
+
+    <form method="post" action="/vote">
+      <input type="hidden" name="task_id" value="{{ task_id }}">
+      <div class="grid">
+        {% for opt in options %}
+        <div class="opt">
+          <label class="pick"><input type="radio" name="choice" value="{{ opt.label }}" required>
+            <span class="badge">{{ opt.label }}</span> Best</label>
+          <div class="body">{{ opt.text }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <fieldset class="tags">
+        <legend>Quick notes (optional)</legend>
+        {% for tag in quick_tags %}
+        <label><input type="checkbox" name="tags" value="{{ tag }}">{{ tag }}</label>
+        {% endfor %}
+      </fieldset>
+
+      <textarea name="notes" placeholder="Optional free-text notes about this comparison..."></textarea>
+
+      <div class="actions">
+        <button class="primary" type="submit" name="action" value="submit">Save &amp; next</button>
+        <button class="ghost" type="submit" name="action" value="skip" formnovalidate>Skip</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>
