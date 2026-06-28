@@ -74,11 +74,10 @@ s.label(700, 555, "shrine's tax-free plots (vermillion)", 9, italic=True, color=
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((140, 150, 1700, 1115), spacing=330, near=85)
 
-# harvest processing: the communal threshing/drying ground (hiroba) on the open dry ground west of
-# the V field, with rice-drying racks (hazakake) beside it
-s.threshing_ground(255, 730, 78, 48, label="threshing ground")
-s.drying_rack(210, 648, 66, 0)
-s.drying_rack(305, 648, 66, 0)
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
+# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
+s.threshing_yards()
 
 # the village burial ground, off at the east edge - well clear of both shrines (a Shinto shrine
 # keeps death-pollution at arm's length)

@@ -32,13 +32,9 @@ def rect_corners(h):
 
 
 def _struct_rect(s):
-    """Normalise any solid footprint feature to a rect for the overlap tests: a building carries
-    w/h(/rot); a threshing ground is an ellipse (rx/ry); a drying rack is a length-by-~18 bar."""
-    if "w" in s:
-        return {"x": s["x"], "y": s["y"], "w": s["w"], "h": s["h"], "rot": s.get("rot", 0)}
-    if "rx" in s:
-        return {"x": s["x"], "y": s["y"], "w": 2 * s["rx"], "h": 2 * s["ry"], "rot": 0}
-    return {"x": s["x"], "y": s["y"], "w": s["length"], "h": 18, "rot": s.get("rot", 0)}
+    """Normalise a solid footprint feature to a rect for the overlap tests. Every solid feature now
+    carries w/h(/rot)."""
+    return {"x": s["x"], "y": s["y"], "w": s["w"], "h": s["h"], "rot": s.get("rot", 0)}
 
 
 # ---- overlap classification registry ---------------------------------------------------------------
@@ -50,7 +46,7 @@ def _struct_rect(s):
 # `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
 # sets, forcing whoever adds it to declare its overlap behaviour rather than silently skipping it.
 _OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds",
-                    "ossuaries", "threshing", "drying_racks", "ministries")
+                    "ossuaries", "ministries")
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs")
@@ -58,6 +54,7 @@ _OVERLAP_LINEAR = ("fields", "fallow_patches", "flower_fields", "streams", "chan
                    "alleys", "wards", "ponds", "pastures", "forests")   # linear / area features structs avoid
 _OVERLAP_EXEMPT = {
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
+    "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
     "merchant_estates": "a walled court AROUND an inner building that is itself an overlap-checked struct",
     "wells": "a small well-head dropped into the open gaps between dwellings (its nominal footprint may kiss a dense-city building)",
     "wall_towers": "guard towers stand ON the city wall - an intentional overlap - and clear of the interior",
@@ -698,12 +695,11 @@ def gate(M, verbose=True):
     # (they were added late, so it is easy to forget - this is what catches a grave on the moat or a
     # mausoleum in the street). They carry x/y/w/h/rot like any building.
     # EVERY solid footprint feature is a first-class structure for overlap purposes (see the
-    # _OVERLAP_STRUCTS registry): houses, civic/urban buildings, the funerary structures, the harvest
-    # grounds (threshing + drying racks), wayside shrines, ministries, inspection stations. They are
-    # normalised to rects (an ellipse threshing / a bar-shaped rack become rects) and then checked,
-    # like any building, against each other and against the wall / moat / road / stream / channel /
-    # street / manor / hall / gate / torii. Adding a new feature here is the DEFAULT; exceptions that
-    # may overlap (annex storehouses, on-wall towers, bridges) live in _OVERLAP_EXEMPT, not here.
+    # _OVERLAP_STRUCTS registry): houses, civic/urban buildings, the funerary structures, wayside
+    # shrines, ministries, inspection stations. They are normalised to rects and then checked, like any
+    # building, against each other and against the wall / moat / road / stream / channel / street /
+    # manor / hall / gate / torii. Adding a new feature here is the DEFAULT; exceptions that may overlap
+    # (annex storehouses, annex threshing yards, on-wall towers, bridges) live in _OVERLAP_EXEMPT.
     structs = ([_struct_rect(s) for k in _OVERLAP_STRUCTS for s in M.get(k, [])]
                + [_struct_rect(s) for s in (granary["stores"] if granary else [])])
     corners = [rect_corners(s) for s in structs]
@@ -716,7 +712,7 @@ def gate(M, verbose=True):
     # _OVERLAP_* registry above). The default is MUST-NOT-OVERLAP - a new feature joins _OVERLAP_STRUCTS
     # and is cleared by the checks above; anything allowed to overlap is named in _OVERLAP_EXEMPT. This
     # fires when a generator emits a feature key nobody classified, so a new feature can never silently
-    # skip the overlap rules (the recurring trap: threshing/drying racks shipped unchecked).
+    # skip the overlap rules (the recurring trap: harvest features shipped unchecked).
     unclassified = sorted(k for k, v in M.items()
                           if isinstance(v, list) and v and isinstance(v[0], dict)
                           and any(g in v[0] for g in ("x", "pts", "outline", "boundary", "poly"))
@@ -1285,76 +1281,37 @@ def gate(M, verbose=True):
                   f"{len(dry)} household(s) more than {REACH}px from any water source - a well, or an irrigation "
                   f"channel / pond / stream / moat: {dry[:4]} - put a well within reach")
 
-            # HARVEST PROCESSING: every rice settlement threshes and dries its crop. The communal
-            # THRESHING/DRYING GROUND (the village hiroba) is a tamped earthen floor among the
-            # farmhouses - a DRY surface, so it never sits inside a flooded paddy, and it is a shared
-            # facility, so it sits near the dwelling cluster (not out in a remote spot). The DRYING
-            # RACKS (hazakake) stand by the field edges where the cut rice is hung to dry.
+            # HARVEST PROCESSING (per-farmstead): a rice settlement threshes and dries its crop at the
+            # FARMHOUSE, not on one communal floor. Each household works its cut rice on its own small
+            # tamped earthen YARD (niwa) beside the house, with a little drying rack. Historically Japan
+            # had no central village threshing ground; processing was household-scale. A MINORITY of
+            # farmsteads show a yard (~1/3, matching the ~30% that carry a shed); the rest imply it / run
+            # off-frame. Drawn as an annex abutting its own house (s.threshing_yards()).
             fields_ol = [fdef["outline"] for fdef in fields]
-            threshing = M.get("threshing", [])
-            valid_tg = [t for t in threshing
-                        if min(math.hypot(t["x"] - h["x"], t["y"] - h["y"]) for h in dwell) <= 300
-                        and not any(point_in_poly(t["x"], t["y"], ol) for ol in fields_ol)]
-            check("settlement_has_threshing_ground", bool(valid_tg),
-                  f"a {scale} grows and harvests rice but has no threshing/drying ground (the communal hiroba) on dry "
-                  f"ground among its farmhouses - add s.threshing_ground(...) near the dwelling cluster, clear of the paddies")
-            # the hiroba serves the FIELDS, so it sits AT the farmland - not cut off from it by the main
-            # road (you do not cart the harvest across the Imperial road and through the shop rows to thresh
-            # it). Each threshing ground must lie near a field that is reachable WITHOUT crossing the trunk
-            # road. The distance bound is generous (existing maps run ~150-240px); the real fault it catches
-            # is a hiroba marooned on the far side of the road from every field it serves.
-            mainroad = M.get("road")
-
-            def _road_between(t, ol):
-                nv = min(ol, key=lambda v: math.hypot(t["x"] - v[0], t["y"] - v[1]))
-                return bool(mainroad) and any(segments_cross((t["x"], t["y"]), nv, mainroad[k], mainroad[k + 1])
-                                              for k in range(len(mainroad) - 1))
-            marooned = []
-            for t in threshing:
-                reachable = min((poly_dist(t["x"], t["y"], ol) for ol in fields_ol if not _road_between(t, ol)), default=1e9)
-                if reachable > 280:
-                    marooned.append((round(t["x"]), round(t["y"])))
-            if fields_ol:
-                check("threshing_ground_near_farmland", not marooned,
-                      f"threshing ground(s) sit far from the farmland they serve, or are cut off from every field by the main "
-                      f"road: {marooned[:3]} - the communal hiroba belongs AT a field edge among the farmhouses, not across "
-                      f"the Imperial road and the shop rows; place it within ~280px of a field reachable without crossing the trunk road")
-            racks = M.get("drying_racks", [])
-            stray_racks = []
-            for rk in racks:
-                dt = min((math.hypot(rk["x"] - t["x"], rk["y"] - t["y"]) for t in threshing), default=1e9)
-                df = min((poly_dist(rk["x"], rk["y"], ol) for ol in fields_ol), default=1e9)
-                if min(dt, df) > 150:
-                    stray_racks.append((round(rk["x"]), round(rk["y"])))
-            check("settlement_has_drying_racks", len(racks) >= 2 and not stray_racks,
-                  f"a {scale} hangs its cut rice on drying racks (hazakake) by the fields: found {len(racks)} rack(s) "
-                  f"(want >= 2)" + (f"; {len(stray_racks)} sit far from any field or threshing ground: {stray_racks[:3]}" if stray_racks else "")
-                  + " - place s.drying_rack(...) along the field edges")
-            # the threshing floor and the drying racks are DRY-ground harvest features: their FOOTPRINTS
-            # must stay clear of the flooded paddies (a hiroba standing in the water is wrong - the older
-            # center-only test missed a footprint clipping the field edge, as Hoshizora's threshing did).
-            harvest = [_struct_rect(t) for t in threshing] + [_struct_rect(rk) for rk in racks]
+            yards = M.get("threshing_yards", [])
+            need = math.ceil(len(houses) / 3)
+            check("harvest_yards_present", len(yards) >= need,
+                  f"a {scale} threshes and dries its rice at the farmstead: only {len(yards)} of {len(houses)} farmhouses "
+                  f"show a threshing/drying yard (want >= 1/3 = {need}) - attach more with s.threshing_yards()")
+            # the yard is the farmstead's own dry work apron, SMALLER than the house it serves (not a
+            # second dwelling). Each yard records `of` = its parent farmhouse centre.
+            hmap = {(round(h["x"]), round(h["y"])): h["w"] * h["h"] for h in houses}
+            oversize = [(round(t["x"]), round(t["y"])) for t in yards
+                        if t["w"] * t["h"] >= hmap.get((round(t["of"][0]), round(t["of"][1])), 0)]
+            check("harvest_yards_smaller_than_farmhouse", not oversize,
+                  f"threshing yard(s) are not smaller than their farmhouse: {oversize[:3]} - the niwa is a small dry apron beside the house")
+            # the yard is a DRY tamped floor: its whole footprint must stay out of the flooded paddies.
             in_paddy = []
-            for hs in harvest:
-                fc = rect_corners(hs)
+            for t in yards:
+                fc = rect_corners(_struct_rect(t))
                 if any(any(point_in_poly(px, py, ol) for px, py in fc)
                        or any(point_in_poly(vx, vy, fc) for vx, vy in ol)
                        or any(segments_cross(fc[e], fc[(e + 1) % 4], ol[k], ol[(k + 1) % len(ol)])
                               for e in range(4) for k in range(len(ol))) for ol in fields_ol):
-                    in_paddy.append((round(hs["x"]), round(hs["y"])))
-            check("harvest_features_clear_of_paddies", not in_paddy,
-                  f"threshing ground / drying rack footprint(s) sit IN a flooded paddy: {in_paddy[:3]} - the hiroba and "
-                  f"its racks are dry-ground features; keep their whole footprint clear of every field outline")
-            # the threshing-ground LABEL may sit over the threshing floor itself, but it must NOT collide
-            # with the DRYING RACKS beside it - the rack's fine pole/sheaf lines under the label text are
-            # unreadable. (The label vs the floor is fine; this is label-vs-racks only.)
-            rack_rects = [rect_corners(_struct_rect(rk)) for rk in racks]
-            tg_label_on_rack = [str(L[5]) for L in M.get("labels", [])
-                                if len(L) > 5 and "threshing" in str(L[5]).lower()
-                                and any(sat_overlap([(L[0], L[1]), (L[2], L[1]), (L[2], L[3]), (L[0], L[3])], rr) for rr in rack_rects)]
-            check("threshing_label_clear_of_racks", not tg_label_on_rack,
-                  f"the threshing-ground label overlaps a drying rack ({tg_label_on_rack}) - the rack's fine lines under the "
-                  f"text are unreadable; move the label or the racks so the label clears the racks (it may still sit over the floor)")
+                    in_paddy.append((round(t["x"]), round(t["y"])))
+            check("harvest_yards_clear_of_paddies", not in_paddy,
+                  f"threshing yard footprint(s) sit IN a flooded paddy: {in_paddy[:3]} - the yard is dry ground; "
+                  f"keep its whole footprint clear of every field outline")
 
     # THE DEAD - a full funerary geography. Every settlement above a hamlet buries its cremated dead
     # (a hamlet's go to the village district's ground, just as it has no shrine or headman). GRAVEYARDS

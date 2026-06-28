@@ -398,8 +398,16 @@ class Peasant(Character):
 
 
 class Monk(Character):
-    def __init__(self, base_rank, **ignored):
+    def __init__(self, base_rank, order='', seat='', **ignored):
         self.rank = int(base_rank)
+        # The monk's Order (one of the 7 Fortunes of Good Luck). Unlike the
+        # other dropdowns, a blank Order is left blank rather than randomized -
+        # the GM does this deliberately for a less common order (e.g. Order of
+        # Inari) they will type into the tags by hand.
+        self.order = order
+        # Some ranks pair two roles (rank 4: Senior Monk / Preceptor; rank 5:
+        # Adept Monk / Country Monk). `seat` records which one was chosen.
+        self.seat = seat
         Character.__init__(self)
         self.school = ''
         self.full_name = self.personal_name
@@ -408,7 +416,11 @@ class Monk(Character):
         )  # the +1 and higher variance indicates the esteem for monks
 
     def gen_tags(self) -> list[str]:
-        return ['Order of Bishamon', config['ranks']['Monk'][str(self.rank)]]
+        # Paired-rank labels ("Senior Monk, Preceptor") resolve to the chosen
+        # seat, or a random one of the pair if none was chosen.
+        roles = [role.strip() for role in config['ranks']['Monk'][str(self.rank)].split(',')]
+        designator = self.seat if self.seat in roles else choice(roles)
+        return ([self.order] if self.order else []) + [designator]
 
     def gen_honor(self, base=3.0) -> float:
         variance = 1.1 - self.rank / 10

@@ -174,6 +174,32 @@ def test_wall_walk_crosses_multiple_edges():
     assert abs(ang - 180) < 1e-6   # the run is horizontal; walking west the edge points in -x
 
 
+# --- threshing_yards: branches the rural gens (which all have plain houses + fields) never hit ----
+def test_threshing_yards_returns_zero_without_plain_farmhouses():
+    s = _town()
+    s.M["houses"] = [{"x": 500, "y": 500, "w": 40, "h": 28, "rot": 0, "kind": "big"}]   # no 'plain' farmstead
+    assert s.threshing_yards() == 0
+
+
+def test_threshing_yards_without_fields_tucks_north():
+    # no fields -> the away-from-paddy direction defaults to north; the yard still attaches
+    s = _town()
+    s.M["houses"] = [{"x": 500, "y": 500, "w": 40, "h": 28, "rot": 0, "kind": "plain"}]
+    s.placed.append((500, 500, 40, 28))
+    assert s.threshing_yards() == 1
+    y = s.M["threshing_yards"][0]
+    assert y["of"] == [500, 500] and y["y"] < 500
+
+
+def test_threshing_yards_skips_a_yard_outside_the_bound():
+    # with a bounding ring (a city wall), a yard that would land outside it is skipped
+    s = _town()
+    s.bound = [(400, 400), (600, 400), (600, 600), (400, 600)]
+    s.field_polys = [[(400, 400), (600, 400), (600, 600), (400, 600)]]
+    s.M["houses"] = [{"x": 590, "y": 500, "w": 40, "h": 28, "rot": 0, "kind": "plain"}]
+    assert s.threshing_yards() == 0   # the only candidate's yard tucks east, past the bound
+
+
 if __name__ == "__main__":
     import sys
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

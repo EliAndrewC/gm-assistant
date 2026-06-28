@@ -55,11 +55,10 @@ s.place_wells((360, 320, 900, 1040), spacing=430, near=85)
 
 s.label(950, 546, "irrigation pond", 10, italic=True, color="#5C7488")
 
-# harvest processing: a communal threshing/drying ground (hiroba) on dry ground among the
-# farmhouses, with rice-drying racks (hazakake) beside it
-s.threshing_ground(693, 563, 74, 48, label="threshing ground")
-s.drying_rack(583, 581, 64, 0)
-s.drying_rack(762, 470, 64, 0)
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
+# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
+s.threshing_yards()
 
 s.title("Moritono")
 s.compass()

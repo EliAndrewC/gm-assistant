@@ -79,11 +79,10 @@ s.label(305, 1120, "abandoned after the kumosaya", 10, "start", italic=True, col
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((160, 110, 1480, 1080), spacing=320, near=85)
 
-# harvest processing: the communal threshing/drying ground (hiroba) on the open dry ground
-# south of the fields, with rice-drying racks (hazakake) beside it
-s.threshing_ground(692, 922, 72, 46, label="threshing ground")
-s.drying_rack(644, 854, 64, 0)
-s.drying_rack(742, 842, 64, 0)
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
+# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
+s.threshing_yards()
 
 # the village burial ground, away to the NE - well clear of the shrine (kegare/death-pollution)
 s.cemetery(1340, 300, 80, 56, label="village burial ground")

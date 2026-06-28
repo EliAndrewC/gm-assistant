@@ -137,11 +137,10 @@ s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
 s.inn(1398, 1024, rot=90)
 s.stables(1510, 1024)
 
-# harvest processing: the communal threshing/drying ground (hiroba) on the dry ground south of
-# the western field, among the outside farmhouses, with rice-drying racks (hazakake) beside it
-s.threshing_ground(380, 780, 70, 44, label="threshing ground")
-s.drying_rack(332, 700, 64, 0)
-s.drying_rack(428, 708, 64, 0)
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
+# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
+s.threshing_yards()
 
 # the graveyard in the Bishamon monastery's precinct (the Buddhist danka parish ground)
 s.cemetery(1786, 1042, 88, 62, label="graveyard")               # the intramural parish ground, by the Bishamon monastery
