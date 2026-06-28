@@ -10,18 +10,31 @@
 #   * If that container is ALREADY RUNNING, opens a fresh bash shell inside it
 #     (podman exec) instead of starting a second container - and prints the
 #     ports that container actually has published.
-#   * Otherwise starts a new container (podman run --rm -it ... bash), mounting:
-#       - the repo at /workspace
+#   * Otherwise pulls the latest image, then starts a new container
+#     (podman run --rm -it ... bash), mounting:
+#       - the repo at /workspace (or the path it declares via container-workdir)
 #       - the host's ~/.claude.json and ~/.claude/ into /home/agent so Claude
 #         Code auth, config, skills, and memory persist across containers
 #       - any extra host mounts the repo declares (see below)
 #     and publishing the ports the repo declares.
+#
+# Because the container name is derived per repo (<prefix>-<repo-dir-name>),
+# "already running" only ever matches the SAME repo: launching from gm-assistant
+# twice attaches the second time, but launching from a different repo starts its
+# own container.
 #
 # Per-repo config lives in the repo's CLAUDE.md as greppable HTML-comment lines.
 # Format is HOST:CONTAINER (space-separated for multiples):
 #
 #   <!-- container-ports: 8080:8080 8091:8090 -->
 #   <!-- container-mounts: ..:/host-l7r-repo -->
+#   <!-- container-workdir: /gm-assistant -->
+#
+# container-workdir (optional, default /workspace) is where the repo is mounted
+# and the shell starts. Give each repo a DISTINCT path (e.g. /gm-assistant,
+# /character-sheet) so Claude Code's per-project memory/history under
+# ~/.claude/projects/ does not collide - that namespace is keyed off the cwd
+# path, and ~/.claude is shared across all of these containers.
 #
 # Port convention: first is the repo's primary webapp, second the secondary
 # (e.g. a blind-eval webapp). Host and container ports may differ so several
@@ -33,8 +46,11 @@
 # the tree is checked out (/home/eli/l7r/<repo>, /data/dev/l7r/<repo>, ...).
 #
 # Usage:
-#   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--fresh] [--help]
+#   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
+#                       [--fresh] [--help]
 #
+# A fresh launch first runs `podman pull` for the latest image; --no-pull skips
+# that (offline, or to save time). Attaching to a running container never pulls.
 # --no-claude skips mounting the host ~/.claude.json and ~/.claude/ - use it on a
 # shared/work machine so the container does NOT inherit that host's default Claude
 # account (you log in fresh inside instead, on your own account). Point at a
@@ -60,12 +76,14 @@ NAME=""
 PUBLISH_PORTS=1
 FRESH=0
 MOUNT_CLAUDE=1
+PULL=1
 CLAUDE_SRC="${CLAUDE_SRC:-$HOME}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --name) NAME="${2:-}"; shift 2 ;;
     --no-ports) PUBLISH_PORTS=0; shift ;;
     --no-claude) MOUNT_CLAUDE=0; shift ;;
+    --no-pull) PULL=0; shift ;;
     --fresh) FRESH=1; shift ;;
     -h|--help) show_help ;;
     *) die "unknown option: $1 (try --help)" ;;
@@ -104,6 +122,17 @@ read_directive() {
     | sed '/^$/d' || true
 }
 
+# Where to mount the repo and start the shell. Default /workspace; a repo can
+# declare a distinct path via container-workdir so its Claude Code project memory
+# (keyed off the cwd path) does not collide with other repos under shared
+# ~/.claude.
+WORKDIR="$(read_directive container-workdir | head -n1)"
+[ -n "$WORKDIR" ] || WORKDIR="/workspace"
+case "$WORKDIR" in
+  /*) : ;;
+  *) die "container-workdir must be an absolute path (got '$WORKDIR')" ;;
+esac
+
 # ---- if a container of this name exists, attach (or recreate with --fresh) ----
 if [ "$FRESH" -eq 1 ] && podman container exists "$NAME" 2>/dev/null; then
   echo ">> --fresh: removing existing container '$NAME'"
@@ -130,27 +159,25 @@ RUN_ARGS=(
   --uidmap 0:1:1000 --uidmap 1000:0:1 --uidmap 1001:1001:64536
   --gidmap 0:1:1000 --gidmap 1000:0:1 --gidmap 1001:1001:64536
   --env HOME=/home/agent
-  --workdir /workspace
+  --workdir "$WORKDIR"
   --memory "$MEMORY" --memory-swap "$MEMORY"
-  --volume "${REPO_ROOT}:/workspace:Z"
+  --volume "${REPO_ROOT}:${WORKDIR}:Z"
 )
 
-# Host Claude Code config. Shared by host + every container, so use the shared
-# SELinux relabel (:z), not the private one (:Z) used for the workspace. Skip it
-# with --no-claude (e.g. on a work machine, so the container does not inherit that
-# host's default Claude account); CLAUDE_SRC overrides where it is read from.
+# Host Claude Code config, mounted so auth, settings, skills, and per-project
+# memory persist across these --rm containers. The host paths are created if
+# missing so even the very first launch persists - otherwise an in-container
+# login would be written container-internally and lost on exit (an empty {} is a
+# valid starting config). Uses the shared SELinux relabel (:z), not the private
+# :Z used for the workspace. Skip with --no-claude (e.g. on a work machine, so
+# the container does not inherit that host's default Claude account); CLAUDE_SRC
+# overrides where it is read from.
 if [ "$MOUNT_CLAUDE" -eq 1 ]; then
-  if [ -f "$CLAUDE_SRC/.claude.json" ]; then
-    RUN_ARGS+=( --volume "$CLAUDE_SRC/.claude.json:/home/agent/.claude.json:z" )
-  else
-    echo ">> warning: $CLAUDE_SRC/.claude.json not found; Claude auth may not persist." >&2
-  fi
-  if [ -d "$CLAUDE_SRC/.claude" ]; then
-    RUN_ARGS+=( --volume "$CLAUDE_SRC/.claude:/home/agent/.claude:z" )
-  else
-    echo ">> warning: $CLAUDE_SRC/.claude not found; skills/memory may not persist." >&2
-  fi
-  echo ">> Claude config: mounting from $CLAUDE_SRC"
+  mkdir -p "$CLAUDE_SRC/.claude"
+  [ -e "$CLAUDE_SRC/.claude.json" ] || echo '{}' > "$CLAUDE_SRC/.claude.json"
+  RUN_ARGS+=( --volume "$CLAUDE_SRC/.claude.json:/home/agent/.claude.json:z" )
+  RUN_ARGS+=( --volume "$CLAUDE_SRC/.claude:/home/agent/.claude:z" )
+  echo ">> Claude config: mounting from $CLAUDE_SRC (created if missing, so login persists)"
 else
   echo ">> --no-claude: NOT mounting host Claude config; log in fresh inside the"
   echo "   container to keep it separate from this host's default account."
@@ -189,5 +216,12 @@ else
   echo ">> --no-ports: nothing published."
 fi
 
-echo ">> starting '$NAME' from $IMAGE"
+if [ "$PULL" -eq 1 ]; then
+  echo ">> pulling latest image: $IMAGE"
+  podman pull "$IMAGE" || echo ">> warning: pull failed; using the local image if present." >&2
+else
+  echo ">> --no-pull: not pulling; using the local image."
+fi
+
+echo ">> starting '$NAME' (workdir $WORKDIR) from $IMAGE"
 exec podman run "${RUN_ARGS[@]}" "$IMAGE" bash

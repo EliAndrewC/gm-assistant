@@ -32,7 +32,7 @@ Templates requiring review/update:
   ✅ webapp/tests/screenshot.py - produces multi-scroll contact sheets.
   ✅ webapp/tests/dom_audit.py - adds layout-balance rule (sibling-height
                               ratio cap inside flex/grid containers).
-  ✅ /workspace/.claude/agents/frontend-review.md - new independent
+  ✅ /gm-assistant/.claude/agents/frontend-review.md - new independent
                               reviewer agent (Constitution mirror).
   ⚠  .specify/templates/plan-template.md - Constitution Check entry
                               for Principle I should now mention "no
@@ -178,7 +178,7 @@ Only the GM may edit those sections, and only when they explicitly
 instruct an agent to do so.
 
 The sole automated exception is the canonical-source sync workflow
-documented in `/workspace/CLAUDE.md`: when the GM has updated their
+documented in `/gm-assistant/CLAUDE.md`: when the GM has updated their
 GitHub notes, downstream SOURCE blocks MUST be updated to match exactly.
 
 AI-generated content (preferences, generation instructions, examples of
@@ -423,8 +423,8 @@ undermines the whole reading experience for any player who knows Japanese.
   variant inputs.
 
 **Webapp conventions**
-- Static prototypes live under `/workspace/webapp-prototype/`.
-- The chargen backend (CherryPy + Jinja2) lives under `/workspace/webapp/`.
+- Static prototypes live under `/gm-assistant/webapp-prototype/`.
+- The chargen backend (CherryPy + Jinja2) lives under `/gm-assistant/webapp/`.
 - A `relics.js` (or analogous) bundle inlines pool data as
   `window.<NAME>_BUNDLE` so prototypes work over `file://` without a
   server. A parallel `relics.json` artifact is produced for future API
@@ -447,7 +447,7 @@ gate via the *Constitution Check* section of `plan-template.md`.
 **Screenshot-as-feedback workflow (mandatory for UI changes)**
 The verification workflow described in Principle I and VI MUST be run
 before any UI change is reported as done. The canonical implementation
-lives at `/workspace/webapp-prototype/relics/screenshot.py` and runs:
+lives at `/gm-assistant/webapp-prototype/relics/screenshot.py` and runs:
 
 1. Boot the prototype via `python3 -m http.server` on port 8123.
 2. For each of GM-100 (1850×1050), GM-200 (925×525), tablet (800×1100),
@@ -482,7 +482,7 @@ delegated work before reporting success.
 
 **Memory and persistent context**
 The agent maintains persistent memory at
-`/home/agent/.claude/projects/-workspace/memory/`. Memory entries follow
+`/home/agent/.claude/projects/-gm-assistant/memory/`. Memory entries follow
 the format and rules described in the harness system prompt; this
 constitution does not duplicate them, but the agent's behavior MUST be
 consistent with both the constitution and the memory rules.
@@ -523,7 +523,7 @@ document wins; where this document is silent, defer to the project's
   before being added to a pool.
 
 **Runtime guidance**
-`/workspace/CLAUDE.md` and the per-directory CLAUDE.md files remain the
+`/gm-assistant/CLAUDE.md` and the per-directory CLAUDE.md files remain the
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 

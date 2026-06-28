@@ -25,7 +25,7 @@ COPY development-defaults.ini ./
 # private to the Fly account; rotating means rebuilding.
 COPY development-secrets.ini ./
 COPY authorize_op.py ./
-# pool data (relic + name pools) lives under /workspace/.claude/skills/<skill>/.
+# pool data (relic + name pools) lives under /gm-assistant/.claude/skills/<skill>/.
 # The image needs both — we lay them out under /app/skills and point the app at them.
 COPY skills ./skills
 

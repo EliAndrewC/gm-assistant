@@ -4,7 +4,7 @@ description: "Task list for L7R Toolkit Phase 1 implementation"
 
 # Tasks: L7R Toolkit Phase 1 - App Shell + Chargen + Relics
 
-**Input**: Design documents in `/workspace/specs/001-toolkit-shell/`
+**Input**: Design documents in `/gm-assistant/specs/001-toolkit-shell/`
 
 **Prerequisites**: ✅ plan.md, ✅ spec.md, ✅ research.md, ✅ data-model.md, ✅ contracts/
 
@@ -43,7 +43,7 @@ description: "Task list for L7R Toolkit Phase 1 implementation"
 
 **Goal**: Browse /relics and /relics/<slug> with the prototype's look and feel.
 
-- [ ] **T100** [US1] **STATIC** Port `/workspace/webapp-prototype/relics/styles.css` to `l7r/static/css/l7r.css`. Strip prototype-only selectors not used by the live app; add app-shell rules (`.app-shell`, `.app-nav-main`, `.app-footer`); keep the design system intact.
+- [ ] **T100** [US1] **STATIC** Port `/gm-assistant/webapp-prototype/relics/styles.css` to `l7r/static/css/l7r.css`. Strip prototype-only selectors not used by the live app; add app-shell rules (`.app-shell`, `.app-nav-main`, `.app-footer`); keep the design system intact.
 - [ ] **T101** [US1] **STATIC** Write `l7r/static/js/l7r.js` for seal-filter behavior (port from prototype's `main.js` filter handling; remove the bundle-loading code since data is server-rendered now).
 - [ ] **T102** [US1] **TEMPLATE** Create `l7r/templates/_layout.html` - base shell with nav, footer, font links, shared shell markup.
 - [ ] **T103** [US1] **TEMPLATE** Create `l7r/templates/relics_index.html` - extends `_layout.html`; renders per-Fortune sections with the seal filter rail and card grid. Uses fortune list, clan label registry.
@@ -101,7 +101,7 @@ description: "Task list for L7R Toolkit Phase 1 implementation"
 ## Phase 8: Final "done" check
 
 - [ ] **T600** [FOUND] **VERIFY** `make done` exits clean (ruff check + ruff format --check + mypy --strict + pytest + 100% coverage on `l7r/`).
-- [ ] **T601** [FOUND] **DOC** Update `/workspace/CLAUDE.md` if needed to reflect any new paths/conventions introduced.
+- [ ] **T601** [FOUND] **DOC** Update `/gm-assistant/CLAUDE.md` if needed to reflect any new paths/conventions introduced.
 
 ---
 

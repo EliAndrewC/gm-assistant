@@ -341,6 +341,58 @@ def test_house_count_in_range_target_houses_fires():
     assert "house_count_in_range" in f(M)
 
 
+# ---- water-width ladder: ditch < creek < moat, with honest gaps ---------------------------
+# Real wet-rice water systems are a tiered hierarchy (~2-4x per tier); the rendered map log-
+# compresses that but must keep the ordering. A ditch is the thinnest line; a creek clearly
+# beats it; the city moat dwarfs it and out-widths every natural stream (a feeder may equal it).
+_CHAN = [[100, 100], [110, 120], [120, 140]]
+_STRM = [[400, 100], [400, 300]]
+
+
+def test_irrigation_channels_hairline_fires_on_a_fat_ditch():
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}, "w": 4.2}]}
+    assert "irrigation_channels_hairline" in f(M)   # the OLD 4.2 px stout ditch must now trip
+
+
+def test_irrigation_channels_hairline_passes_at_the_floor():
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}, "w": 2.5}]}
+    assert "irrigation_channels_hairline" not in f(M)
+
+
+def test_watercourses_wider_than_ditches_fires_when_a_creek_reads_like_a_ditch():
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}, "w": 2.5}],
+         "streams": [{"poly": _STRM, "frm": None, "to": None, "w": 5}]}   # 5 < 2.5x2.5 -> too close to the ditch
+    assert "watercourses_wider_than_ditches" in f(M)
+
+
+def test_watercourses_wider_than_ditches_passes_for_a_proper_creek():
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}, "w": 2.5}],
+         "streams": [{"poly": _STRM, "frm": None, "to": None, "w": 9}]}   # 9 >= 6.25
+    assert "watercourses_wider_than_ditches" not in f(M)
+
+
+def test_moat_is_heaviest_watercourse_fires_when_a_stream_out_widths_it():
+    M = {"streams": [{"poly": _STRM, "frm": None, "to": None, "w": 30}], "moat_width": 26}   # stream > moat
+    assert "moat_is_heaviest_watercourse" in f(M)
+
+
+def test_moat_is_heaviest_watercourse_passes_when_a_feeder_equals_it():
+    M = {"streams": [{"poly": _STRM, "frm": None, "to": None, "w": 26}], "moat_width": 26}   # equal is allowed
+    assert "moat_is_heaviest_watercourse" not in f(M)
+
+
+def test_moat_dwarfs_ditches_fires_on_a_skimpy_moat():
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}, "w": 2.5}],
+         "moat_width": 8}   # 8 < 4x2.5
+    assert "moat_dwarfs_ditches" in f(M)
+
+
+def test_moat_dwarfs_ditches_passes_for_a_real_city_moat():
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}, "w": 2.5}],
+         "moat_width": 26}   # 26 >= 10
+    assert "moat_dwarfs_ditches" not in f(M)
+
+
 # ---- provincial-city checks (scale="city"); tango.gen.py is the passing integration ---------
 WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]   # a closed city ring
 

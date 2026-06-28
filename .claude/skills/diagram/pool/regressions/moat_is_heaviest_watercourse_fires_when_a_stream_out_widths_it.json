@@ -1,0 +1,26 @@
+{
+ "streams": [
+  {
+   "poly": [
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     300
+    ]
+   ],
+   "frm": null,
+   "to": null,
+   "w": 30
+  }
+ ],
+ "moat_width": 26,
+ "_regression": {
+  "fires": [
+   "moat_is_heaviest_watercourse"
+  ],
+  "source": "test_checks.py::test_moat_is_heaviest_watercourse_fires_when_a_stream_out_widths_it"
+ }
+}

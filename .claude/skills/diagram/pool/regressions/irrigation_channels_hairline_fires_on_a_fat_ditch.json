@@ -1,0 +1,34 @@
+{
+ "channels": [
+  {
+   "poly": [
+    [
+     100,
+     100
+    ],
+    [
+     110,
+     120
+    ],
+    [
+     120,
+     140
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f"
+   },
+   "w": 4.2
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "irrigation_channels_hairline"
+  ],
+  "source": "test_checks.py::test_irrigation_channels_hairline_fires_on_a_fat_ditch"
+ }
+}

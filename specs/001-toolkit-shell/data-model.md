@@ -6,7 +6,7 @@
 
 ### Relic
 
-Loaded from `/workspace/.claude/skills/relic/pool/<fortune>/<slug>.md`.
+Loaded from `/gm-assistant/.claude/skills/relic/pool/<fortune>/<slug>.md`.
 
 ```python
 @dataclass(frozen=True, slots=True)

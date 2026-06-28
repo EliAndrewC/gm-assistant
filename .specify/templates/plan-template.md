@@ -71,7 +71,7 @@ approval before /speckit-tasks may run.
 
 - **V. Protecting the GM's Writing (NON-NEGOTIABLE)**: The plan MUST NOT
   include any task that modifies content inside SOURCE markers except the
-  canonical-source sync workflow described in `/workspace/CLAUDE.md`.
+  canonical-source sync workflow described in `/gm-assistant/CLAUDE.md`.
 
 - **VI. Verify Before Reporting Done**: The plan MUST list the verification
   steps each task will run before being marked complete - pytest for Python

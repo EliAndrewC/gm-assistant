@@ -8,6 +8,7 @@ itself does not contain them and thus does not trip its own guard.
 """
 
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -56,6 +57,31 @@ SOURCE_OPEN = '<!-- SOURCE: GM NOTES - DO NOT MODIFY -->'
 SOURCE_CLOSE = '<!-- END SOURCE -->'
 
 
+def _git_ignored(paths: list[Path]) -> set[Path]:
+    """Return the subset of `paths` that git ignores.
+
+    The dash guard polices committable content, not disposable local artifacts
+    (e.g. `bakeoff/data/` blind-eval outputs or the `skills/` build artifact,
+    both git-ignored). Those may legitimately contain typographic dashes - the
+    former captures raw model output verbatim. If git is unavailable, nothing is
+    treated as ignored and the full tree is scanned (the original behavior).
+    """
+    if not paths:
+        return set()
+    try:
+        proc = subprocess.run(
+            ['git', 'check-ignore', '--stdin'],
+            input='\n'.join(str(p) for p in paths),
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except (FileNotFoundError, OSError):
+        return set()
+    return {Path(line) for line in proc.stdout.splitlines() if line}
+
+
 def _strip_source_blocks(text: str) -> str:
     """Remove content between SOURCE: GM NOTES markers.
 
@@ -84,12 +110,21 @@ def _scan_repo() -> list[tuple[Path, int, str, str]]:
     findings: list[tuple[Path, int, str, str]] = []
     for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        # Prune git-ignored subdirectories so disposable local artifacts are
+        # never scanned (and we don't os.walk into them needlessly).
+        ignored_dirs = _git_ignored([Path(dirpath) / d for d in dirnames])
+        dirnames[:] = [d for d in dirnames if (Path(dirpath) / d) not in ignored_dirs]
+        candidates = []
         for fn in filenames:
-            ext = os.path.splitext(fn)[1]
-            if ext not in EXTENSIONS:
+            if os.path.splitext(fn)[1] not in EXTENSIONS:
                 continue
             path = Path(dirpath) / fn
             if path.resolve() in SKIP_FILES:
+                continue
+            candidates.append(path)
+        ignored_files = _git_ignored(candidates)
+        for path in candidates:
+            if path in ignored_files:
                 continue
             try:
                 text = path.read_text(encoding='utf-8')

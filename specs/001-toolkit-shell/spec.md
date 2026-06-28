@@ -65,7 +65,7 @@ The GM visits the root URL and sees a landing page that names the toolkit, brief
 
 - **Long kanji on a relic card**: The relic with the 7-character kanji "太郎兵衛の太鼓" must render without clipping at the 200%-zoom viewport. The prototype already solved this by allowing the kanji to wrap to two lines; the live app preserves that behavior.
 - **Long relic prose**: Some entity descriptions are 150-200 characters. The detail page must show the full prose; cards must not truncate the named-entity text.
-- **Pool file changes**: If a relic file is added/edited in `/workspace/.claude/skills/relic/pool/`, the catalog must reflect that on the next request (re-read at request time, or re-load at process start with a known way to refresh).
+- **Pool file changes**: If a relic file is added/edited in `/gm-assistant/.claude/skills/relic/pool/`, the catalog must reflect that on the next request (re-read at request time, or re-load at process start with a known way to refresh).
 - **A pool file with malformed YAML frontmatter**: Skipping the file with a logged warning is preferred over crashing the catalog page.
 - **The chargen `development-secrets.ini` is missing or invalid**: Chargen has its own behavior here; the new shell should not regress that path. Non-chargen sections (Relics, Names) MUST function regardless of chargen-secrets state.
 - **Direct deep link to `/relics/<slug>` with an unknown slug**: Render a clean 404 inside the shell, not a CherryPy stack trace.
@@ -85,7 +85,7 @@ The GM visits the root URL and sees a landing page that names the toolkit, brief
 
 #### Relics catalog
 
-- **FR-005**: `GET /relics` MUST render all relics from `/workspace/.claude/skills/relic/pool/<fortune>/*.md`, grouped by Fortune, with one section per Fortune.
+- **FR-005**: `GET /relics` MUST render all relics from `/gm-assistant/.claude/skills/relic/pool/<fortune>/*.md`, grouped by Fortune, with one section per Fortune.
 - **FR-006**: Each relic card MUST show: the Japanese kanji as the visual anchor; the relic_type (main category only, the parenthetical descriptor truncated to the title tooltip); the clan tag; the English name; and the named_entity.
 - **FR-007**: The Fortune filter rail MUST be sticky (always visible while scrolling) and present a hanko-stamp seal per Fortune plus an "all" seal.
 - **FR-008**: Clicking a Fortune seal MUST hide the other Fortune sections and scroll to the chosen one; clicking "all" MUST restore all sections.
@@ -118,7 +118,7 @@ The GM visits the root URL and sees a landing page that names the toolkit, brief
 
 ### Key Entities
 
-- **Relic**: Loaded from `/workspace/.claude/skills/relic/pool/<fortune>/<slug>.md`. Attributes (from frontmatter): `name`, `japanese_romaji`, `japanese_kanji`, `fortune` (slug), `clan` (slug or "any"), `temple`, `named_entity`, `relic_type`. Body: multi-paragraph prose. Derived: `slug` (filename basename without `.md`).
+- **Relic**: Loaded from `/gm-assistant/.claude/skills/relic/pool/<fortune>/<slug>.md`. Attributes (from frontmatter): `name`, `japanese_romaji`, `japanese_kanji`, `fortune` (slug), `clan` (slug or "any"), `temple`, `named_entity`, `relic_type`. Body: multi-paragraph prose. Derived: `slug` (filename basename without `.md`).
 - **Fortune**: One of the seven major Rokugani Fortunes (Benten, Bishamon, Daikoku, Ebisu, Fukurokujin, Hotei, Jurojin). Attributes: `name` (English display), `domain` (e.g., "Fortune of romantic love"), `kanji` (e.g., "弁天"). The catalog groups relics by Fortune.
 - **Clan**: A lookup label for the relic's clan tag. Used purely for display (e.g., `crab` → "Crab", `any` → "Anywhere").
 - **Section**: A top-level area of the toolkit (Character Generator, Relics, Names). Attributes: route prefix, nav label, "is enabled in this phase" flag.
@@ -142,7 +142,7 @@ The GM visits the root URL and sees a landing page that names the toolkit, brief
 ## Assumptions
 
 - The GM uses Chrome at 200% browser zoom on a 1850×1173 outer window (per user-accessibility memory). All UI verification targets these dimensions.
-- The chargen webapp at `/workspace/webapp/` remains the deployment target; we modernize in place rather than relocating.
+- The chargen webapp at `/gm-assistant/webapp/` remains the deployment target; we modernize in place rather than relocating.
 - CherryPy 18.x with Jinja2 3.x is the stack for Phase 1. No FastAPI / Flask migration.
 - Google Fonts (Fraunces, EB Garamond, Shippori Mincho) are loaded from `fonts.googleapis.com` at request time, as in the prototype. No font self-hosting in Phase 1.
 - Pool data is read at process startup and cached in memory for the lifetime of the server. A server restart picks up changes. (Hot reloading is out of scope; a `make` target or process restart suffices.)

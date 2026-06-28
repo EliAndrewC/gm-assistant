@@ -48,7 +48,7 @@ dom-audit:
 ui-verify: screenshots dom-audit
 	@echo "[ui-verify] contact sheets in /tmp/l7r-shots/sheet-*.png — review at GM-200 with Eli's task in mind."
 
-# Sync pool data from /workspace/.claude/skills into the Docker build context.
+# Sync pool data from /gm-assistant/.claude/skills into the Docker build context.
 # `skills/` is gitignored — it's a build artifact, not source code.
 prepare-deploy:
 	@echo "[deploy] syncing pool data into webapp/skills/"

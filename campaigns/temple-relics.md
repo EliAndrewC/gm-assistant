@@ -2,7 +2,7 @@
 
 The GM source material for temple relics - the Temple of Bishamon's relics, cursed items (Armor of Fool's Regret, Candle of Tears), the Yamaoroshi sword backstory, and the broader essay on supernatural ambiguity - has its canonical home in [`/.claude/skills/relic/SKILL.md`](../.claude/skills/relic/SKILL.md).
 
-Per project convention (see [`/workspace/CLAUDE.md`](../CLAUDE.md) → "Single Canonical Home for Source Blocks"), this file is retained as a campaign-side discoverability pointer and does not duplicate the source block.
+Per project convention (see [`/gm-assistant/CLAUDE.md`](../CLAUDE.md) → "Single Canonical Home for Source Blocks"), this file is retained as a campaign-side discoverability pointer and does not duplicate the source block.
 
 ## What lives in /relic/SKILL.md
 

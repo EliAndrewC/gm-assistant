@@ -2,7 +2,7 @@
 
 The four major temples in Toshi Ranbo (Bishamon, Daikoku, Sadahako, Benten) and their political/religious dynamics under the Damasu vs. Tsume regimes.
 
-For the broader framework (the Seven Fortunes, clan patronage, temple organization), see [`/.claude/skills/temple/SKILL.md`](../.claude/skills/temple/SKILL.md). Per project convention (see [`/workspace/CLAUDE.md`](../CLAUDE.md) → "Single Canonical Home for Source Blocks"), the Fortune list and temple-hierarchy preamble are not duplicated here.
+For the broader framework (the Seven Fortunes, clan patronage, temple organization), see [`/.claude/skills/temple/SKILL.md`](../.claude/skills/temple/SKILL.md). Per project convention (see [`/gm-assistant/CLAUDE.md`](../CLAUDE.md) → "Single Canonical Home for Source Blocks"), the Fortune list and temple-hierarchy preamble are not duplicated here.
 
 <!-- SOURCE: GM NOTES - DO NOT MODIFY -->
 In addition to the required temples to Bishamon and Daikoku that every Lion city contains, there are two other significant temples in Toshi Ranbo. Each of the four major temples in the city is described in a section below.

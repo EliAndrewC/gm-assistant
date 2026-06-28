@@ -1,0 +1,51 @@
+{
+ "channels": [
+  {
+   "poly": [
+    [
+     100,
+     100
+    ],
+    [
+     110,
+     120
+    ],
+    [
+     120,
+     140
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f"
+   },
+   "w": 2.5
+  }
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     300
+    ]
+   ],
+   "frm": null,
+   "to": null,
+   "w": 5
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "watercourses_wider_than_ditches"
+  ],
+  "source": "test_checks.py::test_watercourses_wider_than_ditches_fires_when_a_creek_reads_like_a_ditch"
+ }
+}
