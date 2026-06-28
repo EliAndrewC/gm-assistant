@@ -344,6 +344,11 @@ s.ossuary(860, 2050)
 
 s.bridges()   # spans the Imperial Road over the moat at the north and south gates
 
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) on ~1/3 of the farmhouses -
+# the in-wall agricultural district AND the outside farm rings. Scaled by bscale so each stays a bit
+# smaller than the (compressed) city farmhouse; placed LAST so it avoids every other structure.
+s.threshing_yards()
+
 s.title("Tango")
 s.compass()
 

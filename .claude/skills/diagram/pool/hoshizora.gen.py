@@ -119,11 +119,6 @@ s.place_wells((85, 110, 1930, 1260), spacing=290, near=85)
 s.inn(276, 1116, rot=150)
 s.stables(276, 1202, rot=150)
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
-# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
-s.threshing_yards()
-
 # the funerary ground BEHIND the monastery (N of it, away from the Imperial Road): the parish
 # graveyard (Buddhist danka) right against the BACK of the hall (well clear of the stream to the N),
 # with the cremation ground on the marginal
@@ -146,6 +141,11 @@ for mx, my, mr in [(1136, 433, -27), (1040, 481, -29), (880, 571, -29), (1260, 6
     s.building(mx, my, *s._dims("merchant_large"), "merchant_large", rot=mr)
 for lx, ly in [(1328, 235), (740, 298)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
+
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy,
+# the house re-drawn over it. Placed LAST so it avoids every other structure (incl. hand-placed buildings).
+s.threshing_yards()
 
 s.title("Hoshizora")
 s.compass(1950, 50)

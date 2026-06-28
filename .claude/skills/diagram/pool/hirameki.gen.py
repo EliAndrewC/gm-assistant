@@ -137,11 +137,6 @@ s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
 s.inn(1398, 1024, rot=90)
 s.stables(1510, 1024)
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
-# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
-s.threshing_yards()
-
 # the graveyard in the Bishamon monastery's precinct (the Buddhist danka parish ground)
 s.cemetery(1786, 1042, 88, 62, label="graveyard")               # the intramural parish ground, by the Bishamon monastery
 s.cemetery(1895, 1255, 120, 88, label="common burial ground")    # the MAIN burial ground (a town of ~1,200 over centuries) - large, extramural, well clear of the paddy
@@ -157,6 +152,11 @@ for mx, my in [(1034, 1048), (1772, 1168), (1082, 1366), (1400, 1402)]:
     s.building(mx, my, *s._dims("merchant_large"), "merchant_large")
 for lx, ly in [(1024, 1152), (1174, 1152), (1510, 1152)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
+
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy,
+# the house re-drawn over it. Placed LAST so it avoids every other structure (incl. hand-placed buildings).
+s.threshing_yards()
 
 s.title("Hirameki")
 s.compass()

@@ -74,14 +74,14 @@ s.label(700, 555, "shrine's tax-free plots (vermillion)", 9, italic=True, color=
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((140, 150, 1700, 1115), spacing=330, near=85)
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
-# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
-s.threshing_yards()
-
 # the village burial ground, off at the east edge - well clear of both shrines (a Shinto shrine
 # keeps death-pollution at arm's length)
 s.cemetery(1620, 690, 82, 58, label="village burial ground")
+
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy,
+# the house re-drawn over it. Placed LAST so it avoids every other structure.
+s.threshing_yards()
 
 s.title("Hikari no Sato")
 s.compass()

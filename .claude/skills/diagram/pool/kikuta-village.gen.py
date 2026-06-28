@@ -79,13 +79,13 @@ s.label(305, 1120, "abandoned after the kumosaya", 10, "start", italic=True, col
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((160, 110, 1480, 1080), spacing=320, near=85)
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
-# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
-s.threshing_yards()
-
 # the village burial ground, away to the NE - well clear of the shrine (kegare/death-pollution)
 s.cemetery(1340, 300, 80, 56, label="village burial ground")
+
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy,
+# the house re-drawn over it. Placed LAST so it avoids every other structure.
+s.threshing_yards()
 
 s.title("Kikuta")
 s.compass()

@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "wells": [
+  {
+   "x": 300,
+   "y": 300,
+   "r": 8,
+   "vr": 11.9
+  }
+ ],
+ "threshing_yards": [
+  {
+   "x": 344,
+   "y": 300,
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    300,
+    300
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "x": 352,
+   "y": 300,
+   "w": 44,
+   "h": 30,
+   "rot": 0,
+   "kind": "shop"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "harvest_yards_clear_of_structures"
+  ],
+  "source": "test_checks.py::test_harvest_yards_clear_of_structures_fires_on_another_building"
+ }
+}
