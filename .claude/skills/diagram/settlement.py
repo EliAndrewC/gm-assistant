@@ -294,8 +294,17 @@ class Settlement:
         self.M["meta"]["view"] = [ox, oy, w, h]
 
     # ---- fields
-    def paddy_field(self, shape, label, name, amp=52, taxfree=0, fallow_patch=None, label_xy=None):
-        """shape: a bbox (x0,y0,x1,y1) OR a list of base polygon vertices (e.g. a V)."""
+    def paddy_field(self, shape, label, name, amp=52, taxfree=0, fallow_patch=None, label_xy=None, plot=46):
+        """shape: a bbox (x0,y0,x1,y1) OR a list of base polygon vertices (e.g. a V).
+        `plot` is the target plot (sub-paddy) size in px: the field is quilted into jittered
+        bunded plots at roughly this grain. Smaller -> a finer patchwork of more, smaller paddies.
+        Default 46 is the fine grain that reads as intensively-worked premodern paddy (a 1-cho
+        holding was subdivided into dozens of small irregular bunded plots); it is the legibility
+        floor at the 2600px render - the true grain is finer still, but the bund network and the
+        planting-row hatching must stay legible, so plots are drawn a touch oversized (the same
+        legibility license the houses take). The bund stroke thins with the grain to suit. See the
+        "Paddy plot grain" entry in the SKILL.md historical grounding."""
+        bund = 0.03 * plot + 0.35   # bund (aze) stroke thins with the plot grain: ~2.6 at the old 76, ~1.7 at 46
         if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
             bbox = tuple(shape)
             outline = organic_bbox(bbox, amp)
@@ -325,8 +334,8 @@ class Settlement:
             e.append(hi)
             return e
 
-        xs = edges(ex0, ex1, 76)
-        ys = edges(ey0, ey1, 76)
+        xs = edges(ex0, ex1, plot)
+        ys = edges(ey0, ey1, plot)
         cols, rows = len(xs) - 1, len(ys) - 1
         P = {}
         for i in range(cols + 1):
@@ -345,7 +354,7 @@ class Settlement:
                 r = random.random()
                 crop = 'dry' if r < 0.16 else ('soy' if r < 0.30 else 'rice')
                 fill = 'url(#drycrop)' if crop == 'dry' else ('#9CB36A' if crop == 'soy' else random.choice(PADDY_SHADES))
-                self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="2.6" stroke-linejoin="round"/>')
+                self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
                 if crop in ('rice', 'soy'):
                     self._rows(quad, pts, crop)
         if label and taxfree:

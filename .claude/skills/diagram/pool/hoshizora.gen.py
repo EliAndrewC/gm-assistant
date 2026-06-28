@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(2000, 1300, seed=78)
+s = Settlement(2000, 1300, seed=209)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.
@@ -63,7 +63,7 @@ s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86,
 # (hall, stables, etc.) is the subject of a separate Mode A diagram. TILTED (rot=-30) so its front
 # wall runs PARALLEL to the Imperial Road, which crosses NW-to-NE just past this SW edge; the gate
 # (north side) opens onto that road. The tilted footprint reshuffles the dense town's seeded packs,
-# which is why this map's seed (78) was chosen - it lands the depicted population back on its mark.
+# which is why this map's seed (209) was chosen - it lands the depicted population back on its mark.
 s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)
 
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
@@ -83,6 +83,17 @@ s.label(1200, 1058, "barns", 10, italic=True)
 ROAD_CORE = [(470, 945), (760, 760), (1060, 600), (1360, 450), (1700, 278)]
 s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 11, width=26, setback=16, spacing=48, rows=2, skip=ROAD)
 s.label(972, 586, "merchant houses & shops", 11, italic=True, color="#5A4326")
+# a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH / RICH
+# merchants in big homes in a tight band DIRECTLY BEHIND the storefronts (a short step off the road, ahead
+# of the laborer warren further back - the merchant family lives over/behind its own shop), and the ~3
+# MASTER (rich) laborers in larger dwellings at the edge of the warren. Placed AFTER the frontage (so each
+# merchant home sits behind a storefront) but BEFORE the packs, which then flow AROUND them (a pack placed
+# first fills these spots and the big house lands on a packed dwelling). Each merchant home is TILTED to the
+# local road angle (~-27deg) so it lies PARALLEL to the storefront in front of it (merchant_housing_aligned).
+for mx, my, mr in [(1136, 433, -27), (1040, 481, -29), (880, 571, -29), (1260, 619, -27)]:
+    s.building(mx, my, *s._dims("merchant_large"), "merchant_large", rot=mr)
+for lx, ly in [(1328, 235), (740, 298)]:
+    s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
 s.pack((740, 235, 1320, 470), ["laborer"] * 24, step=42)
 s.pack((1165, 705, 1580, 918), ["servant"] * 13 + ["laborer"] * 13, step=42)
@@ -104,10 +115,10 @@ s.merchant_storehouses(6)
 # ---- farmhouses: the town's farmer majority (still the largest single group), packed several-deep
 # around the fields - generously, since each needs room for its threshing yard (some get dropped)
 for bb in (F1, F2, F3, F4):
-    s.ring(bb, 17, 14, ["plain"])
-    s.ring(bb, 15, 40, ["plain"])
-    s.ring(bb, 13, 66, ["plain"])
-    s.ring(bb, 11, 90, ["plain"])
+    s.ring(bb, 19, 14, ["plain"])
+    s.ring(bb, 17, 40, ["plain"])
+    s.ring(bb, 15, 66, ["plain"])
+    s.ring(bb, 13, 90, ["plain"])
 
 # a caravan INN + STABLES on the Imperial Road through-route, with open ground beside the stables as a
 # pasture for the wagon-train animals (oxen, horses) - like a provincial city's gate caravan facilities,
@@ -125,18 +136,6 @@ s.cemetery(215, 705, 110, 80, label="graveyard", label_above=True)
 # sits ABOVE the glyph so it clears the long "Monastery of Bishamon" label just to the east
 s.cremation_ground(95, 695, label_above=True)
 
-# a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH /
-# RICH merchants in big homes. These sit in a tight band DIRECTLY BEHIND the storefronts (a short step
-# off the road, ahead of the laborer warren further back) - the merchant family lives over/behind its
-# own shop - and the ~3 MASTER (rich) laborers in larger dwellings at the edge of the warren. The rest
-# live small (the house-size variety a county town shows, like a city). Hand-placed LAST in pre-cleared
-# gaps so they perturb no seeded pack; the band reads cleanly: shops -> merchant homes -> gap -> laborers.
-# Each is TILTED to the local road angle (~-27deg) so it lies PARALLEL to the storefronts directly in
-# front of it - housing behind a shop shares the shop's orientation (merchant_housing_aligned_with_storefronts).
-for mx, my, mr in [(1136, 433, -27), (1040, 481, -29), (880, 571, -29), (1260, 619, -27)]:
-    s.building(mx, my, *s._dims("merchant_large"), "merchant_large", rot=mr)
-for lx, ly in [(1328, 235), (740, 298)]:
-    s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
