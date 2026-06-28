@@ -31,6 +31,11 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "authorize_op.py"        = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "probe_op_oauth.py"      = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "orgchart.py"            = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+# Bakeoff: temporary, local-only evaluation harness — not shipped. Same grace
+# treatment as the chargen modules it sits beside. Remove the whole bakeoff/
+# dir (and these entries) once the prompt tier is chosen.
+"bakeoff/*.py"           = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
+"chargen/synthesis.py"   = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 # Tests may use `print` for diagnostics.
 "**/test_*.py"           = ["T20"]
 "tests/**"               = ["T20"]
@@ -60,7 +65,9 @@ module = [
     "chargen.ministry",
     "chargen.op",
     "chargen.website",
+    "chargen.synthesis",
     "chargen",
+    "bakeoff.*",
     "authorize_op",
     "probe_op_oauth",
     "orgchart",
