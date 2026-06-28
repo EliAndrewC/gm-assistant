@@ -50,7 +50,7 @@
     var tagify = null;
 
     $(function () {
-        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit'], function (i, s) {
+        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         // The two Upload buttons (top of form + next to Generate Art) act as
@@ -187,30 +187,59 @@
             return $sub;
         };
 
+        var ordinal = function (n) {
+            n = parseInt(n, 10);
+            var s = ['th', 'st', 'nd', 'rd'],
+                v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        };
+
+        // Flyout for a Monk rank that pairs two roles (e.g. 4: Senior Monk /
+        // Preceptor). `roles` is the comma-split rank label.
+        var seatSubmenu = function (rank, roles) {
+            var $sub = $('<ul class="rank-select__submenu"></ul>');
+            _.each(roles, function (role) {
+                $sub.append($('<li class="rank-select__item"></li>').append(
+                    rankLeaf(role, { rank: rank, seat: role, label: rank + '. ' + role })
+                ));
+            });
+            return $sub;
+        };
+
         var anySelection = function () {
-            return { rank: '', post: '', ministry: '', label: '- any -' };
+            return { rank: '', post: '', ministry: '', seat: '', label: '- any -' };
         };
 
         var buildRankMenu = function () {
             var $menu = dom.$rank_menu.empty();
-            var ranksForType = _.get(config.ranks, dom.$type.val()) || {};
-            var isSamurai = (dom.$type.val() === 'Samurai');
+            var type = dom.$type.val();
+            var ranksForType = _.get(config.ranks, type) || {};
 
             $menu.append($('<li class="rank-select__item"></li>').append(
                 rankLeaf('- any -', anySelection())
             ));
             _.each(ranksForType, function (label, rank) {
                 var text = rank + '. ' + label;
-                var defaultSel = { rank: rank, post: '', ministry: '', label: text };
-                if (isSamurai) {
+                if (type === 'Samurai') {
                     // Clicking the rank picks its default designator; hovering
                     // reveals the posting flyout. Magistrate-default ranks drop
                     // the redundant Magistrate option from that flyout.
                     $menu.append($('<li class="rank-select__item rank-select__item--parent"></li>')
-                        .append(rankLeaf(text, defaultSel))
+                        .append(rankLeaf(text, { rank: rank, post: '', ministry: '', label: text }))
                         .append(postSubmenu(rank, label !== 'Magistrate')));
+                } else if (type === 'Monk' && label.indexOf(',') !== -1) {
+                    // Paired-role rank (4: Senior Monk/Preceptor, 5: Adept
+                    // Monk/Country Monk): show "Nth seat" as a hover-only parent
+                    // (not selectable itself) whose flyout lists the two roles -
+                    // you must pick a specific role.
+                    var roles = _.map(label.split(','), function (s) { return s.trim(); });
+                    $menu.append($('<li class="rank-select__item rank-select__item--parent"></li>')
+                        .append(parentRow(ordinal(rank) + ' seat'))
+                        .append(seatSubmenu(rank, roles)));
                 } else {
-                    $menu.append($('<li class="rank-select__item"></li>').append(rankLeaf(text, defaultSel)));
+                    $menu.append($('<li class="rank-select__item"></li>').append(
+                        rankLeaf(text, { rank: rank, label: text })
+                    ));
                 }
             });
 
@@ -288,8 +317,24 @@
             }
         });
 
+        // Populate the Order dropdown (Monk only) from the configured Fortunes.
+        _.each(config.monk_orders || [], function (o) {
+            dom.$order.append($('<option></option>').attr('value', o).text(o));
+        });
+
+        // Show clan/family/house/lineage/location for Samurai, the Order field
+        // for Monk, and neither for Peasant.
+        var applyTypeFields = function () {
+            var type = dom.$type.val();
+            $('.js-samurai-field').toggle(type === 'Samurai');
+            $('.js-monk-field').toggle(type === 'Monk');
+            $('.js-rank-field').toggle(type !== 'Peasant');  // Peasants have no rank
+        };
+
         dom.$type.on('change', buildRankMenu);
+        dom.$type.on('change', applyTypeFields);
         buildRankMenu();  // initial build for the default-selected type
+        applyTypeFields();
 
         dropdownPopulator('clan', 'family');
         dropdownPopulator('family', 'house');
@@ -338,16 +383,21 @@
         populateLocations();  // initial state for the default-selected cascade
 
         dom.$generate.on('click', function () {
-            var params = {
-                type: dom.$type.val(),
-                base_rank: rankSelection.rank,
-                post: rankSelection.post,
-                ministry: rankSelection.ministry,
-                location: dom.$location.val()
-            };
-            _(['clan', 'family', 'house', 'lineage']).each(function (field) {
-                params[field] = dom['$' + field].val();
-            });
+            var type = dom.$type.val();
+            // Build only the params each type accepts - Samurai's constructor
+            // has no order/seat kwargs, so those must not be sent to it.
+            var params = { type: type, base_rank: rankSelection.rank };
+            if (type === 'Samurai') {
+                params.post = rankSelection.post;
+                params.ministry = rankSelection.ministry;
+                params.location = dom.$location.val();
+                _(['clan', 'family', 'house', 'lineage']).each(function (field) {
+                    params[field] = dom['$' + field].val();
+                });
+            } else if (type === 'Monk') {
+                params.seat = rankSelection.seat || '';
+                params.order = dom.$order.val();
+            }
             $.getJSON('/chargen/generate', _.pickBy(params), function (character) {
                 if (character.error) {
                     alert(character.error);
@@ -560,14 +610,14 @@
       <span class="chargen-field__label">Type</span>
       <select id="type" class="chargen-field__select"></select>
     </label>
-    <div class="chargen-field">
+    <div class="chargen-field js-rank-field">
       <span class="chargen-field__label">Rank</span>
       <div class="rank-select" id="rank_select">
         <button type="button" class="chargen-field__select rank-select__toggle" id="rank_toggle">- any -</button>
         <ul class="rank-select__menu" id="rank_menu"></ul>
       </div>
     </div>
-    <label class="chargen-field">
+    <label class="chargen-field js-samurai-field">
       <span class="chargen-field__label">Clan</span>
       <select id="clan" class="chargen-field__select">
         <option value="">- any -</option>
@@ -576,28 +626,34 @@
         {% endfor %}
       </select>
     </label>
-    <label class="chargen-field">
+    <label class="chargen-field js-samurai-field">
       <span class="chargen-field__label">Family</span>
       <select id="family" class="chargen-field__select">
         <option value="">- any -</option>
       </select>
     </label>
-    <label class="chargen-field">
+    <label class="chargen-field js-samurai-field">
       <span class="chargen-field__label">House</span>
       <select id="house" class="chargen-field__select">
         <option value="">- any -</option>
       </select>
     </label>
-    <label class="chargen-field">
+    <label class="chargen-field js-samurai-field">
       <span class="chargen-field__label">Lineage</span>
       <select id="lineage" class="chargen-field__select">
         <option value="">- any -</option>
       </select>
     </label>
-    <label class="chargen-field">
+    <label class="chargen-field js-samurai-field">
       <span class="chargen-field__label">Location</span>
       <select id="location" class="chargen-field__select">
         <option value="">- auto -</option>
+      </select>
+    </label>
+    <label class="chargen-field js-monk-field" style="display: none;">
+      <span class="chargen-field__label">Order</span>
+      <select id="order" class="chargen-field__select">
+        <option value="">- any -</option>
       </select>
     </label>
   </div>

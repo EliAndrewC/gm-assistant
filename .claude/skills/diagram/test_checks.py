@@ -2005,54 +2005,55 @@ def test_roads_bridge_water_passes_when_road_runs_alongside_water():
     assert "roads_bridge_water" not in f(M)
 
 
-# --- harvest processing (threshing ground + drying racks) ---
+# --- harvest processing (per-farmstead threshing/drying yards) ---
 _PADDY_SQ = [[400, 400], [600, 400], [600, 600], [400, 600]]
 
 
-def _harvest(houses, threshing, racks, fields=None):
+def _harvest(houses, yards, fields=None):
     M = {"meta": {"scale": "village"},
          "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for (x, y) in houses],
          "wells": [{"x": x, "y": y, "r": 8, "vr": 11.9} for (x, y) in houses],   # a well by each house so the water checks pass
-         "threshing": threshing, "drying_racks": racks}
+         "threshing_yards": yards}
     if fields:
         M["fields"] = fields
     return M
 
 
-def test_settlement_has_threshing_ground_fires_when_missing():
-    assert "settlement_has_threshing_ground" in f(_harvest([(300, 300)], [], []))
+def _yard(of, dx=44, dy=0, w=32, h=20):
+    # a small yard beside the farmhouse at `of`, recording its parent farmhouse centre
+    return {"x": of[0] + dx, "y": of[1] + dy, "w": w, "h": h, "rot": 0, "of": [of[0], of[1]]}
 
 
-def test_settlement_has_threshing_ground_fires_when_in_a_paddy():
-    # the floor sits inside a flooded paddy - it must be a DRY surface
-    M = _harvest([(450, 350)], [{"x": 500, "y": 500, "rx": 40, "ry": 30}], [],
-                 fields=[{"name": "a", "kind": "paddy", "bbox": [400, 400, 600, 600], "outline": _PADDY_SQ}])
-    assert "settlement_has_threshing_ground" in f(M)
+_SIX = [(300, 300), (380, 300), (460, 300), (540, 300), (620, 300), (700, 300)]   # need ceil(6/3) = 2
 
 
-def test_settlement_has_threshing_ground_fires_when_far_from_houses():
-    assert "settlement_has_threshing_ground" in f(_harvest([(300, 300)], [{"x": 900, "y": 900, "rx": 40, "ry": 30}], []))
+def test_harvest_yards_present_fires_when_too_few():
+    assert "harvest_yards_present" in f(_harvest(_SIX, [_yard((300, 300))]))   # only 1 of the needed 2
 
 
-def test_settlement_has_threshing_ground_passes_when_dry_and_near():
-    assert "settlement_has_threshing_ground" not in f(_harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}], []))
+def test_harvest_yards_present_passes_when_a_third_have_yards():
+    assert "harvest_yards_present" not in f(_harvest(_SIX, [_yard((300, 300)), _yard((380, 300))]))
 
 
-def test_settlement_has_drying_racks_fires_when_too_few():
-    M = _harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}], [{"x": 360, "y": 350, "length": 60, "rot": 0}])
-    assert "settlement_has_drying_racks" in f(M)
+def test_harvest_yards_smaller_than_farmhouse_fires_when_oversize():
+    assert "harvest_yards_smaller_than_farmhouse" in f(_harvest([(300, 300)], [_yard((300, 300), w=60, h=44)]))
 
 
-def test_settlement_has_drying_racks_fires_when_a_rack_strays():
-    M = _harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}],
-                 [{"x": 360, "y": 350, "length": 60, "rot": 0}, {"x": 900, "y": 900, "length": 60, "rot": 0}])
-    assert "settlement_has_drying_racks" in f(M)
+def test_harvest_yards_smaller_than_farmhouse_passes_when_small():
+    assert "harvest_yards_smaller_than_farmhouse" not in f(_harvest([(300, 300)], [_yard((300, 300))]))
 
 
-def test_settlement_has_drying_racks_passes_when_present_near_ground():
-    M = _harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}],
-                 [{"x": 340, "y": 350, "length": 60, "rot": 0}, {"x": 390, "y": 350, "length": 60, "rot": 0}])
-    assert "settlement_has_drying_racks" not in f(M)
+def test_harvest_yards_clear_of_paddies_fires_when_in_a_paddy():
+    # the yard footprint sits inside the field (400,400)-(600,600) - a dry floor in the flooded paddy
+    y = {"x": 500, "y": 500, "w": 32, "h": 20, "rot": 0, "of": [460, 460]}
+    M = _harvest([(460, 460)], [y], fields=[{"name": "a", "kind": "paddy", "bbox": [400, 400, 600, 600], "outline": _PADDY_SQ}])
+    assert "harvest_yards_clear_of_paddies" in f(M)
+
+
+def test_harvest_yards_clear_of_paddies_passes_when_clear():
+    y = {"x": 720, "y": 300, "w": 32, "h": 20, "rot": 0, "of": [676, 300]}
+    M = _harvest([(676, 300)], [y], fields=[{"name": "a", "kind": "paddy", "bbox": [400, 400, 600, 600], "outline": _PADDY_SQ}])
+    assert "harvest_yards_clear_of_paddies" not in f(M)
 
 
 # --- waterways merge at crossings (confluence layering) ---
@@ -2330,43 +2331,6 @@ def test_city_estate_gates_vary_passes_when_mixed():
     assert "city_estate_gates_vary" not in f(_city_estates(["south", "west", "north", "south", "west"]))
 
 
-def _thresh(tx, ty, with_road=True):
-    # a town with one paddy at x[400,600] y[400,550] and (optionally) a main road along y=300;
-    # a dwelling sits at the threshing so the "near a dwelling" condition is satisfied
-    M = {"meta": {"scale": "town"},
-         "fields": [{"outline": [[400, 400], [600, 400], [600, 550], [400, 550]], "bbox": [400, 400, 600, 550], "name": "f", "kind": "paddy"}],
-         "houses": [{"x": tx, "y": ty, "w": 30, "h": 24, "rot": 0, "kind": "plain"}],
-         "threshing": [{"x": tx, "y": ty, "rx": 62, "ry": 42}]}
-    if with_road:
-        M["road"] = [[0, 300], [1000, 300]]
-    return M
-
-
-def test_threshing_near_farmland_fires_when_across_the_road():
-    # the hiroba sits north of the road; every field is south of it - marooned across the road
-    assert "threshing_ground_near_farmland" in f(_thresh(500, 200))
-
-
-def test_threshing_near_farmland_passes_when_at_a_field_edge():
-    # just south of the field, same side of the road - reachable without crossing the trunk road
-    assert "threshing_ground_near_farmland" not in f(_thresh(500, 580))
-
-
-def test_threshing_near_farmland_fires_when_far_from_any_field():
-    # no road at all, but the hiroba is 400px from the only field - too far from the farmland it serves
-    assert "threshing_ground_near_farmland" in f(_thresh(500, 950, with_road=False))
-
-
-def test_harvest_features_clear_of_paddies_fires_when_in_a_paddy():
-    # the threshing footprint sits inside the field (400,400)-(600,550) - a dry floor in the flooded paddy
-    assert "harvest_features_clear_of_paddies" in f(_thresh(500, 475, with_road=False))
-
-
-def test_harvest_features_clear_of_paddies_passes_when_clear():
-    # the threshing sits south of the field, footprint clear of it
-    assert "harvest_features_clear_of_paddies" not in f(_thresh(500, 680, with_road=False))
-
-
 def test_every_feature_classified_for_overlap_fires_on_unknown_feature():
     # a new footprint feature nobody added to the _OVERLAP_* registry trips the completeness guard
     M = {"meta": {"scale": "village"}, "watchtowers": [{"x": 100, "y": 100, "w": 20, "h": 20, "rot": 0}]}
@@ -2376,22 +2340,6 @@ def test_every_feature_classified_for_overlap_fires_on_unknown_feature():
 def test_every_feature_classified_for_overlap_passes_for_known_features():
     M = {"meta": {"scale": "village"}, "houses": [{"x": 100, "y": 100, "w": 20, "h": 20, "rot": 0, "kind": "plain"}]}
     assert "every_feature_classified_for_overlap" not in f(M)
-
-
-# --- threshing_label_clear_of_racks ---------------------------------------------------------------
-def _thresh_label(rack_xy, label_cx):
-    M = _thresh(500, 680, with_road=False)              # threshing clear of the paddy
-    M["drying_racks"] = [{"x": rack_xy[0], "y": rack_xy[1], "length": 60, "rot": 0}]
-    M["labels"] = [[label_cx - 48, 494, label_cx + 48, 506, 5, "threshing ground"]]
-    return M
-
-
-def test_threshing_label_clear_of_racks_fires_when_over_a_rack():
-    assert "threshing_label_clear_of_racks" in f(_thresh_label((500, 500), 500))     # label sits on the rack
-
-
-def test_threshing_label_clear_of_racks_passes_when_clear():
-    assert "threshing_label_clear_of_racks" not in f(_thresh_label((500, 500), 800))  # label well east of the rack
 
 
 # --- town_has_caravan_inn -------------------------------------------------------------------------

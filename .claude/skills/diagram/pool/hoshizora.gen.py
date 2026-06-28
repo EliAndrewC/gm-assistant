@@ -119,12 +119,10 @@ s.place_wells((85, 110, 1930, 1260), spacing=290, near=85)
 s.inn(276, 1116, rot=150)
 s.stables(276, 1202, rot=150)
 
-# harvest processing: the communal threshing/drying ground (hiroba) on dry ground AT the edge of
-# field F2 among the NW farmhouses - close to the farmland it serves and NORTH of the Imperial Road
-# (not marooned across the road), with rice-drying racks (hazakake) along the field edge beside it
-s.threshing_ground(354, 792, 62, 42, label="threshing ground")
-s.drying_rack(339, 695, 60, 0)
-s.drying_rack(385, 729, 60, 0)
+# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
+# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
+# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
+s.threshing_yards()
 
 # the funerary ground BEHIND the monastery (N of it, away from the Imperial Road): the parish
 # graveyard (Buddhist danka) right against the BACK of the hall (well clear of the stream to the N),

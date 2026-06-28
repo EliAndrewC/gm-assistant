@@ -199,7 +199,7 @@ class Settlement:
                   "shrine": None, "forest": None, "road": None,
                   "wall": None, "gate": None, "gates": [], "moat": None,
                   "governor_mansion": None, "ministries": [], "inspection_stations": [],
-                  "wells": [], "bridges": [], "threshing": [], "drying_racks": [], "cemeteries": [],
+                  "wells": [], "bridges": [], "threshing_yards": [], "cemeteries": [],
                   "mausoleums": [], "cremation_grounds": [], "ossuaries": [], "moat_layer": None,
                   "meta": {"W": W, "H": H}}
         self._header()
@@ -1057,45 +1057,83 @@ class Settlement:
         if label:
             self.label(cx, cy + r * 0.82 + 18, label, 11, italic=True)
 
-    def threshing_ground(self, cx, cy, rx, ry, label=None):
-        """A communal THRESHING / DRYING GROUND - the village hiroba: an open, tamped EARTHEN floor
-        near the farmhouses where the cut rice is threshed and the grain spread on straw mats to dry.
-        A DRY packed surface, distinct from the flooded paddies (so it never sits inside a field).
-        Place it among/beside the dwelling cluster (a shared village facility, not a remote spot).
-        Records M['threshing'] and blocks placement."""
-        self.add(f'<ellipse cx="{cx:.0f}" cy="{cy:.0f}" rx="{rx:.0f}" ry="{ry:.0f}" fill="#D2BE94" stroke="#A98E54" stroke-width="1.8"/>')
-        self.add(f'<ellipse cx="{cx:.0f}" cy="{cy:.0f}" rx="{rx-6:.0f}" ry="{ry-6:.0f}" fill="none" stroke="#BBA06E" stroke-width="0.8" opacity="0.6"/>')   # the swept rim of the floor
-        st = random.getstate()
-        random.seed(int(abs(cx) + abs(cy)))
-        for _ in range(3):                                   # straw drying mats laid on the floor
-            mx, my = cx + random.uniform(-rx * 0.5, rx * 0.5), cy + random.uniform(-ry * 0.45, ry * 0.45)
-            self.add(f'<rect x="{mx-9:.0f}" y="{my-6:.0f}" width="18" height="12" rx="1.5" fill="#E2D2A2" stroke="#A98E54" stroke-width="0.7" opacity="0.9"/>')
-        random.setstate(st)
-        self.ellipses.append((cx, cy, rx, ry))
-        self.M.setdefault("threshing", []).append({"x": round(cx, 1), "y": round(cy, 1), "rx": rx, "ry": ry})
-        bm = 10
-        self.block_polys.append([(cx - rx - bm, cy - ry - bm), (cx + rx + bm, cy - ry - bm),
-                                 (cx + rx + bm, cy + ry + bm), (cx - rx - bm, cy + ry + bm)])
-        if label:
-            self.label(cx, cy + ry + 14, label, 11, italic=True, color="#6B5A3C")
-
-    def drying_rack(self, x, y, length=72, rot=0):
-        """A hazakake - a rice-DRYING RACK: horizontal timber poles on posts where the cut rice is
-        hung in sheaves to dry after the harvest. Stands near a field edge (or the threshing ground).
-        Records M['drying_racks']."""
-        hl = length / 2
-        g = [f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">']
-        for dy in (-5.0, -1.5, 2.0):                         # 3 stacked drying poles
-            g.append(f'<line x1="{-hl:.1f}" y1="{dy:.1f}" x2="{hl:.1f}" y2="{dy:.1f}" stroke="#7A5A30" stroke-width="1.3"/>')
-        for px in (-hl, -hl / 2, 0, hl / 2, hl):             # posts holding the poles up
-            g.append(f'<line x1="{px:.1f}" y1="-7" x2="{px:.1f}" y2="9" stroke="#5A3F1E" stroke-width="1.5"/>')
-        bx = -hl + 5                                          # sheaves of rice hung to dry
-        while bx < hl - 2:
-            g.append(f'<line x1="{bx:.1f}" y1="2.5" x2="{bx:.1f}" y2="10" stroke="#CBB36A" stroke-width="2.1" opacity="0.9"/>')
-            bx += 8
+    def _draw_threshing_yard(self, cx, cy, w, h):
+        """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack)."""
+        x0, y0 = -w / 2, -h / 2
+        g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
+        g.append(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w:.0f}" height="{h:.0f}" rx="2" fill="#D2BE94" stroke="#A98E54" stroke-width="1.5"/>')   # tamped earthen floor
+        g.append(f'<rect x="{x0+3:.0f}" y="{y0+3:.0f}" width="{w-6:.0f}" height="{h-6:.0f}" rx="1.5" fill="none" stroke="#BBA06E" stroke-width="0.7" opacity="0.6"/>')   # swept rim
+        g.append('<rect x="-7" y="-6" width="14" height="9" rx="1" fill="#E2D2A2" stroke="#A98E54" stroke-width="0.6" opacity="0.9"/>')   # a straw drying mat
+        ry = h / 2 - 3                                        # a little drying rack (hazakake) along the floor's lower edge
+        g.append(f'<line x1="{x0+4:.1f}" y1="{ry:.1f}" x2="{-x0-4:.1f}" y2="{ry:.1f}" stroke="#7A5A30" stroke-width="1.2"/>')
+        g.append(f'<line x1="{x0+4:.1f}" y1="{ry-3:.1f}" x2="{-x0-4:.1f}" y2="{ry-3:.1f}" stroke="#7A5A30" stroke-width="1.0"/>')
+        for px in (x0 + 4, 0.0, -x0 - 4):                    # posts + a few hung sheaves
+            g.append(f'<line x1="{px:.1f}" y1="{ry-5:.1f}" x2="{px:.1f}" y2="{ry+3:.1f}" stroke="#5A3F1E" stroke-width="1.2"/>')
         g.append('</g>')
         self.add(''.join(g))
-        self.M.setdefault("drying_racks", []).append({"x": round(x, 1), "y": round(y, 1), "length": length, "rot": round(rot, 1)})
+
+    def _yard_fits(self, x, y, w, h, hx, hy):
+        """A threshing yard fits where it is in-bounds, on DRY ground (clear of paddies / blocks),
+        off any lane, and clear of every placed footprint EXCEPT its own farmhouse (it abuts that)."""
+        if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:
+            return False
+        if self.bound and not point_in_poly(x, y, self.bound):
+            return False
+        if self._in_blocked(x, y) or self._near_corridor(x, y):
+            return False
+        r = math.hypot(w, h) / 2
+        for poly in self.field_polys:                        # keep the whole DRY footprint out of every paddy
+            if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < r + 4:
+                return False
+        for (px, py, pw, ph) in self.placed:
+            if px == hx and py == hy:                        # the yard abuts its OWN farmhouse - allowed
+                continue
+            if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 2:
+                return False
+        return True
+
+    def threshing_yards(self, fraction=1 / 3, yw=36, yh=22):
+        """Attach a small earthen THRESHING / DRYING YARD (the farmstead niwa) plus a little drying rack
+        to a MINORITY (~`fraction`, default ~1/3) of farmhouses - the per-household harvest processing
+        that replaces the single communal hiroba: each family threshes and dries its cut rice on its own
+        tamped dry yard beside the house. Drawn AFTER the houses with a saved/restored RNG (perturbs no
+        seeded placement); each yard tucks against its farmhouse on the side AWAY from the nearest paddy
+        (dry ground), and a house is SKIPPED when that spot is not clear (in the water, on a lane, or
+        against a neighbour) - the kura pattern, which self-selects the outer-ring farmsteads with open
+        room. Independent of the ~30% that carry a shed, so a farmhouse may have neither, either, or both.
+        Records M['threshing_yards'] (an annex abutting its own house, hence overlap-exempt against it).
+        Returns the number attached."""
+        homes = [h for h in self.M["houses"] if h.get("kind") == "plain"]
+        if not homes:
+            return 0
+        target = math.ceil(len(self.M["houses"]) * fraction)
+        cents = [(sum(p[0] for p in poly) / len(poly), sum(p[1] for p in poly) / len(poly))
+                 for poly in self.field_polys]
+        st = random.getstate()        # spread the picks without perturbing the main placement RNG
+        random.seed(11)
+        random.shuffle(homes)
+        random.setstate(st)
+        placed = 0
+        for h in homes:
+            if placed >= target:
+                break
+            hx, hy, hw, hh = h["x"], h["y"], h["w"], h["h"]
+            if cents:
+                fcx, fcy = min(cents, key=lambda c: math.hypot(c[0] - hx, c[1] - hy))
+                ax, ay = hx - fcx, hy - fcy
+            else:
+                ax, ay = 0, -1
+            if abs(ax) >= abs(ay):        # snap the away-from-field direction to a cardinal, tuck the yard there
+                ox, oy = hx + (1 if ax >= 0 else -1) * (hw / 2 + yw / 2 - 2), hy
+            else:
+                ox, oy = hx, hy + (1 if ay >= 0 else -1) * (hh / 2 + yh / 2 - 2)
+            if not self._yard_fits(ox, oy, yw, yh, hx, hy):
+                continue
+            self._draw_threshing_yard(ox, oy, yw, yh)
+            self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0, "of": [hx, hy]})
+            self.placed.append((ox, oy, yw, yh))
+            placed += 1
+        return placed
 
     def cemetery(self, cx, cy, w, h, rot=0, label=None, label_above=False, parish=True):
         """A BURIAL GROUND - rows of grave markers (sotoba / stone stelae) with a couple of taller

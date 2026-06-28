@@ -4,8 +4,8 @@
  },
  "houses": [
   {
-   "x": 450,
-   "y": 350,
+   "x": 460,
+   "y": 460,
    "w": 40,
    "h": 28,
    "rot": 0,
@@ -14,21 +14,25 @@
  ],
  "wells": [
   {
-   "x": 450,
-   "y": 350,
+   "x": 460,
+   "y": 460,
    "r": 8,
    "vr": 11.9
   }
  ],
- "threshing": [
+ "threshing_yards": [
   {
    "x": 500,
    "y": 500,
-   "rx": 40,
-   "ry": 30
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    460,
+    460
+   ]
   }
  ],
- "drying_racks": [],
  "fields": [
   {
    "name": "a",
@@ -61,8 +65,8 @@
  ],
  "_regression": {
   "fires": [
-   "settlement_has_threshing_ground"
+   "harvest_yards_clear_of_paddies"
   ],
-  "source": "test_checks.py::test_settlement_has_threshing_ground_fires_when_in_a_paddy"
+  "source": "test_checks.py::test_harvest_yards_clear_of_paddies_fires_when_in_a_paddy"
  }
 }

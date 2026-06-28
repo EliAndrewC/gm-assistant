@@ -20,26 +20,23 @@
    "vr": 11.9
   }
  ],
- "threshing": [
+ "threshing_yards": [
   {
-   "x": 360,
+   "x": 344,
    "y": 300,
-   "rx": 40,
-   "ry": 30
-  }
- ],
- "drying_racks": [
-  {
-   "x": 360,
-   "y": 350,
-   "length": 60,
-   "rot": 0
+   "w": 60,
+   "h": 44,
+   "rot": 0,
+   "of": [
+    300,
+    300
+   ]
   }
  ],
  "_regression": {
   "fires": [
-   "settlement_has_drying_racks"
+   "harvest_yards_smaller_than_farmhouse"
   ],
-  "source": "test_checks.py::test_settlement_has_drying_racks_fires_when_too_few"
+  "source": "test_checks.py::test_harvest_yards_smaller_than_farmhouse_fires_when_oversize"
  }
 }
