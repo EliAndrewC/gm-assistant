@@ -101,12 +101,56 @@
     300,
     300
    ]
+  },
+  {
+   "x": 424,
+   "y": 300,
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    380,
+    300
+   ]
+  },
+  {
+   "x": 504,
+   "y": 300,
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    460,
+    300
+   ]
+  },
+  {
+   "x": 584,
+   "y": 300,
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    540,
+    300
+   ]
+  },
+  {
+   "x": 664,
+   "y": 300,
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    620,
+    300
+   ]
   }
  ],
  "_regression": {
   "fires": [
    "harvest_yards_present"
   ],
-  "source": "test_checks.py::test_harvest_yards_present_fires_when_too_few"
+  "source": "test_checks.py::test_harvest_yards_present_fires_when_any_farmhouse_lacks_one"
  }
 }

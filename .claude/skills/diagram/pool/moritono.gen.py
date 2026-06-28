@@ -55,10 +55,8 @@ s.place_wells((360, 320, 900, 1040), spacing=430, near=85)
 
 s.label(950, 546, "irrigation pond", 10, italic=True, color="#5C7488")
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) attached to ~1/3 of the
-# farmhouses - a small dry earthen apron + a hazakake rack beside each, on the side away from the paddy.
-# Replaces the single communal hiroba (historically Japan threshed at the farmstead, not a central floor).
-s.threshing_yards()
+# draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
+s.farmsteads()
 
 s.title("Moritono")
 s.compass()

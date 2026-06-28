@@ -12,6 +12,13 @@ than assuming one village's layout. Exit 0 if all pass, 1 otherwise.
 The skill's plain-English / persona review still applies on top of this gate -
 and remember a green check on the wrong geometry is worse than no check, so the
 manifest records the *rendered* (smoothed) boundary and you still eyeball a crop.
+
+Many checks are pure rendering/geometry (no overlaps, lanes layered, labels clear) and need no
+justification. But where a check encodes a HISTORICAL or SETTING finding - who lives where, well
+densities, the Shinto/Buddhist split, caste geography, the commerce-fronts-the-street pattern - the
+reasoning (the "why") lives in SKILL.md's "Historical grounding: the why behind the realism checks"
+section; such checks below carry a brief `# WHY:` pointer to it. (Project policy: research-driven
+rules record their why next to the rule - see CLAUDE.md "Generation Behavior".)
 """
 import json
 import math
@@ -556,6 +563,7 @@ def gate(M, verbose=True):
         biz = [b for b in M.get("buildings", []) if b.get("kind") in BUSINESS_KINDS]
         if biz:
             off = [b for b in biz if not on_a_street(b)]
+            # WHY (commerce takes the valuable street frontage; dwellings sit behind/interior): SKILL.md "Historical grounding"
             check("businesses_front_streets", len(off) <= 0.15 * len(biz),
                   f"{len(off)}/{len(biz)} shops/merchant houses are NOT on a street - almost every business fronts a street (the more mercantile a quarter, the more streets); only dwellings fill the block interior")
         poor = [b for b in M.get("buildings", []) if b.get("kind") in ("laborer", "burakumin")]
@@ -1035,6 +1043,7 @@ def gate(M, verbose=True):
     ADJ = 165
     far = [h for h in houses if h.get("role") != "headman"
            and min((poly_dist(h["x"], h["y"], f["outline"]) for f in fields), default=999) > ADJ]
+    # WHY (farmers build close to the fields they work): SKILL.md "Historical grounding"
     check("all_houses_field_adjacent", not far, f"{len(far)} house(s) >{ADJ}px from any field")
     def runs_off_edge(ol):
         return any(p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1 for p in ol)
@@ -1059,6 +1068,7 @@ def gate(M, verbose=True):
 
     # religious building by settlement scale: hamlet none, village shrine, town
     # monastery, city temple
+    # WHY (the Shinto/Buddhist split + scale: shrine -> monastery -> temple): SKILL.md "Historical grounding"
     expected_rel = {"hamlet": None, "village": "shrine", "town": "monastery", "city": "temple"}.get(scale)
     rel_kinds = set(r["kind"] for r in M.get("religious", [])) - {"small_shrine"}   # small wayside shrines are auxiliary, allowed alongside the scale's main religious building
     if expected_rel is None:
@@ -1290,10 +1300,16 @@ def gate(M, verbose=True):
         if scale in ("town", "village", "hamlet", "city"):
             fields_ol = [fdef["outline"] for fdef in fields]
             yards = M.get("threshing_yards", [])
-            need = math.ceil(len(houses) / 3)
-            check("harvest_yards_present", len(yards) >= need,
-                  f"a {scale} threshes and dries its rice at the farmstead: only {len(yards)} of {len(houses)} farmhouses "
-                  f"show a threshing/drying yard (want >= 1/3 = {need}) - attach more with s.threshing_yards()")
+            # the work yard (niwa) was UNIVERSAL: EVERY farmhouse threshed and dried its own rice on its own
+            # yard, so EVERY farmhouse must have one (a firm 100%). The generator guarantees this by making
+            # the yard integral to farmstead placement - a house is only sited where its yard also fits
+            # (nudging it as needed) - so a farmhouse without a yard is a generator bug, not a density limit.
+            without = [(round(h["x"]), round(h["y"])) for h in houses
+                       if not any(t["of"][0] == h["x"] and t["of"][1] == h["y"] for t in yards)]
+            check("harvest_yards_present", not without,
+                  f"a {scale} threshes and dries its rice at the farmstead, and the work yard was universal: "
+                  f"{len(without)} of {len(houses)} farmhouses have NO threshing/drying yard {without[:3]} - every "
+                  f"farmhouse must have one (placement makes the yard integral to the farmstead)")
             # the yard is the farmstead's own dry work apron, SMALLER than the house it serves (not a
             # second dwelling). Each yard records `of` = its parent farmhouse centre.
             hmap = {(round(h["x"]), round(h["y"])): h["w"] * h["h"] for h in houses}
@@ -1301,6 +1317,14 @@ def gate(M, verbose=True):
                         if t["w"] * t["h"] >= hmap.get((round(t["of"][0]), round(t["of"][1])), 0)]
             check("harvest_yards_smaller_than_farmhouse", not oversize,
                   f"threshing yard(s) are not smaller than their farmhouse: {oversize[:3]} - the niwa is a small dry apron beside the house")
+            # the yard is the maeniwa - the SOUTH-facing front work yard. Rice must dry in the SUN and
+            # minka face south, so the yard sits on the house's south/front side (or, if the paddy blocks
+            # that, a side), but NEVER the shady NORTH back. +y is south here, so a yard must not sit
+            # meaningfully north of (above) its own farmhouse centre (`of[1]`).
+            shady = [(round(t["x"]), round(t["y"])) for t in yards if t["y"] < t["of"][1] - 5]
+            check("harvest_yards_on_sunny_side", not shady,
+                  f"threshing yard(s) sit on the shady NORTH/back side of their farmhouse: {shady[:3]} - the niwa is the "
+                  f"south-facing front work yard (rice must dry in the sun), so it belongs on the house's south/front side")
             # the yard is a DRY tamped floor: its whole footprint must stay out of the flooded paddies.
             in_paddy = []
             for t in yards:
@@ -1368,6 +1392,7 @@ def gate(M, verbose=True):
         sites = [(c["x"], c["y"]) for c in cems] + [(m2["x"], m2["y"]) for m2 in maus]
         near_shrine = [(round(sx), round(sy)) for (sx, sy) in sites
                        if any(math.hypot(sx - r["x"], sy - r["y"]) < 120 for r in shrines)]
+        # WHY (Shinto death-pollution / kegare keeps graves away from a shrine): SKILL.md "Historical grounding"
         check("cemetery_clear_of_shrine", not near_shrine,
               f"grave site(s) sit hard against a Shinto shrine, which must keep death-pollution (kegare) "
               f"clear: {near_shrine[:3]} - move the burial ground away from the shrine")
@@ -1873,6 +1898,7 @@ def gate(M, verbose=True):
             check(f"town_caste_count[{kind}]", lo <= c <= hi,
                   f"{kind} buildings {c} outside budgets.md band [{lo},{hi}]")
         non_farmer_max = max(caste_n.values(), default=0)
+        # WHY (farmers are the overwhelming majority caste): SKILL.md "Historical grounding"
         check("town_farmers_plurality", farmhouses >= non_farmer_max,
               f"farmhouses {farmhouses} should be the largest single group (max other {non_farmer_max})")
         # MERCHANT and LABORER housing varies in SIZE by wealth, like a provincial city's (budgets.md
@@ -2465,6 +2491,7 @@ def gate(M, verbose=True):
             for hx, hy in hh:
                 served[min(range(len(wells)), key=lambda i: math.hypot(hx - wells[i]["x"], hy - wells[i]["y"]))] += 1
             swamped = [(round(wells[i]["x"]), round(wells[i]["y"]), c) for i, c in enumerate(served) if c > MAX_PER_WELL]
+            # WHY (~1 communal well per 10-20 households - the premodern courtyard-well norm): SKILL.md "Historical grounding"
             check("city_well_density_sufficient", not swamped,
                   f"public well(s) each the nearest for more than {MAX_PER_WELL} commoner households - too few wells for "
                   f"the neighborhood (~1 per 10-20 households is realistic); add wells where the warren is densest: {swamped}")
@@ -2499,6 +2526,7 @@ def gate(M, verbose=True):
                 near = sorted(dwl, key=lambda d: math.hypot(d[0] - w["x"], d[1] - w["y"]))[:3]
                 if near and sum(1 for d in near if d[2]) * 2 >= len(near):   # most of its nearest neighbours are samurai
                     sam_wells.append((round(w["x"]), round(w["y"])))
+            # WHY (samurai/official households drew from PRIVATE wells inside their walled compounds): SKILL.md "Historical grounding"
             check("city_samurai_quarter_has_no_public_wells", not sam_wells,
                   f"public well(s) sitting among the samurai dwellings: {sam_wells} - the samurai/government quarter has no "
                   f"communal wells (samurai draw from private wells inside their compounds; the public idobata is a commoner institution)")
@@ -2673,6 +2701,7 @@ def gate(M, verbose=True):
                 check("ring_road_kept_clear", not on_ring,
                       f"the ring road must run CLEAR of buildings/civic compounds/fields (only the gate guard houses, inspection stations, towers and gated ward fences may sit on it): {sorted(set(on_ring))}")
             buraku_in = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inwall(b["x"], b["y"])]
+            # WHY (a walled city cannot do without burakumin labor during a siege, so some live inside): SKILL.md "Historical grounding"
             check("walled_city_has_burakumin_inside", len(buraku_in) >= 3,
                   f"{len(buraku_in)} burakumin inside the walls - a walled provincial city must keep >= 1 burakumin neighborhood within (they cannot be without burakumin during a siege)")
             est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]

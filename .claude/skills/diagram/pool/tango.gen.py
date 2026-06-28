@@ -334,7 +334,7 @@ s.ring(NW2, 22, 46, ["plain"])
 #  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (the elite crypts)
 #  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
 # (the Temple of Bishamon, new and in a former estate, keeps no graveyard - graveyard=False above)
-s.cemetery(1079, 1783, 46, 34, label="graveyard", label_above=True)   # Benten's parish ground (inside, cramped)
+s.cemetery(1084, 1643, 46, 34, label="graveyard")   # Benten's parish ground (inside, cramped); placed in a clear gap (footprint + label clear of merchant rows, temple, and streets)
 s.cemetery(1532, 1771, 56, 40, label="graveyard")                     # Daikoku's parish ground (inside, cramped)
 s.cemetery(756, 2013, 104, 74, label="common burial ground")          # the extramural common ground - set WELL back from the moat (beyond the cremation ground)
 s.cemetery(1354, 673, 60, 44, label="graveyard", parish=False)        # Tango-only: an in-wall burial ground in the agricultural district (NOT a temple parish ground)
@@ -344,10 +344,8 @@ s.ossuary(860, 2050)
 
 s.bridges()   # spans the Imperial Road over the moat at the north and south gates
 
-# harvest processing: per-farmstead threshing/drying yards (the family niwa) on ~1/3 of the farmhouses -
-# the in-wall agricultural district AND the outside farm rings. Scaled by bscale so each stays a bit
-# smaller than the (compressed) city farmhouse; placed LAST so it avoids every other structure.
-s.threshing_yards()
+# draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
+s.farmsteads()
 
 s.title("Tango")
 s.compass()

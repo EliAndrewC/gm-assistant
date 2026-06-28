@@ -183,6 +183,7 @@ class Settlement:
         #                           into a continuous confluence instead of stacking opacity (a dark seam).
         self.bscale = 1.0         # urban-building footprint scale (a large town packs at a finer grain)
         self.placed = []          # (x, y, w, h)
+        self._pending_farmsteads = []   # farmhouses awaiting their threshing yard (drawn by farmsteads())
         self.corridors = []       # polylines houses must avoid
         self.bound = None         # optional bounding polygon: placement stays inside it (city wall)
         self.view = None          # optional (ox,oy,w,h) viewBox crop - render/checks treat it as the map edge
@@ -689,6 +690,18 @@ class Settlement:
                         break
                 xx += spacing
             yy += spacing
+        if dwell is not None:
+            # COVERAGE pass: the grid can leave an edge / outlier dwelling in a gap. Guarantee none is left
+            # well-less: any dwelling with no well within `spacing` gets one dropped in a clear spot beside it.
+            for b in dwell:
+                if all((b["x"] - wx) ** 2 + (b["y"] - wy) ** 2 > spacing * spacing for wx, wy in out):
+                    for ox, oy in ((0, near * 0.6), (near * 0.6, 0), (-near * 0.6, 0), (0, -near * 0.6),
+                                   (near * 0.45, near * 0.45), (-near * 0.45, near * 0.45)):
+                        cx, cy = b["x"] + ox, b["y"] + oy
+                        if self._fits(cx, cy, probe, probe):
+                            self.well(cx, cy, r)
+                            out.append((cx, cy))
+                            break
         return out
 
     def torii_path(self, ascent):
@@ -1092,57 +1105,37 @@ class Settlement:
                 return False
         return True
 
-    def threshing_yards(self, fraction=1 / 3, yw=36, yh=22):
-        """Attach a small earthen THRESHING / DRYING YARD (the farmstead niwa) plus a little drying rack
-        to a MINORITY (~`fraction`, default ~1/3) of farmhouses - the per-household harvest processing
-        that replaces the single communal hiroba: each family threshes and dries its cut rice on its own
-        tamped dry yard beside the house. Drawn AFTER the houses with a saved/restored RNG (perturbs no
-        seeded placement); each yard tucks against its farmhouse on the side AWAY from the nearest paddy
-        (dry ground), and a house is SKIPPED when that spot is not clear (in the water, on a lane, or
-        against a neighbour) - the kura pattern, which self-selects the outer-ring farmsteads with open
-        room. Independent of the ~30% that carry a shed, so a farmhouse may have neither, either, or both.
-        Records M['threshing_yards'] (an annex abutting its own house, hence overlap-exempt against it);
-        where the yard overlaps its house the HOUSE is re-drawn on top so it wins the overlap. The yard
-        footprint scales with bscale, like the farmhouses, so it stays a bit smaller than the house at any
-        scale (incl. a compressed city). Returns the number attached."""
-        yw, yh = yw * self.bscale, yh * self.bscale
-        homes = [h for h in self.M["houses"] if h.get("kind") == "plain"]
-        if not homes:
-            return 0
-        target = math.ceil(len(self.M["houses"]) * fraction)
-        cents = [(sum(p[0] for p in poly) / len(poly), sum(p[1] for p in poly) / len(poly))
-                 for poly in self.field_polys]
-        st = random.getstate()        # spread the picks without perturbing the main placement RNG
-        random.seed(11)
-        random.shuffle(homes)
-        random.setstate(st)
-        placed = 0
-        for h in homes:
-            if placed >= target:
-                break
-            hx, hy, hw, hh = h["x"], h["y"], h["w"], h["h"]
-            if cents:
-                fcx, fcy = min(cents, key=lambda c: math.hypot(c[0] - hx, c[1] - hy))
-                ax, ay = hx - fcx, hy - fcy
-            else:
-                ax, ay = 0, -1
-            if abs(ax) >= abs(ay):        # snap the away-from-field direction to a cardinal
-                prim = (1 if ax >= 0 else -1, 0)
-            else:
-                prim = (0, 1 if ay >= 0 else -1)
-            # try the away-from-paddy side first, then the two perpendicular sides (never toward the field),
-            # so a farmstead boxed in on its outward side can still tuck a yard alongside
-            for dx, dy in (prim, (prim[1], prim[0]), (-prim[1], -prim[0])):
-                ox = hx + dx * (hw / 2 + yw / 2 - 2)
-                oy = hy + dy * (hh / 2 + yh / 2 - 2)
-                if self._yard_fits(ox, oy, yw, yh, hx, hy):
-                    self._draw_threshing_yard(ox, oy, yw, yh)
-                    self.house(hx, hy, hw, hh, h["kind"], h["rot"], shed=h.get("shed", False))   # re-draw the house OVER the yard so it wins the overlap
-                    self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0, "of": [hx, hy]})
-                    self.placed.append((ox, oy, yw, yh))
-                    placed += 1
-                    break
-        return placed
+    def _yard_dims(self):
+        """The farmstead threshing/drying yard footprint, scaled with the map's building grain."""
+        return 32 * self.bscale, 20 * self.bscale
+
+    def _find_yard_spot(self, hx, hy, hw, hh):
+        """The first fitting threshing-yard position for a farmhouse: the sunny SOUTH/front side (+y) is
+        the maeniwa; fall back to the E/W sides if the paddy blocks due-south, but NEVER the shady north
+        back. Returns (ox, oy, yw, yh) or None if the farmstead is boxed in on all three sides."""
+        yw, yh = self._yard_dims()
+        for dx, dy in ((0, 1), (1, 0), (-1, 0)):
+            ox = hx + dx * (hw / 2 + yw / 2 - 2)
+            oy = hy + dy * (hh / 2 + yh / 2 - 2)
+            if self._yard_fits(ox, oy, yw, yh, hx, hy):
+                return ox, oy, yw, yh
+        return None
+
+    def _attach_yard(self, hx, hy, spot):
+        """Draw a farmstead's threshing/drying yard (it is drawn BEFORE its house, so the house renders on
+        top of the overlap) and record it. The work yard was UNIVERSAL, so every farmhouse gets one."""
+        ox, oy, yw, yh = spot
+        self._draw_threshing_yard(ox, oy, yw, yh)
+        self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0, "of": [hx, hy]})
+        self.placed.append((ox, oy, yw, yh))
+
+    def _farmstead_nudges(self):
+        """Small offsets to try for a farmhouse so BOTH the house and its yard fit: the ring's own spot
+        first, then nudges (preferring south/sideways, where the yard goes) to make room without churn."""
+        yield 0, 0
+        for d in (11 * self.bscale, 21 * self.bscale):
+            for o in ((0, d), (d, 0), (-d, 0), (d, d), (-d, d), (0, -d), (d, -d), (-d, -d)):
+                yield o
 
     def cemetery(self, cx, cy, w, h, rot=0, label=None, label_above=False, parish=True):
         """A BURIAL GROUND - rows of grave markers (sotoba / stone stelae) with a couple of taller
@@ -1899,19 +1892,68 @@ class Settlement:
         # scales down by the same factor.
         bw, bh = (60, 40) if kind == "big" else (44, 29)   # south-facing: long axis E-W
         w, h = bw * self.bscale, bh * self.bscale
-        if self._fits(x, y, w, h):
-            rot = random.uniform(-5, 5)
-            shed = random.random() < 0.3
-            self.placed.append((x, y, w, h))
-            self.house(x, y, w, h, kind, rot, shed=shed)
-            self.M["houses"].append({"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": rot, "role": role, "shed": shed})
-            return True
-        return False
+        if not self._fits(x, y, w, h):
+            return False
+        # DEFER drawing: record + reserve the farmhouse now (so wells/other placement avoid it), but draw it
+        # with its threshing YARD later, in farmsteads(), when every obstacle is known. Base placement is
+        # thus identical to a yard-free map (same density / population), and the yard is layered on after.
+        rot = random.uniform(-5, 5)
+        shed = random.random() < 0.3
+        self.placed.append((x, y, w, h))
+        rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": rot, "role": role, "shed": shed}
+        self.M["houses"].append(rec)
+        self._pending_farmsteads.append(rec)
+        return True
 
     def headman(self, x, y, w=108, h=68):
         self.placed.append((x, y, w, h))
-        self.house(x, y, w, h, "big", 0)
-        self.M["houses"].append({"x": x, "y": y, "w": w, "h": h, "kind": "big", "rot": 0, "role": "headman", "shed": False})
+        rec = {"x": x, "y": y, "w": w, "h": h, "kind": "big", "rot": 0, "role": "headman", "shed": False}
+        self.M["houses"].append(rec)
+        self._pending_farmsteads.append(rec)   # the headman is the largest farmstead; it gets a yard too
+
+    def _field_adjacent(self, x, y):
+        """A farmhouse must stay near the farmland (within the gate's ADJ=165), so a nudge cannot drift it
+        off into the urban core or the void."""
+        return any(edge_dist(x, y, poly) <= 165 for poly in self.field_polys) if self.field_polys else True
+
+    def _nudge_for_yard(self, rec):
+        """Shift a farmhouse a little so a yard fits - keeping it field-adjacent and clear of everything -
+        when it has no yard room at its placed spot. Updates rec + its reservation; returns the spot or None."""
+        x0, y0, w, h = rec["x"], rec["y"], rec["w"], rec["h"]
+        self.placed = [p for p in self.placed if p != (x0, y0, w, h)]   # lift its own reservation while searching
+        found = None
+        for nx, ny in self._farmstead_nudges():
+            if nx == 0 and ny == 0:
+                continue
+            cx, cy = x0 + nx, y0 + ny
+            if not self._fits(cx, cy, w, h) or not self._field_adjacent(cx, cy):
+                continue
+            spot = self._find_yard_spot(cx, cy, w, h)
+            if spot:
+                rec["x"], rec["y"], found = cx, cy, spot
+                break
+        self.placed.append((rec["x"], rec["y"], w, h))   # re-reserve at the new (or original) position
+        return found
+
+    def farmsteads(self):
+        """Draw every deferred farmhouse WITH its threshing/drying YARD - the work yard was universal, so
+        every farmstead has one. Find a yard spot (sunny S/front, then E/W); if none, nudge the house a
+        little; draw yard then house so the house wins the overlap. A house that cannot host a yard anywhere
+        nearby is dropped (rare) so the 100% invariant holds. Call LAST in the gen. Returns the count."""
+        survivors = []
+        for rec in self._pending_farmsteads:
+            spot = self._find_yard_spot(rec["x"], rec["y"], rec["w"], rec["h"])
+            if spot is None:
+                spot = self._nudge_for_yard(rec)
+            if spot is None:
+                fp = (rec["x"], rec["y"], rec["w"], rec["h"])
+                self.placed = [p for p in self.placed if p != fp]   # drop the un-yardable farmhouse
+                continue
+            self._attach_yard(rec["x"], rec["y"], spot)
+            self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"], shed=rec["shed"])
+            survivors.append(rec)
+        self.M["houses"] = survivors
+        return len(survivors)
 
     def _perim_bbox(self, bbox, n, gap):
         x0, y0, x1, y1 = bbox
