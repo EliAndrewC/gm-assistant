@@ -1,0 +1,108 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "cemeteries": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 70,
+   "h": 50,
+   "rot": 0,
+   "parish": true
+  },
+  {
+   "x": 700,
+   "y": 300,
+   "w": 70,
+   "h": 50,
+   "rot": 0,
+   "parish": true
+  },
+  {
+   "x": 100,
+   "y": 100,
+   "w": 60,
+   "h": 40,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "mausoleums": [
+  {
+   "x": 520,
+   "y": 520,
+   "w": 74,
+   "h": 58,
+   "rot": 0
+  }
+ ],
+ "cremation_grounds": [
+  {
+   "x": 100,
+   "y": 900,
+   "w": 116,
+   "h": 80,
+   "rot": 0
+  }
+ ],
+ "ossuaries": [
+  {
+   "x": 140,
+   "y": 900,
+   "w": 92,
+   "h": 60,
+   "rot": 0
+  }
+ ],
+ "religious": [
+  {
+   "kind": "temple",
+   "x": 320,
+   "y": 320,
+   "w": 80,
+   "h": 60,
+   "label": "A",
+   "graveyard": true
+  },
+  {
+   "kind": "temple",
+   "x": 680,
+   "y": 320,
+   "w": 80,
+   "h": 60,
+   "label": "B",
+   "graveyard": true
+  }
+ ],
+ "governor_mansion": {
+  "x": 500,
+  "y": 500,
+  "w": 120,
+  "h": 90
+ },
+ "_regression": {
+  "fires": [
+   "walled_exterior_cemetery_larger"
+  ],
+  "source": "test_checks.py::test_walled_exterior_cemetery_larger_fires_when_not_larger"
+ }
+}

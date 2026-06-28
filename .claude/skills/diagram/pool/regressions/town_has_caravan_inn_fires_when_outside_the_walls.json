@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "houses": [],
+ "fields": [],
+ "buildings": [
+  {
+   "x": 40,
+   "y": 40,
+   "w": 66,
+   "h": 48,
+   "kind": "inn",
+   "rot": 0
+  },
+  {
+   "x": 40,
+   "y": 100,
+   "w": 92,
+   "h": 44,
+   "kind": "stables",
+   "rot": 0
+  }
+ ],
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   2000,
+   100
+  ],
+  [
+   2000,
+   2000
+  ],
+  [
+   100,
+   2000
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "town_has_caravan_inn"
+  ],
+  "source": "test_checks.py::test_town_has_caravan_inn_fires_when_outside_the_walls"
+ }
+}

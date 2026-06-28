@@ -19,6 +19,7 @@ caught next time.
     python3 test_checks.py
 """
 import check_village
+import settlement
 
 WALL = [[50, 50], [950, 50], [950, 950], [50, 950]]   # a simple square enclosure
 
@@ -789,6 +790,28 @@ def test_labels_within_image_passes_when_inside():
     assert "labels_within_image" not in f(M)
 
 
+# --- no_label_overlaps (two body labels must not overlap) ---
+def test_no_label_overlaps_fires_when_glyphs_cross():
+    # two same-line labels whose boxes cross by >2px (x) and >4px (y) - the glyphs touch (the real
+    # Hoshizora "cremation ground" / "Monastery of Bishamon" collision: 3px x, 10px y)
+    M = {"meta": {}, "labels": [[40, 740, 143, 752, 1, "cremation ground"],
+                                [140, 736, 290, 750, 2, "Monastery of Bishamon"]]}
+    assert "no_label_overlaps" in f(M)
+
+
+def test_no_label_overlaps_passes_when_stacked_boxes_only_kiss():
+    # two STACKED labels whose boxes merely kiss vertically (2.2px, the descender allowance) but are
+    # cleanly separated lines (the real Tango "Mausoleum" / "Ministry of Works") - must NOT flag
+    M = {"meta": {}, "labels": [[2216, 1580, 2276, 1593, 1, "Mausoleum"],
+                                [2168, 1591, 2252, 1600, 2, "Ministry of Works"]]}
+    assert "no_label_overlaps" not in f(M)
+
+
+def test_no_label_overlaps_passes_when_clear():
+    M = {"meta": {}, "labels": [[40, 740, 130, 752, 1, "a"], [200, 740, 300, 752, 2, "b"]]}
+    assert "no_label_overlaps" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
@@ -1303,6 +1326,35 @@ def test_labels_clear_of_other_buildings_passes_over_a_fronting_shop():
 
 def test_labels_clear_of_other_buildings_passes_for_a_zone_label_over_its_cluster():
     M = _lbl_city(labels=[[480, 490, 520, 510, 1, "samurai neighborhood"]], buildings=[_bldg("samurai", w=56, h=40)])
+    assert "labels_clear_of_other_buildings" not in f(M)
+
+
+# --- the check also runs at TOWN scale (the monastery/graveyard cross-overlap the GM hit) ---
+def _lbl_town(label_text, **extra):
+    M = {"meta": {"scale": "town"}, "labels": [[480, 490, 520, 510, 1, label_text]]}
+    M.update(extra)
+    return M
+
+
+def test_labels_clear_town_monastery_label_over_graveyard_fires():
+    M = _lbl_town("Monastery of Bishamon", cemeteries=[{"x": 500, "y": 500, "w": 80, "h": 50, "rot": 0, "parish": True}])
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
+def test_labels_clear_town_graveyard_label_over_temple_fires():
+    M = _lbl_town("graveyard", religious=[{"kind": "monastery", "x": 500, "y": 500, "w": 80, "h": 50, "label": "M"}])
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
+def test_labels_clear_town_funerary_label_over_funerary_passes():
+    # the funerary structures cluster, so a funerary label may cover any of them
+    M = _lbl_town("cremation ground", cemeteries=[{"x": 500, "y": 500, "w": 80, "h": 50, "rot": 0, "parish": True}])
+    assert "labels_clear_of_other_buildings" not in f(M)
+
+
+def test_labels_clear_town_street_label_over_merchant_passes():
+    # a street/road label runs along its frontage, so it may clip the storefronts it lines
+    M = _lbl_town("main street", buildings=[_bldg("merchant", w=60, h=40)])
     assert "labels_clear_of_other_buildings" not in f(M)
 
 
@@ -1915,6 +1967,854 @@ def test_wells_sized_to_buildings_fires_when_too_small():
 def test_wells_sized_to_buildings_passes_when_proportional():
     # scaled to the village grain (~24px), about half a farmhouse
     assert "wells_sized_to_buildings" not in f(_well_size_city(11.9))
+
+
+# --- bridges where a road crosses water ---
+def _bridge_map(bridges):
+    # a country road (E-W) crossing a stream (N-S) at (500, 500); `bridges` is the recorded list
+    return {"meta": {"scale": "village", "W": 1000, "H": 1000},
+            "road": [[100, 500], [900, 500]],
+            "streams": [{"poly": [[500, 100], [500, 900]], "frm": None, "to": None, "w": 9}],
+            "bridges": bridges}
+
+
+def test_roads_bridge_water_fires_when_unbridged():
+    # the road runs straight through the stream with no bridge
+    assert "roads_bridge_water" in f(_bridge_map([]))
+
+
+def test_roads_bridge_water_passes_when_bridged():
+    assert "roads_bridge_water" not in f(_bridge_map([{"x": 500, "y": 500, "rot": 0, "span": 37, "w": 26}]))
+
+
+def test_seg_intersect_returns_point_for_a_crossing_and_none_for_parallel():
+    # the geometry helper that bridges() uses to find the crossing point
+    p = settlement.seg_intersect((0, 0), (10, 0), (5, -5), (5, 5))
+    assert p == (5.0, 0.0)
+    assert settlement.seg_intersect((0, 0), (10, 0), (0, 4), (10, 4)) is None   # parallel - no crossing
+    assert settlement.segments_cross((0, 0), (10, 0), (5, -5), (5, 5))
+    assert not settlement.segments_cross((0, 0), (10, 0), (0, 4), (10, 4))
+
+
+def test_roads_bridge_water_passes_when_road_runs_alongside_water():
+    # a road parallel to a stream, never intersecting it, needs no bridge
+    M = {"meta": {"scale": "village", "W": 1000, "H": 1000},
+         "road": [[100, 480], [900, 480]],
+         "streams": [{"poly": [[100, 520], [900, 520]], "frm": None, "to": None, "w": 9}],
+         "bridges": []}
+    assert "roads_bridge_water" not in f(M)
+
+
+# --- harvest processing (threshing ground + drying racks) ---
+_PADDY_SQ = [[400, 400], [600, 400], [600, 600], [400, 600]]
+
+
+def _harvest(houses, threshing, racks, fields=None):
+    M = {"meta": {"scale": "village"},
+         "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for (x, y) in houses],
+         "wells": [{"x": x, "y": y, "r": 8, "vr": 11.9} for (x, y) in houses],   # a well by each house so the water checks pass
+         "threshing": threshing, "drying_racks": racks}
+    if fields:
+        M["fields"] = fields
+    return M
+
+
+def test_settlement_has_threshing_ground_fires_when_missing():
+    assert "settlement_has_threshing_ground" in f(_harvest([(300, 300)], [], []))
+
+
+def test_settlement_has_threshing_ground_fires_when_in_a_paddy():
+    # the floor sits inside a flooded paddy - it must be a DRY surface
+    M = _harvest([(450, 350)], [{"x": 500, "y": 500, "rx": 40, "ry": 30}], [],
+                 fields=[{"name": "a", "kind": "paddy", "bbox": [400, 400, 600, 600], "outline": _PADDY_SQ}])
+    assert "settlement_has_threshing_ground" in f(M)
+
+
+def test_settlement_has_threshing_ground_fires_when_far_from_houses():
+    assert "settlement_has_threshing_ground" in f(_harvest([(300, 300)], [{"x": 900, "y": 900, "rx": 40, "ry": 30}], []))
+
+
+def test_settlement_has_threshing_ground_passes_when_dry_and_near():
+    assert "settlement_has_threshing_ground" not in f(_harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}], []))
+
+
+def test_settlement_has_drying_racks_fires_when_too_few():
+    M = _harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}], [{"x": 360, "y": 350, "length": 60, "rot": 0}])
+    assert "settlement_has_drying_racks" in f(M)
+
+
+def test_settlement_has_drying_racks_fires_when_a_rack_strays():
+    M = _harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}],
+                 [{"x": 360, "y": 350, "length": 60, "rot": 0}, {"x": 900, "y": 900, "length": 60, "rot": 0}])
+    assert "settlement_has_drying_racks" in f(M)
+
+
+def test_settlement_has_drying_racks_passes_when_present_near_ground():
+    M = _harvest([(300, 300)], [{"x": 360, "y": 300, "rx": 40, "ry": 30}],
+                 [{"x": 340, "y": 350, "length": 60, "rot": 0}, {"x": 390, "y": 350, "length": 60, "rot": 0}])
+    assert "settlement_has_drying_racks" not in f(M)
+
+
+# --- waterways merge at crossings (confluence layering) ---
+def _confluence(ch_bedz):
+    # a stream (bed+sheen) crossed by a channel; ch_bedz is the channel's bed draw position
+    return {"meta": {"scale": "village"},
+            "streams": [{"poly": [[100, 500], [900, 500]], "frm": None, "to": None, "w": 9, "bedz": 10, "sheenz": 20}],
+            "channels": [{"poly": [[500, 100], [500, 900]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "bedz": ch_bedz}]}
+
+
+def test_waterways_merge_at_crossings_fires_when_bed_over_sheen():
+    # the channel bed is drawn AFTER the stream sheen (the old per-course order) - an opaque bed cuts it
+    assert "waterways_merge_at_crossings" in f(_confluence(25))
+
+
+def test_waterways_merge_at_crossings_passes_when_beds_below_sheens():
+    assert "waterways_merge_at_crossings" not in f(_confluence(11))
+
+
+def test_waterways_merge_at_crossings_passes_when_no_crossing():
+    M = _confluence(25)
+    M["channels"][0]["poly"] = [[500, 100], [500, 300]]   # stops short, never reaches the stream
+    assert "waterways_merge_at_crossings" not in f(M)
+
+
+def test_waterways_merge_at_crossings_passes_when_neither_has_sheen():
+    # two channels crossing - same-colour beds merge regardless of order, no sheen to cut
+    M = {"meta": {"scale": "village"},
+         "channels": [{"poly": [[100, 500], [900, 500]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "bedz": 30},
+                      {"poly": [[500, 100], [500, 900]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "bedz": 10}]}
+    assert "waterways_merge_at_crossings" not in f(M)
+
+
+def test_waterways_merge_at_crossings_fires_at_a_feeder_junction():
+    # a channel FEEDS INTO a stream (its endpoint sits on it), drawn over the stream's sheen
+    M = {"meta": {"scale": "village"},
+         "streams": [{"poly": [[100, 500], [900, 500]], "frm": None, "to": None, "w": 9, "bedz": 10, "sheenz": 20}],
+         "channels": [{"poly": [[500, 505], [500, 900]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "bedz": 25}]}
+    assert "waterways_merge_at_crossings" in f(M)
+
+
+def test_waterways_merge_at_crossings_fires_when_stream_ends_on_a_channel():
+    # the stream's own endpoint sits on a channel (the pa-endpoint junction branch)
+    M = {"meta": {"scale": "village"},
+         "streams": [{"poly": [[505, 500], [900, 500]], "frm": None, "to": None, "w": 9, "bedz": 25, "sheenz": 30}],
+         "channels": [{"poly": [[500, 100], [500, 900]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "bedz": 10, "sheenz": 5}]}
+    assert "waterways_merge_at_crossings" in f(M)
+
+
+# --- the dead (cemeteries) ---
+_MON = [{"kind": "monastery", "x": 500, "y": 500, "w": 120, "h": 80}]
+_SHR = [{"kind": "shrine", "x": 500, "y": 500, "w": 100, "h": 68}]
+
+
+def _dead(scale, cems, religious=None):
+    M = {"meta": {"scale": scale}, "cemeteries": cems}
+    if religious is not None:
+        M["religious"] = religious
+    return M
+
+
+def test_settlement_has_cemetery_fires_when_missing():
+    assert "settlement_has_cemetery" in f(_dead("village", []))
+
+
+def test_settlement_has_cemetery_exempts_hamlet():
+    assert "settlement_has_cemetery" not in f(_dead("hamlet", []))
+
+
+def test_settlement_has_cemetery_passes_when_present():
+    assert "settlement_has_cemetery" not in f(_dead("village", [{"x": 300, "y": 300, "w": 80, "h": 56, "rot": 0}]))
+
+
+def test_cemetery_clear_of_shrine_fires_when_adjacent():
+    # a graveyard hard against a Shinto shrine - kegare/death-pollution
+    assert "cemetery_clear_of_shrine" in f(_dead("village", [{"x": 540, "y": 520, "w": 80, "h": 56, "rot": 0}], religious=_SHR))
+
+
+def test_cemetery_clear_of_shrine_passes_when_far():
+    assert "cemetery_clear_of_shrine" not in f(_dead("village", [{"x": 900, "y": 900, "w": 80, "h": 56, "rot": 0}], religious=_SHR))
+
+
+def test_cemetery_in_temple_precinct_fires_when_far_from_hall():
+    assert "cemetery_in_temple_precinct" in f(_dead("town", [{"x": 1500, "y": 1500, "w": 80, "h": 56, "rot": 0}], religious=_MON))
+
+
+def test_cemetery_in_temple_precinct_passes_when_by_hall():
+    assert "cemetery_in_temple_precinct" not in f(_dead("town", [{"x": 560, "y": 520, "w": 80, "h": 56, "rot": 0}], religious=_MON))
+
+
+def test_mausoleum_draws_with_either_gate_orientation():
+    # exercises both the horizontal-wall (south) and vertical-wall (west) gate branches + the default
+    # (above) label position
+    s = settlement.Settlement()
+    s.mausoleum(900, 900, 120, 90, label="Mausoleum", gate_dir="south")
+    s.mausoleum(600, 600, 120, 90, gate_dir="west")
+    assert len(s.M["mausoleums"]) == 2
+
+
+def test_cemetery_clear_of_shrine_fires_on_a_mausoleum_by_a_shrine():
+    # the kegare rule covers MAUSOLEA too, not just graveyards
+    M = {"meta": {"scale": "village"}, "mausoleums": [{"x": 540, "y": 520, "w": 74, "h": 58, "rot": 0}],
+         "religious": [{"kind": "shrine", "x": 500, "y": 500, "w": 100, "h": 68}]}
+    assert "cemetery_clear_of_shrine" in f(M)
+
+
+# --- the full city funerary geography ---
+def _city_dead(**kw):
+    WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]   # inside = 200..800
+    d = dict(cems=[(300, 300), (700, 300), (100, 100)],         # 2 inside + 1 outside
+             temples=[(320, 320, "A", True), (680, 320, "B", True)],
+             maus=[(520, 520)], crem=[(100, 900)], oss=[(140, 900)], gov=(500, 500), shrines=[])
+    d.update(kw)
+
+    def _cem(c):
+        x, y = c[0], c[1]
+        if len(c) >= 4:
+            w, h = c[2], c[3]
+        else:                                              # outside cemeteries default bigger than inside
+            outside = not (200 < x < 800 and 200 < y < 800)
+            w, h = (104, 74) if outside else (70, 50)
+        parish = c[4] if len(c) >= 5 else True
+        return {"x": x, "y": y, "w": w, "h": h, "rot": 0, "parish": parish}
+    return {"meta": {"scale": "city"}, "wall": WALLSQ,
+            "cemeteries": [_cem(c) for c in d["cems"]],
+            "mausoleums": [{"x": x, "y": y, "w": 74, "h": 58, "rot": 0} for (x, y) in d["maus"]],
+            "cremation_grounds": [{"x": x, "y": y, "w": 116, "h": 80, "rot": 0} for (x, y) in d["crem"]],
+            "ossuaries": [{"x": x, "y": y, "w": 92, "h": 60, "rot": 0} for (x, y) in d["oss"]],
+            "religious": [{"kind": "temple", "x": tx, "y": ty, "w": 80, "h": 60, "label": lbl, "graveyard": gv}
+                          for (tx, ty, lbl, gv) in d["temples"]]
+                         + [{"kind": "small_shrine", "x": sx, "y": sy, "w": 30, "h": 24} for (sx, sy) in d["shrines"]],
+            "governor_mansion": {"x": d["gov"][0], "y": d["gov"][1], "w": 120, "h": 90} if d["gov"] else None}
+
+
+def test_city_graveyard_count_fires_when_too_few():
+    assert "city_graveyard_count" in f(_city_dead(cems=[(300, 300)]))
+
+
+def test_city_graveyard_count_fires_when_too_many():
+    assert "city_graveyard_count" in f(_city_dead(cems=[(300, 300), (350, 300), (400, 300), (700, 300), (100, 100)]))
+
+
+def test_city_graveyard_count_passes_at_three():
+    assert "city_graveyard_count" not in f(_city_dead())
+
+
+def test_walled_graveyards_inside_and_outside_fires_when_all_inside():
+    assert "walled_graveyards_inside_and_outside" in f(_city_dead(cems=[(300, 300), (700, 300)]))
+
+
+def test_walled_graveyards_inside_and_outside_passes_when_mixed():
+    assert "walled_graveyards_inside_and_outside" not in f(_city_dead())
+
+
+def test_walled_exterior_cemetery_larger_fires_when_not_larger():
+    # the outside common ground is no bigger than the cramped intramural one
+    assert "walled_exterior_cemetery_larger" in f(_city_dead(cems=[(300, 300), (700, 300), (100, 100, 60, 40)]))
+
+
+def test_walled_exterior_cemetery_larger_passes_when_larger():
+    assert "walled_exterior_cemetery_larger" not in f(_city_dead())
+
+
+def test_cemetery_in_temple_precinct_exempts_a_nonparish_grave():
+    # an inside graveyard far from any temple is exempt when parish=False (a non-parish plot)
+    assert "cemetery_in_temple_precinct" not in f(_city_dead(cems=[(300, 300), (700, 300), (100, 100), (500, 500, 60, 44, False)]))
+
+
+def test_cemetery_in_temple_precinct_fires_on_an_inside_parish_grave_off_temple():
+    assert "cemetery_in_temple_precinct" in f(_city_dead(cems=[(300, 300), (700, 300), (100, 100), (500, 500, 60, 44, True)]))
+
+
+def _water_grave(water):
+    M = {"meta": {"scale": "village"}, "cemeteries": [{"x": 300, "y": 300, "w": 60, "h": 44, "rot": 0, "parish": True}]}
+    M.update(water)
+    return M
+
+
+def test_funerary_set_back_from_water_fires_near_a_stream():
+    assert "funerary_set_back_from_water" in f(_water_grave({"streams": [{"poly": [[300, 340], [600, 340]], "frm": None, "to": None, "w": 9}]}))
+
+
+def test_funerary_set_back_from_water_fires_near_a_pond():
+    assert "funerary_set_back_from_water" in f(_water_grave({"pond": [400, 300, 60, 40]}))
+
+
+def test_funerary_set_back_from_water_passes_when_clear_of_water():
+    assert "funerary_set_back_from_water" not in f(_water_grave({"streams": [{"poly": [[300, 600], [600, 600]], "frm": None, "to": None, "w": 9}],
+                                                                 "pond": [900, 900, 60, 40]}))
+
+
+def test_water_setback_scales_with_waterway_width():
+    assert check_village.water_setback(4) == 75            # any small open water -> the floor (graves flood out)
+    assert check_village.water_setback(9) == 75            # a narrow stream still gets the full floor
+    assert check_village.water_setback(22) == 110          # moat -> moderate/large
+    assert check_village.water_setback(40) == 140          # river / canal -> capped
+    assert check_village.water_setback(9) < check_village.water_setback(22)   # wider water, more set-back
+
+
+def test_funerary_set_back_scales_grave_ok_by_a_stream_fails_by_a_moat():
+    # a graveyard whose nearest corner is 90px from the watercourse: fine by a narrow stream (floor 75),
+    # too close to a moat (set-back 110)
+    def M(width):
+        return {"meta": {"scale": "village"},
+                "cemeteries": [{"x": 300, "y": 270, "w": 50, "h": 36, "rot": 0, "parish": True}],
+                "streams": [{"poly": [[200, 378], [600, 378]], "frm": None, "to": None, "w": width}]}
+    assert "funerary_set_back_from_water" not in f(M(6))    # narrow stream: floor 75, corner 90px away -> ok
+    assert "funerary_set_back_from_water" in f(M(22))       # moat-width: set-back 110 -> 90px too close
+
+
+def test_funerary_set_back_cremation_may_sit_nearer_than_a_grave():
+    # at the SAME 50px corner distance from a wide watercourse: the cremation ground passes, a graveyard fires
+    base = {"meta": {"scale": "village"}, "streams": [{"poly": [[200, 378], [600, 378]], "frm": None, "to": None, "w": 22}]}
+    grave = {**base, "cemeteries": [{"x": 300, "y": 310, "w": 50, "h": 36, "rot": 0, "parish": True}]}
+    crem = {**base, "cremation_grounds": [{"x": 300, "y": 288, "w": 116, "h": 80, "rot": 0}]}
+    assert "funerary_set_back_from_water" in f(grave)
+    assert "funerary_set_back_from_water" not in f(crem)
+
+
+def test_funerary_set_back_inside_wall_grave_exempt_from_moat():
+    # a graveyard just inside the wall is shielded from the (outside) moat by the rampart -> exempt
+    WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]
+    M = {"meta": {"scale": "city"}, "wall": WALLSQ, "moat": _MOAT, "moat_width": 22,
+         "cemeteries": [{"x": 230, "y": 500, "w": 50, "h": 36, "rot": 0, "parish": True}]}
+    assert "funerary_set_back_from_water" not in f(M)
+
+
+def test_funerary_set_back_outside_wall_grave_subject_to_moat():
+    WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]
+    M = {"meta": {"scale": "city"}, "wall": WALLSQ, "moat": _MOAT, "moat_width": 22,
+         "cemeteries": [{"x": 120, "y": 500, "w": 50, "h": 36, "rot": 0, "parish": True}]}
+    assert "funerary_set_back_from_water" in f(M)
+
+
+_PADDY = {"name": "a", "kind": "paddy", "bbox": [300, 330, 500, 500],
+          "outline": [[300, 330], [500, 330], [500, 500], [300, 500]]}
+
+
+def test_funerary_set_back_fires_near_a_rice_paddy():
+    # a burial ground hard against a flood-prone paddy edge
+    M = {"meta": {"scale": "village"}, "fields": [_PADDY],
+         "cemeteries": [{"x": 300, "y": 300, "w": 50, "h": 36, "rot": 0, "parish": True}]}
+    assert "funerary_set_back_from_water" in f(M)
+
+
+def test_funerary_set_back_paddy_needs_more_than_creek_distance():
+    # ~35px from a paddy edge: fine for a creek, but a flooded paddy needs a real margin -> still fires
+    near = {"meta": {"scale": "village"}, "fields": [_PADDY],
+            "cemeteries": [{"x": 300, "y": 277, "w": 50, "h": 36, "rot": 0, "parish": True}]}   # corner ~35px from the paddy
+    assert "funerary_set_back_from_water" in f(near)
+    far = {"meta": {"scale": "village"}, "fields": [_PADDY],
+           "cemeteries": [{"x": 300, "y": 255, "w": 50, "h": 36, "rot": 0, "parish": True}]}    # corner ~57px -> clear
+    assert "funerary_set_back_from_water" not in f(far)
+
+
+def test_funerary_set_back_cremation_may_sit_by_a_paddy():
+    # the cremation ground is exempt from the paddy set-back (a fire site, not flood-sensitive graves)
+    M = {"meta": {"scale": "village"}, "fields": [_PADDY],
+         "cremation_grounds": [{"x": 300, "y": 280, "w": 116, "h": 80, "rot": 0}]}
+    assert "funerary_set_back_from_water" not in f(M)
+
+
+def _city_estates(gate_dirs):
+    WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]   # estates sit OUTSIDE, to the SE
+    return {"meta": {"scale": "city", "walled": True}, "wall": WALLSQ,
+            "manors": [{"x": 900 + (i % 3) * 220, "y": 900 + (i // 3) * 220, "w": 120, "h": 90, "gate_dir": gd}
+                       for i, gd in enumerate(gate_dirs)]}
+
+
+def test_city_estate_gates_vary_fires_when_all_identical():
+    assert "city_estate_gates_vary" in f(_city_estates(["west"] * 5))
+
+
+def test_city_estate_gates_vary_passes_when_mixed():
+    assert "city_estate_gates_vary" not in f(_city_estates(["south", "west", "north", "south", "west"]))
+
+
+def _thresh(tx, ty, with_road=True):
+    # a town with one paddy at x[400,600] y[400,550] and (optionally) a main road along y=300;
+    # a dwelling sits at the threshing so the "near a dwelling" condition is satisfied
+    M = {"meta": {"scale": "town"},
+         "fields": [{"outline": [[400, 400], [600, 400], [600, 550], [400, 550]], "bbox": [400, 400, 600, 550], "name": "f", "kind": "paddy"}],
+         "houses": [{"x": tx, "y": ty, "w": 30, "h": 24, "rot": 0, "kind": "plain"}],
+         "threshing": [{"x": tx, "y": ty, "rx": 62, "ry": 42}]}
+    if with_road:
+        M["road"] = [[0, 300], [1000, 300]]
+    return M
+
+
+def test_threshing_near_farmland_fires_when_across_the_road():
+    # the hiroba sits north of the road; every field is south of it - marooned across the road
+    assert "threshing_ground_near_farmland" in f(_thresh(500, 200))
+
+
+def test_threshing_near_farmland_passes_when_at_a_field_edge():
+    # just south of the field, same side of the road - reachable without crossing the trunk road
+    assert "threshing_ground_near_farmland" not in f(_thresh(500, 580))
+
+
+def test_threshing_near_farmland_fires_when_far_from_any_field():
+    # no road at all, but the hiroba is 400px from the only field - too far from the farmland it serves
+    assert "threshing_ground_near_farmland" in f(_thresh(500, 950, with_road=False))
+
+
+def test_harvest_features_clear_of_paddies_fires_when_in_a_paddy():
+    # the threshing footprint sits inside the field (400,400)-(600,550) - a dry floor in the flooded paddy
+    assert "harvest_features_clear_of_paddies" in f(_thresh(500, 475, with_road=False))
+
+
+def test_harvest_features_clear_of_paddies_passes_when_clear():
+    # the threshing sits south of the field, footprint clear of it
+    assert "harvest_features_clear_of_paddies" not in f(_thresh(500, 680, with_road=False))
+
+
+def test_every_feature_classified_for_overlap_fires_on_unknown_feature():
+    # a new footprint feature nobody added to the _OVERLAP_* registry trips the completeness guard
+    M = {"meta": {"scale": "village"}, "watchtowers": [{"x": 100, "y": 100, "w": 20, "h": 20, "rot": 0}]}
+    assert "every_feature_classified_for_overlap" in f(M)
+
+
+def test_every_feature_classified_for_overlap_passes_for_known_features():
+    M = {"meta": {"scale": "village"}, "houses": [{"x": 100, "y": 100, "w": 20, "h": 20, "rot": 0, "kind": "plain"}]}
+    assert "every_feature_classified_for_overlap" not in f(M)
+
+
+# --- threshing_label_clear_of_racks ---------------------------------------------------------------
+def _thresh_label(rack_xy, label_cx):
+    M = _thresh(500, 680, with_road=False)              # threshing clear of the paddy
+    M["drying_racks"] = [{"x": rack_xy[0], "y": rack_xy[1], "length": 60, "rot": 0}]
+    M["labels"] = [[label_cx - 48, 494, label_cx + 48, 506, 5, "threshing ground"]]
+    return M
+
+
+def test_threshing_label_clear_of_racks_fires_when_over_a_rack():
+    assert "threshing_label_clear_of_racks" in f(_thresh_label((500, 500), 500))     # label sits on the rack
+
+
+def test_threshing_label_clear_of_racks_passes_when_clear():
+    assert "threshing_label_clear_of_racks" not in f(_thresh_label((500, 500), 800))  # label well east of the rack
+
+
+# --- town_has_caravan_inn -------------------------------------------------------------------------
+def _town_caravan(inn=True, stables=True, walled=False, inn_xy=(500, 500), st_xy=(500, 560)):
+    M = {"meta": {"scale": "town", "walled": walled}, "houses": [], "fields": [], "buildings": []}
+    if inn:
+        M["buildings"].append({"x": inn_xy[0], "y": inn_xy[1], "w": 66, "h": 48, "kind": "inn", "rot": 0})
+    if stables:
+        M["buildings"].append({"x": st_xy[0], "y": st_xy[1], "w": 92, "h": 44, "kind": "stables", "rot": 0})
+    if walled:
+        M["wall"] = [[100, 100], [2000, 100], [2000, 2000], [100, 2000]]
+    return M
+
+
+def test_town_has_caravan_inn_passes_with_inn_stables_open_ground():
+    assert "town_has_caravan_inn" not in f(_town_caravan())
+
+
+def test_town_has_caravan_inn_fires_without_stables():
+    assert "town_has_caravan_inn" in f(_town_caravan(stables=False))
+
+
+def test_town_has_caravan_inn_fires_when_outside_the_walls():
+    assert "town_has_caravan_inn" in f(_town_caravan(walled=True, inn_xy=(40, 40), st_xy=(40, 100)))
+
+
+def test_town_has_caravan_inn_fires_when_stables_hemmed_in():
+    # the stables needs open ground (a pasture) - >4 dwellings crowding it fails
+    M = _town_caravan()
+    M["buildings"] += [{"x": 500 + i * 8, "y": 560, "w": 20, "h": 16, "kind": "laborer", "rot": 0} for i in range(5)]
+    assert "town_has_caravan_inn" in f(M)
+
+
+def test_town_has_caravan_inn_passes_when_inn_fronts_road():
+    M = _town_caravan(inn_xy=(500, 560), st_xy=(500, 640))
+    M["road"] = [[100, 500], [900, 500]]   # the inn (y560) fronts the road (y500), nothing between
+    assert "town_has_caravan_inn" not in f(M)
+
+
+def test_town_has_caravan_inn_fires_when_inn_behind_shops():
+    M = _town_caravan(inn_xy=(500, 560), st_xy=(500, 640))
+    M["road"] = [[100, 500], [900, 500]]
+    M["buildings"].append({"x": 500, "y": 525, "w": 60, "h": 30, "kind": "merchant", "rot": 0})  # a shop between inn and road
+    assert "town_has_caravan_inn" in f(M)
+
+
+def test_town_has_caravan_inn_fires_when_inn_far_from_any_road():
+    M = _town_caravan(inn_xy=(500, 560), st_xy=(500, 640))
+    M["road"] = [[100, 200], [900, 200]]   # the road is far away - the inn is not along it
+    assert "town_has_caravan_inn" in f(M)
+
+
+def test_inn_faces_the_road_fires_when_back_to_the_road():
+    # inn at rot 0 (noren faces south) but the road is to its NORTH -> back to the road
+    M = _town_caravan(inn_xy=(500, 560), st_xy=(500, 640))
+    M["road"] = [[100, 500], [900, 500]]
+    assert "inn_faces_the_road" in f(M)
+
+
+def test_inn_faces_the_road_passes_when_facing():
+    M = _town_caravan(inn_xy=(500, 560), st_xy=(500, 640))
+    M["road"] = [[100, 500], [900, 500]]
+    M["buildings"][0]["rot"] = 180   # the inn (buildings[0]) turns its noren north, toward the road
+    assert "inn_faces_the_road" not in f(M)
+
+
+# --- compass_clear (the N/S compass overlay must sit in empty space) ------------------------------
+def test_compass_clear_passes_in_an_empty_corner():
+    M = {"meta": {"scale": "village"}, "compass": {"x": 1700, "y": 100},
+         "houses": [{"x": 300, "y": 300, "w": 30, "h": 20, "rot": 0, "kind": "plain"}]}
+    assert "compass_clear" not in f(M)
+
+
+def test_compass_clear_fires_over_a_building():
+    M = {"meta": {"scale": "village"}, "compass": {"x": 300, "y": 300},
+         "houses": [{"x": 300, "y": 300, "w": 40, "h": 30, "rot": 0, "kind": "plain"}]}
+    assert "compass_clear" in f(M)
+
+
+def test_compass_clear_fires_over_a_road():
+    M = {"meta": {"scale": "village"}, "compass": {"x": 300, "y": 300}, "road": [[100, 300], [900, 300]], "road_width": 26}
+    assert "compass_clear" in f(M)
+
+
+def test_compass_clear_fires_over_terrain():
+    M = {"meta": {"scale": "village"}, "compass": {"x": 300, "y": 300},
+         "fields": [{"outline": [[260, 260], [340, 260], [340, 340], [260, 340]], "bbox": [260, 260, 340, 340], "name": "a", "kind": "paddy"}]}
+    assert "compass_clear" in f(M)
+
+
+def test_compass_clear_fires_over_a_label():
+    M = {"meta": {"scale": "village"}, "compass": {"x": 300, "y": 300},
+         "labels": [[280, 290, 380, 310, 5, "somewhere"]]}
+    assert "compass_clear" in f(M)
+
+
+# --- town merchant/laborer house-size variety -----------------------------------------------------
+def _town_housing(m_large, l_large, m_small=12, l_small=22):
+    b = []
+    for i in range(m_small):
+        b.append(bldg(120 + i * 60, 120, "merchant"))
+    for i in range(m_large):
+        b.append(bldg(120 + i * 100, 240, "merchant_large", w=86, h=60))
+    for i in range(l_small):
+        b.append(bldg(120 + i * 50, 360, "laborer"))
+    for i in range(l_large):
+        b.append(bldg(120 + i * 70, 480, "laborer_large", w=50, h=34))
+    return {"meta": {"scale": "town"}, "houses": [], "fields": [], "buildings": b}
+
+
+def test_town_merchant_housing_varied_fires_when_uniform():
+    assert "town_merchant_housing_varied" in f(_town_housing(m_large=0, l_large=3))
+
+
+def test_town_merchant_housing_varied_passes_when_mixed():
+    assert "town_merchant_housing_varied" not in f(_town_housing(m_large=4, l_large=3))
+
+
+def test_town_laborer_housing_varied_fires_when_uniform():
+    assert "town_laborer_housing_varied" in f(_town_housing(m_large=4, l_large=0))
+
+
+def test_town_laborer_housing_varied_passes_when_mixed():
+    assert "town_laborer_housing_varied" not in f(_town_housing(m_large=4, l_large=3))
+
+
+# --- merchant_residences_behind_businesses (road-fronted towns: shops -> homes -> gap -> laborers) -
+# A vertical trunk road at x=100; droad = |x - 100|. Shops front it, merchant homes sit behind, then
+# the laborer warren further back with a gap.
+def _town_behind(res_x=230, lab_x=300):
+    b = []
+    for i in range(7):
+        b.append(bldg(150, 100 + i * 60, "shop"))          # businesses at droad ~50
+    for i in range(3):
+        b.append(bldg(res_x, 150 + i * 80, "merchant_large", w=86, h=60))   # merchant residences
+    for i in range(6):
+        b.append(bldg(lab_x, 120 + i * 50, "laborer"))     # laborer warren
+    return {"meta": {"scale": "town"}, "houses": [], "fields": [],
+            "road": [[100, 0], [100, 1000]], "road_width": 26, "buildings": b}
+
+
+def test_merchant_residences_behind_businesses_passes_when_banded():
+    assert "merchant_residences_behind_businesses" not in f(_town_behind(res_x=230, lab_x=320))
+
+
+def test_merchant_residences_behind_businesses_fires_when_residence_in_storefront_band():
+    # a merchant home sitting at droad 40 (within the shops' droad ~50 band), not behind it
+    assert "merchant_residences_behind_businesses" in f(_town_behind(res_x=140, lab_x=320))
+
+
+def test_merchant_residences_behind_businesses_fires_when_laborers_crowd_the_homes():
+    # laborers at droad 140, only ~10px behind the merchant homes at droad 130 - no gap
+    assert "merchant_residences_behind_businesses" in f(_town_behind(res_x=230, lab_x=240))
+
+
+def test_merchant_residences_behind_businesses_skipped_without_a_road():
+    # a walled town has no trunk M["road"]; the single-axis test must not run
+    M = _town_behind(res_x=140, lab_x=240)
+    del M["road"]
+    assert "merchant_residences_behind_businesses" not in f(M)
+
+
+# --- housing_aligned_behind_storefronts (a home tucked behind a shop lies parallel to it) ----------
+# A vertical trunk road at x=100; along = y, droad = |x - 100|. Shops front it (rot 0); a home is
+# "directly behind" a shop when it shares the shop's along-road position and sits one building deeper.
+def _town_align(home_rot=0, home_x=200, home_y=280, with_shops=True):
+    b = []
+    if with_shops:
+        for i in range(7):
+            b.append(bldg(140, 100 + i * 60, "shop", rot=0))        # storefronts at droad 40
+    b.append(bldg(home_x, home_y, "merchant_large", rot=home_rot, w=86, h=60))
+    return {"meta": {"scale": "town"}, "houses": [], "fields": [],
+            "road": [[100, 0], [100, 1000]], "road_width": 26, "buildings": b}
+
+
+def test_housing_aligned_behind_storefronts_passes_when_parallel():
+    # a home directly behind a shop (droad 100 vs 40 -> depth 60), same orientation -> fine
+    assert "housing_aligned_behind_storefronts" not in f(_town_align(home_rot=0))
+
+
+def test_housing_aligned_behind_storefronts_fires_when_askew():
+    # same spot, but rotated 35deg off the storefront -> askew
+    assert "housing_aligned_behind_storefronts" in f(_town_align(home_rot=35))
+
+
+def test_housing_aligned_behind_storefronts_skips_a_home_far_back():
+    # droad 240 -> depth 200 (> DEPTH_MAX): deep in the warren, not "directly behind" a shop
+    assert "housing_aligned_behind_storefronts" not in f(_town_align(home_rot=35, home_x=340))
+
+
+def test_housing_aligned_behind_storefronts_skips_a_home_beside_a_shop():
+    # droad 50 -> depth 10 (< DEPTH_MIN): level with the shop row, not behind it
+    assert "housing_aligned_behind_storefronts" not in f(_town_align(home_rot=35, home_x=150, home_y=310))
+
+
+def test_housing_aligned_behind_storefronts_skips_a_laterally_offset_home():
+    # proper depth but 240px away ALONG the road (outside any shop's radial shadow)
+    assert "housing_aligned_behind_storefronts" not in f(_town_align(home_rot=35, home_y=700))
+
+
+def test_housing_aligned_behind_storefronts_skips_when_no_storefronts():
+    # homes but no shops at all -> nothing is "behind a storefront"
+    assert "housing_aligned_behind_storefronts" not in f(_town_align(home_rot=35, with_shops=False))
+
+
+def _maus_ward(ward_walls, maus_cy=1556):
+    # a mausoleum (gate west) whose NORTH wall (y0 = cy-20) runs along a ward fence at y=1535,
+    # inside a city wall - "ward_walls" records the sides the compound yielded to the fence
+    return {"meta": {"scale": "city", "walled": True},
+            "wall": [[100, 100], [3000, 100], [3000, 2500], [100, 2500]],
+            "wards": [{"name": "samurai", "boundary": [[1620, 1535], [2401, 1535]], "z": 5}],
+            "mausoleums": [{"x": 2246, "y": maus_cy, "w": 54, "h": 40, "rot": 0, "gate_dir": "west", "ward_walls": ward_walls}]}
+
+
+def test_walled_structure_yields_to_ward_wall_fires_when_unyielded():
+    # north wall abuts the fence but the compound drew its own wall there (not recorded)
+    assert "walled_structure_yields_to_ward_wall" in f(_maus_ward([]))
+
+
+def test_walled_structure_yields_to_ward_wall_passes_when_yielded():
+    assert "walled_structure_yields_to_ward_wall" not in f(_maus_ward(["north"]))
+
+
+def test_walled_structure_yields_to_ward_wall_passes_when_not_abutting():
+    # the mausoleum sits well clear of the fence - nothing to yield
+    assert "walled_structure_yields_to_ward_wall" not in f(_maus_ward([], maus_cy=2000))
+
+
+def test_walled_structure_yields_to_ward_wall_fires_on_a_vertical_fence():
+    # the mausoleum's EAST wall (x = cx+27 = 1535) runs along a VERTICAL ward fence at x=1535
+    M = {"meta": {"scale": "city", "walled": True},
+         "wall": [[100, 100], [3000, 100], [3000, 2500], [100, 2500]],
+         "wards": [{"name": "samurai", "boundary": [[1535, 1200], [1535, 1900]], "z": 5}],
+         "mausoleums": [{"x": 1508, "y": 1556, "w": 54, "h": 40, "rot": 0, "gate_dir": "west", "ward_walls": []}]}
+    assert "walled_structure_yields_to_ward_wall" in f(M)
+
+
+def test_walled_structure_yields_to_ward_wall_skips_compounds_outside_the_wall():
+    # a compound OUTSIDE the city wall is not held to the rule (wards are an intramural feature)
+    M = _maus_ward([])
+    M["mausoleums"][0]["x"], M["mausoleums"][0]["y"] = 50, 50   # west of the wall (x >= 100): outside
+    assert "walled_structure_yields_to_ward_wall" not in f(M)
+
+
+def test_walled_structure_yields_to_ward_wall_skips_tilted_compounds():
+    # a tilted compound is not axis-aligned to a fence, so the rule does not apply
+    M = _maus_ward([])
+    M["mausoleums"][0]["rot"] = 30
+    assert "walled_structure_yields_to_ward_wall" not in f(M)
+
+
+def _town_manor(gate_dir, rot=0, road=None):
+    # a magistrate manor at (300,300); the "town" (houses) is to the SE at ~(950,933)
+    M = {"meta": {"scale": "town"},
+         "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for x, y in [(900, 900), (1000, 900), (950, 1000)]],
+         "manors": [{"x": 300, "y": 300, "w": 120, "h": 90, "rot": rot, "gate_dir": gate_dir, "gate": [300, 300]}]}
+    if road:
+        M["road"] = road
+    return M
+
+
+def test_manor_gate_faces_town_passes_facing_the_town():
+    assert "manor_gate_faces_town" not in f(_town_manor("south"))   # town is SE -> south gate faces it
+
+
+def test_manor_gate_faces_town_fires_facing_away():
+    assert "manor_gate_faces_town" in f(_town_manor("north"))       # north gate faces away from the SE town
+
+
+def test_manor_gate_faces_town_passes_facing_the_road():
+    # town centroid is SE, but a north gate faces an Imperial road to the manor's north -> ok
+    assert "manor_gate_faces_town" not in f(_town_manor("north", road=[[100, 150], [600, 150]]))
+
+
+def test_manor_rotation_records_rot_and_tilts_the_footprint():
+    s = settlement.Settlement()
+    s.manor(500, 500, 200, 120, "M", gate_dir="south", rot=30)
+    mn = s.M["manors"][0]
+    assert mn["rot"] == 30
+    c = check_village.rect_corners(mn)
+    assert abs(c[0][1] - c[1][1]) > 1   # the top edge is no longer horizontal -> the compound is tilted
+
+
+def _crem_cem(crem_xy, cem_xy, walled=False):
+    M = {"meta": {"scale": "town"},
+         "cremation_grounds": [{"x": crem_xy[0], "y": crem_xy[1], "w": 116, "h": 80, "rot": 0}],
+         "cemeteries": [{"x": cem_xy[0], "y": cem_xy[1], "w": 100, "h": 72, "rot": 0, "parish": True}]}
+    if walled:
+        M["wall"] = [[200, 200], [800, 200], [800, 800], [200, 800]]
+    return M
+
+
+def test_cremation_ground_by_external_cemetery_passes_when_adjacent():
+    assert "cremation_ground_by_external_cemetery" not in f(_crem_cem((300, 300), (300, 420)))
+
+
+def test_cremation_ground_by_external_cemetery_fires_when_far():
+    assert "cremation_ground_by_external_cemetery" in f(_crem_cem((300, 300), (900, 900)))
+
+
+def test_cremation_ground_by_external_cemetery_fires_when_only_internal_cemetery():
+    # walled: cremation outside, but the only cemetery is INSIDE the wall (even adjacent) -> not external -> fires
+    assert "cremation_ground_by_external_cemetery" in f(_crem_cem((150, 500), (250, 500), walled=True))
+
+
+def test_cremation_ground_by_external_cemetery_passes_walled_with_external():
+    # walled: cremation + cemetery both outside the wall, adjacent -> ok
+    assert "cremation_ground_by_external_cemetery" not in f(_crem_cem((150, 500), (150, 620), walled=True))
+
+
+def _crem_road(crem_xy, cem_xy):
+    # a cremation ground + an adjacent external cemetery, beside a main road along y=200
+    return {"meta": {"scale": "town"}, "road": [[100, 200], [900, 200]],
+            "cremation_grounds": [{"x": crem_xy[0], "y": crem_xy[1], "w": 116, "h": 80, "rot": 0}],
+            "cemeteries": [{"x": cem_xy[0], "y": cem_xy[1], "w": 100, "h": 72, "rot": 0, "parish": True}]}
+
+
+def test_cremation_set_back_from_road_fires_when_on_the_road():
+    assert "cremation_ground_set_back_from_main_road" in f(_crem_road((300, 260), (300, 360)))   # 60px off the road
+
+
+def test_cremation_set_back_from_road_passes_when_far():
+    assert "cremation_ground_set_back_from_main_road" not in f(_crem_road((300, 500), (300, 600)))
+
+
+def test_cremation_set_back_from_road_passes_when_no_main_road():
+    M = _crem_road((300, 260), (300, 360))
+    del M["road"]   # a settlement on minor streets only - nothing to be set back from
+    assert "cremation_ground_set_back_from_main_road" not in f(M)
+
+
+def _crem_temple(crem_xy, mon_xy=(300, 500)):
+    # a monastery + a cremation ground (with an adjacent cemetery), beside a main road along y=200.
+    # The monastery at y=500 sits 300px back from the road; "behind" it means >= 260px back.
+    return {"meta": {"scale": "town"}, "road": [[100, 200], [900, 200]],
+            "religious": [{"x": mon_xy[0], "y": mon_xy[1], "w": 132, "h": 86, "rot": 0, "kind": "monastery"}],
+            "cremation_grounds": [{"x": crem_xy[0], "y": crem_xy[1], "w": 116, "h": 80, "rot": 0}],
+            "cemeteries": [{"x": crem_xy[0], "y": crem_xy[1] + 110, "w": 100, "h": 72, "rot": 0, "parish": True}]}
+
+
+def test_cremation_not_between_temple_and_road_fires_when_between():
+    # cremation on the road side of its monastery (closer to the road than the temple), yet still
+    # clear of the road's own set-back floor - only the between-temple-and-road rule should object
+    fails = f(_crem_temple((300, 360)))
+    assert "cremation_ground_not_between_temple_and_road" in fails
+    assert "cremation_ground_set_back_from_main_road" not in fails   # isolates the new rule
+
+
+def test_cremation_not_between_temple_and_road_passes_when_behind():
+    assert "cremation_ground_not_between_temple_and_road" not in f(_crem_temple((300, 640)))
+
+
+def test_cremation_not_between_temple_and_road_passes_when_no_temple_nearby():
+    # no temple within association range -> nothing to be "in front of"
+    assert "cremation_ground_not_between_temple_and_road" not in f(_crem_temple((300, 360), mon_xy=(300, 1500)))
+
+
+def test_no_structure_on_moat_fires_when_a_structure_sits_on_it():
+    M = {"meta": {"scale": "city"}, "wall": [[200, 200], [800, 200], [800, 800], [200, 800]],
+         "moat": _MOAT, "moat_width": 22,
+         "buildings": [{"x": 168, "y": 500, "w": 44, "h": 30, "rot": 0, "kind": "laborer"},   # a corner within the moat band
+                       {"x": 160, "y": 160, "w": 70, "h": 70, "rot": 0, "kind": "laborer"}]}  # a moat vertex inside the footprint
+    assert "no_structure_on_moat" in f(M)
+
+
+def test_city_temples_have_graveyards_fires_when_a_temple_unserved():
+    assert "city_temples_have_graveyards" in f(_city_dead(temples=[(320, 320, "A", True), (680, 700, "B", True)]))
+
+
+def test_city_temples_have_graveyards_exempts_a_flagged_temple():
+    assert "city_temples_have_graveyards" not in f(_city_dead(temples=[(320, 320, "A", True), (680, 700, "B", False)]))
+
+
+def test_city_has_mausoleum_fires_when_missing():
+    assert "city_has_mausoleum" in f(_city_dead(maus=[]))
+
+
+def test_city_has_mausoleum_fires_when_outside_walls():
+    assert "city_has_mausoleum" in f(_city_dead(maus=[(100, 100)]))
+
+
+def test_city_has_mausoleum_fires_when_far_from_quarter():
+    assert "city_has_mausoleum" in f(_city_dead(maus=[(260, 740)], gov=(740, 260)))
+
+
+def test_city_has_mausoleum_passes_when_by_quarter():
+    assert "city_has_mausoleum" not in f(_city_dead())
+
+
+def test_city_has_cremation_ground_fires_when_inside_walls():
+    assert "city_has_cremation_ground" in f(_city_dead(crem=[(500, 400)]))
+
+
+def test_city_has_cremation_ground_passes_when_outside():
+    assert "city_has_cremation_ground" not in f(_city_dead())
+
+
+def test_city_has_ossuary_fires_when_far_from_cremation():
+    assert "city_has_ossuary" in f(_city_dead(oss=[(900, 100)]))
+
+
+def test_city_has_ossuary_passes_when_by_cremation():
+    assert "city_has_ossuary" not in f(_city_dead())
+
+
+def _town_dead(crem, dwell=((300, 300),)):
+    return {"meta": {"scale": "town"},
+            "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for (x, y) in dwell],
+            "cemeteries": [{"x": 300, "y": 360, "w": 70, "h": 50, "rot": 0}],
+            "religious": [{"kind": "monastery", "x": 300, "y": 300, "w": 80, "h": 60, "label": "M", "graveyard": True}],
+            "cremation_grounds": [{"x": x, "y": y, "w": 116, "h": 80, "rot": 0} for (x, y) in crem]}
+
+
+def test_town_has_cremation_ground_fires_when_missing():
+    assert "town_has_cremation_ground" in f(_town_dead([]))
+
+
+def test_town_has_cremation_ground_fires_when_among_dwellings():
+    assert "town_has_cremation_ground" in f(_town_dead([(320, 300)]))
+
+
+def test_town_has_cremation_ground_passes_when_at_the_edge():
+    assert "town_has_cremation_ground" not in f(_town_dead([(900, 900)]))
 
 
 if __name__ == "__main__":

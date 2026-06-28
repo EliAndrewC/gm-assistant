@@ -6,7 +6,7 @@ building grain (s.bscale) than a village, so the rampart encloses the whole town
 Historically a Chinese walled county seat / Japanese jokamachi keeps the urban castes -
 merchants, artisans, LABORERS, servants, and samurai - INSIDE the walls, zoned around the
 magistrate's hilltop citadel; only the farmland/farmhouses, the segregated burakumin
-quarter, and a small guan-xiang gate-market lie outside. The surrounding farmers retreat
+neighborhood, and a small guan-xiang gate-market lie outside. The surrounding farmers retreat
 inside during a raid. The hill's steep back defends the north flank; the Imperial
 chrysanthemum field abuts the inside of the west rampart.
 """
@@ -52,7 +52,7 @@ s.manor(1300, 415, 360, 216, "Magistrate's Manor", gate_dir="south")   # gate fa
 # the S/SE/E faces hug the built core (the monastery + laborer quarters) rather than
 # enclosing empty corner space - a tighter line is cheaper to build (wall_hugs_the_town).
 # The south face rides just below the laborer blocks, dipping only at the center for a modest
-# gate forecourt; the east face encloses the cross-street and east quarter, then tapers up to
+# gate forecourt; the east face encloses the cross-street and east side, then tapers up to
 # the Bishamon monastery and the hill.
 WALL = [(1000, 500), (820, 720), (660, 960), (660, 1340),
         (780, 1410), (1100, 1440), (1300, 1500), (1500, 1440), (1800, 1340),
@@ -93,9 +93,9 @@ s.street(CROSS, width=22)
 # sit on the hill's slope to watch the performances; offset west of the main-street axis
 s.amphitheater(1080, 910, 80, label="amphitheater")
 
-# samurai quarter: lining the manor's approach, below the hill
+# samurai neighborhood: lining the manor's approach, below the hill
 s.pack((940, 880, 1680, 1060), ["samurai"] * 9, step=58)
-s.label(1300, 868, "samurai quarter", 11, italic=True)
+s.label(1300, 868, "samurai neighborhood", 11, italic=True)
 
 # merchants + shops FRONT the main avenue and the market cross-street (facing them)
 s.frontage(MAIN, (["merchant"] * 3 + ["shop"]) * 6, width=28, spacing=46, rows=2)
@@ -107,14 +107,14 @@ s.pack((1450, 1090, 1780, 1550), ["laborer"] * 17, step=42, face_streets="fill")
 s.label(1300, 1330, "merchant houses & shops", 10, italic=True, color="#5A4326")
 s.label(820, 1430, "laborers' & servants' tenements", 9, italic=True, color="#5A4326")
 
-# ---- OUTSIDE: a small guan-xiang gate-market, the segregated burakumin quarter, farm rings
+# ---- OUTSIDE: a small guan-xiang gate-market, the segregated burakumin neighborhood, farm rings
 s.pack((1080, 1600, 1540, 1794), ["merchant"] * 5 + ["shop"] * 5, step=46, face_streets=True)
 s.label(1300, 1600, "gate market", 10, italic=True, color="#5A4326")
 # the market flophouse (kichin-yado), OUTSIDE the gate beside the gate market: far-traveling
 # peasants who reach the town after the gate shuts at dusk sleep here for a sen before market day
 s.flophouse(1690, 1690)
 s.pack((2060, 1500, 2360, 1780), ["burakumin"] * 12, step=44)
-s.label(2210, 1484, "burakumin quarter", 11, italic=True, color="#6B4F2A")
+s.label(2210, 1484, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 # a noticeable minority of merchant houses keep a fireproof kura (rent-rice / bulk goods of the
 # absentee landlords whose tenants farm the surrounding land), drawn AFTER the businesses exist
 s.merchant_storehouses(6)
@@ -130,6 +130,34 @@ s.ring(OW2, 24, 40, ["plain"])
 # communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
+
+# a caravan INN + STABLES just INSIDE the front gate (caravans enter there), with open ground beside the
+# stables as a pasture for the wagon-train animals - like a provincial city's gate caravan facilities, but
+# a county town needs only the ONE; a WALLED town keeps it inside the rampart, FRONTING the main street
+s.inn(1398, 1024, rot=90)
+s.stables(1510, 1024)
+
+# harvest processing: the communal threshing/drying ground (hiroba) on the dry ground south of
+# the western field, among the outside farmhouses, with rice-drying racks (hazakake) beside it
+s.threshing_ground(380, 780, 70, 44, label="threshing ground")
+s.drying_rack(332, 700, 64, 0)
+s.drying_rack(428, 708, 64, 0)
+
+# the graveyard in the Bishamon monastery's precinct (the Buddhist danka parish ground)
+s.cemetery(1786, 1042, 88, 62, label="graveyard")               # the intramural parish ground, by the Bishamon monastery
+s.cemetery(1895, 1255, 120, 88, label="common burial ground")    # the MAIN burial ground (a town of ~1,200 over centuries) - large, extramural, well clear of the paddy
+# the cremation ground ADJOINS the external common ground (body burned, bones interred next door) -
+# the extramural funerary complex; monk-run with burakumin assistants
+s.cremation_ground(1915, 1348)
+
+# a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH /
+# RICH merchants in big homes near the commercial core, and the ~3 MASTER (rich) laborers in larger
+# dwellings among the tenements - the rest live small (the house-size variety a county town shows, like
+# a city); all inside the walls. Hand-placed LAST in pre-cleared gaps so they perturb no seeded pack.
+for mx, my in [(1034, 1048), (1772, 1168), (1082, 1366), (1400, 1402)]:
+    s.building(mx, my, *s._dims("merchant_large"), "merchant_large")
+for lx, ly in [(1024, 1152), (1174, 1152), (1510, 1152)]:
+    s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 
 s.title("Hirameki")
 s.compass()

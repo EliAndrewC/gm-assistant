@@ -1,0 +1,77 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "ring_road": [
+  [
+   240,
+   240
+  ],
+  [
+   760,
+   240
+  ],
+  [
+   760,
+   760
+  ],
+  [
+   240,
+   760
+  ],
+  [
+   240,
+   240
+  ]
+ ],
+ "ring_road_width": 15,
+ "alleys": [
+  {
+   "pts": [
+    [
+     400,
+     500
+    ],
+    [
+     280,
+     500
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_streets_meet_through_lanes"
+  ],
+  "source": "test_checks.py::test_city_streets_meet_through_lanes_fires_when_an_alley_undershoots_the_ring"
+ }
+}

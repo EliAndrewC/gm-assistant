@@ -1,0 +1,27 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "ministries": [
+  {
+   "name": "Ministry of Works",
+   "x": 500,
+   "y": 500,
+   "w": 88,
+   "h": 58
+  },
+  {
+   "name": "Ministry of Justice",
+   "x": 500,
+   "y": 560,
+   "w": 88,
+   "h": 58
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_government_offices_dont_abut"
+  ],
+  "source": "test_checks.py::test_city_government_offices_dont_abut_fires_when_two_ministries_touch"
+ }
+}

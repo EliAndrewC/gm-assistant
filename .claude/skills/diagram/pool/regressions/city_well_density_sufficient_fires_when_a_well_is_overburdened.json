@@ -1,0 +1,260 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "buildings": [
+  {
+   "kind": "laborer",
+   "x": 500,
+   "y": 500,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 515,
+   "y": 500,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 530,
+   "y": 500,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 545,
+   "y": 500,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 560,
+   "y": 500,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 575,
+   "y": 500,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 500,
+   "y": 515,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 515,
+   "y": 515,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 530,
+   "y": 515,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 545,
+   "y": 515,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 560,
+   "y": 515,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 575,
+   "y": 515,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 500,
+   "y": 530,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 515,
+   "y": 530,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 530,
+   "y": 530,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 545,
+   "y": 530,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 560,
+   "y": 530,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 575,
+   "y": 530,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 500,
+   "y": 545,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 515,
+   "y": 545,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 530,
+   "y": 545,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 545,
+   "y": 545,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 560,
+   "y": 545,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 575,
+   "y": 545,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 500,
+   "y": 560,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 515,
+   "y": 560,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 530,
+   "y": 560,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 545,
+   "y": 560,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 560,
+   "y": 560,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 575,
+   "y": 560,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  }
+ ],
+ "wells": [
+  {
+   "x": 500,
+   "y": 530,
+   "r": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_well_density_sufficient"
+  ],
+  "source": "test_checks.py::test_city_well_density_sufficient_fires_when_a_well_is_overburdened"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "watchtowers": [
+  {
+   "x": 100,
+   "y": 100,
+   "w": 20,
+   "h": 20,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "every_feature_classified_for_overlap"
+  ],
+  "source": "test_checks.py::test_every_feature_classified_for_overlap_fires_on_unknown_feature"
+ }
+}

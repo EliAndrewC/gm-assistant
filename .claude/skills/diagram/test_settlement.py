@@ -51,6 +51,26 @@ def test_set_view_records_meta_and_crops_viewbox():
         assert 'viewBox="500 400 1000 800"' in svg and 'viewBox="0 0 3000 2000"' not in svg
 
 
+def test_mausoleum_yields_walls_to_abutting_ward_fences():
+    # a wall that runs along a ward fence is re-stamped (the fence renders ON TOP - the wall runs
+    # underneath); exercises both the horizontal- and vertical-fence branches of _ward_fence_cap
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="C", scale="city")
+    s.ward("a", [(400, 600), (900, 600)], [])            # horizontal fence at y=600
+    s.mausoleum(600, 627, 54, 40, gate_dir="south")      # north wall y0=607 runs along it -> yields north
+    assert s.M["mausoleums"][-1]["ward_walls"] == ["north"]
+    s.ward("b", [(1200, 400), (1200, 900)], [])          # vertical fence at x=1200
+    s.mausoleum(1227, 650, 54, 40, gate_dir="east")      # west wall x0=1200 runs along it -> yields west
+    assert "west" in s.M["mausoleums"][-1]["ward_walls"]
+    # a fence that is parallel + aligned but does NOT overlap the wall's extent -> no yield (both axes)
+    s.ward("c", [(100, 200), (200, 200)], [])            # horizontal fence far left of...
+    s.mausoleum(700, 227, 54, 40, gate_dir="south")      # ...this north wall (no x-overlap)
+    assert "north" not in s.M["mausoleums"][-1]["ward_walls"]
+    s.ward("d", [(1500, 100), (1500, 250)], [])          # vertical fence high above...
+    s.mausoleum(1527, 650, 54, 40, gate_dir="east")      # ...this west wall (no y-overlap)
+    assert "west" not in s.M["mausoleums"][-1]["ward_walls"]
+
+
 def test_kido_records_ward_gates_in_both_orientations():
     s = Settlement(1000, 1000, seed=1)
     s.kido(500, 300, horizontal=True)        # E-W street gate

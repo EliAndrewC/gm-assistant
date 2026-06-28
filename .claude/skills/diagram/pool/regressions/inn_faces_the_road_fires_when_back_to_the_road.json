@@ -1,0 +1,42 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false
+ },
+ "houses": [],
+ "fields": [],
+ "buildings": [
+  {
+   "x": 500,
+   "y": 560,
+   "w": 66,
+   "h": 48,
+   "kind": "inn",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 640,
+   "w": 92,
+   "h": 44,
+   "kind": "stables",
+   "rot": 0
+  }
+ ],
+ "road": [
+  [
+   100,
+   500
+  ],
+  [
+   900,
+   500
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "inn_faces_the_road"
+  ],
+  "source": "test_checks.py::test_inn_faces_the_road_fires_when_back_to_the_road"
+ }
+}

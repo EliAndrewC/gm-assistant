@@ -1,0 +1,45 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "compass": {
+  "x": 300,
+  "y": 300
+ },
+ "fields": [
+  {
+   "outline": [
+    [
+     260,
+     260
+    ],
+    [
+     340,
+     260
+    ],
+    [
+     340,
+     340
+    ],
+    [
+     260,
+     340
+    ]
+   ],
+   "bbox": [
+    260,
+    260,
+    340,
+    340
+   ],
+   "name": "a",
+   "kind": "paddy"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "compass_clear"
+  ],
+  "source": "test_checks.py::test_compass_clear_fires_over_terrain"
+ }
+}

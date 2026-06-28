@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "labels": [
+  [
+   480,
+   490,
+   520,
+   510,
+   1,
+   "graveyard"
+  ]
+ ],
+ "religious": [
+  {
+   "kind": "monastery",
+   "x": 500,
+   "y": 500,
+   "w": 80,
+   "h": 50,
+   "label": "M"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_clear_of_other_buildings"
+  ],
+  "source": "test_checks.py::test_labels_clear_town_graveyard_label_over_temple_fires"
+ }
+}

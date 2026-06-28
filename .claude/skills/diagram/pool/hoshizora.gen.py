@@ -7,7 +7,7 @@ A county seat of ~1,200 people / ~238 households. Per budgets.md the population 
 (scaled down - others off-map - but every caste present and farmers the plurality):
 a rural farm zone NW around a stream, a dense urban core of merchant/laborer/servant
 buildings along the Imperial Road, the Magistrate's walled manor + samurai houses SW,
-the segregated burakumin quarter NE, an amphitheater, barns ringed by hayfield/grazing
+the segregated burakumin neighborhood NE, an amphitheater, barns ringed by hayfield/grazing
 pasture SE, and a small forest. Unwalled.
 """
 import math
@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(2000, 1300, seed=53)
+s = Settlement(2000, 1300, seed=78)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.
@@ -57,11 +57,14 @@ for bb, nm, fa in [(F1, "nw1", 22), (F2, "nw2", 24), (F3, "nw3", 18), (F4, "nw4"
 # ---- the Shrine to Bishamon, by the stream
 # a town's religious building is a monastery (not a village shrine), with a torii in front
 s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86,
-              kind="monastery", primary=True, torii=[(215, 892)])
+              kind="monastery", primary=True, torii=[(215, 892)], label_below=True)
 
 # ---- the Magistrate's walled manor (county seat) - walls only; its interior
-# (hall, stables, etc.) is the subject of a separate Mode A diagram
-s.manor(500, 1120, 250, 180, "Magistrate's Manor", "county seat")
+# (hall, stables, etc.) is the subject of a separate Mode A diagram. TILTED (rot=-30) so its front
+# wall runs PARALLEL to the Imperial Road, which crosses NW-to-NE just past this SW edge; the gate
+# (north side) opens onto that road. The tilted footprint reshuffles the dense town's seeded packs,
+# which is why this map's seed (78) was chosen - it lands the depicted population back on its mark.
+s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)
 
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
 # travelling in for market day arrive - they sleep on straw for a sen a night
@@ -79,15 +82,15 @@ s.label(1200, 1058, "barns", 10, italic=True)
 # laborers' and servants' housing sits back off the road, behind the shopfronts.
 ROAD_CORE = [(470, 945), (760, 760), (1060, 600), (1360, 450), (1700, 278)]
 s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 11, width=26, setback=16, spacing=48, rows=2, skip=ROAD)
-s.label(1180, 360, "merchant houses & shops (fronting the road)", 11, italic=True, color="#5A4326")
+s.label(972, 586, "merchant houses & shops", 11, italic=True, color="#5A4326")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
 s.pack((740, 235, 1320, 470), ["laborer"] * 24, step=42)
 s.pack((1165, 705, 1580, 918), ["servant"] * 13 + ["laborer"] * 13, step=42)
 s.label(1010, 224, "laborers' dwellings (set back off the road)", 10, italic=True, color="#5A4326")
 
-# ---- the segregated burakumin quarter (NE edge)
+# ---- the segregated burakumin neighborhood (NE edge)
 s.pack((1700, 380, 1972, 700), ["burakumin"] * 12, step=44)
-s.label(1832, 360, "burakumin quarter", 11, italic=True, color="#6B4F2A")
+s.label(1832, 360, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 
 # ---- samurai houses, around the magistrate's manor (SW); their servants live within
 # the manor/samurai compounds, not as separate huts
@@ -110,8 +113,44 @@ for bb in (F1, F2, F3, F4):
 # the rest draw from the irrigation pond/channels/stream
 s.place_wells((85, 110, 1930, 1260), spacing=290, near=85)
 
+# a caravan INN + STABLES on the Imperial Road through-route, with open ground beside the stables as a
+# pasture for the wagon-train animals (oxen, horses) - like a provincial city's gate caravan facilities,
+# but a county town needs only the ONE; it FRONTS the Imperial Road on the quiet SW approach (caravans pull up to it)
+s.inn(276, 1116, rot=150)
+s.stables(276, 1202, rot=150)
+
+# harvest processing: the communal threshing/drying ground (hiroba) on dry ground AT the edge of
+# field F2 among the NW farmhouses - close to the farmland it serves and NORTH of the Imperial Road
+# (not marooned across the road), with rice-drying racks (hazakake) along the field edge beside it
+s.threshing_ground(354, 792, 62, 42, label="threshing ground")
+s.drying_rack(339, 695, 60, 0)
+s.drying_rack(385, 729, 60, 0)
+
+# the funerary ground BEHIND the monastery (N of it, away from the Imperial Road): the parish
+# graveyard (Buddhist danka) right against the BACK of the hall (well clear of the stream to the N),
+# with the cremation ground on the marginal
+# western edge beyond it - clear of the dwellings. Both sit behind the hall so no one walks past
+# the pyre to reach the monastery (gated by cremation_ground_not_between_temple_and_road).
+s.cemetery(215, 705, 110, 80, label="graveyard", label_above=True)
+# the cremation ground (monk-run, burakumin assistants) on the western marginal edge; its label
+# sits ABOVE the glyph so it clears the long "Monastery of Bishamon" label just to the east
+s.cremation_ground(95, 695, label_above=True)
+
+# a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH /
+# RICH merchants in big homes. These sit in a tight band DIRECTLY BEHIND the storefronts (a short step
+# off the road, ahead of the laborer warren further back) - the merchant family lives over/behind its
+# own shop - and the ~3 MASTER (rich) laborers in larger dwellings at the edge of the warren. The rest
+# live small (the house-size variety a county town shows, like a city). Hand-placed LAST in pre-cleared
+# gaps so they perturb no seeded pack; the band reads cleanly: shops -> merchant homes -> gap -> laborers.
+# Each is TILTED to the local road angle (~-27deg) so it lies PARALLEL to the storefronts directly in
+# front of it - housing behind a shop shares the shop's orientation (merchant_housing_aligned_with_storefronts).
+for mx, my, mr in [(1136, 433, -27), (1040, 481, -29), (880, 571, -29), (1260, 619, -27)]:
+    s.building(mx, my, *s._dims("merchant_large"), "merchant_large", rot=mr)
+for lx, ly in [(1328, 235), (740, 298)]:
+    s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
+
 s.title("Hoshizora")
-s.compass()
+s.compass(1950, 50)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

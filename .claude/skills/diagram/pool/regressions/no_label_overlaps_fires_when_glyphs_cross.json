@@ -1,0 +1,27 @@
+{
+ "meta": {},
+ "labels": [
+  [
+   40,
+   740,
+   143,
+   752,
+   1,
+   "cremation ground"
+  ],
+  [
+   140,
+   736,
+   290,
+   750,
+   2,
+   "Monastery of Bishamon"
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "no_label_overlaps"
+  ],
+  "source": "test_checks.py::test_no_label_overlaps_fires_when_glyphs_cross"
+ }
+}

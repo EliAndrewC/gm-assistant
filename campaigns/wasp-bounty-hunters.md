@@ -308,7 +308,7 @@ Kakita Foruku challenged Shione Agus to a duel on the Autumnal equinox of last y
 
 h4. **The Silk-Stained Three** [50 koku]
 
-Daidoji no Etsuko Azami was waylaid on the road to Shiro Reiji on the 3rd Day of the Month of the Dragon of this year, and 8 bolts of dyed silk were taken.  The bandits were two men and one woman.  Azami threw a sukumo (fermented indigo) dye onto the clothes and faces and hands of the men.  The indigo under their cuticles may take up to a few months to fully fade.
+Daidoji no Etsuko Azami was waylaid on the road to Shiro Reiji on the 3rd Day of the Month of the Dragon of this year, and 8 bolts of dyed silk were taken.  The bandits were two men and one woman.  Azami threw a jug of active liquid indigo dye (*ai-date*) onto the clothes, faces, and hands of the men.  The indigo under their cuticles may take up to a few months to fully fade.
 
 h4. **Daidoji Maku** [50 koku]
 

@@ -1,0 +1,60 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "gate_structs": [
+  {
+   "x": 420,
+   "y": 256,
+   "w": 66,
+   "h": 44,
+   "rot": 90,
+   "kind": "guardhouse",
+   "z": 1
+  },
+  {
+   "x": 360,
+   "y": 256,
+   "w": 60,
+   "h": 44,
+   "rot": 90,
+   "kind": "inspection",
+   "z": 1
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_gate_furniture_aligned"
+  ],
+  "source": "test_checks.py::test_city_gate_furniture_aligned_fires_on_a_90_degree_turn"
+ }
+}

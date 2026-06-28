@@ -1,0 +1,40 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "road": [
+  [
+   100,
+   200
+  ],
+  [
+   900,
+   200
+  ]
+ ],
+ "cremation_grounds": [
+  {
+   "x": 300,
+   "y": 260,
+   "w": 116,
+   "h": 80,
+   "rot": 0
+  }
+ ],
+ "cemeteries": [
+  {
+   "x": 300,
+   "y": 360,
+   "w": 100,
+   "h": 72,
+   "rot": 0,
+   "parish": true
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "cremation_ground_set_back_from_main_road"
+  ],
+  "source": "test_checks.py::test_cremation_set_back_from_road_fires_when_on_the_road"
+ }
+}

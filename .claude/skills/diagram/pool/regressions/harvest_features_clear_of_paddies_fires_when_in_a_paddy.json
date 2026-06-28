@@ -1,0 +1,59 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "fields": [
+  {
+   "outline": [
+    [
+     400,
+     400
+    ],
+    [
+     600,
+     400
+    ],
+    [
+     600,
+     550
+    ],
+    [
+     400,
+     550
+    ]
+   ],
+   "bbox": [
+    400,
+    400,
+    600,
+    550
+   ],
+   "name": "f",
+   "kind": "paddy"
+  }
+ ],
+ "houses": [
+  {
+   "x": 500,
+   "y": 475,
+   "w": 30,
+   "h": 24,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "threshing": [
+  {
+   "x": 500,
+   "y": 475,
+   "rx": 62,
+   "ry": 42
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "harvest_features_clear_of_paddies"
+  ],
+  "source": "test_checks.py::test_harvest_features_clear_of_paddies_fires_when_in_a_paddy"
+ }
+}

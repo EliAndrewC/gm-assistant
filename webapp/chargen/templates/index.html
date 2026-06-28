@@ -11,7 +11,8 @@
 <script src="//cdn.jsdelivr.net/npm/@yaireo/tagify@4/dist/tagify.min.js"></script>
 <script>
     var types = {{ types|tojson }},
-        config = {{ config|tojson }};
+        config = {{ config|tojson }},
+        ministries = {{ ministries|tojson }};
 
     String.prototype.title = function () {
         return this.substring(0, 1).toUpperCase() + this.substring(1);
@@ -29,8 +30,12 @@
             });
             var options = $dest.find('option[value!=""]');
             if (options.length === 1) {
-                $dest.val(options.first().val()).change();
+                $dest.val(options.first().val());
             }
+            // Always fire change so the reset cascades to deeper levels (and
+            // the Location dropdown), not just when a single option auto-selects.
+            // Otherwise switching to a multi-option level leaves stale children.
+            $dest.change();
         });
     };
 
@@ -45,7 +50,7 @@
     var tagify = null;
 
     $(function () {
-        $.each(['base_rank', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit'], function (i, s) {
+        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         // The two Upload buttons (top of form + next to Generate Art) act as
@@ -67,26 +72,280 @@
             dom.$type.append($('<option></option>').attr('value', type).text(type.title()));
         });
 
-        // Rank dropdown cascades off type. config.ranks is keyed by type
-        // (Samurai / Monk / Peasant / Legionnaire); each value is {N: label}.
-        var populateRanks = function () {
-            dom.$base_rank.empty().append('<option value="">- any -</option>');
-            var ranksForType = _.get(config.ranks, dom.$type.val()) || {};
-            _.each(ranksForType, function (label, rank) {
-                dom.$base_rank.append(
-                    $('<option></option>').attr('value', rank).text(rank + '. ' + label));
+        // Rank dropdown is a custom widget (native <select> can't do hover
+        // flyouts). config.ranks is keyed by type; each value is {N: label}.
+        // A samurai's rank is seniority, not job - most Rank 8 samurai are not
+        // Governors - so each Samurai rank fans out to an actual posting:
+        // Unposted, Yoriki (by ministry), Magistrate (Ministry of Justice), or
+        // Clerk (by ministry). Clicking the rank itself keeps its default
+        // designator. Non-Samurai types get a plain flat menu.
+        var rankSelection = { rank: '', post: '', ministry: '', label: '- any -' };
+
+        // Hover intent for the flyouts: open a beat after the pointer settles on
+        // a parent (so brushing past a sibling on the way to a flyout doesn't
+        // hijack it) and close after a short grace period (so the diagonal trip
+        // from a row to its flyout doesn't make it vanish before you arrive).
+        // Per-item timers, and the open timer re-checks ":hover" when it fires -
+        // so a momentary mouseleave/enter flicker (e.g. a bottom row at the
+        // viewport edge) can't cancel an open that should happen.
+        var OPEN_DELAY = 110,
+            CLOSE_DELAY = 300;
+        var timers = new WeakMap();
+        var timersFor = function (item) {
+            var t = timers.get(item);
+            if (!t) {
+                t = { open: null, close: null };
+                timers.set(item, t);
+            }
+            return t;
+        };
+
+        var closeParent = function (item) {
+            var t = timersFor(item);
+            clearTimeout(t.open);
+            clearTimeout(t.close);
+            item.classList.remove('is-open');
+            $(item).find('.rank-select__item--parent.is-open').each(function () {
+                var ct = timersFor(this);
+                clearTimeout(ct.open);
+                clearTimeout(ct.close);
+                this.classList.remove('is-open');
             });
         };
-        dom.$type.on('change', populateRanks);
-        populateRanks();  // initial populate for the default-selected type
+        var openParent = function (item) {
+            var $sub = $(item).children('.rank-select__submenu').first();
+            if (!$sub.length) return;
+            // only one flyout open per level
+            $(item).siblings('.rank-select__item--parent.is-open').each(function () { closeParent(this); });
+            item.classList.add('is-open');  // show first, so positionSubmenu measures correctly
+            positionSubmenu(item, $sub);  // defined below (var-hoisted; runs on hover)
+        };
+
+        var closeRankMenu = function () {
+            dom.$rank_select.removeClass('is-open');
+            dom.$rank_menu.find('.rank-select__item--parent.is-open').each(function () {
+                closeParent(this);
+            });
+        };
+
+        var setRankSelection = function (sel) {
+            rankSelection = sel;
+            dom.$rank_toggle.text(sel.label);
+            closeRankMenu();
+            // Rank crossing the >8 threshold changes the Location default.
+            // Guarded: updateLocationDefault is defined later (var-hoisted) and
+            // is undefined during the initial buildRankMenu() call.
+            if (typeof updateLocationDefault === 'function') updateLocationDefault();
+        };
+
+        // A clickable selection row that commits `sel` and closes the menu.
+        var rankLeaf = function (text, sel) {
+            return $('<div class="rank-select__row"></div>')
+                .text(text)
+                .on('click', function (e) {
+                    e.stopPropagation();
+                    setRankSelection(sel);
+                });
+        };
+
+        // Flyout of the six ministries, for Yoriki / Clerk postings.
+        var ministrySubmenu = function (rank, post) {
+            var $sub = $('<ul class="rank-select__submenu"></ul>');
+            _.each(ministries, function (m) {
+                $sub.append($('<li class="rank-select__item"></li>').append(
+                    rankLeaf(m, {
+                        rank: rank, post: post, ministry: m,
+                        label: rank + '. ' + post.title() + ' - ' + m
+                    })
+                ));
+            });
+            return $sub;
+        };
+
+        // A non-selectable parent row that only reveals its flyout on hover.
+        var parentRow = function (text) {
+            return $('<div class="rank-select__row"></div>').text(text);
+        };
+
+        // Flyout of postings for a single Samurai rank. Ranks whose default
+        // designator is already "Magistrate" (ranks 3-4) omit the Magistrate
+        // option, since that is their default.
+        var postSubmenu = function (rank, includeMagistrate) {
+            var $sub = $('<ul class="rank-select__submenu"></ul>');
+            $sub.append($('<li class="rank-select__item"></li>').append(
+                rankLeaf('Unposted', { rank: rank, post: 'unposted', ministry: '', label: rank + '. Unposted' })
+            ));
+            $sub.append($('<li class="rank-select__item rank-select__item--parent"></li>')
+                .append(parentRow('Yoriki')).append(ministrySubmenu(rank, 'yoriki')));
+            if (includeMagistrate) {
+                $sub.append($('<li class="rank-select__item"></li>').append(
+                    rankLeaf('Magistrate', { rank: rank, post: 'magistrate', ministry: 'Ministry of Justice', label: rank + '. Magistrate' })
+                ));
+            }
+            $sub.append($('<li class="rank-select__item rank-select__item--parent"></li>')
+                .append(parentRow('Clerk')).append(ministrySubmenu(rank, 'clerk')));
+            return $sub;
+        };
+
+        var anySelection = function () {
+            return { rank: '', post: '', ministry: '', label: '- any -' };
+        };
+
+        var buildRankMenu = function () {
+            var $menu = dom.$rank_menu.empty();
+            var ranksForType = _.get(config.ranks, dom.$type.val()) || {};
+            var isSamurai = (dom.$type.val() === 'Samurai');
+
+            $menu.append($('<li class="rank-select__item"></li>').append(
+                rankLeaf('- any -', anySelection())
+            ));
+            _.each(ranksForType, function (label, rank) {
+                var text = rank + '. ' + label;
+                var defaultSel = { rank: rank, post: '', ministry: '', label: text };
+                if (isSamurai) {
+                    // Clicking the rank picks its default designator; hovering
+                    // reveals the posting flyout. Magistrate-default ranks drop
+                    // the redundant Magistrate option from that flyout.
+                    $menu.append($('<li class="rank-select__item rank-select__item--parent"></li>')
+                        .append(rankLeaf(text, defaultSel))
+                        .append(postSubmenu(rank, label !== 'Magistrate')));
+                } else {
+                    $menu.append($('<li class="rank-select__item"></li>').append(rankLeaf(text, defaultSel)));
+                }
+            });
+
+            setRankSelection(anySelection());  // reset when type changes
+        };
+
+        // The menus are position:fixed, so JS places them relative to the
+        // viewport. This keeps them from extending the page (which would toggle
+        // a scrollbar and cause the hover "jitter") and keeps flyouts on-screen.
+        var GAP = 2;  // px
+
+        var positionRankMenu = function () {
+            var r = dom.$rank_toggle[0].getBoundingClientRect();
+            var top = Math.round(r.bottom + GAP);
+            dom.$rank_menu.css({
+                top: top + 'px',
+                left: Math.round(r.left) + 'px',
+                minWidth: Math.round(r.width) + 'px',
+                // Cap to the space below the toggle so it never runs off the
+                // bottom (it scrolls internally instead - the page can't grow).
+                maxHeight: (window.innerHeight - top - 8) + 'px',
+            });
+        };
+
+        // Place a flyout beside the row that opened it: to the right normally,
+        // flipped left if it would overflow, and nudged up if it would run off
+        // the bottom - all clamped inside the viewport (taller-than-screen
+        // menus scroll internally).
+        var positionSubmenu = function (itemEl, $sub) {
+            $sub.css('max-height', (window.innerHeight - 8) + 'px');
+            var item = itemEl.getBoundingClientRect();
+            var w = $sub.outerWidth(), h = $sub.outerHeight();
+            var left = item.right - 1;
+            if (left + w > window.innerWidth - 4) left = item.left - w + 1;  // flip left
+            left = Math.max(4, Math.min(left, window.innerWidth - w - 4));
+            var top = Math.max(4, Math.min(item.top - 1, window.innerHeight - h - 4));
+            $sub.css({ top: Math.round(top) + 'px', left: Math.round(left) + 'px' });
+        };
+
+        dom.$rank_toggle.on('click', function (e) {
+            e.stopPropagation();
+            dom.$rank_select.toggleClass('is-open');
+            if (dom.$rank_select.hasClass('is-open')) positionRankMenu();
+        });
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#rank_select').length) closeRankMenu();
+        });
+
+        dom.$rank_menu.on('mouseenter', '.rank-select__item--parent', function () {
+            var item = this,
+                t = timersFor(item);
+            clearTimeout(t.close);
+            // back inside an ancestor's subtree - cancel its pending close
+            $(item).parents('.rank-select__item--parent').each(function () {
+                clearTimeout(timersFor(this).close);
+            });
+            if (!item.classList.contains('is-open')) {
+                clearTimeout(t.open);
+                // Fire-time :hover check makes this robust to flicker - a brief
+                // leave/enter won't drop the open, and a sibling we only passed
+                // over won't open (it isn't hovered when its timer fires).
+                t.open = setTimeout(function () {
+                    if (item.matches(':hover')) openParent(item);
+                }, OPEN_DELAY);
+            }
+        });
+        dom.$rank_menu.on('mouseleave', '.rank-select__item--parent', function () {
+            var item = this;
+            if (item.classList.contains('is-open')) {
+                var t = timersFor(item);
+                clearTimeout(t.close);
+                t.close = setTimeout(function () {
+                    if (!item.matches(':hover')) closeParent(item);
+                }, CLOSE_DELAY);
+            }
+        });
+
+        dom.$type.on('change', buildRankMenu);
+        buildRankMenu();  // initial build for the default-selected type
 
         dropdownPopulator('clan', 'family');
         dropdownPopulator('family', 'house');
         dropdownPopulator('house', 'lineage');
 
+        // Location dropdown: options come from the selected House's [locations]
+        // config; the default selection is derived from the lineage's
+        // provincial annotation and the rank, mirroring Samurai._derive_location
+        // on the backend (capital above Rank 8; a provincial lineage's province
+        // at Rank <=8; blank otherwise). When the dropdown is left on "- auto -"
+        // the backend re-derives, so random Rank/Lineage still get a location.
+        var locationConfig = function () {
+            return _.get(config.locations, dom.$house.val()) || {};
+        };
+
+        var computeDefaultLocation = function () {
+            var loc = locationConfig();
+            if (_.isEmpty(loc)) return '';
+            var rank = rankSelection.rank, lineage = dom.$lineage.val();
+            if (!rank || !lineage) return '';  // unknown -> defer to backend
+            if (parseInt(rank, 10) > 8) return loc.capital || '';
+            return _.get(config.provincial_lineages, [dom.$house.val(), lineage]) || '';
+        };
+
+        var updateLocationDefault = function () {
+            if (!dom.$location || !dom.$location.length) return;
+            dom.$location.val(computeDefaultLocation());  // '' selects "- auto -"
+        };
+
+        var populateLocations = function () {
+            var loc = locationConfig();
+            dom.$location.empty().append('<option value="">- auto -</option>');
+            if (loc.capital) {
+                dom.$location.append($('<option></option>').attr('value', loc.capital).text(loc.capital));
+            }
+            _.each(loc.provinces || [], function (prov) {
+                dom.$location.append($('<option></option>').attr('value', prov).text(prov));
+            });
+            updateLocationDefault();
+        };
+
+        // House sets the options (bound after house->lineage so lineage is
+        // current); lineage sets the default within those options.
+        dom.$house.on('change', populateLocations);
+        dom.$lineage.on('change', updateLocationDefault);
+        populateLocations();  // initial state for the default-selected cascade
+
         dom.$generate.on('click', function () {
-            var params = {};
-            _(['base_rank', 'type', 'clan', 'family', 'house', 'lineage']).each(function (field) {
+            var params = {
+                type: dom.$type.val(),
+                base_rank: rankSelection.rank,
+                post: rankSelection.post,
+                ministry: rankSelection.ministry,
+                location: dom.$location.val()
+            };
+            _(['clan', 'family', 'house', 'lineage']).each(function (field) {
                 params[field] = dom['$' + field].val();
             });
             $.getJSON('/chargen/generate', _.pickBy(params), function (character) {
@@ -301,12 +560,13 @@
       <span class="chargen-field__label">Type</span>
       <select id="type" class="chargen-field__select"></select>
     </label>
-    <label class="chargen-field">
+    <div class="chargen-field">
       <span class="chargen-field__label">Rank</span>
-      <select id="base_rank" class="chargen-field__select">
-        <option value="">- any -</option>
-      </select>
-    </label>
+      <div class="rank-select" id="rank_select">
+        <button type="button" class="chargen-field__select rank-select__toggle" id="rank_toggle">- any -</button>
+        <ul class="rank-select__menu" id="rank_menu"></ul>
+      </div>
+    </div>
     <label class="chargen-field">
       <span class="chargen-field__label">Clan</span>
       <select id="clan" class="chargen-field__select">
@@ -332,6 +592,12 @@
       <span class="chargen-field__label">Lineage</span>
       <select id="lineage" class="chargen-field__select">
         <option value="">- any -</option>
+      </select>
+    </label>
+    <label class="chargen-field">
+      <span class="chargen-field__label">Location</span>
+      <select id="location" class="chargen-field__select">
+        <option value="">- auto -</option>
       </select>
     </label>
   </div>

@@ -210,12 +210,46 @@ class Character:
 
 
 class Samurai(Character):
-    def __init__(self, base_rank, clan=None, family=None, house=None, lineage=None, school=None):
+    def __init__(
+        self,
+        base_rank,
+        clan=None,
+        family=None,
+        house=None,
+        lineage=None,
+        school=None,
+        post='',
+        ministry='',
+        location='',
+    ):
         self.base_rank = int(base_rank)
-        self.rank = rounded(
-            normalvariate(self.base_rank, 0.3), minval=self.base_rank - 1, maxval=self.base_rank + 1
-        )
-        self.recognition = rounded(normalvariate(self.rank, 1))
+        # A samurai's rank is their seniority, not their job: most Rank 8
+        # samurai are not Governors. `post` (and `ministry`, for clerks and
+        # yoriki) records their actual government posting, overriding the
+        # default rank designator when generating tags. Set before
+        # Character.__init__, which calls gen_tags().
+        self.post = post
+        self.ministry = ministry
+        # Explicit Location dropdown override ('' means auto-derive from rank
+        # and the lineage's provincial annotation - see _derive_location).
+        self._location_input = location
+        if self.post or self.base_rank <= 4:
+            # Lesser, generic roles - a posting (clerk, ministry magistrate,
+            # yoriki, unposted) or the low rank-3/4 "Magistrate" designators
+            # (street magistrates) - are not a senior named office, so their
+            # rank is fuzzier: keep the wider jitter, up to a full rank either
+            # way. (Rank 5 / County Magistrate is the first senior office, the
+            # same > 4 threshold used in _post_tags.)
+            self.rank = rounded(
+                normalvariate(self.base_rank, 0.3),
+                minval=self.base_rank - 1,
+                maxval=self.base_rank + 1,
+            )
+        else:
+            # Holds a senior named office (County Magistrate, Governor, ...,
+            # up to daimyo): the rank is exact, varying only between its lower
+            # (x.0) and upper (x.5) half, 50/50.
+            self.rank = self.base_rank + choice([0.0, 0.5])
 
         self.clan = clan or weighted_choice(config['clans'])
         self.family = family or weighted_choice(config['clan'].get(self.clan, {}))
@@ -224,6 +258,20 @@ class Samurai(Character):
         self.school = school or weighted_choice(
             config['schools'].get(self.clan, config['schools']['default'])
         )
+        # Senior members of a ruling house outrank their nominal office (needs
+        # clan/family/house, set just above); this is what promotes a house
+        # daimyo (12) to a Family (13) or Clan (14) daimyo.
+        self.rank = min(15.0, self.rank + self._rank_bonus())
+        # Recognition varies up to 2 in either direction around the resolved
+        # rank, clamped to the 1-15 scale.
+        self.recognition = rounded(
+            normalvariate(self.rank, 1.5),
+            minval=max(1, self.rank - 2),
+            maxval=min(15, self.rank + 2),
+        )
+        # Resolve the location now that house/lineage/base_rank are known, so
+        # gen_tags() (called by Character.__init__) can tag it.
+        self.location = self._derive_location()
 
         Character.__init__(self)
 
@@ -249,10 +297,89 @@ class Samurai(Character):
         """Samurai get additional samurai-specific traits."""
         return dict(Character._trait_pool(self), **c.SAMURAI_TRAITS)
 
+    def _rank_bonus(self) -> float:
+        """Rank bump for senior members (Deputy Minister, rank 9, and above) of
+        a ruling house.
+
+        +2.0 for the ruling house of a clan's ruling family (the families in
+        `ruling_families`) and for all Imperial families; +1.0 for the ruling
+        house of any other Great Clan family. Minor clans get no bump at all. A
+        "ruling house" is the family's main line: the house named for the
+        family, or - when the family has no vassal houses defined - no house at
+        all. Vassal/cadet houses never get a bump.
+        """
+        if self.base_rank < 9:
+            return 0.0
+        if self.house not in ('', self.family):
+            return 0.0
+        if self.clan == 'imperial':
+            return 2.0
+        ruling = config.get('ruling_families', [])
+        if self.family in ruling:
+            return 2.0
+        # +1.0 only within a Great Clan (one that has a ruling family listed);
+        # minor clans, whose sole family is their ruling family, get nothing.
+        great_clans = {
+            clan for clan, families in config['clan'].items() if any(f in ruling for f in families)
+        }
+        return 1.0 if self.clan in great_clans else 0.0
+
     def gen_tags(self) -> list[str]:
-        return Character.gen_tags(self) + (
-            [config['ranks']['Samurai'][str(self.base_rank)]] if self.base_rank > 4 else []
+        return (
+            Character.gen_tags(self)
+            + self._post_tags()
+            + ([self.location] if self.location else [])
         )
+
+    def _derive_location(self) -> str:
+        """Resolve the samurai's location (the value the Location dropdown shows).
+
+        An explicit dropdown choice (`_location_input`) always wins. Otherwise
+        it is auto-derived from the House's `[locations]` config and the
+        lineage's provincial annotation:
+
+        - no location config for the House -> blank (most Houses);
+        - above Rank 8 -> the capital;
+        - a provincial lineage at Rank <=8 -> that lineage's province;
+        - otherwise (cosmopolitan lineage at Rank <=8) -> blank.
+
+        The chosen location is tagged; the provincial/cosmopolitan distinction
+        itself never is.
+        """
+        if self._location_input:
+            return self._location_input
+        house_locations = config.get('locations', {}).get(self.house, {})
+        if not house_locations:
+            return ''
+        if self.base_rank > 8:
+            return house_locations.get('capital', '')
+        return config.get('provincial_lineages', {}).get(self.house, {}).get(self.lineage, '')
+
+    def _post_tags(self) -> list[str]:
+        """Tags describing the samurai's government posting.
+
+        An explicit `post` replaces the default rank designator: the Rank
+        dropdown lets the GM pick what a samurai actually does rather than
+        assume the top job for their rank. Clerks and yoriki are tagged with
+        their ministry; magistrates default to the Ministry of Justice (this is
+        the imperial magistracy, distinct from the rank-5 "County Magistrate"
+        designator). "Unposted" deliberately yields no posting tag.
+
+        Ranks whose default designator is itself "Magistrate" (ranks 3-4)
+        default to the magistrate posting even with no explicit `post`, so a
+        random or roster-generated samurai at those ranks is tagged the same as
+        one picked via the dropdown.
+        """
+        designator = config['ranks']['Samurai'].get(str(self.base_rank), '')
+        if self.post == 'unposted':
+            return []
+        if self.post == 'magistrate' or (not self.post and designator == 'Magistrate'):
+            return ['Magistrate', 'Ministry of Justice']
+        if self.post in ('yoriki', 'clerk'):
+            return [self.post.title()] + ([self.ministry] if self.ministry in c.MINISTRIES else [])
+        # No explicit posting: fall back to the rank designator (e.g. Governor),
+        # which is only meaningful above the rank-4 floor.
+        return [designator] if self.base_rank > 4 else []
 
 
 class Peasant(Character):

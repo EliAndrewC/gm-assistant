@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "houses": [
+  {
+   "x": 900,
+   "y": 900,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  },
+  {
+   "x": 1000,
+   "y": 900,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  },
+  {
+   "x": 950,
+   "y": 1000,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "manors": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 120,
+   "h": 90,
+   "rot": 0,
+   "gate_dir": "north",
+   "gate": [
+    300,
+    300
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "manor_gate_faces_town"
+  ],
+  "source": "test_checks.py::test_manor_gate_faces_town_fires_facing_away"
+ }
+}

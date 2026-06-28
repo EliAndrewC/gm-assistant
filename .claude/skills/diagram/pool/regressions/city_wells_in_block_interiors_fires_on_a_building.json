@@ -1,0 +1,28 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wells": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 8
+  }
+ ],
+ "buildings": [
+  {
+   "kind": "laborer",
+   "x": 505,
+   "y": 505,
+   "w": 40,
+   "h": 30,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_wells_in_block_interiors"
+  ],
+  "source": "test_checks.py::test_city_wells_in_block_interiors_fires_on_a_building"
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "cemeteries": [
+  {
+   "x": 300,
+   "y": 360,
+   "w": 70,
+   "h": 50,
+   "rot": 0
+  }
+ ],
+ "religious": [
+  {
+   "kind": "monastery",
+   "x": 300,
+   "y": 300,
+   "w": 80,
+   "h": 60,
+   "label": "M",
+   "graveyard": true
+  }
+ ],
+ "cremation_grounds": [
+  {
+   "x": 320,
+   "y": 300,
+   "w": 116,
+   "h": 80,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_has_cremation_ground"
+  ],
+  "source": "test_checks.py::test_town_has_cremation_ground_fires_when_among_dwellings"
+ }
+}

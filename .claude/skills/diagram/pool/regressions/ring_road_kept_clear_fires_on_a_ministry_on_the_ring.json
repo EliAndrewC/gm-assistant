@@ -1,0 +1,72 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "ring_road": [
+  [
+   240,
+   240
+  ],
+  [
+   760,
+   240
+  ],
+  [
+   760,
+   760
+  ],
+  [
+   240,
+   760
+  ],
+  [
+   240,
+   240
+  ]
+ ],
+ "ring_road_width": 15,
+ "ministries": [
+  {
+   "name": "Ministry of Rites",
+   "x": 760,
+   "y": 500,
+   "w": 50,
+   "h": 50
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "ring_road_kept_clear"
+  ],
+  "source": "test_checks.py::test_ring_road_kept_clear_fires_on_a_ministry_on_the_ring"
+ }
+}

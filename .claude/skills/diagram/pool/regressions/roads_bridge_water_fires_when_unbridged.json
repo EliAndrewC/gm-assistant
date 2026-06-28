@@ -1,0 +1,41 @@
+{
+ "meta": {
+  "scale": "village",
+  "W": 1000,
+  "H": 1000
+ },
+ "road": [
+  [
+   100,
+   500
+  ],
+  [
+   900,
+   500
+  ]
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     900
+    ]
+   ],
+   "frm": null,
+   "to": null,
+   "w": 9
+  }
+ ],
+ "bridges": [],
+ "_regression": {
+  "fires": [
+   "roads_bridge_water"
+  ],
+  "source": "test_checks.py::test_roads_bridge_water_fires_when_unbridged"
+ }
+}

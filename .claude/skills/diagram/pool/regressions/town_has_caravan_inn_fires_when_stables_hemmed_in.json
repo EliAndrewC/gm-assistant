@@ -1,0 +1,72 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false
+ },
+ "houses": [],
+ "fields": [],
+ "buildings": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 66,
+   "h": 48,
+   "kind": "inn",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 560,
+   "w": 92,
+   "h": 44,
+   "kind": "stables",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 560,
+   "w": 20,
+   "h": 16,
+   "kind": "laborer",
+   "rot": 0
+  },
+  {
+   "x": 508,
+   "y": 560,
+   "w": 20,
+   "h": 16,
+   "kind": "laborer",
+   "rot": 0
+  },
+  {
+   "x": 516,
+   "y": 560,
+   "w": 20,
+   "h": 16,
+   "kind": "laborer",
+   "rot": 0
+  },
+  {
+   "x": 524,
+   "y": 560,
+   "w": 20,
+   "h": 16,
+   "kind": "laborer",
+   "rot": 0
+  },
+  {
+   "x": 532,
+   "y": 560,
+   "w": 20,
+   "h": 16,
+   "kind": "laborer",
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_has_caravan_inn"
+  ],
+  "source": "test_checks.py::test_town_has_caravan_inn_fires_when_stables_hemmed_in"
+ }
+}

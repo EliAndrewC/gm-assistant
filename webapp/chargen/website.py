@@ -74,6 +74,7 @@ class Root:
                 {
                     'config': _safe_config_for_frontend(),
                     'types': list(Character.types().keys()),
+                    'ministries': c.MINISTRIES,
                     'current_user': _l7r_current_user(),
                 }
             )

@@ -1,0 +1,19 @@
+{
+ "meta": {},
+ "labels": [
+  [
+   1750,
+   500,
+   1900,
+   512,
+   1,
+   "off the right edge"
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "labels_within_image"
+  ],
+  "source": "test_checks.py::test_labels_within_image_fires_when_a_label_runs_off_the_edge"
+ }
+}

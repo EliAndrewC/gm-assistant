@@ -1,0 +1,90 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "houses": [],
+ "fields": [],
+ "road": [
+  [
+   100,
+   0
+  ],
+  [
+   100,
+   1000
+  ]
+ ],
+ "road_width": 26,
+ "buildings": [
+  {
+   "x": 140,
+   "y": 100,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 140,
+   "y": 160,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 140,
+   "y": 220,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 140,
+   "y": 280,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 140,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 140,
+   "y": 400,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 140,
+   "y": 460,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  },
+  {
+   "x": 200,
+   "y": 280,
+   "w": 86,
+   "h": 60,
+   "rot": 35,
+   "kind": "merchant_large"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "housing_aligned_behind_storefronts"
+  ],
+  "source": "test_checks.py::test_housing_aligned_behind_storefronts_fires_when_askew"
+ }
+}

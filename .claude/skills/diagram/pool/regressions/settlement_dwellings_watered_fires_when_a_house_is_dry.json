@@ -1,0 +1,36 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  },
+  {
+   "x": 300,
+   "y": 900,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "wells": [
+  {
+   "x": 300,
+   "y": 300,
+   "r": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "settlement_dwellings_watered"
+  ],
+  "source": "test_checks.py::test_settlement_dwellings_watered_fires_when_a_house_is_dry"
+ }
+}

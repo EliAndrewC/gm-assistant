@@ -158,7 +158,7 @@ SW_ST = [[(1010, 1500), (1010, 1830)], [(1300, 1370), (1300, 1920)]]   # two N-S
 grid(SW_ST, width=18)   # deep TOP-TO-BOTTOM blocks (storefronts front the avenue + these), cores left for homes
 # the temple neighborhood (lower SW, INSIDE the wall): Benten + Daikoku with the Ministry of
 # Rites that oversees them - placed BEFORE the merchant pack so it flows around them
-s.shrine_hall(1150, 1846, "Temple of Benten", w=124, h=80, kind="temple", primary=True)
+s.shrine_hall(1150, 1846, "Temple of Benten", w=124, h=80, kind="temple", primary=True, label_below=True)
 s.shrine_hall(1418, 1916, "Temple of Daikoku", w=124, h=80, kind="temple")   # stands off the Ministry of Rites to its west (a government office must not abut a neighbor)
 s.ministry(1290, 1952, "Ministry of Rites")   # nudged clear of the ring road (the SW ring runs just west of here)
 # a smattering of small wayside shrines dot the temple neighborhood (non-residential), tucked in the
@@ -200,7 +200,8 @@ s.governor_mansion(1950, 1758, 248, 168, "Governor's Mansion", gate_dir="west")
 # the first ministry. Its torii still stands on the samurai-quarter street that runs up to it.
 # the samurai-quarter street runs up to it with clear room, so its torii avenue is THREE arches (the
 # approach space fits them without displacing any house) rather than a lone arch at the gate
-s.shrine_hall(1700, 1625, "Temple of Bishamon", w=120, h=80, kind="temple", torii=[(1740, 1712), (1740, 1758), (1740, 1804)])
+s.shrine_hall(1700, 1625, "Temple of Bishamon", w=120, h=80, kind="temple", graveyard=False,   # new, special-purpose hall in a former samurai estate - keeps NO burial ground
+              torii=[(1740, 1712), (1740, 1758), (1740, 1804)])
 # the five other ministries CLUSTER around the yamen (the government district), as in a Chinese
 # provincial seat / Japanese castle town (Rites is apart, in the SW temple neighborhood)
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
@@ -259,11 +260,14 @@ s.bound = None
 # wealthy samurai walled estates - all to the SE, beyond the moat, SCATTERED and varying in size.
 # The inner ones STRADDLE the cropped SE edge (partly shown) so the map signals several estates;
 # the rest run off-map entirely (a city map is about the city, not its commuter belt).
-EST = [(2600, 1500, 200, 130), (2540, 1700, 190, 124), (2470, 1900, 184, 120),   # straddle the edge
-       (2330, 2180, 180, 116), (2860, 1620, 168, 112), (3060, 1780, 150, 100),    # off-map beyond
-       (2900, 2000, 160, 106), (2780, 2240, 150, 100)]
-for ex, ey, ew, eh in EST:
-    s.manor(ex, ey, ew, eh, "")
+# each estate fronts its OWN approach lane (not drawn at this scale), so the depicted (formal) gates
+# VARY rather than all opening one way: most favour the auspicious SOUTH, the rest face the cityward
+# (NW) approach (W/N). Each estate also has cityward service gates we don't show, as with the governor.
+EST = [(2600, 1500, 200, 130, "south"), (2540, 1700, 190, 124, "west"), (2470, 1900, 184, 120, "south"),   # straddle the edge
+       (2330, 2180, 180, 116, "north"), (2860, 1620, 168, 112, "west"), (3060, 1780, 150, 100, "south"),    # off-map beyond
+       (2900, 2000, 160, 106, "west"), (2780, 2240, 150, 100, "north")]
+for ex, ey, ew, eh, gd in EST:
+    s.manor(ex, ey, ew, eh, "", gate_dir=gd)
 s.label(2470, 1620, "samurai estates", 11, italic=True, color="#3A352C")   # kept off the right image edge
 # surrounding farmland: large fields CLOSE to the city, irrigated from the MOAT, each ringed by the
 # villagers' farmhouses; all run off the map edge (their houses ring the on-map part). The moat is fed
@@ -323,6 +327,22 @@ s.ring(NW1, 26, 18, ["plain"])
 s.ring(NW1, 22, 46, ["plain"])
 s.ring(NW2, 26, 18, ["plain"])
 s.ring(NW2, 22, 46, ["plain"])
+
+# THE DEAD - a full funerary geography (centuries-old city; remains cremated, then interred):
+#  - two intramural TEMPLE GRAVEYARDS (danka parish grounds), by Benten and by Daikoku
+#  - one extramural common BURIAL GROUND, west of the wall (the exempt outside graveyard)
+#  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (the elite crypts)
+#  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
+# (the Temple of Bishamon, new and in a former estate, keeps no graveyard - graveyard=False above)
+s.cemetery(1079, 1783, 46, 34, label="graveyard", label_above=True)   # Benten's parish ground (inside, cramped)
+s.cemetery(1532, 1771, 56, 40, label="graveyard")                     # Daikoku's parish ground (inside, cramped)
+s.cemetery(756, 2013, 104, 74, label="common burial ground")          # the extramural common ground - set WELL back from the moat (beyond the cremation ground)
+s.cemetery(1354, 673, 60, 44, label="graveyard", parish=False)        # Tango-only: an in-wall burial ground in the agricultural district (NOT a temple parish ground)
+s.mausoleum(2246, 1556, 54, 40, label="Mausoleum", gate_dir="west", label_below=True)   # the ruling clan's crypts, above-right of the Ministry of Works
+s.cremation_ground(872, 1969)
+s.ossuary(860, 2050)
+
+s.bridges()   # spans the Imperial Road over the moat at the north and south gates
 
 s.title("Tango")
 s.compass()

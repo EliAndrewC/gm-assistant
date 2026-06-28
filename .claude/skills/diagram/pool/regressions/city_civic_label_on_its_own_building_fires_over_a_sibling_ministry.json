@@ -1,0 +1,37 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "ministries": [
+  {
+   "name": "Ministry of Works",
+   "x": 500,
+   "y": 500,
+   "w": 88,
+   "h": 58
+  },
+  {
+   "name": "Ministry of Justice",
+   "x": 500,
+   "y": 640,
+   "w": 88,
+   "h": 58
+  }
+ ],
+ "labels": [
+  [
+   470,
+   490,
+   560,
+   510,
+   1,
+   "Ministry of Justice"
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_civic_label_on_its_own_building"
+  ],
+  "source": "test_checks.py::test_city_civic_label_on_its_own_building_fires_over_a_sibling_ministry"
+ }
+}

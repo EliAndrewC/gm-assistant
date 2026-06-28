@@ -1,0 +1,68 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 450,
+   "y": 350,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "wells": [
+  {
+   "x": 450,
+   "y": 350,
+   "r": 8,
+   "vr": 11.9
+  }
+ ],
+ "threshing": [
+  {
+   "x": 500,
+   "y": 500,
+   "rx": 40,
+   "ry": 30
+  }
+ ],
+ "drying_racks": [],
+ "fields": [
+  {
+   "name": "a",
+   "kind": "paddy",
+   "bbox": [
+    400,
+    400,
+    600,
+    600
+   ],
+   "outline": [
+    [
+     400,
+     400
+    ],
+    [
+     600,
+     400
+    ],
+    [
+     600,
+     600
+    ],
+    [
+     400,
+     600
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "settlement_has_threshing_ground"
+  ],
+  "source": "test_checks.py::test_settlement_has_threshing_ground_fires_when_in_a_paddy"
+ }
+}

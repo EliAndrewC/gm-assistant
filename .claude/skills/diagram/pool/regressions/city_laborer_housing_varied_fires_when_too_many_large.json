@@ -1,0 +1,254 @@
+{
+ "meta": {
+  "scale": "city",
+  "population": 300
+ },
+ "buildings": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 310,
+   "y": 310,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 320,
+   "y": 320,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 330,
+   "y": 330,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 340,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 350,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 360,
+   "y": 310,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 370,
+   "y": 320,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 380,
+   "y": 330,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 390,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 400,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 410,
+   "y": 310,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 420,
+   "y": 320,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 430,
+   "y": 330,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 440,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 310,
+   "y": 310,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 320,
+   "y": 320,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 330,
+   "y": 330,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 340,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 350,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 360,
+   "y": 310,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 370,
+   "y": 320,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 380,
+   "y": 330,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 390,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 400,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 410,
+   "y": 310,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 420,
+   "y": 320,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 430,
+   "y": 330,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  },
+  {
+   "x": 440,
+   "y": 340,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer_large"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_laborer_housing_varied"
+  ],
+  "source": "test_checks.py::test_city_laborer_housing_varied_fires_when_too_many_large"
+ }
+}

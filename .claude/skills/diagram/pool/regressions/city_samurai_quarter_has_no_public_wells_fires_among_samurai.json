@@ -1,0 +1,44 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wells": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 8
+  }
+ ],
+ "buildings": [
+  {
+   "kind": "samurai",
+   "x": 510,
+   "y": 505,
+   "w": 24,
+   "h": 17,
+   "rot": 0
+  },
+  {
+   "kind": "samurai",
+   "x": 480,
+   "y": 520,
+   "w": 24,
+   "h": 17,
+   "rot": 0
+  },
+  {
+   "kind": "laborer",
+   "x": 900,
+   "y": 900,
+   "w": 14,
+   "h": 10,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_samurai_quarter_has_no_public_wells"
+  ],
+  "source": "test_checks.py::test_city_samurai_quarter_has_no_public_wells_fires_among_samurai"
+ }
+}

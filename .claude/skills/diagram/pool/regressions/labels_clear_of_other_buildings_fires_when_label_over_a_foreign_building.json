@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "labels": [
+  [
+   480,
+   490,
+   520,
+   510,
+   1,
+   "flophouse"
+  ]
+ ],
+ "buildings": [
+  {
+   "kind": "merchant_house",
+   "x": 500,
+   "y": 500,
+   "w": 40,
+   "h": 30,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_clear_of_other_buildings"
+  ],
+  "source": "test_checks.py::test_labels_clear_of_other_buildings_fires_when_label_over_a_foreign_building"
+ }
+}

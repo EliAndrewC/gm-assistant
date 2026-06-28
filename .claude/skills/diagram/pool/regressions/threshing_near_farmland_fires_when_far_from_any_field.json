@@ -1,0 +1,59 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "fields": [
+  {
+   "outline": [
+    [
+     400,
+     400
+    ],
+    [
+     600,
+     400
+    ],
+    [
+     600,
+     550
+    ],
+    [
+     400,
+     550
+    ]
+   ],
+   "bbox": [
+    400,
+    400,
+    600,
+    550
+   ],
+   "name": "f",
+   "kind": "paddy"
+  }
+ ],
+ "houses": [
+  {
+   "x": 500,
+   "y": 950,
+   "w": 30,
+   "h": 24,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "threshing": [
+  {
+   "x": 500,
+   "y": 950,
+   "rx": 62,
+   "ry": 42
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "threshing_ground_near_farmland"
+  ],
+  "source": "test_checks.py::test_threshing_near_farmland_fires_when_far_from_any_field"
+ }
+}

@@ -1,0 +1,60 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   500,
+   200
+  ],
+  [
+   800,
+   500
+  ],
+  [
+   500,
+   800
+  ],
+  [
+   200,
+   500
+  ]
+ ],
+ "gates": [
+  [
+   650,
+   350
+  ],
+  [
+   350,
+   650
+  ]
+ ],
+ "gate_structs": [
+  {
+   "x": 640,
+   "y": 360,
+   "w": 66,
+   "h": 44,
+   "rot": 0,
+   "kind": "guardhouse",
+   "z": 1
+  },
+  {
+   "x": 610,
+   "y": 390,
+   "w": 60,
+   "h": 44,
+   "rot": 0,
+   "kind": "inspection",
+   "z": 1
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_gate_furniture_aligned"
+  ],
+  "source": "test_checks.py::test_city_gate_furniture_aligned_fires_when_axis_aligned_on_a_slanted_wall"
+ }
+}
