@@ -16,3 +16,9 @@ __pycache__
 # so they are not tracked - this is what keeps them out of git history. Regenerate with
 # `python3 .claude/skills/diagram/pool/<map>.gen.py`.
 .claude/skills/diagram/pool/*.png
+
+# GNOME atomic-save temp files (a stray one was once committed); never track these.
+.goutputstream-*
+
+# Generated org chart - rebuild with `webapp/orgchart.py --format png` rather than tracking it.
+webapp/orgchart.png

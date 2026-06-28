@@ -8,6 +8,10 @@ development-secrets.ini
 # Bundled pool data — Docker build artifact, synced by `make prepare-deploy`.
 skills/
 
+# Bakeoff generated artifacts (candidates, tasks, votes). The harness code is
+# tracked; the generated data is local and disposable.
+bakeoff/data/
+
 # Test + tooling caches.
 .coverage
 .mypy_cache/
