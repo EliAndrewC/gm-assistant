@@ -110,6 +110,18 @@ s.paddy_field(NW2, "", "nw2", amp=20)
 s.ring(NW1, 7, 16, ["plain"])
 s.ring(NW2, 7, 16, ["plain"])
 s.label(1080, 1010, "agricultural district", 11, italic=True, color="#5A6A2A")
+
+# ===== FIRE DEFENSE (a city's dense wooden quarters) =====
+# Fire-watch towers (hinomi-yagura) over the COMMONER quarters - the magistrate's watch, the bell's
+# cadence telling each quarter how near a blaze is - and a cleared FIREBREAK (hiyokechi/hirokoji) by the
+# theater stage in the temple neighborhood, which fills with removable market stalls so the fire gap
+# doubles as an amusement ground. The warren packs wall-to-wall, so a tower stands where it has
+# SIGHTLINES: a clear block in the laborer quarter, and the open firebreak ground. Placed BEFORE the
+# packs so the dwellings flow around them. WHY: SKILL.md "Fire towers and firebreaks".
+s.fire_tower(1720, 1120, label=None)                                   # a clear block in the NE laborer warren
+s.firebreak(1380, 1700, 118, 100, label="firebreak")  # just east of the theater stage (clear of Benten's parish ground and the x1300 lane)
+s.fire_tower(1330, 1660, label="fire-watch tower")                    # overlooking the firebreak, in the open
+
 # the in-wall burakumin neighborhood (its lane reaches the Imperial road, wiring it to the grid)
 # a FEW shops/stalls front the lane; the burakumin dwellings jam the block interior behind them
 BUR_ST = [[(803, 1230), (1600, 1230)], [(1230, 1180), (1230, 1320)]]   # E-W lane reaches the road
@@ -216,7 +228,7 @@ s.governor_mansion(1950, 1758, 248, 168, "Governor's Mansion", gate_dir="west")
 # the samurai-quarter street runs up to it with clear room, so its torii avenue is THREE arches (the
 # approach space fits them without displacing any house) rather than a lone arch at the gate
 s.shrine_hall(1700, 1625, "Temple of Bishamon", w=120, h=80, kind="temple", graveyard=False,   # new, special-purpose hall in a former samurai estate - keeps NO burial ground
-              torii=[(1740, 1712), (1740, 1758), (1740, 1804)])
+              torii=[(1740, 1712), (1740, 1758), (1740, 1804), (1740, 1850)])
 # the five other ministries CLUSTER around the yamen (the government district), as in a Chinese
 # provincial seat / Japanese castle town (Rites is apart, in the SW temple neighborhood)
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
@@ -310,7 +322,7 @@ for fbb, nm, fin in MOAT_FARMS + [NORTH_FARM]:
 s.label(1100, 2185, "farmland (moat-irrigated; off-map beyond)", 10, italic=True, color="#5A6A2A")
 # a gate market just outside the south gate, beyond the moat - the rows nearest the gate fall
 # inside the cropped view, the rest run off the south edge
-s.pack((1450, 2175, 1770, 2400), (["merchant"] * 2 + ["shop"]) * 4, step=46)
+s.pack((1450, 2175, 1770, 2400), (["merchant"] * 2 + ["shop"]) * 6, step=46)   # *6 (was *4): a busier south gate market, also refilling the city-wide merchant cohort the firebreak trims
 s.label(1640, 2198, "gate market", 10, italic=True, color="#5A4326")
 
 # deep-lot kura tucked behind shopfronts that have an open back lot (the narrow-front / deep-lot

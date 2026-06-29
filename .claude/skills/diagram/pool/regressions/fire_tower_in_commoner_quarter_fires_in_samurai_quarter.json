@@ -1,0 +1,47 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "buildings": [
+  {
+   "x": 520,
+   "y": 510,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 480,
+   "y": 515,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  },
+  {
+   "x": 510,
+   "y": 480,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai_large"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "fire_tower_in_commoner_quarter"
+  ],
+  "source": "test_checks.py::test_fire_tower_in_commoner_quarter_fires_in_samurai_quarter"
+ }
+}

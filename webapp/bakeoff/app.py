@@ -73,6 +73,22 @@ def _append_vote(record: dict) -> None:
         f.write(json.dumps(record, ensure_ascii=False) + '\n')
 
 
+def _collect_option_tags(form: dict) -> dict:
+    """Pull per-option quick-tags out of the submitted form.
+
+    Each option's checkboxes post under ``tag_<label>`` (e.g. ``tag_A``). A group
+    with a single box checked arrives as a bare string; a group with none checked
+    is absent from the form entirely.
+    """
+    out = {}
+    for key, val in form.items():
+        if not key.startswith('tag_'):
+            continue
+        label = key[len('tag_') :]
+        out[label] = [val] if isinstance(val, str) else list(val)
+    return out
+
+
 class Bakeoff:
     @cherrypy.expose
     def index(self):
@@ -101,18 +117,15 @@ class Bakeoff:
         )
 
     @cherrypy.expose
-    def vote(self, task_id=None, choice=None, notes='', action='submit', tags=None):
+    def vote(self, task_id=None, choice=None, notes='', action='submit', **kwargs):
+        option_tags = _collect_option_tags(kwargs)
         if action == 'submit' and choice:
-            if tags is None:
-                tags = []
-            elif isinstance(tags, str):
-                tags = [tags]
             _append_vote(
                 {
                     'task_id': task_id,
                     'choice': choice,
                     'notes': notes.strip(),
-                    'tags': tags,
+                    'option_tags': option_tags,
                     'skipped': False,
                     'ts': time.time(),
                 }
@@ -123,7 +136,7 @@ class Bakeoff:
                     'task_id': task_id,
                     'choice': None,
                     'notes': notes.strip(),
-                    'tags': [],
+                    'option_tags': option_tags,
                     'skipped': True,
                     'ts': time.time(),
                 }

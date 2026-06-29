@@ -54,7 +54,7 @@ All commands run from `webapp/`.
    ```
    # cheap smoke run first:
    python3 -m bakeoff.generate --characters hideki,emi --samples 1
-   # the full matrix (10 chars x 2 arms x 2 models x 3 samples = 120 calls):
+   # the full matrix (10 chars x 2 arms x 1 model x 3 samples = 60 calls):
    python3 -m bakeoff.generate
    ```
 
@@ -99,9 +99,11 @@ All commands run from `webapp/`.
   the option label and text, never the tier or model.
 - **Variance control:** three samples per cell; one task per sample round, so the
   rounds act as repeats that average out the large run-to-run swings.
-- **Model dimension:** each task compares the active arms within a single
-  (hidden) model; `analyze.py` reports arm wins both pooled and split by model.
-  Direct model-vs-model screens are intentionally not built yet.
+- **Model dimension (resolved):** `config.MODELS` is now Pro-only. The Pro-vs-Flash
+  question was settled on the smoke run - Flash drifted low-honor characters into
+  active villainy while Pro held the honor model - so the active comparison runs a
+  single (hidden) model. `analyze.py` still reports arm wins split by model, which
+  is now trivially one column.
 - **Hard characters:** the test set deliberately stresses trait contradictions,
   edge castes, rank/recognition mismatches, clan-stereotype tensions, real vs.
   ambiguous supernatural, and the family-rank promotion mechanic. Easy

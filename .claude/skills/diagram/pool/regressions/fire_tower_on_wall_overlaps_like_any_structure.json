@@ -1,0 +1,35 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "wall": [
+  [
+   100,
+   500
+  ],
+  [
+   900,
+   500
+  ]
+ ],
+ "gate": [
+  500,
+  500
+ ],
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "no_structure_on_wall"
+  ],
+  "source": "test_checks.py::test_fire_tower_on_wall_overlaps_like_any_structure"
+ }
+}

@@ -33,9 +33,13 @@ TIERS = ['blurb', 'flavor']
 #: TIERS; build_tier still understands every id here. See briefs.py.
 CONTEXT_TIERS = ['t0', 't1', 't2', 't3']
 
-#: The models to generate with. A Pro tier and a Flash tier so the bakeoff also
-#: answers "is the cheaper/faster model good enough?" alongside the tier question.
-MODELS = ['gemini-3.1-pro-preview', 'gemini-3.5-flash']
+#: The model to generate with. The Pro-vs-Flash question was resolved in favor of
+#: Pro on the smoke run: gemini-3.5-flash drifted low-honor characters toward
+#: active villainy (breaking the "as good as their incentives" honor model),
+#: while gemini-3.1-pro-preview held it. Flash kept here commented out in case it
+#: is worth revisiting.
+MODELS = ['gemini-3.1-pro-preview']
+# MODELS = ['gemini-3.1-pro-preview', 'gemini-3.5-flash']
 
 #: How many independent samples per (character, tier, model) cell. Multiple
 #: samples average out the large run-to-run variance so a vote rates the prompt,

@@ -53,7 +53,7 @@ def _struct_rect(s):
 # `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
 # sets, forcing whoever adds it to declare its overlap behaviour rather than silently skipping it.
 _OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds",
-                    "ossuaries", "ministries")
+                    "ossuaries", "ministries", "fire_towers")
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs")
@@ -69,6 +69,7 @@ _OVERLAP_EXEMPT = {
     "bridges": "a bridge spans a stream/moat to carry a road over it (intentional water + road overlap)",
     "kido": "a ward gate sits ON the ward fence at the point a lane passes through it",
     "inspection_stations": "an inspection post sited AT the city gate, part of the gate complex (overlaps the gate furniture)",
+    "firebreaks": "an open fire-break plaza (hiyokechi/hirokoji) is deliberately clear ground the theater stage, market stalls, and fire-watch tower sit ON; dwellings are kept off it by firebreak_clear_of_dwellings",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -233,6 +234,51 @@ def check_theater_stage(M, check):
           f"the theater stage's viewing ground does not OPEN toward its temple (alignment {facing:.2f}, want "
           f">= 0.5) - the stage faces the hall with the audience between, so set its `rot` so the ground opens "
           f"toward the temple (the stage's back is the side AWAY from the audience)")
+
+
+def check_fire_features(M, check):
+    """Geometry of the fire-watch towers (hinomi-yagura) and fire-break plazas (hiyokechi/hirokoji)
+    a walled town or a city draws. Scale-agnostic: the PRESENCE/count checks live in the scale
+    blocks; this validates whatever is drawn, so it is a no-op for a settlement that has neither.
+    WHY (a dense, enclosed wooden core needs a fire-watch over its rooftops and a cleared gap a
+    blaze cannot jump - the gap, too valuable to leave idle, doubles as the market/amusement
+    ground): SKILL.md 'Fire towers and firebreaks'."""
+    towers = M.get("fire_towers", [])
+    breaks = M.get("firebreaks", [])
+    COMMON = {"laborer", "laborer_large", "servant", "merchant", "merchant_house", "merchant_large", "shop"}
+    SAM = {"samurai", "samurai_large"}
+    dwell = [(b["x"], b["y"], b.get("kind")) for b in M.get("buildings", []) if b.get("kind") in COMMON | SAM]
+    if towers and dwell:
+        misplaced = []
+        for t in towers:
+            near = sorted(dwell, key=lambda d: math.hypot(d[0] - t["x"], d[1] - t["y"]))[:3]
+            nearest = math.hypot(near[0][0] - t["x"], near[0][1] - t["y"])
+            sam = sum(1 for d in near if d[2] in SAM)
+            if nearest > 230 or sam * 2 > len(near):    # isolated, or sitting in the samurai quarter
+                misplaced.append((round(t["x"]), round(t["y"])))
+        check("fire_tower_in_commoner_quarter", not misplaced,
+              f"fire tower(s) {misplaced} sit isolated or in the samurai quarter - a hinomi-yagura watches the dense COMMONER rooftops")
+    if breaks:
+        # the fire gap doubles as the market/amusement ground (the Edo hirokoji): a firebreak must
+        # co-locate with the theater stage or a knot of shops, else it is just dead space
+        ts = M.get("theater_stage")
+        biz = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant")]
+        hosted = False
+        for fb in breaks:
+            hd = math.hypot(fb["w"], fb["h"]) / 2
+            if ts and math.hypot(ts["x"] - fb["x"], ts["y"] - fb["y"]) <= hd + 150:
+                hosted = True
+            if sum(1 for b in biz if math.hypot(b["x"] - fb["x"], b["y"] - fb["y"]) <= hd + 95) >= 3:
+                hosted = True
+        check("firebreak_hosts_amusements", hosted,
+              "a firebreak (hiyokechi/hirokoji) doubles as the market/amusement ground - site the theater stage or a knot of shops on it, not in dead space")
+        # but it must stay CLEAR of permanent dwellings (the whole point of a fire gap)
+        dwl_all = ([(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in COMMON | SAM | {"burakumin"}]
+                   + [(h["x"], h["y"]) for h in M.get("houses", [])])
+        on_break = [(round(dx), round(dy)) for fb in breaks for (dx, dy) in dwl_all
+                    if point_in_poly(dx, dy, rect_corners(fb))]
+        check("firebreak_clear_of_dwellings", not on_break,
+              f"dwelling(s) {on_break[:4]} sit on a firebreak - a fire gap must stay clear of permanent housing")
 
 
 def water_setback(width):
@@ -443,7 +489,7 @@ DEFAULT_MANIFEST = {
     "storehouses": [], "flophouses": [], "road": None, "wall": None, "gate": None,
     "gates": [], "moat": None, "governor_mansion": None, "ministries": [],
     "inspection_stations": [], "theater_stage": None, "granary": None, "wells": [],
-    "threshing_yards": [], "gardens": [], "meta": {},
+    "threshing_yards": [], "gardens": [], "fire_towers": [], "firebreaks": [], "meta": {},
 }
 
 
@@ -2268,6 +2314,7 @@ def gate(M, verbose=True):
             check("theater_stage_inside_wall", len(w) >= 3 and point_in_poly(amph["x"], amph["y"], w),
                   "a walled town's theater stage belongs inside the walls (set meta(theater_stage='outside') to allow outside)")
         check_theater_stage(M, check)
+        check_fire_features(M, check)   # geometry of any fire towers / firebreaks (presence required only for a WALLED town, below)
 
         # a town's monasteries: by default 2, dedicated to the patron fortunes of the clan
         # whose holdings include it (meta(clan=...)). Override with an explicit list -
@@ -2328,6 +2375,16 @@ def gate(M, verbose=True):
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")),
               "a walled town must have a wall and a gate")
+        # the dense, ENCLOSED wooden core needs a fire-watch tower over its rooftops AND a cleared
+        # firebreak a blaze cannot jump (the wall that keeps raiders out also traps a fire in); an
+        # OPEN road-town relies on its road and field gaps and gets neither. WHY: SKILL.md "Fire
+        # towers and firebreaks". Opt out per-map with meta(fire_tower=False)/meta(firebreak=False).
+        if meta.get("fire_tower", True):
+            check("walled_town_has_fire_tower", len(M.get("fire_towers", [])) >= 1,
+                  "a walled town's dense wooden core needs a fire-watch tower (s.fire_tower(...); meta(fire_tower=False) to omit)")
+        if meta.get("firebreak", True):
+            check("walled_town_has_firebreak", len(M.get("firebreaks", [])) >= 1,
+                  "a walled town needs a firebreak the market/amusements gather on (s.firebreak(...); meta(firebreak=False) to omit)")
         w = M.get("wall") or []
         if len(w) >= 3:
             lens = [math.hypot(w[i + 1][0] - w[i][0], w[i + 1][1] - w[i][1]) for i in range(len(w) - 1)]
@@ -2573,6 +2630,17 @@ def gate(M, verbose=True):
         if amph:
             check("city_theater_stage_larger_than_town", amph.get("w", 0) >= 185,
                   f"the city theater stage (viewing ground {amph.get('w', 0)} wide) is no bigger than a town's - a provincial city's is larger (width >= 185)")
+        # FIRE DEFENSE: a city's dense quarters each need a fire-watch tower (hinomi-yagura), and it
+        # carries a proper firebreak (hiyokechi/hirokoji) the market/amusements gather on. WHY:
+        # SKILL.md "Fire towers and firebreaks". Opt out per-map with meta(fire_tower/firebreak=False).
+        if meta.get("fire_tower", True):
+            nft = len(M.get("fire_towers", []))
+            check("city_has_fire_towers", nft >= 2,
+                  f"{nft} fire towers - a provincial city's dense quarters each need a fire-watch tower (>= 2; s.fire_tower(...); meta(fire_tower=False) to omit)")
+        if meta.get("firebreak", True):
+            check("city_has_firebreak", len(M.get("firebreaks", [])) >= 1,
+                  "a city needs a firebreak the market/amusements gather on (s.firebreak(...); meta(firebreak=False) to omit)")
+        check_fire_features(M, check)
 
         # A NAMED civic building's label must sit on ITS OWN building, never on a DIFFERENT one of the
         # same kind. labels_clear_of_other_buildings lumps every ministry into one "ministry" GROUP, so

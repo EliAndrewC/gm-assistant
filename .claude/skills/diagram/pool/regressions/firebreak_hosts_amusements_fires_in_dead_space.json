@@ -1,0 +1,21 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "firebreaks": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 150,
+   "h": 110,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "firebreak_hosts_amusements"
+  ],
+  "source": "test_checks.py::test_firebreak_hosts_amusements_fires_in_dead_space"
+ }
+}

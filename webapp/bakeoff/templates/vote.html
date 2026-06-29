@@ -23,8 +23,8 @@
     .opt .badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #efe9dc; border: 1px solid var(--line); font-family: sans-serif; }
     .opt .body { white-space: pre-wrap; font-size: 15px; }
     .opt:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(122,92,46,.25); }
-    .tags { margin: 22px 0 8px; }
-    .tags legend { font-weight: bold; padding: 0; }
+    .opt .tags { margin: 14px 0 2px; padding-top: 12px; border: 0; border-top: 1px solid var(--line); }
+    .tags legend { font-weight: bold; padding: 0; font-size: 13px; color: var(--muted); }
     .tags label { display: inline-block; font-size: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px; margin: 6px 8px 0 0; cursor: pointer; }
     .tags input { margin-right: 6px; }
     textarea { width: 100%; min-height: 70px; font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 6px; resize: vertical; }
@@ -45,7 +45,7 @@
       <h2>{{ character_name }}</h2>
       <pre>{{ character_sheet }}</pre>
     </div>
-    <p class="hint">Four backstories were written for this character from the same generated traits. Pick the one you would actually use. The sources are hidden.</p>
+    <p class="hint">Two backstories were written for this character from the same generated traits. Pick the one you would actually use, and tag each one as you like. The sources are hidden.</p>
 
     <form method="post" action="/vote">
       <input type="hidden" name="task_id" value="{{ task_id }}">
@@ -55,16 +55,15 @@
           <label class="pick"><input type="radio" name="choice" value="{{ opt.label }}" required>
             <span class="badge">{{ opt.label }}</span> Best</label>
           <div class="body">{{ opt.text }}</div>
+          <fieldset class="tags">
+            <legend>Tags for {{ opt.label }} (optional)</legend>
+            {% for tag in quick_tags %}
+            <label><input type="checkbox" name="tag_{{ opt.label }}" value="{{ tag }}">{{ tag }}</label>
+            {% endfor %}
+          </fieldset>
         </div>
         {% endfor %}
       </div>
-
-      <fieldset class="tags">
-        <legend>Quick notes (optional)</legend>
-        {% for tag in quick_tags %}
-        <label><input type="checkbox" name="tags" value="{{ tag }}">{{ tag }}</label>
-        {% endfor %}
-      </fieldset>
 
       <textarea name="notes" placeholder="Optional free-text notes about this comparison..."></textarea>
 
