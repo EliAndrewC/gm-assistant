@@ -1,0 +1,28 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "theater_stage": {
+  "x": 500,
+  "y": 500,
+  "w": 150,
+  "h": 105,
+  "rot": 0
+ },
+ "wall": [
+  [
+   500,
+   380
+  ],
+  [
+   500,
+   620
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "theater_stage_clear"
+  ],
+  "source": "test_checks.py::test_theater_stage_clear_fires_on_a_wall"
+ }
+}
