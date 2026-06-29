@@ -1,0 +1,20 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_has_fire_towers"
+  ],
+  "source": "test_checks.py::test_city_has_fire_towers_fires_with_one"
+ }
+}

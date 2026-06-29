@@ -37,10 +37,14 @@ of the curve before wiring the button.
   GM added a materialist "The Great Clans" framing to l7r.md and `flavor_clans.md`
   was rewritten in that spirit; `config.TIERS` is now `['blurb', 'flavor']`. The
   old t0-t3 demo data was cleared (it was keyed to the retired tier ids).
-- **Nothing generated yet** for the new arms, and **no votes yet.** Full matrix =
-  10 chars x 2 arms x 2 models x 3 samples = 120 cells, ~600k input tokens
-  (`python3 -m bakeoff.generate --dry-run` to confirm) - far cheaper than the old
-  240-cell sweep now that the ~337k t3 arm is out of the active run.
+- **Model locked to Pro.** A smoke run (hideki/emi, 1 sample) showed
+  gemini-3.5-flash drifting low-honor characters into active villainy while
+  gemini-3.1-pro-preview held the honor model, so `config.MODELS` is now
+  Pro-only. The 4 Pro smoke cells remain in `data/` and a full run reuses them
+  (resumable); the 4 Flash cells are orphaned but harmless.
+- **No votes yet.** Full matrix = 10 chars x 2 arms x 1 model x 3 samples =
+  60 cells, ~300k input tokens (`python3 -m bakeoff.generate --dry-run` to
+  confirm); 4 already generated, so ~56 calls remain.
 
 ## How to run it (all from `webapp/`)
 

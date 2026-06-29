@@ -2950,6 +2950,120 @@ def test_town_has_cremation_ground_passes_when_at_the_edge():
     assert "town_has_cremation_ground" not in f(_town_dead([(900, 900)]))
 
 
+# ---- fire-watch towers (hinomi-yagura) & fire-break plazas (hiyokechi/hirokoji) ----
+
+def _tower(x, y):
+    return {"x": x, "y": y, "w": 26, "h": 26, "rot": 0}
+
+
+def _break(x, y, w=150, h=110):
+    return {"x": x, "y": y, "w": w, "h": h, "rot": 0}
+
+
+def test_walled_town_has_fire_tower_fires_when_absent():
+    assert "walled_town_has_fire_tower" in f({"meta": {"scale": "town", "walled": True}})
+
+
+def test_walled_town_has_fire_tower_passes_with_one():
+    assert "walled_town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)]})
+
+
+def test_walled_town_has_fire_tower_opt_out():
+    assert "walled_town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True, "fire_tower": False}})
+
+
+def test_walled_town_has_firebreak_fires_when_absent():
+    assert "walled_town_has_firebreak" in f({"meta": {"scale": "town", "walled": True}})
+
+
+def test_walled_town_has_firebreak_passes_with_one():
+    assert "walled_town_has_firebreak" not in f({"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)]})
+
+
+def test_walled_town_has_firebreak_opt_out():
+    assert "walled_town_has_firebreak" not in f({"meta": {"scale": "town", "walled": True, "firebreak": False}})
+
+
+def test_unwalled_town_needs_no_fire_tower_or_break():
+    # an OPEN road-town relies on its road and field gaps; the presence checks are walled-only
+    fails = f({"meta": {"scale": "town", "walled": False}})
+    assert "walled_town_has_fire_tower" not in fails and "walled_town_has_firebreak" not in fails
+
+
+def test_city_has_fire_towers_fires_with_one():
+    assert "city_has_fire_towers" in f({"meta": {"scale": "city"}, "fire_towers": [_tower(500, 500)]})
+
+
+def test_city_has_fire_towers_passes_with_two():
+    assert "city_has_fire_towers" not in f({"meta": {"scale": "city"}, "fire_towers": [_tower(500, 500), _tower(700, 700)]})
+
+
+def test_city_has_fire_towers_opt_out():
+    assert "city_has_fire_towers" not in f({"meta": {"scale": "city", "fire_tower": False}})
+
+
+def test_city_has_firebreak_fires_when_absent():
+    assert "city_has_firebreak" in f({"meta": {"scale": "city"}})
+
+
+def test_city_has_firebreak_passes_with_one():
+    assert "city_has_firebreak" not in f({"meta": {"scale": "city"}, "firebreaks": [_break(500, 500)]})
+
+
+def test_fire_tower_in_commoner_quarter_fires_in_samurai_quarter():
+    # a tower whose nearest neighbours are all samurai sits in the samurai quarter, not the warren
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "buildings": [bldg(520, 510, "samurai"), bldg(480, 515, "samurai"), bldg(510, 480, "samurai_large")]}
+    assert "fire_tower_in_commoner_quarter" in f(M)
+
+
+def test_fire_tower_in_commoner_quarter_fires_when_isolated():
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "buildings": [bldg(900, 900, "laborer")]}   # nearest dwelling > 230px away
+    assert "fire_tower_in_commoner_quarter" in f(M)
+
+
+def test_fire_tower_in_commoner_quarter_passes_among_commoners():
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "buildings": [bldg(520, 510, "laborer"), bldg(480, 515, "servant"), bldg(510, 480, "merchant")]}
+    assert "fire_tower_in_commoner_quarter" not in f(M)
+
+
+def test_firebreak_hosts_amusements_fires_in_dead_space():
+    assert "firebreak_hosts_amusements" in f({"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)]})
+
+
+def test_firebreak_hosts_amusements_passes_by_the_stage():
+    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
+         "theater_stage": {"x": 560, "y": 520, "w": 150, "h": 105, "rot": 0}}
+    assert "firebreak_hosts_amusements" not in f(M)
+
+
+def test_firebreak_hosts_amusements_passes_by_shops():
+    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
+         "buildings": [bldg(540, 520, "shop"), bldg(470, 530, "shop"), bldg(520, 470, "merchant")]}
+    assert "firebreak_hosts_amusements" not in f(M)
+
+
+def test_firebreak_clear_of_dwellings_fires():
+    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
+         "buildings": [bldg(500, 500, "laborer")]}   # a dwelling sitting ON the plaza
+    assert "firebreak_clear_of_dwellings" in f(M)
+
+
+def test_firebreak_clear_of_dwellings_passes_when_clear():
+    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
+         "buildings": [bldg(750, 750, "laborer")]}
+    assert "firebreak_clear_of_dwellings" not in f(M)
+
+
+def test_fire_tower_on_wall_overlaps_like_any_structure():
+    # fire_towers are in _OVERLAP_STRUCTS, so a tower on the wall trips no_structure_on_wall
+    M = {"meta": {"scale": "town", "walled": True}, "wall": [[100, 500], [900, 500]], "gate": [500, 500],
+         "fire_towers": [_tower(500, 500)]}
+    assert "no_structure_on_wall" in f(M)
+
+
 if __name__ == "__main__":
     import sys
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

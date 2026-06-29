@@ -93,6 +93,13 @@ s.street(CROSS, width=22)
 # monastery's precinct, just EAST of it (the NW diagonal rampart hems the ground directly north of Benten),
 # facing WEST (rot=90) so its viewing ground opens toward the Benten hall, the audience gathered between
 s.theater_stage(920, 918, rot=90, label="theater stage")
+# FIRE DEFENSE (a walled town's dense wooden core): a cleared FIREBREAK (hiyokechi/hirokoji) in the
+# commercial heart, just north of the east cross-street's shops - too valuable to leave idle, it fills
+# with removable market stalls, so the fire gap doubles as the market ground. Placed BEFORE the east
+# packs so the laborers flow around it. A FIRE-WATCH TOWER (hinomi-yagura) stands among the laborer
+# tenements: the magistrate's watchman rings its bell in a cadence that tells the town how near a blaze is.
+s.firebreak(1610, 1126, 156, 112, label="firebreak (market ground)")
+s.fire_tower(1600, 1320, label="fire-watch tower")
 
 # Big fixed-position buildings go DOWN FIRST, before the packs - the packs' _fits() then flows the small
 # houses AROUND them (a pack placed first fills these spots and the big building lands on a house). The
@@ -142,10 +149,6 @@ for bb in (OW1, OE1, OE2, OS):
 s.ring(OW2, 30, 15, ["plain"])
 s.ring(OW2, 24, 40, ["plain"])
 
-# communal WELLS among the dwellings (placed after them, in the open gaps); households share these,
-# the rest draw from the irrigation pond/channels/stream
-s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
-
 # the graveyard in the Bishamon monastery's precinct (the Buddhist danka parish ground)
 s.cemetery(1786, 1042, 88, 62, label="graveyard")               # the intramural parish ground, by the Bishamon monastery
 s.cemetery(1895, 1255, 120, 88, label="common burial ground")    # the MAIN burial ground (a town of ~1,200 over centuries) - large, extramural, well clear of the paddy
@@ -155,6 +158,12 @@ s.cremation_ground(1915, 1348)
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+
+# communal WELLS among the dwellings (placed after them, in the open gaps); households share these, the
+# rest draw from the irrigation pond/channels/stream. Placed AFTER farmsteads() so the FINAL house set
+# is known: the threshing pass abandons the odd over-crowded farmhouse, and a well must never be left
+# stranded beside one that is no longer there (wells_among_dwellings).
+s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
 
 s.title("Hirameki")
 s.compass()

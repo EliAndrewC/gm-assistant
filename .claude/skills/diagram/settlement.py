@@ -202,6 +202,7 @@ class Settlement:
                   "governor_mansion": None, "ministries": [], "inspection_stations": [],
                   "wells": [], "bridges": [], "threshing_yards": [], "gardens": [], "cemeteries": [],
                   "mausoleums": [], "cremation_grounds": [], "ossuaries": [], "moat_layer": None,
+                  "fire_towers": [], "firebreaks": [],
                   "meta": {"W": W, "H": H}}
         self._header()
 
@@ -1103,6 +1104,60 @@ class Settlement:
         self.ellipses.append((cx, cy, R, R))
         if label:
             self.label(cx, cy + hh + 16, label, 11, italic=True)
+
+    def fire_tower(self, x, y, tw=26, rot=0.0, label="fire tower"):
+        """A HINOMI-YAGURA (fire-watch tower): a tall, slender braced-timber tower with a lookout
+        platform and an alarm bell (hansho), standing in the dense COMMONER quarter of a walled
+        town or city where packed wooden rooftops make fire catastrophic. It is a CIVILIAN interior
+        structure - the magistrate's fire-watch - distinct from a wall guard tower (military, on the
+        rampart): drawn as an OPEN braced frame (not the guard tower's solid block) with a red bell.
+        The watchman strikes the bell in a cadence that tells the town how near the fire is. Records
+        M['fire_towers'] (an overlap-checked struct: it must stand clear of the wall, roads, and
+        buildings) and reserves a small no-build block (it needs clear sightlines). Place it among the
+        laborer/merchant blocks. See the SKILL.md 'Fire towers and firebreaks' historical grounding."""
+        h = tw / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-h-2:.0f}" y="{-h-5:.0f}" width="{tw+4}" height="5" rx="1" fill="#7A5A30"/>')          # the little roof cap over the lookout platform
+        g.append(f'<rect x="{-h:.0f}" y="{-h:.0f}" width="{tw}" height="{tw}" fill="#EFE6CC" fill-opacity="0.45" stroke="#7A5A30" stroke-width="2"/>')   # the open braced-timber frame
+        g.append(f'<line x1="{-h:.0f}" y1="{-h:.0f}" x2="{h:.0f}" y2="{h:.0f}" stroke="#7A5A30" stroke-width="1.1"/>')   # cross-braces (an X)
+        g.append(f'<line x1="{h:.0f}" y1="{-h:.0f}" x2="{-h:.0f}" y2="{h:.0f}" stroke="#7A5A30" stroke-width="1.1"/>')
+        g.append(f'<circle cx="0" cy="0" r="{tw * 0.2:.1f}" fill="#B0462F" stroke="#5A3F1E" stroke-width="0.8"/>')   # the alarm bell (hansho)
+        g.append('</g>')
+        z = self.add_top(''.join(g))
+        self.M["fire_towers"].append({"x": round(x, 1), "y": round(y, 1), "w": tw, "h": tw, "rot": round(rot, 1), "z": z, "label": label})
+        self.placed.append((x, y, tw, tw))
+        bm = 16
+        self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm),
+                                 (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
+        if label:
+            self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
+        return z
+
+    def firebreak(self, cx, cy, w=300, h=150, rot=0.0, label="firebreak"):
+        """A HIYOKECHI / HIROKOJI (fire-break): a deliberately cleared open plaza kept empty of
+        permanent building so a blaze cannot jump across it - the fire-defense of a dense, ENCLOSED
+        urban core (a walled town or a city), where the rampart that keeps raiders out also traps a
+        fire in. Too valuable to leave idle, it fills with REMOVABLE stalls, teahouses, and the
+        troupe's theater stage, so the fire gap doubles as the market/amusement ground (the Edo
+        hirokoji). Records M['firebreaks'] and blocks DWELLINGS from its ground (the stage, stalls,
+        and fire tower may sit on it - the author places those). Drawn on the base layer so the stage
+        and tower render over it. Place it BEFORE the dwelling packs. See the SKILL.md 'Fire towers
+        and firebreaks' historical grounding."""
+        hw, hh = w / 2, h / 2
+        g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-hw:.0f}" y="{-hh:.0f}" width="{w:.0f}" height="{h:.0f}" rx="6" fill="#EFE6CC" stroke="#C9B484" stroke-width="1.4" stroke-dasharray="7 5"/>')   # the swept open ground, a dashed rim (cleared, not walled)
+        for sx, sy in [(-hw * 0.58, -hh * 0.42), (-hw * 0.12, hh * 0.46), (hw * 0.32, -hh * 0.46), (hw * 0.62, hh * 0.38)]:
+            g.append(f'<rect x="{sx - 9:.0f}" y="{sy - 7:.0f}" width="18" height="14" rx="1" fill="#D8C49A" stroke="#A98E54" stroke-width="0.7" opacity="0.65"/>')   # a scatter of light, removable market stalls
+        g.append('</g>')
+        self.add(''.join(g))
+        self.M["firebreaks"].append({"x": cx, "y": cy, "w": w, "h": h, "rot": round(rot, 1), "label": label})
+        a = math.radians(rot)
+        ca, sa = math.cos(a), math.sin(a)
+        iw, ih = hw + 4, hh + 4                               # block DWELLINGS from the WHOLE plaza (+ a touch, so no dwelling centre lands on its rim); frontage faces it from outside
+        self.block_polys.append([(cx + dx * ca - dy * sa, cy + dx * sa + dy * ca)
+                                 for dx, dy in [(-iw, -ih), (iw, -ih), (iw, ih), (-iw, ih)]])
+        if label:
+            self.label(cx, cy - hh + 14, label, 10, italic=True, color="#8A7138")   # ON the open plaza (its ground carries no building, so the label stays clear)
 
     def _draw_threshing_yard(self, cx, cy, w, h):
         """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack)."""

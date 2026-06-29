@@ -66,8 +66,13 @@ def main() -> None:
         counted += 1
         tier_wins[tier] += 1
         model_tier_wins[task['model']][tier] += 1
-        for tag in vote.get('tags', []):
-            tag_by_tier[tier][tag] += 1
+        # Tags are recorded per option, so attribute each to the arm it describes
+        # (which may be the loser), not to whichever arm won the screen.
+        for label, tags in vote.get('option_tags', {}).items():
+            tagged_tier = label_to_tier.get(label)
+            if tagged_tier:
+                for tag in tags:
+                    tag_by_tier[tagged_tier][tag] += 1
         if vote.get('notes'):
             notes_by_tier[tier].append(
                 f'[{task["character_name"]} / {task["model"]}] {vote["notes"]}'
@@ -97,7 +102,7 @@ def main() -> None:
         parts = ', '.join(f'{t}={wins.get(t, 0)}' for t in config.TIERS)
         print(f'  {model} (n={total}): {parts}')
 
-    print('\nQuick-tags by winning tier:')
+    print('\nQuick-tags by arm (applied to each arm\'s own output, win or lose):')
     for tier in config.TIERS:
         if tag_by_tier.get(tier):
             tags = ', '.join(f'{tag} x{n}' for tag, n in tag_by_tier[tier].most_common())
