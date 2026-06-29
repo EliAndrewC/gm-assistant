@@ -1,0 +1,34 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "gardens": [
+  {
+   "x": 520,
+   "y": 455,
+   "w": 24,
+   "h": 16,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "gardens_on_sunny_side"
+  ],
+  "source": "test_checks.py::test_gardens_on_sunny_side_fires_on_a_north_garden"
+ }
+}

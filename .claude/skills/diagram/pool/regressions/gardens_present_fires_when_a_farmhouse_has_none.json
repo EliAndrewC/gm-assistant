@@ -1,0 +1,22 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "gardens": [],
+ "_regression": {
+  "fires": [
+   "gardens_present"
+  ],
+  "source": "test_checks.py::test_gardens_present_fires_when_a_farmhouse_has_none"
+ }
+}

@@ -1,0 +1,59 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "theater_stage": {
+  "x": 500,
+  "y": 500,
+  "w": 150,
+  "h": 105,
+  "rot": 0
+ },
+ "religious": [
+  {
+   "x": 540,
+   "y": 540,
+   "w": 120,
+   "h": 80,
+   "rot": 0,
+   "kind": "temple"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_theater_stage_larger_than_town"
+  ],
+  "source": "test_checks.py::test_city_theater_stage_larger_than_town_fires_when_small"
+ }
+}

@@ -1,0 +1,64 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "bbox": [
+    480,
+    480,
+    600,
+    600
+   ],
+   "outline": [
+    [
+     480,
+     480
+    ],
+    [
+     600,
+     480
+    ],
+    [
+     600,
+     600
+    ],
+    [
+     480,
+     600
+    ]
+   ]
+  }
+ ],
+ "gardens": [
+  {
+   "x": 530,
+   "y": 530,
+   "w": 24,
+   "h": 16,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "gardens_clear_of_paddies"
+  ],
+  "source": "test_checks.py::test_gardens_clear_of_paddies_fires_on_a_garden_in_a_field"
+ }
+}

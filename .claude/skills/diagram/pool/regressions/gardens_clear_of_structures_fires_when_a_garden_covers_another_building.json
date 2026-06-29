@@ -1,0 +1,44 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "buildings": [
+  {
+   "x": 545,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  }
+ ],
+ "gardens": [
+  {
+   "x": 545,
+   "y": 500,
+   "w": 24,
+   "h": 16,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "gardens_clear_of_structures"
+  ],
+  "source": "test_checks.py::test_gardens_clear_of_structures_fires_when_a_garden_covers_another_building"
+ }
+}
