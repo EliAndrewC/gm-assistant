@@ -7,7 +7,7 @@ A county seat of ~1,200 people / ~238 households. Per budgets.md the population 
 (scaled down - others off-map - but every caste present and farmers the plurality):
 a rural farm zone NW around a stream, a dense urban core of merchant/laborer/servant
 buildings along the Imperial Road, the Magistrate's walled manor + samurai houses SW,
-the segregated burakumin neighborhood NE, an amphitheater, barns ringed by hayfield/grazing
+the segregated burakumin neighborhood NE, a theater stage by the monastery, barns ringed by hayfield/grazing
 pasture SE, and a small forest. Unwalled.
 """
 import math
@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(2000, 1300, seed=209)
+s = Settlement(2000, 1300, seed=380)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.
@@ -26,7 +26,7 @@ s.meta(name="Hoshizora", scale="town", walled=False, torii_expected=1, monastery
 # ---- terrain: a small forest (SE corner) and two grazing pastures, all running OFF
 # the map edge (larger than drawn)
 s.forest_patch([(1660, 950), (1860, 915), (2060, 1000), (2060, 1360), (1720, 1360), (1620, 1120)])
-# southern hayfield - expanded up toward the amphitheater, off the bottom edge
+# southern hayfield - expanded up toward the barns, off the bottom edge
 s.pasture([(900, 1010), (1180, 1000), (1290, 900), (1540, 900), (1600, 1110), (1490, 1360), (910, 1360), (860, 1190)],
           label="hayfields & grazing", amp=32, label_xy=(1090, 1190))
 # northern hayfield - in the empty top of the map, off the top edge, with hay barns
@@ -63,15 +63,17 @@ s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86,
 # (hall, stables, etc.) is the subject of a separate Mode A diagram. TILTED (rot=-30) so its front
 # wall runs PARALLEL to the Imperial Road, which crosses NW-to-NE just past this SW edge; the gate
 # (north side) opens onto that road. The tilted footprint reshuffles the dense town's seeded packs,
-# which is why this map's seed (209) was chosen - it lands the depicted population back on its mark.
+# which is why this map's seed (380) was chosen - it lands the depicted population back on its mark.
 s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)
 
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
 # travelling in for market day arrive - they sleep on straw for a sen a night
 s.flophouse(345, 905)
 
-# ---- the amphitheater + barns (the barns sit in the grazing pasture)
-s.amphitheater(1320, 770, 82, label="amphitheater")
+# ---- the THEATER STAGE - a roofed performance stage + open viewing ground - in the Bishamon monastery's
+# precinct (just south of it), the festival/troupe venue belonging to the temple. A quiet county seat, so
+# a modest stage. The barns sit in the grazing pasture (SE).
+s.theater_stage(200, 990, w=120, h=84, rot=180, label="theater stage")   # rot=180: the monastery is NORTH, so the stage faces north (its viewing ground opens toward the hall, the audience between)
 s.building(1080, 1110, 88, 58, "barn")
 s.building(1330, 1150, 84, 56, "barn")
 s.label(1200, 1058, "barns", 10, italic=True)
@@ -84,19 +86,16 @@ ROAD_CORE = [(470, 945), (760, 760), (1060, 600), (1360, 450), (1700, 278)]
 s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 11, width=26, setback=16, spacing=48, rows=2, skip=ROAD)
 s.label(972, 586, "merchant houses & shops", 11, italic=True, color="#5A4326")
 # a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH / RICH
-# merchants in big homes in a tight band DIRECTLY BEHIND the storefronts (a short step off the road, ahead
-# of the laborer warren further back - the merchant family lives over/behind its own shop), and the ~3
-# MASTER (rich) laborers in larger dwellings at the edge of the warren. Placed AFTER the frontage (so each
-# merchant home sits behind a storefront) but BEFORE the packs, which then flow AROUND them (a pack placed
-# first fills these spots and the big house lands on a packed dwelling). Each merchant home is TILTED to the
-# local road angle (~-27deg) so it lies PARALLEL to the storefront in front of it (merchant_housing_aligned).
-for mx, my, mr in [(1136, 433, -27), (1040, 481, -29), (880, 571, -29), (1260, 619, -27)]:
-    s.building(mx, my, *s._dims("merchant_large"), "merchant_large", rot=mr)
+# merchants in big homes DIRECTLY BEHIND the storefronts (the merchant family lives over/behind its own
+# shop), ahead of the laborer warren set further back. Derived from the ACTUAL shop positions (not fixed
+# coords), so each home is behind the band and parallel to its shop under ANY seed; placed BEFORE the packs,
+# which then flow AROUND them. The ~3 MASTER (rich) laborers get larger dwellings at the edge of the warren.
+s.merchant_residences(4)
 for lx, ly in [(1328, 235), (740, 298)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
-s.pack((740, 235, 1320, 470), ["laborer"] * 24, step=42)
-s.pack((1165, 705, 1580, 918), ["servant"] * 13 + ["laborer"] * 13, step=42)
+s.pack((700, 195, 1140, 390), ["laborer"] * 18, step=42)   # pulled NW, well clear of the diagonal road (behind the merchant-residence band, with a gap); ~29 laborers total (budgets.md), not over
+s.pack((1165, 705, 1580, 918), ["servant"] * 13 + ["laborer"] * 11, step=42)
 s.label(1010, 224, "laborers' dwellings (set back off the road)", 10, italic=True, color="#5A4326")
 
 # ---- the segregated burakumin neighborhood (NE edge)
@@ -115,10 +114,10 @@ s.merchant_storehouses(6)
 # ---- farmhouses: the town's farmer majority (still the largest single group), packed several-deep
 # around the fields - generously, since each needs room for its threshing yard (some get dropped)
 for bb in (F1, F2, F3, F4):
-    s.ring(bb, 19, 14, ["plain"])
-    s.ring(bb, 17, 40, ["plain"])
-    s.ring(bb, 15, 66, ["plain"])
-    s.ring(bb, 13, 90, ["plain"])
+    s.ring(bb, 30, 14, ["plain"])
+    s.ring(bb, 26, 40, ["plain"])
+    s.ring(bb, 22, 66, ["plain"])
+    s.ring(bb, 18, 90, ["plain"])
 
 # a caravan INN + STABLES on the Imperial Road through-route, with open ground beside the stables as a
 # pasture for the wagon-train animals (oxen, horses) - like a provincial city's gate caravan facilities,

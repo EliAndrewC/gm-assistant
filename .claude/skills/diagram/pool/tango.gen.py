@@ -18,7 +18,7 @@ The four quarters (split by the road and an E-W axis):
         SAMURAI neighborhood, with a Temple of Bishamon (the warrior fortune) among them.
 Wealthy samurai keep walled ESTATES of varying size outside the SE wall and commute in. All
 six ministries (Rites, Revenue, Retainers, War, Works, Justice) appear; civic amenities ported
-from the town tier: merchant-house kura, a market flophouse, an amphitheater.
+from the town tier: merchant-house kura, a market flophouse, a theater stage (in the Benten precinct).
 """
 import math
 import os
@@ -27,7 +27,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(3200, 2700, seed=157)
+s = Settlement(3200, 2700, seed=161)
 s.meta(name="Tango", scale="city", walled=True, agricultural_district=True, population=3000)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing
 s.bscale = 0.42
 
@@ -57,13 +57,17 @@ s.road(IMPROAD, label="Imperial Road", label_xy=(1740, 478))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1000) ** 2 + (p[1] - 740) ** 2)   # a moat vertex on the NW
 s.stream([(640, -40), (740, 230), (850, 470), (_mnw[0], _mnw[1])], width=26)   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
 
-# civic amenities placed FIRST, in the open central cross, so the dense packs flow around them
-s.amphitheater(1450, 1030, 102, label="amphitheater")        # a leisure ground near the center; a CITY amphitheater is larger than a town's (~50% bigger)
+# civic amenities placed FIRST, in the open central cross, so the dense packs flow around them.
+# (The THEATER STAGE sits in the Temple of Benten's precinct in the SW - see below - not here: it was a
+# temple performance stage, so it belongs by a temple. A pair of merchant estates displaced from beside
+# Benten to make room for it fill this freed central ground, the merchant quarter reaching north into it.)
+for _ex, _ey, _gd in [(1432, 1018, "south"), (1524, 1086, "north")]:
+    s.merchant_estate(_ex, _ey, gate_dir=_gd)
 s.flophouse(1430, 484, w=92, h=42, label_below=True)         # outside the NORTH gate (arrivals from the north); labels below so its label stays below the cropped image's top edge
 s.flophouse(1820, 2188, w=92, h=42)                          # outside the SOUTH gate, by the gate market
 # CARAVAN facilities just INSIDE each gate (a transit zone): a flophouse + a prominent INN + a large
 # STABLES with open ground around them for the wagon-trains' draft animals (oxen/horses) and crews.
-# N gate (1600,550): in the open agrarian-edge between the fields (west) and the road, north of the amphitheater.
+# N gate (1600,550): in the open agrarian-edge between the fields (west) and the road, north of the central estates.
 # the flophouse labels BELOW itself (south, into the cluster) so its label clears the gate guard house
 # /inspection furniture just north of it, and the cluster sits low enough that the guard-house label
 # (drawn at the gate) doesn't clip the flophouse roof
@@ -161,6 +165,16 @@ grid(SW_ST, width=18)   # deep TOP-TO-BOTTOM blocks (storefronts front the avenu
 s.shrine_hall(1150, 1846, "Temple of Benten", w=124, h=80, kind="temple", primary=True, label_below=True)
 s.shrine_hall(1418, 1916, "Temple of Daikoku", w=124, h=80, kind="temple")   # stands off the Ministry of Rites to its west (a government office must not abut a neighbor)
 s.ministry(1290, 1952, "Ministry of Rites")   # nudged clear of the ring road (the SW ring runs just west of here)
+# the city THEATER STAGE - a roofed performance stage facing an open viewing ground - in the Temple of
+# Benten's precinct, just NORTH of the temple with its viewing ground opening south toward the hall (the
+# troupe/festival venue belonging to the temple). Placed BEFORE the merchant packs so the homes flow around
+# it; it fills the ground the two Benten-side estates vacated (they moved to the freed central spot above).
+s.theater_stage(1192, 1698, w=186, h=128, label="theater stage")
+# Benten's + Daikoku's intramural TEMPLE GRAVEYARDS (danka parish grounds) - placed HERE, before the merchant
+# packs, so the homes flow AROUND them (a graveyard placed last lands under packed homes). Benten's sits WEST
+# of the stage, clear of both it and the temple; Daikoku's by its own hall.
+s.cemetery(1058, 1648, 46, 34, label="graveyard")            # Benten's parish ground (in the slot between the x1010 street and the stage)
+s.cemetery(1532, 1771, 56, 40, label="graveyard")            # Daikoku's parish ground (inside, cramped)
 # a smattering of small wayside shrines dot the temple neighborhood (non-residential), tucked in the
 # gaps around the two temples - placed BEFORE the packs so the homes flow around them
 for sx, sy in [(1145, 1900), (1190, 1930), (1340, 1860), (1400, 2000)]:
@@ -172,9 +186,10 @@ front([AVENUE] + SW_ST, (["merchant"] * 2 + ["shop"]) * 20, width=20, spacing=46
 # 8% -> WALLED ESTATES, rich 12% -> LARGE houses, poor+other 80% -> small/average houses). A few WALLED
 # ESTATES of the very-rich sit deep in the MIDDLE + EAST block cores (placed first; the home packs flow
 # around them) - well clear of the west wall/moat, the temples below, and the streets' storefront bands.
-# (x, y, gate_dir) - the gate must open onto OPEN ground, never into a neighbor; the estate abutting
-# the Temple of Benten (below it) opens its gate NORTH instead of south into the temple.
-EST = [(1155, 1635, "south"), (1155, 1740, "north"), (1460, 1635, "south"), (1460, 1775, "south")]
+# (x, y, gate_dir) - the gate must open onto OPEN ground, never into a neighbor. (Two estates that used to
+# sit just NORTH of the Temple of Benten moved to the freed central ground above, to clear room for the
+# theater stage in Benten's precinct; the remaining pair sit in the MIDDLE/EAST block cores.)
+EST = [(1460, 1635, "south"), (1460, 1775, "south")]
 for ex, ey, gd in EST:
     s.merchant_estate(ex, ey, gate_dir=gd)
 # large + small homes (+ the merchants' live-in servants), INTERLEAVED so the placed mix stays varied,
@@ -334,8 +349,8 @@ s.ring(NW2, 22, 46, ["plain"])
 #  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (the elite crypts)
 #  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
 # (the Temple of Bishamon, new and in a former estate, keeps no graveyard - graveyard=False above)
-s.cemetery(1084, 1643, 46, 34, label="graveyard")   # Benten's parish ground (inside, cramped); placed in a clear gap (footprint + label clear of merchant rows, temple, and streets)
-s.cemetery(1532, 1771, 56, 40, label="graveyard")                     # Daikoku's parish ground (inside, cramped)
+# (Benten's + Daikoku's intramural temple graveyards are placed EARLIER, up in the temple neighborhood,
+# before the merchant packs - see above.)
 s.cemetery(756, 2013, 104, 74, label="common burial ground")          # the extramural common ground - set WELL back from the moat (beyond the cremation ground)
 s.cemetery(1354, 673, 60, 44, label="graveyard", parish=False)        # Tango-only: an in-wall burial ground in the agricultural district (NOT a temple parish ground)
 s.mausoleum(2246, 1556, 54, 40, label="Mausoleum", gate_dir="west", label_below=True)   # the ruling clan's crypts, above-right of the Ministry of Works

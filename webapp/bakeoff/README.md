@@ -10,10 +10,28 @@ your expectations. Afterwards you unblind and tabulate.
 Everything here is disposable. When the winning tier is chosen, delete the
 `bakeoff/` directory and its entries in `pyproject.toml`.
 
-## The four tiers
+## The active comparison: the clan-flavor dimension
 
-Defined and assembled in `briefs.py` (run `python3 -m bakeoff.briefs` to see live
-sizes):
+The live question is how to handle clan identity without making the model
+over-apply clan stereotypes. Both arms carry the GM's materialist "The Great
+Clans" framing (sliced live from l7r.md); the comparison isolates whether the
+per-clan summary helps on top of it. Defined in `briefs.py` (`config.TIERS`); run
+`python3 -m bakeoff.briefs` for live sizes:
+
+| Arm | ~tokens | Contents | Question |
+|------|---------|----------|----------|
+| `blurb` | ~3.7k | shipped brief + the "The Great Clans" framing from l7r.md | Is the framing alone enough? |
+| `flavor` | ~6.3k | `blurb` + `flavor_clans.md` (the per-clan summary, rewritten in that materialist spirit) | Does per-clan flavor add value, or just invite stereotyping? |
+
+The blurb and the t2/t3 sections slice exact text out of the canonical notes at
+build time (via `extract_section`), so the GM's writing is never retyped or
+allowed to drift.
+
+### The earlier context-amount sweep (preserved)
+
+Before the clan-flavor question, the bakeoff compared how *much* context to
+carry. Those tiers (`config.CONTEXT_TIERS`) still build and can be re-run by
+swapping them into `config.TIERS`:
 
 | Tier | ~tokens | Contents | Question |
 |------|---------|----------|----------|
@@ -21,9 +39,6 @@ sizes):
 | `t1` | ~8k | t0 + clan/school flavor (`flavor_clans.md`) + few-shot GM-written NPC exemplars | Lean but textured |
 | `t2` | ~39k | t1 + material/government/calendar/supernatural sections pulled verbatim from l7r.md | Does the full texture layer help? |
 | `t3` | ~337k | The entire l7r.md + budgets.md | Does curation even matter? |
-
-t2 and t3 slice exact text out of the canonical notes at build time (via
-`extract_section`), so the GM's writing is never retyped or allowed to drift.
 
 ## Workflow
 
@@ -39,7 +54,7 @@ All commands run from `webapp/`.
    ```
    # cheap smoke run first:
    python3 -m bakeoff.generate --characters hideki,emi --samples 1
-   # the full matrix (10 chars x 4 tiers x 2 models x 3 samples = 240 calls):
+   # the full matrix (10 chars x 2 arms x 2 models x 3 samples = 120 calls):
    python3 -m bakeoff.generate
    ```
 
@@ -52,9 +67,10 @@ All commands run from `webapp/`.
    ```
    python3 -m bakeoff.app
    ```
-   Open the printed URL. Each screen shows one character's sheet and the four
-   tiers' outputs as shuffled A/B/C/D cards; pick the one you would actually use,
-   optionally add quick-tags and notes. Progress persists - restart and resume.
+   Open the printed URL. Each screen shows one character's sheet and the active
+   arms' outputs as shuffled A/B (A/B/C/D for the 4-tier sweep) cards; pick the
+   one you would actually use, optionally add quick-tags and notes. Progress
+   persists - restart and resume.
    (In a container, the app binds `0.0.0.0:8090`; publish that port or set
    `BAKEOFF_PORT`.)
 
@@ -67,9 +83,9 @@ All commands run from `webapp/`.
 
 | File | Role |
 |------|------|
-| `config.py` | Paths, the tier/model lists, sample count |
-| `briefs.py` | Tier assembly + the heading-based section extractor |
-| `flavor_clans.md` | Hand-written clan/family/school flavor (t1+) |
+| `config.py` | Paths, the active arm list + preserved context-sweep tiers, model list, sample count |
+| `briefs.py` | Tier/arm assembly + the heading-based section extractor |
+| `flavor_clans.md` | Per-clan/family/school flavor, materialist framing (the `flavor` arm) |
 | `characters.json` | The 10 hard test characters (each with a `stress` note) |
 | `generate.py` | Resumable candidate generation across the matrix |
 | `build_tasks.py` | Deterministic blind task builder |
@@ -83,9 +99,9 @@ All commands run from `webapp/`.
   the option label and text, never the tier or model.
 - **Variance control:** three samples per cell; one task per sample round, so the
   rounds act as repeats that average out the large run-to-run swings.
-- **Model dimension:** each task compares the four tiers within a single (hidden)
-  model; `analyze.py` reports tier wins both pooled and split by model. Direct
-  model-vs-model screens are intentionally not built yet.
+- **Model dimension:** each task compares the active arms within a single
+  (hidden) model; `analyze.py` reports arm wins both pooled and split by model.
+  Direct model-vs-model screens are intentionally not built yet.
 - **Hard characters:** the test set deliberately stresses trait contradictions,
   edge castes, rank/recognition mismatches, clan-stereotype tensions, real vs.
   ambiguous supernatural, and the family-rank promotion mechanic. Easy

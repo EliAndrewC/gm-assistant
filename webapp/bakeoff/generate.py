@@ -106,7 +106,7 @@ def dry_run(characters: list[dict], tiers: list[str], models: list[str], samples
         tier_tokens[t] for _ in characters for t in tiers for _ in models for _ in range(samples)
     )
     print(f'Approx brief input tokens across the whole run: ~{total_in:,}')
-    print('(Per-call output is short, ~300-600 tokens. T3 dominates input cost.)')
+    print('(Per-call output is short, ~300-600 tokens; the largest tier dominates input cost.)')
 
 
 def main() -> None:

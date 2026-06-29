@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(2600, 1820, seed=62)
+s = Settlement(2600, 1820, seed=70)
 # downhill is SOUTH: the hill/manor sit in the north, so the land falls away southward and
 # the streams flow north-to-south; irrigation channels must run downhill (tap upstream/north
 # of where they feed each field)
@@ -89,9 +89,10 @@ assert CROSS[0][0] >= CHRYS[2] + 30, "market cross-street must start clear of th
 s.street(MAIN, width=28, main=True, label="main street")
 s.street(CROSS, width=22)
 
-# the town's amphitheater, at the FOOT of the hill (south, downhill side) so the townsfolk
-# sit on the hill's slope to watch the performances; offset west of the main-street axis
-s.amphitheater(1080, 910, 80, label="amphitheater")
+# the town's THEATER STAGE - a roofed performance stage facing an open viewing ground - sited in the Benten
+# monastery's precinct, just EAST of it (the NW diagonal rampart hems the ground directly north of Benten),
+# facing WEST (rot=90) so its viewing ground opens toward the Benten hall, the audience gathered between
+s.theater_stage(920, 918, rot=90, label="theater stage")
 
 # Big fixed-position buildings go DOWN FIRST, before the packs - the packs' _fits() then flows the small
 # houses AROUND them (a pack placed first fills these spots and the big building lands on a house). The

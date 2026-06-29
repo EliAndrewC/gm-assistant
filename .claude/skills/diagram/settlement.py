@@ -200,7 +200,7 @@ class Settlement:
                   "shrine": None, "forest": None, "road": None,
                   "wall": None, "gate": None, "gates": [], "moat": None,
                   "governor_mansion": None, "ministries": [], "inspection_stations": [],
-                  "wells": [], "bridges": [], "threshing_yards": [], "cemeteries": [],
+                  "wells": [], "bridges": [], "threshing_yards": [], "gardens": [], "cemeteries": [],
                   "mausoleums": [], "cremation_grounds": [], "ossuaries": [], "moat_layer": None,
                   "meta": {"W": W, "H": H}}
         self._header()
@@ -1073,16 +1073,36 @@ class Settlement:
             lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
             self.label(lx, ly, label, 12, italic=True, color="#5C6B3A")
 
-    def amphitheater(self, cx, cy, r, label=None):
-        rr = r
-        while rr > 11:
-            self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rr}" ry="{rr*0.82:.0f}" fill="none" stroke="#9C8C70" stroke-width="1.5" opacity="0.85"/>')
-            rr -= 13
-        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="10" ry="8" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.2"/>')
-        self.ellipses.append((cx, cy, r + 10, r * 0.82 + 10))
-        self.M["amphitheater"] = {"x": cx, "y": cy, "r": r}
+    def theater_stage(self, cx, cy, w=150, h=105, rot=0, label=None):
+        """A public THEATER STAGE: a roofed raised stage facing an open viewing ground - the troupe-and-
+        festival venue of a Rokugani town/city (the East Asian analog of a Greco-Roman amphitheater: a
+        temple OPERA STAGE / shrine NOH-kagura stage). It belongs to a temple/monastery precinct, the
+        audience gathering in the open ground between the stage and the hall. (cx,cy) is the centre of the
+        w x h viewing ground; the roofed stage sits at the -y (north) end facing +y into it; `rot` turns the
+        whole feature (point it so the ground opens toward the temple). Records M['theater_stage']; reserves
+        its footprint so packing avoids it."""
+        hw, hh = w / 2, h / 2
+        sw, sh = w * 0.5, h * 0.26                            # the roofed stage at the north end
+        sy = -hh - sh * 0.5                                   # straddling the ground's north edge
+        g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-hw:.0f}" y="{-hh:.0f}" width="{w:.0f}" height="{h:.0f}" rx="4" fill="#E4D6B0" stroke="#A98E54" stroke-width="1.5"/>')   # the swept earthen viewing ground
+        g.append(f'<rect x="{-hw+5:.0f}" y="{-hh+5:.0f}" width="{w-10:.0f}" height="{h-10:.0f}" rx="3" fill="none" stroke="#C9B484" stroke-width="0.7" opacity="0.6"/>')
+        for i in range(3):                                    # a few faint rows of standing crowd in the ground
+            ry = -hh + h * (0.40 + 0.17 * i)
+            for k in range(7):
+                px = -hw + 14 + (w - 28) * (k + 0.5) / 7
+                g.append(f'<circle cx="{px:.0f}" cy="{ry:.0f}" r="1.7" fill="#8A7A56" opacity="0.5"/>')
+        g.append(f'<rect x="{-sw/2:.0f}" y="{sy:.0f}" width="{sw:.0f}" height="{sh:.0f}" rx="2" fill="#C9A57A" stroke="#5A3F1E" stroke-width="1.8"/>')   # stage platform
+        g.append(f'<rect x="{-sw/2:.0f}" y="{sy:.0f}" width="{sw:.0f}" height="{sh*0.36:.0f}" fill="#7A5A30"/>')                                        # its roof
+        g.append(f'<circle cx="0" cy="{sy+sh*0.56:.0f}" r="{sh*0.24:.0f}" fill="#6E8B4A" opacity="0.6"/>')                                              # a hint of the painted pine backdrop
+        g.append(f'<rect x="{-sw/2:.0f}" y="{sy+sh-2.5:.0f}" width="{sw:.0f}" height="2.5" fill="#5A3F1E" opacity="0.6"/>')                             # stage-front lip onto the ground
+        g.append('</g>')
+        self.add(''.join(g))
+        self.M["theater_stage"] = {"x": cx, "y": cy, "w": w, "h": h, "rot": rot}
+        R = math.hypot(hw, hh) + sh * 0.5                     # rotation-safe covering radius (stage + ground)
+        self.ellipses.append((cx, cy, R, R))
         if label:
-            self.label(cx, cy + r * 0.82 + 18, label, 11, italic=True)
+            self.label(cx, cy + hh + 16, label, 11, italic=True)
 
     def _draw_threshing_yard(self, cx, cy, w, h):
         """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack)."""
@@ -1142,6 +1162,98 @@ class Settlement:
         self._draw_threshing_yard(ox, oy, yw, yh)
         self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0, "of": [hx, hy]})
         self.placed.append((ox, oy, yw, yh))
+
+    def _draw_garden(self, cx, cy, w, h):
+        """Draw one small dooryard KITCHEN GARDEN (saien): a tilled earthen bed with tidy planted rows
+        of greens. Distinct from the tan threshing yard (bare swept earth) and the blue-green paddy quilt."""
+        x0, y0 = -w / 2, -h / 2
+        g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
+        g.append(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w:.0f}" height="{h:.0f}" rx="2" fill="#B49A62" stroke="#6E5A30" stroke-width="1.3"/>')   # tilled bed
+        nrows = 3
+        for i in range(nrows):                               # rows of greens running along the bed
+            ry = y0 + h * (i + 0.5) / nrows
+            g.append(f'<line x1="{x0+3:.1f}" y1="{ry:.1f}" x2="{-x0-3:.1f}" y2="{ry:.1f}" stroke="#6E9A40" stroke-width="2.4" stroke-linecap="round"/>')
+            for k in range(3):                               # a few leafy plants dotted along each row
+                px = x0 + 4 + (w - 8) * (k + 0.5) / 3
+                g.append(f'<circle cx="{px:.1f}" cy="{ry:.1f}" r="1.7" fill="#83B255"/>')
+        g.append('</g>')
+        self.add(''.join(g))
+
+    def _garden_dims(self):
+        """The dooryard kitchen-garden footprint, scaled with the map's building grain. Small - smaller
+        than the threshing yard and well under the farmhouse (a kitchen plot, not a second field)."""
+        return 24 * self.bscale, 16 * self.bscale
+
+    def _farm_shed_rect(self, hx, hy, hw, hh, rot, kind, shed):
+        """The footprint of a plain farmhouse's attached STOREHOUSE/shed (kura), drawn as a sub-glyph on
+        the house's WEST side (local -x), or None if it has none. Derived here (the shed is not a separate
+        recorded struct) so the garden can be kept OFF it - shed and garden sit on opposite sides."""
+        if not (shed and kind == "plain"):
+            return None
+        th = math.radians(rot)
+        lx = -0.64 * hw                                      # shed centre in the house's local frame (west side)
+        return (hx + lx * math.cos(th), hy + lx * math.sin(th), 0.32 * hw, 0.56 * hh)
+
+    def _garden_fits(self, x, y, w, h, hx, hy, yard, shed_rect=None):
+        """A garden fits where it is in-bounds, on DRY ground (clear of paddies / blocks), off any lane,
+        clear of every placed footprint EXCEPT its own farmhouse, clear of that farmhouse's YARD, and clear
+        of its SHED (the yard, shed, and garden all sit on different sides of the house, never overlapping)."""
+        if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:
+            return False
+        if self.bound and not point_in_poly(x, y, self.bound):
+            return False
+        if self._in_blocked(x, y) or self._near_corridor(x, y):
+            return False
+        r = math.hypot(w, h) / 2
+        for poly in self.field_polys:                        # a kitchen garden is dry ground, off the paddies
+            if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < r + 4:
+                return False
+        if math.hypot(x - yard[0], y - yard[1]) < r + math.hypot(yard[2], yard[3]) / 2 + 2:
+            return False                                     # not on top of this house's own threshing yard
+        if shed_rect and math.hypot(x - shed_rect[0], y - shed_rect[1]) < r + math.hypot(shed_rect[2], shed_rect[3]) / 2 + 2:
+            return False                                     # not on top of this house's own storehouse/shed (its west side)
+        for (px, py, pw, ph) in self.placed:
+            if px == hx and py == hy:                        # the garden abuts its OWN farmhouse - allowed
+                continue
+            if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 2:
+                return False
+        return True
+
+    def _find_garden_spot(self, hx, hy, hw, hh, yard, shed_rect=None):
+        """The first fitting kitchen-garden position: a sunny SIDE, preferring the EAST (the kitchen/doma
+        end, where the cook steps out to it), then the west, then the sunny SE/SW corners - NEVER the shady
+        north back, and never the south front (the threshing yard's apron) nor the west shed. Spot or None."""
+        gw, gh = self._garden_dims()
+        # the abutting E/W/SE/SW spots first; then the same sides reached a little FURTHER out, to slip
+        # past a close ring-neighbour into the next gap (a real dooryard plot need not be flush to the wall)
+        for extra in (0, 15 * self.bscale):
+            for dx, dy in ((1, 0), (-1, 0), (1, 1), (-1, 1)):
+                ox = hx + dx * (hw / 2 + gw / 2 - 2 + extra)
+                oy = hy + dy * (hh / 2 + gh / 2 - 2)
+                if self._garden_fits(ox, oy, gw, gh, hx, hy, yard, shed_rect):
+                    return ox, oy, gw, gh
+        return None
+
+    def _attach_garden(self, hx, hy, spot):
+        """Draw a farmstead's dooryard kitchen garden (before its house, so the house wins any abutment)
+        and record it. The kitchen garden was a household staple, so every farmhouse gets one."""
+        ox, oy, gw, gh = spot
+        self._draw_garden(ox, oy, gw, gh)
+        self.M["gardens"].append({"x": round(ox, 1), "y": round(oy, 1), "w": gw, "h": gh, "rot": 0, "of": [hx, hy]})
+        self.placed.append((ox, oy, gw, gh))
+
+    def _find_appurtenances(self, hx, hy, hw, hh, rot=0, kind="plain", shed=False):
+        """A farmstead needs room for BOTH its threshing yard (south/front, then a side) AND its dooryard
+        kitchen garden (a DIFFERENT sunny side, kept off the west-side shed). Returns (yard_spot, garden_spot)
+        or None if either can't fit."""
+        yard = self._find_yard_spot(hx, hy, hw, hh)
+        if yard is None:
+            return None
+        shed_rect = self._farm_shed_rect(hx, hy, hw, hh, rot, kind, shed)
+        garden = self._find_garden_spot(hx, hy, hw, hh, yard, shed_rect)
+        if garden is None:
+            return None
+        return yard, garden
 
     def _farmstead_nudges(self):
         """Small offsets to try for a farmhouse so BOTH the house and its yard fit: the ring's own spot
@@ -1347,6 +1459,64 @@ class Settlement:
                      f'<rect x="{-kw/2:.0f}" y="{-kh/2:.0f}" width="{kw}" height="{kh}" rx="1.5" fill="#E8E0CE" stroke="#6B5A3C" stroke-width="1.4"/>'
                      f'<rect x="{-kw/2:.0f}" y="{-kh/2:.0f}" width="{kw}" height="4.5" fill="#5A4A30"/></g>')   # dark fireproof roof
             self.M["storehouses"].append({"x": ox, "y": oy, "w": kw, "h": kh, "of": [b["x"], b["y"]]})
+            placed += 1
+        return placed
+
+    def merchant_residences(self, count=4, depth_margin=14, spread=120):
+        """Place a few RICH merchant RESIDENCES (kind 'merchant_large') directly BEHIND the shopfront band,
+        each ALIGNED to (same rotation as) the storefront it sits behind - the merchant family lives over/
+        behind its own shop. Derived from the ACTUAL placed shops (not fixed coords), so it stays correct
+        under any seed: each home is set one step DEEPER than the deepest shop (clearing the storefront band),
+        parallel to it. Call AFTER the frontage but BEFORE the laborer packs (which then set back further,
+        leaving the merchant-band -> gap -> warren order). Uses a true RECTANGULAR overlap test (the circle
+        _fits is far too conservative for a large home in a tight band). Returns count placed."""
+        rd = self.M.get("road")
+        biz = [b for b in self.M["buildings"] if b["kind"] in ("merchant", "shop")]
+        if not (rd and biz):
+            return 0
+
+        def droad(x, y):
+            return min(seg_dist(x, y, rd[k], rd[k + 1]) for k in range(len(rd) - 1))
+
+        def corners(cx, cy, rw, rh, rot=0.0):
+            th = math.radians(rot)
+            c, sn = math.cos(th), math.sin(th)
+            return [(cx + dx * c - dy * sn, cy + dx * sn + dy * c)
+                    for dx, dy in ((-rw / 2, -rh / 2), (rw / 2, -rh / 2), (rw / 2, rh / 2), (-rw / 2, rh / 2))]
+
+        def overlap(ca, cb):
+            return (any(point_in_poly(px, py, cb) for px, py in ca)
+                    or any(point_in_poly(px, py, ca) for px, py in cb)
+                    or any(segments_cross(ca[i], ca[(i + 1) % 4], cb[j], cb[(j + 1) % 4]) for i in range(4) for j in range(4)))
+
+        bandmax = max(droad(b["x"], b["y"]) for b in biz)   # depth of the deepest storefront
+        w, h = self._dims("merchant_large")
+        st = random.getstate()        # spread the picks without perturbing the main placement RNG
+        random.seed(11)
+        random.shuffle(biz)
+        random.setstate(st)
+        placed, used = 0, []
+        for b in biz:
+            if placed >= count:
+                break
+            th = math.radians(b["rot"])
+            backx, backy = math.sin(th), -math.cos(th)      # the shop's BACK (inland, away from the road)
+            step = bandmax - droad(b["x"], b["y"]) + h / 2 + depth_margin   # land just behind the WHOLE band
+            ox, oy = b["x"] + backx * step, b["y"] + backy * step
+            if ox < 55 or ox > self.W - 55 or oy < 88 or oy > self.H - 26:
+                continue
+            if self.bound and not point_in_poly(ox, oy, self.bound):
+                continue
+            if self._in_blocked(ox, oy) or self._near_corridor(ox, oy):
+                continue
+            mc = corners(ox, oy, w, h, b["rot"])            # (_in_blocked above already keeps it off the paddies)
+            if any(overlap(mc, corners(px, py, pw, ph)) for (px, py, pw, ph) in self.placed
+                   if abs(px - ox) + abs(py - oy) <= 150):   # rectangular, not circular: clears the tight band
+                continue
+            if any(math.hypot(ox - ux, oy - uy) < spread for ux, uy in used):
+                continue                                    # keep the rich homes spread along the band
+            self.building(ox, oy, w, h, "merchant_large", rot=b["rot"])
+            used.append((ox, oy))
             placed += 1
         return placed
 
@@ -1933,8 +2103,9 @@ class Settlement:
         return any(edge_dist(x, y, poly) <= 165 for poly in self.field_polys) if self.field_polys else True
 
     def _nudge_for_yard(self, rec):
-        """Shift a farmhouse a little so a yard fits - keeping it field-adjacent and clear of everything -
-        when it has no yard room at its placed spot. Updates rec + its reservation; returns the spot or None."""
+        """Shift a farmhouse a little so BOTH its yard AND its dooryard garden fit - keeping it
+        field-adjacent and clear of everything - when they have no room at its placed spot. Updates rec +
+        its reservation; returns (yard_spot, garden_spot) or None."""
         x0, y0, w, h = rec["x"], rec["y"], rec["w"], rec["h"]
         self.placed = [p for p in self.placed if p != (x0, y0, w, h)]   # lift its own reservation while searching
         found = None
@@ -1944,7 +2115,7 @@ class Settlement:
             cx, cy = x0 + nx, y0 + ny
             if not self._fits(cx, cy, w, h) or not self._field_adjacent(cx, cy):
                 continue
-            spot = self._find_yard_spot(cx, cy, w, h)
+            spot = self._find_appurtenances(cx, cy, w, h, rec["rot"], rec["kind"], rec["shed"])
             if spot:
                 rec["x"], rec["y"], found = cx, cy, spot
                 break
@@ -1952,20 +2123,23 @@ class Settlement:
         return found
 
     def farmsteads(self):
-        """Draw every deferred farmhouse WITH its threshing/drying YARD - the work yard was universal, so
-        every farmstead has one. Find a yard spot (sunny S/front, then E/W); if none, nudge the house a
-        little; draw yard then house so the house wins the overlap. A house that cannot host a yard anywhere
-        nearby is dropped (rare) so the 100% invariant holds. Call LAST in the gen. Returns the count."""
+        """Draw every deferred farmhouse WITH its threshing/drying YARD (south/front apron) AND its dooryard
+        kitchen GARDEN (a sunny side, preferring the east) - both were universal to a farmstead, so every
+        farmhouse has one of each. Find spots for both; if they don't fit, nudge the house a little; draw
+        garden + yard then the house so the house wins any abutment. A house that cannot host BOTH anywhere
+        nearby is dropped (rare) so the 100% invariants hold. Call LAST in the gen. Returns the count."""
         survivors = []
         for rec in self._pending_farmsteads:
-            spot = self._find_yard_spot(rec["x"], rec["y"], rec["w"], rec["h"])
+            spot = self._find_appurtenances(rec["x"], rec["y"], rec["w"], rec["h"], rec["rot"], rec["kind"], rec["shed"])
             if spot is None:
                 spot = self._nudge_for_yard(rec)
             if spot is None:
                 fp = (rec["x"], rec["y"], rec["w"], rec["h"])
-                self.placed = [p for p in self.placed if p != fp]   # drop the un-yardable farmhouse
+                self.placed = [p for p in self.placed if p != fp]   # drop the un-appurtenanced farmhouse
                 continue
-            self._attach_yard(rec["x"], rec["y"], spot)
+            yard_spot, garden_spot = spot
+            self._attach_garden(rec["x"], rec["y"], garden_spot)
+            self._attach_yard(rec["x"], rec["y"], yard_spot)
             self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"], shed=rec["shed"])
             survivors.append(rec)
         self.M["houses"] = survivors

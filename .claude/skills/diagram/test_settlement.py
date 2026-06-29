@@ -201,6 +201,70 @@ def test_farmsteads_drops_a_farmhouse_with_no_yard_room():
     assert s.M["houses"] == [] and s.M["threshing_yards"] == []
 
 
+# --- dooryard kitchen garden: every farmstead also gets a saien on a sunny side --------------
+def test_farmsteads_garden_on_a_sunny_side():
+    s = _town()
+    assert s.try_place(500, 500, "plain")
+    assert s.farmsteads() == 1
+    gd = s.M["gardens"][0]
+    assert gd["of"] == [500, 500] and gd["y"] >= 500 - 5   # never the shady north back
+
+
+def test_farmsteads_drops_a_farmhouse_with_no_garden_room():
+    # a bound that admits the house + its south yard but leaves NO sunny side for a garden -> the
+    # 100%-garden invariant drops the farmhouse. Exercises _find_appurtenances' garden-None path.
+    s = _town()
+    assert s.try_place(500, 500, "plain")
+    s.bound = [(486, 486), (514, 486), (514, 540), (486, 540)]   # a thin N-S slot: yard fits south, no E/W room
+    assert s.farmsteads() == 0
+    assert s.M["houses"] == [] and s.M["gardens"] == []
+
+
+def test_garden_fits_rejects_a_spot_outside_the_bound():
+    s = Settlement(1000, 1000, seed=1)
+    s.bound = [(0, 0), (600, 0), (600, 1000), (0, 1000)]   # only x < 600 is inside
+    yard = (500, 540, 32, 20)
+    assert s._garden_fits(700, 500, 24, 16, 500, 500, yard) is False   # x=700 is outside the bound
+
+
+# --- merchant_residences(): rich homes derived from the ACTUAL shops, behind the storefront band ---
+def test_merchant_residences_returns_zero_without_a_road_or_shops():
+    s = Settlement(1000, 1000, seed=1)
+    assert s.merchant_residences() == 0          # no road, no shops
+    s.road([(50, 500), (950, 500)])
+    assert s.merchant_residences() == 0          # a road but still no shops
+
+
+def test_merchant_residences_places_behind_band_and_skips_bad_spots():
+    s = Settlement(1000, 1000, seed=1)
+    s.road([(50, 500), (950, 500)])                       # horizontal road
+    s.building(850, 640, 40, 28, "shop", rot=180)         # a DEEP, far shop: raises the band depth so the others'
+    #                                                       homes land well behind their own shop (clearance)
+    s.building(300, 560, 40, 28, "shop", rot=180)         # its home lands ~(300,684), clear -> PLACES
+    s.building(395, 560, 40, 28, "shop", rot=180)         # home ~95px away: clears overlap but within `spread` -> skipped
+    s.building(600, 560, 40, 28, "shop", rot=180)         # its home ~(600,684) lands in the paddy below -> skipped
+    s.paddy_field((540, 650, 660, 760), "", "p", amp=6)   # a paddy under the 600-shop's home (blocked ground)
+    n = s.merchant_residences(count=6)
+    homes = [b for b in s.M["buildings"] if b["kind"] == "merchant_large"]
+    assert n >= 1 and homes and all(h["y"] > 600 for h in homes)   # placed BEHIND the band (further from the road)
+
+
+def test_merchant_residences_skips_an_off_map_home():
+    s = Settlement(1000, 1000, seed=1)
+    s.road([(50, 500), (950, 500)])
+    s.building(300, 950, 40, 28, "shop", rot=180)         # so deep that its home lands ~y=994, off the bottom edge
+    assert s.merchant_residences() == 0
+
+
+def test_merchant_residences_respects_the_bound():
+    s = Settlement(1000, 1000, seed=1)
+    s.road([(50, 500), (950, 500)])
+    s.building(850, 640, 40, 28, "shop", rot=180)         # deep+far: raises band depth so the 300-home clears its shop
+    s.building(300, 560, 40, 28, "shop", rot=180)         # its home lands ~(300,684), clear of shops
+    s.bound = [(0, 0), (1000, 0), (1000, 600), (0, 600)]   # bound excludes y > 600 -> the 300-home is outside -> skipped
+    assert s.merchant_residences() == 0
+
+
 if __name__ == "__main__":
     import sys
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

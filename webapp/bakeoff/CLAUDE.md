@@ -33,12 +33,14 @@ of the curve before wiring the button.
 
 - Scaffolding is **complete and verified end to end** (lint/format/mypy pass; a
   smoke run exercised generate -> build_tasks -> app -> vote -> analyze).
-- **Generated so far:** only a 2-character demo (`hideki`, `emi`), 1 sample each,
-  all 4 tiers x 2 models = 16 candidates, 4 tasks, in `data/` (gitignored but
-  present on disk). **No real votes yet** (the smoke-test vote was cleared).
-- The **full run has NOT been done.** Full matrix = 10 chars x 4 tiers x 2 models
-  x 3 samples = 240 cells (`python3 -m bakeoff.generate --dry-run` to see cost;
-  the t3 "everything" arm dominates at ~20M input tokens).
+- **Pivoted to the clan-flavor dimension** (see "Things not to re-derive"). The
+  GM added a materialist "The Great Clans" framing to l7r.md and `flavor_clans.md`
+  was rewritten in that spirit; `config.TIERS` is now `['blurb', 'flavor']`. The
+  old t0-t3 demo data was cleared (it was keyed to the retired tier ids).
+- **Nothing generated yet** for the new arms, and **no votes yet.** Full matrix =
+  10 chars x 2 arms x 2 models x 3 samples = 120 cells, ~600k input tokens
+  (`python3 -m bakeoff.generate --dry-run` to confirm) - far cheaper than the old
+  240-cell sweep now that the ~337k t3 arm is out of the active run.
 
 ## How to run it (all from `webapp/`)
 
@@ -52,12 +54,20 @@ python3 -m bakeoff.analyze                # unblind + tabulate (only when ready)
 
 ## Things not to re-derive
 
-- **The four tiers** are composed, not hand-maintained copies (see `briefs.py`):
-  t0 = shipped brief (~3k tok); t1 = +clan/school flavor + few-shot GM NPC
-  exemplars (~8k); t2 = +material/government/calendar/supernatural sliced
-  verbatim from l7r.md (~39k); t3 = entire l7r.md + budgets.md (~337k). t2/t3
-  pull exact text by heading via `extract_section`, so the GM's writing is never
-  retyped.
+- **The active comparison is the clan-flavor dimension** (`config.TIERS`), not the
+  original context-amount sweep. Both arms carry the GM's materialist "The Great
+  Clans" framing (sliced live from l7r.md via `extract_section`); they differ
+  only in whether `flavor_clans.md` (the per-clan summary, itself rewritten in
+  that materialist spirit) is layered on top: `blurb` (~3.7k tok) = framing only;
+  `flavor` (~6.3k tok) = framing + per-clan summary. The question: does per-clan
+  flavor help, or just invite stereotyping? `flavor_clans.md` is the GM's canon
+  summary - fair game to edit.
+- **The original context-amount tiers are preserved** in `config.CONTEXT_TIERS`
+  and still build via `briefs.build_tier` (t0 = shipped brief ~3k; t1 = +flavor +
+  few-shot GM NPC exemplars ~8k; t2 = +material/government/calendar/supernatural
+  from l7r.md ~39k; t3 = entire l7r.md + budgets.md ~337k). Swap them into
+  `config.TIERS` to re-run that sweep. t2/t3 pull exact text by heading via
+  `extract_section`, so the GM's writing is never retyped.
 - **Blinding is enforced server-side** in `app.py`: the template only ever gets
   the option label + text, never the tier or model. Keep it that way.
 - **Variance control:** 3 samples/cell; one task per sample round so rounds act
