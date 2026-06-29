@@ -1,8 +1,20 @@
 """
-Assembly of the four prompt tiers under test.
+Assembly of the prompt tiers under test.
 
-The whole point of the bakeoff is to compare context *amount* and *kind*, so the
-tiers are built compositionally rather than as four hand-maintained copies:
+The ACTIVE comparison (config.TIERS) is the clan-flavor dimension:
+
+- **blurb** - the shipped brief + the GM's materialist "The Great Clans" framing,
+  sliced live from l7r.md. No per-clan summary.
+- **flavor** - the same, plus flavor_clans.md (the per-clan summary, itself
+  rewritten in that materialist spirit) layered on top.
+
+Both arms carry the blurb, so a blind comparison isolates exactly one thing:
+does the per-clan flavor summary help, or is the framing alone enough?
+
+The earlier context-amount sweep (config.CONTEXT_TIERS) is preserved below and
+still builds. The whole point of that sweep was to compare context *amount* and
+*kind*, so the tiers are built compositionally rather than as hand-maintained
+copies:
 
 - **t0** - the shipped philosophy-only brief (chargen/synthesis_brief.md, ~3k
   tokens). "Can principles alone carry it?"
@@ -59,9 +71,25 @@ _T2_SECTION_HEADINGS = [
 ]
 
 
+#: The heading in l7r.md whose block holds the GM's materialist framing of the
+#: Clans. Pulled live (not retyped) so the eval can never drift from canon.
+_CLAN_BLURB_HEADING = 'The Great Clans'
+
+
 def _read(path: str) -> str:
     with open(path, encoding='utf-8') as f:
         return f.read()
+
+
+def _clan_blurb() -> str:
+    """The GM's 'The Great Clans' framing, sliced verbatim from l7r.md.
+
+    This is the constant shared by both active arms: it tells the model that the
+    Clans are more alike than different and that their differences are downstream
+    of material circumstance. The blind eval varies only whether the per-clan
+    flavor summary is layered on top of it.
+    """
+    return extract_section(_read(config.L7R_MD), _CLAN_BLURB_HEADING)
 
 
 def extract_section(md_text: str, title: str) -> str:
@@ -116,6 +144,15 @@ def build_tier(tier: str) -> str:
     t0 = _read(_T0_PATH).strip()
     if tier == 't0':
         return t0
+
+    # The active clan-flavor dimension. Both arms carry the shipped brief plus
+    # the GM's materialist clan framing; `flavor` additionally layers the
+    # per-clan summary, so a blind comparison isolates exactly that summary.
+    if tier == 'blurb':
+        return '\n\n'.join([t0, _clan_blurb()])
+    if tier == 'flavor':
+        flavor = _read(_FLAVOR_PATH).strip()
+        return '\n\n'.join([t0, _clan_blurb(), flavor])
 
     if tier == 't3':
         # Everything: the whole canonical corpus, unedited.

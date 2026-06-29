@@ -1,11 +1,5 @@
 # L7R Setting Brief for Character Synthesis
 
-This brief is the curated slice of the GM's setting notes (l7r.md and budgets.md)
-that is relevant to fleshing out a single NPC into a coherent person. It is the
-design-philosophy layer, not the full canon. The canonical record is always
-l7r.md; this is a working extract for one task: turning a pile of generated
-traits into a believable individual.
-
 ## The core conceit
 
 L7R Rokugan is a "low fantasy" setting whose core conceit is **the kind of world
@@ -130,23 +124,49 @@ no less full, even if samurai never notice.
 
 ## Honor
 
-Honor is rated low to high (roughly 1 to 5). It measures a character's adherence
-to the Bushido ideal - the degree to which they live by the rigid code of the
-warrior caste. Note that l7r.md does not define honor in great mechanical detail,
-so reason about it carefully and concretely from the character at hand.
+Honor (rated roughly 1 to 5, low to high) is the strength of a character's
+convictions: how closely their actions track their stated values when living up
+to those values would cost them something. It is not a measure of what a
+character believes. A high-honor and a low-honor samurai may hold identical
+beliefs about duty, courage, and virtue, and argue for them with equal sincerity.
+What separates them is what they actually do when virtue becomes expensive.
 
-- **High honor** suggests an idealist: principled, rigid, sincere, sometimes
-  naive or inflexible, the kind of samurai who would rather die than compromise.
-- **Low honor** does NOT mean villainy. It usually means worldliness and
-  pragmatism: someone who bends the code to get things done, cuts corners, makes
-  deals, survives. Bounty hunters, spies, merchants' fixers, hard-bitten veterans,
-  and the peasantborn who clawed their way up often run low on honor simply
-  because idealism is a luxury they could never afford. A low-honor character can
-  be entirely sympathetic, loyal, and effective - just not pure.
+- **Low honor does NOT mean villainy.** A low-honor character is exactly as good
+  as their incentives. Because Rokugan is an unusually well-run and just society,
+  where virtuous action is usually rewarded, low-honor characters behave
+  virtuously most of the time, and can be loyal, sympathetic, and effective. The
+  difference only shows when doing the right thing would demand a real sacrifice -
+  a personal setback, a danger, a loss of resources or standing. Asked to pay that
+  price for virtue's own sake, a low-honor character will almost always find a
+  reason to decline, unless they can see a longer-term advantage in paying it.
+  Worldly survivors - bounty hunters, spies, fixers, hard-bitten veterans, the
+  peasantborn who clawed their way up - often run low on honor because idealism
+  is a luxury they could not afford.
+- **High honor** means a character acts on their sincere convictions about what
+  is right, even when acting on them is personally costly - up to and including
+  death. To move such a character, you need not show that a course of action
+  benefits them, only that it is right by their own lights. Honor measures the
+  strength of that conviction, NOT the goodness of the belief behind it: a
+  high-honor character can pursue cruel or catastrophic ends - even engineer
+  their own death to bring them about - in the sincere belief that doing so is
+  virtuous. The result is principled and self-sacrificing, but as readily rigid,
+  fanatical, or dangerous as it is noble.
 
 When honor sits in tension with other traits (a "humble" samurai with low honor,
 say), resolve the tension into a specific, coherent person rather than treating
 the traits as contradictory.
+
+Use honor as a lever for complexity, not morality. Two characters with the same
+beliefs and opposite honor are genuinely different people, and the difference is
+dramatic rather than moral. Part of the point of fleshing a character out is to
+seed conflict, and conflicts between good and good - between two sincere,
+incompatible convictions - are more interesting than good against evil (a
+principle often credited to Orson Scott Card). So give this character convictions
+and commitments that could set them in honest opposition to other decent people,
+rather than making them a self-contained villain or saint. In a well-run Rokugan
+the low-honor pragmatist is rarely the real danger - their incentives mostly
+point toward order - while a high-honor character acting on a poisoned premise
+will pay any price to see it through.
 
 ## Religion and the supernatural ethos
 

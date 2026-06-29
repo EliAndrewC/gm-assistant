@@ -393,6 +393,54 @@ def test_moat_dwarfs_ditches_passes_for_a_real_city_moat():
     assert "moat_dwarfs_ditches" not in f(M)
 
 
+# ---- dooryard kitchen garden: every farmstead has a saien on a sunny side -------------------
+# Each fixture trips ONE garden check: the work yard was universal and so was the kitchen garden,
+# so the gate enforces a garden per farmhouse, smaller than the house, on a sunny (not north) side,
+# on dry ground, abutting only its own house.
+def _farmhouse(x, y):
+    return {"x": x, "y": y, "w": 44, "h": 29, "kind": "plain", "rot": 0}
+
+
+def test_gardens_present_fires_when_a_farmhouse_has_none():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)], "gardens": []}
+    assert "gardens_present" in f(M)
+
+
+def test_gardens_on_sunny_side_fires_on_a_north_garden():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 520, "y": 455, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}]}   # y=455 is north of 500
+    assert "gardens_on_sunny_side" in f(M)
+
+
+def test_gardens_smaller_than_farmhouse_fires_on_an_oversize_garden():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 545, "y": 500, "w": 60, "h": 40, "rot": 0, "of": [500, 500]}]}   # bigger than the house
+    assert "gardens_smaller_than_farmhouse" in f(M)
+
+
+def test_gardens_clear_of_paddies_fires_on_a_garden_in_a_field():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "fields": [_field("p", 480, 480, 600, 600)],
+         "gardens": [{"x": 530, "y": 530, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}]}   # sits inside the paddy
+    assert "gardens_clear_of_paddies" in f(M)
+
+
+def test_gardens_clear_of_structures_fires_when_a_garden_covers_another_building():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "buildings": [bldg(545, 500, "shop")],
+         "gardens": [{"x": 545, "y": 500, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}]}   # on the shop, not its own house
+    assert "gardens_clear_of_structures" in f(M)
+
+
+def test_gardens_clear_of_sheds_fires_when_a_garden_covers_the_west_side_shed():
+    # a plain farmhouse with shed=True carries a storehouse on its WEST side (centre ~ x-0.64w); a garden
+    # placed there overlaps it. The shed is derived from the house record, not a separate struct.
+    M = {"meta": {"scale": "village"},
+         "houses": [{"x": 500, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0, "shed": True}],
+         "gardens": [{"x": 472, "y": 500, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}]}   # on the west-side shed
+    assert "gardens_clear_of_sheds" in f(M)
+
+
 # ---- provincial-city checks (scale="city"); tango.gen.py is the passing integration ---------
 WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]   # a closed city ring
 
@@ -1305,7 +1353,7 @@ def test_city_larger_streets_lined_exempts_a_government_avenue():
 
 def test_city_civic_amenity_checks_fire_on_an_empty_city():
     fails = f({"meta": {"scale": "city"}})
-    for name in ("city_has_merchant_storehouses", "city_has_flophouse", "city_has_amphitheater"):
+    for name in ("city_has_merchant_storehouses", "city_has_flophouse", "city_has_theater_stage"):
         assert name in fails
 
 
@@ -1337,11 +1385,71 @@ def test_city_gate_caravan_facilities_fires_when_stables_hemmed_in():
     assert "city_gate_caravan_facilities" in f(M)
 
 
-def test_city_amphitheater_larger_than_town_fires_when_small():
-    # a town-sized amphitheater (radius 70) in a city - a city's is ~50% larger
+def test_city_theater_stage_larger_than_town_fires_when_small():
+    # a town-sized theater stage (viewing ground 150 wide) in a city - a city's is larger (>= 185)
     M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ,
-         "gates": [[500, 200], [500, 800]], "amphitheater": {"x": 500, "y": 500, "r": 70}}
-    assert "city_amphitheater_larger_than_town" in f(M)
+         "gates": [[500, 200], [500, 800]], "theater_stage": {"x": 500, "y": 500, "w": 150, "h": 105, "rot": 0},
+         "religious": [{"x": 540, "y": 540, "w": 120, "h": 80, "rot": 0, "kind": "temple"}]}
+    assert "city_theater_stage_larger_than_town" in f(M)
+
+
+def test_theater_stage_by_temple_fires_when_far_from_any_hall():
+    # a town theater stage sited off on its own, far from any temple/monastery - it was a temple/shrine
+    # performance stage, so it must sit ADJACENT to a religious hall
+    M = {"meta": {"scale": "town"}, "theater_stage": {"x": 500, "y": 500, "w": 150, "h": 105, "rot": 0},
+         "religious": [{"x": 1200, "y": 1200, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]}
+    assert "theater_stage_by_temple" in f(M)
+
+
+def test_theater_stage_by_temple_passes_when_adjacent():
+    M = {"meta": {"scale": "town"}, "theater_stage": {"x": 500, "y": 500, "w": 150, "h": 105, "rot": 0},
+         "religious": [{"x": 540, "y": 620, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]}
+    assert "theater_stage_by_temple" not in f(M)
+
+
+def test_theater_stage_faces_temple_fires_when_back_to_the_hall():
+    # adjacent to the monastery (NORTH) but the stage's viewing ground opens SOUTH (rot=0) - its BACK is to
+    # the hall, the audience facing away. This is the Hoshizora bug the check is meant to catch.
+    M = {"meta": {"scale": "town"}, "theater_stage": {"x": 500, "y": 500, "w": 150, "h": 105, "rot": 0},
+         "religious": [{"x": 510, "y": 380, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]}
+    assert "theater_stage_faces_temple" in f(M)
+
+
+def test_theater_stage_faces_temple_passes_when_open_toward_hall():
+    # the hall is SOUTH and the ground opens SOUTH (rot=0) - the stage faces the hall, audience between
+    M = {"meta": {"scale": "town"}, "theater_stage": {"x": 500, "y": 500, "w": 150, "h": 105, "rot": 0},
+         "religious": [{"x": 510, "y": 640, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]}
+    assert "theater_stage_faces_temple" not in f(M)
+
+
+# ---- theater_stage_clear: the stage footprint overlaps NOTHING (the Hirameki-on-the-wall bug) ----------
+_STAGE = {"x": 500, "y": 500, "w": 150, "h": 105, "rot": 0}
+
+
+def test_theater_stage_clear_fires_on_a_wall():
+    M = {"meta": {"scale": "town"}, "theater_stage": dict(_STAGE), "wall": [[500, 380], [500, 620]]}
+    assert "theater_stage_clear" in f(M)
+
+
+def test_theater_stage_clear_fires_on_a_building():
+    M = {"meta": {"scale": "town"}, "theater_stage": dict(_STAGE), "buildings": [bldg(500, 500, "merchant")]}
+    assert "theater_stage_clear" in f(M)
+
+
+def test_theater_stage_clear_fires_on_a_field():
+    M = {"meta": {"scale": "town"}, "theater_stage": dict(_STAGE), "fields": [_field("f", 400, 400, 600, 600)]}
+    assert "theater_stage_clear" in f(M)
+
+
+def test_theater_stage_clear_fires_on_the_pond():
+    M = {"meta": {"scale": "town"}, "theater_stage": dict(_STAGE), "pond": [500, 500, 80, 60]}
+    assert "theater_stage_clear" in f(M)
+
+
+def test_theater_stage_clear_passes_in_open_ground():
+    M = {"meta": {"scale": "town"}, "theater_stage": dict(_STAGE),
+         "religious": [{"x": 510, "y": 640, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]}
+    assert "theater_stage_clear" not in f(M)
 
 
 # --- labels_clear_of_other_buildings (a label may cover only the thing it names) ---

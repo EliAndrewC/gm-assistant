@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(seed=31)
+s = Settlement(seed=38)
 s.meta(name="Hikari no Sato", scale="village", households=70, torii_expected=2,
        shrine_on_hill=False, fallow_implies_abandoned=False, has_pond=False)
 

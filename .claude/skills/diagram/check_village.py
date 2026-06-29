@@ -62,6 +62,7 @@ _OVERLAP_LINEAR = ("fields", "fallow_patches", "flower_fields", "streams", "chan
 _OVERLAP_EXEMPT = {
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
+    "gardens": "a farmstead's dooryard kitchen garden drawn as a plot abutting its own farmhouse",
     "merchant_estates": "a walled court AROUND an inner building that is itself an overlap-checked struct",
     "wells": "a small well-head dropped into the open gaps between dwellings (its nominal footprint may kiss a dense-city building)",
     "wall_towers": "guard towers stand ON the city wall - an intentional overlap - and clear of the interior",
@@ -154,6 +155,84 @@ def poly_dist(px, py, poly):
     if point_in_poly(px, py, poly):
         return 0.0
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
+
+
+def check_theater_stage(M, check):
+    """The theater stage's siting. It BELONGS to a temple/monastery precinct (a temple OPERA STAGE / shrine
+    NOH stage), the audience gathering in the open ground between stage and hall, the stage FACING the hall:
+    (1) `theater_stage_clear` - the stage + its viewing ground sit in CLEAR ground, overlapping NOTHING (no
+        wall, moat, road, street/alley, watercourse, building, compound, grave, field, or pond). Unlike a
+        packed dwelling it is not auto-checked by the generic overlap pass, so this is its dedicated guard.
+    (2) `theater_stage_by_temple` - ADJACENT to a religious hall (centre within ~260px of the nearest one).
+    (3) `theater_stage_faces_temple` - its viewing ground OPENS TOWARD that hall (the stage faces it). The
+        glyph's open side is local +y, so after `rot` it points (-sin, cos); that aligns with the hall."""
+    ts = M.get("theater_stage")
+    if not ts:
+        return
+    # (1) CLEAR: build the full footprint (the viewing ground PLUS the roofed stage straddling its north edge)
+    w, h = ts["w"], ts["h"]
+    sh = h * 0.26
+    cyl, fh = -sh * 0.25, h + sh * 0.5
+    thr = math.radians(ts.get("rot", 0))
+    ca, sa = math.cos(thr), math.sin(thr)
+    sc = [(ts["x"] + dx * ca - dy * sa, ts["y"] + dx * sa + dy * ca)
+          for dx, dy in ((-w / 2, cyl - fh / 2), (w / 2, cyl - fh / 2), (w / 2, cyl + fh / 2), (-w / 2, cyl + fh / 2))]
+    hits = []
+    lines = []                                           # linear barriers (name, polyline, half-width)
+    if M.get("wall"):
+        lines.append(("the wall", M["wall"], 9))
+    if M.get("moat"):
+        lines.append(("the moat", M["moat"], M.get("moat_width", 26) / 2 + 4))
+    if M.get("road"):
+        lines.append(("a road", M["road"], M.get("road_width", 26) / 2))
+    lines += [("a street", st["pts"], st.get("w", 18) / 2) for st in M.get("town_streets", [])]
+    lines += [("an alley", a["pts"], a.get("w", 10) / 2) for a in M.get("alleys", [])]
+    lines += [("a stream", s["poly"], s.get("w", 9) / 2) for s in M.get("streams", [])]
+    lines += [("a channel", c["poly"], c.get("w", 2.5) / 2 + 2) for c in M.get("channels", [])]
+    for nm, pts, hw in lines:
+        if len(pts) >= 2 and footprint_on_line(sc, pts, hw):
+            hits.append(nm)
+    granary = M.get("granary")                           # solid features (buildings, compounds, graves)
+    solids = ([s for k in _OVERLAP_STRUCTS for s in M.get(k, [])]
+              + M.get("manors", []) + M.get("religious", []) + M.get("shrines", []) + M.get("gate_structs", [])
+              + M.get("storehouses", []) + M.get("merchant_estates", []) + M.get("threshing_yards", [])
+              + M.get("gardens", []) + M.get("inspection_stations", []) + (granary["stores"] if granary else []))
+    if M.get("governor_mansion"):
+        solids.append(M["governor_mansion"])
+    for r in solids:
+        if abs(r["x"] - ts["x"]) + abs(r["y"] - ts["y"]) <= 440 and sat_overlap(sc, rect_corners(_struct_rect(r))):
+            hits.append(f"a {r.get('kind', 'building')}")
+    for fkey in ("fields", "fallow_patches", "flower_fields"):   # areas: paddies/fields and the pond
+        for fld in M.get(fkey, []):
+            ol = fld["outline"]
+            if any(point_in_poly(px, py, ol) for px, py in sc) or any(point_in_poly(vx, vy, sc) for vx, vy in ol):
+                hits.append("a field")
+                break
+    pond = M.get("pond")
+    if pond and (point_in_poly(pond[0], pond[1], sc)        # pond engulfed by the stage, OR a stage corner in the pond
+                 or any(((px - pond[0]) / (pond[2] + 6)) ** 2 + ((py - pond[1]) / (pond[3] + 6)) ** 2 <= 1.0 for px, py in sc)):
+        hits.append("the pond")
+    check("theater_stage_clear", not hits,
+          f"the theater stage footprint overlaps {sorted(set(hits))[:6]} - the stage and its viewing ground "
+          f"must sit in CLEAR ground, touching nothing (no wall, moat, road, street/alley, watercourse, "
+          f"building, compound, grave, field, or pond)")
+    halls = M.get("religious", [])
+    if not halls:
+        return
+    nearest = min(halls, key=lambda h: math.hypot(ts["x"] - h["x"], ts["y"] - h["y"]))
+    near = math.hypot(ts["x"] - nearest["x"], ts["y"] - nearest["y"])
+    check("theater_stage_by_temple", near <= 260,
+          f"the theater stage sits {round(near)}px from the nearest temple/monastery (want <= 260) - it is a "
+          f"temple/shrine performance stage, so site it ADJACENT to a religious hall with the viewing ground between them")
+    th = math.radians(ts.get("rot", 0))
+    ox, oy = -math.sin(th), math.cos(th)                 # the viewing ground's open direction (toward the audience/temple)
+    dx, dy = nearest["x"] - ts["x"], nearest["y"] - ts["y"]
+    d = math.hypot(dx, dy) or 1.0
+    facing = (ox * dx + oy * dy) / d
+    check("theater_stage_faces_temple", facing >= 0.5,
+          f"the theater stage's viewing ground does not OPEN toward its temple (alignment {facing:.2f}, want "
+          f">= 0.5) - the stage faces the hall with the audience between, so set its `rot` so the ground opens "
+          f"toward the temple (the stage's back is the side AWAY from the audience)")
 
 
 def water_setback(width):
@@ -363,7 +442,8 @@ DEFAULT_MANIFEST = {
     "pond": None, "hill": None, "summit": None, "shrine": None, "forest": None,
     "storehouses": [], "flophouses": [], "road": None, "wall": None, "gate": None,
     "gates": [], "moat": None, "governor_mansion": None, "ministries": [],
-    "inspection_stations": [], "amphitheater": None, "granary": None, "wells": [], "meta": {},
+    "inspection_stations": [], "theater_stage": None, "granary": None, "wells": [],
+    "threshing_yards": [], "gardens": [], "meta": {},
 }
 
 
@@ -1243,7 +1323,7 @@ def gate(M, verbose=True):
                 return {"merchant"}
             if any(w in t for w in ("street", "avenue", "road")):
                 return {"merchant"}      # a street/road label runs along its frontage, so it may clip the storefronts it lines
-            return set()                 # farmland / market / amphitheater / title labels name no building
+            return set()                 # farmland / market / theater stage / title labels name no building
 
         mislabel = []
         for L in M.get("labels", []):
@@ -1392,6 +1472,76 @@ def gate(M, verbose=True):
                         break
             check("harvest_yards_clear_of_structures", not fouled,
                   f"threshing yard(s) overlap a building other than their own farmhouse: {fouled[:3]} - a yard abuts only its own house")
+
+            # DOORYARD KITCHEN GARDEN (saien). Every farmstead kept a small intensive vegetable plot for
+            # the household's daily greens - as universal as the work yard, so EVERY farmhouse must have one
+            # (a firm 100%, guaranteed by making the garden integral to farmstead placement). It sits on a
+            # sunny SIDE (preferring the east kitchen end), NOT the north shade and NOT the south front (the
+            # threshing apron's ground), is SMALLER than the farmhouse, stays on DRY ground off the paddies,
+            # and abuts only its own house. (Why a side, not the south front: SKILL.md "Dooryard gardens".)
+            gardens = M.get("gardens", [])
+            g_without = [(round(h["x"]), round(h["y"])) for h in houses
+                         if not any(gd["of"][0] == h["x"] and gd["of"][1] == h["y"] for gd in gardens)]
+            check("gardens_present", not g_without,
+                  f"a {scale} farmstead kept a dooryard kitchen garden for the household's vegetables, and it "
+                  f"was universal: {len(g_without)} of {len(houses)} farmhouses have NO garden {g_without[:3]} - "
+                  f"every farmhouse must have one (placement makes the garden integral to the farmstead)")
+            g_oversize = [(round(gd["x"]), round(gd["y"])) for gd in gardens
+                          if gd["w"] * gd["h"] >= hmap.get((round(gd["of"][0]), round(gd["of"][1])), 0)]
+            check("gardens_smaller_than_farmhouse", not g_oversize,
+                  f"kitchen garden(s) are not smaller than their farmhouse: {g_oversize[:3]} - the saien is a small dooryard plot, not a field")
+            g_shady = [(round(gd["x"]), round(gd["y"])) for gd in gardens if gd["y"] < gd["of"][1] - 5]
+            check("gardens_on_sunny_side", not g_shady,
+                  f"kitchen garden(s) sit on the shady NORTH/back side of their farmhouse: {g_shady[:3]} - the saien "
+                  f"belongs on a SUNNY side (the east kitchen end, or west), never the cold north back")
+            g_in_paddy = []
+            for gd in gardens:
+                fc = rect_corners(_struct_rect(gd))
+                if any(any(point_in_poly(px, py, ol) for px, py in fc)
+                       or any(point_in_poly(vx, vy, fc) for vx, vy in ol)
+                       or any(segments_cross(fc[e], fc[(e + 1) % 4], ol[k], ol[(k + 1) % len(ol)])
+                              for e in range(4) for k in range(len(ol))) for ol in fields_ol):
+                    g_in_paddy.append((round(gd["x"]), round(gd["y"])))
+            check("gardens_clear_of_paddies", not g_in_paddy,
+                  f"kitchen garden footprint(s) sit IN a flooded paddy: {g_in_paddy[:3]} - the saien is dry ground; "
+                  f"keep its whole footprint clear of every field outline")
+            g_fouled = []
+            for gd in gardens:
+                gc = rect_corners(_struct_rect(gd))
+                par = (round(gd["of"][0]), round(gd["of"][1]))
+                for s in others:
+                    if (round(s["x"]), round(s["y"])) == par:
+                        continue
+                    if abs(s["x"] - gd["x"]) + abs(s["y"] - gd["y"]) > 140:
+                        continue
+                    if sat_overlap(gc, rect_corners(_struct_rect(s))):
+                        g_fouled.append((round(gd["x"]), round(gd["y"])))
+                        break
+            check("gardens_clear_of_structures", not g_fouled,
+                  f"kitchen garden(s) overlap a building other than their own farmhouse: {g_fouled[:3]} - a garden abuts only its own house")
+            # the garden and the farmhouse's STOREHOUSE/shed sit on OPPOSITE sides of the house - the shed is
+            # drawn on the house's WEST side, the garden on a sunny side (east first) - so they must never
+            # overlap. The shed is a sub-glyph of the house (not a recorded struct), so derive its footprint
+            # from the house record (a plain farmhouse with shed=True), matching settlement._farm_shed_rect.
+            sheds = []
+            for hh in houses:
+                if hh.get("shed") and hh.get("kind") == "plain":
+                    th = math.radians(hh.get("rot", 0))
+                    lx = -0.64 * hh["w"]
+                    sheds.append({"x": hh["x"] + lx * math.cos(th), "y": hh["y"] + lx * math.sin(th),
+                                  "w": 0.32 * hh["w"], "h": 0.56 * hh["h"], "rot": hh.get("rot", 0)})
+            g_on_shed = []
+            for gd in gardens:
+                gc = rect_corners(_struct_rect(gd))
+                for sd in sheds:
+                    if abs(sd["x"] - gd["x"]) + abs(sd["y"] - gd["y"]) > 120:
+                        continue
+                    if sat_overlap(gc, rect_corners(sd)):
+                        g_on_shed.append((round(gd["x"]), round(gd["y"])))
+                        break
+            check("gardens_clear_of_sheds", not g_on_shed,
+                  f"kitchen garden(s) overlap a farmhouse's storehouse/shed: {g_on_shed[:3]} - the shed sits on the "
+                  f"house's WEST side and the garden on a sunny (east-preferred) side, so the two must never collide")
 
     # THE DEAD - a full funerary geography. Every settlement above a hamlet buries its cremated dead
     # (a hamlet's go to the village district's ground, just as it has no shrine or headman). GRAVEYARDS
@@ -2034,7 +2184,7 @@ def gate(M, verbose=True):
         # fireproof kura where grain gathered from many counties is forwarded up the kick-up
         # chain. A standard county seat does NOT draw one: its grain sits inside the magistrate's
         # yamen, implied by the manor. Opt-in, so the default is no check (unlike the gate
-        # market, amphitheater, and monasteries, which are opt-OUT defaults).
+        # market, theater stage, and monasteries, which are opt-OUT defaults).
         if meta.get("granary"):
             check("town_has_granary", bool(M.get("granary")),
                   "meta(granary=True) declares a rice-transit town - it must draw a granary via s.granary(...)")
@@ -2106,17 +2256,18 @@ def gate(M, verbose=True):
             check("inn_faces_the_road", not unaligned,
                   f"caravan inn(s) not oriented to FACE the road and lie parallel to it: {unaligned[:3]} - tilt the inn "
                   f"(s.inn(x, y, rot=...)) so its noren front faces the roadbed and its long edge runs along the road")
-        # every town has an amphitheater unless meta(amphitheater=False); for a walled town
-        # it sits INSIDE the walls unless meta(amphitheater="outside")
-        amph_meta = meta.get("amphitheater", True)
-        amph = M.get("amphitheater")
-        if amph_meta is not False:
-            check("town_has_amphitheater", bool(amph),
-                  "a town must have an amphitheater (set meta(amphitheater=False) to omit)")
-        if amph and meta.get("walled") and amph_meta != "outside":
+        # every town has a THEATER STAGE unless meta(theater_stage=False); for a walled town
+        # it sits INSIDE the walls unless meta(theater_stage="outside")
+        ts_meta = meta.get("theater_stage", True)
+        amph = M.get("theater_stage")
+        if ts_meta is not False:
+            check("town_has_theater_stage", bool(amph),
+                  "a town must have a theater stage (set meta(theater_stage=False) to omit)")
+        if amph and meta.get("walled") and ts_meta != "outside":
             w = M.get("wall") or []
-            check("amphitheater_inside_wall", len(w) >= 3 and point_in_poly(amph["x"], amph["y"], w),
-                  "a walled town's amphitheater belongs inside the walls (set meta(amphitheater='outside') to allow outside)")
+            check("theater_stage_inside_wall", len(w) >= 3 and point_in_poly(amph["x"], amph["y"], w),
+                  "a walled town's theater stage belongs inside the walls (set meta(theater_stage='outside') to allow outside)")
+        check_theater_stage(M, check)
 
         # a town's monasteries: by default 2, dedicated to the patron fortunes of the clan
         # whose holdings include it (meta(clan=...)). Override with an explicit list -
@@ -2142,32 +2293,6 @@ def gate(M, verbose=True):
             check("town_monasteries_dedicated", got == sorted(declared),
                   f"monasteries dedicated to {got}, expected {sorted(declared)}")
 
-        # for a town whose magistrate's manor sits on a LARGE hill, two arrangement rules:
-        # the manor's gate faces the town below, and the amphitheater sits at the hill's foot
-        # (so the slope seats the audience)
-        hill = M.get("hill")
-        manor_hill = None
-        if hill and hill[2] >= 150 and hill[3] >= 100:
-            hcx, hcy, hrx, hry = hill
-            manor_hill = next((mn for mn in M.get("manors", [])
-                               if math.hypot((mn["x"] - hcx) / hrx, (mn["y"] - hcy) / hry) <= 1.0), None)
-        if manor_hill:
-            bld = M.get("buildings", [])
-            town_dir = None
-            if bld:
-                tvx, tvy = (sum(b["x"] for b in bld) / len(bld) - manor_hill["x"],
-                            sum(b["y"] for b in bld) / len(bld) - manor_hill["y"])
-                tl = math.hypot(tvx, tvy) or 1
-                town_dir = (tvx / tl, tvy / tl)
-            # the manor's gate (faces the town) is checked generally below, for any town/hamlet manor
-            if amph:
-                t = math.hypot((amph["x"] - hcx) / hrx, (amph["y"] - hcy) / hry)
-                fvx, fvy = amph["x"] - hcx, amph["y"] - hcy
-                fl = math.hypot(fvx, fvy) or 1
-                foot = unit_dir(meta.get("downhill")) or town_dir
-                aligned = foot is None or (fvx / fl) * foot[0] + (fvy / fl) * foot[1] >= 0.5
-                check("amphitheater_at_hill_foot", 0.85 <= t <= 1.45 and aligned,
-                      "the amphitheater should sit at the foot of the hill on the downhill/town side, so the slope seats the audience")
 
     # A magistrate's manor sits at the EDGE of its settlement; its gate faces what it fronts - the
     # town/hamlet it administers (the built-up centroid) OR the Imperial road it sits beside. There is
@@ -2239,7 +2364,7 @@ def gate(M, verbose=True):
             for ff in M.get("flower_fields", []):
                 occ += [(p[0], p[1]) for p in ff["outline"][::3]]
             occ += [(r["x"], r["y"]) for r in M.get("religious", [])] + [(mn["x"], mn["y"]) for mn in M.get("manors", [])]
-            amph = M.get("amphitheater")
+            amph = M.get("theater_stage")
             if amph:
                 occ.append((amph["x"], amph["y"]))
             hill = M.get("hill")
@@ -2439,14 +2564,15 @@ def gate(M, verbose=True):
               f"{len(M.get('storehouses', []))} merchant storehouses - a city's merchant district keeps fireproof kura (s.merchant_storehouses(...))")
         check("city_has_flophouse", len(M.get("flophouses", [])) >= 1,
               "a provincial city is a major market center and needs market-day lodging (s.flophouse(...))")
-        check("city_has_amphitheater", bool(M.get("amphitheater")),
-              "a provincial city needs an amphitheater (s.amphitheater(...))")
-        # a CITY amphitheater is bigger than a town's (towns run radius ~80-82) - a provincial city
-        # draws a larger crowd, so its leisure ground is ~50% larger (radius >= 92, the city baseline)
-        amph = M.get("amphitheater")
+        check("city_has_theater_stage", bool(M.get("theater_stage")),
+              "a provincial city needs a theater stage (s.theater_stage(...))")
+        check_theater_stage(M, check)
+        # a CITY theater stage is bigger than a town's (towns run a viewing ground ~150 wide) - a provincial
+        # city draws a larger crowd, so its viewing ground is wider (>= 185, the city baseline)
+        amph = M.get("theater_stage")
         if amph:
-            check("city_amphitheater_larger_than_town", amph.get("r", 0) >= 92,
-                  f"the city amphitheater (radius {amph.get('r', 0)}) is no bigger than a town's - a provincial city's is larger (radius >= 92)")
+            check("city_theater_stage_larger_than_town", amph.get("w", 0) >= 185,
+                  f"the city theater stage (viewing ground {amph.get('w', 0)} wide) is no bigger than a town's - a provincial city's is larger (width >= 185)")
 
         # A NAMED civic building's label must sit on ITS OWN building, never on a DIFFERENT one of the
         # same kind. labels_clear_of_other_buildings lumps every ministry into one "ministry" GROUP, so
@@ -3282,7 +3408,7 @@ def gate(M, verbose=True):
             for grp in ("manors", "ministries", "religious", "inspection_stations"):
                 occ += [(o["x"], o["y"]) for o in M.get(grp, [])]
             occ += [(o["x"], o["y"]) for o in M.get("flophouses", []) + M.get("storehouses", [])]
-            for one in (M.get("governor_mansion"), M.get("amphitheater")):
+            for one in (M.get("governor_mansion"), M.get("theater_stage")):
                 if one:
                     occ.append((one["x"], one["y"]))
             field_polys = [f["outline"] for f in fields]

@@ -22,9 +22,16 @@ TASKS_PATH = os.path.join(DATA_DIR, 'tasks.jsonl')
 VOTES_PATH = os.path.join(DATA_DIR, 'votes.jsonl')
 CHARACTERS_PATH = os.path.join(HERE, 'characters.json')
 
-#: The four prompt tiers under test. T0 is the current shipped brief; T3 is the
-#: whole canonical corpus. See briefs.py for what each one assembles.
-TIERS = ['t0', 't1', 't2', 't3']
+#: The active comparison: does the per-clan flavor summary help on top of the
+#: GM's materialist "The Great Clans" framing, or is the framing alone enough?
+#: BOTH arms carry the blurb (single-sourced from l7r.md); only `flavor` adds
+#: flavor_clans.md on top of it. See briefs.build_tier.
+TIERS = ['blurb', 'flavor']
+
+#: The earlier context-amount sweep - t0 (shipped brief) up to t3 (whole
+#: canonical corpus). Preserved so it can be re-run later by swapping it into
+#: TIERS; build_tier still understands every id here. See briefs.py.
+CONTEXT_TIERS = ['t0', 't1', 't2', 't3']
 
 #: The models to generate with. A Pro tier and a Flash tier so the bakeoff also
 #: answers "is the cheaper/faster model good enough?" alongside the tier question.
