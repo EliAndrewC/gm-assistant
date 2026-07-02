@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(2000, 1300, seed=380)
+s = Settlement(2000, 1300, seed=384)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.
@@ -140,7 +140,7 @@ s.cremation_ground(95, 695, label_above=True)
 s.farmsteads()
 
 # communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
-s.place_wells((85, 110, 1930, 1260), spacing=290, near=85)
+s.place_wells((85, 110, 1930, 1260), spacing=240, near=95)
 
 s.title("Hoshizora")
 s.compass(1950, 50)

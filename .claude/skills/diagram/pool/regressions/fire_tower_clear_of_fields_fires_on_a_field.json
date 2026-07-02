@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "fire_towers": [
+  {
+   "x": 250,
+   "y": 250,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "fields": [
+  {
+   "name": "paddy",
+   "kind": "paddy",
+   "bbox": [
+    100,
+    100,
+    400,
+    400
+   ],
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     100,
+     400
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "fire_tower_clear_of_fields"
+  ],
+  "source": "test_checks.py::test_fire_tower_clear_of_fields_fires_on_a_field"
+ }
+}

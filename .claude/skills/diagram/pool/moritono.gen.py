@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(seed=43)
+s = Settlement(seed=44)
 s.meta(name="Moritono", scale="hamlet", households=16)   # hamlet: no headman, no shrine, no tax-free
 
 # three small paddies (SW), the forest (E), the magistrate's manor (by the forest)

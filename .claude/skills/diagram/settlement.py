@@ -23,7 +23,10 @@ import subprocess
 import sys
 
 LAND = '#EFE3C2'
-PADDY_SHADES = ['#A7C49C', '#9FBE93', '#AECBA1', '#9BBA8F', '#B4CCA6']
+PADDY_SHADES = ['#A7C49C', '#9FBE93', '#AECBA1', '#9BBA8F', '#B4CCA6']       # rice mid-growth (green)
+FLOODED_SHADES = ['#93B0A2', '#8AAB9A', '#9DBAAB', '#88A99A', '#9AB6A8']     # just-transplanted paddy (water+shoots, blue-green)
+RIPE_SHADES = ['#CBBB74', '#C4B36A', '#D1C180']                              # ripening rice (golden) - a few plots
+RICE_GREENS = ['#A6C398', '#A2C094', '#A9C69C']                              # rice at ONE stage - near-identical greens (reads uniform)
 
 
 def _signed_area(poly):
@@ -67,6 +70,29 @@ def segments_cross(a, b, c, d):
     def ccw(p, q, r):
         return (r[1] - p[1]) * (q[0] - p[0]) > (q[1] - p[1]) * (r[0] - p[0])
     return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
+
+
+def _union_area(rects):
+    """Total area covered by a set of axis-aligned rects (x0, y0, x1, y1), counting overlap ONCE. The grove's
+    belt arms abut at the windward corner, so summing their areas double-counts it; the honest grove footprint
+    is the union. Few small rects, so a coordinate-compression sweep is ample."""
+    rects = [r for r in rects if r[2] > r[0] and r[3] > r[1]]
+    if not rects:
+        return 0.0
+    xs = sorted({r[0] for r in rects} | {r[2] for r in rects})
+    area = 0.0
+    for i in range(len(xs) - 1):
+        x0, x1 = xs[i], xs[i + 1]
+        spans = sorted((r[1], r[3]) for r in rects if r[0] <= x0 and r[2] >= x1)
+        cy = -1e18
+        covered = 0.0
+        for y0, y1 in spans:
+            if y1 <= cy:
+                continue
+            covered += y1 - max(y0, cy)
+            cy = y1
+        area += (x1 - x0) * covered
+    return area
 
 
 def seg_intersect(a, b, c, d):
@@ -183,6 +209,8 @@ class Settlement:
         #                           into a continuous confluence instead of stacking opacity (a dark seam).
         self.bscale = 1.0         # urban-building footprint scale (a large town packs at a finer grain)
         self.placed = []          # (x, y, w, h)
+        self.grove_rects = []     # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
+        #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
         self._pending_farmsteads = []   # farmhouses awaiting their threshing yard (drawn by farmsteads())
         self.corridors = []       # polylines houses must avoid
         self.bound = None         # optional bounding polygon: placement stays inside it (city wall)
@@ -200,9 +228,9 @@ class Settlement:
                   "shrine": None, "forest": None, "road": None,
                   "wall": None, "gate": None, "gates": [], "moat": None,
                   "governor_mansion": None, "ministries": [], "inspection_stations": [],
-                  "wells": [], "bridges": [], "threshing_yards": [], "gardens": [], "cemeteries": [],
+                  "wells": [], "bridges": [], "threshing_yards": [], "gardens": [], "groves": [], "cemeteries": [],
                   "mausoleums": [], "cremation_grounds": [], "ossuaries": [], "moat_layer": None,
-                  "fire_towers": [], "firebreaks": [],
+                  "fire_towers": [], "field_ditches": [],
                   "meta": {"W": W, "H": H}}
         self._header()
 
@@ -325,44 +353,53 @@ class Settlement:
         self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
         ex0, ey0, ex1, ey1 = x0 - amp, y0 - amp, x1 + amp, y1 + amp
 
-        def edges(lo, hi, target):
-            e = [lo]
-            while True:
-                nxt = e[-1] + target * random.uniform(0.6, 1.7)
-                if nxt >= hi - target * 0.4:
-                    break
-                e.append(nxt)
-            e.append(hi)
-            return e
-
-        xs = edges(ex0, ex1, plot)
-        ys = edges(ey0, ey1, plot)
-        cols, rows = len(xs) - 1, len(ys) - 1
-        P = {}
-        for i in range(cols + 1):
-            for j in range(rows + 1):
-                wl = (xs[min(i + 1, cols)] - xs[max(i - 1, 0)]) / 2
-                hl = (ys[min(j + 1, rows)] - ys[max(j - 1, 0)]) / 2
-                jx = 0 if i in (0, cols) else random.uniform(-1, 1) * wl * 0.32
-                jy = 0 if j in (0, rows) else random.uniform(-1, 1) * hl * 0.32
-                P[(i, j)] = (xs[i] + jx, ys[j] + jy)
-        self.add(f'<g clip-path="url(#{cid})">')
+        # PADDY PATCHWORK: pre-modern paddies were an IRREGULAR patchwork of odd-sized bunded plots fitted
+        # together by piecemeal reclamation and inheritance - NOT the regular grid of modern (Meiji/Showa)
+        # land consolidation. Build it by recursively splitting the field with straight, slightly-angled aze
+        # (bund) lines that cut the LONG axis of each plot at a jittered fraction, down to the target grain
+        # (with size variation), so bunds meet at T-junctions like real cadastral paddy. See SKILL.md.
+        _fillstate = random.getstate()                       # ISOLATE the paddy fill RNG: the patchwork, crop
+        random.seed(int(abs(x0) * 7 + abs(y0) * 13 + abs(x1) * 3 + len(name)))   # roll, growth stage and mottle
+        plots = self._paddy_plots((ex0, ey0, ex1, ey1), plot)                    # are decorative and must NOT shift
+        self.add(f'<g clip-path="url(#{cid})">')                                 # downstream house placement
         self.add(f'<rect x="{ex0:.0f}" y="{ey0:.0f}" width="{ex1-ex0:.0f}" height="{ey1-ey0:.0f}" fill="#C2A772"/>')
-        for i in range(cols):
-            for j in range(rows):
-                quad = [P[(i, j)], P[(i + 1, j)], P[(i + 1, j + 1)], P[(i, j + 1)]]
-                pts = ' '.join(f'{p[0]:.0f},{p[1]:.0f}' for p in quad)
-                r = random.random()
-                crop = 'dry' if r < 0.16 else ('soy' if r < 0.30 else 'rice')
-                fill = 'url(#drycrop)' if crop == 'dry' else ('#9CB36A' if crop == 'soy' else random.choice(PADDY_SHADES))
+        interior = []
+        for poly in plots:
+            pts = ' '.join(f'{q[0]:.0f},{q[1]:.0f}' for q in poly)
+            cx = sum(q[0] for q in poly) / len(poly)
+            cy = sum(q[1] for q in poly) / len(poly)
+            # CROP MIX: an irrigated valley exists to grow RICE (~85% of the watered common). Dry upland crops
+            # (barley/veg, soy) cluster on the MARGINS - the higher, harder-to-water rim - while the well-watered
+            # interior is all paddy. So dry/soy probability rises toward the field edge. See SKILL.md 'Crop mix'.
+            edge = max(0.0, 1.0 - edge_dist(cx, cy, smoothed) / (2.4 * plot))     # 1 at the rim, 0 deep interior
+            r = random.random()
+            dry_p, soy_p = 0.05 + 0.24 * edge, 0.03 + 0.11 * edge
+            crop = 'dry' if r < dry_p else ('soy' if r < dry_p + soy_p else 'rice')
+            if crop == 'rice':
+                # a village transplants TOGETHER (shared water, exchanged labour), so its paddies are largely
+                # ONE stage - here high-summer green - with only minor spread (early/late rice varieties, the odd
+                # low flooded plot); NOT a rainbow of stages. See SKILL.md 'Crop mix / paddy surface'.
+                st = random.random()
+                if st < 0.06:
+                    fill, flooded = random.choice(FLOODED_SHADES), True
+                elif st > 0.95:
+                    fill, flooded = random.choice(RIPE_SHADES), False
+                else:
+                    fill, flooded = random.choice(PADDY_SHADES), False
                 self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
-                if crop in ('rice', 'soy'):
-                    self._rows(quad, pts, crop)
+                self._paddy_surface(poly, pts, flooded)
+            else:
+                fill = 'url(#drycrop)' if crop == 'dry' else '#9CB36A'
+                self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
+                self._rows(poly, pts, crop)                  # dryland crops ARE ridge/row-cultivated
+            if point_in_poly(cx, cy, smoothed):
+                interior.append((poly, cx, cy))
         if label and taxfree:
-            self._taxfree(P, cols, rows, taxfree, smoothed)
+            self._taxfree_plots(interior, taxfree)
         if fallow_patch:
             self._fallow_patch(fallow_patch)
         self.add('</g>')
+        random.setstate(_fillstate)                          # end fill-RNG isolation
         self.add(f'<path d="{d}" fill="none" stroke="#A98A52" stroke-width="3.5"/>')
         if label:
             lx, ly = label_xy if label_xy else ((x0 + x1) / 2, (y0 + y1) / 2)
@@ -370,6 +407,102 @@ class Settlement:
                              f'font-weight="bold" fill="#33301E" letter-spacing="1.5" '
                              f'paint-order="stroke" stroke="{LAND}" stroke-width="3.5">{label}</text>')
             self._record_label(lx, ly, label, 15, "middle", z)
+
+    @staticmethod
+    def _split_convex(poly, px, py, nx, ny):
+        """Split a convex polygon by the line through (px, py) with normal (nx, ny) into (pos, neg) polygons."""
+        def side(v):
+            return (v[0] - px) * nx + (v[1] - py) * ny
+        pos, neg = [], []
+        n = len(poly)
+        for i in range(n):
+            a, b = poly[i], poly[(i + 1) % n]
+            sa, sb = side(a), side(b)
+            if sa >= 0:
+                pos.append(a)
+            if sa <= 0:
+                neg.append(a)
+            if (sa > 0) != (sb > 0):
+                t = sa / (sa - sb)
+                pos.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))
+                neg.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))
+        return pos, neg
+
+    def _paddy_plots(self, bbox, grain):
+        """Recursively split a field into an irregular patchwork whose plots share a coherent GRAIN aligned to
+        the water and slope - the bunds run along the CONTOUR (NE-SW, for the default NW-uphill tilt) and down
+        the FALL LINE (NW-SE), with plots mildly elongated along-contour and stepping downhill - so the paddy
+        reads as ORGANISED BY THE WATER, not randomly diced. Still irregular (jittered split fractions +
+        slightly non-parallel bunds), just coherent. Tiles the bbox; clipped to the field outline."""
+        ux, uy = 0.7071, -0.7071                             # contour (along-slope) = a plot's LONG axis
+        fx, fy = 0.7071, 0.7071                              # fall line (downhill SE) = a plot's SHORT axis
+        aspect = 1.7
+        tvf, tvu = grain * 0.78, grain * 0.78 * aspect       # target extents across the fall line / along the contour
+        x0, y0, x1, y1 = bbox
+        stack = [[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]]
+        out = []
+        guard = 0
+        while stack and guard < 24000:
+            guard += 1
+            poly = stack.pop()
+            cx = sum(q[0] for q in poly) / len(poly)
+            cy = sum(q[1] for q in poly) / len(poly)
+            us = [q[0] * ux + q[1] * uy for q in poly]
+            fs = [q[0] * fx + q[1] * fy for q in poly]
+            u_ext, f_ext = max(us) - min(us), max(fs) - min(fs)
+            over_f = f_ext > tvf * random.uniform(0.72, 1.45)
+            over_u = u_ext > tvu * random.uniform(0.78, 1.6)
+            if not over_f and not over_u:
+                out.append(poly)
+                continue
+            if over_f and (not over_u or f_ext / tvf >= u_ext / tvu):
+                nx, ny, lo, hi, cen = fx, fy, min(fs), max(fs), cx * fx + cy * fy   # contour bund (normal = fall line)
+            else:
+                nx, ny, lo, hi, cen = ux, uy, min(us), max(us), cx * ux + cy * uy   # cross bund (normal = contour)
+            d = lo + (hi - lo) * random.uniform(0.36, 0.64)                          # jittered split position
+            px, py = cx + (d - cen) * nx, cy + (d - cen) * ny                        # a point on the cut line
+            ang = random.uniform(-0.12, 0.12)                                        # slight wobble - bunds not ruler-parallel
+            ca, sa = math.cos(ang), math.sin(ang)
+            nnx, nny = nx * ca - ny * sa, nx * sa + ny * ca
+            a, b = self._split_convex(poly, px, py, nnx, nny)
+            if len(a) >= 3 and len(b) >= 3:
+                stack.append(a)
+                stack.append(b)
+            else:
+                out.append(poly)
+        return out + stack
+
+    def _taxfree_plots(self, interior, taxfree):
+        """Mark `taxfree` scattered interior paddy plots vermilion (a priestess's / temple's tax-free land)."""
+        if not interior:
+            return
+        interior = sorted(interior, key=lambda t: (round(t[2] / 40), t[1]))   # spread them across the field
+        n = len(interior)
+        for i in sorted(set(min(n - 1, int(n * (k + 0.5) / (taxfree + 1))) for k in range(taxfree))):
+            poly, cx, cy = interior[i]
+            pts = ' '.join(f'{q[0]:.0f},{q[1]:.0f}' for q in poly)
+            self.add(f'<polygon points="{pts}" fill="#A03020" fill-opacity="0.22" stroke="#A03020" stroke-width="4"/>')
+            self.M["taxfree"].append([round(cx, 1), round(cy, 1)])
+
+    def _paddy_surface(self, poly, pts, flooded):
+        """A WET paddy: a flooded, mottled sheet (irregular hand-transplanted shoots, plus a faint water sheen
+        for a freshly-flooded plot) - NOT ruled rows. Premodern rice was transplanted irregularly; crisp
+        checkrow planting (seijoue) is a Meiji improvement, so ruled rows on a paddy read as modern (the same
+        era-tell as the consolidation grid). See SKILL.md 'Crop mix / paddy surface'."""
+        xs = [q[0] for q in poly]
+        ys = [q[1] for q in poly]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        rcid = self._cid('ps')
+        g = [f'<clipPath id="{rcid}"><polygon points="{pts}"/></clipPath>', f'<g clip-path="url(#{rcid})">']
+        if flooded:                                          # faint sheen lines = standing water catching the light
+            for _ in range(2):
+                yy = random.uniform(y0 + 2, y1 - 2)
+                g.append(f'<line x1="{x0:.0f}" y1="{yy:.0f}" x2="{x1:.0f}" y2="{yy:.0f}" stroke="#CFDFD3" stroke-width="1.5" opacity="0.4"/>')
+        n = min(22, max(3, int((x1 - x0) * (y1 - y0) / 80)))  # sparse irregular shoots (the transplant mottle)
+        for _ in range(n):
+            g.append(f'<circle cx="{random.uniform(x0, x1):.1f}" cy="{random.uniform(y0, y1):.1f}" r="1.0" fill="#6F9061" opacity="0.5"/>')
+        g.append('</g>')
+        self.add(''.join(g))
 
     def _rows(self, quad, pts, crop):
         xq = [p[0] for p in quad]
@@ -433,6 +566,184 @@ class Settlement:
                      f'<line x1="-7" y1="-7" x2="7" y2="7"/><line x1="-7" y1="7" x2="7" y2="-7"/></g>')
         self.M["fallow_patches"].append({"outline": [[round(p[0], 1), round(p[1], 1)] for p in smooth_points(organic_poly(base, 16))]})
 
+    def water_field(self, shape, label, name, source, drain, amp=52, taxfree=0, plot=34, label_xy=None, drain_anchor=None):
+        """A rice field built WATER-FIRST: the irrigation network is the generative skeleton, and the plots,
+        crops, and colours are all DERIVED from it, so the map actually communicates the hydrology. Water
+        enters from `source` (the high NW side, fed from the pond) and drains to `drain` (the low SE side). A
+        HEAD ditch runs along the high edge; LATERALS run down the fall line, dividing the field into strips;
+        paddies stack between them; a DRAIN ditch collects at the low edge and leaves toward `drain`. Crop
+        FOLLOWS the water (rice hugging the ditches, dry upland crops where the network doesn't reach - wide-
+        strip middles and the margins); the paddy is ~ONE green (a rice field, not a colour mix). Records a
+        feed channel (pond->field) and a drain channel (field->drain) so the checks see the supply. See
+        SKILL.md 'Water-first fields'."""
+        if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
+            bbox = tuple(shape)
+            outline = organic_bbox(bbox, amp)
+        else:
+            outline = organic_poly(list(shape), amp)
+            xs = [q[0] for q in outline]
+            ys = [q[1] for q in outline]
+            bbox = (min(xs), min(ys), max(xs), max(ys))
+        x0, y0, x1, y1 = bbox
+        smoothed = smooth_points(outline)
+        self.M["fields"].append({"name": name, "bbox": list(bbox), "kind": "paddy",
+                                 "outline": [[x, y] for (x, y) in smoothed]})
+        self.field_polys.append(smoothed)
+        d = smooth_closed(outline)
+        cid = self._cid('fld')
+        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+        bund = 0.03 * plot + 0.35
+
+        # WATER FRAME: f = downhill (NW->SE, the fall line), u = contour. Orthonormal, so xy<->uf is exact.
+        rt = 0.70710678
+        def U(px, py):
+            return rt * (px - py)
+        def Ff(px, py):
+            return rt * (px + py)
+        def XY(u, f):
+            return (rt * (u + f), rt * (f - u))
+        ex0, ey0, ex1, ey1 = x0 - amp, y0 - amp, x1 + amp, y1 + amp
+        ous = [U(px, py) for px, py in smoothed]
+        ofs = [Ff(px, py) for px, py in smoothed]
+        umin, umax = min(ous) - plot, max(ous) + plot
+        fmin, fmax = min(ofs) - plot, max(ofs) + plot
+        fhi, flo = min(ofs), max(ofs)                        # the field's real high (source) / low (drain) edges
+        fh, fd = fhi + plot * 1.4, flo - plot * 1.4           # the MAIN canal (near the high edge) + DRAIN (near the low)
+
+        stt = random.getstate()                                  # ISOLATE the fill RNG (decorative; must not shift houses)
+        random.seed(int(abs(x0) * 7 + abs(y0) * 13 + abs(x1) * 3 + len(name)))
+
+        # LATERALS: strip boundaries in u, spaced 1.4-3.2 plots apart (varied width). Each is a continuous
+        # wobbly line down f (so both neighbouring strips follow the SAME lateral -> a real ditch, T-junctions).
+        # u-grid: plot-wide columns (all wobble down f). Every 2-4 columns carries a LATERAL DITCH; a plot is
+        # watered from an adjacent lateral or by cascade from the plot above, so the plots FAR from any lateral
+        # (wide-gap middles) and at the field MARGINS are the hard-to-water ground -> dry crops go there.
+        ub = [umin]
+        while ub[-1] < umax - plot * 0.55:
+            ub.append(ub[-1] + plot * random.uniform(0.9, 1.35))
+        ub.append(umax)
+        phase = [random.uniform(0, 6.28) for _ in ub]
+        def uline(i, f):
+            if i == 0 or i == len(ub) - 1:
+                return ub[i]
+            return ub[i] + 5.0 * math.sin(f / 66.0 + phase[i]) + 3.0 * math.sin(f / 29.0 + phase[i] * 1.7)
+        laterals, i = [], random.randint(1, 2)
+        while i < len(ub) - 1:
+            laterals.append(i)
+            i += random.randint(4, 6)
+
+        self.add(f'<g clip-path="url(#{cid})">')
+        self.add(f'<rect x="{ex0:.0f}" y="{ey0:.0f}" width="{ex1-ex0:.0f}" height="{ey1-ey0:.0f}" fill="#C2A772"/>')
+        interior, ndry, nrice = [], 0, 0
+        for k in range(len(ub) - 1):
+            rows = [fmin]
+            while rows[-1] < fmax - plot * 0.6:
+                rows.append(rows[-1] + plot * random.uniform(0.85, 1.5))
+            rows.append(fmax)
+            for j in range(len(rows) - 1):
+                fa, fb = rows[j], rows[j + 1]
+                fm = (fa + fb) / 2
+                quad = [XY(uline(k, fa), fa), XY(uline(k + 1, fa), fa),
+                        XY(uline(k + 1, fb), fb), XY(uline(k, fb), fb)]
+                pts = ' '.join(f'{q[0]:.0f},{q[1]:.0f}' for q in quad)
+                cx = sum(q[0] for q in quad) / 4
+                cy = sum(q[1] for q in quad) / 4
+                edgef = max(0.0, 1.0 - edge_dist(cx, cy, smoothed) / (1.4 * plot))
+                un_irrig = fm < fh or fm > fd            # above the main canal / below the drain: gravity can't flood it
+                if un_irrig or edgef + random.uniform(-0.08, 0.08) > 0.6:
+                    crop = 'dry' if random.random() < 0.62 else 'soy'
+                    fill = 'url(#drycrop)' if crop == 'dry' else '#9CB36A'
+                    self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
+                    self._rows(quad, pts, crop)
+                    ndry += 1
+                else:
+                    near_ditch = abs(fm - fh) < plot * 1.4 or abs(fm - fd) < plot * 1.4   # water pools at the canal/drain
+                    ro = random.random()
+                    if near_ditch and ro < 0.3:
+                        fill, flooded = random.choice(FLOODED_SHADES), True
+                    elif ro > 0.975:
+                        fill, flooded = random.choice(RIPE_SHADES), False
+                    else:
+                        fill, flooded = random.choice(RICE_GREENS), False
+                    self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
+                    self._paddy_surface(quad, pts, flooded)
+                    nrice += 1
+                if point_in_poly(cx, cy, smoothed):
+                    interior.append((quad, cx, cy))
+        if label and taxfree:
+            self._taxfree_plots(interior, taxfree)
+        self.add('</g>')
+
+        # THE WATER NETWORK, drawn ON TOP and clipped to the field: laterals down the fall line, a head ditch
+        # along the high edge, a drain ditch along the low edge - the plots were carved to these, so they align.
+        def polyline(pairs, w):
+            pts = ' '.join(f'{px:.0f},{py:.0f}' for px, py in pairs)
+            self.add(f'<polyline points="{pts}" fill="none" stroke="#9CB4C8" stroke-width="{w}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
+        def bnd(u, lo, step):                                # first f INSIDE the field scanning from lo; None if absent
+            f = lo
+            while (f <= fmax if step > 0 else f >= fmin):
+                if point_in_poly(XY(u, f)[0], XY(u, f)[1], smoothed):
+                    return f
+                f += step
+            return None
+        def ditch(pairs, w, role):                            # draw AND record, so the checks can validate it
+            polyline(pairs, w)
+            self.M["field_ditches"].append({"poly": [[round(px, 1), round(py, 1)] for px, py in pairs], "role": role, "field": name})
+        # CONTINUOUS main + drain along the field's true HIGH / LOW boundaries - sampled only where the field
+        # actually exists (bnd returns None otherwise), so no junk endpoints jutting outside. Then LATERALS
+        # whose ends SNAP onto the nearest main / drain node - so every lateral provably meets both, and the
+        # main/drain read as continuous canals (not a sparse dotted line). Paddies between laterals cascade.
+        us = [min(ous) + i * 11 for i in range(int((max(ous) - min(ous)) / 11) + 1)] + [max(ous)]
+        main_pts, drain_pts = [], []
+        for u in us:
+            t, bt = bnd(u, fmin, 6), bnd(u, fmax, -6)
+            if t is not None and bt is not None and bt - t > plot * 1.4:
+                main_pts.append(XY(u, t + plot * 0.7))
+                drain_pts.append(XY(u, bt - plot * 0.7))
+        def smooth(pts):                                       # kill acute turns where the boundary bends sharply
+            if len(pts) < 3:
+                return pts
+            for _ in range(3):
+                pts = [pts[0]] + [((pts[i - 1][0] + pts[i][0] + pts[i + 1][0]) / 3,
+                                   (pts[i - 1][1] + pts[i][1] + pts[i + 1][1]) / 3) for i in range(1, len(pts) - 1)] + [pts[-1]]
+            return pts
+        main_pts, drain_pts = smooth(main_pts), smooth(drain_pts)
+        self.add(f'<g clip-path="url(#{cid})">')
+        if len(main_pts) >= 2:
+            ditch(main_pts, 3.3, "main")                       # continuous MAIN canal along the high edge
+            ditch(drain_pts, 3.0, "drain")                     # continuous DRAIN along the low edge
+            for li in laterals:
+                if not (0 < li < len(ub) - 1):
+                    continue
+                ut = ub[li]
+                t, bt = bnd(ut, fmin, 6), bnd(ut, fmax, -6)
+                if t is None or bt is None:
+                    continue
+                tf, bf = t + plot * 0.7, bt - plot * 0.7
+                if bf - tf <= plot * 0.7:
+                    continue
+                mid = [XY(uline(li, f), f) for f in [tf + i * 14 for i in range(1, int((bf - tf) / 14) + 1)] if f < bf]
+                ditch([XY(ut, tf)] + mid + [XY(ut, bf)], 2.0, "lateral")   # ends on the continuous main/drain line
+        self.add('</g>')
+        random.setstate(stt)
+
+        # feed the MAIN at a single point from the pond; empty the DRAIN to the outlet (anchors safely inside).
+        safe = [(t[1], t[2]) for t in interior if edge_dist(t[1], t[2], smoothed) >= 14] or [((x0 + x1) / 2, (y0 + y1) / 2)]
+        msafe = [q for q in main_pts if edge_dist(q[0], q[1], smoothed) >= 11] or main_pts or safe
+        dsafe = [q for q in drain_pts if edge_dist(q[0], q[1], smoothed) >= 11] or drain_pts or safe
+        head_pt = min(msafe, key=lambda q: (q[0] - source[0]) ** 2 + (q[1] - source[1]) ** 2)
+        drain_pt = min(dsafe, key=lambda q: (q[0] - drain[0]) ** 2 + (q[1] - drain[1]) ** 2)
+        self.channel(source, head_pt, {"kind": "pond"}, {"kind": "field", "name": name}, amp=8, width=2.6)
+        self.channel(drain_pt, drain, {"kind": "field", "name": name}, drain_anchor or {"kind": "offmap"}, amp=8, width=2.6)
+
+        self.add(f'<path d="{d}" fill="none" stroke="#A98A52" stroke-width="3.5"/>')
+        if label:
+            lx, ly = label_xy if label_xy else ((x0 + x1) / 2, (y0 + y1) / 2)
+            z = self.add_label(f'<text x="{lx:.0f}" y="{ly:.0f}" text-anchor="middle" font-size="15" '
+                               f'font-weight="bold" fill="#33301E" letter-spacing="1.5" '
+                               f'paint-order="stroke" stroke="{LAND}" stroke-width="3.5">{label}</text>')
+            self._record_label(lx, ly, label, 15, "middle", z)
+
     def fallow_field(self, bbox, name, amp=34):
         outline = organic_bbox(bbox, amp)
         d = smooth_closed(outline)
@@ -482,6 +793,16 @@ class Settlement:
         # channel, not just its center - 22 left corners clipping the channel (see
         # no_structure_on_channel). Matches the stream corridor's footprint-aware spacing.
         self.corridors.append((poly, 33))
+
+    def irrigation_ditch(self, pts, width=2.2):
+        """A field ditch drawn ON TOP of the paddy (call AFTER paddy_field, whose fill would otherwise cover
+        it - the deferred water layer sits UNDER the fields). This is the paddy's internal water network:
+        yosui distributary ditches carrying water in from the high side and haisui ditches draining it to the
+        low side, threading between the plots along the aze. The THINNEST line on the map (~0.3 m real, ~1/300
+        of the 1-cho paddy it serves - see the water-width ladder in SKILL.md). Decorative (no anchor/corridor)."""
+        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
+        self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}" stroke-linejoin="round" '
+                 f'stroke-linecap="round" opacity="0.9"/>')
 
     def lane(self, pts):
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
@@ -649,7 +970,8 @@ class Settlement:
         # a consistent ~0.55x a dwelling at every scale - fixed pixels would make it look right in the
         # dense city but far too small beside a village/town's larger houses. It stays SMALLER than a
         # house (a wellhead is small) regardless of the larger COURTYARD footprint reserved for placement.
-        vroof, vcurb = 11.9 * self.bscale, 9.0 * self.bscale
+        vf = 0.52 if self.M["meta"].get("scale") == "village" else 1.0   # to-scale village houses are ~half the legacy size
+        vroof, vcurb = 11.9 * vf * self.bscale, 9.0 * vf * self.bscale
         self.add(f'<rect x="{x-vroof:.1f}" y="{y-vroof:.1f}" width="{2*vroof:.1f}" height="{2*vroof:.1f}" rx="1.5" '
                  f'fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>')   # the well-house roof, light so the curb reads through
         self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb:.1f}" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>')   # stone curb
@@ -1114,7 +1436,7 @@ class Settlement:
         The watchman strikes the bell in a cadence that tells the town how near the fire is. Records
         M['fire_towers'] (an overlap-checked struct: it must stand clear of the wall, roads, and
         buildings) and reserves a small no-build block (it needs clear sightlines). Place it among the
-        laborer/merchant blocks. See the SKILL.md 'Fire towers and firebreaks' historical grounding."""
+        laborer/merchant blocks. See the SKILL.md 'Fire towers' historical grounding."""
         h = tw / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-h-2:.0f}" y="{-h-5:.0f}" width="{tw+4}" height="5" rx="1" fill="#7A5A30"/>')          # the little roof cap over the lookout platform
@@ -1132,32 +1454,6 @@ class Settlement:
         if label:
             self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
         return z
-
-    def firebreak(self, cx, cy, w=300, h=150, rot=0.0, label="firebreak"):
-        """A HIYOKECHI / HIROKOJI (fire-break): a deliberately cleared open plaza kept empty of
-        permanent building so a blaze cannot jump across it - the fire-defense of a dense, ENCLOSED
-        urban core (a walled town or a city), where the rampart that keeps raiders out also traps a
-        fire in. Too valuable to leave idle, it fills with REMOVABLE stalls, teahouses, and the
-        troupe's theater stage, so the fire gap doubles as the market/amusement ground (the Edo
-        hirokoji). Records M['firebreaks'] and blocks DWELLINGS from its ground (the stage, stalls,
-        and fire tower may sit on it - the author places those). Drawn on the base layer so the stage
-        and tower render over it. Place it BEFORE the dwelling packs. See the SKILL.md 'Fire towers
-        and firebreaks' historical grounding."""
-        hw, hh = w / 2, h / 2
-        g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.1f})">']
-        g.append(f'<rect x="{-hw:.0f}" y="{-hh:.0f}" width="{w:.0f}" height="{h:.0f}" rx="6" fill="#EFE6CC" stroke="#C9B484" stroke-width="1.4" stroke-dasharray="7 5"/>')   # the swept open ground, a dashed rim (cleared, not walled)
-        for sx, sy in [(-hw * 0.58, -hh * 0.42), (-hw * 0.12, hh * 0.46), (hw * 0.32, -hh * 0.46), (hw * 0.62, hh * 0.38)]:
-            g.append(f'<rect x="{sx - 9:.0f}" y="{sy - 7:.0f}" width="18" height="14" rx="1" fill="#D8C49A" stroke="#A98E54" stroke-width="0.7" opacity="0.65"/>')   # a scatter of light, removable market stalls
-        g.append('</g>')
-        self.add(''.join(g))
-        self.M["firebreaks"].append({"x": cx, "y": cy, "w": w, "h": h, "rot": round(rot, 1), "label": label})
-        a = math.radians(rot)
-        ca, sa = math.cos(a), math.sin(a)
-        iw, ih = hw + 4, hh + 4                               # block DWELLINGS from the WHOLE plaza (+ a touch, so no dwelling centre lands on its rim); frontage faces it from outside
-        self.block_polys.append([(cx + dx * ca - dy * sa, cy + dx * sa + dy * ca)
-                                 for dx, dy in [(-iw, -ih), (iw, -ih), (iw, ih), (-iw, ih)]])
-        if label:
-            self.label(cx, cy - hh + 14, label, 10, italic=True, color="#8A7138")   # ON the open plaza (its ground carries no building, so the label stays clear)
 
     def _draw_threshing_yard(self, cx, cy, w, h):
         """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack)."""
@@ -1194,15 +1490,15 @@ class Settlement:
                 return False
         return True
 
-    def _yard_dims(self):
-        """The farmstead threshing/drying yard footprint, scaled with the map's building grain."""
-        return 32 * self.bscale, 20 * self.bscale
+    def _yard_dims(self, hw, hh):
+        """PREVIEW: yard scaled to the (now smaller) house, capped so the big headman keeps an ordinary yard."""
+        return min(0.73 * hw, 32 * self.bscale), min(0.69 * hh, 20 * self.bscale)
 
     def _find_yard_spot(self, hx, hy, hw, hh):
         """The first fitting threshing-yard position for a farmhouse: the sunny SOUTH/front side (+y) is
         the maeniwa; fall back to the E/W sides if the paddy blocks due-south, but NEVER the shady north
         back. Returns (ox, oy, yw, yh) or None if the farmstead is boxed in on all three sides."""
-        yw, yh = self._yard_dims()
+        yw, yh = self._yard_dims(hw, hh)
         for dx, dy in ((0, 1), (1, 0), (-1, 0)):
             ox = hx + dx * (hw / 2 + yw / 2 - 2)
             oy = hy + dy * (hh / 2 + yh / 2 - 2)
@@ -1234,10 +1530,9 @@ class Settlement:
         g.append('</g>')
         self.add(''.join(g))
 
-    def _garden_dims(self):
-        """The dooryard kitchen-garden footprint, scaled with the map's building grain. Small - smaller
-        than the threshing yard and well under the farmhouse (a kitchen plot, not a second field)."""
-        return 24 * self.bscale, 16 * self.bscale
+    def _garden_dims(self, hw, hh):
+        """PREVIEW: garden scaled to the (now smaller) house, capped."""
+        return min(0.55 * hw, 24 * self.bscale), min(0.55 * hh, 16 * self.bscale)
 
     def _farm_shed_rect(self, hx, hy, hw, hh, rot, kind, shed):
         """The footprint of a plain farmhouse's attached STOREHOUSE/shed (kura), drawn as a sub-glyph on
@@ -1274,19 +1569,29 @@ class Settlement:
                 return False
         return True
 
-    def _find_garden_spot(self, hx, hy, hw, hh, yard, shed_rect=None):
+    def _find_garden_spot(self, hx, hy, hw, hh, yard, shed_rect=None, wealth=1.0):
         """The first fitting kitchen-garden position: a sunny SIDE, preferring the EAST (the kitchen/doma
-        end, where the cook steps out to it), then the west, then the sunny SE/SW corners - NEVER the shady
-        north back, and never the south front (the threshing yard's apron) nor the west shed. Spot or None."""
-        gw, gh = self._garden_dims()
-        # the abutting E/W/SE/SW spots first; then the same sides reached a little FURTHER out, to slip
-        # past a close ring-neighbour into the next gap (a real dooryard plot need not be flush to the wall)
-        for extra in (0, 15 * self.bscale):
-            for dx, dy in ((1, 0), (-1, 0), (1, 1), (-1, 1)):
-                ox = hx + dx * (hw / 2 + gw / 2 - 2 + extra)
-                oy = hy + dy * (hh / 2 + gh / 2 - 2)
-                if self._garden_fits(ox, oy, gw, gh, hx, hy, yard, shed_rect):
-                    return ox, oy, gw, gh
+        end, where the cook steps out to it), then the sunny SE/SW corners, and the windward WALL itself
+        LAST - NEVER the shady north back, and never the south front (the threshing yard's apron) nor the west
+        shed. The grove's belt sits on the windward WALL (the W face for the default NW wind), so the garden
+        takes that wall only as a last resort - the windward CORNER (SW) is still fine, it tucks below the
+        grove's arm. Keeping the garden off the windward wall is what frees it for the grove (a garden there
+        was the #1 reason a windward arm went missing - e.g. a farm whose EAST faces the paddy). Spot or None."""
+        gw, gh = self._garden_dims(hw * wealth, hh * wealth)   # PREVIEW: richer farm -> bigger garden
+        wx = self._windward_x()                              # windward horizontal sign (-1 W / +1 E / 0)
+        wall = (wx, 0) if wx else None                       # the windward wall the grove's belt wants
+        sides = [(1, 0), (-1, 0), (1, 1), (-1, 1)]
+        # try EVERY non-windward-wall side first - flush AND a little further out (to slip the garden past the
+        # south yard into the windward CORNER) - and the windward wall itself only as a last resort, so an
+        # E-paddy farm puts its garden in the SW corner and leaves the W wall free for the grove
+        cands = [(dx, dy, e) for dx, dy in sides if (dx, dy) != wall for e in (0, 15 * self.bscale, 30 * self.bscale)]
+        if wall:
+            cands += [(wall[0], wall[1], e) for e in (0, 15 * self.bscale)]
+        for dx, dy, extra in cands:
+            ox = hx + dx * (hw / 2 + gw / 2 - 2 + extra)
+            oy = hy + dy * (hh / 2 + gh / 2 - 2)
+            if self._garden_fits(ox, oy, gw, gh, hx, hy, yard, shed_rect):
+                return ox, oy, gw, gh
         return None
 
     def _attach_garden(self, hx, hy, spot):
@@ -1297,7 +1602,203 @@ class Settlement:
         self.M["gardens"].append({"x": round(ox, 1), "y": round(oy, 1), "w": gw, "h": gh, "rot": 0, "of": [hx, hy]})
         self.placed.append((ox, oy, gw, gh))
 
-    def _find_appurtenances(self, hx, hy, hw, hh, rot=0, kind="plain", shed=False):
+    # the windward faces a homestead grove (yashikirin) shelters, by where the prevailing cold wind comes
+    # FROM (its compass key). The grove is an L-BELT: a deep stand on each windward face (for a diagonal
+    # like NW, an N arm + a W arm wrapping the corner; for a cardinal, one deep band). Default NW - the
+    # East Asian winter monsoon (the Siberian high) blows NW across China AND Japan, so N+W is windward and
+    # the S/E is the sheltered, sunny side. A map keys it off its geography with meta(windward=...). Each
+    # arm is (face, perp): `face` is the cardinal it sits on; `perp` is the sign the N/S arm extends along
+    # to wrap the corner (0 for a lone cardinal arm). See SKILL.md 'Homestead groves'.
+    _GROVE_ARMS = {
+        "NW": [((0, -1), -1), ((-1, 0), 0)], "NE": [((0, -1), 1), ((1, 0), 0)],
+        "SW": [((0, 1), -1), ((-1, 0), 0)], "SE": [((0, 1), 1), ((1, 0), 0)],
+        "N": [((0, -1), 0)], "S": [((0, 1), 0)], "E": [((1, 0), 0)], "W": [((-1, 0), 0)],
+    }
+
+    def _windward(self):
+        """The map's prevailing-wind compass key (where the cold wind blows FROM), default NW."""
+        w = str(self.M["meta"].get("windward", "NW")).upper().strip()
+        return w if w in self._GROVE_ARMS else "NW"
+
+    def _windward_x(self):
+        """The horizontal sign of the windward direction: -1 if the wind is from the W (NW/W/SW), +1 if from
+        the E (NE/E/SE), 0 for a due N/S wind. Used to keep the garden off the windward wall (the grove's side)."""
+        wk = self._windward()
+        return -1 if "W" in wk else (1 if "E" in wk else 0)
+
+    def _grove_candidate(self, hx, hy):
+        """Whether this farmhouse is a grove candidate. UNIVERSAL by default (the yashikirin ringed every
+        dispersed farmstead, so a grove is drawn wherever there is windward room); meta(grove_prevalence=N<1)
+        dials it down for an atypical/sheltered microclimate. Deterministic in the house position (stable
+        across regenerations, RNG-independent)."""
+        rate = float(self.M["meta"].get("grove_prevalence", 1.0))
+        return rate >= 1.0 or int(abs(hx) * 31 + abs(hy) * 17) % 100 < rate * 100
+
+    def _grove_arm_rect(self, hx, hy, hw, hh, fdx, fdy, perp, d, gap, lf=1.0):
+        """One belt ARM's footprint (cx, cy, w, h), depth `d`, just outside the house wall it shelters. An
+        N/S arm runs E-W as wide as the house plus `d` (extending `perp` toward the windward corner so the
+        two arms wrap it); an E/W arm runs N-S as tall as the house. The depth `d` is how many trees deep the
+        stand is - sized so the whole grove is the LARGEST homestead appurtenance (bigger than the house);
+        `lf` shortens the arm's run to slip a partial belt past a close neighbour. See SKILL.md 'Homestead
+        groves' (Historical scale)."""
+        if fdy:                                                   # N or S arm (runs E-W); wraps `perp` toward the windward corner
+            return hx + perp * d / 2, hy + fdy * (hh / 2 + d / 2 + gap), (hw + d) * lf, d
+        return hx + fdx * (hw / 2 + d / 2 + gap), hy, d, hh * lf  # E or W arm (runs N-S)
+
+    def _grove_fits(self, x, y, w, h, own):
+        """A grove fits where it is in-bounds, on DRY ground (trees do not grow IN a flooded paddy - but a real
+        homestead grove HUGS the paddy bund, so the footprint may abut a field, it just may not overlap it),
+        off any lane, and clear of every placed footprint EXCEPT its OWN house. Axis-aligned, so an exact AABB
+        test serves - not the conservative half-diagonal circle, which would over-reject the elongated bands."""
+        if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:
+            return False
+        if self.bound and not point_in_poly(x, y, self.bound):
+            return False
+        if self._near_corridor(x, y):                            # NOT `_in_blocked`: a grove may sit right at the
+            return False                                         # paddy edge (the 14px field set-back is for buildings, not the windbreak)
+        gc = [(x - w / 2, y - h / 2), (x + w / 2, y - h / 2), (x + w / 2, y + h / 2), (x - w / 2, y + h / 2)]
+        for poly in self.field_polys:                            # the whole grove stays OUT of the flooded paddy
+            n = len(poly)
+            if (any(point_in_poly(cx, cy, poly) for cx, cy in gc)
+                    or any(point_in_poly(vx, vy, gc) for vx, vy in poly)
+                    or any(segments_cross(gc[e], gc[(e + 1) % 4], poly[k], poly[(k + 1) % n])
+                           for e in range(4) for k in range(n))):
+                return False
+        for (px, py, pw, ph) in self.placed:                     # clear of every footprint but its OWN homestead
+            if any(abs(px - ox) < 1.5 and abs(py - oy) < 1.5 for ox, oy in own):
+                continue
+            if abs(x - px) < (w + pw) / 2 + 2 and abs(y - py) < (h + ph) / 2 + 2:
+                return False
+        # a threshing yard needs clear sky to its SOUTH (the drying sun); a grove squarely in that sun-corridor
+        # would shade it, so keep the grove out of the narrow strip directly south of any yard. (Its OWN grove
+        # is N/W, far from its own yard's southern corridor, so this only steers it off a NEIGHBOUR's yard.)
+        for yd in self.M.get("threshing_yards", []):
+            cyx, cyy = yd["x"], yd["y"] + yd["h"] / 2 + 11       # corridor centre: a ~22px-deep strip south of the yard
+            if abs(x - cyx) < (w + yd["w"]) / 2 and abs(y - cyy) < (h + 22) / 2:
+                return False
+        return True
+
+    GROVE_RATIO = 6.0     # target grove footprint as a multiple of the house (~6:1 - see SKILL.md Historical scale)
+
+    def _find_grove_arms(self, hx, hy, hw, hh):
+        """The windward grove's belt arms, AREA-TARGETED to ~GROVE_RATIO x the house footprint (the historical
+        ~6:1). Each windward face (N + W for an NW wind) is grown to the deepest belt that fits; if the total
+        still falls short of target - because a paddy or neighbour blocks one face - the OTHER, open arm is
+        deepened to compensate, so a typical farm's grove still reaches the full ~6:1 and reads as ~40 trees.
+        A farm boxed in on BOTH windward faces gets only what fits (a small grove - the genuinely cramped
+        minority). Arms are NOT in `placed`, so adjacent groves abut into one continuous windbreak. Returns a
+        list of (cx, cy, w, h, face)."""
+        target = self.GROVE_RATIO * hw * hh
+        own = [(hx, hy)]
+        d0 = 1.4 * hh                                            # base belt depth; the loop deepens to hit the area target
+        dcap = 3.6 * hh                                          # an open arm may deepen this far to cover a blocked one
+        dmin = 12 * self.bscale
+        step = max(2.0, 0.16 * hh)
+        depths = []                                              # [[(fdx,fdy), perp, depth], ...]
+        for (fdx, fdy), perp in self._GROVE_ARMS[self._windward()]:
+            d = d0
+            placed_arm = False
+            while d >= dmin:                                     # deepest full-width arm <= d0 that fits this face
+                cx, cy, w, h = self._grove_arm_rect(hx, hy, hw, hh, fdx, fdy, perp, d, 1.5)
+                if self._grove_fits(cx, cy, w, h, own):
+                    depths.append([(fdx, fdy), perp, d, 1.0])
+                    placed_arm = True
+                    break
+                d -= step
+            if not placed_arm:                                  # tight face: a NARROW clump still reads as a windbreak
+                d = d0
+                while d >= dmin:
+                    cx, cy, w, h = self._grove_arm_rect(hx, hy, hw, hh, fdx, fdy, perp, d, 1.5, 0.55)
+                    if self._grove_fits(cx, cy, w, h, own):
+                        depths.append([(fdx, fdy), perp, d, 0.55])
+                        break
+                    d -= step
+
+        def total_area():
+            rects = [self._grove_arm_rect(hx, hy, hw, hh, fdx, fdy, perp, d, 1.5, lf)
+                     for (fdx, fdy), perp, d, lf in depths]
+            return _union_area([(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2) for cx, cy, w, h in rects])
+
+        guard = 0
+        while depths and total_area() < target and guard < 300:  # compensate: deepen the open arm(s)
+            grew = False
+            for arm in depths:
+                if arm[2] >= dcap:
+                    continue
+                nd = min(dcap, arm[2] + step)
+                cx, cy, w, h = self._grove_arm_rect(hx, hy, hw, hh, arm[0][0], arm[0][1], arm[1], nd, 1.5, arm[3])
+                if self._grove_fits(cx, cy, w, h, own):
+                    arm[2] = nd
+                    grew = True
+                    if total_area() >= target:
+                        break
+            if not grew:
+                break
+            guard += 1
+        return [(*self._grove_arm_rect(hx, hy, hw, hh, fdx, fdy, perp, d, 1.5, lf), (fdx, fdy))
+                for (fdx, fdy), perp, d, lf in depths]
+
+    def _grove_room(self, hx, hy, hw, hh):
+        """Whether at least a MINIMAL grove clump fits on the windward side - used by the homestead solver to
+        prefer a house position that leaves room for a grove (the actual, possibly larger, grove is placed in
+        the second pass). Mirrors the minimal footprint the `_find_grove_arms` ladder falls back to."""
+        for (fdx, fdy), perp in self._GROVE_ARMS[self._windward()]:
+            cx, cy, w, h = self._grove_arm_rect(hx, hy, hw, hh, fdx, fdy, perp, 13 * self.bscale, 1.5, 0.5)
+            if self._grove_fits(cx, cy, w, h, [(hx, hy)]):
+                return True
+        return False
+
+    def _draw_grove(self, cx, cy, w, h, face):
+        """Draw one homestead windbreak grove (yashikirin) as a DENSE MIXED STAND - overlapping canopies
+        packed into a real grove (not a few scattered trees), of three species: tall EVERGREEN conifer
+        (dark, dense apex - the windbreak backbone, cedar/pine), DECIDUOUS broadleaf (mid green - timber
+        and fruit, zelkova/persimmon), and a BAMBOO clump (take - fine culms with leafy tops). Distinct
+        from the big s.forest area feature and the striped kitchen-garden bed. Species and placement are
+        seeded by position (stable across regenerations). Canopy count scales with footprint area (a
+        denser stand on a bigger windward side), grain-invariant so it reads the same at town and city."""
+        bs = self.bscale / 0.82                                  # render scale relative to the town grain
+        st = random.getstate()
+        random.seed(int(abs(cx) * 5 + abs(cy) * 3 + round(w)))
+        n = max(5, min(28, round(w * h / (bs * bs * 48))))       # ~ one crown per ~48 px^2 at 2 ft/px (a ~5 m crown); ~40 across the 6:1 L-grove
+        items = []
+        for _ in range(n):
+            px = random.uniform(-w / 2 + 2, w / 2 - 2)
+            py = random.uniform(-h / 2 + 2, h / 2 - 2)
+            roll = random.random()
+            kind = "bamboo" if roll < 0.20 else ("conifer" if roll < 0.58 else "broadleaf")
+            size = random.uniform(1.25, 1.7) if random.random() < 0.25 else random.uniform(0.72, 1.05)   # a few emergent crowns over many small
+            items.append((px, py, kind, size))
+        g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
+        for px, py, kind, _s in items:                           # trunks first (trees only), so canopies sit over them
+            if kind != "bamboo":
+                g.append(f'<rect x="{px-1:.1f}" y="{py:.1f}" width="2" height="{5*bs:.1f}" rx="0.7" fill="#6B4F2A"/>')
+        for px, py, kind, s in sorted(items, key=lambda t: t[1]):    # back-to-front so the stand layers with depth
+            if kind == "bamboo":
+                for _ in range(6):                               # a clump of fine culms with leafy tops
+                    bx, by = px + random.uniform(-4, 4) * bs, py + random.uniform(-4, 3) * bs
+                    g.append(f'<line x1="{bx:.1f}" y1="{by+4*bs:.1f}" x2="{bx:.1f}" y2="{by-4*bs:.1f}" stroke="#88A646" stroke-width="{0.9*bs:.2f}"/>')
+                    g.append(f'<circle cx="{bx:.1f}" cy="{by-4*bs:.1f}" r="{1.7*bs:.1f}" fill="#BBD06A"/>')
+                continue
+            rr = (4.6 if kind == "conifer" else 4.0) * s * bs    # PREVIEW: smaller crowns read as ~40 distinct trees
+            col = "#496733" if kind == "conifer" else random.choice(["#7C9A4E", "#6E8B43"])
+            g.append(f'<circle cx="{px:.1f}" cy="{py-3*bs:.1f}" r="{rr:.1f}" fill="{col}" stroke="#3C5526" stroke-width="0.8"/>')
+            if kind == "conifer":
+                g.append(f'<circle cx="{px:.1f}" cy="{py-3*bs:.1f}" r="{rr*0.4:.1f}" fill="#364D22" opacity="0.55"/>')   # dense dark apex
+        g.append('</g>')
+        self.add(''.join(g))
+        random.setstate(st)
+
+    def _attach_grove(self, hx, hy, arms):
+        """Draw a farmstead's windbreak grove (its belt arms) and record each arm under its parent house.
+        Arms go into `grove_rects` (NOT `placed`) so a neighbour's grove may MERGE with it and the wells
+        still avoid it. Drawn in the farmsteads() second pass, after every house/yard/garden is set."""
+        for cx, cy, w, h, face in arms:
+            self._draw_grove(cx, cy, w, h, face)
+            self.M["groves"].append({"x": round(cx, 1), "y": round(cy, 1), "w": w, "h": h, "rot": 0,
+                                     "of": [hx, hy], "face": list(face)})
+            self.grove_rects.append((cx, cy, w, h))
+
+    def _find_appurtenances(self, hx, hy, hw, hh, rot=0, kind="plain", shed=False, wealth=1.0):
         """A farmstead needs room for BOTH its threshing yard (south/front, then a side) AND its dooryard
         kitchen garden (a DIFFERENT sunny side, kept off the west-side shed). Returns (yard_spot, garden_spot)
         or None if either can't fit."""
@@ -1305,17 +1806,18 @@ class Settlement:
         if yard is None:
             return None
         shed_rect = self._farm_shed_rect(hx, hy, hw, hh, rot, kind, shed)
-        garden = self._find_garden_spot(hx, hy, hw, hh, yard, shed_rect)
+        garden = self._find_garden_spot(hx, hy, hw, hh, yard, shed_rect, wealth)
         if garden is None:
             return None
         return yard, garden
 
     def _farmstead_nudges(self):
-        """Small offsets to try for a farmhouse so BOTH the house and its yard fit: the ring's own spot
-        first, then nudges (preferring south/sideways, where the yard goes) to make room without churn."""
+        """Offsets to try for a farmhouse so the whole homestead (house + yard + garden + grove-room) fits:
+        the ring's own spot first, then a widening spiral of shifts. The solver stops as soon as the home
+        spot already works, so the wider rings only cost time for a genuinely crowded homestead."""
         yield 0, 0
-        for d in (11 * self.bscale, 21 * self.bscale):
-            for o in ((0, d), (d, 0), (-d, 0), (d, d), (-d, d), (0, -d), (d, -d), (-d, -d)):
+        for d in (11 * self.bscale, 21 * self.bscale, 32 * self.bscale):
+            for o in ((0, d), (d, 0), (-d, 0), (0, -d), (d, d), (-d, d), (d, -d), (-d, -d)):
                 yield o
 
     def cemetery(self, cx, cy, w, h, rot=0, label=None, label_above=False, parish=True):
@@ -2072,6 +2574,9 @@ class Settlement:
         for (px, py, pw, ph) in self.placed:
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:
                 return False
+        for (gx, gy, gw, gh) in self.grove_rects:    # groves are placed LAST, so this only steers the wells - off the trees
+            if math.hypot(x - gx, y - gy) < r + math.hypot(gw, gh) / 2 + 4:
+                return False
         return True
 
     def frontage(self, street, items, width=24, setback=10, spacing=58, both=True, rows=1, rowgap=9, jitter=4, skip=None):
@@ -2127,28 +2632,71 @@ class Settlement:
         return placed
 
     def try_place(self, x, y, kind, role=None):
+        """Place one farmhouse. VILLAGES use the to-scale HOMESTEAD BUNDLE (house + windward grove + yard +
+        garden, reserved and packed as ONE unit). Other scales keep the shipped house-first path until their
+        own to-scale conversion."""
+        if self.M["meta"].get("scale") == "village":
+            return self._try_place_bundle(x, y, kind, role)
+        return self._try_place_legacy(x, y, kind, role)
+
+    def _try_place_bundle(self, x, y, kind, role=None):
         # a farmhouse shares the MAP'S building grain (bscale): at village/hamlet scale bscale is
         # 1.0 (full size), but a town/city compresses its urban buildings, and a peasant farmhouse
         # must not render LARGER than the samurai and merchant houses inside the walls - so it
         # scales down by the same factor.
-        bw, bh = (60, 40) if kind == "big" else (44, 29)   # south-facing: long axis E-W
+        if kind == "abandoned":                              # a lone derelict ruin - no homestead bundle
+            w, h = 23 * self.bscale, 14 * self.bscale
+            if not self._fits(x, y, w, h):
+                return False
+            self.placed.append((x, y, w, h))
+            rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": random.uniform(-5, 5),
+                   "role": role, "shed": False, "wealth": 1.0}
+            self.M["houses"].append(rec)
+            self._pending_farmsteads.append(rec)
+            return True
+        # TO-SCALE HOMESTEAD BUNDLE: an occupied farmstead is placed as ONE unit - house + windward grove +
+        # threshing yard + dooryard garden - reserved and overlap-checked together so the grove always keeps
+        # its ~6:1 room (the fix for groves never reaching target under end-reconciliation). 1 px = 2 ft at
+        # village scale; the plain house is 23x14 px (~46x28 ft, the 8:5 minka). A modest, position-seeded
+        # wealth tier scales the whole bundle. See SKILL.md 'To-scale villages'.
+        bw, bh = (32, 20) if kind == "big" else (23, 14)
+        t = int(abs(x) * 53 + abs(y) * 29) % 100
+        wf = 1.0 if kind == "big" else (0.9 if t < 30 else (1.12 if t >= 80 else 1.0))
+        hw, hh = bw * self.bscale * wf, bh * self.bscale * wf
+        spot = self._place_bundle(x, y, hw, hh)              # pack the bundle as near (x,y) as the rules allow
+        if spot is None:
+            return False
+        cx, cy, geom = spot
+        self.placed.append(geom["bbox"])                     # reserve the whole homestead footprint as one rect
+        rec = {"x": cx, "y": cy, "w": hw, "h": hh, "kind": kind, "rot": random.uniform(-5, 5),
+               "role": role, "shed": False, "wealth": wf, "geom": geom}
+        self.M["houses"].append(rec)
+        self._pending_farmsteads.append(rec)
+        return True
+
+    def _try_place_legacy(self, x, y, kind, role=None):
+        # a farmhouse shares the MAP'S building grain (bscale): at hamlet scale bscale is 1.0 (full size), but
+        # a town/city compresses its urban buildings, and a peasant farmhouse must not render LARGER than the
+        # samurai and merchant houses inside the walls - so it scales down by the same factor.
+        bw, bh = (60, 40) if kind == "big" else (44, 29)
+        wf = 1.0
+        if kind == "plain":
+            t = int(abs(x) * 53 + abs(y) * 29) % 100
+            wf = 0.9 if t < 30 else (1.12 if t >= 80 else 1.0)
         w, h = bw * self.bscale, bh * self.bscale
         if not self._fits(x, y, w, h):
             return False
-        # DEFER drawing: record + reserve the farmhouse now (so wells/other placement avoid it), but draw it
-        # with its threshing YARD later, in farmsteads(), when every obstacle is known. Base placement is
-        # thus identical to a yard-free map (same density / population), and the yard is layered on after.
         rot = random.uniform(-5, 5)
         shed = random.random() < 0.3
         self.placed.append((x, y, w, h))
-        rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": rot, "role": role, "shed": shed}
+        rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": rot, "role": role, "shed": shed, "wealth": wf}
         self.M["houses"].append(rec)
         self._pending_farmsteads.append(rec)
         return True
 
     def headman(self, x, y, w=108, h=68):
         self.placed.append((x, y, w, h))
-        rec = {"x": x, "y": y, "w": w, "h": h, "kind": "big", "rot": 0, "role": "headman", "shed": False}
+        rec = {"x": x, "y": y, "w": w, "h": h, "kind": "big", "rot": 0, "role": "headman", "shed": False, "wealth": 1.0}
         self.M["houses"].append(rec)
         self._pending_farmsteads.append(rec)   # the headman is the largest farmstead; it gets a yard too
 
@@ -2157,27 +2705,232 @@ class Settlement:
         off into the urban core or the void."""
         return any(edge_dist(x, y, poly) <= 165 for poly in self.field_polys) if self.field_polys else True
 
-    def _nudge_for_yard(self, rec):
-        """Shift a farmhouse a little so BOTH its yard AND its dooryard garden fit - keeping it
-        field-adjacent and clear of everything - when they have no room at its placed spot. Updates rec +
-        its reservation; returns (yard_spot, garden_spot) or None."""
-        x0, y0, w, h = rec["x"], rec["y"], rec["w"], rec["h"]
-        self.placed = [p for p in self.placed if p != (x0, y0, w, h)]   # lift its own reservation while searching
-        found = None
-        for nx, ny in self._farmstead_nudges():
-            if nx == 0 and ny == 0:
+    def _bundle_geom(self, hx, hy, hw, hh):
+        """The metric layout of one homestead BUNDLE around a house centred at (hx, hy): the windward GROVE
+        as an L (an N band + a W band, for the default NW wind), the dooryard GARDEN tucked tight to the
+        house's E (lee) wall, and the threshing YARD on the sunny S front. Sized so the grove footprint is
+        ~6x the house (the historical ratio). Returns a dict of (cx, cy, w, h) rects keyed house/garden/
+        yard/grove_n/grove_w plus the whole-bundle bbox. (NW windward; other winds are a later generalisation.)"""
+        gap = 1.5 * self.bscale
+        gw, gh = 0.48 * hw, 0.85 * hh                        # garden - tight to the house, scales with wealth
+        yw, yh = 0.80 * hw, 0.92 * hh                        # threshing/drying yard, ~house-sized
+        b = 1.57 * hh                                         # grove band depth -> grove ~= 6x house area
+        west = hx - hw / 2 - gap - b
+        east = hx + hw / 2 + gap + gw
+        north = hy - hh / 2 - gap - b
+        south = hy + hh / 2 + gap + yh
+        return {
+            "house": (hx, hy, hw, hh),
+            "garden": (hx + hw / 2 + gap + gw / 2, hy, gw, gh),
+            "yard": (hx, hy + hh / 2 + gap + yh / 2, yw, yh),
+            "grove_n": ((west + east) / 2, north + b / 2, east - west, b),
+            "grove_w": (west + b / 2, (north + b + south) / 2, b, south - (north + b)),
+            "bbox": ((west + east) / 2, (north + south) / 2, east - west, south - north),
+        }
+
+    def _rect_corners(self, rect):
+        cx, cy, w, h = rect
+        return [(cx - w / 2, cy - h / 2), (cx + w / 2, cy - h / 2), (cx + w / 2, cy + h / 2), (cx - w / 2, cy + h / 2)]
+
+    def _rect_hits(self, rect, polys):
+        """Whether an axis-aligned rect overlaps any polygon in `polys` (corner-in, vertex-in, or edge-cross)."""
+        gc = self._rect_corners(rect)
+        for poly in polys:
+            n = len(poly)
+            if (any(point_in_poly(px, py, poly) for px, py in gc)
+                    or any(point_in_poly(vx, vy, gc) for vx, vy in poly)
+                    or any(segments_cross(gc[e], gc[(e + 1) % 4], poly[k], poly[(k + 1) % n])
+                           for e in range(4) for k in range(n))):
+                return True
+        return False
+
+    def _rect_blocked(self, rect, fields):
+        """Whether a bundle sub-rect lands on forbidden ground: no-build blocks, lanes, hill/pond ellipses,
+        and (only when `fields=True`, i.e. the SOLID house/yard/garden) the flooded paddies. The GROVE
+        (fields=False) may HUG a paddy bund, so it is tested against everything BUT the fields."""
+        if self._rect_hits(rect, self.block_polys):
+            return True
+        if fields and self._rect_hits(rect, self.field_polys):
+            return True
+        cx, cy, w, h = rect
+        for px, py in self._rect_corners(rect) + [(cx, cy)]:
+            for (ex, ey, rx, ry) in self.ellipses:
+                if rx > 0 and ry > 0 and ((px - ex) / rx) ** 2 + ((py - ey) / ry) ** 2 <= 1:
+                    return True
+        return self._near_corridor(cx, cy)
+
+    def _bundle_fits(self, geom, grove_off_field=True):
+        """A homestead bundle fits where it is in-bounds, its SOLID parts (house/yard/garden) clear every
+        paddy/block/lane/ellipse, its GROVE clears all of those (and may abut - but not enter - a paddy when
+        `grove_off_field`, the test used while shoving the grove up against the bund), and the whole bbox
+        does not overlap another already-placed homestead (a sliver of tolerance lets adjacent groves ABUT
+        into one windbreak)."""
+        cx, cy, W, H = geom["bbox"]
+        if cx - W / 2 < 6 or cx + W / 2 > self.W - 6 or cy - H / 2 < 6 or cy + H / 2 > self.H - 6:
+            return False
+        if self.bound and any(not point_in_poly(vx, vy, self.bound) for vx, vy in self._rect_corners(geom["bbox"])):
+            return False
+        if any(self._rect_blocked(geom[k], fields=True) for k in ("house", "garden", "yard")):
+            return False
+        if any(self._rect_blocked(geom[k], fields=grove_off_field) for k in ("grove_n", "grove_w")):
+            return False
+        for (px, py, pw, ph) in self.placed:
+            if abs(cx - px) < (W + pw) / 2 + 2 and abs(cy - py) < (H + ph) / 2 + 2:  # a hair of gap so an edge feature never clips a neighbour
+                return False
+        if self._yard_sun_conflict(geom):
+            return False
+        return True
+
+    def _yard_sun_conflict(self, geom):
+        """A threshing yard dries rice in the southern sun, so no grove may sit in the ~22px strip directly
+        SOUTH of any yard. Tests the candidate's grove against every placed yard's sun-corridor and the
+        candidate's yard against every placed grove, so packing never stacks a windbreak over a neighbour's
+        drying ground."""
+        def shades(grove, yard):
+            cyx, cyy = yard[0], yard[1] + yard[3] / 2 + 11
+            return abs(grove[0] - cyx) < (grove[2] + yard[2]) / 2 and abs(grove[1] - cyy) < (grove[3] + 22) / 2
+        new_groves = (geom["grove_n"], geom["grove_w"])
+        new_yard = geom["yard"]
+        for rec in self.M["houses"]:
+            g = rec.get("geom")
+            if not g:
                 continue
+            if any(shades(gv, g["yard"]) for gv in new_groves):
+                return True
+            if any(shades(gv, new_yard) for gv in (g["grove_n"], g["grove_w"])):
+                return True
+        return False
+
+    @staticmethod
+    def _closest_on_seg(px, py, ax, ay, bx, by):
+        dx, dy = bx - ax, by - ay
+        L2 = dx * dx + dy * dy
+        if L2 == 0:
+            return ax, ay
+        t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / L2))
+        return ax + t * dx, ay + t * dy
+
+    def _nearest_field_point(self, cx, cy):
+        """The closest point on any paddy outline to (cx, cy) - the bund the grove will hug."""
+        best, bd = None, float("inf")
+        for poly in self.field_polys:
+            n = len(poly)
+            for i in range(n):
+                qx, qy = self._closest_on_seg(cx, cy, poly[i][0], poly[i][1], poly[(i + 1) % n][0], poly[(i + 1) % n][1])
+                d = (qx - cx) ** 2 + (qy - cy) ** 2
+                if d < bd:
+                    bd, best = d, (qx, qy)
+        return best
+
+    def _nearest_placed_point(self, cx, cy):
+        """The centre of the nearest already-placed homestead/house - the neighbour to pack against."""
+        best, bd = None, float("inf")
+        for (px, py, pw, ph) in self.placed:
+            d = (px - cx) ** 2 + (py - cy) ** 2
+            if d < bd:
+                bd, best = d, (px, py)
+        return best
+
+    def _slide(self, cx, cy, hw, hh, target_fn, grove_off_field):
+        """Greedily shove the bundle toward target_fn (a field bund, then a neighbour) in small steps, as
+        far as it still fits - the 'pack as close as the rules allow' step."""
+        for _ in range(48):
+            tgt = target_fn(cx, cy)
+            if tgt is None:
+                break
+            dx, dy = tgt[0] - cx, tgt[1] - cy
+            dist = math.hypot(dx, dy)
+            if dist < 1.5:
+                break
+            ncx, ncy = cx + dx / dist * 2.0, cy + dy / dist * 2.0
+            if self._bundle_fits(self._bundle_geom(ncx, ncy, hw, hh), grove_off_field=grove_off_field):
+                cx, cy = ncx, ncy
+            else:
+                break
+        return cx, cy
+
+    def _place_bundle(self, x, y, hw, hh):
+        """Place a homestead bundle one-at-a-time: find the nearest fitting spot to the seed, then COMPACT it
+        - shove the grove up against the nearest paddy bund (without entering it), then pack the whole
+        complex against its nearest neighbour, each as far as the rules allow. Returns (cx, cy, geom) or None."""
+        offsets = [(0, 0)]
+        for r in range(7, 92, 7):
+            for k in range(12):
+                a = k * math.pi / 6
+                offsets.append((round(r * math.cos(a)), round(r * math.sin(a))))
+        start = None
+        for nx, ny in offsets:
+            if self._bundle_fits(self._bundle_geom(x + nx, y + ny, hw, hh)):
+                start = (x + nx, y + ny)
+                break
+        if start is None:
+            return None
+        cx, cy = start
+        cx, cy = self._slide(cx, cy, hw, hh, self._nearest_field_point, grove_off_field=True)   # grove hugs the bund
+        cx, cy = self._slide(cx, cy, hw, hh, self._nearest_placed_point, grove_off_field=True)   # pack against neighbour
+        return cx, cy, self._bundle_geom(cx, cy, hw, hh)
+
+    def _solve_homestead(self, rec):
+        """Find the best position for a farmhouse so its WHOLE homestead fits - threshing yard + dooryard
+        garden + room for a windward grove. Searches the placed spot first, then a widening spiral, and stops
+        as soon as the home spot already leaves grove-room (no churn). Prefers a spot WITH grove-room, then the
+        least displacement; falls back to a yard+garden-only spot if no grove-room is reachable nearby. Updates
+        rec's position + reservation. Returns (yard_spot, garden_spot), or None if even yard+garden won't fit."""
+        x0, y0, w, h = rec["x"], rec["y"], rec["w"], rec["h"]
+        self.placed = [p for p in self.placed if p != (x0, y0, w, h)]   # lift own reservation while searching
+        best = None                                                     # (has_grove_room, -displacement, cx, cy, spot)
+        for nx, ny in self._farmstead_nudges():
             cx, cy = x0 + nx, y0 + ny
             if not self._fits(cx, cy, w, h) or not self._field_adjacent(cx, cy):
                 continue
-            spot = self._find_appurtenances(cx, cy, w, h, rec["rot"], rec["kind"], rec["shed"])
-            if spot:
-                rec["x"], rec["y"], found = cx, cy, spot
-                break
-        self.placed.append((rec["x"], rec["y"], w, h))   # re-reserve at the new (or original) position
-        return found
+            spot = self._find_appurtenances(cx, cy, w, h, rec["rot"], rec["kind"], rec["shed"], rec["wealth"])
+            if spot is None:
+                continue
+            wf = rec["wealth"]                                           # the grove is drawn at the WEALTH size, so reserve room for THAT
+            cand = (self._grove_room(cx, cy, w * wf, h * wf), -(abs(nx) + abs(ny)), cx, cy, spot)
+            if best is None or cand[:2] > best[:2]:
+                best = cand
+            if cand[0] and nx == 0 and ny == 0:
+                break                                                   # already perfect at the home spot
+        cx, cy = (best[2], best[3]) if best else (x0, y0)
+        rec["x"], rec["y"] = cx, cy
+        self.placed.append((cx, cy, w, h))                              # re-reserve at the chosen (or original) spot
+        return best[4] if best else None
 
     def farmsteads(self):
+        """Draw every farmstead. Villages draw the reserved homestead BUNDLES; other scales use the shipped
+        house-first path. Call LAST in the gen so every obstacle is known. Returns the farmhouse count."""
+        if self.M["meta"].get("scale") == "village":
+            return self._farmsteads_bundle()
+        return self._farmsteads_legacy()
+
+    def _farmsteads_bundle(self):
+        """Draw every reserved homestead bundle: grove (back) -> yard -> garden -> house (on top). The hard
+        work (fitting each whole bundle without overlap) already happened in try_place, one at a time, so
+        this pass is pure drawing. Abandoned ruins (no bundle) draw as a lone house. Call LAST. Returns the
+        farmhouse count."""
+        survivors = []
+        for rec in self._pending_farmsteads:
+            geom = rec.get("geom")
+            if geom is None:                                    # abandoned ruin / headman: a lone house
+                self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"])
+                survivors.append(rec)
+                continue
+            for key, face in (("grove_n", (0, -1)), ("grove_w", (-1, 0))):
+                cx, cy, w, h = geom[key]
+                self._draw_grove(cx, cy, w, h, face)
+                self.M["groves"].append({"x": round(cx, 1), "y": round(cy, 1), "w": w, "h": h, "rot": 0,
+                                         "of": [rec["x"], rec["y"]], "face": list(face)})
+                self.grove_rects.append((cx, cy, w, h))
+            self._attach_yard(rec["x"], rec["y"], geom["yard"])
+            self._attach_garden(rec["x"], rec["y"], geom["garden"])
+            self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"])
+            survivors.append(rec)
+        self.M["houses"] = survivors
+        return len(survivors)
+
+
+    def _farmsteads_legacy(self):
         """Draw every deferred farmhouse WITH its threshing/drying YARD (south/front apron) AND its dooryard
         kitchen GARDEN (a sunny side, preferring the east) - both were universal to a farmstead, so every
         farmhouse has one of each. Find spots for both; if they don't fit, nudge the house a little; draw
@@ -2185,19 +2938,39 @@ class Settlement:
         nearby is dropped (rare) so the 100% invariants hold. Call LAST in the gen. Returns the count."""
         survivors = []
         for rec in self._pending_farmsteads:
-            spot = self._find_appurtenances(rec["x"], rec["y"], rec["w"], rec["h"], rec["rot"], rec["kind"], rec["shed"])
-            if spot is None:
-                spot = self._nudge_for_yard(rec)
+            spot = self._solve_homestead(rec)                       # shift the homestead to fit yard+garden+grove-room
             if spot is None:
                 fp = (rec["x"], rec["y"], rec["w"], rec["h"])
-                self.placed = [p for p in self.placed if p != fp]   # drop the un-appurtenanced farmhouse
+                self.placed = [p for p in self.placed if p != fp]   # drop the un-appurtenanced farmhouse (rare)
                 continue
             yard_spot, garden_spot = spot
             self._attach_garden(rec["x"], rec["y"], garden_spot)
             self._attach_yard(rec["x"], rec["y"], yard_spot)
-            self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"], shed=rec["shed"])
+            # DRAW the house at its WEALTH size - a modest +/-~10% on the rendered glyph only. The manifest keeps
+            # w,h at the BASE footprint (what the reservation, the yard/garden, and the overlap checks use, so
+            # the variation never causes a drop or a shed/garden clash); the `wealth` factor records the render
+            # scale and the grove (below) scales with it.
+            wf = rec["wealth"]
+            self.house(rec["x"], rec["y"], rec["w"] * wf, rec["h"] * wf, rec["kind"], rec["rot"], shed=rec["shed"])
             survivors.append(rec)
         self.M["houses"] = survivors
+        # SECOND PASS - the windward homestead groves (yashikirin). Run AFTER every farmhouse + its yard +
+        # garden is placed, so a grove (an optional flourish) can NEVER block a neighbour's MANDATORY yard/
+        # garden and drop that house. Near-universal (meta.grove_prevalence), but OFF for a farm inside a
+        # CITY wall (an intramural plot is not an isolated farmstead - it is sheltered by the urban fabric
+        # and sits on land too precious for a tree belt; meta(inwall_groves=True) to override). A farm whose
+        # windward side is boxed in goes without. Returns the farmhouse count.
+        meta = self.M["meta"]
+        wall = self.M.get("wall")
+        inwall_off = bool(wall) and meta.get("scale") == "city" and not meta.get("inwall_groves", False)
+        for rec in survivors:
+            if inwall_off and point_in_poly(rec["x"], rec["y"], wall):
+                continue
+            if self._grove_candidate(rec["x"], rec["y"]):
+                wf = rec["wealth"]                            # a wealthier farm's bigger house carries a bigger grove
+                arms = self._find_grove_arms(rec["x"], rec["y"], rec["w"] * wf, rec["h"] * wf)
+                if arms:
+                    self._attach_grove(rec["x"], rec["y"], arms)
         return len(survivors)
 
     def _perim_bbox(self, bbox, n, gap):

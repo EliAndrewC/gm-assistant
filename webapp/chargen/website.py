@@ -11,6 +11,7 @@ import cherrypy
 from chargen import config, op, art, constants as c
 from chargen.character import Character
 from chargen import ministry
+from chargen import synthesis
 
 # `current_user` is supplied by the l7r auth tool when chargen is mounted
 # inside the l7r toolkit. We import it lazily so chargen still imports
@@ -270,6 +271,34 @@ class Root:
             }
         except Exception as e:
             return {'image': None, 'headshot_crop': None, 'error': str(e)}
+
+    @ajax
+    def synthesize(self, extra_notes='', **character_data):
+        """
+        Generate a 1-3 paragraph prose backstory for the displayed character,
+        grounded in the full canonical setting. The text twin of generate_art.
+
+        Returns the prose on success, or a human-readable error - it never falls
+        back to a thinner prompt (a missing corpus / credential is surfaced, not
+        silently degraded).
+        """
+        try:
+            if 'traits' in character_data and isinstance(character_data['traits'], str):
+                character_data['traits'] = [
+                    t.strip() for t in character_data['traits'].split(',') if t.strip()
+                ]
+            if 'xp' in character_data:
+                character_data['xp'] = int(character_data['xp'])
+            backstory = synthesis.synthesize(character_data, extra_notes=extra_notes)
+        except Exception as e:
+            return {'ok': False, 'backstory': None, 'error': str(e)}
+        if not backstory:
+            return {
+                'ok': False,
+                'backstory': None,
+                'error': 'The model returned an empty backstory. Please try again.',
+            }
+        return {'ok': True, 'backstory': backstory, 'error': None}
 
     @cherrypy.expose
     def ministry(self):

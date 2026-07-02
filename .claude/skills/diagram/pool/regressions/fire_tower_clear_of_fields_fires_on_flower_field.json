@@ -1,0 +1,43 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "fire_towers": [
+  {
+   "x": 250,
+   "y": 250,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "flower_fields": [
+  {
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     100,
+     400
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "fire_tower_clear_of_fields"
+  ],
+  "source": "test_checks.py::test_fire_tower_clear_of_fields_fires_on_flower_field"
+ }
+}

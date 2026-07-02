@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "buildings": [
+  {
+   "x": 460,
+   "y": 470,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "shop"
+  }
+ ],
+ "groves": [
+  {
+   "x": 460,
+   "y": 470,
+   "w": 30,
+   "h": 24,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ],
+   "face": [
+    -1,
+    -1
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "groves_clear_of_structures"
+  ],
+  "source": "test_checks.py::test_groves_clear_of_structures_fires_when_a_grove_covers_another_building"
+ }
+}
