@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "threshing_yards": [
+  {
+   "x": 500,
+   "y": 540,
+   "w": 32,
+   "h": 20,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ]
+  }
+ ],
+ "groves": [
+  {
+   "x": 500,
+   "y": 562,
+   "w": 30,
+   "h": 24,
+   "rot": 0,
+   "of": [
+    700,
+    700
+   ],
+   "face": [
+    -1,
+    -1
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "yards_unshaded_by_groves"
+  ],
+  "source": "test_checks.py::test_yards_unshaded_by_groves_fires"
+ }
+}

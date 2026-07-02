@@ -61,10 +61,10 @@ def _git_ignored(paths: list[Path]) -> set[Path]:
     """Return the subset of `paths` that git ignores.
 
     The dash guard polices committable content, not disposable local artifacts
-    (e.g. `bakeoff/data/` blind-eval outputs or the `skills/` build artifact,
-    both git-ignored). Those may legitimately contain typographic dashes - the
-    former captures raw model output verbatim. If git is unavailable, nothing is
-    treated as ignored and the full tree is scanned (the original behavior).
+    (e.g. the `skills/` pool bundle or the `setting/` corpus snapshot, both
+    git-ignored Docker build artifacts). Those may legitimately contain
+    typographic dashes - the corpus snapshot is the GM's notes verbatim. If git
+    is unavailable, nothing is treated as ignored and the full tree is scanned.
     """
     if not paths:
         return set()

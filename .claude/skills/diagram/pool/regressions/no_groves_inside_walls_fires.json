@@ -1,0 +1,57 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ]
+ ],
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "groves": [
+  {
+   "x": 465,
+   "y": 470,
+   "w": 30,
+   "h": 24,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ],
+   "face": [
+    -1,
+    -1
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "no_groves_inside_walls"
+  ],
+  "source": "test_checks.py::test_no_groves_inside_walls_fires"
+ }
+}

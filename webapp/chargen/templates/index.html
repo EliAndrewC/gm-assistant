@@ -50,7 +50,7 @@
     var tagify = null;
 
     $(function () {
-        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit'], function (i, s) {
+        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit', 'synthesize', 'synthesis_section', 'synthesis_notes', 'synthesis_loading', 'synthesis_result', 'synthesis_text', 'synthesis_copy', 'synthesis_copied'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         // The two Upload buttons (top of form + next to Generate Art) act as
@@ -444,6 +444,11 @@
 
                     $('#summary').focus();
 
+                    dom.$synthesis_section.show();
+                    dom.$synthesis_result.hide();
+                    dom.$synthesis_text.empty();
+                    dom.$synthesis_notes.val('');
+
                     dom.$art_section.show();
                     dom.$art_result.hide();
                     dom.$art_prompt.val('Loading prompt...');
@@ -462,6 +467,46 @@
                     });
                 }
             });
+        });
+
+        dom.$synthesize.on('click', function () {
+            if (!currentCharacter) { return; }
+            dom.$synthesize.prop('disabled', true);
+            dom.$synthesis_loading.show();
+            $.post('/chargen/synthesize', {
+                full_name: $('#name').val(),
+                name_meaning: currentCharacter.name_meaning || '',
+                summary: $('#summary').val(),
+                tags: $('#tags').val(),
+                public: $('#public').val(),
+                private: $('#private').val(),
+                extra_notes: dom.$synthesis_notes.val()
+            }, function (resp) {
+                dom.$synthesis_loading.hide();
+                dom.$synthesize.prop('disabled', false);
+                if (!resp.ok) {
+                    alert('Backstory synthesis failed: ' + resp.error);
+                } else {
+                    dom.$synthesis_text.text(resp.backstory);
+                    dom.$synthesis_copied.hide();
+                    dom.$synthesis_result.show();
+                }
+            }, 'json').fail(function () {
+                dom.$synthesis_loading.hide();
+                dom.$synthesize.prop('disabled', false);
+                alert('Backstory synthesis request failed.');
+            });
+        });
+
+        dom.$synthesis_copy.on('click', function () {
+            var bs = dom.$synthesis_text.text();
+            if (!bs) { return; }
+            // Append to the end of the GM-only (private) section, with at least
+            // one blank line between it and whatever came before.
+            var existing = $('#private').val().replace(/\s+$/, '');
+            $('#private').val(existing ? (existing + '\n\n' + bs) : bs);
+            dom.$synthesis_copied.show();
+            setTimeout(function () { dom.$synthesis_copied.hide(); }, 1500);
         });
 
         dom.$generate_art.on('click', function () {
@@ -664,6 +709,25 @@
   </div>
 
   <div id="fields"></div>
+
+  <div id="synthesis_section" style="margin-top: 20px; display: none;">
+      <h3>Synthesize Backstory</h3>
+      <p style="margin: 0 0 10px 0; max-width: 700px;">Turn the character generated above into a 1-3 paragraph prose backstory grounded in the full setting. Click again to re-roll.</p>
+      <label for="synthesis_notes" style="display: block; margin-bottom: 4px;">Optional steering notes (e.g. "a reluctant duelist who lost a sibling"):</label>
+      <textarea id="synthesis_notes" rows="2" style="width: 100%; max-width: 600px; box-sizing: border-box;"></textarea>
+      <div style="margin-top: 8px;">
+          <button id="synthesize">Synthesize Backstory</button>
+          <span id="synthesis_loading" style="display: none; margin-left: 10px;">Synthesizing, please wait...</span>
+      </div>
+      <div id="synthesis_result" style="margin-top: 14px; display: none; border-top: 1px solid #ccc; padding-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+              <strong>Backstory</strong>
+              <button id="synthesis_copy" type="button">Copy to form</button>
+              <span id="synthesis_copied" style="display: none; color: #2a7a2a;">Added to GM notes</span>
+          </div>
+          <div id="synthesis_text" style="white-space: pre-wrap; max-width: 700px; line-height: 1.6;"></div>
+      </div>
+  </div>
 
   <div id="art_section" style="margin-top: 20px; display: none;">
       <h3>Character Art</h3>

@@ -227,6 +227,33 @@ def test_garden_fits_rejects_a_spot_outside_the_bound():
     assert s._garden_fits(700, 500, 24, 16, 500, 500, yard) is False   # x=700 is outside the bound
 
 
+def test_yard_fits_skips_own_house_and_rejects_a_neighbour():
+    s = Settlement(1000, 1000, seed=1)
+    s.placed.append((500, 500, 40, 28))                       # the OWN house footprint -> the loop skips it
+    s.placed.append((520, 540, 40, 28))                       # a neighbour where the yard would land -> rejected
+    assert s._yard_fits(520, 540, 32, 20, 500, 500) is False
+
+
+def test_garden_fits_skips_own_house_and_rejects_a_neighbour():
+    s = Settlement(1000, 1000, seed=1)
+    s.placed.append((500, 500, 40, 28))                       # the OWN house footprint -> the loop skips it
+    s.placed.append((545, 500, 40, 28))                       # a neighbour where the garden would land -> rejected
+    assert s._garden_fits(545, 500, 24, 16, 500, 500, (500, 560, 32, 20)) is False
+
+
+def test_grove_fits_rejects_a_spot_outside_the_bound():
+    s = Settlement(1000, 1000, seed=1)
+    s.bound = [(0, 0), (600, 0), (600, 1000), (0, 1000)]   # only x < 600 is inside (a city-style bound)
+    assert s._grove_fits(700, 500, 30, 24, [(500, 500)]) is False   # x=700 is outside the bound
+
+
+def test_fits_steers_off_a_grove():
+    # groves are out of `placed` (so they may merge), but `_fits` still keeps the wells off them
+    s = Settlement(1000, 1000, seed=1)
+    s.grove_rects.append((500, 500, 40, 40))
+    assert s._fits(505, 505, 20, 20) is False
+
+
 # --- merchant_residences(): rich homes derived from the ACTUAL shops, behind the storefront band ---
 def test_merchant_residences_returns_zero_without_a_road_or_shops():
     s = Settlement(1000, 1000, seed=1)

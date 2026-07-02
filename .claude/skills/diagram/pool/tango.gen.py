@@ -27,7 +27,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(3200, 2700, seed=161)
+s = Settlement(3200, 2700, seed=167)
 s.meta(name="Tango", scale="city", walled=True, agricultural_district=True, population=3000)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing
 s.bscale = 0.42
 
@@ -110,17 +110,6 @@ s.paddy_field(NW2, "", "nw2", amp=20)
 s.ring(NW1, 7, 16, ["plain"])
 s.ring(NW2, 7, 16, ["plain"])
 s.label(1080, 1010, "agricultural district", 11, italic=True, color="#5A6A2A")
-
-# ===== FIRE DEFENSE (a city's dense wooden quarters) =====
-# Fire-watch towers (hinomi-yagura) over the COMMONER quarters - the magistrate's watch, the bell's
-# cadence telling each quarter how near a blaze is - and a cleared FIREBREAK (hiyokechi/hirokoji) by the
-# theater stage in the temple neighborhood, which fills with removable market stalls so the fire gap
-# doubles as an amusement ground. The warren packs wall-to-wall, so a tower stands where it has
-# SIGHTLINES: a clear block in the laborer quarter, and the open firebreak ground. Placed BEFORE the
-# packs so the dwellings flow around them. WHY: SKILL.md "Fire towers and firebreaks".
-s.fire_tower(1720, 1120, label=None)                                   # a clear block in the NE laborer warren
-s.firebreak(1380, 1700, 118, 100, label="firebreak")  # just east of the theater stage (clear of Benten's parish ground and the x1300 lane)
-s.fire_tower(1330, 1660, label="fire-watch tower")                    # overlooking the firebreak, in the open
 
 # the in-wall burakumin neighborhood (its lane reaches the Imperial road, wiring it to the grid)
 # a FEW shops/stalls front the lane; the burakumin dwellings jam the block interior behind them
@@ -228,7 +217,7 @@ s.governor_mansion(1950, 1758, 248, 168, "Governor's Mansion", gate_dir="west")
 # the samurai-quarter street runs up to it with clear room, so its torii avenue is THREE arches (the
 # approach space fits them without displacing any house) rather than a lone arch at the gate
 s.shrine_hall(1700, 1625, "Temple of Bishamon", w=120, h=80, kind="temple", graveyard=False,   # new, special-purpose hall in a former samurai estate - keeps NO burial ground
-              torii=[(1740, 1712), (1740, 1758), (1740, 1804), (1740, 1850)])
+              torii=[(1740, 1712), (1740, 1758), (1740, 1804)])
 # the five other ministries CLUSTER around the yamen (the government district), as in a Chinese
 # provincial seat / Japanese castle town (Rites is apart, in the SW temple neighborhood)
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
@@ -322,7 +311,7 @@ for fbb, nm, fin in MOAT_FARMS + [NORTH_FARM]:
 s.label(1100, 2185, "farmland (moat-irrigated; off-map beyond)", 10, italic=True, color="#5A6A2A")
 # a gate market just outside the south gate, beyond the moat - the rows nearest the gate fall
 # inside the cropped view, the rest run off the south edge
-s.pack((1450, 2175, 1770, 2400), (["merchant"] * 2 + ["shop"]) * 6, step=46)   # *6 (was *4): a busier south gate market, also refilling the city-wide merchant cohort the firebreak trims
+s.pack((1450, 2175, 1770, 2400), (["merchant"] * 2 + ["shop"]) * 4, step=46)
 s.label(1640, 2198, "gate market", 10, italic=True, color="#5A4326")
 
 # deep-lot kura tucked behind shopfronts that have an open back lot (the narrow-front / deep-lot
@@ -373,6 +362,14 @@ s.bridges()   # spans the Imperial Road over the moat at the north and south gat
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+
+# ===== FIRE DEFENSE: watch-towers =====
+# Placed LAST, on the cleared seams the dense city already leaves between its building clusters - so they
+# perturb nothing (no blocking before any pack) and stand on the ACTUAL gaps. FIRE-WATCH TOWERS
+# (hinomi-yagura, the magistrate's bell-watch) stand ON a seam, overlooking the open ground with clear
+# sightlines, among the commoner blocks. WHY: SKILL.md "Fire towers".
+s.fire_tower(1528, 958, label="fire-watch tower")    # central, over the laborer/merchant blocks
+s.fire_tower(1210, 1100, label="fire-watch tower")   # west, over the servant/merchant blocks - clear of the NW in-wall agricultural fields
 
 s.title("Tango")
 s.compass()

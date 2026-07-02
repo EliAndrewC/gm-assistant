@@ -62,11 +62,24 @@ Write 1 to 3 short paragraphs of prose that:
   fear, relationship, or episode from their past - rather than hedging or staying
   abstract. Invented detail is welcome as long as it fits the brief and the
   character's generated details.
+- When you place an event in the character's past, prefer a specific,
+  setting-grounded time - a named festival, month, or season from the Rokugani
+  calendar - over a vague reference like "a few years ago," wherever the brief
+  gives you the detail to do so and it fits naturally. Specificity is the soul of
+  a backstory; do not invent dates that contradict the brief.
 - Stay grounded and mundane by default. The supernatural is real but rare and
   almost always ambiguous; do not hand this character magic, a curse, or a
   literal supernatural event unless their own details clearly point that way, and
   even then keep it uncertain.
 - Never contradict the SETTING BRIEF or the character's own generated details.
+- The character's stated facts are authoritative - their one-line summary, tags,
+  posting, clan, family, school, rank, and recognition. Do not override them or
+  invent around them. In particular, RANK is a level of peerage, not an office:
+  the setting's baseline "rank N is typically held by such-and-such official" is a
+  default, not a rule. A character can hold a high rank through a relative's
+  standing (the family-rank rule) while holding no office at all. If the character
+  is unposted, or its summary names a specific role, keep that exactly - never
+  promote them into the office their rank would typically imply.
 
 Match the GM's register: laconic, matter-of-fact, concrete. No flowery or
 purple prose, no marketing tone. Use "domain" not "demesne"; use
@@ -90,9 +103,16 @@ def _get_client():
 
 
 def load_brief() -> str:
-    """Return the curated setting brief that grounds every synthesis."""
-    with open(_BRIEF_PATH, encoding='utf-8') as f:
-        return f.read()
+    """Return the full-corpus setting brief that grounds every synthesis.
+
+    Production uses the full canonical corpus (the prompt a blind evaluation
+    selected). Assembly lives in the compliant ``chargen.brief`` module; the
+    shipped ``synthesis_brief.md`` here is just the design-brief layer it starts
+    from.
+    """
+    from chargen import brief
+
+    return brief.build_full_brief()
 
 
 def format_character(character: dict) -> str:
@@ -112,6 +132,20 @@ def format_character(character: dict) -> str:
     if name_meaning:
         lines.append(f'Name meaning: {name_meaning}')
 
+    # The GM's one-line description names the character's role/posting and is
+    # authoritative - surface it prominently so the model honors it.
+    summary = character.get('summary', '').strip()
+    if summary:
+        lines.append(f'In brief: {summary}')
+
+    # The form's tags (clan, role, location, etc.) - a comma string from the UI,
+    # or a list from to_dict()/a sample. Surfaced in every path.
+    tags = character.get('tags') or []
+    if isinstance(tags, str):
+        tags = [t.strip() for t in tags.split(',') if t.strip()]
+    if tags:
+        lines.append('Tags: ' + ', '.join(tags))
+
     # Prefer the already-rendered public/private blocks the app produces.
     public = character.get('public', '').strip()
     private = character.get('private', '').strip()
@@ -128,10 +162,6 @@ def format_character(character: dict) -> str:
     descriptor = ' '.join(filter(None, [gender, school])) or gender
     if descriptor:
         lines += ['', descriptor]
-
-    tags = character.get('tags') or []
-    if tags:
-        lines += ['', '\n'.join(tags)]
 
     standing = []
     if character.get('rank') is not None:
@@ -189,8 +219,8 @@ def synthesize(character: dict, extra_notes: str = '', brief: str = '', model: s
         character: a character dict (as produced by Character.to_dict, or a
             compatible hand-built dict).
         extra_notes: optional freeform GM steering text.
-        brief: optional setting brief to use instead of the shipped tier-0
-            brief (the prompt-bakeoff harness passes each tier's text here).
+        brief: optional setting brief to use instead of the production
+            full-corpus brief (mainly useful in tests).
         model: optional model id override; falls back to the configured
             ``[gemini] text_model`` and then DEFAULT_TEXT_MODEL.
 

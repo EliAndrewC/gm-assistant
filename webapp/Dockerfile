@@ -28,6 +28,9 @@ COPY authorize_op.py ./
 # pool data (relic + name pools) lives under /gm-assistant/.claude/skills/<skill>/.
 # The image needs both — we lay them out under /app/skills and point the app at them.
 COPY skills ./skills
+# Bundled setting corpus (l7r.md + budgets.md) for the synthesis prompt;
+# brief.py resolves it at /app/setting (no bind-mount in prod).
+COPY setting ./setting
 
 ENV PORT=8080
 ENV FLY_APP_NAME=l7r-gm-assistant

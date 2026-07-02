@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(2600, 1820, seed=70)
+s = Settlement(2600, 1820, seed=77)
 # downhill is SOUTH: the hill/manor sit in the north, so the land falls away southward and
 # the streams flow north-to-south; irrigation channels must run downhill (tap upstream/north
 # of where they feed each field)
@@ -93,13 +93,6 @@ s.street(CROSS, width=22)
 # monastery's precinct, just EAST of it (the NW diagonal rampart hems the ground directly north of Benten),
 # facing WEST (rot=90) so its viewing ground opens toward the Benten hall, the audience gathered between
 s.theater_stage(920, 918, rot=90, label="theater stage")
-# FIRE DEFENSE (a walled town's dense wooden core): a cleared FIREBREAK (hiyokechi/hirokoji) in the
-# commercial heart, just north of the east cross-street's shops - too valuable to leave idle, it fills
-# with removable market stalls, so the fire gap doubles as the market ground. Placed BEFORE the east
-# packs so the laborers flow around it. A FIRE-WATCH TOWER (hinomi-yagura) stands among the laborer
-# tenements: the magistrate's watchman rings its bell in a cadence that tells the town how near a blaze is.
-s.firebreak(1610, 1126, 156, 112, label="firebreak (market ground)")
-s.fire_tower(1600, 1320, label="fire-watch tower")
 
 # Big fixed-position buildings go DOWN FIRST, before the packs - the packs' _fits() then flows the small
 # houses AROUND them (a pack placed first fills these spots and the big building lands on a house). The
@@ -164,6 +157,12 @@ s.farmsteads()
 # is known: the threshing pass abandons the odd over-crowded farmhouse, and a well must never be left
 # stranded beside one that is no longer there (wells_among_dwellings).
 s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
+
+# ===== FIRE DEFENSE: a watch-tower =====
+# Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
+# perturbs nothing and stands on an ACTUAL gap. A FIRE-WATCH TOWER (hinomi-yagura, the magistrate's
+# bell-watch) stands in the tenement warren, watching its packed rooftops. WHY: SKILL.md "Fire towers".
+s.fire_tower(1040, 1300, label="fire-watch tower")   # standing in the tenement warren, watching its packed rooftops
 
 s.title("Hirameki")
 s.compass()

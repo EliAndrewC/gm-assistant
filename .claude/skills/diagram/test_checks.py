@@ -441,6 +441,119 @@ def test_gardens_clear_of_sheds_fires_when_a_garden_covers_the_west_side_shed():
     assert "gardens_clear_of_sheds" in f(M)
 
 
+def _grove(x, y, ofx, ofy, w=30, h=24):
+    return {"x": x, "y": y, "w": w, "h": h, "rot": 0, "of": [ofx, ofy], "face": [-1, -1]}
+
+
+def test_groves_on_windward_side_fires_on_a_lee_grove():
+    # default windward NW; a grove on the SE (lee/sunny) side of its house is backwards
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "groves": [_grove(540, 540, 500, 500)]}   # SE of the house, not the windward NW
+    assert "groves_on_windward_side" in f(M)
+
+
+def test_groves_on_windward_side_respects_meta_windward():
+    # with the wind keyed to the NE, a grove on the SW is on the lee side and fires
+    M = {"meta": {"scale": "village", "windward": "NE"}, "houses": [_farmhouse(500, 500)],
+         "groves": [_grove(460, 540, 500, 500)]}   # SW, but windward is NE
+    assert "groves_on_windward_side" in f(M)
+
+
+def test_groves_on_windward_side_passes_on_a_nw_grove():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "groves": [_grove(465, 470, 500, 500)]}   # NW of the house - windward
+    assert "groves_on_windward_side" not in f(M)
+
+
+def test_groves_clear_of_paddies_fires_on_a_grove_in_a_field():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "fields": [_field("p", 440, 440, 600, 600)],
+         "groves": [_grove(465, 470, 500, 500)]}   # NW corner sits inside the paddy
+    assert "groves_clear_of_paddies" in f(M)
+
+
+def test_groves_clear_of_structures_fires_when_a_grove_covers_another_building():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "buildings": [bldg(460, 470, "shop")],
+         "groves": [_grove(460, 470, 500, 500)]}   # on the shop, not its own house
+    assert "groves_clear_of_structures" in f(M)
+
+
+def test_groves_where_possible_fires_when_a_clear_windward_farm_has_none():
+    # 12 farmhouses with open windward sides (no fields/structs/corridors) and no groves -> the generator
+    # would have placed groves; a grove-less farm with clear windward room is flagged
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(300 + 60 * i, 400) for i in range(12)], "groves": []}
+    assert "groves_where_possible" in f(M)
+
+
+def test_groves_where_possible_passes_when_windward_is_blocked():
+    # the same farms, but a field hugs every windward (N + W) side -> no room -> no grove required
+    houses = [_farmhouse(300 + 60 * i, 400) for i in range(12)]
+    fields = [_field(f"f{i}", 280 + 60 * i, 330, 340 + 60 * i, 395) for i in range(12)]   # field just N of each house
+    M = {"meta": {"scale": "village", "windward": "N"}, "houses": houses, "fields": fields, "groves": []}
+    assert "groves_where_possible" not in f(M)
+
+
+def test_gardens_clear_of_groves_fires_when_a_garden_is_buried():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 540, "y": 500, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}],
+         "groves": [_grove(540, 500, 700, 700)]}   # grove sits squarely on the garden
+    assert "gardens_clear_of_groves" in f(M)
+
+
+def _big_grove(x, y, ofx, ofy):
+    return _grove(x, y, ofx, ofy, w=44, h=34)   # area 1496 vs a 44x29=1276 house -> ~1.17x (substantial)
+
+
+def test_groves_are_substantial_fires_on_tiny_groves():
+    houses = [_farmhouse(300 + 60 * i, 300) for i in range(6)]
+    groves = [_grove(285 + 60 * i, 270, 300 + 60 * i, 300, w=10, h=10) for i in range(6)]   # clumps, ~0.08x the house
+    assert "groves_are_substantial" in f({"meta": {"scale": "village"}, "houses": houses, "groves": groves})
+
+
+def test_groves_are_substantial_passes_with_belts():
+    houses = [_farmhouse(300 + 60 * i, 300) for i in range(6)]
+    groves = [_big_grove(300 + 60 * i, 300, 300 + 60 * i, 300) for i in range(6)]
+    assert "groves_are_substantial" not in f({"meta": {"scale": "village"}, "houses": houses, "groves": groves})
+
+
+_CITY_WALL = [[100, 100], [900, 100], [900, 900], [100, 900]]   # a closed square wall
+
+
+def test_no_groves_inside_walls_fires():
+    M = {"meta": {"scale": "city", "walled": True}, "wall": _CITY_WALL,
+         "houses": [_farmhouse(500, 500)], "groves": [_grove(465, 470, 500, 500)]}   # of (500,500) is inside the wall
+    assert "no_groves_inside_walls" in f(M)
+
+
+def test_no_groves_inside_walls_passes_for_an_outside_farm():
+    M = {"meta": {"scale": "city", "walled": True}, "wall": _CITY_WALL,
+         "houses": [_farmhouse(1200, 500)], "groves": [_grove(1165, 470, 1200, 500)]}   # of (1200,500) is outside
+    assert "no_groves_inside_walls" not in f(M)
+
+
+def test_yards_unshaded_by_groves_fires():
+    # a grove in the strip directly south of a threshing yard would shade its drying ground
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "threshing_yards": [{"x": 500, "y": 540, "w": 32, "h": 20, "rot": 0, "of": [500, 500]}],
+         "groves": [_grove(500, 562, 700, 700)]}   # grove just south of the yard (its south edge ~550)
+    assert "yards_unshaded_by_groves" in f(M)
+
+
+def test_farmhouse_sizes_vary_fires_when_flat():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(300 + 60 * i, 300) for i in range(12)]}
+    assert "farmhouse_sizes_vary" in f(M)   # _farmhouse has no wealth -> all at the baseline tier
+
+
+def test_farmhouse_sizes_vary_passes_with_a_spread():
+    houses = []
+    for i in range(12):
+        h = _farmhouse(300 + 60 * i, 300)
+        h["wealth"] = 0.9 if i % 3 == 0 else (1.12 if i % 3 == 1 else 1.0)
+        houses.append(h)
+    assert "farmhouse_sizes_vary" not in f({"meta": {"scale": "village"}, "houses": houses})
+
+
 # ---- provincial-city checks (scale="city"); tango.gen.py is the passing integration ---------
 WALLSQ = [[200, 200], [800, 200], [800, 800], [200, 800]]   # a closed city ring
 
@@ -2956,10 +3069,6 @@ def _tower(x, y):
     return {"x": x, "y": y, "w": 26, "h": 26, "rot": 0}
 
 
-def _break(x, y, w=150, h=110):
-    return {"x": x, "y": y, "w": w, "h": h, "rot": 0}
-
-
 def test_walled_town_has_fire_tower_fires_when_absent():
     assert "walled_town_has_fire_tower" in f({"meta": {"scale": "town", "walled": True}})
 
@@ -2972,22 +3081,10 @@ def test_walled_town_has_fire_tower_opt_out():
     assert "walled_town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True, "fire_tower": False}})
 
 
-def test_walled_town_has_firebreak_fires_when_absent():
-    assert "walled_town_has_firebreak" in f({"meta": {"scale": "town", "walled": True}})
-
-
-def test_walled_town_has_firebreak_passes_with_one():
-    assert "walled_town_has_firebreak" not in f({"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)]})
-
-
-def test_walled_town_has_firebreak_opt_out():
-    assert "walled_town_has_firebreak" not in f({"meta": {"scale": "town", "walled": True, "firebreak": False}})
-
-
-def test_unwalled_town_needs_no_fire_tower_or_break():
-    # an OPEN road-town relies on its road and field gaps; the presence checks are walled-only
+def test_unwalled_town_needs_no_fire_tower():
+    # an OPEN road-town relies on its road and field gaps; the presence check is walled-only
     fails = f({"meta": {"scale": "town", "walled": False}})
-    assert "walled_town_has_fire_tower" not in fails and "walled_town_has_firebreak" not in fails
+    assert "walled_town_has_fire_tower" not in fails
 
 
 def test_city_has_fire_towers_fires_with_one():
@@ -3000,14 +3097,6 @@ def test_city_has_fire_towers_passes_with_two():
 
 def test_city_has_fire_towers_opt_out():
     assert "city_has_fire_towers" not in f({"meta": {"scale": "city", "fire_tower": False}})
-
-
-def test_city_has_firebreak_fires_when_absent():
-    assert "city_has_firebreak" in f({"meta": {"scale": "city"}})
-
-
-def test_city_has_firebreak_passes_with_one():
-    assert "city_has_firebreak" not in f({"meta": {"scale": "city"}, "firebreaks": [_break(500, 500)]})
 
 
 def test_fire_tower_in_commoner_quarter_fires_in_samurai_quarter():
@@ -3029,39 +3118,30 @@ def test_fire_tower_in_commoner_quarter_passes_among_commoners():
     assert "fire_tower_in_commoner_quarter" not in f(M)
 
 
-def test_firebreak_hosts_amusements_fires_in_dead_space():
-    assert "firebreak_hosts_amusements" in f({"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)]})
-
-
-def test_firebreak_hosts_amusements_passes_by_the_stage():
-    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
-         "theater_stage": {"x": 560, "y": 520, "w": 150, "h": 105, "rot": 0}}
-    assert "firebreak_hosts_amusements" not in f(M)
-
-
-def test_firebreak_hosts_amusements_passes_by_shops():
-    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
-         "buildings": [bldg(540, 520, "shop"), bldg(470, 530, "shop"), bldg(520, 470, "merchant")]}
-    assert "firebreak_hosts_amusements" not in f(M)
-
-
-def test_firebreak_clear_of_dwellings_fires():
-    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
-         "buildings": [bldg(500, 500, "laborer")]}   # a dwelling sitting ON the plaza
-    assert "firebreak_clear_of_dwellings" in f(M)
-
-
-def test_firebreak_clear_of_dwellings_passes_when_clear():
-    M = {"meta": {"scale": "town", "walled": True}, "firebreaks": [_break(500, 500)],
-         "buildings": [bldg(750, 750, "laborer")]}
-    assert "firebreak_clear_of_dwellings" not in f(M)
-
-
 def test_fire_tower_on_wall_overlaps_like_any_structure():
     # fire_towers are in _OVERLAP_STRUCTS, so a tower on the wall trips no_structure_on_wall
     M = {"meta": {"scale": "town", "walled": True}, "wall": [[100, 500], [900, 500]], "gate": [500, 500],
          "fire_towers": [_tower(500, 500)]}
     assert "no_structure_on_wall" in f(M)
+
+
+def test_fire_tower_clear_of_fields_fires_on_a_field():
+    # a hinomi-yagura standing ON cultivated ground (e.g. an in-wall agricultural district) is nonsense
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(250, 250)],
+         "fields": [_field("paddy", 100, 100, 400, 400)]}
+    assert "fire_tower_clear_of_fields" in f(M)
+
+
+def test_fire_tower_clear_of_fields_fires_on_flower_field():
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(250, 250)],
+         "flower_fields": [{"outline": [[100, 100], [400, 100], [400, 400], [100, 400]]}]}
+    assert "fire_tower_clear_of_fields" in f(M)
+
+
+def test_fire_tower_clear_of_fields_passes_when_clear():
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(800, 800)],
+         "fields": [_field("paddy", 100, 100, 400, 400)]}
+    assert "fire_tower_clear_of_fields" not in f(M)
 
 
 if __name__ == "__main__":

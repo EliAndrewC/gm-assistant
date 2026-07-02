@@ -24,7 +24,7 @@ test:
 
 cov:
 	@if [ -d l7r ]; then \
-		pytest --cov=l7r --cov-report=term-missing --cov-fail-under=100; \
+		pytest --cov=l7r --cov=chargen.brief --cov-report=term-missing --cov-fail-under=100; \
 	else \
 		echo "[done] No l7r/ package yet — coverage check skipped"; \
 	fi
@@ -58,6 +58,12 @@ prepare-deploy:
 	@cp ../.claude/skills/name/pool-male.jsonl ../.claude/skills/name/pool-female.jsonl skills/name/
 	@cp ../.claude/skills/place-names/pool.jsonl skills/place-names/pool.jsonl
 	@echo "[deploy] context ready: $$(find skills -type f | wc -l) files"
+	@echo "[deploy] snapshotting setting corpus into webapp/setting/"
+	@rm -rf setting
+	@mkdir -p setting
+	@cp "$${L7R_SETTING_DIR:-/host-l7r-repo/setting}/l7r.md" setting/l7r.md
+	@cp "$${L7R_SETTING_DIR:-/host-l7r-repo/setting}/budgets.md" setting/budgets.md
+	@echo "[deploy] corpus ready: $$(find setting -type f | wc -l) files"
 
 # Deploy to Fly.io. Reads FLY_API_TOKEN from .env (handled by grep, not `source`,
 # because Fly tokens contain a literal space which trips shell sourcing).
