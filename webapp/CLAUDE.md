@@ -41,5 +41,15 @@ configurable via `[gemini] text_model`).
   (the Dockerfile copies it). A missing corpus fails loud - never a thin fallback.
 - **Route + UI**: `@ajax synthesize` in `chargen/website.py`; the control lives in
   `chargen/templates/index.html`.
+- **Campaign character context**: `chargen/opcache.py` (compliant, 100%-covered)
+  keeps an id-keyed cache of the campaign's OP characters and injects an
+  `OTHER CAMPAIGN CHARACTERS` block into the prompt so new backstories stay
+  consistent with the cast and honor steering-note references to them. Refresh is
+  incremental (1 OP list call + body fetches only for new/changed ids, via
+  fail-soft `op.existing_characters` / `op.get_character_body`); cache is
+  gitignored `webapp/opcache/characters.json`, refreshed + bundled by
+  `make prepare-deploy`, refreshed in-memory at runtime (short TTL). Non-fatal:
+  OP down -> 0 characters in context, synthesis still runs (the route reports
+  `context_count`, shown by the UI). See `specs/003-campaign-character-context/`.
 
-See `specs/002-synthesize-backstory/` for the spec/plan/tasks.
+See `specs/002-synthesize-backstory/` for the synthesis feature spec/plan/tasks.

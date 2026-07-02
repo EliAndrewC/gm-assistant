@@ -368,11 +368,38 @@ def existing_characters():
             'avatar_url': c.get('avatar_url') or '',
             'tags': list(c.get('tags') or []),
             'description': c.get('description') or '',
+            'updated_at': c.get('updated_at') or '',
             'is_player_character': bool(c.get('is_player_character')),
             'is_game_master_only': bool(c.get('is_game_master_only')),
         }
         for c in (response.json() or [])
     ]
+
+
+def get_character_body(character_id):
+    """Fetch one character's full body via the OAuth API.
+
+    Returns {'name', 'tags', 'bio', 'game_master_info', 'updated_at'} or None on
+    any failure (logged). Never raises - callers (the campaign-context cache)
+    degrade gracefully when OP is unreachable.
+    """
+    try:
+        api = _get_oauth_session()
+        campaign_id = _get_campaign_id()
+        url = f'{API_BASE_URL}/campaigns/{campaign_id}/characters/{character_id}.json'
+        response = api.get(url, timeout=20)
+        response.raise_for_status()
+        c = response.json() or {}
+    except Exception as e:
+        cherrypy.log(f'Failed to fetch character body {character_id}: {e}')
+        return None
+    return {
+        'name': c.get('name') or '',
+        'tags': list(c.get('tags') or []),
+        'bio': c.get('bio') or '',
+        'game_master_info': c.get('game_master_info') or '',
+        'updated_at': c.get('updated_at') or '',
+    }
 
 
 def delete_character(character_id):

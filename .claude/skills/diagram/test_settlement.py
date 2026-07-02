@@ -292,6 +292,57 @@ def test_merchant_residences_respects_the_bound():
     assert s.merchant_residences() == 0
 
 
+def _village():
+    s = Settlement(600, 600, seed=3)
+    s.meta(name="V", scale="village")
+    return s
+
+
+def test_union_area_empty_and_overlapping_spans():
+    # empty (or all-degenerate) rects -> zero area; and a rect fully shadowed by a taller one in the
+    # same x-slab must be counted ONCE (the y1 <= cy skip), not double-counted.
+    assert settlement._union_area([]) == 0.0
+    assert settlement._union_area([(0, 0, 2, 2)]) == 4.0                        # single rect
+    assert settlement._union_area([(0, 0, 10, 10), (0, 2, 10, 5)]) == 100.0     # inner rect adds nothing
+
+
+def test_taxfree_plots_with_no_interior_cells():
+    # no interior plots -> _taxfree_plots is a no-op (a field whose cells all fell outside the outline)
+    s = _village()
+    s._taxfree_plots([], 2)
+    assert s.M["taxfree"] == []
+
+
+def test_closest_on_seg_degenerate_segment():
+    # a zero-length segment returns its own endpoint (no division by zero)
+    assert Settlement._closest_on_seg(0, 0, 5, 5, 5, 5) == (5, 5)
+
+
+def test_water_field_accepts_a_polygon_shape():
+    # water_field is normally handed a bbox 4-tuple; a POLYGON shape (list of vertices) takes the other
+    # branch - the outline is grown from the poly and the bbox derived from it. The field is still recorded
+    # with its irrigation ditches.
+    s = _village()
+    s.water_field([(150, 150), (360, 150), (360, 360), (150, 360)], "", "f",
+                  (150, 150), (360, 360), amp=10, plot=34)
+    assert any(f["name"] == "f" and f["kind"] == "paddy" for f in s.M["fields"])
+    assert any(d["field"] == "f" for d in s.M["field_ditches"])
+
+
+def test_bundle_fits_rejects_a_bundle_spilling_outside_the_bound():
+    # a homestead bundle whose grove/garden corner falls outside the settlement bound is rejected
+    s = _village()
+    s.bound = [(100, 100), (500, 100), (500, 500), (100, 500)]
+    assert s._bundle_fits(s._bundle_geom(120, 120, 40, 26)) is False
+
+
+def test_slide_stops_on_no_target_and_on_arrival():
+    # _slide halts when the target function yields None (nowhere to go) and when it is already on target
+    s = _village()
+    assert s._slide(200, 200, 40, 26, lambda x, y: None, True) == (200, 200)
+    assert s._slide(200, 200, 40, 26, lambda x, y: (x, y), True) == (200, 200)
+
+
 if __name__ == "__main__":
     import sys
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

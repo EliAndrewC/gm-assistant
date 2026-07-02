@@ -38,6 +38,25 @@ def test_build_prompt_omits_steering_when_blank() -> None:
     assert '# GM STEERING NOTES' not in prompt
 
 
+def test_build_prompt_inserts_campaign_context_between_brief_and_character() -> None:
+    ctx = '# OTHER CAMPAIGN CHARACTERS\n\n## Grand Abbot\nStern and devout.'
+    prompt = synthesis.build_prompt(_CHAR, brief='SETTING', campaign_context=ctx)
+    assert '# OTHER CAMPAIGN CHARACTERS' in prompt
+    assert 'Grand Abbot' in prompt
+    # ordering: setting brief -> campaign characters -> the character being made
+    assert prompt.index('# SETTING BRIEF') < prompt.index('# OTHER CAMPAIGN CHARACTERS')
+    assert prompt.index('# OTHER CAMPAIGN CHARACTERS') < prompt.index('# CHARACTER')
+
+
+def test_build_prompt_omits_campaign_section_when_empty() -> None:
+    prompt = synthesis.build_prompt(_CHAR, brief='X', campaign_context='   ')
+    assert '# OTHER CAMPAIGN CHARACTERS' not in prompt
+
+
+def test_instructions_ask_for_campaign_consistency() -> None:
+    assert 'OTHER CAMPAIGN CHARACTERS' in synthesis.INSTRUCTIONS
+
+
 def test_format_character_includes_summary() -> None:
     out = synthesis.format_character(
         {'full_name': 'Suzume Hina', 'summary': 'Sparrow Clan ambassador to Shiro Reiji'}

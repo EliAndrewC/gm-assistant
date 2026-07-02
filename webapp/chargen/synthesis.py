@@ -80,6 +80,11 @@ Write 1 to 3 short paragraphs of prose that:
   standing (the family-rank rule) while holding no office at all. If the character
   is unposted, or its summary names a specific role, keep that exactly - never
   promote them into the office their rank would typically imply.
+- If an OTHER CAMPAIGN CHARACTERS section is present, it lists real characters
+  already in this campaign. Keep this character consistent with them - their
+  roles, relationships, and history - and never contradict established facts about
+  them. When the GM's steering notes name one of them, ground the relationship in
+  that character's stated backstory rather than inventing a stand-in.
 
 Match the GM's register: laconic, matter-of-fact, concrete. No flowery or
 purple prose, no marketing tone. Use "domain" not "demesne"; use
@@ -186,7 +191,9 @@ def format_character(character: dict) -> str:
     return '\n'.join(lines).strip()
 
 
-def build_prompt(character: dict, brief: str = '', extra_notes: str = '') -> str:
+def build_prompt(
+    character: dict, brief: str = '', extra_notes: str = '', campaign_context: str = ''
+) -> str:
     """
     Assemble the full prompt sent to the model.
 
@@ -198,8 +205,13 @@ def build_prompt(character: dict, brief: str = '', extra_notes: str = '') -> str
     sections = [
         INSTRUCTIONS,
         '# SETTING BRIEF\n\n' + brief.strip(),
-        '# CHARACTER\n\n' + format_character(character),
     ]
+    # Other campaign characters (already a "# OTHER CAMPAIGN CHARACTERS" block
+    # from opcache.assemble_context); inserted between the setting and this
+    # character so the model reads the cast before the subject. Empty -> omitted.
+    if campaign_context and campaign_context.strip():
+        sections.append(campaign_context.strip())
+    sections.append('# CHARACTER\n\n' + format_character(character))
     if extra_notes and extra_notes.strip():
         sections.append(
             '# GM STEERING NOTES\n\n'
@@ -211,7 +223,13 @@ def build_prompt(character: dict, brief: str = '', extra_notes: str = '') -> str
     return '\n\n'.join(sections)
 
 
-def synthesize(character: dict, extra_notes: str = '', brief: str = '', model: str = '') -> str:
+def synthesize(
+    character: dict,
+    extra_notes: str = '',
+    brief: str = '',
+    model: str = '',
+    campaign_context: str = '',
+) -> str:
     """
     Generate a 1-3 paragraph backstory gestalt for the given character.
 
@@ -229,7 +247,9 @@ def synthesize(character: dict, extra_notes: str = '', brief: str = '', model: s
     """
     client = _get_client()
     model = model or config.get('gemini', {}).get('text_model', '') or DEFAULT_TEXT_MODEL
-    prompt = build_prompt(character, brief=brief, extra_notes=extra_notes)
+    prompt = build_prompt(
+        character, brief=brief, extra_notes=extra_notes, campaign_context=campaign_context
+    )
     response = client.models.generate_content(model=model, contents=prompt)
     return (response.text or '').strip()
 

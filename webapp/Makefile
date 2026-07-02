@@ -24,7 +24,7 @@ test:
 
 cov:
 	@if [ -d l7r ]; then \
-		pytest --cov=l7r --cov=chargen.brief --cov-report=term-missing --cov-fail-under=100; \
+		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov-report=term-missing --cov-fail-under=100; \
 	else \
 		echo "[done] No l7r/ package yet — coverage check skipped"; \
 	fi
@@ -64,6 +64,9 @@ prepare-deploy:
 	@cp "$${L7R_SETTING_DIR:-/host-l7r-repo/setting}/l7r.md" setting/l7r.md
 	@cp "$${L7R_SETTING_DIR:-/host-l7r-repo/setting}/budgets.md" setting/budgets.md
 	@echo "[deploy] corpus ready: $$(find setting -type f | wc -l) files"
+	@echo "[deploy] refreshing campaign-character cache into webapp/opcache/"
+	@python3 -c "import l7r; from chargen import opcache; opcache.refresh_cache_file()"
+	@echo "[deploy] opcache ready: $$(find opcache -type f | wc -l) files"
 
 # Deploy to Fly.io. Reads FLY_API_TOKEN from .env (handled by grep, not `source`,
 # because Fly tokens contain a literal space which trips shell sourcing).

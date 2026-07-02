@@ -31,6 +31,8 @@ COPY skills ./skills
 # Bundled setting corpus (l7r.md + budgets.md) for the synthesis prompt;
 # brief.py resolves it at /app/setting (no bind-mount in prod).
 COPY setting ./setting
+# Campaign-character cache (cold-start base; refreshed in-memory at runtime).
+COPY opcache ./opcache
 
 ENV PORT=8080
 ENV FLY_APP_NAME=l7r-gm-assistant
