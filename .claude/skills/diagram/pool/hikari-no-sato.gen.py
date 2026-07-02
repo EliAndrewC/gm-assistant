@@ -58,11 +58,11 @@ s.shrine_hall(230, 980, "Shrine to Bishamon", "(still tended)", w=118, h=82)
 # houses: headman largest; ring the V field and each small field
 s.headman(*HEADMAN)
 # two-deep around the great V field, plus a ring on each small field
-s.ring(("poly", s.field_polys[0]), 40, 24, ["plain"] * 8 + ["big"])
-s.ring(("poly", s.field_polys[0]), 18, 58, ["plain"])
+s.ring(("poly", s.field_polys[0]), 30, 24, ["plain"] * 8 + ["big"])
+s.ring(("poly", s.field_polys[0]), 14, 58, ["plain"])
 for bb in (NW, NE, SW, SE):
-    s.ring(bb, 12, 16, ["plain"])
-s.ring(SW, 8, 44, ["plain"])   # extra ring on SW's open sides (the Bishamon shrine blocks its west)
+    s.ring(bb, 9, 16, ["plain"])
+s.ring(SW, 5, 44, ["plain"])   # extra ring on SW's open sides (the Bishamon shrine blocks its west)
 
 # labels
 s.label(806, 805, "Headman's House", 13, anchor="end", weight="bold")

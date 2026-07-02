@@ -21,3 +21,6 @@ htmlcov/
 
 # Bundled setting corpus - Docker build artifact, snapshot by `make prepare-deploy`.
 setting/
+
+# Campaign character cache - gitignored build artifact, refreshed by `make prepare-deploy`.
+opcache/

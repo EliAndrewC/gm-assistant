@@ -12,6 +12,7 @@ from chargen import config, op, art, constants as c
 from chargen.character import Character
 from chargen import ministry
 from chargen import synthesis
+from chargen import opcache
 
 # `current_user` is supplied by the l7r auth tool when chargen is mounted
 # inside the l7r toolkit. We import it lazily so chargen still imports
@@ -272,16 +273,33 @@ class Root:
         except Exception as e:
             return {'image': None, 'headshot_crop': None, 'error': str(e)}
 
+    @staticmethod
+    def _campaign_context(full_name):
+        """Gather the OTHER CAMPAIGN CHARACTERS block, excluding this character.
+
+        Never raises: OP problems degrade to empty context so synthesis still
+        runs (campaign context is an enhancement, not a dependency).
+        """
+        try:
+            return opcache.get_campaign_context(exclude_name=full_name)
+        except Exception as e:  # defensive; get_campaign_context is itself fail-soft
+            cherrypy.log(f'campaign context gather failed: {e}')
+            return '', 0
+
     @ajax
     def synthesize(self, extra_notes='', **character_data):
         """
         Generate a 1-3 paragraph prose backstory for the displayed character,
-        grounded in the full canonical setting. The text twin of generate_art.
+        grounded in the full canonical setting plus the other campaign characters.
+        The text twin of generate_art.
 
         Returns the prose on success, or a human-readable error - it never falls
-        back to a thinner prompt (a missing corpus / credential is surfaced, not
-        silently degraded).
+        back to a thinner prompt for the corpus. Campaign context, by contrast, is
+        gathered non-fatally (0 characters if OP is unreachable) and is reported
+        via `context_count` so the GM can see what was included.
         """
+        # Gathered up front and fail-soft, so context problems never block synthesis.
+        context_text, context_count = self._campaign_context(character_data.get('full_name', ''))
         try:
             if 'traits' in character_data and isinstance(character_data['traits'], str):
                 character_data['traits'] = [
@@ -289,16 +307,19 @@ class Root:
                 ]
             if 'xp' in character_data:
                 character_data['xp'] = int(character_data['xp'])
-            backstory = synthesis.synthesize(character_data, extra_notes=extra_notes)
+            backstory = synthesis.synthesize(
+                character_data, extra_notes=extra_notes, campaign_context=context_text
+            )
         except Exception as e:
-            return {'ok': False, 'backstory': None, 'error': str(e)}
+            return {'ok': False, 'backstory': None, 'error': str(e), 'context_count': context_count}
         if not backstory:
             return {
                 'ok': False,
                 'backstory': None,
                 'error': 'The model returned an empty backstory. Please try again.',
+                'context_count': context_count,
             }
-        return {'ok': True, 'backstory': backstory, 'error': None}
+        return {'ok': True, 'backstory': backstory, 'error': None, 'context_count': context_count}
 
     @cherrypy.expose
     def ministry(self):

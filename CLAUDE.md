@@ -243,7 +243,7 @@ The server binds to `0.0.0.0:8080` automatically when it detects a container run
 - `/gm-assistant/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` - the 200-name pool consumed by the `/names` section
 
 <!-- SPECKIT START -->
-Current active plan: [`specs/002-synthesize-backstory/plan.md`](specs/002-synthesize-backstory/plan.md)
-Active feature: Synthesize Backstory - full-corpus prompt productionization + chargen button
-Feature directory: `specs/002-synthesize-backstory/`
+Current active plan: [`specs/003-campaign-character-context/plan.md`](specs/003-campaign-character-context/plan.md)
+Active feature: Campaign Character Context - OP-backed incremental character cache feeding the synthesis prompt
+Feature directory: `specs/003-campaign-character-context/`
 <!-- SPECKIT END -->

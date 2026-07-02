@@ -50,7 +50,7 @@
     var tagify = null;
 
     $(function () {
-        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit', 'synthesize', 'synthesis_section', 'synthesis_notes', 'synthesis_loading', 'synthesis_result', 'synthesis_text', 'synthesis_copy', 'synthesis_copied'], function (i, s) {
+        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit', 'synthesize', 'synthesis_section', 'synthesis_notes', 'synthesis_loading', 'synthesis_result', 'synthesis_text', 'synthesis_copy', 'synthesis_copied', 'synthesis_context'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         // The two Upload buttons (top of form + next to Generate Art) act as
@@ -488,6 +488,10 @@
                     alert('Backstory synthesis failed: ' + resp.error);
                 } else {
                     dom.$synthesis_text.text(resp.backstory);
+                    var n = resp.context_count || 0;
+                    dom.$synthesis_context.text(
+                        (n === 1 ? '1 campaign character' : n + ' campaign characters') + ' in context'
+                    );
                     dom.$synthesis_copied.hide();
                     dom.$synthesis_result.show();
                 }
@@ -720,10 +724,11 @@
           <span id="synthesis_loading" style="display: none; margin-left: 10px;">Synthesizing, please wait...</span>
       </div>
       <div id="synthesis_result" style="margin-top: 14px; display: none; border-top: 1px solid #ccc; padding-top: 10px;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 6px;">
               <strong>Backstory</strong>
               <button id="synthesis_copy" type="button">Copy to form</button>
               <span id="synthesis_copied" style="display: none; color: #2a7a2a;">Added to GM notes</span>
+              <span id="synthesis_context" style="margin-left: auto; color: #4a443b;"></span>
           </div>
           <div id="synthesis_text" style="white-space: pre-wrap; max-width: 700px; line-height: 1.6;"></div>
       </div>

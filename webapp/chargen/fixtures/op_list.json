@@ -1,0 +1,62 @@
+[
+  {
+    "id": "ba005f56fd69472aa51db0eb04867664",
+    "name": "Tsuruchi",
+    "tags": [
+      "Wasp clan",
+      "daimyo",
+      "Tsuruchi Lineage"
+    ],
+    "updated_at": "2026-05-30T14:28:33Z"
+  },
+  {
+    "id": "a6b51be1167e46bdb1d9d5c118933f8c",
+    "name": "Bayushi no Kyo Haruka",
+    "tags": [
+      "Scorpion Clan",
+      "Bayushi Family",
+      "Kyo House",
+      "Kyo Lineage",
+      "Daimyo"
+    ],
+    "updated_at": "2026-01-30T02:40:25Z"
+  },
+  {
+    "id": "96ba6343051b4efe9c7059a34801a417",
+    "name": "Bayushi no Kyo Omika",
+    "tags": [
+      "Scorpion Clan",
+      "Bayushi Family",
+      "Kyo House",
+      "Rui Lineage",
+      "Deputy Minister",
+      "Ministry of Justice"
+    ],
+    "updated_at": "2026-02-03T15:14:26Z"
+  },
+  {
+    "id": "ae0931412ab441f2a4af9576fdc8d71d",
+    "name": "Bayushi no Kyo Ryoko",
+    "tags": [
+      "Scorpion Clan",
+      "Bayushi Family",
+      "Kyo House",
+      "Rui Lineage",
+      "Minister",
+      "Ministry of Rites"
+    ],
+    "updated_at": "2026-01-30T03:01:27Z"
+  },
+  {
+    "id": "bc103c18eb3f48f68aee2351a4f8d5e2",
+    "name": "Matsu no Zenji Kana",
+    "tags": [
+      "Lion Clan",
+      "Matsu Family",
+      "Zenji House",
+      "Zenji Lineage",
+      "Daimyo"
+    ],
+    "updated_at": "2026-01-30T03:10:40Z"
+  }
+]

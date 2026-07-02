@@ -16,7 +16,6 @@ adapt its checks per village instead of assuming one village's specifics.
 """
 import json
 import math
-import os
 import random
 import shutil
 import subprocess
@@ -469,7 +468,7 @@ class Settlement:
                 stack.append(a)
                 stack.append(b)
             else:
-                out.append(poly)
+                out.append(poly)   # pragma: no cover - defensive: a line cutting a convex polygon yields two >=3-gons except the measure-zero exact-tangent case
         return out + stack
 
     def _taxfree_plots(self, interior, taxfree):
@@ -515,10 +514,9 @@ class Settlement:
         nx, ny = -dyu, dxu
         rcid = self._cid('rc')
         self.add(f'<clipPath id="{rcid}"><polygon points="{pts}"/></clipPath>')
-        if crop == 'rice':
-            spacing, stroke, wdt, dash, op = 11, '#86AC90', 0.9, '', 0.7
-        else:
-            spacing, stroke, wdt, dash, op = 13, '#7E9B54', 0.8, ' stroke-dasharray="1,3"', 0.85
+        # _rows is only ever called for dry/soy plots (rice paddies get _paddy_surface, no rows), so the
+        # styling here is the dryland one - dashed, olive, wider spacing
+        spacing, stroke, wdt, dash, op = 13, '#7E9B54', 0.8, ' stroke-dasharray="1,3"', 0.85
         g = [f'<g clip-path="url(#{rcid})">']
         s = -diag / 2
         while s <= diag / 2:
@@ -529,27 +527,6 @@ class Settlement:
             s += spacing
         g.append('</g>')
         self.add(''.join(g))
-
-    def _taxfree(self, P, cols, rows, taxfree, outline):
-        # only cells whose centroid is INSIDE the field (so a V's empty notch never
-        # gets an invisible, clipped-away plot); spread them out non-contiguously
-        interior = []
-        for ci in range(cols):
-            for cj in range(rows):
-                quad = [P[(ci, cj)], P[(ci + 1, cj)], P[(ci + 1, cj + 1)], P[(ci, cj + 1)]]
-                cx = sum(p[0] for p in quad) / 4
-                cy = sum(p[1] for p in quad) / 4
-                if point_in_poly(cx, cy, outline):
-                    interior.append((quad, cx, cy))
-        n = len(interior)
-        if not n:
-            return   # pragma: no cover - defensive: a real field's single cell centroid is always inside
-        idxs = sorted(set(min(n - 1, int(n * (k + 0.5) / (taxfree + 1))) for k in range(taxfree)))
-        for i in idxs:
-            quad, cx, cy = interior[i]
-            pts = ' '.join(f'{p[0]:.0f},{p[1]:.0f}' for p in quad)
-            self.add(f'<polygon points="{pts}" fill="#A03020" fill-opacity="0.22" stroke="#A03020" stroke-width="4"/>')
-            self.M["taxfree"].append([round(cx, 1), round(cy, 1)])
 
     def _fallow_patch(self, base):
         """A blighted sub-region inside a field: fallow stipple + red X marks. No
@@ -702,7 +679,7 @@ class Settlement:
                 drain_pts.append(XY(u, bt - plot * 0.7))
         def smooth(pts):                                       # kill acute turns where the boundary bends sharply
             if len(pts) < 3:
-                return pts
+                return pts   # pragma: no cover - defensive: a real field spans many u-columns, so main/drain always have >=3 sampled points
             for _ in range(3):
                 pts = [pts[0]] + [((pts[i - 1][0] + pts[i][0] + pts[i + 1][0]) / 3,
                                    (pts[i - 1][1] + pts[i][1] + pts[i + 1][1]) / 3) for i in range(1, len(pts) - 1)] + [pts[-1]]
@@ -714,7 +691,7 @@ class Settlement:
             ditch(drain_pts, 3.0, "drain")                     # continuous DRAIN along the low edge
             for li in laterals:
                 if not (0 < li < len(ub) - 1):
-                    continue
+                    continue   # pragma: no cover - defensive: laterals are built strictly inside (0, len(ub)-1)
                 ut = ub[li]
                 t, bt = bnd(ut, fmin, 6), bnd(ut, fmax, -6)
                 if t is None or bt is None:
@@ -793,16 +770,6 @@ class Settlement:
         # channel, not just its center - 22 left corners clipping the channel (see
         # no_structure_on_channel). Matches the stream corridor's footprint-aware spacing.
         self.corridors.append((poly, 33))
-
-    def irrigation_ditch(self, pts, width=2.2):
-        """A field ditch drawn ON TOP of the paddy (call AFTER paddy_field, whose fill would otherwise cover
-        it - the deferred water layer sits UNDER the fields). This is the paddy's internal water network:
-        yosui distributary ditches carrying water in from the high side and haisui ditches draining it to the
-        low side, threading between the plots along the aze. The THINNEST line on the map (~0.3 m real, ~1/300
-        of the 1-cho paddy it serves - see the water-width ladder in SKILL.md). Decorative (no anchor/corridor)."""
-        dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
-        self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}" stroke-linejoin="round" '
-                 f'stroke-linecap="round" opacity="0.9"/>')
 
     def lane(self, pts):
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)

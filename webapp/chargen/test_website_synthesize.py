@@ -1,8 +1,9 @@
 """Envelope tests for the chargen ``synthesize`` AJAX route.
 
-The route is thin glue over ``synthesis.synthesize`` (which is itself
-fixture-tested). Here we substitute ``synthesize`` to assert the success and
-failure JSON envelopes, including the fail-loud behavior (FR-010).
+The route is thin glue over ``synthesis.synthesize`` (fixture-tested) and
+``opcache.get_campaign_context`` (unit-tested). Both are substituted here to
+assert the JSON envelope, the fail-loud model errors, and the fail-SOFT campaign
+context (a context failure must not turn a good synthesis into an error).
 """
 
 from __future__ import annotations
@@ -12,26 +13,53 @@ from collections.abc import Callable
 
 import pytest
 
-from chargen import synthesis, website
+from chargen import opcache, synthesis, website
 
 
 def _call(
-    monkeypatch: pytest.MonkeyPatch, synth: Callable[..., str], **char: str
+    monkeypatch: pytest.MonkeyPatch,
+    synth: Callable[..., str],
+    *,
+    context: tuple[str, int] = ('# OTHER CAMPAIGN CHARACTERS\n\n## Foo', 2),
+    context_raises: bool = False,
+    **char: str,
 ) -> dict[str, object]:
-    # website.py did `from chargen import synthesis`, so patching the module
-    # object is seen by the route (same object).
     monkeypatch.setattr(synthesis, 'synthesize', synth)
+    if context_raises:
+
+        def boom(*args: object, **kwargs: object) -> tuple[str, int]:
+            raise RuntimeError('OP unreachable')
+
+        monkeypatch.setattr(opcache, 'get_campaign_context', boom)
+    else:
+        monkeypatch.setattr(opcache, 'get_campaign_context', lambda *a, **k: context)
     result = website.Root().synthesize(extra_notes='', **char)
     data: dict[str, object] = json.loads(result)
     return data
 
 
-def test_synthesize_returns_ok_envelope(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_synthesize_returns_ok_envelope_with_context_count(monkeypatch: pytest.MonkeyPatch) -> None:
     out = _call(monkeypatch, lambda *a, **k: 'A grounded backstory.', full_name='Hideki')
-    assert out == {'ok': True, 'backstory': 'A grounded backstory.', 'error': None}
+    assert out['ok'] is True
+    assert out['backstory'] == 'A grounded backstory.'
+    assert out['error'] is None
+    assert out['context_count'] == 2
 
 
-def test_synthesize_returns_error_envelope_on_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_synthesize_passes_context_into_synthesis(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, object] = {}
+
+    def synth(character: dict[str, object], **kwargs: object) -> str:
+        seen.update(kwargs)
+        return 'ok'
+
+    _call(monkeypatch, synth, full_name='Hideki')
+    assert 'OTHER CAMPAIGN CHARACTERS' in str(seen.get('campaign_context'))
+
+
+def test_synthesize_returns_error_envelope_on_model_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def boom(*args: object, **kwargs: object) -> str:
         raise RuntimeError('Gemini API key not configured.')
 
@@ -39,9 +67,18 @@ def test_synthesize_returns_error_envelope_on_failure(monkeypatch: pytest.Monkey
     assert out['ok'] is False
     assert out['backstory'] is None
     assert 'not configured' in str(out['error'])
+    assert out['context_count'] == 2
 
 
 def test_synthesize_reports_empty_output_as_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     out = _call(monkeypatch, lambda *a, **k: '', full_name='Hideki')
     assert out['ok'] is False
     assert 'empty' in str(out['error']).lower()
+
+
+def test_synthesize_survives_context_gather_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    # OP down mid-gather: synthesis must still succeed with 0 context.
+    out = _call(monkeypatch, lambda *a, **k: 'Still works.', context_raises=True, full_name='X')
+    assert out['ok'] is True
+    assert out['backstory'] == 'Still works.'
+    assert out['context_count'] == 0
