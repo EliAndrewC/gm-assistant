@@ -130,6 +130,43 @@ def test_refresh_ignores_entries_without_id() -> None:
     assert cache == {}
 
 
+def test_refresh_preserves_prior_order_when_op_listing_reorders() -> None:
+    """Prompt-prefix caching contract: established entries keep their cache
+    order even when the OP listing comes back reshuffled."""
+    base, _ = opcache.refresh({}, _list_fn, _body_fn)
+    assert list(base) == ['1', '2']
+    reordered = [dict(LIST[1]), dict(LIST[0])]
+    cache, stats = opcache.refresh(base, lambda: reordered, _body_fn)
+    assert list(cache) == ['1', '2']
+    assert stats == {'fetched': 0, 'kept': 2, 'dropped': 0}
+
+
+def test_refresh_appends_new_ids_at_the_end() -> None:
+    """New characters join at the tail of the block, even when the OP listing
+    puts them first."""
+    base, _ = opcache.refresh({}, _list_fn, _body_fn)
+
+    def body_fn(cid: str) -> dict[str, object] | None:
+        return BODIES.get(cid, {'bio': 'new bio', 'game_master_info': '', 'updated_at': 'x'})
+
+    lst: list[dict[str, object]] = [
+        {'id': '9', 'name': 'Newest', 'tags': [], 'updated_at': 'x'},
+        dict(LIST[1]),
+        dict(LIST[0]),
+        {'id': '8', 'name': 'Newer', 'tags': [], 'updated_at': 'x'},
+    ]
+    cache, stats = opcache.refresh(base, lambda: lst, body_fn)
+    assert list(cache) == ['1', '2', '9', '8']  # priors in order, new appended in list order
+    assert stats == {'fetched': 2, 'kept': 2, 'dropped': 0}
+
+
+def test_refresh_changed_entry_keeps_its_position() -> None:
+    base, _ = opcache.refresh({}, _list_fn, _body_fn)
+    changed = [{**LIST[1], 'updated_at': '2026-09-09T00:00:00Z'}, dict(LIST[0])]
+    cache, _ = opcache.refresh(base, lambda: changed, _body_fn)
+    assert list(cache) == ['1', '2']
+
+
 def test_refresh_falls_back_to_list_name_when_body_lacks_it() -> None:
     lst: list[dict[str, object]] = [
         {'id': '7', 'name': 'FromList', 'tags': ['t'], 'updated_at': 'a'}
@@ -175,6 +212,20 @@ def test_assemble_context_skips_bodyless_entries() -> None:
     assert opcache.assemble_context(cache) == ('', 0)
 
 
+def test_assemble_context_filters_by_ids_and_uses_heading() -> None:
+    cache, _ = opcache.refresh({}, _list_fn, _body_fn)
+    text, count = opcache.assemble_context(cache, ids=frozenset({'2'}), heading='# RECENT')
+    assert count == 1
+    assert text.startswith('# RECENT')
+    assert '## Steward' in text
+    assert '## Abbot' not in text
+
+
+def test_assemble_context_empty_ids_filter_yields_empty() -> None:
+    cache, _ = opcache.refresh({}, _list_fn, _body_fn)
+    assert opcache.assemble_context(cache, ids=frozenset()) == ('', 0)
+
+
 # --- get_campaign_context (TTL) ---
 
 
@@ -188,6 +239,7 @@ def test_get_campaign_context_refreshes_then_reuses_within_ttl(
     monkeypatch.setattr(opcache, '_CACHE_PATH', tmp_path / 'characters.json')
     monkeypatch.setattr(opcache, '_cache', None)
     monkeypatch.setattr(opcache, '_assembled_at', None)
+    monkeypatch.setattr(opcache, '_baseline_ids', None)
 
     calls = {'n': 0}
     real_refresh = opcache.refresh
@@ -200,7 +252,7 @@ def test_get_campaign_context_refreshes_then_reuses_within_ttl(
 
     monkeypatch.setattr(opcache, 'refresh', counting)
 
-    _, count = opcache.get_campaign_context(now=1000.0)
+    _, _, count = opcache.get_campaign_context(now=1000.0)
     assert count == 2
     assert calls['n'] == 1
 
@@ -221,9 +273,41 @@ def test_get_campaign_context_default_now_uses_clock(
     monkeypatch.setattr(opcache, '_CACHE_PATH', tmp_path / 'characters.json')
     monkeypatch.setattr(opcache, '_cache', None)
     monkeypatch.setattr(opcache, '_assembled_at', None)
-    text, count = opcache.get_campaign_context()  # now=None -> time.monotonic()
+    monkeypatch.setattr(opcache, '_baseline_ids', None)
+    snapshot, recent, count = opcache.get_campaign_context()  # now=None -> time.monotonic()
     assert count == 2
-    assert text.startswith('# OTHER CAMPAIGN CHARACTERS')
+    # No cache file at process start -> empty baseline; everything the first
+    # refresh discovers is a runtime addition.
+    assert snapshot == ''
+    assert recent.startswith('# OTHER CAMPAIGN CHARACTERS (RECENT ADDITIONS)')
+
+
+def test_get_campaign_context_splits_snapshot_from_runtime_discoveries(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The process-start cache file is the layer-2/layer-4 boundary: bundled
+    characters render in the stable block, later discoveries in the recent one."""
+    from chargen import op
+
+    path = tmp_path / 'characters.json'
+    seeded, _ = opcache.refresh({}, lambda: [dict(LIST[0])], _body_fn)  # only Abbot on disk
+    opcache.save_cache(seeded, path)
+
+    monkeypatch.setattr(op, 'existing_characters', _list_fn)  # OP now also has Steward
+    monkeypatch.setattr(op, 'get_character_body', _body_fn)
+    monkeypatch.setattr(opcache, '_CACHE_PATH', path)
+    monkeypatch.setattr(opcache, '_cache', None)
+    monkeypatch.setattr(opcache, '_assembled_at', None)
+    monkeypatch.setattr(opcache, '_baseline_ids', None)
+
+    snapshot, recent, count = opcache.get_campaign_context(now=1000.0)
+    assert count == 2
+    assert snapshot.startswith('# OTHER CAMPAIGN CHARACTERS')
+    assert '## Abbot' in snapshot
+    assert '## Steward' not in snapshot
+    assert recent.startswith('# OTHER CAMPAIGN CHARACTERS (RECENT ADDITIONS)')
+    assert '## Steward' in recent
+    assert '## Abbot' not in recent
 
 
 # --- refresh_cache_file ---

@@ -100,6 +100,62 @@ def test_channels_flow_downhill_passes_when_channel_runs_downhill():
     assert "channels_flow_downhill" not in f(M)
 
 
+# ---- field_ditches_reach_source_and_sink (role-aware: supply->source, drain->sink) ----------
+def test_field_ditches_reach_source_and_sink_fires_when_ungrounded():
+    # a supply ditch with no pond source AND a drain with no runoff sink - both dangle (the failure
+    # path of the role-aware grounding). The GOOD case is covered by the real maps (kikuta passes with
+    # its full pond->canal->cascade->drain->off-map network; the wip Hoshigaoka likewise).
+    M = {"field_ditches": [{"poly": [[300, 300], [500, 300]], "role": "main", "field": "f"},
+                           {"poly": [[300, 600], [500, 600]], "role": "drain", "field": "f"}]}
+    assert "field_ditches_reach_source_and_sink" in f(M)
+
+
+# ---- lanes: houses must FRONT a lane (not sit on it); a CONNECTOR must run off the edge -------
+def test_houses_clear_of_lanes_fires_when_a_house_sits_on_the_tread():
+    M = {"lanes": [{"pts": [[100, 500], [900, 500]], "worn": True, "w": 6, "connector": False}],
+         "houses": [{"x": 500, "y": 500, "w": 23, "h": 14, "rot": 0, "kind": "plain"}]}   # centred ON the lane
+    assert "houses_clear_of_lanes" in f(M)
+
+
+def test_houses_clear_of_lanes_passes_when_the_house_fronts_the_lane():
+    M = {"lanes": [{"pts": [[100, 500], [900, 500]], "worn": True, "w": 6, "connector": False}],
+         "houses": [{"x": 500, "y": 460, "w": 23, "h": 14, "rot": 0, "kind": "plain"}]}   # 40px off = fronting, clear
+    assert "houses_clear_of_lanes" not in f(M)
+
+
+def test_connector_lane_runs_off_edge_fires_when_it_stops_short():
+    M = {"lanes": [{"pts": [[500, 500], [500, 700]], "worn": True, "w": 6, "connector": True}]}   # both ends interior
+    assert any(c.startswith("connector_lane_runs_off_edge") for c in f(M))
+
+
+def test_connector_lane_runs_off_edge_passes_when_it_reaches_the_edge():
+    M = {"lanes": [{"pts": [[500, 500], [500, 1165]], "worn": True, "w": 6, "connector": True}]}   # runs off the bottom
+    assert not any(c.startswith("connector_lane_runs_off_edge") for c in f(M))
+
+
+def test_pond_fed_from_edge_fires_when_the_feeder_starts_mid_map():
+    # a brook whose pond end is in the pond but whose FAR end sits mid-map (water out of nowhere)
+    M = {"pond": [400, 300, 150, 90],
+         "streams": [{"poly": [[600, 600], [420, 320]], "frm": {"kind": "offmap"}, "to": {"kind": "pond"}, "w": 9}]}
+    assert "pond_fed_from_edge" in f(M)
+
+
+def test_pond_fed_from_edge_passes_when_the_feeder_comes_from_the_edge():
+    M = {"pond": [400, 300, 150, 90],
+         "streams": [{"poly": [[10, 10], [420, 320]], "frm": {"kind": "offmap"}, "to": {"kind": "pond"}, "w": 9}]}
+    assert "pond_fed_from_edge" not in f(M)
+
+
+def test_brook_from_drain_outfall_runs_off_edge():
+    # a natural BROOK that STARTS at the field drain's outfall (frm=drain) and runs off the map edge is
+    # valid - exercises the "drain" anchor kind (the akusui empties into a valley brook, water OUT).
+    M = {"field_ditches": [{"poly": [[300, 600], [700, 600]], "role": "drain", "field": "f"}],
+         "streams": [{"poly": [[700, 600], [1200, 850], [1815, 1120]],
+                      "frm": {"kind": "drain"}, "to": {"kind": "offmap"}, "w": 9}]}
+    fails = f(M)
+    assert "stream_source_anchored[0]" not in fails and "stream_runs_off_edge[0]" not in fails
+
+
 # ---- monastery_torii_scale_with_space + approach_span ------------------------------------
 def test_approach_span_terminates_at_each_barrier():
     # March south (0,1) from (500,100) with half-depth 20 (front edge at y132). Each barrier

@@ -220,6 +220,57 @@ def test_farmsteads_drops_a_farmhouse_with_no_garden_room():
     assert s.M["houses"] == [] and s.M["gardens"] == []
 
 
+# --- NUCLEATED village: grove-less cluster, adaptive gardens, worn lanes, headman-as-farmhouse ----
+def _nuc_village(seed=1):
+    s = Settlement(1200, 900, seed=seed)
+    s.meta(name="V", scale="village")
+    s._nucleated = True
+    s.field_polys.append([(640, 150), (1120, 150), (1120, 780), (640, 780)])   # a paddy to the east
+    return s
+
+
+def test_nucleated_cluster_is_grove_less_with_yards_and_gardens():
+    import random
+    s = _nuc_village()
+    s.lane([(300, 180), (322, 620)], width=5, clearance=11, worn=True)   # the WORN (unpaved) lane branch
+    s.headman(560, 300)                                                  # headman = a LARGER plain farmhouse
+    rng, n = random.Random(3), 1
+    for _ in range(80):
+        if n >= 14:
+            break
+        if s.try_place(500 + rng.uniform(-120, 120), 460 + rng.uniform(-200, 200), "plain"):
+            n += 1
+    drawn = s.farmsteads()
+    assert drawn >= 10
+    assert s.M["lanes"] and s.M["lanes"][0]["worn"] is True             # worn lane recorded
+    assert not s.M["groves"]                                            # nucleated -> NO per-house grove
+    assert len(s.M["threshing_yards"]) >= drawn - 1                     # each homestead keeps a yard
+    assert len(s.M["gardens"]) >= drawn - 1                             # ... and an (adaptive-side) garden
+    hm = [h for h in s.M["houses"] if h.get("role") == "headman"][0]
+    assert hm["kind"] == "plain" and hm["w"] >= 40                      # the headman is a plain, larger house
+    assert all(h["w"] <= hm["w"] for h in s.M["houses"])               # ... and the largest
+
+
+def test_slide_nuc_stops_when_already_at_target():
+    # a target function returning the current point -> distance 0 < 1.5 -> the immediate-break branch
+    s = _nuc_village()
+    assert s._slide_nuc(500, 500, 23, 14, lambda cx, cy: (cx, cy)) == (500, 500)
+
+
+def test_nucleated_bundle_returns_none_when_boxed_in():
+    # a bound admitting the seed but no room for even the compact house+yard+garden bundle -> no placement
+    s = _nuc_village()
+    s.bound = [(495, 495), (505, 495), (505, 505), (495, 505)]
+    assert s.try_place(500, 500, "plain") is False
+
+
+def test_garden_shaded_detects_a_house_to_the_south():
+    s = _nuc_village()
+    s.M["houses"].append({"x": 400, "y": 470, "w": 23, "h": 14})       # a house just SOUTH of the garden
+    assert s._garden_shaded((400, 450, 22, 12)) is True                # shaded
+    assert s._garden_shaded((900, 450, 22, 12)) is False               # open sky to the south -> not shaded
+
+
 def test_garden_fits_rejects_a_spot_outside_the_bound():
     s = Settlement(1000, 1000, seed=1)
     s.bound = [(0, 0), (600, 0), (600, 1000), (0, 1000)]   # only x < 600 is inside

@@ -80,11 +80,15 @@ Write 1 to 3 short paragraphs of prose that:
   standing (the family-rank rule) while holding no office at all. If the character
   is unposted, or its summary names a specific role, keep that exactly - never
   promote them into the office their rank would typically imply.
-- If an OTHER CAMPAIGN CHARACTERS section is present, it lists real characters
-  already in this campaign. Keep this character consistent with them - their
-  roles, relationships, and history - and never contradict established facts about
+- If OTHER CAMPAIGN CHARACTERS sections are present (there may be two, the
+  second listing recent additions), they list real characters already in this
+  campaign. Keep this character consistent with them - their roles,
+  relationships, and history - and never contradict established facts about
   them. When the GM's steering notes name one of them, ground the relationship in
   that character's stated backstory rather than inventing a stand-in.
+- If a SETTING BRIEF SUPPLEMENT section is present, it is additional canonical
+  setting material relevant to this character's walk of life. Treat it exactly
+  like the SETTING BRIEF.
 
 Match the GM's register: laconic, matter-of-fact, concrete. No flowery or
 purple prose, no marketing tone. Use "domain" not "demesne"; use
@@ -192,7 +196,12 @@ def format_character(character: dict) -> str:
 
 
 def build_prompt(
-    character: dict, brief: str = '', extra_notes: str = '', campaign_context: str = ''
+    character: dict,
+    brief: str = '',
+    extra_notes: str = '',
+    campaign_context: str = '',
+    caste_supplement: str = '',
+    campaign_context_recent: str = '',
 ) -> str:
     """
     Assemble the full prompt sent to the model.
@@ -200,17 +209,27 @@ def build_prompt(
     ``extra_notes`` is freeform steering the GM types before (re)synthesizing -
     the text equivalent of editing the art prompt before regenerating a portrait.
     It is given high priority so the GM can push the result in a direction.
+
+    Section order is a caching contract (Gemini implicit prefix caching bills
+    only up to the first divergence between requests), most-stable first:
+    instructions + base corpus (identical for every synthesis), the process-start
+    cast snapshot (stable per server run), the caste supplement (varies by
+    character type), the runtime-discovered cast additions (grows mid-session),
+    and finally the subject character + steering notes (vary every click).
     """
     brief = brief or load_brief()
     sections = [
         INSTRUCTIONS,
         '# SETTING BRIEF\n\n' + brief.strip(),
     ]
-    # Other campaign characters (already a "# OTHER CAMPAIGN CHARACTERS" block
-    # from opcache.assemble_context); inserted between the setting and this
-    # character so the model reads the cast before the subject. Empty -> omitted.
+    # The snapshot cast block ("# OTHER CAMPAIGN CHARACTERS" from opcache);
+    # the model reads the cast before the subject. Empty -> omitted.
     if campaign_context and campaign_context.strip():
         sections.append(campaign_context.strip())
+    if caste_supplement and caste_supplement.strip():
+        sections.append(caste_supplement.strip())
+    if campaign_context_recent and campaign_context_recent.strip():
+        sections.append(campaign_context_recent.strip())
     sections.append('# CHARACTER\n\n' + format_character(character))
     if extra_notes and extra_notes.strip():
         sections.append(
@@ -229,6 +248,8 @@ def synthesize(
     brief: str = '',
     model: str = '',
     campaign_context: str = '',
+    character_type: str = '',
+    campaign_context_recent: str = '',
 ) -> str:
     """
     Generate a 1-3 paragraph backstory gestalt for the given character.
@@ -241,14 +262,27 @@ def synthesize(
             full-corpus brief (mainly useful in tests).
         model: optional model id override; falls back to the configured
             ``[gemini] text_model`` and then DEFAULT_TEXT_MODEL.
+        campaign_context: the stable (process-start snapshot) cast block.
+        character_type: the chargen type dropdown value ('Samurai' / 'Monk' /
+            'Peasant'); types with caste-conditional corpus sections get them
+            appended as a SETTING BRIEF SUPPLEMENT.
+        campaign_context_recent: the runtime-discovered cast block.
 
     Returns:
         The synthesized prose.
     """
+    from chargen import brief as brief_mod
+
     client = _get_client()
     model = model or config.get('gemini', {}).get('text_model', '') or DEFAULT_TEXT_MODEL
+    caste_supplement = brief_mod.build_caste_supplement(character_type) if character_type else ''
     prompt = build_prompt(
-        character, brief=brief, extra_notes=extra_notes, campaign_context=campaign_context
+        character,
+        brief=brief,
+        extra_notes=extra_notes,
+        campaign_context=campaign_context,
+        caste_supplement=caste_supplement,
+        campaign_context_recent=campaign_context_recent,
     )
     response = client.models.generate_content(model=model, contents=prompt)
     return (response.text or '').strip()

@@ -53,8 +53,41 @@ def test_build_prompt_omits_campaign_section_when_empty() -> None:
     assert '# OTHER CAMPAIGN CHARACTERS' not in prompt
 
 
+def test_build_prompt_layers_all_blocks_stable_first() -> None:
+    """The full 5-layer caching order: base corpus, snapshot cast, caste
+    supplement, runtime cast additions, then the subject + steering."""
+    prompt = synthesis.build_prompt(
+        _CHAR,
+        brief='SETTING',
+        extra_notes='steer',
+        campaign_context='# OTHER CAMPAIGN CHARACTERS\n\n## Old Abbot',
+        caste_supplement='# SETTING BRIEF SUPPLEMENT\n\ntemple lore',
+        campaign_context_recent='# OTHER CAMPAIGN CHARACTERS (RECENT ADDITIONS)\n\n## New Guard',
+    )
+    order = [
+        prompt.index('# SETTING BRIEF'),
+        prompt.index('# OTHER CAMPAIGN CHARACTERS\n'),
+        prompt.index('# SETTING BRIEF SUPPLEMENT'),
+        prompt.index('# OTHER CAMPAIGN CHARACTERS (RECENT ADDITIONS)'),
+        prompt.index('# CHARACTER'),
+        prompt.index('# GM STEERING NOTES'),
+    ]
+    assert order == sorted(order)
+
+
+def test_build_prompt_omits_supplement_and_recent_when_blank() -> None:
+    # The INSTRUCTIONS legitimately mention these sections by name; assert the
+    # section headings themselves are absent.
+    prompt = synthesis.build_prompt(
+        _CHAR, brief='X', caste_supplement='  ', campaign_context_recent=''
+    )
+    assert '# SETTING BRIEF SUPPLEMENT' not in prompt
+    assert '# OTHER CAMPAIGN CHARACTERS (RECENT ADDITIONS)' not in prompt
+
+
 def test_instructions_ask_for_campaign_consistency() -> None:
     assert 'OTHER CAMPAIGN CHARACTERS' in synthesis.INSTRUCTIONS
+    assert 'SETTING BRIEF SUPPLEMENT' in synthesis.INSTRUCTIONS
 
 
 def test_format_character_includes_summary() -> None:
@@ -109,3 +142,38 @@ def test_synthesize_returns_stripped_recorded_response(monkeypatch: pytest.Monke
     assert len(client.models.calls) == 1
     assert client.models.calls[0]['model'] == 'gemini-3.1-pro-preview'
     assert 'small brief' in str(client.models.calls[0]['contents'])
+
+
+def test_synthesize_appends_supplement_for_monk_type(monkeypatch: pytest.MonkeyPatch) -> None:
+    from chargen import brief as brief_mod
+
+    client = _StubClient('prose')
+    monkeypatch.setattr(synthesis, '_get_client', lambda: client)
+    seen: list[str] = []
+
+    def fake_supplement(character_type: str) -> str:
+        seen.append(character_type)
+        return '# SETTING BRIEF SUPPLEMENT\n\nTEMPLE LORE'
+
+    monkeypatch.setattr(brief_mod, 'build_caste_supplement', fake_supplement)
+
+    synthesis.synthesize(_CHAR, brief='B', model='m', character_type='Monk')
+
+    assert seen == ['Monk']
+    contents = str(client.models.calls[0]['contents'])
+    assert 'TEMPLE LORE' in contents
+    assert contents.index('# SETTING BRIEF SUPPLEMENT') < contents.index('# CHARACTER')
+
+
+def test_synthesize_no_supplement_for_types_without_sections(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # An unrecognized dropdown value has no caste sections; the real
+    # build_caste_supplement returns '' before touching the corpus, so no
+    # corpus is needed here.
+    client = _StubClient('prose')
+    monkeypatch.setattr(synthesis, '_get_client', lambda: client)
+
+    synthesis.synthesize(_CHAR, brief='B', model='m', character_type='Ronin')
+
+    assert '# SETTING BRIEF SUPPLEMENT' not in str(client.models.calls[0]['contents'])

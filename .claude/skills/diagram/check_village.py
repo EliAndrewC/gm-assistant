@@ -58,7 +58,7 @@ _OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleu
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs")
 _OVERLAP_LINEAR = ("fields", "fallow_patches", "flower_fields", "streams", "channels", "town_streets",
-                   "alleys", "wards", "ponds", "pastures", "forests")   # linear / area features structs avoid
+                   "alleys", "lanes", "wards", "ponds", "pastures", "forests")   # linear / area features structs avoid
 _OVERLAP_EXEMPT = {
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
@@ -1989,6 +1989,10 @@ def gate(M, verbose=True):
         if k == "moat":
             mo = M.get("moat")
             return bool(mo) and any(seg_dist(pt[0], pt[1], mo[i], mo[i + 1]) < 34 for i in range(len(mo) - 1))
+        if k == "drain":                                     # a brook empties FROM the field drain (akusui outfall)
+            return any(seg_dist(pt[0], pt[1], dp[i], dp[i + 1]) < 30
+                       for fd in M.get("field_ditches", []) if fd.get("role") == "drain"
+                       for dp in [fd["poly"]] for i in range(len(dp) - 1))
         return False
 
     for idx, c in enumerate(M["channels"]):
@@ -2093,11 +2097,23 @@ def gate(M, verbose=True):
         for r in {find(i) for i in range(len(segs))}:
             members = [m for m in range(len(segs)) if find(m) == r]
             grounded[r] = (any(segs[m][1] for m in members), any(segs[m][2] for m in members))
-        ungrounded = sorted({(ditches[m - d0]["role"], ditches[m - d0]["field"])
-                             for m in range(d0, len(segs)) if not all(grounded[find(m)])})
+        # ROLE-AWARE grounding, so BOTH water models pass: a SUPPLY ditch (main/branch/lateral) must trace to
+        # the pond SOURCE; the DRAIN must trace to a runoff SINK. They need NOT be one component - in the
+        # tagoshi CASCADE model the delivery ditches END mid-field and the water flows plot-to-plot to the
+        # drain (which sits offset below them), so supply and drain are separate networks bridged by the
+        # cascade, not by a ditch. (In the older end-on-drain model they are one component, which still
+        # satisfies both.) A ditch missing its required grounding is tied to nothing outside the field.
+        supply = ("main", "branch", "lateral", "feed")
+        ungrounded = []
+        for m in range(d0, len(segs)):
+            role = ditches[m - d0]["role"]
+            has_source, has_sink = grounded[find(m)]
+            if (role in supply and not has_source) or (role == "drain" and not has_sink):
+                ungrounded.append((role, ditches[m - d0]["field"]))
+        ungrounded = sorted(set(ungrounded))
         check("field_ditches_reach_source_and_sink", not ungrounded,
-              f"in-field ditch(es) not connected to BOTH a pond source and a runoff drain: {ungrounded[:4]} - every "
-              f"irrigation ditch must trace out of the field to the pond (feed) AND to a runoff (off-map / stream)")
+              f"in-field ditch(es) not grounded: {ungrounded[:4]} - a SUPPLY ditch (main/branch/lateral) must "
+              f"trace to the pond source; the DRAIN must trace to a runoff sink (off-map / stream / brook)")
 
     # no farm field overlaps a road OR a town street (the roadbed/street band must not clip
     # a field) - the road leading into town must not run through a farm field
@@ -2295,13 +2311,60 @@ def gate(M, verbose=True):
     if road:
         check("road_runs_off_edge", at_edge(road[0]) and at_edge(road[-1]),
               f"a road must reach the map edge at both ends (ends {road[0]}, {road[-1]})")
+
+    # a CONNECTOR lane (the trodden path leaving the village for the wider world) must run OFF the map
+    # edge - it links to a district/Imperial road (or a canal landing) beyond the frame, so it must not
+    # stop mid-landscape. Internal lanes (the spine, field spurs) are exempt: they legitimately end in
+    # the cluster or at the paddy. See SKILL.md 'Village lanes and connecting paths'.
+    for i, ln in enumerate(M.get("lanes", [])):
+        if ln.get("connector"):
+            p = ln["pts"]
+            check(f"connector_lane_runs_off_edge[{i}]", at_edge(p[0]) or at_edge(p[-1]),
+                  f"the connector path (lane {i}) must run OFF the map edge (ends {p[0]}, {p[-1]}) - it leaves "
+                  f"the village for the wider world and must not stop mid-landscape")
+
+    # FARMHOUSES must not sit ON a village lane - a lane lays a no-build corridor and houses FRONT it,
+    # never overlap the tread (place lanes BEFORE the houses). Fires if any house footprint corner/centre
+    # falls within the lane's tread half-width.
+    def _house_pts(h):
+        hw2, hh2 = h["w"] / 2, h["h"] / 2
+        return [(h["x"] - hw2, h["y"] - hh2), (h["x"] + hw2, h["y"] - hh2),
+                (h["x"] + hw2, h["y"] + hh2), (h["x"] - hw2, h["y"] + hh2), (h["x"], h["y"])]
+    lane_hits = []
+    for h in M.get("houses", []):
+        for ln in M.get("lanes", []):
+            half = ln.get("w", 5) / 2 + 2                     # tread half-width + a hair
+            p = ln["pts"]
+            if any(seg_dist(cx, cy, p[k], p[k + 1]) < half
+                   for cx, cy in _house_pts(h) for k in range(len(p) - 1)):
+                lane_hits.append((round(h["x"]), round(h["y"])))
+                break
+    check("houses_clear_of_lanes", not lane_hits,
+          f"farmhouse(s) sit ON a village lane at {lane_hits[:5]} - a lane is a no-build corridor; houses FRONT it, "
+          f"never overlap the tread (lay lanes BEFORE the houses so they pack around it)")
     moat_ring = M.get("moat")
     for idx, st in enumerate(M.get("streams", [])):
         e0, e1 = st["poly"][0], st["poly"][-1]
         in_pond = (lambda p: bool(pond) and in_ellipse(p[0], p[1], pond, 1.05))
         at_moat = (lambda p: bool(moat_ring) and poly_dist(p[0], p[1], moat_ring) <= 32)   # a city stream may feed the moat
-        ok = all(at_edge(e) or in_pond(e) or at_moat(e) for e in (e0, e1)) and (at_edge(e0) or at_edge(e1))
-        check(f"stream_runs_off_edge[{idx}]", ok, f"stream {idx} ends {e0},{e1} must run off the edge (one end may be a pond or the moat)")
+        at_drain = (lambda p: anchored(p, {"kind": "drain"}))   # a brook may START at the field drain's outfall
+        ok = (all(at_edge(e) or in_pond(e) or at_moat(e) or at_drain(e) for e in (e0, e1))
+              and (at_edge(e0) or at_edge(e1)))
+        check(f"stream_runs_off_edge[{idx}]", ok, f"stream {idx} ends {e0},{e1} must run off the edge (one end may be a pond, the moat, or the field drain)")
+
+    # WATER SOURCES COME FROM THE MAP EDGE: a pond does not generate water, so any brook FEEDING it (a
+    # stream with one end in the pond) must ORIGINATE off-map - it flows in from the edge, not out of
+    # nowhere. (A sole-storage / rain-fed pond with no feeder stream is exempt - no inflow to check.)
+    if pond:
+        unsourced = []
+        for st in M.get("streams", []):
+            p = st["poly"]
+            for near, far in ((p[0], p[-1]), (p[-1], p[0])):
+                if in_ellipse(near[0], near[1], pond, 1.05) and not at_edge(far):
+                    unsourced.append([round(far[0]), round(far[1])])
+        check("pond_fed_from_edge", not unsourced,
+              f"a stream feeds the pond but its far end {unsourced[:3]} is not at the map edge - a pond's "
+              f"feeder brook must flow IN from off-map (the water source comes from the edge, not nowhere)")
 
     # torii (if any): clear of the shrine and spread out (universal)
     torii = M.get("torii", [])

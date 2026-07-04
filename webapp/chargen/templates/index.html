@@ -480,6 +480,7 @@
                 tags: $('#tags').val(),
                 public: $('#public').val(),
                 private: $('#private').val(),
+                character_type: dom.$type.val() || '',
                 extra_notes: dom.$synthesis_notes.val()
             }, function (resp) {
                 dom.$synthesis_loading.hide();

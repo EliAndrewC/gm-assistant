@@ -275,16 +275,19 @@ class Root:
 
     @staticmethod
     def _campaign_context(full_name):
-        """Gather the OTHER CAMPAIGN CHARACTERS block, excluding this character.
+        """Gather the OTHER CAMPAIGN CHARACTERS blocks, excluding this character.
 
-        Never raises: OP problems degrade to empty context so synthesis still
-        runs (campaign context is an enhancement, not a dependency).
+        Returns ``(snapshot_block, recent_block, count)`` - the process-start
+        cast and the runtime-discovered additions, placed at different prompt
+        layers for cache friendliness. Never raises: OP problems degrade to
+        empty context so synthesis still runs (campaign context is an
+        enhancement, not a dependency).
         """
         try:
             return opcache.get_campaign_context(exclude_name=full_name)
         except Exception as e:  # defensive; get_campaign_context is itself fail-soft
             cherrypy.log(f'campaign context gather failed: {e}')
-            return '', 0
+            return '', '', 0
 
     @ajax
     def synthesize(self, extra_notes='', **character_data):
@@ -299,7 +302,13 @@ class Root:
         via `context_count` so the GM can see what was included.
         """
         # Gathered up front and fail-soft, so context problems never block synthesis.
-        context_text, context_count = self._campaign_context(character_data.get('full_name', ''))
+        context_text, context_recent, context_count = self._campaign_context(
+            character_data.get('full_name', '')
+        )
+        # The type dropdown value ('Samurai'/'Monk'/'Peasant') selects any
+        # caste-conditional corpus supplement; it is not part of the character
+        # block itself.
+        character_type = character_data.pop('character_type', '')
         try:
             if 'traits' in character_data and isinstance(character_data['traits'], str):
                 character_data['traits'] = [
@@ -308,7 +317,11 @@ class Root:
             if 'xp' in character_data:
                 character_data['xp'] = int(character_data['xp'])
             backstory = synthesis.synthesize(
-                character_data, extra_notes=extra_notes, campaign_context=context_text
+                character_data,
+                extra_notes=extra_notes,
+                campaign_context=context_text,
+                character_type=character_type,
+                campaign_context_recent=context_recent,
             )
         except Exception as e:
             return {'ok': False, 'backstory': None, 'error': str(e), 'context_count': context_count}

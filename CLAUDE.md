@@ -68,6 +68,7 @@ Reference directories hold organized source material and context. Each directory
 | `/bounty` | Generate bounties, Wasp clan content, minor clan details |
 | `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[m\|f] [p] [N]` - supports shorthand and concatenation (e.g. `pf3`) |
 | `/diagram` | Generate SVG top-down diagrams of L5R locations (manor plans, village layouts, temple plans, etc.) and render to PNG |
+| `/synthesize` | Generate a Gemini backstory for an existing Obsidian Portal NPC (chat twin of the webapp Synthesize Backstory button): reads the OP tagline, reuses the webapp's per-caste corpus + campaign context, review (upload as-is / regenerate / upload with typed changes), merges into GM-only notes. Args: `<character name>` |
 
 ## Testing
 
@@ -243,7 +244,7 @@ The server binds to `0.0.0.0:8080` automatically when it detects a container run
 - `/gm-assistant/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` - the 200-name pool consumed by the `/names` section
 
 <!-- SPECKIT START -->
-Current active plan: [`specs/003-campaign-character-context/plan.md`](specs/003-campaign-character-context/plan.md)
-Active feature: Campaign Character Context - OP-backed incremental character cache feeding the synthesis prompt
-Feature directory: `specs/003-campaign-character-context/`
+Current active plan: [`specs/004-synthesize-op-npc/plan.md`](specs/004-synthesize-op-npc/plan.md)
+Active feature: /synthesize skill - chat-driven backstory synthesis for existing Obsidian Portal NPCs (reads the OP tagline, reuses the webapp's per-caste corpus + campaign context, review with upload/regenerate/upload-with-typed-changes, idempotent GM-notes merge)
+Feature directory: `specs/004-synthesize-op-npc/`
 <!-- SPECKIT END -->

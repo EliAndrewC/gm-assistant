@@ -376,7 +376,7 @@ def existing_characters():
     ]
 
 
-def get_character_body(character_id):
+def get_character_body(character_id: str) -> dict[str, object] | None:
     """Fetch one character's full body via the OAuth API.
 
     Returns {'name', 'tags', 'bio', 'game_master_info', 'updated_at'} or None on
@@ -397,9 +397,28 @@ def get_character_body(character_id):
         'name': c.get('name') or '',
         'tags': list(c.get('tags') or []),
         'bio': c.get('bio') or '',
+        'description': c.get('description') or '',
         'game_master_info': c.get('game_master_info') or '',
         'updated_at': c.get('updated_at') or '',
     }
+
+
+def fetch_character_page(character_url: str) -> str | None:
+    """Fetch a character's OP page HTML via the authenticated browser session.
+
+    Returns the page HTML on success, or None on any failure (logged). Never
+    raises. Used to read the character's tagline (the one-line summary), which
+    the OAuth JSON API does not expose; parse the HTML with
+    ``opsynth.parse_tagline``.
+    """
+    try:
+        session = _get_browser_session()
+        response = session.get(character_url, timeout=30)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        cherrypy.log(f'Failed to fetch character page {character_url}: {e}')
+        return None
 
 
 def delete_character(character_id):

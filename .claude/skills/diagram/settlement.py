@@ -771,12 +771,28 @@ class Settlement:
         # no_structure_on_channel). Matches the stream corridor's footprint-aware spacing.
         self.corridors.append((poly, 33))
 
-    def lane(self, pts):
+    def lane(self, pts, width=16, clearance=22, worn=False, connector=False):
+        """A village lane or connecting path. `worn=True` draws it as UNPAVED TRODDEN EARTH: a NARROW
+        single track (China moved rural goods by WHEELBARROW + shoulder-pole porter + packhorse, not wide
+        cart roads, so two carts could not pass), packed dirt with soft worn shoulders and NO centre
+        marking (a paved road was far beyond a village's means). `worn=False` keeps the legacy wide dashed
+        lane (the dispersed pool maps until they are rebuilt). `clearance` is the no-build corridor
+        half-width (keep houses off the tread). `connector=True` marks the trodden path that LEAVES the
+        village for the wider world - it MUST run off the map edge (checked), never stop mid-landscape.
+        See SKILL.md 'Village lanes and connecting paths'."""
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
-        self.add(f'<path d="{dd}" fill="none" stroke="#CBB178" stroke-width="16" opacity="0.65"/>')
-        self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
+        if worn:
+            self.add(f'<path d="{dd}" fill="none" stroke="#A98C58" stroke-width="{width + 2.5:.1f}" '
+                     f'opacity="0.4" stroke-linejoin="round" stroke-linecap="round"/>')   # soft worn-earth shoulder
+            self.add(f'<path d="{dd}" fill="none" stroke="#C9AE79" stroke-width="{width:.1f}" '
+                     f'opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')    # packed-earth tread, no centreline
+        else:
+            self.add(f'<path d="{dd}" fill="none" stroke="#CBB178" stroke-width="{width}" opacity="0.65"/>')
+            self.add(f'<path d="{dd}" fill="none" stroke="#6B4F2A" stroke-width="1.4" stroke-dasharray="8,8" opacity="0.7"/>')
+        self.M.setdefault("lanes", []).append({"pts": [[x, y] for x, y in pts], "worn": worn,
+                                                "w": width, "connector": connector})
         self.M["lane"] = [[x, y] for x, y in pts]
-        self.corridors.append((pts, 22))
+        self.corridors.append((pts, clearance))
 
     def street(self, pts, width=24, label=None, main=False):
         """A town street (packed earth): the gate-to-yamen main avenue (main=True) or a
@@ -2598,15 +2614,16 @@ class Settlement:
             d += spacing
         return placed
 
-    def try_place(self, x, y, kind, role=None):
+    def try_place(self, x, y, kind, role=None, size=None):
         """Place one farmhouse. VILLAGES use the to-scale HOMESTEAD BUNDLE (house + windward grove + yard +
         garden, reserved and packed as ONE unit). Other scales keep the shipped house-first path until their
-        own to-scale conversion."""
+        own to-scale conversion. `size=(w,h)` overrides the kind's default footprint (base px, pre-bscale)
+        so farmhouses can be individually sized - e.g. a headman is just a LARGER plain farmhouse."""
         if self.M["meta"].get("scale") == "village":
-            return self._try_place_bundle(x, y, kind, role)
+            return self._try_place_bundle(x, y, kind, role, size)
         return self._try_place_legacy(x, y, kind, role)
 
-    def _try_place_bundle(self, x, y, kind, role=None):
+    def _try_place_bundle(self, x, y, kind, role=None, size=None):
         # a farmhouse shares the MAP'S building grain (bscale): at village/hamlet scale bscale is
         # 1.0 (full size), but a town/city compresses its urban buildings, and a peasant farmhouse
         # must not render LARGER than the samurai and merchant houses inside the walls - so it
@@ -2626,9 +2643,12 @@ class Settlement:
         # its ~6:1 room (the fix for groves never reaching target under end-reconciliation). 1 px = 2 ft at
         # village scale; the plain house is 23x14 px (~46x28 ft, the 8:5 minka). A modest, position-seeded
         # wealth tier scales the whole bundle. See SKILL.md 'To-scale villages'.
-        bw, bh = (32, 20) if kind == "big" else (23, 14)
-        t = int(abs(x) * 53 + abs(y) * 29) % 100
-        wf = 1.0 if kind == "big" else (0.9 if t < 30 else (1.12 if t >= 80 else 1.0))
+        if size is not None:                                 # explicit footprint (e.g. a larger headman)
+            bw, bh, wf = size[0], size[1], 1.0
+        else:
+            bw, bh = (32, 20) if kind == "big" else (23, 14)
+            t = int(abs(x) * 53 + abs(y) * 29) % 100
+            wf = 1.0 if kind == "big" else (0.9 if t < 30 else (1.12 if t >= 80 else 1.0))
         hw, hh = bw * self.bscale * wf, bh * self.bscale * wf
         spot = self._place_bundle(x, y, hw, hh)              # pack the bundle as near (x,y) as the rules allow
         if spot is None:
@@ -2661,7 +2681,16 @@ class Settlement:
         self._pending_farmsteads.append(rec)
         return True
 
-    def headman(self, x, y, w=108, h=68):
+    def headman(self, x, y, w=46, h=28):
+        # TO SCALE (1px=2ft): a nanushi/shoya house is the grandest in the village but still a house -
+        # ~46x28 px is ~92x56 ft, clearly larger than a plain farmhouse (23x14) or a well-off one
+        # (~26x16) without the old pre-scale 108x68 (~216x136 ft, a fortress). headman_is_largest holds.
+        if getattr(self, "_nucleated", False):
+            # the headman is just a LARGER PLAIN farmhouse - placed through the standard collision-checked
+            # bundle path with a tunable SIZE, so it gets its (capped) yard + garden and cannot overlap a
+            # neighbour. NO special reservation or "big"-glyph storeroom wing (that wing was drawn outside
+            # the reserved footprint and overlapped the north neighbour's yard).
+            return self.try_place(x, y, "plain", role="headman", size=(w, h))
         self.placed.append((x, y, w, h))
         rec = {"x": x, "y": y, "w": w, "h": h, "kind": "big", "rot": 0, "role": "headman", "shed": False, "wealth": 1.0}
         self.M["houses"].append(rec)
@@ -2672,28 +2701,64 @@ class Settlement:
         off into the urban core or the void."""
         return any(edge_dist(x, y, poly) <= 165 for poly in self.field_polys) if self.field_polys else True
 
-    def _bundle_geom(self, hx, hy, hw, hh):
-        """The metric layout of one homestead BUNDLE around a house centred at (hx, hy): the windward GROVE
-        as an L (an N band + a W band, for the default NW wind), the dooryard GARDEN tucked tight to the
-        house's E (lee) wall, and the threshing YARD on the sunny S front. Sized so the grove footprint is
-        ~6x the house (the historical ratio). Returns a dict of (cx, cy, w, h) rects keyed house/garden/
-        yard/grove_n/grove_w plus the whole-bundle bbox. (NW windward; other winds are a later generalisation.)"""
+    def _bundle_geom(self, hx, hy, hw, hh, garden_side="E"):
+        """The metric layout of one homestead BUNDLE around a house centred at (hx, hy). TWO forms:
+        NUCLEATED (self._nucleated) = house + lee GARDEN (E) + south YARD only, compact so a cluster can
+        pack tight (no per-house grove - a nucleus shelters itself); DISPERSED (default) also carries the
+        windward GROVE as an L (an N band + a W band for the default NW wind), sized ~6x the house. The
+        dooryard GARDEN tucks tight to the house's E (lee) wall, the threshing YARD sits on the sunny S
+        front. Returns a dict of (cx, cy, w, h) rects keyed house/garden/yard (+ grove_n/grove_w when
+        dispersed) plus the whole-bundle bbox. (NW windward; other winds are a later generalisation.)"""
         gap = 1.5 * self.bscale
         gw, gh = 0.48 * hw, 0.85 * hh                        # garden - tight to the house, scales with wealth
         yw, yh = 0.80 * hw, 0.92 * hh                        # threshing/drying yard, ~house-sized
-        b = 1.57 * hh                                         # grove band depth -> grove ~= 6x house area
-        west = hx - hw / 2 - gap - b
         east = hx + hw / 2 + gap + gw
-        north = hy - hh / 2 - gap - b
         south = hy + hh / 2 + gap + yh
-        return {
+        base = {
             "house": (hx, hy, hw, hh),
             "garden": (hx + hw / 2 + gap + gw / 2, hy, gw, gh),
             "yard": (hx, hy + hh / 2 + gap + yh / 2, yw, yh),
-            "grove_n": ((west + east) / 2, north + b / 2, east - west, b),
-            "grove_w": (west + b / 2, (north + b + south) / 2, b, south - (north + b)),
-            "bbox": ((west + east) / 2, (north + south) / 2, east - west, south - north),
         }
+        if getattr(self, "_nucleated", False):
+            # NUCLEATED cluster (China-leaning default, per Knapp - and the Japanese shuson): the
+            # houses stand close and SHELTER EACH OTHER, so there is NO per-house windbreak grove
+            # (a full yashikirin is the DISPERSED-farmstead feature; a tight cluster of grove-bundles
+            # cannot nucleate at all). The windbreak becomes a VILLAGE-EDGE belt placed in the second
+            # pass. The bundle is house + south yard + a garden on an ADAPTIVE sunny side (chosen by
+            # the placer for fit + no shading), so it packs into a real nucleus and the gardens vary
+            # instead of all sitting east between houses. See SKILL.md 'Settlement form'.
+            # CAP the appurtenance dims so a big house (the headman) keeps an ORDINARY farm's yard/garden
+            # (spanning ~its adjacent wall but not scaled up to the grand house - "not as tall / not as
+            # wide"). A plain 23x14 house is well under these caps, so ordinary farms are unaffected.
+            yw = min(yw, 34 * self.bscale)
+            yh = min(yh, 22 * self.bscale)
+            gw = min(gw, 24 * self.bscale)
+            gh = min(gh, 17 * self.bscale)
+            base["yard"] = (hx, hy + hh / 2 + gap + yh / 2, yw, yh)
+            if garden_side == "SE":                          # tucked beside the south yard (sunny, tight)
+                gx, gy = hx + hw / 2 + gap + gw / 2, hy + hh / 2 + gap + gh / 2
+            elif garden_side == "SW":
+                gx, gy = hx - hw / 2 - gap - gw / 2, hy + hh / 2 + gap + gh / 2
+            elif garden_side == "W":                         # windward wall, house mid-height
+                gx, gy = hx - hw / 2 - gap - gw / 2, hy
+            else:                                            # "E" - lee wall, house mid-height
+                gx, gy = hx + hw / 2 + gap + gw / 2, hy
+            base["garden"] = (gx, gy, gw, gh)
+            xs = [hx - hw / 2, hx + hw / 2, base["yard"][0] - yw / 2, base["yard"][0] + yw / 2,
+                  gx - gw / 2, gx + gw / 2]
+            ys = [hy - hh / 2, base["yard"][1] + yh / 2, gy - gh / 2, gy + gh / 2]
+            base["bbox"] = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2,
+                            max(xs) - min(xs), max(ys) - min(ys))
+            return base
+        # DISPERSED farmstead (the shipped ring-village behaviour): the windward GROVE as an L (an N
+        # band + a W band, for the default NW wind), sized so the grove footprint is ~6x the house.
+        b = 1.57 * hh                                         # grove band depth -> grove ~= 6x house area
+        west = hx - hw / 2 - gap - b
+        north = hy - hh / 2 - gap - b
+        base["grove_n"] = ((west + east) / 2, north + b / 2, east - west, b)
+        base["grove_w"] = (west + b / 2, (north + b + south) / 2, b, south - (north + b))
+        base["bbox"] = ((west + east) / 2, (north + south) / 2, east - west, south - north)
+        return base
 
     def _rect_corners(self, rect):
         cx, cy, w, h = rect
@@ -2739,7 +2804,8 @@ class Settlement:
             return False
         if any(self._rect_blocked(geom[k], fields=True) for k in ("house", "garden", "yard")):
             return False
-        if any(self._rect_blocked(geom[k], fields=grove_off_field) for k in ("grove_n", "grove_w")):
+        if "grove_n" in geom and any(self._rect_blocked(geom[k], fields=grove_off_field)
+                                     for k in ("grove_n", "grove_w")):
             return False
         for (px, py, pw, ph) in self.placed:
             if abs(cx - px) < (W + pw) / 2 + 2 and abs(cy - py) < (H + ph) / 2 + 2:  # a hair of gap so an edge feature never clips a neighbour
@@ -2756,7 +2822,7 @@ class Settlement:
         def shades(grove, yard):
             cyx, cyy = yard[0], yard[1] + yard[3] / 2 + 11
             return abs(grove[0] - cyx) < (grove[2] + yard[2]) / 2 and abs(grove[1] - cyy) < (grove[3] + 22) / 2
-        new_groves = (geom["grove_n"], geom["grove_w"])
+        new_groves = (geom["grove_n"], geom["grove_w"]) if "grove_n" in geom else ()
         new_yard = geom["yard"]
         for rec in self.M["houses"]:
             g = rec.get("geom")
@@ -2764,7 +2830,8 @@ class Settlement:
                 continue
             if any(shades(gv, g["yard"]) for gv in new_groves):
                 return True
-            if any(shades(gv, new_yard) for gv in (g["grove_n"], g["grove_w"])):
+            other_groves = (g["grove_n"], g["grove_w"]) if "grove_n" in g else ()
+            if any(shades(gv, new_yard) for gv in other_groves):
                 return True
         return False
 
@@ -2820,6 +2887,8 @@ class Settlement:
         """Place a homestead bundle one-at-a-time: find the nearest fitting spot to the seed, then COMPACT it
         - shove the grove up against the nearest paddy bund (without entering it), then pack the whole
         complex against its nearest neighbour, each as far as the rules allow. Returns (cx, cy, geom) or None."""
+        if getattr(self, "_nucleated", False):
+            return self._place_bundle_nucleated(x, y, hw, hh)
         offsets = [(0, 0)]
         for r in range(7, 92, 7):
             for k in range(12):
@@ -2836,6 +2905,83 @@ class Settlement:
         cx, cy = self._slide(cx, cy, hw, hh, self._nearest_field_point, grove_off_field=True)   # grove hugs the bund
         cx, cy = self._slide(cx, cy, hw, hh, self._nearest_placed_point, grove_off_field=True)   # pack against neighbour
         return cx, cy, self._bundle_geom(cx, cy, hw, hh)
+
+    _NUC_SIDES = ("SE", "SW", "E", "W")   # garden-side preference: sunny south strip first, walls as fallback
+
+    def _garden_shaded(self, grect):
+        """A dooryard garden is SHADED when a farmhouse stands close to its SOUTH (the sun comes from the
+        south), so a garden sandwiched with a neighbour's house just below it gets no light. Tested against
+        every placed house - the nucleated placer prefers a side with open sky to the south."""
+        gx, gy, gw, gh = grect
+        for rec in self.M["houses"]:
+            hx, hy, hw, hh = rec["x"], rec["y"], rec["w"], rec["h"]
+            if hy > gy + gh / 2 - 3 and abs(hx - gx) < (hw + gw) / 2 and (hy - hh / 2) - (gy + gh / 2) < gh + 4:
+                return True
+        return False
+
+    def _fits_any_side(self, cx, cy, hw, hh):
+        return any(self._bundle_fits(self._bundle_geom(cx, cy, hw, hh, s)) for s in self._NUC_SIDES)
+
+    def _field_dist(self, cx, cy):
+        """Distance from a point to the nearest paddy edge (inf if there are no fields)."""
+        p = self._nearest_field_point(cx, cy)
+        return math.hypot(cx - p[0], cy - p[1]) if p else float("inf")
+
+    def _slide_nuc(self, cx, cy, hw, hh, target_fn, keep_field=False):
+        """Shove a nucleated bundle toward target_fn as far as SOME garden side still fits - the tight-pack
+        step (the garden side is re-chosen at the final spot, so the slide only needs one side to work).
+        With keep_field, a move is ALSO rejected if it would drift the bundle FURTHER from the paddy than
+        where it started: so the neighbour-pack runs ALONG the field edge (tangentially) and never pulls the
+        cluster off the paddy - the village glues its field side to the paddy and builds outward in rows."""
+        fd_cap = self._field_dist(cx, cy) + 3 if keep_field else None
+        for _ in range(80):
+            tgt = target_fn(cx, cy)
+            if tgt is None:
+                break
+            dx, dy = tgt[0] - cx, tgt[1] - cy
+            dist = math.hypot(dx, dy)
+            if dist < 1.5:
+                break
+            ncx, ncy = cx + dx / dist * 2.0, cy + dy / dist * 2.0
+            if keep_field and self._field_dist(ncx, ncy) > fd_cap:
+                break
+            if self._fits_any_side(ncx, ncy, hw, hh):
+                cx, cy = ncx, ncy
+            else:
+                break
+        return cx, cy
+
+    def _place_bundle_nucleated(self, x, y, hw, hh):
+        """Nucleated placement: find the nearest spot where SOME garden side fits, pack it hard against the
+        field bund then its neighbours, then pick the garden side that is UNSHADED and sunniest. The compact
+        (grove-less) bundle lets the cluster nucleate; the adaptive garden gives sun + variety."""
+        offsets = [(0, 0)]
+        for r in range(5, 80, 5):
+            for k in range(12):
+                a = k * math.pi / 6
+                offsets.append((round(r * math.cos(a)), round(r * math.sin(a))))
+        start = None
+        for nx, ny in offsets:
+            if self._fits_any_side(x + nx, y + ny, hw, hh):
+                start = (x + nx, y + ny)
+                break
+        if start is None:
+            return None
+        cx, cy = start
+        cx, cy = self._slide_nuc(cx, cy, hw, hh, self._nearest_field_point)    # hug the paddy edge
+        cx, cy = self._slide_nuc(cx, cy, hw, hh, self._nearest_placed_point,   # then pack ALONG it (never off it),
+                                 keep_field=True)                              # so the cluster glues to the paddy
+        best = None
+        for rank, side in enumerate(self._NUC_SIDES):
+            geom = self._bundle_geom(cx, cy, hw, hh, side)
+            if not self._bundle_fits(geom):
+                continue
+            score = (1 if self._garden_shaded(geom["garden"]) else 0, rank)   # unshaded first, then preference
+            if best is None or score < best[0]:
+                best = (score, geom)
+        if best is None:  # pragma: no cover - the slide only rests where some garden side fits, so best is set
+            return None
+        return cx, cy, best[1]
 
     def _solve_homestead(self, rec):
         """Find the best position for a farmhouse so its WHOLE homestead fits - threshing yard + dooryard
@@ -2879,11 +3025,13 @@ class Settlement:
         survivors = []
         for rec in self._pending_farmsteads:
             geom = rec.get("geom")
-            if geom is None:                                    # abandoned ruin / headman: a lone house
+            if geom is None:                                    # abandoned ruin / dispersed headman: lone house
                 self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"])
                 survivors.append(rec)
                 continue
             for key, face in (("grove_n", (0, -1)), ("grove_w", (-1, 0))):
+                if key not in geom:                          # nucleated bundle: no per-house grove
+                    continue
                 cx, cy, w, h = geom[key]
                 self._draw_grove(cx, cy, w, h, face)
                 self.M["groves"].append({"x": round(cx, 1), "y": round(cy, 1), "w": w, "h": h, "rot": 0,

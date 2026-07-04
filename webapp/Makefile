@@ -24,7 +24,7 @@ test:
 
 cov:
 	@if [ -d l7r ]; then \
-		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov-report=term-missing --cov-fail-under=100; \
+		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov-report=term-missing --cov-fail-under=100; \
 	else \
 		echo "[done] No l7r/ package yet — coverage check skipped"; \
 	fi
