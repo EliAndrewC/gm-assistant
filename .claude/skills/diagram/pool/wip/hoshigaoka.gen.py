@@ -38,7 +38,7 @@ SLUICE = (513, 282)                 # the single outlet on the pond's downhill f
 SEED = 7
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Hoshigaoka", scale="village", households=70)
+s.meta(name="Hoshigaoka", scale="village", households=70, down_deg=45)   # NW-high -> downhill = SE (45 deg)
 
 # Hoshigaoka slopes NW(high) -> SE(low); other provinces differ (Lion: S high; Dragon: N high;
 # Unicorn: W high) - down_deg is the knob, nothing assumes SE. The pond is a keepout so the
@@ -47,7 +47,8 @@ s.meta(name="Hoshigaoka", scale="village", households=70)
 # within the frame - not grown to the map corner (which spilled it off the E edge). The frame is sized
 # to hold the whole village + field + a low-side margin for the drain's outfall + brook to discharge.
 net = build_comb(W, H, SLUICE, SEED, down_deg=45, field_fall=1230,
-                 dry_keepout=[(POND[0], POND[1], POND[2] + 45)])
+                 offtakes_a=(0.25, 0.55, 0.82), offtakes_b=(0.6,),   # SPARSER delivery net (~6-9 cols apart,
+                 dry_keepout=[(POND[0], POND[1], POND[2] + 45)])     # the sparse pre-modern cascade, not a Meiji ditch-per-plot grid)
 
 # Register the water-first field footprints so the homestead solver sees them: the paddy
 # envelope blocks houses AND provides field-adjacency; the dry-field plots are no-build
@@ -108,11 +109,28 @@ s.stream([(pcx - 24, -12), (pcx - 14, 70), (pcx + 6, pcy - pry + 18)],
 s.pond(pcx, pcy, prx, pry)
 
 # the water network: head-race, tapering supply canals, delivery ditches, drain
+def _draw_channel(pts, col, w0, w1):
+    """Draw a watercourse. If w1 < w0 it TAPERS (a delivery ditch dwindling as it feeds the paddies) -
+    split into stroked pieces of decreasing width; round caps soften the joins into a smooth narrowing."""
+    if abs(w1 - w0) < 0.2:
+        dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
+        s.add(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" '
+              f'stroke-linejoin="round" stroke-linecap="round" opacity="0.92"/>')
+        return
+    n, L = 7, len(pts)
+    for k in range(n):
+        piece = pts[k * (L - 1) // n: (k + 1) * (L - 1) // n + 1]
+        if len(piece) < 2:
+            continue
+        wk = w0 + (w1 - w0) * (k + 0.5) / n
+        dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in piece)
+        s.add(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" '
+              f'stroke-linejoin="round" stroke-linecap="round" opacity="0.92"/>')
+
+
 for c in sorted(net["channels"], key=lambda c: -c["w"]):
-    d = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in c["pts"])
-    col = '#7C9EB0' if c["role"] == "drain" else '#6C9CBE'
-    s.add(f'<path d="{d}" fill="none" stroke="{col}" stroke-width="{c["w"]:.1f}" '
-          f'stroke-linejoin="round" stroke-linecap="round" opacity="0.92"/>')
+    _draw_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE',
+                  c["w"], c.get("w_tail", c["w"]))
 
 # the drain's OUTFALL empties into a natural valley BROOK that carries the runoff off the map downhill
 # (water OUT, mirroring the pond's feeder = water IN). Only present when the field's low corner sits
@@ -173,7 +191,8 @@ s.M["fields"].append({"name": "hoshigaoka-paddies", "kind": "paddy", "outline": 
                       "bbox": [min(_exs), min(_eys), max(_exs), max(_eys)]})
 for c in net["channels"]:
     s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
-                                 "role": c["role"], "field": "hoshigaoka-paddies"})
+                                 "role": c["role"], "field": "hoshigaoka-paddies",
+                                 "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)})
 # ANCHOR the network for field_ditches_reach_source_and_sink: the pond FEEDS the head-race (external
 # SOURCE) and the drain discharges to a runoff SINK. Water IN and water OUT, both traceable off the
 # field - the check that a paddy system is not a closed loop. (The brook, when present, is the sink;

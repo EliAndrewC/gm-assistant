@@ -133,6 +133,89 @@ def test_connector_lane_runs_off_edge_passes_when_it_reaches_the_edge():
     assert not any(c.startswith("connector_lane_runs_off_edge") for c in f(M))
 
 
+# ---- drainage flows downhill (matches meta.down_deg); a COLLECTOR may run cross-slope, but not uphill ----
+def _drain(poly, stream=None):
+    M = {"meta": {"down_deg": 45}, "field_ditches": [{"poly": poly, "role": "drain", "field": "f"}]}
+    if stream:
+        M["streams"] = [{"poly": stream, "frm": {"kind": "drain"}, "to": {"kind": "offmap"}, "w": 9}]
+    return M
+
+
+def test_drain_flows_downhill_fires_when_outfall_is_uphill():
+    # down_deg=45 -> fall = x+y. The brook meets the drain at (300,300) [low fall], so that is the OUTFALL,
+    # but the head (700,700) is further downhill -> the outfall sits UPHILL of the head -> water runs backwards.
+    assert "drain_flows_downhill" in f(_drain([[300, 300], [700, 700]], stream=[[300, 300], [40, 40]]))
+
+
+def test_drain_flows_downhill_passes_when_outfall_is_downhill():
+    assert "drain_flows_downhill" not in f(_drain([[300, 300], [700, 700]], stream=[[700, 700], [950, 950]]))
+
+
+def test_drain_flows_downhill_defaults_to_the_lower_end_with_no_brook():
+    # no brook and neither end at the edge -> the outfall defaults to the downhill end, so it never reads uphill
+    assert "drain_flows_downhill" not in f(_drain([[300, 300], [700, 700]]))
+
+
+def test_drainage_discharges_downhill_fires_when_the_brook_runs_uphill():
+    # brook from the outfall (700,700 = high fall) up to (400,400 = lower fall) - carries runoff UPHILL
+    assert "drainage_discharges_downhill" in f(_drain([[300, 300], [700, 700]], stream=[[700, 700], [400, 400]]))
+
+
+def test_delivery_ditches_taper_fires_on_a_blunt_ditch():
+    # a delivery ditch (role "branch") ending at nearly full width - it should have shed its water
+    M = {"field_ditches": [{"poly": [[300, 300], [500, 500]], "role": "branch", "field": "f", "w": 4.0, "w_tail": 4.0}]}
+    assert "delivery_ditches_taper" in f(M)
+
+
+def test_delivery_ditches_taper_passes_when_it_narrows():
+    M = {"field_ditches": [{"poly": [[300, 300], [500, 500]], "role": "branch", "field": "f", "w": 4.0, "w_tail": 1.5}]}
+    assert "delivery_ditches_taper" not in f(M)
+
+
+def test_delivery_ditches_taper_exempts_ditches_without_recorded_widths():
+    # the older water_field engine records no head/tail width - nothing to judge, so it is skipped
+    M = {"field_ditches": [{"poly": [[300, 300], [500, 500]], "role": "branch", "field": "f"}]}
+    assert "delivery_ditches_taper" not in f(M)
+
+
+def test_drainage_junction_smooth_fires_on_a_hard_corner():
+    # drain arrives heading EAST; the brook leaves heading SOUTH = a hard ~90 deg corner off the collector
+    M = {"field_ditches": [{"poly": [[300, 500], [700, 500]], "role": "drain", "field": "f"}],
+         "streams": [{"poly": [[700, 500], [700, 900]], "frm": {"kind": "drain"}, "to": {"kind": "offmap"}, "w": 9}]}
+    assert "drainage_junction_smooth" in f(M)
+
+
+def test_drainage_junction_smooth_passes_when_the_brook_curves_out():
+    # the brook leaves roughly CONTINUING the drain's eastward heading -> a smooth bend, not a corner
+    M = {"field_ditches": [{"poly": [[300, 500], [700, 500]], "role": "drain", "field": "f"}],
+         "streams": [{"poly": [[700, 500], [1000, 600]], "frm": {"kind": "drain"}, "to": {"kind": "offmap"}, "w": 9}]}
+    assert "drainage_junction_smooth" not in f(M)
+
+
+def test_drainage_junction_smooth_skips_a_brook_with_no_drain():
+    # a drain-fed brook but no drain ditch present -> nothing to measure the junction against, so it is skipped
+    M = {"streams": [{"poly": [[700, 500], [1000, 600]], "frm": {"kind": "drain"}, "to": {"kind": "offmap"}, "w": 9}]}
+    assert "drainage_junction_smooth" not in f(M)
+
+
+def test_drain_runs_cross_slope_fires_when_it_runs_downhill():
+    # down_deg=45 (fall = SE). A drain running straight down the fall collects nothing - not a collector.
+    assert "drain_runs_cross_slope" in f(_drain([[300, 300], [700, 700]]))
+
+
+def test_drain_runs_cross_slope_passes_for_a_contour_collector():
+    # a drain running along the contour (perpendicular to the fall) is a proper cross-slope collector
+    assert "drain_runs_cross_slope" not in f(_drain([[300, 700], [700, 300]]))
+
+
+def test_drain_flows_downhill_skips_non_drain_ditches():
+    # a SUPPLY (main) ditch is not a collector - the drainage-direction check ignores it (only 'drain' role)
+    M = {"meta": {"down_deg": 45},
+         "field_ditches": [{"poly": [[100, 100], [200, 200]], "role": "main", "field": "f"},
+                           {"poly": [[300, 300], [700, 700]], "role": "drain", "field": "f"}]}
+    assert "drain_flows_downhill" not in f(M)
+
+
 def test_pond_fed_from_edge_fires_when_the_feeder_starts_mid_map():
     # a brook whose pond end is in the pond but whose FAR end sits mid-map (water out of nowhere)
     M = {"pond": [400, 300, 150, 90],

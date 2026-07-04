@@ -2071,6 +2071,24 @@ def gate(M, verbose=True):
               f"irrigation channel(s) dead-end / overshoot inside a field at {sorted(set(dangling))[:5]} - every "
               f"lateral must END on the main canal or the drain (not stop, and not stub past it toward the edge)")
 
+        # DELIVERY DITCHES TAPER: a delivery ditch (role "branch") sheds its water into the paddies all
+        # along its length, so its flow dwindles and it must NARROW toward the point where it stops - not
+        # end abruptly at full width, which reads as a jarring blunt stub. Where head/tail widths are
+        # recorded (w / w_tail), each delivery ditch must taper: w_tail < ~0.85*w. Maps that do not record
+        # widths (the older water_field engine) are exempt - no width to judge.
+        blunt = []
+        for fd in ditches:
+            if fd.get("role") != "branch":
+                continue
+            w, wt = fd.get("w"), fd.get("w_tail")
+            if w is None or wt is None:
+                continue
+            if wt > 0.85 * w:
+                blunt.append([round(fd["poly"][-1][0]), round(fd["poly"][-1][1])])
+        check("delivery_ditches_taper", not blunt,
+              f"delivery ditch(es) stop at nearly full width {blunt[:3]} - a ditch feeding paddies sheds its "
+              f"water along the way, so it must TAPER to a thread at its stopping point (w_tail < ~0.85*w)")
+
         # CONNECTIVITY: every in-field ditch must trace to BOTH an external SOURCE (a pond feed) and a runoff
         # SINK (an off-map drain or a stream). Build the watercourse graph - channels + streams + field ditches,
         # joined where their polylines come within tol (crossing-aware) - and require each ditch's component to
@@ -2260,7 +2278,7 @@ def gate(M, verbose=True):
     # must run WITH that current - its field-end downstream of its moat-tap. A channel whose field
     # is UPSTREAM of the tap reads as water flowing from the field INTO the moat (backwards).
     moat_ring = M.get("moat")
-    mfed = [c for c in channels if c.get("frm", {}).get("kind") == "moat"]
+    mfed = [c for c in channels if (c.get("frm") or {}).get("kind") == "moat"]
     if moat_ring and len(moat_ring) >= 3 and mfed:
         feeder = None
         for st in streams_m:
@@ -2365,6 +2383,101 @@ def gate(M, verbose=True):
         check("pond_fed_from_edge", not unsourced,
               f"a stream feeds the pond but its far end {unsourced[:3]} is not at the map edge - a pond's "
               f"feeder brook must flow IN from off-map (the water source comes from the edge, not nowhere)")
+
+    # DRAINAGE FLOWS DOWNHILL (matches the map's configured slope). We do NOT require the drain to RUN
+    # downhill - a collector (akusui) legitimately runs ACROSS the low margin, ~perpendicular to the fall,
+    # to gather runoff from every cascade column; a downhill-running drain would collect nothing. What we
+    # DO require is that the water never runs UPHILL: the drain's OUTFALL (the end that discharges to the
+    # brook / off-map) must be the lower-ground end, and the discharge brook must head downhill. `fall` =
+    # projection onto the downhill unit vector (meta.down_deg); higher fall = further downhill = lower ground.
+    _dd = M["meta"].get("down_deg")
+    if _dd is not None:
+        _dv = (math.cos(math.radians(_dd)), math.sin(math.radians(_dd)))
+        fall = lambda p: p[0] * _dv[0] + p[1] * _dv[1]
+        streams_ = M.get("streams", [])
+
+        def _near_stream(pt):
+            return any(seg_dist(pt[0], pt[1], sp[i], sp[i + 1]) < 30
+                       for st in streams_ for sp in [st["poly"]] for i in range(len(sp) - 1))
+        up_drain, up_disch = [], []
+        for fd in M.get("field_ditches", []):
+            if fd.get("role") != "drain":
+                continue
+            p = fd["poly"]
+            e0, e1 = p[0], p[-1]
+            # the OUTFALL is the end that meets a brook or runs off-map (else default to the lower end)
+            if _near_stream(e1) or at_edge(e1):
+                out, head = e1, e0
+            elif _near_stream(e0) or at_edge(e0):
+                out, head = e0, e1
+            else:
+                out, head = (e1, e0) if fall(e1) >= fall(e0) else (e0, e1)
+            if fall(out) < fall(head) - 8:                # outfall is UPHILL of the head - water runs backwards
+                up_drain.append([round(out[0]), round(out[1])])
+        for st in streams_:                               # a drainage brook must head downhill off the field
+            if (st.get("frm") or {}).get("kind") == "drain":
+                p = st["poly"]
+                if fall(p[-1]) < fall(p[0]) - 8:
+                    up_disch.append([round(p[-1][0]), round(p[-1][1])])
+        check("drain_flows_downhill", not up_drain,
+              f"a drain's OUTFALL {up_drain[:3]} sits UPHILL of its head - water would run backwards; the "
+              f"discharge end of a collector must be its lowest point (per meta.down_deg)")
+        check("drainage_discharges_downhill", not up_disch,
+              f"a drainage brook {up_disch[:3]} runs UPHILL from the drain outfall - it must carry the runoff "
+              f"DOWNHILL (toward the fall direction, meta.down_deg), matching the water flow elsewhere")
+        # a collector runs CROSS-SLOPE (roughly along the contour), because it must gather runoff from every
+        # cascade column - a drain running with the fall would follow one column and collect nothing. So its
+        # direction must be more PERPENDICULAR to the fall than parallel: the along-fall fraction of its
+        # head->outfall vector stays below ~0.65 (angle to the fall > ~50 deg). It may descend to carry water
+        # to the discharge, but must not run straight downhill like a delivery ditch.
+        crossy = []
+        for fd in M.get("field_ditches", []):
+            if fd.get("role") != "drain":
+                continue
+            a, b = fd["poly"][0], fd["poly"][-1]
+            vx, vy = b[0] - a[0], b[1] - a[1]
+            vlen = math.hypot(vx, vy)
+            if vlen < 1:  # pragma: no cover - a real drain spans the field's low edge; guards a 0-length poly
+                continue
+            along = abs(vx * _dv[0] + vy * _dv[1]) / vlen           # |cos(angle to the fall)|
+            if along > 0.65:
+                crossy.append(round(math.degrees(math.acos(min(1.0, along)))))
+        check("drain_runs_cross_slope", not crossy,
+              f"a drain runs too nearly WITH the slope (only {crossy[:3]} deg off the fall) - a collector must "
+              f"run roughly PERPENDICULAR to the flow (along the contour) to gather every column's runoff")
+
+    # A drainage brook LEAVES the collector as a smooth BEND, not a hard right-angle corner - a contour
+    # collector turns down the valley INTO the stream, it does not meet it at 90 deg. For each drain-fed
+    # brook, compare the drain's ARRIVAL heading (into the shared outfall) with the brook's DEPARTURE
+    # heading (each averaged over ~40px, so short jittery segments do not fool it); the turn must be < 65 deg.
+    def _flow_dir(poly, at_start, span=40.0):
+        end = poly[0] if at_start else poly[-1]
+        ref = end
+        for q in (poly[1:] if at_start else poly[-2::-1]):
+            ref = q
+            if math.hypot(q[0] - end[0], q[1] - end[1]) >= span:
+                break
+        return (ref[0] - end[0], ref[1] - end[1]) if at_start else (end[0] - ref[0], end[1] - ref[1])
+    _drains = [fd["poly"] for fd in M.get("field_ditches", []) if fd.get("role") == "drain"]
+    sharp = []
+    for st in M.get("streams", []):
+        if (st.get("frm") or {}).get("kind") != "drain" or len(st["poly"]) < 2:
+            continue
+        bp = st["poly"]
+        near = min(((math.hypot(bp[0][0] - dp[e][0], bp[0][1] - dp[e][1]), dp, e)     # the drain it leaves:
+                    for dp in _drains for e in (0, -1)), default=None)                # nearest drain endpoint
+        if near is None or near[0] > 40 or len(near[1]) < 2:
+            continue
+        arr, dep = _flow_dir(near[1], at_start=(near[2] == 0)), _flow_dir(bp, at_start=True)
+        la, ld = math.hypot(*arr), math.hypot(*dep)
+        if la < 1 or ld < 1:  # pragma: no cover - real drains/brooks span the field; guards 0-length polys
+            continue
+        ang = math.degrees(math.acos(max(-1.0, min(1.0, (arr[0] * dep[0] + arr[1] * dep[1]) / (la * ld)))))
+        if ang > 65:
+            sharp.append(round(ang))
+    check("drainage_junction_smooth", not sharp,
+          f"a drainage brook leaves the collector at a sharp {sharp[:3]} deg corner - it must CURVE out of "
+          f"the drain's heading (a collector turns down the valley into the stream, not a hard right angle)")
 
     # torii (if any): clear of the shrine and spread out (universal)
     torii = M.get("torii", [])

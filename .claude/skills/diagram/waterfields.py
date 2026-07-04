@@ -219,11 +219,22 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     # canal B is itself the far-side boundary thread (its dug prefix IS the canal)
     bc = mk(fork[0], fork[1], DOWN + math.radians(58), R.uniform(*canal_b_len), decay=170.0)
     threads = [bc]
-    for frac in offtakes_a:                     # delivery ditches off canal A
+    # delivery ditches are MIN-SPACED: two ditches closer than ~2 plot-columns would water the same
+    # ground twice (a redundant near-pair that reads as an artifact, not design), so drop the closer.
+    min_gap = 2.0 * plot_across
+    placed_u = [bc.u0]                           # canal B is a SUPPLY canal - deliveries must not hug it either
+    a_ths = []
+    for frac in offtakes_a:                      # delivery ditches off canal A
         bx, by = _point_along(a_pts, frac)
+        tu = F.to_uf(bx, by)[0]
+        if any(abs(tu - pu) < min_gap for pu in placed_u):
+            continue                             # redundant near-pair - skip it (keeps the net sparse)
+        placed_u.append(tu)
         th = mk(bx, by, DOWN + R.uniform(-0.15, 0.1), R.uniform(420, 620), fallback=a_pts)
-        th.spawn_sub = frac in (offtakes_a[1], offtakes_a[2])   # the middle blocks split once
+        a_ths.append(th)
         threads.append(th)
+    for th in a_ths[1:-1]:                        # only the INTERIOR (widest) blocks split once
+        th.spawn_sub = True
     rb = mk(a_pts[-1][0], a_pts[-1][1], DOWN, 0, fallback=a_pts)   # far boundary (bund only)
     threads.append(rb)
     threads.sort(key=lambda t: t.u0)
@@ -235,11 +246,14 @@ def build_comb(W, H, sluice, seed, down_deg=45,
         f_at = bc.f0 + (sum(canal_b_len) / 2 * frac) * math.cos(math.radians(58))
         bc.offtake_fs.append(f_at)
         spawns.append([f_at, bc, DOWN + R.uniform(-0.2, 0.0), R.uniform(340, 560), +1])
+    # a sub takes off HIGH on its parent and DIVERGES steeply (bigger heading, longer run) so the two
+    # channels end up > ~2 columns apart - a real Y-junction serving a distinct sub-block, NOT two
+    # ditches running adjacent for a stretch (which read as a redundant artifact, per the GM).
     for th in [t for t in threads if getattr(t, "spawn_sub", False)]:
-        f_at = th.f0 + (th.ditch_f - th.f0) * R.uniform(0.45, 0.6)
+        f_at = th.f0 + (th.ditch_f - th.f0) * R.uniform(0.24, 0.38)
         side = R.choice((-1, 1))
-        spawns.append([f_at, th, DOWN + side * R.uniform(0.2, 0.45), R.uniform(200, 320), side])
-    bc.ditch_f = max(e[0] for e in spawns if e[1] is bc) + 22
+        spawns.append([f_at, th, DOWN + side * R.uniform(0.5, 0.66), R.uniform(300, 430), side])
+    bc.ditch_f = max([e[0] for e in spawns if e[1] is bc], default=bc.f0 + 40) + 22
 
     # ---- the lockstep march (no thread may cross another or pinch under GAP)
     for t in threads:
@@ -330,11 +344,20 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     outfall = dpts[-1]                                   # the drain's downhill (highest-u) end
     brook = []
     if 14 < outfall[0] < W - 14 and 14 < outfall[1] < H - 14:
-        ou, of = F.to_uf(*outfall)
+        u0, f0 = F.to_uf(*outfall)
+        um, fm = F.to_uf(*dpts[-2])                      # the drain's EXIT heading (u/f) at the outfall
+        eu, ef = u0 - um, f0 - fm
+        el = math.hypot(eu, ef) or 1.0
+        eu, ef = eu / el, ef / el                        # unit exit heading (mostly cross-slope, slight fall)
+        ou, of = u0, f0
         brook = [outfall]
-        for _ in range(40):
-            of += R.uniform(70, 105)                     # downhill (down the valley's low line)
-            ou += R.uniform(-24, 40)                      # a gentle natural meander across the contour
+        for i in range(40):
+            # the brook does NOT turn a hard ~90 deg corner off the collector: it CURVES from the drain's
+            # exit heading toward pure downhill over the first few steps, so the junction reads as the
+            # collector turning down the valley INTO the stream (a smooth bend, not a right angle).
+            w = min(1.0, i / 4.0)
+            ou += (1 - w) * eu * 88 + w * R.uniform(-22, 40)
+            of += (1 - w) * ef * 88 + w * R.uniform(72, 105)   # w->1 quickly: pure downhill off the map
             p = F.to_xy(ou, of)
             brook.append(p)
             if not (12 < p[0] < W - 12 and 12 < p[1] < H - 12):
@@ -380,15 +403,21 @@ def build_comb(W, H, sluice, seed, down_deg=45,
         if len(pre) < 2:
             continue
         if t is bc and len(bc_cuts) > 2:
-            # the west canal narrows past each offtake it feeds (same taper rule)
+            # canal B is a SUPPLY canal (role "main", like canal A) that narrows past each offtake it
+            # feeds - distinct from the delivery ditches (role "branch"), which taper continuously.
             for i in range(len(bc_cuts) - 1):
                 piece = [p for p in pre if bc_cuts[i] - 14 <= F.to_uf(*p)[1] <= bc_cuts[i + 1] + 14]
                 if len(piece) >= 2:
                     channels.append({"pts": piece,
                                      "w": 5.6 - 1.6 * i / max(1, len(bc_cuts) - 2),
-                                     "role": "branch"})
+                                     "role": "main"})
         else:
-            channels.append({"pts": pre, "w": 5.6 if t is bc else 4.0, "role": "branch"})
+            # a delivery ditch TAPERS as it descends: it sheds water into the paddies it feeds all
+            # along its length, so its flow - and width - decreases from full at the canal takeoff to a
+            # THREAD at the delivery point where it stops (continuously "tapped by the plots it feeds",
+            # extending Tabayashi's supply-canal taper rule to the delivery ditches). w_tail marks the
+            # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
+            channels.append({"pts": pre, "w": 5.6 if t is bc else 4.0, "w_tail": 1.5, "role": "branch"})
 
     plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step)
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560   # 1px=2ft -> 4 sq ft/px^2
