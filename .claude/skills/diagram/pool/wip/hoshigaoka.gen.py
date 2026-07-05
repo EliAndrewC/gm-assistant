@@ -27,7 +27,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from settlement import Settlement  # noqa: E402
+from settlement import Settlement, edge_dist, point_in_poly  # noqa: E402
 import math  # noqa: E402
 
 from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
@@ -38,7 +38,11 @@ SLUICE = (513, 282)                 # the single outlet on the pond's downhill f
 SEED = 7
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Hoshigaoka", scale="village", households=70, down_deg=45)   # NW-high -> downhill = SE (45 deg)
+s.meta(name="Hoshigaoka", scale="village", households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
+       nucleated=True)                                                   # a clustered village -> a COMMUNAL fengshui windbreak, not per-house groves
+# Hoshigaoka is a GENTLE valley, so its dry-field furrows FAN (the patchwork quilt) - the default. A steep /
+# terraced village would pass build_comb(..., furrow_spread=~0.06) to converge the rows onto the contour, and
+# record meta(dry_furrows_vary=False) so dry_plot_furrows_vary is not required. Recorded below from the net.
 
 # Hoshigaoka slopes NW(high) -> SE(low); other provinces differ (Lion: S high; Dragon: N high;
 # Unicorn: W high) - down_deg is the knob, nothing assumes SE. The pond is a keepout so the
@@ -49,6 +53,7 @@ s.meta(name="Hoshigaoka", scale="village", households=70, down_deg=45)   # NW-hi
 net = build_comb(W, H, SLUICE, SEED, down_deg=45, field_fall=1230,
                  offtakes_a=(0.25, 0.55, 0.82), offtakes_b=(0.6,),   # SPARSER delivery net (~6-9 cols apart,
                  dry_keepout=[(POND[0], POND[1], POND[2] + 45)])     # the sparse pre-modern cascade, not a Meiji ditch-per-plot grid)
+s.meta(dry_furrows_vary=net["furrows_vary"])   # gentle valley -> dry furrows FAN (the check requires it); a steep village would be False
 
 # Register the water-first field footprints so the homestead solver sees them: the paddy
 # envelope blocks houses AND provides field-adjacency; the dry-field plots are no-build
@@ -88,6 +93,9 @@ for p in net["dry_plots"]:
     s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" '
           f'stroke-width="1.4" stroke-linejoin="round"/>')
     furrows(p["poly"], p["furrow"], p["theta"])
+    # record each dry plot (poly + furrow angle) so dry_plot_furrows_vary can verify neighbours differ
+    s.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in p["poly"]],
+                             "crop": p["crop"], "theta": round(p["theta"], 3)})
 
 # paddies (the water is drawn OVER them, along their edges)
 for p in net["plots"]:
@@ -167,7 +175,6 @@ s.lane([(CX + 2, CY + 30), ((CX + _fp[0]) / 2 + 12, (CY + 30 + _fp[1]) / 2 - 6),
 s.lane([(CX + 4, CY + 245), (CX + 48, CY + 360), (CX + 78, CY + 490), (CX + 112, CY + 700),
         (CX + 138, CY + 860), (CX + 158, CY + 985)],
        width=6, clearance=18, worn=True, connector=True)   # runs OFF the bottom edge (H+), not stopping short
-s.label(CX + 175, CY + 690, "to the road", 11, italic=True, color="#7A5A30")
 
 s.headman(455, CY - 60)              # the largest homestead, fronting the head of the main lane
 _placed = 1
@@ -182,6 +189,69 @@ for _ in range(240):
         _placed += 1
 n_farms = s.farmsteads()
 print(f"farmhouses: {n_farms}")
+
+# VILLAGE WINDBREAK - the Chinese fengshui forest (风水林), a COMMUNAL grove, NOT per-house yashikirin (a
+# nucleated cluster shelters behind one village-scale wood). Sited per 背山面水 ("back to the hill, face the
+# water"): the DENSE wood sits on the high/windward BACK, the FIELD/water side stays OPEN, and the village
+# itself nestles in scattered bamboo + fruit (not bare ground). Three parts, IRREGULAR + terrain-following
+# (village_grove fills an organic polygon, skipping clumps on houses/yards/gardens/paddy): (1) the 后龙林
+# back-village BELT, a ragged crescent EMBRACING the high WEST edge + wrapping the NW/SW corners, nestled
+# against the cluster; (2) the 水口林 WATER-MOUTH cluster at the low SE exit; (3) a leafy SCATTER of bamboo /
+# fruit copses filling the open gaps among the houses. See SKILL.md 'Village windbreak'.
+_hx = [h["x"] for h in s.M["houses"]]
+_hy = [h["y"] for h in s.M["houses"]]
+_minx, _maxx, _miny, _maxy = min(_hx), max(_hx), min(_hy), max(_hy)
+_ccx, _ccy = sum(_hx) / len(_hx), sum(_hy) / len(_hy)
+
+
+def _rag(pts, amp=13):
+    """Jitter polygon vertices so an outline reads as ragged, terrain-following woodland, not a ruled wall."""
+    return [(x + _rng.uniform(-amp, amp), y + _rng.uniform(-amp, amp)) for x, y in pts]
+
+
+def _interp(pts, n):
+    """Resample a polyline to n points (linear), so an offset band curve stays smooth, not angular."""
+    segs = len(pts) - 1
+    out = []
+    for i in range(n):
+        t = i * segs / (n - 1)
+        k = min(int(t), segs - 1)
+        ax, ay = pts[k]
+        bx, by = pts[k + 1]
+        f = t - k
+        out.append((ax + (bx - ax) * f, ay + (by - ay) * f))
+    return out
+
+
+# back-grove crescent geometry (shared by the belt AND the commons that abuts its back): a crescent embracing
+# the WEST (high, windward) back, deepest in the middle, tapering into horns that wrap the NW + SW corners; the
+# inner edge hugs the houses (clump-skipping keeps it off them), the outer edge bulges ~95 px west (~1-2 ha).
+_belt_inner = [(_ccx - 30, _miny - 20), (_minx - 6, _miny + 34), (_minx - 14, _ccy),
+               (_minx - 6, _maxy - 34), (_ccx - 30, _maxy + 20)]
+_belt_outer = [(_ccx - 58, _maxy + 58), (_minx - 74, _maxy - 22), (_minx - 100, _ccy),
+               (_minx - 74, _miny + 22), (_ccx - 58, _miny - 58)]
+
+# FUEL-AND-FODDER COMMONS - drawn FIRST, UNDER the forest, so the grove's dense canopy overlaps its inner edge
+# for a SEAMLESS abut (no bare gap). It is a ragged BAND that PARALLELS the grove's back at a jittered width
+# (NOT a wedge/rhombus): the E edge underlaps the grove back, the W edge is ragged and follows the same curve
+# out onto the far windward slope. The degraded, cut-over hill-ground (grass, brush, scraggly pines) - non-
+# arable grazing, visually open + sparse, distinct from the dense grove. Toposequence: village -> back-grove ->
+# fuel commons -> (off-map boundary). See SKILL.md 'Village windbreak' / back-slope.
+_arc = _interp(_belt_outer, 11)                       # densified grove-back curve (bottom -> top)
+_com_inner = [(x + 16, y) for x, y in _arc]           # underlap the grove back a touch (hidden under the canopy)
+_com_outer = [(max(16, x - _rng.uniform(96, 150)), y + _rng.uniform(-16, 16)) for x, y in _arc]   # ragged ~parallel W edge
+s.commons(_com_inner + list(reversed(_com_outer)))
+
+# (1) back-village belt ON TOP of the commons (its canopy blends over the scrub's inner edge)
+s.village_grove(_rag(_belt_inner) + _rag(_belt_outer), role="windbreak")
+# (2) water-mouth cluster at the low SE exit (by the connector track); an irregular blob, kept off the paddy
+_wmx, _wmy = _ccx + 40, _maxy + 66
+_wm = [(_wmx + 60 * math.cos(a), _wmy + 46 * math.sin(a)) for a in [i * math.pi / 3 for i in range(6)]]
+s.village_grove(_rag(_wm), role="water_mouth")
+# (3) leafy scatter: bamboo + dooryard fruit filling the OPEN gaps across the whole cluster (village_grove
+# skips any clump on a house/yard/garden/paddy, so these settle into the bare ground between homes)
+_scatter = [(_minx - 18, _miny - 18), (_maxx + 18, _miny - 18), (_maxx + 18, _maxy + 18), (_minx - 18, _maxy + 18)]
+s.village_grove(_scatter, role="copse", dense=False)
 
 # manifest: the field envelope + every watercourse, for the checks that come later
 _env = [[round(x, 1), round(y, 1)] for x, y in net["envelope"]]
@@ -215,7 +285,6 @@ if not net["brook"]:                                  # field runs to the map ed
                                      [round(_dr[-1][0], 1), round(_dr[-1][1], 1)]],
                             "frm": {"kind": "field", "name": "hoshigaoka-paddies"}, "to": {"kind": "offmap"}, "w": 2.5})
 
-s.label(pcx, pcy - pry - 12, "irrigation pond", 11, italic=True, color="#5C7488")
 s.title("Hoshigaoka (WIP: water + fields)")
 s.compass()
 s.finish(os.path.join(HERE, "hoshigaoka"))

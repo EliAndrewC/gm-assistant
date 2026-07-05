@@ -251,6 +251,108 @@ def test_nucleated_cluster_is_grove_less_with_yards_and_gardens():
     assert all(h["w"] <= hm["w"] for h in s.M["houses"])               # ... and the largest
 
 
+def test_village_grove_fills_an_irregular_polygon_and_records_it():
+    s = _nuc_village()                                                 # field to the EAST (x >= 640)
+    poly = [(150, 350), (260, 330), (280, 640), (160, 660)]           # an irregular quad WEST of the field (open ground)
+    n = s.village_grove(poly, role="windbreak")                       # dense belt -> many overlapping clumps
+    assert n > 0
+    vg = s.M["village_groves"]
+    assert len(vg) == 1 and vg[0]["role"] == "windbreak" and len(vg[0]["poly"]) == 4
+
+
+def test_village_grove_over_the_paddy_draws_and_records_nothing():
+    s = _nuc_village()                                                 # field at [(640,150),(1120,150),(1120,780),(640,780)]
+    poly = [(700, 250), (900, 250), (900, 450), (700, 450)]          # a footprint ENTIRELY inside the paddy
+    assert s.village_grove(poly, role="copse", dense=False) == 0     # every clump skipped (on crops) -> nothing
+    assert s.M["village_groves"] == []                                # ... and nothing recorded
+
+
+def test_village_grove_scatter_skips_houses_and_fills_the_open_gaps():
+    s = _nuc_village()
+    s.M["houses"] = [{"x": 300, "y": 400, "w": 46, "h": 29}]         # one house inside the scatter region
+    n = s.village_grove([(200, 300), (500, 300), (500, 500), (200, 500)], role="copse", dense=False)
+    assert n >= 1                                                     # bamboo/fruit clumps settle into the gaps
+    assert s.M["village_groves"][0]["role"] == "copse"
+
+
+def test_commons_draws_open_scrub_and_records_it():
+    s = _nuc_village()                                                # field to the EAST (x >= 640)
+    poly = [(60, 300), (200, 320), (110, 660)]                       # a TRIANGLE of open ground WEST of the field
+    s.commons(poly)                                                  # grass tufts + brush + scraggly pines
+    assert len(s.M["commons"]) == 1 and len(s.M["commons"][0]["poly"]) == 3
+    assert s.out                                                     # it drew the scrub texture
+
+
+def test_commons_skips_scrub_that_would_fall_on_the_paddy():
+    s = _nuc_village()                                                # field at [(640,150),(1120,150),(1120,780),(640,780)]
+    s.commons([(560, 300), (760, 300), (760, 600), (560, 600)])     # straddles the field's W edge - clumps over crops skipped
+    assert len(s.M["commons"]) == 1
+
+
+# --- fragmented dooryard gardens: _garden_beds picks single / flanking / stacked / side-by-side --------
+def _pos_where(pred):
+    """The first (x, y) on a deterministic sweep whose position-hash lands in the wanted branch."""
+    for i in range(4000):
+        x, y = 100 + i * 0.7, 200 + (i * 1.3) % 500
+        if pred(x, y):
+            return x, y
+    raise AssertionError("no position matched the predicate")   # pragma: no cover
+
+
+def test_garden_beds_undivided_is_the_common_case():
+    s = _nuc_village()
+    x, y = _pos_where(lambda x, y: Settlement._hjit(x, y, 8.0) >= 0.26)
+    beds = s._garden_beds(x, y, 23, 14, x + 20, y, 20, 20, "E", 3)
+    assert beds == [(x + 20, y, 20, 20)]                                # one undivided plot
+
+
+def test_garden_beds_opposite_flank_puts_the_house_between_two_beds():
+    s = _nuc_village()
+    x, y = _pos_where(lambda x, y: Settlement._hjit(x, y, 8.0) < 0.26 and Settlement._hjit(x, y, 9.0) < 0.5)
+    beds = s._garden_beds(x, y, 23, 14, x + 20, y, 20, 20, "E", 3)
+    assert len(beds) == 2 and min(b[0] for b in beds) < x < max(b[0] for b in beds)   # flanking E and W
+
+
+def test_garden_beds_stacked_when_same_side_south_garden():
+    s = _nuc_village()
+    x, y = _pos_where(lambda x, y: Settlement._hjit(x, y, 8.0) < 0.26 and Settlement._hjit(x, y, 9.0) >= 0.5
+                      and Settlement._hjit(x, y, 10.0) < 0.5)
+    beds = s._garden_beds(x, y, 23, 14, x, y + 30, 20, 20, "SE", 3)     # a SOUTH garden -> may stack above/below
+    assert len(beds) == 2 and beds[0][0] == beds[1][0] and beds[0][1] != beds[1][1]   # same x, different y
+
+
+def test_garden_beds_side_by_side_when_same_side_not_stacked():
+    s = _nuc_village()
+    x, y = _pos_where(lambda x, y: Settlement._hjit(x, y, 8.0) < 0.26 and Settlement._hjit(x, y, 9.0) >= 0.5
+                      and Settlement._hjit(x, y, 10.0) >= 0.5)
+    beds = s._garden_beds(x, y, 23, 14, x, y + 30, 20, 20, "SE", 3)     # not stacked -> side by side
+    assert len(beds) == 2 and beds[0][1] == beds[1][1] and beds[0][0] != beds[1][0]   # same y, different x
+
+
+def test_garden_beds_too_narrow_falls_back_to_one_bed():
+    s = _nuc_village()
+    x, y = _pos_where(lambda x, y: Settlement._hjit(x, y, 8.0) < 0.26)   # a split is WANTED
+    beds = s._garden_beds(x, y, 23, 14, x, y + 12, 8, 8, "SE", 3)        # ... but the plot is too small to split
+    assert beds == [(x, y + 12, 8, 8)]
+
+
+def test_attach_garden_draws_and_records_two_beds():
+    s = _nuc_village()
+    s._attach_garden(500, 500, [(486, 500, 10, 12), (520, 500, 10, 12)])
+    beds = s.M["gardens"]
+    assert len(beds) == 2 and all(b["of"] == [500, 500] and len(b["poly"]) == 4 for b in beds)
+
+
+def test_bundle_geom_nucleated_records_a_gardens_list_spanning_the_bbox():
+    s = _nuc_village()
+    x, y = _pos_where(lambda x, y: Settlement._hjit(x, y, 8.0) < 0.26 and Settlement._hjit(x, y, 9.0) < 0.5)
+    geom = s._bundle_geom(x, y, 46, 28, "E")                            # a big house so the flank split clears its gate
+    assert len(geom["gardens"]) == 2
+    bx, by, bw, bh = geom["bbox"]
+    for gx, gy, gw, gh in geom["gardens"]:                             # every bed lies inside the bundle bbox
+        assert bx - bw / 2 - 1 <= gx - gw / 2 and gx + gw / 2 <= bx + bw / 2 + 1
+
+
 def test_slide_nuc_stops_when_already_at_target():
     # a target function returning the current point -> distance 0 < 1.5 -> the immediate-break branch
     s = _nuc_village()

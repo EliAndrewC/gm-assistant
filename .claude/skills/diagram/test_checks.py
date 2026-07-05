@@ -178,6 +178,29 @@ def test_delivery_ditches_taper_exempts_ditches_without_recorded_widths():
     assert "delivery_ditches_taper" not in f(M)
 
 
+def _dryplot(x, theta):
+    return {"poly": [[x, 300], [x + 40, 300], [x + 40, 336], [x + 36, 336]], "theta": theta, "crop": "barley"}
+
+
+def test_dry_plot_furrows_vary_fires_when_two_neighbours_share_an_angle():
+    # 4 dry plots in a row; the first two are edge-adjacent AND run their furrows the same way -> fires
+    dp = [_dryplot(300, 0.2), _dryplot(340, 0.2), _dryplot(380, 0.9), _dryplot(420, 0.4)]
+    assert "dry_plot_furrows_vary" in f({"dry_plots": dp})
+
+
+def test_dry_plot_furrows_vary_passes_when_neighbours_differ():
+    # adjacent plots alternate orientation, so no neighbouring pair shares a row direction
+    dp = [_dryplot(300, 0.2), _dryplot(340, 0.9), _dryplot(380, 0.2), _dryplot(420, 0.9)]
+    assert "dry_plot_furrows_vary" not in f({"dry_plots": dp})
+
+
+def test_dry_plot_furrows_vary_skipped_for_a_contour_village():
+    # a STEEP / terraced village declares contour furrows (meta.dry_furrows_vary=False) - the rows converge on
+    # the contour for erosion control, so identical adjacent angles are CORRECT and the check does not fire
+    dp = [_dryplot(300, 0.2), _dryplot(340, 0.2), _dryplot(380, 0.2), _dryplot(420, 0.2)]   # all aligned
+    assert "dry_plot_furrows_vary" not in f({"meta": {"dry_furrows_vary": False}, "dry_plots": dp})
+
+
 def test_drainage_junction_smooth_fires_on_a_hard_corner():
     # drain arrives heading EAST; the brook leaves heading SOUTH = a hard ~90 deg corner off the collector
     M = {"field_ditches": [{"poly": [[300, 500], [700, 500]], "role": "drain", "field": "f"}],
@@ -580,6 +603,56 @@ def test_gardens_clear_of_sheds_fires_when_a_garden_covers_the_west_side_shed():
     assert "gardens_clear_of_sheds" in f(M)
 
 
+def test_garden_plots_are_quads_fires_on_a_non_quad_poly():
+    # a garden whose recorded footprint poly has 3 vertices (a triangle, not a quadrilateral)
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 520, "y": 520, "w": 24, "h": 16, "rot": 0, "of": [500, 500],
+                      "poly": [[509, 513], [531, 513], [520, 527]]}]}
+    assert "garden_plots_are_quads" in f(M)
+
+
+def test_garden_plots_are_quads_fires_when_poly_pokes_outside_its_rect():
+    # a 4-gon whose first corner (x=560) sits well OUTSIDE the recorded w x h bounds (x in [508, 532]); the
+    # jitter only pulls corners INWARD, so an outside vertex means the overlap checks cleared the wrong rect
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 520, "y": 520, "w": 24, "h": 16, "rot": 0, "of": [500, 500],
+                      "poly": [[560, 513], [531, 513], [530, 527], [510, 527]]}]}
+    assert "garden_plots_are_quads" in f(M)
+
+
+def test_garden_plots_are_quads_passes_on_a_valid_inscribed_quad():
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 520, "y": 520, "w": 24, "h": 16, "rot": 0, "of": [500, 500],
+                      "poly": [[509, 513], [531, 512], [530, 527], [510, 528]]}]}
+    assert "garden_plots_are_quads" not in f(M)
+
+
+def test_garden_area_within_norms_fires_on_an_oversize_garden():
+    # a single bed the size of a field (~60x60 px = 3600 px^2 ~ 1338 m^2 at 2 ft/px), far above a saien's band
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 560, "y": 500, "w": 60, "h": 60, "rot": 0, "of": [500, 500],
+                      "poly": [[530, 470], [590, 470], [590, 530], [530, 530]]}]}
+    assert "garden_area_within_norms" in f(M)
+
+
+def test_garden_area_within_norms_fires_on_a_tiny_garden():
+    # a bed under ~10 m^2 (~27 px^2 at 2 ft/px): a 5x4 poly is ~20 px^2 ~ 7.4 m^2
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)],
+         "gardens": [{"x": 520, "y": 500, "w": 5, "h": 4, "rot": 0, "of": [500, 500],
+                      "poly": [[517.5, 498], [522.5, 498], [522.5, 502], [517.5, 502]]}]}
+    assert "garden_area_within_norms" in f(M)
+
+
+def test_garden_area_within_norms_passes_and_sums_fragmented_beds():
+    # two beds of ONE household, each ~120 px^2 (~45 m^2), summing ~89 m^2 - the fragmented-plot total is in band
+    beds = [{"x": 512, "y": 500, "w": 12, "h": 10, "rot": 0, "of": [500, 500],
+             "poly": [[506, 495], [518, 495], [518, 505], [506, 505]]},
+            {"x": 530, "y": 500, "w": 12, "h": 10, "rot": 0, "of": [500, 500],
+             "poly": [[524, 495], [536, 495], [536, 505], [524, 505]]}]
+    M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)], "gardens": beds}
+    assert "garden_area_within_norms" not in f(M)
+
+
 def _grove(x, y, ofx, ofy, w=30, h=24):
     return {"x": x, "y": y, "w": w, "h": h, "rot": 0, "of": [ofx, ofy], "face": [-1, -1]}
 
@@ -631,6 +704,87 @@ def test_groves_where_possible_passes_when_windward_is_blocked():
     fields = [_field(f"f{i}", 280 + 60 * i, 330, 340 + 60 * i, 395) for i in range(12)]   # field just N of each house
     M = {"meta": {"scale": "village", "windward": "N"}, "houses": houses, "fields": fields, "groves": []}
     assert "groves_where_possible" not in f(M)
+
+
+def _nuc_grid(n=12):
+    return [_farmhouse(300 + 40 * (i % 6), 400 + 40 * (i // 6)) for i in range(n)]
+
+
+def test_groves_where_possible_skipped_for_a_nucleated_village():
+    # a NUCLEATED village shelters behind the COMMUNAL windbreak, not per-house groves, so bare farms with
+    # clear windward room must NOT fire groves_where_possible - though the SAME setup DOES fire when dispersed
+    houses = [_farmhouse(300 + 60 * i, 400) for i in range(12)]
+    assert "groves_where_possible" in f({"meta": {"scale": "village"}, "houses": houses, "groves": []})
+    assert "groves_where_possible" not in f({"meta": {"scale": "village", "nucleated": True},
+                                             "houses": houses, "groves": []})
+
+
+def _nuc_village_M(houses, vgroves=None, **extra):
+    M = {"meta": {"scale": "village", "nucleated": True}, "houses": houses}
+    if vgroves is not None:
+        M["village_groves"] = vgroves
+    M.update(extra)
+    return M
+
+
+def test_village_windbreak_present_fires_when_a_nucleated_village_has_none():
+    assert "village_windbreak_present" in f(_nuc_village_M(_nuc_grid(), []))
+
+
+def test_village_windbreak_present_passes_with_a_back_grove_on_the_windward_side():
+    houses = _nuc_grid()
+    ccx = sum(h["x"] for h in houses) / len(houses)
+    ccy = sum(h["y"] for h in houses) / len(houses)
+    wb = [{"x": ccx - 150, "y": ccy - 150, "w": 72, "h": 300, "rot": 0, "role": "windbreak"}]   # NW of the centroid
+    fails = f(_nuc_village_M(houses, wb))
+    assert "village_windbreak_present" not in fails and "village_windbreak_on_windward_side" not in fails
+
+
+def test_village_windbreak_on_windward_side_fires_on_a_lee_belt():
+    houses = _nuc_grid()
+    ccx = sum(h["x"] for h in houses) / len(houses)
+    ccy = sum(h["y"] for h in houses) / len(houses)
+    wb = [{"x": ccx + 150, "y": ccy + 150, "w": 72, "h": 300, "rot": 0, "role": "windbreak"}]   # SE = the sunny lee
+    assert "village_windbreak_on_windward_side" in f(_nuc_village_M(houses, wb))
+
+
+def test_village_groves_clear_of_paddies_fires_on_a_grove_in_a_field():
+    M = _nuc_village_M(_nuc_grid(), [{"x": 600, "y": 600, "w": 40, "h": 40, "rot": 0, "role": "copse"}],
+                       fields=[_field("p", 540, 540, 700, 700)])
+    assert "village_groves_clear_of_paddies" in f(M)
+
+
+def test_commons_clear_of_paddies_fires_when_scrub_sits_in_a_field():
+    M = _nuc_village_M(_nuc_grid(), fields=[_field("p", 540, 540, 700, 700)])
+    M["commons"] = [{"x": 600, "y": 600, "w": 60, "h": 60, "rot": 0}]   # centre in the paddy
+    assert "commons_clear_of_paddies" in f(M)
+
+
+def _nuc_with_windbreak():
+    houses = _nuc_grid()
+    ccx = sum(h["x"] for h in houses) / len(houses)
+    ccy = sum(h["y"] for h in houses) / len(houses)
+    wb = [{"x": ccx - 160, "y": ccy - 160, "w": 72, "h": 300, "rot": 0, "role": "windbreak"}]   # NW back grove
+    return houses, ccx, ccy, _nuc_village_M(houses, wb)
+
+
+def test_commons_beyond_the_windbreak_fires_when_between_grove_and_village():
+    houses, ccx, ccy, M = _nuc_with_windbreak()
+    M["commons"] = [{"x": ccx - 70, "y": ccy - 70, "w": 80, "h": 200, "rot": 0}]   # NOT past the grove
+    assert "commons_beyond_the_windbreak" in f(M)
+
+
+def test_commons_beyond_the_windbreak_passes_when_past_the_grove():
+    houses, ccx, ccy, M = _nuc_with_windbreak()
+    M["commons"] = [{"x": ccx - 280, "y": ccy - 280, "w": 80, "h": 200, "rot": 0}]   # well beyond the belt
+    assert "commons_beyond_the_windbreak" not in f(M)
+
+
+def test_commons_beyond_check_skipped_without_a_windbreak():
+    # nucleated + commons but NO windbreak grove -> the beyond-the-windbreak check cannot run (wbs empty)
+    M = _nuc_village_M(_nuc_grid())
+    M["commons"] = [{"x": 100, "y": 100, "w": 60, "h": 60, "rot": 0}]
+    assert "commons_beyond_the_windbreak" not in f(M)
 
 
 def test_gardens_clear_of_groves_fires_when_a_garden_is_buried():

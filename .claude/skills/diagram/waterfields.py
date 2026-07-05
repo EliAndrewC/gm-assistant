@@ -28,8 +28,14 @@ LOCAL random.Random(seed) so field generation never ripples other features' plac
 import math
 import random
 
-# palette shared with settlement.py's paddy look (a rice field reads as ~ONE green)
-RICE_GREENS = ['#A6C398', '#A2C094', '#A9C69C']
+# A rice field is ONE crop at ONE transplant/growth stage, so its body is a UNIFORM green - the plot-to-plot
+# shade jitter denoted nothing (it was only anti-flatness texture), and the GM asked for it uniform. The bund
+# network + footpaths carry the structure, not colour. Kept as a 3-element list of the SAME value so R.choice
+# consumes the RNG stream IDENTICALLY to the old 3-shade version - the field geometry + the meaningful FLOODED
+# drain-plots stay byte-for-byte unchanged; only the body colour goes uniform. (The MEANINGFUL colours remain:
+# FLOODED blue-green for the low plots that sit on the drain, and RIPE_GOLD, when a map uses it.)
+_RICE_GREEN = '#A6C398'
+RICE_GREENS = [_RICE_GREEN, _RICE_GREEN, _RICE_GREEN]
 FLOODED = '#93B7AC'
 RIPE_GOLD = '#C9BA79'
 BUND = '#C2A772'
@@ -180,7 +186,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
                canal_a_len=(1250, 1450), canal_b_len=(680, 800),
                offtakes_a=(0.22, 0.45, 0.68, 0.88), offtakes_b=(0.45, 0.8),
                plot_across=48, row_step=(26, 36), dry_keepout=(), dry_band=(70, 132),
-               bean_frac=0.28, field_fall=None):
+               bean_frac=0.28, field_fall=None, furrow_spread=1.1):
     """The COMB layout (the historical default - Kishu school / Chinese canal doctrine):
     the sluice's head-race forks at one division point into TWO supply canals hugging the
     high margins (canal A runs cross-slope at down-37 deg, canal B down the other margin at
@@ -427,12 +433,16 @@ def build_comb(W, H, sluice, seed, down_deg=45,
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
     # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see SKILL.md.
-    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band)
+    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, furrow_spread=furrow_spread)
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac)
+    # furrows_vary tells the checker whether to REQUIRE neighbouring dry plots to differ in row direction: a
+    # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
+    # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
+    # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
     return {"channels": channels, "plots": plots, "threads": threads, "drain": dpts,
             "brook": brook, "envelope": envelope, "acres": acres, "dry_plots": dry_plots,
-            "dry_acres": dry_acres, "bund_beans": bund_beans}
+            "dry_acres": dry_acres, "bund_beans": bund_beans, "furrows_vary": furrow_spread >= 0.3}
 
 
 def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
@@ -675,7 +685,7 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
     return plots
 
 
-def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132)):
+def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132), furrow_spread=1.1):
     """DRY FIELDS (hatake) on the UPSLOPE margin the irrigation cannot command - the band
     just ABOVE the supply canal (lower fall). Grain and pulses (barley/wheat, millet,
     buckwheat, field soy) in an irregular PATCHWORK of ridge-cultivated plots. Crop is
@@ -708,6 +718,19 @@ def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132)):
     bounds[-1] = uhi
     jit = [0.0] + [R.uniform(-5, 5) for _ in bounds[1:-1]] + [0.0]
 
+    # FURROW ANGLE varies PER PLOT: fragmented dry-field holdings were a mosaic of family strips, each plowed
+    # to its OWN orientation, so adjacent plots run their ridges different ways (the patchwork-quilt look).
+    # Ridge-along-contour is a STEEP-slope erosion measure; on a GENTLE valley margin it is not forced, so the
+    # furrows spread up to ~HW rad either side of the contour (never straight down-slope). Each plot drops its
+    # furrows into the LARGEST gap between the angles of its already-placed NEIGHBOURS, guaranteeing a real
+    # separation from every one of them (drives dry_plot_furrows_vary). Uses ONE R draw per plot (a small
+    # jitter), exactly as the old contour code did, so the plot GEOMETRY is unchanged - only the angles vary.
+    # `furrow_spread` (HW) is the KNOB: the default (~1.1 rad) gives the gentle-valley patchwork; a SMALL value
+    # narrows the fan back onto the contour for a STEEP/terraced village (ridge-along-contour erosion control),
+    # in which case the plots read aligned and dry_plot_furrows_vary is not required (build_comb flags it).
+    HW = furrow_spread
+    placed = []                                            # (cx, cy, theta) of dry plots already given an angle
+    ADJ2 = 56 ** 2                                         # neighbour guard radius^2 (>= the check's, so it is a superset)
     prev_crop = R.choice(list(DRY_CROPS))
     for i in range(len(bounds) - 1):
         uL, uR = bounds[i] + jit[i], bounds[i + 1] + jit[i + 1]
@@ -738,7 +761,13 @@ def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132)):
                 continue
             if blocked(cx, cy):
                 continue
-            theta = theta0 + R.uniform(-0.06, 0.06)
+            lo, hi = theta0 - HW, theta0 + HW              # furrows stay within HW rad of the contour
+            nb = sorted(min(hi, max(lo, t)) for (px, py, t) in placed
+                        if (cx - px) ** 2 + (cy - py) ** 2 < ADJ2)
+            edges = [lo] + nb + [hi]
+            gi = max(range(len(edges) - 1), key=lambda j: edges[j + 1] - edges[j])   # the widest gap between neighbours
+            theta = min(hi, max(lo, (edges[gi] + edges[gi + 1]) / 2 + R.uniform(-0.03, 0.03)))
+            placed.append((cx, cy, theta))
             plots.append({"poly": [(round(p[0], 1), round(p[1], 1)) for p in quad],
                           "crop": crop, "fill": fill, "furrow": furrow, "theta": round(theta, 3)})
     return plots

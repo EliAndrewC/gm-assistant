@@ -44,6 +44,17 @@ def _struct_rect(s):
     return {"x": s["x"], "y": s["y"], "w": s["w"], "h": s["h"], "rot": s.get("rot", 0)}
 
 
+def poly_area(pts):
+    """Absolute polygon area (shoelace) of a list of (x, y) vertices."""
+    n = len(pts)
+    s = 0.0
+    for i in range(n):
+        x0, y0 = pts[i]
+        x1, y1 = pts[(i + 1) % n]
+        s += x0 * y1 - x1 * y0
+    return abs(s) / 2.0
+
+
 # ---- overlap classification registry ---------------------------------------------------------------
 # Every footprint feature (a manifest key holding a list of dicts with positional geometry) must be
 # classified below. The DEFAULT is "must not overlap anything": a SOLID feature joins `structs`, which
@@ -58,7 +69,7 @@ _OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleu
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs")
 _OVERLAP_LINEAR = ("fields", "fallow_patches", "flower_fields", "streams", "channels", "town_streets",
-                   "alleys", "lanes", "wards", "ponds", "pastures", "forests")   # linear / area features structs avoid
+                   "alleys", "lanes", "wards", "ponds", "pastures", "forests", "commons", "dry_plots")   # linear / area features structs avoid
 _OVERLAP_EXEMPT = {
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
@@ -71,6 +82,7 @@ _OVERLAP_EXEMPT = {
     "kido": "a ward gate sits ON the ward fence at the point a lane passes through it",
     "inspection_stations": "an inspection post sited AT the city gate, part of the gate complex (overlaps the gate furniture)",
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
+    "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -486,7 +498,8 @@ DEFAULT_MANIFEST = {
     "storehouses": [], "flophouses": [], "road": None, "wall": None, "gate": None,
     "gates": [], "moat": None, "governor_mansion": None, "ministries": [],
     "inspection_stations": [], "theater_stage": None, "granary": None, "wells": [],
-    "threshing_yards": [], "gardens": [], "groves": [], "fire_towers": [], "meta": {},
+    "threshing_yards": [], "gardens": [], "groves": [], "fire_towers": [], "village_groves": [], "commons": [],
+    "dry_plots": [], "meta": {},
 }
 
 
@@ -1587,6 +1600,51 @@ def gate(M, verbose=True):
                   f"kitchen garden(s) overlap a farmhouse's storehouse/shed: {g_on_shed[:3]} - the shed sits on the "
                   f"house's WEST side and the garden on a sunny (east-preferred) side, so the two must never collide")
 
+            # A dooryard bed and a threshing yard were HAND-worked plots bent to paths and soil, not surveyed
+            # rectangles - the generator draws each as a slightly-irregular 4-sided quad (a garden more irregular,
+            # a swept work yard near-square). Validate the SHAPE it records: every garden/yard with a `poly` must
+            # carry exactly 4 vertices, be non-degenerate (real area), and stay INSCRIBED in its recorded w x h
+            # bounds (the jitter only pulls corners INWARD, so a poly poking outside its rect means the overlap
+            # checks - which use that rect - were cleared against the wrong footprint). WHY quads: SKILL.md
+            # "Dooryard kitchen gardens" / "Threshing yards" (irregular-plot grounding).
+            bad_quad = []
+            for pl in gardens + yards:
+                pg = pl.get("poly")
+                if pg is None:
+                    continue                                 # legacy rect-only record (dispersed maps predate poly)
+                hw, hh = pl["w"] / 2 + 0.6, pl["h"] / 2 + 0.6   # small tolerance for rounding
+                inside = all(abs(px - pl["x"]) <= hw and abs(py - pl["y"]) <= hh for px, py in pg)
+                if len(pg) != 4 or poly_area(pg) < 0.20 * pl["w"] * pl["h"] or not inside:
+                    bad_quad.append((round(pl["x"]), round(pl["y"])))
+            check("garden_plots_are_quads", not bad_quad,
+                  f"garden/yard footprint(s) are not valid inscribed 4-gons: {bad_quad[:3]} - each is a slightly-"
+                  f"irregular quadrilateral (4 vertices, real area) that stays within its reserved w x h rect")
+
+            # GARDEN AREA is held to a HISTORICAL band. Unlike the house/yard (drawn oversized against the
+            # fields for legibility), a dooryard kitchen garden at 1 px = 2 ft is near its TRUE size, so its area
+            # is a real quantity we can check against the ground a household could hand-work. The saien is the
+            # small intensive daily-greens bed by the kitchen (the bulk vegetable growing was out in the hatake
+            # dry fields, not here): historically a few tsubo up to ~1.4 se - roughly 10-140 m^2 (1 tsubo = 3.31
+            # m^2; 1 se = 30 tsubo ~ 99 m^2). We sum ALL of a household's garden beds (a fragmented plot is still
+            # one household's garden) and require the TOTAL in that band. WHY the numbers: SKILL.md "Dooryard
+            # kitchen gardens" (area grounding). Scale override via meta.ft_per_px for any non-standard map.
+            ft_per_px = float(meta.get("ft_per_px", 2.0))
+            m2_per_px2 = (ft_per_px * 0.3048) ** 2           # ft/px -> m per px, squared -> m^2 per px^2
+            GARDEN_M2_MIN, GARDEN_M2_MAX = 10.0, 140.0
+            by_house = {}
+            for gd in gardens:
+                pg = gd.get("poly")
+                a_px = poly_area(pg) if pg else gd["w"] * gd["h"]
+                key = (round(gd["of"][0]), round(gd["of"][1]))
+                by_house[key] = by_house.get(key, 0.0) + a_px
+            g_area_bad = [(hx, hy, round(a_px * m2_per_px2)) for (hx, hy), a_px in by_house.items()
+                          if not (GARDEN_M2_MIN <= a_px * m2_per_px2 <= GARDEN_M2_MAX)]
+            check("garden_area_within_norms", not g_area_bad,
+                  f"household kitchen-garden total area out of the historical band "
+                  f"[{GARDEN_M2_MIN:.0f}-{GARDEN_M2_MAX:.0f} m^2]: {g_area_bad[:3]} (x, y, m^2) - a saien is the small "
+                  f"intensive daily-greens bed by the kitchen, ~a few tsubo up to ~1.4 se; bigger reads as a field, "
+                  f"tinier as no garden at all")
+
             # HOMESTEAD GROVE (yashikirin) - the farmhouse windbreak. A dense L-BELT of shelter trees on the
             # WINDWARD side(s) of the house (one record per belt ARM), blocking the cold prevailing wind while
             # leaving the SUNNY lee open. Default windward NW: the East Asian winter monsoon blows NW across
@@ -1669,7 +1727,7 @@ def gate(M, verbose=True):
             # every dispersed farmstead - so a grove-LESS farm must be one whose windward side is genuinely blocked
             # (a paddy, a neighbour, or the sun-corridor south of a yard). If a grove-less farm has CLEAR windward
             # room, the generator omitted a grove it could have placed. Replaces the old blunt presence floor.
-            if scale in ("town", "village", "hamlet") and len(houses) >= 10:
+            if scale in ("town", "village", "hamlet") and len(houses) >= 10 and not meta.get("nucleated"):
                 WF = {"N": [((0, -1), 0)], "S": [((0, 1), 0)], "E": [((1, 0), 0)], "W": [((-1, 0), 0)],
                       "NW": [((0, -1), -1), ((-1, 0), 0)], "NE": [((0, -1), 1), ((1, 0), 0)],
                       "SW": [((0, 1), -1), ((-1, 0), 0)], "SE": [((0, 1), 1), ((1, 0), 0)]}
@@ -1729,6 +1787,61 @@ def gate(M, verbose=True):
                       f"farm(s) {omitted[:4]} have clear windward room but no grove - a yashikirin is drawn on every farm "
                       f"that can host one; only a paddy/neighbour/yard-shaded windward side may leave a farm grove-less")
 
+            # NUCLEATED villages shelter behind a COMMUNAL fengshui WINDBREAK (风水林), NOT per-house groves: a
+            # dense grove belt on the high WINDWARD back edge (the winter-monsoon wall + sacred back-village
+            # grove), a smaller cluster at the low water-mouth entrance, and scattered bamboo/fruit copses. So a
+            # nucleated village is NOT required to grove every farm (groves_where_possible is skipped above for
+            # meta.nucleated); instead it MUST carry the village windbreak, on the windward side, off the paddies.
+            # WHY (the fengshui-forest research - ~2 groves/village, a ~1-2 ha back grove at ~3,400 stems/ha, a
+            # water-mouth cluster, kept off the crops and the road): SKILL.md 'Village windbreak'.
+            vgroves = M.get("village_groves", [])
+            if meta.get("nucleated") and len(houses) >= 10:
+                windbreaks = [g for g in vgroves if g.get("role") == "windbreak"]
+                check("village_windbreak_present", bool(windbreaks),
+                      "a nucleated village shelters behind a COMMUNAL windbreak (a fengshui back-village grove), but "
+                      "no role='windbreak' village grove is present - add s.village_grove(..., role='windbreak') on the "
+                      "high windward edge")
+                # the belt backs the cluster on the WINDWARD/high side (default NW) - its centroid must lie
+                # windward of the house-cluster centroid, so the wall faces the cold wind, not the sunny field side
+                ccx = sum(h["x"] for h in houses) / len(houses)
+                ccy = sum(h["y"] for h in houses) / len(houses)
+                lee = [(round(g["x"]), round(g["y"])) for g in windbreaks
+                       if (g["x"] - ccx) * wvx + (g["y"] - ccy) * wvy <= 0]
+                check("village_windbreak_on_windward_side", not lee,
+                      f"the village windbreak sits on the LEE/sunny side of the cluster, not the windward {windward}: "
+                      f"{lee[:2]} - the back-village grove shelters the high windward edge and leaves the sunny field side open")
+            # every village grove (of any role) is DRY woodland - its centre must not sit in a flooded paddy
+            vg_in_paddy = [(round(g["x"]), round(g["y"])) for g in vgroves
+                           if any(point_in_poly(g["x"], g["y"], ol) for ol in fields_ol)]
+            check("village_groves_clear_of_paddies", not vg_in_paddy,
+                  f"village grove(s) sit IN a flooded paddy (centre over water): {vg_in_paddy[:3]} - the fengshui "
+                  f"windbreak stands on dry ground at the cluster's back and entrance, never out in the paddy")
+
+            # FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far side, BEYOND the back-grove.
+            # South China's hills were stripped for fuel/timber over a millennium (open pine + grass + erosion),
+            # so past the protected grove is NON-ARABLE waste: coarse grass, brush, scraggly pines - a commons,
+            # not a field, and never the flooded paddy. The land toposequence is village -> back-grove -> fuel
+            # commons, so the commons sits on the WINDWARD/high side and FURTHER out than the windbreak. WHY (the
+            # denuded hills + back-slope waste; graves + dry hill-crops also live here): SKILL.md 'Village windbreak'.
+            commons = M.get("commons", [])
+            c_in_paddy = [(round(c["x"]), round(c["y"])) for c in commons
+                          if any(point_in_poly(c["x"], c["y"], ol) for ol in fields_ol)]
+            check("commons_clear_of_paddies", not c_in_paddy,
+                  f"fuel/fodder commons sit IN a flooded paddy (centre over water): {c_in_paddy[:3]} - the commons is "
+                  f"NON-arable degraded grazing on the high back slope, never the productive wet paddy")
+            if meta.get("nucleated") and commons and len(houses) >= 10:
+                wbs = [g for g in vgroves if g.get("role") == "windbreak"]
+                if wbs:
+                    ccx = sum(h["x"] for h in houses) / len(houses)
+                    ccy = sum(h["y"] for h in houses) / len(houses)
+                    wb_proj = max((g["x"] - ccx) * wvx + (g["y"] - ccy) * wvy for g in wbs)
+                    near = [(round(c["x"]), round(c["y"])) for c in commons
+                            if (c["x"] - ccx) * wvx + (c["y"] - ccy) * wvy <= wb_proj + 5]
+                    check("commons_beyond_the_windbreak", not near,
+                          f"fuel/fodder commons {near[:2]} sit between the village and its back-grove (or on the field "
+                          f"side), not BEYOND the windbreak - the toposequence is village -> back-grove -> commons, so the "
+                          f"degraded grazing lies on the far windward side, past the protected wood")
+
             # WEALTH VARIATION: farmhouses are not one uniform size - a modest wealth tier (recorded as `wealth`)
             # scales the rendered house and, with it, the grove, so holdings read as ranging from the landless
             # mizunomi to a honbyakushO landholder. Verify the tiers are ACTIVE so a regression that flattens
@@ -1736,10 +1849,26 @@ def gate(M, verbose=True):
             # uniform - scaling them coupled into farmstead placement and dropped houses.) WHY: SKILL.md.
             plain = [h for h in houses if h.get("role") != "headman"]
             if len(plain) >= 10:
-                varied = sum(1 for h in plain if abs(h.get("wealth", 1.0) - 1.0) > 0.01)
+                # measure the ACTUAL rendered-footprint spread, which is carried TWO ways: the DISPERSED path
+                # keeps a uniform base w x h and scales the drawn house by a `wealth` tier (0.9/1.0/1.12), while
+                # the NUCLEATED path jitters the base w x h (length/depth) directly at wealth 1.0. Fold both in
+                # via effective area = w * h * wealth^2 (the wealth factor scales each dimension), so a regression
+                # that flattens houses to one size is caught under EITHER encoding.
+                def _eff(h):
+                    return h["w"] * h["h"] * (h.get("wealth", 1.0) ** 2)
+                areas = sorted(_eff(h) for h in plain)
+                med = areas[len(areas) // 2] or 1
+                varied = sum(1 for h in plain if abs(_eff(h) - med) > 0.05 * med)
                 check("farmhouse_sizes_vary", varied >= 0.2 * len(plain),
-                      f"farmhouses show no size variation ({varied}/{len(plain)} off the baseline wealth tier) - a modest "
-                      f"spread of homestead sizes is expected (the wealth tiers look flattened to one size)")
+                      f"farmhouses show no size variation ({varied}/{len(plain)} off the median footprint) - a modest "
+                      f"spread of homestead sizes is expected (they look flattened to one size)")
+                # a minka is rectangular but within the ~1.3-2.5:1 norm - a house grew by adding bays
+                # (longer), never into a 4:1 shed. Guard the aspect so the length jitter stays plausible.
+                lop = [[round(h["x"]), round(h["y"])] for h in houses
+                       if min(h["w"], h["h"]) > 0 and max(h["w"], h["h"]) / min(h["w"], h["h"]) > 2.7]
+                check("farmhouse_aspect_in_range", not lop,
+                      f"farmhouse(s) {lop[:3]} are more than 2.7:1 long-to-wide - a minka stays roughly "
+                      f"1.3-2.5:1 (it lengthened by bays, it did not become a shed)")
 
     # THE DEAD - a full funerary geography. Every settlement above a hamlet buries its cremated dead
     # (a hamlet's go to the village district's ground, just as it has no shrine or headman). GRAVEYARDS
@@ -2050,6 +2179,28 @@ def gate(M, verbose=True):
     check("water_channels_obtuse_turns", not acute,
           f"water channel(s) make an ACUTE (<90 deg) turn at {sorted(set(acute))[:5]} - a ditch/canal only bends "
           f"through obtuse angles; an acute hairpin implies impossible topology")
+
+    # DRY-FIELD FURROWS vary PER PLOT - no two EDGE-ADJACENT dry plots may run their ridges the SAME way.
+    # Fragmented dry holdings were a mosaic of family strips, each plowed to its OWN orientation (the patchwork-
+    # quilt look); ridge-along-contour is a STEEP-slope erosion measure, NOT forced on a gentle valley margin.
+    # A furrow is an undirected LINE, so "same direction" is compared mod pi. WHY: SKILL.md 'Water-first v2' crop.
+    # A steep / terraced village may declare CONTOUR furrows (meta.dry_furrows_vary=False - the rows converge
+    # onto the contour for erosion control), in which case aligned rows are correct and variation is NOT required.
+    dry_plots = M.get("dry_plots", [])
+    if len(dry_plots) >= 4 and M.get("meta", {}).get("dry_furrows_vary", True):
+        dcen = [(sum(v[0] for v in p["poly"]) / len(p["poly"]), sum(v[1] for v in p["poly"]) / len(p["poly"]))
+                for p in dry_plots]
+        same = []
+        for a in range(len(dry_plots)):
+            for b in range(a + 1, len(dry_plots)):
+                if (dcen[a][0] - dcen[b][0]) ** 2 + (dcen[a][1] - dcen[b][1]) ** 2 >= 50 ** 2:
+                    continue                               # only EDGE-adjacent plots (a shared boundary)
+                d = abs(dry_plots[a]["theta"] - dry_plots[b]["theta"]) % math.pi
+                if min(d, math.pi - d) <= 0.10:            # within ~6 deg reads as the SAME row direction
+                    same.append((round(dcen[a][0]), round(dcen[a][1])))
+        check("dry_plot_furrows_vary", not same,
+              f"neighbouring dry-field plot(s) run their furrows the SAME way {same[:3]} - fragmented family strips "
+              f"were each plowed to their own orientation, so adjacent plots must differ in row direction")
 
     # EVERY IN-FIELD IRRIGATION DITCH TERMINATES AT A DITCH THAT LEAVES THE FIELD - no channel runs to the
     # middle of a field and dead-ends. Concretely: each LATERAL's two ends sit on the MAIN or the DRAIN (which

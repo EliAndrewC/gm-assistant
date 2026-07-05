@@ -229,7 +229,7 @@ class Settlement:
                   "governor_mansion": None, "ministries": [], "inspection_stations": [],
                   "wells": [], "bridges": [], "threshing_yards": [], "gardens": [], "groves": [], "cemeteries": [],
                   "mausoleums": [], "cremation_grounds": [], "ossuaries": [], "moat_layer": None,
-                  "fire_towers": [], "field_ditches": [],
+                  "fire_towers": [], "field_ditches": [], "village_groves": [], "commons": [], "dry_plots": [],
                   "meta": {"W": W, "H": H}}
         self._header()
 
@@ -1438,11 +1438,14 @@ class Settlement:
             self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
         return z
 
-    def _draw_threshing_yard(self, cx, cy, w, h):
-        """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack)."""
+    def _draw_threshing_yard(self, cx, cy, w, h, poly):
+        """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack). The
+        outer footprint is a slightly-irregular quad (`poly`, absolute corner coords) - a swept work surface
+        stays NEAR-square; interior detail is laid out in the local (w,h) frame."""
         x0, y0 = -w / 2, -h / 2
         g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
-        g.append(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w:.0f}" height="{h:.0f}" rx="2" fill="#D2BE94" stroke="#A98E54" stroke-width="1.5"/>')   # tamped earthen floor
+        pts = " ".join(f"{px - cx:.1f},{py - cy:.1f}" for px, py in poly)
+        g.append(f'<polygon points="{pts}" fill="#D2BE94" stroke="#A98E54" stroke-width="1.5"/>')   # tamped earthen floor
         g.append(f'<rect x="{x0+3:.0f}" y="{y0+3:.0f}" width="{w-6:.0f}" height="{h-6:.0f}" rx="1.5" fill="none" stroke="#BBA06E" stroke-width="0.7" opacity="0.6"/>')   # swept rim
         g.append('<rect x="-7" y="-6" width="14" height="9" rx="1" fill="#E2D2A2" stroke="#A98E54" stroke-width="0.6" opacity="0.9"/>')   # a straw drying mat
         ry = h / 2 - 3                                        # a little drying rack (hazakake) along the floor's lower edge
@@ -1491,18 +1494,25 @@ class Settlement:
 
     def _attach_yard(self, hx, hy, spot):
         """Draw a farmstead's threshing/drying yard (it is drawn BEFORE its house, so the house renders on
-        top of the overlap) and record it. The work yard was UNIVERSAL, so every farmhouse gets one."""
+        top of the overlap) and record it. The work yard was UNIVERSAL, so every farmhouse gets one. Its
+        footprint is a SLIGHTLY-irregular quad (a swept work surface stays near-square: small jitter),
+        inscribed in the reserved rect so it can never breach the collision the rect already cleared."""
         ox, oy, yw, yh = spot
-        self._draw_threshing_yard(ox, oy, yw, yh)
-        self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0, "of": [hx, hy]})
+        poly = self._quad(ox, oy, yw, yh, 0.10, 41.0)
+        self._draw_threshing_yard(ox, oy, yw, yh, poly)
+        self.M["threshing_yards"].append({"x": round(ox, 1), "y": round(oy, 1), "w": yw, "h": yh, "rot": 0,
+                                          "of": [hx, hy], "poly": [[round(px, 1), round(py, 1)] for px, py in poly]})
         self.placed.append((ox, oy, yw, yh))
 
-    def _draw_garden(self, cx, cy, w, h):
+    def _draw_garden(self, cx, cy, w, h, poly):
         """Draw one small dooryard KITCHEN GARDEN (saien): a tilled earthen bed with tidy planted rows
-        of greens. Distinct from the tan threshing yard (bare swept earth) and the blue-green paddy quilt."""
+        of greens. Distinct from the tan threshing yard (bare swept earth) and the blue-green paddy quilt.
+        The bed's outer footprint is an irregular quad (`poly`, absolute corner coords) - a hand-worked plot
+        bent to paths and soil, not surveyed square; the rows are laid out in the local (w,h) frame."""
         x0, y0 = -w / 2, -h / 2
         g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
-        g.append(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w:.0f}" height="{h:.0f}" rx="2" fill="#B49A62" stroke="#6E5A30" stroke-width="1.3"/>')   # tilled bed
+        pts = " ".join(f"{px - cx:.1f},{py - cy:.1f}" for px, py in poly)
+        g.append(f'<polygon points="{pts}" fill="#B49A62" stroke="#6E5A30" stroke-width="1.3"/>')   # tilled bed
         nrows = 3
         for i in range(nrows):                               # rows of greens running along the bed
             ry = y0 + h * (i + 0.5) / nrows
@@ -1577,13 +1587,22 @@ class Settlement:
                 return ox, oy, gw, gh
         return None
 
-    def _attach_garden(self, hx, hy, spot):
-        """Draw a farmstead's dooryard kitchen garden (before its house, so the house wins any abutment)
-        and record it. The kitchen garden was a household staple, so every farmhouse gets one."""
-        ox, oy, gw, gh = spot
-        self._draw_garden(ox, oy, gw, gh)
-        self.M["gardens"].append({"x": round(ox, 1), "y": round(oy, 1), "w": gw, "h": gh, "rot": 0, "of": [hx, hy]})
-        self.placed.append((ox, oy, gw, gh))
+    def _attach_garden(self, hx, hy, beds):
+        """Draw a farmstead's dooryard kitchen garden BED(S) (before its house, so the house wins any abutment)
+        and record them. The kitchen garden was a household staple, so every farmhouse gets one - but the plot
+        is occasionally FRAGMENTED into two beds (`_garden_beds` decides where: flanking opposite walls, stacked,
+        or side-by-side). `beds` is the reserved-and-collision-checked list of (cx,cy,w,h) rects from the bundle
+        geometry; all beds of one house carry the same `of` parent, so `gardens_present` counts one garden per
+        house and `garden_area_within_norms` sums their areas. Each bed is drawn as a slightly-irregular hand-
+        worked quad (real dooryard beds were bent to paths and soil, not surveyed square); a lone bed can be more
+        irregular than a split strip."""
+        jit = 0.18 if len(beds) == 1 else 0.13
+        for i, (bx, by, bw, bh) in enumerate(beds):
+            poly = self._quad(bx, by, bw, bh, jit, 71.0 + i * 5.0)
+            self._draw_garden(bx, by, bw, bh, poly)
+            self.M["gardens"].append({"x": round(bx, 1), "y": round(by, 1), "w": bw, "h": bh, "rot": 0,
+                                      "of": [hx, hy], "poly": [[round(px, 1), round(py, 1)] for px, py in poly]})
+            self.placed.append((bx, by, bw, bh))
 
     # the windward faces a homestead grove (yashikirin) shelters, by where the prevailing cold wind comes
     # FROM (its compass key). The grove is an L-BELT: a deep stand on each windward face (for a diagonal
@@ -1731,24 +1750,26 @@ class Settlement:
                 return True
         return False
 
-    def _draw_grove(self, cx, cy, w, h, face):
-        """Draw one homestead windbreak grove (yashikirin) as a DENSE MIXED STAND - overlapping canopies
-        packed into a real grove (not a few scattered trees), of three species: tall EVERGREEN conifer
-        (dark, dense apex - the windbreak backbone, cedar/pine), DECIDUOUS broadleaf (mid green - timber
-        and fruit, zelkova/persimmon), and a BAMBOO clump (take - fine culms with leafy tops). Distinct
-        from the big s.forest area feature and the striped kitchen-garden bed. Species and placement are
-        seeded by position (stable across regenerations). Canopy count scales with footprint area (a
-        denser stand on a bigger windward side), grain-invariant so it reads the same at town and city."""
+    def _draw_grove(self, cx, cy, w, h, face, mix="windbreak"):
+        """Draw one windbreak/grove clump as a DENSE MIXED STAND - overlapping canopies packed into a real
+        grove (not a few scattered trees), of three species: tall EVERGREEN conifer (dark, dense apex - the
+        windbreak backbone, cedar/pine), DECIDUOUS broadleaf (mid green - timber and fruit, zelkova/persimmon),
+        and a BAMBOO clump (take - fine culms with leafy tops). `mix` picks the species blend: 'windbreak' is
+        conifer-backed (the sheltering wall - the yashikirin and the fengshui back belt); 'dooryard' is bamboo
+        + fruit broadleaf with NO conifer (the leafy bamboo/fruit greenery scattered among village houses).
+        Distinct from the big s.forest area feature and the striped kitchen-garden bed. Species and placement
+        are seeded by position (stable across regenerations). Canopy count scales with footprint area."""
         bs = self.bscale / 0.82                                  # render scale relative to the town grain
         st = random.getstate()
         random.seed(int(abs(cx) * 5 + abs(cy) * 3 + round(w)))
         n = max(5, min(28, round(w * h / (bs * bs * 48))))       # ~ one crown per ~48 px^2 at 2 ft/px (a ~5 m crown); ~40 across the 6:1 L-grove
+        b_th, c_th = (0.20, 0.58) if mix == "windbreak" else (0.45, 0.45)   # dooryard = bamboo + fruit, no conifer
         items = []
         for _ in range(n):
             px = random.uniform(-w / 2 + 2, w / 2 - 2)
             py = random.uniform(-h / 2 + 2, h / 2 - 2)
             roll = random.random()
-            kind = "bamboo" if roll < 0.20 else ("conifer" if roll < 0.58 else "broadleaf")
+            kind = "bamboo" if roll < b_th else ("conifer" if roll < c_th else "broadleaf")
             size = random.uniform(1.25, 1.7) if random.random() < 0.25 else random.uniform(0.72, 1.05)   # a few emergent crowns over many small
             items.append((px, py, kind, size))
         g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
@@ -1770,6 +1791,109 @@ class Settlement:
         g.append('</g>')
         self.add(''.join(g))
         random.setstate(st)
+
+    def village_grove(self, poly, role="windbreak", dense=True):
+        """A COMMUNAL village grove - the Chinese *fengshui* forest (风水林). Unlike the per-house *yashikirin*,
+        a NUCLEATED village shelters behind ONE village-scale grove, in three roles (see SKILL.md 'Village
+        windbreak'):
+          - `windbreak` - the dense belt on the WINDWARD/high BACK edge (后龙林 back-village grove); the winter-
+            monsoon wall and the LARGEST vegetation feature. Nestles against and EMBRACES the cluster.
+          - `water_mouth` - a smaller cluster of big old trees at the LOW entrance / water-mouth (水口林);
+          - `copse` - the leafy bamboo / fruit-tree greenery scattered through the OPEN gaps among the houses.
+        `poly` is the grove's FOOTPRINT - an IRREGULAR, terrain-following outline, NOT a rectangle (real groves
+        hug the land and wrap the settlement, they are not ruled walls). It is FILLED with dense mixed-stand
+        clumps on a jittered grid; a clump is SKIPPED wherever it would land on a HOUSE / threshing YARD /
+        GARDEN / PADDY (so the wood settles into the open ground and hugs the cluster without ever drawing trees
+        on a building or out in the crops - this is what lets the belt nestle right up to the village edge).
+        `dense=True` packs overlapping clumps into a continuous belt/cluster; `dense=False` scatters them for the
+        leafy fringe among houses. role tunes the species mix (windbreak/water_mouth = conifer-backed forest;
+        copse = bamboo + fruit, no conifer). Recorded in M['village_groves'] (bbox + role + poly) IF any clump
+        is drawn (a footprint entirely over houses/crops draws nothing and records nothing). Returns the count."""
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        mix = "windbreak" if role in ("windbreak", "water_mouth") else "dooryard"
+        bs = self.bscale
+        step = (20 if dense else 52) * bs
+        clump = (28 if dense else 22) * bs
+        occ = [(o["x"], o["y"], 0.5 * math.hypot(o["w"], o["h"]) + clump * 0.35)   # never draw ON a home/yard/garden
+               for k in ("houses", "threshing_yards", "gardens") for o in self.M.get(k, [])]
+        nx, ny = max(1, round((x1 - x0) / step)), max(1, round((y1 - y0) / step))
+        drawn = 0
+        for iy in range(ny + 1):
+            for ix in range(nx + 1):
+                gx = x0 + ix * (x1 - x0) / nx
+                gy = y0 + iy * (y1 - y0) / ny
+                jx = gx + (self._hjit(gx, gy, 21.0) - 0.5) * step   # jitter the grid so the stand + its edge read ragged
+                jy = gy + (self._hjit(gx, gy, 22.0) - 0.5) * step
+                if not point_in_poly(jx, jy, poly):
+                    continue
+                if any((jx - ox) ** 2 + (jy - oy) ** 2 < rr * rr for ox, oy, rr in occ):
+                    continue
+                if any(point_in_poly(jx, jy, f) or edge_dist(jx, jy, f) < 12 for f in self.field_polys):
+                    continue
+                self._draw_grove(jx, jy, clump, clump, face=(0, -1), mix=mix)
+                drawn += 1
+        if drawn:
+            self.M["village_groves"].append({
+                "x": round((x0 + x1) / 2, 1), "y": round((y0 + y1) / 2, 1),
+                "w": round(x1 - x0, 1), "h": round(y1 - y0, 1), "rot": 0, "role": role,
+                "poly": [[round(px, 1), round(py, 1)] for px, py in poly]})
+        return drawn
+
+    def commons(self, poly):
+        """FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far (upslope / windward) side,
+        BEYOND the fengshui back-grove: coarse grass, low brush, and a FEW scattered SCRAGGLY pines, kept
+        cropped bare by constant firewood + grass gathering. Deliberately drawn OPEN and SPARSE on drier,
+        poorer ground so it is VISUALLY DISTINCT from the dense, dark, closed-canopy village grove - this is a
+        COMMONS (not anyone's field), non-arable. WHY (south China's hills were stripped for fuel/timber over a
+        millennium - open pine + grass + erosion; the protected grove is the green EXCEPTION; the back slope
+        also carried the graves + dry hill-crops): SKILL.md 'Village windbreak' / back-slope land use. Recorded
+        in M['commons']."""
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        bs = self.bscale
+        area = (x1 - x0) * (y1 - y0)
+        st = random.getstate()
+        random.seed(int(abs(x0) * 7 + abs(y0) * 3 + round(x1 - x0)))
+        feather = 42 * bs                                     # scrub THINS toward the boundary (a soft, ragged edge, not a hard line)
+
+        def _sparse(px, py, drop):                            # skip a scatter point outside the poly, on a field, or (probabilistically) near the edge
+            if not point_in_poly(px, py, poly) or any(point_in_poly(px, py, ff) for ff in self.field_polys):
+                return True
+            ed = edge_dist(px, py, poly)
+            return ed < feather and random.random() > (ed / feather) ** drop
+        # NO solid fill: a filled polygon always has a crisp geometric EDGE (that read as a rhombus). The commons
+        # is defined purely by its feathered scatter of grass/brush/pines, which thins to nothing at the margin -
+        # so the ground has no boundary at all, just scrub petering out onto the open slope.
+        g = []
+        for _ in range(int(area / (74 * bs * bs))):          # coarse grass tufts + the odd low brush dot
+            gx, gy = random.uniform(x0, x1), random.uniform(y0, y1)
+            if _sparse(gx, gy, 0.7):
+                continue
+            if random.random() < 0.14:                       # a low brush dot
+                g.append(f'<circle cx="{gx:.1f}" cy="{gy:.1f}" r="{random.uniform(1.5, 2.4) * bs:.1f}" fill="#94A063" fill-opacity="0.85"/>')
+            else:                                            # a grass tuft: a few short diverging blades
+                for _ in range(3):
+                    a, bl = random.uniform(-0.45, 0.45), random.uniform(2.4, 4.2) * bs
+                    g.append(f'<line x1="{gx:.1f}" y1="{gy:.1f}" x2="{gx + math.sin(a) * bl:.1f}" '
+                             f'y2="{gy - math.cos(a) * bl:.1f}" stroke="#A7A860" stroke-width="0.8"/>')
+        for _ in range(max(2, int(area / (6000 * bs * bs)))):   # a few SCRAGGLY hill pines (sparse, individual, open)
+            px, py = random.uniform(x0 + 6, x1 - 6), random.uniform(y0 + 6, y1 - 6)
+            if _sparse(px, py, 0.5):
+                continue
+            th = random.uniform(9, 14) * bs
+            g.append(f'<line x1="{px:.1f}" y1="{py:.1f}" x2="{px:.1f}" y2="{py - th:.1f}" stroke="#7A6A48" stroke-width="{1.1 * bs:.1f}"/>')   # thin trunk
+            for k in range(3):                               # sparse open branches - a scraggly wind-cropped pine, NOT a dense crown
+                ly, sp = py - th * (0.45 + 0.25 * k), (3.6 - k) * bs
+                g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px - sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
+                g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px + sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
+        self.add(''.join(g))
+        random.setstate(st)
+        self.M["commons"].append({"x": round((x0 + x1) / 2, 1), "y": round((y0 + y1) / 2, 1),
+                                  "w": round(x1 - x0, 1), "h": round(y1 - y0, 1), "rot": 0,
+                                  "poly": [[round(px, 1), round(py, 1)] for px, py in poly]})
 
     def _attach_grove(self, hx, hy, arms):
         """Draw a farmstead's windbreak grove (its belt arms) and record each arm under its parent house.
@@ -2614,6 +2738,31 @@ class Settlement:
             d += spacing
         return placed
 
+    @staticmethod
+    def _hjit(x, y, salt):
+        """Deterministic per-position pseudo-random in [0,1) from (x,y,salt) - jitters a homestead's parts
+        (house aspect, garden/yard size + shape) WITHOUT a global RNG draw, so it never ripples other
+        placement or household counts (position-seeded, exactly like the wealth tier). Real villages were
+        never rows of copy-pasted identical farmsteads; this gives each one its own proportions."""
+        v = math.sin(x * 12.9898 + y * 4.1414 + salt * 7.373) * 43758.5453
+        return v - math.floor(v)
+
+    def _quad(self, cx, cy, w, h, jit, salt):
+        """A slightly-IRREGULAR 4-sided polygon INSCRIBED in the (cx,cy,w,h) rect: each corner is pulled
+        INWARD by a deterministic, position-seeded fraction (0..jit of the half-span), so the footprint loses
+        its perfect 90-degree corners while staying ENTIRELY within its reserved rect - so it can never create
+        a new overlap the rect-based placement/checks didn't already clear. Real dooryard plots were bounded by
+        paths, walls, and awkward soil, not surveyed to a clean rectangle. `jit` sets how irregular: a garden
+        gets more (a hand-worked bed), a threshing yard less (a swept work surface stays near-square). Returns
+        the 4 corners [NW, NE, SE, SW] as (x, y) tuples."""
+        hw, hh = w / 2.0, h / 2.0
+        out = []
+        for i, (sx, sy) in enumerate(((-1, -1), (1, -1), (1, 1), (-1, 1))):   # NW, NE, SE, SW
+            jx = self._hjit(cx, cy, salt + i * 0.19) * jit                     # each corner its own inward pull
+            jy = self._hjit(cx, cy, salt + i * 0.19 + 0.5) * jit
+            out.append((cx + sx * hw * (1.0 - jx), cy + sy * hh * (1.0 - jy)))
+        return out
+
     def try_place(self, x, y, kind, role=None, size=None):
         """Place one farmhouse. VILLAGES use the to-scale HOMESTEAD BUNDLE (house + windward grove + yard +
         garden, reserved and packed as ONE unit). Other scales keep the shipped house-first path until their
@@ -2644,12 +2793,20 @@ class Settlement:
         # village scale; the plain house is 23x14 px (~46x28 ft, the 8:5 minka). A modest, position-seeded
         # wealth tier scales the whole bundle. See SKILL.md 'To-scale villages'.
         if size is not None:                                 # explicit footprint (e.g. a larger headman)
-            bw, bh, wf = size[0], size[1], 1.0
+            wf, hw, hh = 1.0, size[0] * self.bscale, size[1] * self.bscale
+        elif getattr(self, "_nucleated", False):
+            # a minka grew by adding BAYS (ken) along the ridge, so a bigger farmhouse is LONGER far more
+            # than it is wider (the roof span caps the depth) - vary length a lot, depth only a little, so
+            # houses are individually proportioned (some long, some near-square) but always within the
+            # ~1.3-2.5:1 minka norm, never uniformly scaled copies. Position-seeded (no RNG ripple).
+            wf = 1.0
+            hw = 23 * self.bscale * (0.85 + self._hjit(x, y, 1.0) * 0.5)   # length factor [0.85, 1.35]
+            hh = 14 * self.bscale * (0.90 + self._hjit(x, y, 2.0) * 0.2)   # depth factor  [0.90, 1.10]
         else:
             bw, bh = (32, 20) if kind == "big" else (23, 14)
             t = int(abs(x) * 53 + abs(y) * 29) % 100
             wf = 1.0 if kind == "big" else (0.9 if t < 30 else (1.12 if t >= 80 else 1.0))
-        hw, hh = bw * self.bscale * wf, bh * self.bscale * wf
+            hw, hh = bw * self.bscale * wf, bh * self.bscale * wf
         spot = self._place_bundle(x, y, hw, hh)              # pack the bundle as near (x,y) as the rules allow
         if spot is None:
             return False
@@ -2701,6 +2858,45 @@ class Settlement:
         off into the urban core or the void."""
         return any(edge_dist(x, y, poly) <= 165 for poly in self.field_polys) if self.field_polys else True
 
+    @staticmethod
+    def _bbox_of(rects):
+        """The axis-aligned (cx, cy, w, h) bounding box enclosing a list of (cx, cy, w, h) rects."""
+        xs = [r[0] - r[2] / 2 for r in rects] + [r[0] + r[2] / 2 for r in rects]
+        ys = [r[1] - r[3] / 2 for r in rects] + [r[1] + r[3] / 2 for r in rects]
+        return ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, max(xs) - min(xs), max(ys) - min(ys))
+
+    def _garden_beds(self, hx, hy, hw, hh, gx, gy, gw, gh, side, gap):
+        """The dooryard garden BED(S) of one nucleated homestead. Usually ONE bed (the reserved plot at
+        (gx, gy)). But ~1 in 4 households FRAGMENT the plot into two beds - soil and paths made a single
+        clean plot impractical, so you work the good topsoil where it lies. Of the splits (all position-
+        seeded, no RNG ripple): ~half FLANK the house on OPPOSITE walls (the E and W walls, or the two south
+        corners) because the workable ground just fell on both sides; the rest share ONE side, either
+        SIDE-BY-SIDE or - for a SOUTH garden, where the upper bed stays out of the house's shade - STACKED
+        above/below. Every bed sits on a SUNNY band (never the cold north back), and because the beds are
+        returned to `_bundle_geom` they are RESERVED and collision-checked as part of the whole bundle - so an
+        opposite-side bed can never overlap a neighbour or a paddy. Splits only fire when each bed stays wide
+        enough (~12 ft) to read as a real garden, so it is the larger (well-off / headman) plots that
+        fragment. Total bed area stays in the saien band (`garden_area_within_norms`). Returns (cx,cy,w,h) rects."""
+        bs = self.bscale
+        if self._hjit(hx, hy, 8.0) >= 0.26:                       # the common case: one undivided plot
+            return [(gx, gy, gw, gh)]
+        south = side in ("SE", "SW")
+        # OPPOSITE-SIDE (flanking) split: a bed on each of the E and W walls (or the two south corners for a
+        # south garden), each ~half width, the house standing between them
+        if self._hjit(hx, hy, 9.0) < 0.5 and gw * 0.55 >= 6 * bs:
+            pw = gw * 0.55
+            return [(hx + hw / 2 + gap + pw / 2, gy, pw, gh),
+                    (hx - hw / 2 - gap - pw / 2, gy, pw, gh)]
+        # SAME-SIDE STACKED (above/below): only for a south garden, so the upper bed does not fall into shade
+        if south and self._hjit(hx, hy, 10.0) < 0.5 and (gh - gap) / 2 >= 6 * bs:
+            ph = (gh - gap) / 2
+            return [(gx, gy - (gap + ph) / 2, gw, ph), (gx, gy + (gap + ph) / 2, gw, ph)]
+        # SAME-SIDE SIDE-BY-SIDE (the default fragmentation), both beds on the primary wall
+        if (gw - gap) / 2 >= 6 * bs:
+            pw = (gw - gap) / 2
+            return [(gx - (gap + pw) / 2, gy, pw, gh), (gx + (gap + pw) / 2, gy, pw, gh)]
+        return [(gx, gy, gw, gh)]                                  # reserved plot too small to split cleanly
+
     def _bundle_geom(self, hx, hy, hw, hh, garden_side="E"):
         """The metric layout of one homestead BUNDLE around a house centred at (hx, hy). TWO forms:
         NUCLEATED (self._nucleated) = house + lee GARDEN (E) + south YARD only, compact so a cluster can
@@ -2730,10 +2926,15 @@ class Settlement:
             # CAP the appurtenance dims so a big house (the headman) keeps an ORDINARY farm's yard/garden
             # (spanning ~its adjacent wall but not scaled up to the grand house - "not as tall / not as
             # wide"). A plain 23x14 house is well under these caps, so ordinary farms are unaffected.
-            yw = min(yw, 34 * self.bscale)
-            yh = min(yh, 22 * self.bscale)
-            gw = min(gw, 24 * self.bscale)
-            gh = min(gh, 17 * self.bscale)
+            # SIZE variation (position-seeded, no RNG ripple): the garden's base is its MINIMUM (you need at
+            # least this plot to feed a household) so it jitters UP - by a different amount in each dimension,
+            # which also varies its proportions; the threshing yard's base is its MAXIMUM (a work apron sized
+            # to the harvest) so it jitters DOWN. No two homesteads are identical. Both are CAPPED afterward so
+            # the big headman still keeps an ordinary farm's yard/garden (the garden jitter can't breach it).
+            yw = min(yw * (0.75 + self._hjit(hx, hy, 5.0) * 0.25), 34 * self.bscale)   # yard  [0.75,1.00]x, capped
+            yh = min(yh * (0.75 + self._hjit(hx, hy, 6.0) * 0.25), 22 * self.bscale)
+            gw = min(gw * (1.0 + self._hjit(hx, hy, 3.0) * 0.25), 24 * self.bscale)    # garden [1.00,1.25]x, capped
+            gh = min(gh * (1.0 + self._hjit(hx, hy, 4.0) * 0.25), 17 * self.bscale)
             base["yard"] = (hx, hy + hh / 2 + gap + yh / 2, yw, yh)
             if garden_side == "SE":                          # tucked beside the south yard (sunny, tight)
                 gx, gy = hx + hw / 2 + gap + gw / 2, hy + hh / 2 + gap + gh / 2
@@ -2743,15 +2944,16 @@ class Settlement:
                 gx, gy = hx - hw / 2 - gap - gw / 2, hy
             else:                                            # "E" - lee wall, house mid-height
                 gx, gy = hx + hw / 2 + gap + gw / 2, hy
-            base["garden"] = (gx, gy, gw, gh)
-            xs = [hx - hw / 2, hx + hw / 2, base["yard"][0] - yw / 2, base["yard"][0] + yw / 2,
-                  gx - gw / 2, gx + gw / 2]
-            ys = [hy - hh / 2, base["yard"][1] + yh / 2, gy - gh / 2, gy + gh / 2]
-            base["bbox"] = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2,
-                            max(xs) - min(xs), max(ys) - min(ys))
+            beds = self._garden_beds(hx, hy, hw, hh, gx, gy, gw, gh, garden_side, gap)
+            base["gardens"] = beds                           # 1 bed normally; 2 (flanking / stacked / side-by-side) when fragmented
+            base["garden"] = beds[0]                          # primary bed (kept for the shading score + back-compat)
+            base["bbox"] = self._bbox_of([base["house"], base["yard"], *beds])
             return base
         # DISPERSED farmstead (the shipped ring-village behaviour): the windward GROVE as an L (an N
-        # band + a W band, for the default NW wind), sized so the grove footprint is ~6x the house.
+        # band + a W band, for the default NW wind), sized so the grove footprint is ~6x the house. The
+        # multi-bed garden split is a NUCLEATED feature (clean E/W walls, no grove or shed in the way); a
+        # dispersed farm keeps its single east garden (its west wall carries the windbreak grove).
+        base["gardens"] = [base["garden"]]
         b = 1.57 * hh                                         # grove band depth -> grove ~= 6x house area
         west = hx - hw / 2 - gap - b
         north = hy - hh / 2 - gap - b
@@ -2802,7 +3004,8 @@ class Settlement:
             return False
         if self.bound and any(not point_in_poly(vx, vy, self.bound) for vx, vy in self._rect_corners(geom["bbox"])):
             return False
-        if any(self._rect_blocked(geom[k], fields=True) for k in ("house", "garden", "yard")):
+        if (self._rect_blocked(geom["house"], fields=True) or self._rect_blocked(geom["yard"], fields=True)
+                or any(self._rect_blocked(g, fields=True) for g in geom["gardens"])):
             return False
         if "grove_n" in geom and any(self._rect_blocked(geom[k], fields=grove_off_field)
                                      for k in ("grove_n", "grove_w")):
@@ -2976,7 +3179,7 @@ class Settlement:
             geom = self._bundle_geom(cx, cy, hw, hh, side)
             if not self._bundle_fits(geom):
                 continue
-            score = (1 if self._garden_shaded(geom["garden"]) else 0, rank)   # unshaded first, then preference
+            score = (sum(self._garden_shaded(g) for g in geom["gardens"]), rank)   # fewest shaded beds first, then preference
             if best is None or score < best[0]:
                 best = (score, geom)
         if best is None:  # pragma: no cover - the slide only rests where some garden side fits, so best is set
@@ -3038,7 +3241,7 @@ class Settlement:
                                          "of": [rec["x"], rec["y"]], "face": list(face)})
                 self.grove_rects.append((cx, cy, w, h))
             self._attach_yard(rec["x"], rec["y"], geom["yard"])
-            self._attach_garden(rec["x"], rec["y"], geom["garden"])
+            self._attach_garden(rec["x"], rec["y"], geom["gardens"])
             self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"])
             survivors.append(rec)
         self.M["houses"] = survivors
@@ -3059,7 +3262,7 @@ class Settlement:
                 self.placed = [p for p in self.placed if p != fp]   # drop the un-appurtenanced farmhouse (rare)
                 continue
             yard_spot, garden_spot = spot
-            self._attach_garden(rec["x"], rec["y"], garden_spot)
+            self._attach_garden(rec["x"], rec["y"], [garden_spot])   # legacy farms keep ONE bed (multi-bed split is nucleated)
             self._attach_yard(rec["x"], rec["y"], yard_spot)
             # DRAW the house at its WEALTH size - a modest +/-~10% on the rendered glyph only. The manifest keeps
             # w,h at the BASE footprint (what the reservation, the yard/garden, and the overlap checks use, so
