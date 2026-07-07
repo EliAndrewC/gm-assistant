@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Hoshigaoka ("Star Hill") - the water-first BASE CASE: one pond, one contiguous field.
 
-A NEW village, purpose-built to nail the single-field case (the most common one - a broad
-gentle valley holds one contiguous paddy expanse; multiple blocks are the TERRAIN-driven
-variant for broken ground). Kikuta will be rebuilt later on this foundation WITH its
-backstory second field (blighted, fallow since last summer, water shut at the sluice);
-Hikari no Sato later still as a split multi-block village. Stage 1: the irrigation pond,
-its single sluice, the comb supply network, the paddies grown between the ditch threads,
-and the drain. No roads, farmhouses, shrine or monk plots yet - one layer at a time, each
-approved by eye; checks/tests are backfilled at the END as ratchets (per the GM), so this
-WIP lives outside pool/*.gen.py's test glob.
+A village purpose-built to nail the single-field case (the most common one - a broad gentle
+valley holds one contiguous paddy expanse; multiple blocks are the TERRAIN-driven variant for
+broken ground). Built water-first, layer by layer, each approved by eye, with the checks/tests
+backfilled as ratchets: the irrigation pond + sluice + comb supply net + paddies + drain; the
+dry hatake margin, reed marsh, and the grazing-scrub satoyama ring; the nucleated farmhouse
+cluster with its kura, threshing yards, kitchen gardens, shared draft-animal byres, and communal
+wells; the fengshui windbreak grove; the earth-god shrine (with its own ablution well) at the
+water-mouth and the back-slope graveyard; the lanes + connector track and the plank footbridges
+across the ditches. (Kikuta was later rebuilt on this foundation; Hikari no Sato is the split
+multi-block variant.)
 
 FIELD SIZING (population 350, ~70 households): a person eats ~1 koku/yr; pre-modern yields
 ~1.3 koku/tan; the village also eats coarse grain and pays ~45% tax in rice, so the paddy
@@ -25,7 +26,7 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SKILL = os.path.dirname(os.path.dirname(HERE))
+SKILL = os.path.dirname(HERE)
 sys.path.insert(0, SKILL)
 from settlement import Settlement, edge_dist, point_in_poly  # noqa: E402
 import math  # noqa: E402
@@ -39,7 +40,8 @@ SEED = 7
 
 s = Settlement(W=W, H=H, seed=SEED)
 s.meta(name="Hoshigaoka", scale="village", households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
-       nucleated=True)                                                   # a clustered village -> a COMMUNAL fengshui windbreak, not per-house groves
+       nucleated=True,                                                   # a clustered village -> a COMMUNAL fengshui windbreak, not per-house groves
+       field_footbridges=True)                                          # long irrigation ditches carry plank footbridges (long_ditches_have_a_footbridge)
 # Hoshigaoka is a GENTLE valley, so its dry-field furrows FAN (the patchwork quilt) - the default. A steep /
 # terraced village would pass build_comb(..., furrow_spread=~0.06) to converge the rows onto the contour, and
 # record meta(dry_furrows_vary=False) so dry_plot_furrows_vary is not required. Recorded below from the net.
@@ -108,6 +110,13 @@ beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>'
                 for x, y in net["bund_beans"])
 s.add(f'<g opacity="0.85">{beads}</g>')
 
+# REED MARSH on the low, downstream SE toe of the valley: below the paddy's drainage line the wet-rice
+# cultivation stops, and the un-reclaimed valley floor stays reed WETLAND (wet rice is diked OUT of marsh -
+# where reclamation ends, or the ground is too low/wet to manage, it reverts to marsh, NOT dry plain). A
+# generous SE region; s.marsh SKIPS any point on the paddy, so the reeds ABUT the field's low edge and only
+# fill the open ground beyond, feathering out and trailing off the SE map corner. See SKILL.md 'Marsh'.
+s.marsh([(1080, 1240), (2210, 1240), (2210, 470), (1450, 560)])
+
 # the pond's FEEDER: a natural brook flowing IN from the map edge (water sources come from off-map, not
 # out of nowhere). Recorded as a stream anchored offmap->pond so pond_fed_from_edge + stream_runs_off_edge
 # validate it. Drawn BEFORE the pond so the pond covers the junction.
@@ -115,6 +124,15 @@ pcx, pcy, prx, pry = POND
 s.stream([(pcx - 24, -12), (pcx - 14, 70), (pcx + 6, pcy - pry + 18)],
          frm={"kind": "offmap"}, to={"kind": "pond"}, width=9)
 s.pond(pcx, pcy, prx, pry)
+
+# AROUND THE POND (the valley-head reservoir sits IN the hill catchment - satoyama). (a) a REEDY FRINGE at the
+# shallow shore (marsh role='pond_fringe' - a ring around the pond; s.marsh skips the open water + the dry
+# fields, so reeds only rim the shore). (b) CATCHMENT SCRUB behind/west of the pond - the cut-over hill that
+# feeds it (reuse the commons scrub: grass + brush + scraggly pine), bleeding off the NW corner. See SKILL.md
+# 'Marsh' + 'Village windbreak' (back-slope). Both drawn AFTER the pond so the reeds rim its edge.
+_ring = [(pcx + (prx + 58) * math.cos(a), pcy + (pry + 58) * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]
+s.marsh(_ring, role="pond_fringe")
+s.commons([(78, 58), (258, 58), (258, 344), (78, 372)])   # NW catchment hill, west of the pond (x<pond west edge), bleeds off the NW
 
 # the water network: head-race, tapering supply canals, delivery ditches, drain
 def _draw_channel(pts, col, w0, w1):
@@ -167,6 +185,9 @@ CX, CY = 400, 650                    # cluster centre on the higher W margin
 s.lane([(CX - 8, CY - 205), (CX + 6, CY - 70), (CX - 4, CY + 85), (CX + 4, CY + 245)],
        width=5, clearance=18, worn=True)
 _fp = s._nearest_field_point(CX + 170, CY + 20)
+# the spur STOPS at the field edge - a lane does not run through the flooded paddy (people cross into the
+# fields on foot, along the earthen bunds). The plank bridges over the ditches are placed separately by
+# channel_footbridges() and are NOT connected to any lane.
 s.lane([(CX + 2, CY + 30), ((CX + _fp[0]) / 2 + 12, (CY + 30 + _fp[1]) / 2 - 6), (_fp[0] - 6, _fp[1] + 2)],
        width=5, clearance=18, worn=True)
 # The CONNECTING PATH to the wider world: a trodden dirt track (NOT a constructed road), worn into the
@@ -189,6 +210,19 @@ for _ in range(240):
         _placed += 1
 n_farms = s.farmsteads()
 print(f"farmhouses: {n_farms}")
+
+# COMMUNAL WELLS (井戸): every village keeps a few shared draw-wells among the dwellings - one per ~20-25
+# households, the idobata (well-side) social hub. A farm beside the irrigation net can dip the ditch, but the
+# houses set back from the water need a well. Scatter across the house-cluster bbox; `near` keeps each well
+# AMONG the houses (never out in open country), and place_wells' coverage pass guarantees no dwelling is left
+# dry. Placed AFTER the farmhouses (so the wells slot into the courtyards between them) and before the grove.
+s.place_wells((228, 410, 670, 910), spacing=185, near=210)
+
+# DRAFT-ANIMAL BYRES: shared ox / water-buffalo sheds standing in the courtyards among the homesteads (a
+# buffalo was costly and shared, so ~one byre per 4-5 households, not one per farm). Scattered into clear gaps
+# like the wells, each among the houses. AFTER the farmhouses + wells, BEFORE the grove (which skips them).
+n_byres = s.draft_byres(fraction=0.2, gap=70)
+print(f"byres: {len(n_byres)}")
 
 # VILLAGE WINDBREAK - the Chinese fengshui forest (风水林), a COMMUNAL grove, NOT per-house yashikirin (a
 # nucleated cluster shelters behind one village-scale wood). Sited per 背山面水 ("back to the hill, face the
@@ -257,8 +291,13 @@ s.village_grove(_scatter, role="copse", dense=False)
 _env = [[round(x, 1), round(y, 1)] for x, y in net["envelope"]]
 _exs = [p[0] for p in _env]
 _eys = [p[1] for p in _env]
+# vis_bbox = the extent of the DRAWN paddy plots (the envelope has an invisible tail past the last plot used
+# only for house-blocking); crop_to_content frames to the visible plots, not that tail
+_pvx = [v[0] for p in net["plots"] for v in p["poly"]]
+_pvy = [v[1] for p in net["plots"] for v in p["poly"]]
 s.M["fields"].append({"name": "hoshigaoka-paddies", "kind": "paddy", "outline": _env,
-                      "bbox": [min(_exs), min(_eys), max(_exs), max(_eys)]})
+                      "bbox": [min(_exs), min(_eys), max(_exs), max(_eys)],
+                      "vis_bbox": [min(_pvx), min(_pvy), max(_pvx), max(_pvy)]})
 for c in net["channels"]:
     s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
                                  "role": c["role"], "field": "hoshigaoka-paddies",
@@ -285,7 +324,72 @@ if not net["brook"]:                                  # field runs to the map ed
                                      [round(_dr[-1][0], 1), round(_dr[-1][1], 1)]],
                             "frm": {"kind": "field", "name": "hoshigaoka-paddies"}, "to": {"kind": "offmap"}, "w": 2.5})
 
-s.title("Hoshigaoka (WIP: water + fields)")
-s.compass()
+# PLANK FOOTBRIDGES across the irrigation ditches: standalone planks where field-workers cross a channel
+# while walking the paddy bunds - NOT tied to any lane. Every long ditch stretch gets one about midway (the
+# northern trunk along the top of the field gets several; each branch running into the paddy gets one; the
+# channel next to the village gets one), spanning the ditch perpendicular. Called AFTER all field ditches.
+n_bridges = s.channel_footbridges(spacing=320)
+# The channel running N-S along the VILLAGE'S east edge sees heavy foot traffic, so it carries a SECOND plank
+# on its NORTHERN stretch (beyond the midway one channel_footbridges placed) - the descending 'main' ditch.
+_vc = next(d for d in s.M["field_ditches"]
+           if d["role"] == "main" and abs(d["poly"][-1][1] - d["poly"][0][1]) > 150)
+_vp = _vc["poly"]
+_seg = [math.hypot(_vp[i + 1][0] - _vp[i][0], _vp[i + 1][1] - _vp[i][1]) for i in range(len(_vp) - 1)]
+_t, _acc = 0.24 * sum(_seg), 0.0
+for _i, _sl in enumerate(_seg):
+    if _acc + _sl >= _t:
+        _f = (_t - _acc) / _sl
+        _ax, _ay = _vp[_i]
+        _bx, _by = _vp[_i + 1]
+        s.bridge(_ax + (_bx - _ax) * _f, _ay + (_by - _ay) * _f,
+                 math.degrees(math.atan2(_by - _ay, _bx - _ax)) + 90, _vc["w"] + 15, 5.5)
+        break
+    _acc += _sl
+print(f"footbridges: {n_bridges + 1}")
+
+# GRAZING SCRUB fills the remaining DRY margins of the NW-high / SE-low valley into a CONTINUOUS upland ring
+# (not isolated corner patches): everything above the irrigation command, and the back-slope behind the
+# village, is un-terraced grass-and-scrub hill-grazing. role='grazing' = general marginal hill-grazing (not
+# the windward fuel-commons), so it is exempt from commons_beyond_the_windbreak. Held OFF the crops: commons
+# auto-skips the paddy, and the polygons are kept ABOVE the dry-field tops (ymin ~231-285) and WEST of the
+# paddy edge so scrub never dots the rows. Two broad bands:
+#   (a) the NORTH up-valley head - one band across the WHOLE top edge above the dry fields, from the pond
+#       catchment east to the NE flank, which drops at the east edge to meet the SE reed marsh. The grass
+#       hill climbs to the off-map ridge; the dry hatake fields are the cultivated hem of it.
+#   (b) the SOUTH back-slope - the non-arable hill BEHIND the village (background 背山, off the water/field
+#       front), below the fengshui grove and west of the paddy, down to the SW boundary. The graveyard +
+#       earth-god shrine sit ON this scrub (drawn later, on top): burial + kegare belong on the waste back-slope.
+# ORDER: this fill comes AFTER the farmhouses + groves (so it fills the gaps THEY leave) but BEFORE the
+# graveyard + shrine (so those sit ON the scrubland, not on bare tan). See SKILL.md 'Village windbreak'.
+# the NORTH band's top edge DIPS over x630-1470 (a shallow clearing / col in the ridge line) so the map TITLE
+# has a blank tan bay just right of the pond to sit in - the hills stand back a little at the valley mouth.
+s.commons([(630, 215), (930, 170), (1230, 150), (1470, 58), (2160, 58), (2160, 475),
+           (1905, 235), (1560, 215), (1200, 225), (900, 248), (700, 255), (630, 258)], role="grazing")   # NORTH up-valley grass hills
+s.commons([(85, 895), (250, 988), (430, 1030), (600, 955), (770, 975),
+           (900, 1075), (1010, 1180), (1080, 1250), (85, 1250)], role="grazing")   # SOUTH back-slope behind the village
+
+# CROP the frame to the placed content (BEFORE the title + the deferred small features, which drop into the
+# framed space): the commons is a BLEED feature, so its outer scrub trails off the west edge = "more wild
+# ground this way", while the hard features (village, fields, grove, pond) fit fully with a margin.
+s.crop_to_content(margin=30)
+
+# DEFERRED FEATURES drop into the cropped frame. VILLAGE SHRINE at the SE WATER-MOUTH ENTRANCE: the tutelary /
+# earth-god shrine (土地庙) guards the feng-shui entry point where the connector track leaves for the road, set
+# in the water-mouth grove that we already grew there, a small Shinto shrine fronted by a torii. SMALL (~30x24
+# px ~ 275 m2, a touch bigger than a plain farmhouse) - a village earth-god shrine is a modest hall, NOT a
+# temple. (kind='shrine' satisfies religious_matches_scale; graveyard=False - Shinto keeps kegare at arm's length.)
+s.shrine_hall(392, 1074, "", w=30, h=24, kind="shrine", primary=True,
+              torii=[(392, 1114)], graveyard=False)   # no label - the vermilion hall + torii read as a shrine
+# VILLAGE GRAVEYARD on the SW BACK-SLOPE, behind the village and well AWAY from the pond (the water source -
+# graves foul water) and off the field/water front (背山面水: the non-arable back side). The high NW back is
+# taken by the sacred grove + the pond, so the graves sit on the clear lower-W slope below the grove. A village
+# plot (parish=False, not a temple parish ground), set back from all water + kept >=120px from the shrine (kegare).
+s.cemetery(178, 1030, 100, 70, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot, not a ruled rectangle
+# The shrine sits APART from the village (past the graveyard at the water-mouth), beyond reach of the
+# communal wells, so it keeps its OWN well for purification/ablution (temizu) - a remote shrine is watered by
+# its own draw-point, not the village's (remote_shrine_has_own_well).
+s.shrine_well(392, 1074)
+
+s.title("Hoshigaoka")   # title placed AFTER everything, so it finds blank space in the framed window
 s.finish(os.path.join(HERE, "hoshigaoka"))
 print(f"paddy acres: {net['acres']:.1f}  plots: {len(net['plots'])}")

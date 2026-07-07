@@ -59,7 +59,6 @@ s.label(950, 546, "irrigation pond", 10, italic=True, color="#5C7488")
 s.farmsteads()
 
 s.title("Moritono")
-s.compass()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 print("placed houses:", s.finish(os.path.join(HERE, "moritono")))

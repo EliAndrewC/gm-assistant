@@ -91,7 +91,6 @@ s.farmsteads()
 s.place_wells((120, 110, 1660, 1250), spacing=240, r=5, near=90)
 
 s.title("Kikuta")
-s.compass()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 print("placed houses:", s.finish(os.path.join(HERE, "kikuta-village")))

@@ -157,6 +157,8 @@ s.farmsteads()
 # is known: the threshing pass abandons the odd over-crowded farmhouse, and a well must never be left
 # stranded beside one that is no longer there (wells_among_dwellings).
 s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
+# the set-apart Benten monastery (west, far from the houses) keeps its OWN ablution well (remote_shrine_has_own_well)
+s.shrine_well(770, 940)
 
 # ===== FIRE DEFENSE: a watch-tower =====
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
@@ -165,7 +167,6 @@ s.place_wells((80, 300, 2375, 1775), spacing=280, near=85)
 s.fire_tower(1040, 1300, label="fire-watch tower")   # standing in the tenement warren, watching its packed rooftops
 
 s.title("Hirameki")
-s.compass()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

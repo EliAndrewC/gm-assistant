@@ -44,6 +44,17 @@ def _struct_rect(s):
     return {"x": s["x"], "y": s["y"], "w": s["w"], "h": s["h"], "rot": s.get("rot", 0)}
 
 
+def _box_hits_poly(box, poly):
+    """Whether an axis-aligned box (x0,y0,x1,y1) overlaps a polygon (corner-in, vertex-in, or edge-cross)."""
+    x0, y0, x1, y1 = box
+    bc = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    n = len(poly)
+    return (any(point_in_poly(cx, cy, poly) for cx, cy in bc)
+            or any(x0 <= vx <= x1 and y0 <= vy <= y1 for vx, vy in poly)
+            or any(segments_cross(bc[e], bc[(e + 1) % 4], poly[k], poly[(k + 1) % n])
+                   for e in range(4) for k in range(n)))
+
+
 def poly_area(pts):
     """Absolute polygon area (shoelace) of a list of (x, y) vertices."""
     n = len(pts)
@@ -64,12 +75,12 @@ def poly_area(pts):
 # `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
 # sets, forcing whoever adds it to declare its overlap behaviour rather than silently skipping it.
 _OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds",
-                    "ossuaries", "ministries", "fire_towers")
+                    "ossuaries", "ministries", "fire_towers", "byres")
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs")
 _OVERLAP_LINEAR = ("fields", "fallow_patches", "flower_fields", "streams", "channels", "town_streets",
-                   "alleys", "lanes", "wards", "ponds", "pastures", "forests", "commons", "dry_plots")   # linear / area features structs avoid
+                   "alleys", "lanes", "wards", "ponds", "pastures", "forests", "commons", "dry_plots", "marshes")   # linear / area features structs avoid
 _OVERLAP_EXEMPT = {
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
@@ -499,7 +510,7 @@ DEFAULT_MANIFEST = {
     "gates": [], "moat": None, "governor_mansion": None, "ministries": [],
     "inspection_stations": [], "theater_stage": None, "granary": None, "wells": [],
     "threshing_yards": [], "gardens": [], "groves": [], "fire_towers": [], "village_groves": [], "commons": [],
-    "dry_plots": [], "meta": {},
+    "dry_plots": [], "marshes": [], "title": None, "meta": {},
 }
 
 
@@ -1212,10 +1223,31 @@ def gate(M, verbose=True):
     check("houses_off_corridors", onroad == 0, f"{onroad} house-on-corridor hit(s)")
 
     ADJ = 165
-    far = [h for h in houses if h.get("role") != "headman"
-           and min((poly_dist(h["x"], h["y"], f["outline"]) for f in fields), default=999) > ADJ]
-    # WHY (farmers build close to the fields they work): SKILL.md "Historical grounding"
-    check("all_houses_field_adjacent", not far, f"{len(far)} house(s) >{ADJ}px from any field")
+    # WHY (farmers build close to the fields they work): SKILL.md "Historical grounding". The invariant
+    # depends on the SETTLEMENT FORM, and it is TUNABLE via meta.nucleated:
+    #   - DISPERSED (the default): every farmhouse fronts its own fields, so EACH house must be within ADJ
+    #     of a field (`all_houses_field_adjacent`).
+    #   - NUCLEATED (meta.nucleated=True): the houses cluster together and the FIELDS radiate from the
+    #     cluster's edge - the interior houses are legitimately a cluster-span BACK from the nearest field,
+    #     so per-house adjacency is wrong. Instead the whole CLUSTER must ABUT its fields: the nearest house
+    #     is field-adjacent (the village sits ON its land, not floating in open country) AND no house is
+    #     farther than the cluster's own diameter past that edge (`cluster_abuts_fields`).
+    if fields and houses:
+        hh = [h for h in houses if h.get("role") != "headman"]
+        dists = [(h, min(poly_dist(h["x"], h["y"], f["outline"]) for f in fields)) for h in hh]
+        if meta.get("nucleated"):
+            hx = [h["x"] for h in houses]
+            hy = [h["y"] for h in houses]
+            ccx, ccy = sum(hx) / len(hx), sum(hy) / len(hy)
+            span = max((math.hypot(h["x"] - ccx, h["y"] - ccy) for h in houses), default=0)   # cluster radius
+            nearest = min((d for _, d in dists), default=999)
+            far = [h for h, d in dists if d > ADJ + 2 * span]   # farther than a cluster-diameter past the field edge
+            check("cluster_abuts_fields", nearest <= ADJ and not far,
+                  f"nucleated cluster: nearest house {nearest:.0f}px from a field (want <={ADJ}); "
+                  f"{len(far)} house(s) beyond a cluster-span of the fields")
+        else:
+            far = [h for h, d in dists if d > ADJ]
+            check("all_houses_field_adjacent", not far, f"{len(far)} house(s) >{ADJ}px from any field")
     def runs_off_edge(ol):
         return any(p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1 for p in ol)
 
@@ -1258,7 +1290,7 @@ def gate(M, verbose=True):
         bigger = [h for h in houses if h is not headman and h["w"] * h["h"] >= hm]
         check("headman_is_largest", not bigger, f"{len(bigger)} house(s) >= headman")
 
-    # no two body labels overlap (title block + compass are excluded by the generator)
+    # no two body labels overlap (the title block is excluded by the generator)
     labels = M.get("labels", [])
     # An overlap is real when the bboxes cross by more than the estimation slack. The horizontal slack
     # is small (a >2px x-overlap means the glyphs actually touch); the vertical slack stays larger (~4px)
@@ -1269,43 +1301,40 @@ def gate(M, verbose=True):
           and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4]
     check("no_label_overlaps", not ov, f"{len(ov)} overlapping label pair(s)")
 
-    # the N/S COMPASS is a non-diegetic OVERLAY, so it must sit in empty space - clear of every building,
-    # terrain polygon, road/street/water line, wall, and label - for readability. Move it with s.compass(x, y).
-    comp = M.get("compass")
-    if comp:
-        cb = [(comp["x"] - 28, comp["y"] - 40), (comp["x"] + 28, comp["y"] - 40),
-              (comp["x"] + 28, comp["y"] + 44), (comp["x"] - 28, comp["y"] + 44)]
-        chit = []
-        cfoot = []
-        for k in _OVERLAP_STRUCTS + _OVERLAP_TARGETS + ("merchant_estates", "wall_towers"):
-            cfoot += [s for s in M.get(k, []) if "w" in s]
-        if any(sat_overlap(cb, rect_corners(_struct_rect(s))) for s in cfoot):
-            chit.append("a building")
-        for key in ("fields", "flower_fields", "pastures", "forest_patches"):
-            for fdef in M.get(key, []):
-                ol = fdef.get("outline") if isinstance(fdef, dict) else fdef
-                if ol and (any(point_in_poly(px, py, ol) for px, py in cb) or any(point_in_poly(vx, vy, cb) for vx, vy in ol)
-                           or any(segments_cross(ol[i], ol[(i + 1) % len(ol)], cb[e], cb[(e + 1) % 4]) for i in range(len(ol)) for e in range(4))):
-                    chit.append(key)
+    # the TITLE (the map's place name) must sit over BLANK space, not on a building / field / water / grove -
+    # the reader has to be able to read it. The generator searches for a clear box (crop_to_content first, so the
+    # search runs over the framed window); this verifies it landed clear. Solid features + the fields + pond.
+    ttl = M.get("title")
+    if ttl:
+        tb = ttl["bbox"]
+        tc = [(tb[0], tb[1]), (tb[2], tb[1]), (tb[2], tb[3]), (tb[0], tb[3])]
+        thit = []
+        for k in ("houses", "gardens", "threshing_yards", "groves", "dry_plots", "buildings", "manors",
+                  "religious", "flophouses", "storehouses", "merchant_estates", "ministries",
+                  "village_groves", "commons", "marshes"):
+            for s in M.get(k, []):
+                if s.get("poly"):
+                    if _box_hits_poly(tb, s["poly"]):
+                        thit.append(k)
+                        break
+                elif "w" in s and not (tb[2] < s["x"] - s["w"] / 2 or tb[0] > s["x"] + s["w"] / 2
+                                       or tb[3] < s["y"] - s["h"] / 2 or tb[1] > s["y"] + s["h"] / 2):
+                    thit.append(k)
                     break
-        clines = ([(M["road"], M.get("road_width", 26) / 2 + 3)] if M.get("road") else []) \
-            + [(s["poly"], s.get("w", 9) / 2 + 3) for s in M.get("streams", [])] \
-            + [(c["poly"], 6) for c in M.get("channels", [])] \
-            + ([(M["moat"], M.get("moat_width", 22) / 2 + 3)] if M.get("moat") else []) \
-            + [(s["pts"], s["w"] / 2 + 3) for s in M.get("town_streets", [])] \
-            + ([(list(M["wall"]) + [M["wall"][0]], 8)] if M.get("wall") and len(M["wall"]) >= 3 else [])
-        for poly, rw in clines:
-            if (any(seg_dist(px, py, poly[k], poly[k + 1]) < rw for px, py in cb for k in range(len(poly) - 1))
-                    or any(point_in_poly(vx, vy, cb) for vx, vy in poly)
-                    or any(segments_cross(poly[k], poly[k + 1], cb[e], cb[(e + 1) % 4]) for k in range(len(poly) - 1) for e in range(4))):
-                chit.append("a road/water/wall line")
+            if thit:
                 break
-        for L in M.get("labels", []):
-            if min(cb[2][0], L[2]) - max(cb[0][0], L[0]) > 2 and min(cb[2][1], L[3]) - max(cb[0][1], L[1]) > 2:
-                chit.append("a label")
-                break
-        check("compass_clear", not chit,
-              f"the N/S compass overlaps {sorted(set(chit))} - it is an overlay, so move it with s.compass(x, y) to an empty corner")
+        if not thit:
+            for fdef in M.get("fields", []):
+                if _box_hits_poly(tb, fdef["outline"]):
+                    thit.append("fields")
+                    break
+        if not thit and M.get("pond"):
+            pcx, pcy, prx, pry = M["pond"]
+            if not (tb[2] < pcx - prx or tb[0] > pcx + prx or tb[3] < pcy - pry or tb[1] > pcy + pry):
+                thit.append("pond")
+        check("title_clear_of_features", not thit,
+              f"the map title sits on {thit[:2]} - it must go over BLANK space so the place name is readable "
+              f"(the generator's s.title() searches for a clear box; call it AFTER crop_to_content)")
 
     # A LABEL must not sit on a building/structure it does NOT name (town + city scale, where features
     # carry distinct identities). A label may overlap the feature(s) it names - its own building/compound,
@@ -1400,23 +1429,25 @@ def gate(M, verbose=True):
     # fields, roads, samurai country estates, farmhouses, the countryside continuing beyond the frame -
     # but a label that spills past the edge is clipped and unreadable, so every label's bounding box
     # must sit inside the frame. The frame is the cropped view (a city map crops tight to the walls,
-    # so its EX/EY bounds are the viewBox) or, uncropped, the full canvas. The title and compass are
-    # placed directly (not recorded in M["labels"]) and sit inside the frame by construction.
+    # so its EX/EY bounds are the viewBox) or, uncropped, the full canvas. The title is placed directly
+    # (not recorded in M["labels"]) and sits inside the frame by construction.
     off_img = [L[5] if len(L) > 5 else "label" for L in labels
                if L[0] < EX0 - 1 or L[1] < EY0 - 1 or L[2] > EX1 + 1 or L[3] > EY1 + 1]
     check("labels_within_image", not off_img,
           f"label(s) running off the edge of the image - a label must sit fully within the frame (fields/roads/"
           f"estates/farmhouses may run off, labels may not): {sorted(set(off_img))}")
 
-    # every WELL must sit AMONG the dwellings it serves (ANY scale): a communal well is the draw-point
-    # for the households around it, so one out in open countryside with no house beside it is unreal. (A
-    # city's pack fills in around its wells; the rural tiers place wells only near houses via
-    # place_wells(..., near=...), since their grid would otherwise scatter into the fields.)
+    # every WELL must sit AMONG the buildings it serves (ANY scale): a communal well is the draw-point for
+    # the households around it, so one out in open countryside with no building beside it is unreal. (A city's
+    # pack fills in around its wells; the rural tiers place wells only near houses via place_wells(..., near=...),
+    # since their grid would otherwise scatter into the fields.) A well may also serve a RELIGIOUS building - a
+    # set-apart shrine's own ablution well stands beside the shrine, not among houses - so religious halls count.
     all_wells = M.get("wells", [])
     if all_wells:
-        dwell_all = M.get("buildings", []) + M.get("houses", [])
+        dwell_all = M.get("buildings", []) + M.get("houses", []) + M.get("religious", [])
         stray = [(round(wl["x"]), round(wl["y"])) for wl in all_wells
-                 if dwell_all and min(math.hypot(wl["x"] - b["x"], wl["y"] - b["y"]) for b in dwell_all) > 95]
+                 if dwell_all and min(math.hypot(wl["x"] - b["x"], wl["y"] - b["y"]) - 0.5 * math.hypot(b["w"], b["h"])
+                                      for b in dwell_all) > 95]   # gap to the served building's EDGE (fair to a large hall)
         check("wells_among_dwellings", not stray,
               f"well(s) standing in open ground with no building within ~95px - a well serves the households "
               f"around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}")
@@ -1461,6 +1492,26 @@ def gate(M, verbose=True):
             check("settlement_dwellings_watered", not dry,
                   f"{len(dry)} household(s) more than {REACH}px from any water source - a well, or an irrigation "
                   f"channel / pond / stream / moat: {dry[:4]} - put a well within reach")
+
+            # A shrine/temple set sufficiently APART from the village keeps its OWN WELL close by for purification
+            # (temizu): too far to walk to the village's shared wells, it needs a dedicated draw-point right beside
+            # it - and specifically a WELL, not just any water (a ditch/pond is not an ablution source). A shrine
+            # AMONG or near the houses shares the village wells (exempt). "Set apart" = the nearest dwelling is more
+            # than SHRINE_FAR px away; "close by" = a well within SHRINE_WELL_NEAR px.
+            SHRINE_FAR, SHRINE_WELL_GAP = 150, 70
+            shrine_hill = M.get("hill")
+            wellless = []
+            for r in M.get("religious", []):
+                if shrine_hill and in_ellipse(r["x"], r["y"], shrine_hill):
+                    continue                                          # a hilltop/mountain shrine draws from a spring/basin, not a dug well
+                if min((math.hypot(r["x"] - b["x"], r["y"] - b["y"]) for b in dwell), default=1e9) <= SHRINE_FAR:
+                    continue                                          # among/near the houses -> shares the village wells
+                near_well = min((math.hypot(r["x"] - wl["x"], r["y"] - wl["y"]) for wl in wells), default=1e9)
+                if near_well - 0.5 * math.hypot(r["w"], r["h"]) > SHRINE_WELL_GAP:   # gap to the hall's EDGE (a big monastery's well sits further out)
+                    wellless.append((round(r["x"]), round(r["y"])))
+            check("remote_shrine_has_own_well", not wellless,
+                  f"{len(wellless)} shrine/temple(s) set apart from the village (>{SHRINE_FAR}px from any house) with no "
+                  f"well beside them - a remote shrine keeps its own well for ablution: {wellless[:4]}")
 
         # HARVEST PROCESSING (per-farmstead): a rice settlement threshes and dries its crop at the
         # FARMHOUSE, not on one communal floor. Each household works its cut rice on its own small tamped
@@ -1698,6 +1749,18 @@ def gate(M, verbose=True):
             check("yards_unshaded_by_groves", not shaded,
                   f"threshing yard(s) {shaded[:3]} have a grove in the sun-corridor just to their SOUTH - it would shade "
                   f"the drying ground; keep groves out of the strip south of any yard")
+            # SAME sun rule for the COMMUNAL fengshui trees: no village-grove CLUMP may sit in the southern sun-
+            # corridor of a threshing yard OR a kitchen garden (both need the drying/growing sun from the south).
+            # The scatter records its real clumps, so test those, not the bounding poly. WHY: SKILL.md 'Village windbreak'.
+            vg_clumps = [(cx, cy, g.get("r", 6)) for g in M.get("village_groves", []) for cx, cy in g.get("clumps", [])]
+            vg_shaded = []
+            for f in yards + gardens:
+                se = f["y"] + f["h"] / 2
+                if any(abs(cx - f["x"]) < f["w"] / 2 + r and se - r < cy < se + 22 + r for cx, cy, r in vg_clumps):
+                    vg_shaded.append((round(f["x"]), round(f["y"])))
+            check("village_trees_unshade_yards_and_gardens", not vg_shaded,
+                  f"a village-grove tree sits in the southern sun-corridor of yard/garden(s) {vg_shaded[:3]} - it would "
+                  f"shade the drying/growing ground; keep the scatter + belts out of the strip south of any yard or garden")
             # SCALE: the typical grove must read as the LARGEST homestead appurtenance - a real stand of dozens
             # of trees, not a clump. The median grove's total footprint (its arms) must be >= ~0.75x the house
             # it shelters (the spacious farms run well above; a single-arm grove on a cramped farm pulls the
@@ -1835,8 +1898,11 @@ def gate(M, verbose=True):
                     ccx = sum(h["x"] for h in houses) / len(houses)
                     ccy = sum(h["y"] for h in houses) / len(houses)
                     wb_proj = max((g["x"] - ccx) * wvx + (g["y"] - ccy) * wvy for g in wbs)
-                    near = [(round(c["x"]), round(c["y"])) for c in commons
-                            if (c["x"] - ccx) * wvx + (c["y"] - ccy) * wvy <= wb_proj + 5]
+                    # only the fuel/fodder COMMONS proper (role 'commons') must lie on the windward back-slope;
+                    # a 'grazing' scrub patch is general marginal hill-grazing that can sit on any dry flank (the
+                    # NE dry-margin, the SW corner) and is exempt from the beyond-the-windbreak toposequence rule
+                    near = [(round(c["x"]), round(c["y"])) for c in commons if c.get("role", "commons") != "grazing"
+                            and (c["x"] - ccx) * wvx + (c["y"] - ccy) * wvy <= wb_proj + 5]
                     check("commons_beyond_the_windbreak", not near,
                           f"fuel/fodder commons {near[:2]} sit between the village and its back-grove (or on the field "
                           f"side), not BEYOND the windbreak - the toposequence is village -> back-grove -> commons, so the "
@@ -2312,8 +2378,10 @@ def gate(M, verbose=True):
     bridges = M.get("bridges", [])
     waters_b = ([s["poly"] for s in M.get("streams", [])]
                 + [c["poly"] for c in M.get("channels", [])]
+                + [d["poly"] for d in M.get("field_ditches", [])]
                 + ([M["moat"]] if M.get("moat") else []))
-    carried_b = ([road] if road else []) + [st["pts"] for st in M.get("town_streets", [])]
+    carried_b = (([road] if road else []) + [st["pts"] for st in M.get("town_streets", [])]
+                 + [ln["pts"] for ln in M.get("lanes", [])])
     unbridged = []
     for rpts in carried_b:
         for i in range(len(rpts) - 1):
@@ -2326,6 +2394,35 @@ def gate(M, verbose=True):
                             unbridged.append((round(p[0]), round(p[1])))
     check("roads_bridge_water", not unbridged,
           f"a road/street crosses water with no bridge at {sorted(set(unbridged))} - carry it over (call s.bridges() after laying all roads and water)")
+
+    # STANDALONE plank FOOTBRIDGES on the irrigation ditches (opt-in via meta.field_footbridges): field-workers
+    # cross a ditch on a plank while walking the bunds, so any long ditch stretch carries at least one plank
+    # about midway (these are NOT lane crossings - no path leads to them). Fires if a long ditch has none near it.
+    if meta.get("field_footbridges"):
+        FB_MIN = 140
+        unplanked = []
+        for d in M.get("field_ditches", []):
+            pts = d["poly"]
+            length = sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
+            if length < FB_MIN:
+                continue
+            if not any(poly_dist(b["x"], b["y"], pts) <= 20 for b in M.get("bridges", [])):
+                unplanked.append((round(pts[0][0]), round(pts[0][1])))
+        check("long_ditches_have_a_footbridge", not unplanked,
+              f"{len(unplanked)} long irrigation ditch(es) with no plank footbridge near {unplanked[:4]} - a long "
+              f"ditch stretch needs a plank about midway (call s.channel_footbridges())")
+
+    # A plank bridge is overlap-EXEMPT in general (it intentionally sits ON the water it spans), but it must
+    # never land on a FARMHOUSE - a plank crosses a ditch, it does not sit on a home. Rotated-rect SAT of each
+    # bridge deck (span x deck-width) against every house footprint.
+    house_corners = [rect_corners(_struct_rect(h)) for h in M.get("houses", [])]
+    on_house = []
+    for b in M.get("bridges", []):
+        deck = rect_corners({"x": b["x"], "y": b["y"], "w": b["span"], "h": b["w"], "rot": b.get("rot", 0)})
+        if any(sat_overlap(deck, hc) for hc in house_corners):
+            on_house.append((round(b["x"]), round(b["y"])))
+    check("bridges_clear_of_houses", not on_house,
+          f"{len(on_house)} plank bridge(s) overlap a farmhouse at {on_house[:4]} - a plank spans a ditch, it must not sit on a home")
 
     # WHERE WATERCOURSES MEET they must MERGE like a confluence, not stack opacity into a dark seam.
     # All water BEDS render below all water SHEENS (the shared-opacity bed group composites first, the
@@ -2511,6 +2608,29 @@ def gate(M, verbose=True):
     check("houses_clear_of_lanes", not lane_hits,
           f"farmhouse(s) sit ON a village lane at {lane_hits[:5]} - a lane is a no-build corridor; houses FRONT it, "
           f"never overlap the tread (lay lanes BEFORE the houses so they pack around it)")
+
+    # TREES must not be drawn ON a lane / street / road - a path is bare trodden earth, not planted over. Covers
+    # BOTH the communal fengshui grove (village_groves: each records its actual drawn clump centres + radius) and
+    # the per-house windbreak grove (groves: a rect footprint). Every corridor (lanes, town streets, the road) is
+    # a keep-out; the generator skips any clump within it, and this verifies nothing slipped through.
+    corridors = [(ln["pts"], ln.get("w", 6) / 2) for ln in M.get("lanes", [])]
+    corridors += [(s["pts"], s.get("w", 10) / 2) for s in M.get("town_streets", [])]
+    if M.get("road"):
+        corridors.append((M["road"], M.get("road_width", 26) / 2))
+    tree_on_path = []
+    for g in M.get("village_groves", []):
+        r = g.get("r", 6)
+        for cx, cy in g.get("clumps", []):
+            if any(seg_dist(cx, cy, p[k], p[k + 1]) < half + r for p, half in corridors for k in range(len(p) - 1)):
+                tree_on_path.append((round(cx), round(cy)))
+                break
+    for g in M.get("groves", []):
+        gc = rect_corners(_struct_rect(g)) + [(g["x"], g["y"])]
+        if any(seg_dist(cx, cy, p[k], p[k + 1]) < half for cx, cy in gc for p, half in corridors for k in range(len(p) - 1)):
+            tree_on_path.append((round(g["x"]), round(g["y"])))
+    check("groves_clear_of_lanes", not tree_on_path,
+          f"tree/grove clump(s) sit ON a lane/street/road at {tree_on_path[:4]} - a path is bare trodden earth; "
+          f"keep vegetation off every corridor (the generator skips clumps within a lane's keep-out)")
     moat_ring = M.get("moat")
     for idx, st in enumerate(M.get("streams", [])):
         e0, e1 = st["poly"][0], st["poly"][-1]
@@ -2545,6 +2665,17 @@ def gate(M, verbose=True):
     if _dd is not None:
         _dv = (math.cos(math.radians(_dd)), math.sin(math.radians(_dd)))
         fall = lambda p: p[0] * _dv[0] + p[1] * _dv[1]
+        # REED MARSH sits on the LOW, downhill ground below the paddy (wet rice is reclaimed FROM marsh; the un-
+        # reclaimed valley toe stays wetland). So a marsh must lie DOWNHILL of the field it borders - its centroid's
+        # fall must exceed the field centroid's; a marsh on the high/dry side would read wrong. WHY: SKILL.md 'Marsh'.
+        marshes_ = [m for m in M.get("marshes", []) if m.get("role") != "pond_fringe"]   # a pond's reedy MARGIN is a water fringe, not the low valley toe - exempt
+        if marshes_ and M.get("fields"):
+            fol = M["fields"][0]["outline"]
+            fc = (sum(p[0] for p in fol) / len(fol), sum(p[1] for p in fol) / len(fol))
+            high_marsh = [(round(m["x"]), round(m["y"])) for m in marshes_ if fall((m["x"], m["y"])) <= fall(fc)]
+            check("marsh_on_low_ground", not high_marsh,
+                  f"reed marsh {high_marsh[:2]} sits UPHILL of the paddy - marsh is the LOW, undrained valley toe "
+                  f"below the field (wet rice is reclaimed from marsh), so it must lie downhill (higher fall)")
         streams_ = M.get("streams", [])
 
         def _near_stream(pt):
@@ -4078,7 +4209,10 @@ def gate(M, verbose=True):
             check("city_no_large_empty_space", largest <= 12,
                   f"a contiguous empty region of ~{largest} grid cells (~{largest * STEP * STEP // 1000}k px2) inside the walls - a city does not wall in large unused ground")
 
-    if scale == "village":
+    # Tax-free (temple/monk glebe) plots are OPTIONAL - marking them on the map is a choice, not a
+    # requirement. The check only validates the COUNT when a map opts in (it drew some, or meta asks for
+    # them); a village that does not denote them at all is fine.
+    if scale == "village" and (M.get("taxfree") or meta.get("taxfree_expected")):
         tf = M.get("taxfree", [])
         check("taxfree_plots_in_range", 2 <= len(tf) <= 3, f"{len(tf)} tax-free plots (law: ~2 households)")
 

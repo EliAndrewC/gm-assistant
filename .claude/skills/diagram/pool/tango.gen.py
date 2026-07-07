@@ -372,7 +372,6 @@ s.fire_tower(1528, 958, label="fire-watch tower")    # central, over the laborer
 s.fire_tower(1210, 1100, label="fire-watch tower")   # west, over the servant/merchant blocks - clear of the NW in-wall agricultural fields
 
 s.title("Tango")
-s.compass()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

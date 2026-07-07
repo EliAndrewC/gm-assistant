@@ -81,7 +81,6 @@ s.farmsteads()
 s.place_wells((140, 150, 1700, 1115), spacing=330, near=85)
 
 s.title("Hikari no Sato")
-s.compass()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 print("placed houses:", s.finish(os.path.join(HERE, "hikari-no-sato")))

@@ -141,9 +141,10 @@ s.farmsteads()
 
 # communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
 s.place_wells((85, 110, 1930, 1260), spacing=240, near=95)
+# the Bishamon monastery sits apart from the houses, so it keeps its OWN ablution well (remote_shrine_has_own_well)
+s.shrine_well(215, 800)
 
 s.title("Hoshizora")
-s.compass(1950, 50)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}
