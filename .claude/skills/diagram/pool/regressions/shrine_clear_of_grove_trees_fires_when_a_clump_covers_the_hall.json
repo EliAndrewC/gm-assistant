@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "religious": [
+  {
+   "kind": "shrine",
+   "x": 500,
+   "y": 500,
+   "w": 30,
+   "h": 24,
+   "label": "Shrine"
+  }
+ ],
+ "village_groves": [
+  {
+   "role": "water_mouth",
+   "r": 14,
+   "clumps": [
+    [
+     502,
+     498
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "shrine_clear_of_grove_trees"
+  ],
+  "source": "test_checks.py::test_shrine_clear_of_grove_trees_fires_when_a_clump_covers_the_hall"
+ }
+}

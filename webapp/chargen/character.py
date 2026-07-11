@@ -1,7 +1,7 @@
 import re
 from os.path import join
 from copy import deepcopy
-from random import random, randrange, normalvariate, choice
+from random import random, randrange, normalvariate, choice, choices, uniform
 
 from chargen import config
 from chargen import constants as c
@@ -9,6 +9,43 @@ from chargen import constants as c
 
 def rounded(x: int, minval=1, maxval=15) -> int:
     return min(maxval, max(minval, round(x * 2) / 2))
+
+
+#: Age distribution brackets: (weight, youngest, oldest).  The weights form a
+#: bell curve centered on the mid-30s - NPCs the party deals with are mostly
+#: established working adults, not fresh graduates or elders.  The floor of 16
+#: is just past gempukku (nobody generated here is a child), and the 75 cap
+#: reflects how few Rokugani remain active in public life beyond that age.
+AGE_BRACKETS = [
+    (5, 16, 19),
+    (15, 20, 24),
+    (25, 25, 29),
+    (35, 30, 34),
+    (40, 35, 37),
+    (35, 38, 39),
+    (25, 40, 44),
+    (15, 45, 49),
+    (10, 50, 59),
+    (5, 60, 75),
+]
+
+
+def random_age(xp: int) -> int:
+    """
+    Roll a random age, skewed older for more experienced characters.
+
+    A bracket is drawn from the AGE_BRACKETS bell curve, then shifted by XP:
+    +1 bracket (roughly 5 years) per 75 XP above the 50-XP baseline, so
+    veterans skew older and greenhorns younger, with +/- half a bracket of
+    jitter so XP doesn't fully determine age.  The final age is uniform
+    within the chosen bracket.
+    """
+    weights = [weight for weight, _, _ in AGE_BRACKETS]
+    base_index = choices(range(len(AGE_BRACKETS)), weights=weights)[0]
+    shifted_index = base_index + (xp - 50) / 75.0 + uniform(-0.5, 0.5)
+    final_index = max(0, min(len(AGE_BRACKETS) - 1, round(shifted_index)))
+    _, youngest, oldest = AGE_BRACKETS[final_index]
+    return randrange(youngest, oldest + 1)
 
 
 def unused_name(gender: str = None) -> tuple[str, str]:
@@ -60,6 +97,7 @@ class Character:
         self.personal_name, self.name_meaning = unused_name(self.gender)
 
         self.xp = self.gen_xp()
+        self.age = self.gen_age()
         self.honor = self.gen_honor()
         self.traits = self.gen_traits()
         self.collects = ''
@@ -117,6 +155,14 @@ class Character:
         while random() < 0.10:
             base += 50
         return base + 5 * randrange(10)
+
+    def gen_age(self) -> int:
+        """
+        Age is generated on the character (rather than rolled at art time) so
+        that the sheet, the portrait, and the synthesized backstory all agree
+        on how old this character is.
+        """
+        return random_age(self.xp)
 
     def gen_honor(self, base=2.0) -> float:
         """

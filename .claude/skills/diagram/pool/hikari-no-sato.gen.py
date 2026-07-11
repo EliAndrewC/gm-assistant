@@ -70,9 +70,10 @@ s.label(1135, 408, "blight - fallow patch", 10, italic=True, color="#9C7A40")
 s.label(950, 96, "from the hills (off-map)", 10, "start", italic=True, color="#5C7488")
 s.label(700, 555, "shrine's tax-free plots (vermillion)", 9, italic=True, color="#6B2A18")
 
-# the village burial ground, off at the east edge - well clear of both shrines (a Shinto shrine
-# keeps death-pollution at arm's length)
-s.cemetery(1620, 690, 82, 58, label="village burial ground")
+# the village burial ground in the SW Bishamon shrine's precinct: the shrine is officially Shinseist and its
+# monk performs the funerary rites, so the graves are its churchyard (village_graveyard_by_shrine), off the
+# hall itself. No label - by the shrine, its marker rows read as a graveyard.
+s.cemetery(215, 890, 82, 58)
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()

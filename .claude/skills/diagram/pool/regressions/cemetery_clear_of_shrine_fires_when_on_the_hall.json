@@ -24,6 +24,6 @@
   "fires": [
    "cemetery_clear_of_shrine"
   ],
-  "source": "test_checks.py::test_cemetery_clear_of_shrine_fires_when_adjacent"
+  "source": "test_checks.py::test_cemetery_clear_of_shrine_fires_when_on_the_hall"
  }
 }

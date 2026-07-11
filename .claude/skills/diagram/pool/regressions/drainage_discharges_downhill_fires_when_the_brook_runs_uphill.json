@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "down_deg": 45
+ },
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     700,
+     700
+    ]
+   ],
+   "role": "drain",
+   "field": "f"
+  }
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     700,
+     700
+    ],
+    [
+     400,
+     400
+    ]
+   ],
+   "frm": {
+    "kind": "drain"
+   },
+   "to": {
+    "kind": "offmap"
+   },
+   "w": 9
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "drainage_discharges_downhill"
+  ],
+  "source": "test_checks.py::test_drainage_discharges_downhill_fires_when_the_brook_runs_uphill"
+ }
+}

@@ -1,0 +1,45 @@
+{
+ "meta": {
+  "scale": "village",
+  "field_footbridges": true
+ },
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     100,
+     200
+    ],
+    [
+     800,
+     200
+    ]
+   ],
+   "w": 5,
+   "role": "main",
+   "field": "p"
+  },
+  {
+   "poly": [
+    [
+     100,
+     600
+    ],
+    [
+     180,
+     600
+    ]
+   ],
+   "w": 4,
+   "role": "branch",
+   "field": "p"
+  }
+ ],
+ "bridges": [],
+ "_regression": {
+  "fires": [
+   "long_ditches_have_a_footbridge"
+  ],
+  "source": "test_checks.py::test_long_ditches_have_a_footbridge_fires_when_a_long_ditch_is_planless"
+ }
+}

@@ -1,0 +1,59 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "fields": [
+  {
+   "name": "f",
+   "kind": "paddy",
+   "bbox": [
+    100,
+    100,
+    400,
+    400
+   ],
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     100,
+     400
+    ]
+   ]
+  }
+ ],
+ "houses": [
+  {
+   "x": 430,
+   "y": 250,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 1200,
+   "y": 250,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "all_houses_field_adjacent"
+  ],
+  "source": "test_checks.py::test_all_houses_field_adjacent_dispersed_fires_on_a_remote_house"
+ }
+}

@@ -20,7 +20,7 @@ Target ~75-90 acres of paddy on the 240-acre frame (1px = 2ft).
 POND SIZING: sole-storage rule of thumb ~2,000-2,500 m3 per irrigated ha (typical depth
 2-4 m); a stream-fed pond refilling 1-2x a season runs comfortably at ~1,200-1,500 m3/ha.
 31.8 ha of paddy -> ~1.5 ha of pond surface (rx=145, ry=92 px) at ~3 m depth ~ 47,000 m3
-~ 1,470 m3/ha + the feeder stream. See SKILL.md 'Water-first fields v2' for the grounding.
+~ 1,470 m3/ha + the feeder stream. See settlements.md 'Water-first fields v2' for the grounding.
 """
 import os
 import sys
@@ -114,7 +114,7 @@ s.add(f'<g opacity="0.85">{beads}</g>')
 # cultivation stops, and the un-reclaimed valley floor stays reed WETLAND (wet rice is diked OUT of marsh -
 # where reclamation ends, or the ground is too low/wet to manage, it reverts to marsh, NOT dry plain). A
 # generous SE region; s.marsh SKIPS any point on the paddy, so the reeds ABUT the field's low edge and only
-# fill the open ground beyond, feathering out and trailing off the SE map corner. See SKILL.md 'Marsh'.
+# fill the open ground beyond, feathering out and trailing off the SE map corner. See settlements.md 'Marsh'.
 s.marsh([(1080, 1240), (2210, 1240), (2210, 470), (1450, 560)])
 
 # the pond's FEEDER: a natural brook flowing IN from the map edge (water sources come from off-map, not
@@ -128,41 +128,24 @@ s.pond(pcx, pcy, prx, pry)
 # AROUND THE POND (the valley-head reservoir sits IN the hill catchment - satoyama). (a) a REEDY FRINGE at the
 # shallow shore (marsh role='pond_fringe' - a ring around the pond; s.marsh skips the open water + the dry
 # fields, so reeds only rim the shore). (b) CATCHMENT SCRUB behind/west of the pond - the cut-over hill that
-# feeds it (reuse the commons scrub: grass + brush + scraggly pine), bleeding off the NW corner. See SKILL.md
+# feeds it (reuse the commons scrub: grass + brush + scraggly pine), bleeding off the NW corner. See settlements.md
 # 'Marsh' + 'Village windbreak' (back-slope). Both drawn AFTER the pond so the reeds rim its edge.
 _ring = [(pcx + (prx + 58) * math.cos(a), pcy + (pry + 58) * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]
 s.marsh(_ring, role="pond_fringe")
 s.commons([(78, 58), (258, 58), (258, 344), (78, 372)])   # NW catchment hill, west of the pond (x<pond west edge), bleeds off the NW
 
-# the water network: head-race, tapering supply canals, delivery ditches, drain
-def _draw_channel(pts, col, w0, w1):
-    """Draw a watercourse. If w1 < w0 it TAPERS (a delivery ditch dwindling as it feeds the paddies) -
-    split into stroked pieces of decreasing width; round caps soften the joins into a smooth narrowing."""
-    if abs(w1 - w0) < 0.2:
-        dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
-        s.add(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" '
-              f'stroke-linejoin="round" stroke-linecap="round" opacity="0.92"/>')
-        return
-    n, L = 7, len(pts)
-    for k in range(n):
-        piece = pts[k * (L - 1) // n: (k + 1) * (L - 1) // n + 1]
-        if len(piece) < 2:
-            continue
-        wk = w0 + (w1 - w0) * (k + 0.5) / n
-        dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in piece)
-        s.add(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" '
-              f'stroke-linejoin="round" stroke-linecap="round" opacity="0.92"/>')
-
-
+# the water network: head-race, tapering supply canals, delivery ditches, drain. The channels go THROUGH the
+# water block (s.field_channel) so they JOIN the pond + each other cleanly: each bed sits in the shared water
+# group over the pond's rim edge, and the head-race's sluice end is snapped onto the rim (covers it -> clean gap).
 for c in sorted(net["channels"], key=lambda c: -c["w"]):
-    _draw_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE',
-                  c["w"], c.get("w_tail", c["w"]))
+    s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE',
+                    c["w"], c.get("w_tail", c["w"]))
 
 # the drain's OUTFALL empties into a natural valley BROOK that carries the runoff off the map downhill
 # (water OUT, mirroring the pond's feeder = water IN). Only present when the field's low corner sits
 # INSIDE the frame; on Hoshigaoka the paddy runs to the E map edge, so the drain discharges off-map
 # directly (a brook from an edge-outfall would run back through the field). A field-extent pass that
-# bounds the paddy within the frame (see SKILL.md) will bring the outfall in-frame and light the brook.
+# bounds the paddy within the frame (see settlements.md) will bring the outfall in-frame and light the brook.
 if net["brook"]:
     s.stream(net["brook"], frm={"kind": "drain"}, to={"kind": "offmap"}, width=9)
 
@@ -182,7 +165,7 @@ CX, CY = 400, 650                    # cluster centre on the higher W margin
 # a village could never afford paving. A nucleated village is
 # laced with lanes: a main N-S spine through the cluster, and a spur east to the paddy edge that bridges
 # the village to its fields (spur field-end computed from the field geometry, not hand-placed).
-s.lane([(CX - 8, CY - 205), (CX + 6, CY - 70), (CX - 4, CY + 85), (CX + 4, CY + 245)],
+s.lane([(CX - 8, CY - 205), (CX + 6, CY - 70), (CX + 8, CY + 85), (CX + 16, CY + 245)],
        width=5, clearance=18, worn=True)
 _fp = s._nearest_field_point(CX + 170, CY + 20)
 # the spur STOPS at the field edge - a lane does not run through the flooded paddy (people cross into the
@@ -231,7 +214,7 @@ print(f"byres: {len(n_byres)}")
 # (village_grove fills an organic polygon, skipping clumps on houses/yards/gardens/paddy): (1) the 后龙林
 # back-village BELT, a ragged crescent EMBRACING the high WEST edge + wrapping the NW/SW corners, nestled
 # against the cluster; (2) the 水口林 WATER-MOUTH cluster at the low SE exit; (3) a leafy SCATTER of bamboo /
-# fruit copses filling the open gaps among the houses. See SKILL.md 'Village windbreak'.
+# fruit copses filling the open gaps among the houses. See settlements.md 'Village windbreak'.
 _hx = [h["x"] for h in s.M["houses"]]
 _hy = [h["y"] for h in s.M["houses"]]
 _minx, _maxx, _miny, _maxy = min(_hx), max(_hx), min(_hy), max(_hy)
@@ -270,7 +253,7 @@ _belt_outer = [(_ccx - 58, _maxy + 58), (_minx - 74, _maxy - 22), (_minx - 100, 
 # (NOT a wedge/rhombus): the E edge underlaps the grove back, the W edge is ragged and follows the same curve
 # out onto the far windward slope. The degraded, cut-over hill-ground (grass, brush, scraggly pines) - non-
 # arable grazing, visually open + sparse, distinct from the dense grove. Toposequence: village -> back-grove ->
-# fuel commons -> (off-map boundary). See SKILL.md 'Village windbreak' / back-slope.
+# fuel commons -> (off-map boundary). See settlements.md 'Village windbreak' / back-slope.
 _arc = _interp(_belt_outer, 11)                       # densified grove-back curve (bottom -> top)
 _com_inner = [(x + 16, y) for x, y in _arc]           # underlap the grove back a touch (hidden under the canopy)
 _com_outer = [(max(16, x - _rng.uniform(96, 150)), y + _rng.uniform(-16, 16)) for x, y in _arc]   # ragged ~parallel W edge
@@ -360,7 +343,7 @@ print(f"footbridges: {n_bridges + 1}")
 #       front), below the fengshui grove and west of the paddy, down to the SW boundary. The graveyard +
 #       earth-god shrine sit ON this scrub (drawn later, on top): burial + kegare belong on the waste back-slope.
 # ORDER: this fill comes AFTER the farmhouses + groves (so it fills the gaps THEY leave) but BEFORE the
-# graveyard + shrine (so those sit ON the scrubland, not on bare tan). See SKILL.md 'Village windbreak'.
+# graveyard + shrine (so those sit ON the scrubland, not on bare tan). See settlements.md 'Village windbreak'.
 # the NORTH band's top edge DIPS over x630-1470 (a shallow clearing / col in the ridge line) so the map TITLE
 # has a blank tan bay just right of the pond to sit in - the hills stand back a little at the valley mouth.
 s.commons([(630, 215), (930, 170), (1230, 150), (1470, 58), (2160, 58), (2160, 475),

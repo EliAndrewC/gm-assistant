@@ -1,0 +1,28 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  },
+  {
+   "x": 600,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "fire_towers_dispersed"
+  ],
+  "source": "test_checks.py::test_fire_towers_dispersed_fires_when_bunched"
+ }
+}

@@ -1,0 +1,35 @@
+{
+ "pond": [
+  400,
+  300,
+  150,
+  90
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     600,
+     600
+    ],
+    [
+     420,
+     320
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "pond"
+   },
+   "w": 9
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "pond_fed_from_edge"
+  ],
+  "source": "test_checks.py::test_pond_fed_from_edge_fires_when_the_feeder_starts_mid_map"
+ }
+}

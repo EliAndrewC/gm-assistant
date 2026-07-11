@@ -1,0 +1,25 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "torii": [
+  [
+   500,
+   500,
+   1
+  ]
+ ],
+ "wells": [
+  {
+   "x": 505,
+   "y": 502,
+   "r": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "wells_clear_of_shrine_and_torii"
+  ],
+  "source": "test_checks.py::test_wells_clear_of_shrine_and_torii_fires_when_a_well_sits_under_the_torii"
+ }
+}

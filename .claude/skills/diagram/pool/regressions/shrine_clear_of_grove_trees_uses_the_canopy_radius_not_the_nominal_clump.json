@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "religious": [
+  {
+   "kind": "shrine",
+   "x": 500,
+   "y": 500,
+   "w": 30,
+   "h": 24,
+   "label": "Shrine"
+  }
+ ],
+ "village_groves": [
+  {
+   "role": "water_mouth",
+   "r": 14,
+   "clumps": [
+    [
+     533,
+     500
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "shrine_clear_of_grove_trees"
+  ],
+  "source": "test_checks.py::test_shrine_clear_of_grove_trees_uses_the_canopy_radius_not_the_nominal_clump"
+ }
+}

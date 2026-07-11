@@ -1,0 +1,76 @@
+{
+ "meta": {
+  "scale": "village",
+  "nucleated": true
+ },
+ "fields": [
+  {
+   "name": "f",
+   "kind": "paddy",
+   "bbox": [
+    1400,
+    150,
+    1700,
+    400
+   ],
+   "outline": [
+    [
+     1400,
+     150
+    ],
+    [
+     1700,
+     150
+    ],
+    [
+     1700,
+     400
+    ],
+    [
+     1400,
+     400
+    ]
+   ]
+  }
+ ],
+ "houses": [
+  {
+   "x": 60,
+   "y": 250,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 130,
+   "y": 250,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 200,
+   "y": 250,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 270,
+   "y": 250,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "cluster_abuts_fields"
+  ],
+  "source": "test_checks.py::test_nucleated_cluster_abuts_fields_fires_when_the_village_floats_off_its_land"
+ }
+}

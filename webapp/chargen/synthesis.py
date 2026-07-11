@@ -47,7 +47,7 @@ Legend of the Five Rings tabletop campaign, set in the "L7R" version of Rokugan
 described in the SETTING BRIEF below.
 
 The character's mechanical details were generated semi-randomly: clan, family,
-lineage, school, rank, recognition, experience, honor, and a list of traits
+lineage, school, age, rank, recognition, experience, honor, and a list of traits
 (advantages, disadvantages, and physical or behavioral descriptions). Your job
 is to synthesize those details into a believable individual.
 
@@ -73,8 +73,11 @@ Write 1 to 3 short paragraphs of prose that:
   even then keep it uncertain.
 - Never contradict the SETTING BRIEF or the character's own generated details.
 - The character's stated facts are authoritative - their one-line summary, tags,
-  posting, clan, family, school, rank, and recognition. Do not override them or
-  invent around them. In particular, RANK is a level of peerage, not an office:
+  posting, clan, family, school, age, rank, and recognition. Do not override them
+  or invent around them. Keep the backstory's timeline consistent with the stated
+  age: the span of careers, apprenticeships, marriages, and past events must fit
+  inside a life that long, and how long ago something happened should square with
+  how old they were when it happened. In particular, RANK is a level of peerage, not an office:
   the setting's baseline "rank N is typically held by such-and-such official" is a
   default, not a rule. A character can hold a high rank through a relative's
   standing (the family-rank rule) while holding no office at all. If the character
@@ -173,6 +176,8 @@ def format_character(character: dict) -> str:
         lines += ['', descriptor]
 
     standing = []
+    if character.get('age') is not None:
+        standing.append(f'Age: {character["age"]}')
     if character.get('rank') is not None:
         standing.append(f'Rank: {character["rank"]}')
     if character.get('recognition') is not None:

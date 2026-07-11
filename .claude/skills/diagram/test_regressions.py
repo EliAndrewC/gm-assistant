@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Replay the captured regression corpus (pool/regressions/*.json).
 
-The third leg of the Mode B testing discipline (see SKILL.md "Three testing disciplines"):
+The third leg of the Mode B testing discipline (see settlements.md "Three testing disciplines"):
 
   - test_villages.py  - the GOOD maps still PASS the whole gate (integration).
   - test_checks.py    - each check still FIRES on a minimal synthetic break (unit).

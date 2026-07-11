@@ -35,6 +35,22 @@ def test_finish_writes_svg_json_and_renders_png():
         assert os.path.exists(base + ".png")
 
 
+def test_png_width_env_overrides_render_resolution(monkeypatch):
+    # DIAGRAM_PNG_WIDTH renders at a lower resolution for a quick iteration eyeball (raster cost is
+    # ~quadratic in width); DIAGRAM_SKIP_RENDER skips it entirely (the test suite's default - the gate
+    # reads the JSON, never the PNG). Committed maps still render at the full default width.
+    from PIL import Image
+    with tempfile.TemporaryDirectory() as d:
+        base = os.path.join(d, "t")
+        monkeypatch.setenv("DIAGRAM_PNG_WIDTH", "400")
+        _town().finish(base)                              # render=True + env width -> the int(env_w) branch
+        assert Image.open(base + ".png").width == 400
+        base2 = os.path.join(d, "u")
+        monkeypatch.setenv("DIAGRAM_SKIP_RENDER", "1")
+        _town().finish(base2)                             # skip env -> no raster even though render=True
+        assert os.path.exists(base2 + ".svg") and not os.path.exists(base2 + ".png")
+
+
 def test_set_view_records_meta_and_crops_viewbox():
     # a city map crops tight to the walls: set_view records the window in meta (the checks read
     # it as the map edge) and finish() rewrites the SVG viewBox to that window. The title follows
@@ -92,13 +108,16 @@ def test_crop_to_content_uses_field_outline_when_no_vis_bbox():
     assert s.view == (400, 400, 500, 500)
 
 
-def test_crop_to_content_bleeds_a_commons_but_keeps_two_thirds_every_side():
+def test_crop_ignores_the_commons_which_just_clips_at_the_frame():
+    # the commons scrub does NOT set the frame - it is drawn and simply CLIPS at the edge, so even a huge
+    # commons overhanging the hard core on every side leaves the frame tight to the hard content + margin.
+    # (The GM wants the frame tight to real content - the pond, a back-slope graveyard - never held open by
+    # empty grazing: the Ueda-east grazing band past the lone pond used to bloat the frame ~130px.)
     s = _crop_settlement()
-    s.M["houses"] = [{"x": 500, "y": 500, "w": 20, "h": 20}]         # tiny hard core (490..510)
+    s.M["houses"] = [{"x": 500, "y": 500, "w": 20, "h": 20}]         # hard core 490..510
     s.M["commons"] = [{"poly": [[200, 200], [800, 200], [800, 800], [200, 800]]}]   # huge, overhangs ALL four sides
-    s.crop_to_content(margin=10, bleed_frac=2.0 / 3)
-    # hard crop 480..520; commons 600 wide -> 2/3 floor pulls each side out to 400..600 (keeps 2/3 of the commons)
-    assert s.view == (400, 400, 200, 200)
+    s.crop_to_content(margin=10)
+    assert s.view == (480, 480, 40, 40)                             # hard 490..510 + 10 margin; commons ignored
 
 
 def test_box_clear_detects_rect_poly_and_line_obstacles():
@@ -421,6 +440,60 @@ def test_marsh_pond_fringe_skips_the_open_water():
     assert s.M["marshes"][0]["role"] == "pond_fringe"
 
 
+def test_pond_anchored_detects_a_watercourse_that_connects_to_the_pond():
+    # the cue that a course should snap onto the pond rim: either end's anchor is kind=='pond'
+    assert Settlement._pond_anchored({"kind": "pond"}, {"kind": "field"}) is True
+    assert Settlement._pond_anchored({"kind": "field"}, {"kind": "pond"}) is True
+    assert Settlement._pond_anchored({"kind": "offmap"}, {"kind": "field"}) is False
+    assert Settlement._pond_anchored(None, None) is False
+
+
+def test_clip_to_pond_is_a_noop_without_a_pond():
+    s = _crop_settlement()                                  # no pond recorded on this map
+    pts = [(100, 100), (200, 200)]
+    assert s._clip_to_pond(pts) == pts                      # nothing to snap to -> returned unchanged
+
+
+def test_clip_to_pond_snaps_a_connecting_end_onto_the_rim():
+    s = _crop_settlement()
+    s.M["pond"] = [300, 300, 100, 80]                       # centre (300,300), rx=100, ry=80; rim where rad==1
+
+    def rad(p):
+        return ((p[0] - 300) / 100) ** 2 + ((p[1] - 300) / 80) ** 2
+
+    inside = s._clip_to_pond([(300, 300), (310, 310), (300, 500)])   # a RUN inside the pond -> trimmed to start AT the rim
+    assert abs(rad(inside[0]) - 1.0) < 1e-3
+    assert inside[-1] == (300, 500)                         # the field end is untouched
+    outside = s._clip_to_pond([(300, 388), (300, 600)])     # foot JUST OUTSIDE (rad ~1.21) -> a rim point is prepended
+    assert abs(rad(outside[0]) - 1.0) < 1e-3
+    assert outside[1] == (300, 388)                         # the original foot is kept, the rim point sits before it
+
+
+def test_field_channel_routes_pieces_through_the_water_block():
+    s = _crop_settlement()
+    s.M["pond"] = [300, 300, 100, 80]
+    run = [(300, 300)] + [(300 + 30 * i, 380 + 30 * i) for i in range(9)]   # sluice inside -> snapped to the rim
+    s.field_channel(run, "#6C9CBE", 6.0, 2.0)              # tapering -> split into stroked pieces of decreasing width
+    s.field_channel(run, "#7C9EB0", 3.0, 3.0)             # uniform width -> the single-stroke branch
+    s.field_channel([(300, 300), (600, 700)], "#6C9CBE", 6.0, 2.0)   # only 2 pts -> degenerate pieces are skipped
+    assert s.water and s._water_idx is not None            # routed through _water, not a bare s.add
+
+
+def test_pond_feeder_snaps_to_the_rim_even_when_drawn_before_the_pond():
+    # the DEFERRED clip: a feeder is drawn BEFORE the pond (M['pond'] unknown at call time), then the pond;
+    # at flush both a bed+sheen feeder (stream) and a bed-only feeder (channel) are re-emitted snapped to the
+    # rim, so neither lays a stroke across the open water.
+    with tempfile.TemporaryDirectory() as d:
+        base = os.path.join(d, "t")
+        s = Settlement(1000, 1000, seed=1)
+        s.meta(name="V", scale="village")
+        s.stream([(500, 20), (500, 300)], frm={"kind": "offmap"}, to={"kind": "pond"})       # brook INTO the pond, drawn FIRST
+        s.channel((500, 260), (200, 260), {"kind": "pond"}, {"kind": "field", "name": "w"})  # supply channel OUT of the pond
+        s.pond(500, 250, 100, 70)                          # pond LAST - the clip must still find it at flush
+        s.finish(base, render=False)
+        assert "9CB4C8" in open(base + ".svg").read()      # water rendered (the flush ran the re-emit)
+
+
 def test_commons_draws_open_scrub_and_records_it():
     s = _nuc_village()                                                # field to the EAST (x >= 640)
     poly = [(60, 300), (200, 320), (110, 660)]                       # a TRIANGLE of open ground WEST of the field
@@ -456,6 +529,22 @@ def test_marsh_keeps_reeds_off_a_lane_causeway():
     assert len(s.M["marshes"]) == 1
 
 
+def test_commons_keeps_scrub_off_a_shrine_and_torii():
+    # a commons that OVERLAPS the shrine must not scatter scrub over the hall or its torii arch (both are
+    # block_polys); the skip is per-tuft, so the plot is still recorded
+    s = _nuc_village()
+    s.shrine_hall(320, 400, "", w=60, h=48, kind="shrine", torii=[(320, 330)], graveyard=False)
+    s.commons([(220, 150), (420, 150), (420, 650), (220, 650)])          # straddles the shrine + torii blocks
+    assert len(s.M["commons"]) == 1
+
+
+def test_marsh_keeps_reeds_off_a_building():
+    s = _crop_settlement()
+    s.shrine_hall(300, 300, "", w=60, h=48, kind="shrine", graveyard=False)   # a block_poly inside the marsh
+    s.marsh([(150, 150), (500, 150), (500, 450), (150, 450)])            # reeds on the hall are skipped
+    assert len(s.M["marshes"]) == 1
+
+
 def test_cemetery_default_is_a_ruled_rectangle():
     s = _crop_settlement()
     s.cemetery(300, 300, 100, 70)
@@ -469,6 +558,33 @@ def test_cemetery_organic_draws_an_irregular_plot():
     assert "<path" in frag and 'width="100"' not in frag                  # a jittered blob outline, no ruled 100-wide plot rect
     assert s.M["cemeteries"][-1]["w"] == 100                              # recorded bbox is still the w x h rectangle
     assert s.block_polys[-1] == [(242, 257), (358, 257), (358, 343), (242, 343)]   # no-build block unchanged (checks unaffected)
+
+
+def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
+    # the homestead solver rejects a house/yard/garden that lands on a channel/ditch/stream, but NOT the grove
+    s = _crop_settlement()
+    s.M["field_ditches"] = [{"poly": [(400, 300), (400, 500)], "role": "drain", "w": 6, "field": "f"}]
+    s.M["channels"] = [{"poly": [(600, 300), (600, 500)], "w": 2.5}]
+    s.M["streams"] = [{"poly": [(800, 300), (800, 500)], "w": 9}]
+    assert s._rect_on_water((400, 400, 24, 16)) is True                   # garden straddling the drain -> seg_dist branch
+    assert s._rect_on_water((360, 400, 100, 10)) is True                   # a wide rect an edge of which the ditch CROSSES far from any corner -> segments_cross branch
+    assert s._rect_on_water((600, 400, 20, 14)) is True                   # on the feeder channel
+    assert s._rect_on_water((800, 400, 20, 14)) is True                   # on the stream
+    assert s._rect_on_water((500, 400, 24, 16)) is False                  # dry ground between them -> clear
+    # the grove (fields=False) is exempt - it may hug a bund/ditch; the solid parts (fields=True) are not
+    assert s._rect_blocked((400, 400, 24, 16), fields=False) is False
+    assert s._rect_blocked((400, 400, 24, 16), fields=True) is True
+
+
+def test_rect_on_water_skips_a_degenerate_course_and_far_ones():
+    # the collision pre-filter: a degenerate (<2-point) course is dropped from _water_obstacles (it has no
+    # segment and would crash the bbox min/max on an empty poly), and a course whose bbox is nowhere near
+    # the rect is skipped without any seg_dist / crossing math.
+    s = _crop_settlement()
+    s.M["streams"] = [{"poly": [(100, 100)], "w": 9},                       # degenerate: single point -> skipped
+                      {"poly": [(1500, 1300), (1500, 1400)], "w": 9}]       # real, but far from the probe rect
+    assert s._water_obstacles() == [(s.M["streams"][1]["poly"], 9 / 2 + 5, (1500, 1300, 1500, 1400))]
+    assert s._rect_on_water((400, 400, 24, 16)) is False                    # far course bbox-rejected -> clear
 
 
 def _byre_village():

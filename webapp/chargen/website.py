@@ -252,6 +252,8 @@ class Root:
             ]
         if 'xp' in character_data:
             character_data['xp'] = int(character_data['xp'])
+        if character_data.get('age'):
+            character_data['age'] = int(character_data['age'])
         return {'prompt': art.generate_prompt(character_data)}
 
     @ajax

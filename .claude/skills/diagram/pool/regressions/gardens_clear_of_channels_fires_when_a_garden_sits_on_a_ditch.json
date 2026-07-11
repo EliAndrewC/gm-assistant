@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "gardens": [
+  {
+   "x": 540,
+   "y": 500,
+   "w": 24,
+   "h": 16,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ]
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     540,
+     480
+    ],
+    [
+     540,
+     520
+    ]
+   ],
+   "role": "drain",
+   "w": 6,
+   "field": "f"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "gardens_clear_of_channels"
+  ],
+  "source": "test_checks.py::test_gardens_clear_of_channels_fires_when_a_garden_sits_on_a_ditch"
+ }
+}

@@ -367,9 +367,12 @@ s.farmsteads()
 # Placed LAST, on the cleared seams the dense city already leaves between its building clusters - so they
 # perturb nothing (no blocking before any pack) and stand on the ACTUAL gaps. FIRE-WATCH TOWERS
 # (hinomi-yagura, the magistrate's bell-watch) stand ON a seam, overlooking the open ground with clear
-# sightlines, among the commoner blocks. WHY: SKILL.md "Fire towers".
-s.fire_tower(1528, 958, label="fire-watch tower")    # central, over the laborer/merchant blocks
-s.fire_tower(1210, 1100, label="fire-watch tower")   # west, over the servant/merchant blocks - clear of the NW in-wall agricultural fields
+# sightlines - ONE AMID EACH major commoner quarter (fire_tower_amid_its_district: the original pair
+# both stood NW of centre - one of them ON the pond rim - leaving the NE laborer warren unwatched;
+# these three sit at the commoner-mass district centroids). WHY: settlements.md "Fire towers".
+s.fire_tower(2054, 1039, label="fire-watch tower")   # NE, amid the laborer neighborhoods (the city's biggest rooftop mass)
+s.fire_tower(1300, 1350, label="fire-watch tower")   # west, amid the servant/burakumin blocks - clear of the NW in-wall agricultural fields and the pond; the tower originally stood at (1188,1409), ON the well court at (1195,1420) (fire_tower_clear_of_wells), and this is the nearest seam with daylight for both the frame and its label
+s.fire_tower(1568, 1608, label="fire-watch tower")   # south-central, amid the merchant/road-market blocks
 
 s.title("Tango")
 

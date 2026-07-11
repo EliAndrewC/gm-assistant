@@ -1,0 +1,26 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "pond": [
+  400,
+  400,
+  100,
+  80
+ ],
+ "title": {
+  "name": "V",
+  "bbox": [
+   380,
+   380,
+   450,
+   420
+  ]
+ },
+ "_regression": {
+  "fires": [
+   "title_clear_of_features"
+  ],
+  "source": "test_checks.py::test_title_clear_of_features_fires_over_the_pond"
+ }
+}

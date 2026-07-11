@@ -1,0 +1,32 @@
+{
+ "road": [
+  [
+   100,
+   400
+  ],
+  [
+   900,
+   400
+  ]
+ ],
+ "road_width": 26,
+ "groves": [
+  {
+   "x": 500,
+   "y": 400,
+   "w": 40,
+   "h": 30,
+   "rot": 0,
+   "of": [
+    500,
+    360
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "groves_clear_of_lanes"
+  ],
+  "source": "test_checks.py::test_groves_clear_of_lanes_fires_when_a_per_house_grove_sits_on_a_road"
+ }
+}

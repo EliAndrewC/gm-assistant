@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "village",
+  "down_deg": 45
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "bbox": [
+    1000,
+    1000,
+    1600,
+    1600
+   ],
+   "outline": [
+    [
+     1000,
+     1000
+    ],
+    [
+     1600,
+     1000
+    ],
+    [
+     1600,
+     1600
+    ],
+    [
+     1000,
+     1600
+    ]
+   ]
+  }
+ ],
+ "marshes": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 100,
+   "h": 100
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "marsh_on_low_ground"
+  ],
+  "source": "test_checks.py::test_marsh_on_low_ground_fires_when_marsh_is_uphill"
+ }
+}

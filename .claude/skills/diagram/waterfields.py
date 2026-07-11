@@ -6,7 +6,7 @@ the other way round. The generator lays the irrigation skeleton first - one pond
 head-race, supply canals along the HIGH margins, delivery ditches dropping downhill - and
 the paddy plots are carved BETWEEN those lines, so the map cannot help but communicate the
 hydrology. The old approach (draw a field blob, decorate it with water) reads as random no
-matter how it is tuned; see SKILL.md 'Water-first fields v2' for the full grounding.
+matter how it is tuned; see settlements.md 'Water-first fields v2' for the full grounding.
 
 ENGINE: every plot-column boundary is a warp THREAD marched downhill in lockstep fall-steps,
 clamped so threads can never cross and never pinch closer than one plot width (GAP). The
@@ -268,7 +268,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     # By default the field grows downhill until the threads leave the map (fills the frame to the low
     # corner, then spills off it). `field_fall` CAPS the downhill depth instead, so the field is sized
     # to the population and BOUNDED within the frame - leaving a low-side margin for the drain's outfall
-    # + brook to discharge into open land (see SKILL.md 'Field extent'). None = the old fill-to-edge.
+    # + brook to discharge into open land (see settlements.md 'Field extent'). None = the old fill-to-edge.
     f_stop = max(F.to_uf(0, 0)[1], F.to_uf(W, 0)[1], F.to_uf(0, H)[1], F.to_uf(W, H)[1]) + 300
     if field_fall is not None:
         f_stop = min(f_stop, f + field_fall)
@@ -432,7 +432,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
                 list(reversed(dpts)) + list(reversed(threads[0].pts)))
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
-    # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see SKILL.md.
+    # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md.
     dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, furrow_spread=furrow_spread)
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac)
@@ -686,75 +686,75 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
 
 
 def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132), furrow_spread=1.1):
-    """DRY FIELDS (hatake) on the UPSLOPE margin the irrigation cannot command - the band
-    just ABOVE the supply canal (lower fall). Grain and pulses (barley/wheat, millet,
-    buckwheat, field soy) in an irregular PATCHWORK of ridge-cultivated plots. Crop is
-    assigned per-PLOT (not per-column) with spatial coherence - historical holdings were
-    fragmented, so adjacent small plots carry different crops, clustering rather than forming
-    clean full-height ribbons. To scale (1px=2ft): plot outlines are real, furrows stylised.
+    """DRY FIELDS (hatake) on the UPSLOPE margin the irrigation cannot command - the band just ABOVE the
+    supply canal. Grain and pulses (barley/wheat, millet, buckwheat, field soy) in an irregular PATCHWORK of
+    ridge-cultivated plots. Crop is assigned per-PLOT (not per-column) with spatial coherence - historical
+    holdings were fragmented, so adjacent small plots carry different crops. To scale (1px=2ft): plot outlines
+    are real, furrows stylised.
 
-    Columns share JITTERED boundaries (each interior boundary is drawn once and used by both
-    neighbours) so the dry plots ABUT into a contiguous cultivated margin rather than floating
-    as separated lozenges; their canal-side edges hug the canal continuously (bottom edge
-    follows the canal fall), and only the UPSLOPE (top) edge is ragged - a per-column depth.
-    `band` = (min, max) upslope depth in px: a THIN fringe (default) for a water-rich valley
-    floor where dry land is scarce; widen it for a drier / hill-flanked village.
+    The plots are RECTANGLES laid out AGAINST THE CANAL THEY BORDER - one edge runs ALONG the supply canal,
+    the other PERPENDICULAR to it, extending upslope. They are NOT oriented to the paddy's fall grid (that gave
+    a pronounced ~43deg shear, since the canal runs diagonally to the fall). Because the base edge rides the
+    canal itself, adjacent plots ABUT continuously along it (no shear, no steps); only the UPSLOPE (outer) edge
+    is ragged - a per-column depth. The base dips slightly BELOW the canal so it tucks under the paddy (drawn
+    after). `band` = (min, max) upslope depth in px: a THIN fringe (default) for a water-rich valley floor.
 
-    FURROWS run along the CONTOUR (perpendicular to the fall), the traditional Japanese
-    ridge-along-contour that dams rain and checks soil runoff (GIAHS drainage practice) - so
-    the furrow direction is the contour heading, NOT random. Returned as `theta` per plot."""
+    FURROWS run along the CONTOUR (perpendicular to the fall), the traditional ridge-along-contour that dams
+    rain and checks runoff - so the furrow direction is the contour heading, varied per plot; `theta` per plot."""
     plots = []
-    us = sorted(F.to_uf(*p)[0] for p in a_pts)
-    ulo, uhi = us[0], us[-1]
     theta0 = math.atan2(F.c[1], F.c[0])                    # contour heading (ridges follow it)
 
     def blocked(x, y):
         return any((x - cx) ** 2 + (y - cy) ** 2 < rr * rr for (cx, cy, rr) in keepout)
 
-    # shared column boundaries across the whole margin; endpoints pinned, interiors jittered
-    bounds = [ulo]
-    while bounds[-1] < uhi - plot * 0.6:
-        bounds.append(bounds[-1] + plot * R.uniform(0.9, 1.25))
-    bounds[-1] = uhi
-    jit = [0.0] + [R.uniform(-5, 5) for _ in bounds[1:-1]] + [0.0]
+    # tile the plots ALONG the canal by ARC-LENGTH (shared boundaries -> a contiguous margin), jittered widths
+    seglen = [math.dist(a_pts[i], a_pts[i + 1]) for i in range(len(a_pts) - 1)]
+    total = sum(seglen)
 
-    # FURROW ANGLE varies PER PLOT: fragmented dry-field holdings were a mosaic of family strips, each plowed
-    # to its OWN orientation, so adjacent plots run their ridges different ways (the patchwork-quilt look).
-    # Ridge-along-contour is a STEEP-slope erosion measure; on a GENTLE valley margin it is not forced, so the
-    # furrows spread up to ~HW rad either side of the contour (never straight down-slope). Each plot drops its
-    # furrows into the LARGEST gap between the angles of its already-placed NEIGHBOURS, guaranteeing a real
-    # separation from every one of them (drives dry_plot_furrows_vary). Uses ONE R draw per plot (a small
-    # jitter), exactly as the old contour code did, so the plot GEOMETRY is unchanged - only the angles vary.
-    # `furrow_spread` (HW) is the KNOB: the default (~1.1 rad) gives the gentle-valley patchwork; a SMALL value
-    # narrows the fan back onto the contour for a STEEP/terraced village (ridge-along-contour erosion control),
-    # in which case the plots read aligned and dry_plot_furrows_vary is not required (build_comb flags it).
+    def at(s):                                             # point on the canal polyline at arc-length s
+        acc = 0.0
+        for i, sl in enumerate(seglen):
+            if acc + sl >= s or i == len(seglen) - 1:
+                t = (s - acc) / sl if sl else 0.0
+                ax, ay = a_pts[i]
+                bx, by = a_pts[i + 1]
+                return (ax + (bx - ax) * t, ay + (by - ay) * t)
+            acc += sl
+
+    bounds = [0.0]
+    while bounds[-1] < total - plot * 0.6:
+        bounds.append(bounds[-1] + plot * R.uniform(0.9, 1.25))
+    bounds[-1] = total
+
+    # FURROW ANGLE varies PER PLOT (a mosaic of family strips): each plot drops its ridges into the LARGEST gap
+    # between the angles of its already-placed NEIGHBOURS, guaranteeing separation (drives dry_plot_furrows_vary).
     HW = furrow_spread
-    placed = []                                            # (cx, cy, theta) of dry plots already given an angle
-    ADJ2 = 56 ** 2                                         # neighbour guard radius^2 (>= the check's, so it is a superset)
+    placed = []
+    ADJ2 = 56 ** 2
     prev_crop = R.choice(list(DRY_CROPS))
+    berm = 8                                               # a thin bund holds the dry plots just ABOVE (upslope of) the canal
     for i in range(len(bounds) - 1):
-        uL, uR = bounds[i] + jit[i], bounds[i + 1] + jit[i + 1]
-        fcL, fcR = _f_at_u(F, a_pts, uL), _f_at_u(F, a_pts, uR)
-        if fcL is None or fcR is None:
-            continue
-        depth = R.uniform(*band)                           # ragged top edge (per-column depth)
-        berm = 12                                          # a thin bund above the canal
+        pL, pR = at(bounds[i]), at(bounds[i + 1])
+        tx, ty = pR[0] - pL[0], pR[1] - pL[1]
+        tl = math.hypot(tx, ty) or 1.0
+        nx, ny = -ty / tl, tx / tl                        # unit normal to the canal
+        mx, my = (pL[0] + pR[0]) / 2, (pL[1] + pR[1]) / 2
+        if F.to_uf(mx + nx, my + ny)[1] > F.to_uf(mx, my)[1]:   # point it UPSLOPE (decreasing fall)
+            nx, ny = -nx, -ny
+        depth = R.uniform(*band)                           # ragged outer edge (per-column depth)
         nrow = max(1, round(depth / 36))
         for k in range(nrow):
-            # per-plot crop with coherence: usually keep the last crop (holdings cluster),
-            # sometimes switch - a fragmented mosaic, not a clean single-crop ribbon
+            # per-plot crop with coherence: usually keep the last crop (holdings cluster), sometimes switch
             if R.random() < 0.45:
                 prev_crop = R.choice(list(DRY_CROPS))
             crop = prev_crop
             fill, furrow = DRY_CROPS[crop]
-            # near = canal side (larger f); far = upslope (smaller f). Both L and R edges are
-            # anchored to their own canal fall so the whole bottom edge rides the canal line.
-            fL_near = fcL - berm - depth * k / nrow
-            fR_near = fcR - berm - depth * k / nrow
-            fL_far = fcL - berm - depth * (k + 1) / nrow
-            fR_far = fcR - berm - depth * (k + 1) / nrow
-            quad = [F.to_xy(uL, fL_far), F.to_xy(uR, fR_far),
-                    F.to_xy(uR, fR_near), F.to_xy(uL, fL_near)]
+            # PERPENDICULAR offset from the canal (both edges UPSLOPE of it): near = canal side, far = upslope.
+            # The whole plot stays on the DRY side - it never dips across the canal onto the wet paddy.
+            o_near = berm + depth * k / nrow
+            o_far = berm + depth * (k + 1) / nrow
+            quad = [(pL[0] + nx * o_far, pL[1] + ny * o_far), (pR[0] + nx * o_far, pR[1] + ny * o_far),
+                    (pR[0] + nx * o_near, pR[1] + ny * o_near), (pL[0] + nx * o_near, pL[1] + ny * o_near)]
             cx = sum(p[0] for p in quad) / 4
             cy = sum(p[1] for p in quad) / 4
             if any(p[0] < 12 or p[0] > W - 12 or p[1] < 12 or p[1] > H - 12 for p in quad):

@@ -163,8 +163,8 @@ s.shrine_well(770, 940)
 # ===== FIRE DEFENSE: a watch-tower =====
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
 # perturbs nothing and stands on an ACTUAL gap. A FIRE-WATCH TOWER (hinomi-yagura, the magistrate's
-# bell-watch) stands in the tenement warren, watching its packed rooftops. WHY: SKILL.md "Fire towers".
-s.fire_tower(1040, 1300, label="fire-watch tower")   # standing in the tenement warren, watching its packed rooftops
+# bell-watch) stands in the tenement warren, watching its packed rooftops. WHY: settlements.md "Fire towers".
+s.fire_tower(1050, 1300, label="fire-watch tower")   # standing in the tenement warren, watching its packed rooftops (nudged east for the 5px fire_tower_standoff daylight)
 
 s.title("Hirameki")
 

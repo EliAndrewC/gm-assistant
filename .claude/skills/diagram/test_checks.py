@@ -511,6 +511,30 @@ def test_streams_avoid_fields_fires():
     assert "streams_avoid_fields" in f(M)
 
 
+def test_streams_avoid_fields_allows_a_drain_fed_brook():
+    # a brook anchored to the field's DRAIN starts at the outfall (inside the envelope) and runs off-map - legit
+    M = {"fields": [_field("f", 100, 100, 400, 400)],
+         "streams": [{"poly": [[300, 380], [300, 550], [300, 700]],
+                      "frm": {"kind": "drain"}, "to": {"kind": "offmap"}}]}
+    assert "streams_avoid_fields" not in f(M)
+
+
+def test_streams_avoid_fields_still_fires_when_a_drain_brook_reenters_the_field():
+    # a drain-fed brook that leaves then CUTS BACK across the crop is still a defect
+    M = {"fields": [_field("f", 100, 100, 400, 400)],
+         "streams": [{"poly": [[300, 380], [300, 600], [250, 250]],
+                      "frm": {"kind": "drain"}, "to": {"kind": "offmap"}}]}   # last leg re-enters the field
+    assert "streams_avoid_fields" in f(M)
+
+
+def test_streams_avoid_fields_allows_a_stream_that_ends_at_the_field():
+    # a stream anchored INTO the field (to=field) ends inside it - the connection is legitimate
+    M = {"fields": [_field("f", 100, 100, 400, 400)],
+         "streams": [{"poly": [[300, 700], [300, 500], [300, 300]],
+                      "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}}]}   # ends inside the field
+    assert "streams_avoid_fields" not in f(M)
+
+
 def test_fields_clear_of_road_fires():
     M = {"fields": [_field("f", 100, 100, 400, 400)], "road": [[50, 250], [500, 250]], "road_width": 26}
     assert "fields_clear_of_road" in f(M)
@@ -677,13 +701,158 @@ def test_gardens_clear_of_structures_fires_when_a_garden_covers_another_building
     assert "gardens_clear_of_structures" in f(M)
 
 
-def test_gardens_clear_of_sheds_fires_when_a_garden_covers_the_west_side_shed():
-    # a plain farmhouse with shed=True carries a storehouse on its WEST side (centre ~ x-0.64w); a garden
-    # placed there overlaps it. The shed is derived from the house record, not a separate struct.
+def test_gardens_clear_of_sheds_fires_when_a_garden_covers_the_shed():
+    # a farm's kura is a recorded annex in M['farm_sheds']; a garden placed on top of it overlaps it.
     M = {"meta": {"scale": "village"},
-         "houses": [{"x": 500, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0, "shed": True}],
-         "gardens": [{"x": 472, "y": 500, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}]}   # on the west-side shed
+         "houses": [{"x": 500, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0}],
+         "farm_sheds": [{"x": 500, "y": 476, "w": 20, "h": 9, "rot": 0, "of": [500, 500]}],   # kura on the north wall
+         "gardens": [{"x": 500, "y": 478, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}]}   # on the shed
     assert "gardens_clear_of_sheds" in f(M)
+
+
+def test_gardens_clear_of_channels_fires_when_a_garden_sits_on_a_ditch():
+    # a drain ditch runs straight through the garden's footprint - a raised-bed saien in a running ditch
+    M = {"meta": {"scale": "village"},
+         "houses": [{"x": 500, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0}],
+         "gardens": [{"x": 540, "y": 500, "w": 24, "h": 16, "rot": 0, "of": [500, 500]}],
+         "field_ditches": [{"poly": [[540, 480], [540, 520]], "role": "drain", "w": 6, "field": "f"}]}
+    assert "gardens_clear_of_channels" in f(M)
+
+
+def test_farm_sheds_attached_fires_on_a_stranded_kura():
+    # a kura recorded far from every farmhouse (a move-procedure stranded it in the open courtyard) must trip
+    M = {"meta": {"scale": "village"},
+         "houses": [{"x": 500, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0}],
+         "farm_sheds": [{"x": 800, "y": 800, "w": 20, "h": 9, "rot": 0, "of": [500, 500]}]}
+    assert "farm_sheds_attached" in f(M)
+
+
+def test_shrine_clear_of_grove_trees_fires_when_a_clump_covers_the_hall():
+    # a fengshui-grove tree clump whose centre sits on the shrine hall's footprint reads as buried in the wood
+    M = {"meta": {"scale": "village"},
+         "religious": [{"kind": "shrine", "x": 500, "y": 500, "w": 30, "h": 24, "label": "Shrine"}],
+         "village_groves": [{"role": "water_mouth", "r": 14, "clumps": [[502, 498]]}]}
+    assert "shrine_clear_of_grove_trees" in f(M)
+
+
+def test_shrine_clear_of_grove_trees_uses_the_canopy_radius_not_the_nominal_clump():
+    # a clump 18px off the hall's east edge: its NOMINAL r=14 does not reach, but the drawn CANOPY (~1.7x = 24)
+    # does - the check uses the canopy radius, so it fires (the crown overhang is what the eye sees overlapping)
+    M = {"meta": {"scale": "village"},
+         "religious": [{"kind": "shrine", "x": 500, "y": 500, "w": 30, "h": 24, "label": "Shrine"}],   # east edge x=515
+         "village_groves": [{"role": "water_mouth", "r": 14, "clumps": [[533, 500]]}]}                 # 18px off -> canopy overlaps
+    assert "shrine_clear_of_grove_trees" in f(M)
+
+
+def test_torii_clear_of_grove_trees_fires_when_a_clump_covers_the_arch():
+    # a fengshui-grove tree clump sitting on a torii arch reads as the arch buried in the wood
+    M = {"meta": {"scale": "village"},
+         "torii": [[500, 500, 1]],
+         "village_groves": [{"role": "water_mouth", "r": 14, "clumps": [[505, 504]]}]}
+    assert "torii_clear_of_grove_trees" in f(M)
+
+
+def test_wells_clear_of_shrine_and_torii_fires_when_a_well_sits_under_the_torii():
+    # a well scattered under the torii arch (its disc overlaps the arch box) reads as a wellhead in the gateway
+    M = {"meta": {"scale": "village"},
+         "torii": [[500, 500, 1]],
+         "wells": [{"x": 505, "y": 502, "r": 8}]}
+    assert "wells_clear_of_shrine_and_torii" in f(M)
+
+
+# ---- SOFT ADVISORY: crop-limiting relocatable singleton ----
+# a village that crops to content, with a pond stuck far EAST (sole east feature) and empty room between the
+# NW houses and the SE paddy to move it into -> moving that one pond would crop the image much smaller
+_POND_OUTLIER = {"meta": {"scale": "village", "view": [0, 0, 1400, 1000]},
+                 "houses": [{"x": 200, "y": 200, "w": 60, "h": 40, "rot": 0, "kind": "plain"}],
+                 "fields": [{"name": "f", "kind": "paddy", "vis_bbox": [600, 500, 1000, 900],
+                             "bbox": [600, 500, 1000, 900],
+                             "outline": [[600, 500], [1000, 500], [1000, 900], [600, 900]]}],
+                 "pond": [1300, 400, 90, 60]}
+
+
+def test_crop_advisory_flags_an_outlying_pond():
+    adv = check_village.crop_relocatable_singletons(_POND_OUTLIER)
+    assert len(adv) == 1 and adv[0]["kind"] == "pond" and adv[0]["edge"] == "E" and adv[0]["shrink"] >= 150
+
+
+def test_crop_advisory_exempts_a_pond_that_sources_a_field():
+    # a pond feeding a field (channel frm=pond -> to=field) is a valley-head reservoir: hydrologically anchored
+    # uphill of the field, so the advisory does NOT flag it (moving it in would drop it below the field intake)
+    M = {**_POND_OUTLIER,
+         "channels": [{"poly": [[1300, 400], [900, 600]], "frm": {"kind": "pond"}, "to": {"kind": "field", "name": "f"}}]}
+    assert check_village.crop_relocatable_singletons(M) == []
+
+
+def test_crop_advisory_occupancy_includes_hill_forest_and_marsh():
+    # the empty-landing search must AVOID a hill / forest / marsh too (all placed SE, clear of the NW landing);
+    # the pond still fires (it lands NW, clear of them). Exercises the solid-occupancy accounting.
+    M = {**_POND_OUTLIER,
+         "hill": [850, 750, 80, 60],
+         "forest": [{"poly": [[900, 600], [1000, 700]]}],
+         "marshes": [{"poly": [[650, 850], [750, 950]]}]}
+    adv = check_village.crop_relocatable_singletons(M)
+    assert len(adv) == 1 and adv[0]["kind"] == "pond"
+
+
+def test_crop_advisory_skips_a_city():
+    assert check_village.crop_relocatable_singletons({**_POND_OUTLIER, "meta": {"scale": "city", "view": [0, 0, 1400, 1000]}}) == []
+
+
+def test_crop_advisory_skips_an_uncropped_map():
+    assert check_village.crop_relocatable_singletons({**_POND_OUTLIER, "meta": {"scale": "village"}}) == []   # no view
+
+
+def test_crop_advisory_empty_without_content():
+    assert check_village.crop_relocatable_singletons({"meta": {"scale": "village", "view": [0, 0, 100, 100]}}) == []
+
+
+def test_crop_advisory_ignores_a_pond_that_barely_extends():
+    # pond east=1030 vs field east=1000 -> shrink ~30px, below the 150px "significant" floor
+    assert check_village.crop_relocatable_singletons({**_POND_OUTLIER, "pond": [1010, 400, 20, 20]}) == []
+
+
+def test_crop_advisory_needs_an_empty_landing():
+    # the field FILLS the tighter frame (and has NO vis_bbox -> the outline path), so a moved pond has nowhere to go
+    M = {"meta": {"scale": "village", "view": [0, 0, 1400, 1000]},
+         "fields": [{"name": "f", "outline": [[100, 100], [800, 100], [800, 800], [100, 800]]}],
+         "pond": [1100, 400, 90, 60]}
+    assert check_village.crop_relocatable_singletons(M) == []
+
+
+def test_crop_advisory_skips_a_hill_anchored_shrine():
+    # the shrine sits ON the hill, so it is terrain-anchored - it cannot move to flat empty ground
+    M = {"meta": {"scale": "village", "view": [0, 0, 1400, 1000]},
+         "houses": [{"x": 200, "y": 200, "w": 60, "h": 40, "rot": 0}],
+         "shrines": [{"x": 900, "y": 200, "w": 60, "h": 48}],
+         "hill": [900, 200, 200, 150]}
+    assert check_village.crop_relocatable_singletons(M) == []
+
+
+def test_crop_advisory_pond_only_map_has_nothing_to_tighten_against():
+    # removing the pond leaves NO other frame drivers, so there is no tighter frame to move into
+    assert check_village.crop_relocatable_singletons({"meta": {"scale": "village", "view": [0, 0, 400, 400]}, "pond": [200, 200, 90, 60]}) == []
+
+
+def test_gate_crop_advisory_is_soft_not_a_failure():
+    fails = check_village.gate(_POND_OUTLIER, verbose=True)   # prints the ADVISORY line but must NOT gate the map
+    assert "crop_could_tighten" not in fails
+
+
+def test_gate_crop_advisory_can_be_silenced():
+    M = {**_POND_OUTLIER, "meta": {"scale": "village", "view": [0, 0, 1400, 1000], "crop_advisory": False}}
+    check_village.gate(M, verbose=True)                       # meta(crop_advisory=False) -> the advisory block is skipped
+    assert check_village.crop_relocatable_singletons(M)       # ... though the detector itself still finds it
+
+
+def test_hard_features_within_frame_fires_on_a_feature_clipped_by_the_crop():
+    # a set-apart graveyard placed past the tight WEST frame edge (its west edge x=310 < the view's x0=400).
+    # the torii (list branch) and well (radius branch) sit INSIDE the frame - only the graveyard is clipped.
+    M = {"meta": {"scale": "village", "view": [400, 100, 1000, 800]},
+         "torii": [[500, 300, 1]],
+         "wells": [{"x": 600, "y": 300, "r": 8}],
+         "cemeteries": [{"x": 360, "y": 500, "w": 100, "h": 70, "rot": 0}]}
+    assert "hard_features_within_frame" in f(M)
 
 
 def test_garden_plots_are_quads_fires_on_a_non_quad_poly():
@@ -2929,13 +3098,45 @@ def test_settlement_has_cemetery_passes_when_present():
     assert "settlement_has_cemetery" not in f(_dead("village", [{"x": 300, "y": 300, "w": 80, "h": 56, "rot": 0}]))
 
 
-def test_cemetery_clear_of_shrine_fires_when_adjacent():
-    # a graveyard hard against a Shinto shrine - kegare/death-pollution
+def test_cemetery_clear_of_shrine_fires_when_on_the_hall():
+    # graves fill the shrine's YARD but never sit ON the sacred hall itself (this grave overlaps it)
     assert "cemetery_clear_of_shrine" in f(_dead("village", [{"x": 540, "y": 520, "w": 80, "h": 56, "rot": 0}], religious=_SHR))
 
 
-def test_cemetery_clear_of_shrine_passes_when_far():
+def test_cemetery_clear_of_shrine_passes_when_off_the_hall():
     assert "cemetery_clear_of_shrine" not in f(_dead("village", [{"x": 900, "y": 900, "w": 80, "h": 56, "rot": 0}], religious=_SHR))
+
+
+def test_cemetery_clear_of_shrine_allows_a_grave_in_the_precinct():
+    # NEW (L7R): the shrine is Shinseist and its monk tends the dead, so a grave NEAR the shrine (in the yard,
+    # off the hall) is FINE - the old kegare-distance rule is gone; only the sacred hall + torii stay clear
+    M = {"meta": {"scale": "village"}, "cemeteries": [{"x": 615, "y": 500, "w": 80, "h": 56, "rot": 0}],
+         "religious": _SHR}   # 115px from the shrine centre (old rule would fire) but clear of the hall's east edge
+    assert "cemetery_clear_of_shrine" not in f(M)
+
+
+def test_cemetery_clear_of_shrine_fires_on_a_grave_under_the_torii():
+    # the sacred GATEWAY stays clear too - a grave on the torii arch fires (hall placed far off, so it is the torii)
+    M = {"meta": {"scale": "village"}, "cemeteries": [{"x": 500, "y": 504, "w": 60, "h": 40, "rot": 0}],
+         "religious": [{"kind": "shrine", "x": 500, "y": 760, "w": 30, "h": 24}], "torii": [[500, 500, 1]]}
+    assert "cemetery_clear_of_shrine" in f(M)
+
+
+def test_village_graveyard_by_shrine_fires_when_set_apart():
+    # L7R: the village shrine's monk performs the funerary rites, so the graveyard sits in its precinct
+    assert "village_graveyard_by_shrine" in f(_dead("village", [{"x": 1200, "y": 1200, "w": 80, "h": 56, "rot": 0}], religious=_SHR))
+
+
+def test_village_graveyard_by_shrine_passes_when_in_precinct():
+    assert "village_graveyard_by_shrine" not in f(_dead("village", [{"x": 640, "y": 500, "w": 80, "h": 56, "rot": 0}], religious=_SHR))
+
+
+def test_village_graveyard_by_shrine_exempts_a_hilltop_shrine():
+    # a hilltop shrine is exempt (graves do not climb the sacred hill); with no flat shrine the ground is by-eye
+    M = _dead("village", [{"x": 1200, "y": 1200, "w": 80, "h": 56, "rot": 0}],
+             religious=[{"kind": "shrine", "x": 500, "y": 500, "w": 100, "h": 68}])
+    M["hill"] = [500, 500, 200, 150]
+    assert "village_graveyard_by_shrine" not in f(M)
 
 
 def test_cemetery_in_temple_precinct_fires_when_far_from_hall():
@@ -2955,8 +3156,8 @@ def test_mausoleum_draws_with_either_gate_orientation():
     assert len(s.M["mausoleums"]) == 2
 
 
-def test_cemetery_clear_of_shrine_fires_on_a_mausoleum_by_a_shrine():
-    # the kegare rule covers MAUSOLEA too, not just graveyards
+def test_cemetery_clear_of_shrine_fires_on_a_mausoleum_on_the_hall():
+    # the off-the-hall rule covers MAUSOLEA too, not just graveyards (this one overlaps the shrine hall)
     M = {"meta": {"scale": "village"}, "mausoleums": [{"x": 540, "y": 520, "w": 74, "h": 58, "rot": 0}],
          "religious": [{"kind": "shrine", "x": 500, "y": 500, "w": 100, "h": 68}]}
     assert "cemetery_clear_of_shrine" in f(M)
@@ -3477,6 +3678,21 @@ def test_no_structure_on_moat_fires_when_a_structure_sits_on_it():
     assert "no_structure_on_moat" in f(M)
 
 
+def test_no_structure_on_pond_fires_when_a_structure_stands_in_it():
+    # the Tango west-tower case: a struct corner dipping into the pond ellipse; and the engulfment
+    # branch: a footprint swallowing the pond centre outright
+    M = {"meta": {"scale": "village"}, "pond": [500, 500, 74, 46],
+         "houses": [{"x": 545, "y": 530, "w": 30, "h": 22, "rot": 0, "kind": "plain"}],
+         "buildings": [{"x": 500, "y": 500, "w": 200, "h": 140, "rot": 0, "kind": "laborer"}]}
+    assert "no_structure_on_pond" in f(M)
+
+
+def test_no_structure_on_pond_passes_when_clear():
+    M = {"meta": {"scale": "village"}, "pond": [500, 500, 74, 46],
+         "houses": [{"x": 640, "y": 620, "w": 30, "h": 22, "rot": 0, "kind": "plain"}]}
+    assert "no_structure_on_pond" not in f(M)
+
+
 def test_city_temples_have_graveyards_fires_when_a_temple_unserved():
     assert "city_temples_have_graveyards" in f(_city_dead(temples=[(320, 320, "A", True), (680, 700, "B", True)]))
 
@@ -3599,6 +3815,88 @@ def test_fire_tower_on_wall_overlaps_like_any_structure():
     assert "no_structure_on_wall" in f(M)
 
 
+def test_fire_towers_dispersed_fires_when_bunched():
+    # two towers 100 px apart (< one 230 px watch radius) watch the same rooftops twice
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500), _tower(600, 500)]}
+    assert "fire_towers_dispersed" in f(M)
+
+
+def test_fire_towers_dispersed_passes_when_spread():
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(400, 500), _tower(900, 500)]}
+    assert "fire_towers_dispersed" not in f(M)
+
+
+def test_fire_towers_dispersed_ignores_a_single_tower():
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)]}
+    assert "fire_towers_dispersed" not in f(M)
+
+
+def _block(cx, cy, kind="laborer", n=4, step=30):
+    return [bldg(cx + i * step, cy + j * step, kind) for i in range(n) for j in range(n)]
+
+
+def test_fire_tower_amid_its_district_fires_when_towers_share_a_quarter():
+    # both towers by the west block (though > one watch radius apart, so dispersal passes): the
+    # second tower inherits the whole east block as its "district" and stands far off its centroid
+    M = {"meta": {"scale": "town", "walled": True},
+         "fire_towers": [_tower(470, 545), _tower(775, 545)],
+         "buildings": _block(400, 500) + _block(1400, 500)}
+    fails = f(M)
+    assert "fire_tower_amid_its_district" in fails
+    assert "fire_towers_dispersed" not in fails   # 305px apart - the old check alone misses this
+
+
+def test_fire_tower_amid_its_district_passes_with_one_tower_per_quarter():
+    M = {"meta": {"scale": "town", "walled": True},
+         "fire_towers": [_tower(445, 545), _tower(1445, 545)],
+         "buildings": _block(400, 500) + _block(1400, 500)}
+    assert "fire_tower_amid_its_district" not in f(M)
+
+
+def test_fire_tower_amid_its_district_ignores_extramural_rows():
+    # with a wall drawn, the gate-market rows OUTSIDE it are not part of any tower's district -
+    # counting them would drag the east tower's centroid out and false-fire
+    M = {"meta": {"scale": "town", "walled": True},
+         "wall": [[100, 100], [1900, 100], [1900, 1000], [100, 1000]],
+         "fire_towers": [_tower(445, 545), _tower(1445, 545)],
+         "buildings": _block(400, 500) + _block(1400, 500) + _block(1400, 1200)}
+    assert "fire_tower_amid_its_district" not in f(M)
+
+
+def test_fire_tower_standoff_fires_when_flush_with_a_building():
+    # tower half-width 13 + shop half-width 20 -> centres 536 apart leave a 3px gap: too tight
+    # (the far building exercises the distance prefilter)
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "buildings": [bldg(536, 500, "laborer", w=40, h=28), bldg(900, 900, "laborer")]}
+    fails = f(M)
+    assert "fire_tower_standoff" in fails
+    assert "no_structure_overlaps" not in fails   # a 3px gap is NOT an overlap - only the new check sees it
+
+
+def test_fire_tower_standoff_fires_on_true_overlap_too():
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "buildings": [bldg(510, 500, "laborer", w=40, h=28)]}
+    assert "fire_tower_standoff" in f(M)
+
+
+def test_fire_tower_standoff_passes_with_daylight():
+    # 6px gap (centres 539 apart) clears the 5px rule
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "buildings": [bldg(539, 500, "laborer", w=40, h=28)]}
+    assert "fire_tower_standoff" not in f(M)
+
+
+def test_fire_tower_amid_its_district_skips_a_district_less_tower():
+    # two coincident towers: all dwellings assign to the first, the second has no district to be
+    # off-centre of (dispersal is what catches the stacking)
+    M = {"meta": {"scale": "town", "walled": True},
+         "fire_towers": [_tower(500, 500), _tower(500, 500)],
+         "buildings": _block(455, 455)}
+    fails = f(M)
+    assert "fire_tower_amid_its_district" not in fails
+    assert "fire_towers_dispersed" in fails
+
+
 def test_fire_tower_clear_of_fields_fires_on_a_field():
     # a hinomi-yagura standing ON cultivated ground (e.g. an in-wall agricultural district) is nonsense
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(250, 250)],
@@ -3616,6 +3914,29 @@ def test_fire_tower_clear_of_fields_passes_when_clear():
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(800, 800)],
          "fields": [_field("paddy", 100, 100, 400, 400)]}
     assert "fire_tower_clear_of_fields" not in f(M)
+
+
+def test_fire_tower_clear_of_wells_fires_on_a_wellhead():
+    # wells are overlap-EXEMPT, so only the dedicated check catches a tower footing on the well court
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "wells": [{"x": 505, "y": 500, "r": 8}]}
+    fails = f(M)
+    assert "fire_tower_clear_of_wells" in fails
+    assert "no_structure_overlaps" not in fails   # the exemption means the blanket pass misses this
+
+
+def test_fire_tower_clear_of_wells_fires_within_the_standoff():
+    # tower half-width 13 + well r 8 + 5px daylight rule -> a well centre 25px away is still too close
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "wells": [{"x": 525, "y": 500, "r": 8}]}
+    assert "fire_tower_clear_of_wells" in f(M)
+
+
+def test_fire_tower_clear_of_wells_passes_with_daylight():
+    # 26px of clearance (centre 500 -> well 539: 13 + 8 + 18) is comfortably clear of the 5px rule
+    M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)],
+         "wells": [{"x": 539, "y": 500, "r": 8}]}
+    assert "fire_tower_clear_of_wells" not in f(M)
 
 
 if __name__ == "__main__":

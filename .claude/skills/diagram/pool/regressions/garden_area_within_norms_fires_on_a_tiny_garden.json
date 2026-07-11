@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "gardens": [
+  {
+   "x": 520,
+   "y": 500,
+   "w": 5,
+   "h": 4,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ],
+   "poly": [
+    [
+     517.5,
+     498
+    ],
+    [
+     522.5,
+     498
+    ],
+    [
+     522.5,
+     502
+    ],
+    [
+     517.5,
+     502
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "garden_area_within_norms"
+  ],
+  "source": "test_checks.py::test_garden_area_within_norms_fires_on_a_tiny_garden"
+ }
+}

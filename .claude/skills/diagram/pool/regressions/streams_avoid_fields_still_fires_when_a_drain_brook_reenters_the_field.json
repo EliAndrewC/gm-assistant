@@ -1,0 +1,62 @@
+{
+ "fields": [
+  {
+   "name": "f",
+   "kind": "paddy",
+   "bbox": [
+    100,
+    100,
+    400,
+    400
+   ],
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     100,
+     400
+    ]
+   ]
+  }
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     300,
+     380
+    ],
+    [
+     300,
+     600
+    ],
+    [
+     250,
+     250
+    ]
+   ],
+   "frm": {
+    "kind": "drain"
+   },
+   "to": {
+    "kind": "offmap"
+   }
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "streams_avoid_fields"
+  ],
+  "source": "test_checks.py::test_streams_avoid_fields_still_fires_when_a_drain_brook_reenters_the_field"
+ }
+}

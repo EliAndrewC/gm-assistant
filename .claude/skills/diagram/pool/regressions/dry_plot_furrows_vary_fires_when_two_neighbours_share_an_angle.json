@@ -1,0 +1,98 @@
+{
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     340,
+     300
+    ],
+    [
+     340,
+     336
+    ],
+    [
+     336,
+     336
+    ]
+   ],
+   "theta": 0.2,
+   "crop": "barley"
+  },
+  {
+   "poly": [
+    [
+     340,
+     300
+    ],
+    [
+     380,
+     300
+    ],
+    [
+     380,
+     336
+    ],
+    [
+     376,
+     336
+    ]
+   ],
+   "theta": 0.2,
+   "crop": "barley"
+  },
+  {
+   "poly": [
+    [
+     380,
+     300
+    ],
+    [
+     420,
+     300
+    ],
+    [
+     420,
+     336
+    ],
+    [
+     416,
+     336
+    ]
+   ],
+   "theta": 0.9,
+   "crop": "barley"
+  },
+  {
+   "poly": [
+    [
+     420,
+     300
+    ],
+    [
+     460,
+     300
+    ],
+    [
+     460,
+     336
+    ],
+    [
+     456,
+     336
+    ]
+   ],
+   "theta": 0.4,
+   "crop": "barley"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dry_plot_furrows_vary"
+  ],
+  "source": "test_checks.py::test_dry_plot_furrows_vary_fires_when_two_neighbours_share_an_angle"
+ }
+}

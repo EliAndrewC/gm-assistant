@@ -34,7 +34,7 @@ HEADMAN = (1140, 500)
 pcx, pcy, prx, pry = POND
 s.pond(pcx, pcy, prx, pry, stream_curve=f'M{pcx},{pcy-pry} C{pcx-28},135 {pcx+32},88 {pcx-6},38')
 # a tameike has ONE outlet sluice (hi): all the irrigation forks from a single point on the pond's SE foot,
-# not three independent taps (see SKILL.md 'Irrigation topology')
+# not three independent taps (see settlements.md 'Irrigation topology')
 OUTLET = (470, 312)   # the pond single sluice; every field is fed from here by water_field
 s.lane([(930, 1310), (905, 1130), (878, 1040), (832, 940), (772, 884)])
 # drainage (haisui): NW is uphill, so the valley sheds its water to the LOW SE - a drain stream leaves the

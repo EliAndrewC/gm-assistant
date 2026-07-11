@@ -4,5 +4,6 @@
 
 {character.tags_string}
 
+Age: {character.age}
 Rank: {character.rank}
 Recognition: {character.recognition}

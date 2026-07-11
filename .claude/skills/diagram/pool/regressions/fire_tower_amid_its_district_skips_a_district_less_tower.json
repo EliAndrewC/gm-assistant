@@ -1,0 +1,158 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "buildings": [
+  {
+   "x": 455,
+   "y": 455,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 455,
+   "y": 485,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 455,
+   "y": 515,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 455,
+   "y": 545,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 485,
+   "y": 455,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 485,
+   "y": 485,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 485,
+   "y": 515,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 485,
+   "y": 545,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 515,
+   "y": 455,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 515,
+   "y": 485,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 515,
+   "y": 515,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 515,
+   "y": 545,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 545,
+   "y": 455,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 545,
+   "y": 485,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 545,
+   "y": 515,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 545,
+   "y": 545,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "fire_towers_dispersed"
+  ],
+  "source": "test_checks.py::test_fire_tower_amid_its_district_skips_a_district_less_tower"
+ }
+}

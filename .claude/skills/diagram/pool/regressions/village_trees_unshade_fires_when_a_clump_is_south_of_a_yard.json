@@ -1,0 +1,54 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "threshing_yards": [
+  {
+   "x": 300,
+   "y": 400,
+   "w": 40,
+   "h": 24,
+   "rot": 0,
+   "of": [
+    300,
+    380
+   ]
+  }
+ ],
+ "village_groves": [
+  {
+   "role": "copse",
+   "r": 11,
+   "clumps": [
+    [
+     300,
+     430
+    ]
+   ],
+   "poly": [
+    [
+     280,
+     415
+    ],
+    [
+     320,
+     415
+    ],
+    [
+     320,
+     445
+    ],
+    [
+     280,
+     445
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "village_trees_unshade_yards_and_gardens"
+  ],
+  "source": "test_checks.py::test_village_trees_unshade_fires_when_a_clump_is_south_of_a_yard"
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "meta": {
+  "down_deg": 45
+ },
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     700,
+     700
+    ]
+   ],
+   "role": "drain",
+   "field": "f"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "drain_runs_cross_slope"
+  ],
+  "source": "test_checks.py::test_drain_runs_cross_slope_fires_when_it_runs_downhill"
+ }
+}

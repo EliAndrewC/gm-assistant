@@ -1,0 +1,150 @@
+{
+ "meta": {
+  "scale": "village",
+  "nucleated": true
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 340,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 380,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 420,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 460,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 300,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 340,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 380,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 420,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 460,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "village_groves": [
+  {
+   "x": 600,
+   "y": 600,
+   "w": 40,
+   "h": 40,
+   "rot": 0,
+   "role": "copse"
+  }
+ ],
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "bbox": [
+    540,
+    540,
+    700,
+    700
+   ],
+   "outline": [
+    [
+     540,
+     540
+    ],
+    [
+     700,
+     540
+    ],
+    [
+     700,
+     700
+    ],
+    [
+     540,
+     700
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "village_groves_clear_of_paddies"
+  ],
+  "source": "test_checks.py::test_village_groves_clear_of_paddies_fires_on_a_grove_in_a_field"
+ }
+}

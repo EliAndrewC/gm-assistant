@@ -1,0 +1,40 @@
+{
+ "meta": {
+  "scale": "village",
+  "view": [
+   400,
+   100,
+   1000,
+   800
+  ]
+ },
+ "torii": [
+  [
+   500,
+   300,
+   1
+  ]
+ ],
+ "wells": [
+  {
+   "x": 600,
+   "y": 300,
+   "r": 8
+  }
+ ],
+ "cemeteries": [
+  {
+   "x": 360,
+   "y": 500,
+   "w": 100,
+   "h": 70,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "hard_features_within_frame"
+  ],
+  "source": "test_checks.py::test_hard_features_within_frame_fires_on_a_feature_clipped_by_the_crop"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     500,
+     500
+    ]
+   ],
+   "role": "branch",
+   "field": "f",
+   "w": 4.0,
+   "w_tail": 4.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "delivery_ditches_taper"
+  ],
+  "source": "test_checks.py::test_delivery_ditches_taper_fires_on_a_blunt_ditch"
+ }
+}

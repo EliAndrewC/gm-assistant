@@ -1,0 +1,29 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "cemeteries": [
+  {
+   "x": 1200,
+   "y": 1200,
+   "w": 80,
+   "h": 56,
+   "rot": 0
+  }
+ ],
+ "religious": [
+  {
+   "kind": "shrine",
+   "x": 500,
+   "y": 500,
+   "w": 100,
+   "h": 68
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "village_graveyard_by_shrine"
+  ],
+  "source": "test_checks.py::test_village_graveyard_by_shrine_fires_when_set_apart"
+ }
+}

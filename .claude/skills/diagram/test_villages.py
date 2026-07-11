@@ -25,8 +25,14 @@ GENERATORS = sorted(glob.glob(os.path.join(POOL, "*.gen.py")))
 
 def _regen_and_gate(gen):
     """Run a village generator, then its gate; return True if every check passes.
-    Runs the generator IN-PROCESS (not as a subprocess) so coverage measures settlement.py."""
-    runpy.run_path(gen, run_name="__main__")
+    Runs the generator IN-PROCESS (not as a subprocess) so coverage measures settlement.py.
+    The gate reads the JSON manifest, never the PNG, so DIAGRAM_SKIP_RENDER skips the rsvg
+    raster - which is ~90% of a big map's gen time and pure waste in the test loop."""
+    os.environ["DIAGRAM_SKIP_RENDER"] = "1"
+    try:
+        runpy.run_path(gen, run_name="__main__")
+    finally:
+        del os.environ["DIAGRAM_SKIP_RENDER"]
     manifest = gen[: -len(".gen.py")] + ".json"
     assert os.path.exists(manifest), f"{os.path.basename(gen)} produced no manifest"
     return check_village.main(manifest) == 0

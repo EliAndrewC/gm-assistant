@@ -1,0 +1,111 @@
+{
+ "meta": {
+  "scale": "village",
+  "nucleated": true
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 340,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 380,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 420,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 460,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 300,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 340,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 380,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 420,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 460,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "village_groves": [],
+ "_regression": {
+  "fires": [
+   "village_windbreak_present"
+  ],
+  "source": "test_checks.py::test_village_windbreak_present_fires_when_a_nucleated_village_has_none"
+ }
+}

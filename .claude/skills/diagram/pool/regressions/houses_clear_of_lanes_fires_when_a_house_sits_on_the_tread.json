@@ -1,0 +1,35 @@
+{
+ "lanes": [
+  {
+   "pts": [
+    [
+     100,
+     500
+    ],
+    [
+     900,
+     500
+    ]
+   ],
+   "worn": true,
+   "w": 6,
+   "connector": false
+  }
+ ],
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 23,
+   "h": 14,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "houses_clear_of_lanes"
+  ],
+  "source": "test_checks.py::test_houses_clear_of_lanes_fires_when_a_house_sits_on_the_tread"
+ }
+}

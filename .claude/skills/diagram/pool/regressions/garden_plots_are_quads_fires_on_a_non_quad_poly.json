@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "gardens": [
+  {
+   "x": 520,
+   "y": 520,
+   "w": 24,
+   "h": 16,
+   "rot": 0,
+   "of": [
+    500,
+    500
+   ],
+   "poly": [
+    [
+     509,
+     513
+    ],
+    [
+     531,
+     513
+    ],
+    [
+     520,
+     527
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "garden_plots_are_quads"
+  ],
+  "source": "test_checks.py::test_garden_plots_are_quads_fires_on_a_non_quad_poly"
+ }
+}

@@ -1,0 +1,30 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "torii": [
+  [
+   500,
+   500,
+   1
+  ]
+ ],
+ "village_groves": [
+  {
+   "role": "water_mouth",
+   "r": 14,
+   "clumps": [
+    [
+     505,
+     504
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "torii_clear_of_grove_trees"
+  ],
+  "source": "test_checks.py::test_torii_clear_of_grove_trees_fires_when_a_clump_covers_the_arch"
+ }
+}

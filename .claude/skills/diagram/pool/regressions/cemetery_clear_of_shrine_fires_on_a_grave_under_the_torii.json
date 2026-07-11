@@ -1,0 +1,36 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "cemeteries": [
+  {
+   "x": 500,
+   "y": 504,
+   "w": 60,
+   "h": 40,
+   "rot": 0
+  }
+ ],
+ "religious": [
+  {
+   "kind": "shrine",
+   "x": 500,
+   "y": 760,
+   "w": 30,
+   "h": 24
+  }
+ ],
+ "torii": [
+  [
+   500,
+   500,
+   1
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "cemetery_clear_of_shrine"
+  ],
+  "source": "test_checks.py::test_cemetery_clear_of_shrine_fires_on_a_grave_under_the_torii"
+ }
+}

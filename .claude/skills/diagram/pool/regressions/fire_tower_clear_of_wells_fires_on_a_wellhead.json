@@ -1,0 +1,28 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "wells": [
+  {
+   "x": 505,
+   "y": 500,
+   "r": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "fire_tower_clear_of_wells"
+  ],
+  "source": "test_checks.py::test_fire_tower_clear_of_wells_fires_on_a_wellhead"
+ }
+}

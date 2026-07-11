@@ -16,6 +16,7 @@ from PIL import Image, ImageOps
 
 from chargen import config
 from chargen import constants as c
+from chargen.character import random_age
 
 #: Gemini image-generation model used when ``[gemini] image_model`` is unset.
 #: Imagen 4 (imagen-4.0-*) was retired by Google on 2026-08-17; the successor
@@ -129,37 +130,10 @@ def generate_prompt(character: dict) -> str:
     clan = character.get('clan', '').title()
     clan_colors = c.CLAN_COLORS.get(clan, '')
 
-    # Random age on a bell curve centered around mid-30s, shifted by XP
-    # Higher XP characters tend to be older (~5 years per 75 XP above baseline)
-    import random
-
-    age_options = [
-        'late teens',
-        'early 20s',
-        'late 20s',
-        'early 30s',
-        'mid-30s',
-        'late 30s',
-        'early 40s',
-        'late 40s',
-        '50s',
-        '60s or older',
-    ]
-    # Bell curve weights centered on index 4 (mid-30s)
-    base_weights = [5, 15, 25, 35, 40, 35, 25, 15, 10, 5]
-
-    # Calculate XP-based shift (50 XP = baseline, +75 XP = +1 age bracket)
-    xp = character.get('xp', 50)
-    xp_shift = (xp - 50) / 75.0
-
-    # Pick from base distribution, then apply XP shift
-    base_index = random.choices(range(len(age_options)), weights=base_weights)[0]
-    shifted_index = base_index + xp_shift
-    # Add a little randomness to the shift (+/- 0.5 brackets)
-    shifted_index += random.uniform(-0.5, 0.5)
-    # Clamp to valid range
-    final_index = max(0, min(len(age_options) - 1, round(shifted_index)))
-    age_desc = age_options[final_index]
+    # The character's generated age drives the portrait, so the art matches
+    # the sheet and the synthesized backstory. Rolling one here is only a
+    # fallback for requests that predate the age field.
+    age = character.get('age') or random_age(character.get('xp', 50))
 
     # Build character description from traits
     # Only traits that would be visually apparent in a portrait are included
@@ -311,7 +285,7 @@ def generate_prompt(character: dict) -> str:
     lines = [
         f'A portrait of a {"noble" if clan else "person"} from {"the " + clan + " clan" if clan else "Rokugan"}.',
         '',
-        f'-> {pronoun.title()} is in {possessive} {age_desc}',
+        f'-> {pronoun.title()} is {age} years old',
     ]
 
     if clan_colors:

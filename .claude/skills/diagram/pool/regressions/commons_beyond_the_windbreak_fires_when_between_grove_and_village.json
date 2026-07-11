@@ -1,0 +1,129 @@
+{
+ "meta": {
+  "scale": "village",
+  "nucleated": true
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 340,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 380,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 420,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 460,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 400,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 300,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 340,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 380,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 420,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 460,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  },
+  {
+   "x": 500,
+   "y": 440,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "village_groves": [
+  {
+   "x": 240.0,
+   "y": 260.0,
+   "w": 72,
+   "h": 300,
+   "rot": 0,
+   "role": "windbreak"
+  }
+ ],
+ "commons": [
+  {
+   "x": 330.0,
+   "y": 350.0,
+   "w": 80,
+   "h": 200,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "commons_beyond_the_windbreak"
+  ],
+  "source": "test_checks.py::test_commons_beyond_the_windbreak_fires_when_between_grove_and_village"
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "bbox": [
+    200,
+    200,
+    600,
+    600
+   ],
+   "outline": [
+    [
+     200,
+     200
+    ],
+    [
+     600,
+     200
+    ],
+    [
+     600,
+     600
+    ],
+    [
+     200,
+     600
+    ]
+   ]
+  }
+ ],
+ "title": {
+  "name": "V",
+  "bbox": [
+   300,
+   300,
+   450,
+   340
+  ]
+ },
+ "_regression": {
+  "fires": [
+   "title_clear_of_features"
+  ],
+  "source": "test_checks.py::test_title_clear_of_features_fires_over_a_field"
+ }
+}

@@ -1,0 +1,53 @@
+{
+ "lanes": [
+  {
+   "pts": [
+    [
+     300,
+     100
+    ],
+    [
+     300,
+     700
+    ]
+   ],
+   "w": 6
+  }
+ ],
+ "village_groves": [
+  {
+   "role": "copse",
+   "r": 11,
+   "clumps": [
+    [
+     302,
+     400
+    ]
+   ],
+   "poly": [
+    [
+     290,
+     390
+    ],
+    [
+     314,
+     390
+    ],
+    [
+     314,
+     410
+    ],
+    [
+     290,
+     410
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "groves_clear_of_lanes"
+  ],
+  "source": "test_checks.py::test_groves_clear_of_lanes_fires_when_a_copse_sits_on_a_lane"
+ }
+}

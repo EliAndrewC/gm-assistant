@@ -1,0 +1,39 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "buildings": [
+  {
+   "x": 536,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 900,
+   "y": 900,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "fire_tower_standoff"
+  ],
+  "source": "test_checks.py::test_fire_tower_standoff_fires_when_flush_with_a_building"
+ }
+}

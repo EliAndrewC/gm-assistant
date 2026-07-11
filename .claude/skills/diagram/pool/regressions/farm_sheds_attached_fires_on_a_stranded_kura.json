@@ -9,16 +9,15 @@
    "w": 44,
    "h": 29,
    "kind": "plain",
-   "rot": 0,
-   "shed": true
+   "rot": 0
   }
  ],
- "gardens": [
+ "farm_sheds": [
   {
-   "x": 472,
-   "y": 500,
-   "w": 24,
-   "h": 16,
+   "x": 800,
+   "y": 800,
+   "w": 20,
+   "h": 9,
    "rot": 0,
    "of": [
     500,
@@ -28,8 +27,8 @@
  ],
  "_regression": {
   "fires": [
-   "gardens_clear_of_sheds"
+   "farm_sheds_attached"
   ],
-  "source": "test_checks.py::test_gardens_clear_of_sheds_fires_when_a_garden_covers_the_west_side_shed"
+  "source": "test_checks.py::test_farm_sheds_attached_fires_on_a_stranded_kura"
  }
 }

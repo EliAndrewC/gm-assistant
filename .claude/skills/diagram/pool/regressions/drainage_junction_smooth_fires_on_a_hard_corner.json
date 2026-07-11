@@ -1,0 +1,45 @@
+{
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     300,
+     500
+    ],
+    [
+     700,
+     500
+    ]
+   ],
+   "role": "drain",
+   "field": "f"
+  }
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     700,
+     500
+    ],
+    [
+     700,
+     900
+    ]
+   ],
+   "frm": {
+    "kind": "drain"
+   },
+   "to": {
+    "kind": "offmap"
+   },
+   "w": 9
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "drainage_junction_smooth"
+  ],
+  "source": "test_checks.py::test_drainage_junction_smooth_fires_on_a_hard_corner"
+ }
+}

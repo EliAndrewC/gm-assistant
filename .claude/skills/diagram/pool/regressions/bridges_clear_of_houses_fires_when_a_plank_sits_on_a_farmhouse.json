@@ -1,0 +1,30 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 400,
+   "y": 300,
+   "w": 44,
+   "h": 29,
+   "kind": "plain",
+   "rot": 0
+  }
+ ],
+ "bridges": [
+  {
+   "x": 400,
+   "y": 300,
+   "rot": 0,
+   "span": 24,
+   "w": 6
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "bridges_clear_of_houses"
+  ],
+  "source": "test_checks.py::test_bridges_clear_of_houses_fires_when_a_plank_sits_on_a_farmhouse"
+ }
+}

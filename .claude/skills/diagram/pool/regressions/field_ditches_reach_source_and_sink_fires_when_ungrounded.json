@@ -1,0 +1,38 @@
+{
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     500,
+     300
+    ]
+   ],
+   "role": "main",
+   "field": "f"
+  },
+  {
+   "poly": [
+    [
+     300,
+     600
+    ],
+    [
+     500,
+     600
+    ]
+   ],
+   "role": "drain",
+   "field": "f"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "field_ditches_reach_source_and_sink"
+  ],
+  "source": "test_checks.py::test_field_ditches_reach_source_and_sink_fires_when_ungrounded"
+ }
+}

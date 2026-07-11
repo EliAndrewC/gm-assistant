@@ -1,0 +1,46 @@
+{
+ "meta": {
+  "scale": "village",
+  "W": 1000,
+  "H": 1000
+ },
+ "lanes": [
+  {
+   "pts": [
+    [
+     100,
+     500
+    ],
+    [
+     900,
+     500
+    ]
+   ],
+   "w": 6
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     900
+    ]
+   ],
+   "w": 5,
+   "role": "main",
+   "field": "p"
+  }
+ ],
+ "bridges": [],
+ "_regression": {
+  "fires": [
+   "roads_bridge_water"
+  ],
+  "source": "test_checks.py::test_roads_bridge_water_fires_on_an_unbridged_lane_over_a_canal"
+ }
+}

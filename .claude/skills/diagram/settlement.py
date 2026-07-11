@@ -16,6 +16,7 @@ adapt its checks per village instead of assuming one village's specifics.
 """
 import json
 import math
+import os
 import random
 import shutil
 import subprocess
@@ -229,6 +230,11 @@ class Settlement:
         self.field_polys = []     # smoothed outlines used for blocking
         self.ellipses = []        # (cx, cy, rx, ry) hill/pond/manor - block houses
         self.block_polys = []     # arbitrary no-build polygons (e.g. forest)
+        self._bbox_cache = {}     # id(poly-list) -> (len, [per-poly (minx,miny,maxx,maxy)]) for the collision
+        #                           pre-filter: reject a far polygon cheaply before the O(vertices) corner /
+        #                           segment tests (the homestead solver probes _rect_blocked ~100k+ times)
+        self._water_obs_cache = None   # (lengths-key, [(poly, keep-out half-width, bbox)]) - same pre-filter idea
+        #                                for _rect_on_water's irrigation lines (channels / ditches / streams)
         self._clip = 0
         self._nbig = 0
         self.M = {"houses": [], "fields": [], "fallow_patches": [], "channels": [],
@@ -242,7 +248,7 @@ class Settlement:
                   "wells": [], "bridges": [], "threshing_yards": [], "gardens": [], "groves": [], "cemeteries": [],
                   "mausoleums": [], "cremation_grounds": [], "ossuaries": [], "moat_layer": None,
                   "fire_towers": [], "field_ditches": [], "village_groves": [], "commons": [], "dry_plots": [],
-                  "marshes": [], "byres": [],
+                  "marshes": [], "byres": [], "farm_sheds": [],
                   "meta": {"W": W, "H": H}}
         self._header()
 
@@ -288,19 +294,25 @@ class Settlement:
             self.out.append("")          # placeholder, replaced by the sorted block at finish()
         self.ground.append({"zpri": zpri, "seq": len(self.ground), "edge": edge, "bed": bed, "top": top, "rec": rec, "zkey": zkey})
 
-    def _water(self, bed, rec, sheen=None):
-        """Defer a watercourse (stream / channel / moat) so the whole set renders as ONE block, in TWO
-        sub-layers: all BEDS (the blue water bodies, same colour) inside one shared-opacity group, then
-        all SHEENS (the lighter mid-current highlights) inside another above it. The shared group opacity
-        means overlapping water does NOT stack opacity into a dark seam where two courses cross - the beds
+    def _water(self, bed, rec, sheen=None, edge=None, clip=None, pond_fill=False):
+        """Defer a watercourse (stream / channel / moat / POND) so the whole set renders as ONE block, in
+        THREE sub-layers: all EDGES (pond rims - the only water feature with a border) at the bottom, then
+        all BEDS (the blue water bodies, same colour) inside one shared-opacity group, then all SHEENS (the
+        lighter mid-current highlights) inside another above it. The shared bed-group opacity means
+        overlapping water does NOT stack opacity into a dark seam where two courses cross - the beds
         composite into a single continuous body (a confluence), exactly as the ground beds merge into a
-        clean crossroads. Each course records its bed's / sheen's draw position on `rec` (bedz / sheenz)
-        for waterways_merge_at_crossings. Spliced at the FIRST water call's position, so later fields still
-        paint over a channel's end."""
+        clean crossroads. And because every EDGE sits below every bed, a feeder's bed COVERS a pond's rim
+        where it meets it - so the stream/channel JOINS the pond at the rim (a clean gap) instead of the rim
+        cutting across its mouth. Each course records its bed's / sheen's draw position on `rec` (bedz /
+        sheenz) for waterways_merge_at_crossings. Spliced at the FIRST water call's position, so later fields
+        still paint over a channel's end. `clip` (optional {'pts','bed_t','sheen_t'}) marks a pond-anchored
+        feeder whose bed/sheen are RE-EMITTED at flush, snapped to the rim - deferred so it works even when the
+        feeder is drawn BEFORE the pond (M['pond'] is not known at call time). `pond_fill` marks the pond's
+        water body, drawn LAST among the beds so it paints over any feeder's inside-the-rim overshoot."""
         if self._water_idx is None:
             self._water_idx = len(self.out)
-            self.out.append("")          # placeholder, replaced by the two-group block at finish()
-        self.water.append({"bed": bed, "sheen": sheen, "rec": rec})
+            self.out.append("")          # placeholder, replaced by the three-group block at finish()
+        self.water.append({"bed": bed, "sheen": sheen, "edge": edge, "rec": rec, "clip": clip, "pond_fill": pond_fill})
 
     def _cid(self, prefix):
         self._clip += 1
@@ -334,26 +346,29 @@ class Settlement:
         self.view = (ox, oy, w, h)
         self.M["meta"]["view"] = [ox, oy, w, h]
 
-    # feature keys that MAY be cropped THROUGH - the frame shows only `bleed_frac` (~2/3) of them and the cut
-    # edge reads as "more of this beyond" (the degraded fuel/fodder commons; future wilderness/forest/waste).
-    _CROP_BLEED = ("commons",)
     # solid HARD footprints the frame must fully contain (+ margin); the fields and pond are added specially.
+    # Everything NOT listed here - the commons scrub, streams/channels/lanes - does not set the frame: it is
+    # drawn and simply CLIPS at the crop edge (the frame stays tight to the settlement + its fields).
     _CROP_HARD = ("houses", "gardens", "threshing_yards", "village_groves", "groves", "dry_plots",
-                  "buildings", "manors", "religious", "shrines", "flophouses", "storehouses",
+                  "buildings", "manors", "religious", "shrines", "flophouses", "storehouses", "farm_sheds",
                   "merchant_estates", "wells", "fire_towers", "ministries", "inspection_stations",
                   "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "forest_patches", "pastures")
 
-    def crop_to_content(self, margin=30, bleed_frac=2.0 / 3):
-        """Frame the map to its CONTENT: set the render viewBox to the bounding box of the features placed SO FAR
-        plus `margin`, so the image is exactly as large as what it shows (nonstandard sizes are fine, and the
-        checks already treat the crop - not the canvas - as the map edge). Call this AFTER the large features
-        (water, fields, houses, groves, commons) and BEFORE the small deferred ones (shrine, wells, cemetery,
-        monk plots) AND the title - the small features drop into the framed space and the title positions inside
-        the crop. Two feature classes: HARD (`_CROP_HARD` + the fields' VISIBLE extent + the pond) must fit FULLY
-        (+ margin); BLEED (`_CROP_BLEED`, e.g. the commons) MAY be cropped through - the frame need only show
-        `bleed_frac` of them, so the cut edge reads as 'more wild ground this way'. Linear / off-map RUNNERS
-        (streams, channels, lanes) are ignored: they clip at the frame and their off-edge checks read the crop."""
-        hx, hy, bleed = [], [], []
+    def crop_to_content(self, margin=30):
+        """Frame the map to its CONTENT: set the render viewBox to the bounding box of the HARD features placed
+        SO FAR plus `margin`, so the image is exactly as large as the settlement + its fields, tight to `margin`
+        on every side (nonstandard sizes are fine, and the checks already treat the crop - not the canvas - as
+        the map edge). Call this AFTER the large features (water, fields, houses, groves) AND after any SET-APART
+        hard feature that would otherwise sit outside the frame (a back-slope graveyard, an outlying shrine -
+        those must be placed BEFORE the crop so it includes them), and BEFORE the small features that DROP INTO
+        the framed space (wells among the houses, monk plots) AND the title.
+        HARD (`_CROP_HARD` + the fields' VISIBLE extent + the pond) is what sets the frame. Everything else -
+        the BLEED commons scrub AND the linear/off-map RUNNERS (streams, channels, lanes) - does NOT affect the
+        frame: it is drawn and simply CLIPS at the edge, trailing off as 'more wild ground / more map this way'.
+        (We used to extend the frame to preserve 2/3 of a trailing commons, but the GM wants the frame tight to
+        the real content - a graveyard, the pond - never held open by empty back-slope grazing, so the commons
+        now clips like the marsh instead of dragging the frame out.)"""
+        hx, hy = [], []
         for k in self._CROP_HARD:
             for o in self.M.get(k, []):
                 if o.get("poly"):
@@ -374,24 +389,9 @@ class Settlement:
             cx, cy, rx, ry = self.M["pond"]
             hx += [cx - rx, cx + rx]
             hy += [cy - ry, cy + ry]
-        for k in self._CROP_BLEED:
-            for o in self.M.get(k, []):
-                xs = [p[0] for p in o["poly"]]
-                ys = [p[1] for p in o["poly"]]
-                bleed.append((min(xs), min(ys), max(xs), max(ys)))
         if not hx:  # pragma: no cover - crop is called only after the hard features are placed
             return
         x0, y0, x1, y1 = min(hx) - margin, min(hy) - margin, max(hx) + margin, max(hy) + margin
-        for bx0, by0, bx1, by1 in bleed:                     # keep >= bleed_frac of each bleed feature (expand outward only if the hard crop would cut too much)
-            bw, bh = bx1 - bx0, by1 - by0
-            if bw > 0 and bx0 < x0:
-                x0 = min(x0, bx1 - bleed_frac * bw)
-            if bw > 0 and bx1 > x1:
-                x1 = max(x1, bx0 + bleed_frac * bw)
-            if bh > 0 and by0 < y0:
-                y0 = min(y0, by1 - bleed_frac * bh)
-            if bh > 0 and by1 > y1:
-                y1 = max(y1, by0 + bleed_frac * bh)
         self.set_view(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
 
     # ---- fields
@@ -404,7 +404,7 @@ class Settlement:
         floor at the 2600px render - the true grain is finer still, but the bund network and the
         planting-row hatching must stay legible, so plots are drawn a touch oversized (the same
         legibility license the houses take). The bund stroke thins with the grain to suit. See the
-        "Paddy plot grain" entry in the SKILL.md historical grounding."""
+        "Paddy plot grain" entry in the settlements.md historical grounding."""
         bund = 0.03 * plot + 0.35   # bund (aze) stroke thins with the plot grain: ~2.6 at the old 76, ~1.7 at 46
         if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
             bbox = tuple(shape)
@@ -429,7 +429,7 @@ class Settlement:
         # together by piecemeal reclamation and inheritance - NOT the regular grid of modern (Meiji/Showa)
         # land consolidation. Build it by recursively splitting the field with straight, slightly-angled aze
         # (bund) lines that cut the LONG axis of each plot at a jittered fraction, down to the target grain
-        # (with size variation), so bunds meet at T-junctions like real cadastral paddy. See SKILL.md.
+        # (with size variation), so bunds meet at T-junctions like real cadastral paddy. See settlements.md.
         _fillstate = random.getstate()                       # ISOLATE the paddy fill RNG: the patchwork, crop
         random.seed(int(abs(x0) * 7 + abs(y0) * 13 + abs(x1) * 3 + len(name)))   # roll, growth stage and mottle
         plots = self._paddy_plots((ex0, ey0, ex1, ey1), plot)                    # are decorative and must NOT shift
@@ -442,7 +442,7 @@ class Settlement:
             cy = sum(q[1] for q in poly) / len(poly)
             # CROP MIX: an irrigated valley exists to grow RICE (~85% of the watered common). Dry upland crops
             # (barley/veg, soy) cluster on the MARGINS - the higher, harder-to-water rim - while the well-watered
-            # interior is all paddy. So dry/soy probability rises toward the field edge. See SKILL.md 'Crop mix'.
+            # interior is all paddy. So dry/soy probability rises toward the field edge. See settlements.md 'Crop mix'.
             edge = max(0.0, 1.0 - edge_dist(cx, cy, smoothed) / (2.4 * plot))     # 1 at the rim, 0 deep interior
             r = random.random()
             dry_p, soy_p = 0.05 + 0.24 * edge, 0.03 + 0.11 * edge
@@ -450,7 +450,7 @@ class Settlement:
             if crop == 'rice':
                 # a village transplants TOGETHER (shared water, exchanged labour), so its paddies are largely
                 # ONE stage - here high-summer green - with only minor spread (early/late rice varieties, the odd
-                # low flooded plot); NOT a rainbow of stages. See SKILL.md 'Crop mix / paddy surface'.
+                # low flooded plot); NOT a rainbow of stages. See settlements.md 'Crop mix / paddy surface'.
                 st = random.random()
                 if st < 0.06:
                     fill, flooded = random.choice(FLOODED_SHADES), True
@@ -560,7 +560,7 @@ class Settlement:
         """A WET paddy: a flooded, mottled sheet (irregular hand-transplanted shoots, plus a faint water sheen
         for a freshly-flooded plot) - NOT ruled rows. Premodern rice was transplanted irregularly; crisp
         checkrow planting (seijoue) is a Meiji improvement, so ruled rows on a paddy read as modern (the same
-        era-tell as the consolidation grid). See SKILL.md 'Crop mix / paddy surface'."""
+        era-tell as the consolidation grid). See settlements.md 'Crop mix / paddy surface'."""
         xs = [q[0] for q in poly]
         ys = [q[1] for q in poly]
         x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
@@ -625,7 +625,7 @@ class Settlement:
         FOLLOWS the water (rice hugging the ditches, dry upland crops where the network doesn't reach - wide-
         strip middles and the margins); the paddy is ~ONE green (a rice field, not a colour mix). Records a
         feed channel (pond->field) and a drain channel (field->drain) so the checks see the supply. See
-        SKILL.md 'Water-first fields'."""
+        settlements.md 'Water-first fields'."""
         if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
             bbox = tuple(shape)
             outline = organic_bbox(bbox, amp)
@@ -805,12 +805,22 @@ class Settlement:
 
     # ---- water
     def pond(self, cx, cy, rx, ry, stream_curve=None):
+        """A pond / irrigation reservoir. Routed through the WATER block (not drawn inline) so a stream or
+        channel MEETING it JOINS at the rim instead of the rim cutting across its mouth: the RIM is an EDGE
+        below every water bed (a feeder's bed covers it at the junction -> a clean gap), the FILL joins the
+        shared bed group as the TOPMOST bed (`pond_fill=True`) - so it paints OVER any feeder's inside-the-rim
+        overshoot (an irrigation channel's round end-cap bulging past the rim, whichever order it was drawn),
+        while the shore rim still shows and the mouths stay clean; the inner highlight is a sheen."""
         if stream_curve:
             # the pond's feeder runs at the lateral/ditch tier - a thin line near the channel weight,
-            # NOT the heftier natural-stream weight (see the water-width ladder in SKILL.md).
-            self.add(f'<path d="{stream_curve}" fill="none" stroke="#9CB4C8" stroke-width="5" opacity="0.85"/>')
-        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#9CB4C8" stroke="#5C7488" stroke-width="2.4"/>')
-        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx-12}" ry="{ry-10}" fill="none" stroke="#B6CAD8" stroke-width="1" opacity="0.7"/>')
+            # NOT the heftier natural-stream weight (see the water-width ladder in settlements.md).
+            self._water(f'<path d="{stream_curve}" fill="none" stroke="#9CB4C8" stroke-width="5"/>', {})
+        self._water(
+            f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#9CB4C8"/>',                                  # FILL -> shared bed group (topmost bed)
+            {},
+            sheen=f'<ellipse cx="{cx}" cy="{cy}" rx="{rx-12}" ry="{ry-10}" fill="none" stroke="#B6CAD8" stroke-width="1"/>',   # inner highlight
+            edge=f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="none" stroke="#5C7488" stroke-width="2.4"/>',        # RIM -> edge layer, below beds
+            pond_fill=True)
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
@@ -823,26 +833,97 @@ class Settlement:
         # always recorded so the gate can check it (anchors optional - only some streams connect things)
         rec = {"poly": [[x, y] for x, y in pts], "frm": frm, "to": to, "w": width}
         self.M["streams"].append(rec)
+        bed_t = f'<path d="{{dd}}" fill="none" stroke="#9CB4C8" stroke-width="{width}" stroke-linejoin="round" stroke-linecap="round"/>'
+        # lighter mid-current highlight (NOT a dashed lane line - this is water, not a road)
+        sheen_t = f'<path d="{{dd}}" fill="none" stroke="#B6CAD8" stroke-width="{max(2, width * 0.35):.0f}" stroke-linejoin="round" stroke-linecap="round"/>'
+        clip = {"pts": [(x, y) for x, y in pts], "bed_t": bed_t, "sheen_t": sheen_t} if self._pond_anchored(frm, to) else None
         self._water(   # opacity comes from the shared bed/sheen groups, so crossings don't stack into a dark seam
-            f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}" stroke-linejoin="round" stroke-linecap="round"/>',
-            rec,
-            sheen=f'<path d="{dd}" fill="none" stroke="#B6CAD8" stroke-width="{max(2, width*0.35):.0f}" stroke-linejoin="round" stroke-linecap="round"/>')   # lighter mid-current highlight (NOT a dashed lane line - this is water, not a road)
+            bed_t.format(dd=dd), rec, sheen=sheen_t.format(dd=dd), clip=clip)
         self.corridors.append(([(x, y) for x, y in pts], max(30, width / 2 + 20)))   # no-build: keep houses off the stream
 
     def channel(self, start, end, frm, to, amp=15, width=2.5):
         """frm/to are anchor dicts: {'kind':'pond'|'offmap'|'field','name':...}. `width` is the drawn
         bed: a field-level irrigation ditch is the THINNEST line on the map (in reality ~0.3 m, ~1/300
         of the 1-cho paddy it feeds), so it sits at the legibility floor (~2.5 px) - a hairline, clearly
-        finer than any natural watercourse. See the water-width ladder in SKILL.md historical grounding."""
+        finer than any natural watercourse. See the water-width ladder in settlements.md historical grounding."""
         poly = winding(start, end, amp=amp)
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in poly)
         rec = {"poly": [[x, y] for x, y in poly], "frm": frm, "to": to, "w": width}
         self.M["channels"].append(rec)
-        self._water(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}"/>', rec)   # a channel is a thin bed, no sheen
+        bed_t = f'<path d="{{dd}}" fill="none" stroke="#9CB4C8" stroke-width="{width}"/>'   # a channel is a thin bed, no sheen
+        clip = {"pts": [(x, y) for x, y in poly], "bed_t": bed_t, "sheen_t": None} if self._pond_anchored(frm, to) else None
+        self._water(bed_t.format(dd=dd), rec, clip=clip)
         # 33 px keeps even a plain farmhouse's FOOTPRINT (half-diagonal ~26) clear of the
         # channel, not just its center - 22 left corners clipping the channel (see
         # no_structure_on_channel). Matches the stream corridor's footprint-aware spacing.
         self.corridors.append((poly, 33))
+
+    def _clip_to_pond(self, pts):
+        """Snap a channel's leading endpoint ONTO the pond rim - trim a run that lies inside the pond, or
+        extend one that sits just outside (the sluice foot) - so its bed straddles the rim and COVERS it at
+        the mouth: a clean JOIN, without the channel drawing a coloured line across the open water. No-op
+        when there is no pond. (The rim renders in the water EDGE layer, below every bed, so the covering
+        works.)"""
+        p = self.M.get("pond")
+        if not p:
+            return pts
+        ex, ey, erx, ery = p
+
+        def rad(q):
+            return ((q[0] - ex) / erx) ** 2 + ((q[1] - ey) / ery) ** 2   # <1 inside, 1 on the rim, >1 outside
+
+        def rim(inside_pt, outside_pt):                                  # the rad==1 crossing on the segment
+            lo, hi = 0.0, 1.0
+            for _ in range(24):
+                m = (lo + hi) / 2
+                q = (inside_pt[0] + (outside_pt[0] - inside_pt[0]) * m, inside_pt[1] + (outside_pt[1] - inside_pt[1]) * m)
+                lo, hi = (m, hi) if rad(q) < 1.0 else (lo, m)
+            return (inside_pt[0] + (outside_pt[0] - inside_pt[0]) * hi, inside_pt[1] + (outside_pt[1] - inside_pt[1]) * hi)
+
+        def snap_front(seq):                           # snap a leading endpoint that connects to the pond onto the rim
+            out = list(seq)
+            if rad(out[0]) < 1.0:                       # inside: drop the run inside the pond, start AT the rim
+                i = 0
+                while i + 1 < len(out) and rad(out[i + 1]) < 1.0:
+                    i += 1
+                if i + 1 < len(out):
+                    out = [rim(out[i], out[i + 1])] + out[i + 1:]
+            elif rad(out[0]) < 1.35:                     # just outside (the sluice foot): prepend the rim point
+                out = [rim((ex, ey), out[0])] + out
+            return out
+
+        out = snap_front(pts)                           # a comb channel meets the pond at its head (leading end)...
+        out = snap_front(out[::-1])[::-1]               # ...a feeder brook meets it at its mouth (trailing end): clip both
+        return out
+
+    @staticmethod
+    def _pond_anchored(frm, to):
+        """True if a watercourse connects TO the pond at either end (frm/to kind == 'pond') - the cue to snap
+        that end onto the rim so it JOINS the open water instead of drawing its bed/sheen across it."""
+        return any(a and a.get("kind") == "pond" for a in (frm, to))
+
+    def field_channel(self, pts, col, w0, w1):
+        """Draw a comb-net irrigation channel (from the waterfields engine) THROUGH the water block, so it
+        JOINS the pond + the other channels cleanly: its bed sits in the shared bed group (composited as one
+        confluence, no dark seam), OVER the pond's rim edge (so its bed covers the rim where it meets the
+        pond -> a clean gap, not the rim cutting across). `col` is the bed colour (supply vs drain); the width
+        tapers `w0 -> w1` along the run (split into pieces). The sluice end is snapped onto the rim by
+        `_clip_to_pond`. Not recorded here - the field_ditches are recorded separately for the checks."""
+        pts = self._clip_to_pond(pts)
+        if abs(w1 - w0) < 0.2:
+            dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" '
+                        f'stroke-linejoin="round" stroke-linecap="round"/>', {})
+            return
+        n, L = 7, len(pts)
+        for k in range(n):
+            piece = pts[k * (L - 1) // n: (k + 1) * (L - 1) // n + 1]
+            if len(piece) < 2:
+                continue
+            wk = w0 + (w1 - w0) * (k + 0.5) / n
+            dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in piece)
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" '
+                        f'stroke-linejoin="round" stroke-linecap="round"/>', {})
 
     def lane(self, pts, width=16, clearance=22, worn=False, connector=False):
         """A village lane or connecting path. `worn=True` draws it as UNPAVED TRODDEN EARTH: a NARROW
@@ -852,7 +933,7 @@ class Settlement:
         lane (the dispersed pool maps until they are rebuilt). `clearance` is the no-build corridor
         half-width (keep houses off the tread). `connector=True` marks the trodden path that LEAVES the
         village for the wider world - it MUST run off the map edge (checked), never stop mid-landscape.
-        See SKILL.md 'Village lanes and connecting paths'."""
+        See settlements.md 'Village lanes and connecting paths'."""
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
         if worn:
             self.add(f'<path d="{dd}" fill="none" stroke="#A98C58" stroke-width="{width + 2.5:.1f}" '
@@ -1121,7 +1202,9 @@ class Settlement:
         farmsteads() (homesteads fixed) and BEFORE the grove (which then skips the byres). Records M['byres']."""
         bs = self.bscale
         vf = 0.52 if self.M["meta"].get("scale") == "village" else 1.0    # to-scale village buildings are ~half legacy
-        bw, bh = round(20 * vf * bs, 1), round(14 * vf * bs, 1)
+        # SIZE (1px=2ft): a shared byre houses ~1-2 draft animals (an ox / water-buffalo stall is ~2x3 m) plus
+        # fodder -> ~4.7x3.2 m ~ 15 m2, well under the ~120 m2 farmhouse. (Was 6.3x4.4 m ~ 28 m2 - oversized.)
+        bw, bh = round(15.5 * vf * bs, 1), round(10.5 * vf * bs, 1)
         houses = [h for h in self.M.get("houses", []) if h.get("kind") == "plain"]
         ranked = sorted(houses, key=lambda h: (-h.get("wealth", 1.0), h["x"], h["y"]))   # buffalo owners = the wealthier
         target = max(1, round(len(houses) * fraction))
@@ -1555,7 +1638,7 @@ class Settlement:
         The watchman strikes the bell in a cadence that tells the town how near the fire is. Records
         M['fire_towers'] (an overlap-checked struct: it must stand clear of the wall, roads, and
         buildings) and reserves a small no-build block (it needs clear sightlines). Place it among the
-        laborer/merchant blocks. See the SKILL.md 'Fire towers' historical grounding."""
+        laborer/merchant blocks. See the settlements.md 'Fire towers' historical grounding."""
         h = tw / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-h-2:.0f}" y="{-h-5:.0f}" width="{tw+4}" height="5" rx="1" fill="#7A5A30"/>')          # the little roof cap over the lookout platform
@@ -1746,7 +1829,7 @@ class Settlement:
     # East Asian winter monsoon (the Siberian high) blows NW across China AND Japan, so N+W is windward and
     # the S/E is the sheltered, sunny side. A map keys it off its geography with meta(windward=...). Each
     # arm is (face, perp): `face` is the cardinal it sits on; `perp` is the sign the N/S arm extends along
-    # to wrap the corner (0 for a lone cardinal arm). See SKILL.md 'Homestead groves'.
+    # to wrap the corner (0 for a lone cardinal arm). See settlements.md 'Homestead groves'.
     _GROVE_ARMS = {
         "NW": [((0, -1), -1), ((-1, 0), 0)], "NE": [((0, -1), 1), ((1, 0), 0)],
         "SW": [((0, 1), -1), ((-1, 0), 0)], "SE": [((0, 1), 1), ((1, 0), 0)],
@@ -1777,7 +1860,7 @@ class Settlement:
         N/S arm runs E-W as wide as the house plus `d` (extending `perp` toward the windward corner so the
         two arms wrap it); an E/W arm runs N-S as tall as the house. The depth `d` is how many trees deep the
         stand is - sized so the whole grove is the LARGEST homestead appurtenance (bigger than the house);
-        `lf` shortens the arm's run to slip a partial belt past a close neighbour. See SKILL.md 'Homestead
+        `lf` shortens the arm's run to slip a partial belt past a close neighbour. See settlements.md 'Homestead
         groves' (Historical scale)."""
         if fdy:                                                   # N or S arm (runs E-W); wraps `perp` toward the windward corner
             return hx + perp * d / 2, hy + fdy * (hh / 2 + d / 2 + gap), (hw + d) * lf, d
@@ -1794,14 +1877,8 @@ class Settlement:
             return False
         if self._near_corridor(x, y):                            # NOT `_in_blocked`: a grove may sit right at the
             return False                                         # paddy edge (the 14px field set-back is for buildings, not the windbreak)
-        gc = [(x - w / 2, y - h / 2), (x + w / 2, y - h / 2), (x + w / 2, y + h / 2), (x - w / 2, y + h / 2)]
-        for poly in self.field_polys:                            # the whole grove stays OUT of the flooded paddy
-            n = len(poly)
-            if (any(point_in_poly(cx, cy, poly) for cx, cy in gc)
-                    or any(point_in_poly(vx, vy, gc) for vx, vy in poly)
-                    or any(segments_cross(gc[e], gc[(e + 1) % 4], poly[k], poly[(k + 1) % n])
-                           for e in range(4) for k in range(n))):
-                return False
+        if self._rect_hits((x, y, w, h), self.field_polys):      # the whole grove stays OUT of the flooded paddy
+            return False                                         # (same corner/vertex/edge test, with the bbox pre-filter)
         for (px, py, pw, ph) in self.placed:                     # clear of every footprint but its OWN homestead
             if any(abs(px - ox) < 1.5 and abs(py - oy) < 1.5 for ox, oy in own):
                 continue
@@ -1816,7 +1893,7 @@ class Settlement:
                 return False
         return True
 
-    GROVE_RATIO = 6.0     # target grove footprint as a multiple of the house (~6:1 - see SKILL.md Historical scale)
+    GROVE_RATIO = 6.0     # target grove footprint as a multiple of the house (~6:1 - see settlements.md Historical scale)
 
     def _find_grove_arms(self, hx, hy, hw, hh):
         """The windward grove's belt arms, AREA-TARGETED to ~GROVE_RATIO x the house footprint (the historical
@@ -1930,7 +2007,7 @@ class Settlement:
 
     def village_grove(self, poly, role="windbreak", dense=True):
         """A COMMUNAL village grove - the Chinese *fengshui* forest (风水林). Unlike the per-house *yashikirin*,
-        a NUCLEATED village shelters behind ONE village-scale grove, in three roles (see SKILL.md 'Village
+        a NUCLEATED village shelters behind ONE village-scale grove, in three roles (see settlements.md 'Village
         windbreak'):
           - `windbreak` - the dense belt on the WINDWARD/high BACK edge (后龙林 back-village grove); the winter-
             monsoon wall and the LARGEST vegetation feature. Nestles against and EMBRACES the cluster.
@@ -1952,8 +2029,18 @@ class Settlement:
         bs = self.bscale
         step = (20 if dense else 52) * bs
         clump = (28 if dense else 22) * bs
-        occ = [(o["x"], o["y"], 0.5 * math.hypot(o["w"], o["h"]) + clump * 0.35)   # never draw ON a home/yard/garden/byre
-               for k in ("houses", "threshing_yards", "gardens", "byres") for o in self.M.get(k, [])]
+        occ = [(o["x"], o["y"], 0.5 * math.hypot(o["w"], o["h"]) + clump * 0.35)   # never draw ON a home/yard/garden/byre/kura
+               for k in ("houses", "threshing_yards", "gardens", "byres", "farm_sheds")
+               for o in self.M.get(k, [])]
+        occ += [(o["x"], o["y"], o["r"] + clump * 0.35) for o in self.M.get("wells", [])]   # wells carry a radius, not w/h
+        # A SHRINE and its TORII sit in a CLEAN clearing: no tree CANOPY may reach them (a hall/arch lost in the
+        # wood reads wrong - shrine_clear_of_grove_trees / torii_clear_of_grove_trees gate it). The DRAWN canopy
+        # overhangs the nominal clump radius (crowns spill past clump/2), reaching ~0.85*clump from the clump
+        # centre - so the keep-out uses that reach + a hair (0.90*clump), NOT the 0.35*clump a homestead uses
+        # (there a grove may hug the eaves). A torii is recorded as [x, y, z]; glyph spans x +/-19, y -10..+18.
+        occ += [(o["x"], o["y"], 0.5 * math.hypot(o["w"], o["h"]) + clump * 0.90)
+                for k in ("religious", "shrines") for o in self.M.get(k, [])]
+        occ += [(t[0], t[1] + 4, math.hypot(19, 14) + clump * 0.90) for t in self.M.get("torii", [])]
         corr = self._corridor_buffers(clump * 0.45 + 4)      # ... and keep trees OFF the lanes / streets / road
         cr = clump / 2
         # ... and OUT of the SOUTHERN sun-corridor of every threshing yard + garden (a tree just south of them
@@ -2016,7 +2103,7 @@ class Settlement:
         poorer ground so it is VISUALLY DISTINCT from the dense, dark, closed-canopy village grove - this is a
         COMMONS (not anyone's field), non-arable. WHY (south China's hills were stripped for fuel/timber over a
         millennium - open pine + grass + erosion; the protected grove is the green EXCEPTION; the back slope
-        also carried the graves + dry hill-crops): SKILL.md 'Village windbreak' / back-slope land use. Recorded
+        also carried the graves + dry hill-crops): settlements.md 'Village windbreak' / back-slope land use. Recorded
         in M['commons']."""
         xs = [p[0] for p in poly]
         ys = [p[1] for p in poly]
@@ -2027,9 +2114,10 @@ class Settlement:
         random.seed(int(abs(x0) * 7 + abs(y0) * 3 + round(x1 - x0)))
         feather = 42 * bs                                     # scrub THINS toward the boundary (a soft, ragged edge, not a hard line)
 
-        def _sparse(px, py, drop):                            # skip a scatter point outside the poly, on a field/lane, or (probabilistically) near the edge
+        def _sparse(px, py, drop):                            # skip a scatter point outside the poly, on a field/lane/building, or (probabilistically) near the edge
             if (not point_in_poly(px, py, poly) or any(point_in_poly(px, py, ff) for ff in self.field_polys)
-                    or self._on_lane(px, py, 3 * bs)):         # keep scrub off the trodden lane so the path is not overgrown
+                    or self._on_lane(px, py, 3 * bs)           # keep scrub off the trodden lane so the path is not overgrown
+                    or any(point_in_poly(px, py, b) for b in self.block_polys)):   # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
                 return True
             ed = edge_dist(px, py, poly)
             return ed < feather and random.random() > (ed / feather) ** drop
@@ -2073,7 +2161,7 @@ class Settlement:
         undrained valley toe below the managed paddy, where wet-rice cultivation stops (wet rice is reclaimed FROM
         marsh - polders diked out into marsh/lake; where reclamation stops it stays reed wetland; `marsh_on_low_ground`
         checks this sits downhill); 'pond_fringe' = the reedy shallow MARGIN of a pond (a water-edge fringe, exempt
-        from the low-ground rule). WHY: SKILL.md 'Marsh'. Recorded M['marshes']."""
+        from the low-ground rule). WHY: settlements.md 'Marsh'. Recorded M['marshes']."""
         xs = [p[0] for p in poly]
         ys = [p[1] for p in poly]
         x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
@@ -2084,9 +2172,10 @@ class Settlement:
         feather = 46 * bs
         pond = self.M.get("pond")
 
-        def _sparse(px, py, drop):                            # skip a point outside the poly, IN a paddy / ON the pond / on a lane, or (probabilistically) near the edge
+        def _sparse(px, py, drop):                            # skip a point outside the poly, IN a paddy / ON the pond / on a lane/building, or (probabilistically) near the edge
             if (not point_in_poly(px, py, poly) or any(point_in_poly(px, py, ff) or edge_dist(px, py, ff) < 10 for ff in self.field_polys)
-                    or self._on_lane(px, py, 3 * bs)):         # a causeway/path through the marsh stays bare, not reeded over
+                    or self._on_lane(px, py, 3 * bs)           # a causeway/path through the marsh stays bare, not reeded over
+                    or any(point_in_poly(px, py, b) for b in self.block_polys)):   # ... and OFF any building/shrine/torii footprint
                 return True
             if pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 < 1.0:
                 return True                                   # reeds fringe the shore, they do not float on open water
@@ -2646,7 +2735,7 @@ class Settlement:
         by `gap`. Records M['moat']. Feed it from off-map with a stream (AS WIDE as the moat, by
         conservation of flow) and tap it for irrigation channels to the outside fields. A no-build
         corridor. Width ~26 px: a provincial-city defensive moat is the heaviest watercourse on the
-        map (Himeji-tier ~20-35 m real, ~70x a field ditch); see the SKILL.md water-width ladder."""
+        map (Himeji-tier ~20-35 m real, ~70x a field ditch); see the settlements.md water-width ladder."""
         cx = sum(p[0] for p in ring) / len(ring)
         cy = sum(p[1] for p in ring) / len(ring)
         mo = []
@@ -2728,13 +2817,16 @@ class Settlement:
                             n += 1
         return n
 
-    def channel_footbridges(self, spacing=320, min_len=140, plank_w=5.5):
+    def channel_footbridges(self, spacing=320, min_len=140, plank_w=2.5):
         """Standalone plank FOOTBRIDGES across the irrigation channels, where field-workers cross a ditch while
         walking the paddy bunds - NOT carried by any lane (people reach them along the earthen bunds, so no
         path leads to them). Any ditch stretch longer than `min_len` gets a plank about MIDWAY; a long stretch
         gets one roughly every `spacing` px, evenly spaced along it. Each plank crosses PERPENDICULAR to the
         ditch, spanning its local width plus short abutments. Call AFTER the field ditches are recorded. Bridges
-        draw on the TOP layer (over the water). Records via `bridge()` into M['bridges']; returns the count."""
+        draw on the TOP layer (over the water). Records via `bridge()` into M['bridges']; returns the count.
+        DECK WIDTH (1 px = 2 ft): a dobashi footplank is a single-file crossing (~3-5 ft), so `plank_w=2.5`
+        (~5 ft) - the honest upper end, kept just wide enough to read. It must stay NARROWER than a cart lane
+        (~5-6 px); the wider `bridges()` carried-way deck matches the lane it carries, but a footplank does not."""
         def _at(pts, seg, s):                                     # point + heading (deg) at arc-length s along the polyline
             acc = 0.0
             for i, sl in enumerate(seg):
@@ -2914,7 +3006,7 @@ class Settlement:
             self.label(lx, ly, label, 11, italic=True, weight="bold", color="#7A6A1A")
 
     # ---- houses
-    def house(self, cx, cy, w, h, kind="plain", rot=0, shed=False):
+    def house(self, cx, cy, w, h, kind="plain", rot=0, shed=False, shed_side="W"):
         pal = {
             "plain": (random.choice(['#C6AC76', '#BEA26C', '#C2A672', '#B89A62']), '#A98C58', '#5A4326'),
             "big": ('#CFAB64', '#B08C4C', '#4E3A1E'),
@@ -2923,9 +3015,13 @@ class Settlement:
         light, dark, edge = pal[kind]
         ridge = '#E2CB98' if kind != "abandoned" else '#C7C0AA'
         x0, y0 = -w / 2, -h / 2
+        # kura footprint (ox, oy centre; sw, sh) in the house's local frame, per side. WEST = a tall block on the
+        # west wall (dispersed farms, where the west is free); NORTH = a wide block on the shaded back wall
+        # (nucleated farms, where the garden takes the sunnier walls). Shared by the draw + the record below.
+        _sox, _soy, _ssw, _ssh = (0.0, -0.60 * h, 0.46 * w, 0.30 * h) if shed_side == "N" else (-0.64 * w, 0.0, 0.32 * w, 0.56 * h)
         g = [f'<g transform="translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})">']
         if shed and kind == "plain":
-            g.append(f'<rect x="{x0-w*0.30:.1f}" y="{-h*0.28:.1f}" width="{w*0.32:.1f}" height="{h*0.56:.1f}" rx="2" fill="{dark}" stroke="{edge}" stroke-width="1.1"/>')
+            g.append(f'<rect x="{_sox-_ssw/2:.1f}" y="{_soy-_ssh/2:.1f}" width="{_ssw:.1f}" height="{_ssh:.1f}" rx="2" fill="{dark}" stroke="{edge}" stroke-width="1.1"/>')
         g.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w}" height="{h/2:.1f}" fill="{dark}"/>')
         g.append(f'<rect x="{x0:.1f}" y="0" width="{w}" height="{h/2:.1f}" fill="{light}"/>')
         dash = ' stroke-dasharray="5,3"' if kind == "abandoned" else ''
@@ -2939,12 +3035,26 @@ class Settlement:
             g.append(f'<rect x="-3.5" y="{h/2-2:.1f}" width="7" height="3.3" fill="{edge}" opacity="0.85"/>')
         g.append('</g>')
         self.add(''.join(g))
+        if shed and kind == "plain":                         # record the attached kura so it is first-class + checkable
+            th = math.radians(rot)
+            self.M.setdefault("farm_sheds", []).append(
+                {"x": round(cx + _sox * math.cos(th) - _soy * math.sin(th), 1),
+                 "y": round(cy + _sox * math.sin(th) + _soy * math.cos(th), 1),
+                 "w": round(_ssw, 1), "h": round(_ssh, 1), "rot": round(rot, 1),
+                 "of": [round(cx, 1), round(cy, 1)]})
 
     def _in_blocked(self, x, y):
-        for poly in self.field_polys:
+        # bbox pre-filter (cached, same idea as _rect_hits): a point outside a polygon's bbox - expanded by
+        # the 14px field set-back - can neither be inside it nor within 14px of an edge, so skip the O(vertices)
+        # point_in_poly / edge_dist. Matters for the one big field envelope and a city's many block polys.
+        for poly, (bx0, by0, bx1, by1) in zip(self.field_polys, self._poly_bboxes(self.field_polys)):
+            if x < bx0 - 14 or x > bx1 + 14 or y < by0 - 14 or y > by1 + 14:
+                continue
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < 14:
                 return True
-        for poly in self.block_polys:
+        for poly, (bx0, by0, bx1, by1) in zip(self.block_polys, self._poly_bboxes(self.block_polys)):
+            if x < bx0 or x > bx1 or y < by0 or y > by1:
+                continue
             if point_in_poly(x, y, poly):
                 return True
         for (cx, cy, rx, ry) in self.ellipses:
@@ -2957,7 +3067,11 @@ class Settlement:
             if poly is skip:          # a frontage row may sit against the street it fronts
                 continue
             for k in range(len(poly) - 1):
-                if seg_dist(x, y, poly[k], poly[k + 1]) < clearance:
+                a, b = poly[k], poly[k + 1]                       # skip a segment whose bbox+clearance can't reach (x,y)
+                if (x < min(a[0], b[0]) - clearance or x > max(a[0], b[0]) + clearance
+                        or y < min(a[1], b[1]) - clearance or y > max(a[1], b[1]) + clearance):
+                    continue
+                if seg_dist(x, y, a, b) < clearance:
                     return True
         return False
 
@@ -3082,7 +3196,7 @@ class Settlement:
         # threshing yard + dooryard garden - reserved and overlap-checked together so the grove always keeps
         # its ~6:1 room (the fix for groves never reaching target under end-reconciliation). 1 px = 2 ft at
         # village scale; the plain house is 23x14 px (~46x28 ft, the 8:5 minka). A modest, position-seeded
-        # wealth tier scales the whole bundle. See SKILL.md 'To-scale villages'.
+        # wealth tier scales the whole bundle. See settlements.md 'To-scale villages'.
         if size is not None:                                 # explicit footprint (e.g. a larger headman)
             wf, hw, hh = 1.0, size[0] * self.bscale, size[1] * self.bscale
         elif getattr(self, "_nucleated", False):
@@ -3098,13 +3212,20 @@ class Settlement:
             t = int(abs(x) * 53 + abs(y) * 29) % 100
             wf = 1.0 if kind == "big" else (0.9 if t < 30 else (1.12 if t >= 80 else 1.0))
             hw, hh = bw * self.bscale * wf, bh * self.bscale * wf
-        spot = self._place_bundle(x, y, hw, hh)              # pack the bundle as near (x,y) as the rules allow
+        # a fireproof KURA storehouse is a WEALTH MARKER, not universal - it attaches to the house on ~30% of
+        # plain farms (position-seeded off the SEED spot, no RNG ripple; a headman/ruin has none). It goes on the
+        # NORTH (back) wall of a nucleated house: the cluster hugs the field to the EAST so a house's garden takes
+        # the west/sunny walls but never the shaded NORTH, so a north kura is clear of it - and its footprint is
+        # RESERVED in the homestead bundle so a neighbour never lands on it. Drawn + recorded in farmsteads() so
+        # it always moves WITH the house (farm_sheds_attached guards it).
+        _shed = kind == "plain" and self._hjit(x, y, 3.0) < 0.30
+        spot = self._place_bundle(x, y, hw, hh, shed=_shed)  # pack the bundle (incl. the reserved kura) near (x,y)
         if spot is None:
             return False
         cx, cy, geom = spot
         self.placed.append(geom["bbox"])                     # reserve the whole homestead footprint as one rect
         rec = {"x": cx, "y": cy, "w": hw, "h": hh, "kind": kind, "rot": random.uniform(-5, 5),
-               "role": role, "shed": False, "wealth": wf, "geom": geom}
+               "role": role, "shed": _shed, "shed_side": "N", "wealth": wf, "geom": geom}
         self.M["houses"].append(rec)
         self._pending_farmsteads.append(rec)
         return True
@@ -3188,7 +3309,7 @@ class Settlement:
             return [(gx - (gap + pw) / 2, gy, pw, gh), (gx + (gap + pw) / 2, gy, pw, gh)]
         return [(gx, gy, gw, gh)]                                  # reserved plot too small to split cleanly
 
-    def _bundle_geom(self, hx, hy, hw, hh, garden_side="E"):
+    def _bundle_geom(self, hx, hy, hw, hh, garden_side="E", shed=False):
         """The metric layout of one homestead BUNDLE around a house centred at (hx, hy). TWO forms:
         NUCLEATED (self._nucleated) = house + lee GARDEN (E) + south YARD only, compact so a cluster can
         pack tight (no per-house grove - a nucleus shelters itself); DISPERSED (default) also carries the
@@ -3213,7 +3334,7 @@ class Settlement:
             # cannot nucleate at all). The windbreak becomes a VILLAGE-EDGE belt placed in the second
             # pass. The bundle is house + south yard + a garden on an ADAPTIVE sunny side (chosen by
             # the placer for fit + no shading), so it packs into a real nucleus and the gardens vary
-            # instead of all sitting east between houses. See SKILL.md 'Settlement form'.
+            # instead of all sitting east between houses. See settlements.md 'Settlement form'.
             # CAP the appurtenance dims so a big house (the headman) keeps an ORDINARY farm's yard/garden
             # (spanning ~its adjacent wall but not scaled up to the grand house - "not as tall / not as
             # wide"). A plain 23x14 house is well under these caps, so ordinary farms are unaffected.
@@ -3238,7 +3359,11 @@ class Settlement:
             beds = self._garden_beds(hx, hy, hw, hh, gx, gy, gw, gh, garden_side, gap)
             base["gardens"] = beds                           # 1 bed normally; 2 (flanking / stacked / side-by-side) when fragmented
             base["garden"] = beds[0]                          # primary bed (kept for the shading score + back-compat)
-            base["bbox"] = self._bbox_of([base["house"], base["yard"], *beds])
+            rects = [base["house"], base["yard"], *beds]
+            if shed:                                          # a north-wall kura, reserved so a neighbour never lands on it
+                base["shed"] = (hx, hy - 0.60 * hh, 0.46 * hw, 0.30 * hh)
+                rects.append(base["shed"])
+            base["bbox"] = self._bbox_of(rects)
             return base
         # DISPERSED farmstead (the shipped ring-village behaviour): the windward GROVE as an L (an N
         # band + a W band, for the default NW wind), sized so the grove footprint is ~6x the house. The
@@ -3257,25 +3382,103 @@ class Settlement:
         cx, cy, w, h = rect
         return [(cx - w / 2, cy - h / 2), (cx + w / 2, cy - h / 2), (cx + w / 2, cy + h / 2), (cx - w / 2, cy + h / 2)]
 
+    def _poly_bboxes(self, polys):
+        """Cached (minx, miny, maxx, maxy) per polygon in `polys`. Rebuilt only when the list GROWS - the
+        block-poly list accretes each placed homestead during the solve, but individual polys are never
+        mutated - so a length change is a sufficient staleness signal. Lets _rect_hits reject a far polygon
+        with 4 comparisons instead of the O(vertices) corner/segment tests. See `_bbox_cache`."""
+        cached = self._bbox_cache.get(id(polys))
+        if cached is None or cached[0] != len(polys):
+            boxes = []
+            for poly in polys:
+                xs = [p[0] for p in poly]
+                ys = [p[1] for p in poly]
+                boxes.append((min(xs), min(ys), max(xs), max(ys)))
+            cached = (len(polys), boxes)
+            self._bbox_cache[id(polys)] = cached
+        return cached[1]
+
     def _rect_hits(self, rect, polys):
-        """Whether an axis-aligned rect overlaps any polygon in `polys` (corner-in, vertex-in, or edge-cross)."""
+        """Whether an axis-aligned rect overlaps any polygon in `polys` (corner-in, vertex-in, or edge-cross).
+        Bbox pre-filters carry the cost: a polygon whose bbox is disjoint from the rect is skipped outright,
+        and within an overlapping polygon each EDGE is bbox-tested before the crossing check (this matters for
+        the one huge field-envelope polygon, where the rect only ever meets a couple of its many edges)."""
+        cx, cy, w, h = rect
+        rx0, ry0, rx1, ry1 = cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2
         gc = self._rect_corners(rect)
-        for poly in polys:
+        for poly, (px0, py0, px1, py1) in zip(polys, self._poly_bboxes(polys)):
+            if px1 < rx0 or px0 > rx1 or py1 < ry0 or py0 > ry1:
+                continue                                  # bboxes disjoint -> cannot overlap
             n = len(poly)
             if (any(point_in_poly(px, py, poly) for px, py in gc)
-                    or any(point_in_poly(vx, vy, gc) for vx, vy in poly)
-                    or any(segments_cross(gc[e], gc[(e + 1) % 4], poly[k], poly[(k + 1) % n])
-                           for e in range(4) for k in range(n))):
+                    or any(rx0 <= vx <= rx1 and ry0 <= vy <= ry1 and point_in_poly(vx, vy, gc) for vx, vy in poly)):
                 return True
+            for k in range(n):                            # edge-cross, each edge bbox-gated against the rect
+                a, b = poly[k], poly[(k + 1) % n]
+                if min(a[0], b[0]) > rx1 or max(a[0], b[0]) < rx0 or min(a[1], b[1]) > ry1 or max(a[1], b[1]) < ry0:
+                    continue
+                if any(segments_cross(gc[e], gc[(e + 1) % 4], a, b) for e in range(4)):
+                    return True
+        return False
+
+    def _water_obstacles(self):
+        """Cached (poly, keep-out half-width, bbox) for every irrigation LINE a solid bundle rect must avoid -
+        feeder channels, in-field/drain ditches, streams. Rebuilt only when one of the three source lists
+        changes length (all are laid before the homestead solve, then static). Lets _rect_on_water skip a
+        whole course - and then an individual segment - whose neighbourhood the rect cannot reach."""
+        chans = self.M.get("channels", [])
+        ditches = self.M.get("field_ditches", [])
+        streams = self.M.get("streams", [])
+        key = (len(chans), len(ditches), len(streams))
+        if self._water_obs_cache is None or self._water_obs_cache[0] != key:
+            obs = []
+            for lst, base in ((chans, 2.5), (ditches, 7.0), (streams, 9.0)):
+                for f in lst:
+                    poly = f["poly"]
+                    if len(poly) < 2:
+                        continue
+                    hw = f.get("w", base) / 2 + 5
+                    xs = [p[0] for p in poly]
+                    ys = [p[1] for p in poly]
+                    obs.append((poly, hw, (min(xs), min(ys), max(xs), max(ys))))
+            self._water_obs_cache = (key, obs)
+        return self._water_obs_cache[1]
+
+    def _rect_on_water(self, rect):
+        """Whether a SOLID bundle rect (house/yard/garden/shed) lands on an irrigation LINE - a feeder
+        channel, an in-field/drain ditch, or a stream. These are dry-ground structures, so a garden or
+        yard in a running ditch is wrong (gardens_clear_of_channels), and this keeps the homestead solver
+        off the drain outfall that threads the village margin. A hair wider than the check's keep-out so
+        the solver leaves room the check then confirms. The GROVE is exempt (it may hug a bund). Bbox
+        pre-filters (per course, then per segment) skip the seg_dist / crossing math for anything far off."""
+        cx, cy, w, h = rect
+        gc = self._rect_corners(rect)
+        pts = gc + [(cx, cy)]
+        rx0, ry0, rx1, ry1 = cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2
+        for poly, hw, (px0, py0, px1, py1) in self._water_obstacles():
+            if px1 + hw < rx0 or px0 - hw > rx1 or py1 + hw < ry0 or py0 - hw > ry1:
+                continue                                  # the whole course is out of reach
+            for k in range(len(poly) - 1):
+                a, b = poly[k], poly[k + 1]
+                if (min(a[0], b[0]) - hw > rx1 or max(a[0], b[0]) + hw < rx0
+                        or min(a[1], b[1]) - hw > ry1 or max(a[1], b[1]) + hw < ry0):
+                    continue                              # this segment is out of reach
+                if any(seg_dist(px, py, a, b) < hw for px, py in pts):
+                    return True
+                if any(segments_cross(a, b, gc[e], gc[(e + 1) % 4]) for e in range(4)):
+                    return True
         return False
 
     def _rect_blocked(self, rect, fields):
         """Whether a bundle sub-rect lands on forbidden ground: no-build blocks, lanes, hill/pond ellipses,
-        and (only when `fields=True`, i.e. the SOLID house/yard/garden) the flooded paddies. The GROVE
-        (fields=False) may HUG a paddy bund, so it is tested against everything BUT the fields."""
+        irrigation lines, and (only when `fields=True`, i.e. the SOLID house/yard/garden) the flooded
+        paddies. The GROVE (fields=False) may HUG a paddy bund, so it is tested against everything BUT the
+        fields and the water lines."""
         if self._rect_hits(rect, self.block_polys):
             return True
         if fields and self._rect_hits(rect, self.field_polys):
+            return True
+        if fields and self._rect_on_water(rect):
             return True
         cx, cy, w, h = rect
         for px, py in self._rect_corners(rect) + [(cx, cy)]:
@@ -3296,7 +3499,8 @@ class Settlement:
         if self.bound and any(not point_in_poly(vx, vy, self.bound) for vx, vy in self._rect_corners(geom["bbox"])):
             return False
         if (self._rect_blocked(geom["house"], fields=True) or self._rect_blocked(geom["yard"], fields=True)
-                or any(self._rect_blocked(g, fields=True) for g in geom["gardens"])):
+                or any(self._rect_blocked(g, fields=True) for g in geom["gardens"])
+                or ("shed" in geom and self._rect_blocked(geom["shed"], fields=True))):
             return False
         if "grove_n" in geom and any(self._rect_blocked(geom[k], fields=grove_off_field)
                                      for k in ("grove_n", "grove_w")):
@@ -3377,12 +3581,13 @@ class Settlement:
                 break
         return cx, cy
 
-    def _place_bundle(self, x, y, hw, hh):
+    def _place_bundle(self, x, y, hw, hh, shed=False):
         """Place a homestead bundle one-at-a-time: find the nearest fitting spot to the seed, then COMPACT it
         - shove the grove up against the nearest paddy bund (without entering it), then pack the whole
-        complex against its nearest neighbour, each as far as the rules allow. Returns (cx, cy, geom) or None."""
+        complex against its nearest neighbour, each as far as the rules allow. `shed` reserves a north kura in
+        the bundle. Returns (cx, cy, geom) or None."""
         if getattr(self, "_nucleated", False):
-            return self._place_bundle_nucleated(x, y, hw, hh)
+            return self._place_bundle_nucleated(x, y, hw, hh, shed)
         offsets = [(0, 0)]
         for r in range(7, 92, 7):
             for k in range(12):
@@ -3413,8 +3618,8 @@ class Settlement:
                 return True
         return False
 
-    def _fits_any_side(self, cx, cy, hw, hh):
-        return any(self._bundle_fits(self._bundle_geom(cx, cy, hw, hh, s)) for s in self._NUC_SIDES)
+    def _fits_any_side(self, cx, cy, hw, hh, shed=False):
+        return any(self._bundle_fits(self._bundle_geom(cx, cy, hw, hh, s, shed)) for s in self._NUC_SIDES)
 
     def _field_dist(self, cx, cy):
         """Distance from a point to the nearest paddy edge (inf if there are no fields)."""
@@ -3445,10 +3650,11 @@ class Settlement:
                 break
         return cx, cy
 
-    def _place_bundle_nucleated(self, x, y, hw, hh):
+    def _place_bundle_nucleated(self, x, y, hw, hh, shed=False):
         """Nucleated placement: find the nearest spot where SOME garden side fits, pack it hard against the
         field bund then its neighbours, then pick the garden side that is UNSHADED and sunniest. The compact
-        (grove-less) bundle lets the cluster nucleate; the adaptive garden gives sun + variety."""
+        (grove-less) bundle lets the cluster nucleate; the adaptive garden gives sun + variety. `shed` reserves
+        a north kura in every candidate bundle so a neighbour never lands on it."""
         offsets = [(0, 0)]
         for r in range(5, 80, 5):
             for k in range(12):
@@ -3456,7 +3662,7 @@ class Settlement:
                 offsets.append((round(r * math.cos(a)), round(r * math.sin(a))))
         start = None
         for nx, ny in offsets:
-            if self._fits_any_side(x + nx, y + ny, hw, hh):
+            if self._fits_any_side(x + nx, y + ny, hw, hh, shed):
                 start = (x + nx, y + ny)
                 break
         if start is None:
@@ -3467,7 +3673,7 @@ class Settlement:
                                  keep_field=True)                              # so the cluster glues to the paddy
         best = None
         for rank, side in enumerate(self._NUC_SIDES):
-            geom = self._bundle_geom(cx, cy, hw, hh, side)
+            geom = self._bundle_geom(cx, cy, hw, hh, side, shed)
             if not self._bundle_fits(geom):
                 continue
             score = (sum(self._garden_shaded(g) for g in geom["gardens"]), rank)   # fewest shaded beds first, then preference
@@ -3533,7 +3739,8 @@ class Settlement:
                 self.grove_rects.append((cx, cy, w, h))
             self._attach_yard(rec["x"], rec["y"], geom["yard"])
             self._attach_garden(rec["x"], rec["y"], geom["gardens"])
-            self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"])
+            self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"],
+                       shed=rec["shed"], shed_side=rec.get("shed_side", "W"))
             survivors.append(rec)
         self.M["houses"] = survivors
         return len(survivors)
@@ -3762,20 +3969,31 @@ class Settlement:
             if bed_zs:
                 self.M["ground_bed_zmin"] = min(bed_zs)
             splices.append((self._ground_idx, block))
-        if self._water_idx is not None:             # the watercourse block: all BEDS (one opacity group),
-            wblock, bedzs, sheenzs = [], [], []      # then all SHEENS above - so crossings MERGE, not stack
+        if self._water_idx is not None:             # the watercourse block: all EDGES (pond rims), then all
+            wblock, bedzs, sheenzs = [], [], []      # BEDS (one opacity group), then all SHEENS - crossings MERGE
+            for w in self.water:                     # rims below every bed -> a feeder's bed covers the rim at its mouth
+                if w.get("edge") is not None:
+                    wblock.append(w["edge"])
+            for w in self.water:                     # a pond-anchored feeder is snapped to the rim now that the
+                w["_bed"], w["_sheen"] = w["bed"], w["sheen"]   # pond is known (deferred - it may predate the pond)
+                if w["clip"] is not None and self.M.get("pond"):
+                    cp = self._clip_to_pond(w["clip"]["pts"])
+                    dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in cp)
+                    w["_bed"] = w["clip"]["bed_t"].format(dd=dd)
+                    if w["clip"]["sheen_t"] is not None:
+                        w["_sheen"] = w["clip"]["sheen_t"].format(dd=dd)
             wblock.append('<g opacity="0.85">')
-            for w in self.water:
-                w["rec"]["bedz"] = self._water_idx + len(wblock)
+            for w in sorted(self.water, key=lambda w: w["pond_fill"]):   # pond FILL drawn LAST (stable sort) so it
+                w["rec"]["bedz"] = self._water_idx + len(wblock)         # covers any feeder's inside-the-rim overshoot
                 bedzs.append(self._water_idx + len(wblock))
-                wblock.append(w["bed"])
+                wblock.append(w["_bed"])
             wblock.append('</g>')
             wblock.append('<g opacity="0.55">')
             for w in self.water:
-                if w["sheen"] is not None:
+                if w["_sheen"] is not None:
                     w["rec"]["sheenz"] = self._water_idx + len(wblock)
                     sheenzs.append(self._water_idx + len(wblock))
-                    wblock.append(w["sheen"])
+                    wblock.append(w["_sheen"])
             wblock.append('</g>')
             if bedzs:                                # every bed sits below every sheen -> clean confluence
                 self.M["water_bed_zmax"] = max(bedzs)
@@ -3793,8 +4011,15 @@ class Settlement:
             f.write('\n'.join(body))
         with open(basepath + '.json', 'w') as f:
             json.dump(self.M, f)
-        if render:
-            self.render_png(basepath, png_width)    # keep the .png paired with the .svg automatically
+        # Two env knobs make iteration cheap without changing committed output (the PNG raster is ~90% of a
+        # big map's gen time - see SKILL.md 'Render pipeline'):
+        #   DIAGRAM_SKIP_RENDER  - skip the raster entirely; the gate reads the JSON, so tests set this and
+        #                          never pay to render a PNG no test looks at.
+        #   DIAGRAM_PNG_WIDTH=N  - render at N px instead of 2600 (raster cost is ~quadratic in width, so
+        #                          1300 is ~4x faster) for a quick eyeball; unset for the full-res committed PNG.
+        if render and not os.environ.get("DIAGRAM_SKIP_RENDER"):
+            env_w = os.environ.get("DIAGRAM_PNG_WIDTH")
+            self.render_png(basepath, int(env_w) if env_w else png_width)   # keep the .png paired with the .svg
         return len(self.placed)
 
     def render_png(self, basepath, width=2600):
