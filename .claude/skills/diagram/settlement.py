@@ -1986,17 +1986,19 @@ class Settlement:
             size = random.uniform(1.25, 1.7) if random.random() < 0.25 else random.uniform(0.72, 1.05)   # a few emergent crowns over many small
             items.append((px, py, kind, size))
         g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
-        for px, py, kind, _s in items:                           # trunks first (trees only), so canopies sit over them
-            if kind != "bamboo":
-                g.append(f'<rect x="{px-1:.1f}" y="{py:.1f}" width="2" height="{5*bs:.1f}" rx="0.7" fill="#6B4F2A"/>')
-        for px, py, kind, s in sorted(items, key=lambda t: t[1]):    # back-to-front so the stand layers with depth
-            if kind == "bamboo":
-                for _ in range(6):                               # a clump of fine culms with leafy tops
-                    bx, by = px + random.uniform(-4, 4) * bs, py + random.uniform(-4, 3) * bs
-                    g.append(f'<line x1="{bx:.1f}" y1="{by+4*bs:.1f}" x2="{bx:.1f}" y2="{by-4*bs:.1f}" stroke="#88A646" stroke-width="{0.9*bs:.2f}"/>')
-                    g.append(f'<circle cx="{bx:.1f}" cy="{by-4*bs:.1f}" r="{1.7*bs:.1f}" fill="#BBD06A"/>')
+        # Draw back-to-front so the stand layers with depth. Each CROWN is one tree at real size (~5-6 m; a few
+        # emergents larger) - that is the to-scale reading, and it is unchanged. We deliberately DROP two kinds
+        # of detail that cost ~half the stand's SVG elements without buying scale accuracy: the per-tree trunk
+        # (hidden under the closed canopy anyway), and the 6-culm bamboo clump - a real *take* is DOZENS of
+        # culms, so any handful is already symbolic, and one compact culm+top reads the same. See the foliage
+        # comparison (the 'to scale, compact bamboo' option) for the before/after; groves stay to scale, the
+        # SVG + rsvg raster roughly halve.
+        for px, py, kind, s in sorted(items, key=lambda t: t[1]):
+            if kind == "bamboo":                                 # one compact culm + leafy top (symbolic, was 6)
+                g.append(f'<line x1="{px:.1f}" y1="{py+4*bs:.1f}" x2="{px:.1f}" y2="{py-4*bs:.1f}" stroke="#88A646" stroke-width="{1.4*bs:.2f}"/>')
+                g.append(f'<circle cx="{px:.1f}" cy="{py-4*bs:.1f}" r="{3.0*bs:.1f}" fill="#BBD06A"/>')
                 continue
-            rr = (4.6 if kind == "conifer" else 4.0) * s * bs    # PREVIEW: smaller crowns read as ~40 distinct trees
+            rr = (4.6 if kind == "conifer" else 4.0) * s * bs    # one crown = one tree, sized to a real ~5-6 m canopy
             col = "#496733" if kind == "conifer" else random.choice(["#7C9A4E", "#6E8B43"])
             g.append(f'<circle cx="{px:.1f}" cy="{py-3*bs:.1f}" r="{rr:.1f}" fill="{col}" stroke="#3C5526" stroke-width="0.8"/>')
             if kind == "conifer":
