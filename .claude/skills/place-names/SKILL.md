@@ -25,7 +25,7 @@ Each scale has its own naming conventions. The same bare-element name often work
 
 ### Provinces
 
-Two or three syllables, classical or "kuni"-feeling. No community-type suffix. Sometimes ends in a major-geography element (`-no` 野 plain, `-hara` 原 field, `-yama` 山 mountain, `-kawa` 川 river) when the province is built around that feature.
+Two or three syllables, classical or "kuni"-feeling (see the [Historical grounding](#historical-grounding-classical-province-names-kuni) section below for what "kuni" means and why these names read the way they do). No community-type suffix. Sometimes ends in a major-geography element (`-no` 野 plain, `-hara` 原 field, `-yama` 山 mountain, `-kawa` 川 river) when the province is built around that feature.
 
 Cardinal-direction province names (Higashi 東, Kita 北, Nishi 西, Minami 南) are explicitly used by the Fox per canon; other clans may or may not adopt this pattern.
 
@@ -228,6 +228,23 @@ A Crane county of six village districts might contain:
 
 The suffixes do half the worldbuilding work. A reader who hears the six names in sequence has already learned that this is mixed-economy country with a road, a tenanted estate, a noble's seasonal retreat, and water-based commerce.
 
+## Historical grounding: classical province names (kuni)
+
+Research grounding for the classical-name entries in the pool and for the rule that every pool note must explain *why a place would be called that* (audit of 2026-07). "Kuni" (国) means **province**: the roughly 60 provinces of classical Japan, the old top-level map that names like Harima, Iyo, and Mutsu come from.
+
+**Why the literal meanings of kuni-names are so often gibberish** ("scattering-polishing", "however-horse"): most kuni names are older than writing in Japan. They existed as spoken names for centuries before kanji arrived; when scribes finally wrote them down, they picked characters mainly for **sound** (the practice called *ateji*), and an early-8th-century Imperial edict then required every province and district name to be written with **exactly two auspicious characters**. So the literal kanji meaning of a kuni-name is usually an artifact of its spelling, not the reason for the name. The GM-facing takeaway: these names are the Japanese equivalent of "Thames" or "London" - so old that the meaning is worn away, with the written form a later scribe's phonetic dress.
+
+Mechanisms worth knowing (each is used in the relevant pool notes, and each translates directly into Rokugan):
+
+- **Silent padding characters**: Izumi (和泉) was originally just 泉 "spring"; the edict demanded two characters, so a silent 和 was prefixed - written but never read. Kii (紀伊) is old Ki "tree country" plus a silent 伊. The bureaucracy's fingerprints are visible in the spelling.
+- **Respelling by decree**: Yamato's original character was deemed undignified and re-spelled 大和 "great harmony"; Yamashiro was 山背 "behind the mountains" until the capital moved there, whereupon it became 山城 "mountain castle". Names get upgraded when their status does.
+- **Front/middle/behind and upper/lower = distance from the capital**: when an old region grew too big it was split, and the parts were named by their distance from the Imperial capital. Kibi became Bizen/Bicchu/Bingo (front/middle/back); Koshi became Echizen/Etchu/Echigo; Toyo-no-kuni became Buzen/Bungo; Hi-no-kuni became Hizen/Higo; Fusa became Kazusa/Shimousa (upper/lower); Tanba spun off Tango ("the back of Tan"); Keno split into upper and lower Keno (Shimotsuke). In Rokugan the identical logic works measured from Otosan Uchi.
+- **Names that ARE literal**: a minority are genuine descriptions - Mikawa "three rivers", Kawachi "the land within the rivers", Hyuga "sun-facing", Oki "the offing". These need no apology; they are the Springfield class.
+- **Poetry fused into spelling**: Asuka (飛鳥 "flying bird") cannot be read from its kanji at all; court poets always prefixed the place with the epithet "of the flying birds" and the epithet became the official spelling. A written name can preserve a fragment of a poem.
+- **Relational itineraries**: Awaji is literally "the road to Awa"; Totomi is "the far lake" as opposed to Omi "the near lake", both named from where the capital sits.
+
+**The pool-note rule this grounds**: every entry's `notes` field must leave the reader knowing why a place might carry that name. Transparent descriptive names ("middle village", "stone bridge") need nothing beyond the `meaning` field. But any name whose literal meaning does not explain itself - classical kuni-names, phonetic spellings, borrowed famous names, zodiac-direction districts (Tora-machi is the district on the tiger *bearing*, east-northeast, not a tiger sighting) - must say where the name actually comes from, self-contained, because each webapp detail page is reached by random draw and read in isolation.
+
 ## Pool schema
 
 The pre-generated pool is `pool.jsonl`. Each entry has the following fields:
@@ -243,7 +260,7 @@ The pre-generated pool is `pool.jsonl`. Each entry has the following fields:
 - **`commonality`** - single value: `very_common`, `common`, `uncommon`, `rare`, `unique`
 - **`regional`** - multi-value tags for geographic context. Fixed vocabulary: `mountain_bordering`, `coastal`, `riverine`, `forested`, `plains`, `valley`, `road_corridor`. Empty list means "works anywhere."
 - **`suffix`** - community-type suffix if present (drives which emit-time note is attached), else `null`
-- **`notes`** - free-form commentary; used for Springfield-style "this name is like X" content
+- **`notes`** - free-form commentary; used for Springfield-style "this name is like X" content. Every note must leave the reader knowing *why a place might be called that*: transparent descriptive names need nothing beyond `meaning`, but any name whose literal meaning does not explain itself (classical kuni-names, phonetic spellings, borrowed famous names) must carry a self-contained explanation - see the Historical grounding section above
 
 Example entries:
 

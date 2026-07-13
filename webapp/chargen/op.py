@@ -120,7 +120,15 @@ def _get_authenticity_token():
 
 
 def create_character(
-    name, *, summary='', tags=None, description='', bio='', gm_info='', avatar_upload_id=''
+    name,
+    *,
+    summary='',
+    tags=None,
+    description='',
+    bio='',
+    gm_info='',
+    avatar_upload_id='',
+    gm_only=False,
 ):
     """
     Create a character in Obsidian Portal by simulating browser form submission.
@@ -133,6 +141,7 @@ def create_character(
         bio: The character's biography
         gm_info: GM-only information
         avatar_upload_id: The upload ID from upload_avatar() for the character thumbnail
+        gm_only: When True, create the character as GM-only (hidden from players)
 
     Returns:
         requests.Response: The response from the server
@@ -154,7 +163,7 @@ def create_character(
         'game_character[gm_info]': gm_info,
         'game_character[is_pc]': '0',
         'game_character[wish_list]': '',
-        'game_character[gm_only]': '0',
+        'game_character[gm_only]': '1' if gm_only else '0',
         'game_character[hide_stats]': '0',
         'commit': 'Create',
         'new_avatar_upload_id': avatar_upload_id,

@@ -39,7 +39,7 @@ SLUICE = (513, 282)                 # the single outlet on the pond's downhill f
 SEED = 7
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Hoshigaoka", scale="village", households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
+s.meta(name="Hoshigaoka", scale="village", ftpx=2, households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
        nucleated=True,                                                   # a clustered village -> a COMMUNAL fengshui windbreak, not per-house groves
        field_footbridges=True)                                          # long irrigation ditches carry plank footbridges (long_ditches_have_a_footbridge)
 # Hoshigaoka is a GENTLE valley, so its dry-field furrows FAN (the patchwork quilt) - the default. A steep /
@@ -350,6 +350,14 @@ s.commons([(630, 215), (930, 170), (1230, 150), (1470, 58), (2160, 58), (2160, 4
            (1905, 235), (1560, 215), (1200, 225), (900, 248), (700, 255), (630, 258)], role="grazing")   # NORTH up-valley grass hills
 s.commons([(85, 895), (250, 988), (430, 1030), (600, 955), (770, 975),
            (900, 1075), (1010, 1180), (1080, 1250), (85, 1250)], role="grazing")   # SOUTH back-slope behind the village
+# A FEW managed-WOODLAND patches (coppice / bamboo / tung-oil "economic forest") - the green EXCEPTION amid the
+# cut-over grass hills (China-first: the hills are mostly denuded scrub, with a little managed wood). Sited on the
+# open high ground CLEAR of the crops and never SHADING them: the sun is to the S, so trees cast shadows N - a
+# patch stands north/beside the fields, never on their sunny south edge (gated by woodland_clear_of_crops). Both
+# sit on the high N ridge ABOVE the dry-hatake fields, EAST of the title bay (x630-1470), and CLEAR of the fengshui
+# grove on the W - the coppice is a DISTINCT stand from the protected grove (gated by woodland_clear_of_grove).
+s.commons([(1910, 115), (2150, 115), (2150, 295), (1910, 295)], role="woodland")   # NE, east of the dry ribbon, above the paddy
+s.commons([(1490, 95), (1770, 95), (1770, 162), (1490, 162)], role="woodland")     # N ridge above the dry fields
 
 # CROP the frame to the placed content (BEFORE the title + the deferred small features, which drop into the
 # framed space): the commons is a BLEED feature, so its outer scrub trails off the west edge = "more wild

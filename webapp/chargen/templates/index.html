@@ -417,7 +417,8 @@
                         $('<input type="text" id="summary" placeholder="Short textual description that appears on the Characters list page in Obsidian Portal" />'),
                         $('<input type="text" id="tags" />').val(character.tags.join(', ')),
                         $('<textarea rows="12" id="public" />').text(character.public),
-                        $('<textarea rows="12" id="private" />').text(character.private)
+                        $('<textarea rows="12" id="private" />').text(character.private),
+                        $('<label class="gm-only-toggle" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-top: 4px;"><input type="checkbox" id="gm_only" style="width: auto; margin: 0;" /> GM-only (hidden from players)</label>')
                     ];
                     $.each(fields, function(i, $field) {
                         dom.$fields.append(
@@ -593,6 +594,7 @@
             $.each(['name', 'summary', 'tags', 'public', 'private'], function(i, param) {
                 params[param] = $('#' + param).val();
             });
+            params.gm_only = $('#gm_only').is(':checked');
             if (currentImageData) {
                 params.image_data = currentImageData;
                 if (cropper) {

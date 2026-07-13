@@ -31,7 +31,7 @@ def test_finish_writes_svg_json_and_renders_png():
         s.finish(base, render=False)
         assert os.path.exists(base + ".svg") and os.path.exists(base + ".json")
         assert not os.path.exists(base + ".png")
-        s.finish(base)                   # default render=True -> rsvg-convert produces the PNG
+        s.finish(base)                   # default render=True -> resvg produces the PNG
         assert os.path.exists(base + ".png")
 
 
@@ -98,6 +98,16 @@ def test_crop_to_content_covers_fields_pond_and_poly_features():
     s.M["pond"] = [700, 700, 50, 40]                                 # pond branch
     s.crop_to_content(margin=0)
     assert s.view == (300, 300, 450, 440)                           # grove W/N, pond E/S
+
+
+def test_crop_to_content_frames_a_torii_arch():
+    # a torii arch is a visible structure: its box (x +/-19, y -10..+18) must be inside the frame, so a torii
+    # standing beyond the houses pushes the crop out to contain it (matches the hard_features_within_frame check)
+    s = _crop_settlement()
+    s.M["houses"] = [{"x": 500, "y": 500, "w": 20, "h": 20}]         # hard core 490..510
+    s.M["torii"] = [[500, 640, 1]]                                   # a gateway S of the houses: box y 630..658
+    s.crop_to_content(margin=0)
+    assert s.view == (481, 490, 38, 168)                            # W/E from the torii arch (500 +/-19), S edge = 658
 
 
 def test_crop_to_content_uses_field_outline_when_no_vis_bbox():
@@ -239,6 +249,13 @@ def test_merchant_storehouses_attaches_behind_shops_and_skips_corridors():
     s.building(300, 800, 40, 28, "merchant", rot=0)   # back faces open ground -> kura attached
     n = s.merchant_storehouses(count=6)
     assert n == 1 and len(s.M["storehouses"]) == 1
+
+
+def test_street_default_width_falls_back_to_the_ft_scale():
+    # street() with no explicit width uses a real 24 ft, converted at the map's ftpx and linework-floored
+    s = _town()
+    s.street([(100, 200), (900, 200)])               # no width -> the lw(24) default branch
+    assert s.M["town_streets"][0]["w"] == s.lw(24)
 
 
 def test_forest_patch_uses_default_label_position():
@@ -454,6 +471,115 @@ def test_clip_to_pond_is_a_noop_without_a_pond():
     assert s._clip_to_pond(pts) == pts                      # nothing to snap to -> returned unchanged
 
 
+def test_city_wall_tower_slides_along_the_wall_for_a_kido():
+    # tower_skip: a mural tower yields its vertex to a future kido by SLIDING a short way along
+    # the wall (not a whole-vertex jump - that left a bare, indefensible stretch of rampart)
+    import math as m
+    s = _crop_settlement()
+    pts = [(round(1000 + 400 * m.cos(2 * m.pi * i / 12)), round(700 + 400 * m.sin(2 * m.pi * i / 12))) for i in range(12)]
+    s.city_wall(pts, gates=(), tower_skip=[pts[6]])
+    ds = [m.hypot(t["x"] - pts[6][0], t["y"] - pts[6][1]) for t in s.M["wall_towers"]]
+    assert all(d > 45 for d in ds)                # the vertex is yielded...
+    assert any(d < 110 for d in ds)               # ...but a tower still stands a short slide away
+
+
+def test_city_wall_tower_drops_when_boxed_in_on_both_sides():
+    # ...and when the slide finds no clear ground either way, the tower is dropped (the 75-deg
+    # spacing check tolerates one gap)
+    import math as m
+    s = _crop_settlement()
+    pts = [(round(1000 + 400 * m.cos(2 * m.pi * i / 12)), round(700 + 400 * m.sin(2 * m.pi * i / 12))) for i in range(12)]
+    s.city_wall(pts, gates=(), tower_skip=[pts[5], pts[6], pts[7]])
+    assert all(m.hypot(t["x"] - pts[6][0], t["y"] - pts[6][1]) > 60 for t in s.M["wall_towers"])
+
+
+def test_river_canal_dock_jetty_water_gate_defaults():
+    # exercise the river-city glyph methods with their DEFAULT widths/lengths + the moat(river=)
+    # open-arc path and the water-gate tower-skip vertex (Nagahara passes explicit sizes; this
+    # covers the default branches).
+    import math as m
+    s = _crop_settlement()
+    s.meta(name="R", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 300 * m.cos(2 * m.pi * i / 16)), round(700 + 300 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
+    river = [(1360, 300), (1360, 1100)]                       # a river just east of the wall
+    s.river(river)                                            # default width
+    s.moat(pts, gap=24, river=river)                         # open-arc moat joining the river
+    s.water_gate(pts[0][0], pts[0][1])                       # arch on the east gate vertex (default rot)
+    s.canal([(1350, 700), (1100, 700)])                     # default width
+    s.dock(1050, 700, 54, 34)
+    s.jetty(1330, 600)                                       # default length
+    s.city_wall(pts, gates=[pts[4]], water_gates=[pts[0]])   # water gate skips its mural-tower vertex
+    assert s.M["river"]["w"] > 0 and s.M["canals"] and s.M["docks"] and s.M["jetties"] and s.M["water_gates"]
+    assert s.M["moat"][0] != s.M["moat"][-1]                 # OPEN arc (ends do not close on themselves)
+
+
+def test_clip_to_moat_whole_path_inside_is_left_alone():
+    s = _crop_settlement()
+    s.M["moat"] = [(300, 100), (300, 900)]
+    s.M["moat_width"] = 22
+    both_in = [(298, 400), (302, 500)]                        # both ends within the bed -> untouched
+    assert s._clip_to_moat(both_in) == both_in
+
+
+def test_city_wall_gateposts_orient_to_the_wall_tangent():
+    # GM 2026-07: gateposts were hard-coded N/S (vertical rects); on an E/W gate they must stand
+    # N and S of the opening, oriented to the wall's local tangent - so a gate on a vertical wall
+    # stretch gets ~vertical-tangent posts (rot near +-90), not the old rot=0.
+    import math as m
+    s = _crop_settlement()
+    s.meta(name="C", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 400 * m.cos(2 * m.pi * i / 16)), round(700 + 400 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
+    egate = pts[0]                                   # the EAST gate (rightmost): the wall runs ~vertically there
+    s.city_wall(pts, gates=[egate])
+    posts = [g for g in s.M["gate_structs"] if g.get("kind") == "gatepost"]
+    assert len(posts) == 2
+    assert all(abs(abs(p["rot"]) - 90) < 25 for p in posts)   # tangent ~vertical, not the old rot 0
+    # the two posts straddle the gate along the tangent (N and S of it), not E and W
+    assert abs(posts[0]["y"] - posts[1]["y"]) > 40 and abs(posts[0]["x"] - posts[1]["x"]) < 30
+
+
+def test_dry_polys_block_a_footprint_margin_not_just_the_center():
+    # dry crop plots are FOOTPRINT-aware no-build cropland: block_polys test only a candidate's
+    # CENTER, which let a house centred just off a hem strip stand half its footprint on the crop
+    s = _crop_settlement()
+    s.dry_polys.append([(300, 300), (500, 300), (500, 380), (300, 380)])
+    assert not s._fits(400, 340, 20, 14)      # centred inside the strip -> blocked
+    assert not s._fits(510, 340, 20, 14)      # centred 10px OUTSIDE: the footprint would overlap -> still blocked
+    assert s._fits(560, 340, 20, 14)          # well clear of the 12px margin -> fits
+
+
+def test_grove_fits_rejects_a_belt_over_a_dry_strip():
+    # the windbreak's canopy stays out of the barley exactly as it stays out of the paddy
+    s = _crop_settlement()
+    s.dry_polys.append([(300, 300), (500, 300), (500, 380), (300, 380)])
+    assert not s._grove_fits(400, 340, 60, 30, own=[])
+    assert s._grove_fits(400, 500, 60, 30, own=[])
+
+
+def test_clip_to_moat_is_a_noop_without_a_moat():
+    s = _crop_settlement()                                  # no moat recorded on this map
+    pts = [(100, 100), (200, 200)]
+    assert s._clip_to_moat(pts) == pts
+    assert s._clip_to_moat([(1, 1)]) == [(1, 1)]            # a degenerate 1-point path is left alone
+
+
+def test_clip_to_moat_snaps_a_connecting_end_onto_the_bed_edge():
+    # the moat twin of _clip_to_pond: a tap/culvert that reaches the moat must JOIN the bed's edge
+    # (mouth inset ~3px so it covers the rim stroke), never draw its bed across the open water
+    s = _crop_settlement()
+    s.M["moat"] = [(300, 100), (300, 900)]                  # a straight vertical moat centerline
+    s.M["moat_width"] = 22                                  # bed half-width 11 -> snapped ends sit 8 out
+    out = s._clip_to_moat([(300, 500), (500, 500)])         # end ON the centerline -> snapped to the edge
+    assert abs(out[0][0] - 308) < 0.5 and abs(out[0][1] - 500) < 0.5
+    assert out[-1] == (500, 500)                            # the field end is untouched
+    run = s._clip_to_moat([(295, 500), (305, 502), (500, 500)])   # a RUN inside the bed -> trimmed
+    assert len(run) == 2 and abs(run[0][0] - 308) < 3
+    far = [(400, 500), (500, 500)]                          # both ends clear of the bed -> untouched
+    assert s._clip_to_moat(far) == far
+    allin = [(300, 400), (300, 500)]                        # the whole path lies in the moat -> left alone
+    assert s._clip_to_moat(allin) == allin
+
+
 def test_clip_to_pond_snaps_a_connecting_end_onto_the_rim():
     s = _crop_settlement()
     s.M["pond"] = [300, 300, 100, 80]                       # centre (300,300), rx=100, ry=80; rim where rad==1
@@ -622,6 +748,18 @@ def test_draft_byres_keeps_off_the_paddy():
     s.field_polys.append([(330, 200), (600, 200), (600, 500), (330, 500)])   # paddy on the E half of the ring
     placed = s.draft_byres(fraction=1.0)
     assert len(placed) == 1 and placed[0][0] < 330                       # the byre lands on the dry (W) side, off the paddy
+
+
+def test_draft_byres_uses_the_legacy_size_off_the_to_scale_tiers():
+    # a legacy tier (town/city) sizes its byre from the urban glyph grain (bscale), not px(feet) - the
+    # non-to-scale branch of the byre sizer.
+    s = _town()                                                          # scale="town" -> not to-scale
+    hs = [{"x": 300 + i * 170, "y": 350, "w": 40, "h": 28, "kind": "plain", "rot": 0, "wealth": 1.0} for i in range(3)]
+    s.M["houses"] = hs
+    for h in hs:
+        s.placed.append((h["x"], h["y"], h["w"], h["h"]))
+    placed = s.draft_byres(fraction=1.0, gap=40)
+    assert placed and all(b["w"] > 0 for b in s.M["byres"])
 
 
 def test_bridges_spans_a_lane_where_it_crosses_a_canal():
@@ -880,6 +1018,23 @@ def test_slide_stops_on_no_target_and_on_arrival():
     assert s._slide(200, 200, 40, 26, lambda x, y: (x, y), True) == (200, 200)
 
 
+def test_ftpx_scale_derives_bscale_and_ft_defaults():
+    # The GM's scale ladder (hamlet/town 1 ft/px, village 2, city 3): meta(ftpx=N) derives the
+    # urban grain bscale = 1/ftpx, px()/lw() convert real feet, and the 4px linework floor
+    # rescues thin features (a 5 ft roji at 3 ft/px would be an invisible 1.7px). A street's
+    # default width is the real 24 ft converted at the map's scale.
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="C", scale="city", ftpx=3)
+    assert s.bscale == 1 / 3 and s.px(66) == 22 and s.lw(5) == 4
+    s.street([(100, 100), (400, 100)])
+    assert s.M["town_streets"][-1]["w"] == 8                        # lw(24) at 3 ft/px
+    # VILLAGE maps keep bscale = 1.0: their placement constants were hand-pre-scaled to
+    # 2 ft/px before ftpx existed (re-deriving would perturb every tuned village map).
+    v = Settlement(1000, 1000, seed=1)
+    v.meta(name="V", scale="village", ftpx=2)
+    assert v.ftpx == 2 and v.bscale == 1.0
+
+
 if __name__ == "__main__":
     import sys
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
@@ -892,3 +1047,232 @@ if __name__ == "__main__":
             print("FAIL " + t.__name__ + ("  " + str(e) if str(e) else ""))
             rc = 1
     sys.exit(rc)
+
+
+def _city():
+    s = Settlement(1200, 1200, seed=3)
+    s.meta(name="C", scale="city", ftpx=3)
+    return s
+
+
+def test_rowpack_lays_touching_terraces():
+    # the GM row-packing doctrine: city commoner housing goes down as CONTIGUOUS terraces -
+    # most units share a party wall (hairline seam <= 1.2px), never the old detached scatter
+    s = _city()
+    n = s.rowpack((200, 200, 600, 330), ["laborer"] * 40)
+    assert n >= 25
+    bs = s.M["buildings"]
+
+    def egap(a, b):
+        dx = abs(a["x"] - b["x"]) - (a["w"] + b["w"]) / 2
+        dy = abs(a["y"] - b["y"]) - (a["h"] + b["h"]) / 2
+        return max(dx, dy)
+
+    gaps = [min(egap(a, b) for j, b in enumerate(bs) if j != i) for i, a in enumerate(bs)]
+    assert sum(1 for g in gaps if g <= 1.2) >= 0.55 * len(bs)
+
+
+def test_rowpack_respects_canvas_edge_and_bound():
+    # rows must not spill off the canvas margins (title/edge zone) or outside a bounding
+    # ring (the city's ring road) - both rejections clip the terrace, they don't crash it
+    s = _city()
+    s.rowpack((20, 200, 200, 260), ["laborer"] * 30)          # zone hangs past the x<55 edge margin
+    assert all(b["x"] - b["w"] / 2 >= 55 for b in s.M["buildings"])
+    s2 = _city()
+    s2.bound = [(300, 100), (700, 100), (700, 500), (300, 500)]
+    s2.rowpack((200, 200, 600, 300), ["laborer"] * 30)         # zone's west half lies outside the bound
+    assert all(b["x"] - b["w"] / 2 >= 299 for b in s2.M["buildings"])
+
+
+def test_rowpack_blocked_zone_terminates_and_places_nothing():
+    # a zone fully covered by an earlier structure yields no houses: every row scans past the
+    # obstacle, the row pitch still advances, and the loop ends at the zone's south edge
+    s = _city()
+    s.building(400, 250, 420, 130, "civic")                    # a compound covering the whole zone
+    assert s.rowpack((200, 200, 600, 300), ["laborer"] * 30) == 0
+
+
+def test_pack_core_skips_the_street_facing_band():
+    # face_streets="core" leaves the near-street band for shop frontage: dwellings pack only
+    # the deep block interior
+    s = Settlement(1000, 1000, seed=2)
+    s.meta(name="T", scale="town")
+    s.street([(100, 500), (900, 500)], width=24)
+    s.pack((150, 300, 850, 700), ["laborer"] * 30, step=40, face_streets="core")
+    import math as _m
+    for b in s.M["buildings"]:
+        assert _m.hypot(0, b["y"] - 500) > 76 or not (100 <= b["x"] <= 900)
+
+
+def _hamlet_with_field(down_deg):
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="H", scale="hamlet", down_deg=down_deg)
+    s.field_polys.append([(400, 400), (600, 400), (600, 600), (400, 600)])   # a paddy centred at (500,500)
+    return s
+
+
+def test_hinterland_scrub_ring_and_marsh_downhill_each_cardinal():
+    # the reed MARSH toe sits on the DOWNHILL side of the field for each cardinal slope (exercises the four
+    # direction branches); the cut-over SCRUB commons fills the 3 non-toe sides (scrub is the dominant cover;
+    # managed woodland is added as patches by the gen), each band centred clear of the paddy. down_deg in screen
+    # angle: 90=S(+y), 270=N(-y), 0=E(+x), 180=W(-x).
+    import math
+    for down_deg in (90, 270, 0, 180):
+        s = _hamlet_with_field(down_deg)
+        s.hinterland()
+        toe = [m for m in s.M["marshes"] if m["role"] == "toe"]
+        roles = [c["role"] for c in s.M["commons"]]
+        assert len(toe) == 1 and roles.count("grazing") == 3
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        assert (toe[0]["x"] - 500) * dx + (toe[0]["y"] - 500) * dy > 0      # toe is downhill of field centre
+        for c in s.M["commons"]:                                            # no commons centre in the paddy box
+            assert not (400 <= c["x"] <= 600 and 400 <= c["y"] <= 600)
+
+
+def test_hinterland_honors_hamlet_keepout_and_dry_plot_extent():
+    # a hamlet keep-out (from M['houses']) and the dry-hatake extent are both folded in: the house sits where a
+    # ring + the marsh toe overlap it, so the avoid-skip fires in BOTH commons and marsh; dry_plots widen the
+    # cultivated bbox the woodland sets back from.
+    s = _hamlet_with_field(90)
+    s.M["houses"] = [{"x": 300, "y": 500, "w": 20, "h": 14, "rot": 0}]
+    s.M["dry_plots"] = [{"poly": [[610, 400], [720, 400], [720, 520], [610, 520]], "crop": "soy", "theta": 0.0}]
+    s.hinterland()
+    assert s.M["commons"] and s.M["marshes"]
+
+
+def test_hinterland_flags_default_downdeg_and_empty_field():
+    s = _hamlet_with_field(90)
+    s.hinterland(commons=False)                       # marsh only
+    assert not s.M["commons"] and len(s.M["marshes"]) == 1
+    s2 = _hamlet_with_field(90)
+    s2.hinterland(marsh=False)                        # commons only
+    assert s2.M["commons"] and not s2.M["marshes"]
+    s3 = _hamlet_with_field(90)
+    s3.hinterland(down_deg=None)                      # None -> reads meta down_deg (90 = south)
+    assert s3.M["marshes"][0]["y"] > 500
+    empty = Settlement(1000, 1000, seed=1)
+    empty.meta(name="E", scale="hamlet")
+    empty.hinterland()                                # no field_polys -> early return
+    assert not empty.M["commons"] and not empty.M["marshes"]
+
+
+def test_commons_glyph_variants_draw_and_record_each_role():
+    # the three distinct land-cover looks exercised directly (independent of the village gens): woodland =
+    # tree CROWNS, pasture = open GRASS (no pines), commons/grazing = grass + a few scraggly PINES. Each is
+    # given a non-empty `avoid` keep-out so the avoid-skip is exercised too. A marsh keep-out is checked as well.
+    poly = [(200, 200), (800, 200), (800, 800), (200, 800)]
+    keepout = [[(400, 400), (600, 400), (600, 600), (400, 600)]]   # a central keep-out the scatter stays out of
+    for role in ("woodland", "pasture", "commons", "grazing"):
+        s = Settlement(1000, 1000, seed=3)
+        s.meta(name="C", scale="hamlet")
+        s.commons(poly, role=role, avoid=keepout)
+        assert s.M["commons"][-1]["role"] == role and s.out   # recorded + something drawn
+    sm = Settlement(1000, 1000, seed=3)
+    sm.meta(name="C", scale="hamlet")
+    sm.marsh(poly, avoid=keepout)
+    assert sm.M["marshes"][-1]["role"] == "toe"
+
+
+def test_ministry_auto_label_side_prefers_empty_ground():
+    # the GM label doctrine (2026-07): a label that CAN sit in empty ground, should. With no
+    # label_below override the ministry scores both spots against what is already placed and
+    # takes the clearer; the default (unpassed) size is the real ~224x148 ft compound.
+    s = Settlement(1000, 1000, seed=4)
+    s.meta(name="C", scale="city", ftpx=3)
+    s.building(500, 462, 90, 24, "civic")            # crowd the ABOVE label spot
+    s.ministry(500, 510, "Ministry of Test")
+    assert s.M["ministries"][0]["w"] == s.px(224)
+    lab = next(l for l in s.M["labels"] if l[5] == "Ministry of Test")
+    assert (lab[1] + lab[3]) / 2 > 510               # the label went BELOW, into the open ground
+
+
+def test_crop_to_content_includes_forest_clamped_to_canvas():
+    # the forest is a big EDGE feature recorded as a POINT-LIST (not dicts): the crop frames to include it,
+    # CLAMPED to the canvas so the view never opens past the edge (an edge feature must REACH the frame edge,
+    # not stop short). Exercises the forest branch + all four clamp arms.
+    s = Settlement(2000, 1500, seed=1)
+    s.M["houses"] = [{"x": 30, "y": 700, "w": 20, "h": 20}]
+    s.M["forest"] = [[1800, -10], [1820, 750], [1800, 1510], [2012, 1510], [2012, -10]]   # fills the E to canvas+12
+    s.crop_to_content(margin=40)
+    assert s.view == (0, 0, 2000, 1500)              # clamped to the whole canvas (forest reaches every edge)
+
+
+def test_hinterland_skip_sides_drops_a_scrub_band():
+    # skip_sides suppresses the scrub band on a named frame side (e.g. a forest flank): down_deg=90 -> toe=bottom,
+    # non-toe = top/left/right (3 bands); skipping "right" leaves 2.
+    s = _hamlet_with_field(90)
+    s.hinterland(skip_sides=("right",))
+    assert [c["role"] for c in s.M["commons"]].count("grazing") == 2
+
+
+def test_legacy_dispersed_farmstead_path_still_covered():
+    # every POOL map is now to-scale, so keep the legacy (non-to-scale) DISPERSED path covered here: an old-style
+    # hamlet (scale!=village, no toscale -> _toscale() False) rings its field with houses and draws farmsteads
+    # via _try_place_legacy + _farmsteads_legacy (the pre-bundle path Moritono used before it was redone).
+    s = Settlement(1200, 900, seed=3)
+    s.meta(name="L", scale="hamlet")
+    fld = (300, 300, 620, 560)
+    s.paddy_field(fld, "", "f", amp=20)
+    s.ring(fld, 8, 16, ["plain"])
+    n = s.farmsteads()
+    assert n > 0
+
+
+def test_on_watercourse_detects_stream_and_channel_beds():
+    s = Settlement(600, 600, seed=1)
+    s.M["streams"] = [{"poly": [[100, 100], [400, 100]], "w": 8}]
+    s.M["channels"] = [{"poly": [[100, 300], [400, 300]], "w": 4}]
+    assert s._on_watercourse(250, 100) and s._on_watercourse(250, 300)   # on the stream / channel bed
+    assert not s._on_watercourse(250, 200)                                # clear ground between them
+
+
+def test_commons_and_marsh_skip_the_pond_and_watercourses():
+    # ground-cover (scrub, reeds) never draws OVER open water: a big commons/marsh poly covering a pond + stream
+    # skips those points at scatter time (the pond-check + _on_watercourse branches). Just assert it runs + records.
+    for method in ("commons", "marsh"):
+        s = Settlement(600, 600, seed=1)
+        s.meta(name="W", scale="hamlet")
+        s.M["pond"] = [300, 300, 60, 40]
+        s.M["streams"] = [{"poly": [[80, 500], [520, 500]], "w": 10}]
+        getattr(s, method)([(40, 40), (560, 40), (560, 560), (40, 560)])
+        assert (s.M["commons"] if method == "commons" else s.M["marshes"])
+
+
+def test_relax_gardens_south_skips_a_bundle_without_gardens():
+    # defensive: a homestead bundle whose geom carries no garden beds is simply skipped (no shift, no error)
+    s = Settlement(800, 800, seed=1)
+    s.meta(name="V", scale="village", ftpx=2)
+    rec = {"x": 100, "y": 100, "w": 23, "h": 14,
+           "geom": {"house": (100, 100, 23, 14), "yard": (100, 120, 20, 16)}}   # no "gardens" key
+    s._relax_gardens_south([rec])
+    assert "gardens" not in rec["geom"]
+
+
+def test_village_grove_keeps_copse_out_of_a_garden_east_sun_lane():
+    # the copse must not scatter a clump directly EAST of a kitchen garden (it would block the morning sun).
+    # Teeth: a clump lands in that lane with NO garden present, and is skipped once the garden is there.
+    poly = [[260, 240], [420, 240], [420, 360], [260, 360]]
+
+    def lane_clumps(gardens):
+        s = Settlement(700, 700, seed=3)
+        s.meta(name="V", scale="village", ftpx=2)
+        s.M["gardens"] = gardens
+        s.village_grove(poly, role="copse", dense=True)
+        cs = [c for g in s.M["village_groves"] for c in g["clumps"]]
+        return [c for c in cs if 311 < c[0] < 345 and abs(c[1] - 300) < 13]   # the garden's east sun-lane
+
+    without = lane_clumps([])
+    with_garden = lane_clumps([{"x": 300, "y": 300, "w": 20, "h": 18, "rot": 0, "of": [280, 300]}])
+    assert without and not with_garden
+
+
+def test_relax_gardens_south_nudges_an_east_shaded_garden_south():
+    # a garden on the E lee side with a neighbour grove hard against its east, open ground south -> it shifts S
+    s = Settlement(800, 800, seed=1)
+    s.meta(name="V", scale="village", ftpx=2)
+    s.grove_rects = [(340, 300, 16, 40)]                       # a neighbour grove arm just east of the garden
+    beds = [(320, 300, 12, 12)]                                # garden east edge x=326; tree west edge=332 (in band)
+    rec = {"x": 300, "y": 300, "w": 23, "h": 14,
+           "geom": {"house": (300, 300, 23, 14), "yard": (300, 322, 20, 12), "gardens": list(beds)}}
+    s._relax_gardens_south([rec])
+    assert rec["geom"]["gardens"][0][1] > 300                  # the bed moved SOUTH to clear the east tree

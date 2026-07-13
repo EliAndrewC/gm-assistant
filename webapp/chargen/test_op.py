@@ -42,6 +42,44 @@ class _FakeSession:
         return self._response
 
 
+class _PostCapturingSession:
+    """Captures the last form payload posted to create_character."""
+
+    def __init__(self) -> None:
+        self.last_payload: dict[str, object] | None = None
+
+    def post(self, url: str, data: dict[str, object]) -> _FakeResponse:
+        self.last_payload = data
+        resp = _FakeResponse()
+        resp.status_code = 200  # type: ignore[attr-defined]
+        resp.url = f'{url}/characters/new-char'  # type: ignore[attr-defined]
+        return resp
+
+
+def _patch_create_character_seams(
+    monkeypatch: pytest.MonkeyPatch, session: _PostCapturingSession
+) -> None:
+    monkeypatch.setattr(op, '_get_browser_session', lambda: session)
+    monkeypatch.setattr(op, '_get_campaign_base_url', lambda: 'https://example.test')
+    monkeypatch.setattr(op, '_get_authenticity_token', lambda: 'tok')
+
+
+def test_create_character_defaults_to_public(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = _PostCapturingSession()
+    _patch_create_character_seams(monkeypatch, session)
+    op.create_character('Test Name')  # type: ignore[no-untyped-call]
+    assert session.last_payload is not None
+    assert session.last_payload['game_character[gm_only]'] == '0'
+
+
+def test_create_character_gm_only_sets_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = _PostCapturingSession()
+    _patch_create_character_seams(monkeypatch, session)
+    op.create_character('Test Name', gm_only=True)  # type: ignore[no-untyped-call]
+    assert session.last_payload is not None
+    assert session.last_payload['game_character[gm_only]'] == '1'
+
+
 def test_fetch_character_page_returns_html_on_success(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         op, '_get_browser_session', lambda: _FakeSession(_FakeResponse(text=_PAGE_HTML))

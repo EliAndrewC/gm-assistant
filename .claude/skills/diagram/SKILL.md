@@ -11,7 +11,18 @@ The skill's first worked example is [`pool/ochiba-magistracy.svg`](pool/ochiba-m
 
 ## Core principle: roughly to scale
 
-These maps are **schematic, not survey-accurate** - there is no fixed pixels-per-meter, and small glyphs (buildings, wells, torii) are drawn somewhat **oversized for legibility**. But that is a license to *round*, NOT a license to ignore scale: **relative sizes and distances are meant to be roughly proportional to reality.** A thing that is twice as large (or twice as far) in the world should read as roughly twice as large (or far) on the map. Hold proportions honest:
+Every diagram now carries a **declared scale** - the GM's scale ladder (2026-07, extended to Mode A):
+
+| Tier | Scale | Why |
+|------|-------|-----|
+| Compound plan (Mode A) | **3 px = 1 ft** | interior plans need room-level legibility; a county magistracy's ~250×200 ft is authored on a 1200×900 working canvas, then the viewBox is cropped tight to the content (rectangular, minimal border - see "Framing" below; anchors in buildings.md's grounding) |
+| Hamlet, town | **1 px = 1 ft** | towns crop to their core and skip most surrounding farmland, so they earn the zoom |
+| Village | **1 px = 2 ft** | must show ~60-90 acres of working farmland around ~50-70 homesteads |
+| Provincial city | **1 px = 3 ft** | the walled seat spans ~0.9 mi; 3 makes the wall a plausible ~2.9 mi perimeter |
+
+The round numbers are deliberate (a human should be able to read distances off the map). Mode A compound plans are hand-authored, so they declare their scale with a **scale bar drawn on the sheet** (see the "Scale" section of [`buildings.md`](buildings.md)). Mode B declares via `s.meta(ftpx=N)`: the building grain follows automatically (`bscale = 1/ftpx` - the urban glyph library is calibrated at town scale, with the 44x29px farmhouse ~ the 46x28 ft *minka* anchor; this is what keeps a "merchant house" the same real ~57 ft on every map). Real-feet constants convert through `s.px(ft)`; linear features through `s.lw(ft)`, which applies the **4px linework floor**: standard cartographic practice - a 5 ft roji at 3 ft/px would be an invisible 1.7px, so thin linework draws at the minimum visible width, true-width-or-floored, never inflated past the floor. Villages declare `ftpx=2` for the record but keep `bscale = 1.0` (their placement constants were hand-pre-scaled to 2 ft/px before ftpx existed). Checks read `meta.ftpx` wherever a threshold means real feet (`on_a_street`'s 85 ft, the city theater's 185 ft).
+
+Within the declared scale, maps stay **schematic, not survey-accurate** - small point glyphs (wells, torii, gate furniture) are drawn somewhat **oversized for legibility**. But that is a license to *round*, NOT a license to ignore scale: **relative sizes and distances are meant to be roughly proportional to reality.** A thing that is twice as large (or twice as far) in the world should read as roughly twice as large (or far) on the map. Hold proportions honest:
 
 - A cemetery serving a thousand people should clearly **dwarf** one serving a hundred; a provincial city's wall should dwarf a village shrine; a manor should outsize a peasant house by about the ratio it really is.
 - When you **size or place a new element**, ask "how big / how far is this relative to its neighbours in reality?" and match that proportion - don't just pick numbers that fit the gap.
@@ -33,7 +44,7 @@ Rokugan's **land** - its geography, terrain, agriculture, demographics, settleme
 This skill covers two kinds of diagram that share the conventions below (palette, English-default labeling, kanji triangle, orientation, title block, label sizes, render pipeline, self-review) but differ in subject and method:
 
 - **Mode A - Compound and building plans** (manor, magistracy, temple, keep, battlefield). Interior plan view: walls, courts, rooms, building footprints. Hand-authored SVG, copied from the canonical template [`pool/ochiba-magistracy.svg`](pool/ochiba-magistracy.svg) and edited. The Mode A vocabulary, checklist, and grounding live in [`buildings.md`](buildings.md) - read it before starting a Mode A diagram.
-- **Mode B - Settlement maps** (hamlet, village, town, provincial city - walled or unwalled). Landscape/terrain plan: a settlement in its fields, with realistic house density, irregular paddies, irrigation, and a shrine hill. Built by a **parametric generator** with an **automated validator** gate, because ~50 placed houses and clipped irregular fields are not practical to hand-place. Canonical example: [`pool/kikuta-village.svg`](pool/kikuta-village.svg). See [`settlements.md`](settlements.md) - read it before starting a Mode B map.
+- **Mode B - Settlement maps** (hamlet, village, town, provincial city - walled or unwalled). Landscape/terrain plan: a settlement in its fields, with realistic house density, irregular paddies, irrigation, and a shrine. Built by a **parametric generator** with an **automated validator** gate, because ~50 placed houses and clipped irregular fields are not practical to hand-place. Canonical example: [`pool/kikuta-village.svg`](pool/kikuta-village.svg). See [`settlements.md`](settlements.md) - read it before starting a Mode B map.
 
 ## Workflow
 
@@ -51,7 +62,7 @@ This skill covers two kinds of diagram that share the conventions below (palette
 
 ## Labeling rule: English-default
 
-Use **English** for commonplace nouns: `latrine`, `bath`, `rice granary`, `entry porch`, `cell`, `hearing court`, `kitchen`, `stables`, `well`.
+Use **English** for commonplace nouns: `latrine`, `bath`, `granary`, `entry porch`, `cell`, `hearing court`, `kitchen`, `stables`, `well`.
 
 Reserve **Japanese** for terms that function as names:
 
@@ -61,6 +72,11 @@ Reserve **Japanese** for terms that function as names:
 - **Named places, clans, families, lineages**: as canonical.
 
 When kanji appears in a label, it must pass the **kanji ↔ romaji ↔ meaning triangle** per Constitution Principle XI. Cross-reference: [`/.claude/skills/relic/SKILL.md`](../relic/SKILL.md) for the triangle worksheet pattern.
+
+Two further labeling rules (GM, 2026-07):
+
+- **Annotations explain the unusual, not the universal.** A feature label states the function (`clerks' duty room`); italic sub-notes are reserved for what is particular to THIS subject (`staging store - tax grain barges down to Nagahara`). A note that would be equally true on any instance of the feature ("3-4 town clerks by day") is clutter - facts like that live in the skill docs, not on the sheet. This applies to ALL prose on the sheet, legend/notes boxes included: a box line stating a program fact ("~15 samurai per county town") is the same defect relocated.
+- **Terms mean what they say.** A label that quietly asserts a quantity, rate, or relationship must match the setting's actual arrangements: "tithe" implies a tenth, and Rokugan's land tax is 1/3, so it is *tax grain* and a *tax archive* - never "tithe".
 
 ## Style conventions
 
@@ -78,8 +94,10 @@ When kanji appears in a label, it must pass the **kanji ↔ romaji ↔ meaning t
 | Internal divider wall | (stroke only) | `#3F3A30`, width 6 |
 | Court interior (earth pattern) | `url(#court-earth)` | - |
 | Lord's buildings (residence, audience pavilion) | `#DDB87A` | `#5A3F1E` |
-| Service buildings (kitchen, stables, barracks, gatehouse) | `#C9A57A` | `#6B4F2A` |
-| Plain wood buildings (tithe-archive, etc.) | `#E8D2A8` | `#6B4F2A` |
+| Service buildings (kitchen, stables, barracks) | `#C9A57A` | `#6B4F2A` |
+| Gatehouse / dais (dark wood) | `#8C6F3E` | `#4A3318` |
+| Plain wood buildings (clerks' duty room, tally office, etc.) | `#E8D2A8` | `#6B4F2A` |
+| Sealed kura (document storehouse, e.g. tax archive) | `#F2EFE4` | `#4A3318`, width 2.5 |
 | Cells / restraint | `#B89868` | `#5C4318` |
 | Sacred / shrine (vermillion-edged) | `#C9876C` | `#6B2A18`, with `#A03020` edging strips |
 | Cinnabar markers (threshold stones, sacred boundaries) | `#A03020` | `#5C0A04` |
@@ -107,15 +125,19 @@ Add new patterns as needed, kebab-case and descriptive. New patterns should be p
 
 - North at top.
 - Walled compounds: main gate faces south (bottom).
-- Compass rose: top-right, ~28 px circle, dark needle, `N` above, `S` below.
+- No compass rose: north-at-top is invariant on every sheet, so the compass is retired furniture (GM 2026-07).
 
 ### Title block
 
-Centered at top of viewBox:
+Centered at the top, placed JUST ABOVE the compound (not floated high with a wide gap):
 
 - Title - font-size 30, bold
 - Subtitle (one line, place + clan + seat-holder name) - font-size 14, italic
-- Summary line (one phrase describing the plan type) - font-size 11
+- NO summary line by default. A one-phrase summary is allowed only if it states something NOT visually evident; never restate what the plan already shows (that it is walled, two-courtyard, or where the main gate faces - all readable from the drawing). "Walled two-courtyard compound - main gate south" is the canonical redundant summary; drop it.
+
+### Framing: crop tight to content
+
+Mode A diagrams are cropped tight - set the `viewBox` to hug the drawn content with only a small (~15-25 px) cosmetic border. **Diagrams are rectangular, not forced square.** No wide empty margins on any side (a river or road may legitimately run off an edge; empty parchment may not). **A road or path meant to leave the map must actually run to and off the viewBox edge** - draw it long enough to cross the frame and crop where it exits; a stub that stops short of the edge reads as a dead end. (The postern/gate LABELS go just inside, but any road THROUGH a gate runs out through the frame.) Keep furniture from forcing slack: the **scale bar** sits in a top corner beside the title (not in a dedicated empty band); **approach-road destination labels** sit close to the compound edge with a short road stub, not far out in a margin; and an **edge feature label** (a gate or postern name) goes just INSIDE the opening it names, never outside where it pushes the crop wider. Set the viewBox last, after placing everything, to the true content bounds.
 
 ### Label sizes
 
@@ -129,7 +151,7 @@ Centered at top of viewBox:
 
 L5R/L7R blends historical periods. When uncertain about authenticity:
 
-- **Default civilian administrative features to Edo norms**: hearing court with the magistrate's dais overlooking the sand, rice granary at any tithe-collecting magistracy, modest single-cell detention (Edo detention was a holding function, not imprisonment-as-punishment).
+- **Default civilian administrative features to Edo norms**: hearing court with the magistrate's dais overlooking the sand, granary at any tax-collecting magistracy, modest single-cell detention (Edo detention was a holding function, not imprisonment-as-punishment).
 - **Default military/security features to Sengoku norms**: walled compounds with main gate and gatehouse, on-grounds retainer barracks, watchtowers if scale warrants.
 - **L5R deliberate divergences from history** (do NOT "correct" these):
   - Major Inari shrines in Fox lands may be substantial halls rather than modest standalone shrines.
@@ -140,17 +162,25 @@ For sizing - samurai per town, building footprint conventions, role hierarchies 
 
 ## Render pipeline
 
+**Setup - run this check once when the skill loads** (passwordless sudo is always available wherever this skill runs):
+
 ```sh
-rsvg-convert -w 2400 pool/<subject>.svg -o pool/<subject>.png
+which resvg >/dev/null || sudo apt-get install -y resvg
+[ -f /usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf ] || sudo apt-get install -y fonts-dejavu-extra
+```
+
+The renderer is **resvg** - required, deliberately no rsvg-convert fallback. Why (profiled on Tango, 2026-07): rsvg-convert took ~16s at 2600px, ~2/3 of it processing foliage circles lying entirely outside the cropped city viewBox; resvg culls off-view geometry properly and renders the same SVG in ~0.6s, visually identical. Both installs matter for that "identical": resvg's generic-family defaults name MS fonts, so `serif` must map to DejaVu Serif via `--serif-family`; and resvg does not synthesize oblique, so without the real italic faces (`fonts-dejavu-extra`) every italic label silently renders upright.
+
+```sh
+resvg --width 2400 --serif-family 'DejaVu Serif' pool/<subject>.svg pool/<subject>.png
 ```
 
 - **Draw-order / layering.** The generator emits two layers: the base (`self.add`) and a deferred **top layer** (`self.add_top`), concatenated base-then-top at `finish()`. Roads, streets, terrain, and buildings live in the base; **all labels and the gate furniture (guard station + tower) live in the top layer**, so a road or street can never paint over a label or a gatehouse that sits on it (a street runs *through* the gate, under the gatehouse). Anything that records a footprint a road might overlap should carry its draw-order `z` into the manifest so `roads_drawn_under_overlays` can gate it.
 - 2400 px wide gives readable labels at typical viewing sizes. Smaller widths may render the smallest labels (latrines, well annotations) illegibly.
-- **This manual command is for Mode A only.** Mode B settlement maps render their PNG automatically: `s.finish()` calls `rsvg-convert` at 2600px after writing the SVG (pass `render=False` or a different `png_width` to override), so the `.png` stays paired with the `.svg` without a separate step. Re-run the gen (or the test suite, which re-runs every gen) to refresh it; don't call `rsvg-convert` by hand for a Mode B map.
-- **The raster is ~90% of a big map's gen time** (a village SVG is ~30k elements, mostly foliage circles; rsvg cost is ~quadratic in output width). Two env knobs make iteration cheap **without changing committed output**:
-  - `DIAGRAM_SKIP_RENDER=1` - skip the raster entirely. The gate (`check_village.py`) reads the JSON manifest, never the PNG, so **`test_villages` sets this** and the suite no longer pays to render PNGs nothing looks at (it roughly halves the suite). Use it yourself for a gate-only iteration: `DIAGRAM_SKIP_RENDER=1 python3 pool/<map>.gen.py && python3 check_village.py pool/<map>.json`.
-  - `DIAGRAM_PNG_WIDTH=1300` - render at 1300px instead of 2600 (~4x faster) for a quick visual eyeball; leave it unset for the full-res committed PNG. Iterate at low res, then do one clean full-res gen + the full suite at the end.
-- One-time setup if not already present in the container: `sudo apt-get install -y librsvg2-bin libcairo2`.
+- **This manual command is for Mode A only.** Mode B settlement maps render their PNG automatically: `s.finish()` calls `resvg` at 2600px after writing the SVG (pass `render=False` or a different `png_width` to override), so the `.png` stays paired with the `.svg` without a separate step. Re-run the gen (or the test suite, which re-runs every gen) to refresh it; don't call `resvg` by hand for a Mode B map.
+- **Since the resvg switch the raster is cheap** (~0.6s even for the biggest map; the Python generation is now the long pole - for Tango, ~2.4s dominated by farmstead/appurtenance geometry). Two env knobs still make iteration cheaper **without changing committed output**:
+  - `DIAGRAM_SKIP_RENDER=1` - skip the raster entirely. The gate (`check_village.py`) reads the JSON manifest, never the PNG, so **`test_villages` sets this** and the suite never pays to render PNGs nothing looks at. Use it yourself for a gate-only iteration: `DIAGRAM_SKIP_RENDER=1 python3 pool/<map>.gen.py && python3 check_village.py pool/<map>.json`.
+  - `DIAGRAM_PNG_WIDTH=1300` - render at 1300px instead of 2600 for a quick visual eyeball; leave it unset for the full-res committed PNG.
 - After rendering, **read the PNG back yourself with the Read tool** to verify legibility and correctness before declaring done. Per Constitution Principle I, the author is not a reliable reviewer of their own visual output - but at minimum, look at it once before reporting it as ready.
 
 ## Output convention
@@ -159,6 +189,10 @@ Finished diagrams live in this skill's `pool/` directory as paired files:
 
 - `pool/<subject>.svg` - source
 - `pool/<subject>.png` - 2400 px rendered output (Mode B settlement maps render at 2600 px+)
+
+Mode A compound plans additionally save their design notes alongside:
+
+- `pool/<subject>.notes.md` - intent, knob settings, deliberate choices, review log; the second source for the `building-review` subagent gate (see [`buildings.md`](buildings.md) "Design notes and the review gate")
 
 Mode B settlement maps additionally save their generator and manifest alongside:
 
@@ -170,10 +204,11 @@ Subject names: lowercase-kebab-case, descriptive (e.g., `ochiba-magistracy`, `wa
 ## References
 
 - [`pool/ochiba-magistracy.svg`](pool/ochiba-magistracy.svg) - canonical Mode A worked example; template for compound/building plans
+- [`pool/hayakawa-magistracy.svg`](pool/hayakawa-magistracy.svg) - Mode A example B: the generic magistrate's-manor program (buildings.md) instantiated fresh - river-landing county, guest-wing annex, staff-housing option (c), two modest shrines
 - [`settlement.py`](settlement.py) - the shared Mode B library (`Settlement` class); all common machinery lives here
-- [`pool/kikuta-village.gen.py`](pool/kikuta-village.gen.py) - Mode B example A: pond-fed, two staggered fields, 7-torii hill shrine, fallow-with-abandonment
-- [`pool/hikari-no-sato.gen.py`](pool/hikari-no-sato.gen.py) - Mode B example B: stream-fed, one V-shaped field, internal fallow patch, flat-ground Benten shrine at the southern torii gateway, standalone Bishamon shrine
-- [`pool/moritono.gen.py`](pool/moritono.gen.py) - Mode B example C: a hamlet (no headman/shrine/tax-free) with a forest and the magistrate's walled manor (`forest()` / `manor()` features)
+- [`pool/kikuta-village.gen.py`](pool/kikuta-village.gen.py) - Mode B example A: **pond-fed single comb-field**, nucleated cluster sheltered by a communal fengshui windbreak, with a Shrine to Benten reached by a **7-torii approach avenue on flat ground** (the burial ground shares its precinct). Rebuilt on the water-first engine.
+- [`pool/hikari-no-sato.gen.py`](pool/hikari-no-sato.gen.py) - Mode B example B: the water-first SPLIT (multi-block) village - two separate `build_comb` fans (a TALL west block + a WIDE east block, own sluice/seed each) divided by a central N->S spur the nucleated cluster + shrines sit on; N->S flow (each block stream-fed from the northern hills, draining S to a reed marsh); central Benten shrine at the torii gateway + SW Bishamon shrine. Shows two side-by-side S-fans kept apart with SYMMETRIC short canals (so the drain lands on the S edge and the brook exits cleanly) and made to differ in aspect for `common_fields_vary_orientation`
+- [`pool/moritono.gen.py`](pool/moritono.gen.py) - Mode B example C: a to-scale (1 ft/px) HAMLET beside a forest (no headman/shrine/tax-free), water flowing E->W - a source *tameike* fed by a brook out of the `forest()`, the comb paddy draining W to a marsh, plus the magistrate's walled `manor()` at the forest's edge. Shows the water-first + `hinterland()` rules on an EAST-downhill map (the scrub matrix fills around the manor + up to the forest, skipping those blocks) with `forest`-aware crop framing
 - [`pool/hoshizora.gen.py`](pool/hoshizora.gen.py) - Mode B example D: an **unwalled town** (county seat) - Imperial Road spine, road-fronting urban core, all castes, single-monastery exception
 - [`pool/hirameki.gen.py`](pool/hirameki.gen.py) - Mode B example E: a **walled town** - hill-anchored rampart, urban core inside, gate-to-yamen streets, chrysanthemum field, two monasteries (changed-hands), downhill irrigation, a theater stage in the Benten monastery's precinct
 - [`pool/tango.gen.py`](pool/tango.gen.py) - Mode B example F: a **walled provincial city** - closed moated ring, N-S Imperial road with gate inspection stations, governor's mansion + 6 ministries, a crossing-grid street network with ~600 densely-packed buildings, quartered districts, 5-15 varying-size outside samurai estates

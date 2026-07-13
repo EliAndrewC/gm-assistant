@@ -68,7 +68,7 @@ Reference directories hold organized source material and context. Each directory
 | `/bounty` | Generate bounties, Wasp clan content, minor clan details |
 | `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[m\|f] [p] [N]` - supports shorthand and concatenation (e.g. `pf3`) |
 | `/diagram` | Generate SVG top-down diagrams of L5R locations (manor plans, village layouts, temple plans, etc.) and render to PNG |
-| `/synthesize` | Generate a Gemini backstory for an existing Obsidian Portal NPC (chat twin of the webapp Synthesize Backstory button): reads the OP tagline, reuses the webapp's per-caste corpus + campaign context, review (upload as-is / regenerate / upload with typed changes), merges into GM-only notes. Args: `<character name>` |
+| `/synthesize` | Write a backstory for an existing Obsidian Portal NPC, Claude-native (in-session prose - no external LLM; the webapp button still uses Gemini): reads the OP record + tagline and the campaign-context cast, researches the setting files directly, review (upload as-is / regenerate / upload with typed changes), merges into GM-only notes. Args: `<character name> [ - steering]` |
 
 ## Testing
 
@@ -213,6 +213,16 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   - **Persona-driven review pass**: before declaring done, examine at least one contact sheet at GM-200 with the user's task in mind (not the implementer's: "Eli is opening this page; what is he trying to do here?"). If the same agent both implemented and reviewed, **invoke the `frontend-review` subagent** (`.claude/agents/frontend-review.md`) to get an independent pass. Author ≠ reliable reviewer.
 - **Python changes**: `ruff check` + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` on pure-logic packages (Principle X).
 - **Delegated work**: spot-check actual artifacts before relaying success to the user. "The subagent said it was done" is not sufficient.
+
+**Subagent-check TDD (REQUIRED procedure for improving review subagents)**: when the GM asks for a new rule that a review subagent (e.g. `building-review`) should enforce, do NOT simply apply the fix and write the rule into the agent. The current artifacts contain the motivating defect - that is the failing test. Procedure:
+
+1. Add only the **general, category-level rule** to the agent definition. Never name the specific instance yet - that would test nothing about whether the check generalizes.
+2. Run the agent against the artifact that contains the known defect, unfixed.
+3. **If it flags the defect**, the rule generalizes: now fix the artifacts, and only now record the specific instance in the agent definition as a validated example for future runs.
+4. **If it misses**, sharpen the general rule and re-run - do not shortcut by naming the instance. Escalation ladder from the first application (2026-07): a trait buried in a checklist gets skimmed; adding a protocol step barely helps; what reliably works is making the agent's **output format demand an enumerated sweep** (a mandatory report section listing every item checked) - models do what the required output structure forces.
+5. Record the red/green outcome in the artifact's review log.
+
+**Gotcha (harness behavior)**: agent definitions are snapshotted when the session registers them - mid-session edits to `.claude/agents/*.md` do NOT reach agents launched by type, which silently invalidates the TDD run. When iterating on an agent definition, launch a `general-purpose` agent instructed to Read the definition file and adopt it; the registered type picks up the changes next session.
 
 **Spec-kit hooks**: `.specify/extensions.yml` defines auto-commit hooks before each spec-kit step. Per the project's git-safety convention, do not auto-execute those - surface them and let the user confirm each time.
 

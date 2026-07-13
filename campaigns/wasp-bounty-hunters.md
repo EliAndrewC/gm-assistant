@@ -288,7 +288,7 @@ A gang of approximately six to eight bandits has been attacking barges for the p
 
 h4. **Kage the shadow-bandit** [75 koku]
 
-While raiding the town manor of the county magistrate of Seitoyama (Kakita Hikai) three years ago, the bandit lord Kage successfully stole hundreds of koku and disappeared.  Hikai slashed Kage across the cheek from his left ear down to his chin, and is certain to have left a scar.
+While raiding the town manor of the county magistrate of Seitoyama (Kakita Hikai) three years ago, the bandit lord Kage successfully stole hundreds of koku and disappeared.  Hikai slashed Kage across the cheek from his left ear down to his chin, and is certain to have left a scar.  (Note that is not in the Imperial bulletin: "Kage" means "shadow" and is a common name for bandits to identify themselves by rather than a real name - players will likely encounter many bandits called Kage in different places.)
 
 h4. **Shinjiro the obsidian merchant** [75 koku]
 

@@ -41,7 +41,7 @@ SLUICE = (POND[0] - round(0.64 * PRX), POND[1] + round(0.78 * PRY))   # the sing
 POND_DRAW = (POND[0] - 157, POND[1], PRX, PRY)
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Ueda", scale="village", households=HOUSEHOLDS, down_deg=135,   # NE-high -> downhill = SW (135 deg)
+s.meta(name="Ueda", scale="village", ftpx=2, households=HOUSEHOLDS, down_deg=135,   # NE-high -> downhill = SW (135 deg)
        nucleated=True, field_footbridges=True)
 # (The pond is a valley-head reservoir feeding the field, so the crop advisory now exempts it automatically -
 # no meta(crop_advisory=False) needed. It is drawn nudged W so its E edge is flush with the fields.)
@@ -258,6 +258,11 @@ s.village_grove(_scatter, role="copse", dense=False)
 # catchment across the field's top. Draw order: AFTER farmhouses + grove, BEFORE the (later) graveyard + shrine.
 s.commons([(150, 110), (1080, 110), (980, 360), (740, 540), (430, 600), (150, 430)], role="grazing")     # NW upper grass head
 s.commons([(120, 540), (480, 560), (450, 1050), (380, 1420), (120, 1500)], role="grazing")              # W/SW back-slope, down to the marsh
+# A FEW managed-WOODLAND patches (coppice / bamboo "economic forest") on the high NW grass head above the paddy -
+# the green EXCEPTION amid the cut-over grass (China-first: the hills are mostly denuded scrub, a little managed
+# wood). Within the grass-head scrub, set back above the crops. Crowns draw on top of the scrub.
+s.commons([(600, 140), (840, 140), (840, 300), (600, 300)], role="woodland")
+s.commons([(890, 155), (1065, 155), (1065, 320), (890, 320)], role="woodland")
 
 # ===== STAGE 4b: plank FOOTBRIDGES across the irrigation ditches (standalone, where field-workers cross while
 # walking the bunds - NOT tied to any lane). Every long ditch stretch gets one about midway.

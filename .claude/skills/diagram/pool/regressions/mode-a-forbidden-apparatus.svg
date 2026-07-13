@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="180 84 840 752" font-family="Georgia, 'Times New Roman', serif">
+<!-- MODE A NEGATIVE FIXTURE (building-review). A deliberately-broken copy
+     of ochiba-magistracy.svg carrying the six apparatus/terminology defects
+     the building-review sweeps must catch: (1) scale bar MISSING, (2) compass
+     rose PRESENT, (3) key/legend box PRESENT, (4) generic "Staffing notes" box
+     PRESENT, (5) "tithe archive" (should be "tax archive"), (6) "rice granary"
+     (should be "granary"). Re-run building-review on this file after editing the
+     agent; a green run must report all six as ERRORS. Do NOT "fix" this file. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="Georgia, 'Times New Roman', serif">
   <!-- ============================================================ -->
   <!-- Ochiba County Magistracy - top-down diagrammatic plan         -->
   <!-- North at top, main gate facing south (bottom).                -->
@@ -47,27 +54,20 @@
   <g>
     <path d="M 600 900 L 600 750" stroke="#B89060" stroke-width="40" stroke-linecap="butt" opacity="0.55"/>
     <path d="M 600 900 L 600 750" stroke="#9C7448" stroke-width="40" stroke-dasharray="14 12" fill="none" opacity="0.4"/>
-    <text x="636" y="816" font-size="12" fill="#6B4F2A" font-style="italic">to the Imperial road</text>
+    <text x="640" y="870" font-size="13" fill="#6B4F2A" font-style="italic">to the Imperial road</text>
   </g>
 
-  <!-- Title block (just above the compound; no redundant summary line - the
-       plan itself shows it is walled, two-court, main-gate-south) -->
-  <text x="600" y="114" text-anchor="middle" font-size="30" font-weight="bold" fill="#3A2E1C">Ochiba County Magistracy</text>
-  <text x="600" y="136" text-anchor="middle" font-size="14" font-style="italic" fill="#6B4F2A">Minami province, Fox Clan lands - seat of County Magistrate Kitsune Tatsuya</text>
+  <!-- Title block -->
+  <text x="600" y="44" text-anchor="middle" font-size="30" font-weight="bold" fill="#3A2E1C">Ochiba County Magistracy</text>
+  <text x="600" y="68" text-anchor="middle" font-size="14" font-style="italic" fill="#6B4F2A">Minami province, Fox Clan lands - seat of County Magistrate Kitsune Tatsuya</text>
+  <text x="600" y="90" text-anchor="middle" font-size="11" fill="#8C7048">Walled two-courtyard compound · main gate south</text>
 
-  <!-- Scale bar (3 px = 1 ft), top-left beside the title -->
-  <g>
-    <g stroke="#3A2E1C">
-      <line x1="196" y1="112" x2="286" y2="112" stroke-width="2"/>
-      <line x1="196" y1="107" x2="196" y2="117" stroke-width="2"/>
-      <line x1="286" y1="107" x2="286" y2="117" stroke-width="2"/>
-      <line x1="241" y1="109" x2="241" y2="115" stroke-width="1"/>
-    </g>
-    <text x="241" y="128" text-anchor="middle" font-size="10" fill="#3A2E1C">30 ft</text>
-    <text x="241" y="139" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">(3 px = 1 ft)</text>
+  <g transform="translate(1110, 130)">
+    <circle r="28" fill="#F7EFD8" stroke="#6B4F2A" stroke-width="1.2"/>
+    <path d="M 0 -24 L 5 0 L 0 24 L -5 0 Z" fill="#6B4F2A"/>
+    <text y="-32" text-anchor="middle" font-size="12" font-weight="bold" fill="#3A2E1C">N</text>
+    <text y="42" text-anchor="middle" font-size="12" fill="#3A2E1C">S</text>
   </g>
-
-  <!-- (No compass rose: north-at-top is the invariant convention - GM 2026-07.) -->
 
   <!-- ============================================================ -->
   <!-- THE COMPOUND WALL                                              -->
@@ -108,7 +108,7 @@
     <rect x="194" y="362" width="12" height="8"/>
     <rect x="194" y="400" width="12" height="8"/>
   </g>
-  <text x="228" y="360" text-anchor="start" font-size="8" font-style="italic" fill="#5C4830">kitchen postern</text>
+  <text x="188" y="415" text-anchor="end" font-size="8" font-style="italic" fill="#5C4830">kitchen postern</text>
   <!-- Service-gate posts (south wall, just east of the stables) -->
   <g fill="#2D2A24">
     <rect x="384" y="744" width="16" height="14"/>
@@ -165,7 +165,7 @@
   <g>
     <rect x="220" y="500" width="108" height="96" fill="#F2EFE4" stroke="#4A3318" stroke-width="2.5"/>
     <rect x="318" y="541" width="8" height="14" fill="#4A3318"/>
-    <text x="274" y="553" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">tax archive</text>
+    <text x="274" y="553" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">tithe archive</text>
   </g>
 
   <!-- Office hall: the working block. Rear day rooms (day office + official
@@ -211,7 +211,7 @@
     <rect x="822" y="620" width="10" height="8" fill="#4A3318"/>
     <rect x="894" y="620" width="10" height="8" fill="#4A3318"/>
     <rect x="968" y="620" width="10" height="8" fill="#4A3318"/>
-    <text x="900" y="562" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">granary</text>
+    <text x="900" y="562" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">rice granary</text>
   </g>
 
   <!-- Rain barrels (fire water beside the granary, against the east wall -
@@ -436,13 +436,23 @@
     <path d="M 600 762 L 600 778"/>
   </g>
 
-  <!-- (scale bar moved to the top-left beside the title) -->
 
-  <!-- (The old bottom-left "Sizing notes" box is gone: its content was
-       generic program fact - staffing facts live in buildings.md and the
-       design-notes file, not on the sheet. Ochiba runs the default staffing,
-       so there is nothing instance-specific to say.) -->
+  <g transform="translate(40, 760)">
+    <rect x="0" y="0" width="300" height="96" fill="#F7EFD8" stroke="#6B4F2A" stroke-width="1.2"/>
+    <text x="150" y="20" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">Staffing notes</text>
+    <text x="10" y="42" font-size="10" fill="#3A2E1C">~15 useful samurai in the county town, the full</text>
+    <text x="10" y="56" font-size="10" fill="#3A2E1C">working platoon; cooks, grooms, servants in the</text>
+    <text x="10" y="70" font-size="10" fill="#3A2E1C">kitchen wing and stables; clerks commute from town.</text>
+  </g>
 
-  <!-- (No key box: the sheet is labeled directly - GM 2026-07. Palette
-       semantics live in buildings.md/SKILL.md.) -->
+  <g transform="translate(870, 760)">
+    <rect x="0" y="0" width="290" height="110" fill="#F7EFD8" stroke="#6B4F2A" stroke-width="1.2"/>
+    <text x="145" y="20" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">Key</text>
+    <rect x="10" y="32" width="18" height="12" fill="#DDB87A" stroke="#5A3F1E" stroke-width="1"/>
+    <text x="34" y="42" font-size="10" fill="#3A2E1C">lord's buildings (residence)</text>
+    <rect x="10" y="50" width="18" height="12" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1"/>
+    <text x="34" y="60" font-size="10" fill="#3A2E1C">inner garden</text>
+    <rect x="10" y="68" width="18" height="12" fill="url(#granary-slats)" stroke="#5A3F1E" stroke-width="1"/>
+    <text x="34" y="78" font-size="10" fill="#3A2E1C">granary</text>
+  </g>
 </svg>

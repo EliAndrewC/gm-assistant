@@ -78,9 +78,10 @@ _OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleu
                     "ossuaries", "ministries", "fire_towers", "byres")
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
-_OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs")
+_OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs", "docks")
 _OVERLAP_LINEAR = ("fields", "fallow_patches", "flower_fields", "streams", "channels", "town_streets",
-                   "alleys", "lanes", "wards", "ponds", "pastures", "forests", "commons", "dry_plots", "marshes")   # linear / area features structs avoid
+                   "alleys", "lanes", "wards", "ponds", "pastures", "forests", "commons", "dry_plots", "marshes",
+                   "canals", "roads")   # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers)
 _OVERLAP_EXEMPT = {
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "farm_sheds": "a farmstead's grain-storehouse kura drawn as an annex abutting its own farmhouse's back wall (farm_sheds_attached verifies the attachment)",
@@ -93,6 +94,8 @@ _OVERLAP_EXEMPT = {
     "bridges": "a bridge spans a stream/moat to carry a road over it (intentional water + road overlap)",
     "kido": "a ward gate sits ON the ward fence at the point a lane passes through it",
     "inspection_stations": "an inspection post sited AT the city gate, part of the gate complex (overlaps the gate furniture)",
+    "water_gates": "the shuimen arch stands ON the city wall over its canal - intentional, like the kido on its fence",
+    "jetties": "planked mooring fingers running out over the river water, like bridge decks",
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
 }
@@ -125,6 +128,32 @@ def seg_closest(px, py, a, b):
 def seg_dist(px, py, a, b):
     cx, cy = seg_closest(px, py, a, b)
     return math.hypot(px - cx, py - cy)
+
+
+def pt_to_rect(px, py, rect):
+    """Shortest distance from a point to a (possibly rotated) rectangle footprint; 0 if the point is inside.
+    Un-rotates the point into the rect's local frame, clamps to the half-extents, and measures the overhang."""
+    a = math.radians(rect.get("rot", 0))
+    ca, sa = math.cos(a), math.sin(a)
+    dx, dy = px - rect["x"], py - rect["y"]
+    lx, ly = dx * ca + dy * sa, -dx * sa + dy * ca   # local coords (rect axis-aligned here)
+    ox = max(abs(lx) - rect["w"] / 2, 0.0)
+    oy = max(abs(ly) - rect["h"] / 2, 0.0)
+    return math.hypot(ox, oy)
+
+
+def seg_to_rect_dist(a, b, rect):
+    """Shortest distance between segment a-b and a (possibly rotated) rectangle; 0 if they touch/cross. Needed
+    where a thin corridor can thread THROUGH a wide footprint BETWEEN its corners - corner-sampling misses that.
+    Standard convex result: 0 on intersection, else min(endpoint-to-rect, rect-corner-to-segment)."""
+    corners = rect_corners(rect)
+    for i in range(4):
+        if segments_cross(a, b, corners[i], corners[(i + 1) % 4]):
+            return 0.0
+    if pt_to_rect(a[0], a[1], rect) == 0 or pt_to_rect(b[0], b[1], rect) == 0:
+        return 0.0
+    return min(min(pt_to_rect(a[0], a[1], rect), pt_to_rect(b[0], b[1], rect)),
+               min(seg_dist(cx, cy, a, b) for cx, cy in corners))
 
 
 # the 2 patron fortunes of each Great Clan - a town defaults to one monastery for each
@@ -183,6 +212,16 @@ def poly_dist(px, py, poly):
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
 
+def poly_gap(a, b):
+    """Minimum distance between two polygons; 0.0 if they overlap, touch, or one contains the other."""
+    na, nb = len(a), len(b)
+    if any(point_in_poly(x, y, b) for x, y in a) or any(point_in_poly(x, y, a) for x, y in b):
+        return 0.0
+    if any(segments_cross(a[i], a[(i + 1) % na], b[j], b[(j + 1) % nb]) for i in range(na) for j in range(nb)):
+        return 0.0
+    return min(min(poly_dist(x, y, b) for x, y in a), min(poly_dist(x, y, a) for x, y in b))
+
+
 def check_theater_stage(M, check):
     """The theater stage's siting. It BELONGS to a temple/monastery precinct (a temple OPERA STAGE / shrine
     NOH stage), the audience gathering in the open ground between stage and hall, the stage FACING the hall:
@@ -211,10 +250,13 @@ def check_theater_stage(M, check):
         lines.append(("the moat", M["moat"], M.get("moat_width", 26) / 2 + 4))
     if M.get("road"):
         lines.append(("a road", M["road"], M.get("road_width", 26) / 2))
+    if M.get("ring_road"):
+        lines.append(("the ring road", M["ring_road"], M.get("ring_road_width", 15) / 2))
     lines += [("a street", st["pts"], st.get("w", 18) / 2) for st in M.get("town_streets", [])]
     lines += [("an alley", a["pts"], a.get("w", 10) / 2) for a in M.get("alleys", [])]
     lines += [("a stream", s["poly"], s.get("w", 9) / 2) for s in M.get("streams", [])]
     lines += [("a channel", c["poly"], c.get("w", 2.5) / 2 + 2) for c in M.get("channels", [])]
+    lines += [("the canal", c["poly"], c.get("w", 12) / 2 + 2) for c in M.get("canals", [])]
     for nm, pts, hw in lines:
         if len(pts) >= 2 and footprint_on_line(sc, pts, hw):
             hits.append(nm)
@@ -397,6 +439,20 @@ def check_fire_features(M, check):
         check("fire_tower_clear_of_wells", not on_well,
               f"fire tower(s) {on_well} stand on (or within {STANDOFF} px of) a wellhead - a hinomi-yagura's "
               f"footing must not block a quarter's shared draw-point; nudge the tower off the well court")
+    # ... and clear of GRAVEYARDS (GM, 2026-07): a watch-tower's braced footing planted among
+    # the graves reads as a plain collision - the dead get the same daylight as the living
+    cems = M.get("cemeteries", [])
+    if towers and cems:
+        on_grave = []
+        for t in towers:
+            tc = rect_corners({"x": t["x"], "y": t["y"], "w": t["w"] + 2 * STANDOFF, "h": t["h"] + 2 * STANDOFF, "rot": 0})
+            for cm in cems:
+                if sat_overlap(tc, rect_corners({"x": cm["x"], "y": cm["y"], "w": cm["w"], "h": cm["h"], "rot": 0})):
+                    on_grave.append((round(t["x"]), round(t["y"])))
+                    break
+        check("fire_tower_clear_of_graveyards", not on_grave,
+              f"fire tower(s) {on_grave} stand on (or within {STANDOFF} px of) a graveyard - move the "
+              f"watch-tower off the burial ground")
 
 
 def water_setback(width):
@@ -615,7 +671,7 @@ DEFAULT_MANIFEST = {
 # a building's role for the population/frontage maths. A DWELLING houses one ~5-person household;
 # a BUSINESS is a commercial frontage (the merchant's house+shop is BOTH - dual-use); everything
 # else (civic, government, granary kura, barns, gate furniture) houses no one and fronts nothing.
-DWELLING_KINDS = {"laborer", "laborer_large", "servant", "burakumin", "samurai", "merchant", "merchant_house", "merchant_large"}
+DWELLING_KINDS = {"laborer", "laborer_large", "servant", "burakumin", "samurai", "samurai_large", "merchant", "merchant_house", "merchant_large"}   # samurai_large was missing (a senior samurai house is a dwelling like every other _large variant) - found when Tango's population count kept landing 5 short of its generator's
 BUSINESS_KINDS = {"shop", "merchant"}
 HOUSEHOLD = 5
 
@@ -783,24 +839,39 @@ def _pond_bbox(M):
     return (c[0] - c[2], c[1] - c[3], c[0] + c[2], c[1] + c[3])
 
 
+def _norm_skip(skip):
+    """Normalise `skip` to a SET of (kind, i) members: None -> {}, else the given iterable of members (so a
+    whole GROUP - a shrine + its churchyard + well - can be skipped at once, not just a single feature)."""
+    return frozenset(skip) if skip else frozenset()
+
+
+def _member_bbox(M, member):
+    """The bbox of one crop-driver member (kind, i) - the pond, a torii list, or a w/h / poly / well dict."""
+    k, i = member
+    return _pond_bbox(M) if k == "pond" else _adv_bbox(M[k][i])
+
+
 def _crop_frame_boxes(M, skip=None):
-    """The bboxes that DRIVE the crop frame (crop-hard kinds + fields' visible extent + pond), minus `skip`."""
+    """The bboxes that DRIVE the crop frame (crop-hard kinds + fields' visible extent + pond), minus `skip`
+    (a single member OR a set of them - a whole relocatable GROUP)."""
+    skip = _norm_skip(skip)
     B = []
     for k in _CROP_DRIVERS:
         for i, o in enumerate(M.get(k) or []):
-            if skip != (k, i):
+            if (k, i) not in skip:
                 B.append(_adv_bbox(o))
     for fd in M.get("fields") or []:
         vb = fd.get("vis_bbox")
         B.append(tuple(vb) if vb else _adv_bbox({"poly": fd["outline"]}))
-    if M.get("pond") and skip != ("pond", 0):
+    if M.get("pond") and ("pond", 0) not in skip:
         B.append(_pond_bbox(M))
     return B
 
 
 def _solid_occupancy(M, skip=None):
     """Everything a relocated feature must AVOID: the frame drivers + fields + forest + marsh + hill. The
-    COMMONS scrub is deliberately excluded - it is sparse grazing waste a pond/feature can simply replace."""
+    COMMONS scrub is deliberately excluded - it is sparse grazing waste a pond/feature can simply replace.
+    (Marsh IS included: a shrine/graveyard landing must be DRY.) `skip` may be a single member or a group."""
     B = _crop_frame_boxes(M, skip)
     for k in ("forest", "marshes"):
         for o in M.get(k) or []:
@@ -815,13 +886,42 @@ def _bbox_frame(B, m=30):
     return (min(b[0] for b in B) - m, min(b[1] for b in B) - m, max(b[2] for b in B) + m, max(b[3] for b in B) + m)
 
 
+def _shrine_group(M, i):
+    """The set of members that move AS ONE with the shrine at religious[i]: the shrine itself, the graveyard
+    it is responsible for (a cemetery within ~300px), its ablution well (~150px), and its torii (~140px). A
+    village shrine and its churchyard are a single sacred precinct - you relocate the whole precinct, not the
+    altar alone - so the crop advisory must weigh them together, not one at a time. See settlements.md."""
+    sh = M["religious"][i]
+    sx, sy = sh["x"], sh["y"]
+    members = {("religious", i)}
+    # the SAME shrine is mirrored into the geometric `shrines` list (parallel footprint records); the mirror
+    # is also a crop-driver, so the group must carry it too or the copy left behind still pins the crop edge.
+    for j, s in enumerate(M.get("shrines") or []):
+        if abs(s["x"] - sx) <= 1 and abs(s["y"] - sy) <= 1:
+            members.add(("shrines", j))
+    for j, cm in enumerate(M.get("cemeteries") or []):
+        if math.hypot(cm["x"] - sx, cm["y"] - sy) <= 300:
+            members.add(("cemeteries", j))
+    for j, wl in enumerate(M.get("wells") or []):
+        if math.hypot(wl["x"] - sx, wl["y"] - sy) <= 150:
+            members.add(("wells", j))
+    for j, t in enumerate(M.get("torii") or []):
+        if math.hypot(t[0] - sx, t[1] - sy) <= 140:
+            members.add(("torii", j))
+    return members
+
+
 def crop_relocatable_singletons(M, min_shrink=150, clear=20):
-    """SOFT ADVISORY (never a gate failure): find a single freely-relocatable feature that ALONE holds a
-    crop_to_content edge out by >= `min_shrink` px, AND for which an equal-size EMPTY landing (clear of all
-    SOLID occupancy) exists INSIDE the tighter frame - so moving that one feature would let the image crop
-    significantly smaller without disturbing anything else. The archetype is an outlying irrigation POND.
-    Only applies to a village/hamlet that crops to content (`meta.view`); a city/town frames bespoke. Returns
-    a list of {kind, at, edge, shrink, landing}; empty when nothing qualifies. See settlements.md 'Crop advisory'."""
+    """SOFT ADVISORY (never a gate failure): find a relocatable CANDIDATE that ALONE holds a crop_to_content
+    edge out by >= `min_shrink` px, AND for which an EMPTY landing (clear of all SOLID occupancy) exists INSIDE
+    the tighter frame - so moving it would let the image crop significantly smaller without disturbing anything
+    else. A candidate is either (a) a single freely-relocatable feature (the archetype: an outlying irrigation
+    POND), or (b) a GROUP that moves as one unit - a village SHRINE together with its churchyard GRAVEYARD (and
+    its ablution well + torii). The group case matters because removing the shrine ALONE leaves the graveyard
+    holding the same crop corner (and vice versa), so neither reads as relocatable singly - only weighed
+    together does the precinct free the corner. Only applies to a village/hamlet that crops to content
+    (`meta.view`). Returns a list of {kind, at, edge, shrink, landing, members}; empty when nothing qualifies.
+    See settlements.md 'Crop advisory'."""
     meta = M.get("meta", {})
     if meta.get("scale") not in ("village", "hamlet") or not meta.get("view"):
         return []
@@ -831,18 +931,33 @@ def crop_relocatable_singletons(M, min_shrink=150, clear=20):
     full = _bbox_frame(full_boxes)
     hill = M.get("hill")
     out = []
-    # a pond that SOURCES a field (a channel frm=pond -> to=field) is a valley-head RESERVOIR: it belongs
-    # UPHILL of the field, so "move it into the frame" would drop it BELOW the field's water-entry - backwards
-    # for a gravity feed. So it is hydrologically anchored (like a hill-shrine) and NOT a relocatable candidate;
-    # its poke past the crop corner is intrinsic. (A standalone/decorative pond with no field feed stays a
-    # candidate.) The right response to a poking valley-head pond is to NUDGE it flush with the field, not move
-    # it - see settlements.md 'Crop advisory'.
-    pond_feeds_field = any(c.get("frm", {}).get("kind") == "pond" and c.get("to", {}).get("kind") == "field"
-                           for c in M.get("channels", []))
-    cands = ([("pond", 0)] if M.get("pond") and not pond_feeds_field else [])
-    cands += [(k, i) for k in _RELOCATABLE if k != "pond" for i in range(len(M.get(k) or []))]
-    for (k, i) in cands:
-        without = _crop_frame_boxes(M, (k, i))
+    # a pond WIRED TO THE FIELD's water is hydrologically anchored (like a hill-shrine), NOT relocatable: a
+    # SOURCE pond (a channel frm=pond -> to=field) belongs UPHILL of the field, so moving it "into the frame"
+    # would drop it below the water-entry (backwards for a gravity feed); a DRAINAGE pond (frm=drain -> to=pond)
+    # belongs at the low foot BELOW the field, so it must poke past the low crop corner. Either way its poke is
+    # intrinsic - the fix is to NUDGE it flush, not move it. (A standalone/decorative pond with no field wiring
+    # stays a candidate.) See settlements.md 'Crop advisory'.
+    pond_wired = any((c.get("frm", {}).get("kind") == "pond" and c.get("to", {}).get("kind") == "field")
+                     or (c.get("frm", {}).get("kind") == "drain" and c.get("to", {}).get("kind") == "pond")
+                     for c in M.get("channels", []))
+    # cands: each entry is (label, members-frozenset, (ox, oy) primary anchor).
+    cands = []
+    if M.get("pond") and not pond_wired:
+        cands.append(("pond", frozenset({("pond", 0)}), (M["pond"][0], M["pond"][1])))
+    for k in _RELOCATABLE:
+        if k == "pond":
+            continue
+        for i, o in enumerate(M.get(k) or []):
+            cands.append((k, frozenset({(k, i)}), (o["x"], o["y"])))
+    # GROUP candidates: a shrine + its churchyard graveyard (+ well + torii) as one movable precinct. Only a
+    # shrine with a real COMPANION (a graveyard/well/torii) is a group - a bare shrine (plus its own `shrines`
+    # mirror record, which always pairs) is just the singleton already considered above.
+    for i, sh in enumerate(M.get("religious") or []):
+        members = _shrine_group(M, i)
+        if any(m[0] in ("cemeteries", "wells", "torii") for m in members):
+            cands.append(("shrine+churchyard", frozenset(members), (sh["x"], sh["y"])))
+    for (kind, members, (ox, oy)) in cands:
+        without = _crop_frame_boxes(M, members)
         if not without:
             continue
         f2 = _bbox_frame(without)
@@ -850,13 +965,13 @@ def crop_relocatable_singletons(M, min_shrink=150, clear=20):
         shrink = max(edges.values())
         if shrink < min_shrink:
             continue
-        o = M["pond"] if k == "pond" else M[k][i]
-        ox, oy = (o[0], o[1]) if k == "pond" else (o["x"], o["y"])
-        if hill and k != "pond" and in_ellipse(ox, oy, hill):
+        is_pond = ("pond", 0) in members
+        if hill and not is_pond and in_ellipse(ox, oy, hill):
             continue                                          # terrain-anchored (a hill-shrine can't move to flat ground)
-        fb = _pond_bbox(M) if k == "pond" else _adv_bbox(o)
-        w, h = fb[2] - fb[0], fb[3] - fb[1]
-        occ = _solid_occupancy(M, (k, i))
+        mb = [_member_bbox(M, m) for m in members]            # the group's COMBINED footprint moves as one rigid unit
+        w = max(b[2] for b in mb) - min(b[0] for b in mb)
+        h = max(b[3] for b in mb) - min(b[1] for b in mb)
+        occ = _solid_occupancy(M, members)
         tb = _bbox_frame(without, 0)                          # the TIGHTER content bbox - land here and the crop tightens
         landing = None                                        # (a feature wider/taller than tb never enters the loops -> stays None)
         gy = tb[1] + h / 2
@@ -871,9 +986,158 @@ def crop_relocatable_singletons(M, min_shrink=150, clear=20):
             gy += 25
         if landing is None:
             continue
-        out.append({"kind": k, "at": (round(ox), round(oy)),
-                    "edge": max(edges, key=edges.get), "shrink": round(shrink), "landing": landing})
+        out.append({"kind": kind, "at": (round(ox), round(oy)), "edge": max(edges, key=edges.get),
+                    "shrink": round(shrink), "landing": landing, "members": len(members)})
     return out
+
+
+# canonical residential DENSITY: dwellings per px^2 of residential-capable ground (interior minus
+# overhead) that a well-packed provincial-city quarter delivers. Calibrated on Tango, a GM-accepted
+# 3,000-person city: 562 dwellings on ~444k px^2 of non-overhead, non-field interior = ~1.27/1000.
+RHO_CANONICAL = 0.00127
+
+
+def city_capacity(M, step=8, grid_step=None):
+    """SPACE-BUDGET ANALYSIS: is the city wall sized to hold its target population?
+
+    Guessing a wall size and then grinding placements is backwards - the honest process is to
+    MEASURE. This grid-samples the walled interior (every `step` px), classes each cell as
+    dwelling / civic-overhead / water / trunk-circulation / residential-street / field / OPEN,
+    reads the density the built residential quarters actually achieve, and projects whether
+    filling the OPEN ground would reach the target. Returns a dict with a verdict
+    ('too_small' | 'too_big' | 'about_right'), the space budget, and a suggested wall SCALE so
+    the wall can be resized ONCE to the right size rather than by trial and error. A city WITH
+    an agricultural district commits its slack to fields (canon), so field cells are excluded
+    from both the residential ground and the wasted-open ground."""
+    meta = M.get("meta", {})
+    wall = M.get("wall")
+    pop = meta.get("population")
+    if not wall or not pop:
+        return None
+    T = pop / 5.0
+    bound = M.get("ring_road") or (list(wall) + [wall[0]])
+    xs = [p[0] for p in bound]
+    ys = [p[1] for p in bound]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+
+    def _rects(items, vscale=1.0):
+        out = []
+        for it in items:
+            if "w" not in it:
+                continue
+            out.append(rect_corners({"x": it["x"], "y": it["y"], "w": it["w"], "h": it["h"] * vscale, "rot": it.get("rot", 0)}))
+        return out
+
+    dwell_r = _rects([b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS])
+    dwell_r += [rect_corners(_struct_rect(h)) for h in M.get("houses", []) if point_in_poly(h["x"], h["y"], wall)]
+    civic = (M.get("ministries", []) + M.get("religious", []) + M.get("flophouses", [])
+             + M.get("storehouses", []) + M.get("cemeteries", []) + M.get("mausoleums", [])
+             + M.get("merchant_estates", []) + M.get("inspection_stations", [])
+             + [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "inn", "stables")]
+             + ([M["governor_mansion"]] if M.get("governor_mansion") else [])
+             + M.get("docks", []))
+    civic_r = _rects(civic)
+    ts = M.get("theater_stage")
+    if ts:
+        civic_r.append(rect_corners({"x": ts["x"], "y": ts["y"], "w": ts["w"], "h": ts["h"] * 1.3, "rot": ts.get("rot", 0)}))
+    field_polys = [f["outline"] for f in M.get("fields", []) if point_in_poly((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2, wall)]
+    field_polys += [dp["poly"] for dp in M.get("dry_plots", []) if point_in_poly(dp["poly"][0][0], dp["poly"][0][1], wall)]
+    water = ([(M["moat"], M.get("moat_width", 22) / 2)] if M.get("moat") else []) + [(cc["poly"], cc.get("w", 12) / 2) for cc in M.get("canals", [])]
+    trunk = ([(M["road"], M.get("road_width", 26) / 2)] if M.get("road") else [])
+    trunk += [(r["pts"], r["w"] / 2) for r in M.get("roads", [])]
+    if M.get("ring_road"):
+        trunk.append((M["ring_road"], M.get("ring_road_width", 15) / 2 + 24))
+    res_st = [(s["pts"], s.get("w", 12) / 2) for s in M.get("town_streets", [])] + [(a["pts"], a.get("w", 8) / 2) for a in M.get("alleys", [])]
+
+    def _on(gx, gy, lines):
+        return any(len(pts) >= 2 and any(seg_dist(gx, gy, pts[k], pts[k + 1]) < hw for k in range(len(pts) - 1)) for pts, hw in lines)
+
+    c = {"dwell": 0, "civic": 0, "water": 0, "trunk": 0, "res_st": 0, "field": 0, "open": 0}
+    pond = M.get("pond")
+    gx = x0
+    while gx <= x1:
+        gy = y0
+        while gy <= y1:
+            if point_in_poly(gx, gy, wall):
+                if any(point_in_poly(gx, gy, r) for r in dwell_r):
+                    c["dwell"] += 1
+                elif any(point_in_poly(gx, gy, r) for r in civic_r):
+                    c["civic"] += 1
+                elif (pond and in_ellipse(gx, gy, pond)) or _on(gx, gy, water):
+                    c["water"] += 1
+                elif any(point_in_poly(gx, gy, p) for p in field_polys):
+                    c["field"] += 1
+                elif _on(gx, gy, trunk):
+                    c["trunk"] += 1
+                elif _on(gx, gy, res_st):
+                    c["res_st"] += 1
+                else:
+                    c["open"] += 1
+            gy += step
+        gx += step
+    cell = step * step
+    A = {k: v * cell for k, v in c.items()}
+    ring_area = sum(A.values()) or 1
+    # OPTIONAL coarse ASCII map of the interior classification, so the report shows WHERE the
+    # open ground is (not just how much) - the operator can then aim new quarters at it rather
+    # than guess. Reuses the rects/lines already built above; a second coarse sweep is cheap.
+    grid_rows = None
+    if grid_step:
+        _sym = {"dwell": "D", "civic": "C", "water": "~", "trunk": "#", "res_st": "+", "field": "F", "open": "."}
+        grid_rows = []
+        gy = y0
+        while gy <= y1:
+            row = []
+            gx = x0
+            while gx <= x1:
+                if not point_in_poly(gx, gy, wall):
+                    row.append(" ")
+                elif any(point_in_poly(gx, gy, r) for r in dwell_r):
+                    row.append(_sym["dwell"])
+                elif any(point_in_poly(gx, gy, r) for r in civic_r):
+                    row.append(_sym["civic"])
+                elif (pond and in_ellipse(gx, gy, pond)) or _on(gx, gy, water):
+                    row.append(_sym["water"])
+                elif any(point_in_poly(gx, gy, p) for p in field_polys):
+                    row.append(_sym["field"])
+                elif _on(gx, gy, trunk):
+                    row.append(_sym["trunk"])
+                elif _on(gx, gy, res_st):
+                    row.append(_sym["res_st"])
+                else:
+                    row.append(_sym["open"])
+                gx += grid_step
+            grid_rows.append("".join(row))
+            gy += grid_step
+    D = len([b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]) + sum(1 for h in M.get("houses", []) if point_in_poly(h["x"], h["y"], wall))
+    # residential-CAPABLE ground = the interior minus the fixed overhead (government + temples +
+    # wharf/dock/gates/shops, water, trunk roads + ring road + wall berm, and any committed field
+    # ground). At a well-packed quarter's canonical density this ground holds INHERENT_CAP dwellings
+    # - what the wall CAN hold, independent of how well the current gen happens to pack it.
+    overhead = A["civic"] + A["water"] + A["trunk"] + A["field"]
+    res_capable = A["dwell"] + A["res_st"] + A["open"]        # everything that could be residential
+    inherent_cap = res_capable * RHO_CANONICAL                # dwellings the wall CAN hold, well-packed
+    open_frac = A["open"] / ring_area
+    # size the wall so its residential-capable ground holds T at the canonical density (+5% slack).
+    need_res = (T / RHO_CANONICAL) * 1.05
+    scale = math.sqrt((overhead + need_res) / ring_area)
+    # UNDERPACKED tracks the population check's own tolerance (population_tol, default 7%): if the
+    # placed dwellings fall below (1-tol)*T the population check WILL fail, so the capacity verdict
+    # must say "add dwellings" at exactly that line - not a looser one that reads "about right"
+    # while population is still red.
+    pop_tol = meta.get("population_tol", 0.07)
+    if inherent_cap < 0.9 * T:
+        verdict = "too_small"                                # even well-packed the wall cannot hold T
+    elif inherent_cap > 1.4 * T:
+        verdict = "too_big"                                  # far more room than T needs
+    elif D < (1 - pop_tol) * T:
+        verdict = "underpacked"                              # the WALL is fine; the placement is too sparse
+    else:
+        verdict = "about_right"
+    return {"verdict": verdict, "target_dwellings": round(T), "placed": D, "inherent_capacity": round(inherent_cap),
+            "ring_area": round(ring_area), "res_capable_area": round(res_capable), "overhead_area": round(overhead),
+            "open_frac": round(open_frac, 3), "suggested_wall_scale": round(scale, 3), "areas": {k: round(v) for k, v in A.items()},
+            "grid": grid_rows, "grid_origin": (round(x0), round(y0)), "grid_step": grid_step}
 
 
 def gate(M, verbose=True):
@@ -938,7 +1202,17 @@ def gate(M, verbose=True):
         # farmers - so a city's farmhouses (M["houses"]) are excluded entirely from the figure. A TOWN's
         # depicted farmhouses ARE its (partial) county farmer cohort, so they DO count there.
         urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS)
-        dwellings = urban if scale == "city" else len(houses) + urban
+        if scale == "city" and meta.get("agricultural_district") and M.get("wall"):
+            # the unusual agricultural-district city (Tango's canon deviation) HOUSES its in-wall
+            # farmers: they are walled residents and count toward the declared figure - the
+            # budgets' zero-farmer assumption is precisely what agricultural_district overrides.
+            # Surrounding (extramural) farmhouses still do not count.
+            inwall_farms = sum(1 for h in houses if point_in_poly(h["x"], h["y"], M["wall"]))
+            dwellings = urban + inwall_farms
+        elif scale == "city":
+            dwellings = urban
+        else:
+            dwellings = len(houses) + urban
         est = dwellings * HOUSEHOLD
         pop = meta["population"]
         tol = meta.get("population_tol", 0.07)   # the map should DELIVER the declared figure, not merely be in a wide band
@@ -949,6 +1223,23 @@ def gate(M, verbose=True):
               f"never the shops, government offices, flophouses, kura, gate furniture{' or any farmhouses (city farmers are not in the ~3,000)' if scale == 'city' else ''}; "
               f"place enough dwellings to hit the declared figure")
 
+    # IS THE WALL THE RIGHT SIZE FOR THE POPULATION? A space-budget analysis, so "the wall is
+    # too big / too small" becomes a first-class, automated judgement instead of trial and error.
+    # city_capacity() grid-samples the interior, subtracts the fixed overhead (government, temples,
+    # wharf, gates, water, trunk roads + ring road + berm, committed fields), and asks whether the
+    # residential-capable ground - at a well-packed quarter's canonical density - can hold the
+    # target. TOO_SMALL / TOO_BIG are WALL faults (resize by the suggested scale); UNDERPACKED means
+    # the wall is right but the placement is sparse (densify - population_consistent catches that
+    # separately). See settlements.md "Sizing the wall to the population".
+    if scale == "city" and meta.get("population"):
+        cap = city_capacity(M)
+        if cap:
+            check("city_wall_sized_to_population", cap["verdict"] not in ("too_small", "too_big"),
+                  f"the wall is {cap['verdict'].replace('_', ' ')} for a population of {meta['population']} "
+                  f"(target {cap['target_dwellings']} dwellings; the ring holds ~{cap['inherent_capacity']} well-packed, "
+                  f"open fraction {cap['open_frac']}) - resize the wall by the suggested scale x{cap['suggested_wall_scale']} "
+                  f"(>1 enlarge, <1 shrink), then re-run; do NOT grind placements against a mis-sized wall")
+
     # ALMOST all shops front a street (commerce wants the street); POOR housing (laborer/burakumin)
     # mostly packs the block INTERIOR, reached by alleys, not the paved street frontage. (The towns
     # set the template: businesses on the frontage via s.frontage, dwellings interior via s.pack.)
@@ -956,7 +1247,10 @@ def gate(M, verbose=True):
         st_lines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
 
         def on_a_street(b):
-            return any(seg_dist(b["x"], b["y"], sp[i], sp[i + 1]) < 85 for sp in st_lines for i in range(len(sp) - 1))
+            # 85 REAL FEET of a street centerline (converted at the declared scale): the fixed
+            # 85px was tuned at the towns' 1 ft/px grain and would call most of a 3 ft/px city
+            # "on a street" (85px there is 255 ft - two full blocks)
+            return any(seg_dist(b["x"], b["y"], sp[i], sp[i + 1]) < 85 / meta.get("ftpx", 1) for sp in st_lines for i in range(len(sp) - 1))
         biz = [b for b in M.get("buildings", []) if b.get("kind") in BUSINESS_KINDS]
         if biz:
             off = [b for b in biz if not on_a_street(b)]
@@ -1003,6 +1297,12 @@ def gate(M, verbose=True):
                 cx, cy = (f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2
                 if not point_in_poly(cx, cy, M["wall"]):
                     continue                               # only the in-wall plots
+                # VEGETABLE tracts are exempt from the farmstead ring: urban garden ground is
+                # worked by the residents of the surrounding quarters (well/night-soil fed
+                # intensive plots), not by dedicated in-wall farm households - only in-wall
+                # PADDY carries the village-density farmhouse ring
+                if f.get("kind") != "paddy":
+                    continue
                 edge = onmap_field_edge(f["outline"], EX0, EY0, EX1, EY1)
                 if edge < 120:
                     continue
@@ -1341,6 +1641,23 @@ def gate(M, verbose=True):
         bad_c = [1 for sc in corners for c in channels_struct if on_channel(sc, c["poly"])]
         check("no_structure_on_channel", not bad_c, f"{len(bad_c)} structure(s) overlap an irrigation channel")
 
+    # no structure overlaps the navigable CARGO CANAL - the same full-footprint test as a channel,
+    # but the canal is a WIDER watercourse (a poling barge, not a field ditch), so its half-width is
+    # honoured. A merchant house / warehouse fronts the quay but must not stand IN the water (GM,
+    # 2026-07: a merchant_large sat on Nagahara's canal - there was no canal-vs-struct check at all,
+    # this being the first city with a canal). Jetties/water-gates/bridges legitimately cross it (EXEMPT).
+    canals_struct = M.get("canals", [])
+    if canals_struct:
+        def on_canal(sc, cp, chw):
+            if any(seg_dist(cx, cy, cp[k], cp[k + 1]) < chw for (cx, cy) in sc for k in range(len(cp) - 1)):
+                return True
+            if any(point_in_poly(rx, ry, sc) for rx, ry in cp):
+                return True
+            return any(segments_cross(cp[k], cp[k + 1], sc[e], sc[(e + 1) % 4])
+                       for k in range(len(cp) - 1) for e in range(4))
+        bad_cn = [1 for sc in corners for c in canals_struct if on_canal(sc, c["poly"], c.get("w", 12) / 2 + 2)]
+        check("no_structure_on_canal", not bad_cn, f"{len(bad_cn)} structure(s) overlap the cargo canal")
+
     # no structure overlaps the town wall (the thick rampart stroke)
     wallpts = M.get("wall")
     if wallpts:
@@ -1419,8 +1736,13 @@ def gate(M, verbose=True):
               f"narrowest stream {min(strm_ws)} px is not >= 2.5x the widest channel {max(chan_ws)} px - "
               f"a natural creek must read clearly heavier than an irrigation ditch, not as its sibling")
     if strm_ws and moat_w:
-        check("moat_is_heaviest_watercourse", max(strm_ws) <= moat_w * 1.05,
-              f"a stream ({max(strm_ws)} px) is wider than the city moat ({moat_w} px) - the moat is the "
+        # a RIVER-bank city's river legitimately outweighs its dug moat (the river IS the heavier
+        # defense - it closes the water ring on its flank), so the river's own stream record is
+        # excluded from the comparison; every OTHER stream still respects the moat's weight
+        rv_w = (M.get("river") or {}).get("w")
+        strm_cmp = [w_ for w_ in strm_ws if rv_w is None or w_ != rv_w]
+        check("moat_is_heaviest_watercourse", not strm_cmp or max(strm_cmp) <= moat_w * 1.05,
+              f"a stream ({max(strm_cmp or [0])} px) is wider than the city moat ({moat_w} px) - the moat is the "
               f"heaviest watercourse; a feeder stream may equal it (conservation of flow) but not exceed it")
     if chan_ws and moat_w:
         check("moat_dwarfs_ditches", moat_w >= 4.0 * max(chan_ws),
@@ -1524,6 +1846,8 @@ def gate(M, verbose=True):
     for f in fields:
         if runs_off_edge(f["outline"]):
             continue   # a field running off the map has its farmhouses implied off-map too
+        if f.get("kind") == "vegetable":
+            continue   # urban garden tracts are worked by the surrounding quarters, not farmsteads
         ring = [h for h in houses if poly_dist(h["x"], h["y"], f["outline"]) <= ADJ]
         area = (f["bbox"][2] - f["bbox"][0]) * (f["bbox"][3] - f["bbox"][1])
         need = 5 if area > 80000 else 3
@@ -1787,13 +2111,35 @@ def gate(M, verbose=True):
                   f"{len(on_sacred)} well(s) overlap a shrine hall or torii arch at {on_sacred[:4]} - a wellhead "
                   f"stands BESIDE the shrine, never on the hall or under the gateway; place the shrine + torii "
                   f"BEFORE the wells so they are blocked out")
+        if wells:
+            # a WELLHEAD is a clean draw-point: no tree canopy may reach it (a well lost under the wood reads
+            # wrong). Gather every tree feature - the communal fengshui GROVE clumps (windbreak/water-mouth/copse,
+            # each a centre + drawn radius), the per-house YASHIKIRIN grove rects, a big FOREST, and the managed-
+            # WOODLAND coppice patches - and fire on any well whose drawn head (vr) overlaps one. Fix at placement:
+            # the grove is placed AFTER the wells and skips them (with a keep-out wide enough for the canopy).
+            _clumps = [(cx, cy, g.get("r", 6)) for g in M.get("village_groves", []) for cx, cy in g.get("clumps", [])]
+            _grects = [(g["x"], g["y"], g["w"], g["h"]) for g in M.get("groves", [])]
+            _forest = M.get("forest")
+            _wl_polys = [c["poly"] for c in M.get("commons", []) if c.get("role") == "woodland"]
+            on_trees = []
+            for wl in wells:
+                wx, wy, vr = wl["x"], wl["y"], wl.get("vr", wl.get("r", 8))
+                if (any(math.hypot(wx - cx, wy - cy) < vr + cr for cx, cy, cr in _clumps)
+                        or any(abs(wx - gx) < gw / 2 + vr and abs(wy - gy) < gh / 2 + vr for gx, gy, gw, gh in _grects)
+                        or (_forest and point_in_poly(wx, wy, _forest))
+                        or any(point_in_poly(wx, wy, p) for p in _wl_polys)):
+                    on_trees.append((round(wx), round(wy)))
+            check("wells_clear_of_trees", not on_trees,
+                  f"well(s) {on_trees[:4]} sit UNDER trees - a wellhead is a clean draw-point, not lost in the wood; "
+                  f"keep it clear of the fengshui grove, the per-house groves, the forest, and the coppice patches "
+                  f"(place the wells BEFORE the grove so it skips them, with a well keep-out wide enough for the canopy)")
         if dwell:
             check("settlement_has_wells", len(wells) >= max(1, round(len(dwell) / 25)),
                   f"a {scale} of {len(dwell)} households has only {len(wells)} communal well(s) - every settlement "
                   f"keeps wells (about one per 20-25 households); scatter them among the dwellings with s.place_wells(...)")
             lines = [c["poly"] for c in M.get("channels", [])] + [st["poly"] for st in M.get("streams", [])] + ([M["moat"]] if M.get("moat") else [])
             pond = M.get("pond")
-            REACH = 380
+            REACH = round(760 / float(meta.get("ftpx") or meta.get("ft_per_px") or 2.0))   # ~760 ft, in px at this map's scale (380 at 2 ft/px)
             dry = []
             for h in dwell:
                 d = min((math.hypot(h["x"] - wl["x"], h["y"] - wl["y"]) for wl in wells), default=1e9)
@@ -2023,7 +2369,7 @@ def gate(M, verbose=True):
             # m^2; 1 se = 30 tsubo ~ 99 m^2). We sum ALL of a household's garden beds (a fragmented plot is still
             # one household's garden) and require the TOTAL in that band. WHY the numbers: settlements.md "Dooryard
             # kitchen gardens" (area grounding). Scale override via meta.ft_per_px for any non-standard map.
-            ft_per_px = float(meta.get("ft_per_px", 2.0))
+            ft_per_px = float(meta.get("ftpx") or meta.get("ft_per_px") or 2.0)   # the map's real scale (village 2, hamlet 1)
             m2_per_px2 = (ft_per_px * 0.3048) ** 2           # ft/px -> m per px, squared -> m^2 per px^2
             GARDEN_M2_MIN, GARDEN_M2_MAX = 10.0, 140.0
             by_house = {}
@@ -2105,6 +2451,71 @@ def gate(M, verbose=True):
             check("village_trees_unshade_yards_and_gardens", not vg_shaded,
                   f"a village-grove tree sits in the southern sun-corridor of yard/garden(s) {vg_shaded[:3]} - it would "
                   f"shade the drying/growing ground; keep the scatter + belts out of the strip south of any yard or garden")
+            # EAST SUN (option): a kitchen garden on a house's lee/EAST side loses its MORNING sun if a neighbour's
+            # grove arm (or a copse) stands hard against its east. Where a small SOUTHWARD nudge into open ground
+            # would clear it (the tree then falls to the garden's NE), the placement takes it (_relax_gardens_south).
+            # This fires ONLY on an AVOIDABLE case - a garden still east-shaded though a clear south-shift existed -
+            # so a garden genuinely boxed in to the south (paddy/lane/neighbour) is exempt. WHY: settlements.md 'gardens'.
+            # scoped to the BUNDLE-path farmsteads (villages + to-scale hamlets), where _relax_gardens_south runs;
+            # a town/city places its outside farms on the legacy path (no south-nudge), so the rule does not apply.
+            if groves and meta.get("toscale", scale == "village"):
+                _band = 22
+                _hh = {(round(h["x"]), round(h["y"])): h["h"] for h in houses}
+                _lanes = M.get("lanes", [])
+                _bog = [m["poly"] for m in M.get("marshes", []) if m.get("role") != "pond_fringe" and m.get("poly")]
+                _water = [c["poly"] for c in M.get("channels", [])] + [st["poly"] for st in M.get("streams", [])]
+                _fol = [f["outline"] for f in M.get("fields", []) if f.get("outline")]
+                _hill, _pond = M.get("hill"), M.get("pond")
+
+                def _e_iv(ge, own):
+                    iv = [(gv["y"] - gv["h"] / 2, gv["y"] + gv["h"] / 2) for gv in groves
+                          if tuple(gv.get("of", [])) != own and ge - 2 <= gv["x"] - gv["w"] / 2 < ge + _band]
+                    iv += [(cy - r, cy + r) for cx, cy, r in vg_clumps if ge - 2 <= cx - r < ge + _band]
+                    return iv
+
+                def _shaded(lane, iv):
+                    return any(a < lane[1] and lane[0] < b for a, b in iv)
+
+                def _bed_clear(bx, by, bw, bh, own):
+                    box = (bx - bw / 2, by - bh / 2, bx + bw / 2, by + bh / 2)
+                    for h in houses:
+                        if (round(h["x"]), round(h["y"])) != (round(own[0]), round(own[1])) \
+                                and abs(bx - h["x"]) < (bw + h["w"]) / 2 and abs(by - h["y"]) < (bh + h["h"]) / 2:
+                            return False
+                    for s in yards + groves + gardens + M.get("farm_sheds", []) + M.get("byres", []):
+                        if tuple(s.get("of", [])) == own:                     # skip the garden's OWN yard/grove/beds/shed
+                            continue
+                        if abs(bx - s["x"]) < (bw + s["w"]) / 2 and abs(by - s["y"]) < (bh + s["h"]) / 2:
+                            return False
+                    if any(_box_hits_poly(box, ol) for ol in _fol) or any(_box_hits_poly(box, p) for p in _bog):
+                        return False
+                    for ln in _lanes:
+                        p = ln["pts"]
+                        if any(seg_dist(bx, by, p[k], p[k + 1]) < ln.get("w", 6) / 2 + 2 for k in range(len(p) - 1)):
+                            return False
+                    for wp in _water:
+                        if any(seg_dist(bx, by, wp[k], wp[k + 1]) < 6 for k in range(len(wp) - 1)):
+                            return False
+                    return not ((_hill and in_ellipse(bx, by, _hill)) or (_pond and in_ellipse(bx, by, _pond)))
+
+                east_bad = []
+                for gd in gardens:
+                    gx, gy, gw, gh = gd["x"], gd["y"], gd["w"], gd["h"]
+                    own = tuple(gd.get("of", []))
+                    iv = _e_iv(gx + gw / 2, own)
+                    if not _shaded((gy - gh / 2, gy + gh / 2), iv):
+                        continue                                             # not currently east-shaded
+                    hh = _hh.get((round(own[0]), round(own[1])), gh) if own else gh
+                    maxshift, dy = gh + hh + 6, 4
+                    while dy <= maxshift:
+                        if not _shaded((gy + dy - gh / 2, gy + dy + gh / 2), iv) and _bed_clear(gx, gy + dy, gw, gh, own):
+                            east_bad.append((round(gx), round(gy)))          # a clear south-shift existed -> avoidable
+                            break
+                        dy += 4
+                check("gardens_unshaded_from_east", not east_bad,
+                      f"kitchen garden(s) {east_bad[:4]} sit with a tree hard against their EAST (losing the morning sun) "
+                      f"though a small SOUTHWARD shift into open ground would clear it - nudge the garden south of the "
+                      f"tree (the placement's _relax_gardens_south does this; a garden truly boxed in south is exempt)")
             # SCALE: the typical grove must read as the LARGEST homestead appurtenance - a real stand of dozens
             # of trees, not a clump. The median grove's total footprint (its arms) must be >= ~0.75x the house
             # it shelters (the spacious farms run well above; a single-arm grove on a cramped farm pulls the
@@ -2224,6 +2635,26 @@ def gate(M, verbose=True):
                   f"village grove(s) sit IN a flooded paddy (centre over water): {vg_in_paddy[:3]} - the fengshui "
                   f"windbreak stands on dry ground at the cluster's back and entrance, never out in the paddy")
 
+            # A grove clump (a tree blob, radius r) may abut a farmstead - trees stand right up against a house
+            # wall - but it must NOT OVERLAP a building/yard/garden footprint (a tree drawn ON the roof reads
+            # wrong). Both the placement (the village_grove keep-out uses the clump's FULL radius) and this check
+            # enforce it. The nominal blob radius is the measure; canopy leaves spilling a few px onto the eaves
+            # are "adjacent," which is fine. Covers the whole homestead: house, threshing yard, kitchen garden,
+            # draft byre, farm shed. WHY (trees beside, not on, the buildings): settlements.md 'Village windbreak'.
+            _clm = [(cx, cy, g.get("r", 6)) for g in vgroves for cx, cy in g.get("clumps", [])]
+            on_struct = []
+            for k in ("houses", "threshing_yards", "gardens", "byres", "farm_sheds"):
+                for o in M.get(k, []):
+                    rect = _struct_rect(o)
+                    for cx, cy, r in _clm:
+                        if pt_to_rect(cx, cy, rect) < r - 1:      # real penetration (just-touching is allowed)
+                            on_struct.append((k, round(o["x"]), round(o["y"])))
+                            break
+            check("grove_clumps_clear_of_structures", not on_struct,
+                  f"{len(on_struct)} farmstead footprint(s) have a grove-clump tree drawn OVER them: {on_struct[:4]} - "
+                  f"a copse/windbreak clump may stand right beside a house but never ON it; widen the village_grove "
+                  f"keep-out to the clump's full radius so the blob settles into the open ground beside the buildings")
+
             # FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far side, BEYOND the back-grove.
             # South China's hills were stripped for fuel/timber over a millennium (open pine + grass + erosion),
             # so past the protected grove is NON-ARABLE waste: coarse grass, brush, scraggly pines - a commons,
@@ -2236,6 +2667,58 @@ def gate(M, verbose=True):
             check("commons_clear_of_paddies", not c_in_paddy,
                   f"fuel/fodder commons sit IN a flooded paddy (centre over water): {c_in_paddy[:3]} - the commons is "
                   f"NON-arable degraded grazing on the high back slope, never the productive wet paddy")
+            # MANAGED-WOODLAND patches must not OVERLAP the crops nor BLOCK THEIR LIGHT (GM). Both the placement and
+            # this check enforce it. A tree canopy over a crop competes for root/light; and the sun is to the SOUTH
+            # (maps are north-up), so a tree casts its shadow toward the NORTH - a patch may sit just north/beside a
+            # crop, but on the crop's SOUTH (sunny) side it must stand well back (a canopy's shadow reach) or it
+            # shades the field. Covers BOTH the paddy and the dry hatake plots. Distances: a fixed crown-radius
+            # no-overhang CLEAR, plus a real-world shadow reach on the south side (feet -> px at the map's ftpx).
+            woodland = [c for c in commons if c.get("role") == "woodland"]
+            if woodland:
+                _fp = float(meta.get("ftpx") or meta.get("ft_per_px") or 2.0)
+                CLEAR = 14                          # ~a crown radius: the canopy must not overhang the crop
+                SHADE = 14 + round(55 / _fp)        # ... plus a shadow reach (~55 ft) on the crop's SUNNY south side
+                crops = [f["outline"] for f in fields if f.get("kind") == "paddy"]
+                crops += [dp["poly"] for dp in M.get("dry_plots", [])]
+                w_over, w_shade = [], []
+                for c in woodland:
+                    wp = c.get("poly")
+                    if not wp:
+                        continue
+                    tag = (round(c["x"]), round(c["y"]))
+                    wy0 = min(p[1] for p in wp)
+                    wx0 = min(p[0] for p in wp)
+                    wx1 = max(p[0] for p in wp)
+                    for crop in crops:
+                        gap = poly_gap(wp, crop)
+                        if gap <= 0:
+                            w_over.append(tag)
+                            break
+                        cx0 = min(p[0] for p in crop)
+                        cx1 = max(p[0] for p in crop)
+                        cy1 = max(p[1] for p in crop)
+                        south = wy0 >= cy1 - CLEAR and wx0 < cx1 and cx0 < wx1   # patch sits south of the crop, in its shadow column
+                        if gap < (SHADE if south else CLEAR):
+                            w_shade.append(tag)
+                            break
+                check("woodland_clear_of_crops", not w_over and not w_shade,
+                      f"managed-woodland patch(es) overlap {sorted(set(w_over))[:3]} or shade {sorted(set(w_shade))[:3]} the "
+                      f"crops - a coppice patch must stand clear of the paddy + dry hatake (a canopy over crops competes; a "
+                      f"tree on the crop's SOUTH/sunny side blocks its light). Set it back on the high ground, north/beside the fields")
+                # a coppice WOODLAND patch is a DISTINCT wood from the protected fengshui GROVE (village_groves) -
+                # the two must not overlap, or they merge into one indistinct green mass (GM). Keep each patch off
+                # every grove clump (its drawn radius). Place the coppice on its OWN stretch of the high ground.
+                w_on_grove = []
+                for c in woodland:
+                    wp = c.get("poly")
+                    if not wp:
+                        continue
+                    if any(point_in_poly(gx, gy, wp) or poly_dist(gx, gy, wp) < g.get("r", 6)
+                           for g in M.get("village_groves", []) for gx, gy in g.get("clumps", [])):
+                        w_on_grove.append((round(c["x"]), round(c["y"])))
+                check("woodland_clear_of_grove", not w_on_grove,
+                      f"managed-woodland patch(es) {sorted(set(w_on_grove))[:3]} overlap the fengshui GROVE - the coppice "
+                      f"commons and the protected village grove are DISTINCT woods; keep the patch off the grove clumps")
             if meta.get("nucleated") and commons and len(houses) >= 10:
                 wbs = [g for g in vgroves if g.get("role") == "windbreak"]
                 if wbs:
@@ -2243,9 +2726,11 @@ def gate(M, verbose=True):
                     ccy = sum(h["y"] for h in houses) / len(houses)
                     wb_proj = max((g["x"] - ccx) * wvx + (g["y"] - ccy) * wvy for g in wbs)
                     # only the fuel/fodder COMMONS proper (role 'commons') must lie on the windward back-slope;
-                    # a 'grazing' scrub patch is general marginal hill-grazing that can sit on any dry flank (the
-                    # NE dry-margin, the SW corner) and is exempt from the beyond-the-windbreak toposequence rule
-                    near = [(round(c["x"]), round(c["y"])) for c in commons if c.get("role", "commons") != "grazing"
+                    # the general marginal hill land types - 'grazing' scrub, open 'pasture', coppice 'woodland' -
+                    # can sit on ANY dry flank (the NE upland, the SW corner, the uphill head) and are exempt from
+                    # the beyond-the-windbreak toposequence rule (they are the hinterland catena, not the fuel commons)
+                    near = [(round(c["x"]), round(c["y"])) for c in commons
+                            if c.get("role", "commons") not in ("grazing", "pasture", "woodland")
                             and (c["x"] - ccx) * wvx + (c["y"] - ccy) * wvy <= wb_proj + 5]
                     check("commons_beyond_the_windbreak", not near,
                           f"fuel/fodder commons {near[:2]} sit between the village and its back-grove (or on the field "
@@ -2328,6 +2813,19 @@ def gate(M, verbose=True):
         check("cemetery_clear_of_shrine", not on_bldg,
               f"grave site(s) sit ON the shrine hall or its torii gateway: {on_bldg[:3]} - the monk tends the graves "
               f"so they fill the shrine's yard, but the sacred hall + gateway themselves stay clear of burials")
+
+        # MARSH is unbuildable wet ground: no SACRED hall and no BURIAL ground sits on a reed marsh - you would
+        # never raise a shrine or dig graves in a bog (they belong on DRY ground, the spur / high ground). The
+        # `toe` marsh is the wet valley floor; a `pond_fringe` (a thin decorative shore ring) is exempt. GM 2026-07.
+        bog = [m["poly"] for m in M.get("marshes", []) if m.get("role") != "pond_fringe" and m.get("poly")]
+        if bog:
+            def _on_marsh(site):
+                return (any(point_in_poly(site["x"], site["y"], mp) for mp in bog)
+                        or any(point_in_poly(cx, cy, mp) for cx, cy in rect_corners(_struct_rect(site)) for mp in bog))
+            marshy = [(round(s["x"]), round(s["y"])) for s in relig + cems + maus + crem + oss if _on_marsh(s)]
+            check("sacred_and_graves_off_marsh", not marshy,
+                  f"shrine/temple or grave site(s) {sorted(set(marshy))[:3]} sit on a reed MARSH - a hall is not "
+                  f"raised and graves are not dug in a bog; site them on DRY ground (the spur / high ground), off the marsh")
 
         # PRECINCT (village): the village graveyard sits BY the shrine (the Shinsei monk's funerary ground),
         # mirroring the town/city temple-precinct rule. A HILLTOP shrine is exempt (graves do not climb the
@@ -2646,6 +3144,71 @@ def gate(M, verbose=True):
               f"neighbouring dry-field plot(s) run their furrows the SAME way {same[:3]} - fragmented family strips "
               f"were each plowed to their own orientation, so adjacent plots must differ in row direction")
 
+    # BUILDINGS AND WORK YARDS STAY OFF THE DRY PLOTS: a hem of barley/soy strips (or an urban
+    # vegetable tract) is CROPLAND, not building ground - a farmstead may ABUT a plot, never stand
+    # on it. The dry plots were classified in the overlap registry but no check actually TESTED
+    # structures against them, and placement guarded them center-only (block_polys), so a house
+    # nudged for its yard - or a ring house at the envelope gap - could stand half its footprint
+    # on a hem strip (GM caught farmsteads on Tango's fn1/nw1 hems, 2026-07). Footprints are
+    # shrunk ~6% so a plot ABUTTING a wall does not false-fire; real overlap does.
+    dry_polys_c = [dp["poly"] for dp in M.get("dry_plots", [])]
+    if dry_polys_c:
+        on_dry = []
+        for key in ("houses", "buildings", "threshing_yards", "flophouses", "storehouses",
+                    "cemeteries", "cremation_grounds", "ossuaries", "mausoleums"):
+            for it in M.get(key, []) or []:
+                fc = rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 20),
+                                   "h": it.get("h", 14), "rot": it.get("rot", 0)})
+                fc = [(it["x"] + (px - it["x"]) * 0.94, it["y"] + (py - it["y"]) * 0.94) for px, py in fc]
+                for poly in dry_polys_c:
+                    if (any(point_in_poly(px, py, poly) for px, py in fc)
+                            or any(point_in_poly(qx, qy, fc) for qx, qy in poly)
+                            or any(segments_cross(fc[i], fc[(i + 1) % 4], poly[j], poly[(j + 1) % len(poly)])
+                                   for i in range(4) for j in range(len(poly)))):
+                        on_dry.append((round(it["x"]), round(it["y"])))
+                        break
+        check("structures_clear_of_dry_plots", not on_dry,
+              f"building(s)/work yard(s) standing ON a dry crop plot: {sorted(set(on_dry))[:6]} - the hem strips "
+              f"and garden tracts are cropland; a farmstead may abut a plot but never overlap it")
+        # ... and the WINDBREAK TREES stay off the crops too: a homestead grove hugs the paddy bund
+        # but its canopy clumps must not stand in a dry plot (same rule as groves_clear_of_lanes)
+        gro_dry = []
+        for g in M.get("village_groves", []):
+            gr = g.get("r", 10)
+            for gx_, gy_ in g.get("clumps", []):
+                if any(point_in_poly(gx_, gy_, poly)
+                       or min(seg_dist(gx_, gy_, poly[j], poly[(j + 1) % len(poly)]) for j in range(len(poly))) < gr * 0.75
+                       for poly in dry_polys_c):
+                    gro_dry.append((round(gx_), round(gy_)))
+        check("groves_clear_of_dry_plots", not gro_dry,
+              f"windbreak canopy clump(s) standing in a dry crop plot: {sorted(set(gro_dry))[:6]} - a grove may "
+              f"hug a plot's edge, but its trees do not grow in the crop")
+
+    # FUNERARY GROUNDS STAND CLEAR OF THE FIELDS: a burial / cremation ground sits in open ground
+    # BESIDE the farmland, never ON a paddy's body or its irrigation ditches (GM, 2026-07: Nagahara's
+    # cremation ground sat on the far-bank comb's main ditch AND its dry plots). funerary_set_back_from_water
+    # keeps graves off open WATER + a creek-margin off field EDGES, and the cremation ground is exempt
+    # from that water rule (a fire site) - but a funerary footprint sitting IN a field interior or ON a
+    # field ditch is wrong for every funerary kind, cremation included. Field-EDGE abutment is fine
+    # (that is the set-back's job); this catches the footprint standing inside the cropped field.
+    fld_outlines = [f["outline"] for f in M.get("fields", [])]
+    fdit = [d["poly"] for d in M.get("field_ditches", [])]
+    if fld_outlines or fdit:
+        on_field = []
+        for key in ("cemeteries", "cremation_grounds", "ossuaries", "mausoleums"):
+            for it in M.get(key, []) or []:
+                fc = rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 40),
+                                   "h": it.get("h", 28), "rot": it.get("rot", 0)})
+                fc = [(it["x"] + (px - it["x"]) * 0.9, it["y"] + (py - it["y"]) * 0.9) for px, py in fc]
+                inside_field = any(point_in_poly(px, py, ol) for ol in fld_outlines for px, py in fc)
+                on_ditch = any(seg_dist(cx, cy, dp[k], dp[k + 1]) < 8
+                               for dp in fdit for (cx, cy) in fc for k in range(len(dp) - 1))
+                if inside_field or on_ditch:
+                    on_field.append((round(it["x"]), round(it["y"])))
+        check("funerary_clear_of_fields", not on_field,
+              f"funerary ground(s) standing on a field or its ditches: {sorted(set(on_field))[:4]} - a burial / "
+              f"cremation ground sits in open ground BESIDE the farmland, not on the paddy body or its irrigation ditches")
+
     # EVERY IN-FIELD IRRIGATION DITCH TERMINATES AT A DITCH THAT LEAVES THE FIELD - no channel runs to the
     # middle of a field and dead-ends. Concretely: each LATERAL's two ends sit on the MAIN or the DRAIN (which
     # in turn is fed by a pond channel / emptied by an off-map or cascade channel, so the whole net exits to
@@ -2691,9 +3254,26 @@ def gate(M, verbose=True):
         def touch(pa, pb, tol=16):
             return (any(seg_dist(v[0], v[1], pb[k], pb[k + 1]) < tol for v in pa for k in range(len(pb) - 1))
                     or any(seg_dist(v[0], v[1], pa[k], pa[k + 1]) < tol for v in pb for k in range(len(pa) - 1)))
-        segs = [(c["poly"], c["frm"].get("kind") == "pond" or c["to"].get("kind") == "pond",
-                 c["frm"].get("kind") == "offmap" or c["to"].get("kind") == "offmap") for c in M.get("channels", [])]
-        segs += [(st["poly"], False, True) for st in M.get("streams", [])]
+        # a pond is the SOURCE by default (it feeds the field); meta(pond_role="drainage") makes it the SINK
+        # (the field drains into it - a reservoir below the fields). Grounding is then DIRECTIONAL: the frm side
+        # brings water FROM a source (an inflow brook / off-map / a source pond), the to side carries it OUT to
+        # a sink (off-map / a stream / a drainage pond). Streams follow the same rule (a feeder brook grounds a
+        # source, a drain brook grounds a sink) instead of the old assume-sink.
+        pond_is_source = meta.get("pond_role", "source") == "source"
+
+        def _grounds(frm, to):
+            # the MOAT grounds both ways: it is a fed watercourse (a moated city's fields tap it -
+            # city_moat_irrigates_fields), and it is the city's storm drain (an outside field's
+            # collector may empty into it), so frm=moat is a source and to=moat is a sink
+            fk, tk = (frm or {}).get("kind"), (to or {}).get("kind")
+            src = (fk in ("offmap", "forest", "stream", "moat") or (fk == "pond" and pond_is_source)
+                   or (tk == "pond" and pond_is_source))
+            snk = (tk in ("offmap", "stream", "moat") or (tk == "pond" and not pond_is_source)
+                   or (fk == "pond" and not pond_is_source))
+            return src, snk
+
+        segs = [(c["poly"], *_grounds(c["frm"], c["to"])) for c in M.get("channels", [])]
+        segs += [(st["poly"], *_grounds(st.get("frm"), st.get("to"))) for st in M.get("streams", [])]
         d0 = len(segs)
         segs += [(d["poly"], False, False) for d in ditches]
         par = list(range(len(segs)))
@@ -2987,6 +3567,24 @@ def gate(M, verbose=True):
           f"farmhouse(s) sit ON a village lane at {lane_hits[:5]} - a lane is a no-build corridor; houses FRONT it, "
           f"never overlap the tread (lay lanes BEFORE the houses so they pack around it)")
 
+    # A shrine/temple HALL must not sit ON a lane/street/road: a building stands BESIDE the way, not in it. The
+    # TORII is the deliberate exception - a gateway arch straddles the approach path and the road runs UNDER it
+    # (a real, common feature), so torii are NOT checked here. The road may run up to and through the torii to a
+    # hall set just off the way. Covers religious halls (shrine/monastery/temple). WHY: settlements.md 'Shrines'.
+    hall_on_lane = []
+    _hcorr = [(ln["pts"], ln.get("w", 6) / 2 + 2) for ln in M.get("lanes", [])]
+    _hcorr += [(s["pts"], s.get("w", 10) / 2 + 2) for s in M.get("town_streets", [])]
+    if M.get("road"):
+        _hcorr.append((M["road"], M.get("road_width", 26) / 2 + 2))
+    for hall in M.get("religious", []):
+        rect = _struct_rect(hall)
+        if any(seg_to_rect_dist(p[k], p[k + 1], rect) < half for p, half in _hcorr for k in range(len(p) - 1)):
+            hall_on_lane.append((round(hall["x"]), round(hall["y"])))
+    check("shrine_halls_clear_of_lanes", not hall_on_lane,
+          f"shrine/temple hall(s) sit ON a lane/street/road at {hall_on_lane[:4]} - a HALL stands beside the way, "
+          f"not in it (place it off the corridor); the road may pass UNDER the shrine's TORII (arches are exempt), "
+          f"but never through the hall itself")
+
     # TREES must not be drawn ON a lane / street / road - a path is bare trodden earth, not planted over. Covers
     # BOTH the communal fengshui grove (village_groves: each records its actual drawn clump centres + radius) and
     # the per-house windbreak grove (groves: a rect footprint). Every corridor (lanes, town streets, the road) is
@@ -3015,9 +3613,13 @@ def gate(M, verbose=True):
         in_pond = (lambda p: bool(pond) and in_ellipse(p[0], p[1], pond, 1.05))
         at_moat = (lambda p: bool(moat_ring) and poly_dist(p[0], p[1], moat_ring) <= 32)   # a city stream may feed the moat
         at_drain = (lambda p: anchored(p, {"kind": "drain"}))   # a brook may START at the field drain's outfall
-        ok = (all(at_edge(e) or in_pond(e) or at_moat(e) or at_drain(e) for e in (e0, e1))
+        in_field = (lambda p: any(point_in_poly(p[0], p[1], f["outline"]) for f in fields))   # a SOURCE brook may END at the field head
+        at_ditch = (lambda p: any(seg_dist(p[0], p[1], dp[i], dp[i + 1]) < 22   # a brook DIVERTED into an irrigation channel
+                                  for d in (M.get("field_ditches", []) + M.get("channels", []))
+                                  for dp in [d["poly"]] for i in range(len(dp) - 1)))
+        ok = (all(at_edge(e) or in_pond(e) or at_moat(e) or at_drain(e) or in_field(e) or at_ditch(e) for e in (e0, e1))
               and (at_edge(e0) or at_edge(e1)))
-        check(f"stream_runs_off_edge[{idx}]", ok, f"stream {idx} ends {e0},{e1} must run off the edge (one end may be a pond, the moat, or the field drain)")
+        check(f"stream_runs_off_edge[{idx}]", ok, f"stream {idx} ends {e0},{e1} must run off the edge (one end may be a pond, the moat, the field drain, or the field head)")
 
     # WATER SOURCES COME FROM THE MAP EDGE: a pond does not generate water, so any brook FEEDING it (a
     # stream with one end in the pond) must ORIGINATE off-map - it flows in from the edge, not out of
@@ -3032,6 +3634,36 @@ def gate(M, verbose=True):
         check("pond_fed_from_edge", not unsourced,
               f"a stream feeds the pond but its far end {unsourced[:3]} is not at the map edge - a pond's "
               f"feeder brook must flow IN from off-map (the water source comes from the edge, not nowhere)")
+
+    # THE POND CONNECTS TO THE FIELD's WATER, matching its role. A SOURCE pond (the default) must FEED the
+    # field through an irrigation channel that touches the pond; a DRAINAGE pond (meta pond_role="drainage",
+    # a reservoir below the fields) must be REACHED BY the field's drain - the drain must actually run into
+    # the pond, not stop short of it (the disconnected-drain bug). Either way SOME watercourse endpoint sits
+    # in the pond.
+    if pond:
+        if meta.get("pond_role", "source") == "source":
+            wc = [c["poly"] for c in M.get("channels", []) if "pond" in ((c["frm"] or {}).get("kind"), (c["to"] or {}).get("kind"))]
+            why = "a source pond must FEED the field through an irrigation channel, but none connects to the pond"
+        else:
+            wc = ([d["poly"] for d in M.get("field_ditches", []) if d.get("role") == "drain"]
+                  + [c["poly"] for c in M.get("channels", []) if "pond" in ((c["frm"] or {}).get("kind"), (c["to"] or {}).get("kind"))])
+            why = "a drainage pond is fed by the field's DRAIN, but the drain does not reach the pond (it stops short of the water)"
+        connected = any(in_ellipse(p[0], p[1], pond, 1.12) for poly in wc for p in (poly[0], poly[-1]))
+        check("pond_connected_to_field", connected, why)
+
+    # AN IRRIGATION POND DOES NOT SIT ON THE PADDIES. A pond WIRED to the field's water (a source reservoir at
+    # the head, or a drainage tameike at the low foot) is a distinct body of water BESIDE or BELOW the field,
+    # joined to the crop by a channel - never laid OVER the paddies. So its ellipse must not overlap the field
+    # envelope (no rim point inside a field, no field vertex inside it). A DECORATIVE pond not connected to the
+    # field's water (a city garden pond) is exempt - it is not part of the irrigation system.
+    _pond_wired = any("pond" in ((c.get("frm") or {}).get("kind"), (c.get("to") or {}).get("kind")) for c in M.get("channels", []))
+    if pond and fields and _pond_wired:
+        _peri = [(pond[0] + pond[2] * math.cos(a), pond[1] + pond[3] * math.sin(a)) for a in [i * math.pi / 12 for i in range(24)]]
+        on_field = (any(point_in_poly(px, py, fo["outline"]) for px, py in _peri for fo in fields)
+                    or any(in_ellipse(v[0], v[1], pond, 1.0) for fo in fields for v in fo["outline"]))
+        check("pond_clear_of_field", not on_field,
+              "the pond overlaps the paddy field - a pond is a distinct water body beside/below the field, "
+              "joined to it by a channel, not laid over the crop (site the pond clear of the field envelope)")
 
     # DRAINAGE FLOWS DOWNHILL (matches the map's configured slope). We do NOT require the drain to RUN
     # downhill - a collector (akusui) legitimately runs ACROSS the low margin, ~perpendicular to the fall,
@@ -3162,7 +3794,7 @@ def gate(M, verbose=True):
         # off-frame homesteads or the odd shared roof. (Supersedes the earlier ~0.7x
         # extended-family assumption: the target is to depict every household.)
         hh = meta["households"]
-        if scale == "village":                       # to-scale villages depict ~every household 1:1
+        if meta.get("toscale", scale == "village"):  # to-scale tiers (village + hamlet) depict ~every household 1:1
             lo, hi = round(0.85 * hh), round(1.05 * hh)
         else:                                        # legacy tiers still depict ~0.7-0.9 (extended-family sharing, off-frame)
             lo, hi = round(0.68 * hh), round(0.9 * hh)
@@ -3665,6 +4297,30 @@ def gate(M, verbose=True):
         # storefronts the homes mix sizes by wealth band (budgets.md: very rich -> walled ESTATES, rich
         # -> LARGE houses, the rest -> small houses) and are SPREAD OUT - more room between them than the
         # densely-packed laborers (a few denser merchant blocks are fine; the median is robust to those).
+        # ROW-PACKING doctrine (GM, 2026-07): city commoner housing is CONTIGUOUS - the
+        # machiya/nagaya fabric of party walls and touching eaves, not detached-with-yard.
+        # Real urban commoners packed into terraces (street frontage was taxed and precious;
+        # a back-lot nagaya was one roof over a row of family units; Chinese county-seat
+        # courtyard housing shared party walls in continuous street walls). Measured on the
+        # pre-doctrine Tango: median nearest-neighbour gap was 12px (~31 ft) with ZERO
+        # touching pairs - a suburb, not a city quarter. Gaps allowed: a hairline seam
+        # (<=1.2px, touching), the ~3-6 ft eave gap between back-to-back rows, courts,
+        # and street/roji breaks - but the QUARTER-WIDE stats must read as terraces.
+        rowk = [b for b in M.get("buildings", []) if b.get("kind") in ("laborer", "servant", "burakumin", "merchant_house")]
+        if len(rowk) >= 20:
+            def _egap(a, b):
+                dx = abs(a["x"] - b["x"]) - (a["w"] + b["w"]) / 2
+                dy = abs(a["y"] - b["y"]) - (a["h"] + b["h"]) / 2
+                return max(dx, dy)
+            _gaps = sorted(min(_egap(a, b) for j, b in enumerate(rowk) if j != i) for i, a in enumerate(rowk))
+            _touch = sum(1 for g in _gaps if g <= 1.2)
+            check("city_row_housing_touches", _touch >= 0.55 * len(rowk),
+                  f"only {_touch}/{len(rowk)} row-class dwellings (laborer/servant/burakumin/merchant_house) TOUCH a "
+                  f"neighbour - city commoner housing is contiguous terraces (party walls), not detached houses")
+            _med = _gaps[len(_gaps) // 2]
+            check("city_row_housing_gap", _med <= 2.0,
+                  f"median nearest-neighbour edge gap among row-class dwellings is {_med:.1f}px - the quarter reads "
+                  f"as scattered houses, not terraces (want <= 2px: a party wall or a ~3-6 ft eave gap)")
         mlarge = [b for b in M.get("buildings", []) if b.get("kind") == "merchant_large"]
         msmall = [b for b in M.get("buildings", []) if b.get("kind") == "merchant_house"]
         mest = M.get("merchant_estates", [])
@@ -3696,8 +4352,13 @@ def gate(M, verbose=True):
         # city draws a larger crowd, so its viewing ground is wider (>= 185, the city baseline)
         amph = M.get("theater_stage")
         if amph:
-            check("city_theater_stage_larger_than_town", amph.get("w", 0) >= 185,
-                  f"the city theater stage (viewing ground {amph.get('w', 0)} wide) is no bigger than a town's - a provincial city's is larger (width >= 185)")
+            # compared in REAL FEET via the declared scale (meta ftpx, default 1): a town's stage
+            # is ~150 ft wide, so a provincial city's must be >= 185 ft - the old 185px threshold
+            # assumed the pre-ladder ~1 ft/px grain and would silently pass a to-scale city map
+            # whose stage shrank in pixels while staying honest in feet
+            _ftpx = meta.get("ftpx", 1)
+            check("city_theater_stage_larger_than_town", amph.get("w", 0) * _ftpx >= 185,
+                  f"the city theater stage (viewing ground ~{round(amph.get('w', 0) * _ftpx)} ft wide) is no bigger than a town's - a provincial city's is larger (>= 185 ft)")
         # FIRE DEFENSE: a city's dense quarters each need a fire-watch tower (hinomi-yagura). WHY:
         # settlements.md "Fire towers". Opt out per-map with meta(fire_tower=False).
         if meta.get("fire_tower", True):
@@ -3931,6 +4592,77 @@ def gate(M, verbose=True):
                     fmis.append((round(g["x"]), round(g["y"])))
             check("city_gate_furniture_aligned", not fmis,
                   f"gate guard house / inspection station(s) not square to the wall - they should rotate to the wall's LOCAL tangent where they sit (so the ring road runs through them lengthwise), not stay flat: {fmis}")
+            # ... and the guard house + inspection station are SEPARATE buildings: walked along a
+            # tightly-curving wall the two arcs can converge, and an inspection annex drawn through
+            # its guard house reads as a collision (GM, 2026-07)
+            gpairs = []
+            ghs = [g for g in M.get("gate_structs", []) if g.get("kind") == "guardhouse"]
+            for ins in M.get("inspection_stations", []):
+                for gh in ghs:
+                    if math.hypot(ins["x"] - gh["x"], ins["y"] - gh["y"]) < 160 and sat_overlap(
+                            rect_corners({"x": ins["x"], "y": ins["y"], "w": ins["w"], "h": ins["h"], "rot": ins.get("rot", 0)}),
+                            rect_corners({"x": gh["x"], "y": gh["y"], "w": gh["w"], "h": gh["h"], "rot": gh.get("rot", 0)})):
+                        gpairs.append((round(ins["x"]), round(ins["y"])))
+            check("city_gate_guard_inspection_separate", not gpairs,
+                  f"gate inspection station(s) overlapping their guard house: {gpairs} - the two are separate "
+                  f"buildings on the ring road; space them along the wall until they clear")
+            # WALL FURNITURE STAYS OUT OF THE MOAT: a guard tower straddles the wall and may PROJECT a
+            # stride past its outer face (the horse-face bastion), but its footing must stand on the
+            # BERM, never in the water - a tight moat gap leaves a narrow berm, so a tower centred on
+            # the wall line pokes its outer face into the bed. Same for the gate towers and the guard
+            # house / inspection station. (Bridges are exempt - they span the moat by design.)
+            mo_f = M.get("moat")
+            if mo_f:
+                mhw_f = M.get("moat_width", 22) / 2
+                wet = []
+                for it in (M.get("wall_towers", []) + M.get("gate_structs", []) + M.get("inspection_stations", [])):
+                    fc = rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 26), "h": it.get("h", 26), "rot": it.get("rot", 0)})
+                    if footprint_on_line(fc, mo_f, mhw_f + 1):
+                        wet.append((round(it["x"]), round(it["y"])))
+                check("city_wall_furniture_clear_of_moat", not wet,
+                      f"guard tower(s) / gate furniture standing IN the moat: {sorted(set(wet))[:6]} - wall furniture "
+                      f"footings stay on the berm; nudge them inward so only a small outer projection passes the wall face")
+            # THE WARD GATES STAND CLEAR OF THE WALL TOWERS: a kido hangs on the ward fence where a
+            # lane or the ring road crosses it, and the fence ends abut the rampart - so the LAST
+            # kido can land against a mural tower's footprint (its guard box read as "a small square
+            # building" inside the tower - GM, 2026-07). Both are overlap-EXEMPT classes (each sits
+            # on its own wall), so no generic pass catches the pair. The kido cannot move (it gates
+            # a fixed crossing), so the TOWER yields - city_wall(tower_skip=[...]) relocates it to
+            # the neighbouring wall vertex.
+            k_hit = []
+            for kd in M.get("kido", []):
+                bb = kd.get("bbox")
+                if not bb:
+                    continue
+                kc = [(bb[0], bb[1]), (bb[2], bb[1]), (bb[2], bb[3]), (bb[0], bb[3])]
+                for t in (M.get("wall_towers", []) + [g_ for g_ in M.get("gate_structs", []) if g_.get("kind") == "tower"]):
+                    if sat_overlap(kc, rect_corners({"x": t["x"], "y": t["y"], "w": t.get("w", 38),
+                                                     "h": t.get("h", 38), "rot": t.get("rot", 0)})):
+                        k_hit.append((round(kd["x"]), round(kd["y"])))
+                        break
+            check("kido_clear_of_wall_towers", not k_hit,
+                  f"ward gate(s) overlapping a guard tower: {sorted(set(k_hit))[:4]} - where the ward fence meets the "
+                  f"rampart the kido keeps its ground (it gates a fixed crossing); slide the tower along the wall "
+                  f"(city_wall tower_skip)")
+            # ... and clear of the HOUSING: the kido + its guard box occupy a fixed crossing that the
+            # packs cannot see (s.ward draws long after the quarters are built), so the gen must
+            # RESERVE each gate's ground (block_polys) before any pack runs - else a row house lands
+            # under the guard box (GM, 2026-07: caught twice, on both fence-end gates)
+            kb_hit = []
+            for kd in M.get("kido", []):
+                bb = kd.get("bbox")
+                if not bb:
+                    continue
+                kc = [(bb[0], bb[1]), (bb[2], bb[1]), (bb[2], bb[3]), (bb[0], bb[3])]
+                for key_ in ("buildings", "houses", "flophouses", "storehouses"):
+                    if any(sat_overlap(kc, rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 20),
+                                                         "h": it.get("h", 14), "rot": it.get("rot", 0)}))
+                           for it in M.get(key_, []) or []):
+                        kb_hit.append((round(kd["x"]), round(kd["y"])))
+                        break
+            check("kido_clear_of_buildings", not kb_hit,
+                  f"ward gate(s) overlapping a building: {sorted(set(kb_hit))[:4]} - the kido and its guard box hold "
+                  f"their crossing; reserve the gate's ground before the packs run (block_polys around each kido spot)")
             # a walled city has a RING ROAD (順城街) just inside the rampart - the wall-clear patrol zone a
             # fortified city keeps for moving troops along the wall; the quarters pack INSIDE it (s.ring_road
             # returns the loop to use as s.bound).
@@ -4020,6 +4752,35 @@ def gate(M, verbose=True):
             rel_bad = [r.get("label") for r in rel
                        if footprint_on_line(rect_corners_xywh(r, 0), w, 9) or (moat and footprint_on_line(rect_corners_xywh(r, 0), moat, 13))]
             check("city_temples_clear_of_wall_moat", not rel_bad, f"temple(s) overlapping the wall or moat: {rel_bad}")
+            # THE LABELLED (major) CITY TEMPLES ARE DEDICATED TO THE CLAN'S TWO PATRON FORTUNES. Hantei
+            # X codified that every city holds a temple to each of its clan's patron fortunes (l7r.md);
+            # the two GREAT temples honour those, and a smattering of small wayside shrines fills the
+            # rest. Declare meta(clan=...); the labelled temples (kind="temple", not "small_shrine")
+            # must be exactly the clan's two fortunes. Override with meta(temple_fortunes=[...]) for a
+            # city that changed hands. GM, 2026-07: Nagahara (Crab) had a large Temple of Suitengu -
+            # a thematic pick, not a Crab patron (Crab = Bishamon + Ebisu). Named after "Temple of X".
+            declared_t = meta.get("temple_fortunes")
+            clan_t = meta.get("clan")
+            if declared_t is None and clan_t:
+                cf = CLAN_FORTUNES.get(clan_t.lower())
+                check("city_clan_known", cf is not None, f"unknown clan {clan_t!r} - no patron fortunes")
+                declared_t = sorted(cf) if cf else None
+            if declared_t is not None:
+                def _tfortune(r):
+                    lab = (r.get("label") or "").strip()
+                    return lab.rsplit(" of ", 1)[-1].strip() if " of " in lab else lab
+                major = [_tfortune(r) for r in rel if r.get("kind") == "temple"]
+                # every major temple honours a PATRON fortune (or Bishamon, the warrior fortune of
+                # any clan's samurai quarter - for Crab it IS a patron; for Crane/Tango it stands
+                # beside the two patron temples), and BOTH patrons must be present. A great temple to
+                # a non-patron (Nagahara's Suitengu) fails; small wayside shrines carry the rest.
+                allowed = set(declared_t) | {"Bishamon"}
+                stray = sorted(set(f for f in major if f not in allowed))
+                missing = sorted(f for f in declared_t if f not in major)
+                check("city_temples_dedicated", not stray and not missing,
+                      f"major city temples {sorted(set(major))}: stray non-patron {stray}, missing patron {missing} "
+                      f"(clan {clan_t!r} patrons {sorted(declared_t)}); a city has a great temple to each of its two "
+                      f"patron fortunes (+ optionally Bishamon in the samurai quarter), the rest small shrines")
             # a TEMPLE NEIGHBORHOOD (>= 2 temples clustered together) should be dotted with a smattering of
             # small wayside SHRINES (s.small_shrine - non-residential, kind 'small_shrine'). A lone temple
             # among houses (e.g. the warrior-fortune temple in the samurai quarter) is not a neighborhood.
@@ -4101,7 +4862,10 @@ def gate(M, verbose=True):
             # as any samurai estate and several times any single ministry office
             if gov:
                 ga = gov["w"] * gov["h"]
-                big_other = max([mn["w"] * mn["h"] for mn in est_out] + [3 * m["w"] * m["h"] for m in M.get("ministries", [])] + [24000])
+                # the absolute floor is REAL area (~1.4 ha): 24000px2 was tuned at the pre-ladder
+                # ~2.55 ft/px grain and would demand a 2 ha yamen at 3 ft/px
+                _floor = round(24000 * (2.55 / meta.get("ftpx", 2.55)) ** 2)
+                big_other = max([mn["w"] * mn["h"] for mn in est_out] + [3 * m["w"] * m["h"] for m in M.get("ministries", [])] + [_floor])
                 check("city_governor_mansion_large", ga >= big_other,
                       f"the governor's mansion ({ga:.0f}px2) must be the grandest compound - a city-block yamen at least as large as any estate and >= 3x any ministry (need >= {big_other:.0f})")
                 # the ministries cluster around the yamen (the government district), threading into the
@@ -4178,11 +4942,33 @@ def gate(M, verbose=True):
                         not_under.append((round(e[0]), round(e[1])))
             check("city_ward_fence_under_wall", not not_under,
                   f"ward-fence end(s) NOT rendered under the city wall - no wall cap on top of the junction, so the fence paints over the rampart: {not_under}")
-            # the extramural samurai estates all lie to the SOUTHEAST of the city
+            # the extramural samurai estates all lie TOWARD OTOSAN UCHI (the Imperial capital) - a
+            # samurai builds his country seat on the capital-facing side, so the direction is
+            # per-city: meta(capital_dir=<cardinal>) (Tango SE, Nagahara NE). Each estate must sit in
+            # the correct half-plane(s) for that direction (a diagonal requires BOTH axes).
             cx, cy = sum(p[0] for p in w) / len(w), sum(p[1] for p in w) / len(w)
-            not_se = [1 for mn in est_out if not (mn["x"] > cx and mn["y"] > cy)]
-            check("city_estates_in_southeast", not not_se,
-                  f"{len(not_se)} samurai estate(s) not to the southeast - a city's extramural estates cluster SE of it")
+            cap = meta.get("capital_dir", "southeast")
+            cd = unit_dir(cap)
+            check("city_capital_dir_valid", cd is not None, f"meta(capital_dir={cap!r}) is not a cardinal direction")
+            if cd:
+                def toward(mn):
+                    okx = (mn["x"] > cx) if cd[0] > 0.3 else (mn["x"] < cx) if cd[0] < -0.3 else True
+                    oky = (mn["y"] > cy) if cd[1] > 0.3 else (mn["y"] < cy) if cd[1] < -0.3 else True
+                    return okx and oky
+                not_cap = [(round(mn["x"]), round(mn["y"])) for mn in est_out if not toward(mn)]
+                check("city_estates_toward_capital", not not_cap,
+                      f"{len(not_cap)} samurai estate(s) not toward the capital ({cap}): {not_cap[:3]} - a city's "
+                      f"extramural estates cluster on the Otosan-Uchi-facing side (meta(capital_dir=...))")
+            # ... and clear of the ROADS leaving the city (an estate straddling the highway blocks it -
+            # GM, 2026-07: a Nagahara estate sat on the bridge road). Test each outside estate footprint
+            # against every recorded road.
+            roads_all = [r["pts"] for r in M.get("roads", [])] or ([M["road"]] if M.get("road") else [])
+            est_on_road = [(round(mn["x"]), round(mn["y"])) for mn in est_out
+                           if any(footprint_on_line(rect_corners(_struct_rect(mn)), rp, (M.get("road_width", 26) / 2 + 4))
+                                  for rp in roads_all)]
+            check("city_estates_clear_of_roads", not est_on_road,
+                  f"samurai estate(s) straddling a road out of the city: {est_on_road[:3]} - an estate fronts its own "
+                  f"approach lane but must not sit ON the highway")
             # the ground circulation (streets + alleys; NOT the Imperial road, which exits at the
             # gates) must stay INSIDE the wall and clear of the moat - separate checks, since a lane
             # can poke through the rampart, the moat, or both (the elliptical wall curves in, so a
@@ -4392,9 +5178,24 @@ def gate(M, verbose=True):
                   f"larger city street(s) with a long bare stretch of roadside land - a commercial/residential through-street should be "
                   f"LINED with buildings close to it (only narrow alleys may run unlined): {bare_streets}")
             road = M.get("road") or []
-            through = bool(road) and any(p[1] < EY0 for p in road) and any(p[1] > EY1 for p in road)
-            check("city_imperial_road_through", through,
-                  "the Imperial road must run N-S through a walled city - off both the top and bottom edges, via the gates")
+            if meta.get("imperial_road", True):
+                through = bool(road) and any(p[1] < EY0 for p in road) and any(p[1] > EY1 for p in road)
+                check("city_imperial_road_through", through,
+                      "the Imperial road must run N-S through a walled city - off both the top and bottom edges, via the gates")
+            else:
+                # NO Imperial road (it passes miles away): the city still lives on through-traffic,
+                # so its road net must leave the map in at least TWO directions (one polyline
+                # bending through the city - off-map N, through the gates, off-map SE - counts
+                # as two; a dead-end road serves nobody)
+                rds = [r["pts"] for r in M.get("roads", [])] or ([road] if road else [])
+
+                def offend(p):
+                    return p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1
+                exits = sum(1 for r in rds for e in (r[0], r[-1]) if offend(e))
+                dead = [(round(e[0]), round(e[1])) for r in rds for e in (r[0], r[-1]) if not offend(e)]
+                check("city_roads_run_offmap", exits >= 2 and not dead,
+                      f"{exits} off-map road end(s), dead end(s) at {dead[:3]} - a provincial city without an "
+                      f"Imperial spine still connects to the wider world in >= 2 directions, and no road stops dead")
             if not meta.get("agricultural_district"):
                 inwall_fields = [f["name"] for f in fields
                                  if inwall((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2)]
@@ -4411,8 +5212,31 @@ def gate(M, verbose=True):
                       f"sheltered by the urban fabric and on land too precious for one (meta(inwall_groves=True) to allow)")
             moat = M.get("moat")
             if moat:
-                check("city_moat_surrounds_wall", len(w) >= 3 and all(point_in_poly(wx, wy, moat) for wx, wy in w),
-                      "the moat must encircle the wall (every wall point inside the moat ring)")
+                rv = M.get("river")
+                if rv:
+                    # a river-bank city's moat is an OPEN arc: the river closes the water ring on its
+                    # flank (Xiangyang/Pingyao pattern). Coverage: every wall vertex stands behind
+                    # water - within ~72px of the moat arc OR ~200px of the river (the wharf strip
+                    # sits between wall and bank, so the river runs further out than a dug moat) -
+                    # and BOTH open moat ends must actually JOIN the river (inlet upstream, outlet
+                    # downstream, the current flushing the ring).
+                    rp = rv["pts"]
+
+                    def rdist(q):
+                        return min(seg_dist(q[0], q[1], rp[i], rp[i + 1]) for i in range(len(rp) - 1))
+                    bare = [(round(wx), round(wy)) for wx, wy in w
+                            if min(seg_dist(wx, wy, moat[i], moat[i + 1]) for i in range(len(moat) - 1)) > 72
+                            and rdist((wx, wy)) > 200]
+                    check("city_moat_surrounds_wall", not bare,
+                          f"wall stretch(es) behind neither the moat arc nor the river: {bare[:4]} - a river-bank "
+                          f"city's dug moat covers the landward faces and the river covers its own flank")
+                    loose = [(round(e[0]), round(e[1])) for e in (moat[0], moat[-1]) if rdist(e) > rv["w"] / 2 + 12]
+                    check("city_moat_joins_river", not loose,
+                          f"open moat end(s) not joining the river: {loose} - the moat taps the river upstream and "
+                          f"returns downstream (the current flushes it); extend the ends onto the river")
+                else:
+                    check("city_moat_surrounds_wall", len(w) >= 3 and all(point_in_poly(wx, wy, moat) for wx, wy in w),
+                          "the moat must encircle the wall (every wall point inside the moat ring)")
                 fed = any(any(p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1 for p in (s["poly"][0], s["poly"][-1]))
                           and min(poly_dist(q[0], q[1], moat) for q in s["poly"]) <= 32
                           for s in M.get("streams", []))
@@ -4427,6 +5251,73 @@ def gate(M, verbose=True):
                 check("city_moat_feeder_matches_width", not narrow,
                       f"the stream feeding the moat is too narrow ({narrow} px vs the {mw}px moat) - a moat's water source "
                       f"must be about as wide as the moat it supplies (pass s.stream(..., width=<moat width>))")
+
+            # RIVER-CITY WATERWORKS (a cargo canal + wharf; only where they are drawn):
+            river_c = M.get("river")
+            canals_c = M.get("canals", [])
+            docks_c = M.get("docks", [])
+            # (1) THE CANAL CONNECTS THE RIVER TO THE DOCK, like a street reaching the road: one end
+            # taps the river (through the water gate), the other feeds the in-city dock basin - a
+            # canal that stops short of the dock is a ditch to nowhere (GM, 2026-07: Nagahara's canal
+            # left a visible gap to the dock). "Reaches" = the end's bed physically meets the target
+            # (within the target's half-extent + the canal half-width + a small tolerance).
+            if canals_c:
+                def _end_near_river(e):
+                    return bool(river_c) and min(seg_dist(e[0], e[1], river_c["pts"][i], river_c["pts"][i + 1])
+                                                 for i in range(len(river_c["pts"]) - 1)) <= river_c["w"] / 2 + 14
+                def _end_near_dock(e, chw):
+                    # the canal MOUTH opens into the basin: the endpoint sits at the quay edge or
+                    # inside it (a visible gap to the dock = not connected), so no slack beyond ~3px
+                    return any(abs(e[0] - d["x"]) <= d["w"] / 2 + 3 and abs(e[1] - d["y"]) <= d["h"] / 2 + 3
+                               for d in docks_c)
+                unreached = []
+                for c in canals_c:
+                    chw = c.get("w", 12) / 2
+                    ends = (c["poly"][0], c["poly"][-1])
+                    if not (any(_end_near_river(e) for e in ends) and (not docks_c or any(_end_near_dock(e, chw) for e in ends))):
+                        unreached.append([round(c["poly"][0][0]), round(c["poly"][0][1])])
+                check("city_canal_reaches_dock", not unreached,
+                      f"cargo canal(s) not connecting the river to the dock basin: {unreached[:3]} - one end taps the "
+                      f"river (at the water gate), the other must feed the in-city dock (extend it to the quay, like a "
+                      f"street reaching the road)")
+            # (2) THE WHARF JETTIES REACH THE BANK: a jetty is a finger running out from the river's
+            # near bank into the water - its landward end must TOUCH the bank, not float mid-stream
+            # (GM, 2026-07: Nagahara's jetties floated in the middle of the river). The near bank is
+            # the river centerline offset by half its width toward the city; a jetty's nearest end
+            # must sit within ~14px of it.
+            jetties_c = M.get("jetties", [])
+            if jetties_c and river_c:
+                rp = river_c["pts"]
+                rhw = river_c["w"] / 2
+                cx_r = sum(p[0] for p in w) / len(w) if len(w) >= 3 else EX0
+                cy_r = sum(p[1] for p in w) / len(w) if len(w) >= 3 else EY0
+                floats = []
+                for j in jetties_c:
+                    ends = [(j["x"], j["y"]),
+                            (j["x"] + math.cos(math.radians(j["rot"])) * j["len"],
+                             j["y"] + math.sin(math.radians(j["rot"])) * j["len"])]
+                    # a jetty runs out from the CITYWARD bank into the water. At least one end must
+                    # sit on that near bank: within ~14px of the bank line (|dist-to-centerline - rhw|
+                    # small) AND on the city's side of the centerline (dot of (end - foot) with the
+                    # direction to the wall centroid is positive).
+                    def cityward_dist(px, py):
+                        # (distance to the river centerline, is-it-on-the-city-side-of-the-centerline)
+                        k = min(range(len(rp) - 1), key=lambda i: seg_dist(px, py, rp[i], rp[i + 1]))
+                        fx, fy = seg_closest(px, py, rp[k], rp[k + 1])
+                        d = math.hypot(px - fx, py - fy)
+                        cityward = (px - fx) * (cx_r - fx) + (py - fy) * (cy_r - fy) > 0
+                        return d, cityward
+                    # a jetty is a FINGER: its ROOT sits at the near bank or just onto land (cityward,
+                    # >= rhw-6 from the centerline - so the plank visibly connects to the shore, not
+                    # floating a stride out in the water), and its TIP runs INTO the near-half water
+                    # (cityward, <= rhw - it neither floats mid-stream nor spans past the far bank).
+                    root = any((lambda dc: dc[1] and dc[0] >= rhw - 6)(cityward_dist(*e)) for e in ends)
+                    tip = any((lambda dc: dc[1] and dc[0] <= rhw)(cityward_dist(*e)) for e in ends)
+                    if not (root and tip):
+                        floats.append([round(ends[0][0]), round(ends[0][1])])
+                check("city_wharf_jetties_on_bank", not floats,
+                      f"wharf jetties floating off the bank: {floats[:3]} - a jetty's landward end must touch the "
+                      f"river's near bank, running out into the water from there, not float mid-stream")
 
             # the street network must be CONNECTED - one coherent grid wired to the Imperial
             # road, not isolated stubs (ported from the town "no street to nowhere" thinking).
@@ -4634,7 +5525,9 @@ def gate(M, verbose=True):
     if meta.get("crop_advisory", True):
         for adv in crop_relocatable_singletons(M):
             if verbose:
-                print(f"ADVISORY crop_could_tighten  -> the {adv['kind']} at {adv['at']} alone holds the "
+                who = (f"the {adv['kind']} at {adv['at']} (a {adv['members']}-feature group, moved as one unit)"
+                       if adv.get("members", 1) > 1 else f"the {adv['kind']} at {adv['at']} alone")
+                print(f"ADVISORY crop_could_tighten  -> {who} holds the "
                       f"{adv['edge']} crop edge out by ~{adv['shrink']}px; empty space near {adv['landing']} "
                       f"could take it, cropping the image significantly smaller (soft hint - move it + re-crop, "
                       f"or set meta(crop_advisory=False) to silence)")
@@ -4652,4 +5545,24 @@ if __name__ == "__main__":
     import os
     here = os.path.dirname(os.path.abspath(__file__))
     default = os.path.join(here, "pool", "kikuta-village.json")
-    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else default))
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    path = args[0] if args else default
+    if "--capacity" in sys.argv[1:]:
+        import json as _json
+        want_map = "--capacity-map" in sys.argv[1:]
+        rep = city_capacity(_json.load(open(path)), grid_step=40 if want_map else None)
+        if rep is None:
+            print("no capacity report (not a walled city with a declared population)")
+        else:
+            print(f"WALL CAPACITY: {rep['verdict'].upper().replace('_', ' ')}")
+            print(f"  target {rep['target_dwellings']} dwellings, placed {rep['placed']}, INHERENT capacity (well-packed) {rep['inherent_capacity']}")
+            print(f"  ring {rep['ring_area']}px^2 = overhead {rep['overhead_area']} + residential-capable {rep['res_capable_area']} (open fraction {rep['open_frac']})")
+            print(f"  area budget (px^2): {rep['areas']}")
+            print(f"  suggested wall scale x{rep['suggested_wall_scale']} (>1 enlarge, <1 shrink)")
+            if rep.get("grid"):
+                ox, oy = rep["grid_origin"]
+                print(f"  interior map (D dwell / C civic / ~ water / # trunk / + res-street / F field / . OPEN); each cell {rep['grid_step']}px, origin ({ox},{oy}):")
+                for j, row in enumerate(rep["grid"]):
+                    print(f"    {oy + j * rep['grid_step']:>5} {row}")
+        sys.exit(0)
+    sys.exit(main(path))

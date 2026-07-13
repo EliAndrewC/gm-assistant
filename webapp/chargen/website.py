@@ -178,6 +178,7 @@ class Root:
         public = data.get('public', '')
         private = data.get('private', '')
         tags = data.get('tags', '')
+        gm_only = bool(data.get('gm_only', False))
         image_data = data.get('image_data', '')
         image_embed = ''  # will be set if we upload the image
 
@@ -233,6 +234,7 @@ class Root:
             bio=image_embed,
             gm_info=private,
             avatar_upload_id=avatar_upload_id,
+            gm_only=gm_only,
         )
         return {
             'view_url': config['campaign_url'] + '/characters/' + slug,
