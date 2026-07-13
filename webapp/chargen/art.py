@@ -22,6 +22,13 @@ from chargen.character import random_age
 #: Imagen 4 (imagen-4.0-*) was retired by Google on 2026-08-17; the successor
 #: family is the Gemini *-flash-image models, called via generate_content
 #: rather than the Imagen-only generate_images endpoint.
+#:
+#: Per-image cost (as of 2026-07): image output bills at $60 / 1M tokens with a
+#: fixed token count per resolution, so a single portrait at the default 1K
+#: (1024x1024) output is ~$0.067. Other resolutions: 512px ~$0.045, 2K ~$0.101,
+#: 4K ~$0.151. Text-prompt input is negligible and there is no image input in
+#: the chargen flow. Batch mode would halve the 1K price (~$0.034), but the
+#: chargen button generates one image interactively, so ~$0.07/image applies.
 DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image'
 
 

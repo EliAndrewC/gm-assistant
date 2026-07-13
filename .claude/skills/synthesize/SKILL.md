@@ -86,8 +86,17 @@ json.dump(
 )
 open("[SCRATCH]/synthesize-character.txt", "w").write(synthesis.format_character(char))
 open("[SCRATCH]/synthesize-campaign-context.txt", "w").write((snapshot + "\n\n" + recent).strip())
+open("[SCRATCH]/synthesize-tagline.txt", "w").write(tagline or "")  # existing OP tagline, for the review's tagline check
+# Authoritative name->slug map of every existing OP character, for wrapping cast
+# references in the backstory as OP links (Step 2c) and for the review agent.
+try:
+    cast_links = {c["name"]: c["slug"] for c in op.existing_characters() if c.get("slug")}
+except Exception:
+    cast_links = {}
+json.dump(cast_links, open("[SCRATCH]/synthesize-cast-links.json", "w"), indent=0)
 print("CASTE:", caste, "| TAGLINE:", tagline or "(none)", "| STEERING:", STEERING or "(none)",
-      "| CONTEXT:", n, "characters,", len(snapshot) + len(recent), "chars")
+      "| CONTEXT:", n, "characters,", len(snapshot) + len(recent), "chars,",
+      len(cast_links), "cast-links")
 PY
 ```
 
@@ -107,7 +116,10 @@ lookups (grep, then read the hits):
   (grep the family and place names), `/gm-assistant/setting/lineages.md`,
   `clans-and-imperials.md`.
 - **Caste-specific life**: for a Monk, `/gm-assistant/cosmology/` and the
-  temple skill's reference material; for a Peasant, `/gm-assistant/setting/castes.md`,
+  temple skill's reference material - including its **Monk Titles and Ceremonial
+  Offices** section, so a monk with a specific duty (Steward, Senior Monk,
+  appraiser) gets their correct ceremonial title (remember the Fortune-swap rule);
+  for a Peasant, `/gm-assistant/setting/castes.md`,
   `professions.md`, `village-headsmen.md`, `economics.md`.
 - Anything the tags or tagline name (an institution, a place, another NPC).
 
@@ -142,6 +154,39 @@ engine's tested instructions - keep honoring them):
   "demesne"; "humans"/"inhabitants"/"population" for generic demographics
   ("people" means samurai). Hyphens only - never em- or en-dashes. Prose
   paragraphs only, no headings or bullets.
+- **Link every reference to another OP character** (GM preference). When the prose
+  names another character who has an Obsidian Portal record, wrap the first mention
+  as an OP internal link `[[:slug|Display]]` - leading colon, the slug from
+  `$SCRATCH/synthesize-cast-links.json` (the authoritative name->slug map), and the
+  display text is the character's FULL name, e.g.
+  `[[:hida-no-reiji-natsuo|Hida no Reiji Natsuo]]` (not the short "Natsuo"); the
+  linked first mention reads as the full name, later bare mentions may use the
+  short form. Link only characters that HAVE a record; leave a not-yet-created
+  character bare UNLESS the cast already links it anticipatorily in GM-only notes
+  (then match that). Not places/families/temples.
+
+## Step 2c-review - Run the `backstory-review` subagent before the GM sees it
+
+The author is not a reliable reviewer of their own prose (Principle I). Before
+presenting, write the drafted prose to `$SCRATCH/synthesize-backstory.txt` and run
+the `backstory-review` subagent on it - it sweeps the GM's growing catalog of
+previously-caught mistakes plus the baseline canon/style rules, so recurring
+errors get fixed in-session instead of reaching the GM again. Launch it (Agent
+tool, `subagent_type: backstory-review`) and pass the paths to
+`$SCRATCH/synthesize-backstory.txt`, `$SCRATCH/synthesize-character.txt`,
+`$SCRATCH/synthesize-campaign-context.txt`, `$SCRATCH/synthesize-cast-links.json`,
+and `$SCRATCH/synthesize-tagline.txt` (plus any steering). Apply backstory FLAGs
+by rewriting `synthesize-backstory.txt`. The tagline here is the character's
+EXISTING OP one, which this skill does not normally author - so if the agent
+flags it (leaks non-public info, or color commentary), do NOT silently rewrite it;
+surface it to the GM in your presentation and offer to trim it (a terse
+`<Office/Title> of/for <Place>`), applying `op.update_character(id, tagline=...)`
+only if they say yes. Apply every FLAG it returns (rewrite `synthesize-backstory.txt`),
+re-running if a fix is substantial, until no unaddressed flags remain. **Same-
+session gotcha**: if `.claude/agents/backstory-review.md` was created or edited
+THIS session, launching by `subagent_type` gets the stale snapshot - instead
+launch a `general-purpose` agent told to Read that definition and adopt it
+verbatim, then review (see the harness-behavior note in the project CLAUDE.md).
 
 Then present to the GM: the inferred **caste**, the **tagline**, the
 **steering** applied, how many campaign characters you read - and **reproduce
@@ -161,14 +206,17 @@ described edits yourself, then Step 4 with the edited text.
 
 ## Step 4 - Upload (idempotent, notes-preserving)
 
-Write the final prose to `[BACKSTORY_FILE]` in the scratchpad, then:
+Upload the reviewed prose. It already lives in
+`$SCRATCH/synthesize-backstory.txt` from Step 2c-review; if the GM chose "upload
+with these changes" (Step 3 free-text), apply those edits to that same file
+first, then:
 
 ```bash
 cd /gm-assistant/webapp && python3 - <<'PY'
 import l7r, json
 from chargen import op, opsynth
 h = json.load(open("[SCRATCH]/synthesize-handoff.json"))
-prose = open("[BACKSTORY_FILE]").read()
+prose = open("[SCRATCH]/synthesize-backstory.txt").read()
 body = op.get_character_body(h["id"]) or {}          # re-fetch to avoid staleness
 merged = opsynth.merge_backstory(body.get("game_master_info") or "", prose)
 op.update_character(h["id"], game_master_info=merged)

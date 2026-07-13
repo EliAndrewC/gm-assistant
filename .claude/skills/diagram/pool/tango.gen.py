@@ -9,12 +9,15 @@ the streets and the bulk of the housing packs into TIGHT ROWS behind them (the r
 doctrine - see settlements.md). The placement is bounded by the wall (s.bound), so the dense
 quarters fill the ring's shape to the rampart.
 
-TO SCALE at the GM's city scale, 1px = 3ft. The wall's semi-axes are 480x450px = 1,440 x
-1,350 ft: ~57 walled hectares for ~3,000 people = ~53/ha - the LOW end of the real 100-250/ha
+TO SCALE at the GM's city scale, 1px = 3ft. The wall's semi-axes are 487x457px (~1,461 x
+1,371 ft): ~59 walled hectares for ~3,000 people = ~51/ha - the LOW end of the real 100-250/ha
 walled-settlement band, which is Tango's canon (an average provincial-city population with
 above-average in-wall space per capita BECAUSE of its agricultural district). The first
-1px=3ft pass kept the old 840x780 ring and produced a ~17/ha ghost town - the wall was
-enclosing 5-8x more ground than 600 households can fill; this ring is the honest size.
+1px=3ft pass kept the old 840x780 ring and produced a ~17/ha ghost town; the ring was then sized
+to hug the city. Feature 006 (per-quarter density + no extramural commoners) revealed the hugged
+ring had been meeting 3,000 partly by SPILLING ~12 dwellings past the wall, so the ring was
+enlarged a hair (a uniform x1.015 from the earlier 480x450) - the GM's call: keep the round
+3,000 and let the honest-inside figure meet it, rather than trim the declared population.
 
 The four quarters (split by the road and an E-W axis) - same layout as ever:
   - NW: the (unusual, tunable - agricultural_district=True) AGRICULTURAL district - in-wall
@@ -42,17 +45,57 @@ s.meta(name="Tango", scale="city", walled=True, agricultural_district=True, popu
        clan="Crane", capital_dir="southeast")   # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
 
 # ---- the closed rampart (a near-elliptical ring) sized to hug the city, with N and S gates
-CX, CY, RX, RY = 1600, 1330, 480, 450
+CX, CY, RX, RY = 1602, 1328, 487, 457
 NRING = 22
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)),
          round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, SGATE = WALL[0], WALL[NRING // 2]
-s.city_wall(WALL, gates=[NGATE, SGATE], guard_east=[NGATE], tower_skip=[(2056, 1365), (1652, 1744)])   # the fence-END kido spots (E + SW ring-road gates): the gates keep their crossings, the towers slide a short way along the wall
+s.city_wall(WALL, gates=[NGATE, SGATE], guard_east=[NGATE], tower_skip=[(2065, 1364), (1655, 1748)])   # the fence-END kido spots (E + SW ring-road gates): the gates keep their crossings, the towers slide a short way along the wall
 MOAT = s.moat(WALL, gap=24)                  # the moat hugs the wall base (~72 ft out; real seats kept it close)
 # a ring road (順城街) hugs the inside of the wall, leaving the wall-clear patrol zone; the quarters
 # pack INSIDE it (s.bound = the ring loop), off the rampart
 RING = s.ring_road(WALL, inset=22)
 s.bound = [list(p) for p in RING]            # placement stays inside the ring road, off the wall
+
+# ---- DECLARED QUARTERS (feature 006): the interior tiles into zoned regions so density is judged
+# PER QUARTER. Tango splits at the road (x=CX) and the E-W axis (y=CY) into four wedges of the
+# ring-inset ellipse; the NW wedge subdivides into the agricultural district (a reserve) above and
+# the burakumin quarter (residential) below. Density is measured over housing-available ground, so
+# the government wedge (mostly yamen + ministries) reads as a civic precinct, not under-built.
+def _ipt(i, n=48, inset=24):
+    a = -math.pi / 2 + 2 * math.pi * i / n
+    return (CX + (RX - inset) * math.cos(a), CY + (RY - inset) * math.sin(a))
+
+
+def _wedge(i0, i1, n=48):
+    return [(CX, CY)] + [_ipt(i, n) for i in range(i0, i1 + 1)]
+
+
+def _clip_h(poly, ys, keep_above):
+    # Sutherland-Hodgman clip of a polygon to the half-plane y<=ys (keep_above) or y>=ys.
+    out = []
+    for k in range(len(poly)):
+        x0, y0 = poly[k]
+        x1, y1 = poly[(k + 1) % len(poly)]
+        in0 = (y0 <= ys) if keep_above else (y0 >= ys)
+        in1 = (y1 <= ys) if keep_above else (y1 >= ys)
+        if in0:
+            out.append((x0, y0))
+        if in0 != in1:
+            t = (ys - y0) / (y1 - y0)
+            out.append((x0 + t * (x1 - x0), ys))
+    return out
+
+
+_NE = _wedge(0, 12)      # top -> right : the laborer warren
+_SE = _wedge(12, 24)     # right -> bottom : the government / samurai ward
+_SW = _wedge(24, 36)     # bottom -> left : the merchant district + temple neighborhood
+_NW = _wedge(36, 48)     # left -> top : agricultural district (above) + burakumin (below)
+s.quarter(_NE, "residential")
+s.quarter(_SE, "mixed")
+s.quarter(_SW, "mixed")
+s.quarter(_clip_h(_NW, 1211, True), "reserve", kind="agricultural_district")
+s.quarter(_clip_h(_NW, 1211, False), "residential")
 # crop the rendered map tight to the walled city - a city map is about the city, not its
 # countryside, so estates and farmland run off the edge. A ~90px margin past the moat leaves
 # room for the title (top-left) and compass (top-right) above the rampart, plus a working
@@ -63,18 +106,18 @@ s.set_view(CX - RX - 46 - MARGIN, CY - RY - 46 - MARGIN, 2 * (RX + 46 + MARGIN),
 # ---- the Imperial road (N-S spine, off both edges, through both gates), the moat-feeder, gates
 # the label names the IMPERIAL road - placed OUTSIDE the north gate; inside the walls the same
 # roadway is a city street (a city, not Imperial, responsibility), so the label must sit beyond a gate
-IMPROAD = [(1600, 720), (1600, CY - RY), (1600, 1330), (1600, CY + RY), (1600, 1950)]
-s.road(IMPROAD, label="Imperial Road", label_xy=(1700, 800))
-_mnw = min(MOAT, key=lambda p: (p[0] - 1250) ** 2 + (p[1] - 1000) ** 2)   # a moat vertex on the NW
-s.stream([(930, 715), (1040, 850), (_mnw[0], _mnw[1])], width=s.px(66))   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
+IMPROAD = [(1602, 709), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 1957)]
+s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
+_mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)   # a moat vertex on the NW
+s.stream([(922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66))   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
 # fixed crossing on the samurai ward fence, but s.ward draws them near the END of the gen - long
 # after the packs - so without these block_polys a row house lands under a guard box (the boxes
 # hang W of a vertical kido, N of a horizontal one; reserved with a ~17px margin (a samurai_large's
 # half-diagonal) so a footprint CENTER-test keeps whole footprints out). Also feeds tower_skip.
-KIDO_SPOTS = [(1620, 1455, True), (1700, 1365, False), (1800, 1365, False),
-              (1890, 1365, False), (2056, 1365, False), (1652, 1744, True)]
+KIDO_SPOTS = [(1622, 1455, True), (1704, 1364, False), (1805, 1364, False),
+              (1896, 1364, False), (2065, 1364, False), (1655, 1748, True)]
 for kx, ky, kh in KIDO_SPOTS:
     if kh:
         s.block_polys.append([(kx - 25, ky - 38), (kx + 45, ky - 38), (kx + 45, ky + 26), (kx - 25, ky + 26)])
@@ -85,16 +128,16 @@ for kx, ky, kh in KIDO_SPOTS:
 # CARAVAN facilities just INSIDE each gate (a transit zone): a flophouse + a prominent INN + a
 # STABLES with open ground for the wagon-trains' draft animals; plus a market flophouse OUTSIDE
 # each gate for late arrivals who find the gate shut at dusk.
-s.flophouse(1508, 790, label_below=True)                     # outside the NORTH gate
-s.flophouse(1700, 1856)                                      # outside the SOUTH gate, by the gate market
+s.flophouse(1509, 780, label_below=True)                     # outside the NORTH gate
+s.flophouse(1704, 1862)                                      # outside the SOUTH gate, by the gate market
 # N-gate caravan cluster, EAST of the road inside the gate (the NW is the agri district's)
-s.flophouse(1642, 998)
-s.inn(1642, 1035)
-s.stables(1640, 1072, rot=90)
+s.flophouse(1645, 991)
+s.inn(1645, 1029)
+s.stables(1643, 1066, rot=90)
 # S-gate caravan cluster, WEST of the road inside the gate, below the temple neighborhood
-s.flophouse(1572, 1618)
-s.inn(1572, 1652)
-s.stables(1572, 1684, rot=90)
+s.flophouse(1574, 1620)
+s.inn(1574, 1655)
+s.stables(1574, 1687, rot=90)
 
 
 def grid(streets, width_ft=18):
@@ -310,11 +353,11 @@ def veg_tract(name, bbox, seed):
 # narrowing crescent. Params found by sweeping seeds/falls against the ACTUAL ring-road
 # polyline (its chords cut inside the ideal ellipse) + the burakumin band at y1236.
 # The district's second block is a kind="vegetable" GARDEN TRACT on the road flank.
-s.pond(1497, 972, 38, 24)                # the in-wall tank, on the quarter's high NE corner
-_net1, ENV_NW1, _c1 = comb_field("nw1", (1470, 985), 135, 99, 110, (95, 130), (55, 80), (0.35, 0.7),
-                                 dry_band=(10, 18), avoid=(RING,), mirror_ym=1116)
+s.pond(1497, 965, 38, 24)                # the in-wall tank, on the quarter's high NE corner
+_net1, ENV_NW1, _c1 = comb_field("nw1", (1470, 978), 135, 99, 110, (95, 130), (55, 80), (0.35, 0.7),
+                                 dry_band=(10, 18), avoid=(RING,), mirror_ym=1111)
 _p1 = plot_centroid(_net1, lambda cs: min(cs, key=lambda c: (c[0] - _c1[0]) ** 2 + (c[1] - _c1[1]) ** 2))
-topo_channel([(1482, 979), (1470, 985), _p1], {"kind": "pond"}, {"kind": "field", "name": "nw1"})
+topo_channel([(1482, 972), (1470, 978), _p1], {"kind": "pond"}, {"kind": "field", "name": "nw1"})
 # the in-wall field's runoff leaves by a WATER GATE: a culvert from the drain's outfall under
 # the ring road + rampart into the moat (drawn in the water block, so the wall renders over it -
 # it reads as flowing beneath the masonry, which is what a real water gate did)
@@ -339,167 +382,169 @@ s.field_channel([(_o1x, _o1y), (_o1x + _ucx * _te, _o1y + _ucy * _te)], '#7C9EB0
 s.ring(('poly', ENV_NW1), 17, 14, ["plain"])
 s.ring(('poly', ENV_NW1), 13, 42, ["plain"])
 s.ring(('poly', ENV_NW1), 10, 70, ["plain"])
-veg_tract("nw2", (1502, 1030, 1566, 1210), 72)
-s.label(1340, 1128, "agricultural district", 10, italic=True, color="#5A6A2A")
+veg_tract("nw2", (1503, 1023, 1568, 1206), 72)
+s.label(1338, 1123, "agricultural district", 10, italic=True, color="#5A6A2A")
 
 # the in-wall burakumin neighborhood (its lane reaches the Imperial road, wiring it to the grid):
 # two terrace strips flanking the E-W lane (row-packing doctrine), a few shops fronting the lane
-BUR_ST = [[(1195, 1288), (1600, 1288)], [(1480, 1236), (1480, 1372)]]   # the vertical runs a full 50+ past the lane both ways (no dangling stub) and into the SW street   # the vertical continues into the SW x1480 street (end-to-end junction, no near-miss)
+BUR_ST = [[(1191, 1285), (1602, 1285)], [(1480, 1233), (1480, 1371)]]   # the vertical runs a full 50+ past the lane both ways (no dangling stub) and into the SW street   # the vertical continues into the SW x1480 street (end-to-end junction, no near-miss)
 grid(BUR_ST)
 # the burakumin draw from their OWN wells (status segregation extended to shared water) -
 # placed before the rows so the strips break into courts around them
-for wx, wy in [(1300, 1262), (1490, 1262), (1330, 1312), (1540, 1312), (1230, 1264), (1230, 1314), (1400, 1314), (1560, 1264), (1265, 1262), (1265, 1312), (1435, 1316)]:
+for wx, wy in [(1298, 1259), (1490, 1259), (1328, 1310), (1541, 1310), (1226, 1261), (1226, 1312), (1399, 1312), (1561, 1261), (1262, 1259), (1262, 1310), (1435, 1314)]:
     s.well_at(wx, wy)
 front([BUR_ST[0]], ["shop"] * 5, spacing=42, rows=1)
-s.rowpack((1202, 1236, 1580, 1276), (["burakumin"] + ["servant"]) * 18, court_every=3)
-s.rowpack((1202, 1300, 1580, 1340), (["burakumin"] + ["servant"]) * 18, court_every=3)
-s.label(1450, 1266, "burakumin", 10, italic=True, color="#6B4F2A")
+s.rowpack((1198, 1233, 1582, 1273), (["burakumin"] + ["servant"]) * 18, court_every=3)
+s.rowpack((1198, 1298, 1582, 1338), (["burakumin"] + ["servant"]) * 18, court_every=3)
+s.label(1450, 1263, "burakumin", 10, italic=True, color="#6B4F2A")
 
 # ====================================================================== NE: laborers
 # one E-W street (to a clean ring-road junction) + one N-S; shops + the wealthier "master"
 # laborers front them, and the standard laborers pack into terrace BANDS behind the frontage
-NE_ST = [[(1600, 1150), (2016, 1150)], [(1800, 1050), (1800, 1363)]]
+NE_ST = [[(1602, 1145), (2024, 1145)], [(1805, 1044), (1805, 1361)]]
 grid(NE_ST)
 # gravel roji subdivide the bands into machiya-block widths; drawn BEFORE wells and rows
-alleys([[(1700, 1062), (1700, 1296)], [(1890, 1082), (1890, 1296)], [(1970, 1153), (1970, 1250)]])   # the third serves the east-arc terraces
-s.frontage([(1600, 1150), (1960, 1150)], ["shop"] * 3 + ["laborer_large"] * 12, width=s.lw(18), spacing=17, rows=1, rowgap=2, jitter=1, setback=s.px(14), skip=NE_ST[0])   # stops short of the ring arc (a large corner was reaching the patrol bed)
+alleys([[(1704, 1056), (1704, 1293)], [(1896, 1076), (1896, 1293)], [(1978, 1148), (1978, 1247)]])   # the third serves the east-arc terraces
+s.frontage([(1602, 1145), (1967, 1145)], ["shop"] * 3 + ["laborer_large"] * 12, width=s.lw(18), spacing=17, rows=1, rowgap=2, jitter=1, setback=s.px(14), skip=NE_ST[0])   # stops short of the ring arc (a large corner was reaching the patrol bed)
 front([NE_ST[1]], ["shop"] * 2 + ["laborer_large"] * 6, spacing=17, rows=1)
 # the laborer warren is the DENSEST quarter, so it carries the most wells - the idobata courts
 # the terraces break around; placed BEFORE the rows
-s.place_wells((1700, 1015, 2000, 1250), spacing=58)
-for wx, wy in [(1660, 1100), (1750, 1210), (1700, 1075), (1860, 1230), (1672, 1120), (1900, 1080), (1950, 1200), (1770, 1085), (1840, 1085), (1910, 1088), (1745, 1112), (1830, 1112), (1930, 1112), (1660, 1085), (1690, 1180), (1760, 1180), (1830, 1180), (1900, 1180), (1960, 1180), (1680, 1132), (1745, 1132), (1860, 1132), (1930, 1132)]:
+s.place_wells((1704, 1008, 2008, 1247), spacing=58)
+for wx, wy in [(1663, 1095), (1754, 1206), (1704, 1069), (1866, 1226), (1675, 1115), (1907, 1074), (1957, 1196), (1775, 1079), (1846, 1079), (1917, 1082), (1749, 1107), (1835, 1107), (1937, 1107), (1663, 1079), (1693, 1176), (1764, 1176), (1835, 1176), (1907, 1176), (1967, 1176), (1683, 1127), (1749, 1127), (1866, 1127), (1937, 1127)]:
     s.well_at(wx, wy)
-s.fire_tower(1826, 1246, label=None)   # NE, amid the terraces (placed first; the rows flow around it)
-for wx, wy in [(1670, 1213), (1786, 1222), (1992, 1226), (1998, 1330), (1725, 1180), (1762, 1248), (1642, 1238), (1958, 1250)]:
+s.fire_tower(1831, 1243, label=None)   # NE, amid the terraces (placed first; the rows flow around it)
+for wx, wy in [(1673, 1209), (1791, 1218), (2000, 1222), (2006, 1328), (1729, 1176), (1766, 1245), (1645, 1235), (1965, 1247)]:
     s.well_at(wx, wy)   # extra idobata courts BEFORE the rows, splitting the flagged 28-77-household draw-points
-for fan in ([(1812, 1052), (1808, 1030), (1816, 1068), (1876, 1028), (1874, 1064)],
-            [(1962, 1268), (1946, 1246), (2006, 1252), (2010, 1210)],
-            [(1845, 1252), (1815, 1252), (1875, 1250), (1845, 1186), (1808, 1188), (1878, 1186), (1815, 1160)],
-            [(1500, 1332), (1470, 1360), (1508, 1425), (1544, 1435), (1470, 1330)],
-            [(1544, 1438), (1470, 1432), (1424, 1428), (1548, 1382)]):
+for fan in ([(1817, 1046), (1813, 1023), (1821, 1062), (1882, 1021), (1880, 1058)],
+            [(1969, 1265), (1953, 1243), (2014, 1249), (2018, 1206)],
+            [(1851, 1249), (1820, 1249), (1881, 1247), (1851, 1182), (1813, 1184), (1884, 1182), (1820, 1155)],
+            [(1501, 1330), (1470, 1358), (1509, 1424), (1545, 1435), (1470, 1328)],
+            [(1545, 1438), (1470, 1432), (1423, 1427), (1549, 1381)]):
     for c in fan:
         if s.well_at(*c):
             break   # candidate fan: first clear spot wins (splits a 27-32-household draw-point)
-s.rowpack((1716, 1010, 2005, 1140), (["laborer"] * 3 + ["servant"]) * 60, court_every=3)
-s.rowpack((1620, 1158, 2045, 1250), (["laborer"] * 3 + ["servant"]) * 50, court_every=3)
-s.rowpack((1620, 1254, 2045, 1300), (["laborer"] * 3 + ["servant"]) * 26, court_every=3)
-s.label(1760, 1088, "laborer neighborhoods", 10, italic=True, color="#5A4326")
+s.rowpack((1720, 1003, 2013, 1135), (["laborer"] * 3 + ["servant"]) * 60, court_every=3)
+s.rowpack((1622, 1153, 2054, 1247), (["laborer"] * 3 + ["servant"]) * 50, court_every=3)
+s.rowpack((1622, 1251, 2054, 1298), (["laborer"] * 3 + ["servant"]) * 26, court_every=3)
+s.label(1764, 1082, "laborer neighborhoods", 10, italic=True, color="#5A4326")
 
 # fill the band between the NE laborer quarter and the samurai ward fence (no large empty
 # ground in a city) - terraces between gravel lanes that continue down to the ward gates
-alleys([[(1700, 1300), (1700, 1362)], [(1890, 1300), (1890, 1362)]])   # x1800 is a real street now
-for wx in (1660, 1755, 1855, 1945):
-    s.well_at(wx, 1340)
-s.rowpack((1620, 1302, 2050, 1352), (["merchant_house"] * 4 + ["servant"]) * 40, court_every=3)
+alleys([[(1704, 1298), (1704, 1360)], [(1896, 1298), (1896, 1360)]])   # x1800 is a real street now
+for wx in (1663, 1759, 1861, 1952):
+    s.well_at(wx, 1338)
+s.rowpack((1622, 1300, 2059, 1350), (["merchant_house"] * 4 + ["servant"]) * 40, court_every=3)
 
 # ====================================================================== SW: merchants
 # the main commercial avenue reaches from the road to the west ring road; two N-S streets
 # hang off it. Storefronts line all three (near-contiguous machiya frontage); the merchant
 # homes fill the blocks as terraces, with the wealthy WEST enclave spread out (estates +
 # large homes with air between them - the variety/spread the budgets.md wealth bands demand).
-AVENUE = [(1164, 1455), (1920, 1455)]
+AVENUE = [(1164, 1455), (1927, 1455)]
 s.street(AVENUE, width=s.lw(22), main=True)
-SW_ST = [[(1256, 1455), (1256, 1614)], [(1480, 1372), (1480, 1658)]]   # x1256 ends ON the ring; x1480 stops well clear of the S-gate furniture and its tucked inspection annex
+SW_ST = [[(1253, 1455), (1253, 1616)], [(1480, 1371), (1480, 1661)]]   # x1256 ends ON the ring; x1480 stops well clear of the S-gate furniture and its tucked inspection annex
 grid(SW_ST)
 # the temple neighborhood (lower SW, INSIDE the wall): Benten + Daikoku with the Ministry of
 # Rites that oversees them - placed BEFORE the merchant rows so they flow around it
-s.shrine_hall(1345, 1500, "Temple of Benten", w=100, h=64, kind="temple", primary=True, label_below=True)
-s.shrine_hall(1425, 1614, "Temple of Daikoku", w=100, h=64, kind="temple", torii=[(1481, 1614), (1481, 1568)])
-s.ministry(1318, 1600, "Ministry of Rites", w=s.px(140), h=s.px(95))
+s.shrine_hall(1343, 1501, "Temple of Benten", w=100, h=64, kind="temple", primary=True, label_below=True)
+s.block_polys.append([(1281, 1534), (1405, 1534), (1405, 1560), (1281, 1560)])   # reserve the 'Temple of Benten' label ground so the merchant pack does not land under it (post-scale, feature 006)
+s.shrine_hall(1424, 1616, "Temple of Daikoku", w=100, h=64, kind="temple", torii=[(1481, 1616), (1481, 1570)])
+s.ministry(1316, 1602, "Ministry of Rites", w=s.px(140), h=s.px(95))
 # the city THEATER STAGE - in the Temple of Benten's precinct, EAST of it, its viewing ground
 # opening west toward the hall (the troupe/festival venue belonging to the temple)
-s.theater_stage(1448, 1502, w=s.px(190), h=s.px(132), rot=90, label="theater stage")
+s.theater_stage(1448, 1503, w=s.px(190), h=s.px(132), rot=90, label="theater stage")
 # Benten's + Daikoku's intramural TEMPLE GRAVEYARDS (danka parish grounds)
-s.cemetery(1220, 1508, 46, 34, label="graveyard")
-s.cemetery(1390, 1674, 56, 40, label="graveyard")
+s.cemetery(1216, 1509, 46, 34, label="graveyard")
+s.cemetery(1389, 1677, 56, 40, label="graveyard")
 # a smattering of small wayside shrines dot the temple neighborhood (non-residential)
-for sx, sy in [(1302, 1558), (1268, 1608), (1520, 1650), (1500, 1620)]:   # all four INSIDE the temple neighborhood, clustered AWAY from the theater stage (its facing check measures the nearest religious feature - keep Benten nearest) - the S-gate pocket is the furniture's ground
+for sx, sy in [(1300, 1559), (1265, 1610), (1521, 1653), (1501, 1622)]:   # all four INSIDE the temple neighborhood, clustered AWAY from the theater stage (its facing check measures the nearest religious feature - keep Benten nearest) - the S-gate pocket is the furniture's ground
     s.small_shrine(sx, sy)
-s.label(1258, 1545, "temple neighborhood", 9, italic=True, color="#6B2A18")
-s.frontage([(1164, 1455), (1600, 1455)], (["merchant"] * 3 + ["shop"]) * 20, width=s.lw(20), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), skip=AVENUE)   # skip=AVENUE: the sub-segment must match the avenue's REGISTERED corridor or its own street rejects it
+s.label(1255, 1546, "temple neighborhood", 9, italic=True, color="#6B2A18")
+s.frontage([(1159, 1455), (1602, 1455)], (["merchant"] * 3 + ["shop"]) * 20, width=s.lw(20), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), skip=AVENUE)   # skip=AVENUE: the sub-segment must match the avenue's REGISTERED corridor or its own street rejects it
 front(SW_ST, (["merchant"] * 3 + ["shop"]) * 12, width_ft=18, spacing=19, rows=2)
 # a noticeable minority of merchant houses keep a fireproof kura - placed NOW, while the
 # shopfronts still have open back lots (the terraces packed next would fill them)
 s.merchant_storehouses(8)
 # the merchants' HOMES: terraces in the north band (between the burakumin lane and the avenue,
 # prime central ground) and the mid-block cores; the WEST enclave keeps its spread
-alleys([[(1310, 1348), (1310, 1454)]])   # reaches the avenue bed; the x1480 through-street serves the band's east half
-EST = [(1268, 1388, "south")]
+alleys([[(1308, 1346), (1308, 1454)]])   # reaches the avenue bed; the x1480 through-street serves the band's east half
+EST = [(1265, 1387, "south")]
 for ex, ey, gd in EST:
     s.merchant_estate(ex, ey, gate_dir=gd)
-for mx, my in [(1360, 1400), (1516, 1392)]:
+for mx, my in [(1358, 1399), (1517, 1391)]:
     s.building(mx, my, *s._dims("merchant_large"), "merchant_large")
-s.inn(1568, 1425)                        # the roadside inn anchoring the central road-market (before the terraces)
-s.fire_tower(1240, 1352, label=None)   # west-central, on the strip between the burakumin lane and the merchant band (before the rows, which flow around it)
-s.place_wells((1250, 1345, 1580, 1440), spacing=66)
-for wx, wy in [(1330, 1400), (1520, 1395), (1394, 1428), (1466, 1430)]:
+s.inn(1570, 1424)                        # the roadside inn anchoring the central road-market (before the terraces)
+s.fire_tower(1237, 1350, label=None)   # west-central, on the strip between the burakumin lane and the merchant band (before the rows, which flow around it)
+s.place_wells((1247, 1343, 1582, 1440), spacing=66)
+for wx, wy in [(1328, 1399), (1521, 1394), (1393, 1427), (1466, 1429)]:
     s.well_at(wx, wy)   # split the west merchant band's overloaded draw-point
-s.rowpack((1185, 1346, 1558, 1440), (["merchant_house"] * 5 + ["servant"]) * 40, court_every=3)   # reaches the west ring arc (the bound clips the taper)
+s.rowpack((1181, 1344, 1559, 1440), (["merchant_house"] * 5 + ["servant"]) * 40, court_every=3)   # reaches the west ring arc (the bound clips the taper)
 # mid-block cores between the two SW streets: more merchant terraces
-s.rowpack((1480, 1560, 1545, 1642), (["merchant_house"] * 5 + ["servant"]) * 12)
-s.rowpack((1554, 1498, 1590, 1608), (["merchant_house"] * 3 + ["servant"]) * 8)   # the road flank south of the avenue
-s.rowpack((1500, 1462, 1580, 1558), (["merchant_house"] * 5 + ["servant"]) * 10)
+s.rowpack((1480, 1561, 1546, 1645), (["merchant_house"] * 5 + ["servant"]) * 12)
+s.rowpack((1555, 1498, 1592, 1610), (["merchant_house"] * 3 + ["servant"]) * 8)   # the road flank south of the avenue
+s.rowpack((1501, 1462, 1582, 1559), (["merchant_house"] * 5 + ["servant"]) * 10)
 WEST_HOMES = (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 8
-s.place_wells((1230, 1460, 1330, 1620), spacing=90)
-s.pack((1195, 1466, 1345, 1690), (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 12, step=20, face_streets="fill")
-s.label(1400, 1462, "merchant district", 10, italic=True, color="#5A4326")
+s.place_wells((1226, 1460, 1328, 1622), spacing=90)
+s.pack((1191, 1466, 1343, 1693), (["merchant_large"] + ["merchant_house"] * 2 + ["servant"]) * 12, step=20, face_streets="fill")
+s.label(1399, 1462, "merchant district", 10, italic=True, color="#5A4326")
 
 # WELL COVERAGE passes, now the commoner housing is all down: any dwelling farther than a
 # court-spacing from a well gets one dropped in the nearest clear court (place_wells near=
 # mode + its coverage pass; grid placement consumes no RNG, so this perturbs nothing).
-s.place_wells((1620, 1000, 2060, 1360), spacing=52, near=46)   # NE laborer warren + the gap band
-s.place_wells((1185, 1340, 1600, 1700), spacing=52, near=46)   # merchant district + temple neighborhood
-s.place_wells((1195, 1230, 1600, 1345), spacing=52, near=46)   # burakumin strips
+s.place_wells((1622, 993, 2069, 1358), spacing=52, near=46)   # NE laborer warren + the gap band
+s.place_wells((1181, 1338, 1602, 1704), spacing=52, near=46)   # merchant district + temple neighborhood
+s.place_wells((1191, 1226, 1602, 1343), spacing=52, near=46)   # burakumin strips
 
 # ====================================================================== SE: government + samurai
 # the governor's YAMEN - the grandest compound in the city (its dozens of interior buildings
 # are a separate Mode A diagram) - with the five other ministries LINING the government avenue
 # (Rites is apart, in the SW temple neighborhood), and the samurai neighborhood around them
-grid([[(1920, 1455), (1920, 1580)]])   # the government avenue's E leg, wrapping the yamen
-s.governor_mansion(1788, 1546, s.px(436), s.px(366), "Governor's Mansion", gate_dir="west")   # ~1.4 ha - modest for a provincial yamen, still the grandest compound by far
+grid([[(1927, 1455), (1927, 1582)]])   # the government avenue's E leg, wrapping the yamen
+s.governor_mansion(1793, 1547, s.px(436), s.px(366), "Governor's Mansion", gate_dir="west")   # ~1.4 ha - modest for a provincial yamen, still the grandest compound by far
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
         "Ministry of Works", "Ministry of Justice"]
-MIN_POS = [(1652, 1395), (1746, 1420), (1840, 1395), (1934, 1420), (1950, 1484)]   # staggered rows between fence and avenue; the upper row labels ABOVE (over the bare fence line), the lower row + Justice label BELOW (into their own block margins)
+MIN_POS = [(1655, 1394), (1750, 1419), (1846, 1394), (1941, 1419), (1957, 1484)]   # staggered rows between fence and avenue; the upper row labels ABOVE (over the bare fence line), the lower row + Justice label BELOW (into their own block margins)
 for (mx, my), name in zip(MIN_POS, MINS):
     s.ministry(mx, my, name, w=s.px(130), h=s.px(90))   # label side auto-picked (empty ground wins)
 # Bishamon (the warrior fortune) in the samurai quarter SW corner, off the grid (no street
 # runs up to it at this tight scale, so it needs no torii avenue); new hall in a former
 # samurai compound - keeps NO burial ground
-s.shrine_hall(1668, 1660, "Temple of Bishamon", w=s.px(200), h=s.px(140), kind="temple", graveyard=False, label_below=True)
-s.block_polys.append([(1594, 1678), (1742, 1678), (1742, 1726), (1594, 1726)])   # keep the hall's below-label strip clear of the samurai packs (covers a large house's half-footprint past the box)
-s.block_polys.append([(1621, 1623), (1715, 1623), (1715, 1697), (1621, 1697)])   # a ~14px apron around the hall itself - the scatter pack kept rolling a house onto its +4 check margin
+s.shrine_hall(1671, 1663, "Temple of Bishamon", w=s.px(200), h=s.px(140), kind="temple", graveyard=False, label_below=True)
+s.block_polys.append([(1596, 1681), (1746, 1681), (1746, 1730), (1596, 1730)])   # keep the hall's below-label strip clear of the samurai packs (covers a large house's half-footprint past the box)
+s.block_polys.append([(1623, 1625), (1719, 1625), (1719, 1700), (1623, 1700)])   # a ~14px apron around the hall itself - the scatter pack kept rolling a house onto its +4 check margin
 # the ruling clan's walled MAUSOLEUM by the government quarter (the elite crypts)
-s.mausoleum(1788, 1652, 44, 32, label="Mausoleum", gate_dir="north")   # the ward's SE corner, below the yamen
+s.mausoleum(1793, 1655, 44, 32, label="Mausoleum", gate_dir="north")   # the ward's SE corner, below the yamen
 
 # houses vary by rank: ~1-in-4 a large senior house; the wealthiest live on walled estates
 # OUTSIDE the walls. Samurai keep DETACHED compounds with yards - pack, NOT rowpack (the
 # scatter is the deliberate contrast with the commoner terraces).
 SAM_MIX = (["samurai"] * 3 + ["samurai_large"]) * 6
-front([[(1920, 1470), (1920, 1580)]], SAM_MIX[:18], spacing=18, rows=1)   # senior houses front the avenue's E leg
-s.rowpack((1722, 1632, 1995, 1680), (["samurai"] * 5 + ["samurai_large"]) * 10, court_every=6)   # kumi-yashiki nagaya: junior-samurai row-barracks south of the yamen (courts thinned - the quarter keeps no public wells)
-s.rowpack((1955, 1382, 2048, 1568), (["samurai"] * 5 + ["samurai_large"]) * 12, court_every=6)   # the east-arc barracks strip
-s.rowpack((1700, 1686, 1876, 1730), (["samurai"] * 4 + ["samurai_large"]) * 11, court_every=6)   # the south strip below the mausoleum (bound clips it at the ring road)
-s.pack((1622, 1378, 2075, 1738), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill")
-s.label(1758, 1688, "samurai neighborhood", 10, italic=True, color="#3A352C")
+front([[(1927, 1470), (1927, 1582)]], SAM_MIX[:18], spacing=18, rows=1)   # senior houses front the avenue's E leg
+s.rowpack((1726, 1635, 2003, 1683), (["samurai"] * 5 + ["samurai_large"]) * 10, court_every=6)   # kumi-yashiki nagaya: junior-samurai row-barracks south of the yamen (courts thinned - the quarter keeps no public wells)
+s.rowpack((1962, 1381, 2057, 1570), (["samurai"] * 5 + ["samurai_large"]) * 12, court_every=6)   # the east-arc barracks strip
+s.rowpack((1704, 1689, 1882, 1734), (["samurai"] * 4 + ["samurai_large"]) * 11, court_every=6)   # the south strip below the mausoleum (bound clips it at the ring road)
+s.corridors.append(([(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)], 16))   # reserve the WARD FENCE line before the pack so no samurai house sits ON the fence (city_ward_fence_clear_of_structures)
+s.pack((1624, 1377, 2084, 1742), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill")
+s.label(1762, 1691, "samurai neighborhood", 10, italic=True, color="#3A352C")
 # the samurai/government WARD: a continuous earthwork fence (W + N), ends abutting the city
 # wall, so the kido gates can't be walked around. The W leg jogs east below the quarter to
 # abut SOLID wall clear of the S gate opening at x1600.
-s.ward("samurai", [(1678, 1772), (1620, 1716), (1620, 1365), (2079, 1365)],
-       gates=[(1620, 1455, True),                                   # the government avenue pierces the W fence
-              (1700, 1365, False), (1800, 1365, False), (1890, 1365, False),   # the commoner lanes enter at kido gates
-              (2056, 1365, False), (1652, 1744, True)])             # the RING ROAD crosses the fence (E and SW) - gated
-s.label(1652, 1354, "samurai ward gate", 9, italic=True, color="#5A4326")
+s.ward("samurai", [(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)],
+       gates=[(1622, 1455, True),                                   # the government avenue pierces the W fence
+              (1704, 1364, False), (1805, 1364, False), (1896, 1364, False),   # the commoner lanes enter at kido gates
+              (2065, 1364, False), (1655, 1748, True)])             # the RING ROAD crosses the fence (E and SW) - gated
+s.label(1655, 1352, "samurai ward gate", 9, italic=True, color="#5A4326")
 
 # ====================================================================== OUTSIDE the walls
 s.bound = None
 # wealthy samurai walled estates - all to the SE, beyond the moat, SCATTERED and varying in
 # size (~1-1.5 real acres each). The inner ones STRADDLE the cropped SE edge (partly shown);
 # the rest run off-map entirely (a city map is about the city, not its commuter belt).
-EST = [(2190, 1470, 94, 62, "south"), (2150, 1620, 90, 60, "west"), (2095, 1780, 86, 58, "south"),   # straddle the edge
-       (2300, 1560, 84, 56, "west"), (2350, 1720, 76, 50, "south"), (2250, 1890, 72, 48, "north")]    # off-map beyond
+EST = [(2201, 1470, 94, 62, "south"), (2160, 1622, 90, 60, "west"), (2104, 1785, 86, 58, "south"),   # straddle the edge
+       (2313, 1561, 84, 56, "west"), (2363, 1724, 76, 50, "south"), (2262, 1896, 72, 48, "north")]    # off-map beyond
 for ex, ey, ew, eh, gd in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
-s.label(2150, 1548, "samurai estates", 10, italic=True, color="#3A352C")   # in the open ground between the straddling estates, off the moat
+s.label(2160, 1549, "samurai estates", 10, italic=True, color="#3A352C")   # in the open ground between the straddling estates, off the moat
 # surrounding farmland: large comb fields CLOSE to the city, irrigated from the MOAT, each
 # ringed by the villagers' farmhouses; all run off the map edge. Each comb's SLUICE sits a
 # stride outside the moat rim (computed from the actual moat polyline, so the tap self-corrects)
@@ -508,9 +553,9 @@ s.label(2150, 1548, "samurai estates", 10, italic=True, color="#3A352C")   # in 
 # so each tap picks a moat vertex UPSTREAM (north) of the sluice, running WITH the current.
 # fall directions carry a slight SOUTH bias (175/172/105) so each comb's ground sits DOWNSTREAM
 # of its tap (moat_channels_flow_with_current: the moat is fed from the N, its water runs south)
-MOAT_FARMS = [("fw1", (1080, 1204), 175, 73, 190, (160, 210), (95, 125), (0.35, 0.7)),
-              ("fw2", (1160, 1630), 172, 74, 190, (145, 190), (85, 115), (0.4, 0.75)),
-              ("fs1", (1330, 1800), 105, 75, 170, (125, 165), (85, 115), (0.4, 0.78))]
+MOAT_FARMS = [("fw1", (1074, 1200), 175, 73, 190, (160, 210), (95, 125), (0.35, 0.7)),
+              ("fw2", (1155, 1632), 172, 74, 190, (145, 190), (85, 115), (0.4, 0.75)),
+              ("fs1", (1328, 1805), 105, 75, 170, (125, 165), (85, 115), (0.4, 0.78))]
 for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     upstream = [p for p in MOAT if p[1] < tap[1] - 20]       # moat vertices NORTH of the tap (upstream of the southward current)
     mp = min(upstream, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
@@ -531,10 +576,10 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
 # the sluice sits above the cropped frame, so the comb's head shows only its canals entering the
 # view; the fall is capped so the drain stays clear of the moat's north rim, and the collector
 # EMPTIES INTO THE MOAT (the city's storm drain - the north field's runoff feeds the ring)
-_netn, ENV_FN1, _cn = comb_field("fn1", (1872, 610), 90, 76, 90, (140, 180), (80, 110), (0.4, 0.8),
+_netn, ENV_FN1, _cn = comb_field("fn1", (1878, 610), 90, 76, 90, (140, 180), (80, 110), (0.4, 0.8),
                                  avoid=(MOAT,))
 _pn = plot_centroid(_netn, lambda cs: min(cs, key=lambda c: c[1]))   # a head plot, nearest the off-map source
-topo_channel([(1872, 604), (1872, 610), _pn], {"kind": "offmap"}, {"kind": "field", "name": "fn1"})
+topo_channel([(1878, 604), (1878, 610), _pn], {"kind": "offmap"}, {"kind": "field", "name": "fn1"})
 _drn = next(c["pts"] for c in _netn["channels"] if c["role"] == "drain")
 _dfx, _dfy = _drn[-1]
 _mne = min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2)   # the moat rim S of the outfall (west of the funerary ground)
@@ -542,17 +587,17 @@ topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "mo
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
 # a gate market just outside the south gate, beyond the moat - stall rows FLANKING the road
-s.frontage([(1600, 1850), (1600, 1995)], (["merchant"] * 2 + ["shop"]) * 6, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
-s.label(1682, 1902, "gate market", 10, italic=True, color="#5A4326")
+s.frontage([(1602, 1856), (1602, 2003)], ["shop"] * 18, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))   # the guan-xiang gate market is transient SHOPS/stalls, not merchant residences (commoner DWELLINGS shelter inside the wall)
+s.label(1685, 1909, "gate market", 10, italic=True, color="#5A4326")
 
 # COMMERCIAL RIBBON along the Imperial road - a city ON a trade route lines its through-road
 # with shops + traveler services (its prime frontage). The central road-market fills the block
 # between the burakumin lane and the merchant avenue; a smaller row greets northern arrivals.
-s.frontage([(1600, 1330), (1600, 1448)], (["shop"] + ["merchant"] * 2) * 5, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
-s.frontage([(1600, 985), (1600, 1045)], ["shop"] * 3, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=1, jitter=1, setback=s.px(14))
+s.frontage([(1602, 1328), (1602, 1448)], (["shop"] + ["merchant"] * 2) * 5, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
+s.frontage([(1602, 978), (1602, 1039)], ["shop"] * 3, skip=IMPROAD, both=False, width=s.lw(22), spacing=19, rows=1, jitter=1, setback=s.px(14))
 # EAST side - a thin shop row in the gap between the road and the NE/SE quarters
-s.frontage([(1600, 1310), (1600, 1160)], (["shop"] + ["merchant"] * 3) * 2, skip=IMPROAD, both=False, width=s.lw(22), spacing=20, rows=1, jitter=1, setback=s.px(14))   # stops at the burakumin-lane latitude: the ministry labels own the flank below
-s.label(1522, 1408, "road market", 9, italic=True, color="#5A4326")
+s.frontage([(1602, 1308), (1602, 1155)], (["shop"] + ["merchant"] * 3) * 2, skip=IMPROAD, both=False, width=s.lw(22), spacing=20, rows=1, jitter=1, setback=s.px(14))   # stops at the burakumin-lane latitude: the ministry labels own the flank below
+s.label(1523, 1407, "road market", 9, italic=True, color="#5A4326")
 
 # THE DEAD - a full funerary geography (centuries-old city; remains cremated, then interred):
 #  - two intramural TEMPLE GRAVEYARDS (danka parish grounds), by Benten and by Daikoku (above)
@@ -560,9 +605,9 @@ s.label(1522, 1408, "road market", 9, italic=True, color="#5A4326")
 #  - one extramural common BURIAL GROUND, west of the wall (the exempt outside graveyard)
 #  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (above)
 #  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
-s.cemetery(2150, 880, 90, 64, label="common burial ground")
-s.cremation_ground(2150, 985)
-s.ossuary(2160, 770)
+s.cemetery(2160, 871, 90, 64, label="common burial ground")
+s.cremation_ground(2160, 978)
+s.ossuary(2170, 760)
 
 s.bridges()   # spans the Imperial Road over the moat at the north and south gates
 
@@ -572,8 +617,8 @@ s.farmsteads()
 # ===== FIRE DEFENSE: watch-towers =====
 # ONE AMID EACH major commoner quarter, on the cleared seams the dense city leaves - placed
 # LAST so they perturb nothing. WHY: settlements.md "Fire towers".
-s.fire_tower(1526, 1694, label=None)   # south, amid the rooftops it watches - the ONLY spot the full-obstacle scan
-s.label(1526, 1671, "fire tower", 9, italic=True, color="#5A4326")   # ... left with label room (short text, placed ABOVE - the dense south has no 84px below-box anywhere)
+s.fire_tower(1527, 1697, label=None)   # south, amid the rooftops it watches - the ONLY spot the full-obstacle scan
+s.label(1527, 1674, "fire tower", 9, italic=True, color="#5A4326")   # ... left with label room (short text, placed ABOVE - the dense south has no 84px below-box anywhere)
 
 # ---- DETERMINISTIC TOP-UP (consumes no RNG): the seeded packs saturate wherever the streets,
 # wells and compounds leave them, and every upstream edit re-rolls the totals - so the caste
@@ -593,6 +638,8 @@ def top_up(kind, region, need, count_kinds=None):
     stab = [(b["x"], b["y"]) for b in s.M.get("buildings", []) if b.get("kind") == "stables"]
 
     def ok(gx, gy):
+        if kind not in ("samurai", "samurai_large") and not _in_poly(gx, gy, WALL):
+            return False                                     # a COMMONER dwelling never lands OUTSIDE the wall (feature 006); samurai are exempt (their country seats sit outside)
         if any(abs(gx - cx) <= (cw + w_) / 2 + 15 and abs(gy - cy) <= (ch + h_) / 2 + 15 for cx, cy, cw, ch in civ):
             return False                                     # ministries/yamen stand-clear margin
         if any((gx - sx) ** 2 + (gy - sy) ** 2 < 85 ** 2 for sx, sy in stab):
@@ -642,13 +689,13 @@ def _inwall(x, y):
 
 DWELL = ("laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house",
          "merchant_large", "samurai", "samurai_large")
-top_up("samurai", (1632, 1385, 2062, 1730), 40, count_kinds=("samurai", "samurai_large"))
-top_up("merchant_house", (1198, 1352, 1592, 1698), 112,
+top_up("samurai", (1635, 1384, 2071, 1734), 40, count_kinds=("samurai", "samurai_large"))
+top_up("merchant_house", (1194, 1350, 1594, 1701), 112,
        count_kinds=("merchant", "merchant_house", "merchant_large"))
 _dw = (sum(1 for b in s.M["buildings"] if b["kind"] in DWELL)
        + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"])))
 if _dw < 562:   # population floor 558 (3000 x 0.93 / 5) + margin
-    top_up("laborer", (1630, 1015, 2042, 1352),
+    top_up("laborer", (1632, 1008, 2051, 1350),
            sum(1 for b in s.M["buildings"] if b["kind"] == "laborer") + (562 - _dw))
 def _dwell_count():
     return (sum(1 for b in s.M["buildings"] if b["kind"] in DWELL)
@@ -656,13 +703,14 @@ def _dwell_count():
 
 
 # fallback quarters, in caste-band-headroom order, until the floor is met
-for _kind, _region, _cap in (("servant", (1198, 1352, 1592, 1698), 150),
-                             ("burakumin", (1205, 1232, 1595, 1344), 37),
-                             ("samurai", (1632, 1385, 2062, 1730), 46),
-                             ("servant", (1630, 1015, 2042, 1352), 152),
-                             ("laborer", (1180, 1020, 1560, 1222), 290),   # the agri district's margins - its field hands live by the fields they work
-                             ("servant", (1632, 1385, 2062, 1730), 152),  # servants staffed the samurai compounds - the quarter takes the last few
-                             ("merchant_house", (1198, 1352, 1592, 1698), 120)):  # merchant band headroom (caste max ~195) absorbs any residue
+for _kind, _region, _cap in (("servant", (1201, 1226, 1597, 1344), 155),   # the open W-central / burakumin-quarter band (servants interleave among the commoners) - no other servant region reached it, leaving it under-filled (feature 006)
+                             ("servant", (1194, 1350, 1594, 1701), 150),
+                             ("burakumin", (1201, 1229, 1597, 1342), 37),
+                             ("samurai", (1635, 1384, 2071, 1734), 46),
+                             ("servant", (1632, 1008, 2051, 1350), 152),
+                             ("laborer", (1176, 1013, 1561, 1218), 290),   # the agri district's margins - its field hands live by the fields they work
+                             ("servant", (1635, 1384, 2071, 1734), 152),  # servants staffed the samurai compounds - the quarter takes the last few
+                             ("merchant_house", (1194, 1350, 1594, 1701), 120)):  # merchant band headroom (caste max ~195) absorbs any residue
     _dw = _dwell_count()
     if _dw >= 562:
         break
@@ -670,7 +718,7 @@ for _kind, _region, _cap in (("servant", (1198, 1352, 1592, 1698), 150),
 
 # the agricultural district's field hands draw from their own wells - the top-ups above can
 # push homes past the burakumin band's 290px reach (city_neighborhoods_have_wells)
-s.place_wells((1180, 1000, 1560, 1230), spacing=56, near=88, coverage=False)   # FINE grid (the district is laced with field margins + channel corridors), each well gated to sit AMONG homes (near=88), coverage=False so the near-gate stays district-scoped (the global coverage pass would drop wells beside the samurai compounds)
+s.place_wells((1176, 993, 1561, 1226), spacing=56, near=88, coverage=False)   # FINE grid (the district is laced with field margins + channel corridors), each well gated to sit AMONG homes (near=88), coverage=False so the near-gate stays district-scoped (the global coverage pass would drop wells beside the samurai compounds)
 
 s.title("Tango")
 

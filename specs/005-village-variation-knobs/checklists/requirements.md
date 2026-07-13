@@ -33,5 +33,5 @@
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`.
 - The spec deliberately names historically-real village-form categories (nucleated, linear, terraces, polder, mulberry-fishpond, fengshui crescent pond, ancestral hall, water-mouth complex) as *domain vocabulary / requirements*, not implementation choices - these are the "what" of the variety, grounded China-first per the project's core principle. No programming-language, framework, or code-structure detail appears.
-- One judgement call worth flagging for `/speckit-clarify`: the measure of "visually distinct" is a human blind-review (SC-002) backed by the structural-axis count (SC-001). If a purely automated distinctiveness gate is wanted instead, that is a scope decision for clarify/plan.
-- Scope is staged: Phase 1 (within-archetype knobs) is the MVP (US1); archetypes (US4) are explicitly later and incremental. The plan may split this into multiple implementation rounds.
+- Resolved in `/speckit-clarify` (Session 2026-07-13): "visually distinct" gets an automated pool-level twin-detector (FR-013 / SC-002) plus human review; scope = the whole effort (Phase 1 + archetypes) in one plan, archetypes still incremental; re-vary only Kikuta + Hoshigaoka; knobs roll independently under historical-typing rules (no preset bundles).
+- Scope is staged for delivery: Phase 1 (within-archetype knobs) is the MVP (US1) and ships first; archetypes (US4) follow one at a time within this same feature. The plan will sequence multiple implementation rounds.

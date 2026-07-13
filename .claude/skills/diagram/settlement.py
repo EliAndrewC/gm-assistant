@@ -268,7 +268,7 @@ class Settlement:
                   "wells": [], "bridges": [], "threshing_yards": [], "gardens": [], "groves": [], "cemeteries": [],
                   "mausoleums": [], "cremation_grounds": [], "ossuaries": [], "moat_layer": None,
                   "fire_towers": [], "field_ditches": [], "village_groves": [], "commons": [], "dry_plots": [],
-                  "marshes": [], "byres": [], "farm_sheds": [],
+                  "marshes": [], "byres": [], "farm_sheds": [], "quarters": [],
                   "meta": {"W": W, "H": H}}
         self._header()
 
@@ -1143,6 +1143,60 @@ class Settlement:
         self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "wall_caps": caps})
         for gx, gy, horiz in gates:
             self.kido(gx, gy, horizontal=horiz)
+
+    _QUARTER_ZONES = ("residential", "civic", "mixed", "reserve")
+    _RESERVE_KINDS = ("drill_ground", "garden", "agricultural_district")
+
+    def quarter(self, poly, zone, kind=None, label=None):
+        """Declare a city QUARTER as a first-class zoned region (feature 006). A walled city is a
+        set of quarters tiling its interior, each with a ZONE - `residential`, `civic`, `mixed`, or
+        `reserve` - so density is judged PER QUARTER (an empty block in a residential quarter is a
+        defect; the same emptiness in a declared civic/reserve quarter is intentional). Purely
+        DECLARATIVE: it records the region + zone into M['quarters'] and does NOT move or place any
+        building. A `reserve` quarter also carries a `kind` and is DRAWN as that visible feature
+        (so open ground reads as a deliberate drill ground / garden / farmland, not accidental
+        emptiness). Declare reserves BEFORE the packs so the surface renders under later features
+        (like fields and streets). `poly` is a list of (x, y); `label` is an optional map label."""
+        if zone not in self._QUARTER_ZONES:
+            raise ValueError(f"quarter zone must be one of {self._QUARTER_ZONES}, got {zone!r}")
+        if zone == "reserve":
+            if kind not in self._RESERVE_KINDS:
+                raise ValueError(f"a reserve quarter needs kind in {self._RESERVE_KINDS}, got {kind!r}")
+            self._draw_reserve(poly, kind)
+        elif kind is not None:
+            raise ValueError(f"only a reserve quarter may carry a kind (got zone={zone!r}, kind={kind!r})")
+        self.M["quarters"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in poly],
+                                   "zone": zone, "kind": kind, "name": label})
+        if label:
+            xs = [p[0] for p in poly]
+            ys = [p[1] for p in poly]
+            self.label(sum(xs) / len(xs), sum(ys) / len(ys), label, 9, italic=True, color="#5A4326")
+
+    def _draw_reserve(self, poly, kind):
+        """Render a reserve quarter's ground as its declared kind. An agricultural_district is drawn
+        by the generator's own field routines (its combs ARE the rendering), so here it only gets a
+        faint boundary; a drill_ground is bare packed earth; a garden is a planted green sward."""
+        pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in poly)
+        if kind == "drill_ground":
+            # a muster / archery field: flat swept earth, a dashed perimeter, a few faint rake lines
+            self.add(f'<polygon points="{pts}" fill="#D6C79E" stroke="#A9925C" stroke-width="1.4" stroke-dasharray="6,4"/>')
+            xs = [p[0] for p in poly]
+            ys = [p[1] for p in poly]
+            x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+            for k in range(1, 5):
+                ry = y0 + (y1 - y0) * k / 5
+                self.add(f'<line x1="{x0+6:.1f}" y1="{ry:.1f}" x2="{x1-6:.1f}" y2="{ry:.1f}" stroke="#BBA76E" stroke-width="0.8" opacity="0.6"/>')
+        elif kind == "garden":
+            # an ornamental / kitchen garden sward: soft green with planted rows
+            self.add(f'<polygon points="{pts}" fill="#C4D3A0" stroke="#6E8A44" stroke-width="1.3"/>')
+            xs = [p[0] for p in poly]
+            ys = [p[1] for p in poly]
+            x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+            for k in range(1, 4):
+                ry = y0 + (y1 - y0) * k / 4
+                self.add(f'<line x1="{x0+6:.1f}" y1="{ry:.1f}" x2="{x1-6:.1f}" y2="{ry:.1f}" stroke="#6E9A40" stroke-width="2.0" stroke-linecap="round" opacity="0.75"/>')
+        else:   # agricultural_district: the generator's fields carry the visual; mark a faint boundary
+            self.add(f'<polygon points="{pts}" fill="none" stroke="#9C8A5E" stroke-width="1.0" stroke-dasharray="3,6" opacity="0.5"/>')
 
     def alley(self, pts, width=None):
         """An UNPAVED interior lane (gravel / wood planks, not the dressed earth of a street) that
@@ -3187,8 +3241,17 @@ class Settlement:
             # there - and NUDGED INWARD so its footing stands on the berm, not in the moat (below)
             _arc = 78
             twx, twy, tang_e = self._wall_walk(pts, g_idx, _arc, west=g_east)
-            while any(math.hypot(twx - kx_, twy - ky_) < 62 for kx_, ky_ in tower_skip) and _arc < 220:
-                _arc += 30                             # a kido will hang there - walk the tower further along the wall
+            # walk the tower along the wall until it clears BOTH any kido spot AND this gate's guard
+            # house / inspection footprints - the two sit on opposite flanks of the gate but converge
+            # near the opening on a tight ring (city_gate_towers_clear_of_gate_furniture, GM 2026-07)
+            _gfurn = [(f["x"], f["y"], f["w"], f["h"]) for f in self.M["gate_structs"] if f.get("kind") in ("guardhouse", "inspection")][-2:]
+
+            def _tower_blocked(tx, ty):
+                if any(math.hypot(tx - kx_, ty - ky_) < 62 for kx_, ky_ in tower_skip):
+                    return True
+                return any(abs(tx - fx) < (40 + fw) / 2 + 3 and abs(ty - fy) < (40 + fh) / 2 + 3 for fx, fy, fw, fh in _gfurn)
+            while _tower_blocked(twx, twy) and _arc < 240:
+                _arc += 20                             # a kido or the gate furniture sits there - walk the tower further along the wall
                 twx, twy, tang_e = self._wall_walk(pts, g_idx, _arc, west=g_east)
             ta = (tang_e + 90) % 180 - 90
             twx, twy = _berm_nudge(twx, twy, 40)
@@ -3207,6 +3270,9 @@ class Settlement:
         # skipping the gate vertices (those already have a tower).
         self.M.setdefault("wall_towers", [])   # the gate towers were already added above (via _tower)
         gate_towers = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") == "tower"]
+        # a mural tower must also clear each gate's INSPECTION / GUARD HOUSE (they sit INWARD from the
+        # gate, so the 130px gate-vertex filter alone misses them - city_gate_towers_clear_of_gate_furniture)
+        gate_furn = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") in ("guardhouse", "inspection")]
         for i in range(0, n, 2):
             vx, vy = pts[i]
             if any(math.hypot(vx - gx, vy - gy) < 130 for gx, gy in gates):
@@ -3216,7 +3282,7 @@ class Settlement:
             if any(math.hypot(vx - tx2, vy - ty2) < 110 for tx2, ty2 in gate_towers):
                 continue   # a mural tower shoulder-to-shoulder with a gate tower reads as a double (GM, 2026-07)
             ta_i = tang[i]
-            if any(math.hypot(vx - kx_, vy - ky_) < 62 for kx_, ky_ in tower_skip):
+            if any(math.hypot(vx - kx_, vy - ky_) < 62 for kx_, ky_ in tower_skip) or any(math.hypot(vx - fx_, vy - fy_) < 66 for fx_, fy_ in gate_furn):
                 # yield to the future kido by SLIDING a short way along the wall, not jumping a
                 # whole vertex - a vertex jump left a ~360px towerless stretch on Tango's east
                 # wall (the GM: "what if someone attacked the city from the east?"). Try growing
@@ -3226,6 +3292,7 @@ class Settlement:
                     for _west in (False, True):
                         sx_, sy_, se_ = self._wall_walk(pts, i, _arc, west=_west)
                         if all(math.hypot(sx_ - kx_, sy_ - ky_) >= 62 for kx_, ky_ in tower_skip) \
+                                and all(math.hypot(sx_ - fx_, sy_ - fy_) >= 66 for fx_, fy_ in gate_furn) \
                                 and all(math.hypot(sx_ - gx, sy_ - gy) >= 130 for gx, gy in gates):
                             slid = (sx_, sy_, (se_ + 90) % 180 - 90)
                             break

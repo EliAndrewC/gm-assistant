@@ -14,6 +14,15 @@ The Mode B settlement generator currently produces village maps from one implici
 
 Historical reality (China-first, Song/Ming rice south; Japan corroborating): within one region and terrain type, wet-rice villages genuinely rhymed - but real variation lived on four axes the generator currently collapses to a single value each: (1) terrain/field archetype, (2) settlement form, (3) focal & incidental features, (4) crop/land-use overlay. Recovering that variation as historically-typed, tunable knobs is the goal - villages that read as distinct *places* while remaining exactly as to-scale and historically accurate as they are today.
 
+## Clarifications
+
+### Session 2026-07-13
+
+- Q: Should the plan cover only Phase 1 (within-archetype knobs), or the whole effort including the terrain/settlement archetypes? → A: The whole effort in one plan (Phase 1 + archetypes), with archetypes still delivered incrementally per FR-010 - not split into a separate later spec.
+- Q: How is "visually distinct" enforced/verified? → A: Add an automated pool-level twin-detector check that flags when two same-`down_deg` villages share too many structural axes, backed by a human blind-review of the rendered PNGs.
+- Q: Which existing pool maps get re-varied through the new knobs? → A: Only the twinned pair, Kikuta and Hoshigaoka; the other village/hamlet maps are left as-is (they must still pass the gate).
+- Q: How are unspecified knobs rolled from the seed? → A: Each knob rolls independently from the seed, constrained by historical-typing rules (a value invalid for the stated geography is excluded); no preset "village type" bundles.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Same water direction, still visually distinct (Priority: P1)
@@ -98,6 +107,8 @@ As the GM building out a varied region, I can select a whole terrain or settleme
 - **FR-010**: Later-phase archetype knobs (field/terrain type, settlement form, land-use overlay) MUST each carry archetype-specific validator rules and to-scale grounding, and MUST be delivered incrementally (one archetype validated end-to-end before the next).
 - **FR-011**: The variation MUST preserve to-scale realism: every knob value draws a real historical form at honest relative size; no knob may inflate or shrink a feature past its true relative magnitude to manufacture difference.
 - **FR-012**: The generator MUST NOT silently produce implausible or overlapping layouts from any knob combination; an impossible combination fails loudly or resolves by shifting/shrinking within the existing placement rules.
+- **FR-013**: An automated pool-level "twin-detector" MUST exist that, given the generated village manifests, flags any two same-`down_deg` villages that share too many structural axes (per the SC-001 axis set), so the distinctiveness goal is mechanically guarded and regressions to twinning are caught - not left to eyeballing alone.
+- **FR-014**: Unspecified knobs MUST be rolled INDEPENDENTLY from the seed (one deterministic draw per knob), each constrained by its historical-typing rule; the generator MUST NOT rely on fixed "village type" preset bundles to produce coherence - coherence comes from the per-knob typing rules.
 
 ### Key Entities
 
@@ -111,7 +122,7 @@ As the GM building out a varied region, I can select a whole terrain or settleme
 ### Measurable Outcomes
 
 - **SC-001**: For any two villages in the regenerated pool that share the same `down_deg`, they differ on at least 4 of these structural axes: cluster centroid region, cluster shape/aspect, headman position relative to the cluster, lane-skeleton type, water-source position, focal-feature set, paddy-grain orientation. (Today Kikuta and Hoshigaoka differ on ~1.)
-- **SC-002**: A blind review of the regenerated pool (maps shown without names) yields correct "these are different villages" judgements - no two same-direction villages are mistaken for the same place.
+- **SC-002**: The automated twin-detector reports zero twinned pairs across the pool (no two same-`down_deg` villages share too many structural axes), AND a human blind review of the regenerated maps (shown without names) yields correct "these are different villages" judgements.
 - **SC-003**: All six existing pool maps pass the `check_village` gate after the change; the full test suite is green except for pre-existing failures owned by other work.
 - **SC-004**: A village can be generated from a minimal spec (seed + scale + water direction + water-source kind) with zero hand-placed coordinates and still pass the gate.
 - **SC-005**: Every shipped knob value has its historical grounding recorded in the settlement grounding docs (100% of shipped knob values, per the project's "record the why" policy).
@@ -119,10 +130,12 @@ As the GM building out a varied region, I can select a whole terrain or settleme
 
 ## Assumptions
 
-- The "user" is the GM authoring village maps via the Mode B generator; there is no external/end-user surface. "Visually distinct" is judged by a human looking at the rendered PNGs, supported by the structural-axis metric in SC-001.
-- Re-varying the existing pool maps is in scope and desired: the twinned maps will be regenerated to look distinct. Byte-identical preservation of existing maps is explicitly NOT required for this feature (the intent is to change them), but every map must keep passing the gate.
-- Phase 1 (within-archetype knobs) is the priority and the MVP; the archetype knobs (Phase 2+) are sequenced after and delivered one archetype at a time. This spec covers the whole effort; the plan and tasks may stage it.
+- The "user" is the GM authoring village maps via the Mode B generator; there is no external/end-user surface. "Visually distinct" is enforced by the automated twin-detector (FR-013 / SC-002) and confirmed by a human looking at the rendered PNGs, supported by the structural-axis metric in SC-001.
+- Re-varying is scoped to the twinned pair ONLY: Kikuta and Hoshigaoka are regenerated to look distinct. The other village/hamlet maps (Hikari, Moritono, Ikegami, Ueda) are left as-is - they already read as different places - and must keep passing the gate. Byte-identical preservation is not required for the two re-varied maps (the intent is to change them).
+- Phase 1 (within-archetype knobs) is the priority and the MVP (US1); the archetype knobs (US4) are sequenced after but are part of THIS feature's plan (not a separate spec) and delivered one archetype at a time (FR-010).
+- Unspecified knobs roll INDEPENDENTLY from the seed under per-knob historical-typing rules (FR-014); there are no preset "village type" bundles.
 - China-first governs undecided variation questions (Song/Ming rice south); Japanese forms corroborate and serve as tiebreakers; established GM/world canon overrides the historical default where they conflict.
 - The knob machinery is a superset of today's hand-authoring: existing hand-placed villages remain expressible by pinning knobs, so no authoring capability is lost.
 - Determinism is preserved: the roll is seeded, so a given spec plus seed always produces the same map (no wall-clock or nondeterministic entropy).
 - Each new field archetype is a substantial build (new geometry generator plus validator rules plus grounding), not an afternoon tweak; the plan will treat archetypes as separate increments.
+- Foundation work is in scope (GM-directed 2026-07-13): before the knob work, the diagram skill is brought to full Constitution Principle X compliance - `ruff` + `ruff format --check` + `mypy --strict` + `pytest` at 100% coverage, all wired into one maintained gate command - via a per-module type-annotation ratchet. This eliminates the Principle X deferral rather than carrying it, and is a real deliverable of this feature (not a side note).

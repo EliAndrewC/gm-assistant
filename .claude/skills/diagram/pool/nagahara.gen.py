@@ -48,7 +48,7 @@ NRING = 20
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)),
          round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, EGATE, WGATE_PT = WALL[0], WALL[5], WALL[6]
-KIDO_SPOTS = [(1468, 1330, True), (1468, 1410, True), (1020, 1309, True), (1209, 1673, True)]
+KIDO_SPOTS = [(1468, 1330, True), (1468, 1410, True), (1020, 1309, True), (1209, 1693, True)]
 for kx, ky, kh in KIDO_SPOTS:
     if kh:
         s.block_polys.append([(kx - 25, ky - 38), (kx + 45, ky - 38), (kx + 45, ky + 26), (kx - 25, ky + 26)])
@@ -63,6 +63,28 @@ RIVER_W = s.river(RIVER)
 MOAT = s.moat(WALL, gap=24, river=RIVER, river_cut=150)
 RING = s.ring_road(WALL, inset=22)
 s.bound = [list(p) for p in RING]
+
+
+# ---- DECLARED QUARTERS (feature 006): tile the interior into zoned wedges split at the crossroads
+# (road x=CX, axis y=CY). NE = laborer (residential); SE = merchant + downstream burakumin (mixed);
+# SW = the government/samurai ward (mixed - civic compounds + samurai housing); NW = the temple
+# neighbourhood plus its monzen-machi commoner pocket (mixed - a temple town had dense pilgrim/
+# craftsman housing around the halls, which also fills the ground the first draft left empty).
+def _qpt(i, n=48, inset=24):
+    a = -math.pi / 2 + 2 * math.pi * i / n
+    return (CX + (RX - inset) * math.cos(a), CY + (RY - inset) * math.sin(a))
+
+
+def _qwedge(i0, i1, n=48):
+    return [(CX, CY)] + [_qpt(i, n) for i in range(i0, i1 + 1)]
+
+
+s.quarter(_qwedge(0, 12), "residential")   # NE laborer
+s.quarter(_qwedge(12, 24), "mixed")        # SE merchant + burakumin
+s.quarter(_qwedge(24, 36), "mixed")        # SW government/samurai ward
+s.quarter(_qwedge(36, 48), "mixed")        # NW temple neighbourhood + monzen
+SAM_BND = [(995, 1309), (1468, 1309), (1468, 1594), (1191, 1700)]
+s.corridors.append((SAM_BND, 15))   # reserve the WARD FENCE line before ANY pack so no house (samurai or burakumin) sits ON it (city_ward_fence_clear_of_structures)
 MARGIN = 96
 s.set_view(CX - RX - 46 - MARGIN, CY - RY - 46 - MARGIN, 2 * (RX + 46 + MARGIN) + 320, 2 * (RY + 46 + MARGIN))
 
@@ -276,7 +298,7 @@ grid([SAM_ST, MER_V1, MER_V2])
 # Crab city -> the great temples are its two PATRON fortunes: EBISU here, BISHAMON in the
 # samurai quarter (below). SUITENGU, the river fortune a river city honours, is a small wayside
 # shrine among the smattering (unlabeled), NOT a great temple (city_temples_dedicated).
-TEMPLE_LANE = [(1100, 1204), (1480, 1204)]   # the E-W temple-neighborhood street; Rites + Ebisu front it, it meets the spine
+TEMPLE_LANE = [(1032, 1204), (1480, 1204)]   # the E-W temple-neighborhood street; Rites + Ebisu front it, it meets the spine; W end lands IN the ring bed (ring centerline x~1029.5 at y1204) so it makes a clean T, not a sliver-short stub (city_streets_meet_through_lanes)
 grid([TEMPLE_LANE], width_ft=18)
 s.shrine_hall(1160, 1123, "Temple of Bishamon", w=100, h=64, kind="temple", label_below=True)   # a Crab patron (also the warrior fortune); nudged E so its W edge clears the ring road
 s.shrine_hall(1388, 1123, "Temple of Ebisu", w=100, h=64, kind="temple", primary=True, label_below=True)   # the other Crab patron
@@ -287,6 +309,23 @@ s.theater_stage(1273, 1001, w=s.px(190), h=s.px(132), rot=0, label="theater stag
 for sx, sy in [(1236, 1098), (1273, 1134), (1236, 1171)]:   # small wayside shrines (one is Suitengu, the river fortune) - clustered clear of the graveyards
     s.small_shrine(sx, sy)
 s.label(1273, 1296, "temple neighborhood", 9, italic=True, color="#6B2A18")
+
+# MONZEN-MACHI: the temple town's commoner housing (pilgrims' inns, shrine craftsmen, their
+# servants) packs the NW ground around the halls. A temple neighbourhood was historically DENSE
+# (Zenkoji, Ise, Naritasan monzen-machi), and this fills the quarter the first Nagahara draft left
+# nearly empty - the exact lopsidedness feature 006 exists to catch.
+# reserve the temple-neighbourhood LABEL grounds so the monzen packs avoid them (labels draw last)
+for _lx0, _ly0, _lx1, _ly1 in [(1098, 1156, 1224, 1180),   # 'Temple of Bishamon'
+                               (1104, 1256, 1168, 1276),   # 'graveyard'
+                               (1206, 1286, 1340, 1308)]:   # 'temple neighborhood'
+    s.block_polys.append([(_lx0, _ly0), (_lx1, _ly0), (_lx1, _ly1), (_lx0, _ly1)])
+s.fire_tower(1178, 1180, label=None)   # the monzen's fire-watch, in an open court amid the terrace rows near the district centroid (keeps fire_tower_amid_its_district honest; >=5px off every house, clear of the graveyards and the curving west wall)
+alleys([[(1097, 1118), (1097, 1204)]])   # monzen back-alley, meeting the temple lane at its foot (drawn BEFORE the packs so they reserve the corridor). Moved E to x1097 so it uniquely serves the west-column rows on BOTH sides (closer to it than to the temple lane), and its VERTICAL run stays perpendicular to the curving ring at the top (no sliver poked past it - the ring lies to its west, so the top does not aim at it)
+s.place_wells((1060, 1082, 1250, 1305), spacing=58)
+s.rowpack((1062, 1092, 1128, 1300), (["laborer"] * 2 + ["laborer_large"] + ["servant"] + ["merchant_house"]) * 34, court_every=5, eave_ft=3)
+s.rowpack((1064, 1258, 1250, 1308), (["servant"] + ["laborer"] * 2 + ["laborer_large"]) * 28, court_every=5, eave_ft=3)
+s.rowpack((1195, 1082, 1330, 1176), (["laborer"] * 2 + ["servant"] + ["merchant_house"]) * 16, court_every=5, eave_ft=3)   # the pocket N of the temple lane, E of Bishamon, W of the theater
+s.label(1075, 1078, "monzen", 9, italic=True, color="#6B2A18")
 
 # ====================================================================== W: the samurai/government ward
 # the government + samurai occupy the SW quadrant, WEST of the spine (the merchant district is
@@ -300,8 +339,8 @@ MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
 MIN_POS = [(1078, 1371), (1236, 1371), (1395, 1371), (1100, 1473), (1425, 1473)]   # 3 N of the avenue, 2 S, all fronting it
 for (mx, my), name in zip(MIN_POS, MINS):
     s.ministry(mx, my, name, w=s.px(130), h=s.px(90))
-s.mausoleum(1273, 1659, 44, 32, label="Mausoleum", gate_dir="north")   # the ruling clan's crypt, below the yamen
-for _m in s.M["ministries"] + [s.M["governor_mansion"]]:
+s.mausoleum(1273, 1636, 44, 32, label="Mausoleum", gate_dir="north", label_below=True)   # the ruling clan's crypt, below the yamen (clear of the diagonal SW ward fence). Label BELOW: the crypt sits directly under the governor's mansion, so a label above it would land on the governor (labels_clear_of_other_buildings); below drops it into the reserved margin between crypt and fence.
+for _m in s.M["ministries"] + [s.M["governor_mansion"]] + s.M["mausoleums"]:   # reserve the mausoleum too, so the samurai pack does not overlap it
     s.block_polys.append([(_m["x"] - _m["w"] / 2 - 30, _m["y"] - _m["h"] / 2 - 30), (_m["x"] + _m["w"] / 2 + 30, _m["y"] - _m["h"] / 2 - 30),
                           (_m["x"] + _m["w"] / 2 + 30, _m["y"] + _m["h"] / 2 + 30), (_m["x"] - _m["w"] / 2 - 30, _m["y"] + _m["h"] / 2 + 30)])
 # a ministry's italic label is WIDER than its footprint, so reserve the label's own ground (+ a
@@ -310,6 +349,11 @@ for _m in s.M["ministries"] + [s.M["governor_mansion"]]:
 for _L in s.M["labels"]:
     if len(_L) > 5 and _L[5].startswith("Ministry"):
         s.block_polys.append([(_L[0] - 15, _L[1] - 12), (_L[2] + 15, _L[1] - 12), (_L[2] + 15, _L[3] + 12), (_L[0] - 15, _L[3] + 12)])
+# reserve the narrow wedge where the SW diagonal fence dips closest to the packed rows near the
+# governor: at corridor half-width 15 one pack house would seat here and clip the fence line
+# (city_ward_fence_clear_of_structures). A small block here drops just that one house; the rest of
+# the ward keeps the tighter 15px corridor, so overall samurai count stays >= 39.
+s.block_polys.append([(1416, 1606), (1462, 1606), (1462, 1642), (1416, 1642)])
 # lace the deep samurai block BEFORE packing so the packer reserves the lane corridors; ends
 # stay inset off the ward wall so they do not trip the ward-gate / seal checks
 # NO interior ward alleys: the ministries + the yamen fill most of the ward, and the samurai homes
@@ -318,7 +362,7 @@ for _L in s.M["labels"]:
 s.pack((1032, 1307, 1468, 1640), (["samurai"] * 3 + ["samurai_large"]) * 150, step=13, face_streets="fill")
 s.label(1410, 1555, "samurai neighborhood", 10, italic=True, color="#3A352C")   # E of the governor's mansion among the ward's samurai, clear of the burakumin rows to the S
 s.ward("samurai", [(995, 1309), (1468, 1309), (1468, 1594), (1191, 1700)],
-       gates=[(1468, 1330, True), (1468, 1410, True), (1020, 1309, True), (1209, 1673, True)])   # 2 street kido + 2 ring-road kido
+       gates=[(1468, 1330, True), (1468, 1410, True), (1020, 1309, True), (1209, 1693, True)])   # 2 street kido + 2 ring-road kido
 s.label(1428, 1316, "samurai ward gate", 9, italic=True, color="#5A4326")   # inside the ward by the E-fence kido, off the merchant frontage
 
 # ====================================================================== N + NE: the LABORER quarter
@@ -404,7 +448,7 @@ s.bound = None
 for jy in (1199, 1293, 1392):
     s.jetty(2101, jy, rot=0, length=22)   # root on the river's WEST bank (~2101 = centerline 2126 - half-width 20 - 5px onto land), running E into the water
 QUAY = [(2062, 1226), (2062, 1434)]
-s.frontage(QUAY, (["merchant"] * 2 + ["shop"]) * 6, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
+s.frontage(QUAY, ["shop"] * 18, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))   # the riverfront wharf is warehouses/SHOPS, not merchant residences (commoner dwellings shelter inside the wall - feature 006)
 s.label(2050, 1188, "wharf", 10, italic=True, color="#5A4326")
 
 # samurai ESTATES across the river to the NORTHEAST (toward Otosan Uchi - a samurai builds his
@@ -463,6 +507,8 @@ def top_up(kind, region, need, count_kinds=None):
     stab = [(b["x"], b["y"]) for b in s.M.get("buildings", []) if b.get("kind") == "stables"]
 
     def ok(gx, gy):
+        if kind not in ("samurai", "samurai_large") and not _in_poly(gx, gy, WALL):
+            return False                                     # a COMMONER dwelling never lands OUTSIDE the wall (feature 006); samurai country seats are exempt
         if any(abs(gx - cx) <= (cw + w_) / 2 + 15 and abs(gy - cy) <= (ch + h_) / 2 + 15 for cx, cy, cw, ch in civ):
             return False                                     # ministries/yamen stand-clear margin
         if any((gx - sx) ** 2 + (gy - sy) ** 2 < 85 ** 2 for sx, sy in stab):
@@ -520,7 +566,7 @@ def _dwell_count():
             + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"])))
 
 
-top_up("samurai", (1032, 1307, 1470, 1600), 48, count_kinds=("samurai", "samurai_large"))
+top_up("samurai", (1032, 1307, 1470, 1600), 52, count_kinds=("samurai", "samurai_large"))
 top_up("merchant_house", (1549, 1347, 1905, 1690), 160,
        count_kinds=("merchant", "merchant_house", "merchant_large"))
 # seat the wealthier 'master' laborers (laborer_large) FIRST, into gaps in the warren, before the

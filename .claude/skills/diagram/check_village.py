@@ -66,6 +66,33 @@ def poly_area(pts):
     return abs(s) / 2.0
 
 
+def largest_empty_gap(poly, pts, occupied=None, step=30):
+    """The radius of the largest empty pocket inside `poly`: the max over interior grid points of the
+    distance to the nearest point in `pts`. A thin firebreak strip stays within a house-reach of homes
+    on either side (small gap); a whole empty block has an interior point far from any house (large gap).
+    This is the dead-zone signal a per-quarter density AVERAGE cannot see (a half-full quarter averages
+    fine). Grid points that fall inside an `occupied` rect (a civic compound - a temple or yamen in a
+    mixed quarter is built ground, not empty) are skipped, so a compound does not read as a dwelling
+    dead zone. Returns 0.0 for an empty poly bbox; a large sentinel if `pts` is empty."""
+    if not pts:
+        return float("inf")
+    occupied = occupied or []
+    xs = [p[0] for p in poly]
+    ys = [p[1] for p in poly]
+    worst = 0.0
+    gx = min(xs)
+    while gx <= max(xs):
+        gy = min(ys)
+        while gy <= max(ys):
+            if point_in_poly(gx, gy, poly) and not any(abs(gx - r["x"]) <= r["w"] / 2 and abs(gy - r["y"]) <= r["h"] / 2 for r in occupied):
+                d = min(math.hypot(gx - dx, gy - dy) for dx, dy in pts)
+                if d > worst:
+                    worst = d
+            gy += step
+        gx += step
+    return worst
+
+
 # ---- overlap classification registry ---------------------------------------------------------------
 # Every footprint feature (a manifest key holding a list of dicts with positional geometry) must be
 # classified below. The DEFAULT is "must not overlap anything": a SOLID feature joins `structs`, which
@@ -98,6 +125,7 @@ _OVERLAP_EXEMPT = {
     "jetties": "planked mooring fingers running out over the river water, like bridge decks",
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
+    "quarters": "declarative zoning overlays (feature 006), not solid structures - they intentionally contain buildings and are validated by the city_quarters_* / per-quarter density checks",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -674,6 +702,15 @@ DEFAULT_MANIFEST = {
 DWELLING_KINDS = {"laborer", "laborer_large", "servant", "burakumin", "samurai", "samurai_large", "merchant", "merchant_house", "merchant_large"}   # samurai_large was missing (a senior samurai house is a dwelling like every other _large variant) - found when Tango's population count kept landing 5 short of its generator's
 BUSINESS_KINDS = {"shop", "merchant"}
 HOUSEHOLD = 5
+# COMMONER dwellings must shelter INSIDE a walled city (feature 006). In imperial-Chinese and
+# Japanese practice the ordinary working population (laborers, artisans, most shopkeepers) lived
+# intramurally - the wall's whole purpose is to protect them - while only four categories sat
+# legitimately outside: elite country estates, farmhouses, the riverside wharf suburb, and the
+# gate/approach-road (guan-xiang) market. So a commoner dwelling outside the wall is the true
+# anomaly (it defeats the wall and has no economic anchor) and is flagged hard-zero; samurai are
+# NOT commoners (their country seats are a legitimate extramural category).
+COMMONER_KINDS = {"laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house", "merchant_large"}
+EXTRAMURAL_COMMONER_MAX = 0   # GM decision (FR-002): hard zero, no allowance the generator can drift into
 
 
 def lane_near_misses(M, maxgap=80.0, eps=4.0, align=0.80, block=18.0):
@@ -996,6 +1033,36 @@ def crop_relocatable_singletons(M, min_shrink=150, clear=20):
 # 3,000-person city: 562 dwellings on ~444k px^2 of non-overhead, non-field interior = ~1.27/1000.
 RHO_CANONICAL = 0.00127
 
+# --- feature 006: per-quarter density + reserve/civic zoning thresholds --------------------
+# These are calibrated against Tango (GM-accepted, must pass) AND the pinned pre-feature broken
+# Nagahara (pool/regressions/city_density_broken_nagahara.json, must fail); see settlements.md
+# "Quarters and per-quarter density" for the recorded why behind each number.
+#
+# QUARTER_DENSITY band (dwellings per px^2, averaged over a residential/mixed quarter): a commoner
+# warren runs ~4-6x denser than a samurai/official ward (Edo: commoners ~50% of population on
+# ~20% of land vs samurai ~50% on ~70%; provincial castle towns 4-6x), so the band spans ~5x from
+# a low-density samurai ward floor to a packed-warren ceiling. Below the floor reads as a
+# half-built quarter; above the ceiling is implausibly crammed. Floor/ceil are provisional here
+# and pinned during calibration (T019).
+QUARTER_DENSITY_FLOOR = 0.00030   # ~ a legitimately sparse government/samurai ward (Tango's SE reads 0.36/1000 over its non-civic ground; calibrated on Tango)
+QUARTER_DENSITY_CEIL = 0.00230    # ~ a packed commoner warren (Tango's NE laborer wedge reads 2.13/1000); ~7.7x the floor, within the 4-8x historical spread
+# a residential quarter must not hide a DEAD ZONE: a contiguous empty region larger than a
+# firebreak strip. Block-density medians alone cannot separate a good city from a lopsided one
+# (Tango and the broken Nagahara share a 4.6/10k median); the discriminator is empty *sub-regions*
+# inside a quarter that should be housing. Fire-breaks are thin; a whole empty block is not.
+DEAD_ZONE_MAX = 150.0             # px, longest side of an allowed empty pocket in a residential quarter
+# a CIVIC precinct (yamen, temple) is legitimately majority-open (roofed halls ~25-45%, courtyards
+# and gardens the rest), so tolerate up to ~70% open - but only when the openness is STRUCTURED
+# (the quarter actually holds civic compounds); an open-and-structureless "civic" quarter reads as
+# merely empty and is flagged.
+CIVIC_OPEN_TOL = 0.70
+# RESERVE ground (drill ground + gardens + agricultural district) is capped at ~20% of the walled
+# interior. Civic *buildings* alone are only ~3-6% of a Chinese county seat; the big open consumer
+# is the drill ground plus deliberately under-built garden/farm remainder. ~20% comfortably fits a
+# drill ground + gardens + an agricultural district and is historically conservative; beyond it the
+# wall encloses more open ground than a provincial seat justifies (read: shrink the wall).
+RESERVE_CAP_FRAC = 0.20
+
 
 def city_capacity(M, step=8, grid_step=None):
     """SPACE-BUDGET ANALYSIS: is the city wall sized to hold its target population?
@@ -1005,7 +1072,7 @@ def city_capacity(M, step=8, grid_step=None):
     dwelling / civic-overhead / water / trunk-circulation / residential-street / field / OPEN,
     reads the density the built residential quarters actually achieve, and projects whether
     filling the OPEN ground would reach the target. Returns a dict with a verdict
-    ('too_small' | 'too_big' | 'about_right'), the space budget, and a suggested wall SCALE so
+    ('enlarge' | 'shrink' | 'densify' | 'sized_and_packed'), the space budget, and a suggested wall SCALE so
     the wall can be resized ONCE to the right size rather than by trial and error. A city WITH
     an agricultural district commits its slack to fields (canon), so field cells are excluded
     from both the residential ground and the wasted-open ground."""
@@ -1109,34 +1176,61 @@ def city_capacity(M, step=8, grid_step=None):
                 gx += grid_step
             grid_rows.append("".join(row))
             gy += grid_step
-    D = len([b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]) + sum(1 for h in M.get("houses", []) if point_in_poly(h["x"], h["y"], wall))
+    # PLACED dwellings: for a walled city only those INSIDE the wall count (feature 006 - the
+    # extramural spill must not inflate the figure); in-wall farmhouses count too.
+    D = (len([b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], wall)])
+         + sum(1 for h in M.get("houses", []) if point_in_poly(h["x"], h["y"], wall)))
     # residential-CAPABLE ground = the interior minus the fixed overhead (government + temples +
-    # wharf/dock/gates/shops, water, trunk roads + ring road + wall berm, and any committed field
-    # ground). At a well-packed quarter's canonical density this ground holds INHERENT_CAP dwellings
-    # - what the wall CAN hold, independent of how well the current gen happens to pack it.
+    # wharf/dock/gates/shops, water, trunk roads + ring road + wall berm, committed field ground) -
+    # the per-cell classification already excludes civic buildings, water, trunk, and fields (an
+    # agricultural-district reserve draws as fields, so it is already out). A drill-ground / garden
+    # reserve draws as OPEN, so subtract those declared reserves explicitly (feature 006): they are
+    # committed to non-housing and must not count toward what the wall can house.
+    quarters = M.get("quarters", [])
+    civic_q = sum(poly_area(q["poly"]) for q in quarters if q.get("zone") == "civic")
+    reserve_q = sum(poly_area(q["poly"]) for q in quarters if q.get("zone") == "reserve")
+    nonfield_reserve = sum(poly_area(q["poly"]) for q in quarters if q.get("zone") == "reserve" and q.get("kind") != "agricultural_district")
+    reserve_frac = reserve_q / ring_area
     overhead = A["civic"] + A["water"] + A["trunk"] + A["field"]
-    res_capable = A["dwell"] + A["res_st"] + A["open"]        # everything that could be residential
+    res_capable = max(A["dwell"] + A["res_st"] + A["open"] - nonfield_reserve, 1)   # everything that could be residential
     inherent_cap = res_capable * RHO_CANONICAL                # dwellings the wall CAN hold, well-packed
     open_frac = A["open"] / ring_area
     # size the wall so its residential-capable ground holds T at the canonical density (+5% slack).
     need_res = (T / RHO_CANONICAL) * 1.05
-    scale = math.sqrt((overhead + need_res) / ring_area)
-    # UNDERPACKED tracks the population check's own tolerance (population_tol, default 7%): if the
-    # placed dwellings fall below (1-tol)*T the population check WILL fail, so the capacity verdict
-    # must say "add dwellings" at exactly that line - not a looser one that reads "about right"
-    # while population is still red.
+    scale = math.sqrt((ring_area - res_capable + need_res) / ring_area)
+    # per-quarter density (residential + mixed), measured over non-civic ground - the report the
+    # operator reads to see WHICH quarter is under-built, not just the city-wide total.
+    per_quarter = []
+    if quarters:
+        civ_rects = [_struct_rect(cc) for cc in (M.get("ministries", []) + M.get("religious", [])
+                     + M.get("cemeteries", []) + M.get("mausoleums", []) + M.get("storehouses", [])
+                     + ([M["governor_mansion"]] if M.get("governor_mansion") else [])) if "w" in cc]
+        dpts = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], wall)]
+        for q in quarters:
+            if q.get("zone") not in ("residential", "mixed"):
+                continue
+            qa = poly_area(q["poly"])
+            cf = sum(r["w"] * r["h"] for r in civ_rects if point_in_poly(r["x"], r["y"], q["poly"]))
+            nq = sum(1 for x, y in dpts if point_in_poly(x, y, q["poly"]))
+            per_quarter.append({"name": q.get("name"), "zone": q["zone"], "dwellings": nq, "density": round(nq / max(qa - cf, 1), 5)})
+    # VERDICT -> one clear ACTION (feature 006 rename of the earlier too_small/too_big/underpacked/
+    # about_right). The densify boundary tracks population_tol so the capacity verdict and the
+    # population check never disagree; a wall fillable only by OVER-CAP reserve reads as shrink
+    # (emptiness cannot be laundered as reserve).
     pop_tol = meta.get("population_tol", 0.07)
     if inherent_cap < 0.9 * T:
-        verdict = "too_small"                                # even well-packed the wall cannot hold T
-    elif inherent_cap > 1.4 * T:
-        verdict = "too_big"                                  # far more room than T needs
+        verdict = "enlarge"                                  # even well-packed the wall cannot hold T
+    elif inherent_cap > 1.4 * T or reserve_frac > RESERVE_CAP_FRAC:
+        verdict = "shrink"                                   # far more room than T needs (or only fillable via over-cap reserve)
     elif D < (1 - pop_tol) * T:
-        verdict = "underpacked"                              # the WALL is fine; the placement is too sparse
+        verdict = "densify"                                  # the WALL is right; the placement is too sparse
     else:
-        verdict = "about_right"
+        verdict = "sized_and_packed"
     return {"verdict": verdict, "target_dwellings": round(T), "placed": D, "inherent_capacity": round(inherent_cap),
             "ring_area": round(ring_area), "res_capable_area": round(res_capable), "overhead_area": round(overhead),
+            "civic_area": round(civic_q), "reserve_area": round(reserve_q), "reserve_frac": round(reserve_frac, 3),
             "open_frac": round(open_frac, 3), "suggested_wall_scale": round(scale, 3), "areas": {k: round(v) for k, v in A.items()},
+            "per_quarter": per_quarter,
             "grid": grid_rows, "grid_origin": (round(x0), round(y0)), "grid_step": grid_step}
 
 
@@ -1201,7 +1295,15 @@ def gate(M, verbose=True):
         # at all: not the surrounding villagers, and not even the unusual IN-WALL agricultural district's
         # farmers - so a city's farmhouses (M["houses"]) are excluded entirely from the figure. A TOWN's
         # depicted farmhouses ARE its (partial) county farmer cohort, so they DO count there.
-        urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS)
+        # a WALLED city's people shelter INSIDE the rampart, so only in-wall dwellings count toward
+        # the declared figure (feature 006). Counting extramural dwellings too let a generator hit
+        # the target by spilling houses into the fields while the interior sat half-empty - the exact
+        # leak that passed the broken Nagahara (525 in-wall + 35 spilled = 560 ~ target).
+        _wall = M.get("wall")
+        if scale == "city" and _wall:
+            urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], _wall))
+        else:
+            urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS)
         if scale == "city" and meta.get("agricultural_district") and M.get("wall"):
             # the unusual agricultural-district city (Tango's canon deviation) HOUSES its in-wall
             # farmers: they are walled residents and count toward the declared figure - the
@@ -1223,6 +1325,128 @@ def gate(M, verbose=True):
               f"never the shops, government offices, flophouses, kura, gate furniture{' or any farmhouses (city farmers are not in the ~3,000)' if scale == 'city' else ''}; "
               f"place enough dwellings to hit the declared figure")
 
+    # COMMONER DWELLINGS SHELTER INSIDE THE WALLS (feature 006). A walled city's ordinary
+    # population (laborers, artisans, servants, merchants) lived intramurally - the wall exists to
+    # protect them. Only four categories sat legitimately outside: samurai country estates,
+    # farmhouses, the riverside wharf suburb, and the gate/approach-road (guan-xiang) market shops.
+    # So ANY commoner DWELLING outside the wall is the anomaly (it defeats the wall and has no
+    # economic anchor); hard-zero. Samurai are exempt (their country seats are a legitimate
+    # extramural category); shops are businesses, not dwellings, so they are not in COMMONER_KINDS.
+    if scale == "city" and M.get("wall"):
+        wall_p = M["wall"]
+        outside_com = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", [])
+                       if b.get("kind") in COMMONER_KINDS and not point_in_poly(b["x"], b["y"], wall_p)]
+        check("city_commoner_dwellings_inside_walls", len(outside_com) <= EXTRAMURAL_COMMONER_MAX,
+              f"{len(outside_com)} commoner dwelling(s) sit OUTSIDE the walls {sorted(set(outside_com))[:4]} - a walled "
+              f"city's commoners shelter inside the rampart; only samurai country estates, farmhouses, the wharf suburb, "
+              f"and gate-market shops belong outside. Move these dwellings inside the wall.")
+
+        # DECLARED QUARTERS + PER-QUARTER DENSITY (feature 006). A walled city is a set of zoned
+        # quarters tiling its interior; density is judged PER QUARTER (residential/mixed against a
+        # band + a dead-zone guard), civic quarters must actually hold civic ground, and reserve
+        # ground is capped. This is what a global aggregate could not see: a dense east + empty west
+        # averages to "fine" (measured: Tango and the broken Nagahara share the same block-density
+        # median; the difference is WHERE the empty ground sits).
+        quarters = M.get("quarters", [])
+        check("city_quarters_declared", bool(quarters),
+              "a walled city must declare its quarters - s.quarter(poly, zone, kind=...) - so density is judged per "
+              "quarter, not by a global aggregate a lopsided city can satisfy (a dense half plus an empty half averages fine)")
+        if quarters:
+            interior_area = poly_area(wall_p)
+            dwell_pts = [(b["x"], b["y"]) for b in M.get("buildings", [])
+                         if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], wall_p)]
+            _civic = (M.get("ministries", []) + M.get("religious", []) + M.get("cemeteries", [])
+                      + M.get("mausoleums", []) + M.get("storehouses", [])
+                      + ([M["governor_mansion"]] if M.get("governor_mansion") else []))
+            civic_rects = [_struct_rect(c) for c in _civic if "w" in c]
+
+            # TILING: sweep the wall-plus-quarters bbox once (so a quarter that spills OUTSIDE the
+            # wall is sampled too) - quarters must cover the interior (>=85%), not overlap (<=5%),
+            # and not spill outside the wall (<=3% of interior-equivalent cells).
+            wxs = [p[0] for p in wall_p] + [v[0] for q in quarters for v in q["poly"]]
+            wys = [p[1] for p in wall_p] + [v[1] for q in quarters for v in q["poly"]]
+            interior_cells = uncovered = overlapped = spill_cells = 0
+            gx = min(wxs)
+            while gx <= max(wxs):
+                gy = min(wys)
+                while gy <= max(wys):
+                    n_in = sum(1 for q in quarters if point_in_poly(gx, gy, q["poly"]))
+                    if point_in_poly(gx, gy, wall_p):
+                        interior_cells += 1
+                        if n_in == 0:
+                            uncovered += 1
+                        elif n_in > 1:
+                            overlapped += 1
+                    elif n_in >= 1:
+                        spill_cells += 1
+                    gy += 40
+                gx += 40
+            ic = max(interior_cells, 1)
+            covered = 1 - uncovered / ic
+            check("city_quarters_tile_interior",
+                  covered >= 0.85 and overlapped / ic <= 0.05 and spill_cells / ic <= 0.03,
+                  f"declared quarters must tile the walled interior without overlap or spill - covered {covered:.0%} "
+                  f"(need >=85%), overlapped {overlapped / ic:.0%} (<=5%), outside-wall {spill_cells / ic:.0%} (<=3%)")
+
+            # PER-QUARTER DENSITY + DEAD ZONE (residential + mixed quarters)
+            thin_q = []
+            for q in quarters:
+                if q.get("zone") not in ("residential", "mixed"):
+                    continue
+                qpoly = q["poly"]
+                qarea = poly_area(qpoly)
+                if qarea <= 0:
+                    continue
+                qd = [(x, y) for x, y in dwell_pts if point_in_poly(x, y, qpoly)]
+                # density is measured over HOUSING-AVAILABLE ground: subtract any civic compound
+                # footprint sitting in the quarter (a government ward or a temple in a merchant
+                # district eats area that was never going to be housing), so a mixed quarter is not
+                # wrongly flagged under-built for the ground its compounds occupy.
+                civic_in_q = sum(r["w"] * r["h"] for r in civic_rects if point_in_poly(r["x"], r["y"], qpoly))
+                eff_area = max(qarea - civic_in_q, 1.0)
+                dens = len(qd) / eff_area
+                nm = q.get("name") or f"quarter@({round(sum(p[0] for p in qpoly) / len(qpoly))},{round(sum(p[1] for p in qpoly) / len(qpoly))})"
+                if dens < QUARTER_DENSITY_FLOOR:
+                    thin_q.append((nm, f"{len(qd)} dwellings, density {dens * 1000:.2f}/1000px^2 < floor {QUARTER_DENSITY_FLOOR * 1000:.2f} (under-built)"))
+                elif dens > QUARTER_DENSITY_CEIL:
+                    thin_q.append((nm, f"density {dens * 1000:.2f}/1000px^2 > ceil {QUARTER_DENSITY_CEIL * 1000:.2f} (implausibly crammed)"))
+                elif q.get("zone") == "residential" and largest_empty_gap(qpoly, qd + [(w["x"], w["y"]) for w in M.get("wells", []) if point_in_poly(w["x"], w["y"], qpoly)], occupied=[r for r in civic_rects if point_in_poly(r["x"], r["y"], qpoly)]) > DEAD_ZONE_MAX:
+                    # the dead-zone guard applies to PURE residential quarters (uniform housing, no
+                    # empty blocks); a MIXED quarter legitimately holds a civic forecourt/plaza, so it
+                    # is judged on the density AVERAGE only. An all-empty region declared to dodge this
+                    # still fails: as residential it fires here, as civic it fires city_civic_quarter,
+                    # as mixed its average density is too low.
+                    thin_q.append((nm, f"dead zone: an empty pocket wider than a firebreak ({DEAD_ZONE_MAX:.0f}px) inside a residential quarter"))
+            check("city_residential_quarters_dense_enough", not thin_q,
+                  f"residential/mixed quarter(s) not evenly built up (per-quarter density band "
+                  f"[{QUARTER_DENSITY_FLOOR * 1000:.2f}, {QUARTER_DENSITY_CEIL * 1000:.2f}]/1000px^2 + no dead zone): {thin_q[:4]}")
+
+            # CIVIC quarters must actually hold civic ground (not be emptiness labelled civic)
+            open_civic = []
+            for q in quarters:
+                if q.get("zone") != "civic":
+                    continue
+                qpoly = q["poly"]
+                qarea = poly_area(qpoly)
+                if qarea <= 0:
+                    continue
+                built = sum(r["w"] * r["h"] for r in civic_rects if point_in_poly(r["x"], r["y"], qpoly))
+                open_share = 1 - min(built / qarea, 1.0)
+                if open_share > CIVIC_OPEN_TOL:
+                    nm = q.get("name") or "civic quarter"
+                    open_civic.append((nm, f"{open_share:.0%} open > {CIVIC_OPEN_TOL:.0%}; holds little civic building"))
+            check("city_civic_quarter_not_mostly_open", not open_civic,
+                  f"civic quarter(s) that are mostly empty rather than a real precinct - a yamen/temple precinct is "
+                  f"majority-open but STRUCTURED (it holds its compounds); flag: {open_civic[:3]}")
+
+            # RESERVE ground capped
+            reserve_area = sum(poly_area(q["poly"]) for q in quarters if q.get("zone") == "reserve")
+            rfrac = reserve_area / max(interior_area, 1)
+            check("city_reserve_within_cap", rfrac <= RESERVE_CAP_FRAC,
+                  f"declared reserve ground is {rfrac:.0%} of the interior, over the {RESERVE_CAP_FRAC:.0%} cap - "
+                  f"a wall enclosing this much deliberately-open ground is too big for the residential program (shrink it, "
+                  f"or convert reserve to housing)")
+
     # IS THE WALL THE RIGHT SIZE FOR THE POPULATION? A space-budget analysis, so "the wall is
     # too big / too small" becomes a first-class, automated judgement instead of trial and error.
     # city_capacity() grid-samples the interior, subtracts the fixed overhead (government, temples,
@@ -1234,10 +1458,10 @@ def gate(M, verbose=True):
     if scale == "city" and meta.get("population"):
         cap = city_capacity(M)
         if cap:
-            check("city_wall_sized_to_population", cap["verdict"] not in ("too_small", "too_big"),
-                  f"the wall is {cap['verdict'].replace('_', ' ')} for a population of {meta['population']} "
+            check("city_wall_sized_to_population", cap["verdict"] not in ("enlarge", "shrink"),
+                  f"the wall wants to {cap['verdict']} for a population of {meta['population']} "
                   f"(target {cap['target_dwellings']} dwellings; the ring holds ~{cap['inherent_capacity']} well-packed, "
-                  f"open fraction {cap['open_frac']}) - resize the wall by the suggested scale x{cap['suggested_wall_scale']} "
+                  f"reserve fraction {cap['reserve_frac']}) - resize the wall by the suggested scale x{cap['suggested_wall_scale']} "
                   f"(>1 enlarge, <1 shrink), then re-run; do NOT grind placements against a mis-sized wall")
 
     # ALMOST all shops front a street (commerce wants the street); POOR housing (laborer/burakumin)
@@ -4644,6 +4868,23 @@ def gate(M, verbose=True):
                   f"ward gate(s) overlapping a guard tower: {sorted(set(k_hit))[:4]} - where the ward fence meets the "
                   f"rampart the kido keeps its ground (it gates a fixed crossing); slide the tower along the wall "
                   f"(city_wall tower_skip)")
+            # a GATE TOWER (a gate's guard tower, or a mural tower) must not OVERLAP the gate's
+            # INSPECTION STATION or GUARD HOUSE (GM, 2026-07). The gate complex packs tight (guardhouse
+            # + inspection + tower + gateposts at each gate) and inspection stations are overlap-EXEMPT
+            # against the gate furniture, which had let a tower footprint STACK on the inspection post -
+            # each is a distinct building and they must sit CLEAR of one another, abutting not stacked.
+            _gtowers = [g for g in (M.get("wall_towers", []) + [x for x in M.get("gate_structs", []) if x.get("kind") == "tower"]) if "w" in g]
+            _gfurn = [g for g in ([x for x in M.get("gate_structs", []) if x.get("kind") in ("inspection", "guardhouse")] + M.get("inspection_stations", [])) if "w" in g]
+            gf_hit = []
+            for t in _gtowers:
+                tc = rect_corners({"x": t["x"], "y": t["y"], "w": t["w"], "h": t.get("h", t["w"]), "rot": t.get("rot", 0)})
+                for o in _gfurn:
+                    if sat_overlap(tc, rect_corners({"x": o["x"], "y": o["y"], "w": o["w"], "h": o.get("h", o["w"]), "rot": o.get("rot", 0)})):
+                        gf_hit.append((round(t["x"]), round(t["y"])))
+                        break
+            check("city_gate_towers_clear_of_gate_furniture", not gf_hit,
+                  f"guard tower(s) overlapping an inspection station or gate house: {sorted(set(gf_hit))[:4]} - the gate "
+                  f"complex packs tight but each footprint sits CLEAR; move the tower (or the furniture) so they abut, not stack")
             # ... and clear of the HOUSING: the kido + its guard box occupy a fixed crossing that the
             # packs cannot see (s.ward draws long after the quarters are built), so the gen must
             # RESERVE each gate's ground (block_polys) before any pack runs - else a row house lands
@@ -4926,6 +5167,37 @@ def gate(M, verbose=True):
                         fence_gap.append((round(e[0]), round(e[1]), "lands in a gate OPENING (the wall is cut there, so the fence meets nothing)"))
             check("city_ward_fence_meets_wall", not fence_gap,
                   f"ward-fence end(s) not abutting SOLID city wall (commoners could walk around the fence end): {fence_gap} - extend the fence to solid rampart, clear of any gate opening")
+            # the ward FENCE runs in OPEN ground - it must not pass THROUGH a building, a mausoleum, or
+            # another ward's fence (GM, 2026-07). The packs keep off the fence via s.ward's corridor, but
+            # a hand-placed compound (the mausoleum) or a diagonal fence segment can still cut through one.
+            fence_hit = []
+            _ftargets = [b for b in (M.get("buildings", []) + M.get("houses", []) + M.get("mausoleums", [])) if "w" in b]
+            for wd in wards:
+                bnd = wd["boundary"]
+                for b in _ftargets:
+                    bc = rect_corners({"x": b["x"], "y": b["y"], "w": b["w"], "h": b.get("h", b["w"]), "rot": b.get("rot", 0)})
+                    if footprint_on_line(bc, bnd, 4):
+                        fence_hit.append((round(b["x"]), round(b["y"])))
+                for wd2 in wards:
+                    if wd2 is wd:
+                        continue
+                    b2 = wd2["boundary"]
+                    if any(segments_cross(bnd[i], bnd[i + 1], b2[j], b2[j + 1]) for i in range(len(bnd) - 1) for j in range(len(b2) - 1)):
+                        fence_hit.append(("ward-x-ward", round(bnd[0][0])))
+            check("city_ward_fence_clear_of_structures", not fence_hit,
+                  f"ward fence passing THROUGH a structure (building / mausoleum / another fence): {sorted(set(fence_hit))[:4]} - "
+                  f"the fence runs in open ground; move the structure clear of the fence line or reroute the fence")
+            # a KIDO is a gate THROUGH the fence, so it must sit ON the fence (overlap it), not beside it
+            # (GM, 2026-07: a gate next to rather than part of the wall does not work). Its crossing point
+            # must lie within ~8px of a fence segment so the gate visibly straddles the fence.
+            off_fence = []
+            for kd in kido:
+                if wards and min((seg_dist(kd["x"], kd["y"], wd["boundary"][i], wd["boundary"][i + 1])
+                                  for wd in wards for i in range(len(wd["boundary"]) - 1)), default=999) > 8:
+                    off_fence.append((round(kd["x"]), round(kd["y"])))
+            check("city_kido_on_ward_fence", not off_fence,
+                  f"ward gate(s) sitting BESIDE the fence, not on it: {off_fence[:4]} - a kido gates a crossing THROUGH the "
+                  f"fence, so its point must lie ON the fence line (overlap it), not offset into the ward")
             # ...and where the fence meets the wall, the city WALL must render ON TOP (the fence runs
             # UNDER the rampart). The fence is drawn late (high z), so without a wall cap on top of the
             # junction it paints over the wall stroke. s.ward records the fence z and the wall cap it
@@ -5554,11 +5826,15 @@ if __name__ == "__main__":
         if rep is None:
             print("no capacity report (not a walled city with a declared population)")
         else:
-            print(f"WALL CAPACITY: {rep['verdict'].upper().replace('_', ' ')}")
-            print(f"  target {rep['target_dwellings']} dwellings, placed {rep['placed']}, INHERENT capacity (well-packed) {rep['inherent_capacity']}")
-            print(f"  ring {rep['ring_area']}px^2 = overhead {rep['overhead_area']} + residential-capable {rep['res_capable_area']} (open fraction {rep['open_frac']})")
-            print(f"  area budget (px^2): {rep['areas']}")
+            _action = {"sized_and_packed": "sized and packed - done", "densify": "add dwellings (wall is right)",
+                       "enlarge": "ENLARGE the wall", "shrink": "SHRINK the wall"}
+            print(f"WALL CAPACITY: {rep['verdict'].upper()} -> {_action.get(rep['verdict'], '')}")
+            print(f"  target {rep['target_dwellings']} dwellings, placed IN-WALL {rep['placed']}, INHERENT capacity (well-packed) {rep['inherent_capacity']}")
+            print(f"  ring {rep['ring_area']}px^2: residential-capable {rep['res_capable_area']}, civic {rep['civic_area']}, reserve {rep['reserve_area']} (reserve frac {rep['reserve_frac']}, cap {RESERVE_CAP_FRAC})")
             print(f"  suggested wall scale x{rep['suggested_wall_scale']} (>1 enlarge, <1 shrink)")
+            for pq in rep.get("per_quarter", []):
+                _band = "" if QUARTER_DENSITY_FLOOR <= pq["density"] <= QUARTER_DENSITY_CEIL else "  <-- OUT OF BAND"
+                print(f"  quarter {str(pq['name']):>22} [{pq['zone']:11}] {pq['dwellings']:3d} dwellings, density {pq['density'] * 1000:.2f}/1000px^2{_band}")
             if rep.get("grid"):
                 ox, oy = rep["grid_origin"]
                 print(f"  interior map (D dwell / C civic / ~ water / # trunk / + res-street / F field / . OPEN); each cell {rep['grid_step']}px, origin ({ox},{oy}):")

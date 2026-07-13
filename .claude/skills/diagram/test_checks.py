@@ -4442,7 +4442,7 @@ def _diamond_city(pop, dwellings=0, **extra):
 def test_city_capacity_too_small_when_wall_cannot_hold_target():
     # a 400px diamond holds ~200 well-packed; declaring 3000 (target 600) is far too small.
     rep = check_village.city_capacity(_diamond_city(3000))
-    assert rep["verdict"] == "too_small"
+    assert rep["verdict"] == "enlarge"
     assert rep["suggested_wall_scale"] > 1        # enlarge
     # and the gate check surfaces it
     assert "city_wall_sized_to_population" in f(_diamond_city(3000))
@@ -4450,7 +4450,7 @@ def test_city_capacity_too_small_when_wall_cannot_hold_target():
 
 def test_city_capacity_too_big_when_wall_dwarfs_target():
     rep = check_village.city_capacity(_diamond_city(100))   # target 20, inherent ~200
-    assert rep["verdict"] == "too_big"
+    assert rep["verdict"] == "shrink"
     assert rep["suggested_wall_scale"] < 1         # shrink
     assert "city_wall_sized_to_population" in f(_diamond_city(100))
 
@@ -4459,14 +4459,14 @@ def test_city_capacity_underpacked_when_wall_right_but_placement_sparse():
     # target 80 (pop 400) sits inside the inherent band (~102), but only 10 dwellings placed ->
     # the WALL is fine, the PLACEMENT is sparse (below the 7% population line). Not a resize.
     rep = check_village.city_capacity(_diamond_city(400, dwellings=10))
-    assert rep["verdict"] == "underpacked"
+    assert rep["verdict"] == "densify"
     # underpacked is NOT a wall-size fault, so the gate check stays silent
     assert "city_wall_sized_to_population" not in f(_diamond_city(400, dwellings=10))
 
 
 def test_city_capacity_about_right_when_sized_and_packed():
     rep = check_village.city_capacity(_diamond_city(400, dwellings=80))
-    assert rep["verdict"] == "about_right"
+    assert rep["verdict"] == "sized_and_packed"
     assert "city_wall_sized_to_population" not in f(_diamond_city(400, dwellings=80))
 
 
@@ -4496,3 +4496,211 @@ def test_city_capacity_skips_footprintless_item():
     M["buildings"] = [{"x": 200, "y": 200, "kind": "laborer"}]   # footprint-less
     rep = check_village.city_capacity(M)
     assert rep["placed"] == 1
+
+
+# ---- feature 006: in-wall population + extramural commoners ------------------------------
+_CITY_WALL = [[200, 200], [800, 200], [800, 800], [200, 800]]   # 600x600 box
+
+
+def _pop_city(buildings, population=100, **extra):
+    M = {"meta": {"scale": "city", "population": population}, "wall": _CITY_WALL, "buildings": buildings}
+    M.update(extra)
+    return M
+
+
+def test_population_counts_only_in_wall_dwellings_for_a_walled_city():
+    # 20 dwellings inside -> ~100 residents, passes.
+    inside = [bldg(300 + (i % 10) * 20, 300, "laborer") for i in range(20)]
+    assert "population_consistent_with_housing" not in f(_pop_city(inside))
+    # 15 inside + 5 spilled OUTSIDE (x=50) = 20 total: the OLD count (all 20) would pass, but only
+    # the 15 in-wall now count -> ~75 residents -> fails. The spill cannot rescue the figure.
+    spilled = [bldg(300 + (i % 10) * 20, 300, "laborer") for i in range(15)] \
+        + [bldg(50, 300 + i * 20, "laborer") for i in range(5)]
+    assert "population_consistent_with_housing" in f(_pop_city(spilled))
+
+
+def test_city_commoner_dwellings_inside_walls_fires_on_a_spilled_commoner():
+    inside = [bldg(300 + (i % 10) * 20, 300, "laborer") for i in range(20)]
+    assert "city_commoner_dwellings_inside_walls" not in f(_pop_city(inside))
+    # one laborer outside the wall -> fires (hard zero)
+    leaky = inside + [bldg(50, 500, "laborer")]
+    assert "city_commoner_dwellings_inside_walls" in f(_pop_city(leaky))
+
+
+def test_city_commoner_dwellings_exempts_samurai_and_shops_outside():
+    # samurai country estate + a gate-market shop OUTSIDE the wall are legitimate; not flagged.
+    inside = [bldg(300 + (i % 10) * 20, 300, "laborer") for i in range(20)]
+    exempt_outside = inside + [bldg(50, 300, "samurai"), bldg(50, 400, "samurai_large"), bldg(900, 500, "shop")]
+    assert "city_commoner_dwellings_inside_walls" not in f(_pop_city(exempt_outside))
+
+
+# ---- feature 006: declared quarters, per-quarter density, civic-open, reserve-cap ---------
+def _qcity(quarters, buildings=None, **extra):
+    M = {"meta": {"scale": "city"}, "wall": _CITY_WALL, "quarters": quarters, "buildings": buildings or []}
+    M.update(extra)
+    return M
+
+
+_FULL_Q = [[200, 200], [800, 200], [800, 800], [200, 800]]   # a quarter covering the whole interior
+
+
+def _dwell_grid(x0, x1, y0, y1, n, kind="laborer"):
+    return [bldg(x0 + (x1 - x0) * i / (n - 1), y0 + (y1 - y0) * j / (n - 1), kind) for i in range(n) for j in range(n)]
+
+
+def test_city_quarters_declared_fires_when_absent_passes_when_present():
+    assert "city_quarters_declared" in f({"meta": {"scale": "city"}, "wall": _CITY_WALL, "buildings": []})
+    ok = _qcity([{"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "q"}])
+    assert "city_quarters_declared" not in f(ok)
+
+
+def test_city_quarters_tile_interior_passes_on_a_clean_two_half_tiling():
+    left = {"poly": [[200, 200], [500, 200], [500, 800], [200, 800]], "zone": "residential", "kind": None, "name": "L"}
+    right = {"poly": [[500, 200], [800, 200], [800, 800], [500, 800]], "zone": "residential", "kind": None, "name": "R"}
+    # both packed enough to pass density, so we isolate the tiling result
+    b = _dwell_grid(230, 470, 230, 770, 12) + _dwell_grid(530, 770, 230, 770, 12)
+    assert "city_quarters_tile_interior" not in f(_qcity([left, right], b))
+
+
+def test_city_quarters_tile_interior_fires_on_gap_overlap_and_spill():
+    half = {"poly": [[200, 200], [500, 200], [500, 800], [200, 800]], "zone": "civic", "kind": None, "name": "half"}
+    assert "city_quarters_tile_interior" in f(_qcity([half]))                       # only half covered -> gap
+    dup = {"poly": _FULL_Q, "zone": "civic", "kind": None, "name": "a"}
+    dup2 = {"poly": _FULL_Q, "zone": "civic", "kind": None, "name": "b"}
+    assert "city_quarters_tile_interior" in f(_qcity([dup, dup2]))                   # doubled -> overlap
+    spill = {"poly": [[50, 200], [800, 200], [800, 800], [50, 800]], "zone": "civic", "kind": None, "name": "s"}
+    assert "city_quarters_tile_interior" in f(_qcity([spill]))                       # extends past the wall
+
+
+def test_city_residential_density_passes_in_band():
+    q = {"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "warren"}
+    b = _dwell_grid(210, 790, 210, 790, 17)      # 289 dwellings evenly spread -> in band, no dead zone
+    assert "city_residential_quarters_dense_enough" not in f(_qcity([q], b))
+
+
+def test_city_residential_density_fires_below_floor_and_above_ceil():
+    q = {"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "warren"}
+    sparse = _dwell_grid(210, 790, 210, 790, 6)      # 36 dwellings -> below floor
+    assert "city_residential_quarters_dense_enough" in f(_qcity([q], sparse))
+    crammed = _dwell_grid(210, 790, 210, 790, 30)    # 900 dwellings -> above ceil
+    assert "city_residential_quarters_dense_enough" in f(_qcity([q], crammed))
+
+
+def test_city_residential_density_fires_on_a_dead_zone_despite_a_good_average():
+    # in-band average, but every dwelling is jammed into one corner - the far half is a dead zone.
+    q = {"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "lopsided"}
+    corner = _dwell_grid(210, 400, 210, 400, 16)     # ~256 dwellings, density over the whole quarter in band
+    assert "city_residential_quarters_dense_enough" in f(_qcity([q], corner))
+
+
+def test_city_civic_quarter_passes_with_a_compound_fires_when_bare():
+    civic = {"poly": _FULL_Q, "zone": "civic", "kind": None, "name": "yamen precinct"}
+    with_compound = _qcity([civic], governor_mansion={"x": 500, "y": 500, "w": 400, "h": 300, "rot": 0})
+    assert "city_civic_quarter_not_mostly_open" not in f(with_compound)
+    bare = _qcity([civic], ministries=[{"x": 500, "y": 500, "w": 130, "h": 90, "rot": 0}])   # tiny building in a big quarter
+    assert "city_civic_quarter_not_mostly_open" in f(bare)
+
+
+def test_city_reserve_within_cap_passes_under_and_fires_over():
+    small = {"poly": [[250, 250], [500, 250], [500, 500], [250, 500]], "zone": "reserve", "kind": "drill_ground", "name": "drill"}
+    assert "city_reserve_within_cap" not in f(_qcity([small]))       # 62500/360000 = 17% <= 20%
+    big = {"poly": [[250, 250], [550, 250], [550, 550], [250, 550]], "zone": "reserve", "kind": "drill_ground", "name": "drill"}
+    assert "city_reserve_within_cap" in f(_qcity([big]))             # 90000/360000 = 25% > 20%
+
+
+# ---- feature 006: reworked capacity verdict (usable residential ground + reserve) ------------
+def test_city_capacity_counts_only_in_wall_dwellings():
+    # extramural dwellings do not inflate the placed count
+    wall = _CITY_WALL
+    inside = [bldg(300 + (i % 10) * 20, 300, "laborer") for i in range(20)]
+    M = {"meta": {"scale": "city", "population": 100}, "wall": wall, "buildings": inside + [bldg(50, 500, "laborer")]}
+    assert check_village.city_capacity(M)["placed"] == 20    # the outside one is not counted
+
+
+def test_city_capacity_shrinks_when_reserve_over_cap():
+    # a city whose empty ground is declared reserve beyond the cap reads SHRINK, never sized_and_packed
+    over = {"poly": [[250, 250], [560, 250], [560, 560], [250, 560]], "zone": "reserve", "kind": "drill_ground", "name": "drill"}
+    b = _dwell_grid(210, 790, 210, 790, 17)
+    M = _pop_city(b, population=400, quarters=[over])
+    rep = check_village.city_capacity(M)
+    assert rep["verdict"] == "shrink"                        # reserve_frac over the 20% cap forces shrink
+    assert rep["reserve_frac"] > check_village.RESERVE_CAP_FRAC
+    # and the gate check surfaces it
+    assert "city_wall_sized_to_population" in f(M)
+
+
+def test_city_capacity_per_quarter_table_lists_residential_quarters():
+    q = {"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "warren"}
+    civic = {"poly": [[600, 600], [790, 600], [790, 790], [600, 790]], "zone": "civic", "kind": None, "name": "yamen"}
+    M = _pop_city(_dwell_grid(210, 560, 210, 560, 12), population=400, quarters=[q, civic])
+    rep = check_village.city_capacity(M)
+    names = {pq["name"] for pq in rep["per_quarter"]}
+    assert "warren" in names and "yamen" not in names        # residential listed; pure civic not in the density table
+
+
+# ---- feature 006: defensive-branch coverage (empty pts, degenerate quarter) ----------------
+def test_largest_empty_gap_is_infinite_with_no_points():
+    assert check_village.largest_empty_gap([[0, 0], [10, 0], [10, 10], [0, 10]], []) == float("inf")
+
+
+def test_quarter_checks_skip_a_degenerate_zero_area_quarter():
+    # collinear (zero-area) quarters are skipped by the residential-density and civic-open loops
+    # rather than dividing by zero.
+    good = {"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "warren"}
+    degen_res = {"poly": [[400, 400], [500, 400], [600, 400]], "zone": "residential", "kind": None, "name": "res-sliver"}
+    degen_civ = {"poly": [[400, 500], [500, 500], [600, 500]], "zone": "civic", "kind": None, "name": "civ-sliver"}
+    b = _dwell_grid(210, 790, 210, 790, 17)
+    M = _pop_city(b, population=400, quarters=[good, degen_res, degen_civ])
+    fails = f(M)
+    assert "city_residential_quarters_dense_enough" not in fails     # good quarter passes; degenerate skipped
+    assert "city_civic_quarter_not_mostly_open" not in fails         # zero-area civic quarter skipped, no crash
+    check_village.city_capacity(M)                                   # does not crash on a degenerate quarter
+
+
+# ---- overlap rules (2026-07-13): gate towers, ward fence, kido on fence -------------------
+def test_city_gate_towers_clear_of_gate_furniture():
+    wall = _CITY_WALL
+    base = {"meta": {"scale": "city", "walled": True}, "wall": wall, "gates": [[500, 200]],
+            "gate_structs": [{"x": 500, "y": 230, "w": 40, "h": 40, "kind": "tower"},
+                             {"x": 560, "y": 230, "w": 60, "h": 44, "kind": "inspection"}]}
+    assert "city_gate_towers_clear_of_gate_furniture" not in f(base)      # 60px apart, clear
+    over = {**base, "gate_structs": [{"x": 500, "y": 230, "w": 40, "h": 40, "kind": "tower"},
+                                     {"x": 530, "y": 230, "w": 60, "h": 44, "kind": "inspection"}]}
+    assert "city_gate_towers_clear_of_gate_furniture" in f(over)          # 30px -> footprints overlap
+
+
+def _ward006(**extra):
+    # a walled city with a sealed rectangular ward whose fence ends abut the wall
+    wall = _CITY_WALL
+    bnd = [[200, 500], [500, 500], [500, 700], [200, 700]]   # a fence with ends on the W wall (x=200)
+    M = {"meta": {"scale": "city", "walled": True}, "wall": wall, "gates": [[500, 200]],
+         "wards": [{"name": "samurai", "boundary": bnd, "z": 10}],
+         "kido": [{"x": 500, "y": 600, "horizontal": False, "bbox": [490, 590, 510, 610]}]}
+    M.update(extra)
+    return M
+
+
+def test_city_ward_fence_clear_of_structures_fires_on_a_building_on_the_fence():
+    clear = _ward006(buildings=[bldg(350, 550, "samurai")])   # inside the ward, off the fence
+    assert "city_ward_fence_clear_of_structures" not in f(clear)
+    onfence = _ward006(buildings=[bldg(350, 500, "samurai")])  # centred ON the top fence line
+    assert "city_ward_fence_clear_of_structures" in f(onfence)
+    maus = _ward006(mausoleums=[{"x": 500, "y": 600, "w": 44, "h": 32, "rot": 0}])  # the E fence passes through it
+    assert "city_ward_fence_clear_of_structures" in f(maus)
+
+
+def test_city_kido_on_ward_fence_fires_when_the_gate_is_beside_the_fence():
+    on = _ward006()                                            # kido at (500,600) is ON the E fence (x=500)
+    assert "city_kido_on_ward_fence" not in f(on)
+    beside = _ward006(kido=[{"x": 470, "y": 600, "horizontal": False, "bbox": [460, 590, 480, 610]}])  # 30px inside
+    assert "city_kido_on_ward_fence" in f(beside)
+
+
+def test_city_ward_fence_clear_fires_when_two_ward_fences_cross():
+    wall = _CITY_WALL
+    a = {"name": "a", "boundary": [[200, 400], [600, 400], [600, 401]], "z": 10}
+    b = {"name": "b", "boundary": [[400, 200], [400, 600], [401, 600]], "z": 10}   # crosses a's fence at (400,400)
+    M = {"meta": {"scale": "city", "walled": True}, "wall": wall, "gates": [[500, 200]],
+         "wards": [a, b], "kido": []}
+    assert "city_ward_fence_clear_of_structures" in f(M)
+

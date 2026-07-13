@@ -1276,3 +1276,63 @@ def test_relax_gardens_south_nudges_an_east_shaded_garden_south():
            "geom": {"house": (300, 300, 23, 14), "yard": (300, 322, 20, 12), "gardens": list(beds)}}
     s._relax_gardens_south([rec])
     assert rec["geom"]["gardens"][0][1] > 300                  # the bed moved SOUTH to clear the east tree
+
+
+# ---- s.quarter: first-class zoned regions (feature 006) -----------------------------------
+def _city():
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="C", scale="city", walled=True, population=3000, ftpx=3)
+    return s
+
+
+def test_quarter_records_zone_without_drawing_for_non_reserve():
+    s = _city()
+    poly = [(100, 100), (400, 100), (400, 400), (100, 400)]
+    before = len(s.out)
+    s.quarter(poly, "residential")
+    q = s.M["quarters"][-1]
+    assert q["zone"] == "residential" and q["kind"] is None
+    assert q["poly"][0] == [100.0, 100.0]
+    assert len(s.out) == before        # residential/civic/mixed draw nothing (declarative only)
+
+
+def test_quarter_label_is_drawn_at_the_centroid():
+    s = _city()
+    s.quarter([(0, 0), (200, 0), (200, 200), (0, 200)], "civic", label="yamen precinct")
+    assert s.M["quarters"][-1]["name"] == "yamen precinct"
+    assert any("yamen precinct" in frag for frag in s.toplabels)
+
+
+def test_quarter_reserve_kinds_each_render_a_surface():
+    poly = [(100, 100), (500, 100), (500, 500), (100, 500)]
+    for kind in ("drill_ground", "garden", "agricultural_district"):
+        s = _city()
+        before = len(s.out)
+        s.quarter(poly, "reserve", kind=kind, label=kind)
+        assert s.M["quarters"][-1]["kind"] == kind
+        assert len(s.out) > before      # a reserve renders its ground feature
+
+
+def test_quarter_rejects_bad_zone_and_kind_misuse():
+    s = _city()
+    poly = [(0, 0), (100, 0), (100, 100), (0, 100)]
+    try:
+        s.quarter(poly, "industrial")
+        assert False, "bad zone should raise"
+    except ValueError:
+        pass
+    try:
+        s.quarter(poly, "reserve")            # reserve needs a kind
+        assert False, "reserve without kind should raise"
+    except ValueError:
+        pass
+    try:
+        s.quarter(poly, "reserve", kind="parade")   # unknown reserve kind
+        assert False, "unknown reserve kind should raise"
+    except ValueError:
+        pass
+    try:
+        s.quarter(poly, "residential", kind="garden")   # only reserve may carry a kind
+        assert False, "non-reserve with kind should raise"
+    except ValueError:
+        pass

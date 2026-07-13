@@ -69,6 +69,7 @@ Reference directories hold organized source material and context. Each directory
 | `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[m\|f] [p] [N]` - supports shorthand and concatenation (e.g. `pf3`) |
 | `/diagram` | Generate SVG top-down diagrams of L5R locations (manor plans, village layouts, temple plans, etc.) and render to PNG |
 | `/synthesize` | Write a backstory for an existing Obsidian Portal NPC, Claude-native (in-session prose - no external LLM; the webapp button still uses Gemini): reads the OP record + tagline and the campaign-context cast, researches the setting files directly, review (upload as-is / regenerate / upload with typed changes), merges into GM-only notes. Args: `<character name> [ - steering]` |
+| `/chargen` | Make a brand-new NPC end-to-end and upload it to Obsidian Portal: roll a skeleton character with the chargen engine (asking only about genuinely-missing essentials), write a Claude-native backstory (the `/synthesize` method, not Gemini) from the rolled attributes, generate and attach an AI portrait, and create the OP record. Public by default; GM-only if the concept says private/hidden. Args: `<free-text character concept>` |
 
 ## Testing
 
@@ -250,11 +251,12 @@ The server binds to `0.0.0.0:8080` automatically when it detects a container run
 - `/gm-assistant/webapp/Makefile` - `make done` runs ruff + format check + mypy --strict + pytest + 100% coverage gate
 - `/gm-assistant/webapp/tests/screenshot.py` and `tests/dom_audit.py` - Playwright suite for Principle I verification at GM-100 / GM-200 / tablet / mobile. The screenshot script outputs multi-scroll contact sheets to `/tmp/l7r-shots/sheet-<page>-<viewport>.png`.
 - `/gm-assistant/.claude/agents/frontend-review.md` - independent design-review subagent. Invoke before declaring a UI change done if the same agent implemented AND reviewed.
+- `/gm-assistant/.claude/agents/backstory-review.md` - independent review of synthesized NPC prose (`/synthesize`, `/chargen`), run automatically by those skills before the GM sees a backstory. Holds a **growing catalog of previously GM-caught mistakes** plus the baseline canon/style rules and sweeps them by enumeration, so recurring errors are fixed in-session. When the GM catches a new category of mistake in generated prose, distil it into a general rule here (follow the Subagent-check TDD procedure).
 - `/gm-assistant/.claude/skills/relic/pool/` - exemplar of the pool data convention (Principle III)
 - `/gm-assistant/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` - the 200-name pool consumed by the `/names` section
 
 <!-- SPECKIT START -->
-Current active plan: [`specs/004-synthesize-op-npc/plan.md`](specs/004-synthesize-op-npc/plan.md)
-Active feature: /synthesize skill - chat-driven backstory synthesis for existing Obsidian Portal NPCs (reads the OP tagline, reuses the webapp's per-caste corpus + campaign context, review with upload/regenerate/upload-with-typed-changes, idempotent GM-notes merge)
-Feature directory: `specs/004-synthesize-op-npc/`
+Current active plan: [`specs/006-city-quarter-density/plan.md`](specs/006-city-quarter-density/plan.md)
+Active feature: City quarter density and wall-sizing correctness for the /diagram Mode B provincial cities - cities declare first-class quarters (residential/civic/mixed/reserve) so density is judged PER QUARTER (with a dead-zone guard) instead of by a global aggregate that passed a lopsided Nagahara; population counts in-wall only (hard-zero extramural commoners); reserve ground is declared/rendered/capped at ~20%; the capacity verdict is reframed around usable residential ground so "shrink the wall" is a real outcome. Tango is the good calibration anchor; the pre-change broken Nagahara is pinned as a must-fail fixture.
+Feature directory: `specs/006-city-quarter-density/`
 <!-- SPECKIT END -->

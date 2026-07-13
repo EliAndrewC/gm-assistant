@@ -196,6 +196,96 @@ For married monks (remember that only Adept monks and below can marry, while Sen
 
 <!-- END SOURCE -->
 
+## Monk Titles and Ceremonial Offices
+
+Monks in positions of responsibility carry an ornate ceremonial title alongside
+their plain rank or role. Use these when naming or describing a monk NPC with a
+specific duty (a Steward running a division, a Senior Monk heading a function, an
+appraiser-monk). Reach for the plain role in the character's tags and the
+ceremonial title in prose, taglines, and in-world address (e.g. Soun, the
+treasury steward of the Sovereign Temple of Bishamon in Shiro Reiji, is the
+Guardian of the Temple Treasury).
+
+**Fortune-swap rule (from the GM):** many of these titles name a specific Fortune
+- they read "...Bishamon..." below because the source notes were written for a
+Bishamon temple - and they are TEMPLATES. For a temple of another Fortune, swap
+"Bishamon" for that Fortune's name (Benten, Daikoku, Ebisu, Fukurokujin, Hotei,
+Jurojin, or whichever the temple serves): "Sentinel of Bishamon's Sanctuary" ->
+"Sentinel of Daikoku's Sanctuary" at a Daikoku temple, "Compassionate Hand of
+Bishamon" -> "Compassionate Hand of Ebisu." Titles below that do NOT name a
+Fortune are used as-is at any temple. Fortune-naming titles are marked with `*`.
+
+### Steward offices (the council of Stewards)
+
+Each major temple's council of Stewards runs one division each. The plain "Steward
+of X" pairs with an ornate ceremonial title:
+
+| Steward of ... (division) | Ceremonial title |
+|---|---|
+| Temple Finances | Guardian of the Temple Treasury |
+| Education | Master of the Hall of Learning |
+| Religious Ceremonies | Herald of the Sacred Rites |
+| Grounds and Buildings | Warden of the Five Gates |
+| Kitchen and Food Supplies | Overseer of the Temple Kitchens |
+| Clothing and Textiles | Keeper of the Sacred Vestments |
+| Temple Security | Sentinel of Bishamon's Sanctuary `*` |
+| Health and Medicine | Healer of the Serene Refuge |
+| Temple Art and Artifacts | Custodian of the Sacred Relics |
+| Library and Archives | Sage of the Ancestral Scrolls |
+| Pilgrimage and Visitors | Host of the Hundred Paths |
+| Temple Farms and Gardens | Keeper of the Verdant Tranquility |
+| Liturgical Calendar and Events | Timekeeper of the Divine Cycle |
+| Relations with the Lay Community | Liaison of the Faithful |
+| Relations with Other Temples and Orders | Ambassador of Bishamon's Harmony `*` |
+| Monastic Discipline | Arbitrator of the Sacred Code |
+| Charity and Alms | Compassionate Hand of Bishamon `*` |
+
+### Senior Monk titles
+
+A Senior Monk put in charge of a function takes an ornate title. Examples (with
+the duty each implies, where the notes give one):
+
+- Champion of the Sparring Circle
+- Custodian of the Temple Grounds
+- Herald of the Bell
+- Protector of the Serene Sanctuary
+- Bearer of the Temple's Bounty - delivers stipends and budgets within the temple
+- Inkmaster of the Distant Dialogues - chief of correspondence
+- Pilgrim of the Thousand Duties - delivers budgets to subordinate temples
+- Overseer of the Temple's Harvest - head farm landlord
+- Keeper of the Sacred Hearth - head chef
+- Scribe of the Eternal Tao - oversees copying of the Tao
+
+### Teaching roles
+
+- Teacher of Bishamon's Wisdom `*` - any Adept Monk who teaches novices
+- Guiding Star of the Seeker's Path - a Senior Monk who oversees the Adept Monks
+
+### Appraiser-monks (evaluating goods)
+
+Monks who judge the quality or authenticity of goods take a title matched to the
+class of good:
+
+| Good judged | Title |
+|---|---|
+| Food / ingredients | Evaluator of Sacred Ingredients |
+| Clothing | Appraiser of Humble Garments |
+| Incense | Judge of the Fragrant Offering |
+| Tea | Tea Master |
+| Religious objects | Critic of the Divine Symbols |
+| Ink and paper | Assessor of the Eternal Word |
+| Temple decorations | Spectator of the Luminous Decorations |
+| Medicine and herbs | Inspector of the Healing Gifts |
+| Musical instruments | Master of Harmony |
+
+Note: "Master of Harmony" is the instrument-appraiser's title inside a temple;
+elsewhere in the Empire the same phrase names a gardener - mind the context.
+
+### Generic authority terms
+
+Plainer words are also used for a monk in a position of authority: Surveyor,
+Judge, Reviewer, Examiner.
+
 ## Generation Preferences
 
 (To be developed through iteration with the GM. This section will capture what the GM likes and dislikes about generated temple content, and why.)

@@ -141,10 +141,12 @@
     <!-- East, annex to postern (landing gate 496..534 = 12.7 ft - the honest
          two-way cart-gate minimum) -->
     <line x1="880" y1="400" x2="880" y2="496"/>
-    <!-- (annex east wall is broken by the guests' river door at y=330..362,
-         opening into the guest garden - guest doors feed courts, not flanks) -->
-    <line x1="1000" y1="180" x2="1000" y2="330"/>
-    <line x1="1000" y1="362" x2="1000" y2="400"/>
+    <!-- (annex east wall is broken by the guests' river door at y=332..356 - an
+         ~8 ft formal guest gate, no cart uses it, so it is narrower than the
+         bale-cart landing gate; size-audit opening-vs-purpose 2026-07 - opening
+         into the guest garden: guest doors feed courts, not flanks) -->
+    <line x1="1000" y1="180" x2="1000" y2="332"/>
+    <line x1="1000" y1="356" x2="1000" y2="400"/>
     <!-- East, postern to SE corner -->
     <line x1="880" y1="534" x2="880" y2="750"/>
     <!-- South, west of gate (opening 490..530 = 13.3 ft - a real carriage
@@ -193,15 +195,15 @@
   <text x="166" y="705" text-anchor="start" font-size="8" font-style="italic" fill="#5C4830">service gate</text>
   <!-- Guests' river door (annex east wall, opening into the guest garden) -->
   <g fill="#2D2A24">
-    <rect x="994" y="322" width="12" height="8"/>
-    <rect x="994" y="362" width="12" height="8"/>
+    <rect x="994" y="324" width="12" height="8"/>
+    <rect x="994" y="356" width="12" height="8"/>
   </g>
-  <path d="M 1004 346 L 1044 346 L 1044 510" stroke="#9C7448" stroke-width="6" stroke-dasharray="8 8" fill="none" opacity="0.5"/>
-  <text x="1022" y="388" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">river door</text>
+  <path d="M 1004 344 L 1044 344 L 1044 510" stroke="#9C7448" stroke-width="6" stroke-dasharray="8 8" fill="none" opacity="0.5"/>
+  <text x="1022" y="386" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">river door</text>
   <!-- river door (annex east wall), flanking, outside (east) - the door
        Hajime fears most, so it is warded like the rest -->
-  <circle cx="1010" cy="332" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-  <circle cx="1010" cy="360" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="1010" cy="336" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="1010" cy="352" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
 
   <!-- Salt wards flanking the main gate, outside (south of the wall) -->
   <g>
@@ -235,7 +237,7 @@
   <!-- ============================================================ -->
   <!-- INNER COURT (north half) - residence, garden, shrines         -->
   <!-- ============================================================ -->
-  <text x="510" y="174" text-anchor="middle" font-size="13" font-weight="bold" fill="#5C4830" letter-spacing="2">INNER COURT</text>
+  <text x="466" y="174" text-anchor="middle" font-size="13" font-weight="bold" fill="#5C4830" letter-spacing="2">INNER COURT</text>
 
   <!-- Residence - TWO offset blocks (gankō / flying-geese massing, the way
        real shoin residences massed; was a single 180 ft bar - interior-audit
@@ -276,17 +278,20 @@
     <text x="268" y="312" text-anchor="middle" font-size="8" font-style="italic" fill="#3A2E1C">entry porch</text>
   </g>
 
-  <!-- Kitchen + pantries (west range) -->
+  <!-- Kitchen + pantries (west range) - 40x33 ft; a large institutional
+       daidokoro (household, clerks, watch), but kept SMALLER than a residence
+       living block - the cookhouse does not out-foot the family's own quarters
+       (size-audit 2026-07) -->
   <g>
-    <rect x="160" y="320" width="140" height="130" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
+    <rect x="160" y="320" width="120" height="100" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
     <rect x="175" y="333" width="30" height="22" fill="#6B4030" stroke="#3A2010" stroke-width="0.8"/>
     <circle cx="190" cy="344" r="6" fill="#E68A40"/>
-    <text x="230" y="392" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">kitchen</text>
-    <text x="230" y="410" text-anchor="middle" font-size="11" fill="#3A2E1C">&amp; pantries</text>
+    <text x="222" y="370" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">kitchen</text>
+    <text x="222" y="388" text-anchor="middle" font-size="11" fill="#3A2E1C">&amp; pantries</text>
     <!-- Kitchen well -->
-    <rect x="268" y="418" width="22" height="22" fill="#9C8C70" stroke="#5C4830" stroke-width="1.2"/>
-    <circle cx="279" cy="429" r="6" fill="#2D2A24"/>
-    <text x="279" y="412" text-anchor="middle" font-size="8" font-style="italic" fill="#3A2E1C">well</text>
+    <rect x="248" y="388" width="22" height="22" fill="#9C8C70" stroke="#5C4830" stroke-width="1.2"/>
+    <circle cx="259" cy="399" r="6" fill="#2D2A24"/>
+    <text x="259" y="382" text-anchor="middle" font-size="8" font-style="italic" fill="#3A2E1C">well</text>
   </g>
 
   <!-- Inner garden (mature - laid down by generations of magistrates) -->
@@ -322,6 +327,8 @@
        lord's own wing (interior-audit historical correction 2026-07) -->
   <g>
     <rect x="340" y="374" width="115" height="74" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2"/>
+    <!-- informal side entrance (a modest door, not a second genkan) -->
+    <rect x="372" y="448" width="26" height="8" fill="#C9A57A" stroke="#5A3F1E" stroke-width="1"/>
     <text x="397" y="406" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">karo's house</text>
     <text x="397" y="421" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">(the house elder)</text>
   </g>
@@ -333,11 +340,33 @@
     <text x="657" y="438" text-anchor="middle" font-size="9" font-style="italic" fill="#3A2E1C">well</text>
   </g>
 
-  <!-- Inner-court latrine (against the north wall behind the residence,
-       clear of the kitchen) -->
+  <!-- Rear service strip (north band behind the residence) - the shady rear was
+       the household's service zone, not empty ground (building-review internal-
+       dead-space + sanitation sweeps, 2026-07). Servants' quarters run along the
+       north wall; the family privy ATTACHES to the residence's rear corner,
+       cesspit toward the wall (not a lone block adrift in open ground). -->
   <g>
-    <rect x="180" y="160" width="20" height="14" fill="#7E726A" stroke="#3A2E1C" stroke-width="0.8"/>
-    <text x="206" y="171" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
+    <!-- Servants' quarters (nagaya for the on-grounds servants) -->
+    <rect x="172" y="156" width="210" height="40" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
+    <line x1="224" y1="156" x2="224" y2="196" stroke="#6B4F2A" stroke-width="1"/>
+    <line x1="277" y1="156" x2="277" y2="196" stroke="#6B4F2A" stroke-width="1"/>
+    <line x1="330" y1="156" x2="330" y2="196" stroke="#6B4F2A" stroke-width="1"/>
+    <!-- court-facing door (informal) -->
+    <rect x="252" y="196" width="26" height="6" fill="#B89868" stroke="#6B4F2A" stroke-width="0.8"/>
+    <text x="277" y="180" text-anchor="middle" font-size="9" font-weight="bold" fill="#3A2E1C">servants' quarters</text>
+  </g>
+  <!-- Family privy attached to the residence's rear (north) corner -->
+  <g>
+    <rect x="462" y="208" width="18" height="14" fill="#7E726A" stroke="#3A2E1C" stroke-width="0.8"/>
+    <text x="484" y="219" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
+  </g>
+
+  <!-- Kitchen garden filling the rest of the rear strip (behind the east
+       residence block) - a vegetable plot on the shady north/service side, the
+       band the servants' quarters did not take -->
+  <g>
+    <rect x="540" y="156" width="160" height="44" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="620" y="182" text-anchor="middle" font-size="9" font-style="italic" fill="#3A4E38">kitchen garden</text>
   </g>
 
   <!-- The two shrines (east range of the inner court) -->
@@ -380,6 +409,9 @@
   <text x="940" y="174" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">(guest wing - added by the 9th magistrate)</text>
   <g>
     <rect x="895" y="200" width="90" height="100" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2.5"/>
+    <!-- entry from the guest garden (guests arrive via the river door into the
+         garden, then the guest house - a court-fed entrance, not a sealed box) -->
+    <rect x="925" y="300" width="30" height="8" fill="#C9A57A" stroke="#5A3F1E" stroke-width="1"/>
     <text x="940" y="254" text-anchor="middle" font-size="12" font-weight="bold" fill="#3A2E1C">guest house</text>
   </g>
   <g>
@@ -429,33 +461,43 @@
   <!-- Tax archive (W side, upper) - sealed plaster kura: the ledgers are
        the county's tax base, so they get fireproof walls -->
   <g>
-    <rect x="160" y="480" width="108" height="84" fill="#F2EFE4" stroke="#4A3318" stroke-width="2.5"/>
-    <rect x="258" y="515" width="8" height="14" fill="#4A3318"/>
-    <text x="214" y="527" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">tax archive</text>
+    <rect x="160" y="480" width="96" height="78" fill="#F2EFE4" stroke="#4A3318" stroke-width="2.5"/>
+    <rect x="246" y="512" width="8" height="14" fill="#4A3318"/>
+    <text x="208" y="524" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">tax archive</text>
   </g>
 
   <!-- Clerks' duty room (W side, middle - 28 x 18 ft, honest for 3-4 clerks
        plus their shelving; was 47 x 20, caught by size-audit 2026-07) -->
   <g>
-    <rect x="160" y="605" width="84" height="54" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1.5"/>
-    <text x="202" y="627" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">clerks'</text>
-    <text x="202" y="642" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">duty room</text>
+    <rect x="160" y="585" width="84" height="54" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1.5"/>
+    <text x="202" y="607" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">clerks'</text>
+    <text x="202" y="622" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">duty room</text>
   </g>
 
-  <!-- Stables (SW corner) -->
+  <!-- Stables (SW corner) - 28x16 ft, a small umaya for a rich county's few
+       mounts; deliberately kept UNDER the barracks (a stable for a handful of
+       horses must not out-foot the watch's quarters - size-audit hierarchy
+       sweep, 2026-07) -->
   <g>
-    <rect x="160" y="685" width="140" height="60" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
-    <line x1="195" y1="685" x2="195" y2="745" stroke="#6B4F2A" stroke-width="1"/>
-    <line x1="230" y1="685" x2="230" y2="745" stroke="#6B4F2A" stroke-width="1"/>
-    <line x1="265" y1="685" x2="265" y2="745" stroke="#6B4F2A" stroke-width="1"/>
-    <text x="230" y="720" text-anchor="middle" font-size="12" font-weight="bold" fill="#3A2E1C">stables</text>
+    <rect x="160" y="659" width="84" height="48" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
+    <line x1="188" y1="659" x2="188" y2="707" stroke="#6B4F2A" stroke-width="1"/>
+    <line x1="216" y1="659" x2="216" y2="707" stroke="#6B4F2A" stroke-width="1"/>
+    <text x="202" y="688" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">stables</text>
   </g>
 
   <!-- Stables well -->
   <g>
-    <rect x="304" y="702" width="22" height="22" fill="#9C8C70" stroke="#5C4830" stroke-width="1.2"/>
-    <circle cx="315" cy="713" r="6" fill="#2D2A24"/>
-    <text x="315" y="740" text-anchor="middle" font-size="9" font-style="italic" fill="#3A2E1C">well</text>
+    <rect x="252" y="680" width="22" height="22" fill="#9C8C70" stroke="#5C4830" stroke-width="1.2"/>
+    <circle cx="263" cy="691" r="6" fill="#2D2A24"/>
+    <text x="263" y="716" text-anchor="middle" font-size="9" font-style="italic" fill="#3A2E1C">well</text>
+  </g>
+
+  <!-- West-court latrine - serves the tax office / clerks / stable yard (a privy
+       per functional zone; sanitation sweep 2026-07), against the west wall by
+       the service gate for night-soil collection -->
+  <g>
+    <rect x="144" y="714" width="16" height="18" fill="#7E726A" stroke="#3A2E1C" stroke-width="0.8"/>
+    <text x="163" y="727" font-size="7.5" font-style="italic" fill="#5C4830">latrine</text>
   </g>
 
   <!-- Tally office (west of the postern forecourt, on the granary-to-landing
@@ -467,28 +509,30 @@
     <text x="740" y="520" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">&amp; seals</text>
   </g>
 
-  <!-- Granary (raised kura, E side - a staging store) -->
+  <!-- Granary (raised kura, E side - a staging store). 43x26 ft, a single
+       staging kura; depth trimmed from a ~38 ft fat box to a real single-kura
+       footprint, kept under a residence block (size-audit 2026-07) -->
   <g>
-    <rect x="740" y="550" width="130" height="115" fill="url(#granary-slats)" stroke="#5A3F1E" stroke-width="2"/>
-    <rect x="742" y="660" width="10" height="8" fill="#4A3318"/>
-    <rect x="800" y="660" width="10" height="8" fill="#4A3318"/>
-    <rect x="858" y="660" width="10" height="8" fill="#4A3318"/>
-    <text x="805" y="588" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">granary</text>
-    <text x="805" y="606" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">staging store - tax grain</text>
-    <text x="805" y="619" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">barges down to Nagahara</text>
+    <rect x="740" y="550" width="130" height="78" fill="url(#granary-slats)" stroke="#5A3F1E" stroke-width="2"/>
+    <rect x="742" y="620" width="10" height="8" fill="#4A3318"/>
+    <rect x="800" y="620" width="10" height="8" fill="#4A3318"/>
+    <rect x="858" y="620" width="10" height="8" fill="#4A3318"/>
+    <text x="805" y="576" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">granary</text>
+    <text x="805" y="592" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">staging store - tax grain</text>
+    <text x="805" y="604" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">barges down to Nagahara</text>
   </g>
 
   <!-- Holding cell (east of the gate - placement is free; the gate guards
-       double as jailers) -->
+       double as jailers). 18x15 ft, remand-only for 1-2; trimmed to keep the
+       lattice bump linear and stay under the barracks (size-audit 2026-07) -->
   <g>
-    <rect x="572" y="695" width="68" height="50" fill="#B89868" stroke="#5C4318" stroke-width="1.5"/>
-    <line x1="580" y1="703" x2="580" y2="737" stroke="#3A2010" stroke-width="0.6"/>
-    <line x1="590" y1="703" x2="590" y2="737" stroke="#3A2010" stroke-width="0.6"/>
-    <line x1="600" y1="703" x2="600" y2="737" stroke="#3A2010" stroke-width="0.6"/>
-    <line x1="610" y1="703" x2="610" y2="737" stroke="#3A2010" stroke-width="0.6"/>
-    <line x1="620" y1="703" x2="620" y2="737" stroke="#3A2010" stroke-width="0.6"/>
-    <line x1="630" y1="703" x2="630" y2="737" stroke="#3A2010" stroke-width="0.6"/>
-    <text x="606" y="723" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">cell</text>
+    <rect x="572" y="699" width="54" height="46" fill="#B89868" stroke="#5C4318" stroke-width="1.5"/>
+    <line x1="580" y1="706" x2="580" y2="740" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="590" y1="706" x2="590" y2="740" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="600" y1="706" x2="600" y2="740" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="610" y1="706" x2="610" y2="740" stroke="#3A2010" stroke-width="0.6"/>
+    <line x1="618" y1="706" x2="618" y2="740" stroke="#3A2010" stroke-width="0.6"/>
+    <text x="599" y="726" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">cell</text>
   </g>
 
   <!-- Duty-watch barracks (the senior retainers live in town) -->
@@ -506,13 +550,37 @@
     <text x="852" y="737" text-anchor="end" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
   </g>
 
-  <!-- Rain barrels (against the granary's west face, catching eave runoff,
-       clear of the cart corridor) -->
-  <g>
-    <circle cx="733" cy="565" r="5" fill="#8C6F3E" stroke="#4A3318" stroke-width="0.8"/>
-    <circle cx="733" cy="585" r="5" fill="#8C6F3E" stroke="#4A3318" stroke-width="0.8"/>
-    <text x="725" y="600" text-anchor="end" font-size="8" font-style="italic" fill="#5C4830">rain barrels</text>
+  <!-- Fire-water tubs (tensuioke) - standing rainwater tubs kept as fire reserve,
+       DISTRIBUTED to the fire-prone wooden buildings and weighted to the kitchen
+       (open hearth = top ignition source), not a token pair at one storehouse.
+       The fireproof plaster tax-archive kura correctly carries none. (Fire-water
+       sweep, 2026-07: halls burn, kura endure - so the water lives at the halls.) -->
+  <g fill="#8FB0C6" stroke="#3A5060" stroke-width="1">
+    <!-- kitchen (2, highest fire risk) -->
+    <circle cx="180" cy="432" r="5"/>
+    <circle cx="202" cy="432" r="5"/>
+    <!-- office hall -->
+    <circle cx="328" cy="498" r="5"/>
+    <!-- residence west block (by the entry porch) -->
+    <circle cx="310" cy="296" r="5"/>
+    <!-- residence east block (family, garden frontage) -->
+    <circle cx="680" cy="312" r="5"/>
+    <!-- the two shrines -->
+    <circle cx="832" cy="280" r="5"/>
+    <!-- guest house -->
+    <circle cx="888" cy="210" r="5"/>
+    <!-- granary / east yard (gap coverage) -->
+    <circle cx="733" cy="560" r="5"/>
+    <!-- barracks -->
+    <circle cx="648" cy="706" r="5"/>
+    <!-- gatehouse -->
+    <circle cx="328" cy="705" r="5"/>
+    <!-- stables -->
+    <circle cx="294" cy="692" r="5"/>
+    <!-- servants' quarters -->
+    <circle cx="392" cy="162" r="5"/>
   </g>
+  <text x="210" y="436" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
 
   <!-- Gatehouse (guard post just inside and BESIDE the gate - never across it) -->
   <g>
