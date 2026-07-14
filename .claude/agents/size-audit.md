@@ -105,9 +105,29 @@ Paths under `/gm-assistant/.claude/skills/diagram/`:
      right - do NOT recommend shrinking the walls** (that fights the size-audited
      Joge<->Takayama envelope). An in-band plan that still "feels" loose is
      FRAGMENTED, not oversized - the fix is consolidation, not a smaller envelope.
-   - **LARGEST VACANT RECTANGLE** - decide whether it is the intentional forecourt
-     / oshirasu / processional approach (a FEATURE, keep it - real jin'ya kept
-     ~12-18% open ceremonial ground) or undifferentiated dead slack.
+   - **TOP-N VACANT RECTANGLES** - the report lists the several largest empty
+     rectangles, not just one (a single-largest metric once let a big secondary
+     void hide behind the legitimate forecourt - GM caught it, 2026-07). For EACH,
+     decide feature vs slack, and **quantify the clearance**: any region you clear
+     by naming its function must state the historical size that function warrants
+     and confirm the drawn region fits. A cart-and-draft-animal **loading apron is
+     ~15-20 ft deep**, NOT 24; a forecourt/oshirasu is sized for assembly (real
+     jin'ya kept ~12-18% open ceremonial ground). An unquantified label ("it's a
+     cart apron") or a region larger than its function warrants is a FINDING - do
+     not wave a void through on a plausible name (the same laundering the
+     independence rule stops, one level up: an oversized EMPTY region cleared by
+     an unquantified function instead of an oversized BUILDING cleared by a
+     tolerance).
+   - **PER-REGION DENSITY** - the report tiles the interior; a large tile whose
+     local coverage is far below the compound's global figure is a locally-sparse
+     pocket (global coverage can be in-band while one quadrant is ~2/3 empty).
+     But density counts BUILDINGS only, so a tile reads low either because it is
+     bare slack OR because it holds a designated open FEATURE (the oshirasu sand
+     court, a garden, the forecourt). Cross-check against the vacant-rectangle
+     list: a low tile that coincides with a big bare rectangle is a consolidation
+     candidate; a low tile that is the oshirasu/garden/forecourt is a feature.
+     Do not let the healthy global average clear genuine bare slack, and do not
+     flag a court just because it is (correctly) unbuilt.
    - **ALIGNED GAPS** - for each flagged gap, read the two buildings' labels and
      rule: two ordinary wooden SERVICE/UTILITY buildings on a shared edge should
      ABUT into a range or sit at a ~6-8 ft fire-gap, not 12-16 ft apart (real
@@ -139,9 +159,10 @@ PROPORTION / HIERARCHY SWEEP (mandatory - enumerate the ORDERING, not just absol
 
 PACKING / WHITESPACE SWEEP (mandatory - run pack_audit.py, then interpret):
 - coverage: N% of interior -> in jin'ya band ~37-42% / sparse / cramped -> ENVELOPE verdict (keep - and if in-band, state explicitly that shrinking the walls is NOT the fix)
-- largest vacant rectangle: W x H ft at (loc) -> forecourt/oshirasu (FEATURE, keep) / dead slack (consolidate)
+- top-N vacant rectangles: for EACH, W x H ft at (loc) -> FEATURE with a quantified reason ("warrants ~N ft because <function>": loading apron ~15-20 ft, forecourt sized for assembly) | SLACK (region exceeds what its function warrants, or has no function - consolidate). An unquantified "it's an apron/forecourt" is not acceptable.
+- per-region density: name any large tile whose local coverage sits far below the global figure -> locally-sparse pocket (consolidation candidate), even when global coverage is in-band
 - loose gaps: rule each flagged gap -> ABUT/TIGHTEN (two wooden service buildings) | fire-gap OK (kura, <=~10 ft) | FEATURE (forecourt / court / passage)
-- packing verdict: envelope OK + which specific gaps/regions to consolidate (never "shrink the manor" when coverage is in-band)
+- packing verdict: envelope OK + which specific gaps/regions/tiles to consolidate (never "shrink the manor" when coverage is in-band)
 
 FINDINGS (ranked by how wrong):
 1. <feature>: drawn X ft, real equivalents Y ft (source basis) - verdict, and

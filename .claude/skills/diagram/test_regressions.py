@@ -22,6 +22,7 @@ distinctly from the auto-captured ones.
     python3 -m pytest test_regressions.py -q
     python3 test_regressions.py
 """
+
 import glob
 import json
 import os

@@ -11,6 +11,7 @@ Works under pytest OR standalone:
     python3 -m pytest test_villages.py -q     # from the diagram skill directory
     python3 test_villages.py                  # no pytest required
 """
+
 import glob
 import os
 import runpy

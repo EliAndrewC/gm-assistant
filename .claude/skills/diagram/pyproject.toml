@@ -1,11 +1,56 @@
-# Test + coverage config for the diagram skill's Mode B Python (check_village.py + settlement.py).
-# Coverage is gated at 100% (fail_under) so "we have tests" is mechanically enforced, not just
-# asserted. Run: python3 -m pytest   (from this directory; needs pytest + pytest-cov).
+# Lint + format + type + test + coverage config for the diagram skill's Python.
+# One gate command runs them all: `make done` -> ruff check + ruff format --check + mypy + pytest
+# (100% coverage). Wired so Constitution Principle X is enforced for the whole skill, not missed.
+#
+# Principle X (feature 005, GM-directed 2026-07-13): the Mode B engine (settlement.py,
+# check_village.py, waterfields.py) is brought to FULL compliance - no grace period. ruff lint +
+# format apply now; mypy --strict is reached via a per-module ratchet (the three engine modules are
+# relaxed via [[tool.mypy.overrides]] below and annotated to strict in focused per-module passes,
+# each pass removing its module from the override so the gate blocks backsliding). pack_audit.py
+# (feature 007) stays strict-typed + linted.
+
+# ---- ruff (lint + format) ----------------------------------------------------------------
+[tool.ruff]
+target-version = "py313"
+# The engine uses intentionally long, descriptive single-line check calls; 200 keeps `ruff format`
+# from wrapping them (only ~17 lines exceed it) while still normalizing spacing/comments.
+line-length = 200
+extend-exclude = ["pool"]   # generated per-map gens are scripts, formatted by their own authors
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]   # long descriptive lines are house style; the formatter caps wrapping via line-length
+
+[tool.ruff.format]
+# Preserve the existing quote style: the SVG f-strings use single-outer/double-inner
+# (f'<rect fill="{c}"/>'), so leaving quotes as-authored avoids needless churn/risk.
+quote-style = "preserve"
+
+# ---- mypy (strict, with a per-module ratchet) --------------------------------------------
+# Scoped to PRODUCTION LIBRARY modules (per Principle X - not the tests or the generator scripts).
+# `python3 -m mypy` (bare, in the Makefile) checks exactly these files.
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py"]
+
+[[tool.mypy.overrides]]
+# RATCHET: the legacy engine modules carried ~2,470 pre-existing strict errors (the manifest is an
+# untyped dict). Each is migrated to strict in its own focused pass, then removed from this list so
+# the gate blocks backsliding. NEW modules (e.g. the knob engine, once added to `files` above) are
+# strict immediately. Migrated so far: waterfields.py, check_village.py. REMAINING: settlement.py -
+# its pass is deferred because that file is the shared Mode B + city generator and is currently being
+# heavily rewritten by the concurrent city-quarter (feature 006) work; migrating it under a live
+# concurrent editor would clobber that work, so it lands after 006's settlement.py changes settle.
+module = ["settlement"]
+ignore_errors = true
+
+# ---- pytest + coverage -------------------------------------------------------------------
 [tool.pytest.ini_options]
 addopts = "--cov --cov-report=term-missing"
 
 [tool.coverage.run]
-source = ["check_village", "settlement"]
+source = ["check_village", "settlement", "pack_audit"]
 omit = ["test_*.py", "pool/*.gen.py"]
 
 [tool.coverage.report]

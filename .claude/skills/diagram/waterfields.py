@@ -25,8 +25,14 @@ plot carve assumes SE. (The drain and the supply canals are given headings RELAT
 Returns plain data (channels, plots, stats); the caller draws SVG via Settlement. RNG is a
 LOCAL random.Random(seed) so field generation never ripples other features' placement.
 """
+
 import math
 import random
+from collections.abc import Sequence
+from typing import Any
+
+Pt = tuple[float, float]  # an (x, y) point in map pixels
+Poly = list[Pt]  # a polyline / polygon as a list of points
 
 # A rice field is ONE crop at ONE transplant/growth stage, so its body is a UNIFORM green - the plot-to-plot
 # shade jitter denoted nothing (it was only anti-flatness texture), and the GM asked for it uniform. The bund
@@ -39,56 +45,66 @@ RICE_GREENS = [_RICE_GREEN, _RICE_GREEN, _RICE_GREEN]
 FLOODED = '#93B7AC'
 RIPE_GOLD = '#C9BA79'
 BUND = '#C2A772'
-BEAN_GREEN = '#7C9A4E'        # azemame (bund soybeans) - the beaded-bund accent
+BEAN_GREEN = '#7C9A4E'  # azemame (bund soybeans) - the beaded-bund accent
 
 # DRY-FIELD (hatake) crops on ground the irrigation cannot command - the upslope margin
 # above the supply canal. Each: fill + furrow-line colour (dry crops are ridge-cultivated).
 DRY_CROPS = {
-    "barley": ("#CDB86A", "#B49E52"),      # mugi - tan-gold
-    "millet": ("#C6A64A", "#AD8C36"),      # awa/kibi - ochre
-    "buckwheat": ("#D3C2A6", "#C69C86"),   # soba - pale, reddish stems
-    "soy": ("#A9B36A", "#8E9A50"),         # daizu as a field crop - soybean green
+    "barley": ("#CDB86A", "#B49E52"),  # mugi - tan-gold
+    "millet": ("#C6A64A", "#AD8C36"),  # awa/kibi - ochre
+    "buckwheat": ("#D3C2A6", "#C69C86"),  # soba - pale, reddish stems
+    "soy": ("#A9B36A", "#8E9A50"),  # daizu as a field crop - soybean green
 }
 
-DF = 30.0        # fall step of the lockstep march (px)
-GAP = 26.0       # threads never pinch closer than this - a plot must fit between them
+DF = 30.0  # fall step of the lockstep march (px)
+GAP = 26.0  # threads never pinch closer than this - a plot must fit between them
 
 
 class _Frame:
     """Contour/fall frame for an arbitrary downhill screen angle."""
 
-    def __init__(self, down_deg):
+    def __init__(self, down_deg: float) -> None:
         a = math.radians(down_deg)
-        self.down = a
-        self.d = (math.cos(a), math.sin(a))          # fall unit (downhill)
-        self.c = (math.sin(a), -math.cos(a))         # contour unit (90 deg left of fall)
+        self.down: float = a
+        self.d: Pt = (math.cos(a), math.sin(a))  # fall unit (downhill)
+        self.c: Pt = (math.sin(a), -math.cos(a))  # contour unit (90 deg left of fall)
 
-    def to_uf(self, x, y):
+    def to_uf(self, x: float, y: float) -> Pt:
         return (x * self.c[0] + y * self.c[1], x * self.d[0] + y * self.d[1])
 
-    def to_xy(self, u, f):
+    def to_xy(self, u: float, f: float) -> Pt:
         return (u * self.c[0] + f * self.d[0], u * self.c[1] + f * self.d[1])
 
 
 class _Thread:
     """One plot-column boundary marched down the fall line."""
 
-    def __init__(self, u, f, drift, ditch_f, decay=110.0, fallback=None):
+    def __init__(
+        self,
+        u: float,
+        f: float,
+        drift: float,
+        ditch_f: float,
+        decay: float = 110.0,
+        fallback: "Poly | _Thread | None" = None,
+    ) -> None:
         self.u0, self.f0 = u, f
         self.u = u
-        self.drift = drift              # du/df at takeoff (from the ditch's dug heading)
-        self.decay = decay              # fall-distance over which drift relaxes to 0
-        self.ditch_f = ditch_f          # dug-ditch prefix ends at this f (plain bund below)
-        self.fallback = fallback        # boundary path ABOVE the takeoff (parent canal/thread)
-        self.pts = []
-        self.f_end = None
+        self.drift = drift  # du/df at takeoff (from the ditch's dug heading)
+        self.decay = decay  # fall-distance over which drift relaxes to 0
+        self.ditch_f = ditch_f  # dug-ditch prefix ends at this f (plain bund below)
+        self.fallback = fallback  # boundary path ABOVE the takeoff (parent canal/thread)
+        self.pts: Poly = []
+        self.f_end: float | None = None
+        self.spawn_sub: bool = False  # set True on interior blocks that split once
+        self.offtake_fs: list[float] = []  # falls at which this canal spawns offtakes
 
-    def step(self, f, R):
+    def step(self, f: float, R: random.Random) -> float:
         k = math.exp(-max(0.0, f - self.f0) / self.decay)
         return self.u + (self.drift * k + R.uniform(-0.10, 0.10)) * DF
 
 
-def _at_f(F, pts, f):
+def _at_f(F: _Frame, pts: Poly, f: float) -> Pt:
     """Point on a fall-monotone polyline at fall f (clamped at the ends)."""
     if f <= F.to_uf(*pts[0])[1]:
         return pts[0]
@@ -96,12 +112,11 @@ def _at_f(F, pts, f):
         fa, fb = F.to_uf(*pts[i])[1], F.to_uf(*pts[i + 1])[1]
         if fa <= f <= fb and fb > fa:
             k = (f - fa) / (fb - fa)
-            return (pts[i][0] + k * (pts[i + 1][0] - pts[i][0]),
-                    pts[i][1] + k * (pts[i + 1][1] - pts[i][1]))
+            return (pts[i][0] + k * (pts[i + 1][0] - pts[i][0]), pts[i][1] + k * (pts[i + 1][1] - pts[i][1]))
     return pts[-1]
 
 
-def _f_at_u(F, pts, u):
+def _f_at_u(F: _Frame, pts: Poly, u: float) -> float | None:
     """Fall of a u-monotone polyline at contour coordinate u (clamped; None outside range)."""
     us = [F.to_uf(*p)[0] for p in pts]
     if not (min(us[0], us[-1]) - 20 <= u <= max(us[0], us[-1]) + 20):
@@ -118,7 +133,7 @@ def _f_at_u(F, pts, u):
     return F.to_uf(*near)[1]
 
 
-def _seg_x(a, b, c, d):
+def _seg_x(a: Pt, b: Pt, c: Pt, d: Pt) -> Pt | None:
     r = (b[0] - a[0], b[1] - a[1])
     s = (d[0] - c[0], d[1] - c[1])
     den = r[0] * s[1] - r[1] * s[0]
@@ -131,7 +146,7 @@ def _seg_x(a, b, c, d):
     return None
 
 
-def _pip(x, y, poly):
+def _pip(x: float, y: float, poly: Poly) -> bool:
     n = len(poly)
     inside = False
     j = n - 1
@@ -144,7 +159,7 @@ def _pip(x, y, poly):
     return inside
 
 
-def _poly_area(poly):
+def _poly_area(poly: Poly) -> float:
     s = 0.0
     for i in range(len(poly)):
         x0, y0 = poly[i]
@@ -153,7 +168,18 @@ def _poly_area(poly):
     return abs(s) / 2
 
 
-def _dug_polyline(R, F, x, y, ang, length, wobble, seg, W, H):
+def _dug_polyline(
+    R: random.Random,
+    F: _Frame,
+    x: float,
+    y: float,
+    ang: float,
+    length: float,
+    wobble: float,
+    seg: tuple[float, float],
+    W: float,
+    H: float,
+) -> Poly:
     """A hand-dug canal: few long segments, tiny heading changes (obtuse only)."""
     pts = [(x, y)]
     trav = 0.0
@@ -169,24 +195,36 @@ def _dug_polyline(R, F, x, y, ang, length, wobble, seg, W, H):
     return pts
 
 
-def _point_along(pts, frac):
+def _point_along(pts: Poly, frac: float) -> Pt:
     total = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
     d = frac * total
     for i in range(len(pts) - 1):
         L = math.dist(pts[i], pts[i + 1])
         if d <= L:
             t = d / L
-            return (pts[i][0] + t * (pts[i + 1][0] - pts[i][0]),
-                    pts[i][1] + t * (pts[i + 1][1] - pts[i][1]))
+            return (pts[i][0] + t * (pts[i + 1][0] - pts[i][0]), pts[i][1] + t * (pts[i + 1][1] - pts[i][1]))
         d -= L
     return pts[-1]
 
 
-def build_comb(W, H, sluice, seed, down_deg=45,
-               canal_a_len=(1250, 1450), canal_b_len=(680, 800),
-               offtakes_a=(0.22, 0.45, 0.68, 0.88), offtakes_b=(0.45, 0.8),
-               plot_across=48, row_step=(26, 36), dry_keepout=(), dry_band=(70, 132),
-               bean_frac=0.28, field_fall=None, furrow_spread=1.1):
+def build_comb(
+    W: float,
+    H: float,
+    sluice: Pt,
+    seed: int,
+    down_deg: float = 45,
+    canal_a_len: tuple[float, float] = (1250, 1450),
+    canal_b_len: tuple[float, float] = (680, 800),
+    offtakes_a: Sequence[float] = (0.22, 0.45, 0.68, 0.88),
+    offtakes_b: Sequence[float] = (0.45, 0.8),
+    plot_across: float = 48,
+    row_step: tuple[float, float] = (26, 36),
+    dry_keepout: Sequence[tuple[float, float, float]] = (),
+    dry_band: tuple[float, float] = (70, 132),
+    bean_frac: float = 0.28,
+    field_fall: float | None = None,
+    furrow_spread: float = 1.1,
+) -> dict[str, Any]:
     """The COMB layout (the historical default - Kishu school / Chinese canal doctrine):
     the sluice's head-race forks at one division point into TWO supply canals hugging the
     high margins (canal A runs cross-slope at down-37 deg, canal B down the other margin at
@@ -202,25 +240,29 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     channels = []
 
     # head-race: sluice -> the division point (bunsuiguchi), straight down the fall
-    hr = [sluice,
-          (sluice[0] + 45 * F.d[0], sluice[1] + 45 * F.d[1]),
-          (sluice[0] + 90 * F.d[0], sluice[1] + 90 * F.d[1])]
+    hr = [sluice, (sluice[0] + 45 * F.d[0], sluice[1] + 45 * F.d[1]), (sluice[0] + 90 * F.d[0], sluice[1] + 90 * F.d[1])]
     channels.append({"pts": hr, "w": 7.0, "role": "main"})
     fork = hr[-1]
 
     # supply canal A: cross-slope along the high margin, descending gently
-    a_pts = _dug_polyline(R, F, fork[0], fork[1], DOWN - math.radians(42),
-                          R.uniform(*canal_a_len), 0.045, (95, 125), W, H)
-    # supply canal B: down the other margin (steeper heading, the west canal on Kikuta)
-    b_pts = _dug_polyline(R, F, fork[0], fork[1], DOWN + math.radians(58),
-                          R.uniform(*canal_b_len), 0.05, (90, 120), W, H)
+    a_pts = _dug_polyline(R, F, fork[0], fork[1], DOWN - math.radians(42), R.uniform(*canal_a_len), 0.045, (95, 125), W, H)
+    # supply canal B: down the other margin (steeper heading, the west canal on Kikuta). Its polyline is
+    # discarded - canal B is redrawn below as the `bc` boundary thread - but the call stays (its RNG draw is
+    # part of the frozen stream that keeps every map byte-identical); `_`-prefixed so it reads as intentional.
+    _b_pts = _dug_polyline(R, F, fork[0], fork[1], DOWN + math.radians(58), R.uniform(*canal_b_len), 0.05, (90, 120), W, H)
 
-    def mk(px, py, heading, ditch_len, decay=110.0, fallback=None):
+    def mk(
+        px: float,
+        py: float,
+        heading: float,
+        ditch_len: float,
+        decay: float = 110.0,
+        fallback: "Poly | _Thread | None" = None,
+    ) -> "_Thread":
         tu, tf = F.to_uf(px, py)
         h = max(-1.2, min(1.2, heading - DOWN))
         # du/df = -tan(h): a heading LEFT of the fall line (h<0) moves u POSITIVE
-        return _Thread(tu, tf, -math.tan(h), tf + ditch_len * max(0.2, math.cos(h)),
-                       decay, fallback)
+        return _Thread(tu, tf, -math.tan(h), tf + ditch_len * max(0.2, math.cos(h)), decay, fallback)
 
     # canal B is itself the far-side boundary thread (its dug prefix IS the canal)
     bc = mk(fork[0], fork[1], DOWN + math.radians(58), R.uniform(*canal_b_len), decay=170.0)
@@ -228,25 +270,25 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     # delivery ditches are MIN-SPACED: two ditches closer than ~2 plot-columns would water the same
     # ground twice (a redundant near-pair that reads as an artifact, not design), so drop the closer.
     min_gap = 2.0 * plot_across
-    placed_u = [bc.u0]                           # canal B is a SUPPLY canal - deliveries must not hug it either
+    placed_u = [bc.u0]  # canal B is a SUPPLY canal - deliveries must not hug it either
     a_ths = []
-    for frac in offtakes_a:                      # delivery ditches off canal A
+    for frac in offtakes_a:  # delivery ditches off canal A
         bx, by = _point_along(a_pts, frac)
         tu = F.to_uf(bx, by)[0]
         if any(abs(tu - pu) < min_gap for pu in placed_u):
-            continue                             # redundant near-pair - skip it (keeps the net sparse)
+            continue  # redundant near-pair - skip it (keeps the net sparse)
         placed_u.append(tu)
         th = mk(bx, by, DOWN + R.uniform(-0.15, 0.1), R.uniform(420, 620), fallback=a_pts)
         a_ths.append(th)
         threads.append(th)
-    for th in a_ths[1:-1]:                        # only the INTERIOR (widest) blocks split once
+    for th in a_ths[1:-1]:  # only the INTERIOR (widest) blocks split once
         th.spawn_sub = True
-    rb = mk(a_pts[-1][0], a_pts[-1][1], DOWN, 0, fallback=a_pts)   # far boundary (bund only)
+    rb = mk(a_pts[-1][0], a_pts[-1][1], DOWN, 0, fallback=a_pts)  # far boundary (bund only)
     threads.append(rb)
     threads.sort(key=lambda t: t.u0)
 
     # spawn events: west-canal offtakes + mid-block subs take off ON their parent's path
-    spawns = []
+    spawns: list[list[Any]] = []  # [f_at, parent_thread, heading, ditch_len, side] - heterogeneous
     bc.offtake_fs = []
     for frac in offtakes_b:
         f_at = bc.f0 + (sum(canal_b_len) / 2 * frac) * math.cos(math.radians(58))
@@ -292,8 +334,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
             t.u = nu
             t.pts.append(F.to_xy(nu, f))
             prev_u = nu
-        if all(not (-60 < F.to_xy(t.u, f)[0] < W + 60 and -60 < F.to_xy(t.u, f)[1] < H + 60)
-               for t in threads):
+        if all(not (-60 < F.to_xy(t.u, f)[0] < W + 60 and -60 < F.to_xy(t.u, f)[1] < H + 60) for t in threads):
             break
 
     # ---- DRAIN (akusui): the collector is DUG along the fields' low boundary, so its route
@@ -303,7 +344,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     bots = []
     for t in threads:
         if t.ditch_f <= t.f0 + 10:
-            continue                                     # bund-only boundaries have no ditch
+            continue  # bund-only boundaries have no ditch
         bot = t.pts[0]
         for p in t.pts:
             if F.to_uf(*p)[1] <= t.ditch_f:
@@ -324,7 +365,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     # the boundary thread and beyond into bare ground - a collector starts where the first field drains
     # in, and the hem pass covers any sliver at the SW corner. (This was a dangling stub before.)
     lo_u = min(b[0] for b in bots)
-    hi_u = max(b[0] for b in bots) + 40                  # the OUTFALL, just past the SE-most ditch bottom
+    hi_u = max(b[0] for b in bots) + 40  # the OUTFALL, just past the SE-most ditch bottom
     # keep the collector INSIDE the frame: lower the line if an end would dip off the map edge (a
     # delivery ditch that then reaches it simply discharges into the collector - correct hydrology)
     for uc in (lo_u, hi_u):
@@ -336,7 +377,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     while u < hi_u:
         duf.append((u, a_fit + b_fit * u + R.uniform(-6, 6)))
         u += R.uniform(120, 170)
-    duf.append((hi_u, a_fit + b_fit * hi_u))             # the outfall point (drain's downhill end)
+    duf.append((hi_u, a_fit + b_fit * hi_u))  # the outfall point (drain's downhill end)
     duf.sort(key=lambda q: q[0])
     dpts = [F.to_xy(u, f) for u, f in duf]
     channels.append({"pts": dpts, "w": 6.0, "role": "drain"})
@@ -347,14 +388,14 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     # the outfall sits INSIDE the frame - if the field itself already runs to the map edge, the drain
     # discharges off-map directly (a brook grown from there would just run back through the field, as
     # the streams_avoid_fields check correctly flags). A field bounded within the frame gets the brook.
-    outfall = dpts[-1]                                   # the drain's downhill (highest-u) end
+    outfall = dpts[-1]  # the drain's downhill (highest-u) end
     brook = []
     if 14 < outfall[0] < W - 14 and 14 < outfall[1] < H - 14:
         u0, f0 = F.to_uf(*outfall)
-        um, fm = F.to_uf(*dpts[-2])                      # the drain's EXIT heading (u/f) at the outfall
+        um, fm = F.to_uf(*dpts[-2])  # the drain's EXIT heading (u/f) at the outfall
         eu, ef = u0 - um, f0 - fm
         el = math.hypot(eu, ef) or 1.0
-        eu, ef = eu / el, ef / el                        # unit exit heading (mostly cross-slope, slight fall)
+        eu, ef = eu / el, ef / el  # unit exit heading (mostly cross-slope, slight fall)
         ou, of = u0, f0
         brook = [outfall]
         for i in range(40):
@@ -363,13 +404,13 @@ def build_comb(W, H, sluice, seed, down_deg=45,
             # collector turning down the valley INTO the stream (a smooth bend, not a right angle).
             w = min(1.0, i / 4.0)
             ou += (1 - w) * eu * 88 + w * R.uniform(-22, 40)
-            of += (1 - w) * ef * 88 + w * R.uniform(72, 105)   # w->1 quickly: pure downhill off the map
+            of += (1 - w) * ef * 88 + w * R.uniform(72, 105)  # w->1 quickly: pure downhill off the map
             p = F.to_xy(ou, of)
             brook.append(p)
             if not (12 < p[0] < W - 12 and 12 < p[1] < H - 12):
-                break                                    # ran off the map edge = the runoff sink
+                break  # ran off the map edge = the runoff sink
 
-    for t in threads:                                    # clip every thread to the drain
+    for t in threads:  # clip every thread to the drain
         clipped = [t.pts[0]]
         for i in range(len(t.pts) - 1):
             a, b = t.pts[i], t.pts[i + 1]
@@ -401,9 +442,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     for i in range(len(cuts) - 1):
         piece = [_point_along(a_pts, cuts[i] + (cuts[i + 1] - cuts[i]) * t / 6) for t in range(7)]
         channels.append({"pts": piece, "w": 6.2 - 2.2 * i / (len(cuts) - 2), "role": "main"})
-    bc_cuts = sorted(F.to_uf(*e[1].pts[0])[1] if False else e[0]
-                     for e in [] ) if False else sorted(
-        [bc.f0] + [f for f in getattr(bc, "offtake_fs", [])] + [bc.ditch_f])
+    bc_cuts = sorted(F.to_uf(*e[1].pts[0])[1] if False else e[0] for e in []) if False else sorted([bc.f0] + [f for f in getattr(bc, "offtake_fs", [])] + [bc.ditch_f])
     for t in threads:
         pre = [p for p in t.pts if F.to_uf(*p)[1] <= t.ditch_f]
         if len(pre) < 2:
@@ -414,9 +453,7 @@ def build_comb(W, H, sluice, seed, down_deg=45,
             for i in range(len(bc_cuts) - 1):
                 piece = [p for p in pre if bc_cuts[i] - 14 <= F.to_uf(*p)[1] <= bc_cuts[i + 1] + 14]
                 if len(piece) >= 2:
-                    channels.append({"pts": piece,
-                                     "w": 5.6 - 1.6 * i / max(1, len(bc_cuts) - 2),
-                                     "role": "main"})
+                    channels.append({"pts": piece, "w": 5.6 - 1.6 * i / max(1, len(bc_cuts) - 2), "role": "main"})
         else:
             # a delivery ditch TAPERS as it descends: it sheds water into the paddies it feeds all
             # along its length, so its flow - and width - decreases from full at the canal takeoff to a
@@ -426,10 +463,9 @@ def build_comb(W, H, sluice, seed, down_deg=45,
             channels.append({"pts": pre, "w": 5.6 if t is bc else 4.0, "w_tail": 1.5, "role": "branch"})
 
     plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step)
-    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560   # 1px=2ft -> 4 sq ft/px^2
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
 
-    envelope = ([p for p in a_pts] + [p for p in threads[-1].pts] +
-                list(reversed(dpts)) + list(reversed(threads[0].pts)))
+    envelope = [p for p in a_pts] + [p for p in threads[-1].pts] + list(reversed(dpts)) + list(reversed(threads[0].pts))
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
     # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md.
@@ -440,19 +476,39 @@ def build_comb(W, H, sluice, seed, down_deg=45,
     # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
     # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
     # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
-    return {"channels": channels, "plots": plots, "threads": threads, "drain": dpts,
-            "brook": brook, "envelope": envelope, "acres": acres, "dry_plots": dry_plots,
-            "dry_acres": dry_acres, "bund_beans": bund_beans, "furrows_vary": furrow_spread >= 0.3}
+    return {
+        "channels": channels,
+        "plots": plots,
+        "threads": threads,
+        "drain": dpts,
+        "brook": brook,
+        "envelope": envelope,
+        "acres": acres,
+        "dry_plots": dry_plots,
+        "dry_acres": dry_acres,
+        "bund_beans": bund_beans,
+        "furrows_vary": furrow_spread >= 0.3,
+    }
 
 
-def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
+def _carve(
+    R: random.Random,
+    F: _Frame,
+    threads: list["_Thread"],
+    a_pts: Poly,
+    dpts: Poly,
+    W: float,
+    H: float,
+    plot_across: float,
+    row_step: tuple[float, float],
+) -> list[dict[str, Any]]:
     """Carve paddy plots between adjacent threads. Above a thread's takeoff the boundary
     falls back to its parent path (canal / parent ditch); below its end, to the DRAIN - so
     plots hug the canal at the top and reach the collector at the bottom, never spilling
     past either. Rows are contour-parallel bunds (the cascade steps down them)."""
-    plots = []
+    plots: list[dict[str, Any]] = []
 
-    def bnd(t, f):
+    def bnd(t: "_Thread", f: float) -> Pt:
         if f < t.f0 and t.fallback is not None:
             fb = t.fallback
             return _at_f(F, fb if isinstance(fb, list) else fb.pts, f)
@@ -463,13 +519,13 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
     a_us = [F.to_uf(*p)[0] for p in a_pts]
     a_ulo, a_uhi = min(a_us), max(a_us)
 
-    def spills_drain(pq):
+    def spills_drain(pq: Pt) -> bool:
         """Below the collector - strict per-vertex (no plot may poke past the drain)."""
         u, f = F.to_uf(*pq)
         fd = _f_at_u(F, dpts, u)
         return fd is not None and f > fd - 3
 
-    def above_canal(quad):
+    def above_canal(quad: Poly) -> bool:
         """Upslope of the supply canal - judged by the CENTROID, not the top vertices: a
         head plot's top edge sits ON the canal (fed directly through the bund), which is
         correct and must be KEPT; only a plot whose body is genuinely above the canal is
@@ -480,9 +536,9 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
         if not (a_ulo - 20 < u < a_uhi + 20):
             return False
         fc = _f_at_u(F, a_pts, u)
-        return fc is not None and f < fc + 4                 # centroid upslope of a small berm
+        return fc is not None and f < fc + 4  # centroid upslope of a small berm
 
-    def root_f(t):
+    def root_f(t: "_Thread") -> float:
         while isinstance(t.fallback, _Thread):
             t = t.fallback
         if isinstance(t.fallback, list):
@@ -508,18 +564,26 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
         nsub = max(1, round(width_mid / plot_across))
         phase = [R.uniform(0, 6.28) for _ in range(nsub + 2)]
 
-        def edge(fv, j, n):
+        def edge(  # bind loop vars (used within this iteration)
+            fv: float,
+            j: int,
+            n: int,
+            A: "_Thread" = A,
+            B: "_Thread" = B,
+            phase: list[float] = phase,
+            nsub: int = nsub,
+        ) -> Pt:
             a, b = bnd(A, fv), bnd(B, fv)
             t = j / n
             x = a[0] + t * (b[0] - a[0])
             y = a[1] + t * (b[1] - a[1])
-            if 0 < j < n:                                # interior bunds waver along contour
+            if 0 < j < n:  # interior bunds waver along contour
                 wob = 5.0 * math.sin(fv / 70 + phase[min(j, nsub + 1)])
                 x += F.c[0] * wob
                 y += F.c[1] * wob
             return (x, y)
 
-        def drain_f_at(fv, j_, n_):
+        def drain_f_at(fv: float, j_: int, n_: int) -> float:
             """Fall of the drain under the j_-th sub-bund point sampled at fall fv."""
             pu = F.to_uf(*edge(fv, j_, n_))[0]
             fd_ = _f_at_u(F, dpts, pu)
@@ -536,14 +600,12 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
             rows.append(f)
 
         for k in range(len(rows) - 1):
-            wk = min(math.dist(bnd(A, rows[k]), bnd(B, rows[k])),
-                     math.dist(bnd(A, rows[k + 1]), bnd(B, rows[k + 1])))
+            wk = min(math.dist(bnd(A, rows[k]), bnd(B, rows[k])), math.dist(bnd(A, rows[k + 1]), bnd(B, rows[k + 1])))
             if wk < 24:
                 continue
-            n = nsub if wk / nsub >= 13 else max(1, int(wk // 44))   # canal-wedge rows: local
+            n = nsub if wk / nsub >= 13 else max(1, int(wk // 44))  # canal-wedge rows: local
             for j in range(n):
-                quad = [edge(rows[k], j, n), edge(rows[k], j + 1, n),
-                        edge(rows[k + 1], j + 1, n), edge(rows[k + 1], j, n)]
+                quad = [edge(rows[k], j, n), edge(rows[k], j + 1, n), edge(rows[k + 1], j + 1, n), edge(rows[k + 1], j, n)]
                 if math.dist(quad[0], quad[1]) < 12 or math.dist(quad[1], quad[2]) < 12:
                     continue
                 if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
@@ -559,8 +621,7 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
                 # drain collector - so every blue plot literally drains into the southern ditch
                 # and none can read as a stranded reservoir. The body is uniformly rice-green.
                 fill = R.choice(RICE_GREENS)
-                plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad],
-                              "fill": fill})
+                plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad], "fill": fill})
 
         # CANAL-SIDE closers: the head plots run up against the supply canal - only a
         # narrow berm remains. These are the plots that take water DIRECTLY from the
@@ -568,7 +629,7 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
         # gap below a supply canal would be wasted prime land. Top edges follow the
         # canal line (sloped, like the drain closers), bottoms sit on the row grid.
         for j in range(nsub):
-            fprobe = max(A.f0, B.f0) + 12       # sample where the subcolumns are spread out
+            fprobe = max(A.f0, B.f0) + 12  # sample where the subcolumns are spread out
             fc0 = _f_at_u(F, a_pts, F.to_uf(*edge(fprobe, j, nsub))[0])
             fc1 = _f_at_u(F, a_pts, F.to_uf(*edge(fprobe, j + 1, nsub))[0])
             if fc0 is None or fc1 is None:
@@ -579,9 +640,8 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
                 continue
             fb = rows[ks[0]]
             if fb - min(t0, t1) > 78 or fb - max(t0, t1) < 8:
-                continue                    # no gap here / top boundary is not the canal
-            quad = [edge(t0, j, nsub), edge(t1, j + 1, nsub),
-                    edge(fb, j + 1, nsub), edge(fb, j, nsub)]
+                continue  # no gap here / top boundary is not the canal
+            quad = [edge(t0, j, nsub), edge(t1, j + 1, nsub), edge(fb, j + 1, nsub), edge(fb, j, nsub)]
             if math.dist(quad[0], quad[1]) < 12 or math.dist(quad[1], quad[2]) < 6:
                 continue
             if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
@@ -589,9 +649,8 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
             cx = sum(pq[0] for pq in quad) / 4
             cy = sum(pq[1] for pq in quad) / 4
             if any(_pip(cx, cy, pl["poly"]) for pl in plots[sector_start:]):
-                continue                        # this ground already planted (fork wedges)
-            plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad],
-                          "fill": R.choice(RICE_GREENS)})
+                continue  # this ground already planted (fork wedges)
+            plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad], "fill": R.choice(RICE_GREENS)})
 
         # the CLOSING rank: hem EVERY column down onto the collector, so the whole field
         # edge sits on the drain (no dry sliver between the bottom paddies and their outfall).
@@ -600,7 +659,7 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
         n = nsub
         ftop = rows[-1]
 
-        def drain_meet(jj):
+        def drain_meet(jj: int, ftop: float = ftop, n: int = n) -> float:  # bind loop vars (used within this iteration)
             """Fall where sub-bund line jj actually meets the drain - refined, because the
             bund drifts in u as it descends so the drain fall at the top sample is wrong."""
             fd = drain_f_at(ftop, jj, n)
@@ -617,14 +676,13 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
             depth = max(fb0, fb1) - ftop
             if depth < 6:
                 continue
-            nlev = max(1, round(depth / 34))             # keep closer plots ~one row tall
+            nlev = max(1, round(depth / 34))  # keep closer plots ~one row tall
             for li in range(nlev):
                 fa0 = ftop + (fb0 - ftop) * li / nlev
                 fa1 = ftop + (fb1 - ftop) * li / nlev
                 fz0 = ftop + (fb0 - ftop) * (li + 1) / nlev
                 fz1 = ftop + (fb1 - ftop) * (li + 1) / nlev
-                quad = [edge(fa0, j, n), edge(fa1, j + 1, n),
-                        edge(fz1, j + 1, n), edge(fz0, j, n)]
+                quad = [edge(fa0, j, n), edge(fa1, j + 1, n), edge(fz1, j + 1, n), edge(fz0, j, n)]
                 abuts = li == nlev - 1
                 if abuts:
                     # snap the bottom vertices exactly onto the collector (drain fall at
@@ -642,15 +700,14 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
                 # lowest ground); an upper split level cascades into it and stays green - so a
                 # blue plot always abuts the drain
                 fill = FLOODED if (abuts and R.random() < 0.45) else R.choice(RICE_GREENS)
-                plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad],
-                              "fill": fill})
+                plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad], "fill": fill})
 
     # HEM PASS: guarantee the whole field edge meets the drain. The per-sector closers cover
     # most of it, but a straight-line drain that dips below a shallower sector can leave a
     # residual sliver. Walk the drain; wherever there is field just above a segment but a bare
     # gap down to the drain, fill it with a thin plot snapped onto the collector. Localised -
     # it only fires on an actual gap, so it never disturbs the flooded closers.
-    def inside_any(px, py):
+    def inside_any(px: float, py: float) -> bool:
         return any(_pip(px, py, pl["poly"]) for pl in plots)
 
     for i in range(len(dpts) - 1):
@@ -660,11 +717,11 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
             mx = da[0] + s * (db[0] - da[0])
             my = da[1] + s * (db[1] - da[1])
             u, fdr = F.to_uf(mx, my)
-            just_in = F.to_xy(u, fdr - 6)                    # 6px up-fall, on the field side
+            just_in = F.to_xy(u, fdr - 6)  # 6px up-fall, on the field side
             if not (10 < just_in[0] < W - 10 and 10 < just_in[1] < H - 10):
                 continue
             if inside_any(*just_in):
-                continue                                     # already hemmed here
+                continue  # already hemmed here
             # find the field edge above (up to a deep dip below a shallow sector); only hem
             # where the field genuinely reaches down toward this stretch of drain
             top = None
@@ -673,19 +730,28 @@ def _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step):
                     top = fdr - dd
                     break
             if top is None:
-                continue                                     # no field above (tail/outside)
+                continue  # no field above (tail/outside)
             uu, uv = u - 13, u + 13
-            levels = max(1, round((fdr - 2 - top) / 38))     # tile tall gaps into ~row plots
+            levels = max(1, round((fdr - 2 - top) / 38))  # tile tall gaps into ~row plots
             for li in range(levels):
                 fa = top + (fdr - 2 - top) * li / levels
                 fz = top + (fdr - 2 - top) * (li + 1) / levels
                 quad = [F.to_xy(uu, fa), F.to_xy(uv, fa), F.to_xy(uv, fz), F.to_xy(uu, fz)]
-                plots.append({"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad],
-                              "fill": R.choice(RICE_GREENS)})
+                plots.append({"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad], "fill": R.choice(RICE_GREENS)})
     return plots
 
 
-def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132), furrow_spread=1.1):
+def _dry_fields(
+    R: random.Random,
+    F: _Frame,
+    a_pts: Poly,
+    W: float,
+    H: float,
+    keepout: Sequence[tuple[float, float, float]],
+    plot: float = 46,
+    band: tuple[float, float] = (70, 132),
+    furrow_spread: float = 1.1,
+) -> list[dict[str, Any]]:
     """DRY FIELDS (hatake) on the UPSLOPE margin the irrigation cannot command - the band just ABOVE the
     supply canal. Grain and pulses (barley/wheat, millet, buckwheat, field soy) in an irregular PATCHWORK of
     ridge-cultivated plots. Crop is assigned per-PLOT (not per-column) with spatial coherence - historical
@@ -702,16 +768,16 @@ def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132), furrow_spre
     FURROWS run along the CONTOUR (perpendicular to the fall), the traditional ridge-along-contour that dams
     rain and checks runoff - so the furrow direction is the contour heading, varied per plot; `theta` per plot."""
     plots = []
-    theta0 = math.atan2(F.c[1], F.c[0])                    # contour heading (ridges follow it)
+    theta0 = math.atan2(F.c[1], F.c[0])  # contour heading (ridges follow it)
 
-    def blocked(x, y):
+    def blocked(x: float, y: float) -> bool:
         return any((x - cx) ** 2 + (y - cy) ** 2 < rr * rr for (cx, cy, rr) in keepout)
 
     # tile the plots ALONG the canal by ARC-LENGTH (shared boundaries -> a contiguous margin), jittered widths
     seglen = [math.dist(a_pts[i], a_pts[i + 1]) for i in range(len(a_pts) - 1)]
     total = sum(seglen)
 
-    def at(s):                                             # point on the canal polyline at arc-length s
+    def at(s: float) -> Pt:  # point on the canal polyline at arc-length s
         acc = 0.0
         for i, sl in enumerate(seglen):
             if acc + sl >= s or i == len(seglen) - 1:
@@ -720,6 +786,7 @@ def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132), furrow_spre
                 bx, by = a_pts[i + 1]
                 return (ax + (bx - ax) * t, ay + (by - ay) * t)
             acc += sl
+        return a_pts[-1]  # unreachable for a real (non-empty) canal; satisfies the type
 
     bounds = [0.0]
     while bounds[-1] < total - plot * 0.6:
@@ -729,19 +796,19 @@ def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132), furrow_spre
     # FURROW ANGLE varies PER PLOT (a mosaic of family strips): each plot drops its ridges into the LARGEST gap
     # between the angles of its already-placed NEIGHBOURS, guaranteeing separation (drives dry_plot_furrows_vary).
     HW = furrow_spread
-    placed = []
-    ADJ2 = 56 ** 2
+    placed: list[tuple[float, float, float]] = []
+    ADJ2 = 56**2
     prev_crop = R.choice(list(DRY_CROPS))
-    berm = 8                                               # a thin bund holds the dry plots just ABOVE (upslope of) the canal
+    berm = 8  # a thin bund holds the dry plots just ABOVE (upslope of) the canal
     for i in range(len(bounds) - 1):
         pL, pR = at(bounds[i]), at(bounds[i + 1])
         tx, ty = pR[0] - pL[0], pR[1] - pL[1]
         tl = math.hypot(tx, ty) or 1.0
-        nx, ny = -ty / tl, tx / tl                        # unit normal to the canal
+        nx, ny = -ty / tl, tx / tl  # unit normal to the canal
         mx, my = (pL[0] + pR[0]) / 2, (pL[1] + pR[1]) / 2
-        if F.to_uf(mx + nx, my + ny)[1] > F.to_uf(mx, my)[1]:   # point it UPSLOPE (decreasing fall)
+        if F.to_uf(mx + nx, my + ny)[1] > F.to_uf(mx, my)[1]:  # point it UPSLOPE (decreasing fall)
             nx, ny = -nx, -ny
-        depth = R.uniform(*band)                           # ragged outer edge (per-column depth)
+        depth = R.uniform(*band)  # ragged outer edge (per-column depth)
         nrow = max(1, round(depth / 36))
         for k in range(nrow):
             # per-plot crop with coherence: usually keep the last crop (holdings cluster), sometimes switch
@@ -753,27 +820,24 @@ def _dry_fields(R, F, a_pts, W, H, keepout, plot=46, band=(70, 132), furrow_spre
             # The whole plot stays on the DRY side - it never dips across the canal onto the wet paddy.
             o_near = berm + depth * k / nrow
             o_far = berm + depth * (k + 1) / nrow
-            quad = [(pL[0] + nx * o_far, pL[1] + ny * o_far), (pR[0] + nx * o_far, pR[1] + ny * o_far),
-                    (pR[0] + nx * o_near, pR[1] + ny * o_near), (pL[0] + nx * o_near, pL[1] + ny * o_near)]
+            quad = [(pL[0] + nx * o_far, pL[1] + ny * o_far), (pR[0] + nx * o_far, pR[1] + ny * o_far), (pR[0] + nx * o_near, pR[1] + ny * o_near), (pL[0] + nx * o_near, pL[1] + ny * o_near)]
             cx = sum(p[0] for p in quad) / 4
             cy = sum(p[1] for p in quad) / 4
             if any(p[0] < 12 or p[0] > W - 12 or p[1] < 12 or p[1] > H - 12 for p in quad):
                 continue
             if blocked(cx, cy):
                 continue
-            lo, hi = theta0 - HW, theta0 + HW              # furrows stay within HW rad of the contour
-            nb = sorted(min(hi, max(lo, t)) for (px, py, t) in placed
-                        if (cx - px) ** 2 + (cy - py) ** 2 < ADJ2)
+            lo, hi = theta0 - HW, theta0 + HW  # furrows stay within HW rad of the contour
+            nb = sorted(min(hi, max(lo, t)) for (px, py, t) in placed if (cx - px) ** 2 + (cy - py) ** 2 < ADJ2)
             edges = [lo] + nb + [hi]
-            gi = max(range(len(edges) - 1), key=lambda j: edges[j + 1] - edges[j])   # the widest gap between neighbours
+            gi = max(range(len(edges) - 1), key=lambda j: edges[j + 1] - edges[j])  # the widest gap between neighbours
             theta = min(hi, max(lo, (edges[gi] + edges[gi + 1]) / 2 + R.uniform(-0.03, 0.03)))
             placed.append((cx, cy, theta))
-            plots.append({"poly": [(round(p[0], 1), round(p[1], 1)) for p in quad],
-                          "crop": crop, "fill": fill, "furrow": furrow, "theta": round(theta, 3)})
+            plots.append({"poly": [(round(p[0], 1), round(p[1], 1)) for p in quad], "crop": crop, "fill": fill, "furrow": furrow, "theta": round(theta, 3)})
     return plots
 
 
-def _bund_beans(R, plots, frac, spacing=9.5):
+def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spacing: float = 9.5) -> Poly:
     """AZEMAME (bund soybeans): sub-pixel at 1px=2ft, so drawn symbolically as a green BEAD
     line along a fraction of the paddy bunds. Returns bead centre points; the caller draws
     small BEAN_GREEN dots. ~`frac` of plots carry beaded bunds (not every bund had beans)."""
@@ -784,12 +848,11 @@ def _bund_beans(R, plots, frac, spacing=9.5):
         poly = p["poly"]
         order = list(range(len(poly)))
         R.shuffle(order)
-        for ei in order[:R.randint(1, 2)]:
+        for ei in order[: R.randint(1, 2)]:
             a = poly[ei]
             b = poly[(ei + 1) % len(poly)]
             nd = int(math.dist(a, b) / spacing)
             for t in range(1, nd):
                 s = t / nd
-                beans.append((round(a[0] + s * (b[0] - a[0]), 1),
-                              round(a[1] + s * (b[1] - a[1]), 1)))
+                beans.append((round(a[0] + s * (b[0] - a[0]), 1), round(a[1] + s * (b[1] - a[1]), 1)))
     return beans

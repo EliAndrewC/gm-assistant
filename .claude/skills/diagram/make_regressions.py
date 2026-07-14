@@ -11,6 +11,7 @@ so the corpus can be regenerated if the fixtures change. The GOING-FORWARD disci
 when a real generated map exposes a check gap, drop its manifest straight into pool/regressions/
 with a `_regression` block - no tooling needed. Run:  python3 make_regressions.py
 """
+
 import ast
 import copy
 import inspect
@@ -76,8 +77,7 @@ def main():
 
     check_village.gate = spy
     try:
-        fns = [v for k, v in sorted(vars(test_checks).items())
-               if k.startswith("test_") and callable(v)]
+        fns = [v for k, v in sorted(vars(test_checks).items()) if k.startswith("test_") and callable(v)]
         written, covered, gaps = 0, set(), []
         for fn in fns:
             tgs = positive_targets(fn)
@@ -85,19 +85,18 @@ def main():
                 continue
             captures.clear()
             fn()
-            groups = {}   # capture-index -> set(target checks fired by that manifest)
+            groups = {}  # capture-index -> set(target checks fired by that manifest)
             for t in tgs:
                 idx = next((i for i, (m, fs) in enumerate(captures) if t in fs), None)
                 if idx is None:
                     gaps.append((fn.__name__, t))
                     continue
                 groups.setdefault(idx, set()).add(t)
-            base = fn.__name__[len("test_"):]
+            base = fn.__name__[len("test_") :]
             multi = len(groups) > 1
             for n, idx in enumerate(sorted(groups)):
                 M, _fs = captures[idx]
-                M["_regression"] = {"fires": sorted(groups[idx]),
-                                    "source": f"test_checks.py::{fn.__name__}"}
+                M["_regression"] = {"fires": sorted(groups[idx]), "source": f"test_checks.py::{fn.__name__}"}
                 name = base + (f"_{n + 1}" if multi else "")
                 with open(os.path.join(OUT, name + ".json"), "w") as fh:
                     json.dump(M, fh, indent=1)
@@ -107,7 +106,9 @@ def main():
         check_village.gate = orig
 
     all_checks = set()
-    for line in open(os.path.join(HERE, "check_village.py")):
+    with open(os.path.join(HERE, "check_village.py")) as _cvf:
+        cv_lines = _cvf.readlines()
+    for line in cv_lines:
         line = line.strip()
         if line.startswith('check("'):
             all_checks.add(line.split('"')[1])
