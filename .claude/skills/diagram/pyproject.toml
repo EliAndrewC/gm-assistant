@@ -34,16 +34,12 @@ python_version = "3.13"
 strict = true
 files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py"]
 
-[[tool.mypy.overrides]]
-# RATCHET: the legacy engine modules carried ~2,470 pre-existing strict errors (the manifest is an
-# untyped dict). Each is migrated to strict in its own focused pass, then removed from this list so
-# the gate blocks backsliding. NEW modules (e.g. the knob engine, once added to `files` above) are
-# strict immediately. Migrated so far: waterfields.py, check_village.py. REMAINING: settlement.py -
-# its pass is deferred because that file is the shared Mode B + city generator and is currently being
-# heavily rewritten by the concurrent city-quarter (feature 006) work; migrating it under a live
-# concurrent editor would clobber that work, so it lands after 006's settlement.py changes settle.
-module = ["settlement"]
-ignore_errors = true
+# RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
+# settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
+# gone, so the gate now blocks any backsliding across the whole Mode B engine. NEW modules are strict
+# from the start via `files` above. (History: the manifest is an untyped dict, so the engine carried
+# ~2,470 pre-existing strict errors; they were cleared module-by-module in focused behavior-preserving
+# passes, each verified by byte-identical map output + the full gate still passing on every pool map.)
 
 # ---- pytest + coverage -------------------------------------------------------------------
 [tool.pytest.ini_options]
