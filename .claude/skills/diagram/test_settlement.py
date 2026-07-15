@@ -10,6 +10,7 @@ settlement.py to 100%.
     python3 -m pytest test_settlement.py -q
 """
 
+import math
 import os
 import tempfile
 
@@ -1347,3 +1348,147 @@ def test_quarter_rejects_bad_zone_and_kind_misuse():
         raise AssertionError("non-reserve with kind should raise")
     except ValueError:
         pass
+
+
+# ---- paddy_field: the tax-free plots + fallow patch + field label branches -----------------
+def test_paddy_field_marks_taxfree_plots_and_a_fallow_patch_and_labels():
+    # label + taxfree marks scattered vermilion tax-free plots; a fallow_patch stipples a blighted
+    # sub-region; the label renders and is recorded. Exercises _taxfree_plots (interior non-empty)
+    # and _fallow_patch, which the pool gens do not both trigger on one field.
+    s = _village()
+    s.paddy_field((150, 150, 470, 470), "Rice", "f", taxfree=2, fallow_patch=[[250, 250], [380, 250], [380, 380], [250, 380]])
+    assert s.M["taxfree"]  # tax-free plots recorded -> _taxfree_plots did real work
+    assert s.M["fallow_patches"]  # blighted sub-region recorded
+    assert any(lab[5] == "Rice" for lab in s.M["labels"])  # field name labelled
+
+
+# ---- water_field: the BBOX-shape branch + taxfree + label ----------------------------------
+def test_water_field_from_a_bbox_marks_taxfree_and_labels():
+    # handed a 4-number bbox (not a polygon), water_field grows the outline from the bbox; label +
+    # taxfree marks vermilion plots and renders the name.
+    s = _village()
+    s.water_field((150, 150, 470, 470), "Paddy", "f", (150, 150), (470, 470), amp=10, taxfree=2, plot=34)
+    assert any(fd["name"] == "f" and fd["kind"] == "paddy" for fd in s.M["fields"])
+    assert s.M["taxfree"]
+    assert any(lab[5] == "Paddy" for lab in s.M["labels"])
+
+
+# ---- fallow_field: a whole field left fallow ----------------------------------------------
+def test_fallow_field_records_a_fallow_field():
+    s = _village()
+    s.fallow_field((150, 150, 350, 350), "ff")
+    assert any(fd["name"] == "ff" and fd["kind"] == "fallow" for fd in s.M["fields"])
+
+
+# ---- pond: the optional feeder stream_curve branch ----------------------------------------
+def test_pond_with_a_feeder_stream_curve_draws_the_feeder():
+    s = _village()
+    s.pond(300, 300, 90, 60, stream_curve="M 100 100 L 300 300")
+    assert s.M["pond"] == [300, 300, 90, 60]
+    assert (300, 300, 90, 60) in s.ellipses  # pond also blocks houses via its ellipse
+
+
+# ---- lane: the UNWORN (paved/dashed) branch ------------------------------------------------
+def test_lane_unworn_draws_a_dashed_causeway():
+    s = _village()
+    s.lane([(100, 300), (500, 300)], width=6, worn=False)
+    assert s.M["lanes"][-1]["worn"] is False
+    assert 'stroke-dasharray="8,8"' in "".join(s.out)  # the dashed centreline of a paved lane
+
+
+# ---- shrine: the primary Shinto hall glyph -------------------------------------------------
+def test_shrine_draws_and_records_a_religious_hall():
+    s = _village()
+    s.shrine(300, 300)
+    assert s.M["shrine"] == [300 - 52, 300 - 34, 104, 68]
+    assert any(r["kind"] == "shrine" and r["x"] == 300 for r in s.M["religious"])
+
+
+# ---- house: the ABANDONED-ruin glyph -------------------------------------------------------
+def test_house_abandoned_draws_the_collapsed_roof_glyph():
+    s = _village()
+    s.house(300, 300, 46, 28, kind="abandoned")
+    svg = "".join(s.out)
+    assert '#6E6452' in svg  # the collapsed-roof debris polygon
+    assert 'stroke-dasharray="5,3"' in svg  # the derelict outline dash
+
+
+# ---- try_place: the LONE ABANDONED ruin (no homestead bundle) ------------------------------
+def test_try_place_abandoned_places_a_lone_ruin_without_a_bundle():
+    s = _nuc_village()  # a to-scale village; the west half (x < 640) is open ground
+    assert s.try_place(300, 300, "abandoned") is True
+    ruin = [h for h in s.M["houses"] if h["kind"] == "abandoned"]
+    assert len(ruin) == 1 and ruin[0]["shed"] is False  # a lone derelict, no kura
+
+
+# ---- _rect_blocked: the hill/pond ELLIPSE branch -------------------------------------------
+def test_rect_blocked_by_a_hill_or_pond_ellipse():
+    s = _village()
+    s.ellipses.append((300, 300, 80, 60))  # a hill/pond footprint
+    assert s._rect_blocked((300, 300, 40, 26), fields=False) is True  # bed centre inside the ellipse
+
+
+# ---- _bundle_side_fits: the OUT-OF-BOUNDS bbox branch --------------------------------------
+def test_bundle_side_fits_rejects_a_bbox_running_off_the_canvas():
+    s = _village()
+    geom = {"bbox": (5, 300, 40, 26), "gardens": []}  # cx - W/2 = -15 < 6 -> spills off the west edge
+    assert s._bundle_side_fits(geom) is False
+
+
+# ---- _garden_beds_clear: a bed landing on a paddy ------------------------------------------
+def test_garden_beds_clear_rejects_a_bed_on_a_paddy():
+    s = _nuc_village()  # field_polys carries a paddy over the east half (x >= 640)
+    assert s._garden_beds_clear([(880, 400, 30, 20)], []) is False  # bed sits in the paddy
+
+
+# ---- ring: a BIG house whose placement FAILS is un-counted ---------------------------------
+def test_ring_decrements_the_big_count_when_a_placement_fails():
+    # every candidate lands on paddy (whole map is a field), so try_place fails; each 'big' that was
+    # counted up must be counted back down, leaving the tally at zero.
+    s = _nuc_village()
+    s.field_polys.append([(0, 0), (1200, 0), (1200, 900), (0, 900)])  # the entire canvas is flooded paddy
+    s._nbig = 0
+    s.ring((100, 100, 500, 500), 8, 30, ["big"], max_big=10)
+    assert s._nbig == 0  # each big incremented then decremented on its failed placement
+    assert not s.M["houses"]  # nothing could be placed
+
+
+# ---- water_field: a lateral column too SHORT to carry a ditch is skipped -------------------
+def test_water_field_skips_a_lateral_column_too_short_for_a_ditch():
+    # a shallow field at a COARSE plot grain: some interior columns span less than ~2.1 plots
+    # between the high main and the low drain, so no lateral ditch fits there and it is skipped.
+    s = Settlement(900, 900, seed=3)
+    s.meta(name="V", scale="village")
+    s.water_field((150, 150, 400, 320), "P", "f", (150, 150), (400, 320), amp=10, plot=100)
+    assert any(fd["name"] == "f" for fd in s.M["fields"])
+    assert any(d["role"] == "main" for d in s.M["field_ditches"])  # the main/drain still run
+
+
+# ---- try_place: an abandoned ruin that does not FIT is rejected ----------------------------
+def test_try_place_abandoned_rejects_a_ruin_off_the_canvas_edge():
+    s = _nuc_village()
+    assert s.try_place(20, 300, "abandoned") is False  # x < 55 -> _fits fails, no ruin placed
+    assert not [h for h in s.M["houses"] if h["kind"] == "abandoned"]
+
+
+# ---- city_wall: a mural tower BOXED IN on both sides is dropped ----------------------------
+def test_city_wall_drops_a_mural_tower_boxed_in_on_both_sides():
+    # the NW vertex is ringed by keep-clear (kido) points carpeting BOTH wall flanks out past the
+    # farthest slide arc, so every slide candidate stays blocked and the tower is dropped (spacing
+    # tolerates one gap). The clear SE vertex still gets its tower.
+    s = Settlement(1200, 1200, seed=1)
+    s.meta(name="C", scale="city")
+    pts = [[150, 150], [1050, 150], [1050, 1050], [150, 1050]]
+    skip = [
+        (150, 150),
+        (190, 150),
+        (230, 150),
+        (270, 150),  # carpet the top flank
+        (150, 190),
+        (150, 230),
+        (150, 270),
+    ]  # carpet the left flank
+    s.city_wall(pts, gates=(), tower_skip=skip)
+    towers = s.M.get("wall_towers", [])
+    assert not any(math.hypot(t["x"] - 150, t["y"] - 150) < 90 for t in towers)  # NW tower dropped
+    assert any(math.hypot(t["x"] - 1050, t["y"] - 1050) < 90 for t in towers)  # SE tower kept

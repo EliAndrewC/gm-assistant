@@ -64,6 +64,16 @@ def _box_hits_poly(box: tuple[float, float, float, float], poly: Poly) -> bool:
     )
 
 
+def sweep_hi(lo: float, hi: float, step: float, cap: int = 500) -> float:
+    """Clamp a grid-sweep's upper bound so a MALFORMED coordinate (a stray vertex millions of px
+    off the map) cannot blow the sweep up to billions of cells and make the validator appear to
+    hang. A real settlement spans at most ~1,000-3,000 px (a few hundred steps at the 8px cell,
+    well under `cap`), so this never truncates a valid map - but garbage input is bounded to `cap`
+    steps per axis (<= 250k cells, a couple of seconds), so the check FAILS the bad manifest (via
+    city_geometry_within_canvas) instead of looping forever. A validator must never hang on bad input."""
+    return min(hi, lo + step * cap)
+
+
 def poly_area(pts: Poly) -> float:
     """Absolute polygon area (shoelace) of a list of (x, y) vertices."""
     n = len(pts)
@@ -89,10 +99,11 @@ def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, An
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
     worst = 0.0
+    _hx, _hy = sweep_hi(min(xs), max(xs), step), sweep_hi(min(ys), max(ys), step)  # bounded: a malformed vertex cannot hang the sweep
     gx = min(xs)
-    while gx <= max(xs):
+    while gx <= _hx:
         gy = min(ys)
-        while gy <= max(ys):
+        while gy <= _hy:
             if point_in_poly(gx, gy, poly) and not any(abs(gx - r["x"]) <= r["w"] / 2 and abs(gy - r["y"]) <= r["h"] / 2 for r in occupied):
                 d = min(math.hypot(gx - dx, gy - dy) for dx, dy in pts)
                 if d > worst:
@@ -1179,7 +1190,10 @@ def city_capacity(M: Manifest, step: float = 8, grid_step: float | None = None) 
     bound = M.get("ring_road") or (list(wall) + [wall[0]])
     xs = [p[0] for p in bound]
     ys = [p[1] for p in bound]
-    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    # bound the sweep span so a malformed coordinate (a wall/ring vertex millions of px off) cannot
+    # blow the cell + ASCII grid sweeps up to billions of cells and hang the validator (both sweeps
+    # below run over x0..x1 / y0..y1); a real map's span is far under sweep_hi's cap.
+    x0, x1, y0, y1 = min(xs), sweep_hi(min(xs), max(xs), step), min(ys), sweep_hi(min(ys), max(ys), step)
 
     def _rects(items: Sequence[dict[str, Any]], vscale: float = 1.0) -> list[list[tuple[float, float]]]:
         out: list[list[tuple[float, float]]] = []
@@ -1477,6 +1491,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # averages to "fine" (measured: Tango and the broken Nagahara share the same block-density
         # median; the difference is WHERE the empty ground sits).
         quarters = M.get("quarters", [])
+        # a MALFORMED manifest (a wall or quarter vertex millions of px off the map) must FAIL, not
+        # hang - the grid sweeps are bounded by sweep_hi so they cannot loop forever, and this flags
+        # the bad geometry so the validator reports it instead of silently sweeping garbage. A real
+        # settlement's features lie within one canvas-width of margin of the drawn canvas.
+        _Wd = meta.get("W") or 3200
+        _Hd = meta.get("H") or 2700
+        _oob = [(round(vx), round(vy)) for vx, vy in ([tuple(p) for p in wall_p] + [tuple(v) for q in quarters for v in q["poly"]]) if not (-_Wd <= vx <= 2 * _Wd and -_Hd <= vy <= 2 * _Hd)]
+        check(
+            "city_geometry_within_canvas",
+            not _oob,
+            f"wall/quarter vertex(es) far outside the canvas ({_Wd}x{_Hd}): {sorted(set(_oob))[:4]} - a coordinate "
+            f"millions of px off the map is malformed input; a valid settlement's geometry lies near the drawn canvas",
+        )
         check(
             "city_quarters_declared",
             bool(quarters),
@@ -1502,10 +1529,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             wxs = [p[0] for p in wall_p] + [v[0] for q in quarters for v in q["poly"]]
             wys = [p[1] for p in wall_p] + [v[1] for q in quarters for v in q["poly"]]
             interior_cells = uncovered = overlapped = spill_cells = 0
+            _hx = sweep_hi(min(wxs), max(wxs), 40)  # bounded so a malformed vertex cannot hang the sweep
+            _hy = sweep_hi(min(wys), max(wys), 40)
             gx = min(wxs)
-            while gx <= max(wxs):
+            while gx <= _hx:
                 gy = min(wys)
-                while gy <= max(wys):
+                while gy <= _hy:
                     n_in = sum(1 for q in quarters if point_in_poly(gx, gy, q["poly"]))
                     if point_in_poly(gx, gy, wall_p):
                         interior_cells += 1

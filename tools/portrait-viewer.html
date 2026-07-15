@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Portrait</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root { --bg:#111; }
+  html,body { margin:0; height:100%; background:var(--bg); overflow:hidden; }
+  body { display:flex; align-items:center; justify-content:center; }
+  #img { max-width:100vw; max-height:100vh; object-fit:contain; display:none;
+         user-select:none; -webkit-user-drag:none; }
+  #img.show { display:block; }
+  #hint { position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+          color:#8a8a8a; font:16px/1.7 system-ui,sans-serif; text-align:center;
+          pointer-events:none; padding:2rem; }
+  #hint.hide { display:none; }
+  #hint b { color:#c4c4c4; }
+  #hint .k { color:#6a6a6a; }
+  #err { position:fixed; bottom:1.1rem; left:50%; transform:translateX(-50%);
+         color:#e79a9a; font:14px system-ui,sans-serif; opacity:0; transition:opacity .3s;
+         pointer-events:none; }
+  #err.show { opacity:1; }
+  body.drag::after { content:""; position:fixed; inset:12px; border:2px dashed #555;
+                     border-radius:14px; pointer-events:none; }
+</style>
+</head>
+<body>
+  <img id="img" alt="">
+  <div id="hint">
+    <div>
+      <div style="font-size:20px;margin-bottom:.7rem;color:#adadad;">Portrait viewer</div>
+      <b>Drag</b> an image in &nbsp;&middot;&nbsp; <b>paste</b> an image or an image URL (Ctrl/Cmd+V)
+      &nbsp;&middot;&nbsp; <b>click</b> to choose a file
+      <div class="k" style="margin-top:1rem;">
+        Double-click or <b>F</b>: fullscreen &nbsp;&middot;&nbsp; <b>B</b>: background
+        &nbsp;&middot;&nbsp; <b>C</b>: clear &nbsp;&middot;&nbsp; <b>H</b>: hide/show this
+      </div>
+    </div>
+  </div>
+  <div id="err"></div>
+  <input id="file" type="file" accept="image/*" hidden>
+<script>
+(function(){
+  var img=document.getElementById('img'), hint=document.getElementById('hint'),
+      err=document.getElementById('err'), file=document.getElementById('file'), body=document.body;
+  var bgs=['#111','#000','#f4f4f4','#808080'], bgi=0, curUrl=null, errTimer=null;
+
+  function setBg(){ document.documentElement.style.setProperty('--bg', bgs[bgi]); }
+  function flash(msg){ err.textContent=msg; err.classList.add('show');
+    clearTimeout(errTimer); errTimer=setTimeout(function(){ err.classList.remove('show'); }, 2200); }
+
+  function show(src, isBlob){
+    if(curUrl){ URL.revokeObjectURL(curUrl); curUrl=null; }
+    if(isBlob){ curUrl=src; }
+    img.onload=function(){ img.classList.add('show'); hint.classList.add('hide'); };
+    img.onerror=function(){ flash('Could not load that image.'); };
+    img.src=src;
+  }
+  function fromFile(f){ if(f && f.type && f.type.indexOf('image/')===0){ show(URL.createObjectURL(f), true); return true; } return false; }
+  function fromText(t){
+    t=(t||'').trim(); if(!t) return false;
+    if(/^(https?:|data:image\/|file:|blob:)/i.test(t)){ show(t,false); return true; }
+    if(/\.(png|jpe?g|gif|webp|bmp|avif|svg)(\?|#|$)/i.test(t)){
+      if(/^\//.test(t)) t='file://'+t;
+      else if(/^[a-zA-Z]:[\\/]/.test(t)) t='file:///'+t.replace(/\\/g,'/');
+      show(t,false); return true;
+    }
+    return false;
+  }
+  function clear(){ if(curUrl){ URL.revokeObjectURL(curUrl); curUrl=null; }
+    img.removeAttribute('src'); img.classList.remove('show'); hint.classList.remove('hide'); }
+
+  // click empty area to pick a file (only when nothing is shown, so a focus-click never pops the dialog)
+  body.addEventListener('click', function(e){ if(e.target===img) return; if(!img.classList.contains('show')) file.click(); });
+  file.addEventListener('change', function(){ if(file.files[0]) fromFile(file.files[0]); file.value=''; });
+
+  // drag & drop (files, or an image dragged from a web page)
+  ['dragenter','dragover'].forEach(function(ev){ window.addEventListener(ev, function(e){ e.preventDefault(); body.classList.add('drag'); }); });
+  window.addEventListener('dragleave', function(e){ if(!e.relatedTarget) body.classList.remove('drag'); });
+  window.addEventListener('drop', function(e){
+    e.preventDefault(); body.classList.remove('drag');
+    var dt=e.dataTransfer; if(!dt) return;
+    if(dt.files && dt.files.length && fromFile(dt.files[0])) return;
+    var uri=dt.getData('text/uri-list');
+    if(uri){ var line=uri.split('\n').filter(function(l){ return l && l.charAt(0)!=='#'; })[0]; if(fromText(line)) return; }
+    var html=dt.getData('text/html');
+    if(html){ var m=html.match(/<img[^>]+src=["']([^"']+)["']/i); if(m && fromText(m[1])) return; }
+    if(fromText(dt.getData('text/plain'))) return;
+    flash('That did not contain an image.');
+  });
+
+  // paste an image or an image URL
+  window.addEventListener('paste', function(e){
+    var cd=e.clipboardData; if(!cd) return;
+    var items=cd.items||[];
+    for(var i=0;i<items.length;i++){
+      if(items[i].type && items[i].type.indexOf('image/')===0){
+        if(fromFile(items[i].getAsFile())){ e.preventDefault(); return; }
+      }
+    }
+    if(fromText(cd.getData('text'))){ e.preventDefault(); return; }
+    if(fromText(cd.getData('text/uri-list'))){ e.preventDefault(); return; }
+  });
+
+  function toggleFs(){
+    if(document.fullscreenElement){ document.exitFullscreen(); return; }
+    var el=document.documentElement, r=el.requestFullscreen||el.webkitRequestFullscreen;
+    if(r) r.call(el);
+  }
+  window.addEventListener('keydown', function(e){
+    var k=e.key.toLowerCase();
+    if(k==='f'){ e.preventDefault(); toggleFs(); }
+    else if(k==='b'){ bgi=(bgi+1)%bgs.length; setBg(); }
+    else if(k==='c'){ clear(); }
+    else if(k==='h' || k==='?'){ hint.classList.toggle('hide'); }
+  });
+  body.addEventListener('dblclick', function(e){ e.preventDefault(); toggleFs(); });
+
+  setBg();
+})();
+</script>
+</body>
+</html>

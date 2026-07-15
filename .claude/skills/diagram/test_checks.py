@@ -4876,3 +4876,85 @@ def test_city_ward_fence_clear_fires_when_two_ward_fences_cross():
     b = {"name": "b", "boundary": [[400, 200], [400, 600], [401, 600]], "z": 10}  # crosses a's fence at (400,400)
     M = {"meta": {"scale": "city", "walled": True}, "wall": wall, "gates": [[500, 200]], "wards": [a, b], "kido": []}
     assert "city_ward_fence_clear_of_structures" in f(M)
+
+
+# ---- robustness: bounded sweeps + geometry sanity (2026-07-14, hang on malformed input) ----
+def test_sweep_hi_clamps_a_runaway_bound_but_not_a_normal_one():
+    assert check_village.sweep_hi(0, 3000, 8) == 3000  # a normal map span is untouched
+    assert check_village.sweep_hi(0, 9_000_000, 8) == 8 * 500  # a runaway bound is clamped to cap*step
+
+
+def test_city_geometry_within_canvas_fires_on_a_stray_vertex():
+    good = _qcity([{"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "q"}], meta={"scale": "city", "W": 3200, "H": 2700})
+    assert "city_geometry_within_canvas" not in f(good)
+    bad = {
+        "meta": {"scale": "city", "W": 3200, "H": 2700},
+        "wall": _CITY_WALL + [[9_000_000, 9_000_000]],
+        "quarters": [{"poly": _FULL_Q, "zone": "residential", "kind": None, "name": "q"}],
+        "buildings": [],
+    }
+    assert "city_geometry_within_canvas" in f(bad)  # a vertex millions of px off is flagged
+
+
+def test_gate_does_not_hang_on_a_runaway_quarter_vertex():
+    # the sweeps must terminate on garbage geometry (the whole point of sweep_hi) - if this test
+    # runs to completion at all, the sweep did not loop forever.
+    M = {
+        "meta": {"scale": "city", "walled": True, "population": 3000, "W": 3200, "H": 2700},
+        "wall": _CITY_WALL,
+        "buildings": [bldg(300 + (i % 10) * 20, 300, "laborer") for i in range(20)],
+        "quarters": [{"poly": [[200, 200], [9_000_000, 200], [9_000_000, 9_000_000], [200, 9_000_000]], "zone": "residential", "kind": None, "name": "runaway"}],
+    }
+    fails = f(M)
+    assert "city_geometry_within_canvas" in fails
+
+
+# ---- households_consistent: the LEGACY (extended-family) band on an off-scale tier -----------
+# On a to-scale tier (village/hamlet, or meta.toscale) the map depicts ~every household 1:1
+# (~0.85-1.05x). A tier that is NOT to-scale (a town/city carrying a `households` meta, or an
+# explicit toscale:False) falls to the legacy ~0.68-0.9x extended-family band. This pins that
+# branch: a town declaring 100 households but depicting zero farmhouses is out of even the
+# looser legacy band and must fire.
+def test_households_consistent_uses_legacy_band_when_not_to_scale():
+    M = {"meta": {"scale": "town", "households": 100}}  # town => scale != "village", no toscale => legacy band
+    assert "households_consistent" in f(M)
+
+
+# ---- channel_source_anchored: a channel that claims a FOREST source ------------------------
+# A watercourse anchor of kind "forest" is grounded iff a forest polygon exists AND the anchor
+# point lies inside it. A channel declaring a forest source whose tap sits OUTSIDE the drawn
+# forest is ungrounded and must fire (exercises the forest branch of anchored()).
+def test_channel_source_anchored_fires_when_forest_tap_is_outside_the_forest():
+    M = {
+        "forest": [[100, 100], [300, 100], [300, 300], [100, 300]],
+        "channels": [{"poly": [[500, 500], [510, 400], [520, 300]], "frm": {"kind": "forest"}, "to": {"kind": "offmap"}}],
+    }
+    assert "channel_source_anchored[0]" in f(M)
+
+
+# ---- no_structure_on_canal: a canal VERTEX sitting inside a building footprint --------------
+# The canal-vs-structure test catches not only a footprint corner near the water but also a
+# canal polyline vertex landing INSIDE a (large) footprint while every corner stays clear of the
+# thin canal segments. A merchant house straddling the canal's bend must fire.
+def test_no_structure_on_canal_fires_when_canal_vertex_inside_footprint():
+    M = {
+        "buildings": [bldg(500, 500, "merchant_large", w=200, h=200)],
+        "canals": [{"poly": [[500, 500], [490, 300]], "w": 4}],  # the [500,500] vertex sits inside the footprint
+    }
+    assert "no_structure_on_canal" in f(M)
+
+
+# ---- gardens_unshaded_from_east: a garden truly boxed in to the SOUTH by a bog is EXEMPT ----
+# The east-shade relaxer only fires when a small SOUTHWARD nudge into OPEN ground would clear
+# the morning-sun shadow. When every candidate shift lands the garden bed on a bog/marsh (or a
+# field outline), no clear shift exists, so the garden is exempt and the check must NOT fire.
+# This pins the field-outline / bog clause of the internal _bed_clear helper.
+def test_gardens_unshaded_from_east_exempt_when_south_shift_blocked_by_a_bog():
+    M = {
+        "meta": {"scale": "village"},
+        "houses": [{"x": 500, "y": 500, "w": 40, "h": 30, "rot": 0, "kind": "plain"}],
+        "gardens": [{"x": 500, "y": 500, "w": 30, "h": 30, "of": [500, 500]}],
+        "groves": [{"x": 545, "y": 500, "w": 40, "h": 30, "of": [999, 999]}],  # neighbour grove hard against the garden's east
+        "marshes": [{"poly": [[480, 510], [520, 510], [520, 600], [480, 600]]}],  # bog fills the whole southward corridor
+    }
+    assert "gardens_unshaded_from_east" not in f(M)
