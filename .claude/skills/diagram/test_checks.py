@@ -4958,3 +4958,140 @@ def test_gardens_unshaded_from_east_exempt_when_south_shift_blocked_by_a_bog():
         "marshes": [{"poly": [[480, 510], [520, 510], [520, 600], [480, 600]]}],  # bog fills the whole southward corridor
     }
     assert "gardens_unshaded_from_east" not in f(M)
+
+
+# ---- Pool-level twin-detector (feature 005) -----------------------------------------------------
+# The cross-map check that mechanically guards the distinctiveness goal: two same-down_deg villages must
+# differ on >= TWIN_MIN_DIFF of the 7 structural axes, or they read as copies (the Kikuta/Hoshigaoka twin).
+
+
+def _tv(**over):
+    """A minimal village manifest with the fields twin_axes reads; `over` merges (meta merges nested)."""
+    M = {
+        "meta": {"scale": "village", "down_deg": 45},
+        "houses": [
+            {"x": 380, "y": 620, "role": "plain"},
+            {"x": 420, "y": 700, "role": "plain"},
+            {"x": 400, "y": 560, "role": "headman"},
+            {"x": 440, "y": 660, "role": "plain"},
+        ],
+        "fields": [{"bbox": [566, 313, 2122, 1392]}],
+        "pond": [420, 210, 145, 92],
+        "dry_plots": [{"theta": -0.8}, {"theta": -0.9}, {"theta": -0.7}],
+    }
+    for k, v in over.items():
+        if k == "meta":
+            M["meta"] = {**M["meta"], **v}
+        else:
+            M[k] = v
+    return M
+
+
+def test_twin_detector_fires_on_twinned_pair():
+    # two structurally-identical villages (the Kikuta/Hoshigaoka situation) -> zero axes differ -> TWINNED
+    rep = check_village.twin_report([_tv(meta={"name": "A"}), _tv(meta={"name": "B"})])
+    assert len(rep) == 1
+    assert rep[0]["verdict"] == "TWINNED" and rep[0]["diffs"] == 0 and rep[0]["pair"] == ("A", "B")
+
+
+def test_twin_detector_passes_distinct_pair():
+    a = _tv(meta={"name": "A", "cluster_shape": "round", "lane_skeleton": "spine", "water_source_position": "corner_NW", "focal_features": []})
+    b = _tv(meta={"name": "B", "cluster_shape": "crescent", "lane_skeleton": "cross", "water_source_position": "chain", "focal_features": ["mill"]})
+    rep = check_village.twin_report([a, b])
+    assert len(rep) == 1 and rep[0]["verdict"] == "PASS" and rep[0]["diffs"] >= 4
+
+
+def test_twin_detector_skips_different_or_missing_down_deg():
+    a = _tv(meta={"name": "A", "down_deg": 45})
+    b = _tv(meta={"name": "B", "down_deg": 135})
+    c = _tv(meta={"name": "C"})
+    c["meta"].pop("down_deg")
+    assert check_village.twin_report([a, b]) == []  # different water direction -> not compared
+    assert check_village.twin_report([a, c]) == []  # one map lacks down_deg -> not compared
+
+
+def test_twin_axes_geometric_fallbacks_no_meta_knobs():
+    ax = check_village.twin_axes(_tv(meta={"name": "G"}))
+    assert ax["cluster_region"] == "W"  # cluster sits W of the field centre
+    assert ax["cluster_shape"] == "tall"  # bbox 60 wide x 140 tall -> r < 0.7
+    assert ax["headman_side"] == "N"  # headman N of the cluster centroid
+    assert ax["water_source"] == "NW"  # pond NW of the field centre
+    assert ax["lane_skeleton"] is None  # no declared knob, no geometric fallback
+    assert ax["focal_set"] == frozenset()
+    assert isinstance(ax["grain_orient"], int)
+
+
+def test_twin_axes_round_cluster_center_headman_and_dir8_deadzone():
+    # a square cluster CENTRED on the field centre: round shape, headman AT the centroid (center),
+    # and cluster_region hits _dir8's zero-vector dead zone -> None
+    houses = [
+        {"x": 300, "y": 300, "role": "plain"},
+        {"x": 400, "y": 300, "role": "plain"},
+        {"x": 300, "y": 400, "role": "plain"},
+        {"x": 400, "y": 400, "role": "plain"},
+        {"x": 350, "y": 350, "role": "headman"},
+    ]
+    ax = check_village.twin_axes({"meta": {"name": "R", "down_deg": 45}, "houses": houses, "fields": [{"bbox": [0, 0, 700, 700]}]})
+    assert ax["cluster_shape"] == "round"  # w == h
+    assert ax["headman_side"] == "center"  # headman at the cluster centre
+    assert ax["cluster_region"] is None  # centroid == field centre -> dead zone
+    assert ax["water_source"] is None and ax["grain_orient"] is None  # no pond, no dry_plots
+
+
+def test_twin_axes_wide_cluster_and_bare_manifest():
+    wide = [{"x": 100, "y": 300, "role": "plain"}, {"x": 500, "y": 300, "role": "plain"}, {"x": 300, "y": 320, "role": "plain"}]
+    axw = check_village.twin_axes({"meta": {"name": "W", "down_deg": 45}, "houses": wide, "fields": [{"bbox": [0, 0, 700, 700]}]})
+    assert axw["cluster_shape"] == "wide"  # 400 wide x 20 tall -> r > 1.4
+    # a bare manifest: every geometric axis is 'no evidence'
+    ax = check_village.twin_axes({"meta": {"name": "bare", "down_deg": 45}})
+    assert ax["cluster_region"] is None and ax["cluster_shape"] is None and ax["headman_side"] is None
+    assert ax["water_source"] is None and ax["grain_orient"] is None and ax["focal_set"] == frozenset()
+
+
+def test_twin_report_none_axes_are_no_evidence_not_a_diff():
+    # a fully-featured map vs a bare one: the bare map's None axes must NOT count as differences (a data
+    # gap cannot manufacture distinctiveness) -> the pair stays TWINNED, not spuriously PASS
+    rep = check_village.twin_report([_tv(meta={"name": "A"}), {"meta": {"name": "B", "down_deg": 45}}])
+    assert len(rep) == 1 and rep[0]["verdict"] == "TWINNED"
+
+
+def test_twin_report_uses_index_when_unnamed():
+    rep = check_village.twin_report([{"meta": {"down_deg": 45}}, {"meta": {"down_deg": 45}}])
+    assert rep and rep[0]["pair"] == ("0", "1")
+
+
+def test_twin_settlement_form_is_an_axis():
+    # nucleated blob vs linear ribbon - the biggest structural read - is a twin-detector axis; it defaults
+    # to 'nucleated' when a map does not declare it (so an undeclared map is not spuriously "different")
+    assert "settlement_form" in check_village.TWIN_AXES
+    a = _tv(meta={"name": "A", "settlement_form": "nucleated"})
+    b = _tv(meta={"name": "B", "settlement_form": "linear"})
+    ax, bx = check_village.twin_axes(a), check_village.twin_axes(b)
+    assert ax["settlement_form"] == "nucleated" and bx["settlement_form"] == "linear"
+    assert check_village.twin_axes(_tv(meta={"name": "C"}))["settlement_form"] == "nucleated"  # default
+    assert check_village.twin_diff_count(ax, bx) == 1  # differ on settlement_form alone (otherwise identical)
+
+
+# ---- dwellings must not sit in the WET low toe below the field's drainage ditch (feature 005 / GM 2026-07) ----
+
+
+def test_dwellings_above_field_drain_fires_on_a_toe_farm():
+    # a DISPERSED map (no meta.nucleated), downhill = due S (down_deg=90); a drain runs cross-slope (E-W) at
+    # the field's low edge. The first drain segment is DEGENERATE (a repeated point) to exercise that branch.
+    base = {
+        "meta": {"scale": "hamlet", "down_deg": 90},
+        "field_ditches": [{"role": "drain", "field": "toe-test", "poly": [[400, 600], [400, 600], [800, 600]], "w": 4}],
+        "fields": [{"name": "toe-test", "kind": "paddy", "outline": [[380, 560], [820, 560], [820, 640], [380, 640]], "bbox": [380, 560, 820, 640]}],
+    }
+    # a farm 110px DOWNSLOPE (S) of the drain, projecting onto the drain's interior -> in the wet toe -> FIRES
+    bad = {**base, "houses": [{"x": 600, "y": 710, "w": 46, "h": 28, "rot": 0, "kind": "plain"}]}
+    assert "dwellings_above_field_drain" in f(bad)
+    # the same farm UPSLOPE (N) of the drain is on dry ground -> does NOT fire
+    good = {**base, "houses": [{"x": 600, "y": 490, "w": 46, "h": 28, "rot": 0, "kind": "plain"}]}
+    assert "dwellings_above_field_drain" not in f(good)
+    # a flank farm off the drain's END (W of its start) is a legit homestead beside the field -> does NOT fire
+    flank = {**base, "houses": [{"x": 250, "y": 710, "w": 46, "h": 28, "rot": 0, "kind": "plain"}]}
+    assert "dwellings_above_field_drain" not in f(flank)
+    # a NUCLEATED cluster is scoped OUT (governed by cluster_abuts_fields), even sitting downslope
+    nuc = {**base, "meta": {**base["meta"], "nucleated": True}, "houses": [{"x": 600, "y": 710, "w": 46, "h": 28, "rot": 0, "kind": "plain"}]}
+    assert "dwellings_above_field_drain" not in f(nuc)

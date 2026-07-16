@@ -45,6 +45,10 @@ MIN_BLDG_AREA_PX: float = 900.0  # 100 sqft; below this it is furniture, not a b
 _RECT_RE = re.compile(r'<rect x="([\-\d.]+)" y="([\-\d.]+)" width="([\d.]+)" height="([\d.]+)"[^>]*?fill="([^"]+)"')
 _CIRCLE_RE = re.compile(r'<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"')
 _ELLIPSE_RE = re.compile(r'<ellipse cx="([\d.]+)" cy="([\d.]+)" rx="([\d.]+)" ry="([\d.]+)"')
+DIVIDER_STROKE = "#3F3A30"  # internal court-divider wall; buildings legitimately back it, so it
+# counts as a "wall" for perimeter-hugging (a jin'ya's office hall backs the divider).
+_DIV_GROUP_RE = re.compile(rf'<g stroke="{re.escape(DIVIDER_STROKE)}"[^>]*>(.*?)</g>', re.DOTALL)
+_LINE_RE = re.compile(r'<line x1="([\-\d.]+)" y1="([\-\d.]+)" x2="([\-\d.]+)" y2="([\-\d.]+)"')
 
 Grid = list[list[bool]]
 
@@ -84,6 +88,7 @@ class ParsedPlan:
     buildings: tuple[Rect, ...]
     open_features: tuple[Rect, ...]
     glyphs: tuple[Rect, ...]
+    dividers: tuple[Rect, ...] = ()  # internal divider walls, as thin rects
 
     @property
     def bounds(self) -> tuple[float, float, float, float]:
@@ -103,6 +108,7 @@ class VacantRect:
     area_sqft: float
     x: float
     y: float
+    zone: str = "central"  # "central" (courtyard) or "perimeter" (gap in the wall ring)
 
     @property
     def orient(self) -> str:
@@ -146,7 +152,12 @@ def parse_svg(text: str) -> ParsedPlan:
     for e in _ELLIPSE_RE.finditer(text):
         ex, ey, rx, ry = float(e.group(1)), float(e.group(2)), float(e.group(3)), float(e.group(4))
         glyphs.append(Rect(ex - rx, ey - ry, 2 * rx, 2 * ry))
-    return ParsedPlan(interior, buildings, open_features, tuple(glyphs))
+    dividers: list[Rect] = []
+    for grp in _DIV_GROUP_RE.finditer(text):
+        for ln in _LINE_RE.finditer(grp.group(1)):
+            x1, y1, x2, y2 = (float(ln.group(i)) for i in range(1, 5))
+            dividers.append(Rect(min(x1, x2), min(y1, y2), max(abs(x2 - x1), 2.0), max(abs(y2 - y1), 2.0)))
+    return ParsedPlan(interior, buildings, open_features, tuple(glyphs), tuple(dividers))
 
 
 def _blank(w: int, h: int) -> Grid:
@@ -169,6 +180,7 @@ class _Grids:
     inside: Grid
     building: Grid
     occ: Grid
+    divider: Grid
     w: int
     h: int
     minx: float
@@ -192,7 +204,10 @@ def _grids(plan: ParsedPlan, cell: int) -> _Grids:
         _paint(occ, r, cell, minx, miny, w, h)
     for r in plan.glyphs:
         _paint(occ, r, cell, minx, miny, w, h)
-    return _Grids(inside, building, occ, w, h, minx, miny, cell)
+    divider = _blank(w, h)
+    for r in plan.dividers:
+        _paint(divider, r, cell, minx, miny, w, h)
+    return _Grids(inside, building, occ, divider, w, h, minx, miny, cell)
 
 
 def coverage(plan: ParsedPlan, cell: int = 2) -> float:
@@ -207,6 +222,40 @@ def coverage(plan: ParsedPlan, cell: int = 2) -> float:
                 if g.building[gy][gx]:
                     built_cells += 1
     return built_cells / inside_cells
+
+
+def _perimeter_band(g: _Grids, depth_cells: int) -> Grid:
+    """Inside cells within depth_cells of the interior edge (a wall), by cardinal rays."""
+    band = _blank(g.w, g.h)
+    for gy in range(g.h):
+        for gx in range(g.w):
+            if not g.inside[gy][gx]:
+                continue
+            near = False
+            for d in range(1, depth_cells + 1):
+                for ny, nx in ((gy - d, gx), (gy + d, gx), (gy, gx - d), (gy, gx + d)):
+                    if not (0 <= ny < g.h and 0 <= nx < g.w) or not g.inside[ny][nx] or g.divider[ny][nx]:
+                        near = True
+                        break
+                if near:
+                    break
+            band[gy][gx] = near
+    return band
+
+
+def perimeter_hugging_pct(plan: ParsedPlan, depth_ft: float = 25.0, cell: int = 2) -> float:
+    """Fraction of building footprint sitting within depth_ft of a wall (high = a good ring)."""
+    g = _grids(plan, cell)
+    band = _perimeter_band(g, max(1, int(depth_ft * FTPX / cell)))
+    built = 0
+    hugging = 0
+    for gy in range(g.h):
+        for gx in range(g.w):
+            if g.building[gy][gx] and g.inside[gy][gx]:
+                built += 1
+                if band[gy][gx]:
+                    hugging += 1
+    return hugging / built if built else 0.0
 
 
 def _max_rect(mask: Grid, w: int, h: int) -> tuple[int, int, int, int, int]:
@@ -234,9 +283,20 @@ def _max_rect(mask: Grid, w: int, h: int) -> tuple[int, int, int, int, int]:
     return best
 
 
-def top_vacant_rects(plan: ParsedPlan, n: int = 3, cell: int = 2, min_area_sqft: float = 150.0) -> list[VacantRect]:
-    """The n largest non-overlapping empty rectangles, largest first (greedy)."""
+def top_vacant_rects(
+    plan: ParsedPlan,
+    n: int = 3,
+    cell: int = 2,
+    min_area_sqft: float = 150.0,
+    perimeter_depth_ft: float = 25.0,
+) -> list[VacantRect]:
+    """The n largest non-overlapping empty rectangles, largest first (greedy).
+
+    Each is tagged zone="central" (courtyard - good) or "perimeter" (a gap in the
+    wall ring - slack) by whether its centroid sits in the perimeter band.
+    """
     g = _grids(plan, cell)
+    band = _perimeter_band(g, max(1, int(perimeter_depth_ft * FTPX / cell)))
     vacant: Grid = [[g.inside[gy][gx] and not g.occ[gy][gx] for gx in range(g.w)] for gy in range(g.h)]
     floor_px = min_area_sqft * FTPX * FTPX
     out: list[VacantRect] = []
@@ -244,6 +304,7 @@ def top_vacant_rects(plan: ParsedPlan, n: int = 3, cell: int = 2, min_area_sqft:
         area_cells, gx0, gy0, wc, hc = _max_rect(vacant, g.w, g.h)
         if area_cells * cell * cell < floor_px:
             break
+        cy, cx = gy0 + hc // 2, gx0 + wc // 2
         out.append(
             VacantRect(
                 w_ft=wc * cell / FTPX,
@@ -251,6 +312,7 @@ def top_vacant_rects(plan: ParsedPlan, n: int = 3, cell: int = 2, min_area_sqft:
                 area_sqft=round(area_cells * cell * cell / (FTPX * FTPX)),
                 x=gx0 * cell + g.minx,
                 y=gy0 * cell + g.miny,
+                zone="perimeter" if band[cy][cx] else "central",
             )
         )
         for yy in range(gy0, gy0 + hc):
@@ -366,17 +428,19 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
             else:
                 empty += 1
     minx, miny, maxx, maxy = plan.bounds
+    hug = perimeter_hugging_pct(plan, cell=cell)
     lines = [
         f"walled interior: {(maxx - minx) / FTPX:.0f} x {(maxy - miny) / FTPX:.0f} ft = {inside * cell * cell / (FTPX * FTPX):,.0f} sqft",
         f"building coverage: {100 * built / inside:.0f}%  (jin'ya band 37-42%)",
         f"purposeful open (garden/court/glyphs): {100 * openc / inside:.0f}%  (features)",
         f"bare open ground: {100 * empty / inside:.0f}%  (courts are open - not a defect alone)",
-        "top vacant rectangles (largest first - forecourt/oshirasu FEATURE, or slack?):",
+        f"perimeter-hugging: {100 * hug:.0f}% of building footprint within 25 ft of a wall  (high = buildings ring the courts)",
+        "top vacant rectangles (largest first - CENTRAL=courtyard/feature, PERIMETER=ring gap/slack):",
     ]
     tv = top_vacant_rects(plan, n=4, cell=cell)
     if not tv:
         lines.append("    (none above the floor area)")
-    lines += [f"    {v.w_ft:.0f} x {v.h_ft:.0f} ft = {v.area_sqft:,.0f} sqft [{v.orient}] at svg({v.x:.0f},{v.y:.0f})" for v in tv]
+    lines += [f"    {v.w_ft:.0f} x {v.h_ft:.0f} ft = {v.area_sqft:,.0f} sqft [{v.orient}, {v.zone}] at svg({v.x:.0f},{v.y:.0f})" for v in tv]
     lines.append("per-region density (a large low-coverage tile = consolidation candidate):")
     lines += [f"    tile[r{t.row}c{t.col}]: {100 * t.coverage_pct:.0f}% built  ({t.interior_sqft:,.0f} sqft interior)" for t in region_density(plan, cell=cell)]
     lines.append("aligned building gaps 5-30 ft (kura fire-gap OK ~10 ft; wooden >8 ft loose):")

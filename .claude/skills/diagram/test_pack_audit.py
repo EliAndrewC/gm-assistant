@@ -139,6 +139,71 @@ def test_vacant_rect_orientation() -> None:
     assert pa.top_vacant_rects(plan, n=1)[0].orient == "horizontal"
 
 
+# --- perimeter_hugging_pct (NEW, feature 008) ---
+
+
+def test_perimeter_hugging_pct_high_when_buildings_line_the_walls() -> None:
+    plan = pa.parse_svg(
+        _svg(
+            _rect(0, 0, 300, 300, COURT),
+            _rect(0, 0, 300, 30, "#DDB87A"),  # top-wall building
+            _rect(0, 270, 300, 30, "#DDB87A"),  # bottom-wall building
+        )
+    )
+    assert pa.perimeter_hugging_pct(plan, depth_ft=15) > 0.95
+
+
+def test_perimeter_hugging_pct_low_when_building_floats_in_the_center() -> None:
+    plan = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _rect(130, 130, 40, 40, "#DDB87A")))
+    assert pa.perimeter_hugging_pct(plan, depth_ft=15) < 0.1
+
+
+def test_perimeter_hugging_pct_zero_when_no_buildings() -> None:
+    assert pa.perimeter_hugging_pct(pa.parse_svg(_svg(_rect(0, 0, 100, 100, COURT)))) == 0.0
+
+
+def test_perimeter_hugging_counts_buildings_backing_an_internal_divider() -> None:
+    # a building far from the OUTER walls but backing a divider line is well-placed and should hug
+    plan = pa.parse_svg(
+        _svg(
+            _rect(0, 0, 300, 300, COURT),
+            '<g stroke="#3F3A30" stroke-width="6" fill="none"><line x1="0" y1="150" x2="300" y2="150"/></g>',
+            _rect(120, 120, 60, 25, "#DDB87A"),  # centered, but its bottom backs the y=150 divider
+        )
+    )
+    assert pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT))).dividers == ()  # no false dividers
+    assert len(plan.dividers) == 1
+    assert pa.perimeter_hugging_pct(plan, depth_ft=15) > 0.5
+
+
+# --- vacant-rect zone (central vs perimeter) (NEW, feature 008) ---
+
+
+def test_vacant_rect_zone_central_when_ringed_by_wall_buildings() -> None:
+    plan = pa.parse_svg(
+        _svg(
+            _rect(0, 0, 300, 300, COURT),
+            _rect(0, 0, 300, 20, "#DDB87A"),
+            _rect(0, 280, 300, 20, "#DDB87A"),
+            _rect(0, 0, 20, 300, "#DDB87A"),
+            _rect(280, 0, 20, 300, "#DDB87A"),
+        )
+    )
+    assert pa.top_vacant_rects(plan, n=1)[0].zone == "central"
+
+
+def test_vacant_rect_zone_perimeter_when_gap_between_wall_buildings() -> None:
+    plan = pa.parse_svg(
+        _svg(
+            _rect(0, 0, 300, 300, COURT),
+            _rect(0, 0, 120, 40, "#DDB87A"),  # top-wall building, left
+            _rect(180, 0, 120, 40, "#DDB87A"),  # top-wall building, right
+            _rect(0, 40, 300, 260, "#DDB87A"),  # fills the rest; only the top gap is vacant
+        )
+    )
+    assert pa.top_vacant_rects(plan, n=1)[0].zone == "perimeter"
+
+
 # --- region_density (NEW) ---
 
 

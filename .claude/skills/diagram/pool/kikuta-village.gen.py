@@ -32,11 +32,18 @@ SEED = 41
 s = Settlement(W=W, H=H, seed=SEED)
 s.meta(name="Kikuta", scale="village", ftpx=2, households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
        nucleated=True, field_footbridges=True, torii_expected=7, shrine_on_hill=False,
-       has_pond=True)
+       has_pond=True, water_kind="pond", field_origin="organic")
+
+# GRAIN DRIFT (feature 005): Kikuta's hatake grain leans +12deg off the fall-line - a real valley lets the
+# ridge-along-contour furrows drift rather than holding one rigid angle (resolves the "uniform 45deg grain"
+# residual). Pinned here (a designed village) and resolved through the knob engine to exercise pin -> value;
+# it also makes grain_orient a distinct twin-detector axis from Hoshigaoka's straight grain.
+s.pin_knob("grain_drift", 12)
+GRAIN_DRIFT = s.resolve("grain_drift")
 
 net = build_comb(W, H, SLUICE, SEED, down_deg=45, field_fall=1150,
                  offtakes_a=(0.26, 0.56, 0.83), offtakes_b=(0.6,),
-                 dry_keepout=[(POND[0], POND[1], POND[2] + 45)])
+                 dry_keepout=[(POND[0], POND[1], POND[2] + 45)], grain_drift=GRAIN_DRIFT)
 s.meta(dry_furrows_vary=net["furrows_vary"])
 
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
@@ -97,34 +104,44 @@ for c in sorted(net["channels"], key=lambda c: -c["w"]):
     s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]))
 if net["brook"]:
     s.stream(net["brook"], frm={"kind": "drain"}, to={"kind": "offmap"}, width=9)
+# Register the irrigation ditches on the manifest BEFORE the farmhouses, so the homestead solver's
+# channel-avoidance (_rect_on_water) keeps every house + garden OFF the ditches. (Feature 005: the cross
+# lane-skeleton packs the cluster nearer the field-edge channel than the old spine did, so the solver has
+# to SEE the ditches at placement time - previously they were only recorded after farmsteads() ran.)
+for c in net["channels"]:
+    s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
+                                 "role": c["role"], "field": "kikuta-paddies",
+                                 "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)})
 
-# FARMHOUSES: a nucleated cluster on the higher W margin (below the pond, W of the paddy)
+# FARMHOUSES: Kikuta is a LINEAR village (feature 005 settlement_form=linear) - a RIBBON of homesteads
+# strung along the field's high WEST margin, fronting the paddy, NOT a nucleated blob. This ribbon-vs-blob
+# contrast with Hoshigaoka is the single biggest structural differentiator (research.md D5: a valley-edge
+# track / levee strings the houses out). A SPINE street runs the ribbon's length; the headman anchors the
+# high (N) head; the bundle solver hugs each homestead to the field edge as usual.
 _rng = _random.Random(SEED + 1)
-CX, CY = 405, 720
-s.lane([(CX - 8, CY - 210), (CX + 6, CY - 70), (CX + 8, CY + 90), (CX + 16, CY + 250)],
-       width=5, clearance=18, worn=True)
-_fp = s._nearest_field_point(CX + 170, CY + 20)
-s.lane([(CX + 2, CY + 30), ((CX + _fp[0]) / 2 + 12, (CY + 30 + _fp[1]) / 2 - 6), (_fp[0] - 6, _fp[1] + 2)],
-       width=5, clearance=18, worn=True)
-s.lane([(CX + 4, CY + 250), (CX + 40, CY + 370), (CX + 66, CY + 520), (CX + 96, CY + 720),
-        (CX + 120, CY + 900), (CX + 138, CY + 1010)],
-       width=6, clearance=18, worn=True, connector=True)
-
-s.headman(455, CY - 60)
+LINE0, LINE1 = (432, 452), (505, 1028)       # ribbon axis: N (high, by the pond) -> S, just W of the paddy edge
+s.lane([LINE0, ((LINE0[0] + LINE1[0]) / 2 - 8, (LINE0[1] + LINE1[1]) / 2), LINE1], width=6, clearance=20, worn=True)   # the spine street
+s.meta(lane_skeleton="spine")                # a linear village's lanes are a single spine along the ribbon
+# a short SPUR crosses E from mid-ribbon to the paddy edge; the CONNECTOR track leaves S off-map from the foot
+_fp = s._nearest_field_point(575, 720)
+s.lane([(490, 705), ((490 + _fp[0]) / 2 + 8, (705 + _fp[1]) / 2 - 4), (_fp[0] - 6, _fp[1] + 2)], width=5, clearance=20, worn=True)
+s.lane([(LINE1[0] + 2, LINE1[1] + 8), (LINE1[0] + 40, LINE1[1] + 170), (LINE1[0] + 74, LINE1[1] + 350), (LINE1[0] + 100, LINE1[1] + 520)],
+       width=6, clearance=20, worn=True, connector=True)
+s.headman(LINE0[0] + 30, LINE0[1] + 46)      # the headman anchors the HIGH (N) head of the ribbon
+_seeds = s.line_seeds(LINE0, LINE1, 240, 74, _rng)
 _placed = 1
-for _ in range(240):
-    if _placed >= 70:
+for _x, _y in _seeds:
+    if _placed >= 66:
         break
-    _a = _rng.uniform(0, 2 * math.pi)
-    _rad = _rng.random() ** 0.5
-    _x = CX + math.cos(_a) * _rad * 165
-    _y = CY + math.sin(_a) * _rad * 250
     if s.try_place(_x, _y, "plain"):
         _placed += 1
 n_farms = s.farmsteads()
 print(f"farmhouses: {n_farms}")
 
-s.place_wells((235, 480, 675, 980), spacing=185, near=210)
+# wells: derive the bbox from the actual RIBBON of houses (a long thin band), so they stay among the dwellings
+_wx = [h["x"] for h in s.M["houses"]]
+_wy = [h["y"] for h in s.M["houses"]]
+s.place_wells((min(_wx) - 6, min(_wy) + 12, max(_wx) + 6, max(_wy) - 12), spacing=170, near=200)
 n_byres = s.draft_byres(fraction=0.2, gap=70)
 print(f"byres: {len(n_byres)}")
 
@@ -176,10 +193,7 @@ _pvy = [v[1] for p in net["plots"] for v in p["poly"]]
 s.M["fields"].append({"name": "kikuta-paddies", "kind": "paddy", "outline": _env,
                       "bbox": [min(_exs), min(_eys), max(_exs), max(_eys)],
                       "vis_bbox": [min(_pvx), min(_pvy), max(_pvx), max(_pvy)]})
-for c in net["channels"]:
-    s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
-                                 "role": c["role"], "field": "kikuta-paddies",
-                                 "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)})
+# (field_ditches are registered earlier, before farmsteads(), so the solver avoids them - see above)
 _hr = net["channels"][0]["pts"]
 _fork = _hr[-1]
 _din = (_fork[0] + 70 * math.cos(math.radians(45)), _fork[1] + 70 * math.sin(math.radians(45)))
@@ -211,7 +225,7 @@ s.commons([(1500, 96), (1780, 96), (1780, 164), (1500, 164)], role="woodland")
 # flat-ground equivalent of the old winding hill ascent). This is a SET-APART precinct beyond the natural
 # village content, so it is placed BEFORE crop_to_content, which then extends the frame to include it (the torii
 # are crop drivers now, so the avenue is framed too). See settlements.md 'Shrines'.
-BEN_HALL = (620, 1050)                                  # Benten hall, dry back-slope, W of the paddy, off the lanes
+BEN_HALL = (628, 1098)                                  # Benten hall, dry back-slope S of the cluster, clear of the windbreak grove's SW horn
 _ux, _uy = -0.16, 0.99                                  # approach axis: nearly due S, a slight W lean
 _torii = [(round(BEN_HALL[0] + _ux * d), round(BEN_HALL[1] + _uy * d)) for d in range(54, 54 + 7 * 34, 34)]
 s.shrine_hall(BEN_HALL[0], BEN_HALL[1], "Shrine to Benten", "(Sister Baika's care)", w=44, h=30,

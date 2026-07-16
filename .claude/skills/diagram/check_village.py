@@ -143,7 +143,8 @@ _OVERLAP_LINEAR = (
     "marshes",
     "canals",
     "roads",
-)  # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers)
+    "crescent_ponds",
+)  # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers; crescent_ponds = the fengshui 半月塘 focal pond, reserved as a placement keep-out so the cluster packs around it)
 _OVERLAP_EXEMPT = {
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "farm_sheds": "a farmstead's grain-storehouse kura drawn as an annex abutting its own farmhouse's back wall (farm_sheds_attached verifies the attachment)",
@@ -161,6 +162,7 @@ _OVERLAP_EXEMPT = {
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
     "quarters": "declarative zoning overlays (feature 006), not solid structures - they intentionally contain buildings and are validated by the city_quarters_* / per-quarter density checks",
+    "mills": "a water mill (水磨) focal feature drawn BESIDE its watercourse with the wheel dipping into the drain/stream - an intentional water-adjacency like a bridge/jetty; reserved in open ground (self.placed) so it does not overlap dwellings",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -2285,6 +2287,49 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         else:
             far = [h for h, d in dists if d > ADJ]
             check("all_houses_field_adjacent", not far, f"{len(far)} house(s) >{ADJ}px from any field")
+
+    # DWELLINGS sit on the DRY higher ground, NEVER in the wet low toe below the field's drainage. The field
+    # drains to its lowest edge (the akusui collector ditch); the ground DOWNSLOPE of that drain - reed marsh,
+    # low reclaimed paddy, or the drainage tameike - is the wettest in the valley and is not building ground.
+    # So no dwelling may sit downslope of the drain line WITHIN the drain's cross-slope span (a farm off to the
+    # SIDE, past the drain's ends, is a legit flank homestead and is NOT flagged - only the central toe below
+    # the drain is). Scoped to DISPERSED maps (like the per-house `all_houses_field_adjacent` above): each
+    # strewn farm must individually sit on dry ground, whereas a NUCLEATED cluster is placed as a unit and
+    # governed by `cluster_abuts_fields` (and a tight cluster beside a diagonal drain reads as "downslope" of it
+    # without being in any wet toe). Needs the map's slope (meta.down_deg) + a drain ditch; skipped otherwise.
+    # WHY: the GM (2026-07) flagged dispersed farmhouses strewn S of a drainage ditch into marshland - see
+    # settlements.md 'Marsh'.
+    down_deg = meta.get("down_deg")
+    drains = [fd["poly"] for fd in M.get("field_ditches", []) if fd.get("role") == "drain" and len(fd.get("poly", [])) >= 2]
+    if houses and down_deg is not None and drains and not meta.get("nucleated"):
+        dux, duy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        in_toe = []
+        for h in houses + M.get("buildings", []):
+            for dp in drains:
+                best = None
+                for si in range(len(dp) - 1):
+                    ax, ay = dp[si]
+                    bx, by = dp[si + 1]
+                    vx, vy = bx - ax, by - ay
+                    ll = vx * vx + vy * vy
+                    tt = 0.0 if ll == 0 else max(0.0, min(1.0, ((h["x"] - ax) * vx + (h["y"] - ay) * vy) / ll))
+                    px, py = ax + vx * tt, ay + vy * tt
+                    d = math.hypot(h["x"] - px, h["y"] - py)
+                    at_end = (si == 0 and tt <= 0.001) or (si == len(dp) - 2 and tt >= 0.999)  # clamped to the polyline's absolute end -> off the side
+                    if best is None or d < best[0]:
+                        best = (d, px, py, at_end)
+                assert best is not None
+                _d, px, py, at_end = best
+                if not at_end and (h["x"] - px) * dux + (h["y"] - py) * duy > 18:  # centre clearly on the wet (downslope) side of the drain
+                    in_toe.append((round(h["x"]), round(h["y"])))
+                    break
+        check(
+            "dwellings_above_field_drain",
+            not in_toe,
+            f"{len(in_toe)} dwelling(s) sit in the WET low toe DOWNSLOPE of the field drain at {in_toe[:4]} - the "
+            f"ground below the drainage line (marsh / low reclaimed paddy / the tameike) is the wettest in the "
+            f"valley, not building ground; strew the farms on the DRY margins ABOVE the drain (flank farms past the drain's ends are fine)",
+        )
 
     def runs_off_edge(ol: Poly) -> bool:
         return any(p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1 for p in ol)
@@ -6429,6 +6474,140 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if verbose:
         print(f"\n{len(fails)} failing check(s): {fails}" if fails else "\nALL CHECKS PASSED")
     return fails
+
+
+# ---- Pool-level twin-detector (feature 005) -----------------------------------------------------
+# The per-map gate() validates ONE manifest; this is a CROSS-map tool. Two villages that share a water
+# direction (down_deg) should still read as different PLACES - the GM's complaint was that Kikuta was a
+# near-copy of Hoshigaoka down to the headman's house position. So for every same-down_deg pair we count
+# how many of the structural axes a viewer actually reads (SC-001) fall in DIFFERENT coarse buckets, and
+# flag the pair when too few differ. Two design choices, both from research.md D6:
+#   - Same-down_deg SCOPING: villages that already differ by water direction are trivially distinguishable
+#     and are not compared (comparing them would dilute the signal).
+#   - COARSE buckets (which side / which type / which octant), never pixel positions, so genuine near-
+#     variants are not falsely flagged as twins - the axes answer "different KIND of place?", not "moved a
+#     few px?". The 4-of-7 threshold is the tuning target; recorded with its reasoning in settlements.md.
+TWIN_AXES = ("cluster_region", "cluster_shape", "headman_side", "lane_skeleton", "water_source", "focal_set", "grain_orient", "settlement_form")
+TWIN_MIN_DIFF = 4  # a same-down_deg pair must differ on >= this many of the 8 axes to read as distinct
+
+
+def _dir8(dx: float, dy: float, dead: float = 1e-9) -> str | None:
+    """Bucket a vector into one of 8 compass labels (N/NE/E/SE/S/SW/W/NW), y DOWN = south. Returns None
+    for a ~zero vector (no meaningful direction). Coarse on purpose: a village on the W margin reads the
+    same whether it is a few px higher or lower."""
+    if dx * dx + dy * dy < dead:
+        return None
+    ang = math.degrees(math.atan2(dy, dx)) % 360  # 0=E, 90=S (y down), 180=W, 270=N
+    return ("E", "SE", "S", "SW", "W", "NW", "N", "NE")[int((ang + 22.5) % 360 // 45)]
+
+
+def _cluster_centroid(M: Manifest) -> tuple[float, float] | None:
+    hs = M.get("houses", [])
+    if not hs:
+        return None
+    return (sum(h["x"] for h in hs) / len(hs), sum(h["y"] for h in hs) / len(hs))
+
+
+def twin_axes(M: Manifest) -> dict[str, Any]:
+    """Extract the coarse structural axes a viewer reads a village by, for twin comparison. Each axis is
+    a small hashable label (or None when the map lacks the data); two maps 'differ' on an axis only when
+    both are present and their labels are unequal (a missing datum never manufactures a difference)."""
+    meta = M.get("meta", {})
+    hs = M.get("houses", [])
+    cen = _cluster_centroid(M)
+    fields = M.get("fields", [])
+    fb = fields[0]["bbox"] if fields else None
+    fc = ((fb[0] + fb[2]) / 2, (fb[1] + fb[3]) / 2) if fb else None
+    ax: dict[str, Any] = {}
+
+    # 1. cluster_region: which side of the field the village sits on (the 背山面水 "background" octant)
+    ax["cluster_region"] = _dir8(cen[0] - fc[0], cen[1] - fc[1]) if (cen and fc) else None
+
+    # 2. cluster_shape: the declared knob if present, else the cluster-bbox aspect (round vs elongated + axis)
+    if meta.get("cluster_shape"):
+        ax["cluster_shape"] = meta["cluster_shape"]
+    elif hs:
+        xs = [h["x"] for h in hs]
+        ys = [h["y"] for h in hs]
+        w, h = max(xs) - min(xs), max(ys) - min(ys)
+        r = w / h if h else 1.0
+        ax["cluster_shape"] = "round" if 0.7 <= r <= 1.4 else ("wide" if r > 1.4 else "tall")
+    else:
+        ax["cluster_shape"] = None
+
+    # 3. headman_side: where the headman compound sits WITHIN the cluster (octant off the centroid, or
+    #    'center' when near the middle) - the GM's specific twinning symptom
+    headman = next((h for h in hs if h.get("role") == "headman"), None)
+    if headman and cen:
+        span = 0.0
+        if hs:
+            span = max(max(h["x"] for h in hs) - min(h["x"] for h in hs), max(h["y"] for h in hs) - min(h["y"] for h in hs))
+        d = math.hypot(headman["x"] - cen[0], headman["y"] - cen[1])
+        ax["headman_side"] = "center" if d < 0.15 * span else _dir8(headman["x"] - cen[0], headman["y"] - cen[1])
+    else:
+        ax["headman_side"] = None
+
+    # 4. lane_skeleton: the declared knob (spine / T / Y / cross / waterside); no reliable geometric fallback
+    ax["lane_skeleton"] = meta.get("lane_skeleton")
+
+    # 5. water_source: pond octant off the field centre (which corner), else the stream entry edge, else None
+    pond = M.get("pond")
+    if meta.get("water_source_position"):
+        ax["water_source"] = meta["water_source_position"]
+    elif pond and fc:
+        ax["water_source"] = _dir8(pond[0] - fc[0], pond[1] - fc[1])
+    else:
+        ax["water_source"] = None
+
+    # 6. focal_set: the set of OPTIONAL focal features present (a frozenset so order does not matter)
+    ax["focal_set"] = frozenset(meta.get("focal_features", []))
+
+    # 7. grain_orient: median paddy/dry-plot grain angle, bucketed to 15-degree bands (mod 180, a bund has
+    #    no head/tail) - the "uniform 45deg" residual becomes a real differentiator once it drifts per map
+    thetas = [d["theta"] for d in M.get("dry_plots", []) if "theta" in d]
+    if thetas:
+        med = sorted(thetas)[len(thetas) // 2]
+        ax["grain_orient"] = round((math.degrees(med) % 180) / 15)
+    else:
+        ax["grain_orient"] = None
+
+    # 8. settlement_form: nucleated blob vs linear ribbon vs dispersed vs water-town - the biggest structural
+    #    read of all. Defaults to 'nucleated' (the base form) when a map does not declare it.
+    ax["settlement_form"] = meta.get("settlement_form", "nucleated")
+    return ax
+
+
+def twin_diff_count(a: dict[str, Any], b: dict[str, Any]) -> int:
+    """How many axes two extracted axis-dicts differ on (both present and unequal). A None on either side
+    is 'no evidence', not a difference, so a data gap never inflates distinctiveness."""
+    n = 0
+    for k in TWIN_AXES:
+        av, bv = a.get(k), b.get(k)
+        if av is None or bv is None:
+            continue
+        if av != bv:
+            n += 1
+    return n
+
+
+def twin_report(manifests: Sequence[Manifest]) -> list[dict[str, Any]]:
+    """For every pair of villages that SHARE a water direction, report how many structural axes differ and
+    whether the pair reads as distinct. Verdict 'TWINNED' (too similar) when fewer than TWIN_MIN_DIFF axes
+    differ, else 'PASS'. Non-village manifests (no down_deg) are skipped. This is a pool-level tool run
+    alongside - not inside - the per-map gate()."""
+    named = [(str(M.get("meta", {}).get("name", i)), M) for i, M in enumerate(manifests)]
+    axes = {name: twin_axes(M) for name, M in named}
+    out: list[dict[str, Any]] = []
+    for i in range(len(named)):
+        for j in range(i + 1, len(named)):
+            na, Ma = named[i]
+            nb, Mb = named[j]
+            da, db = Ma.get("meta", {}).get("down_deg"), Mb.get("meta", {}).get("down_deg")
+            if da is None or db is None or da != db:
+                continue  # only same-water-direction pairs are compared
+            diff = twin_diff_count(axes[na], axes[nb])
+            out.append({"pair": (na, nb), "down_deg": da, "diffs": diff, "verdict": "PASS" if diff >= TWIN_MIN_DIFF else "TWINNED"})
+    return out
 
 
 def main(path: str) -> int:

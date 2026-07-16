@@ -41,6 +41,7 @@ SEED = 7
 s = Settlement(W=W, H=H, seed=SEED)
 s.meta(name="Hoshigaoka", scale="village", ftpx=2, households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
        nucleated=True,                                                   # a clustered village -> a COMMUNAL fengshui windbreak, not per-house groves
+       lane_skeleton="spine", settlement_form="nucleated",              # feature 005: Hoshigaoka is a compact NUCLEATED village on a single spine - the structural contrast with Kikuta's LINEAR ribbon
        field_footbridges=True)                                          # long irrigation ditches carry plank footbridges (long_ditches_have_a_footbridge)
 # Hoshigaoka is a GENTLE valley, so its dry-field furrows FAN (the patchwork quilt) - the default. A steep /
 # terraced village would pass build_comb(..., furrow_spread=~0.06) to converge the rows onto the contour, and
@@ -179,6 +180,12 @@ s.lane([(CX + 2, CY + 30), ((CX + _fp[0]) / 2 + 12, (CY + 30 + _fp[1]) / 2 - 6),
 s.lane([(CX + 4, CY + 245), (CX + 48, CY + 360), (CX + 78, CY + 490), (CX + 112, CY + 700),
         (CX + 138, CY + 860), (CX + 158, CY + 985)],
        width=6, clearance=18, worn=True, connector=True)   # runs OFF the bottom edge (H+), not stopping short
+
+# FENGSHUI CRESCENT POND (半月塘, feature 005): a half-moon pond in FRONT of the cluster (its flat edge facing
+# the houses to the N), RESERVED here - before the homesteads - so the cluster packs around it. Drainage +
+# fire water + the fengshui "gathering of qi", distinct from the NW irrigation pond; it is Hoshigaoka's
+# optional focal feature (the twin-detector reads focal_set, so this is a distinctiveness axis vs Kikuta).
+s.crescent_pond(335, 908, 48, facing_deg=270)
 
 s.headman(455, CY - 60)              # the largest homestead, fronting the head of the main lane
 _placed = 1

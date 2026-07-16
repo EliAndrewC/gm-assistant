@@ -14,6 +14,8 @@ import math
 import os
 import tempfile
 
+import pytest
+
 import settlement
 from settlement import Settlement
 
@@ -1492,3 +1494,311 @@ def test_city_wall_drops_a_mural_tower_boxed_in_on_both_sides():
     towers = s.M.get("wall_towers", [])
     assert not any(math.hypot(t["x"] - 150, t["y"] - 150) < 90 for t in towers)  # NW tower dropped
     assert any(math.hypot(t["x"] - 1050, t["y"] - 1050) < 90 for t in towers)  # SE tower kept
+
+
+# ------------------------------------------------------------------------------------------------
+# Knob engine (feature 005, Phase 2b): seeded, independent, historically-typed layout variation.
+# These are the FAILING-first tests for the shared machinery (Knob / knob_rng / register_knob /
+# resolve_knob + the Settlement pin/resolve surface); the actual Family-A knob catalogue lands in US1.
+# ------------------------------------------------------------------------------------------------
+
+
+def test_knob_rng_is_deterministic_and_stable():
+    # SHA-256-derived (not hash()-derived, which is per-process salted): a fixed (seed, knob) always
+    # yields the same stream, so a roll is reproducible across runs/processes.
+    a = settlement.knob_rng(7, "cluster_position")
+    b = settlement.knob_rng(7, "cluster_position")
+    assert [a.random() for _ in range(5)] == [b.random() for _ in range(5)]
+
+
+def test_knob_rng_independent_per_knob():
+    # different knob names draw from different streams (independence, not a shared global sequence)
+    a = settlement.knob_rng(7, "cluster_position")
+    b = settlement.knob_rng(7, "lane_skeleton")
+    assert a.random() != b.random()
+
+
+def test_knob_roll_deterministic():
+    k = settlement.Knob("t_shape", ["a", "b", "c", "d"], default="a")
+    assert k.roll(42, {}) == k.roll(42, {})
+
+
+def test_knob_roll_independent_across_knobs():
+    # two knobs with identical value spaces do NOT move in lockstep across seeds
+    k1 = settlement.Knob("t_one", list(range(20)), default=0)
+    k2 = settlement.Knob("t_two", list(range(20)), default=0)
+    assert any(k1.roll(s, {}) != k2.roll(s, {}) for s in range(30))
+
+
+def test_knob_two_seeds_give_different_draws():
+    k = settlement.Knob("t_pos", list(range(20)), default=0)
+    assert len({k.roll(s, {}) for s in range(30)}) > 1
+
+
+def test_knob_roll_excludes_typing_invalid():
+    # only even values are historically valid in this context; the roll never returns an odd one
+    k = settlement.Knob("t_even", [1, 2, 3, 4, 5, 6], default=2, typing_rule=lambda v, ctx: v % 2 == 0)
+    assert all(k.roll(s, {}) % 2 == 0 for s in range(40))
+
+
+def test_knob_empty_filtered_space_is_loud():
+    # no value satisfies the rule -> a spec error, never a silent fallback
+    k = settlement.Knob("t_none", [1, 3, 5], default=1, typing_rule=lambda v, ctx: v % 2 == 0)
+    with pytest.raises(ValueError):
+        k.roll(1, {})
+
+
+def test_resolve_order_pinned_beats_roll_and_default():
+    settlement.register_knob(settlement.Knob("t_res", ["a", "b", "c"], default="a"))
+    assert settlement.resolve_knob("t_res", 1, {}, {"t_res": "b"}) == "b"  # pinned wins
+    assert settlement.resolve_knob("t_res", 1, {}, {}, do_roll=False) == "a"  # default when roll opted out
+    assert settlement.resolve_knob("t_res", 1, {}, {}) in ("a", "b", "c")  # else rolled
+
+
+def test_resolve_pin_not_in_value_space_rejected():
+    settlement.register_knob(settlement.Knob("t_pin", ["x", "y"], default="x"))
+    with pytest.raises(ValueError):
+        settlement.resolve_knob("t_pin", 1, {}, {"t_pin": "z"})
+
+
+def test_resolve_pin_typing_violation_rejected():
+    settlement.register_knob(settlement.Knob("t_pin2", ["dry", "wet"], default="dry", typing_rule=lambda v, ctx: not (v == "wet" and ctx.get("region") == "upland")))
+    with pytest.raises(ValueError):
+        settlement.resolve_knob("t_pin2", 1, {"region": "upland"}, {"t_pin2": "wet"})
+    # the same pin is fine in a delta region
+    assert settlement.resolve_knob("t_pin2", 1, {"region": "delta"}, {"t_pin2": "wet"}) == "wet"
+
+
+def test_settlement_resolve_surface_records_and_feeds_context():
+    s = Settlement(1000, 1000, seed=5)
+    s.meta(name="V", scale="village", region="upland")
+    settlement.register_knob(settlement.Knob("t_sk", ["p", "q"], default="p"))
+    # a knob whose typing rule reads an EARLIER resolved knob from the running context
+    settlement.register_knob(settlement.Knob("t_dep", ["lo", "hi"], default="lo", typing_rule=lambda v, ctx: not (v == "hi" and ctx.get("t_sk") == "p")))
+    s.pin_knob("t_sk", "q")
+    assert s.resolve("t_sk") == "q"
+    assert s._resolved_knobs["t_sk"] == "q"
+    # region flows from meta into the context; t_sk="q" so t_dep may be "hi"
+    assert "region" in s.knob_context() and s.knob_context()["t_sk"] == "q"
+    assert s.resolve("t_dep") in ("lo", "hi")
+
+
+def test_settlement_resolve_default_when_unpinned_and_no_roll():
+    s = Settlement(1000, 1000, seed=5)
+    s.meta(name="V", scale="village")
+    settlement.register_knob(settlement.Knob("t_def", ["one", "two"], default="one"))
+    assert s.resolve("t_def", do_roll=False) == "one"
+
+
+# ---- Family-A knob catalogue (feature 005, US1): value spaces + China-first typing rules ----------
+
+
+def test_family_a_knobs_are_registered_with_expected_value_spaces():
+    for name, space in [
+        ("cluster_position", {"high_margin", "flank", "mid_margin", "valley_mouth", "valley_head", "on_rise"}),
+        ("cluster_shape", {"round", "elongated", "crescent", "split"}),
+        ("lane_skeleton", {"spine", "T", "Y", "cross", "waterside"}),
+        ("plot_size", {"small_irregular", "medium", "large_block", "strip"}),
+        ("plot_regularity", {"organic", "grid"}),
+    ]:
+        assert set(settlement.KNOBS[name].value_space) == space
+
+
+def test_lane_skeleton_waterside_typing():
+    k = settlement.KNOBS["lane_skeleton"]
+    assert "waterside" not in k.allowed({"water_kind": "pond"})  # pond-fed valley: no water alongside
+    assert "waterside" in k.allowed({"water_kind": "stream"})  # stream-fed: a lane can hug the water
+    assert "waterside" in k.allowed({"waterside_site": True})  # explicit canal/waterside site
+    assert set(k.allowed({"water_kind": "pond"})) == {"spine", "T", "Y", "cross"}
+
+
+def test_water_source_position_typing_pond_vs_stream():
+    k = settlement.KNOBS["water_source_position"]
+    pond = set(k.allowed({"water_kind": "pond"}))
+    stream = set(k.allowed({"water_kind": "stream"}))
+    assert pond == {"corner_NW", "corner_NE", "corner_SW", "corner_SE", "mid_margin", "chain"}
+    assert stream == {"edge_N", "edge_E", "edge_S", "edge_W"}
+
+
+def test_cluster_shape_split_needs_room():
+    k = settlement.KNOBS["cluster_shape"]
+    assert "split" not in k.allowed({"scale": "hamlet"})
+    assert "split" in k.allowed({"scale": "village"})
+
+
+def test_plot_regularity_grid_needs_planned_field():
+    k = settlement.KNOBS["plot_regularity"]
+    assert k.allowed({"field_origin": "organic"}) == ["organic"]  # old organically-grown field: no grid
+    assert set(k.allowed({"field_origin": "planned"})) == {"organic", "grid"}
+
+
+def test_family_a_roll_always_satisfies_typing_rule():
+    # a pond-fed, organically-grown valley village (Kikuta/Hoshigaoka geography): every rolled knob value
+    # is historically coherent for that context, across many seeds
+    ctx = {"water_kind": "pond", "field_origin": "organic", "scale": "village"}
+    for name in ("cluster_position", "cluster_shape", "lane_skeleton", "water_source_position", "plot_size", "plot_regularity", "grain_drift"):
+        k = settlement.KNOBS[name]
+        for seed in range(25):
+            v = k.roll(seed, ctx)
+            assert k.typing_rule(v, ctx)
+            assert v != "waterside" and not str(v).startswith("edge_") and v != "grid"
+
+
+def test_grain_drift_value_space():
+    assert settlement.KNOBS["grain_drift"].value_space == [-12, -8, -4, 0, 4, 8, 12]
+
+
+# ---- lane_skeleton knob: DERIVED headman/shrine placement (feature 005, US1) --------------------
+
+
+def test_skeleton_layout_derives_distinct_headman_positions_per_skeleton():
+    # the whole point: the headman position is DERIVED from the skeleton, so different skeletons put it in
+    # different places (this is what stops two same-water villages from sharing a headman position)
+    cx, cy, ex, ey = 400, 700, 120, 210
+    hp = {k: settlement.skeleton_layout(k, cx, cy, ex, ey)["headman"] for k in settlement.LANE_SKELETONS}
+    assert len(set(hp.values())) == len(hp)  # every skeleton's headman is a distinct point
+    assert hp["spine"][1] < cy  # spine: at the high head (above centre)
+    assert hp["cross"] != (cx, cy) and settlement.skeleton_layout("cross", cx, cy, ex, ey)["market"] == (cx, cy)  # headman beside the market node
+    assert hp["T"][1] < cy and hp["Y"][1] > cy  # T junction is upper, Y fork is lower
+    assert hp["waterside"][0] < cx  # waterside: fronting the water flank (west of centre)
+
+
+def test_skeleton_layout_gateway_is_downslope_and_market_only_for_cross():
+    for k in settlement.LANE_SKELETONS:
+        lay = settlement.skeleton_layout(k, 400, 700, 120, 210)
+        if k == "waterside":
+            assert lay["gateway"][1] > 700  # foot of the waterside lane
+        else:
+            assert lay["gateway"] == (400, 910)  # downslope foot of the cluster
+        assert ("market" in lay) == (k == "cross")  # only a cross yields a market node
+
+
+def test_skeleton_layout_rejects_unknown_kind():
+    import pytest
+
+    with pytest.raises(ValueError):
+        settlement.skeleton_layout("spiral", 0, 0, 10, 10)
+
+
+def test_lane_skeleton_method_draws_lanes_and_records_axis():
+    s = Settlement(1200, 1400, seed=3)
+    s.meta(name="Sk", scale="village")
+    before = len(s.M.get("lanes", []))  # 'lanes' is created lazily on the first lane() call
+    lay = s.lane_skeleton("T", 400, 700, 120, 210)
+    assert s.M["meta"]["lane_skeleton"] == "T"  # recorded for the twin-detector
+    assert len(s.M["lanes"]) == before + 2  # a T lays two lanes (spine + crossbar)
+    assert lay["headman"] == (400, 700 - 210 * 0.4)  # derived focal point returned
+
+
+def test_crescent_pond_records_footprint_focal_feature_and_keepout():
+    s = Settlement(1200, 1400, seed=3)
+    s.meta(name="Cp", scale="village")
+    ne_before = len(s.ellipses)
+    s.crescent_pond(400, 900, 50, facing_deg=270)
+    cp = s.M["crescent_ponds"]
+    assert len(cp) == 1 and cp[0]["r"] == 50 and len(cp[0]["poly"]) == 27  # n+1 boundary points
+    assert s.M["meta"]["focal_features"] == ["crescent_pond"]  # recorded as a focal feature
+    assert len(s.ellipses) == ne_before + 1  # a placement keep-out was reserved
+    # the half-disk bulges AWAY from the village (flat edge faces up/N): its lowest point is well below cy
+    assert max(p[1] for p in cp[0]["poly"]) > 900
+    # calling again does not duplicate the focal-feature tag (the "already present" branch)
+    s.crescent_pond(600, 900, 40, facing_deg=90)
+    assert s.M["meta"]["focal_features"] == ["crescent_pond"]
+    assert len(s.M["crescent_ponds"]) == 2
+
+
+def test_mill_draws_records_and_reserves():
+    s = Settlement(1200, 1400, seed=3)
+    s.meta(name="Mill", scale="village")
+    np_before = len(s.placed)
+    n_svg = len(s.out)
+    s.mill(500, 600, wheel_side="E")
+    assert len(s.M["mills"]) == 1 and s.M["mills"][0]["x"] == 500
+    assert s.M["meta"]["focal_features"] == ["mill"]  # recorded via note_focal
+    assert len(s.placed) == np_before + 1  # reserved in open ground
+    assert len(s.out) > n_svg  # drew the house + waterwheel
+    # the other wheel sides resolve too (the direction lookup)
+    for side in ("W", "N", "S"):
+        s.mill(700, 600, wheel_side=side)
+    assert len(s.M["mills"]) == 4
+
+
+def test_note_focal_is_idempotent_per_kind():
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="F", scale="village")
+    s.note_focal("ancestral_hall")
+    s.note_focal("ancestral_hall")  # idempotent
+    s.note_focal("secondary_shrine")
+    assert s.M["meta"]["focal_features"] == ["ancestral_hall", "secondary_shrine"]
+
+
+# ---- cluster_shape knob: shape-aware seed generation (feature 005, US1) -------------------------
+
+
+def test_cluster_seeds_shapes_generate_and_record():
+    import random as _r
+
+    s = Settlement(1400, 1400, seed=1)
+    s.meta(name="Cs", scale="village")
+    for shape in ("round", "elongated", "crescent", "split"):
+        pts = s.cluster_seeds(shape, 500, 700, 150, 220, 60, _r.Random(4))
+        assert len(pts) == 60
+        assert s.M["meta"]["cluster_shape"] == shape
+
+    # elongated is taller than wide (stretched along the margin); round is broader across
+    rnd = s.cluster_seeds("round", 500, 700, 150, 220, 200, _r.Random(9))
+    elo = s.cluster_seeds("elongated", 500, 700, 150, 220, 200, _r.Random(9))
+    rw = max(p[0] for p in rnd) - min(p[0] for p in rnd)
+    ew = max(p[0] for p in elo) - min(p[0] for p in elo)
+    assert ew < rw  # elongated is narrower across the margin
+
+    # split forms two lateral lobes -> the x-distribution is bimodal (few points near the centre line)
+    spl = s.cluster_seeds("split", 500, 700, 150, 220, 300, _r.Random(9))
+    near_centre = sum(1 for p in spl if abs(p[0] - 500) < 30)
+    assert near_centre < 0.15 * len(spl)  # a gap between the two sub-hamlets
+
+
+def test_cluster_seeds_record_false_and_bad_shape():
+    import random as _r
+
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="Cs2", scale="village")
+    s.cluster_seeds("round", 500, 500, 100, 100, 5, _r.Random(1), record=False)
+    assert "cluster_shape" not in s.M["meta"]  # record=False leaves meta untouched
+    with pytest.raises(ValueError):
+        s.cluster_seeds("spiral", 500, 500, 100, 100, 5, _r.Random(1))
+
+
+def test_line_seeds_strings_along_the_line_and_records_form():
+    import random as _r
+
+    s = Settlement(1400, 1400, seed=1)
+    s.meta(name="Ln", scale="village")
+    pts = s.line_seeds((400, 400), (400, 1000), 80, 40, _r.Random(3))
+    assert len(pts) == 80
+    assert s.M["meta"]["settlement_form"] == "linear"  # recorded (a twin-detector axis)
+    assert all(abs(p[0] - 400) <= 40 + 1e-9 for p in pts)  # a vertical line: x stays within the band
+    assert max(p[1] for p in pts) - min(p[1] for p in pts) > 400  # strung along the length
+    # record=False leaves meta untouched
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.meta(name="L2", scale="village")
+    s2.line_seeds((0, 0), (100, 0), 5, 10, _r.Random(1), record=False)
+    assert "settlement_form" not in s2.M["meta"]
+
+
+def test_scatter_seeds_spreads_over_area_and_records_dispersed():
+    import random as _r
+
+    s = Settlement(1400, 1400, seed=1)
+    s.meta(name="Sc", scale="village")
+    pts = s.scatter_seeds(600, 600, 200, 300, 150, _r.Random(5))
+    assert len(pts) == 150
+    assert s.M["meta"]["settlement_form"] == "dispersed"  # recorded (a twin-detector axis)
+    assert all(((p[0] - 600) / 200) ** 2 + ((p[1] - 600) / 300) ** 2 <= 1.0 + 1e-6 for p in pts)  # within the ellipse
+    # an even (area-uniform) scatter fills the ellipse, not clumped at the centre
+    assert sum(1 for p in pts if math.hypot(p[0] - 600, p[1] - 600) > 150) > 30
+    # record=False leaves meta untouched
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.meta(name="S2", scale="village")
+    s2.scatter_seeds(500, 500, 100, 100, 5, _r.Random(1), record=False)
+    assert "settlement_form" not in s2.M["meta"]

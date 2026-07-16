@@ -150,6 +150,7 @@
   <!-- y = 450 to y = 750                                             -->
   <!-- ============================================================ -->
   <text x="600" y="471" text-anchor="middle" font-size="13" font-weight="bold" fill="#5C4830" letter-spacing="2">OUTER COURT</text>
+  <text x="486" y="712" text-anchor="middle" font-size="10" font-style="italic" fill="#7A6A4A">forecourt</text>
 
   <!-- Stables (SW corner) - 32x22 ft, a ~3-stall umaya for the magistrate's and
        messengers' few mounts; deliberately kept SMALLER than the barracks (a

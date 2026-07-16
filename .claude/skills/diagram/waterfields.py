@@ -224,6 +224,7 @@ def build_comb(
     bean_frac: float = 0.28,
     field_fall: float | None = None,
     furrow_spread: float = 1.1,
+    grain_drift: float = 0.0,
 ) -> dict[str, Any]:
     """The COMB layout (the historical default - Kishu school / Chinese canal doctrine):
     the sluice's head-race forks at one division point into TWO supply canals hugging the
@@ -469,7 +470,7 @@ def build_comb(
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
     # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md.
-    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, furrow_spread=furrow_spread)
+    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, furrow_spread=furrow_spread, grain_drift=grain_drift)
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac)
     # furrows_vary tells the checker whether to REQUIRE neighbouring dry plots to differ in row direction: a
@@ -751,6 +752,7 @@ def _dry_fields(
     plot: float = 46,
     band: tuple[float, float] = (70, 132),
     furrow_spread: float = 1.1,
+    grain_drift: float = 0.0,
 ) -> list[dict[str, Any]]:
     """DRY FIELDS (hatake) on the UPSLOPE margin the irrigation cannot command - the band just ABOVE the
     supply canal. Grain and pulses (barley/wheat, millet, buckwheat, field soy) in an irregular PATCHWORK of
@@ -768,7 +770,7 @@ def _dry_fields(
     FURROWS run along the CONTOUR (perpendicular to the fall), the traditional ridge-along-contour that dams
     rain and checks runoff - so the furrow direction is the contour heading, varied per plot; `theta` per plot."""
     plots = []
-    theta0 = math.atan2(F.c[1], F.c[0])  # contour heading (ridges follow it)
+    theta0 = math.atan2(F.c[1], F.c[0]) + math.radians(grain_drift)  # contour heading (ridges follow it), drifted off the fall-line by the grain_drift knob (feature 005)
 
     def blocked(x: float, y: float) -> bool:
         return any((x - cx) ** 2 + (y - cy) ** 2 < rr * rr for (cx, cy, rr) in keepout)

@@ -15,6 +15,7 @@ here. Those declarations are echoed into manifest["meta"] so the validator can
 adapt its checks per village instead of assuming one village's specifics.
 """
 
+import hashlib
 import json
 import math
 import os
@@ -22,7 +23,7 @@ import random
 import shutil
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any, cast
 
 Pt = tuple[float, float]  # an (x, y) point in map pixels
@@ -224,10 +225,182 @@ def winding(start: Pt, end: Pt, amp: float = 15, n: int = 2) -> Poly:
     return pts
 
 
+# ---- Knob engine (feature 005): historically-typed, seed-rolled layout variation ---------------
+# A "knob" is one named degree of village-layout variation - where the cluster sits, the lane
+# skeleton, the water-source position, the plot texture, the focal-feature set. A village spec MAY
+# pin any knob; every unpinned knob is resolved by an INDEPENDENT deterministic roll off the map
+# seed, filtered by the knob's historical-typing rule so a value invalid for the stated geography (or
+# conflicting with an already-resolved knob) is never drawn. Resolution order per knob (data-model.md):
+# pinned -> rolled -> default. This is the shared MACHINERY; the actual Family-A knob catalogue is
+# registered in the US1 pass. Grounding for WHY independent-per-knob (not preset bundles): research.md
+# D3 - independent knobs give the widest variety and make "pin one, roll the rest" natural, while the
+# per-knob typing rules (not a bundle) keep combinations historically coherent.
+
+TypingRule = Callable[[Any, Mapping[str, Any]], bool]
+
+
+def _always_typed(value: Any, context: Mapping[str, Any]) -> bool:
+    """Default typing rule: every value is allowed (a knob with no geographic constraint)."""
+    return True
+
+
+def knob_rng(seed: int, knob_name: str) -> random.Random:
+    """A per-knob INDEPENDENT, deterministic RNG. Derives a stable sub-seed from (map seed, knob
+    name) with SHA-256 - Python's built-in hash() is salted per process (PYTHONHASHSEED), so it
+    cannot give cross-run determinism - so each knob draws independently of the others and a given
+    (seed, knob) pair always yields the same draw. Returns its OWN Random instance and never disturbs
+    the global random state the generators seed positionally."""
+    digest = hashlib.sha256(f"{seed}\x00{knob_name}".encode()).digest()
+    return random.Random(int.from_bytes(digest[:8], "big"))
+
+
+class Knob:
+    """One named degree of village-layout variation: a discrete value_space, a default, and a
+    typing_rule(value, context) predicate that excludes values historically invalid for the stated
+    geography / already-resolved knobs. `roll` draws deterministically and independently from the
+    typing-filtered space."""
+
+    def __init__(self, name: str, value_space: Sequence[Any], default: Any, typing_rule: TypingRule | None = None) -> None:
+        self.name = name
+        self.value_space: list[Any] = list(value_space)
+        self.default = default
+        self.typing_rule: TypingRule = typing_rule if typing_rule is not None else _always_typed
+
+    def allowed(self, context: Mapping[str, Any]) -> list[Any]:
+        """value_space filtered to the values whose typing_rule holds in this context."""
+        return [v for v in self.value_space if self.typing_rule(v, context)]
+
+    def roll(self, seed: int, context: Mapping[str, Any]) -> Any:
+        """A deterministic, independent draw from the typing-filtered value space. An empty filtered
+        space is a spec error (loud), never a silent fallback (contract C2)."""
+        pool = self.allowed(context)
+        if not pool:
+            raise ValueError(f"knob {self.name!r}: no value in {self.value_space} satisfies its typing rule for context {dict(context)!r}")
+        return pool[knob_rng(seed, self.name).randrange(len(pool))]
+
+
+KNOBS: dict[str, Knob] = {}
+
+
+def register_knob(knob: Knob) -> Knob:
+    """Register a knob in the global catalogue (last registration per name wins). Returns the knob so
+    a module can write `X = register_knob(Knob(...))`."""
+    KNOBS[knob.name] = knob
+    return knob
+
+
+def resolve_knob(name: str, seed: int, context: Mapping[str, Any], pinned: Mapping[str, Any], *, do_roll: bool = True) -> Any:
+    """Resolve one registered knob. Order (data-model.md): pinned -> rolled -> default. A pinned value
+    that is not in the value_space, or that violates the typing_rule, is a loud error - never silently
+    drawn (contract C3). With do_roll=False an unpinned knob falls straight to its default (a map that
+    opts out of rolling this knob)."""
+    knob = KNOBS[name]
+    if pinned.get(name) is not None:
+        val = pinned[name]
+        if val not in knob.value_space:
+            raise ValueError(f"knob {name!r}: pinned value {val!r} is not in its value space {knob.value_space}")
+        if not knob.typing_rule(val, context):
+            raise ValueError(f"knob {name!r}: pinned value {val!r} violates its typing rule for context {dict(context)!r}")
+        return val
+    if do_roll:
+        return knob.roll(seed, context)
+    return knob.default
+
+
+# ---- Family-A knob catalogue (feature 005, US1): the within-archetype layout knobs --------------
+# Registered at import so a spec can pin or roll them. Value spaces + typing rules follow data-model.md
+# D2 / research.md D2 (China-first). Each typing rule reads the village's stated geography from the
+# resolution `context` (water_kind, field_origin, scale, ...) and excludes values that would be
+# historically incoherent there, so an INDEPENDENT per-knob roll still lands on a coherent village.
+
+
+def _lane_skeleton_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """A 'waterside' lane skeleton needs water running ALONG the cluster (a stream/canal beside it), not
+    merely a valley-head pond uphill - so it is allowed only for a stream-fed village or one that
+    explicitly declares a waterside/canal site."""
+    if v == "waterside":
+        return ctx.get("water_kind") == "stream" or bool(ctx.get("waterside_site"))
+    return True
+
+
+def _water_source_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """Stream 'edge_*' entry points need a stream source; the pond positions (corner/mid_margin/chain)
+    need a pond. Gravity feed (source uphill of the field intake) is a PLACEMENT concern enforced when
+    the source is drawn, not a value exclusion here."""
+    if v.startswith("edge_"):
+        return ctx.get("water_kind") == "stream"
+    return ctx.get("water_kind") != "stream"
+
+
+def _cluster_shape_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """A 'split' cluster needs room for two hamlets to read separately - a village/town, not a hamlet."""
+    return v != "split" or ctx.get("scale") in ("village", "town")
+
+
+def _plot_regularity_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """A rectilinear 'grid' bund pattern implies a planned/surveyed field (a reclamation or allotment
+    context), not an organically-grown old one - so it is excluded unless the field origin is planned."""
+    return v != "grid" or ctx.get("field_origin") == "planned"
+
+
+register_knob(Knob("cluster_position", ["high_margin", "flank", "mid_margin", "valley_mouth", "valley_head", "on_rise"], default="high_margin"))
+register_knob(Knob("cluster_shape", ["round", "elongated", "crescent", "split"], default="round", typing_rule=_cluster_shape_ok))
+register_knob(Knob("lane_skeleton", ["spine", "T", "Y", "cross", "waterside"], default="spine", typing_rule=_lane_skeleton_ok))
+register_knob(
+    Knob(
+        "water_source_position",
+        ["corner_NW", "corner_NE", "corner_SW", "corner_SE", "mid_margin", "chain", "edge_N", "edge_E", "edge_S", "edge_W"],
+        default="corner_NW",
+        typing_rule=_water_source_ok,
+    )
+)
+register_knob(Knob("plot_size", ["small_irregular", "medium", "large_block", "strip"], default="medium"))
+register_knob(Knob("plot_regularity", ["organic", "grid"], default="organic", typing_rule=_plot_regularity_ok))
+register_knob(Knob("grain_drift", [-12, -8, -4, 0, 4, 8, 12], default=0))  # degrees of paddy-grain drift off the fall-line
+
+
+LANE_SKELETONS = ("spine", "T", "Y", "cross", "waterside")
+
+
+def skeleton_layout(kind: str, cx: float, cy: float, ex: float, ey: float) -> dict[str, Any]:
+    """Pure geometry for a nucleated cluster's internal lane skeleton. Given the cluster centre (cx, cy)
+    and its half-extents (ex horizontal, ey vertical, in px), returns the lane polylines plus the two
+    DERIVED focal points a village reads by: the headman compound (the grandest house, at the skeleton's
+    prime spot) and the gateway (the downslope exit where the connector track leaves and the tutelary
+    shrine sits). Screen frame: -y = upslope/back (the high, dry 背 side), +y = downslope toward the
+    field; +x = toward the field flank. The headman lands at a DIFFERENT spot per skeleton (never a fixed
+    offset), which is the whole point - it is why two same-water villages stop sharing a headman position.
+    Grounding (research.md D2): a nucleated village's lanes followed its site - a spine along a ridge, a T
+    where a spur met the field track, a Y where two approaches merged, a cross at a small market node, a
+    waterside lane in a stream village - and the headman sat at that skeleton's focal point, not a pixel."""
+    top, bot = cy - ey, cy + ey
+    if kind == "spine":  # one lane along the margin; headman at the high HEAD, gateway at the low foot
+        lanes = [[(cx, top), (cx, bot)]]
+        return {"kind": kind, "lanes": lanes, "headman": (cx, top + ey * 0.12), "gateway": (cx, bot)}
+    if kind == "T":  # spine + an upper crossbar toward the field; headman at the T-junction
+        cj = cy - ey * 0.4
+        lanes = [[(cx, top), (cx, bot)], [(cx - ex, cj), (cx + ex, cj)]]
+        return {"kind": kind, "lanes": lanes, "headman": (cx, cj), "gateway": (cx, bot)}
+    if kind == "Y":  # two approaches merging into one downslope stem; headman at the fork
+        fy = cy + ey * 0.2
+        lanes = [[(cx - ex * 0.7, top), (cx, fy)], [(cx + ex * 0.7, top), (cx, fy)], [(cx, fy), (cx, bot)]]
+        return {"kind": kind, "lanes": lanes, "headman": (cx, fy), "gateway": (cx, bot)}
+    if kind == "cross":  # two crossing lanes at a small market node; headman in an adjacent quadrant
+        lanes = [[(cx, top), (cx, bot)], [(cx - ex, cy), (cx + ex, cy)]]
+        return {"kind": kind, "lanes": lanes, "headman": (cx - ex * 0.4, cy - ey * 0.22), "gateway": (cx, bot), "market": (cx, cy)}
+    if kind == "waterside":  # a lane hugging the water flank; headman fronting the water
+        lanes = [[(cx - ex, top), (cx - ex, bot)]]
+        return {"kind": kind, "lanes": lanes, "headman": (cx - ex, cy), "gateway": (cx - ex, bot)}
+    raise ValueError(f"unknown lane_skeleton {kind!r}; expected one of {LANE_SKELETONS}")
+
+
 class Settlement:
     def __init__(self, W: int = 1820, H: int = 1180, seed: int = 23) -> None:
         random.seed(seed)
         self.W, self.H = W, H
+        self.seed = seed  # drives every unpinned knob's independent deterministic roll (feature 005)
+        self.knob_pins: dict[str, Any] = {}  # knobs the spec pinned explicitly (bypass the roll)
+        self._resolved_knobs: dict[str, Any] = {}  # knobs resolved so far, fed into later knobs' typing context
         self.out: list[str] = []
         self.top: list[str] = []  # deferred TOP layer (gate furniture, torii, kido) - over roads/buildings
         self.toplabels: list[str] = []  # deferred LABEL layer - the very last thing drawn, so TEXT is never
@@ -420,6 +593,26 @@ class Settlement:
             if kw.get("scale", self.M["meta"].get("scale")) != "village":
                 self.bscale = 1.0 / self.ftpx
         self.M["meta"].update(kw)
+
+    def pin_knob(self, name: str, value: Any) -> None:
+        """Pin a knob to an explicit value, bypassing the roll. The pin is still validated against the
+        knob's value_space + typing_rule when `resolve` is called (an invalid pin is a loud error)."""
+        self.knob_pins[name] = value
+
+    def knob_context(self) -> dict[str, Any]:
+        """The geography/other-knob context a typing_rule reads: the map meta (scale, down_deg, region,
+        water-source kind, ...) plus every knob resolved so far, so a later knob's rule can depend on an
+        earlier resolved one."""
+        ctx = dict(self.M["meta"])
+        ctx.update(self._resolved_knobs)
+        return ctx
+
+    def resolve(self, name: str, do_roll: bool = True) -> Any:
+        """Resolve a knob (pinned -> rolled -> default) against the running context, record it so later
+        knobs' typing rules can read it, and return the value."""
+        val = resolve_knob(name, self.seed, self.knob_context(), self.knob_pins, do_roll=do_roll)
+        self._resolved_knobs[name] = val
+        return val
 
     def px(self, ft: float) -> float:
         """A real-world size in FEET -> drawn pixels at this map's declared scale (meta ftpx)."""
@@ -972,6 +1165,66 @@ class Settlement:
         )
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
+
+    def crescent_pond(self, cx: float, cy: float, r: float, facing_deg: float = 270.0) -> None:
+        """A fengshui CRESCENT / half-moon pond (半月塘), a focal feature of Huizhou / Hakka single-lineage
+        villages (feature 005): a half-disk of water IN FRONT of the cluster - drainage + fire water + the
+        fengshui "gathering of qi" - its flat diameter facing the houses and the arc bulging away, DISTINCT
+        from the irrigation pond. `facing_deg` is the screen direction the FLAT edge faces (toward the
+        village); default 270 = up / N. Draws through the shared water block (so it composites cleanly),
+        records the footprint + the `crescent_pond` focal feature on the manifest, and reserves a placement
+        keep-out - so call it BEFORE `farmsteads()` and the cluster packs around it."""
+        fa = math.radians(facing_deg)
+        fx, fy = math.cos(fa), math.sin(fa)  # unit vector toward the village (the flat side)
+        perp = (-fy, fx)  # along the flat diameter
+        n = 26
+        pts = []
+        for i in range(n + 1):
+            t = math.pi * i / n  # sweep the arc across the diameter, bulging AWAY from the village
+            px = cx + r * (math.cos(t) * perp[0] - math.sin(t) * fx)
+            py = cy + r * (math.cos(t) * perp[1] - math.sin(t) * fy)
+            pts.append((round(px, 1), round(py, 1)))
+        poly = " ".join(f"{x},{y}" for x, y in pts)
+        self._water(
+            f'<polygon points="{poly}" fill="#9CB4C8"/>',
+            {},
+            sheen=f'<polygon points="{poly}" fill="none" stroke="#B6CAD8" stroke-width="1" opacity="0.6"/>',
+            edge=f'<polygon points="{poly}" fill="none" stroke="#5C7488" stroke-width="2.4"/>',
+            pond_fill=True,
+        )
+        self.M.setdefault("crescent_ponds", []).append({"cx": cx, "cy": cy, "r": r, "facing": facing_deg, "poly": [[x, y] for x, y in pts]})
+        self.note_focal("crescent_pond")
+        # keep-out over the bulge half-disk (its centroid sits ~0.42r off centre, away from the village)
+        self.ellipses.append((cx - fx * r * 0.45, cy - fy * r * 0.45, r * 0.95, r * 0.95))
+
+    def note_focal(self, kind: str) -> None:
+        """Record an optional FOCAL feature (feature 005 catalogue) on the manifest so the twin-detector reads
+        it as a distinctiveness axis (meta.focal_features). Call it for a focus DRAWN via an existing method -
+        a secondary shrine via `shrine_hall(primary=False)`, an ancestral hall, a market clearing - as well as
+        from the dedicated focal methods (`crescent_pond`, `mill`). Idempotent per kind."""
+        foc = self.M["meta"].setdefault("focal_features", [])
+        if kind not in foc:
+            foc.append(kind)
+
+    def mill(self, x: float, y: float, wheel_side: str = "E", w: float = 30, h: float = 24) -> None:
+        """A water MILL (水磨 / 水車), a focal feature: a small mill house with an undershot WATERWHEEL on its
+        watercourse side, for hulling/grinding. Place it BESIDE a watercourse with fall (a drain outfall or a
+        stream), never on still pond water. `wheel_side` (N/E/S/W) is the side the wheel faces the water. Draws
+        the house + wheel, records the footprint (M['mills']) + the `mill` focal feature, and reserves the
+        footprint as a placement keep-out (call it before `farmsteads()` if the cluster could reach it)."""
+        pw, ph = self.px(w), self.px(h)
+        dx, dy = {"E": (1.0, 0.0), "W": (-1.0, 0.0), "N": (0.0, -1.0), "S": (0.0, 1.0)}[wheel_side]
+        self.add(f'<rect x="{x - pw / 2:.1f}" y="{y - ph / 2:.1f}" width="{pw:.1f}" height="{ph:.1f}" fill="#C9A57A" stroke="#6B4F2A" stroke-width="2" rx="2"/>')
+        self.add(f'<line x1="{x - pw / 2:.1f}" y1="{y:.1f}" x2="{x + pw / 2:.1f}" y2="{y:.1f}" stroke="#6B4F2A" stroke-width="1" opacity="0.6"/>')  # ridge line
+        wx, wy = x + dx * (pw / 2 + self.px(5)), y + dy * (ph / 2 + self.px(5))  # waterwheel centre, on the water side
+        wr = self.px(9)
+        spokes = "".join(
+            f'<line x1="{wx:.1f}" y1="{wy:.1f}" x2="{wx + wr * math.cos(a):.1f}" y2="{wy + wr * math.sin(a):.1f}" stroke="#5A3F1E" stroke-width="1"/>' for a in [i * math.pi / 4 for i in range(8)]
+        )
+        self.add(f'<circle cx="{wx:.1f}" cy="{wy:.1f}" r="{wr:.1f}" fill="none" stroke="#5A3F1E" stroke-width="1.8"/>{spokes}')
+        self.M.setdefault("mills", []).append({"x": round(x, 1), "y": round(y, 1), "w": pw, "h": ph, "rot": 0})
+        self.note_focal("mill")
+        self.placed.append((x, y, pw, ph))
 
     def stream(self, pts: Any, frm: Any = None, to: Any = None, width: float = 9) -> None:
         """A natural watercourse. If frm/to anchors are given (e.g. a forest brook
@@ -4151,6 +4404,88 @@ class Settlement:
         self.M["houses"].append(rec)
         self._pending_farmsteads.append(rec)
         return True
+
+    def lane_skeleton(self, kind: str, cx: float, cy: float, ex: float, ey: float, width: float = 5, clearance: float = 18, worn: bool = True) -> dict[str, Any]:
+        """Lay a nucleated cluster's internal lanes for the given skeleton and record the skeleton kind on
+        the manifest (meta.lane_skeleton, read by the twin-detector). Returns the DERIVED focal points -
+        `headman` (place the headman house there) and `gateway` (the downslope exit; anchor the connector
+        track and the tutelary shrine off it). The lanes lay their no-build corridors BEFORE the houses,
+        so the homesteads front them (same as a hand-placed lane)."""
+        layout = skeleton_layout(kind, cx, cy, ex, ey)
+        for pts in layout["lanes"]:
+            self.lane(pts, width=width, clearance=clearance, worn=worn)
+        self.M["meta"]["lane_skeleton"] = kind
+        return layout
+
+    def cluster_seeds(self, shape: str, cx: float, cy: float, ex: float, ey: float, n: int, rng: random.Random, record: bool = True) -> list[Pt]:
+        """Generate `n` house-seed positions for a nucleated cluster of the given SHAPE (feature 005
+        `cluster_shape` knob), to feed to `try_place` (the bundle solver then hugs each homestead to the field
+        edge). Records `meta.cluster_shape` when `record=True`. Shapes (grounding: research.md D2 - cluster
+        shape followed the available dry ground):
+          - `round`     - a filled ellipse (a knoll): the classic disk.
+          - `elongated` - a long narrow ellipse (a levee / ridge string): stretched along the margin (the ey axis).
+          - `crescent`  - positions hugging a shallow arc (a field-edge crescent), concave toward the field.
+          - `split`     - two sub-hamlets on either flank (two dry patches flanking the arable).
+        Off the flood toe / field-adjacency are enforced downstream by `try_place` (each candidate that is not
+        field-adjacent or lands on a blocker is simply rejected), so this only has to SHAPE the seed cloud."""
+        if shape not in ("round", "elongated", "crescent", "split"):
+            raise ValueError(f"unknown cluster_shape {shape!r}; expected round / elongated / crescent / split")
+        if record:
+            self.M["meta"]["cluster_shape"] = shape
+        out: list[Pt] = []
+        for _ in range(n):
+            a = rng.uniform(0, 2 * math.pi)
+            r = rng.random() ** 0.5
+            if shape == "round":
+                out.append((cx + math.cos(a) * r * ex, cy + math.sin(a) * r * ey))
+            elif shape == "elongated":  # narrow across the margin, long along it
+                out.append((cx + math.cos(a) * r * ex * 0.55, cy + math.sin(a) * r * ey * 1.4))
+            elif shape == "crescent":  # a shallow arc: lateral position t, curved back, jittered in depth
+                t = rng.uniform(-1.0, 1.0)
+                depth = rng.random() ** 0.5
+                bx = cx + t * ex * 1.15 + math.cos(a) * ex * 0.22 * depth
+                by = cy + (t * t - 0.5) * ey * 0.75 + math.sin(a) * ey * 0.28 * depth
+                out.append((bx, by))
+            else:  # split: two sub-disks on the flanks
+                side = -1.0 if rng.random() < 0.5 else 1.0
+                out.append((cx + side * ex * 0.62 + math.cos(a) * r * ex * 0.42, cy + math.sin(a) * r * ey * 0.82))
+        return out
+
+    def line_seeds(self, p0: Pt, p1: Pt, n: int, half_band: float, rng: random.Random, form: str = "linear", record: bool = True) -> list[Pt]:
+        """House seeds strung ALONG a line (feature 005 `settlement_form` = 'linear'): a RIBBON of homesteads
+        fronting a road / field-margin / dike instead of a nucleated blob - historically the cheapest big
+        structural difference between two same-region villages (research.md D5; a levee, a valley-edge track,
+        or a canal bank strings the houses out). Distributes `n` seeds along the segment `p0`->`p1` (uniform
+        along its length) with a perpendicular jitter up to +/-`half_band`; the bundle solver then hugs each
+        homestead to the field edge as usual. Records `meta.settlement_form` when `record=True`."""
+        if record:
+            self.M["meta"]["settlement_form"] = form
+        (x0, y0), (x1, y1) = p0, p1
+        dx, dy = x1 - x0, y1 - y0
+        length = math.hypot(dx, dy) or 1.0
+        px, py = -dy / length, dx / length  # unit perpendicular to the line
+        out: list[Pt] = []
+        for _ in range(n):
+            t = rng.random()
+            b = rng.uniform(-1.0, 1.0) * half_band
+            out.append((x0 + dx * t + px * b, y0 + dy * t + py * b))
+        return out
+
+    def scatter_seeds(self, cx: float, cy: float, rx: float, ry: float, n: int, rng: random.Random, form: str = "dispersed", record: bool = True) -> list[Pt]:
+        """House seeds scattered LOOSELY and evenly over a BROAD area (feature 005 `settlement_form`
+        = 'dispersed'): scattered farmsteads, each its own yashikirin-groved homestead, rather than a tight
+        nucleus - the kainyo / Tonami dispersed-farmstead pattern of the well-watered plains. Area-uniform
+        over the ellipse so the farms spread out; `try_place`'s field-adjacency + no-build blockers then
+        filter them onto the dry margins, leaving them dotted along the field edges instead of clumped.
+        Records `meta.settlement_form`. Pair with `s._nucleated = False` so each farm draws its OWN grove."""
+        if record:
+            self.M["meta"]["settlement_form"] = form
+        out: list[Pt] = []
+        for _ in range(n):
+            a = rng.uniform(0, 2 * math.pi)
+            r = rng.random() ** 0.5  # area-uniform: an even scatter, not centre-clumped
+            out.append((cx + math.cos(a) * r * rx, cy + math.sin(a) * r * ry))
+        return out
 
     def headman(self, x: float, y: float, w: float = 92, h: float = 56) -> Any:
         # `w`, `h` are in FEET (drawn at the map's ftpx, px(92) = 46px at 2 ft/px). A nanushi/shoya house is

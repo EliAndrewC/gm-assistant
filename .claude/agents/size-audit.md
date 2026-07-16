@@ -105,6 +105,18 @@ Paths under `/gm-assistant/.claude/skills/diagram/`:
      right - do NOT recommend shrinking the walls** (that fights the size-audited
      Joge<->Takayama envelope). An in-band plan that still "feels" loose is
      FRAGMENTED, not oversized - the fix is consolidation, not a smaller envelope.
+   - **COMPOSITION (perimeter-hugging + central/perimeter vacancies)** - a jin'ya
+     RINGS its courts: buildings hug the outer walls and back the divider, with the
+     open ground held as a central court-spine (forecourt -> oshirasu -> garden). The
+     report gives a **perimeter-hugging %** (building footprint within ~one building-
+     depth of a wall OR the divider) and tags each vacant rectangle **central** vs
+     **perimeter**. Read them: a HIGH perimeter-hugging % is GOOD, and the big CENTRAL
+     vacancies are the courtyards - KEEP them (do NOT treat central open as a defect;
+     that is the courtyard), but each must be a NAMED court (forecourt/oshirasu/garden/
+     working yard) or the finding is "name it." A **PERIMETER** vacancy is a gap in the
+     wall ring -> tighten/consolidate that edge. A LOW perimeter-hugging % means
+     buildings float mid-court (under-composed) -> pull them to the walls/divider. The
+     rule inverts the naive "avoid empty space": central open good, perimeter gaps bad.
    - **TOP-N VACANT RECTANGLES** - the report lists the several largest empty
      rectangles, not just one (a single-largest metric once let a big secondary
      void hide behind the legitimate forecourt - GM caught it, 2026-07). For EACH,
@@ -159,7 +171,8 @@ PROPORTION / HIERARCHY SWEEP (mandatory - enumerate the ORDERING, not just absol
 
 PACKING / WHITESPACE SWEEP (mandatory - run pack_audit.py, then interpret):
 - coverage: N% of interior -> in jin'ya band ~37-42% / sparse / cramped -> ENVELOPE verdict (keep - and if in-band, state explicitly that shrinking the walls is NOT the fix)
-- top-N vacant rectangles: for EACH, W x H ft at (loc) -> FEATURE with a quantified reason ("warrants ~N ft because <function>": loading apron ~15-20 ft, forecourt sized for assembly) | SLACK (region exceeds what its function warrants, or has no function - consolidate). An unquantified "it's an apron/forecourt" is not acceptable.
+- composition: perimeter-hugging N% (high = buildings ring the walls/divider; low = they float mid-court -> pull them to the edges); count of central vs perimeter vacancies -> central = courtyard (good, must be NAMED); perimeter = ring gap (tighten)
+- top-N vacant rectangles: for EACH, W x H ft [central|perimeter] at (loc) -> CENTRAL courtyard is a FEATURE (keep) but must be a NAMED court + carry a quantified reason ("warrants ~N ft because <function>": loading apron ~15-20 ft, forecourt/oshirasu sized for assembly); PERIMETER vacancy -> ring gap, tighten/consolidate. An unquantified "it's an apron/forecourt" and an UNNAMED central void are both findings.
 - per-region density: name any large tile whose local coverage sits far below the global figure -> locally-sparse pocket (consolidation candidate), even when global coverage is in-band
 - loose gaps: rule each flagged gap -> ABUT/TIGHTEN (two wooden service buildings) | fire-gap OK (kura, <=~10 ft) | FEATURE (forecourt / court / passage)
 - packing verdict: envelope OK + which specific gaps/regions/tiles to consolidate (never "shrink the manor" when coverage is in-band)
