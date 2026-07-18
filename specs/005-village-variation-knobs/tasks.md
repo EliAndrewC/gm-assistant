@@ -124,7 +124,7 @@ description: "Task list for Village Visual Variation Knobs"
 - [x] T030 [US4] Implement the archetype registry (`field_archetype` / `settlement_form` / `land_use_overlay`) + region-typing in `settlement.py`.
 - [x] T031 [P] [US4] Write FAILING tests + negative fixtures for the first archetype's validator rules in `test_checks.py`.
 - [x] T032 [US4] Implement the first archetype's geometry generator (in `waterfields.py`/`settlement.py`) + settlement placement + archetype-specific validator rules (green T031); add a demo `pool/<name>.gen.py`; grounding recorded.
-- [ ] T033 [US4] REPEAT the T029/T031/T032 increment for each subsequent archetype (terraces, polder, ribbon, mulberry-fishpond; linear/water-town/dispersed; rape/lotus/tea overlays) - one at a time, each its own validated round.
+- [x] T033 [US4] REPEAT the T029/T031/T032 increment for each subsequent archetype (terraces, polder, ribbon, mulberry-fishpond; linear/water-town/dispersed; rape/lotus/tea overlays) - one at a time, each its own validated round.
 
 **Checkpoint**: at least one archetype proves the registry; the rest follow incrementally.
 

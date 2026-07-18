@@ -5120,6 +5120,14 @@ def test_polder_field_must_fill_its_bbox():
     assert "polder_fills_its_bbox" in f(fan)
 
 
+def test_ribbon_valley_must_be_long_and_narrow():
+    base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "ribbon_valley"}}
+    thin = {**base, "fields": [{"name": "r", "kind": "paddy", "outline": [[400, 100], [700, 100], [700, 2000], [400, 2000]], "bbox": [400, 100, 700, 2000]}]}  # 300 wide x 1900 long
+    assert "ribbon_is_long_and_narrow" not in f(thin)
+    squat = {**base, "fields": [{"name": "r", "kind": "paddy", "outline": [[100, 100], [1400, 100], [1400, 900], [100, 900]], "bbox": [100, 100, 1400, 900]}]}  # 1300 x 800, too broad
+    assert "ribbon_is_long_and_narrow" in f(squat)
+
+
 def test_mulberry_dike_fishpond_needs_a_block_of_ponds():
     base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}}
     rect_ol = [[100, 100], [900, 100], [900, 1300], [100, 1300]]

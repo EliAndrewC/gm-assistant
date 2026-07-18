@@ -1022,3 +1022,79 @@ def build_polder(
         "furrows_vary": False,
         "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
     }
+
+
+def build_ribbon(
+    W: float,
+    H: float,
+    top: Pt,
+    seed: int,
+    down_deg: float = 90,
+    length: float = 1900,
+    width: float = 300,
+    n_bands: int = 24,
+) -> dict[str, Any]:
+    """RIBBON VALLEY (谷地田 / a narrow valley-floor strip): a long, NARROW paddy strung along a MEANDERING
+    valley floor, the field archetype for a confined valley where the flat ground is only a thin winding
+    ribbon beside the brook. Returns build_comb-compatible keys. China-first grounding (research.md D4): the
+    valley-bottom rice ribbon of hill country - the brook runs down the centre, paddy bands flank it, and the
+    whole strip WANDERS with the valley (the distinguishing read against the broad comb fan or the polder)."""
+    R = random.Random(seed)
+    dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+    ux, uy = dy, -dx
+    hw = width / 2
+    step = length / n_bands
+    amp = width * 0.62  # how far the valley meanders laterally
+    wl = length / 2.4  # meander wavelength
+    ph = R.uniform(0, 2 * math.pi)
+
+    def cline(s: float) -> float:  # lateral offset of the valley centre at downhill s (the meander)
+        return amp * math.sin(ph + s / wl * 2 * math.pi)
+
+    def edge(s: float, side: float) -> Pt:
+        lat = cline(s) + side * hw * (0.9 + 0.2 * math.sin(s / 90.0))
+        return (top[0] + dx * s + ux * lat, top[1] + dy * s + uy * lat)
+
+    plots: list[dict[str, Any]] = []
+    for i in range(n_bands):
+        s0, s1 = i * step, (i + 1) * step
+        quad = [edge(s0, -1), edge(s0, 1), edge(s1, 1), edge(s1, -1)]
+        fill = FLOODED if i >= n_bands - 3 else R.choice(RICE_GREENS)
+        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill})
+    left = [edge(i * step, -1) for i in range(n_bands + 1)]
+    right = [edge(i * step, 1) for i in range(n_bands + 1)]
+    envelope = [*left, *reversed(right), left[0]]
+    # the valley BROOK runs down the meandering centre (the source: a stream, entering at the high end); a drain
+    # continues it off-map at the foot. Supply is the brook itself, so the 'main' ditch traces the centreline.
+    centre = [(top[0] + dx * (i * step) + ux * cline(i * step), top[1] + dy * (i * step) + uy * cline(i * step)) for i in range(n_bands + 1)]
+    flank = [(round(x, 1), round(y, 1)) for x, y in centre[: n_bands // 2 + 1]]  # the upper valley brook is the supply reach; its fork sits mid-valley so the source->field feed anchors INSIDE the ribbon
+    # a short CROSS-SLOPE collector across the ribbon at the foot (perpendicular to the fall), then a downhill
+    # outfall so the brook leaves smoothly (a valley ribbon still gathers its tail-water in a cross drain)
+    foot = centre[-1]
+    drain_pts = [
+        (round(foot[0] - ux * hw * 0.9, 1), round(foot[1] - uy * hw * 0.9, 1)),
+        (round(foot[0], 1), round(foot[1], 1)),
+        (round(foot[0] + ux * hw * 0.9, 1), round(foot[1] + uy * hw * 0.9, 1)),
+    ]
+    drain_pts.append((round(drain_pts[-1][0] + dx * 60, 1), round(drain_pts[-1][1] + dy * 60, 1)))
+    sluice = flank[0]
+    channels = [
+        {"pts": flank, "role": "main", "w": 5.0, "w_tail": 3.0},
+        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+    ]
+    brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    return {
+        "channels": channels,
+        "plots": plots,
+        "threads": [],
+        "drain": drain_pts,
+        "brook": brook,
+        "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
+        "acres": acres,
+        "dry_plots": [],
+        "dry_acres": 0.0,
+        "bund_beans": [],
+        "furrows_vary": False,
+        "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
+    }
