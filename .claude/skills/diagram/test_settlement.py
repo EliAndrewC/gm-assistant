@@ -1920,6 +1920,24 @@ def test_plot_texture_drives_build_comb_grain():
             s.plot_texture(*bad)
 
 
+def test_focal_catalogue_methods_draw_record_and_note():
+    # the rest of the focal catalogue (T020): each draws, records its footprint, and notes the focal feature
+    # so the twin-detector's focal_set axis reads it.
+    s = Settlement(2000, 2000, seed=2)
+    s.meta(name="F", scale="village", ftpx=1)
+    s.ancestral_hall(400, 400)
+    s.water_mouth(700, 700)
+    s.market(1000, 1000)
+    s.secondary_shrine(1300, 500)
+    assert s.M["ancestral_halls"] and s.M["water_mouths"] and s.M["markets"]
+    foc = set(s.M["meta"]["focal_features"])
+    assert {"ancestral_hall", "water_mouth", "market", "secondary_shrine"} <= foc
+    # each reserved a placement keep-out (nothing may later be placed on it)
+    assert not s._fits(400, 400, 40, 30)  # the ancestral hall footprint is blocked
+    # the secondary shrine records as a shrine kind (religious_matches_scale still sees only shrines)
+    assert any(r.get("kind") == "shrine" for r in s.M.get("religious", []) + s.M.get("shrines", []))
+
+
 def test_roll_village_is_deterministic_and_seed_varies_the_combination():
     # US2 (SC-004): the same seed rolls the SAME combination (byte-identical), a different seed rolls a
     # DIFFERENT one, and a rolled map is populated with no hand-placed coordinates.
@@ -1945,6 +1963,33 @@ def test_roll_village_honors_a_pinned_knob():
     s.pin_knob("lane_skeleton", "spine")
     k = s.roll_village("P", households=18, down_deg=90, water_kind="pond", field_fall=1260)
     assert k["cluster_shape"] == "elongated" and k["lane_skeleton"] == "spine"
+
+
+def test_pinned_knob_is_byte_identical_across_regens_and_rejects_incompatible_pins():
+    # US3 (SC-006): a pinned knob is honored identically every regen; a pin outside the value space or one
+    # that violates the geography typing rule is a LOUD error, never silently drawn.
+    def build():
+        s = Settlement(W=2000, H=2600, seed=11)
+        s.meta(name="Pin", scale="village", ftpx=1, toscale=True, households=40, field_footbridges=True)
+        s.pin_knob("cluster_shape", "split")  # split needs a village (typing rule) - legal here
+        s.pin_knob("lane_skeleton", "cross")
+        return s.roll_village("Pin", households=40, down_deg=90, water_kind="pond", field_fall=1400)
+
+    k1 = build()
+    k2 = build()
+    assert k1 == k2 and k1["cluster_shape"] == "split" and k1["lane_skeleton"] == "cross"  # byte-identical, honored
+    # a value outside the knob's space -> loud error
+    s = Settlement(W=1800, H=1800, seed=1)
+    s.meta(name="X", scale="village")
+    s.pin_knob("cluster_shape", "octagon")
+    with pytest.raises(ValueError):
+        s.resolve("cluster_shape")
+    # a value that VIOLATES the geography typing rule (split needs a village/town, not a hamlet) -> loud error
+    s2 = Settlement(W=1800, H=1800, seed=1)
+    s2.meta(name="Y", scale="hamlet")
+    s2.pin_knob("cluster_shape", "split")
+    with pytest.raises(ValueError):
+        s2.resolve("cluster_shape")
 
 
 def test_water_source_anchor_gravity_and_valid_set():

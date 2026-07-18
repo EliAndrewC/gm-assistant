@@ -1240,7 +1240,7 @@ class Settlement:
         self.M["channels"].append(
             {"poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]], "frm": frm, "to": {"kind": "field", "name": name}, "w": 2.5}
         )
-        return net["envelope"]
+        return cast("list[Pt]", net["envelope"])
 
     def _draw_furrows(self, poly: Any, colour: str, theta: float) -> None:
         """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
@@ -1322,6 +1322,66 @@ class Settlement:
         self.M.setdefault("mills", []).append({"x": round(x, 1), "y": round(y, 1), "w": pw, "h": ph, "rot": 0})
         self.note_focal("mill")
         self.placed.append((x, y, pw, ph))
+
+    def _focal_block(self, x: float, y: float, pw: float, ph: float) -> None:
+        """Reserve a focal footprint as a placement keep-out (so a later farmstead can never overlap it)."""
+        self.placed.append((x, y, pw, ph))
+        self.block_polys.append([(x - pw / 2 - 6, y - ph / 2 - 6), (x + pw / 2 + 6, y - ph / 2 - 6), (x + pw / 2 + 6, y + ph / 2 + 6), (x - pw / 2 - 6, y + ph / 2 + 6)])
+
+    def ancestral_hall(self, x: float, y: float, w: float = 110, h: float = 74) -> None:
+        """A lineage ANCESTRAL HALL (祠堂), a focal feature: the grandest civic building of a single-lineage
+        village - broader than any house, a double-eave hall on the auspicious axis fronting the pond/water.
+        Draws the hall, records M['ancestral_halls'] + the focal feature, reserves the footprint. Grounding
+        (research.md D2): the ancestral hall was the ritual + governance centre of a Huizhou/Hakka lineage
+        village, its single most prominent structure - so a village that HAS one reads unmistakably by it."""
+        pw, ph = self.px(w), self.px(h)
+        self.add(f'<rect x="{x - pw / 2:.1f}" y="{y - ph / 2:.1f}" width="{pw:.1f}" height="{ph:.1f}" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2.4" rx="2"/>')
+        self.add(
+            f'<rect x="{x - pw / 2 + self.px(5):.1f}" y="{y - ph / 2 + self.px(5):.1f}" width="{pw - self.px(10):.1f}" height="{ph - self.px(10):.1f}" fill="none" stroke="#6B4F2A" stroke-width="1.2"/>'
+        )  # inner eave
+        self.add(f'<rect x="{x - self.px(9):.1f}" y="{y + ph / 2 - self.px(4):.1f}" width="{self.px(18):.1f}" height="{self.px(6):.1f}" fill="#5A3F1E"/>')  # entry porch on the water side
+        self.M.setdefault("ancestral_halls", []).append({"x": round(x, 1), "y": round(y, 1), "w": pw, "h": ph, "rot": 0})
+        self.note_focal("ancestral_hall")
+        self._focal_block(x, y, pw, ph)
+
+    def water_mouth(self, x: float, y: float, r: float = 22) -> None:
+        """A fengshui WATER-MOUTH complex (水口), a focal feature: the guarded outlet where the village stream
+        leaves, marked by a small hexagonal pavilion (and, per the gen, a screening grove) to 'lock in' the qi
+        of the departing water. Draws the pavilion, records M['water_mouths'] + the focal feature. Grounding:
+        the shuikou was a standard focal ensemble of south-China lineage villages, sited at the stream exit."""
+        pr = self.px(r)
+        pts = " ".join(f"{x + pr * math.cos(a):.1f},{y + pr * math.sin(a):.1f}" for a in [math.pi / 6 + i * math.pi / 3 for i in range(6)])
+        self.add(f'<polygon points="{pts}" fill="#C9876C" stroke="#6B2A18" stroke-width="2" stroke-linejoin="round"/>')
+        self.add(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{pr * 0.42:.1f}" fill="none" stroke="#6B2A18" stroke-width="1.2"/>')
+        self.M.setdefault("water_mouths", []).append({"x": round(x, 1), "y": round(y, 1), "w": pr * 2, "h": pr * 2, "rot": 0})
+        self.note_focal("water_mouth")
+        self._focal_block(x, y, pr * 2, pr * 2)
+
+    def market(self, x: float, y: float, w: float = 120, h: float = 84) -> None:
+        """A village MARKET clearing (墟/市), a focal feature: an open packed-earth space with a few stalls
+        where a periodic market gathers - a widening in the lane fabric, not a building. Draws the open court +
+        a row of stall marks, records M['markets'] + the focal feature. Grounding: a market node is exactly
+        where a `cross` lane skeleton reads as a market village rather than a plain farming one."""
+        pw, ph = self.px(w), self.px(h)
+        cid = self._cid("mkt")
+        self.add(f'<clipPath id="{cid}"><rect x="{x - pw / 2:.1f}" y="{y - ph / 2:.1f}" width="{pw:.1f}" height="{ph:.1f}" rx="3"/></clipPath>')
+        self.add(f'<rect x="{x - pw / 2:.1f}" y="{y - ph / 2:.1f}" width="{pw:.1f}" height="{ph:.1f}" fill="#D8C7A0" stroke="#9C7A40" stroke-width="1.6" stroke-dasharray="5 4" rx="3"/>')
+        stalls = "".join(
+            f'<rect x="{x - pw / 2 + self.px(10) + i * self.px(22):.1f}" y="{y - self.px(6):.1f}" width="{self.px(14):.1f}" height="{self.px(12):.1f}" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1"/>'
+            for i in range(max(1, int(w / 34)))
+        )
+        self.add(f'<g clip-path="url(#{cid})">{stalls}</g>')
+        self.M.setdefault("markets", []).append({"x": round(x, 1), "y": round(y, 1), "w": pw, "h": ph, "rot": 0})
+        self.note_focal("market")
+        self._focal_block(x, y, pw, ph)
+
+    def secondary_shrine(self, x: float, y: float, w: float = 60, h: float = 42) -> None:
+        """A SECONDARY tutelary/roadside shrine, a focal feature: a small second shrine besides the village's
+        main one (a Benten by the pond, an Inari at a field corner). Records as a 'shrine' kind (so
+        religious_matches_scale still sees only shrines) + the focal feature. Grounding: a village often kept a
+        minor shrine in addition to its tutelary one; its PRESENCE + placement is a distinctiveness axis."""
+        self.shrine(x, y, w, h, kind="shrine")
+        self.note_focal("secondary_shrine")
 
     def stream(self, pts: Any, frm: Any = None, to: Any = None, width: float = 9) -> None:
         """A natural watercourse. If frm/to anchors are given (e.g. a forest brook
