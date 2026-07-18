@@ -1997,6 +1997,44 @@ def test_roll_village_is_deterministic_and_seed_varies_the_combination():
     assert 15 <= len(s7a.M["houses"]) <= 19 and s7a.M["fields"] and s7a.view  # a populated, framed map
 
 
+def test_waterfront_seeds_line_both_banks_of_a_canal():
+    import random as _r
+
+    s = Settlement(1600, 1600, seed=1)
+    s.meta(name="Wt", scale="village")
+    canal = [(200, 200), (200, 1200)]  # a straight N-S canal
+    seeds = s.waterfront_seeds(canal, 20, 60.0, _r.Random(3))
+    assert len(seeds) == 20 and s.M["meta"]["settlement_form"] == "water_town"
+    # seeds sit on BOTH banks (both sides of x=200), offset ~60px
+    xs = [p[0] for p in seeds]
+    assert any(x > 250 for x in xs) and any(x < 150 for x in xs)
+    # record=False leaves meta untouched
+    s2 = Settlement(1600, 1600, seed=1)
+    s2.meta(name="Wt2", scale="village")
+    s2.waterfront_seeds(canal, 6, 60.0, _r.Random(1), record=False)
+    assert "settlement_form" not in s2.M["meta"]
+
+
+def test_settlement_form_water_town_is_lion_gated():
+    # water_town needs a canal, which is a Lion-lands feature per GM canon; the other forms are unrestricted
+    s = Settlement(1200, 1200, seed=1)
+    s.meta(name="Sf", scale="village")
+    for form in ("nucleated", "linear", "dispersed"):
+        s.knob_pins.clear()
+        s._resolved_knobs.clear()
+        s.pin_knob("settlement_form", form)
+        assert s.resolve("settlement_form") == form
+    s.knob_pins.clear()
+    s._resolved_knobs.clear()
+    s.pin_knob("settlement_form", "water_town")
+    with pytest.raises(ValueError):
+        s.resolve("settlement_form")  # no Lion / canal declared
+    lion = Settlement(1200, 1200, seed=1)
+    lion.meta(name="Sl", scale="village", clan="Lion")
+    lion.pin_knob("settlement_form", "water_town")
+    assert lion.resolve("settlement_form") == "water_town"
+
+
 def test_roll_village_stream_fed_with_a_pinned_water_source():
     # exercises the STREAM water path (a brook entering from a canvas edge) and a PINNED water_source_position
     # (edge_N is a legal stream source for a south-falling field). Covers the stream branches in roll_village +
