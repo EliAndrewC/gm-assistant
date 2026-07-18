@@ -6630,6 +6630,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         recs = [r for r in M.get("land_use", []) if r.get("overlay") == lu]
         check("land_use_overlay_drawn", bool(recs) and recs[0].get("count", 0) > 0, f"meta declares land_use_overlay={lu!r} but no plots/rows were drawn with it - call s.apply_land_use()")
 
+    # A contour-TERRACES field (feature 005 US4) must actually read as STEPPED CROSS-SLOPE BANDS: enough terrace
+    # retaining bunds, each running roughly PERPENDICULAR to the fall (a terrace lip follows the contour, across
+    # the slope - a bund that ran downhill would be a channel, not a terrace step). This is the archetype's teeth.
+    if meta.get("field_archetype") == "contour_terraces":
+        bunds = M.get("terrace_bunds", [])
+        dd = meta.get("down_deg", 90)
+        ddx, ddy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+        n_cross = 0
+        for bl in bunds:
+            if len(bl) < 2:
+                continue
+            along = abs((bl[-1][0] - bl[0][0]) * ddx + (bl[-1][1] - bl[0][1]) * ddy)  # span along the fall
+            acrs = abs((bl[-1][0] - bl[0][0]) * -ddy + (bl[-1][1] - bl[0][1]) * ddx)  # span across the fall
+            if acrs > 2.0 * along:  # a genuine n_cross-slope contour bund
+                n_cross += 1
+        check(
+            "contour_terraces_are_stepped_bands",
+            len(bunds) >= 8 and n_cross >= 8,
+            f"a contour_terraces field needs >=8 n_cross-slope terrace bunds (found {len(bunds)} bunds, {n_cross} n_cross-slope) - the defining stepped-band look",
+        )
+
     # SOFT ADVISORY (default-on; a map opts out with meta(crop_advisory=False)): a single feature that could
     # be moved to free a significantly tighter crop. NOT a failure - it never enters `fails` or gates the map;
     # it just prints a hint. (Unlike a hard invariant, e.g. houses-clear-of-moats, this is a default we accept.)
