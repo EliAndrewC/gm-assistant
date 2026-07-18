@@ -6665,6 +6665,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a polder_grid field must FILL its bounding box (a surveyed rectangular block), but its outline covers only {fill_ratio:.0%} of its bbox - that reads as a fan/terraced field, not a polder",
         )
 
+    # A MULBERRY-DIKE FISH-POND field (feature 005 US4, 桑基魚塘) is a filled block whose cells are FISH PONDS
+    # rimmed by mulberry dikes - so it must both fill its bbox (a reclaimed block) AND carry a mulberry_fishpond
+    # land-use over most of it. China-first: the Pearl-delta closed sericulture-aquaculture system.
+    if meta.get("field_archetype") == "mulberry_dike_fishpond" and fields:
+        pf = fields[0]
+        b = pf.get("bbox") or [0, 0, 1, 1]
+        dp_fill = poly_area(pf["outline"]) / max(1.0, (b[2] - b[0]) * (b[3] - b[1]))
+        pond_rec = [r for r in M.get("land_use", []) if r.get("overlay") == "mulberry_fishpond" and r.get("count", 0) >= 20]
+        check(
+            "dikepond_is_ponds_in_a_block",
+            dp_fill >= 0.82 and bool(pond_rec),
+            f"a mulberry_dike_fishpond field must be a filled block ({dp_fill:.0%} of bbox) of many mulberry-rimmed fish ponds (enough pond cells: {bool(pond_rec)}) - the 桑基魚塘 system",
+        )
+
     # SOFT ADVISORY (default-on; a map opts out with meta(crop_advisory=False)): a single feature that could
     # be moved to free a significantly tighter crop. NOT a failure - it never enters `fails` or gates the map;
     # it just prints a hint. (Unlike a hard invariant, e.g. houses-clear-of-moats, this is a default we accept.)
