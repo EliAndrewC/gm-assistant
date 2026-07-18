@@ -118,6 +118,14 @@
   body.addEventListener('dblclick', function(e){ e.preventDefault(); toggleFs(); });
 
   setBg();
+
+  // One-shot handoff: if a same-origin page (e.g. the chargen "Show to players"
+  // button) stashed an image for us, display it once and clear it. Opening the
+  // viewer directly (the standalone use) finds nothing here and starts empty.
+  try {
+    var handoff = localStorage.getItem('l7r_viewer_img');
+    if(handoff){ localStorage.removeItem('l7r_viewer_img'); show(handoff, false); }
+  } catch(e){}
 })();
 </script>
 </body>

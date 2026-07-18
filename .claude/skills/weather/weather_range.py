@@ -94,7 +94,10 @@ tbody tr:nth-child(even) td { background: #faf8f2; }
 tr.rain td { background: #eef4f7 !important; }
 tr.snow td { background: #eceef2 !important; }
 tr.mhead td { background: #e7e0d0; color: #4a4336; font: 600 .9rem Georgia, serif;
-              border-top: 2px solid #cabfa6; letter-spacing: .01em; }
+              border-top: 2px solid #cabfa6; letter-spacing: .01em; cursor: pointer; user-select: none; }
+tr.mhead:hover td { background: #e0d8c4; }
+.chev { display: inline-block; transition: transform .12s ease; margin-right: .35rem; color: #8a7d5f; }
+tr.mhead.collapsed .chev { transform: rotate(-90deg); }
 .hi { font-weight: 600; } .lo { color: #6b6357; }
 .tags { color: #7a5a3a; font-size: .85rem; white-space: normal; min-width: 130px; max-width: 210px; }
 .snowcell { color: #3a4a63; }
@@ -140,6 +143,7 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
     body = []
     cur_month = None
     ncols = len(columns) + 1  # + kebab column
+    nonempty = set()  # columns that have at least one non-empty cell
     for r in rows:
         if r["month"] != cur_month:
             cur_month = r["month"]
@@ -147,7 +151,8 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
             lo = W.to_gregorian(cur_month, 1, rows[0]["greg"].year)
             hi = W.to_gregorian(cur_month, 30, rows[0]["greg"].year)
             label = f"{W.ordinal(cur_month)} Month - {name} ({meaning}), Month of the {zod} - {lo:%b %-d} to {hi:%b %-d}"
-            body.append(f'<tr class="mhead"><td colspan="{ncols}">{esc(label)}</td></tr>')
+            body.append(f'<tr class="mhead" data-month="{cur_month}"><td colspan="{ncols}">'
+                        f'<span class="chev">&#9662;</span>{esc(label)}</td></tr>')
 
         cls = "snow" if r["snow"] else ("rain" if r["precip"] >= W.WET_IN else "")
         cell = {
@@ -172,16 +177,21 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
         tds = []
         for k, _ in columns:
             inner, ccls = cell[k]
+            if inner not in ("-", ""):
+                nonempty.add(k)
             attr = f' class="{ccls}"' if ccls else ""
             tds.append(f'<td data-col="{k}"{attr}>{inner}</td>')
         tds.append('<td class="kebab-col"></td>')
-        body.append(f'<tr class="{cls}">' + "".join(tds) + "</tr>")
+        rowcls = ("drow " + cls).strip()
+        body.append(f'<tr class="{rowcls}" data-month="{r["month"]}">' + "".join(tds) + "</tr>")
 
+    empty_cols = [k for k, _ in columns if k not in nonempty]
+    empty_js = "[" + ", ".join(f'"{k}"' for k in empty_cols) + "]"
     snow_note = "" if has_snow else " No snow fell in this range, so snow columns are omitted."
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(title)}</title><style>{CSS}</style><style id="colhide"></style></head>
+<title>{esc(title)}</title><style>{CSS}</style><style id="colhide"></style><style id="monthhide"></style></head>
 <body><div class="wrap">
 <h1>{esc(title)}</h1>
 <p class="sub"><b>{esc(place['place'])}</b> ({esc(place.get('clan','?'))}) &mdash; real recorded weather for its climate analog, <b>{esc(place['us_analog'])}</b>. {esc(span)}.{snow_note}</p>
@@ -194,22 +204,27 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
 <script>
 (function () {{
   var KEY = "l7r_weather_hidden_cols";
+  var EMPTY = new Set({empty_js});  // columns empty on every row: hidden by default each load, un-hide is ephemeral
   var style = document.getElementById("colhide");
-  function load() {{ try {{ return new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); }} catch (e) {{ return new Set(); }} }}
+  function loadSaved() {{ try {{ return new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); }} catch (e) {{ return new Set(); }} }}
   function save(s) {{ try {{ localStorage.setItem(KEY, JSON.stringify(Array.from(s))); }} catch (e) {{}} }}
-  var hidden = load();
+  var saved = loadSaved();                       // persisted user hides (never includes empty columns)
+  var hidden = new Set(saved);
+  EMPTY.forEach(function (k) {{ hidden.add(k); }});
   function apply() {{
     style.textContent = Array.from(hidden).map(function (k) {{ return '[data-col="' + k + '"]{{display:none}}'; }}).join("");
     document.querySelectorAll("input[data-toggle]").forEach(function (cb) {{ cb.checked = !hidden.has(cb.dataset.toggle); }});
   }}
   document.querySelectorAll("input[data-toggle]").forEach(function (cb) {{
     cb.addEventListener("change", function () {{
-      if (cb.checked) hidden.delete(cb.dataset.toggle); else hidden.add(cb.dataset.toggle);
-      save(hidden); apply();
+      var k = cb.dataset.toggle;
+      if (cb.checked) hidden.delete(k); else hidden.add(k);
+      if (!EMPTY.has(k)) {{ if (cb.checked) saved.delete(k); else saved.add(k); save(saved); }}
+      apply();
     }});
   }});
   var reset = document.getElementById("cols-reset");
-  reset.addEventListener("click", function (e) {{ e.preventDefault(); hidden.clear(); save(hidden); apply(); }});
+  reset.addEventListener("click", function (e) {{ e.preventDefault(); hidden.clear(); saved.clear(); save(saved); apply(); }});
   apply();
 
   var btn = document.getElementById("kebab-btn");
@@ -226,6 +241,24 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
   document.addEventListener("keydown", function (e) {{ if (e.key === "Escape") closeMenu(); }});
   window.addEventListener("scroll", closeMenu, true);
   window.addEventListener("resize", closeMenu);
+
+  var MKEY = "l7r_weather_collapsed_months";
+  var mstyle = document.getElementById("monthhide");
+  function loadC() {{ try {{ return new Set(JSON.parse(localStorage.getItem(MKEY) || "[]")); }} catch (e) {{ return new Set(); }} }}
+  function saveC(s) {{ try {{ localStorage.setItem(MKEY, JSON.stringify(Array.from(s))); }} catch (e) {{}} }}
+  var collapsed = loadC();
+  function applyMonths() {{
+    mstyle.textContent = Array.from(collapsed).map(function (m) {{ return 'tr.drow[data-month="' + m + '"]{{display:none}}'; }}).join("");
+    document.querySelectorAll("tr.mhead").forEach(function (tr) {{ tr.classList.toggle("collapsed", collapsed.has(tr.dataset.month)); }});
+  }}
+  document.querySelectorAll("tr.mhead").forEach(function (tr) {{
+    tr.addEventListener("click", function () {{
+      var m = tr.dataset.month;
+      if (collapsed.has(m)) collapsed.delete(m); else collapsed.add(m);
+      saveC(collapsed); applyMonths();
+    }});
+  }});
+  applyMonths();
 }})();
 </script>
 </body></html>"""

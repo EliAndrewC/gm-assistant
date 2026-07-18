@@ -42,6 +42,7 @@
     var dom = {};
     var currentCharacter = null;
     var currentImageData = null;
+    var lastUploadedArtUrl = null;
     var cropper = null;
     // Tagify state: whitelist is the campaign-wide tag pool fetched on page
     // load; tagify is the live widget instance (recreated each generation
@@ -50,7 +51,7 @@
     var tagify = null;
 
     $(function () {
-        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit', 'synthesize', 'synthesis_section', 'synthesis_notes', 'synthesis_loading', 'synthesis_result', 'synthesis_text', 'synthesis_copy', 'synthesis_copied', 'synthesis_context'], function (i, s) {
+        $.each(['rank_select', 'rank_toggle', 'rank_menu', 'type', 'generate', 'upload', 'upload_bottom', 'fields', 'clan', 'family', 'house', 'lineage', 'location', 'order', 'art_section', 'art_prompt', 'generate_art', 'art_result', 'art_image', 'show_players', 'art_loading', 'headshot_preview', 'cropper_container', 'upload_result', 'upload_result_name', 'upload_result_view', 'upload_result_edit', 'show_players_uploaded', 'synthesize', 'synthesis_section', 'synthesis_notes', 'synthesis_loading', 'synthesis_result', 'synthesis_text', 'synthesis_copy', 'synthesis_copied', 'synthesis_context'], function (i, s) {
             dom['$' + s] = $('#' + s);
         });
         // The two Upload buttons (top of form + next to Generate Art) act as
@@ -516,6 +517,21 @@
             setTimeout(function () { dom.$synthesis_copied.hide(); }, 1500);
         });
 
+        // Stash the current portrait for the standalone viewer (same origin) and
+        // open it in a new tab, already showing just the art - no name, no filename.
+        dom.$show_players.on('click', function () {
+            try { localStorage.setItem('l7r_viewer_img', dom.$art_image.attr('src')); } catch (e) {}
+            window.open('/viewer', '_blank');
+        });
+
+        // Same handoff, from the post-upload result panel (uses the art that was
+        // actually uploaded for this character, so it survives the panel reset).
+        dom.$show_players_uploaded.on('click', function () {
+            if (!lastUploadedArtUrl) return;
+            try { localStorage.setItem('l7r_viewer_img', lastUploadedArtUrl); } catch (e) {}
+            window.open('/viewer', '_blank');
+        });
+
         dom.$generate_art.on('click', function () {
             var prompt = dom.$art_prompt.val();
             dom.$generate_art.prop('disabled', true);
@@ -632,6 +648,9 @@
                     dom.$upload_result_name.text(params.name);
                     dom.$upload_result_view.attr('href', resp.view_url);
                     dom.$upload_result_edit.attr('href', resp.edit_url);
+                    // Offer "Show art to players" only when this character was uploaded with art.
+                    lastUploadedArtUrl = params.image_data ? ('data:image/png;base64,' + params.image_data) : null;
+                    if (lastUploadedArtUrl) { dom.$show_players_uploaded.show(); } else { dom.$show_players_uploaded.hide(); }
                     dom.$upload_result.show();
                     // Pull focus so a keyboard user lands somewhere meaningful.
                     dom.$upload_result_view.focus();
@@ -761,6 +780,10 @@
           </div>
           <br/>
           <small>Adjust the crop box to select the headshot region for the avatar. If you don't like the image, edit the prompt above and click Generate Art again.</small>
+          <div style="margin-top: 12px;">
+              <button id="show_players" type="button" class="chargen-button">Show to players</button>
+              <small style="margin-left: 8px; color: #666;">Opens the viewer in a new tab showing just this portrait - no name, no filename.</small>
+          </div>
       </div>
   </div>
 
@@ -770,6 +793,7 @@
     <div class="upload-result__links">
       <a id="upload_result_view" class="chargen-button" target="_blank" rel="noopener">View on Obsidian Portal</a>
       <a id="upload_result_edit" class="chargen-button" target="_blank" rel="noopener">Edit on Obsidian Portal</a>
+      <button type="button" id="show_players_uploaded" class="chargen-button" style="display: none;">Show art to players</button>
     </div>
     <p class="upload-result__hint">Click <strong>Generate</strong> above to start another character.</p>
   </div>

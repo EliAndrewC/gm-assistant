@@ -5,7 +5,7 @@ description: Generate Rokugani dream-omen scenes - randomized d10 dream tables f
 
 # Dreams
 
-Generate dream-omen scenes for the table: the set of tables a GM rolls on when one or more PCs sleep seeking guidance, usually beseeching a single fortune (but other spirits can send dreams too - ancestors, nature kami, the restless dead, gaki, Shadowlands things). The output is not a story; it is a rolling apparatus plus a bank of fragments. The players roll, the GM reads a band and picks a fragment, and the group must then interpret an ambiguous aggregate to discern the god's will. They really can learn it - but imperfectly, through noise and guesswork, never as a clean answer.
+Generate dream-omen scenes for the table: the set of tables a GM rolls on when one or more PCs sleep seeking guidance, usually beseeching a single fortune (but other spirits can send dreams too - ancestors, nature kami, the restless dead, gaki, Shadowlands things). The output is not a story; it is a rolling apparatus plus a bank of fragments. The players roll, the GM reads a band and picks a fragment, and the group must then interpret an ambiguous aggregate to discern the god's will. They really can learn it - but imperfectly, through noise and guesswork, never as a clean answer. A sleeper never poses a specific question; they open themselves to the god's **general guidance** on the matter, and the god answers, if at all, with the direction of its will - not a reply to a query.
 
 This skill exists because a scene we ran (PCs sleeping in a Temple of Ebisu to divine the Fortune of honest work's will about sheltering a fugitive) worked well, and the shape of it generalizes. What follows is that shape, plus the hard-won craft rules for writing the fragments.
 
@@ -213,7 +213,7 @@ Rules:
 
 - **Never auto-promote local to public.** Promotion is an explicit GM decision, made after the plot has resolved or with a scene deliberately built to be spoiler-free. Silent promotion would expose players.
 - **Obsidian Portal on request only.** OP is player-visible; publish a dream page (public body plus GM-only tables, as with the "Ebisu dreams" page) only when the GM asks, and keep the tables in the GM-only section.
-- The live **Ebisu dreams** scene is a spoiler for an ongoing case; it stays out of `pool/` and belongs in `pool-local/` after a conforming pass (its OP page keeps the original fixed 1-2 / 3-4 bands for historical reference; a `pool-local/` copy should be re-cut to the randomized-band standard here).
+- The **Ebisu dreams** scene (`pool-local/ebisu-dreams-shiro-reiji.md`) is the worked example of this skill and a spoiler for an ongoing case, so it lives in `pool-local/`, conformed to the randomized-band standard. Its OP page keeps the original fixed 1-2 / 3-4 band numbering for historical reference.
 
 ## Historical grounding and design rationale (why these rules)
 
