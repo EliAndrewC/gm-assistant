@@ -68,9 +68,9 @@ description: "Task list for Village Visual Variation Knobs"
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Implement `cluster_position` + `cluster_shape` knobs (round / elongated / crescent / split-into-2-hamlets), field-adjacent + off the flood toe, in `settlement.py` (green T015).
+- [x] T016 [US1] Implement `cluster_position` + `cluster_shape` knobs (round / elongated / crescent / split-into-2-hamlets), field-adjacent + off the flood toe, in `settlement.py` (green T015).
 - [x] T017 [US1] Implement the `lane_skeleton` knob (spine / T / Y / cross / waterside) + DERIVED headman & primary-shrine placement in `settlement.py` (green T014).
-- [ ] T018 [US1] Implement the `water_source_position` knob (pond corner / mid-margin / chain; stream entry edge), keeping the source uphill of the field intake, in `settlement.py` + `waterfields.py`.
+- [x] T018 [US1] Implement the `water_source_position` knob (pond corner / mid-margin / chain; stream entry edge), keeping the source uphill of the field intake, in `settlement.py` + `waterfields.py`.
 - [x] T019 [US1] Implement the `plot_texture` (size + organic/grid regularity) + `grain_drift` knobs in `waterfields.py` (resolves the "uniform 45deg grain" residual).
 - [x] T020 [US1] Implement the focal-feature catalogue placement (crescent pond, ancestral hall, water-mouth complex, mill, market, secondary shrine) in `settlement.py`, each placed by the existing overlap/set-back invariants and recorded in the manifest.
 - [x] T021 [US1] Implement the pool-level twin-detector in `check_village.py` (SC-001 axis discretization + >= 4-of-7 threshold), tuned against the re-varied pool (green T013).
@@ -94,8 +94,8 @@ description: "Task list for Village Visual Variation Knobs"
 
 **Independent Test**: generate several minimal specs differing only in seed; each rolls a different coherent knob combination, all pass the gate, none reads as a copy.
 
-- [ ] T025 [P] [US2] FAILING test: a minimal spec generates a gate-passing map with zero hand-placed coordinates (SC-004); two seeds roll different combinations, in `test_settlement.py`.
-- [ ] T026 [US2] Implement the minimal-spec entrypoint (roll every unpinned knob) + add a demo minimal `pool/<name>.gen.py`; `check_village` green (green T025).
+- [x] T025 [P] [US2] FAILING test: a minimal spec generates a gate-passing map with zero hand-placed coordinates (SC-004); two seeds roll different combinations, in `test_settlement.py`.
+- [x] T026 [US2] Implement the minimal-spec entrypoint (roll every unpinned knob) + add a demo minimal `pool/<name>.gen.py`; `check_village` green (green T025).
 
 **Checkpoint**: US1 + US2 both work.
 
@@ -107,8 +107,8 @@ description: "Task list for Village Visual Variation Knobs"
 
 **Independent Test**: pin one knob and leave others unset -> pinned value honored, deterministic across regenerations; pin an incompatible value -> rejected/warned, not drawn.
 
-- [ ] T027 [P] [US3] FAILING test: a pinned knob is honored + byte-identical across two regenerations (SC-006); a historically-incompatible pin is rejected/warned, in `test_settlement.py`.
-- [ ] T028 [US3] Implement pin-honoring determinism + incompatible-pin rejection/warning in `settlement.py` (green T027).
+- [x] T027 [P] [US3] FAILING test: a pinned knob is honored + byte-identical across two regenerations (SC-006); a historically-incompatible pin is rejected/warned, in `test_settlement.py`.
+- [x] T028 [US3] Implement pin-honoring determinism + incompatible-pin rejection/warning in `settlement.py` (green T027).
 
 **Checkpoint**: US1 + US2 + US3 all work; knobs are a superset of hand-authoring.
 
@@ -120,11 +120,11 @@ description: "Task list for Village Visual Variation Knobs"
 
 **Independent Test**: a map built with a non-default archetype passes a gate that includes the archetype's rules; its grounding is recorded.
 
-- [ ] T029 [P] [US4] Research + record the China-first grounding for the FIRST archetype (recommended: linear settlement form OR contour terraces - biggest bang) in `research.md` + `settlements.md`.
-- [ ] T030 [US4] Implement the archetype registry (`field_archetype` / `settlement_form` / `land_use_overlay`) + region-typing in `settlement.py`.
-- [ ] T031 [P] [US4] Write FAILING tests + negative fixtures for the first archetype's validator rules in `test_checks.py`.
-- [ ] T032 [US4] Implement the first archetype's geometry generator (in `waterfields.py`/`settlement.py`) + settlement placement + archetype-specific validator rules (green T031); add a demo `pool/<name>.gen.py`; grounding recorded.
-- [ ] T033 [US4] REPEAT the T029/T031/T032 increment for each subsequent archetype (terraces, polder, ribbon, mulberry-fishpond; linear/water-town/dispersed; rape/lotus/tea overlays) - one at a time, each its own validated round.
+- [x] T029 [P] [US4] Research + record the China-first grounding for the FIRST archetype (recommended: linear settlement form OR contour terraces - biggest bang) in `research.md` + `settlements.md`.
+- [x] T030 [US4] Implement the archetype registry (`field_archetype` / `settlement_form` / `land_use_overlay`) + region-typing in `settlement.py`.
+- [x] T031 [P] [US4] Write FAILING tests + negative fixtures for the first archetype's validator rules in `test_checks.py`.
+- [x] T032 [US4] Implement the first archetype's geometry generator (in `waterfields.py`/`settlement.py`) + settlement placement + archetype-specific validator rules (green T031); add a demo `pool/<name>.gen.py`; grounding recorded.
+- [x] T033 [US4] REPEAT the T029/T031/T032 increment for each subsequent archetype (terraces, polder, ribbon, mulberry-fishpond; linear/water-town/dispersed; rape/lotus/tea overlays) - one at a time, each its own validated round.
 
 **Checkpoint**: at least one archetype proves the registry; the rest follow incrementally.
 
@@ -132,10 +132,10 @@ description: "Task list for Village Visual Variation Knobs"
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T034 [P] Document the full knob surface + roll-vs-pin in `SKILL.md` and update the settlements.md map roster.
-- [ ] T035 [P] Save negative-fixture regressions to `pool/regressions/` for the twin-detector + each new check (coverage alone does not prove teeth).
-- [ ] T036 Run the full gate: `make done` (ruff + format + mypy --strict + pytest 100% cov) green; `check_village` on all six maps; twin-detector reports zero twinned pairs; render-review Kikuta + Hoshigaoka (SC-001..SC-006).
-- [ ] T037 Verify 100% of shipped knob values have recorded grounding in `settlements.md` (SC-005); run `quickstart.md` walkthrough end-to-end.
+- [x] T034 [P] Document the full knob surface + roll-vs-pin in `SKILL.md` and update the settlements.md map roster.
+- [x] T035 [P] Save negative-fixture regressions to `pool/regressions/` for the twin-detector + each new check (coverage alone does not prove teeth).
+- [x] T036 Run the full gate: `make done` (ruff + format + mypy --strict + pytest 100% cov) green; `check_village` on all six maps; twin-detector reports zero twinned pairs; render-review Kikuta + Hoshigaoka (SC-001..SC-006).
+- [x] T037 Verify 100% of shipped knob values have recorded grounding in `settlements.md` (SC-005); run `quickstart.md` walkthrough end-to-end.
 
 ---
 

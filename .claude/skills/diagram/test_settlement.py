@@ -1859,6 +1859,256 @@ def test_cluster_seeds_shapes_generate_and_record():
     assert near_centre < 0.15 * len(spl)  # a gap between the two sub-hamlets
 
 
+def test_cluster_anchor_places_each_position_on_the_right_dry_margin():
+    # cluster_position resolves against the field bbox + down_deg into an anchor off the paddy. Check each
+    # value lands on the expected side of the field centre relative to the fall (down_deg=90 -> downhill = +y).
+    import math as m
+
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="Ca", scale="village")
+    fb = (600.0, 400.0, 1400.0, 1200.0)  # a field, centre (1000, 800)
+    fcx, fcy = 1000.0, 800.0
+    dd = 90.0
+    dx, dy = m.cos(m.radians(dd)), m.sin(m.radians(dd))  # (0, 1)
+    ux, uy = -dy, dx  # (-1, 0)
+
+    def along(pos):  # signed along-slope offset of the anchor (>0 = downhill of centre)
+        cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
+        return (cx - fcx) * dx + (cy - fcy) * dy
+
+    def lateral(pos):
+        cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
+        return (cx - fcx) * ux + (cy - fcy) * uy
+
+    assert along("high_margin") < -400 and abs(lateral("high_margin")) < 30  # uphill, centred
+    assert along("valley_head") < -400 and lateral("valley_head") != lateral("mid_margin")  # both high, opposite flanks
+    assert along("mid_margin") < -400
+    assert abs(lateral("flank")) > 400 and abs(along("flank")) < 30  # off to a cross-slope side
+    assert along("valley_mouth") > 0 and abs(lateral("valley_mouth")) > 400  # low end, but on the dry shoulder
+    assert along("on_rise") < -300  # a high-corner knoll
+    # the anchor centre sits OFF the paddy footprint (never inside the field bbox) for the margin positions
+    for pos in ("high_margin", "valley_head", "mid_margin", "flank", "valley_mouth"):
+        cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
+        assert not (fb[0] < cx < fb[2] and fb[1] < cy < fb[3])
+    # extents are positive and the lateral (along-margin) axis is the broader one for a top margin (runs E-W)
+    _cx, _cy, ex, ey = s.cluster_anchor("high_margin", fb, dd)
+    assert ex > ey > 0
+    with pytest.raises(ValueError):
+        s.cluster_anchor("nowhere", fb, dd)
+
+
+def test_plot_texture_drives_build_comb_grain():
+    from waterfields import build_comb
+
+    s = Settlement(2000, 2800, seed=1)
+    s.meta(name="Pt", scale="village")
+    # small_irregular vs large_block must produce visibly different plot counts on the SAME field
+    a_small, step_small = s.plot_texture("small_irregular", "organic")
+    a_large, _step_large = s.plot_texture("large_block", "organic")
+    assert a_small < a_large  # smaller plot_across = smaller paddies
+    net_small = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=(), plot_across=a_small, row_step=step_small)
+    net_large = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=(), plot_across=a_large)
+    assert len(net_small["plots"]) > len(net_large["plots"])  # small paddies -> more plots
+    # grid tightens the row-step spread vs organic
+    _a, org = s.plot_texture("medium", "organic")
+    _a2, grid = s.plot_texture("medium", "grid")
+    assert (grid[1] - grid[0]) < (org[1] - org[0])
+    # the knobs are recorded
+    assert s.M["meta"]["plot_size"] == "medium" and s.M["meta"]["plot_regularity"] == "grid"
+    for bad in (("huge", "organic"), ("medium", "checkerboard")):
+        with pytest.raises(ValueError):
+            s.plot_texture(*bad)
+
+
+def test_land_use_overlay_draws_and_records_each_kind():
+    from waterfields import build_comb
+
+    net = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=())
+    for overlay in ("mulberry_fishpond", "rape", "lotus", "tea_fringe"):
+        s = Settlement(2000, 2800, seed=3)
+        s.meta(name="LU", scale="village", ftpx=1, down_deg=90)
+        n = s.apply_land_use(net, overlay, __import__("random").Random(1))
+        assert n > 0 and s.M["meta"]["land_use_overlay"] == overlay and s.out
+        assert s.M["land_use"][-1] == {"overlay": overlay, "count": n}
+    # "none" records zero and draws nothing extra
+    s0 = Settlement(2000, 2800, seed=3)
+    s0.meta(name="LU0", scale="village", ftpx=1, down_deg=90)
+    assert s0.apply_land_use(net, "none", __import__("random").Random(1)) == 0
+    with pytest.raises(ValueError):
+        s0.apply_land_use(net, "quinoa", __import__("random").Random(1))
+
+
+def test_archetype_knob_typing_rules():
+    # field_archetype + land_use_overlay honor terrain typing (research.md D4)
+    s = Settlement(1800, 1800, seed=1)
+    s.meta(name="A", scale="village")
+    # with no declared terrain, only valley_paddy is a coherent field archetype; a hill archetype pin is rejected
+    s.pin_knob("field_archetype", "contour_terraces")
+    with pytest.raises(ValueError):
+        s.resolve("field_archetype")
+    s2 = Settlement(1800, 1800, seed=1)
+    s2.meta(name="A2", scale="village", terrain="hill")
+    s2.pin_knob("field_archetype", "contour_terraces")
+    assert s2.resolve("field_archetype") == "contour_terraces"  # hill terrain -> terraces allowed
+    # tea_fringe overlay needs hill/terrace ground; lotus is fine anywhere
+    s3 = Settlement(1800, 1800, seed=1)
+    s3.meta(name="A3", scale="village")
+    s3.pin_knob("land_use_overlay", "tea_fringe")
+    with pytest.raises(ValueError):
+        s3.resolve("land_use_overlay")
+    s3.knob_pins.clear()
+    s3._resolved_knobs.clear()
+    s3.pin_knob("land_use_overlay", "lotus")
+    assert s3.resolve("land_use_overlay") == "lotus"
+
+
+def test_focal_catalogue_methods_draw_record_and_note():
+    # the rest of the focal catalogue (T020): each draws, records its footprint, and notes the focal feature
+    # so the twin-detector's focal_set axis reads it.
+    s = Settlement(2000, 2000, seed=2)
+    s.meta(name="F", scale="village", ftpx=1)
+    s.ancestral_hall(400, 400)
+    s.water_mouth(700, 700)
+    s.market(1000, 1000)
+    s.secondary_shrine(1300, 500)
+    assert s.M["ancestral_halls"] and s.M["water_mouths"] and s.M["markets"]
+    foc = set(s.M["meta"]["focal_features"])
+    assert {"ancestral_hall", "water_mouth", "market", "secondary_shrine"} <= foc
+    # each reserved a placement keep-out (nothing may later be placed on it)
+    assert not s._fits(400, 400, 40, 30)  # the ancestral hall footprint is blocked
+    # the secondary shrine records as a shrine kind (religious_matches_scale still sees only shrines)
+    assert any(r.get("kind") == "shrine" for r in s.M.get("religious", []) + s.M.get("shrines", []))
+
+
+def test_roll_village_is_deterministic_and_seed_varies_the_combination():
+    # US2 (SC-004): the same seed rolls the SAME combination (byte-identical), a different seed rolls a
+    # DIFFERENT one, and a rolled map is populated with no hand-placed coordinates.
+    def roll(seed):
+        s = Settlement(W=2000, H=2600, seed=seed)
+        s.meta(name="R", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+        return s, s.roll_village("R", households=18, down_deg=90, water_kind="pond", field_fall=1260)
+
+    s7a, k7a = roll(7)
+    _s7b, k7b = roll(7)
+    assert k7a == k7b  # same seed -> identical roll
+    _s8, k8 = roll(8)
+    combo = ("cluster_position", "cluster_shape", "lane_skeleton", "water_source_position")
+    assert tuple(k7a[c] for c in combo) != tuple(k8[c] for c in combo)  # different seeds -> different combination
+    assert 15 <= len(s7a.M["houses"]) <= 19 and s7a.M["fields"] and s7a.view  # a populated, framed map
+
+
+def test_waterfront_seeds_line_both_banks_of_a_canal():
+    import random as _r
+
+    s = Settlement(1600, 1600, seed=1)
+    s.meta(name="Wt", scale="village")
+    canal = [(200, 200), (200, 700), (500, 1200)]  # a BENT canal (2 segments) so later seeds fall past the first
+    seeds = s.waterfront_seeds(canal, 20, 60.0, _r.Random(3))
+    assert len(seeds) == 20 and s.M["meta"]["settlement_form"] == "water_town"
+    # seeds sit on BOTH banks (both sides of x=200), offset ~60px
+    xs = [p[0] for p in seeds]
+    assert any(x > 250 for x in xs) and any(x < 150 for x in xs)
+    # record=False leaves meta untouched
+    s2 = Settlement(1600, 1600, seed=1)
+    s2.meta(name="Wt2", scale="village")
+    s2.waterfront_seeds(canal, 6, 60.0, _r.Random(1), record=False)
+    assert "settlement_form" not in s2.M["meta"]
+
+
+def test_settlement_form_water_town_is_lion_gated():
+    # water_town needs a canal, which is a Lion-lands feature per GM canon; the other forms are unrestricted
+    s = Settlement(1200, 1200, seed=1)
+    s.meta(name="Sf", scale="village")
+    for form in ("nucleated", "linear", "dispersed"):
+        s.knob_pins.clear()
+        s._resolved_knobs.clear()
+        s.pin_knob("settlement_form", form)
+        assert s.resolve("settlement_form") == form
+    s.knob_pins.clear()
+    s._resolved_knobs.clear()
+    s.pin_knob("settlement_form", "water_town")
+    with pytest.raises(ValueError):
+        s.resolve("settlement_form")  # no Lion / canal declared
+    lion = Settlement(1200, 1200, seed=1)
+    lion.meta(name="Sl", scale="village", clan="Lion")
+    lion.pin_knob("settlement_form", "water_town")
+    assert lion.resolve("settlement_form") == "water_town"
+
+
+def test_roll_village_stream_fed_with_a_pinned_water_source():
+    # exercises the STREAM water path (a brook entering from a canvas edge) and a PINNED water_source_position
+    # (edge_N is a legal stream source for a south-falling field). Covers the stream branches in roll_village +
+    # draw_comb_field that the pond-fed demos do not.
+    s = Settlement(W=2000, H=2600, seed=7)
+    s.meta(name="Sr", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+    s.pin_knob("water_source_position", "edge_N")
+    k = s.roll_village("Sr", households=18, down_deg=90, water_kind="stream", field_fall=1260)
+    assert k["water_source_position"] == "edge_N" and s.M["meta"]["water_kind"] == "stream"
+    assert s.M["houses"] and any(st for st in s.M["streams"])  # a stream source was drawn
+
+
+def test_roll_village_honors_a_pinned_knob():
+    # a pinned knob overrides the roll (US3 determinism surface, exercised through the roll entrypoint)
+    s = Settlement(W=2000, H=2600, seed=7)
+    s.meta(name="P", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+    s.pin_knob("cluster_shape", "elongated")
+    s.pin_knob("lane_skeleton", "spine")
+    k = s.roll_village("P", households=18, down_deg=90, water_kind="pond", field_fall=1260)
+    assert k["cluster_shape"] == "elongated" and k["lane_skeleton"] == "spine"
+
+
+def test_pinned_knob_is_byte_identical_across_regens_and_rejects_incompatible_pins():
+    # US3 (SC-006): a pinned knob is honored identically every regen; a pin outside the value space or one
+    # that violates the geography typing rule is a LOUD error, never silently drawn.
+    def build():
+        s = Settlement(W=2000, H=2600, seed=11)
+        s.meta(name="Pin", scale="village", ftpx=1, toscale=True, households=40, field_footbridges=True)
+        s.pin_knob("cluster_shape", "split")  # split needs a village (typing rule) - legal here
+        s.pin_knob("lane_skeleton", "cross")
+        return s.roll_village("Pin", households=40, down_deg=90, water_kind="pond", field_fall=1400)
+
+    k1 = build()
+    k2 = build()
+    assert k1 == k2 and k1["cluster_shape"] == "split" and k1["lane_skeleton"] == "cross"  # byte-identical, honored
+    # a value outside the knob's space -> loud error
+    s = Settlement(W=1800, H=1800, seed=1)
+    s.meta(name="X", scale="village")
+    s.pin_knob("cluster_shape", "octagon")
+    with pytest.raises(ValueError):
+        s.resolve("cluster_shape")
+    # a value that VIOLATES the geography typing rule (split needs a village/town, not a hamlet) -> loud error
+    s2 = Settlement(W=1800, H=1800, seed=1)
+    s2.meta(name="Y", scale="hamlet")
+    s2.pin_knob("cluster_shape", "split")
+    with pytest.raises(ValueError):
+        s2.resolve("cluster_shape")
+
+
+def test_water_source_anchor_gravity_and_valid_set():
+    # water_source_position resolves to a sluice/entry point on the field's UPHILL margin; a downhill source
+    # is rejected (gravity), and water_sources_for lists only the feedable set for a given fall + water kind.
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="Ws", scale="village")
+    fb = (600.0, 400.0, 1400.0, 1200.0)  # centre (1000, 800); down_deg 90 -> downhill = +y (S)
+    # an uphill (N) pond corner is fine and sits above the field
+    sx, sy = s.water_source_anchor("corner_NW", fb, 90.0)
+    assert sy < 400  # north of the field's top edge
+    assert s.water_source_anchor("mid_margin", fb, 90.0)[1] < 400  # the uphill margin
+    # a downhill (S) corner cannot gravity-feed a south-falling field -> rejected
+    with pytest.raises(ValueError):
+        s.water_source_anchor("corner_SW", fb, 90.0)
+    with pytest.raises(ValueError):
+        s.water_source_anchor("edge_S", fb, 90.0)
+    with pytest.raises(ValueError):
+        s.water_source_anchor("bogus", fb, 90.0)
+    # the gravity-valid sets: ponds exclude the two south corners for a south fall; streams keep the non-S edges
+    ponds = s.water_sources_for(90.0, "pond")
+    assert "corner_NW" in ponds and "corner_NE" in ponds and "mid_margin" in ponds
+    assert "corner_SW" not in ponds and "corner_SE" not in ponds
+    streams = s.water_sources_for(90.0, "stream")
+    assert set(streams) == {"edge_N", "edge_E", "edge_W"}  # not edge_S (downhill)
+
+
 def test_cluster_seeds_record_false_and_bad_shape():
     import random as _r
 
