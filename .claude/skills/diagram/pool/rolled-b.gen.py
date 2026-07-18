@@ -21,6 +21,7 @@ SEED = 8
 
 s = Settlement(W=W, H=H, seed=SEED)
 s.meta(name="Rolled-B", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+s.pin_knob("land_use_overlay", "mulberry_fishpond")  # PINNED to showcase the land-use overlay (US4); the rest still rolls
 knobs = s.roll_village("Rolled-B", households=18, down_deg=90, water_kind="pond", field_fall=1260)
 print("rolled:", knobs)
 print(s.finish(os.path.join(HERE, "rolled-b")))

@@ -343,6 +343,30 @@ def _plot_regularity_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     return v != "grid" or ctx.get("field_origin") == "planned"
 
 
+def _field_archetype_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """The FIELD terrain archetype must match the village's stated terrain (research.md D4, China-first):
+    contour_terraces need HILL/upland ground; polder_grid needs LOW reclaimed/coastal-delta ground; a
+    ribbon_valley needs a narrow valley floor; a mulberry_dike_fishpond is the Pearl-delta low-wet system.
+    valley_paddy (the comb default) fits any ordinary valley-bottom terrain. Terrain is read from
+    `ctx['terrain']` when the spec declares it; absent a declaration, only valley_paddy is coherent."""
+    terrain = ctx.get("terrain")
+    need = {"valley_paddy": None, "contour_terraces": "hill", "polder_grid": "low", "ribbon_valley": "narrow_valley", "mulberry_dike_fishpond": "low"}
+    req = need.get(v)
+    return req is None or terrain == req
+
+
+def _land_use_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """A LAND-USE overlay must suit the setting: mulberry_fishpond + lotus + rape are wet/valley crops fine on
+    ordinary paddy land; a tea_fringe needs some hill/terrace margin (`ctx['terrain']` hill, or a terrace
+    archetype) to sit on. 'none' (plain rice) is always valid. (research.md D4: the sericulture dike-pond, the
+    rape-blossom rotation, the lotus-in-paddy, and the hill-fringe tea garden are the documented overlays.)"""
+    if v in ("none", "mulberry_fishpond", "rape", "lotus"):
+        return True
+    return ctx.get("terrain") == "hill" or ctx.get("field_archetype") == "contour_terraces"  # tea_fringe
+
+
+register_knob(Knob("field_archetype", ["valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley", "mulberry_dike_fishpond"], default="valley_paddy", typing_rule=_field_archetype_ok))
+register_knob(Knob("land_use_overlay", ["none", "mulberry_fishpond", "rape", "lotus", "tea_fringe"], default="none", typing_rule=_land_use_ok))
 register_knob(Knob("cluster_position", ["high_margin", "flank", "mid_margin", "valley_mouth", "valley_head", "on_rise"], default="high_margin"))
 register_knob(Knob("cluster_shape", ["round", "elongated", "crescent", "split"], default="round", typing_rule=_cluster_shape_ok))
 register_knob(Knob("lane_skeleton", ["spine", "T", "Y", "cross", "waterside"], default="spine", typing_rule=_lane_skeleton_ok))
@@ -1241,6 +1265,52 @@ class Settlement:
             {"poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]], "frm": frm, "to": {"kind": "field", "name": name}, "w": 2.5}
         )
         return cast("list[Pt]", net["envelope"])
+
+    def apply_land_use(self, net: dict[str, Any], overlay: str, rng: random.Random, fraction: float = 0.32) -> int:
+        """Overlay a LAND-USE archetype (feature 005 US4 `land_use_overlay`) onto an already-drawn comb field:
+        recolour a FRACTION of the paddy plots (or, for tea, a hill-margin fringe) as the overlay crop, so a
+        village growing mulberry-and-fishpond, rape, lotus, or hill-tea reads distinctly from a plain-rice one.
+        Records M['land_use'] + meta.land_use_overlay. Returns the number of plots/rows overlaid.
+        Grounding (research.md D4, China-first): the mulberry-dike fish-pond (桑基魚塘, the Pearl-delta closed
+        sericulture-aquaculture system), the rape-blossom (油菜) winter rotation on paddy, lotus-in-paddy (藕田),
+        and the hill-fringe tea garden (茶) are the documented south-China land-use overlays on rice ground."""
+        if overlay not in ("none", "mulberry_fishpond", "rape", "lotus", "tea_fringe"):
+            raise ValueError(f"unknown land_use_overlay {overlay!r}")
+        self.M["meta"]["land_use_overlay"] = overlay
+        if overlay == "none":
+            self.M.setdefault("land_use", []).append({"overlay": "none", "count": 0})
+            return 0
+        plots = list(net["plots"])
+        n = 0
+        if overlay == "tea_fringe":  # tea BUSH rows along the field's dry HIGH margin (not plot-based)
+            for dp in net["dry_plots"]:
+                pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in dp["poly"])
+                cid = self._cid("tea")
+                self.add(f'<clipPath id="{cid}"><polygon points="{pts}"/></clipPath>')
+                xs = [p[0] for p in dp["poly"]]
+                ys = [p[1] for p in dp["poly"]]
+                rows = "".join(
+                    f'<line x1="{min(xs):.1f}" y1="{y:.1f}" x2="{max(xs):.1f}" y2="{y:.1f}" stroke="#5C7A3E" stroke-width="2.4" opacity="0.75"/>'
+                    for y in [min(ys) + 6 + i * 8 for i in range(int((max(ys) - min(ys)) / 8))]
+                )
+                self.add(f'<g clip-path="url(#{cid})">{rows}</g>')
+                n += 1
+            self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n})
+            return n
+        colours = {"mulberry_fishpond": "#93B7AC", "rape": "#E4CE55", "lotus": "#8FA9A0"}
+        take = max(2, int(len(plots) * fraction))
+        for p in rng.sample(plots, min(take, len(plots))):
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+            self.add(f'<polygon points="{pts}" fill="{colours[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
+            cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
+            cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
+            if overlay == "mulberry_fishpond":  # a green mulberry DIKE rim around the fish pond
+                self.add(f'<polygon points="{pts}" fill="none" stroke="#6E8B4A" stroke-width="3" stroke-linejoin="round" opacity="0.8"/>')
+            elif overlay == "lotus":  # a few lily pads / blooms
+                self.add("".join(f'<circle cx="{cx + rng.uniform(-14, 14):.1f}" cy="{cy + rng.uniform(-10, 10):.1f}" r="{rng.uniform(2.5, 4):.1f}" fill="#C98BA6" opacity="0.85"/>' for _ in range(3)))
+            n += 1
+        self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n})
+        return n
 
     def _draw_furrows(self, poly: Any, colour: str, theta: float) -> None:
         """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
@@ -4910,6 +4980,10 @@ class Settlement:
         else:
             source = {"kind": "stream", "stream": [(sluice[0] - dx * 380, sluice[1] - dy * 380), (sluice[0], sluice[1])]}
         self.draw_comb_field(net, name + "-paddies", source)
+        # roll the ARCHETYPE knobs: field_archetype (only valley_paddy is geometrically implemented, so a roll
+        # with no declared terrain lands there by typing) + a land-use OVERLAY drawn over the fresh paddy
+        self.M["meta"]["field_archetype"] = self.resolve("field_archetype")
+        self.apply_land_use(net, self.resolve("land_use_overlay"), random.Random((self.seed ^ 0x1A7D) & 0xFFFFFFFF))
         # --- seat the cluster on the field edge, from the ACTUAL drawn plots (robust to a fan's narrow head) ---
         # The cluster_position gives the CHARACTER (which margin); the seat is computed constructively so it
         # always abuts + rings the field and never fights the water intake: the lateral lean is forced AWAY from

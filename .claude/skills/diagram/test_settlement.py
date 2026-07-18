@@ -1920,6 +1920,48 @@ def test_plot_texture_drives_build_comb_grain():
             s.plot_texture(*bad)
 
 
+def test_land_use_overlay_draws_and_records_each_kind():
+    from waterfields import build_comb
+
+    net = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=())
+    for overlay in ("mulberry_fishpond", "rape", "lotus", "tea_fringe"):
+        s = Settlement(2000, 2800, seed=3)
+        s.meta(name="LU", scale="village", ftpx=1, down_deg=90)
+        n = s.apply_land_use(net, overlay, __import__("random").Random(1))
+        assert n > 0 and s.M["meta"]["land_use_overlay"] == overlay and s.out
+        assert s.M["land_use"][-1] == {"overlay": overlay, "count": n}
+    # "none" records zero and draws nothing extra
+    s0 = Settlement(2000, 2800, seed=3)
+    s0.meta(name="LU0", scale="village", ftpx=1, down_deg=90)
+    assert s0.apply_land_use(net, "none", __import__("random").Random(1)) == 0
+    with pytest.raises(ValueError):
+        s0.apply_land_use(net, "quinoa", __import__("random").Random(1))
+
+
+def test_archetype_knob_typing_rules():
+    # field_archetype + land_use_overlay honor terrain typing (research.md D4)
+    s = Settlement(1800, 1800, seed=1)
+    s.meta(name="A", scale="village")
+    # with no declared terrain, only valley_paddy is a coherent field archetype; a hill archetype pin is rejected
+    s.pin_knob("field_archetype", "contour_terraces")
+    with pytest.raises(ValueError):
+        s.resolve("field_archetype")
+    s2 = Settlement(1800, 1800, seed=1)
+    s2.meta(name="A2", scale="village", terrain="hill")
+    s2.pin_knob("field_archetype", "contour_terraces")
+    assert s2.resolve("field_archetype") == "contour_terraces"  # hill terrain -> terraces allowed
+    # tea_fringe overlay needs hill/terrace ground; lotus is fine anywhere
+    s3 = Settlement(1800, 1800, seed=1)
+    s3.meta(name="A3", scale="village")
+    s3.pin_knob("land_use_overlay", "tea_fringe")
+    with pytest.raises(ValueError):
+        s3.resolve("land_use_overlay")
+    s3.knob_pins.clear()
+    s3._resolved_knobs.clear()
+    s3.pin_knob("land_use_overlay", "lotus")
+    assert s3.resolve("land_use_overlay") == "lotus"
+
+
 def test_focal_catalogue_methods_draw_record_and_note():
     # the rest of the focal catalogue (T020): each draws, records its footprint, and notes the focal feature
     # so the twin-detector's focal_set axis reads it.
