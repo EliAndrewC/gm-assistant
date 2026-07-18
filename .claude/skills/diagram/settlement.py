@@ -343,6 +343,41 @@ def _plot_regularity_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     return v != "grid" or ctx.get("field_origin") == "planned"
 
 
+def _field_archetype_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """The FIELD terrain archetype must match the village's stated terrain (research.md D4, China-first):
+    contour_terraces need HILL/upland ground; polder_grid needs LOW reclaimed/coastal-delta ground; a
+    ribbon_valley needs a narrow valley floor; a mulberry_dike_fishpond is the Pearl-delta low-wet system.
+    valley_paddy (the comb default) fits any ordinary valley-bottom terrain. Terrain is read from
+    `ctx['terrain']` when the spec declares it; absent a declaration, only valley_paddy is coherent."""
+    terrain = ctx.get("terrain")
+    need = {"valley_paddy": None, "contour_terraces": "hill", "polder_grid": "low", "ribbon_valley": "narrow_valley", "mulberry_dike_fishpond": "low"}
+    req = need.get(v)
+    return req is None or terrain == req
+
+
+def _land_use_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """A LAND-USE overlay must suit the setting: mulberry_fishpond + lotus + rape are wet/valley crops fine on
+    ordinary paddy land; a tea_fringe needs some hill/terrace margin (`ctx['terrain']` hill, or a terrace
+    archetype) to sit on. 'none' (plain rice) is always valid. (research.md D4: the sericulture dike-pond, the
+    rape-blossom rotation, the lotus-in-paddy, and the hill-fringe tea garden are the documented overlays.)"""
+    if v in ("none", "mulberry_fishpond", "rape", "lotus"):
+        return True
+    return ctx.get("terrain") == "hill" or ctx.get("field_archetype") == "contour_terraces"  # tea_fringe
+
+
+def _settlement_form_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """The SETTLEMENT FORM must suit the site: nucleated/linear/dispersed fit anywhere, but a WATER-TOWN (houses
+    fronting a canal) needs a canal - and per GM setting canon artificial transport canals are a LION-lands
+    feature, not the Empire-wide default (see the diagram SKILL.md China-first note), so water_town is excluded
+    unless the map declares Lion lands or a canal (`ctx['clan']=='Lion'` or `ctx['canal']`)."""
+    if v in ("nucleated", "linear", "dispersed"):
+        return True
+    return ctx.get("clan") == "Lion" or bool(ctx.get("canal"))  # water_town
+
+
+register_knob(Knob("settlement_form", ["nucleated", "linear", "dispersed", "water_town"], default="nucleated", typing_rule=_settlement_form_ok))
+register_knob(Knob("field_archetype", ["valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley", "mulberry_dike_fishpond"], default="valley_paddy", typing_rule=_field_archetype_ok))
+register_knob(Knob("land_use_overlay", ["none", "mulberry_fishpond", "rape", "lotus", "tea_fringe"], default="none", typing_rule=_land_use_ok))
 register_knob(Knob("cluster_position", ["high_margin", "flank", "mid_margin", "valley_mouth", "valley_head", "on_rise"], default="high_margin"))
 register_knob(Knob("cluster_shape", ["round", "elongated", "crescent", "split"], default="round", typing_rule=_cluster_shape_ok))
 register_knob(Knob("lane_skeleton", ["spine", "T", "Y", "cross", "waterside"], default="spine", typing_rule=_lane_skeleton_ok))
@@ -1166,6 +1201,149 @@ class Settlement:
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
+    def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any]) -> list[Pt]:
+        """Draw a `build_comb` net (dry hem + flooded paddies + bunds + channels) AND register the field's
+        manifest + water topology, in one call - the ~50 lines every comb gen otherwise repeats inline. Feeds
+        the roll-from-seed entrypoint (which cannot hand-place any of it) but is reusable by any comb gen.
+        `source` describes where the water comes from: {"kind":"pond", "pond":(cx,cy,rx,ry)} draws a tameike at
+        the sluice and feeds from it; {"kind":"stream", "stream":[(x,y),...]} runs a brook in from a canvas edge
+        to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
+        SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
+        source_and_sink) see a source. Returns the field envelope polygon."""
+        from waterfields import BEAN_GREEN, BUND
+
+        for p in net["dry_plots"]:  # the dry upslope hem
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+            self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
+            self._draw_furrows(p["poly"], p["furrow"], p["theta"])
+            self.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in p["poly"]], "crop": p["crop"], "theta": round(p["theta"], 3)})
+            self.block_polys.append(p["poly"])  # dry cropland is no-build ground; keep farmsteads off it
+        for p in net["plots"]:  # the flooded paddies
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+            self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{BUND}" stroke-width="2" stroke-linejoin="round"/>')
+        beads = "".join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
+        self.add(f'<g opacity="0.85">{beads}</g>')
+        sluice = net["channels"][0]["pts"][0]
+        pond_rec: Any = None
+        if source.get("kind") == "pond":
+            pcx, pcy, prx, pry = source["pond"]
+            self.stream([(sluice[0], sluice[1]), (pcx, pcy)], frm={"kind": "offmap"}, to={"kind": "pond"}, width=6) if source.get("feeder") else None
+            self.pond(pcx, pcy, prx, pry)
+            ring = [(pcx + (prx + 40) * math.cos(a), pcy + (pry + 40) * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]
+            self.marsh(ring, role="pond_fringe")
+            self.block_polys.append([(pcx - prx - 10, pcy - pry - 10), (pcx + prx + 10, pcy - pry - 10), (pcx + prx + 10, pcy + pry + 10), (pcx - prx - 10, pcy + pry + 10)])  # no build on the pond
+            pond_rec = (pcx, pcy)
+        elif source.get("kind") == "stream":
+            self.stream(source["stream"], frm={"kind": "offmap"}, width=7)
+        for c in sorted(net["channels"], key=lambda c: -c["w"]):
+            self.field_channel(c["pts"], "#7C9EB0" if c["role"] == "drain" else "#6C9CBE", c["w"], c.get("w_tail", c["w"]))
+        if net["brook"]:
+            # the drain-outfall brook shoots STRAIGHT downhill off-map (a fan field's own wiggly brook can
+            # re-enter the paddy and trip streams_avoid_fields; a straight downhill exit never does)
+            ddb = self.M["meta"].get("down_deg", 90)
+            bdx, bdy = math.cos(math.radians(ddb)), math.sin(math.radians(ddb))
+            b0 = net["brook"][0]
+            b1 = net["brook"][1] if len(net["brook"]) > 1 else (b0[0] + bdx, b0[1] + bdy)
+            ex, ey = b1[0] - b0[0], b1[1] - b0[1]  # the drain's own exit direction (smooth junction)
+            el = math.hypot(ex, ey) or 1.0
+            mid = (b0[0] + ex / el * 70, b0[1] + ey / el * 70)  # a short smooth continuation, THEN turn downhill
+            # (first segment = drain direction -> smooth junction; then straight downhill AWAY from the field ->
+            # clears a fan envelope's concave lobe without an acute turn, since the drain already runs downhill)
+            self.stream([b0, mid, (mid[0] + bdx * 520, mid[1] + bdy * 520)], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)
+        env = [[round(x, 1), round(y, 1)] for x, y in net["envelope"]]
+        exs, eys = [p[0] for p in env], [p[1] for p in env]
+        pvx = [v[0] for p in net["plots"] for v in p["poly"]]
+        pvy = [v[1] for p in net["plots"] for v in p["poly"]]
+        self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)]})
+        for c in net["channels"]:
+            self.M["field_ditches"].append(
+                {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
+            )
+        # a hairline SOURCE -> field feed carrying the topology (winds a little into the paddy interior). It
+        # STARTS at the source (the pond centre, or the sluice for a stream) so channel_source_anchored /
+        # pond_connected_to_field see it, and carries a gentle perpendicular KINK so channel_winds_gently passes.
+        hr = net["channels"][0]["pts"]
+        fork = hr[-1]
+        dd = self.M["meta"].get("down_deg", 90)
+        dx, dy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+        din = (fork[0] + dx * 70, fork[1] + dy * 70)
+        start = pond_rec if pond_rec else (sluice[0], sluice[1])
+        frm = {"kind": "pond"} if pond_rec else {"kind": "stream"}
+        vx, vy = din[0] - start[0], din[1] - start[1]
+        vl = math.hypot(vx, vy) or 1.0
+        midx, midy = (start[0] + din[0]) / 2 - vy / vl * 20, (start[1] + din[1]) / 2 + vx / vl * 20
+        self.M["channels"].append(
+            {"poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]], "frm": frm, "to": {"kind": "field", "name": name}, "w": 2.5}
+        )
+        return cast("list[Pt]", net["envelope"])
+
+    def apply_land_use(self, net: dict[str, Any], overlay: str, rng: random.Random, fraction: float = 0.32) -> int:
+        """Overlay a LAND-USE archetype (feature 005 US4 `land_use_overlay`) onto an already-drawn comb field:
+        recolour a FRACTION of the paddy plots (or, for tea, a hill-margin fringe) as the overlay crop, so a
+        village growing mulberry-and-fishpond, rape, lotus, or hill-tea reads distinctly from a plain-rice one.
+        Records M['land_use'] + meta.land_use_overlay. Returns the number of plots/rows overlaid.
+        Grounding (research.md D4, China-first): the mulberry-dike fish-pond (桑基魚塘, the Pearl-delta closed
+        sericulture-aquaculture system), the rape-blossom (油菜) winter rotation on paddy, lotus-in-paddy (藕田),
+        and the hill-fringe tea garden (茶) are the documented south-China land-use overlays on rice ground."""
+        if overlay not in ("none", "mulberry_fishpond", "rape", "lotus", "tea_fringe"):
+            raise ValueError(f"unknown land_use_overlay {overlay!r}")
+        self.M["meta"]["land_use_overlay"] = overlay
+        if overlay == "none":
+            self.M.setdefault("land_use", []).append({"overlay": "none", "count": 0})
+            return 0
+        plots = list(net["plots"])
+        n = 0
+        if overlay == "tea_fringe":  # tea BUSH rows along the field's dry HIGH margin (not plot-based)
+            for dp in net["dry_plots"]:
+                pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in dp["poly"])
+                cid = self._cid("tea")
+                self.add(f'<clipPath id="{cid}"><polygon points="{pts}"/></clipPath>')
+                xs = [p[0] for p in dp["poly"]]
+                ys = [p[1] for p in dp["poly"]]
+                rows = "".join(
+                    f'<line x1="{min(xs):.1f}" y1="{y:.1f}" x2="{max(xs):.1f}" y2="{y:.1f}" stroke="#5C7A3E" stroke-width="2.4" opacity="0.75"/>'
+                    for y in [min(ys) + 6 + i * 8 for i in range(int((max(ys) - min(ys)) / 8))]
+                )
+                self.add(f'<g clip-path="url(#{cid})">{rows}</g>')
+                n += 1
+            self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n})
+            return n
+        colours = {"mulberry_fishpond": "#93B7AC", "rape": "#E4CE55", "lotus": "#8FA9A0"}
+        take = max(2, int(len(plots) * fraction))
+        for p in rng.sample(plots, min(take, len(plots))):
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+            self.add(f'<polygon points="{pts}" fill="{colours[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
+            cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
+            cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
+            if overlay == "mulberry_fishpond":  # a green mulberry DIKE rim around the fish pond
+                self.add(f'<polygon points="{pts}" fill="none" stroke="#6E8B4A" stroke-width="3" stroke-linejoin="round" opacity="0.8"/>')
+            elif overlay == "lotus":  # a few lily pads / blooms
+                self.add("".join(f'<circle cx="{cx + rng.uniform(-14, 14):.1f}" cy="{cy + rng.uniform(-10, 10):.1f}" r="{rng.uniform(2.5, 4):.1f}" fill="#C98BA6" opacity="0.85"/>' for _ in range(3)))
+            n += 1
+        self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n})
+        return n
+
+    def _draw_furrows(self, poly: Any, colour: str, theta: float) -> None:
+        """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
+        diag = math.hypot(max(xs) - min(xs), max(ys) - min(ys))
+        dx, dy = math.cos(theta), math.sin(theta)
+        nx, ny = -dy, dx
+        cid = self._cid("dry")
+        pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in poly)
+        g = [f'<clipPath id="{cid}"><polygon points="{pts}"/></clipPath>', f'<g clip-path="url(#{cid})">']
+        t = -diag / 2
+        while t <= diag / 2:
+            mx, my = cx + nx * t, cy + ny * t
+            g.append(
+                f'<line x1="{mx - dx * diag / 2:.1f}" y1="{my - dy * diag / 2:.1f}" x2="{mx + dx * diag / 2:.1f}" y2="{my + dy * diag / 2:.1f}" stroke="{colour}" stroke-width="0.8" opacity="0.8"/>'
+            )
+            t += 5
+        g.append("</g>")
+        self.add("".join(g))
+
     def crescent_pond(self, cx: float, cy: float, r: float, facing_deg: float = 270.0) -> None:
         """A fengshui CRESCENT / half-moon pond (半月塘), a focal feature of Huizhou / Hakka single-lineage
         villages (feature 005): a half-disk of water IN FRONT of the cluster - drainage + fire water + the
@@ -1225,6 +1403,66 @@ class Settlement:
         self.M.setdefault("mills", []).append({"x": round(x, 1), "y": round(y, 1), "w": pw, "h": ph, "rot": 0})
         self.note_focal("mill")
         self.placed.append((x, y, pw, ph))
+
+    def _focal_block(self, x: float, y: float, pw: float, ph: float) -> None:
+        """Reserve a focal footprint as a placement keep-out (so a later farmstead can never overlap it)."""
+        self.placed.append((x, y, pw, ph))
+        self.block_polys.append([(x - pw / 2 - 6, y - ph / 2 - 6), (x + pw / 2 + 6, y - ph / 2 - 6), (x + pw / 2 + 6, y + ph / 2 + 6), (x - pw / 2 - 6, y + ph / 2 + 6)])
+
+    def ancestral_hall(self, x: float, y: float, w: float = 110, h: float = 74) -> None:
+        """A lineage ANCESTRAL HALL (祠堂), a focal feature: the grandest civic building of a single-lineage
+        village - broader than any house, a double-eave hall on the auspicious axis fronting the pond/water.
+        Draws the hall, records M['ancestral_halls'] + the focal feature, reserves the footprint. Grounding
+        (research.md D2): the ancestral hall was the ritual + governance centre of a Huizhou/Hakka lineage
+        village, its single most prominent structure - so a village that HAS one reads unmistakably by it."""
+        pw, ph = self.px(w), self.px(h)
+        self.add(f'<rect x="{x - pw / 2:.1f}" y="{y - ph / 2:.1f}" width="{pw:.1f}" height="{ph:.1f}" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2.4" rx="2"/>')
+        self.add(
+            f'<rect x="{x - pw / 2 + self.px(5):.1f}" y="{y - ph / 2 + self.px(5):.1f}" width="{pw - self.px(10):.1f}" height="{ph - self.px(10):.1f}" fill="none" stroke="#6B4F2A" stroke-width="1.2"/>'
+        )  # inner eave
+        self.add(f'<rect x="{x - self.px(9):.1f}" y="{y + ph / 2 - self.px(4):.1f}" width="{self.px(18):.1f}" height="{self.px(6):.1f}" fill="#5A3F1E"/>')  # entry porch on the water side
+        self.M.setdefault("ancestral_halls", []).append({"x": round(x, 1), "y": round(y, 1), "w": pw, "h": ph, "rot": 0})
+        self.note_focal("ancestral_hall")
+        self._focal_block(x, y, pw, ph)
+
+    def water_mouth(self, x: float, y: float, r: float = 22) -> None:
+        """A fengshui WATER-MOUTH complex (水口), a focal feature: the guarded outlet where the village stream
+        leaves, marked by a small hexagonal pavilion (and, per the gen, a screening grove) to 'lock in' the qi
+        of the departing water. Draws the pavilion, records M['water_mouths'] + the focal feature. Grounding:
+        the shuikou was a standard focal ensemble of south-China lineage villages, sited at the stream exit."""
+        pr = self.px(r)
+        pts = " ".join(f"{x + pr * math.cos(a):.1f},{y + pr * math.sin(a):.1f}" for a in [math.pi / 6 + i * math.pi / 3 for i in range(6)])
+        self.add(f'<polygon points="{pts}" fill="#C9876C" stroke="#6B2A18" stroke-width="2" stroke-linejoin="round"/>')
+        self.add(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{pr * 0.42:.1f}" fill="none" stroke="#6B2A18" stroke-width="1.2"/>')
+        self.M.setdefault("water_mouths", []).append({"x": round(x, 1), "y": round(y, 1), "w": pr * 2, "h": pr * 2, "rot": 0})
+        self.note_focal("water_mouth")
+        self._focal_block(x, y, pr * 2, pr * 2)
+
+    def market(self, x: float, y: float, w: float = 120, h: float = 84) -> None:
+        """A village MARKET clearing (墟/市), a focal feature: an open packed-earth space with a few stalls
+        where a periodic market gathers - a widening in the lane fabric, not a building. Draws the open court +
+        a row of stall marks, records M['markets'] + the focal feature. Grounding: a market node is exactly
+        where a `cross` lane skeleton reads as a market village rather than a plain farming one."""
+        pw, ph = self.px(w), self.px(h)
+        cid = self._cid("mkt")
+        self.add(f'<clipPath id="{cid}"><rect x="{x - pw / 2:.1f}" y="{y - ph / 2:.1f}" width="{pw:.1f}" height="{ph:.1f}" rx="3"/></clipPath>')
+        self.add(f'<rect x="{x - pw / 2:.1f}" y="{y - ph / 2:.1f}" width="{pw:.1f}" height="{ph:.1f}" fill="#D8C7A0" stroke="#9C7A40" stroke-width="1.6" stroke-dasharray="5 4" rx="3"/>')
+        stalls = "".join(
+            f'<rect x="{x - pw / 2 + self.px(10) + i * self.px(22):.1f}" y="{y - self.px(6):.1f}" width="{self.px(14):.1f}" height="{self.px(12):.1f}" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1"/>'
+            for i in range(max(1, int(w / 34)))
+        )
+        self.add(f'<g clip-path="url(#{cid})">{stalls}</g>')
+        self.M.setdefault("markets", []).append({"x": round(x, 1), "y": round(y, 1), "w": pw, "h": ph, "rot": 0})
+        self.note_focal("market")
+        self._focal_block(x, y, pw, ph)
+
+    def secondary_shrine(self, x: float, y: float, w: float = 60, h: float = 42) -> None:
+        """A SECONDARY tutelary/roadside shrine, a focal feature: a small second shrine besides the village's
+        main one (a Benten by the pond, an Inari at a field corner). Records as a 'shrine' kind (so
+        religious_matches_scale still sees only shrines) + the focal feature. Grounding: a village often kept a
+        minor shrine in addition to its tutelary one; its PRESENCE + placement is a distinctiveness axis."""
+        self.shrine(x, y, w, h, kind="shrine")
+        self.note_focal("secondary_shrine")
 
     def stream(self, pts: Any, frm: Any = None, to: Any = None, width: float = 9) -> None:
         """A natural watercourse. If frm/to anchors are given (e.g. a forest brook
@@ -3031,7 +3269,9 @@ class Settlement:
         if role != "pond_fringe":  # the wet valley TOE is UNBUILDABLE: register it as a no-build keep-out
             self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in poly])  # so nothing is placed/dug on a bog (a thin pond-fringe shore ring is exempt)
 
-    def hinterland(self, down_deg: Any = None, *, marsh: bool = True, commons: bool = True, pad: float = 90, marsh_role: str = "toe", scrub_role: str = "grazing", skip_sides: Any = ()) -> None:
+    def hinterland(
+        self, down_deg: Any = None, *, marsh: bool = True, commons: bool = True, interior_fill: bool = True, pad: float = 90, marsh_role: str = "toe", scrub_role: str = "grazing", skip_sides: Any = ()
+    ) -> None:
         """Lay out a settlement's non-arable HINTERLAND: a reed MARSH at the downhill TOE (below the paddy's
         drainage line, where wet-rice reclamation stops and the valley floor stays reed wetland) and the
         cut-over SCRUB commons (coarse grass + a few scraggly pines) filling the surrounding non-arable margins.
@@ -3113,8 +3353,10 @@ class Settlement:
             # ground, the only uncovered land on the map. That is what read as "empty space" on Akagahara. This
             # patch covers the cultivated bbox; since the scatter already skips every field, lane, watercourse,
             # building and keep-out, it can only land in those voids, clothing them as the rough grazing they
-            # are. Ground the crop does not use is still ground, and it is grazed.
-            self.commons([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)], role=scrub_role, avoid=avoid)
+            # are. Ground the crop does not use is still ground, and it is grazed. A SOLID field (a polder grid
+            # fills its whole bbox, no voids) has nothing to clothe here, so `interior_fill=False` skips it.
+            if interior_fill:
+                self.commons([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)], role=scrub_role, avoid=avoid)
         if marsh:
             # The toe is a CONTOUR BAND, not an axis-aligned box. Wet ground is defined by HEIGHT, and every
             # other feature here (field, comb, drain, the marsh_on_low_ground check) resolves height by
@@ -4553,6 +4795,284 @@ class Settlement:
                 out.append((cx + side * ex * 0.62 + math.cos(a) * r * ex * 0.42, cy + math.sin(a) * r * ey * 0.82))
         return out
 
+    def cluster_anchor(self, position: str, field_bbox: tuple[float, float, float, float], down_deg: float, lateral_frac: float = 0.6, depth_frac: float = 0.34) -> tuple[float, float, float, float]:
+        """Resolve the `cluster_position` knob into a cluster ANCHOR `(cx, cy, ex, ey)` to feed `cluster_seeds`.
+        The knob says WHERE on its field's dry margin a nucleated village sits; this reads that against the
+        field's bbox and its `down_deg` fall line and returns a centre just OFF the paddy plus screen-axis
+        half-extents (`ex`, `ey`) oriented so the cluster runs ALONG that margin. (Field-adjacency + off-the-toe
+        are still enforced downstream: `try_place` rejects any seeded house that is not field-adjacent or lands
+        on the flood toe / a blocker, so this only has to aim the cloud at the right dry ground.)
+
+        Grounding (research.md D2 - villages took the best DRY ground beside their paddy, 背山面水 'mountain
+        behind, water in front'; which dry ground was available varied, and that variation is the knob):
+          - `high_margin`  - the upslope (high) edge, centred: the classic back-to-the-hill seat. DEFAULT.
+          - `valley_head`  - the high edge but tucked to one cross-slope corner (a head terrace by the intake).
+          - `mid_margin`   - the high edge, offset the other way along the margin (partway along, not centred).
+          - `flank`        - a cross-slope SIDE margin (a side levee / valley wall), off to one flank.
+          - `valley_mouth` - down by the low end where the valley opens, but pulled to the dry lateral shoulder
+                             (NEVER straight down into the wet central toe below the drain).
+          - `on_rise`      - a dry knoll off a high corner (a rise standing a little out of the plain).
+        """
+        if position not in ("high_margin", "valley_head", "mid_margin", "flank", "valley_mouth", "on_rise"):
+            raise ValueError(f"unknown cluster_position {position!r}")
+        fx0, fy0, fx1, fy1 = field_bbox
+        fcx, fcy = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+        hw, hh = (fx1 - fx0) / 2, (fy1 - fy0) / 2
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill unit
+        ux, uy = -dy, dx  # cross-slope (lateral / along-margin) unit
+        ad = abs(dx) * hw + abs(dy) * hh  # field half-extent along the fall
+        au = abs(ux) * hw + abs(uy) * hh  # field half-extent across the fall (the margin's run)
+        lat = au * lateral_frac  # the cluster runs ALONG the margin (lateral)...
+        dep = min(
+            max(ad, au) * depth_frac, 118.0
+        )  # ...but stays fairly shallow: the near rows ring the field (field_ringed), the back rows are a legit cluster-span back (cluster_abuts_fields allows it for a nucleated seat)
+        clr = dep + 22.0  # the along-slope clearance: the cluster's near edge sits `pad`-ish off the paddy, whole cluster clear
+        # (along-slope offset s: -ve = uphill of centre; lateral offset t along +u)
+        # high-margin lateral offsets stay MODEST (a fan field is narrow at its head, so the bbox overstates
+        # how far a high-corner cluster can slide and still sit over the paddy) - the flank/mouth positions push
+        # fully out to a cross-slope side where the field is at full width.
+        if position == "high_margin":
+            s, t = -(ad + clr), 0.0
+        elif position == "valley_head":
+            s, t = -(ad + clr), -au * 0.3
+        elif position == "mid_margin":
+            s, t = -(ad + clr), au * 0.3
+        elif position == "flank":
+            s, t = 0.0, au + clr
+        elif position == "valley_mouth":
+            s, t = ad * 0.45, au + clr  # low-ish AND pushed to the dry lateral shoulder, never the central toe
+        else:  # on_rise: a dry knoll at a HIGH CORNER (up, and a little laterally) - still hugging the high margin
+            s, t = -(ad + clr), au * 0.3
+        cx = fcx + dx * s + ux * t
+        cy = fcy + dy * s + uy * t
+        ex = abs(ux) * lat + abs(dx) * dep  # project the lateral+depth extents back onto screen x / y
+        ey = abs(uy) * lat + abs(dy) * dep
+        return (cx, cy, ex, ey)
+
+    def plot_texture(self, plot_size: str = "medium", plot_regularity: str = "organic", record: bool = True) -> tuple[float, tuple[float, float]]:
+        """Resolve the `plot_size` + `plot_regularity` knobs into `build_comb`'s `(plot_across, row_step)` levers
+        so they actually change the paddy grain. `plot_across` sets how many bunded plots tile across each canal
+        reach (small = many small paddies, large_block = few big ones, strip = narrow but long); `row_step` is
+        the along-canal row spacing, and its SPREAD is the regularity: a WIDE spread reads organic/old-grown, a
+        TIGHT spread reads as a planned/surveyed grid. Records the two knobs on the manifest. Grounding: old
+        wet-rice terraces grew as small irregular paddies fitted to the microtopography; large regular blocks or
+        long strips signal a later planned reclamation/allotment (which is why `grid` is typing-gated to a
+        planned field origin). Returns `(plot_across, row_step)` to pass straight into `build_comb`."""
+        size_map = {
+            "small_irregular": (34.0, (20.0, 40.0)),
+            "medium": (48.0, (26.0, 36.0)),
+            "large_block": (70.0, (30.0, 44.0)),
+            "strip": (32.0, (46.0, 66.0)),
+        }
+        if plot_size not in size_map:
+            raise ValueError(f"unknown plot_size {plot_size!r}")
+        if plot_regularity not in ("organic", "grid"):
+            raise ValueError(f"unknown plot_regularity {plot_regularity!r}")
+        across, step = size_map[plot_size]
+        if plot_regularity == "grid":  # collapse the row-step spread toward its mean -> even, surveyed rows
+            mid = (step[0] + step[1]) / 2
+            step = (mid - 3.0, mid + 3.0)
+        if record:
+            self.M["meta"]["plot_size"] = plot_size
+            self.M["meta"]["plot_regularity"] = plot_regularity
+        return across, step
+
+    @staticmethod
+    def water_sources_for(down_deg: float, water_kind: str) -> list[str]:
+        """The `water_source_position` values that gravity-feed a field falling toward `down_deg` (the source
+        must sit UPHILL of the field intake - water runs downhill through the comb). Pond kinds are the
+        corner/mid/chain set; a stream enters from a canvas edge. A source on the downhill half is excluded
+        (it could not feed the field), which is the gravity typing the knob's own `typing_rule` defers to
+        placement. Used by the seed roll so an unpinned water source lands somewhere water can actually flow
+        from."""
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        # each candidate's outward direction from field centre; keep those on the UPHILL half (dot with
+        # downhill <= a small tolerance, so a cross-slope side counts as feedable)
+        dirs = {
+            "corner_NW": (-1, -1),
+            "corner_NE": (1, -1),
+            "corner_SW": (-1, 1),
+            "corner_SE": (1, 1),
+            "edge_N": (0, -1),
+            "edge_E": (1, 0),
+            "edge_S": (0, 1),
+            "edge_W": (-1, 0),
+            "mid_margin": (-dx, -dy),
+            "chain": (-dx, -dy),  # the uphill margin itself
+        }
+        pond = ["corner_NW", "corner_NE", "corner_SW", "corner_SE", "mid_margin", "chain"]
+        edge = ["edge_N", "edge_E", "edge_S", "edge_W"]
+        names = edge if water_kind == "stream" else pond
+        out = []
+        for nm in names:
+            vx, vy = dirs[nm]
+            n = math.hypot(vx, vy) or 1.0
+            if (vx / n) * dx + (vy / n) * dy <= 0.35:  # not on the downhill half (tolerance admits cross sides)
+                out.append(nm)
+        return out
+
+    def water_source_anchor(self, position: str, field_bbox: tuple[float, float, float, float], down_deg: float, pad: float = 90.0) -> Pt:
+        """Resolve `water_source_position` into the SLUICE / stream-entry point (where water reaches the field
+        head), just off the field on the named margin. Pond positions (`corner_*` / `mid_margin` / `chain`) put
+        the feed on that corner or margin; stream `edge_*` positions put it at that canvas-edge margin. RAISES
+        if the resolved point is on the DOWNHILL half of the field (gravity: a source below the field cannot
+        feed it) - so a historically-impossible pin is rejected here, and `water_sources_for` lists the legal
+        set for a roll. Grounding: Chinese canal doctrine feeds a comb from its high end; the varied high-side
+        entry (a corner pond, a mid-margin tank, a stepped chain, a stream off one edge) is the knob."""
+        if position not in ("corner_NW", "corner_NE", "corner_SW", "corner_SE", "mid_margin", "chain", "edge_N", "edge_E", "edge_S", "edge_W"):
+            raise ValueError(f"unknown water_source_position {position!r}")
+        fx0, fy0, fx1, fy1 = field_bbox
+        fcx, fcy = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        corners = {"corner_NW": (fx0 - pad, fy0 - pad), "corner_NE": (fx1 + pad, fy0 - pad), "corner_SW": (fx0 - pad, fy1 + pad), "corner_SE": (fx1 + pad, fy1 + pad)}
+        edges = {"edge_N": (fcx, fy0 - pad), "edge_S": (fcx, fy1 + pad), "edge_E": (fx1 + pad, fcy), "edge_W": (fx0 - pad, fcy)}
+        if position in corners:
+            sx, sy = corners[position]
+        elif position in edges:
+            sx, sy = edges[position]
+        else:  # mid_margin / chain: the middle of the UPHILL margin (opposite the fall)
+            sx, sy = fcx - dx * ((fx1 - fx0) / 2 + pad), fcy - dy * ((fy1 - fy0) / 2 + pad)
+        if (sx - fcx) * dx + (sy - fcy) * dy > 0.35 * math.hypot(sx - fcx, sy - fcy):
+            raise ValueError(f"water_source_position {position!r} sits downhill of a field falling to {down_deg} deg - it cannot gravity-feed it")
+        return (round(sx, 1), round(sy, 1))
+
+    def roll_village(
+        self,
+        name: str,
+        households: int,
+        down_deg: float,
+        water_kind: str = "pond",
+        field_fall: float | None = None,
+        offtakes_a: Sequence[float] = (0.22, 0.45, 0.68, 0.88),
+        offtakes_b: Sequence[float] = (0.45, 0.8),
+    ) -> dict[str, Any]:
+        """ROLL a whole gate-passing settlement from the seed (feature 005 US2, SC-004: zero hand-placed
+        coordinates). Every unpinned knob is rolled from `self.seed` (pinned ones honored); the rolled values
+        then DRIVE the geometry through the resolvers: the water source picks the sluice, plot_texture picks the
+        paddy grain, cluster_position + cluster_shape place + shape the homestead cloud, lane_skeleton lays the
+        lanes. Two different seeds roll different combinations; the same seed is byte-identical. Call after
+        `s.meta(name=, scale=, ftpx=, toscale=True, ...)`. Returns the resolved knob dict. Scope: a nucleated
+        HAMLET or VILLAGE (the to-scale tiers); a hamlet needs no headman/shrine/cemetery, a village adds them."""
+        from waterfields import build_comb
+
+        self.M["meta"]["water_kind"] = water_kind
+        self.M["meta"]["down_deg"] = down_deg
+        self.M["meta"]["nucleated"] = True  # a rolled village is a nucleated cluster (per-house-grove path is off; a communal windbreak is drawn below)
+        scale = self.M["meta"].get("scale", "village")
+        self._nucleated = True
+        W, H = self.W, self.H
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        # --- roll the knobs (pinned -> rolled -> default) ---
+        cluster_position = self.resolve("cluster_position")
+        cluster_shape = self.resolve("cluster_shape")
+        lane_kind = self.resolve("lane_skeleton")
+        plot_size = self.resolve("plot_size")
+        plot_regularity = self.resolve("plot_regularity")
+        grain_drift = self.resolve("grain_drift")
+        if self.knob_pins.get("water_source_position") is not None:
+            water_source = self.resolve("water_source_position")
+        else:  # roll among the GRAVITY-VALID set (the typing rule defers gravity to placement)
+            valid = sorted(self.water_sources_for(down_deg, water_kind))
+            # don't put the intake DEAD-CENTRE on the high margin where a high-seated village already sits - a
+            # centre source (mid_margin / chain) would fight the cluster for the narrow fan head, so prefer a
+            # corner intake there (historically fine: a corner tank feeding the comb from one high shoulder).
+            if cluster_position in ("high_margin", "valley_head", "mid_margin", "on_rise"):
+                corner = [v for v in valid if v not in ("mid_margin", "chain")]
+                valid = corner or valid
+            wr = knob_rng(self.seed, "water_source_position")
+            water_source = valid[wr.randrange(len(valid))]
+            self._resolved_knobs["water_source_position"] = water_source
+        self.M["meta"]["water_source"] = water_source
+        # --- the field: sluice from the water source, then the comb ---
+        mx, my = W * 0.16, H * 0.16
+        sluice = self.water_source_anchor(water_source, (mx, my, W - mx, H - my), down_deg)
+        across, step = self.plot_texture(plot_size, plot_regularity)
+        net = build_comb(W, H, sluice, self.seed, down_deg=down_deg, field_fall=field_fall, plot_across=across, row_step=step, grain_drift=grain_drift, offtakes_a=offtakes_a, offtakes_b=offtakes_b)
+        self.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
+        self.meta(dry_furrows_vary=net["furrows_vary"])
+        if water_kind == "pond":
+            source: dict[str, Any] = {"kind": "pond", "pond": (sluice[0] - dx * 66, sluice[1] - dy * 66, 88.0, 56.0)}
+        else:
+            source = {"kind": "stream", "stream": [(sluice[0] - dx * 380, sluice[1] - dy * 380), (sluice[0], sluice[1])]}
+        self.draw_comb_field(net, name + "-paddies", source)
+        # roll the ARCHETYPE knobs: field_archetype (only valley_paddy is geometrically implemented, so a roll
+        # with no declared terrain lands there by typing) + a land-use OVERLAY drawn over the fresh paddy
+        self.M["meta"]["field_archetype"] = self.resolve("field_archetype")
+        self.apply_land_use(net, self.resolve("land_use_overlay"), random.Random((self.seed ^ 0x1A7D) & 0xFFFFFFFF))
+        # --- seat the cluster on the field edge, from the ACTUAL drawn plots (robust to a fan's narrow head) ---
+        # The cluster_position gives the CHARACTER (which margin); the seat is computed constructively so it
+        # always abuts + rings the field and never fights the water intake: the lateral lean is forced AWAY from
+        # the sluice's side, and the seat sits just beyond the drawn rice's reach in that direction. This
+        # replaces the earlier anchor+snap+nudge, whose post-hoc pushes destabilised placement roll-to-roll.
+        env = net["envelope"]
+        exs, eys = [p[0] for p in env], [p[1] for p in env]
+        fb = (min(exs), min(eys), max(exs), max(eys))
+        verts = [(v[0], v[1]) for p in net["plots"] for v in p["poly"]]
+        fcx2 = sum(v[0] for v in verts) / len(verts)
+        fcy2 = sum(v[1] for v in verts) / len(verts)
+        ux, uy = -dy, dx  # lateral (cross-slope) unit
+        _, _, cex, cey = self.cluster_anchor(cluster_position, fb, down_deg)  # keep the shape EXTENTS
+        away = -1.0 if ((sluice[0] - fcx2) * ux + (sluice[1] - fcy2) * uy) >= 0 else 1.0  # lean opposite the sluice
+        along_bias = {"high_margin": -1.0, "valley_head": -1.0, "mid_margin": -1.0, "on_rise": -1.0, "flank": 0.0, "valley_mouth": 0.55}
+        lat_bias = {"high_margin": 0.2, "valley_head": 0.6, "mid_margin": 0.6, "on_rise": 0.55, "flank": 1.0, "valley_mouth": 0.95}
+        tdx = dx * along_bias[cluster_position] + ux * away * lat_bias[cluster_position]
+        tdy = dy * along_bias[cluster_position] + uy * away * lat_bias[cluster_position]
+        tl = math.hypot(tdx, tdy) or 1.0
+        tdx, tdy = tdx / tl, tdy / tl
+        reach = max((v[0] - fcx2) * tdx + (v[1] - fcy2) * tdy for v in verts)
+        off = math.hypot(cex * tdx, cey * tdy) + 26.0  # the ellipse's SUPPORT in the seat direction + 26px, so the WHOLE cluster clears the drawn rice (no seed lands on a paddy)
+        ccx, ccy = fcx2 + tdx * (reach + off), fcy2 + tdy * (reach + off)
+        rng = random.Random((self.seed * 2654435761) & 0xFFFFFFFF)
+        sk = self.lane_skeleton(lane_kind, ccx, ccy, cex, cey, clearance=40)
+        placed = 0
+        if scale == "village":  # the headman takes the skeleton's prime spot first
+            hmx, hmy = sk["headman"]
+            if self.headman(hmx, hmy):
+                placed = 1
+        for sx, sy in self.cluster_seeds(cluster_shape, ccx, ccy, cex, cey, int(households * 3.0) + 18, rng):
+            if placed >= households:
+                break
+            if self.try_place(sx, sy, "plain"):
+                placed += 1
+        self.farmsteads()
+        hs = self.M["houses"]
+        if hs:  # wells among the ACTUAL houses (BEFORE the grove, so the grove's canopy skips them)
+            hxs, hys = [h["x"] for h in hs], [h["y"] for h in hs]
+            self.place_wells((min(hxs) - 10, min(hys) - 10, max(hxs) + 10, max(hys) + 10), spacing=190, near=150)
+        # --- a COMMUNAL windward windbreak behind the cluster (a nucleated village shelters behind one grove,
+        # not per-house belts): a belt on the uphill (windward) side, spanning the cluster's lateral run ---
+        ux, uy = -dy, dx
+        lat_half = abs(ux) * cex + abs(uy) * cey + 34.0
+        dep_half = abs(dx) * cex + abs(dy) * cey
+        bc = (ccx - dx * (dep_half + 46), ccy - dy * (dep_half + 46))
+        belt = [
+            (bc[0] - ux * lat_half - dx * 28, bc[1] - uy * lat_half - dy * 28),
+            (bc[0] + ux * lat_half - dx * 28, bc[1] + uy * lat_half - dy * 28),
+            (bc[0] + ux * lat_half + dx * 28, bc[1] + uy * lat_half + dy * 28),
+            (bc[0] - ux * lat_half + dx * 28, bc[1] - uy * lat_half + dy * 28),
+        ]
+        self.village_grove(belt, role="windbreak")
+        # --- village-only civic features (a hamlet has none) ---
+        if scale == "village":
+            gx, gy = sk["gateway"]
+            self.shrine(gx + dx * 46, gy + dy * 46)
+        self.bridges()  # carry the lanes over any water they cross
+        if self.M.get("field_ditches"):  # planks over the long irrigation ditches
+            self.channel_footbridges(spacing=300)
+        self.hinterland()
+        self.crop_to_content(margin=40)
+        self.title(name)
+        return {
+            "cluster_position": cluster_position,
+            "cluster_shape": cluster_shape,
+            "lane_skeleton": lane_kind,
+            "water_source_position": water_source,
+            "plot_size": plot_size,
+            "plot_regularity": plot_regularity,
+            "grain_drift": grain_drift,
+            "households": placed,
+        }
+
     def line_seeds(self, p0: Pt, p1: Pt, n: int, half_band: float, rng: random.Random, form: str = "linear", record: bool = True) -> list[Pt]:
         """House seeds strung ALONG a line (feature 005 `settlement_form` = 'linear'): a RIBBON of homesteads
         fronting a road / field-margin / dike instead of a nucleated blob - historically the cheapest big
@@ -4587,6 +5107,32 @@ class Settlement:
             a = rng.uniform(0, 2 * math.pi)
             r = rng.random() ** 0.5  # area-uniform: an even scatter, not centre-clumped
             out.append((cx + math.cos(a) * r * rx, cy + math.sin(a) * r * ry))
+        return out
+
+    def waterfront_seeds(self, canal: Any, n: int, offset: float, rng: random.Random, form: str = "water_town", record: bool = True) -> list[Pt]:
+        """House seeds strung along BOTH banks of a canal (feature 005 `settlement_form` = 'water_town'): a
+        Jiangnan-style water town where the houses FRONT the water, offset `offset` px to either side of the
+        canal polyline. Records `meta.settlement_form`. (Per GM canon canals are a Lion-lands feature, so this
+        form is typing-gated to Lion lands / a declared canal.) `try_place` then keeps each seed field-adjacent
+        and off blockers, so the row packs cleanly along the waterfront."""
+        if record:
+            self.M["meta"]["settlement_form"] = form
+        segs = [(canal[i], canal[i + 1]) for i in range(len(canal) - 1)]
+        total = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in segs) or 1.0
+        out: list[Pt] = []
+        for k in range(n):
+            d = total * (k + 0.5) / n
+            acc = 0.0
+            for a, b in segs:
+                ln = math.hypot(b[0] - a[0], b[1] - a[1])
+                if acc + ln >= d:
+                    t = (d - acc) / (ln or 1.0)
+                    px, py = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+                    nx, ny = -(b[1] - a[1]) / (ln or 1.0), (b[0] - a[0]) / (ln or 1.0)  # canal normal
+                    side = 1.0 if k % 2 == 0 else -1.0  # alternate banks
+                    out.append((px + nx * offset * side + rng.uniform(-10, 10), py + ny * offset * side + rng.uniform(-10, 10)))
+                    break
+                acc += ln
         return out
 
     def headman(self, x: float, y: float, w: float = 92, h: float = 56) -> Any:

@@ -858,3 +858,243 @@ def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spac
                 s = t / nd
                 beans.append((round(a[0] + s * (b[0] - a[0]), 1), round(a[1] + s * (b[1] - a[1]), 1)))
     return beans
+
+
+def build_terraces(
+    W: float,
+    H: float,
+    top: Pt,
+    seed: int,
+    down_deg: float = 90,
+    n_terraces: int = 16,
+    cross_width: float = 820,
+    fall: float = 1500,
+) -> dict[str, Any]:
+    """Contour TERRACES (梯田): stacked thin paddies following the hillside contours, stepping downhill from
+    `top` (the high catchment where water enters). Each terrace is a gently curved band PERPENDICULAR to the
+    fall; a supply channel runs down one flank and the stack cascades to a drain at the foot. Returns the same
+    keys as `build_comb` so `Settlement.draw_comb_field` can draw it, plus `bund_lines` (the retaining-wall
+    lip at each terrace's downhill edge, drawn by the gen). China-first grounding (research.md D4): the
+    south-China / SE-Asia rice terrace (Yuanyang 元陽, Longsheng 龍勝) is THE field archetype for HILL ground,
+    where valley-bottom paddy is impossible - the defining alternative to the comb's flat valley field."""
+    R = random.Random(seed)
+    dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill unit
+    ux, uy = -dy, dx  # cross-slope (contour) unit
+    hw = cross_width / 2
+    step = fall / n_terraces
+    plots: list[dict[str, Any]] = []
+    bund_lines: list[Poly] = []
+    samples = 14
+
+    def contour(s: float, amp: float, phase: float) -> Poly:
+        # one contour line across the slope at downhill distance s, curved by a gentle sine (organic terracing);
+        # the hillside narrows slightly downhill (a natural spur), so width tapers with s
+        w = hw * (1.0 - 0.12 * s / fall)
+        pts: Poly = []
+        for k in range(samples + 1):
+            t = -1.0 + 2.0 * k / samples
+            curve = amp * math.sin(phase + t * math.pi * 1.15)
+            base = s + curve
+            pts.append((top[0] + dx * base + ux * (t * w), top[1] + dy * base + uy * (t * w)))
+        return pts
+
+    # precompute the N+1 boundary contours ONCE (each its own gentle curve); adjacent terraces SHARE a boundary,
+    # so there is no gap between them - terrace i fills between boundary i (its uphill lip) and boundary i+1
+    boundaries = [contour(i * step, 16.0 + R.uniform(-4, 7), R.uniform(0, 2 * math.pi)) for i in range(n_terraces + 1)]
+    for i in range(n_terraces):
+        poly = [*boundaries[i], *reversed(boundaries[i + 1])]
+        fill = FLOODED if i >= n_terraces - 3 else R.choice(RICE_GREENS)  # the low terraces sit wettest
+        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in poly], "fill": fill})
+        bund_lines.append([(round(x, 1), round(y, 1)) for x, y in boundaries[i + 1]])  # the retaining lip at each terrace's low edge
+
+    # envelope: the two flank edges + the top and bottom contours (the outer boundary of the whole stack)
+    top_c = contour(0.0, 22.0, 0.0)
+    bot_c = contour(fall, 22.0, 0.0)
+    envelope = [*top_c, *reversed(bot_c), top_c[0]]
+    # a supply canal runs DOWN the high (t=-1) flank, then TURNS INTO the field foot (so its tail sits inside the
+    # terraces and the source->field feed anchors); a drain collects along the foot and DESCENDS to the low-flank
+    # outfall (so it flows downhill); a brook carries the drain off-map continuing the drain's own heading.
+    # a gentle diagonal supply: from the sluice (high-west shoulder) descending toward the field-centre foot, so
+    # its fork sits INSIDE the terraces (the source->field feed anchors) with no hairpin turn
+    n_sup = 8
+    flank = []
+    for k in range(n_sup + 1):
+        f = k / n_sup
+        s_pos = fall * 0.9 * f
+        lat = -hw * 0.92 * (1.0 - f * 0.8)  # from the west flank toward the centre as it descends
+        flank.append((top[0] + dx * s_pos + ux * lat, top[1] + dy * s_pos + uy * lat))
+    # the drain is a STRAIGHT descending collector along the foot (a straight amp=0 contour, not the wiggly
+    # terrace bottom - following the sine would hairpin), sloping steadily to the low-flank outfall, then turning
+    # downhill so the brook continues without an acute bend
+    foot = contour(fall, 0.0, 0.0)
+    fe, fw = foot[0], foot[-1]  # east / west foot ends
+    n_d = 8
+    drain_pts = []
+    for k in range(n_d + 1):
+        f = k / n_d
+        x = fe[0] + (fw[0] - fe[0]) * f + dx * 40 * f
+        y = fe[1] + (fw[1] - fe[1]) * f + dy * 40 * f
+        drain_pts.append((round(x, 1), round(y, 1)))
+    drain_pts.append((round(drain_pts[-1][0] + dx * 66, 1), round(drain_pts[-1][1] + dy * 66, 1)))  # the outfall TURNS DOWNHILL
+    sluice = flank[0]
+    channels = [
+        {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
+        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+    ]
+    brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]  # straight downhill off-map
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    return {
+        "channels": channels,
+        "plots": plots,
+        "threads": [],
+        "drain": drain_pts,
+        "brook": brook,
+        "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
+        "acres": acres,
+        "dry_plots": [],
+        "dry_acres": 0.0,
+        "bund_beans": [],
+        "bund_lines": bund_lines,
+        "furrows_vary": False,
+        "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
+    }
+
+
+def build_polder(
+    W: float,
+    H: float,
+    origin: Pt,
+    seed: int,
+    down_deg: float = 90,
+    rows: int = 11,
+    cols: int = 6,
+    cell: float = 150,
+) -> dict[str, Any]:
+    """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of LARGE regular rectangular
+    paddies on flat reclaimed low ground, divided by a straight orthogonal ditch grid inside a perimeter dike.
+    Returns build_comb-compatible keys so `Settlement.draw_comb_field` draws it. China-first grounding
+    (research.md D4): the wei-tian polder of the lower-Yangtze lake plains (Taihu / Dongting) is THE field
+    archetype for LOW reclaimed ground - orthogonal, surveyed, big-block, the planned opposite of the old
+    organic comb; water enters a corner, a perimeter feeder rings the block, and it drains to the low corner."""
+    R = random.Random(seed)
+    dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill (row) unit
+    ux, uy = dy, -dx  # cross (column) unit - the grid extends to the +x/+cross side of the origin
+    ox, oy = origin
+
+    def grid(s: float, t: float) -> Pt:
+        return (ox + dx * s + ux * t, oy + dy * s + uy * t)
+
+    plots: list[dict[str, Any]] = []
+    for r in range(rows):
+        for c in range(cols):
+            s0, s1, t0, t1 = r * cell, (r + 1) * cell, c * cell, (c + 1) * cell
+            g = 4.0  # a hairline gap = the bund between cells
+            quad = [grid(s0 + g, t0 + g), grid(s0 + g, t1 - g), grid(s1 - g, t1 - g), grid(s1 - g, t0 + g)]
+            fill = FLOODED if r >= rows - 2 else R.choice(RICE_GREENS)
+            plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill})
+    span_s, span_t = rows * cell, cols * cell
+    envelope = [grid(0, 0), grid(0, span_t), grid(span_s, span_t), grid(span_s, 0), grid(0, 0)]
+    # the supply feeder runs STRAIGHT along the high (top) edge from the sluice, so its fork sits just above the
+    # block and the source->field feed (fork + a step downhill) anchors INSIDE the grid without any hairpin. The
+    # drain runs along the low edge descending to the far outfall corner, then turns downhill for a smooth brook.
+    flank = [grid(-12, span_t * k / 8) for k in range(5)]  # along the high edge to mid-top...
+    flank.append(grid(70, span_t * 0.5))  # ...then dip INTO the block so the source->field feed anchors inside
+    drain_pts = [(round(x, 1), round(y, 1)) for x, y in [grid(span_s + 12 + dx * 30 * (k / 6), span_t * k / 6) for k in range(7)]]
+    drain_pts.append((round(drain_pts[-1][0] + dx * 62, 1), round(drain_pts[-1][1] + dy * 62, 1)))
+    sluice = flank[0]
+    channels = [
+        {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
+        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+    ]
+    brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    return {
+        "channels": channels,
+        "plots": plots,
+        "threads": [],
+        "drain": drain_pts,
+        "brook": brook,
+        "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
+        "acres": acres,
+        "dry_plots": [],
+        "dry_acres": 0.0,
+        "bund_beans": [],
+        "furrows_vary": False,
+        "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
+    }
+
+
+def build_ribbon(
+    W: float,
+    H: float,
+    top: Pt,
+    seed: int,
+    down_deg: float = 90,
+    length: float = 1900,
+    width: float = 300,
+    n_bands: int = 24,
+) -> dict[str, Any]:
+    """RIBBON VALLEY (谷地田 / a narrow valley-floor strip): a long, NARROW paddy strung along a MEANDERING
+    valley floor, the field archetype for a confined valley where the flat ground is only a thin winding
+    ribbon beside the brook. Returns build_comb-compatible keys. China-first grounding (research.md D4): the
+    valley-bottom rice ribbon of hill country - the brook runs down the centre, paddy bands flank it, and the
+    whole strip WANDERS with the valley (the distinguishing read against the broad comb fan or the polder)."""
+    R = random.Random(seed)
+    dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+    ux, uy = dy, -dx
+    hw = width / 2
+    step = length / n_bands
+    amp = width * 0.62  # how far the valley meanders laterally
+    wl = length / 2.4  # meander wavelength
+    ph = R.uniform(0, 2 * math.pi)
+
+    def cline(s: float) -> float:  # lateral offset of the valley centre at downhill s (the meander)
+        return amp * math.sin(ph + s / wl * 2 * math.pi)
+
+    def edge(s: float, side: float) -> Pt:
+        lat = cline(s) + side * hw * (0.9 + 0.2 * math.sin(s / 90.0))
+        return (top[0] + dx * s + ux * lat, top[1] + dy * s + uy * lat)
+
+    plots: list[dict[str, Any]] = []
+    for i in range(n_bands):
+        s0, s1 = i * step, (i + 1) * step
+        quad = [edge(s0, -1), edge(s0, 1), edge(s1, 1), edge(s1, -1)]
+        fill = FLOODED if i >= n_bands - 3 else R.choice(RICE_GREENS)
+        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill})
+    left = [edge(i * step, -1) for i in range(n_bands + 1)]
+    right = [edge(i * step, 1) for i in range(n_bands + 1)]
+    envelope = [*left, *reversed(right), left[0]]
+    # the valley BROOK runs down the meandering centre (the source: a stream, entering at the high end); a drain
+    # continues it off-map at the foot. Supply is the brook itself, so the 'main' ditch traces the centreline.
+    centre = [(top[0] + dx * (i * step) + ux * cline(i * step), top[1] + dy * (i * step) + uy * cline(i * step)) for i in range(n_bands + 1)]
+    flank = [(round(x, 1), round(y, 1)) for x, y in centre[: n_bands // 2 + 1]]  # the upper valley brook is the supply reach; its fork sits mid-valley so the source->field feed anchors INSIDE the ribbon
+    # a short CROSS-SLOPE collector across the ribbon at the foot (perpendicular to the fall), then a downhill
+    # outfall so the brook leaves smoothly (a valley ribbon still gathers its tail-water in a cross drain)
+    foot = centre[-1]
+    drain_pts = [
+        (round(foot[0] - ux * hw * 0.9, 1), round(foot[1] - uy * hw * 0.9, 1)),
+        (round(foot[0], 1), round(foot[1], 1)),
+        (round(foot[0] + ux * hw * 0.9, 1), round(foot[1] + uy * hw * 0.9, 1)),
+    ]
+    drain_pts.append((round(drain_pts[-1][0] + dx * 60, 1), round(drain_pts[-1][1] + dy * 60, 1)))
+    sluice = flank[0]
+    channels = [
+        {"pts": flank, "role": "main", "w": 5.0, "w_tail": 3.0},
+        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+    ]
+    brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    return {
+        "channels": channels,
+        "plots": plots,
+        "threads": [],
+        "drain": drain_pts,
+        "brook": brook,
+        "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
+        "acres": acres,
+        "dry_plots": [],
+        "dry_acres": 0.0,
+        "bund_beans": [],
+        "furrows_vary": False,
+        "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
+    }

@@ -5098,6 +5098,45 @@ def test_twin_settlement_form_is_an_axis():
 # ---- dwellings must not sit in the WET low toe below the field's drainage ditch (feature 005 / GM 2026-07) ----
 
 
+def test_contour_terraces_require_stepped_cross_slope_bands():
+    # a field declared field_archetype=contour_terraces must show >=8 cross-slope terrace bunds; too few, or bunds
+    # that run downhill (channels, not terrace lips), fires.
+    base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "contour_terraces"}}
+    good = {**base, "terrace_bunds": [*([[100, 200 + i * 80], [900, 200 + i * 80]] for i in range(10)), [[500, 900]]]}  # 10 wide E-W bands + a degenerate 1-pt bund (skipped)
+    assert "contour_terraces_are_stepped_bands" not in f(good)
+    few = {**base, "terrace_bunds": [[[100, 200 + i * 80], [900, 200 + i * 80]] for i in range(4)]}  # only 4
+    assert "contour_terraces_are_stepped_bands" in f(few)
+    downhill = {**base, "terrace_bunds": [[[100 + i * 40, 200], [100 + i * 40, 900]] for i in range(10)]}  # bunds run N-S (downhill)
+    assert "contour_terraces_are_stepped_bands" in f(downhill)
+
+
+def test_polder_field_must_fill_its_bbox():
+    # a field declared field_archetype=polder_grid must FILL its bounding box (a surveyed rectangle); a fan-shaped
+    # outline covering only a fraction of its bbox fires.
+    base = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}}
+    rect = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}]}
+    assert "polder_fills_its_bbox" not in f(rect)
+    fan = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": [[500, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}]}  # a triangle covers ~half its bbox
+    assert "polder_fills_its_bbox" in f(fan)
+
+
+def test_ribbon_valley_must_be_long_and_narrow():
+    base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "ribbon_valley"}}
+    thin = {**base, "fields": [{"name": "r", "kind": "paddy", "outline": [[400, 100], [700, 100], [700, 2000], [400, 2000]], "bbox": [400, 100, 700, 2000]}]}  # 300 wide x 1900 long
+    assert "ribbon_is_long_and_narrow" not in f(thin)
+    squat = {**base, "fields": [{"name": "r", "kind": "paddy", "outline": [[100, 100], [1400, 100], [1400, 900], [100, 900]], "bbox": [100, 100, 1400, 900]}]}  # 1300 x 800, too broad
+    assert "ribbon_is_long_and_narrow" in f(squat)
+
+
+def test_mulberry_dike_fishpond_needs_a_block_of_ponds():
+    base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}}
+    rect_ol = [[100, 100], [900, 100], [900, 1300], [100, 1300]]
+    good = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": rect_ol, "bbox": [100, 100, 900, 1300]}], "land_use": [{"overlay": "mulberry_fishpond", "count": 40}]}
+    assert "dikepond_is_ponds_in_a_block" not in f(good)
+    no_ponds = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": rect_ol, "bbox": [100, 100, 900, 1300]}]}  # a block but no fishponds
+    assert "dikepond_is_ponds_in_a_block" in f(no_ponds)
+
+
 def test_field_outline_matches_planting_fires_on_a_phantom_tail():
     # A DISPERSED map whose field OUTLINE runs 200px past the planted crop (`vis_bbox`) - the over-declared
     # `field_fall` defect. The point of the fixture: `all_houses_field_adjacent` PASSES on this manifest (the

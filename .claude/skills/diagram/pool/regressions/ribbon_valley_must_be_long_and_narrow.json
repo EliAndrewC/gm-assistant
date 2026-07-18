@@ -1,0 +1,43 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "down_deg": 90,
+  "field_archetype": "ribbon_valley"
+ },
+ "fields": [
+  {
+   "name": "r",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     1400,
+     100
+    ],
+    [
+     1400,
+     900
+    ],
+    [
+     100,
+     900
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    1400,
+    900
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "ribbon_is_long_and_narrow"
+  ],
+  "source": "test_checks.py::test_ribbon_valley_must_be_long_and_narrow"
+ }
+}

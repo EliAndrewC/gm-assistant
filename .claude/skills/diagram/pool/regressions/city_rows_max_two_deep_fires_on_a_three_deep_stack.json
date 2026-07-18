@@ -1,0 +1,104 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "wall": [
+  [
+   0,
+   0
+  ],
+  [
+   3000,
+   0
+  ],
+  [
+   3000,
+   3000
+  ],
+  [
+   0,
+   3000
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 300.0,
+   "w": 40,
+   "h": 24,
+   "rot": 180,
+   "kind": "laborer"
+  },
+  {
+   "x": 341,
+   "y": 300.0,
+   "w": 40,
+   "h": 24,
+   "rot": 180,
+   "kind": "laborer"
+  },
+  {
+   "x": 382,
+   "y": 300.0,
+   "w": 40,
+   "h": 24,
+   "rot": 180,
+   "kind": "laborer"
+  },
+  {
+   "x": 300,
+   "y": 325.5,
+   "w": 40,
+   "h": 24,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 341,
+   "y": 325.5,
+   "w": 40,
+   "h": 24,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 382,
+   "y": 325.5,
+   "w": 40,
+   "h": 24,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 300,
+   "y": 351.0,
+   "w": 40,
+   "h": 24,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 341,
+   "y": 351.0,
+   "w": 40,
+   "h": 24,
+   "rot": 0,
+   "kind": "laborer"
+  },
+  {
+   "x": 382,
+   "y": 351.0,
+   "w": 40,
+   "h": 24,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_rows_max_two_deep"
+  ],
+  "source": "test_checks.py::test_city_rows_max_two_deep_fires_on_a_three_deep_stack"
+ }
+}

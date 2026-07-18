@@ -6623,6 +6623,79 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if hill:
             check("pond_clear_of_hill", not in_ellipse(pcx, pcy, hill, 1.4), "pond too close to the hill (erosion)")
 
+    # A declared LAND-USE overlay must actually be DRAWN (feature 005 US4): a village that says it grows
+    # mulberry-fishpond / rape / lotus / hill-tea must show plots (or a tea fringe) of it, not just a label.
+    lu = meta.get("land_use_overlay")
+    if lu and lu != "none":
+        recs = [r for r in M.get("land_use", []) if r.get("overlay") == lu]
+        check("land_use_overlay_drawn", bool(recs) and recs[0].get("count", 0) > 0, f"meta declares land_use_overlay={lu!r} but no plots/rows were drawn with it - call s.apply_land_use()")
+
+    # A contour-TERRACES field (feature 005 US4) must actually read as STEPPED CROSS-SLOPE BANDS: enough terrace
+    # retaining bunds, each running roughly PERPENDICULAR to the fall (a terrace lip follows the contour, across
+    # the slope - a bund that ran downhill would be a channel, not a terrace step). This is the archetype's teeth.
+    if meta.get("field_archetype") == "contour_terraces":
+        bunds = M.get("terrace_bunds", [])
+        dd = meta.get("down_deg", 90)
+        ddx, ddy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+        n_cross = 0
+        for bl in bunds:
+            if len(bl) < 2:
+                continue
+            along = abs((bl[-1][0] - bl[0][0]) * ddx + (bl[-1][1] - bl[0][1]) * ddy)  # span along the fall
+            acrs = abs((bl[-1][0] - bl[0][0]) * -ddy + (bl[-1][1] - bl[0][1]) * ddx)  # span across the fall
+            if acrs > 2.0 * along:  # a genuine n_cross-slope contour bund
+                n_cross += 1
+        check(
+            "contour_terraces_are_stepped_bands",
+            len(bunds) >= 8 and n_cross >= 8,
+            f"a contour_terraces field needs >=8 cross-slope terrace bunds (found {len(bunds)} bunds, {n_cross} cross-slope) - the defining stepped-band look",
+        )
+
+    # A POLDER-grid field (feature 005 US4) is a solid rectilinear BLOCK - it FILLS its bounding box (unlike the
+    # comb fan or the contour terraces, whose outline covers a small fraction of its bbox). That fill ratio is
+    # the archetype's teeth: a polder reads as a surveyed rectangle, not an organic field.
+    if meta.get("field_archetype") == "polder_grid" and fields:
+        pf = fields[0]
+        b = pf.get("bbox") or [0, 0, 1, 1]
+        bbox_area = max(1.0, (b[2] - b[0]) * (b[3] - b[1]))
+        fill_ratio = poly_area(pf["outline"]) / bbox_area
+        check(
+            "polder_fills_its_bbox",
+            fill_ratio >= 0.82,
+            f"a polder_grid field must FILL its bounding box (a surveyed rectangular block), but its outline covers only {fill_ratio:.0%} of its bbox - that reads as a fan/terraced field, not a polder",
+        )
+
+    # A MULBERRY-DIKE FISH-POND field (feature 005 US4, 桑基魚塘) is a filled block whose cells are FISH PONDS
+    # rimmed by mulberry dikes - so it must both fill its bbox (a reclaimed block) AND carry a mulberry_fishpond
+    # land-use over most of it. China-first: the Pearl-delta closed sericulture-aquaculture system.
+    if meta.get("field_archetype") == "mulberry_dike_fishpond" and fields:
+        pf = fields[0]
+        b = pf.get("bbox") or [0, 0, 1, 1]
+        dp_fill = poly_area(pf["outline"]) / max(1.0, (b[2] - b[0]) * (b[3] - b[1]))
+        pond_rec = [r for r in M.get("land_use", []) if r.get("overlay") == "mulberry_fishpond" and r.get("count", 0) >= 20]
+        check(
+            "dikepond_is_ponds_in_a_block",
+            dp_fill >= 0.82 and bool(pond_rec),
+            f"a mulberry_dike_fishpond field must be a filled block ({dp_fill:.0%} of bbox) of many mulberry-rimmed fish ponds (enough pond cells: {bool(pond_rec)}) - the 桑基魚塘 system",
+        )
+
+    # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -
+    # so its extent ALONG the fall is much greater than its extent ACROSS it. That aspect is the archetype's
+    # teeth: a ribbon reads as a winding valley strip, not a broad fan/block.
+    if meta.get("field_archetype") == "ribbon_valley" and fields:
+        dd = meta.get("down_deg", 90)
+        rdx, rdy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+        ol = fields[0]["outline"]
+        along_vals = [px * rdx + py * rdy for px, py in ol]
+        cross_vals = [px * -rdy + py * rdx for px, py in ol]
+        along_span = max(along_vals) - min(along_vals)
+        cross_span = max(1.0, max(cross_vals) - min(cross_vals))
+        check(
+            "ribbon_is_long_and_narrow",
+            along_span >= 2.0 * cross_span,
+            f"a ribbon_valley field must run far along the fall relative to its width (along {along_span:.0f} vs across {cross_span:.0f}, want >=2x) - the defining narrow-valley strip",
+        )
+
     # SOFT ADVISORY (default-on; a map opts out with meta(crop_advisory=False)): a single feature that could
     # be moved to free a significantly tighter crop. NOT a failure - it never enters `fails` or gates the map;
     # it just prints a hint. (Unlike a hard invariant, e.g. houses-clear-of-moats, this is a default we accept.)
