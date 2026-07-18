@@ -153,6 +153,28 @@ if podman container exists "$NAME" 2>/dev/null; then
 fi
 
 # ---- build a fresh run ----
+#
+# The uid/gid maps make the container's `agent` user (uid 1000) write files that
+# the host sees as owned by YOU - without which everything the container touched
+# in the bind-mounted repo would land owned by some subuid and need chown'ing.
+#
+# They do NOT hard-code your UID. Under ROOTLESS podman the middle field of
+# CONTAINER:HOST:SIZE is not a real host id but a slot in the intermediate user
+# namespace podman sets up, where slot 0 is the invoking user (whatever their UID
+# is - 1000, 3000, 5000) and slots 1..65536 are their /etc/subuid range. So
+# "1000:0:1" means "container uid 1000 -> the invoking user", and the script
+# never has to know the number. The other two lines park container root (0..999)
+# and everything above 1000 in the subuid range so they can't collide with it.
+#
+# What this DOES depend on is the SIZE of the subuid/subgid allocation: the maps
+# reach intermediate slot 1001+64536-1 = 65536, and the near-universal default
+# allocation is exactly 65536 entries - a perfect fit with zero headroom. A host
+# handing out a smaller range makes `podman run` fail outright. Check with:
+#   grep "^$USER:" /etc/subuid /etc/subgid    # third field must be >= 65536
+#
+# All of the above is rootless-only. Under `sudo podman` the middle field means a
+# REAL host id, so "1000:0:1" would map the agent user to actual root and
+# /etc/subuid is not consulted - do not run this script with sudo.
 RUN_ARGS=(
   --interactive --tty --rm
   --name "$NAME"
@@ -185,6 +207,25 @@ fi
 
 # Extra host mounts declared by the repo. The HOST side may be absolute, ~-based,
 # or relative to the repo root (so ".." is the repo's parent directory).
+#
+# Existence alone is a weak check for a RELATIVE source: ".." always exists, so a
+# repo cloned somewhere unexpected (~/projects/gm-assistant) would silently mount
+# the wrong directory and only fail much later, when something looks for a file
+# that isn't there. So a mount may also declare marker paths that must be present
+# under the source for it to count as the right directory - here setting/ and
+# rules/ identify the l7r notes repo. Missing markers means we skip the mount and
+# say so, rather than mounting a lookalike.
+mount_markers() {
+  case "$1" in
+    /host-l7r-repo) echo "setting rules" ;;
+    *) : ;;
+  esac
+}
+
+# Shared SELinux relabel (:z), not the private :Z used for the workspace: these
+# are host directories used OUTSIDE the container too (the GM edits l7r.md from
+# their laptop), and :Z would relabel them container-private and lock the host
+# out. On non-SELinux distros both are no-ops.
 while IFS= read -r m; do
   [ -n "$m" ] || continue
   host_raw="${m%%:*}"
@@ -194,7 +235,16 @@ while IFS= read -r m; do
     echo ">> warning: mount source '$host_raw' -> '$host' does not exist; skipping." >&2
     continue
   fi
-  RUN_ARGS+=( --volume "${host}:${container_path}:Z" )
+  missing=""
+  for marker in $(mount_markers "$container_path"); do
+    [ -d "$host/$marker" ] || missing="$missing $marker"
+  done
+  if [ -n "$missing" ]; then
+    echo ">> warning: '$host' is missing${missing}/ so it does not look like the" >&2
+    echo "   expected ${container_path} content; skipping that mount." >&2
+    continue
+  fi
+  RUN_ARGS+=( --volume "${host}:${container_path}:z" )
   echo ">> mount: ${host} -> ${container_path}"
 done < <(read_directive container-mounts)
 
