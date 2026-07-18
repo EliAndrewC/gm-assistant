@@ -1,0 +1,38 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid"
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     500,
+     100
+    ],
+    [
+     900,
+     1300
+    ],
+    [
+     100,
+     1300
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    900,
+    1300
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "polder_fills_its_bbox"
+  ],
+  "source": "test_checks.py::test_polder_field_must_fill_its_bbox"
+ }
+}
