@@ -1859,6 +1859,92 @@ def test_cluster_seeds_shapes_generate_and_record():
     assert near_centre < 0.15 * len(spl)  # a gap between the two sub-hamlets
 
 
+def test_cluster_anchor_places_each_position_on_the_right_dry_margin():
+    # cluster_position resolves against the field bbox + down_deg into an anchor off the paddy. Check each
+    # value lands on the expected side of the field centre relative to the fall (down_deg=90 -> downhill = +y).
+    import math as m
+
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="Ca", scale="village")
+    fb = (600.0, 400.0, 1400.0, 1200.0)  # a field, centre (1000, 800)
+    fcx, fcy = 1000.0, 800.0
+    dd = 90.0
+    dx, dy = m.cos(m.radians(dd)), m.sin(m.radians(dd))  # (0, 1)
+    ux, uy = -dy, dx  # (-1, 0)
+
+    def along(pos):  # signed along-slope offset of the anchor (>0 = downhill of centre)
+        cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
+        return (cx - fcx) * dx + (cy - fcy) * dy
+
+    def lateral(pos):
+        cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
+        return (cx - fcx) * ux + (cy - fcy) * uy
+
+    assert along("high_margin") < -400 and abs(lateral("high_margin")) < 30  # uphill, centred
+    assert along("valley_head") < -400 and lateral("valley_head") != lateral("mid_margin")  # both high, opposite flanks
+    assert along("mid_margin") < -400
+    assert abs(lateral("flank")) > 400 and abs(along("flank")) < 30  # off to a cross-slope side
+    assert along("valley_mouth") > 0 and abs(lateral("valley_mouth")) > 400  # low end, but on the dry shoulder
+    assert along("on_rise") < -300  # a high-corner knoll
+    # the anchor centre sits OFF the paddy footprint (never inside the field bbox) for the margin positions
+    for pos in ("high_margin", "valley_head", "mid_margin", "flank", "valley_mouth"):
+        cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
+        assert not (fb[0] < cx < fb[2] and fb[1] < cy < fb[3])
+    # extents are positive and the lateral (along-margin) axis is the broader one for a top margin (runs E-W)
+    _cx, _cy, ex, ey = s.cluster_anchor("high_margin", fb, dd)
+    assert ex > ey > 0
+    with pytest.raises(ValueError):
+        s.cluster_anchor("nowhere", fb, dd)
+
+
+def test_plot_texture_drives_build_comb_grain():
+    from waterfields import build_comb
+
+    s = Settlement(2000, 2800, seed=1)
+    s.meta(name="Pt", scale="village")
+    # small_irregular vs large_block must produce visibly different plot counts on the SAME field
+    a_small, step_small = s.plot_texture("small_irregular", "organic")
+    a_large, _step_large = s.plot_texture("large_block", "organic")
+    assert a_small < a_large  # smaller plot_across = smaller paddies
+    net_small = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=(), plot_across=a_small, row_step=step_small)
+    net_large = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=(), plot_across=a_large)
+    assert len(net_small["plots"]) > len(net_large["plots"])  # small paddies -> more plots
+    # grid tightens the row-step spread vs organic
+    _a, org = s.plot_texture("medium", "organic")
+    _a2, grid = s.plot_texture("medium", "grid")
+    assert (grid[1] - grid[0]) < (org[1] - org[0])
+    # the knobs are recorded
+    assert s.M["meta"]["plot_size"] == "medium" and s.M["meta"]["plot_regularity"] == "grid"
+    for bad in (("huge", "organic"), ("medium", "checkerboard")):
+        with pytest.raises(ValueError):
+            s.plot_texture(*bad)
+
+
+def test_water_source_anchor_gravity_and_valid_set():
+    # water_source_position resolves to a sluice/entry point on the field's UPHILL margin; a downhill source
+    # is rejected (gravity), and water_sources_for lists only the feedable set for a given fall + water kind.
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="Ws", scale="village")
+    fb = (600.0, 400.0, 1400.0, 1200.0)  # centre (1000, 800); down_deg 90 -> downhill = +y (S)
+    # an uphill (N) pond corner is fine and sits above the field
+    sx, sy = s.water_source_anchor("corner_NW", fb, 90.0)
+    assert sy < 400  # north of the field's top edge
+    assert s.water_source_anchor("mid_margin", fb, 90.0)[1] < 400  # the uphill margin
+    # a downhill (S) corner cannot gravity-feed a south-falling field -> rejected
+    with pytest.raises(ValueError):
+        s.water_source_anchor("corner_SW", fb, 90.0)
+    with pytest.raises(ValueError):
+        s.water_source_anchor("edge_S", fb, 90.0)
+    with pytest.raises(ValueError):
+        s.water_source_anchor("bogus", fb, 90.0)
+    # the gravity-valid sets: ponds exclude the two south corners for a south fall; streams keep the non-S edges
+    ponds = s.water_sources_for(90.0, "pond")
+    assert "corner_NW" in ponds and "corner_NE" in ponds and "mid_margin" in ponds
+    assert "corner_SW" not in ponds and "corner_SE" not in ponds
+    streams = s.water_sources_for(90.0, "stream")
+    assert set(streams) == {"edge_N", "edge_E", "edge_W"}  # not edge_S (downhill)
+
+
 def test_cluster_seeds_record_false_and_bad_shape():
     import random as _r
 
