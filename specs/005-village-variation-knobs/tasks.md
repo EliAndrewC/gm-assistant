@@ -132,10 +132,10 @@ description: "Task list for Village Visual Variation Knobs"
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T034 [P] Document the full knob surface + roll-vs-pin in `SKILL.md` and update the settlements.md map roster.
-- [ ] T035 [P] Save negative-fixture regressions to `pool/regressions/` for the twin-detector + each new check (coverage alone does not prove teeth).
-- [ ] T036 Run the full gate: `make done` (ruff + format + mypy --strict + pytest 100% cov) green; `check_village` on all six maps; twin-detector reports zero twinned pairs; render-review Kikuta + Hoshigaoka (SC-001..SC-006).
-- [ ] T037 Verify 100% of shipped knob values have recorded grounding in `settlements.md` (SC-005); run `quickstart.md` walkthrough end-to-end.
+- [x] T034 [P] Document the full knob surface + roll-vs-pin in `SKILL.md` and update the settlements.md map roster.
+- [x] T035 [P] Save negative-fixture regressions to `pool/regressions/` for the twin-detector + each new check (coverage alone does not prove teeth).
+- [x] T036 Run the full gate: `make done` (ruff + format + mypy --strict + pytest 100% cov) green; `check_village` on all six maps; twin-detector reports zero twinned pairs; render-review Kikuta + Hoshigaoka (SC-001..SC-006).
+- [x] T037 Verify 100% of shipped knob values have recorded grounding in `settlements.md` (SC-005); run `quickstart.md` walkthrough end-to-end.
 
 ---
 
