@@ -958,3 +958,67 @@ def build_terraces(
         "furrows_vary": False,
         "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
     }
+
+
+def build_polder(
+    W: float,
+    H: float,
+    origin: Pt,
+    seed: int,
+    down_deg: float = 90,
+    rows: int = 11,
+    cols: int = 6,
+    cell: float = 150,
+) -> dict[str, Any]:
+    """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of LARGE regular rectangular
+    paddies on flat reclaimed low ground, divided by a straight orthogonal ditch grid inside a perimeter dike.
+    Returns build_comb-compatible keys so `Settlement.draw_comb_field` draws it. China-first grounding
+    (research.md D4): the wei-tian polder of the lower-Yangtze lake plains (Taihu / Dongting) is THE field
+    archetype for LOW reclaimed ground - orthogonal, surveyed, big-block, the planned opposite of the old
+    organic comb; water enters a corner, a perimeter feeder rings the block, and it drains to the low corner."""
+    R = random.Random(seed)
+    dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill (row) unit
+    ux, uy = dy, -dx  # cross (column) unit - the grid extends to the +x/+cross side of the origin
+    ox, oy = origin
+
+    def grid(s: float, t: float) -> Pt:
+        return (ox + dx * s + ux * t, oy + dy * s + uy * t)
+
+    plots: list[dict[str, Any]] = []
+    for r in range(rows):
+        for c in range(cols):
+            s0, s1, t0, t1 = r * cell, (r + 1) * cell, c * cell, (c + 1) * cell
+            g = 4.0  # a hairline gap = the bund between cells
+            quad = [grid(s0 + g, t0 + g), grid(s0 + g, t1 - g), grid(s1 - g, t1 - g), grid(s1 - g, t0 + g)]
+            fill = FLOODED if r >= rows - 2 else R.choice(RICE_GREENS)
+            plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill})
+    span_s, span_t = rows * cell, cols * cell
+    envelope = [grid(0, 0), grid(0, span_t), grid(span_s, span_t), grid(span_s, 0), grid(0, 0)]
+    # the supply feeder runs STRAIGHT along the high (top) edge from the sluice, so its fork sits just above the
+    # block and the source->field feed (fork + a step downhill) anchors INSIDE the grid without any hairpin. The
+    # drain runs along the low edge descending to the far outfall corner, then turns downhill for a smooth brook.
+    flank = [grid(-12, span_t * k / 8) for k in range(5)]  # along the high edge to mid-top...
+    flank.append(grid(70, span_t * 0.5))  # ...then dip INTO the block so the source->field feed anchors inside
+    drain_pts = [(round(x, 1), round(y, 1)) for x, y in [grid(span_s + 12 + dx * 30 * (k / 6), span_t * k / 6) for k in range(7)]]
+    drain_pts.append((round(drain_pts[-1][0] + dx * 62, 1), round(drain_pts[-1][1] + dy * 62, 1)))
+    sluice = flank[0]
+    channels = [
+        {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
+        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+    ]
+    brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    return {
+        "channels": channels,
+        "plots": plots,
+        "threads": [],
+        "drain": drain_pts,
+        "brook": brook,
+        "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
+        "acres": acres,
+        "dry_plots": [],
+        "dry_acres": 0.0,
+        "bund_beans": [],
+        "furrows_vary": False,
+        "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
+    }

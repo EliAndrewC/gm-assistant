@@ -3258,7 +3258,7 @@ class Settlement:
         if role != "pond_fringe":  # the wet valley TOE is UNBUILDABLE: register it as a no-build keep-out
             self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in poly])  # so nothing is placed/dug on a bog (a thin pond-fringe shore ring is exempt)
 
-    def hinterland(self, down_deg: Any = None, *, marsh: bool = True, commons: bool = True, pad: float = 90, marsh_role: str = "toe", scrub_role: str = "grazing", skip_sides: Any = ()) -> None:
+    def hinterland(self, down_deg: Any = None, *, marsh: bool = True, commons: bool = True, interior_fill: bool = True, pad: float = 90, marsh_role: str = "toe", scrub_role: str = "grazing", skip_sides: Any = ()) -> None:
         """Lay out a settlement's non-arable HINTERLAND: a reed MARSH at the downhill TOE (below the paddy's
         drainage line, where wet-rice reclamation stops and the valley floor stays reed wetland) and the
         cut-over SCRUB commons (coarse grass + a few scraggly pines) filling the surrounding non-arable margins.
@@ -3340,8 +3340,10 @@ class Settlement:
             # ground, the only uncovered land on the map. That is what read as "empty space" on Akagahara. This
             # patch covers the cultivated bbox; since the scatter already skips every field, lane, watercourse,
             # building and keep-out, it can only land in those voids, clothing them as the rough grazing they
-            # are. Ground the crop does not use is still ground, and it is grazed.
-            self.commons([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)], role=scrub_role, avoid=avoid)
+            # are. Ground the crop does not use is still ground, and it is grazed. A SOLID field (a polder grid
+            # fills its whole bbox, no voids) has nothing to clothe here, so `interior_fill=False` skips it.
+            if interior_fill:
+                self.commons([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)], role=scrub_role, avoid=avoid)
         if marsh:
             # The toe is a CONTOUR BAND, not an axis-aligned box. Wet ground is defined by HEIGHT, and every
             # other feature here (field, comb, drain, the marsh_on_low_ground check) resolves height by

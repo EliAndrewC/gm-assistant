@@ -6648,7 +6648,21 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         check(
             "contour_terraces_are_stepped_bands",
             len(bunds) >= 8 and n_cross >= 8,
-            f"a contour_terraces field needs >=8 n_cross-slope terrace bunds (found {len(bunds)} bunds, {n_cross} n_cross-slope) - the defining stepped-band look",
+            f"a contour_terraces field needs >=8 cross-slope terrace bunds (found {len(bunds)} bunds, {n_cross} cross-slope) - the defining stepped-band look",
+        )
+
+    # A POLDER-grid field (feature 005 US4) is a solid rectilinear BLOCK - it FILLS its bounding box (unlike the
+    # comb fan or the contour terraces, whose outline covers a small fraction of its bbox). That fill ratio is
+    # the archetype's teeth: a polder reads as a surveyed rectangle, not an organic field.
+    if meta.get("field_archetype") == "polder_grid" and fields:
+        pf = fields[0]
+        b = pf.get("bbox") or [0, 0, 1, 1]
+        bbox_area = max(1.0, (b[2] - b[0]) * (b[3] - b[1]))
+        fill_ratio = poly_area(pf["outline"]) / bbox_area
+        check(
+            "polder_fills_its_bbox",
+            fill_ratio >= 0.82,
+            f"a polder_grid field must FILL its bounding box (a surveyed rectangular block), but its outline covers only {fill_ratio:.0%} of its bbox - that reads as a fan/terraced field, not a polder",
         )
 
     # SOFT ADVISORY (default-on; a map opts out with meta(crop_advisory=False)): a single feature that could

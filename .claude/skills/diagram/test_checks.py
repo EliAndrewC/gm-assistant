@@ -5110,6 +5110,16 @@ def test_contour_terraces_require_stepped_cross_slope_bands():
     assert "contour_terraces_are_stepped_bands" in f(downhill)
 
 
+def test_polder_field_must_fill_its_bbox():
+    # a field declared field_archetype=polder_grid must FILL its bounding box (a surveyed rectangle); a fan-shaped
+    # outline covering only a fraction of its bbox fires.
+    base = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}}
+    rect = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}]}
+    assert "polder_fills_its_bbox" not in f(rect)
+    fan = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": [[500, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}]}  # a triangle covers ~half its bbox
+    assert "polder_fills_its_bbox" in f(fan)
+
+
 def test_field_outline_matches_planting_fires_on_a_phantom_tail():
     # A DISPERSED map whose field OUTLINE runs 200px past the planted crop (`vis_bbox`) - the over-declared
     # `field_fall` defect. The point of the fixture: `all_houses_field_adjacent` PASSES on this manifest (the
