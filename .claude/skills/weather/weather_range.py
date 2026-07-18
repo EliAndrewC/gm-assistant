@@ -100,14 +100,20 @@ tr.mhead td { background: #e7e0d0; color: #4a4336; font: 600 .9rem Georgia, seri
 .snowcell { color: #3a4a63; }
 .muted { color: #b5ae9e; }
 footer { color: #8a8272; font-size: .8rem; margin-top: 1rem; }
-.cols-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem;
-               margin: 0 0 1rem; padding: .55rem .8rem; background: #efe9dc;
-               border: 1px solid #ddd6c8; border-radius: 8px; font-size: .85rem; color: #4a4336; }
-.cols-toggle .lead { font-weight: 600; }
-.cols-toggle label { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; cursor: pointer; }
-.cols-toggle input { margin: 0; }
-.cols-toggle a { color: #7a5a3a; margin-left: .4rem; }
-@media print { .cols-toggle { display: none; } }
+th.kebab-col, td.kebab-col { width: 1%; padding-left: .2rem; padding-right: .45rem; text-align: center; }
+thead th.kebab-col { text-align: right; }
+.kebab { background: none; border: 0; color: inherit; font: inherit; font-size: 1.25rem; line-height: 1;
+         cursor: pointer; padding: 0 .3rem; border-radius: 4px; }
+.kebab:hover { background: rgba(255, 255, 255, .18); }
+.kebab-menu { position: fixed; z-index: 50; background: #fffdf8; border: 1px solid #ddd6c8;
+             border-radius: 8px; box-shadow: 0 6px 22px rgba(0, 0, 0, .18); padding: .6rem .75rem;
+             display: flex; flex-direction: column; gap: .35rem; font-size: .88rem; color: #4a4336; min-width: 168px; }
+.kebab-menu[hidden] { display: none; }
+.kebab-menu-title { font-weight: 600; margin-bottom: .1rem; }
+.kebab-menu label { display: flex; align-items: center; gap: .4rem; white-space: nowrap; cursor: pointer; }
+.kebab-menu input { margin: 0; }
+.kebab-menu a { color: #7a5a3a; margin-top: .25rem; }
+@media print { .kebab-col, .kebab-menu { display: none; } }
 """
 
 
@@ -125,6 +131,7 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
     columns += [("sun", "Sun (rise / set)"), ("notes", "Notes")]
 
     head = "".join(f'<th data-col="{k}">{esc(label)}</th>' for k, label in columns)
+    head += '<th class="kebab-col"><button id="kebab-btn" class="kebab" aria-label="Show or hide columns" title="Columns">&#8942;</button></th>'
     toggles = "".join(
         f'<label><input type="checkbox" data-toggle="{k}" checked> {esc(label)}</label>'
         for k, label in columns
@@ -132,7 +139,7 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
 
     body = []
     cur_month = None
-    ncols = len(columns)
+    ncols = len(columns) + 1  # + kebab column
     for r in rows:
         if r["month"] != cur_month:
             cur_month = r["month"]
@@ -167,6 +174,7 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
             inner, ccls = cell[k]
             attr = f' class="{ccls}"' if ccls else ""
             tds.append(f'<td data-col="{k}"{attr}>{inner}</td>')
+        tds.append('<td class="kebab-col"></td>')
         body.append(f'<tr class="{cls}">' + "".join(tds) + "</tr>")
 
     snow_note = "" if has_snow else " No snow fell in this range, so snow columns are omitted."
@@ -177,10 +185,10 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
 <body><div class="wrap">
 <h1>{esc(title)}</h1>
 <p class="sub"><b>{esc(place['place'])}</b> ({esc(place.get('clan','?'))}) &mdash; real recorded weather for its climate analog, <b>{esc(place['us_analog'])}</b>. {esc(span)}.{snow_note}</p>
-<div class="cols-toggle"><span class="lead">Show columns:</span>{toggles}<a href="#" id="cols-reset">show all</a></div>
 <div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>
 {chr(10).join(body)}
 </tbody></table></div>
+<div id="kebab-menu" class="kebab-menu" hidden><div class="kebab-menu-title">Show columns</div>{toggles}<a href="#" id="cols-reset">show all</a></div>
 <footer>Grounded in historical reanalysis (Open-Meteo / ERA5). Weather is indifferent to the plot by design. Column choices are remembered in this browser.</footer>
 </div>
 <script>
@@ -203,6 +211,21 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
   var reset = document.getElementById("cols-reset");
   reset.addEventListener("click", function (e) {{ e.preventDefault(); hidden.clear(); save(hidden); apply(); }});
   apply();
+
+  var btn = document.getElementById("kebab-btn");
+  var menu = document.getElementById("kebab-menu");
+  function openMenu() {{
+    var r = btn.getBoundingClientRect();
+    menu.style.top = (r.bottom + 4) + "px";
+    menu.style.right = Math.max(8, window.innerWidth - r.right) + "px";
+    menu.hidden = false;
+  }}
+  function closeMenu() {{ menu.hidden = true; }}
+  btn.addEventListener("click", function (e) {{ e.stopPropagation(); if (menu.hidden) openMenu(); else closeMenu(); }});
+  document.addEventListener("click", function (e) {{ if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) closeMenu(); }});
+  document.addEventListener("keydown", function (e) {{ if (e.key === "Escape") closeMenu(); }});
+  window.addEventListener("scroll", closeMenu, true);
+  window.addEventListener("resize", closeMenu);
 }})();
 </script>
 </body></html>"""

@@ -74,7 +74,7 @@ Source: **Open-Meteo Historical Weather API** (ERA5 reanalysis, free, no API key
 - `fetch_analog.py "<place>" <year>` - pull a year for a place's analog into `raw/`; then record the printed filename as that place's `year_file`.
 - `build_weather_csv.py [raw.json] [out.csv]` - reduce a raw year to a stripped daily CSV (date, weekday, high/low, precip, cloud %, sunrise, sunset, conditions).
 - `weather.py "<place>" <month> <day> [--night]` - single-day lookup: place -> analog -> translated date -> a day or night report.
-- `weather_range.py "<place>" <sm> <sd> <em> <ed> [--out f.html]` - a browsable HTML table over a Rokugani date range, written to `reports/` (gitignored). Snow columns appear only if some day in the range has snow. The page has a show/hide-columns bar; the selection persists in the browser (localStorage, keyed by column, shared across all reports) so e.g. "hide snow" sticks everywhere.
+- `weather_range.py "<place>" <sm> <sd> <em> <ed> [--out f.html]` - a browsable HTML table over a Rokugani date range, written to `reports/` (gitignored). Snow columns appear only if some day in the range has snow. The page has a kebab (three-dot) menu at the right of the table header for showing/hiding columns; the selection persists in the browser (localStorage, keyed by column, shared across all reports) so e.g. "hide snow" sticks everywhere.
 
 Two source quirks handled on read, never baked into the raw data: (1) Open-Meteo reports a whole request at one fixed UTC offset, so winter sun times land an hour late - the tools reinterpret at the file's offset and convert to true local time; (2) cloud cover is hourly-only, so daily/night cloud is averaged from the hourly values.
 

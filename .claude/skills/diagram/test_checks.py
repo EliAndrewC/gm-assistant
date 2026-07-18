@@ -5109,7 +5109,7 @@ def test_field_outline_matches_planting_fires_on_a_phantom_tail():
         "houses": [{"x": 600, "y": 760, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
     }
     assert "field_outline_matches_planting" in f(base)
-    assert "all_houses_field_adjacent" not in f(base)   # the old gate is blind here - that is the whole point
+    assert "all_houses_field_adjacent" not in f(base)  # the old gate is blind here - that is the whole point
     # outline == planting: the honest field, no tail -> does NOT fire
     good = {**base, "fields": [{**base["fields"][0], "vis_bbox": [400, 400, 800, 800]}]}
     assert "field_outline_matches_planting" not in f(good)
