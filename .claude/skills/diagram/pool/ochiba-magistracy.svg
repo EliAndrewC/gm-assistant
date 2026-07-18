@@ -128,10 +128,10 @@
        (a kosatsu is read where people pass, so it hugs the gate line on the approach -
        it faced the formal approach off to the east before, ~32 ft from any gate; GM 2026-07) -->
   <g>
-    <rect x="520" y="758" width="44" height="12" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
-    <circle cx="526" cy="772" r="1.5" fill="#4A3318"/>
-    <circle cx="558" cy="772" r="1.5" fill="#4A3318"/>
-    <text x="542" y="786" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">notice board</text>
+    <rect x="468" y="758" width="44" height="12" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
+    <circle cx="474" cy="772" r="1.5" fill="#4A3318"/>
+    <circle cx="506" cy="772" r="1.5" fill="#4A3318"/>
+    <text x="490" y="786" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">notice board</text>
   </g>
 
   <!-- Internal divider wall between outer (south) and inner (north) courts -->
@@ -169,7 +169,7 @@
        county's tax base, so they get fireproof walls -->
   <g>
     <rect x="220" y="500" width="96" height="84" fill="#F2EFE4" stroke="#4A3318" stroke-width="2.5"/>
-    <rect x="306" y="535" width="8" height="14" fill="#4A3318"/>
+    <rect x="308" y="535" width="8" height="14" fill="#4A3318"/>
     <text x="268" y="547" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">tax archive</text>
   </g>
 
