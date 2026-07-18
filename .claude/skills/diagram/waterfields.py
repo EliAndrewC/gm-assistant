@@ -1067,7 +1067,9 @@ def build_ribbon(
     # the valley BROOK runs down the meandering centre (the source: a stream, entering at the high end); a drain
     # continues it off-map at the foot. Supply is the brook itself, so the 'main' ditch traces the centreline.
     centre = [(top[0] + dx * (i * step) + ux * cline(i * step), top[1] + dy * (i * step) + uy * cline(i * step)) for i in range(n_bands + 1)]
-    flank = [(round(x, 1), round(y, 1)) for x, y in centre[: n_bands // 2 + 1]]  # the upper valley brook is the supply reach; its fork sits mid-valley so the source->field feed anchors INSIDE the ribbon
+    flank = [
+        (round(x, 1), round(y, 1)) for x, y in centre[: n_bands // 2 + 1]
+    ]  # the upper valley brook is the supply reach; its fork sits mid-valley so the source->field feed anchors INSIDE the ribbon
     # a short CROSS-SLOPE collector across the ribbon at the foot (perpendicular to the fall), then a downhill
     # outfall so the brook leaves smoothly (a valley ribbon still gathers its tail-water in a cross drain)
     foot = centre[-1]
