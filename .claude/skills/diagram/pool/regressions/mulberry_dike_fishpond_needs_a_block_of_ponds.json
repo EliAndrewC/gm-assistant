@@ -1,0 +1,42 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "mulberry_dike_fishpond"
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     1300
+    ],
+    [
+     100,
+     1300
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    900,
+    1300
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dikepond_is_ponds_in_a_block"
+  ],
+  "source": "test_checks.py::test_mulberry_dike_fishpond_needs_a_block_of_ponds"
+ }
+}

@@ -5120,6 +5120,15 @@ def test_polder_field_must_fill_its_bbox():
     assert "polder_fills_its_bbox" in f(fan)
 
 
+def test_mulberry_dike_fishpond_needs_a_block_of_ponds():
+    base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}}
+    rect_ol = [[100, 100], [900, 100], [900, 1300], [100, 1300]]
+    good = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": rect_ol, "bbox": [100, 100, 900, 1300]}], "land_use": [{"overlay": "mulberry_fishpond", "count": 40}]}
+    assert "dikepond_is_ponds_in_a_block" not in f(good)
+    no_ponds = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": rect_ol, "bbox": [100, 100, 900, 1300]}]}  # a block but no fishponds
+    assert "dikepond_is_ponds_in_a_block" in f(no_ponds)
+
+
 def test_field_outline_matches_planting_fires_on_a_phantom_tail():
     # A DISPERSED map whose field OUTLINE runs 200px past the planted crop (`vis_bbox`) - the over-declared
     # `field_fall` defect. The point of the fixture: `all_houses_field_adjacent` PASSES on this manifest (the
