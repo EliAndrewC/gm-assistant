@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "wall": [
+  [
+   0,
+   0
+  ],
+  [
+   3000,
+   0
+  ],
+  [
+   3000,
+   3000
+  ],
+  [
+   0,
+   3000
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 24,
+   "rot": 90,
+   "kind": "laborer"
+  },
+  {
+   "x": 274.5,
+   "y": 300,
+   "w": 40,
+   "h": 24,
+   "rot": 90,
+   "kind": "laborer"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_house_doors_unblocked"
+  ],
+  "source": "test_checks.py::test_city_house_doors_unblocked_respects_rotation_axes"
+ }
+}

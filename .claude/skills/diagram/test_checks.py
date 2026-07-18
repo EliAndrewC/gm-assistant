@@ -5098,6 +5098,18 @@ def test_twin_settlement_form_is_an_axis():
 # ---- dwellings must not sit in the WET low toe below the field's drainage ditch (feature 005 / GM 2026-07) ----
 
 
+def test_contour_terraces_require_stepped_cross_slope_bands():
+    # a field declared field_archetype=contour_terraces must show >=8 cross-slope terrace bunds; too few, or bunds
+    # that run downhill (channels, not terrace lips), fires.
+    base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "contour_terraces"}}
+    good = {**base, "terrace_bunds": [[[100, 200 + i * 80], [900, 200 + i * 80]] for i in range(10)]}  # 10 wide E-W bands
+    assert "contour_terraces_are_stepped_bands" not in f(good)
+    few = {**base, "terrace_bunds": [[[100, 200 + i * 80], [900, 200 + i * 80]] for i in range(4)]}  # only 4
+    assert "contour_terraces_are_stepped_bands" in f(few)
+    downhill = {**base, "terrace_bunds": [[[100 + i * 40, 200], [100 + i * 40, 900]] for i in range(10)]}  # bunds run N-S (downhill)
+    assert "contour_terraces_are_stepped_bands" in f(downhill)
+
+
 def test_field_outline_matches_planting_fires_on_a_phantom_tail():
     # A DISPERSED map whose field OUTLINE runs 200px past the planted crop (`vis_bbox`) - the over-declared
     # `field_fall` defect. The point of the fixture: `all_houses_field_adjacent` PASSES on this manifest (the
