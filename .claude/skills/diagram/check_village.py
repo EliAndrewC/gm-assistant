@@ -6679,6 +6679,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a mulberry_dike_fishpond field must be a filled block ({dp_fill:.0%} of bbox) of many mulberry-rimmed fish ponds (enough pond cells: {bool(pond_rec)}) - the 桑基魚塘 system",
         )
 
+    # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -
+    # so its extent ALONG the fall is much greater than its extent ACROSS it. That aspect is the archetype's
+    # teeth: a ribbon reads as a winding valley strip, not a broad fan/block.
+    if meta.get("field_archetype") == "ribbon_valley" and fields:
+        dd = meta.get("down_deg", 90)
+        rdx, rdy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+        ol = fields[0]["outline"]
+        along_vals = [px * rdx + py * rdy for px, py in ol]
+        cross_vals = [px * -rdy + py * rdx for px, py in ol]
+        along_span = max(along_vals) - min(along_vals)
+        cross_span = max(1.0, max(cross_vals) - min(cross_vals))
+        check(
+            "ribbon_is_long_and_narrow",
+            along_span >= 2.0 * cross_span,
+            f"a ribbon_valley field must run far along the fall relative to its width (along {along_span:.0f} vs across {cross_span:.0f}, want >=2x) - the defining narrow-valley strip",
+        )
+
     # SOFT ADVISORY (default-on; a map opts out with meta(crop_advisory=False)): a single feature that could
     # be moved to free a significantly tighter crop. NOT a failure - it never enters `fails` or gates the map;
     # it just prints a hint. (Unlike a hard invariant, e.g. houses-clear-of-moats, this is a default we accept.)
