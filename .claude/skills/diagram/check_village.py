@@ -6623,6 +6623,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if hill:
             check("pond_clear_of_hill", not in_ellipse(pcx, pcy, hill, 1.4), "pond too close to the hill (erosion)")
 
+    # A declared LAND-USE overlay must actually be DRAWN (feature 005 US4): a village that says it grows
+    # mulberry-fishpond / rape / lotus / hill-tea must show plots (or a tea fringe) of it, not just a label.
+    lu = meta.get("land_use_overlay")
+    if lu and lu != "none":
+        recs = [r for r in M.get("land_use", []) if r.get("overlay") == lu]
+        check("land_use_overlay_drawn", bool(recs) and recs[0].get("count", 0) > 0, f"meta declares land_use_overlay={lu!r} but no plots/rows were drawn with it - call s.apply_land_use()")
+
     # SOFT ADVISORY (default-on; a map opts out with meta(crop_advisory=False)): a single feature that could
     # be moved to free a significantly tighter crop. NOT a failure - it never enters `fails` or gates the map;
     # it just prints a hint. (Unlike a hard invariant, e.g. houses-clear-of-moats, this is a default we accept.)
