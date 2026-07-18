@@ -2002,7 +2002,7 @@ def test_waterfront_seeds_line_both_banks_of_a_canal():
 
     s = Settlement(1600, 1600, seed=1)
     s.meta(name="Wt", scale="village")
-    canal = [(200, 200), (200, 1200)]  # a straight N-S canal
+    canal = [(200, 200), (200, 700), (500, 1200)]  # a BENT canal (2 segments) so later seeds fall past the first
     seeds = s.waterfront_seeds(canal, 20, 60.0, _r.Random(3))
     assert len(seeds) == 20 and s.M["meta"]["settlement_form"] == "water_town"
     # seeds sit on BOTH banks (both sides of x=200), offset ~60px
