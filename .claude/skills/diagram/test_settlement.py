@@ -1997,6 +1997,18 @@ def test_roll_village_is_deterministic_and_seed_varies_the_combination():
     assert 15 <= len(s7a.M["houses"]) <= 19 and s7a.M["fields"] and s7a.view  # a populated, framed map
 
 
+def test_roll_village_stream_fed_with_a_pinned_water_source():
+    # exercises the STREAM water path (a brook entering from a canvas edge) and a PINNED water_source_position
+    # (edge_N is a legal stream source for a south-falling field). Covers the stream branches in roll_village +
+    # draw_comb_field that the pond-fed demos do not.
+    s = Settlement(W=2000, H=2600, seed=7)
+    s.meta(name="Sr", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+    s.pin_knob("water_source_position", "edge_N")
+    k = s.roll_village("Sr", households=18, down_deg=90, water_kind="stream", field_fall=1260)
+    assert k["water_source_position"] == "edge_N" and s.M["meta"]["water_kind"] == "stream"
+    assert s.M["houses"] and any(st for st in s.M["streams"])  # a stream source was drawn
+
+
 def test_roll_village_honors_a_pinned_knob():
     # a pinned knob overrides the roll (US3 determinism surface, exercised through the roll entrypoint)
     s = Settlement(W=2000, H=2600, seed=7)
