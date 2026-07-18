@@ -9,8 +9,13 @@ __pycache__
 .mypy_cache/
 .ruff_cache/
 
-# Per-machine Claude Code permission grants — gitignored by convention.
+# Per-machine Claude Code permission grants - gitignored by convention.
 .claude/settings.local.json
+
+# Isolated per-session working clones for parallel Claude sessions (see CLAUDE.md "Parallel
+# sessions"). Each is a full `git clone` of this repo, kept out of git so the two working trees
+# never cross-contaminate. Lives on the host mount, so it survives a container rebuild.
+.clones/
 
 # Rendered /diagram map PNGs are regenerable from their .gen.py/.svg/.json (kept in git),
 # so they are not tracked - this is what keeps them out of git history. Regenerate with
