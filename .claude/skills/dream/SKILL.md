@@ -123,20 +123,18 @@ The load-bearing sensibility of the whole skill lives here: **a choice is more i
 
 **Spending.** Points buy options from the scene's menu, in two families: **understand the others' dreams** (the shape of what the group received - the old Coda's job) and **delve deeper into your own dream** (more of what heaven sent *you*). Costs vary; vague or group-level facts are cheap, precise or powerful ones dear - build the menu per scene. As long as the dreamer has **at least 1 point**, they may buy one more option even if it costs more than remains; dipping to zero or below is allowed. Going negative normally costs nothing, but a **dream quest** may set a penalty for ending negative (a nightmare backlash, waking unrested, a lingering ill omen), declared for that scene.
 
-**Void points.** While lucid (i.e. having rolled a 10) a dreamer may spend a void point to enlarge the pool (suggest +3 per void point; tune to taste). A Player Character Point can regain a spent void point per the standard rules.
-
-A default menu to adapt (option - cost):
+A default menu to adapt (cost: option). There are always exactly **three categories** a sleeper's result can fall into - **no dream, noise, or a meaningful result** - no matter how many meaningful tables the scene has (if the scene uses a misleading band, a misleading dream counts as meaningful here, since it presents to everyone as a true sending):
 
 *Understand the others' dreams*
 
-- How many distinct categories the group's dreams fell into - 2
-- How many sleepers fell into a category you name (no dream, noise, your own table, or a specific table) - 2
-- Which named sleepers were in a category you name - 1, **unlocked** only once the category counts are known (bought outright, or the last one deduced by elimination); naming every live category but one reveals the rest for free
+- **2 points:** How many of the three categories the group's dreams fell into
+- **2 points:** How many sleepers fell into a category you name (no dream, noise, or a meaningful result)
+- **1 point:** Which named sleepers were in a category you name - **unlocked** only once the category counts are known (bought outright, or the last one deduced by elimination); naming every live category but one reveals the rest for free
 
 *Delve deeper into your own dream*
 
-- See another significant dream you might have gotten (a second fragment from your table) - 3
-- See a significant dream from a different table - the road not taken - 4
+- **3 points:** See another significant dream you might have gotten (a second fragment from your table)
+- **4 points:** See a significant dream from a different table - the road not taken
 
 Two properties worth keeping when you build a menu. First, aim for a **1/2/3/4 cost ladder** so a small pool still buys something and a large one buys real depth. Second, options can be **unlocked** by earlier purchases: the cheap 1-point "which sleepers were in a category you name" only opens once the counts are known, and since naming all-but-one live category reveals the rest by elimination, cheap options compound into full knowledge. Tiered menus like this reward planning the spend, which is the point - and the order matters, so a dreamer may take one 1-point reveal and bank the rest.
 
@@ -150,6 +148,9 @@ Whatever is purchased, deliver it **inside the lucid-dream fiction**, never as a
 - **Lucky** - re-roll any roll once per adventure.
 - **Togashi Ise Zumi, 4th Dan** - dream rolls count as **contested** for this ability, so the Ise Zumi may reroll a dream roll once after seeing it, **but must keep the new roll even if it is worse**. With rerolls to spare, an Ise Zumi can go 10-hunting, at the risk of dreaming down.
 - The **Merchant 5th Dan does NOT apply** to dream rolls - that ability cannot reroll dice on all types of rolls.
+- **Void points, scaled by Honor.** After seeing your first dream roll and before you wake, you may spend **(6 minus your Honor)** void points to reroll it. Honor runs 1.0 to 5.0 in half-steps, so this costs 1 to 5 points; when your Honor ends in .5 the cost lands between two whole numbers and you round it up or down on a 50/50 roll. You may pay with the one void point a character regains from a night's sleep, so a high-Honor sleeper often rerolls at little or no real cost. As always, a roll takes at most one reroll.
+
+**A reroll is never blind, and so never a trap.** On a first roll no one is told which band they hit - telling a true sending from noise from a blank is the whole interpretation game. A *reroll* is the exception: if it lands on an invalid result (no dream or noise), the dreamer is told so, and told which - they get the fragment *and* the knowledge that it is a no-dream or a random-dream result. So a reroll can never quietly swap a true sending for a convincing lie the dreamer would take as real; the worst it can do is hand back a result they already know to disregard. This holds for every reroll source above (the Honor/void reroll, Lucky, the Togashi Ise Zumi 4th Dan, a Player Character Point), and never for an original roll.
 
 Because a warning or damning fragment can land on a 10 and the dreamer then spends points to confirm the group's shape, a 10 makes hard truths certain and hands the dreamer the leverage of knowing what others cannot vouch for. That is intended.
 

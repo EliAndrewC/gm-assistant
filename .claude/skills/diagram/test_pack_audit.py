@@ -510,3 +510,44 @@ def test_layout_checks_fire_on_frozen_hayakawa_fixture() -> None:
     assert pa.dark_on_dark_labels(plan)  # river door / guest-wing annotation over the wall
     assert pa.notice_board_adrift(plan)
     assert pa.occluded_foreground(plan)  # 'service gate' clipped
+
+
+# --- label-clash + door-on-a-wall checks (round 2 of the rendering checks) ---
+
+
+def test_overlapping_labels_flags_smear_and_ignores_separated() -> None:
+    clash = _svg(_rect(0, 0, 300, 300, COURT), _text(50, 50, "alpha", 'font-size="12"'), _text(58, 52, "beta", 'font-size="12"'))
+    hit = pa.overlapping_labels(pa.parse_svg(clash))
+    assert hit and {hit[0].a, hit[0].b} == {"alpha", "beta"}
+    apart = _svg(_rect(0, 0, 300, 300, COURT), _text(20, 50, "alpha", 'font-size="12"'), _text(220, 50, "beta", 'font-size="12"'))
+    assert pa.overlapping_labels(pa.parse_svg(apart)) == []
+
+
+def test_floating_door_flagged_but_flush_deep_and_straddling_pass() -> None:
+    b = _rect(0, 0, 100, 100, "#DDB87A")
+    floating = _svg(_rect(0, 0, 300, 300, COURT), b, _rect(90, 40, 7, 14, "#4A3318"))  # x2=97, 3 px short of east edge
+    assert pa.floating_doors(pa.parse_svg(floating))[0].gap_ft == pytest.approx(1.0)
+    flush = _svg(_rect(0, 0, 300, 300, COURT), b, _rect(93, 40, 7, 14, "#4A3318"))  # x2=100, on the wall
+    assert pa.floating_doors(pa.parse_svg(flush)) == []
+    deep = _svg(_rect(0, 0, 300, 300, COURT), b, _rect(45, 45, 7, 7, "#4A3318"))  # 45 px from every edge -> an interior mark, not a door
+    assert pa.floating_doors(pa.parse_svg(deep)) == []
+    straddle = _svg(_rect(0, 0, 300, 300, COURT), b, _rect(96, 40, 8, 14, "#4A3318"))  # x2=104, crosses the wall -> a real doorway
+    assert pa.floating_doors(pa.parse_svg(straddle)) == []
+
+
+def test_format_report_clash_and_door_sections() -> None:
+    svg = _svg(
+        _rect(0, 0, 300, 300, COURT),
+        _rect(0, 0, 100, 100, "#DDB87A"),
+        _rect(90, 40, 7, 14, "#4A3318"),  # floating door
+        _text(50, 50, "alpha", 'font-size="12"'),
+        _text(58, 52, "beta", 'font-size="12"'),  # clashes with alpha
+    )
+    report = pa.format_report(pa.parse_svg(svg))
+    assert "LABEL CLASH" in report and "DOOR ADRIFT" in report
+
+
+def test_frozen_fixtures_show_the_floating_kura_door() -> None:
+    for name in ("ochiba-layout-red.svg", "hayakawa-layout-red.svg"):
+        with open(os.path.join(_FIX, name)) as fh:
+            assert pa.floating_doors(pa.parse_svg(fh.read()))  # the kura door 2 px inside its wall

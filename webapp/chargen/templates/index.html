@@ -629,8 +629,14 @@
                 data: JSON.stringify(params),
                 contentType: 'application/json',
                 dataType: 'json',
+                beforeSend: function() {
+                    dom.$uploads.prop('disabled', true);
+                    dom.$upload.text('Uploading...');
+                    dom.$upload_bottom.text('Uploading...');
+                },
                 success: function(resp) {
                     if (resp.error) {
+                        dom.$uploads.prop('disabled', false);
                         alert(resp.error);
                         return;
                     }
@@ -656,7 +662,12 @@
                     dom.$upload_result_view.focus();
                 },
                 error: function(xhr, status, error) {
+                    dom.$uploads.prop('disabled', false);
                     alert('Upload failed: ' + error);
+                },
+                complete: function() {
+                    dom.$upload.text('Upload');
+                    dom.$upload_bottom.text('Upload');
                 }
             });
         });

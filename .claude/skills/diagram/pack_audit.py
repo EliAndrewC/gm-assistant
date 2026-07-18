@@ -73,9 +73,13 @@ DARK_MIN_OVERLAP_PX: float = 2.5  # a label must sit ON a dark feature by at lea
 OCCLUSION_MIN_PX: float = 3.0  # a later feature must cover at least this much of a label/tub to count
 GROUP_LABEL_GLYPHS: dict[str, str] = {"fire-water tub": "tub", "well": "well"}  # label text -> glyph kind it names
 GROUP_LABEL_MAX_FT: float = 9.0  # a glyph-group label must sit within this of a glyph it names
-NOTICE_BOARD_MAX_FT: float = 15.0  # a notice board must sit within this of a gate opening to be read
+NOTICE_BOARD_MAX_FT: float = 20.0  # a notice board must sit within this of a gate opening to be read
 NUDGE_STEP_PX: float = 4.0
 NUDGE_MAX_PX: float = 40.0  # search radius for a legibility-clearing nudge
+LABEL_OVERLAP_MIN_PX: float = 3.0  # two labels overlapping by more than this collide/smear
+DOOR_MAX_AREA_PX: float = 250.0  # a door glyph is small (a kura door); bigger dark rects are hearths/blocks
+DOOR_FLUSH_TOL_PX: float = 1.5  # a door within this of a building edge reads as ON the wall
+DOOR_NEAR_PX: float = 12.0  # a door candidate this close to an edge is TRYING to be in the wall (vs a deep interior marker)
 
 Grid = list[list[bool]]
 
@@ -159,6 +163,7 @@ class ParsedPlan:
     wall_segs: tuple[Rect, ...] = ()  # compound-wall line segments (thin rects), for gate openings
     wells: tuple[Rect, ...] = ()  # well-curb rects, for the 'well' group-label proximity check
     dark_rects: tuple[Rect, ...] = ()  # dark-filled rects, for the black-on-black legibility check
+    door_rects: tuple[Rect, ...] = ()  # small dark rects (door glyphs), for the door-on-a-wall check
 
     @property
     def bounds(self) -> tuple[float, float, float, float]:
@@ -268,6 +273,7 @@ def parse_svg(text: str) -> ParsedPlan:
             wall_segs.append(Rect(min(x1, x2), min(y1, y2), max(abs(x2 - x1), 2.0), max(abs(y2 - y1), 2.0)))
     wells = tuple(r for r in rects if r.fill == WELL_FILL)
     dark_rects = tuple(r for r in rects if r.fill in DARK_FILLS and r.area_px >= MIN_DARK_AREA_PX)
+    door_rects = tuple(r for r in rects if r.fill in DARK_FILLS and r.area_px < DOOR_MAX_AREA_PX)
     return ParsedPlan(
         interior,
         buildings,
@@ -279,6 +285,7 @@ def parse_svg(text: str) -> ParsedPlan:
         tuple(wall_segs),
         wells,
         dark_rects,
+        door_rects,
     )
 
 
@@ -634,6 +641,54 @@ def dark_on_dark_labels(plan: ParsedPlan) -> list[DarkOnDark]:
     return out
 
 
+@dataclass(frozen=True)
+class LabelClash:
+    """Two labels whose boxes overlap - their text smears together."""
+
+    a: str
+    b: str
+    x: float
+    y: float
+
+
+def overlapping_labels(plan: ParsedPlan, min_px: float = LABEL_OVERLAP_MIN_PX) -> list[LabelClash]:
+    """Pairs of labels whose estimated boxes overlap by more than min_px on both axes."""
+    out: list[LabelClash] = []
+    labs = plan.labels
+    for i, a in enumerate(labs):
+        for b in labs[i + 1 :]:
+            ox = min(a.x2, b.x2) - max(a.x, b.x)
+            oy = min(a.y2, b.y2) - max(a.y, b.y)
+            if ox >= min_px and oy >= min_px:
+                out.append(LabelClash(a.text, b.text, (max(a.x, b.x) + min(a.x2, b.x2)) / 2, (max(a.y, b.y) + min(a.y2, b.y2)) / 2))
+    return out
+
+
+@dataclass(frozen=True)
+class FloatingDoor:
+    """A door glyph floating INSIDE a building instead of sitting on (an opening in) its wall."""
+
+    x: float
+    y: float
+    gap_ft: float  # gap to the nearest wall it should sit on
+
+
+def floating_doors(plan: ParsedPlan) -> list[FloatingDoor]:
+    """A door is an opening in a WALL, so its glyph must sit on a building edge, not adrift in the
+    interior. Flag a small dark door-rect fully contained in a building whose nearest edge is close
+    (it is clearly meant to be that wall's door) but not flush - leaving white space to the wall."""
+    out: list[FloatingDoor] = []
+    for d in plan.door_rects:
+        for b in plan.buildings:
+            gaps = (d.x - b.x, b.x2 - d.x2, d.y - b.y, b.y2 - d.y2)
+            if all(g >= 0 for g in gaps):  # fully inside this building
+                gap = min(gaps)
+                if DOOR_FLUSH_TOL_PX < gap <= DOOR_NEAR_PX:
+                    out.append(FloatingDoor(d.x + d.w / 2, d.y + d.h / 2, gap / FTPX))
+                break
+    return out
+
+
 def _blocked(
     buildings: tuple[Rect, ...],
     i: int,
@@ -760,6 +815,10 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
     for dk in dark_on_dark_labels(plan):
         fix = f"nudge ({dk.nudge_dx_ft:+.0f},{dk.nudge_dy_ft:+.0f}) ft clears it" if dk.fixable else "no small nudge clears it - relocate"
         lines.append(f"    DARK-ON-DARK: {dk.text!r} at svg({dk.x:.0f},{dk.y:.0f}) - black ink over a dark feature; {fix}")
+    for cl in overlapping_labels(plan):
+        lines.append(f"    LABEL CLASH: {cl.a!r} and {cl.b!r} overlap at svg({cl.x:.0f},{cl.y:.0f}) - move one apart")
+    for dr in floating_doors(plan):
+        lines.append(f"    DOOR ADRIFT: a door at svg({dr.x:.0f},{dr.y:.0f}) floats {dr.gap_ft:.1f} ft inside the building - set it on the wall")
     return "\n".join(lines)
 
 

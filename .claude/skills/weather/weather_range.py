@@ -4,8 +4,12 @@
     python3 weather_range.py "Shiro Reiji" 2 1 4 30            # 2nd month through end of 4th
     python3 weather_range.py reiji 1 1 1 30 --out /tmp/win.html
 
-One row per day: Rokugani date, Gregorian analog, high/low, sky, rain, sun, moon,
-and a terse grounded note. Snow columns (new snow, ground depth start->end, peak)
+One row per day: Rokugani date, Gregorian analog, calendar observance, high/low,
+sky, rain, sun, moon, and a terse grounded note. Festival names in the Calendar
+column expand in place to the /calendar skill's full entry for that day, and a
+month header's name opens that month's seasonal notes in a modal - both are baked
+into the file from `.claude/skills/calendar/SKILL.md` at build time, so the report
+stays self-contained. Snow columns (new snow, ground depth start->end, peak)
 appear ONLY if some day in the range has snow; a snowless range omits them
 entirely. Writes a self-contained HTML file (styled, opens in any browser) and
 prints its path. See SKILL.md for the invocation contract and the place -> analog
@@ -19,6 +23,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import calendar_data as C
 import weather as W
 from build_weather_csv import local_clock
 
@@ -98,6 +103,39 @@ tr.mhead td { background: #e7e0d0; color: #4a4336; font: 600 .9rem Georgia, seri
 tr.mhead:hover td { background: #e0d8c4; }
 .chev { display: inline-block; transition: transform .12s ease; margin-right: .35rem; color: #8a7d5f; }
 tr.mhead.collapsed .chev { transform: rotate(-90deg); }
+tr.mhead .mname { background: none; border: 0; font: inherit; color: #5a4a24; cursor: pointer;
+                  padding: 0; text-decoration: underline dotted #a8996f; text-underline-offset: 3px; }
+tr.mhead .mname:hover { color: #23201b; text-decoration-color: #5a4a24; }
+.cal { white-space: normal; min-width: 120px; max-width: 200px; }
+.calbtn { background: none; border: 0; font: inherit; color: #6d4d7a; cursor: pointer; padding: 0;
+          text-align: left; text-decoration: underline dotted #b09bbb; text-underline-offset: 3px; }
+.calbtn:hover { color: #23201b; text-decoration-color: #6d4d7a; }
+.calbtn::after { content: " \\25B8"; font-size: .8em; color: #b09bbb; }
+tr.dayrow.open .calbtn::after { content: " \\25BE"; }
+tr.detail { display: none; }
+tr.detail.open { display: table-row; }
+tr.detail td { background: #f6f1f7 !important; white-space: normal; padding: .6rem .9rem .8rem 1.1rem;
+               border-left: 3px solid #b09bbb; }
+tr.detail h4 { margin: 0 0 .35rem; font: 600 1rem Georgia, serif; color: #4a3a52; }
+tr.detail p { margin: 0 0 .5rem; max-width: 74ch; }
+tr.detail p:last-child { margin-bottom: 0; }
+tr.detail .none { color: #8a8272; font-style: italic; }
+.modal-back { position: fixed; inset: 0; background: rgba(35, 32, 27, .45); z-index: 60;
+              display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.modal-back[hidden] { display: none; }
+.modal { background: #fffdf8; border-radius: 10px; box-shadow: 0 12px 40px rgba(0, 0, 0, .3);
+         max-width: 720px; width: 100%; max-height: 82vh; overflow-y: auto; padding: 1.4rem 1.6rem 1.6rem; }
+.modal h2 { font: 600 1.3rem/1.3 Georgia, serif; margin: 0 0 .15rem; }
+.modal .mspan { color: #6b6357; font-size: .9rem; margin: 0 0 .9rem; }
+.modal dl { margin: 0 0 1rem; display: grid; grid-template-columns: max-content 1fr; gap: .3rem .8rem; }
+.modal dt { font-weight: 600; color: #4a4336; font-size: .88rem; }
+.modal dd { margin: 0; font-size: .9rem; }
+.modal p { margin: 0 0 .7rem; max-width: 74ch; }
+.modal .days { margin: .4rem 0 0; padding-left: 1.1rem; font-size: .9rem; }
+.modal .days li { margin-bottom: .25rem; }
+.modal-close { float: right; background: none; border: 0; font-size: 1.5rem; line-height: 1;
+               color: #8a8272; cursor: pointer; padding: 0 .2rem; }
+.modal-close:hover { color: #23201b; }
 .hi { font-weight: 600; } .lo { color: #6b6357; }
 .tags { color: #7a5a3a; font-size: .85rem; white-space: normal; min-width: 130px; max-width: 210px; }
 .snowcell { color: #3a4a63; }
@@ -120,7 +158,25 @@ thead th.kebab-col { text-align: right; }
 """
 
 
-def render(place: dict, rows: list, sm, sd, em, ed) -> str:
+def month_modal_json(cal: dict, months: list[int]) -> str:
+    """Serialise just the months present in this range, for the header modal."""
+    import json
+    out = {}
+    for n in months:
+        mo = cal.get(n)
+        if mo is None:  # pragma: no cover - all twelve months exist in SKILL.md
+            continue
+        out[str(n)] = {
+            "title": f"{W.ordinal(n)} Month - {mo['name']} ({mo['meaning']}), Month of the {mo['zodiac']}",
+            "span": mo["span"],
+            "meta": [[k, v] for k, v in mo["meta"]],
+            "intro": mo["intro"],
+            "days": [[d, mo["days"][d]["title"]] for d in sorted(mo["days"])],
+        }
+    return json.dumps(out)
+
+
+def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
     has_snow = any(r["snow"] for r in rows)
     m1, _, mean1 = W.MONTHS[sm]
     m2, _, mean2 = W.MONTHS[em]
@@ -128,7 +184,8 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
              f"to {W.ordinal(ed)} of the {W.ordinal(em)} month")
     span = f"{rows[0]['greg']:%b %-d} - {rows[-1]['greg']:%b %-d, %Y}"
 
-    columns = [("rok", "Rokugani"), ("date", "Date"), ("hilo", "Hi / Lo"), ("sky", "Sky"), ("rain", "Rain")]
+    columns = [("rok", "Rokugani"), ("date", "Date"), ("cal", "Calendar"),
+               ("hilo", "Hi / Lo"), ("sky", "Sky"), ("rain", "Rain")]
     if has_snow:
         columns += [("newsnow", "New snow"), ("ground", "Ground"), ("peak", "Peak")]
     columns += [("sun", "Sun (rise / set)"), ("notes", "Notes")]
@@ -150,14 +207,28 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
             zod, name, meaning = W.MONTHS[cur_month]
             lo = W.to_gregorian(cur_month, 1, rows[0]["greg"].year)
             hi = W.to_gregorian(cur_month, 30, rows[0]["greg"].year)
-            label = f"{W.ordinal(cur_month)} Month - {name} ({meaning}), Month of the {zod} - {lo:%b %-d} to {hi:%b %-d}"
+            # The month name is its own button (opens the modal); clicking anywhere
+            # else on the header row still collapses/expands the month.
+            mname = f"{W.ordinal(cur_month)} Month - {name} ({meaning})"
+            rest = f", Month of the {zod} - {lo:%b %-d} to {hi:%b %-d}"
             body.append(f'<tr class="mhead" data-month="{cur_month}"><td colspan="{ncols}">'
-                        f'<span class="chev">&#9662;</span>{esc(label)}</td></tr>')
+                        f'<span class="chev">&#9662;</span>'
+                        f'<button class="mname" data-month="{cur_month}" '
+                        f'title="Seasonal notes for this month">{esc(mname)}</button>'
+                        f'{esc(rest)}</td></tr>')
 
         cls = "snow" if r["snow"] else ("rain" if r["precip"] >= W.WET_IN else "")
+        entry = cal.get(r["month"], {}).get("days", {}).get(r["day"])
+        rid = f'{r["month"]}-{r["day"]:02d}'
+        if entry:
+            calcell = (f'<button class="calbtn" data-day="{rid}">'
+                       f'{esc(C.short_title(entry["title"]))}</button>')
+        else:
+            calcell = "-"
         cell = {
-            "rok": (f'{r["month"]}-{r["day"]:02d}', ""),
+            "rok": (rid, ""),
             "date": (f'{r["greg"]:%b %-d}', ""),
+            "cal": (calcell, "cal"),
             "hilo": (f'<span class="hi">{r["hi"]}</span> / <span class="lo">{r["lo"]}</span> &deg;F', ""),
             "sky": (f'{esc(W.describe_sky(r["cloud"]))} <span class="muted">{r["cloud"]:.0f}%</span>', ""),
             "rain": ((f'{r["precip"]:.2f}"', "") if r["precip"] >= W.WET_IN else ("-", "muted")),
@@ -182,11 +253,24 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
             attr = f' class="{ccls}"' if ccls else ""
             tds.append(f'<td data-col="{k}"{attr}>{inner}</td>')
         tds.append('<td class="kebab-col"></td>')
-        rowcls = ("drow " + cls).strip()
-        body.append(f'<tr class="{rowcls}" data-month="{r["month"]}">' + "".join(tds) + "</tr>")
+        rowcls = ("drow dayrow " + cls).strip()
+        body.append(f'<tr class="{rowcls}" data-month="{r["month"]}" data-day="{rid}">'
+                    + "".join(tds) + "</tr>")
+
+        if entry:
+            # Pre-rendered and hidden rather than built in JS: keeps the file
+            # printable and searchable (ctrl-F finds collapsed festival text).
+            paras = "".join(f"<p>{esc(p)}</p>" for p in entry["body"]) or \
+                '<p class="none">No further detail in the calendar for this day.</p>'
+            greg = f' <span class="muted">({esc(entry["greg"])})</span>' if entry["greg"] else ""
+            body.append(
+                f'<tr class="drow detail" data-month="{r["month"]}" data-detail="{rid}">'
+                f'<td colspan="{ncols}"><h4>{W.ordinal(r["day"])} Day{greg} - '
+                f'{esc(entry["title"])}</h4>{paras}</td></tr>')
 
     empty_cols = [k for k, _ in columns if k not in nonempty]
     empty_js = "[" + ", ".join(f'"{k}"' for k in empty_cols) + "]"
+    months_js = month_modal_json(cal, sorted({r["month"] for r in rows}))
     snow_note = "" if has_snow else " No snow fell in this range, so snow columns are omitted."
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -199,7 +283,11 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
 {chr(10).join(body)}
 </tbody></table></div>
 <div id="kebab-menu" class="kebab-menu" hidden><div class="kebab-menu-title">Show columns</div>{toggles}<a href="#" id="cols-reset">show all</a></div>
-<footer>Grounded in historical reanalysis (Open-Meteo / ERA5). Weather is indifferent to the plot by design. Column choices are remembered in this browser.</footer>
+<div id="modal-back" class="modal-back" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+<button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+<h2 id="modal-title"></h2><p class="mspan" id="modal-span"></p><div id="modal-body"></div>
+</div></div>
+<footer>Grounded in historical reanalysis (Open-Meteo / ERA5). Weather is indifferent to the plot by design. Calendar entries come from the /calendar skill; click a festival to expand it, or a month name for its seasonal notes. Column choices are remembered in this browser.</footer>
 </div>
 <script>
 (function () {{
@@ -252,13 +340,64 @@ def render(place: dict, rows: list, sm, sd, em, ed) -> str:
     document.querySelectorAll("tr.mhead").forEach(function (tr) {{ tr.classList.toggle("collapsed", collapsed.has(tr.dataset.month)); }});
   }}
   document.querySelectorAll("tr.mhead").forEach(function (tr) {{
-    tr.addEventListener("click", function () {{
+    tr.addEventListener("click", function (e) {{
+      if (e.target.closest(".mname")) return;   // month name opens the modal instead
       var m = tr.dataset.month;
       if (collapsed.has(m)) collapsed.delete(m); else collapsed.add(m);
       saveC(collapsed); applyMonths();
     }});
   }});
   applyMonths();
+
+  // --- Calendar day expand/collapse -------------------------------------
+  // Purely ephemeral: unlike columns and month collapse, an expanded festival
+  // is a "read this now" action, not a viewing preference worth persisting.
+  document.querySelectorAll(".calbtn").forEach(function (b) {{
+    b.addEventListener("click", function (e) {{
+      e.stopPropagation();
+      var id = b.dataset.day;
+      var detail = document.querySelector('tr.detail[data-detail="' + id + '"]');
+      var row = document.querySelector('tr.dayrow[data-day="' + id + '"]');
+      if (!detail) return;
+      var open = detail.classList.toggle("open");
+      row.classList.toggle("open", open);
+    }});
+  }});
+
+  // --- Month modal ------------------------------------------------------
+  var MONTHS = {months_js};
+  var back = document.getElementById("modal-back");
+  var mTitle = document.getElementById("modal-title");
+  var mSpan = document.getElementById("modal-span");
+  var mBody = document.getElementById("modal-body");
+  function el(tag, text) {{ var n = document.createElement(tag); if (text != null) n.textContent = text; return n; }}
+  function openModal(n) {{
+    var mo = MONTHS[n];
+    if (!mo) return;
+    mTitle.textContent = mo.title;
+    mSpan.textContent = mo.span;
+    mBody.textContent = "";
+    if (mo.meta.length) {{
+      var dl = el("dl");
+      mo.meta.forEach(function (kv) {{ dl.appendChild(el("dt", kv[0])); dl.appendChild(el("dd", kv[1])); }});
+      mBody.appendChild(dl);
+    }}
+    mo.intro.forEach(function (p) {{ mBody.appendChild(el("p", p)); }});
+    if (mo.days.length) {{
+      mBody.appendChild(el("h4", "Observances this month"));
+      var ul = el("ul"); ul.className = "days";
+      mo.days.forEach(function (d) {{ ul.appendChild(el("li", d[0] + " - " + d[1])); }});
+      mBody.appendChild(ul);
+    }}
+    back.hidden = false;
+  }}
+  function closeModal() {{ back.hidden = true; }}
+  document.querySelectorAll(".mname").forEach(function (b) {{
+    b.addEventListener("click", function (e) {{ e.stopPropagation(); openModal(b.dataset.month); }});
+  }});
+  document.getElementById("modal-close").addEventListener("click", closeModal);
+  back.addEventListener("click", function (e) {{ if (e.target === back) closeModal(); }});
+  document.addEventListener("keydown", function (e) {{ if (e.key === "Escape") closeModal(); }});
 }})();
 </script>
 </body></html>"""
@@ -292,7 +431,7 @@ def main() -> None:
     raw, year = loaded
 
     rows = build_rows(raw, year, list(rok_range(sm, sd, em, ed)))
-    html = render(place, rows, sm, sd, em, ed)
+    html = render(place, rows, sm, sd, em, ed, C.parse_calendar())
 
     if out is None:
         REPORTS.mkdir(exist_ok=True)
