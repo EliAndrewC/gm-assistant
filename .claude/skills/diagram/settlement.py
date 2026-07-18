@@ -365,6 +365,17 @@ def _land_use_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     return ctx.get("terrain") == "hill" or ctx.get("field_archetype") == "contour_terraces"  # tea_fringe
 
 
+def _settlement_form_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
+    """The SETTLEMENT FORM must suit the site: nucleated/linear/dispersed fit anywhere, but a WATER-TOWN (houses
+    fronting a canal) needs a canal - and per GM setting canon artificial transport canals are a LION-lands
+    feature, not the Empire-wide default (see the diagram SKILL.md China-first note), so water_town is excluded
+    unless the map declares Lion lands or a canal (`ctx['clan']=='Lion'` or `ctx['canal']`)."""
+    if v in ("nucleated", "linear", "dispersed"):
+        return True
+    return ctx.get("clan") == "Lion" or bool(ctx.get("canal"))  # water_town
+
+
+register_knob(Knob("settlement_form", ["nucleated", "linear", "dispersed", "water_town"], default="nucleated", typing_rule=_settlement_form_ok))
 register_knob(Knob("field_archetype", ["valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley", "mulberry_dike_fishpond"], default="valley_paddy", typing_rule=_field_archetype_ok))
 register_knob(Knob("land_use_overlay", ["none", "mulberry_fishpond", "rape", "lotus", "tea_fringe"], default="none", typing_rule=_land_use_ok))
 register_knob(Knob("cluster_position", ["high_margin", "flank", "mid_margin", "valley_mouth", "valley_head", "on_rise"], default="high_margin"))
@@ -5096,6 +5107,32 @@ class Settlement:
             a = rng.uniform(0, 2 * math.pi)
             r = rng.random() ** 0.5  # area-uniform: an even scatter, not centre-clumped
             out.append((cx + math.cos(a) * r * rx, cy + math.sin(a) * r * ry))
+        return out
+
+    def waterfront_seeds(self, canal: Any, n: int, offset: float, rng: random.Random, form: str = "water_town", record: bool = True) -> list[Pt]:
+        """House seeds strung along BOTH banks of a canal (feature 005 `settlement_form` = 'water_town'): a
+        Jiangnan-style water town where the houses FRONT the water, offset `offset` px to either side of the
+        canal polyline. Records `meta.settlement_form`. (Per GM canon canals are a Lion-lands feature, so this
+        form is typing-gated to Lion lands / a declared canal.) `try_place` then keeps each seed field-adjacent
+        and off blockers, so the row packs cleanly along the waterfront."""
+        if record:
+            self.M["meta"]["settlement_form"] = form
+        segs = [(canal[i], canal[i + 1]) for i in range(len(canal) - 1)]
+        total = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in segs) or 1.0
+        out: list[Pt] = []
+        for k in range(n):
+            d = total * (k + 0.5) / n
+            acc = 0.0
+            for a, b in segs:
+                ln = math.hypot(b[0] - a[0], b[1] - a[1])
+                if acc + ln >= d:
+                    t = (d - acc) / (ln or 1.0)
+                    px, py = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+                    nx, ny = -(b[1] - a[1]) / (ln or 1.0), (b[0] - a[0]) / (ln or 1.0)  # canal normal
+                    side = 1.0 if k % 2 == 0 else -1.0  # alternate banks
+                    out.append((px + nx * offset * side + rng.uniform(-10, 10), py + ny * offset * side + rng.uniform(-10, 10)))
+                    break
+                acc += ln
         return out
 
     def headman(self, x: float, y: float, w: float = 92, h: float = 56) -> Any:
