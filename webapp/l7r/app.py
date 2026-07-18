@@ -208,6 +208,13 @@ class Root:
     def privacy(self) -> bytes:
         return self._render('privacy.html', current_section='')
 
+    # GET /viewer - standalone full-screen image viewer with NO site chrome, for
+    # showing character art on a shared screen without exposing a filename. Served
+    # raw (not through the Jinja layout) and deliberately kept out of SECTIONS/nav.
+    @cherrypy.expose
+    def viewer(self) -> bytes:
+        return (_HERE / 'static' / 'viewer.html').read_bytes()
+
     # POST /archive/save - GM-only stub. The gm gate is applied via the
     # mount config (tools.l7r_auth.min_role='gm' for the '/archive' prefix);
     # this handler can assume the caller is a GM.

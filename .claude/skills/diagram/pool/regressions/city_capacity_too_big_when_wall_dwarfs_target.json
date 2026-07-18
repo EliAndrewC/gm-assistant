@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "scale": "city",
+  "population": 100
+ },
+ "wall": [
+  [
+   200,
+   0
+  ],
+  [
+   400,
+   200
+  ],
+  [
+   200,
+   400
+  ],
+  [
+   0,
+   200
+  ]
+ ],
+ "buildings": [],
+ "_regression": {
+  "fires": [
+   "city_wall_sized_to_population"
+  ],
+  "source": "test_checks.py::test_city_capacity_too_big_when_wall_dwarfs_target"
+ }
+}

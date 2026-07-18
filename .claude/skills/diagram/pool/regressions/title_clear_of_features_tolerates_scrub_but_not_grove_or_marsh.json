@@ -2,7 +2,7 @@
  "meta": {
   "scale": "village"
  },
- "commons": [
+ "village_groves": [
   {
    "poly": [
     [
@@ -37,6 +37,6 @@
   "fires": [
    "title_clear_of_features"
   ],
-  "source": "test_checks.py::test_title_clear_of_features_fires_over_a_commons"
+  "source": "test_checks.py::test_title_clear_of_features_tolerates_scrub_but_not_grove_or_marsh"
  }
 }

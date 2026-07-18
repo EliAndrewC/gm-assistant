@@ -2101,6 +2101,39 @@ class Settlement:
         dl = math.hypot(dx, dy) or 1
         return math.degrees(math.atan2(-dx / dl, dy / dl)), bd
 
+    def open_face_rot(self, cx: float, cy: float, w: float, h: float, clear_ft: float = 8.0, prefer: Any = (0, 180, 270, 90)) -> float | None:
+        """The rotation whose DOOR side (the local +h/2 face) opens onto clear ground - or None
+        if every cardinal is walled in. GM doctrine (2026-07-18): a farmhouse always faces SOUTH
+        (its garden and threshing ground need the sun), but a CITY house has no sun constraint
+        and must instead have an UNBLOCKED entrance - the door faces open space (street, roji,
+        court), never the back of another building an eave-gap away. Tries `prefer` in order and
+        returns the first whose door-front band (`clear_ft` real feet deep) contains no placed
+        footprint; conservative AABB test against self.placed (rotated neighbours are close
+        enough to axis-aligned at row scales for a placement-time choice - the gate check does
+        the exact geometry)."""
+        clear = self.px(clear_ft)
+        for rot in prefer:
+            th = math.radians(rot)
+            ux, uy = -math.sin(th), math.cos(th)
+            fx, fy = cx + ux * h / 2, cy + uy * h / 2
+            ok = True
+            for ox, oy, ow, oh in self.placed:
+                if abs(ox - cx) > (w + ow) / 2 + clear + 2 or abs(oy - cy) > (h + oh) / 2 + clear + 2:
+                    continue
+                for d in (1.0, clear * 0.55, clear):
+                    for t in (-0.3 * w, 0.0, 0.3 * w):
+                        px_, py_ = fx + ux * d - uy * t, fy + uy * d + ux * t
+                        if abs(px_ - ox) < ow / 2 and abs(py_ - oy) < oh / 2:
+                            ok = False
+                            break
+                    if not ok:
+                        break
+                if not ok:
+                    break
+            if ok:
+                return float(rot)
+        return None
+
     def rowpack(self, bbox: Any, items: Any, court_every: int = 2, court_ft: float = 21, eave_ft: float = 4, seam: float = 0.4) -> int:
         """CITY row housing - the machiya/nagaya fabric (GM row-packing doctrine, 2026-07):
         urban commoners did not build detached-with-yard; street frontage was taxed and precious,
@@ -2110,11 +2143,15 @@ class Settlement:
           - rows run E-W; houses TOUCH within a row (a hairline `seam` of 0.4px keeps the SAT
             overlap gate honest - independent structures grown together, outlines merging into
             a terrace strip);
-          - successive rows sit the real ~3-6 ft eave/drainage gap apart (`eave_ft` - rain
-            dripped between roofs; gutter and night-soil access);
-          - every `court_every` rows a COURT gap opens (`court_ft`, ~15-25 ft) - the idobata
-            courtyard a tenement block's life turned around (pre-placed wells also break the
-            terraces into natural courts);
+          - rows come in BACK-TO-BACK PAIRS with both doors facing OUTWARD (GM doctrine
+            2026-07-18): the first row of a pair faces UP (rot 180), the second DOWN (rot 0),
+            their backs sharing the ~3-6 ft eave/drainage gap (`eave_ft` - rain drip, gutter,
+            night-soil access - NOT an entrance). A city house has no farmhouse-style
+            south-facing sun constraint; what it must have is an unblocked entrance;
+          - after every pair a WALKABLE gap opens - a roji lane (~12 ft) by default, widening
+            to a COURT (`court_ft`, ~15-25 ft, the idobata courtyard) every ~`court_every`
+            rows - so rows never stack more than TWO deep and no household is trapped behind
+            another (the city_house_doors_unblocked / city_rows_max_two_deep gates);
           - rows front the caller's roji/alleys TIGHTLY (a real roji had walls you could touch
             from its centerline) but stand a frontage-band back from real streets and the road,
             where the shop rows live. Draw the zone's alleys BEFORE calling this.
@@ -2126,6 +2163,7 @@ class Settlement:
         items = list(items)
         n0 = len(self.placed)  # obstacle snapshot: everything placed BEFORE this call
         court_px, eave_px = self.px(court_ft), max(self.px(eave_ft), 1.2)
+        roji_px = max(self.px(12), 4.5)  # the walkable between-pairs lane: >= ~12 real ft, floored for legibility (vs the ~7 ft door-clear line the checks enforce)
         # linework the rows must respect: tight against alleys (roji), a frontage band off
         # streets/roads (the shop rows own that ground)
         lines = [(al["pts"], al.get("w", 10) / 2 + max(self.px(3), 2.5)) for al in self.M.get("alleys", [])]  # 2.5 >= the overlap gate's +2 margin
@@ -2188,7 +2226,10 @@ class Settlement:
                     break
                 cx, cy = x + bw / 2, ytop + bh / 2
                 if rect_ok(cx, cy, bw, bh):
-                    self.building(cx, cy, bw, bh, kind, 0)
+                    # pair-facing doctrine: first row of each pair faces UP (door at its top
+                    # edge, onto the walkable gap above), second faces DOWN - backs meet
+                    # across the eave gap, every door opens outward onto roji/court ground
+                    self.building(cx, cy, bw, bh, kind, 180 if row % 2 == 0 else 0)
                     n += 1
                     idx += 1
                     rowmax = max(rowmax, bh)
@@ -2198,7 +2239,13 @@ class Settlement:
             if rowmax == 0.0:
                 rowmax = self._dims("laborer")[1]  # an entirely-blocked row still advances
             row += 1
-            ytop += rowmax + (court_px if row % court_every == 0 else eave_px)
+            if row % 2 == 1:
+                gap = eave_px  # inside a pair: the back-to-back eave/drainage gap
+            elif (row // 2) % max(1, round(court_every / 2)) == 0:
+                gap = court_px  # a full idobata court every ~court_every rows
+            else:
+                gap = roji_px  # between pairs: a walkable roji so both pair-fronts have entrance ground
+            ytop += rowmax + gap
             if ytop + self._dims("laborer")[1] > y1:
                 break
         return n
@@ -2232,6 +2279,21 @@ class Settlement:
                         continue
                 else:
                     r = rot + random.uniform(-6, 6)
+                # a scattered (non-street-facing) house still needs an UNBLOCKED door: keep the
+                # street-facing rotation when one was chosen, else pick the cardinal whose door
+                # side opens onto clear ground (doctrine 2026-07-18; skip a spot walled on all 4).
+                # RNG-NEUTRAL by construction: the prefer order starts at the pack's own base
+                # rotation and the already-drawn jitter is REUSED (no extra random draws), so a
+                # map whose scatter never actually blocks a door regenerates bit-identically to
+                # the pre-doctrine engine - the doctrine only perturbs the spots it must.
+                if not (face_streets and fr is not None and fd <= 92):
+                    w_, h_ = self._dims(items[0])
+                    base = (round(rot / 90) * 90) % 360
+                    orot = self.open_face_rot(gx + jx, gy + jy, w_, h_, prefer=(base, (base + 180) % 360, (base + 270) % 360, (base + 90) % 360))
+                    if orot is None:
+                        gx += step
+                        continue
+                    r = orot + (r - rot)
                 if self.try_building(gx + jx, gy + jy, items[0], r):
                     items.pop(0)
                     n += 1
@@ -2983,8 +3045,10 @@ class Settlement:
         paddies` is a centroid test). All scatters skip fields/pond/lanes/buildings AND a **hamlet keep-out**
         (the cluster bbox, so no cover creeps among the houses), and NONE is a crop anchor (`_CROP_HARD`), so
         they BLEED off the frame and the crop stays tight. Call AFTER fields + cluster + pond + dry fields,
-        BEFORE crop_to_content. `down_deg` (defaults to meta's) only picks which side is the marsh TOE; the
-        scrub ring is radial. A comb-FAN field leaves the opposite bbox corner open -> the gen fills it (scrub +
+        BEFORE crop_to_content. `down_deg` (defaults to meta's) picks which frame side the scrub ring OMITS
+        (the toe side) AND orients the marsh itself: the toe is a CONTOUR BAND perpendicular to the fall, so it
+        rotates with the map like every other feature (see the comment at the marsh block); the scrub ring is
+        radial. A comb-FAN field leaves the opposite bbox corner open -> the gen fills it (scrub +
         woodland patches). See settlements.md 'Hinterland (water-flow-keyed)'."""
         if down_deg is None:
             down_deg = self.M.get("meta", {}).get("down_deg", 90)
@@ -2999,12 +3063,25 @@ class Settlement:
         fx0, fx1, fy0, fy1 = min(xs), max(xs), min(ys), max(ys)
         W, H = self.W, self.H
         dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
-        # HAMLET KEEP-OUT: the cluster's bbox + margin, so cover never scatters among the houses.
+        # SETTLEMENT KEEP-OUT, so cover never scatters among the dwellings. Its SHAPE depends on the form:
         avoid: list[Any] = []
         hs = self.M.get("houses", [])
-        if hs:
-            hxs, hys, m = [h["x"] for h in hs], [h["y"] for h in hs], 44
+        m = 44
+        if hs and self.M.get("meta", {}).get("nucleated", True):
+            # NUCLEATED: the houses are one tight blob, so the bbox of their positions IS the built footprint.
+            hxs, hys = [h["x"] for h in hs], [h["y"] for h in hs]
             avoid.append([(min(hxs) - m, min(hys) - m), (max(hxs) + m, min(hys) - m), (max(hxs) + m, max(hys) + m), (min(hxs) - m, max(hys) + m)])
+        elif hs:
+            # DISPERSED: the farmsteads RING the settlement, so a bbox of their positions is not their footprint
+            # - it is the WHOLE MAP, and using it forbids ground cover everywhere inside the ring. That is what
+            # left Akagahara's fan void as bare clay (GM: "a ton of empty space between the ditch and the
+            # marsh"): the void fell inside this blanket, so neither the scrub ring nor anything else could
+            # clothe it. Keep out each HOMESTEAD individually instead - house plus its bundle (yard, garden,
+            # grove) - so the open ground BETWEEN the strewn farms is free to carry rough grazing, as it should.
+            for key in ("houses", "gardens", "threshing_yards", "groves"):
+                for r in self.M.get(key, []):
+                    hw, hh = r.get("w", 40) / 2 + m, r.get("h", 30) / 2 + m
+                    avoid.append([(r["x"] - hw, r["y"] - hh), (r["x"] + hw, r["y"] - hh), (r["x"] + hw, r["y"] + hh), (r["x"] - hw, r["y"] + hh)])
         # which frame side is the downhill TOE (marsh) - the other three carry the scrub commons
         toe_side = ("bottom" if dy >= 0 else "top") if abs(dy) >= abs(dx) else ("right" if dx >= 0 else "left")
 
@@ -3030,15 +3107,36 @@ class Settlement:
         if commons:
             for p in ring(0, max(W, H)):  # the cut-over SCRUB commons: the DOMINANT denuded-hill cover
                 self.commons(p, role=scrub_role, avoid=avoid)  # (managed woodland is added as a FEW patches by the gen)
+            # ...and the INTERIOR. The ring lays strips only OUTSIDE the cultivated bbox, but an irregular field
+            # (a comb FAN) does not fill its own bbox: it leaves open VOIDS INSIDE it that nothing else clothes
+            # - the strips are outside them and the marsh is a contour band below them - so they render as BARE
+            # ground, the only uncovered land on the map. That is what read as "empty space" on Akagahara. This
+            # patch covers the cultivated bbox; since the scatter already skips every field, lane, watercourse,
+            # building and keep-out, it can only land in those voids, clothing them as the rough grazing they
+            # are. Ground the crop does not use is still ground, and it is grazed.
+            self.commons([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)], role=scrub_role, avoid=avoid)
         if marsh:
-            if toe_side == "bottom":
-                toe = [(fx0 - pad, fy1 - pad), (fx1 + pad, fy1 - pad), (fx1 + pad, H), (fx0 - pad, H)]
-            elif toe_side == "top":
-                toe = [(fx0 - pad, 0), (fx1 + pad, 0), (fx1 + pad, fy0 + pad), (fx0 - pad, fy0 + pad)]
-            elif toe_side == "right":
-                toe = [(fx1 - pad, fy0 - pad), (W, fy0 - pad), (W, fy1 + pad), (fx1 - pad, fy1 + pad)]
-            else:
-                toe = [(0, fy0 - pad), (fx0 + pad, fy0 - pad), (fx0 + pad, fy1 + pad), (0, fy1 + pad)]
+            # The toe is a CONTOUR BAND, not an axis-aligned box. Wet ground is defined by HEIGHT, and every
+            # other feature here (field, comb, drain, the marsh_on_low_ground check) resolves height by
+            # projecting onto the `down_deg` vector - so the marsh's inner edge must be PERPENDICULAR to that
+            # vector too. It was previously a bbox-keyed rectangle, which is only an honest contour when the
+            # fall is axis-aligned (0/90/180/270); it was the ONE feature that did not rotate with the map.
+            # At a diagonal fall that rectangle slices across the slope: on Kikuta/Hoshigaoka (down=45) its
+            # inner edge spanned 205/219px of height and its uphill corner reached ABOVE their entire drain,
+            # so it swallowed the ditch and painted reeds over ground that is still at rice height. That made
+            # the reeds appear to abut the collector on the diagonal maps but not on due-S Akagahara - a pure
+            # artifact of the rotation, which read as a real difference between the maps (GM, 2026-07).
+            # Since EVERY collector descends ~19-20 degrees across the contours to reach its tameike, there is
+            # genuinely ground below the ditch that is still crop-height on every map; the band now shows that
+            # consistently instead of hiding it on two maps out of three.
+            ux, uy = -dy, dx  # cross-slope unit vector (the contour direction)
+            cult = [p for poly in polys for p in poly] + [p for dp in self.M.get("dry_plots", []) for p in dp["poly"]]
+            v_in = max(p[0] * dx + p[1] * dy for p in cult) - pad  # inner edge: `pad` ABOVE the crop's lowest point, so the reeds still tuck under the crop
+            corners = [(-BLEED, -BLEED), (W + BLEED, -BLEED), (W + BLEED, H + BLEED), (-BLEED, H + BLEED)]
+            us = [c[0] * ux + c[1] * uy for c in corners]
+            v_out = max(c[0] * dx + c[1] * dy for c in corners)  # far enough downhill to leave the canvas
+            u0, u1 = min(us), max(us)
+            toe = [(u * ux + v * dx, u * uy + v * dy) for u, v in ((u0, v_in), (u1, v_in), (u1, v_out), (u0, v_out))]
             self.marsh(toe, role=marsh_role, avoid=avoid)  # reed wetland: the low, undrained downhill toe
 
     def _attach_grove(self, hx: float, hy: float, arms: Any) -> None:
@@ -4232,10 +4330,12 @@ class Settlement:
         self, street: Any, items: Any, width: float = 24, setback: float = 10, spacing: float = 58, both: bool = True, rows: int = 1, rowgap: float = 9, jitter: float = 4, skip: Any = None
     ) -> int:
         """Place buildings in row(s) along a street, each rotated so its FRONTAGE faces the
-        street (shophouses lining the road). rows>1 stacks deeper rows behind the front one
-        (still facing the street). Sits against the fronted street (skips that street's own
-        corridor - pass skip=<registered poly> when fronting a sub-stretch of a longer
-        road) but respects walls, other streets, fields, and collisions."""
+        street (shophouses lining the road). rows=2 stacks a second row BACK-TO-BACK behind the
+        front one, facing AWAY from the street (GM doctrine 2026-07-18: a door opens onto open
+        ground, never into the back row ahead of it - the rear row fronts the back lane/block
+        interior, the real ura-dana pattern). Sits against the fronted street (skips that
+        street's own corridor - pass skip=<registered poly> when fronting a sub-stretch of a
+        longer road) but respects walls, other streets, fields, and collisions."""
         skip = skip if skip is not None else street
         items = list(items)
         seg = [math.hypot(street[i + 1][0] - street[i][0], street[i + 1][1] - street[i][1]) for i in range(len(street) - 1)]
@@ -4272,7 +4372,7 @@ class Settlement:
                 nx, ny = -ty * s, tx * s  # outward normal (street -> building)
                 base_rot = math.degrees(math.atan2(nx, -ny))  # frontage faces the street
                 depth = sh + setback
-                for _ in range(rows):
+                for ri in range(rows):
                     if not items:
                         break
                     kind = items[0]
@@ -4280,7 +4380,9 @@ class Settlement:
                     off = depth + h / 2
                     bx, by = x + nx * off, y + ny * off
                     if self._fits(bx, by, w, h, skip=skip):
-                        self.building(bx, by, w, h, kind, base_rot + random.uniform(-jitter, jitter))
+                        # rear rows flip 180: back-to-back with the row ahead, door onto the
+                        # back lane - never into the front row's rear wall
+                        self.building(bx, by, w, h, kind, base_rot + (180 if ri % 2 else 0) + random.uniform(-jitter, jitter))
                         items.pop(0)
                         placed += 1
                         depth = off + h / 2 + rowgap  # next row sits behind this one
@@ -5264,7 +5366,12 @@ class Settlement:
                     rects.append((min(xs), min(ys), max(xs), max(ys)))
                 elif "w" in o and "h" in o:
                     rects.append((o["x"] - o["w"] / 2, o["y"] - o["h"] / 2, o["x"] + o["w"] / 2, o["y"] + o["h"] / 2))
-        for o in self.M.get("village_groves", []) + self.M.get("commons", []) + self.M.get("marshes", []):
+        # NOT the scrub commons: it is sparse GROUND COVER (a feathered scatter of grass tufts on open ground),
+        # not a feature with a footprint, and a bold place name reads perfectly well over it. Treating it as an
+        # obstacle only worked while some ground was left bare - once the commons properly clothes the field's
+        # voids too, scrub covers nearly the whole map and a title could find nowhere at all to sit. The grove
+        # (dense closed canopy) and the marsh (a distinct wetland) stay obstacles.
+        for o in self.M.get("village_groves", []) + self.M.get("marshes", []):
             polys.append([tuple(p) for p in o["poly"]])
         for fd in self.M.get("fields", []):
             polys.append([tuple(p) for p in fd["outline"]])

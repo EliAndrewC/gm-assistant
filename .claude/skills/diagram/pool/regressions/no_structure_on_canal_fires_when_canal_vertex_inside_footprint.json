@@ -1,0 +1,33 @@
+{
+ "buildings": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 200,
+   "h": 200,
+   "rot": 0,
+   "kind": "merchant_large"
+  }
+ ],
+ "canals": [
+  {
+   "poly": [
+    [
+     500,
+     500
+    ],
+    [
+     490,
+     300
+    ]
+   ],
+   "w": 4
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "no_structure_on_canal"
+  ],
+  "source": "test_checks.py::test_no_structure_on_canal_fires_when_canal_vertex_inside_footprint"
+ }
+}

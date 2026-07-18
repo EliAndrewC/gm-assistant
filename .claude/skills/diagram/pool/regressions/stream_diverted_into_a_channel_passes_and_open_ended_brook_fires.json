@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "W": 1000,
+  "H": 1000
+ },
+ "streams": [
+  {
+   "poly": [
+    [
+     500,
+     8
+    ],
+    [
+     500,
+     160
+    ],
+    [
+     500,
+     500
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   }
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "stream_runs_off_edge[0]"
+  ],
+  "source": "test_checks.py::test_stream_diverted_into_a_channel_passes_and_open_ended_brook_fires"
+ }
+}

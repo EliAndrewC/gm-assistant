@@ -124,13 +124,14 @@
     <text x="600" y="801" text-anchor="middle" font-size="9" fill="#5C0A04" font-style="italic">(senior Pact-Bowl checkpoint)</text>
   </g>
 
-  <!-- Notice board just outside the wall, on the east flank of the MAIN gate
-       (it faces the formal approach, not the service door) -->
+  <!-- Notice board just outside the wall, BETWEEN the main gate and the service gate
+       (a kosatsu is read where people pass, so it hugs the gate line on the approach -
+       it faced the formal approach off to the east before, ~32 ft from any gate; GM 2026-07) -->
   <g>
-    <rect x="700" y="758" width="44" height="12" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
-    <circle cx="706" cy="772" r="1.5" fill="#4A3318"/>
-    <circle cx="738" cy="772" r="1.5" fill="#4A3318"/>
-    <text x="722" y="786" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">notice board</text>
+    <rect x="520" y="758" width="44" height="12" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
+    <circle cx="526" cy="772" r="1.5" fill="#4A3318"/>
+    <circle cx="558" cy="772" r="1.5" fill="#4A3318"/>
+    <text x="542" y="786" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">notice board</text>
   </g>
 
   <!-- Internal divider wall between outer (south) and inner (north) courts -->
@@ -221,35 +222,8 @@
     <text x="895" y="533" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">granary</text>
   </g>
 
-  <!-- Fire-water tubs (tensuioke) - standing rainwater tubs kept as fire reserve,
-       DISTRIBUTED to the fire-prone wooden buildings and weighted to the kitchen
-       (open hearth = top ignition source), not a token pair at one storehouse.
-       The fireproof plaster tax-archive kura correctly carries none. (Fire-water
-       sweep, 2026-07: halls burn, kura endure - so the water lives at the halls.) -->
-  <g fill="#8FB0C6" stroke="#3A5060" stroke-width="1">
-    <!-- kitchen (2, highest fire risk) -->
-    <circle cx="352" cy="322" r="5"/>
-    <circle cx="352" cy="344" r="5"/>
-    <!-- office hall -->
-    <circle cx="406" cy="490" r="5"/>
-    <!-- residence west block (by the entry porch) -->
-    <circle cx="440" cy="294" r="5"/>
-    <!-- residence east block (family/guest, garden frontage) -->
-    <circle cx="690" cy="312" r="5"/>
-    <!-- Inari shrine hall -->
-    <circle cx="808" cy="290" r="5"/>
-    <!-- granary / east forecourt (gap coverage) -->
-    <circle cx="988" cy="560" r="5"/>
-    <!-- barracks -->
-    <circle cx="982" cy="664" r="5"/>
-    <!-- gatehouse -->
-    <circle cx="648" cy="706" r="5"/>
-    <!-- stables -->
-    <circle cx="326" cy="678" r="5"/>
-    <!-- servants' quarters -->
-    <circle cx="478" cy="165" r="5"/>
-  </g>
-  <text x="360" y="366" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
+  <!-- (Fire-water tubs are drawn in the TOP LAYER near the end of the file, so their rims
+       sit ON TOP of the gardens/court, never buried under a fill drawn later.) -->
 
   <!-- Holding cell (single small lattice-cage block, SE) - 18x15 ft, remand-only
        for 1-2; trimmed so the lattice-legibility bump reads as a LINEAR ~2x on
@@ -288,7 +262,7 @@
   <!-- Outer-court latrine, tucked along W wall between tax archive and stables -->
   <g>
     <rect x="206" y="642" width="20" height="14" fill="#7E726A" stroke="#3A2E1C" stroke-width="0.8"/>
-    <text x="230" y="653" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
+    <text x="230" y="659" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
   </g>
 
   <!-- Stables well - just east of stables, in the open courtyard -->
@@ -331,7 +305,7 @@
        room for the formal reception (zashiki). Occupant labels kept as the
        GM's schematic convention. -->
   <g>
-    <text x="510" y="196" text-anchor="middle" font-size="11" font-weight="bold" fill="#5C4830" letter-spacing="2">RESIDENCE</text>
+    <text x="524" y="196" text-anchor="middle" font-size="11" font-weight="bold" fill="#5C4830" letter-spacing="2">RESIDENCE</text>
     <!-- West block: formal reception + the lord's rooms (each label is a
          multi-room ZONE, not one room; engawa veranda along the south face) -->
     <rect x="240" y="202" width="270" height="76" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2.5"/>
@@ -376,69 +350,82 @@
        measured the lord's own residence blocks and, with its workshop, rivaled
        the whole residence. A grand shrine stays subordinate to the lord's house:
        the divergence licenses a hall, not that magnitude (size-audit direction-
-       vs-magnitude, 2026-07) -->
+       vs-magnitude, 2026-07). BACKS THE EAST WALL: shifted +60 px (20 ft) east so
+       its back is flush to the wall - was floated ~23 ft off it, leaving a dead
+       NE strip a subordinate hall should not (size-audit backing-void sweep, 2026-07);
+       the freed strip went to the inner garden. -->
   <g>
-    <rect x="820" y="200" width="110" height="92" fill="#C9876C" stroke="#6B2A18" stroke-width="2.5"/>
+    <rect x="880" y="200" width="110" height="92" fill="#C9876C" stroke="#6B2A18" stroke-width="2.5"/>
     <!-- internal rail dividing W (Ta-no-Kami) and E (Myobu) -->
-    <line x1="875" y1="208" x2="875" y2="284" stroke="#5C1A0A" stroke-width="2"/>
+    <line x1="935" y1="208" x2="935" y2="284" stroke="#5C1A0A" stroke-width="2"/>
     <!-- vermillion edging -->
-    <rect x="820" y="200" width="110" height="6" fill="#A03020"/>
-    <rect x="820" y="286" width="110" height="6" fill="#A03020"/>
+    <rect x="880" y="200" width="110" height="6" fill="#A03020"/>
+    <rect x="880" y="286" width="110" height="6" fill="#A03020"/>
     <!-- W altar marker (Ta-no-Kami) - a small rice-straw doll silhouette -->
-    <g transform="translate(847, 226)">
+    <g transform="translate(907, 226)">
       <rect x="-6" y="-2" width="12" height="18" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="0.8"/>
       <circle cx="0" cy="-6" r="5" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="0.8"/>
     </g>
-    <text x="847" y="260" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">Ta-no-Kami</text>
-    <text x="847" y="272" text-anchor="middle" font-size="8" font-style="italic" fill="#FFFAE6">(rice)</text>
-    <text x="847" y="283" text-anchor="middle" font-size="7.5" fill="#FFFAE6">Fox-Fire Lantern</text>
+    <text x="907" y="260" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">Ta-no-Kami</text>
+    <text x="907" y="272" text-anchor="middle" font-size="8" font-style="italic" fill="#FFFAE6">(rice)</text>
+    <text x="907" y="283" text-anchor="middle" font-size="7.5" fill="#FFFAE6">Fox-Fire Lantern</text>
     <!-- E altar marker (Myobu) - torii silhouette -->
-    <g transform="translate(903, 218)">
+    <g transform="translate(963, 218)">
       <line x1="-10" y1="0" x2="10" y2="0" stroke="#FFFAE6" stroke-width="2.5"/>
       <line x1="-12" y1="5" x2="12" y2="5" stroke="#FFFAE6" stroke-width="2"/>
       <line x1="-8" y1="5" x2="-8" y2="20" stroke="#FFFAE6" stroke-width="2"/>
       <line x1="8" y1="5" x2="8" y2="20" stroke="#FFFAE6" stroke-width="2"/>
     </g>
-    <text x="903" y="258" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">Myobu</text>
-    <text x="903" y="270" text-anchor="middle" font-size="8" font-style="italic" fill="#FFFAE6">(fox)</text>
-    <text x="903" y="283" text-anchor="middle" font-size="7.5" fill="#FFFAE6">Akami-fude</text>
+    <text x="963" y="258" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">Myobu</text>
+    <text x="963" y="270" text-anchor="middle" font-size="8" font-style="italic" fill="#FFFAE6">(fox)</text>
+    <text x="963" y="283" text-anchor="middle" font-size="7.5" fill="#FFFAE6">Akami-fude</text>
+  </g>
+
+  <!-- Shrine garden: nests the shrine + workshop's south side, filling the SE inner-court
+       pocket against the east wall and divider (a shrine reads as set in a garden, and the
+       column is shorter than the wall so the leftover wall-space becomes garden, not bare
+       slack - backing-void follow-up, GM 2026-07). Drawn here (before the relic annotation
+       and workshop) so those paint on top of it. -->
+  <g>
+    <rect x="860" y="375" width="132" height="70" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
   </g>
 
   <!-- Shrine hall label (above) -->
-  <text x="875" y="195" text-anchor="middle" font-size="12" font-weight="bold" fill="#5C1A0A" letter-spacing="1">INARI SHRINE</text>
+  <text x="935" y="195" text-anchor="middle" font-size="12" font-weight="bold" fill="#5C1A0A" letter-spacing="1">INARI SHRINE</text>
 
   <!-- Fox relics kept at the Myobu altar (annotation below the workshop, in the
        open court freed by the smaller hall) -->
   <g>
-    <text x="875" y="392" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C1A0A">Chigiri-no-Chou &amp;</text>
-    <text x="875" y="404" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C1A0A">warding materials</text>
-    <text x="875" y="416" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C1A0A">(at the Myobu altar)</text>
+    <text x="935" y="392" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C1A0A">Chigiri-no-Chou &amp;</text>
+    <text x="935" y="404" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C1A0A">warding materials</text>
+    <text x="935" y="416" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C1A0A">(at the Myobu altar)</text>
   </g>
 
-  <!-- Cinnabar workshop colonnade (south of shrine, hatched to indicate covered open-air) -->
+  <!-- Cinnabar workshop colonnade (south of shrine, hatched to indicate covered open-air).
+       Shifted +60 px east with the shrine to back the east wall (backing-void fix). -->
   <g>
-    <rect x="820" y="300" width="110" height="72" fill="url(#colonnade-hatch)" stroke="#6B2A18" stroke-width="2"/>
+    <rect x="880" y="300" width="110" height="72" fill="url(#colonnade-hatch)" stroke="#6B2A18" stroke-width="2"/>
     <!-- post markers -->
-    <circle cx="830" cy="310" r="3" fill="#3A1810"/>
-    <circle cx="875" cy="310" r="3" fill="#3A1810"/>
-    <circle cx="920" cy="310" r="3" fill="#3A1810"/>
-    <circle cx="830" cy="362" r="3" fill="#3A1810"/>
-    <circle cx="875" cy="362" r="3" fill="#3A1810"/>
-    <circle cx="920" cy="362" r="3" fill="#3A1810"/>
+    <circle cx="890" cy="310" r="3" fill="#3A1810"/>
+    <circle cx="935" cy="310" r="3" fill="#3A1810"/>
+    <circle cx="980" cy="310" r="3" fill="#3A1810"/>
+    <circle cx="890" cy="362" r="3" fill="#3A1810"/>
+    <circle cx="935" cy="362" r="3" fill="#3A1810"/>
+    <circle cx="980" cy="362" r="3" fill="#3A1810"/>
     <!-- river-stones drying (small grey circles) -->
-    <circle cx="842" cy="322" r="4" fill="#7E726A"/>
-    <circle cx="856" cy="329" r="4" fill="#7E726A"/>
-    <circle cx="842" cy="339" r="4" fill="#7E726A"/>
+    <circle cx="902" cy="322" r="4" fill="#7E726A"/>
+    <circle cx="916" cy="329" r="4" fill="#7E726A"/>
+    <circle cx="902" cy="339" r="4" fill="#7E726A"/>
     <!-- bowls drying (small lacquer-black circles) -->
-    <circle cx="905" cy="322" r="5" fill="#1A1410" stroke="#3A2418" stroke-width="0.6"/>
-    <circle cx="912" cy="339" r="5" fill="#1A1410" stroke="#3A2418" stroke-width="0.6"/>
-    <text x="875" y="352" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">Cinnabar Workshop</text>
-    <text x="875" y="364" text-anchor="middle" font-size="8" font-style="italic" fill="#FFFAE6">(colonnade)</text>
+    <circle cx="965" cy="322" r="5" fill="#1A1410" stroke="#3A2418" stroke-width="0.6"/>
+    <circle cx="972" cy="339" r="5" fill="#1A1410" stroke="#3A2418" stroke-width="0.6"/>
+    <text x="935" y="352" text-anchor="middle" font-size="10" font-weight="bold" fill="#FFFAE6">Cinnabar Workshop</text>
+    <text x="935" y="364" text-anchor="middle" font-size="8" font-style="italic" fill="#FFFAE6">(colonnade)</text>
   </g>
 
   <!-- Inner garden / open space (center of inner court) -->
   <g>
-    <rect x="520" y="310" width="290" height="135" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
+    <rect x="520" y="310" width="345" height="135" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
     <!-- a small ornamental pond -->
     <ellipse cx="620" cy="380" rx="42" ry="22" fill="#9CB4C8" stroke="#5C7488" stroke-width="1.2"/>
     <text x="660" y="432" text-anchor="middle" font-size="10" font-style="italic" fill="#3A2E1C">inner garden</text>
@@ -493,12 +480,15 @@
     <text x="546" y="219" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
   </g>
 
-  <!-- Kitchen garden filling the rest of the rear strip (behind the east
+  <!-- Vegetable garden filling the rest of the rear strip (behind the east
        residence block) - a vegetable plot on the shady north/service side, the
-       band the servants' quarters did not take -->
+       band the servants' quarters did not take. Labeled for what it is: the kitchen
+       is boxed into the SW service corner with no room for an adjacent plot, so the
+       compound's vegetables come from this rear plot (servant-tended) + outside via
+       the kitchen postern - normal for a compact walled magistracy (GM 2026-07). -->
   <g>
-    <rect x="662" y="156" width="138" height="44" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
-    <text x="731" y="182" text-anchor="middle" font-size="9" font-style="italic" fill="#3A4E38">kitchen garden</text>
+    <rect x="662" y="156" width="218" height="44" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="731" y="182" text-anchor="middle" font-size="9" font-style="italic" fill="#3A4E38">vegetable garden</text>
   </g>
 
   <!-- Formal entry porch (genkan) at the reception block -->
@@ -525,4 +515,26 @@
 
   <!-- (No key box: the sheet is labeled directly - GM 2026-07. Palette
        semantics live in buildings.md/SKILL.md.) -->
+
+  <!-- ============================================================ -->
+  <!-- TOP LAYER - fire-water tubs (tensuioke), drawn last so their rims sit ON TOP        -->
+  <!-- of the gardens and court, never buried. Each is GUTTER-FED by roof runoff, so it    -->
+  <!-- sits AGAINST its building at an eaves corner/downspout - DISTRIBUTED to the wooden   -->
+  <!-- buildings, weighted to the kitchen (2, open hearth); the fireproof plaster kura      -->
+  <!-- carries none (halls burn, kura endure). The label sits beside the kitchen pair.      -->
+  <!-- ============================================================ -->
+  <g fill="#8FB0C6" stroke="#3A5060" stroke-width="1">
+    <circle cx="346" cy="318" r="5"/>
+    <circle cx="346" cy="402" r="5"/>
+    <circle cx="414" cy="486" r="5"/>
+    <circle cx="440" cy="291" r="5"/>
+    <circle cx="690" cy="311" r="5"/>
+    <circle cx="874" cy="286" r="5"/>
+    <circle cx="976" cy="562" r="5"/>
+    <circle cx="972" cy="664" r="5"/>
+    <circle cx="650" cy="706" r="5"/>
+    <circle cx="314" cy="680" r="5"/>
+    <circle cx="476" cy="165" r="5"/>
+  </g>
+  <text x="356" y="322" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
 </svg>

@@ -1,1 +1,0 @@
-{"meta": {"scale": "city", "walled": true, "W": 1000, "H": 1000}, "wall": [[200, 200], [800, 200], [800, 800], [200, 800]], "gates": [[500, 200], [500, 800]], "manors": [{"x": 60, "y": 60, "w": 100, "h": 80, "rot": 0}], "_regression": {"fires": ["city_estates_toward_capital"], "source": "test_checks.py::test_city_estates_toward_capital_fires_on_the_wrong_side"}}

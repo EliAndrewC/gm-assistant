@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "capital_dir": "southeast"
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "manors": [
+  {
+   "x": 900,
+   "y": 100,
+   "w": 90,
+   "h": 60,
+   "rot": 0,
+   "gate_dir": "south"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_estates_toward_capital"
+  ],
+  "source": "test_checks.py::test_city_estates_toward_capital_respects_the_declared_direction"
+ }
+}

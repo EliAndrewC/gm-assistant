@@ -1,0 +1,35 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "religious": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 96,
+   "h": 64,
+   "kind": "shrine"
+  }
+ ],
+ "lanes": [
+  {
+   "pts": [
+    [
+     500,
+     500
+    ],
+    [
+     500,
+     300
+    ]
+   ],
+   "w": 6
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "shrine_halls_clear_of_lanes"
+  ],
+  "source": "test_checks.py::test_shrine_halls_clear_of_lanes_fires_when_a_lane_ends_inside_the_hall"
+ }
+}

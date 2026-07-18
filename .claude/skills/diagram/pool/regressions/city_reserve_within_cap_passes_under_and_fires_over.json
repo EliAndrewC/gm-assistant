@@ -1,0 +1,55 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "quarters": [
+  {
+   "poly": [
+    [
+     250,
+     250
+    ],
+    [
+     550,
+     250
+    ],
+    [
+     550,
+     550
+    ],
+    [
+     250,
+     550
+    ]
+   ],
+   "zone": "reserve",
+   "kind": "drill_ground",
+   "name": "drill"
+  }
+ ],
+ "buildings": [],
+ "_regression": {
+  "fires": [
+   "city_reserve_within_cap"
+  ],
+  "source": "test_checks.py::test_city_reserve_within_cap_passes_under_and_fires_over"
+ }
+}

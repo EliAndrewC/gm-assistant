@@ -21,7 +21,21 @@ import check_village
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 POOL = os.path.join(HERE, "pool")
-GENERATORS = sorted(glob.glob(os.path.join(POOL, "*.gen.py")))
+
+
+def _is_village_gen(gen):
+    """A Mode B VILLAGE gen builds on the settlement engine (`settlement.py`) and emits a JSON manifest the
+    check_village gate reads. Mode A COMPOUND gens (built on `compound.py`, e.g. ochiba-recomposed) also live
+    in pool/ but are hand-plan SVGs with NO village manifest - running one produces nothing to gate (and may
+    raise SystemExit from its own `__main__` guard). They are not villages, so this test skips them; they carry
+    their own tests. Discriminate by which engine the gen imports (every village gen imports settlement; no
+    compound gen does - verified across the pool)."""
+    with open(gen) as fh:
+        src = fh.read()
+    return "settlement import" in src or "import settlement" in src
+
+
+GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*.gen.py")) if _is_village_gen(g))
 
 
 def _regen_and_gate(gen):

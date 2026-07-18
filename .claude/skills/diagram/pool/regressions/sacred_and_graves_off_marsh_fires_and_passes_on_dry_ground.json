@@ -1,0 +1,57 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 200,
+   "y": 200,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "marshes": [
+  {
+   "x": 550,
+   "y": 550,
+   "w": 300,
+   "h": 300,
+   "role": "toe",
+   "poly": [
+    [
+     400,
+     400
+    ],
+    [
+     700,
+     400
+    ],
+    [
+     700,
+     700
+    ],
+    [
+     400,
+     700
+    ]
+   ]
+  }
+ ],
+ "religious": [
+  {
+   "x": 550,
+   "y": 550,
+   "w": 96,
+   "h": 64,
+   "kind": "shrine"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "sacred_and_graves_off_marsh"
+  ],
+  "source": "test_checks.py::test_sacred_and_graves_off_marsh_fires_and_passes_on_dry_ground"
+ }
+}

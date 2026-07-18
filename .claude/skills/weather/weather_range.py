@@ -1,0 +1,249 @@
+#!/usr/bin/env python3
+"""Generate a browsable HTML weather table for a place over a Rokugani date range.
+
+    python3 weather_range.py "Shiro Reiji" 2 1 4 30            # 2nd month through end of 4th
+    python3 weather_range.py reiji 1 1 1 30 --out /tmp/win.html
+
+One row per day: Rokugani date, Gregorian analog, high/low, sky, rain, sun, moon,
+and a terse grounded note. Snow columns (new snow, ground depth start->end, peak)
+appear ONLY if some day in the range has snow; a snowless range omits them
+entirely. Writes a self-contained HTML file (styled, opens in any browser) and
+prints its path. See SKILL.md for the invocation contract and the place -> analog
+framework; all figures are real recorded weather for the place's climate analog.
+"""
+
+from __future__ import annotations
+
+import sys
+from datetime import date, datetime, timedelta
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import weather as W
+from build_weather_csv import local_clock
+
+REPORTS = W.HERE / "reports"
+
+
+def slug(name: str) -> str:
+    return "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-").replace("--", "-")
+
+
+def rok_range(sm: int, sd: int, em: int, ed: int):
+    """Yield (month, day) from start to end inclusive, wrapping across the year if needed."""
+    start = (sm - 1) * 30 + sd
+    end = (em - 1) * 30 + ed
+    count = (end - start) % 360 + 1
+    for k in range(count):
+        o = (start - 1 + k) % 360
+        yield o // 30 + 1, o % 30 + 1
+
+
+def esc(s: str) -> str:
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def compact_time(t: str) -> str:
+    """'6:34 AM' -> '6:34a' to save table width."""
+    return t.replace(" AM", "a").replace(" PM", "p")
+
+
+def build_rows(raw: dict, year: int, cells):
+    daily = raw["daily"]
+    records = W.hourly_local(raw)
+    by_date = W.group_by_date(records)
+    cloud_map = {d: sum(r["cloud"] for r in rows) / len(rows) for d, rows in by_date.items()}
+    offset = int(raw["utc_offset_seconds"])
+    tz = ZoneInfo(raw.get("timezone", "America/New_York"))
+
+    rows = []
+    for month, day in cells:
+        target = W.to_gregorian(month, day, year)
+        i = daily["time"].index(target.isoformat())
+        rows.append({
+            "month": month, "day": day,
+            "greg": datetime(year, target.month, target.day),
+            "hi": round(daily["temperature_2m_max"][i]),
+            "lo": round(daily["temperature_2m_min"][i]),
+            "cloud": cloud_map.get(target, 0),
+            "precip": daily["precipitation_sum"][i],
+            "snow": W.snow_day(by_date.get(target, [])),
+            "sunrise": local_clock(daily["sunrise"][i], offset, tz),
+            "sunset": local_clock(daily["sunset"][i], offset, tz),
+            "tags": W.note_tags(daily, cloud_map, i),
+        })
+    return rows
+
+
+CSS = """
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 2rem 1rem; background: #f4f1ea; color: #23201b;
+       font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1240px; margin: 0 auto; }
+h1 { font: 600 1.6rem/1.2 Georgia, "Times New Roman", serif; margin: 0 0 .25rem; }
+.sub { color: #6b6357; margin: 0 0 1.25rem; font-size: .95rem; }
+.sub b { color: #4a4336; }
+.scroll { overflow-x: auto; border: 1px solid #ddd6c8; border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; background: #fffdf8; }
+thead th { position: sticky; top: 0; background: #3f3a30; color: #f4f1ea;
+           font-weight: 600; text-align: left; padding: .5rem .6rem; white-space: nowrap; font-size: .82rem;
+           text-transform: uppercase; letter-spacing: .03em; }
+td { padding: .38rem .55rem; border-top: 1px solid #ece7db; white-space: nowrap; vertical-align: top; }
+tbody tr:nth-child(even) td { background: #faf8f2; }
+tr.rain td { background: #eef4f7 !important; }
+tr.snow td { background: #eceef2 !important; }
+tr.mhead td { background: #e7e0d0; color: #4a4336; font: 600 .9rem Georgia, serif;
+              border-top: 2px solid #cabfa6; letter-spacing: .01em; }
+.hi { font-weight: 600; } .lo { color: #6b6357; }
+.tags { color: #7a5a3a; font-size: .85rem; white-space: normal; min-width: 130px; max-width: 210px; }
+.snowcell { color: #3a4a63; }
+.muted { color: #b5ae9e; }
+footer { color: #8a8272; font-size: .8rem; margin-top: 1rem; }
+.cols-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem;
+               margin: 0 0 1rem; padding: .55rem .8rem; background: #efe9dc;
+               border: 1px solid #ddd6c8; border-radius: 8px; font-size: .85rem; color: #4a4336; }
+.cols-toggle .lead { font-weight: 600; }
+.cols-toggle label { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; cursor: pointer; }
+.cols-toggle input { margin: 0; }
+.cols-toggle a { color: #7a5a3a; margin-left: .4rem; }
+@media print { .cols-toggle { display: none; } }
+"""
+
+
+def render(place: dict, rows: list, sm, sd, em, ed) -> str:
+    has_snow = any(r["snow"] for r in rows)
+    m1, _, mean1 = W.MONTHS[sm]
+    m2, _, mean2 = W.MONTHS[em]
+    title = (f"{place['place']} - {W.ordinal(sd)} of the {W.ordinal(sm)} month "
+             f"to {W.ordinal(ed)} of the {W.ordinal(em)} month")
+    span = f"{rows[0]['greg']:%b %-d} - {rows[-1]['greg']:%b %-d, %Y}"
+
+    columns = [("rok", "Rokugani"), ("date", "Date"), ("hilo", "Hi / Lo"), ("sky", "Sky"), ("rain", "Rain")]
+    if has_snow:
+        columns += [("newsnow", "New snow"), ("ground", "Ground"), ("peak", "Peak")]
+    columns += [("sun", "Sun (rise / set)"), ("notes", "Notes")]
+
+    head = "".join(f'<th data-col="{k}">{esc(label)}</th>' for k, label in columns)
+    toggles = "".join(
+        f'<label><input type="checkbox" data-toggle="{k}" checked> {esc(label)}</label>'
+        for k, label in columns
+    )
+
+    body = []
+    cur_month = None
+    ncols = len(columns)
+    for r in rows:
+        if r["month"] != cur_month:
+            cur_month = r["month"]
+            zod, name, meaning = W.MONTHS[cur_month]
+            lo = W.to_gregorian(cur_month, 1, rows[0]["greg"].year)
+            hi = W.to_gregorian(cur_month, 30, rows[0]["greg"].year)
+            label = f"{W.ordinal(cur_month)} Month - {name} ({meaning}), Month of the {zod} - {lo:%b %-d} to {hi:%b %-d}"
+            body.append(f'<tr class="mhead"><td colspan="{ncols}">{esc(label)}</td></tr>')
+
+        cls = "snow" if r["snow"] else ("rain" if r["precip"] >= W.WET_IN else "")
+        cell = {
+            "rok": (f'{r["month"]}-{r["day"]:02d}', ""),
+            "date": (f'{r["greg"]:%b %-d}', ""),
+            "hilo": (f'<span class="hi">{r["hi"]}</span> / <span class="lo">{r["lo"]}</span> &deg;F', ""),
+            "sky": (f'{esc(W.describe_sky(r["cloud"]))} <span class="muted">{r["cloud"]:.0f}%</span>', ""),
+            "rain": ((f'{r["precip"]:.2f}"', "") if r["precip"] >= W.WET_IN else ("-", "muted")),
+            "sun": (f'{esc(compact_time(r["sunrise"]))} / {esc(compact_time(r["sunset"]))}', ""),
+            "notes": (" &middot; ".join(esc(t) for t in r["tags"]), "tags"),
+        }
+        if has_snow:
+            s = r["snow"]
+            if s:
+                new = f'{s["new"]:.1f}"' if s["new"] >= W.SNOW_IN else "-"
+                cell["newsnow"] = (new, "snowcell")
+                cell["ground"] = (f'{s["start"]:.1f} &rarr; {s["end"]:.1f}"', "snowcell")
+                cell["peak"] = (f'{s["peak"]:.1f}"', "snowcell")
+            else:
+                cell["newsnow"] = cell["ground"] = cell["peak"] = ("-", "muted")
+
+        tds = []
+        for k, _ in columns:
+            inner, ccls = cell[k]
+            attr = f' class="{ccls}"' if ccls else ""
+            tds.append(f'<td data-col="{k}"{attr}>{inner}</td>')
+        body.append(f'<tr class="{cls}">' + "".join(tds) + "</tr>")
+
+    snow_note = "" if has_snow else " No snow fell in this range, so snow columns are omitted."
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{esc(title)}</title><style>{CSS}</style><style id="colhide"></style></head>
+<body><div class="wrap">
+<h1>{esc(title)}</h1>
+<p class="sub"><b>{esc(place['place'])}</b> ({esc(place.get('clan','?'))}) &mdash; real recorded weather for its climate analog, <b>{esc(place['us_analog'])}</b>. {esc(span)}.{snow_note}</p>
+<div class="cols-toggle"><span class="lead">Show columns:</span>{toggles}<a href="#" id="cols-reset">show all</a></div>
+<div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>
+{chr(10).join(body)}
+</tbody></table></div>
+<footer>Grounded in historical reanalysis (Open-Meteo / ERA5). Weather is indifferent to the plot by design. Column choices are remembered in this browser.</footer>
+</div>
+<script>
+(function () {{
+  var KEY = "l7r_weather_hidden_cols";
+  var style = document.getElementById("colhide");
+  function load() {{ try {{ return new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); }} catch (e) {{ return new Set(); }} }}
+  function save(s) {{ try {{ localStorage.setItem(KEY, JSON.stringify(Array.from(s))); }} catch (e) {{}} }}
+  var hidden = load();
+  function apply() {{
+    style.textContent = Array.from(hidden).map(function (k) {{ return '[data-col="' + k + '"]{{display:none}}'; }}).join("");
+    document.querySelectorAll("input[data-toggle]").forEach(function (cb) {{ cb.checked = !hidden.has(cb.dataset.toggle); }});
+  }}
+  document.querySelectorAll("input[data-toggle]").forEach(function (cb) {{
+    cb.addEventListener("change", function () {{
+      if (cb.checked) hidden.delete(cb.dataset.toggle); else hidden.add(cb.dataset.toggle);
+      save(hidden); apply();
+    }});
+  }});
+  var reset = document.getElementById("cols-reset");
+  reset.addEventListener("click", function (e) {{ e.preventDefault(); hidden.clear(); save(hidden); apply(); }});
+  apply();
+}})();
+</script>
+</body></html>"""
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    out = None
+    if "--out" in args:
+        k = args.index("--out")
+        out = Path(args[k + 1])
+        args = args[:k] + args[k + 2:]
+    if len(args) != 5:
+        sys.exit('Usage: python3 weather_range.py "<place>" <start_month> <start_day> <end_month> <end_day> [--out file.html]')
+    query, nums = args[0], args[1:]
+    try:
+        sm, sd, em, ed = (int(x) for x in nums)
+    except ValueError:
+        sys.exit("Month/day values must be numbers")
+    for label, m, d in (("start", sm, sd), ("end", em, ed)):
+        if not (1 <= m <= 12 and 1 <= d <= 30):
+            sys.exit(f"{label} date out of range (month 1-12, day 1-30)")
+
+    place = W.find_place(query)
+    if place is None:
+        known = ", ".join(p["place"] for p in W.load_places())
+        sys.exit(f"REJECTED: no place matching '{query}'. Known places: {known}")
+    loaded = W.load_year(place)
+    if isinstance(loaded, str):
+        sys.exit(loaded)
+    raw, year = loaded
+
+    rows = build_rows(raw, year, list(rok_range(sm, sd, em, ed)))
+    html = render(place, rows, sm, sd, em, ed)
+
+    if out is None:
+        REPORTS.mkdir(exist_ok=True)
+        out = REPORTS / f"{slug(place['place'])}-{rows[0]['greg']:%Y%m%d}-{rows[-1]['greg']:%Y%m%d}.html"
+    out.write_text(html)
+    print(f"Wrote {len(rows)} days to {out.resolve()}")
+
+
+if __name__ == "__main__":
+    main()

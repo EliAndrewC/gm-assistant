@@ -1137,8 +1137,14 @@ def crop_relocatable_singletons(M: Manifest, min_shrink: float = 150, clear: flo
 
 # canonical residential DENSITY: dwellings per px^2 of residential-capable ground (interior minus
 # overhead) that a well-packed provincial-city quarter delivers. Calibrated on Tango, a GM-accepted
-# 3,000-person city: 562 dwellings on ~444k px^2 of non-overhead, non-field interior = ~1.27/1000.
-RHO_CANONICAL = 0.00127
+# 3,000-person city: 561 placed dwellings on ~378k px^2 of non-overhead, NON-RESERVE interior
+# (449,984 res-capable minus the agri reserve's ~72k of non-field slack) = ~1.49/1000.
+# Feature-009 recalibration: the original 0.00127 divided by res-capable ground that still
+# CONTAINED Tango's agricultural-reserve slack (only non-agri reserves were deducted), so the
+# constant under-read what packed urban ground actually delivers - and a no-reserve city
+# (Nagahara at its budget-derived ring) was told to 'enlarge' at a density Tango itself packs.
+# Reserve ground of ANY kind is committed to non-housing; it must never dilute the density norm.
+RHO_CANONICAL = 0.00149
 
 # --- feature 006: per-quarter density + reserve/civic zoning thresholds --------------------
 # These are calibrated against Tango (GM-accepted, must pass) AND the pinned pre-feature broken
@@ -1169,6 +1175,25 @@ CIVIC_OPEN_TOL = 0.70
 # drill ground + gardens + an agricultural district and is historically conservative; beyond it the
 # wall encloses more open ground than a provincial seat justifies (read: shrink the wall).
 RESERVE_CAP_FRAC = 0.20
+
+# --- feature 009: budget-first wall sizing (specs/009-city-area-budget) ---------------------
+# A walled city's wall is DERIVED from a declared space budget (citybudget.plan_city, recorded
+# at meta.budget by the gen script BEFORE the wall is drawn); these tolerances bound how far the
+# drawn enclosure may drift from that promise, in EITHER direction. Calibrated on the two pinned
+# anchors: shipped Tango's enclosure sits ~+0.2% off its budget (must pass) while the pre-feature
+# Nagahara - the GM-rejected "too empty" city every other check called green - sits ~+21% (must
+# fail, pool/regressions/city_budget_fires_on_the_too_empty_nagahara.json). OVER at 8% leaves
+# >2x separation to the known-bad anchor; UNDER is tighter (5%) because an undersized wall
+# breaks packing immediately rather than merely reading as sparse.
+BUDGET_TOL_OVER = 0.08
+BUDGET_TOL_UNDER = 0.05
+
+# --- doors-face-open + rows-max-two-deep (GM, 2026-07-18) -----------------------------------
+# The boundary between "an eave/drainage gap" (~3-6 real ft between back-to-back rows - rain
+# drip and night-soil access, NOT an entrance) and "walkable entrance ground" (a roji/court at
+# >= ~10 real ft). 7 ft sits cleanly between the two bands at every map scale; the checks
+# convert it to drawn px via meta.ftpx.
+DOOR_CLEAR_FT = 7.0
 
 
 def city_capacity(M: Manifest, step: float = 8, grid_step: float | None = None) -> dict[str, Any] | None:
@@ -1305,10 +1330,15 @@ def city_capacity(M: Manifest, step: float = 8, grid_step: float | None = None) 
     quarters = M.get("quarters", [])
     civic_q = sum(poly_area(q["poly"]) for q in quarters if q.get("zone") == "civic")
     reserve_q = sum(poly_area(q["poly"]) for q in quarters if q.get("zone") == "reserve")
-    nonfield_reserve = sum(poly_area(q["poly"]) for q in quarters if q.get("zone") == "reserve" and q.get("kind") != "agricultural_district")
+    # ALL reserve ground is committed to non-housing and must not count toward what the wall can
+    # house. An agricultural district draws mostly as FIELDS - those cells are already classed out -
+    # so deduct only its non-field remainder (farmhouse yards, groves, margins between combs).
+    # (Feature 009: the earlier deduction skipped agricultural reserves entirely, leaving ~72k px^2
+    # of Tango's reserve slack inside res_capable and diluting RHO_CANONICAL - see its comment.)
+    reserve_deduct = max(reserve_q - A["field"], 0.0)
     reserve_frac = reserve_q / ring_area
     overhead = A["civic"] + A["water"] + A["trunk"] + A["field"]
-    res_capable = max(A["dwell"] + A["res_st"] + A["open"] - nonfield_reserve, 1)  # everything that could be residential
+    res_capable = max(A["dwell"] + A["res_st"] + A["open"] - reserve_deduct, 1)  # everything that could be residential
     inherent_cap = res_capable * RHO_CANONICAL  # dwellings the wall CAN hold, well-packed
     open_frac = A["open"] / ring_area
     # size the wall so its residential-capable ground holds T at the canonical density (+5% slack).
@@ -1649,6 +1679,88 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"reserve fraction {cap['reserve_frac']}) - resize the wall by the suggested scale x{cap['suggested_wall_scale']} "
                 f"(>1 enlarge, <1 shrink), then re-run; do NOT grind placements against a mis-sized wall",
             )
+
+    # THE WALL MATCHES THE DECLARED SPACE BUDGET (feature 009). Budget-first is the city
+    # workflow: the gen computes citybudget.plan_city(...) BEFORE drawing anything, takes the
+    # wall from budget.wall, and records the promise at meta.budget - this check holds the
+    # drawn map to it. Enclosing MORE ground than the budget justifies is the empty-space
+    # defect (the pre-feature Nagahara read fully green while ~17% of its interior was
+    # unaccounted open ground); enclosing less starves the program. Open ground is credited
+    # only as itemized budget lines (reserve/agri/extras) - never as ambient slack.
+    if scale == "city" and meta.get("walled") and M.get("wall"):
+        bud = meta.get("budget")
+        if not bud:
+            check(
+                "city_wall_matches_budget",
+                False,
+                "no space budget declared - a walled city is sized budget-first: compute citybudget.plan_city(program), take the wall from budget.wall, and record s.meta(budget=budget_to_manifest(budget)) (specs/009-city-area-budget)",
+            )
+        else:
+            measured = poly_area(M["wall"])
+            req = float(bud["required_interior_px2"])
+            bud_over = measured > req * (1 + BUDGET_TOL_OVER)
+            bud_under = measured < req * (1 - BUDGET_TOL_UNDER)
+            check(
+                "city_wall_matches_budget",
+                not (bud_over or bud_under),
+                f"the wall encloses {measured:.0f} px^2 vs the budget's required {req:.0f} ({measured / req - 1:+.1%}, tolerance +{BUDGET_TOL_OVER:.0%}/-{BUDGET_TOL_UNDER:.0%}) - "
+                + (
+                    "unjustified open ground (the empty-space defect): shrink the wall to the budget, or declare+draw the extra ground as reserve/extras lines"
+                    if bud_over
+                    else "the wall cannot hold the program: enlarge to the budget, or trim the program"
+                ),
+            )
+
+    # DOORS OPEN OUTWARD; ROWS STACK AT MOST TWO DEEP (GM, 2026-07-18). An urban building's door
+    # glyph sits on its local +h/2 side (rotated by `rot` - settlement.building), so the door's
+    # world direction derives from the manifest alone. A door must open onto WALKABLE ground
+    # (street, roji, court, open space) - never into the back of another house an eave-gap away.
+    # FARMHOUSES ARE EXEMPT EVERYWHERE: a farmhouse always faces SOUTH (its garden and threshing
+    # ground need the sunlight - the orientation is canon); a city house has no sun constraint,
+    # so it must face open ground instead. The pair rule follows from the same fact: contiguous
+    # rows stack at most TWO deep (back-to-back, both fronts outward), because the middle row of
+    # a 3-stack has walls hard against BOTH long faces - those households would be trapped.
+    # Separations in real feet: an eave/drainage gap is ~3-6 ft (drainage, not an entrance), a
+    # walkable roji/court is >= ~10 ft; DOOR_CLEAR_FT = 7 sits cleanly between them at every
+    # map scale (ftpx converts to drawn px).
+    if scale in ("town", "city"):
+        door_clear = DOOR_CLEAR_FT / meta.get("ftpx", 1)
+        subj = [b for b in M.get("buildings", []) if "w" in b]
+        blockers = subj + [h for h in M.get("houses", []) if "w" in h]
+        bcorn = [rect_corners(_struct_rect(b)) for b in blockers]
+        bdiag = [math.hypot(b["w"], b["h"]) / 2 for b in blockers]
+
+        def _face_blocked(b: dict[str, Any], sgn: float) -> bool:
+            th = math.radians(b.get("rot", 0))
+            ux, uy = -math.sin(th) * sgn, math.cos(th) * sgn  # outward normal of the (sgn=+1) door face
+            vx, vy = -uy, ux  # lateral, along the face
+            fx, fy = b["x"] + ux * b["h"] / 2, b["y"] + uy * b["h"] / 2  # face centre
+            rr = math.hypot(b["w"], b["h"]) / 2 + door_clear + 1
+            for o, oc, od in zip(blockers, bcorn, bdiag, strict=True):
+                if o is b or math.hypot(o["x"] - b["x"], o["y"] - b["y"]) > rr + od:
+                    continue
+                for d in (0.8, door_clear * 0.55, door_clear):
+                    for t in (-0.3 * b["w"], 0.0, 0.3 * b["w"]):
+                        if point_in_poly(fx + ux * d + vx * t, fy + uy * d + vy * t, oc):
+                            return True
+            return False
+
+        bad_doors = [b for b in subj if _face_blocked(b, 1.0)]
+        check(
+            "city_house_doors_unblocked",
+            not bad_doors,
+            f"{len(bad_doors)} building(s) whose DOOR opens into another structure within ~{DOOR_CLEAR_FT:.0f} real ft "
+            f"(an eave gap, not an entrance): {[(round(b['x']), round(b['y']), b.get('kind')) for b in bad_doors[:5]]} - a city house faces "
+            f"open ground (street/roji/court); in a back-to-back pair both doors face OUTWARD (rot the row 180), never into a neighbour's back wall",
+        )
+        trapped = [b for b in subj if _face_blocked(b, 1.0) and _face_blocked(b, -1.0)]
+        check(
+            "city_rows_max_two_deep",
+            not trapped,
+            f"{len(trapped)} building(s) walled on BOTH long faces - the trapped middle of a 3-deep row stack: "
+            f"{[(round(b['x']), round(b['y']), b.get('kind')) for b in trapped[:5]]} - rows/columns stack at most TWO deep (back-to-back); "
+            f"after every pair leave a walkable roji/court (>= ~10 real ft), so every household fronts open ground",
+        )
 
     # ALMOST all shops front a street (commerce wants the street); POOR housing (laborer/burakumin)
     # mostly packs the block INTERIOR, reached by alleys, not the paved street frontage. (The towns
@@ -2288,6 +2400,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             far = [h for h, d in dists if d > ADJ]
             check("all_houses_field_adjacent", not far, f"{len(far)} house(s) >{ADJ}px from any field")
 
+            # ...and the outline that adjacency was just measured against must BE the planting. A field's
+            # `outline` is the smoothed ENVELOPE the water net claims; `vis_bbox` is the extent of the plots
+            # actually DRAWN. They diverge when a gen declares more field than the comb fills (an over-declared
+            # `field_fall`): the surplus becomes a PHANTOM TAIL - invisible on the map, but fully real to every
+            # distance test. A farm hugging that tail reads as "field-adjacent" while sitting well out past the
+            # last rice, which is exactly how Akagahara grew a line of farmsteads hanging south of its paddy
+            # (the tail was 181px; the gate saw nothing). Without this, `all_houses_field_adjacent` has no teeth
+            # on precisely the maps that need it. DISPERSED only: there the outline is load-bearing for
+            # placement, whereas a nucleated cluster is seeded as a unit and never rides the envelope, so a tail
+            # is inert (Hoshigaoka/Kikuta carry ~210px tails harmlessly). Tolerance 60px allows the genuine
+            # rounding of a smoothed rim over irregular plots, well under the ~165px band it protects.
+            PHANTOM = 60
+            tails = []
+            for f in fields:
+                b, v = f.get("bbox"), f.get("vis_bbox")
+                if not b or not v:
+                    continue
+                pad = max(v[0] - b[0], v[1] - b[1], b[2] - v[2], b[3] - v[3])
+                if pad > PHANTOM:
+                    tails.append(f"{f.get('name')} (+{pad:.0f}px)")
+            check("field_outline_matches_planting", not tails, f"field outline overruns the planted crop by >{PHANTOM}px, so adjacency is measured against empty ground: {', '.join(tails)}")
+
     # DWELLINGS sit on the DRY higher ground, NEVER in the wet low toe below the field's drainage. The field
     # drains to its lowest edge (the akusui collector ditch); the ground DOWNSLOPE of that drain - reed marsh,
     # low reclaimed paddy, or the drainage tameike - is the wettest in the valley and is not building ground.
@@ -2436,7 +2570,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "merchant_estates",
             "ministries",
             "village_groves",
-            "commons",
+            # NOT "commons": the scrub is sparse GROUND COVER (a feathered grass scatter on open ground), not a
+            # feature with a footprint, and a bold place name reads fine over it. Kept in step with
+            # `_title_obstacles` in settlement.py - once the commons clothes the field's interior voids too it
+            # covers nearly the whole map, so blocking on it would leave a title nowhere to sit.
             "marshes",
         ):
             for s in M.get(k, []):
@@ -3255,12 +3392,41 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # not a field, and never the flooded paddy. The land toposequence is village -> back-grove -> fuel
             # commons, so the commons sits on the WINDWARD/high side and FURTHER out than the windbreak. WHY (the
             # denuded hills + back-slope waste; graves + dry hill-crops also live here): settlements.md 'Village windbreak'.
+            # Test the DRAWN OUTCOME, not the patch's bbox CENTRE. `commons()` skips every paddy point when it
+            # scatters, so scrub can never actually be drawn on a flooded field - "is the centre over water" was
+            # only ever a PROXY for that, and a wrong one: an INTERIOR fill (the patch that clothes the voids an
+            # irregular field leaves inside its own bbox) legitimately has its centre on the crop while every
+            # glyph it draws falls in the voids around it. Scoring the centre would fail a correct patch, which
+            # is the same bbox-stands-in-for-real-geometry mistake as the phantom field tail. What genuinely
+            # goes wrong is a patch placed where it can clothe NOTHING - it silently draws nothing at all - so
+            # that is what we test: sample each patch and require real open (non-crop) ground under it.
             commons = M.get("commons", [])
-            c_in_paddy = [(round(c["x"]), round(c["y"])) for c in commons if any(point_in_poly(c["x"], c["y"], ol) for ol in fields_ol)]
+            barren = []
+            for c in commons:
+                poly = c.get("poly")
+                if not poly:
+                    continue
+                xs = [p[0] for p in poly]
+                ys = [p[1] for p in poly]
+                n_inside: int = 0
+                n_open: int = 0
+                step = max(6.0, min(max(xs) - min(xs), max(ys) - min(ys)) / 12.0)
+                gy = min(ys)
+                while gy <= max(ys):
+                    gx = min(xs)
+                    while gx <= max(xs):
+                        if point_in_poly(gx, gy, poly):
+                            n_inside += 1
+                            if not any(point_in_poly(gx, gy, ol) for ol in fields_ol):
+                                n_open += 1
+                        gx += step
+                    gy += step
+                if n_inside and not n_open:
+                    barren.append((round(c["x"]), round(c["y"])))
             check(
                 "commons_clear_of_paddies",
-                not c_in_paddy,
-                f"fuel/fodder commons sit IN a flooded paddy (centre over water): {c_in_paddy[:3]} - the commons is NON-arable degraded grazing on the high back slope, never the productive wet paddy",
+                not barren,
+                f"fuel/fodder commons patch(es) lie ENTIRELY over flooded paddy, so they clothe nothing and draw nothing: {barren[:3]} - the commons is NON-arable degraded grazing, never the productive wet paddy; put the patch where there is open ground",
             )
             # MANAGED-WOODLAND patches must not OVERLAP the crops nor BLOCK THEIR LIGHT (GM). Both the placement and
             # this check enforce it. A tree canopy over a crop competes for root/light; and the sun is to the SOUTH

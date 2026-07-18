@@ -1189,9 +1189,22 @@ def test_village_groves_clear_of_paddies_fires_on_a_grove_in_a_field():
 
 
 def test_commons_clear_of_paddies_fires_when_scrub_sits_in_a_field():
+    # The check tests the DRAWN OUTCOME, not the patch's bbox CENTRE (the scatter skips every paddy point by
+    # construction, so a centre-over-water test was only a proxy). It fires when a patch can clothe NOTHING:
     M = _nuc_village_M(_nuc_grid(), fields=[_field("p", 540, 540, 700, 700)])
-    M["commons"] = [{"x": 600, "y": 600, "w": 60, "h": 60, "rot": 0}]  # centre in the paddy
+    M["commons"] = [{"x": 600, "y": 600, "w": 60, "h": 60, "rot": 0, "poly": [[570, 570], [630, 570], [630, 630], [570, 630]]}]  # wholly inside the paddy -> draws nothing
     assert "commons_clear_of_paddies" in f(M)
+    # ...but an INTERIOR FILL - the patch that clothes the voids an irregular field leaves inside its own bbox -
+    # legitimately has its CENTRE on the crop while every glyph it draws lands in the open ground around it.
+    # Scoring the centre failed this correct patch, which is why the rule changed (GM, 2026-07: Akagahara's fan
+    # void rendered as bare clay because nothing was allowed to cover it).
+    fill = _nuc_village_M(_nuc_grid(), fields=[_field("p", 540, 540, 700, 700)])
+    fill["commons"] = [{"x": 600, "y": 600, "w": 400, "h": 400, "rot": 0, "poly": [[400, 400], [800, 400], [800, 800], [400, 800]]}]
+    assert "commons_clear_of_paddies" not in f(fill)
+    # a patch with no recorded polygon is skipped rather than crashing
+    nopoly = _nuc_village_M(_nuc_grid(), fields=[_field("p", 540, 540, 700, 700)])
+    nopoly["commons"] = [{"x": 600, "y": 600, "w": 60, "h": 60, "rot": 0}]
+    assert "commons_clear_of_paddies" not in f(nopoly)
 
 
 def _nuc_with_windbreak():
@@ -1872,9 +1885,18 @@ def test_title_clear_of_features_fires_over_a_field():
     assert "title_clear_of_features" in f(M)
 
 
-def test_title_clear_of_features_fires_over_a_commons():
-    M = {"meta": {"scale": "village"}, "commons": [{"poly": [[200, 200], [400, 200], [400, 400], [200, 400]]}], "title": {"name": "V", "bbox": [250, 250, 350, 300]}}
-    assert "title_clear_of_features" in f(M)
+def test_title_clear_of_features_tolerates_scrub_but_not_grove_or_marsh():
+    # The scrub commons is sparse GROUND COVER (a feathered grass scatter), not a feature with a footprint, and
+    # a bold place name reads fine over it - so it does NOT block a title. This changed when the commons began
+    # clothing the field's interior voids too (GM, 2026-07): scrub then covers nearly the whole map, and
+    # treating it as an obstacle would leave the title nowhere at all to sit. Must stay in step with
+    # `Settlement._title_obstacles`.
+    scrub = {"meta": {"scale": "village"}, "commons": [{"poly": [[200, 200], [400, 200], [400, 400], [200, 400]]}], "title": {"name": "V", "bbox": [250, 250, 350, 300]}}
+    assert "title_clear_of_features" not in f(scrub)
+    # the GROVE (dense closed canopy) and the MARSH (a distinct wetland) DO still block it
+    for k in ("village_groves", "marshes"):
+        M = {"meta": {"scale": "village"}, k: [{"poly": [[200, 200], [400, 200], [400, 400], [200, 400]]}], "title": {"name": "V", "bbox": [250, 250, 350, 300]}}
+        assert "title_clear_of_features" in f(M), k
 
 
 def test_title_clear_of_features_fires_over_the_pond():
@@ -4622,18 +4644,19 @@ def test_city_capacity_too_big_when_wall_dwarfs_target():
 
 
 def test_city_capacity_underpacked_when_wall_right_but_placement_sparse():
-    # target 80 (pop 400) sits inside the inherent band (~102), but only 10 dwellings placed ->
-    # the WALL is fine, the PLACEMENT is sparse (below the 7% population line). Not a resize.
-    rep = check_village.city_capacity(_diamond_city(400, dwellings=10))
+    # target 100 (pop 500) sits inside the inherent band (~118 at RHO 1.49/1000), but only 10
+    # dwellings placed -> the WALL is fine, the PLACEMENT is sparse (below the 7% population
+    # line). Not a resize.
+    rep = check_village.city_capacity(_diamond_city(500, dwellings=10))
     assert rep["verdict"] == "densify"
     # underpacked is NOT a wall-size fault, so the gate check stays silent
-    assert "city_wall_sized_to_population" not in f(_diamond_city(400, dwellings=10))
+    assert "city_wall_sized_to_population" not in f(_diamond_city(500, dwellings=10))
 
 
 def test_city_capacity_about_right_when_sized_and_packed():
-    rep = check_village.city_capacity(_diamond_city(400, dwellings=80))
+    rep = check_village.city_capacity(_diamond_city(500, dwellings=95))
     assert rep["verdict"] == "sized_and_packed"
-    assert "city_wall_sized_to_population" not in f(_diamond_city(400, dwellings=80))
+    assert "city_wall_sized_to_population" not in f(_diamond_city(500, dwellings=95))
 
 
 def test_city_capacity_ascii_map_classes_every_cell_kind():
@@ -5075,6 +5098,32 @@ def test_twin_settlement_form_is_an_axis():
 # ---- dwellings must not sit in the WET low toe below the field's drainage ditch (feature 005 / GM 2026-07) ----
 
 
+def test_field_outline_matches_planting_fires_on_a_phantom_tail():
+    # A DISPERSED map whose field OUTLINE runs 200px past the planted crop (`vis_bbox`) - the over-declared
+    # `field_fall` defect. The point of the fixture: `all_houses_field_adjacent` PASSES on this manifest (the
+    # farm hugs the phantom tail, so it measures as adjacent) while the farm sits out beyond the last rice.
+    # That is the blindness the check exists to cover, so assert BOTH facts.
+    base = {
+        "meta": {"scale": "hamlet", "down_deg": 90},
+        "fields": [{"name": "tail-test", "kind": "paddy", "outline": [[400, 400], [800, 400], [800, 800], [400, 800]], "bbox": [400, 400, 800, 800], "vis_bbox": [400, 400, 800, 600]}],
+        "houses": [{"x": 600, "y": 760, "w": 46, "h": 28, "rot": 0, "kind": "plain"}],
+    }
+    assert "field_outline_matches_planting" in f(base)
+    assert "all_houses_field_adjacent" not in f(base)   # the old gate is blind here - that is the whole point
+    # outline == planting: the honest field, no tail -> does NOT fire
+    good = {**base, "fields": [{**base["fields"][0], "vis_bbox": [400, 400, 800, 800]}]}
+    assert "field_outline_matches_planting" not in f(good)
+    # a rounding-scale rim (smoothing over irregular plots) is tolerated -> does NOT fire
+    rim = {**base, "fields": [{**base["fields"][0], "vis_bbox": [410, 420, 790, 760]}]}
+    assert "field_outline_matches_planting" not in f(rim)
+    # NUCLEATED is scoped OUT: the cluster never rides the envelope, so a tail is inert there
+    nuc = {**base, "meta": {**base["meta"], "nucleated": True}}
+    assert "field_outline_matches_planting" not in f(nuc)
+    # a field with no vis_bbox recorded is skipped rather than crashing
+    novis = {**base, "fields": [{k: v for k, v in base["fields"][0].items() if k != "vis_bbox"}]}
+    assert "field_outline_matches_planting" not in f(novis)
+
+
 def test_dwellings_above_field_drain_fires_on_a_toe_farm():
     # a DISPERSED map (no meta.nucleated), downhill = due S (down_deg=90); a drain runs cross-slope (E-W) at
     # the field's low edge. The first drain segment is DEGENERATE (a repeated point) to exercise that branch.
@@ -5095,3 +5144,111 @@ def test_dwellings_above_field_drain_fires_on_a_toe_farm():
     # a NUCLEATED cluster is scoped OUT (governed by cluster_abuts_fields), even sitting downslope
     nuc = {**base, "meta": {**base["meta"], "nucleated": True}, "houses": [{"x": 600, "y": 710, "w": 46, "h": 28, "rot": 0, "kind": "plain"}]}
     assert "dwellings_above_field_drain" not in f(nuc)
+
+
+# ---- feature 009: the wall must match the declared space budget -----------------------------
+def _budget_city(budget=None):
+    # a walled city whose square wall encloses 600x600 = 360,000 px^2
+    M = {"meta": {"scale": "city", "walled": True}, "wall": [[200, 200], [800, 200], [800, 800], [200, 800]]}
+    if budget is not None:
+        M["meta"]["budget"] = budget
+    return M
+
+
+def test_city_wall_matches_budget_fires_when_no_budget_is_declared():
+    # budget-first is the city workflow: a walled city without meta.budget is unsized by construction
+    assert "city_wall_matches_budget" in f(_budget_city())
+
+
+def test_city_wall_matches_budget_fires_on_over_enclosure():
+    # required 300k, enclosed 360k = +20% - the empty-space defect (unjustified open ground)
+    assert "city_wall_matches_budget" in f(_budget_city({"required_interior_px2": 300_000.0}))
+
+
+def test_city_wall_matches_budget_fires_on_under_enclosure():
+    # required 400k, enclosed 360k = -10% - the wall cannot hold the program
+    assert "city_wall_matches_budget" in f(_budget_city({"required_interior_px2": 400_000.0}))
+
+
+def test_city_wall_matches_budget_passes_within_tolerance():
+    # required 350k, enclosed 360k = +2.9% - inside +8%/-5%
+    assert "city_wall_matches_budget" not in f(_budget_city({"required_interior_px2": 350_000.0}))
+
+
+def test_city_wall_matches_budget_is_scoped_to_walled_cities_only():
+    town = {"meta": {"scale": "town", "walled": True}, "wall": [[200, 200], [800, 200], [800, 800], [200, 800]]}
+    assert "city_wall_matches_budget" not in f(town)
+    unwalled = {"meta": {"scale": "city"}, "wall": [[200, 200], [800, 200], [800, 800], [200, 800]]}
+    assert "city_wall_matches_budget" not in f(unwalled)
+
+
+# ---- doors face open ground + rows max 2-deep (GM feedback 2026-07-18) ----------------------
+# The door glyph draws on a building's local +h/2 side (settlement.building), so the door's
+# world position/direction derive from x,y,w,h,rot alone. At rot=0 the door faces +y (down).
+def _door_city(buildings, scale="city"):
+    return {"meta": {"scale": scale, "ftpx": 3}, "wall": [[0, 0], [3000, 0], [3000, 3000], [0, 3000]], "buildings": buildings}
+
+
+def test_city_house_doors_unblocked_fires_when_a_door_opens_into_a_back_wall():
+    # two rot=0 rows 1.5px apart (an eave gap): the TOP row's door (facing down) opens straight
+    # into the bottom row's back wall - the defect the GM flagged on the shipped cities
+    top = [bldg(300 + i * 41, 300, "laborer", w=40, h=24) for i in range(3)]
+    bot = [bldg(300 + i * 41, 300 + 24 + 1.5, "laborer", w=40, h=24) for i in range(3)]
+    assert "city_house_doors_unblocked" in f(_door_city(top + bot))
+
+
+def test_city_house_doors_unblocked_passes_back_to_back_pair_facing_outward():
+    # the SAME two rows with the top row rotated 180 (door up, into open ground): a proper
+    # back-to-back nagaya pair - both doors open outward
+    top = [bldg(300 + i * 41, 300, "laborer", rot=180, w=40, h=24) for i in range(3)]
+    bot = [bldg(300 + i * 41, 300 + 24 + 1.5, "laborer", w=40, h=24) for i in range(3)]
+    assert "city_house_doors_unblocked" not in f(_door_city(top + bot))
+
+
+def test_city_house_doors_unblocked_passes_across_a_walkable_roji():
+    # facing rows separated by a walkable lane (>= ~10 real ft): doors open onto the roji, fine
+    top = [bldg(300 + i * 41, 300, "laborer", w=40, h=24) for i in range(3)]  # door down
+    bot = [bldg(300 + i * 41, 300 + 24 + 5.0, "laborer", rot=180, w=40, h=24) for i in range(3)]  # door up
+    assert "city_house_doors_unblocked" not in f(_door_city(top + bot))
+
+
+def test_city_house_doors_unblocked_respects_rotation_axes():
+    # a west-facing house (rot=90: door toward -x) with a neighbor tight on its WEST is blocked;
+    # the same neighbor on its EAST, facing EAST itself (rot=270), is a proper back-to-back
+    # partner - fine (both doors outward on the E-W axis)
+    house = bldg(300, 300, "laborer", rot=90, w=40, h=24)
+    west = bldg(300 - 24 / 2 - 1.5 - 12, 300, "laborer", rot=90, w=40, h=24)
+    east = bldg(300 + 24 / 2 + 1.5 + 12, 300, "laborer", rot=270, w=40, h=24)
+    assert "city_house_doors_unblocked" in f(_door_city([house, west]))
+    assert "city_house_doors_unblocked" not in f(_door_city([house, east]))
+
+
+def test_city_house_doors_scope_excludes_villages_and_farmhouses():
+    # villages/farmhouses keep the south-facing sunlight canon - out of scope entirely
+    top = [bldg(300 + i * 41, 300, "laborer", w=40, h=24) for i in range(3)]
+    bot = [bldg(300 + i * 41, 300 + 24 + 1.5, "laborer", w=40, h=24) for i in range(3)]
+    assert "city_house_doors_unblocked" not in f({"meta": {"scale": "village"}, "buildings": top + bot})
+
+
+def test_city_rows_max_two_deep_fires_on_a_three_deep_stack():
+    # three eave-gapped rows: the middle row has walls hard against BOTH long faces - trapped
+    rows = []
+    for r in range(3):
+        rows += [bldg(300 + i * 41, 300 + r * (24 + 1.5), "laborer", rot=(180 if r == 0 else 0), w=40, h=24) for i in range(3)]
+    assert "city_rows_max_two_deep" in f(_door_city(rows))
+
+
+def test_city_rows_max_two_deep_passes_pairs_split_by_roji():
+    # 2 rows + walkable gap + 2 rows: nobody is trapped (the canonical pair cadence)
+    rows = []
+    y = 300.0
+    for r in range(4):
+        rows += [bldg(300 + i * 41, y, "laborer", rot=(180 if r % 2 == 0 else 0), w=40, h=24) for i in range(3)]
+        y += 24 + (5.0 if r % 2 else 1.5)
+    assert "city_rows_max_two_deep" not in f(_door_city(rows))
+
+
+def test_city_rows_max_two_deep_ignores_side_by_side_terraces():
+    # a long terrace of party-wall units (touching along w) is the doctrine, not a violation
+    row = [bldg(300 + i * 40.4, 300, "laborer", w=40, h=24) for i in range(8)]
+    assert "city_rows_max_two_deep" not in f(_door_city(row))

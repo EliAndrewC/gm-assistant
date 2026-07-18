@@ -1,0 +1,36 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "gardens": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 20,
+   "h": 18,
+   "rot": 0,
+   "of": [
+    500,
+    470
+   ]
+  }
+ ],
+ "village_groves": [
+  {
+   "role": "copse",
+   "r": 11,
+   "clumps": [
+    [
+     500,
+     500
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "grove_clumps_clear_of_structures"
+  ],
+  "source": "test_checks.py::test_grove_clumps_clear_of_structures_covers_a_garden_and_a_shed"
+ }
+}

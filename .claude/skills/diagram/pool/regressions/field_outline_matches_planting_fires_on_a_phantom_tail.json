@@ -1,0 +1,58 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "down_deg": 90
+ },
+ "fields": [
+  {
+   "name": "tail-test",
+   "kind": "paddy",
+   "outline": [
+    [
+     400,
+     400
+    ],
+    [
+     800,
+     400
+    ],
+    [
+     800,
+     800
+    ],
+    [
+     400,
+     800
+    ]
+   ],
+   "bbox": [
+    400,
+    400,
+    800,
+    800
+   ],
+   "vis_bbox": [
+    400,
+    400,
+    800,
+    600
+   ]
+  }
+ ],
+ "houses": [
+  {
+   "x": 600,
+   "y": 760,
+   "w": 46,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "field_outline_matches_planting"
+  ],
+  "source": "test_checks.py::test_field_outline_matches_planting_fires_on_a_phantom_tail"
+ }
+}

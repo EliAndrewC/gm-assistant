@@ -1,0 +1,30 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "buildings": [],
+ "_regression": {
+  "fires": [
+   "city_quarters_declared"
+  ],
+  "source": "test_checks.py::test_city_quarters_declared_fires_when_absent_passes_when_present"
+ }
+}

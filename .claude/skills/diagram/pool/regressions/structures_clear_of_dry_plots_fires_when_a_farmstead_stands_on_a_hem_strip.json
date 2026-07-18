@@ -1,0 +1,42 @@
+{
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     500,
+     300
+    ],
+    [
+     500,
+     380
+    ],
+    [
+     300,
+     380
+    ]
+   ],
+   "crop": "barley",
+   "theta": 0.5
+  }
+ ],
+ "houses": [
+  {
+   "x": 480,
+   "y": 372,
+   "w": 46,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "structures_clear_of_dry_plots"
+  ],
+  "source": "test_checks.py::test_structures_clear_of_dry_plots_fires_when_a_farmstead_stands_on_a_hem_strip"
+ }
+}

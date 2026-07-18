@@ -17,6 +17,10 @@ __pycache__
 # `python3 .claude/skills/diagram/pool/<map>.gen.py`.
 .claude/skills/diagram/pool/*.png
 
+# Spoiler-sensitive /dream scenes: the local tier is the GM's disk only, never committed.
+# The public tier (.claude/skills/dream/pool/) stays tracked; see that skill's SKILL.md.
+.claude/skills/dream/pool-local/
+
 # GNOME atomic-save temp files (a stray one was once committed); never track these.
 .goutputstream-*
 

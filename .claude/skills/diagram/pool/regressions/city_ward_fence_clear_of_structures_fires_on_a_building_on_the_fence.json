@@ -1,0 +1,83 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ]
+ ],
+ "wards": [
+  {
+   "name": "samurai",
+   "boundary": [
+    [
+     200,
+     500
+    ],
+    [
+     500,
+     500
+    ],
+    [
+     500,
+     700
+    ],
+    [
+     200,
+     700
+    ]
+   ],
+   "z": 10
+  }
+ ],
+ "kido": [
+  {
+   "x": 500,
+   "y": 600,
+   "horizontal": false,
+   "bbox": [
+    490,
+    590,
+    510,
+    610
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "x": 350,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "samurai"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_ward_fence_clear_of_structures"
+  ],
+  "source": "test_checks.py::test_city_ward_fence_clear_of_structures_fires_on_a_building_on_the_fence"
+ }
+}

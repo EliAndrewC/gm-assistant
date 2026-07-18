@@ -192,14 +192,14 @@
     <rect x="134" y="682" width="12" height="8"/>
     <rect x="134" y="720" width="12" height="8"/>
   </g>
-  <text x="166" y="705" text-anchor="start" font-size="8" font-style="italic" fill="#5C4830">service gate</text>
+  <text x="166" y="722" text-anchor="start" font-size="8" font-style="italic" fill="#5C4830">service gate</text>
   <!-- Guests' river door (annex east wall, opening into the guest garden) -->
   <g fill="#2D2A24">
     <rect x="994" y="324" width="12" height="8"/>
     <rect x="994" y="356" width="12" height="8"/>
   </g>
   <path d="M 1004 344 L 1044 344 L 1044 510" stroke="#9C7448" stroke-width="6" stroke-dasharray="8 8" fill="none" opacity="0.5"/>
-  <text x="1022" y="386" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">river door</text>
+  <text x="1034" y="386" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">river door</text>
   <!-- river door (annex east wall), flanking, outside (east) - the door
        Hajime fears most, so it is warded like the rest -->
   <circle cx="1010" cy="336" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
@@ -209,15 +209,16 @@
   <g>
     <circle cx="484" cy="764" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
     <circle cx="536" cy="764" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-    <text x="592" y="782" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">salt wards</text>
+    <text x="636" y="782" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">salt wards</text>
   </g>
 
-  <!-- Notice board just outside the wall, west of the gate -->
+  <!-- Notice board just outside the wall, hugging the main gate (a kosatsu is read where
+       people pass; it sat ~28 ft west of any gate before - GM 2026-07) -->
   <g>
-    <rect x="380" y="758" width="44" height="12" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
-    <circle cx="386" cy="772" r="1.5" fill="#4A3318"/>
-    <circle cx="418" cy="772" r="1.5" fill="#4A3318"/>
-    <text x="402" y="786" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">notice board</text>
+    <rect x="548" y="758" width="44" height="12" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
+    <circle cx="554" cy="772" r="1.5" fill="#4A3318"/>
+    <circle cx="586" cy="772" r="1.5" fill="#4A3318"/>
+    <text x="570" y="786" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">notice board</text>
   </g>
 
   <!-- (scale bar moved to the top-left beside the title) -->
@@ -361,12 +362,28 @@
     <text x="484" y="219" font-size="8" font-style="italic" fill="#5C4830">latrine</text>
   </g>
 
-  <!-- Kitchen garden filling the rest of the rear strip (behind the east
+  <!-- Vegetable garden filling the rest of the rear strip (behind the east
        residence block) - a vegetable plot on the shady north/service side, the
-       band the servants' quarters did not take -->
+       band the servants' quarters did not take. Labeled for what it is: the kitchen
+       is boxed into the SW service corner with no room for an adjacent plot, so the
+       compound's vegetables come from this rear plot (servant-tended) + outside via
+       the kitchen postern - normal for a compact walled magistracy (GM 2026-07). -->
   <g>
     <rect x="540" y="156" width="160" height="44" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
-    <text x="620" y="182" text-anchor="middle" font-size="9" font-style="italic" fill="#3A4E38">kitchen garden</text>
+    <text x="620" y="182" text-anchor="middle" font-size="9" font-style="italic" fill="#3A4E38">vegetable garden</text>
+  </g>
+
+  <!-- Shrine grove (chinju no mori): the two standalone shrines + their approach torii
+       stand in a green precinct, not bare court-earth. It gathers the open ground ABOVE,
+       BELOW, and BETWEEN the shrines into ONE named feature - a shrine reads as set in a
+       grove (GM backing-void follow-up, 2026-07). Drawn before the shrines/torii so those
+       paint on top of it. -->
+  <g>
+    <rect x="740" y="190" width="105" height="265" fill="url(#garden-stipple)" stroke="#7A8C5C" stroke-width="1" stroke-dasharray="4 3"/>
+    <circle cx="828" cy="420" r="8" fill="#5C7050" stroke="#3A4E38" stroke-width="0.8"/>
+    <circle cx="762" cy="418" r="7" fill="#5C7050" stroke="#3A4E38" stroke-width="0.8"/>
+    <circle cx="806" cy="432" r="6" fill="#5C7050" stroke="#3A4E38" stroke-width="0.8"/>
+    <text x="792" y="448" text-anchor="middle" font-size="9" font-style="italic" fill="#3A4E38">shrine grove</text>
   </g>
 
   <!-- The two shrines (east range of the inner court) -->
@@ -406,7 +423,7 @@
   <!-- ============================================================ -->
   <!-- GUEST-WING ANNEX (the accreted east bulge)                    -->
   <!-- ============================================================ -->
-  <text x="940" y="174" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">(guest wing - added by the 9th magistrate)</text>
+  <text x="940" y="142" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">(guest wing - added by the 9th magistrate)</text>
   <g>
     <rect x="895" y="200" width="90" height="100" fill="#DDB87A" stroke="#5A3F1E" stroke-width="2.5"/>
     <!-- entry from the guest garden (guests arrive via the river door into the
@@ -557,17 +574,17 @@
        The fireproof plaster tax-archive kura correctly carries none. (Fire-water
        sweep, 2026-07: halls burn, kura endure - so the water lives at the halls.) -->
   <g fill="#8FB0C6" stroke="#3A5060" stroke-width="1">
-    <!-- kitchen (2, highest fire risk) -->
-    <circle cx="180" cy="432" r="5"/>
-    <circle cx="202" cy="432" r="5"/>
-    <!-- office hall -->
-    <circle cx="328" cy="498" r="5"/>
+    <!-- kitchen (2, highest fire risk) - east eaves wall -->
+    <circle cx="286" cy="336" r="5"/>
+    <circle cx="286" cy="404" r="5"/>
+    <!-- office hall - west eaves corner -->
+    <circle cx="334" cy="494" r="5"/>
     <!-- residence west block (by the entry porch) -->
     <circle cx="310" cy="296" r="5"/>
     <!-- residence east block (family, garden frontage) -->
     <circle cx="680" cy="312" r="5"/>
-    <!-- the two shrines -->
-    <circle cx="832" cy="280" r="5"/>
+    <!-- the two shrines (against the Fire Dragon shrine's east eaves) -->
+    <circle cx="828" cy="238" r="5"/>
     <!-- guest house -->
     <circle cx="888" cy="210" r="5"/>
     <!-- granary / east yard (gap coverage) -->
@@ -576,12 +593,12 @@
     <circle cx="648" cy="706" r="5"/>
     <!-- gatehouse -->
     <circle cx="328" cy="705" r="5"/>
-    <!-- stables -->
-    <circle cx="294" cy="692" r="5"/>
+    <!-- stables (east eaves wall) -->
+    <circle cx="250" cy="692" r="5"/>
     <!-- servants' quarters -->
     <circle cx="392" cy="162" r="5"/>
   </g>
-  <text x="210" y="436" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
+  <text x="296" y="408" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
 
   <!-- Gatehouse (guard post just inside and BESIDE the gate - never across it) -->
   <g>

@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "scale": "city",
+  "population": 3000
+ },
+ "wall": [
+  [
+   200,
+   0
+  ],
+  [
+   400,
+   200
+  ],
+  [
+   200,
+   400
+  ],
+  [
+   0,
+   200
+  ]
+ ],
+ "buildings": [],
+ "_regression": {
+  "fires": [
+   "city_wall_sized_to_population"
+  ],
+  "source": "test_checks.py::test_city_capacity_too_small_when_wall_cannot_hold_target"
+ }
+}

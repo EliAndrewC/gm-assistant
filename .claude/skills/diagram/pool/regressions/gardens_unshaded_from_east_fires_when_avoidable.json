@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 23,
+   "h": 14,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "gardens": [
+  {
+   "x": 320,
+   "y": 300,
+   "w": 10,
+   "h": 11,
+   "rot": 0,
+   "of": [
+    300,
+    300
+   ]
+  }
+ ],
+ "groves": [
+  {
+   "x": 340,
+   "y": 300,
+   "w": 16,
+   "h": 24,
+   "rot": 0,
+   "of": [
+    380,
+    300
+   ],
+   "face": [
+    -1,
+    0
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "gardens_unshaded_from_east"
+  ],
+  "source": "test_checks.py::test_gardens_unshaded_from_east_fires_when_avoidable"
+ }
+}

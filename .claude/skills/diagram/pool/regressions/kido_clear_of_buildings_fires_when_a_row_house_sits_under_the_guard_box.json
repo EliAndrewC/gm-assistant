@@ -1,0 +1,63 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "kido": [
+  {
+   "x": 400,
+   "y": 500,
+   "horizontal": false,
+   "bbox": [
+    385,
+    480,
+    415,
+    520
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "x": 390,
+   "y": 505,
+   "w": 20,
+   "h": 14,
+   "rot": 0,
+   "kind": "samurai"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "kido_clear_of_buildings"
+  ],
+  "source": "test_checks.py::test_kido_clear_of_buildings_fires_when_a_row_house_sits_under_the_guard_box"
+ }
+}

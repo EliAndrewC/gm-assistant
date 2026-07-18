@@ -117,6 +117,21 @@ Paths under `/gm-assistant/.claude/skills/diagram/`:
      wall ring -> tighten/consolidate that edge. A LOW perimeter-hugging % means
      buildings float mid-court (under-composed) -> pull them to the walls/divider. The
      rule inverts the naive "avoid empty space": central open good, perimeter gaps bad.
+     **CAVEAT - hugging % counts "near a wall" (~one building-depth), NOT "flush to
+     it", so a decent hugging % can HIDE a building that hangs a building-depth off
+     its wall with a dead strip behind it.** So do not stop at the headline %:
+     enumerate the perimeter vacancies and, for any that sit BEHIND a building
+     (sandwiched between a building and the wall it should back), name the building
+     and rule "floats N ft off the {wall} wall -> push it flush; the strip belongs in
+     the courtyard." A subordinate HALL / RESIDENCE / WING backs the perimeter wall -
+     it should not hover a room's-width off it with the wall-strip left as unlabeled
+     dead ground. A rear SERVICE lane inside a wall is a few feet (eaves + inspection
+     path, ~<=10 ft); anything wider behind a building is slack. EXCEPTION - a KURA /
+     STOREHOUSE / GRANARY is the one type that legitimately STANDS APART: it was kept
+     isolated with an all-around fire-break + inspection/ventilation clearance (~6-10
+     ft), so a storehouse standing off its wall is a FEATURE, not a backing void - do
+     not push a kura flush. (And a storehouse's position is often pinned by its own
+     loading apron; the gap on its court-facing side is the column's spacing, not slack.)
    - **TOP-N VACANT RECTANGLES** - the report lists the several largest empty
      rectangles, not just one (a single-largest metric once let a big secondary
      void hide behind the legitimate forecourt - GM caught it, 2026-07). For EACH,
@@ -173,8 +188,11 @@ PACKING / WHITESPACE SWEEP (mandatory - run pack_audit.py, then interpret):
 - coverage: N% of interior -> in jin'ya band ~37-42% / sparse / cramped -> ENVELOPE verdict (keep - and if in-band, state explicitly that shrinking the walls is NOT the fix)
 - composition: perimeter-hugging N% (high = buildings ring the walls/divider; low = they float mid-court -> pull them to the edges); count of central vs perimeter vacancies -> central = courtyard (good, must be NAMED); perimeter = ring gap (tighten)
 - top-N vacant rectangles: for EACH, W x H ft [central|perimeter] at (loc) -> CENTRAL courtyard is a FEATURE (keep) but must be a NAMED court + carry a quantified reason ("warrants ~N ft because <function>": loading apron ~15-20 ft, forecourt/oshirasu sized for assembly); PERIMETER vacancy -> ring gap, tighten/consolidate. An unquantified "it's an apron/forecourt" and an UNNAMED central void are both findings.
+- BACKING VOIDS (mandatory sub-check of the perimeter vacancies): for EACH perimeter vacancy, state whether a BUILDING sits on its inner side with the wall on its outer side (building||void||wall). If so, that building FLOATS off the wall -> name it, give the gap in ft, verdict "push flush to the {wall} wall, the strip goes to the courtyard" (a subordinate hall/wing/residence BACKS the perimeter; >~10 ft of dead ground behind it is slack, not a rear lane. EXCEPTION: a KURA/storehouse/granary legitimately stands apart with a ~6-10 ft fire/access clearance - its stand-off is a feature, and its court-facing gap is often pinned by its loading apron - so do NOT flag a storehouse as a backing void). Enumerate ALL perimeter vacancies here even to say "not a backing void (it is the forecourt/apron/ring gap)" - the hugging % can look healthy while a building hangs a room's-width off its wall. VALIDATED (2026-07, red/green): on Ochiba this sweep caught the Inari shrine hall + cinnabar workshop floating ~23 ft off the EAST wall (a 23x99 ft dead NE strip) while perimeter-hugging read a healthy 48% - and correctly did NOT flag the south forecourt, the granary loading apron, or the residence's filled rear service strip. GM's own catch that seeded it; pack_audit reported the void in its vacant list but the headline masked it, and an earlier per-building geometric detector was reverted because it missed the shrine (it "backs" the neighbouring residence + its own workshop) and false-flagged good composition - the feature/slack call is a REVIEW judgment, not a geometric one.
 - per-region density: name any large tile whose local coverage sits far below the global figure -> locally-sparse pocket (consolidation candidate), even when global coverage is in-band
 - loose gaps: rule each flagged gap -> ABUT/TIGHTEN (two wooden service buildings) | fire-gap OK (kura, <=~10 ft) | FEATURE (forecourt / court / passage)
+- fire-water tubs adrift: pack_audit lists any gutter-fed tub sitting >~3.5 ft from a building -> each must be moved to a wall/eaves corner (a tensuioke is fed by roof runoff; a tub adrift in the court is fed by nothing). This is a hard geometric FINDING, not a judgment call - report every adrift tub.
+- LAYER/LABEL section: pack_audit also runs five hard rendering checks (all objective geometry, no judgment - so they live in the tool, not this sweep): labels/tubs BURIED under a later-drawn feature (belong on the top layer), a glyph-group label ORPHANED from its glyphs, a NOTICE BOARD not within ~15 ft of a gate opening, and DARK-ON-DARK label ink over a wall/dark block (with a suggested nudge). Relay any it prints; they are already-verified findings, not calls to re-litigate.
 - packing verdict: envelope OK + which specific gaps/regions/tiles to consolidate (never "shrink the manor" when coverage is in-band)
 
 FINDINGS (ranked by how wrong):

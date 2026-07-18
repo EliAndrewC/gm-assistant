@@ -551,6 +551,86 @@ def test_city_wall_gateposts_orient_to_the_wall_tangent():
     assert abs(posts[0]["y"] - posts[1]["y"]) > 40 and abs(posts[0]["x"] - posts[1]["x"]) < 30
 
 
+def test_moat_closes_into_a_ring_without_a_river():
+    # the moat(river=None) branch: with no river to join, the moat closes on itself into a ring (the
+    # else arm), so the recorded polyline's first and last points coincide. The river-open-arc arm is
+    # covered by test_river_canal_dock_jetty_water_gate_defaults.
+    import math as m
+
+    s = _crop_settlement()
+    pts = [(round(1000 + 300 * m.cos(2 * m.pi * i / 12)), round(700 + 300 * m.sin(2 * m.pi * i / 12))) for i in range(12)]
+    s.moat(pts)  # no river -> CLOSED ring
+    assert s.M["moat"][0] == s.M["moat"][-1]
+
+
+def test_rect_hits_detects_a_pure_edge_crossing():
+    # the _rect_hits edge-cross arm: a plus-sign where neither shape has a corner/vertex inside the
+    # other, but their edges cross - the corner-in / vertex-in fast paths both miss, so only the
+    # per-edge segments_cross catches it. Plus a bbox-disjoint poly to exercise the early reject.
+    s = _crop_settlement()
+    assert s._rect_hits((500, 500, 200, 40), [[(480, 400), (520, 400), (520, 600), (480, 600)]])
+    assert not s._rect_hits((500, 500, 40, 40), [[(900, 900), (950, 900), (950, 950), (900, 950)]])
+
+
+def test_label_hits_counts_a_grove_under_the_label():
+    # the _label_hits grove_rects arm: a label box centred on a homestead grove counts it as an
+    # obstacle (a label should not sit over a grove canopy).
+    s = _crop_settlement()
+    s.grove_rects = [(500, 500, 40, 40)]
+    assert s._label_hits(500, 500, "Ministry of Test", 12) >= 1
+
+
+def test_city_gate_tower_walks_past_a_kido_planted_at_the_gate():
+    # the gate-guard TOWER's own obstacle walk (_tower_blocked + the while loop): with a kido planted
+    # right where the tower first tries to stand, the tower is blocked and WALKS further along the wall
+    # until it clears, rather than standing on the kido. g_east defaults off, so the tower walks with
+    # west=False - block that span.
+    import math as m
+
+    s = _crop_settlement()
+    s.meta(name="G", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 400 * m.cos(2 * m.pi * i / 16)), round(700 + 400 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
+    blocks = [s._wall_walk(pts, 0, a, west=False)[:2] for a in (78, 98, 118)]
+    s.city_wall(pts, gates=[pts[0]], tower_skip=blocks)
+    tower = [gs for gs in s.M["gate_structs"] if gs.get("kind") == "tower"]
+    assert tower  # the gate tower is still placed...
+    assert all(m.hypot(tower[0]["x"] - bx, tower[0]["y"] - by) > 45 for bx, by in blocks)  # ...walked clear of the kido span
+
+
+def test_city_mural_tower_yields_a_vertex_shoulder_to_shoulder_with_a_gate_tower():
+    # the mural-tower loop skips a wall vertex within 110px of a GATE tower (a mural tower there would
+    # read as a double). Normally the gate tower hugs its gate, and any nearby vertex is already dropped
+    # by the 130px gate filter - so this fires only when the gate tower has WALKED out (blocked at the
+    # gate) toward the next even vertex. A fine 24-gon plus a kido blocking the tower's near spots forces
+    # exactly that: the tower walks out near an even, non-gate vertex, which the mural loop then yields.
+    import math as m
+
+    s = _crop_settlement()
+    s.meta(name="M", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 420 * m.cos(2 * m.pi * i / 24)), round(700 + 420 * m.sin(2 * m.pi * i / 24))) for i in range(24)]
+    blocks = [s._wall_walk(pts, 0, a, west=False)[:2] for a in (78, 98, 118)]
+    s.city_wall(pts, gates=[pts[0]], tower_skip=blocks)
+    gate_towers = [(gs["x"], gs["y"]) for gs in s.M["gate_structs"] if gs.get("kind") == "tower"]
+    assert gate_towers and s.M.get("wall_towers")  # both kinds of tower were placed
+    # the gate tower walked clear of the blocked kido span (which is what carried it out near the even
+    # vertex the mural loop then yields)
+    assert all(m.hypot(gate_towers[0][0] - bx, gate_towers[0][1] - by) > 45 for bx, by in blocks)
+
+
+def test_farmsteads_legacy_skips_grove_for_a_city_intramural_farm():
+    # the legacy farmsteads inwall-grove skip: a farm INSIDE a city wall (scale=city, inwall_groves off)
+    # gets no windward grove (intramural land is too precious and the urban fabric shelters it). Uses the
+    # legacy house-first path (city is not to-scale), with a wall enclosing the whole ring of farms.
+    s = Settlement(1200, 900, seed=3)
+    s.meta(name="C", scale="city")  # city + not toscale -> legacy path
+    fld = (300, 300, 620, 560)
+    s.paddy_field(fld, "", "f", amp=20)
+    s.ring(fld, 8, 16, ["plain"])
+    s.M["wall"] = [(120, 120), (760, 120), (760, 720), (120, 720)]  # encloses the whole ring of farms
+    n = s.farmsteads()
+    assert n > 0 and not s.M["groves"]  # every intramural farm skipped its grove
+
+
 def test_dry_polys_block_a_footprint_margin_not_just_the_center():
     # dry crop plots are FOOTPRINT-aware no-build cropland: block_polys test only a candidate's
     # CENTER, which let a house centred just off a hem strip stand half its footprint on the crop
@@ -1137,12 +1217,19 @@ def test_hinterland_scrub_ring_and_marsh_downhill_each_cardinal():
         s = _hamlet_with_field(down_deg)
         s.hinterland()
         toe = [m for m in s.M["marshes"] if m["role"] == "toe"]
-        roles = [c["role"] for c in s.M["commons"]]
-        assert len(toe) == 1 and roles.count("grazing") == 3
+        grazing = [c for c in s.M["commons"] if c["role"] == "grazing"]
+        # 3 outer RING bands (the non-toe sides) PLUS 1 INTERIOR fill (over the cultivated bbox, clothing the
+        # voids an irregular field leaves inside it). The interior fill legitimately spans the paddy box; the
+        # three ring bands each clear it.
+        assert len(toe) == 1 and len(grazing) == 4
+        interior = [c for c in grazing if 400 <= c["x"] <= 600 and 400 <= c["y"] <= 600]
+        assert len(interior) == 1  # exactly the interior fill sits over the field box
+        for c in grazing:
+            if c is interior[0]:
+                continue
+            assert not (400 <= c["x"] <= 600 and 400 <= c["y"] <= 600)  # each RING band clears the paddy box
         dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
         assert (toe[0]["x"] - 500) * dx + (toe[0]["y"] - 500) * dy > 0  # toe is downhill of field centre
-        for c in s.M["commons"]:  # no commons centre in the paddy box
-            assert not (400 <= c["x"] <= 600 and 400 <= c["y"] <= 600)
 
 
 def test_hinterland_honors_hamlet_keepout_and_dry_plot_extent():
@@ -1215,10 +1302,24 @@ def test_crop_to_content_includes_forest_clamped_to_canvas():
 
 def test_hinterland_skip_sides_drops_a_scrub_band():
     # skip_sides suppresses the scrub band on a named frame side (e.g. a forest flank): down_deg=90 -> toe=bottom,
-    # non-toe = top/left/right (3 bands); skipping "right" leaves 2.
+    # non-toe = top/left/right (3 ring bands); skipping "right" leaves 2 ring bands, PLUS the interior fill = 3.
     s = _hamlet_with_field(90)
     s.hinterland(skip_sides=("right",))
-    assert [c["role"] for c in s.M["commons"]].count("grazing") == 2
+    assert [c["role"] for c in s.M["commons"]].count("grazing") == 3
+
+
+def test_hinterland_dispersed_keepout_is_per_homestead():
+    # DISPERSED settlements keep out each HOMESTEAD individually, not the (map-spanning) bbox of the ringing
+    # farms - otherwise no ground cover could be laid inside the ring at all (the Akagahara bare-void bug). With
+    # meta.nucleated False and two far-apart farmsteads, the open ground BETWEEN them still carries scrub.
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="D", scale="hamlet", down_deg=90, nucleated=False)
+    s.field_polys.append([(400, 400), (600, 400), (600, 600), (400, 600)])
+    s.M["houses"] = [{"x": 250, "y": 250, "w": 46, "h": 28}, {"x": 750, "y": 250, "w": 46, "h": 28}]
+    s.hinterland()
+    # the interior fill lands over the field box (proving cover was NOT blanket-forbidden by a map-wide keep-out)
+    grazing = [c for c in s.M["commons"] if c["role"] == "grazing"]
+    assert any(400 <= c["x"] <= 600 and 400 <= c["y"] <= 600 for c in grazing)
 
 
 def test_legacy_dispersed_farmstead_path_still_covered():

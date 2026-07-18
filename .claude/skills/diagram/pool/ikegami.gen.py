@@ -181,9 +181,8 @@ print(f"byres: {len(n_byres)}")
 # DOMINANT denuded-hill cover (China-first: the south-China rice hills were stripped for fuel/timber over centuries;
 # the fengshui grove is the green exception). Drawn BEFORE the windbreak grove; the scatter skips fields/pond/lanes/
 # houses + a hamlet keep-out, and bleeds off-frame so the crop stays tight.
-s.hinterland()
-# the comb-FAN paddy hugs the SW, leaving the NE corner (NE of the dry-hatake ribbon) open - fill it with SCRUB too.
-s.commons([(800, 320), (1900, 300), (1900, 1400), (1740, 1380)], role="grazing")
+s.hinterland()   # scrub ring + contour-band marsh + interior fill; the interior fill clothes the comb fan's open
+# NE corner automatically, so no hand-added scrub quad is needed.
 # ... plus a FEW managed-WOODLAND patches (coppice / bamboo / tung-oil "economic forest") on the higher/farther
 # ground, SET BACK from the sun-needing crops by the scrub between: two on the NE upland, one on the W back-slope
 # beyond the fengshui grove. Woodland is the green EXCEPTION here, not the dominant cover. Drawn on top of the scrub.

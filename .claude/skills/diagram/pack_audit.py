@@ -30,6 +30,7 @@ Usage:  python3 pack_audit.py pool/<subject>.svg [more.svg ...]
 
 from __future__ import annotations
 
+import math
 import re
 import sys
 from dataclasses import dataclass
@@ -49,6 +50,32 @@ DIVIDER_STROKE = "#3F3A30"  # internal court-divider wall; buildings legitimatel
 # counts as a "wall" for perimeter-hugging (a jin'ya's office hall backs the divider).
 _DIV_GROUP_RE = re.compile(rf'<g stroke="{re.escape(DIVIDER_STROKE)}"[^>]*>(.*?)</g>', re.DOTALL)
 _LINE_RE = re.compile(r'<line x1="([\-\d.]+)" y1="([\-\d.]+)" x2="([\-\d.]+)" y2="([\-\d.]+)"')
+FIRE_WATER_FILL = "#8FB0C6"  # tensuioke (rain-water fire tubs). They are GUTTER-FED by roof runoff,
+# so each must sit at a building's wall/eaves; a tub standing out in the open court is fed by nothing.
+_TUB_GROUP_RE = re.compile(rf'<g fill="{re.escape(FIRE_WATER_FILL)}"[^>]*>(.*?)</g>', re.DOTALL)
+TUB_MAX_GAP_FT: float = 3.5  # a wall-hugging tub sits ~1.7-2 ft from a wall (its own radius + eaves);
+# beyond this it is adrift in the court with no roof draining into it.
+
+# --- text labels (for the layer/legibility/proximity checks) ---
+_TEXT_RE = re.compile(r"<text\s([^>]*)>(.*?)</text>", re.DOTALL)
+_ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
+_INNER_TAG_RE = re.compile(r"<[^>]*>")
+CHAR_W_FRAC: float = 0.55  # a serif glyph's advance width as a fraction of font-size (bbox estimate)
+CHAR_W_BOLD: float = 0.72  # bold caps (RESIDENCE, building names) run wider
+WELL_FILL = "#9C8C70"  # well-curb stone
+WALL_STROKE = "#2D2A24"  # the compound wall (and gate posts / well-mouths share this dark ink)
+_WALL_GROUP_RE = re.compile(rf'<g stroke="{re.escape(WALL_STROKE)}"[^>]*>(.*?)</g>', re.DOTALL)
+# Fills dark enough that BLACK label ink laid over them stops being legible (luminance < ~0.30):
+DARK_FILLS: frozenset[str] = frozenset({"#2D2A24", "#3A2010", "#3A2418", "#1A1410", "#4A3318", "#5C0A04", "#3A2E1C", "#6B4030", "#5A3F1E", "#5C1A0A"})
+LABEL_DARK_LUMA: float = 0.42  # a label whose own fill is darker than this is "black ink" for legibility
+MIN_DARK_AREA_PX: float = 150.0  # ignore tiny dark markers (kura door, altar square) - only a real dark BLOCK or wall hurts legibility
+DARK_MIN_OVERLAP_PX: float = 2.5  # a label must sit ON a dark feature by at least this much (not just graze an edge)
+OCCLUSION_MIN_PX: float = 3.0  # a later feature must cover at least this much of a label/tub to count
+GROUP_LABEL_GLYPHS: dict[str, str] = {"fire-water tub": "tub", "well": "well"}  # label text -> glyph kind it names
+GROUP_LABEL_MAX_FT: float = 9.0  # a glyph-group label must sit within this of a glyph it names
+NOTICE_BOARD_MAX_FT: float = 15.0  # a notice board must sit within this of a gate opening to be read
+NUDGE_STEP_PX: float = 4.0
+NUDGE_MAX_PX: float = 40.0  # search radius for a legibility-clearing nudge
 
 Grid = list[list[bool]]
 
@@ -62,6 +89,7 @@ class Rect:
     w: float
     h: float
     fill: str = ""
+    pos: int = -1  # byte offset in the source SVG (document/draw order; higher = drawn later, on top)
 
     @property
     def x2(self) -> float:
@@ -81,6 +109,43 @@ class Rect:
 
 
 @dataclass(frozen=True)
+class Label:
+    """A text label with an ESTIMATED bounding box (px) and its draw-order position."""
+
+    x: float  # bbox top-left
+    y: float
+    w: float
+    h: float
+    fill: str
+    text: str
+    pos: int  # byte offset in the source SVG (draw order)
+
+    @property
+    def x2(self) -> float:
+        return self.x + self.w
+
+    @property
+    def y2(self) -> float:
+        return self.y + self.h
+
+    @property
+    def cx(self) -> float:
+        return self.x + self.w / 2
+
+    @property
+    def cy(self) -> float:
+        return self.y + self.h / 2
+
+
+def _luma(fill: str) -> float:
+    """Relative luminance (0=black, 1=white) of a #rrggbb fill; 1.0 for anything non-hex."""
+    if not (len(fill) == 7 and fill.startswith("#")):
+        return 1.0
+    r, g, b = (int(fill[i : i + 2], 16) / 255 for i in (1, 3, 5))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+@dataclass(frozen=True)
 class ParsedPlan:
     """Classified geometry of one compound plan."""
 
@@ -89,6 +154,11 @@ class ParsedPlan:
     open_features: tuple[Rect, ...]
     glyphs: tuple[Rect, ...]
     dividers: tuple[Rect, ...] = ()  # internal divider walls, as thin rects
+    tubs: tuple[Rect, ...] = ()  # fire-water tubs (bbox of each), to check wall-adjacency
+    labels: tuple[Label, ...] = ()  # text labels with estimated bboxes + draw order
+    wall_segs: tuple[Rect, ...] = ()  # compound-wall line segments (thin rects), for gate openings
+    wells: tuple[Rect, ...] = ()  # well-curb rects, for the 'well' group-label proximity check
+    dark_rects: tuple[Rect, ...] = ()  # dark-filled rects, for the black-on-black legibility check
 
     @property
     def bounds(self) -> tuple[float, float, float, float]:
@@ -136,9 +206,38 @@ class RegionTile:
     interior_sqft: float
 
 
+@dataclass(frozen=True)
+class TubAdrift:
+    """A fire-water tub sitting too far from any building to be gutter-fed."""
+
+    x: float  # tub centre, SVG px
+    y: float
+    gap_ft: float  # distance from tub centre to the nearest building
+
+
+def _parse_labels(text: str) -> list[Label]:
+    """Text labels with an estimated bbox (from font-size x string length) + draw-order pos."""
+    out: list[Label] = []
+    for m in _TEXT_RE.finditer(text):
+        attrs = dict(_ATTR_RE.findall(m.group(1)))
+        content = _INNER_TAG_RE.sub("", m.group(2)).replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").strip()
+        if not content or "x" not in attrs or "y" not in attrs:
+            continue
+        x, y = float(attrs["x"]), float(attrs["y"])
+        fs = float(attrs.get("font-size", "13"))
+        ls = float(attrs.get("letter-spacing", "0"))
+        n = len(content)
+        frac = CHAR_W_BOLD if attrs.get("font-weight") == "bold" else CHAR_W_FRAC
+        w = n * fs * frac + ls * max(n - 1, 0)
+        anchor = attrs.get("text-anchor", "start")
+        left = x - w / 2 if anchor == "middle" else (x - w if anchor == "end" else x)
+        out.append(Label(left, y - fs * 0.78, w, fs, attrs.get("fill", "#000000"), content, m.start()))
+    return out
+
+
 def parse_svg(text: str) -> ParsedPlan:
-    """Parse an SVG into interior / building / open-feature / point-glyph rects."""
-    rects = [Rect(float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4)), m.group(5)) for m in _RECT_RE.finditer(text)]
+    """Parse an SVG into interior / building / open-feature / point-glyph rects + labels + walls."""
+    rects = [Rect(float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4)), m.group(5), m.start()) for m in _RECT_RE.finditer(text)]
     interior = tuple(r for r in rects if r.fill == INTERIOR_FILL)
     if not interior:
         raise ValueError("no court-earth interior rect found in the SVG")
@@ -148,16 +247,39 @@ def parse_svg(text: str) -> ParsedPlan:
     for c in _CIRCLE_RE.finditer(text):
         cx, cy, rad = float(c.group(1)), float(c.group(2)), float(c.group(3))
         if rad >= 4.0:
-            glyphs.append(Rect(cx - rad, cy - rad, 2 * rad, 2 * rad))
+            glyphs.append(Rect(cx - rad, cy - rad, 2 * rad, 2 * rad, "", c.start()))
     for e in _ELLIPSE_RE.finditer(text):
         ex, ey, rx, ry = float(e.group(1)), float(e.group(2)), float(e.group(3)), float(e.group(4))
-        glyphs.append(Rect(ex - rx, ey - ry, 2 * rx, 2 * ry))
+        glyphs.append(Rect(ex - rx, ey - ry, 2 * rx, 2 * ry, "", e.start()))
     dividers: list[Rect] = []
     for grp in _DIV_GROUP_RE.finditer(text):
         for ln in _LINE_RE.finditer(grp.group(1)):
             x1, y1, x2, y2 = (float(ln.group(i)) for i in range(1, 5))
             dividers.append(Rect(min(x1, x2), min(y1, y2), max(abs(x2 - x1), 2.0), max(abs(y2 - y1), 2.0)))
-    return ParsedPlan(interior, buildings, open_features, tuple(glyphs), tuple(dividers))
+    tubs: list[Rect] = []
+    for grp in _TUB_GROUP_RE.finditer(text):
+        for c in _CIRCLE_RE.finditer(grp.group(1)):
+            cx, cy, rad = float(c.group(1)), float(c.group(2)), float(c.group(3))
+            tubs.append(Rect(cx - rad, cy - rad, 2 * rad, 2 * rad, FIRE_WATER_FILL, grp.start() + c.start()))
+    wall_segs: list[Rect] = []
+    for grp in _WALL_GROUP_RE.finditer(text):
+        for ln in _LINE_RE.finditer(grp.group(1)):
+            x1, y1, x2, y2 = (float(ln.group(i)) for i in range(1, 5))
+            wall_segs.append(Rect(min(x1, x2), min(y1, y2), max(abs(x2 - x1), 2.0), max(abs(y2 - y1), 2.0)))
+    wells = tuple(r for r in rects if r.fill == WELL_FILL)
+    dark_rects = tuple(r for r in rects if r.fill in DARK_FILLS and r.area_px >= MIN_DARK_AREA_PX)
+    return ParsedPlan(
+        interior,
+        buildings,
+        open_features,
+        tuple(glyphs),
+        tuple(dividers),
+        tuple(tubs),
+        tuple(_parse_labels(text)),
+        tuple(wall_segs),
+        wells,
+        dark_rects,
+    )
 
 
 def _blank(w: int, h: int) -> Grid:
@@ -342,6 +464,176 @@ def region_density(plan: ParsedPlan, rows: int = 3, cols: int = 3, cell: int = 2
     return tiles
 
 
+def _point_rect_dist(px: float, py: float, r: Rect) -> float:
+    """Euclidean distance from a point to a rectangle (0 if the point is inside)."""
+    dx = max(r.x - px, 0.0, px - r.x2)
+    dy = max(r.y - py, 0.0, py - r.y2)
+    return math.hypot(dx, dy)
+
+
+def fire_water_adrift(plan: ParsedPlan, max_gap_ft: float = TUB_MAX_GAP_FT) -> list[TubAdrift]:
+    """Fire-water tubs sitting farther than max_gap_ft from any building.
+
+    A tensuioke is fed by roof runoff (gutter -> downspout -> tub at the wall base), so every
+    tub must sit against a building. Unlike a court's open space (a judgment call), this is a
+    hard geometric rule: a tub adrift in the court is fed by nothing. Worst (farthest) first.
+    """
+    out: list[TubAdrift] = []
+    for t in plan.tubs:
+        cx, cy = t.x + t.w / 2, t.y + t.h / 2
+        gaps = [_point_rect_dist(cx, cy, b) for b in plan.buildings]
+        gap_ft = (min(gaps) if gaps else float("inf")) / FTPX
+        if gap_ft > max_gap_ft:
+            out.append(TubAdrift(cx, cy, gap_ft))
+    out.sort(key=lambda t: t.gap_ft, reverse=True)
+    return out
+
+
+@dataclass(frozen=True)
+class Occluded:
+    """A label or tub painted over by a feature drawn later in the SVG (not on the top layer)."""
+
+    kind: str  # "label" | "tub"
+    text: str  # label text, or "" for a tub
+    x: float
+    y: float
+
+
+def _overlap_px(ax: float, ay: float, ax2: float, ay2: float, b: Rect) -> float:
+    """Smaller of the x/y overlaps between a box and rect b (>0 only on a real 2-D overlap)."""
+    return min(min(ax2, b.x2) - max(ax, b.x), min(ay2, b.y2) - max(ay, b.y))
+
+
+def occluded_foreground(plan: ParsedPlan, min_px: float = OCCLUSION_MIN_PX) -> list[Occluded]:
+    """Labels/tubs painted OVER by a feature (building/garden) drawn LATER in the SVG - i.e. they
+    are not on the top layer, so they read as buried (a label's ink, a tub's rim). Draw-order rule:
+    every label and tub belongs above the fills, so ANY later feature overlapping one is a defect."""
+    feats = plan.buildings + plan.open_features
+    out: list[Occluded] = []
+    for lab in plan.labels:
+        if any(f.pos > lab.pos and _overlap_px(lab.x, lab.y, lab.x2, lab.y2, f) >= min_px for f in feats):
+            out.append(Occluded("label", lab.text, lab.cx, lab.cy))
+    for t in plan.tubs:
+        if any(f.pos > t.pos and _overlap_px(t.x, t.y, t.x2, t.y2, f) >= min_px for f in feats):
+            out.append(Occluded("tub", "", t.x + t.w / 2, t.y + t.h / 2))
+    return out
+
+
+@dataclass(frozen=True)
+class OrphanLabel:
+    """A glyph-group label (e.g. 'fire-water tubs') sitting too far from any glyph it names."""
+
+    text: str
+    x: float
+    y: float
+    gap_ft: float
+
+
+def orphan_group_labels(plan: ParsedPlan, max_ft: float = GROUP_LABEL_MAX_FT) -> list[OrphanLabel]:
+    """Labels that NAME a glyph group (fire-water tubs, well) must sit next to a glyph of that kind
+    - a label far from every glyph it names is orphaned. (Building labels sit on their rect, so they
+    are not this check's concern; only the small point-glyph groups drift.)"""
+    kinds: dict[str, tuple[Rect, ...]] = {"tub": plan.tubs, "well": plan.wells}
+    out: list[OrphanLabel] = []
+    for lab in plan.labels:
+        low = lab.text.lower()
+        for key, kind in GROUP_LABEL_GLYPHS.items():
+            if key not in low:
+                continue
+            centers = kinds[kind]
+            if centers:
+                lr = Rect(lab.x, lab.y, lab.w, lab.h)
+                d = min(_point_rect_dist(c.x + c.w / 2, c.y + c.h / 2, lr) for c in centers) / FTPX
+                if d > max_ft:
+                    out.append(OrphanLabel(lab.text, lab.cx, lab.cy, d))
+            break
+    out.sort(key=lambda o: o.gap_ft, reverse=True)
+    return out
+
+
+def _gate_openings(plan: ParsedPlan) -> list[tuple[float, float]]:
+    """Midpoints of gaps in the compound wall - the gate/postern openings."""
+    ops: list[tuple[float, float]] = []
+    for horiz in (True, False):
+        groups: dict[int, list[Rect]] = {}
+        for s in plan.wall_segs:
+            if (s.w >= s.h) != horiz:
+                continue
+            groups.setdefault(round(s.y if horiz else s.x), []).append(s)
+        for key, segs in groups.items():
+            segs.sort(key=lambda s: s.x if horiz else s.y)
+            for a, b in zip(segs, segs[1:], strict=False):
+                gap = (b.x - a.x2) if horiz else (b.y - a.y2)
+                if 0 < gap < 80:
+                    ops.append(((a.x2 + b.x) / 2, key) if horiz else (key, (a.y2 + b.y) / 2))
+    return ops
+
+
+@dataclass(frozen=True)
+class MisplacedBoard:
+    """A notice board too far from any gate opening to be seen by passers-through."""
+
+    x: float
+    y: float
+    gap_ft: float
+
+
+def notice_board_adrift(plan: ParsedPlan, max_ft: float = NOTICE_BOARD_MAX_FT) -> list[MisplacedBoard]:
+    """A notice board (kosatsu) is read where people pass, so it must sit at a gate. Flag any
+    'notice board' label farther than max_ft from the nearest wall gate opening."""
+    ops = _gate_openings(plan)
+    if not ops:
+        return []
+    out: list[MisplacedBoard] = []
+    for lab in plan.labels:
+        if "notice board" in lab.text.lower():
+            lr = Rect(lab.x, lab.y, lab.w, lab.h)
+            d = min(_point_rect_dist(ox, oy, lr) for ox, oy in ops) / FTPX  # nearest edge of the board
+            if d > max_ft:
+                out.append(MisplacedBoard(lab.cx, lab.cy, d))
+    return out
+
+
+@dataclass(frozen=True)
+class DarkOnDark:
+    """A dark (black-ink) label laid over a dark feature, with a nudge that would clear it."""
+
+    text: str
+    x: float
+    y: float
+    nudge_dx_ft: float
+    nudge_dy_ft: float
+    fixable: bool
+
+
+def _dark_hit(x: float, y: float, w: float, h: float, darks: tuple[Rect, ...], walls: tuple[Rect, ...]) -> bool:
+    """True if box (x,y,w,h) sits ON any dark-filled rect or (stroke-widened) wall by >= the min overlap."""
+    if any(_overlap_px(x, y, x + w, y + h, d) >= DARK_MIN_OVERLAP_PX for d in darks):
+        return True
+    return any(_overlap_px(x, y, x + w, y + h, Rect(s.x - 4.5, s.y - 4.5, s.w + 9, s.h + 9)) >= DARK_MIN_OVERLAP_PX for s in walls)
+
+
+def dark_on_dark_labels(plan: ParsedPlan) -> list[DarkOnDark]:
+    """Black-ink labels sitting on a dark feature (a wall, a dark block) where they lose contrast.
+    For each, search a small grid of nudges and report the first offset that lands the label on
+    clear ground (fixable=False if nothing within the search radius clears it)."""
+    out: list[DarkOnDark] = []
+    steps = [n * NUDGE_STEP_PX for n in range(1, int(NUDGE_MAX_PX / NUDGE_STEP_PX) + 1)]
+    for lab in plan.labels:
+        if _luma(lab.fill) >= LABEL_DARK_LUMA or not _dark_hit(lab.x, lab.y, lab.w, lab.h, plan.dark_rects, plan.wall_segs):
+            continue
+        best: tuple[float, float] | None = None
+        for r in steps:
+            for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r)):
+                if not _dark_hit(lab.x + dx, lab.y + dy, lab.w, lab.h, plan.dark_rects, plan.wall_segs):
+                    best = (dx / FTPX, dy / FTPX)
+                    break
+            if best is not None:
+                break
+        out.append(DarkOnDark(lab.text, lab.cx, lab.cy, *(best or (0.0, 0.0)), best is not None))
+    return out
+
+
 def _blocked(
     buildings: tuple[Rect, ...],
     i: int,
@@ -448,6 +740,26 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
     if not gaps:
         lines.append("    (none in the 5-30 ft range)")
     lines += [f"    {gp.ft:.1f} ft  {gp.orient}  at svg({gp.mx:.0f},{gp.my:.0f})   {gap_tag(gp)}" for gp in gaps[:12]]
+    lines.append(f"fire-water tubs adrift (a gutter-fed tub must sit <={TUB_MAX_GAP_FT:.0f} ft from a building):")
+    if not plan.tubs:
+        lines.append("    (no fire-water tubs in this plan)")
+    else:
+        adrift = fire_water_adrift(plan)
+        if not adrift:
+            lines.append(f"    (all {len(plan.tubs)} tubs sit against a building)")
+        lines += [f"    tub at svg({t.x:.0f},{t.y:.0f}) is {t.gap_ft:.1f} ft from the nearest building - move it to a wall/eaves" for t in adrift]
+    lines.append("LAYER/LABEL checks:")
+    occ = occluded_foreground(plan)
+    if not occ:
+        lines.append("    labels/tubs on top: OK (nothing buried under a later feature)")
+    lines += [f"    BURIED: {o.kind} {(repr(o.text) + ' ') if o.text else ''}at svg({o.x:.0f},{o.y:.0f}) is under a feature drawn later - move it to the top layer" for o in occ]
+    for orp in orphan_group_labels(plan):
+        lines.append(f"    ORPHAN LABEL: {orp.text!r} at svg({orp.x:.0f},{orp.y:.0f}) is {orp.gap_ft:.1f} ft from the nearest glyph it names - move it beside one")
+    for bd in notice_board_adrift(plan):
+        lines.append(f"    NOTICE BOARD: at svg({bd.x:.0f},{bd.y:.0f}) is {bd.gap_ft:.1f} ft from the nearest gate opening - move it to a gate")
+    for dk in dark_on_dark_labels(plan):
+        fix = f"nudge ({dk.nudge_dx_ft:+.0f},{dk.nudge_dy_ft:+.0f}) ft clears it" if dk.fixable else "no small nudge clears it - relocate"
+        lines.append(f"    DARK-ON-DARK: {dk.text!r} at svg({dk.x:.0f},{dk.y:.0f}) - black ink over a dark feature; {fix}")
     return "\n".join(lines)
 
 

@@ -44,7 +44,11 @@ s.meta(name="Akagahara", scale="hamlet", ftpx=FTPX, toscale=True, households=15,
 
 # Comb supply net marching due S from the head sluice. field_fall sizes the paddy to ~15 households (~20 acres)
 # and gives a LONG W margin so the 15 dispersed farmsteads (each ~2x a nucleated one's room) all fit.
-net = build_comb(W, H, SLUICE, SEED, down_deg=90, field_fall=1440,
+# field_fall is sized to what the comb ACTUALLY fills (the plots stop at y~1665 whatever we declare). Declaring
+# more (this was 1440) buys no rice - it only extends the field ENVELOPE ~180px past the last plot, and since
+# the envelope is what house-adjacency is measured against, that phantom tail let the placement solver strand
+# farmsteads well SOUTH of the visible paddy while still reading as "field-adjacent". Keep envelope ~= rice.
+net = build_comb(W, H, SLUICE, SEED, down_deg=90, field_fall=1260,
                  offtakes_a=(0.32, 0.7), offtakes_b=())   # a SPARSE delivery net for a small field
 s.meta(dry_furrows_vary=net["furrows_vary"])
 
@@ -156,36 +160,60 @@ s.M["channels"].append({"poly": [[SLUICE[0], SLUICE[1]], [749.0, 388.0], [774.6,
 # ~11 so the dispersed farms + their groves fit the margin (a dispersed farm needs ~2x a nucleated one's room).
 _rng = _random.Random(SEED + 1)
 s.lane([(345, 300), (318, 840), (292, 1440), (266, 2040), (242, 2560), (222, 2740)], width=6, clearance=30, worn=True, connector=True)   # winds S down the far-W back-slope (clear of the farm groves), off the bottom edge (H=2680)
-# strew the 15 farms across the field's whole W margin - a DEEP band (the 165px adjacency zone is wide
-# enough to stagger them ~1.5 rows) down the full height, so all 15 dispersed homesteads fit and read strewn
-s.meta(settlement_form="dispersed", grove_prevalence=0.72)   # ~70% of the strewn farms carry a grove (clearly dispersed); a few open yards help them pack
-# 15 farms RING the field's dry margins - strewn just outside the paddy edge all the way around (each on its
-# own dry patch), the fullest dispersed pattern. Candidates hug the smoothed field OUTLINE, offset outward
-# ~72px so every farm is field-adjacent; try_place drops any that land on the marsh / pond / ditches (the low
-# S toe), so the ring naturally fills the N + W + E dry margins and leaves the wet S foot open.
+s.meta(settlement_form="dispersed", grove_prevalence=0.6)   # ~60% of the strewn farms carry a grove (still clearly dispersed); the open-yard farms pack without shading a neighbour
+# Strew the farms across the field's high W margin as a DEEP 2D scatter (`scatter_seeds`): the 165px adjacency
+# band is wide enough to stagger them ~1.5 rows, so they read STREWN (an irregular scatter), NOT a single
+# straight edge-line - plus a few at the N head by the sluice. The homesteads concentrate on the dry W margin -
+# NOT because it is higher (the land falls due S, so the W margin sits at the same height as the rice due E of
+# it) but because the comb's fan does not deliver water there: it is land at paddy elevation that stays
+# unirrigated, hence buildable. None crowd the wet S toe, which is the genuinely low ground.
+# Filtered to genuine field-adjacency, off the head-race, and ABOVE the visible paddy (no farm past the rice).
 _env2 = list(net["envelope"])
+# Measure adjacency against the DRAWN RICE, never the field envelope. The envelope carries an invisible
+# TAIL past the last plot (it exists only to block houses), so a farm hugging that tail sits well SOUTH of
+# the actual rice while still reading as "field-adjacent" - that is exactly how farms ended up stranded
+# below the paddy. A point-cloud of the plot vertices is the honest test of "is this farm beside the rice".
+_rice_pts = [(v[0], v[1]) for p in net["plots"] for v in p["poly"]]
+
+
+def _beside_rice(_qx, _qy):
+    """A farm sits BESIDE the rice it works: close to real rice, and not stranded below the field's local edge.
+
+    Both halves are needed, and BOTH must be measured against the drawn plots. The field is a FAN, so its
+    southern extent is x-dependent - a single global "north of the paddy's bbox bottom" cap passes farms that
+    are far below the rice on the narrow W margin, which is exactly what went wrong here.
+    """
+    _near = [(_rx, _ry) for _rx, _ry in _rice_pts if abs(_rx - _qx) < 110 and abs(_ry - _qy) < 110]
+    if not _near:
+        return False
+    # 60px, NOT the gate's 165px band: the homestead-bundle solver shifts a placed house by up to ~90px to fit
+    # its yard/garden/grove, so a seed parked at the edge of the band lands stranded. Seed well inside it.
+    if min(math.hypot(_qx - _rx, _qy - _ry) for _rx, _ry in _near) > 88:
+        return False
+    # Not below the field's LOCAL southern edge: some nearby rice must lie at (or south of) the farm's own
+    # latitude. If every scrap of rice near a farm is well NORTH of it, that farm is hanging off the bottom
+    # of the paddy - the "line of farmhouses stretching further south than the rice" artifact.
+    return any(_ry > _qy - 20 for _rx, _ry in _near)
+
+
 _fcx = sum(p[0] for p in _env2) / len(_env2)
 _fcy = sum(p[1] for p in _env2) / len(_env2)
-_ring = []
-for _rep in range(8):
+_seeds = []
+for _rep in range(10):
     for _px, _py in _env2:
         _d = math.hypot(_px - _fcx, _py - _fcy) or 1.0
-        _ring.append((_px + (_px - _fcx) / _d * 64 + _rng.uniform(-20, 20), _py + (_py - _fcy) / _d * 64 + _rng.uniform(-20, 20)))
-# keep the strewn farms on the DRY margins only - the N head + the W and E flanks BESIDE the paddy - and OFF
-# the low-middle S toe below the drainage ditch (that ground is the wettest in the valley: reed marsh, or
-# reclaimed low paddy, or the tameike - never dry house ground). The flanks (x<540 / x>1560) may run low
-# alongside the paddy (still dry, above the marsh); only the central toe (S of the drain line) is excluded.
-_ring = [
+        _off = _rng.uniform(40, 86)   # VARIED depth so the farms STAGGER (a strewn scatter), not a straight edge-line
+        _seeds.append((_px + (_px - _fcx) / _d * _off + _rng.uniform(-24, 24), _py + (_py - _fcy) / _d * _off + _rng.uniform(-24, 24)))
+_seeds = [
     (_x, _y)
-    for _x, _y in _ring
-    if not (540 < _x < 1560 and _y > 1430)  # off the low-middle S toe (below the drain: marsh / low paddy / pond)
-    and not (_x >= 1560 and _y > 1560)  # keep the E flank off the wet SE corner
+    for _x, _y in _seeds
+    if not (540 < _x < 1560 and _y > 1430)  # off the low-middle S toe below the drain (marsh / low paddy / pond)
     and not (690 < _x < 830 and _y < 480)  # off the head-race corridor by the sluice (a farm's byre must not land on it)
-    and _y < 1720
+    and _beside_rice(_x, _y)  # beside REAL rice, and never hanging off the paddy's southern edge
 ]
-_rng.shuffle(_ring)
+_rng.shuffle(_seeds)
 _placed = 0
-for _x, _y in _ring:
+for _x, _y in _seeds:
     if _placed >= 15:
         break
     if s.try_place(_x, _y, "plain"):
@@ -209,9 +237,8 @@ print(f"byres: {len(n_byres)}")
 # DOMINANT denuded-hill cover (China-first: the south-China rice hills were stripped for fuel/timber over centuries;
 # the fengshui grove is the green exception). Drawn BEFORE the windbreak grove; the scatter skips fields/pond/lanes/
 # houses + a hamlet keep-out, and bleeds off-frame so the crop stays tight.
-s.hinterland()
-# the comb-FAN paddy hugs the SW, leaving the NE corner (NE of the dry-hatake ribbon) open - fill it with SCRUB too.
-s.commons([(800, 320), (1900, 300), (1900, 1400), (1740, 1380)], role="grazing")
+s.hinterland()   # scrub ring + contour-band marsh + interior fill; the interior fill clothes the comb fan's open
+# corners (both the NE upland and the SW void by the drain) automatically, so no hand-added scrub quad is needed.
 # ... plus a FEW managed-WOODLAND patches (coppice / bamboo / tung-oil "economic forest") on the higher/farther
 # ground, SET BACK from the sun-needing crops by the scrub between: two on the NE upland, one on the W back-slope
 # beyond the fengshui grove. Woodland is the green EXCEPTION here, not the dominant cover. Drawn on top of the scrub.

@@ -1,0 +1,12 @@
+{
+ "meta": {
+  "scale": "town",
+  "households": 100
+ },
+ "_regression": {
+  "fires": [
+   "households_consistent"
+  ],
+  "source": "test_checks.py::test_households_consistent_uses_legacy_band_when_not_to_scale"
+ }
+}

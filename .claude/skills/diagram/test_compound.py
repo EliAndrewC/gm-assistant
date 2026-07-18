@@ -9,8 +9,8 @@ def _env(w: float = 200.0, h: float = 200.0, div: float = 100.0, gate: float = 1
     return c.Envelope(w, h, div, gate)
 
 
-def _b(name: str, w: float, h: float, court: str, wall: str, order: int = 0) -> c.BuildingSpec:
-    return c.BuildingSpec(name, "service", w, h, court, wall, order)
+def _b(name: str, w: float, h: float, court: str, wall: str, order: int = 0, rank: int = 1) -> c.BuildingSpec:
+    return c.BuildingSpec(name, "service", w, h, court, wall, order, rank)
 
 
 def test_courtzone_and_placed_props() -> None:
@@ -71,10 +71,48 @@ def test_place_overflow_when_building_too_wide() -> None:
     assert [s.name for s in res.overflow] == ["huge"]
 
 
-def test_place_corner_reserve_insets_horizontal_rows() -> None:
+def _rects_overlap(a: c.Placed, b: c.Placed) -> bool:
+    return c._rect_overlap(a.x_ft, a.y_ft, a.spec.w_ft, a.spec.h_ft, b.x_ft, b.y_ft, b.spec.w_ft, b.spec.h_ft)
+
+
+def test_place_ns_row_owns_the_corner_and_ew_column_flows_below() -> None:
+    # The N row (higher tier) takes the NW corner; the W column flows below it, not overlapping.
     prog = c.CompoundProgram("t", _env(w=200.0), (), (_b("wwall", 40, 20, "inner", "W"), _b("nwall", 30, 10, "inner", "N")))
-    placed = {p.spec.name: p for p in c.place(prog).placed}
-    assert placed["nwall"].x_ft >= 40.0
+    p = {x.spec.name: x for x in c.place(prog).placed}
+    assert p["nwall"].x_ft == 3.0 and p["nwall"].y_ft == 0.0  # N owns the corner
+    assert p["wwall"].x_ft == 0.0 and p["wwall"].y_ft >= p["nwall"].y2  # W flows below
+    assert not _rects_overlap(p["nwall"], p["wwall"])
+
+
+def test_divider_hall_centers_between_the_ew_columns() -> None:
+    # A long divider hall is placed AFTER the E/W columns, so it slides past the W column
+    # instead of hogging the left corner (the office-hall-behind-oshirasu case).
+    prog = c.CompoundProgram(
+        "t",
+        _env(w=200.0),
+        (),
+        (_b("hall", 120, 12, "outer", "divider", order=10), _b("wkura", 30, 20, "outer", "W", order=6), _b("ekura", 30, 20, "outer", "E", order=6)),
+    )
+    p = {x.spec.name: x for x in c.place(prog).placed}
+    assert p["wkura"].x_ft == 0.0 and p["ekura"].x2 == 200.0
+    assert p["hall"].x_ft >= p["wkura"].x2  # hall flows past the W column, not into the corner
+
+
+def test_second_rank_sits_behind_the_rank1_row_on_each_wall() -> None:
+    # rank-2 building is offset inward past the rank-1 row, on all four straight walls.
+    env = _env(w=200.0, h=200.0, div=100.0)
+    for wall, court in (("N", "inner"), ("S", "outer"), ("W", "inner"), ("E", "inner")):
+        prog = c.CompoundProgram("t", env, (), (_b("front", 40, 30, court, wall, order=10, rank=1), _b("rear", 20, 12, court, wall, order=1, rank=2)))
+        p = {x.spec.name: x for x in c.place(prog).placed}
+        assert not _rects_overlap(p["front"], p["rear"])
+        if wall == "N":
+            assert p["rear"].y_ft == p["front"].y2 + c.FIRE_GAP_FT
+        elif wall == "S":
+            assert p["rear"].y2 == p["front"].y_ft - c.FIRE_GAP_FT
+        elif wall == "W":
+            assert p["rear"].x_ft == p["front"].x2 + c.FIRE_GAP_FT
+        else:  # E
+            assert p["rear"].x2 == p["front"].x_ft - c.FIRE_GAP_FT
 
 
 def test_emit_svg_contains_courts_buildings_and_walls() -> None:

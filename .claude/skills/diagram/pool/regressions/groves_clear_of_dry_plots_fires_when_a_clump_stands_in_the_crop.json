@@ -1,0 +1,62 @@
+{
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     500,
+     300
+    ],
+    [
+     500,
+     380
+    ],
+    [
+     300,
+     380
+    ]
+   ],
+   "crop": "soy",
+   "theta": 1.2
+  }
+ ],
+ "village_groves": [
+  {
+   "role": "belt",
+   "r": 11,
+   "clumps": [
+    [
+     400,
+     340
+    ]
+   ],
+   "poly": [
+    [
+     380,
+     320
+    ],
+    [
+     420,
+     320
+    ],
+    [
+     420,
+     360
+    ],
+    [
+     380,
+     360
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "groves_clear_of_dry_plots"
+  ],
+  "source": "test_checks.py::test_groves_clear_of_dry_plots_fires_when_a_clump_stands_in_the_crop"
+ }
+}

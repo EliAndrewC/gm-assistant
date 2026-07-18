@@ -1,0 +1,33 @@
+{
+ "canals": [
+  {
+   "poly": [
+    [
+     300,
+     500
+    ],
+    [
+     700,
+     500
+    ]
+   ],
+   "w": 14
+  }
+ ],
+ "buildings": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 24,
+   "h": 18,
+   "rot": 0,
+   "kind": "merchant_house"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "no_structure_on_canal"
+  ],
+  "source": "test_checks.py::test_no_structure_on_canal_fires_and_passes"
+ }
+}

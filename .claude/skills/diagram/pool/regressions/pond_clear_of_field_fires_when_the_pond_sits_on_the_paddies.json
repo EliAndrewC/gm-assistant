@@ -1,0 +1,72 @@
+{
+ "pond": [
+  400,
+  400,
+  120,
+  80
+ ],
+ "fields": [
+  {
+   "name": "f",
+   "kind": "paddy",
+   "outline": [
+    [
+     300,
+     300
+    ],
+    [
+     500,
+     300
+    ],
+    [
+     500,
+     500
+    ],
+    [
+     300,
+     500
+    ]
+   ],
+   "bbox": [
+    300,
+    300,
+    500,
+    500
+   ],
+   "vis_bbox": [
+    300,
+    300,
+    500,
+    500
+   ]
+  }
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     400,
+     400
+    ],
+    [
+     450,
+     450
+    ]
+   ],
+   "frm": {
+    "kind": "pond"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f"
+   },
+   "w": 2.5
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "pond_clear_of_field"
+  ],
+  "source": "test_checks.py::test_pond_clear_of_field_fires_when_the_pond_sits_on_the_paddies"
+ }
+}

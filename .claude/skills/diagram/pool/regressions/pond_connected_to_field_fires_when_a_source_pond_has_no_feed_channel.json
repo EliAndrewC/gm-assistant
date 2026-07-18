@@ -1,0 +1,39 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "pond": [
+  400,
+  300,
+  150,
+  90
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     600,
+     600
+    ],
+    [
+     700,
+     700
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f"
+   },
+   "w": 2.5
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "pond_connected_to_field"
+  ],
+  "source": "test_checks.py::test_pond_connected_to_field_fires_when_a_source_pond_has_no_feed_channel"
+ }
+}

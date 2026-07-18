@@ -1,0 +1,55 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "quarters": [
+  {
+   "poly": [
+    [
+     200,
+     200
+    ],
+    [
+     500,
+     200
+    ],
+    [
+     500,
+     800
+    ],
+    [
+     200,
+     800
+    ]
+   ],
+   "zone": "civic",
+   "kind": null,
+   "name": "half"
+  }
+ ],
+ "buildings": [],
+ "_regression": {
+  "fires": [
+   "city_quarters_tile_interior"
+  ],
+  "source": "test_checks.py::test_city_quarters_tile_interior_fires_on_gap_overlap_and_spill"
+ }
+}

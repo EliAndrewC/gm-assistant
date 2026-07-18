@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "river": {
+  "pts": [
+   [
+    900,
+    100
+   ],
+   [
+    900,
+    900
+   ]
+  ],
+  "w": 40
+ },
+ "jetties": [
+  {
+   "x": 860,
+   "y": 500,
+   "rot": 0,
+   "len": 80
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_wharf_jetties_on_bank"
+  ],
+  "source": "test_checks.py::test_city_wharf_jetties_on_bank_fires_when_floating_and_passes_on_the_bank"
+ }
+}

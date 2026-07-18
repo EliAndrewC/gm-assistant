@@ -1,0 +1,42 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "religious": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 96,
+   "h": 64,
+   "kind": "shrine"
+  }
+ ],
+ "torii": [
+  [
+   500,
+   600,
+   1
+  ]
+ ],
+ "lanes": [
+  {
+   "pts": [
+    [
+     500,
+     300
+    ],
+    [
+     500,
+     700
+    ]
+   ],
+   "w": 6
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "shrine_halls_clear_of_lanes"
+  ],
+  "source": "test_checks.py::test_shrine_halls_clear_of_lanes_fires_on_a_hall_on_a_lane_exempts_torii"
+ }
+}

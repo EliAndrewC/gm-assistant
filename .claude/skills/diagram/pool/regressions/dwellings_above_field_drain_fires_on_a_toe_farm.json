@@ -1,0 +1,73 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "down_deg": 90
+ },
+ "field_ditches": [
+  {
+   "role": "drain",
+   "field": "toe-test",
+   "poly": [
+    [
+     400,
+     600
+    ],
+    [
+     400,
+     600
+    ],
+    [
+     800,
+     600
+    ]
+   ],
+   "w": 4
+  }
+ ],
+ "fields": [
+  {
+   "name": "toe-test",
+   "kind": "paddy",
+   "outline": [
+    [
+     380,
+     560
+    ],
+    [
+     820,
+     560
+    ],
+    [
+     820,
+     640
+    ],
+    [
+     380,
+     640
+    ]
+   ],
+   "bbox": [
+    380,
+    560,
+    820,
+    640
+   ]
+  }
+ ],
+ "houses": [
+  {
+   "x": 600,
+   "y": 710,
+   "w": 46,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dwellings_above_field_drain"
+  ],
+  "source": "test_checks.py::test_dwellings_above_field_drain_fires_on_a_toe_farm"
+ }
+}

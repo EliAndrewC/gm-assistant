@@ -1,0 +1,47 @@
+{
+ "fields": [
+  {
+   "name": "fe1",
+   "kind": "paddy",
+   "outline": [
+    [
+     300,
+     300
+    ],
+    [
+     700,
+     300
+    ],
+    [
+     700,
+     700
+    ],
+    [
+     300,
+     700
+    ]
+   ],
+   "bbox": [
+    300,
+    300,
+    700,
+    700
+   ]
+  }
+ ],
+ "cremation_grounds": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 116,
+   "h": 80,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "funerary_clear_of_fields"
+  ],
+  "source": "test_checks.py::test_funerary_clear_of_fields_fires_when_a_cremation_ground_sits_on_a_field"
+ }
+}

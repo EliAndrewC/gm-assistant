@@ -1,0 +1,50 @@
+{
+ "forest": [
+  [
+   100,
+   100
+  ],
+  [
+   300,
+   100
+  ],
+  [
+   300,
+   300
+  ],
+  [
+   100,
+   300
+  ]
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     500,
+     500
+    ],
+    [
+     510,
+     400
+    ],
+    [
+     520,
+     300
+    ]
+   ],
+   "frm": {
+    "kind": "forest"
+   },
+   "to": {
+    "kind": "offmap"
+   }
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channel_source_anchored[0]"
+  ],
+  "source": "test_checks.py::test_channel_source_anchored_fires_when_forest_tap_is_outside_the_forest"
+ }
+}

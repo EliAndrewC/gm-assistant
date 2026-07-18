@@ -13,6 +13,7 @@ with a `_regression` block - no tooling needed. Run:  python3 make_regressions.p
 """
 
 import ast
+import contextlib
 import copy
 import inspect
 import json
@@ -84,7 +85,13 @@ def main():
             if not tgs:
                 continue
             captures.clear()
-            fn()
+            # A few tests assert on the gate's PRINTED output, which the spy suppresses (it forces
+            # verbose=False to capture return values); those raise under the spy even though they pass under
+            # pytest. Their manifests are still captured before the failing assertion, so the backfill proceeds
+            # - one such test must never abort the whole corpus regen (it once wiped 125 fixtures midway). We
+            # rely on the captures list, not on fn() returning cleanly.
+            with contextlib.suppress(Exception):
+                fn()
             groups = {}  # capture-index -> set(target checks fired by that manifest)
             for t in tgs:
                 idx = next((i for i, (m, fs) in enumerate(captures) if t in fs), None)

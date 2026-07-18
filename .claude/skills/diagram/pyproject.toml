@@ -32,7 +32,7 @@ quote-style = "preserve"
 [tool.mypy]
 python_version = "3.13"
 strict = true
-files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py", "compound.py"]
+files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py"]
 
 # RATCHET FULLY RETIRED: all three legacy engine modules (waterfields.py, check_village.py,
 # settlement.py) have been migrated to mypy --strict and the per-module override that relaxed them is
@@ -46,7 +46,7 @@ files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py",
 addopts = "--cov --cov-report=term-missing"
 
 [tool.coverage.run]
-source = ["check_village", "settlement", "pack_audit", "compound"]
+source = ["check_village", "settlement", "pack_audit", "compound", "citybudget"]
 omit = ["test_*.py", "pool/*.gen.py"]
 
 [tool.coverage.report]

@@ -68,8 +68,10 @@ Reference directories hold organized source material and context. Each directory
 | `/bounty` | Generate bounties, Wasp clan content, minor clan details |
 | `/name` | Generate Rokugani personal names with meanings in varied formats. Args: `[m\|f] [p] [N]` - supports shorthand and concatenation (e.g. `pf3`) |
 | `/diagram` | Generate SVG top-down diagrams of L5R locations (manor plans, village layouts, temple plans, etc.) and render to PNG |
+| `/dream` | Generate Rokugani dream-omen scenes: randomized d10 dream tables for PCs seeking a fortune's (or other spirit's) will in sleep, grounded in Kitsu Okura's six-doctrine theology of attunement. Strange, open fragments that describe the dream's events and never its meaning; shared no-dream/noise bands, a 10-is-always-significant Coda, and a two-tier (public / gitignored-local) spoiler-safe pool |
 | `/synthesize` | Write a backstory for an existing Obsidian Portal NPC, Claude-native (in-session prose - no external LLM; the webapp button still uses Gemini): reads the OP record + tagline and the campaign-context cast, researches the setting files directly, review (upload as-is / regenerate / upload with typed changes), merges into GM-only notes. Args: `<character name> [ - steering]` |
 | `/chargen` | Make a brand-new NPC end-to-end and upload it to Obsidian Portal: roll a skeleton character with the chargen engine (asking only about genuinely-missing essentials), write a Claude-native backstory (the `/synthesize` method, not Gemini) from the rolled attributes, generate and attach an AI portrait, and create the OP record. Public by default; GM-only if the concept says private/hidden. Args: `<free-text character concept>` |
+| `/weather` | Ground Rokugan weather in real historical data: map a place to a continental-US climate analog (latitude, distance from ocean, elevation) and read actual recorded weather for a Rokugani calendar date translated to a real-world date. Args: `<place> <month> <day>` |
 
 ## Testing
 
@@ -255,8 +257,4 @@ The server binds to `0.0.0.0:8080` automatically when it detects a container run
 - `/gm-assistant/.claude/skills/relic/pool/` - exemplar of the pool data convention (Principle III)
 - `/gm-assistant/.claude/skills/name/pool-male.jsonl` + `pool-female.jsonl` - the 200-name pool consumed by the `/names` section
 
-<!-- SPECKIT START -->
-Current active plan: [`specs/006-city-quarter-density/plan.md`](specs/006-city-quarter-density/plan.md)
-Active feature: City quarter density and wall-sizing correctness for the /diagram Mode B provincial cities - cities declare first-class quarters (residential/civic/mixed/reserve) so density is judged PER QUARTER (with a dead-zone guard) instead of by a global aggregate that passed a lopsided Nagahara; population counts in-wall only (hard-zero extramural commoners); reserve ground is declared/rendered/capped at ~20%; the capacity verdict is reframed around usable residential ground so "shrink the wall" is a real outcome. Tango is the good calibration anchor; the pre-change broken Nagahara is pinned as a must-fail fixture.
-Feature directory: `specs/006-city-quarter-density/`
-<!-- SPECKIT END -->
+Spec-kit features (the `specify` -> `plan` -> `tasks` -> `implement` flow) live under `specs/NNN-*/`. There is deliberately **no single "active plan" tracked here** - a hardcoded pointer just goes stale as features come and go. For current status, look at the highest-numbered `specs/` dir, its `tasks.md` checkboxes, and `git log`.

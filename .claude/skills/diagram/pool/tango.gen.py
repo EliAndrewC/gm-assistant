@@ -37,12 +37,20 @@ import random as _random
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from citybudget import CityProgram, budget_to_manifest, plan_city  # noqa: E402
 from settlement import Settlement  # noqa: E402
 from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
 
 s = Settlement(3200, 2700, seed=162)
 s.meta(name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3,
        clan="Crane", capital_dir="southeast")   # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
+
+# ---- feature 009: the SPACE BUDGET the wall answers to. Tango predates budget-first sizing and
+# is the model's CALIBRATION ANCHOR: plan_city derives rx,ry = 487.4 x 457.3 for this program -
+# the shipped 487x457 ring to +0.1% - so the hand-sized wall is kept verbatim and the budget is
+# recorded for the city_wall_matches_budget gate (enclosure sits ~-0.25% off the required area).
+BUDGET = plan_city(CityProgram(population=3000, agricultural_district=True, aspect=457 / 487, nring=22), canvas=(3200, 2700))
+s.meta(budget=budget_to_manifest(BUDGET))
 
 # ---- the closed rampart (a near-elliptical ring) sized to hug the city, with N and S gates
 CX, CY, RX, RY = 1602, 1328, 487, 457
@@ -419,7 +427,8 @@ for fan in ([(1817, 1046), (1813, 1023), (1821, 1062), (1882, 1021), (1880, 1058
             [(1969, 1265), (1953, 1243), (2014, 1249), (2018, 1206)],
             [(1851, 1249), (1820, 1249), (1881, 1247), (1851, 1182), (1813, 1184), (1884, 1182), (1820, 1155)],
             [(1501, 1330), (1470, 1358), (1509, 1424), (1545, 1435), (1470, 1328)],
-            [(1545, 1438), (1470, 1432), (1423, 1427), (1549, 1381)]):
+            [(1545, 1438), (1470, 1432), (1423, 1427), (1549, 1381)],
+            [(1742, 1272), (1786, 1272), (1748, 1258)]):   # the last fan splits the (1766,1245) draw-point the roji cadence pushed to 27 households (city_well_density_sufficient); candidates sit a court SW of it - anything nearer is inside the seam well's own berth
     for c in fan:
         if s.well_at(*c):
             break   # candidate fan: first clear spot wins (splits a 27-32-household draw-point)
@@ -657,8 +666,52 @@ def top_up(kind, region, need, count_kinds=None):
             return False
         if any(abs(gx - w2["x"]) < 26 and abs(gy - w2["y"]) < 26 for w2 in s.M.get("wells", [])):
             return False
-        return all(abs(gx - px) >= (w_ + pw) / 2 + 3 or abs(gy - py) >= (h_ + ph) / 2 + 3
-                   for (px, py, pw, ph) in s.placed)
+        if not all(abs(gx - px) >= (w_ + pw) / 2 + 3 or abs(gy - py) >= (h_ + ph) / 2 + 3
+                   for (px, py, pw, ph) in s.placed):
+            return False
+        # s.placed stores (w,h) UNROTATED, so a street-facing pack house rotated ~45-135 deg
+        # reaches past the box the test above clears against - test the true rotated AABBs too.
+        # Religious halls join the sweep with a wider 8px berth: the no_structure_on_religious
+        # gate grows each hall by 4px, and the first finer sweep seated a merchant_house 0.35px
+        # inside Daikoku's grown corner
+        for o, marg in [(o2, 3.0) for o2 in s.M["buildings"] + s.M["houses"]] + [(o2, 8.0) for o2 in s.M.get("religious", [])]:
+            if "w" not in o or abs(gx - o["x"]) > 64 or abs(gy - o["y"]) > 64:
+                continue
+            oth = math.radians(o.get("rot", 0))
+            oc, os_ = abs(math.cos(oth)), abs(math.sin(oth))
+            if abs(gx - o["x"]) < (w_ + oc * o["w"] + os_ * o["h"]) / 2 + marg and abs(gy - o["y"]) < (h_ + os_ * o["w"] + oc * o["h"]) / 2 + marg:
+                return False
+        return True
+
+    def door_clear(gx, gy, rot):
+        # outward-facing-doors doctrine (2026-07-18): a gap-fill house still needs an UNBLOCKED
+        # entrance. This is the gate's EXACT geometry (check_village city_house_doors_unblocked:
+        # the door-probe band vs ROTATED neighbour corners) rather than s.open_face_rot - the
+        # helper's conservative axis-aligned self.placed test cannot see a 90-degree frontage
+        # house's true footprint (placed stores (w,h) unrotated), which is precisely where a fill
+        # beside a street-facing row lands. Probe depth carries a 15% safety margin over the
+        # gate's DOOR_CLEAR_FT so borderline float geometry never flips the verdict.
+        dc = (7.0 / 3) * 1.15
+        th = math.radians(rot)
+        ux, uy = -math.sin(th), math.cos(th)
+        vx, vy = -uy, ux
+        fx, fy = gx + ux * h_ / 2, gy + uy * h_ / 2
+        rr = math.hypot(w_, h_) / 2 + dc + 2
+        for o in s.M["buildings"] + s.M["houses"]:
+            if "w" not in o:
+                continue
+            if math.hypot(o["x"] - gx, o["y"] - gy) > rr + math.hypot(o["w"], o["h"]) / 2:
+                continue
+            oth = math.radians(o.get("rot", 0))
+            c_, sn = math.cos(oth), math.sin(oth)
+            corners = [(o["x"] + c_ * dx - sn * dy, o["y"] + sn * dx + c_ * dy)
+                       for dx, dy in ((-o["w"] / 2, -o["h"] / 2), (o["w"] / 2, -o["h"] / 2),
+                                      (o["w"] / 2, o["h"] / 2), (-o["w"] / 2, o["h"] / 2))]
+            for d_ in (0.8, dc * 0.55, dc):
+                for t_ in (-0.3 * w_, 0.0, 0.3 * w_):
+                    if _in_poly(fx + ux * d_ + vx * t_, fy + uy * d_ + vy * t_, corners):
+                        return False
+        return True
 
     x0, y0, x1, y1 = region
     for pad in (7, 4, "exact"):       # tighter sweeps only when the padded pass leaves the floor unmet
@@ -667,10 +720,14 @@ def top_up(kind, region, need, count_kinds=None):
             gx = x0
             while gx <= x1 and have < need:
                 if ok(gx, gy) and (exact_clear(gx, gy) if pad == "exact" else s._fits(gx, gy, w_ + pad, h_ + pad)):
-                    s.building(gx, gy, w_, h_, kind)
-                    have += 1
-                gx += 9
-            gy += 10
+                    # door faces UP or DOWN only (90/270 would rotate the AABB out from under the
+                    # axis-aligned clearance tests above); skip the spot when both faces are walled
+                    orot = next((r_ for r_ in (0.0, 180.0) if door_clear(gx, gy, r_)), None)
+                    if orot is not None:
+                        s.building(gx, gy, w_, h_, kind, orot)
+                        have += 1
+                gx += 6
+            gy += 7
         if have >= need:
             break
     return have
@@ -689,9 +746,12 @@ def _inwall(x, y):
 
 DWELL = ("laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house",
          "merchant_large", "samurai", "samurai_large")
-top_up("samurai", (1635, 1384, 2071, 1734), 40, count_kinds=("samurai", "samurai_large"))
-top_up("merchant_house", (1194, 1350, 1594, 1701), 112,
-       count_kinds=("merchant", "merchant_house", "merchant_large"))
+top_up("samurai", (1635, 1384, 2071, 1734), 46, count_kinds=("samurai", "samurai_large"))   # 46 (was 40): the roji cadence thinned the SE government/samurai quarter to 0.28/1000px^2, under the 0.30 residential floor (city_residential_quarters_dense_enough) - a few more junior houses in the ward's gaps restore it
+top_up("samurai", (1640, 1395, 2020, 1715), 53, count_kinds=("samurai", "samurai_large"))   # +7 constrained to the SE QUARTER WEDGE'S interior: the wider sweep above seats houses along the E arc OUTSIDE the quarter's inset-24 polygon (13 of the ward's samurai sit past it), which the per-quarter density counter cannot credit - only in-wedge seats lift 36 -> ~40 dwellings over the 0.30 floor
+top_up("merchant_house", (1181, 1350, 1594, 1712), 120,
+       count_kinds=("merchant", "merchant_house", "merchant_large"))   # 120 (was 112), region grown W to the row band's own x1181 edge + S to the ring taper: the pair cadence dropped the merchant caste to 102 vs its 105 band floor (~150 target, city_caste_counts_in_band); the finer 6x7 exact sweep finds the SW district's residual seats
+top_up("merchant_house", (1632, 1302, 2050, 1348), 112,
+       count_kinds=("merchant", "merchant_house", "merchant_large"))   # the SW district alone saturates ~3 short of the floor - the NE gap band (already a merchant_house terrace strip) takes the residue
 _dw = (sum(1 for b in s.M["buildings"] if b["kind"] in DWELL)
        + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"])))
 if _dw < 562:   # population floor 558 (3000 x 0.93 / 5) + margin

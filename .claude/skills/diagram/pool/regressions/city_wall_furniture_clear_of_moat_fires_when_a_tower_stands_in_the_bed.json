@@ -1,0 +1,72 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "moat": [
+  [
+   176,
+   176
+  ],
+  [
+   824,
+   176
+  ],
+  [
+   824,
+   824
+  ],
+  [
+   176,
+   824
+  ],
+  [
+   176,
+   176
+  ]
+ ],
+ "moat_width": 22,
+ "wall_towers": [
+  {
+   "x": 200,
+   "y": 500,
+   "w": 38,
+   "h": 38,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_wall_furniture_clear_of_moat"
+  ],
+  "source": "test_checks.py::test_city_wall_furniture_clear_of_moat_fires_when_a_tower_stands_in_the_bed"
+ }
+}

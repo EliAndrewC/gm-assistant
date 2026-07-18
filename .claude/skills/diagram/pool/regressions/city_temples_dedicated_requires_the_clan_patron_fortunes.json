@@ -1,0 +1,70 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "clan": "Crab"
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "religious": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 100,
+   "h": 64,
+   "rot": 0,
+   "kind": "temple",
+   "label": "Temple of Bishamon"
+  },
+  {
+   "x": 340,
+   "y": 300,
+   "w": 100,
+   "h": 64,
+   "rot": 0,
+   "kind": "temple",
+   "label": "Temple of Ebisu"
+  },
+  {
+   "x": 380,
+   "y": 300,
+   "w": 100,
+   "h": 64,
+   "rot": 0,
+   "kind": "temple",
+   "label": "Temple of Suitengu"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_temples_dedicated"
+  ],
+  "source": "test_checks.py::test_city_temples_dedicated_requires_the_clan_patron_fortunes"
+ }
+}

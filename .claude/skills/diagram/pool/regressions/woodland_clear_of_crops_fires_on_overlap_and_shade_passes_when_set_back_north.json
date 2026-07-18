@@ -1,0 +1,69 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "bbox": [
+    400,
+    400,
+    700,
+    600
+   ],
+   "outline": [
+    [
+     400,
+     400
+    ],
+    [
+     700,
+     400
+    ],
+    [
+     700,
+     600
+    ],
+    [
+     400,
+     600
+    ]
+   ]
+  }
+ ],
+ "commons": [
+  {
+   "x": 550.0,
+   "y": 500.0,
+   "w": 100,
+   "h": 100,
+   "rot": 0,
+   "role": "woodland",
+   "poly": [
+    [
+     500,
+     450
+    ],
+    [
+     600,
+     450
+    ],
+    [
+     600,
+     550
+    ],
+    [
+     500,
+     550
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "woodland_clear_of_crops"
+  ],
+  "source": "test_checks.py::test_woodland_clear_of_crops_fires_on_overlap_and_shade_passes_when_set_back_north"
+ }
+}

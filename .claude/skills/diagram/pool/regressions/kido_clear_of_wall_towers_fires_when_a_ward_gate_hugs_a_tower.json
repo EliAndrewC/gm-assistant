@@ -1,0 +1,62 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "kido": [
+  {
+   "x": 210,
+   "y": 500,
+   "horizontal": false,
+   "bbox": [
+    195,
+    480,
+    225,
+    520
+   ]
+  }
+ ],
+ "wall_towers": [
+  {
+   "x": 205,
+   "y": 505,
+   "w": 38,
+   "h": 38,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "kido_clear_of_wall_towers"
+  ],
+  "source": "test_checks.py::test_kido_clear_of_wall_towers_fires_when_a_ward_gate_hugs_a_tower"
+ }
+}

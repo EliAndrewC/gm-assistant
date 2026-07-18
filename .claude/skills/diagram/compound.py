@@ -84,7 +84,8 @@ class BuildingSpec:
     h_ft: float
     court: str  # "outer" | "inner"
     wall: str  # "N" | "S" | "E" | "W" | "divider"
-    order: int = 0  # higher places first (largest/most-important hug the wall first)
+    order: int = 0  # higher places first (largest/most-important win a contested corner)
+    rank: int = 1  # 1 = hug the wall; 2 = sit as a second rank BEHIND the rank-1 row
 
 
 @dataclass(frozen=True)
@@ -118,7 +119,16 @@ class PlaceResult:
     overflow: list[BuildingSpec] = field(default_factory=list)  # did not fit the ring
 
 
-# ---- placement (perimeter-first) ---------------------------------------------------------
+# ---- placement (perimeter-first, 2-D collision) ------------------------------------------
+#
+# Buildings are placed in a single global priority order (rank 1 before rank 2, then highest
+# `order`, then largest). Each building hugs its wall and slides ALONG that wall past every
+# obstacle it overlaps - the spine courts, the south gate, AND every building already placed.
+# So a contested corner goes to whichever building is placed first (highest order), and a
+# short E/W building no longer blocks the whole corner it does not actually occupy: the crude
+# per-court corner reservation the old placer used is gone, replaced by real rectangle overlap.
+# A rank-2 building sits BEHIND the rank-1 row on its wall (a rear service strip / second rank),
+# which is how real residences ranked servants behind the family wing.
 
 
 def _court_yrange(env: Envelope, court: str) -> tuple[float, float]:
@@ -130,100 +140,106 @@ def _gate_interval(env: Envelope) -> tuple[float, float]:
     return (env.w_ft / 2 - half, env.w_ft / 2 + half)
 
 
-def _cross_coord(env: Envelope, court: str, wall: str, spec: BuildingSpec) -> float:
-    """Fixed cross-axis top-left coord for a hugging building (y for N/S/divider, x for E/W)."""
-    if wall == "N":
-        return 0.0
-    if wall == "S":
-        return env.h_ft - spec.h_ft
-    if wall == "divider":
-        return env.divider_ft if court == "outer" else env.divider_ft - spec.h_ft
-    if wall == "W":
-        return 0.0
-    return env.w_ft - spec.w_ft  # "E"
+def _rank_depth(env: Envelope, already: list[Placed], spec: BuildingSpec) -> float:
+    """How deep the rank-1 row on this building's wall reaches inward (0 if none placed yet)."""
+    same = [p for p in already if p.spec.court == spec.court and p.spec.wall == spec.wall and p.spec.rank == 1]
+    depths: list[float] = []
+    for p in same:
+        if spec.wall == "N":
+            depths.append(p.y2)
+        elif spec.wall == "S":
+            depths.append(env.h_ft - p.y_ft)
+        elif spec.wall == "W":
+            depths.append(p.x2)
+        else:  # "E"
+            depths.append(env.w_ft - p.x_ft)
+    return max(depths) if depths else 0.0
 
 
-def _overlaps(ax: float, ay: float, aw: float, ah: float, z: CourtZone) -> bool:
-    return ax < z.x2 and ax + aw > z.x_ft and ay < z.y2 and ay + ah > z.y_ft
+def _cross_coord(env: Envelope, spec: BuildingSpec, already: list[Placed]) -> float:
+    """Fixed cross-axis top-left coord (y for N/S/divider, x for E/W). Rank 2 is offset inward
+    past the rank-1 row already on that wall."""
+    if spec.wall == "divider":  # backs the internal divider; no second rank
+        return env.divider_ft if spec.court == "outer" else env.divider_ft - spec.h_ft
+    off = (_rank_depth(env, already, spec) + FIRE_GAP_FT) if spec.rank > 1 else 0.0
+    if spec.wall == "N":
+        return off
+    if spec.wall == "S":
+        return env.h_ft - spec.h_ft - off
+    if spec.wall == "W":
+        return off
+    return env.w_ft - spec.w_ft - off  # "E"
+
+
+def _rect_overlap(ax: float, ay: float, aw: float, ah: float, bx: float, by: float, bw: float, bh: float) -> bool:
+    return ax < bx + bw and ax + aw > bx and ay < by + bh and ay + ah > by
 
 
 def _obstacle_end(
-    env: Envelope,
-    wall: str,
     gate: tuple[float, float] | None,
     spine: tuple[CourtZone, ...],
+    already: list[Placed],
     px: float,
     py: float,
     spec: BuildingSpec,
     horizontal: bool,
 ) -> float | None:
-    """Along-axis end of the nearest obstacle (gate or spine court) the building overlaps."""
+    """Along-axis end of the furthest obstacle (gate, spine court, or placed building) the
+    candidate rectangle overlaps - or None if it overlaps nothing."""
     ends: list[float] = []
     if gate is not None and px < gate[1] and px + spec.w_ft > gate[0]:
         ends.append(gate[1])
     for z in spine:
-        if _overlaps(px, py, spec.w_ft, spec.h_ft, z):
+        if _rect_overlap(px, py, spec.w_ft, spec.h_ft, z.x_ft, z.y_ft, z.w_ft, z.h_ft):
             ends.append(z.x2 if horizontal else z.y2)
+    for p in already:
+        if _rect_overlap(px, py, spec.w_ft, spec.h_ft, p.x_ft, p.y_ft, p.spec.w_ft, p.spec.h_ft):
+            ends.append(p.x2 if horizontal else p.y2)
     return max(ends) if ends else None
 
 
-@dataclass(frozen=True)
-class _Reserve:
-    """The corners belong to the vertical (E/W) walls, so horizontal rows inset by these."""
-
-    left: float  # max W-wall building width
-    right: float  # max E-wall building width
-
-
-def _place_wall(
-    env: Envelope,
-    court: str,
-    wall: str,
-    specs: list[BuildingSpec],
-    spine: tuple[CourtZone, ...],
-    res: _Reserve,
-    result: PlaceResult,
-) -> None:
-    horizontal = wall in ("N", "S", "divider")
-    if horizontal:  # N/S/divider rows inset by the W/E corner reservations (corners are E/W's)
-        along_start, along_end = res.left, env.w_ft - res.right
-    else:  # E/W rows use the full court height (they own the corners)
-        along_start, along_end = _court_yrange(env, court)
-    gate = _gate_interval(env) if wall == "S" else None
+def _place_one(env: Envelope, spec: BuildingSpec, spine: tuple[CourtZone, ...], already: list[Placed]) -> Placed | None:
+    """Hug the wall and slide along it past every obstacle; None if it runs off the wall."""
+    horizontal = spec.wall in ("N", "S", "divider")
+    cross = _cross_coord(env, spec, already)
+    along_start, along_end = (0.0, env.w_ft) if horizontal else _court_yrange(env, spec.court)
+    gate = _gate_interval(env) if spec.wall == "S" else None
+    size = spec.w_ft if horizontal else spec.h_ft
     cursor = along_start + WALL_MARGIN_FT
-    for spec in specs:
-        cross = _cross_coord(env, court, wall, spec)
-        size = spec.w_ft if horizontal else spec.h_ft
-        while True:
-            px, py = (cursor, cross) if horizontal else (cross, cursor)
-            end = _obstacle_end(env, wall, gate, spine, px, py, spec, horizontal)
-            if end is None:
-                break
-            cursor = end + FIRE_GAP_FT
-        if cursor + size > along_end - WALL_MARGIN_FT:
-            result.overflow.append(spec)
-            continue
+    while True:
         px, py = (cursor, cross) if horizontal else (cross, cursor)
-        result.placed.append(Placed(spec, px, py))
-        cursor += size + FIRE_GAP_FT
+        end = _obstacle_end(gate, spine, already, px, py, spec, horizontal)
+        if end is None:
+            break
+        cursor = end + FIRE_GAP_FT
+    if cursor + size > along_end - WALL_MARGIN_FT:
+        return None
+    px, py = (cursor, cross) if horizontal else (cross, cursor)
+    return Placed(spec, px, py)
+
+
+def _wall_tier(wall: str) -> int:
+    """Placement tier: N/S rows first (own the corners), then E/W columns (flow below the
+    N/S buildings), then the divider hall last (flows centered between the E/W columns)."""
+    if wall in ("N", "S"):
+        return 0
+    return 1 if wall in ("E", "W") else 2
 
 
 def place(program: CompoundProgram) -> PlaceResult:
-    """Arrange the program's buildings perimeter-first: reserve the spine + the corners, then
-    hug each wall largest/most-important first with fire-gaps, skipping the gate and courts."""
+    """Arrange the buildings perimeter-first with 2-D collision: reserve the spine, then place
+    each building in priority order - rank 1 before rank 2, then N/S before E/W before divider,
+    then highest `order`, then largest - hugging its wall and sliding past the gate, the courts,
+    and every building already down. Corners go to the N/S rows; short E/W and divider buildings
+    flow around them instead of blocking a whole corner they do not occupy."""
     result = PlaceResult()
-    groups: dict[tuple[str, str], list[BuildingSpec]] = {}
-    for s in program.buildings:
-        groups.setdefault((s.court, s.wall), []).append(s)
-
-    def maxdim(court: str, wall: str, dim: str) -> float:
-        vals = [getattr(s, dim) for s in groups.get((court, wall), [])]
-        return max(vals) if vals else 0.0
-
-    for (court, wall), specs in sorted(groups.items()):
-        specs.sort(key=lambda s: (-s.order, -(s.w_ft * s.h_ft)))
-        res = _Reserve(left=maxdim(court, "W", "w_ft"), right=maxdim(court, "E", "w_ft"))
-        _place_wall(program.envelope, court, wall, specs, program.spine, res, result)
+    env = program.envelope
+    for spec in sorted(program.buildings, key=lambda s: (s.rank, _wall_tier(s.wall), -s.order, -(s.w_ft * s.h_ft))):
+        placed = _place_one(env, spec, program.spine, result.placed)
+        if placed is None:
+            result.overflow.append(spec)
+        else:
+            result.placed.append(placed)
     return result
 
 

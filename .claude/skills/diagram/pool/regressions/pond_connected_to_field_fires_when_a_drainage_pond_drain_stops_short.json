@@ -1,0 +1,36 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "toscale": true,
+  "pond_role": "drainage"
+ },
+ "pond": [
+  400,
+  700,
+  120,
+  74
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     300,
+     500
+    ]
+   ],
+   "role": "drain",
+   "field": "f",
+   "w": 3
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "pond_connected_to_field"
+  ],
+  "source": "test_checks.py::test_pond_connected_to_field_fires_when_a_drainage_pond_drain_stops_short"
+ }
+}

@@ -46,6 +46,14 @@ def test_index_renders_landing(root: Root) -> None:
     assert 'Relics' in html
 
 
+def test_viewer_serves_standalone_page(root: Root) -> None:
+    html = root.viewer().decode('utf-8')
+    # Full standalone document (not wrapped in the site layout), neutral title.
+    assert html.lower().startswith('<!doctype html>')
+    assert '<title>Portrait</title>' in html
+    assert 'Portrait viewer' in html
+
+
 def test_relics_index_lists_all_fortune_sections(root: Root) -> None:
     html = root.relics().decode('utf-8')
     # Sections for fortunes that have relics in the fixture pool.
