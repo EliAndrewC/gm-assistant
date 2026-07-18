@@ -5102,7 +5102,7 @@ def test_contour_terraces_require_stepped_cross_slope_bands():
     # a field declared field_archetype=contour_terraces must show >=8 cross-slope terrace bunds; too few, or bunds
     # that run downhill (channels, not terrace lips), fires.
     base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "contour_terraces"}}
-    good = {**base, "terrace_bunds": [[[100, 200 + i * 80], [900, 200 + i * 80]] for i in range(10)]}  # 10 wide E-W bands
+    good = {**base, "terrace_bunds": [*([[100, 200 + i * 80], [900, 200 + i * 80]] for i in range(10)), [[500, 900]]]}  # 10 wide E-W bands + a degenerate 1-pt bund (skipped)
     assert "contour_terraces_are_stepped_bands" not in f(good)
     few = {**base, "terrace_bunds": [[[100, 200 + i * 80], [900, 200 + i * 80]] for i in range(4)]}  # only 4
     assert "contour_terraces_are_stepped_bands" in f(few)
