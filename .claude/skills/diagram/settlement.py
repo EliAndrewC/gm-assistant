@@ -4553,6 +4553,134 @@ class Settlement:
                 out.append((cx + side * ex * 0.62 + math.cos(a) * r * ex * 0.42, cy + math.sin(a) * r * ey * 0.82))
         return out
 
+    def cluster_anchor(self, position: str, field_bbox: tuple[float, float, float, float], down_deg: float, pad: float = 70.0, lateral_frac: float = 0.42, depth_frac: float = 0.3) -> tuple[float, float, float, float]:
+        """Resolve the `cluster_position` knob into a cluster ANCHOR `(cx, cy, ex, ey)` to feed `cluster_seeds`.
+        The knob says WHERE on its field's dry margin a nucleated village sits; this reads that against the
+        field's bbox and its `down_deg` fall line and returns a centre just OFF the paddy plus screen-axis
+        half-extents (`ex`, `ey`) oriented so the cluster runs ALONG that margin. (Field-adjacency + off-the-toe
+        are still enforced downstream: `try_place` rejects any seeded house that is not field-adjacent or lands
+        on the flood toe / a blocker, so this only has to aim the cloud at the right dry ground.)
+
+        Grounding (research.md D2 - villages took the best DRY ground beside their paddy, 背山面水 'mountain
+        behind, water in front'; which dry ground was available varied, and that variation is the knob):
+          - `high_margin`  - the upslope (high) edge, centred: the classic back-to-the-hill seat. DEFAULT.
+          - `valley_head`  - the high edge but tucked to one cross-slope corner (a head terrace by the intake).
+          - `mid_margin`   - the high edge, offset the other way along the margin (partway along, not centred).
+          - `flank`        - a cross-slope SIDE margin (a side levee / valley wall), off to one flank.
+          - `valley_mouth` - down by the low end where the valley opens, but pulled to the dry lateral shoulder
+                             (NEVER straight down into the wet central toe below the drain).
+          - `on_rise`      - a dry knoll off a high corner (a rise standing a little out of the plain).
+        """
+        if position not in ("high_margin", "valley_head", "mid_margin", "flank", "valley_mouth", "on_rise"):
+            raise ValueError(f"unknown cluster_position {position!r}")
+        fx0, fy0, fx1, fy1 = field_bbox
+        fcx, fcy = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+        hw, hh = (fx1 - fx0) / 2, (fy1 - fy0) / 2
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill unit
+        ux, uy = -dy, dx  # cross-slope (lateral / along-margin) unit
+        ad = abs(dx) * hw + abs(dy) * hh  # field half-extent along the fall
+        au = abs(ux) * hw + abs(uy) * hh  # field half-extent across the fall (the margin's run)
+        # (along-slope offset s: -ve = uphill of centre; lateral offset t along +u)
+        if position == "high_margin":
+            s, t = -(ad + pad), 0.0
+        elif position == "valley_head":
+            s, t = -(ad + pad), -au * 0.55
+        elif position == "mid_margin":
+            s, t = -(ad + pad), au * 0.55
+        elif position == "flank":
+            s, t = 0.0, au + pad
+        elif position == "valley_mouth":
+            s, t = ad * 0.45, au + pad  # low-ish AND pushed to the dry lateral shoulder, never the central toe
+        else:  # on_rise: a knoll off a high corner
+            s, t = -(ad + pad * 0.4), au * 0.7
+        cx = fcx + dx * s + ux * t
+        cy = fcy + dy * s + uy * t
+        lat = au * lateral_frac  # the cluster runs ALONG the margin (lateral), shallow in depth
+        dep = max(ad, au) * depth_frac
+        ex = abs(ux) * lat + abs(dx) * dep  # project the lateral+depth extents back onto screen x / y
+        ey = abs(uy) * lat + abs(dy) * dep
+        return (cx, cy, ex, ey)
+
+    def plot_texture(self, plot_size: str = "medium", plot_regularity: str = "organic", record: bool = True) -> tuple[float, tuple[float, float]]:
+        """Resolve the `plot_size` + `plot_regularity` knobs into `build_comb`'s `(plot_across, row_step)` levers
+        so they actually change the paddy grain. `plot_across` sets how many bunded plots tile across each canal
+        reach (small = many small paddies, large_block = few big ones, strip = narrow but long); `row_step` is
+        the along-canal row spacing, and its SPREAD is the regularity: a WIDE spread reads organic/old-grown, a
+        TIGHT spread reads as a planned/surveyed grid. Records the two knobs on the manifest. Grounding: old
+        wet-rice terraces grew as small irregular paddies fitted to the microtopography; large regular blocks or
+        long strips signal a later planned reclamation/allotment (which is why `grid` is typing-gated to a
+        planned field origin). Returns `(plot_across, row_step)` to pass straight into `build_comb`."""
+        size_map = {
+            "small_irregular": (34.0, (20.0, 40.0)),
+            "medium": (48.0, (26.0, 36.0)),
+            "large_block": (70.0, (30.0, 44.0)),
+            "strip": (32.0, (46.0, 66.0)),
+        }
+        if plot_size not in size_map:
+            raise ValueError(f"unknown plot_size {plot_size!r}")
+        if plot_regularity not in ("organic", "grid"):
+            raise ValueError(f"unknown plot_regularity {plot_regularity!r}")
+        across, step = size_map[plot_size]
+        if plot_regularity == "grid":  # collapse the row-step spread toward its mean -> even, surveyed rows
+            mid = (step[0] + step[1]) / 2
+            step = (mid - 3.0, mid + 3.0)
+        if record:
+            self.M["meta"]["plot_size"] = plot_size
+            self.M["meta"]["plot_regularity"] = plot_regularity
+        return across, step
+
+    @staticmethod
+    def water_sources_for(down_deg: float, water_kind: str) -> list[str]:
+        """The `water_source_position` values that gravity-feed a field falling toward `down_deg` (the source
+        must sit UPHILL of the field intake - water runs downhill through the comb). Pond kinds are the
+        corner/mid/chain set; a stream enters from a canvas edge. A source on the downhill half is excluded
+        (it could not feed the field), which is the gravity typing the knob's own `typing_rule` defers to
+        placement. Used by the seed roll so an unpinned water source lands somewhere water can actually flow
+        from."""
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        # each candidate's outward direction from field centre; keep those on the UPHILL half (dot with
+        # downhill <= a small tolerance, so a cross-slope side counts as feedable)
+        dirs = {
+            "corner_NW": (-1, -1), "corner_NE": (1, -1), "corner_SW": (-1, 1), "corner_SE": (1, 1),
+            "edge_N": (0, -1), "edge_E": (1, 0), "edge_S": (0, 1), "edge_W": (-1, 0),
+            "mid_margin": (-dx, -dy), "chain": (-dx, -dy),  # the uphill margin itself
+        }
+        pond = ["corner_NW", "corner_NE", "corner_SW", "corner_SE", "mid_margin", "chain"]
+        edge = ["edge_N", "edge_E", "edge_S", "edge_W"]
+        names = edge if water_kind == "stream" else pond
+        out = []
+        for nm in names:
+            vx, vy = dirs[nm]
+            n = math.hypot(vx, vy) or 1.0
+            if (vx / n) * dx + (vy / n) * dy <= 0.35:  # not on the downhill half (tolerance admits cross sides)
+                out.append(nm)
+        return out
+
+    def water_source_anchor(self, position: str, field_bbox: tuple[float, float, float, float], down_deg: float, pad: float = 90.0) -> Pt:
+        """Resolve `water_source_position` into the SLUICE / stream-entry point (where water reaches the field
+        head), just off the field on the named margin. Pond positions (`corner_*` / `mid_margin` / `chain`) put
+        the feed on that corner or margin; stream `edge_*` positions put it at that canvas-edge margin. RAISES
+        if the resolved point is on the DOWNHILL half of the field (gravity: a source below the field cannot
+        feed it) - so a historically-impossible pin is rejected here, and `water_sources_for` lists the legal
+        set for a roll. Grounding: Chinese canal doctrine feeds a comb from its high end; the varied high-side
+        entry (a corner pond, a mid-margin tank, a stepped chain, a stream off one edge) is the knob."""
+        if position not in ("corner_NW", "corner_NE", "corner_SW", "corner_SE", "mid_margin", "chain", "edge_N", "edge_E", "edge_S", "edge_W"):
+            raise ValueError(f"unknown water_source_position {position!r}")
+        fx0, fy0, fx1, fy1 = field_bbox
+        fcx, fcy = (fx0 + fx1) / 2, (fy0 + fy1) / 2
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        corners = {"corner_NW": (fx0 - pad, fy0 - pad), "corner_NE": (fx1 + pad, fy0 - pad), "corner_SW": (fx0 - pad, fy1 + pad), "corner_SE": (fx1 + pad, fy1 + pad)}
+        edges = {"edge_N": (fcx, fy0 - pad), "edge_S": (fcx, fy1 + pad), "edge_E": (fx1 + pad, fcy), "edge_W": (fx0 - pad, fcy)}
+        if position in corners:
+            sx, sy = corners[position]
+        elif position in edges:
+            sx, sy = edges[position]
+        else:  # mid_margin / chain: the middle of the UPHILL margin (opposite the fall)
+            sx, sy = fcx - dx * ((fx1 - fx0) / 2 + pad), fcy - dy * ((fy1 - fy0) / 2 + pad)
+        if (sx - fcx) * dx + (sy - fcy) * dy > 0.35 * math.hypot(sx - fcx, sy - fcy):
+            raise ValueError(f"water_source_position {position!r} sits downhill of a field falling to {down_deg} deg - it cannot gravity-feed it")
+        return (round(sx, 1), round(sy, 1))
+
     def line_seeds(self, p0: Pt, p1: Pt, n: int, half_band: float, rng: random.Random, form: str = "linear", record: bool = True) -> list[Pt]:
         """House seeds strung ALONG a line (feature 005 `settlement_form` = 'linear'): a RIBBON of homesteads
         fronting a road / field-margin / dike instead of a nucleated blob - historically the cheapest big
