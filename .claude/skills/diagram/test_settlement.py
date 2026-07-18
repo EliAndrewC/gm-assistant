@@ -1920,6 +1920,33 @@ def test_plot_texture_drives_build_comb_grain():
             s.plot_texture(*bad)
 
 
+def test_roll_village_is_deterministic_and_seed_varies_the_combination():
+    # US2 (SC-004): the same seed rolls the SAME combination (byte-identical), a different seed rolls a
+    # DIFFERENT one, and a rolled map is populated with no hand-placed coordinates.
+    def roll(seed):
+        s = Settlement(W=2000, H=2600, seed=seed)
+        s.meta(name="R", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+        return s, s.roll_village("R", households=18, down_deg=90, water_kind="pond", field_fall=1260)
+
+    s7a, k7a = roll(7)
+    _s7b, k7b = roll(7)
+    assert k7a == k7b  # same seed -> identical roll
+    _s8, k8 = roll(8)
+    combo = ("cluster_position", "cluster_shape", "lane_skeleton", "water_source_position")
+    assert tuple(k7a[c] for c in combo) != tuple(k8[c] for c in combo)  # different seeds -> different combination
+    assert 15 <= len(s7a.M["houses"]) <= 19 and s7a.M["fields"] and s7a.view  # a populated, framed map
+
+
+def test_roll_village_honors_a_pinned_knob():
+    # a pinned knob overrides the roll (US3 determinism surface, exercised through the roll entrypoint)
+    s = Settlement(W=2000, H=2600, seed=7)
+    s.meta(name="P", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+    s.pin_knob("cluster_shape", "elongated")
+    s.pin_knob("lane_skeleton", "spine")
+    k = s.roll_village("P", households=18, down_deg=90, water_kind="pond", field_fall=1260)
+    assert k["cluster_shape"] == "elongated" and k["lane_skeleton"] == "spine"
+
+
 def test_water_source_anchor_gravity_and_valid_set():
     # water_source_position resolves to a sluice/entry point on the field's UPHILL margin; a downhill source
     # is rejected (gravity), and water_sources_for lists only the feedable set for a given fall + water kind.

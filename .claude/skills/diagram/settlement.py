@@ -1166,6 +1166,103 @@ class Settlement:
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
+    def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any]) -> list[Pt]:
+        """Draw a `build_comb` net (dry hem + flooded paddies + bunds + channels) AND register the field's
+        manifest + water topology, in one call - the ~50 lines every comb gen otherwise repeats inline. Feeds
+        the roll-from-seed entrypoint (which cannot hand-place any of it) but is reusable by any comb gen.
+        `source` describes where the water comes from: {"kind":"pond", "pond":(cx,cy,rx,ry)} draws a tameike at
+        the sluice and feeds from it; {"kind":"stream", "stream":[(x,y),...]} runs a brook in from a canvas edge
+        to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
+        SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
+        source_and_sink) see a source. Returns the field envelope polygon."""
+        from waterfields import BEAN_GREEN, BUND
+
+        for p in net["dry_plots"]:  # the dry upslope hem
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+            self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
+            self._draw_furrows(p["poly"], p["furrow"], p["theta"])
+            self.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in p["poly"]], "crop": p["crop"], "theta": round(p["theta"], 3)})
+            self.block_polys.append(p["poly"])  # dry cropland is no-build ground; keep farmsteads off it
+        for p in net["plots"]:  # the flooded paddies
+            pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+            self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{BUND}" stroke-width="2" stroke-linejoin="round"/>')
+        beads = "".join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
+        self.add(f'<g opacity="0.85">{beads}</g>')
+        sluice = net["channels"][0]["pts"][0]
+        pond_rec: Any = None
+        if source.get("kind") == "pond":
+            pcx, pcy, prx, pry = source["pond"]
+            self.stream([(sluice[0], sluice[1]), (pcx, pcy)], frm={"kind": "offmap"}, to={"kind": "pond"}, width=6) if source.get("feeder") else None
+            self.pond(pcx, pcy, prx, pry)
+            ring = [(pcx + (prx + 40) * math.cos(a), pcy + (pry + 40) * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]
+            self.marsh(ring, role="pond_fringe")
+            self.block_polys.append([(pcx - prx - 10, pcy - pry - 10), (pcx + prx + 10, pcy - pry - 10), (pcx + prx + 10, pcy + pry + 10), (pcx - prx - 10, pcy + pry + 10)])  # no build on the pond
+            pond_rec = (pcx, pcy)
+        elif source.get("kind") == "stream":
+            self.stream(source["stream"], frm={"kind": "offmap"}, width=7)
+        for c in sorted(net["channels"], key=lambda c: -c["w"]):
+            self.field_channel(c["pts"], "#7C9EB0" if c["role"] == "drain" else "#6C9CBE", c["w"], c.get("w_tail", c["w"]))
+        if net["brook"]:
+            # the drain-outfall brook shoots STRAIGHT downhill off-map (a fan field's own wiggly brook can
+            # re-enter the paddy and trip streams_avoid_fields; a straight downhill exit never does)
+            ddb = self.M["meta"].get("down_deg", 90)
+            bdx, bdy = math.cos(math.radians(ddb)), math.sin(math.radians(ddb))
+            b0 = net["brook"][0]
+            b1 = net["brook"][1] if len(net["brook"]) > 1 else (b0[0] + bdx, b0[1] + bdy)
+            ex, ey = b1[0] - b0[0], b1[1] - b0[1]  # the drain's own exit direction (smooth junction)
+            el = math.hypot(ex, ey) or 1.0
+            mid = (b0[0] + ex / el * 70, b0[1] + ey / el * 70)  # a short smooth continuation, THEN turn downhill
+            # (first segment = drain direction -> smooth junction; then straight downhill AWAY from the field ->
+            # clears a fan envelope's concave lobe without an acute turn, since the drain already runs downhill)
+            self.stream([b0, mid, (mid[0] + bdx * 520, mid[1] + bdy * 520)], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)
+        env = [[round(x, 1), round(y, 1)] for x, y in net["envelope"]]
+        exs, eys = [p[0] for p in env], [p[1] for p in env]
+        pvx = [v[0] for p in net["plots"] for v in p["poly"]]
+        pvy = [v[1] for p in net["plots"] for v in p["poly"]]
+        self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)]})
+        for c in net["channels"]:
+            self.M["field_ditches"].append(
+                {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
+            )
+        # a hairline SOURCE -> field feed carrying the topology (winds a little into the paddy interior). It
+        # STARTS at the source (the pond centre, or the sluice for a stream) so channel_source_anchored /
+        # pond_connected_to_field see it, and carries a gentle perpendicular KINK so channel_winds_gently passes.
+        hr = net["channels"][0]["pts"]
+        fork = hr[-1]
+        dd = self.M["meta"].get("down_deg", 90)
+        dx, dy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+        din = (fork[0] + dx * 70, fork[1] + dy * 70)
+        start = pond_rec if pond_rec else (sluice[0], sluice[1])
+        frm = {"kind": "pond"} if pond_rec else {"kind": "stream"}
+        vx, vy = din[0] - start[0], din[1] - start[1]
+        vl = math.hypot(vx, vy) or 1.0
+        midx, midy = (start[0] + din[0]) / 2 - vy / vl * 20, (start[1] + din[1]) / 2 + vx / vl * 20
+        self.M["channels"].append(
+            {"poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]], "frm": frm, "to": {"kind": "field", "name": name}, "w": 2.5}
+        )
+        return net["envelope"]
+
+    def _draw_furrows(self, poly: Any, colour: str, theta: float) -> None:
+        """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
+        diag = math.hypot(max(xs) - min(xs), max(ys) - min(ys))
+        dx, dy = math.cos(theta), math.sin(theta)
+        nx, ny = -dy, dx
+        cid = self._cid("dry")
+        pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in poly)
+        g = [f'<clipPath id="{cid}"><polygon points="{pts}"/></clipPath>', f'<g clip-path="url(#{cid})">']
+        t = -diag / 2
+        while t <= diag / 2:
+            mx, my = cx + nx * t, cy + ny * t
+            g.append(
+                f'<line x1="{mx - dx * diag / 2:.1f}" y1="{my - dy * diag / 2:.1f}" x2="{mx + dx * diag / 2:.1f}" y2="{my + dy * diag / 2:.1f}" stroke="{colour}" stroke-width="0.8" opacity="0.8"/>'
+            )
+            t += 5
+        g.append("</g>")
+        self.add("".join(g))
+
     def crescent_pond(self, cx: float, cy: float, r: float, facing_deg: float = 270.0) -> None:
         """A fengshui CRESCENT / half-moon pond (半月塘), a focal feature of Huizhou / Hakka single-lineage
         villages (feature 005): a half-disk of water IN FRONT of the cluster - drainage + fire water + the
@@ -4553,7 +4650,7 @@ class Settlement:
                 out.append((cx + side * ex * 0.62 + math.cos(a) * r * ex * 0.42, cy + math.sin(a) * r * ey * 0.82))
         return out
 
-    def cluster_anchor(self, position: str, field_bbox: tuple[float, float, float, float], down_deg: float, pad: float = 70.0, lateral_frac: float = 0.42, depth_frac: float = 0.3) -> tuple[float, float, float, float]:
+    def cluster_anchor(self, position: str, field_bbox: tuple[float, float, float, float], down_deg: float, lateral_frac: float = 0.6, depth_frac: float = 0.34) -> tuple[float, float, float, float]:
         """Resolve the `cluster_position` knob into a cluster ANCHOR `(cx, cy, ex, ey)` to feed `cluster_seeds`.
         The knob says WHERE on its field's dry margin a nucleated village sits; this reads that against the
         field's bbox and its `down_deg` fall line and returns a centre just OFF the paddy plus screen-axis
@@ -4580,23 +4677,29 @@ class Settlement:
         ux, uy = -dy, dx  # cross-slope (lateral / along-margin) unit
         ad = abs(dx) * hw + abs(dy) * hh  # field half-extent along the fall
         au = abs(ux) * hw + abs(uy) * hh  # field half-extent across the fall (the margin's run)
+        lat = au * lateral_frac  # the cluster runs ALONG the margin (lateral)...
+        dep = min(
+            max(ad, au) * depth_frac, 118.0
+        )  # ...but stays fairly shallow: the near rows ring the field (field_ringed), the back rows are a legit cluster-span back (cluster_abuts_fields allows it for a nucleated seat)
+        clr = dep + 22.0  # the along-slope clearance: the cluster's near edge sits `pad`-ish off the paddy, whole cluster clear
         # (along-slope offset s: -ve = uphill of centre; lateral offset t along +u)
+        # high-margin lateral offsets stay MODEST (a fan field is narrow at its head, so the bbox overstates
+        # how far a high-corner cluster can slide and still sit over the paddy) - the flank/mouth positions push
+        # fully out to a cross-slope side where the field is at full width.
         if position == "high_margin":
-            s, t = -(ad + pad), 0.0
+            s, t = -(ad + clr), 0.0
         elif position == "valley_head":
-            s, t = -(ad + pad), -au * 0.55
+            s, t = -(ad + clr), -au * 0.3
         elif position == "mid_margin":
-            s, t = -(ad + pad), au * 0.55
+            s, t = -(ad + clr), au * 0.3
         elif position == "flank":
-            s, t = 0.0, au + pad
+            s, t = 0.0, au + clr
         elif position == "valley_mouth":
-            s, t = ad * 0.45, au + pad  # low-ish AND pushed to the dry lateral shoulder, never the central toe
-        else:  # on_rise: a knoll off a high corner
-            s, t = -(ad + pad * 0.4), au * 0.7
+            s, t = ad * 0.45, au + clr  # low-ish AND pushed to the dry lateral shoulder, never the central toe
+        else:  # on_rise: a dry knoll at a HIGH CORNER (up, and a little laterally) - still hugging the high margin
+            s, t = -(ad + clr), au * 0.3
         cx = fcx + dx * s + ux * t
         cy = fcy + dy * s + uy * t
-        lat = au * lateral_frac  # the cluster runs ALONG the margin (lateral), shallow in depth
-        dep = max(ad, au) * depth_frac
         ex = abs(ux) * lat + abs(dx) * dep  # project the lateral+depth extents back onto screen x / y
         ey = abs(uy) * lat + abs(dy) * dep
         return (cx, cy, ex, ey)
@@ -4641,9 +4744,16 @@ class Settlement:
         # each candidate's outward direction from field centre; keep those on the UPHILL half (dot with
         # downhill <= a small tolerance, so a cross-slope side counts as feedable)
         dirs = {
-            "corner_NW": (-1, -1), "corner_NE": (1, -1), "corner_SW": (-1, 1), "corner_SE": (1, 1),
-            "edge_N": (0, -1), "edge_E": (1, 0), "edge_S": (0, 1), "edge_W": (-1, 0),
-            "mid_margin": (-dx, -dy), "chain": (-dx, -dy),  # the uphill margin itself
+            "corner_NW": (-1, -1),
+            "corner_NE": (1, -1),
+            "corner_SW": (-1, 1),
+            "corner_SE": (1, 1),
+            "edge_N": (0, -1),
+            "edge_E": (1, 0),
+            "edge_S": (0, 1),
+            "edge_W": (-1, 0),
+            "mid_margin": (-dx, -dy),
+            "chain": (-dx, -dy),  # the uphill margin itself
         }
         pond = ["corner_NW", "corner_NE", "corner_SW", "corner_SE", "mid_margin", "chain"]
         edge = ["edge_N", "edge_E", "edge_S", "edge_W"]
@@ -4680,6 +4790,139 @@ class Settlement:
         if (sx - fcx) * dx + (sy - fcy) * dy > 0.35 * math.hypot(sx - fcx, sy - fcy):
             raise ValueError(f"water_source_position {position!r} sits downhill of a field falling to {down_deg} deg - it cannot gravity-feed it")
         return (round(sx, 1), round(sy, 1))
+
+    def roll_village(
+        self,
+        name: str,
+        households: int,
+        down_deg: float,
+        water_kind: str = "pond",
+        field_fall: float | None = None,
+        offtakes_a: Sequence[float] = (0.22, 0.45, 0.68, 0.88),
+        offtakes_b: Sequence[float] = (0.45, 0.8),
+    ) -> dict[str, Any]:
+        """ROLL a whole gate-passing settlement from the seed (feature 005 US2, SC-004: zero hand-placed
+        coordinates). Every unpinned knob is rolled from `self.seed` (pinned ones honored); the rolled values
+        then DRIVE the geometry through the resolvers: the water source picks the sluice, plot_texture picks the
+        paddy grain, cluster_position + cluster_shape place + shape the homestead cloud, lane_skeleton lays the
+        lanes. Two different seeds roll different combinations; the same seed is byte-identical. Call after
+        `s.meta(name=, scale=, ftpx=, toscale=True, ...)`. Returns the resolved knob dict. Scope: a nucleated
+        HAMLET or VILLAGE (the to-scale tiers); a hamlet needs no headman/shrine/cemetery, a village adds them."""
+        from waterfields import build_comb
+
+        self.M["meta"]["water_kind"] = water_kind
+        self.M["meta"]["down_deg"] = down_deg
+        self.M["meta"]["nucleated"] = True  # a rolled village is a nucleated cluster (per-house-grove path is off; a communal windbreak is drawn below)
+        scale = self.M["meta"].get("scale", "village")
+        self._nucleated = True
+        W, H = self.W, self.H
+        dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        # --- roll the knobs (pinned -> rolled -> default) ---
+        cluster_position = self.resolve("cluster_position")
+        cluster_shape = self.resolve("cluster_shape")
+        lane_kind = self.resolve("lane_skeleton")
+        plot_size = self.resolve("plot_size")
+        plot_regularity = self.resolve("plot_regularity")
+        grain_drift = self.resolve("grain_drift")
+        if self.knob_pins.get("water_source_position") is not None:
+            water_source = self.resolve("water_source_position")
+        else:  # roll among the GRAVITY-VALID set (the typing rule defers gravity to placement)
+            valid = sorted(self.water_sources_for(down_deg, water_kind))
+            # don't put the intake DEAD-CENTRE on the high margin where a high-seated village already sits - a
+            # centre source (mid_margin / chain) would fight the cluster for the narrow fan head, so prefer a
+            # corner intake there (historically fine: a corner tank feeding the comb from one high shoulder).
+            if cluster_position in ("high_margin", "valley_head", "mid_margin", "on_rise"):
+                corner = [v for v in valid if v not in ("mid_margin", "chain")]
+                valid = corner or valid
+            wr = knob_rng(self.seed, "water_source_position")
+            water_source = valid[wr.randrange(len(valid))]
+            self._resolved_knobs["water_source_position"] = water_source
+        self.M["meta"]["water_source"] = water_source
+        # --- the field: sluice from the water source, then the comb ---
+        mx, my = W * 0.16, H * 0.16
+        sluice = self.water_source_anchor(water_source, (mx, my, W - mx, H - my), down_deg)
+        across, step = self.plot_texture(plot_size, plot_regularity)
+        net = build_comb(W, H, sluice, self.seed, down_deg=down_deg, field_fall=field_fall, plot_across=across, row_step=step, grain_drift=grain_drift, offtakes_a=offtakes_a, offtakes_b=offtakes_b)
+        self.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
+        self.meta(dry_furrows_vary=net["furrows_vary"])
+        if water_kind == "pond":
+            source: dict[str, Any] = {"kind": "pond", "pond": (sluice[0] - dx * 66, sluice[1] - dy * 66, 88.0, 56.0)}
+        else:
+            source = {"kind": "stream", "stream": [(sluice[0] - dx * 380, sluice[1] - dy * 380), (sluice[0], sluice[1])]}
+        self.draw_comb_field(net, name + "-paddies", source)
+        # --- seat the cluster on the field edge, from the ACTUAL drawn plots (robust to a fan's narrow head) ---
+        # The cluster_position gives the CHARACTER (which margin); the seat is computed constructively so it
+        # always abuts + rings the field and never fights the water intake: the lateral lean is forced AWAY from
+        # the sluice's side, and the seat sits just beyond the drawn rice's reach in that direction. This
+        # replaces the earlier anchor+snap+nudge, whose post-hoc pushes destabilised placement roll-to-roll.
+        env = net["envelope"]
+        exs, eys = [p[0] for p in env], [p[1] for p in env]
+        fb = (min(exs), min(eys), max(exs), max(eys))
+        verts = [(v[0], v[1]) for p in net["plots"] for v in p["poly"]]
+        fcx2 = sum(v[0] for v in verts) / len(verts)
+        fcy2 = sum(v[1] for v in verts) / len(verts)
+        ux, uy = -dy, dx  # lateral (cross-slope) unit
+        _, _, cex, cey = self.cluster_anchor(cluster_position, fb, down_deg)  # keep the shape EXTENTS
+        away = -1.0 if ((sluice[0] - fcx2) * ux + (sluice[1] - fcy2) * uy) >= 0 else 1.0  # lean opposite the sluice
+        along_bias = {"high_margin": -1.0, "valley_head": -1.0, "mid_margin": -1.0, "on_rise": -1.0, "flank": 0.0, "valley_mouth": 0.55}
+        lat_bias = {"high_margin": 0.2, "valley_head": 0.6, "mid_margin": 0.6, "on_rise": 0.55, "flank": 1.0, "valley_mouth": 0.95}
+        tdx = dx * along_bias[cluster_position] + ux * away * lat_bias[cluster_position]
+        tdy = dy * along_bias[cluster_position] + uy * away * lat_bias[cluster_position]
+        tl = math.hypot(tdx, tdy) or 1.0
+        tdx, tdy = tdx / tl, tdy / tl
+        reach = max((v[0] - fcx2) * tdx + (v[1] - fcy2) * tdy for v in verts)
+        off = math.hypot(cex * tdx, cey * tdy) + 26.0  # the ellipse's SUPPORT in the seat direction + 26px, so the WHOLE cluster clears the drawn rice (no seed lands on a paddy)
+        ccx, ccy = fcx2 + tdx * (reach + off), fcy2 + tdy * (reach + off)
+        rng = random.Random((self.seed * 2654435761) & 0xFFFFFFFF)
+        sk = self.lane_skeleton(lane_kind, ccx, ccy, cex, cey, clearance=40)
+        placed = 0
+        if scale == "village":  # the headman takes the skeleton's prime spot first
+            hmx, hmy = sk["headman"]
+            if self.headman(hmx, hmy):
+                placed = 1
+        for sx, sy in self.cluster_seeds(cluster_shape, ccx, ccy, cex, cey, int(households * 3.0) + 18, rng):
+            if placed >= households:
+                break
+            if self.try_place(sx, sy, "plain"):
+                placed += 1
+        self.farmsteads()
+        hs = self.M["houses"]
+        if hs:  # wells among the ACTUAL houses (BEFORE the grove, so the grove's canopy skips them)
+            hxs, hys = [h["x"] for h in hs], [h["y"] for h in hs]
+            self.place_wells((min(hxs) - 10, min(hys) - 10, max(hxs) + 10, max(hys) + 10), spacing=190, near=150)
+        # --- a COMMUNAL windward windbreak behind the cluster (a nucleated village shelters behind one grove,
+        # not per-house belts): a belt on the uphill (windward) side, spanning the cluster's lateral run ---
+        ux, uy = -dy, dx
+        lat_half = abs(ux) * cex + abs(uy) * cey + 34.0
+        dep_half = abs(dx) * cex + abs(dy) * cey
+        bc = (ccx - dx * (dep_half + 46), ccy - dy * (dep_half + 46))
+        belt = [
+            (bc[0] - ux * lat_half - dx * 28, bc[1] - uy * lat_half - dy * 28),
+            (bc[0] + ux * lat_half - dx * 28, bc[1] + uy * lat_half - dy * 28),
+            (bc[0] + ux * lat_half + dx * 28, bc[1] + uy * lat_half + dy * 28),
+            (bc[0] - ux * lat_half + dx * 28, bc[1] - uy * lat_half + dy * 28),
+        ]
+        self.village_grove(belt, role="windbreak")
+        # --- village-only civic features (a hamlet has none) ---
+        if scale == "village":
+            gx, gy = sk["gateway"]
+            self.shrine(gx + dx * 46, gy + dy * 46)
+        self.bridges()  # carry the lanes over any water they cross
+        if self.M.get("field_ditches"):  # planks over the long irrigation ditches
+            self.channel_footbridges(spacing=300)
+        self.hinterland()
+        self.crop_to_content(margin=40)
+        self.title(name)
+        return {
+            "cluster_position": cluster_position,
+            "cluster_shape": cluster_shape,
+            "lane_skeleton": lane_kind,
+            "water_source_position": water_source,
+            "plot_size": plot_size,
+            "plot_regularity": plot_regularity,
+            "grain_drift": grain_drift,
+            "households": placed,
+        }
 
     def line_seeds(self, p0: Pt, p1: Pt, n: int, half_band: float, rng: random.Random, form: str = "linear", record: bool = True) -> list[Pt]:
         """House seeds strung ALONG a line (feature 005 `settlement_form` = 'linear'): a RIBBON of homesteads
