@@ -701,7 +701,13 @@ def _carve(
                 # lowest ground); an upper split level cascades into it and stays green - so a
                 # blue plot always abuts the drain
                 fill = FLOODED if (abuts and R.random() < 0.45) else R.choice(RICE_GREENS)
-                plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad], "fill": fill})
+                # `low` is the TOPOGRAPHY; `fill` is only the PICTURE. FLOODED tints a random 45% of the
+                # bottom level blue for texture, so it is not the low ground - it is a sample of it. The
+                # land-use overlays must key off `low`, never off the tint (feature 010).
+                # The band is the bottom TWO levels, not just the one on the drain: a real valley bottom
+                # has a wet backswamp with width, not a one-plot hem. Its exact extent is unrecorded, so
+                # this is a CALIBRATED LIBERTY (constitution XII) - see the note in `apply_land_use`.
+                plots.append({"poly": [(round(pq[0], 1), round(pq[1], 1)) for pq in quad], "fill": fill, "low": li >= nlev - 2})
 
     # HEM PASS: guarantee the whole field edge meets the drain. The per-sector closers cover
     # most of it, but a straight-line drain that dips below a shallower sector can leave a
@@ -903,8 +909,9 @@ def build_terraces(
     boundaries = [contour(i * step, 16.0 + R.uniform(-4, 7), R.uniform(0, 2 * math.pi)) for i in range(n_terraces + 1)]
     for i in range(n_terraces):
         poly = [*boundaries[i], *reversed(boundaries[i + 1])]
-        fill = FLOODED if i >= n_terraces - 3 else R.choice(RICE_GREENS)  # the low terraces sit wettest
-        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in poly], "fill": fill})
+        low = i >= n_terraces - 3  # the low terraces sit wettest - the topography, not the tint (feature 010)
+        fill = FLOODED if low else R.choice(RICE_GREENS)
+        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in poly], "fill": fill, "low": low})
         bund_lines.append([(round(x, 1), round(y, 1)) for x, y in boundaries[i + 1]])  # the retaining lip at each terrace's low edge
 
     # envelope: the two flank edges + the top and bottom contours (the outer boundary of the whole stack)
@@ -990,8 +997,9 @@ def build_polder(
             s0, s1, t0, t1 = r * cell, (r + 1) * cell, c * cell, (c + 1) * cell
             g = 4.0  # a hairline gap = the bund between cells
             quad = [grid(s0 + g, t0 + g), grid(s0 + g, t1 - g), grid(s1 - g, t1 - g), grid(s1 - g, t0 + g)]
-            fill = FLOODED if r >= rows - 2 else R.choice(RICE_GREENS)
-            plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill})
+            low = r >= rows - 2  # the lowest rows of the polder (feature 010)
+            fill = FLOODED if low else R.choice(RICE_GREENS)
+            plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill, "low": low})
     span_s, span_t = rows * cell, cols * cell
     envelope = [grid(0, 0), grid(0, span_t), grid(span_s, span_t), grid(span_s, 0), grid(0, 0)]
     # the supply feeder runs STRAIGHT along the high (top) edge from the sluice, so its fork sits just above the
@@ -1059,8 +1067,9 @@ def build_ribbon(
     for i in range(n_bands):
         s0, s1 = i * step, (i + 1) * step
         quad = [edge(s0, -1), edge(s0, 1), edge(s1, 1), edge(s1, -1)]
-        fill = FLOODED if i >= n_bands - 3 else R.choice(RICE_GREENS)
-        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill})
+        low = i >= n_bands - 3  # the lowest bands down the valley floor (feature 010)
+        fill = FLOODED if low else R.choice(RICE_GREENS)
+        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill, "low": low})
     left = [edge(i * step, -1) for i in range(n_bands + 1)]
     right = [edge(i * step, 1) for i in range(n_bands + 1)]
     envelope = [*left, *reversed(right), left[0]]

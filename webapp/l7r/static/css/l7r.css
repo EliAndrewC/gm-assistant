@@ -2898,3 +2898,97 @@ textarea.roster-field__input { resize: vertical; min-height: 5rem; font-family: 
   0%   { box-shadow: 0 0 0 6px var(--vermillion-soft); }
   100% { box-shadow: 0 1px 3px var(--shadow-ink); }
 }
+
+/* ============================================================
+   Dreams section (feature 011)
+   Framework prose + scene bodies are full markdown (headings,
+   lists, blockquotes, occasional tables), so the reused
+   .detail-prose base is extended here for those elements.
+   ============================================================ */
+
+.dreams-framework,
+.dream-prose { text-align: left; }
+
+.dream-prose h2,
+.dreams-framework h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--ink);
+  margin: 2.5rem 0 0.9rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.dream-prose h3,
+.dreams-framework h3 {
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  color: var(--ink);
+  margin: 1.8rem 0 0.5rem;
+}
+
+.dream-prose ul, .dream-prose ol,
+.dreams-framework ul, .dreams-framework ol {
+  margin: 0 0 1.4rem;
+  padding-left: 1.3rem;
+}
+
+.dream-prose li, .dreams-framework li { margin: 0 0 0.5rem; }
+
+.dream-prose blockquote,
+.dreams-framework blockquote {
+  margin: 1.6rem 0;
+  padding: 0.3rem 0 0.3rem 1.2rem;
+  border-left: 3px solid var(--vermillion);
+  color: var(--ink);
+  font-style: italic;
+}
+
+.dream-prose strong,
+.dreams-framework strong { color: var(--ink); font-weight: 600; }
+
+/* Any table in dream content scrolls inside its own box so the page body
+   never scrolls horizontally (Principle I). */
+.dream-prose table,
+.dreams-framework table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0 0 1.4rem;
+  max-width: 100%;
+}
+.dream-prose th, .dream-prose td,
+.dreams-framework th, .dreams-framework td {
+  border: 1px solid var(--hairline);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+}
+
+/* Gallery header + empty state */
+.dreams-gallery__header { margin: 2.6rem 0 1.2rem; }
+.dreams-gallery__title {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  color: var(--ink);
+  margin: 0;
+}
+.dreams-gallery__empty { color: var(--ink-soft); font-style: italic; }
+.dreams-gallery__lede {
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  max-width: var(--reading-max);
+  margin: 0.5rem 0 0;
+}
+
+/* Dream cards reuse .card; the sender label reuses .card__clan but without
+   the clan-color dot. */
+.card--dream .card__clan::before { content: none; }
+
+/* The gallery grows slowly, so it must read as deliberate at any count -
+   including one. Auto-fit collapses empty tracks and the row centers, so a
+   lone card sits as a capped-width feature rather than stranded in a wide
+   multi-column grid; several cards wrap in a centered row. */
+.dream-cards {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 400px));
+  justify-content: center;
+}

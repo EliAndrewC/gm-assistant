@@ -1225,7 +1225,7 @@ class Settlement:
         to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
         SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
         source_and_sink) see a source. Returns the field envelope polygon."""
-        from waterfields import BEAN_GREEN, BUND, FLOODED
+        from waterfields import BEAN_GREEN, BUND
 
         for p in net["dry_plots"]:  # the dry upslope hem
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
@@ -1240,7 +1240,7 @@ class Settlement:
             # plot-based land-use overlays draw from. It is written HERE, by the field pass, so that
             # `overlays_on_wet_ground_only` compares two INDEPENDENTLY-produced records rather than
             # reading back the overlay's own self-report - a check that reads one source has no teeth.
-            if p["fill"] == FLOODED:
+            if p.get("low"):
                 self.M.setdefault("wet_plots", []).append(_centroid(p["poly"]))
         beads = "".join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
         self.add(f'<g opacity="0.85">{beads}</g>')
@@ -1298,7 +1298,7 @@ class Settlement:
         )
         return cast("list[Pt]", net["envelope"])
 
-    def apply_land_use(self, net: dict[str, Any], overlay: str, rng: random.Random, fraction: float = 0.32, eligible: str = "wet") -> int:
+    def apply_land_use(self, net: dict[str, Any], overlay: str, rng: random.Random, fraction: float = 0.55, eligible: str = "wet") -> int:
         """Overlay a LAND-USE archetype (feature 005 US4 `land_use_overlay`) onto an already-drawn comb field:
         recolor a FRACTION of the paddy plots (or, for tea, a hill-margin fringe) as the overlay crop, so a
         village growing mulberry-and-fishpond, lotus, or hill-tea reads distinctly from a plain-rice one.
@@ -1320,6 +1320,18 @@ class Settlement:
           on the tang banks with rice remaining the polder's main crop permanently). The wall-to-wall
           landscape is the rare end state, which is what the `mulberry_dike_fishpond` ARCHETYPE is for.
           Do not delete this value; the two are different scales of the same system, not duplicates.
+        CALIBRATED LIBERTY (constitution XII, GM 2026-07-19) - disclosed, not hidden. Eligibility keys off
+        the plot's `low` flag, and `low` is the bottom TWO levels of each field sector rather than only the
+        one hemming the drain. Two things drove that. (1) Correctness: `FLOODED` is a random 45% tint over
+        the bottom level for visual texture, so keying off it made eligibility an accident of RENDERING.
+        (2) A liberty: how wide a valley bottom's wet backswamp ran is not recorded, and the research puts a
+        lotus-growing village anywhere from a few percent to ~10-15% of field area - itself an interpolation,
+        the weakest number in that report. Binding to the single drain-side hem put lotus at ~2%, technically
+        inside the range but so sparse the knob stopped doing its job of making villages look distinct. We
+        therefore chose the UPPER part of a plausible range for a stated non-historical reason (legibility).
+        What this does NOT do is invent a range: lotus stays on genuinely low ground, and the overlay still
+        cannot touch the upper field.
+
         - `lotus` (藕田): models DEEP-WATER lotus (深水藕, 30-50cm, tolerating ~1m) against paddy rice's
           ~5-9cm optimum - it physically cannot sit on high ground, so eligible = FLOODED plots. Shallow-
           water lotus (浅水藕) in ordinary paddy is real but is NOT modeled: it is an economic choice
@@ -1333,8 +1345,6 @@ class Settlement:
         - `rape` (油菜): REMOVED and must not return. Rice and rape are two halves of ONE seasonally-
           synchronized rotation in the SAME plot, so they are never both standing - at any percentage and
           in any pattern. Do not re-add it here."""
-        from waterfields import FLOODED
-
         if overlay not in ("none", "mulberry_fishpond", "lotus", "tea_fringe"):
             raise ValueError(f"unknown land_use_overlay {overlay!r}")
         self.M["meta"]["land_use_overlay"] = overlay
@@ -1365,8 +1375,14 @@ class Settlement:
         # ARCHETYPE. At that scale the ponds really have engulfed the ordinary ground too - Shunde county
         # went from ~4.6% dike-pond in 1581 to rice under one-tenth of land by c. 1900 on the same terrain.
         # It is a deliberate, named opt-out, NOT the default, because the mixed patchwork is the norm.
-        elig = list(plots) if eligible == "all" else [p for p in plots if p["fill"] == FLOODED]
-        take = min(len(elig), max(2, int(len(plots) * fraction)))
+        elig = list(plots) if eligible == "all" else [p for p in plots if p.get("low")]
+        # `fraction` is the ECONOMIC term: the share of the ELIGIBLE ground that actually converted, NOT a
+        # share of the whole field. Keeping it a share of the field made it inert - the eligible set is
+        # always smaller than fraction*all, so every village converted 100% of its low ground and the
+        # economic term decided nothing. As a share of eligible it varies independently of topography,
+        # which is the whole point: Shunde was ~5% dike-pond county-wide while containing townships past
+        # 50% the same year, on identical terrain.
+        take = min(len(elig), max(2, round(len(elig) * fraction)))
         chosen = self._pick_overlay_plots(elig, take, clustered=(overlay == "mulberry_fishpond" and eligible != "all"), rng=rng)
         for p in chosen:
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
@@ -2235,7 +2251,7 @@ class Settlement:
             lx, ly = label_xy if label_xy else (min(xs) + (self.W - min(xs)) / 2, (min(ys) + max(ys)) / 2)
             self.label(lx, ly, label, 14, italic=True, weight="bold", color="#3E5631")
 
-    def manor(self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0) -> None:
+    def manor(self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0, gate_ft: float = 12.0) -> None:
         """A walled samurai compound (e.g. a magistrate's manor / hunting lodge) shown
         as a feature on a settlement map: ONLY the walls + gate + empty court. The
         interior is deliberately not drawn here - it is the subject of its own Mode A
@@ -2244,9 +2260,18 @@ class Settlement:
         toward whatever the compound fronts (the town / road it sits at the edge of). There
         is no universal default direction (it depends where the town is), but SOUTH is the
         auspicious/formal fallback. `rot` TILTS the whole compound (degrees) so it can parallel
-        a diagonal road or river it fronts. Blocks houses."""
+        a diagonal road or river it fronts. Blocks houses.
+        TO SCALE (GM 2026-07-19): the gate opening is `gate_ft` real feet (default 12 - a
+        nagayamon/yakuimon passes a cart and palanquin; a grand yamen passes gate_ft=18-24),
+        the wall draws ~2 ft thick (true-width-or-floored at 2px), and the gate posts are
+        ~2 ft squares (floored ~3px). The blank court is DELIBERATE - the interior is the
+        subject of its own Mode A diagram when the PCs visit; the wall + gate carry the
+        realism, so they are the parts that must be honest. Records gate_w/wall_w (px)."""
         hw, hh = w / 2, h / 2
         wall = '#2D2A24'
+        gg = max(self.px(gate_ft) / 2, 2.0)  # gate HALF-gap: real feet, floored so the opening stays visible
+        ww = max(self.px(2), 2.0)  # wall thickness: ~2 ft dobei, 2px cartographic floor
+        gp = max(self.px(2), 3.0)  # gate post: ~2 ft square, floored for visibility
         a = math.radians(rot)
         ca, sa = math.cos(a), math.sin(a)
 
@@ -2263,17 +2288,17 @@ class Settlement:
         gcl = sides[gate_dir][2]
         for name, (pa, pb, (gx, gy), outv) in sides.items():
             if name != gate_dir:
-                g.append(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
+                g.append(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
             elif outv[1] == 0:  # vertical wall (west/east) - gap in y
-                g.append(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pa[0]:.0f}" y2="{gy - 34:.0f}" stroke="{wall}" stroke-width="6"/>')
-                g.append(f'<line x1="{pb[0]:.0f}" y1="{gy + 34:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
-                for py in (gy - 34, gy + 34):
-                    g.append(f'<rect x="{gx - 7:.0f}" y="{py - 7:.0f}" width="14" height="14" fill="{wall}"/>')
+                g.append(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pa[0]:.0f}" y2="{gy - gg:.1f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                g.append(f'<line x1="{pb[0]:.0f}" y1="{gy + gg:.1f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                for py in (gy - gg, gy + gg):
+                    g.append(f'<rect x="{gx - gp / 2:.1f}" y="{py - gp / 2:.1f}" width="{gp:.1f}" height="{gp:.1f}" fill="{wall}"/>')
             else:  # horizontal wall (north/south) - gap in x
-                g.append(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{gx - 34:.0f}" y2="{pa[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
-                g.append(f'<line x1="{gx + 34:.0f}" y1="{pb[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="6"/>')
-                for px in (gx - 34, gx + 34):
-                    g.append(f'<rect x="{px - 7:.0f}" y="{gy - 7:.0f}" width="14" height="14" fill="{wall}"/>')
+                g.append(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{gx - gg:.1f}" y2="{pa[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                g.append(f'<line x1="{gx + gg:.1f}" y1="{pb[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                for px in (gx - gg, gx + gg):
+                    g.append(f'<rect x="{px - gp / 2:.1f}" y="{gy - gp / 2:.1f}" width="{gp:.1f}" height="{gp:.1f}" fill="{wall}"/>')
         g.append('</g>')
         self.add(''.join(g))
         # interior intentionally left blank: the buildings inside (hall, stables, etc.)
@@ -2291,7 +2316,21 @@ class Settlement:
                 "east": ((x + hw, y - hh), (x + hw, y + hh)),
             }
             ward_walls = [name for name, (a, b) in msides.items() if name != gate_dir and self._ward_fence_cap(a, b) is not None]
-        self.M["manors"].append({"x": x, "y": y, "w": w, "h": h, "rot": rot, "label": label, "gate": [round(gctr[0], 1), round(gctr[1], 1)], "gate_dir": gate_dir, "ward_walls": ward_walls})
+        self.M["manors"].append(
+            {
+                "x": x,
+                "y": y,
+                "w": w,
+                "h": h,
+                "rot": rot,
+                "label": label,
+                "gate": [round(gctr[0], 1), round(gctr[1], 1)],
+                "gate_dir": gate_dir,
+                "ward_walls": ward_walls,
+                "gate_w": round(2 * gg, 2),
+                "wall_w": round(ww, 2),
+            }
+        )
         m = max(
             36 * self.bscale, 26
         )  # a building-half margin at the map's grain, floored so a standard dwelling's corner keeps the 14px office-abut clearance (a samurai_large needs seed luck - the sweep handles it)
@@ -2370,13 +2409,17 @@ class Settlement:
                 f"merchant_estate at ({x:.0f},{y:.0f}) {w:.0f}x{h:.0f}: no seat within the slide fan keeps the compound wall clear of water/fire towers - resite it (or the tower) in the gen"
             )
         x0, y0, x1, y1 = x - w / 2, y - h / 2, x + w / 2, y + h / 2
-        self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w:.0f}" height="{h:.0f}" fill="#EAD9B0" stroke="#5A4326" stroke-width="3.5"/>')  # walled court
+        mww = max(self.px(2), 1.6)  # wall ~2 ft (a merchant's lighter wall), floored for visibility
+        mgg = max(self.px(10), 3.5)  # gate opening ~10 real ft (a cart gate), floored
+        self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w:.0f}" height="{h:.0f}" fill="#EAD9B0" stroke="#5A4326" stroke-width="{mww:.1f}"/>')  # walled court
         # the gate gap (erases a slot of the wall stroke on the chosen side); gate point on that edge
-        gates = {"south": (x, y1, 24, 6), "north": (x, y0, 24, 6), "east": (x1, y, 6, 24), "west": (x0, y, 6, 24)}
+        gates = {"south": (x, y1, mgg, mww + 2), "north": (x, y0, mgg, mww + 2), "east": (x1, y, mww + 2, mgg), "west": (x0, y, mww + 2, mgg)}
         gx, gy, gw, gh = gates[gate_dir]
-        self.add(f'<rect x="{gx - gw / 2:.0f}" y="{gy - gh / 2:.0f}" width="{gw}" height="{gh}" fill="#EAD9B0"/>')
+        self.add(f'<rect x="{gx - gw / 2:.1f}" y="{gy - gh / 2:.1f}" width="{gw:.1f}" height="{gh:.1f}" fill="#EAD9B0"/>')
         self.building(x, y - 2, *self._dims("merchant_large"), "merchant_large")  # the large house inside the court
-        self.M.setdefault("merchant_estates", []).append({"x": round(x, 1), "y": round(y, 1), "w": w, "h": h, "gate": [round(gx, 1), round(gy, 1)], "gate_dir": gate_dir})
+        self.M.setdefault("merchant_estates", []).append(
+            {"x": round(x, 1), "y": round(y, 1), "w": w, "h": h, "gate": [round(gx, 1), round(gy, 1)], "gate_dir": gate_dir, "gate_w": round(mgg, 2), "wall_w": round(mww, 2)}
+        )
         m = 18 * self.bscale  # a building-half margin at the map's grain
         self.block_polys.append([(x0 - m, y0 - m), (x1 + m, y0 - m), (x1 + m, y1 + m), (x0 - m, y1 + m)])
 
@@ -3648,15 +3691,17 @@ class Settlement:
         self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="{h}" fill="#E7DDC4"/>')  # the swept precinct court
         wall = '#3A352C'
         sides = {"north": ((x0, y0), (x1, y0), cx, y0), "south": ((x0, y1), (x1, y1), cx, y1), "west": ((x0, y0), (x0, y1), x0, cy), "east": ((x1, y0), (x1, y1), x1, cy)}
+        mgg = max(self.px(12) / 2, 2.0)  # ceremonial gate: ~12 real ft opening (half-gap), floored
+        mww = max(self.px(2), 2.0)  # precinct wall ~2 ft, 2px cartographic floor (GM 2026-07-19 to-scale rule)
         for name, (a, b, gx, gy) in sides.items():
             if name != gate_dir:
-                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="5"/>')
+                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="{mww:.1f}"/>')
             elif name in ("west", "east"):  # vertical wall - gap in y
-                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{a[0]:.0f}" y2="{gy - 26:.0f}" stroke="{wall}" stroke-width="5"/>')
-                self.add(f'<line x1="{b[0]:.0f}" y1="{gy + 26:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="5"/>')
+                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{a[0]:.0f}" y2="{gy - mgg:.1f}" stroke="{wall}" stroke-width="{mww:.1f}"/>')
+                self.add(f'<line x1="{b[0]:.0f}" y1="{gy + mgg:.1f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="{mww:.1f}"/>')
             else:  # horizontal wall - gap in x
-                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{gx - 26:.0f}" y2="{a[1]:.0f}" stroke="{wall}" stroke-width="5"/>')
-                self.add(f'<line x1="{gx + 26:.0f}" y1="{b[1]:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="5"/>')
+                self.add(f'<line x1="{a[0]:.0f}" y1="{a[1]:.0f}" x2="{gx - mgg:.1f}" y2="{a[1]:.0f}" stroke="{wall}" stroke-width="{mww:.1f}"/>')
+                self.add(f'<line x1="{gx + mgg:.1f}" y1="{b[1]:.0f}" x2="{b[0]:.0f}" y2="{b[1]:.0f}" stroke="{wall}" stroke-width="{mww:.1f}"/>')
         # a wall that ABUTS a neighborhood (ward) fence yields to it: the fence is re-stamped over our
         # own wall there, so it renders ON TOP and IS that side of the precinct (recorded for the gate)
         ward_walls = [name for name, (a, b, gx, gy) in sides.items() if name != gate_dir and self._ward_fence_cap(a, b) is not None]
@@ -3666,7 +3711,7 @@ class Settlement:
         for sx in (x0 + 16, x1 - 16):  # tall memorial stupas flanking the hall
             self.add(f'<rect x="{sx - 3:.0f}" y="{cy - 9:.0f}" width="6" height="18" rx="2" fill="#B7B0A0" stroke="#5A584F" stroke-width="0.8"/>')
             self.add(f'<circle cx="{sx:.0f}" cy="{cy - 9:.0f}" r="3.4" fill="#B7B0A0" stroke="#5A584F" stroke-width="0.8"/>')
-        self.M["mausoleums"].append({"x": cx, "y": cy, "w": w, "h": h, "rot": 0, "label": label, "gate_dir": gate_dir, "ward_walls": ward_walls})
+        self.M["mausoleums"].append({"x": cx, "y": cy, "w": w, "h": h, "rot": 0, "label": label, "gate_dir": gate_dir, "ward_walls": ward_walls, "gate_w": round(2 * mgg, 2), "wall_w": round(mww, 2)})
         self.placed.append((cx, cy, w, h))
         m = 30 * self.bscale  # a building-half margin at the map's grain
         self.block_polys.append([(x0 - m, y0 - m), (x1 + m, y0 - m), (x1 + m, y1 + m), (x0 - m, y1 + m)])
@@ -3680,34 +3725,52 @@ class Settlement:
         religious order stands outside the caste system, so handling the dead does not pollute its caste).
         A cleared, scorched ground with a raised stone pyre platform, a wisp of smoke, and a small roofed
         shelter for the rite. Records M['cremation_grounds']; blocks placement."""
-        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="58" ry="40" fill="#C9BCA0" stroke="#8C7A56" stroke-width="1.5" opacity="0.85"/>')  # cleared scorched ground
-        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="34" ry="22" fill="#9A8A6A" opacity="0.5"/>')  # the burned center
-        self.add(f'<rect x="{cx - 18:.0f}" y="{cy - 12:.0f}" width="36" height="24" rx="2" fill="#8C8470" stroke="#4A463C" stroke-width="1.5"/>')  # stone pyre platform
-        self.add(f'<rect x="{cx - 13:.0f}" y="{cy - 7:.0f}" width="26" height="14" fill="#5A463A"/>')  # the ash bed
-        self.add(f'<rect x="{cx + 30:.0f}" y="{cy - 8:.0f}" width="22" height="16" rx="1.5" fill="#CDB890" stroke="#5A4326" stroke-width="1.2"/>')  # the officiants' shelter
-        self.add(f'<rect x="{cx + 30:.0f}" y="{cy - 8:.0f}" width="22" height="5" fill="#5A4326"/>')
-        self.M["cremation_grounds"].append({"x": round(cx, 1), "y": round(cy, 1), "w": 116, "h": 80, "rot": 0})
-        self.placed.append((cx, cy, 116, 80))
+        # TO SCALE (GM 2026-07-19; anchors in settlements.md): a sanmai's cleared working core is
+        # 30-80 real ft for a village/town, ~80-160 ft for a provincial city (even metropolitan
+        # Edo's Yoyogi crematory was only ~180 ft square); the pyre platform ~15x10 ft. The old
+        # glyph was FIXED-PIXEL (116x80px) and silently tripled at city scale.
+        across = 130.0 if self.M["meta"].get("scale") == "city" else 75.0
+        crx, cry = max(self.px(across) / 2, 14.0), max(self.px(across * 0.7) / 2, 10.0)
+        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{crx:.1f}" ry="{cry:.1f}" fill="#C9BCA0" stroke="#8C7A56" stroke-width="1.5" opacity="0.85"/>')  # cleared scorched ground
+        self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{crx * 0.58:.1f}" ry="{cry * 0.55:.1f}" fill="#9A8A6A" opacity="0.5"/>')  # the burned center
+        ppw, pph = max(self.px(15), 7.0), max(self.px(10), 5.0)
+        self.add(
+            f'<rect x="{cx - ppw / 2:.1f}" y="{cy - pph / 2:.1f}" width="{ppw:.1f}" height="{pph:.1f}" rx="1.5" fill="#8C8470" stroke="#4A463C" stroke-width="1.2"/>'
+        )  # stone pyre platform (~15x10 ft)
+        abw, abh = max(self.px(12), 5.0), max(self.px(8), 3.6)  # the ash bed ON the platform (~12x8 ft burn area)
+        self.add(f'<rect x="{cx - abw / 2:.1f}" y="{cy - abh / 2:.1f}" width="{abw:.1f}" height="{abh:.1f}" fill="#5A463A"/>')  # the ash bed
+        shw, shh = max(self.px(14), 7.0), max(self.px(10), 5.0)  # the officiants' shelter (~14x10 ft hut)
+        shx = cx + crx * 0.52
+        self.add(f'<rect x="{shx:.1f}" y="{cy - shh / 2:.1f}" width="{shw:.1f}" height="{shh:.1f}" rx="1.5" fill="#CDB890" stroke="#5A4326" stroke-width="1.2"/>')
+        self.add(f'<rect x="{shx:.1f}" y="{cy - shh / 2:.1f}" width="{shw:.1f}" height="{shh * 0.32:.1f}" fill="#5A4326"/>')
+        self.M["cremation_grounds"].append({"x": round(cx, 1), "y": round(cy, 1), "w": round(2 * crx, 1), "h": round(2 * cry, 1), "rot": 0})
+        self.placed.append((cx, cy, 2 * crx, 2 * cry))
         m = 8
-        self.block_polys.append([(cx - 58 - m, cy - 40 - m), (cx + 58 + m, cy - 40 - m), (cx + 58 + m, cy + 40 + m), (cx - 58 - m, cy + 40 + m)])
+        self.block_polys.append([(cx - crx - m, cy - cry - m), (cx + crx + m, cy - cry - m), (cx + crx + m, cy + cry + m), (cx - crx - m, cy + cry + m)])
         if label:
-            self.label(cx, cy - 40 - 8 if label_above else cy + 40 + 14, label, 11, italic=True, color="#6B5A3C")
+            self.label(cx, cy - cry - 8 if label_above else cy + cry + 14, label, 11, italic=True, color="#6B5A3C")
 
     def ossuary(self, cx: float, cy: float, label: str = "pauper ossuary mound") -> None:
         """A PAUPER OSSUARY MOUND - a communal earthen mound where the bones of the poor and the
         'unconnected dead' (muenbotoke - those with no family or temple to inter them) are gathered, by
         the cremation ground outside the walls. A low rounded mound with a single weathered marker stupa.
         Records M['ossuaries']; blocks placement."""
-        self.add(f'<ellipse cx="{cx}" cy="{cy + 6}" rx="46" ry="28" fill="#BCA878" stroke="#8C7A52" stroke-width="1.5"/>')  # the earthen mound
-        self.add(f'<ellipse cx="{cx}" cy="{cy - 2}" rx="30" ry="16" fill="#C8B584" opacity="0.7"/>')  # the crown (shading)
-        self.add(f'<rect x="{cx - 3:.0f}" y="{cy - 22:.0f}" width="6" height="20" rx="2" fill="#A8A294" stroke="#5A584F" stroke-width="0.8"/>')  # a weathered marker stupa
-        self.add(f'<circle cx="{cx:.0f}" cy="{cy - 22:.0f}" r="4" fill="#A8A294" stroke="#5A584F" stroke-width="0.8"/>')
-        self.M["ossuaries"].append({"x": round(cx, 1), "y": round(cy, 1), "w": 92, "h": 60, "rot": 0})
-        self.placed.append((cx, cy, 92, 56))
+        # TO SCALE (GM 2026-07-19; anchors in settlements.md): a muenzuka is a 10-30 real-ft
+        # mound (cremated, consolidated bone takes almost no volume; Kyoto's monumental Mimizuka
+        # is ~50 ft at the base). Drawn at ~40 ft with a small-glyph legibility floor - the old
+        # glyph was FIXED-PIXEL (92x60px = a 276 ft kofun at city scale).
+        orx = max(self.px(40) / 2, 9.0)
+        ory = orx * 0.62
+        self.add(f'<ellipse cx="{cx}" cy="{cy + ory * 0.2:.1f}" rx="{orx:.1f}" ry="{ory:.1f}" fill="#BCA878" stroke="#8C7A52" stroke-width="1.5"/>')  # the earthen mound
+        self.add(f'<ellipse cx="{cx}" cy="{cy - ory * 0.1:.1f}" rx="{orx * 0.64:.1f}" ry="{ory * 0.55:.1f}" fill="#C8B584" opacity="0.7"/>')  # the crown (shading)
+        self.add(f'<rect x="{cx - 2:.0f}" y="{cy - ory - 8:.1f}" width="4" height="9" rx="1.5" fill="#A8A294" stroke="#5A584F" stroke-width="0.8"/>')  # a weathered marker stupa
+        self.add(f'<circle cx="{cx:.0f}" cy="{cy - ory - 8:.1f}" r="2.6" fill="#A8A294" stroke="#5A584F" stroke-width="0.8"/>')
+        self.M["ossuaries"].append({"x": round(cx, 1), "y": round(cy, 1), "w": round(2 * orx, 1), "h": round(2 * ory, 1), "rot": 0})
+        self.placed.append((cx, cy, 2 * orx, 2 * ory))
         m = 8
-        self.block_polys.append([(cx - 46 - m, cy - 28 - m), (cx + 46 + m, cy - 28 - m), (cx + 46 + m, cy + 34 + m), (cx - 46 - m, cy + 34 + m)])
+        self.block_polys.append([(cx - orx - m, cy - ory - m), (cx + orx + m, cy - ory - m), (cx + orx + m, cy + ory + m), (cx - orx - m, cy + ory + m)])
         if label:
-            self.label(cx, cy + 34 + 14, label, 11, italic=True, color="#6B5A3C")
+            self.label(cx, cy + ory + 12, label, 11, italic=True, color="#6B5A3C")
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary") -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
@@ -4446,7 +4509,7 @@ class Settlement:
         """The provincial governor's walled mansion - a large compound, grander than a county
         magistrate's manor. Reuses the manor glyph (walls + gate + empty court; the interior is
         a separate Mode A diagram) and moves the record to M['governor_mansion']."""
-        self.manor(x, y, w, h, label, gate_dir=gate_dir)
+        self.manor(x, y, w, h, label, gate_dir=gate_dir, gate_ft=18.0)  # a yamen's formal gatehouse passes ~18 real ft
         self.M["governor_mansion"] = self.M["manors"].pop()  # not an outside samurai estate
         return self.M["governor_mansion"]
 

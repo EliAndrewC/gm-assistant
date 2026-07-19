@@ -11,6 +11,7 @@ split_factor: which Daikoku relic the PC handled (the Balance vs the Tally)
 attunement: near-ideal (sought the temple of their clan's patron and handled its relics in guided prayer)
 bands: {none: 2, unrelated: 2, meaningful: 6}
 roll: 1k1 (single d10)
+summary: Daidoji of the Aki lineage seek Daikoku's guidance on wringing a Masamune blade from an unwilling kinsman to help pay the lineage's debts.
 setting: Akishi, the province of the Aki lineage of the ruling Daidoji house (Crane). A past campaign, offered as the worked public example of the /dream framework.
 ---
 
@@ -47,9 +48,28 @@ Before rolling, each praying PC declares two things:
 1. **Which relic** they took up in guided prayer. The **Balance** attunes them to honest exchange and true gain; the **Tally** attunes them to the house's shared store and its holding-together across the blood.
 2. **Which way** they lean. **Pursue** means trying to secure the sword for the lineage, by whatever means the PC judges justified. **Decline** means not securing it, anywhere from an open refusal and protecting Nagamasa to a face-saving report to the governor, true or invented.
 
+### The roll
+
+Each praying PC rolls once. This scene's attunement is near-ideal - a relic handled in guided prayer at the Fortune's own temple - so the odds run about 20% no dream, 20% a meaningless dream, 50% a significant one, and 10% a significant dream that opens into lucid dreaming. The 10 is always the lucid result; the other faces are scrambled fresh for each night's sleep so they cannot be learned in advance.
+
+These are the **baseline** odds: no ill force has taken an interest in the PCs here, the party carries no weight heavy enough to tilt them, and the matter - the honest price of a bargain - stirs no great spirit. Only slightly different circumstances would move them: a PC already hunted by an ill power, guidance sought instead on the blood-hungry blade itself, or a graver sin on the party's hands could raise the chance of nothing, or of an actively misleading dream.
+
+| Roll | Result |
+|------|--------|
+| 1 | A significant dream |
+| 2 | A significant dream |
+| 3 | A significant dream |
+| 4 | No dream |
+| 5 | No dream |
+| 6 | A random, meaningless dream |
+| 7 | A significant dream |
+| 8 | A random, meaningless dream |
+| 9 | A significant dream |
+| 10 | A significant dream, and lucid dreaming |
+
 ### Choosing one relic
 
-The PCs are told of both relics in advance and each chooses which one to approach - the **Level Beam of Aki Tomobei**, a market-steward's beam-balance that will not settle level over a false or a forced bargain, or the **Twinned Tally of the Aki Granary**, the two halves of a storehouse tally split between the founder's heirs, which must be brought together to open the house's oldest store. Having chosen, a PC keeps clear of the other: each imbues a different aspect of Daikoku, and to draw on both at once would mix those aspects, which is dangerous. The choice is a deliberate one (and, as ever, a confession of what the PC is really asking).
+The PCs are told of both relics in advance and each chooses which one to approach - the **[Level Beam of Aki Tomobei](/relics/level-beam-of-aki-tomobei)**, a market-steward's beam-balance that will not settle level over a false or a forced bargain, or the **[Twinned Tally of the Aki Granary](/relics/twinned-tally-of-the-aki-granary)**, the two halves of a storehouse tally split between the founder's heirs, which must be brought together to open the house's oldest store. Having chosen, a PC keeps clear of the other: each imbues a different aspect of Daikoku, and to draw on both at once would mix those aspects, which is dangerous. The choice is a deliberate one (and, as ever, a confession of what the PC is really asking).
 
 ## Shared band: no dream (poorly remembered)
 

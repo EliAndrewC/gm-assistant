@@ -1,0 +1,47 @@
+{% extends "_layout.html" %}
+
+{% block title %}L7R dreams{% endblock %}
+
+{% block content %}
+<section class="container">
+  <div class="masthead">
+    <div class="masthead__copy">
+      <h1 class="masthead__title">Dreams</h1>
+      <p class="masthead__lede">Seeking the will of a Fortune in sleep - the theology, the reading, and worked examples.</p>
+    </div>
+    <span class="masthead__watermark" lang="ja" aria-hidden="true">夢</span>
+  </div>
+</section>
+
+{% if framework_html %}
+<section class="container">
+  <div class="dreams-framework detail-prose">
+    {{ framework_html|safe }}
+  </div>
+</section>
+{% endif %}
+
+<section class="container">
+  <header class="dreams-gallery__header">
+    <h2 class="dreams-gallery__title">Worked examples</h2>
+    <p class="dreams-gallery__lede">Drawn from concluded or purely illustrative situations and shown in full - read one to see how a sending is built, and how a group might read it.</p>
+  </header>
+  {% if scenes %}
+    <div class="cards dream-cards">
+      {% for scene in scenes %}
+        <a class="card card--dream" href="/dreams/{{ scene.slug }}">
+          <div class="card__top">
+            <span class="card__clan">{{ scene.sender.split(',')[0] }}</span>
+          </div>
+          <div class="card__foot">
+            <h3 class="card__name">{{ scene.title }}</h3>
+            <p class="card__summary">{{ scene.summary }}</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="dreams-gallery__empty">No worked examples yet. Check back soon.</p>
+  {% endif %}
+</section>
+{% endblock %}

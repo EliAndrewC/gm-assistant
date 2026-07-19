@@ -18,7 +18,6 @@ import pytest
 
 import settlement
 from settlement import Settlement, _centroid
-from waterfields import FLOODED
 
 
 def _town():
@@ -1935,7 +1934,7 @@ def test_land_use_overlay_draws_and_records_each_kind():
         if overlay != "tea_fringe":  # tea is a margin fringe, not plot-based, so it records no plot list
             # feature 010: the plot-based overlays record WHICH plots converted, and every one of them
             # must be a low/wet plot - the topographic eligibility filter.
-            wet = {tuple(_centroid(p["poly"])) for p in net["plots"] if p["fill"] == FLOODED}
+            wet = {tuple(_centroid(p["poly"])) for p in net["plots"] if p.get("low")}
             assert rec["eligible"] == "wet" and len(rec["plots"]) == n
             assert all(tuple(p) in wet for p in rec["plots"])
     # "none" records zero and draws nothing extra
@@ -1952,7 +1951,7 @@ def test_land_use_overlay_topography_paths():
     from waterfields import build_comb
 
     net = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=())
-    dry = {**net, "plots": [{**p, "fill": "#7FA05A"} for p in net["plots"]]}  # a field with NO low/wet ground
+    dry = {**net, "plots": [{**p, "low": False} for p in net["plots"]]}  # a field with NO low/wet ground
     s = Settlement(2000, 2800, seed=3)
     s.meta(name="LU1", scale="village", ftpx=1, down_deg=90)
     assert s.apply_land_use(dry, "lotus", __import__("random").Random(1)) == 0  # draws nothing, honestly
@@ -1963,7 +1962,7 @@ def test_land_use_overlay_topography_paths():
     n2 = s2.apply_land_use(dry, "mulberry_fishpond", __import__("random").Random(1), fraction=0.9, eligible="all")
     assert n2 > 0 and s2.M["land_use"][-1]["eligible"] == "all"
     # take >= len(eligible) short-circuits to "convert everything eligible"
-    two = [{"poly": [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)], "fill": FLOODED}] * 2
+    two = [{"poly": [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)], "low": True}] * 2
     assert len(Settlement._pick_overlay_plots(two, 5, clustered=True, rng=__import__("random").Random(1))) == 2
 
 
@@ -2191,7 +2190,7 @@ def test_pick_overlay_plots_grows_a_patch_from_its_seeds():
     than an evenly-spread subset of the same size would be."""
     import random as _r
 
-    row = [{"poly": [(float(i * 100), 0.0), (float(i * 100 + 90), 0.0), (float(i * 100 + 90), 90.0)], "fill": FLOODED} for i in range(20)]
+    row = [{"poly": [(float(i * 100), 0.0), (float(i * 100 + 90), 0.0), (float(i * 100 + 90), 90.0)], "low": True} for i in range(20)]
     got = Settlement._pick_overlay_plots(row, 6, clustered=True, rng=_r.Random(4))
     assert len(got) == 6
     xs = sorted(_centroid(p["poly"])[0] for p in got)

@@ -588,8 +588,8 @@
     <circle cx="648" cy="706" r="5"/>
     <!-- gatehouse -->
     <circle cx="328" cy="705" r="5"/>
-    <!-- stables (east eaves wall) -->
-    <circle cx="250" cy="692" r="5"/>
+    <!-- stables (NW eaves corner - clear of the stable-yard well to the E) -->
+    <circle cx="166" cy="653" r="5"/>
     <!-- servants' quarters -->
     <circle cx="392" cy="162" r="5"/>
   </g>

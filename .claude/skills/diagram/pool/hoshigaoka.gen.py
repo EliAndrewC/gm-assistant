@@ -382,7 +382,7 @@ s.shrine_hall(392, 1074, "", w=30, h=24, kind="shrine", primary=True,
 # graves foul water) and off the field/water front (背山面水: the non-arable back side). The high NW back is
 # taken by the sacred grove + the pond, so the graves sit on the clear lower-W slope below the grove. A village
 # plot (parish=False, not a temple parish ground), set back from all water + kept >=120px from the shrine (kegare).
-s.cemetery(178, 1030, 100, 70, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot, not a ruled rectangle
+s.cemetery(178, 1030, 48, 34, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot. Resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~96x68 ft), not 0.5+ - see settlements.md funerary anchors
 # The shrine sits APART from the village (past the graveyard at the water-mouth), beyond reach of the
 # communal wells, so it keeps its OWN well for purification/ablution (temizu) - a remote shrine is watered by
 # its own draw-point, not the village's (remote_shrine_has_own_well).

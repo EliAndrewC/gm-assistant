@@ -40,6 +40,7 @@ ENV PYTHONUNBUFFERED=1
 ENV L7R_RELIC_POOL_DIR=/app/skills/relic/pool
 ENV L7R_NAMES_DIR=/app/skills/name
 ENV L7R_PLACES_DIR=/app/skills/place-names
+ENV L7R_DREAM_POOL_DIR=/app/skills/dream/pool
 
 EXPOSE 8080
 

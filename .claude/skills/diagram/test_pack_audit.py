@@ -551,3 +551,15 @@ def test_frozen_fixtures_show_the_floating_kura_door() -> None:
     for name in ("ochiba-layout-red.svg", "hayakawa-layout-red.svg"):
         with open(os.path.join(_FIX, name)) as fh:
             assert pa.floating_doors(pa.parse_svg(fh.read()))  # the kura door 2 px inside its wall
+
+
+def test_tub_on_well_flagged_and_clear_passes() -> None:
+    on = _svg(_rect(0, 0, 300, 300, COURT), _rect(50, 50, 22, 22, pa.WELL_FILL), _tubgroup('<circle cx="60" cy="60" r="5"/>'))
+    assert pa.tubs_on_wells(pa.parse_svg(on))
+    off = _svg(_rect(0, 0, 300, 300, COURT), _rect(50, 50, 22, 22, pa.WELL_FILL), _tubgroup('<circle cx="200" cy="200" r="5"/>'))
+    assert pa.tubs_on_wells(pa.parse_svg(off)) == []
+
+
+def test_format_report_tub_on_well_section() -> None:
+    svg = _svg(_rect(0, 0, 300, 300, COURT), _rect(0, 0, 50, 120, "#DDB87A"), _rect(50, 50, 22, 22, pa.WELL_FILL), _tubgroup('<circle cx="60" cy="60" r="5"/>'))
+    assert "TUB ON WELL" in pa.format_report(pa.parse_svg(svg))

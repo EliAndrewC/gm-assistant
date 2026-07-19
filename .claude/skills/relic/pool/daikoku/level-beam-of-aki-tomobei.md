@@ -1,0 +1,19 @@
+---
+name: The Level Beam of Aki Tomobei
+japanese_romaji: Hakarizao
+japanese_kanji: 秤竿
+fortune: daikoku
+clan: crane
+temple: the Temple of Daikoku in the provincial city of Akishi, seat of the Aki lineage of the Daidoji
+named_entity: Aki Tomobei (a Daidoji market-steward of the Aki lineage who trued the markets of Akishi for forty years, and was ruined once for refusing to let a lord's forced bargain balance)
+relic_type: implement (beam-balance)
+summary: "A worn boxwood-and-brass beam-balance, its beam burned with the character for level, kept in the Akishi Temple of Daikoku; a bargain weighed upon it brings the beam dead level only when the trade is honest and freely made, and no weight will level it for a gift given under duress or a price paid by force."
+---
+
+A beam-balance of close-grained boxwood banded and capped in brass, the beam a little longer than a forearm, worn pale and smooth where forty years of hands steadied it at the center. From a bronze fulcrum-hook it hangs in perfect trim, two shallow brass pans swaying on triple silk cords beneath. Burned into the beam at the fulcrum, where the eye falls when the pans come to rest, is the single character 平 (*hei*, "level"). It hangs on a black-lacquered stand in the market-hall of the Akishi temple, a set of trued brass weights in a fitted box beside it, and it is called the Level Beam because on an honest bargain it comes to rest so flat that a drop of water set on the beam will not run.
+
+Aki Tomobei was a market-steward of the Aki lineage, the Daidoji house that has governed Akishi since the dawn of the Empire, and for forty years he trued the weights and measures of its markets. He held, and taught, that Daikoku blesses only the wealth that is honestly come by: that a bargain must be freely made or not made at all, and that a gift wrung from an unwilling hand is not a gift but a theft wearing a gift's clothes, which brings the Fortune's ruin and not his favor down upon the house that takes it. His name was a byword for fair dealing until his sixty-first year, when a Daidoji lord of a rival lineage pressed a farmer to sell a river-meadow for a fraction of its worth and brought the sale to Tomobei to be weighed and sealed as fair. Tomobei set the price against the land on this very balance, and the beam would not come level, and he would not seal it. The lord took his revenge through the Chancellery; Tomobei lost his stewardship and his standing and died a hired weigher in another man's market, and the Aki have honored him ever since for the beam he would not force.
+
+A disputed exchange is brought before the Level Beam and set upon it - the thing offered against the thing asked, or a gift against the goodwill it claims to carry - and the beam is watched. When the trade is honest and both hands are willing, the beam settles level and stays, dead flat under Daikoku's regard. When one party is coerced, or the gift is extorted, or the price is a lie, the beam will not come to rest however the weights are trimmed: it drifts, it hunts, it hangs a hair off true and will not settle, for Daikoku will not let a forced bargain lie level beside an honest one. Some who weigh a clean trade are graced with a single clear ring from the brass as the beam comes to rest, taken as a sign that the Fortune has set his hand upon the dealing; most feel nothing beyond the plain refusal of the beam to level on a crooked one, which the honest reckon sign enough.
+
+County magistrates of Akishi call for the beam when a "gift exchange" is challenged as a seizure in a gift's dress, and Aki merchants bring a weighty bargain before it to weigh not the goods but the willingness on both sides of the trade. The temple keeps the beam trued against Daikoku's masu and lends it to no cause it judges a pretext, for the Custodian holds with Tomobei that a balance made to seal a forced sale is worth less than no balance at all.

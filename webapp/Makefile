@@ -53,10 +53,13 @@ ui-verify: screenshots dom-audit
 prepare-deploy:
 	@echo "[deploy] syncing pool data into webapp/skills/"
 	@rm -rf skills
-	@mkdir -p skills/relic skills/name skills/place-names
+	@mkdir -p skills/relic skills/name skills/place-names skills/dream
 	@cp -r ../.claude/skills/relic/pool skills/relic/pool
 	@cp ../.claude/skills/name/pool-male.jsonl ../.claude/skills/name/pool-female.jsonl skills/name/
 	@cp ../.claude/skills/place-names/pool.jsonl skills/place-names/pool.jsonl
+	@# Dream scenes: copy the PUBLIC pool ONLY. pool-local/ is gitignored spoiler
+	@# content and must never enter the image (feature 011, FR-007).
+	@cp -r ../.claude/skills/dream/pool skills/dream/pool
 	@echo "[deploy] context ready: $$(find skills -type f | wc -l) files"
 	@echo "[deploy] snapshotting setting corpus into webapp/setting/"
 	@rm -rf setting

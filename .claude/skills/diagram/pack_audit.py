@@ -55,6 +55,7 @@ FIRE_WATER_FILL = "#8FB0C6"  # tensuioke (rain-water fire tubs). They are GUTTER
 _TUB_GROUP_RE = re.compile(rf'<g fill="{re.escape(FIRE_WATER_FILL)}"[^>]*>(.*?)</g>', re.DOTALL)
 TUB_MAX_GAP_FT: float = 3.5  # a wall-hugging tub sits ~1.7-2 ft from a wall (its own radius + eaves);
 # beyond this it is adrift in the court with no roof draining into it.
+TUB_WELL_MIN_PX: float = 1.0  # a fire-water tub overlapping a well glyph by more than this sits ON it
 
 # --- text labels (for the layer/legibility/proximity checks) ---
 _TEXT_RE = re.compile(r"<text\s([^>]*)>(.*?)</text>", re.DOTALL)
@@ -497,6 +498,25 @@ def fire_water_adrift(plan: ParsedPlan, max_gap_ft: float = TUB_MAX_GAP_FT) -> l
 
 
 @dataclass(frozen=True)
+class TubOnWell:
+    """A fire-water tub glyph overlapping a well glyph - they smear into one blob."""
+
+    x: float
+    y: float
+
+
+def tubs_on_wells(plan: ParsedPlan, min_px: float = TUB_WELL_MIN_PX) -> list[TubOnWell]:
+    """Fire-water tubs sitting ON a well. Both are small point-glyphs; overlapping ones read as
+    one object and are functionally wrong (a rain-fed fire tub is not the drawing well). Any real
+    overlap is a defect - move the tub to a different eaves corner."""
+    out: list[TubOnWell] = []
+    for t in plan.tubs:
+        if any(_overlap_px(t.x, t.y, t.x2, t.y2, w) >= min_px for w in plan.wells):
+            out.append(TubOnWell(t.x + t.w / 2, t.y + t.h / 2))
+    return out
+
+
+@dataclass(frozen=True)
 class Occluded:
     """A label or tub painted over by a feature drawn later in the SVG (not on the top layer)."""
 
@@ -819,6 +839,8 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
         lines.append(f"    LABEL CLASH: {cl.a!r} and {cl.b!r} overlap at svg({cl.x:.0f},{cl.y:.0f}) - move one apart")
     for dr in floating_doors(plan):
         lines.append(f"    DOOR ADRIFT: a door at svg({dr.x:.0f},{dr.y:.0f}) floats {dr.gap_ft:.1f} ft inside the building - set it on the wall")
+    for tw in tubs_on_wells(plan):
+        lines.append(f"    TUB ON WELL: a fire-water tub at svg({tw.x:.0f},{tw.y:.0f}) overlaps a well - move it to a different eaves corner")
     return "\n".join(lines)
 
 

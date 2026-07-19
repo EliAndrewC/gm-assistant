@@ -42,12 +42,21 @@ Empire-scale reference points, north to south (GM-established). Details and per-
 | **Otosan Uchi (Imperial)** | **New York City** | **baseline anchor - the ladder is pinned here** |
 | Kyuden Doji (Crane) | Atlantic City, NJ | |
 | Kyuden Kakita (Crane) | Ocean City, MD | coastal; map-derived, 146 mi north of Reiji |
+| Shinden Kitsune (Fox) | Charlottesville, VA | eastern foot of the Blue Ridge; town sits at the base, not on the mountain |
 | Shiro Etsuko (Crane) | Virginia Beach, VA | coastal Daidoji vassal house; the true seaside twin of landlocked Reiji, 25 mi north of it |
 | Shiro Reiji (Crab) | Roanoke Rapids, NC | landlocked, ~100 mi inland |
 | Kyuden Daidoji (Crane) | Savannah, GA | |
 | Shinden Asahina (Crane) | Tampa, FL | southern tip; least-exact (Earthquake Bay << Gulf) |
 
 Known imperfection to keep in mind: **Earthquake Bay is much smaller than the Gulf of Mexico**, so Asahina is a touch more continental than Tampa.
+
+### Choosing between equally-good analogs: pick the FAMOUS one
+
+When two or more real places fit the drivers about equally well, **choose the one the players will have heard of**. The analog is not only a data source, it is a phrase the GM says out loud at the table: "this place has the weather of Charlottesville" lands instantly, while "the weather of Big Island, Virginia" communicates nothing. A recognisable name does real work that a marginally better latitude does not.
+
+This is a tie-breaker, not an override. Latitude, continentality, and elevation still decide which places are *candidates*; fame only picks among them. Quantify the cost before trading: Shinden Kitsune took Charlottesville over Amherst at 0.35 deg further north and 230 ft lower, and those two errors nearly cancel (~+0.5F from the latitude, ~-0.8F from the elevation), so the trade was close to free. If the famous option costs a whole zone - a different season length, a rain shadow, a coast-vs-interior flip - it is not a tie, and accuracy wins.
+
+Where a real analog cannot satisfy every driver at once, record the shortfall in that place's `why` rather than quietly accepting it (see the Shinden Kitsune and Shinden Asahina entries).
 
 ### Deriving a latitude from a campaign map (method, so it need not be re-invented)
 

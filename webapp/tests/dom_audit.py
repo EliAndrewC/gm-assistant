@@ -61,6 +61,8 @@ PAGES = [
     ('names-picked', '/names?picked=male-hiroshi', True),
     ('places', '/places', True),
     ('place-detail', '/places/owari?via=random', True),
+    ('dreams', '/dreams', True),
+    ('dream-detail', '/dreams/daikoku-masamune-sword-akishi', True),
     ('auth-login', '/auth/login', False),
     ('terms', '/terms', False),
     ('privacy', '/privacy', False),
