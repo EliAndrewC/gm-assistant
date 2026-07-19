@@ -370,7 +370,7 @@
     <circle cx="830" cy="435" r="3" fill="#3A1810"/>
     <circle cx="900" cy="435" r="3" fill="#3A1810"/>
     <circle cx="970" cy="435" r="3" fill="#3A1810"/>
-    <!-- river-stones drying (small grey circles) -->
+    <!-- river-stones drying (small gray circles) -->
     <circle cx="848" cy="395" r="4" fill="#7E726A"/>
     <circle cx="862" cy="402" r="4" fill="#7E726A"/>
     <circle cx="848" cy="412" r="4" fill="#7E726A"/>

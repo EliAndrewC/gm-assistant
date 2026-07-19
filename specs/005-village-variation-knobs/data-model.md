@@ -1,6 +1,6 @@
 # Phase 1 Data Model: Village Visual Variation Knobs
 
-The "data" here is the knob catalogue and the village-spec shape - the structures the generator reads and the validator checks. No persisted database; these are in-memory structures in `settlement.py` and fields in the per-map `meta` + manifest.
+The "data" here is the knob catalog and the village-spec shape - the structures the generator reads and the validator checks. No persisted database; these are in-memory structures in `settlement.py` and fields in the per-map `meta` + manifest.
 
 ## Entity: Knob
 
@@ -16,7 +16,7 @@ A named degree of variation in a village's layout.
 
 **Resolution order per knob** (FR-001, FR-007, FR-014): pinned value (if the spec sets it) → else `roll(seed, context)` (if the map opts into rolling) → else `default`. A pinned value that fails its `typing_rule` is rejected/warned (FR-004), never silently drawn.
 
-### Phase-1 knob catalogue (Family A)
+### Phase-1 knob catalog (Family A)
 
 | Knob | Value space | Typing rule (excludes when...) |
 |------|-------------|-------------------------------|
@@ -26,7 +26,7 @@ A named degree of variation in a village's layout.
 | `water_source_position` | pond: `corner{NW,NE,SW,SE}` \| `mid_margin` \| `chain`; stream: `edge{N,E,S,W}` | source must sit uphill of the field intake (gravity feed); `chain` implies a smaller/drier catchment |
 | `plot_texture` | size `small_irregular` \| `medium` \| `large_block` \| `strip`; regularity `organic` \| `grid` | `grid` regularity implies a planned/surveyed field, not an organically-grown old one |
 | `grain_drift` | bounded angular drift off the fall-line (degrees) | none (always allowed; a gentle real-valley drift) |
-| `focal_feature_set` | subset of the Focal-feature catalogue (below) | per-feature typing (see Focal feature); the mandatory floor (primary shrine, graveyard, wells, windbreak) is always present and not part of this roll |
+| `focal_feature_set` | subset of the Focal-feature catalog (below) | per-feature typing (see Focal feature); the mandatory floor (primary shrine, graveyard, wells, windbreak) is always present and not part of this roll |
 
 Headman-house and primary-shrine positions are **derived** (not knobs): a function of `cluster_position` + `lane_skeleton` (headman at the lane's focal point; shrine at an edge/gateway per the existing shrine-placement rules).
 
@@ -38,14 +38,14 @@ The per-map declaration - today the `pool/<name>.gen.py` plus its `s.meta(...)`.
 |-------|---------|
 | `seed` | the RNG seed; drives every unpinned knob's roll deterministically |
 | geographic facts | `scale`, `down_deg` (water direction), water-source `kind` (pond/stream), optional `region`/`terrain` type |
-| pinned knobs | any subset of the knob catalogue, set explicitly |
+| pinned knobs | any subset of the knob catalog, set explicitly |
 | rolled knobs | the rest - resolved by `roll(seed, context)` |
 
 A minimal spec (FR-006) supplies only `seed` + `scale` + `down_deg` + water-source `kind` (+ optional region); the generator rolls the rest and emits a complete, gate-passing map. Existing hand-authored maps remain expressible by pinning knobs (FR: knob machinery is a superset of hand-authoring).
 
 ## Entity: Focal feature
 
-An optional, historically-attested village element drawn from a catalogue (research.md D4), placed by the existing overlap/placement invariants.
+An optional, historically-attested village element drawn from a catalog (research.md D4), placed by the existing overlap/placement invariants.
 
 | Feature | Placement typing |
 |---------|-----------------|

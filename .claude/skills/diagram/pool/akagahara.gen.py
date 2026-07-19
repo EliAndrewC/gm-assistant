@@ -64,7 +64,7 @@ RED_CLAY = '#C58A63'
 s.add(f'<rect width="{W}" height="{H}" fill="{RED_CLAY}" opacity="0.5"/>')
 
 
-def furrows(poly, colour, theta):
+def furrows(poly, color, theta):
     """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
@@ -79,7 +79,7 @@ def furrows(poly, colour, theta):
     while t <= diag / 2:
         mx, my = cx + nx * t, cy + ny * t
         g.append(f'<line x1="{mx-dx*diag/2:.1f}" y1="{my-dy*diag/2:.1f}" '
-                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{colour}" stroke-width="0.8" opacity="0.8"/>')
+                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{color}" stroke-width="0.8" opacity="0.8"/>')
         t += 5
     g.append('</g>')
     s.add(''.join(g))
@@ -160,7 +160,7 @@ s.M["channels"].append({"poly": [[SLUICE[0], SLUICE[1]], [749.0, 388.0], [774.6,
 # ~11 so the dispersed farms + their groves fit the margin (a dispersed farm needs ~2x a nucleated one's room).
 _rng = _random.Random(SEED + 1)
 s.lane([(345, 300), (318, 840), (292, 1440), (266, 2040), (242, 2560), (222, 2740)], width=6, clearance=30, worn=True, connector=True)   # winds S down the far-W back-slope (clear of the farm groves), off the bottom edge (H=2680)
-s.meta(settlement_form="dispersed", grove_prevalence=0.6)   # ~60% of the strewn farms carry a grove (still clearly dispersed); the open-yard farms pack without shading a neighbour
+s.meta(settlement_form="dispersed", grove_prevalence=0.6)   # ~60% of the strewn farms carry a grove (still clearly dispersed); the open-yard farms pack without shading a neighbor
 # Strew the farms across the field's high W margin as a DEEP 2D scatter (`scatter_seeds`): the 165px adjacency
 # band is wide enough to stagger them ~1.5 rows, so they read STREWN (an irregular scatter), NOT a single
 # straight edge-line - plus a few at the N head by the sluice. The homesteads concentrate on the dry W margin -

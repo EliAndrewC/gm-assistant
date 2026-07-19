@@ -441,7 +441,7 @@
     <circle cx="890" cy="362" r="3" fill="#3A1810"/>
     <circle cx="935" cy="362" r="3" fill="#3A1810"/>
     <circle cx="980" cy="362" r="3" fill="#3A1810"/>
-    <!-- river-stones drying (small grey circles) -->
+    <!-- river-stones drying (small gray circles) -->
     <circle cx="902" cy="322" r="4" fill="#7E726A"/>
     <circle cx="916" cy="329" r="4" fill="#7E726A"/>
     <circle cx="902" cy="339" r="4" fill="#7E726A"/>

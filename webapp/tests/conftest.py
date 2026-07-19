@@ -15,3 +15,13 @@ import pytest
 def sample_pool_dir() -> Path:
     """Directory containing fixture relic files for tests."""
     return Path(__file__).parent / 'fixtures' / 'pool_sample'
+
+
+@pytest.fixture(scope='session')
+def sample_dream_pool_dir() -> Path:
+    """The PUBLIC dream pool fixture dir.
+
+    Its parent also holds a sibling `pool-local/` with a decoy scene, so tests
+    can prove the loader never traverses to the spoiler tier (FR-007).
+    """
+    return Path(__file__).parent / 'fixtures' / 'dream_pool' / 'pool'

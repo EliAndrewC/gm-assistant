@@ -195,7 +195,7 @@ def _in_poly(x, y, poly):
     return c
 
 
-def furrows(poly, colour, theta):
+def furrows(poly, color, theta):
     """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
@@ -210,7 +210,7 @@ def furrows(poly, colour, theta):
     while t <= diag / 2:
         mx, my = fcx + nx * t, fcy + ny * t
         g.append(f'<line x1="{mx-dx*diag/2:.1f}" y1="{my-dy*diag/2:.1f}" '
-                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{colour}" stroke-width="0.8" opacity="0.8"/>')
+                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{color}" stroke-width="0.8" opacity="0.8"/>')
         t += 5
     g.append('</g>')
     s.add(''.join(g))
@@ -251,7 +251,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         if any(_pt_seg(x, y, ln[i][0], ln[i][1], ln[i + 1][0], ln[i + 1][1]) < 16
                for ln in avoid for (x, y) in dp["poly"] for i in range(len(ln) - 1)):
             continue                       # hem plot would ride the moat / ring road - skip it
-        s.dry_polys.append(dp["poly"])   # footprint-aware: houses/yards/groves stay OFF the crop, not just centred off it
+        s.dry_polys.append(dp["poly"])   # footprint-aware: houses/yards/groves stay OFF the crop, not just centered off it
         pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in dp["poly"])
         s.add(f'<polygon points="{pts}" fill="{dp["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
         furrows(dp["poly"], dp["furrow"], dp["theta"])
@@ -339,7 +339,7 @@ def veg_tract(name, bbox, seed):
             fill, fur = VEG_CROPS[prev]
             pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in quad)
             s.add(f'<polygon points="{pts}" fill="{fill}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
-            theta = (i * 0.9 + j * 1.5 + R.uniform(-0.15, 0.15)) % math.pi   # neighbours differ (family strips)
+            theta = (i * 0.9 + j * 1.5 + R.uniform(-0.15, 0.15)) % math.pi   # neighbors differ (family strips)
             furrows(quad, fur, theta)
             s.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in quad],
                                      "crop": prev, "theta": round(theta, 3)})
@@ -568,7 +568,7 @@ MOAT_FARMS = [("fw1", (1074, 1200), 175, 73, 190, (160, 210), (95, 125), (0.35, 
 for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     upstream = [p for p in MOAT if p[1] < tap[1] - 20]       # moat vertices NORTH of the tap (upstream of the southward current)
     mp = min(upstream, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
-    _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0          # outward: away from the city centre
+    _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0          # outward: away from the city center
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
     s.field_channel([mp, sl], '#6C9CBE', 7, 7)               # the visible tap: moat rim -> sluice
     _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,))
@@ -686,7 +686,7 @@ def top_up(kind, region, need, count_kinds=None):
     def door_clear(gx, gy, rot):
         # outward-facing-doors doctrine (2026-07-18): a gap-fill house still needs an UNBLOCKED
         # entrance. This is the gate's EXACT geometry (check_village city_house_doors_unblocked:
-        # the door-probe band vs ROTATED neighbour corners) rather than s.open_face_rot - the
+        # the door-probe band vs ROTATED neighbor corners) rather than s.open_face_rot - the
         # helper's conservative axis-aligned self.placed test cannot see a 90-degree frontage
         # house's true footprint (placed stores (w,h) unrotated), which is precisely where a fill
         # beside a street-facing row lands. Probe depth carries a 15% safety margin over the

@@ -36,7 +36,10 @@ s.draw_comb_field(net, "kuwabata-polder", {"kind": "pond", "pond": (sluice[0] - 
 # THE DIKE-POND SYSTEM: convert (almost) every cell to a fish pond rimmed by a mulberry dike (桑基魚塘)
 import random as __r
 
-s.apply_land_use(net, "mulberry_fishpond", __r.Random(SEED ^ 0x55), fraction=0.9)
+# eligible="all": this map IS the wholesale-conversion end state (the ARCHETYPE), the rare case where a
+# whole district went over to ponds and bought its grain in - so the ponds engulf the ordinary ground too,
+# not just the low hollows. Everywhere else the overlay is topographically filtered. See research.md D2.
+s.apply_land_use(net, "mulberry_fishpond", __r.Random(SEED ^ 0x55), fraction=0.9, eligible="all")
 
 # the PERIMETER DIKE - a heavier bund ringing the reclaimed block, the defining polder look
 _env = net["envelope"]

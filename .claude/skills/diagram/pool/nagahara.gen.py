@@ -46,7 +46,7 @@ s.meta(name="Nagahara", scale="city", walled=True, population=3000, ftpx=3, impe
 # drawn and the wall comes from it - not hand-tuned. The pre-feature 494x460 ring enclosed ~21%
 # more ground than this program justifies (the GM's "too much empty space", pinned as the
 # city_budget_fires_on_the_too_empty_nagahara regression); the whole layout was similarity-
-# shrunk x0.9083 about the wall centre onto the derived ring.
+# shrunk x0.9083 about the wall center onto the derived ring.
 BUDGET = plan_city(CityProgram(population=3000, river=True, aspect=460 / 494, nring=20), canvas=(3200, 2700))
 s.meta(budget=budget_to_manifest(BUDGET))
 
@@ -82,7 +82,7 @@ s.bound = [list(p) for p in RING]
 # ---- DECLARED QUARTERS (feature 006): tile the interior into zoned wedges split at the crossroads
 # (road x=CX, axis y=CY). NE = laborer (residential); SE = merchant + downstream burakumin (mixed);
 # SW = the government/samurai ward (mixed - civic compounds + samurai housing); NW = the temple
-# neighbourhood plus its monzen-machi commoner pocket (mixed - a temple town had dense pilgrim/
+# neighborhood plus its monzen-machi commoner pocket (mixed - a temple town had dense pilgrim/
 # craftsman housing around the halls, which also fills the ground the first draft left empty).
 def _qpt(i, n=48, inset=24):
     a = -math.pi / 2 + 2 * math.pi * i / n
@@ -96,7 +96,7 @@ def _qwedge(i0, i1, n=48):
 s.quarter(_qwedge(0, 12), "residential")   # NE laborer
 s.quarter(_qwedge(12, 24), "mixed")        # SE merchant + burakumin
 s.quarter(_qwedge(24, 36), "mixed")        # SW government/samurai ward
-s.quarter(_qwedge(36, 48), "mixed")        # NW temple neighbourhood + monzen
+s.quarter(_qwedge(36, 48), "mixed")        # NW temple neighborhood + monzen
 SAM_BND = [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)]
 s.corridors.append((SAM_BND, 15))   # reserve the WARD FENCE line before ANY pack so no house (samurai or burakumin) sits ON it (city_ward_fence_clear_of_structures)
 MARGIN = 96
@@ -181,7 +181,7 @@ def _in_poly(x, y, poly):
     return c
 
 
-def furrows(poly, colour, theta):
+def furrows(poly, color, theta):
     """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
@@ -196,7 +196,7 @@ def furrows(poly, colour, theta):
     while t <= diag / 2:
         mx, my = fcx + nx * t, fcy + ny * t
         g.append(f'<line x1="{mx-dx*diag/2:.1f}" y1="{my-dy*diag/2:.1f}" '
-                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{colour}" stroke-width="0.8" opacity="0.8"/>')
+                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{color}" stroke-width="0.8" opacity="0.8"/>')
         t += 5
     g.append('</g>')
     s.add(''.join(g))
@@ -237,7 +237,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         if any(_pt_seg(x, y, ln[i][0], ln[i][1], ln[i + 1][0], ln[i + 1][1]) < 16
                for ln in avoid for (x, y) in dp["poly"] for i in range(len(ln) - 1)):
             continue                       # hem plot would ride the moat / ring road - skip it
-        s.dry_polys.append(dp["poly"])   # footprint-aware: houses/yards/groves stay OFF the crop, not just centred off it
+        s.dry_polys.append(dp["poly"])   # footprint-aware: houses/yards/groves stay OFF the crop, not just centered off it
         pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in dp["poly"])
         s.add(f'<polygon points="{pts}" fill="{dp["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
         furrows(dp["poly"], dp["furrow"], dp["theta"])
@@ -310,7 +310,7 @@ grid([SAM_ST, MER_V1, MER_V2])
 # Suitengu (the river fortune - a river city prays to its water) + Ebisu (honest work and
 # trade - the wharf's fortune), with the Ministry of Rites that oversees them
 # Crab city -> the great temples are its two PATRON fortunes: EBISU here, BISHAMON in the
-# samurai quarter (below). SUITENGU, the river fortune a river city honours, is a small wayside
+# samurai quarter (below). SUITENGU, the river fortune a river city honors, is a small wayside
 # shrine among the smattering (unlabeled), NOT a great temple (city_temples_dedicated).
 TEMPLE_LANE = [(1073, 1216), (1480, 1216)]   # the E-W temple-neighborhood street; Rites + Ebisu front it, it meets the spine; W end lands IN the ring bed (ring centerline x~1029.5 at y1204) so it makes a clean T, not a sliver-short stub (city_streets_meet_through_lanes)
 grid([TEMPLE_LANE], width_ft=18)
@@ -325,10 +325,10 @@ for sx, sy in [(1272, 1122), (1292, 1152), (1258, 1186)]:   # small wayside shri
 s.label(1292, 1299, "temple neighborhood", 9, italic=True, color="#6B2A18")
 
 # MONZEN-MACHI: the temple town's commoner housing (pilgrims' inns, shrine craftsmen, their
-# servants) packs the NW ground around the halls. A temple neighbourhood was historically DENSE
+# servants) packs the NW ground around the halls. A temple neighborhood was historically DENSE
 # (Zenkoji, Ise, Naritasan monzen-machi), and this fills the quarter the first Nagahara draft left
 # nearly empty - the exact lopsidedness feature 006 exists to catch.
-# reserve the temple-neighbourhood LABEL grounds so the monzen packs avoid them (labels draw last)
+# reserve the temple-neighborhood LABEL grounds so the monzen packs avoid them (labels draw last)
 for _lx0, _ly0, _lx1, _ly1 in [(1133, 1172, 1247, 1194),   # 'Temple of Bishamon'
                                (1138, 1263, 1197, 1281),   # 'graveyard'
                                (1231, 1290, 1353, 1310)]:   # 'temple neighborhood'
@@ -497,12 +497,12 @@ MER_ST = [MER_V1, MER_V2]   # gridded in the skeleton
 # storefronts line the main-street stretch of the through-road between the crossroads and
 # the river gate (the road-market of a river city, inside the walls)
 s.fire_tower(1742, 1502, label="fire tower")   # amid the merchant dwellings, before the packs
-s.block_polys.append([(1714, 1484), (1769, 1484), (1769, 1528), (1714, 1528)])   # reserve the fire-tower + its label ground
+s.block_polys.append([(1690, 1484), (1769, 1484), (1769, 1548), (1690, 1548)])   # reserve the fire-tower + its label ground (widened W/S 2026-07-19: with the estate resited south, the label's SW flank became packable row ground and a merchant house seated under the caption)
 # reserve the cargo-canal corridor and the walled merchant-estate court BEFORE the packs fill
 # this ground: the Suzhou dock strip is a working waterway (no dwelling stands in it) and the
 # estate's court is walled ground, so no pack house may land on either
 s.block_polys.append([(1818, 1444), (1886, 1444), (1886, 1486), (1818, 1486)])   # canal mouth strip just inside the wall
-s.block_polys.append([(1707, 1439), (1800, 1439), (1800, 1513), (1707, 1513)])   # merchant estate court at (1753,1476), 62x46, + a house-half margin
+s.block_polys.append([(1704, 1511), (1797, 1511), (1797, 1585), (1704, 1585)])   # merchant estate court at (1750,1548), 62x46, + a house-half margin - resited 2026-07-19: the old seat by the dock ran its wall into the dock basin / fire tower / merchant street (the estate-wall siting rules); this seat clears the street band (west wall 1719 vs the x1710 street), the tower (north wall 1522 vs the tower's y<=1509 band), and all water
 # seat a well in the far-E merchant block BEFORE the frontage/packs run, so it reserves its own
 # court and the houses flow around it - the block is otherwise too dense to split its lone well's load
 s.well_at(1851, 1394)
@@ -512,11 +512,11 @@ s.frontage([(1501, 1330), (1898, 1330)], (["merchant"] * 3 + ["shop"]) * 16, ski
            width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
 front(MER_ST, (["merchant"] * 3 + ["shop"]) * 8, spacing=19, rows=1)
 s.merchant_storehouses(8)
-EST_M = [(1753, 1476, "south")]
+EST_M = [(1750, 1548, "south")]
 for ex, ey, gd in EST_M:
     s.merchant_estate(ex, ey, gate_dir=gd)
 _ML_SPOTS = [(1580, 1394), (1580, 1614)]
-_mer = (["merchant_house"] * 2 + ["servant"] + ["laborer"]) * 130   # 2:1:1 (was 3:1:1): interleaving more servants/laborers between the merchant homes is what keeps the merchant-to-merchant nearest-neighbour spread >= 1.3x the laborer warren (city_merchant_housing_spread) while the rows themselves stay contiguous
+_mer = (["merchant_house"] * 2 + ["servant"] + ["laborer"]) * 130   # 2:1:1 (was 3:1:1): interleaving more servants/laborers between the merchant homes is what keeps the merchant-to-merchant nearest-neighbor spread >= 1.3x the laborer warren (city_merchant_housing_spread) while the rows themselves stay contiguous
 _MER_COURT = 4   # 3->4: one more terrace row per block; the fine near=48 well passes still find the remaining courts
 # west strip (1567-1733) lacks a street - lace an alley (BEFORE the packs) so the houses aren't cut off
 alleys([[(1604, 1380), (1604, 1656)]])   # ONE continuous roji (the old three segments left open mouths at the row-band boundaries where a top_up house corner could clip an alley end); top pulled >46px clear of the main road (centerline y1330, so the top must start at y>=1377 - the road-frontage rows fill the ground between, blocking any lanes-should-meet reading)
@@ -654,7 +654,7 @@ def top_up(kind, region, need, count_kinds=None):
             return False
         # s.placed stores (w,h) UNROTATED, so a street-facing pack house rotated ~45-135 deg
         # reaches past the box the test above clears against (a -137deg samurai's bbox runs
-        # ~11.2px from centre vs the 6.65 stored) - test the true rotated AABBs too
+        # ~11.2px from center vs the 6.65 stored) - test the true rotated AABBs too
         for o in s.M["buildings"] + s.M["houses"]:
             if "w" not in o or abs(gx - o["x"]) > 42 or abs(gy - o["y"]) > 42:
                 continue
@@ -667,7 +667,7 @@ def top_up(kind, region, need, count_kinds=None):
     def door_clear(gx, gy, rot):
         # outward-facing-doors doctrine (2026-07-18): a gap-fill house still needs an UNBLOCKED
         # entrance. This is the gate's EXACT geometry (check_village city_house_doors_unblocked:
-        # the door-probe band vs ROTATED neighbour corners) rather than s.open_face_rot - the
+        # the door-probe band vs ROTATED neighbor corners) rather than s.open_face_rot - the
         # helper's conservative axis-aligned self.placed test cannot see a 90-degree frontage
         # house's true footprint (placed stores (w,h) unrotated), which is precisely where a fill
         # beside a street-facing row lands. Probe depth carries a 15% safety margin over the

@@ -67,7 +67,7 @@ for _dp in net["dry_plots"]:
 s._nucleated = True                  # China-leaning default: a tight nucleated cluster, no per-house grove
 
 
-def furrows(poly, colour, theta):
+def furrows(poly, color, theta):
     """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
@@ -84,7 +84,7 @@ def furrows(poly, colour, theta):
         mx, my = cx + nx * t, cy + ny * t
         g.append(f'<line x1="{mx-dx*diag/2:.1f}" y1="{my-dy*diag/2:.1f}" '
                  f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" '
-                 f'stroke="{colour}" stroke-width="0.8" opacity="0.8"/>')
+                 f'stroke="{color}" stroke-width="0.8" opacity="0.8"/>')
         t += 5
     g.append('</g>')
     s.add(''.join(g))
@@ -96,7 +96,7 @@ for p in net["dry_plots"]:
     s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" '
           f'stroke-width="1.4" stroke-linejoin="round"/>')
     furrows(p["poly"], p["furrow"], p["theta"])
-    # record each dry plot (poly + furrow angle) so dry_plot_furrows_vary can verify neighbours differ
+    # record each dry plot (poly + furrow angle) so dry_plot_furrows_vary can verify neighbors differ
     s.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in p["poly"]],
                              "crop": p["crop"], "theta": round(p["theta"], 3)})
 
@@ -152,17 +152,17 @@ if net["brook"]:
 
 # FARMHOUSES: a nucleated cluster on the higher WEST margin (NW-high slope), below the pond and
 # west of the paddy - houses grouped, paddy radiating downhill to the SE. Seed a rough disk of
-# candidates; the bundle solver compacts each toward the nearest paddy bund and its neighbours,
+# candidates; the bundle solver compacts each toward the nearest paddy bund and its neighbors,
 # so the accepted homesteads pack into a nucleus hugging the field's high edge. Over-seed and cap
 # at ~70 (the Chinese rice-village norm is 30-60 households; Hoshigaoka's ~70 sits just above it).
 import random as _random  # noqa: E402
 
 _rng = _random.Random(SEED + 1)
-CX, CY = 400, 650                    # cluster centre on the higher W margin
+CX, CY = 400, 650                    # cluster center on the higher W margin
 
 # LANES go down BEFORE the houses - a lane lays a no-build corridor, so the homesteads FRONT it. They
 # are UNPAVED trodden earth, NARROW (a single wheelbarrow/packhorse/porter track - China moved goods by
-# wheelbarrow + shoulder-pole, not wide cart roads, so two carts could not pass) with no centre marking;
+# wheelbarrow + shoulder-pole, not wide cart roads, so two carts could not pass) with no center marking;
 # a village could never afford paving. A nucleated village is
 # laced with lanes: a main N-S spine through the cluster, and a spur east to the paddy edge that bridges
 # the village to its fields (spur field-end computed from the field geometry, not hand-placed).
@@ -195,7 +195,7 @@ for _ in range(240):
     _a = _rng.uniform(0, 2 * math.pi)
     _rad = _rng.random() ** 0.5
     _x = CX + math.cos(_a) * _rad * 165   # a concentrated disk; the placer then hugs each homestead to
-    _y = CY + math.sin(_a) * _rad * 250   # the paddy edge and packs it ALONG the field, against neighbours
+    _y = CY + math.sin(_a) * _rad * 250   # the paddy edge and packs it ALONG the field, against neighbors
     if s.try_place(_x, _y, "plain"):
         _placed += 1
 n_farms = s.farmsteads()

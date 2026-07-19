@@ -17,7 +17,8 @@ import tempfile
 import pytest
 
 import settlement
-from settlement import Settlement
+from settlement import Settlement, _centroid
+from waterfields import FLOODED
 
 
 def _town():
@@ -177,7 +178,7 @@ def test_title_without_a_view_centres_on_the_canvas():
     s.M["fields"] = [{"outline": [[-10, -10], [2010, -10], [2010, 1510], [-10, 1510]]}]  # full-canvas cover -> no gap
     s.title("Y")
     tb = s.M["title"]["bbox"]
-    assert abs((tb[0] + tb[2]) / 2 - 1000) < 2  # centred on W/2 = 1000
+    assert abs((tb[0] + tb[2]) / 2 - 1000) < 2  # centered on W/2 = 1000
 
 
 def test_mausoleum_yields_walls_to_abutting_ward_fences():
@@ -573,7 +574,7 @@ def test_rect_hits_detects_a_pure_edge_crossing():
 
 
 def test_label_hits_counts_a_grove_under_the_label():
-    # the _label_hits grove_rects arm: a label box centred on a homestead grove counts it as an
+    # the _label_hits grove_rects arm: a label box centered on a homestead grove counts it as an
     # obstacle (a label should not sit over a grove canopy).
     s = _crop_settlement()
     s.grove_rects = [(500, 500, 40, 40)]
@@ -633,11 +634,11 @@ def test_farmsteads_legacy_skips_grove_for_a_city_intramural_farm():
 
 def test_dry_polys_block_a_footprint_margin_not_just_the_center():
     # dry crop plots are FOOTPRINT-aware no-build cropland: block_polys test only a candidate's
-    # CENTER, which let a house centred just off a hem strip stand half its footprint on the crop
+    # CENTER, which let a house centered just off a hem strip stand half its footprint on the crop
     s = _crop_settlement()
     s.dry_polys.append([(300, 300), (500, 300), (500, 380), (300, 380)])
-    assert not s._fits(400, 340, 20, 14)  # centred inside the strip -> blocked
-    assert not s._fits(510, 340, 20, 14)  # centred 10px OUTSIDE: the footprint would overlap -> still blocked
+    assert not s._fits(400, 340, 20, 14)  # centered inside the strip -> blocked
+    assert not s._fits(510, 340, 20, 14)  # centered 10px OUTSIDE: the footprint would overlap -> still blocked
     assert s._fits(560, 340, 20, 14)  # well clear of the 12px margin -> fits
 
 
@@ -675,7 +676,7 @@ def test_clip_to_moat_snaps_a_connecting_end_onto_the_bed_edge():
 
 def test_clip_to_pond_snaps_a_connecting_end_onto_the_rim():
     s = _crop_settlement()
-    s.M["pond"] = [300, 300, 100, 80]  # centre (300,300), rx=100, ry=80; rim where rad==1
+    s.M["pond"] = [300, 300, 100, 80]  # center (300,300), rx=100, ry=80; rim where rad==1
 
     def rad(p):
         return ((p[0] - 300) / 100) ** 2 + ((p[1] - 300) / 80) ** 2
@@ -999,14 +1000,14 @@ def test_garden_fits_rejects_a_spot_outside_the_bound():
 def test_yard_fits_skips_own_house_and_rejects_a_neighbour():
     s = Settlement(1000, 1000, seed=1)
     s.placed.append((500, 500, 40, 28))  # the OWN house footprint -> the loop skips it
-    s.placed.append((520, 540, 40, 28))  # a neighbour where the yard would land -> rejected
+    s.placed.append((520, 540, 40, 28))  # a neighbor where the yard would land -> rejected
     assert s._yard_fits(520, 540, 32, 20, 500, 500) is False
 
 
 def test_garden_fits_skips_own_house_and_rejects_a_neighbour():
     s = Settlement(1000, 1000, seed=1)
     s.placed.append((500, 500, 40, 28))  # the OWN house footprint -> the loop skips it
-    s.placed.append((545, 500, 40, 28))  # a neighbour where the garden would land -> rejected
+    s.placed.append((545, 500, 40, 28))  # a neighbor where the garden would land -> rejected
     assert s._garden_fits(545, 500, 24, 16, 500, 500, (500, 560, 32, 20)) is False
 
 
@@ -1202,14 +1203,14 @@ def test_pack_core_skips_the_street_facing_band():
 def _hamlet_with_field(down_deg):
     s = Settlement(1000, 1000, seed=1)
     s.meta(name="H", scale="hamlet", down_deg=down_deg)
-    s.field_polys.append([(400, 400), (600, 400), (600, 600), (400, 600)])  # a paddy centred at (500,500)
+    s.field_polys.append([(400, 400), (600, 400), (600, 600), (400, 600)])  # a paddy centered at (500,500)
     return s
 
 
 def test_hinterland_scrub_ring_and_marsh_downhill_each_cardinal():
     # the reed MARSH toe sits on the DOWNHILL side of the field for each cardinal slope (exercises the four
     # direction branches); the cut-over SCRUB commons fills the 3 non-toe sides (scrub is the dominant cover;
-    # managed woodland is added as patches by the gen), each band centred clear of the paddy. down_deg in screen
+    # managed woodland is added as patches by the gen), each band centered clear of the paddy. down_deg in screen
     # angle: 90=S(+y), 270=N(-y), 0=E(+x), 180=W(-x).
     import math
 
@@ -1229,7 +1230,7 @@ def test_hinterland_scrub_ring_and_marsh_downhill_each_cardinal():
                 continue
             assert not (400 <= c["x"] <= 600 and 400 <= c["y"] <= 600)  # each RING band clears the paddy box
         dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
-        assert (toe[0]["x"] - 500) * dx + (toe[0]["y"] - 500) * dy > 0  # toe is downhill of field centre
+        assert (toe[0]["x"] - 500) * dx + (toe[0]["y"] - 500) * dy > 0  # toe is downhill of field center
 
 
 def test_hinterland_honors_hamlet_keepout_and_dry_plot_extent():
@@ -1383,10 +1384,10 @@ def test_village_grove_keeps_copse_out_of_a_garden_east_sun_lane():
 
 
 def test_relax_gardens_south_nudges_an_east_shaded_garden_south():
-    # a garden on the E lee side with a neighbour grove hard against its east, open ground south -> it shifts S
+    # a garden on the E lee side with a neighbor grove hard against its east, open ground south -> it shifts S
     s = Settlement(800, 800, seed=1)
     s.meta(name="V", scale="village", ftpx=2)
-    s.grove_rects = [(340, 300, 16, 40)]  # a neighbour grove arm just east of the garden
+    s.grove_rects = [(340, 300, 16, 40)]  # a neighbor grove arm just east of the garden
     beds = [(320, 300, 12, 12)]  # garden east edge x=326; tree west edge=332 (in band)
     rec = {"x": 300, "y": 300, "w": 23, "h": 14, "geom": {"house": (300, 300, 23, 14), "yard": (300, 322, 20, 12), "gardens": list(beds)}}
     s._relax_gardens_south([rec])
@@ -1462,7 +1463,7 @@ def test_paddy_field_marks_taxfree_plots_and_a_fallow_patch_and_labels():
     s.paddy_field((150, 150, 470, 470), "Rice", "f", taxfree=2, fallow_patch=[[250, 250], [380, 250], [380, 380], [250, 380]])
     assert s.M["taxfree"]  # tax-free plots recorded -> _taxfree_plots did real work
     assert s.M["fallow_patches"]  # blighted sub-region recorded
-    assert any(lab[5] == "Rice" for lab in s.M["labels"])  # field name labelled
+    assert any(lab[5] == "Rice" for lab in s.M["labels"])  # field name labeled
 
 
 # ---- water_field: the BBOX-shape branch + taxfree + label ----------------------------------
@@ -1496,7 +1497,7 @@ def test_lane_unworn_draws_a_dashed_causeway():
     s = _village()
     s.lane([(100, 300), (500, 300)], width=6, worn=False)
     assert s.M["lanes"][-1]["worn"] is False
-    assert 'stroke-dasharray="8,8"' in "".join(s.out)  # the dashed centreline of a paved lane
+    assert 'stroke-dasharray="8,8"' in "".join(s.out)  # the dashed centerline of a paved lane
 
 
 # ---- shrine: the primary Shinto hall glyph -------------------------------------------------
@@ -1528,7 +1529,7 @@ def test_try_place_abandoned_places_a_lone_ruin_without_a_bundle():
 def test_rect_blocked_by_a_hill_or_pond_ellipse():
     s = _village()
     s.ellipses.append((300, 300, 80, 60))  # a hill/pond footprint
-    assert s._rect_blocked((300, 300, 40, 26), fields=False) is True  # bed centre inside the ellipse
+    assert s._rect_blocked((300, 300, 40, 26), fields=False) is True  # bed center inside the ellipse
 
 
 # ---- _bundle_side_fits: the OUT-OF-BOUNDS bbox branch --------------------------------------
@@ -1600,7 +1601,7 @@ def test_city_wall_drops_a_mural_tower_boxed_in_on_both_sides():
 # ------------------------------------------------------------------------------------------------
 # Knob engine (feature 005, Phase 2b): seeded, independent, historically-typed layout variation.
 # These are the FAILING-first tests for the shared machinery (Knob / knob_rng / register_knob /
-# resolve_knob + the Settlement pin/resolve surface); the actual Family-A knob catalogue lands in US1.
+# resolve_knob + the Settlement pin/resolve surface); the actual Family-A knob catalog lands in US1.
 # ------------------------------------------------------------------------------------------------
 
 
@@ -1691,7 +1692,7 @@ def test_settlement_resolve_default_when_unpinned_and_no_roll():
     assert s.resolve("t_def", do_roll=False) == "one"
 
 
-# ---- Family-A knob catalogue (feature 005, US1): value spaces + China-first typing rules ----------
+# ---- Family-A knob catalog (feature 005, US1): value spaces + China-first typing rules ----------
 
 
 def test_family_a_knobs_are_registered_with_expected_value_spaces():
@@ -1758,10 +1759,10 @@ def test_skeleton_layout_derives_distinct_headman_positions_per_skeleton():
     cx, cy, ex, ey = 400, 700, 120, 210
     hp = {k: settlement.skeleton_layout(k, cx, cy, ex, ey)["headman"] for k in settlement.LANE_SKELETONS}
     assert len(set(hp.values())) == len(hp)  # every skeleton's headman is a distinct point
-    assert hp["spine"][1] < cy  # spine: at the high head (above centre)
+    assert hp["spine"][1] < cy  # spine: at the high head (above center)
     assert hp["cross"] != (cx, cy) and settlement.skeleton_layout("cross", cx, cy, ex, ey)["market"] == (cx, cy)  # headman beside the market node
     assert hp["T"][1] < cy and hp["Y"][1] > cy  # T junction is upper, Y fork is lower
-    assert hp["waterside"][0] < cx  # waterside: fronting the water flank (west of centre)
+    assert hp["waterside"][0] < cx  # waterside: fronting the water flank (west of center)
 
 
 def test_skeleton_layout_gateway_is_downslope_and_market_only_for_cross():
@@ -1853,7 +1854,7 @@ def test_cluster_seeds_shapes_generate_and_record():
     ew = max(p[0] for p in elo) - min(p[0] for p in elo)
     assert ew < rw  # elongated is narrower across the margin
 
-    # split forms two lateral lobes -> the x-distribution is bimodal (few points near the centre line)
+    # split forms two lateral lobes -> the x-distribution is bimodal (few points near the center line)
     spl = s.cluster_seeds("split", 500, 700, 150, 220, 300, _r.Random(9))
     near_centre = sum(1 for p in spl if abs(p[0] - 500) < 30)
     assert near_centre < 0.15 * len(spl)  # a gap between the two sub-hamlets
@@ -1861,18 +1862,18 @@ def test_cluster_seeds_shapes_generate_and_record():
 
 def test_cluster_anchor_places_each_position_on_the_right_dry_margin():
     # cluster_position resolves against the field bbox + down_deg into an anchor off the paddy. Check each
-    # value lands on the expected side of the field centre relative to the fall (down_deg=90 -> downhill = +y).
+    # value lands on the expected side of the field center relative to the fall (down_deg=90 -> downhill = +y).
     import math as m
 
     s = Settlement(2000, 2000, seed=1)
     s.meta(name="Ca", scale="village")
-    fb = (600.0, 400.0, 1400.0, 1200.0)  # a field, centre (1000, 800)
+    fb = (600.0, 400.0, 1400.0, 1200.0)  # a field, center (1000, 800)
     fcx, fcy = 1000.0, 800.0
     dd = 90.0
     dx, dy = m.cos(m.radians(dd)), m.sin(m.radians(dd))  # (0, 1)
     ux, uy = -dy, dx  # (-1, 0)
 
-    def along(pos):  # signed along-slope offset of the anchor (>0 = downhill of centre)
+    def along(pos):  # signed along-slope offset of the anchor (>0 = downhill of center)
         cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
         return (cx - fcx) * dx + (cy - fcy) * dy
 
@@ -1880,13 +1881,13 @@ def test_cluster_anchor_places_each_position_on_the_right_dry_margin():
         cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
         return (cx - fcx) * ux + (cy - fcy) * uy
 
-    assert along("high_margin") < -400 and abs(lateral("high_margin")) < 30  # uphill, centred
+    assert along("high_margin") < -400 and abs(lateral("high_margin")) < 30  # uphill, centered
     assert along("valley_head") < -400 and lateral("valley_head") != lateral("mid_margin")  # both high, opposite flanks
     assert along("mid_margin") < -400
     assert abs(lateral("flank")) > 400 and abs(along("flank")) < 30  # off to a cross-slope side
     assert along("valley_mouth") > 0 and abs(lateral("valley_mouth")) > 400  # low end, but on the dry shoulder
     assert along("on_rise") < -300  # a high-corner knoll
-    # the anchor centre sits OFF the paddy footprint (never inside the field bbox) for the margin positions
+    # the anchor center sits OFF the paddy footprint (never inside the field bbox) for the margin positions
     for pos in ("high_margin", "valley_head", "mid_margin", "flank", "valley_mouth"):
         cx, cy, _ex, _ey = s.cluster_anchor(pos, fb, dd)
         assert not (fb[0] < cx < fb[2] and fb[1] < cy < fb[3])
@@ -1924,18 +1925,46 @@ def test_land_use_overlay_draws_and_records_each_kind():
     from waterfields import build_comb
 
     net = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=())
-    for overlay in ("mulberry_fishpond", "rape", "lotus", "tea_fringe"):
+    for overlay in ("mulberry_fishpond", "lotus", "tea_fringe"):
         s = Settlement(2000, 2800, seed=3)
         s.meta(name="LU", scale="village", ftpx=1, down_deg=90)
         n = s.apply_land_use(net, overlay, __import__("random").Random(1))
         assert n > 0 and s.M["meta"]["land_use_overlay"] == overlay and s.out
-        assert s.M["land_use"][-1] == {"overlay": overlay, "count": n}
+        rec = s.M["land_use"][-1]
+        assert rec["overlay"] == overlay and rec["count"] == n
+        if overlay != "tea_fringe":  # tea is a margin fringe, not plot-based, so it records no plot list
+            # feature 010: the plot-based overlays record WHICH plots converted, and every one of them
+            # must be a low/wet plot - the topographic eligibility filter.
+            wet = {tuple(_centroid(p["poly"])) for p in net["plots"] if p["fill"] == FLOODED}
+            assert rec["eligible"] == "wet" and len(rec["plots"]) == n
+            assert all(tuple(p) in wet for p in rec["plots"])
     # "none" records zero and draws nothing extra
     s0 = Settlement(2000, 2800, seed=3)
     s0.meta(name="LU0", scale="village", ftpx=1, down_deg=90)
     assert s0.apply_land_use(net, "none", __import__("random").Random(1)) == 0
     with pytest.raises(ValueError):
         s0.apply_land_use(net, "quinoa", __import__("random").Random(1))
+
+
+def test_land_use_overlay_topography_paths():
+    """Feature 010: the three placement paths - no eligible ground at all, the clustered dike-pond
+    growth, and the named wholesale-conversion opt-out that ignores the topographic filter."""
+    from waterfields import build_comb
+
+    net = build_comb(1900, 2680, (760, 320), 5, down_deg=90, field_fall=1260, offtakes_a=(0.32, 0.7), offtakes_b=())
+    dry = {**net, "plots": [{**p, "fill": "#7FA05A"} for p in net["plots"]]}  # a field with NO low/wet ground
+    s = Settlement(2000, 2800, seed=3)
+    s.meta(name="LU1", scale="village", ftpx=1, down_deg=90)
+    assert s.apply_land_use(dry, "lotus", __import__("random").Random(1)) == 0  # draws nothing, honestly
+    assert s.M["land_use"][-1]["plots"] == []
+    # eligible="all" is the ARCHETYPE opt-out: it converts ordinary rice ground too
+    s2 = Settlement(2000, 2800, seed=3)
+    s2.meta(name="LU2", scale="village", ftpx=1, down_deg=90)
+    n2 = s2.apply_land_use(dry, "mulberry_fishpond", __import__("random").Random(1), fraction=0.9, eligible="all")
+    assert n2 > 0 and s2.M["land_use"][-1]["eligible"] == "all"
+    # take >= len(eligible) short-circuits to "convert everything eligible"
+    two = [{"poly": [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)], "fill": FLOODED}] * 2
+    assert len(Settlement._pick_overlay_plots(two, 5, clustered=True, rng=__import__("random").Random(1))) == 2
 
 
 def test_archetype_knob_typing_rules():
@@ -1963,7 +1992,7 @@ def test_archetype_knob_typing_rules():
 
 
 def test_focal_catalogue_methods_draw_record_and_note():
-    # the rest of the focal catalogue (T020): each draws, records its footprint, and notes the focal feature
+    # the rest of the focal catalog (T020): each draws, records its footprint, and notes the focal feature
     # so the twin-detector's focal_set axis reads it.
     s = Settlement(2000, 2000, seed=2)
     s.meta(name="F", scale="village", ftpx=1)
@@ -2089,7 +2118,7 @@ def test_water_source_anchor_gravity_and_valid_set():
     # is rejected (gravity), and water_sources_for lists only the feedable set for a given fall + water kind.
     s = Settlement(2000, 2000, seed=1)
     s.meta(name="Ws", scale="village")
-    fb = (600.0, 400.0, 1400.0, 1200.0)  # centre (1000, 800); down_deg 90 -> downhill = +y (S)
+    fb = (600.0, 400.0, 1400.0, 1200.0)  # center (1000, 800); down_deg 90 -> downhill = +y (S)
     # an uphill (N) pond corner is fine and sits above the field
     sx, sy = s.water_source_anchor("corner_NW", fb, 90.0)
     assert sy < 400  # north of the field's top edge
@@ -2146,10 +2175,58 @@ def test_scatter_seeds_spreads_over_area_and_records_dispersed():
     assert len(pts) == 150
     assert s.M["meta"]["settlement_form"] == "dispersed"  # recorded (a twin-detector axis)
     assert all(((p[0] - 600) / 200) ** 2 + ((p[1] - 600) / 300) ** 2 <= 1.0 + 1e-6 for p in pts)  # within the ellipse
-    # an even (area-uniform) scatter fills the ellipse, not clumped at the centre
+    # an even (area-uniform) scatter fills the ellipse, not clumped at the center
     assert sum(1 for p in pts if math.hypot(p[0] - 600, p[1] - 600) > 150) > 30
     # record=False leaves meta untouched
     s2 = Settlement(1000, 1000, seed=1)
     s2.meta(name="S2", scale="village")
     s2.scatter_seeds(500, 500, 100, 100, 5, _r.Random(1), record=False)
     assert "settlement_form" not in s2.M["meta"]
+
+
+def test_pick_overlay_plots_grows_a_patch_from_its_seeds():
+    """Feature 010: the clustered dike-pond path. Conversion was 挖塘培基 - one household digging one
+    low plot in one dry season - so the patch GROWS outward from a seed by nearest-neighbor, rather
+    than sprinkling evenly. Assert the growth actually happened: the chosen plots are mutually nearer
+    than an evenly-spread subset of the same size would be."""
+    import random as _r
+
+    row = [{"poly": [(float(i * 100), 0.0), (float(i * 100 + 90), 0.0), (float(i * 100 + 90), 90.0)], "fill": FLOODED} for i in range(20)]
+    got = Settlement._pick_overlay_plots(row, 6, clustered=True, rng=_r.Random(4))
+    assert len(got) == 6
+    xs = sorted(_centroid(p["poly"])[0] for p in got)
+    assert xs[-1] - xs[0] <= 5 * 100 + 1  # contiguous run, not scattered over the full 2000px row
+    # unclustered takes the same eligible set but does NOT force contiguity
+    assert len(Settlement._pick_overlay_plots(row, 6, clustered=False, rng=_r.Random(4))) == 6
+
+
+def _estate_settlement():
+    s = Settlement(1200, 1200, seed=1)
+    s.meta(name="E", scale="city", ftpx=3, down_deg=90)
+    return s
+
+
+def test_estate_wall_must_stand_on_dry_private_ground():
+    """The municipal watch cannot be walled inside a private court, and the compound wall may not run
+    through working water. Each refusal path asserted directly rather than left to map geometry."""
+    s = _estate_settlement()
+    assert s._estate_wall_clear(600, 600, 100, 80)  # clear ground
+    s.M["fire_towers"] = [{"x": 600, "y": 600, "w": 10, "h": 10}]  # tower swallowed by the court
+    assert not s._estate_wall_clear(600, 600, 100, 80)
+    s2 = _estate_settlement()
+    s2.M["fire_towers"] = [{"x": 650, "y": 600, "w": 10, "h": 10}]  # tower ON the wall line
+    assert not s2._estate_wall_clear(600, 600, 100, 80)
+    s3 = _estate_settlement()
+    s3.M["canals"] = [{"poly": [(650, 400), (650, 800)], "w": 12}]  # canal crossing the wall
+    assert not s3._estate_wall_clear(600, 600, 100, 80)
+    s4 = _estate_settlement()
+    s4.M["pond"] = (650, 600, 40, 40)  # pond under the wall
+    assert not s4._estate_wall_clear(600, 600, 100, 80)
+
+
+def test_merchant_estate_raises_when_no_clear_seat_exists():
+    """Rather than draw a wall the gate will reject, an estate boxed in by water raises."""
+    s = _estate_settlement()
+    s.M["canals"] = [{"poly": [(x, 0), (x, 1200)], "w": 12} for x in range(400, 900, 40)]  # a thicket of canals
+    with pytest.raises(ValueError, match="no seat within the slide fan"):
+        s.merchant_estate(600, 600, 100, 80)

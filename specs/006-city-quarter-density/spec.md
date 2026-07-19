@@ -10,7 +10,7 @@
 
 ## Context and Problem Statement
 
-The `/diagram` skill generates top-down maps of L7R provincial cities and gates each one through an automated validator (`check_village.py`). A prior feature added a wall-sizing analysis (`city_capacity`) meant to answer "do the walls enclose too much or too little space for the target population." It shipped a city (Nagahara, target 3,000) that reads as broken to the GM: a densely packed east half, a NW temple quarter with zero commoner dwellings, a near-empty interior block, and roughly 35 commoner dwellings spilled OUTSIDE the walls to the north-east and south-east - an extramural neighbourhood that has no business being outside a walled city.
+The `/diagram` skill generates top-down maps of L7R provincial cities and gates each one through an automated validator (`check_village.py`). A prior feature added a wall-sizing analysis (`city_capacity`) meant to answer "do the walls enclose too much or too little space for the target population." It shipped a city (Nagahara, target 3,000) that reads as broken to the GM: a densely packed east half, a NW temple quarter with zero commoner dwellings, a near-empty interior block, and roughly 35 commoner dwellings spilled OUTSIDE the walls to the north-east and south-east - an extramural neighborhood that has no business being outside a walled city.
 
 The validator passed it anyway. Three defects let it through:
 
@@ -51,7 +51,7 @@ The generator declares the city's quarters explicitly: each quarter is a region 
 
 1. **Given** a generated walled city, **When** it is produced, **Then** the map records a set of quarters that tile the walled interior, each with a zone type, with reserves carrying a kind.
 2. **Given** a reserve quarter (e.g. a drill ground), **When** the city renders, **Then** that ground is visibly drawn as its declared kind, not left blank.
-3. **Given** a walled city that declares no quarters, **When** the validator runs, **Then** it flags the omission rather than silently falling back to a global-only judgement.
+3. **Given** a walled city that declares no quarters, **When** the validator runs, **Then** it flags the omission rather than silently falling back to a global-only judgment.
 
 ### User Story 3 - Wall-sizing recommends the right corrective action (Priority: P3)
 
@@ -71,7 +71,7 @@ When a city does not fit its population well, the capacity analysis tells the GM
 ### Edge Cases
 
 - A quarter polygon that crosses the wall line, or quarters that overlap each other or leave interior gaps uncovered - how is the interior partitioned and are gaps/overlaps flagged?
-- A small city where one quarter effectively spans most of the interior (does per-quarter degenerate back into a global judgement, and is that acceptable at small scale?).
+- A small city where one quarter effectively spans most of the interior (does per-quarter degenerate back into a global judgment, and is that acceptable at small scale?).
 - An unwalled provincial city (do quarters and inside-the-wall accounting apply, or is this walled-only?).
 - A legitimately-extramural cluster (samurai estates across a river, the wharf suburb) - must not be flagged as spilled dwellings.
 - A civic quarter (temples, government yamen) that is mostly open ground around its compounds - how much non-civic open is tolerated before it counts against the wall.
@@ -88,7 +88,7 @@ When a city does not fit its population well, the capacity analysis tells the GM
 - **FR-004**: The declared quarters MUST cover the walled interior; the validator MUST flag interior ground that belongs to no quarter, and MUST flag quarters that overlap or fall outside the walls.
 - **FR-005**: Reserve quarters MUST be rendered as their declared kind (a visible feature such as a drill ground surface, garden, or fields), so that intentional open ground is legible and distinguishable from accidental emptiness.
 - **FR-006**: The validator MUST evaluate residential (and mixed) quarters for LOCAL dwelling density and flag any such quarter whose density falls below (or above) an acceptable band, naming the quarter. A near-empty residential quarter or block MUST fail.
-- **FR-007**: The validator MUST flag a civic quarter whose non-civic open ground exceeds an allowed share, so emptiness cannot be hidden by labelling a mostly-empty region "civic."
+- **FR-007**: The validator MUST flag a civic quarter whose non-civic open ground exceeds an allowed share, so emptiness cannot be hidden by labeling a mostly-empty region "civic."
 - **FR-008**: Total declared reserve ground MUST be capped at ~20% of the walled interior; the validator MUST flag a city that exceeds the cap. (Rationale: a fifth of the interior comfortably fits a yamen drill ground plus temple gardens plus an agricultural district; beyond that the wall is enclosing more open ground than a provincial city justifies, which should read as "shrink the wall," not "reserve.")
 - **FR-009**: The wall-sizing analysis MUST compute the wall's residential capacity against USABLE residential ground (interior minus civic minus reserves), not the raw interior, so that civic and reserve ground reduce the residential capacity the wall is judged against.
 - **FR-010**: The wall-sizing analysis MUST return one of a small set of verdicts, each mapping to a distinct corrective action: densify (wall right, placement sparse), enlarge the wall (cannot hold target even packed), shrink the wall (residential program cannot fill the wall without excess open ground), or sized-and-packed (correct). The under-filled/"densify" boundary MUST align with the population tolerance so the capacity verdict and the population check agree.
@@ -96,7 +96,7 @@ When a city does not fit its population well, the capacity analysis tells the GM
 - **FR-012**: The pre-change Nagahara map MUST be snapshotted as a permanent negative fixture BEFORE any generator change, and the new checks MUST demonstrably fire on it (under-filled interior, empty NW quarter, near-empty block, extramural commoner dwellings). The good Tango map MUST be a positive fixture that the new checks pass.
 - **FR-013**: After the checks exist and fire on the bad fixture, the Nagahara generator MUST be corrected so the shipped city has no commoner dwellings outside the walls, every residential quarter within the density band, any intentional open ground declared and rendered as a reserve within the cap, and a wall sized so the residential quarters fill it - passing the full validator.
 - **FR-014**: The new checks MUST integrate with the existing red-first check discipline: add the general rule, prove it fires on the defective artifact, fix the artifact, then pin the defective manifest as a regression fixture; and unit-test each new check.
-- **FR-015**: The doctrine document for settlements MUST be updated to describe the quarter/zoning model, the per-quarter density judgement, the reserve rules, and the reframed wall-sizing verdicts, including the reasoning behind each threshold.
+- **FR-015**: The doctrine document for settlements MUST be updated to describe the quarter/zoning model, the per-quarter density judgment, the reserve rules, and the reframed wall-sizing verdicts, including the reasoning behind each threshold.
 - **FR-016**: Tango MUST be retrofitted to declare its quarters under the new model as part of THIS feature, and every walled city MUST declare quarters with no grandfathered exceptions. Both worked cities thus exercise the quarter-based checks, and Tango serves as the known-good calibration anchor for the density band. (Rationale: the band cannot be calibrated on the bad city alone; a live "declare quarters unless grandfathered" exception is exactly the kind of carve-out the next city would copy.)
 
 ### Non-Functional / Project Requirements

@@ -58,7 +58,7 @@ for _dp in net["dry_plots"]:
 s._nucleated = True
 
 
-def furrows(poly, colour, theta):
+def furrows(poly, color, theta):
     """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
@@ -75,7 +75,7 @@ def furrows(poly, colour, theta):
         mx, my = cx + nx * t, cy + ny * t
         g.append(f'<line x1="{mx-dx*diag/2:.1f}" y1="{my-dy*diag/2:.1f}" '
                  f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" '
-                 f'stroke="{colour}" stroke-width="0.8" opacity="0.8"/>')
+                 f'stroke="{color}" stroke-width="0.8" opacity="0.8"/>')
         t += 5
     g.append('</g>')
     s.add(''.join(g))
@@ -154,7 +154,7 @@ s.M["channels"].append({"poly": [[round(SLUICE[0], 1), round(SLUICE[1], 1)],
 # puts the cluster on the LOWER (SW) flank, hugging the field's SW-west edge, well above the marsh; the bulk of
 # the paddy rises above it to the NE. (Name-informed siting - see settlements.md.) =====
 _rng = random.Random(SEED + 1)
-CX, CY = 790, 1030                   # cluster centre on the LOWER/SW flank, downslope of the upper paddies
+CX, CY = 790, 1030                   # cluster center on the LOWER/SW flank, downslope of the upper paddies
 
 # LANES go down BEFORE the houses (a lane lays a no-build corridor the homesteads FRONT). A main ~N-S spine
 # through the cluster, a spur E to the paddy edge (stops at the field - no lane runs through the paddy), and a
@@ -177,7 +177,7 @@ for _ in range(220):
     _a = _rng.uniform(0, 2 * math.pi)
     _rad = _rng.random() ** 0.5
     _x = CX + math.cos(_a) * _rad * 155   # a concentrated disk; the bundle solver then hugs each homestead to
-    _y = CY + math.sin(_a) * _rad * 240   # the nearest paddy bund and packs it against its neighbours
+    _y = CY + math.sin(_a) * _rad * 240   # the nearest paddy bund and packs it against its neighbors
     if s.try_place(_x, _y, "plain"):
         _placed += 1
 n_farms = s.farmsteads()

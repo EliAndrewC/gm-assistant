@@ -59,7 +59,6 @@
   <g>
     <path d="M 510 900 L 510 750" stroke="#B89060" stroke-width="40" stroke-linecap="butt" opacity="0.55"/>
     <path d="M 510 900 L 510 750" stroke="#9C7448" stroke-width="40" stroke-dasharray="14 12" fill="none" opacity="0.4"/>
-    <text x="548" y="858" font-size="12" fill="#6B4F2A" font-style="italic">to the town's main street</text>
   </g>
 
   <!-- Lane from the east postern to the river landing (10.7 ft - a real
@@ -167,7 +166,6 @@
     <rect x="874" y="488" width="12" height="8"/>
     <rect x="874" y="534" width="12" height="8"/>
   </g>
-  <text x="952" y="500" text-anchor="end" font-size="8" font-style="italic" fill="#5C4830">landing gate</text>
   <!-- salt wards OUTSIDE every door, one on EACH SIDE of the opening (the
        ward keeps ill fortune from crossing the threshold, so it sits outside) -->
   <!-- landing gate (east wall), flanking the opening, outside (east) -->
@@ -182,7 +180,6 @@
     <rect x="134" y="286" width="12" height="8"/>
     <rect x="134" y="320" width="12" height="8"/>
   </g>
-  <text x="166" y="305" text-anchor="start" font-size="8" font-style="italic" fill="#5C4830">kitchen postern</text>
   <!-- kitchen postern (west wall), flanking, outside (west) -->
   <circle cx="129" cy="296" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
   <circle cx="129" cy="318" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
@@ -192,14 +189,12 @@
     <rect x="134" y="682" width="12" height="8"/>
     <rect x="134" y="720" width="12" height="8"/>
   </g>
-  <text x="166" y="722" text-anchor="start" font-size="8" font-style="italic" fill="#5C4830">service gate</text>
   <!-- Guests' river door (annex east wall, opening into the guest garden) -->
   <g fill="#2D2A24">
     <rect x="994" y="324" width="12" height="8"/>
     <rect x="994" y="356" width="12" height="8"/>
   </g>
   <path d="M 1004 344 L 1044 344 L 1044 510" stroke="#9C7448" stroke-width="6" stroke-dasharray="8 8" fill="none" opacity="0.5"/>
-  <text x="1034" y="386" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">river door</text>
   <!-- river door (annex east wall), flanking, outside (east) - the door
        Hajime fears most, so it is warded like the rest -->
   <circle cx="1010" cy="336" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>

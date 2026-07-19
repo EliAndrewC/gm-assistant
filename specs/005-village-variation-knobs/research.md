@@ -29,7 +29,7 @@ These vary the layout the seed currently only jitters within, so two nucleated b
 
 **Alternatives considered**: weighted preset bundles (roll a named "village type", jitter within) - rejected by the GM: more coherent out of the box but less variety and a coarser pin-one-knob story. Determinism is preserved either way (seeded draws; no wall-clock/`Math.random` - the skill already forbids nondeterministic entropy).
 
-## D4. Focal-feature catalogue (FR-009) - historical grounding
+## D4. Focal-feature catalog (FR-009) - historical grounding
 
 Each optional focus, its real basis (China-first), and its placement typing. All placed by the SAME overlap/placement invariants that already gate hand-authored features (off the paddy/marsh/lane, non-overlapping, set-backs).
 
@@ -46,7 +46,7 @@ Each is a substantial build (new field-geometry generator + archetype-specific v
 
 - **Field/terrain archetype**: broad-valley comb-fan (have it) / **contour terraces (梯田)** - curved contour bunds following the slope, village perched at the terrace head or foot (Longji, Yuanyang); / **polder grid (圩田/围田)** - rectilinear diked cells, water on multiple sides, village on the dike or a rise (Taihu, Dongting, Poyang lake regions); / **ribbon valley (谷戸-type)** - a narrow valley with a thin ribbon of paddy along a stream; / **mulberry-dike fish-pond (桑基鱼塘)** - a checkerboard of fish ponds with raised mulberry/cane dikes (Pearl River & Taihu deltas). Highest visual payoff: terraces (curved contours) and polder (rectilinear cells) are the furthest from the fan.
 - **Settlement form**: nucleated (have it) / **linear** (houses strung along a road, a dike-top, or a canal) / **water-town** (houses fronting canals with stone quays) / **dispersed** (scattered farmsteads, Tonami/Izumo type). Linear is the cheapest big differentiator.
-- **Land-use overlay**: rice-mono (have it) / rice + **mulberry-dikes + fish-ponds** / rice + **rape** (golden) / **lotus** ponds / **tea-terrace** fringe - a colour-and-texture layer over the field archetype. *Typing*: each overlay is region-typed (mulberry-fishpond = delta; tea = hill fringe; rape = rice-rape rotation belt).
+- **Land-use overlay**: rice-mono (have it) / rice + **mulberry-dikes + fish-ponds** / rice + **rape** (golden) / **lotus** ponds / **tea-terrace** fringe - a color-and-texture layer over the field archetype. *Typing*: each overlay is region-typed (mulberry-fishpond = delta; tea = hill fringe; rape = rice-rape rotation belt).
 
 **Sequencing recommendation**: prove the archetype-registry mechanism with ONE Family-B archetype first (linear settlement form OR contour terraces - biggest bang per unit build), before adding the rest.
 

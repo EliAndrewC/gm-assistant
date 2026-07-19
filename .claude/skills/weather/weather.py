@@ -256,12 +256,12 @@ def dry_info(daily: dict, i: int) -> tuple[bool, int, int]:
 
 
 def note_tags(daily: dict, cloud_map: dict, i: int) -> list[str]:
-    """Terse grounded tags for a table cell (e.g. 'a bit cool', '4th grey day')."""
+    """Terse grounded tags for a table cell (e.g. 'a bit cool', '4th gray day')."""
     _, tag, _, _ = temp_anomaly(daily, i)
     tags = [] if tag == "about normal" else [tag]
     oc = overcast_streak(daily, cloud_map, i)
     if oc >= 2:
-        tags.append(f"{ordinal(oc)} grey day")
+        tags.append(f"{ordinal(oc)} gray day")
     wet, dry, prior = dry_info(daily, i)
     if wet and prior >= 3:
         tags.append(f"first rain in {prior}d")
