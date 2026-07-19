@@ -219,7 +219,7 @@ n_bridges = s.channel_footbridges(spacing=320)
 print(f"footbridges: {n_bridges}")
 
 # the village burial ground in the Bishamon shrine's churchyard, just N of the hall (moved with the precinct)
-s.cemetery(BX, BY - 110, 82, 58, parish=False, organic=True)
+s.cemetery(BX, BY - 110, 46, 32, parish=False, organic=True)  # resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~92x64 ft at 2 ft/px), not 0.5+ - see settlements.md funerary anchors
 
 # BRIDGES carry every lane over the water it crosses (the connector track + spurs cross ditches/brooks)
 s.bridges()

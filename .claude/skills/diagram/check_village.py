@@ -1188,6 +1188,31 @@ RESERVE_CAP_FRAC = 0.20
 BUDGET_TOL_OVER = 0.08
 BUDGET_TOL_UNDER = 0.05
 
+# --- to-scale gates/walls + funerary features (GM, 2026-07-19) ------------------------------
+# Anchors researched 2026-07-19 (full memo in settlements.md "Historical grounding"):
+# GATES: a samurai residence gate (nagayamon/yakuimon) opens ~9-12 real ft; a grand yamen
+# gatehouse carriage opening runs to ~24 ft. Openings above that (the old fixed +-34px gap =
+# 204 ft at city scale) read as a missing wall. WALLS: dobei/tsuijibei ~1.5-2 ft; the 2px
+# cartographic floor at 3 ft/px draws 6 ft, so the band top is 8.
+GATE_FT_MIN, GATE_FT_MAX = 6.0, 24.0
+WALL_FT_MIN, WALL_FT_MAX = 1.0, 8.0
+# CREMATION: a village/town sanmai's cleared working core is 30-80 ft across (Fukui sanmai
+# survey: ~7 ft hearth, 10-13 ft sheltered structures + bone platform + attendant hut); a
+# provincial city justifies ~80-160 ft; the Yoyogi crematory serving metropolitan Edo was ~900
+# tsubo (~180 ft square) - the far ceiling, not a template. Floors keep a token dot from
+# passing as a crematory.
+CREMATION_FT_MIN, CREMATION_FT_MAX_TOWN, CREMATION_FT_MAX_CITY = 25.0, 90.0, 160.0
+# OSSUARY: a muenzuka bone mound is typically 10-30 ft across, 3-8 ft high (cremated,
+# consolidated bone takes almost no volume - Kozukappara's 100k+ dead never made a great
+# mound); Kyoto's monumental state-built Mimizuka is ~50 ft at the base. Band top 60 admits
+# the small-glyph legibility floor.
+OSSUARY_FT_MIN, OSSUARY_FT_MAX = 8.0, 60.0
+# BURIAL GROUNDS (cremation-then-inter culture, aggressive plot reuse, ~1 generation of active
+# plots): ~10-20 sq ft per urn-grave packed incl. circulation -> village (~350) 0.1-0.25 ac,
+# town (~1,200) 0.25-0.75, city (~3,000) 0.75-2 split across yards. Bands widened a little
+# both ways for glyph rounding; the LADDER must stay monotone with population served.
+BURIAL_AC_BAND = {"village": (0.04, 0.30), "town": (0.10, 0.80), "city": (0.35, 2.20)}
+
 # --- doors-face-open + rows-max-two-deep (GM, 2026-07-18) -----------------------------------
 # The boundary between "an eave/drainage gap" (~3-6 real ft between back-to-back rows - rain
 # drip and night-soil access, NOT an entrance) and "walkable entrance ground" (a roji/court at
@@ -1845,6 +1870,77 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not est_on_st,
             f"merchant-estate wall(s) standing IN a street/alley/road bed: {est_on_st} - the public way stays open; "
             f"a compound wall may line a street but never stand in its cleared band - move the estate off the street",
+        )
+
+    # COMPOUND GATES AND WALLS TO SCALE (GM, 2026-07-19). The walled compounds (samurai country
+    # estates/manors, the governor's yamen, merchant estates, the mausoleum) draw only walls +
+    # gate + a deliberately BLANK court (the interior is its own Mode A diagram) - so the wall
+    # and gate ARE the feature, and they must be honest: a samurai residence gate (nagayamon /
+    # yakuimon) opens ~9-12 real ft (cart + palanquin), a grand yamen gatehouse up to ~24 ft;
+    # the old fixed-pixel gap (+-34px) drew a 204 ft opening at city scale - most of a wall
+    # missing. Walls (dobei/tsuijibei) run ~1.5-2 ft thick, drawn true-width-or-floored (the
+    # 2px cartographic floor = 6 ft at city scale; band top 8 allows it). A manifest that
+    # records no gate_w predates the to-scale engine and cannot prove its gates - regenerate.
+    _gcomp = [("manor", mn) for mn in M.get("manors", [])] + [("merchant estate", me) for me in M.get("merchant_estates", [])] + [("mausoleum", mu) for mu in M.get("mausoleums", [])]
+    if M.get("governor_mansion"):
+        _gcomp.append(("governor's mansion", M["governor_mansion"]))
+    if _gcomp:
+        _gftpx = meta.get("ftpx", 1)
+        gcomp_bad = []
+        for gkind, gc in _gcomp:
+            gw = gc.get("gate_w")
+            if gw is None:
+                gcomp_bad.append((gkind, round(gc["x"]), round(gc["y"]), "gate unrecorded - regenerate with the to-scale engine"))
+                continue
+            gft = gw * _gftpx
+            side = gc["w"] if gc.get("gate_dir", "south") in ("north", "south") else gc["h"]
+            wallft = gc.get("wall_w", 0) * _gftpx
+            if not GATE_FT_MIN <= gft <= GATE_FT_MAX:
+                gcomp_bad.append((gkind, round(gc["x"]), round(gc["y"]), f"gate opening {gft:.0f} ft outside [{GATE_FT_MIN:.0f},{GATE_FT_MAX:.0f}]"))
+            elif gw > 0.4 * side:
+                gcomp_bad.append((gkind, round(gc["x"]), round(gc["y"]), f"gate is {gw / side:.0%} of its wall side - reads as a missing wall, not a gate"))
+            elif not WALL_FT_MIN <= wallft <= WALL_FT_MAX:
+                gcomp_bad.append((gkind, round(gc["x"]), round(gc["y"]), f"wall drawn {wallft:.0f} ft thick, outside [{WALL_FT_MIN:.0f},{WALL_FT_MAX:.0f}]"))
+        check(
+            "compound_gates_to_scale",
+            not gcomp_bad,
+            f"walled compound(s) with out-of-scale gates/walls: {gcomp_bad[:4]} - a residence gate opens ~9-12 real ft (a grand "
+            f"yamen gatehouse up to ~24), walls run ~2 ft thick (2px cartographic floor); the blank court is deliberate (the interior is its own diagram) so the wall+gate must carry the realism",
+        )
+
+    # FUNERARY FEATURES TO SCALE (GM, 2026-07-19; anchors in settlements.md "Historical
+    # grounding"). The old glyphs were FIXED-PIXEL and silently tripled at city scale.
+    _fftpx = meta.get("ftpx", 1)
+    crem_bad = []
+    for cg in M.get("cremation_grounds", []):
+        long_ft = max(cg["w"], cg["h"]) * _fftpx
+        crem_cap = CREMATION_FT_MAX_CITY if scale == "city" else CREMATION_FT_MAX_TOWN
+        if not CREMATION_FT_MIN <= long_ft <= crem_cap:
+            crem_bad.append((round(cg["x"]), round(cg["y"]), f"{long_ft:.0f} ft across vs [{CREMATION_FT_MIN:.0f},{crem_cap:.0f}]"))
+    if M.get("cremation_grounds"):
+        check(
+            "cremation_ground_to_scale",
+            not crem_bad,
+            f"cremation ground(s) out of scale: {crem_bad} - a sanmai's working core (7 ft hearth, shelter, bone platform, mourner ground) "
+            f"clears 30-80 ft for a village/town and ~80-160 ft for a provincial city; even the crematory serving metropolitan Edo was ~180 ft square",
+        )
+    oss_bad = [(round(o["x"]), round(o["y"]), f"{max(o['w'], o['h']) * _fftpx:.0f} ft") for o in M.get("ossuaries", []) if not OSSUARY_FT_MIN <= max(o["w"], o["h"]) * _fftpx <= OSSUARY_FT_MAX]
+    if M.get("ossuaries"):
+        check(
+            "ossuary_to_scale",
+            not oss_bad,
+            f"pauper ossuary mound(s) out of scale: {oss_bad} (band [{OSSUARY_FT_MIN:.0f},{OSSUARY_FT_MAX:.0f}] ft) - a muenzuka is a 10-30 ft mound "
+            f"(cremated bone takes almost no volume; even Kyoto's monumental state-built Mimizuka is ~50 ft at the base); the band top allows the small-glyph legibility floor",
+        )
+    if M.get("cemeteries") and scale in ("village", "town", "city"):
+        total_ac = sum(c["w"] * c["h"] for c in M["cemeteries"]) * _fftpx * _fftpx / 43_560
+        lo, hi = BURIAL_AC_BAND[scale]
+        check(
+            "burial_grounds_sized_to_population",
+            lo <= total_ac <= hi,
+            f"total burial ground {total_ac:.2f} acres vs the {scale} band [{lo},{hi}] - size the grounds to the population served "
+            f"(cremation-then-inter culture, ~1 generation of active plots before reuse: village ~0.1-0.25 ac, town ~0.25-0.75, city ~0.75-2 split across yards); "
+            f"the ladder must read MONOTONE with population - a village ground must never dwarf a town's",
         )
 
     # ALMOST all shops front a street (commerce wants the street); POOR housing (laborer/burakumin)

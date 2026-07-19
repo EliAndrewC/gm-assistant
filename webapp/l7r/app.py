@@ -7,6 +7,8 @@ Routes:
 - GET /names           pre-generated Rokugani names with filters
 - GET /places          pre-generated place names with filters
 - GET /places/<slug>   single place detail
+- GET /dreams          dream-divination framework + example gallery
+- GET /dreams/<slug>   single worked dream-omen example
 - /chargen/*           mounted chargen Root (legacy)
 - /static/*            static assets
 """
@@ -23,6 +25,7 @@ from jinja2 import Environment
 
 from l7r.auth import AuthConfig, load_auth_config
 from l7r.auth_routes import AuthRoot, current_user, install_auth_tool
+from l7r.dreams import DreamScene, find_scene_by_slug, load_dream_scenes, render_markdown
 from l7r.fortunes import FORTUNES
 from l7r.jinja_env import build_environment
 from l7r.names import (
@@ -84,9 +87,27 @@ def _resolve_default_places_dir() -> Path:
     return (_HERE.parent.parent / '.claude' / 'skills' / 'place-names').resolve()
 
 
+def _resolve_default_dream_pool_dir() -> Path:
+    """Resolve the PUBLIC dream-scene pool directory.
+
+    Production deploys override with `L7R_DREAM_POOL_DIR`. In development we
+    walk up to `.claude/skills/dream/pool` relative to the package. Only the
+    public `pool/` tier is ever pointed at; the gitignored `pool-local/` tier
+    is never read (feature 011, FR-007).
+    """
+    import os
+
+    env_override = os.environ.get('L7R_DREAM_POOL_DIR')
+    if env_override:
+        return Path(env_override)
+    return (_HERE.parent.parent / '.claude' / 'skills' / 'dream' / 'pool').resolve()
+
+
 _DEFAULT_POOL_DIR = _resolve_default_pool_dir()
 _DEFAULT_NAMES_DIR = _resolve_default_names_dir()
 _DEFAULT_PLACES_DIR = _resolve_default_places_dir()
+_DEFAULT_DREAM_POOL_DIR = _resolve_default_dream_pool_dir()
+_DREAM_FRAMEWORK_PATH = _HERE / 'content' / 'dreams_framework.md'
 
 
 def _group_relics_by_fortune(relics: list[Relic]) -> dict[str, list[Relic]]:
@@ -153,11 +174,15 @@ class Root:
         relics: list[Relic],
         names: list[GeneratedName] | None = None,
         places: list[Place] | None = None,
+        dream_scenes: list[DreamScene] | None = None,
+        dream_framework_html: str = '',
         env: Environment | None = None,
     ) -> None:
         self._relics = relics
         self._names = names if names is not None else []
         self._places = places if places is not None else []
+        self._dream_scenes = dream_scenes if dream_scenes is not None else []
+        self._dream_framework_html = dream_framework_html
         self._env = env if env is not None else build_environment()
         self._relics_by_fortune = _group_relics_by_fortune(relics)
         self._clans_with_relics = _clans_with_relics(relics)
@@ -196,6 +221,27 @@ class Root:
             fortune=fortune,
             prev_relic=prev_relic,
             next_relic=next_relic,
+        )
+
+    # GET /dreams, GET /dreams/<slug>
+    @cherrypy.expose
+    def dreams(self, slug: str | None = None) -> bytes:
+        if slug is None:
+            return self._render(
+                'dreams_index.html',
+                current_section='dreams',
+                framework_html=self._dream_framework_html,
+                scenes=self._dream_scenes,
+            )
+
+        scene = find_scene_by_slug(self._dream_scenes, slug)
+        if scene is None:
+            return self._render_404()
+
+        return self._render(
+            'dream_detail.html',
+            current_section='dreams',
+            scene=scene,
         )
 
     # GET /terms - public (linked from Discord OAuth consent screen)
@@ -392,19 +438,37 @@ class Root:
         return self._render('_404.html', current_section='')
 
 
+def _load_dream_framework_html(path: Path = _DREAM_FRAMEWORK_PATH) -> str:
+    """Render the player-facing framework markdown to HTML once at startup.
+
+    Returns an empty string if the file is absent (the /dreams page still
+    renders its examples gallery), so a missing framework degrades gracefully.
+    """
+    try:
+        text = path.read_text(encoding='utf-8')
+    except OSError:
+        logger.warning('dreams framework file %s not found; page will omit it', path)
+        return ''
+    return render_markdown(text)
+
+
 def make_app(
     pool_dir: Path | None = None,
     names_dir: Path | None = None,
     places_dir: Path | None = None,
+    dream_pool_dir: Path | None = None,
 ) -> Root:
-    """Construct a wired Root with relics, names, and places loaded from disk."""
+    """Construct a wired Root with relics, names, places, and dream scenes."""
     pool_src = pool_dir if pool_dir is not None else _DEFAULT_POOL_DIR
     names_src = names_dir if names_dir is not None else _DEFAULT_NAMES_DIR
     places_src = places_dir if places_dir is not None else _DEFAULT_PLACES_DIR
+    dream_src = dream_pool_dir if dream_pool_dir is not None else _DEFAULT_DREAM_POOL_DIR
     return Root(
         relics=load_relics(pool_src),
         names=load_names(names_src),
         places=load_places(places_src),
+        dream_scenes=load_dream_scenes(dream_src),
+        dream_framework_html=_load_dream_framework_html(),
     )
 
 

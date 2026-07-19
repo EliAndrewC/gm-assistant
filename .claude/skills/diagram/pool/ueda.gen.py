@@ -273,7 +273,7 @@ print(f"footbridges: {n_bridges}")
 # so the burial ground is the shrine's churchyard - village_graveyard_by_shrine). It sits in the clear ground
 # SW of the water-mouth shrine, off the sacred hall + torii (cemetery_clear_of_shrine), south of the grove and
 # north of the marsh, well clear of the far-E field. An organic (unsurveyed) earthen plot; no label.
-s.cemetery(_wmx - 100, _wmy + 130, 100, 70, parish=False, organic=True)
+s.cemetery(_wmx - 100, _wmy + 130, 48, 34, parish=False, organic=True)  # resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~92x64 ft at 2 ft/px), not 0.5+ - see settlements.md funerary anchors
 
 # CROP the frame to the placed content (the title then drops into the framed space).
 s.crop_to_content(margin=30)

@@ -76,6 +76,38 @@ That national figure is far too low for a village that actually grows it; a few 
 10-15% of field area is defensible for a lotus-growing Yangtze village. **This range is interpolation, not
 a sourced figure, and is the weakest number in this document.**
 
+### CALIBRATED LIBERTY TAKEN (disclosed per constitution XII, GM 2026-07-19)
+
+The GM's standing rule: where research shows a thing is plausible, the *degree* is genuinely unclear, and
+a particular reading within the plausible range serves the project's goals, we may choose that reading -
+provided we say so. All three conditions hold here, so we did.
+
+- **The claim**: lotus, where a village grows it, occupies a wet bottom running to roughly the upper part
+  of the plausible extent rather than a one-plot hem on the drain.
+- **Why the degree is unclear**: no per-village land-share statistic for lotus was found. The range above
+  (a few percent to ~10-15% of field area) is interpolated from a national ~1% figure that averages
+  across the whole country including regions that grow none, so it says little about a village that does.
+  How wide a valley bottom's wet backswamp ran is likewise unrecorded.
+- **Why we chose the upper part**: binding eligibility to the single drain-side hem put lotus at ~2% of
+  field area - technically inside the range, but so sparse that the `land_use_overlay` knob stopped doing
+  its job of making villages visually distinct. That job is the reason the knob exists.
+- **What we did NOT do**: invent a range the research does not support. Lotus stays strictly on genuinely
+  low ground and still cannot touch the upper field. The topographic rule is unchanged; only the width of
+  the low band moved, within an unrecorded interval.
+
+**A correctness fix rode along with this and is worth separating out, because it is NOT a liberty.**
+Eligibility originally keyed off the `FLOODED` fill. But `FLOODED` is a random 45% tint applied to the
+bottom level *for visual texture* - so eligibility was keying off an accident of RENDERING rather than off
+topography. Plots now carry an explicit `low` flag (the topography) distinct from `fill` (the picture).
+That would have been the right change regardless of extent.
+
+**A second defect this surfaced.** With eligibility widened, `fraction` (a share of ALL plots) became
+inert: the eligible set is always smaller than `fraction x all`, so every village converted 100% of its
+low ground and the economic term decided nothing - collapsing the two-term model back into one.
+`fraction` is now a share of the ELIGIBLE set, which is what makes the two terms independent, and is what
+the Shunde evidence demands: ~5% dike-pond county-wide while containing townships past 50% the same year,
+on identical terrain.
+
 ### Honest limitation
 
 The agronomy is solid; the *pre-modern village-scale practice* is not directly sourced. The clearest

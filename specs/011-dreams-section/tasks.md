@@ -27,8 +27,8 @@ Web app; all paths are under `webapp/` (the `l7r/` package and `tests/`), plus t
 
 **Purpose**: deploy-bundling so the public pool (and only the public pool) reaches the running app.
 
-- [ ] T001 [P] Extend `prepare-deploy` in `webapp/Makefile` to sync the PUBLIC dream pool into the build context: create `skills/dream/` and `cp -r ../.claude/skills/dream/pool skills/dream/pool` (copy `pool` ONLY, never `pool-local`); confirm the `clean` target still removes `skills`.
-- [ ] T002 [P] Mirror the relic pool's deploy wiring for dreams: in `webapp/Dockerfile` (and `fly.toml` runtime env) ship `skills/dream/pool` and set `L7R_DREAM_POOL_DIR` to the bundled path, exactly as `L7R_RELIC_POOL_DIR` is wired.
+- [x] T001 [P] Extend `prepare-deploy` in `webapp/Makefile` to sync the PUBLIC dream pool into the build context: create `skills/dream/` and `cp -r ../.claude/skills/dream/pool skills/dream/pool` (copy `pool` ONLY, never `pool-local`); confirm the `clean` target still removes `skills`.
+- [x] T002 [P] Mirror the relic pool's deploy wiring for dreams: in `webapp/Dockerfile` (and `fly.toml` runtime env) ship `skills/dream/pool` and set `L7R_DREAM_POOL_DIR` to the bundled path, exactly as `L7R_RELIC_POOL_DIR` is wired.
 
 ---
 
@@ -36,10 +36,10 @@ Web app; all paths are under `webapp/` (the `l7r/` package and `tests/`), plus t
 
 **Purpose**: the scene loader every page depends on. MUST complete before any user story. TDD (red before green).
 
-- [ ] T003 [P] Create loader fixtures under `webapp/tests/fixtures/dream_pool/`: (a) `pool/` with one valid scene file, (b) a malformed file in `pool/` (missing a required field and one with no frontmatter), (c) a sibling `pool-local/` containing a decoy scene (to prove it is never read).
-- [ ] T004 Write FAILING loader tests in `webapp/tests/test_dreams.py` (red): loads the valid scene; skips malformed files with a logged warning (INV-2); sorts scenes by title; renders the markdown body to HTML; and INV-1 - given a pool dir with a sibling `pool-local/`, the loader returns ONLY the public scene and never the decoy. Behavior-named, parametrized where natural.
-- [ ] T005 Implement `webapp/l7r/dreams.py` to green: `DreamScene` frozen dataclass (per data-model.md), `load_dream_scenes(pool_dir)` mirroring `l7r/pool.py` (frontmatter split, required-field skip-with-warning, title sort, slug from stem), and a module-level `markdown-it-py` renderer (CommonMark + tables, raw-HTML disabled) producing `body_html`. Must reach 100% line coverage; no swallowed exceptions; no `print`.
-- [ ] T006 Wire the pool into the app in `webapp/l7r/app.py`: add `_resolve_default_dream_pool_dir()` (env `L7R_DREAM_POOL_DIR`, else dev default `.claude/skills/dream/pool`), load scenes in `make_app()`, store them on `Root`, and render `content/dreams_framework.md` to HTML once at startup.
+- [x] T003 [P] Create loader fixtures under `webapp/tests/fixtures/dream_pool/`: (a) `pool/` with one valid scene file, (b) a malformed file in `pool/` (missing a required field and one with no frontmatter), (c) a sibling `pool-local/` containing a decoy scene (to prove it is never read).
+- [x] T004 Write FAILING loader tests in `webapp/tests/test_dreams.py` (red): loads the valid scene; skips malformed files with a logged warning (INV-2); sorts scenes by title; renders the markdown body to HTML; and INV-1 - given a pool dir with a sibling `pool-local/`, the loader returns ONLY the public scene and never the decoy. Behavior-named, parametrized where natural.
+- [x] T005 Implement `webapp/l7r/dreams.py` to green: `DreamScene` frozen dataclass (per data-model.md), `load_dream_scenes(pool_dir)` mirroring `l7r/pool.py` (frontmatter split, required-field skip-with-warning, title sort, slug from stem), and a module-level `markdown-it-py` renderer (CommonMark + tables, raw-HTML disabled) producing `body_html`. Must reach 100% line coverage; no swallowed exceptions; no `print`.
+- [x] T006 Wire the pool into the app in `webapp/l7r/app.py`: add `_resolve_default_dream_pool_dir()` (env `L7R_DREAM_POOL_DIR`, else dev default `.claude/skills/dream/pool`), load scenes in `make_app()`, store them on `Root`, and render `content/dreams_framework.md` to HTML once at startup.
 
 **Checkpoint**: `pytest tests/test_dreams.py --cov=l7r/dreams --cov-fail-under=100` green; scenes load in a REPL from the real public pool.
 
@@ -51,12 +51,12 @@ Web app; all paths are under `webapp/` (the `l7r/` package and `tests/`), plus t
 
 **Independent test**: load `/dreams`, read the framework, follow the example link, and confirm the full Daikoku scene renders (question, divine direction, how-to-run, shared bands, four tables, the 10 menu, design notes).
 
-- [ ] T007 [P] [US1] Author `webapp/l7r/content/dreams_framework.md` - hand-written player-facing rules & framework: the theology (constant sending, poor receiver, expected noise/silence), attunement/circumstances, and the mechanic (1k1 roll; no-dream/noise/meaningful bands; the always-significant 10 + lucid point pool; rerolls). OMIT authoring internals (pool tiers, fragment-writing, spoiler handling). Hyphens only; no em/en dashes.
-- [ ] T008 [US1] Add the `dreams(self, slug=None)` route to `Root` in `webapp/l7r/app.py`: `slug is None` renders `dreams_index.html` (framework HTML + `scenes`); otherwise look up by slug and render `dream_detail.html`, or `_render_404()` on miss (FR-009). `current_section='dreams'`.
-- [ ] T009 [P] [US1] Create `webapp/l7r/templates/dreams_index.html` (extends `_layout.html`): the rendered framework block, then the examples list.
-- [ ] T010 [P] [US1] Create `webapp/l7r/templates/dream_detail.html` (extends `_layout.html`): scene title, sender, and the rendered `body_html`, with prev/back navigation to `/dreams`.
-- [ ] T011 [US1] Add Dreams styles to `webapp/l7r/static/css/l7r.css` using EXISTING tokens only (Fraunces/EB Garamond/Shippori Mincho, existing color vars): framework prose block, scene section rhythm, and fragment tables - wide tables MUST scroll inside their own `overflow-x:auto` container so the page body never scrolls horizontally.
-- [ ] T012 [US1] Verify US1 (Principle I): run `webapp/tests/screenshot.py` and `webapp/tests/dom_audit.py` for `/dreams` and `/dreams/daikoku-masamune-sword-akishi`; zero DOM-audit issues at GM-100/GM-200/tablet/mobile; examine a GM-200 contact sheet from the player's perspective.
+- [x] T007 [P] [US1] Author `webapp/l7r/content/dreams_framework.md` - hand-written player-facing rules & framework: the theology (constant sending, poor receiver, expected noise/silence), attunement/circumstances, and the mechanic (1k1 roll; no-dream/noise/meaningful bands; the always-significant 10 + lucid point pool; rerolls). OMIT authoring internals (pool tiers, fragment-writing, spoiler handling). Hyphens only; no em/en dashes.
+- [x] T008 [US1] Add the `dreams(self, slug=None)` route to `Root` in `webapp/l7r/app.py`: `slug is None` renders `dreams_index.html` (framework HTML + `scenes`); otherwise look up by slug and render `dream_detail.html`, or `_render_404()` on miss (FR-009). `current_section='dreams'`.
+- [x] T009 [P] [US1] Create `webapp/l7r/templates/dreams_index.html` (extends `_layout.html`): the rendered framework block, then the examples list.
+- [x] T010 [P] [US1] Create `webapp/l7r/templates/dream_detail.html` (extends `_layout.html`): scene title, sender, and the rendered `body_html`, with prev/back navigation to `/dreams`.
+- [x] T011 [US1] Add Dreams styles to `webapp/l7r/static/css/l7r.css` using EXISTING tokens only (Fraunces/EB Garamond/Shippori Mincho, existing color vars): framework prose block, scene section rhythm, and fragment tables - wide tables MUST scroll inside their own `overflow-x:auto` container so the page body never scrolls horizontally.
+- [x] T012 [US1] Verify US1 (Principle I): run `webapp/tests/screenshot.py` and `webapp/tests/dom_audit.py` for `/dreams` and `/dreams/daikoku-masamune-sword-akishi`; zero DOM-audit issues at GM-100/GM-200/tablet/mobile; examine a GM-200 contact sheet from the player's perspective.
 
 **Checkpoint**: US1 is a shippable MVP - the section works even before nav polish.
 
@@ -68,9 +68,9 @@ Web app; all paths are under `webapp/` (the `l7r/` package and `tests/`), plus t
 
 **Independent test**: from any page, "Dreams" is in the primary nav; clicking it shows the examples list with title + descriptor per scene, each linking to its page (nav → /dreams → scene ≤ 2 clicks).
 
-- [ ] T013 [US2] Add `Section(slug='dreams', label='Dreams', path='/dreams', enabled=True)` to `webapp/l7r/sections.py` (after `places`).
-- [ ] T014 [P] [US2] Style the examples gallery cards in `webapp/l7r/templates/dreams_index.html` (title, sender, summary descriptor, link) to match the Relics catalog card treatment.
-- [ ] T015 [US2] Verify US2: confirm "Dreams" renders in the nav on every page and the ≤2-click path holds; re-run `dom_audit.py` across all pages (the nav change touches every page).
+- [x] T013 [US2] Add `Section(slug='dreams', label='Dreams', path='/dreams', enabled=True)` to `webapp/l7r/sections.py` (after `places`).
+- [x] T014 [P] [US2] Style the examples gallery cards in `webapp/l7r/templates/dreams_index.html` (title, sender, summary descriptor, link) to match the Relics catalog card treatment.
+- [x] T015 [US2] Verify US2: confirm "Dreams" renders in the nav on every page and the ≤2-click path holds; re-run `dom_audit.py` across all pages (the nav change touches every page).
 
 ---
 
@@ -80,16 +80,16 @@ Web app; all paths are under `webapp/` (the `l7r/` package and `tests/`), plus t
 
 **Independent test**: add a second valid scene to the pool, reload, and confirm it appears in the gallery and is viewable.
 
-- [ ] T016 [US3] Add a regression test in `webapp/tests/test_dreams.py` (INV-3): dropping a new valid scene file into the pool dir makes `load_dream_scenes()` include it and resolve it by slug with no code change, and the result stays deterministically title-sorted.
+- [x] T016 [US3] Add a regression test in `webapp/tests/test_dreams.py` (INV-3): dropping a new valid scene file into the pool dir makes `load_dream_scenes()` include it and resolve it by slug with no code change, and the result stays deterministically title-sorted.
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T017 Run `make done` in `webapp/` (ruff check + ruff format --check + mypy --strict + pytest + `--cov-fail-under=100`); all green.
-- [ ] T018 Full-site Principle I regression: `webapp/tests/screenshot.py` + `webapp/tests/dom_audit.py` across ALL pages × 4 viewports (zero issues), then invoke the `frontend-review` subagent for an independent pass on `/dreams` and `/dreams/<slug>` (author != reviewer).
-- [ ] T019 [P] Spoiler smoke check (FR-007 / SC-004): with the app running, confirm no `pool-local` scene (e.g. `ebisu-dreams-shiro-reiji`) is listed on `/dreams`, and `/dreams/ebisu-dreams-shiro-reiji` returns 404.
-- [ ] T020 [P] Docs: add `/dreams` and `/dreams/<slug>` to the Routes list in `webapp/CLAUDE.md` (and the main `CLAUDE.md` Key paths), and confirm `make prepare-deploy` produces `webapp/skills/dream/pool` but no `pool-local`.
+- [x] T017 Run `make done` in `webapp/` (ruff check + ruff format --check + mypy --strict + pytest + `--cov-fail-under=100`); all green.
+- [x] T018 Full-site Principle I regression: `webapp/tests/screenshot.py` + `webapp/tests/dom_audit.py` across ALL pages × 4 viewports (zero issues), then invoke the `frontend-review` subagent for an independent pass on `/dreams` and `/dreams/<slug>` (author != reviewer).
+- [x] T019 [P] Spoiler smoke check (FR-007 / SC-004): with the app running, confirm no `pool-local` scene (e.g. `ebisu-dreams-shiro-reiji`) is listed on `/dreams`, and `/dreams/ebisu-dreams-shiro-reiji` returns 404.
+- [x] T020 [P] Docs: add `/dreams` and `/dreams/<slug>` to the Routes list in `webapp/CLAUDE.md` (and the main `CLAUDE.md` Key paths), and confirm `make prepare-deploy` produces `webapp/skills/dream/pool` but no `pool-local`.
 
 ---
 

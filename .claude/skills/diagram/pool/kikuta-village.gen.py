@@ -93,7 +93,7 @@ _torii = [(round(BEN[0] + _ux * d), round(BEN[1] + _uy * d)) for d in range(58, 
 s.shrine_hall(BEN[0], BEN[1], "Shrine to Benten", "(Sister Baika's care)", w=44, h=30, kind="shrine", primary=True, torii=_torii, graveyard=False)
 s.shrine_well(round(BEN[0] - _uy * 46), round(BEN[1] + _ux * 46))  # the priestess's ablution well, beside the hall
 # the village burial ground shares the precinct but stands clear of the hall + the sando
-s.cemetery(round(BEN[0] + _ax * 96 - _uy * 104), round(BEN[1] + _ay * 96 + _ux * 104), 96, 66, parish=False, organic=True, label="village burial ground")
+s.cemetery(round(BEN[0] + _ax * 96 - _uy * 104), round(BEN[1] + _ay * 96 + _ux * 104), 46, 32, parish=False, organic=True, label="village burial ground")  # resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~92x64 ft at 2 ft/px), not 0.5+ - see settlements.md funerary anchors
 
 s.crop_to_content(margin=40)
 s.title("Kikuta")

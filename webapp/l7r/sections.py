@@ -24,6 +24,7 @@ SECTIONS: tuple[Section, ...] = (
     Section(slug='relics', label='Relics', path='/relics', enabled=True),
     Section(slug='names', label='Names', path='/names', enabled=True),
     Section(slug='places', label='Places', path='/places', enabled=True),
+    Section(slug='dreams', label='Dreams', path='/dreams', enabled=True),
 )
 
 

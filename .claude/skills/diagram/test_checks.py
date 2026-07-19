@@ -5384,3 +5384,66 @@ def test_merchant_estate_fires_when_a_fire_tower_is_enclosed_in_the_court():
     # wall-line clear but the municipal tower trapped INSIDE the private court - same siting error
     inside = _mest_city(fire_towers=[{"x": 500, "y": 505, "w": 8.7, "h": 8.7, "rot": 0}])
     assert "merchant_estate_wall_clear_of_fire_towers" in f(inside)
+
+
+# ---- to-scale gates/walls + funerary features (GM feedback 2026-07-19) ----------------------
+def _scaled_city(**extra):
+    M = {"meta": {"scale": "city", "ftpx": 3}}
+    M.update(extra)
+    return M
+
+
+def test_compound_gates_to_scale_fires_on_a_wall_wide_opening():
+    # a 204 real-ft gate opening (the old fixed +-34px at 3 ft/px) - most of the wall missing
+    m = {"x": 500, "y": 500, "w": 90, "h": 60, "rot": 0, "label": "", "gate_dir": "south", "gate": [500, 530], "gate_w": 68.0, "wall_w": 6.0}
+    assert "compound_gates_to_scale" in f(_scaled_city(manors=[m]))
+
+
+def test_compound_gates_to_scale_fires_when_gate_size_unrecorded():
+    # a pre-doctrine manifest (no gate_w) cannot prove its gates - regenerate with the engine that records them
+    m = {"x": 500, "y": 500, "w": 90, "h": 60, "rot": 0, "label": "", "gate_dir": "south", "gate": [500, 530]}
+    assert "compound_gates_to_scale" in f(_scaled_city(manors=[m]))
+
+
+def test_compound_gates_to_scale_passes_a_real_gate():
+    # a 12 real-ft opening (4px at 3 ft/px) in a 2 ft wall drawn at the 2px legibility floor
+    m = {"x": 500, "y": 500, "w": 90, "h": 60, "rot": 0, "label": "", "gate_dir": "south", "gate": [500, 530], "gate_w": 4.0, "wall_w": 2.0}
+    gov = {"x": 800, "y": 500, "w": 150, "h": 100, "rot": 0, "gate_dir": "west", "gate": [725, 500], "gate_w": 6.0, "wall_w": 2.0}
+    assert "compound_gates_to_scale" not in f(_scaled_city(manors=[m], governor_mansion=gov))
+
+
+def test_cremation_ground_to_scale_fires_oversized_passes_in_band():
+    # the old fixed 116x80px glyph at 3 ft/px = 348x240 ft - bigger than the crematory serving metropolitan Edo
+    assert "cremation_ground_to_scale" in f(_scaled_city(cremation_grounds=[{"x": 500, "y": 500, "w": 116, "h": 80, "rot": 0}]))
+    # a 129x90 ft city ground (43x30px) is inside the 80-160 ft city band
+    assert "cremation_ground_to_scale" not in f(_scaled_city(cremation_grounds=[{"x": 500, "y": 500, "w": 43, "h": 30, "rot": 0}]))
+
+
+def test_ossuary_to_scale_fires_oversized_passes_in_band():
+    # the old fixed mound = 276x180 ft - kofun-sized; a pauper bone mound is 10-30 ft (legibility-floored ~54)
+    assert "ossuary_to_scale" in f(_scaled_city(ossuaries=[{"x": 500, "y": 500, "w": 92, "h": 60, "rot": 0}]))
+    assert "ossuary_to_scale" not in f(_scaled_city(ossuaries=[{"x": 500, "y": 500, "w": 18, "h": 12, "rot": 0}]))
+
+
+def test_burial_grounds_sized_to_population_fires_on_an_oversized_village_ground():
+    # a 350-person village drawing 0.64 acre (200x140 ft) - 2-3x the 0.1-0.25 acre band, larger than a town's
+    M = {"meta": {"scale": "village", "ftpx": 2}, "cemeteries": [{"x": 500, "y": 500, "w": 100, "h": 70, "rot": 0}]}
+    assert "burial_grounds_sized_to_population" in f(M)
+    # a 92x64 ft ground (46x32px at 2 ft/px) = ~0.135 acre - in band
+    ok = {"meta": {"scale": "village", "ftpx": 2}, "cemeteries": [{"x": 500, "y": 500, "w": 46, "h": 32, "rot": 0}]}
+    assert "burial_grounds_sized_to_population" not in f(ok)
+
+
+def test_burial_grounds_sized_to_population_passes_the_city_split():
+    # ~1.8 acres split across common ground + parish yards is inside the 0.4-2.2 acre city band
+    M = _scaled_city(cemeteries=[{"x": 500, "y": 500, "w": 90, "h": 64, "rot": 0}, {"x": 800, "y": 500, "w": 44, "h": 32, "rot": 0}, {"x": 900, "y": 700, "w": 44, "h": 32, "rot": 0}])
+    assert "burial_grounds_sized_to_population" not in f(M)
+
+
+def test_compound_gates_to_scale_fires_on_gate_fraction_and_wall_thickness():
+    # an in-band 21 ft opening that still swallows over 40% of a tiny compound's wall side
+    frac = {"x": 500, "y": 500, "w": 15, "h": 10, "rot": 0, "label": "", "gate_dir": "south", "gate": [500, 505], "gate_w": 7.0, "wall_w": 0.7}
+    assert "compound_gates_to_scale" in f(_scaled_city(manors=[frac]))
+    # a good gate in a 15 ft rampart-thick wall - a residence wall is ~2 ft, not fortress masonry
+    thick = {"x": 500, "y": 500, "w": 90, "h": 60, "rot": 0, "label": "", "gate_dir": "south", "gate": [500, 530], "gate_w": 4.0, "wall_w": 5.0}
+    assert "compound_gates_to_scale" in f(_scaled_city(manors=[thick]))

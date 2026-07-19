@@ -1,7 +1,18 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.3.0 → 1.4.0
+Version change: 1.4.0 → 1.4.1
+PATCH: Principle XII gains a "calibrated liberty" clause (GM, 2026-07-19) -
+where research shows a thing is plausible but the DEGREE is genuinely unclear,
+a favorable reading within the plausible range may be chosen deliberately, on
+condition that the choice and its range are disclosed in research.md and beside
+the rule in code. Conjunctive conditions; does not license inventing a range or
+overriding a finding that is actually clear. Also CORRECTS a factual claim in
+XII's own motivating example: the 桑基魚塘 dike-pond system did NOT replace
+rice across whole districts as the norm - the mixed scatter was normal, and the
+principle's opening gate caught the error on its first outing (feature 010).
+
+PRIOR (1.3.0 → 1.4.0):
 MINOR: Principle XII (Historical Grounding Bookends) ADDED - any feature that
 changes what a generator asserts about the world must open with a historical-
 grounding analysis and close with a verification of the RENDERED ARTIFACT.
@@ -433,9 +444,41 @@ Oct-Nov, flowering Mar-Apr), so they are never both standing - the map
 depicted two seasons at once. Nothing in the code could reveal that; only
 looking at the picture and asking "what season is this?" could. The same pass
 also showed the second failure mode: the overlay scattered plots at random
-when the real governing variable was topography (lotus goes on the wettest
-ground) or landscape-scale economy (the 桑基魚塘 dike-pond system replaced
-rice across whole districts rather than dotting among it).
+when the real governing variable was topography - deep-water lotus goes on the
+wettest ground, and the 桑基魚塘 dike-ponds were dug out of the low
+flood-prone hollows.
+
+**A correction this principle caught on its own first outing (feature 010),
+worth keeping as a warning.** The original wording here claimed the dike-pond
+system "replaced rice across whole districts rather than dotting among it,"
+and a feature was specified to DELETE the overlay on that basis. Phase 0
+research refuted it: a scatter of dike-ponds among rice was the system's
+NORMAL state (Shunde county was ~4.6% dike-pond in 1581; at Lake Tai mulberry
+sat on the *tang* banks with rice remaining the polder's main crop
+permanently), and the wall-to-wall landscape is the rare end state. The lesson
+is not merely that the claim was wrong - it is that a **confident, plausible,
+kanji-citing sentence written into a governing document was wrong**, and only
+the opening gate caught it. Grounding claims already recorded here are inputs
+to research, never substitutes for it.
+
+**Calibrated liberty where the record is genuinely unclear (GM, 2026-07-19).**
+The bookends demand honesty about the evidence, NOT paralysis when the
+evidence is thin. Where all three of the following hold:
+
+1. the research shows the thing is **plausibly true**,
+2. the **degree** to which it was true is genuinely unclear or
+   region-dependent, and
+3. a particular reading within that plausible range **serves the project's
+   goals** (legibility, visual variation, playability),
+
+then the favorable reading MAY be chosen deliberately. The conditions are
+conjunctive and the obligation is disclosure: the choice, its plausible range,
+and the fact that we picked from within it for a stated non-historical reason
+MUST be written into `research.md` and alongside the rule in the code. What
+this clause does NOT license is inventing a range that the research does not
+support, or using "the record is unclear" to dodge a finding that is actually
+clear - the `rape` rotation was not a matter of degree, and no amount of
+project convenience makes rice and rape stand in the same field at once.
 
 **Enforcement.** `/speckit-plan` MUST record both gates in its Constitution
 Check. A feature that cannot state its grounding is not ready to build. The
@@ -588,4 +631,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.4.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-07-19
+**Version**: 1.4.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-07-19

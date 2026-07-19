@@ -310,11 +310,13 @@ def test_make_app_returns_root_with_relics() -> None:
         pool_dir=Path('/nonexistent'),
         names_dir=Path('/nonexistent'),
         places_dir=Path('/nonexistent'),
+        dream_pool_dir=Path('/nonexistent'),
     )
     assert isinstance(app, Root)
     assert app._relics == []
     assert app._names == []
     assert app._places == []
+    assert app._dream_scenes == []
 
 
 def test_error_page_handler_renders_404_template() -> None:
@@ -418,6 +420,19 @@ def test_resolve_default_pool_dir_fallback(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.delenv('L7R_RELIC_POOL_DIR', raising=False)
     result = _resolve_default_pool_dir()
     assert result.name == 'pool'
+
+
+def test_resolve_default_dream_pool_dir_uses_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    from l7r.app import _resolve_default_dream_pool_dir
+
+    monkeypatch.setenv('L7R_DREAM_POOL_DIR', '/dream/pool/here')
+    assert _resolve_default_dream_pool_dir() == Path('/dream/pool/here')
+
+
+def test_load_dream_framework_html_missing_file_returns_empty() -> None:
+    from l7r.app import _load_dream_framework_html
+
+    assert _load_dream_framework_html(Path('/nonexistent/framework.md')) == ''
 
 
 def test_resolve_default_names_dir_uses_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
