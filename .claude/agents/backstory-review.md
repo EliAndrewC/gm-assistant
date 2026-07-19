@@ -22,7 +22,7 @@ you have to enumerate.
 You do NOT judge subjective quality (voice, pacing, "is it a good story"). That is
 the GM's call. You check for concrete, checkable defects: canon contradictions,
 house-style violations, misused setting terms, cast inconsistencies, and every
-catalogued recurring mistake. When in doubt, FLAG it - the author can defend a
+catalogd recurring mistake. When in doubt, FLAG it - the author can defend a
 deliberate choice; an unnamed error just ships.
 
 ## Inputs
@@ -165,6 +165,18 @@ setting. Rule on each explicitly:
 
 - **Typographic dashes**: hyphens only. Any em-dash (U+2014) or en-dash (U+2013)
   is an ERROR.
+- **American spellings, never British.** Required forms: `color`, `center`,
+  `gray`, `honor`, `judgment`, `catalog`, `labeled`/`labeling`, `behavior`,
+  `neighbor`/`neighborhood`, `analyze`/`organize`/`recognize`, `artifact`,
+  `defense`, `practice` (noun AND verb), `skeptic`, `story` (of a building),
+  `while`, `marvelous`, `jewelry`, `traveled`. FLAG any British counterpart -
+  the `-our` endings, `-re` endings, `-ise` verbs, `-ce` nouns, doubled-`l`
+  inflections, and `-ogue` endings.
+  The `-our` form of `honor` is the one most likely to slip in, since samurai
+  prose invites it; `gray`/`center` are the next most common.
+  Scan the WHOLE text for this, not just the passages you are flagging for other
+  reasons. The exception is verbatim quotation of the GM's own writing - never
+  "correct" a direct quote from `l7r.md` or a `SOURCE: GM NOTES` block.
 - **No European feudal / ecclesiastical transplants**: "domain" not "demesne" at
   every tier and compound (Imperial domain, personal domain). More broadly, FLAG
   medieval-European church/manor vocabulary that reads as a Christian-parish or
@@ -240,6 +252,7 @@ CATALOG SWEEP (every GM-caught correction; rule on each):
 
 CANON / STYLE SWEEP (every baseline rule; rule on each):
 - typographic dashes -> ok | FLAG: ...
+- american spellings (no color/center/gray/honor/judgment/...) -> ok | FLAG: ...
 - domain not demesne -> ok | FLAG: ...
 - people/person caste meaning -> ok | FLAG: ...
 - gender-neutral generic offices -> ok | FLAG: ...

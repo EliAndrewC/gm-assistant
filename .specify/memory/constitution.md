@@ -1,15 +1,23 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.2.0 → 1.3.0
-MINOR: Principle I (Accessibility-First Viewports) materially expanded
+Version change: 1.3.0 → 1.4.0
+MINOR: Principle XII (Historical Grounding Bookends) ADDED - any feature that
+changes what a generator asserts about the world must open with a historical-
+grounding analysis and close with a verification of the RENDERED ARTIFACT.
+Motivated by the /diagram `rape` land-use overlay, which passed every
+automated check and its tests while depicting two seasons of one crop
+rotation standing simultaneously; only looking at the picture caught it.
+
+PRIOR (1.2.0 → 1.3.0):
+Principle I (Accessibility-First Viewports) materially expanded
 to require scroll-through verification and to forbid column-height
 asymmetry past 2.5× ratio. The added requirements were already implicit
 in the principle's intent but had been missed in practice because no
 artifact captured them - the new dom_audit layout-balance rule + the
 multi-scroll contact sheets in screenshot.py now enforce them.
 
-Principles (11) - unchanged in set; Principle I expanded:
+Principles (12) - Principle XII added; Principle I previously expanded:
   I.   Accessibility-First Viewports (NON-NEGOTIABLE)        [EXPANDED]
   II.  Bold, Intentional Design                              [unchanged]
   III. Pool Data Conventions                                 [unchanged]
@@ -21,6 +29,7 @@ Principles (11) - unchanged in set; Principle I expanded:
   IX.  Setting Integration                                   [unchanged]
   X.   Python Discipline (NON-NEGOTIABLE)                    [unchanged]
   XI.  Japanese Authenticity (NON-NEGOTIABLE)                [unchanged]
+  XII. Historical Grounding Bookends (NON-NEGOTIABLE)        [ADDED]
 
 Sections updated:
   - Core Principles: Principle I expanded with layout-balance + scroll-
@@ -386,6 +395,58 @@ This principle is NON-NEGOTIABLE because the project's stated aesthetic
 that says one thing in kanji, another in romaji, and a third in English
 undermines the whole reading experience for any player who knows Japanese.
 
+### XII. Historical Grounding Bookends (NON-NEGOTIABLE)
+
+Any feature that changes what a **generator asserts about the world** - the
+`/diagram` settlement and compound engines above all, but equally any future
+generator that draws or states how a place was farmed, built, or lived in -
+MUST be bookended by historical-grounding work: an analysis BEFORE it is
+built, and a verification of the ARTIFACT after.
+
+**Opening gate (Phase 0, before any design).** For every element the feature
+adds or changes, the plan MUST state, in `research.md`:
+
+1. **What the historical reality was** (China-first, Japan corroborating, per
+   the `/diagram` doctrine), in enough detail to be checkable - not "terraces
+   existed" but what determined their placement, extent, and season.
+2. **Whether the proposed design matches it**, explicitly. A design that does
+   not match MUST be changed or dropped at this point, not implemented and
+   revisited.
+3. **What determines the element in reality** - topography, season, tenure,
+   economy. This matters because a generator usually gets the *existence* of
+   a thing right and its *governing variable* wrong.
+
+**Closing gate (final phase, before "done").** The feature MUST re-examine
+the **rendered artifact** - the PNG, not the code and not the intent - and
+confirm each element still matches the Phase 0 findings. This is a separate
+step from the automated gate: `check_village` proves internal consistency,
+never historical truth. A map can pass every check and still depict something
+that never existed.
+
+**Why the artifact and not the code (the motivating failure).** The
+`land_use_overlay` knob shipped a `rape` value that recolored a random ~32%
+of paddy plots yellow. It passed every automated check, was covered by tests,
+and carried a grounded-sounding docstring citing the real 油菜 winter
+rotation. It was still wrong: rice and rape are the two halves of ONE
+rotation in the SAME plot (rice May-Oct; rape sown into the drained stubble
+Oct-Nov, flowering Mar-Apr), so they are never both standing - the map
+depicted two seasons at once. Nothing in the code could reveal that; only
+looking at the picture and asking "what season is this?" could. The same pass
+also showed the second failure mode: the overlay scattered plots at random
+when the real governing variable was topography (lotus goes on the wettest
+ground) or landscape-scale economy (the 桑基魚塘 dike-pond system replaced
+rice across whole districts rather than dotting among it).
+
+**Enforcement.** `/speckit-plan` MUST record both gates in its Constitution
+Check. A feature that cannot state its grounding is not ready to build. The
+findings MUST be written where the rule lives (per the "record the why" rule
+in CLAUDE.md) - including grounding that led to *rejecting* a design, so a
+future pass does not reinvent it.
+
+This principle is NON-NEGOTIABLE because the failure it guards against is
+SILENT: historically impossible output looks perfectly fine, passes the gate,
+and is only caught if a human happens to ask about it.
+
 ## Technical Standards
 
 **Languages and runtimes**
@@ -527,4 +588,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.1.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-05-27
+**Version**: 1.4.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-07-19

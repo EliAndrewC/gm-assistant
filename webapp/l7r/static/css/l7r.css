@@ -48,7 +48,7 @@ html {
   font-size: 17px;
   /* The surface beneath the paper. When body content doesn't fill the
      viewport (e.g. the chargen pre-generation form), this color shows below
-     the paper's bottom edge, signalling that the page ends with the content
+     the paper's bottom edge, signaling that the page ends with the content
      rather than the cream extending forever. */
   background: var(--paper-fold);
 }

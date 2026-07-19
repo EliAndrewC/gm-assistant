@@ -29,6 +29,7 @@ When passed a path to a contact sheet (e.g., `/tmp/l7r-shots/sheet-landing-gm-20
 5. **Look for things that feel sparse, unfinished, or accidental** - empty cream space that doesn't serve a composition; orphan elements; widows of one card per row.
 6. **Check the page edges.** Scan every viewport, especially tablet and mobile, for text, form fields, or buttons that touch the left or right edge of the page. Content kissing the viewport edge is a defect, not a style choice - even if a real mobile site somewhere does it. The L7R Toolkit's design system always inserts a gutter (matching `--gutter`). If you see content at the edge, name it; the implementing agent likely used a `padding` shorthand on a `.container`-wrapped element and stomped the container's horizontal padding to 0.
 7. **Trust your reaction first, then articulate it.** "This feels weird" → describe what specifically is weird. Don't soften it.
+8. **Read every word of visible copy and check the spelling is American, not British.** This project uses American spellings everywhere (`color`, `center`, `gray`, `honor`, `judgment`, `catalog`, `labeled`, `behavior`, `analyze`, `artifact`, `defense`, `skeptic`, `story` of a building). A British spelling in user-visible text is a defect regardless of how good the layout is. Read headings, labels, buttons, table headers, tooltips, and body copy - not just the parts relevant to the layout question you were asked about. (Validated example, 2026-07-19: the /weather report's legend modal was titled "Row col-o-u-rs", and the rule ALSO caught "2nd gr-e-y day" buried in the table's NOTES column - a string emitted by `weather.py`'s note templates that the implementing agent had not registered as user-visible copy at all. The two defect words are hyphen-broken here deliberately so a future automated spelling sweep cannot silently "fix" this example and destroy its meaning. That second catch is the point of the sweep: the obvious heading is the one you were already looking at; the generated body strings are the ones that slip.)
 
 ## What to ignore
 
@@ -43,6 +44,11 @@ Return a short report:
 ```
 PAGE: <name> @ <viewport>
 VERDICT: pass | needs-work | broken
+
+SPELLING SWEEP (mandatory - never omit this section):
+<Quote every distinct word of visible copy that has a British/American split,
+ and mark it OK or WRONG. If you found none at all, write "no split-spelling
+ words in visible copy" - do not simply skip the section.>
 
 Specific issues, ranked by impact:
 1. <one-sentence problem statement>

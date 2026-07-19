@@ -75,7 +75,7 @@ No DEFERRED gates. One flagged decision (D1), recommended not deferred.
   "name it or fill it." Central open is not a defect.
 - **Recompose manors (FR-5):** name/extend the central open (forecourt label + a defined
   outer working-yard; extend/ްname inner-court open as garden/court), tighten any
-  remaining perimeter gaps. No wall move, no coverage change beyond labelling.
+  remaining perimeter gaps. No wall move, no coverage change beyond labeling.
 
 ### Phase 2
 
@@ -85,7 +85,7 @@ No DEFERRED gates. One flagged decision (D1), recommended not deferred.
   buildings)`.
 - **place() (FR-7):** returns `list[Placed]` (each a feet-rect + name/kind) via the D2
   algorithm; a pure function. `emit_svg(placed, program) -> str` multiplies by FTPX and
-  builds labelled rects reusing the palette. A thin CLI writes the draft + renders.
+  builds labeled rects reusing the palette. A thin CLI writes the draft + renders.
 - **Validate (FR-8):** encode the county-magistracy program, place it, emit, run
   pack_audit -> assert high perimeter-hugging %, court-spine intact, coverage in band.
 

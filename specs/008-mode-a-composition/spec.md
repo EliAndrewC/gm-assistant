@@ -40,11 +40,11 @@ that each central court be named.
 ### User Story 2 - The two manors read as composed courtyards (Priority: P1)
 
 The bare centers are defined as **named courts** (forecourt, the outer working yard,
-the inner garden/court) - by extending gardens, labelling the forecourt and the
+the inner garden/court) - by extending gardens, labeling the forecourt and the
 working yard - and perimeter gaps are tightened. Little or no building is added; the
 envelope and coverage are unchanged.
 
-**Acceptance:** after recomposition, every large open region on each manor is a labelled
+**Acceptance:** after recomposition, every large open region on each manor is a labeled
 court/garden; the size-audit packing sweep is clean; pack_audit's perimeter-hugging % is
 high and no vacant rectangle is an unnamed perimeter void.
 
@@ -94,7 +94,7 @@ ruff, ruff format, mypy --strict, pytest, and 100% coverage, TDD.
   named court (forecourt/oshirasu/garden), else "name it or fill it."
 - **FR-4** buildings.md gains a **Mode A composition grammar** section (perimeter ring +
   court-spine; office-front/residence-rear; named-courts rule) with historical grounding.
-- **FR-5** Both manors recomposed so every large open region is a labelled court/garden
+- **FR-5** Both manors recomposed so every large open region is a labeled court/garden
   and perimeter gaps are tight; envelope + coverage unchanged; green on both checks.
 - **FR-6** A `CompoundProgram` feet-first data model (typed dataclasses): envelope,
   court-spine reservations, buildings (name, fill/kind, w_ft, h_ft, zone, wall pref).

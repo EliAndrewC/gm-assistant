@@ -111,18 +111,6 @@ def parse_calendar(path: Path | None = None) -> dict[int, Month]:
     return months
 
 
-def short_title(title: str) -> str:
-    """Table-column form: drop a trailing parenthetical gloss.
-
-    `Haru Higan (Haru Higan festival)` -> `Haru Higan`
-    `Joui (Bestowal of ranks)` -> `Joui`
-
-    The full title (gloss included) still shows in the expanded detail row, so
-    nothing is lost - this only keeps the column narrow.
-    """
-    return re.sub(r"\s*\([^()]*\)\s*$", "", title).strip() or title
-
-
 if __name__ == "__main__":  # pragma: no cover - manual inspection aid
     cal = parse_calendar()
     for n in sorted(cal):
@@ -131,4 +119,4 @@ if __name__ == "__main__":  # pragma: no cover - manual inspection aid
               f"  [{len(mo['meta'])} meta, {len(mo['intro'])} intro, {len(mo['days'])} days]")
         for dn in sorted(mo["days"]):
             dd = mo["days"][dn]
-            print(f"     {dn:2d} {short_title(dd['title'])!r:40} ({len(dd['body'])} paras)")
+            print(f"     {dn:2d} {dd['title']!r:60} ({len(dd['body'])} paras)")

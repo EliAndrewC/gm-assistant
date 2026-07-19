@@ -40,7 +40,7 @@ python3 check_village.py pool/tango.json --capacity --capacity-map
 ## 4. Fix Nagahara
 
 - Declare Nagahara's quarters; ensure NO commoner dwelling is placed outside the wall (route the former extramural top-ups inside).
-- Apply the capacity verdict: it should now read `densify` or `shrink`. If `shrink`, resize the wall by `suggested_wall_scale` about the centre (the whole-map coordinate scale) so the residential quarters fill it; re-run the capacity analysis until `sized_and_packed`.
+- Apply the capacity verdict: it should now read `densify` or `shrink`. If `shrink`, resize the wall by `suggested_wall_scale` about the center (the whole-map coordinate scale) so the residential quarters fill it; re-run the capacity analysis until `sized_and_packed`.
 - Regenerate, run the FULL validator to zero mechanical fails, render and eyeball.
 
 ```

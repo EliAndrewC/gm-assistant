@@ -41,7 +41,7 @@ s.meta(name="Hikari no Sato", scale="village", ftpx=FTPX, households=70, down_de
 _furrows_vary = True
 
 
-def furrows(poly, colour, theta):
+def furrows(poly, color, theta):
     """Stylised ridge/furrow lines within a dry-field plot (dry crops are row-cultivated)."""
     xs = [p[0] for p in poly]
     ys = [p[1] for p in poly]
@@ -56,7 +56,7 @@ def furrows(poly, colour, theta):
     while t <= diag / 2:
         mx, my = cx + nx * t, cy + ny * t
         g.append(f'<line x1="{mx-dx*diag/2:.1f}" y1="{my-dy*diag/2:.1f}" '
-                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{colour}" stroke-width="0.8" opacity="0.8"/>')
+                 f'x2="{mx+dx*diag/2:.1f}" y2="{my+dy*diag/2:.1f}" stroke="{color}" stroke-width="0.8" opacity="0.8"/>')
         t += 5
     g.append('</g>')
     s.add(''.join(g))
@@ -140,7 +140,7 @@ for net in (net_w, net_e):
 # leave free). Lanes first (no-build corridors): a N-S spine along the spur, spurs E + W to each block's edge,
 # and a connector track off the S edge to the district / road.
 _rng = _random.Random(SEED + 1)
-CX, CY = 1120, 600         # centred on the dry spur between the tall W block and the wide E block
+CX, CY = 1120, 600         # centered on the dry spur between the tall W block and the wide E block
 s.lane([(CX - 6, CY - 240), (CX + 6, CY - 90), (CX - 4, CY + 90), (CX + 8, CY + 250)], width=6, clearance=18, worn=True)
 for _sx in (CX - 300, CX + 300):
     _fp = s._nearest_field_point(_sx, CY + 20)
@@ -168,7 +168,7 @@ print(f"farmhouses: {n_farms}")
 # the track as the village's southern gateway - the road runs UNDER the arches (a real, common feature, which is
 # why shrine_halls_clear_of_lanes exempts torii but not the hall). See settlements.md 'Shrines'.
 s.shrine_hall(CX - 40, CY + 540, "Shrine to Benten", w=96, h=64,
-              torii=[(1144, CY + 630), (1141, CY + 695)], primary=True)   # torii ON the track (x on the lane centreline)
+              torii=[(1144, CY + 630), (1141, CY + 695)], primary=True)   # torii ON the track (x on the lane centerline)
 s.shrine_well(CX - 115, CY + 540)     # ablution well just W of the hall, away from the road
 # the still-tended Bishamon village shrine, with the burial ground in its churchyard. It sits in the empty DRY
 # pocket BELOW the E block and to the LEFT of that block's toe marsh - not at the far SW. The SW placement was

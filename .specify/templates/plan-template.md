@@ -104,6 +104,24 @@ approval before /speckit-tasks may run.
   tests, parametrized variants, and ConfigObj / pydantic-settings for
   configuration (no hardcoded magic).
 
+- **XII. Historical Grounding Bookends (NON-NEGOTIABLE)**: Does the feature
+  change what a generator ASSERTS ABOUT THE WORLD (any `/diagram` settlement
+  or compound change; any generator that draws or states how a place was
+  farmed, built, or lived in)? If yes, the plan MUST commit to BOTH bookends:
+  - **Opening (Phase 0, in `research.md`)**: for each element added or
+    changed, state what the historical reality was (China-first, Japan
+    corroborating) in checkable detail, state explicitly whether the proposed
+    design matches it, and name WHAT DETERMINES the element in reality
+    (topography / season / tenure / economy). A design that does not match is
+    changed or dropped HERE, not implemented and revisited. Grounding that
+    led to REJECTING a design MUST be recorded too.
+  - **Closing (final phase, before "done")**: re-examine the RENDERED
+    ARTIFACT (the PNG - not the code, not the intent) and confirm each element
+    still matches the Phase 0 findings. This is separate from the automated
+    gate: `check_village` proves internal consistency, never historical truth.
+    A map can pass every check and still depict something that never existed
+    (see the `rape` overlay failure in the constitution's Principle XII).
+
 Document each gate's status in a short bulleted Constitution Check section
 in the plan output before proceeding to Phase 0.
 

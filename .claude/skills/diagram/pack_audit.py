@@ -215,9 +215,9 @@ class RegionTile:
 class TubAdrift:
     """A fire-water tub sitting too far from any building to be gutter-fed."""
 
-    x: float  # tub centre, SVG px
+    x: float  # tub center, SVG px
     y: float
-    gap_ft: float  # distance from tub centre to the nearest building
+    gap_ft: float  # distance from tub center to the nearest building
 
 
 def _parse_labels(text: str) -> list[Label]:

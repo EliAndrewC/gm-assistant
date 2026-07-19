@@ -47,7 +47,6 @@
   <g>
     <path d="M 600 900 L 600 750" stroke="#B89060" stroke-width="40" stroke-linecap="butt" opacity="0.55"/>
     <path d="M 600 900 L 600 750" stroke="#9C7448" stroke-width="40" stroke-dasharray="14 12" fill="none" opacity="0.4"/>
-    <text x="636" y="816" font-size="12" fill="#6B4F2A" font-style="italic">to the Imperial road</text>
   </g>
 
   <!-- Title block (just above the compound; no redundant summary line - the
@@ -109,19 +108,19 @@
     <rect x="194" y="366" width="12" height="8"/>
     <rect x="194" y="394" width="12" height="8"/>
   </g>
-  <text x="210" y="303" text-anchor="start" font-size="8" font-style="italic" fill="#5C4830">kitchen postern</text>
   <!-- Service-gate posts (south wall, just east of the stables) -->
   <g fill="#2D2A24">
     <rect x="384" y="744" width="16" height="14"/>
     <rect x="428" y="744" width="16" height="14"/>
   </g>
-  <text x="414" y="776" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">service gate</text>
 
-  <!-- THE THRESHOLD STONE (senior Pact-Bowl checkpoint) at south gate -->
+  <!-- Vermillion threshold stones - a PAIR flanking the main-gate passage (one each side,
+       not one stone blocking it); the service/servant gate has none -->
   <g>
-    <rect x="586" y="748" width="28" height="14" fill="#A03020" stroke="#5C0A04" stroke-width="1.2"/>
-    <text x="600" y="789" text-anchor="middle" font-size="10" fill="#5C0A04" font-style="italic">threshold stone</text>
-    <text x="600" y="801" text-anchor="middle" font-size="9" fill="#5C0A04" font-style="italic">(senior Pact-Bowl checkpoint)</text>
+    <rect x="582" y="748" width="10" height="14" fill="#A03020" stroke="#5C0A04" stroke-width="1.2"/>
+    <rect x="608" y="748" width="10" height="14" fill="#A03020" stroke="#5C0A04" stroke-width="1.2"/>
+    <text x="600" y="789" text-anchor="middle" font-size="10" fill="#5C0A04" font-style="italic">Vermillion threshold stones</text>
+    <text x="600" y="801" text-anchor="middle" font-size="9" fill="#5C0A04" font-style="italic">(and buried Pact-Bowl)</text>
   </g>
 
   <!-- Notice board just outside the wall, BETWEEN the main gate and the service gate
@@ -412,7 +411,7 @@
     <circle cx="890" cy="362" r="3" fill="#3A1810"/>
     <circle cx="935" cy="362" r="3" fill="#3A1810"/>
     <circle cx="980" cy="362" r="3" fill="#3A1810"/>
-    <!-- river-stones drying (small grey circles) -->
+    <!-- river-stones drying (small gray circles) -->
     <circle cx="902" cy="322" r="4" fill="#7E726A"/>
     <circle cx="916" cy="329" r="4" fill="#7E726A"/>
     <circle cx="902" cy="339" r="4" fill="#7E726A"/>
@@ -500,11 +499,6 @@
   <!-- ============================================================ -->
   <!-- ANNOTATION LINES (link interior features to outer text)        -->
   <!-- ============================================================ -->
-
-  <!-- Threshold stone annotation -->
-  <g stroke="#5C0A04" stroke-width="0.8" fill="none">
-    <path d="M 600 762 L 600 778"/>
-  </g>
 
   <!-- (scale bar moved to the top-left beside the title) -->
 

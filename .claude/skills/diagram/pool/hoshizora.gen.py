@@ -73,7 +73,7 @@ s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86,
 s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)
 
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
-# travelling in for market day arrive - they sleep on straw for a sen a night
+# traveling in for market day arrive - they sleep on straw for a sen a night
 s.flophouse(345, 905)
 
 # ---- the THEATER STAGE - a roofed performance stage + open viewing ground - in the Bishamon monastery's

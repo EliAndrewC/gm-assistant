@@ -16,7 +16,7 @@ First of all, because Rokugan is not a real place on earth and has a different c
 
 Second, each month is a 30 day lunar month, and the lunar cycle is exactly 30 days, with the full moon falling in the middle of each month and the new moon happening at the beginning/end of each month.  This makes the lunar cycle easy to keep track of alongside the calendar.  It also reinforces the centrality of the sun and moon in the Rokugani cosmology.
 
-The months of the Rokugani calendar do not exactly line up with the Gregorian one.  The 1st day of the Rokugani year is the 1st day of spring, which falls at roughly the end of February.
+The months of the Rokugani calendar do not exactly line up with the Gregorian one.  The 1st day of the Rokugani year is the 1st day of spring, which falls in early February.
 
 Here are the Twelve Months of the Rokugani Year
 N / Zodiac / Traditional Name of the Month / equivalent Gregorian Month
@@ -117,7 +117,7 @@ centered on the equinoxes and solstices, rather than beginning and ending on the
 The most important festival days tend to occur on the 15th days of months and on "double odd" days,
 such as the first day of the first month, the third day of the third month, and so on. Each month also brings its seasonal flowers and colors. This manifests itself in many ways, especially in poetry, clothing, and decorations.
 
-Here's a breakdown of the 1st month of the Rokugani calendar.  This description lists the real-world calendar days which are roughly equivalent to the days on the Rokugani calendar, to help the reader account for the fact that the 1st day of the Rokugani year is the first day of spring, which represents a considerable offset from the Gregorian calendar.
+Here's a breakdown of the 1st month of the Rokugani calendar.  This description lists the real-world calendar days which are roughly equivalent to the days on the Rokugani calendar, to help the reader account for the fact that the 1st day of the Rokugani year is the first day of solar spring, which represents a considerable offset from the Gregorian calendar.
 
 1st Month: Mutsuki ("affection month"), Month of the Hare
 4 February - 5 March
@@ -130,7 +130,7 @@ The first month is called the "month of affection" or "friendly month" because o
 Many of the "firsts" of the year are special - the first visit to a shrine, the first snow, the first flowers, the first martial arts practice, and so on. Typically, people participate as a group, in varying degrees of formality, to do their "firsts" together.
 
 1st Day (4 Feb): Risshun (first day of spring)
-In the solar calendar, Risshun marks the first day of spring.
+In the solar calendar, Risshun marks the first day of solar spring, i.e. Risshun falls exactly halfway between the Winter Solstice and the Vernal Equinox, the point where the lengthening days are halfway toward turning the year back toward the day and night being of equal length, rather than being the end of the cold season. Early Mutsuki is still the dead of winter across most of Rokugan, and snow on Risshun is unremarkable. What the festival celebrates is the turning of the sun, not any warmth on the ground.
 
 The first day of the year begins with rituals and ends with a festival. The Emperor and daimyo begin the day with the ceremony of Shihohai (Prayer to the Four Directions), and nobles and vassals participate in Kochohai (Lesser Obeisance), paying respects to their lords and masters.
 
@@ -190,7 +190,7 @@ On the fourth day of the second month, the governmental Ministries of Rites hold
 11th Day: Rekken (Examinations)
 On the eleventh day of the second month, at the Imperial Court, nobles selected for promotion from the Sixth Rank wear garlands of flowers and proceed to be formally examined by the top ministers of the government. Their names are entered into the rolls of officials of the Fifth Rank, and they join their new ministers for the three-by-three exchange of wine cups.
 
-12th Day (18 Mar): Haru Higan (Haru Higan festival)
+12th Day (18 Mar): Haru Higan festival
 The twelfth day of the second month marks the beginning of the Haru Higan festival, a seven-day Shinseist festival centered on the Vernal Equinox. Families visit the graves of their ancestors, weed and clean the graves, and make offerings of flowers, incense, and rice balls. During this time, monks chant the canon of Shinseist sutras, and services are held every day at temples. Many people attend midday temple services every day during Haru Higan.
 
 15th Day (20 Mar): Shunbun (Vernal Equinox)

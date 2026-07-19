@@ -36,9 +36,9 @@ Poly = list[Pt]  # a polyline / polygon as a list of points
 
 # A rice field is ONE crop at ONE transplant/growth stage, so its body is a UNIFORM green - the plot-to-plot
 # shade jitter denoted nothing (it was only anti-flatness texture), and the GM asked for it uniform. The bund
-# network + footpaths carry the structure, not colour. Kept as a 3-element list of the SAME value so R.choice
+# network + footpaths carry the structure, not color. Kept as a 3-element list of the SAME value so R.choice
 # consumes the RNG stream IDENTICALLY to the old 3-shade version - the field geometry + the meaningful FLOODED
-# drain-plots stay byte-for-byte unchanged; only the body colour goes uniform. (The MEANINGFUL colours remain:
+# drain-plots stay byte-for-byte unchanged; only the body color goes uniform. (The MEANINGFUL colors remain:
 # FLOODED blue-green for the low plots that sit on the drain, and RIPE_GOLD, when a map uses it.)
 _RICE_GREEN = '#A6C398'
 RICE_GREENS = [_RICE_GREEN, _RICE_GREEN, _RICE_GREEN]
@@ -48,7 +48,7 @@ BUND = '#C2A772'
 BEAN_GREEN = '#7C9A4E'  # azemame (bund soybeans) - the beaded-bund accent
 
 # DRY-FIELD (hatake) crops on ground the irrigation cannot command - the upslope margin
-# above the supply canal. Each: fill + furrow-line colour (dry crops are ridge-cultivated).
+# above the supply canal. Each: fill + furrow-line color (dry crops are ridge-cultivated).
 DRY_CROPS = {
     "barley": ("#CDB86A", "#B49E52"),  # mugi - tan-gold
     "millet": ("#C6A64A", "#AD8C36"),  # awa/kibi - ochre
@@ -473,7 +473,7 @@ def build_comb(
     dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, furrow_spread=furrow_spread, grain_drift=grain_drift)
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac)
-    # furrows_vary tells the checker whether to REQUIRE neighbouring dry plots to differ in row direction: a
+    # furrows_vary tells the checker whether to REQUIRE neighboring dry plots to differ in row direction: a
     # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
     # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
     # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
@@ -796,7 +796,7 @@ def _dry_fields(
     bounds[-1] = total
 
     # FURROW ANGLE varies PER PLOT (a mosaic of family strips): each plot drops its ridges into the LARGEST gap
-    # between the angles of its already-placed NEIGHBOURS, guaranteeing separation (drives dry_plot_furrows_vary).
+    # between the angles of its already-placed NEIGHBORS, guaranteeing separation (drives dry_plot_furrows_vary).
     HW = furrow_spread
     placed: list[tuple[float, float, float]] = []
     ADJ2 = 56**2
@@ -832,7 +832,7 @@ def _dry_fields(
             lo, hi = theta0 - HW, theta0 + HW  # furrows stay within HW rad of the contour
             nb = sorted(min(hi, max(lo, t)) for (px, py, t) in placed if (cx - px) ** 2 + (cy - py) ** 2 < ADJ2)
             edges = [lo] + nb + [hi]
-            gi = max(range(len(edges) - 1), key=lambda j: edges[j + 1] - edges[j])  # the widest gap between neighbours
+            gi = max(range(len(edges) - 1), key=lambda j: edges[j + 1] - edges[j])  # the widest gap between neighbors
             theta = min(hi, max(lo, (edges[gi] + edges[gi + 1]) / 2 + R.uniform(-0.03, 0.03)))
             placed.append((cx, cy, theta))
             plots.append({"poly": [(round(p[0], 1), round(p[1], 1)) for p in quad], "crop": crop, "fill": fill, "furrow": furrow, "theta": round(theta, 3)})
@@ -841,7 +841,7 @@ def _dry_fields(
 
 def _bund_beans(R: random.Random, plots: list[dict[str, Any]], frac: float, spacing: float = 9.5) -> Poly:
     """AZEMAME (bund soybeans): sub-pixel at 1px=2ft, so drawn symbolically as a green BEAD
-    line along a fraction of the paddy bunds. Returns bead centre points; the caller draws
+    line along a fraction of the paddy bunds. Returns bead center points; the caller draws
     small BEAN_GREEN dots. ~`frac` of plots carry beaded bunds (not every bund had beans)."""
     beans = []
     for p in plots:
@@ -914,14 +914,14 @@ def build_terraces(
     # a supply canal runs DOWN the high (t=-1) flank, then TURNS INTO the field foot (so its tail sits inside the
     # terraces and the source->field feed anchors); a drain collects along the foot and DESCENDS to the low-flank
     # outfall (so it flows downhill); a brook carries the drain off-map continuing the drain's own heading.
-    # a gentle diagonal supply: from the sluice (high-west shoulder) descending toward the field-centre foot, so
+    # a gentle diagonal supply: from the sluice (high-west shoulder) descending toward the field-center foot, so
     # its fork sits INSIDE the terraces (the source->field feed anchors) with no hairpin turn
     n_sup = 8
     flank = []
     for k in range(n_sup + 1):
         f = k / n_sup
         s_pos = fall * 0.9 * f
-        lat = -hw * 0.92 * (1.0 - f * 0.8)  # from the west flank toward the centre as it descends
+        lat = -hw * 0.92 * (1.0 - f * 0.8)  # from the west flank toward the center as it descends
         flank.append((top[0] + dx * s_pos + ux * lat, top[1] + dy * s_pos + uy * lat))
     # the drain is a STRAIGHT descending collector along the foot (a straight amp=0 contour, not the wiggly
     # terrace bottom - following the sine would hairpin), sloping steadily to the low-flank outfall, then turning
@@ -1037,7 +1037,7 @@ def build_ribbon(
     """RIBBON VALLEY (谷地田 / a narrow valley-floor strip): a long, NARROW paddy strung along a MEANDERING
     valley floor, the field archetype for a confined valley where the flat ground is only a thin winding
     ribbon beside the brook. Returns build_comb-compatible keys. China-first grounding (research.md D4): the
-    valley-bottom rice ribbon of hill country - the brook runs down the centre, paddy bands flank it, and the
+    valley-bottom rice ribbon of hill country - the brook runs down the center, paddy bands flank it, and the
     whole strip WANDERS with the valley (the distinguishing read against the broad comb fan or the polder)."""
     R = random.Random(seed)
     dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
@@ -1048,7 +1048,7 @@ def build_ribbon(
     wl = length / 2.4  # meander wavelength
     ph = R.uniform(0, 2 * math.pi)
 
-    def cline(s: float) -> float:  # lateral offset of the valley centre at downhill s (the meander)
+    def cline(s: float) -> float:  # lateral offset of the valley center at downhill s (the meander)
         return amp * math.sin(ph + s / wl * 2 * math.pi)
 
     def edge(s: float, side: float) -> Pt:
@@ -1064,15 +1064,15 @@ def build_ribbon(
     left = [edge(i * step, -1) for i in range(n_bands + 1)]
     right = [edge(i * step, 1) for i in range(n_bands + 1)]
     envelope = [*left, *reversed(right), left[0]]
-    # the valley BROOK runs down the meandering centre (the source: a stream, entering at the high end); a drain
-    # continues it off-map at the foot. Supply is the brook itself, so the 'main' ditch traces the centreline.
-    centre = [(top[0] + dx * (i * step) + ux * cline(i * step), top[1] + dy * (i * step) + uy * cline(i * step)) for i in range(n_bands + 1)]
+    # the valley BROOK runs down the meandering center (the source: a stream, entering at the high end); a drain
+    # continues it off-map at the foot. Supply is the brook itself, so the 'main' ditch traces the centerline.
+    center = [(top[0] + dx * (i * step) + ux * cline(i * step), top[1] + dy * (i * step) + uy * cline(i * step)) for i in range(n_bands + 1)]
     flank = [
-        (round(x, 1), round(y, 1)) for x, y in centre[: n_bands // 2 + 1]
+        (round(x, 1), round(y, 1)) for x, y in center[: n_bands // 2 + 1]
     ]  # the upper valley brook is the supply reach; its fork sits mid-valley so the source->field feed anchors INSIDE the ribbon
     # a short CROSS-SLOPE collector across the ribbon at the foot (perpendicular to the fall), then a downhill
     # outfall so the brook leaves smoothly (a valley ribbon still gathers its tail-water in a cross drain)
-    foot = centre[-1]
+    foot = center[-1]
     drain_pts = [
         (round(foot[0] - ux * hw * 0.9, 1), round(foot[1] - uy * hw * 0.9, 1)),
         (round(foot[0], 1), round(foot[1], 1)),

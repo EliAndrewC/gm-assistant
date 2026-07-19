@@ -67,7 +67,7 @@ def test_streets_have_buildings_passes_when_a_building_fronts_the_street():
 # Walls are expensive; one should hug the built town. A single building tucked in one corner of
 # a big square enclosure leaves three faces running over empty space - that must fire. A town
 # whose buildings sit near every face must NOT. (The hill, when present, counts as occupancy -
-# a wall may legitimately climb/skirt terrain rather than levelling it.)
+# a wall may legitimately climb/skirt terrain rather than leveling it.)
 def test_wall_hugs_the_town_fires_on_empty_corner_space():
     M = {"meta": {"scale": "town", "walled": True}, "wall": WALL, "buildings": [bldg(120, 120)]}  # one building, far from the right/bottom faces
     assert "wall_hugs_the_town" in f(M)
@@ -158,7 +158,7 @@ def test_field_ditches_ground_via_the_moat():
 
 # ---- lanes: houses must FRONT a lane (not sit on it); a CONNECTOR must run off the edge -------
 def test_houses_clear_of_lanes_fires_when_a_house_sits_on_the_tread():
-    M = {"lanes": [{"pts": [[100, 500], [900, 500]], "worn": True, "w": 6, "connector": False}], "houses": [{"x": 500, "y": 500, "w": 23, "h": 14, "rot": 0, "kind": "plain"}]}  # centred ON the lane
+    M = {"lanes": [{"pts": [[100, 500], [900, 500]], "worn": True, "w": 6, "connector": False}], "houses": [{"x": 500, "y": 500, "w": 23, "h": 14, "rot": 0, "kind": "plain"}]}  # centered ON the lane
     assert "houses_clear_of_lanes" in f(M)
 
 
@@ -278,7 +278,7 @@ def test_dry_plot_furrows_vary_fires_when_two_neighbours_share_an_angle():
 
 
 def test_dry_plot_furrows_vary_passes_when_neighbours_differ():
-    # adjacent plots alternate orientation, so no neighbouring pair shares a row direction
+    # adjacent plots alternate orientation, so no neighboring pair shares a row direction
     dp = [_dryplot(300, 0.2), _dryplot(340, 0.9), _dryplot(380, 0.2), _dryplot(420, 0.9)]
     assert "dry_plot_furrows_vary" not in f({"dry_plots": dp})
 
@@ -835,7 +835,7 @@ def test_farm_sheds_attached_fires_on_a_stranded_kura():
 
 
 def test_shrine_clear_of_grove_trees_fires_when_a_clump_covers_the_hall():
-    # a fengshui-grove tree clump whose centre sits on the shrine hall's footprint reads as buried in the wood
+    # a fengshui-grove tree clump whose center sits on the shrine hall's footprint reads as buried in the wood
     M = {
         "meta": {"scale": "village"},
         "religious": [{"kind": "shrine", "x": 500, "y": 500, "w": 30, "h": 24, "label": "Shrine"}],
@@ -1189,14 +1189,14 @@ def test_village_groves_clear_of_paddies_fires_on_a_grove_in_a_field():
 
 
 def test_commons_clear_of_paddies_fires_when_scrub_sits_in_a_field():
-    # The check tests the DRAWN OUTCOME, not the patch's bbox CENTRE (the scatter skips every paddy point by
-    # construction, so a centre-over-water test was only a proxy). It fires when a patch can clothe NOTHING:
+    # The check tests the DRAWN OUTCOME, not the patch's bbox CENTER (the scatter skips every paddy point by
+    # construction, so a center-over-water test was only a proxy). It fires when a patch can clothe NOTHING:
     M = _nuc_village_M(_nuc_grid(), fields=[_field("p", 540, 540, 700, 700)])
     M["commons"] = [{"x": 600, "y": 600, "w": 60, "h": 60, "rot": 0, "poly": [[570, 570], [630, 570], [630, 630], [570, 630]]}]  # wholly inside the paddy -> draws nothing
     assert "commons_clear_of_paddies" in f(M)
     # ...but an INTERIOR FILL - the patch that clothes the voids an irregular field leaves inside its own bbox -
-    # legitimately has its CENTRE on the crop while every glyph it draws lands in the open ground around it.
-    # Scoring the centre failed this correct patch, which is why the rule changed (GM, 2026-07: Akagahara's fan
+    # legitimately has its CENTER on the crop while every glyph it draws lands in the open ground around it.
+    # Scoring the center failed this correct patch, which is why the rule changed (GM, 2026-07: Akagahara's fan
     # void rendered as bare clay because nothing was allowed to cover it).
     fill = _nuc_village_M(_nuc_grid(), fields=[_field("p", 540, 540, 700, 700)])
     fill["commons"] = [{"x": 600, "y": 600, "w": 400, "h": 400, "rot": 0, "poly": [[400, 400], [800, 400], [800, 800], [400, 800]]}]
@@ -2050,7 +2050,7 @@ def test_kido_clear_of_wall_towers_passes_when_the_tower_stands_off():
 
 
 def test_city_wall_furniture_clear_of_moat_fires_when_a_tower_stands_in_the_bed():
-    # a tower centred on the wall line pokes its outer face into a close-set moat's bed (GM 2026-07:
+    # a tower centered on the wall line pokes its outer face into a close-set moat's bed (GM 2026-07:
     # every Tango tower did - the gap=24 moat leaves a 13px berm vs a 19-20px tower half-width)
     moat = [[176, 176], [824, 176], [824, 824], [176, 824], [176, 176]]
     M = _fort_city(moat=moat, moat_width=22, wall_towers=[{"x": 200, "y": 500, "w": 38, "h": 38, "rot": 0}])
@@ -2244,7 +2244,7 @@ def test_city_merchant_estates_clear_of_wall_moat_fires():
 
 
 def test_city_merchant_estates_clear_of_buildings_fires_on_a_temple():
-    # an estate court over a temple whose CENTRE is outside the court (so it is not its own inner house)
+    # an estate court over a temple whose CENTER is outside the court (so it is not its own inner house)
     M = _estate_city([{"x": 500, "y": 500, "w": 78, "h": 58}], religious=[{"x": 500, "y": 560, "w": 80, "h": 80, "kind": "temple", "label": "Temple"}])
     assert "city_merchant_estates_clear_of_buildings" in f(M)
 
@@ -2633,7 +2633,7 @@ def test_city_civic_label_on_its_own_building_passes_over_its_own():
     assert "city_civic_label_on_its_own_building" not in f(M)
 
 
-# --- city_government_offices_dont_abut (a ministry / the yamen must stand clear of its neighbours) ---
+# --- city_government_offices_dont_abut (a ministry / the yamen must stand clear of its neighbors) ---
 def test_city_government_offices_dont_abut_fires_when_two_ministries_touch():
     M = {
         "meta": {"scale": "city"},
@@ -3471,7 +3471,7 @@ def _harvest(houses, yards, fields=None):
 
 
 def _yard(of, dx=44, dy=0, w=32, h=20):
-    # a small yard beside the farmhouse at `of`, recording its parent farmhouse centre
+    # a small yard beside the farmhouse at `of`, recording its parent farmhouse center
     return {"x": of[0] + dx, "y": of[1] + dy, "w": w, "h": h, "rot": 0, "of": [of[0], of[1]]}
 
 
@@ -3496,7 +3496,7 @@ def test_harvest_yards_smaller_than_farmhouse_passes_when_small():
 
 
 def test_harvest_yards_on_sunny_side_fires_when_north_of_house():
-    # +y is south; a yard ABOVE its house centre sits on the shady north/back side
+    # +y is south; a yard ABOVE its house center sits on the shady north/back side
     y = {"x": 300, "y": 260, "w": 32, "h": 20, "rot": 0, "of": [300, 300]}
     assert "harvest_yards_on_sunny_side" in f(_harvest([(300, 300)], [y]))
 
@@ -3558,7 +3558,7 @@ def test_waterways_merge_at_crossings_passes_when_no_crossing():
 
 
 def test_waterways_merge_at_crossings_passes_when_neither_has_sheen():
-    # two channels crossing - same-colour beds merge regardless of order, no sheen to cut
+    # two channels crossing - same-color beds merge regardless of order, no sheen to cut
     M = {
         "meta": {"scale": "village"},
         "channels": [
@@ -3629,7 +3629,7 @@ def test_cemetery_clear_of_shrine_allows_a_grave_in_the_precinct():
         "meta": {"scale": "village"},
         "cemeteries": [{"x": 615, "y": 500, "w": 80, "h": 56, "rot": 0}],
         "religious": _SHR,
-    }  # 115px from the shrine centre (old rule would fire) but clear of the hall's east edge
+    }  # 115px from the shrine center (old rule would fire) but clear of the hall's east edge
     assert "cemetery_clear_of_shrine" not in f(M)
 
 
@@ -4224,7 +4224,7 @@ def test_no_structure_on_moat_fires_when_a_structure_sits_on_it():
 
 def test_no_structure_on_pond_fires_when_a_structure_stands_in_it():
     # the Tango west-tower case: a struct corner dipping into the pond ellipse; and the engulfment
-    # branch: a footprint swallowing the pond centre outright
+    # branch: a footprint swallowing the pond center outright
     M = {
         "meta": {"scale": "village"},
         "pond": [500, 500, 74, 46],
@@ -4339,7 +4339,7 @@ def test_city_has_fire_towers_opt_out():
 
 
 def test_fire_tower_in_commoner_quarter_fires_in_samurai_quarter():
-    # a tower whose nearest neighbours are all samurai sits in the samurai quarter, not the warren
+    # a tower whose nearest neighbors are all samurai sits in the samurai quarter, not the warren
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)], "buildings": [bldg(520, 510, "samurai"), bldg(480, 515, "samurai"), bldg(510, 480, "samurai_large")]}
     assert "fire_tower_in_commoner_quarter" in f(M)
 
@@ -4407,7 +4407,7 @@ def test_fire_tower_amid_its_district_ignores_extramural_rows():
 
 
 def test_fire_tower_standoff_fires_when_flush_with_a_building():
-    # tower half-width 13 + shop half-width 20 -> centres 536 apart leave a 3px gap: too tight
+    # tower half-width 13 + shop half-width 20 -> centers 536 apart leave a 3px gap: too tight
     # (the far building exercises the distance prefilter)
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)], "buildings": [bldg(536, 500, "laborer", w=40, h=28), bldg(900, 900, "laborer")]}
     fails = f(M)
@@ -4421,14 +4421,14 @@ def test_fire_tower_standoff_fires_on_true_overlap_too():
 
 
 def test_fire_tower_standoff_passes_with_daylight():
-    # 6px gap (centres 539 apart) clears the 5px rule
+    # 6px gap (centers 539 apart) clears the 5px rule
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)], "buildings": [bldg(539, 500, "laborer", w=40, h=28)]}
     assert "fire_tower_standoff" not in f(M)
 
 
 def test_fire_tower_amid_its_district_skips_a_district_less_tower():
     # two coincident towers: all dwellings assign to the first, the second has no district to be
-    # off-centre of (dispersal is what catches the stacking)
+    # off-center of (dispersal is what catches the stacking)
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500), _tower(500, 500)], "buildings": _block(455, 455)}
     fails = f(M)
     assert "fire_tower_amid_its_district" not in fails
@@ -4460,13 +4460,13 @@ def test_fire_tower_clear_of_wells_fires_on_a_wellhead():
 
 
 def test_fire_tower_clear_of_wells_fires_within_the_standoff():
-    # tower half-width 13 + well r 8 + 5px daylight rule -> a well centre 25px away is still too close
+    # tower half-width 13 + well r 8 + 5px daylight rule -> a well center 25px away is still too close
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)], "wells": [{"x": 525, "y": 500, "r": 8}]}
     assert "fire_tower_clear_of_wells" in f(M)
 
 
 def test_fire_tower_clear_of_wells_passes_with_daylight():
-    # 26px of clearance (centre 500 -> well 539: 13 + 8 + 18) is comfortably clear of the 5px rule
+    # 26px of clearance (center 500 -> well 539: 13 + 8 + 18) is comfortably clear of the 5px rule
     M = {"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)], "wells": [{"x": 539, "y": 500, "r": 8}]}
     assert "fire_tower_clear_of_wells" not in f(M)
 
@@ -4477,7 +4477,7 @@ def test_grove_clumps_clear_of_structures_fires_on_a_clump_over_a_house():
         "meta": {"scale": "village"},
         "houses": [{"x": 500, "y": 500, "w": 40, "h": 30, "rot": 0, "kind": "plain"}],
         "village_groves": [{"role": "copse", "r": 11, "clumps": [[515, 505]]}],
-    }  # blob centre inside the house
+    }  # blob center inside the house
     assert "grove_clumps_clear_of_structures" in f(on)
     beside = {**on, "village_groves": [{"role": "copse", "r": 11, "clumps": [[560, 505]]}]}  # abuts, off the wall
     assert "grove_clumps_clear_of_structures" not in f(beside)
@@ -4518,7 +4518,7 @@ def test_seg_to_rect_dist_zero_on_corner_touch_and_positive_when_apart():
 
 
 # ---- gardens_unshaded_from_east: nudge an E-side garden S of a shading tree WHERE POSSIBLE ----
-# a house with its garden on the E, a NEIGHBOUR grove hard against the garden's east, open ground to the S
+# a house with its garden on the E, a NEIGHBOR grove hard against the garden's east, open ground to the S
 _EAST_SHADE = {
     "meta": {"scale": "village"},
     "houses": [{"x": 300, "y": 300, "w": 23, "h": 14, "rot": 0, "kind": "plain"}],
@@ -4880,7 +4880,7 @@ def _ward006(**extra):
 def test_city_ward_fence_clear_of_structures_fires_on_a_building_on_the_fence():
     clear = _ward006(buildings=[bldg(350, 550, "samurai")])  # inside the ward, off the fence
     assert "city_ward_fence_clear_of_structures" not in f(clear)
-    onfence = _ward006(buildings=[bldg(350, 500, "samurai")])  # centred ON the top fence line
+    onfence = _ward006(buildings=[bldg(350, 500, "samurai")])  # centered ON the top fence line
     assert "city_ward_fence_clear_of_structures" in f(onfence)
     maus = _ward006(mausoleums=[{"x": 500, "y": 600, "w": 44, "h": 32, "rot": 0}])  # the E fence passes through it
     assert "city_ward_fence_clear_of_structures" in f(maus)
@@ -4977,7 +4977,7 @@ def test_gardens_unshaded_from_east_exempt_when_south_shift_blocked_by_a_bog():
         "meta": {"scale": "village"},
         "houses": [{"x": 500, "y": 500, "w": 40, "h": 30, "rot": 0, "kind": "plain"}],
         "gardens": [{"x": 500, "y": 500, "w": 30, "h": 30, "of": [500, 500]}],
-        "groves": [{"x": 545, "y": 500, "w": 40, "h": 30, "of": [999, 999]}],  # neighbour grove hard against the garden's east
+        "groves": [{"x": 545, "y": 500, "w": 40, "h": 30, "of": [999, 999]}],  # neighbor grove hard against the garden's east
         "marshes": [{"poly": [[480, 510], [520, 510], [520, 600], [480, 600]]}],  # bog fills the whole southward corridor
     }
     assert "gardens_unshaded_from_east" not in f(M)
@@ -5035,17 +5035,17 @@ def test_twin_detector_skips_different_or_missing_down_deg():
 
 def test_twin_axes_geometric_fallbacks_no_meta_knobs():
     ax = check_village.twin_axes(_tv(meta={"name": "G"}))
-    assert ax["cluster_region"] == "W"  # cluster sits W of the field centre
+    assert ax["cluster_region"] == "W"  # cluster sits W of the field center
     assert ax["cluster_shape"] == "tall"  # bbox 60 wide x 140 tall -> r < 0.7
     assert ax["headman_side"] == "N"  # headman N of the cluster centroid
-    assert ax["water_source"] == "NW"  # pond NW of the field centre
+    assert ax["water_source"] == "NW"  # pond NW of the field center
     assert ax["lane_skeleton"] is None  # no declared knob, no geometric fallback
     assert ax["focal_set"] == frozenset()
     assert isinstance(ax["grain_orient"], int)
 
 
 def test_twin_axes_round_cluster_center_headman_and_dir8_deadzone():
-    # a square cluster CENTRED on the field centre: round shape, headman AT the centroid (center),
+    # a square cluster CENTERED on the field center: round shape, headman AT the centroid (center),
     # and cluster_region hits _dir8's zero-vector dead zone -> None
     houses = [
         {"x": 300, "y": 300, "role": "plain"},
@@ -5056,8 +5056,8 @@ def test_twin_axes_round_cluster_center_headman_and_dir8_deadzone():
     ]
     ax = check_village.twin_axes({"meta": {"name": "R", "down_deg": 45}, "houses": houses, "fields": [{"bbox": [0, 0, 700, 700]}]})
     assert ax["cluster_shape"] == "round"  # w == h
-    assert ax["headman_side"] == "center"  # headman at the cluster centre
-    assert ax["cluster_region"] is None  # centroid == field centre -> dead zone
+    assert ax["headman_side"] == "center"  # headman at the cluster center
+    assert ax["cluster_region"] is None  # centroid == field center -> dead zone
     assert ax["water_source"] is None and ax["grain_orient"] is None  # no pond, no dry_plots
 
 
@@ -5135,6 +5135,36 @@ def test_mulberry_dike_fishpond_needs_a_block_of_ponds():
     assert "dikepond_is_ponds_in_a_block" not in f(good)
     no_ponds = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": rect_ol, "bbox": [100, 100, 900, 1300]}]}  # a block but no fishponds
     assert "dikepond_is_ponds_in_a_block" in f(no_ponds)
+
+
+def test_overlays_must_sit_on_the_low_wet_ground():
+    """Feature 010. A plot-based land-use overlay is sited by TOPOGRAPHY, not chance: deep-water lotus
+    (30-50cm) cannot sit on ground that grows rice at 5-9cm, and dike-ponds were dug out of the low
+    flood-prone hollows. The teeth come from `wet_plots` being written by the FIELD pass while
+    `land_use[].plots` is written by the OVERLAY pass - two independent records, not a self-report."""
+    base = {"meta": {"scale": "village", "land_use_overlay": "lotus"}, "wet_plots": [[100, 100], [140, 100], [180, 100]]}
+    good = {**base, "land_use": [{"overlay": "lotus", "count": 2, "plots": [[100, 100], [140, 100]]}]}
+    assert "overlays_on_wet_ground_only" not in f(good)
+    off = {**base, "land_use": [{"overlay": "lotus", "count": 2, "plots": [[100, 100], [900, 900]]}]}  # one plot up on dry rice ground
+    assert "overlays_on_wet_ground_only" in f(off)
+    # the ORIGINAL defect this feature fixed: a uniform random sample over ALL plots, so nothing lands on wet ground
+    random_sample = {**base, "land_use": [{"overlay": "lotus", "count": 3, "plots": [[500, 220], [730, 640], [910, 480]]}]}
+    assert "overlays_on_wet_ground_only" in f(random_sample)
+    # the NAMED wholesale-conversion opt-out (the dike-pond ARCHETYPE) is exempt by design, not by accident
+    archetype = {**base, "land_use": [{"overlay": "lotus", "count": 2, "eligible": "all", "plots": [[900, 900]]}]}
+    assert "overlays_on_wet_ground_only" not in f(archetype)
+
+
+def test_land_use_overlay_drawn_tolerates_having_no_eligible_ground():
+    """Feature 010. Drawing nothing is the HONEST outcome when a field has no low/wet ground, so that must
+    not trip the gate - but a declared overlay that simply never called apply_land_use still must."""
+    base = {"meta": {"scale": "village", "land_use_overlay": "lotus"}}
+    no_ground = {**base, "wet_plots": [], "land_use": [{"overlay": "lotus", "count": 0, "plots": []}]}
+    assert "land_use_overlay_drawn" not in f(no_ground)
+    never_called = {**base, "wet_plots": [[100, 100]], "land_use": []}
+    assert "land_use_overlay_drawn" in f(never_called)
+    had_ground_but_empty = {**base, "wet_plots": [[100, 100]], "land_use": [{"overlay": "lotus", "count": 0, "plots": []}]}
+    assert "land_use_overlay_drawn" in f(had_ground_but_empty)
 
 
 def test_field_outline_matches_planting_fires_on_a_phantom_tail():
@@ -5291,3 +5321,66 @@ def test_city_rows_max_two_deep_ignores_side_by_side_terraces():
     # a long terrace of party-wall units (touching along w) is the doctrine, not a violation
     row = [bldg(300 + i * 40.4, 300, "laborer", w=40, h=24) for i in range(8)]
     assert "city_rows_max_two_deep" not in f(_door_city(row))
+
+
+# ---- merchant-estate walls clear of water + fire towers (GM feedback 2026-07-19) ------------
+def _mest_city(**extra):
+    M = {"meta": {"scale": "city"}, "merchant_estates": [{"x": 500, "y": 500, "w": 62.0, "h": 46.0, "gate": [500, 523.0], "gate_dir": "south"}]}
+    M.update(extra)
+    return M
+
+
+def test_merchant_estate_wall_fires_on_a_dock_overlap():
+    # dock basin footprint under the estate's east wall (the shipped-Nagahara defect)
+    assert "merchant_estate_wall_clear_of_water" in f(_mest_city(docks=[{"x": 540, "y": 490, "w": 54, "h": 34, "rot": 0}]))
+
+
+def test_merchant_estate_wall_fires_on_a_canal_crossing():
+    # canal centerline passes through the north wall
+    assert "merchant_estate_wall_clear_of_water" in f(_mest_city(canals=[{"poly": [[400, 477], [600, 477]], "w": 12.0}]))
+
+
+def test_merchant_estate_wall_fires_on_a_pond_and_a_moat():
+    assert "merchant_estate_wall_clear_of_water" in f(_mest_city(pond=[469, 500, 20, 14]))  # pond ellipse reaching the west wall
+    assert "merchant_estate_wall_clear_of_water" in f(_mest_city(moat=[[531, 400], [531, 600]], moat_width=22.0))  # moat band over the east wall
+
+
+def test_merchant_estate_wall_passes_with_water_at_a_distance():
+    clear = _mest_city(
+        docks=[{"x": 620, "y": 490, "w": 54, "h": 34, "rot": 0}],
+        canals=[{"poly": [[400, 440], [600, 440]], "w": 12.0}],
+        pond=[420, 500, 20, 14],
+    )
+    assert "merchant_estate_wall_clear_of_water" not in f(clear)
+
+
+def test_merchant_estate_wall_fires_on_a_fire_tower_and_passes_when_clear():
+    # tower footprint straddling the south wall (the shipped-Nagahara defect)
+    on_wall = _mest_city(fire_towers=[{"x": 490, "y": 523, "w": 8.7, "h": 8.7, "rot": 0}])
+    assert "merchant_estate_wall_clear_of_fire_towers" in f(on_wall)
+    clear = _mest_city(fire_towers=[{"x": 490, "y": 545, "w": 8.7, "h": 8.7, "rot": 0}])
+    assert "merchant_estate_wall_clear_of_fire_towers" not in f(clear)
+
+
+def test_merchant_estate_wall_checks_skip_maps_without_estates():
+    assert "merchant_estate_wall_clear_of_water" not in f({"meta": {"scale": "city"}, "docks": [{"x": 540, "y": 490, "w": 54, "h": 34, "rot": 0}]})
+
+
+def test_merchant_estate_wall_fires_on_a_street_crossing():
+    # a city street's band running under the estate's west wall (GM 2026-07-19 follow-up)
+    hit = _mest_city(town_streets=[{"pts": [[470, 400], [470, 600]], "w": 6.0}])
+    assert "merchant_estate_wall_clear_of_streets" in f(hit)
+    # the trunk road under the south wall is the same error
+    road = _mest_city(road=[[400, 523], [600, 523]], road_width=8.7)
+    assert "merchant_estate_wall_clear_of_streets" in f(road)
+
+
+def test_merchant_estate_wall_passes_streets_at_a_distance():
+    clear = _mest_city(town_streets=[{"pts": [[440, 400], [440, 600]], "w": 6.0}], road=[[400, 560], [600, 560]], road_width=8.7)
+    assert "merchant_estate_wall_clear_of_streets" not in f(clear)
+
+
+def test_merchant_estate_fires_when_a_fire_tower_is_enclosed_in_the_court():
+    # wall-line clear but the municipal tower trapped INSIDE the private court - same siting error
+    inside = _mest_city(fire_towers=[{"x": 500, "y": 505, "w": 8.7, "h": 8.7, "rot": 0}])
+    assert "merchant_estate_wall_clear_of_fire_towers" in f(inside)

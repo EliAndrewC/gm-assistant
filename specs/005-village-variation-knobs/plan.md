@@ -6,7 +6,7 @@
 
 ## Summary
 
-Extend the Mode B settlement generator (`.claude/skills/diagram/`) so that villages are assembled from named, individually-tunable **knobs** rather than one frozen per-map template. Each knob can be pinned in a village spec or rolled independently and deterministically from the seed, gated by historical-typing rules so a roll respects the village's stated geography. Phase 1 delivers the "same water direction still distinct" knob set (cluster geometry, lane skeleton with derived headman/shrine, water-source placement, plot texture + grain drift, focal-feature catalogue); an automated **pool-level twin-detector** in `check_village.py` mechanically guards distinctiveness; Kikuta and Hoshigaoka are re-varied to stop twinning. Later phases add whole-terrain/settlement **archetypes** (contour terraces, polder grid, ribbon valley, mulberry-dike fish-pond; linear/dispersed/water-town forms; land-use overlays), each an incremental build with its own validator rules and to-scale grounding. Every knob value carries recorded historical grounding (China-first, Japan corroborating); all existing pool maps keep passing the gate.
+Extend the Mode B settlement generator (`.claude/skills/diagram/`) so that villages are assembled from named, individually-tunable **knobs** rather than one frozen per-map template. Each knob can be pinned in a village spec or rolled independently and deterministically from the seed, gated by historical-typing rules so a roll respects the village's stated geography. Phase 1 delivers the "same water direction still distinct" knob set (cluster geometry, lane skeleton with derived headman/shrine, water-source placement, plot texture + grain drift, focal-feature catalog); an automated **pool-level twin-detector** in `check_village.py` mechanically guards distinctiveness; Kikuta and Hoshigaoka are re-varied to stop twinning. Later phases add whole-terrain/settlement **archetypes** (contour terraces, polder grid, ribbon valley, mulberry-dike fish-pond; linear/dispersed/water-town forms; land-use overlays), each an incremental build with its own validator rules and to-scale grounding. Every knob value carries recorded historical grounding (China-first, Japan corroborating); all existing pool maps keep passing the gate.
 
 **Foundation work first (GM-directed 2026-07-13):** before the knob work, the diagram skill is brought to full Principle X compliance - fix the ~10 `ruff` findings, wire `ruff` + `ruff format --check` + `mypy` + `pytest --cov-fail-under=100` into one gate command (a `make done` equivalent) so it is maintained going forward, and migrate the three engine modules (`settlement.py`, `check_village.py`, `waterfields.py`) to `mypy --strict` via a **per-module ratchet** (new code strict immediately; each legacy module annotated in a focused pass that flips it off the relax-list). This eliminates the Principle X deferral rather than carrying it.
 
@@ -28,9 +28,9 @@ Extend the Mode B settlement generator (`.claude/skills/diagram/`) so that villa
 
 **Constraints**: (a) to-scale realism preserved - every knob draws a real historical form at honest relative size (Mode B scale ladder: village = 1 px = 2 ft); (b) China-first grounding (Song/Ming rice south), Japan corroborating, GM canon overrides; (c) determinism - a spec + seed always produces an identical map (seeded rolls, no wall-clock entropy); (d) all six existing village/hamlet pool maps keep passing `check_village`; (e) every shipped knob value has recorded grounding in `settlements.md`.
 
-**Scale/Scope**: The knob layer + independent seeded roll + historical-typing rules + the focal-feature catalogue + the pool-level twin-detector, applied first to re-vary Kikuta + Hoshigaoka (the MVP), then the terrain/settlement/land-use archetypes delivered one at a time (each: new geometry generator + archetype-specific validator rules + grounding). The other four village/hamlet maps (Hikari, Moritono, Ikegami, Ueda) stay as-is and keep passing.
+**Scale/Scope**: The knob layer + independent seeded roll + historical-typing rules + the focal-feature catalog + the pool-level twin-detector, applied first to re-vary Kikuta + Hoshigaoka (the MVP), then the terrain/settlement/land-use archetypes delivered one at a time (each: new geometry generator + archetype-specific validator rules + grounding). The other four village/hamlet maps (Hikari, Moritono, Ikegami, Ueda) stay as-is and keep passing.
 
-**Unknowns resolved in Phase 0 research** (no open NEEDS CLARIFICATION): the historical catalogue of real variation axes and their to-scale grounding (China-first), the concrete value spaces + typing rules per knob, the twin-detector's axis set and threshold, and the current ruff/mypy status of the diagram skill (Principle X scope).
+**Unknowns resolved in Phase 0 research** (no open NEEDS CLARIFICATION): the historical catalog of real variation axes and their to-scale grounding (China-first), the concrete value spaces + typing rules per knob, the twin-detector's axis set and threshold, and the current ruff/mypy status of the diagram skill (Principle X scope).
 
 ## Constitution Check
 
@@ -59,7 +59,7 @@ specs/005-village-variation-knobs/
 ├── spec.md              # /speckit-specify + /speckit-clarify output
 ├── plan.md              # this file
 ├── research.md          # Phase 0 - historical variation axes + grounding, knob value spaces, twin-detector design, Principle X status
-├── data-model.md        # Phase 1 - the Knob catalogue (value spaces, typing rules, defaults, roll), Village-spec shape, Focal-feature catalogue, Archetype registry
+├── data-model.md        # Phase 1 - the Knob catalog (value spaces, typing rules, defaults, roll), Village-spec shape, Focal-feature catalog, Archetype registry
 ├── contracts/
 │   └── knob-interface.md # Phase 1 - the knob declaration surface (meta), the roll contract, the twin-detector report contract, the archetype plug-in contract
 ├── quickstart.md        # Phase 1 - "generate a rolled village" + "pin a knob" worked walkthrough
@@ -72,7 +72,7 @@ specs/005-village-variation-knobs/
 
 ```text
 .claude/skills/diagram/
-├── settlement.py           # the shared Settlement library - ADD: the knob layer (declaration + independent seeded roll + historical-typing gate), derived headman/shrine placement, cluster-geometry + lane-skeleton + water-placement knobs, plot-texture hooks, the focal-feature catalogue placement
+├── settlement.py           # the shared Settlement library - ADD: the knob layer (declaration + independent seeded roll + historical-typing gate), derived headman/shrine placement, cluster-geometry + lane-skeleton + water-placement knobs, plot-texture hooks, the focal-feature catalog placement
 ├── waterfields.py          # build_comb - EXTEND: plot-texture (plot size / bund regularity) + paddy-grain drift; later, new field-archetype generators (terraces, polder, ribbon, mulberry-fishpond)
 ├── check_village.py        # the validator - ADD: the pool-level twin-detector (cross-map distinctiveness) + per-knob/per-archetype validity rules; existing per-map gate unchanged
 ├── settlements.md          # grounding doc - RECORD the historical "why" for every knob value + archetype (China-first), per project policy

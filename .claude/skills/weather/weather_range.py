@@ -19,7 +19,7 @@ framework; all figures are real recorded weather for the place's climate analog.
 from __future__ import annotations
 
 import sys
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -80,6 +80,30 @@ def build_rows(raw: dict, year: int, cells):
     return rows
 
 
+# Row background colors. Single source of truth: the CSS below carries __TOKEN__
+# placeholders that are substituted in, and the legend modal is built from the
+# same dict - so a color tweak here cannot leave the legend describing a shade
+# the table no longer uses.
+#
+# There is deliberately NO zebra striping. It used to alternate even rows, which
+# broke the invariant this table depends on: a row that looks different IS
+# different weather. Worse, `nth-child(even)` counted the month-header and hidden
+# calendar-detail rows too, so the banding did not even alternate by day - it
+# flipped parity at every month break and every expanded festival. Rows stay
+# legible via the 1px border-top on each cell; if row tracking across the width
+# ever needs more help, add a hover highlight, not a background stripe.
+# Rain and snow are split by HUE, not just lightness: the old pair differed by
+# 6/255 in their strongest channel, which is invisible while scanning. Rain is
+# now decisively blue; snow is a desaturated cool gray. Gray (not a second blue,
+# and not a violet) because violet would collide with the lilac calendar-detail
+# row, and two blues are exactly the problem being fixed.
+ROW_COLORS = {
+    "plain": "#fffdf8",
+    "rain": "#c7e0f4",
+    "snow": "#dfe3e6",
+    "detail": "#f6f1f7",
+}
+
 CSS = """
 :root { color-scheme: light; }
 * { box-sizing: border-box; }
@@ -90,14 +114,13 @@ h1 { font: 600 1.6rem/1.2 Georgia, "Times New Roman", serif; margin: 0 0 .25rem;
 .sub { color: #6b6357; margin: 0 0 1.25rem; font-size: .95rem; }
 .sub b { color: #4a4336; }
 .scroll { overflow-x: auto; border: 1px solid #ddd6c8; border-radius: 8px; }
-table { border-collapse: collapse; width: 100%; background: #fffdf8; }
+table { border-collapse: collapse; width: 100%; background: __PLAIN__; }
 thead th { position: sticky; top: 0; background: #3f3a30; color: #f4f1ea;
            font-weight: 600; text-align: left; padding: .5rem .6rem; white-space: nowrap; font-size: .82rem;
            text-transform: uppercase; letter-spacing: .03em; }
 td { padding: .38rem .55rem; border-top: 1px solid #ece7db; white-space: nowrap; vertical-align: top; }
-tbody tr:nth-child(even) td { background: #faf8f2; }
-tr.rain td { background: #eef4f7 !important; }
-tr.snow td { background: #eceef2 !important; }
+tr.rain td { background: __RAIN__ !important; }
+tr.snow td { background: __SNOW__ !important; }
 tr.mhead td { background: #e7e0d0; color: #4a4336; font: 600 .9rem Georgia, serif;
               border-top: 2px solid #cabfa6; letter-spacing: .01em; cursor: pointer; user-select: none; }
 tr.mhead:hover td { background: #e0d8c4; }
@@ -106,7 +129,11 @@ tr.mhead.collapsed .chev { transform: rotate(-90deg); }
 tr.mhead .mname { background: none; border: 0; font: inherit; color: #5a4a24; cursor: pointer;
                   padding: 0; text-decoration: underline dotted #a8996f; text-underline-offset: 3px; }
 tr.mhead .mname:hover { color: #23201b; text-decoration-color: #5a4a24; }
-.cal { white-space: normal; min-width: 120px; max-width: 200px; }
+/* Titles carry their English gloss, so most are ~25 chars but a couple run to
+   85 ("Shuubun (Autumnal Equinox), Hojoe (The Great Liberation), and Kangetsu
+   (Moon Viewing)"). Wide enough that typical entries stay on one or two lines,
+   capped so the outliers wrap instead of shoving the weather columns rightward. */
+.cal { white-space: normal; min-width: 140px; max-width: 260px; }
 .calbtn { background: none; border: 0; font: inherit; color: #6d4d7a; cursor: pointer; padding: 0;
           text-align: left; text-decoration: underline dotted #b09bbb; text-underline-offset: 3px; }
 .calbtn:hover { color: #23201b; text-decoration-color: #6d4d7a; }
@@ -114,7 +141,7 @@ tr.mhead .mname:hover { color: #23201b; text-decoration-color: #5a4a24; }
 tr.dayrow.open .calbtn::after { content: " \\25BE"; }
 tr.detail { display: none; }
 tr.detail.open { display: table-row; }
-tr.detail td { background: #f6f1f7 !important; white-space: normal; padding: .6rem .9rem .8rem 1.1rem;
+tr.detail td { background: __DETAIL__ !important; white-space: normal; padding: .6rem .9rem .8rem 1.1rem;
                border-left: 3px solid #b09bbb; }
 tr.detail h4 { margin: 0 0 .35rem; font: 600 1rem Georgia, serif; color: #4a3a52; }
 tr.detail p { margin: 0 0 .5rem; max-width: 74ch; }
@@ -140,7 +167,6 @@ tr.detail .none { color: #8a8272; font-style: italic; }
 .tags { color: #7a5a3a; font-size: .85rem; white-space: normal; min-width: 130px; max-width: 210px; }
 .snowcell { color: #3a4a63; }
 .muted { color: #b5ae9e; }
-footer { color: #8a8272; font-size: .8rem; margin-top: 1rem; }
 th.kebab-col, td.kebab-col { width: 1%; padding-left: .2rem; padding-right: .45rem; text-align: center; }
 thead th.kebab-col { text-align: right; }
 .kebab { background: none; border: 0; color: inherit; font: inherit; font-size: 1.25rem; line-height: 1;
@@ -154,8 +180,33 @@ thead th.kebab-col { text-align: right; }
 .kebab-menu label { display: flex; align-items: center; gap: .4rem; white-space: nowrap; cursor: pointer; }
 .kebab-menu input { margin: 0; }
 .kebab-menu a { color: #7a5a3a; margin-top: .25rem; }
+/* The row tints are deliberately faint, and the modal's own background is the
+   same cream as an untinted row - so a small white-on-white chip reads as an
+   empty box. The legend sits on a darker panel and each swatch is a full
+   table-row-sized block, which is what makes two near-identical pale blues
+   (rain vs snow) actually comparable. The swatches stay the REAL colors: a
+   legend that saturates its samples for legibility is a legend that lies. */
+.legend { list-style: none; margin: 0 0 .9rem; padding: .8rem .9rem .3rem;
+          background: #efebe1; border-radius: 8px; }
+.legend li { display: grid; grid-template-columns: 5rem 1fr; gap: .2rem .9rem;
+             align-items: start; margin-bottom: .7rem; }
+.legend .sw { grid-row: span 2; width: 5rem; height: 2.4rem; border: 1px solid #cdc5b4;
+              border-radius: 4px; }
+.legend .lb { font-weight: 600; color: #3f3a30; font-size: .92rem; align-self: end; }
+.legend .ds { font-size: .88rem; color: #4a4336; align-self: start; }
+.modal .note { color: #6b6357; font-size: .84rem; margin: 0 0 .5rem; }
+.modal .src { color: #8a8272; font-size: .8rem; margin: .9rem 0 0; }
+@media (max-width: 520px) {
+  .legend li { grid-template-columns: 1fr; gap: .15rem; }
+  .legend .sw { grid-row: auto; width: 100%; height: 1.7rem; }
+}
+.tip { text-decoration: underline dotted #b5ae9e; text-underline-offset: 3px; cursor: help; }
 @media print { .kebab-col, .kebab-menu { display: none; } }
 """
+
+for _token, _key in (("__PLAIN__", "plain"), ("__RAIN__", "rain"),
+                     ("__SNOW__", "snow"), ("__DETAIL__", "detail")):
+    CSS = CSS.replace(_token, ROW_COLORS[_key])
 
 
 def month_modal_json(cal: dict, months: list[int]) -> str:
@@ -176,12 +227,62 @@ def month_modal_json(cal: dict, months: list[int]) -> str:
     return json.dumps(out)
 
 
+def range_label(sm: int, sd: int, em: int, ed: int) -> str:
+    """Describe a Rokugani date range as briefly as it can be said unambiguously.
+
+    Days are named only for an end that starts or stops MID-month; a whole month
+    needs no day numbers:
+
+        1,1 -> 1,30   "1st month"
+        2,1 -> 4,30   "2nd - 4th months"
+        1,5 -> 1,20   "5th - 20th of the 1st month"
+        2,5 -> 4,30   "5th of the 2nd month - 4th month"
+        2,1 -> 4,12   "2nd month - 12th of the 4th month"
+
+    A month is "whole" when the range enters it on day 1 and leaves on day 30.
+    """
+    o = W.ordinal
+    whole_start, whole_end = sd == 1, ed == 30
+
+    if sm == em and sd <= ed:  # one month (sd > ed would mean a year-long wrap)
+        if whole_start and whole_end:
+            return f"{o(sm)} month"
+        return f"{o(sd)} - {o(ed)} of the {o(sm)} month"
+
+    if whole_start and whole_end:
+        return f"{o(sm)} - {o(em)} months"
+
+    start = f"{o(sm)} month" if whole_start else f"{o(sd)} of the {o(sm)} month"
+    end = f"{o(em)} month" if whole_end else f"{o(ed)} of the {o(em)} month"
+    return f"{start} - {end}"
+
+
+def house_label(place: dict) -> str:
+    """The parenthetical after a place name: which house holds it.
+
+    A VASSAL house names both: "Hida Family, Crab Clan". A RULING-family house
+    names only the Clan - "Kyuden Kakita (Crane Clan)" - because "Kakita" is
+    already in the place name and repeating it says nothing.
+
+    That suppression is DERIVED, not a per-place flag: if the family name is
+    already a word in the place name, it is a ruling-family seat. So the
+    registry only has to record `family` where it is not obvious from the name,
+    and adding a new Kyuden <Family> needs no extra bookkeeping.
+
+    The Imperial house is not a clan (its four are the Imperial Families), so it
+    is never given a "Clan" suffix.
+    """
+    clan = place.get("clan", "?")
+    suffix = clan if clan == "Imperial" else f"{clan} Clan"
+    family = place.get("family")
+    if family and family.lower() not in place["place"].lower().split():
+        return f"{family} Family, {suffix}"
+    return suffix
+
+
 def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
     has_snow = any(r["snow"] for r in rows)
-    m1, _, mean1 = W.MONTHS[sm]
-    m2, _, mean2 = W.MONTHS[em]
-    title = (f"{place['place']} - {W.ordinal(sd)} of the {W.ordinal(sm)} month "
-             f"to {W.ordinal(ed)} of the {W.ordinal(em)} month")
+    title = f"{place['place']} - {range_label(sm, sd, em, ed)}"
     span = f"{rows[0]['greg']:%b %-d} - {rows[-1]['greg']:%b %-d, %Y}"
 
     columns = [("rok", "Rokugani"), ("date", "Date"), ("cal", "Calendar"),
@@ -222,11 +323,11 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
         rid = f'{r["month"]}-{r["day"]:02d}'
         if entry:
             calcell = (f'<button class="calbtn" data-day="{rid}">'
-                       f'{esc(C.short_title(entry["title"]))}</button>')
+                       f'{esc(entry["title"])}</button>')
         else:
             calcell = "-"
         cell = {
-            "rok": (rid, ""),
+            "rok": (str(r["day"]), ""),
             "date": (f'{r["greg"]:%b %-d}', ""),
             "cal": (calcell, "cal"),
             "hilo": (f'<span class="hi">{r["hi"]}</span> / <span class="lo">{r["lo"]}</span> &deg;F', ""),
@@ -271,6 +372,31 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
     empty_cols = [k for k, _ in columns if k not in nonempty]
     empty_js = "[" + ", ".join(f'"{k}"' for k in empty_cols) + "]"
     months_js = month_modal_json(cal, sorted({r["month"] for r in rows}))
+
+    # Legend rows. The snow entry is omitted on a snowless range for the same
+    # reason the snow columns are: describing a color the table never shows is
+    # just noise. Thresholds are read from weather.py so they cannot drift.
+    import json
+    legend = [
+        (ROW_COLORS["plain"], "Dry",
+         f"No measurable precipitation (under {W.WET_IN:g} in)."),
+        (ROW_COLORS["rain"], "Rain",
+         f"{W.WET_IN:g} in or more of precipitation."),
+    ]
+    if has_snow:
+        legend.append((ROW_COLORS["snow"], "Snow",
+                       "Snow fell, or lay on the ground."))
+    legend.append((ROW_COLORS["detail"], "Calendar entry",
+                   "An expanded festival or observance, not a day of weather."))
+    legend_js = json.dumps(legend)
+
+    # Notes, not entries: the precedence rule is the single most useful
+    # disambiguator (it explains why a rainy day can look gray), so it gets its
+    # own line rather than trailing off the end of the snow definition.
+    notes = []
+    if has_snow:
+        notes.append("A day that both rained and snowed is shaded as snow.")
+    notes_js = json.dumps(notes)
     snow_note = "" if has_snow else " No snow fell in this range, so snow columns are omitted."
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -278,16 +404,15 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
 <title>{esc(title)}</title><style>{CSS}</style><style id="colhide"></style><style id="monthhide"></style></head>
 <body><div class="wrap">
 <h1>{esc(title)}</h1>
-<p class="sub"><b>{esc(place['place'])}</b> ({esc(place.get('clan','?'))}) &mdash; real recorded weather for its climate analog, <b>{esc(place['us_analog'])}</b>. {esc(span)}.{snow_note}</p>
+<p class="sub"><b>{esc(place['place'])}</b> ({esc(house_label(place))}) &mdash; <span class="tip" title="Weather is indifferent to the plot by design.">real recorded weather</span> for its climate analog, <b>{esc(place['us_analog'])}</b>. {esc(span)}.{snow_note}</p>
 <div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>
 {chr(10).join(body)}
 </tbody></table></div>
-<div id="kebab-menu" class="kebab-menu" hidden><div class="kebab-menu-title">Show columns</div>{toggles}<a href="#" id="cols-reset">show all</a></div>
+<div id="kebab-menu" class="kebab-menu" hidden><div class="kebab-menu-title">Show columns</div>{toggles}<a href="#" id="cols-reset">show all</a><a href="#" id="legend-open">color legend</a></div>
 <div id="modal-back" class="modal-back" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
 <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
 <h2 id="modal-title"></h2><p class="mspan" id="modal-span"></p><div id="modal-body"></div>
 </div></div>
-<footer>Grounded in historical reanalysis (Open-Meteo / ERA5). Weather is indifferent to the plot by design. Calendar entries come from the /calendar skill; click a festival to expand it, or a month name for its seasonal notes. Column choices are remembered in this browser.</footer>
 </div>
 <script>
 (function () {{
@@ -392,6 +517,34 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
     back.hidden = false;
   }}
   function closeModal() {{ back.hidden = true; }}
+
+  // Legend reuses the month modal's shell - same close affordances, one dialog.
+  var LEGEND = {legend_js};
+  var NOTES = {notes_js};
+  document.getElementById("legend-open").addEventListener("click", function (e) {{
+    e.preventDefault();
+    closeMenu();
+    mTitle.textContent = "Row colors";
+    mSpan.textContent = "What the shading of each row means.";
+    mBody.textContent = "";
+    var ul = el("ul"); ul.className = "legend";
+    LEGEND.forEach(function (row) {{
+      var li = el("li");
+      var sw = el("span"); sw.className = "sw"; sw.style.background = row[0];
+      li.appendChild(sw);
+      var lb = el("span", row[1]); lb.className = "lb"; li.appendChild(lb);
+      var ds = el("span", row[2]); ds.className = "ds"; li.appendChild(ds);
+      ul.appendChild(li);
+    }});
+    mBody.appendChild(ul);
+    NOTES.forEach(function (t) {{
+      var n = el("p", t); n.className = "note"; mBody.appendChild(n);
+    }});
+    var src = el("p", "Grounded in historical reanalysis (Open-Meteo / ERA5).");
+    src.className = "src";
+    mBody.appendChild(src);
+    back.hidden = false;
+  }});
   document.querySelectorAll(".mname").forEach(function (b) {{
     b.addEventListener("click", function (e) {{ e.stopPropagation(); openModal(b.dataset.month); }});
   }});

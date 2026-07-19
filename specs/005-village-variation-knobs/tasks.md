@@ -72,7 +72,7 @@ description: "Task list for Village Visual Variation Knobs"
 - [x] T017 [US1] Implement the `lane_skeleton` knob (spine / T / Y / cross / waterside) + DERIVED headman & primary-shrine placement in `settlement.py` (green T014).
 - [x] T018 [US1] Implement the `water_source_position` knob (pond corner / mid-margin / chain; stream entry edge), keeping the source uphill of the field intake, in `settlement.py` + `waterfields.py`.
 - [x] T019 [US1] Implement the `plot_texture` (size + organic/grid regularity) + `grain_drift` knobs in `waterfields.py` (resolves the "uniform 45deg grain" residual).
-- [x] T020 [US1] Implement the focal-feature catalogue placement (crescent pond, ancestral hall, water-mouth complex, mill, market, secondary shrine) in `settlement.py`, each placed by the existing overlap/set-back invariants and recorded in the manifest.
+- [x] T020 [US1] Implement the focal-feature catalog placement (crescent pond, ancestral hall, water-mouth complex, mill, market, secondary shrine) in `settlement.py`, each placed by the existing overlap/set-back invariants and recorded in the manifest.
 - [x] T021 [US1] Implement the pool-level twin-detector in `check_village.py` (SC-001 axis discretization + >= 4-of-7 threshold), tuned against the re-varied pool (green T013).
 - [x] T022 [US1] Re-vary `pool/hoshigaoka.gen.py` through the knobs (distinct cluster/lane/water/grain/focal set); `check_village` green + render self-review.
 - [x] T023 [US1] Re-vary `pool/kikuta-village.gen.py` through the knobs so it differs from Hoshigaoka on >= 4 axes; `check_village` green + twin-detector clean + render self-review.

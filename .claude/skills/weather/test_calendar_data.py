@@ -52,7 +52,7 @@ def test_day_count_matches_source(cal):
 def test_day_with_gregorian_date(cal):
     d = cal[2]["days"][12]
     assert d["greg"] == "18 Mar"
-    assert d["title"] == "Haru Higan (Haru Higan festival)"
+    assert d["title"] == "Haru Higan festival"
     assert d["body"] and "Vernal Equinox" in d["body"][0]
 
 
@@ -77,19 +77,12 @@ def test_days_are_in_range(cal):
             assert 1 <= dn <= 30, f"month {n} day {dn} out of range"
 
 
-@pytest.mark.parametrize("title,expected", [
-    ("Joui (Bestowal of ranks)", "Joui"),
-    ("Haru Higan (Haru Higan festival)", "Haru Higan"),
-    ("End of Haru Higan", "End of Haru Higan"),
-    ("Wakana no sekku or Nanakusa no sekku (Festival of Young Herbs)",
-     "Wakana no sekku or Nanakusa no sekku"),
-    # Interior parentheses must survive; only a trailing gloss is dropped.
-    ("Shuubun (Autumnal Equinox), Hojoe (The Great Liberation), and Kangetsu",
-     "Shuubun (Autumnal Equinox), Hojoe (The Great Liberation), and Kangetsu"),
-    ("(all gloss)", "(all gloss)"),  # never strip down to nothing
-])
-def test_short_title(title, expected):
-    assert C.short_title(title) == expected
+def test_titles_keep_their_english_gloss(cal):
+    """The Calendar column shows the title verbatim, gloss included, so the
+    parser must never trim the parenthetical off."""
+    assert cal[2]["days"][4]["title"] == "Kinensai (Spring Prayers)"
+    assert cal[1]["days"][5]["title"] == "Joui (Bestowal of ranks)"
+    assert cal[8]["days"][15]["title"].endswith("Kangetsu (Moon Viewing)")
 
 
 def test_parses_a_synthetic_month(tmp_path):

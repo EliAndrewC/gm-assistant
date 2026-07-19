@@ -92,7 +92,7 @@ description: "Task list for City Quarter Density and Wall-Sizing Correctness"
 - [x] T022 [US3] Rework `city_capacity` in `check_village.py`: `residential_capable_area = interior - civic_quarter_area - reserve_quarter_area`; verdict enum {sized_and_packed, densify, enlarge, shrink}; add `per_quarter` density table, `reserve_area`/`civic_area`/`reserve_frac`; count `placed` in-wall only; align the `densify` boundary to `pop_tol`; `shrink` also when the wall is only fillable via over-cap reserve.
 - [x] T023 [US3] Update `city_wall_sized_to_population` to fire on `enlarge`/`shrink`; update the `--capacity` / `--capacity-map` CLI output (verdict names + area budget + reserve_frac + per-quarter table; `--capacity-map` overlays quarter zones). Unit tests in `test_checks.py` for each verdict branch (synthetic manifests) plus the CLI-guarded lines.
 - [x] T024 [US3] Synthetic over-cap-reserve manifest test: a city whose empty ground is declared reserve beyond the cap is flagged (`city_reserve_within_cap` and/or `shrink`), never `sized_and_packed`. Pin as a regression fixture.
-- [x] T025 [US3] Apply the verdict to `pool/nagahara.gen.py`: run `--capacity`; if `shrink`, scale the whole generator by `suggested_wall_scale` about the wall centre; re-run until `sized_and_packed` with every residential quarter in band and no dead zone. Regenerate.
+- [x] T025 [US3] Apply the verdict to `pool/nagahara.gen.py`: run `--capacity`; if `shrink`, scale the whole generator by `suggested_wall_scale` about the wall center; re-run until `sized_and_packed` with every residential quarter in band and no dead zone. Regenerate.
 
 **Checkpoint**: the wall-sizing verdict is action-mapped and agrees with the population check; Nagahara is correctly sized.
 
@@ -102,7 +102,7 @@ description: "Task list for City Quarter Density and Wall-Sizing Correctness"
 
 - [x] T026 Run the FULL validator on `pool/nagahara.json` to zero mechanical fails; render `rsvg-convert -w 950 pool/nagahara.svg -o /tmp/nag.png` and review; run the `building-review` subagent on the final Nagahara (author is not a reliable reviewer).
 - [x] T027 Regenerate and validate the WHOLE pool (`tango`, `nagahara`, and all village/town maps) to confirm none regressed; confirm all pinned regression fixtures still fire; confirm `city_density_broken_nagahara.json` still fails the new checks.
-- [x] T028 [P] Update `settlements.md`: the quarter/zoning model, per-quarter density judgement + dead-zone guard, reserve kinds + cap, civic-open tolerance, the reframed capacity verdicts, and the recorded "why" for every threshold (research.md section C), plus the empirical post-mortem (section A) explaining why per-quarter replaced the aggregate.
+- [x] T028 [P] Update `settlements.md`: the quarter/zoning model, per-quarter density judgment + dead-zone guard, reserve kinds + cap, civic-open tolerance, the reframed capacity verdicts, and the recorded "why" for every threshold (research.md section C), plus the empirical post-mortem (section A) explaining why per-quarter replaced the aggregate.
 - [x] T029 [P] Green gate: `ruff check .` + `ruff format --check .` + `mypy --strict check_village.py settlement.py` + `python3 -m pytest` (100% coverage) + `grep -RlP '[\x{2013}\x{2014}]' *.py *.md pool/*.gen.py` returns nothing.
 - [x] T030 [P] Update memory `project_diagram_city_mode.md`: the per-quarter density model, the extramural-leak fix, the reframed verdict, and the lesson (aggregate-blind-to-distribution; keep a known-bad fixture that must fail).
 

@@ -41,12 +41,26 @@ Empire-scale reference points, north to south (GM-established). Details and per-
 | Kyuden Shiba (Phoenix) | Boston, MA | |
 | **Otosan Uchi (Imperial)** | **New York City** | **baseline anchor - the ladder is pinned here** |
 | Kyuden Doji (Crane) | Atlantic City, NJ | |
-| Kyuden Kakita (Crane) | Virginia Beach, VA | seaside twin of landlocked Reiji at ~the same latitude |
+| Kyuden Kakita (Crane) | Ocean City, MD | coastal; map-derived, 146 mi north of Reiji |
+| Shiro Etsuko (Crane) | Virginia Beach, VA | coastal Daidoji vassal house; the true seaside twin of landlocked Reiji, 25 mi north of it |
 | Shiro Reiji (Crab) | Roanoke Rapids, NC | landlocked, ~100 mi inland |
 | Kyuden Daidoji (Crane) | Savannah, GA | |
 | Shinden Asahina (Crane) | Tampa, FL | southern tip; least-exact (Earthquake Bay << Gulf) |
 
 Known imperfection to keep in mind: **Earthquake Bay is much smaller than the Gulf of Mexico**, so Asahina is a touch more continental than Tampa.
+
+### Deriving a latitude from a campaign map (method, so it need not be re-invented)
+
+Places on a hand-drawn campaign map get their latitude MEASURED, not guessed. Worked on the Three Man Alliance map, 2026-07-19:
+
+1. **Scale.** Read the legend (there: `⊔ - 5 miles`) and confirm the glyph is one graph-paper square. Measure the grid's true pixel period rather than trusting the glyph - fold the image's faint-line mask at candidate periods and take the strongest. That map: 60 px/square, so **12 px/mile**.
+2. **Orientation.** Do not assume. The ocean sits on the map's right edge, and Rokugan's ocean is east, so up = north.
+3. **Positions.** Snap each castle star to the centroid of its dark ink in a small window (a mean-shift of a few iterations), then **render an overlay with the detected points circled and check every one by eye** - hand-drawn stars and nearby labels make pure automation unsafe.
+4. **Convert.** Take north-south pixel offsets from an already-anchored place (Reiji, GM-established) and divide by 12 px/mile, then by **69 miles per degree** of latitude.
+
+**Precision.** Star placement on graph paper is good to roughly half a square (~2.5 mi, ~0.04 deg). Treat inferred latitudes as +-5 miles; they are far better than eyeballing, but do not quote them to two decimals as if surveyed.
+
+**Why this section exists.** The original Kakita entry claimed Virginia Beach was "at Reiji's latitude" while its own `lat` field said otherwise, and the map work behind the ladder was never written down - so when the GM questioned it, nothing could be checked and it had to be redone from the map. Measuring showed Kakita is 146 mi north of Reiji (lat ~38.58, hence Ocean City), and that **Virginia Beach actually belongs to Shiro Etsuko** (25 mi north of Reiji, lat ~36.83). Record the derivation for any place added this way.
 
 ## Calendar translation
 
@@ -74,7 +88,7 @@ Source: **Open-Meteo Historical Weather API** (ERA5 reanalysis, free, no API key
 - `fetch_analog.py "<place>" <year>` - pull a year for a place's analog into `raw/`; then record the printed filename as that place's `year_file`.
 - `build_weather_csv.py [raw.json] [out.csv]` - reduce a raw year to a stripped daily CSV (date, weekday, high/low, precip, cloud %, sunrise, sunset, conditions).
 - `weather.py "<place>" <month> <day> [--night]` - single-day lookup: place -> analog -> translated date -> a day or night report.
-- `weather_range.py "<place>" <sm> <sd> <em> <ed> [--out f.html]` - a browsable HTML table over a Rokugani date range, written to `reports/` (gitignored). Snow columns appear only if some day in the range has snow. The page is interactive: a kebab (three-dot) menu at the right of the table header shows/hides columns (persisted in localStorage, keyed by column, shared across all reports, so e.g. "hide snow" sticks everywhere); any column that is empty on every row is hidden by default on load and must be re-shown each load if wanted (this default is deliberately not persisted); and clicking a month header collapses/expands that month, with the collapsed set also remembered across loads.
+- `weather_range.py "<place>" <sm> <sd> <em> <ed> [--out f.html]` - a browsable HTML table over a Rokugani date range, written to `reports/` (gitignored). Snow columns appear only if some day in the range has snow. The page is interactive: a kebab (three-dot) menu at the right of the table header shows/hides columns (persisted in localStorage, keyed by column, shared across all reports, so e.g. "hide snow" sticks everywhere); any column that is empty on every row is hidden by default on load and must be re-shown each load if wanted (this default is deliberately not persisted); and clicking a month header collapses/expands that month, with the collapsed set also remembered across loads. The same kebab menu carries a **color legend** entry explaining the row tints (dry / rain / snow / expanded calendar entry), with the Open-Meteo sourcing line at its foot; the snow swatch is omitted on a snowless range for the same reason the snow columns are. Row colors live in one `ROW_COLORS` dict in `weather_range.py` which is substituted into the CSS via `__TOKEN__` placeholders **and** used to build the legend, so a color tweak cannot leave the legend describing a shade the table no longer uses.
 - `calendar_data.py` - parses the `/calendar` skill's month-by-month breakdown (`.claude/skills/calendar/SKILL.md`, read-only: it lives inside a `SOURCE: GM NOTES` block) into structured months and days. Read at build time by `weather_range.py`; the GM's prose stays the single source of truth, so editing the calendar updates every report built afterwards. Tested to 100% in `test_calendar_data.py`.
 
 **Calendar in the range report.** The table carries a **Calendar** column between Date and Hi/Lo, showing the observance for any day the calendar names (`Joui`, `Haru Higan`, `Tanabata`, ...). The trailing gloss is trimmed for column width; clicking the name expands the calendar's **full entry** - untrimmed title, Gregorian date, and all its prose - in a detail row beneath that day, and clicking again collapses it. Detail rows are pre-rendered hidden rather than built in JS, so the text is still found by ctrl-F and survives printing. Expansion is deliberately **not** persisted (unlike columns and month collapse): reading a festival is a now-action, not a viewing preference. If no day in the range has an observance, the column self-hides via the existing empty-column rule.
@@ -105,7 +119,7 @@ Snow lines/columns appear only when there is actually snow (see Data pipeline); 
 
 So `/weather Shiro Reiji night of the 2nd day of the 3rd month` becomes `python3 weather.py "Shiro Reiji" 3 2 --night`, and `/weather Reiji 3rd day 3rd month` becomes `python3 weather.py "Shiro Reiji" 3 3`.
 
-**Color commentary (required, grounded).** The script ends each report with a `NOTES (for color)` line holding computed facts: the day's high vs the +-1-week seasonal norm (with a plain-language tag like "unusually warm"), and any overcast or dry streak. **Open the narrated report with one or two sentences of natural color drawn ONLY from those notes** - e.g. "An unusually warm morning for early spring." or "The fourth grey day running, and still not a drop - the clouds hang low enough that today might finally break." Never invent weather facts the notes don't support; the whole point of computing them is that the flavor stays honest.
+**Color commentary (required, grounded).** The script ends each report with a `NOTES (for color)` line holding computed facts: the day's high vs the +-1-week seasonal norm (with a plain-language tag like "unusually warm"), and any overcast or dry streak. **Open the narrated report with one or two sentences of natural color drawn ONLY from those notes** - e.g. "An unusually warm morning for early spring." or "The fourth gray day running, and still not a drop - the clouds hang low enough that today might finally break." Never invent weather facts the notes don't support; the whole point of computing them is that the flavor stays honest.
 
 **Rejection (do not synthesize).** If the script returns a line beginning `REJECTED:` - the place is unknown, or known but has no cached weather year - relay that and stop. Do **not** improvise weather for an unmapped or uncached place. For a *known* place lacking data you may offer to fetch a year (`fetch_analog.py "<place>" <year>`); that is legitimate grounding, not synthesis.
 
