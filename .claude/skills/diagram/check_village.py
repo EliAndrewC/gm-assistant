@@ -6073,6 +6073,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 5 <= len(est_out) <= 15,
                 f"{len(est_out)} walled samurai estates outside the walls, expected 5-15 - a walled city's cramped interior pushes wealthy samurai to extramural estates they commute in from",
             )
+            # WHY (the extramural samurai residence is the walled, defensible country ESTATE; a lone
+            # UNWALLED samurai house beyond the rampart is defenseless and belongs in the sealed ward
+            # inside): settlements.md "Historical grounding". Hard-zero - the estates rule above is
+            # exactly why the commoner inside-walls check exempts samurai, so this closes that gap
+            # (validated instance: Tango's SE top_up sweep leaked 14 houses into the moat berm, 2026-07-20).
+            sam_out = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large") and len(w) >= 3 and not point_in_poly(b["x"], b["y"], w)]
+            check(
+                "city_samurai_houses_inside_walls",
+                not sam_out,
+                f"{len(sam_out)} free-standing samurai house(s) sit OUTSIDE the walls {sorted(set(sam_out))[:5]} - in-city "
+                f"samurai live unwalled INSIDE the sealed ward; the only extramural samurai residences are the walled "
+                f"country estates (s.manor). Re-seat these houses in the samurai quarter.",
+            )
             areas = sorted((mn["w"] * mn["h"]) for mn in est_out)
             check(
                 "city_samurai_estates_vary_in_size",
