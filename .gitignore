@@ -24,6 +24,12 @@ __pycache__
 # gitignored. Regenerate with `python3 .claude/skills/diagram/pool/<map>.gen.py`.
 .claude/skills/diagram/pool/*.png
 .claude/skills/diagram/pool/*.svg
+# ...but the HAND-AUTHORED Mode A compound plans (magistracies, drafts) have NO generator - they ARE the
+# source, KB-sized, not regenerable - so they stay tracked. Add any new hand-authored pool SVG here.
+!.claude/skills/diagram/pool/ochiba-magistracy.svg
+!.claude/skills/diagram/pool/ochiba-recomposed-draft.svg
+!.claude/skills/diagram/pool/county-magistracy-draft.svg
+!.claude/skills/diagram/pool/hayakawa-magistracy.svg
 
 # Spoiler-sensitive /dream scenes: the local tier is the GM's disk only, never committed.
 # The public tier (.claude/skills/dream/pool/) stays tracked; see that skill's SKILL.md.
