@@ -16,4 +16,5 @@ pip-tools
 playwright
 pytest
 pytest-cov
+pytest-xdist
 ruff

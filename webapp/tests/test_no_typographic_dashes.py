@@ -77,7 +77,7 @@ def _git_ignored(paths: list[Path]) -> set[Path]:
             text=True,
             check=False,
         )
-    except (FileNotFoundError, OSError):
+    except FileNotFoundError, OSError:
         return set()
     return {Path(line) for line in proc.stdout.splitlines() if line}
 
@@ -128,7 +128,7 @@ def _scan_repo() -> list[tuple[Path, int, str, str]]:
                 continue
             try:
                 text = path.read_text(encoding='utf-8')
-            except (UnicodeDecodeError, PermissionError):
+            except UnicodeDecodeError, PermissionError:
                 continue
             if EM_DASH not in text and EN_DASH not in text:
                 continue

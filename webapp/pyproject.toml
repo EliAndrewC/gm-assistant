@@ -2,11 +2,11 @@
 name = "l7r-toolkit"
 version = "0.1.0"
 description = "L7R Toolkit — character generator, relic catalog, and content tools for a custom L5R tabletop campaign"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 # Ruff is the single canonical lint tool per Principle X.
@@ -43,7 +43,7 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 quote-style = "single"  # match chargen convention per its CLAUDE.md
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 strict = true
 
 # Strict mypy on production modules. Legacy chargen modules get the one-time

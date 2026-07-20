@@ -407,6 +407,20 @@ def test_load_secrets_returns_empty_dict_when_file_missing(
     assert app_module._load_secrets() == {}
 
 
+def test_load_secrets_parses_sections_without_interpolation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from l7r import app as app_module
+
+    # A synthetic ini (not the real deployed one, which is gitignored and absent in
+    # session clones) with a literal % that would trip interpolation if enabled.
+    (tmp_path / 'development-secrets.ini').write_text(
+        '[obsidian_portal]\ncookie = abc%20def\n', encoding='utf-8'
+    )
+    monkeypatch.setattr(app_module, '_HERE', tmp_path / 'l7r')
+    assert app_module._load_secrets() == {'obsidian_portal': {'cookie': 'abc%20def'}}
+
+
 def test_resolve_default_pool_dir_uses_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
     from l7r.app import _resolve_default_pool_dir
 
