@@ -193,6 +193,7 @@ _OVERLAP_EXEMPT = {
     "field_ponds": "feature 012: a low-pocket pond sunk INTO one paddy plot, the field tiling around it - drawn ON the paddy like field_ditches, validated by paddy_features_match_archetype",
     "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
     "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
+    "clearings": "swept-ground records (the shrine keidai / torii sando collar / grave collar), not drawn features at all - they carry the cover-ordinal bookkeeping for scatter_respects_swept_clearings and deliberately CONTAIN their sacred/funerary feature",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -2912,6 +2913,50 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             bare_frac <= 0.12,
             f"{bare_frac:.0%} of the framed map is bare open ground (over the 12% seam allowance) - every empty margin is dry marginal land and must be clothed in the satoyama ring (grazing scrub / coppice / marsh / dry plots, broad edge-spanning bands), and the bands must lie INSIDE the cropped view, not off-frame",
         )
+
+    # SWEPT GROUND stays swept: a sacred/funerary feature keeps a tended clearing - the shrine's keidai, the
+    # torii's sando collar, the graveyard's trimmed grave collar (settlements.md 'Swept ground around sacred +
+    # funerary features') - and the loose ground-cover scatter (commons scrub, marsh reeds) skips it. But the
+    # scatter can only skip clearings that EXIST when it runs: a cemetery/shrine placed AFTER a commons/marsh
+    # draw registers its collar too late, and the scrub has already dotted the swept ground (this bit Ueda's
+    # graveyard, 2026-07-20: the new S grazing band drew at stage 3b, the cemetery registered its collar at
+    # stage 4d, and tufts landed among the grave markers). The engine records each cover draw's ordinal (`seq`
+    # on commons/marsh entries) and each clearing's ordinal at registration (`seq` = covers already drawn), so
+    # ORDER is checkable from the manifest: a cover that overlaps a clearing and drew at seq <= the clearing's
+    # seq predates it - violation. Fix in the gen: s.reserve_clearing(...) BEFORE the scatter (or reorder).
+    late = []
+    _clearings = M.get("clearings", [])
+    _clr_bbs = []
+    for cl in _clearings:
+        cxs = [p[0] for p in cl["poly"]]
+        cys = [p[1] for p in cl["poly"]]
+        _clr_bbs.append((min(cxs), min(cys), max(cxs), max(cys)))
+    for cl, cbb in zip(_clearings, _clr_bbs, strict=True):
+        for cov in list(M.get("commons", [])) + list(M.get("marshes", [])):
+            if cov.get("seq") is None or cov["seq"] > cl["seq"] or not cov.get("poly") or not _box_hits_poly(cbb, cov["poly"]):
+                continue
+            # the scatter predates this clearing where they overlap - but the SAME ground may have been
+            # RESERVED in time: a clearing registered before the cover drew (guard.seq < cov.seq) already
+            # made the scatter skip it (s.reserve_clearing first, then the feature registers its own
+            # duplicate collar late - the documented, harmless pattern). Sample the clearing rect: a point
+            # is EXPOSED only if it lies in the cover's poly and in no pre-cover guard clearing.
+            guards = [gbb for g, gbb in zip(_clearings, _clr_bbs, strict=True) if g["seq"] < cov["seq"]]
+            exposed = False
+            sy = cbb[1] + 4.0
+            while not exposed and sy < cbb[3]:
+                sx = cbb[0] + 4.0
+                while not exposed and sx < cbb[2]:
+                    if point_in_poly(sx, sy, cov["poly"]) and not any(g[0] <= sx <= g[2] and g[1] <= sy <= g[3] for g in guards):
+                        exposed = True
+                    sx += 8
+                sy += 8
+            if exposed:
+                late.append((cov.get("role", "?"), round(cbb[0]), round(cbb[1])))
+    check(
+        "scatter_respects_swept_clearings",
+        not late,
+        f"ground-cover scatter drawn BEFORE the swept clearing it overlaps (cover role, clearing at): {late[:3]} - the scrub/reed scatter only skips clearings that exist when it runs, so the shrine/torii/graveyard collar got dotted over; s.reserve_clearing(...) the ground BEFORE the commons/marsh draw (or place the feature first)",
+    )
 
     # A LABEL must not sit on a building/structure it does NOT name (town + city scale, where features
     # carry distinct identities). A label may overlap the feature(s) it names - its own building/compound,
