@@ -8,3 +8,4 @@ sys.modules by then.
 """
 
 import l7r  # noqa: F401  (imported for its import-time side effect)
+import mainguard  # noqa: F401  (import-time guard: gates never run from the MAIN tree)
