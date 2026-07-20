@@ -1,0 +1,58 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "commons": [
+  {
+   "poly": [
+    [
+     50,
+     50
+    ],
+    [
+     400,
+     50
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     50,
+     400
+    ]
+   ],
+   "role": "grazing",
+   "seq": 1
+  }
+ ],
+ "clearings": [
+  {
+   "poly": [
+    [
+     100,
+     100
+    ],
+    [
+     200,
+     100
+    ],
+    [
+     200,
+     200
+    ],
+    [
+     100,
+     200
+    ]
+   ],
+   "seq": 1
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "scatter_respects_swept_clearings"
+  ],
+  "source": "test_checks.py::test_scatter_respects_swept_clearings_fires_on_cover_before_the_collar"
+ }
+}
