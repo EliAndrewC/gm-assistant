@@ -27,6 +27,10 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
+from settlement import _assert_not_main_tree
+
+_assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
+
 Manifest = dict[str, Any]  # the JSON settlement manifest the generator emits
 Pt = Sequence[float]  # an (x, y) point (list from JSON, or a tuple)
 Poly = Sequence[Sequence[float]]  # a polyline / polygon

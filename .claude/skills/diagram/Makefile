@@ -4,9 +4,25 @@
 # mypy uses a per-module ratchet (see pyproject.toml): the legacy engine modules are relaxed until
 # each is migrated to --strict in its own pass; new modules are strict immediately.
 
-.PHONY: done lint format typecheck test
+.PHONY: done lint format typecheck test guard
 
 done: lint format typecheck test
+
+# Refuse to run from the MAIN /gm-assistant tree (CLAUDE.md "Session clones": main is the
+# integration point, never a workspace - work runs in .clones/<session-name>). Every target
+# depends on this. GM override for a deliberate main-tree run: GM_ASSISTANT_ALLOW_MAIN=1.
+guard:
+	@case "$(CURDIR)" in \
+	  /gm-assistant/.clones/*) ;; \
+	  /gm-assistant|/gm-assistant/*) [ "$$GM_ASSISTANT_ALLOW_MAIN" = 1 ] || { \
+	    echo "ERROR: this ran from the MAIN /gm-assistant tree. Main is the integration point, never a workspace."; \
+	    echo "Check CLAUDE.md, section 'Session clones' (reload CLAUDE.md if it has fallen out of your context"; \
+	    echo "window): create or reuse .clones/<kebab-cased-session-name>, sync it in with 'git pull origin main',"; \
+	    echo "and run this same command from inside that clone. (GM override: GM_ASSISTANT_ALLOW_MAIN=1)"; \
+	    exit 1; };; \
+	esac
+
+lint format typecheck test: | guard
 
 lint:
 	python3 -m ruff check .

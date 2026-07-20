@@ -1,8 +1,25 @@
 .PHONY: lint format types test cov done clean serve prepare-deploy deploy \
-        screenshots dom-audit ui-verify
+        screenshots dom-audit ui-verify guard
 
 # The Principle X "done" checklist. A change is not done until `make done` passes.
 done: lint format-check types test cov
+
+# Refuse to run from the MAIN /gm-assistant tree (CLAUDE.md "Session clones": main is the
+# integration point, never a workspace - work runs in .clones/<session-name>). Every target
+# except `serve` depends on this (the GM legitimately serves the toolkit from main to browse
+# it). GM override for a deliberate main-tree run: GM_ASSISTANT_ALLOW_MAIN=1.
+guard:
+	@case "$(CURDIR)" in \
+	  /gm-assistant/.clones/*) ;; \
+	  /gm-assistant|/gm-assistant/*) [ "$$GM_ASSISTANT_ALLOW_MAIN" = 1 ] || { \
+	    echo "ERROR: this ran from the MAIN /gm-assistant tree. Main is the integration point, never a workspace."; \
+	    echo "Check CLAUDE.md, section 'Session clones' (reload CLAUDE.md if it has fallen out of your context"; \
+	    echo "window): create or reuse .clones/<kebab-cased-session-name>, sync it in with 'git pull origin main',"; \
+	    echo "and run this same command from inside that clone. (GM override: GM_ASSISTANT_ALLOW_MAIN=1)"; \
+	    exit 1; };; \
+	esac
+
+lint format format-check types test cov clean screenshots dom-audit ui-verify prepare-deploy deploy: | guard
 
 lint:
 	ruff check .
