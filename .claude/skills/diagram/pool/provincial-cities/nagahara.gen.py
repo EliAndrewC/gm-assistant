@@ -331,7 +331,8 @@ s.label(1292, 1299, "temple neighborhood", 9, italic=True, color="#6B2A18")
 # reserve the temple-neighborhood LABEL grounds so the monzen packs avoid them (labels draw last)
 for _lx0, _ly0, _lx1, _ly1 in [(1133, 1172, 1247, 1194),   # 'Temple of Bishamon'
                                (1138, 1263, 1197, 1281),   # 'graveyard'
-                               (1231, 1290, 1353, 1310)]:   # 'temple neighborhood'
+                               (1231, 1290, 1353, 1310),   # 'temple neighborhood'
+                               (1076, 1243, 1122, 1266)]:   # 'monzen' - moved beside the teahouse cluster (2026-07-20); S of the lane so it never reads as one line with Bishamon's bold caption
     s.block_polys.append([(_lx0, _ly0), (_lx1, _ly0), (_lx1, _ly1), (_lx0, _ly1)])
 s.fire_tower(1206, 1194, label=None)   # the monzen's fire-watch, in an open court amid the terrace rows near the district centroid (keeps fire_tower_amid_its_district honest; >=5px off every house, clear of the graveyards and the curving west wall)
 # NO monzen back-alley in the WEST column: after the budget-first shrink it is a ring-front
@@ -347,15 +348,30 @@ s.fire_tower(1206, 1194, label=None)   # the monzen's fire-watch, in an open cou
 alleys([[(1250, 1000), (1250, 1160)]])
 s.block_polys.append([(1246, 1054), (1338, 1054), (1338, 1078), (1246, 1078)])   # the 'theater stage' label's ground (a theater label may cover no building at all; the theater's own stand-clear circle only shields its middle)
 s.place_wells((1082, 1105, 1271, 1300), spacing=58)
+# FUNERAL TRADES cluster by the GRAVEYARD, not the halls (Edo gravestone cutters and
+# coffin-makers sat by the burial grounds; China-first adds the joss-paper/spirit-money trade):
+# two shopfronts flanking Bishamon's danka ground on the temple lane - a coffin-maker and a
+# grave-marker stonecutter at map scale ARE the generic `shop` glyph; the story is placement.
+# NO amulet/religious-goods shops anywhere in the city: charms, incense and lamp-oil are
+# TEMPLE-DIRECT sales (a temple revenue stream), so no third-party storefront competes at the
+# temple's own gate. rot=180 fronts them onto the lane (businesses_front_streets); placed
+# BEFORE the lane's frontage row, which flows around them.
+s.building(1133, 1229, *s._dims("shop"), "shop", 180)
+s.building(1201, 1229, *s._dims("shop"), "shop", 180)
 # the monzen lines its OWN street: pilgrim-quarter housing fronting the temple lane on both
 # sides is the defining monzen-machi image (Zenkoji/Naritasan approach streets were solid
 # house-fronts), and the pair-cadence reflow (2026-07-18) needs the frontage band's capacity -
-# the deep rows alone no longer meet the budget's 600-dwelling promise. ALL SERVANT: the halls'
-# and pilgrims' attendants (label-exempt in labels_clear_of_other_buildings, so the row may run
-# under the temples' name-boxes where a laborer house may not; also not in the poor set for
-# poor_housing_mostly_interior). Placed AFTER the halls/ministry/graveyards (fixed seats),
-# BEFORE the packs (which flow around it).
-front([TEMPLE_LANE], ["servant"] * 40, spacing=19, rows=1)
+# the deep rows alone no longer meet the budget's 600-dwelling promise. SHOPS LEAD THE LIST
+# (2026-07-20): ~6 teahouses/eateries take the lane's WEST stretch - the modest gate-front
+# refreshment cluster a `monzen` caption promises. Nagahara's worship traffic is REGIONAL (an
+# ordinary provincial city, not a pilgrimage destination), so the gate economy stays a handful
+# of teahouses, NOT a full monzen-machi strip. The rest stays SERVANT: the halls' and pilgrims'
+# attendants (shop and servant are both label-exempt in labels_clear_of_other_buildings, so the
+# row may run under the temples' name-boxes where a laborer house may not; servants also not in
+# the poor set for poor_housing_mostly_interior). Shops are business frontage, not dwellings -
+# the x5 population count is untouched and top_up re-seats the displaced servants in the caste
+# bands. Placed AFTER the halls/ministry/graveyards (fixed seats), BEFORE the packs.
+front([TEMPLE_LANE], ["shop"] * 6 + ["servant"] * 40, spacing=19, rows=1)
 s.well_at(1320, 1080)   # a seeded idobata for the theater-south strip's E end: the monzen roji reflow left its densest pocket drawing 30 households from one well (city_well_density_sufficient) - seated BEFORE the rows so the terrace breaks into a court around it
 for _wc in [(1330, 1170), (1320, 1140), (1310, 1178)]:
     if s.well_at(*_wc):
@@ -373,7 +389,7 @@ s.rowpack((1225, 1058, 1360, 1102), (["laborer"] * 2 + ["servant"] + ["laborer_l
 s.rowpack((1165, 953, 1400, 1005), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 16, court_every=7, eave_ft=3)   # the ring-front strip N of the theater, up against the NW ring arc
 s.rowpack((1358, 1228, 1462, 1300), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 12, court_every=7, eave_ft=3)   # the temple-lane SE pocket, between the Rites apron and the spine's frontage band
 s.rowpack((1130, 1012, 1258, 1102), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 14, court_every=7, eave_ft=3)   # the NW-arc wedge W of the theater, N of Bishamon (the ring bound clips its taper)
-s.label(1112, 1101, "monzen", 9, italic=True, color="#6B2A18")
+s.label(1099, 1256, "monzen", 9, italic=True, color="#6B2A18")   # beside the teahouse cluster on the lane's W stretch, S of the lane - the caption sits WITH the gate-front commerce it names (city_labels_placed_with_subject) and clear of the Bishamon caption's line (the first seat at y1190 visually merged with the bold hall name)
 
 # ====================================================================== W: the samurai/government ward
 # the government + samurai occupy the SW quadrant, WEST of the spine (the merchant district is
@@ -506,6 +522,17 @@ s.block_polys.append([(1704, 1511), (1797, 1511), (1797, 1585), (1704, 1585)])  
 # seat a well in the far-E merchant block BEFORE the frontage/packs run, so it reserves its own
 # court and the houses flow around it - the block is otherwise too dense to split its lone well's load
 s.well_at(1851, 1394)
+# WHARF SHRINE to EBISU at the dock basin (2026-07-20): Ebisu is the fortune of fishermen and
+# honest commerce, so the water economy's heart gets its own threshold shrine - wayside shrines
+# historically stood exactly where a settlement's life turns (a landing, a crossing, a gate) -
+# and it echoes the Temple of Ebisu across town. Unlabeled like the temple-quarter wayside
+# cluster (the glyph reads; the dedication is flavor recorded here). Placed BEFORE the merchant
+# frontage/packs; sited in the pocket BETWEEN the basin and the estate court, where its reserve
+# block mostly overlaps ground the canal-strip + estate-court reserves already deny to housing
+# (the 566-dwelling target is ground-limited, so the shrine must not eat open row seats) -
+# clear of the dock/canal/water-gate footprints and of the x1792 street's end. It is EXTRA
+# flavor - the 3 shrines by the temple cluster still carry city_temple_neighborhood_has_shrines.
+s.small_shrine(1800, 1493)
 for _mrx, _mry in [(1580, 1394), (1580, 1614)]:
     s.block_polys.append([(_mrx - 22, _mry - 16), (_mrx + 22, _mry - 16), (_mrx + 22, _mry + 16), (_mrx - 22, _mry + 16)])
 s.frontage([(1501, 1330), (1898, 1330)], (["merchant"] * 3 + ["shop"]) * 16, skip=ROAD,
@@ -760,7 +787,7 @@ top_up("servant", (1490, 1345, 1875, 1657), 90)
 for _kind, _region, _cap in (("servant", (1491, 923, 1878, 1294), 130),   # y0 923 (was 969): the warren's top strip against the N ring arc was outside every servant sweep
                              ("laborer", (1490, 1345, 1875, 1657), 260),
                              ("servant", (1282, 1626, 1630, 1740), 60),
-                             ("burakumin", (1282, 1626, 1630, 1740), 40),
+                             ("burakumin", (1282, 1626, 1634, 1755), 40),   # y1 1755 (was 1740): the row band itself runs to 1752, so the sweep reaches the last row's gaps - seats lost to the temple-lane shop reflow (2026-07-20) are recovered here within the burakumin band
                              ("laborer", (1082, 953, 1462, 1300), 260),   # the NW monzen pockets (west column, theater strips, temple-lane pocket)
                              ("servant", (1073, 1309, 1471, 1600), 130),   # attendants' quarters tucked into the samurai ward's slivers (a 10x7 servant hut seats where no samurai house could)
                              ("laborer", (1491, 923, 1878, 1294), 305),
