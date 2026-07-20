@@ -1,0 +1,40 @@
+{
+ "meta": {
+  "scale": "village",
+  "view": [
+   0,
+   0,
+   400,
+   300
+  ]
+ },
+ "village_groves": [
+  {
+   "poly": [
+    [
+     100,
+     -200
+    ],
+    [
+     300,
+     -200
+    ],
+    [
+     300,
+     -40
+    ],
+    [
+     100,
+     -40
+    ]
+   ],
+   "role": "windbreak"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "hard_features_within_frame"
+  ],
+  "source": "test_checks.py::test_hard_features_within_frame_lets_the_windbreak_clip_but_not_vanish"
+ }
+}

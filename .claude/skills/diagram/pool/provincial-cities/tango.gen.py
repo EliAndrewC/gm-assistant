@@ -509,7 +509,8 @@ s.place_wells((1191, 1226, 1602, 1343), spacing=52, near=46)   # burakumin strip
 # are a separate Mode A diagram) - with the five other ministries LINING the government avenue
 # (Rites is apart, in the SW temple neighborhood), and the samurai neighborhood around them
 grid([[(1927, 1455), (1927, 1582)]])   # the government avenue's E leg, wrapping the yamen
-s.governor_mansion(1793, 1547, s.px(436), s.px(366), "Governor's Mansion", gate_dir="west")   # ~1.4 ha - modest for a provincial yamen, still the grandest compound by far
+s.governor_mansion(1793, 1547, s.px(436), s.px(366), "", gate_dir="west")   # ~1.4 ha - modest for a provincial yamen, still the grandest compound by far
+s.label(1793, 1552, "Governor's Mansion", 14, weight="bold")   # label CENTERED IN the compound (its interior is deliberately blank - a separate Mode A diagram): the manor default puts the caption above the walls, where its reserved box was eating a full housing row the leak-fix re-seat needs (2026-07-20)
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
         "Ministry of Works", "Ministry of Justice"]
 MIN_POS = [(1655, 1394), (1750, 1419), (1846, 1394), (1941, 1419), (1957, 1484)]   # staggered rows between fence and avenue; the upper row labels ABOVE (over the bare fence line), the lower row + Justice label BELOW (into their own block margins)
@@ -528,10 +529,12 @@ s.mausoleum(1793, 1655, 44, 32, label="Mausoleum", gate_dir="north")   # the war
 # OUTSIDE the walls. Samurai keep DETACHED compounds with yards - pack, NOT rowpack (the
 # scatter is the deliberate contrast with the commoner terraces).
 SAM_MIX = (["samurai"] * 3 + ["samurai_large"]) * 6
-front([[(1927, 1470), (1927, 1582)]], SAM_MIX[:18], spacing=18, rows=1)   # senior houses front the avenue's E leg
-s.rowpack((1726, 1635, 2003, 1683), (["samurai"] * 5 + ["samurai_large"]) * 10, court_every=6)   # kumi-yashiki nagaya: junior-samurai row-barracks south of the yamen (courts thinned - the quarter keeps no public wells)
-s.rowpack((1962, 1381, 2057, 1570), (["samurai"] * 5 + ["samurai_large"]) * 12, court_every=6)   # the east-arc barracks strip
-s.rowpack((1704, 1689, 1882, 1734), (["samurai"] * 4 + ["samurai_large"]) * 11, court_every=6)   # the south strip below the mausoleum (bound clips it at the ring road)
+front([[(1927, 1470), (1927, 1582)]], SAM_MIX * 2, spacing=18, rows=2)   # senior houses front the avenue's E leg; items sized past the slots so the list never binds before the ground does, and rows=2 seats a rear ura-dana row back-to-back behind the frontage (the engine's frontage doctrine) - both leak-fix re-seat measures, 2026-07-20
+s.rowpack((1645, 1460, 1700, 1615), (["samurai"] * 4 + ["samurai_large"]) * 12, court_every=8)   # the WEST-FENCE nagaya strip (leak-fix re-seat, 2026-07-20): the ward must hold the full ~54-house resident cohort in-wall now that city_samurai_houses_inside_walls bars the SE overflow, and the scatter pack saturates ~40 - junior-samurai row-barracks lining the compound edge are the period-correct denser form (kumi-yashiki rows along the fence); x1 1700 keeps a >=14px gap to the yamen's W wall (city_government_offices_dont_abut), y0 1460 clears the Ministry of Revenue + its label
+s.rowpack((1726, 1635, 2003, 1683), (["samurai"] * 5 + ["samurai_large"]) * 10, court_every=8)   # kumi-yashiki nagaya: junior-samurai row-barracks south of the yamen (courts thinned further 6->8 for the leak-fix re-seat - the quarter keeps no public wells, so the courts are visual breathing only)
+s.rowpack((1962, 1381, 2057, 1570), (["samurai"] * 5 + ["samurai_large"]) * 12, court_every=8)   # the east-arc barracks strip (courts thinned 6->8 with the other strips for the leak-fix re-seat; extending the region S of 1570 was tried and seats nothing - the arc + ring bound own that ground)
+s.rowpack((1880, 1590, 1955, 1632), (["samurai"] * 4 + ["samurai_large"]) * 8, court_every=8)   # the mansion-east pocket between the yamen's E apron, the avenue leg's end and the ring arc - where the 14 houses that leaked outside the SE wall (city_samurai_houses_inside_walls, 2026-07-20) come home; y0 1590 keeps the rows clear of the avenue's street end at (1927,1582)
+s.rowpack((1704, 1689, 1882, 1734), (["samurai"] * 4 + ["samurai_large"]) * 11, court_every=8)   # the south strip below the mausoleum (bound clips it at the ring road; courts thinned 6->8 with the other strips - extending E of 1882 was tried and seats nothing, the ring diagonal owns that ground)
 s.corridors.append(([(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)], 16))   # reserve the WARD FENCE line before the pack so no samurai house sits ON the fence (city_ward_fence_clear_of_structures)
 s.pack((1624, 1377, 2084, 1742), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill")
 s.label(1762, 1691, "samurai neighborhood", 10, italic=True, color="#3A352C")
@@ -647,8 +650,8 @@ def top_up(kind, region, need, count_kinds=None):
     stab = [(b["x"], b["y"]) for b in s.M.get("buildings", []) if b.get("kind") == "stables"]
 
     def ok(gx, gy):
-        if kind not in ("samurai", "samurai_large") and not _in_poly(gx, gy, WALL):
-            return False                                     # a COMMONER dwelling never lands OUTSIDE the wall (feature 006); samurai are exempt (their country seats sit outside)
+        if not _in_poly(gx, gy, WALL):
+            return False                                     # NO dwelling lands OUTSIDE the wall - commoners per feature 006, and free-standing samurai houses too (city_samurai_houses_inside_walls): the only extramural samurai residences are the walled country ESTATES, placed by hand. The old samurai exemption here leaked 14 houses past the SE wall arc (the rect sweep region pokes beyond the round wall; the 2026-07-20 regression fixture)
         if any(abs(gx - cx) <= (cw + w_) / 2 + 15 and abs(gy - cy) <= (ch + h_) / 2 + 15 for cx, cy, cw, ch in civ):
             return False                                     # ministries/yamen stand-clear margin
         if any((gx - sx) ** 2 + (gy - sy) ** 2 < 85 ** 2 for sx, sy in stab):
@@ -746,8 +749,36 @@ def _inwall(x, y):
 
 DWELL = ("laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house",
          "merchant_large", "samurai", "samurai_large")
-top_up("samurai", (1635, 1384, 2071, 1734), 46, count_kinds=("samurai", "samurai_large"))   # 46 (was 40): the roji cadence thinned the SE government/samurai quarter to 0.28/1000px^2, under the 0.30 residential floor (city_residential_quarters_dense_enough) - a few more junior houses in the ward's gaps restore it
-top_up("samurai", (1640, 1395, 2020, 1715), 53, count_kinds=("samurai", "samurai_large"))   # +7 constrained to the SE QUARTER WEDGE'S interior: the wider sweep above seats houses along the E arc OUTSIDE the quarter's inset-24 polygon (13 of the ward's samurai sit past it), which the per-quarter density counter cannot credit - only in-wedge seats lift 36 -> ~40 dwellings over the 0.30 floor
+# civic-apron PHASE 2 (the Nagahara pattern, ported for the leak-fix re-seat 2026-07-20):
+# ministry()/manor() reserve a 26px halo in block_polys so the RNG packs keep well clear, but
+# top_up's own ok() enforces the real 15px office gap (city_government_offices_dont_abut needs
+# 14) and exact_clear tests true rotated footprints - so before the fills run, the ministry and
+# mansion halos drop to 16px and the fills may claim the freed ring (the mausoleum keeps its
+# halo: ok() carries no mausoleum gap, so its block is the only guard). REPLACED IN PLACE,
+# index for index: settlement's _poly_bboxes cache invalidates on list-LENGTH change only, so
+# the old 26px bboxes remain a conservative (superset) pre-filter over the new 16px polys.
+def _swap_halo(cx, cy, w, h, old_m=26, new_m=16):
+    for _i, _p in enumerate(s.block_polys):
+        xs = [q[0] for q in _p]
+        ys = [q[1] for q in _p]
+        if (abs(min(xs) - (cx - w / 2 - old_m)) < 0.6 and abs(max(xs) - (cx + w / 2 + old_m)) < 0.6
+                and abs(min(ys) - (cy - h / 2 - old_m)) < 0.6 and abs(max(ys) - (cy + h / 2 + old_m)) < 0.6):
+            s.block_polys[_i] = [(cx - w / 2 - new_m, cy - h / 2 - new_m), (cx + w / 2 + new_m, cy - h / 2 - new_m),
+                                 (cx + w / 2 + new_m, cy + h / 2 + new_m), (cx - w / 2 - new_m, cy + h / 2 + new_m)]
+            return True
+    return False
+
+
+for _m in s.M["ministries"] + [s.M["governor_mansion"]]:
+    if not _swap_halo(_m["x"], _m["y"], _m["w"], _m["h"]):
+        raise SystemExit(f"phase-2 halo swap missed {_m.get('name', 'governor')}")
+
+top_up("samurai", (1635, 1384, 2071, 1734), 54, count_kinds=("samurai", "samurai_large"))   # 54 (was 46): the ward must hold the FULL resident cohort in-wall - the pre-leak-fix map drew 53 samurai homes, 14 of them illegally outside the SE wall (city_samurai_houses_inside_walls, 2026-07-20); the extended rowpack strips carry most of the re-seat and this sweep tops up the rest. ok()'s wall test now clips the region's over-wall corner, so the rect region may stay generous
+top_up("samurai", (1640, 1395, 2020, 1715), 55, count_kinds=("samurai", "samurai_large"))
+top_up("samurai", (1638, 1387, 2068, 1731), 54, count_kinds=("samurai", "samurai_large"))   # OFFSET-PHASE repeat sweeps (leak-fix re-seat): the sweep tests a fixed 5x6 lattice, so a seat whose clear window is a few px wide can fall between grid points - re-running with shifted origins catches the phase-missed seats at ~zero cost
+top_up("samurai", (1637, 1390, 2068, 1731), 54, count_kinds=("samurai", "samurai_large"))
+top_up("samurai", (1636, 1388, 2069, 1732), 54, count_kinds=("samurai", "samurai_large"))
+top_up("samurai", (1639, 1392, 2067, 1730), 54, count_kinds=("samurai", "samurai_large"))   # constrained to the SE QUARTER WEDGE'S interior: the wider sweep above seats houses along the E arc OUTSIDE the quarter's inset-24 polygon, which the per-quarter density counter cannot credit - only in-wedge seats lift the quarter over the 0.30 residential floor (city_residential_quarters_dense_enough)
 top_up("merchant_house", (1181, 1350, 1594, 1712), 120,
        count_kinds=("merchant", "merchant_house", "merchant_large"))   # 120 (was 112), region grown W to the row band's own x1181 edge + S to the ring taper: the pair cadence dropped the merchant caste to 102 vs its 105 band floor (~150 target, city_caste_counts_in_band); the finer 6x7 exact sweep finds the SW district's residual seats
 top_up("merchant_house", (1632, 1302, 2050, 1348), 112,

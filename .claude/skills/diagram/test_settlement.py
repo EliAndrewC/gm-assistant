@@ -101,11 +101,13 @@ def test_crop_to_content_frames_hard_features_with_margin():
 def test_crop_to_content_covers_fields_pond_and_poly_features():
     s = _crop_settlement()
     s.M["houses"] = [{"x": 500, "y": 500, "w": 20, "h": 20}]  # w/h branch
-    s.M["village_groves"] = [{"poly": [[300, 300], [350, 300], [350, 350], [300, 350]], "role": "windbreak"}]  # poly branch
+    s.M["groves"] = [{"poly": [[430, 430], [460, 430], [460, 460], [430, 460]]}]  # poly branch (a homestead grove still sets the frame)
+    s.M["village_groves"] = [{"poly": [[300, 300], [350, 300], [350, 350], [300, 350]], "role": "windbreak"}]  # must NOT set the frame (GM 2026-07-20: the windbreak clips)
     s.M["fields"] = [{"outline": [[400, 400], [600, 400], [600, 600], [400, 600]], "vis_bbox": [420, 420, 580, 580]}]  # vis_bbox branch
     s.M["pond"] = [700, 700, 50, 40]  # pond branch
+    s.M["wells"] = [{"x": 410, "y": 500, "r": 8}]  # r branch (latent bug 2026-07-20: wells set the frame too)
     s.crop_to_content(margin=0)
-    assert s.view == (300, 300, 450, 440)  # grove W/N, pond E/S
+    assert s.view == (402, 420, 348, 320)  # well W (410-8), field N, pond E/S - the windbreak at 300 is CLIPPED
 
 
 def test_crop_to_content_frames_a_torii_arch():
