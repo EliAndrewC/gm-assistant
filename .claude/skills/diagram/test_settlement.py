@@ -2275,3 +2275,17 @@ def test_paddy_features_cover_every_archetype_branch():
     sd.meta(name="D", scale="village", ftpx=1, down_deg=90, field_archetype="mulberry_dike_fishpond")
     sd._paddy_features(net)
     assert not any(sd.M.get(k) for k in seen)
+
+
+def test_main_tree_guard_blocks_main_allows_clones_and_gm_override(monkeypatch):
+    monkeypatch.delenv("GM_ASSISTANT_ALLOW_MAIN", raising=False)
+    # running from the MAIN integration tree aborts with the CLAUDE.md reminder
+    with pytest.raises(SystemExit, match="Session clones"):
+        settlement._assert_not_main_tree("/gm-assistant/.claude/skills/diagram/settlement.py")
+    # a session clone under .clones/ is the sanctioned workspace
+    settlement._assert_not_main_tree("/gm-assistant/.clones/x/.claude/skills/diagram/settlement.py")
+    # any tree outside /gm-assistant (the GM's laptop checkout) is not main
+    settlement._assert_not_main_tree("/home/eli/l7r/gm-assistant/.claude/skills/diagram/settlement.py")
+    # the GM's deliberate override opens main
+    monkeypatch.setenv("GM_ASSISTANT_ALLOW_MAIN", "1")
+    settlement._assert_not_main_tree("/gm-assistant/.claude/skills/diagram/settlement.py")

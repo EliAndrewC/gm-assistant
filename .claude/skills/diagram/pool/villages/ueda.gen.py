@@ -254,6 +254,11 @@ s.village_grove(_scatter, role="copse", dense=False)
 # ===== STAGE 3b: the SATOYAMA GRAZING MARGINS - the "empty" DRY high edges are un-terraced grass/scrub hill-
 # grazing (role='grazing', exempt from commons_beyond_the_windbreak), filling a CONTINUOUS ring around the
 # cultivated valley (settlements.md 'Village windbreak'; gated by margins_form_continuous_ring).
+# The GRAVEYARD (stage 4d, below) is placed AFTER these bands, so its tended grave collar must be RESERVED
+# before the scatter runs or the scrub dots the swept ground among the markers (scatter only skips clearings
+# that already exist - scatter_respects_swept_clearings; this map shipped with exactly that defect once).
+# Same footprint as the s.cemetery call below (_wmx/_wmy are set in stage 3a above).
+s.reserve_clearing(_wmx - 100, _wmy + 130, 48, 34, 30)
 # LESSON (2026-07-20, the map's original defect): draw the bands for the FRAME, not the canvas. The first
 # version's bands sat at canvas x 120-1080, but crop_to_content tightens Ueda's view to x>=~505 (the frame
 # hugs the houses/field, and commons are not crop content), so the W/SW band fell entirely OFF-FRAME and 28%

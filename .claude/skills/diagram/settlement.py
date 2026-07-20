@@ -30,6 +30,28 @@ Pt = tuple[float, float]  # an (x, y) point in map pixels
 Poly = list[Pt]  # a polyline / polygon as a list of points
 Manifest = dict[str, Any]  # the JSON settlement manifest the generator emits
 
+
+def _assert_not_main_tree(path: str | None = None) -> None:
+    """Refuse to run from the MAIN /gm-assistant checkout. Main is the integration point,
+    never a workspace (CLAUDE.md "Session clones"): a generator/gate/test writing into main's
+    tree races with another session's mid-ritual push-to-checkout (the 2026-07-20 double-push
+    post-mortem). Import-time enforcement here covers every Mode B gen, check_village.py, and
+    the pytest suites, since they all import this module. The GM can deliberately override
+    with GM_ASSISTANT_ALLOW_MAIN=1; a session must not."""
+    p = os.path.realpath(path if path is not None else __file__)
+    if p.startswith("/gm-assistant/") and "/.clones/" not in p and os.environ.get("GM_ASSISTANT_ALLOW_MAIN") != "1":
+        raise SystemExit(
+            "ERROR: this ran from the MAIN /gm-assistant tree. Main is the integration point, never a workspace -\n"
+            "every generator, gate, and test runs inside the session's own clone under /gm-assistant/.clones/.\n"
+            "Check CLAUDE.md, section 'Session clones' (reload CLAUDE.md if it has fallen out of your context\n"
+            "window) for the procedure: create or reuse .clones/<kebab-cased-session-name>, sync it in with\n"
+            "'git pull origin main', and run this same command from inside that clone.\n"
+            "(GM override for a deliberate main-tree run: GM_ASSISTANT_ALLOW_MAIN=1)"
+        )
+
+
+_assert_not_main_tree()
+
 LAND = '#EFE3C2'
 PADDY_SHADES = ['#A7C49C', '#9FBE93', '#AECBA1', '#9BBA8F', '#B4CCA6']  # rice mid-growth (green)
 FLOODED_SHADES = ['#93B0A2', '#8AAB9A', '#9DBAAB', '#88A99A', '#9AB6A8']  # just-transplanted paddy (water+shoots, blue-green)
@@ -483,6 +505,11 @@ class Settlement:
         # shrine's deliberate fengshui/chinju-no-mori grove (a separate feature) is left untouched. See
         # settlements.md 'Swept ground around sacred + funerary features'.
         self.clearings: list[Any] = []
+        self._cover_n = 0  # ground-cover scatter ordinal (commons + marsh draws). Each cover entry and each
+        #                    swept clearing records it, so the scatter_respects_swept_clearings check can see
+        #                    ORDER: a scatter only skips clearings that exist when it runs, so a cover whose
+        #                    seq <= a clearing's seq drew before the clearing was registered and may have
+        #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
         self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
@@ -3490,6 +3517,7 @@ class Settlement:
         self.add(f'<g stroke="#A7A860" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
         self.add(''.join(g))
         random.setstate(st)
+        self._cover_n += 1
         self.M["commons"].append(
             {
                 "x": round((x0 + x1) / 2, 1),
@@ -3498,6 +3526,7 @@ class Settlement:
                 "h": round(y1 - y0, 1),
                 "rot": 0,
                 "role": role,
+                "seq": self._cover_n,
                 "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
             }
         )
@@ -3558,6 +3587,7 @@ class Settlement:
         self.add(f'<g stroke="#6E9377" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
         self.add(''.join(g))
         random.setstate(st)
+        self._cover_n += 1
         self.M["marshes"].append(
             {
                 "x": round((x0 + x1) / 2, 1),
@@ -3566,6 +3596,7 @@ class Settlement:
                 "h": round(y1 - y0, 1),
                 "rot": 0,
                 "role": role,
+                "seq": self._cover_n,
                 "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
             }
         )
@@ -3717,9 +3748,13 @@ class Settlement:
     def _clear_ground(self, x: float, y: float, w: float, h: float, extra: float) -> None:
         """Reserve a swept verge around a sacred/funerary feature: the w x h footprint grown by `extra`,
         added to `self.clearings` so the loose hinterland scatter (commons scrub, marsh reeds) skips it.
-        Scaled by the map grain (bscale), so the cleared collar reads at the same real size on any scale."""
+        Scaled by the map grain (bscale), so the cleared collar reads at the same real size on any scale.
+        Also recorded in M['clearings'] with the current cover ordinal, so the checks can verify ORDER: a
+        scatter only skips clearings that exist when it runs (scatter_respects_swept_clearings)."""
         e = extra * self.bscale
-        self.clearings.append([(x - w / 2 - e, y - h / 2 - e), (x + w / 2 + e, y - h / 2 - e), (x + w / 2 + e, y + h / 2 + e), (x - w / 2 - e, y + h / 2 + e)])
+        rect = [(x - w / 2 - e, y - h / 2 - e), (x + w / 2 + e, y - h / 2 - e), (x + w / 2 + e, y + h / 2 + e), (x - w / 2 - e, y + h / 2 + e)]
+        self.clearings.append(rect)
+        self.M.setdefault("clearings", []).append({"poly": [[round(px, 1), round(py, 1)] for px, py in rect], "seq": self._cover_n})
 
     def reserve_clearing(self, x: float, y: float, w: float, h: float, extra: float = 46) -> None:
         """Pre-register a swept-ground clearing for a sacred/funerary feature a gen draws LATER (e.g. a
