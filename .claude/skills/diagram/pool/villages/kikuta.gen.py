@@ -101,4 +101,4 @@ s.hinterland()  # NOW lay the scrub + marsh - after the precinct's clearings are
 
 s.crop_to_content(margin=40)
 s.title("Kikuta")
-print(s.finish(os.path.join(HERE, "kikuta-village")))
+print(s.finish(os.path.join(HERE, "kikuta")))

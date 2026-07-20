@@ -6,7 +6,7 @@ the palette, organic fields with irregular crop basins, south-facing house glyph
 hills + shrines + torii, ponds/streams/channels, size-aware house placement, and
 the JSON manifest that check_village.py validates.
 
-A specific settlement (see kikuta-village.gen.py, hikari-no-sato.gen.py) is a thin
+A specific settlement (see kikuta.gen.py, hikari-no-sato.gen.py) is a thin
 script: it instantiates Settlement, declares its fields/water/shrine/houses, and
 calls finish(). What varies village to village - number and shape of fields, the
 irrigation source (pond vs stream vs field-to-field), torii count, whether a hill

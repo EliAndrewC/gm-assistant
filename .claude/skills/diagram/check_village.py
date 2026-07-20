@@ -7172,7 +7172,7 @@ if __name__ == "__main__":
     import os
 
     here = os.path.dirname(os.path.abspath(__file__))
-    default = os.path.join(here, "pool", "villages", "kikuta-village.json")
+    default = os.path.join(here, "pool", "villages", "kikuta.json")
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     path = args[0] if args else default
     if "--capacity" in sys.argv[1:]:
