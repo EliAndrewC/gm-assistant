@@ -1,0 +1,21 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "ossuaries": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 92,
+   "h": 60,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "ossuary_to_scale"
+  ],
+  "source": "test_checks.py::test_ossuary_to_scale_fires_oversized_passes_in_band"
+ }
+}

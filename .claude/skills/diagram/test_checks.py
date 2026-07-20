@@ -1904,6 +1904,23 @@ def test_title_clear_of_features_fires_over_the_pond():
     assert "title_clear_of_features" in f(M)
 
 
+def test_scalebar_matches_declared_scale_passes():
+    M = {"meta": {"scale": "village", "ftpx": 2}, "title": {"name": "V", "bbox": [800, 50, 900, 132]}, "scalebar": {"ft": 200, "ftpx": 2, "bbox": [800, 93, 900, 132]}}
+    assert "scalebar_matches_declared_scale" not in f(M)
+
+
+def test_scalebar_matches_declared_scale_fires_when_missing():
+    # a manifest with a title but no scalebar predates the bar (GM 2026-07-20) - regenerate the map
+    M = {"meta": {"scale": "village", "ftpx": 2}, "title": {"name": "V", "bbox": [800, 50, 900, 90]}}
+    assert "scalebar_matches_declared_scale" in f(M)
+
+
+def test_scalebar_matches_declared_scale_fires_on_a_wrong_distance():
+    # a village map (2 ft/px) whose bar claims the hamlet distance - the 100 map-px bar must read 200 ft
+    M = {"meta": {"scale": "village", "ftpx": 2}, "title": {"name": "V", "bbox": [800, 50, 900, 132]}, "scalebar": {"ft": 100, "ftpx": 1, "bbox": [800, 93, 900, 132]}}
+    assert "scalebar_matches_declared_scale" in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires

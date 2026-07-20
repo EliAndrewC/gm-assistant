@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "merchant_estates": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 62.0,
+   "h": 46.0,
+   "gate": [
+    500,
+    523.0
+   ],
+   "gate_dir": "south"
+  }
+ ],
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 505,
+   "w": 8.7,
+   "h": 8.7,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "merchant_estate_wall_clear_of_fire_towers"
+  ],
+  "source": "test_checks.py::test_merchant_estate_fires_when_a_fire_tower_is_enclosed_in_the_court"
+ }
+}
