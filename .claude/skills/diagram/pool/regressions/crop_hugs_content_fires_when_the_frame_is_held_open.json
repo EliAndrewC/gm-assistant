@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "village",
+  "view": [
+   150,
+   -300,
+   120,
+   455
+  ]
+ },
+ "houses": [
+  {
+   "x": 200,
+   "y": 100,
+   "w": 40,
+   "h": 30,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "village_groves": [
+  {
+   "poly": [
+    [
+     100,
+     -290
+    ],
+    [
+     300,
+     -290
+    ],
+    [
+     300,
+     60
+    ],
+    [
+     100,
+     60
+    ]
+   ],
+   "role": "windbreak"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "crop_hugs_content"
+  ],
+  "source": "test_checks.py::test_crop_hugs_content_fires_when_the_frame_is_held_open"
+ }
+}

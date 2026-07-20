@@ -657,8 +657,8 @@ def top_up(kind, region, need, count_kinds=None):
     stab = [(b["x"], b["y"]) for b in s.M.get("buildings", []) if b.get("kind") == "stables"]
 
     def ok(gx, gy):
-        if kind not in ("samurai", "samurai_large") and not _in_poly(gx, gy, WALL):
-            return False                                     # a COMMONER dwelling never lands OUTSIDE the wall (feature 006); samurai country seats are exempt
+        if not _in_poly(gx, gy, WALL):
+            return False                                     # NO dwelling lands OUTSIDE the wall - commoners per feature 006, and free-standing samurai houses too (city_samurai_houses_inside_walls): the only extramural samurai residences are the walled country ESTATES, placed by hand. The old samurai exemption leaked 1 house past the SW arc here and 14 past Tango's SE arc (2026-07-20)
         if any(abs(gx - cx) <= (cw + w_) / 2 + 15 and abs(gy - cy) <= (ch + h_) / 2 + 15 for cx, cy, cw, ch in civ):
             return False                                     # ministries/yamen stand-clear margin
         if any((gx - sx) ** 2 + (gy - sy) ** 2 < 85 ** 2 for sx, sy in stab):

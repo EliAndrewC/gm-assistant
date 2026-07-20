@@ -723,11 +723,16 @@ class Settlement:
     # solid HARD footprints the frame must fully contain (+ margin); the fields and pond are added specially.
     # Everything NOT listed here - the commons scrub, streams/channels/lanes - does not set the frame: it is
     # drawn and simply CLIPS at the crop edge (the frame stays tight to the settlement + its fields).
+    # NOT "village_groves" (GM 2026-07-20): the COMMUNAL windbreak/copse may CLIP at the frame edge - a
+    # partially visible belt reads as "the wood continues", and a smaller crop beats a larger one whose only
+    # extra content is more of the same grove (this held Kikuta's frame open north of the village). The belt
+    # hugs the cluster, so the houses' own margin always keeps part of it in view; hard_features_within_frame
+    # requires partial visibility (not containment) for it, and crop_hugs_content gates the tightness.
+    # Homestead "groves" stay: each hugs its own farmhouse, so it never drags the frame anyway.
     _CROP_HARD = (
         "houses",
         "gardens",
         "threshing_yards",
-        "village_groves",
         "groves",
         "dry_plots",
         "buildings",
@@ -754,7 +759,7 @@ class Settlement:
         """Frame the map to its CONTENT: set the render viewBox to the bounding box of the HARD features placed
         SO FAR plus `margin`, so the image is exactly as large as the settlement + its fields, tight to `margin`
         on every side (nonstandard sizes are fine, and the checks already treat the crop - not the canvas - as
-        the map edge). Call this AFTER the large features (water, fields, houses, groves) AND after any SET-APART
+        the map edge). Call this AFTER the large features (water, fields, houses) AND after any SET-APART
         hard feature that would otherwise sit outside the frame (a back-slope graveyard, an outlying shrine -
         those must be placed BEFORE the crop so it includes them), and BEFORE the small features that DROP INTO
         the framed space (wells among the houses, monk plots) AND the title.
@@ -771,6 +776,10 @@ class Settlement:
                 if o.get("poly"):
                     hx += [p[0] for p in o["poly"]]
                     hy += [p[1] for p in o["poly"]]
+                elif "r" in o:  # a well records {x, y, r} - no poly, no w/h. Latent bug found 2026-07-20:
+                    hx += [o["x"] - o["r"], o["x"] + o["r"]]  # wells never set the frame at all, and the
+                    hy += [o["y"] - o["r"], o["y"] + o["r"]]  # windbreak band silently covered for them until
+                    #                                           the grove stopped counting (crop_hugs_content)
                 elif "w" in o and "h" in o:
                     hx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
                     hy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]

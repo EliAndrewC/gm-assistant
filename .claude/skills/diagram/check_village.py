@@ -1513,6 +1513,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if scale in ("hamlet", "village") and _vw:
         # the village/hamlet hard features (a town/city carries urban/funerary kinds recorded as lists that this
         # per-scale check does not model). Each carries EITHER a torii list [x,y,z], a `poly`, a well `r`, or w/h.
+        # `village_groves` is NOT held to containment (GM 2026-07-20): the communal windbreak may CLIP at the
+        # frame edge - part of the belt in view reads as "the wood continues", and the crop is no longer held
+        # open for it (crop_hugs_content below gates that). It must still be PARTLY visible: a windbreak
+        # entirely outside the view is a lost feature, so it fires here like any fully-clipped hard feature.
         _HARD_IN_FRAME = ("houses", "gardens", "threshing_yards", "village_groves", "groves", "dry_plots", "manors", "religious", "shrines", "farm_sheds", "wells", "cemeteries", "torii")
         clipped = []
         for k in _HARD_IN_FRAME:
@@ -1527,7 +1531,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     fx0, fy0, fx1, fy1 = o["x"] - o["r"], o["y"] - o["r"], o["x"] + o["r"], o["y"] + o["r"]
                 else:  # every other hard feature carries w/h
                     fx0, fy0, fx1, fy1 = o["x"] - o["w"] / 2, o["y"] - o["h"] / 2, o["x"] + o["w"] / 2, o["y"] + o["h"] / 2
-                if fx0 < EX0 - 1 or fy0 < EY0 - 1 or fx1 > EX1 + 1 or fy1 > EY1 + 1:
+                if k == "village_groves":
+                    if fx1 < EX0 - 1 or fx0 > EX1 + 1 or fy1 < EY0 - 1 or fy0 > EY1 + 1:  # ENTIRELY outside
+                        clipped.append((k, round((fx0 + fx1) / 2), round((fy0 + fy1) / 2)))
+                elif fx0 < EX0 - 1 or fy0 < EY0 - 1 or fx1 > EX1 + 1 or fy1 > EY1 + 1:
                     clipped.append((k, round((fx0 + fx1) / 2), round((fy0 + fy1) / 2)))
         check(
             "hard_features_within_frame",
@@ -1536,6 +1543,85 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"feature the frame must contain (esp. a set-apart graveyard/shrine placed AFTER crop_to_content) "
             f"must sit inside the view; place it BEFORE the crop so the frame includes it",
         )
+
+        # ... and the frame must be TIGHT to that content (GM 2026-07-20): prefer the SMALLER crop - a view
+        # edge held open where the only content in the extra band is the communal windbreak (already partly
+        # visible) or nothing at all is wasted image. On each side, the view edge must sit within ALLOW px of
+        # the outermost frame-setting content - everything crop_to_content counts EXCEPT village_groves (the
+        # windbreak clips): structures, homestead plots/groves, dry plots, torii, the fields' VISIBLE extent,
+        # the pond. ALLOW = 56: the biggest crop margin in use is 44 (hamlets; villages 30-40) plus a little
+        # slack, so a conforming crop passes on every side while a grove-held edge (Kikuta's north sat ~200px
+        # past the houses to contain the windbreak) fires.
+        # mirrors settlement.py _CROP_HARD minus village_groves (keep the two in step), plus the torii /
+        # field-vis / pond / forest extras crop_to_content adds - Moritono taught the hard way that a partial
+        # mirror reads a legitimately forest-framed hamlet edge as "held open"
+        _FRAME_SET = (
+            "houses",
+            "gardens",
+            "threshing_yards",
+            "groves",
+            "dry_plots",
+            "buildings",
+            "manors",
+            "religious",
+            "shrines",
+            "flophouses",
+            "storehouses",
+            "farm_sheds",
+            "merchant_estates",
+            "wells",
+            "fire_towers",
+            "ministries",
+            "inspection_stations",
+            "cemeteries",
+            "mausoleums",
+            "cremation_grounds",
+            "ossuaries",
+            "forest_patches",
+            "pastures",
+        )
+        fsx: list[float] = []
+        fsy: list[float] = []
+        for k in _FRAME_SET:
+            for o in M.get(k, []):
+                if o.get("poly"):
+                    fsx += [p[0] for p in o["poly"]]
+                    fsy += [p[1] for p in o["poly"]]
+                elif "r" in o:
+                    fsx += [o["x"] - o["r"], o["x"] + o["r"]]
+                    fsy += [o["y"] - o["r"], o["y"] + o["r"]]
+                elif "w" in o and "h" in o:
+                    fsx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
+                    fsy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
+        for t in M.get("torii", []):
+            fsx += [t[0] - 19, t[0] + 19]
+            fsy += [t[1] - 10, t[1] + 18]
+        for fd in fields:
+            vb = fd.get("vis_bbox")
+            if vb:
+                fsx += [vb[0], vb[2]]
+                fsy += [vb[1], vb[3]]
+        if M.get("pond"):
+            pcx, pcy, prx, pry = M["pond"]
+            fsx += [pcx - prx, pcx + prx]
+            fsy += [pcy - pry, pcy + pry]
+        for fp in M.get("forest") or []:  # the big EDGE forest is frame-setting, canvas-clamped like the crop
+            fsx.append(min(max(fp[0], 0), Wd))
+            fsy.append(min(max(fp[1], 0), Hd))
+        if fsx:
+            ALLOW = 56
+            _edge_slack = {
+                "west": min(fsx) - EX0,
+                "north": min(fsy) - EY0,
+                "east": EX1 - max(fsx),
+                "south": EY1 - max(fsy),
+            }
+            _edge_loose = {side: round(v) for side, v in _edge_slack.items() if v > ALLOW}
+            check(
+                "crop_hugs_content",
+                not _edge_loose,
+                f"view edge(s) held open past the frame-setting content by more than {ALLOW}px: {_edge_loose} - prefer the smaller crop; a band whose only extra content is more windbreak grove (or open ground) is wasted image, so let the grove clip at the edge (crop_to_content no longer counts village_groves)",
+            )
 
     # population is DWELLINGS x ~5, NEVER total buildings: a town/city's shops, government
     # offices, flophouses, kura and gate furniture house no one, so counting them as housing
@@ -6091,6 +6177,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 "city_samurai_estates_outside",
                 5 <= len(est_out) <= 15,
                 f"{len(est_out)} walled samurai estates outside the walls, expected 5-15 - a walled city's cramped interior pushes wealthy samurai to extramural estates they commute in from",
+            )
+            # WHY (the extramural samurai residence is the walled, defensible country ESTATE; a lone
+            # UNWALLED samurai house beyond the rampart is defenseless and belongs in the sealed ward
+            # inside): settlements.md "Historical grounding". Hard-zero - the estates rule above is
+            # exactly why the commoner inside-walls check exempts samurai, so this closes that gap
+            # (validated instance: Tango's SE top_up sweep leaked 14 houses into the moat berm, 2026-07-20).
+            sam_out = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large") and len(w) >= 3 and not point_in_poly(b["x"], b["y"], w)]
+            check(
+                "city_samurai_houses_inside_walls",
+                not sam_out,
+                f"{len(sam_out)} free-standing samurai house(s) sit OUTSIDE the walls {sorted(set(sam_out))[:5]} - in-city "
+                f"samurai live unwalled INSIDE the sealed ward; the only extramural samurai residences are the walled "
+                f"country estates (s.manor). Re-seat these houses in the samurai quarter.",
             )
             areas = sorted((mn["w"] * mn["h"]) for mn in est_out)
             check(
