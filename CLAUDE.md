@@ -218,6 +218,13 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 - **Python changes**: `ruff check` + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` on pure-logic packages (Principle X).
 - **Delegated work**: spot-check actual artifacts before relaying success to the user. "The subagent said it was done" is not sufficient.
 
+**Iteration-loop efficiency** (profiled with the GM, 2026-07-20): a transcript-timestamp profile of a representative small feature (the swept-collar check: 11m07s wall) showed **78% of wall time was model turn latency and only 22% tool execution** - the full diagram gate is ~1 minute and single-map regens are ~6s, so tool speed is NOT the bottleneck; the NUMBER of sequential turns is. Standing practice:
+
+- **Batch into fewer, bigger turns.** Group independent recon (greps, file reads, artifact inspections) as parallel tool calls in ONE turn instead of one lookup per turn, and apply a planned multi-edit to a file in one turn rather than edit-per-turn. Only serialize when the next step genuinely depends on the previous result - do not batch past a real decision point, and never skip looking at a result that could change the plan.
+- **Docs-only diffs skip the gate.** If everything changed since the last green gate is markdown/docs, do not re-run `make done` - the gate runs once at stop-work for the code that changed. (This exact redundancy cost a full gate run in the profiled feature: gate #2 ran after only `settlements.md` edits.)
+- **Background the final gate.** Start the stop-work gate with `run_in_background` and write the docs/commit message while it runs; report done only after it comes back green.
+- **Do NOT cut the ritual steps** (regression-fixture freeze, overlap-registry classification, record-the-why docs, the stop-work ritual). GM-confirmed 2026-07-20: they cost ~2 minutes per feature and are why the regression rate stays near zero. The savings come from turn structure, never from skipping guardrails.
+
 **Subagent-check TDD (REQUIRED procedure for improving review subagents)**: when the GM asks for a new rule that a review subagent (e.g. `building-review`) should enforce, do NOT simply apply the fix and write the rule into the agent. The current artifacts contain the motivating defect - that is the failing test. Procedure:
 
 1. Add only the **general, category-level rule** to the agent definition. Never name the specific instance yet - that would test nothing about whether the check generalizes.
