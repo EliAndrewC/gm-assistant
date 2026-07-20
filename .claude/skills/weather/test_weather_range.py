@@ -70,9 +70,9 @@ def test_rok_range_full_year():
 
 
 @pytest.mark.parametrize("raw,want", [
-    ("6:34 AM", "6:34a"),
-    ("7:05 PM", "7:05p"),
-    ("12:00 PM", "12:00p"),
+    ("6:34 AM", "6:34am"),
+    ("7:05 PM", "7:05pm"),
+    ("12:00 PM", "12:00pm"),
 ])
 def test_compact_time(raw, want):
     assert R.compact_time(raw) == want
