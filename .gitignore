@@ -17,19 +17,24 @@ __pycache__
 # never cross-contaminate. Lives on the host mount, so it survives a container rebuild.
 .clones/
 
-# /diagram map artifacts are DERIVED from their .gen.py + .json (the real source, kept in
-# git) - both the .png render and the .svg it renders from. A to-scale village .svg is tens
-# of MB (one primitive per crop row / grass tuft), so tracking them bloated the working tree
-# and grew git history every diagram commit. They are regenerated on demand, so both are
-# gitignored. Regenerate with `python3 .claude/skills/diagram/pool/<map>.gen.py`.
-.claude/skills/diagram/pool/*.png
-.claude/skills/diagram/pool/*.svg
-# ...but the HAND-AUTHORED Mode A compound plans (magistracies, drafts) have NO generator - they ARE the
-# source, KB-sized, not regenerable - so they stay tracked. Add any new hand-authored pool SVG here.
-!.claude/skills/diagram/pool/ochiba-magistracy.svg
-!.claude/skills/diagram/pool/ochiba-recomposed-draft.svg
-!.claude/skills/diagram/pool/county-magistracy-draft.svg
-!.claude/skills/diagram/pool/hayakawa-magistracy.svg
+# /diagram pool is foldered BY SUBJECT so tracking is per-folder (no per-file exemptions):
+#  - GENERATED settlement maps (Mode B: villages/hamlets/towns/provincial-cities) derive their
+#    .svg + .png from a .gen.py + .json - a to-scale village .svg is tens of MB (one primitive per
+#    crop row), so both derived artifacts are ignored and regenerated on demand
+#    (`python3 .claude/skills/diagram/pool/<type>/<map>.gen.py`).
+#  - HAND-AUTHORED Mode A compound plans (magistracies/) have NO generator - the .svg IS the source,
+#    KB-sized - so it stays tracked; only its .png render is ignored.
+#  - regressions/ holds tracked fixture .svgs (no ignore line -> tracked).
+# A NEW settlement type would add its two lines here; a new magistracy .svg is auto-tracked.
+.claude/skills/diagram/pool/villages/*.svg
+.claude/skills/diagram/pool/villages/*.png
+.claude/skills/diagram/pool/hamlets/*.svg
+.claude/skills/diagram/pool/hamlets/*.png
+.claude/skills/diagram/pool/towns/*.svg
+.claude/skills/diagram/pool/towns/*.png
+.claude/skills/diagram/pool/provincial-cities/*.svg
+.claude/skills/diagram/pool/provincial-cities/*.png
+.claude/skills/diagram/pool/magistracies/*.png
 
 # Spoiler-sensitive /dream scenes: the local tier is the GM's disk only, never committed.
 # The public tier (.claude/skills/dream/pool/) stays tracked; see that skill's SKILL.md.

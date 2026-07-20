@@ -20,7 +20,7 @@ paddy ~0.1 acre, so a single plot visibly outsizes the 46x28 ft farmhouses.
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from settlement import Settlement  # noqa: E402
 
 s = Settlement(2600, 2000, seed=77)

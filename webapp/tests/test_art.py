@@ -106,7 +106,8 @@ def test_prompt_monk_is_a_monastic_without_swords() -> None:
     prompt = generate_prompt(
         {'gender': 'female', 'order': 'Order of Daikoku', 'seat': '', 'age': 55}
     )
-    assert 'Buddhist monk' in prompt
+    assert 'monk from Rokugan' in prompt
+    assert 'Buddhist' not in prompt
     assert 'no topknot' in prompt
     assert 'no swords and no armor' in prompt
     # The hair clause is suppressed for monks - the head line covers the hair.
@@ -123,6 +124,27 @@ def test_prompt_monk_head_is_shaved_or_grown_out_roughly_evenly() -> None:
     assert any('cleanly shaved head' in p for p in prompts)
     assert any('grown out from a tonsure' in p for p in prompts)
     assert all('no topknot' in p for p in prompts)
+
+
+def test_prompt_monk_hair_trait_suppresses_the_head_roll() -> None:
+    from chargen.art import generate_prompt
+
+    # A rolled hairstyle trait contradicts a described head ("shaved head"
+    # plus "an unusual, distinctive hairstyle"), so the head roll is skipped.
+    monk = {
+        'gender': 'female',
+        'order': 'Order of Daikoku',
+        'seat': '',
+        'age': 24,
+        'traits': ['unusual haircut'],
+    }
+    prompts = [generate_prompt(monk) for _ in range(20)]
+    assert all('shaved head' not in p for p in prompts)
+    assert all('tonsure' not in p for p in prompts)
+    assert all('no samurai topknot' in p for p in prompts)
+    assert all('unusual, distinctive hairstyle' in p for p in prompts)
+    balding = dict(monk, traits=['balding'])
+    assert 'shaved head' not in ' '.join(generate_prompt(balding) for _ in range(20))
 
 
 def test_prompt_explicit_character_type_beats_dict_shape() -> None:

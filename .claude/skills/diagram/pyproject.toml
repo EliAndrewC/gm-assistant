@@ -47,7 +47,7 @@ addopts = "--cov --cov-report=term-missing"
 
 [tool.coverage.run]
 source = ["check_village", "settlement", "pack_audit", "compound", "citybudget"]
-omit = ["test_*.py", "pool/*.gen.py"]
+omit = ["test_*.py", "pool/*/*.gen.py"]
 
 [tool.coverage.report]
 fail_under = 100

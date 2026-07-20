@@ -306,15 +306,21 @@ def generate_prompt(character: dict) -> str:
     school = character.get('school', '').lower()
     extra_style_lines: list[str] = []
     if character_type == 'monk':
-        subject = 'A portrait of a Buddhist monk from Rokugan.'
+        subject = 'A portrait of a monk from Rokugan.'
         clothing = (
             'plain, somewhat worn monastic robes - a muted kimono-style robe '
             'with a kesa surplice draped over one shoulder'
         )
         # Not every monk keeps the tonsure - roughly half do (GM decision
         # 2026-07-20); the rest wear their hair grown out, but never a
-        # samurai topknot.
-        if _random() < 0.5:
+        # samurai topknot. A rolled hair trait (balding, unusual haircut)
+        # takes precedence and skips the head roll entirely - "shaved head"
+        # alongside "an unusual, distinctive hairstyle" is nonsense
+        # (GM-caught 2026-07-20).
+        hair_traits = {'balding', 'unusual haircut'}
+        if any(trait.lower() in hair_traits for trait in traits):
+            head = 'wears no samurai topknot'
+        elif _random() < 0.5:
             head = 'has a cleanly shaved head with no topknot'
         else:
             head = 'has short natural hair grown out from a tonsure, with no topknot'

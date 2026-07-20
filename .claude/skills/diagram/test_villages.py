@@ -35,7 +35,7 @@ def _is_village_gen(gen):
     return "settlement import" in src or "import settlement" in src
 
 
-GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*.gen.py")) if _is_village_gen(g))
+GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*", "*.gen.py")) if _is_village_gen(g))
 
 
 def _regen_and_gate(gen):

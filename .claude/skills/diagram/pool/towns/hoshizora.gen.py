@@ -14,7 +14,7 @@ import math
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from settlement import Settlement  # noqa: E402
 
 s = Settlement(2000, 1300, seed=386)
