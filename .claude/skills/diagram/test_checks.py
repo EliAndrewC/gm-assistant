@@ -1024,7 +1024,7 @@ def test_hikari_bishamon_precinct_no_longer_limits_the_crop():
     # the E block, so the shipped map's advisory is now SILENT. This guards against a regression that re-parks
     # the precinct (or any shrine group) where it needlessly limits the crop. See settlements.md 'Crop advisory'.
     here = pathlib.Path(__file__).parent
-    M = json.loads((here / "pool" / "hikari-no-sato.json").read_text())
+    M = json.loads((here / "pool" / "villages" / "hikari-no-sato.json").read_text())
     assert check_village.crop_relocatable_singletons(M) == []
 
 
