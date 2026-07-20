@@ -1303,7 +1303,10 @@ class Settlement:
             self.marsh(ring, role="pond_fringe")
             self.block_polys.append([(pcx - prx - 10, pcy - pry - 10), (pcx + prx + 10, pcy - pry - 10), (pcx + prx + 10, pcy + pry + 10), (pcx - prx - 10, pcy + pry + 10)])  # no build on the pond
             pond_rec = (pcx, pcy)
-        elif source.get("kind") == "stream":
+        elif source.get("kind") == "stream" and source.get("stream"):
+            # no "stream" polyline = an existing on-map stream already runs at the sluice (the town
+            # pattern: the comb taps the map's stream via a weir); nothing extra is drawn, the
+            # hairline topology channel below still anchors to that stream
             self.stream(source["stream"], frm={"kind": "offmap"}, width=7)
         for c in sorted(net["channels"], key=lambda c: -c["w"]):
             self.field_channel(c["pts"], "#7C9EB0" if c["role"] == "drain" else "#6C9CBE", c["w"], c.get("w_tail", c["w"]))
@@ -1332,19 +1335,28 @@ class Settlement:
         # a hairline SOURCE -> field feed carrying the topology (winds a little into the paddy interior). It
         # STARTS at the source (the pond center, or the sluice for a stream) so channel_source_anchored /
         # pond_connected_to_field see it, and carries a gentle perpendicular KINK so channel_winds_gently passes.
-        hr = net["channels"][0]["pts"]
-        fork = hr[-1]
-        dd = self.M["meta"].get("down_deg", 90)
-        dx, dy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
-        din = (fork[0] + dx * 70, fork[1] + dy * 70)
-        start = pond_rec if pond_rec else (sluice[0], sluice[1])
-        frm = {"kind": "pond"} if pond_rec else {"kind": "stream"}
-        vx, vy = din[0] - start[0], din[1] - start[1]
-        vl = math.hypot(vx, vy) or 1.0
-        midx, midy = (start[0] + din[0]) / 2 - vy / vl * 20, (start[1] + din[1]) / 2 + vx / vl * 20
-        self.M["channels"].append(
-            {"poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]], "frm": frm, "to": {"kind": "field", "name": name}, "w": 2.5}
-        )
+        # source kind "cascade" = the field is fed plot-to-plot from an UPSTREAM field (the caller
+        # records its own connector channel with to={"kind":"field",...}), so no hairline is added -
+        # its frm={"kind":"stream"} anchor would dangle with no stream at the sluice.
+        if source.get("kind") != "cascade":
+            hr = net["channels"][0]["pts"]
+            fork = hr[-1]
+            dd = self.M["meta"].get("down_deg", 90)
+            dx, dy = math.cos(math.radians(dd)), math.sin(math.radians(dd))
+            din = (fork[0] + dx * 70, fork[1] + dy * 70)
+            start = pond_rec if pond_rec else (sluice[0], sluice[1])
+            frm = {"kind": "pond"} if pond_rec else {"kind": "stream"}
+            vx, vy = din[0] - start[0], din[1] - start[1]
+            vl = math.hypot(vx, vy) or 1.0
+            midx, midy = (start[0] + din[0]) / 2 - vy / vl * 20, (start[1] + din[1]) / 2 + vx / vl * 20
+            self.M["channels"].append(
+                {
+                    "poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]],
+                    "frm": frm,
+                    "to": {"kind": "field", "name": name},
+                    "w": 2.5,
+                }
+            )
         self._paddy_features(net)
         return cast("list[Pt]", net["envelope"])
 
@@ -2980,6 +2992,8 @@ class Settlement:
             return False
         if self._in_blocked(x, y) or self._near_corridor(x, y):
             return False
+        if self._rect_hits((x, y, w, h), self.dry_polys):  # hem strips / garden tracts are cropland too -
+            return False  # the yard footprint stays off them, same as the house test in _fits (GM, Tango hems)
         r = math.hypot(w, h) / 2
         for poly in self.field_polys:  # keep the whole DRY footprint out of every paddy
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < r + 4:
@@ -3185,6 +3199,14 @@ class Settlement:
                 continue
             if abs(x - px) < (w + pw) / 2 + 2 and abs(y - py) < (h + ph) / 2 + 2:
                 return False
+        # the town RAMPART blocks a belt arm at the FOOTPRINT level: the corridor test above is
+        # center-only, so a wide arm centered clear of the wall could still lap the stroke
+        # (first hit: a Hirameki farm's west arm crossing the east face, 2026-07)
+        wallp = self.M.get("wall")
+        if wallp and any(
+            seg_dist(gx, gy, wallp[k], wallp[k + 1]) < 12 for gx, gy in ((x - w / 2, y - h / 2), (x + w / 2, y - h / 2), (x + w / 2, y + h / 2), (x - w / 2, y + h / 2)) for k in range(len(wallp) - 1)
+        ):
+            return False
         # a threshing yard needs clear sky to its SOUTH (the drying sun); a grove squarely in that sun-corridor
         # would shade it, so keep the grove out of the narrow strip directly south of any yard. (Its OWN grove
         # is N/W, far from its own yard's southern corridor, so this only steers it off a NEIGHBOR's yard.)
