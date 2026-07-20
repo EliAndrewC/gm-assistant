@@ -1949,6 +1949,42 @@ def test_margins_form_continuous_ring_ignores_town_and_city_sheets():
     assert "margins_form_continuous_ring" not in f(M)
 
 
+def test_scatter_respects_swept_clearings_fires_on_cover_before_the_collar():
+    # the real Ueda graveyard defect in miniature: the grazing band (seq 1) drew BEFORE the grave
+    # collar was registered (clearing seq 1 = one cover already drawn), so tufts landed on swept ground
+    M = {
+        "meta": {"scale": "village"},
+        "commons": [{"poly": [[50, 50], [400, 50], [400, 400], [50, 400]], "role": "grazing", "seq": 1}],
+        "clearings": [{"poly": [[100, 100], [200, 100], [200, 200], [100, 200]], "seq": 1}],
+    }
+    assert "scatter_respects_swept_clearings" in f(M)
+
+
+def test_scatter_respects_swept_clearings_passes_when_the_ground_was_reserved():
+    # the documented reserve_clearing pattern: the collar is reserved (seq 0, before any cover), the
+    # band draws (seq 1, skips it), then the cemetery registers its own duplicate collar late (seq 1) -
+    # harmless, because a pre-cover guard clearing already protected every point of it
+    M = {
+        "meta": {"scale": "village"},
+        "commons": [{"poly": [[50, 50], [400, 50], [400, 400], [50, 400]], "role": "grazing", "seq": 1}],
+        "clearings": [
+            {"poly": [[100, 100], [200, 100], [200, 200], [100, 200]], "seq": 0},
+            {"poly": [[100, 100], [200, 100], [200, 200], [100, 200]], "seq": 1},
+        ],
+    }
+    assert "scatter_respects_swept_clearings" not in f(M)
+
+
+def test_scatter_respects_swept_clearings_passes_when_the_cover_draws_after():
+    # normal order: clearing registered first (seq 0), the band draws after (seq 1) and skips it
+    M = {
+        "meta": {"scale": "village"},
+        "commons": [{"poly": [[50, 50], [400, 50], [400, 400], [50, 400]], "role": "grazing", "seq": 1}],
+        "clearings": [{"poly": [[100, 100], [200, 100], [200, 200], [100, 200]], "seq": 0}],
+    }
+    assert "scatter_respects_swept_clearings" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires

@@ -483,6 +483,11 @@ class Settlement:
         # shrine's deliberate fengshui/chinju-no-mori grove (a separate feature) is left untouched. See
         # settlements.md 'Swept ground around sacred + funerary features'.
         self.clearings: list[Any] = []
+        self._cover_n = 0  # ground-cover scatter ordinal (commons + marsh draws). Each cover entry and each
+        #                    swept clearing records it, so the scatter_respects_swept_clearings check can see
+        #                    ORDER: a scatter only skips clearings that exist when it runs, so a cover whose
+        #                    seq <= a clearing's seq drew before the clearing was registered and may have
+        #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
         self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
@@ -3490,6 +3495,7 @@ class Settlement:
         self.add(f'<g stroke="#A7A860" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
         self.add(''.join(g))
         random.setstate(st)
+        self._cover_n += 1
         self.M["commons"].append(
             {
                 "x": round((x0 + x1) / 2, 1),
@@ -3498,6 +3504,7 @@ class Settlement:
                 "h": round(y1 - y0, 1),
                 "rot": 0,
                 "role": role,
+                "seq": self._cover_n,
                 "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
             }
         )
@@ -3558,6 +3565,7 @@ class Settlement:
         self.add(f'<g stroke="#6E9377" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
         self.add(''.join(g))
         random.setstate(st)
+        self._cover_n += 1
         self.M["marshes"].append(
             {
                 "x": round((x0 + x1) / 2, 1),
@@ -3566,6 +3574,7 @@ class Settlement:
                 "h": round(y1 - y0, 1),
                 "rot": 0,
                 "role": role,
+                "seq": self._cover_n,
                 "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
             }
         )
@@ -3717,9 +3726,13 @@ class Settlement:
     def _clear_ground(self, x: float, y: float, w: float, h: float, extra: float) -> None:
         """Reserve a swept verge around a sacred/funerary feature: the w x h footprint grown by `extra`,
         added to `self.clearings` so the loose hinterland scatter (commons scrub, marsh reeds) skips it.
-        Scaled by the map grain (bscale), so the cleared collar reads at the same real size on any scale."""
+        Scaled by the map grain (bscale), so the cleared collar reads at the same real size on any scale.
+        Also recorded in M['clearings'] with the current cover ordinal, so the checks can verify ORDER: a
+        scatter only skips clearings that exist when it runs (scatter_respects_swept_clearings)."""
         e = extra * self.bscale
-        self.clearings.append([(x - w / 2 - e, y - h / 2 - e), (x + w / 2 + e, y - h / 2 - e), (x + w / 2 + e, y + h / 2 + e), (x - w / 2 - e, y + h / 2 + e)])
+        rect = [(x - w / 2 - e, y - h / 2 - e), (x + w / 2 + e, y - h / 2 - e), (x + w / 2 + e, y + h / 2 + e), (x - w / 2 - e, y + h / 2 + e)]
+        self.clearings.append(rect)
+        self.M.setdefault("clearings", []).append({"poly": [[round(px, 1), round(py, 1)] for px, py in rect], "seq": self._cover_n})
 
     def reserve_clearing(self, x: float, y: float, w: float, h: float, extra: float = 46) -> None:
         """Pre-register a swept-ground clearing for a sacred/funerary feature a gen draws LATER (e.g. a
