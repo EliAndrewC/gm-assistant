@@ -177,9 +177,39 @@
     refresh();
   }
 
+  // ---------------------------------------------------------------------
+  // Responsive nav: hamburger toggle for the collapsed header menu
+  // ---------------------------------------------------------------------
+
+  function initNavToggle() {
+    const header = document.querySelector('.app-nav');
+    const toggle = header ? header.querySelector('.app-nav__toggle') : null;
+    if (!toggle) return;
+
+    function setOpen(open) {
+      header.classList.toggle('app-nav--open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    }
+
+    toggle.addEventListener('click', function () {
+      setOpen(!header.classList.contains('app-nav--open'));
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+
+    // Clicking anywhere outside the header closes the menu. Link clicks
+    // inside it navigate away, so they need no special handling.
+    document.addEventListener('click', function (e) {
+      if (!header.contains(e.target)) setOpen(false);
+    });
+  }
+
   function init() {
     initRelicsFilter();
     initPlacesDetail();
+    initNavToggle();
   }
 
   if (document.readyState === 'loading') {

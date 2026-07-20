@@ -12,7 +12,8 @@ unit-tested at 100% coverage (Constitution Principle X):
 - ``build_synthesis_character`` - map an OP record into the webapp character shape.
 - ``related_by_tagline``  - find cast members linked to the same NPC as the subject.
 - ``refresh_taglines``    - incremental tagline-cache merge (injected fetcher).
-- ``merge_backstory``     - idempotently splice the backstory into GM-only notes.
+- ``merge_backstory``     - merge the backstory into GM-only notes as bare prose.
+- ``strip_backstory_markers`` - drop the legacy sentinel lines from old records.
 
 The network boundary (fetching OP pages, PATCHing records) lives in
 ``chargen.op``; this module never performs I/O.
@@ -27,7 +28,10 @@ from dataclasses import dataclass, field
 
 from bs4 import BeautifulSoup
 
-#: Sentinels delimiting the auto-managed backstory block inside GM-only notes.
+#: LEGACY sentinels that used to delimit the auto-managed backstory block in
+#: GM-only notes. New merges write bare prose with no markers (GM decision
+#: 2026-07-20); the constants remain so records that still carry them get the
+#: block replaced in place (markers dropped) and can be swept clean.
 BACKSTORY_START = '--- Synthesized Backstory (auto) ---'
 BACKSTORY_END = '--- End Synthesized Backstory ---'
 
@@ -207,13 +211,16 @@ def refresh_taglines(
 
 
 def merge_backstory(existing_gm_info: str, prose: str) -> str:
-    """Splice ``prose`` into GM-only notes between the backstory sentinels.
+    """Merge ``prose`` into GM-only notes as bare, unmarked prose.
 
-    If the delimited block already exists, replace it in place; otherwise append
-    it after the existing notes. All text outside the block is preserved, and the
-    operation is idempotent (running it twice yields one section, unchanged).
+    Backstories carry no header/footer (GM decision 2026-07-20). If a legacy
+    sentinel-delimited block is still present, it is replaced in place and the
+    markers dropped; otherwise the prose is appended after the existing notes.
+    Without markers a re-run cannot recognize its own earlier prose, so
+    re-synthesizing an already-merged character appends a second copy - an
+    accepted tradeoff; the GM prunes by hand in that rare case.
     """
-    block = f'{BACKSTORY_START}\n{prose.strip()}\n{BACKSTORY_END}'
+    block = prose.strip()
     start = existing_gm_info.find(BACKSTORY_START)
     end = existing_gm_info.find(BACKSTORY_END)
     if start != -1 and end != -1 and end > start:
@@ -221,3 +228,23 @@ def merge_backstory(existing_gm_info: str, prose: str) -> str:
     if existing_gm_info.strip():
         return existing_gm_info.rstrip() + '\n\n' + block
     return block
+
+
+def strip_backstory_markers(gm_info: str) -> str:
+    """Remove legacy backstory sentinel lines, keeping the prose between them.
+
+    One-shot cleanup for records written before the no-markers decision
+    (2026-07-20). Unwraps every well-formed block; text outside the markers is
+    preserved with blank-line joins. Malformed markers (end before start, or
+    only one present) are left untouched rather than guessed at.
+    """
+    out = gm_info
+    while True:
+        start = out.find(BACKSTORY_START)
+        end = out.find(BACKSTORY_END)
+        if start == -1 or end == -1 or end < start:
+            return out
+        inner = out[start + len(BACKSTORY_START) : end].strip()
+        before = out[:start].rstrip()
+        after = out[end + len(BACKSTORY_END) :].strip()
+        out = '\n\n'.join(part for part in (before, inner, after) if part)

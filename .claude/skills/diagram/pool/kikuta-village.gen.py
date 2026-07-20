@@ -37,7 +37,9 @@ s.meta(name="Kikuta", scale="village", ftpx=2, toscale=True, households=HOUSEHOL
 
 # ROLL the whole village. civic_shrine=False + frame=False: this gen supplies Kikuta's OWN sacred precinct
 # (the Benten hall + its 7 torii + the burial ground) and crops the frame itself, AFTER placing them.
-knobs = s.roll_village("Kikuta", households=HOUSEHOLDS, down_deg=45, water_kind=WATER_KIND, field_fall=1500, civic_shrine=False, frame=False)
+# lay_hinterland=False: defer the scrub/marsh scatter until AFTER the Benten precinct below registers its
+# swept-ground clearings (the hall, the 7 torii, the burial ground), so the scrub reads cleared around them.
+knobs = s.roll_village("Kikuta", households=HOUSEHOLDS, down_deg=45, water_kind=WATER_KIND, field_fall=1500, civic_shrine=False, frame=False, lay_hinterland=False)
 print("rolled:", {k: v for k, v in knobs.items() if k not in ("cluster", "gateway", "field_bbox")})
 
 # --- THE BENTEN PRECINCT (the one hand-sited thing, because the GM fixes it) -------------------------
@@ -94,6 +96,8 @@ s.shrine_hall(BEN[0], BEN[1], "Shrine to Benten", "(Sister Baika's care)", w=44,
 s.shrine_well(round(BEN[0] - _uy * 46), round(BEN[1] + _ux * 46))  # the priestess's ablution well, beside the hall
 # the village burial ground shares the precinct but stands clear of the hall + the sando
 s.cemetery(round(BEN[0] + _ax * 96 - _uy * 104), round(BEN[1] + _ay * 96 + _ux * 104), 46, 32, parish=False, organic=True, label="village burial ground")  # resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~92x64 ft at 2 ft/px), not 0.5+ - see settlements.md funerary anchors
+
+s.hinterland()  # NOW lay the scrub + marsh - after the precinct's clearings are registered, so it reads swept around the shrine/torii/graves
 
 s.crop_to_content(margin=40)
 s.title("Kikuta")

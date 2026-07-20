@@ -85,6 +85,29 @@ def poly_area(pts: Poly) -> float:
     return abs(s) / 2.0
 
 
+def convex_hull(pts: Sequence[Pt]) -> Poly:
+    """Convex hull (monotone chain) of a point cloud, as a CCW vertex list. <3 unique points returns them
+    as-is (a degenerate hull of zero area)."""
+    ps = sorted(set((round(x, 3), round(y, 3)) for x, y in pts))
+    if len(ps) < 3:
+        return [(x, y) for x, y in ps]
+
+    def cross(o: Pt, a: Pt, b: Pt) -> float:
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower: list[Pt] = []
+    for p in ps:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    upper: list[Pt] = []
+    for p in reversed(ps):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
+
+
 def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, Any]] | None = None, step: float = 30) -> float:
     """The radius of the largest empty pocket inside `poly`: the max over interior grid points of the
     distance to the nearest point in `pts`. A thin firebreak strip stays within a house-reach of homes
@@ -2577,6 +2600,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 nearest <= ADJ and not far,
                 f"nucleated cluster: nearest house {nearest:.0f}px from a field (want <={ADJ}); {len(far)} house(s) beyond a cluster-span of the fields",
             )
+            # A NUCLEATED cluster must be a COMPACT FABRIC, not a thin hollow arc. `cluster_abuts_fields`
+            # measures each house against the cluster's OWN span, so a big hollow cluster gets a big
+            # allowance and passes even when a horn juts into empty ground far from the crops. Measure the
+            # BUILT COVERAGE of the cluster's convex hull instead: the houses + their gardens / threshing
+            # yards / farmstead groves should fill a healthy fraction of the footprint they span. A cluster
+            # strung thin over a wide, hollow hull (the placer pulls every house to hug the paddy and packs
+            # ALONG it, so an over-WIDE seed shape strings them into a stranded arc) fills far less of its
+            # hull than a compact blob does. CALIBRATION: the pathological rolled crescent that motivated this
+            # filled ~0.20 (Kikuta: 55 houses over a hull filled 20%, NE horn ~400px from any crop); the
+            # roll_village placer's healthy nucleated villages fill ~0.28-0.31, and the tightly hand-placed
+            # villages ~0.40. Floor 0.25 sits clear below the healthy band and above the pathology. Village
+            # scale + >=12 houses only: a hamlet is legitimately loose, and a tiny cluster's hull is degenerate.
+            if scale == "village" and len(houses) >= 12:
+                harea = poly_area(convex_hull([(h["x"], h["y"]) for h in houses]))
+                built = sum(r.get("w", 30) * r.get("h", 24) for grp in ("houses", "gardens", "threshing_yards", "groves") for r in M.get(grp, []))
+                cov = built / harea if harea else 0.0
+                check(
+                    "village_cluster_compact",
+                    cov >= 0.25,
+                    f"nucleated village cluster fills only {cov:.0%} of the footprint it spans (want >=25%): the houses are strung thin over a hollow hull (an over-wide cluster stranding houses far from the fields), not a compact village fabric",
+                )
         else:
             far = [h for h, d in dists if d > ADJ]
             check("all_houses_field_adjacent", not far, f"{len(far)} house(s) >{ADJ}px from any field")

@@ -179,6 +179,15 @@ BX, BY = 1600, 1180
 s.shrine_hall(BX, BY, "Shrine to Bishamon", "(still tended)", w=118, h=82)
 s.shrine_well(BX + 85, BY)            # ablution well just E of the hall (same offset as before)
 
+# RESERVE swept ground for both shrine precincts + the graveyard BEFORE the hinterland/commons scatter below,
+# or the scrub covers them (the Benten hall + torii and Bishamon hall are placed above; the graveyard is drawn
+# at ~line 222). Same footprints as those draw calls - keep the two in sync.
+s.reserve_clearing(CX - 40, CY + 540, 96, 64, 58)   # Shrine to Benten
+s.reserve_clearing(1144, CY + 630, 38, 28, 30)      # its two torii
+s.reserve_clearing(1141, CY + 695, 38, 28, 30)
+s.reserve_clearing(BX, BY, 118, 82, 58)             # Shrine to Bishamon
+s.reserve_clearing(BX, BY - 110, 46, 32, 30)        # the village graveyard
+
 # COMMUNAL WELLS + shared draft-animal BYRES among the dwellings
 s.place_wells((CX - 210, CY - 300, CX + 210, CY + 320), spacing=260, near=110)
 n_byres = s.draft_byres(fraction=0.2, gap=64)

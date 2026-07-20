@@ -31,18 +31,31 @@ Judge any Rokugan place by these, in order:
 
 - **Absolute longitude / the straight coastline.** Rokugan's coast is a fairly straight north-south line; the US East Coast bends (Maine far east, Florida far south). This is a real *geometric* mismatch but **not a weather problem**: weather at a place depends on that place's own latitude and its own distance to the nearest coast, never on absolute longitude. Do not try to correct for it.
 
+### Sub-grid terrain (local hills, forest canopy): flavor, not an analog driver
+
+Elevation matters when it is genuine altitude - a mountain range or a high site of ~1,000 ft or more shifts the mean temperature enough to resolve, and it **must** drive the analog (Hachinaga Keep, a ~2,400 ft pass, maps to the Allegheny highlands, not to lowland at its latitude; cf. Asheville vs the NC coast). But **local relief of a few hundred feet, and land cover like a closed forest canopy, sit below both the ERA5 grid (~9-31 km) and the noise floor of the latitude signal** - each was measured this project at only ~1-3F. These **never** pick the analog. Record them in the place's `why`/`orography` as terrain notes for the GM to narrate, and reach for the best-latitude analog anyway:
+
+- **Suzume's Sparrow Hills** (tested and rejected as an analog criterion): overnight cold air drains off the hilltops, so the marshy valley bottoms are frost pockets while the mid-slope thermal belt stays warmest - which is exactly where the tea and mulberry are planted; the dry hilltops run windier and a few degrees cooler than the shore. Chincoteague still carries the climate; the relief is a note.
+- **Deep in the Kitsune Mori** (Lynchburg analog): a closed canopy damps the diurnal range - shaded summer afternoons a touch cooler, nights warmer and far more humid, and clearings/hollows frosting earlier in autumn and later in spring than the open piedmont around them.
+
+No analog choice can buy these effects, so do not distort the site selection reaching for them.
+
 ## The east-coast anchor ladder
 
-Empire-scale reference points, north to south (GM-established). Details and per-place reasoning live in `places.jsonl`.
+North to south. The empire-scale anchors (Isawa, Shiba, Otosan Uchi, Doji, Daidoji, Asahina) are GM-established; the inland and interior places are map-derived from the Three Man Alliance grid. Details and per-place reasoning live in `places.jsonl`.
 
 | Rokugan | US analog | Note |
 |---|---|---|
 | Kyuden Isawa (Phoenix) | Acadia NP / Bar Harbor, ME | coastal and forested; the inland Isawa Woodlands (largest forest in the Empire) are a separate, colder interior zone (own registry entry) |
 | Kyuden Shiba (Phoenix) | Boston, MA | |
 | **Otosan Uchi (Imperial)** | **New York City** | **baseline anchor - the ladder is pinned here** |
+| Hachinaga Keep (Wasp) | Deep Creek Lake / Oakland, MD | high pass in the Spine of the World; elevation-dominated (~2,400 ft), so it sits far above its latitude on this list |
 | Kyuden Doji (Crane) | Atlantic City, NJ | |
 | Kyuden Kakita (Crane) | Ocean City, MD | coastal; map-derived, 146 mi north of Reiji |
 | Shinden Kitsune (Fox) | Charlottesville, VA | eastern foot of the Blue Ridge; town sits at the base, not on the mountain |
+| Shiro Suzume (Sparrow) | Chincoteague, VA | coastal Sparrow Hills; the hilliness is terrain flavor only (see the sub-grid doctrine) |
+| Shiro Daika (Scorpion) | Richmond, VA | inland Bayushi vassal; ~50 mi from the western mountains |
+| Kitsune Mori, deep forest (Fox) | Lynchburg, VA | generic forest interior; the closed canopy is terrain flavor only |
 | Shiro Etsuko (Crane) | Virginia Beach, VA | coastal Daidoji vassal house; the true seaside twin of landlocked Reiji, 25 mi north of it |
 | Shiro Reiji (Crab) | Roanoke Rapids, NC | landlocked, ~100 mi inland |
 | Kyuden Daidoji (Crane) | Savannah, GA | |
@@ -52,7 +65,7 @@ Known imperfection to keep in mind: **Earthquake Bay is much smaller than the Gu
 
 ### Choosing between equally-good analogs: pick the FAMOUS one
 
-When two or more real places fit the drivers about equally well, **choose the one the players will have heard of**. The analog is not only a data source, it is a phrase the GM says out loud at the table: "this place has the weather of Charlottesville" lands instantly, while "the weather of Big Island, Virginia" communicates nothing. A recognisable name does real work that a marginally better latitude does not.
+When two or more real places fit the drivers about equally well, **choose the one the players will have heard of**. The analog is not only a data source, it is a phrase the GM says out loud at the table: "this place has the weather of Charlottesville" lands instantly, while "the weather of Big Island, Virginia" communicates nothing. A recognizable name does real work that a marginally better latitude does not.
 
 This is a tie-breaker, not an override. Latitude, continentality, and elevation still decide which places are *candidates*; fame only picks among them. Quantify the cost before trading: Shinden Kitsune took Charlottesville over Amherst at 0.35 deg further north and 230 ft lower, and those two errors nearly cancel (~+0.5F from the latitude, ~-0.8F from the elevation), so the trade was close to free. If the famous option costs a whole zone - a different season length, a rain shadow, a coast-vs-interior flip - it is not a tie, and accuracy wins.
 
@@ -104,6 +117,14 @@ Source: **Open-Meteo Historical Weather API** (ERA5 reanalysis, free, no API key
 
 **Month notes.** The month name in each month header is a button that opens a **modal** with that month's seasonal color, flower lists, intro prose, and an index of its observances. The rest of the header row still toggles collapse, so the two interactions do not fight; close via the X, the backdrop, or Escape. A modal rather than an expander because month-level material is reference-you-consult, not a row in the daily sequence.
 
+**House label in the report subtitle.** Each range report is titled with the place and subtitled with its house, built by `house_label()` from the registry `clan`/`family`. The rule (GM-established) turns on **whether the family name already appears in the place name**:
+
+- family NOT in the name -> name both: `Hida Family, Crab Clan` (Shiro Reiji), `Bayushi Family, Scorpion Clan` (Shiro Daika), `Tsuruchi Family, Wasp Clan` (Hachinaga Keep - a ruling seat, but "Tsuruchi" is not in "Hachinaga Keep", so naming it is still informative).
+- family IS in the name -> Clan only: `Crane Clan` (Kyuden Kakita), `Crane Clan` (Shinden Asahina), `Fox Clan` (Kitsune Mori) - repeating the family would be redundant.
+- the **Imperial** house takes neither suffix: `Imperial`, never `Imperial Clan`.
+
+Detection is whole-word (the family is suppressed only when it appears as a full word in the place name, so "Hida" is not matched by "Shiro Hidden Vale"). Tested in `test_weather_range.py`, including against the live registry.
+
 Two source quirks handled on read, never baked into the raw data: (1) Open-Meteo reports a whole request at one fixed UTC offset, so winter sun times land an hour late - the tools reinterpret at the file's offset and convert to true local time; (2) cloud cover is hourly-only, so daily/night cloud is averaged from the hourly values.
 
 **Snow.** The hourly pull includes `snowfall` and `snow_depth` (units vary - here inch and ft - and are normalized to inches on read). Per day we compute new snowfall, ground depth at start and end of the window, and the intraday peak, so a report can show both accumulation (depth rising as it snows) and melt (depth falling), e.g. a dusting that peaks at 1 in and melts off by evening, or 5 in on the ground melting to 3 in with no new snow. **Snow is shown only when present** - in single-day reports it is one extra line that appears only on snowy days; in range tables the three snow columns appear only if some day in the range has snow, and are omitted entirely otherwise. Adding snow was a schema change, so any analog fetched before it needs a re-fetch to carry snow depth.
@@ -142,4 +163,4 @@ Note: `conditions` / `Daytime` (from the daily WMO weather code) is the day's *m
 
 ## Status
 
-Organically built, pre-spec-kit by design - this is still a vibes-and-experimentation stage. Formalize a spec-kit constitution section only once the framework has matured. Only Shiro Reiji has a cached weather year so far (Roanoke Rapids 2015); other registry places fetch on demand.
+Organically built, pre-spec-kit by design - this is still a vibes-and-experimentation stage. Formalize a spec-kit constitution section only once the framework has matured. Cached weather years so far (all 2015): Shiro Reiji (Roanoke Rapids), Shiro Etsuko (Virginia Beach), Kyuden Kakita (Ocean City), Shinden Kitsune (Charlottesville), Shiro Suzume (Chincoteague), Shiro Daika (Richmond), Kitsune Mori deep forest (Lynchburg), and Hachinaga Keep (Deep Creek Lake / Oakland). Other registry places fetch on demand.

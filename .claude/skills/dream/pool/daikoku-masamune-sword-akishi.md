@@ -92,6 +92,7 @@ Attuned to honest exchange, leaning toward securing the sword; asking "is this g
 - You and a man each set a thing on the balance - his sword, and something of your own you did not think to give - and the beam settles dead level, and you are both content, and try as you might you cannot make out in the dream what you laid down that weighed as much as a Masamune blade.
 - The coin you press into his hand goes cold and gray and heavy the moment he takes it, lead where it was gold, and it goes on cooling until it burns cold in his palm, and he drops it, and it lies between you dull and dead while the sword stays bright on the wall.
 - You are weighing rice into bales for the store, honest work, bale after full bale, until you notice the one you are filling is not rice but something dark and wet, and you pack it down all the same, and the scale still reads it good and level and true, and you know the scale is wrong for the first time in its life and that you are the reason.
+- You keep no dream you can hold, and carry all morning a low dread fixed not on the sword and not on Nagamasa but on your own hands - on whatever they might reach out and do to close the thing - and it will not lift.
 
 ## Table B - Balance and Decline
 
@@ -102,6 +103,7 @@ Attuned to honest exchange, leaning toward walking away; asking "is this gain ho
 - You hand a man back the coin he offered and you both bow, and the bow is real, and you walk out of his shop having bought nothing and owing nothing, and the street outside is a market at full bustle, the stalls heavy with goods, and there is money in your sleeve and honest places to spend it.
 - A rat sits on the counting-board, on the very coin you did not spend, washing its face, unbothered, and it looks at you the way a creature looks at someone it has decided is not a threat.
 - You tell someone the plain truth of a hard thing - you cannot see who - and it costs you, you feel the cost go out of you like a coin leaving your sleeve and not coming back, and the balance in the corner settles level as you speak.
+- You keep nothing of the night, only wake lighter than you lay down, an unaccountable ease in your chest pinned to the empty road home and to nothing at all that you are carrying back along it.
 
 ## Table C - Tally and Pursue
 
@@ -112,6 +114,7 @@ Attuned to the house's shared store, leaning toward securing the sword; asking "
 - You are paying down the debt, coin by coin, and it is working, the ledger-lines closing one by one, real relief - and each coin you lay down has a drop of dark on it, and the ledger drinks it, and the closed lines are written in it, and the book grows heavier and warmer than a book should be.
 - A full storehouse, yours, rice to the rafters, and when you haul the door open the smell is wrong and the rice is all hollow husks, weightless, a whole granary of chaff that fills the hand and weighs nothing, and somewhere down in it a rat lies dead.
 - Two of you hold the split tally, you and a kinsman whose face keeps changing - sometimes Nagamasa's, sometimes your own - and one half must be broken for the other to be made whole, and the hall stands waiting for it to be done, and the axe is already in your hand.
+- Nothing comes in the night, and yet you wake grieving - a raw, specific grief with no death behind it - fixed on the Aki house itself, on its cold rooms, as though something in them were already lost that no one has yet thought to mourn.
 
 ## Table D - Tally and Decline
 
@@ -122,6 +125,7 @@ Attuned to the house's shared store, leaning toward leaving the sword; asking "d
 - You stand between Nagamasa and someone coming up on him - you cannot see who - and you do not draw, you only stand there, and the someone stops, and turns, and goes, and behind the two of you the sword stays on Nagamasa's wall, and the hall is quiet, and no one has bled.
 - The Aki household at a meal, all of them, the whole loud crowded table, poorer than they were and not one seat empty, and someone is telling a story badly and everyone is laughing, and there is not a Masamune blade anywhere in the room.
 - You hand the governor's letter back unopened - you cannot see her face, only her hand taking it - and you say a plain true thing, and it costs you, you feel your standing go out of you like coin from a sleeve, and outside the harvest is coming in, cartload after cartload, none of it yours and all of it real.
+- You keep nothing of the night but wake full of a plain aching fondness for the whole loud crowded Aki table, the poorer faces and the full seats, and none at all - oddly none - for the bright thing on the wall that you find, waking, you can no longer picture.
 
 ## The 10: lucid dreaming in the hall
 

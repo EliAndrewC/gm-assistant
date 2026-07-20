@@ -2229,3 +2229,27 @@ def test_merchant_estate_raises_when_no_clear_seat_exists():
     s.M["canals"] = [{"poly": [(x, 0), (x, 1200)], "w": 12} for x in range(400, 900, 40)]  # a thicket of canals
     with pytest.raises(ValueError, match="no seat within the slide fan"):
         s.merchant_estate(600, 600, 100, 80)
+
+
+def test_clearings_keep_scrub_off_sacred_and_funerary_ground():
+    """Feature: a swept verge around shrine/torii/graves. `_clear_ground` grows the footprint by `extra`
+    (bscale-scaled) into `self.clearings`, which the hinterland scatter skips - but building placement
+    (block_polys) and groves are untouched, so a shrine's preserved grove is unaffected."""
+    s = Settlement(1200, 1200, seed=1)
+    s.meta(name="C", scale="village", ftpx=1, down_deg=90)
+    n_block = len(s.block_polys)
+    s._clear_ground(600, 600, 40, 30, 58)
+    assert len(s.clearings) == 1 and len(s.block_polys) == n_block  # clearings, NOT block_polys
+    poly = s.clearings[0]
+    xs = [p[0] for p in poly]
+    assert min(xs) == 600 - 20 - 58 and max(xs) == 600 + 20 + 58  # footprint half (20) + extra (58), bscale 1.0
+    # shrine_hall with a torii registers a clearing for BOTH the hall and the arch
+    s2 = Settlement(1200, 1200, seed=1)
+    s2.meta(name="C2", scale="village", ftpx=1, down_deg=90)
+    s2.shrine_hall(600, 600, "Shrine", torii=[(600, 680)])
+    assert len(s2.clearings) == 2  # the hall + the one torii
+    # a cemetery registers one too
+    s3 = Settlement(1200, 1200, seed=1)
+    s3.meta(name="C3", scale="village", ftpx=1, down_deg=90)
+    s3.cemetery(600, 600, 90, 60, label="burial ground")
+    assert len(s3.clearings) == 1

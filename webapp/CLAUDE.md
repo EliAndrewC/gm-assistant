@@ -102,9 +102,11 @@ lets the GM synthesize a backstory for an NPC that already exists on Obsidian
 Portal, from a Claude Code session, reusing this exact synthesis stack. New pure
 logic lives in `chargen/opsynth.py` (100%-covered, mypy-strict): name matching,
 caste inference, OP-page tagline parsing, related-cast lookup, incremental
-tagline cache, and an idempotent `merge_backstory` that splices the result into
-GM-only notes between `--- Synthesized Backstory (auto) ---` sentinels without
-clobbering existing notes. The one-line summary ("tagline") it reads is NOT in
+tagline cache, and a `merge_backstory` that appends the result to GM-only notes
+as bare, unmarked prose (no header/footer - GM decision 2026-07-20; the legacy
+`--- Synthesized Backstory (auto) ---` sentinels are still recognized and
+dropped if a record carries them, and re-running on an already-merged character
+appends a second copy - an accepted tradeoff). The one-line summary ("tagline") it reads is NOT in
 the OAuth JSON API - it only appears on the character page HTML - so
 `op.fetch_character_page` (fail-soft boundary) fetches the page and
 `opsynth.parse_tagline` extracts it. See `specs/004-synthesize-op-npc/`.

@@ -180,31 +180,64 @@ def test_refresh_taglines_keeps_unchanged_refetches_changed_drops_absent() -> No
 # --- merge_backstory ---
 
 
-def test_merge_backstory_appends_when_absent_preserving_notes() -> None:
+def test_merge_backstory_appends_bare_prose_preserving_notes() -> None:
     out = opsynth.merge_backstory('XP: 160\nHonor: 1', 'A grounded life.')
-    assert out.startswith('XP: 160\nHonor: 1\n\n')
-    assert opsynth.BACKSTORY_START in out
-    assert 'A grounded life.' in out
-    assert out.endswith(opsynth.BACKSTORY_END)
+    assert out == 'XP: 160\nHonor: 1\n\nA grounded life.'
 
 
 def test_merge_backstory_into_empty_notes() -> None:
-    out = opsynth.merge_backstory('', 'Prose.')
-    assert out == f'{opsynth.BACKSTORY_START}\nProse.\n{opsynth.BACKSTORY_END}'
+    assert opsynth.merge_backstory('', 'Prose.') == 'Prose.'
 
 
-def test_merge_backstory_replaces_existing_block_and_preserves_surroundings() -> None:
-    first = opsynth.merge_backstory('XP: 160', 'First version.')
-    trailing = first + '\n\nManual note added later.'
-    second = opsynth.merge_backstory(trailing, 'Second version.')
-    assert 'Second version.' in second
-    assert 'First version.' not in second
-    assert second.count(opsynth.BACKSTORY_START) == 1
-    assert 'XP: 160' in second
-    assert 'Manual note added later.' in second
+def test_merge_backstory_replaces_legacy_block_dropping_markers() -> None:
+    legacy = (
+        f'XP: 160\n\n{opsynth.BACKSTORY_START}\nFirst version.\n{opsynth.BACKSTORY_END}'
+        '\n\nManual note added later.'
+    )
+    out = opsynth.merge_backstory(legacy, 'Second version.')
+    assert 'Second version.' in out
+    assert 'First version.' not in out
+    assert opsynth.BACKSTORY_START not in out
+    assert opsynth.BACKSTORY_END not in out
+    assert 'XP: 160' in out
+    assert 'Manual note added later.' in out
 
 
-def test_merge_backstory_is_idempotent() -> None:
+def test_merge_backstory_rerun_appends_second_copy() -> None:
     once = opsynth.merge_backstory('XP: 160', 'Prose.')
     twice = opsynth.merge_backstory(once, 'Prose.')
-    assert twice == once
+    assert twice == 'XP: 160\n\nProse.\n\nProse.'
+
+
+# --- strip_backstory_markers ---
+
+
+def test_strip_backstory_markers_unwraps_block() -> None:
+    legacy = (
+        f'XP: 160\n\n{opsynth.BACKSTORY_START}\nThe prose.\n{opsynth.BACKSTORY_END}\n\nManual note.'
+    )
+    assert opsynth.strip_backstory_markers(legacy) == 'XP: 160\n\nThe prose.\n\nManual note.'
+
+
+def test_strip_backstory_markers_block_only() -> None:
+    legacy = f'{opsynth.BACKSTORY_START}\nThe prose.\n{opsynth.BACKSTORY_END}'
+    assert opsynth.strip_backstory_markers(legacy) == 'The prose.'
+
+
+def test_strip_backstory_markers_without_markers_is_passthrough() -> None:
+    assert opsynth.strip_backstory_markers('XP: 160\nplain notes') == 'XP: 160\nplain notes'
+
+
+def test_strip_backstory_markers_malformed_left_untouched() -> None:
+    reversed_markers = f'{opsynth.BACKSTORY_END}\noops\n{opsynth.BACKSTORY_START}'
+    assert opsynth.strip_backstory_markers(reversed_markers) == reversed_markers
+    start_only = f'{opsynth.BACKSTORY_START}\ndangling'
+    assert opsynth.strip_backstory_markers(start_only) == start_only
+
+
+def test_strip_backstory_markers_unwraps_multiple_blocks() -> None:
+    legacy = (
+        f'{opsynth.BACKSTORY_START}\nOne.\n{opsynth.BACKSTORY_END}\n\n'
+        f'{opsynth.BACKSTORY_START}\nTwo.\n{opsynth.BACKSTORY_END}'
+    )
+    assert opsynth.strip_backstory_markers(legacy) == 'One.\n\nTwo.'

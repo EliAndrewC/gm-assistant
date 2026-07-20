@@ -63,10 +63,16 @@ Write 1 to 3 short paragraphs of prose that:
   abstract. Invented detail is welcome as long as it fits the brief and the
   character's generated details.
 - When you place an event in the character's past, prefer a specific,
-  setting-grounded time - a named festival, month, or season from the Rokugani
-  calendar - over a vague reference like "a few years ago," wherever the brief
-  gives you the detail to do so and it fits naturally. Specificity is the soul of
-  a backstory; do not invent dates that contradict the brief.
+  setting-grounded time over a vague reference like "a few years ago," wherever
+  the brief gives you the detail to do so and it fits naturally. The best anchor
+  is a significant DAY from the brief's Festival Calendar - "a few days after
+  the Haru Higan festival," "on Nyuubai" - with a bare month or season as the
+  fallback when no named observance fits. Whenever you name a month, follow it
+  with its place in the season in parentheses: "the Month of the Goat (the 2nd
+  month of summer)." The Rokugani year starts on the 1st day of spring, so
+  months 1-3 are spring, 4-6 are summer, 7-9 are autumn, and 10-12 are winter.
+  Specificity is the soul of a backstory; do not invent dates that contradict
+  the brief.
 - Stay grounded and mundane by default. The supernatural is real but rare and
   almost always ambiguous; do not hand this character magic, a curse, or a
   literal supernatural event unless their own details clearly point that way, and

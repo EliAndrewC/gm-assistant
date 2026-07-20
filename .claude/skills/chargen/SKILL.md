@@ -327,7 +327,7 @@ name = d["full_name"]
 tags_list = d.get("tags") or []
 public = d["public"]
 private = d["private"]
-gm_info = opsynth.merge_backstory(private, backstory)   # sentinel-wrapped, /synthesize-compatible
+gm_info = opsynth.merge_backstory(private, backstory)   # bare prose appended, /synthesize-compatible
 
 # Re-load and re-crop the portrait saved in Step 3c, upload avatar + bio image.
 safe = re.sub(r"[^a-zA-Z0-9]", "", name.replace(" ", ""))
@@ -351,11 +351,12 @@ print("EDIT:", base + "/characters/" + slug + "/edit")
 PY
 ```
 
-`merge_backstory` puts the prose in GM-only notes between the
-`--- Synthesized Backstory (auto) ---` sentinels, so a later `/synthesize` run on
-this same character replaces that block cleanly instead of duplicating it. The
-public description, tags, avatar, and embedded portrait all come from the rolled
-sheet.
+`merge_backstory` appends the prose to GM-only notes as bare, unmarked prose
+(no header/footer - GM decision 2026-07-20). A later `/synthesize` run on this
+same character cannot recognize its earlier prose and would append a second
+backstory, so warn the GM before re-synthesizing a character that already has
+one. The public description, tags, avatar, and embedded portrait all come from
+the rolled sheet.
 
 Report exactly what was created: the name, **public vs GM-only**, the tagline,
 that the backstory went into GM-only notes, that the portrait was attached, and

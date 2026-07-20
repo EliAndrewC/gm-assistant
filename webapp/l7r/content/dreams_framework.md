@@ -33,6 +33,10 @@ Each person who sleeps seeking guidance receives one dream, resolved by a single
 
 On any single dream you are not told which kind you got - telling the true sending from the noise from the nothing is the whole art. But **across three, four, five sleepers**, a real message is present and can be recovered, if the group is willing to compare what they saw, weigh it, argue over it, and set the noise aside. The gods reward the shrewd who can read them.
 
+## When the dream is only a feeling
+
+A sending need not be a picture at all. Sometimes a sleeper wakes remembering nothing they saw, and still cannot shake a strong feeling fixed on someone or something: waking filled with tenderness toward a particular person, or with dread about the road ahead, or with an unaccountable certainty circling one face of the matter at hand. When such a sending is true, that feeling is the god's leaning carried as pure affect instead of an image - and it is still to be weighed rather than obeyed, for it names no reason. When it is false, this is among the easiest shapes for a lie to wear: the feeling fixes on the wrong thing entirely - a fellow traveler, the foul weather, the aches of the journey, a fear the dreamer already carried into sleep - and it feels every bit as much like true intuition. A feeling with no picture behind it is the hardest omen to interrogate, and the easiest to trust too far.
+
 ## The significant dream
 
 Now and then a sleeper is granted a dream of unmistakable weight - the surest sending the night can give. Such a dream does not merely inform; it opens into a **lucid dream**, where the dreamer is given choices: to look deeper into what they themselves were shown, or to sense the shape of what the others received. The more powerful the sending, the more they may learn. And a determined dreamer with the right gifts or resources can sometimes reach for such a dream on purpose, chasing it across a restless night - though a dream pursued is never a dream commanded.
@@ -52,11 +56,11 @@ When some ill force has taken an interest, a sin or spiritual weight lies on the
 
 ### Rerolls
 
-A dream may be rerolled, and a reroll **replaces** the dream - you dream again, and keep the new dream, whatever it proves to be. No dream may be rerolled more than once. The ways to reach for a second dream:
+A dream may be rerolled, and a reroll **replaces** the dream - you dream again, and keep the new dream, whatever it proves to be. A character may earn several rerolls over a single night, drawing on more than one of the means below at once - spending void points for one reroll, then a Player Character Point for another, then Lucky for a third. The ways to reach for another dream:
 
-- spending a **Player Character Point**;
+- spending a **Player Character Point** - which may be done again and again, one reroll for each point spent;
 - the advantage **Lucky**, once per adventure;
 - a **Togashi Ise Zumi**'s fourth-dan gift, for which dream rolls count as contested - though the monk must keep the rerolled dream even if it is worse;
-- spending **void points scaled by your Honor**: **(6 minus your Honor)** points, declared after you see your roll and before you wake, and payable with the single void point a night's rest restores - so the honorable reroll cheaply, and the dishonorable dearly.
+- spending **void points scaled by your Honor**: **(6 minus your Honor)** points, declared after you see your roll and before you wake, and payable with the void a night's rest restores - so the honorable reroll cheaply, and the dishonorable dearly. Honor runs in half-steps, so a character at 3.5 Honor owes a cost that falls between 2 and 3 points, settled by a 50/50 roll that rounds it up or down. Spending void points may only produce one additional dream roll, regardless of whether a character has enough void points to continue rerolling.
 
-The Merchant fifth-dan reroll does not reach dream rolls. And a reroll is never blind: should it land on no dream or a meaningless one, you are told as much - so a reroll can never quietly trade a true sending for a convincing lie.
+The Merchant fifth-dan reroll does not reach dream rolls. And a reroll is never blind: should it land on no dream or a meaningless one, you are told as much - so a reroll can never quietly confound a true sending with a convincing lie.

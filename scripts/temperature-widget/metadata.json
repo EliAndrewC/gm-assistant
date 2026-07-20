@@ -1,0 +1,7 @@
+{
+  "uuid": "temperature-bar@mujina",
+  "name": "CPU Temperature Bar",
+  "description": "Colored CPU-temperature level bar in the top panel, with notifications when the temperature crosses into the warning or critical range. Thresholds mirror scripts/temperature-check.sh.",
+  "shell-version": ["42"],
+  "version": 2
+}
