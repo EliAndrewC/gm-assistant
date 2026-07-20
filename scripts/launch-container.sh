@@ -10,8 +10,9 @@
 #   * If that container is ALREADY RUNNING, opens a fresh bash shell inside it
 #     (podman exec) instead of starting a second container - and prints the
 #     ports that container actually has published.
-#   * Otherwise pulls the latest image, then starts a new container
-#     (podman run --rm -it ... bash), mounting:
+#   * Otherwise pulls the latest image, then starts a new DETACHED container
+#     (podman run -d ... sleep infinity) and opens a bash shell inside it
+#     (podman exec), mounting:
 #       - the repo at /workspace (or the path it declares via container-workdir)
 #       - the host's ~/.claude.json and ~/.claude/ into /home/agent so Claude
 #         Code auth, config, skills, and memory persist across containers
@@ -22,6 +23,14 @@
 # "already running" only ever matches the SAME repo: launching from gm-assistant
 # twice attaches the second time, but launching from a different repo starts its
 # own container.
+#
+# Container lifetime is decoupled from every terminal: PID 1 is `sleep infinity`
+# and EVERY shell - including the first launch's - is a podman exec session, so
+# exiting or closing any terminal never stops the container or kills the other
+# shells. The container runs until explicitly removed (--fresh, or
+# `podman rm -f <name>`). There is deliberately no --rm: a container stopped
+# from outside (host reboot, podman stop) stays on disk, and the next launch
+# restarts and re-attaches it instead of rebuilding from scratch.
 #
 # Per-repo config lives in the repo's CLAUDE.md as greppable HTML-comment lines.
 # Format is HOST:CONTAINER (space-separated for multiples):
@@ -176,7 +185,7 @@ fi
 # REAL host id, so "1000:0:1" would map the agent user to actual root and
 # /etc/subuid is not consulted - do not run this script with sudo.
 RUN_ARGS=(
-  --interactive --tty --rm
+  --detach
   --name "$NAME"
   --uidmap 0:1:1000 --uidmap 1000:0:1 --uidmap 1001:1001:64536
   --gidmap 0:1:1000 --gidmap 1000:0:1 --gidmap 1001:1001:64536
@@ -187,10 +196,10 @@ RUN_ARGS=(
 )
 
 # Host Claude Code config, mounted so auth, settings, skills, and per-project
-# memory persist across these --rm containers. The host paths are created if
+# memory persist across container recreations. The host paths are created if
 # missing so even the very first launch persists - otherwise an in-container
-# login would be written container-internally and lost on exit (an empty {} is a
-# valid starting config). Uses the shared SELinux relabel (:z), not the private
+# login would be written container-internally and lost when the container is
+# removed (an empty {} is a valid starting config). Uses the shared SELinux relabel (:z), not the private
 # :Z used for the workspace. Skip with --no-claude (e.g. on a work machine, so
 # the container does not inherit that host's default Claude account); CLAUDE_SRC
 # overrides where it is read from.
@@ -273,5 +282,12 @@ else
   echo ">> --no-pull: not pulling; using the local image."
 fi
 
-echo ">> starting '$NAME' (workdir $WORKDIR) from $IMAGE"
-exec podman run "${RUN_ARGS[@]}" "$IMAGE" bash
+# Detached, with `sleep infinity` as PID 1, so that no terminal is special:
+# every shell - this first one included - is an exec session, and exiting any
+# of them leaves the container and the other shells running. (The old design
+# ran bash as PID 1 with --rm, so a clean `exit` in the original terminal
+# stopped the container and killed every other attached shell with it.)
+# Teardown is explicit: --fresh or `podman rm -f`.
+echo ">> starting '$NAME' detached (workdir $WORKDIR) from $IMAGE"
+podman run "${RUN_ARGS[@]}" "$IMAGE" sleep infinity >/dev/null
+exec podman exec -it "$NAME" bash
