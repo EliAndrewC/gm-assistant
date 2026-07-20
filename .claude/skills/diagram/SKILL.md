@@ -73,8 +73,9 @@ Reserve **Japanese** for terms that function as names:
 
 When kanji appears in a label, it must pass the **kanji ↔ romaji ↔ meaning triangle** per Constitution Principle XI. Cross-reference: [`/.claude/skills/relic/SKILL.md`](../relic/SKILL.md) for the triangle worksheet pattern.
 
-Two further labeling rules (GM, 2026-07):
+Three further labeling rules (GM, 2026-07):
 
+- **Label Imperial roads; leave other roads unlabeled.** An Imperial road is a named institution - part of the maintained Imperial highway network - and flagging it tells the reader something real about the settlement (traffic, waystations, who maintains it). An ordinary road needs no label: the drawing already shows where it runs and which edge it leaves by, so a label like "north road" restates what the map makes obvious (same defect as labeling a gate "gate"). Validated instance: Nagahara's through-road was labeled "north road" - removed; Tango's and Hoshizora's "Imperial Road" labels stay.
 - **Annotations explain the unusual, not the universal.** A feature label states the function (`clerks' duty room`); italic sub-notes are reserved for what is particular to THIS subject (`staging store - tax grain barges down to Nagahara`). A note that would be equally true on any instance of the feature ("3-4 town clerks by day") is clutter - facts like that live in the skill docs, not on the sheet. This applies to ALL prose on the sheet, legend/notes boxes included: a box line stating a program fact ("~15 samurai per county town") is the same defect relocated.
 - **Terms mean what they say.** A label that quietly asserts a quantity, rate, or relationship must match the setting's actual arrangements: "tithe" implies a tenth, and Rokugan's land tax is 1/3, so it is *tax grain* and a *tax archive* - never "tithe".
 

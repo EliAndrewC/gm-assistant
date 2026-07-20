@@ -109,7 +109,7 @@ s.set_view(CX - RX - 46 - MARGIN, CY - RY - 46 - MARGIN, 2 * (RX + 46 + MARGIN) 
 # (through-traffic is why the city is here; the bend at the crossroads is the market corner)
 ROAD = [(1382, 672), (1413, 751), (1451, 829), (1480, 918), (1480, 1330),
         (1933, 1330), (2023, 1330), (2071, 1333), (2149, 1335), (2253, 1457), (2357, 1550), (2472, 1650)]
-s.road(ROAD, label="north road", label_xy=(1589, 834))   # kept below the top frame edge (EY0 ~= 728)
+s.road(ROAD)   # unlabeled: only Imperial roads get labels (SKILL.md labeling rules)
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)    # the Hayakawa bridge carries the through-road over the river
 
 # ---- the cargo canal: river -> water gate -> dock basin (the Suzhou pattern)
