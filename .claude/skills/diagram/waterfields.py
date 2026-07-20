@@ -86,7 +86,7 @@ class _Thread:
         drift: float,
         ditch_f: float,
         decay: float = 110.0,
-        fallback: "Poly | _Thread | None" = None,
+        fallback: Poly | _Thread | None = None,
     ) -> None:
         self.u0, self.f0 = u, f
         self.u = u
@@ -258,8 +258,8 @@ def build_comb(
         heading: float,
         ditch_len: float,
         decay: float = 110.0,
-        fallback: "Poly | _Thread | None" = None,
-    ) -> "_Thread":
+        fallback: Poly | _Thread | None = None,
+    ) -> _Thread:
         tu, tf = F.to_uf(px, py)
         h = max(-1.2, min(1.2, heading - DOWN))
         # du/df = -tan(h): a heading LEFT of the fall line (h<0) moves u POSITIVE
@@ -495,7 +495,7 @@ def build_comb(
 def _carve(
     R: random.Random,
     F: _Frame,
-    threads: list["_Thread"],
+    threads: list[_Thread],
     a_pts: Poly,
     dpts: Poly,
     W: float,
@@ -509,7 +509,7 @@ def _carve(
     past either. Rows are contour-parallel bunds (the cascade steps down them)."""
     plots: list[dict[str, Any]] = []
 
-    def bnd(t: "_Thread", f: float) -> Pt:
+    def bnd(t: _Thread, f: float) -> Pt:
         if f < t.f0 and t.fallback is not None:
             fb = t.fallback
             return _at_f(F, fb if isinstance(fb, list) else fb.pts, f)
@@ -539,7 +539,7 @@ def _carve(
         fc = _f_at_u(F, a_pts, u)
         return fc is not None and f < fc + 4  # centroid upslope of a small berm
 
-    def root_f(t: "_Thread") -> float:
+    def root_f(t: _Thread) -> float:
         while isinstance(t.fallback, _Thread):
             t = t.fallback
         if isinstance(t.fallback, list):
@@ -569,8 +569,8 @@ def _carve(
             fv: float,
             j: int,
             n: int,
-            A: "_Thread" = A,
-            B: "_Thread" = B,
+            A: _Thread = A,
+            B: _Thread = B,
             phase: list[float] = phase,
             nsub: int = nsub,
         ) -> Pt:

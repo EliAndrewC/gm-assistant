@@ -1,7 +1,14 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.4.0 → 1.4.1
+Version change: 1.4.1 → 1.4.2
+PATCH: Technical Standards runtime bump - Python 3.13 -> 3.14 (GM, 2026-07-20),
+matching the new standard dev container; the Fly prod image, both lockfiles,
+both pyproject.toml pins (webapp + diagram skill), and CLAUDE.md move together.
+Also drops the stale note that the chargen webapp pinned 3.10 (it no longer
+does). No principle changes.
+
+PRIOR (1.4.0 → 1.4.1):
 PATCH: Principle XII gains a "calibrated liberty" clause (GM, 2026-07-19) -
 where research shows a thing is plausible but the DEGREE is genuinely unclear,
 a favorable reading within the plausible range may be chosen deliberately, on
@@ -493,9 +500,9 @@ and is only caught if a human happens to ask about it.
 ## Technical Standards
 
 **Languages and runtimes**
-- Python 3.13 (system Python on the dev sandbox; the chargen webapp's
-  CLAUDE.md still pins 3.10 - that is the chargen-specific constraint,
-  not a project-wide one).
+- Python 3.14 (system Python on the dev sandbox and the Fly prod image;
+  bumped from 3.13 when the standard dev container moved to 3.14,
+  GM-directed 2026-07-20).
 - Node.js for headless-browser tooling (Playwright bundles its own
   Chromium binary; do not assume a system Chrome).
 
@@ -631,4 +638,4 @@ document wins; where this document is silent, defer to the project's
 day-to-day runtime guidance. This constitution is the higher-level
 authority; CLAUDE.md operationalizes it.
 
-**Version**: 1.4.1 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-07-19
+**Version**: 1.4.2 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-07-20

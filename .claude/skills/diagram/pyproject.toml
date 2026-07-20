@@ -11,7 +11,7 @@
 
 # ---- ruff (lint + format) ----------------------------------------------------------------
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 # The engine uses intentionally long, descriptive single-line check calls; 200 keeps `ruff format`
 # from wrapping them (only ~17 lines exceed it) while still normalizing spacing/comments.
 line-length = 200
@@ -30,7 +30,7 @@ quote-style = "preserve"
 # Scoped to PRODUCTION LIBRARY modules (per Principle X - not the tests or the generator scripts).
 # `python3 -m mypy` (bare, in the Makefile) checks exactly these files.
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 strict = true
 files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py", "compound.py", "citybudget.py"]
 
