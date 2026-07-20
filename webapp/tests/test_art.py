@@ -83,3 +83,49 @@ def test_invalid_image_raises_rather_than_swallowing() -> None:
     # untrimmed; the Pillow path must let a broken image surface.
     with pytest.raises(UnidentifiedImageError):
         trim_whitespace(b'not a real image')
+
+
+# --- generate_prompt caste-awareness ---
+# Peasants and monks must not come out dressed as samurai (kimono, topknot,
+# swords); see infer_character_type in chargen.art.
+
+
+def test_prompt_peasant_wears_work_clothes_not_kimono() -> None:
+    from chargen.art import generate_prompt
+
+    prompt = generate_prompt({'gender': 'male', 'tags': ['peasant'], 'age': 40})
+    assert 'peasant commoner' in prompt
+    assert 'roughspun' in prompt
+    assert 'no samurai topknot' in prompt
+    assert 'kimono' not in prompt.lower()
+
+
+def test_prompt_monk_is_tonsured_monastic_without_swords() -> None:
+    from chargen.art import generate_prompt
+
+    prompt = generate_prompt(
+        {'gender': 'female', 'order': 'Order of Daikoku', 'seat': '', 'age': 55}
+    )
+    assert 'Buddhist monk' in prompt
+    assert 'shaved head' in prompt
+    assert 'no swords and no armor' in prompt
+    # The hair clause is suppressed for monks - the head is already shaved.
+    assert 'unstyled black hair' not in prompt
+
+
+def test_prompt_explicit_character_type_beats_dict_shape() -> None:
+    from chargen.art import generate_prompt
+
+    prompt = generate_prompt(
+        {'gender': 'male', 'character_type': 'Peasant', 'school': 'hida bushi', 'age': 30}
+    )
+    assert 'roughspun' in prompt
+    assert 'formal kimono' not in prompt
+
+
+def test_prompt_samurai_wardrobe_unchanged() -> None:
+    from chargen.art import generate_prompt
+
+    prompt = generate_prompt({'gender': 'male', 'clan': 'crab', 'school': 'hida bushi', 'age': 30})
+    assert 'a formal kimono and is not wearing armor' in prompt
+    assert 'noble' in prompt
