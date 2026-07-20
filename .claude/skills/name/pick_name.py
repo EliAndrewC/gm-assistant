@@ -20,7 +20,7 @@ import os
 import random
 import sys
 
-from similarity import is_too_similar
+from similarity import is_too_similar, set_conflict
 
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 MALE_POOL = os.path.join(SKILL_DIR, "pool-male.jsonl")
@@ -65,11 +65,18 @@ def pick(gender, count, peasant=False):
             print(json.dumps({"error": f"No {label} names in pool. Run pool generation first."}))
             continue
 
-        # Filter out names too similar to campaign names or already-picked names
+        # Filter out names too similar to campaign names (loose rule) or to
+        # names already picked in this batch (strict set rule: no shared first
+        # letter, no rhymes, no 1-letter differences - names introduced together
+        # must be unmistakable at the table).
         picked_names = [r["name"] for r in results]
-        all_excluded = campaign_names + picked_names
 
-        valid = [entry for entry in pool if not is_too_similar(entry["name"], all_excluded)]
+        valid = [
+            entry
+            for entry in pool
+            if not is_too_similar(entry["name"], campaign_names)
+            and not any(set_conflict(entry["name"], p) for p in picked_names)
+        ]
 
         if not valid:
             print(json.dumps({"error": f"No valid {g} names remain after similarity filtering."}))

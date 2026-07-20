@@ -125,6 +125,18 @@ inferable, fold a "where are they posted?" into this same one round of questions
 
 ## Step 2 - Roll the skeleton and let the GM re-roll
 
+**Generating a SET of characters in one request** (a team, a family, several
+NPCs introduced together): the given names within the set must be mutually
+distinct per the GM's set-distinctness rule (2026-07-20; similar names confuse
+players at the table - the Sauron/Saruman problem). Within the set: no two
+names may start with the same letter, no two may rhyme, and no two may be
+within 1 letter of each other. The check lives in
+`.claude/skills/name/similarity.py` (`set_conflict()`); after rolling each
+character, test its given name against the set's earlier names and re-roll the
+character (or re-roll just the name via the engine) until it passes. Family
+names shared by the set (e.g. three Tsuruchi) are expected and exempt - the
+rule is about given names.
+
 ```bash
 cd /gm-assistant/webapp && python3 - <<'PY'
 import l7r, json

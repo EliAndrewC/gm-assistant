@@ -193,3 +193,32 @@ class TestPick:
         output = capsys.readouterr().out
         names = self._extract_names(output)
         assert len(names) == len(set(names))
+
+    def test_batch_rejects_shared_first_letter(self, pool_dir, capsys, monkeypatch):
+        """Within one batch, no two picked names may start with the same letter."""
+        male_pool = pool_dir / "pool-male.jsonl"
+        entries = [
+            {"name": n, "gender": "male", "format": 1, "explanation": "test"}
+            for n in ("Kaito", "Kenji", "Noboru")
+        ]
+        male_pool.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
+        monkeypatch.setattr("pick_name.MALE_POOL", str(male_pool))
+        pick("male", 2)
+        names = self._extract_names(capsys.readouterr().out)
+        assert len(names) == 2
+        initials = [n[0] for n in names]
+        assert len(initials) == len(set(initials))
+
+    def test_batch_rejects_rhymes(self, pool_dir, capsys, monkeypatch):
+        """Within one batch, no two picked names may rhyme (3+ letter shared tail)."""
+        male_pool = pool_dir / "pool-male.jsonl"
+        entries = [
+            {"name": n, "gender": "male", "format": 1, "explanation": "test"}
+            for n in ("Naomasa", "Hiromasa", "Kenji")
+        ]
+        male_pool.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
+        monkeypatch.setattr("pick_name.MALE_POOL", str(male_pool))
+        pick("male", 2)
+        names = self._extract_names(capsys.readouterr().out)
+        assert len(names) == 2
+        assert not ("Naomasa" in names and "Hiromasa" in names)

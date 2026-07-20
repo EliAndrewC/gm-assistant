@@ -93,6 +93,27 @@ Names are rejected if they are too similar to existing campaign NPC names. "Too 
 
 The similarity logic is in `${CLAUDE_SKILL_DIR}/similarity.py`.
 
+### Set Distinctness (GM rule, 2026-07-20)
+
+When a SET of names is generated together (a multi-name request, a team of
+NPCs, siblings, any group introduced at the same time), a stricter rule applies
+*within the set*, on top of the campaign-wide check above. Similar names are
+confusing for players - Tolkien was a great author, but "Sauron" and "Saruman"
+are famously confusingly similar. Within one set:
+
+- No two names may start with the same letter.
+- No two names may rhyme (heuristic: a shared trailing run of 3+ letters).
+- No two names may be only 1 letter different from each other.
+
+`pick_name.py` enforces this automatically for batch picks via
+`similarity.set_conflict()`. When generating names directly (fallback path) or
+generating characters in any other skill or workflow, apply the same rule by
+hand: if a rolled name conflicts with another member of the set, re-roll it.
+
+This rule is deliberately set-scoped, not campaign-wide - applied against the
+whole cast, the first-letter constraint would exhaust the alphabet in two
+dozen NPCs.
+
 ## Source Material -- Name Formats
 
 <!-- SOURCE: GM NOTES - DO NOT MODIFY -->
