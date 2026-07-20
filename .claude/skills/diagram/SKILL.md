@@ -173,32 +173,34 @@ which resvg >/dev/null || sudo apt-get install -y resvg
 The renderer is **resvg** - required, deliberately no rsvg-convert fallback. Why (profiled on Tango, 2026-07): rsvg-convert took ~16s at 2600px, ~2/3 of it processing foliage circles lying entirely outside the cropped city viewBox; resvg culls off-view geometry properly and renders the same SVG in ~0.6s, visually identical. Both installs matter for that "identical": resvg's generic-family defaults name MS fonts, so `serif` must map to DejaVu Serif via `--serif-family`; and resvg does not synthesize oblique, so without the real italic faces (`fonts-dejavu-extra`) every italic label silently renders upright.
 
 ```sh
-resvg --width 2400 --serif-family 'DejaVu Serif' pool/<subject>.svg pool/<subject>.png
+resvg --width 2400 --serif-family 'DejaVu Serif' pool/magistracies/<subject>.svg pool/magistracies/<subject>.png
 ```
 
 - **Draw-order / layering.** The generator emits two layers: the base (`self.add`) and a deferred **top layer** (`self.add_top`), concatenated base-then-top at `finish()`. Roads, streets, terrain, and buildings live in the base; **all labels and the gate furniture (guard station + tower) live in the top layer**, so a road or street can never paint over a label or a gatehouse that sits on it (a street runs *through* the gate, under the gatehouse). Anything that records a footprint a road might overlap should carry its draw-order `z` into the manifest so `roads_drawn_under_overlays` can gate it.
 - 2400 px wide gives readable labels at typical viewing sizes. Smaller widths may render the smallest labels (latrines, well annotations) illegibly.
 - **This manual command is for Mode A only.** Mode B settlement maps render their PNG automatically: `s.finish()` calls `resvg` at 2600px after writing the SVG (pass `render=False` or a different `png_width` to override), so the `.png` stays paired with the `.svg` without a separate step. Re-run the gen (or the test suite, which re-runs every gen) to refresh it; don't call `resvg` by hand for a Mode B map.
 - **Since the resvg switch the raster is cheap** (~0.6s even for the biggest map; the Python generation is now the long pole - for Tango, ~2.4s dominated by farmstead/appurtenance geometry). Two env knobs still make iteration cheaper **without changing committed output**:
-  - `DIAGRAM_SKIP_RENDER=1` - skip the raster entirely. The gate (`check_village.py`) reads the JSON manifest, never the PNG, so **`test_villages` sets this** and the suite never pays to render PNGs nothing looks at. Use it yourself for a gate-only iteration: `DIAGRAM_SKIP_RENDER=1 python3 pool/<map>.gen.py && python3 check_village.py pool/<map>.json`.
+  - `DIAGRAM_SKIP_RENDER=1` - skip the raster entirely. The gate (`check_village.py`) reads the JSON manifest, never the PNG, so **`test_villages` sets this** and the suite never pays to render PNGs nothing looks at. Use it yourself for a gate-only iteration: `DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json`.
   - `DIAGRAM_PNG_WIDTH=1300` - render at 1300px instead of 2600 for a quick visual eyeball; leave it unset for the full-res committed PNG.
 - After rendering, **read the PNG back yourself with the Read tool** to verify legibility and correctness before declaring done. Per Constitution Principle I, the author is not a reliable reviewer of their own visual output - but at minimum, look at it once before reporting it as ready.
 
 ## Output convention
 
-Finished diagrams live in this skill's `pool/` directory as paired files:
+Finished diagrams live in `pool/`, **foldered by subject** so tracking is per-folder and "operate on all of one type" is a clean glob (`pool/villages/*.gen.py`):
 
-- `pool/<subject>.svg` - source
-- `pool/<subject>.png` - 2400 px rendered output (Mode B settlement maps render at 2600 px+)
+- `pool/villages/`, `pool/hamlets/`, `pool/towns/`, `pool/provincial-cities/` - **Mode B** generated settlement maps (by `meta.scale`)
+- `pool/magistracies/` - **Mode A** hand-authored compound plans (add `temples/`, `keeps/`, etc. as they appear)
+- `pool/regressions/` - negative-fixture manifests for the gate; `pool/wip/` - scratch
 
-Mode A compound plans additionally save their design notes alongside:
+Each map is a set of paired files in its folder (`<type>/` for a settlement, `magistracies/` for a compound):
 
-- `pool/<subject>.notes.md` - intent, knob settings, deliberate choices, review log; the second source for the `building-review` subagent gate (see [`buildings.md`](buildings.md) "Design notes and the review gate")
+- `<subject>.svg` - the drawing. **Mode A: this IS the source** (hand-authored, tracked). **Mode B: this is DERIVED** from the `.gen.py` + `.json`.
+- `<subject>.png` - the raster render (always derived)
+- `<subject>.notes.md` - Mode A design notes: intent, knob settings, deliberate choices, review log; the second source for the `building-review` gate (see [`buildings.md`](buildings.md))
+- `<subject>.gen.py` - Mode B parametric generator
+- `<subject>.json` - Mode B manifest consumed by `check_village.py`
 
-Mode B settlement maps additionally save their generator and manifest alongside:
-
-- `pool/<subject>.gen.py` - the parametric generator
-- `pool/<subject>.json` - the manifest consumed by `check_village.py`
+**Tracking (per-folder, no per-file exemptions).** A Mode B `.svg`/`.png` is DERIVED and tens of MB (one primitive per crop row), so the generated folders' `*.svg`/`*.png` are **gitignored and regenerated on demand** - `python3 pool/<type>/<map>.gen.py` (writes svg + png + json). Only the small **source** is tracked: the `.gen.py` + `.json` for Mode B, and the hand-authored `.svg` + `.notes.md` in `magistracies/` (its `.png` is still ignored). Adding a new settlement *type* adds two `.gitignore` lines; a new magistracy `.svg` is auto-tracked. (These artifacts were purged from git history in 2026-07; do not re-commit generated svg/png.)
 
 Subject names: lowercase-kebab-case, descriptive (e.g., `ochiba-magistracy`, `wasp-keep-hachinaga`, `kitsune-mori-pilgrimage-trail`).
 

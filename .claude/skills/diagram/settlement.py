@@ -3448,10 +3448,11 @@ class Settlement:
         #   role="pasture"   -> OPEN GRAZING GRASS: grass tufts + the odd brush dot, NO trees at all - reads as
         #                       open pasture, unmistakably NOT woodland.
         #   role="commons"/"grazing" (default) -> the cut-over fuel/fodder scrub: grass + a FEW scraggly pines.
-        # SVG-size lever 2: the grass BLADES are ~98% of a to-scale map's <line> elements and all share ONE
-        # constant style, so they go in a bucket emitted ONCE inside a styled <g> (bare coords per line),
-        # not one full stroke=...stroke-width=... string each. Lossless + render-identical (ground texture at
-        # distinct scattered points). See svg-size.md. The sparse dots/pines keep their inline styles.
+        # SVG-size: the grass BLADES are ~98% of a to-scale map's <line> elements and all share ONE constant
+        # style, so they go in a bucket emitted ONCE inside a styled <g> (bare coords per line), not one full
+        # stroke=...stroke-width=... string each - ~30% off the file, content-lossless (same lines, grouped),
+        # render is visually identical (only the z-order of overlapping scrub texture shifts, in the margins;
+        # the fields/buildings are pixel-identical). The sparse dots/pines keep their inline styles.
         g: list[str] = []
         blades: list[str] = []
         if role == "woodland":
