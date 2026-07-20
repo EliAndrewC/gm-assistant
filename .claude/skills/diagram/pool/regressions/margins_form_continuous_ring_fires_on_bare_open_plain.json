@@ -1,0 +1,70 @@
+{
+ "meta": {
+  "scale": "village",
+  "view": [
+   500,
+   0,
+   400,
+   300
+  ]
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "bbox": [
+    500,
+    0,
+    650,
+    150
+   ],
+   "outline": [
+    [
+     500,
+     0
+    ],
+    [
+     650,
+     0
+    ],
+    [
+     650,
+     150
+    ],
+    [
+     500,
+     150
+    ]
+   ]
+  }
+ ],
+ "commons": [
+  {
+   "poly": [
+    [
+     0,
+     0
+    ],
+    [
+     480,
+     0
+    ],
+    [
+     480,
+     300
+    ],
+    [
+     0,
+     300
+    ]
+   ],
+   "role": "grazing"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "margins_form_continuous_ring"
+  ],
+  "source": "test_checks.py::test_margins_form_continuous_ring_fires_on_bare_open_plain"
+ }
+}

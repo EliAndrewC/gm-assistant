@@ -2865,6 +2865,50 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"scalebar {sb} disagrees with (or is missing for) the declared scale of {ftpx} ft/px - the 100 map-px bar must read {round(100 * ftpx)} ft",
         )
 
+    # a VILLAGE / HAMLET map clothes its margins in a CONTINUOUS RING of dry marginal land (settlements.md
+    # 'Village windbreak' back-slope doctrine, the GM's rule: every "empty" edge of the frame is the satoyama
+    # toposequence - grazing scrub, coppice, marsh, dry plots - never open plain). Proving ring TOPOLOGY is
+    # hard; gate the SYMPTOM instead: the fraction of the framed view covered by NO ground feature at all.
+    # Why 12%: calibrated over the whole pool (2026-07-20) - hamlets sit at 0% bare, the ring-conforming
+    # villages at 0-8.4% (Hoshigaoka the max; its tan shows only as thin seams between feathered scatter
+    # bands), while the motivating defect (Ueda, whose ring bands were drawn for the full canvas and then
+    # mostly CROPPED OUT of the tightened frame) sat at 28% - so 12% cleanly separates "seams between
+    # scatters" from "open plain". Town/city sheets are urban (streets/wards/walls, which these feature sets
+    # do not model) and outside the doctrine's scope. Sampled on a 25-px grid; polygon features count via
+    # point-in-poly, box features (structures, the pond) via their bounds.
+    if scale in ("village", "hamlet"):
+        cover_polys = [f["outline"] for f in fields]
+        for k in ("commons", "marshes", "village_groves", "groves", "dry_plots", "gardens", "threshing_yards"):
+            cover_polys += [o["poly"] for o in M.get(k, []) if o.get("poly") and len(o["poly"]) >= 3]
+        cover_boxes = []
+        for k in ("houses", "buildings", "manors", "religious", "shrines", "farm_sheds", "storehouses", "cemeteries", "gardens", "threshing_yards"):
+            for o in M.get(k, []):
+                if "x" in o and "w" in o and "h" in o:
+                    cover_boxes.append((o["x"] - o["w"] / 2, o["y"] - o["h"] / 2, o["x"] + o["w"] / 2, o["y"] + o["h"] / 2))
+        if M.get("pond"):
+            pcx, pcy, prx, pry = M["pond"]
+            cover_boxes.append((pcx - prx, pcy - pry, pcx + prx, pcy + pry))
+        cover_bbs = [(min(x for x, _ in p), min(y for _, y in p), max(x for x, _ in p), max(y for _, y in p)) for p in cover_polys]
+        _bare = _total = 0
+        gy = EY0 + 12.5
+        while gy < EY1:
+            gx = EX0 + 12.5
+            while gx < EX1:
+                _total += 1
+                if not (
+                    any(bx0 <= gx <= bx1 and by0 <= gy <= by1 for bx0, by0, bx1, by1 in cover_boxes)
+                    or any(bb[0] <= gx <= bb[2] and bb[1] <= gy <= bb[3] and point_in_poly(gx, gy, p) for p, bb in zip(cover_polys, cover_bbs, strict=True))
+                ):
+                    _bare += 1
+                gx += 25
+            gy += 25
+        bare_frac = _bare / _total if _total else 1.0
+        check(
+            "margins_form_continuous_ring",
+            bare_frac <= 0.12,
+            f"{bare_frac:.0%} of the framed map is bare open ground (over the 12% seam allowance) - every empty margin is dry marginal land and must be clothed in the satoyama ring (grazing scrub / coppice / marsh / dry plots, broad edge-spanning bands), and the bands must lie INSIDE the cropped view, not off-frame",
+        )
+
     # A LABEL must not sit on a building/structure it does NOT name (town + city scale, where features
     # carry distinct identities). A label may overlap the feature(s) it names - its own building/compound,
     # or (for a zone label) any building of that cluster - and may clip a street-fronting shop or an

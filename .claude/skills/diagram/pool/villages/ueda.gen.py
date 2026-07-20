@@ -252,12 +252,21 @@ _scatter = [(_minx - 18, _miny - 18), (_maxx + 18, _miny - 18), (_maxx + 18, _ma
 s.village_grove(_scatter, role="copse", dense=False)
 
 # ===== STAGE 3b: the SATOYAMA GRAZING MARGINS - the "empty" DRY high edges are un-terraced grass/scrub hill-
-# grazing (role='grazing', exempt from commons_beyond_the_windbreak), filling the ring around the cultivated
-# valley. Held OFF the crops (commons auto-skips the paddy; kept left of the field / above the dry-field tops).
-# The big UPPER-LEFT (NW) above and left of the field is the up-valley grass head; it joins the NE pond-
-# catchment across the field's top. Draw order: AFTER farmhouses + grove, BEFORE the (later) graveyard + shrine.
-s.commons([(150, 110), (1080, 110), (980, 360), (740, 540), (430, 600), (150, 430)], role="grazing")     # NW upper grass head
-s.commons([(120, 540), (480, 560), (450, 1050), (380, 1420), (120, 1500)], role="grazing")              # W/SW back-slope, down to the marsh
+# grazing (role='grazing', exempt from commons_beyond_the_windbreak), filling a CONTINUOUS ring around the
+# cultivated valley (settlements.md 'Village windbreak'; gated by margins_form_continuous_ring).
+# LESSON (2026-07-20, the map's original defect): draw the bands for the FRAME, not the canvas. The first
+# version's bands sat at canvas x 120-1080, but crop_to_content tightens Ueda's view to x>=~505 (the frame
+# hugs the houses/field, and commons are not crop content), so the W/SW band fell entirely OFF-FRAME and 28%
+# of the rendered map was bare open tan. These bands span the CROPPED window (x ~490-1790): generous polygons
+# are safe - the scatter auto-skips the paddy, dry plots, lanes, water, structures, and swept clearings, and
+# commons_clear_of_paddies only rejects a patch with NO open ground at all. Overlapping the woodland patches
+# is deliberate (woodland-on-scrub, the Hoshigaoka look). Draw order: AFTER farmhouses + grove, BEFORE the
+# (later) graveyard, which sits ON this scrub (burial belongs on the waste back-slope).
+s.commons([(490, 90), (1425, 90), (1425, 335), (1150, 390), (975, 365), (700, 560), (490, 620)], role="grazing")     # N band: up-valley grass head, crop edge to the pond fringe
+s.commons([(490, 560), (700, 560), (975, 365), (1260, 430), (1090, 730), (600, 740), (490, 720)], role="grazing")   # C band: the slope between the grass head and the cluster/field
+s.commons([(490, 1340), (760, 1300), (1000, 1290), (1260, 1360), (1360, 1500), (1230, 1575), (880, 1540), (600, 1610), (490, 1640)], role="grazing")   # S band: shrine/graveyard waste ground down to the marsh
+s.commons([(1560, 1470), (1780, 1500), (1780, 1740), (1400, 1720)], role="grazing")                     # SE pocket between the field toe, dry strip, and marsh
+s.commons([(1560, 340), (1790, 340), (1790, 1480), (1560, 1480)], role="grazing")                       # E upslope margin: scrub between/beyond the dry hatake plots (auto-skip keeps it off the crops)
 # A FEW managed-WOODLAND patches (coppice / bamboo "economic forest") on the high NW grass head above the paddy -
 # the green EXCEPTION amid the cut-over grass (China-first: the hills are mostly denuded scrub, a little managed
 # wood). Within the grass-head scrub, set back above the crops. Crowns draw on top of the scrub.

@@ -1921,6 +1921,34 @@ def test_scalebar_matches_declared_scale_fires_on_a_wrong_distance():
     assert "scalebar_matches_declared_scale" in f(M)
 
 
+def test_margins_form_continuous_ring_passes_when_the_frame_is_clothed():
+    # one commons band + the field cover the whole (small) view - only feathered seams left
+    M = {
+        "meta": {"scale": "village", "view": [0, 0, 400, 300]},
+        "fields": [_field("p", 0, 0, 400, 150)],
+        "commons": [{"poly": [[0, 140], [400, 140], [400, 300], [0, 300]], "role": "grazing"}],
+    }
+    assert "margins_form_continuous_ring" not in f(M)
+
+
+def test_margins_form_continuous_ring_fires_on_bare_open_plain():
+    # the real Ueda defect in miniature: the ring bands sit OFF-FRAME (west of the cropped view),
+    # so the framed map is mostly bare open tan around a small field
+    M = {
+        "meta": {"scale": "village", "view": [500, 0, 400, 300]},
+        "fields": [_field("p", 500, 0, 650, 150)],
+        "commons": [{"poly": [[0, 0], [480, 0], [480, 300], [0, 300]], "role": "grazing"}],
+    }
+    assert "margins_form_continuous_ring" in f(M)
+
+
+def test_margins_form_continuous_ring_ignores_town_and_city_sheets():
+    # urban sheets cover the ground with streets/wards/walls these feature sets do not model -
+    # the satoyama-ring doctrine is village/hamlet scope only
+    M = {"meta": {"scale": "town", "view": [0, 0, 400, 300]}}
+    assert "margins_form_continuous_ring" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
