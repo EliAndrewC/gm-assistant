@@ -1,0 +1,27 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "manors": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 90,
+   "h": 60,
+   "rot": 0,
+   "label": "",
+   "gate_dir": "south",
+   "gate": [
+    500,
+    530
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "compound_gates_to_scale"
+  ],
+  "source": "test_checks.py::test_compound_gates_to_scale_fires_when_gate_size_unrecorded"
+ }
+}

@@ -1,0 +1,29 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "manors": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 90,
+   "h": 60,
+   "rot": 0,
+   "label": "",
+   "gate_dir": "south",
+   "gate": [
+    500,
+    530
+   ],
+   "gate_w": 68.0,
+   "wall_w": 6.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "compound_gates_to_scale"
+  ],
+  "source": "test_checks.py::test_compound_gates_to_scale_fires_on_a_wall_wide_opening"
+ }
+}

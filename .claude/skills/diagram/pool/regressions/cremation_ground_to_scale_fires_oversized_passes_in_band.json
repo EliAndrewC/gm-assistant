@@ -1,0 +1,21 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "cremation_grounds": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 116,
+   "h": 80,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "cremation_ground_to_scale"
+  ],
+  "source": "test_checks.py::test_cremation_ground_to_scale_fires_oversized_passes_in_band"
+ }
+}

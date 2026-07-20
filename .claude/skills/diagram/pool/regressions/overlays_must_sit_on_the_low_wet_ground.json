@@ -1,0 +1,42 @@
+{
+ "meta": {
+  "scale": "village",
+  "land_use_overlay": "lotus"
+ },
+ "wet_plots": [
+  [
+   100,
+   100
+  ],
+  [
+   140,
+   100
+  ],
+  [
+   180,
+   100
+  ]
+ ],
+ "land_use": [
+  {
+   "overlay": "lotus",
+   "count": 2,
+   "plots": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     900
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "overlays_on_wet_ground_only"
+  ],
+  "source": "test_checks.py::test_overlays_must_sit_on_the_low_wet_ground"
+ }
+}
