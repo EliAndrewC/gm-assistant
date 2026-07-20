@@ -49,8 +49,8 @@ def esc(s: str) -> str:
 
 
 def compact_time(t: str) -> str:
-    """'6:34 AM' -> '6:34a' to save table width."""
-    return t.replace(" AM", "a").replace(" PM", "p")
+    """'6:34 AM' -> '6:34am' to save table width."""
+    return t.replace(" AM", "am").replace(" PM", "pm")
 
 
 def build_rows(raw: dict, year: int, cells):
