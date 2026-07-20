@@ -1,6 +1,6 @@
 """Tests for similarity.py"""
 
-from similarity import edit_distance, is_too_similar
+from similarity import edit_distance, is_too_similar, rhymes, set_conflict
 
 
 class TestEditDistance:
@@ -64,3 +64,42 @@ class TestIsTooSimilar:
         existing = ["Akari", "Takeshi", "Haruka"]
         assert is_too_similar("Takashi", existing) is True  # edit dist 1 from Takeshi
         assert is_too_similar("Noboru", existing) is False
+
+
+class TestRhymes:
+    def test_shared_three_letter_suffix(self):
+        assert rhymes("Naomi", "Hitomi") is True
+
+    def test_shared_suffix_case_insensitive(self):
+        assert rhymes("HARUKO", "yasuko") is True
+
+    def test_two_letter_suffix_not_rhyme(self):
+        assert rhymes("Kazuki", "Hideki") is False
+
+    def test_no_shared_suffix(self):
+        assert rhymes("Akira", "Noboru") is False
+
+    def test_short_name_fully_contained_in_suffix(self):
+        # Common suffix "ko" is only 2 letters, below the rhyme threshold
+        assert rhymes("Ko", "Yoko") is False
+
+
+class TestSetConflict:
+    def test_same_first_letter(self):
+        assert set_conflict("Kaito", "Kenji") is True
+
+    def test_edit_distance_one_different_initial(self):
+        assert set_conflict("Sana", "Hana") is True
+
+    def test_rhyme_different_initial(self):
+        assert set_conflict("Naomi", "Hitomi") is True
+
+    def test_prefix_extension_different_initial(self):
+        # "Iyo" vs "Chiyo" - edit distance 2, no shared initial, suffix "iyo"
+        assert set_conflict("Iyo", "Chiyo") is True
+
+    def test_distinct_names_pass(self):
+        assert set_conflict("Noboru", "Akari") is False
+
+    def test_distinct_names_pass_symmetric(self):
+        assert set_conflict("Akari", "Noboru") is False
