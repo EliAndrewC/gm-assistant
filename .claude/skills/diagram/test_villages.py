@@ -17,6 +17,8 @@ import os
 import runpy
 import sys
 
+import pytest
+
 import check_village
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -57,9 +59,11 @@ def test_at_least_one_village_exists():
     assert GENERATORS, "no *.gen.py village generators found in pool/"
 
 
-def test_villages_pass_gate():
-    failures = [os.path.basename(g) for g in GENERATORS if not _regen_and_gate(g)]
-    assert not failures, f"villages failed the gate: {failures}"
+# one test per village (not one loop over all): a failure names its map directly, and a
+# parallel runner (pytest-xdist) can spread the regens instead of serializing them in one test
+@pytest.mark.parametrize("gen", GENERATORS, ids=[os.path.basename(g) for g in GENERATORS])
+def test_village_passes_gate(gen):
+    assert _regen_and_gate(gen), f"{os.path.basename(gen)} failed the gate"
 
 
 if __name__ == "__main__":

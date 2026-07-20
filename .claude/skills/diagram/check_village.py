@@ -1309,30 +1309,70 @@ def city_capacity(M: Manifest, step: float = 8, grid_step: float | None = None) 
         trunk.append((M["ring_road"], M.get("ring_road_width", 15) / 2 + 24))
     res_st = [(s["pts"], s.get("w", 12) / 2) for s in M.get("town_streets", [])] + [(a["pts"], a.get("w", 8) / 2) for a in M.get("alleys", [])]
 
-    def _on(gx: float, gy: float, lines: Sequence[tuple[Poly, float]]) -> bool:
-        return any(len(pts) >= 2 and any(seg_dist(gx, gy, pts[k], pts[k + 1]) < hw for k in range(len(pts) - 1)) for pts, hw in lines)
+    # PERFORMANCE: the sweeps below sample ~40k grid points on a provincial city, and the naive
+    # form probed every dwelling/civic rect, field poly, and street segment from every point -
+    # ~23M point_in_poly/seg_dist calls, ~13s per gate run (profiled on Tango, 2026-07-20), paid
+    # on every in-session map iteration and every city regression fixture. The features are tiny
+    # relative to the walled span, so index them into coarse spatial bins and test each sample
+    # point only against the features whose bounding box overlaps its bin. The classification is
+    # IDENTICAL to the naive sweep: same sample points, same predicates in the same priority
+    # order, and the bin prefilter is conservative (a poly lies inside its bbox; a "within hw of
+    # segment" capsule lies inside the segment bbox inflated by hw), so no true hit is skipped.
+    BIN = step * 8
+
+    def _bucket_polys(polys: Sequence[Poly]) -> dict[tuple[int, int], list[Poly]]:
+        out: dict[tuple[int, int], list[Poly]] = {}
+        for p in polys:
+            pxs = [q[0] for q in p]
+            pys = [q[1] for q in p]
+            for bx in range(int(min(pxs) // BIN), int(max(pxs) // BIN) + 1):
+                for by in range(int(min(pys) // BIN), int(max(pys) // BIN) + 1):
+                    out.setdefault((bx, by), []).append(p)
+        return out
+
+    def _bucket_lines(lines: Sequence[tuple[Poly, float]]) -> dict[tuple[int, int], list[tuple[Pt, Pt, float]]]:
+        out: dict[tuple[int, int], list[tuple[Pt, Pt, float]]] = {}
+        for pts, hw in lines:
+            for k in range(len(pts) - 1):
+                a, b = pts[k], pts[k + 1]
+                for bx in range(int((min(a[0], b[0]) - hw) // BIN), int((max(a[0], b[0]) + hw) // BIN) + 1):
+                    for by in range(int((min(a[1], b[1]) - hw) // BIN), int((max(a[1], b[1]) + hw) // BIN) + 1):
+                        out.setdefault((bx, by), []).append((a, b, hw))
+        return out
+
+    dwell_bk, civic_bk, field_bk = _bucket_polys(dwell_r), _bucket_polys(civic_r), _bucket_polys(field_polys)
+    water_bk, trunk_bk, res_bk = _bucket_lines(water), _bucket_lines(trunk), _bucket_lines(res_st)
+    pond = M.get("pond")
+
+    def _classify(gx: float, gy: float) -> str:
+        """Class one sample point: 'outside' the wall, else the first matching ground category
+        in the fixed priority order. Shared by the count sweep and the ASCII-map sweep so the
+        two can never disagree."""
+        b = (int(gx // BIN), int(gy // BIN))
+        if not point_in_poly(gx, gy, wall):
+            return "outside"
+        if any(point_in_poly(gx, gy, r) for r in dwell_bk.get(b, [])):
+            return "dwell"
+        if any(point_in_poly(gx, gy, r) for r in civic_bk.get(b, [])):
+            return "civic"
+        if (pond and in_ellipse(gx, gy, pond)) or any(seg_dist(gx, gy, a, bb) < hw for a, bb, hw in water_bk.get(b, [])):
+            return "water"
+        if any(point_in_poly(gx, gy, p) for p in field_bk.get(b, [])):
+            return "field"
+        if any(seg_dist(gx, gy, a, bb) < hw for a, bb, hw in trunk_bk.get(b, [])):
+            return "trunk"
+        if any(seg_dist(gx, gy, a, bb) < hw for a, bb, hw in res_bk.get(b, [])):
+            return "res_st"
+        return "open"
 
     c = {"dwell": 0, "civic": 0, "water": 0, "trunk": 0, "res_st": 0, "field": 0, "open": 0}
-    pond = M.get("pond")
     gx = x0
     while gx <= x1:
         gy = y0
         while gy <= y1:
-            if point_in_poly(gx, gy, wall):
-                if any(point_in_poly(gx, gy, r) for r in dwell_r):
-                    c["dwell"] += 1
-                elif any(point_in_poly(gx, gy, r) for r in civic_r):
-                    c["civic"] += 1
-                elif (pond and in_ellipse(gx, gy, pond)) or _on(gx, gy, water):
-                    c["water"] += 1
-                elif any(point_in_poly(gx, gy, p) for p in field_polys):
-                    c["field"] += 1
-                elif _on(gx, gy, trunk):
-                    c["trunk"] += 1
-                elif _on(gx, gy, res_st):
-                    c["res_st"] += 1
-                else:
-                    c["open"] += 1
+            kind = _classify(gx, gy)
+            if kind != "outside":
+                c[kind] += 1
             gy += step
         gx += step
     cell = step * step
@@ -1343,29 +1383,14 @@ def city_capacity(M: Manifest, step: float = 8, grid_step: float | None = None) 
     # than guess. Reuses the rects/lines already built above; a second coarse sweep is cheap.
     grid_rows = None
     if grid_step:
-        _sym = {"dwell": "D", "civic": "C", "water": "~", "trunk": "#", "res_st": "+", "field": "F", "open": "."}
+        _sym = {"outside": " ", "dwell": "D", "civic": "C", "water": "~", "trunk": "#", "res_st": "+", "field": "F", "open": "."}
         grid_rows = []
         gy = y0
         while gy <= y1:
             row = []
             gx = x0
             while gx <= x1:
-                if not point_in_poly(gx, gy, wall):
-                    row.append(" ")
-                elif any(point_in_poly(gx, gy, r) for r in dwell_r):
-                    row.append(_sym["dwell"])
-                elif any(point_in_poly(gx, gy, r) for r in civic_r):
-                    row.append(_sym["civic"])
-                elif (pond and in_ellipse(gx, gy, pond)) or _on(gx, gy, water):
-                    row.append(_sym["water"])
-                elif any(point_in_poly(gx, gy, p) for p in field_polys):
-                    row.append(_sym["field"])
-                elif _on(gx, gy, trunk):
-                    row.append(_sym["trunk"])
-                elif _on(gx, gy, res_st):
-                    row.append(_sym["res_st"])
-                else:
-                    row.append(_sym["open"])
+                row.append(_sym[_classify(gx, gy)])
                 gx += grid_step
             grid_rows.append("".join(row))
             gy += grid_step
@@ -2827,6 +2852,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "title_clear_of_features",
             not thit,
             f"the map title sits on {thit[:2]} - it must go over BLANK space so the place name is readable (the generator's s.title() searches for a clear box; call it AFTER crop_to_content)",
+        )
+        # every settlement map shows a SCALE BAR (GM 2026-07-20, matching the Mode A compound sheets),
+        # and the bar's declared distance must agree with the map's declared ft/px - the bar is 100
+        # map-px, so ft = 100 x ftpx (100 hamlet/town, 200 village, 300 city). s.title() draws it, so
+        # a manifest with a title but no scalebar means the generator predates the bar - regenerate.
+        sb = M.get("scalebar")
+        ftpx = M.get("meta", {}).get("ftpx", 1.0)
+        check(
+            "scalebar_matches_declared_scale",
+            sb is not None and sb["ft"] == round(100 * ftpx),
+            f"scalebar {sb} disagrees with (or is missing for) the declared scale of {ftpx} ft/px - the 100 map-px bar must read {round(100 * ftpx)} ft",
         )
 
     # A LABEL must not sit on a building/structure it does NOT name (town + city scale, where features

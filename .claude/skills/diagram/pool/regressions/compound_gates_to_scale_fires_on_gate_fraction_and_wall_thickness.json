@@ -1,0 +1,29 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "manors": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 15,
+   "h": 10,
+   "rot": 0,
+   "label": "",
+   "gate_dir": "south",
+   "gate": [
+    500,
+    505
+   ],
+   "gate_w": 7.0,
+   "wall_w": 0.7
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "compound_gates_to_scale"
+  ],
+  "source": "test_checks.py::test_compound_gates_to_scale_fires_on_gate_fraction_and_wall_thickness"
+ }
+}

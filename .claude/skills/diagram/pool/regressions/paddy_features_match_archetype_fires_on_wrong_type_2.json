@@ -1,0 +1,56 @@
+{
+ "meta": {
+  "scale": "village",
+  "field_archetype": "polder_grid"
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     0,
+     0
+    ],
+    [
+     500,
+     0
+    ],
+    [
+     500,
+     500
+    ],
+    [
+     0,
+     500
+    ]
+   ],
+   "bbox": [
+    0,
+    0,
+    500,
+    500
+   ]
+  }
+ ],
+ "wet_plots": [
+  [
+   100,
+   100
+  ]
+ ],
+ "field_ponds": [
+  {
+   "x": 400,
+   "y": 400,
+   "rx": 20,
+   "ry": 14
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "field_ponds_on_low_ground"
+  ],
+  "source": "test_checks.py::test_paddy_features_match_archetype_fires_on_wrong_type"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "meta": {
+  "scale": "village",
+  "land_use_overlay": "lotus"
+ },
+ "wet_plots": [
+  [
+   100,
+   100
+  ]
+ ],
+ "land_use": [],
+ "_regression": {
+  "fires": [
+   "land_use_overlay_drawn"
+  ],
+  "source": "test_checks.py::test_land_use_overlay_drawn_tolerates_having_no_eligible_ground"
+ }
+}

@@ -1,0 +1,39 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "merchant_estates": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 62.0,
+   "h": 46.0,
+   "gate": [
+    500,
+    523.0
+   ],
+   "gate_dir": "south"
+  }
+ ],
+ "canals": [
+  {
+   "poly": [
+    [
+     400,
+     477
+    ],
+    [
+     600,
+     477
+    ]
+   ],
+   "w": 12.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "merchant_estate_wall_clear_of_water"
+  ],
+  "source": "test_checks.py::test_merchant_estate_wall_fires_on_a_canal_crossing"
+ }
+}
