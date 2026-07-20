@@ -1233,7 +1233,21 @@ class Settlement:
         to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
         SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
         source_and_sink) see a source. Returns the field envelope polygon."""
-        from waterfields import BEAN_GREEN, BUND
+        from waterfields import _RICE_GREEN, BEAN_GREEN, BUND
+
+        # BASE FILL (feature 012): a paddy-green wash over the whole planted extent BEFORE the plots, so the
+        # imperfect plot tessellation never lets the parchment background show through as bare "white" gaps -
+        # flat wet paddy tiles completely (research.md D5). Filled over the PLOTS' union bbox, NOT the raw
+        # envelope, so a nucleated map's harmless phantom tail (the over-declared field_fall the checks let a
+        # nucleated cluster carry) stays invisible instead of being painted green.
+        pv = [v for p in net["plots"] for v in p["poly"]]
+        if pv:
+            cid = self._cid("padbase")
+            epts = " ".join(f"{x:.1f},{y:.1f}" for x, y in net["envelope"])
+            px0, px1 = min(v[0] for v in pv), max(v[0] for v in pv)
+            py0, py1 = min(v[1] for v in pv), max(v[1] for v in pv)
+            self.add(f'<clipPath id="{cid}"><rect x="{px0:.1f}" y="{py0:.1f}" width="{px1 - px0:.1f}" height="{py1 - py0:.1f}"/></clipPath>')
+            self.add(f'<polygon points="{epts}" fill="{_RICE_GREEN}" clip-path="url(#{cid})"/>')
 
         for p in net["dry_plots"]:  # the dry upslope hem
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
@@ -1304,7 +1318,84 @@ class Settlement:
         self.M["channels"].append(
             {"poly": [[round(start[0], 1), round(start[1], 1)], [round(midx, 1), round(midy, 1)], [round(din[0], 1), round(din[1], 1)]], "frm": frm, "to": {"kind": "field", "name": name}, "w": 2.5}
         )
+        self._paddy_features(net)
         return cast("list[Pt]", net["envelope"])
+
+    # ---- feature 012: deliberate non-rice features the paddy tiles around --------------------------------
+    # Placed automatically from the field geometry per the ARCHETYPE MATRIX (specs/012-.../research.md). Only
+    # the genuinely NEW in-field glyphs live here - a low-pocket POND, a bedrock ROCK outcrop, and (a disclosed
+    # CALIBRATED LIBERTY the GM approved) a rare in-field GRAVE island. The matrix's MARGIN graves + feng-shui
+    # knolls are already the village burial ground + back-grove (the research warns a standalone knoll usually
+    # IS the back-grove), so they are not redrawn here. Seeded from self.seed so it never ripples other RNG.
+    _PADDY_POND_KINDS = ("valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley")
+    _PADDY_ROCK_KINDS = ("contour_terraces", "ribbon_valley")  # bedrock ground; alluvial valley/polder + delta dike-pond have none
+    _PADDY_GRAVE_KINDS = ("valley_paddy", "contour_terraces", "ribbon_valley")
+
+    def _paddy_features(self, net: dict[str, Any]) -> None:
+        arch = self.M.get("meta", {}).get("field_archetype") or "valley_paddy"
+        if arch == "mulberry_dike_fishpond":
+            return  # open water IS its fabric - no obstacle tiles among it (research D4)
+        rng = random.Random((self.seed ^ 0x9AD1) & 0xFFFFFFFF)
+        plots = net["plots"]
+        if not plots:  # pragma: no cover - a drawn field always has plots
+            return
+        low = [p for p in plots if p.get("low")]
+        # POND: a low pocket held as open water (research D4). ~55% of eligible fields carry one.
+        if arch in self._PADDY_POND_KINDS and low and rng.random() < 0.55:
+            self._plot_pond(rng.choice(low))
+        # ROCK: bedrock outcrops the risers/bunds wrap around (research D3) - terraces always, ribbon ~half.
+        if arch == "contour_terraces" or (arch == "ribbon_valley" and rng.random() < 0.5):
+            for _ in range(rng.randint(1, 3)):
+                self._plot_rock(rng.choice(plots), rng)
+        # GRAVE ISLAND: calibrated liberty (GM 2026-07-20), RARE - the "graves among the paddy" look.
+        if arch in self._PADDY_GRAVE_KINDS and rng.random() < 0.3:
+            self._plot_grave_island(rng.choice(plots), rng)
+
+    @staticmethod
+    def _plot_center_span(poly: Sequence[Pt]) -> tuple[float, float, float, float]:
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        return (sum(xs) / len(xs), sum(ys) / len(ys), (max(xs) - min(xs)) / 2, (max(ys) - min(ys)) / 2)
+
+    def _plot_pond(self, plot: dict[str, Any]) -> None:
+        """A small OPEN-WATER pond sunk into one low plot - a low pocket / header tameike the paddy rings.
+        Distinct from the reed/lotus BOG (blue-green, choked) and from the main village reservoir at the
+        source. Drawn OVER the plot (so it carries no bund grid) with a reed fringe; recorded in M['field_ponds']."""
+        cx, cy, hx, hy = self._plot_center_span(plot["poly"])
+        rx, ry = max(10.0, hx * 0.82), max(7.0, hy * 0.82)
+        self.add(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="#9CB4C8" stroke="#5C7488" stroke-width="1.8"/>')
+        self.add(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx - 5:.1f}" ry="{ry - 4:.1f}" fill="none" stroke="#B6CAD8" stroke-width="0.9"/>')
+        reeds = "".join(f'<line x1="{cx + rx * math.cos(a):.1f}" y1="{cy + ry * math.sin(a):.1f}" x2="{cx + rx * math.cos(a):.1f}" y2="{cy + ry * math.sin(a) - 5:.1f}" stroke="#7C9A4E" stroke-width="1.1"/>' for a in [i * math.pi / 4 for i in range(8)])
+        self.add(f'<g opacity="0.8">{reeds}</g>')
+        self.M.setdefault("field_ponds", []).append({"x": round(cx, 1), "y": round(cy, 1), "rx": round(rx, 1), "ry": round(ry, 1)})
+
+    def _plot_rock(self, plot: dict[str, Any], rng: random.Random) -> None:
+        """A bedrock OUTCROP the terrace risers wrap around - a cluster of grey boulders. Recorded in
+        M['field_rocks']. Small (a few plot-fractions), off-center so it reads as a natural obstacle."""
+        cx, cy, hx, hy = self._plot_center_span(plot["poly"])
+        cx += rng.uniform(-hx * 0.3, hx * 0.3)
+        cy += rng.uniform(-hy * 0.3, hy * 0.3)
+        boulders = ""
+        for _ in range(rng.randint(2, 4)):
+            bx, by = cx + rng.uniform(-7, 7), cy + rng.uniform(-5, 5)
+            r = rng.uniform(3.5, 6.5)
+            boulders += f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="{r:.1f}" fill="#9C948A" stroke="#5C544A" stroke-width="1"/>'
+            boulders += f'<path d="M{bx - r * 0.5:.1f},{by - r * 0.2:.1f} q{r * 0.4:.1f},{-r * 0.5:.1f} {r:.1f},{-r * 0.1:.1f}" fill="none" stroke="#C6BEB2" stroke-width="0.8"/>'  # a lit crown
+        self.add(f'<g>{boulders}</g>')
+        self.M.setdefault("field_rocks", []).append({"x": round(cx, 1), "y": round(cy, 1)})
+
+    def _plot_grave_island(self, plot: dict[str, Any], rng: random.Random) -> None:
+        """A RARE in-field grave island (calibrated liberty) - a small raised earthen mound with a couple of
+        stone markers, the flat paddy tiling around it. Recorded in M['field_graves']."""
+        cx, cy, hx, hy = self._plot_center_span(plot["poly"])
+        rx, ry = max(9.0, hx * 0.55), max(6.0, hy * 0.55)
+        self.add(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="#CFC6B4" stroke="#8C8470" stroke-width="1.2" opacity="0.9"/>')
+        markers = ""
+        for i in range(rng.randint(2, 3)):
+            mx = cx + (i - 1) * 6
+            markers += f'<rect x="{mx - 1.3:.1f}" y="{cy - 7:.1f}" width="2.6" height="7" rx="1" fill="#9AA1A4" stroke="#5A584F" stroke-width="0.5"/>'
+        self.add(f'<g>{markers}</g>')
+        self.M.setdefault("field_graves", []).append({"x": round(cx, 1), "y": round(cy, 1)})
 
     def apply_land_use(self, net: dict[str, Any], overlay: str, rng: random.Random, fraction: float = 0.55, eligible: str = "wet") -> int:
         """Overlay a LAND-USE archetype (feature 005 US4 `land_use_overlay`) onto an already-drawn comb field:
@@ -5243,10 +5334,12 @@ class Settlement:
             source: dict[str, Any] = {"kind": "pond", "pond": (sluice[0] - dx * 66, sluice[1] - dy * 66, 88.0, 56.0)}
         else:
             source = {"kind": "stream", "stream": [(sluice[0] - dx * 380, sluice[1] - dy * 380), (sluice[0], sluice[1])]}
-        self.draw_comb_field(net, name + "-paddies", source)
-        # roll the ARCHETYPE knobs: field_archetype (only valley_paddy is geometrically implemented, so a roll
-        # with no declared terrain lands there by typing) + a land-use OVERLAY drawn over the fresh paddy
+        # roll the ARCHETYPE knob BEFORE drawing (draw_comb_field reads it to place archetype-appropriate
+        # in-field features): field_archetype (only valley_paddy is geometrically implemented, so a roll with
+        # no declared terrain lands there by typing).
         self.M["meta"]["field_archetype"] = self.resolve("field_archetype")
+        self.draw_comb_field(net, name + "-paddies", source)
+        # a land-use OVERLAY drawn over the fresh paddy
         self.apply_land_use(net, self.resolve("land_use_overlay"), random.Random((self.seed ^ 0x1A7D) & 0xFFFFFFFF))
         # --- seat the cluster on the field edge, from the ACTUAL drawn plots (robust to a fan's narrow head) ---
         # The cluster_position gives the CHARACTER (which margin); the seat is computed constructively so it

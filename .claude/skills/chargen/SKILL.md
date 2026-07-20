@@ -249,22 +249,18 @@ the project CLAUDE.md).
 **3c. Generate the portrait** (this is the ~$0.07 image call - do it once here,
 regenerate only on request).
 
-**`art.generate_prompt` is caste-blind** - it was written for the webapp, where
-the GM hand-edits the prompt, so it dresses EVERY subject as a samurai (topknot,
-kimono, and for many schools a daisho). For a **Monk** or **Peasant** it produces
-the wrong picture (a Grand Abbot came out as a two-sword bushi, validated
-2026-07-13). So:
-
-- **Samurai**: use `art.generate_prompt(d)` as-is; it is correct for them.
-- **Monk**: build the prompt yourself, reusing `art.generate_prompt`'s rendering
-  tail (the "Make a colored, photo-realistic ... float on plain white" block),
-  but describe a Buddhist monastic: shaved/tonsured head and NO topknot; plain,
-  somewhat worn monastic robes (a muted kimono-style robe with a kesa surplice),
-  richer for a senior abbot, humbler for a country monk; a string of prayer beads
-  (juzu); explicitly **NO swords and NO armor**. Keep the age and any
-  visually-apparent rolled traits (e.g. "eyes darting" -> alert, darting eyes).
-- **Peasant**: likewise build it yourself - simple working clothes appropriate to
-  the trade (farmer, fisherman, merchant, artisan), no swords, no samurai topknot.
+**`art.generate_prompt` is caste-aware** (since 2026-07-20; it used to dress
+every subject as a samurai - a Grand Abbot came out as a two-sword bushi,
+2026-07-13). It classifies the subject via `art.infer_character_type` (explicit
+`character_type` wins, else the dict shape: `order`/`seat` keys mean Monk, a
+`peasant` tag means Peasant, default Samurai) and dresses accordingly: samurai
+keep the school-based kimono/robes wardrobe, monks get a tonsured monastic
+(shaved head, worn robes with kesa, prayer beads, no swords/armor), peasants
+get roughspun work clothes with no swords and no topknot. The full
+`chargen-character.json` dict carries those signals, so calling it as-is is
+correct **for every caste**. Optionally append one prompt line for monk
+seniority (finer robes for a senior abbot, humbler for a country monk) or a
+peasant's trade (a farmer's sun-weathered look, a fisherman's gear).
 
 ```bash
 cd /gm-assistant/webapp && python3 - <<'PY'
@@ -272,10 +268,7 @@ import l7r, json, re, base64
 from chargen import art
 d = json.load(open("[SCRATCH]/chargen-character.json"))
 name = d["full_name"]
-# Samurai: prompt = art.generate_prompt(d)
-# Monk/Peasant: assemble a caste-correct prompt (see guidance above) and reuse the
-# rendering tail so the white-background/framing instructions match exactly.
-prompt = """[PROMPT]"""
+prompt = art.generate_prompt(d)  # caste-aware; append seniority/trade nuance if wanted
 img = base64.b64decode(art.generate_image_base64(prompt))
 safe = re.sub(r"[^a-zA-Z0-9]", "", name.replace(" ", ""))
 fname = f"{safe}.png"
@@ -289,11 +282,6 @@ PY
 (a monk must not come back as a sword-bearing samurai); if it is wrong or a refusal
 / text-only image, fix the prompt and regenerate before proceeding. Tell the GM the
 portrait's scratch path so they can open it if they want.
-
-(Root-cause option, deferred: making `chargen.art.generate_prompt` itself
-caste-aware would fix this for the webapp too, but that is a tested + redeployed
-code change - see the "Fix image-gen at the prompt" GM preference. The skill-level
-workaround above keeps `/chargen` correct in the meantime.)
 
 Present to the GM: the **tagline**, the **portrait path**, and the **FULL
 backstory reproduced verbatim in your reply** (never leave it only in a file),

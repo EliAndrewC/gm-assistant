@@ -9,6 +9,7 @@ config edit rather than a code change.
 
 import base64
 from io import BytesIO
+from random import random as _random
 
 from google import genai
 from google.genai import types
@@ -116,6 +117,27 @@ def trim_whitespace(image_data: bytes) -> bytes:
     out = BytesIO()
     bordered.save(out, format='PNG')
     return out.getvalue()
+
+
+def infer_character_type(character: dict) -> str:
+    """
+    Classify the subject as 'samurai', 'monk', or 'peasant' for dress and grooming.
+
+    An explicit ``character_type`` (the webapp's type dropdown value) wins;
+    otherwise the dict shape decides: only the Monk class carries ``order`` and
+    ``seat``, and the Peasant class tags itself 'peasant'. Anything else -
+    including the partial dicts the art-prompt AJAX sends - defaults to samurai,
+    the common case.
+    """
+    explicit = str(character.get('character_type') or '').strip().lower()
+    if explicit in ('samurai', 'monk', 'peasant'):
+        return explicit
+    if 'order' in character or 'seat' in character:
+        return 'monk'
+    tags = [str(tag).lower() for tag in character.get('tags') or []]
+    if 'peasant' in tags:
+        return 'peasant'
+    return 'samurai'
 
 
 def generate_prompt(character: dict) -> str:
@@ -274,37 +296,81 @@ def generate_prompt(character: dict) -> str:
             if collects_art:
                 trait_descriptions.append(f'{pronoun} has {collects_art}')
 
-    # Determine clothing/role - always use kimono for samurai to avoid armor
+    # Determine subject and clothing by caste. Monks and peasants must never
+    # fall through to samurai dress: a kimono is samurai (or wealthy-merchant)
+    # garb, peasants wear roughspun work clothes, and monks are tonsured
+    # monastics (a Grand Abbot once rendered as a two-sword bushi when this
+    # was caste-blind). Samurai keep the school-based wardrobe - always
+    # kimono/robes rather than armor.
+    character_type = infer_character_type(character)
     school = character.get('school', '').lower()
-    if 'bushi' in school:
-        clothing = 'a formal kimono and is not wearing armor'
-    elif 'courtier' in school or 'diplomat' in school or 'artisan' in school:
-        clothing = 'elegant formal court robes'
-    elif 'merchant' in school:
-        clothing = 'practical but quality merchant attire'
+    extra_style_lines: list[str] = []
+    if character_type == 'monk':
+        subject = 'A portrait of a Buddhist monk from Rokugan.'
+        clothing = (
+            'plain, somewhat worn monastic robes - a muted kimono-style robe '
+            'with a kesa surplice draped over one shoulder'
+        )
+        # Not every monk keeps the tonsure - roughly half do (GM decision
+        # 2026-07-20); the rest wear their hair grown out, but never a
+        # samurai topknot.
+        if _random() < 0.5:
+            head = 'has a cleanly shaved head with no topknot'
+        else:
+            head = 'has short natural hair grown out from a tonsure, with no topknot'
+        extra_style_lines = [
+            f'-> {pronoun.title()} {head}',
+            f'-> {pronoun.title()} carries a string of wooden prayer beads '
+            'and has no swords and no armor',
+        ]
+    elif character_type == 'peasant':
+        subject = 'A portrait of a peasant commoner from Rokugan.'
+        clothing = (
+            'simple, roughspun working clothes of undyed hemp - a short work '
+            'jacket and work trousers with a plain cloth sash'
+        )
+        extra_style_lines = [
+            f'-> {pronoun.title()} has no swords and no samurai topknot',
+        ]
     else:
-        clothing = 'a traditional kimono'
+        subject = (
+            f'A portrait of a {"noble" if clan else "person"} from '
+            f'{"the " + clan + " clan" if clan else "Rokugan"}.'
+        )
+        if 'bushi' in school:
+            clothing = 'a formal kimono and is not wearing armor'
+        elif 'courtier' in school or 'diplomat' in school or 'artisan' in school:
+            clothing = 'elegant formal court robes'
+        elif 'merchant' in school:
+            clothing = 'practical but quality merchant attire'
+        else:
+            clothing = 'a traditional kimono'
 
     # Check if character has fine makeup trait
     has_fine_makeup = 'fine makeup' in [t.lower() for t in traits]
 
     # Build the prompt
     lines = [
-        f'A portrait of a {"noble" if clan else "person"} from {"the " + clan + " clan" if clan else "Rokugan"}.',
+        subject,
         '',
         f'-> {pronoun.title()} is {age} years old',
     ]
 
-    if clan_colors:
+    if clan_colors and character_type == 'samurai':
         lines.append(f'-> {pronoun.title()} is wearing {clan} clan colors of {clan_colors}')
 
     lines.append(f'-> {pronoun.title()} is dressed in {clothing}')
+    lines.extend(extra_style_lines)
 
     # For women, specify no makeup unless they have the fine makeup trait
+    # (monks skip the hair clause - the head is already described as shaved)
     if gender == 'female' and not has_fine_makeup:
-        lines.append(
-            f'-> {pronoun.title()} is not wearing any makeup and has plain unstyled black hair'
-        )
+        if character_type == 'monk':
+            lines.append(f'-> {pronoun.title()} is not wearing any makeup')
+        else:
+            lines.append(
+                f'-> {pronoun.title()} is not wearing any makeup and has plain unstyled black hair'
+            )
 
     if trait_descriptions:
         lines.append(f'-> {"; ".join(trait_descriptions)}')

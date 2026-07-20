@@ -458,6 +458,7 @@
 
                     $.getJSON('/chargen/art_prompt', {
                         gender: character.gender,
+                        character_type: dom.$type.val() || '',
                         clan: character.clan || '',
                         school: character.school || '',
                         xp: character.xp || 150,
