@@ -17,5 +17,8 @@ format:
 typecheck:
 	python3 -m mypy
 
+# parallel across cores when pytest-xdist is installed (~1 min vs ~5 min serial, measured
+# 2026-07-20 on 22 cores), plain serial pytest otherwise - xdist is a speedup, not a requirement.
+# The coverage gate combines worker data, so the 100% requirement holds either way.
 test:
-	python3 -m pytest
+	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto; else python3 -m pytest; fi
