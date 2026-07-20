@@ -6260,23 +6260,44 @@ class Settlement:
         self._record_label(x, y, text, size, anchor, z)
 
     def title(self, name: str, fs: float = 30) -> None:
-        """Place the map title (just the bold place name - the map is self-evident) over BLANK space: scan the
-        rendered window for a spot where the text box clears every feature (buildings, fields, water, groves,
+        """Place the map title (the bold place name plus a scale bar under it) over BLANK space: scan the
+        rendered window for a spot where the box clears every feature (buildings, fields, water, groves,
         the pond), scanning top-first so the title lands high when it can. Records the placed box in M['title']
         so `title_clear_of_features` can verify it. Call AFTER crop_to_content, so the search runs over the
         framed window. Falls back to the top-left of the view (or the canvas center) only if the map is too full
-        to find any gap."""
+        to find any gap.
+
+        SCALE BAR (GM 2026-07-20: every settlement map shows its scale, matching the Mode A compound
+        sheets): the bar spans 100 map-px, which is a round real distance at every rung of the GM's
+        scale ladder - 100 ft at hamlet/town (1 ft/px), 200 ft at village (2 ft/px), 300 ft at
+        provincial city (3 ft/px) - drawn in the Mode A furniture style (end ticks + mid tick, the
+        distance under the bar, a fine-print '(1 px = N ft)' line). The searched AND recorded box
+        covers the title + bar together, so `title_clear_of_features` gates the bar's placement too."""
         tw, th = len(name) * fs * 0.55, fs * 1.2  # estimated text box (bold, ~0.55 em/char)
+        bar_px, bar_ft = 100.0, round(100 * self.ftpx)
+        bw, bh = max(tw, bar_px), th + 46  # the searched box: title text + the bar block (gap + ticks + two label lines)
         vx0, vy0, vw, vh = self.view if self.view else (0, 0, self.W, self.H)
-        spot = self._blank_label_spot(vx0, vy0, vw, vh, tw, th)
+        spot = self._blank_label_spot(vx0, vy0, vw, vh, bw, bh)
         if spot:
             x, y = spot
         elif self.view:  # map too full - fall back to the top-left corner
             x, y = vx0 + 30, vy0 + 16
         else:
-            x, y = self.W / 2 - tw / 2, 22
-        self.M["title"] = {"name": name, "bbox": [round(x, 1), round(y, 1), round(x + tw, 1), round(y + th, 1)]}
+            x, y = self.W / 2 - bw / 2, 22
+        self.M["title"] = {"name": name, "bbox": [round(x, 1), round(y, 1), round(x + bw, 1), round(y + bh, 1)]}
         self.add_label(f'<text x="{x:.0f}" y="{y + fs:.0f}" font-size="{fs}" font-weight="bold" fill="#2D2A24">{name}</text>')
+        bx0, bx1, by = x, x + bar_px, y + th + 12  # bar left-aligned under the title
+        self.M["scalebar"] = {"ft": bar_ft, "ftpx": self.ftpx, "bbox": [round(bx0, 1), round(by - 5, 1), round(bx1, 1), round(y + bh, 1)]}
+        self.add_label(
+            f'<g stroke="#3A2E1C" stroke-width="2">'
+            f'<line x1="{bx0:.0f}" y1="{by:.0f}" x2="{bx1:.0f}" y2="{by:.0f}"/>'
+            f'<line x1="{bx0:.0f}" y1="{by - 5:.0f}" x2="{bx0:.0f}" y2="{by + 5:.0f}"/>'
+            f'<line x1="{bx1:.0f}" y1="{by - 5:.0f}" x2="{bx1:.0f}" y2="{by + 5:.0f}"/>'
+            f'<line x1="{(bx0 + bx1) / 2:.0f}" y1="{by - 3:.0f}" x2="{(bx0 + bx1) / 2:.0f}" y2="{by + 3:.0f}" stroke-width="1"/>'
+            f'</g>'
+        )
+        self.add_label(f'<text x="{(bx0 + bx1) / 2:.0f}" y="{by + 17:.0f}" text-anchor="middle" font-size="12" fill="#3A2E1C">{bar_ft} ft</text>')
+        self.add_label(f'<text x="{(bx0 + bx1) / 2:.0f}" y="{by + 31:.0f}" text-anchor="middle" font-size="10" font-style="italic" fill="#5C4830">(1 px = {self.ftpx:g} ft)</text>')
 
     def _title_obstacles(self) -> tuple[list[Any], list[Any], list[Any]]:
         """Feature footprints a title must clear, as (rects, polys, lines). Solid buildings/plots -> rects;

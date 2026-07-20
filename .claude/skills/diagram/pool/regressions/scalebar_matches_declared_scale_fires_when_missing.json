@@ -1,0 +1,21 @@
+{
+ "meta": {
+  "scale": "village",
+  "ftpx": 2
+ },
+ "title": {
+  "name": "V",
+  "bbox": [
+   800,
+   50,
+   900,
+   90
+  ]
+ },
+ "_regression": {
+  "fires": [
+   "scalebar_matches_declared_scale"
+  ],
+  "source": "test_checks.py::test_scalebar_matches_declared_scale_fires_when_missing"
+ }
+}

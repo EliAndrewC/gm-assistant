@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "merchant_estates": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 62.0,
+   "h": 46.0,
+   "gate": [
+    500,
+    523.0
+   ],
+   "gate_dir": "south"
+  }
+ ],
+ "docks": [
+  {
+   "x": 540,
+   "y": 490,
+   "w": 54,
+   "h": 34,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "merchant_estate_wall_clear_of_water"
+  ],
+  "source": "test_checks.py::test_merchant_estate_wall_fires_on_a_dock_overlap"
+ }
+}

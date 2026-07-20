@@ -2828,6 +2828,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not thit,
             f"the map title sits on {thit[:2]} - it must go over BLANK space so the place name is readable (the generator's s.title() searches for a clear box; call it AFTER crop_to_content)",
         )
+        # every settlement map shows a SCALE BAR (GM 2026-07-20, matching the Mode A compound sheets),
+        # and the bar's declared distance must agree with the map's declared ft/px - the bar is 100
+        # map-px, so ft = 100 x ftpx (100 hamlet/town, 200 village, 300 city). s.title() draws it, so
+        # a manifest with a title but no scalebar means the generator predates the bar - regenerate.
+        sb = M.get("scalebar")
+        ftpx = M.get("meta", {}).get("ftpx", 1.0)
+        check(
+            "scalebar_matches_declared_scale",
+            sb is not None and sb["ft"] == round(100 * ftpx),
+            f"scalebar {sb} disagrees with (or is missing for) the declared scale of {ftpx} ft/px - the 100 map-px bar must read {round(100 * ftpx)} ft",
+        )
 
     # A LABEL must not sit on a building/structure it does NOT name (town + city scale, where features
     # carry distinct identities). A label may overlap the feature(s) it names - its own building/compound,
