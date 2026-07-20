@@ -13,9 +13,20 @@
 <header class="app-nav">
   <div class="container app-nav__inner">
     <a class="app-nav__brand" href="/">L7R <em>Toolkit</em></a>
+    {# Hamburger toggle - hidden on wide viewports, shown when the nav
+       collapses. JS in l7r.js flips aria-expanded and .app-nav--open. #}
+    <button class="app-nav__toggle" type="button"
+            aria-expanded="false" aria-controls="app-nav-menu" aria-label="Menu">
+      <span class="app-nav__toggle-bar"></span>
+      <span class="app-nav__toggle-bar"></span>
+      <span class="app-nav__toggle-bar"></span>
+    </button>
     {# Section nav renders for everyone. Login-gated sections (chargen)
        redirect to /auth/login on click, which is more discoverable than
-       hiding them - anonymous visitors can see what the toolkit offers. #}
+       hiding them - anonymous visitors can see what the toolkit offers.
+       The wrapper is display:contents on wide viewports (layout unchanged)
+       and becomes the collapsible dropdown panel on narrow ones. #}
+    <div class="app-nav__menu" id="app-nav-menu">
     <nav>
       <ul class="app-nav__sections">
         {% for section in SECTIONS %}
@@ -47,6 +58,7 @@
         <a class="app-nav__user-signin" href="/auth/login">sign in</a>
       </div>
     {% endif %}
+    </div>
   </div>
 </header>
 

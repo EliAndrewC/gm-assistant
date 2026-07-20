@@ -5447,3 +5447,34 @@ def test_compound_gates_to_scale_fires_on_gate_fraction_and_wall_thickness():
     # a good gate in a 15 ft rampart-thick wall - a residence wall is ~2 ft, not fortress masonry
     thick = {"x": 500, "y": 500, "w": 90, "h": 60, "rot": 0, "label": "", "gate_dir": "south", "gate": [500, 530], "gate_w": 4.0, "wall_w": 5.0}
     assert "compound_gates_to_scale" in f(_scaled_city(manors=[thick]))
+
+
+def test_village_cluster_compact_fires_on_a_hollow_cluster():
+    """A nucleated village whose houses ring a big HOLLOW hull (an over-wide cluster stranding houses far
+    from the fields) must fire; the same houses packed into a compact blob must not. The teeth: it measures
+    built COVERAGE of the house convex hull, which `cluster_abuts_fields` (a per-house span allowance) misses.
+    Village scale + >=12 houses only."""
+    import math
+
+    base = {
+        "meta": {"scale": "village", "nucleated": True},
+        "fields": [{"name": "p", "kind": "paddy", "outline": [[0, 400], [800, 400], [800, 900], [0, 900]], "bbox": [0, 400, 800, 900]}],
+    }
+    ring = [{"x": 400 + 300 * math.cos(t), "y": 200 + 300 * math.sin(t), "w": 24, "h": 18, "rot": 0, "kind": "plain"} for t in [i * 2 * math.pi / 16 for i in range(16)]]
+    assert "village_cluster_compact" in f({**base, "houses": ring})
+    grid = [{"x": 360 + 26 * (i % 4), "y": 160 + 26 * (i // 4), "w": 24, "h": 18, "rot": 0, "kind": "plain"} for i in range(16)]
+    assert "village_cluster_compact" not in f({**base, "houses": grid})
+    # a HAMLET (or a small cluster) is legitimately loose - the check is village-scale + >=12 houses only
+    assert "village_cluster_compact" not in f({**base, "meta": {"scale": "hamlet", "nucleated": True}, "houses": ring})
+    assert "village_cluster_compact" not in f({**base, "houses": ring[:8]})
+
+
+def test_convex_hull_degenerate_point_clouds():
+    """The hull helper returns <3 unique points as-is (a degenerate, zero-area hull) - the guard the pool
+    maps never reach (the compactness check needs >=12 houses) but that must not crash on a stray call."""
+    import check_village as cv
+
+    assert cv.convex_hull([]) == []
+    assert cv.convex_hull([(1.0, 2.0)]) == [(1.0, 2.0)]
+    assert cv.convex_hull([(1.0, 2.0), (3.0, 4.0), (1.0, 2.0)]) == [(1.0, 2.0), (3.0, 4.0)]  # 2 unique
+    assert cv.poly_area(cv.convex_hull([(0.0, 0.0), (1.0, 1.0)])) == 0.0

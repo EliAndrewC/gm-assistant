@@ -111,6 +111,13 @@ beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>'
                 for x, y in net["bund_beans"])
 s.add(f'<g opacity="0.85">{beads}</g>')
 
+# RESERVE the swept ground of the deferred SE precinct BEFORE the scatter below, or the scrub/marsh cover
+# the shrine + torii + graveyard (which are drawn post-crop). Same footprints as the s.shrine_hall / s.cemetery
+# calls at the foot of this gen - keep the two in sync.
+s.reserve_clearing(392, 1074, 30, 24, 58)    # the shrine hall
+s.reserve_clearing(392, 1114, 38, 28, 30)    # its torii
+s.reserve_clearing(178, 1030, 48, 34, 30)    # the village graveyard
+
 # REED MARSH on the low, downstream SE toe of the valley: below the paddy's drainage line the wet-rice
 # cultivation stops, and the un-reclaimed valley floor stays reed WETLAND (wet rice is diked OUT of marsh -
 # where reclamation ends, or the ground is too low/wet to manage, it reverts to marsh, NOT dry plain). A

@@ -71,10 +71,13 @@ STEERING = """[STEERING]"""
 body = op.get_character_body(ID) or {}
 html = op.fetch_character_page(URL) if URL else None
 tagline = opsynth.parse_tagline(html) if html else ""
-# Infer caste from the hand-written notes only (text before the first "--- "
-# section): synthesized/added sections may mention monks, peasants, etc. and
-# would poison the inference (caught live on a magistrate whose salt-ward note
-# mentioned a shrine monk, 2026-07).
+# Infer caste from the text before the first "--- " section. This used to
+# shield the inference from the synthesized-backstory block (a magistrate whose
+# backstory mentioned a shrine monk was mis-inferred, 2026-07), but backstories
+# are now merged as unmarked prose (GM decision 2026-07-20), so the shield only
+# catches other "--- "-headed sections. Sanity-check the inferred caste against
+# the tags and the notes you read in Step 2; override it if the prose has
+# clearly poisoned it.
 caste = opsynth.infer_caste(body.get("tags") or [], (body.get("game_master_info") or "").split("--- ")[0])
 char = opsynth.build_synthesis_character(body, tagline)
 snapshot, recent, n = opcache.get_campaign_context(exclude_name=body.get("name") or NAME)
@@ -137,8 +140,15 @@ engine's tested instructions - keep honoring them):
   both true at once, and commit.
 - Commit to concrete, plausible specifics - a belief, habit, grudge, fear,
   relationship, or episode - never hedge or stay abstract.
-- Prefer setting-grounded times (a named festival, month, or season) over "a
-  few years ago" where it fits naturally.
+- Prefer setting-grounded times over "a few years ago" where it fits
+  naturally - and the best anchor is a significant DAY, not a bare month: a
+  named festival or calendar observance ("a few days after the Haru Higan
+  festival", "on Nyuubai"), falling back to a month or season only when no
+  observance fits. Pick the day from l7r.md - grep `### The Festival Calendar`
+  and `### The Twelve Months`. Whenever you name a month, gloss its place in
+  the season in parentheses: "the Month of the Goat (the 2nd month of summer)".
+  The year starts on the 1st day of spring, so months 1-3 are spring, 4-6
+  summer, 7-9 autumn, 10-12 winter.
 - Grounded and mundane by default: the supernatural is real but rare and
   ambiguous; no magic, curses, or literal supernatural events unless the
   character's own details clearly point that way - and keep it uncertain even then.
@@ -224,8 +234,16 @@ print("Uploaded to", h["name"], "- backstory merged into GM-only notes.")
 PY
 ```
 
-`merge_backstory` preserves every existing note and replaces only its own
-`--- Synthesized Backstory (auto) ---` block, so re-running never duplicates or
-clobbers. Report exactly what was written and where. If `update_character`
-raises, tell the GM the save did not complete and their existing notes are
-unchanged.
+`merge_backstory` appends the prose to the existing GM-only notes as bare,
+unmarked prose - no header/footer (GM decision 2026-07-20). It never clobbers
+existing notes, but it also cannot recognize an earlier synthesized backstory:
+**re-running on a character that already has one appends a second copy.** You
+read the GM-only notes in Step 2 - if they already contain what reads as a
+previously synthesized backstory, say so when presenting the draft and, if the
+GM proceeds, offer to replace the old prose instead of appending (delete it
+from the merged text with a small Python edit before `update_character`).
+Legacy records still carrying the old `--- Synthesized Backstory (auto) ---`
+sentinels are handled automatically: the block is replaced in place and the
+markers dropped. Report exactly what was written and where. If
+`update_character` raises, tell the GM the save did not complete and their
+existing notes are unchanged.

@@ -475,6 +475,14 @@ class Settlement:
         self.field_polys: list[Any] = []  # smoothed outlines used for blocking
         self.ellipses: list[Any] = []  # (cx, cy, rx, ry) hill/pond/manor - block houses
         self.block_polys: list[Any] = []  # arbitrary no-build polygons (e.g. forest)
+        # SWEPT/TENDED GROUND around sacred + funerary features - a keep-out for the LOOSE HINTERLAND
+        # SCATTER (commons scrub + marsh reeds) ONLY, not for building placement and not for the grove.
+        # A shrine precinct, the ground under a torii and along its sando, and the collar tended around
+        # graves were kept clear of wild scrub in reality (raked gravel precinct; the tomb-swept grave
+        # collar); the surrounding waste stays scrubby. So this clears a small verge around each, while a
+        # shrine's deliberate fengshui/chinju-no-mori grove (a separate feature) is left untouched. See
+        # settlements.md 'Swept ground around sacred + funerary features'.
+        self.clearings: list[Any] = []
         self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
@@ -2200,6 +2208,7 @@ class Settlement:
                     f'<line x1="11" y1="-7" x2="11" y2="16" stroke="#A03020" stroke-width="2.8"/></g>'
                 )
                 self.M["torii"].append([round(tx, 1), round(ty, 1), tz])
+                self._clear_ground(tx, ty + 4, 38, 28, 30)  # a swept collar under the arch + its sando approach
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="{h}" rx="3" fill="#C9876C" stroke="{edge}" stroke-width="2"/>')
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="9" fill="#A03020"/>')
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y + h / 2 - 9:.0f}" width="{w}" height="9" fill="#A03020"/>')
@@ -2210,6 +2219,7 @@ class Settlement:
             self.M["shrine"] = [x - w / 2, y - h / 2, w, h]
         bm = 34 * self.bscale  # block a RECT + a building-half margin, at the map's grain (an ellipse undershot the hall corners)
         self.block_polys.append([(x - w / 2 - bm, y - h / 2 - bm), (x + w / 2 + bm, y - h / 2 - bm), (x + w / 2 + bm, y + h / 2 + bm), (x - w / 2 - bm, y + h / 2 + bm)])
+        self._clear_ground(x, y, w, h, 58)  # the swept shrine precinct - scrub kept off the tended keidai (the grove, if any, is separate)
         if label:
             self.label(x, y + h / 2 + 22 if label_below else y - h / 2 - 10, label, 13, weight="bold", color=edge)
         if sublabel:
@@ -3326,6 +3336,7 @@ class Settlement:
                 or any(
                     point_in_poly(px, py, b) for b in self.block_polys
                 )  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
+                or any(point_in_poly(px, py, c) for c in self.clearings)  # ... and off the swept sacred/funerary verge (tended precinct, sando, grave collar)
                 or any(point_in_poly(px, py, a) for a in avoid)
             ):  # ... and OUT of any keep-out (the hamlet cluster stays clear of cover)
                 return True
@@ -3416,6 +3427,7 @@ class Settlement:
                 or self._on_lane(px, py, 3 * bs)  # a causeway/path through the marsh stays bare, not reeded over
                 or self._on_watercourse(px, py)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
                 or any(point_in_poly(px, py, b) for b in self.block_polys)  # ... and OFF any building/shrine/torii footprint
+                or any(point_in_poly(px, py, c) for c in self.clearings)  # ... and off the swept sacred/funerary verge
                 or any(point_in_poly(px, py, a) for a in avoid)
             ):  # ... and OUT of any keep-out
                 return True
@@ -3598,6 +3610,22 @@ class Settlement:
         for d in (11 * self.bscale, 21 * self.bscale, 32 * self.bscale):
             yield from ((0, d), (d, 0), (-d, 0), (0, -d), (d, d), (-d, d), (d, -d), (-d, -d))
 
+    def _clear_ground(self, x: float, y: float, w: float, h: float, extra: float) -> None:
+        """Reserve a swept verge around a sacred/funerary feature: the w x h footprint grown by `extra`,
+        added to `self.clearings` so the loose hinterland scatter (commons scrub, marsh reeds) skips it.
+        Scaled by the map grain (bscale), so the cleared collar reads at the same real size on any scale."""
+        e = extra * self.bscale
+        self.clearings.append([(x - w / 2 - e, y - h / 2 - e), (x + w / 2 + e, y - h / 2 - e), (x + w / 2 + e, y + h / 2 + e), (x - w / 2 - e, y + h / 2 + e)])
+
+    def reserve_clearing(self, x: float, y: float, w: float, h: float, extra: float = 46) -> None:
+        """Pre-register a swept-ground clearing for a sacred/funerary feature a gen draws LATER (e.g. a
+        precinct dropped in after crop_to_content, or placed after the hinterland scatter). The scrub/marsh
+        scatter only skips clearings that already exist when it runs, so a late precinct must reserve its
+        ground FIRST or the scrub covers it. The later shrine_hall/cemetery registers its own clearing too;
+        the overlap is harmless. Pass roughly the footprint you will draw (a slightly generous `extra` is
+        fine - over-clearing by a few px reads the same)."""
+        self._clear_ground(x, y, w, h, extra)
+
     def cemetery(self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool = False) -> None:
         """A BURIAL GROUND - rows of grave markers (sotoba / stone stelae) with a couple of taller
         memorial stupas. Every settlement above a hamlet buries its dead: a Buddhist danka PARISH
@@ -3643,6 +3671,7 @@ class Settlement:
         self.placed.append((cx, cy, w, h))
         bm = 8
         self.block_polys.append([(cx - w / 2 - bm, cy - h / 2 - bm), (cx + w / 2 + bm, cy - h / 2 - bm), (cx + w / 2 + bm, cy + h / 2 + bm), (cx - w / 2 - bm, cy + h / 2 + bm)])
+        self._clear_ground(cx, cy, w, h, 30)  # the tended grave collar - scrub trimmed back off the markers (the waste around it stays scrubby)
         if label:
             ly = cy - h / 2 - 8 if label_above else cy + h / 2 + 14
             self.label(cx, ly, label, 11, italic=True, color="#6B5A3C")
@@ -4991,11 +5020,17 @@ class Settlement:
                 out.append((cx + math.cos(a) * r * ex, cy + math.sin(a) * r * ey))
             elif shape == "elongated":  # narrow across the margin, long along it
                 out.append((cx + math.cos(a) * r * ex * 0.55, cy + math.sin(a) * r * ey * 1.4))
-            elif shape == "crescent":  # a shallow arc: lateral position t, curved back, jittered in depth
+            elif shape == "crescent":  # a curved band, concave toward the field, NARROW across the margin.
+                # The old form spread wide (x1.15 lateral) with the horns curved hard back, so the placer -
+                # which pulls every house to hug the paddy and packs ALONG it - strung them into a wide, hollow
+                # arc that stranded the horns far from the crops (Kikuta: 55 houses over a hull filled ~20%, NE
+                # horn ~400px from any field; see village_cluster_compact / settlements.md 'Cluster compactness').
+                # WIDTH is what the placer amplifies, so keep the lateral reach narrow (a nucleated village is a
+                # deep blob, not a wide ribbon) and let the depth carry the frontage, with a gentle concave bow.
                 t = rng.uniform(-1.0, 1.0)
                 depth = rng.random() ** 0.5
-                bx = cx + t * ex * 1.15 + math.cos(a) * ex * 0.22 * depth
-                by = cy + (t * t - 0.5) * ey * 0.75 + math.sin(a) * ey * 0.28 * depth
+                bx = cx + t * ex * 0.5 + math.cos(a) * ex * 0.22 * depth
+                by = cy + (t * t - 0.5) * ey * 0.5 + math.sin(a) * ey * 0.95 * depth
                 out.append((bx, by))
             else:  # split: two sub-disks on the flanks
                 side = -1.0 if rng.random() < 0.5 else 1.0
@@ -5154,6 +5189,7 @@ class Settlement:
         offtakes_b: Sequence[float] = (0.45, 0.8),
         civic_shrine: bool = True,
         frame: bool = True,
+        lay_hinterland: bool = True,
     ) -> dict[str, Any]:
         """ROLL a whole gate-passing settlement from the seed (feature 005 US2, SC-004: zero hand-placed
         coordinates). Every unpinned knob is rolled from `self.seed` (pinned ones honored); the rolled values
@@ -5305,7 +5341,12 @@ class Settlement:
         self.bridges()  # carry the lanes over any water they cross
         if self.M.get("field_ditches"):  # planks over the long irrigation ditches
             self.channel_footbridges(spacing=300)
-        self.hinterland()
+        # `lay_hinterland=False`: a caller that supplies its OWN sacred precinct AFTER roll_village (the
+        # civic_shrine=False path) must defer the scrub/marsh scatter until its shrine/torii/graveyard have
+        # registered their swept-ground clearings, or the scrub scatters over ground that should read tended.
+        # Such a caller calls `s.hinterland()` itself, after placing the precinct.
+        if lay_hinterland:
+            self.hinterland()
         if frame:  # a caller adding its OWN civic features (a sacred precinct) crops+titles itself, AFTER them
             self.crop_to_content(margin=40)
             self.title(name)
