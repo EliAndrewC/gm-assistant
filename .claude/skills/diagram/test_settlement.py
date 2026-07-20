@@ -2289,3 +2289,72 @@ def test_main_tree_guard_blocks_main_allows_clones_and_gm_override(monkeypatch):
     # the GM's deliberate override opens main
     monkeypatch.setenv("GM_ASSISTANT_ALLOW_MAIN", "1")
     settlement._assert_not_main_tree("/gm-assistant/.claude/skills/diagram/settlement.py")
+
+
+def test_draw_comb_field_existing_stream_and_cascade_sources():
+    # source={"kind":"stream"} WITHOUT a polyline = an existing on-map stream already runs at the
+    # sluice (the town pattern: a comb tapping the map's stream via a weir) - nothing extra is
+    # drawn, but the hairline topology channel is still recorded. source={"kind":"cascade"} skips
+    # the hairline too: the caller records its own connector channel (the field-to-field cascade,
+    # e.g. Hirameki's e1 -> e2), whose to={"kind":"field"} anchor replaces it.
+    from waterfields import build_comb
+
+    s = Settlement(W=1400, H=1400, seed=5)
+    s.meta(name="Cs", scale="town", ftpx=1, down_deg=90)
+    net = build_comb(1400, 1400, (700, 200), 5, down_deg=90, field_fall=400)
+    net["brook"] = []
+    n_streams = len(s.M["streams"])
+    s.draw_comb_field(net, "f1", {"kind": "stream"})  # no polyline -> no stream drawn
+    assert len(s.M["streams"]) == n_streams
+    assert s.M["channels"][-1]["to"] == {"kind": "field", "name": "f1"}  # hairline still recorded
+    n_chan = len(s.M["channels"])
+    net2 = build_comb(1400, 1400, (700, 200), 6, down_deg=90, field_fall=400)
+    net2["brook"] = []
+    s.draw_comb_field(net2, "f2", {"kind": "cascade"})  # cascade: the caller wires the source
+    assert len(s.M["channels"]) == n_chan  # no hairline appended
+
+
+def test_yard_fits_rejects_dry_crop_plots():
+    # the threshing yard is footprint-checked against dry_polys exactly like the house in _fits:
+    # a hem strip is cropland, and a yard straddling it (center off, footprint on) must be
+    # rejected (the Tango-hems class of defect, extended to yards via the town comb conversion)
+    s = Settlement(W=1000, H=1000, seed=1)
+    s.meta(name="Yd", scale="town", ftpx=1)
+    assert s._yard_fits(500, 500, 40, 26, 460, 460)  # open ground: fits
+    s.dry_polys.append([(490, 480), (620, 480), (620, 560), (490, 560)])
+    assert not s._yard_fits(500, 500, 40, 26, 460, 460)  # same spot now overlaps the hem plot
+
+
+def test_grove_fits_rejects_wall_overlap():
+    # a belt arm is footprint-checked against the town wall: the corridor test is center-only,
+    # so a wide arm centered clear of the rampart could still lap the stroke (Hirameki, 2026-07)
+    s = Settlement(W=1000, H=1000, seed=1)
+    s.meta(name="Gw", scale="town", ftpx=1)
+    assert s._grove_fits(500, 500, 90, 40, [(470, 470)])  # no wall: fits
+    s.M["wall"] = [(540, 300), (540, 700)]
+    assert not s._grove_fits(500, 500, 90, 40, [(470, 470)])  # east corner laps the wall stroke
+
+
+def test_paddy_field_polygon_shape_records_the_field():
+    # the legacy paddy_field's POLYGON branch: kept exercised here now that no pool map draws a
+    # legacy quilt anymore (the towns moved to build_comb; only ad-hoc callers use this path)
+    s = Settlement(W=1200, H=1200, seed=3)
+    s.meta(name="Pf", scale="town", ftpx=1)
+    s.paddy_field([(200, 200), (500, 220), (520, 500), (240, 520)], "", "poly-paddy", amp=14, plot=58)
+    f = [f for f in s.M["fields"] if f["name"] == "poly-paddy"]
+    assert f and len(f[0]["outline"]) >= 4
+
+
+def test_merchant_residences_stop_at_the_requested_count():
+    # the placed >= count early-break: with more storefronts than requested homes, the loop
+    # must stop at the cap (previously covered by the towns' legacy gens)
+    s = Settlement(W=1600, H=1600, seed=4)
+    s.meta(name="Mr", scale="town", ftpx=1)
+    rd = [(300, 1100), (1300, 1100)]
+    s.road(rd, label="post road")  # merchant_residences derives its band from the ROAD, not a street
+    s.frontage(rd, ["shop"] * 8, width=24, spacing=64, skip=rd)
+    n0 = sum(1 for b in s.M["buildings"] if b["kind"] == "merchant_large")
+    s.merchant_residences(0)  # count already satisfied -> the cap break fires on the first storefront
+    assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant_large") == n0
+    s.merchant_residences(1)
+    assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant_large") <= n0 + 1

@@ -9,61 +9,179 @@ a rural farm zone NW around a stream, a dense urban core of merchant/laborer/ser
 buildings along the Imperial Road, the Magistrate's walled manor + samurai houses SW,
 the segregated burakumin neighborhood NE, a theater stage by the monastery, barns ringed by hayfield/grazing
 pasture SE, and a small forest. Unwalled.
+
+WATER (the water-first comb doctrine, settlements.md "Water-first fields v2"): the
+stream is the valley watercourse, crossing the map NE -> SW roughly parallel to the
+Imperial Road; the land falls with it (downhill/down_deg = 115, SSW - high NE corner,
+low SW corner). The farm zone is a single build_comb fan WEDGED between the stream
+(NW) and the road (SE): its sluice sits ON the stream bank (a weir diverts the water
+straight into the head-race), the head-race forks into supply canals, tapering
+delivery ditches drop down-slope, and the drain
+collector empties into a small drainage tameike at the low road-bend corner
+(pond_role="drainage", the akagahara pattern). The NE pocket is the west TIP of a
+second comb running off the east edge - fed by a brook off the high ground NE,
+draining off-map east. This replaced the retired legacy paddy_field quilts (45-deg
+multicolor patchwork with no in-field water), which this map originally used.
+
+COMB GRAIN (historical grounding - recorded so the numbers aren't re-derived): at the
+town scale (1 px = 1 ft) plot_across=58 with row_step=(52,72) carves ~58 x 62 ft
+bunded paddies, ~0.08 acre - the mid premodern range, and the scale-audit
+relationship still holds (one plot visibly outsizes the 46x28 ft farmhouses beside
+it). The old quilt figure of 66 px (~0.1 acre) is NOT reused: build_comb spaces
+delivery ditches at 2x plot_across, and that 132 px floor skips every offtake on the
+short canals a town-scale comb runs - the comb degenerates to a ditchless sliver.
+58 keeps the plot in the historical band AND lets the delivery net develop.
 """
+
 import math
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from settlement import Settlement  # noqa: E402
+from waterfields import build_comb  # noqa: E402
 
 s = Settlement(2000, 1300, seed=386)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.
-s.meta(name="Hoshizora", scale="town", walled=False, torii_expected=1, monastery_fortunes=["Bishamon"], population=600, ftpx=1)   # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county. ftpx=1: the GM's town scale, 1px=1ft
+# downhill=[-0.42, 0.91] / down_deg=115: the land falls SSW, obliquely along the stream and
+# the Imperial Road (both descend toward the low SW corner); every channel + drain runs with it.
+s.meta(
+    name="Hoshizora", scale="town", walled=False, torii_expected=1, monastery_fortunes=["Bishamon"], population=550, ftpx=1, downhill=[-0.42, 0.91], down_deg=115, pond_role="drainage"
+)  # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county (was 600 under the old quilt fields; the to-scale comb wedge holds ~110 dwellings). ftpx=1: the GM's town scale, 1px=1ft
 
 # ---- terrain: a small forest (SE corner) and two grazing pastures, all running OFF
 # the map edge (larger than drawn)
 s.forest_patch([(1660, 950), (1860, 915), (2060, 1000), (2060, 1360), (1720, 1360), (1620, 1120)])
 # southern hayfield - expanded up toward the barns, off the bottom edge
-s.pasture([(900, 1010), (1180, 1000), (1290, 900), (1540, 900), (1600, 1110), (1490, 1360), (910, 1360), (860, 1190)],
-          label="hayfields & grazing", amp=32, label_xy=(1090, 1190))
-# northern hayfield - in the empty top of the map, off the top edge, with hay barns
-s.pasture((1060, -50, 1660, 240), label="hayfields", label_xy=(1300, 150))
-for (bx, by) in [(1180, 140), (1420, 110), (1560, 185)]:
+s.pasture([(900, 1010), (1180, 1000), (1290, 900), (1540, 900), (1600, 1110), (1490, 1360), (910, 1360), (860, 1190)], label="hayfields & grazing", amp=32, label_xy=(1090, 1190))
+# northern hayfield - the whole upland strip along the top edge, extended WEST over the high
+# dry ground NW of the stream (hay country above the weir), off the top edge, with hay barns
+s.pasture([(250, -50), (1660, -50), (1660, 240), (1060, 240), (700, 160), (250, 140)], label="hayfields", label_xy=(1300, 150))
+for bx, by in [(1180, 140), (1420, 110), (1560, 185)]:
     s.building(bx, by, 84, 56, "barn")
 
 # ---- the Imperial Road (SW -> NE spine), running off both edges
 ROAD = [(-162, 1306), (140, 1130), (620, 850), (1100, 580), (1560, 350), (1900, 170), (2209, 6)]
 s.road(ROAD, label="Imperial Road")
 
-# ---- water: a stream running PARALLEL to the road, BETWEEN the fields (nw1/nw3
-# northwest, nw2/nw4 southeast), off the left and top edges - never through a field.
-# Irrigation channels tap it to feed the fields.
-# FOUR fields, TO SCALE at 1px=1ft (the scale-ladder pass; they were 4-8x under area
-# before): the two biggest RUN OFF the top / west edges - a town map shows only a
-# SLICE of the county's farmland, so the drawn patches must read as parts of larger
-# expanses continuing off-map, not self-contained garden plots. plot=66 puts one
-# bunded paddy at ~0.1 acre (mid premodern range) so a single plot visibly outsizes
-# the 46x28 ft farmhouses beside it - the relationship the scale audit checked.
-F1 = (290, -50, 560, 220)                                  # runs OFF the top edge
-F2 = (480, 405, 780, 610)
-F4 = (370, 630, 645, 780)
-F3P = [(-150, 85), (230, 85), (400, 330), (60, 510), (-150, 510)]   # hugs the stream, runs OFF the west edge
-F6 = (1740, 720, 2060, 860)                                # a second farm pocket NE, runs OFF the east edge
+# ---- WATER + FARMLAND: water-first combs (see docstring). The stream runs NE -> SW between
+# the hay upland (NW) and the farm wedge (SE), roughly parallel to the road, off the west edge.
 s.stream([(-15, 640), (230, 500), (470, 360), (700, 210), (880, -15)])
-s.channel((250, -10), (350, 60), {"kind": "offmap"}, {"kind": "field", "name": "nw1"})
-s.channel((340, 130), (200, 150), {"kind": "field", "name": "nw1"}, {"kind": "field", "name": "nw3"})   # anchored DEEP in both fields: the organic outline wobble (amp 22/14) must never strand an endpoint
-s.channel((520, 200), (580, 450), {"kind": "field", "name": "nw1"}, {"kind": "field", "name": "nw2"})
-s.channel((600, 540), (560, 690), {"kind": "field", "name": "nw2"}, {"kind": "field", "name": "nw4"})
-for bb, nm, fa in [(F1, "nw1", 22), (F2, "nw2", 24), (F3P, "nw3", 14), (F4, "nw4", 24), (F6, "ne1", 20)]:
-    s.paddy_field(bb, "", nm, amp=fa, plot=66)
+
+
+def topo_channel(pts, frm, to, draw_w=0.0):
+    """Record a water-topology channel through `pts` (source/sink grounding + the winds/hairline
+    conventions) and register its no-build corridor so the farmstead rings avoid it. A bend is
+    added on the longest segment when the path runs too straight (channel_winds_gently wants a
+    dug channel to wind 5-50px). Pass draw_w to also draw it (a visible culvert/runoff ditch);
+    zero = topology only. Same helper as the provincial-city gens."""
+    ax, ay = pts[0]
+    bx, by = pts[-1]
+    chord = math.hypot(bx - ax, by - ay) or 1.0
+    dev = max(abs((py - ay) * (bx - ax) - (px - ax) * (by - ay)) / chord for px, py in pts[1:-1]) if len(pts) > 2 else 0.0
+    if dev < 6:
+        k = max(range(len(pts) - 1), key=lambda i: math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]))
+        mx, my = (pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2
+        pts = list(pts[: k + 1]) + [(mx - 12 * (by - ay) / chord, my + 12 * (bx - ax) / chord)] + list(pts[k + 1 :])
+    poly = [[round(px, 1), round(py, 1)] for px, py in pts]
+    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5})
+    s.corridors.append(([(px, py) for px, py in poly], 45))  # 45 half-width: a 44x28 farmhouse corner stays off the water even center-placed at the corridor edge
+    if draw_w:
+        s.field_channel([(px, py) for px, py in poly], '#7C9EB0', draw_w, draw_w)
+
+
+# THE MAIN COMB ("hoshizora-west"): the wedge between stream and road. Its SLUICE sits on the
+# stream's east bank (a weir on the stream, ~25px off the centerline - within the 30px anchor
+# band, so the engine's hairline source channel grounds to the stream; a detached leat is NOT
+# an option, since every drawn stream must run off a map edge). Seed 1 lands the fan clear of
+# the stream (NW), the road (SE), the monastery/funerary block (SW) and the laborers' quarter
+# (NE) - the acceptance sweep that chose it tested all four clearances. (A denser-offtake
+# variant was tried and reverted: its bigger fan displaced the merchant residences and the
+# farm rings - the map is packed tightly enough that the comb's exact footprint is load-bearing.)
+netA = build_comb(
+    2000,
+    1300,
+    (558, 322),
+    1,
+    down_deg=115,
+    field_fall=250,
+    canal_a_len=(240, 280),
+    canal_b_len=(70, 100),
+    offtakes_a=(0.4, 0.8),
+    offtakes_b=(0.5,),
+    plot_across=58,
+    row_step=(52, 72),
+    dry_band=(22, 38),
+)
+netA["brook"] = []  # no auto-brook (it would shoot into the town); the runoff's real sink is the tameike
+ENV_A = s.draw_comb_field(netA, "hoshizora-west", {"kind": "stream"})  # no polyline: the map's stream IS the source
+# the WEIR: a short drawn connector from the stream bed to the sluice, so the diversion reads
+# visually (the hairline channel recorded by draw_comb_field already carries the topology -
+# this stub is drawing only, no manifest record)
+s.field_channel([(530, 313), (544, 317), (558, 322)], '#6C9CBE', 7, 7)
+s.field_polys.append([(x, y) for x, y in ENV_A])
+s.corridors.append(([(p[0], p[1]) for p in s.M["channels"][-1]["poly"]], 45))  # keep farmsteads off the hairline feed
+
+
+def grow_poly(poly, m=8):
+    # register hem plots INFLATED by ~8px: _fits tests the base house rect, but a drawn farmstead
+    # can exceed it (attached shed, rotation, wealth render scale), and the checks test the real
+    # footprint - the margin absorbs that slack so no farm building ever laps the hem crop
+    cx = sum(p[0] for p in poly) / len(poly)
+    cy = sum(p[1] for p in poly) / len(poly)
+    out = []
+    for x, y in poly:
+        dx, dy = x - cx, y - cy
+        ln = math.hypot(dx, dy) or 1.0
+        out.append((x + dx / ln * m, y + dy / ln * m))
+    return out
+
+
+for _dp in netA["dry_plots"]:
+    s.dry_polys.append(grow_poly(_dp["poly"]))  # footprint-aware: houses/yards/sheds stay OFF the hem crop
+# the DRAINAGE TAMEIKE at the low road-bend corner: the collector's outfall empties into it
+# (pond_role="drainage" - a reservoir BELOW the field). Sited in the low pocket between the
+# flophouse, the road bend, and the manor - the only low ground the town leaves open, which
+# is exactly where a real tameike sits.
+_drainA = [c for c in netA["channels"] if c["role"] == "drain"][0]["pts"]
+_outA = _drainA[-1]
+POND = (430, 895, 44, 26)
+s.pond(*POND)
+_pring = [(POND[0] + (POND[2] + 40) * math.cos(a), POND[1] + (POND[3] + 40) * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]
+s.marsh(_pring, role="pond_fringe")
+s.block_polys.append(
+    [
+        (POND[0] - POND[2] - 34, POND[1] - POND[3] - 34),
+        (POND[0] + POND[2] + 34, POND[1] - POND[3] - 34),
+        (POND[0] + POND[2] + 34, POND[1] + POND[3] + 34),
+        (POND[0] - POND[2] - 34, POND[1] + POND[3] + 34),
+    ]
+)  # wide pad: block_polys tests centers, so the pad must absorb a house half-footprint
+topo_channel([_outA, ((_outA[0] + POND[0]) / 2, (_outA[1] + POND[1]) / 2 + 14), (POND[0], POND[1])], {"kind": "drain"}, {"kind": "pond"}, draw_w=2.5)
+
+# THE NE POCKET COMB ("hoshizora-ne"): the west TIP of a larger field running off the east
+# edge (a town map shows a slice of the county's farmland). Fed by a brook off the high
+# ground NE (off-map); its drain collector discharges off-map east (the sink stub below
+# carries the topology, angled SSE so it still runs downhill).
+netE = build_comb(
+    2300, 1300, (2010, 570), 6, down_deg=115, field_fall=145, canal_a_len=(280, 320), canal_b_len=(55, 75), offtakes_a=(0.55, 0.95), offtakes_b=(), plot_across=58, row_step=(52, 72), dry_band=(18, 30)
+)
+netE["brook"] = []  # the drain already leaves the map east; no brook
+ENV_E = s.draw_comb_field(netE, "hoshizora-ne", {"kind": "stream", "stream": [(2012, 470), (2004, 522), (2010, 570)]})
+s.field_polys.append([(x, y) for x, y in ENV_E])
+s.corridors.append(([(p[0], p[1]) for p in s.M["channels"][-1]["poly"]], 45))
+for _dp in netE["dry_plots"]:
+    s.dry_polys.append(grow_poly(_dp["poly"]))
+_drainE = [c for c in netE["channels"] if c["role"] == "drain"][0]["pts"]
+_onmapE = [p for p in _drainE if p[0] < 1995][-1]
+# sink stub angled SSE (mostly along the fall) so channels_flow_downhill holds; ends off-map east
+topo_channel([_onmapE, (2010, _onmapE[1] + 95)], {"kind": "drain"}, {"kind": "offmap"})
 
 # ---- the Shrine to Bishamon, by the stream
 # a town's religious building is a monastery (not a village shrine), with a torii in front
-s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86,
-              kind="monastery", primary=True, torii=[(215, 892)], label_below=True)
+s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86, kind="monastery", primary=True, torii=[(215, 892)], label_below=True)
 
 # ---- the Magistrate's walled manor (county seat) - walls only; its interior
 # (hall, stables, etc.) is the subject of a separate Mode A diagram. TILTED (rot=-30) so its front
@@ -73,13 +191,14 @@ s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86,
 s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)
 
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
-# traveling in for market day arrive - they sleep on straw for a sen a night
-s.flophouse(345, 905)
+# traveling in for market day arrive - they sleep on straw for a sen a night. (Nudged west of
+# its old spot to clear the drainage tameike at the road bend.)
+s.flophouse(300, 920)
 
 # ---- the THEATER STAGE - a roofed performance stage + open viewing ground - in the Bishamon monastery's
 # precinct (just south of it), the festival/troupe venue belonging to the temple. A quiet county seat, so
 # a modest stage. The barns sit in the grazing pasture (SE).
-s.theater_stage(200, 990, w=120, h=84, rot=180, label="theater stage")   # rot=180: the monastery is NORTH, so the stage faces north (its viewing ground opens toward the hall, the audience between)
+s.theater_stage(200, 990, w=120, h=84, rot=180, label="theater stage")  # rot=180: the monastery is NORTH, so the stage faces north (its viewing ground opens toward the hall, the audience between)
 s.building(1080, 1110, 88, 58, "barn")
 s.building(1330, 1150, 84, 56, "barn")
 s.label(1200, 1058, "barns", 10, italic=True)
@@ -97,39 +216,103 @@ s.label(972, 586, "merchant houses & shops", 11, italic=True, color="#5A4326")
 # coords), so each home is behind the band and parallel to its shop under ANY seed; placed BEFORE the packs,
 # which then flow AROUND them. The ~3 MASTER (rich) laborers get larger dwellings at the edge of the warren.
 s.merchant_residences(4)
-for lx, ly in [(1328, 235), (740, 298)]:
+for lx, ly in [(1328, 235), (740, 298), (1445, 745)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
+# a fixed plain laborer dwelling at the warren's east edge - the packs saturate one short of
+# the budgets.md band, so this one is pinned (stable across the packs' RNG)
+s.building(1642, 662, *s._dims("laborer"), "laborer")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
-s.pack((700, 195, 1140, 390), ["laborer"] * 18, step=42)   # pulled NW, well clear of the diagonal road (behind the merchant-residence band, with a gap); ~29 laborers total (budgets.md), not over
-s.pack((1165, 705, 1580, 918), ["servant"] * 13 + ["laborer"] * 11, step=42)
+s.pack((680, 190, 1150, 395), ["laborer"] * 11, step=40)  # laborers at the budgets.md band floor (25 total with the SE pack + the 3 masters) so the depicted farmer cohort stays the plurality
+s.pack((1165, 700, 1600, 925), ["servant"] * 16 + ["laborer"] * 14, step=40)
 s.label(1010, 224, "laborers' dwellings (set back off the road)", 10, italic=True, color="#5A4326")
 
 # ---- the segregated burakumin neighborhood (NE edge). Set back a full 74+ ft behind the
 # road frontage: the aligned-behind-storefronts rule treats any dwelling 15-74 ft directly
 # behind a shop as row housing that must lie parallel, and this quarter is its own cluster,
-# not part of the shopfront rows
-s.pack((1720, 440, 1990, 660), ["burakumin"] * 12, step=44)
-s.label(1850, 420, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
+# not part of the shopfront rows. (Shifted up ~80px from its old spot so the NE pocket comb
+# below it has room for its head.)
+s.pack((1725, 395, 2005, 600), ["burakumin"] * 16, step=42)
+s.label(1855, 382, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 
 # ---- samurai houses, around the magistrate's manor (SW); their servants live within
 # the manor/samurai compounds, not as separate huts
-s.pack((620, 1010, 920, 1295), ["samurai"] * 7, step=58)
-s.label(770, 1268, "samurai houses", 11, italic=True)   # over the cluster - kept above the bottom image edge (canvas H=1300)
+s.pack((620, 1010, 920, 1295), ["samurai"] * 10, step=54)
+s.label(770, 1268, "samurai houses", 11, italic=True)  # over the cluster - kept above the bottom image edge (canvas H=1300)
 
 # a noticeable minority of merchant houses keep a fireproof kura (the absentee landlords'
 # rent-rice / bulk goods), drawn AFTER the businesses exist
 s.merchant_storehouses(6)
 
-# ---- farmhouses: the town's farmer majority (still the largest single group), packed several-deep
-# around the fields - generously, since each needs room for its threshing yard (some get dropped).
-# The west-edge field is a polygon: ring its recorded outline.
-F3_OUTLINE = next(f["outline"] for f in s.M["fields"] if f["name"] == "nw3")
-for bb in (F1, F2, ('poly', F3_OUTLINE), F4, F6):
-    s.ring(bb, 44, 14, ["plain"])
-    s.ring(bb, 38, 40, ["plain"])
-    s.ring(bb, 30, 66, ["plain"])
-    s.ring(bb, 24, 92, ["plain"])
-    s.ring(bb, 18, 118, ["plain"])
+# ---- farmhouses: the town's farmer majority (still the largest single group), ringed
+# several-deep around the comb envelopes - generously, since each needs room for its
+# threshing yard (some get dropped). Dense rings so the shown field edges read WORKED
+# (outside_fields_farmhouse_density wants ~village density along the on-map edge).
+for bb, rings in ((('poly', ENV_A), [(48, 14), (42, 40), (34, 66), (28, 92), (22, 118), (16, 144)]), (('poly', ENV_E), [(28, 14), (24, 40), (20, 66), (16, 92)])):
+    for n, gap in rings:
+        s.ring(bb, n, gap, ["plain"])
+
+
+# CULL THE WET TOE: the rings surround the whole envelope, but the ground DOWNSLOPE of each
+# drain collector is the wettest in the valley - not building ground (dwellings_above_field_drain;
+# the same rule the dispersed hamlets follow). Drop every ring house that landed below a drain.
+def cull_wet_toe(drain_pts, margin=-5):  # negative: safety band, _solve_homestead may nudge a farm ~20px after the cull
+    # operates on the PENDING farmstead reservations (ring/try_place queue them; farmsteads()
+    # only draws them later - M["houses"] is still empty here)
+    dux, duy = math.cos(math.radians(115)), math.sin(math.radians(115))
+    keep = []
+    for h in s._pending_farmsteads:
+        best = None
+        for i in range(len(drain_pts) - 1):
+            ax, ay = drain_pts[i]
+            bx, by = drain_pts[i + 1]
+            vx, vy = bx - ax, by - ay
+            ll = vx * vx + vy * vy or 1.0
+            tt = max(0.0, min(1.0, ((h["x"] - ax) * vx + (h["y"] - ay) * vy) / ll))
+            px, py = ax + vx * tt, ay + vy * tt
+            d = math.hypot(h["x"] - px, h["y"] - py)
+            at_end = (i == 0 and tt <= 0.001) or (i == len(drain_pts) - 2 and tt >= 0.999)
+            if best is None or d < best[0]:
+                best = (d, px, py, at_end)
+        _d, px, py, at_end = best
+        if not at_end and (h["x"] - px) * dux + (h["y"] - py) * duy > margin:
+            continue  # clearly on the wet (downslope) side of the collector - no farm here
+        keep.append(h)
+    s._pending_farmsteads[:] = keep
+
+
+cull_wet_toe(_drainA)
+cull_wet_toe(_drainE)
+
+# HAND-PLACED farmsteads on the dry margins the random rings under-serve: a row on the stream's
+# NW bank (farms working the west comb across footbridges - the dry high bank is exactly where
+# they build), and the west flank of the NE pocket (between the servants' quarter and the
+# forest). try_place runs the same homestead-fit solve as the rings, so a spot that cannot host
+# its yard+garden is simply dropped.
+for fx, fy in [
+    (405, 315),
+    (475, 282),
+    (545, 250),
+    (340, 355),
+    (585, 218),
+    (270, 400),
+    (700, 430),
+    (706, 500),
+    (712, 570),
+    (718, 640),
+    (438, 248),
+    (368, 290),
+    (300, 345),
+    (1590, 800),
+    (575, 795),
+    (640, 755),
+    (1665, 700),
+    (1668, 775),
+    (1682, 850),
+    (1600, 740),
+    (1612, 660),
+    (1640, 880),
+]:
+    s.try_place(fx, fy, "plain")
 
 # a caravan INN + STABLES on the Imperial Road through-route, with open ground beside the stables as a
 # pasture for the wagon-train animals (oxen, horses) - like a provincial city's gate caravan facilities,
@@ -145,8 +328,8 @@ s.stables(276, 1202, rot=150)
 s.cemetery(215, 705, 110, 80, label="graveyard", label_above=True)
 # the cremation ground (monk-run, burakumin assistants) on the western marginal edge; its label
 # sits ABOVE the glyph so it clears the long "Monastery of Bishamon" label just to the east.
-# Pushed S of the funerary/monastery band: the to-scale nw3 field's farmhouse ring reaches
-# y~650 here, and the crematory must keep >120 ft clear of every dwelling
+# Pushed S of the funerary/monastery band: the comb's farmhouse ring reaches down here, and
+# the crematory must keep >120 ft clear of every dwelling
 s.cremation_ground(85, 810, label_above=True)
 
 
@@ -154,7 +337,7 @@ s.cremation_ground(85, 810, label_above=True)
 s.farmsteads()
 
 # communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
-s.place_wells((60, 30, 1980, 1270), spacing=220, near=100)   # grid widened to reach the off-edge fields' farms (top + NE pocket)
+s.place_wells((60, 30, 1980, 1270), spacing=220, near=100)  # grid widened to reach the off-edge fields' farms (top + NE pocket)
 # the Bishamon monastery sits apart from the houses, so it keeps its OWN ablution well (remote_shrine_has_own_well)
 s.shrine_well(215, 800)
 

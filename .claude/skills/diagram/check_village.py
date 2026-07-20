@@ -2695,6 +2695,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     drains = [fd["poly"] for fd in M.get("field_ditches", []) if fd.get("role") == "drain" and len(fd.get("poly", [])) >= 2]
     if houses and down_deg is not None and drains and not meta.get("nucleated"):
         dux, duy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+        # the WET TOE is a BAND below the collector (~240 real ft - the marsh/reclaimed strip the
+        # runoff keeps soggy), not an infinite downslope slab: without this cap the first town
+        # with drains (Hirameki) had tenements flagged 780px away, across the town wall, merely
+        # for being south of a field's collector. Distance converts at the map's ft/px.
+        toe_px = 240.0 / float(meta.get("ftpx", 1) or 1)
         in_toe = []
         for h in houses + M.get("buildings", []):
             for dp in drains:
@@ -2712,7 +2717,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                         best = (d, px, py, at_end)
                 assert best is not None
                 _d, px, py, at_end = best
-                if not at_end and (h["x"] - px) * dux + (h["y"] - py) * duy > 18:  # center clearly on the wet (downslope) side of the drain
+                if not at_end and _d <= toe_px and (h["x"] - px) * dux + (h["y"] - py) * duy > 18:  # center clearly on the wet (downslope) side, within the toe band
                     in_toe.append((round(h["x"]), round(h["y"])))
                     break
         check(
@@ -3629,6 +3634,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 corridors = [c for c in [M.get("lane"), M.get("road")] if c]
                 corridors += [(c.get("poly", c) if isinstance(c, dict) else c) for c in M.get("channels", [])]
                 corridors += [(s.get("poly", s) if isinstance(s, dict) else s) for s in M.get("streams", [])]
+                # a town RAMPART blocks a grove belt exactly like a road: a farm hugging the wall has a
+                # wall-shaded windward side (the placement side refuses via the wall's no-build corridor)
+                corridors += [M["wall"]] if M.get("wall") else []
                 Wm, Hm = meta.get("W", 1820), meta.get("H", 1180)
 
                 def min_clump(hh_: dict[str, Any], fdx: float, fdy: float, perp: float) -> tuple[float, float, float, float]:
@@ -3642,12 +3650,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # open (room + B px), so it fires on a gross omission (a farm with plenty of space and no grove)
                 # but tolerates the borderline cases where this check can't perfectly mirror the placement test.
                 B = 7
+                # ALL cropland blocks a grove clump, not just the flooded paddy: the dry hem strips /
+                # garden tracts are barley, and trees do not grow in the barley either (the placement
+                # side refuses them via dry_polys in _grove_fits) - so a hem-shadowed windward side
+                # legitimately leaves a farm grove-less, same as a paddy-shadowed one. LOCAL to this
+                # check: the shared fields_ol stays paddy-only (its other uses mean "in the rice").
+                crop_ol = fields_ol + [dpl["poly"] for dpl in M.get("dry_plots", [])]
 
                 def clump_clear(cx: float, cy: float, cw: float, ch: float, par: tuple[int, int]) -> bool:
                     if cx < 55 or cx > Wm - 55 or cy < 88 or cy > Hm - 26:
                         return False
                     rc = rect_corners({"x": cx, "y": cy, "w": cw, "h": ch, "rot": 0})
-                    for ol in fields_ol:
+                    for ol in crop_ol:
                         n = len(ol)
                         if (
                             point_in_poly(cx, cy, ol)
@@ -4442,7 +4456,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # city_moat_irrigates_fields), and it is the city's storm drain (an outside field's
             # collector may empty into it), so frm=moat is a source and to=moat is a sink
             fk, tk = (frm or {}).get("kind"), (to or {}).get("kind")
-            src = fk in ("offmap", "forest", "stream", "moat") or (fk == "pond" and pond_is_source) or (tk == "pond" and pond_is_source)
+            # frm=drain + to=field is the CASCADE-REUSE link (余水 reuse): a channel carrying an
+            # UPSTREAM field's collector surplus down into the next field's head. The upstream
+            # collector always runs when its field is irrigated, so it is a legitimate supply
+            # source for the downstream net (role-aware grounding otherwise keeps a comb's supply
+            # and drain as separate components, which would strand every cascade-fed field).
+            src = fk in ("offmap", "forest", "stream", "moat") or (fk == "drain" and tk == "field") or (fk == "pond" and pond_is_source) or (tk == "pond" and pond_is_source)
             snk = tk in ("offmap", "stream", "moat") or (tk == "pond" and not pond_is_source) or (fk == "pond" and not pond_is_source)
             return src, snk
 
