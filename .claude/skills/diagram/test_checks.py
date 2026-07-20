@@ -1985,6 +1985,41 @@ def test_scatter_respects_swept_clearings_passes_when_the_cover_draws_after():
     assert "scatter_respects_swept_clearings" not in f(M)
 
 
+def test_crop_hugs_content_fires_when_the_frame_is_held_open():
+    # Kikuta's defect in miniature: the north view edge sits ~385px above the northernmost
+    # frame-setting content because the crop was holding the windbreak grove fully in frame
+    M = {
+        "meta": {"scale": "village", "view": [150, -300, 120, 455]},
+        "houses": [{"x": 200, "y": 100, "w": 40, "h": 30, "rot": 0, "kind": "plain"}],
+        "village_groves": [{"poly": [[100, -290], [300, -290], [300, 60], [100, 60]], "role": "windbreak"}],
+    }
+    assert "crop_hugs_content" in f(M)
+
+
+def test_crop_hugs_content_passes_on_a_snug_frame():
+    M = {
+        "meta": {"scale": "village", "view": [150, 45, 120, 110]},
+        "houses": [{"x": 200, "y": 100, "w": 40, "h": 30, "rot": 0, "kind": "plain"}],
+    }
+    assert "crop_hugs_content" not in f(M)
+
+
+def test_hard_features_within_frame_lets_the_windbreak_clip_but_not_vanish():
+    # a windbreak POKING past the frame edge is fine (part visible = "the wood continues";
+    # the crop no longer holds the frame open for it) ...
+    M = {
+        "meta": {"scale": "village", "view": [0, 0, 400, 300]},
+        "village_groves": [{"poly": [[100, -200], [300, -200], [300, 80], [100, 80]], "role": "windbreak"}],
+    }
+    assert "hard_features_within_frame" not in f(M)
+    # ... but one ENTIRELY outside the view is a lost feature and still fires
+    M2 = {
+        "meta": {"scale": "village", "view": [0, 0, 400, 300]},
+        "village_groves": [{"poly": [[100, -200], [300, -200], [300, -40], [100, -40]], "role": "windbreak"}],
+    }
+    assert "hard_features_within_frame" in f(M2)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
