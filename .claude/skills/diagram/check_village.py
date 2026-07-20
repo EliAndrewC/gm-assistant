@@ -186,6 +186,9 @@ _OVERLAP_EXEMPT = {
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
     "quarters": "declarative zoning overlays (feature 006), not solid structures - they intentionally contain buildings and are validated by the city_quarters_* / per-quarter density checks",
     "mills": "a water mill (水磨) focal feature drawn BESIDE its watercourse with the wheel dipping into the drain/stream - an intentional water-adjacency like a bridge/jetty; reserved in open ground (self.placed) so it does not overlap dwellings",
+    "field_ponds": "feature 012: a low-pocket pond sunk INTO one paddy plot, the field tiling around it - drawn ON the paddy like field_ditches, validated by paddy_features_match_archetype",
+    "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
+    "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -6886,6 +6889,25 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # version of this check was written, and an EVEN random scatter of the same count passed it - so
         # it would have been a check that cannot fail, which is worse than no check. If a future field
         # archetype ever yields a genuinely 2-D eligible region, this becomes testable and worth adding.
+
+    # IN-FIELD PADDY FEATURES (feature 012) must honor the per-archetype ELIGIBILITY MATRIX
+    # (specs/012-.../research.md): a low-pocket pond, a bedrock rock outcrop, or a rare grave island appear
+    # only where their archetype allows, and NEVER on mulberry_dike_fishpond (open water is its fabric).
+    # Ponds must additionally sit on LOW/WET ground (the pocket that determines them) - teeth from `wet_plots`
+    # (written by the field pass) vs the pond record (written by the feature pass), two independent sources.
+    arch = meta.get("field_archetype")
+    _ELIG = {
+        "field_ponds": ("valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley"),
+        "field_rocks": ("contour_terraces", "ribbon_valley"),
+        "field_graves": ("valley_paddy", "contour_terraces", "ribbon_valley"),
+    }
+    if arch:
+        mis = [(k, len(M.get(k, []))) for k, ok in _ELIG.items() if M.get(k) and arch not in ok]
+        check("paddy_features_match_archetype", not mis, f"in-field feature(s) on the wrong paddy type ({arch}): {mis} - see the archetype matrix in specs/012-in-field-paddy-features/research.md")
+        if M.get("field_ponds"):
+            wet = {tuple(p) for p in M.get("wet_plots", [])}
+            off = [[p["x"], p["y"]] for p in M["field_ponds"] if (p["x"], p["y"]) not in wet]
+            check("field_ponds_on_low_ground", not off, f"{len(off)} field pond(s) not on the low/wet ground that determines them (e.g. {off[:2]}) - a pond is a LOW pocket, not a mid-field puddle")
 
     # A contour-TERRACES field (feature 005 US4) must actually read as STEPPED CROSS-SLOPE BANDS: enough terrace
     # retaining bunds, each running roughly PERPENDICULAR to the fall (a terrace lip follows the contour, across

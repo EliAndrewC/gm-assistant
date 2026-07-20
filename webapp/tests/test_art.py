@@ -100,17 +100,29 @@ def test_prompt_peasant_wears_work_clothes_not_kimono() -> None:
     assert 'kimono' not in prompt.lower()
 
 
-def test_prompt_monk_is_tonsured_monastic_without_swords() -> None:
+def test_prompt_monk_is_a_monastic_without_swords() -> None:
     from chargen.art import generate_prompt
 
     prompt = generate_prompt(
         {'gender': 'female', 'order': 'Order of Daikoku', 'seat': '', 'age': 55}
     )
     assert 'Buddhist monk' in prompt
-    assert 'shaved head' in prompt
+    assert 'no topknot' in prompt
     assert 'no swords and no armor' in prompt
-    # The hair clause is suppressed for monks - the head is already shaved.
+    # The hair clause is suppressed for monks - the head line covers the hair.
     assert 'unstyled black hair' not in prompt
+
+
+def test_prompt_monk_head_is_shaved_or_grown_out_roughly_evenly() -> None:
+    from chargen.art import generate_prompt
+
+    # Not every monk keeps the tonsure: ~50/50 shaved vs grown out. Over 60
+    # rolls the chance of never seeing one of the variants is 2 * 0.5^60.
+    monk = {'gender': 'male', 'order': 'Order of Daikoku', 'seat': '', 'age': 55}
+    prompts = [generate_prompt(monk) for _ in range(60)]
+    assert any('cleanly shaved head' in p for p in prompts)
+    assert any('grown out from a tonsure' in p for p in prompts)
+    assert all('no topknot' in p for p in prompts)
 
 
 def test_prompt_explicit_character_type_beats_dict_shape() -> None:

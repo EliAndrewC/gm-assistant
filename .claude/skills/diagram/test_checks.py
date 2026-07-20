@@ -5478,3 +5478,21 @@ def test_convex_hull_degenerate_point_clouds():
     assert cv.convex_hull([(1.0, 2.0)]) == [(1.0, 2.0)]
     assert cv.convex_hull([(1.0, 2.0), (3.0, 4.0), (1.0, 2.0)]) == [(1.0, 2.0), (3.0, 4.0)]  # 2 unique
     assert cv.poly_area(cv.convex_hull([(0.0, 0.0), (1.0, 1.0)])) == 0.0
+
+
+def test_paddy_features_match_archetype_fires_on_wrong_type():
+    """Feature 012: an in-field feature on the wrong paddy type must fire (rock on polder; anything on
+    dike-pond), and a right-type placement must not. Ponds must also sit on low/wet ground."""
+    base = {"meta": {"scale": "village", "field_archetype": "polder_grid"}, "fields": [{"name": "p", "kind": "paddy", "outline": [[0, 0], [500, 0], [500, 500], [0, 500]], "bbox": [0, 0, 500, 500]}]}
+    # rock outcrop on a polder (alluvial silt, no bedrock) - wrong
+    assert "paddy_features_match_archetype" in f({**base, "field_rocks": [{"x": 100, "y": 100}]})
+    # a pond on a polder is fine (borrow-pit) IF on low ground
+    good = {**base, "wet_plots": [[100, 100]], "field_ponds": [{"x": 100, "y": 100, "rx": 20, "ry": 14}]}
+    assert "paddy_features_match_archetype" not in f(good)
+    assert "field_ponds_on_low_ground" not in f(good)
+    # a pond NOT on low ground fires the placement check
+    offlow = {**base, "wet_plots": [[100, 100]], "field_ponds": [{"x": 400, "y": 400, "rx": 20, "ry": 14}]}
+    assert "field_ponds_on_low_ground" in f(offlow)
+    # NOTHING is allowed on a dike-pond map (open water is its fabric)
+    dp = {**base, "meta": {"scale": "village", "field_archetype": "mulberry_dike_fishpond"}, "field_ponds": [{"x": 100, "y": 100, "rx": 20, "ry": 14}], "wet_plots": [[100, 100]]}
+    assert "paddy_features_match_archetype" in f(dp)

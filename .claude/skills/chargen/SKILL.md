@@ -254,8 +254,9 @@ every subject as a samurai - a Grand Abbot came out as a two-sword bushi,
 2026-07-13). It classifies the subject via `art.infer_character_type` (explicit
 `character_type` wins, else the dict shape: `order`/`seat` keys mean Monk, a
 `peasant` tag means Peasant, default Samurai) and dresses accordingly: samurai
-keep the school-based kimono/robes wardrobe, monks get a tonsured monastic
-(shaved head, worn robes with kesa, prayer beads, no swords/armor), peasants
+keep the school-based kimono/robes wardrobe, monks get a monastic look (worn
+robes with kesa, prayer beads, no swords/armor, and a 50/50 roll between a
+shaved head and hair grown out from the tonsure - never a topknot), peasants
 get roughspun work clothes with no swords and no topknot. The full
 `chargen-character.json` dict carries those signals, so calling it as-is is
 correct **for every caste**. Optionally append one prompt line for monk

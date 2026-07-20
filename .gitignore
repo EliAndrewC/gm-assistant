@@ -17,10 +17,13 @@ __pycache__
 # never cross-contaminate. Lives on the host mount, so it survives a container rebuild.
 .clones/
 
-# Rendered /diagram map PNGs are regenerable from their .gen.py/.svg/.json (kept in git),
-# so they are not tracked - this is what keeps them out of git history. Regenerate with
-# `python3 .claude/skills/diagram/pool/<map>.gen.py`.
+# /diagram map artifacts are DERIVED from their .gen.py + .json (the real source, kept in
+# git) - both the .png render and the .svg it renders from. A to-scale village .svg is tens
+# of MB (one primitive per crop row / grass tuft), so tracking them bloated the working tree
+# and grew git history every diagram commit. They are regenerated on demand, so both are
+# gitignored. Regenerate with `python3 .claude/skills/diagram/pool/<map>.gen.py`.
 .claude/skills/diagram/pool/*.png
+.claude/skills/diagram/pool/*.svg
 
 # Spoiler-sensitive /dream scenes: the local tier is the GM's disk only, never committed.
 # The public tier (.claude/skills/dream/pool/) stays tracked; see that skill's SKILL.md.

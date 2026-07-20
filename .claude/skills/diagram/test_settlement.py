@@ -2253,3 +2253,25 @@ def test_clearings_keep_scrub_off_sacred_and_funerary_ground():
     s3.meta(name="C3", scale="village", ftpx=1, down_deg=90)
     s3.cemetery(600, 600, 90, 60, label="burial ground")
     assert len(s3.clearings) == 1
+
+
+def test_paddy_features_cover_every_archetype_branch():
+    """Feature 012: exercise _paddy_features across archetypes + many seeds so every placement branch fires
+    (pond / rock / grave-island each both ways), plus the dike-pond early return. Also confirms each glyph
+    draws and records its manifest key. Synthetic net: 6 plots, the first 3 flagged low."""
+    net = {"plots": [{"poly": [(float(i * 30), 0.0), (float(i * 30 + 20), 0.0), (float(i * 30 + 20), 20.0), (float(i * 30), 20.0)], "low": i < 3, "fill": "#A6C398"} for i in range(6)]}
+    seen = {"field_ponds": 0, "field_rocks": 0, "field_graves": 0}
+    for arch in ("valley_paddy", "contour_terraces", "polder_grid", "ribbon_valley", "mulberry_dike_fishpond"):
+        for seed in range(40):
+            s = Settlement(1200, 1200, seed=seed)
+            s.meta(name="P", scale="village", ftpx=1, down_deg=90, field_archetype=arch)
+            s._paddy_features(net)
+            for k in seen:
+                seen[k] += len(s.M.get(k, []))
+    # every glyph type got drawn at least once across the sweep (so all three _plot_* methods are covered)
+    assert all(v > 0 for v in seen.values()), seen
+    # dike-pond draws NONE
+    sd = Settlement(1200, 1200, seed=1)
+    sd.meta(name="D", scale="village", ftpx=1, down_deg=90, field_archetype="mulberry_dike_fishpond")
+    sd._paddy_features(net)
+    assert not any(sd.M.get(k) for k in seen)

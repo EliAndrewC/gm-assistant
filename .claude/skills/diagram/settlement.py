@@ -1362,10 +1362,14 @@ class Settlement:
         Distinct from the reed/lotus BOG (blue-green, choked) and from the main village reservoir at the
         source. Drawn OVER the plot (so it carries no bund grid) with a reed fringe; recorded in M['field_ponds']."""
         cx, cy, hx, hy = self._plot_center_span(plot["poly"])
-        rx, ry = max(10.0, hx * 0.82), max(7.0, hy * 0.82)
+        # capped so a wide TERRACE band gives a POND, not a field-spanning lake (a low pocket, not a reservoir)
+        rx, ry = min(max(10.0, hx * 0.82), 46.0), min(max(7.0, hy * 0.82), 32.0)
         self.add(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="#9CB4C8" stroke="#5C7488" stroke-width="1.8"/>')
         self.add(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" rx="{rx - 5:.1f}" ry="{ry - 4:.1f}" fill="none" stroke="#B6CAD8" stroke-width="0.9"/>')
-        reeds = "".join(f'<line x1="{cx + rx * math.cos(a):.1f}" y1="{cy + ry * math.sin(a):.1f}" x2="{cx + rx * math.cos(a):.1f}" y2="{cy + ry * math.sin(a) - 5:.1f}" stroke="#7C9A4E" stroke-width="1.1"/>' for a in [i * math.pi / 4 for i in range(8)])
+        reeds = "".join(
+            f'<line x1="{cx + rx * math.cos(a):.1f}" y1="{cy + ry * math.sin(a):.1f}" x2="{cx + rx * math.cos(a):.1f}" y2="{cy + ry * math.sin(a) - 5:.1f}" stroke="#7C9A4E" stroke-width="1.1"/>'
+            for a in [i * math.pi / 4 for i in range(8)]
+        )
         self.add(f'<g opacity="0.8">{reeds}</g>')
         self.M.setdefault("field_ponds", []).append({"x": round(cx, 1), "y": round(cy, 1), "rx": round(rx, 1), "ry": round(ry, 1)})
 
@@ -3444,7 +3448,12 @@ class Settlement:
         #   role="pasture"   -> OPEN GRAZING GRASS: grass tufts + the odd brush dot, NO trees at all - reads as
         #                       open pasture, unmistakably NOT woodland.
         #   role="commons"/"grazing" (default) -> the cut-over fuel/fodder scrub: grass + a FEW scraggly pines.
+        # SVG-size lever 2: the grass BLADES are ~98% of a to-scale map's <line> elements and all share ONE
+        # constant style, so they go in a bucket emitted ONCE inside a styled <g> (bare coords per line),
+        # not one full stroke=...stroke-width=... string each. Lossless + render-identical (ground texture at
+        # distinct scattered points). See svg-size.md. The sparse dots/pines keep their inline styles.
         g: list[str] = []
+        blades: list[str] = []
         if role == "woodland":
             for _ in range(int(area / (540 * bs * bs))):  # spaced crowns: an OPEN coppice canopy, gaps showing
                 cx, cy = random.uniform(x0, x1), random.uniform(y0, y1)
@@ -3462,10 +3471,10 @@ class Settlement:
                     continue
                 if random.random() < 0.14:  # a low brush dot
                     g.append(f'<circle cx="{gx:.1f}" cy="{gy:.1f}" r="{random.uniform(1.5, 2.4) * bs:.1f}" fill="#94A063" fill-opacity="0.85"/>')
-                else:  # a grass tuft: a few short diverging blades
+                else:  # a grass tuft: a few short diverging blades (bucketed - see the note at `blades`)
                     for _ in range(3):
                         a, bl = random.uniform(-0.45, 0.45), random.uniform(2.4, 4.2) * bs
-                        g.append(f'<line x1="{gx:.1f}" y1="{gy:.1f}" x2="{gx + math.sin(a) * bl:.1f}" y2="{gy - math.cos(a) * bl:.1f}" stroke="#A7A860" stroke-width="0.8"/>')
+                        blades.append(f'<line x1="{gx:.1f}" y1="{gy:.1f}" x2="{gx + math.sin(a) * bl:.1f}" y2="{gy - math.cos(a) * bl:.1f}"/>')
             if role != "pasture":  # the SCRAGGLY pines belong to cut-over scrub, NOT to open pasture
                 for _ in range(max(2, int(area / (6000 * bs * bs)))):  # a few SCRAGGLY hill pines (sparse, individual, open)
                     px, py = random.uniform(x0 + 6, x1 - 6), random.uniform(y0 + 6, y1 - 6)
@@ -3477,6 +3486,7 @@ class Settlement:
                         ly, sp = py - th * (0.45 + 0.25 * k), (3.6 - k) * bs
                         g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px - sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
                         g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px + sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
+        self.add(f'<g stroke="#A7A860" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
         self.add(''.join(g))
         random.setstate(st)
         self.M["commons"].append(
@@ -3528,6 +3538,7 @@ class Settlement:
             return ed < feather and random.random() > (ed / feather) ** drop
 
         g: list[str] = []
+        blades: list[str] = []  # SVG-size lever 2: bucket the constant-styled reed blades (see the note in `commons`)
         for _ in range(int(area / (360 * bs * bs))):  # faint WET TINT: soft translucent blue-green patches (feathered, no hard edge)
             gx, gy = random.uniform(x0, x1), random.uniform(y0, y1)
             if _sparse(gx, gy, 0.9):
@@ -3542,7 +3553,8 @@ class Settlement:
             else:  # a reed tuft: a few fine near-VERTICAL blades, taller than dry grass
                 for _ in range(4):
                     a, bl = random.uniform(-0.2, 0.2), random.uniform(4.0, 7.0) * bs
-                    g.append(f'<line x1="{gx:.1f}" y1="{gy:.1f}" x2="{gx + math.sin(a) * bl:.1f}" y2="{gy - math.cos(a) * bl:.1f}" stroke="#6E9377" stroke-width="0.8"/>')
+                    blades.append(f'<line x1="{gx:.1f}" y1="{gy:.1f}" x2="{gx + math.sin(a) * bl:.1f}" y2="{gy - math.cos(a) * bl:.1f}"/>')
+        self.add(f'<g stroke="#6E9377" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
         self.add(''.join(g))
         random.setstate(st)
         self.M["marshes"].append(
