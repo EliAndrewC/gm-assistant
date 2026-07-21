@@ -2954,6 +2954,35 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"{len(torii_under)} torii arch(es) sit UNDER the grove's trees at {torii_under[:4]} - a torii stands "
             f"in the OPEN before its shrine, not buried in the wood; draw the grove to skip it (place torii BEFORE it)",
         )
+        # ... and no tree canopy crosses a fengshui CRESCENT POND's water (GM 2026-07-21, caught on
+        # Hoshigaoka, where a windbreak clump overhung the half-moon pond): the banyuetang is an OPEN water
+        # mirror at the settlement's front - reflecting sky is its fengshui job - and its flat-side forecourt
+        # was the village's open ceremony/work ground, so trees neither overhang the water nor crowd it.
+        # Same canopy doctrine as the shrine/torii checks (drawn crowns reach ~1.7x the clump's nominal r).
+        pond_trees = []
+        for cpd in M.get("crescent_ponds", []):
+            for gcx, gcy, gcr in grove_clumps:
+                if point_in_poly(gcx, gcy, cpd["poly"]) or poly_dist(gcx, gcy, [tuple(p) for p in cpd["poly"]]) < gcr:
+                    pond_trees.append((round(gcx), round(gcy)))
+        check(
+            "trees_clear_of_fengshui_ponds",
+            not pond_trees,
+            f"tree clump(s) overhang the fengshui crescent pond's water at {pond_trees[:4]} - the half-moon pond is an open water mirror (its fengshui job is reflecting sky); the grove placement keeps a full-disk keep-out around it",
+        )
+    # every fengshui crescent pond carries its "half-moon pond" label (GM 2026-07-21): a culturally specific
+    # feature that does not read by itself - the GM asked "what is that?" of an unlabeled one, so the
+    # don't-label-the-obvious rule cuts the OTHER way here. crescent_pond() draws the label; this gates it.
+    unlabeled_cp = []
+    for cpd in M.get("crescent_ponds", []):
+        near = [lb for lb in M.get("labels", []) if len(lb) >= 6 and "half-moon" in str(lb[5]) and math.hypot((lb[0] + lb[2]) / 2 - cpd["cx"], (lb[1] + lb[3]) / 2 - cpd["cy"]) < cpd["r"] + 60]
+        if not near:
+            unlabeled_cp.append((round(cpd["cx"]), round(cpd["cy"])))
+    check(
+        "crescent_pond_labeled",
+        not unlabeled_cp,
+        f"fengshui crescent pond(s) with no 'half-moon pond' label at {unlabeled_cp[:3]} - the banyuetang is culturally specific and does not read by itself; crescent_pond() draws the label automatically",
+    )
+
     # a religious building's subtitle must not RESTATE its type (the label already names it,
     # e.g. "Monastery of Tengen" needs no "(town monastery)" note)
     redundant_sub = [r.get("label") for r in M.get("religious", []) if r.get("sublabel") and any(t in r["sublabel"].lower() for t in ("shrine", "monastery", "temple"))]

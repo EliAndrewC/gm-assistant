@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "crescent_ponds": [
+  {
+   "cx": 300,
+   "cy": 300,
+   "r": 40,
+   "facing": 270,
+   "poly": [
+    [
+     340,
+     300
+    ],
+    [
+     300,
+     340
+    ],
+    [
+     260,
+     300
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "crescent_pond_labeled"
+  ],
+  "source": "test_checks.py::test_crescent_pond_labeled_fires_when_the_label_is_missing"
+ }
+}

@@ -2069,6 +2069,30 @@ def test_village_shrine_footprint_within_norms_fires_on_a_monastery_sized_hall()
     assert "village_shrine_footprint_within_norms" not in f(M2)
 
 
+def test_trees_clear_of_fengshui_ponds_fires_on_an_overhanging_clump():
+    # Hoshigaoka's defect in miniature: a grove clump's canopy (1.7x nominal r) crossing the half-moon
+    # pond's water fires; a clump standing clear passes. Pond poly = a simple half-disk stand-in.
+    pond = {"cx": 300, "cy": 300, "r": 40, "facing": 270, "poly": [[340, 300], [300, 340], [260, 300]]}
+    M = {
+        "meta": {"scale": "village"},
+        "crescent_ponds": [pond],
+        "village_groves": [{"poly": [[200, 200], [400, 200], [400, 400], [200, 400]], "role": "windbreak", "r": 10, "clumps": [[310, 315]]}],
+        "labels": [[270, 350, 340, 362, 1, "half-moon pond"]],
+    }
+    assert "trees_clear_of_fengshui_ponds" in f(M)
+    M["village_groves"][0]["clumps"] = [[500, 500]]
+    assert "trees_clear_of_fengshui_ponds" not in f(M)
+
+
+def test_crescent_pond_labeled_fires_when_the_label_is_missing():
+    # the banyuetang is culturally specific and does not read by itself (the GM asked "what is that?")
+    pond = {"cx": 300, "cy": 300, "r": 40, "facing": 270, "poly": [[340, 300], [300, 340], [260, 300]]}
+    M = {"meta": {"scale": "village"}, "crescent_ponds": [pond]}
+    assert "crescent_pond_labeled" in f(M)
+    M["labels"] = [[270, 350, 340, 362, 1, "half-moon pond"]]
+    assert "crescent_pond_labeled" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
