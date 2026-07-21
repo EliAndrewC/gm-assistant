@@ -139,7 +139,10 @@ for net in (net_w, net_e):
 # FARMHOUSES: a nucleated cluster on the dry central SPUR between the two blocks (the higher ground the fields
 # leave free). Lanes first (no-build corridors): a N-S spine along the spur, spurs E + W to each block's edge,
 # and a connector track off the S edge to the district / road.
-_rng = _random.Random(SEED + 1)
+_rng = _random.Random(SEED + 4)   # scatter re-seed (was SEED + 1): when the headman started getting a real
+#   homestead bundle (yard + garden + grove, GM 2026-07-21) its larger reservation re-rolled the whole packing
+#   sequence, and the +1/+2/+3 arrangements each left a grove clump on a lane / dry plot / sun corridor;
+#   +4 packs clean (0 gate fails) with the headman kept at its designed spot at the head of the spur lane
 CX, CY = 1120, 600         # centered on the dry spur between the tall W block and the wide E block
 s.lane([(CX - 6, CY - 240), (CX + 6, CY - 90), (CX - 4, CY + 90), (CX + 8, CY + 250)], width=6, clearance=18, worn=True)
 for _sx in (CX - 300, CX + 300):
