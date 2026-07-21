@@ -3301,7 +3301,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if scale in ("town", "village", "hamlet", "city"):
             fields_ol = [fdef["outline"] for fdef in fields]
             yards = M.get("threshing_yards", [])
-            occ_h = [h for h in houses if h.get("kind") != "abandoned" and h.get("role") != "headman"]
+            # the HEADMAN is NOT exempt (GM 2026-07-21, caught on Hikari no Sato): the old role=="headman"
+            # carve-out here existed only because the dispersed-style headman() predated the homestead
+            # bundle and drew a lone house - the check was written around the bug. The headman is the
+            # LARGEST farmstead in the village and threshes its own rice like every other household.
+            occ_h = [h for h in houses if h.get("kind") != "abandoned"]
             # the work yard (niwa) was UNIVERSAL: EVERY farmhouse threshed and dried its own rice on its own
             # yard, so EVERY farmhouse must have one (a firm 100%). The generator guarantees this by making
             # the yard integral to farmstead placement - a house is only sited where its yard also fits

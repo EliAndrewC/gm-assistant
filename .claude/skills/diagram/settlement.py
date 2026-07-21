@@ -5604,17 +5604,22 @@ class Settlement:
         # `w`, `h` are in FEET (drawn at the map's ftpx, px(92) = 46px at 2 ft/px). A nanushi/shoya house is
         # the grandest in the village but still a house - ~92x56 ft, clearly larger than a plain 46x28 ft
         # farmhouse without the old fortress-sized 216x136 ft. headman_is_largest holds.
-        if getattr(self, "_nucleated", False):
+        if self._toscale():
             # the headman is just a LARGER PLAIN farmhouse - placed through the standard collision-checked
-            # bundle path with a tunable SIZE, so it gets its (capped) yard + garden and cannot overlap a
-            # neighbor. NO special reservation or "big"-glyph storeroom wing (that wing was drawn outside
+            # bundle path with a tunable SIZE, so it gets its yard + garden and cannot overlap a neighbor.
+            # BOTH homestead styles route here (GM 2026-07-21, caught on Hikari no Sato): this guard used to
+            # test _nucleated, so a DISPERSED to-scale village's headman fell through to the legacy rec below,
+            # which _farmsteads_bundle draws as a LONE house (the abandoned-ruin path) - the grandest
+            # farmstead in the village with no threshing yard and no garden. In the dispersed style the
+            # bundle also brings the per-house grove when room allows; the solver drops it gracefully in a
+            # dense cluster (neighbor tree cover shelters the house), which is the wanted behavior.
+            # NO special reservation or "big"-glyph storeroom wing (that wing was drawn outside
             # the reserved footprint and overlapped the north neighbor's yard).
             return self.try_place(x, y, "plain", role="headman", size=(w, h))
-        pw, ph = self.px(w), self.px(h)  # feet -> px at this map's scale
-        self.placed.append((x, y, pw, ph))
-        rec = {"x": x, "y": y, "w": pw, "h": ph, "kind": "big", "rot": 0, "role": "headman", "shed": False, "wealth": 1.0}
-        self.M["houses"].append(rec)
-        self._pending_farmsteads.append(rec)  # the headman is the largest farmstead; it gets a yard too
+        # non-to-scale tiers have no headman (a hamlet falls under the district headman, towns are run by
+        # the magistrate - the *_has_no_headman checks), so the old legacy rec branch here was dead code
+        # once the Hikari fix routed every to-scale style through the bundle; removed 2026-07-21.
+        raise ValueError("headman() is a to-scale village feature - this map is not toscale")
 
     def _field_adjacent(self, x: float, y: float) -> bool:
         """A farmhouse must stay near the farmland (within the gate's ADJ=165), so a nudge cannot drift it
@@ -5670,6 +5675,19 @@ class Settlement:
         gap = self.px(3)  # 3 ft between a house and its yard/garden, at this map's ftpx
         gw, gh = 0.48 * hw, 0.85 * hh  # garden - tight to the house, scales with wealth
         yw, yh = 0.80 * hw, 0.92 * hh  # threshing/drying yard, ~house-sized
+        if not getattr(self, "_nucleated", False):
+            # CAP the DISPERSED appurtenances too, same doctrine as the nucleated branch below: a BIG house
+            # (the 46x28 px headman) keeps an ORDINARY farm's garden/yard, not ones scaled to the grand
+            # house. Found 2026-07-21 (Hikari, GM): the moment the dispersed headman started getting a real
+            # bundle, its uncapped 0.48/0.85-scaled garden (~160+ m^2) breached garden_area_within_norms'
+            # 140 m^2 ceiling. Garden caps sit BELOW the nucleated ones (42x30 ft vs 48x34) because this
+            # path has no up-jitter to absorb - 21x15 px ~ 117 m^2 stays comfortably a garden. Plain
+            # dispersed houses (garden ~11x12 px, yard ~25x14) sit far under every cap, so only the headman
+            # is affected. Scoped OFF the nucleated path (which recomputes from these as inputs and applies
+            # its own caps) so nucleated maps stay byte-identical - capping its inputs re-rolled
+            # Hoshigaoka's packing and pushed its fixed-coordinate graveyard off-frame.
+            gw, gh = min(gw, self.px(42)), min(gh, self.px(30))
+            yw, yh = min(yw, self.px(68)), min(yh, self.px(44))
         east = hx + hw / 2 + gap + gw
         south = hy + hh / 2 + gap + yh
         base: dict[str, Any] = {

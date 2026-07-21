@@ -2020,6 +2020,20 @@ def test_hard_features_within_frame_lets_the_windbreak_clip_but_not_vanish():
     assert "hard_features_within_frame" in f(M2)
 
 
+def test_harvest_and_garden_checks_cover_the_headman():
+    # the headman is a FARMSTEAD, not an exception to farmstead anatomy (GM 2026-07-21, caught on
+    # Hikari no Sato): the old role=="headman" carve-out in occ_h existed only because the dispersed
+    # headman() predated the homestead bundle and drew a lone house - a headman with no yard and no
+    # garden now fires BOTH universal checks
+    M = {
+        "meta": {"scale": "village"},
+        "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain", "role": "headman"}],
+    }
+    fails = f(M)
+    assert "harvest_yards_present" in fails
+    assert "gardens_present" in fails
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
