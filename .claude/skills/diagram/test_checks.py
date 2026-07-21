@@ -5341,6 +5341,23 @@ def test_polder_parcel_fabric_must_vary():
     assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
 
 
+def test_torii_full_avenue_is_seven():
+    # GM numerology canon (2026-07-21): a torii approach is 1-2 (modest entrance) or EXACTLY 7 (full
+    # avenue); 3-6 and 8+ fire. Arches assign to their nearest religious feature.
+    hall = {"kind": "monastery", "x": 500, "y": 500, "w": 50, "h": 33, "label": "Monastery of Bishamon"}
+
+    def m(n, kind="monastery"):
+        return {"meta": {"scale": "town"}, "religious": [{**hall, "kind": kind}], "torii": [[500, 560 + 40 * i, 9] for i in range(n)]}
+
+    assert "torii_full_avenue_is_seven" in f(m(4))  # the Hirameki defect
+    assert "torii_full_avenue_is_seven" in f(m(3, kind="shrine"))
+    assert "torii_full_avenue_is_seven" in f(m(8))
+    for ok in (1, 2, 7):
+        assert "torii_full_avenue_is_seven" not in f(m(ok))
+    # no religious features -> the check has nothing to assign to and stays silent
+    assert "torii_full_avenue_is_seven" not in f({"meta": {"scale": "town"}, "torii": [[500, 560, 9]] * 4})
+
+
 def test_polder_parcels_must_front_a_ditch():
     # every polder parcel must sit within reach of a supply/drain ditch (the jingbang creek-and-ditch
     # interior): parcels far from every ditch fire, parcels without recorded centroids (pre-fix format)
