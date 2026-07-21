@@ -5327,6 +5327,25 @@ def test_polder_parcel_fabric_must_vary():
     assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
 
 
+def test_polder_parcels_must_front_a_ditch():
+    # every polder parcel must sit within reach of a supply/drain ditch (the jingbang creek-and-ditch
+    # interior): parcels far from every ditch fire, parcels without recorded centroids (pre-fix format)
+    # fire, and a laterals-served fabric passes. GM-flagged on the original Kuwabata (floating ponds).
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    lat = {"poly": [[500, 88], [500, 1312]], "role": "lateral", "field": "p", "w": 3.2, "w_tail": 2.4}
+    # varied 4-tuple parcels hugging the x=500 lateral: centroids at x 430/570, spans ~140 -> reach ~103
+    served = [[140, 70, 430, 100 + 90 * i] for i in range(7)] + [[140, 140, 570, 100 + 160 * i] for i in range(7)]
+    for arch in ("polder_grid", "mulberry_dike_fishpond"):
+        base = {"meta": {"scale": "hamlet", "field_archetype": arch}, "field_ditches": [lat]}
+        assert "polder_parcels_front_water" not in f({**base, "fields": [{**field, "plots": served}]})
+        adrift = [*served, [140, 140, 880, 1280]]  # one parcel ~380px from the lateral
+        assert "polder_parcels_front_water" in f({**base, "fields": [{**field, "plots": adrift}]})
+        no_cent = [*served, [140.0, 140.0]]  # pre-fix 2-tuple record: no centroid = no frontage
+        assert "polder_parcels_front_water" in f({**base, "fields": [{**field, "plots": no_cent}]})
+        # no ditches recorded at all -> everything is unfronted
+        assert "polder_parcels_front_water" in f({"meta": base["meta"], "fields": [{**field, "plots": served}]})
+
+
 def test_ribbon_valley_must_be_long_and_narrow():
     base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "ribbon_valley"}}
     thin = {**base, "fields": [{"name": "r", "kind": "paddy", "outline": [[400, 100], [700, 100], [700, 2000], [400, 2000]], "bbox": [400, 100, 700, 2000]}]}  # 300 wide x 1900 long
@@ -5727,3 +5746,46 @@ def test_channels_join_streams_at_confluence_fires_when_the_intake_starts_short(
 def test_channels_join_streams_at_confluence_passes_when_the_intake_taps_the_bed():
     M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [{"poly": [[400, 500], [460, 560]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "x"}}]}
     assert "channels_join_streams_at_confluence" not in f(M)
+
+
+# ---- roads_clear_of_marsh / pond_clear_of_paddies / no_structure_on_paddy (GM, Hoshizora 2026-07) ----
+def test_roads_clear_of_marsh_fires_when_the_road_runs_through_a_reed_fringe():
+    M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 500, "w": 120, "h": 80, "poly": [[440, 460], [560, 460], [560, 540], [440, 540]]}]}
+    assert "roads_clear_of_marsh" in f(M)
+
+
+def test_roads_clear_of_marsh_passes_when_the_marsh_sits_off_the_road():
+    M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 700, "w": 120, "h": 80, "poly": [[440, 660], [560, 660], [560, 740], [440, 740]]}]}
+    assert "roads_clear_of_marsh" not in f(M)
+
+
+def _paddy_field_rec(name="p1", x0=300, y0=300, x1=700, y1=700):
+    ol = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+    return {"name": name, "kind": "paddy", "outline": ol, "bbox": [x0, y0, x1, y1], "vis_bbox": [x0, y0, x1, y1]}
+
+
+def test_pond_clear_of_paddies_fires_when_the_pond_laps_the_crop():
+    M = {"meta": {}, "pond": [320, 320, 80, 60], "fields": [_paddy_field_rec()]}
+    assert "pond_clear_of_paddies" in f(M)
+
+
+def test_pond_clear_of_paddies_passes_when_the_pond_sits_beside_the_crop():
+    M = {"meta": {}, "pond": [120, 120, 60, 40], "fields": [_paddy_field_rec()]}
+    assert "pond_clear_of_paddies" not in f(M)
+
+
+def test_no_structure_on_paddy_fires_when_a_farmhouse_sinks_a_corner_into_the_crop():
+    # house center 10px outside the paddy edge, 44px wide -> its corner reaches ~12px inside
+    M = {"meta": {}, "fields": [_paddy_field_rec()], "houses": [{"x": 290, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0}]}
+    assert "no_structure_on_paddy" in f(M)
+
+
+def test_no_structure_on_paddy_passes_when_the_farmhouse_abuts_the_bund():
+    M = {"meta": {}, "fields": [_paddy_field_rec()], "houses": [{"x": 276, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0}]}
+    assert "no_structure_on_paddy" not in f(M)
+
+
+def test_roads_clear_of_marsh_skips_a_degenerate_marsh_poly():
+    # a marsh record whose poly is a bare 2-point sliver carries no area to test - skipped, no crash
+    M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 500, "w": 10, "h": 10, "poly": [[490, 495], [510, 505]]}]}
+    assert "roads_clear_of_marsh" not in f(M)

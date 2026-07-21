@@ -264,7 +264,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
     s.add(f'<g opacity="0.85">{beads}</g>')
     for c in sorted(net["channels"], key=lambda c: -c["w"]):
-        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]))
+        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]), late=True)   # the LATE water block: the city's moat/river opens the shared block EARLY, which would composite the whole ditch net UNDER the plots (invisible network + parchment pinstripes on the uncovered corridors - the villages draw water after fields and never hit this)
     exs = [p[0] for p in env]
     eys = [p[1] for p in env]
     pvx = [v[0] for p in net["plots"] for v in p["poly"]]
@@ -365,6 +365,7 @@ def veg_tract(name, bbox, seed):
 # The district's second block is a kind="vegetable" GARDEN TRACT on the road flank.
 s.pond(1497, 965, 38, 24)                # the in-wall tank, on the quarter's high NE corner
 _net1, ENV_NW1, _c1 = comb_field("nw1", (1470, 978), 135, 99, 110, (95, 130), (55, 80), (0.35, 0.7),
+                                 offtakes_b=(0.6,),   # a delivery ditch off canal B too: the in-wall comb shows the full standard net - head-race forking, both canals tapped, ditches tapering (GM 2026-07-21)
                                  dry_band=(10, 18), avoid=(RING,), mirror_ym=1111)
 _p1 = plot_centroid(_net1, lambda cs: min(cs, key=lambda c: (c[0] - _c1[0]) ** 2 + (c[1] - _c1[1]) ** 2))
 topo_channel([(1482, 972), (1470, 978), _p1], {"kind": "pond"}, {"kind": "field", "name": "nw1"})
