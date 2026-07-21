@@ -502,6 +502,7 @@ for fx, fy in [
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 
 # communal WELLS among the dwellings (placed after them, in the open gaps); households share these, the
@@ -530,7 +531,7 @@ s.commons([(300, 15), (700, 10), (700, 95), (305, 100)], role="grazing")
 s.commons([(1600, 15), (1960, 10), (1955, 95), (1605, 100)], role="grazing")
 s.commons([(10, 290), (90, 300), (85, 900), (12, 890)], role="grazing")
 s.commons([(2510, 15), (2590, 15), (2590, 1985), (2515, 1985)], role="grazing")  # E strip held E of the fringe farm at x2487
-s.commons([(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 1050), (216, 1050)], role="grazing")  # W apron, notched around the farm row at x229-254 y1126-1257
+s.commons([(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 995), (216, 995)], role="grazing")  # W apron, notched around the farm row at x229-254 y1126-1257 AND its farm-belt well at (280,1045)
 s.commons([(1550, 1730), (1650, 1728), (1655, 1985), (1560, 1985)], role="grazing")  # S strip, held W of the flophouse
 s.commons([(1950, 1495), (2360, 1490), (2370, 1695), (1955, 1700)], role="grazing")
 s.commons([(20, 1400), (230, 1395), (225, 1695), (30, 1690)], role="grazing")

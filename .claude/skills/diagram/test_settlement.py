@@ -1166,6 +1166,22 @@ def test_garden_beds_clear_rejects_a_bed_on_a_neighbor():
     assert s._garden_beds_clear([(100, 100, 20, 14)], others=[(300, 300, 20, 14)]) is True
 
 
+def test_text_width_measures_the_render_font_and_falls_back(monkeypatch):
+    # the placard pads symmetrically because the width is MEASURED in the render font (DejaVu Serif
+    # Bold, what resvg substitutes for serif) - 'Akagahara' measured ~180px where the old estimate
+    # said 167 and ran off the card edge (GM 2026-07-21). Without PIL/the font, a generous estimate.
+    s = _crop_settlement()
+    w = s._text_width("Akagahara", 30)
+    assert 170 < w < 195
+    import PIL.ImageFont
+
+    def _boom(*a, **k):
+        raise OSError("no font")
+
+    monkeypatch.setattr(PIL.ImageFont, "truetype", _boom)
+    assert s._text_width("Akagahara", 30) == 9 * 30 * 0.62
+
+
 def test_union_area_empty_and_overlapping_spans():
     # empty (or all-degenerate) rects -> zero area; and a rect fully shadowed by a taller one in the
     # same x-slab must be counted ONCE (the y1 <= cy skip), not double-counted.
@@ -2621,3 +2637,14 @@ def test_village_grove_skips_watercourses():
     for g in s2.M["village_groves"]:
         for cx, _cy in g["clumps"]:
             assert cx < 289 or cx > 311
+
+
+def test_farm_wells_drops_a_cluster_with_no_seatable_ground():
+    """A steading whose whole reach-disc is blocked ground gets skipped rather than spinning the
+    cover loop forever - the well simply cannot seat, and the gate will say so."""
+    s = Settlement(1000, 1000, seed=3)
+    s.meta(name="Fw", scale="town", ftpx=1)
+    s.M["houses"].append({"x": 500, "y": 500, "w": 44, "h": 29, "rot": 0})
+    s.block_polys.append([(300, 300), (700, 300), (700, 700), (300, 700)])  # blanket the reach disc
+    assert s.farm_wells() == 0
+    assert not s.M["wells"]
