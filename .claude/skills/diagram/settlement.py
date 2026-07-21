@@ -1653,6 +1653,10 @@ class Settlement:
         self.note_focal("crescent_pond")
         # keep-out over the bulge half-disk (its centroid sits ~0.42r off center, away from the village)
         self.ellipses.append((cx - fx * r * 0.45, cy - fy * r * 0.45, r * 0.95, r * 0.95))
+        # LABELED (GM 2026-07-21): the half-moon pond is a culturally specific feature that does not read by
+        # itself (the GM asked "what is that?" of an unlabeled one - the don't-label-the-obvious rule cuts the
+        # OTHER way here). Placed off the arc side, away from the village (crescent_pond_labeled gates it).
+        self.label(cx - fx * (r + 16), cy - fy * (r + 16) + 4, "half-moon pond", 11, italic=True, color="#4C6478")
 
     def note_focal(self, kind: str) -> None:
         """Record an optional FOCAL feature (feature 005 catalog) on the manifest so the twin-detector reads
@@ -3458,6 +3462,12 @@ class Settlement:
         # (there a grove may hug the eaves). A torii is recorded as [x, y, z]; glyph spans x +/-19, y -10..+18.
         occ += [(o["x"], o["y"], 0.5 * math.hypot(o["w"], o["h"]) + clump * 0.90) for k in ("religious", "shrines") for o in self.M.get(k, [])]
         occ += [(t[0], t[1] + 4, math.hypot(19, 14) + clump * 0.90) for t in self.M.get("torii", [])]
+        # ... and OFF the fengshui CRESCENT POND (GM 2026-07-21): no tree canopy may cross the half-moon
+        # pond's water (trees_clear_of_fengshui_ponds gates it). The keep-out circle spans the FULL disk
+        # (radius r + canopy reach) even though the water is only the away-facing half - the flat side toward
+        # the village is the pond's open FORECOURT (the banyuetang fronted the settlement's ceremony/work
+        # ground), so keeping the copse fringe off that band too is the historically right reading, not slack.
+        occ += [(cp["cx"], cp["cy"], cp["r"] + clump * 0.90) for cp in self.M.get("crescent_ponds", [])]
         corr = self._corridor_buffers(clump * 0.45 + 4)  # ... and keep trees OFF the lanes / streets / road
         cr = clump / 2
         # ... and OUT of the SOUTHERN sun-corridor of every threshing yard + garden (a tree just south of them
@@ -3535,7 +3545,9 @@ class Settlement:
             half = wc.get("w", 6) / 2 + pad
             if any(seg_dist(px, py, p[i], p[i + 1]) < half for i in range(len(p) - 1)):
                 return True
-        return False
+        # ... and the fengshui crescent pond's open water (found 2026-07-21: scrub tufts drew ON the
+        # half-moon pond - the skip knew M['pond'] and the linear courses but not this water body)
+        return any(math.hypot(px - cp["cx"], py - cp["cy"]) < cp["r"] + pad for cp in self.M.get("crescent_ponds", []))
 
     def commons(self, poly: Any, role: str = "commons", avoid: Any = ()) -> None:
         """FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far (upslope / windward) side,
