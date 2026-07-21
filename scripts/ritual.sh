@@ -41,13 +41,17 @@ sync_in() {
 
 push_cmd() {
   [ -z "$(git status --porcelain)" ] || die "uncommitted changes - commit first (the ritual never writes your commit for you)"
-  # files OUR unpushed commits touch, captured BEFORE the pull so the overlap test is honest
-  local base ours theirs overlap
+  # files OUR unpushed commits touch, captured BEFORE the pull so the overlap test is honest.
+  # INCOMING files = what the pull moves HEAD across - NOT a diff against post-push origin/main,
+  # which contains our own commits and false-flags every push (the script's own first dogfood run
+  # caught exactly that bug: a no-op pull reported our just-pushed files as overlap).
+  local base before ours theirs overlap
   base=$(git rev-parse origin/main)
+  before=$(git rev-parse HEAD)
   ours=$(git diff --name-only "$base"...HEAD | sort -u)
   # pull+push as ONE locked unit: no other session can slip a push into the gap (CLAUDE.md step 2)
   flock "$LOCK" sh -c 'git pull --no-rebase origin main && git push origin main'
-  theirs=$(git diff --name-only "$base" origin/main | sort -u)
+  theirs=$(git diff --name-only "$before"..HEAD | sort -u)
   overlap=$(comm -12 <(printf '%s\n' "$ours") <(printf '%s\n' "$theirs"))
   if [ -n "$overlap" ]; then
     echo "ritual: PUSHED, but the pull auto-merged other sessions' edits into files your commits touched:" >&2
