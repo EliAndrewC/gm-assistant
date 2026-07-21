@@ -2093,6 +2093,15 @@ def test_crescent_pond_labeled_fires_when_the_label_is_missing():
     assert "crescent_pond_labeled" not in f(M)
 
 
+def test_title_has_placard_fires_on_a_pre_placard_manifest():
+    # the parchment card under the title + scale bar (GM 2026-07-21, legibility over scrub) is drawn
+    # by s.title() - a manifest without the record predates the card and needs regeneration
+    M = {"meta": {"scale": "village"}, "title": {"name": "V", "bbox": [800, 50, 900, 132]}}
+    assert "title_has_placard" in f(M)
+    M["title"]["placard"] = [800, 50, 900, 132]
+    assert "title_has_placard" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires

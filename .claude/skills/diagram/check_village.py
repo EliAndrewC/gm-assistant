@@ -3196,6 +3196,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             sb is not None and sb["ft"] == round(100 * ftpx),
             f"scalebar {sb} disagrees with (or is missing for) the declared scale of {ftpx} ft/px - the 100 map-px bar must read {round(100 * ftpx)} ft",
         )
+        # ... and the block sits on its parchment PLACARD (GM 2026-07-21: ink over scrub speckle was hard
+        # to read - the card keeps the title + scale legible over any ground cover). s.title() draws it;
+        # a manifest without the record predates the card - regenerate.
+        check(
+            "title_has_placard",
+            bool(ttl.get("placard")),
+            "the title block records no placard - the parchment card under the title + scale bar is drawn by s.title(); regenerate the map",
+        )
 
     # a VILLAGE / HAMLET map clothes its margins in a CONTINUOUS RING of dry marginal land (settlements.md
     # 'Village windbreak' back-slope doctrine, the GM's rule: every "empty" edge of the frame is the satoyama

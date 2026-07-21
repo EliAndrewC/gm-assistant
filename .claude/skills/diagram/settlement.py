@@ -6531,19 +6531,36 @@ class Settlement:
         scale ladder - 100 ft at hamlet/town (1 ft/px), 200 ft at village (2 ft/px), 300 ft at
         provincial city (3 ft/px) - drawn in the Mode A furniture style (end ticks + mid tick, the
         distance under the bar, a fine-print '(1 px = N ft)' line). The searched AND recorded box
-        covers the title + bar together, so `title_clear_of_features` gates the bar's placement too."""
-        tw, th = len(name) * fs * 0.55, fs * 1.2  # estimated text box (bold, ~0.55 em/char)
+        covers the title + bar together, so `title_clear_of_features` gates the bar's placement too.
+
+        PLACARD (GM 2026-07-21): the title + scale bar sit on a stylized parchment CARD - a cream
+        cartouche (lighter than the #EFE3C2 ground, double-line brown border) drawn under the text -
+        so the block stays legible no matter what ground cover it lands over (the satoyama ring put
+        scrub speckle nearly everywhere a title can sit, and ink-on-scrub was hard to read). The
+        searched and recorded box is the PLACARD's extent, so the clearance check gates the whole
+        card; `title_has_placard` gates its presence (a manifest without one predates the card)."""
+        tw, th = len(name) * fs * 0.58 + 10, fs * 1.2  # estimated text box (bold serif runs ~0.58 em/char; +10 so a long name never kisses the card border)
         bar_px, bar_ft = 100.0, round(100 * self.ftpx)
-        bw, bh = max(tw, bar_px), th + 46  # the searched box: title text + the bar block (gap + ticks + two label lines)
+        PAD = 12  # placard padding around the text block
+        bw, bh = max(tw, bar_px) + 2 * PAD, th + 46 + 2 * PAD  # the searched box: the whole placard
         vx0, vy0, vw, vh = self.view if self.view else (0, 0, self.W, self.H)
         spot = self._blank_label_spot(vx0, vy0, vw, vh, bw, bh)
         if spot:
-            x, y = spot
+            px0, py0 = spot
         elif self.view:  # map too full - fall back to the top-left corner
-            x, y = vx0 + 30, vy0 + 16
+            px0, py0 = vx0 + 30, vy0 + 16
         else:
-            x, y = self.W / 2 - bw / 2, 22
-        self.M["title"] = {"name": name, "bbox": [round(x, 1), round(y, 1), round(x + bw, 1), round(y + bh, 1)]}
+            px0, py0 = self.W / 2 - bw / 2, 22
+        x, y = px0 + PAD, py0 + PAD  # the text block's origin, inside the card
+        self.M["title"] = {
+            "name": name,
+            "bbox": [round(px0, 1), round(py0, 1), round(px0 + bw, 1), round(py0 + bh, 1)],
+            "placard": [round(px0, 1), round(py0, 1), round(px0 + bw, 1), round(py0 + bh, 1)],
+        }
+        self.add_label(  # the card FIRST, so every text draws over it (add_label draws in call order)
+            f'<g><rect x="{px0:.0f}" y="{py0:.0f}" width="{bw:.0f}" height="{bh:.0f}" rx="7" fill="#F7F0DC" fill-opacity="0.94" stroke="#8C7A55" stroke-width="1.6"/>'
+            f'<rect x="{px0 + 3.5:.0f}" y="{py0 + 3.5:.0f}" width="{bw - 7:.0f}" height="{bh - 7:.0f}" rx="5" fill="none" stroke="#BCAA7E" stroke-width="0.8"/></g>'
+        )
         self.add_label(f'<text x="{x:.0f}" y="{y + fs:.0f}" font-size="{fs}" font-weight="bold" fill="#2D2A24">{name}</text>')
         bx0, bx1, by = x, x + bar_px, y + th + 12  # bar left-aligned under the title
         self.M["scalebar"] = {"ft": bar_ft, "ftpx": self.ftpx, "bbox": [round(bx0, 1), round(by - 5, 1), round(bx1, 1), round(y + bh, 1)]}
