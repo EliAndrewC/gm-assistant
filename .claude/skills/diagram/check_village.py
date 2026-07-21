@@ -2132,10 +2132,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _ds_a = abs(sum(_ds_p[i][0] * _ds_p[(i + 1) % len(_ds_p)][1] - _ds_p[(i + 1) % len(_ds_p)][0] * _ds_p[i][1] for i in range(len(_ds_p)))) / 2
             _ds_areas.append(_ds_a * _ds_ftpx * _ds_ftpx / 43560)
         _ds_mean = sum(_ds_areas) / len(_ds_areas)
+        # the MEAN alone let a small oversized subpopulation hide behind many right-sized hem
+        # parcels (Tango's vegetable tract at 0.3-0.5 acre diluted to a passing mean by ~70
+        # hem plots, 2026-07-21) - so the largest single parcel is capped too: pool-wide the
+        # honest maximum is ~0.30 acre (biggest hem parcel), villages max ~0.26
+        _ds_max = max(_ds_areas)
         check(
             "dry_plots_to_scale",
-            _ds_mean <= 0.25,
-            f"mean dry-crop plot area {_ds_mean:.2f} real acres (want <= 0.25) - a hem parcel is a smallholder strip "
+            _ds_mean <= 0.25 and _ds_max <= 0.35,
+            f"mean dry-crop plot area {_ds_mean:.2f} real acres (want <= 0.25), largest {_ds_max:.2f} (want <= 0.35) - a hem parcel is a smallholder strip "
             f"(~1 mu / ~0.17 acre, Buck); oversized cells mean the _dry_fields tiling constants were used as raw px "
             f"at a coarser grain instead of real feet (pass/scale them by grain)",
         )

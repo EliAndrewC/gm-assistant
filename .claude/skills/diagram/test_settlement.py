@@ -2582,3 +2582,19 @@ def test_farm_wells_drops_a_cluster_with_no_seatable_ground():
     s.block_polys.append([(300, 300), (700, 300), (700, 700), (300, 700)])  # blanket the reach disc
     assert s.farm_wells() == 0
     assert not s.M["wells"]
+
+
+def test_farm_wells_falls_back_to_envelope_rim_slack():
+    """When a steading's whole neighborhood sits inside a field ENVELOPE (the smoothed outline
+    claiming more than the crop fills), the primary seating fails and the fallback suspends the
+    envelope blocks, seating the well on unplanted rim slack - but never on a DRAWN plot."""
+    s = Settlement(1000, 1000, seed=4)
+    s.meta(name="Fw2", scale="town", ftpx=1)
+    s.M["houses"].append({"x": 500, "y": 500, "w": 44, "h": 29, "rot": 0})
+    s.field_polys.append([(200, 200), (800, 200), (800, 800), (200, 800)])  # envelope blankets the disc
+    s.M["fields"].append(
+        {"name": "t", "kind": "paddy", "outline": [[200, 200], [800, 200], [800, 800], [200, 800]], "bbox": [200, 200, 800, 800], "plot_polys": [[[430, 430], [570, 430], [570, 570], [430, 570]]]}
+    )  # drawn crop hugs the house
+    assert s.farm_wells() == 1
+    wx, wy = s.M["wells"][0]["x"], s.M["wells"][0]["y"]
+    assert not (430 <= wx <= 570 and 430 <= wy <= 570)  # seated on rim slack, not on the crop
