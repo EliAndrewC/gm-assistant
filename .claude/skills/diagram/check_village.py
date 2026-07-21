@@ -3074,6 +3074,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     else:
         check("religious_matches_scale", rel_kinds == {expected_rel}, f"a {scale} should have only {expected_rel}(s); found {rel_kinds or 'none'}")
 
+    # TORII COUNT NUMEROLOGY (GM canon 2026-07-21): a torii approach is either a MODEST ENTRANCE
+    # (1-2 arches) or a FULL AVENUE of EXACTLY SEVEN - 7 is the numerologically significant count.
+    # A monastery/temple takes the full seven when there is room (Hirameki's Bishamon, the motivating
+    # example at an unfinished 4); "room" is a design-time judgment, so the check bans the 3-6 (and >7)
+    # dead zone rather than mandating 7 everywhere - a dense city temple legitimately keeps a 1-2 arch
+    # entrance. Village shrines usually keep 1-2; a formal shrine avenue (Kikuta's showcase Benten) is
+    # the sanctioned exception at exactly 7. Arches are assigned to their nearest religious feature.
+    tor_all = M.get("torii", [])
+    rel_feats = M.get("religious", [])
+    if tor_all and rel_feats:
+        tcount: dict[int, int] = {}
+        for t in tor_all:
+            ri = min(range(len(rel_feats)), key=lambda i: (rel_feats[i]["x"] - t[0]) ** 2 + (rel_feats[i]["y"] - t[1]) ** 2)
+            tcount[ri] = tcount.get(ri, 0) + 1
+        bad_tc = [f"{rel_feats[i].get('label') or rel_feats[i]['kind']}: {n}" for i, n in sorted(tcount.items()) if n not in (1, 2, 7)]
+        check(
+            "torii_full_avenue_is_seven",
+            not bad_tc,
+            f"torii approach(es) outside the sanctioned counts: {bad_tc[:3]} - an approach is either a modest entrance (1-2 arches) or a full avenue of EXACTLY 7 (the numerologically significant count; GM canon 2026-07-21); 3-6 reads as an unfinished avenue",
+        )
+
     # ... and a village/hamlet SHRINE has a village-scale FOOTPRINT (GM 2026-07-21, caught on Hikari no
     # Sato, whose two shrines survived from before the size norms crystallized at 192x128 / 236x164 ft -
     # small-monastery footprints in a village). religious_matches_scale gates the TYPE per tier but said
@@ -3464,6 +3485,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not stray,
             f"well(s) standing in open ground with no building within ~95px - a well serves the households around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}",
         )
+
         # THE WELL IS A LOCATION MARKER under the stroke convention (GM ruling 2026-07-21): a real
         # curb is ~3-4 ft (sub-glyph at every scale), so the wellhead marks the well's TO-SCALE
         # LOCATION with a legible marker whose own pixels are not claimed to be to scale - the same
@@ -3483,6 +3505,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"wells are mis-sized for this map - drawn at {mean_dia:.0f}px against a ~{med:.0f}px median dwelling "
                 f"({mean_dia / med:.0%}; want ~40-80%): a wellhead must scale with the map grain (bscale), not a fixed pixel size",
             )
+
+    # WELLS SIZED TO THE POPULATION (GM 2026-07-21) - a DELIBERATE LIBERTY, banded. What the research found
+    # (see settlements.md 'Wells - research + deliberate liberty' for the full note): historically a south-China
+    # rice village of ~70 households ran 1-3 communal drinking wells TOTAL - surface water (canal/pond, settled
+    # and boiled) covered most drinking, wells were expensive subscription-financed capital, the classical
+    # jingtian "8 families per well" was an ideal nobody practiced, and one open well physically serves ~400
+    # people (Sphere/UNICEF anchors; a nucleated village is ~250m across, so carrying distance never binds).
+    # The dense ~10-18 households/well pattern is URBAN tenement (nagaya) density; per-farmstead wells are the
+    # shallow-water-table plain pattern. THE LIBERTY: Rokugan is deliberately unusually well-run, and generous
+    # wells express that - villages run ~1 communal well per 8-26 households (vs the historical 1-3 total),
+    # hamlets down to per-farmstead (2-20 hh/well; the dispersed-farm shallow-table pattern made honest).
+    # Shrine (temizu) ablution wells are tagged shrine=True by the engine and excluded from the count.
+    if scale in ("village", "hamlet") and meta.get("households"):
+        _draw_wells = [w for w in M.get("wells", []) if not w.get("shrine")]
+        _whh = meta["households"]
+        _wlo, _whi = (2.0, 20.0) if scale == "hamlet" else (8.0, 26.0)
+        _wr = _whh / len(_draw_wells) if _draw_wells else float("inf")
+        check(
+            "wells_sized_to_population",
+            _wlo <= _wr <= _whi,
+            f"{len(_draw_wells)} communal well(s) for {_whh} households = {_wr:.1f} hh/well, outside the {scale} band [{_wlo:.0f}-{_whi:.0f}] - Rokugan's prosperity liberty runs generous wells (settlements.md 'Wells'); shrine temizu wells are excluded from the count",
+        )
 
     # WATER ACCESS for the rural tiers (town/village/hamlet): every settlement needs communal WELLS, and
     # every household must be able to reach water. Wells dot the dwellings (one per ~20-25 households),
@@ -6098,12 +6142,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                         run = 0
             check("wall_hugs_the_town", worst <= EMPTY_RUN, f"~{worst:.0f}px of wall runs more than {MAXGAP}px from any building or terrain (it encloses empty space - draw a tighter wall)")
 
-        # a town monastery fronts a torii AVENUE whose number of arches is set by the open
-        # approach in front of it: a grand monastery with a long clear run to the street shows
-        # several arches; one wedged into a corner (the Benten monastery, hard against the west
-        # wall and the Imperial field) shows a single arch. This fires ONLY for monasteries and
-        # ONLY inside a wall - village SHRINES are exempt (they get 0-1 torii regardless). Each
-        # torii is assigned to its nearest monastery; the approach direction is taken from the
+        # a town monastery fronts a torii AVENUE whose form is set by the open approach in front
+        # of it, QUANTIZED to the numerology canon (GM 2026-07-21, superseding the old fill-the-
+        # space band): a monastery with room for an avenue (approach span >= ~3 arch-pitches - the
+        # spacing itself adapts) takes the FULL SEVEN; one wedged into a corner (the Benten
+        # monastery, hard against the west wall and the Imperial field) keeps a modest 1-2 arch
+        # entrance. Nothing in between - 3-6 reads as unfinished (torii_full_avenue_is_seven bans
+        # it globally; this check adds the town-tier "roomy approach OWES the seven" direction).
+        # Each torii is assigned to its nearest monastery; the approach direction is taken from the
         # monastery toward that group of torii, and the available span runs to the first street/
         # field/wall/edge (approach_span, which ignores buildings - the avenue displaces them).
         monks = [r for r in M.get("religious", []) if r.get("kind") == "monastery"]
@@ -6119,13 +6165,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     span = approach_span(m["x"], m["y"], m["h"] / 2, (cx - m["x"]) / dlen, (cy - m["y"]) / dlen, M, w, Wd, Hd)
                 else:
                     span = 0.0
-                lo, hi = max(1, round(span / PITCH) - 1), round(span / PITCH) + 1
+                lo, hi = (7, 7) if span / PITCH >= 3.0 else (1, 2)
                 if not (lo <= n <= hi):
                     bad_torii.append((m.get("label"), f"{n} torii", f"want {lo}-{hi}", f"~{span:.0f}px"))
             check(
                 "monastery_torii_scale_with_space",
                 not bad_torii,
-                f"a walled-town monastery's torii avenue should fill its approach space (a roomy approach wants several arches, a cramped one a single arch): {bad_torii}",
+                f"a walled-town monastery's torii avenue must match its approach (roomy approach -> the full SEVEN arches, the numerologically significant count; cramped corner -> a 1-2 arch entrance): {bad_torii}",
             )
 
         # a walled town almost always accretes a small extramural MARKET (a Chinese guan-xiang)

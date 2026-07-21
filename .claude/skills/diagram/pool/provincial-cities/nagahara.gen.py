@@ -335,7 +335,7 @@ s.label(1292, 1299, "temple neighborhood", 9, italic=True, color="#6B2A18")
 for _lx0, _ly0, _lx1, _ly1 in [(1133, 1172, 1247, 1194),   # 'Temple of Bishamon'
                                (1138, 1263, 1197, 1281),   # 'graveyard'
                                (1231, 1290, 1353, 1310),   # 'temple neighborhood'
-                               (1076, 1243, 1122, 1266)]:   # 'monzen' - moved beside the teahouse cluster (2026-07-20); S of the lane so it never reads as one line with Bishamon's bold caption
+                               (1076, 1243, 1122, 1266)]:   # a clear pocket beside the teahouse cluster (held the 'monzen' caption until GM 2026-07-21 dropped it as redundant with 'temple neighborhood'; the reservation stays so the quarter's packing does not re-roll)
     s.block_polys.append([(_lx0, _ly0), (_lx1, _ly0), (_lx1, _ly1), (_lx0, _ly1)])
 s.fire_tower(1206, 1194, label=None)   # the monzen's fire-watch, in an open court amid the terrace rows near the district centroid (keeps fire_tower_amid_its_district honest; >=5px off every house, clear of the graveyards and the curving west wall)
 # NO monzen back-alley in the WEST column: after the budget-first shrink it is a ring-front
@@ -395,7 +395,9 @@ s.rowpack((1225, 1058, 1360, 1102), (["laborer"] * 2 + ["servant"] + ["laborer_l
 s.rowpack((1165, 953, 1400, 1005), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 16, court_every=7, eave_ft=3)   # the ring-front strip N of the theater, up against the NW ring arc
 s.rowpack((1358, 1228, 1462, 1300), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 12, court_every=7, eave_ft=3)   # the temple-lane SE pocket, between the Rites apron and the spine's frontage band
 s.rowpack((1130, 1012, 1258, 1102), (["laborer"] * 2 + ["servant"] + ["laborer_large"]) * 14, court_every=7, eave_ft=3)   # the NW-arc wedge W of the theater, N of Bishamon (the ring bound clips its taper)
-s.label(1099, 1256, "monzen", 9, italic=True, color="#6B2A18")   # beside the teahouse cluster on the lane's W stretch, S of the lane - the caption sits WITH the gate-front commerce it names (city_labels_placed_with_subject) and clear of the Bishamon caption's line (the first seat at y1190 visually merged with the bold hall name)
+# NO "monzen" caption (GM 2026-07-21): the quarter already carries the "temple neighborhood" label,
+# and its monzen-machi commerce pocket is part of that same named district - one caption per district,
+# never a second caption for a sub-pocket of an already-labeled neighborhood.
 
 # ====================================================================== W: the samurai/government ward
 # the government + samurai occupy the SW quadrant, WEST of the spine (the merchant district is
