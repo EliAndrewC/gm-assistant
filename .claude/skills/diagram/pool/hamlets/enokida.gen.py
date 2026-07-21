@@ -27,7 +27,9 @@ s = Settlement(W=W, H=H, seed=SEED)
 s.meta(name="Enokida", scale="hamlet", ftpx=1, toscale=True, households=16, down_deg=90, terrain="low", field_archetype="polder_grid", nucleated=True, field_footbridges=True)
 s._nucleated = True
 
-net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=11, cols=6, cell=150)
+# TRUE SCALE (1 px = 1 ft): rice parcels mean ~1 mu, range ~0.2-3 mu (build_polder docstring, TRUE-SCALE
+# SIZING) - a 110 ft module puts whole bays at ~1.9 mu, halves ~0.9 mu, thirds ~0.6 mu.
+net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=15, cols=8, cell=110)
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.meta(dry_furrows_vary=False)
 

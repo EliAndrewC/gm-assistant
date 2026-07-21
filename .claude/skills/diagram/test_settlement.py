@@ -1982,6 +1982,24 @@ def test_build_polder_parcel_fabric():
         cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
         assert p["low"] == (cy > 320 + 9 * 150 - 6)  # down_deg=90: low rows sit past row 9 (node jitter <= 6)
     assert any(p["low"] for p in plots) and not all(p["low"] for p in plots)
+    # the water network: 1 head feeder + 1 drain + one lateral per interior column line, and every
+    # lateral's ends sit on the feeder / drain lines (the connected jingbang net)
+    roles = [ch["role"] for ch in net["channels"]]
+    assert roles.count("main") == 2 and roles.count("drain") == 1 and roles.count("lateral") == 7  # head + dike-top feeder; 5 interior + 2 toe ditches
+    for ch in net["channels"]:
+        if ch["role"] != "lateral":
+            continue
+        assert abs(ch["pts"][0][1] - (320 - 12)) < 1  # starts on the feeder line (down_deg=90)
+        assert abs(ch["pts"][-1][1] - (320 + 1650 + 12)) < 1  # ends on the drain line
+    # pond-profile mix: merge-heavy, no 3-cuts, wide dike gaps -> fewer, larger, oblong parcels
+    pond_net = build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0))
+    assert len(pond_net["plots"]) < len(plots)
+    pond_areas = sorted(abs(_shoelace(p["poly"])) for p in pond_net["plots"])
+    assert pond_areas[-1] > 2.5 * pond_areas[0]  # merged doubles dwarf the split minority
+
+
+def _shoelace(poly):
+    return sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly))) / 2
 
 
 def test_land_use_overlay_draws_and_records_each_kind():
@@ -2440,6 +2458,19 @@ def test_clip_to_stream_trims_the_confluence_mouth():
     assert same == [(300, 500), (370, 500)]
     inside = s._clip_to_stream([(399, 400), (400, 500)])  # wholly inside the bed -> left alone
     assert inside == [(399, 400), (400, 500)]
+
+
+def test_late_water_block_carries_sheens_and_splices_after_plots():
+    """field_channel(late=True) defers into the SECOND water block (spliced at its own first-call
+    position so a city's comb net draws OVER the field's plots); a late course with a sheen records
+    its sheenz above every late bed, mirroring the main block's contract."""
+    s = Settlement(300, 300, seed=1)
+    s.meta(name="T", scale="village", ftpx=2)
+    rec: dict = {}
+    s._water('<path d="M0,0 L10,10" stroke="#6C9CBE"/>', rec, sheen='<path d="M0,0 L10,10" stroke="#9CC"/>', late=True)
+    with tempfile.TemporaryDirectory() as td:
+        s.finish(os.path.join(td, "t"), render=False)
+    assert rec["sheenz"] > rec["bedz"]
 
 
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
