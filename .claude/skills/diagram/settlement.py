@@ -1407,6 +1407,13 @@ class Settlement:
     _PADDY_GRAVE_KINDS = ("valley_paddy", "contour_terraces", "ribbon_valley")
 
     def _paddy_features(self, net: dict[str, Any]) -> None:
+        if self.M.get("meta", {}).get("scale") in ("town", "city"):
+            # the in-field flourishes (low-pocket pond, rock outcrop, rare grave island) are VILLAGE-scale
+            # features from the feature-012 archetype matrix. On a town/city map the combs are a SLICE of
+            # county farmland, and at the 1 ft/px grain the glyphs read literally - the GM read the grave
+            # island as a pauper ossuary on the paddy and the pocket pond as a pond overlapping the rice
+            # (Hoshizora, 2026-07) - so a town/city comb stays plain.
+            return
         arch = self.M.get("meta", {}).get("field_archetype") or "valley_paddy"
         if arch == "mulberry_dike_fishpond":
             return  # open water IS its fabric - no obstacle tiles among it (research D4)
@@ -3483,6 +3490,8 @@ class Settlement:
                     continue
                 if any(point_in_poly(jx, jy, f) or edge_dist(jx, jy, f) < 12 for f in self.field_polys):
                     continue
+                if any(point_in_poly(jx, jy, d) or edge_dist(jx, jy, d) < 12 for d in self.dry_polys):
+                    continue  # the hem strips are barley: trees do not grow in the crop (groves_clear_of_dry_plots)
                 if any(seg_dist(jx, jy, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1)):
                     continue
                 if any(abs(jx - sx) < shw and se - cr - 2 < jy < se + 24 + cr for sx, se, shw in sun):
@@ -5156,9 +5165,9 @@ class Settlement:
         return cast(bool, m.get("toscale", m.get("scale") == "village"))
 
     def try_place(self, x: float, y: float, kind: str, role: Any = None, size: Any = None) -> bool:
-        """Place one farmhouse. VILLAGES + HAMLETS use the to-scale HOMESTEAD BUNDLE (house + windward grove +
-        yard + garden, reserved and packed as ONE unit). Other scales keep the shipped house-first path until
-        their own to-scale conversion. `size=(w,h)` overrides the kind's default footprint (base FEET) so
+        """Place one farmhouse. VILLAGES + HAMLETS + TOWNS use the to-scale HOMESTEAD BUNDLE (house + grove/
+        garden + yard, reserved and packed as ONE unit; towns run the NUCLEATED form). CITIES keep the
+        shipped house-first path until their own to-scale conversion. `size=(w,h)` overrides the kind's default footprint (base FEET) so
         farmhouses can be individually sized - e.g. a headman is just a LARGER plain farmhouse."""
         if self._toscale():
             return self._try_place_bundle(x, y, kind, role, size)
@@ -5200,12 +5209,17 @@ class Settlement:
             wf = 1.0 if kind == "big" else (0.9 if t < 30 else (1.12 if t >= 80 else 1.0))
             hw, hh = self.px(bw) * wf, self.px(bh) * wf
         # a fireproof KURA storehouse is a WEALTH MARKER, not universal - it attaches to the house on ~30% of
-        # plain farms (position-seeded off the SEED spot, no RNG ripple; a headman/ruin has none). It goes on the
+        # plain farms (position-seeded off the SEED spot, no RNG ripple; a ruin has none). The HEADMAN always
+        # has one (GM 2026-07-21): the shoya/nanushi is by definition among the village's most prosperous
+        # farmers - historically the land-opening family - AND the office needs one functionally: the headman
+        # kept the village's tax ledgers, land registers, and tax rice awaiting collection, exactly what
+        # fireproof kura storage is for. Leaving him on the ~30% dice let all four pool headmen roll bare
+        # (chance masquerading as doctrine); headman_has_kura gates it now. It goes on the
         # NORTH (back) wall of a nucleated house: the cluster hugs the field to the EAST so a house's garden takes
         # the west/sunny walls but never the shaded NORTH, so a north kura is clear of it - and its footprint is
         # RESERVED in the homestead bundle so a neighbor never lands on it. Drawn + recorded in farmsteads() so
         # it always moves WITH the house (farm_sheds_attached guards it).
-        _shed = kind == "plain" and self._hjit(x, y, 3.0) < 0.30
+        _shed = kind == "plain" and (role == "headman" or self._hjit(x, y, 3.0) < 0.30)
         spot = self._place_bundle(x, y, hw, hh, shed=_shed)  # pack the bundle (incl. the reserved kura) near (x,y)
         if spot is None:
             return False
@@ -6191,8 +6205,8 @@ class Settlement:
         return best[4] if best else None
 
     def farmsteads(self) -> int:
-        """Draw every farmstead. Villages draw the reserved homestead BUNDLES; other scales use the shipped
-        house-first path. Call LAST in the gen so every obstacle is known. Returns the farmhouse count."""
+        """Draw every farmstead. The to-scale tiers (villages/hamlets/towns) draw the reserved homestead
+        BUNDLES; cities use the shipped house-first path. Call LAST in the gen so every obstacle is known. Returns the farmhouse count."""
         if self._toscale():
             return self._farmsteads_bundle()
         return self._farmsteads_legacy()
