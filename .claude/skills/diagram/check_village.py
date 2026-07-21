@@ -2515,6 +2515,43 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     ]
     check("no_structure_on_torii", not bad_t, f"{len(bad_t)} structure(s) overlap a torii arch")
 
+    # TORII AND RELIGIOUS FOOTPRINTS KEEP CLEAR OF THE DEFENSIVE WORKS AND THE PATROL RING (GM
+    # placement rules 2026-07-21, caught on Tango: a wayside shrine seated against the SW wall
+    # tower). A torii arch overlapping a temple/shrine hall, a guard tower / gate structure, or
+    # the ring-road corridor - or a religious footprint overlapping a tower or the ring road -
+    # reads as impossible construction: the wall's works and its patrol lane are kept clear, and
+    # an arch stands in the open on its approach, never against a hall. (A torii OVER an ordinary
+    # street stays legitimate - a monzen sando arch spans its road - so only the RING road is a
+    # corridor here.)
+    _ring = M.get("ring_road") or []
+    _rw2 = float(M.get("ring_road_width") or 0) / 2
+    _tow = [g for g in list(M.get("gate_structs", [])) + list(M.get("wall_towers", [])) + list(M.get("fire_towers", [])) if isinstance(g, dict) and "w" in g]
+
+    def _ring_hit(x: float, y: float, half: float) -> bool:
+        return bool(_ring) and any(seg_dist(x, y, _ring[i], _ring[i + 1]) < _rw2 + half for i in range(len(_ring) - 1))
+
+    bad_tor_pl = []
+    for t in M.get("torii", []):
+        hit_rel = any(abs(t[0] - r["x"]) < r["w"] / 2 + _ts2 and abs(t[1] - r["y"]) < r["h"] / 2 + _ts2 for r in M.get("religious", []))
+        hit_tw = any(abs(t[0] - g["x"]) < g["w"] / 2 + _ts2 and abs(t[1] - g["y"]) < g["h"] / 2 + _ts2 for g in _tow)
+        if hit_rel or hit_tw or _ring_hit(t[0], t[1], _ts2):
+            bad_tor_pl.append((round(t[0]), round(t[1])))
+    check(
+        "torii_clear_of_halls_towers_ring",
+        not bad_tor_pl,
+        f"torii arch(es) overlapping a temple/shrine hall, guard tower/gate structure, or the ring-road corridor: {sorted(set(bad_tor_pl))[:4]} - an arch stands clear on its approach (an ordinary street through the arch is fine; the patrol ring is not)",
+    )
+    bad_rel_pl = []
+    for r in M.get("religious", []):
+        hit_tw = any(abs(r["x"] - g["x"]) < (r["w"] + g["w"]) / 2 and abs(r["y"] - g["y"]) < (r["h"] + g["h"]) / 2 for g in _tow)
+        if hit_tw or _ring_hit(r["x"], r["y"], max(r["w"], r["h"]) / 2):
+            bad_rel_pl.append((r.get("label") or r["kind"], round(r["x"]), round(r["y"])))
+    check(
+        "religious_clear_of_ring_and_towers",
+        not bad_rel_pl,
+        f"religious footprint(s) overlapping a guard tower/gate structure or the ring-road corridor: {bad_rel_pl[:4]} - shrines and halls keep clear of the wall's works and the patrol lane",
+    )
+
     # roads/streets are a GROUND layer: a gatehouse or label that legitimately sits on a road
     # must be drawn ON TOP of it (higher draw-order z), never have the road painted over it.
     road_layers = []
