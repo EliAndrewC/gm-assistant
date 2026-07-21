@@ -1648,12 +1648,25 @@ class Settlement:
 
     def crescent_pond(self, cx: float, cy: float, r: float, facing_deg: float = 270.0) -> None:
         """A fengshui CRESCENT / half-moon pond (半月塘), a focal feature of Huizhou / Hakka single-lineage
-        villages (feature 005): a half-disk of water IN FRONT of the cluster - drainage + fire water + the
-        fengshui "gathering of qi" - its flat diameter facing the houses and the arc bulging away, DISTINCT
-        from the irrigation pond. `facing_deg` is the screen direction the FLAT edge faces (toward the
-        village); default 270 = up / N. Draws through the shared water block (so it composites cleanly),
-        records the footprint + the `crescent_pond` focal feature on the manifest, and reserves a placement
-        keep-out - so call it BEFORE `farmsteads()` and the cluster packs around it."""
+        villages (feature 005): a half-disk of water IN FRONT of the cluster, its flat diameter facing the
+        houses and the arc bulging away, DISTINCT from the irrigation pond.
+
+        WHAT IT IS (GM asked, 2026-07-21 - labeled "geomantic pond" at his direction): GEOMANTIC, not
+        religious - no deity, no rites; cosmological engineering, the same category as orienting a house
+        south. The village wants "mountain behind, water in front" (背山面水): the back half is the hill +
+        fengshui grove (the windbreak belt these maps already draw), and where no river obliges, the village
+        DIGS the front half. Still water gathers and holds qi/wealth where flowing water carries it away;
+        the HALF shape leaves the lineage room to grow (a full circle is complete, and what is complete can
+        only wane). Grove-arc behind + water-arc in front cradle the village as ONE system. It also earns
+        its keep practically - roof/yard runoff retention (hence UNCONNECTED to the irrigation network: it
+        is rain-fed by design), fire water beside thatch, fish/ducks/washing, and the flat-side bank doubles
+        as the open threshing/ceremony forecourt. The shrine is where religion happens; this is just how a
+        well-sited village should be shaped.
+
+        `facing_deg` is the screen direction the FLAT edge faces (toward the village); default 270 = up / N.
+        Draws through the shared water block (so it composites cleanly), records the footprint + the
+        `crescent_pond` focal feature on the manifest, and reserves a placement keep-out - so call it BEFORE
+        `farmsteads()` and the cluster packs around it."""
         fa = math.radians(facing_deg)
         fx, fy = math.cos(fa), math.sin(fa)  # unit vector toward the village (the flat side)
         perp = (-fy, fx)  # along the flat diameter
@@ -1676,10 +1689,10 @@ class Settlement:
         self.note_focal("crescent_pond")
         # keep-out over the bulge half-disk (its centroid sits ~0.42r off center, away from the village)
         self.ellipses.append((cx - fx * r * 0.45, cy - fy * r * 0.45, r * 0.95, r * 0.95))
-        # LABELED (GM 2026-07-21): the half-moon pond is a culturally specific feature that does not read by
+        # LABELED (GM 2026-07-21): the pond is a culturally specific feature that does not read by
         # itself (the GM asked "what is that?" of an unlabeled one - the don't-label-the-obvious rule cuts the
         # OTHER way here). Placed off the arc side, away from the village (crescent_pond_labeled gates it).
-        self.label(cx - fx * (r + 16), cy - fy * (r + 16) + 4, "half-moon pond", 11, italic=True, color="#4C6478")
+        self.label(cx - fx * (r + 16), cy - fy * (r + 16) + 4, "geomantic pond", 11, italic=True, color="#4C6478")
 
     def note_focal(self, kind: str) -> None:
         """Record an optional FOCAL feature (feature 005 catalog) on the manifest so the twin-detector reads
