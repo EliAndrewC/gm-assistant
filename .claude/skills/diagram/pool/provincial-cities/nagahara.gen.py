@@ -271,7 +271,7 @@ def plot_centroid(net, key):
     planted field (the envelope centroid of a curved fan can miss, and the water-source checks
     test the channel END with point_in_poly against the outline)."""
     cens = [(sum(v[0] for v in p["poly"]) / len(p["poly"]), sum(v[1] for v in p["poly"]) / len(p["poly"]))
-            for p in net["plots"]]
+            for p in net["plots"] if not p.get("filler")]   # carve plots only: a filler tile hugging the drain rim can win the extremum and put the topo anchor outside the outline (channel_field_anchored)
     cx, cy = key(cens)
     return (round(cx, 1), round(cy, 1))
 
