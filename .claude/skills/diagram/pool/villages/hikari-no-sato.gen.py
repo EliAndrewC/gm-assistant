@@ -88,9 +88,12 @@ def add_block(name, sluice, seed, field_fall, offtakes_a, canal_a_len, canal_b_l
     # the northern BROOK diverted into the head-race at the sluice (from off-map hills, frm=offmap, no `to`)
     s.stream([(sluice[0] + 6, -12), (sluice[0] + 2, sluice[1] * 0.45), (sluice[0], sluice[1] - 30), sluice],
              frm={"kind": "offmap"}, width=7)
-    # the water network: head-race + supply canals + drain, marching S
+    # the water network: head-race + supply canals + drain, marching S - in the LATE water block
+    # (late=True) like every comb net: this map's SECOND comb's plots drew over the first comb's
+    # shared-block net (GM 2026-07-21, the Hoshizora canals-under-paddies audit; the late block
+    # re-anchors past the last-drawn plots so both nets stay visible)
     for c in sorted(net["channels"], key=lambda c: -c["w"]):
-        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]))
+        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]), late=True)
     # the drain's OUTFALL empties into a valley brook off-map S (water OUT)
     if net["brook"]:
         s.stream(net["brook"], frm={"kind": "drain"}, to={"kind": "offmap"}, width=8)

@@ -5199,10 +5199,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 if p_ is not None and len(p_) >= 3:
                     tm_polys.append(p_)
         tm_boxes = []
+        # structure boxes grow by the URBAN-CLEARANCE halo (30 ft, converted at the map's grain), not a
+        # token 8px: the swept/trodden ground around every occupied structure - dooryards, alleys, drying
+        # ground - is URBAN FLOOR, the unwalled-town equivalent of the walled case's inside-the-rampart
+        # exemption. Without this, forbidding scrub over the built-up area (scrub_clear_of_urban_fabric
+        # below) would re-count all that working ground as "bare" and the two checks would fight.
+        tm_halo = 30.0 / (meta.get("ftpx") or 1)
         for v_ in M.values():
             if isinstance(v_, list) and v_ and isinstance(v_[0], dict) and "x" in v_[0] and "w" in v_[0] and "h" in v_[0]:
                 for o_ in v_:
-                    tm_boxes.append((o_["x"] - o_["w"] / 2 - 8, o_["y"] - o_["h"] / 2 - 8, o_["x"] + o_["w"] / 2 + 8, o_["y"] + o_["h"] / 2 + 8))
+                    tm_boxes.append((o_["x"] - o_["w"] / 2 - tm_halo, o_["y"] - o_["h"] / 2 - tm_halo, o_["x"] + o_["w"] / 2 + tm_halo, o_["y"] + o_["h"] / 2 + tm_halo))
         for g_ in M.get("village_groves", []):
             for c_ in g_.get("clumps", []):
                 tm_boxes.append((c_[0] - 16, c_[1] - 16, c_[0] + 16, c_[1] + 16))
@@ -5241,6 +5247,44 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             tm_frac <= 0.20,
             f"{tm_frac:.0%} of the town sheet is bare open ground (over the 20% allowance) - a county seat's margins are worked land: clothe the aprons in grazing commons scrub / pasture / marsh / coppice (s.commons(..., role='grazing') bands; the ground inside the rampart counts as urban floor)",
         )
+
+    # SCRUB STAYS OUT OF THE BUILT-UP FABRIC (GM 2026-07-21, Hoshizora). The old doctrine let a gen
+    # draw GENEROUS scrub polys over the town and trust the scatter's per-point skips - but those
+    # skips only cleared building FOOTPRINTS, so scrub speckled the streets, dooryards, and gaps
+    # between the shops, merchant houses, laborer housing, and the burakumin quarter, and crowded
+    # right up to the wellheads. The rule: settlement ground is CLEARED - the daily traffic, sweeping,
+    # and fuel/fodder-gathering pressure of the inhabitants strips brush from the built-up area first,
+    # so scrub survives only on the OUTSKIRTS, beyond the last dwellings. The recorded poly must
+    # therefore itself trace the outskirts: no occupied structure's or wellhead's CENTER may lie inside
+    # a commons cover poly (any role - grazing scrub, pasture, coppice woodland). The engine's draw-time
+    # urban-clearance halo additionally keeps the scatter off fringe features that merely ABUT an
+    # apron; this check governs the claimed REGION, and is order-blind, so a structure drawn AFTER the
+    # scrub fires all the same. Field BARNS are exempt: a hay barn stands in the grazed ground it
+    # serves (Hoshizora's SE pasture barns are the canonical case). SCOPED TO town/city: at
+    # village/hamlet scale the satoyama doctrine deliberately interleaves the settlement with its
+    # marginal scrub - dispersed farmsteads stand ON the unirrigated waste (Akagahara), the
+    # water-mouth shrine sits IN its commons (Ueda), and the margin ring spans whole map edges -
+    # so there only the engine halo applies (every feature's curtilage stays clear, but the polys
+    # legitimately contain features).
+    scrub_urban = []
+    for cv_ in M.get("commons", []) if scale in ("town", "city") else []:
+        cp_ = cv_.get("poly")
+        if not cp_ or len(cp_) < 3:
+            continue
+        for uk_ in ("houses", "buildings", "wells", "storehouses", "flophouses", "religious", "shrines", "manors", "ministries"):
+            for o_ in M.get(uk_, []) or []:
+                if uk_ == "buildings" and o_.get("kind") == "barn":
+                    continue  # a field barn stands in its pasture/commons - that is where hay barns live
+                if point_in_poly(o_["x"], o_["y"], cp_):
+                    scrub_urban.append((uk_, o_.get("kind", ""), round(o_["x"]), round(o_["y"])))
+    check(
+        "scrub_clear_of_urban_fabric",
+        not scrub_urban,
+        f"{len(scrub_urban)} urban feature(s) stand INSIDE a scrub/pasture/coppice cover poly (key, kind, x, y): {scrub_urban[:6]} - "
+        "settlement ground is cleared; scrub lives on the OUTSKIRTS only. Redraw the commons poly to hug the "
+        "built-up edge (the engine's urban-clearance halo protects fringe features that abut an apron; a poly "
+        "that CONTAINS a dwelling/shop/well is claiming grazed waste where the town stands)",
+    )
 
     # NO CANOPY STANDS OVER OPEN WATER (GM audit 2026-07): a village-grove clump drawn across a
     # stream / channel / moat reads as trees growing in the current. The fengshui-pond rule
