@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# ritual.sh - the session-clone git ritual, encoded as a script.
+# sync-with-main.sh - keep a session clone and main in sync, in both directions: pull main's
+# tip into the clone (sync-in), push the clone's committed work back (push), and land the
+# clone's rendered map artifacts in main's browsing tree (render-sync). Encodes the stop-work
+# ritual from CLAUDE.md as a script. (Renamed from ritual.sh, GM 2026-07-21: name the purpose,
+# not the culture.)
 #
 # WHY (GM 2026-07-21): "if you're having to just remember to run the right commands in the right
 # order then that seems error prone" - it was. Incidents that shaped this script, all from sessions
@@ -22,10 +26,10 @@
 set -euo pipefail
 
 MAIN=/gm-assistant
-LOCK=$MAIN/.clones/.ritual.lock
+LOCK=$MAIN/.clones/.ritual.lock   # keep this NAME: it is the cross-session lock convention in CLAUDE.md - renaming it would stop serializing against other sessions
 POOL=.claude/skills/diagram/pool
 
-die() { echo "ritual: $*" >&2; exit 1; }
+die() { echo "sync-with-main: $*" >&2; exit 1; }
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git checkout"
 case "$ROOT" in
@@ -54,12 +58,12 @@ push_cmd() {
   theirs=$(git diff --name-only "$before"..HEAD | sort -u)
   overlap=$(comm -12 <(printf '%s\n' "$ours") <(printf '%s\n' "$theirs"))
   if [ -n "$overlap" ]; then
-    echo "ritual: PUSHED, but the pull auto-merged other sessions' edits into files your commits touched:" >&2
+    echo "sync-with-main: PUSHED, but the pull auto-merged other sessions' edits into files your commits touched:" >&2
     printf '  %s\n' $overlap >&2
-    echo "ritual: rerun the relevant gate NOW and fix forward (CLAUDE.md stop-work step 3)" >&2
+    echo "sync-with-main: rerun the relevant gate NOW and fix forward (CLAUDE.md stop-work step 3)" >&2
     exit 3
   fi
-  echo "ritual: pushed clean (no overlap with incoming changes)"
+  echo "sync-with-main: pushed clean (no overlap with incoming changes)"
 }
 
 regen() {
@@ -70,7 +74,7 @@ regen() {
     d=$(dirname "$g")
     ( cd "$d" && python3 "$(basename "$g")" >/dev/null ) || die "generator failed: $g"
   done
-  echo "ritual: all pool generators re-run"
+  echo "sync-with-main: all pool generators re-run"
 }
 
 render_sync() {
@@ -79,7 +83,7 @@ render_sync() {
   # that never built another session's map must not wipe main's render of it). CLAUDE.md step 5.
   flock "$LOCK" sh -c "
     [ \"\$(git -C '$ROOT' rev-parse HEAD)\" = \"\$(git -C '$MAIN' rev-parse HEAD)\" ] \
-      || { echo 'ritual: TIP-GUARD refused - clone is not at main HEAD; pull, re-gate, re-render first' >&2; exit 1; }
+      || { echo 'sync-with-main: TIP-GUARD refused - clone is not at main HEAD; pull, re-gate, re-render first' >&2; exit 1; }
     rsync -rt --include='*/' --include='*.svg' --include='*.png' --exclude='*' '$ROOT/$POOL/' '$MAIN/$POOL/'
   "
   # VERIFY every render the clone has: report from checksum evidence, never from rsync exiting 0
@@ -88,12 +92,12 @@ render_sync() {
     rel=${f#"$ROOT/$POOL/"}
     n=$((n + 1))
     if ! cmp -s "$f" "$MAIN/$POOL/$rel"; then
-      echo "ritual: VERIFY FAILED: $rel differs between clone and main after copy" >&2
+      echo "sync-with-main: VERIFY FAILED: $rel differs between clone and main after copy" >&2
       bad=1
     fi
   done < <(find "$ROOT/$POOL" -name '*.png' -o -name '*.svg')
   [ "$bad" = 0 ] || exit 1
-  echo "ritual: render sync verified - $n files byte-identical in main"
+  echo "sync-with-main: render sync verified - $n files byte-identical in main"
 }
 
 case "${1:-}" in
@@ -101,5 +105,5 @@ case "${1:-}" in
   push)        push_cmd ;;
   render-sync) shift; render_sync "${1:-}" ;;
   done)        push_cmd; render_sync ;;
-  *)           die "usage: ritual.sh sync-in | push | render-sync [--regen] | done" ;;
+  *)           die "usage: sync-with-main.sh sync-in | push | render-sync [--regen] | done" ;;
 esac
