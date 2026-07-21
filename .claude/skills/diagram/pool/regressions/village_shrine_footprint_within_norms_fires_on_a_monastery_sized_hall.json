@@ -1,0 +1,21 @@
+{
+ "meta": {
+  "scale": "village",
+  "ftpx": 2
+ },
+ "religious": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 118,
+   "h": 82,
+   "kind": "shrine"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "village_shrine_footprint_within_norms"
+  ],
+  "source": "test_checks.py::test_village_shrine_footprint_within_norms_fires_on_a_monastery_sized_hall"
+ }
+}

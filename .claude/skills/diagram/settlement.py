@@ -5198,12 +5198,17 @@ class Settlement:
             wf = 1.0 if kind == "big" else (0.9 if t < 30 else (1.12 if t >= 80 else 1.0))
             hw, hh = self.px(bw) * wf, self.px(bh) * wf
         # a fireproof KURA storehouse is a WEALTH MARKER, not universal - it attaches to the house on ~30% of
-        # plain farms (position-seeded off the SEED spot, no RNG ripple; a headman/ruin has none). It goes on the
+        # plain farms (position-seeded off the SEED spot, no RNG ripple; a ruin has none). The HEADMAN always
+        # has one (GM 2026-07-21): the shoya/nanushi is by definition among the village's most prosperous
+        # farmers - historically the land-opening family - AND the office needs one functionally: the headman
+        # kept the village's tax ledgers, land registers, and tax rice awaiting collection, exactly what
+        # fireproof kura storage is for. Leaving him on the ~30% dice let all four pool headmen roll bare
+        # (chance masquerading as doctrine); headman_has_kura gates it now. It goes on the
         # NORTH (back) wall of a nucleated house: the cluster hugs the field to the EAST so a house's garden takes
         # the west/sunny walls but never the shaded NORTH, so a north kura is clear of it - and its footprint is
         # RESERVED in the homestead bundle so a neighbor never lands on it. Drawn + recorded in farmsteads() so
         # it always moves WITH the house (farm_sheds_attached guards it).
-        _shed = kind == "plain" and self._hjit(x, y, 3.0) < 0.30
+        _shed = kind == "plain" and (role == "headman" or self._hjit(x, y, 3.0) < 0.30)
         spot = self._place_bundle(x, y, hw, hh, shed=_shed)  # pack the bundle (incl. the reserved kura) near (x,y)
         if spot is None:
             return False
