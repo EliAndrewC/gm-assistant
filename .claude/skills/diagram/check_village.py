@@ -7209,6 +7209,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a mulberry_dike_fishpond field must be a filled block ({dp_fill:.0%} of bbox) of many mulberry-rimmed fish ponds (enough pond cells: {bool(pond_rec)}) - the 桑基魚塘 system",
         )
 
+    # A polder's PARCEL fabric must VARY (researched 2026-07-21; grounding in build_polder's docstring).
+    # The surveyed chessboard was the CANAL grid; the parcels inside were a private-tenure patchwork
+    # (Buck 1929-33: mean parcel ~1 mu, several scattered per farm; dike-ponds accreted 挖塘培基,
+    # household by household). Identical uniform cells are the 20th-century consolidation look (hojo
+    # seibi 30x100m), so a block of them - the original Kuwabata/Enokida render - must fire. Applies to
+    # both polder-geometry archetypes; measured from the manifest's per-plot [along, cross] spans, and a
+    # polder manifest that records NO parcel geometry fails rather than passes by omission.
+    if meta.get("field_archetype") in ("polder_grid", "mulberry_dike_fishpond") and fields:
+        pl = fields[0].get("plots") or []
+        pv_cv = pv_ob = 0.0
+        pv_ok = len(pl) >= 12
+        if pv_ok:
+            areas = [a * c for a, c in pl]
+            mean_a = sum(areas) / len(areas)
+            pv_cv = (sum((x - mean_a) ** 2 for x in areas) / len(areas)) ** 0.5 / max(1e-9, mean_a)
+            asps = [max(a, c) / max(1.0, min(a, c)) for a, c in pl]
+            pv_ob = sum(1 for x in asps if x >= 1.45) / len(asps)
+            pv_ok = pv_cv >= 0.18 and pv_ob >= 0.35
+        check(
+            "polder_parcels_vary",
+            pv_ok,
+            f"a polder's parcel fabric must be a patchwork, not identical cells - the survey grid was the CANALS, the parcels were private-tenure oblongs of varied size (area cv {pv_cv:.2f}, want >=0.18; oblong share {pv_ob:.0%}, want >=35%; n={len(pl)}, want >=12) - uniform squares read as 20th-century land consolidation",
+        )
+
     # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -
     # so its extent ALONG the fall is much greater than its extent ACROSS it. That aspect is the archetype's
     # teeth: a ribbon reads as a winding valley strip, not a broad fan/block.

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Kuwabata (榎田) - a POLDER-grid village (feature 005 US4 field_archetype='polder_grid').
 
-A second field-GEOMETRY archetype: a rectilinear block of large regular paddies on flat reclaimed LOW
-ground, an orthogonal ditch grid inside a perimeter dike (China-first: the wei-tian 圩田 polders of the
+A second field-GEOMETRY archetype: a rectilinear block on flat reclaimed LOW ground - a straight ditch-grid
+module whose bays subdivide into a varied parcel patchwork - inside a perimeter dike (China-first: the wei-tian 圩田 polders of the
 lower-Yangtze lake plains - the planned, surveyed opposite of the organic valley comb). Water enters the
 high corner, a perimeter feeder supplies the grid, and it drains to the low corner; the village lines the
 dry perimeter dike on the east side.
