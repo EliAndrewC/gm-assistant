@@ -4705,6 +4705,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"s.moat so the shared bed and sheen groups composite it as one confluence",
     )
 
+    # A DRAIN CULVERT MEETS ITS STREAM AT A CONFLUENCE - waterways join like roads do. A channel
+    # declaring to={"kind":"stream"} must actually REACH the receiving bed: its recorded end within
+    # the stream's half-width (+2px) of the centerline, so the mouth sits in the water. The anchor
+    # test alone allows 30px, which let a culvert die in the grass beside the stream and still pass
+    # (GM caught this on Hirameki, 2026-07): a ditch that "drains to the stream" must visibly drain
+    # INTO the stream. (Extend the recorded polyline to the centerline; `_clip_to_stream` trims the
+    # DRAWN mouth back onto the bed edge so it never paints a tongue across the current.)
+    dry_mouths = []
+    for c in M.get("channels", []):
+        if (c.get("to") or {}).get("kind") != "stream":
+            continue
+        end = c["poly"][-1]
+        reach = min(
+            (seg_dist(end[0], end[1], sp[i], sp[i + 1]) - st.get("w", 9) / 2 for st in M.get("streams", []) for sp in [st["poly"]] for i in range(len(sp) - 1)),
+            default=None,
+        )
+        if reach is None or reach > 2:
+            dry_mouths.append((round(end[0]), round(end[1])))
+    check(
+        "channels_join_streams_at_confluence",
+        not dry_mouths,
+        f"channel mouth(s) declared to={{stream}} stop short of the receiving bed at {sorted(set(dry_mouths))[:4]} - "
+        f"a drain culvert joins its stream at a CONFLUENCE (the mouth reaches into the water, like a road junction), "
+        f"never dying in the grass beside the bank; extend the recorded polyline to the stream centerline",
+    )
+
     # no field overlaps the town wall: a field may ABUT the wall but must stay on one
     # side of it (the chrysanthemum field inside the walls touches but never crosses)
     wall = M.get("wall")

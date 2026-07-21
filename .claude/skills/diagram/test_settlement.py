@@ -2360,3 +2360,19 @@ def test_merchant_residences_stop_at_the_requested_count():
     assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant_large") == n0
     s.merchant_residences(1)
     assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant_large") <= n0 + 1
+
+
+def test_clip_to_stream_trims_the_confluence_mouth():
+    # a drawn channel whose recorded end sits ON the stream centerline gets its DRAWN mouth
+    # trimmed back onto the bed's edge (~2px inside the bank) - the confluence join; ends short
+    # of the bank and runs lying wholly inside the bed are left alone
+    s = Settlement(W=1000, H=1000, seed=1)
+    s.meta(name="Cf", scale="town", ftpx=1)
+    assert s._clip_to_stream([(100, 100), (200, 100)]) == [(100, 100), (200, 100)]  # no streams: no-op
+    s.stream([(400, 50), (400, 950)], width=9)
+    out = s._clip_to_stream([(300, 500), (400, 500)])  # end on the centerline -> pulled to hw-2
+    assert abs(out[-1][0] - 397.5) < 0.1 and out[-1][1] == 500
+    same = s._clip_to_stream([(300, 500), (370, 500)])  # short of the bank -> untouched
+    assert same == [(300, 500), (370, 500)]
+    inside = s._clip_to_stream([(399, 400), (400, 500)])  # wholly inside the bed -> left alone
+    assert inside == [(399, 400), (400, 500)]

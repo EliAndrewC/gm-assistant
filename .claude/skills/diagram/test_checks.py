@@ -104,6 +104,23 @@ def test_channels_flow_downhill_passes_when_channel_runs_downhill():
     assert "channels_flow_downhill" not in f(M)
 
 
+# ---- channels_join_streams_at_confluence (a drain culvert reaches INTO the receiving bed) ----
+def _sink_channel(end):
+    return {"poly": [[end[0] - 60, end[1] - 40], end], "frm": {"kind": "drain"}, "to": {"kind": "stream"}}
+
+
+def test_channels_join_streams_at_confluence_fires_when_the_mouth_dies_short():
+    # the stream runs N-S at x=400 (w 9 -> half-width 4.5); a culvert ending 20px from the
+    # centerline passes the 30px anchor but never reaches the water - no confluence
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [_sink_channel([380, 500])]}
+    assert "channels_join_streams_at_confluence" in f(M)
+
+
+def test_channels_join_streams_at_confluence_passes_when_the_mouth_reaches_the_bed():
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [_sink_channel([400, 500])]}
+    assert "channels_join_streams_at_confluence" not in f(M)
+
+
 # ---- field_ditches_reach_source_and_sink (role-aware: supply->source, drain->sink) ----------
 def test_field_ditches_reach_source_and_sink_fires_when_ungrounded():
     # a supply ditch with no pond source AND a drain with no runoff sink - both dangle (the failure

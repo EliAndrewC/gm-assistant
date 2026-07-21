@@ -1848,6 +1848,58 @@ class Settlement:
         out = snap_front(out[::-1])[::-1]
         return out
 
+    def _clip_to_stream(self, pts: Any) -> Any:
+        """Snap a channel endpoint that reaches INTO a stream bed onto the bed's edge (~2px inside
+        the bank, so the mouth covers the bank stroke) - the same clean CONFLUENCE `_clip_to_pond`
+        and `_clip_to_moat` give: a drain culvert JOINS the receiving stream without drawing its own
+        bed as a colored tongue across the current. Trim-only: an end short of the bank is left
+        alone (the `channels_join_streams_at_confluence` check requires the RECORDED polyline to
+        reach the bed, so the gen extends the record to the centerline and this trims the DRAWING)."""
+        streams = self.M.get("streams", [])
+        if not streams or len(pts) < 2:
+            return pts
+
+        def foot(q: Pt) -> tuple[Any, float, float]:
+            best: Any = None
+            bd, bhw = 1e9, 4.5
+            for st in streams:
+                sp = st["poly"]
+                hw = st.get("w", 9) / 2
+                for i in range(len(sp) - 1):
+                    ax, ay = sp[i]
+                    bx, by = sp[i + 1]
+                    vx, vy = bx - ax, by - ay
+                    ll = vx * vx + vy * vy or 1.0
+                    t = max(0.0, min(1.0, ((q[0] - ax) * vx + (q[1] - ay) * vy) / ll))
+                    fx, fy = ax + vx * t, ay + vy * t
+                    d = math.hypot(q[0] - fx, q[1] - fy)
+                    if d < bd:
+                        bd, best, bhw = d, (fx, fy), hw
+            return best, bd, bhw
+
+        def snap_front(seq: Any) -> list[Any]:
+            out = list(seq)
+            f0, d0, hw0 = foot(out[0])
+            if f0 is None or d0 >= hw0 - 2:
+                return out  # the end is clear of the bed (or right at its edge) - nothing to trim
+            i = 0  # drop any leading run inside the bed
+            while i + 1 < len(out):
+                _fn, dn, hwn = foot(out[i + 1])
+                if dn >= hwn - 2:
+                    break
+                i += 1
+            if i + 1 >= len(out):
+                return out  # the whole channel lies in the stream - leave it
+            f, _d, hw = foot(out[i])
+            nxt = out[i + 1]
+            ux, uy = nxt[0] - f[0], nxt[1] - f[1]
+            ul = math.hypot(ux, uy) or 1.0
+            return [(f[0] + ux / ul * (hw - 2), f[1] + uy / ul * (hw - 2))] + out[i + 1 :]
+
+        out = snap_front(pts)
+        out = snap_front(out[::-1])[::-1]
+        return out
+
     @staticmethod
     def _pond_anchored(frm: Any, to: Any) -> bool:
         """True if a watercourse connects TO the pond at either end (frm/to kind == 'pond') - the cue to snap
@@ -1862,8 +1914,10 @@ class Settlement:
         tapers `w0 -> w1` along the run (split into pieces). The sluice end is snapped onto the rim by
         `_clip_to_pond`, and an end meeting the MOAT is snapped onto the moat bed's edge by
         `_clip_to_moat` (the same clean-mouth join, for a moated city's taps and drain culverts).
+        An end reaching into a STREAM bed is snapped onto that bed's edge by `_clip_to_stream`
+        (the confluence mouth for a drain culvert emptying into a stream).
         Not recorded here - the field_ditches are recorded separately for the checks."""
-        pts = self._clip_to_moat(self._clip_to_pond(pts))
+        pts = self._clip_to_stream(self._clip_to_moat(self._clip_to_pond(pts)))
         if abs(w1 - w0) < 0.2:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
             self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {})
