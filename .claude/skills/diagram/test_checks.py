@@ -5359,6 +5359,24 @@ def test_polder_parcel_fabric_must_vary():
     assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
 
 
+def test_torii_and_religious_clear_of_works_and_ring():
+    # GM placement rules (2026-07-21, caught on Tango): torii keep clear of halls/towers/the ring
+    # road; religious footprints keep clear of towers/the ring road. An ordinary street through a
+    # torii stays legal (only the RING corridor counts), so no street data appears here.
+    base = {"meta": {"scale": "city", "ftpx": 3}, "ring_road": [[100, 900], [900, 900]], "ring_road_width": 8, "wall_towers": [{"x": 500, "y": 500, "w": 38, "h": 38}]}
+    hall = {"kind": "temple", "x": 300, "y": 300, "w": 43, "h": 28, "label": "Temple of Ebisu"}
+    # torii: on the hall / on the tower / on the ring -> fire; standing clear -> pass
+    assert "torii_clear_of_halls_towers_ring" in f({**base, "religious": [hall], "torii": [[305, 310, 9]]})
+    assert "torii_clear_of_halls_towers_ring" in f({**base, "religious": [hall], "torii": [[505, 512, 9]]})
+    assert "torii_clear_of_halls_towers_ring" in f({**base, "religious": [hall], "torii": [[400, 902, 9]]})
+    assert "torii_clear_of_halls_towers_ring" not in f({**base, "religious": [hall], "torii": [[300, 380, 9]]})
+    # religious: the Tango defect (shrine on a wall tower) and a hall on the ring -> fire; clear -> pass
+    shrine_on_tower = {"kind": "small_shrine", "x": 521, "y": 509, "w": 11, "h": 8}
+    assert "religious_clear_of_ring_and_towers" in f({**base, "religious": [shrine_on_tower]})
+    assert "religious_clear_of_ring_and_towers" in f({**base, "religious": [{**hall, "y": 890}]})
+    assert "religious_clear_of_ring_and_towers" not in f({**base, "religious": [hall]})
+
+
 def test_torii_full_avenue_is_seven():
     # GM numerology canon (2026-07-21): a torii approach is 1-2 (modest entrance) or EXACTLY 7 (full
     # avenue); 3-6 and 8+ fire. Arches assign to their nearest religious feature.
