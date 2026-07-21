@@ -203,7 +203,7 @@ def furrows(poly, color, theta):
 
 
 def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a,
-               offtakes_b=(), dry_band=(14, 26), avoid=(), mirror_ym=None):
+               offtakes_b=(), dry_band=(47, 88), avoid=(), mirror_ym=None):
     """One comb-doctrine field: build the net, draw it, record the manifest. `avoid` lists
     polylines (moat / ring road) a dry-hem plot must not ride - a colliding plot is skipped
     (the hem is texture on the upslope margin, not load-bearing). `mirror_ym` flips the comb's

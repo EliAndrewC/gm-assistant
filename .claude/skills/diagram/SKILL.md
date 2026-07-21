@@ -63,6 +63,8 @@ This skill covers two kinds of diagram that share the conventions below (palette
 
 5. **Self-review.** Read the rendered PNG yourself. Does every named feature appear? Are labels legible? Is the layout coherent? Iterate before showing the GM.
 
+   **EVERY found defect becomes an automated check - ALWAYS (GM rule, 2026-07-21).** When any visual or geometry issue is found - by the GM, by review, or by your own eye - the fix is NOT done until a check exists that would have caught it: write the general check FIRST, verify it fires RED on the unfixed artifact, apply the fix, verify GREEN, and freeze the bad manifest into `pool/regressions/` as the check's negative fixture. A fix shipped without its check is how the same bug returns invisibly - the bare-fan-heads regression survived four fix rounds with every gate green, because `paddy_fan_gapless` deliberately sampled only ground a DIFFERENT rule governed. Mode A diagrams (no manifest gate) encode the rule in the `building-review` agent per the Subagent-check TDD procedure in CLAUDE.md instead.
+
 6. **Report to GM.** Describe what changed, what's deliberately absent, where the diagram diverges from history (Edo vs. Sengoku vs. L5R), and offer a historical-accuracy review pass.
 
 ## Labeling rule: English-default

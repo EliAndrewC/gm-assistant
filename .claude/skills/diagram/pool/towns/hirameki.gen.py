@@ -522,11 +522,17 @@ s.shrine_well(1750, 1050)
 # windward check reserves role='windbreak' for the NW side).
 s.village_grove([(30, 70), (165, 55), (185, 140), (160, 225), (60, 235), (28, 160)], role="windbreak")
 s.village_grove([(275, 60), (385, 70), (392, 200), (360, 280), (285, 265), (262, 150)], role="windbreak")
-s.village_grove([(240, 305), (395, 300), (398, 345), (242, 352)], role="windbreak")
-s.village_grove([(452, 300), (620, 290), (624, 338), (454, 345)], role="windbreak")
+# ...and the NESTLING bands: the doctrine belt "nestles against and EMBRACES the cluster"
+# (settlements.md) - each farm cluster gets a band hugging its windward (N/NW) fringe, wide
+# enough to reach open ground so the clumps take (a band drawn only over the packed rows
+# thins to scatter). The corner masses above are the wood; these bands are the wind wall.
+s.village_grove([(238, 205), (396, 198), (398, 348), (240, 352)], role="windbreak")
+s.village_grove([(452, 198), (626, 192), (628, 342), (454, 345)], role="windbreak")
 s.village_grove([(1960, 70), (2095, 60), (2100, 215), (1975, 235)], role="copse")
 s.village_grove([(2175, 55), (2350, 65), (2360, 210), (2280, 255), (2180, 225)], role="copse")
-s.village_grove([(2000, 300), (2320, 290), (2326, 340), (2004, 348)], role="copse")
+s.village_grove([(1978, 240), (2098, 232), (2100, 345), (1980, 350)], role="copse")
+s.village_grove([(2172, 228), (2352, 222), (2356, 342), (2176, 345)], role="copse")
+s.village_grove([(64, 795), (228, 788), (232, 858), (66, 862)], role="windbreak")
 s.village_grove([(260, 380), (700, 362), (700, 415), (260, 430)], role="copse", dense=False)
 s.village_grove([(640, 430), (700, 430), (700, 860), (640, 860)], role="copse", dense=False)
 s.village_grove([(1940, 420), (1985, 420), (1985, 1300), (1940, 1300)], role="copse", dense=False)
@@ -538,6 +544,8 @@ s.village_grove([(890, 1745), (1040, 1740), (1045, 1975), (895, 1975)], role="co
 # clear ground beside s1's western rows), a copse lobe on the open ground between the gate
 # market and the burakumin quarter, and a small copse behind e2's southeastern farms
 s.village_grove([(35, 1725), (200, 1710), (225, 1800), (190, 1955), (60, 1965), (30, 1850)], role="windbreak")
+s.village_grove([(372, 1708), (548, 1712), (546, 1762), (374, 1760)], role="copse")
+s.village_grove([(720, 1716), (880, 1712), (882, 1764), (722, 1766)], role="copse")
 s.village_grove([(1800, 1700), (2050, 1690), (2060, 1800), (1900, 1830), (1795, 1790)], role="copse")
 s.village_grove([(2290, 1350), (2378, 1345), (2382, 1462), (2295, 1470)], role="copse")
 
