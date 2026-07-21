@@ -2051,6 +2051,24 @@ def test_harvest_and_garden_checks_cover_the_headman():
     assert "gardens_present" in fails
 
 
+def test_headman_has_kura_fires_on_a_bare_headman_and_passes_with_one():
+    # the shoya always has a fireproof kura (GM 2026-07-21): prosperity by definition, plus the office's
+    # ledgers and tax rice need fireproof storage - the ~30% wealth dice are for ordinary plains only
+    M = {"meta": {"scale": "village"}, "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain", "role": "headman", "shed": False}]}
+    assert "headman_has_kura" in f(M)
+    M["houses"][0]["shed"] = True
+    assert "headman_has_kura" not in f(M)
+
+
+def test_village_shrine_footprint_within_norms_fires_on_a_monastery_sized_hall():
+    # Hikari's defect in miniature: a 236x164 ft hall is a small monastery, not a village kami shrine
+    M = {"meta": {"scale": "village", "ftpx": 2}, "religious": [{"x": 500, "y": 500, "w": 118, "h": 82, "kind": "shrine"}]}
+    assert "village_shrine_footprint_within_norms" in f(M)
+    # ... while the showcase Benten class (~490 m^2) passes with headroom under the 600 m^2 ceiling
+    M2 = {"meta": {"scale": "village", "ftpx": 2}, "religious": [{"x": 500, "y": 500, "w": 44, "h": 30, "kind": "shrine"}]}
+    assert "village_shrine_footprint_within_norms" not in f(M2)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
