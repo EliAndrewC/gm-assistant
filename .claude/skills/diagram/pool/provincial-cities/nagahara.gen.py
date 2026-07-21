@@ -258,7 +258,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     s.M["fields"].append({"name": name, "kind": "paddy", "outline": [[x, y] for x, y in env],
                           "bbox": [min(exs), min(eys), max(exs), max(eys)],
                           "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
-                          "plots": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]]})   # the drawn paddy plots, so paddy_fan_gapless can see holes inside the fan
+                          "plot_polys": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]]})   # the drawn paddy plot POLYGONS, so paddy_fan_gapless can see holes inside the fan ("plots" is taken: the polder checks record [along, cross] parcel spans there)
     for c in net["channels"]:
         s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
                                      "role": c["role"], "field": name,

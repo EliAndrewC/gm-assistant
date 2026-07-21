@@ -2091,7 +2091,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # tuned at 2 ft/px, a 3 ft/px city passes grain=2/3); left unscaled they silently drop
     # sectors, head plots and gap-closers a village would plant (Tango/Nagahara re-exposed
     # exactly this at the city grain, 2026-07-21 - the frozen fixture). Only fields that record
-    # their drawn "plots" are gated (the city gens do; a village gen can opt in by recording
+    # their drawn "plot_polys" are gated (the city gens do; a village gen can opt in by recording
     # them). The rim is inset away (canal berms / drain set-backs legitimately live there) and
     # the tolerance covers bunds and the delivery-ditch strips between plot columns.
     _gpx = float(meta.get("ftpx", 1) or 1)
@@ -2101,10 +2101,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # fan), so the delivery-ditch strips between plot columns never read as bare
     gap_fields = []
     for f in M.get("fields", []):
-        if f.get("kind") != "paddy" or not f.get("plots") or not f.get("outline"):
+        if f.get("kind") != "paddy" or not f.get("plot_polys") or not f.get("outline"):
             continue
         gout = [(q[0], q[1]) for q in f["outline"]]
-        gplots = [[(q[0], q[1]) for q in gp] for gp in f["plots"]]
+        gplots = [[(q[0], q[1]) for q in gp] for gp in f["plot_polys"]]
         pboxes = [(min(q[0] for q in gp) - _g_tol, min(q[1] for q in gp) - _g_tol, max(q[0] for q in gp) + _g_tol, max(q[1] for q in gp) + _g_tol) for gp in gplots]
         fditch = [d for d in M.get("field_ditches", []) if d.get("field") == f.get("name")]
         bx0, by0 = min(q[0] for q in gout), min(q[1] for q in gout)
@@ -2136,7 +2136,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             gy += _g_step
         if gtotal and gbare > max(2, 0.02 * gtotal):
             gap_fields.append(f"{f.get('name')} ({gbare}/{gtotal} bare)")
-    if any(f.get("plots") for f in M.get("fields", [])):
+    if any(f.get("plot_polys") for f in M.get("fields", [])):
         check(
             "paddy_fan_gapless",
             not gap_fields,
