@@ -511,8 +511,14 @@ s.label(1399, 1462, "merchant district", 10, italic=True, color="#5A4326")
 # court-spacing from a well gets one dropped in the nearest clear court (place_wells near=
 # mode + its coverage pass; grid placement consumes no RNG, so this perturbs nothing).
 s.place_wells((1622, 993, 2069, 1358), spacing=52, near=46)   # NE laborer warren + the gap band
-s.place_wells((1181, 1338, 1602, 1704), spacing=52, near=46)   # merchant district + temple neighborhood
+s.place_wells((1181, 1338, 1602, 1704), spacing=47, near=46)   # merchant district + temple neighborhood (spacing 52->47, 2026-07-21: the true-scale reflow packed the avenue rows denser and the (1412,1376) well sat nearest for 33-34 households with every interior seed spot reserved - a finer grid is the honest fix, ~1 well per 10-20 households)
 s.place_wells((1191, 1226, 1602, 1343), spacing=52, near=46)   # burakumin strips
+for _wc in [(1255, 1460), (1250, 1465), (1255, 1475), (1255, 1455), (1250, 1480)]:   # a west idobata for the temple-hood merchants: the (1412,1376) well's 34-household catchment reaches to x1267, and every interior spot is reserved (hall block / label bands) - this splits off its west wing
+    if s.well_at(*_wc):
+        break
+for _wc in [(1620, 1452), (1614, 1452), (1626, 1446), (1608, 1458), (1550, 1520), (1560, 1540)]:   # a seeded idobata for the merchant district's SE pocket by the ward fence: the true-scale reflow (2026-07-21, merged engines) left its densest well nearest for 30+ households (city_well_density_sufficient ceiling 26); candidate LIST per the well_at doctrine - blocked spots no-op
+    if s.well_at(*_wc):
+        break
 
 # ====================================================================== SE: government + samurai
 # the governor's YAMEN - the grandest compound in the city (its dozens of interior buildings
