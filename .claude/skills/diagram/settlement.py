@@ -6616,6 +6616,20 @@ class Settlement:
         )
         self._record_label(x, y, text, size, anchor, z)
 
+    def _text_width(self, s: str, fs: float) -> float:
+        """Measured pixel width of bold `s` at font-size `fs` in the RENDER font (DejaVu Serif Bold -
+        what resvg substitutes for 'serif'), via PIL; falls back to a calibrated estimate when PIL or
+        the font is absent. WHY (GM 2026-07-21): the em/char estimates under-measured wide lowercase
+        names - 'Akagahara' measured 180px against a 167px estimate, and the missing 14px ran the
+        name off its placard's right edge. Measuring the actual glyphs makes the padding true."""
+        try:
+            from PIL import ImageFont
+
+            f = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf", int(round(fs)))
+            return float(f.getlength(s))
+        except Exception:  # PIL / font absent: the engine stays standalone on a generous estimate
+            return len(s) * fs * 0.62
+
     def title(self, name: str, fs: float = 30) -> None:
         """Place the map title (the bold place name plus a scale bar under it) over BLANK space: scan the
         rendered window for a spot where the box clears every feature (buildings, fields, water, groves,
@@ -6637,7 +6651,7 @@ class Settlement:
         scrub speckle nearly everywhere a title can sit, and ink-on-scrub was hard to read). The
         searched and recorded box is the PLACARD's extent, so the clearance check gates the whole
         card; `title_has_placard` gates its presence (a manifest without one predates the card)."""
-        tw, th = len(name) * fs * 0.58 + 10, fs * 1.2  # estimated text box (bold serif runs ~0.58 em/char; +10 so a long name never kisses the card border)
+        tw, th = self._text_width(name, fs) + 4, fs * 1.2  # MEASURED text box (+4 breathing room) - see _text_width; symmetric placard padding follows for free
         bar_px, bar_ft = 100.0, round(100 * self.ftpx)
         PAD = 12  # placard padding around the text block
         bw, bh = max(tw, bar_px) + 2 * PAD, th + 46 + 2 * PAD  # the searched box: the whole placard
@@ -6649,7 +6663,8 @@ class Settlement:
             px0, py0 = vx0 + 30, vy0 + 16
         else:
             px0, py0 = self.W / 2 - bw / 2, 22
-        x, y = px0 + PAD, py0 + PAD  # the text block's origin, inside the card
+        y = py0 + PAD  # the text block's top, inside the card
+        pcx = px0 + bw / 2  # the placard's axis: the name AND the scale bar center on it (GM 2026-07-21)
         self.M["title"] = {
             "name": name,
             "bbox": [round(px0, 1), round(py0, 1), round(px0 + bw, 1), round(py0 + bh, 1)],
@@ -6659,8 +6674,8 @@ class Settlement:
             f'<g><rect x="{px0:.0f}" y="{py0:.0f}" width="{bw:.0f}" height="{bh:.0f}" rx="7" fill="#F7F0DC" fill-opacity="0.94" stroke="#8C7A55" stroke-width="1.6"/>'
             f'<rect x="{px0 + 3.5:.0f}" y="{py0 + 3.5:.0f}" width="{bw - 7:.0f}" height="{bh - 7:.0f}" rx="5" fill="none" stroke="#BCAA7E" stroke-width="0.8"/></g>'
         )
-        self.add_label(f'<text x="{x:.0f}" y="{y + fs:.0f}" font-size="{fs}" font-weight="bold" fill="#2D2A24">{name}</text>')
-        bx0, bx1, by = x, x + bar_px, y + th + 12  # bar left-aligned under the title
+        self.add_label(f'<text x="{pcx:.0f}" y="{y + fs:.0f}" text-anchor="middle" font-size="{fs}" font-weight="bold" fill="#2D2A24">{name}</text>')
+        bx0, bx1, by = pcx - bar_px / 2, pcx + bar_px / 2, y + th + 12  # bar CENTERED under the name, on the placard's axis
         self.M["scalebar"] = {"ft": bar_ft, "ftpx": self.ftpx, "bbox": [round(bx0, 1), round(by - 5, 1), round(bx1, 1), round(y + bh, 1)]}
         self.add_label(
             f'<g stroke="#3A2E1C" stroke-width="2">'

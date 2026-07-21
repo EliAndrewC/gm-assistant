@@ -1100,6 +1100,22 @@ def test_garden_beds_clear_rejects_a_bed_on_a_neighbor():
     assert s._garden_beds_clear([(100, 100, 20, 14)], others=[(300, 300, 20, 14)]) is True
 
 
+def test_text_width_measures_the_render_font_and_falls_back(monkeypatch):
+    # the placard pads symmetrically because the width is MEASURED in the render font (DejaVu Serif
+    # Bold, what resvg substitutes for serif) - 'Akagahara' measured ~180px where the old estimate
+    # said 167 and ran off the card edge (GM 2026-07-21). Without PIL/the font, a generous estimate.
+    s = _crop_settlement()
+    w = s._text_width("Akagahara", 30)
+    assert 170 < w < 195
+    import PIL.ImageFont
+
+    def _boom(*a, **k):
+        raise OSError("no font")
+
+    monkeypatch.setattr(PIL.ImageFont, "truetype", _boom)
+    assert s._text_width("Akagahara", 30) == 9 * 30 * 0.62
+
+
 def test_union_area_empty_and_overlapping_spans():
     # empty (or all-degenerate) rects -> zero area; and a rect fully shadowed by a taller one in the
     # same x-slab must be counted ONCE (the y1 <= cy skip), not double-counted.
