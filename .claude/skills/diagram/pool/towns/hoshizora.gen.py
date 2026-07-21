@@ -48,8 +48,19 @@ s = Settlement(2000, 1300, seed=386)
 # downhill=[-0.42, 0.91] / down_deg=115: the land falls SSW, obliquely along the stream and
 # the Imperial Road (both descend toward the low SW corner); every channel + drain runs with it.
 s.meta(
-    name="Hoshizora", scale="town", walled=False, torii_expected=1, monastery_fortunes=["Bishamon"], population=550, ftpx=1, downhill=[-0.42, 0.91], down_deg=115, pond_role="drainage"
-)  # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county (was 600 under the old quilt fields; the to-scale comb wedge holds ~110 dwellings). ftpx=1: the GM's town scale, 1px=1ft
+    name="Hoshizora",
+    scale="town",
+    walled=False,
+    torii_expected=1,
+    monastery_fortunes=["Bishamon"],
+    population=680,
+    ftpx=1,
+    toscale=True,
+    nucleated=True,
+    downhill=[-0.42, 0.91],
+    down_deg=115,
+    pond_role="drainage",
+)  # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county (the nucleated to-scale farm rows pack ~135 dwellings around the combs). ftpx=1: the GM's town scale, 1px=1ft
 
 # ---- terrain: a small forest (SE corner) and two grazing pastures, all running OFF
 # the map edge (larger than drawn)
@@ -150,7 +161,9 @@ _drainA = [c for c in netA["channels"] if c["role"] == "drain"][0]["pts"]
 _outA = _drainA[-1]
 POND = (430, 895, 44, 26)
 s.pond(*POND)
-_pring = [(POND[0] + (POND[2] + 40) * math.cos(a), POND[1] + (POND[3] + 40) * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]
+# reed fringe on the NORTH arc of the rim only (+16): the Imperial Road bends past the south
+# side, and a road never runs through marshland (roads_clear_of_marsh)
+_pring = [(POND[0] + (POND[2] + 16) * math.cos(a), POND[1] + (POND[3] + 16) * math.sin(a)) for a in [i * math.pi / 8 for i in range(8, 17)]]
 s.marsh(_pring, role="pond_fringe")
 s.block_polys.append(
     [
@@ -221,7 +234,7 @@ for lx, ly in [(1328, 235), (740, 298), (1445, 745)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 # a fixed plain laborer dwelling at the warren's east edge - the packs saturate one short of
 # the budgets.md band, so this one is pinned (stable across the packs' RNG)
-s.building(1642, 662, *s._dims("laborer"), "laborer")
+s.building(1625, 1000, *s._dims("laborer"), "laborer")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
 s.pack((680, 190, 1150, 395), ["laborer"] * 11, step=40)  # laborers at the budgets.md band floor (25 total with the SE pack + the 3 masters) so the depicted farmer cohort stays the plurality
 s.pack((1165, 700, 1600, 925), ["servant"] * 16 + ["laborer"] * 14, step=40)
@@ -243,6 +256,31 @@ s.label(770, 1268, "samurai houses", 11, italic=True)  # over the cluster - kept
 # a noticeable minority of merchant houses keep a fireproof kura (the absentee landlords'
 # rent-rice / bulk goods), drawn AFTER the businesses exist
 s.merchant_storehouses(6)
+
+s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows (the NUCLEATED
+# homestead bundle: house + south threshing yard + adaptive sunny garden + reserved north kura;
+# no per-farm grove - a nucleus shelters itself, per settlements.md 'Settlement form')
+
+# funerary ground BEHIND the monastery, placed BEFORE the farm rings (the to-scale homestead
+# bundles reserve yard+garden+grove footprints, so the graveyard must already be an obstacle
+# they pack around): the parish graveyard (Buddhist danka) against the BACK of the hall, the
+# cremation ground (monk-run, burakumin assistants) on the marginal western edge beyond it -
+# both behind the hall so no one walks past the pyre to reach the monastery.
+s.cemetery(215, 705, 110, 80, label="graveyard", label_above=True)
+s.cremation_ground(85, 810, label_above=True)
+# keep-out ring around the crematory: town_has_cremation_ground demands >120 ft clear of every
+# dwelling, so no farm bundle may pack into that radius (blocked BEFORE the rings run).
+# Centered a touch WEST of the crematory so the ring covers the full 120 ft on every side
+# while leaving the monastery center (215,800) outside it - the ring must not swallow the
+# monastery's own ablution-well spot (remote_shrine_has_own_well).
+s.block_polys.append([(72 + 136 * math.cos(a), 815 + 136 * math.sin(a)) for a in [i * math.pi / 4 for i in range(8)]])
+# ...and a small block on the road-frontage corner SE of the comb: the shopfronts there stand
+# ROTATED along the diagonal road, and the bundle packer's axis-aligned placed-rect test cannot
+# see a rotated corner - one farm kept packing into a shop's swung corner (no_structure_overlaps)
+s.block_polys.append([(615, 855), (835, 855), (835, 940), (615, 940)])
+# ...and a thin strip between the burakumin quarter and the NE comb's head: a bundle packed
+# there stands hard against the quarter's door row (city_house_doors_unblocked)
+s.block_polys.append([(1720, 590), (2010, 590), (2010, 665), (1720, 665)])
 
 # ---- farmhouses: the town's farmer majority (still the largest single group), ringed
 # several-deep around the comb envelopes - generously, since each needs room for its
@@ -321,26 +359,31 @@ for fx, fy in [
 s.inn(276, 1116, rot=150)
 s.stables(276, 1202, rot=150)
 
-# the funerary ground BEHIND the monastery (N of it, away from the Imperial Road): the parish
-# graveyard (Buddhist danka) right against the BACK of the hall (well clear of the stream to the N),
-# with the cremation ground on the marginal
-# western edge beyond it - clear of the dwellings. Both sit behind the hall so no one walks past
-# the pyre to reach the monastery (gated by cremation_ground_not_between_temple_and_road).
-s.cemetery(215, 705, 110, 80, label="graveyard", label_above=True)
-# the cremation ground (monk-run, burakumin assistants) on the western marginal edge; its label
-# sits ABOVE the glyph so it clears the long "Monastery of Bishamon" label just to the east.
-# Pushed S of the funerary/monastery band: the comb's farmhouse ring reaches down here, and
-# the crematory must keep >120 ft clear of every dwelling
-s.cremation_ground(85, 810, label_above=True)
-
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
 
+# the COMMUNAL WINDBREAK (后龙林 back-village grove): a nucleated cluster shelters behind ONE
+# village-scale belt on its high WINDWARD (NW) edge instead of per-farm groves - the band runs
+# along the top-left upland margin OUTSIDE the farm rows (clumps auto-skip any house/yard/
+# garden, so the belt must lie on genuinely open ground to actually render)
+s.village_grove([(12, 165), (95, 148), (185, 158), (240, 175), (250, 240), (245, 330), (180, 350), (95, 330), (14, 320)], role="windbreak")
+# ...and the leafy scatter: bamboo + dooryard fruit filling the OPEN gaps through the whole
+# farm belt (clumps skip every house/yard/garden/paddy, settling into the bare ground between
+# homes - the greenery the per-farm groves used to carry)
+# ...shaped AROUND the comb + its hem (a copse fills gaps between homes, not the crop)
+s.village_grove([(20, 120), (700, 120), (690, 250), (360, 285), (20, 310)], role="copse", dense=False)
+s.village_grove([(20, 330), (180, 365), (130, 545), (20, 520)], role="copse", dense=False)
+s.village_grove([(700, 270), (780, 330), (795, 690), (715, 640)], role="copse", dense=False)
+s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="copse", dense=False)
+
 # communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
 s.place_wells((60, 30, 1980, 1270), spacing=220, near=100)  # grid widened to reach the off-edge fields' farms (top + NE pocket)
-# the Bishamon monastery sits apart from the houses, so it keeps its OWN ablution well (remote_shrine_has_own_well)
-s.shrine_well(215, 800)
+# the Bishamon monastery sits apart from the houses, so it keeps its OWN ablution well
+# (remote_shrine_has_own_well) - placed BY HAND at the proven spot SW of the hall: the crematory
+# keep-out block makes shrine_well's automatic ring search reject every candidate, but the block
+# only steers FARM placement; a wellhead here is clear of the hall, the torii, and the graveyard
+s.well(167, 883)
 
 s.title("Hoshizora")
 

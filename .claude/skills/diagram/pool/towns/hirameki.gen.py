@@ -59,7 +59,18 @@ s = Settlement(2600, 2000, seed=77)
 # main one is to Bishamon (Lion's), and a much smaller, older one to Benten (Crane's) sits
 # on the far side of town - a relic of Crane rule. Hence monastery_fortunes is set explicitly.
 s.meta(
-    name="Hirameki", scale="town", walled=True, torii_expected=5, downhill="south", down_deg=90, clan="Lion", monastery_fortunes=["Bishamon", "Benten"], population=720, ftpx=1
+    name="Hirameki",
+    scale="town",
+    walled=True,
+    torii_expected=5,
+    downhill="south",
+    down_deg=90,
+    clan="Lion",
+    monastery_fortunes=["Bishamon", "Benten"],
+    population=820,
+    ftpx=1,
+    toscale=True,
+    nucleated=True,
 )  # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county. ftpx=1 -> bscale 1.0
 
 # ---- OUTSIDE the walls: the two valley streams. The WEST stream now BENDS southeast below
@@ -386,14 +397,27 @@ s.label(2230, 1680, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 # absentee landlords whose tenants farm the surrounding land), drawn AFTER the businesses exist
 s.merchant_storehouses(6)
 
+s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows (the NUCLEATED
+# homestead bundle: house + south threshing yard + adaptive sunny garden + reserved north kura;
+# no per-farm grove - same conversion as Hoshizora, settlements.md 'Settlement form')
+
+# funerary complex BEFORE the rings (bundle appurtenances reserve real footprints and must pack
+# around it): the intramural parish graveyard by the Bishamon monastery, the MAIN extramural
+# common burial ground, and the adjoining cremation ground (monk-run, burakumin assistants)
+s.cemetery(1840, 1160, 88, 62, label="graveyard", label_above=True)
+s.cemetery(2080, 1420, 120, 88, label="common burial ground")
+s.cremation_ground(2100, 1513)
+# keep-out ring: town_has_cremation_ground demands the crematory stay >120 ft from every dwelling
+s.block_polys.append([(2100 + 132 * math.cos(a), 1513 + 132 * math.sin(a)) for a in [i * math.pi / 4 for i in range(8)]])
+
 # ---- farmhouses: ringed around the comb envelopes, densely (outside_fields_farmhouse_density
 # wants ~village density along each shown edge; many attempts get dropped by the homestead solve)
 for bb, rings in (
-    (('poly', ENV_W1), [(20, 14), (16, 40), (13, 66), (10, 92)]),
-    (('poly', ENV_W2), [(22, 14), (18, 40), (14, 66)]),
-    (('poly', ENV_E1), [(20, 14), (16, 40), (13, 66), (10, 92)]),
-    (('poly', ENV_E2), [(16, 14), (13, 40), (10, 66)]),
-    (('poly', ENV_S1), [(20, 14), (16, 40), (13, 66), (10, 92)]),
+    (('poly', ENV_W1), [(15, 12), (12, 52), (9, 96)]),
+    (('poly', ENV_W2), [(13, 12), (10, 52)]),
+    (('poly', ENV_E1), [(15, 12), (12, 52), (9, 96)]),
+    (('poly', ENV_E2), [(11, 12), (9, 52), (7, 96)]),
+    (('poly', ENV_S1), [(14, 12), (12, 52), (9, 96)]),
 ):
     for n, gap in rings:
         s.ring(bb, n, gap, ["plain"])
@@ -440,15 +464,9 @@ for fx, fy in [
 ]:  # + e2's NW + SW corner pockets (scanned placeable ground; shown-edge density)
     s.try_place(fx, fy, "plain")
 
-# the graveyard in the Bishamon monastery's precinct (the Buddhist danka parish ground)
-s.cemetery(1840, 1160, 88, 62, label="graveyard", label_above=True)  # the intramural parish ground, by the Bishamon monastery (label flipped N toward the precinct, off the tenements)
-s.cemetery(2080, 1420, 120, 88, label="common burial ground")  # the MAIN burial ground (a town of ~1,200 over centuries) - large, extramural, well clear of the paddy
-# the cremation ground ADJOINS the external common ground (body burned, bones interred next door) -
-# the extramural funerary complex; monk-run with burakumin assistants
-s.cremation_ground(2100, 1513)
-
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+
 
 # communal WELLS among the dwellings (placed after them, in the open gaps); households share these, the
 # rest draw from the irrigation channels/streams. Placed AFTER farmsteads() so the FINAL house set
@@ -459,6 +477,22 @@ s.place_wells((80, 300, 2500, 1975), spacing=250, near=90)
 s.shrine_well(700, 1010)
 # the Bishamon monastery also sits apart from the dwellings at the to-scale spacing
 s.shrine_well(1750, 1050)
+
+# the COMMUNAL WINDBREAK (后龙林): the nucleated farm rows shelter behind belt lobes on the high
+# WINDWARD (NW) upland above the w1 comb - two lobes flanking its feeder brook so no canopy
+# stands over the water. (The matching belt above e1 sits NE of the all-farms centroid, so it is
+# recorded as a leafy copse instead - the windward check wants role='windbreak' only NW.) Copse
+# scatter then fills the open gaps between homes on strips shaped AROUND the fields and their
+# hems. All AFTER the wells, so the canopy keep-out sees every wellhead.
+s.village_grove([(240, 305), (395, 300), (398, 345), (242, 352)], role="windbreak")
+s.village_grove([(452, 300), (620, 290), (624, 338), (454, 345)], role="windbreak")
+s.village_grove([(2000, 300), (2320, 290), (2326, 340), (2004, 348)], role="copse")
+s.village_grove([(260, 380), (700, 362), (700, 415), (260, 430)], role="copse", dense=False)
+s.village_grove([(640, 430), (700, 430), (700, 860), (640, 860)], role="copse", dense=False)
+s.village_grove([(1940, 420), (1985, 420), (1985, 1300), (1940, 1300)], role="copse", dense=False)
+s.village_grove([(1990, 835), (2190, 835), (2190, 995), (1990, 995)], role="copse", dense=False)
+s.village_grove([(380, 1740), (458, 1745), (455, 1975), (380, 1975)], role="copse", dense=False)
+s.village_grove([(890, 1745), (1040, 1740), (1045, 1975), (895, 1975)], role="copse", dense=False)
 
 # ===== FIRE DEFENSE: a watch-tower =====
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
