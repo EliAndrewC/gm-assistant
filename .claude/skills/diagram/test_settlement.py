@@ -2460,6 +2460,19 @@ def test_clip_to_stream_trims_the_confluence_mouth():
     assert inside == [(399, 400), (400, 500)]
 
 
+def test_late_water_block_carries_sheens_and_splices_after_plots():
+    """field_channel(late=True) defers into the SECOND water block (spliced at its own first-call
+    position so a city's comb net draws OVER the field's plots); a late course with a sheen records
+    its sheenz above every late bed, mirroring the main block's contract."""
+    s = Settlement(300, 300, seed=1)
+    s.meta(name="T", scale="village", ftpx=2)
+    rec: dict = {}
+    s._water('<path d="M0,0 L10,10" stroke="#6C9CBE"/>', rec, sheen='<path d="M0,0 L10,10" stroke="#9CC"/>', late=True)
+    with tempfile.TemporaryDirectory() as td:
+        s.finish(os.path.join(td, "t"), render=False)
+    assert rec["sheenz"] > rec["bedz"]
+
+
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
