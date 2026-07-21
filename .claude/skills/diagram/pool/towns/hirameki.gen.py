@@ -62,7 +62,7 @@ s.meta(
     name="Hirameki",
     scale="town",
     walled=True,
-    torii_expected=5,
+    torii_expected=8,   # 7-arch Bishamon avenue (GM numerology canon 2026-07-21) + Benten's single entrance arch
     downhill="south",
     down_deg=90,
     clan="Lion",
@@ -352,7 +352,7 @@ s.flower_field(CHRYS, "chrysanthemum field", amp=8, flat_west=True)
 # main town monastery (to Bishamon, the Lion patron), on the east side. It has a long, clear
 # approach south to the market cross-street, so it fronts a proper torii AVENUE (sando) of
 # several arches rather than a single gate (monastery_torii_scale_with_space).
-s.shrine_hall(1750, 1050, "Monastery of Bishamon", w=150, h=98, kind="monastery", primary=True, torii=[(1750, 1174), (1750, 1235), (1750, 1296), (1750, 1357)])
+s.shrine_hall(1750, 1050, "Monastery of Bishamon", w=150, h=98, kind="monastery", primary=True, torii=[(1750, 1174), (1750, 1235), (1750, 1296), (1750, 1357), (1750, 1418), (1750, 1479), (1750, 1540)])   # a FULL 7-arch avenue (GM canon 2026-07-21: exactly 7 for a monastery/temple when there's room - the old 4 read as unfinished); the avenue crosses the E-W road (a monzen approach) and continues south
 # the older, much smaller Benten monastery (Crane patron) on the OPPOSITE (west) side, inside
 # the walls - a relic of the town's time under Crane rule. It is wedged hard against the west
 # rampart and the Imperial chrysanthemum field, so there is room for only a SINGLE torii arch.
@@ -407,6 +407,7 @@ s.frontage(MAIN, (["merchant"] * 3 + ["shop"]) * 6, width=28, spacing=56, rows=2
 s.frontage(CROSS, (["merchant"] * 2 + ["shop"]) * 6, width=22, spacing=56, rows=2)
 # the laborers' and servants' dwellings fill the blocks flanking the core - those next to
 # the cross-street face it; the rest are deep tenement blocks with no street frontage
+s.block_polys.append([(533, 1550), (595, 1550), (595, 1612), (533, 1612)])   # the pack bbox's SW corner pokes past the rampart; the 7-torii reflow (2026-07-21) rolled a laborer into that outside sliver (walled_town_commoners_inside_walls)
 s.pack((540, 1200, 1130, 1600), ["servant"] * 13 + ["laborer"] * 13, step=44, face_streets="fill")
 s.pack((1450, 1200, 1880, 1540), ["laborer"] * 17, step=44, face_streets="fill")
 s.label(1300, 1505, "merchant houses & shops", 10, italic=True, color="#5A4326")
