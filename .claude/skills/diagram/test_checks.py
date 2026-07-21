@@ -104,6 +104,23 @@ def test_channels_flow_downhill_passes_when_channel_runs_downhill():
     assert "channels_flow_downhill" not in f(M)
 
 
+# ---- channels_join_streams_at_confluence (a drain culvert reaches INTO the receiving bed) ----
+def _sink_channel(end):
+    return {"poly": [[end[0] - 60, end[1] - 40], end], "frm": {"kind": "drain"}, "to": {"kind": "stream"}}
+
+
+def test_channels_join_streams_at_confluence_fires_when_the_mouth_dies_short():
+    # the stream runs N-S at x=400 (w 9 -> half-width 4.5); a culvert ending 20px from the
+    # centerline passes the 30px anchor but never reaches the water - no confluence
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [_sink_channel([380, 500])]}
+    assert "channels_join_streams_at_confluence" in f(M)
+
+
+def test_channels_join_streams_at_confluence_passes_when_the_mouth_reaches_the_bed():
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [_sink_channel([400, 500])]}
+    assert "channels_join_streams_at_confluence" not in f(M)
+
+
 # ---- field_ditches_reach_source_and_sink (role-aware: supply->source, drain->sink) ----------
 def test_field_ditches_reach_source_and_sink_fires_when_ungrounded():
     # a supply ditch with no pond source AND a drain with no runoff sink - both dangle (the failure
@@ -2018,6 +2035,20 @@ def test_hard_features_within_frame_lets_the_windbreak_clip_but_not_vanish():
         "village_groves": [{"poly": [[100, -200], [300, -200], [300, -40], [100, -40]], "role": "windbreak"}],
     }
     assert "hard_features_within_frame" in f(M2)
+
+
+def test_harvest_and_garden_checks_cover_the_headman():
+    # the headman is a FARMSTEAD, not an exception to farmstead anatomy (GM 2026-07-21, caught on
+    # Hikari no Sato): the old role=="headman" carve-out in occ_h existed only because the dispersed
+    # headman() predated the homestead bundle and drew a lone house - a headman with no yard and no
+    # garden now fires BOTH universal checks
+    M = {
+        "meta": {"scale": "village"},
+        "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain", "role": "headman"}],
+    }
+    fails = f(M)
+    assert "harvest_yards_present" in fails
+    assert "gardens_present" in fails
 
 
 def test_labels_within_image_uses_the_cropped_view():
@@ -5234,6 +5265,24 @@ def test_polder_field_must_fill_its_bbox():
     assert "polder_fills_its_bbox" not in f(rect)
     fan = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": [[500, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}]}  # a triangle covers ~half its bbox
     assert "polder_fills_its_bbox" in f(fan)
+
+
+def test_polder_parcel_fabric_must_vary():
+    # a polder's parcels must be a PATCHWORK (varied oblongs), never identical cells: the surveyed
+    # chessboard was the canal grid, the parcels inside were private-tenure fragments (grounding in
+    # build_polder's docstring). The uniform 66x [142,142] block is the real pre-fix Kuwabata/Enokida
+    # geometry. Applies to both polder-geometry archetypes; a polder manifest with NO recorded parcel
+    # geometry fires too (no passing by omission).
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    varied = [[142, 68], [142, 66], [75, 142], [44, 142], [142, 142], [290, 142]] * 11
+    for arch in ("polder_grid", "mulberry_dike_fishpond"):
+        base = {"meta": {"scale": "hamlet", "field_archetype": arch}}
+        assert "polder_parcels_vary" in f({**base, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
+        assert "polder_parcels_vary" in f({**base, "fields": [field]})  # no parcel geometry recorded
+        assert "polder_parcels_vary" in f({**base, "fields": [{**field, "plots": varied[:6]}]})  # too few to judge
+        assert "polder_parcels_vary" not in f({**base, "fields": [{**field, "plots": varied}]})
+    # a non-polder archetype never trips it, plots or not
+    assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
 
 
 def test_ribbon_valley_must_be_long_and_narrow():

@@ -1069,6 +1069,37 @@ def _village():
     return s
 
 
+def test_abandoned_ruin_draws_as_a_lone_house_and_big_glyph_renders():
+    # the geom-less lone-house path in _farmsteads_bundle now serves ONLY abandoned ruins - the dispersed
+    # headman that used to share it gets a full bundle since 2026-07-21 (the Hikari fix). The ruin must
+    # survive farmsteads() as a bare house (no yard/garden/grove), riding through _relax_gardens_south's
+    # geom-less skip. The "big" minka glyph (storeroom wing) renders via a direct draw.
+    s = Settlement(800, 800, seed=5)
+    s.meta(name="Ruin", scale="village", ftpx=2, toscale=True)
+    assert s.try_place(400, 400, "abandoned")
+    assert s.try_place(560, 400, "plain")  # a bundle placed AFTER the ruin: the shading scan skips the geom-less rec
+    assert s.farmsteads() == 2
+    assert s.M["houses"][0]["kind"] == "abandoned"
+    assert len(s.M["threshing_yards"]) == 1 and len(s.M["gardens"]) == 1  # the plain bundle's, not the ruin's
+    s.house(200, 200, 46, 28, "big", 0)  # the big-minka glyph branch (the storeroom wing)
+
+
+def test_headman_refuses_a_non_toscale_map():
+    # the legacy (pre-to-scale) headman rec branch was dead code after the Hikari fix and is gone
+    s = Settlement(800, 800, seed=5)
+    s.meta(name="T", scale="town")
+    with pytest.raises(ValueError):
+        s.headman(400, 400)
+
+
+def test_garden_beds_clear_rejects_a_bed_on_a_neighbor():
+    # the neighbor-footprint hit branch: a shifted bed landing on an actual drawn structure is rejected
+    s = Settlement(800, 800, seed=5)
+    s.meta(name="B", scale="village", ftpx=2, toscale=True)
+    assert s._garden_beds_clear([(100, 100, 20, 14)], others=[(104, 102, 20, 14)]) is False
+    assert s._garden_beds_clear([(100, 100, 20, 14)], others=[(300, 300, 20, 14)]) is True
+
+
 def test_union_area_empty_and_overlapping_spans():
     # empty (or all-degenerate) rects -> zero area; and a rect fully shadowed by a taller one in the
     # same x-slab must be counted ONCE (the y1 <= cy skip), not double-counted.
@@ -1922,6 +1953,37 @@ def test_plot_texture_drives_build_comb_grain():
             s.plot_texture(*bad)
 
 
+def test_build_polder_parcel_fabric():
+    from waterfields import build_polder
+
+    net = build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=11, cols=6, cell=150)
+    plots = net["plots"]
+    # deterministic per seed
+    assert build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=11, cols=6, cell=150)["plots"] == plots
+    # splits outnumber merges: more parcels than module bays
+    assert len(plots) > 66
+    # the perimeter dike stays PINNED dead straight: envelope corners are exact grid multiples
+    assert net["envelope"][0] == (360, 320) and net["envelope"][2] == (360 + 6 * 150, 320 + 11 * 150)
+    # the fabric varies (mirrors the polder_parcels_vary thresholds, with slack): areas spread, oblongs dominate
+    dims = []
+    for p in plots:
+        xs = [v[0] for v in p["poly"]]
+        ys = [v[1] for v in p["poly"]]
+        dims.append((max(xs) - min(xs), max(ys) - min(ys)))
+    areas = [w * h for w, h in dims]
+    mean_a = sum(areas) / len(areas)
+    cv = (sum((a - mean_a) ** 2 for a in areas) / len(areas)) ** 0.5 / mean_a
+    assert cv > 0.25
+    oblong = sum(1 for w, h in dims if max(w, h) / min(w, h) >= 1.45) / len(dims)
+    assert oblong > 0.5
+    # every parcel stays inside the envelope, and the low flag marks the bottom two rows only
+    for p in plots:
+        assert all(360 <= v[0] <= 360 + 900 and 320 <= v[1] <= 320 + 1650 for v in p["poly"])
+        cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
+        assert p["low"] == (cy > 320 + 9 * 150 - 6)  # down_deg=90: low rows sit past row 9 (node jitter <= 6)
+    assert any(p["low"] for p in plots) and not all(p["low"] for p in plots)
+
+
 def test_land_use_overlay_draws_and_records_each_kind():
     from waterfields import build_comb
 
@@ -2360,3 +2422,19 @@ def test_merchant_residences_stop_at_the_requested_count():
     assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant_large") == n0
     s.merchant_residences(1)
     assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant_large") <= n0 + 1
+
+
+def test_clip_to_stream_trims_the_confluence_mouth():
+    # a drawn channel whose recorded end sits ON the stream centerline gets its DRAWN mouth
+    # trimmed back onto the bed's edge (~2px inside the bank) - the confluence join; ends short
+    # of the bank and runs lying wholly inside the bed are left alone
+    s = Settlement(W=1000, H=1000, seed=1)
+    s.meta(name="Cf", scale="town", ftpx=1)
+    assert s._clip_to_stream([(100, 100), (200, 100)]) == [(100, 100), (200, 100)]  # no streams: no-op
+    s.stream([(400, 50), (400, 950)], width=9)
+    out = s._clip_to_stream([(300, 500), (400, 500)])  # end on the centerline -> pulled to hw-2
+    assert abs(out[-1][0] - 397.5) < 0.1 and out[-1][1] == 500
+    same = s._clip_to_stream([(300, 500), (370, 500)])  # short of the bank -> untouched
+    assert same == [(300, 500), (370, 500)]
+    inside = s._clip_to_stream([(399, 400), (400, 500)])  # wholly inside the bed -> left alone
+    assert inside == [(399, 400), (400, 500)]

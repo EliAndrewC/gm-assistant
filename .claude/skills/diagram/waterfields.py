@@ -1105,12 +1105,28 @@ def build_polder(
     cols: int = 6,
     cell: float = 150,
 ) -> dict[str, Any]:
-    """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of LARGE regular rectangular
-    paddies on flat reclaimed low ground, divided by a straight orthogonal ditch grid inside a perimeter dike.
-    Returns build_comb-compatible keys so `Settlement.draw_comb_field` draws it. China-first grounding
-    (research.md D4): the wei-tian polder of the lower-Yangtze lake plains (Taihu / Dongting) is THE field
-    archetype for LOW reclaimed ground - orthogonal, surveyed, big-block, the planned opposite of the old
-    organic comb; water enters a corner, a perimeter feeder rings the block, and it drains to the low corner."""
+    """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of paddies on flat reclaimed
+    low ground, an orthogonal ditch-grid module inside a perimeter dike. Returns build_comb-compatible keys
+    so `Settlement.draw_comb_field` draws it. China-first grounding (research.md D4): the wei-tian polder of
+    the lower-Yangtze lake plains (Taihu / Dongting) is THE field archetype for LOW reclaimed ground -
+    orthogonal, surveyed, big-block, the planned opposite of the old organic comb; water enters a corner, a
+    perimeter feeder rings the block, and it drains to the low corner.
+
+    PARCEL FABRIC (researched + source-verified 2026-07-21; drives `polder_parcels_vary`). The surveyed
+    chessboard was the CANAL GRID, not the parcels: Northern Song sources describe the Taihu tangpu 塘浦
+    polder lattice at kilometer scale (canals every 5-10 li), but inside it private tenure fragmented land
+    continuously - mid-Qing Jiangnan farms averaged ~10 mu scattered over several parcels, and Buck's
+    pre-mechanization survey (1929-33) found a mean parcel of ~600 m2 (~1 mu), roughly rectangular where it
+    fronted a straight ditch and irregular elsewhere. Household-by-household dike-pond digging (挖塘培基,
+    research.md D2) likewise yields a patchwork accreted over centuries, never 66 identical cells. Fields of
+    one uniform machine-sized rectangle are a 20th-century consolidation look (Japan's 1963 hojo seibi 30m x
+    100m standard; PRC land-consolidation campaigns). SO: the ditch-grid MODULE stays straight and uniform
+    (that part was genuinely surveyed, and the perimeter dike is dead straight), while the parcels inside it
+    vary - most module bays split into 2-3 oblong strips, a few merge into double-bay parcels, and interior
+    bund nodes jitter a touch so minor bunds waver while main ditches hold their line. DELIBERATE DEPARTURE:
+    parcels are drawn larger than the literal ~1-mu average (a true-scale parcel at hamlet zoom is a sliver)
+    - the RELATIVE variation is the honest part; absolute size trades toward legibility, same liberty as the
+    other archetypes."""
     R = random.Random(seed)
     dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill (row) unit
     ux, uy = dy, -dx  # cross (column) unit - the grid extends to the +x/+cross side of the origin
@@ -1119,15 +1135,56 @@ def build_polder(
     def grid(s: float, t: float) -> Pt:
         return (ox + dx * s + ux * t, oy + dy * s + uy * t)
 
+    # jittered bund-node lattice in (s, t) space. Perimeter nodes stay PINNED so the dike and the block
+    # envelope are dead straight; only interior nodes waver (minor bunds), and the jitter is small enough
+    # that the main ditch lines still read straight at map scale.
+    J = 6.0
+    nodes: list[list[tuple[float, float]]] = [
+        [(r * cell + (R.uniform(-J, J) if 0 < r < rows else 0.0), c * cell + (R.uniform(-J, J) if 0 < c < cols else 0.0)) for c in range(cols + 1)] for r in range(rows + 1)
+    ]
+
+    def lerp(a: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
+        return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+
+    def inset(quad: list[tuple[float, float]], g: float = 4.0) -> list[tuple[float, float]]:
+        # a hairline gap = the bund between parcels. Bbox-scaling about the centroid is exact for the
+        # axis-aligned case and near-exact for these gently jittered quads (all built in (s, t) space).
+        s_lo, s_hi = min(p[0] for p in quad), max(p[0] for p in quad)
+        t_lo, t_hi = min(p[1] for p in quad), max(p[1] for p in quad)
+        cs, ct = (s_lo + s_hi) / 2, (t_lo + t_hi) / 2
+        ks = max(0.0, s_hi - s_lo - 2 * g) / max(1e-9, s_hi - s_lo)
+        kt = max(0.0, t_hi - t_lo - 2 * g) / max(1e-9, t_hi - t_lo)
+        return [(cs + (p[0] - cs) * ks, ct + (p[1] - ct) * kt) for p in quad]
+
     plots: list[dict[str, Any]] = []
+
+    def emit(quad_st: list[tuple[float, float]], r: int) -> None:
+        low = r >= rows - 2  # the lowest rows of the polder (feature 010)
+        poly = [grid(s, t) for s, t in inset(quad_st)]
+        fill = FLOODED if low else R.choice(RICE_GREENS)
+        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in poly], "fill": fill, "low": low})
+
     for r in range(rows):
-        for c in range(cols):
-            s0, s1, t0, t1 = r * cell, (r + 1) * cell, c * cell, (c + 1) * cell
-            g = 4.0  # a hairline gap = the bund between cells
-            quad = [grid(s0 + g, t0 + g), grid(s0 + g, t1 - g), grid(s1 - g, t1 - g), grid(s1 - g, t0 + g)]
-            low = r >= rows - 2  # the lowest rows of the polder (feature 010)
-            fill = FLOODED if low else R.choice(RICE_GREENS)
-            plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill, "low": low})
+        c = 0
+        while c < cols:
+            wide = c + 1 < cols and R.random() < 0.12  # an occasional double-bay parcel (merged holding)
+            c1 = c + (2 if wide else 1)
+            tl, tr = nodes[r][c], nodes[r][c1]
+            bl, br = nodes[r + 1][c], nodes[r + 1][c1]
+            u = R.random()
+            n_cuts = 0 if wide else (2 if u < 0.16 else (1 if u < 0.68 else 0))
+            if n_cuts == 0:
+                emit([tl, tr, br, bl], r)
+            else:
+                cuts = [R.uniform(0.38, 0.62)] if n_cuts == 1 else [R.uniform(0.26, 0.4), R.uniform(0.6, 0.74)]
+                fs = [0.0, *cuts, 1.0]
+                if R.random() < 0.5:  # cut ACROSS the fall - sub-parcels stack down the block
+                    for f0, f1 in zip(fs, fs[1:], strict=False):
+                        emit([lerp(tl, bl, f0), lerp(tr, br, f0), lerp(tr, br, f1), lerp(tl, bl, f1)], r)
+                else:  # cut ALONG the fall - side-by-side strips
+                    for f0, f1 in zip(fs, fs[1:], strict=False):
+                        emit([lerp(tl, tr, f0), lerp(tl, tr, f1), lerp(bl, br, f1), lerp(bl, br, f0)], r)
+            c = c1
     span_s, span_t = rows * cell, cols * cell
     envelope = [grid(0, 0), grid(0, span_t), grid(span_s, span_t), grid(span_s, 0), grid(0, 0)]
     # the supply feeder runs STRAIGHT along the high (top) edge from the sluice, so its fork sits just above the

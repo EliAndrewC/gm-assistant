@@ -3361,7 +3361,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if scale in ("town", "village", "hamlet", "city"):
             fields_ol = [fdef["outline"] for fdef in fields]
             yards = M.get("threshing_yards", [])
-            occ_h = [h for h in houses if h.get("kind") != "abandoned" and h.get("role") != "headman"]
+            # the HEADMAN is NOT exempt (GM 2026-07-21, caught on Hikari no Sato): the old role=="headman"
+            # carve-out here existed only because the dispersed-style headman() predated the homestead
+            # bundle and drew a lone house - the check was written around the bug. The headman is the
+            # LARGEST farmstead in the village and threshes its own rice like every other household.
+            occ_h = [h for h in houses if h.get("kind") != "abandoned"]
             # the work yard (niwa) was UNIVERSAL: EVERY farmhouse threshed and dried its own rice on its own
             # yard, so EVERY farmhouse must have one (a firm 100%). The generator guarantees this by making
             # the yard integral to farmstead placement - a house is only sited where its yard also fits
@@ -4763,6 +4767,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"watercourses overlap instead of merging at {sorted(set(seams))} - a higher-drawn bed paints over "
         f"another course's sheen (stacking into a dark seam); route all water through s.stream / s.channel / "
         f"s.moat so the shared bed and sheen groups composite it as one confluence",
+    )
+
+    # A DRAIN CULVERT MEETS ITS STREAM AT A CONFLUENCE - waterways join like roads do. A channel
+    # declaring to={"kind":"stream"} must actually REACH the receiving bed: its recorded end within
+    # the stream's half-width (+2px) of the centerline, so the mouth sits in the water. The anchor
+    # test alone allows 30px, which let a culvert die in the grass beside the stream and still pass
+    # (GM caught this on Hirameki, 2026-07): a ditch that "drains to the stream" must visibly drain
+    # INTO the stream. (Extend the recorded polyline to the centerline; `_clip_to_stream` trims the
+    # DRAWN mouth back onto the bed edge so it never paints a tongue across the current.)
+    dry_mouths = []
+    for c in M.get("channels", []):
+        if (c.get("to") or {}).get("kind") != "stream":
+            continue
+        end = c["poly"][-1]
+        reach = min(
+            (seg_dist(end[0], end[1], sp[i], sp[i + 1]) - st.get("w", 9) / 2 for st in M.get("streams", []) for sp in [st["poly"]] for i in range(len(sp) - 1)),
+            default=None,
+        )
+        if reach is None or reach > 2:
+            dry_mouths.append((round(end[0]), round(end[1])))
+    check(
+        "channels_join_streams_at_confluence",
+        not dry_mouths,
+        f"channel mouth(s) declared to={{stream}} stop short of the receiving bed at {sorted(set(dry_mouths))[:4]} - "
+        f"a drain culvert joins its stream at a CONFLUENCE (the mouth reaches into the water, like a road junction), "
+        f"never dying in the grass beside the bank; extend the recorded polyline to the stream centerline",
     )
 
     # no field overlaps the town wall: a field may ABUT the wall but must stay on one
@@ -7263,6 +7293,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "dikepond_is_ponds_in_a_block",
             dp_fill >= 0.82 and bool(pond_rec),
             f"a mulberry_dike_fishpond field must be a filled block ({dp_fill:.0%} of bbox) of many mulberry-rimmed fish ponds (enough pond cells: {bool(pond_rec)}) - the 桑基魚塘 system",
+        )
+
+    # A polder's PARCEL fabric must VARY (researched 2026-07-21; grounding in build_polder's docstring).
+    # The surveyed chessboard was the CANAL grid; the parcels inside were a private-tenure patchwork
+    # (Buck 1929-33: mean parcel ~1 mu, several scattered per farm; dike-ponds accreted 挖塘培基,
+    # household by household). Identical uniform cells are the 20th-century consolidation look (hojo
+    # seibi 30x100m), so a block of them - the original Kuwabata/Enokida render - must fire. Applies to
+    # both polder-geometry archetypes; measured from the manifest's per-plot [along, cross] spans, and a
+    # polder manifest that records NO parcel geometry fails rather than passes by omission.
+    if meta.get("field_archetype") in ("polder_grid", "mulberry_dike_fishpond") and fields:
+        pl = fields[0].get("plots") or []
+        pv_cv = pv_ob = 0.0
+        pv_ok = len(pl) >= 12
+        if pv_ok:
+            areas = [a * c for a, c in pl]
+            mean_a = sum(areas) / len(areas)
+            pv_cv = (sum((x - mean_a) ** 2 for x in areas) / len(areas)) ** 0.5 / max(1e-9, mean_a)
+            asps = [max(a, c) / max(1.0, min(a, c)) for a, c in pl]
+            pv_ob = sum(1 for x in asps if x >= 1.45) / len(asps)
+            pv_ok = pv_cv >= 0.18 and pv_ob >= 0.35
+        check(
+            "polder_parcels_vary",
+            pv_ok,
+            f"a polder's parcel fabric must be a patchwork, not identical cells - the survey grid was the CANALS, the parcels were private-tenure oblongs of varied size (area cv {pv_cv:.2f}, want >=0.18; oblong share {pv_ob:.0%}, want >=35%; n={len(pl)}, want >=12) - uniform squares read as 20th-century land consolidation",
         )
 
     # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -
