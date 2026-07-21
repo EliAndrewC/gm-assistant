@@ -5236,6 +5236,24 @@ def test_polder_field_must_fill_its_bbox():
     assert "polder_fills_its_bbox" in f(fan)
 
 
+def test_polder_parcel_fabric_must_vary():
+    # a polder's parcels must be a PATCHWORK (varied oblongs), never identical cells: the surveyed
+    # chessboard was the canal grid, the parcels inside were private-tenure fragments (grounding in
+    # build_polder's docstring). The uniform 66x [142,142] block is the real pre-fix Kuwabata/Enokida
+    # geometry. Applies to both polder-geometry archetypes; a polder manifest with NO recorded parcel
+    # geometry fires too (no passing by omission).
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    varied = [[142, 68], [142, 66], [75, 142], [44, 142], [142, 142], [290, 142]] * 11
+    for arch in ("polder_grid", "mulberry_dike_fishpond"):
+        base = {"meta": {"scale": "hamlet", "field_archetype": arch}}
+        assert "polder_parcels_vary" in f({**base, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
+        assert "polder_parcels_vary" in f({**base, "fields": [field]})  # no parcel geometry recorded
+        assert "polder_parcels_vary" in f({**base, "fields": [{**field, "plots": varied[:6]}]})  # too few to judge
+        assert "polder_parcels_vary" not in f({**base, "fields": [{**field, "plots": varied}]})
+    # a non-polder archetype never trips it, plots or not
+    assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
+
+
 def test_ribbon_valley_must_be_long_and_narrow():
     base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "ribbon_valley"}}
     thin = {**base, "fields": [{"name": "r", "kind": "paddy", "outline": [[400, 100], [700, 100], [700, 2000], [400, 2000]], "bbox": [400, 100, 700, 2000]}]}  # 300 wide x 1900 long
