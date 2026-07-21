@@ -1780,12 +1780,17 @@ class Settlement:
         self.M["river"] = {"pts": [[x, y] for x, y in pts], "w": width}
         return width
 
-    def channel(self, start: Any, end: Any, frm: Any, to: Any, amp: float = 15, width: float = 2.5) -> None:
+    def channel(self, start: Any, end: Any, frm: Any, to: Any, amp: float = 15, width: float = 2.5, pts: Any = None) -> None:
         """frm/to are anchor dicts: {'kind':'pond'|'offmap'|'field','name':...}. `width` is the drawn
         bed: a field-level irrigation ditch is the THINNEST line on the map (in reality ~0.3 m, ~1/300
         of the 1-cho paddy it feeds), so it sits at the legibility floor (~2.5 px) - a hairline, clearly
-        finer than any natural watercourse. See the water-width ladder in settlements.md historical grounding."""
-        poly = winding(start, end, amp=amp)
+        finer than any natural watercourse. See the water-width ladder in settlements.md historical
+        grounding. `pts` (optional): an explicit polyline used verbatim instead of the auto-winding -
+        for culverts routed by hand (a drain outfall reaching its stream confluence, a field-to-field
+        cascade connector) whose waypoints are load-bearing; drawing through THIS method (not a flat
+        field_channel stroke) is what puts the bed in the shared water group at the standard bed hue,
+        so the mouth merges into the receiving stream like any confluence (GM, Hirameki 2026-07)."""
+        poly = [(p[0], p[1]) for p in pts] if pts else winding(start, end, amp=amp)
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in poly)
         rec = {"poly": [[x, y] for x, y in poly], "frm": frm, "to": to, "w": width}
         self.M["channels"].append(rec)
