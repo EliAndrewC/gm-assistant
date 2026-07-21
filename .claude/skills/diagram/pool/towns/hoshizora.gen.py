@@ -378,6 +378,7 @@ s.stables(276, 1202, rot=150)
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 
 # communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)

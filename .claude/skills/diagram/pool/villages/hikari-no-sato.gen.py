@@ -150,8 +150,21 @@ CX, CY = 1120, 600         # centered on the dry spur between the tall W block a
 s.lane([(CX - 6, CY - 240), (CX + 6, CY - 90), (CX - 4, CY + 90), (CX + 8, CY + 250)], width=6, clearance=18, worn=True)
 for _sx in (CX - 300, CX + 300):
     _fp = s._nearest_field_point(_sx, CY + 20)
-    s.lane([(CX + (6 if _sx > CX else -6), CY + 10), ((CX + _fp[0]) / 2, (CY + 10 + _fp[1]) / 2),
-            (_fp[0] + (-6 if _sx > CX else 6), _fp[1])], width=5, clearance=18, worn=True)
+    if _sx < CX:
+        # WEST spur: bend NORTH over the barley hem (lanes_clear_of_dry_plots, GM 2026-07-21) - the
+        # straight midpoint ran the path THROUGH the two dry plots at (822-929, 627-734); a trodden
+        # path runs the baulk between/above the row crops, so it now skirts the hem's top edge and
+        # drops to the paddy edge west of the plots.
+        # ... and it STOPS at the dry hem's edge (lanes_clear_of_dry_plots, GM 2026-07-21): the
+        # barley staircase descends SW from (712,495) to (899,759) with no >3px-clear baulk
+        # through it, and routing around its foot fought the homestead packing on every seed - so
+        # the field track ends where the crops begin, exactly as a real one does; past the hem the
+        # farmers walk the plot baulks. (The paddy beyond is still reached: the W block's water
+        # network and bunds run from the hem down.)
+        s.lane([(CX - 6, CY + 10), (1020, 622), (940, 636)], width=5, clearance=18, worn=True)
+    else:
+        s.lane([(CX + 6, CY + 10), ((CX + _fp[0]) / 2, (CY + 10 + _fp[1]) / 2),
+                (_fp[0] - 6, _fp[1])], width=5, clearance=18, worn=True)
 s.lane([(CX + 8, CY + 250), (CX + 30, CY + 470), (CX + 20, CY + 720), (CX + 40, CY + 980), (CX + 26, CY + 1120)],
        width=6, clearance=18, worn=True, connector=True)
 

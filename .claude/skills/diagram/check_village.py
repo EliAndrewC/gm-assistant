@@ -2089,6 +2089,33 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"the ladder must read MONOTONE with population - a village ground must never dwarf a town's",
         )
 
+    # FARMSTEADS ARE WITHIN REACH OF A WELL (town/city): the farm belt drinks daily too, and
+    # Rokugan's unusually well-run domains sink wells liberally (the same liberty behind the
+    # literal urban idobata count) - so no farmhouse stands more than 500 REAL FEET from a
+    # well (a ~2-minute bucket walk; a real farmstead would often have its own). Farmhouses
+    # within 150 real ft of the VIEW edge are exempt: their fields already run off-map, and
+    # their well is presumed just off the edge with the rest of their steading (GM rule,
+    # 2026-07-21). Villages are not gated here - their wells already sit among the houses
+    # (wells_among_dwellings). WHY: settlements.md wells entry.
+    if scale in ("town", "city") and M.get("houses"):
+        _fw_ftpx = float(meta.get("ftpx", 1) or 1)
+        _fw_reach = 500.0 / _fw_ftpx
+        _fw_edge = 150.0 / _fw_ftpx
+        _fw_view = meta.get("view") or [0, 0, meta.get("W", 10**9), meta.get("H", 10**9)]
+        _fw_far = []
+        for _fw_h in M["houses"]:
+            if min(_fw_h["x"] - _fw_view[0], _fw_h["y"] - _fw_view[1], _fw_view[0] + _fw_view[2] - _fw_h["x"], _fw_view[1] + _fw_view[3] - _fw_h["y"]) < _fw_edge:
+                continue
+            if not any((_fw_h["x"] - _fw_w["x"]) ** 2 + (_fw_h["y"] - _fw_w["y"]) ** 2 <= _fw_reach**2 for _fw_w in M.get("wells", [])):
+                _fw_far.append((round(_fw_h["x"]), round(_fw_h["y"])))
+        check(
+            "farm_wells_within_reach",
+            not _fw_far,
+            f"{len(_fw_far)} farmhouse(s) further than 500 real ft from any well {_fw_far[:5]} - the farm belt "
+            f"drinks daily too; call s.farm_wells() after s.farmsteads() (map-edge farmsteads are exempt - their "
+            f"well is presumed just off the edge)",
+        )
+
     # DRY-CROP PLOTS ARE TO SCALE: a hem parcel is a smallholder's strip (~1 mu / ~0.17 acre
     # mean in Buck's surveys - the same grain the paddy plots and the polder parcels obey), so
     # the map-wide MEAN dry-plot area must stay under 0.25 real acres. The tiling constants in
@@ -2487,6 +2514,43 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if sat_overlap(sc, [(t[0] - _ts2, t[1] - _ts2 * 0.37), (t[0] + _ts2, t[1] - _ts2 * 0.37), (t[0] + _ts2, t[1] + _ts2 * 0.9), (t[0] - _ts2, t[1] + _ts2 * 0.9)])
     ]
     check("no_structure_on_torii", not bad_t, f"{len(bad_t)} structure(s) overlap a torii arch")
+
+    # TORII AND RELIGIOUS FOOTPRINTS KEEP CLEAR OF THE DEFENSIVE WORKS AND THE PATROL RING (GM
+    # placement rules 2026-07-21, caught on Tango: a wayside shrine seated against the SW wall
+    # tower). A torii arch overlapping a temple/shrine hall, a guard tower / gate structure, or
+    # the ring-road corridor - or a religious footprint overlapping a tower or the ring road -
+    # reads as impossible construction: the wall's works and its patrol lane are kept clear, and
+    # an arch stands in the open on its approach, never against a hall. (A torii OVER an ordinary
+    # street stays legitimate - a monzen sando arch spans its road - so only the RING road is a
+    # corridor here.)
+    _ring = M.get("ring_road") or []
+    _rw2 = float(M.get("ring_road_width") or 0) / 2
+    _tow = [g for g in list(M.get("gate_structs", [])) + list(M.get("wall_towers", [])) + list(M.get("fire_towers", [])) if isinstance(g, dict) and "w" in g]
+
+    def _ring_hit(x: float, y: float, half: float) -> bool:
+        return bool(_ring) and any(seg_dist(x, y, _ring[i], _ring[i + 1]) < _rw2 + half for i in range(len(_ring) - 1))
+
+    bad_tor_pl = []
+    for t in M.get("torii", []):
+        hit_rel = any(abs(t[0] - r["x"]) < r["w"] / 2 + _ts2 and abs(t[1] - r["y"]) < r["h"] / 2 + _ts2 for r in M.get("religious", []))
+        hit_tw = any(abs(t[0] - g["x"]) < g["w"] / 2 + _ts2 and abs(t[1] - g["y"]) < g["h"] / 2 + _ts2 for g in _tow)
+        if hit_rel or hit_tw or _ring_hit(t[0], t[1], _ts2):
+            bad_tor_pl.append((round(t[0]), round(t[1])))
+    check(
+        "torii_clear_of_halls_towers_ring",
+        not bad_tor_pl,
+        f"torii arch(es) overlapping a temple/shrine hall, guard tower/gate structure, or the ring-road corridor: {sorted(set(bad_tor_pl))[:4]} - an arch stands clear on its approach (an ordinary street through the arch is fine; the patrol ring is not)",
+    )
+    bad_rel_pl = []
+    for r in M.get("religious", []):
+        hit_tw = any(abs(r["x"] - g["x"]) < (r["w"] + g["w"]) / 2 and abs(r["y"] - g["y"]) < (r["h"] + g["h"]) / 2 for g in _tow)
+        if hit_tw or _ring_hit(r["x"], r["y"], max(r["w"], r["h"]) / 2):
+            bad_rel_pl.append((r.get("label") or r["kind"], round(r["x"]), round(r["y"])))
+    check(
+        "religious_clear_of_ring_and_towers",
+        not bad_rel_pl,
+        f"religious footprint(s) overlapping a guard tower/gate structure or the ring-road corridor: {bad_rel_pl[:4]} - shrines and halls keep clear of the wall's works and the patrol lane",
+    )
 
     # roads/streets are a GROUND layer: a gatehouse or label that legitimately sits on a road
     # must be drawn ON TOP of it (higher draw-order z), never have the road painted over it.
@@ -3478,6 +3542,34 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"wells are mis-sized for this map - drawn at {mean_dia:.0f}px against a ~{med:.0f}px median dwelling "
                 f"({mean_dia / med:.0%}; want ~40-80%): a wellhead must scale with the map grain (bscale), not a fixed pixel size",
             )
+
+    # LANES stay OFF the dry crop plots (GM 2026-07-21, caught on Hikari no Sato: the west field-spur
+    # ran straight through two barley plots). A trodden path does not cross row crops - historically a
+    # path runs on the baulk/margin BETWEEN plots, and the engine already keeps the reverse direction
+    # honest (dry plots are no-build ground for houses, groves skip them). A lane may TOUCH a plot's
+    # edge (paths hug field margins by design), so only points >3px INSIDE a plot fire.
+    _lane_on_crop = []
+    _dps = [dp["poly"] for dp in M.get("dry_plots", [])]
+    if _dps:
+        for _ln in M.get("lanes", []):
+            _pts = _ln["pts"]
+            for _i in range(len(_pts) - 1):
+                (_ax, _ay), (_bx, _by) = _pts[_i], _pts[_i + 1]
+                _n = max(2, int(math.hypot(_bx - _ax, _by - _ay) / 8))
+                for _t in range(_n + 1):
+                    _px, _py = _ax + (_bx - _ax) * _t / _n, _ay + (_by - _ay) * _t / _n
+                    # depth INSIDE the plot = distance to its boundary (poly_dist is 0 for interior points)
+                    if any(point_in_poly(_px, _py, _dp) and min(seg_dist(_px, _py, _dp[_k], _dp[(_k + 1) % len(_dp)]) for _k in range(len(_dp))) > 3 for _dp in _dps):
+                        _lane_on_crop.append((round(_px), round(_py)))
+                        break
+                else:
+                    continue
+                break
+    check(
+        "lanes_clear_of_dry_plots",
+        not _lane_on_crop,
+        f"lane(s) run THROUGH a dry crop plot at {_lane_on_crop[:3]} - a trodden path crosses no row crops; route it on the baulk between plots or around the hem (a lane may touch a plot edge, not its interior)",
+    )
 
     # WELLS SIZED TO THE POPULATION (GM 2026-07-21) - a DELIBERATE LIBERTY, banded. What the research found
     # (see settlements.md 'Wells - research + deliberate liberty' for the full note): historically a south-China
@@ -6519,6 +6611,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             SAMK = {"samurai", "samurai_large"}
             HOUSEK = {"laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house", "merchant_large"} | SAMK
             dwl = [(b["x"], b["y"], b.get("kind") in SAMK) for b in M.get("buildings", []) if b.get("kind") in HOUSEK]
+            dwl += [
+                (h["x"], h["y"], False) for h in M.get("houses", [])
+            ]  # FARMHOUSES are commoner households in this vote: a farm-belt well (s.farm_wells) sits among farmsteads far from any urban dwelling, and judging it by the nearest IN-WALL houses mislabeled it samurai (Nagahara's SW belt, 2026-07-21)
             sam_wells = []
             for w in wells:
                 near_dw = sorted(dwl, key=lambda d: math.hypot(d[0] - w["x"], d[1] - w["y"]))[:3]

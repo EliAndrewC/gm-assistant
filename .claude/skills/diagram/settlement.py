@@ -2303,6 +2303,96 @@ class Settlement:
         bm = 8
         self.block_polys.append([(x - vroof - bm, y - vroof - bm), (x + vroof + bm, y - vroof - bm), (x + vroof + bm, y + vroof + bm), (x - vroof - bm, y + vroof + bm)])
 
+    def farm_wells(self, reach_ft: float = 500.0, edge_ft: float = 150.0) -> int:
+        """Shared wells for the FARM BELT (town/city scale): the farmsteads outside the urban
+        core drink daily too, and Rokugan's unusually well-run domains sink wells liberally
+        (the same liberty behind the literal urban idobata count) - so no farmhouse stands
+        more than ~500 real ft from a well. Call AFTER farmsteads(). Farmhouses within
+        ~150 real ft of the view edge are exempt (their well is presumed just off the map,
+        like the fields that run off-edge). Deterministic - no RNG draws, so a map whose
+        farm belt is already covered (Hoshizora) is byte-identical with or without the call.
+        Greedy cluster cover: seat a well near the densest uncovered cluster's centroid via
+        well_at's clear-spot test, repeat. Gated by farm_wells_within_reach."""
+        reach = self.px(reach_ft)
+        edge = self.px(edge_ft)
+        vx, vy, vw, vh = self.view if self.view else (0, 0, self.W, self.H)
+        houses = [h for h in self.M["houses"] if min(h["x"] - vx, h["y"] - vy, vx + vw - h["x"], vy + vh - h["y"]) >= edge]
+
+        def covered(h: Mapping[str, Any]) -> bool:
+            return any((h["x"] - w["x"]) ** 2 + (h["y"] - w["y"]) ** 2 <= reach * reach for w in self.M["wells"])
+
+        placed = 0
+        for _ in range(60):
+            todo = [h for h in houses if not covered(h)]
+            if not todo:
+                break
+            best = max(todo, key=lambda h: sum(1 for o in todo if (h["x"] - o["x"]) ** 2 + (h["y"] - o["y"]) ** 2 <= (0.9 * reach) ** 2))
+            cl = [o for o in todo if (best["x"] - o["x"]) ** 2 + (best["y"] - o["y"]) ** 2 <= (0.9 * reach) ** 2]
+            # seat the well in a STEADING'S DOORYARD, not at the cluster centroid: a farm belt's
+            # open ground is mostly CROP (where well_at rightly refuses to stand a wellhead), and
+            # historically the rural well sat in a farmstead's own yard anyway - so walk the
+            # cluster's members densest-first and ring each until a clear dooryard spot takes
+            cl.sort(key=lambda h: -sum(1 for o in todo if (h["x"] - o["x"]) ** 2 + (h["y"] - o["y"]) ** 2 <= (0.9 * reach) ** 2))
+            seated = False
+            for h in cl:
+                for r_, n_ in (
+                    (20.0, 8),
+                    (30.0, 12),
+                    (42.0, 12),
+                    (60.0, 16),
+                    (80.0, 16),
+                    (100.0, 20),
+                    (125.0, 24),
+                    (150.0, 24),
+                ):  # rings widen to ~240 ft at city grain: a steading's inner yard is dense with its own appurtenances and the crop starts right past them, so the clear spot is often the open margin ground BETWEEN steadings
+                    for k in range(n_):
+                        a = 2 * math.pi * k / n_
+                        if self.well_at(h["x"] + r_ * math.cos(a), h["y"] + r_ * math.sin(a)):
+                            seated = True
+                            placed += 1
+                            break
+                    if seated:
+                        break
+                if seated:
+                    break
+            if not seated:
+                # FALLBACK: the cluster's open ground may all be field-ENVELOPE rim slack - the
+                # smoothed outline claims more than the crop fills, and _fits rightly refuses the
+                # envelope. A farm well standing on unplanted rim ground is fine (that IS the
+                # steading's margin); standing on CROP is not. So retry with the envelope blocks
+                # suspended and an explicit test against the DRAWN plots instead.
+                crop: list[list[tuple[float, float]]] = [list(dp2) for dp2 in self.dry_polys]
+                for frec in self.M.get("fields", []):
+                    crop += [[(q[0], q[1]) for q in p2] for p2 in frec.get("plot_polys", [])]
+
+                def on_crop(x2: float, y2: float, crop: list[list[tuple[float, float]]] = crop) -> bool:  # bound as a default: the closure lives one loop iteration (B023)
+                    m2 = 14.0
+                    for cp2 in crop:
+                        if min(q[0] for q in cp2) - m2 <= x2 <= max(q[0] for q in cp2) + m2 and min(q[1] for q in cp2) - m2 <= y2 <= max(q[1] for q in cp2) + m2 and point_in_poly(x2, y2, cp2):
+                            return True
+                    return False
+
+                save = self.field_polys
+                self.field_polys = []
+                try:
+                    for h in cl:
+                        # a nearest-first GRID scan, not rings: the clear ground here is pinholes
+                        # between steading footprints, and sparse ring angles walk right past them
+                        cands = [(h["x"] + dx, h["y"] + dy) for dx in range(-156, 157, 6) for dy in range(-156, 157, 6) if 18 * 18 <= dx * dx + dy * dy <= 156 * 156]
+                        cands.sort(key=lambda c: (c[0] - h["x"]) ** 2 + (c[1] - h["y"]) ** 2)
+                        for wx2, wy2 in cands:
+                            if not on_crop(wx2, wy2) and self.well_at(wx2, wy2):
+                                seated = True
+                                placed += 1
+                                break
+                        if seated:
+                            break
+                finally:
+                    self.field_polys = save
+            if not seated:
+                houses = [h2 for h2 in houses if h2 is not best]  # nothing seats anywhere in this cluster - skip it rather than spin
+        return placed
+
     def well_at(self, x: float, y: float, r: float = 8, shrine: bool = False) -> bool:
         """Place ONE well at (x, y), but only if the spot is clear (a block interior off lanes,
         compounds, the bound, and other placed things - the same `_fits` test place_wells uses).
@@ -6587,6 +6677,20 @@ class Settlement:
         )
         self._record_label(x, y, text, size, anchor, z)
 
+    def _text_width(self, s: str, fs: float) -> float:
+        """Measured pixel width of bold `s` at font-size `fs` in the RENDER font (DejaVu Serif Bold -
+        what resvg substitutes for 'serif'), via PIL; falls back to a calibrated estimate when PIL or
+        the font is absent. WHY (GM 2026-07-21): the em/char estimates under-measured wide lowercase
+        names - 'Akagahara' measured 180px against a 167px estimate, and the missing 14px ran the
+        name off its placard's right edge. Measuring the actual glyphs makes the padding true."""
+        try:
+            from PIL import ImageFont
+
+            f = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf", int(round(fs)))
+            return float(f.getlength(s))
+        except Exception:  # PIL / font absent: the engine stays standalone on a generous estimate
+            return len(s) * fs * 0.62
+
     def title(self, name: str, fs: float = 30) -> None:
         """Place the map title (the bold place name plus a scale bar under it) over BLANK space: scan the
         rendered window for a spot where the box clears every feature (buildings, fields, water, groves,
@@ -6608,7 +6712,7 @@ class Settlement:
         scrub speckle nearly everywhere a title can sit, and ink-on-scrub was hard to read). The
         searched and recorded box is the PLACARD's extent, so the clearance check gates the whole
         card; `title_has_placard` gates its presence (a manifest without one predates the card)."""
-        tw, th = len(name) * fs * 0.58 + 10, fs * 1.2  # estimated text box (bold serif runs ~0.58 em/char; +10 so a long name never kisses the card border)
+        tw, th = self._text_width(name, fs) + 4, fs * 1.2  # MEASURED text box (+4 breathing room) - see _text_width; symmetric placard padding follows for free
         bar_px, bar_ft = 100.0, round(100 * self.ftpx)
         PAD = 12  # placard padding around the text block
         bw, bh = max(tw, bar_px) + 2 * PAD, th + 46 + 2 * PAD  # the searched box: the whole placard
@@ -6620,7 +6724,8 @@ class Settlement:
             px0, py0 = vx0 + 30, vy0 + 16
         else:
             px0, py0 = self.W / 2 - bw / 2, 22
-        x, y = px0 + PAD, py0 + PAD  # the text block's origin, inside the card
+        y = py0 + PAD  # the text block's top, inside the card
+        pcx = px0 + bw / 2  # the placard's axis: the name AND the scale bar center on it (GM 2026-07-21)
         self.M["title"] = {
             "name": name,
             "bbox": [round(px0, 1), round(py0, 1), round(px0 + bw, 1), round(py0 + bh, 1)],
@@ -6630,8 +6735,8 @@ class Settlement:
             f'<g><rect x="{px0:.0f}" y="{py0:.0f}" width="{bw:.0f}" height="{bh:.0f}" rx="7" fill="#F7F0DC" fill-opacity="0.94" stroke="#8C7A55" stroke-width="1.6"/>'
             f'<rect x="{px0 + 3.5:.0f}" y="{py0 + 3.5:.0f}" width="{bw - 7:.0f}" height="{bh - 7:.0f}" rx="5" fill="none" stroke="#BCAA7E" stroke-width="0.8"/></g>'
         )
-        self.add_label(f'<text x="{x:.0f}" y="{y + fs:.0f}" font-size="{fs}" font-weight="bold" fill="#2D2A24">{name}</text>')
-        bx0, bx1, by = x, x + bar_px, y + th + 12  # bar left-aligned under the title
+        self.add_label(f'<text x="{pcx:.0f}" y="{y + fs:.0f}" text-anchor="middle" font-size="{fs}" font-weight="bold" fill="#2D2A24">{name}</text>')
+        bx0, bx1, by = pcx - bar_px / 2, pcx + bar_px / 2, y + th + 12  # bar CENTERED under the name, on the placard's axis
         self.M["scalebar"] = {"ft": bar_ft, "ftpx": self.ftpx, "bbox": [round(bx0, 1), round(by - 5, 1), round(bx1, 1), round(y + bh, 1)]}
         self.add_label(
             f'<g stroke="#3A2E1C" stroke-width="2">'

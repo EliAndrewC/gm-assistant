@@ -2123,6 +2123,18 @@ def test_wells_sized_to_population_bands():
     assert "wells_sized_to_population" in f(H)  # a settlement with no draw-well at all
 
 
+def test_lanes_clear_of_dry_plots_fires_on_a_path_through_the_crop():
+    # Hikari's defect in miniature (GM 2026-07-21): a lane crossing a dry plot's interior fires; a
+    # lane running along the plot's edge (a path hugs the field margin by design) passes
+    plot = {"poly": [[300, 300], [400, 300], [400, 400], [300, 400]], "crop": "barley", "theta": 0}
+    M = {"meta": {"scale": "village"}, "dry_plots": [plot], "lanes": [{"pts": [[250, 350], [450, 350]], "width": 5}]}
+    assert "lanes_clear_of_dry_plots" in f(M)
+    M["lanes"] = [{"pts": [[250, 300], [450, 300]], "width": 5}]  # along the top edge - touching, not through
+    assert "lanes_clear_of_dry_plots" not in f(M)
+    M["lanes"] = [{"pts": [[250, 250], [450, 250]], "width": 5}]  # clear of the plot entirely
+    assert "lanes_clear_of_dry_plots" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
@@ -5357,6 +5369,24 @@ def test_polder_parcel_fabric_must_vary():
         assert "polder_parcels_vary" not in f({**base, "fields": [{**field, "plots": varied}]})
     # a non-polder archetype never trips it, plots or not
     assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
+
+
+def test_torii_and_religious_clear_of_works_and_ring():
+    # GM placement rules (2026-07-21, caught on Tango): torii keep clear of halls/towers/the ring
+    # road; religious footprints keep clear of towers/the ring road. An ordinary street through a
+    # torii stays legal (only the RING corridor counts), so no street data appears here.
+    base = {"meta": {"scale": "city", "ftpx": 3}, "ring_road": [[100, 900], [900, 900]], "ring_road_width": 8, "wall_towers": [{"x": 500, "y": 500, "w": 38, "h": 38}]}
+    hall = {"kind": "temple", "x": 300, "y": 300, "w": 43, "h": 28, "label": "Temple of Ebisu"}
+    # torii: on the hall / on the tower / on the ring -> fire; standing clear -> pass
+    assert "torii_clear_of_halls_towers_ring" in f({**base, "religious": [hall], "torii": [[305, 310, 9]]})
+    assert "torii_clear_of_halls_towers_ring" in f({**base, "religious": [hall], "torii": [[505, 512, 9]]})
+    assert "torii_clear_of_halls_towers_ring" in f({**base, "religious": [hall], "torii": [[400, 902, 9]]})
+    assert "torii_clear_of_halls_towers_ring" not in f({**base, "religious": [hall], "torii": [[300, 380, 9]]})
+    # religious: the Tango defect (shrine on a wall tower) and a hall on the ring -> fire; clear -> pass
+    shrine_on_tower = {"kind": "small_shrine", "x": 521, "y": 509, "w": 11, "h": 8}
+    assert "religious_clear_of_ring_and_towers" in f({**base, "religious": [shrine_on_tower]})
+    assert "religious_clear_of_ring_and_towers" in f({**base, "religious": [{**hall, "y": 890}]})
+    assert "religious_clear_of_ring_and_towers" not in f({**base, "religious": [hall]})
 
 
 def test_torii_full_avenue_is_seven():
