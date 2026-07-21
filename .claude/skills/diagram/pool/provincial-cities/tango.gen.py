@@ -264,7 +264,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
     s.add(f'<g opacity="0.85">{beads}</g>')
     for c in sorted(net["channels"], key=lambda c: -c["w"]):
-        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]), late=True)   # the LATE water block: the city's moat/river opens the shared block EARLY, which would composite the whole ditch net UNDER the plots (invisible network + parchment pinstripes on the uncovered corridors - the villages draw water after fields and never hit this)
+        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]), late=True)   # the LATE water block: the city's moat/river opens the shared block EARLY, which would composite the whole ditch net UNDER the plots (invisible network + parchment pinstripes on the uncovered corridors). Since the Hoshizora canals-under-paddies audit (GM 2026-07-21) the late block RE-ANCHORS at every call, so multi-fan maps stay correct too; see settlements.md's late-water bullet
     exs = [p[0] for p in env]
     eys = [p[1] for p in env]
     pvx = [v[0] for p in net["plots"] for v in p["poly"]]
@@ -324,13 +324,17 @@ def veg_tract(name, bbox, seed):
     small furrowed plots, each row-cultivated to its own heading like fragmented dry holdings."""
     R = _random.Random(seed)
     x0, y0, x1, y1 = bbox
+    # parcel constants in REAL FEET via s.px (the GM's catch, 2026-07-21: the raw px values -
+    # rows 26-40px, split threshold 46px - were garden-scale at a finer grain but became
+    # 0.3-0.5 acre slabs at 3 ft/px, dwarfing every other map's dry parcels; gated by
+    # dry_plots_to_scale's max clause). Rows 52-80 ft, columns split above 92 ft.
     rows = [y0]
-    while rows[-1] < y1 - 30:
-        rows.append(min(y1, rows[-1] + R.uniform(26, 40)))
+    while rows[-1] < y1 - s.px(60):
+        rows.append(min(y1, rows[-1] + R.uniform(s.px(52), s.px(80))))
     rows[-1] = y1
     prev = R.choice(list(VEG_CROPS))
     for i in range(len(rows) - 1):
-        cuts = [x0, x1] if (x1 - x0) < 46 or R.random() < 0.4 else [x0, R.uniform(x0 + 22, x1 - 22), x1]
+        cuts = [x0, x1] if (x1 - x0) < s.px(92) else [x0, R.uniform(x0 + s.px(44), x1 - s.px(44)), x1]   # a tract wider than 92 ft ALWAYS splits: one full-width 195 ft row is a 0.39-acre slab
         for j in range(len(cuts) - 1):
             quad = [(cuts[j] + R.uniform(-2, 2), rows[i] + R.uniform(-2, 2)),
                     (cuts[j + 1] + R.uniform(-2, 2), rows[i] + R.uniform(-2, 2)),
