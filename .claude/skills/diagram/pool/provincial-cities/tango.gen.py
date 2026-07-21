@@ -366,7 +366,7 @@ def veg_tract(name, bbox, seed):
 s.pond(1497, 965, 38, 24)                # the in-wall tank, on the quarter's high NE corner
 _net1, ENV_NW1, _c1 = comb_field("nw1", (1470, 978), 135, 99, 110, (95, 130), (55, 80), (0.35, 0.7),
                                  offtakes_b=(0.6,),   # a delivery ditch off canal B too: the in-wall comb shows the full standard net - head-race forking, both canals tapped, ditches tapering (GM 2026-07-21)
-                                 dry_band=(10, 18), avoid=(RING,), mirror_ym=1111)
+                                 dry_band=(42, 76), avoid=(RING,), mirror_ym=1111)   # in-wall hem: 126-228 real ft - near the village hem depth; the avoid clause already drops any plot the crescent cannot hold, so the band may run close to full
 _p1 = plot_centroid(_net1, lambda cs: min(cs, key=lambda c: (c[0] - _c1[0]) ** 2 + (c[1] - _c1[1]) ** 2))
 topo_channel([(1482, 972), (1470, 978), _p1], {"kind": "pond"}, {"kind": "field", "name": "nw1"})
 # the in-wall field's runoff leaves by a WATER GATE: a culvert from the drain's outfall under
@@ -490,6 +490,12 @@ s.fire_tower(1237, 1350, label=None)   # west-central, on the strip between the 
 s.place_wells((1247, 1343, 1582, 1440), spacing=66)
 for wx, wy in [(1328, 1399), (1521, 1394), (1393, 1427), (1466, 1429)]:
     s.well_at(wx, wy)   # split the west merchant band's overloaded draw-point
+for _wc in [(1378, 1358), (1390, 1366), (1370, 1372)]:
+    if s.well_at(*_wc):
+        break   # W-flank court: the widened agri hems ripple the SW packs and the (1412,1376) draw-point recurringly climbs past the 26-household ceiling (city_well_density_sufficient) - two flanking courts split its catchment
+for _wc in [(1446, 1360), (1436, 1368), (1454, 1372)]:
+    if s.well_at(*_wc):
+        break   # E-flank court (same split)
 s.rowpack((1181, 1344, 1559, 1440), (["merchant_house"] * 5 + ["servant"]) * 40, court_every=3)   # reaches the west ring arc (the bound clips the taper)
 # mid-block cores between the two SW streets: more merchant terraces
 s.rowpack((1480, 1561, 1546, 1645), (["merchant_house"] * 5 + ["servant"]) * 12)
@@ -568,6 +574,10 @@ s.label(2160, 1549, "samurai estates", 10, italic=True, color="#3A352C")   # in 
 # so each tap picks a moat vertex UPSTREAM (north) of the sluice, running WITH the current.
 # fall directions carry a slight SOUTH bias (175/172/105) so each comb's ground sits DOWNSTREAM
 # of its tap (moat_channels_flow_with_current: the moat is fed from the N, its water runs south)
+# dry_band (47, 88)px = the VILLAGE hem's 140-264 real ft at this map's 3 ft/px (the villages'
+# default (70,132)px was tuned at 2 ft/px): the hem quilt is what fills the fan's head/fork
+# ground - the GM's circled blank wedges (2026-07-21) were exactly the hem the old thin
+# (14,26) = 42-78 ft band no longer covered
 MOAT_FARMS = [("fw1", (1074, 1200), 175, 73, 190, (160, 210), (95, 125), (0.35, 0.7)),
               ("fw2", (1155, 1632), 172, 74, 190, (145, 190), (85, 115), (0.4, 0.75)),
               ("fs1", (1328, 1805), 105, 75, 170, (125, 165), (85, 115), (0.4, 0.78))]
@@ -577,7 +587,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0          # outward: away from the city center
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
     s.field_channel([mp, sl], '#6C9CBE', 7, 7)               # the visible tap: moat rim -> sluice
-    _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,))
+    _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,))
     # source topology: ends at the SOUTHERNMOST plot's centroid - guaranteed inside the outline
     # (city_moat_irrigates_fields) and downstream of the tap (moat_channels_flow_with_current)
     _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda c: c[1]))
@@ -587,6 +597,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     topo_channel([tuple(_dr[-2]), tuple(_dr[-1])], {"kind": "drain"}, {"kind": "offmap"})
     s.ring(('poly', _env), 28, 15, ["plain"])
     s.ring(('poly', _env), 22, 40, ["plain"])
+    s.ring(('poly', _env), 14, 78, ["plain"])   # an outer ring band past the widened dry hems (2026-07-21): the village-depth quilts claim the near margin, so without it fw1's visible sliver seats no farmhouses (outside_fields_farmhouse_density)
 # a field running off the NORTH edge - its water is implied off-map (the moat's own source side):
 # the sluice sits above the cropped frame, so the comb's head shows only its canals entering the
 # view; the fall is capped so the drain stays clear of the moat's north rim, and the collector
