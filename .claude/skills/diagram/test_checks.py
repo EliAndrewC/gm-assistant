@@ -5285,6 +5285,25 @@ def test_polder_parcel_fabric_must_vary():
     assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
 
 
+def test_polder_parcels_must_front_a_ditch():
+    # every polder parcel must sit within reach of a supply/drain ditch (the jingbang creek-and-ditch
+    # interior): parcels far from every ditch fire, parcels without recorded centroids (pre-fix format)
+    # fire, and a laterals-served fabric passes. GM-flagged on the original Kuwabata (floating ponds).
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    lat = {"poly": [[500, 88], [500, 1312]], "role": "lateral", "field": "p", "w": 3.2, "w_tail": 2.4}
+    # varied 4-tuple parcels hugging the x=500 lateral: centroids at x 430/570, spans ~140 -> reach ~103
+    served = [[140, 70, 430, 100 + 90 * i] for i in range(7)] + [[140, 140, 570, 100 + 160 * i] for i in range(7)]
+    for arch in ("polder_grid", "mulberry_dike_fishpond"):
+        base = {"meta": {"scale": "hamlet", "field_archetype": arch}, "field_ditches": [lat]}
+        assert "polder_parcels_front_water" not in f({**base, "fields": [{**field, "plots": served}]})
+        adrift = [*served, [140, 140, 880, 1280]]  # one parcel ~380px from the lateral
+        assert "polder_parcels_front_water" in f({**base, "fields": [{**field, "plots": adrift}]})
+        no_cent = [*served, [140.0, 140.0]]  # pre-fix 2-tuple record: no centroid = no frontage
+        assert "polder_parcels_front_water" in f({**base, "fields": [{**field, "plots": no_cent}]})
+        # no ditches recorded at all -> everything is unfronted
+        assert "polder_parcels_front_water" in f({"meta": base["meta"], "fields": [{**field, "plots": served}]})
+
+
 def test_ribbon_valley_must_be_long_and_narrow():
     base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "ribbon_valley"}}
     thin = {**base, "fields": [{"name": "r", "kind": "paddy", "outline": [[400, 100], [700, 100], [700, 2000], [400, 2000]], "bbox": [400, 100, 700, 2000]}]}  # 300 wide x 1900 long

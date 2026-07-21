@@ -1104,6 +1104,8 @@ def build_polder(
     rows: int = 11,
     cols: int = 6,
     cell: float = 150,
+    parcel_mix: tuple[float, float, float] = (0.52, 0.16, 0.12),
+    gap: tuple[float, float] = (1.5, 4.0),
 ) -> dict[str, Any]:
     """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of paddies on flat reclaimed
     low ground, an orthogonal ditch-grid module inside a perimeter dike. Returns build_comb-compatible keys
@@ -1122,11 +1124,26 @@ def build_polder(
     one uniform machine-sized rectangle are a 20th-century consolidation look (Japan's 1963 hojo seibi 30m x
     100m standard; PRC land-consolidation campaigns). SO: the ditch-grid MODULE stays straight and uniform
     (that part was genuinely surveyed, and the perimeter dike is dead straight), while the parcels inside it
-    vary - most module bays split into 2-3 oblong strips, a few merge into double-bay parcels, and interior
-    bund nodes jitter a touch so minor bunds waver while main ditches hold their line. DELIBERATE DEPARTURE:
-    parcels are drawn larger than the literal ~1-mu average (a true-scale parcel at hamlet zoom is a sliver)
-    - the RELATIVE variation is the honest part; absolute size trades toward legibility, same liberty as the
-    other archetypes."""
+    vary - most module bays split into 2-3 oblong strips, a few merge into double-bay parcels (ALONG the
+    fall, so parcels never cross a lateral), and interior bund nodes jitter a touch so minor bunds waver
+    while main ditches hold their line.
+
+    TRUE-SCALE SIZING (GM directive 2026-07-21: no legibility inflation - these maps are perfectly to
+    scale, 1 px = 1 ft at hamlet scale; sizes verified by research the same day):
+    - RICE polder (`parcel_mix` default (0.52, 0.16, 0.12)): target mean parcel ~1 mu (~600 m2 ~6,460
+      sq ft; Buck 1929-33: 0.34 ha over 5.6 plots), common range ~0.2-3 mu, square to ~1:3 oblong. A
+      ~110 ft module hits this: whole bay ~1.9 mu, halves ~0.9 mu, thirds ~0.6 mu, rare merges ~3.7 mu.
+      `gap` default (1.5, 4.0): between-row gaps 3 px (~1 m walking bund, attested 20-50 cm + stroke) and
+      8 px column corridors carrying the 3.2 px lateral (a bang 浜 field ditch + spoil banks, ~2.4 m).
+    - DIKE-POND (mulberry_dike_fishpond archetype): traditional ponds were 0.4-0.6 ha (6-9 mu) oblong
+      rectangles, dikes 6-10 m wide (Ruddle & Zhong / FAO; CAVEAT: earliest well-attested sizes are
+      Republican-to-1980s surveys of the traditional landscape, not Ming/Qing documents). A ~160 ft
+      module with merge-heavy mix (e.g. (0.10, 0.0, 0.60)) yields mostly 160x320 ft (~0.48 ha, 1:2)
+      ponds with square ~2.4-mu minority ponds, and `gap` ~(11, 11) draws ~22 ft (~6.7 m) mulberry dikes.
+    - The per-parcel ditch FRONTAGE (every basin on a jing/bang ditch; polder_parcels_front_water) is
+      qualitatively well-attested; the exact lateral spacing is a REASONED RECONSTRUCTION (one lateral
+      per module line, so no basin sits farther than a basin-width from water) - no published pre-modern
+      metric spacing was found."""
     R = random.Random(seed)
     dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill (row) unit
     ux, uy = dy, -dx  # cross (column) unit - the grid extends to the +x/+cross side of the origin
@@ -1137,23 +1154,36 @@ def build_polder(
 
     # jittered bund-node lattice in (s, t) space. Perimeter nodes stay PINNED so the dike and the block
     # envelope are dead straight; only interior nodes waver (minor bunds), and the jitter is small enough
-    # that the main ditch lines still read straight at map scale.
+    # that the main ditch lines still read straight at map scale. A narrow RING corridor (~10 px ~3 m) is
+    # reserved inside the two side dikes for the TOE DITCHES - the standard polder collector running along
+    # the dike foot (it intercepts seepage and gives the edge parcels their ditch frontage) - so the
+    # parcel lattice spans [ring, span_t - ring] across while the envelope keeps the full span.
     J = 6.0
+    RING = 10.0
+    span_s, span_t = rows * cell, cols * cell
+    t_step = (span_t - 2 * RING) / cols
+
+    def tt(c: int) -> float:
+        return RING + c * t_step
+
     nodes: list[list[tuple[float, float]]] = [
-        [(r * cell + (R.uniform(-J, J) if 0 < r < rows else 0.0), c * cell + (R.uniform(-J, J) if 0 < c < cols else 0.0)) for c in range(cols + 1)] for r in range(rows + 1)
+        [(r * cell + (R.uniform(-J, J) if 0 < r < rows else 0.0), tt(c) + (R.uniform(-J, J) if 0 < c < cols else 0.0)) for c in range(cols + 1)] for r in range(rows + 1)
     ]
 
     def lerp(a: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
 
-    def inset(quad: list[tuple[float, float]], g: float = 4.0) -> list[tuple[float, float]]:
-        # a hairline gap = the bund between parcels. Bbox-scaling about the centroid is exact for the
-        # axis-aligned case and near-exact for these gently jittered quads (all built in (s, t) space).
+    g_s, g_t = gap  # (row-edge bund gap, column-edge ditch-corridor gap) - see TRUE-SCALE SIZING above
+
+    def inset(quad: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        # the gap = the bund / mulberry dike between parcels (and the ditch corridor on column edges).
+        # Bbox-scaling about the centroid is exact for the axis-aligned case and near-exact for these
+        # gently jittered quads (all built in (s, t) space).
         s_lo, s_hi = min(p[0] for p in quad), max(p[0] for p in quad)
         t_lo, t_hi = min(p[1] for p in quad), max(p[1] for p in quad)
         cs, ct = (s_lo + s_hi) / 2, (t_lo + t_hi) / 2
-        ks = max(0.0, s_hi - s_lo - 2 * g) / max(1e-9, s_hi - s_lo)
-        kt = max(0.0, t_hi - t_lo - 2 * g) / max(1e-9, t_hi - t_lo)
+        ks = max(0.0, s_hi - s_lo - 2 * g_s) / max(1e-9, s_hi - s_lo)
+        kt = max(0.0, t_hi - t_lo - 2 * g_t) / max(1e-9, t_hi - t_lo)
         return [(cs + (p[0] - cs) * ks, ct + (p[1] - ct) * kt) for p in quad]
 
     plots: list[dict[str, Any]] = []
@@ -1164,15 +1194,19 @@ def build_polder(
         fill = FLOODED if low else R.choice(RICE_GREENS)
         plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in poly], "fill": fill, "low": low})
 
-    for r in range(rows):
-        c = 0
-        while c < cols:
-            wide = c + 1 < cols and R.random() < 0.12  # an occasional double-bay parcel (merged holding)
-            c1 = c + (2 if wide else 1)
-            tl, tr = nodes[r][c], nodes[r][c1]
-            bl, br = nodes[r + 1][c], nodes[r + 1][c1]
+    p_split2, p_split3, p_merge = parcel_mix
+    for c in range(cols):
+        r = 0
+        while r < rows:
+            # an occasional double-bay parcel (merged holding). Merges run ALONG the fall (never across a
+            # column line) so the lateral ditches on the column lines never cut through a parcel, and never
+            # straddle the low-band boundary so the `low` flag stays a whole-parcel truth.
+            tall = r + 1 < rows and ((r + 1 >= rows - 2) == (r >= rows - 2)) and R.random() < p_merge
+            r1 = r + (2 if tall else 1)
+            tl, tr = nodes[r][c], nodes[r][c + 1]
+            bl, br = nodes[r1][c], nodes[r1][c + 1]
             u = R.random()
-            n_cuts = 0 if wide else (2 if u < 0.16 else (1 if u < 0.68 else 0))
+            n_cuts = 0 if tall else (2 if u < p_split3 else (1 if u < p_split3 + p_split2 else 0))
             if n_cuts == 0:
                 emit([tl, tr, br, bl], r)
             else:
@@ -1184,21 +1218,39 @@ def build_polder(
                 else:  # cut ALONG the fall - side-by-side strips
                     for f0, f1 in zip(fs, fs[1:], strict=False):
                         emit([lerp(tl, tr, f0), lerp(tl, tr, f1), lerp(bl, br, f1), lerp(bl, br, f0)], r)
-            c = c1
-    span_s, span_t = rows * cell, cols * cell
+            r = r1
     envelope = [grid(0, 0), grid(0, span_t), grid(span_s, span_t), grid(span_s, 0), grid(0, 0)]
-    # the supply feeder runs STRAIGHT along the high (top) edge from the sluice, so its fork sits just above the
-    # block and the source->field feed (fork + a step downhill) anchors INSIDE the grid without any hairpin. The
-    # drain runs along the low edge descending to the far outfall corner, then turns downhill for a smooth brook.
-    flank = [grid(-12, span_t * k / 8) for k in range(5)]  # along the high edge to mid-top...
-    flank.append(grid(70, span_t * 0.5))  # ...then dip INTO the block so the source->field feed anchors inside
+    # THE WATER NETWORK IS FULLY CONNECTED (GM-flagged 2026-07-21: the old feeder dipped into the block,
+    # touched one paddy and stopped, the drain floated unconnected, and no parcel had ditch frontage).
+    # The engineered polder layout: the head feeder runs STRAIGHT along the inside of the high dike from
+    # the corner sluice; a straight LATERAL runs down every interior column line (each following its
+    # gently jittered bund-node line) from the feeder to the collecting drain along the low edge, which
+    # descends to the far outfall corner and turns downhill into the brook. Every parcel fronts a lateral
+    # or a trunk, and feeder -> laterals -> drain is one connected system - straight lines and right
+    # angles are CORRECT here (a surveyed, engineered polder is the one pre-modern landscape that looks
+    # like this); what was wrong before was the disconnection, not the geometry. The head channel is TWO
+    # trunks from the corner sluice: a short main that turns down INTO the block along the first interior
+    # lateral's line (its tail is the fork the hairline source->field topology feed anchors from, and it
+    # reads as the feeder head charging that lateral), and the dike-top feeder running the full width to
+    # the NE corner, where it wraps into the east toe ditch - the perimeter feeder genuinely RINGS the
+    # block.
+    head = [grid(-12, 0), grid(-12, tt(1)), grid(60, tt(1))]
+    flank = [grid(-12, tt(1) + (span_t - tt(1)) * k / 6) for k in range(7)]
     drain_pts = [(round(x, 1), round(y, 1)) for x, y in [grid(span_s + 12 + dx * 30 * (k / 6), span_t * k / 6) for k in range(7)]]
     drain_pts.append((round(drain_pts[-1][0] + dx * 62, 1), round(drain_pts[-1][1] + dy * 62, 1)))
-    sluice = flank[0]
+    sluice = head[0]
     channels = [
+        {"pts": [(round(x, 1), round(y, 1)) for x, y in head], "role": "main", "w": 6.0, "w_tail": 3.0},
         {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
         {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
     ]
+    for c in range(1, cols):  # the laterals, one per interior column line, feeder -> drain
+        tc = tt(c)
+        lat_pts = [(-12.0, tc), *[nodes[r][c] for r in range(rows + 1)], (span_s + 12 + dx * 30 * (tc / span_t), tc)]
+        channels.append({"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4})
+    for tc in (RING * 0.5, span_t - RING * 0.5):  # the toe ditches inside the two side dikes, feeder -> drain
+        lat_pts = [(-12.0, tc), (span_s + 12 + dx * 30 * (tc / span_t), tc)]
+        channels.append({"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4})
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
     return {
