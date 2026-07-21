@@ -264,7 +264,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
     s.add(f'<g opacity="0.85">{beads}</g>')
     for c in sorted(net["channels"], key=lambda c: -c["w"]):
-        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]), late=True)   # the LATE water block: the city's moat/river opens the shared block EARLY, which would composite the whole ditch net UNDER the plots (invisible network + parchment pinstripes on the uncovered corridors - the villages draw water after fields and never hit this)
+        s.field_channel(c["pts"], '#7C9EB0' if c["role"] == "drain" else '#6C9CBE', c["w"], c.get("w_tail", c["w"]), late=True)   # the LATE water block: the city's moat/river opens the shared block EARLY, which would composite the whole ditch net UNDER the plots (invisible network + parchment pinstripes on the uncovered corridors). Since the Hoshizora canals-under-paddies audit (GM 2026-07-21) the late block RE-ANCHORS at every call, so multi-fan maps stay correct too; see settlements.md's late-water bullet
     exs = [p[0] for p in env]
     eys = [p[1] for p in env]
     pvx = [v[0] for p in net["plots"] for v in p["poly"]]

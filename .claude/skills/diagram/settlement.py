@@ -642,9 +642,15 @@ class Settlement:
         feeder is drawn BEFORE the pond (M['pond'] is not known at call time). `pond_fill` marks the pond's
         water body, drawn LAST among the beds so it paints over any feeder's inside-the-rim overshoot."""
         if late:
-            if self._late_water_idx is None:
-                self._late_water_idx = len(self.out)
-                self.out.append("")  # placeholder for the LATE block (see __init__)
+            # (RE-)ANCHOR the late block at EVERY late call, not just the first: a multi-comb map
+            # emits plots-then-channels per field, so a block pinned at the FIRST field's position
+            # would sit UNDER every later field's plots (GM 2026-07-21: Hoshizora/Hirameki nets
+            # invisible; Tango/Nagahara's per-gen late=True had the same residual hole on their
+            # 2nd+ fans). Anchoring at the LAST call puts the whole net above the last-drawn
+            # plots - and every earlier field's plots too. The abandoned placeholders are empty
+            # strings, inert in the final SVG.
+            self._late_water_idx = len(self.out)
+            self.out.append("")  # placeholder for the LATE block (see __init__)
             self.late_water.append({"bed": bed, "sheen": sheen, "edge": edge, "rec": rec, "clip": clip, "pond_fill": pond_fill})
             return
         if self._water_idx is None:
@@ -1332,8 +1338,17 @@ class Settlement:
             # pattern: the comb taps the map's stream via a weir); nothing extra is drawn, the
             # hairline topology channel below still anchors to that stream
             self.stream(source["stream"], frm={"kind": "offmap"}, width=7)
+        # The ditch net ALWAYS goes to the LATE water block (GM 2026-07-21: Hoshizora's canals
+        # "rendering below the rice paddies"). In the shared block - anchored at the FIRST water
+        # call - the net composites UNDER any plots painted after that anchor: a town/city stream
+        # or moat drawn before the field anchors it early (the whole net invisible), and even on
+        # a village a SECOND comb's plots covered the first comb's net (Hikari-no-sato). The late
+        # block re-anchors at every call (see _water), so the net lands after the LAST field's
+        # plots and draws OVER every paddy, exactly as the hand-drawn maps intend. The cities
+        # discovered the early-anchor half of this and patched it per-gen (tango/nagahara
+        # `late=True`); this makes it automatic and closes their residual multi-fan hole too.
         for c in sorted(net["channels"], key=lambda c: -c["w"]):
-            self.field_channel(c["pts"], "#7C9EB0" if c["role"] == "drain" else "#6C9CBE", c["w"], c.get("w_tail", c["w"]))
+            self.field_channel(c["pts"], "#7C9EB0" if c["role"] == "drain" else "#6C9CBE", c["w"], c.get("w_tail", c["w"]), late=True)
         if net["brook"]:
             # the drain-outfall brook shoots STRAIGHT downhill off-map (a fan field's own wiggly brook can
             # re-enter the paddy and trip streams_avoid_fields; a straight downhill exit never does)
@@ -3608,18 +3623,6 @@ class Settlement:
             corr.append(([tuple(p) for p in self.M["road"]], self.M.get("road_width", 26) / 2 + extra))
         return corr
 
-    def _on_lane(self, px: float, py: float, clear: float) -> bool:
-        """True if (px, py) lies on (within `clear` of the tread half-width of) a trodden LANE. Decorative
-        ground-cover (scrub, reeds) skips it so a constantly-walked path stays BARE and reads ON TOP of the
-        scrub, never overgrown - the same reason the tread carries no vegetation in reality. Uses the lanes
-        already recorded in M['lanes'] (so it only clears lanes drawn BEFORE the ground-cover)."""
-        for ln in self.M.get("lanes", []):
-            pts = ln["pts"]
-            half = ln["w"] / 2 + clear
-            if any(seg_dist(px, py, pts[i], pts[i + 1]) < half for i in range(len(pts) - 1)):
-                return True
-        return False
-
     def _on_watercourse(self, px: float, py: float, pad: float = 2.0) -> bool:
         """True if (px, py) lies ON a drawn watercourse - a stream or an irrigation channel (within its half-
         width + `pad`). Decorative ground-cover (scrub, reeds) skips it: vegetation never draws OVER open water,
@@ -3632,6 +3635,46 @@ class Settlement:
         # ... and the fengshui crescent pond's open water (found 2026-07-21: scrub tufts drew ON the
         # half-moon pond - the skip knew M['pond'] and the linear courses but not this water body)
         return any(math.hypot(px - cp["cx"], py - cp["cy"]) < cp["r"] + pad for cp in self.M.get("crescent_ponds", []))
+
+    # THE URBAN-CLEARANCE HALO (GM 2026-07-21, Hoshizora): loose ground-cover (scrub, reeds) stays out of
+    # the swept/trodden ground AROUND every occupied structure, not merely off its footprint. WHY: the daily
+    # foot traffic, sweeping, and fuel/fodder-gathering pressure of the residents strips brush from the
+    # ground nearest the dwellings first - dooryards are packed earth, the alleys between packed town houses
+    # are walked bare, and a settlement's whole built-up fabric reads CLEARED; scrub survives only past this
+    # halo, on the outskirts. 30 ft around structures (a working dooryard's depth; also closes the gaps in
+    # packed districts, whose ~40-48 ft house spacing leaves no strip wider than two halos), 20 ft around a
+    # wellhead (the most-trodden, spill-puddled ground in any settlement), 8 ft around tended ground plots
+    # (a garden's or threshing yard's maintained edge). Constants are REAL FEET, converted at the map grain.
+    _HALO_STRUCT_FT = 30.0
+    _HALO_WELL_FT = 20.0
+    _HALO_PLOT_FT = 8.0
+    # occupied structures (people live/work in them: full dooryard halo) vs tended ground plots (kept clear
+    # to their edge, but nobody sweeps a 30 ft apron around a vegetable bed)
+    _HALO_STRUCT_KEYS = ("houses", "buildings", "storehouses", "flophouses", "byres", "farm_sheds", "religious", "shrines", "manors", "ministries", "inspection_stations")
+    _HALO_PLOT_KEYS = ("gardens", "threshing_yards")
+
+    def _urban_keepouts(self, bbox: tuple[float, float, float, float]) -> tuple[list[tuple[float, float, float, float]], list[tuple[float, float, float]]]:
+        """Axis-aligned keep-out rects + wellhead keep-out circles for the urban-clearance halo (see the
+        constants above), built from every structure/plot/well recorded in M so far. A rotated structure is
+        covered conservatively by its half-diagonal square. Prefiltered to `bbox` (the cover poly's extent) -
+        a keep-out that cannot touch the scatter region would only slow the per-point loop (a to-scale town
+        carries ~200 structures and each cover poly samples thousands of points). Returned as (rects,
+        circles) for the ground-cover scatters' per-point tests."""
+        bx0, by0, bx1, by1 = bbox
+        rects: list[tuple[float, float, float, float]] = []
+        for keys, halo_ft in ((self._HALO_STRUCT_KEYS, self._HALO_STRUCT_FT), (self._HALO_PLOT_KEYS, self._HALO_PLOT_FT)):
+            halo = halo_ft * self.bscale
+            for k in keys:
+                for o in self.M.get(k, []) or []:
+                    hw, hh = o["w"] / 2, o["h"] / 2
+                    if o.get("rot"):
+                        hw = hh = math.hypot(hw, hh)  # conservative: the rotated rect fits in its half-diagonal square
+                    rx0, ry0, rx1, ry1 = o["x"] - hw - halo, o["y"] - hh - halo, o["x"] + hw + halo, o["y"] + hh + halo
+                    if rx1 >= bx0 and rx0 <= bx1 and ry1 >= by0 and ry0 <= by1:
+                        rects.append((rx0, ry0, rx1, ry1))
+        wh = self._HALO_WELL_FT * self.bscale
+        circles = [(o["x"], o["y"], o.get("vr", o["r"]) + wh) for o in self.M.get("wells", []) if bx0 - 40 <= o["x"] <= bx1 + 40 and by0 - 40 <= o["y"] <= by1 + 40]
+        return rects, circles
 
     def commons(self, poly: Any, role: str = "commons", avoid: Any = ()) -> None:
         """FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far (upslope / windward) side,
@@ -3653,14 +3696,26 @@ class Settlement:
         feather = 42 * bs  # scrub THINS toward the boundary (a soft, ragged edge, not a hard line)
 
         pond = self.M.get("pond")
+        halo_rects, halo_circles = self._urban_keepouts((x0, y0, x1, y1))  # the urban-clearance halo (see _urban_keepouts)
+        corridors = self._corridor_buffers(
+            3 * bs
+        )  # lanes AND town streets AND the road: every trodden/maintained tread stays bare (the old skip knew only lanes, so scrub drew on the Imperial Road bed - GM 2026-07-21, Hoshizora)
 
-        def _sparse(px: float, py: float, drop: float) -> bool:  # skip a scatter point outside the poly, on a field/lane/building/water, in a keep-out, or (probabilistically) near the edge
+        def _sparse(
+            px: float, py: float, drop: float
+        ) -> bool:  # skip a scatter point outside the poly, on a field/corridor/water, in the urban halo, in a keep-out, or (probabilistically) near the edge
             if (
                 not point_in_poly(px, py, poly)
                 or any(point_in_poly(px, py, ff) for ff in self.field_polys)
-                or self._on_lane(px, py, 3 * bs)  # keep scrub off the trodden lane so the path is not overgrown
+                or any(
+                    any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors
+                )  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
                 or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
                 or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
+                or any(
+                    x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects
+                )  # ... and OUT of the urban-clearance halo: the swept/trodden ground around every structure, not just its footprint
+                or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
                 or any(
                     point_in_poly(px, py, b) for b in self.block_polys
                 )  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
@@ -3756,13 +3811,19 @@ class Settlement:
         random.seed(int(abs(x0) * 5 + abs(y0) * 7 + round(x1 - x0)))
         feather = 46 * bs
         pond = self.M.get("pond")
+        halo_rects, halo_circles = self._urban_keepouts((x0, y0, x1, y1))  # the urban-clearance halo (see _urban_keepouts): reeds no more belong in a dooryard than scrub does
+        corridors = self._corridor_buffers(3 * bs)  # every trodden tread (lane/street/road), not just lanes
 
-        def _sparse(px: float, py: float, drop: float) -> bool:  # skip a point outside the poly, IN a paddy / ON the pond / on a lane/building / in a keep-out, or (probabilistically) near the edge
+        def _sparse(
+            px: float, py: float, drop: float
+        ) -> bool:  # skip a point outside the poly, IN a paddy / ON the pond / on a corridor/building / in the urban halo / in a keep-out, or (probabilistically) near the edge
             if (
                 not point_in_poly(px, py, poly)
                 or any(point_in_poly(px, py, ff) or edge_dist(px, py, ff) < 10 for ff in self.field_polys)
-                or self._on_lane(px, py, 3 * bs)  # a causeway/path through the marsh stays bare, not reeded over
+                or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)  # a causeway/path/road through the marsh stays bare, not reeded over
                 or self._on_watercourse(px, py)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
+                or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # ... and OUT of the urban-clearance halo (the swept/trodden ground around every structure)
+                or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
                 or any(point_in_poly(px, py, b) for b in self.block_polys)  # ... and OFF any building/shrine/torii footprint
                 or any(point_in_poly(px, py, c) for c in self.clearings)  # ... and off the swept sacred/funerary verge
                 or any(point_in_poly(px, py, a) for a in avoid)

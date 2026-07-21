@@ -388,14 +388,14 @@ s.place_wells((60, 30, 1980, 1270), spacing=220, near=100)  # grid widened to re
 # only steers FARM placement; a wellhead here is clear of the hall, the torii, and the graveyard
 s.well(167, 883)
 
-# COMMONS SCRUB clothes the bare margins (town_margins_clothed - GM audit 2026-07: the village
-# satoyama rule excluded towns; a county seat's open aprons are the district's grazed commons,
-# not blank paper). The scatter skips every drawn feature, so the polys just have to be generous.
-s.commons([(820, 180), (1480, 200), (1700, 300), (1700, 700), (1480, 760), (1150, 780), (880, 560)], role="grazing")
-s.commons([(1690, 140), (1995, 120), (1995, 520), (1700, 420)], role="grazing")
-s.commons([(10, 660), (120, 650), (110, 1010), (15, 1000)], role="grazing")
-s.commons([(80, 1180), (700, 1210), (690, 1298), (90, 1298)], role="grazing")
-s.commons([(700, 780), (1480, 800), (1450, 1000), (720, 980)], role="grazing")
+# COMMONS SCRUB clothes the bare OUTSKIRTS only (town_margins_clothed wants the aprons worked;
+# scrub_clear_of_urban_fabric forbids claiming the town itself - GM 2026-07-21: the old
+# "generous polys + per-point skips" doctrine scattered scrub through the streets, dooryards,
+# and district gaps, so the polys now trace the built-up EDGE. Ground between the districts is
+# urban floor - trodden bare - and stays blank paper; the tm check counts the structures'
+# 30 ft urban-clearance halo as cover, so it no longer needs scrub to pass).
+s.commons([(10, 660), (120, 650), (110, 1010), (15, 1000)], role="grazing")  # west edge, below the graveyard
+s.commons([(80, 1180), (235, 1190), (230, 1298), (90, 1298)], role="grazing")  # SW corner, short of the caravan stables
 
 # (the groves run AFTER the wells so the canopy keep-out sees every wellhead - wells_clear_of_trees)
 # the COMMUNAL WINDBREAK (后龙林 back-village grove): a nucleated cluster shelters behind ONE

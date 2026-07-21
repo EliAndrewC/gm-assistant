@@ -6010,3 +6010,42 @@ def test_town_margins_clothed_fires_on_a_bare_sheet():
 def test_town_margins_clothed_passes_when_the_ground_is_worked():
     M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "commons": [{"x": 500, "y": 500, "w": 1000, "h": 1000, "role": "grazing", "poly": [[-10, -10], [1010, -10], [1010, 1010], [-10, 1010]]}]}
     assert "town_margins_clothed" not in f(M)
+
+
+# ---- scrub_clear_of_urban_fabric (GM 2026-07-21, Hoshizora): settlement ground is CLEARED - a
+# commons/pasture/coppice cover poly that CONTAINS an occupied structure or a wellhead is claiming
+# grazed waste where the town stands. Scrub lives on the outskirts only; field barns are exempt
+# (a hay barn stands in the grazed ground it serves).
+def test_scrub_clear_of_urban_fabric_fires_when_scrub_claims_the_town():
+    M = {
+        "meta": {"scale": "town"},
+        "commons": [{"x": 500, "y": 500, "w": 400, "h": 400, "rot": 0, "role": "grazing", "seq": 1, "poly": [[300, 300], [700, 300], [700, 700], [300, 700]]}],
+        "buildings": [bldg(500, 500)],  # a merchant house deep inside the claimed scrub
+        "wells": [{"x": 400, "y": 400, "r": 8, "vr": 12}],  # a wellhead inside it too
+    }
+    assert "scrub_clear_of_urban_fabric" in f(M)
+
+
+def test_scrub_clear_of_urban_fabric_fires_on_a_farmhouse_in_the_scrub():
+    # the check is order-blind and covers farmhouses: a house drawn after the cover fires too
+    # (town scale - at village/hamlet scale dispersed farms legitimately stand on the marginal
+    # scrub, so the check is scoped out there and only the engine halo applies)
+    M = {
+        "meta": {"scale": "town"},
+        "commons": [{"x": 500, "y": 500, "w": 400, "h": 400, "rot": 0, "role": "pasture", "seq": 1, "poly": [[300, 300], [700, 300], [700, 700], [300, 700]]}],
+        "houses": [{"x": 450, "y": 520, "w": 44, "h": 29, "rot": 0, "kind": "plain"}],
+    }
+    assert "scrub_clear_of_urban_fabric" in f(M)
+
+
+def test_scrub_clear_of_urban_fabric_passes_when_scrub_hugs_the_outskirts():
+    M = {
+        "meta": {"scale": "town"},
+        "commons": [
+            {"x": 500, "y": 500, "w": 400, "h": 400, "rot": 0, "role": "grazing", "seq": 1, "poly": [[300, 300], [700, 300], [700, 700], [300, 700]]},
+            {"x": 0, "y": 0, "w": 0, "h": 0, "rot": 0, "role": "grazing", "seq": 2, "poly": [[0, 0], [1, 0]]},  # degenerate record - skipped, never a crash
+        ],
+        "buildings": [bldg(500, 500, kind="barn"), bldg(900, 900)],  # the hay barn IN the grazing is legal; the merchant stands outside
+        "wells": [{"x": 800, "y": 300, "r": 8, "vr": 12}],  # outside the poly
+    }
+    assert "scrub_clear_of_urban_fabric" not in f(M)

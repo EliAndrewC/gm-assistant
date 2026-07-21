@@ -522,15 +522,16 @@ s.shrine_well(1750, 1050)
 # hems. All AFTER the wells, so the canopy keep-out sees every wellhead.
 # COMMONS SCRUB clothes the bare EXTRAMURAL margins (town_margins_clothed - the ground inside
 # the rampart is urban floor and counts as covered; these aprons are the district's grazed
-# commons). The scatter skips every drawn feature, so the polys just have to be generous.
+# commons). The polys trace the OUTSKIRTS only (scrub_clear_of_urban_fabric, GM 2026-07-21):
+# no dwelling/well center may sit inside one - the fringe farm rows, the S burakumin quarter,
+# and the flophouse keep their strips notched, shifted, or dropped; the ground they stand on
+# is urban floor (the 30 ft urban-clearance halo), not grazed waste.
 s.commons([(300, 15), (700, 10), (700, 95), (305, 100)], role="grazing")
 s.commons([(1600, 15), (1960, 10), (1955, 95), (1605, 100)], role="grazing")
 s.commons([(10, 290), (90, 300), (85, 900), (12, 890)], role="grazing")
-s.commons([(2470, 15), (2590, 15), (2590, 1985), (2475, 1985)], role="grazing")
-s.commons([(210, 790), (520, 800), (540, 1690), (230, 1700)], role="grazing")
-s.commons([(870, 1740), (1060, 1750), (1050, 1990), (880, 1990)], role="grazing")
-s.commons([(1550, 1730), (1795, 1725), (1800, 1985), (1560, 1985)], role="grazing")
-s.commons([(1900, 1840), (2390, 1830), (2385, 1990), (1905, 1995)], role="grazing")
+s.commons([(2510, 15), (2590, 15), (2590, 1985), (2515, 1985)], role="grazing")  # E strip held E of the fringe farm at x2487
+s.commons([(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 1050), (216, 1050)], role="grazing")  # W apron, notched around the farm row at x229-254 y1126-1257
+s.commons([(1550, 1730), (1650, 1728), (1655, 1985), (1560, 1985)], role="grazing")  # S strip, held W of the flophouse
 s.commons([(1950, 1495), (2360, 1490), (2370, 1695), (1955, 1700)], role="grazing")
 s.commons([(20, 1400), (230, 1395), (225, 1695), (30, 1690)], role="grazing")
 
