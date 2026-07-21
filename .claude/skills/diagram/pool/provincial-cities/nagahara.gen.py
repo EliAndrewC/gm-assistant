@@ -316,8 +316,9 @@ grid([SAM_ST, MER_V1, MER_V2])
 # shrine among the smattering (unlabeled), NOT a great temple (city_temples_dedicated).
 TEMPLE_LANE = [(1073, 1216), (1480, 1216)]   # the E-W temple-neighborhood street; Rites + Ebisu front it, it meets the spine; W end lands IN the ring bed (ring centerline x~1029.5 at y1204) so it makes a clean T, not a sliver-short stub (city_streets_meet_through_lanes)
 grid([TEMPLE_LANE], width_ft=18)
-s.shrine_hall(1189, 1142, "Temple of Bishamon", w=100, h=64, kind="temple", label_below=True)   # a Crab patron (also the warrior fortune); nudged E so its W edge clears the ring road
-s.shrine_hall(1396, 1142, "Temple of Ebisu", w=100, h=64, kind="temple", primary=True, label_below=True)   # the other Crab patron
+s.shrine_hall(1189, 1142, "Temple of Bishamon", w=s.px(130), h=s.px(84), kind="temple", label_below=True)   # a Crab patron (also the warrior fortune); nudged E so its W edge clears the ring road
+s.block_polys.append([(1120, 1158), (1258, 1158), (1258, 1189), (1120, 1189)])   # Bishamon's below-label band - the monzen pack seated a laborer under the text after the true-size reflow (2026-07-21)
+s.shrine_hall(1396, 1142, "Temple of Ebisu", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True)   # the other Crab patron
 s.cemetery(1167, 1246, 44, 32, label="graveyard")   # Bishamon's danka parish ground, S of the hall (kept clear of the temple lane)
 s.cemetery(1396, 1075, 44, 32, label="graveyard", label_above=True)   # Ebisu's danka parish ground, N of the hall
 s.ministry(1292, 1248, "Ministry of Rites", w=s.px(140), h=s.px(95))
@@ -381,6 +382,9 @@ for _wc in [(1330, 1170), (1320, 1140), (1310, 1178)]:
 s.place_wells((1228, 1058, 1356, 1100), spacing=52)   # courts for the theater-south terrace strip
 s.place_wells((1170, 957, 1395, 1003), spacing=56)    # courts for the ring-front strip N of the theater
 s.place_wells((1360, 1232, 1458, 1298), spacing=56)   # courts for the temple-lane SE pocket
+for _wc in [(1181, 1041), (1187, 1053), (1199, 1069), (1214, 1090), (1232, 1108), (1201, 1116), (1247, 1069)]:   # a second seeded idobata INSIDE the swamped catchment (28 households, x1176-1318 y1038-1157, centroid ~1228,1090): the true-size temple reflow (2026-07-21) re-packed the warren and its densest well went back over the 26-household ceiling (city_well_density_sufficient). Candidate LIST per the well_at doctrine - the blocked spots no-op; a first single attempt at (1216,1178) sat outside the catchment and a second at (1181,1041) alone failed _fits
+    if s.well_at(*_wc):
+        break
 s.rowpack((1082, 1114, 1160, 1303), (["laborer"] * 2 + ["laborer_large"] + ["servant"]) * 34, court_every=7, eave_ft=3)   # x0 rides the W ring arc (the bound clips what the curve disallows)
 # south-strip y1 pulled to 1300: rowpack does not read corridors, so at y1 1310 the bottom row's
 # eave clipped the ward-fence line at y1311 (city_ward_fence_clear_of_structures at (1161,1302));

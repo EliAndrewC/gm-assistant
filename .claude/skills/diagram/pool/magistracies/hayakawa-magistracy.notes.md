@@ -30,17 +30,17 @@
 
 - Guest-wing annex bulges outside the main rectangle: accreted architecture, the tenure-character knob made visible.
 - Guests' river door opens into the GUEST GARDEN (GM circulation rule 2026-07: guest doors feed courts, never building flanks); the kitchen postern deliberately opens into work space.
-- Cell placement by the gate: free variable (grounding); guards double as jailers. Cell drawn ~2x real footprint: documented Scale glyph exemption (lattice legibility).
+- Cell placement by the gate: free variable (grounding); guards double as jailers. Cell at TRUE footprint (18x15 ft; size-audit 2026-07) - lattice lines are stroke-convention linework. (Stale "~2x footprint" wording retired 2026-07-21.)
 - Main gate opening 13.3 ft (was 27 ft; the size-audit agent caught the structure-vs-passage confusion, 2026-07). Gate hierarchy: main 13.3 > landing gate 12.7 (honest two-way cart minimum) > divider 8 (real nakamon) > posterns/doors ~9-11.
 - The internal divider gate sits on the main axis directly behind the office hall: deliberate (the hall is the privacy baffle; formal visitors are received in the hall and go no deeper; heavy service uses the kitchen postern). Documented in the program's two-court bullet.
-- The two modest shrines share the single approach torii that stands between them; they draw ~2x real (documented Scale exemption - interior glyphs need the room).
+- The two modest shrines share the single approach torii that stands between them; both now draw TRUE size (33x21 px = 11x7 ft modest standalone halls; the old ~2x exemption was retired with the glyph doctrine, 2026-07-21 - their interior flame/wave glyphs shrank with them).
 - The residence is drawn as TWO offset blocks (gankō / flying-geese massing) joined by a corridor, not a single 180-ft bar - real shoin residences massed as connected offset blocks (GM ruling 2026-07). Still generous overall (lineage accretion at a 9-generation posting), do not shrink.
 - Residence room program: reception/zashiki (a residence keeps a formal reception room even with a separate office hall, per Takayama's yakutaku), Hajime's quarters + private study (shoin), family quarters, east rooms + ancestral alcove. Rooms are labeled by OCCUPANT rather than by historical function-name (okami/nakanoma/nando) - a deliberate GM schematic-legibility convention (2026-07); the underlying zones (lord's rooms, inner family rooms, the shoin study) are historically real.
 - The karo has his own house in the residence court (west, below the bath), NOT a bay of the lord's wing - historical correction, GM ruling 2026-07.
 - Each residence room-label is a multi-room ZONE/suite, not one room (a real residence of this footprint holds ~18-25 tatami rooms; compressed for legibility, a tolerated simplification per size-audit). The engawa strip on each block's garden face is the veranda that reads "residence, not nagaya." Block depth ~28 ft = the two-rows-plus-engawa section, on the shallow end but within range; the inner court can't fit deeper blocks alongside the garden/kitchen/shrine.
 - The guest annex has NO privy: guests of rank receive chamber-pot service from the household staff (more courteous than sending an inspector across the garden at night); the inner-court latrine is household-side.
 - No interrogation room: global rule (grounding) - do not flag.
-- Glyph exemptions per buildings.md Scale: wells ~2x, kneeling marks ~2x, salt wards / lanterns / hearth pure glyph.
+- Point glyphs TRUE SIZE per the retired-doctrine ruling (2026-07-21): notice board 7x3 ft, kneeling marks 3x3 ft half-tatami mats, kitchen hearth 10x4.3 ft kamado range, fire tubs 2.5 ft, lanterns near-true (the first sweep missed the kneeling marks + hearth; the size-audit caught both same day). Wells AND salt wards are location MARKERS under the stroke convention (true sizes ~3-4 ft curb / ~0.3-0.7 ft morijio cone are sub-glyph; the marker denotes the to-scale location, not to-scale pixels).
 
 ## Review log
 

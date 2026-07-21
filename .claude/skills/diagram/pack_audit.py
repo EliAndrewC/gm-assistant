@@ -41,7 +41,10 @@ BUILDING_FILLS: frozenset[str] = frozenset({"#DDB87A", "#C9A57A", "#E8D2A8", "#F
 BUILDING_PATTERNS: frozenset[str] = frozenset({"url(#granary-slats)", "url(#colonnade-hatch)"})
 KURA_FILLS: frozenset[str] = frozenset({"#F2EFE4"})  # fireproof plaster kura: a fire-gap IS correct
 OPEN_PATTERNS: frozenset[str] = frozenset({"url(#garden-stipple)", "url(#oshirasu-sand)"})
-MIN_BLDG_AREA_PX: float = 900.0  # 100 sqft; below this it is furniture, not a building mass
+MIN_BLDG_AREA_PX: float = 500.0  # ~55 sqft; below this it is furniture, not a building mass. Lowered
+# from 900 (2026-07-21): the glyph-doctrine retirement shrank real buildings to TRUE size - an 11x7 ft
+# modest shrine is 693 px2 - and the old floor silently dropped them from coverage/adjacency, emitting
+# a false "fire tub adrift" on Hayakawa (the tub sits 1.8 ft off the shrine the tool stopped seeing).
 
 _RECT_RE = re.compile(r'<rect x="([\-\d.]+)" y="([\-\d.]+)" width="([\d.]+)" height="([\d.]+)"[^>]*?fill="([^"]+)"')
 _CIRCLE_RE = re.compile(r'<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"')
