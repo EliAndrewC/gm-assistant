@@ -4918,6 +4918,36 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             reach = _bed_reach(pt)
             if reach is None or reach > 2:
                 dry_mouths.append((round(pt[0]), round(pt[1])))
+    # A DRAIN COLLECTOR'S FREE END REACHES WATER. A collector endpoint may sit among its own
+    # plots (the lo-end begins at the westmost delivery's bottom) or run off-map - but an on-map
+    # drain end OUTSIDE the planted extent that touches no other watercourse is runoff dying in
+    # bare ground (GM, Hirameki 2026-07: w2's collector ended mid-air beside the stream). Scoped
+    # to role='drain' (delivery tails END mid-crop by tagoshi doctrine; supply-canal tails taper
+    # past their last offtake) with the planted extent grown 14px and a 12px touch tolerance.
+    vis_by_field = {fdef["name"]: fdef.get("vis_bbox") or fdef["bbox"] for fdef in M.get("fields", [])}
+    all_ways = [st["poly"] for st in M.get("streams", [])] + [c["poly"] for c in M.get("channels", [])] + [dd["poly"] for dd in M.get("field_ditches", [])] + ([M["moat"]] if M.get("moat") else [])
+    dry_drains = []
+    for dd in M.get("field_ditches", []):
+        if dd.get("role") != "drain":
+            continue
+        vb = vis_by_field.get(dd["field"])
+        for endp in (dd["poly"][0], dd["poly"][-1]):
+            if not (12 < endp[0] < EX1 - 12 and 12 < endp[1] < EY1 - 12) or endp[0] < EX0 + 12 or endp[1] < EY0 + 12:
+                continue  # an off-map (or map-edge) end discharges beyond the frame
+            if vb and vb[0] - 14 <= endp[0] <= vb[2] + 14 and vb[1] - 14 <= endp[1] <= vb[3] + 14:
+                continue  # among the planted plots - the collector's in-crop end
+            dgap: float | None = min(
+                (min(seg_dist(endp[0], endp[1], pl[k], pl[k + 1]) for k in range(len(pl) - 1)) for pl in all_ways if pl is not dd["poly"]),
+                default=None,
+            )
+            if dgap is None or dgap > 12:
+                dry_drains.append((round(endp[0]), round(endp[1])))
+    check(
+        "drain_ends_reach_water",
+        not dry_drains,
+        f"drain collector end(s) dangle in bare ground at {sorted(set(dry_drains))[:4]} - an on-map collector end outside the crop must JOIN a watercourse (a culvert to the stream, another ditch, the moat) or run off the frame; runoff never just stops",
+    )
+
     check(
         "channels_join_streams_at_confluence",
         not dry_mouths,

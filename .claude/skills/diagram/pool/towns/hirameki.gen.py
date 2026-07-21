@@ -240,6 +240,19 @@ netW2 = mirror_comb(
     60,
 )
 netW2["brook"] = []
+# the on-map plots stop well west of the canal net here (most of w2 is off-map), so a delivery
+# tail can overshoot the planted edge into bare ground - trim every branch to the crop
+_w2_pmax = max(v[0] for p in netW2["plots"] for v in p["poly"])
+_w2_pminy = min(v[1] for p in netW2["plots"] for v in p["poly"])
+for _c in netW2["channels"]:
+    if _c["role"] == "branch":
+        _trimmed = [p for p in _c["pts"] if p[0] <= _w2_pmax + 6]
+        if len(_trimmed) >= 2:
+            _c["pts"] = _trimmed
+        if _c["pts"][-1][1] < _w2_pminy - 4:
+            # a tail stopping ABOVE the crop dangles in bare ground - bend it straight down-fall
+            # into the plot head so the delivery visibly reaches the rice it waters
+            _c["pts"] = list(_c["pts"]) + [(_c["pts"][-1][0], _w2_pminy + 4)]
 ENV_W2, DR_W2 = comb("hirameki-w2", netW2, {"kind": "stream", "stream": [(-12, 856), (24, 886), (60, 920)]})
 toe_block(DR_W2)
 
@@ -255,6 +268,9 @@ def _drain_at_x(dr, x):
 
 _onW2 = _drain_at_x(DR_W2, 35)
 topo_channel([_onW2, (-14, _onW2[1] + 22)], {"kind": "drain"}, {"kind": "offmap"})
+# the collector's EAST end would otherwise dangle mid-air beside the stream: a short relief
+# culvert tees the excess back into the stream at a proper confluence
+topo_channel([DR_W2[0], (stream_at_y(WS, DR_W2[0][1] + 17))], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
 
 # e1: default chirality, own hill brook off the N edge, collector culverts east into the stream
 netE1 = build_comb(
@@ -271,15 +287,20 @@ netE2 = build_comb(
     2600, 2000, (2170, 930), 14, down_deg=90, field_fall=230, canal_a_len=(260, 300), canal_b_len=(60, 80), offtakes_a=(0.55, 0.95), offtakes_b=(), plot_across=58, row_step=(52, 72), dry_band=(18, 30)
 )
 netE2["brook"] = []
+# cascade-fed: no sluice exists, so the auto head-race would dangle with a free top end
+# (GM: "channels just ending"). Shorten it to a short THROAT above the fork; the cascade
+# connector below runs through the throat's top, so the water visibly arrives there.
+netE2["channels"][0]["pts"] = [(2170, 1000), (2170, 1020)]
 ENV_E2, DR_E2 = comb("hirameki-e2", netE2, {"kind": "cascade"})
 toe_block(DR_E2)
 # the cascade connector: e1's drain outfall -> a gentle diagonal culvert -> just past e2's
 # FORK. The end sits 15px inside the e2 planting (the to=field anchor + fields_show_water_
 # source) AND within the 16px union tolerance of e2's head-race, so the two combs' ditch
 # nets join into one component that traces to e1's brook (field_ditches_reach_source_and_sink).
-_e2_fork = netE2["channels"][0]["pts"][-1]
+# ...routed THROUGH the throat's top (2170,1000), so the shortened head-race visibly receives
+# the cascade water, then diving into the fan for the to=field anchor
 topo_channel(
-    [DR_E1[-1], (2240, (DR_E1[-1][1] + _e2_fork[1]) / 2), (_e2_fork[0] + 1, _e2_fork[1] + 5), (_e2_fork[0] + 4, _e2_fork[1] + 42)],
+    [DR_E1[-1], (2262, 930), (2170, 1000), (2174, 1062)],
     {"kind": "drain"},
     {"kind": "field", "name": "hirameki-e2"},
     draw_w=2.5,
@@ -465,7 +486,13 @@ for fx, fy in [
     (1932, 975),
     (1962, 1052),
     (1972, 1345),
-]:  # + e2's NW + SW corner pockets (scanned placeable ground; shown-edge density)
+    (1974, 1206),
+    (2408, 1066),
+    (2394, 1248),
+    (2382, 1372),
+    (1966, 1390),
+    (2394, 1264),
+]:  # + e2's flank pockets (scanned placeable ground; shown-edge density)
     s.try_place(fx, fy, "plain")
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
