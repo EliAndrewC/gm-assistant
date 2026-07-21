@@ -533,6 +533,13 @@ s.village_grove([(1940, 420), (1985, 420), (1985, 1300), (1940, 1300)], role="co
 s.village_grove([(1990, 835), (2190, 835), (2190, 995), (1990, 995)], role="copse", dense=False)
 s.village_grove([(380, 1740), (458, 1745), (455, 1975), (380, 1975)], role="copse", dense=False)
 s.village_grove([(890, 1745), (1040, 1740), (1045, 1975), (895, 1975)], role="copse", dense=False)
+# ...and the SOUTHEASTERN quadrant's own wood (GM: the s1/e2 farm rows had no windbreak trees):
+# a real windbreak lobe on the open SW corner (the rerouted stream bent away from it, leaving
+# clear ground beside s1's western rows), a copse lobe on the open ground between the gate
+# market and the burakumin quarter, and a small copse behind e2's southeastern farms
+s.village_grove([(35, 1725), (200, 1710), (225, 1800), (190, 1955), (60, 1965), (30, 1850)], role="windbreak")
+s.village_grove([(1800, 1700), (2050, 1690), (2060, 1800), (1900, 1830), (1795, 1790)], role="copse")
+s.village_grove([(2290, 1350), (2378, 1345), (2382, 1462), (2295, 1470)], role="copse")
 
 # ===== FIRE DEFENSE: a watch-tower =====
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
