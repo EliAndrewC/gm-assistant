@@ -169,11 +169,11 @@
   <!-- salt wards OUTSIDE every door, one on EACH SIDE of the opening (the
        ward keeps ill fortune from crossing the threshold, so it sits outside) -->
   <!-- landing gate (east wall), flanking the opening, outside (east) -->
-  <circle cx="890" cy="498" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-  <circle cx="890" cy="532" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="890" cy="498" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="890" cy="532" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
   <!-- service gate (west wall), flanking, outside (west) -->
-  <circle cx="129" cy="692" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-  <circle cx="129" cy="718" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="129" cy="692" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="129" cy="718" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
   <!-- Kitchen postern posts (west service door, opening into the open gap
        between residence and kitchen rather than against the kitchen flank) -->
   <g fill="#2D2A24">
@@ -181,8 +181,8 @@
     <rect x="134" y="320" width="12" height="8"/>
   </g>
   <!-- kitchen postern (west wall), flanking, outside (west) -->
-  <circle cx="129" cy="296" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-  <circle cx="129" cy="318" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="129" cy="296" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="129" cy="318" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
   <!-- Service-gate posts (west wall by the stable yard - a service door,
        so opening into work space is correct) -->
   <g fill="#2D2A24">
@@ -197,20 +197,20 @@
   <path d="M 1004 344 L 1044 344 L 1044 510" stroke="#9C7448" stroke-width="6" stroke-dasharray="8 8" fill="none" opacity="0.5"/>
   <!-- river door (annex east wall), flanking, outside (east) - the door
        Hajime fears most, so it is warded like the rest -->
-  <circle cx="1010" cy="336" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-  <circle cx="1010" cy="352" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="1010" cy="336" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+  <circle cx="1010" cy="352" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
 
   <!-- Salt wards flanking the main gate, outside (south of the wall) -->
   <g>
-    <circle cx="484" cy="764" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-    <circle cx="536" cy="764" r="4" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-    <text x="636" y="782" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">salt wards</text>
+    <circle cx="484" cy="764" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+    <circle cx="536" cy="764" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
+    <text x="596" y="782" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">salt wards</text>
   </g>
 
   <!-- Notice board just outside the wall, hugging the main gate (a kosatsu is read where
        people pass; it sat ~28 ft west of any gate before - GM 2026-07) -->
   <g>
-    <rect x="548" y="758" width="44" height="12" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
+    <rect x="559.5" y="759.5" width="21" height="9" fill="#E8D2A8" stroke="#6B4F2A" stroke-width="1"/>
     <circle cx="554" cy="772" r="1.5" fill="#4A3318"/>
     <circle cx="586" cy="772" r="1.5" fill="#4A3318"/>
     <text x="570" y="786" text-anchor="middle" font-size="9" font-style="italic" fill="#5C4830">notice board</text>
@@ -280,8 +280,8 @@
        (size-audit 2026-07) -->
   <g>
     <rect x="160" y="320" width="120" height="100" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
-    <rect x="175" y="333" width="30" height="22" fill="#6B4030" stroke="#3A2010" stroke-width="0.8"/>
-    <circle cx="190" cy="344" r="6" fill="#E68A40"/>
+    <rect x="175" y="337.5" width="30" height="13" fill="#6B4030" stroke="#3A2010" stroke-width="0.8"/>
+    <circle cx="190" cy="344" r="4" fill="#E68A40"/>
     <text x="222" y="370" text-anchor="middle" font-size="13" font-weight="bold" fill="#3A2E1C">kitchen</text>
     <text x="222" y="388" text-anchor="middle" font-size="11" fill="#3A2E1C">&amp; pantries</text>
     <!-- Kitchen well -->
@@ -386,14 +386,14 @@
        shrine - a small Ebisu altar keeps the corner) -->
   <g>
     <text x="790" y="195" text-anchor="middle" font-size="11" font-weight="bold" fill="#5C1A0A" letter-spacing="1">Fire Dragon shrine</text>
-    <rect x="757" y="200" width="66" height="42" fill="#C9876C" stroke="#6B2A18" stroke-width="2"/>
-    <rect x="757" y="200" width="66" height="4" fill="#A03020"/>
-    <rect x="757" y="238" width="66" height="4" fill="#A03020"/>
+    <rect x="773.5" y="210.5" width="33" height="21" fill="#C9876C" stroke="#6B2A18" stroke-width="2"/>
+    <rect x="773.5" y="210.5" width="33" height="3" fill="#A03020"/>
+    <rect x="773.5" y="228.5" width="33" height="3" fill="#A03020"/>
     <!-- flame glyph inside -->
-    <path d="M 780 230 L 784 214 L 789 225 L 794 211 L 799 223 L 802 230" stroke="#FFFAE6" stroke-width="2" fill="none"/>
+    <path d="M 785 226 L 787 218 L 789.5 223 L 792 216 L 794.5 222 L 796 226" stroke="#FFFAE6" stroke-width="1.4" fill="none"/>
     <!-- the surviving Ebisu altar in the corner -->
-    <rect x="762" y="224" width="9" height="9" fill="none" stroke="#FFFAE6" stroke-width="1.2"/>
-    <text x="795" y="262" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">(was an Ebisu shrine - one altar remains)</text>
+    <rect x="776" y="219" width="9" height="9" fill="none" stroke="#FFFAE6" stroke-width="1.2"/>
+    <text x="795" y="246" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">(was an Ebisu shrine - one altar remains)</text>
     <!-- approach torii south of the shrine -->
     <g transform="translate(790, 274)" stroke="#A03020" stroke-width="2.5">
       <line x1="-13" y1="0" x2="13" y2="0"/>
@@ -406,11 +406,11 @@
   <!-- River-kami shrine -->
   <g>
     <text x="790" y="306" text-anchor="middle" font-size="11" font-weight="bold" fill="#5C1A0A" letter-spacing="1">river-kami shrine</text>
-    <rect x="757" y="312" width="66" height="42" fill="#C9876C" stroke="#6B2A18" stroke-width="2"/>
-    <rect x="757" y="312" width="66" height="4" fill="#A03020"/>
-    <rect x="757" y="350" width="66" height="4" fill="#A03020"/>
+    <rect x="773.5" y="322.5" width="33" height="21" fill="#C9876C" stroke="#6B2A18" stroke-width="2"/>
+    <rect x="773.5" y="322.5" width="33" height="3" fill="#A03020"/>
+    <rect x="773.5" y="340.5" width="33" height="3" fill="#A03020"/>
     <!-- wave glyph inside -->
-    <path d="M 772 334 q 6 -10 12 0 q 6 10 12 0 q 6 -10 12 0" stroke="#FFFAE6" stroke-width="2" fill="none"/>
+    <path d="M 781 334 q 3 -5 6 0 q 3 5 6 0 q 3 -5 6 0" stroke="#FFFAE6" stroke-width="1.4" fill="none"/>
     <text x="790" y="378" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C4830">offerings against flood &amp; drowning</text>
     <text x="790" y="390" text-anchor="middle" font-size="8.5" font-style="italic" fill="#5C4830">(Hajime attends daily)</text>
   </g>
@@ -463,10 +463,10 @@
     <rect x="340" y="577" width="340" height="92" fill="url(#oshirasu-sand)" stroke="#9C7A40" stroke-width="1.2" stroke-dasharray="2 2"/>
     <text x="510" y="602" text-anchor="middle" font-size="14" font-weight="bold" fill="#5C4318" letter-spacing="1">HEARING COURT</text>
     <g fill="#A88454" stroke="#7A5430" stroke-width="0.5" opacity="0.85">
-      <rect x="435" y="640" width="30" height="14"/>
-      <rect x="475" y="640" width="30" height="14"/>
-      <rect x="515" y="640" width="30" height="14"/>
-      <rect x="555" y="640" width="30" height="14"/>
+      <rect x="445.5" y="642.5" width="9" height="9"/>
+      <rect x="485.5" y="642.5" width="9" height="9"/>
+      <rect x="525.5" y="642.5" width="9" height="9"/>
+      <rect x="565.5" y="642.5" width="9" height="9"/>
     </g>
     <text x="510" y="660" text-anchor="middle" font-size="8" font-style="italic" fill="#7A5C30">witness / petitioner positions</text>
   </g>
@@ -570,28 +570,28 @@
        sweep, 2026-07: halls burn, kura endure - so the water lives at the halls.) -->
   <g fill="#8FB0C6" stroke="#3A5060" stroke-width="1">
     <!-- kitchen (2, highest fire risk) - east eaves wall -->
-    <circle cx="286" cy="336" r="5"/>
-    <circle cx="286" cy="404" r="5"/>
+    <circle cx="286" cy="336" r="3.8"/>
+    <circle cx="286" cy="404" r="3.8"/>
     <!-- office hall - west eaves corner -->
-    <circle cx="334" cy="494" r="5"/>
+    <circle cx="334" cy="494" r="3.8"/>
     <!-- residence west block (by the entry porch) -->
-    <circle cx="310" cy="296" r="5"/>
+    <circle cx="310" cy="296" r="3.8"/>
     <!-- residence east block (family, garden frontage) -->
-    <circle cx="680" cy="312" r="5"/>
+    <circle cx="680" cy="312" r="3.8"/>
     <!-- the two shrines (against the Fire Dragon shrine's east eaves) -->
-    <circle cx="828" cy="238" r="5"/>
+    <circle cx="812" cy="221" r="3.8"/>
     <!-- guest house -->
-    <circle cx="888" cy="210" r="5"/>
+    <circle cx="888" cy="210" r="3.8"/>
     <!-- granary / east yard (gap coverage) -->
-    <circle cx="733" cy="560" r="5"/>
+    <circle cx="733" cy="560" r="3.8"/>
     <!-- barracks -->
-    <circle cx="648" cy="706" r="5"/>
+    <circle cx="648" cy="706" r="3.8"/>
     <!-- gatehouse -->
-    <circle cx="328" cy="705" r="5"/>
+    <circle cx="328" cy="705" r="3.8"/>
     <!-- stables (NW eaves corner - clear of the stable-yard well to the E) -->
-    <circle cx="166" cy="653" r="5"/>
+    <circle cx="166" cy="653" r="3.8"/>
     <!-- servants' quarters -->
-    <circle cx="392" cy="162" r="5"/>
+    <circle cx="392" cy="162" r="3.8"/>
   </g>
   <text x="262" y="500" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
 

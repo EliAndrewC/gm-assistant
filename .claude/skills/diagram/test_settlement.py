@@ -1536,8 +1536,20 @@ def test_lane_unworn_draws_a_dashed_causeway():
 def test_shrine_draws_and_records_a_religious_hall():
     s = _village()
     s.shrine(300, 300)
-    assert s.M["shrine"] == [300 - 52, 300 - 34, 104, 68]
+    # TRUE SCALE (2026-07-21): the default is a 62x42 ft tutelary hall drawn through px(), no longer 104x68 raw px
+    assert s.M["shrine"] == [300 - s.px(62) / 2, 300 - s.px(42) / 2, s.px(62), s.px(42)]
     assert any(r["kind"] == "shrine" and r["x"] == 300 for r in s.M["religious"])
+
+
+def test_shrine_hall_guard_refuses_unscaled_pixels_at_coarse_scales():
+    # the latent-footgun guard (2026-07-21): four city temples shipped as fixed 100x64 px = 300x192 real ft.
+    # At any ftpx > 1, raw-pixel dims implying an impossible hall must raise; s.px(real_ft) passes.
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(name="G", scale="city", ftpx=3, toscale=True, households=600)
+    with pytest.raises(ValueError, match="pass s.px"):
+        s.shrine_hall(500, 500, "Temple", w=100, h=64, kind="temple")
+    s.shrine_hall(500, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple")
+    assert any(r["kind"] == "temple" for r in s.M["religious"])
 
 
 # ---- house: the ABANDONED-ruin glyph -------------------------------------------------------
