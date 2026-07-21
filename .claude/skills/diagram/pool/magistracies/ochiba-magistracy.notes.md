@@ -21,12 +21,13 @@
 - The karo has his own house in the residence court, and the senior retainers a separate quarters by the stables - NOT bays of the lord's wing (interior-audit correction 2026-07). Ochiba is option (a) so all are on-grounds, but each in its own structure.
 - Each residence room-label is a multi-room ZONE/suite, not one room (compressed for legibility, a tolerated simplification per size-audit); the engawa strip on each block's garden face is the veranda that reads "residence, not nagaya."
 - The internal divider gate sits on the main axis directly behind the office hall: deliberate (the hall is the privacy baffle; formal visitors are received in the hall and go no deeper; heavy service uses the kitchen postern). Now documented in the program's two-court bullet.
-- Holding cell drawn ~2x real footprint: documented Scale glyph exemption (lattice legibility).
+- Holding cell at TRUE footprint (18x15 ft; re-derived by size-audit 2026-07) - the lattice-bar lines are linework under the stroke convention. (The old "~2x footprint" exemption wording was stale against the review log and is retired with the glyph doctrine, 2026-07-21.)
 - Main gate opening 13.3 ft (was 27 ft; the size-audit agent caught the structure-vs-passage confusion, 2026-07 - the old "three bays" tolerance described gate structure, not passage).
 - Inari shrine as a hall rather than a modest standalone: deliberate L5R divergence (SKILL.md reference framework).
 - Cell placement SE by the barracks: cell placement is a free variable (grounding).
 - No interrogation room: global rule (grounding) - do not flag.
-- Glyph exemptions per buildings.md Scale: wells ~2x, kneeling marks ~2x, hearth/lantern marks pure glyph.
+- Point glyphs TRUE SIZE per the retired-doctrine ruling (2026-07-21): kneeling marks 3x3 ft, notice board 7x3 ft, hearth ~4.7 ft irori, fire tubs 2.5 ft. Wells stay at marker size - a location MARKER under the stroke convention (a real curb is ~3-4 ft; the marker denotes the to-scale location, not to-scale pixels).
+- Interior altar markers (the rice-straw doll, the torii silhouette) are ALTAR-DAIS symbols (~1x a 3-6 ft dais), not literal-object sizes - the same marker logic as the wells.
 
 ## Review log
 
