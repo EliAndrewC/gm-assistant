@@ -5789,3 +5789,30 @@ def test_roads_clear_of_marsh_skips_a_degenerate_marsh_poly():
     # a marsh record whose poly is a bare 2-point sliver carries no area to test - skipped, no crash
     M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 500, "w": 10, "h": 10, "poly": [[490, 495], [510, 505]]}]}
     assert "roads_clear_of_marsh" not in f(M)
+
+
+# ---- drain_ends_reach_water (a collector's free end never dangles in bare ground) ----
+def _drain_ditch(pts, field="f1"):
+    return {"poly": pts, "role": "drain", "field": field, "w": 6, "w_tail": 6}
+
+
+def test_drain_ends_reach_water_fires_when_the_collector_dangles():
+    # the collector's east end stops 50px short of the stream, outside the planted bbox
+    M = {
+        "meta": {},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 300], [300, 300], [300, 600], [100, 600]], "bbox": [100, 300, 300, 600], "vis_bbox": [100, 300, 300, 600]}],
+        "streams": [{"poly": [[430, 100], [430, 900]], "w": 9}],
+        "field_ditches": [_drain_ditch([[120, 590], [370, 610]])],
+    }
+    assert "drain_ends_reach_water" in f(M)
+
+
+def test_drain_ends_reach_water_passes_when_a_culvert_carries_it_on():
+    M = {
+        "meta": {},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 300], [300, 300], [300, 600], [100, 600]], "bbox": [100, 300, 300, 600], "vis_bbox": [100, 300, 300, 600]}],
+        "streams": [{"poly": [[430, 100], [430, 900]], "w": 9}],
+        "field_ditches": [_drain_ditch([[120, 590], [370, 610]])],
+        "channels": [{"poly": [[370, 610], [430, 628]], "frm": {"kind": "drain"}, "to": {"kind": "stream"}, "w": 2.5}],
+    }
+    assert "drain_ends_reach_water" not in f(M)
