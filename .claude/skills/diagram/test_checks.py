@@ -2051,6 +2051,24 @@ def test_harvest_and_garden_checks_cover_the_headman():
     assert "gardens_present" in fails
 
 
+def test_headman_has_kura_fires_on_a_bare_headman_and_passes_with_one():
+    # the shoya always has a fireproof kura (GM 2026-07-21): prosperity by definition, plus the office's
+    # ledgers and tax rice need fireproof storage - the ~30% wealth dice are for ordinary plains only
+    M = {"meta": {"scale": "village"}, "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain", "role": "headman", "shed": False}]}
+    assert "headman_has_kura" in f(M)
+    M["houses"][0]["shed"] = True
+    assert "headman_has_kura" not in f(M)
+
+
+def test_village_shrine_footprint_within_norms_fires_on_a_monastery_sized_hall():
+    # Hikari's defect in miniature: a 236x164 ft hall is a small monastery, not a village kami shrine
+    M = {"meta": {"scale": "village", "ftpx": 2}, "religious": [{"x": 500, "y": 500, "w": 118, "h": 82, "kind": "shrine"}]}
+    assert "village_shrine_footprint_within_norms" in f(M)
+    # ... while the showcase Benten class (~490 m^2) passes with headroom under the 600 m^2 ceiling
+    M2 = {"meta": {"scale": "village", "ftpx": 2}, "religious": [{"x": 500, "y": 500, "w": 44, "h": 30, "kind": "shrine"}]}
+    assert "village_shrine_footprint_within_norms" not in f(M2)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
@@ -5704,3 +5722,46 @@ def test_channels_join_streams_at_confluence_fires_when_the_intake_starts_short(
 def test_channels_join_streams_at_confluence_passes_when_the_intake_taps_the_bed():
     M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [{"poly": [[400, 500], [460, 560]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "x"}}]}
     assert "channels_join_streams_at_confluence" not in f(M)
+
+
+# ---- roads_clear_of_marsh / pond_clear_of_paddies / no_structure_on_paddy (GM, Hoshizora 2026-07) ----
+def test_roads_clear_of_marsh_fires_when_the_road_runs_through_a_reed_fringe():
+    M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 500, "w": 120, "h": 80, "poly": [[440, 460], [560, 460], [560, 540], [440, 540]]}]}
+    assert "roads_clear_of_marsh" in f(M)
+
+
+def test_roads_clear_of_marsh_passes_when_the_marsh_sits_off_the_road():
+    M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 700, "w": 120, "h": 80, "poly": [[440, 660], [560, 660], [560, 740], [440, 740]]}]}
+    assert "roads_clear_of_marsh" not in f(M)
+
+
+def _paddy_field_rec(name="p1", x0=300, y0=300, x1=700, y1=700):
+    ol = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+    return {"name": name, "kind": "paddy", "outline": ol, "bbox": [x0, y0, x1, y1], "vis_bbox": [x0, y0, x1, y1]}
+
+
+def test_pond_clear_of_paddies_fires_when_the_pond_laps_the_crop():
+    M = {"meta": {}, "pond": [320, 320, 80, 60], "fields": [_paddy_field_rec()]}
+    assert "pond_clear_of_paddies" in f(M)
+
+
+def test_pond_clear_of_paddies_passes_when_the_pond_sits_beside_the_crop():
+    M = {"meta": {}, "pond": [120, 120, 60, 40], "fields": [_paddy_field_rec()]}
+    assert "pond_clear_of_paddies" not in f(M)
+
+
+def test_no_structure_on_paddy_fires_when_a_farmhouse_sinks_a_corner_into_the_crop():
+    # house center 10px outside the paddy edge, 44px wide -> its corner reaches ~12px inside
+    M = {"meta": {}, "fields": [_paddy_field_rec()], "houses": [{"x": 290, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0}]}
+    assert "no_structure_on_paddy" in f(M)
+
+
+def test_no_structure_on_paddy_passes_when_the_farmhouse_abuts_the_bund():
+    M = {"meta": {}, "fields": [_paddy_field_rec()], "houses": [{"x": 276, "y": 500, "w": 44, "h": 29, "kind": "plain", "rot": 0}]}
+    assert "no_structure_on_paddy" not in f(M)
+
+
+def test_roads_clear_of_marsh_skips_a_degenerate_marsh_poly():
+    # a marsh record whose poly is a bare 2-point sliver carries no area to test - skipped, no crash
+    M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 500, "w": 10, "h": 10, "poly": [[490, 495], [510, 505]]}]}
+    assert "roads_clear_of_marsh" not in f(M)

@@ -2638,6 +2638,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         bad_p = [1 for sc in corners if on_pond(sc)]
         check("no_structure_on_pond", not bad_p, f"{len(bad_p)} structure(s) overlap the pond")
 
+    # no structure stands ON a rice paddy - the long-missing member of this family (GM, Hoshizora
+    # 2026-07: the legacy house-first placement tested only the CENTER +14px against the field, so a
+    # town-scale 44px farmhouse could sink a corner ~12px into the crop while every village's 23px
+    # houses stayed clear by luck of the grain). A corner is IN the paddy only when it penetrates
+    # deeper than 3px past the outline - bund-hugging abutment (and the organic outline's stroke)
+    # stays legal.
+    paddy_ol_st = [f["outline"] for f in M.get("fields", []) if f.get("kind") == "paddy"]
+    if paddy_ol_st:
+
+        def paddy_depth(sc: Poly) -> float:
+            worst = 0.0
+            for px, py in sc:
+                for ol in paddy_ol_st:
+                    if point_in_poly(px, py, ol):
+                        worst = max(worst, min(seg_dist(px, py, ol[i], ol[i + 1]) for i in range(len(ol) - 1)))
+            return worst
+
+        bad_pd = [1 for sc in corners if paddy_depth(sc) > 3]
+        check(
+            "no_structure_on_paddy",
+            not bad_pd,
+            f"{len(bad_pd)} structure(s) stand on a rice paddy - houses, yards, and every other footprint sit on dry ground BESIDE the crop, never in the flooded field",
+        )
+
     # WATER-WIDTH LADDER. Real wet-rice water systems are a tiered hierarchy whose widths step up
     # ~2-4x per tier (channel width scales with the sqrt of command-area flow): a field ditch ~0.3 m,
     # a village creek ~2 m (~6x the ditch), a town river / castle moat ~20 m (~70x the ditch). That
@@ -2907,6 +2931,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     else:
         check("religious_matches_scale", rel_kinds == {expected_rel}, f"a {scale} should have only {expected_rel}(s); found {rel_kinds or 'none'}")
 
+    # ... and a village/hamlet SHRINE has a village-scale FOOTPRINT (GM 2026-07-21, caught on Hikari no
+    # Sato, whose two shrines survived from before the size norms crystallized at 192x128 / 236x164 ft -
+    # small-monastery footprints in a village). religious_matches_scale gates the TYPE per tier but said
+    # nothing about SIZE, so oversize halls sailed through. Calibration (the pool + temple-density canon): a
+    # village kami hall is a modest structure - the ordinary earth-god/water-mouth shrine is ~275 m^2
+    # (60x48 ft, Ueda/Hoshigaoka, with the recorded why in Ueda's gen), and Kikuta's showcase Benten with
+    # its 7-torii avenue is ~490 m^2 - so the 600 m^2 ceiling clears every deliberate design with headroom
+    # while the monastery/temple tier (a town's smallest monastery runs well past 1,000 m^2) stays cleanly
+    # out of reach. No floor: a tiny wayside hall is legitimate.
+    if scale in ("village", "hamlet"):
+        _ft = float(meta.get("ftpx") or 2.0)
+        _oversize_rel = [
+            (round(r["x"]), round(r["y"]), round(r["w"] * r["h"] * _ft * _ft * 0.3048 * 0.3048)) for r in M.get("religious", []) if r.get("w") and r["w"] * r["h"] * _ft * _ft * 0.3048 * 0.3048 > 600
+        ]
+        check(
+            "village_shrine_footprint_within_norms",
+            not _oversize_rel,
+            f"village-scale shrine hall(s) with a monastery-tier footprint (x, y, m^2): {_oversize_rel[:3]} - a village kami shrine is a modest hall (~275 m^2 ordinary, ~490 m^2 for a showcase Benten; ceiling 600), the monastery/temple tier belongs to towns and cities (temple-density canon)",
+        )
+
     # A SHRINE and its TORII arch NESTLE in a CLEARING within the sacred grove - neither may sit UNDER the trees
     # (a hall/arch drawn on top of tree canopy reads as buried in the wood). So no fengshui-grove tree CLUMP may
     # overlap a religious hall's or a torii's footprint. The recorded clump `r` is the NOMINAL clump radius, but
@@ -2942,6 +2986,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         hm = headman["w"] * headman["h"]
         bigger = [h for h in houses if h is not headman and h["w"] * h["h"] >= hm]
         check("headman_is_largest", not bigger, f"{len(bigger)} house(s) >= headman")
+        # ... and the headman always has an attached fireproof KURA (GM 2026-07-21): the shoya/nanushi is by
+        # definition among the village's most prosperous farmers, and the office functionally needs one - tax
+        # ledgers, land registers, and tax rice awaiting collection are exactly what fireproof storage is
+        # for. The ~30% wealth-marker roll is for ORDINARY plain farms; leaving the headman on those dice let
+        # all four pool headmen roll bare. The kura rides in the reserved bundle (farm_sheds_attached guards
+        # the drawn record); this gates the flag at the source.
+        check(
+            "headman_has_kura",
+            bool(headman.get("shed")),
+            f"the headman's house at ({headman['x']:.0f},{headman['y']:.0f}) has no attached kura storehouse - the village's most prosperous farmer (and keeper of its ledgers and tax rice) always has one; the generator forces shed=True for role='headman'",
+        )
 
     # no two body labels overlap (the title block is excluded by the generator)
     labels = M.get("labels", [])
@@ -4675,6 +4730,48 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     bad_fr.append(f["name"])
                     break
         check("fields_clear_of_road", not bad_fr, f"field(s) run under a road/street: {sorted(set(bad_fr))}")
+
+        # ROADS STAY CLEAR OF MARSHLAND (GM, Hoshizora 2026-07: the tameike's reed fringe ran under
+        # the Imperial Road). A roadbed is engineered dry ground; none of these maps draw a causeway,
+        # so a road/street entering a marsh patch is a placement error, not a feature.
+        wet_road = []
+        for m in M.get("marshes", []):
+            mpoly = m.get("poly") or []
+            nmp = len(mpoly)
+            if nmp < 3:
+                continue
+            for poly, hw in roadways:
+                if (
+                    any(seg_dist(px, py, poly[k], poly[k + 1]) < hw for px, py in mpoly for k in range(len(poly) - 1))
+                    or any(point_in_poly(rx, ry, mpoly) for rx, ry in poly)
+                    or any(segments_cross(poly[k], poly[k + 1], mpoly[e], mpoly[(e + 1) % nmp]) for k in range(len(poly) - 1) for e in range(nmp))
+                ):
+                    wet_road.append((round(m["x"]), round(m["y"])))
+                    break
+        check(
+            "roads_clear_of_marsh",
+            not wet_road,
+            f"road/street runs through marshland at {sorted(set(wet_road))[:4]} - a roadbed is engineered dry ground; keep reed fringes and wet toes clear of every road and street",
+        )
+
+    # THE POND STAYS CLEAR OF THE RICE PADDIES (GM, Hoshizora 2026-07). A pond is a distinct water
+    # body BESIDE the crop - a reservoir above the field or a drainage tameike below it - joined by a
+    # channel, never overlapping the planted paddy itself.
+    if pond and fields:
+        pcx_, pcy_, prx_, pry_ = pond
+        rim_pts = [(pcx_ + prx_ * math.cos(a), pcy_ + pry_ * math.sin(a)) for a in [i * math.pi / 12 for i in range(24)]]
+        wet_paddy = []
+        for f in fields:
+            if f.get("kind") != "paddy":
+                continue
+            ol = f["outline"]
+            if any(in_ellipse(vx, vy, pond) for vx, vy in ol) or any(point_in_poly(px, py, ol) for px, py in rim_pts) or point_in_poly(pcx_, pcy_, ol):
+                wet_paddy.append(f["name"])
+        check(
+            "pond_clear_of_paddies",
+            not wet_paddy,
+            f"the pond overlaps rice paddy field(s) {sorted(set(wet_paddy))} - a pond sits BESIDE the crop (a reservoir above it or a tameike below it), joined by a channel, never over the planted paddy",
+        )
 
     # WHERE A ROAD (or town street) CROSSES A WATERCOURSE, a bridge must carry it over - a road does
     # not simply run through open water. Crossings are road/street segments intersecting a stream, an

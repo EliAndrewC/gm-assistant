@@ -376,6 +376,10 @@ s.commons([(1490, 95), (1770, 95), (1770, 162), (1490, 162)], role="woodland")  
 # CROP the frame to the placed content (BEFORE the title + the deferred small features, which drop into the
 # framed space): the commons is a BLEED feature, so its outer scrub trails off the west edge = "more wild
 # ground this way", while the hard features (village, fields, grove, pond) fit fully with a margin.
+# VILLAGE GRAVEYARD on the SW BACK-SLOPE, placed BEFORE the crop so the frame always contains it (the
+# doctrine's set-apart rule; moved 2026-07-21 when the headman-kura repack shifted the cluster's west extent
+# and the tight crop clipped the fixed-coordinate plot). Siting rationale in the comment block below.
+s.cemetery(178, 1030, 48, 34, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot. Resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~96x68 ft), not 0.5+ - see settlements.md funerary anchors
 s.crop_to_content(margin=30)
 
 # DEFERRED FEATURES drop into the cropped frame. VILLAGE SHRINE at the SE WATER-MOUTH ENTRANCE: the tutelary /
@@ -389,7 +393,7 @@ s.shrine_hall(392, 1074, "", w=30, h=24, kind="shrine", primary=True,
 # graves foul water) and off the field/water front (背山面水: the non-arable back side). The high NW back is
 # taken by the sacred grove + the pond, so the graves sit on the clear lower-W slope below the grove. A village
 # plot (parish=False, not a temple parish ground), set back from all water + kept >=120px from the shrine (kegare).
-s.cemetery(178, 1030, 48, 34, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot. Resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~96x68 ft), not 0.5+ - see settlements.md funerary anchors
+# (The graveyard itself is drawn pre-crop above so the frame contains it.)
 # The shrine sits APART from the village (past the graveyard at the water-mouth), beyond reach of the
 # communal wells, so it keeps its OWN well for purification/ablution (temizu) - a remote shrine is watered by
 # its own draw-point, not the village's (remote_shrine_has_own_well).
