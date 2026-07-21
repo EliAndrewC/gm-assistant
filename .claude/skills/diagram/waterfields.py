@@ -225,6 +225,7 @@ def build_comb(
     field_fall: float | None = None,
     furrow_spread: float = 1.1,
     grain_drift: float = 0.0,
+    grain: float = 1.0,
 ) -> dict[str, Any]:
     """The COMB layout (the historical default - Kishu school / Chinese canal doctrine):
     the sluice's head-race forks at one division point into TWO supply canals hugging the
@@ -234,7 +235,18 @@ def build_comb(
     between the ditch threads; water cascades plot-to-plot within each block (tagoshi).
 
     Returns {"channels": [{pts, w, role}], "plots": [{poly, fill}], "threads", "drain",
-    "envelope", "acres"} - the caller draws it (px are map px; acres assume 1px = 2ft)."""
+    "envelope", "acres"} - the caller draws it (px are map px; acres assume 1px = 2ft).
+
+    `grain` scales the PLOT-GEOMETRY thresholds in the carve (minimum sector/row/plot sizes,
+    canal berms, drain set-backs, the gap-closer margins). They are REAL-FEET quantities that
+    were tuned at the village grain of 1px = 2ft; a map at a different scale passes
+    grain = 2 / ftpx (a 3 ft/px provincial city passes 2/3) so a "too narrow to plant" test
+    means the same real-world size on every map. Left unscaled, a city's carve dropped
+    sectors, head plots, and closers that a village would have planted, leaving parchment
+    holes inside the fan - the white-spots bug the villages fixed once (canal-side closers,
+    the closing rank) and the cities then re-exposed at their coarser grain (2026-07-21).
+    The canal/thread/drain SKELETON is deliberately NOT scaled here: its lengths arrive
+    pre-scaled from the caller, and the map-edge margins (8px) are canvas facts, not feet."""
     R = random.Random(seed)
     F = _Frame(down_deg)
     DOWN = F.down
@@ -463,10 +475,20 @@ def build_comb(
             # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
             channels.append({"pts": pre, "w": 5.6 if t is bc else 4.0, "w_tail": 1.5, "role": "branch"})
 
-    plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step)
-    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
+    plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step, grain)
 
     envelope = [p for p in a_pts] + [p for p in threads[-1].pts] + list(reversed(dpts)) + list(reversed(threads[0].pts))
+
+    # WEDGE FILLER (coarse grains only): even with the thresholds grain-scaled, the carve
+    # leaves awkward slivers where ditch threads diverge or the closing geometry misses - and
+    # a real cascade fan wasted nothing: fork wedges were terraced into small IRREGULAR
+    # paddies. Sample the fan interior on the same grid paddy_fan_gapless uses, cluster the
+    # bare cells, and plant a fan-aligned (u,f-frame) filler plot over each cluster. Gated to
+    # grain != 1.0 ONLY for byte-stability: every village map was visually vetted gapless at
+    # the 2 ft/px tuning grain, and an unconditional pass would re-roll their RNG streams.
+    if grain != 1.0:
+        _fill_wedges(R, F, plots, envelope, grain, channels, plot_across, row_step)
+    acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
     # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md.
@@ -492,6 +514,111 @@ def build_comb(
     }
 
 
+def _fill_wedges(R: random.Random, F: _Frame, plots: list[dict[str, Any]], envelope: Poly, g: float, channels: list[dict[str, Any]], plot_across: float, row_step: tuple[float, float]) -> None:
+    """Plant the bare wedges _carve left inside the fan (see the call site). Grid-samples the
+    envelope interior (rim inset excluded - berms and drain set-backs legitimately live there),
+    clusters bare cells, and appends one fan-aligned quad per cluster, shrunk until it stands
+    clear of every existing plot. Mirrors paddy_fan_gapless's geometry: inset 28*g / tol 8*g /
+    step 12*g px = 56 / 6 / 24 real ft at any grain. The plot tolerance is BUND-scale (6 real
+    ft): anything wider than a bund must be planted or be WATER - the recorded channels count
+    as covered ground (they draw over the fan), which is what lets the tolerance stay tight
+    without flagging the delivery-ditch strips between plot columns."""
+    inset, tol, step = 28 * g, 3 * g, 6 * g  # step at HALF the check's grid: a thin diagonal sliver aliases through a coarser sweep
+
+    def sd(px: float, py: float, a: Pt, b: Pt) -> float:
+        vx, vy = b[0] - a[0], b[1] - a[1]
+        ll = vx * vx + vy * vy or 1.0
+        t = max(0.0, min(1.0, ((px - a[0]) * vx + (py - a[1]) * vy) / ll))
+        return math.hypot(px - a[0] - t * vx, py - a[1] - t * vy)
+
+    boxes = [(min(q[0] for q in p["poly"]) - tol, min(q[1] for q in p["poly"]) - tol, max(q[0] for q in p["poly"]) + tol, max(q[1] for q in p["poly"]) + tol) for p in plots]
+
+    def near_plot(x: float, y: float) -> bool:
+        for p, (bx0, by0, bx1, by1) in zip(plots, boxes, strict=True):
+            if not (bx0 <= x <= bx1 and by0 <= y <= by1):
+                continue
+            poly = p["poly"]
+            if _pip(x, y, poly) or any(sd(x, y, poly[i], poly[(i + 1) % len(poly)]) < tol for i in range(len(poly))):
+                return True
+        for c in channels:
+            hw = c["w"] / 2 + 3 * g
+            cp = c["pts"]
+            if any(sd(x, y, cp[i], cp[i + 1]) < hw for i in range(len(cp) - 1)):
+                return True
+        return False
+
+    ex0, ey0 = min(q[0] for q in envelope), min(q[1] for q in envelope)
+    ex1, ey1 = max(q[0] for q in envelope), max(q[1] for q in envelope)
+    bare = []
+    y = ey0
+    while y <= ey1:
+        x = ex0
+        while x <= ex1:
+            if _pip(x, y, envelope) and all(sd(x, y, envelope[i], envelope[(i + 1) % len(envelope)]) > inset for i in range(len(envelope))) and not near_plot(x, y):
+                bare.append((x, y))
+            x += step
+        y += step
+
+    # cluster by grid adjacency (union-find over neighbors within 1.6 steps)
+    parent = list(range(len(bare)))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i in range(len(bare)):
+        for j in range(i + 1, len(bare)):
+            if math.dist(bare[i], bare[j]) <= 1.6 * step:
+                parent[find(i)] = find(j)
+    clusters: dict[int, list[Pt]] = {}
+    for i, c in enumerate(bare):
+        clusters.setdefault(find(i), []).append(c)
+
+    def depth_in_plots(px: float, py: float) -> float:
+        """How deep (px) the point sits inside any existing plot - 0 when outside all."""
+        best = 0.0
+        for p in plots:
+            poly = p["poly"]
+            if _pip(px, py, poly):
+                best = max(best, min(sd(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly))))
+        return best
+
+    tiles: list[tuple[float, float, float, float]] = []
+    for cells in clusters.values():
+        ufs = [F.to_uf(*c) for c in cells]
+        ulo, uhi = min(u for u, _ in ufs) - 0.8 * step, max(u for u, _ in ufs) + 0.8 * step
+        flo, fhi = min(f for _, f in ufs) - 0.8 * step, max(f for _, f in ufs) + 0.8 * step
+        # tile the cluster's (u,f) box at the FAN'S OWN GRAIN: one giant filler slab would
+        # dwarf the ~0.08-acre plots around it (the relative-size doctrine), so the box is
+        # split into ~plot_across x row_step cells and each tile is seated on its own
+        nu = max(1, round((uhi - ulo) / plot_across))
+        nf = max(1, round((fhi - flo) / ((row_step[0] + row_step[1]) / 2)))
+        for iu in range(nu):
+            for jf in range(nf):
+                tiles.append((ulo + (uhi - ulo) * iu / nu, ulo + (uhi - ulo) * (iu + 1) / nu, flo + (fhi - flo) * jf / nf, flo + (fhi - flo) * (jf + 1) / nf))
+    for tulo, tuhi, tflo, tfhi in tiles:
+        quad = [F.to_xy(tulo, tflo), F.to_xy(tuhi, tflo), F.to_xy(tuhi, tfhi), F.to_xy(tulo, tfhi)]
+        # shrink toward the centroid until the quad only OVERLAPS its neighbors shallowly.
+        # A thin sliver is bordered by plots on BOTH sides, so demanding full clearance would
+        # drop exactly the wedges this pass exists to plant - instead the filler may lap up
+        # to ~12 real ft onto a neighbor: fillers append LAST, so they paint over the lapped
+        # edge cleanly and the seam just reads as the bund between two plots.
+        cx = sum(q[0] for q in quad) / 4
+        cy = sum(q[1] for q in quad) / 4
+        for _ in range(12):
+            probes = list(quad) + [((quad[i][0] + quad[(i + 1) % 4][0]) / 2, (quad[i][1] + quad[(i + 1) % 4][1]) / 2) for i in range(4)]
+            if all(depth_in_plots(px, py) <= 6 * g for px, py in probes):
+                break
+            quad = [(cx + (q[0] - cx) * 0.88, cy + (q[1] - cy) * 0.88) for q in quad]
+        else:
+            continue  # hopelessly buried - leave the sliver to the bunds
+        if math.dist(quad[0], quad[1]) < 6 * g or math.dist(quad[1], quad[2]) < 6 * g:
+            continue
+        plots.append({"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad], "fill": R.choice(RICE_GREENS)})
+
+
 def _carve(
     R: random.Random,
     F: _Frame,
@@ -502,6 +629,7 @@ def _carve(
     H: float,
     plot_across: float,
     row_step: tuple[float, float],
+    g: float = 1.0,
 ) -> list[dict[str, Any]]:
     """Carve paddy plots between adjacent threads. Above a thread's takeoff the boundary
     falls back to its parent path (canal / parent ditch); below its end, to the DRAIN - so
@@ -524,7 +652,7 @@ def _carve(
         """Below the collector - strict per-vertex (no plot may poke past the drain)."""
         u, f = F.to_uf(*pq)
         fd = _f_at_u(F, dpts, u)
-        return fd is not None and f > fd - 3
+        return fd is not None and f > fd - 3 * g
 
     def above_canal(quad: Poly) -> bool:
         """Upslope of the supply canal - judged by the CENTROID, not the top vertices: a
@@ -534,10 +662,10 @@ def _carve(
         cx = sum(p[0] for p in quad) / 4
         cy = sum(p[1] for p in quad) / 4
         u, f = F.to_uf(cx, cy)
-        if not (a_ulo - 20 < u < a_uhi + 20):
+        if not (a_ulo - 20 * g < u < a_uhi + 20 * g):
             return False
         fc = _f_at_u(F, a_pts, u)
-        return fc is not None and f < fc + 4  # centroid upslope of a small berm
+        return fc is not None and f < fc + 4 * g  # centroid upslope of a small berm
 
     def root_f(t: _Thread) -> float:
         while isinstance(t.fallback, _Thread):
@@ -548,19 +676,19 @@ def _carve(
 
     for di in range(len(threads) - 1):
         A, B = threads[di], threads[di + 1]
-        f_lo = max(root_f(A), root_f(B)) + 6
+        f_lo = max(root_f(A), root_f(B)) + 6 * g
         if B.fallback is A or A.fallback is B:
             # a parent-child pair: the sector opens AT the spawn point - anchor the first
             # row there, else the row straddling the spawn has zero width and never plants
-            f_lo = max(A.f0, B.f0) + 4
-        f_hi0 = max(F.to_uf(*A.pts[-1])[1], F.to_uf(*B.pts[-1])[1]) - 34
-        if f_hi0 - f_lo < 24:
+            f_lo = max(A.f0, B.f0) + 4 * g
+        f_hi0 = max(F.to_uf(*A.pts[-1])[1], F.to_uf(*B.pts[-1])[1]) - 34 * g
+        if f_hi0 - f_lo < 24 * g:
             continue
         # measure the sector's width where BOTH boundaries are their own threads (the
         # active span) - measuring in the fallback wedge reads ~0 and degenerates nsub
         fmid = (max(A.f0, B.f0) + f_hi0) / 2
         width_mid = math.dist(bnd(A, fmid), bnd(B, fmid))
-        if width_mid < 24:
+        if width_mid < 24 * g:
             continue
         nsub = max(1, round(width_mid / plot_across))
         phase = [R.uniform(0, 6.28) for _ in range(nsub + 2)]
@@ -590,8 +718,8 @@ def _carve(
             fd_ = _f_at_u(F, dpts, pu)
             return fd_ if fd_ is not None else fv
 
-        f_hi = min(f_hi0, min(drain_f_at(f_hi0, j, nsub) for j in range(nsub + 1)) - 32)
-        if f_hi - f_lo < 24:
+        f_hi = min(f_hi0, min(drain_f_at(f_hi0, j, nsub) for j in range(nsub + 1)) - 32 * g)
+        if f_hi - f_lo < 24 * g:
             continue
         sector_start = len(plots)
         rows = [f_lo]
@@ -602,12 +730,12 @@ def _carve(
 
         for k in range(len(rows) - 1):
             wk = min(math.dist(bnd(A, rows[k]), bnd(B, rows[k])), math.dist(bnd(A, rows[k + 1]), bnd(B, rows[k + 1])))
-            if wk < 24:
+            if wk < 24 * g:
                 continue
-            n = nsub if wk / nsub >= 13 else max(1, int(wk // 44))  # canal-wedge rows: local
+            n = nsub if wk / nsub >= 13 * g else max(1, int(wk // (44 * g)))  # canal-wedge rows: local
             for j in range(n):
                 quad = [edge(rows[k], j, n), edge(rows[k], j + 1, n), edge(rows[k + 1], j + 1, n), edge(rows[k + 1], j, n)]
-                if math.dist(quad[0], quad[1]) < 12 or math.dist(quad[1], quad[2]) < 12:
+                if math.dist(quad[0], quad[1]) < 12 * g or math.dist(quad[1], quad[2]) < 12 * g:
                     continue
                 if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
                     continue
@@ -630,20 +758,20 @@ def _carve(
         # gap below a supply canal would be wasted prime land. Top edges follow the
         # canal line (sloped, like the drain closers), bottoms sit on the row grid.
         for j in range(nsub):
-            fprobe = max(A.f0, B.f0) + 12  # sample where the subcolumns are spread out
+            fprobe = max(A.f0, B.f0) + 12 * g  # sample where the subcolumns are spread out
             fc0 = _f_at_u(F, a_pts, F.to_uf(*edge(fprobe, j, nsub))[0])
             fc1 = _f_at_u(F, a_pts, F.to_uf(*edge(fprobe, j + 1, nsub))[0])
             if fc0 is None or fc1 is None:
                 continue
-            t0, t1 = fc0 + 5, fc1 + 5
-            ks = [k for k in range(len(rows)) if rows[k] >= max(t0, t1) + 6]
+            t0, t1 = fc0 + 5 * g, fc1 + 5 * g
+            ks = [k for k in range(len(rows)) if rows[k] >= max(t0, t1) + 6 * g]
             if not ks:
                 continue
             fb = rows[ks[0]]
-            if fb - min(t0, t1) > 78 or fb - max(t0, t1) < 8:
+            if fb - min(t0, t1) > 78 * g or fb - max(t0, t1) < 8 * g:
                 continue  # no gap here / top boundary is not the canal
             quad = [edge(t0, j, nsub), edge(t1, j + 1, nsub), edge(fb, j + 1, nsub), edge(fb, j, nsub)]
-            if math.dist(quad[0], quad[1]) < 12 or math.dist(quad[1], quad[2]) < 6:
+            if math.dist(quad[0], quad[1]) < 12 * g or math.dist(quad[1], quad[2]) < 6 * g:
                 continue
             if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
                 continue
@@ -672,12 +800,12 @@ def _carve(
             return fd
 
         for j in range(n):
-            fb0 = drain_meet(j) - 2
-            fb1 = drain_meet(j + 1) - 2
+            fb0 = drain_meet(j) - 2 * g
+            fb1 = drain_meet(j + 1) - 2 * g
             depth = max(fb0, fb1) - ftop
-            if depth < 6:
+            if depth < 6 * g:
                 continue
-            nlev = max(1, round(depth / 34))  # keep closer plots ~one row tall
+            nlev = max(1, round(depth / (34 * g)))  # keep closer plots ~one row tall
             for li in range(nlev):
                 fa0 = ftop + (fb0 - ftop) * li / nlev
                 fa1 = ftop + (fb1 - ftop) * li / nlev
@@ -692,8 +820,8 @@ def _carve(
                         u_ = F.to_uf(*quad[bi])[0]
                         fdv = _f_at_u(F, dpts, u_)
                         if fdv is not None:
-                            quad[bi] = F.to_xy(u_, fdv - 2)
-                if math.dist(quad[0], quad[1]) < 8:
+                            quad[bi] = F.to_xy(u_, fdv - 2 * g)
+                if math.dist(quad[0], quad[1]) < 8 * g:
                     continue
                 if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
                     continue

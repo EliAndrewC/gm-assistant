@@ -2085,6 +2085,66 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"the ladder must read MONOTONE with population - a village ground must never dwarf a town's",
         )
 
+    # PADDY FANS ARE GAPLESS inside their command area: bare parchment inside a comb fan is
+    # ground the water commands that nobody planted - the "white spots" bug. The carve's minimum
+    # plot/sector/closer thresholds are REAL-FEET quantities (build_comb's `grain` scales them:
+    # tuned at 2 ft/px, a 3 ft/px city passes grain=2/3); left unscaled they silently drop
+    # sectors, head plots and gap-closers a village would plant (Tango/Nagahara re-exposed
+    # exactly this at the city grain, 2026-07-21 - the frozen fixture). Only fields that record
+    # their drawn "plots" are gated (the city gens do; a village gen can opt in by recording
+    # them). The rim is inset away (canal berms / drain set-backs legitimately live there) and
+    # the tolerance covers bunds and the delivery-ditch strips between plot columns.
+    _gpx = float(meta.get("ftpx", 1) or 1)
+    _g_inset, _g_tol, _g_step = 56.0 / _gpx, 6.0 / _gpx, 24.0 / _gpx
+    # the plot tolerance is BUND-scale (6 real ft): anything wider than a bund must be planted
+    # or be WATER - the field's recorded ditches count as covered ground (they draw over the
+    # fan), so the delivery-ditch strips between plot columns never read as bare
+    gap_fields = []
+    for f in M.get("fields", []):
+        if f.get("kind") != "paddy" or not f.get("plots") or not f.get("outline"):
+            continue
+        gout = [(q[0], q[1]) for q in f["outline"]]
+        gplots = [[(q[0], q[1]) for q in gp] for gp in f["plots"]]
+        pboxes = [(min(q[0] for q in gp) - _g_tol, min(q[1] for q in gp) - _g_tol, max(q[0] for q in gp) + _g_tol, max(q[1] for q in gp) + _g_tol) for gp in gplots]
+        fditch = [d for d in M.get("field_ditches", []) if d.get("field") == f.get("name")]
+        bx0, by0 = min(q[0] for q in gout), min(q[1] for q in gout)
+        bx1, by1 = max(q[0] for q in gout), max(q[1] for q in gout)
+        gbare = gtotal = 0
+        gy = by0
+        while gy <= by1:
+            gx = bx0
+            while gx <= bx1:
+                if point_in_poly(gx, gy, gout) and all(seg_dist(gx, gy, gout[i], gout[(i + 1) % len(gout)]) > _g_inset for i in range(len(gout))):
+                    gtotal += 1
+                    ok_pt = False
+                    for gp, (px0, py0, px1, py1) in zip(gplots, pboxes, strict=True):
+                        if not (px0 <= gx <= px1 and py0 <= gy <= py1):
+                            continue
+                        if point_in_poly(gx, gy, gp) or any(seg_dist(gx, gy, gp[i], gp[(i + 1) % len(gp)]) < _g_tol for i in range(len(gp))):
+                            ok_pt = True
+                            break
+                    if not ok_pt:
+                        for d in fditch:
+                            hw = float(d.get("w", 4)) / 2 + 6.0 / _gpx
+                            dp = d["poly"]
+                            if any(seg_dist(gx, gy, dp[i], dp[i + 1]) < hw for i in range(len(dp) - 1)):
+                                ok_pt = True
+                                break
+                    if not ok_pt:
+                        gbare += 1
+                gx += _g_step
+            gy += _g_step
+        if gtotal and gbare > max(2, 0.02 * gtotal):
+            gap_fields.append(f"{f.get('name')} ({gbare}/{gtotal} bare)")
+    if any(f.get("plots") for f in M.get("fields", [])):
+        check(
+            "paddy_fan_gapless",
+            not gap_fields,
+            f"unplanted holes inside the paddy fan(s): {gap_fields} - bare parchment inside the comb's command "
+            f"area means the carve dropped sectors/head plots/closers there; pass build_comb grain=2/ftpx so its "
+            f"real-feet minimum-size thresholds match this map's scale",
+        )
+
     # ALMOST all shops front a street (commerce wants the street); POOR housing (laborer/burakumin)
     # mostly packs the block INTERIOR, reached by alleys, not the paved street frontage. (The towns
     # set the template: businesses on the frontage via s.frontage, dwellings interior via s.pack.)

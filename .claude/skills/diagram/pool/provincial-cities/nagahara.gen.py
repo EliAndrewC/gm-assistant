@@ -216,7 +216,8 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         down_deg = (-down_deg) % 360
     net = build_comb(3200, 2700, sluice, seed, down_deg=down_deg, field_fall=field_fall,
                      canal_a_len=canal_a, canal_b_len=canal_b, offtakes_a=offtakes_a,
-                     offtakes_b=offtakes_b, plot_across=26, row_step=(13, 19), dry_band=dry_band)
+                     offtakes_b=offtakes_b, plot_across=26, row_step=(13, 19), dry_band=dry_band,
+                     grain=2 / 3)  # 3 ft/px city: scale the carve's real-feet minimum-size thresholds (tuned at 2 ft/px) or the fan drops sectors/head plots/closers and shows parchment holes (paddy_fan_gapless)
     if mirror_ym is not None:
         def m(pts):
             return [(x, 2 * mirror_ym - y) for x, y in pts]
@@ -256,7 +257,8 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     pvy = [v[1] for p in net["plots"] for v in p["poly"]]
     s.M["fields"].append({"name": name, "kind": "paddy", "outline": [[x, y] for x, y in env],
                           "bbox": [min(exs), min(eys), max(exs), max(eys)],
-                          "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)]})
+                          "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
+                          "plots": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]]})   # the drawn paddy plots, so paddy_fan_gapless can see holes inside the fan
     for c in net["channels"]:
         s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
                                      "role": c["role"], "field": name,
