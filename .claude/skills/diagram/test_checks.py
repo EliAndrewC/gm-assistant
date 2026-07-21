@@ -2123,6 +2123,18 @@ def test_wells_sized_to_population_bands():
     assert "wells_sized_to_population" in f(H)  # a settlement with no draw-well at all
 
 
+def test_lanes_clear_of_dry_plots_fires_on_a_path_through_the_crop():
+    # Hikari's defect in miniature (GM 2026-07-21): a lane crossing a dry plot's interior fires; a
+    # lane running along the plot's edge (a path hugs the field margin by design) passes
+    plot = {"poly": [[300, 300], [400, 300], [400, 400], [300, 400]], "crop": "barley", "theta": 0}
+    M = {"meta": {"scale": "village"}, "dry_plots": [plot], "lanes": [{"pts": [[250, 350], [450, 350]], "width": 5}]}
+    assert "lanes_clear_of_dry_plots" in f(M)
+    M["lanes"] = [{"pts": [[250, 300], [450, 300]], "width": 5}]  # along the top edge - touching, not through
+    assert "lanes_clear_of_dry_plots" not in f(M)
+    M["lanes"] = [{"pts": [[250, 250], [450, 250]], "width": 5}]  # clear of the plot entirely
+    assert "lanes_clear_of_dry_plots" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires

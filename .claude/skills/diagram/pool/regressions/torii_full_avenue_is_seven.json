@@ -1,0 +1,43 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "religious": [
+  {
+   "kind": "monastery",
+   "x": 500,
+   "y": 500,
+   "w": 50,
+   "h": 33,
+   "label": "Monastery of Bishamon"
+  }
+ ],
+ "torii": [
+  [
+   500,
+   560,
+   9
+  ],
+  [
+   500,
+   600,
+   9
+  ],
+  [
+   500,
+   640,
+   9
+  ],
+  [
+   500,
+   680,
+   9
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "torii_full_avenue_is_seven"
+  ],
+  "source": "test_checks.py::test_torii_full_avenue_is_seven"
+ }
+}
