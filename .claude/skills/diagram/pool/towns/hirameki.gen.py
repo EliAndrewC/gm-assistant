@@ -97,11 +97,15 @@ def topo_channel(pts, frm, to, draw_w=0.0):
         k = max(range(len(pts) - 1), key=lambda i: math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]))
         mx, my = (pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2
         pts = list(pts[: k + 1]) + [(mx - b * (by - ay) / chord, my + b * (bx - ax) / chord)] + list(pts[k + 1 :])
-    poly = [[round(px, 1), round(py, 1)] for px, py in pts]
-    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5})
-    s.corridors.append(([(px, py) for px, py in poly], 45))
     if draw_w:
-        s.field_channel([(px, py) for px, py in poly], '#7C9EB0', draw_w, draw_w)
+        # a DRAWN culvert goes through s.channel: recorded + drawn in the shared water group at
+        # the standard bed hue, so its mouth MERGES into the receiving stream/pond like any
+        # confluence (a flat field_channel stroke butt-joints against the bank - GM, 2026-07)
+        s.channel(pts[0], pts[-1], frm, to, width=draw_w, pts=pts)
+        return
+    poly = [[round(px, 1), round(py, 1)] for px, py in pts]
+    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": 2.5})
+    s.corridors.append(([(px, py) for px, py in poly], 45))
 
 
 def grow_poly(poly, m=7):

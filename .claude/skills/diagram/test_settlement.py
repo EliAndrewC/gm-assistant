@@ -2514,3 +2514,12 @@ def test_village_grove_copse_skips_dry_crop_plots():
     for g in s.M["village_groves"]:
         for cx, cy in g["clumps"]:
             assert not (312 <= cx <= 488 and 312 <= cy <= 488)  # nothing deep inside the plot
+
+
+def test_channel_accepts_an_explicit_polyline():
+    # the pts= form: a hand-routed culvert's waypoints are recorded verbatim (no auto-winding)
+    s = Settlement(W=800, H=800, seed=1)
+    s.meta(name="Cp", scale="town", ftpx=1)
+    route = [(100, 100), (160, 130), (220, 200)]
+    s.channel((100, 100), (220, 200), {"kind": "offmap"}, {"kind": "field", "name": "f"}, pts=route)
+    assert s.M["channels"][-1]["poly"] == [[x, y] for x, y in route]
