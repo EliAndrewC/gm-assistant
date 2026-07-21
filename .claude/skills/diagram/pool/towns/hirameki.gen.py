@@ -501,6 +501,7 @@ for fx, fy in [
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 
 # communal WELLS among the dwellings (placed after them, in the open gaps); households share these, the
