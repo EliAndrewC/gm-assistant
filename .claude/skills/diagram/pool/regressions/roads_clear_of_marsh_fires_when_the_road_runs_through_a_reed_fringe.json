@@ -1,0 +1,45 @@
+{
+ "meta": {},
+ "road": [
+  [
+   100,
+   500
+  ],
+  [
+   900,
+   500
+  ]
+ ],
+ "marshes": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 120,
+   "h": 80,
+   "poly": [
+    [
+     440,
+     460
+    ],
+    [
+     560,
+     460
+    ],
+    [
+     560,
+     540
+    ],
+    [
+     440,
+     540
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "roads_clear_of_marsh"
+  ],
+  "source": "test_checks.py::test_roads_clear_of_marsh_fires_when_the_road_runs_through_a_reed_fringe"
+ }
+}

@@ -1982,6 +1982,24 @@ def test_build_polder_parcel_fabric():
         cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
         assert p["low"] == (cy > 320 + 9 * 150 - 6)  # down_deg=90: low rows sit past row 9 (node jitter <= 6)
     assert any(p["low"] for p in plots) and not all(p["low"] for p in plots)
+    # the water network: 1 head feeder + 1 drain + one lateral per interior column line, and every
+    # lateral's ends sit on the feeder / drain lines (the connected jingbang net)
+    roles = [ch["role"] for ch in net["channels"]]
+    assert roles.count("main") == 2 and roles.count("drain") == 1 and roles.count("lateral") == 7  # head + dike-top feeder; 5 interior + 2 toe ditches
+    for ch in net["channels"]:
+        if ch["role"] != "lateral":
+            continue
+        assert abs(ch["pts"][0][1] - (320 - 12)) < 1  # starts on the feeder line (down_deg=90)
+        assert abs(ch["pts"][-1][1] - (320 + 1650 + 12)) < 1  # ends on the drain line
+    # pond-profile mix: merge-heavy, no 3-cuts, wide dike gaps -> fewer, larger, oblong parcels
+    pond_net = build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0))
+    assert len(pond_net["plots"]) < len(plots)
+    pond_areas = sorted(abs(_shoelace(p["poly"])) for p in pond_net["plots"])
+    assert pond_areas[-1] > 2.5 * pond_areas[0]  # merged doubles dwarf the split minority
+
+
+def _shoelace(poly):
+    return sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly))) / 2
 
 
 def test_land_use_overlay_draws_and_records_each_kind():
@@ -2386,7 +2404,9 @@ def test_yard_fits_rejects_dry_crop_plots():
     s.meta(name="Yd", scale="town", ftpx=1)
     assert s._yard_fits(500, 500, 40, 26, 460, 460)  # open ground: fits
     s.dry_polys.append([(490, 480), (620, 480), (620, 560), (490, 560)])
-    assert not s._yard_fits(500, 500, 40, 26, 460, 460)  # same spot now overlaps the hem plot
+    # center 14px OUTSIDE the hem (so the center-based _in_blocked test passes it) but the 40px
+    # footprint still laps the plot - only the rect test can catch this one
+    assert not s._yard_fits(476, 500, 40, 26, 440, 500)
 
 
 def test_grove_fits_rejects_wall_overlap():
@@ -2440,6 +2460,19 @@ def test_clip_to_stream_trims_the_confluence_mouth():
     assert inside == [(399, 400), (400, 500)]
 
 
+def test_late_water_block_carries_sheens_and_splices_after_plots():
+    """field_channel(late=True) defers into the SECOND water block (spliced at its own first-call
+    position so a city's comb net draws OVER the field's plots); a late course with a sheen records
+    its sheenz above every late bed, mirroring the main block's contract."""
+    s = Settlement(300, 300, seed=1)
+    s.meta(name="T", scale="village", ftpx=2)
+    rec: dict = {}
+    s._water('<path d="M0,0 L10,10" stroke="#6C9CBE"/>', rec, sheen='<path d="M0,0 L10,10" stroke="#9CC"/>', late=True)
+    with tempfile.TemporaryDirectory() as td:
+        s.finish(os.path.join(td, "t"), render=False)
+    assert rec["sheenz"] > rec["bedz"]
+
+
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
@@ -2460,3 +2493,24 @@ def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     net2["brook"] = []
     s2.draw_comb_field(net2, "f2", {"kind": "stream", "stream": [(700, 40), (702, 120), (700, 200)]})
     assert s2.M["channels"][-1]["poly"][0] == [700, 200]  # feeder ends at the sluice: already joined
+
+
+def test_fit_helpers_reject_out_of_bounds_spots():
+    # the shared 55/88px canvas-margin early-outs of the appurtenance fit helpers (previously
+    # exercised by the towns' legacy farmstead pass; the towns now run the bundle path)
+    s = Settlement(W=1000, H=1000, seed=1)
+    s.meta(name="Eb", scale="town", ftpx=1)
+    assert not s._yard_fits(20, 500, 40, 26, 60, 500)
+    assert not s._garden_fits(20, 500, 30, 22, 60, 500, (60, 540, 40, 26))
+    assert not s._grove_fits(20, 500, 60, 30, [(60, 500)])
+
+
+def test_village_grove_copse_skips_dry_crop_plots():
+    # a copse clump never lands in a hem strip (the barley) - the dry_polys skip in village_grove
+    s = Settlement(W=800, H=800, seed=2)
+    s.meta(name="Vg", scale="village", ftpx=2)
+    s.dry_polys.append([(300, 300), (500, 300), (500, 500), (300, 500)])
+    s.village_grove([(280, 280), (520, 280), (520, 520), (280, 520)], role="copse", dense=False)
+    for g in s.M["village_groves"]:
+        for cx, cy in g["clumps"]:
+            assert not (312 <= cx <= 488 and 312 <= cy <= 488)  # nothing deep inside the plot
