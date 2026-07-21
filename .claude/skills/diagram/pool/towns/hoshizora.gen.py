@@ -117,10 +117,11 @@ netA = build_comb(
 )
 netA["brook"] = []  # no auto-brook (it would shoot into the town); the runoff's real sink is the tameike
 ENV_A = s.draw_comb_field(netA, "hoshizora-west", {"kind": "stream"})  # no polyline: the map's stream IS the source
-# the WEIR: a short drawn connector from the stream bed to the sluice, so the diversion reads
-# visually (the hairline channel recorded by draw_comb_field already carries the topology -
-# this stub is drawing only, no manifest record)
-s.field_channel([(530, 313), (544, 317), (558, 322)], '#6C9CBE', 7, 7)
+# the WEIR: the head-race's visible intake, drawn from the sluice's perpendicular FOOT on the
+# stream centerline (the same confluence point draw_comb_field snaps the recorded hairline's
+# start to); _clip_to_stream trims this drawn mouth onto the bank edge so it joins the current
+# without crossing it. Drawing only - the snapped hairline carries the manifest topology.
+s.field_channel([(549.1, 308.4), (558, 322)], '#6C9CBE', 7, 7)
 s.field_polys.append([(x, y) for x, y in ENV_A])
 s.corridors.append(([(p[0], p[1]) for p in s.M["channels"][-1]["poly"]], 45))  # keep farmsteads off the hairline feed
 
@@ -224,7 +225,7 @@ s.building(1642, 662, *s._dims("laborer"), "laborer")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
 s.pack((680, 190, 1150, 395), ["laborer"] * 11, step=40)  # laborers at the budgets.md band floor (25 total with the SE pack + the 3 masters) so the depicted farmer cohort stays the plurality
 s.pack((1165, 700, 1600, 925), ["servant"] * 16 + ["laborer"] * 14, step=40)
-s.label(1010, 224, "laborers' dwellings (set back off the road)", 10, italic=True, color="#5A4326")
+s.label(1010, 224, "laborers' dwellings", 10, italic=True, color="#5A4326")  # the set-back is self-evident on the map (annotations explain the unusual, not the universal)
 
 # ---- the segregated burakumin neighborhood (NE edge). Set back a full 74+ ft behind the
 # road frontage: the aligned-behind-storefronts rule treats any dwelling 15-74 ft directly

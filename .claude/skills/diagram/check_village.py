@@ -4769,30 +4769,35 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"s.moat so the shared bed and sheen groups composite it as one confluence",
     )
 
-    # A DRAIN CULVERT MEETS ITS STREAM AT A CONFLUENCE - waterways join like roads do. A channel
-    # declaring to={"kind":"stream"} must actually REACH the receiving bed: its recorded end within
-    # the stream's half-width (+2px) of the centerline, so the mouth sits in the water. The anchor
-    # test alone allows 30px, which let a culvert die in the grass beside the stream and still pass
-    # (GM caught this on Hirameki, 2026-07): a ditch that "drains to the stream" must visibly drain
-    # INTO the stream. (Extend the recorded polyline to the centerline; `_clip_to_stream` trims the
-    # DRAWN mouth back onto the bed edge so it never paints a tongue across the current.)
-    dry_mouths = []
-    for c in M.get("channels", []):
-        if (c.get("to") or {}).get("kind") != "stream":
-            continue
-        end = c["poly"][-1]
-        reach = min(
-            (seg_dist(end[0], end[1], sp[i], sp[i + 1]) - st.get("w", 9) / 2 for st in M.get("streams", []) for sp in [st["poly"]] for i in range(len(sp) - 1)),
+    # A CHANNEL MEETS ITS STREAM AT A CONFLUENCE - waterways join like roads do, at BOTH ends. A
+    # channel declaring to={"kind":"stream"} (a drain culvert) must actually REACH the receiving
+    # bed, and one declaring frm={"kind":"stream"} (an intake/offtake) must actually START in the
+    # feeding bed: the recorded endpoint within the stream's half-width (+2px) of the centerline,
+    # so the mouth sits in the water. The anchor test alone allows 30px, which let a culvert die in
+    # the grass beside the stream (GM caught the drain side on Hirameki, then the intake side on
+    # Hoshizora, 2026-07). Extend/snap the recorded polyline to the centerline; `_clip_to_stream`
+    # trims the DRAWN mouth back onto the bed edge so it never paints a tongue across the current.
+    def _bed_reach(pt: Pt) -> float | None:
+        return min(
+            (seg_dist(pt[0], pt[1], sp[i], sp[i + 1]) - st.get("w", 9) / 2 for st in M.get("streams", []) for sp in [st["poly"]] for i in range(len(sp) - 1)),
             default=None,
         )
-        if reach is None or reach > 2:
-            dry_mouths.append((round(end[0]), round(end[1])))
+
+    dry_mouths = []
+    for c in M.get("channels", []):
+        chan_ends: list[tuple[dict[str, Any], Any]] = [(c.get("to") or {}, c["poly"][-1]), (c.get("frm") or {}, c["poly"][0])]
+        for anc, pt in chan_ends:
+            if anc.get("kind") != "stream":
+                continue
+            reach = _bed_reach(pt)
+            if reach is None or reach > 2:
+                dry_mouths.append((round(pt[0]), round(pt[1])))
     check(
         "channels_join_streams_at_confluence",
         not dry_mouths,
-        f"channel mouth(s) declared to={{stream}} stop short of the receiving bed at {sorted(set(dry_mouths))[:4]} - "
-        f"a drain culvert joins its stream at a CONFLUENCE (the mouth reaches into the water, like a road junction), "
-        f"never dying in the grass beside the bank; extend the recorded polyline to the stream centerline",
+        f"channel mouth(s) declared frm/to={{stream}} stop short of the bed at {sorted(set(dry_mouths))[:4]} - "
+        f"an intake or drain culvert joins its stream at a CONFLUENCE (the mouth reaches into the water, like a "
+        f"road junction), never dying in the grass beside the bank; snap the recorded polyline to the stream centerline",
     )
 
     # no field overlaps the town wall: a field may ABUT the wall but must stay on one
