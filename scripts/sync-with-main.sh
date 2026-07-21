@@ -41,6 +41,12 @@ cd "$ROOT"
 
 sync_in() {
   git pull --no-rebase origin main
+  # pull main's RENDERS into the clone too (GM 2026-07-21): a clone holding stale .png/.svg
+  # artifacts that later flow back through render-sync looks like a regression - main's renders
+  # are the tip-verified canonical set between work units, so a fresh work unit starts from them.
+  rsync -rt --include='*/' --include='*.svg' --include='*.png' --exclude='*' "$MAIN/$POOL/" "$ROOT/$POOL/"
+  date > "$ROOT/.git/sync-with-main.stamp"
+  echo "sync-with-main: clone synced with main (git + renders)"
 }
 
 push_cmd() {
@@ -56,6 +62,7 @@ push_cmd() {
   # pull+push as ONE locked unit: no other session can slip a push into the gap (CLAUDE.md step 2)
   flock "$LOCK" sh -c 'git pull --no-rebase origin main && git push origin main'
   theirs=$(git diff --name-only "$before"..HEAD | sort -u)
+  date > "$ROOT/.git/sync-with-main.stamp"  # post-push the clone is at main's tip = synced by definition
   overlap=$(comm -12 <(printf '%s\n' "$ours") <(printf '%s\n' "$theirs"))
   if [ -n "$overlap" ]; then
     echo "sync-with-main: PUSHED, but the pull auto-merged other sessions' edits into files your commits touched:" >&2
@@ -78,7 +85,11 @@ regen() {
 }
 
 render_sync() {
-  [ "${1:-}" = "--regen" ] && regen
+  # regen is MANDATORY (GM 2026-07-21, was an optional --regen flag): a clone at main's tip can
+  # still hold renders drawn under an OLDER engine (pulls move HEAD without re-rendering), and
+  # copying those into main looks like a regression. Always regenerating makes staleness
+  # impossible by construction - renders in main are a pure function of tip code.
+  regen
   # TIP-GUARD + copy under the lock; -rt not -a (rootless-podman ownership); no --delete (a clone
   # that never built another session's map must not wipe main's render of it). CLAUDE.md step 5.
   flock "$LOCK" sh -c "
@@ -103,7 +114,7 @@ render_sync() {
 case "${1:-}" in
   sync-in)     sync_in ;;
   push)        push_cmd ;;
-  render-sync) shift; render_sync "${1:-}" ;;
+  render-sync) render_sync ;;
   done)        push_cmd; render_sync ;;
-  *)           die "usage: sync-with-main.sh sync-in | push | render-sync [--regen] | done" ;;
+  *)           die "usage: sync-with-main.sh sync-in | push | render-sync | done" ;;
 esac
