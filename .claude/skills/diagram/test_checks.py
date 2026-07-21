@@ -5669,7 +5669,7 @@ def test_paddy_fan_gapless_credits_ditches_and_fires_on_holes():
     plot tolerance sit at bund scale (6 real ft) without flagging delivery-ditch strips."""
     outline = [[0, 0], [400, 0], [400, 400], [0, 400]]
     plots = [[[0, 0], [180, 0], [180, 400], [0, 400]], [[220, 0], [400, 0], [400, 400], [220, 400]]]
-    base = {"meta": {"scale": "village", "ftpx": 2}, "fields": [{"name": "t", "kind": "paddy", "outline": outline, "bbox": [0, 0, 400, 400], "plots": plots}]}
+    base = {"meta": {"scale": "village", "ftpx": 2}, "fields": [{"name": "t", "kind": "paddy", "outline": outline, "bbox": [0, 0, 400, 400], "plot_polys": plots}]}
     assert "paddy_fan_gapless" in f(base)
     ditched = {**base, "field_ditches": [{"field": "t", "poly": [[200, -10], [200, 410]], "w": 40, "role": "branch"}]}
     assert "paddy_fan_gapless" not in f(ditched)
