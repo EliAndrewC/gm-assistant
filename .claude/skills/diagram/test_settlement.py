@@ -2454,6 +2454,7 @@ def test_late_water_block_carries_sheens_and_splices_after_plots():
         s.finish(os.path.join(td, "t"), render=False)
     assert rec["sheenz"] > rec["bedz"]
 
+
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
