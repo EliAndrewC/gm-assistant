@@ -1336,7 +1336,16 @@ class Settlement:
         exs, eys = [p[0] for p in env], [p[1] for p in env]
         pvx = [v[0] for p in net["plots"] for v in p["poly"]]
         pvy = [v[1] for p in net["plots"] for v in p["poly"]]
-        self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)]})
+        # Per-plot [along-fall, cross-fall] spans, so parcel-fabric checks (polder_parcels_vary) measure
+        # the DRAWN geometry from the manifest rather than trusting a builder self-report.
+        ddp = float(self.M["meta"].get("down_deg", 90))
+        pdx, pdy = math.cos(math.radians(ddp)), math.sin(math.radians(ddp))
+        pdims = []
+        for p in net["plots"]:
+            al = [vx * pdx + vy * pdy for vx, vy in p["poly"]]
+            cr = [vx * pdy - vy * pdx for vx, vy in p["poly"]]
+            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1)])
+        self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims})
         for c in net["channels"]:
             self.M["field_ditches"].append(
                 {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}

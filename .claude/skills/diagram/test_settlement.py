@@ -1953,6 +1953,37 @@ def test_plot_texture_drives_build_comb_grain():
             s.plot_texture(*bad)
 
 
+def test_build_polder_parcel_fabric():
+    from waterfields import build_polder
+
+    net = build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=11, cols=6, cell=150)
+    plots = net["plots"]
+    # deterministic per seed
+    assert build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=11, cols=6, cell=150)["plots"] == plots
+    # splits outnumber merges: more parcels than module bays
+    assert len(plots) > 66
+    # the perimeter dike stays PINNED dead straight: envelope corners are exact grid multiples
+    assert net["envelope"][0] == (360, 320) and net["envelope"][2] == (360 + 6 * 150, 320 + 11 * 150)
+    # the fabric varies (mirrors the polder_parcels_vary thresholds, with slack): areas spread, oblongs dominate
+    dims = []
+    for p in plots:
+        xs = [v[0] for v in p["poly"]]
+        ys = [v[1] for v in p["poly"]]
+        dims.append((max(xs) - min(xs), max(ys) - min(ys)))
+    areas = [w * h for w, h in dims]
+    mean_a = sum(areas) / len(areas)
+    cv = (sum((a - mean_a) ** 2 for a in areas) / len(areas)) ** 0.5 / mean_a
+    assert cv > 0.25
+    oblong = sum(1 for w, h in dims if max(w, h) / min(w, h) >= 1.45) / len(dims)
+    assert oblong > 0.5
+    # every parcel stays inside the envelope, and the low flag marks the bottom two rows only
+    for p in plots:
+        assert all(360 <= v[0] <= 360 + 900 and 320 <= v[1] <= 320 + 1650 for v in p["poly"])
+        cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
+        assert p["low"] == (cy > 320 + 9 * 150 - 6)  # down_deg=90: low rows sit past row 9 (node jitter <= 6)
+    assert any(p["low"] for p in plots) and not all(p["low"] for p in plots)
+
+
 def test_land_use_overlay_draws_and_records_each_kind():
     from waterfields import build_comb
 
