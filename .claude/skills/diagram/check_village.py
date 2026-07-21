@@ -2085,6 +2085,81 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"the ladder must read MONOTONE with population - a village ground must never dwarf a town's",
         )
 
+    # A COMB'S HEAD GROUND IS QUILTED (city-scale): the supply canals run THROUGH cultivated
+    # land - paddy below, dry-crop hem above - never through bare parchment. The fan head (the
+    # band along the mains and the fork triangle between the arms) is uncommanded by gravity,
+    # so the carve correctly never plants RICE there; the HEM system is what fills it (villages
+    # add scrub besides, so they read full either way). paddy_fan_gapless deliberately samples
+    # only the commanded interior - which is exactly why the bare-head regression (the GM's
+    # circled screenshot, 2026-07-21) sailed through green. This check owns that band: sample
+    # both flanks of every recorded MAIN channel beyond the hem berm, skip the sluice mouth and
+    # moat/ring corridors, and require the map-wide bare fraction under 20% (calibrated: the
+    # pre-fix manifest reads ~25%, the quilted maps ~13-16%). Fields recording plot_polys (the
+    # city gens) are gated; a village opts in by recording them.
+    _hq_ftpx = float(meta.get("ftpx", 1) or 1)
+    _hq_tol = 8.0 / _hq_ftpx
+    _hq_bare = _hq_total = 0
+    _hq_fields = [f for f in M.get("fields", []) if f.get("kind") == "paddy" and f.get("plot_polys")]
+    if _hq_fields:
+        _hq_covers: list[list[tuple[float, float]]] = []
+        for f2 in M.get("fields", []):
+            _hq_covers += [[(q[0], q[1]) for q in p] for p in f2.get("plot_polys", [])]
+        _hq_covers += [[(q[0], q[1]) for q in d["poly"]] for d in M.get("dry_plots", [])]
+        _hq_lines = [([(q[0], q[1]) for q in d["poly"]], float(d.get("w", 4))) for d in M.get("field_ditches", [])]
+        _hq_lines += [([(q[0], q[1]) for q in c["poly"]], float(c.get("w", 3))) for c in M.get("channels", [])]
+        _hq_moat = M.get("moat")
+        _hq_ring = M.get("ring_road")
+        _hq_ringw = float(M.get("ring_road_width", 7))
+
+        def _hq_excluded(qx: float, qy: float) -> bool:
+            if _hq_moat and min(seg_dist(qx, qy, _hq_moat[i2], _hq_moat[i2 + 1]) for i2 in range(len(_hq_moat) - 1)) < float(M.get("moat_width", 20)) / 2 + 12 / _hq_ftpx:
+                return True
+            rr_ = _hq_ring
+            return rr_ is not None and min(seg_dist(qx, qy, rr_[i2], rr_[i2 + 1]) for i2 in range(len(rr_) - 1)) < _hq_ringw / 2 + 12 / _hq_ftpx
+
+        def _hq_covered(qx: float, qy: float) -> bool:
+            for cp in _hq_covers:
+                if point_in_poly(qx, qy, cp) or any(seg_dist(qx, qy, cp[k], cp[(k + 1) % len(cp)]) < _hq_tol for k in range(len(cp))):
+                    return True
+            return any(any(seg_dist(qx, qy, lp[k], lp[k + 1]) < lw / 2 + _hq_tol for k in range(len(lp) - 1)) for lp, lw in _hq_lines)
+
+        for f in _hq_fields:
+            _hq_mains = [d for d in M.get("field_ditches", []) if d.get("field") == f.get("name") and d.get("role") == "main"]
+            if not _hq_mains:
+                continue
+            _hq_sluice = _hq_mains[0]["poly"][0]
+            for d in _hq_mains:
+                dpts_ = d["poly"]
+                hw = float(d.get("w", 4)) / 2
+                for i in range(len(dpts_) - 1):
+                    ax, ay = dpts_[i]
+                    bx, by = dpts_[i + 1]
+                    ll = math.hypot(bx - ax, by - ay)
+                    if ll < 1:
+                        continue
+                    ux, uy = (bx - ax) / ll, (by - ay) / ll
+                    stp = 12.0 / _hq_ftpx
+                    t = stp / 2
+                    while t < ll:
+                        px_, py_ = ax + ux * t, ay + uy * t
+                        if math.hypot(px_ - _hq_sluice[0], py_ - _hq_sluice[1]) >= 90.0 / _hq_ftpx:
+                            for _hq_off in (hw + 20 / _hq_ftpx, hw + 34 / _hq_ftpx, hw + 48 / _hq_ftpx):
+                                for sgn in (1, -1):
+                                    qx, qy = px_ - uy * _hq_off * sgn, py_ + ux * _hq_off * sgn
+                                    if not _hq_excluded(qx, qy):
+                                        _hq_total += 1
+                                        if not _hq_covered(qx, qy):
+                                            _hq_bare += 1
+                        t += stp
+        if _hq_total:
+            check(
+                "city_fan_heads_quilted",
+                _hq_bare <= 0.20 * _hq_total,
+                f"{_hq_bare}/{_hq_total} head-band samples along the supply canals are bare parchment (>20%) - the fan head "
+                f"is uncommanded ground the DRY-CROP HEM must quilt (village-real dry_band, the fork-triangle b-side band, "
+                f"the grain-scaled berm); rice cannot grow there but barley does, and bare heads are the white-gaps regression",
+            )
+
     # PADDY FANS ARE GAPLESS inside their command area: bare parchment inside a comb fan is
     # ground the water commands that nobody planted - the "white spots" bug. The carve's minimum
     # plot/sector/closer thresholds are REAL-FEET quantities (build_comb's `grain` scales them:
