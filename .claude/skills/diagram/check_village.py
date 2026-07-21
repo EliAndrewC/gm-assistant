@@ -3113,24 +3113,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
     # TORII COUNT NUMEROLOGY (GM canon 2026-07-21): a torii approach is either a MODEST ENTRANCE
     # (1-2 arches) or a FULL AVENUE of EXACTLY SEVEN - 7 is the numerologically significant count.
-    # A monastery/temple takes the full seven when there is room (Hirameki's Bishamon, the motivating
-    # example at an unfinished 4); "room" is a design-time judgment, so the check bans the 3-6 (and >7)
-    # dead zone rather than mandating 7 everywhere - a dense city temple legitimately keeps a 1-2 arch
-    # entrance. Village shrines usually keep 1-2; a formal shrine avenue (Kikuta's showcase Benten) is
-    # the sanctioned exception at exactly 7. Arches are assigned to their nearest religious feature.
-    tor_all = M.get("torii", [])
-    rel_feats = M.get("religious", [])
-    if tor_all and rel_feats:
-        tcount: dict[int, int] = {}
-        for t in tor_all:
-            ri = min(range(len(rel_feats)), key=lambda i: (rel_feats[i]["x"] - t[0]) ** 2 + (rel_feats[i]["y"] - t[1]) ** 2)
-            tcount[ri] = tcount.get(ri, 0) + 1
-        bad_tc = [f"{rel_feats[i].get('label') or rel_feats[i]['kind']}: {n}" for i, n in sorted(tcount.items()) if n not in (1, 2, 7)]
-        check(
-            "torii_full_avenue_is_seven",
-            not bad_tc,
-            f"torii approach(es) outside the sanctioned counts: {bad_tc[:3]} - an approach is either a modest entrance (1-2 arches) or a full avenue of EXACTLY 7 (the numerologically significant count; GM canon 2026-07-21); 3-6 reads as an unfinished avenue",
-        )
+    # (RETIRED 2026-07-21: torii_full_avenue_is_seven sanctioned {1, 2, 7} and banned 3-6 as "an
+    # unfinished avenue". The GM's numerology ruling the same day supersedes it - counts are exactly
+    # {1, 3, 7} at EVERY proper hall, with torii_outlier for marked exceptions - and that doctrine is
+    # gated by torii_count_canonical below, which also fixes this check's misattribution: it assigned
+    # arches to the nearest of ALL religious features, so a wayside small_shrine near a temple sando
+    # could absorb the temple's gates and hide a violation, which is exactly how Tango's 2-arch
+    # Daikoku entrance slipped through.)
 
     # ... and a village/hamlet SHRINE has a village-scale FOOTPRINT (GM 2026-07-21, caught on Hikari no
     # Sato, whose two shrines survived from before the size norms crystallized at 192x128 / 236x164 ft -
@@ -7807,6 +7796,29 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
     if "torii_expected" in meta:
         check("torii_count", len(torii) == meta["torii_expected"], f"{len(torii)} torii, expected {meta['torii_expected']}")
+
+    # TORII COUNTS ARE NUMEROLOGICAL (GM 2026-07-21): in Rokugan the number 7 is even more significant
+    # than in the real world, so every PROPER religious site - shrine, monastery, temple - carries exactly
+    # 1, 3, or 7 torii, never another number, unless the hall is specifically marked an outlier
+    # (shrine_hall(torii_outlier=True), recorded on the religious rec). The rolled distribution per tier
+    # lives in settlement.roll_torii_count and settlements.md 'Torii'. The floor is 1: a proper hall with
+    # NO torii reads as the abandoned/anomalous case (historically rare enough that each had a story).
+    # kind='small_shrine' is EXEMPT - the hokora/wayside tier draws its own miniature token torii as part
+    # of the glyph and historically mostly had none; it is also excluded from ATTRIBUTION, so a wayside
+    # shed near a temple's sando cannot steal the temple's gates (that misattribution hid Tango's Daikoku
+    # pair during the first survey). Each recorded torii is attributed to the NEAREST proper hall.
+    _proper = [r for r in M.get("religious", []) if r.get("kind") != "small_shrine"]
+    if _proper:
+        _tcount = {id(r): 0 for r in _proper}
+        for _t in torii:
+            _nr = min(_proper, key=lambda r: math.hypot(r["x"] - _t[0], r["y"] - _t[1]))
+            _tcount[id(_nr)] += 1
+        _bad_torii = [(round(r["x"]), round(r["y"]), _tcount[id(r)]) for r in _proper if _tcount[id(r)] not in (1, 3, 7) and not r.get("torii_outlier")]
+        check(
+            "torii_count_canonical",
+            not _bad_torii,
+            f"hall(s) with a non-numerological torii count (x, y, n): {_bad_torii[:4]} - every shrine/monastery/temple carries exactly 1, 3, or 7 torii (7 is numerologically potent in Rokugan; see settlements.md 'Torii'), or is explicitly marked shrine_hall(torii_outlier=True)",
+        )
 
     if M.get("pond"):
         pcx, pcy, prx, pry = M["pond"]

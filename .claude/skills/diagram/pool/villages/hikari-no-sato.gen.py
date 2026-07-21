@@ -35,7 +35,7 @@ FTPX = 2
 
 s = Settlement(W=W, H=H, seed=SEED)
 s.meta(name="Hikari no Sato", scale="village", ftpx=FTPX, households=70, down_deg=90,   # N-high -> downhill = due S
-       nucleated=True, field_footbridges=True, torii_expected=2, shrine_on_hill=False,
+       nucleated=True, field_footbridges=True, torii_expected=4, shrine_on_hill=False,
        fallow_implies_abandoned=False, has_pond=False)   # stream-fed, no pond
 
 _furrows_vary = True
@@ -190,7 +190,7 @@ print(f"farmhouses: {n_farms}")
 # the secondary Bishamon at the ordinary earth-god class (30x24 px ~ 275 m^2, the Ueda/Hoshigaoka size).
 # Gated by village_shrine_footprint_within_norms (ceiling 600 m^2).
 s.shrine_hall(CX - 40, CY + 540, "Shrine to Benten", w=44, h=30,
-              torii=[(1144, CY + 630), (1141, CY + 695)], primary=True)   # torii ON the track (x on the lane centerline)
+              torii=[(1144, CY + 630), (1141, CY + 695), (1143, CY + 760)], primary=True)   # THREE torii ON the track (x on the lane centerline) - numerological (torii_count_canonical): the ichi/ni/san-no-torii sequence marching out the southern gateway
 s.shrine_well(CX - 40, CY + 540)     # ablution well: pass the HALL CENTER - the ring search finds the nearest clear spot beside it
 # the still-tended Bishamon village shrine, with the burial ground in its churchyard. It sits in the empty DRY
 # pocket BELOW the E block and to the LEFT of that block's toe marsh - not at the far SW. The SW placement was
@@ -198,15 +198,16 @@ s.shrine_well(CX - 40, CY + 540)     # ablution well: pass the HALL CENTER - the
 # GROUP advisory flagged the shrine + its graveyard as one movable precinct); relocating the whole precinct
 # here lets the frame crop in to the fields. See settlements.md 'Crop advisory'.
 BX, BY = 1600, 1180
-s.shrine_hall(BX, BY, "Shrine to Bishamon", "(still tended)", w=30, h=24)
+s.shrine_hall(BX, BY, "Shrine to Bishamon", "(still tended)", w=30, h=24, torii=[(BX, BY - 44)])   # one torii on the N approach (numerological floor: every proper hall has 1/3/7), between the churchyard and the hall
 s.shrine_well(BX, BY)                 # ablution well: hall center in, ring search out (the legacy +85 offset only passed while the hall was oversized)
 
 # RESERVE swept ground for both shrine precincts + the graveyard BEFORE the hinterland/commons scatter below,
 # or the scrub covers them (the Benten hall + torii and Bishamon hall are placed above; the graveyard is drawn
 # at ~line 222). Same footprints as those draw calls - keep the two in sync.
 s.reserve_clearing(CX - 40, CY + 540, 44, 30, 58)   # Shrine to Benten
-s.reserve_clearing(1144, CY + 630, 38, 28, 30)      # its two torii
+s.reserve_clearing(1144, CY + 630, 38, 28, 30)      # its three torii
 s.reserve_clearing(1141, CY + 695, 38, 28, 30)
+s.reserve_clearing(1143, CY + 760, 38, 28, 30)
 s.reserve_clearing(BX, BY, 30, 24, 58)              # Shrine to Bishamon
 s.reserve_clearing(BX, BY - 110, 46, 32, 30)        # the village graveyard
 

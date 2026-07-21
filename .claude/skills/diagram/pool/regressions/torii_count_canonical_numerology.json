@@ -1,0 +1,32 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "religious": [
+  {
+   "kind": "monastery",
+   "x": 500,
+   "y": 500,
+   "w": 40,
+   "h": 28
+  }
+ ],
+ "torii": [
+  [
+   500,
+   560,
+   9
+  ],
+  [
+   500,
+   590,
+   9
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "torii_count_canonical"
+  ],
+  "source": "test_checks.py::test_torii_count_canonical_numerology"
+ }
+}

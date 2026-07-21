@@ -402,7 +402,7 @@ BUR_ST = [[(1191, 1285), (1602, 1285)], [(1480, 1233), (1480, 1371)]]   # the ve
 grid(BUR_ST)
 # the burakumin draw from their OWN wells (status segregation extended to shared water) -
 # placed before the rows so the strips break into courts around them
-for wx, wy in [(1298, 1259), (1490, 1259), (1328, 1310), (1541, 1310), (1226, 1261), (1226, 1312), (1399, 1312), (1561, 1261), (1262, 1259), (1262, 1310), (1435, 1314)]:
+for wx, wy in [(1298, 1259), (1490, 1259), (1328, 1310), (1541, 1310), (1226, 1261), (1226, 1312), (1399, 1312), (1561, 1261), (1262, 1259), (1262, 1310), (1435, 1314), (1412, 1376), (1344, 1420)]:   # (1412,1376)+(1350,1408) added 2026-07-21: the torii-reservation repack left that court's draw-point serving 27 households (city_well_density_sufficient)
     s.well_at(wx, wy)
 front([BUR_ST[0]], ["shop"] * 5, spacing=42, rows=1)
 s.rowpack((1198, 1233, 1582, 1273), (["burakumin"] + ["servant"]) * 18, court_every=3)
@@ -458,10 +458,10 @@ SW_ST = [[(1253, 1455), (1253, 1616)], [(1480, 1371), (1480, 1661)]]   # x1256 e
 grid(SW_ST)
 # the temple neighborhood (lower SW, INSIDE the wall): Benten + Daikoku with the Ministry of
 # Rites that oversees them - placed BEFORE the merchant rows so they flow around it
-s.shrine_hall(1343, 1501, "Temple of Benten", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True)
+s.shrine_hall(1343, 1501, "Temple of Benten", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True, torii=[(1390, 1501)])   # ONE in the open E forecourt between hall and theater stage (torii_count_canonical: 1/3/7). The W quarter street is unusable for gates: the graveyard's kegare radius covers its middle and the ring-road corridor its S end
 s.block_polys.append([(1272, 1510), (1410, 1510), (1410, 1550), (1272, 1550)])   # reserve the 'Temple of Benten' label ground so the merchant pack does not land under it (band re-seated up when the hall went true-size, 2026-07-21: the label tracks the smaller hall's bottom edge)
-s.shrine_hall(1424, 1616, "Temple of Daikoku", w=s.px(130), h=s.px(84), kind="temple", torii=[(1481, 1616), (1481, 1570)])
-s.ministry(1316, 1602, "Ministry of Rites", w=s.px(140), h=s.px(95))
+s.shrine_hall(1424, 1616, "Temple of Daikoku", w=s.px(130), h=s.px(84), kind="temple", torii=[(1481, 1616)])   # ONE beside-hall gate (was 2 - torii_count_canonical numerology; a third up the street mis-attributed to Benten, and the S street end is packed, so the modest 1-gate entrance it historically had)
+s.ministry(1308, 1608, "Ministry of Rites", w=s.px(140), h=s.px(95))   # nudged SW 2026-07-21: the torii-reservation repack tilted a merchant_large against its old NE margin (city_government_offices_dont_abut, rotation-aware gap)
 # the city THEATER STAGE - in the Temple of Benten's precinct, EAST of it, its viewing ground
 # opening west toward the hall (the troupe/festival venue belonging to the temple)
 s.theater_stage(1448, 1503, w=s.px(190), h=s.px(132), rot=90, label="theater stage")
@@ -536,7 +536,7 @@ for (mx, my), name in zip(MIN_POS, MINS):
 # Bishamon (the warrior fortune) in the samurai quarter SW corner, off the grid (no street
 # runs up to it at this tight scale, so it needs no torii avenue); new hall in a former
 # samurai compound - keeps NO burial ground
-s.shrine_hall(1671, 1663, "Temple of Bishamon", w=s.px(200), h=s.px(140), kind="temple", graveyard=False, label_below=True)
+s.shrine_hall(1671, 1663, "Temple of Bishamon", w=s.px(200), h=s.px(140), kind="temple", graveyard=False, label_below=True, torii=[(1602, 1610), (1602, 1572), (1602, 1534)])   # THREE straddling the MAIN ROAD at the temple frontage (the monzen pattern - the road runs under the arches; torii_count_canonical)
 s.block_polys.append([(1596, 1681), (1746, 1681), (1746, 1730), (1596, 1730)])   # keep the hall's below-label strip clear of the samurai packs (covers a large house's half-footprint past the box)
 s.block_polys.append([(1623, 1625), (1719, 1625), (1719, 1700), (1623, 1700)])   # a ~14px apron around the hall itself - the scatter pack kept rolling a house onto its +4 check margin
 # the ruling clan's walled MAUSOLEUM by the government quarter (the elite crypts)
