@@ -1009,6 +1009,11 @@ def _dry_fields(
     while bounds[-1] < total - plot * 0.6:
         bounds.append(bounds[-1] + plot * R.uniform(0.9, 1.25))
     bounds[-1] = total
+    if g != 1.0 and len(bounds) >= 2 and bounds[-1] - bounds[-2] > 1.35 * plot:
+        # the snap-to-total stretch can hand the END cell up to ~1.85 plot widths (a ~0.38-acre
+        # slab at city grain - the largest-parcel outlier, 2026-07-21); split it. Coarse grains
+        # only: the vetted village maps carry the same (milder, in-band) artifact byte-stably.
+        bounds.insert(-1, (bounds[-1] + bounds[-2]) / 2)
 
     # FURROW ANGLE varies PER PLOT (a mosaic of family strips): each plot drops its ridges into the LARGEST gap
     # between the angles of its already-placed NEIGHBORS, guaranteeing separation (drives dry_plot_furrows_vary).
