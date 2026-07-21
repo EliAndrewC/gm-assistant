@@ -1,0 +1,20 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "title": {
+  "name": "V",
+  "bbox": [
+   800,
+   50,
+   900,
+   132
+  ]
+ },
+ "_regression": {
+  "fires": [
+   "title_has_placard"
+  ],
+  "source": "test_checks.py::test_title_has_placard_fires_on_a_pre_placard_manifest"
+ }
+}
