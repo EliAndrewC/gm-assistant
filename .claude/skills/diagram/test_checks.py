@@ -2105,6 +2105,24 @@ def test_title_has_placard_fires_on_a_pre_placard_manifest():
     assert "title_has_placard" not in f(M)
 
 
+def test_wells_sized_to_population_bands():
+    # the Rokugan prosperity liberty, banded (GM 2026-07-21): villages 8-26 hh/well, hamlets 2-20;
+    # shrine temizu wells are excluded from the count
+    base = {"meta": {"scale": "village", "households": 70}}
+    M = {**base, "wells": [{"x": 100 * i, "y": 100, "r": 8, "shrine": False} for i in range(5)]}
+    assert "wells_sized_to_population" not in f(M)  # 14 hh/well - in band
+    M = {**base, "wells": [{"x": 100, "y": 100, "r": 8, "shrine": False}]}
+    assert "wells_sized_to_population" in f(M)  # 70 hh/well - parched
+    M = {**base, "wells": [{"x": 60 * i, "y": 100, "r": 8, "shrine": False} for i in range(12)]}
+    assert "wells_sized_to_population" in f(M)  # 5.8 hh/well - urban-tenement density in a village
+    M = {**base, "wells": [{"x": 100 * i, "y": 100, "r": 8, "shrine": False} for i in range(5)] + [{"x": 900, "y": 900, "r": 8, "shrine": True}] * 9}
+    assert "wells_sized_to_population" not in f(M)  # shrine wells do not tip the band
+    H = {"meta": {"scale": "hamlet", "households": 16}, "wells": [{"x": 100 * i, "y": 100, "r": 8, "shrine": False} for i in range(6)]}
+    assert "wells_sized_to_population" not in f(H)  # 2.7 hh/well - per-farmstead hamlet pattern, in band
+    H["wells"] = []
+    assert "wells_sized_to_population" in f(H)  # a settlement with no draw-well at all
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires

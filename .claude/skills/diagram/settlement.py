@@ -2253,7 +2253,7 @@ class Settlement:
         bm = 16
         self.block_polys.append([(x0 - bm, y0 - bm), (x + w / 2 + bm, y0 - bm), (x + w / 2 + bm, y + h / 2 + bm + 16), (x0 - bm, y + h / 2 + bm + 16)])
 
-    def well(self, x: float, y: float, r: float = 8) -> None:
+    def well(self, x: float, y: float, r: float = 8, shrine: bool = False) -> None:
         """A public NEIGHBORHOOD WELL (井戸) - a stone curb under an open-sided well-house roof, the
         shared draw-point and social hub (the idobata, where a tenement block's gossip happened). One
         served a courtyard / cluster of ~10-20 households. SMALLER than a house and sits in a block
@@ -2278,7 +2278,9 @@ class Settlement:
         )  # the well-house roof, light so the curb reads through
         self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb:.1f}" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>')  # stone curb
         self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb * 0.47:.1f}" fill="#2E4C58"/>')  # dark water in the shaft
-        self.M["wells"].append({"x": round(x, 1), "y": round(y, 1), "r": r, "vr": round(vroof, 1)})
+        self.M["wells"].append(
+            {"x": round(x, 1), "y": round(y, 1), "r": r, "vr": round(vroof, 1), "shrine": shrine}
+        )  # shrine=True marks an ablution (temizu) well - wells_sized_to_population counts only the communal household draw-wells
         # reserve only a TIGHT courtyard around the small wellhead (not a whole house-plot): houses ring
         # it closely, as in a real tenement court, so a well costs roughly its own footprint, not several
         # dwellings. (`r` stays the recorded clearance radius the checks use; the reserved block is small.)
@@ -2286,13 +2288,13 @@ class Settlement:
         bm = 8
         self.block_polys.append([(x - vroof - bm, y - vroof - bm), (x + vroof + bm, y - vroof - bm), (x + vroof + bm, y + vroof + bm), (x - vroof - bm, y + vroof + bm)])
 
-    def well_at(self, x: float, y: float, r: float = 8) -> bool:
+    def well_at(self, x: float, y: float, r: float = 8, shrine: bool = False) -> bool:
         """Place ONE well at (x, y), but only if the spot is clear (a block interior off lanes,
         compounds, the bound, and other placed things - the same `_fits` test place_wells uses).
         Returns True if it placed. For hand-seeding wells into cramped, lane-laced quarters the grid
         scatter can't reach - pass a generous candidate list and the blocked ones simply no-op."""
         if self._fits(x, y, 2 * r + 14, 2 * r + 14):
-            self.well(x, y, r)
+            self.well(x, y, r, shrine=shrine)
             return True
         return False
 
@@ -2405,7 +2407,7 @@ class Settlement:
         for rr in (54, 66, 80, 96, 112):
             for a in range(0, 360, 30):
                 x, y = cx + rr * math.cos(math.radians(a)), cy + rr * math.sin(math.radians(a))
-                if self.well_at(x, y, r):
+                if self.well_at(x, y, r, shrine=True):
                     return (x, y)
         return None
 
