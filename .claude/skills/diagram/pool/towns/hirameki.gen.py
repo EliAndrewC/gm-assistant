@@ -25,6 +25,9 @@ a real sink:
 - e2 (E, below e1): fed by CASCADE - a drawn connector carries e1's surplus from its drain
   down into e2's head (tagoshi between fields, one shared component tracing to e1's brook);
   collector culverts east into the east stream.
+- every culvert mouth reaches the receiving stream's CENTERLINE (stream_at_y), so the join is
+  a real confluence (channels_join_streams_at_confluence); _clip_to_stream trims the drawn bed
+  back onto the bank edge so the mouth covers the bank stroke without crossing the current.
 - s1 (S of the gate, running off the bottom edge): the west stream itself BENDS southeast
   below w2 and is swallowed whole at s1's sluice (a stream diverted into an irrigation head,
   the sanctioned brook-into-channel ending); the comb runs off the bottom edge and its
@@ -127,6 +130,15 @@ def mirror_comb(net, mx):
     return net
 
 
+def stream_at_y(poly, y):
+    """The stream centerline's point at height y (the valley streams run essentially N -> S, so
+    the first segment crossing y gives the confluence point a culvert mouth should reach)."""
+    for (ax, ay), (bx, by) in zip(poly, poly[1:]):
+        if (ay - y) * (by - y) <= 0 and ay != by:
+            return (ax + (bx - ax) * (y - ay) / (by - ay), y)
+    return poly[-1]
+
+
 def toe_block(drain_pts, depth=250, slack=6):
     # a no-build BLOCK over the wet toe below a drain collector: unlike the post-hoc cull, a
     # block poly is honored by placement AND by the homestead-solve nudges, so a farm can never
@@ -191,7 +203,7 @@ netW1 = mirror_comb(
 netW1["brook"] = []
 ENV_W1, DR_W1 = comb("hirameki-w1", netW1, {"kind": "stream", "stream": [(430, -12), (426, 150), (420, 330)]})
 toe_block(DR_W1)
-topo_channel([DR_W1[-1], (226, DR_W1[-1][1] + 16)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
+topo_channel([DR_W1[-1], stream_at_y(WS, DR_W1[-1][1] + 16)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
 
 # w2: MIRRORED, fed by a brook in from the west edge, collector discharges off-map west
 netW2 = mirror_comb(
@@ -236,7 +248,7 @@ netE1 = build_comb(
 netE1["brook"] = []
 ENV_E1, DR_E1 = comb("hirameki-e1", netE1, {"kind": "stream", "stream": [(2140, -12), (2136, 160), (2130, 330)]})
 toe_block(DR_E1, depth=140)  # shallower: e2's head needs its worked margin below
-topo_channel([DR_E1[-1], (2408, DR_E1[-1][1] + 32)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
+topo_channel([DR_E1[-1], stream_at_y(ES, DR_E1[-1][1] + 40)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
 
 # e2: CASCADE-fed from e1 (the connector below carries the source topology), collector
 # culverts east into the stream
@@ -257,7 +269,7 @@ topo_channel(
     {"kind": "field", "name": "hirameki-e2"},
     draw_w=2.5,
 )
-topo_channel([DR_E2[-1], (2434, DR_E2[-1][1] + 22)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
+topo_channel([DR_E2[-1], stream_at_y(ES, DR_E2[-1][1] + 22)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
 
 # s1: the rerouted west stream ends AT this sluice (fully diverted); runs off the bottom edge
 netS1 = build_comb(
