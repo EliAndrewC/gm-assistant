@@ -15,7 +15,11 @@ channels_join_streams_at_confluence (both ends), drain_ends_reach_water, the
 dwellings_above_field_drain toe-band cap, cascade-reuse grounding, dry-hem awareness in
 yards/groves/village-grove clumps, grove-vs-town-wall footprints. Towns also now run the
 same nucleated homestead-bundle placement as villages, which retired the whole legacy-path
-defect class (yards off-south, groves over kuras, houses lapping paddies).
+defect class (yards off-south, groves over kuras, houses lapping paddies). Later the same
+day: `scrub_clear_of_urban_fabric` (town/city) + the engine's 30 ft urban-clearance halo -
+scrub polys must trace the outskirts, never the built-up fabric (GM catch on Hoshizora's
+"generous polys" scattering scrub through the streets and wellhead aprons; see
+settlements.md's urban-clearance-halo bullet).
 
 ## HIGH priority - adapt an existing city check or close an obvious doctrine hole
 
