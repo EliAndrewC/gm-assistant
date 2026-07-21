@@ -2077,7 +2077,7 @@ def test_trees_clear_of_fengshui_ponds_fires_on_an_overhanging_clump():
         "meta": {"scale": "village"},
         "crescent_ponds": [pond],
         "village_groves": [{"poly": [[200, 200], [400, 200], [400, 400], [200, 400]], "role": "windbreak", "r": 10, "clumps": [[310, 315]]}],
-        "labels": [[270, 350, 340, 362, 1, "half-moon pond"]],
+        "labels": [[270, 350, 340, 362, 1, "geomantic pond"]],
     }
     assert "trees_clear_of_fengshui_ponds" in f(M)
     M["village_groves"][0]["clumps"] = [[500, 500]]
@@ -2089,7 +2089,7 @@ def test_crescent_pond_labeled_fires_when_the_label_is_missing():
     pond = {"cx": 300, "cy": 300, "r": 40, "facing": 270, "poly": [[340, 300], [300, 340], [260, 300]]}
     M = {"meta": {"scale": "village"}, "crescent_ponds": [pond]}
     assert "crescent_pond_labeled" in f(M)
-    M["labels"] = [[270, 350, 340, 362, 1, "half-moon pond"]]
+    M["labels"] = [[270, 350, 340, 362, 1, "geomantic pond"]]
     assert "crescent_pond_labeled" not in f(M)
 
 
