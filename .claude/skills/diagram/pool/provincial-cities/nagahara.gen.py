@@ -316,9 +316,9 @@ grid([SAM_ST, MER_V1, MER_V2])
 # shrine among the smattering (unlabeled), NOT a great temple (city_temples_dedicated).
 TEMPLE_LANE = [(1073, 1216), (1480, 1216)]   # the E-W temple-neighborhood street; Rites + Ebisu front it, it meets the spine; W end lands IN the ring bed (ring centerline x~1029.5 at y1204) so it makes a clean T, not a sliver-short stub (city_streets_meet_through_lanes)
 grid([TEMPLE_LANE], width_ft=18)
-s.shrine_hall(1189, 1142, "Temple of Bishamon", w=s.px(130), h=s.px(84), kind="temple", label_below=True)   # a Crab patron (also the warrior fortune); nudged E so its W edge clears the ring road
+s.shrine_hall(1189, 1142, "Temple of Bishamon", w=s.px(130), h=s.px(84), kind="temple", label_below=True, torii=[(1170, 1196)])   # a Crab patron (also the warrior fortune); nudged E so its W edge clears the ring road. ONE torii on the approach walk from the monzen lane (torii_count_canonical 1/3/7), threaded W of the fire tower and below the label
 s.block_polys.append([(1120, 1158), (1258, 1158), (1258, 1189), (1120, 1189)])   # Bishamon's below-label band - the monzen pack seated a laborer under the text after the true-size reflow (2026-07-21)
-s.shrine_hall(1396, 1142, "Temple of Ebisu", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True)   # the other Crab patron
+s.shrine_hall(1396, 1142, "Temple of Ebisu", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True, torii=[(1396, 1196)])   # the other Crab patron. ONE torii on the approach walk from the monzen lane (torii_count_canonical 1/3/7)
 s.cemetery(1167, 1246, 44, 32, label="graveyard")   # Bishamon's danka parish ground, S of the hall (kept clear of the temple lane)
 s.cemetery(1396, 1075, 44, 32, label="graveyard", label_above=True)   # Ebisu's danka parish ground, N of the hall
 s.ministry(1292, 1248, "Ministry of Rites", w=s.px(140), h=s.px(95))
@@ -331,6 +331,9 @@ s.label(1292, 1299, "temple neighborhood", 9, italic=True, color="#6B2A18")
 # servants) packs the NW ground around the halls. A temple neighborhood was historically DENSE
 # (Zenkoji, Ise, Naritasan monzen-machi), and this fills the quarter the first Nagahara draft left
 # nearly empty - the exact lopsidedness feature 006 exists to catch.
+# reserve the 'Temple of Ebisu' label grounds too (2026-07-21): the Ebisu torii's block-out shifted
+# the quarter pack and a laborer house slid under the caption (labels_clear_of_other_buildings)
+s.block_polys.append([(1338, 1163), (1454, 1163), (1454, 1185), (1338, 1185)])
 # reserve the temple-neighborhood LABEL grounds so the monzen packs avoid them (labels draw last)
 for _lx0, _ly0, _lx1, _ly1 in [(1133, 1172, 1247, 1194),   # 'Temple of Bishamon'
                                (1138, 1263, 1197, 1281),   # 'graveyard'

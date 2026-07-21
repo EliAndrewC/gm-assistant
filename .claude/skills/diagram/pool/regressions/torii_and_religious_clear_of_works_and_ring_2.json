@@ -1,0 +1,40 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "ring_road": [
+  [
+   100,
+   900
+  ],
+  [
+   900,
+   900
+  ]
+ ],
+ "ring_road_width": 8,
+ "wall_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 38,
+   "h": 38
+  }
+ ],
+ "religious": [
+  {
+   "kind": "small_shrine",
+   "x": 521,
+   "y": 509,
+   "w": 11,
+   "h": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "religious_clear_of_ring_and_towers"
+  ],
+  "source": "test_checks.py::test_torii_and_religious_clear_of_works_and_ring"
+ }
+}

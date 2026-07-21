@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "ring_road": [
+  [
+   100,
+   900
+  ],
+  [
+   900,
+   900
+  ]
+ ],
+ "ring_road_width": 8,
+ "wall_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 38,
+   "h": 38
+  }
+ ],
+ "religious": [
+  {
+   "kind": "temple",
+   "x": 300,
+   "y": 300,
+   "w": 43,
+   "h": 28,
+   "label": "Temple of Ebisu"
+  }
+ ],
+ "torii": [
+  [
+   305,
+   310,
+   9
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "torii_clear_of_halls_towers_ring"
+  ],
+  "source": "test_checks.py::test_torii_and_religious_clear_of_works_and_ring"
+ }
+}

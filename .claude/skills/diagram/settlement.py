@@ -466,6 +466,32 @@ def skeleton_layout(kind: str, cx: float, cy: float, ex: float, ey: float) -> di
     raise ValueError(f"unknown lane_skeleton {kind!r}; expected one of {LANE_SKELETONS}")
 
 
+TORII_WEIGHTS = {
+    # TORII COUNT DISTRIBUTIONS (GM 2026-07-21): counts are NUMEROLOGICAL - 1, 3, or 7 only (7 is even
+    # more potent in Rokugan than in the real world). Weights per settlement tier; the richer the tier,
+    # the deeper the accumulated patronage (torii are DONATED votive gates - see settlements.md 'Torii'
+    # for the historical grounding and the deliberate Rokugan liberties). "capital" is recorded ahead of
+    # need - no capital-city maps exist yet.
+    "village": ((1, 0.60), (3, 0.30), (7, 0.10)),
+    "town": ((1, 0.30), (3, 0.60), (7, 0.10)),
+    "city": ((1, 0.30), (3, 0.40), (7, 0.30)),
+    "capital": ((1, 0.10), (3, 0.60), (7, 0.30)),
+}
+
+
+def roll_torii_count(scale: str, rng: random.Random) -> int:
+    """Roll a hall's torii count for the tier: always 1, 3, or 7 (torii_count_canonical gates it),
+    weighted by TORII_WEIGHTS. Unknown scales roll the village column (the conservative tier)."""
+    weights = TORII_WEIGHTS.get(scale, TORII_WEIGHTS["village"])
+    x = rng.random()
+    acc = 0.0
+    for count, wt in weights:
+        acc += wt
+        if x < acc:
+            return count
+    return weights[-1][0]
+
+
 class Settlement:
     def __init__(self, W: int = 1820, H: int = 1180, seed: int = 23) -> None:
         random.seed(seed)
@@ -2569,6 +2595,7 @@ class Settlement:
         kind: str = "shrine",
         graveyard: bool = True,
         label_below: bool = False,
+        torii_outlier: bool = False,
     ) -> None:
         """A standalone religious hall on flat ground. The kind follows settlement
         scale: villages have shrines, towns have monasteries, cities have temples
@@ -2601,7 +2628,9 @@ class Settlement:
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y + h / 2 - 9:.0f}" width="{w}" height="9" fill="#A03020"/>')
         self.add(f'<line x1="{x - w / 2:.0f}" y1="{y:.0f}" x2="{x + w / 2:.0f}" y2="{y:.0f}" stroke="{edge}" stroke-width="0.7"/>')
         self.M["shrines"].append({"x": x, "y": y, "w": w, "h": h, "label": label})
-        self.M["religious"].append({"kind": kind, "x": x, "y": y, "w": w, "h": h, "label": label, "sublabel": sublabel, "graveyard": graveyard})
+        self.M["religious"].append(
+            {"kind": kind, "x": x, "y": y, "w": w, "h": h, "label": label, "sublabel": sublabel, "graveyard": graveyard, "torii_outlier": torii_outlier}
+        )  # torii_outlier=True exempts this hall from torii_count_canonical (a deliberately non-numerological gate count, always with a recorded story)
         if primary:
             self.M["shrine"] = [x - w / 2, y - h / 2, w, h]
         # block a RECT + a building-half margin, at the map's grain (an ellipse undershot the hall
@@ -5782,7 +5811,17 @@ class Settlement:
         # --- village-only civic features (a hamlet has none) ---
         if scale == "village" and civic_shrine:
             gx, gy = sk["gateway"]
-            self.shrine(gx + dx * 46, gy + dy * 46)
+            sx_, sy_ = gx + dx * 46, gy + dy * 46
+            self.shrine(sx_, sy_)
+            # TORII, numerologically counted (GM 2026-07-21): roll 1/3/7 on the tier distribution
+            # (pinnable as knob 'torii_count') and march the gates back up the approach toward the
+            # gateway - the sando the worshiper walks in through. torii_count_canonical gates the set.
+            _tn = self.knob_pins.get("torii_count")
+            if _tn is None:
+                _tn = roll_torii_count(scale, random.Random(self.seed * 977 + 13))
+            for _ti in range(int(_tn)):
+                self._torii(sx_ - dx * (34 + 30 * _ti), sy_ - dy * (34 + 30 * _ti))
+            self.M["meta"]["torii_count"] = int(_tn)
         self.bridges()  # carry the lanes over any water they cross
         if self.M.get("field_ditches"):  # planks over the long irrigation ditches
             self.channel_footbridges(spacing=300)

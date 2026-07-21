@@ -1116,6 +1116,29 @@ def test_text_width_measures_the_render_font_and_falls_back(monkeypatch):
     assert s._text_width("Akagahara", 30) == 9 * 30 * 0.62
 
 
+def test_roll_torii_count_distributions():
+    # the GM's tier weights (2026-07-21): 1/3/7 only, village 60/30/10, town 30/60/10,
+    # city 30/40/30, capital 10/60/30; unknown scales roll the conservative village column
+    import collections
+    import random as _random
+
+    from settlement import roll_torii_count
+
+    for scale, want in [("village", {1: 0.6, 3: 0.3, 7: 0.1}), ("town", {1: 0.3, 3: 0.6, 7: 0.1}), ("city", {1: 0.3, 3: 0.4, 7: 0.3}), ("capital", {1: 0.1, 3: 0.6, 7: 0.3})]:
+        rng = _random.Random(11)
+        c = collections.Counter(roll_torii_count(scale, rng) for _ in range(4000))
+        assert set(c) <= {1, 3, 7}
+        for k, p in want.items():
+            assert abs(c[k] / 4000 - p) < 0.03, (scale, k)
+    assert roll_torii_count("hamlet", _random.Random(1)) in (1, 3, 7)  # fallback column
+
+    class _One:  # rng.random() lives in [0,1) so the exhaustion return is defensively dead - prove it anyway
+        def random(self):
+            return 1.0
+
+    assert roll_torii_count("village", _One()) == 7  # exhaustion falls to the last (rarest) bucket
+
+
 def test_union_area_empty_and_overlapping_spans():
     # empty (or all-degenerate) rects -> zero area; and a rect fully shadowed by a taller one in the
     # same x-slab must be counted ONCE (the y1 <= cy skip), not double-counted.
@@ -2571,6 +2594,26 @@ def test_village_grove_skips_watercourses():
     for g in s2.M["village_groves"]:
         for cx, _cy in g["clumps"]:
             assert cx < 289 or cx > 311
+
+
+def test_farm_wells_seats_in_a_dooryard_dodging_crop():
+    """The SUCCESS path of the dooryard grid scan (previously covered only incidentally by the city
+    regens, which stopped triggering it once Tango's belt got its own seeded wells 2026-07-21): the
+    well seats near the steading on clear ground, skipping a crop patch in the scan ring."""
+    s = Settlement(1000, 1000, seed=3)
+    s.meta(name="Fw2", scale="town", ftpx=1)
+    s.M["houses"].append({"x": 500, "y": 500, "w": 44, "h": 29, "rot": 0})
+    # the field ENVELOPE blankets every ring spot (well_at refuses inside field_polys), so the ring
+    # pass fails; the DRAWN crop covers only the top half, so the fallback - which suspends the
+    # envelope and tests the drawn plots - seats the well on the bottom-half rim slack
+    s.field_polys.append([(340, 340), (660, 340), (660, 660), (340, 660)])
+    s.dry_polys.append([(340, 340), (660, 340), (660, 500), (340, 500)])
+    s.M["fields"].append(
+        {"name": "f", "kind": "paddy", "outline": [[340, 340], [660, 340], [660, 660], [340, 660]], "plot_polys": [[[600, 600], [648, 600], [648, 648], [600, 648]]]}
+    )  # a drawn paddy plot the fallback also dodges
+    assert s.farm_wells() == 1
+    w = s.M["wells"][0]
+    assert w["y"] > 514  # on the rim slack below the drawn crop (+14 margin), never on the crop
 
 
 def test_farm_wells_drops_a_cluster_with_no_seatable_ground():

@@ -5389,21 +5389,27 @@ def test_torii_and_religious_clear_of_works_and_ring():
     assert "religious_clear_of_ring_and_towers" not in f({**base, "religious": [hall]})
 
 
-def test_torii_full_avenue_is_seven():
-    # GM numerology canon (2026-07-21): a torii approach is 1-2 (modest entrance) or EXACTLY 7 (full
-    # avenue); 3-6 and 8+ fire. Arches assign to their nearest religious feature.
-    hall = {"kind": "monastery", "x": 500, "y": 500, "w": 50, "h": 33, "label": "Monastery of Bishamon"}
+def test_torii_count_canonical_numerology():
+    # counts are exactly {1, 3, 7} at every proper hall (GM 2026-07-21 numerology ruling; supersedes
+    # the retired torii_full_avenue_is_seven and its {1, 2, 7} set): 2 and 4 fire (Hikari's old Benten
+    # pair, Hirameki's old unfinished four), 0 fires (the floor - every proper hall has a gate),
+    # 1/3/7 pass, an explicitly marked outlier is exempt, and a small_shrine neither needs gates nor
+    # absorbs a neighbor's (the misattribution that hid Tango's 2-arch Daikoku entrance).
+    def m(n, kind="monastery", **rel_extra):
+        return {
+            "meta": {"scale": "town"},
+            "religious": [{"kind": kind, "x": 500, "y": 500, "w": 40, "h": 28, **rel_extra}],
+            "torii": [[500, 560 + 30 * i, 9] for i in range(n)],
+        }
 
-    def m(n, kind="monastery"):
-        return {"meta": {"scale": "town"}, "religious": [{**hall, "kind": kind}], "torii": [[500, 560 + 40 * i, 9] for i in range(n)]}
-
-    assert "torii_full_avenue_is_seven" in f(m(4))  # the Hirameki defect
-    assert "torii_full_avenue_is_seven" in f(m(3, kind="shrine"))
-    assert "torii_full_avenue_is_seven" in f(m(8))
-    for ok in (1, 2, 7):
-        assert "torii_full_avenue_is_seven" not in f(m(ok))
-    # no religious features -> the check has nothing to assign to and stays silent
-    assert "torii_full_avenue_is_seven" not in f({"meta": {"scale": "town"}, "torii": [[500, 560, 9]] * 4})
+    for bad in (2, 4, 8, 0):
+        assert "torii_count_canonical" in f(m(bad)), bad
+    for ok in (1, 3, 7):
+        assert "torii_count_canonical" not in f(m(ok)), ok
+    assert "torii_count_canonical" not in f(m(4, torii_outlier=True))  # marked outlier - always with a story
+    M = m(3)
+    M["religious"].append({"kind": "small_shrine", "x": 510, "y": 585, "w": 12, "h": 9})  # nearer the arches than the hall
+    assert "torii_count_canonical" not in f(M)  # exempt AND excluded from attribution
 
 
 def test_polder_parcels_must_front_a_ditch():
