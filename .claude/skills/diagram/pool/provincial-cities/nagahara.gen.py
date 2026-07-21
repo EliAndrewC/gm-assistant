@@ -650,6 +650,7 @@ s.ossuary(2290, 1650)
 
 s.bridges()
 s.farmsteads()
+s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 def top_up(kind, region, need, count_kinds=None):
     kinds = set(count_kinds or (kind,))

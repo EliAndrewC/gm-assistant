@@ -647,6 +647,7 @@ s.bridges()   # spans the Imperial Road over the moat at the north and south gat
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 # ===== FIRE DEFENSE: watch-towers =====
 # ONE AMID EACH major commoner quarter, on the cleared seams the dense city leaves - placed

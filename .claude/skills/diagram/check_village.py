@@ -2089,6 +2089,33 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"the ladder must read MONOTONE with population - a village ground must never dwarf a town's",
         )
 
+    # FARMSTEADS ARE WITHIN REACH OF A WELL (town/city): the farm belt drinks daily too, and
+    # Rokugan's unusually well-run domains sink wells liberally (the same liberty behind the
+    # literal urban idobata count) - so no farmhouse stands more than 500 REAL FEET from a
+    # well (a ~2-minute bucket walk; a real farmstead would often have its own). Farmhouses
+    # within 150 real ft of the VIEW edge are exempt: their fields already run off-map, and
+    # their well is presumed just off the edge with the rest of their steading (GM rule,
+    # 2026-07-21). Villages are not gated here - their wells already sit among the houses
+    # (wells_among_dwellings). WHY: settlements.md wells entry.
+    if scale in ("town", "city") and M.get("houses"):
+        _fw_ftpx = float(meta.get("ftpx", 1) or 1)
+        _fw_reach = 500.0 / _fw_ftpx
+        _fw_edge = 150.0 / _fw_ftpx
+        _fw_view = meta.get("view") or [0, 0, meta.get("W", 10**9), meta.get("H", 10**9)]
+        _fw_far = []
+        for _fw_h in M["houses"]:
+            if min(_fw_h["x"] - _fw_view[0], _fw_h["y"] - _fw_view[1], _fw_view[0] + _fw_view[2] - _fw_h["x"], _fw_view[1] + _fw_view[3] - _fw_h["y"]) < _fw_edge:
+                continue
+            if not any((_fw_h["x"] - _fw_w["x"]) ** 2 + (_fw_h["y"] - _fw_w["y"]) ** 2 <= _fw_reach**2 for _fw_w in M.get("wells", [])):
+                _fw_far.append((round(_fw_h["x"]), round(_fw_h["y"])))
+        check(
+            "farm_wells_within_reach",
+            not _fw_far,
+            f"{len(_fw_far)} farmhouse(s) further than 500 real ft from any well {_fw_far[:5]} - the farm belt "
+            f"drinks daily too; call s.farm_wells() after s.farmsteads() (map-edge farmsteads are exempt - their "
+            f"well is presumed just off the edge)",
+        )
+
     # DRY-CROP PLOTS ARE TO SCALE: a hem parcel is a smallholder's strip (~1 mu / ~0.17 acre
     # mean in Buck's surveys - the same grain the paddy plots and the polder parcels obey), so
     # the map-wide MEAN dry-plot area must stay under 0.25 real acres. The tiling constants in
@@ -6429,6 +6456,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             SAMK = {"samurai", "samurai_large"}
             HOUSEK = {"laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house", "merchant_large"} | SAMK
             dwl = [(b["x"], b["y"], b.get("kind") in SAMK) for b in M.get("buildings", []) if b.get("kind") in HOUSEK]
+            dwl += [
+                (h["x"], h["y"], False) for h in M.get("houses", [])
+            ]  # FARMHOUSES are commoner households in this vote: a farm-belt well (s.farm_wells) sits among farmsteads far from any urban dwelling, and judging it by the nearest IN-WALL houses mislabeled it samurai (Nagahara's SW belt, 2026-07-21)
             sam_wells = []
             for w in wells:
                 near_dw = sorted(dwl, key=lambda d: math.hypot(d[0] - w["x"], d[1] - w["y"]))[:3]
