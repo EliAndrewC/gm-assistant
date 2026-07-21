@@ -730,11 +730,77 @@ def test_commons_skips_scrub_that_would_fall_on_the_paddy():
     assert len(s.M["commons"]) == 1
 
 
-def test_on_lane_flags_the_tread_and_clears_off_it():
-    s = _nuc_village()
-    s.lane([(300, 100), (300, 700)], width=6, clearance=11, worn=True)  # a vertical lane at x=300
-    assert s._on_lane(300, 400, 3) is True  # dead on the tread
-    assert s._on_lane(360, 400, 3) is False  # well off to the side
+def _scatter_base_points(frags):
+    """The BASE coordinates of every scatter element in the given SVG fragments: tuft/reed blade
+    roots (the x1,y1 each blade grows from - the exact point _sparse tested) and dot/patch centers
+    (cx,cy). Blade TIPS (x2,y2) may lean a few px past the base, so assertions run on bases."""
+    import re
+
+    pts = []
+    for fr in frags:
+        pts += [(float(a), float(b)) for a, b in re.findall(r'x1="(-?[\d.]+)" y1="(-?[\d.]+)"', fr)]
+        pts += [(float(a), float(b)) for a, b in re.findall(r'cx="(-?[\d.]+)" cy="(-?[\d.]+)"', fr)]
+    return pts
+
+
+# ---- the URBAN-CLEARANCE HALO (GM 2026-07-21, Hoshizora): ground-cover stays out of the swept /
+# trodden ground AROUND every structure and wellhead, not merely off their footprints - the old
+# footprint-only skip scattered scrub through the streets, dooryards, and district gaps of the
+# Hoshizora town core. Doctrine + constants: settlement._urban_keepouts. role="pasture" in these
+# tests keeps the scatter to tufts + dots (no multi-segment pines), so every element is base-tested.
+
+
+def test_commons_clears_the_urban_halo_around_buildings():
+    s = _crop_settlement()
+    s.building(300, 300, 40, 28, "merchant")  # axis-aligned
+    s.building(430, 300, 40, 28, "laborer", rot=30)  # rotated - covered by its half-diagonal square
+    s.building(1900, 1400, 40, 28, "shop")  # far outside the cover poly - the bbox prefilter drops it
+    before = len(s.out)
+    s.commons([(150, 150), (600, 150), (600, 500), (150, 500)], role="pasture")
+    pts = _scatter_base_points(s.out[before:])
+    assert pts  # the open ground beyond the halos still got its scatter
+    halo = 30 * s.bscale - 0.06  # the SVG rounds coords to 0.1, so a base just OUTSIDE the halo can print ON its edge
+    hd = math.hypot(20, 14) + halo
+    for px, py in pts:
+        assert not (280 - halo <= px <= 320 + halo and 286 - halo <= py <= 314 + halo)
+        assert not (430 - hd <= px <= 430 + hd and 300 - hd <= py <= 300 + hd)
+
+
+def test_commons_clears_the_wellhead_apron():
+    s = _crop_settlement()
+    s.well(300, 300)
+    before = len(s.out)
+    s.commons([(150, 150), (500, 150), (500, 450), (150, 450)], role="pasture")
+    lim = s.M["wells"][0]["vr"] + 20 * s.bscale - 0.06  # 0.1-rounding slack, as in the halo test
+    pts = _scatter_base_points(s.out[before:])
+    assert pts and all((px - 300) ** 2 + (py - 300) ** 2 > lim * lim for px, py in pts)
+
+
+def test_commons_keeps_scrub_off_the_road_bed():
+    # the old skip knew only LANES, so scrub drew on the Imperial Road bed (Hoshizora); the
+    # corridor set now covers lanes + town streets + the road
+    s = _crop_settlement()
+    s.road([(100, 300), (700, 300)])
+    before = len(s.out)
+    s.commons([(150, 150), (600, 150), (600, 450), (150, 450)], role="pasture")
+    lim = s.M["road_width"] / 2 + 3 * s.bscale - 0.06  # 0.1-rounding slack, as in the halo test
+    pts = _scatter_base_points(s.out[before:])
+    assert pts and all(abs(py - 300) > lim for px, py in pts if 100 <= px <= 700)
+
+
+def test_marsh_clears_the_urban_halo_and_wellheads():
+    s = _crop_settlement()
+    s.building(300, 300, 40, 28, "merchant")
+    s.well(460, 300)
+    before = len(s.out)
+    s.marsh([(150, 150), (600, 150), (600, 450), (150, 450)])
+    lim = s.M["wells"][0]["vr"] + 20 * s.bscale - 0.06  # 0.1-rounding slack, as in the halo test
+    halo = 30 * s.bscale - 0.06
+    pts = _scatter_base_points(s.out[before:])
+    assert pts
+    for px, py in pts:
+        assert not (280 - halo <= px <= 320 + halo and 286 - halo <= py <= 314 + halo)
+        assert (px - 460) ** 2 + (py - 300) ** 2 > lim * lim
 
 
 def test_commons_keeps_scrub_off_a_trodden_lane():
