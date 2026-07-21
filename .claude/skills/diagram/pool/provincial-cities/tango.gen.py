@@ -469,7 +469,7 @@ s.theater_stage(1448, 1503, w=s.px(190), h=s.px(132), rot=90, label="theater sta
 s.cemetery(1216, 1509, 46, 34, label="graveyard")
 s.cemetery(1389, 1677, 56, 40, label="graveyard")
 # a smattering of small wayside shrines dot the temple neighborhood (non-residential)
-for sx, sy in [(1300, 1559), (1265, 1610), (1521, 1653), (1501, 1622)]:   # all four INSIDE the temple neighborhood, clustered AWAY from the theater stage (its facing check measures the nearest religious feature - keep Benten nearest) - the S-gate pocket is the furniture's ground
+for sx, sy in [(1300, 1559), (1272, 1570), (1521, 1653), (1501, 1622)]:   # (1265,1610) -> (1272,1570) 2026-07-21: the old seat sat against the SW wall tower (religious_clear_of_ring_and_towers, GM catch)   # all four INSIDE the temple neighborhood, clustered AWAY from the theater stage (its facing check measures the nearest religious feature - keep Benten nearest) - the S-gate pocket is the furniture's ground
     s.small_shrine(sx, sy)
 s.label(1255, 1546, "temple neighborhood", 9, italic=True, color="#6B2A18")
 s.block_polys.append([(1204, 1534), (1306, 1534), (1306, 1554), (1204, 1554)])   # the district label's own ground (true-size halls freed this band, and the SW frontage packed a merchant under the text, 2026-07-21)
