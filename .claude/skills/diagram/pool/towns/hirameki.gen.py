@@ -515,8 +515,17 @@ s.shrine_well(1750, 1050)
 # recorded as a leafy copse instead - the windward check wants role='windbreak' only NW.) Copse
 # scatter then fills the open gaps between homes on strips shaped AROUND the fields and their
 # hems. All AFTER the wells, so the canopy keep-out sees every wellhead.
+# The real FOREST mass sits on the open upland CORNERS (the strips beside the farm rows are
+# mostly full of homesteads, so clumps there thin to a scatter): two windward lobes in the NW
+# corner flanking the west stream, and two matching lobes in the NE corner flanking e1's
+# feeder brook (recorded as dense copse - they sit NE of the all-farms centroid, and the
+# windward check reserves role='windbreak' for the NW side).
+s.village_grove([(30, 70), (165, 55), (185, 140), (160, 225), (60, 235), (28, 160)], role="windbreak")
+s.village_grove([(275, 60), (385, 70), (392, 200), (360, 280), (285, 265), (262, 150)], role="windbreak")
 s.village_grove([(240, 305), (395, 300), (398, 345), (242, 352)], role="windbreak")
 s.village_grove([(452, 300), (620, 290), (624, 338), (454, 345)], role="windbreak")
+s.village_grove([(1960, 70), (2095, 60), (2100, 215), (1975, 235)], role="copse")
+s.village_grove([(2175, 55), (2350, 65), (2360, 210), (2280, 255), (2180, 225)], role="copse")
 s.village_grove([(2000, 300), (2320, 290), (2326, 340), (2004, 348)], role="copse")
 s.village_grove([(260, 380), (700, 362), (700, 415), (260, 430)], role="copse", dense=False)
 s.village_grove([(640, 430), (700, 430), (700, 860), (640, 860)], role="copse", dense=False)
@@ -524,6 +533,13 @@ s.village_grove([(1940, 420), (1985, 420), (1985, 1300), (1940, 1300)], role="co
 s.village_grove([(1990, 835), (2190, 835), (2190, 995), (1990, 995)], role="copse", dense=False)
 s.village_grove([(380, 1740), (458, 1745), (455, 1975), (380, 1975)], role="copse", dense=False)
 s.village_grove([(890, 1745), (1040, 1740), (1045, 1975), (895, 1975)], role="copse", dense=False)
+# ...and the SOUTHEASTERN quadrant's own wood (GM: the s1/e2 farm rows had no windbreak trees):
+# a real windbreak lobe on the open SW corner (the rerouted stream bent away from it, leaving
+# clear ground beside s1's western rows), a copse lobe on the open ground between the gate
+# market and the burakumin quarter, and a small copse behind e2's southeastern farms
+s.village_grove([(35, 1725), (200, 1710), (225, 1800), (190, 1955), (60, 1965), (30, 1850)], role="windbreak")
+s.village_grove([(1800, 1700), (2050, 1690), (2060, 1800), (1900, 1830), (1795, 1790)], role="copse")
+s.village_grove([(2290, 1350), (2378, 1345), (2382, 1462), (2295, 1470)], role="copse")
 
 # ===== FIRE DEFENSE: a watch-tower =====
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
