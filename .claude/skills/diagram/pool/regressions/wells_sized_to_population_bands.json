@@ -1,0 +1,20 @@
+{
+ "meta": {
+  "scale": "village",
+  "households": 70
+ },
+ "wells": [
+  {
+   "x": 100,
+   "y": 100,
+   "r": 8,
+   "shrine": false
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "wells_sized_to_population"
+  ],
+  "source": "test_checks.py::test_wells_sized_to_population_bands"
+ }
+}
