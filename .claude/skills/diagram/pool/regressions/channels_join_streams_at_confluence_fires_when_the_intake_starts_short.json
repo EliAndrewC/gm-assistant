@@ -1,0 +1,45 @@
+{
+ "meta": {},
+ "streams": [
+  {
+   "poly": [
+    [
+     400,
+     100
+    ],
+    [
+     400,
+     900
+    ]
+   ],
+   "w": 9
+  }
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     380,
+     500
+    ],
+    [
+     440,
+     560
+    ]
+   ],
+   "frm": {
+    "kind": "stream"
+   },
+   "to": {
+    "kind": "field",
+    "name": "x"
+   }
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channels_join_streams_at_confluence"
+  ],
+  "source": "test_checks.py::test_channels_join_streams_at_confluence_fires_when_the_intake_starts_short"
+ }
+}

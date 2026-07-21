@@ -5673,3 +5673,15 @@ def test_paddy_fan_gapless_credits_ditches_and_fires_on_holes():
     assert "paddy_fan_gapless" in f(base)
     ditched = {**base, "field_ditches": [{"field": "t", "poly": [[200, -10], [200, 410]], "w": 40, "role": "branch"}]}
     assert "paddy_fan_gapless" not in f(ditched)
+
+
+def test_channels_join_streams_at_confluence_fires_when_the_intake_starts_short():
+    # the SYMMETRIC (frm side) case: an intake declared frm={stream} starting 20px from the
+    # centerline never actually taps the water - no confluence at the offtake either
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [{"poly": [[380, 500], [440, 560]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "x"}}]}
+    assert "channels_join_streams_at_confluence" in f(M)
+
+
+def test_channels_join_streams_at_confluence_passes_when_the_intake_taps_the_bed():
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "channels": [{"poly": [[400, 500], [460, 560]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "x"}}]}
+    assert "channels_join_streams_at_confluence" not in f(M)

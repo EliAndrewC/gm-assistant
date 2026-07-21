@@ -1364,6 +1364,22 @@ class Settlement:
             din = (fork[0] + dx * 70, fork[1] + dy * 70)
             start = pond_rec if pond_rec else (sluice[0], sluice[1])
             frm = {"kind": "pond"} if pond_rec else {"kind": "stream"}
+            if not pond_rec:
+                # snap the intake's START onto the nearest stream centerline (within the 30px anchor
+                # band): an offtake JOINS its stream at a confluence like any junction - the symmetric
+                # case of the drain-culvert rule (channels_join_streams_at_confluence) - rather than
+                # beginning in the grass beside it. A comb fed by its OWN feeder brook ending AT the
+                # sluice is already joined (distance ~0) and is left alone.
+                nearest: Any = None
+                for st_ in self.M.get("streams", []):
+                    sp_ = st_["poly"]
+                    for si_ in range(len(sp_) - 1):
+                        fq = seg_closest(start[0], start[1], sp_[si_], sp_[si_ + 1])
+                        dq = math.hypot(start[0] - fq[0], start[1] - fq[1])
+                        if nearest is None or dq < nearest[0]:
+                            nearest = (dq, fq)
+                if nearest and 0.5 < nearest[0] <= 30:
+                    start = nearest[1]
             vx, vy = din[0] - start[0], din[1] - start[1]
             vl = math.hypot(vx, vy) or 1.0
             midx, midy = (start[0] + din[0]) / 2 - vy / vl * 20, (start[1] + din[1]) / 2 + vx / vl * 20
