@@ -2438,3 +2438,16 @@ def test_clip_to_stream_trims_the_confluence_mouth():
     assert same == [(300, 500), (370, 500)]
     inside = s._clip_to_stream([(399, 400), (400, 500)])  # wholly inside the bed -> left alone
     assert inside == [(399, 400), (400, 500)]
+
+
+def test_late_water_block_carries_sheens_and_splices_after_plots():
+    """field_channel(late=True) defers into the SECOND water block (spliced at its own first-call
+    position so a city's comb net draws OVER the field's plots); a late course with a sheen records
+    its sheenz above every late bed, mirroring the main block's contract."""
+    s = Settlement(300, 300, seed=1)
+    s.meta(name="T", scale="village", ftpx=2)
+    rec: dict = {}
+    s._water('<path d="M0,0 L10,10" stroke="#6C9CBE"/>', rec, sheen='<path d="M0,0 L10,10" stroke="#9CC"/>', late=True)
+    with tempfile.TemporaryDirectory() as td:
+        s.finish(os.path.join(td, "t"), render=False)
+    assert rec["sheenz"] > rec["bedz"]
