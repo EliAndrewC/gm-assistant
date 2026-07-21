@@ -493,7 +493,7 @@ def build_comb(
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
     # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md.
-    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, furrow_spread=furrow_spread, grain_drift=grain_drift)
+    dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift)
     if grain != 1.0:
         # the INTER-ARM FORK TRIANGLE (coarse grains only): the ground between the two supply
         # canals just below the fork is commanded by neither (it sits upslope of canal B), and
@@ -505,7 +505,7 @@ def build_comb(
         _bc_supply = [p for p in bc.pts if F.to_uf(*p)[1] <= bc.ditch_f]
         if len(_bc_supply) >= 2:
             dry_plots += _dry_fields(
-                R, F, _bc_supply, W, H, dry_keepout, band=(dry_band[0] * 0.6, dry_band[1] * 0.6), furrow_spread=furrow_spread, grain_drift=grain_drift
+                R, F, _bc_supply, W, H, dry_keepout, band=(dry_band[0] * 0.6, dry_band[1] * 0.6), g=grain, furrow_spread=furrow_spread, grain_drift=grain_drift
             )  # thinner than the a-side hem: it only needs to cover the fork triangle, and a full-depth band crowds the farmhouse ring off the fan's visible edge
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac)
@@ -960,6 +960,7 @@ def _dry_fields(
     keepout: Sequence[tuple[float, float, float]],
     plot: float = 46,
     band: tuple[float, float] = (70, 132),
+    g: float = 1.0,
     furrow_spread: float = 1.1,
     grain_drift: float = 0.0,
 ) -> list[dict[str, Any]]:
@@ -1010,7 +1011,7 @@ def _dry_fields(
     placed: list[tuple[float, float, float]] = []
     ADJ2 = 56**2
     prev_crop = R.choice(list(DRY_CROPS))
-    berm = 8  # a thin bund holds the dry plots just ABOVE (upslope of) the canal
+    berm = 8 * g  # a thin bund holds the dry plots just ABOVE (upslope of) the canal (grain-scaled: 8px was 16 real ft at the village grain; unscaled it left a 24 ft bare stripe on the city maps)
     for i in range(len(bounds) - 1):
         pL, pR = at(bounds[i]), at(bounds[i + 1])
         tx, ty = pR[0] - pL[0], pR[1] - pL[1]
