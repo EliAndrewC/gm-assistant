@@ -1,0 +1,51 @@
+{
+ "meta": {},
+ "pond": [
+  320,
+  320,
+  80,
+  60
+ ],
+ "fields": [
+  {
+   "name": "p1",
+   "kind": "paddy",
+   "outline": [
+    [
+     300,
+     300
+    ],
+    [
+     700,
+     300
+    ],
+    [
+     700,
+     700
+    ],
+    [
+     300,
+     700
+    ]
+   ],
+   "bbox": [
+    300,
+    300,
+    700,
+    700
+   ],
+   "vis_bbox": [
+    300,
+    300,
+    700,
+    700
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "pond_clear_of_paddies"
+  ],
+  "source": "test_checks.py::test_pond_clear_of_paddies_fires_when_the_pond_laps_the_crop"
+ }
+}
