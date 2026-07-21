@@ -1,0 +1,80 @@
+{
+ "meta": {
+  "scale": "village",
+  "ftpx": 2
+ },
+ "fields": [
+  {
+   "name": "t",
+   "kind": "paddy",
+   "outline": [
+    [
+     0,
+     0
+    ],
+    [
+     400,
+     0
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     0,
+     400
+    ]
+   ],
+   "bbox": [
+    0,
+    0,
+    400,
+    400
+   ],
+   "plot_polys": [
+    [
+     [
+      0,
+      0
+     ],
+     [
+      180,
+      0
+     ],
+     [
+      180,
+      400
+     ],
+     [
+      0,
+      400
+     ]
+    ],
+    [
+     [
+      220,
+      0
+     ],
+     [
+      400,
+      0
+     ],
+     [
+      400,
+      400
+     ],
+     [
+      220,
+      400
+     ]
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "paddy_fan_gapless"
+  ],
+  "source": "test_checks.py::test_paddy_fan_gapless_credits_ditches_and_fires_on_holes"
+ }
+}

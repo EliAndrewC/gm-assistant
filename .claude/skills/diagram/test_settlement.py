@@ -2386,7 +2386,9 @@ def test_yard_fits_rejects_dry_crop_plots():
     s.meta(name="Yd", scale="town", ftpx=1)
     assert s._yard_fits(500, 500, 40, 26, 460, 460)  # open ground: fits
     s.dry_polys.append([(490, 480), (620, 480), (620, 560), (490, 560)])
-    assert not s._yard_fits(500, 500, 40, 26, 460, 460)  # same spot now overlaps the hem plot
+    # center 14px OUTSIDE the hem (so the center-based _in_blocked test passes it) but the 40px
+    # footprint still laps the plot - only the rect test can catch this one
+    assert not s._yard_fits(476, 500, 40, 26, 440, 500)
 
 
 def test_grove_fits_rejects_wall_overlap():
@@ -2451,3 +2453,45 @@ def test_late_water_block_carries_sheens_and_splices_after_plots():
     with tempfile.TemporaryDirectory() as td:
         s.finish(os.path.join(td, "t"), render=False)
     assert rec["sheenz"] > rec["bedz"]
+
+def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
+    # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
+    # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
+    # exactly AT the sluice (distance ~0) is already joined and stays untouched
+    from waterfields import build_comb
+
+    s = Settlement(W=1400, H=1400, seed=5)
+    s.meta(name="Sn", scale="town", ftpx=1, down_deg=90)
+    s.stream([(680, 50), (680, 1350)], width=9)  # runs 20px west of the sluice
+    net = build_comb(1400, 1400, (700, 200), 5, down_deg=90, field_fall=400)
+    net["brook"] = []
+    s.draw_comb_field(net, "f1", {"kind": "stream"})
+    hx, hy = s.M["channels"][-1]["poly"][0]
+    assert abs(hx - 680) < 0.5 and abs(hy - 200) < 0.5  # snapped onto the centerline
+    s2 = Settlement(W=1400, H=1400, seed=6)
+    s2.meta(name="Sn2", scale="town", ftpx=1, down_deg=90)
+    net2 = build_comb(1400, 1400, (700, 200), 6, down_deg=90, field_fall=400)
+    net2["brook"] = []
+    s2.draw_comb_field(net2, "f2", {"kind": "stream", "stream": [(700, 40), (702, 120), (700, 200)]})
+    assert s2.M["channels"][-1]["poly"][0] == [700, 200]  # feeder ends at the sluice: already joined
+
+
+def test_fit_helpers_reject_out_of_bounds_spots():
+    # the shared 55/88px canvas-margin early-outs of the appurtenance fit helpers (previously
+    # exercised by the towns' legacy farmstead pass; the towns now run the bundle path)
+    s = Settlement(W=1000, H=1000, seed=1)
+    s.meta(name="Eb", scale="town", ftpx=1)
+    assert not s._yard_fits(20, 500, 40, 26, 60, 500)
+    assert not s._garden_fits(20, 500, 30, 22, 60, 500, (60, 540, 40, 26))
+    assert not s._grove_fits(20, 500, 60, 30, [(60, 500)])
+
+
+def test_village_grove_copse_skips_dry_crop_plots():
+    # a copse clump never lands in a hem strip (the barley) - the dry_polys skip in village_grove
+    s = Settlement(W=800, H=800, seed=2)
+    s.meta(name="Vg", scale="village", ftpx=2)
+    s.dry_polys.append([(300, 300), (500, 300), (500, 500), (300, 500)])
+    s.village_grove([(280, 280), (520, 280), (520, 520), (280, 520)], role="copse", dense=False)
+    for g in s.M["village_groves"]:
+        for cx, cy in g["clumps"]:
+            assert not (312 <= cx <= 488 and 312 <= cy <= 488)  # nothing deep inside the plot

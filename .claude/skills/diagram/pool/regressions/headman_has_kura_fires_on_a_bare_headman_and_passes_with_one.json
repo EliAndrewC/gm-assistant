@@ -1,0 +1,23 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 46,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain",
+   "role": "headman",
+   "shed": false
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "headman_has_kura"
+  ],
+  "source": "test_checks.py::test_headman_has_kura_fires_on_a_bare_headman_and_passes_with_one"
+ }
+}
