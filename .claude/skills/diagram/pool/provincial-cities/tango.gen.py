@@ -458,9 +458,9 @@ SW_ST = [[(1253, 1455), (1253, 1616)], [(1480, 1371), (1480, 1661)]]   # x1256 e
 grid(SW_ST)
 # the temple neighborhood (lower SW, INSIDE the wall): Benten + Daikoku with the Ministry of
 # Rites that oversees them - placed BEFORE the merchant rows so they flow around it
-s.shrine_hall(1343, 1501, "Temple of Benten", w=100, h=64, kind="temple", primary=True, label_below=True)
-s.block_polys.append([(1281, 1534), (1405, 1534), (1405, 1560), (1281, 1560)])   # reserve the 'Temple of Benten' label ground so the merchant pack does not land under it (post-scale, feature 006)
-s.shrine_hall(1424, 1616, "Temple of Daikoku", w=100, h=64, kind="temple", torii=[(1481, 1616), (1481, 1570)])
+s.shrine_hall(1343, 1501, "Temple of Benten", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True)
+s.block_polys.append([(1272, 1510), (1410, 1510), (1410, 1550), (1272, 1550)])   # reserve the 'Temple of Benten' label ground so the merchant pack does not land under it (band re-seated up when the hall went true-size, 2026-07-21: the label tracks the smaller hall's bottom edge)
+s.shrine_hall(1424, 1616, "Temple of Daikoku", w=s.px(130), h=s.px(84), kind="temple", torii=[(1481, 1616), (1481, 1570)])
 s.ministry(1316, 1602, "Ministry of Rites", w=s.px(140), h=s.px(95))
 # the city THEATER STAGE - in the Temple of Benten's precinct, EAST of it, its viewing ground
 # opening west toward the hall (the troupe/festival venue belonging to the temple)
@@ -472,6 +472,7 @@ s.cemetery(1389, 1677, 56, 40, label="graveyard")
 for sx, sy in [(1300, 1559), (1265, 1610), (1521, 1653), (1501, 1622)]:   # all four INSIDE the temple neighborhood, clustered AWAY from the theater stage (its facing check measures the nearest religious feature - keep Benten nearest) - the S-gate pocket is the furniture's ground
     s.small_shrine(sx, sy)
 s.label(1255, 1546, "temple neighborhood", 9, italic=True, color="#6B2A18")
+s.block_polys.append([(1204, 1534), (1306, 1534), (1306, 1554), (1204, 1554)])   # the district label's own ground (true-size halls freed this band, and the SW frontage packed a merchant under the text, 2026-07-21)
 s.frontage([(1159, 1455), (1602, 1455)], (["merchant"] * 3 + ["shop"]) * 20, width=s.lw(20), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), skip=AVENUE)   # skip=AVENUE: the sub-segment must match the avenue's REGISTERED corridor or its own street rejects it
 front(SW_ST, (["merchant"] * 3 + ["shop"]) * 12, width_ft=18, spacing=19, rows=2)
 # a noticeable minority of merchant houses keep a fireproof kura - placed NOW, while the
@@ -510,8 +511,14 @@ s.label(1399, 1462, "merchant district", 10, italic=True, color="#5A4326")
 # court-spacing from a well gets one dropped in the nearest clear court (place_wells near=
 # mode + its coverage pass; grid placement consumes no RNG, so this perturbs nothing).
 s.place_wells((1622, 993, 2069, 1358), spacing=52, near=46)   # NE laborer warren + the gap band
-s.place_wells((1181, 1338, 1602, 1704), spacing=52, near=46)   # merchant district + temple neighborhood
+s.place_wells((1181, 1338, 1602, 1704), spacing=47, near=46)   # merchant district + temple neighborhood (spacing 52->47, 2026-07-21: the true-scale reflow packed the avenue rows denser and the (1412,1376) well sat nearest for 33-34 households with every interior seed spot reserved - a finer grid is the honest fix, ~1 well per 10-20 households)
 s.place_wells((1191, 1226, 1602, 1343), spacing=52, near=46)   # burakumin strips
+for _wc in [(1255, 1460), (1250, 1465), (1255, 1475), (1255, 1455), (1250, 1480)]:   # a west idobata for the temple-hood merchants: the (1412,1376) well's 34-household catchment reaches to x1267, and every interior spot is reserved (hall block / label bands) - this splits off its west wing
+    if s.well_at(*_wc):
+        break
+for _wc in [(1620, 1452), (1614, 1452), (1626, 1446), (1608, 1458), (1550, 1520), (1560, 1540)]:   # a seeded idobata for the merchant district's SE pocket by the ward fence: the true-scale reflow (2026-07-21, merged engines) left its densest well nearest for 30+ households (city_well_density_sufficient ceiling 26); candidate LIST per the well_at doctrine - blocked spots no-op
+    if s.well_at(*_wc):
+        break
 
 # ====================================================================== SE: government + samurai
 # the governor's YAMEN - the grandest compound in the city (its dozens of interior buildings
@@ -523,6 +530,7 @@ s.label(1793, 1552, "Governor's Mansion", 14, weight="bold")   # label CENTERED 
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War",
         "Ministry of Works", "Ministry of Justice"]
 MIN_POS = [(1655, 1394), (1750, 1419), (1846, 1394), (1941, 1419), (1957, 1484)]   # staggered rows between fence and avenue; the upper row labels ABOVE (over the bare fence line), the lower row + Justice label BELOW (into their own block margins)
+s.block_polys.append([(1906, 1498), (2008, 1498), (2008, 1536), (1906, 1536)])   # the 'Ministry of Justice' below-label band + its 14px office standoff - the avenue frontage seated samurai houses under the label and against the ministry after the true-size reflow (2026-07-21)
 for (mx, my), name in zip(MIN_POS, MINS):
     s.ministry(mx, my, name, w=s.px(130), h=s.px(90))   # label side auto-picked (empty ground wins)
 # Bishamon (the warrior fortune) in the samurai quarter SW corner, off the grid (no street

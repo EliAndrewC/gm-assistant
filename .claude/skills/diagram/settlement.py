@@ -832,11 +832,12 @@ class Settlement:
         `plot` is the target plot (sub-paddy) size in px: the field is quilted into jittered
         bunded plots at roughly this grain. Smaller -> a finer patchwork of more, smaller paddies.
         Default 46 is the fine grain that reads as intensively-worked premodern paddy (a 1-cho
-        holding was subdivided into dozens of small irregular bunded plots); it is the legibility
-        floor at the 2600px render - the true grain is finer still, but the bund network and the
-        planting-row hatching must stay legible, so plots are drawn a touch oversized (the same
-        legibility license the houses take). The bund stroke thins with the grain to suit. See the
-        "Paddy plot grain" entry in the settlements.md historical grounding."""
+        holding was subdivided into dozens of small irregular bunded plots). VERIFIED HONEST at the
+        declared scales (audit 2026-07-21): the village grain (plot=34 at 2 ft/px -> ~435 m2) sits
+        inside the real 130-600 m2 basin band, and the default (46 -> ~785 m2 at 2 ft/px) is within
+        the real parcel range (mean ~1 mu = ~600 m2, merged holdings larger) - no legibility
+        inflation is in play, and the houses are true-scale too. The bund stroke thins with the
+        grain to suit. See the "Paddy plot grain" entry in the settlements.md historical grounding."""
         bund = 0.03 * plot + 0.35  # bund (aze) stroke thins with the plot grain: ~2.6 at the old 76, ~1.7 at 46
         if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
             bbox = tuple(shape)
@@ -1775,12 +1776,13 @@ class Settlement:
         self.note_focal("market")
         self._focal_block(x, y, pw, ph)
 
-    def secondary_shrine(self, x: float, y: float, w: float = 60, h: float = 42) -> None:
+    def secondary_shrine(self, x: float, y: float, w_ft: float = 42, h_ft: float = 30) -> None:
         """A SECONDARY tutelary/roadside shrine, a focal feature: a small second shrine besides the village's
         main one (a Benten by the pond, an Inari at a field corner). Records as a 'shrine' kind (so
         religious_matches_scale still sees only shrines) + the focal feature. Grounding: a village often kept a
-        minor shrine in addition to its tutelary one; its PRESENCE + placement is a distinctiveness axis."""
-        self.shrine(x, y, w, h, kind="shrine")
+        minor shrine in addition to its tutelary one; its PRESENCE + placement is a distinctiveness axis.
+        TRUE SCALE: dimensions are real feet (a minor wayside hall ~42x30 ft, smaller than the tutelary)."""
+        self.shrine(x, y, w_ft, h_ft, kind="shrine")
         self.note_focal("secondary_shrine")
 
     def stream(self, pts: Any, frm: Any = None, to: Any = None, width: float = 9) -> None:
@@ -2214,7 +2216,13 @@ class Settlement:
         random.setstate(st)
         return (cx, cy - 40)  # summit point for the shrine
 
-    def shrine(self, x: float, y: float, w: float = 104, h: float = 68, kind: str = "shrine") -> None:
+    def shrine(self, x: float, y: float, w_ft: float = 62, h_ft: float = 42, kind: str = "shrine") -> None:
+        """The legacy simple shrine glyph (the civic_shrine roll path + secondary_shrine). TRUE SCALE
+        (GM 2026-07-21): dimensions are REAL FEET, converted through px() - an ordinary village
+        tutelary hall ~62x42 ft (~240 m2, inside the 600 m2 village ceiling). The old signature took
+        fixed PIXELS (104x68 default), a latent footgun that would have drawn a 208x136 ft
+        monastery-sized hall on any village that used the default civic_shrine path."""
+        w, h = self.px(w_ft), self.px(h_ft)
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="{h}" rx="3" fill="#C9876C" stroke="#6B2A18" stroke-width="2"/>')
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="8" fill="#A03020"/>')
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y + h / 2 - 8:.0f}" width="{w}" height="8" fill="#A03020"/>')
@@ -2232,12 +2240,13 @@ class Settlement:
         x0, y0 = x - w / 2, y - h / 2
         self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="{h}" rx="2" fill="#C9876C" stroke="#6B2A18" stroke-width="1.4"/>')
         self.add(f'<rect x="{x0:.0f}" y="{y0:.0f}" width="{w}" height="5" fill="#A03020"/>')  # vermilion roof ridge
-        ty = y + h / 2 + 8  # a little torii just in front (south)
+        ty = y + h / 2 + max(self.px(8), 3)  # a little torii just in front (south)
+        m2 = self.px(9.0) / 2  # TRUE SCALE: a wayside-shrine torii spans ~9 ft (vs the shed's ~32 ft)
         self.add(
-            f'<g transform="translate({x:.0f},{ty:.0f})"><line x1="-7" y1="0" x2="7" y2="0" stroke="#A03020" stroke-width="2"/>'
-            f'<line x1="-8" y1="-4" x2="8" y2="-4" stroke="#A03020" stroke-width="1.6"/>'
-            f'<line x1="-5" y1="-4" x2="-5" y2="6" stroke="#A03020" stroke-width="1.6"/>'
-            f'<line x1="5" y1="-4" x2="5" y2="6" stroke="#A03020" stroke-width="1.6"/></g>'
+            f'<g transform="translate({x:.0f},{ty:.0f})"><line x1="{-m2 * 0.87:.1f}" y1="0" x2="{m2 * 0.87:.1f}" y2="0" stroke="#A03020" stroke-width="{max(self.px(1.2), 1.4):.2f}"/>'
+            f'<line x1="{-m2:.1f}" y1="{-m2 * 0.5:.1f}" x2="{m2:.1f}" y2="{-m2 * 0.5:.1f}" stroke="#A03020" stroke-width="{max(self.px(1.0), 1.2):.2f}"/>'
+            f'<line x1="{-m2 * 0.62:.1f}" y1="{-m2 * 0.5:.1f}" x2="{-m2 * 0.62:.1f}" y2="{m2 * 0.75:.1f}" stroke="#A03020" stroke-width="{max(self.px(1.0), 1.2):.2f}"/>'
+            f'<line x1="{m2 * 0.62:.1f}" y1="{-m2 * 0.5:.1f}" x2="{m2 * 0.62:.1f}" y2="{m2 * 0.75:.1f}" stroke="#A03020" stroke-width="{max(self.px(1.0), 1.2):.2f}"/></g>'
         )
         self.M["religious"].append({"kind": "small_shrine", "x": x, "y": y, "w": w, "h": h, "rot": 0})
         self.placed.append((x, y, w, h))
@@ -2251,10 +2260,15 @@ class Settlement:
         INTERIOR off the lanes. Records M['wells'] and blocks placement so the quarter's houses flow
         around it - place BEFORE the quarter's pack. The underground end of a city's water system
         (aqueducts, cisterns, rain barrels feeding the shaft) stays off the map; only the head shows."""
-        # the DRAWN wellhead SCALES WITH THE MAP GRAIN (bscale), exactly as the buildings do, so it keeps
-        # a consistent ~0.55x a dwelling at every scale - fixed pixels would make it look right in the
+        # THE WELL IS A LOCATION MARKER, NOT A TO-SCALE FOOTPRINT (GM ruling 2026-07-21). A real stone
+        # well curb is ~3-4 ft - sub-glyph at every map scale - so the wellhead denotes the well's
+        # TO-SCALE LOCATION relative to its surroundings with a legible marker whose own pixels are NOT
+        # claimed to be to scale. That places wells under the STROKE CONVENTION (same doctrine as the
+        # linework floor, see SKILL.md "to scale"), not in violation of the everything-is-to-scale rule.
+        # The marker SCALES WITH THE MAP GRAIN (bscale), exactly as the buildings do, so it keeps a
+        # consistent ~0.55x a dwelling at every scale - fixed pixels would make it look right in the
         # dense city but far too small beside a village/town's larger houses. It stays SMALLER than a
-        # house (a wellhead is small) regardless of the larger COURTYARD footprint reserved for placement.
+        # house regardless of the larger COURTYARD footprint reserved for placement.
         if self._toscale():  # dimensions in FEET, drawn at this map's ftpx (a ~24.8 ft well-house)
             vroof, vcurb = self.px(12.376), self.px(9.36)
         else:  # legacy tiers: the wellhead scales with the urban glyph grain (bscale)
@@ -2395,6 +2409,29 @@ class Settlement:
                     return (x, y)
         return None
 
+    def _torii(self, tx: float, ty: float, span_ft: float = 16.0) -> int:
+        """Draw ONE torii arch TRUE SCALE (GM 2026-07-21) and record it in M['torii']; returns the
+        z-handle. `span_ft` is the TOP-RAIL span in real feet: a standard shrine/approach torii runs
+        ~10-16 ft between its rail ends (grand landmark torii reach 30-50 ft, but none of our maps
+        draws one). The old glyph was FIXED-PIXEL (38 px rail) - honest at 1 ft/px but 76 ft at
+        village scale and 114 ft at city scale. Proportions keep the authored glyph's 38:24 rail:height
+        ratio; STROKES keep a legibility floor (stroke convention - see SKILL.md "to scale"), never a
+        footprint license."""
+        s2 = self.px(span_ft) / 2  # half the top-rail span; the glyph was authored at s2=19px
+        c2, p2 = s2 * 16 / 19, s2 * 12 / 19  # crossbar half-span, post offset
+        hz, hd = s2 * 7 / 19, s2 * 17 / 19  # rail rise above / post drop below the crossbar
+        swr = max(self.px(1.4), 1.9)  # rail stroke (~1.4 ft beam, floored)
+        swp = max(self.px(1.2), 1.6)  # post stroke (~1.2 ft post, floored)
+        tz = self.add_top(
+            f'<g transform="translate({tx:.0f},{ty:.0f})">'  # over any street it crosses
+            f'<line x1="{-c2:.1f}" y1="0" x2="{c2:.1f}" y2="0" stroke="#A03020" stroke-width="{swr:.2f}"/>'
+            f'<line x1="{-s2:.1f}" y1="{-hz:.1f}" x2="{s2:.1f}" y2="{-hz:.1f}" stroke="#A03020" stroke-width="{swr * 0.85:.2f}"/>'
+            f'<line x1="{-p2:.1f}" y1="{-hz:.1f}" x2="{-p2:.1f}" y2="{hd:.1f}" stroke="#A03020" stroke-width="{swp:.2f}"/>'
+            f'<line x1="{p2:.1f}" y1="{-hz:.1f}" x2="{p2:.1f}" y2="{hd:.1f}" stroke="#A03020" stroke-width="{swp:.2f}"/></g>'
+        )
+        self.M["torii"].append([round(tx, 1), round(ty, 1), tz])
+        return tz
+
     def torii_path(self, ascent: Any) -> None:
         """Place one torii at each interior vertex of the ascent polyline; draw the
         winding path. Count is village-specific - pass as many points as torii+ends."""
@@ -2402,14 +2439,7 @@ class Settlement:
         self.add(f'<path d="{dstr}" fill="none" stroke="#B89A6A" stroke-width="8" opacity="0.7"/>')
         self.add(f'<path d="{dstr}" fill="none" stroke="#6B4F2A" stroke-width="1" stroke-dasharray="3,5"/>')
         for tx, ty in ascent[1:-1]:
-            tz = self.add_top(
-                f'<g transform="translate({tx:.0f},{ty:.0f})">'  # over any street it crosses
-                f'<line x1="-16" y1="0" x2="16" y2="0" stroke="#A03020" stroke-width="3.6"/>'
-                f'<line x1="-19" y1="-7" x2="19" y2="-7" stroke="#A03020" stroke-width="3"/>'
-                f'<line x1="-12" y1="-7" x2="-12" y2="17" stroke="#A03020" stroke-width="3"/>'
-                f'<line x1="12" y1="-7" x2="12" y2="17" stroke="#A03020" stroke-width="3"/></g>'
-            )
-            self.M["torii"].append([round(tx, 1), round(ty, 1), tz])
+            self._torii(tx, ty)
 
     def torii_even(self, ascent: Any, count: int) -> None:
         """Spread `count` torii by arc-length along an ascent polyline (Kikuta style)."""
@@ -2431,14 +2461,7 @@ class Settlement:
         self.add(f'<path d="{dstr}" fill="none" stroke="#6B4F2A" stroke-width="1" stroke-dasharray="3,5"/>')
         for i in range(count):
             tx, ty = along(0.06 + 0.80 * i / (count - 1))
-            tz = self.add_top(
-                f'<g transform="translate({tx:.0f},{ty:.0f})">'  # over any street it crosses
-                f'<line x1="-16" y1="0" x2="16" y2="0" stroke="#A03020" stroke-width="3.6"/>'
-                f'<line x1="-19" y1="-7" x2="19" y2="-7" stroke="#A03020" stroke-width="3"/>'
-                f'<line x1="-12" y1="-7" x2="-12" y2="17" stroke="#A03020" stroke-width="3"/>'
-                f'<line x1="12" y1="-7" x2="12" y2="17" stroke="#A03020" stroke-width="3"/></g>'
-            )
-            self.M["torii"].append([round(tx, 1), round(ty, 1), tz])
+            self._torii(tx, ty)
 
     def shrine_hall(
         self,
@@ -2461,21 +2484,26 @@ class Settlement:
         used by the torii checks). A torii may stand in front (torii=[(x,y),...]).
         graveyard=False marks a temple that hosts NO burial ground (a new or special-purpose
         hall, e.g. one founded in a former samurai estate) - city_temples_have_graveyards
-        then exempts it; every other temple is expected to have a graveyard in its precinct."""
+        then exempts it; every other temple is expected to have a graveyard in its precinct.
+
+        SCALE CONTRACT: `w`/`h` are DRAWN PIXELS, so at 1 ft/px (town) they equal real feet, but a
+        coarser map MUST pass s.px(real_ft) - four city temples shipped as fixed 100x64 px = 300x192
+        real ft before this was caught (audit 2026-07-21). The guard below refuses a hall whose
+        implied real footprint exceeds any real main hall (the largest kondo runs ~150-190 ft;
+        Tango's deliberate Daibutsuden-tier landmark is 200 ft) so unscaled px can't slip through."""
+        if self.ftpx > 1 and max(w, h) * self.ftpx > 220:
+            raise ValueError(f"shrine_hall {w}x{h}px at {self.ftpx} ft/px implies a {max(w, h) * self.ftpx:.0f} ft hall - pass s.px(real_ft), not raw pixels")
         if torii:
             for tx, ty in torii:
-                bm: float = 20  # block just the arch (footprint ~38x28 + a building-half margin) - kept SMALLER than a
-                #           street corridor so torii on a street don't shove the frontage houses further off it
-                self.block_polys.append([(tx - 19 - bm, ty - 10 - bm), (tx + 19 + bm, ty - 10 - bm), (tx + 19 + bm, ty + 18 + bm), (tx - 19 - bm, ty + 18 + bm)])
-                tz = self.add_top(
-                    f'<g transform="translate({tx:.0f},{ty:.0f})">'  # over any street it crosses
-                    f'<line x1="-15" y1="0" x2="15" y2="0" stroke="#A03020" stroke-width="3.4"/>'
-                    f'<line x1="-18" y1="-7" x2="18" y2="-7" stroke="#A03020" stroke-width="2.8"/>'
-                    f'<line x1="-11" y1="-7" x2="-11" y2="16" stroke="#A03020" stroke-width="2.8"/>'
-                    f'<line x1="11" y1="-7" x2="11" y2="16" stroke="#A03020" stroke-width="2.8"/></g>'
-                )
-                self.M["torii"].append([round(tx, 1), round(ty, 1), tz])
-                self._clear_ground(tx, ty + 4, 38, 28, 30)  # a swept collar under the arch + its sando approach
+                s2 = self.px(16.0) / 2  # matches _torii's default true span
+                # block the arch + a NEIGHBOR'S HALF-FOOTPRINT: packs test footprint centers, so the
+                # margin must absorb half a house (~28 ft) + slack or a house's edge crosses the arch
+                # (the old fixed 38px arch had this margin baked into its own oversize). Still kept
+                # SMALLER than a street corridor so torii on a street don't shove the frontage houses.
+                bm: float = self.px(28) + 4.0
+                self.block_polys.append([(tx - s2 - bm, ty - s2 * 0.5 - bm), (tx + s2 + bm, ty - s2 * 0.5 - bm), (tx + s2 + bm, ty + s2 + bm), (tx - s2 - bm, ty + s2 + bm)])
+                self._torii(tx, ty)
+                self._clear_ground(tx, ty + 2, max(2 * s2 + 4, 10), max(s2 * 1.3, 8), 30)  # a swept collar under the arch + its sando approach
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="{h}" rx="3" fill="#C9876C" stroke="{edge}" stroke-width="2"/>')
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="9" fill="#A03020"/>')
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y + h / 2 - 9:.0f}" width="{w}" height="9" fill="#A03020"/>')
@@ -2484,7 +2512,12 @@ class Settlement:
         self.M["religious"].append({"kind": kind, "x": x, "y": y, "w": w, "h": h, "label": label, "sublabel": sublabel, "graveyard": graveyard})
         if primary:
             self.M["shrine"] = [x - w / 2, y - h / 2, w, h]
-        bm = 34 * self.bscale  # block a RECT + a building-half margin, at the map's grain (an ellipse undershot the hall corners)
+        # block a RECT + a building-half margin, at the map's grain (an ellipse undershot the hall
+        # corners). The 22px FLOOR (added with the true-size halls, 2026-07-21): packs test footprint
+        # CENTERS, so the margin must absorb the check's +4px pad plus half the largest urban neighbor
+        # (~29px merchant_large) at ANY scale - at city grain the raw 34*bscale is only ~11px and let a
+        # merchant seat its edge into the hall's pad.
+        bm = max(34 * self.bscale, 22.0)
         self.block_polys.append([(x - w / 2 - bm, y - h / 2 - bm), (x + w / 2 + bm, y - h / 2 - bm), (x + w / 2 + bm, y + h / 2 + bm), (x - w / 2 - bm, y + h / 2 + bm)])
         self._clear_ground(x, y, w, h, 58)  # the swept shrine precinct - scrub kept off the tended keidai (the grove, if any, is separate)
         if label:
@@ -4088,11 +4121,14 @@ class Settlement:
         'unconnected dead' (muenbotoke - those with no family or temple to inter them) are gathered, by
         the cremation ground outside the walls. A low rounded mound with a single weathered marker stupa.
         Records M['ossuaries']; blocks placement."""
-        # TO SCALE (GM 2026-07-19; anchors in settlements.md): a muenzuka is a 10-30 real-ft
-        # mound (cremated, consolidated bone takes almost no volume; Kyoto's monumental Mimizuka
-        # is ~50 ft at the base). Drawn at ~40 ft with a small-glyph legibility floor - the old
-        # glyph was FIXED-PIXEL (92x60px = a 276 ft kofun at city scale).
-        orx = max(self.px(40) / 2, 9.0)
+        # TO SCALE (GM 2026-07-19, tightened 2026-07-21): a muenzuka is a 10-30 real-ft mound
+        # (cremated, consolidated bone takes almost no volume; Kyoto's monumental Mimizuka, a state
+        # monument, is ~50 ft at the base). Drawn at ~22 ft, mid-band. History of this constant: the
+        # original glyph was FIXED-PIXEL (92x60px = a 276 ft kofun at city scale); the first fix drew
+        # ~40 ft with a 9px floor, which STILL rendered 54 real ft at city scale - the floor, not the
+        # size, controlled. The floor is now 4.5px (27 ft at city, inside the band) - a stroke-
+        # convention minimum for visibility, never a size license.
+        orx = max(self.px(22) / 2, 4.5)
         ory = orx * 0.62
         self.add(f'<ellipse cx="{cx}" cy="{cy + ory * 0.2:.1f}" rx="{orx:.1f}" ry="{ory:.1f}" fill="#BCA878" stroke="#8C7A52" stroke-width="1.5"/>')  # the earthen mound
         self.add(f'<ellipse cx="{cx}" cy="{cy - ory * 0.1:.1f}" rx="{orx * 0.64:.1f}" ry="{ory * 0.55:.1f}" fill="#C8B584" opacity="0.7"/>')  # the crown (shading)

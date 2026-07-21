@@ -1000,7 +1000,9 @@ _RELOCATABLE = ("pond", "cemeteries", "religious", "shrines", "manors")
 def _adv_bbox(o: Any) -> tuple[float, float, float, float]:
     """(x0,y0,x1,y1) of a feature: a torii list [x,y,z], a poly dict, a w/h dict, or a well radius dict."""
     if isinstance(o, (list, tuple)):
-        return (o[0] - 19, o[1] - 10, o[0] + 19, o[1] + 18)  # torii arch box
+        # torii arch box: the glyph is TRUE SCALE since 2026-07-21 (16 ft rail = 16px at 1 ft/px, less at
+        # coarser scales). This advisory helper has no meta access, so it uses the 1 ft/px worst case.
+        return (o[0] - 8, o[1] - 3, o[0] + 8, o[1] + 8)
     if o.get("poly"):
         xs = [p[0] for p in o["poly"]]
         ys = [p[1] for p in o["poly"]]
@@ -1235,9 +1237,11 @@ WALL_FT_MIN, WALL_FT_MAX = 1.0, 8.0
 CREMATION_FT_MIN, CREMATION_FT_MAX_TOWN, CREMATION_FT_MAX_CITY = 25.0, 90.0, 160.0
 # OSSUARY: a muenzuka bone mound is typically 10-30 ft across, 3-8 ft high (cremated,
 # consolidated bone takes almost no volume - Kozukappara's 100k+ dead never made a great
-# mound); Kyoto's monumental state-built Mimizuka is ~50 ft at the base. Band top 60 admits
-# the small-glyph legibility floor.
-OSSUARY_FT_MIN, OSSUARY_FT_MAX = 8.0, 60.0
+# mound); Kyoto's monumental state-built Mimizuka is ~50 ft at the base. Band [8, 32] = the
+# true 10-30 ft range plus glyph rounding (tightened 2026-07-21: the old top of 60 existed to
+# admit a legibility-sized ~40 ft glyph whose 9px floor actually rendered 54 ft at city scale -
+# the size-inflation license is retired; the drawn mound is now ~22 ft with a 4.5px floor).
+OSSUARY_FT_MIN, OSSUARY_FT_MAX = 8.0, 32.0
 # BURIAL GROUNDS (cremation-then-inter culture, aggressive plot reuse, ~1 generation of active
 # plots): ~10-20 sq ft per urn-grave packed incl. circulation -> village (~350) 0.1-0.25 ac,
 # town (~1,200) 0.25-0.75, city (~3,000) 0.75-2 split across yards. Bands widened a little
@@ -2470,8 +2474,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     bad_g = [1 for gs in M.get("gate_structs", []) for sc in corners if sat_overlap(sc, rect_corners_xywh(gs, 2))]
     check("no_structure_on_gate", not bad_g, f"{len(bad_g)} structure(s) overlap the gate guard station/tower")
 
-    # no structure overlaps a torii arch (footprint ~38x28, centerd just below the post tops)
-    bad_t = [1 for t in M.get("torii", []) for sc in corners if sat_overlap(sc, [(t[0] - 19, t[1] - 10), (t[0] + 19, t[1] - 10), (t[0] + 19, t[1] + 18), (t[0] - 19, t[1] + 18)])]
+    # no structure overlaps a torii arch. The arch is TRUE SCALE since 2026-07-21 (a 16 ft rail span,
+    # drawn via px()), so its box scales with meta.ftpx - the old fixed 38x28 box over-flagged houses
+    # that legitimately pack near the smaller true-size arch. Geometry mirrors settlement._torii
+    # (rail rise 7/19, post drop 17/19 of the half-span) + a 2px pad.
+    _tft = float(M.get("meta", {}).get("ftpx", 1) or 1)
+    _ts2 = 8.0 / _tft + 2
+    bad_t = [
+        1
+        for t in M.get("torii", [])
+        for sc in corners
+        if sat_overlap(sc, [(t[0] - _ts2, t[1] - _ts2 * 0.37), (t[0] + _ts2, t[1] - _ts2 * 0.37), (t[0] + _ts2, t[1] + _ts2 * 0.9), (t[0] - _ts2, t[1] + _ts2 * 0.9)])
+    ]
     check("no_structure_on_torii", not bad_t, f"{len(bad_t)} structure(s) overlap a torii arch")
 
     # roads/streets are a GROUND layer: a gatehouse or label that legitimately sits on a road
@@ -2761,13 +2775,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"{len(bad_pd)} structure(s) stand on a rice paddy - houses, yards, and every other footprint sit on dry ground BESIDE the crop, never in the flooded field",
         )
 
-    # WATER-WIDTH LADDER. Real wet-rice water systems are a tiered hierarchy whose widths step up
-    # ~2-4x per tier (channel width scales with the sqrt of command-area flow): a field ditch ~0.3 m,
-    # a village creek ~2 m (~6x the ditch), a town river / castle moat ~20 m (~70x the ditch). That
-    # true 250:1 span can't be drawn at schematic scale, so the rendered widths are a deliberate LOG-
-    # COMPRESSION of it - but the ORDERING and the coarse steps must survive: an irrigation ditch is
-    # ALWAYS the thinnest line, a natural watercourse clearly heavier, the city moat heaviest of all.
-    # The clauses below pin that. (Why these numbers: settlements.md "Water-width ladder" grounding.)
+    # WATER-WIDTH LADDER - a STROKE CONVENTION, not a size license (GM ruling 2026-07-21). Real
+    # wet-rice water systems are a tiered hierarchy whose widths step up ~2-4x per tier (channel
+    # width scales with the sqrt of command-area flow): a field ditch ~0.3 m, a village creek ~2 m
+    # (~6x the ditch), a town river / castle moat ~20 m (~70x the ditch). Watercourses are LINEWORK:
+    # the smallest lines draw at a minimum-visible floor (a true 1 ft ditch is 0.33px at city scale -
+    # invisible), true-width-or-floored and never fattened past the floor, while honesty anchors on
+    # the LARGE end (the city moat draws its real ~66+ ft). The ORDERING and coarse steps must
+    # survive the compression: an irrigation ditch is ALWAYS the thinnest line, a natural watercourse
+    # clearly heavier, the city moat heaviest of all. The clauses below pin that. (Why these numbers:
+    # settlements.md "Water-width ladder" grounding.)
     chan_ws = [c["w"] for c in M.get("channels", []) if "w" in c]
     strm_ws = [st["w"] for st in M.get("streams", []) if "w" in st]
     moat_w = M.get("moat_width")
@@ -3420,11 +3437,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not stray,
             f"well(s) standing in open ground with no building within ~95px - a well serves the households around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}",
         )
-        # a wellhead must be DRAWN at a size proportional to the buildings: it scales with the map grain
-        # (bscale) the way the houses do, so it reads as a consistent ~half-a-dwelling at every tier. A
-        # fixed pixel size looks right in the dense city but shrinks to a speck beside a village/town's
-        # larger houses. Each well records its drawn radius `vr`; the mean well diameter should be a
-        # sensible fraction of the median dwelling.
+        # THE WELL IS A LOCATION MARKER under the stroke convention (GM ruling 2026-07-21): a real
+        # curb is ~3-4 ft (sub-glyph at every scale), so the wellhead marks the well's TO-SCALE
+        # LOCATION with a legible marker whose own pixels are not claimed to be to scale - the same
+        # doctrine as the linework floor, and deliberately NOT a violation of everything-is-to-scale.
+        # The marker must be DRAWN at a size proportional to the buildings: it scales with the map
+        # grain (bscale) the way the houses do, so it reads as a consistent ~half-a-dwelling at every
+        # tier. A fixed pixel size looks right in the dense city but shrinks to a speck beside a
+        # village/town's larger houses. Each well records its drawn radius `vr`; the mean well
+        # diameter should be a sensible fraction of the median dwelling.
         ddims = [max(b["w"], b["h"]) for b in dwell_all if "w" in b and "h" in b]
         if ddims and any("vr" in wl for wl in all_wells):
             med = sorted(ddims)[len(ddims) // 2]
