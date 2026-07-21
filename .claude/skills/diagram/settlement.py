@@ -2288,6 +2288,96 @@ class Settlement:
         bm = 8
         self.block_polys.append([(x - vroof - bm, y - vroof - bm), (x + vroof + bm, y - vroof - bm), (x + vroof + bm, y + vroof + bm), (x - vroof - bm, y + vroof + bm)])
 
+    def farm_wells(self, reach_ft: float = 500.0, edge_ft: float = 150.0) -> int:
+        """Shared wells for the FARM BELT (town/city scale): the farmsteads outside the urban
+        core drink daily too, and Rokugan's unusually well-run domains sink wells liberally
+        (the same liberty behind the literal urban idobata count) - so no farmhouse stands
+        more than ~500 real ft from a well. Call AFTER farmsteads(). Farmhouses within
+        ~150 real ft of the view edge are exempt (their well is presumed just off the map,
+        like the fields that run off-edge). Deterministic - no RNG draws, so a map whose
+        farm belt is already covered (Hoshizora) is byte-identical with or without the call.
+        Greedy cluster cover: seat a well near the densest uncovered cluster's centroid via
+        well_at's clear-spot test, repeat. Gated by farm_wells_within_reach."""
+        reach = self.px(reach_ft)
+        edge = self.px(edge_ft)
+        vx, vy, vw, vh = self.view if self.view else (0, 0, self.W, self.H)
+        houses = [h for h in self.M["houses"] if min(h["x"] - vx, h["y"] - vy, vx + vw - h["x"], vy + vh - h["y"]) >= edge]
+
+        def covered(h: Mapping[str, Any]) -> bool:
+            return any((h["x"] - w["x"]) ** 2 + (h["y"] - w["y"]) ** 2 <= reach * reach for w in self.M["wells"])
+
+        placed = 0
+        for _ in range(60):
+            todo = [h for h in houses if not covered(h)]
+            if not todo:
+                break
+            best = max(todo, key=lambda h: sum(1 for o in todo if (h["x"] - o["x"]) ** 2 + (h["y"] - o["y"]) ** 2 <= (0.9 * reach) ** 2))
+            cl = [o for o in todo if (best["x"] - o["x"]) ** 2 + (best["y"] - o["y"]) ** 2 <= (0.9 * reach) ** 2]
+            # seat the well in a STEADING'S DOORYARD, not at the cluster centroid: a farm belt's
+            # open ground is mostly CROP (where well_at rightly refuses to stand a wellhead), and
+            # historically the rural well sat in a farmstead's own yard anyway - so walk the
+            # cluster's members densest-first and ring each until a clear dooryard spot takes
+            cl.sort(key=lambda h: -sum(1 for o in todo if (h["x"] - o["x"]) ** 2 + (h["y"] - o["y"]) ** 2 <= (0.9 * reach) ** 2))
+            seated = False
+            for h in cl:
+                for r_, n_ in (
+                    (20.0, 8),
+                    (30.0, 12),
+                    (42.0, 12),
+                    (60.0, 16),
+                    (80.0, 16),
+                    (100.0, 20),
+                    (125.0, 24),
+                    (150.0, 24),
+                ):  # rings widen to ~240 ft at city grain: a steading's inner yard is dense with its own appurtenances and the crop starts right past them, so the clear spot is often the open margin ground BETWEEN steadings
+                    for k in range(n_):
+                        a = 2 * math.pi * k / n_
+                        if self.well_at(h["x"] + r_ * math.cos(a), h["y"] + r_ * math.sin(a)):
+                            seated = True
+                            placed += 1
+                            break
+                    if seated:
+                        break
+                if seated:
+                    break
+            if not seated:
+                # FALLBACK: the cluster's open ground may all be field-ENVELOPE rim slack - the
+                # smoothed outline claims more than the crop fills, and _fits rightly refuses the
+                # envelope. A farm well standing on unplanted rim ground is fine (that IS the
+                # steading's margin); standing on CROP is not. So retry with the envelope blocks
+                # suspended and an explicit test against the DRAWN plots instead.
+                crop: list[list[tuple[float, float]]] = [list(dp2) for dp2 in self.dry_polys]
+                for frec in self.M.get("fields", []):
+                    crop += [[(q[0], q[1]) for q in p2] for p2 in frec.get("plot_polys", [])]
+
+                def on_crop(x2: float, y2: float, crop: list[list[tuple[float, float]]] = crop) -> bool:  # bound as a default: the closure lives one loop iteration (B023)
+                    m2 = 14.0
+                    for cp2 in crop:
+                        if min(q[0] for q in cp2) - m2 <= x2 <= max(q[0] for q in cp2) + m2 and min(q[1] for q in cp2) - m2 <= y2 <= max(q[1] for q in cp2) + m2 and point_in_poly(x2, y2, cp2):
+                            return True
+                    return False
+
+                save = self.field_polys
+                self.field_polys = []
+                try:
+                    for h in cl:
+                        # a nearest-first GRID scan, not rings: the clear ground here is pinholes
+                        # between steading footprints, and sparse ring angles walk right past them
+                        cands = [(h["x"] + dx, h["y"] + dy) for dx in range(-156, 157, 6) for dy in range(-156, 157, 6) if 18 * 18 <= dx * dx + dy * dy <= 156 * 156]
+                        cands.sort(key=lambda c: (c[0] - h["x"]) ** 2 + (c[1] - h["y"]) ** 2)
+                        for wx2, wy2 in cands:
+                            if not on_crop(wx2, wy2) and self.well_at(wx2, wy2):
+                                seated = True
+                                placed += 1
+                                break
+                        if seated:
+                            break
+                finally:
+                    self.field_polys = save
+            if not seated:
+                houses = [h2 for h2 in houses if h2 is not best]  # nothing seats anywhere in this cluster - skip it rather than spin
+        return placed
+
     def well_at(self, x: float, y: float, r: float = 8, shrine: bool = False) -> bool:
         """Place ONE well at (x, y), but only if the spot is clear (a block interior off lanes,
         compounds, the bound, and other placed things - the same `_fits` test place_wells uses).
