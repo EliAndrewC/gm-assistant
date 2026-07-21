@@ -5646,9 +5646,12 @@ def test_cremation_ground_to_scale_fires_oversized_passes_in_band():
 
 
 def test_ossuary_to_scale_fires_oversized_passes_in_band():
-    # the old fixed mound = 276x180 ft - kofun-sized; a pauper bone mound is 10-30 ft (legibility-floored ~54)
+    # the old fixed mound = 276x180 ft - kofun-sized; a pauper bone mound is 10-30 ft. The band top is
+    # 32 ft (tightened 2026-07-21): the earlier legibility-sized glyph (9px floor -> 54 real ft at city
+    # scale, w=18px) must now FIRE; the true-size glyph (4.5px floor -> 27 ft, w=9px) passes.
     assert "ossuary_to_scale" in f(_scaled_city(ossuaries=[{"x": 500, "y": 500, "w": 92, "h": 60, "rot": 0}]))
-    assert "ossuary_to_scale" not in f(_scaled_city(ossuaries=[{"x": 500, "y": 500, "w": 18, "h": 12, "rot": 0}]))
+    assert "ossuary_to_scale" in f(_scaled_city(ossuaries=[{"x": 500, "y": 500, "w": 18, "h": 12, "rot": 0}]))
+    assert "ossuary_to_scale" not in f(_scaled_city(ossuaries=[{"x": 500, "y": 500, "w": 9, "h": 5.6, "rot": 0}]))
 
 
 def test_burial_grounds_sized_to_population_fires_on_an_oversized_village_ground():
