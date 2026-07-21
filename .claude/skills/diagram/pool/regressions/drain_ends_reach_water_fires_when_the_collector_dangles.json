@@ -1,0 +1,78 @@
+{
+ "meta": {},
+ "fields": [
+  {
+   "name": "f1",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     300
+    ],
+    [
+     300,
+     300
+    ],
+    [
+     300,
+     600
+    ],
+    [
+     100,
+     600
+    ]
+   ],
+   "bbox": [
+    100,
+    300,
+    300,
+    600
+   ],
+   "vis_bbox": [
+    100,
+    300,
+    300,
+    600
+   ]
+  }
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     430,
+     100
+    ],
+    [
+     430,
+     900
+    ]
+   ],
+   "w": 9
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     120,
+     590
+    ],
+    [
+     370,
+     610
+    ]
+   ],
+   "role": "drain",
+   "field": "f1",
+   "w": 6,
+   "w_tail": 6
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "drain_ends_reach_water"
+  ],
+  "source": "test_checks.py::test_drain_ends_reach_water_fires_when_the_collector_dangles"
+ }
+}
