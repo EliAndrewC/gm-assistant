@@ -1,0 +1,27 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 2000,
+  "H": 1300
+ },
+ "wall": [
+  [
+   300,
+   300
+  ],
+  [
+   9999999,
+   300
+  ],
+  [
+   700,
+   700
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "geometry_within_canvas"
+  ],
+  "source": "test_checks.py::test_geometry_within_canvas_fires_on_a_stray_town_wall_vertex"
+ }
+}

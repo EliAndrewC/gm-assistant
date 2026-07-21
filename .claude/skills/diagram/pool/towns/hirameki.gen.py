@@ -356,7 +356,9 @@ s.shrine_hall(1750, 1050, "Monastery of Bishamon", w=150, h=98, kind="monastery"
 # the older, much smaller Benten monastery (Crane patron) on the OPPOSITE (west) side, inside
 # the walls - a relic of the town's time under Crane rule. It is wedged hard against the west
 # rampart and the Imperial chrysanthemum field, so there is room for only a SINGLE torii arch.
-s.shrine_hall(700, 1010, "Monastery of Benten", w=60, h=40, kind="monastery", primary=False, torii=[(700, 1073)])
+s.shrine_hall(
+    700, 1010, "Monastery of Benten", w=60, h=40, kind="monastery", primary=False, torii=[(700, 1073)], graveyard=False
+)  # a small relic monastery: its dead go to the Bishamon parish ground (town_monasteries_have_graveyards opt-out)
 
 # street plan: the gate-to-yamen main avenue + a market cross-street (both fully built up).
 # The laborer/servant quarters behind them are accessed off the cross-street and otherwise
@@ -397,7 +399,7 @@ s.building(1418, 1265, *s._dims("laborer"), "laborer")
 s.building(1418, 1350, *s._dims("laborer"), "laborer")
 
 # samurai neighborhood: lining the manor's approach, below the hill
-s.pack((861, 964, 1764, 1183), ["samurai"] * 9, step=70)
+s.pack((861, 964, 1764, 1183), ["samurai_large"] * 2 + ["samurai"] * 7, step=70)  # the senior official(s) keep larger houses (town_samurai_housing_varied)
 s.label(1030, 950, "samurai neighborhood", 11, italic=True)
 
 # merchants + shops FRONT the main avenue and the market cross-street (facing them)
@@ -432,6 +434,8 @@ s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows 
 s.cemetery(1840, 1160, 88, 62, label="graveyard", label_above=True)
 s.cemetery(2080, 1420, 120, 88, label="common burial ground")
 s.cremation_ground(2100, 1513)
+# the pauper ossuary mound (muenzuka) beside the cremation ground (town_has_ossuary)
+s.ossuary(2180, 1560)
 # keep-out ring: town_has_cremation_ground demands the crematory stay >120 ft from every dwelling
 s.block_polys.append([(2100 + 132 * math.cos(a), 1513 + 132 * math.sin(a)) for a in [i * math.pi / 4 for i in range(8)]])
 
@@ -515,6 +519,20 @@ s.shrine_well(1750, 1050)
 # recorded as a leafy copse instead - the windward check wants role='windbreak' only NW.) Copse
 # scatter then fills the open gaps between homes on strips shaped AROUND the fields and their
 # hems. All AFTER the wells, so the canopy keep-out sees every wellhead.
+# COMMONS SCRUB clothes the bare EXTRAMURAL margins (town_margins_clothed - the ground inside
+# the rampart is urban floor and counts as covered; these aprons are the district's grazed
+# commons). The scatter skips every drawn feature, so the polys just have to be generous.
+s.commons([(300, 15), (700, 10), (700, 95), (305, 100)], role="grazing")
+s.commons([(1600, 15), (1960, 10), (1955, 95), (1605, 100)], role="grazing")
+s.commons([(10, 290), (90, 300), (85, 900), (12, 890)], role="grazing")
+s.commons([(2470, 15), (2590, 15), (2590, 1985), (2475, 1985)], role="grazing")
+s.commons([(210, 790), (520, 800), (540, 1690), (230, 1700)], role="grazing")
+s.commons([(870, 1740), (1060, 1750), (1050, 1990), (880, 1990)], role="grazing")
+s.commons([(1550, 1730), (1795, 1725), (1800, 1985), (1560, 1985)], role="grazing")
+s.commons([(1900, 1840), (2390, 1830), (2385, 1990), (1905, 1995)], role="grazing")
+s.commons([(1950, 1495), (2360, 1490), (2370, 1695), (1955, 1700)], role="grazing")
+s.commons([(20, 1400), (230, 1395), (225, 1695), (30, 1690)], role="grazing")
+
 # The real FOREST mass sits on the open upland CORNERS (the strips beside the farm rows are
 # mostly full of homesteads, so clumps there thin to a scatter): two windward lobes in the NW
 # corner flanking the west stream, and two matching lobes in the NE corner flanking e1's

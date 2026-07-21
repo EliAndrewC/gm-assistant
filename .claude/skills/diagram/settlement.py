@@ -3518,6 +3518,10 @@ class Settlement:
         # (the sun rises in the E; +x is east), so a garden on a house's lee/E side keeps clear sky to its east.
         # Entry = (garden east edge, garden cy, half-height + reach). See gardens_unshaded_from_east.
         east = [(o["x"] + o["w"] / 2, o["y"], o["h"] / 2 + cr + 2) for o in self.M.get("gardens", [])]
+        water_lines = [(st_["poly"], st_.get("w", 9) / 2) for st_ in self.M.get("streams", [])]
+        water_lines += [(c_["poly"], c_.get("w", 2.5) / 2) for c_ in self.M.get("channels", [])]
+        if self.M.get("moat"):
+            water_lines.append((self.M["moat"], self.M.get("moat_width", 22) / 2))
         nx, ny = max(1, round((x1 - x0) / step)), max(1, round((y1 - y0) / step))
         clumps: list[Any] = []
         for iy in range(ny + 1):
@@ -3534,6 +3538,8 @@ class Settlement:
                     continue
                 if any(point_in_poly(jx, jy, d) or edge_dist(jx, jy, d) < 12 for d in self.dry_polys):
                     continue  # the hem strips are barley: trees do not grow in the crop (groves_clear_of_dry_plots)
+                if any(seg_dist(jx, jy, wl[k], wl[k + 1]) < whw + cr for wl, whw in water_lines for k in range(len(wl) - 1)):
+                    continue  # no canopy stands over open water (canopy_clear_of_watercourses)
                 if any(seg_dist(jx, jy, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1)):
                     continue
                 if any(abs(jx - sx) < shw and se - cr - 2 < jy < se + 24 + cr for sx, se, shw in sun):

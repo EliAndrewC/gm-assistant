@@ -1,0 +1,62 @@
+{
+ "meta": {
+  "scale": "town",
+  "population": 100
+ },
+ "buildings": [
+  {
+   "x": 400,
+   "y": 400,
+   "w": 30,
+   "h": 20,
+   "kind": "samurai",
+   "rot": 0
+  },
+  {
+   "x": 460,
+   "y": 400,
+   "w": 30,
+   "h": 20,
+   "kind": "samurai",
+   "rot": 0
+  },
+  {
+   "x": 520,
+   "y": 400,
+   "w": 30,
+   "h": 20,
+   "kind": "samurai",
+   "rot": 0
+  },
+  {
+   "x": 580,
+   "y": 400,
+   "w": 30,
+   "h": 20,
+   "kind": "samurai",
+   "rot": 0
+  },
+  {
+   "x": 640,
+   "y": 400,
+   "w": 30,
+   "h": 20,
+   "kind": "samurai",
+   "rot": 0
+  },
+  {
+   "x": 700,
+   "y": 400,
+   "w": 30,
+   "h": 20,
+   "kind": "samurai",
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_samurai_housing_varied"
+  ],
+  "source": "test_checks.py::test_town_samurai_housing_varied_fires_on_uniform_small_houses"
+ }
+}

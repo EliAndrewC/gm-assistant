@@ -1,0 +1,13 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 1000,
+  "H": 1000
+ },
+ "_regression": {
+  "fires": [
+   "town_margins_clothed"
+  ],
+  "source": "test_checks.py::test_town_margins_clothed_fires_on_a_bare_sheet"
+ }
+}

@@ -134,11 +134,13 @@ netA = build_comb(
 )
 netA["brook"] = []  # no auto-brook (it would shoot into the town); the runoff's real sink is the tameike
 ENV_A = s.draw_comb_field(netA, "hoshizora-west", {"kind": "stream"})  # no polyline: the map's stream IS the source
-# the WEIR: the head-race's visible intake, drawn from the sluice's perpendicular FOOT on the
-# stream centerline (the same confluence point draw_comb_field snaps the recorded hairline's
-# start to); _clip_to_stream trims this drawn mouth onto the bank edge so it joins the current
-# without crossing it. Drawing only - the snapped hairline carries the manifest topology.
-s.field_channel([(549.1, 308.4), (558, 322)], '#6C9CBE', 7, 7)
+# the WEIR: the head-race's visible intake, now a RECORDED channel (GM audit 2026-07): it taps
+# the stream UPSTREAM of the sluice (the historically-right tap position, which also keeps it
+# running down-fall for channels_flow_downhill) and hands off to the head-race via the new
+# to={"kind":"ditch"} anchor. Drawn through s.channel at the hairline-band width, so its mouth
+# merges into the stream bed like any confluence and its record satisfies
+# watercourse_ends_reach_water for the head-race's top end.
+topo_channel([(570, 295), (558, 322)], {"kind": "stream"}, {"kind": "ditch"}, draw_w=2.5)  # hairline: the width ladder keeps every ditch clearly lighter than the stream
 s.field_polys.append([(x, y) for x, y in ENV_A])
 s.corridors.append(([(p[0], p[1]) for p in s.M["channels"][-1]["poly"]], 45))  # keep farmsteads off the hairline feed
 
@@ -256,7 +258,12 @@ s.label(1855, 382, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 
 # ---- samurai houses, around the magistrate's manor (SW); their servants live within
 # the manor/samurai compounds, not as separate huts
-s.pack((620, 1010, 920, 1295), ["samurai"] * 10, step=54)
+# the senior officials' larger houses are PINNED clear of the tilted manor (a pack-placed
+# large clipped its rotated corner - the packer's center test cannot see the -30 rotation);
+# the junior pack then flows around them (town_samurai_housing_varied)
+s.building(885, 1045, *s._dims("samurai_large"), "samurai_large")
+s.building(660, 1268, *s._dims("samurai_large"), "samurai_large")
+s.pack((620, 1010, 920, 1295), ["samurai"] * 8, step=54)
 s.label(770, 1268, "samurai houses", 11, italic=True)  # over the cluster - kept above the bottom image edge (canvas H=1300)
 
 # a noticeable minority of merchant houses keep a fireproof kura (the absentee landlords'
@@ -274,6 +281,9 @@ s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows 
 # both behind the hall so no one walks past the pyre to reach the monastery.
 s.cemetery(215, 705, 110, 80, label="graveyard", label_above=True)
 s.cremation_ground(85, 810, label_above=True)
+# the pauper ossuary mound (muenzuka) beside the cremation ground - the communal bones of the
+# poor and the unconnected dead (town_has_ossuary)
+s.ossuary(60, 880)
 # keep-out ring around the crematory: town_has_cremation_ground demands >120 ft clear of every
 # dwelling, so no farm bundle may pack into that radius (blocked BEFORE the rings run).
 # Centered a touch WEST of the crematory so the ring covers the full 120 ft on every side
@@ -369,11 +379,32 @@ s.stables(276, 1202, rot=150)
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
 
+
+# communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
+s.place_wells((60, 30, 1980, 1270), spacing=220, near=100)  # grid widened to reach the off-edge fields' farms (top + NE pocket)
+# the Bishamon monastery sits apart from the houses, so it keeps its OWN ablution well
+# (remote_shrine_has_own_well) - placed BY HAND at the proven spot SW of the hall: the crematory
+# keep-out block makes shrine_well's automatic ring search reject every candidate, but the block
+# only steers FARM placement; a wellhead here is clear of the hall, the torii, and the graveyard
+s.well(167, 883)
+
+# COMMONS SCRUB clothes the bare margins (town_margins_clothed - GM audit 2026-07: the village
+# satoyama rule excluded towns; a county seat's open aprons are the district's grazed commons,
+# not blank paper). The scatter skips every drawn feature, so the polys just have to be generous.
+s.commons([(820, 180), (1480, 200), (1700, 300), (1700, 700), (1480, 760), (1150, 780), (880, 560)], role="grazing")
+s.commons([(1690, 140), (1995, 120), (1995, 520), (1700, 420)], role="grazing")
+s.commons([(10, 660), (120, 650), (110, 1010), (15, 1000)], role="grazing")
+s.commons([(80, 1180), (700, 1210), (690, 1298), (90, 1298)], role="grazing")
+s.commons([(700, 780), (1480, 800), (1450, 1000), (720, 980)], role="grazing")
+
+# (the groves run AFTER the wells so the canopy keep-out sees every wellhead - wells_clear_of_trees)
 # the COMMUNAL WINDBREAK (后龙林 back-village grove): a nucleated cluster shelters behind ONE
 # village-scale belt on its high WINDWARD (NW) edge instead of per-farm groves - the band runs
 # along the top-left upland margin OUTSIDE the farm rows (clumps auto-skip any house/yard/
 # garden, so the belt must lie on genuinely open ground to actually render)
-s.village_grove([(12, 165), (95, 148), (185, 158), (240, 175), (250, 240), (245, 330), (180, 350), (95, 330), (14, 320)], role="windbreak")
+s.village_grove(
+    [(12, 165), (95, 148), (185, 158), (240, 175), (250, 240), (245, 318), (180, 334), (95, 314), (14, 304)], role="windbreak"
+)  # bottom edge pulled up: a reflowed well sat under the canopy
 # ...and the leafy scatter: bamboo + dooryard fruit filling the OPEN gaps through the whole
 # farm belt (clumps skip every house/yard/garden/paddy, settling into the bare ground between
 # homes - the greenery the per-farm groves used to carry)
@@ -383,13 +414,10 @@ s.village_grove([(20, 330), (180, 365), (130, 545), (20, 520)], role="copse", de
 s.village_grove([(700, 270), (780, 330), (795, 690), (715, 640)], role="copse", dense=False)
 s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="copse", dense=False)
 
-# communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
-s.place_wells((60, 30, 1980, 1270), spacing=220, near=100)  # grid widened to reach the off-edge fields' farms (top + NE pocket)
-# the Bishamon monastery sits apart from the houses, so it keeps its OWN ablution well
-# (remote_shrine_has_own_well) - placed BY HAND at the proven spot SW of the hall: the crematory
-# keep-out block makes shrine_well's automatic ring search reject every candidate, but the block
-# only steers FARM placement; a wellhead here is clear of the hall, the torii, and the graveyard
-s.well(167, 883)
+# ===== FIRE DEFENSE: a fire-watch tower (hinomi-yagura) - every town's dense wooden core
+# needs one, walled or not (town_has_fire_tower); on the manifest-scanned clearest seam
+# between the laborers' quarter and the road-front core
+s.fire_tower(970, 420, label="fire-watch tower")
 
 s.title("Hoshizora")
 

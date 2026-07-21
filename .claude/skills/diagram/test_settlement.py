@@ -2523,3 +2523,23 @@ def test_channel_accepts_an_explicit_polyline():
     route = [(100, 100), (160, 130), (220, 200)]
     s.channel((100, 100), (220, 200), {"kind": "offmap"}, {"kind": "field", "name": "f"}, pts=route)
     assert s.M["channels"][-1]["poly"] == [[x, y] for x, y in route]
+
+
+def test_village_grove_skips_watercourses():
+    # no clump lands over a stream: the watercourse skip in the clump filter
+    s = Settlement(W=800, H=800, seed=3)
+    s.meta(name="Vw", scale="village", ftpx=2)
+    s.stream([(400, 50), (400, 750)], width=9)
+    s.village_grove([(330, 300), (470, 300), (470, 500), (330, 500)], role="copse", dense=False)
+    for g in s.M["village_groves"]:
+        for cx, _cy in g["clumps"]:
+            assert abs(cx - 400) > 10
+    # ...and the MOAT counts as a watercourse for the skip too (the city case)
+    s2 = Settlement(W=800, H=800, seed=4)
+    s2.meta(name="Vm", scale="city", ftpx=3)
+    s2.M["moat"] = [(300, 200), (500, 200), (500, 600), (300, 600), (300, 200)]
+    s2.M["moat_width"] = 22
+    s2.village_grove([(260, 300), (340, 300), (340, 500), (260, 500)], role="copse", dense=False)
+    for g in s2.M["village_groves"]:
+        for cx, _cy in g["clumps"]:
+            assert cx < 289 or cx > 311

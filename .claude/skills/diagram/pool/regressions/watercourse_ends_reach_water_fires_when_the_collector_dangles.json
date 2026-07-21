@@ -71,8 +71,8 @@
  ],
  "_regression": {
   "fires": [
-   "drain_ends_reach_water"
+   "watercourse_ends_reach_water"
   ],
-  "source": "test_checks.py::test_drain_ends_reach_water_fires_when_the_collector_dangles"
+  "source": "test_checks.py::test_watercourse_ends_reach_water_fires_when_the_collector_dangles"
  }
 }
