@@ -2555,3 +2555,14 @@ def test_village_grove_skips_watercourses():
     for g in s2.M["village_groves"]:
         for cx, _cy in g["clumps"]:
             assert cx < 289 or cx > 311
+
+
+def test_farm_wells_drops_a_cluster_with_no_seatable_ground():
+    """A steading whose whole reach-disc is blocked ground gets skipped rather than spinning the
+    cover loop forever - the well simply cannot seat, and the gate will say so."""
+    s = Settlement(1000, 1000, seed=3)
+    s.meta(name="Fw", scale="town", ftpx=1)
+    s.M["houses"].append({"x": 500, "y": 500, "w": 44, "h": 29, "rot": 0})
+    s.block_polys.append([(300, 300), (700, 300), (700, 700), (300, 700)])  # blanket the reach disc
+    assert s.farm_wells() == 0
+    assert not s.M["wells"]
