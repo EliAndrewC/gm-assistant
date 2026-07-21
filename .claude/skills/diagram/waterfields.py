@@ -253,8 +253,9 @@ def build_comb(
     channels = []
 
     # head-race: sluice -> the division point (bunsuiguchi), straight down the fall
+    # (channel widths x grain throughout: the same REAL-feet channel sizes at every map scale)
     hr = [sluice, (sluice[0] + 45 * F.d[0], sluice[1] + 45 * F.d[1]), (sluice[0] + 90 * F.d[0], sluice[1] + 90 * F.d[1])]
-    channels.append({"pts": hr, "w": 7.0, "role": "main"})
+    channels.append({"pts": hr, "w": 7.0 * grain, "role": "main"})
     fork = hr[-1]
 
     # supply canal A: cross-slope along the high margin, descending gently
@@ -393,7 +394,7 @@ def build_comb(
     duf.append((hi_u, a_fit + b_fit * hi_u))  # the outfall point (drain's downhill end)
     duf.sort(key=lambda q: q[0])
     dpts = [F.to_xy(u, f) for u, f in duf]
-    channels.append({"pts": dpts, "w": 6.0, "role": "drain"})
+    channels.append({"pts": dpts, "w": 6.0 * grain, "role": "drain"})
 
     # the akusui does NOT just stop: it empties at its outfall into a natural valley BROOK that
     # carries the water off the map downhill (reused by the next village downstream / rejoining the
@@ -454,7 +455,7 @@ def build_comb(
     cuts = [0.0] + list(offtakes_a) + [1.0]
     for i in range(len(cuts) - 1):
         piece = [_point_along(a_pts, cuts[i] + (cuts[i + 1] - cuts[i]) * t / 6) for t in range(7)]
-        channels.append({"pts": piece, "w": 6.2 - 2.2 * i / (len(cuts) - 2), "role": "main"})
+        channels.append({"pts": piece, "w": (6.2 - 2.2 * i / (len(cuts) - 2)) * grain, "role": "main"})
     bc_cuts = sorted(F.to_uf(*e[1].pts[0])[1] if False else e[0] for e in []) if False else sorted([bc.f0] + [f for f in getattr(bc, "offtake_fs", [])] + [bc.ditch_f])
     for t in threads:
         pre = [p for p in t.pts if F.to_uf(*p)[1] <= t.ditch_f]
@@ -466,14 +467,14 @@ def build_comb(
             for i in range(len(bc_cuts) - 1):
                 piece = [p for p in pre if bc_cuts[i] - 14 <= F.to_uf(*p)[1] <= bc_cuts[i + 1] + 14]
                 if len(piece) >= 2:
-                    channels.append({"pts": piece, "w": 5.6 - 1.6 * i / max(1, len(bc_cuts) - 2), "role": "main"})
+                    channels.append({"pts": piece, "w": (5.6 - 1.6 * i / max(1, len(bc_cuts) - 2)) * grain, "role": "main"})
         else:
             # a delivery ditch TAPERS as it descends: it sheds water into the paddies it feeds all
             # along its length, so its flow - and width - decreases from full at the canal takeoff to a
             # THREAD at the delivery point where it stops (continuously "tapped by the plots it feeds",
             # extending Tabayashi's supply-canal taper rule to the delivery ditches). w_tail marks the
             # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
-            channels.append({"pts": pre, "w": 5.6 if t is bc else 4.0, "w_tail": 1.5, "role": "branch"})
+            channels.append({"pts": pre, "w": (5.6 if t is bc else 4.0) * grain, "w_tail": 1.5 * grain, "role": "branch"})
 
     plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step, grain)
 
@@ -487,7 +488,7 @@ def build_comb(
     # grain != 1.0 ONLY for byte-stability: every village map was visually vetted gapless at
     # the 2 ft/px tuning grain, and an unconditional pass would re-roll their RNG streams.
     if grain != 1.0:
-        _fill_wedges(R, F, plots, envelope, grain, channels, plot_across, row_step)
+        _fill_wedges(R, F, plots, envelope, grain, channels, plot_across, row_step, a_pts, dpts)
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
@@ -514,7 +515,9 @@ def build_comb(
     }
 
 
-def _fill_wedges(R: random.Random, F: _Frame, plots: list[dict[str, Any]], envelope: Poly, g: float, channels: list[dict[str, Any]], plot_across: float, row_step: tuple[float, float]) -> None:
+def _fill_wedges(
+    R: random.Random, F: _Frame, plots: list[dict[str, Any]], envelope: Poly, g: float, channels: list[dict[str, Any]], plot_across: float, row_step: tuple[float, float], a_pts: Poly, dpts: Poly
+) -> None:
     """Plant the bare wedges _carve left inside the fan (see the call site). Grid-samples the
     envelope interior (rim inset excluded - berms and drain set-backs legitimately live there),
     clusters bare cells, and appends one fan-aligned quad per cluster, shrunk until it stands
@@ -532,6 +535,17 @@ def _fill_wedges(R: random.Random, F: _Frame, plots: list[dict[str, Any]], envel
         return math.hypot(px - a[0] - t * vx, py - a[1] - t * vy)
 
     boxes = [(min(q[0] for q in p["poly"]) - tol, min(q[1] for q in p["poly"]) - tol, max(q[0] for q in p["poly"]) + tol, max(q[1] for q in p["poly"]) + tol) for p in plots]
+
+    def dist_to_plot(x: float, y: float) -> float:
+        best = 1e9
+        for p, (bx0, by0, bx1, by1) in zip(plots, boxes, strict=True):
+            if not (bx0 - 16 * g <= x <= bx1 + 16 * g and by0 - 16 * g <= y <= by1 + 16 * g):
+                continue
+            poly = p["poly"]
+            if _pip(x, y, poly):
+                return 0.0
+            best = min(best, min(sd(x, y, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly))))
+        return best
 
     def near_plot(x: float, y: float) -> bool:
         for p, (bx0, by0, bx1, by1) in zip(plots, boxes, strict=True):
@@ -554,7 +568,11 @@ def _fill_wedges(R: random.Random, F: _Frame, plots: list[dict[str, Any]], envel
     while y <= ey1:
         x = ex0
         while x <= ex1:
-            if _pip(x, y, envelope) and all(sd(x, y, envelope[i], envelope[(i + 1) % len(envelope)]) > inset for i in range(len(envelope))) and not near_plot(x, y):
+            if _pip(x, y, envelope) and all(sd(x, y, envelope[i], envelope[(i + 1) % len(envelope)]) > inset for i in range(len(envelope))) and not near_plot(x, y) and dist_to_plot(x, y) <= 14 * g:
+                # the dist clause is what makes this a WEDGE filler: a wedge is bare ground BETWEEN
+                # plots (every cell within ~28 real ft of one), not the open rim slack between the
+                # fan's true edge and the smoothed envelope - filling that grew a floating paddy
+                # hanging off nw1's SE toe (2026-07-21)
                 bare.append((x, y))
             x += step
         y += step
@@ -599,6 +617,20 @@ def _fill_wedges(R: random.Random, F: _Frame, plots: list[dict[str, Any]], envel
             for jf in range(nf):
                 tiles.append((ulo + (uhi - ulo) * iu / nu, ulo + (uhi - ulo) * (iu + 1) / nu, flo + (fhi - flo) * jf / nf, flo + (fhi - flo) * (jf + 1) / nf))
     for tulo, tuhi, tflo, tfhi in tiles:
+        # a filler obeys the carve's own water bounds: its centroid never pokes past the drain
+        # collector nor upslope of the supply canal (the floating-diamond wart: a tile seated in
+        # the bare margin between the fan's drain edge and the smoothed outline reads as a paddy
+        # with no water, hanging off the fan - exactly what spills_drain exists to forbid)
+        tcu, tcf = (tulo + tuhi) / 2, (tflo + tfhi) / 2
+        tcx, tcy = F.to_xy(tcu, tcf)
+        if not _pip(tcx, tcy, envelope):
+            continue  # the tile drifted out of the fan (cluster-box expansion can cross the rim - the floating-diamond wart)
+        fd_t = _f_at_u(F, dpts, tcu)
+        if fd_t is not None and tcf > fd_t - 3 * g:
+            continue  # past the collector (None = no drain below this u: a low-u fork wedge, bounded by its thread instead)
+        fc_t = _f_at_u(F, a_pts, tcu)
+        if fc_t is not None and tcf < fc_t + 4 * g:
+            continue
         quad = [F.to_xy(tulo, tflo), F.to_xy(tuhi, tflo), F.to_xy(tuhi, tfhi), F.to_xy(tulo, tfhi)]
         # shrink toward the centroid until the quad only OVERLAPS its neighbors shallowly.
         # A thin sliver is bordered by plots on BOTH sides, so demanding full clearance would
@@ -609,7 +641,9 @@ def _fill_wedges(R: random.Random, F: _Frame, plots: list[dict[str, Any]], envel
         cy = sum(q[1] for q in quad) / 4
         for _ in range(12):
             probes = list(quad) + [((quad[i][0] + quad[(i + 1) % 4][0]) / 2, (quad[i][1] + quad[(i + 1) % 4][1]) / 2) for i in range(4)]
-            if all(depth_in_plots(px, py) <= 6 * g for px, py in probes):
+            if all(depth_in_plots(px, py) <= 6 * g for px, py in probes) and not any(
+                any(sd(px, py, c["pts"][i], c["pts"][i + 1]) < c["w"] / 2 + 2 * g for i in range(len(c["pts"]) - 1)) for px, py in probes for c in channels
+            ):
                 break
             quad = [(cx + (q[0] - cx) * 0.88, cy + (q[1] - cy) * 0.88) for q in quad]
         else:

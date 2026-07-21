@@ -483,6 +483,14 @@ class Settlement:
         self._ground_idx: int | None = None  # lane renders on top. Flushed as one ordered block (below buildings).
         self.water: list[dict[str, Any]] = []  # deferred WATERCOURSES (streams, channels, moat): all BEDS in one
         self._water_idx: int | None = None  # shared-opacity group, then all SHEENS in another, so crossings MERGE
+        self._late_water_idx: int | None = None  # a SECOND water block for comb-field channels (opt-in via
+        self.late_water: list[dict[str, Any]] = []  # field_channel(late=True)): spliced at its own first-call
+        # position, AFTER the field's plots - a city draws its moat/river first, which anchors the shared
+        # block early and would composite the whole ditch network UNDER the later-drawn paddy plots (the
+        # network invisible + its uncovered corridors reading as parchment pinstripes; 2026-07-21). The
+        # villages never hit this (their gens reach water after the fields), so late defaults False and
+        # their output is byte-identical. Late ends are clipped to abut other water (never overlap), so
+        # the two blocks cannot double-composite into a dark seam.
         #                           into a continuous confluence instead of stacking opacity (a dark seam).
         self.bscale = 1.0  # urban-building footprint scale (a large town packs at a finer grain)
         self.ftpx = 1.0  # declared REAL scale, feet per pixel - set via meta(ftpx=...); the
@@ -618,7 +626,7 @@ class Settlement:
             self.out.append("")  # placeholder, replaced by the sorted block at finish()
         self.ground.append({"zpri": zpri, "seq": len(self.ground), "edge": edge, "bed": bed, "top": top, "rec": rec, "zkey": zkey})
 
-    def _water(self, bed: Any, rec: Any, sheen: Any = None, edge: Any = None, clip: Any = None, pond_fill: bool = False) -> None:
+    def _water(self, bed: Any, rec: Any, sheen: Any = None, edge: Any = None, clip: Any = None, pond_fill: bool = False, late: bool = False) -> None:
         """Defer a watercourse (stream / channel / moat / POND) so the whole set renders as ONE block, in
         THREE sub-layers: all EDGES (pond rims - the only water feature with a border) at the bottom, then
         all BEDS (the blue water bodies, same color) inside one shared-opacity group, then all SHEENS (the
@@ -633,6 +641,12 @@ class Settlement:
         feeder whose bed/sheen are RE-EMITTED at flush, snapped to the rim - deferred so it works even when the
         feeder is drawn BEFORE the pond (M['pond'] is not known at call time). `pond_fill` marks the pond's
         water body, drawn LAST among the beds so it paints over any feeder's inside-the-rim overshoot."""
+        if late:
+            if self._late_water_idx is None:
+                self._late_water_idx = len(self.out)
+                self.out.append("")  # placeholder for the LATE block (see __init__)
+            self.late_water.append({"bed": bed, "sheen": sheen, "edge": edge, "rec": rec, "clip": clip, "pond_fill": pond_fill})
+            return
         if self._water_idx is None:
             self._water_idx = len(self.out)
             self.out.append("")  # placeholder, replaced by the three-group block at finish()
@@ -1940,7 +1954,7 @@ class Settlement:
         that end onto the rim so it JOINS the open water instead of drawing its bed/sheen across it."""
         return any(a and a.get("kind") == "pond" for a in (frm, to))
 
-    def field_channel(self, pts: Any, col: str, w0: float, w1: float) -> None:
+    def field_channel(self, pts: Any, col: str, w0: float, w1: float, late: bool = False) -> None:
         """Draw a comb-net irrigation channel (from the waterfields engine) THROUGH the water block, so it
         JOINS the pond + the other channels cleanly: its bed sits in the shared bed group (composited as one
         confluence, no dark seam), OVER the pond's rim edge (so its bed covers the rim where it meets the
@@ -1954,7 +1968,7 @@ class Settlement:
         pts = self._clip_to_stream(self._clip_to_moat(self._clip_to_pond(pts)))
         if abs(w1 - w0) < 0.2:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
-            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {})
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {}, late=late)
             return
         n, L = 7, len(pts)
         for k in range(n):
@@ -1963,7 +1977,7 @@ class Settlement:
                 continue
             wk = w0 + (w1 - w0) * (k + 0.5) / n
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in piece)
-            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {})
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {}, late=late)
 
     def lane(self, pts: Any, width: float = 16, clearance: float = 22, worn: bool = False, connector: bool = False) -> None:
         """A village lane or connecting path. `worn=True` draws it as UNPAVED TRODDEN EARTH: a NARROW
@@ -6640,6 +6654,19 @@ class Settlement:
             if sheenzs:
                 self.M["water_sheen_zmin"] = min(sheenzs)
             splices.append((self._water_idx, wblock))
+        if self._late_water_idx is not None:  # the LATE block (comb-field channels; see __init__): same
+            lblock: list[Any] = ['<g opacity="0.85">']  # shared-opacity compositing, spliced at ITS OWN
+            for w in self.late_water:  # first-call position so the ditch net draws OVER the field's plots
+                w["rec"]["bedz"] = self._late_water_idx + len(lblock)
+                lblock.append(w["bed"])
+            lblock.append('</g>')
+            lblock.append('<g opacity="0.55">')
+            for w in self.late_water:
+                if w["sheen"] is not None:
+                    w["rec"]["sheenz"] = self._late_water_idx + len(lblock)
+                    lblock.append(w["sheen"])
+            lblock.append('</g>')
+            splices.append((self._late_water_idx, lblock))
         for idx, block in sorted(splices, key=lambda s: -s[0]):  # high index first so the lower stays valid
             self.out[idx : idx + 1] = block
         if self.view:  # crop the viewBox to the requested window
