@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     400,
+     300
+    ],
+    [
+     400,
+     400
+    ],
+    [
+     300,
+     400
+    ]
+   ],
+   "crop": "barley",
+   "theta": 0
+  }
+ ],
+ "lanes": [
+  {
+   "pts": [
+    [
+     250,
+     350
+    ],
+    [
+     450,
+     350
+    ]
+   ],
+   "width": 5
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "lanes_clear_of_dry_plots"
+  ],
+  "source": "test_checks.py::test_lanes_clear_of_dry_plots_fires_on_a_path_through_the_crop"
+ }
+}

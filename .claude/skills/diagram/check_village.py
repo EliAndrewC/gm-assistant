@@ -3479,6 +3479,34 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"({mean_dia / med:.0%}; want ~40-80%): a wellhead must scale with the map grain (bscale), not a fixed pixel size",
             )
 
+    # LANES stay OFF the dry crop plots (GM 2026-07-21, caught on Hikari no Sato: the west field-spur
+    # ran straight through two barley plots). A trodden path does not cross row crops - historically a
+    # path runs on the baulk/margin BETWEEN plots, and the engine already keeps the reverse direction
+    # honest (dry plots are no-build ground for houses, groves skip them). A lane may TOUCH a plot's
+    # edge (paths hug field margins by design), so only points >3px INSIDE a plot fire.
+    _lane_on_crop = []
+    _dps = [dp["poly"] for dp in M.get("dry_plots", [])]
+    if _dps:
+        for _ln in M.get("lanes", []):
+            _pts = _ln["pts"]
+            for _i in range(len(_pts) - 1):
+                (_ax, _ay), (_bx, _by) = _pts[_i], _pts[_i + 1]
+                _n = max(2, int(math.hypot(_bx - _ax, _by - _ay) / 8))
+                for _t in range(_n + 1):
+                    _px, _py = _ax + (_bx - _ax) * _t / _n, _ay + (_by - _ay) * _t / _n
+                    # depth INSIDE the plot = distance to its boundary (poly_dist is 0 for interior points)
+                    if any(point_in_poly(_px, _py, _dp) and min(seg_dist(_px, _py, _dp[_k], _dp[(_k + 1) % len(_dp)]) for _k in range(len(_dp))) > 3 for _dp in _dps):
+                        _lane_on_crop.append((round(_px), round(_py)))
+                        break
+                else:
+                    continue
+                break
+    check(
+        "lanes_clear_of_dry_plots",
+        not _lane_on_crop,
+        f"lane(s) run THROUGH a dry crop plot at {_lane_on_crop[:3]} - a trodden path crosses no row crops; route it on the baulk between plots or around the hem (a lane may touch a plot edge, not its interior)",
+    )
+
     # WELLS SIZED TO THE POPULATION (GM 2026-07-21) - a DELIBERATE LIBERTY, banded. What the research found
     # (see settlements.md 'Wells - research + deliberate liberty' for the full note): historically a south-China
     # rice village of ~70 households ran 1-3 communal drinking wells TOTAL - surface water (canal/pond, settled
