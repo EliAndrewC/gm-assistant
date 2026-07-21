@@ -1,0 +1,20 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "cremation_grounds": [
+  {
+   "x": 200,
+   "y": 800,
+   "w": 75,
+   "h": 52,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_has_ossuary"
+  ],
+  "source": "test_checks.py::test_town_has_ossuary_fires_when_missing"
+ }
+}

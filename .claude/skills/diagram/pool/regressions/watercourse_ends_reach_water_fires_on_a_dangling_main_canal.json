@@ -1,0 +1,63 @@
+{
+ "meta": {},
+ "fields": [
+  {
+   "name": "f1",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     300
+    ],
+    [
+     300,
+     300
+    ],
+    [
+     300,
+     600
+    ],
+    [
+     100,
+     600
+    ]
+   ],
+   "bbox": [
+    100,
+    300,
+    300,
+    600
+   ],
+   "vis_bbox": [
+    100,
+    300,
+    300,
+    600
+   ]
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     120,
+     310
+    ],
+    [
+     450,
+     340
+    ]
+   ],
+   "role": "main",
+   "field": "f1",
+   "w": 6,
+   "w_tail": 6
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "watercourse_ends_reach_water"
+  ],
+  "source": "test_checks.py::test_watercourse_ends_reach_water_fires_on_a_dangling_main_canal"
+ }
+}

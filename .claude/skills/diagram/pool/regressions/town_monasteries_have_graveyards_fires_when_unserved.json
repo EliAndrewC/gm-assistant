@@ -1,0 +1,20 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "religious": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 100,
+   "h": 70,
+   "kind": "monastery"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "town_monasteries_have_graveyards"
+  ],
+  "source": "test_checks.py::test_town_monasteries_have_graveyards_fires_when_unserved"
+ }
+}

@@ -1510,7 +1510,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # can land outside the tight frame and be silently CLIPPED (caught the Ueda west graveyard, which the crop
     # never framed because it was drawn after the crop). Scoped to the crop-to-content scales; a town/city is
     # framed bespoke (tight to walls, fields run off-edge) so its "off-frame is intentional" is not a bug here.
-    if scale in ("hamlet", "village") and _vw:
+    if scale in ("hamlet", "village", "town") and _vw:
         # the village/hamlet hard features (a town/city carries urban/funerary kinds recorded as lists that this
         # per-scale check does not model). Each carries EITHER a torii list [x,y,z], a `poly`, a well `r`, or w/h.
         # `village_groves` is NOT held to containment (GM 2026-07-20): the communal windbreak may CLIP at the
@@ -4028,6 +4028,24 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 ccx = sum(h["x"] for h in houses) / len(houses)
                 ccy = sum(h["y"] for h in houses) / len(houses)
                 lee = [(round(g["x"]), round(g["y"])) for g in windbreaks if (g["x"] - ccx) * wvx + (g["y"] - ccy) * wvy <= 0]
+                # THE BELT EMBRACES THE CLUSTER - the doctrine's "nestles against and embraces"
+                # (GM 2026-07), automated via a form-aware ADJACENCY metric after the windward-
+                # canopy-fraction metric failed calibration (approved Kikuta scores 4-18% on it):
+                # at least one SUBSTANTIAL windbreak grove (>= 12 clumps) must stand within 150px
+                # of a farmhouse. Far corner forest masses are welcome extras; a map with ONLY far
+                # masses is decoration, not a wind wall. Calibrated 2026-07: approved maps nestle
+                # at 37-131px (Kikuta's ribbon belt is the 131 outlier).
+                # a map whose wood is a REAL FOREST (M["forest"], the edge-feature wood - Moritono's
+                # Shirin Forest) is exempt: the hamlet nestles against the forest itself, the
+                # strongest windbreak of all. Small forest_patches do NOT exempt.
+                subst_wb = [] if M.get("forest") else [g for g in windbreaks if len(g.get("clumps", [])) >= 12]
+                nestle_d = min((min(math.hypot(c[0] - h["x"], c[1] - h["y"]) for c in g["clumps"] for h in houses) for g in subst_wb), default=None)
+                check(
+                    "village_windbreak_embraces_cluster",
+                    bool(M.get("forest")) or (bool(subst_wb) and nestle_d is not None and nestle_d <= 150),
+                    f"no substantial windbreak belt (>= 12 clumps) nestles against the farm cluster (nearest {None if nestle_d is None else round(nestle_d)}px; want <= 150) - "
+                    f"the back-village grove EMBRACES the houses' windward fringe; far corner masses alone are decoration",
+                )
                 check(
                     "village_windbreak_on_windward_side",
                     not lee,
@@ -4440,6 +4458,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"ground (outside {bo:.0f}px2 vs inside {bi:.0f}px2; want >= 1.3x) - there is room beyond the walls",
                 )
 
+        if scale == "town":
+            # every monastery that CAN host a graveyard keeps one in its precinct (the town analog
+            # of city_temples_have_graveyards - GM audit 2026-07; graveyard=False opts out, e.g. a
+            # small relic monastery whose dead go to the parish ground)
+            needy_t = [r for r in temples if r.get("graveyard", True)]
+            unserved_t = [r.get("label", (round(r["x"]), round(r["y"]))) for r in needy_t if not any(math.hypot(c["x"] - r["x"], c["y"] - r["y"]) < 230 for c in cems)]
+            check(
+                "town_monasteries_have_graveyards",
+                not unserved_t,
+                f"monastery(ies) with no graveyard in their precinct: {unserved_t[:3]} - a town monastery keeps the parish (danka) burial ground unless it opts out (graveyard=False)",
+            )
+
         if scale == "city":
             # every temple that CAN host a graveyard has one in its precinct (graveyard=False opts out)
             needy = [r for r in temples if r.get("graveyard", True)]
@@ -4488,6 +4518,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 bool(far_crem),
                 "a county town cremates its dead at a CREMATION GROUND (s.cremation_ground) at the edge, clear of the dwellings - monk-run with burakumin assistants",
             )
+            # PAUPER OSSUARY: the county town's muenzuka stands by its cremation ground (the town
+            # analog of city_has_ossuary - GM audit 2026-07); outside the rampart when walled
+            wall_oss = M.get("wall")
+            oss_t = [o for o in oss if not (wall_oss and len(wall_oss) >= 3 and point_in_poly(o["x"], o["y"], wall_oss))]
+            check(
+                "town_has_ossuary",
+                any(any(math.hypot(o["x"] - c["x"], o["y"] - c["y"]) < 320 for c in crem) for o in oss_t),
+                "a county town needs a pauper OSSUARY mound (s.ossuary) beside its cremation ground - the communal bones of the poor and the unconnected dead (muenbotoke)",
+            )
+
+    # GEOMETRY SANITY AT EVERY SCALE (GM audit 2026-07: this only ran for cities): a wall vertex
+    # millions of px off the canvas is malformed input at any scale - towns have walls too.
+    if scale != "city":
+        _Wg = meta.get("W") or 3200
+        _Hg = meta.get("H") or 2700
+        _wallg = M.get("wall") or []
+        _oobg = [(round(vx), round(vy)) for vx, vy in [tuple(p) for p in _wallg] if not (-_Wg <= vx <= 2 * _Wg and -_Hg <= vy <= 2 * _Hg)]
+        check(
+            "geometry_within_canvas",
+            not _oobg,
+            f"wall vertex(es) far outside the canvas ({_Wg}x{_Hg}): {sorted(set(_oobg))[:4]} - malformed input; a valid settlement's geometry lies near the drawn canvas",
+        )
 
     # LABEL TEXT renders ON TOP of everything: no part of a label may be covered. Labels live in the
     # topmost layer (s.add_label), above the TOP-layer structures (gate furniture, kido, torii); the
@@ -4539,6 +4591,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             return bool(mo) and any(seg_dist(pt[0], pt[1], mo[i], mo[i + 1]) < 34 for i in range(len(mo) - 1))
         if k == "drain":  # a brook empties FROM the field drain (akusui outfall)
             return any(seg_dist(pt[0], pt[1], dp[i], dp[i + 1]) < 30 for fd in M.get("field_ditches", []) if fd.get("role") == "drain" for dp in [fd["poly"]] for i in range(len(dp) - 1))
+        if k == "ditch":
+            # a weir/intake HANDS OFF to the irrigation works (a head-race, a canal): the mirror of
+            # the stream-diverted-into-a-channel clause in stream_runs_off_edge (GM audit 2026-07)
+            return any(seg_dist(pt[0], pt[1], dp[i], dp[i + 1]) < 22 for d2 in (M.get("field_ditches", []) + M.get("channels", [])) for dp in [d2["poly"]] for i in range(len(dp) - 1))
         return False
 
     for idx, c in enumerate(M["channels"]):
@@ -5003,24 +5059,105 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     all_ways = [st["poly"] for st in M.get("streams", [])] + [c["poly"] for c in M.get("channels", [])] + [dd["poly"] for dd in M.get("field_ditches", [])] + ([M["moat"]] if M.get("moat") else [])
     dry_drains = []
     for dd in M.get("field_ditches", []):
-        if dd.get("role") != "drain":
-            continue
+        if dd.get("role") not in ("drain", "main"):
+            continue  # delivery/lateral tails END mid-crop by tagoshi doctrine
         vb = vis_by_field.get(dd["field"])
         for endp in (dd["poly"][0], dd["poly"][-1]):
             if not (12 < endp[0] < EX1 - 12 and 12 < endp[1] < EY1 - 12) or endp[0] < EX0 + 12 or endp[1] < EY0 + 12:
                 continue  # an off-map (or map-edge) end discharges beyond the frame
-            if vb and vb[0] - 14 <= endp[0] <= vb[2] + 14 and vb[1] - 14 <= endp[1] <= vb[3] + 14:
-                continue  # among the planted plots - the collector's in-crop end
+            if vb and vb[0] - 18 <= endp[0] <= vb[2] + 18 and vb[1] - 18 <= endp[1] <= vb[3] + 18:
+                continue  # at/among the planted plots: an in-crop end. A canal tail past its last
+                # offtake legitimately dies at the crop edge; margin 18 calibrated so the approved
+                # honda/shimizu/kikuta/hikari-east tails stay legal (GM audit 2026-07 widened this
+                # check from drain-only to main pieces too)
             dgap: float | None = min(
                 (min(seg_dist(endp[0], endp[1], pl[k], pl[k + 1]) for k in range(len(pl) - 1)) for pl in all_ways if pl is not dd["poly"]),
                 default=None,
             )
             if dgap is None or dgap > 12:
                 dry_drains.append((round(endp[0]), round(endp[1])))
+    # TOWN MARGINS ARE CLOTHED TOO (GM audit 2026-07). The village satoyama rule
+    # (margins_form_continuous_ring) deliberately excludes towns because its cover model knows
+    # nothing of urban fabric - so this TOWN variant counts the urban features as cover: every
+    # structure box, road/street/lane verges, watercourses, the hill, the pond, and ALL ground
+    # INSIDE the rampart (a walled town's open interior is squares and yards - urban floor, not
+    # wasteland). What remains must be clothed (fields, hems, pastures, marsh, groves, grazing
+    # commons scrub) to within a laxer allowance than a village's 12% - open worked commons
+    # around a county seat are real. Sampled on a 25px grid like the village check.
+    if scale == "town":
+        tm_polys = [f_["outline"] for f_ in M.get("fields", [])] + [f_["outline"] for f_ in M.get("flower_fields", [])]
+        for k_ in ("commons", "marshes", "village_groves", "dry_plots", "pastures", "forest_patches"):
+            for o_ in M.get(k_, []) or []:
+                p_ = o_.get("poly") if isinstance(o_, dict) else o_
+                if p_ is not None and len(p_) >= 3:
+                    tm_polys.append(p_)
+        tm_boxes = []
+        for v_ in M.values():
+            if isinstance(v_, list) and v_ and isinstance(v_[0], dict) and "x" in v_[0] and "w" in v_[0] and "h" in v_[0]:
+                for o_ in v_:
+                    tm_boxes.append((o_["x"] - o_["w"] / 2 - 8, o_["y"] - o_["h"] / 2 - 8, o_["x"] + o_["w"] / 2 + 8, o_["y"] + o_["h"] / 2 + 8))
+        for g_ in M.get("village_groves", []):
+            for c_ in g_.get("clumps", []):
+                tm_boxes.append((c_[0] - 16, c_[1] - 16, c_[0] + 16, c_[1] + 16))
+        tm_lines = []
+        if road:
+            tm_lines.append((road, 60.0))
+        tm_lines += [(st_["pts"], st_["w"] / 2 + 40) for st_ in M.get("town_streets", [])]
+        tm_lines += [(ln_["pts"], 30.0) for ln_ in M.get("lanes", [])]
+        tm_lines += [(s_["poly"], 30.0) for s_ in M.get("streams", [])] + [(c2_["poly"], 24.0) for c2_ in M.get("channels", [])] + [(d_["poly"], 20.0) for d_ in M.get("field_ditches", [])]
+        tm_wall = M.get("wall")
+        if tm_wall:
+            tm_lines.append((tm_wall, 40.0))
+        tm_hill = M.get("hill")
+        tm_pond = M.get("pond")
+        tm_bare = tm_total = 0
+        ty = EY0 + 12.5
+        while ty < EY1:
+            tx = EX0 + 12.5
+            while tx < EX1:
+                tm_total += 1
+                covered = (
+                    any(bx0 <= tx <= bx1 and by0 <= ty <= by1 for bx0, by0, bx1, by1 in tm_boxes)
+                    or (tm_wall is not None and len(tm_wall) >= 3 and point_in_poly(tx, ty, tm_wall))
+                    or any(point_in_poly(tx, ty, p_) for p_ in tm_polys)
+                    or any(any(seg_dist(tx, ty, pl_[i_], pl_[i_ + 1]) < hw_ for i_ in range(len(pl_) - 1)) for pl_, hw_ in tm_lines)
+                    or (tm_hill is not None and in_ellipse(tx, ty, tm_hill, 1.45))
+                    or (tm_pond is not None and in_ellipse(tx, ty, [tm_pond[0], tm_pond[1], tm_pond[2] + 30, tm_pond[3] + 30]))
+                )
+                if not covered:
+                    tm_bare += 1
+                tx += 25
+            ty += 25
+        tm_frac = tm_bare / tm_total if tm_total else 1.0
+        check(
+            "town_margins_clothed",
+            tm_frac <= 0.20,
+            f"{tm_frac:.0%} of the town sheet is bare open ground (over the 20% allowance) - a county seat's margins are worked land: clothe the aprons in grazing commons scrub / pasture / marsh / coppice (s.commons(..., role='grazing') bands; the ground inside the rampart counts as urban floor)",
+        )
+
+    # NO CANOPY STANDS OVER OPEN WATER (GM audit 2026-07): a village-grove clump drawn across a
+    # stream / channel / moat reads as trees growing in the current. The fengshui-pond rule
+    # (trees_clear_of_fengshui_ponds) covered only ponds; this closes the running-water half.
+    # village_grove now skips watercourse corridors at draw time; this is the ratchet.
+    wet_canopy = []
+    canopy_lines = [(st_c["poly"], st_c.get("w", 9) / 2) for st_c in M.get("streams", [])]
+    canopy_lines += [(cc_c["poly"], cc_c.get("w", 2.5) / 2) for cc_c in M.get("channels", [])]
+    if M.get("moat"):
+        canopy_lines.append((M["moat"], M.get("moat_width", 22) / 2))
+    for vg_c in M.get("village_groves", []):
+        for cl_c in vg_c.get("clumps", []):
+            if any(min(seg_dist(cl_c[0], cl_c[1], wl[k], wl[k + 1]) for k in range(len(wl) - 1)) < whw + 6 for wl, whw in canopy_lines):
+                wet_canopy.append((round(cl_c[0]), round(cl_c[1])))
     check(
-        "drain_ends_reach_water",
+        "canopy_clear_of_watercourses",
+        not wet_canopy,
+        f"grove canopy clump(s) stand over open water at {sorted(set(wet_canopy))[:4]} - trees do not grow in a stream, channel, or moat; keep the belt polys (and the clump filter) clear of every watercourse",
+    )
+
+    check(
+        "watercourse_ends_reach_water",
         not dry_drains,
-        f"drain collector end(s) dangle in bare ground at {sorted(set(dry_drains))[:4]} - an on-map collector end outside the crop must JOIN a watercourse (a culvert to the stream, another ditch, the moat) or run off the frame; runoff never just stops",
+        f"canal/collector end(s) dangle in bare ground at {sorted(set(dry_drains))[:4]} - an on-map main or drain end outside the crop must JOIN a watercourse (a culvert, the stream, another ditch, the moat) or run off the frame; water never just stops",
     )
 
     check(
@@ -5483,6 +5620,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         for kind, (lo, hi) in bands.items():
             c = caste_n[kind]
             check(f"town_caste_count[{kind}]", lo <= c <= hi, f"{kind} buildings {c} outside budgets.md band [{lo},{hi}]")
+        # SENIOR SAMURAI GET LARGER HOUSES at the county seat too (budgets.md's rank mix; the town
+        # analog of city_samurai_housing_varied - GM audit 2026-07): at least one samurai_large
+        # among a majority of small houses.
+        sl_t = bk.get("samurai_large", 0)
+        ss_t = bk.get("samurai", 0)
+        if sl_t or ss_t:
+            check(
+                "town_samurai_housing_varied",
+                sl_t >= 1 and ss_t > sl_t,
+                f"samurai housing lacks rank variety (large={sl_t}, small={ss_t}) - the senior official(s) at a county seat keep a larger house among the juniors' small ones",
+            )
+        # THE BURAKUMIN QUARTER IS SEGREGATED - the doctrine word on every map, previously enforced
+        # nowhere (GM audit 2026-07): no other caste's dwelling stands within 40px of a burakumin
+        # dwelling. TOWN-scoped: a city's ward system zones quarters wall-to-wall, so its
+        # segregation is zoning, not open ground (Tango/Nagahara adjacent-quarter seams run ~10px).
+        bur_t = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin"]
+        oth_t = [b for b in M.get("buildings", []) if b.get("kind") in ("laborer", "laborer_large", "servant", "merchant", "merchant_house", "merchant_large", "samurai", "samurai_large")] + houses
+        if bur_t and oth_t:
+            close_t = [(round(b["x"]), round(b["y"])) for b in bur_t if any(math.hypot(b["x"] - o["x"], b["y"] - o["y"]) < 40 for o in oth_t)]
+            check(
+                "burakumin_quarter_segregated",
+                not close_t,
+                f"burakumin dwelling(s) mixed among other castes at {close_t[:3]} - the quarter is SEGREGATED: open ground separates it from every other caste's housing",
+            )
         non_farmer_max = max(caste_n.values(), default=0)
         # WHY (farmers are the overwhelming majority caste): settlements.md "Historical grounding"
         check("town_farmers_plurality", farmhouses >= non_farmer_max, f"farmhouses {farmhouses} should be the largest single group (max other {non_farmer_max})")
@@ -5750,13 +5911,39 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"it sits at the settlement's edge, so its gate should open toward the town/road (no fixed default; south is the formal fallback)",
         )
 
+    if scale == "town" and meta.get("fire_tower", True):
+        # EVERY town's dense wooden core needs a fire-watch tower over its rooftops - a walled
+        # town's rampart traps a fire in, and an unwalled county seat's packed road-front core
+        # burns just the same (GM audit 2026-07 widened this from walled-only). WHY:
+        # settlements.md "Fire towers". Opt out per-map with meta(fire_tower=False).
+        check("town_has_fire_tower", len(M.get("fire_towers", [])) >= 1, "a town's dense wooden core needs a fire-watch tower (s.fire_tower(...); meta(fire_tower=False) to omit)")
+
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")), "a walled town must have a wall and a gate")
-        # the dense, ENCLOSED wooden core needs a fire-watch tower over its rooftops (the wall that
-        # keeps raiders out also traps a fire in); an OPEN road-town relies on its road and field gaps
-        # and gets none. WHY: settlements.md "Fire towers". Opt out per-map with meta(fire_tower=False).
-        if meta.get("fire_tower", True):
-            check("walled_town_has_fire_tower", len(M.get("fire_towers", [])) >= 1, "a walled town's dense wooden core needs a fire-watch tower (s.fire_tower(...); meta(fire_tower=False) to omit)")
+        # COMMONERS SHELTER INSIDE THE RAMPART - the jokamachi doctrine every walled-town docstring
+        # states, previously enforced by nothing (GM audit 2026-07; the town analog of
+        # city_commoner_dwellings_inside_walls). Town exemptions differ from the city's: the
+        # BURAKUMIN quarter is doctrinally OUTSIDE (segregated), and the guan-xiang gate market
+        # keeps its merchant houses by the gate - so laborers/servants outside are hard-zero, and
+        # a merchant dwelling outside must stand within ~260px of the gate.
+        wallp_t = M.get("wall")
+        gate_t = M.get("gate")
+        if wallp_t and len(wallp_t) >= 3:
+            out_ls = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("laborer", "laborer_large", "servant") and not point_in_poly(b["x"], b["y"], wallp_t)]
+            out_mm = [
+                (round(b["x"]), round(b["y"]))
+                for b in M.get("buildings", [])
+                if b.get("kind") in ("merchant", "merchant_house", "merchant_large")
+                and not point_in_poly(b["x"], b["y"], wallp_t)
+                and (not gate_t or math.hypot(b["x"] - gate_t[0], b["y"] - gate_t[1]) > 260)
+            ]
+            check(
+                "walled_town_commoners_inside_walls",
+                not out_ls and not out_mm,
+                f"commoner dwelling(s) outside the rampart: laborers/servants {out_ls[:3]}, far-from-gate merchants {out_mm[:3]} - "
+                f"a walled town's urban castes live INSIDE; only farmhouses, the segregated burakumin quarter, and the gate market belong outside",
+            )
+
         w = M.get("wall") or []
         if len(w) >= 3:
             lens = [math.hypot(w[i + 1][0] - w[i][0], w[i + 1][1] - w[i][1]) for i in range(len(w) - 1)]

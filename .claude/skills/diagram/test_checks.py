@@ -4497,16 +4497,18 @@ def _tower(x, y):
     return {"x": x, "y": y, "w": 26, "h": 26, "rot": 0}
 
 
-def test_walled_town_has_fire_tower_fires_when_absent():
-    assert "walled_town_has_fire_tower" in f({"meta": {"scale": "town", "walled": True}})
+def test_town_has_fire_tower_fires_when_absent():
+    # EVERY town now (GM audit 2026-07 widened this from walled-only): unwalled county seats too
+    assert "town_has_fire_tower" in f({"meta": {"scale": "town", "walled": True}})
+    assert "town_has_fire_tower" in f({"meta": {"scale": "town", "walled": False}})
 
 
-def test_walled_town_has_fire_tower_passes_with_one():
-    assert "walled_town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)]})
+def test_town_has_fire_tower_passes_with_one():
+    assert "town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)]})
 
 
-def test_walled_town_has_fire_tower_opt_out():
-    assert "walled_town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True, "fire_tower": False}})
+def test_town_has_fire_tower_opt_out():
+    assert "town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True, "fire_tower": False}})
 
 
 def test_unwalled_town_needs_no_fire_tower():
@@ -5796,7 +5798,7 @@ def _drain_ditch(pts, field="f1"):
     return {"poly": pts, "role": "drain", "field": field, "w": 6, "w_tail": 6}
 
 
-def test_drain_ends_reach_water_fires_when_the_collector_dangles():
+def test_watercourse_ends_reach_water_fires_when_the_collector_dangles():
     # the collector's east end stops 50px short of the stream, outside the planted bbox
     M = {
         "meta": {},
@@ -5804,10 +5806,10 @@ def test_drain_ends_reach_water_fires_when_the_collector_dangles():
         "streams": [{"poly": [[430, 100], [430, 900]], "w": 9}],
         "field_ditches": [_drain_ditch([[120, 590], [370, 610]])],
     }
-    assert "drain_ends_reach_water" in f(M)
+    assert "watercourse_ends_reach_water" in f(M)
 
 
-def test_drain_ends_reach_water_passes_when_a_culvert_carries_it_on():
+def test_watercourse_ends_reach_water_passes_when_a_culvert_carries_it_on():
     M = {
         "meta": {},
         "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 300], [300, 300], [300, 600], [100, 600]], "bbox": [100, 300, 300, 600], "vis_bbox": [100, 300, 300, 600]}],
@@ -5815,7 +5817,7 @@ def test_drain_ends_reach_water_passes_when_a_culvert_carries_it_on():
         "field_ditches": [_drain_ditch([[120, 590], [370, 610]])],
         "channels": [{"poly": [[370, 610], [430, 628]], "frm": {"kind": "drain"}, "to": {"kind": "stream"}, "w": 2.5}],
     }
-    assert "drain_ends_reach_water" not in f(M)
+    assert "watercourse_ends_reach_water" not in f(M)
 
 
 def test_city_fan_heads_quilted_moat_exclusion_and_degenerate_segments():
@@ -5830,3 +5832,131 @@ def test_city_fan_heads_quilted_moat_exclusion_and_degenerate_segments():
         "field_ditches": [{"field": "t", "poly": [[112, 0], [112, 200], [112, 200], [112, 400]], "w": 6, "role": "main"}],
     }
     f(M)  # execution is the point: west flank samples sit in the moat corridor, the duplicate vertex is skipped
+
+
+# ---- the town-scale audit batch (GM 2026-07): checks adapted from the city suite ----
+def _dw(x, y, kind):
+    return {"x": x, "y": y, "w": 30, "h": 20, "kind": kind, "rot": 0}
+
+
+def test_walled_town_commoners_inside_walls_fires_on_an_outside_laborer():
+    M = {
+        "meta": {"scale": "town", "walled": True},
+        "wall": [[300, 300], [700, 300], [700, 700], [300, 700]],
+        "gate": [500, 700],
+        "buildings": [_dw(900, 500, "laborer")],
+        "fire_towers": [_tower(500, 500)],
+    }
+    assert "walled_town_commoners_inside_walls" in f(M)
+
+
+def test_walled_town_commoners_inside_walls_allows_burakumin_and_gate_merchants():
+    M = {
+        "meta": {"scale": "town", "walled": True},
+        "wall": [[300, 300], [700, 300], [700, 700], [300, 700]],
+        "gate": [500, 700],
+        "buildings": [_dw(900, 500, "burakumin"), _dw(520, 780, "merchant"), _dw(500, 500, "laborer")],
+        "fire_towers": [_tower(500, 500)],
+    }
+    assert "walled_town_commoners_inside_walls" not in f(M)
+
+
+def test_town_monasteries_have_graveyards_fires_when_unserved():
+    M = {"meta": {"scale": "town"}, "religious": [{"x": 500, "y": 500, "w": 100, "h": 70, "kind": "monastery"}]}
+    assert "town_monasteries_have_graveyards" in f(M)
+
+
+def test_town_monasteries_have_graveyards_passes_with_precinct_ground_or_opt_out():
+    M = {"meta": {"scale": "town"}, "religious": [{"x": 500, "y": 500, "w": 100, "h": 70, "kind": "monastery"}], "cemeteries": [{"x": 560, "y": 420, "w": 80, "h": 60, "rot": 0}]}
+    assert "town_monasteries_have_graveyards" not in f(M)
+    M2 = {"meta": {"scale": "town"}, "religious": [{"x": 500, "y": 500, "w": 100, "h": 70, "kind": "monastery", "graveyard": False}]}
+    assert "town_monasteries_have_graveyards" not in f(M2)
+
+
+def test_town_has_ossuary_fires_when_missing():
+    M = {"meta": {"scale": "town"}, "cremation_grounds": [{"x": 200, "y": 800, "w": 75, "h": 52, "rot": 0}]}
+    assert "town_has_ossuary" in f(M)
+
+
+def test_town_has_ossuary_passes_beside_the_cremation_ground():
+    M = {"meta": {"scale": "town"}, "cremation_grounds": [{"x": 200, "y": 800, "w": 75, "h": 52, "rot": 0}], "ossuaries": [{"x": 260, "y": 860, "w": 20, "h": 20, "rot": 0}]}
+    assert "town_has_ossuary" not in f(M)
+
+
+def test_town_samurai_housing_varied_fires_on_uniform_small_houses():
+    M = {"meta": {"scale": "town", "population": 100}, "buildings": [_dw(400 + i * 60, 400, "samurai") for i in range(6)]}
+    assert "town_samurai_housing_varied" in f(M)
+
+
+def test_town_samurai_housing_varied_passes_with_a_senior_house():
+    M = {"meta": {"scale": "town", "population": 100}, "buildings": [_dw(400, 340, "samurai_large")] + [_dw(400 + i * 60, 400, "samurai") for i in range(5)]}
+    assert "town_samurai_housing_varied" not in f(M)
+
+
+def test_burakumin_quarter_segregated_fires_when_interleaved():
+    M = {"meta": {"scale": "town", "population": 100}, "buildings": [_dw(500, 500, "burakumin"), _dw(530, 510, "laborer")]}
+    assert "burakumin_quarter_segregated" in f(M)
+
+
+def test_burakumin_quarter_segregated_passes_with_open_ground_between():
+    M = {"meta": {"scale": "town", "population": 100}, "buildings": [_dw(500, 500, "burakumin"), _dw(700, 500, "laborer")]}
+    assert "burakumin_quarter_segregated" not in f(M)
+
+
+def test_village_windbreak_embraces_cluster_fires_on_far_corner_masses_only():
+    # a substantial belt exists but stands 400px from the nearest farmhouse - decoration, not a wall
+    houses = [{"x": 500 + i * 30, "y": 500, "w": 23, "h": 14, "kind": "plain", "rot": 0} for i in range(12)]
+    far = {"x": 900, "y": 100, "w": 120, "h": 60, "role": "windbreak", "clumps": [[880 + j * 6, 100] for j in range(14)]}
+    M = {"meta": {"scale": "village", "nucleated": True}, "houses": houses, "village_groves": [far]}
+    assert "village_windbreak_embraces_cluster" in f(M)
+
+
+def test_village_windbreak_embraces_cluster_passes_when_the_belt_nestles():
+    houses = [{"x": 500 + i * 30, "y": 500, "w": 23, "h": 14, "kind": "plain", "rot": 0} for i in range(12)]
+    belt = {"x": 590, "y": 420, "w": 300, "h": 50, "role": "windbreak", "clumps": [[470 + j * 22, 425] for j in range(14)]}
+    M = {"meta": {"scale": "village", "nucleated": True}, "houses": houses, "village_groves": [belt]}
+    assert "village_windbreak_embraces_cluster" not in f(M)
+
+
+def test_geometry_within_canvas_fires_on_a_stray_town_wall_vertex():
+    M = {"meta": {"scale": "town", "W": 2000, "H": 1300}, "wall": [[300, 300], [9999999, 300], [700, 700]]}
+    assert "geometry_within_canvas" in f(M)
+
+
+def test_canopy_clear_of_watercourses_fires_on_a_clump_in_the_stream():
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "village_groves": [{"x": 400, "y": 500, "w": 60, "h": 40, "role": "copse", "clumps": [[402, 500]]}]}
+    assert "canopy_clear_of_watercourses" in f(M)
+
+
+def test_canopy_clear_of_watercourses_passes_beside_the_bank():
+    M = {"meta": {}, "streams": [{"poly": [[400, 100], [400, 900]], "w": 9}], "village_groves": [{"x": 440, "y": 500, "w": 60, "h": 40, "role": "copse", "clumps": [[440, 500]]}]}
+    assert "canopy_clear_of_watercourses" not in f(M)
+
+
+def test_watercourse_ends_reach_water_fires_on_a_dangling_main_canal():
+    # a supply canal's free end far past the crop with no join - the hikari-east class
+    M = {
+        "meta": {},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 300], [300, 300], [300, 600], [100, 600]], "bbox": [100, 300, 300, 600], "vis_bbox": [100, 300, 300, 600]}],
+        "field_ditches": [{"poly": [[120, 310], [450, 340]], "role": "main", "field": "f1", "w": 6, "w_tail": 6}],
+    }
+    assert "watercourse_ends_reach_water" in f(M)
+
+
+def test_watercourse_ends_reach_water_allows_a_canal_tail_at_the_crop_edge():
+    M = {
+        "meta": {},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 300], [300, 300], [300, 600], [100, 600]], "bbox": [100, 300, 300, 600], "vis_bbox": [100, 300, 300, 600]}],
+        "field_ditches": [{"poly": [[120, 310], [314, 330]], "role": "main", "field": "f1", "w": 6, "w_tail": 6}],
+    }
+    assert "watercourse_ends_reach_water" not in f(M)
+
+
+def test_town_margins_clothed_fires_on_a_bare_sheet():
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}}
+    assert "town_margins_clothed" in f(M)
+
+
+def test_town_margins_clothed_passes_when_the_ground_is_worked():
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "commons": [{"x": 500, "y": 500, "w": 1000, "h": 1000, "role": "grazing", "poly": [[-10, -10], [1010, -10], [1010, 1010], [-10, 1010]]}]}
+    assert "town_margins_clothed" not in f(M)

@@ -1,0 +1,53 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "wall": [
+  [
+   300,
+   300
+  ],
+  [
+   700,
+   300
+  ],
+  [
+   700,
+   700
+  ],
+  [
+   300,
+   700
+  ]
+ ],
+ "gate": [
+  500,
+  700
+ ],
+ "buildings": [
+  {
+   "x": 900,
+   "y": 500,
+   "w": 30,
+   "h": 20,
+   "kind": "laborer",
+   "rot": 0
+  }
+ ],
+ "fire_towers": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 26,
+   "h": 26,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "walled_town_commoners_inside_walls"
+  ],
+  "source": "test_checks.py::test_walled_town_commoners_inside_walls_fires_on_an_outside_laborer"
+ }
+}
