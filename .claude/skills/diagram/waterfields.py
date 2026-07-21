@@ -494,6 +494,19 @@ def build_comb(
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
     # BUND BEANS (azemame) beaded along a fraction of the paddy bunds - see settlements.md.
     dry_plots = _dry_fields(R, F, a_pts, W, H, dry_keepout, band=dry_band, furrow_spread=furrow_spread, grain_drift=grain_drift)
+    if grain != 1.0:
+        # the INTER-ARM FORK TRIANGLE (coarse grains only): the ground between the two supply
+        # canals just below the fork is commanded by neither (it sits upslope of canal B), and
+        # on a village map the scrub matrix textures it - a city map has no scrub, so it read
+        # as the blank wedge the GM circled at every fan head (2026-07-21). Historically it is
+        # prime dry-crop ground beside the head-race, so quilt it: a second hem band along
+        # canal B's SUPPLY stretch, whose upslope normal points INTO the triangle. Village
+        # maps skip this (byte-stability; their scrub already covers the same ground).
+        _bc_supply = [p for p in bc.pts if F.to_uf(*p)[1] <= bc.ditch_f]
+        if len(_bc_supply) >= 2:
+            dry_plots += _dry_fields(
+                R, F, _bc_supply, W, H, dry_keepout, band=(dry_band[0] * 0.6, dry_band[1] * 0.6), furrow_spread=furrow_spread, grain_drift=grain_drift
+            )  # thinner than the a-side hem: it only needs to cover the fork triangle, and a full-depth band crowds the farmhouse ring off the fan's visible edge
     dry_acres = sum(_poly_area(p["poly"]) for p in dry_plots) * 4 / 43560
     bund_beans = _bund_beans(R, plots, bean_frac)
     # furrows_vary tells the checker whether to REQUIRE neighboring dry plots to differ in row direction: a
