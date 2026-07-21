@@ -2089,6 +2089,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"the ladder must read MONOTONE with population - a village ground must never dwarf a town's",
         )
 
+    # DRY-CROP PLOTS ARE TO SCALE: a hem parcel is a smallholder's strip (~1 mu / ~0.17 acre
+    # mean in Buck's surveys - the same grain the paddy plots and the polder parcels obey), so
+    # the map-wide MEAN dry-plot area must stay under 0.25 real acres. The tiling constants in
+    # _dry_fields (plot width 46px, row depth 36px) are real-feet quantities tuned at 2 ft/px:
+    # unscaled at the 3 ft/px city grain they doubled every parcel's area (0.34-0.38 acre
+    # means), dry cells visibly dwarfing the ~78 ft rice plots beside them - "set a number of
+    # pixels, not a number of feet" (the GM's exact catch, 2026-07-21). WHY: settlements.md.
+    _ds_dps = M.get("dry_plots", [])
+    if _ds_dps:
+        _ds_ftpx = float(meta.get("ftpx", 1) or 1)
+        _ds_areas = []
+        for _ds_d in _ds_dps:
+            _ds_p = _ds_d["poly"]
+            _ds_a = abs(sum(_ds_p[i][0] * _ds_p[(i + 1) % len(_ds_p)][1] - _ds_p[(i + 1) % len(_ds_p)][0] * _ds_p[i][1] for i in range(len(_ds_p)))) / 2
+            _ds_areas.append(_ds_a * _ds_ftpx * _ds_ftpx / 43560)
+        _ds_mean = sum(_ds_areas) / len(_ds_areas)
+        check(
+            "dry_plots_to_scale",
+            _ds_mean <= 0.25,
+            f"mean dry-crop plot area {_ds_mean:.2f} real acres (want <= 0.25) - a hem parcel is a smallholder strip "
+            f"(~1 mu / ~0.17 acre, Buck); oversized cells mean the _dry_fields tiling constants were used as raw px "
+            f"at a coarser grain instead of real feet (pass/scale them by grain)",
+        )
+
     # A COMB'S HEAD GROUND IS QUILTED (city-scale): the supply canals run THROUGH cultivated
     # land - paddy below, dry-crop hem above - never through bare parchment. The fan head (the
     # band along the mains and the fork triangle between the arms) is uncommanded by gravity,
@@ -4703,11 +4727,21 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     dry_plots = M.get("dry_plots", [])
     if len(dry_plots) >= 4 and M.get("meta", {}).get("dry_furrows_vary", True):
         dcen = [(sum(v[0] for v in p["poly"]) / len(p["poly"]), sum(v[1] for v in p["poly"]) / len(p["poly"])) for p in dry_plots]
+        # edge-adjacency radius derives from the plots' OWN size (mean side length x1.25), capped at the
+        # legacy 50px: a fixed radius is secretly a plot-size assumption, and the grain-scaled city plots
+        # (~27px sides) made 50px lasso plots two rows apart while a hamlet's 1 ft/px plots sit right at
+        # the old tuning - the cap keeps every fine-grain map's behavior byte-for-byte identical (2026-07-21)
+        _dv_sides = []
+        for p in dry_plots:
+            pp = p["poly"]
+            _a = abs(sum(pp[i][0] * pp[(i + 1) % len(pp)][1] - pp[(i + 1) % len(pp)][0] * pp[i][1] for i in range(len(pp)))) / 2
+            _dv_sides.append(_a**0.5)
+        _dv_rad = min(50.0, 1.25 * (sum(_dv_sides) / len(_dv_sides)))
         same = []
         for ai in range(len(dry_plots)):
             for bi in range(ai + 1, len(dry_plots)):
-                if (dcen[ai][0] - dcen[bi][0]) ** 2 + (dcen[ai][1] - dcen[bi][1]) ** 2 >= 50**2:
-                    continue  # only EDGE-adjacent plots (a shared boundary)
+                if (dcen[ai][0] - dcen[bi][0]) ** 2 + (dcen[ai][1] - dcen[bi][1]) ** 2 >= _dv_rad**2:
+                    continue  # only EDGE-adjacent plots (a shared boundary; see _dv_rad above)
                 d = abs(dry_plots[ai]["theta"] - dry_plots[bi]["theta"]) % math.pi
                 if min(d, math.pi - d) <= 0.10:  # within ~6 deg reads as the SAME row direction
                     same.append((round(dcen[ai][0]), round(dcen[ai][1])))

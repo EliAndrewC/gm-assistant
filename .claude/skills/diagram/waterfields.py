@@ -980,6 +980,11 @@ def _dry_fields(
     FURROWS run along the CONTOUR (perpendicular to the fall), the traditional ridge-along-contour that dams
     rain and checks runoff - so the furrow direction is the contour heading, varied per plot; `theta` per plot."""
     plots = []
+    plot = plot * g  # the along-canal parcel width and the 36px row depth below are REAL-FEET
+    # quantities tuned at the village grain (1px = 2ft; ~1 mu strips per Buck) - unscaled at a
+    # coarser grain every hem parcel doubled in area, dry cells dwarfing the rice plots beside
+    # them ("a number of pixels, not a number of feet" - the GM's catch, 2026-07-21; gated by
+    # dry_plots_to_scale)
     theta0 = math.atan2(F.c[1], F.c[0]) + math.radians(grain_drift)  # contour heading (ridges follow it), drifted off the fall-line by the grain_drift knob (feature 005)
 
     def blocked(x: float, y: float) -> bool:
@@ -1009,7 +1014,9 @@ def _dry_fields(
     # between the angles of its already-placed NEIGHBORS, guaranteeing separation (drives dry_plot_furrows_vary).
     HW = furrow_spread
     placed: list[tuple[float, float, float]] = []
-    ADJ2 = 56**2
+    ADJ2 = (
+        56**2
+    )  # the furrow-variety neighborhood stays UNSCALED: dry_plot_furrows_vary judges adjacency at this px radius on every map, and a generator that varies over a WIDER circle than the check demands is safely conservative
     prev_crop = R.choice(list(DRY_CROPS))
     berm = 8 * g  # a thin bund holds the dry plots just ABOVE (upslope of) the canal (grain-scaled: 8px was 16 real ft at the village grain; unscaled it left a 24 ft bare stripe on the city maps)
     for i in range(len(bounds) - 1):
@@ -1021,7 +1028,7 @@ def _dry_fields(
         if F.to_uf(mx + nx, my + ny)[1] > F.to_uf(mx, my)[1]:  # point it UPSLOPE (decreasing fall)
             nx, ny = -nx, -ny
         depth = R.uniform(*band)  # ragged outer edge (per-column depth)
-        nrow = max(1, round(depth / 36))
+        nrow = max(1, round(depth / (36 * g)))
         for k in range(nrow):
             # per-plot crop with coherence: usually keep the last crop (holdings cluster), sometimes switch
             if R.random() < 0.45:
