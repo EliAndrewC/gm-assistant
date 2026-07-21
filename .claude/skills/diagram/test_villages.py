@@ -59,11 +59,39 @@ def test_at_least_one_village_exists():
     assert GENERATORS, "no *.gen.py village generators found in pool/"
 
 
+def _channels_under_plots(svgpath):
+    """SVG-level z-order audit: every field channel (the #6C9CBE supply / #7C9EB0 drain strokes)
+    must draw OVER the paddy plots it crosses. A channel whose midpoint lies inside a plot polygon
+    that appears LATER in the document is painted over - the invisible-ditch-net defect (GM
+    2026-07-21: Hoshizora's canals "rendering below the rice paddies"; also Hikari-no-sato's
+    first comb under its second comb's plots, and the cities' residual 2nd-fan hole). This is
+    deliberately an SVG test, not a manifest check: scatter/paint order is not manifest-recorded,
+    same as the per-tuft skips. Returns the covered channels as (x, y) midpoints."""
+    import re
+
+    with open(svgpath) as fh:
+        svg = fh.read()
+    plots = []
+    for m in re.finditer(r'<polygon points="([^"]+)" fill="#[0-9A-Fa-f]{6}" stroke="#[0-9A-Fa-f]{6}" stroke-width="2"', svg):
+        plots.append((m.start(), [tuple(map(float, p.split(","))) for p in m.group(1).split()]))
+    covered = []
+    for m in re.finditer(r'<path d="M([^"]+)" fill="none" stroke="#(?:6C9CBE|7C9EB0)"', svg):
+        coords = [tuple(map(float, p.split(","))) for p in m.group(1).replace(" L", ";").split(";")]
+        mid = coords[len(coords) // 2]
+        if any(pos > m.start() and check_village.point_in_poly(mid[0], mid[1], pts) for pos, pts in plots):
+            covered.append((round(mid[0]), round(mid[1])))
+    return covered
+
+
 # one test per village (not one loop over all): a failure names its map directly, and a
 # parallel runner (pytest-xdist) can spread the regens instead of serializing them in one test
 @pytest.mark.parametrize("gen", GENERATORS, ids=[os.path.basename(g) for g in GENERATORS])
 def test_village_passes_gate(gen):
     assert _regen_and_gate(gen), f"{os.path.basename(gen)} failed the gate"
+    covered = _channels_under_plots(gen[: -len(".gen.py")] + ".svg")
+    assert not covered, (
+        f"{os.path.basename(gen)}: {len(covered)} field channel(s) painted UNDER a later plot at {covered[:5]} - route the comb net through the LATE water block (field_channel late=True; see settlement._water)"
+    )
 
 
 if __name__ == "__main__":
