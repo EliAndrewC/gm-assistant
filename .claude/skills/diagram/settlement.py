@@ -1336,7 +1336,16 @@ class Settlement:
         exs, eys = [p[0] for p in env], [p[1] for p in env]
         pvx = [v[0] for p in net["plots"] for v in p["poly"]]
         pvy = [v[1] for p in net["plots"] for v in p["poly"]]
-        self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)]})
+        # Per-plot [along-fall, cross-fall] spans, so parcel-fabric checks (polder_parcels_vary) measure
+        # the DRAWN geometry from the manifest rather than trusting a builder self-report.
+        ddp = float(self.M["meta"].get("down_deg", 90))
+        pdx, pdy = math.cos(math.radians(ddp)), math.sin(math.radians(ddp))
+        pdims = []
+        for p in net["plots"]:
+            al = [vx * pdx + vy * pdy for vx, vy in p["poly"]]
+            cr = [vx * pdy - vy * pdx for vx, vy in p["poly"]]
+            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1)])
+        self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims})
         for c in net["channels"]:
             self.M["field_ditches"].append(
                 {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
@@ -1848,6 +1857,58 @@ class Settlement:
         out = snap_front(out[::-1])[::-1]
         return out
 
+    def _clip_to_stream(self, pts: Any) -> Any:
+        """Snap a channel endpoint that reaches INTO a stream bed onto the bed's edge (~2px inside
+        the bank, so the mouth covers the bank stroke) - the same clean CONFLUENCE `_clip_to_pond`
+        and `_clip_to_moat` give: a drain culvert JOINS the receiving stream without drawing its own
+        bed as a colored tongue across the current. Trim-only: an end short of the bank is left
+        alone (the `channels_join_streams_at_confluence` check requires the RECORDED polyline to
+        reach the bed, so the gen extends the record to the centerline and this trims the DRAWING)."""
+        streams = self.M.get("streams", [])
+        if not streams or len(pts) < 2:
+            return pts
+
+        def foot(q: Pt) -> tuple[Any, float, float]:
+            best: Any = None
+            bd, bhw = 1e9, 4.5
+            for st in streams:
+                sp = st["poly"]
+                hw = st.get("w", 9) / 2
+                for i in range(len(sp) - 1):
+                    ax, ay = sp[i]
+                    bx, by = sp[i + 1]
+                    vx, vy = bx - ax, by - ay
+                    ll = vx * vx + vy * vy or 1.0
+                    t = max(0.0, min(1.0, ((q[0] - ax) * vx + (q[1] - ay) * vy) / ll))
+                    fx, fy = ax + vx * t, ay + vy * t
+                    d = math.hypot(q[0] - fx, q[1] - fy)
+                    if d < bd:
+                        bd, best, bhw = d, (fx, fy), hw
+            return best, bd, bhw
+
+        def snap_front(seq: Any) -> list[Any]:
+            out = list(seq)
+            f0, d0, hw0 = foot(out[0])
+            if f0 is None or d0 >= hw0 - 2:
+                return out  # the end is clear of the bed (or right at its edge) - nothing to trim
+            i = 0  # drop any leading run inside the bed
+            while i + 1 < len(out):
+                _fn, dn, hwn = foot(out[i + 1])
+                if dn >= hwn - 2:
+                    break
+                i += 1
+            if i + 1 >= len(out):
+                return out  # the whole channel lies in the stream - leave it
+            f, _d, hw = foot(out[i])
+            nxt = out[i + 1]
+            ux, uy = nxt[0] - f[0], nxt[1] - f[1]
+            ul = math.hypot(ux, uy) or 1.0
+            return [(f[0] + ux / ul * (hw - 2), f[1] + uy / ul * (hw - 2))] + out[i + 1 :]
+
+        out = snap_front(pts)
+        out = snap_front(out[::-1])[::-1]
+        return out
+
     @staticmethod
     def _pond_anchored(frm: Any, to: Any) -> bool:
         """True if a watercourse connects TO the pond at either end (frm/to kind == 'pond') - the cue to snap
@@ -1862,8 +1923,10 @@ class Settlement:
         tapers `w0 -> w1` along the run (split into pieces). The sluice end is snapped onto the rim by
         `_clip_to_pond`, and an end meeting the MOAT is snapped onto the moat bed's edge by
         `_clip_to_moat` (the same clean-mouth join, for a moated city's taps and drain culverts).
+        An end reaching into a STREAM bed is snapped onto that bed's edge by `_clip_to_stream`
+        (the confluence mouth for a drain culvert emptying into a stream).
         Not recorded here - the field_ditches are recorded separately for the checks."""
-        pts = self._clip_to_moat(self._clip_to_pond(pts))
+        pts = self._clip_to_stream(self._clip_to_moat(self._clip_to_pond(pts)))
         if abs(w1 - w0) < 0.2:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
             self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {})
@@ -5604,17 +5667,22 @@ class Settlement:
         # `w`, `h` are in FEET (drawn at the map's ftpx, px(92) = 46px at 2 ft/px). A nanushi/shoya house is
         # the grandest in the village but still a house - ~92x56 ft, clearly larger than a plain 46x28 ft
         # farmhouse without the old fortress-sized 216x136 ft. headman_is_largest holds.
-        if getattr(self, "_nucleated", False):
+        if self._toscale():
             # the headman is just a LARGER PLAIN farmhouse - placed through the standard collision-checked
-            # bundle path with a tunable SIZE, so it gets its (capped) yard + garden and cannot overlap a
-            # neighbor. NO special reservation or "big"-glyph storeroom wing (that wing was drawn outside
+            # bundle path with a tunable SIZE, so it gets its yard + garden and cannot overlap a neighbor.
+            # BOTH homestead styles route here (GM 2026-07-21, caught on Hikari no Sato): this guard used to
+            # test _nucleated, so a DISPERSED to-scale village's headman fell through to the legacy rec below,
+            # which _farmsteads_bundle draws as a LONE house (the abandoned-ruin path) - the grandest
+            # farmstead in the village with no threshing yard and no garden. In the dispersed style the
+            # bundle also brings the per-house grove when room allows; the solver drops it gracefully in a
+            # dense cluster (neighbor tree cover shelters the house), which is the wanted behavior.
+            # NO special reservation or "big"-glyph storeroom wing (that wing was drawn outside
             # the reserved footprint and overlapped the north neighbor's yard).
             return self.try_place(x, y, "plain", role="headman", size=(w, h))
-        pw, ph = self.px(w), self.px(h)  # feet -> px at this map's scale
-        self.placed.append((x, y, pw, ph))
-        rec = {"x": x, "y": y, "w": pw, "h": ph, "kind": "big", "rot": 0, "role": "headman", "shed": False, "wealth": 1.0}
-        self.M["houses"].append(rec)
-        self._pending_farmsteads.append(rec)  # the headman is the largest farmstead; it gets a yard too
+        # non-to-scale tiers have no headman (a hamlet falls under the district headman, towns are run by
+        # the magistrate - the *_has_no_headman checks), so the old legacy rec branch here was dead code
+        # once the Hikari fix routed every to-scale style through the bundle; removed 2026-07-21.
+        raise ValueError("headman() is a to-scale village feature - this map is not toscale")
 
     def _field_adjacent(self, x: float, y: float) -> bool:
         """A farmhouse must stay near the farmland (within the gate's ADJ=165), so a nudge cannot drift it
@@ -5670,6 +5738,19 @@ class Settlement:
         gap = self.px(3)  # 3 ft between a house and its yard/garden, at this map's ftpx
         gw, gh = 0.48 * hw, 0.85 * hh  # garden - tight to the house, scales with wealth
         yw, yh = 0.80 * hw, 0.92 * hh  # threshing/drying yard, ~house-sized
+        if not getattr(self, "_nucleated", False):
+            # CAP the DISPERSED appurtenances too, same doctrine as the nucleated branch below: a BIG house
+            # (the 46x28 px headman) keeps an ORDINARY farm's garden/yard, not ones scaled to the grand
+            # house. Found 2026-07-21 (Hikari, GM): the moment the dispersed headman started getting a real
+            # bundle, its uncapped 0.48/0.85-scaled garden (~160+ m^2) breached garden_area_within_norms'
+            # 140 m^2 ceiling. Garden caps sit BELOW the nucleated ones (42x30 ft vs 48x34) because this
+            # path has no up-jitter to absorb - 21x15 px ~ 117 m^2 stays comfortably a garden. Plain
+            # dispersed houses (garden ~11x12 px, yard ~25x14) sit far under every cap, so only the headman
+            # is affected. Scoped OFF the nucleated path (which recomputes from these as inputs and applies
+            # its own caps) so nucleated maps stay byte-identical - capping its inputs re-rolled
+            # Hoshigaoka's packing and pushed its fixed-coordinate graveyard off-frame.
+            gw, gh = min(gw, self.px(42)), min(gh, self.px(30))
+            yw, yh = min(yw, self.px(68)), min(yh, self.px(44))
         east = hx + hw / 2 + gap + gw
         south = hy + hh / 2 + gap + yh
         base: dict[str, Any] = {
