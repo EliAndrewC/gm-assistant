@@ -2931,6 +2931,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     else:
         check("religious_matches_scale", rel_kinds == {expected_rel}, f"a {scale} should have only {expected_rel}(s); found {rel_kinds or 'none'}")
 
+    # ... and a village/hamlet SHRINE has a village-scale FOOTPRINT (GM 2026-07-21, caught on Hikari no
+    # Sato, whose two shrines survived from before the size norms crystallized at 192x128 / 236x164 ft -
+    # small-monastery footprints in a village). religious_matches_scale gates the TYPE per tier but said
+    # nothing about SIZE, so oversize halls sailed through. Calibration (the pool + temple-density canon): a
+    # village kami hall is a modest structure - the ordinary earth-god/water-mouth shrine is ~275 m^2
+    # (60x48 ft, Ueda/Hoshigaoka, with the recorded why in Ueda's gen), and Kikuta's showcase Benten with
+    # its 7-torii avenue is ~490 m^2 - so the 600 m^2 ceiling clears every deliberate design with headroom
+    # while the monastery/temple tier (a town's smallest monastery runs well past 1,000 m^2) stays cleanly
+    # out of reach. No floor: a tiny wayside hall is legitimate.
+    if scale in ("village", "hamlet"):
+        _ft = float(meta.get("ftpx") or 2.0)
+        _oversize_rel = [
+            (round(r["x"]), round(r["y"]), round(r["w"] * r["h"] * _ft * _ft * 0.3048 * 0.3048)) for r in M.get("religious", []) if r.get("w") and r["w"] * r["h"] * _ft * _ft * 0.3048 * 0.3048 > 600
+        ]
+        check(
+            "village_shrine_footprint_within_norms",
+            not _oversize_rel,
+            f"village-scale shrine hall(s) with a monastery-tier footprint (x, y, m^2): {_oversize_rel[:3]} - a village kami shrine is a modest hall (~275 m^2 ordinary, ~490 m^2 for a showcase Benten; ceiling 600), the monastery/temple tier belongs to towns and cities (temple-density canon)",
+        )
+
     # A SHRINE and its TORII arch NESTLE in a CLEARING within the sacred grove - neither may sit UNDER the trees
     # (a hall/arch drawn on top of tree canopy reads as buried in the wood). So no fengshui-grove tree CLUMP may
     # overlap a religious hall's or a torii's footprint. The recorded clump `r` is the NOMINAL clump radius, but
@@ -2966,6 +2986,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         hm = headman["w"] * headman["h"]
         bigger = [h for h in houses if h is not headman and h["w"] * h["h"] >= hm]
         check("headman_is_largest", not bigger, f"{len(bigger)} house(s) >= headman")
+        # ... and the headman always has an attached fireproof KURA (GM 2026-07-21): the shoya/nanushi is by
+        # definition among the village's most prosperous farmers, and the office functionally needs one - tax
+        # ledgers, land registers, and tax rice awaiting collection are exactly what fireproof storage is
+        # for. The ~30% wealth-marker roll is for ORDINARY plain farms; leaving the headman on those dice let
+        # all four pool headmen roll bare. The kura rides in the reserved bundle (farm_sheds_attached guards
+        # the drawn record); this gates the flag at the source.
+        check(
+            "headman_has_kura",
+            bool(headman.get("shed")),
+            f"the headman's house at ({headman['x']:.0f},{headman['y']:.0f}) has no attached kura storehouse - the village's most prosperous farmer (and keeper of its ledgers and tax rice) always has one; the generator forces shed=True for role='headman'",
+        )
 
     # no two body labels overlap (the title block is excluded by the generator)
     labels = M.get("labels", [])
