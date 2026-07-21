@@ -2069,6 +2069,30 @@ def test_village_shrine_footprint_within_norms_fires_on_a_monastery_sized_hall()
     assert "village_shrine_footprint_within_norms" not in f(M2)
 
 
+def test_trees_clear_of_fengshui_ponds_fires_on_an_overhanging_clump():
+    # Hoshigaoka's defect in miniature: a grove clump's canopy (1.7x nominal r) crossing the half-moon
+    # pond's water fires; a clump standing clear passes. Pond poly = a simple half-disk stand-in.
+    pond = {"cx": 300, "cy": 300, "r": 40, "facing": 270, "poly": [[340, 300], [300, 340], [260, 300]]}
+    M = {
+        "meta": {"scale": "village"},
+        "crescent_ponds": [pond],
+        "village_groves": [{"poly": [[200, 200], [400, 200], [400, 400], [200, 400]], "role": "windbreak", "r": 10, "clumps": [[310, 315]]}],
+        "labels": [[270, 350, 340, 362, 1, "half-moon pond"]],
+    }
+    assert "trees_clear_of_fengshui_ponds" in f(M)
+    M["village_groves"][0]["clumps"] = [[500, 500]]
+    assert "trees_clear_of_fengshui_ponds" not in f(M)
+
+
+def test_crescent_pond_labeled_fires_when_the_label_is_missing():
+    # the banyuetang is culturally specific and does not read by itself (the GM asked "what is that?")
+    pond = {"cx": 300, "cy": 300, "r": 40, "facing": 270, "poly": [[340, 300], [300, 340], [260, 300]]}
+    M = {"meta": {"scale": "village"}, "crescent_ponds": [pond]}
+    assert "crescent_pond_labeled" in f(M)
+    M["labels"] = [[270, 350, 340, 362, 1, "half-moon pond"]]
+    assert "crescent_pond_labeled" not in f(M)
+
+
 def test_labels_within_image_uses_the_cropped_view():
     # with a crop set, the frame is the viewBox - a label inside the full canvas but WEST of the crop
     # (a city map crops tight to the walls) is clipped and fires
@@ -5301,6 +5325,25 @@ def test_polder_parcel_fabric_must_vary():
         assert "polder_parcels_vary" not in f({**base, "fields": [{**field, "plots": varied}]})
     # a non-polder archetype never trips it, plots or not
     assert "polder_parcels_vary" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": [[142.0, 142.0]] * 66}]})
+
+
+def test_polder_parcels_must_front_a_ditch():
+    # every polder parcel must sit within reach of a supply/drain ditch (the jingbang creek-and-ditch
+    # interior): parcels far from every ditch fire, parcels without recorded centroids (pre-fix format)
+    # fire, and a laterals-served fabric passes. GM-flagged on the original Kuwabata (floating ponds).
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    lat = {"poly": [[500, 88], [500, 1312]], "role": "lateral", "field": "p", "w": 3.2, "w_tail": 2.4}
+    # varied 4-tuple parcels hugging the x=500 lateral: centroids at x 430/570, spans ~140 -> reach ~103
+    served = [[140, 70, 430, 100 + 90 * i] for i in range(7)] + [[140, 140, 570, 100 + 160 * i] for i in range(7)]
+    for arch in ("polder_grid", "mulberry_dike_fishpond"):
+        base = {"meta": {"scale": "hamlet", "field_archetype": arch}, "field_ditches": [lat]}
+        assert "polder_parcels_front_water" not in f({**base, "fields": [{**field, "plots": served}]})
+        adrift = [*served, [140, 140, 880, 1280]]  # one parcel ~380px from the lateral
+        assert "polder_parcels_front_water" in f({**base, "fields": [{**field, "plots": adrift}]})
+        no_cent = [*served, [140.0, 140.0]]  # pre-fix 2-tuple record: no centroid = no frontage
+        assert "polder_parcels_front_water" in f({**base, "fields": [{**field, "plots": no_cent}]})
+        # no ditches recorded at all -> everything is unfronted
+        assert "polder_parcels_front_water" in f({"meta": base["meta"], "fields": [{**field, "plots": served}]})
 
 
 def test_ribbon_valley_must_be_long_and_narrow():

@@ -2978,6 +2978,35 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"{len(torii_under)} torii arch(es) sit UNDER the grove's trees at {torii_under[:4]} - a torii stands "
             f"in the OPEN before its shrine, not buried in the wood; draw the grove to skip it (place torii BEFORE it)",
         )
+        # ... and no tree canopy crosses a fengshui CRESCENT POND's water (GM 2026-07-21, caught on
+        # Hoshigaoka, where a windbreak clump overhung the half-moon pond): the banyuetang is an OPEN water
+        # mirror at the settlement's front - reflecting sky is its fengshui job - and its flat-side forecourt
+        # was the village's open ceremony/work ground, so trees neither overhang the water nor crowd it.
+        # Same canopy doctrine as the shrine/torii checks (drawn crowns reach ~1.7x the clump's nominal r).
+        pond_trees = []
+        for cpd in M.get("crescent_ponds", []):
+            for gcx, gcy, gcr in grove_clumps:
+                if point_in_poly(gcx, gcy, cpd["poly"]) or poly_dist(gcx, gcy, [tuple(p) for p in cpd["poly"]]) < gcr:
+                    pond_trees.append((round(gcx), round(gcy)))
+        check(
+            "trees_clear_of_fengshui_ponds",
+            not pond_trees,
+            f"tree clump(s) overhang the fengshui crescent pond's water at {pond_trees[:4]} - the half-moon pond is an open water mirror (its fengshui job is reflecting sky); the grove placement keeps a full-disk keep-out around it",
+        )
+    # every fengshui crescent pond carries its "half-moon pond" label (GM 2026-07-21): a culturally specific
+    # feature that does not read by itself - the GM asked "what is that?" of an unlabeled one, so the
+    # don't-label-the-obvious rule cuts the OTHER way here. crescent_pond() draws the label; this gates it.
+    unlabeled_cp = []
+    for cpd in M.get("crescent_ponds", []):
+        near = [lb for lb in M.get("labels", []) if len(lb) >= 6 and "half-moon" in str(lb[5]) and math.hypot((lb[0] + lb[2]) / 2 - cpd["cx"], (lb[1] + lb[3]) / 2 - cpd["cy"]) < cpd["r"] + 60]
+        if not near:
+            unlabeled_cp.append((round(cpd["cx"]), round(cpd["cy"])))
+    check(
+        "crescent_pond_labeled",
+        not unlabeled_cp,
+        f"fengshui crescent pond(s) with no 'half-moon pond' label at {unlabeled_cp[:3]} - the banyuetang is culturally specific and does not read by itself; crescent_pond() draws the label automatically",
+    )
+
     # a religious building's subtitle must not RESTATE its type (the label already names it,
     # e.g. "Monastery of Tengen" needs no "(town monastery)" note)
     redundant_sub = [r.get("label") for r in M.get("religious", []) if r.get("sublabel") and any(t in r["sublabel"].lower() for t in ("shrine", "monastery", "temple"))]
@@ -7409,16 +7438,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         pv_cv = pv_ob = 0.0
         pv_ok = len(pl) >= 12
         if pv_ok:
-            areas = [a * c for a, c in pl]
+            areas = [p[0] * p[1] for p in pl]
             mean_a = sum(areas) / len(areas)
             pv_cv = (sum((x - mean_a) ** 2 for x in areas) / len(areas)) ** 0.5 / max(1e-9, mean_a)
-            asps = [max(a, c) / max(1.0, min(a, c)) for a, c in pl]
+            asps = [max(p[0], p[1]) / max(1.0, min(p[0], p[1])) for p in pl]
             pv_ob = sum(1 for x in asps if x >= 1.45) / len(asps)
             pv_ok = pv_cv >= 0.18 and pv_ob >= 0.35
         check(
             "polder_parcels_vary",
             pv_ok,
             f"a polder's parcel fabric must be a patchwork, not identical cells - the survey grid was the CANALS, the parcels were private-tenure oblongs of varied size (area cv {pv_cv:.2f}, want >=0.18; oblong share {pv_ob:.0%}, want >=35%; n={len(pl)}, want >=12) - uniform squares read as 20th-century land consolidation",
+        )
+
+        # EVERY POLDER PARCEL FRONTS A DITCH (GM-flagged 2026-07-21: the original Kuwabata's ponds floated
+        # with no water connection at all). The jingbang 泾浜 polder interior was a creek-and-ditch net in
+        # which every basin fronted water (qualitatively well-attested; the exact spacing is a reasoned
+        # reconstruction - see build_polder's docstring). Teeth: each parcel's centroid must sit within
+        # ~0.62x its own longer span (+16 px corridor slack) of a recorded supply/drain ditch polyline.
+        # Parcels recorded without centroids (the pre-fix format) count as NOT fronting - no passing by
+        # omission.
+        fdits = [d["poly"] for d in M.get("field_ditches", []) if d.get("role") in ("main", "lateral", "branch", "feed", "drain")]
+        unfronted = 0
+        for p in pl:
+            if len(p) < 4:
+                unfronted += 1
+                continue
+            reach = 0.62 * max(p[0], p[1]) + 16
+            if not any(seg_dist(p[2], p[3], dp[i], dp[i + 1]) < reach for dp in fdits for i in range(len(dp) - 1)):
+                unfronted += 1
+        check(
+            "polder_parcels_front_water",
+            not pl or unfronted == 0,
+            f"{unfronted}/{len(pl)} polder parcel(s) have no ditch frontage - a polder interior is a jingbang creek-and-ditch net where EVERY basin fronts a supply/drain ditch; a parcel out of reach of any ditch (or recorded without a centroid) has no water",
         )
 
     # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -

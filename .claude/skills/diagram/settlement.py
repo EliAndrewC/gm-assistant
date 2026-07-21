@@ -483,6 +483,14 @@ class Settlement:
         self._ground_idx: int | None = None  # lane renders on top. Flushed as one ordered block (below buildings).
         self.water: list[dict[str, Any]] = []  # deferred WATERCOURSES (streams, channels, moat): all BEDS in one
         self._water_idx: int | None = None  # shared-opacity group, then all SHEENS in another, so crossings MERGE
+        self._late_water_idx: int | None = None  # a SECOND water block for comb-field channels (opt-in via
+        self.late_water: list[dict[str, Any]] = []  # field_channel(late=True)): spliced at its own first-call
+        # position, AFTER the field's plots - a city draws its moat/river first, which anchors the shared
+        # block early and would composite the whole ditch network UNDER the later-drawn paddy plots (the
+        # network invisible + its uncovered corridors reading as parchment pinstripes; 2026-07-21). The
+        # villages never hit this (their gens reach water after the fields), so late defaults False and
+        # their output is byte-identical. Late ends are clipped to abut other water (never overlap), so
+        # the two blocks cannot double-composite into a dark seam.
         #                           into a continuous confluence instead of stacking opacity (a dark seam).
         self.bscale = 1.0  # urban-building footprint scale (a large town packs at a finer grain)
         self.ftpx = 1.0  # declared REAL scale, feet per pixel - set via meta(ftpx=...); the
@@ -618,7 +626,7 @@ class Settlement:
             self.out.append("")  # placeholder, replaced by the sorted block at finish()
         self.ground.append({"zpri": zpri, "seq": len(self.ground), "edge": edge, "bed": bed, "top": top, "rec": rec, "zkey": zkey})
 
-    def _water(self, bed: Any, rec: Any, sheen: Any = None, edge: Any = None, clip: Any = None, pond_fill: bool = False) -> None:
+    def _water(self, bed: Any, rec: Any, sheen: Any = None, edge: Any = None, clip: Any = None, pond_fill: bool = False, late: bool = False) -> None:
         """Defer a watercourse (stream / channel / moat / POND) so the whole set renders as ONE block, in
         THREE sub-layers: all EDGES (pond rims - the only water feature with a border) at the bottom, then
         all BEDS (the blue water bodies, same color) inside one shared-opacity group, then all SHEENS (the
@@ -633,6 +641,12 @@ class Settlement:
         feeder whose bed/sheen are RE-EMITTED at flush, snapped to the rim - deferred so it works even when the
         feeder is drawn BEFORE the pond (M['pond'] is not known at call time). `pond_fill` marks the pond's
         water body, drawn LAST among the beds so it paints over any feeder's inside-the-rim overshoot."""
+        if late:
+            if self._late_water_idx is None:
+                self._late_water_idx = len(self.out)
+                self.out.append("")  # placeholder for the LATE block (see __init__)
+            self.late_water.append({"bed": bed, "sheen": sheen, "edge": edge, "rec": rec, "clip": clip, "pond_fill": pond_fill})
+            return
         if self._water_idx is None:
             self._water_idx = len(self.out)
             self.out.append("")  # placeholder, replaced by the three-group block at finish()
@@ -1336,15 +1350,17 @@ class Settlement:
         exs, eys = [p[0] for p in env], [p[1] for p in env]
         pvx = [v[0] for p in net["plots"] for v in p["poly"]]
         pvy = [v[1] for p in net["plots"] for v in p["poly"]]
-        # Per-plot [along-fall, cross-fall] spans, so parcel-fabric checks (polder_parcels_vary) measure
-        # the DRAWN geometry from the manifest rather than trusting a builder self-report.
+        # Per-plot [along-fall span, cross-fall span, centroid x, centroid y], so parcel-fabric checks
+        # (polder_parcels_vary, polder_parcels_front_water) measure the DRAWN geometry from the manifest
+        # rather than trusting a builder self-report.
         ddp = float(self.M["meta"].get("down_deg", 90))
         pdx, pdy = math.cos(math.radians(ddp)), math.sin(math.radians(ddp))
         pdims = []
         for p in net["plots"]:
             al = [vx * pdx + vy * pdy for vx, vy in p["poly"]]
             cr = [vx * pdy - vy * pdx for vx, vy in p["poly"]]
-            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1)])
+            pcx, pcy = _centroid(p["poly"])
+            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1)])
         self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims})
         for c in net["channels"]:
             self.M["field_ditches"].append(
@@ -1660,6 +1676,10 @@ class Settlement:
         self.note_focal("crescent_pond")
         # keep-out over the bulge half-disk (its centroid sits ~0.42r off center, away from the village)
         self.ellipses.append((cx - fx * r * 0.45, cy - fy * r * 0.45, r * 0.95, r * 0.95))
+        # LABELED (GM 2026-07-21): the half-moon pond is a culturally specific feature that does not read by
+        # itself (the GM asked "what is that?" of an unlabeled one - the don't-label-the-obvious rule cuts the
+        # OTHER way here). Placed off the arc side, away from the village (crescent_pond_labeled gates it).
+        self.label(cx - fx * (r + 16), cy - fy * (r + 16) + 4, "half-moon pond", 11, italic=True, color="#4C6478")
 
     def note_focal(self, kind: str) -> None:
         """Record an optional FOCAL feature (feature 005 catalog) on the manifest so the twin-detector reads
@@ -1943,7 +1963,7 @@ class Settlement:
         that end onto the rim so it JOINS the open water instead of drawing its bed/sheen across it."""
         return any(a and a.get("kind") == "pond" for a in (frm, to))
 
-    def field_channel(self, pts: Any, col: str, w0: float, w1: float) -> None:
+    def field_channel(self, pts: Any, col: str, w0: float, w1: float, late: bool = False) -> None:
         """Draw a comb-net irrigation channel (from the waterfields engine) THROUGH the water block, so it
         JOINS the pond + the other channels cleanly: its bed sits in the shared bed group (composited as one
         confluence, no dark seam), OVER the pond's rim edge (so its bed covers the rim where it meets the
@@ -1957,7 +1977,7 @@ class Settlement:
         pts = self._clip_to_stream(self._clip_to_moat(self._clip_to_pond(pts)))
         if abs(w1 - w0) < 0.2:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
-            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {})
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {}, late=late)
             return
         n, L = 7, len(pts)
         for k in range(n):
@@ -1966,7 +1986,7 @@ class Settlement:
                 continue
             wk = w0 + (w1 - w0) * (k + 0.5) / n
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in piece)
-            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {})
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {}, late=late)
 
     def lane(self, pts: Any, width: float = 16, clearance: float = 22, worn: bool = False, connector: bool = False) -> None:
         """A village lane or connecting path. `worn=True` draws it as UNPAVED TRODDEN EARTH: a NARROW
@@ -3470,6 +3490,12 @@ class Settlement:
         # (there a grove may hug the eaves). A torii is recorded as [x, y, z]; glyph spans x +/-19, y -10..+18.
         occ += [(o["x"], o["y"], 0.5 * math.hypot(o["w"], o["h"]) + clump * 0.90) for k in ("religious", "shrines") for o in self.M.get(k, [])]
         occ += [(t[0], t[1] + 4, math.hypot(19, 14) + clump * 0.90) for t in self.M.get("torii", [])]
+        # ... and OFF the fengshui CRESCENT POND (GM 2026-07-21): no tree canopy may cross the half-moon
+        # pond's water (trees_clear_of_fengshui_ponds gates it). The keep-out circle spans the FULL disk
+        # (radius r + canopy reach) even though the water is only the away-facing half - the flat side toward
+        # the village is the pond's open FORECOURT (the banyuetang fronted the settlement's ceremony/work
+        # ground), so keeping the copse fringe off that band too is the historically right reading, not slack.
+        occ += [(cp["cx"], cp["cy"], cp["r"] + clump * 0.90) for cp in self.M.get("crescent_ponds", [])]
         corr = self._corridor_buffers(clump * 0.45 + 4)  # ... and keep trees OFF the lanes / streets / road
         cr = clump / 2
         # ... and OUT of the SOUTHERN sun-corridor of every threshing yard + garden (a tree just south of them
@@ -3549,7 +3575,9 @@ class Settlement:
             half = wc.get("w", 6) / 2 + pad
             if any(seg_dist(px, py, p[i], p[i + 1]) < half for i in range(len(p) - 1)):
                 return True
-        return False
+        # ... and the fengshui crescent pond's open water (found 2026-07-21: scrub tufts drew ON the
+        # half-moon pond - the skip knew M['pond'] and the linear courses but not this water body)
+        return any(math.hypot(px - cp["cx"], py - cp["cy"]) < cp["r"] + pad for cp in self.M.get("crescent_ponds", []))
 
     def commons(self, poly: Any, role: str = "commons", avoid: Any = ()) -> None:
         """FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far (upslope / windward) side,
@@ -6643,6 +6671,19 @@ class Settlement:
             if sheenzs:
                 self.M["water_sheen_zmin"] = min(sheenzs)
             splices.append((self._water_idx, wblock))
+        if self._late_water_idx is not None:  # the LATE block (comb-field channels; see __init__): same
+            lblock: list[Any] = ['<g opacity="0.85">']  # shared-opacity compositing, spliced at ITS OWN
+            for w in self.late_water:  # first-call position so the ditch net draws OVER the field's plots
+                w["rec"]["bedz"] = self._late_water_idx + len(lblock)
+                lblock.append(w["bed"])
+            lblock.append('</g>')
+            lblock.append('<g opacity="0.55">')
+            for w in self.late_water:
+                if w["sheen"] is not None:
+                    w["rec"]["sheenz"] = self._late_water_idx + len(lblock)
+                    lblock.append(w["sheen"])
+            lblock.append('</g>')
+            splices.append((self._late_water_idx, lblock))
         for idx, block in sorted(splices, key=lambda s: -s[0]):  # high index first so the lower stays valid
             self.out[idx : idx + 1] = block
         if self.view:  # crop the viewBox to the requested window
