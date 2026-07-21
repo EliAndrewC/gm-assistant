@@ -25,7 +25,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 import compound as C  # noqa: E402
 
-OUT_SVG = "pool/ochiba-recomposed-draft.svg"
+# cwd-INDEPENDENT output path (fixed 2026-07-21): the old cwd-relative "pool/..." wrote a stray
+# file at the pool ROOT when run from the skill dir and crashed when run from this dir - anchor
+# to __file__ like every Mode B gen, so the render-sync regen (which runs each gen from its own
+# directory) and any hand run land the outputs HERE, beside the gen.
+OUT_SVG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ochiba-recomposed-draft.svg")
 
 
 def ochiba_program() -> C.CompoundProgram:
