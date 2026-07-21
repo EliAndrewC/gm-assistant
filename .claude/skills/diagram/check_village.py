@@ -3458,6 +3458,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not stray,
             f"well(s) standing in open ground with no building within ~95px - a well serves the households around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}",
         )
+
         # THE WELL IS A LOCATION MARKER under the stroke convention (GM ruling 2026-07-21): a real
         # curb is ~3-4 ft (sub-glyph at every scale), so the wellhead marks the well's TO-SCALE
         # LOCATION with a legible marker whose own pixels are not claimed to be to scale - the same
@@ -3477,6 +3478,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"wells are mis-sized for this map - drawn at {mean_dia:.0f}px against a ~{med:.0f}px median dwelling "
                 f"({mean_dia / med:.0%}; want ~40-80%): a wellhead must scale with the map grain (bscale), not a fixed pixel size",
             )
+
+    # WELLS SIZED TO THE POPULATION (GM 2026-07-21) - a DELIBERATE LIBERTY, banded. What the research found
+    # (see settlements.md 'Wells - research + deliberate liberty' for the full note): historically a south-China
+    # rice village of ~70 households ran 1-3 communal drinking wells TOTAL - surface water (canal/pond, settled
+    # and boiled) covered most drinking, wells were expensive subscription-financed capital, the classical
+    # jingtian "8 families per well" was an ideal nobody practiced, and one open well physically serves ~400
+    # people (Sphere/UNICEF anchors; a nucleated village is ~250m across, so carrying distance never binds).
+    # The dense ~10-18 households/well pattern is URBAN tenement (nagaya) density; per-farmstead wells are the
+    # shallow-water-table plain pattern. THE LIBERTY: Rokugan is deliberately unusually well-run, and generous
+    # wells express that - villages run ~1 communal well per 8-26 households (vs the historical 1-3 total),
+    # hamlets down to per-farmstead (2-20 hh/well; the dispersed-farm shallow-table pattern made honest).
+    # Shrine (temizu) ablution wells are tagged shrine=True by the engine and excluded from the count.
+    if scale in ("village", "hamlet") and meta.get("households"):
+        _draw_wells = [w for w in M.get("wells", []) if not w.get("shrine")]
+        _whh = meta["households"]
+        _wlo, _whi = (2.0, 20.0) if scale == "hamlet" else (8.0, 26.0)
+        _wr = _whh / len(_draw_wells) if _draw_wells else float("inf")
+        check(
+            "wells_sized_to_population",
+            _wlo <= _wr <= _whi,
+            f"{len(_draw_wells)} communal well(s) for {_whh} households = {_wr:.1f} hh/well, outside the {scale} band [{_wlo:.0f}-{_whi:.0f}] - Rokugan's prosperity liberty runs generous wells (settlements.md 'Wells'); shrine temizu wells are excluded from the count",
+        )
 
     # WATER ACCESS for the rural tiers (town/village/hamlet): every settlement needs communal WELLS, and
     # every household must be able to reach water. Wells dot the dwellings (one per ~20-25 households),
