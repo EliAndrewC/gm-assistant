@@ -285,7 +285,10 @@ def test_delivery_ditches_taper_exempts_ditches_without_recorded_widths():
 
 
 def _dryplot(x, theta):
-    return {"poly": [[x, 300], [x + 40, 300], [x + 40, 336], [x + 36, 336]], "theta": theta, "crop": "barley"}
+    # a full ~40x36 parcel (one corner nipped): the furrows-vary adjacency radius now derives from the
+    # plots' own mean size (1.25x side length, capped 50px), so the fixture plots must be REAL parcels -
+    # the old sliver trapezoid (~790px^2) read as sub-30px plots whose radius no longer paired them
+    return {"poly": [[x, 300], [x + 40, 300], [x + 40, 336], [x + 4, 336]], "theta": theta, "crop": "barley"}
 
 
 def test_dry_plot_furrows_vary_fires_when_two_neighbours_share_an_angle():
