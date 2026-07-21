@@ -526,7 +526,25 @@ def _fill_wedges(
     ft): anything wider than a bund must be planted or be WATER - the recorded channels count
     as covered ground (they draw over the fan), which is what lets the tolerance stay tight
     without flagging the delivery-ditch strips between plot columns."""
-    inset, tol, step = 28 * g, 3 * g, 6 * g  # step at HALF the check's grid: a thin diagonal sliver aliases through a coarser sweep
+    inset, tol, step = (
+        8 * g,
+        3 * g,
+        6 * g,
+    )  # rim inset is BERM-scale (16 real ft): paddies HUG their canals (the closer doctrine), so a wide "legit rim" tolerance just preserved the bare canal-head bands; step at HALF the check's grid so thin slivers cannot alias through
+
+    dus = [F.to_uf(*q)[0] for q in dpts]
+    du_lo, du_hi = min(dus), max(dus)
+
+    def drain_f_clamped(u: float) -> float:
+        """The collector's fall under u, with FLAT extensions past both ends: the command area's
+        low boundary conceptually continues level beyond the drawn collector, so a low-u fork
+        wedge (before the first ditch) still fills while ground below the extended line - the
+        floating-diamond wart past the outfall - stays bare."""
+        fd = _f_at_u(F, dpts, u)
+        if fd is not None:
+            return fd
+        end = dpts[0] if abs(u - du_lo) < abs(u - du_hi) else dpts[-1]
+        return F.to_uf(*end)[1]
 
     def sd(px: float, py: float, a: Pt, b: Pt) -> float:
         vx, vy = b[0] - a[0], b[1] - a[1]
@@ -568,11 +586,16 @@ def _fill_wedges(
     while y <= ey1:
         x = ex0
         while x <= ex1:
-            if _pip(x, y, envelope) and all(sd(x, y, envelope[i], envelope[(i + 1) % len(envelope)]) > inset for i in range(len(envelope))) and not near_plot(x, y) and dist_to_plot(x, y) <= 14 * g:
-                # the dist clause is what makes this a WEDGE filler: a wedge is bare ground BETWEEN
-                # plots (every cell within ~28 real ft of one), not the open rim slack between the
-                # fan's true edge and the smoothed envelope - filling that grew a floating paddy
-                # hanging off nw1's SE toe (2026-07-21)
+            if (
+                _pip(x, y, envelope)
+                and all(sd(x, y, envelope[i], envelope[(i + 1) % len(envelope)]) > inset for i in range(len(envelope)))
+                and not near_plot(x, y)
+                and F.to_uf(x, y)[1] < drain_f_clamped(F.to_uf(x, y)[0]) - 3 * g
+            ):
+                # bounded by the COMMAND AREA, not by proximity to existing plots: bare ground
+                # between the canals and the (extended) collector line is wasted commanded land
+                # wherever it lies - the canal-head bands the closers miss, fork wedges, tail
+                # slivers - while ground below that line is outside the fan and stays bare
                 bare.append((x, y))
             x += step
         y += step
@@ -625,6 +648,8 @@ def _fill_wedges(
         tcx, tcy = F.to_xy(tcu, tcf)
         if not _pip(tcx, tcy, envelope):
             continue  # the tile drifted out of the fan (cluster-box expansion can cross the rim - the floating-diamond wart)
+        if tcf > drain_f_clamped(tcu) - 3 * g:
+            continue  # below the (extended) collector line - outside the command area
         fd_t = _f_at_u(F, dpts, tcu)
         if fd_t is not None and tcf > fd_t - 3 * g:
             continue  # past the collector (None = no drain below this u: a low-u fork wedge, bounded by its thread instead)
@@ -650,7 +675,9 @@ def _fill_wedges(
             continue  # hopelessly buried - leave the sliver to the bunds
         if math.dist(quad[0], quad[1]) < 6 * g or math.dist(quad[1], quad[2]) < 6 * g:
             continue
-        plots.append({"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad], "fill": R.choice(RICE_GREENS)})
+        plots.append(
+            {"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad], "fill": R.choice(RICE_GREENS), "filler": True}
+        )  # tagged so water-topology anchors (plot_centroid) skip synthetic rim tiles (channel_field_anchored)
 
 
 def _carve(
@@ -802,11 +829,12 @@ def _carve(
             if not ks:
                 continue
             fb = rows[ks[0]]
-            if fb - min(t0, t1) > 78 * g or fb - max(t0, t1) < 8 * g:
-                continue  # no gap here / top boundary is not the canal
+            _ct = (2 if g < 1.0 else 8) * g  # relaxed minima at coarse grains ONLY: village output is GM-vetted and stays byte-identical (g=1 keeps the originals)
+            if fb - min(t0, t1) > 78 * g or fb - max(t0, t1) < _ct:
+                continue  # no gap here / top boundary is not the canal (at coarse grain a thin FAR side is fine - the quad degrades to a wedge)
             quad = [edge(t0, j, nsub), edge(t1, j + 1, nsub), edge(fb, j + 1, nsub), edge(fb, j, nsub)]
-            if math.dist(quad[0], quad[1]) < 12 * g or math.dist(quad[1], quad[2]) < 6 * g:
-                continue
+            if math.dist(quad[0], quad[1]) < (6 if g < 1.0 else 12) * g or math.dist(quad[1], quad[2]) < (2 if g < 1.0 else 6) * g:
+                continue  # min top edge 6*g at coarse grains (12*g at the vetted village grain): the city fans' narrow head sub-columns dropped 3 of nw1's 5 closers, leaving the bare canal-head band (2026-07-21)
             if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
                 continue
             cx = sum(pq[0] for pq in quad) / 4
