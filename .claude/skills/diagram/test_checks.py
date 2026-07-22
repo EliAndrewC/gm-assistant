@@ -3607,6 +3607,34 @@ def test_city_moat_feeder_matches_width_passes_when_matched():
     assert "city_moat_feeder_matches_width" not in f(_feeder_city(22))
 
 
+def _drain_city(streams):
+    # a closed-moat city (no river); off-map = x<0 / x>1000 (EX0=0, EX1=W for a viewBox-less manifest)
+    return {
+        "meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+        "wall": WALLSQ,
+        "gates": [[500, 200], [500, 800]],
+        "moat": _MOAT,
+        "moat_width": 22,
+        "streams": streams,
+    }
+
+
+_MOAT_FEEDER = {"poly": [[-20, 500], [165, 500]], "frm": None, "to": None, "w": 22}  # off-map W -> moat W rim
+_MOAT_OUTFALL = {"poly": [[835, 500], [1020, 500]], "frm": None, "to": None, "w": 22}  # moat E rim -> off-map E (opposite the feeder)
+
+
+def test_city_moat_has_outfall_passes_with_a_flush_through_ring():
+    # feeder on the W rim + outfall on the E rim (opposite faces) = a flow-through moat; the extra
+    # in-city ditch does NOT reach the moat, so it is not mistaken for a tap
+    inland = {"poly": [[500, 480], [500, 520]], "frm": None, "to": None, "w": 6}
+    assert "city_moat_has_outfall" not in f(_drain_city([_MOAT_FEEDER, _MOAT_OUTFALL, inland]))
+
+
+def test_city_moat_has_outfall_fires_when_a_fed_moat_cannot_drain():
+    # a full-flow feeder into a closed moat with no outfall - conservation of flow, it would overflow
+    assert "city_moat_has_outfall" in f(_drain_city([_MOAT_FEEDER]))
+
+
 # --- settlement wells (town/village/hamlet water access) ---
 def _rural(scale, houses, wells, **extra):
     M = {"meta": {"scale": scale}, "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for (x, y) in houses], "wells": [{"x": x, "y": y, "r": 8} for (x, y) in wells]}
@@ -3738,6 +3766,9 @@ def test_roads_bridge_water_fires_on_an_unbridged_lane_over_a_canal():
 def _footbridge_map(bridges, footbridges=True):
     return {
         "meta": {"scale": "village", **({"field_footbridges": True} if footbridges else {})},
+        # a field STRADDLING the main ditch, so the ditch is PLANKABLE (cultivation both banks) and thus
+        # warrants a plank - a margin ditch with nothing to cross to is exempt (see the plankable-gate test)
+        "fields": [{"name": "p", "kind": "paddy", "outline": [[50, 130], [850, 130], [850, 270], [50, 270]], "bbox": [50, 130, 850, 270]}],
         "field_ditches": [
             {"poly": [[100, 200], [800, 200]], "w": 5, "role": "main", "field": "p"},
             {"poly": [[100, 600], [180, 600]], "w": 4, "role": "branch", "field": "p"},
@@ -3754,6 +3785,33 @@ def test_long_ditches_have_a_footbridge_fires_when_a_long_ditch_is_planless():
 def test_long_ditches_footbridge_check_is_opt_in():
     # without meta.field_footbridges the check does not run at all (a planless ditch is fine)
     assert "long_ditches_have_a_footbridge" not in f(_footbridge_map([], footbridges=False))
+
+
+def test_long_ditches_footbridge_exempts_a_margin_ditch():
+    # a long ditch with cultivation on only ONE side (marsh/scrub the other) is not plankable -> no plank needed
+    M = _footbridge_map([])
+    M["fields"] = [{"name": "p", "kind": "paddy", "outline": [[50, 90], [850, 90], [850, 190], [50, 190]], "bbox": [50, 90, 850, 190]}]  # entirely N of the y=200 ditch
+    assert "long_ditches_have_a_footbridge" not in f(M)
+
+
+# ---- footbridges_reach_useful_ground: a standalone plank must land on field/village/dike both banks ----
+def test_footbridges_reach_useful_ground_fires_when_a_plank_crosses_to_nothing():
+    # a foot-tagged plank on the field's EDGE ditch: paddy on the N bank, bare ground (marsh/scrub) on the S
+    M = _footbridge_map([{"x": 450, "y": 200, "rot": 90, "span": 11, "w": 2, "foot": True}])
+    M["fields"] = [{"name": "p", "kind": "paddy", "outline": [[50, 90], [850, 90], [850, 190], [50, 190]], "bbox": [50, 90, 850, 190]}]  # only N of the ditch
+    assert "footbridges_reach_useful_ground" in f(M)
+
+
+def test_footbridges_reach_useful_ground_passes_when_a_plank_reaches_field_both_banks():
+    # the field straddles the ditch -> both banks cultivated -> the plank is useful
+    assert "footbridges_reach_useful_ground" not in f(_footbridge_map([{"x": 450, "y": 200, "rot": 90, "span": 11, "w": 2, "foot": True}]))
+
+
+def test_footbridges_reach_useful_ground_exempts_untagged_lane_bridges():
+    # a lane-carried crossing (no 'foot' tag) is exempt even with nothing on the far bank - a path leads to it
+    M = _footbridge_map([{"x": 450, "y": 200, "rot": 90, "span": 11, "w": 5}])
+    M["fields"] = [{"name": "p", "kind": "paddy", "outline": [[50, 90], [850, 90], [850, 190], [50, 190]], "bbox": [50, 90, 850, 190]}]
+    assert "footbridges_reach_useful_ground" not in f(M)
 
 
 def test_bridges_clear_of_houses_fires_when_a_plank_sits_on_a_farmhouse():
@@ -6220,6 +6278,49 @@ def test_town_margins_clothed_fires_on_a_bare_sheet():
 def test_town_margins_clothed_passes_when_the_ground_is_worked():
     M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "commons": [{"x": 500, "y": 500, "w": 1000, "h": 1000, "role": "grazing", "poly": [[-10, -10], [1010, -10], [1010, 1010], [-10, 1010]]}]}
     assert "town_margins_clothed" not in f(M)
+
+
+# ---- near_ring_cultivated_fraction (feature 013): a well-sited town/city sits in packed farmland,
+# so the flat, uncommitted near-ring ground must be CULTIVATED (paddy/veg fields, dry plots, gardens)
+# to the near_ring_density tier's floor. Bare scrub on that ground counts against; the sub-100%
+# threshold leaves room for the genuine fallow/margin scrub. Town + city only.
+def test_near_ring_cultivated_fraction_fires_on_a_sparse_town():
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}}  # bare sheet, 0% cultivated
+    assert "near_ring_cultivated_fraction" in f(M)
+
+
+def test_near_ring_cultivated_fraction_passes_when_the_near_ring_is_cropped():
+    # dry cropland over ~62% of the flat frame clears the dense town floor (0.55)
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "dry_plots": [{"poly": [[0, 0], [1000, 0], [1000, 620], [0, 620]], "crop": "soy", "theta": 0.0}]}
+    assert "near_ring_cultivated_fraction" not in f(M)
+
+
+def test_near_ring_cultivated_fraction_thin_tier_tolerates_a_scrubbier_ring():
+    # ~26% cultivated: fires when declared 'dense' (floor 0.55), passes when declared 'thin' (floor 0.20)
+    cover = [{"poly": [[0, 0], [1000, 0], [1000, 260], [0, 260]], "crop": "soy", "theta": 0.0}]
+    dense = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "dry_plots": cover}
+    thin = {"meta": {"scale": "town", "W": 1000, "H": 1000, "near_ring_density": "thin"}, "dry_plots": cover}
+    assert "near_ring_cultivated_fraction" in f(dense)
+    assert "near_ring_cultivated_fraction" not in f(thin)
+
+
+def test_near_ring_cultivated_fraction_ignores_village_and_hamlet_sheets():
+    for sc in ("village", "hamlet"):
+        M = {"meta": {"scale": sc, "W": 1000, "H": 1000}}  # bare, but the near-ring rule is town/city only
+        assert "near_ring_cultivated_fraction" not in f(M)
+
+
+# ---- dry_plots_off_hill (feature 013): a hill slope carries dry hill-crops/tea/woodland/scrub, never
+# flooded paddy - and the near-ring dry-field tiler must not stray onto it either (no_field_on_hill
+# reads only M["fields"], so this closes the dry-plot half).
+def test_dry_plots_off_hill_fires_when_a_plot_sits_on_the_hill():
+    M = {"meta": {"scale": "town"}, "hill": [500, 500, 200, 150], "dry_plots": [{"poly": [[480, 480], [520, 480], [520, 520], [480, 520]], "crop": "soy", "theta": 0.0}]}
+    assert "dry_plots_off_hill" in f(M)
+
+
+def test_dry_plots_off_hill_passes_when_plots_avoid_the_hill():
+    M = {"meta": {"scale": "town"}, "hill": [500, 500, 200, 150], "dry_plots": [{"poly": [[50, 50], [90, 50], [90, 90], [50, 90]], "crop": "soy", "theta": 0.0}]}
+    assert "dry_plots_off_hill" not in f(M)
 
 
 # ---- scrub_clear_of_urban_fabric (GM 2026-07-21, Hoshizora): settlement ground is CLEARED - a

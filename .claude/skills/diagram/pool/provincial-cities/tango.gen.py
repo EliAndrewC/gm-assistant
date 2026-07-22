@@ -124,6 +124,14 @@ IMPROAD = [(1602, 709), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 1
 s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)   # a moat vertex on the NW
 s.stream([(922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66))   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
+# ... and the moat DRAINS: an outfall leaves the LOW (SE, downstream - N is the high ground) rim
+# and runs off the map, diagonally opposite the NW feeder so the current flushes the ring corner-to-
+# corner (the Forbidden City NW-in / SE-out pattern). A stream-fed moat in a wet rice climate cannot
+# be a terminal pond - conservation of flow, the surplus MUST leave (evaporation + seepage cannot
+# absorb a live stream); see settlements.md's moat-water bullet. Threads S between the Imperial road
+# (x1602) and the westernmost samurai estate (x~2061), off the S edge.
+_mse = min(MOAT, key=lambda p: (p[0] - 1879) ** 2 + (p[1] - 1732) ** 2)   # a moat vertex on the SE (low) rim
+s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020)], width=s.px(66))   # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow)
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
 # fixed crossing on the samurai ward fence, but s.ward draws them near the END of the gen - long
@@ -855,6 +863,16 @@ top_up("merchant_house", (1181, 1350, 1594, 1712), 120,
        count_kinds=("merchant", "merchant_house", "merchant_large"))   # 120 (was 112), region grown W to the row band's own x1181 edge + S to the ring taper: the pair cadence dropped the merchant caste to 102 vs its 105 band floor (~150 target, city_caste_counts_in_band); the finer 6x7 exact sweep finds the SW district's residual seats
 top_up("merchant_house", (1632, 1302, 2050, 1348), 112,
        count_kinds=("merchant", "merchant_house", "merchant_large"))   # the SW district alone saturates ~3 short of the floor - the NE gap band (already a merchant_house terrace strip) takes the residue
+# ===== NEAR-RING FARMLAND: the extramural flat ground reads PACKED (feature 013) =====
+# A provincial governor's seat sits in its province's best basin, so the flat ground just outside the
+# wall is intensively worked, not bare. Fill the extramural band (inside the cropped view) with a quilt
+# of dry-field + garden plots between the paddy fans - no water needed (dry cropland is exempt from the
+# water-source rule). near_ring_cropland auto-skips everything INSIDE the wall (a city's near ring is
+# extramural) plus the fans, farmsteads, estates, gate markets, graves, and the moat. Called last, after
+# every structure + top-up, so it sees them all. Default near_ring_density "dense" (well-sited).
+# WHY: settlements.md "Near-ring farmland density".
+s.near_ring_cropland((973, 729, 2231, 1927), seed=41)
+
 _dw = (sum(1 for b in s.M["buildings"] if b["kind"] in DWELL)
        + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"])))
 if _dw < 562:   # population floor 558 (3000 x 0.93 / 5) + margin

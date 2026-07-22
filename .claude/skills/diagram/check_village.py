@@ -320,6 +320,56 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
 
+# STANDALONE plank-footbridge usefulness (mirrors settlement.PLANK_BANK_REACH / PLANK_VILLAGE_REACH /
+# PLANK_ABUTMENT - keep in sync). A footplank is worth building only if BOTH banks reach ground someone
+# walks to; the placement engine (channel_footbridges) enforces it, these checks re-verify from the manifest.
+FOOT_ABUTMENT = 6.0  # deck = local ditch width + this abutment (settlement.PLANK_ABUTMENT)
+FOOT_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
+FOOT_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the village (a place worth crossing to)
+
+
+def _footbridge_useful_ground(M: Manifest) -> Any:
+    """Return good(x, y) -> True when (x, y) sits on ground a field-worker walks TO: cultivated field
+    (wet paddy / dry crop), the village (a dwelling within reach), or a walked polder dike. A plank whose
+    far bank fails this opens onto reed marsh / scrub / off-map and connects the fields to nowhere."""
+    crop = [f["outline"] for f in M.get("fields", []) if f.get("outline")]
+    crop += [d["poly"] for d in M.get("dry_plots", [])]
+    dikes = [dk["outline"] for dk in M.get("dikes", []) if dk.get("outline")]
+    houses = M.get("houses", [])
+
+    def good(x: float, y: float) -> bool:
+        return any(point_in_poly(x, y, p) for p in crop) or any(point_in_poly(x, y, p) for p in dikes) or any((x - h["x"]) ** 2 + (y - h["y"]) ** 2 < FOOT_VILLAGE_REACH**2 for h in houses)
+
+    return good
+
+
+def _ditch_plankable(pts: Poly, w: float, good: Any) -> bool:
+    """True if some point along the ditch has USEFUL ground (per `good`) on BOTH banks - i.e. it separates
+    two places worth crossing between, so it warrants a footplank. A MARGIN/toe ditch (cultivation on one
+    side, marsh/scrub on the other for its whole run) is not plankable and needs no plank (GM 2026-07-22)."""
+    seg = [math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1)]
+    total = sum(seg)  # always >= FB_MIN at the one call site (the long-ditch loop pre-filters by length)
+    reach = (w + FOOT_ABUTMENT) / 2 + FOOT_BANK_REACH
+    step = max(8.0, total / 40)
+    s = 0.0
+    while s <= total:
+        acc = 0.0
+        for i, sl in enumerate(seg):
+            if acc + sl >= s or i == len(seg) - 1:
+                fr = (s - acc) / sl if sl else 0.0
+                ax, ay = pts[i]
+                bx, by = pts[i + 1]
+                px, py = ax + (bx - ax) * fr, ay + (by - ay) * fr
+                a = math.radians(math.degrees(math.atan2(by - ay, bx - ax)) + 90.0)  # deck axis, across the ditch
+                ux, uy = math.cos(a), math.sin(a)
+                if good(px + ux * reach, py + uy * reach) and good(px - ux * reach, py - uy * reach):
+                    return True
+                break
+            acc += sl
+        s += step
+    return False
+
+
 def poly_gap(a: Poly, b: Poly) -> float:
     """Minimum distance between two polygons; 0.0 if they overlap, touch, or one contains the other."""
     na, nb = len(a), len(b)
@@ -4876,6 +4926,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if hill:
         onhill = [f["name"] for f in fields if any(in_ellipse(px, py, hill) for px, py in f["outline"])]
         check("no_field_on_hill", not onhill, f"on hill: {onhill}")
+        # DRY PLOTS OBEY THE SAME RULE (feature 013): a hill slope carries dry crops / tea / woodland /
+        # scrub, never flooded paddy - but a near-ring dry-field tiler (near_ring_cropland) could stray
+        # onto the slope. no_field_on_hill reads only M["fields"] (paddy/veg envelopes), so this closes
+        # the dry-plot half. A plot may TOUCH the toe; only a plot whose CENTROID sits on the hill fires
+        # (the tiler's own guard keeps plots off the slope, so a centroid on the hill means the guard broke).
+        dp_onhill = [
+            [round(sum(v[0] for v in dp["poly"]) / len(dp["poly"])), round(sum(v[1] for v in dp["poly"]) / len(dp["poly"]))]
+            for dp in M.get("dry_plots", [])
+            if dp.get("poly") and len(dp["poly"]) >= 3 and in_ellipse(sum(v[0] for v in dp["poly"]) / len(dp["poly"]), sum(v[1] for v in dp["poly"]) / len(dp["poly"]), hill)
+        ]
+        check("dry_plots_off_hill", not dp_onhill, f"dry crop plot(s) centered on the hill (paddy/field needs flat ground; a slope carries dry hill-crops/tea/woodland/scrub only): {dp_onhill[:5]}")
 
     # every watercourse - irrigation channel OR natural stream - must connect what it
     # claims to: each end anchored to its pond / off-map edge / field / forest
@@ -5281,6 +5342,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if meta.get("field_footbridges"):
         FB_MIN = 140
         _no_plank_segs = {"feeder", "w_toe", "drain"}
+        _plank_good = _footbridge_useful_ground(M)
         unplanked = []
         for d in M.get("field_ditches", []):
             if d.get("seg") in _no_plank_segs:
@@ -5289,12 +5351,35 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             length = sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
             if length < FB_MIN:
                 continue
+            if not _ditch_plankable(pts, d.get("w", 4.2), _plank_good):
+                continue  # a margin/toe ditch with nothing to cross TO needs no plank (footbridges_reach_useful_ground)
             if not any(poly_dist(b["x"], b["y"], pts) <= 20 for b in M.get("bridges", [])):
                 unplanked.append((round(pts[0][0]), round(pts[0][1])))
         check(
             "long_ditches_have_a_footbridge",
             not unplanked,
             f"{len(unplanked)} long irrigation ditch(es) with no plank footbridge near {unplanked[:4]} - a long ditch stretch needs a plank about midway (call s.channel_footbridges())",
+        )
+
+        # A standalone plank FOOTBRIDGE (tagged 'foot') is only worth building if BOTH banks reach ground a
+        # field-worker walks to - cultivated field, the village, or a dike. A plank whose far bank opens onto
+        # reed marsh / scrub / off-map connects the fields to nowhere (GM 2026-07-22, Hikari no Sato: drain-toe
+        # planks that stepped straight into the marsh). Lane-carried crossings (s.bridges(), untagged) are
+        # exempt - a path leads to them by construction. The deck spans the ditch along `rot`, so its ends are
+        # the two banks; each is sampled a short reach past its abutment.
+        stranded = []
+        for b in M.get("bridges", []):
+            if not b.get("foot"):
+                continue
+            _fa = math.radians(b.get("rot", 0.0))
+            ux, uy = math.cos(_fa), math.sin(_fa)
+            reach = b["span"] / 2 + FOOT_BANK_REACH
+            if not (_plank_good(b["x"] + ux * reach, b["y"] + uy * reach) and _plank_good(b["x"] - ux * reach, b["y"] - uy * reach)):
+                stranded.append((round(b["x"]), round(b["y"])))
+        check(
+            "footbridges_reach_useful_ground",
+            not stranded,
+            f"{len(stranded)} plank footbridge(s) cross to non-cultivated ground (marsh/scrub/off-map) at {stranded[:4]} - a standalone footplank must reach field/village/dike on BOTH banks; drop it or slide it onto a useful crossing",
         )
 
     # A plank bridge is overlap-EXEMPT in general (it intentionally sits ON the water it spans), but it must
@@ -5503,6 +5588,107 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "built-up edge (the engine's urban-clearance halo protects fringe features that abut an apron; a poly "
         "that CONTAINS a dwelling/shop/well is claiming grazed waste where the town stands)",
     )
+
+    # NEAR-RING FARMLAND DENSITY (feature 013). A well-sited town/city sits in the middle of its BEST
+    # land, and the near ring the frame shows is the part worked HARDEST (site selection + the von
+    # Thünen intensity gradient; the labor-limited fallow lives at the FAR margins, not hugging the
+    # town). So the flat, waterable near-ring ground must read as PACKED cultivation, not bare scrub.
+    # This measures the fraction of flat, uncommitted near-ring ground that is CULTIVATED (paddy +
+    # vegetable fields, dry hem/hatake plots, gardens) - the mirror of town_margins_clothed above, but
+    # counting only CROPLAND, not "any cover". The denominator EXCLUDES ground already committed to a
+    # non-arable use (the settlement + its urban halo, roads/streets, water, the hill, the wet marsh
+    # toe, graves/cremation/ossuary, pasture/coppice, groves) and, on a walled city, everything INSIDE
+    # the wall (urban, not near-ring farmland). What remains is the flat ground that COULD be cropped;
+    # bare scrub (commons) on it counts AGAINST the fraction, so the tier threshold is < 1.0 to leave
+    # room for the genuine fallow/margin scrub. Tunable per map via meta(near_ring_density=...): "dense"
+    # (well-sited default) demands a packed ring, "thin" (a dry rain-shadow / marginal locale) permits a
+    # scrubbier one - the calibrated-liberty range (settlements.md "Near-ring farmland density"). WHY the
+    # thresholds: today's undensified Hirameki sits at ~33% and Tango's outside-wall band at ~7%, both
+    # declared dense - so the dense floor is set well above them to have teeth. Grounded in budgets.md
+    # "Rice and arable-land math" (the ~4% figure is a domain-wide average, the wrong number for the
+    # immediate hinterland). Town + city only; villages/hamlets keep the satoyama scrub-interleave rule.
+    if scale in ("town", "city"):
+        # threshold[tier][scale]: the minimum cultivated fraction of the flat near ring.
+        # Calibrated against the achievable packed ceiling (feature 013): a walled town/city near ring
+        # tops out ~50% cultivated (town) / ~40% (city) because a real fraction of the extramural flat
+        # ground is genuinely un-croppable - reserved irrigation corridors, the fan-ringing farmsteads,
+        # the manor block - and the countryside proper runs off-frame. The dense floor sits below that
+        # ceiling with margin yet well ABOVE the undensified baseline (Hirameki 30%, Tango 7%), so it has
+        # real teeth: an un-densified 'dense' map fails, a packed one passes, and 'thin' stays reachable
+        # for a dry/marginal locale. See settlements.md "Near-ring farmland density".
+        NRD_THRESHOLD = {
+            "dense": {"town": 0.45, "city": 0.30},
+            "medium": {"town": 0.30, "city": 0.20},
+            "thin": {"town": 0.16, "city": 0.10},
+        }
+        nrd_tier = meta.get("near_ring_density", "dense")
+        nr_thr = NRD_THRESHOLD.get(nrd_tier, NRD_THRESHOLD["dense"])[scale]
+        nr_halo = 30.0 / (meta.get("ftpx") or 1)
+        # cultivated cover: paddy + vegetable fields, the chrysanthemum flower field, dry plots, gardens
+        nr_cult = [f_["outline"] for f_ in M.get("fields", [])] + [f_["outline"] for f_ in M.get("flower_fields", [])]
+        for k_ in ("dry_plots", "gardens"):
+            for o_ in M.get(k_, []) or []:
+                p_ = o_.get("poly") if isinstance(o_, dict) else o_
+                if p_ is not None and len(p_) >= 3:
+                    nr_cult.append(p_)
+        # committed non-arable cover -> a cell here is NOT eligible near-ring ground (excluded from the
+        # denominator entirely, so a graveyard / pasture / coppice is neither cultivated nor counted as bare)
+        nr_skip = []
+        for k_ in ("marshes", "pastures", "forest_patches", "cemeteries", "cremation_grounds", "ossuaries", "village_groves", "groves"):
+            for o_ in M.get(k_, []) or []:
+                p_ = o_.get("poly") if isinstance(o_, dict) else o_
+                if p_ is not None and len(p_) >= 3:
+                    nr_skip.append(p_)
+        nr_boxes = []
+        for v_ in M.values():
+            if isinstance(v_, list) and v_ and isinstance(v_[0], dict) and "x" in v_[0] and "w" in v_[0] and "h" in v_[0]:
+                for o_ in v_:
+                    nr_boxes.append((o_["x"] - o_["w"] / 2 - nr_halo, o_["y"] - o_["h"] / 2 - nr_halo, o_["x"] + o_["w"] / 2 + nr_halo, o_["y"] + o_["h"] / 2 + nr_halo))
+        nr_lines = []
+        if road:
+            nr_lines.append((road, 60.0))
+        nr_lines += [(st_["pts"], st_["w"] / 2 + 40) for st_ in M.get("town_streets", [])]
+        nr_lines += [(ln_["pts"], 30.0) for ln_ in M.get("lanes", [])]
+        nr_lines += [(s_["poly"], 30.0) for s_ in M.get("streams", [])] + [(c2_["poly"], 24.0) for c2_ in M.get("channels", [])] + [(d_["poly"], 20.0) for d_ in M.get("field_ditches", [])]
+        nr_moat = M.get("moat")
+        if nr_moat:
+            nr_lines.append((nr_moat, M.get("moat_width", 22) / 2 + 8))
+        nr_wall = M.get("wall")
+        nr_hill = M.get("hill")
+        nr_pond = M.get("pond")
+        nr_elig = nr_cultc = 0
+        gy = EY0 + 12.5
+        while gy < EY1:
+            gx = EX0 + 12.5
+            while gx < EX1:
+                # a cell inside the rampart of a walled town/city is URBAN FLOOR, not near-ring farmland
+                # (same reading as town_margins_clothed's inside-the-rampart exemption) - the near ring is
+                # the EXTRAMURAL flat ground; the intramural chrysanthemum field / open squares are the town
+                committed = (
+                    (nr_wall is not None and len(nr_wall) >= 3 and point_in_poly(gx, gy, nr_wall))
+                    or (nr_hill is not None and in_ellipse(gx, gy, nr_hill, 1.45))
+                    or (nr_pond is not None and in_ellipse(gx, gy, [nr_pond[0], nr_pond[1], nr_pond[2] + 20, nr_pond[3] + 20]))
+                    or any(bx0 <= gx <= bx1 and by0 <= gy <= by1 for bx0, by0, bx1, by1 in nr_boxes)
+                    or any(any(seg_dist(gx, gy, pl_[i_], pl_[i_ + 1]) < hw_ for i_ in range(len(pl_) - 1)) for pl_, hw_ in nr_lines)
+                    or any(point_in_poly(gx, gy, p_) for p_ in nr_skip)
+                )
+                if committed:
+                    gx += 25
+                    continue
+                nr_elig += 1
+                if any(point_in_poly(gx, gy, p_) for p_ in nr_cult):
+                    nr_cultc += 1
+                gx += 25
+            gy += 25
+        nr_frac = nr_cultc / nr_elig if nr_elig else 1.0
+        check(
+            "near_ring_cultivated_fraction",
+            nr_frac >= nr_thr,
+            f"only {nr_frac:.0%} of the flat near-ring ground is cultivated (below the {nr_thr:.0%} floor for near_ring_density='{nrd_tier}') - "
+            "a well-sited town/city sits in packed farmland: fill the flat clear ground with s.near_ring_cropland(...) "
+            "(dry/garden cropland needs no water source) and keep scrub commons to the frame margins; or, for a genuinely "
+            "dry/marginal locale, declare meta(near_ring_density='medium'|'thin')",
+        )
 
     # NO CANOPY STANDS OVER OPEN WATER (GM audit 2026-07): a village-grove clump drawn across a
     # stream / channel / moat reads as trees growing in the current. The fengshui-pond rule
@@ -7725,6 +7911,31 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"the stream feeding the moat is too narrow ({narrow} px vs the {mw}px moat) - a moat's water source "
                     f"must be about as wide as the moat it supplies (pass s.stream(..., width=<moat width>))",
                 )
+                # A FED CLOSED (non-river) MOAT MUST ALSO DRAIN. A moat with a live feeder but no outfall
+                # would overflow: conservation of flow - a perennial stream cannot be held in a wet-rice-
+                # climate moat as a terminal pond (evaporation + seepage cannot absorb a live stream; that
+                # balance belongs to an arid, spring/rain-fed moat). The historical norm is a FLOW-THROUGH
+                # ring - feeder in on the high side, outfall off the LOW side to a lower watercourse, the
+                # current flushing corner-to-corner (Beijing's gated water-passes; the Forbidden City's
+                # NW-in / SE-out moat). The river-moat case is already covered by city_moat_joins_river
+                # (inlet upstream, outlet downstream), so this guards the closed-moat case. See settlements.md.
+                if not rv and moat_is_fed:
+                    mcx, mcy = sum(p[0] for p in moat) / len(moat), sum(p[1] for p in moat) / len(moat)
+                    taps = []  # the moat-rim end of each stream that reaches the moat AND runs off-map: feeder + any outfall
+                    for s in M.get("streams", []):
+                        e0, e1 = s["poly"][0], s["poly"][-1]
+                        if any(e[0] < EX0 or e[0] > EX1 or e[1] < EY0 or e[1] > EY1 for e in (e0, e1)) and min(poly_dist(q[0], q[1], moat) for q in (e0, e1)) <= 32:
+                            taps.append(min((e0, e1), key=lambda e: poly_dist(e[0], e[1], moat)))
+                    # feeder + outfall must attach on OPPOSITE faces (centroid-radials pointing apart, dot < 0)
+                    # so the ring genuinely flushes rather than two inlets crowding one arc
+                    has_outfall = any((taps[i][0] - mcx) * (taps[j][0] - mcx) + (taps[i][1] - mcy) * (taps[j][1] - mcy) < 0 for i in range(len(taps)) for j in range(i + 1, len(taps)))
+                    check(
+                        "city_moat_has_outfall",
+                        has_outfall,
+                        "a fed closed city moat has no outfall - a moat with a live feeder must also DRAIN "
+                        "(conservation of flow: the surplus overflows if it cannot leave), so an outfall stream "
+                        "leaves the LOW rim and runs off-map opposite the feeder to flush the ring; add s.stream(moat rim -> off-map edge)",
+                    )
 
             # RIVER-CITY WATERWORKS (a cargo canal + wharf; only where they are drawn):
             river_c: Any = M.get("river")

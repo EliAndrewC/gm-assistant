@@ -60,6 +60,14 @@ FLOODED_SHADES = ['#93B0A2', '#8AAB9A', '#9DBAAB', '#88A99A', '#9AB6A8']  # just
 RIPE_SHADES = ['#CBBB74', '#C4B36A', '#D1C180']  # ripening rice (golden) - a few plots
 RICE_GREENS = ['#A6C398', '#A2C094', '#A9C69C']  # rice at ONE stage - near-identical greens (reads uniform)
 
+# STANDALONE plank-footbridge geometry, shared by channel_footbridges() (placement) and the
+# footbridges_reach_useful_ground check in check_village.py (which duplicates these three values -
+# keep them in sync). A dobashi footplank spans an ~8 ft ditch with a short landing each bank; it
+# exists so field-workers can cross to the FIELD, so both banks must reach ground worth crossing to.
+PLANK_ABUTMENT = 6.0  # deck = local ditch width + this SHORT abutment (GM 2026-07-22: was 15, far too long for a footplank)
+PLANK_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
+PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
+
 
 def _signed_area(poly: Poly) -> float:
     a = 0.0
@@ -4358,6 +4366,123 @@ class Settlement:
             toe = [(u * ux + v * dx, u * uy + v * dy) for u, v in ((u0, v_in), (u1, v_in), (u1, v_out), (u0, v_out))]
             self.marsh(toe, role=marsh_role, avoid=avoid)  # reed wetland: the low, undrained downhill toe
 
+    def near_ring_cropland(self, bbox: tuple[float, float, float, float], density: str | None = None, *, seed: int = 0, garden_frac: float = 0.16, cell_ft: float = 60.0, avoid: Any = ()) -> int:
+        """Fill the flat, CLEAR ground in `bbox` with channel-free DRY-FIELD + GARDEN cropland, so a
+        well-sited town/city NEAR RING reads as PACKED farmland instead of bare scrub (feature 013,
+        settlements.md 'Near-ring farmland density'). A market town / county seat sits in the middle of
+        its BEST land (site selection) and the near ring is the part worked HARDEST (the von Thünen
+        intensity gradient); the labor-limited fallow lives at the FAR margins, not hugging the town. So
+        the flat near ring is cropland, and the scrub retreats to the frame edge (`s.commons`) + the
+        non-arable ground (hill, wet toe). This tiles a quilt of ridge-cultivated hatake + garden plots
+        (grain/pulse/greens - the dryland SUPPORTING crops that historically flanked the paddy), each
+        recorded to `M['dry_plots']` + `dry_polys` (no-build cropland the coverage checks count as cover)
+        - NO channels, NO water: dry cropland is exempt from `fields_show_water_source`, so it packs the
+        ring without inventing hydrology. It SKIPS every keep-out (existing fields + their corridors, the
+        30-ft urban halo around every structure, roads/streets/lanes, watercourses + the pond, the hill,
+        and - on a walled city - everything INSIDE the wall). Call it AFTER the paddy combs AND after the
+        urban packs/farmsteads (so it sees every structure to skip). Intensity is `density` (`'dense'`
+        default / `'medium'` / `'thin'`), or None to read `meta(near_ring_density=...)` - the
+        calibrated-liberty knob (the DEGREE of near-ring density is region-dependent; dense is the
+        well-sited default). Deterministic (own RNG, seeded), so it perturbs no other seeded pack.
+        Returns the plot count. Gated by `near_ring_cultivated_fraction`."""
+        from waterfields import DRY_CROPS
+
+        tier = density if density is not None else self.M.get("meta", {}).get("near_ring_density", "dense")
+        fill_by_tier = {"dense": 0.97, "medium": 0.62, "thin": 0.33}  # fraction of CLEAR cells cropped; the rest stays scrub/fallow
+        if tier not in fill_by_tier:
+            raise ValueError(f"near_ring_density must be one of {sorted(fill_by_tier)}, got {tier!r}")
+        fill_p = fill_by_tier[tier]
+        garden_pal = [("#9FB86B", "#83A050"), ("#8FAE62", "#75954C")]  # intensively-worked garden greens mixed into the grain/pulse hatake
+        dry_pal = list(DRY_CROPS.items())  # [(crop, (fill, furrow)), ...]
+
+        bx0, by0, bx1, by1 = bbox
+        bx0, by0 = max(bx0, 12.0), max(by0, 12.0)
+        bx1, by1 = min(bx1, self.W - 12.0), min(by1, self.H - 12.0)
+        if bx1 - bx0 < 10 or by1 - by0 < 10:
+            return 0
+        cell = self.px(cell_ft)
+        rng = random.Random((seed & 0xFFFF) ^ 0x13A7 ^ (int(bx0) * 131) ^ (int(by0) * 17))
+
+        halo_rects, halo_circles = self._urban_keepouts((bx0, by0, bx1, by1))
+        corridors = self._corridor_buffers(3 * self.bscale)
+        pond = self.M.get("pond")
+        hill = self.M.get("hill")
+        wall = self.M.get("wall")
+        walled_city = self.M.get("meta", {}).get("scale") == "city" and wall is not None and len(wall) >= 3
+        grove_polys = [
+            g["poly"] for g in self.M.get("village_groves", []) if g.get("poly") and len(g["poly"]) >= 3
+        ]  # keep cropland off the windbreak/copse belts (a grove is committed non-arable cover; call this AFTER the groves)
+        grove_rects = [(g["x"] - g["w"] / 2, g["y"] - g["h"] / 2, g["x"] + g["w"] / 2, g["y"] + g["h"] / 2) for g in self.M.get("groves", []) if "x" in g and "w" in g]
+        # every DRAWN grove clump center - a plot must not cover one (groves_clear_of_dry_plots reads the clumps,
+        # which can sit a little outside their loose belt poly); tested by plot BBOX in the loop, the precise guard
+        grove_clumps = [(float(c[0]), float(c[1])) for g in self.M.get("village_groves", []) for c in g.get("clumps", [])]
+
+        def _blocked(px: float, py: float) -> bool:
+            return bool(
+                any(point_in_poly(px, py, ff) for ff in self.field_polys)  # off the paddy envelopes
+                or any(point_in_poly(px, py, b) for b in self.block_polys)  # off every reserved footprint / bog / pond block
+                or any(point_in_poly(px, py, d) for d in self.dry_polys)  # off existing hem/garden cropland (and plots placed this pass)
+                or any(point_in_poly(px, py, c) for c in self.clearings)  # off swept sacred/funerary verges
+                or any(point_in_poly(px, py, a) for a in avoid)
+                or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)  # off roads/streets/lanes
+                or self._on_watercourse(px, py)  # off streams/channels/moat
+                or (pond is not None and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)  # off the pond
+                or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # off the urban-clearance halo
+                or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # off wellhead aprons
+                or (hill is not None and ((px - hill[0]) / (hill[2] * 1.35)) ** 2 + ((py - hill[1]) / (hill[3] * 1.35)) ** 2 <= 1.0)  # off the hill slope (paddy/field needs flat ground)
+                or any(point_in_poly(px, py, gp) for gp in grove_polys)  # off the windbreak/copse belts
+                or any(gx0 <= px <= gx1 and gy0 <= py <= gy1 for gx0, gy0, gx1, gy1 in grove_rects)
+                or (walled_city and wall is not None and point_in_poly(px, py, wall))  # a city's near ring is OUTSIDE the wall
+            )
+
+        # Tile the bbox on a clean grid (shared cut lines -> plots ABUT, like an in-wall veg tract), then
+        # keep only cells whose whole footprint is clear of every keep-out. A boundary cell abutting a
+        # field/structure is dropped, leaving a baulk. `density` thins the KEPT cells (the rest stay
+        # scrub/fallow), so a `'thin'` locale reads scrubbier than a packed `'dense'` basin.
+        placed = 0
+        rows = [by0]
+        while rows[-1] < by1 - cell * 0.55:
+            rows.append(min(by1, rows[-1] + cell * rng.uniform(0.85, 1.2)))
+        rows[-1] = by1
+        prev_crop = rng.choice(dry_pal)
+        for ri in range(len(rows) - 1):
+            ry0, ry1 = rows[ri], rows[ri + 1]
+            ncol = max(1, round((bx1 - bx0) / cell))
+            cuts = [bx0 + (bx1 - bx0) * j / ncol + (0.0 if j in (0, ncol) else rng.uniform(-6, 6)) for j in range(ncol + 1)]
+            for cj in range(len(cuts) - 1):
+                cx0, cx1 = cuts[cj], cuts[cj + 1]
+                quad = [
+                    (cx0 + rng.uniform(-2, 2), ry0 + rng.uniform(-2, 2)),
+                    (cx1 + rng.uniform(-2, 2), ry0 + rng.uniform(-2, 2)),
+                    (cx1 + rng.uniform(-2, 2), ry1 + rng.uniform(-2, 2)),
+                    (cx0 + rng.uniform(-2, 2), ry1 + rng.uniform(-2, 2)),
+                ]
+                mx = sum(p[0] for p in quad) / 4
+                my = sum(p[1] for p in quad) / 4
+                if _blocked(mx, my) or any(_blocked(px, py) for px, py in quad):
+                    continue
+                qx0, qy0 = min(p[0] for p in quad) - 12, min(p[1] for p in quad) - 12
+                qx1, qy1 = max(p[0] for p in quad) + 12, max(p[1] for p in quad) + 12
+                if any(qx0 <= cx <= qx1 and qy0 <= cy <= qy1 for cx, cy in grove_clumps):  # no plot covers a grove clump (groves_clear_of_dry_plots)
+                    continue
+                if rng.random() > fill_p:  # a clear cell left as scrub/fallow (the sub-saturation the tier allows)
+                    continue
+                if rng.random() < 0.42:  # holdings cluster: usually keep the last crop, sometimes switch
+                    prev_crop = rng.choice(dry_pal)
+                if rng.random() < garden_frac:
+                    crop, (cfill, cfur) = "garden", rng.choice(garden_pal)
+                else:
+                    crop, (cfill, cfur) = prev_crop[0], prev_crop[1]
+                theta = (ri * 0.9 + cj * 1.5 + rng.uniform(-0.15, 0.15)) % math.pi  # neighbors differ (fragmented family strips)
+                pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in quad)
+                self.add(f'<polygon points="{pts}" fill="{cfill}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
+                self._draw_furrows(quad, cfur, theta)
+                self.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in quad], "crop": crop, "theta": round(theta, 3)})
+                self.dry_polys.append(quad)
+                self.block_polys.append(quad)  # no-build cropland; also stops later cells this pass from overlapping
+                placed += 1
+        return placed
+
     def _attach_grove(self, hx: float, hy: float, arms: Any) -> None:
         """Draw a farmstead's windbreak grove (its belt arms) and record each arm under its parent house.
         Arms go into `grove_rects` (NOT `placed`) so a neighbor's grove may MERGE with it and the wells
@@ -5537,16 +5662,19 @@ class Settlement:
                             n += 1
         return n
 
-    def channel_footbridges(self, spacing: float = 320, min_len: float = 140, plank_w: float = 2.5, seg_caps: Any = None) -> int:
+    def channel_footbridges(self, spacing: float = 320, min_len: float = 140, plank_w: float = 2.0, seg_caps: Any = None) -> int:
         """Standalone plank FOOTBRIDGES across the irrigation channels, where field-workers cross a ditch while
         walking the paddy bunds - NOT carried by any lane (people reach them along the earthen bunds, so no
         path leads to them). Any ditch stretch longer than `min_len` gets a plank about MIDWAY; a long stretch
         gets one roughly every `spacing` px, evenly spaced along it. Each plank crosses PERPENDICULAR to the
-        ditch, spanning its local width plus short abutments. Call AFTER the field ditches are recorded. Bridges
-        draw on the TOP layer (over the water). Records via `bridge()` into M['bridges']; returns the count.
-        DECK WIDTH (1 px = 2 ft): a dobashi footplank is a single-file crossing (~3-5 ft), so `plank_w=2.5`
-        (~5 ft) - the honest upper end, kept just wide enough to read. It must stay NARROWER than a cart lane
-        (~5-6 px); the wider `bridges()` carried-way deck matches the lane it carries, but a footplank does not."""
+        ditch, spanning its local width plus a short abutment. Call AFTER the field ditches are recorded. Bridges
+        draw on the TOP layer (over the water). Records via `bridge()` into M['bridges'] (tagged 'foot'); returns
+        the count. DECK WIDTH (1 px = 2 ft): a dobashi footplank is a single-file crossing (~3-4 ft), so
+        `plank_w=2.0` (~4 ft, GM 2026-07-22: was 2.5) - kept just wide enough to read and NARROWER than a cart
+        lane (~5-6 px); the wider `bridges()` carried-way deck matches the lane it carries, but a footplank does not.
+        USEFULNESS: a plank is placed only where BOTH banks reach ground someone walks to - cultivated field,
+        the village, or a dike (via _plank_reaches_useful_ground). A drain/toe stretch whose far bank opens onto
+        marsh/scrub/off-map carries NO plank (GM 2026-07-22, Hikari no Sato: crossings into the reed marsh)."""
 
         def _at(pts: Any, seg: Any, s: float) -> Any:  # point + heading (deg) at arc-length s along the polyline
             acc = 0.0
@@ -5594,15 +5722,52 @@ class Settlement:
                     continue
                 n = min(n, cap)
             w = d.get("w", 4.2)
+            span = w + PLANK_ABUTMENT  # deck = local ditch width + a short abutment each bank
             for k in range(n):
                 base = (k + 0.5) / n * total  # midway for n=1, evenly spaced otherwise
-                px, py, ang = _at(pts, seg, base)
-                for frac in (0.12, -0.12, 0.24, -0.24, 0.36, -0.36):  # a plank must not land on a home: SLIDE along the ditch to dodge one
-                    if not any(_sat(_corners(px, py, w + 15, plank_w, ang + 90), hc) for hc in houses):
-                        break
+                # SLIDE along the ditch to a spot that (a) misses every home and (b) lands on
+                # useful ground (field/village/dike) on BOTH banks. If no such spot is near this
+                # slot - a marsh/scrub toe stretch with nothing to cross to - it carries NO plank.
+                for frac in (0.0, 0.12, -0.12, 0.24, -0.24, 0.36, -0.36, 0.5, -0.5):
                     px, py, ang = _at(pts, seg, max(0.0, min(total, base + frac * total)))
-                self.bridge(px, py, ang + 90, w + 15, plank_w)  # deck runs ACROSS the ditch (perpendicular)
+                    deck = ang + 90  # deck runs ACROSS the ditch (perpendicular)
+                    if any(_sat(_corners(px, py, span, plank_w, deck), hc) for hc in houses):
+                        continue
+                    if not self._plank_reaches_useful_ground(px, py, deck, span):
+                        continue
+                    self.bridge(px, py, deck, span, plank_w)
+                    self.M["bridges"][-1]["foot"] = True  # a standalone footplank (checked by footbridges_reach_useful_ground)
+                    break
         return len(self.M["bridges"]) - n0
+
+    def _plank_reaches_useful_ground(self, px: float, py: float, deck_deg: float, span: float) -> bool:
+        """A STANDALONE footplank is worth building only if BOTH banks reach ground someone walks to:
+        cultivated field (wet paddy or dry crop), the village (a dwelling within a short reach), or a
+        walked polder-dike crest. A crossing whose far bank opens onto reed marsh, scrub commons, forest,
+        or off-map serves no one - field-workers cross a ditch to reach the FIELD, not to wade into the
+        bog (GM 2026-07-22, Hikari no Sato: drain-toe planks that stepped straight into the reed marsh).
+        The deck spans the ditch along `deck_deg`, so its two ends ARE the two banks; each is sampled a
+        short reach past its abutment. See the footbridges_reach_useful_ground check in check_village.py."""
+        a = math.radians(deck_deg)
+        ux, uy = math.cos(a), math.sin(a)
+        reach = span / 2 + PLANK_BANK_REACH
+        # read the SAME cultivation source the footbridges_reach_useful_ground check reads (the manifest
+        # field outlines + dry plots), so placement and check never disagree - self.field_polys is a
+        # separate blocking-only list that some gens leave empty.
+        crop = [f["outline"] for f in self.M.get("fields", []) if f.get("outline")]
+        crop += [d["poly"] for d in self.M.get("dry_plots", [])]
+        dikes = [dk["outline"] for dk in self.M.get("dikes", []) if dk.get("outline")]
+        houses = self.M.get("houses", [])
+        for sgn in (1.0, -1.0):
+            bx, by = px + ux * reach * sgn, py + uy * reach * sgn
+            if any(point_in_poly(bx, by, p) for p in crop):
+                continue
+            if any(point_in_poly(bx, by, p) for p in dikes):
+                continue
+            if any((bx - h["x"]) ** 2 + (by - h["y"]) ** 2 < PLANK_VILLAGE_REACH**2 for h in houses):
+                continue
+            return False
+        return True
 
     def governor_mansion(self, x: float, y: float, w: float = 320, h: float = 210, label: str = "Governor's Mansion", gate_dir: str = "west") -> Any:
         """The provincial governor's walled mansion - a large compound, grander than a county

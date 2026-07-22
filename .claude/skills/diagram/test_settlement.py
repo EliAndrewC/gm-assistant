@@ -950,6 +950,7 @@ def test_bridges_spans_a_lane_where_it_crosses_a_canal():
 
 def test_channel_footbridges_plank_each_long_ditch_perpendicular():
     s = _crop_settlement()
+    s.M["fields"] = [{"outline": [[50, 120], [850, 120], [850, 280], [50, 280]]}]  # paddy straddling the y=200 ditch (both banks cultivated)
     s.M["field_ditches"] = [
         {"poly": [[100, 200], [400, 200], [800, 200]], "w": 5, "role": "main"},  # 700px, 2 segments -> two planks at spacing 320
         {"poly": [[100, 400], [160, 400]], "w": 4, "role": "branch"},  # 60px -> below min_len, no plank
@@ -981,12 +982,21 @@ def test_shrine_well_returns_none_when_boxed_in():
 
 def test_channel_footbridges_slides_a_plank_clear_of_a_farmhouse():
     s = _crop_settlement()
+    s.M["fields"] = [{"outline": [[50, 220], [750, 220], [750, 380], [50, 380]]}]  # paddy straddling the y=300 ditch
     s.M["field_ditches"] = [{"poly": [[100, 300], [700, 300]], "w": 5, "role": "main"}]  # 600px E-W ditch
     s.M["houses"] = [{"x": 400, "y": 300, "w": 60, "h": 40, "kind": "plain", "rot": 0}]  # a house ON the ditch midpoint
     n = s.channel_footbridges(spacing=800)  # n=1, midway = (400,300) = on the house
     assert n == 1
     b = s.M["bridges"][0]
     assert not (365 <= b["x"] <= 435) and 190 < b["y"] < 410  # the plank slid ALONG the ditch, off the house footprint
+
+
+def test_channel_footbridges_skips_a_crossing_to_uncultivated_ground():
+    s = _crop_settlement()
+    s.M["fields"] = [{"outline": [[50, 120], [750, 120], [750, 297], [50, 297]]}]  # paddy only NORTH of the ditch; the S bank is marsh/scrub
+    s.M["field_ditches"] = [{"poly": [[100, 300], [700, 300]], "w": 5, "role": "main"}]  # a margin ditch: field one side, nothing the other
+    n = s.channel_footbridges(spacing=800)
+    assert n == 0 and not s.M["bridges"]  # no cultivated ground on the far bank -> no useful crossing -> no plank
 
 
 # --- fragmented dooryard gardens: _garden_beds picks single / flanking / stacked / side-by-side --------
@@ -2898,3 +2908,94 @@ def test_perimeter_dike_notches_the_band_at_a_gap_on_it():
     env = [(200, 200), (800, 200), (800, 800), (200, 800)]
     s.perimeter_dike(env, seed=3, gaps=[(500, 200), (500, 800)])
     assert s.M["dikes"] and len(s.M["dikes"][0]["gaps"]) == 2
+
+
+# ---- near_ring_cropland (feature 013): channel-free dry/garden tiler that packs the flat near ring.
+def test_near_ring_cropland_rejects_an_unknown_density():
+    s = _town()
+    with pytest.raises(ValueError, match="near_ring_density"):
+        s.near_ring_cropland((0, 0, 1000, 1000), density="lush")
+
+
+def test_near_ring_cropland_returns_zero_for_a_degenerate_bbox():
+    s = _town()
+    assert s.near_ring_cropland((100, 100, 105, 900), density="dense") == 0
+
+
+def test_near_ring_cropland_fills_clear_ground_and_records_dry_plots():
+    s = _town()
+    n = s.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=3)
+    assert n > 0
+    assert len(s.M["dry_plots"]) == n
+    assert len(s.dry_polys) == n  # recorded as no-build cropland
+    # every plot carries the dry-plot shape the checks read
+    assert all(set(p) >= {"poly", "crop", "theta"} for p in s.M["dry_plots"])
+
+
+def test_near_ring_cropland_density_tiers_are_monotonic():
+    def count(tier):
+        s = _town()
+        return s.near_ring_cropland((0, 0, 1000, 1000), density=tier, seed=7)
+
+    assert count("dense") > count("medium") > count("thin") > 0
+
+
+def test_near_ring_cropland_reads_meta_near_ring_density_when_density_is_none():
+    s = _town()
+    s.meta(near_ring_density="thin")
+    thin = s.near_ring_cropland((0, 0, 1000, 1000), density=None, seed=2)
+    s2 = _town()
+    dense = s2.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=2)
+    assert thin < dense  # the meta default ('thin') fills less than an explicit 'dense'
+
+
+def test_near_ring_cropland_can_be_all_garden_or_all_grain():
+    s = _town()
+    s.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=1, garden_frac=1.0)
+    assert s.M["dry_plots"] and all(p["crop"] == "garden" for p in s.M["dry_plots"])
+    s2 = _town()
+    s2.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=1, garden_frac=0.0)
+    assert s2.M["dry_plots"] and all(p["crop"] != "garden" for p in s2.M["dry_plots"])
+
+
+def test_near_ring_cropland_skips_fields_structures_hill_and_groves():
+    s = _town()
+    s.M["hill"] = [500, 200, 180, 120]  # a hill in the north
+    s.field_polys.append([(0, 700), (400, 700), (400, 1000), (0, 1000)])  # a paddy block, SW
+    s.M["houses"] = [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0}]  # a dwelling, SE
+    s.M["village_groves"] = [{"poly": [[600, 600], [760, 600], [760, 760], [600, 760]], "role": "copse", "clumps": [[680, 680]]}]
+    s.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=5)
+    from settlement import point_in_poly
+
+    for p in s.M["dry_plots"]:
+        cx = sum(v[0] for v in p["poly"]) / 4
+        cy = sum(v[1] for v in p["poly"]) / 4
+        assert not (((cx - 500) / (180 * 1.35)) ** 2 + ((cy - 200) / (120 * 1.35)) ** 2 <= 1.0)  # off the hill
+        assert not point_in_poly(cx, cy, [(0, 700), (400, 700), (400, 1000), (0, 1000)])  # off the paddy
+        assert not (760 >= cx >= 600 and 760 >= cy >= 600)  # off the grove belt
+        assert not (780 >= cx >= 620 and 780 >= cy >= 620)  # not covering the grove clump
+
+
+def test_near_ring_cropland_skips_a_grove_clump_outside_its_belt_poly():
+    # a clump can sit just past its loose belt poly; the per-plot clump-bbox guard (not the belt-poly
+    # test) is what keeps a plot off it, so no dry plot may cover the stray clump
+    s = _town()
+    s.M["village_groves"] = [{"poly": [], "clumps": [[500, 500]]}]  # empty belt poly -> only the clump guard applies
+    s.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=6)
+    for p in s.M["dry_plots"]:
+        qx0, qy0 = min(v[0] for v in p["poly"]), min(v[1] for v in p["poly"])
+        qx1, qy1 = max(v[0] for v in p["poly"]), max(v[1] for v in p["poly"])
+        assert not (qx0 - 12 <= 500 <= qx1 + 12 and qy0 - 12 <= 500 <= qy1 + 12)
+
+
+def test_near_ring_cropland_keeps_a_city_ring_outside_the_wall():
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="C", scale="city")
+    s.M["wall"] = [[300, 300], [700, 300], [700, 700], [300, 700]]  # a square rampart
+    s.near_ring_cropland((0, 0, 1000, 1000), density="dense", seed=4)
+    from settlement import point_in_poly
+
+    for p in s.M["dry_plots"]:
+        cx = sum(v[0] for v in p["poly"]) / 4
+        cy = sum(v[1] for v in p["poly"]) / 4
+        assert not point_in_poly(cx, cy, [(300, 300), (700, 300), (700, 700), (300, 700)])  # no cropland inside the wall
