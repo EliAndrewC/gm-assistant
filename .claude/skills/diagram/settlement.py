@@ -5072,43 +5072,41 @@ class Settlement:
                     f'<g transform="translate({_pcx:.1f},{_pcy:.1f}) rotate({tang[g_idx]:.1f})"><rect x="{-_pw / 2:.1f}" y="{-_ph / 2:.1f}" width="{_pw:.1f}" height="{_ph:.1f}" fill="{wc}"/></g>'
                 )
                 self.M["gate_structs"].append({"x": round(_pcx, 1), "y": round(_pcy, 1), "w": round(_pw, 1), "h": round(_ph, 1), "rot": round(tang[g_idx], 1), "kind": "gatepost"})
-            # the GUARD HOUSE + INSPECTION STATION sit ON the ring road just inside the gate, each one
-            # WALKED along the curving wall (so it picks up the wall's LOCAL tangent there, not the gate
-            # vertex's) and pulled in radially to the ring road's centerline (inset `ring_inset`, matching
-            # s.ring_road) - so the patrol road runs lengthwise THROUGH each building, which sits SQUARE
-            # to the wall like the towers, instead of the road slicing across an axis-aligned box.
+            # the GUARD HOUSE and INSPECTION STATION FLANK THE ROAD at the gate throat - one on each
+            # side, facing each other across the entering roadway (the Hakone-sekisho pattern: the
+            # inspection office and the guard barracks stand OPPOSITE each other just inside the gate,
+            # so all arriving traffic passes BETWEEN them). Historically decisive (GM 2026-07-22, was
+            # both stacked on ONE flank and walked 80/144 px = 240/432 ft along the wall, reading as
+            # furniture pushed far from the gate): an inspection/tax barrier only works where traffic
+            # is forced single-file, and the gate passage is that one chokepoint in the whole wall -
+            # set the station back along the wall and arrivals disperse into the streets before ever
+            # reaching it, defeating its purpose. So each sits ~20-100 ft inside the opening, right at
+            # the roadway, NOT a few hundred feet along the wall. See settlements.md 'Historical
+            # grounding'. Each is WALKED a SHORT arc to its own flank (so it picks up the wall's LOCAL
+            # tangent and sits SQUARE to the wall, the ring road running lengthwise through it) then
+            # pulled in radially to the ring road centerline - the two end up just off either verge of
+            # the road at the gate, the road passing between them.
             insp_xy: Any = None
             g_east = any(abs(gx - ex) < 2 and abs(gy - ey) < 2 for (ex, ey) in guard_east)
-            gh_rect: Any = None
+            gh_west = not g_east  # guard house on the WEST flank by default; guard_east flips it east (inspection takes the other verge)
+            road_half = self.M.get("road_width", 26) / 2  # city_wall runs before s.road, so this is the Imperial-road default
             # TRUE SCALE (GM 2026-07-22, was fixed-pixel 66x44 / 60x44 = ~198x132 / 180x132 ft at 3 ft/px -
             # a guardhouse drawn bigger than a temple): footprints in REAL FEET via px(). A gate guard duty
             # room is a small 1-3 bay building (~34x20 ft, upper end of the 15-35 ft attested range); a gate
             # inspection hall (sekisho/lijin bansho) ~44x22 ft. Strokes keep their legibility floor (the
             # stroke convention, SKILL.md 'to scale'); the footprint takes no license. See settlements.md
             # 'Historical grounding' for the anchors.
-            for kind, arc, fw_ft, fh_ft, fill in (("guardhouse", 80, 34, 20, "#C9A57A"), ("inspection", 144, 44, 22, "#D8C49A")):
+            for kind, west_side, fw_ft, fh_ft, fill in (("guardhouse", gh_west, 34, 20, "#C9A57A"), ("inspection", not gh_west, 44, 22, "#D8C49A")):
                 fw, fh = self.px(fw_ft), self.px(fh_ft)
-                # the inspection station walks OUTWARD from the guard house until the two rects
-                # clear - on a small tight ring the fixed arcs converge and the annex would be
-                # drawn through the guard house (city_gate_guard_inspection_separate)
-                for arc_try, tuck in ((arc, 0), (arc + 14, 0), (arc, 20), (arc + 14, 20), (arc + 28, 20)):
-                    # first slide a little along the wall, then TUCK radially inward (an annex
-                    # set just inside the patrol line) - sliding alone can walk the inspection
-                    # past the ~160px gate radius (city_inspection_station_at_each_gate)
-                    wx, wy, ang = self._wall_walk(pts, g_idx, arc_try, west=not g_east)
-                    d = math.hypot(wx - cx, wy - cy) or 1.0
-                    f = (d - ring_inset - tuck) / d  # radial inset to the ring road centerline (+ tuck)
-                    fx, fy = cx + (wx - cx) * f, cy + (wy - cy) * f
-                    a = (ang + 90) % 180 - 90  # local wall tangent, folded to (-90, 90]
-                    if gh_rect is None:
-                        break  # the guard house itself takes the first arc
-                    ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
-                    mine = [
-                        (fx + ca * px_ - sa * py_, fy + sa * px_ + ca * py_)
-                        for px_, py_ in ((-fw / 2 - 3, -fh / 2 - 3), (fw / 2 + 3, -fh / 2 - 3), (fw / 2 + 3, fh / 2 + 3), (-fw / 2 - 3, fh / 2 + 3))
-                    ]
-                    if not rects_overlap(mine, gh_rect):
-                        break
+                # a SHORT arc to this building's flank: just past the road verge (road half-width) plus
+                # the building's own half-length plus a small gap, so it stands hard by the roadway at
+                # the gate rather than walked out along the wall
+                arc = road_half + fw / 2 + 6
+                wx, wy, ang = self._wall_walk(pts, g_idx, arc, west=west_side)
+                d = math.hypot(wx - cx, wy - cy) or 1.0
+                f = (d - ring_inset) / d  # radial inset to the ring road centerline
+                fx, fy = cx + (wx - cx) * f, cy + (wy - cy) * f
+                a = (ang + 90) % 180 - 90  # local wall tangent, folded to (-90, 90]
                 trim = (
                     f'<line x1="{-fw / 2:.0f}" y1="0" x2="{fw / 2:.0f}" y2="0" stroke="#5A4326" stroke-width="0.8"/>'
                     if kind == "guardhouse"
@@ -5120,9 +5118,6 @@ class Settlement:
                     f'{trim}</g>'
                 )
                 self.M["gate_structs"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "kind": kind, "z": z})
-                if kind == "guardhouse":
-                    ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
-                    gh_rect = [(fx + ca * px_ - sa * py_, fy + sa * px_ + ca * py_) for px_, py_ in ((-fw / 2, -fh / 2), (fw / 2, -fh / 2), (fw / 2, fh / 2), (-fw / 2, fh / 2))]
                 if kind == "inspection":
                     self.M["inspection_stations"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "label": "inspection station"})
                     insp_xy = (fx, fy)
@@ -5147,9 +5142,33 @@ class Settlement:
             twx, twy = _berm_nudge(twx, twy, self.px(30))
             tz = self._tower(twx, twy, ta, wc, along_ft=52, deep_ft=30)
             self.M["gate_structs"].append({"x": twx, "y": twy, "w": round(self.px(52), 1), "h": round(self.px(30), 1), "rot": round(ta, 1), "kind": "tower", "z": tz})
-            self.label(insp_xy[0], insp_xy[1] + self.px(22) + 6, "gate guard house + inspection", 9, italic=True, color="#5A4326")
+            # ONE label for the pair, centered on the road just inside the gate and pushed far enough
+            # INWARD (along the gate's radial) to clear BOTH flanking buildings - the wide italic text
+            # runs across the roadway between them, so it covers neither footprint (GM 2026-07-22: the
+            # old label was centered on the inspection station and painted over the guard house)
+            _rix, _riy = cx - gx, cy - gy
+            _rl = math.hypot(_rix, _riy) or 1.0
+            _lx = gx + _rix / _rl * (ring_inset + self.px(50))
+            _ly = gy + _riy / _rl * (ring_inset + self.px(50))
+            _ltext = "guard / inspection stations"
+            self.label(_lx, _ly, _ltext, 9, italic=True, color="#5A4326")
+            # RESERVE the label's ground so no later pack lands a building under the text. city_wall runs
+            # BEFORE the quarters pack, so the label cannot be auto-placed AROUND the buildings the way a
+            # post-pack label is - it must claim its box up front (like the gate furniture above). Without
+            # this a quarter that crowds right up to the gate drops a house under the caption
+            # (nagahara's N-gate laborer terraces - labels_clear_of_other_buildings). The +14 margin is a
+            # building half-width, so no footprint edge pokes into the text either.
+            _lhw = len(_ltext) * 9 * 0.55 / 2 + 14
+            _lhh = 9 * 0.8 + 14
+            self.block_polys.append([(_lx - _lhw, _ly - _lhh), (_lx + _lhw, _ly - _lhh), (_lx + _lhw, _ly + _lhh), (_lx - _lhw, _ly + _lhh)])
             for gs in self.M["gate_structs"][-3:]:
-                bm = 30
+                # the tower keeps a wide keep-clear apron; the guard house / inspection are now TRUE
+                # SCALE (~14x7 px) and sit hard by the road at the gate, where the road corridor
+                # already fends packs off one flank - so their oversized 30px apron (calibrated for the
+                # old 66x44 furniture) reserved far more ground than the footprint and squeezed a
+                # gate-side quarter's packing (nagahara's E-gate merchant blocks). A modest apron keeps
+                # packs from abutting the actual footprint without over-reserving (GM 2026-07-22).
+                bm = 30 if gs.get("kind") == "tower" else 12
                 self.block_polys.append(
                     [
                         (gs["x"] - gs["w"] / 2 - bm, gs["y"] - gs["h"] / 2 - bm),
