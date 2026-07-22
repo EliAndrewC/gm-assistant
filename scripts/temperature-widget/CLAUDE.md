@@ -331,11 +331,13 @@ Design choices, with the "why":
 - **Nothing is written on a healthy machine.** With an empty `KNOWN_BAD_SENSORS`
   there are no excluded reads, so `excluded.jsonl` is never created - the whole
   mechanism is inert until a machine actually has a sensor worth quarantining.
-- **Configured as a documented constant, not a config file.** Every other tunable
-  in this widget is a constant with its rationale beside it; the bad-sensor set
-  is the same kind of machine-specific fact and changes about as often (rarely,
-  and alongside a reinstall). If it ever needs to change without a rebuild,
-  promoting it to a small JSON config under `XDG_CONFIG_HOME` is a clean follow-up.
+- **Configured as a documented constant, not a config file** (GM-confirmed
+  2026-07-22). This widget only ever runs on one machine - mujina, the machine it
+  targets (see the header) - so the bad-sensor set is a fixed, machine-specific
+  fact, exactly like every other tunable in this file. A config file would buy
+  runtime editability and portability across machines that this widget will never
+  need, so it would be over-engineering. To change the list, edit the constant
+  and re-run `install.sh` (the same deploy step every other change already uses).
 
 ## Dev loop caveat
 
