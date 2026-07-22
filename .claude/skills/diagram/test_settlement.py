@@ -1287,6 +1287,40 @@ def _city():
     return s
 
 
+def test_stables_draws_a_working_yard_and_records_it():
+    # the gate stables' beaten-earth yard (GM 2026-07-22): drawing it adds scatter/furniture to the
+    # SVG and records a stable_yard linked to the stables, so stables_have_yards can gate it. The yard
+    # scatter avoids a neighboring building (an inn placed just north).
+    s = _city()
+    s.inn(600, 540)  # a cluster building the yard must skip
+    before = len(s.out)
+    s.stables(600, 620, rot=90)
+    assert len(s.out) > before  # the yard scatter + furniture drew something
+    yd = s.M["stable_yards"][-1]
+    assert yd["of"] == [600.0, 620.0] and yd["r"] > 0
+    # nothing the yard drew lands on the inn's footprint (a 3px-margin keep-out)
+    ix0, iy0, ix1, iy1 = 600 - s.M["buildings"][0]["w"] / 2, 540 - s.M["buildings"][0]["h"] / 2, 600 + s.M["buildings"][0]["w"] / 2, 540 + s.M["buildings"][0]["h"] / 2
+    assert ix1 > ix0 and iy1 > iy0  # sanity: the inn has a real footprint the scatter avoided
+
+
+def test_stables_yard_can_be_suppressed():
+    s = _city()
+    s.stables(600, 620, rot=90, yard=False)
+    assert not s.M.get("stable_yards")  # yard=False draws no yard
+
+
+def test_stables_yard_fully_blocked_draws_no_furniture():
+    # a yard whose whole disk is covered by a field: every scatter/furniture candidate is rejected
+    # (the field-reject branch), take() exhausts, and the cart/dung loops break - the yard is still
+    # recorded (so stables_have_yards passes) but no beaten-earth furniture is drawn
+    s = _city()
+    s.field_polys.append([(400, 400), (800, 400), (800, 840), (400, 840)])  # blankets the r=72 disk at (600,620)
+    s.stables(600, 620, rot=90)
+    svg = "".join(s.out)
+    assert s.M["stable_yards"][-1]["of"] == [600.0, 620.0]  # recorded despite the blocked yard
+    assert "#9A7B4E" not in svg and "#8FA6B0" not in svg  # no parked cart, no water trough drew
+
+
 def test_rowpack_lays_touching_terraces():
     # the GM row-packing doctrine: city commoner housing goes down as CONTIGUOUS terraces -
     # most units share a party wall (hairline seam <= 1.2px), never the old detached scatter
@@ -2059,7 +2093,7 @@ def test_plot_texture_drives_build_comb_grain():
     from waterfields import build_comb
 
     s = Settlement(2000, 2800, seed=1)
-    s.meta(name="Pt", scale="village")
+    s.meta(name="Pt", scale="village", ftpx=2)  # ftpx>=2 -> the real-feet calibration branch (the ft/px=1 hamlet legacy branch is covered by honda/shimizu)
     # small_irregular vs large_block must produce visibly different plot counts on the SAME field
     a_small, step_small = s.plot_texture("small_irregular", "organic")
     a_large, _step_large = s.plot_texture("large_block", "organic")
@@ -2076,6 +2110,22 @@ def test_plot_texture_drives_build_comb_grain():
     for bad in (("huge", "organic"), ("medium", "checkerboard")):
         with pytest.raises(ValueError):
             s.plot_texture(*bad)
+
+
+def test_paddy_grain_hits_the_real_feet_target():
+    # the real-feet paddy calibration (GM 2026-07-22): plot_across x mean row_step, converted at the
+    # map's ftpx, must equal the ~0.05-acre target - the SAME real cell at every scale (see paddy_grain)
+    from waterfields import PADDY_CELL_ACRES, paddy_grain
+
+    for ftpx in (1, 2, 3):
+        across, (rlo, rhi) = paddy_grain(ftpx)
+        mean_row = (rlo + rhi) / 2
+        nominal_acres = across * mean_row * ftpx * ftpx / 43560
+        assert abs(nominal_acres - PADDY_CELL_ACRES) < 0.004, (ftpx, nominal_acres)
+        assert rlo < 0.66 * across < rhi  # the row-step (min,max) straddles the along-canal mean (aspect*across)
+    # a coarser ftpx needs FEWER px per plot for the same real cell; a bigger target -> bigger plot
+    assert paddy_grain(1)[0] > paddy_grain(2)[0] > paddy_grain(3)[0]
+    assert paddy_grain(2, target_acres=0.036)[0] < paddy_grain(2, target_acres=0.0675)[0]
 
 
 def test_perimeter_dike_draws_an_irregular_earthwork_band():

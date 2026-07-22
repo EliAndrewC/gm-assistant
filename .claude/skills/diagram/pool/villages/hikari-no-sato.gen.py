@@ -27,7 +27,11 @@ from settlement import Settlement  # noqa: E402
 import math  # noqa: E402
 import random as _random  # noqa: E402
 
-from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
+from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+
+# Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at 2 ft/px (was hand-set 48px -> ~0.13 acre).
+# Subdivides the same fields into finer cells; farmhouses/households/field area unchanged. See paddy_grain.
+PLOT_ACROSS, ROW_STEP = paddy_grain(2)
 
 W, H = 2200, 1720
 SEED = 38
@@ -70,11 +74,13 @@ def add_block(name, sluice, seed, field_fall, offtakes_a, canal_a_len, canal_b_l
     otherwise overlap, swallowing the central spur the cluster sits on."""
     net = build_comb(W, H, sluice, seed, down_deg=90, field_fall=field_fall,
                      offtakes_a=offtakes_a, offtakes_b=(),
+                     plot_across=PLOT_ACROSS, row_step=ROW_STEP,
                      canal_a_len=canal_a_len, canal_b_len=canal_b_len)
     s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
     s.comb_base_fill(net, name)   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
     for _dp in net["dry_plots"]:
-        s.block_polys.append(_dp["poly"])
+        s.dry_polys.append(_dp["poly"])    # footprint no-build + grove/lane skip (groves_clear_of_dry_plots)
+        s.block_polys.append(_dp["poly"])  # AND yards: farmsteads()'s yard-nudge reads block_polys, so a dry plot needs BOTH (structures_clear_of_dry_plots)
     for p in net["dry_plots"]:
         pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in p["poly"])
         s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')

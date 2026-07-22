@@ -31,7 +31,13 @@ sys.path.insert(0, SKILL)
 from settlement import Settlement, edge_dist, point_in_poly  # noqa: E402
 import math  # noqa: E402
 
-from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
+from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+
+# Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this map's 2 ft/px, replacing the old
+# hand-set build_comb defaults (48px plots -> ~0.13 acre real, over Bray's "large" ceiling). This subdivides
+# the SAME field into more, smaller cells: total paddy area, farmhouse rings, and the household count are
+# unchanged - only the bund grid gets finer. See waterfields.paddy_grain / settlements.md 'Paddy cell size'.
+PLOT_ACROSS, ROW_STEP = paddy_grain(2)
 
 W, H = 2420, 1560
 POND = (420, 210, 145, 92)          # cx, cy, rx, ry - NW, uphill (valley-head tameike)
@@ -55,6 +61,7 @@ s.meta(name="Hoshigaoka", scale="village", ftpx=2, households=70, down_deg=45,  
 # to hold the whole village + field + a low-side margin for the drain's outfall + brook to discharge.
 net = build_comb(W, H, SLUICE, SEED, down_deg=45, field_fall=1230,
                  offtakes_a=(0.25, 0.55, 0.82), offtakes_b=(0.6,),   # SPARSER delivery net (~6-9 cols apart,
+                 plot_across=PLOT_ACROSS, row_step=ROW_STEP,         # ~0.05-acre cells (calibrated, see above)
                  dry_keepout=[(POND[0], POND[1], POND[2] + 45)])     # the sparse pre-modern cascade, not a Meiji ditch-per-plot grid)
 s.meta(dry_furrows_vary=net["furrows_vary"])   # gentle valley -> dry furrows FAN (the check requires it); a steep village would be False
 
@@ -64,7 +71,8 @@ s.meta(dry_furrows_vary=net["furrows_vary"])   # gentle valley -> dry furrows FA
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.comb_base_fill(net, "hoshigaoka-paddies")   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
 for _dp in net["dry_plots"]:
-    s.block_polys.append(_dp["poly"])
+    s.dry_polys.append(_dp["poly"])    # footprint no-build + grove/lane skip (groves_clear_of_dry_plots)
+    s.block_polys.append(_dp["poly"])  # AND the yard-nudge path in farmsteads() reads block_polys, not dry_polys, so a dry plot needs BOTH to keep threshing yards off it too (structures_clear_of_dry_plots)
 s._nucleated = True                  # China-leaning default: a tight nucleated cluster, no per-house grove
 
 
