@@ -7413,11 +7413,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
                 fed = [f["name"] for f in big_out if moat_fed(f)]
                 check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
-            # a gate market outside one of the gates (like a town's guan-xiang)
-            biz_out = [
-                b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant") and not inwall(b["x"], b["y"]) and any(math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520 for g in gates)
-            ]
-            check("city_has_gate_market", len(biz_out) >= 3, f"{len(biz_out)} businesses outside a gate - a city should have a gate market (like a town's guan-xiang)")
+            # a gate market (guan-xiang) OUTSIDE EVERY gate, not just one (GM decision 2026-07-22,
+            # flophouse-research.md): the extramural gate-suburb formed along the road at each
+            # trafficked gate - Beijing's gates all carried one, varying in scale (大关厢 vs small).
+            # A city gate sits on a main/through road, so each earns a market; scale may differ but
+            # each needs >= 3 extramural shops within ~520px. Mirrors city_flophouse_outside_each_gate.
+            biz_out = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant") and not inwall(b["x"], b["y"])]
+            gates_wo_market = [i for i, g in enumerate(gates) if sum(1 for b in biz_out if math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520) < 3]
+            check(
+                "city_has_gate_market",
+                not gates_wo_market,
+                f"gate(s) without a gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY city gate (each is on a main road; scale may differ but each needs >= 3 extramural shops within ~520px)",
+            )
             # market-day lodging: a flophouse INSIDE the walls, and one OUTSIDE each gate (for
             # travelers arriving from either direction, who reach the gate after it has shut)
             flops = M.get("flophouses", [])
