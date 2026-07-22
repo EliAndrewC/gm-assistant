@@ -56,6 +56,67 @@ function serializeHistory(samples) {
     return samples.map(([t, c]) => serializeSample(t, c)).join('');
 }
 
+// --- Excluded-sensor diagnostic archive ------------------------------------
+//
+// Sensors named in KNOWN_BAD_SENSORS (extension.js) are dropped from the
+// displayed/alarming metric, but their raw readings are still recorded here so
+// a known-glitchy sensor can be inspected later WITHOUT ever driving the gauge
+// (per the GM's ask 2026-07-22: quarantine the display, keep the data). This is
+// a SEPARATE file from the metric archive (excluded.jsonl vs history.jsonl), so
+// the metric archive's [t, c] shape and graph-seeding stay untouched. One line
+// per persist: {"t": <ms>, "v": {"<label>": <°C>, ...}}. Kept in the same
+// [t, rest] tuple shape as the sample history, so pruneByAge prunes it unchanged.
+
+function serializeExcludedSample(t, values) {
+    const v = {};
+    for (const k of Object.keys(values)) {
+        const n = values[k];
+        if (typeof n === 'number' && isFinite(n))
+            v[k] = Math.round(n * 10) / 10; // 0.1 C, same precision as the metric
+    }
+    return JSON.stringify({ t: Math.round(t), v }) + '\n';
+}
+
+// Parses one excluded line to [t, {label: °C, ...}], or null if blank/malformed.
+// Same tolerance as parseHistoryLine: a half-written final line must not poison
+// the whole file. Individual non-finite sensor values are dropped, not fatal.
+function parseExcludedLine(line) {
+    const s = String(line).trim();
+    if (!s)
+        return null;
+    let obj;
+    try {
+        obj = JSON.parse(s);
+    } catch (e) {
+        return null;
+    }
+    if (!obj || typeof obj.t !== 'number' || !isFinite(obj.t))
+        return null;
+    if (!obj.v || typeof obj.v !== 'object')
+        return null;
+    const values = {};
+    for (const k of Object.keys(obj.v)) {
+        const n = obj.v[k];
+        if (typeof n === 'number' && isFinite(n))
+            values[k] = n;
+    }
+    return [obj.t, values];
+}
+
+function parseExcluded(text) {
+    const out = [];
+    for (const line of String(text).split('\n')) {
+        const parsed = parseExcludedLine(line);
+        if (parsed !== null)
+            out.push(parsed);
+    }
+    return out;
+}
+
+function serializeExcludedHistory(samples) {
+    return samples.map(([t, values]) => serializeExcludedSample(t, values)).join('');
+}
+
 // Median of a list of numbers. Used to despike the temperature metric: a
 // median of the last few raw reads discards a lone spurious value outright
 // (unlike a mean, which would average it in). Does not mutate the input.
@@ -240,6 +301,10 @@ var HISTORY_EXPORTS = {
     parseHistory,
     serializeSample,
     serializeHistory,
+    serializeExcludedSample,
+    parseExcludedLine,
+    parseExcluded,
+    serializeExcludedHistory,
     median,
     slewGate,
     spatialMetric,
