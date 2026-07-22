@@ -65,6 +65,70 @@ function median(nums) {
     return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+/* Slew/jump gate: the second despike stage, downstream of the median.
+ *
+ * Silicon has thermal mass, so the *true* CPU temperature cannot leap by tens
+ * of degrees for a single 3 s poll and snap back - that shape is a bad sensor
+ * read, not a temperature. A lone spike is already discarded by the median-of-3
+ * upstream, but a run of 2+ CONSECUTIVE bad reads outvotes a 3-wide median and
+ * slips through (observed 2026-07-22: the archive logged burst excursions to
+ * 98-101 C while an ice-packed, cool-to-touch laptop sat at ~50 C). This gate
+ * catches exactly that residual case.
+ *
+ * It refuses to MOVE the accepted metric to a level more than maxJumpC away
+ * until that new level has HELD for confirmSamples consecutive polls. So a
+ * brief burst is ignored - the metric holds its last good value - while a
+ * genuine sustained excursion is accepted after confirmSamples polls. That
+ * acceptance delay mirrors the notification debounce and is harmless: the
+ * hardware's own thermal throttling, not this gauge, is the real safety net, so
+ * a few seconds of lag on a real event costs nothing, and nothing is ever
+ * permanently hidden. A normal gradual rise (a few degrees per poll, well
+ * within maxJumpC) is in-band every poll and passes through with zero lag; only
+ * a physically-impossible single-poll leap engages the gate.
+ *
+ * Pure and caller-driven: the extension owns the streak state and threads it
+ * back in each poll.
+ *
+ *   state.accepted   last accepted metric (C), or null at startup / after a reset
+ *   state.candidate  the pending out-of-band level being confirmed, or null
+ *   state.count      consecutive polls that candidate has held
+ *   reading          the newest (already median-smoothed) read, or null if the
+ *                    sensor could not be read this poll
+ *   opts.maxJumpC    largest per-poll change treated as physically plausible
+ *   opts.confirmSamples  polls an out-of-band level must hold before it is believed
+ *
+ * Returns the next { accepted, candidate, count }; `accepted` is the value to
+ * show and record this poll.
+ */
+function slewGate(state, reading, opts) {
+    const { accepted, candidate, count } = state;
+    const { maxJumpC, confirmSamples } = opts;
+    // No reading this poll (sensor read failed): go blank and forget any pending
+    // excursion, so the stream is judged fresh when reads resume. Matches the
+    // caller's "null metric -> blank gauge" handling and the median's own reset.
+    if (reading === null)
+        return { accepted: null, candidate: null, count: 0 };
+    // First real reading (startup, or the poll after a gap reset): nothing to
+    // compare against, so trust it - refusing it would leave the gauge blank.
+    if (accepted === null)
+        return { accepted: reading, candidate: null, count: 0 };
+    // Within a physically-plausible per-poll change: accept directly and clear
+    // any half-built candidate. The common case - a real temperature drifts by
+    // only a few degrees between 3 s polls.
+    if (Math.abs(reading - accepted) <= maxJumpC)
+        return { accepted: reading, candidate: null, count: 0 };
+    // Out of band: too large a jump to be real for one poll. Hold the last good
+    // value and require the new level to persist. A read that continues the
+    // pending excursion (within maxJumpC of the candidate) extends the streak;
+    // anything else restarts it at the new level.
+    const continues =
+        candidate !== null && Math.abs(reading - candidate) <= maxJumpC;
+    const nextCount = continues ? count + 1 : 1;
+    if (nextCount >= confirmSamples)
+        return { accepted: reading, candidate: null, count: 0 };
+    return { accepted, candidate: reading, count: nextCount };
+}
+
 // Keeps only samples no older than maxAgeMs before `now`. Used both to bound
 // the on-disk file (30-day retention) and to pick the recent window that
 // seeds a freshly-started shell's graph. Boundary is inclusive (t == cutoff
@@ -138,6 +202,7 @@ var HISTORY_EXPORTS = {
     serializeSample,
     serializeHistory,
     median,
+    slewGate,
     pruneByAge,
     serializeLock,
     parseLock,
