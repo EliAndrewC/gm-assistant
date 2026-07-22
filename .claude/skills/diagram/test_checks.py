@@ -3832,6 +3832,19 @@ def test_footbridges_reach_useful_ground_exempts_untagged_lane_bridges():
     assert "footbridges_reach_useful_ground" not in f(M)
 
 
+# ---- torii_spread_out: scale-aware floor of one arch-span (16 ft), so dense senbon avenues are legal --------
+def test_torii_spread_out_fires_when_arches_overlap():
+    # two arches closer than one rail-span (16 ft = 8px at village 2 ft/px) collapse into a blob
+    M = {"meta": {"scale": "village", "ftpx": 2}, "torii": [[400, 440, 1], [400, 445, 2]]}
+    assert "torii_spread_out" in f(M)
+
+
+def test_torii_spread_out_passes_a_dense_avenue():
+    # a dense senbon-style avenue (~14px/28ft apart) is fine - denser than the old fixed 25px floor allowed
+    M = {"meta": {"scale": "village", "ftpx": 2}, "torii": [[400, 440 + i * 14, i] for i in range(7)]}
+    assert "torii_spread_out" not in f(M)
+
+
 def test_bridges_clear_of_houses_fires_when_a_plank_sits_on_a_farmhouse():
     M = {"meta": {"scale": "village"}, "houses": [_farmhouse(400, 300)], "bridges": [{"x": 400, "y": 300, "rot": 0, "span": 24, "w": 6}]}  # a plank ON the house
     assert "bridges_clear_of_houses" in f(M)
