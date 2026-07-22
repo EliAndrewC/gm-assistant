@@ -254,6 +254,16 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
             net["brook"] = m(net["brook"])
     env = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]
     s.field_polys.append([(p[0], p[1]) for p in env])
+    # FIELD FLOOR (city grain): draw the whole envelope in soil-tan FIRST, under every plot and
+    # channel. The comb carve tessellates its paddy/dry plots but cannot fill the odd triangles at
+    # the canal JUNCTIONS - the head-race fork between the two supply canals, the outfall corner
+    # where canal A dies at the drain, the confluence wedges - which otherwise show the bare
+    # parchment BACKGROUND (the "blank bits on the paddies" the GM circled repeatedly). The floor
+    # makes those read as the field's earthen bund matrix (the same tan as the 2px bund strokes
+    # between plots) instead of a hole, under green paddy AND gold hem alike. Villages keep their
+    # own drawing path and are unaffected. Gated by city_paddy_fan_has_floor.
+    _floor_pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in env)
+    s.add(f'<polygon points="{_floor_pts}" fill="#CDB78C" stroke="none"/>')
     for dp in net["dry_plots"]:
         if any(_pt_seg(x, y, ln[i][0], ln[i][1], ln[i + 1][0], ln[i + 1][1]) < 16
                for ln in avoid for (x, y) in dp["poly"] for i in range(len(ln) - 1)):
@@ -278,7 +288,8 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     s.M["fields"].append({"name": name, "kind": "paddy", "outline": [[x, y] for x, y in env],
                           "bbox": [min(exs), min(eys), max(exs), max(eys)],
                           "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
-                          "plot_polys": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]]})   # the drawn paddy plot POLYGONS, so paddy_fan_gapless can see holes inside the fan ("plots" is taken: the polder checks record [along, cross] parcel spans there)
+                          "plot_polys": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]],
+                          "floor": [[x, y] for x, y in env]})   # the drawn soil-tan field floor (== envelope): a paddy fan must have one so canal-junction triangles are not bare parchment (city_paddy_fan_has_floor)   # the drawn paddy plot POLYGONS, so paddy_fan_gapless can see holes inside the fan ("plots" is taken: the polder checks record [along, cross] parcel spans there)
     for c in net["channels"]:
         s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
                                      "role": c["role"], "field": name,
