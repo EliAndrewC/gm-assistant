@@ -33,8 +33,10 @@ net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=15, cols=8, cell=110)
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.meta(dry_furrows_vary=False)
 
-sluice = net["channels"][0]["pts"][0]
-s.draw_comb_field(net, "enokida-polder", {"kind": "pond", "pond": (sluice[0] - 4, sluice[1] - 62, 82.0, 54.0)})
+# the water SOURCE is a header reservoir (the wild water the inlet sluice draws from) sitting OUTSIDE
+# the dike above the high (NW) corner - the feeder ring canal is charged through a sluice in the dike
+_nw = net["envelope"][0]
+s.draw_comb_field(net, "enokida-polder", {"kind": "pond", "pond": (_nw[0] + 44, _nw[1] - 104, 82.0, 54.0)})
 
 # the PERIMETER DIKE - the defining polder feature, an irregular hand-piled EARTHWORK BAND following the
 # natural water edge in organic non-square bends (fish-scale polder 鱼鳞圩; see s.perimeter_dike +

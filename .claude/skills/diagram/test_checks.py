@@ -5353,6 +5353,21 @@ def test_polder_field_must_fill_its_bbox():
     assert "polder_fills_its_bbox" in f(fan)
 
 
+def test_polder_channels_clear_of_dike():
+    # GM 2026-07-22: the polder ring canal runs on the INNER TOE of the dike (field side); an irrigation
+    # channel buried in the dike band fires (>4 points), a couple of sluice crossings are fine.
+    dike = [[100, 100], [900, 100], [900, 900], [100, 900]]  # a simple square "band" outline
+    base = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}, "dikes": [{"outline": dike, "w_min": 14.0, "w_max": 38.0}]}
+    inside = {"poly": [[200, 200], [300, 200], [400, 200], [500, 200], [600, 200], [700, 200]], "role": "main", "field": "p"}  # 6 pts in the band
+    assert "polder_channels_clear_of_dike" in f({**base, "field_ditches": [inside]})
+    outside = {"poly": [[200, 50], [500, 50], [800, 50], [200, 1000]], "role": "main", "field": "p"}  # all outside the band
+    assert "polder_channels_clear_of_dike" not in f({**base, "field_ditches": [outside]})
+    sluices = {"poly": [[200, 150], [500, 1000], [800, 150]], "role": "drain", "field": "p"}  # 2 crossings <= 4
+    assert "polder_channels_clear_of_dike" not in f({**base, "field_ditches": [sluices]})
+    # a non-polder archetype never trips it, and no dike -> polder_dike_is_earthwork owns that case
+    assert "polder_channels_clear_of_dike" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "dikes": base["dikes"], "field_ditches": [inside]})
+
+
 def test_polder_dike_is_earthwork():
     # GM 2026-07-22: a polder/dike-pond map must record a perimeter-dike earthwork band of VARYING width;
     # a missing dike or a uniform-width one (the reverted post-1949 ruled rectangle) fires.

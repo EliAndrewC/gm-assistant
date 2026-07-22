@@ -1276,22 +1276,29 @@ def build_polder(
     def grid(s: float, t: float) -> Pt:
         return (ox + dx * s + ux * t, oy + dy * s + uy * t)
 
-    # jittered bund-node lattice in (s, t) space. Perimeter nodes stay PINNED so the dike and the block
-    # envelope are dead straight; only interior nodes waver (minor bunds), and the jitter is small enough
-    # that the main ditch lines still read straight at map scale. A narrow RING corridor (~10 px ~3 m) is
-    # reserved inside the two side dikes for the TOE DITCHES - the standard polder collector running along
-    # the dike foot (it intercepts seepage and gives the edge parcels their ditch frontage) - so the
-    # parcel lattice spans [ring, span_t - ring] across while the envelope keeps the full span.
+    # jittered bund-node lattice in (s, t) space. Perimeter nodes stay PINNED so the block envelope is
+    # straight; only interior nodes waver (minor bunds). A narrow RING corridor (~14 px ~14 ft) is reserved
+    # inside the dike on ALL FOUR sides for the polder's INNER RING CANAL (圩内河, "一河围田 / one river
+    # surrounds the field"): the trunk distribution+collection channel runs a ring on the INSIDE toe of the
+    # perimeter dike, on the field side - outside the dike is the wild lake/creek the dike holds back, so no
+    # channel runs out there, and water crosses the dike ONLY at gated sluices (斗门) at the inlet + outfall
+    # (research 2026-07-22, settlements.md 'Polder ring canal'). So the parcel lattice is inset to
+    # [ring, span-ring] on BOTH axes and the ring canal runs in the margins just inside the dike; the
+    # envelope keeps the full span (the dike's inner face sits on it).
     J = 6.0
-    RING = 10.0
+    RING = 18.0
     span_s, span_t = rows * cell, cols * cell
     t_step = (span_t - 2 * RING) / cols
+    s_step = (span_s - 2 * RING) / rows
 
     def tt(c: int) -> float:
         return RING + c * t_step
 
+    def ss(r: int) -> float:
+        return RING + r * s_step
+
     nodes: list[list[tuple[float, float]]] = [
-        [(r * cell + (R.uniform(-J, J) if 0 < r < rows else 0.0), tt(c) + (R.uniform(-J, J) if 0 < c < cols else 0.0)) for c in range(cols + 1)] for r in range(rows + 1)
+        [(ss(r) + (R.uniform(-J, J) if 0 < r < rows else 0.0), tt(c) + (R.uniform(-J, J) if 0 < c < cols else 0.0)) for c in range(cols + 1)] for r in range(rows + 1)
     ]
 
     def lerp(a: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
@@ -1344,36 +1351,53 @@ def build_polder(
                         emit([lerp(tl, tr, f0), lerp(tl, tr, f1), lerp(bl, br, f1), lerp(bl, br, f0)], r)
             r = r1
     envelope = [grid(0, 0), grid(0, span_t), grid(span_s, span_t), grid(span_s, 0), grid(0, 0)]
-    # THE WATER NETWORK IS FULLY CONNECTED (GM-flagged 2026-07-21: the old feeder dipped into the block,
-    # touched one paddy and stopped, the drain floated unconnected, and no parcel had ditch frontage).
-    # The engineered polder layout: the head feeder runs STRAIGHT along the inside of the high dike from
-    # the corner sluice; a straight LATERAL runs down every interior column line (each following its
-    # gently jittered bund-node line) from the feeder to the collecting drain along the low edge, which
-    # descends to the far outfall corner and turns downhill into the brook. Every parcel fronts a lateral
-    # or a trunk, and feeder -> laterals -> drain is one connected system - straight lines and right
-    # angles are CORRECT here (a surveyed, engineered polder is the one pre-modern landscape that looks
-    # like this); what was wrong before was the disconnection, not the geometry. The head channel is TWO
-    # trunks from the corner sluice: a short main that turns down INTO the block along the first interior
-    # lateral's line (its tail is the fork the hairline source->field topology feed anchors from, and it
-    # reads as the feeder head charging that lateral), and the dike-top feeder running the full width to
-    # the NE corner, where it wraps into the east toe ditch - the perimeter feeder genuinely RINGS the
-    # block.
-    head = [grid(-12, 0), grid(-12, tt(1)), grid(60, tt(1))]
-    flank = [grid(-12, tt(1) + (span_t - tt(1)) * k / 6) for k in range(7)]
-    drain_pts = [(round(x, 1), round(y, 1)) for x, y in [grid(span_s + 12 + dx * 30 * (k / 6), span_t * k / 6) for k in range(7)]]
-    drain_pts.append((round(drain_pts[-1][0] + dx * 62, 1), round(drain_pts[-1][1] + dy * 62, 1)))
+    # THE WATER NETWORK IS A CONNECTED INNER RING CANAL (researched 2026-07-22; GM-flagged the old feeder,
+    # which ran at s=-12 / s=span+12 - OUTSIDE the envelope, so once the dike became a wide earthwork band
+    # the trunk canal sat buried IN the dike). The correct polder hydrology: the trunk canal rings the block
+    # on the INSIDE toe of the dike (圩内河, "one river surrounds the field") - feeder along the high inner
+    # toe, drain along the low inner toe, a toe ditch down each side inner toe - and water crosses the dike
+    # ONLY at gated sluices (the pond inlet at the high corner + the brook outfall at the low corner). The
+    # ring runs in the ~14 px inner-toe margin (s or t = RING*0.5) just inside the envelope, so it never
+    # overlaps the dike. The trunk line is organized-but-organic: long runs that read straight-ish, GENTLY
+    # WAVY (a surveyed dug canal wavers with terrain and repair; crescent/bow trunk forms are attested) with
+    # rounded corners, NOT a hard 90-degree CAD grid - the finer laterals (following the jittered bund lines)
+    # are visibly crookeder. Feeder -> laterals -> drain stays one connected system; every parcel fronts one.
+    fi, di = RING * 0.5, span_s - RING * 0.5  # feeder / drain inner-toe s-lines
+    phf, phd = R.uniform(0, math.tau), R.uniform(0, math.tau)
+
+    def waver(pts_st: list[tuple[float, float]], along: str, amp: float, ph: float) -> list[tuple[float, float]]:
+        # gently wave a trunk run: offset the CROSS coord by a low-freq sine so the canal is not dead straight
+        out = []
+        m2 = max(1, len(pts_st) - 1)
+        for i, (s, t) in enumerate(pts_st):
+            w = amp * math.sin(ph + 2.2 * math.pi * i / m2)
+            out.append((s + w, t) if along == "t" else (s, t + w))
+        return out
+
+    # head: the feeder INLET - starts at the high-corner sluice (fed from the pond through a dike sluice),
+    # runs along the top inner toe to column 1, then dips INTO the block so the source->field hairline anchors
+    head = [grid(fi, RING * 0.4), grid(fi, tt(1)), grid(ss(0) + cell * 0.35, tt(1))]
+    # flank: the rest of the top feeder along the inner toe, gently wavy, wrapping toward the far corner
+    flank = [grid(s, t) for s, t in waver([(fi, tt(1) + (span_t - RING * 0.4 - tt(1)) * k / 6) for k in range(7)], "t", 4.0, phf)]
+    # drain: the low inner-toe collector, gently wavy, sloping to the far outfall corner; then the OUTFALL
+    # crosses the dike (the one low-corner sluice) and the brook carries it off-map downhill
+    drain_run = waver([(di - 6 * (1 - k / 6), span_t * k / 6) for k in range(7)], "t", 3.5, phd)
+    drain_pts = [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in drain_run]]
+    outfall = grid(span_s + 40, span_t)  # through the dike at the low corner
+    drain_pts.append((round(outfall[0], 1), round(outfall[1], 1)))
+    drain_pts.append((round(outfall[0] + dx * 46, 1), round(outfall[1] + dy * 46, 1)))
     sluice = head[0]
     channels = [
         {"pts": [(round(x, 1), round(y, 1)) for x, y in head], "role": "main", "w": 6.0, "w_tail": 3.0},
         {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
         {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
     ]
-    for c in range(1, cols):  # the laterals, one per interior column line, feeder -> drain
+    for c in range(1, cols):  # the laterals, one per interior column line, feeder -> drain (inner-toe to inner-toe)
         tc = tt(c)
-        lat_pts = [(-12.0, tc), *[nodes[r][c] for r in range(rows + 1)], (span_s + 12 + dx * 30 * (tc / span_t), tc)]
+        lat_pts = [(fi, tc), *[nodes[r][c] for r in range(rows + 1)], (di, tc)]
         channels.append({"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4})
-    for tc in (RING * 0.5, span_t - RING * 0.5):  # the toe ditches inside the two side dikes, feeder -> drain
-        lat_pts = [(-12.0, tc), (span_s + 12 + dx * 30 * (tc / span_t), tc)]
+    for tc in (RING * 0.5, span_t - RING * 0.5):  # the side toe ditches, feeder -> drain (completing the ring)
+        lat_pts = [(fi, tc), (di, tc)]
         channels.append({"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4})
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560

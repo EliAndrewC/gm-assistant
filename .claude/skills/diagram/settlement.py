@@ -3870,7 +3870,10 @@ class Settlement:
             w = wlo + (whi - wlo) * max(0.0, min(1.0, wf)) + R.uniform(-3, 3)
             w_seen.append(w)
             outer_s.append((x + nx * w, y + ny * w))
-            inner_s.append((x - nx * R.uniform(0.0, 5.0), y - ny * R.uniform(0.0, 5.0)))  # hugs the grid, slight wobble
+            # the inner face hugs the grid boundary and wobbles OUTWARD only (never intrudes past the
+            # envelope into the field) - so the ring canal running just inside the envelope stays clear of
+            # the dike, and water crosses the dike only at the sluices
+            inner_s.append((x + nx * R.uniform(0.0, 3.0), y + ny * R.uniform(0.0, 3.0)))
         band = [*outer_s, *reversed(inner_s)]
         d = smooth_closed(band)
         self.add(f'<path d="{d}" fill="{BUND}" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
