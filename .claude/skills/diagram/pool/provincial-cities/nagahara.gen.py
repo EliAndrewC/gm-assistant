@@ -45,7 +45,7 @@ from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
 PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=47)
-s.meta(name="Nagahara", scale="city", walled=True, population=3000, ftpx=3, imperial_road=False,
+s.meta(name="Nagahara", scale="city", walled=True, population=3000, ftpx=3, wall_defense="siege", imperial_road=False,
        clan="Crab", capital_dir="northeast")   # Crab city -> temples to Bishamon + Ebisu; estates toward Otosan Uchi (NE)
 
 # ---- feature 009: BUDGET-FIRST wall sizing. The space budget is computed BEFORE anything is

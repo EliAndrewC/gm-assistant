@@ -55,6 +55,11 @@ This skill covers two kinds of diagram that share the conventions below (palette
 
 1. **Pre-design conversation.** Talk to the GM about what's present. Ask about scale (manor vs. village vs. temple vs. battlefield), notable features (workshops, shrines, garrisons), the residing NPC(s), the surrounding context (walled? what's outside?). Pull sizing and role context from the relevant setting files (`/gm-assistant/setting/median-domain.md`, `/gm-assistant/setting/government.md`, `/gm-assistant/setting/hierarchies.md`).
 
+   **When generating a new PROVINCIAL CITY, ask these city-defining knobs up front** (they set the whole layout, so settle them before pitching):
+   - **Does an Imperial road run through it?** (`meta(imperial_road=...)` + an N-S road through the gates; it gets a commercial ribbon). A city off the Imperial network has ordinary roads, none labeled "Imperial."
+   - **Is there a river / water?** (a trunk `s.river(...)`, a fed `s.moat(...)`, canals + a `s.water_gate(...)`, a dock/wharf) - or is it a dry inland seat?
+   - **What is the wall's DEFENSE TIER?** (`meta(wall_defense="siege"|"garrison"|"peaceful")`) - how hard was it fortified, which sets guard-tower density. **`siege`** = a border/besieged city, `>= 2` towers within aimed-lethal bowshot (197 ft), a dense bastion ring; **`garrison`** (default) = a garrisoned interior city, `>= 2` within full war-bow reach (328 ft); **`peaceful`** = long at peace, the sparser Xi'an crossfire (`>= 1` within 197 ft). Drive it off the city's history and location. See "Historical grounding: Wall towers give INTERLOCKING flanking fire" in [`settlements.md`](settlements.md). (Tango and Nagahara are both `siege`.)
+
 2. **Pitch and confirm.** Offer the GM 3-5 distinct ideas to react to before settling on a layout. Flag any deliberate L5R divergences from historical Japan (e.g., Inari shrine as a hall rather than a standalone, on-grounds barracks rather than off-site retainer housing).
 
 3. **Write the SVG.** Top-down plan view. North at the top of the viewBox. Main gate of any walled compound facing south (bottom). Use the style conventions below and the building vocabulary in [`buildings.md`](buildings.md).

@@ -495,8 +495,10 @@ def test_clip_to_pond_is_a_noop_without_a_pond():
 
 
 def test_city_wall_tower_slides_along_the_wall_for_a_kido():
-    # tower_skip: a mural tower yields its vertex to a future kido by SLIDING a short way along
-    # the wall (not a whole-vertex jump - that left a bare, indefensible stretch of rampart)
+    # tower_skip: a mural tower yields its vertex to a future kido, but the vertex stays COVERED by
+    # a tower a short way along the wall (not a whole-vertex jump leaving a bare, indefensible arc).
+    # At this crop's ftpx=1 the default garrison spacing is ~278px, so the flanking towers straddle
+    # the yielded vertex at ~half-spacing (~140px) - well inside a bare-stretch (~one full segment).
     import math as m
 
     s = _crop_settlement()
@@ -504,7 +506,7 @@ def test_city_wall_tower_slides_along_the_wall_for_a_kido():
     s.city_wall(pts, gates=(), tower_skip=[pts[6]])
     ds = [m.hypot(t["x"] - pts[6][0], t["y"] - pts[6][1]) for t in s.M["wall_towers"]]
     assert all(d > 45 for d in ds)  # the vertex is yielded...
-    assert any(d < 110 for d in ds)  # ...but a tower still stands a short slide away
+    assert any(d < 180 for d in ds)  # ...but a tower still stands a short slide away (< a full segment)
 
 
 def test_city_wall_tower_drops_when_boxed_in_on_both_sides():
@@ -1797,8 +1799,12 @@ def test_city_wall_drops_a_mural_tower_boxed_in_on_both_sides():
     ]  # carpet the left flank
     s.city_wall(pts, gates=(), tower_skip=skip)
     towers = s.M.get("wall_towers", [])
-    assert not any(math.hypot(t["x"] - 150, t["y"] - 150) < 90 for t in towers)  # NW tower dropped
-    assert any(math.hypot(t["x"] - 1050, t["y"] - 1050) < 90 for t in towers)  # SE tower kept
+    # ftpx=1 garrison -> ~278px spacing; a CLEAR corner is straddled by flanking towers at ~147px, a
+    # boxed-in corner's nearest tower is pushed out past the next seat (~212px). The contrast holds.
+    nw = min(math.hypot(t["x"] - 150, t["y"] - 150) for t in towers)
+    se = min(math.hypot(t["x"] - 1050, t["y"] - 1050) for t in towers)
+    assert nw > 180  # NW tower dropped (boxed in) - nearest tower pushed out past the next seat
+    assert se < 180  # SE corner kept - flanking towers straddle it at ~half-spacing
 
 
 # ------------------------------------------------------------------------------------------------
@@ -2814,3 +2820,22 @@ def test_comb_base_fill_noops_on_an_empty_net():
     s.meta(name="Cb", scale="village", ftpx=2)
     s.comb_base_fill({"plots": [], "envelope": [(0, 0), (10, 0), (10, 10)]}, "empty")
     assert "empty" not in s.M.get("comb_floors", {})
+
+
+def test_wall_tower_spacing_px_scales_with_tier():
+    """The per-city defense tier sets the max mural-tower spacing. siege = aimed-lethal bowshot
+    (197 ft), >=2 everywhere, so spacing == range; garrison = full war-bow (328 ft), >=2, so the
+    wider range; peaceful keeps only >=1 flanking tower within aimed-lethal range, so its spacing
+    is DOUBLE (a tower every 2*197 ft - the sparser Xi'an crossfire). At 3 ft/px (city scale):"""
+    ppf = 1.0 / 3.0  # px per ft
+    assert settlement.wall_tower_spacing_px(ppf, "siege") == 197.0 * ppf
+    assert settlement.wall_tower_spacing_px(ppf, "garrison") == 328.0 * ppf
+    assert settlement.wall_tower_spacing_px(ppf, "peaceful") == 2 * 197.0 * ppf
+    # siege is tighter than garrison; peaceful is the loosest
+    assert settlement.wall_tower_spacing_px(ppf, "siege") < settlement.wall_tower_spacing_px(ppf, "garrison")
+    assert settlement.wall_tower_spacing_px(ppf, "peaceful") > settlement.wall_tower_spacing_px(ppf, "garrison")
+
+
+def test_wall_tower_spacing_px_unknown_tier_falls_back_to_garrison():
+    ppf = 1.0 / 3.0
+    assert settlement.wall_tower_spacing_px(ppf, "nonsense") == settlement.wall_tower_spacing_px(ppf, "garrison")

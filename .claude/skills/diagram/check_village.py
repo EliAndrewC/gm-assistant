@@ -27,7 +27,7 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import _assert_not_main_tree
+from settlement import WALL_DEFENSE, _assert_not_main_tree
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
 
@@ -1876,6 +1876,48 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"gate stables with no drawn working yard at {_yardless[:3]} - the open ground around a gate stables is a deliberate wagon-train marshalling yard (carts, tethered oxen, littered beaten earth), not blank parchment; s.stables(...) draws it (yard=True; settlements.md 'Stable yard')",
         )
 
+    # WALL TOWER COVERAGE by the city's DEFENSE POSTURE (GM 2026-07-22): the interlocking-flanking-fire rule
+    # (侧射; Shen Kuo's 11th-c. 矢石相及 - adjacent mamian's fields of fire overlap so an attacker at the base
+    # is hit from >=2 towers). TUNABLE per city (meta wall_defense): `siege` = aimed-lethal bowshot (60 m /
+    # 197 ft), >=2 towers everywhere; `garrison` = full war-bow reach (100 m / 328 ft), >=2; `peaceful` = the
+    # sparser Xi'an spacing, >=1 flanking tower within aimed-lethal range everywhere (midpoints get 2). Every
+    # point on the wall CURTAIN must have >= the tier's min-count of towers within the tier's arrow range;
+    # the gate OPENING itself is exempt (a defended chokepoint with its own gate tower + guard, not open
+    # curtain). Both mural and gate towers count. See settlements.md 'Historical grounding'.
+    if scale == "city" and M.get("wall"):
+        _wall = M["wall"]
+        _tier = meta.get("wall_defense", "garrison")
+        _rng_ft, _mincov = WALL_DEFENSE.get(_tier, WALL_DEFENSE["garrison"])
+        _R = _rng_ft / float(meta.get("ftpx") or 3.0) + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's parapet span, not its centre point
+        _tw = [(t["x"], t["y"]) for t in M.get("wall_towers", [])] + [(g["x"], g["y"]) for g in M.get("gate_structs", []) if g.get("kind") == "tower"]
+        _gates = M.get("gates", [])
+        _barb = [(g["x"], g["y"]) for g in M.get("gate_structs", []) if g.get("kind") in ("guardhouse", "inspection")]  # barbican guard structures
+        _wg = [(w["x"], w["y"]) for w in M.get("water_gates", [])]  # shuimen arches - fortified openings, flanked by their own two towers
+        _gate_skip = (
+            130.0  # px around a gate to exclude from the curtain sample: the gate is a BARBICAN - the most fortified point (gate tower + guard house + inspection + gateposts), not open curtain
+        )
+        _thin = []
+        _nw = len(_wall)
+        for _i in range(_nw):
+            _a, _b = _wall[_i], _wall[(_i + 1) % _nw]
+            _sl = math.hypot(_b[0] - _a[0], _b[1] - _a[1])
+            _ns = max(1, int(_sl / 18))
+            for _s in range(_ns):
+                _t = (_s + 0.5) / _ns
+                _px, _py = _a[0] + (_b[0] - _a[0]) * _t, _a[1] + (_b[1] - _a[1]) * _t
+                if any(math.hypot(_px - _gx, _py - _gy) < _gate_skip for _gx, _gy in _gates) or any(math.hypot(_px - _fx, _py - _fy) < 55 for _fx, _fy in _barb):
+                    continue  # inside the gate barbican (gate + its guard house + inspection) - a defended complex, not open curtain
+                if any(math.hypot(_px - _wx, _py - _wy) < 45 for _wx, _wy in _wg):
+                    continue  # abutting a water gate: a fortified shuimen opening flanked by its own two towers - the placement code (_seat_mural) will not tower this 40px keep-out, so the check must not demand it (check keep-outs mirror placement keep-outs)
+                _cnt = sum(1 for _tx, _ty in _tw if math.hypot(_px - _tx, _py - _ty) <= _R)
+                if _cnt < _mincov:
+                    _thin.append((round(_px), round(_py), _cnt))
+        check(
+            "city_wall_tower_coverage",
+            not _thin,
+            f"{len(_thin)} wall point(s) covered by fewer than {_mincov} tower(s) within the {_tier} arrow range ({_rng_ft:.0f} ft): {_thin[:4]} (x, y, towers-in-range) - a {_tier} city's rampart must keep every curtain point under flanking fire from {_mincov} tower(s); tower the wall closer (meta wall_defense sets the spacing; settlements.md 'Historical grounding')",
+        )
+
     if scale == "city" and meta.get("walled") and M.get("wall"):
         bud = meta.get("budget")
         if not bud:
@@ -2717,6 +2759,31 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if wd.get("z") is not None and len(wd.get("boundary", [])) >= 2:
             over_fence += [(wd.get("name", "ward"), n) for n in lanes_over(wd["boundary"], wd["z"], False, kido_pts)]
     check("city_lanes_under_ward_fences", not over_fence, f"a lane runs into a neighborhood (ward) fence and renders OVER it - lanes pass UNDER the fence (the kido marks the passage): {over_fence}")
+
+    # NO DOUBLED WALL: the short wall-stroke CAP that plugs a ward fence into the rampart must lie FLUSH
+    # along the wall, not jut across it. A straight cap tangent to one segment, laid at a wall CORNER, juts
+    # past the bend and reads as a second wall section overlapping the first (Nagahara SW, GM 2026-07). The
+    # cap is now drawn to FOLLOW the wall (arc +/-16 px through any vertex in the span); this guards the
+    # invariant so a regression to a straight-tangent cap is caught. Every cap vertex must sit within
+    # tolerance of the wall polyline.
+    _wall_ring = M.get("wall")
+    if _wall_ring:
+        _wrng = [(x, y) for x, y in _wall_ring]
+        _ring = _wrng + [_wrng[0]]
+        _off = []
+        for wd in M.get("wards", []):
+            for cap in wd.get("wall_caps", []):
+                for cx3, cy3 in cap.get("pts", []):
+                    _d = min(seg_dist(cx3, cy3, _ring[i], _ring[i + 1]) for i in range(len(_ring) - 1))
+                    if _d > 4.0:  # a flush cap sits ON the wall (~0-1 px); >4 px means it juts across the bend
+                        _off.append((round(cx3), round(cy3), round(_d, 1)))
+        check(
+            "city_ward_cap_flush_to_wall",
+            not _off,
+            f"ward fence wall-cap vertex/vertices jut off the rampart (x, y, px-off-wall): {_off[:4]} - the cap plugs the "
+            f"fence into the wall and must lie FLUSH along it (follow the wall through any corner), not cross it as a "
+            f"straight stub - which renders as two wall sections overlapping instead of one bent wall (settlement.ward)",
+        )
 
     # A walled COMPOUND (mausoleum / manor) whose wall sits ALONG a neighborhood (ward) fence must
     # YIELD that wall to the fence: the fence is re-stamped on top and IS that side of the compound,
