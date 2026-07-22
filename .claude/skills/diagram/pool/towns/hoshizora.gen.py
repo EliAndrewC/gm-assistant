@@ -60,6 +60,7 @@ s.meta(
     downhill=[-0.42, 0.91],
     down_deg=115,
     pond_role="drainage",
+    near_ring_density="thin",  # DIAL-DOWN (feature 013): a post/relay town on the Imperial Road whose frame is dominated by horse-relay HAYFIELDS/grazing + forest, leaving little croppable ground - so its near ring reads genuinely THIN (a light quilt of cropland among the pasture, ~20% cultivated vs dense Hirameki's ~50%). The knob's low tier; the check floor drops to match so a grazing/relay locale is not forced to look like a pure farming basin.
 )  # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county (the nucleated to-scale farm rows pack ~135 dwellings around the combs). ftpx=1: the GM's town scale, 1px=1ft
 
 # ---- terrain: a small forest (SE corner) and two grazing pastures, all running OFF
@@ -419,6 +420,13 @@ s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="cops
 # needs one, walled or not (town_has_fire_tower); on the manifest-scanned clearest seam
 # between the laborers' quarter and the road-front core
 s.fire_tower(970, 420, label="fire-watch tower")
+
+# ===== NEAR-RING FARMLAND at the MEDIUM tier (feature 013) =====
+# Hoshizora's near ring is worked but not saturated (post-town economy + hayfield/grazing), so fill it
+# at meta's "medium" density - a real quilt of dry/garden plots between the comb and the pastures, but
+# visibly thinner than dense Hirameki. Auto-skips the pastures/forest (block_polys), the comb, structures,
+# and the groves. Called after the groves so it threads around them. WHY: settlements.md "Near-ring farmland density".
+s.near_ring_cropland((40, 40, 1960, 1260), seed=386)
 
 s.title("Hoshizora")
 

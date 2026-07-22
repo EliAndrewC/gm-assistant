@@ -4301,7 +4301,11 @@ class Settlement:
         from waterfields import DRY_CROPS
 
         tier = density if density is not None else self.M.get("meta", {}).get("near_ring_density", "dense")
-        fill_by_tier = {"dense": 0.97, "medium": 0.62, "thin": 0.33}  # fraction of CLEAR cells cropped; the rest stays scrub/fallow
+        fill_by_tier = {
+            "dense": 0.97,
+            "medium": 0.70,
+            "thin": 0.52,
+        }  # fraction of CLEAR cells cropped; the rest stays scrub/fallow. thin/medium tile the AVAILABLE pockets fairly full (a marginal locale reads thin because it HAS little croppable ground, e.g. Hoshizora's pasture/relay frame, not because its few plots are patchy), so a thin map still clears its (low) floor with margin
         if tier not in fill_by_tier:
             raise ValueError(f"near_ring_density must be one of {sorted(fill_by_tier)}, got {tier!r}")
         fill_p = fill_by_tier[tier]

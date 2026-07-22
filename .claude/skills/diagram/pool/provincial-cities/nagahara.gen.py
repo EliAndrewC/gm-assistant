@@ -857,6 +857,14 @@ s.place_wells((1516, 985, 1869, 1294), spacing=46, near=48)    # laborer warren,
 s.place_wells((1553, 1357, 1875, 1657), spacing=46, near=48)   # merchant district, offset
 s.place_wells((1094, 962, 1450, 1298), spacing=46, near=48)    # NW monzen, offset
 
+# ===== NEAR-RING FARMLAND: the extramural flat ground reads PACKED (feature 013) =====
+# Nagahara is a well-sited provincial seat, so the flat ground just outside the wall is intensively
+# worked. Fill the extramural band (inside the cropped view) with a quilt of dry/garden plots between
+# the paddy fans - no water needed. near_ring_cropland auto-skips everything inside the wall, the fans,
+# structures, estates, graves, the river, and the moat. Called last, after every structure + top-up.
+# Default near_ring_density "dense". WHY: settlements.md "Near-ring farmland density".
+s.near_ring_cropland((889, 770, 2391, 1890), seed=47)
+
 s.title("Nagahara")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
