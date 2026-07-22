@@ -2399,6 +2399,38 @@ def test_city_gate_furniture_aligned_passes_when_along_the_wall():
     assert "city_gate_furniture_aligned" not in f(_gate_furn(0))
 
 
+def test_city_gate_furniture_at_throat_passes_when_hard_by_the_gate():
+    # guard house + inspection station flanking the road right at each gate opening (~45px in)
+    M = _fort_city(
+        gate_structs=[
+            {"x": 480, "y": 240, "w": 11, "h": 7, "kind": "guardhouse"},
+            {"x": 520, "y": 240, "w": 15, "h": 7, "kind": "inspection"},
+            {"x": 480, "y": 760, "w": 11, "h": 7, "kind": "guardhouse"},
+            {"x": 520, "y": 760, "w": 15, "h": 7, "kind": "inspection"},
+        ],
+        inspection_stations=[{"x": 520, "y": 240, "w": 15, "h": 7}, {"x": 520, "y": 760, "w": 15, "h": 7}],
+    )
+    assert "city_gate_furniture_at_throat" not in f(M)
+
+
+def test_city_gate_furniture_at_throat_fires_when_walked_back_along_the_wall():
+    # the north-gate guard house (~85px) and inspection (~146px) walked back along the wall: the looser
+    # 160/180px gate radii still PASS (no teeth), but the ~70px throat check catches the far placement
+    M = _fort_city(
+        gate_structs=[
+            {"x": 440, "y": 260, "w": 11, "h": 7, "kind": "guardhouse"},
+            {"x": 360, "y": 240, "w": 15, "h": 7, "kind": "inspection"},
+            {"x": 480, "y": 760, "w": 11, "h": 7, "kind": "guardhouse"},
+            {"x": 520, "y": 760, "w": 15, "h": 7, "kind": "inspection"},
+        ],
+        inspection_stations=[{"x": 360, "y": 240, "w": 15, "h": 7}, {"x": 520, "y": 760, "w": 15, "h": 7}],
+    )
+    fails = f(M)
+    assert "city_gate_furniture_at_throat" in fails
+    assert "city_inspection_station_at_each_gate" not in fails  # the loose radii wave the far placement through...
+    assert "city_gate_has_guardhouse" not in fails  # ...which is exactly why the throat check exists
+
+
 def test_city_has_ring_road_fires_when_missing():
     assert "city_has_ring_road" in f(_fort_city())
 
