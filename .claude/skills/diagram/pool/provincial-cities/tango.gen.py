@@ -324,17 +324,19 @@ def veg_tract(name, bbox, seed):
     small furrowed plots, each row-cultivated to its own heading like fragmented dry holdings."""
     R = _random.Random(seed)
     x0, y0, x1, y1 = bbox
-    # parcel constants in REAL FEET via s.px (the GM's catch, 2026-07-21: the raw px values -
-    # rows 26-40px, split threshold 46px - were garden-scale at a finer grain but became
-    # 0.3-0.5 acre slabs at 3 ft/px, dwarfing every other map's dry parcels; gated by
-    # dry_plots_to_scale's max clause). Rows 52-80 ft, columns split above 92 ft.
+    # parcel constants in REAL FEET via s.px (the GM's catch, 2026-07-21). A kitchen/vegetable
+    # garden is INTENSIVE hand-worked ground - its beds are SMALLER than a grain-field hem strip,
+    # not larger. So beds are ~55 ft square, laid on an EVEN grid: rows ~45-60 ft, and the width
+    # split into round(width / 55 ft) equal columns with only small jitter (the old single
+    # uniform cut could leave one 150 ft fat column - Tango's biggest dry parcels, 2026-07-22).
     rows = [y0]
-    while rows[-1] < y1 - s.px(60):
-        rows.append(min(y1, rows[-1] + R.uniform(s.px(52), s.px(80))))
+    while rows[-1] < y1 - s.px(52):
+        rows.append(min(y1, rows[-1] + R.uniform(s.px(45), s.px(60))))
     rows[-1] = y1
+    ncol = max(1, round((x1 - x0) / s.px(55)))
     prev = R.choice(list(VEG_CROPS))
     for i in range(len(rows) - 1):
-        cuts = [x0, x1] if (x1 - x0) < s.px(92) else [x0, R.uniform(x0 + s.px(44), x1 - s.px(44)), x1]   # a tract wider than 92 ft ALWAYS splits: one full-width 195 ft row is a 0.39-acre slab
+        cuts = [x0 + (x1 - x0) * j / ncol + (0 if j in (0, ncol) else R.uniform(-s.px(6), s.px(6))) for j in range(ncol + 1)]
         for j in range(len(cuts) - 1):
             quad = [(cuts[j] + R.uniform(-2, 2), rows[i] + R.uniform(-2, 2)),
                     (cuts[j + 1] + R.uniform(-2, 2), rows[i] + R.uniform(-2, 2)),
