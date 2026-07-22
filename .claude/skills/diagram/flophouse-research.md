@@ -6,8 +6,45 @@ rule. **China-first** (Song/Ming rice-south, the physical/economic layer), Japan
 (Edo *kichin-yado*, cultural surface). Deep-research pass: 6 search angles, 19 sources fetched, 63
 claims extracted, 25 adversarially verified (3-vote, 2/3-to-kill), 23 confirmed / 2 refuted.
 
-**Status: FINDINGS ONLY. No map or check changes made.** The adjustment options in the last
-section are for the GM to decide on; nothing here has been applied.
+## Decision (GM, 2026-07-22)
+
+**KEEP the current rule as-is: 1 flophouse inside + 1 outside each city gate (a town keeps its 1).**
+No layout change. The reasoning, preserved as the rule's grounding:
+
+- **The density is genuinely unknowable, so any figure is an extrapolation** - the ruling class paid
+  little attention to peasant lodging and did not record its numbers or placement (this research
+  confirms it: gazetteers foreground official post-stations, never counting commercial flophouses).
+- **Rokugan is deliberately a more peasant-attentive setting than the historical societies it draws
+  on** - we put more thought into peasant life than real-world rulers did - so leaning to the higher,
+  more-generous end of a genuinely-uncertain range is an intentional demographic choice, not an
+  oversight. The number is *"extrapolated by combining historical precedent with Rokugani
+  demographics,"* which is the honest frame for a figure the sources cannot pin down.
+- **The placement half is historically supported outright:** cheap inns clustered at the gate-suburb
+  (*guanxiang*) and along arrival roads, so an outside-gate flophouse is on solid ground. Only the
+  perimeter *symmetry* (every gate, not just the busiest) is the stylization - and it is a small,
+  legible one we accept for the reasons above.
+- **One rationale is corrected, not kept:** the old "stranded outside by the dusk gate-curfew"
+  justification is a *Tang* artifact (the curfew had relaxed by the Song/Ming rice-south period we
+  model). The better *why* for the outside-gate inn is **convenience lodging at the busy market gate**
+  for peasants, carters, and peddlers - plus the gate-suburb clustering pattern. Update the docs'
+  rationale accordingly; the layout is unchanged.
+
+Options B/D below (concentrate on one gate; draw a distinct animal-yard cart-inn) were considered and
+**declined** in favor of keeping the readable symmetric rule.
+
+**Size (asked 2026-07-22): the ~104 x 46 ft flophouse glyph is reasonable, if slightly generous.**
+It is ~3.7x a farmhouse footprint and reads as a large barn-like dormitory (which is what the
+docstring already calls it). Sanity check: a communal sleeping platform for the research's ~10-30
+occupants runs ~75 ft, which the 104 ft length fits with room for a hearth/entry; and at ~30
+occupants it works out to ~160 sq ft/person - *denser* than a farmhouse's ~260 sq ft for a family of
+5, exactly as communal doss-house lodging (no private rooms or yards) should be. So the size errs
+generous rather than cramped, which suits the legibility license and the peasant-attentive framing.
+No size change.
+
+---
+
+**Original status when written: FINDINGS ONLY.** The options below were the menu the GM chose from;
+option A (keep, with documented reasoning) was selected.
 
 ## What the maps do now (the convention under evaluation)
 
