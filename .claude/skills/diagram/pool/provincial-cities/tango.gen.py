@@ -124,6 +124,14 @@ IMPROAD = [(1602, 709), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 1
 s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)   # a moat vertex on the NW
 s.stream([(922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66))   # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
+# ... and the moat DRAINS: an outfall leaves the LOW (SE, downstream - N is the high ground) rim
+# and runs off the map, diagonally opposite the NW feeder so the current flushes the ring corner-to-
+# corner (the Forbidden City NW-in / SE-out pattern). A stream-fed moat in a wet rice climate cannot
+# be a terminal pond - conservation of flow, the surplus MUST leave (evaporation + seepage cannot
+# absorb a live stream); see settlements.md's moat-water bullet. Threads S between the Imperial road
+# (x1602) and the westernmost samurai estate (x~2061), off the S edge.
+_mse = min(MOAT, key=lambda p: (p[0] - 1879) ** 2 + (p[1] - 1732) ** 2)   # a moat vertex on the SE (low) rim
+s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020)], width=s.px(66))   # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow)
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
 # fixed crossing on the samurai ward fence, but s.ward draws them near the END of the gen - long

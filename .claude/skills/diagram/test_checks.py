@@ -3606,6 +3606,34 @@ def test_city_moat_feeder_matches_width_passes_when_matched():
     assert "city_moat_feeder_matches_width" not in f(_feeder_city(22))
 
 
+def _drain_city(streams):
+    # a closed-moat city (no river); off-map = x<0 / x>1000 (EX0=0, EX1=W for a viewBox-less manifest)
+    return {
+        "meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+        "wall": WALLSQ,
+        "gates": [[500, 200], [500, 800]],
+        "moat": _MOAT,
+        "moat_width": 22,
+        "streams": streams,
+    }
+
+
+_MOAT_FEEDER = {"poly": [[-20, 500], [165, 500]], "frm": None, "to": None, "w": 22}  # off-map W -> moat W rim
+_MOAT_OUTFALL = {"poly": [[835, 500], [1020, 500]], "frm": None, "to": None, "w": 22}  # moat E rim -> off-map E (opposite the feeder)
+
+
+def test_city_moat_has_outfall_passes_with_a_flush_through_ring():
+    # feeder on the W rim + outfall on the E rim (opposite faces) = a flow-through moat; the extra
+    # in-city ditch does NOT reach the moat, so it is not mistaken for a tap
+    inland = {"poly": [[500, 480], [500, 520]], "frm": None, "to": None, "w": 6}
+    assert "city_moat_has_outfall" not in f(_drain_city([_MOAT_FEEDER, _MOAT_OUTFALL, inland]))
+
+
+def test_city_moat_has_outfall_fires_when_a_fed_moat_cannot_drain():
+    # a full-flow feeder into a closed moat with no outfall - conservation of flow, it would overflow
+    assert "city_moat_has_outfall" in f(_drain_city([_MOAT_FEEDER]))
+
+
 # --- settlement wells (town/village/hamlet water access) ---
 def _rural(scale, houses, wells, **extra):
     M = {"meta": {"scale": scale}, "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for (x, y) in houses], "wells": [{"x": x, "y": y, "r": 8} for (x, y) in wells]}
