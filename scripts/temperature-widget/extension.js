@@ -33,6 +33,9 @@ const MessageTray = imports.ui.messageTray;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 
+const Me = imports.misc.extensionUtils.getCurrentExtension();
+const History = Me.imports.history; // pure parse/prune/election logic
+
 const POLL_SECONDS = 3;
 
 // Thresholds (degrees C) - keep in sync with scripts/temperature-check.sh.
@@ -47,15 +50,42 @@ const HYSTERESIS = 4; // degrees below a threshold before severity drops again
 
 const BAR_WIDTH = 80; // px; wide so the fill's approach to the ticks is visible
 
-// History graph. Samples arrive every POLL_SECONDS, so 2 h is 2,400 samples
-// of [ms timestamp, degrees C] - trivial memory. History lives only as long
-// as the extension does (shell restart / logout clears it).
+// History graph shows the last 2 h. The in-memory buffer holds one sample per
+// POLL_SECONDS (~2,400 entries) for a smooth live line; on startup it is
+// SEEDED from the on-disk archive (below) so the graph is populated the
+// instant a shell starts instead of drawing itself from empty.
 const HISTORY_SECONDS = 7200;
 const GRAPH_WIDTH = 340;
 const GRAPH_HEIGHT = 120;
-// A sampling gap longer than this (suspend, shell restart) breaks the graph
-// line rather than drawing a misleading straight segment across it.
-const GAP_BREAK_SECONDS = 30;
+// A sampling gap longer than this breaks the graph line rather than drawing a
+// misleading straight segment across it. It must sit comfortably above the
+// archive's PERSIST_SECONDS cadence (else the coarser seeded portion of the
+// line would fragment) yet still catch real gaps - suspend, a shell restart -
+// which are minutes long.
+const GAP_BREAK_SECONDS = 120;
+
+// On-disk archive. Unlike the in-memory buffer, this survives shell restarts
+// and logouts, so it answers "what were the trends over the last few weeks?"
+// and can be handed to Claude to interpret. It lives under XDG_STATE_HOME
+// (~/.local/state). A sample is persisted every PERSIST_SECONDS (coarser than
+// the 3 s poll - 30 s resolution is plenty for trends and keeps the file
+// ~10x smaller: ~2,880 lines/day, ~3 MB over the 30-day retention).
+//
+// Exactly one running instance writes at a time, chosen by a heartbeat lock
+// file (History.canClaim). Every instance SEEDS its graph from the archive at
+// startup and then tracks its own live samples; only the writer appends to and
+// prunes the file. See CLAUDE.md "Persisted history" for the full rationale.
+const PERSIST_SECONDS = 30;
+const FILE_RETENTION_SECONDS = 30 * 24 * 3600;
+const PRUNE_INTERVAL_SECONDS = 3600;
+// The writer rewrites the lock every poll; a heartbeat older than this means
+// the writer is gone and another instance may take over. Four missed polls.
+const WRITER_STALE_SECONDS = 12;
+
+const STATE_DIR = GLib.build_filenamev(
+    [GLib.get_user_state_dir(), 'temperature-bar']);
+const HISTORY_PATH = GLib.build_filenamev([STATE_DIR, 'history.jsonl']);
+const LOCK_PATH = GLib.build_filenamev([STATE_DIR, 'writer.lock']);
 
 // Severity -> fill color (RGB 0..1). 0 normal, 1 concerning, 2 bad.
 const COLORS = [
@@ -96,6 +126,52 @@ function listDir(path) {
         // directory missing or unreadable - return what we have
     }
     return names;
+}
+
+// Appends text to a file, creating parent dirs as needed. Returns true on
+// success. Used for the one-line-per-sample archive.
+function appendFile(path, text) {
+    try {
+        GLib.mkdir_with_parents(GLib.path_get_dirname(path), 0o755);
+        const stream = Gio.File.new_for_path(path)
+            .append_to(Gio.FileCreateFlags.NONE, null);
+        stream.write_all(new TextEncoder().encode(text), null);
+        stream.close(null);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Atomically replaces a file's contents (temp-file + rename under the hood),
+// creating parent dirs as needed. Used for the lock heartbeat and for
+// rewriting the archive after a prune.
+function writeFileAtomic(path, text) {
+    try {
+        GLib.mkdir_with_parents(GLib.path_get_dirname(path), 0o755);
+        GLib.file_set_contents(path, text);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// This process's pid, read from /proc/self/stat (its first field, before the
+// parenthesized comm, so process names with spaces are harmless).
+function currentPid() {
+    const stat = readFile('/proc/self/stat');
+    return stat === null ? -1 : parseInt(stat.split(' ')[0], 10);
+}
+
+// A per-boot id, so a stale lock left by a previous boot (where the same pid
+// may since have been reused by something else) is never mistaken for live.
+function currentBootId() {
+    return readFile('/proc/sys/kernel/random/boot_id') || '';
+}
+
+// Whether a pid is a live process on THIS boot (caller guards boot identity).
+function pidAlive(pid) {
+    return GLib.file_test(`/proc/${pid}`, GLib.FileTest.EXISTS);
 }
 
 /* Finds the CPU temperature sensors once, at enable time. Returns
@@ -170,7 +246,21 @@ class TempBarButton extends PanelMenu.Button {
         this._pkg = null;
         this._hottest = null;
         this._fraction = 0;
-        this._history = []; // [ms timestamp, degrees C], pruned to 2 h
+
+        // Writer election + persistence bookkeeping.
+        this._pid = currentPid();
+        this._bootId = currentBootId();
+        this._isWriter = false;
+        this._lastPersist = 0;
+        this._lastPrune = 0;
+
+        // Seed the in-memory graph from the on-disk archive's last 2 h, so a
+        // freshly-started shell (including a nested test shell) shows real
+        // history immediately rather than an empty graph that fills in from
+        // scratch. Live samples then accumulate on top.
+        this._history = History.pruneByAge(
+            History.parseHistory(readFile(HISTORY_PATH) || ''),
+            Date.now(), HISTORY_SECONDS * 1000); // [ms timestamp, degrees C]
 
         this._area = new St.DrawingArea({ width: BAR_WIDTH, y_expand: true });
         this._area.connect('repaint', area => this._onRepaint(area));
@@ -190,6 +280,20 @@ class TempBarButton extends PanelMenu.Button {
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
+        }
+        // If we held the writer claim, release it so another running instance
+        // takes over at once rather than waiting out the heartbeat staleness.
+        // Guard on the lock still being ours - never delete a claim a
+        // successor already took.
+        if (this._isWriter) {
+            const lock = History.parseLock(readFile(LOCK_PATH));
+            if (lock !== null && lock.pid === this._pid && lock.bootId === this._bootId) {
+                try {
+                    Gio.File.new_for_path(LOCK_PATH).delete(null);
+                } catch (e) {
+                    // best effort - staleness will expire it otherwise
+                }
+            }
         }
         super.destroy();
     }
@@ -241,6 +345,7 @@ class TempBarButton extends PanelMenu.Button {
     }
 
     _update() {
+        const now = Date.now();
         const { pkg, hottest, metric } = this._readTemps();
         this._pkg = pkg;
         this._hottest = hottest;
@@ -250,7 +355,6 @@ class TempBarButton extends PanelMenu.Button {
             this._sev = 0;
             this._fraction = 0;
         } else {
-            const now = Date.now();
             this._history.push([now, metric]);
             const cutoff = now - HISTORY_SECONDS * 1000;
             while (this._history.length > 0 && this._history[0][0] < cutoff)
@@ -288,9 +392,63 @@ class TempBarButton extends PanelMenu.Button {
             this._fraction = Math.max(0.02, this._fractionOf(metric));
         }
 
+        this._persistTick(now);
+
         this._area.queue_repaint();
         this._graphArea.queue_repaint();
         this._updateMenu();
+    }
+
+    // Runs every poll. Re-elects the writer (so a reader takes over within a
+    // few seconds if the current writer logs out), and if THIS instance is the
+    // writer, appends a sample every PERSIST_SECONDS and prunes the archive to
+    // its retention window hourly.
+    _persistTick(now) {
+        this._electWriter(now);
+        if (!this._isWriter)
+            return;
+        if (this._metric !== null && now - this._lastPersist >= PERSIST_SECONDS * 1000) {
+            appendFile(HISTORY_PATH, History.serializeSample(now, this._metric));
+            this._lastPersist = now;
+        }
+        if (now - this._lastPrune >= PRUNE_INTERVAL_SECONDS * 1000) {
+            this._pruneArchive(now);
+            this._lastPrune = now;
+        }
+    }
+
+    // Claims (or renews) writership via the heartbeat lock, or stands down to
+    // reader. On claiming, the lock is re-read to confirm we won any simult
+    // -aneous-startup race; the loser sees the winner's pid next poll and
+    // stays a reader. A brief double-claim is harmless - the first persisted
+    // sample is 30 s out, long after election settles at the 3 s poll.
+    _electWriter(now) {
+        const lock = History.parseLock(readFile(LOCK_PATH));
+        const writerPidAlive = lock !== null && pidAlive(lock.pid);
+        if (!History.canClaim(lock, now, {
+            staleMs: WRITER_STALE_SECONDS * 1000,
+            myPid: this._pid,
+            currentBootId: this._bootId,
+            writerPidAlive,
+        })) {
+            this._isWriter = false;
+            return;
+        }
+        writeFileAtomic(LOCK_PATH,
+            History.serializeLock(this._pid, this._bootId, now));
+        const back = History.parseLock(readFile(LOCK_PATH));
+        this._isWriter = back !== null &&
+            back.pid === this._pid && back.bootId === this._bootId;
+    }
+
+    // Rewrites the archive dropping samples past the retention window. Only
+    // touches the file when something actually ages out, so the common hourly
+    // call on a within-retention file is a cheap read with no write.
+    _pruneArchive(now) {
+        const samples = History.parseHistory(readFile(HISTORY_PATH) || '');
+        const kept = History.pruneByAge(samples, now, FILE_RETENTION_SECONDS * 1000);
+        if (kept.length !== samples.length)
+            writeFileAtomic(HISTORY_PATH, History.serializeHistory(kept));
     }
 
     _updateMenu() {

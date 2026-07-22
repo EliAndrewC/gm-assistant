@@ -23,9 +23,18 @@ Targets GNOME Shell 42 (Ubuntu 22.04, mujina).
 
 ## How to test a change
 
-**Always run this ON THE LAPTOP, not inside a container** - the container
-cannot run GNOME Shell, so no UI change can be verified from inside it (see
-[Dev loop caveat](#dev-loop-caveat)). After editing `extension.js`:
+**Pure logic runs in the container; UI/IO needs the laptop.** The history
+parse/prune and writer-election logic in `history.js` is unit-tested and
+runnable anywhere:
+
+```bash
+node --test scripts/temperature-widget/test-history.js
+```
+
+Everything else - GNOME Shell rendering, the gauge, notifications, and the
+actual file IO - can only be verified on the laptop, because the container
+cannot run GNOME Shell (see [Dev loop caveat](#dev-loop-caveat)). After
+editing `extension.js` or `history.js`:
 
 1. **Install the new copy:**
 
@@ -33,12 +42,18 @@ cannot run GNOME Shell, so no UI change can be verified from inside it (see
    ./scripts/temperature-widget/install.sh
    ```
 
-   This copies `extension.js` + `metadata.json` into
+   This copies `extension.js` + `history.js` + `metadata.json` into
    `~/.local/share/gnome-shell/extensions/temperature-bar@mujina/` and enables
    it via gsettings. The copy is what any shell (real or nested) loads.
 
 2. **Load it into a shell.** Pick based on session type and how disruptive you
-   want to be:
+   want to be. Note the graph is now **seeded from the on-disk archive** (see
+   [Persisted history](#persisted-history)), so a nested test shell shows your
+   real recent history right away instead of an empty graph - as long as your
+   main session has been running to populate
+   `~/.local/state/temperature-bar/history.jsonl`. To eyeball or reset the
+   archive: `cat ~/.local/state/temperature-bar/history.jsonl` to view it,
+   `rm` it to start fresh.
 
    - **Wayland, without disturbing your real session (preferred for iterating).**
      Run a **nested** GNOME Shell in its own window. It is a separate shell
@@ -81,14 +96,16 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
   100°C, and the bar is full at 110°C. Empty is pinned at 40°C - idle temps
   live in the 40s-50s, so anchoring lower would waste most of the gauge's
   travel on readings that never occur.
-- **History is in-memory only** (2 h of one-sample-per-3-s, ~2,400 entries):
-  trivial memory, no disk writes, and it resets on shell restart or logout -
-  acceptable because the question it answers ("has it been getting hotter?")
-  is about the current sitting, not yesterday. The graph's y-scale is FIXED
-  at 40°C..crit rather than auto-fit, so two glances an hour apart are
-  directly comparable; a sampling gap longer than 30 s (suspend, shell
-  restart) breaks the line instead of drawing a fake straight segment
-  across it.
+- **The popup graph shows the last 2 h from an in-memory buffer** (one sample
+  per 3 s, ~2,400 entries) for a smooth live line, but that buffer is SEEDED
+  at startup from the on-disk archive (see "Persisted history" below), so a
+  freshly-started shell shows real history immediately instead of an empty
+  graph. The graph's y-scale is FIXED at 40°C..crit rather than auto-fit, so
+  two glances an hour apart are directly comparable; a sampling gap longer
+  than 120 s (suspend, shell restart) breaks the line instead of drawing a
+  fake straight segment across it. (120 s, not 30 s: it must sit above the
+  archive's 30 s persist cadence so the coarser seeded portion of the line
+  does not fragment, while still catching real gaps, which are minutes long.)
 - **The popup graph paints its own opaque dark backdrop** before drawing any
   lines, rather than drawing straight onto the popup menu's themed background.
   The menu background's color and opacity are theme-dependent, and on some
@@ -111,10 +128,64 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
   reads, negligible cost, and fast enough to catch a thermal runaway before
   it reaches throttling.
 
+## Persisted history
+
+The temperature history is written to an on-disk archive at
+`~/.local/state/temperature-bar/history.jsonl` (XDG_STATE_HOME), one JSON
+object per line: `{"t": <unix_ms>, "c": <°C>}`. Three reasons it exists rather
+than the history living purely in memory:
+
+1. **Testable graph.** A nested test shell (see [How to test a
+   change](#how-to-test-a-change)) seeds its graph from the archive, so the
+   graph and its rendering can be checked against real data immediately instead
+   of waiting for a fresh buffer to fill.
+2. **Long-term trends.** The in-memory graph only spans 2 h; the archive keeps
+   30 days, so "is it running hotter this month than last week?" is answerable.
+3. **Interpretable by Claude.** The file is plain JSONL at a known path, so it
+   can be handed to Claude to read and interpret (`cat` it, or point Claude at
+   the path).
+
+Design choices, with the "why":
+
+- **A sample is persisted every 30 s, not every 3 s.** The gauge still polls
+  every 3 s (responsiveness, notifications), but 30 s resolution is plenty for
+  trends and keeps the file ~10x smaller: ~2,880 lines/day, ~3 MB across the
+  30-day retention. The file is pruned to retention on startup and hourly, and
+  the prune only rewrites the file when something actually ages out.
+- **Exactly one instance writes at a time, chosen by a heartbeat lock file**
+  (`~/.local/state/temperature-bar/writer.lock`, `{pid, bootId, ts}`). This is
+  the answer to "if both my real session and a `--nested` test shell are
+  running, who saves the data?" - **without** the widget needing to know
+  whether it is nested (which an extension cannot reliably detect anyway).
+  Every instance re-reads the lock each poll; whoever finds no *live* writer
+  claims it and rewrites the lock every poll as a heartbeat, while everyone
+  else just reads the archive to seed their graph. A claim counts as live only
+  if its heartbeat is fresh (< 12 s), it is from the current boot (`bootId`
+  guards pid reuse across reboots), and the holder's pid still exists in
+  `/proc`. So: your main session is normally the sole writer; a nested test
+  shell launched alongside it sees a live writer and stays a read-only
+  reader (getting the seeded graph you wanted); and if the main session logs
+  out, any still-running instance takes over writing within a few seconds, so
+  the single archive keeps growing across logouts and reboots. A writer that
+  is disabled cleanly deletes its own lock so takeover is instant rather than
+  waiting out the staleness window. The election logic is pure and lives in
+  `history.js` (`canClaim`), unit-tested in `test-history.js`.
+- **Why a heartbeat lock rather than an OS file lock or D-Bus name?** GJS has
+  no `flock`, and a `--nested` shell launched via `dbus-run-session` sits on a
+  *separate* session bus, so D-Bus name ownership cannot coordinate across the
+  two. A heartbeat file is the portable primitive that works regardless.
+
 ## Dev loop caveat
 
-The container cannot run GNOME Shell, so UI changes cannot be verified from
-inside it. Logic (sensor discovery, severity state machine) is covered by a
-Node harness with stubbed GNOME imports that was run against the real `/sys`
-during development; visual changes need an install + shell load on the laptop
-to check (see [How to test a change](#how-to-test-a-change)).
+The container cannot run GNOME Shell, so UI and IO changes cannot be verified
+from inside it. The **pure logic** (history parse/serialize/prune and the
+writer-election decision) lives in `history.js` and IS runnable in the
+container:
+
+```bash
+node --test scripts/temperature-widget/test-history.js
+```
+
+Sensor discovery, the severity state machine, the actual file IO, and all
+rendering still need an install + shell load on the laptop to check (see [How
+to test a change](#how-to-test-a-change)).
