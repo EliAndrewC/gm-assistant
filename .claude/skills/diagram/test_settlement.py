@@ -2078,6 +2078,30 @@ def test_plot_texture_drives_build_comb_grain():
             s.plot_texture(*bad)
 
 
+def test_perimeter_dike_draws_an_irregular_earthwork_band():
+    s = Settlement(1400, 1400, seed=3)
+    s.meta(name="D", scale="hamlet", ftpx=1, toscale=True, households=8, field_archetype="polder_grid")
+    env = [(200, 200), (200, 1000), (900, 1000), (900, 200), (200, 200)]
+    s.perimeter_dike(env, seed=5)
+    dk = s.M["dikes"][0]
+    assert dk["label"] == "perimeter dike"
+    assert dk["w_max"] >= 1.4 * dk["w_min"]  # varying width, not a uniform stroke
+    assert len(dk["outline"]) >= 60  # a smoothed organic band, not a 4-corner rectangle
+    # the band stays a ring around the grid (outer points sit outside the inner env, none wildly off-map)
+    assert all(0 <= x <= 1400 and 0 <= y <= 1400 for x, y in dk["outline"])
+    # a label was recorded, and drawing is deterministic per seed
+    assert any(lbl[5] == "perimeter dike" for lbl in s.M["labels"] if len(lbl) > 5)
+    s2 = Settlement(1400, 1400, seed=3)
+    s2.meta(name="D", scale="hamlet", ftpx=1, toscale=True, households=8, field_archetype="polder_grid")
+    s2.perimeter_dike(env, seed=5)
+    assert s2.M["dikes"][0]["outline"] == dk["outline"]
+    # an empty label skips the caption but still draws + records the band
+    s3 = Settlement(1400, 1400, seed=3)
+    s3.meta(name="D", scale="hamlet", ftpx=1, toscale=True, households=8, field_archetype="polder_grid")
+    s3.perimeter_dike(env, seed=5, label="")
+    assert s3.M["dikes"] and not any(len(lbl) > 5 and lbl[5] == "perimeter dike" for lbl in s3.M.get("labels", []))
+
+
 def test_build_polder_parcel_fabric():
     from waterfields import build_polder
 
