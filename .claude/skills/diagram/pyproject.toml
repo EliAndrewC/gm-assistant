@@ -46,7 +46,7 @@ files = ["settlement.py", "check_village.py", "waterfields.py", "pack_audit.py",
 addopts = "--cov --cov-report=term-missing"
 
 [tool.coverage.run]
-source = ["check_village", "settlement", "pack_audit", "compound", "citybudget"]
+source = ["check_village", "settlement", "pack_audit", "compound", "citybudget", "render_cache"]
 omit = ["test_*.py", "pool/*/*.gen.py"]
 
 [tool.coverage.report]

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# sync-with-main.sh - keep a session clone and main in sync, in both directions: pull main's
-# tip into the clone (sync-in), push the clone's committed work back (push), and land the
-# clone's rendered map artifacts in main's browsing tree (render-sync). Encodes the stop-work
-# ritual from CLAUDE.md as a script. (Renamed from ritual.sh, GM 2026-07-21: name the purpose,
-# not the culture.)
+# sync-with-main.sh - keep a session clone and main in sync: pull main's tip into the clone
+# (sync-in), push the clone's committed work back (push), and refresh main's diagram renders
+# (render-sync). Encodes the stop-work ritual from CLAUDE.md as a script. (Renamed from ritual.sh,
+# GM 2026-07-21: name the purpose, not the culture.)
 #
 # WHY (GM 2026-07-21): "if you're having to just remember to run the right commands in the right
 # order then that seems error prone" - it was. Incidents that shaped this script, all from sessions
@@ -14,20 +13,27 @@
 # clones" / "Stop-work ritual") - this script is that doctrine made mechanical; if the two ever
 # disagree, CLAUDE.md wins and this script has a bug.
 #
+# RENDER MODEL (GM 2026-07-22): renders no longer flow clone -> main by copy. render-sync
+# REGENERATES main's diagram renders in place from main's own committed tip (via render_cache.py),
+# so a render in main is a pure function of main's code and can never be a stale copy. A content
+# hash stamped into each derived svg makes the regen a cheap no-op when nothing a map depends on
+# changed. This retired the whole copy machinery: no clone-side pre-render, no rsync, no tip-guard,
+# no byte-verify, and sync-in no longer pulls renders into the clone.
+#
 # Run from anywhere INSIDE a session clone. Subcommands:
 #   sync-in         start-of-work pull from main (near-free; almost always a fast-forward)
 #   push            stop-work: refuse dirty tree, locked pull+push, overlap advisory (exit 3 =
 #                   the pull merged other sessions' edits into files your commits touched -
 #                   rerun the relevant gate NOW and fix forward)
-#   render-sync     tip-guarded, locked, checksum-VERIFIED copy of the diagram pool renders into
-#                   main. --regen first regenerates every map, running each gen from its OWN
-#                   directory (Mode A outputs are cwd-relative - the trap this kills).
+#   render-sync     locked, cache-short-circuited regen of main's diagram renders IN PLACE from
+#                   main's tip (GM_ASSISTANT_ALLOW_MAIN=1 for that one sanctioned regen-in-main)
 #   done            push, then render-sync (the common full stop-work)
 set -euo pipefail
 
 MAIN=/gm-assistant
 LOCK=$MAIN/.clones/.ritual.lock   # keep this NAME: it is the cross-session lock convention in CLAUDE.md - renaming it would stop serializing against other sessions
 POOL=.claude/skills/diagram/pool
+RENDER_CACHE=.claude/skills/diagram/render_cache.py
 
 die() { echo "sync-with-main: $*" >&2; exit 1; }
 
@@ -41,12 +47,12 @@ cd "$ROOT"
 
 sync_in() {
   git pull --no-rebase origin main
-  # pull main's RENDERS into the clone too (GM 2026-07-21): a clone holding stale .png/.svg
-  # artifacts that later flow back through render-sync looks like a regression - main's renders
-  # are the tip-verified canonical set between work units, so a fresh work unit starts from them.
-  rsync -rt --include='*/' --include='*.svg' --include='*.png' --exclude='*' "$MAIN/$POOL/" "$ROOT/$POOL/"
+  # No render pull-in anymore (GM 2026-07-22): its old rationale was that a clone's stale renders
+  # would flow back into main via render-sync's copy - but render-sync no longer copies anything,
+  # it REGENERATES main in place, so nothing flows clone -> main and the clone never needs main's
+  # renders. A clone regenerates whatever map it iterates on; the GM browses renders in main.
   date > "$ROOT/.git/sync-with-main.stamp"
-  echo "sync-with-main: clone synced with main (git + renders)"
+  echo "sync-with-main: clone synced with main (git)"
 }
 
 push_cmd() {
@@ -73,42 +79,34 @@ push_cmd() {
   echo "sync-with-main: pushed clean (no overlap with incoming changes)"
 }
 
-regen() {
-  # every gen runs from ITS OWN directory: Mode B gens are cwd-independent (they use __file__),
-  # Mode A gens write cwd-relative - running them anywhere else scatters outputs (the trap).
-  local g d
-  for g in "$POOL"/*/*.gen.py; do
-    d=$(dirname "$g")
-    ( cd "$d" && python3 "$(basename "$g")" >/dev/null ) || die "generator failed: $g"
-  done
-  echo "sync-with-main: all pool generators re-run"
-}
-
 render_sync() {
-  # regen is MANDATORY (GM 2026-07-21, was an optional --regen flag): a clone at main's tip can
-  # still hold renders drawn under an OLDER engine (pulls move HEAD without re-rendering), and
-  # copying those into main looks like a regression. Always regenerating makes staleness
-  # impossible by construction - renders in main are a pure function of tip code.
-  regen
-  # TIP-GUARD + copy under the lock; -rt not -a (rootless-podman ownership); no --delete (a clone
-  # that never built another session's map must not wipe main's render of it). CLAUDE.md step 5.
-  flock "$LOCK" sh -c "
-    [ \"\$(git -C '$ROOT' rev-parse HEAD)\" = \"\$(git -C '$MAIN' rev-parse HEAD)\" ] \
-      || { echo 'sync-with-main: TIP-GUARD refused - clone is not at main HEAD; pull, re-gate, re-render first' >&2; exit 1; }
-    rsync -rt --include='*/' --include='*.svg' --include='*.png' --exclude='*' '$ROOT/$POOL/' '$MAIN/$POOL/'
-  "
-  # VERIFY every render the clone has: report from checksum evidence, never from rsync exiting 0
-  local f rel bad=0 n=0
-  while IFS= read -r f; do
-    rel=${f#"$ROOT/$POOL/"}
-    n=$((n + 1))
-    if ! cmp -s "$f" "$MAIN/$POOL/$rel"; then
-      echo "sync-with-main: VERIFY FAILED: $rel differs between clone and main after copy" >&2
-      bad=1
-    fi
-  done < <(find "$ROOT/$POOL" -name '*.png' -o -name '*.svg')
-  [ "$bad" = 0 ] || exit 1
-  echo "sync-with-main: render sync verified - $n files byte-identical in main"
+  # REGENERATE main's diagram renders IN PLACE from main's own tip (GM 2026-07-22, replacing the
+  # old build-in-clone-then-rsync-copy machinery). Renders now become a pure function of main's
+  # committed code - nothing is copied, so nothing can be copied stale (the fragility that copy
+  # approach had: whether a clone had touched a given render was situational, so a stale copy
+  # could linger in main). render_cache.py runs each generator FROM ITS OWN DIRECTORY (the Mode A
+  # cwd trap) and short-circuits on a content hash stamped into each derived svg: an unconditional
+  # post-push regen is therefore cheap - only maps whose source actually changed re-run, so a push
+  # that touched no map's inputs costs ~0.3s while still self-healing every render from tip.
+  #
+  # Under the ritual LOCK for the whole regen: main is a push-to-checkout target (updateInstead),
+  # so another session's push mid-regen would rewrite the engine under us and mix tips across maps.
+  # GM_ASSISTANT_ALLOW_MAIN=1 stands the engine's main-tree guard down for this ONE sanctioned
+  # regen-in-main. No tip-guard is needed - regenerating whatever tip main currently holds is
+  # correct, and a second runner finds every stamp fresh and skips (the cache makes redundant
+  # regens ~free, which is what retires the old TIP-GUARD/last-writer-wins hazard entirely).
+  flock "$LOCK" env GM_ASSISTANT_ALLOW_MAIN=1 python3 "$MAIN/$RENDER_CACHE" --pool "$MAIN/$POOL" --main-repo "$MAIN"
+  # A generator writes its TRACKED .json (and a Mode A its tracked .svg) alongside the gitignored
+  # renders; a deterministic gen reproduces those byte-identically, so main stays clean. If any
+  # tracked pool file is left dirty, a generator is nondeterministic - surface it loudly (it would
+  # also block the next session's updateInstead push), but do not auto-revert: the GM decides.
+  local dirty
+  dirty=$(git -C "$MAIN" status --porcelain -- "$POOL" | grep -E '^[ MARC]M ' || true)
+  if [ -n "$dirty" ]; then
+    echo "sync-with-main: WARNING - regen left tracked pool files dirty in main (a generator is nondeterministic):" >&2
+    printf '%s\n' "$dirty" >&2
+    echo "sync-with-main: investigate before the next push - main must be clean for updateInstead" >&2
+  fi
 }
 
 case "${1:-}" in
