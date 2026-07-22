@@ -1,0 +1,12 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid"
+ },
+ "_regression": {
+  "fires": [
+   "polder_dike_is_earthwork"
+  ],
+  "source": "test_checks.py::test_polder_dike_is_earthwork"
+ }
+}
