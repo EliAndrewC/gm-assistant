@@ -52,6 +52,14 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
   directly comparable; a sampling gap longer than 30 s (suspend, shell
   restart) breaks the line instead of drawing a fake straight segment
   across it.
+- **The popup graph paints its own opaque dark backdrop** before drawing any
+  lines, rather than drawing straight onto the popup menu's themed background.
+  The menu background's color and opacity are theme-dependent, and on some
+  themes they washed the low-alpha lines out to near-invisible gray (the temp
+  line and both dashed threshold lines all looked grayed-out). A known dark
+  panel underneath lets the lines use full-alpha bright colors that read
+  consistently regardless of shell theme - white 2 px for the temperature
+  trace, full-saturation orange/red for the dashed thresholds.
 - **Judged on the hotter of package temp and hottest core**, same as the
   script - a single core can spike above the package reading.
 - **Hysteresis (4°C) on the way down**: severity drops only once the reading
