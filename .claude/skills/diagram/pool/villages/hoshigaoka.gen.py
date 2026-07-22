@@ -120,12 +120,18 @@ beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>'
                 for x, y in net["bund_beans"])
 s.add(f'<g opacity="0.85">{beads}</g>')
 
-# RESERVE the swept ground of the deferred SE precinct BEFORE the scatter below, or the scrub/marsh cover
-# the shrine + torii + graveyard (which are drawn post-crop). Same footprints as the s.shrine_hall / s.cemetery
-# calls at the foot of this gen - keep the two in sync.
-s.reserve_clearing(392, 1074, 30, 24, 58)    # the shrine hall
-s.reserve_clearing(392, 1114, 38, 28, 30)    # its torii
-s.reserve_clearing(178, 1030, 48, 34, 30)    # the village graveyard
+# RESERVE the swept ground of the set-apart SE precinct BEFORE the scatter below, or the scrub/marsh cover the
+# shrine + torii + graveyard. Same footprints as the s.shrine_hall / s.cemetery calls below - keep in sync.
+# SEVEN-ARCH AVENUE (GM one-off, 2026-07-22): Hoshigaoka's earth-god shrine carries a full 7-torii sando. A
+# village shrine normally rates only 1-2 arches (the numerology canon reserves 7 for monasteries/temples), but
+# the country monk posted to this shrine is a stickler for the potent number 7 and raised the extra six himself,
+# so the avenue marches S down the back-slope from the hall - a striking gateway for a modest village shrine.
+SHRINE = (392, 1074)
+SHRINE_TORII = [(392, 1114 + i * 52) for i in range(7)]   # 7 arches, straight S at a 52px pitch
+s.reserve_clearing(SHRINE[0], SHRINE[1], 30, 24, 58)      # the shrine hall
+for _tx, _ty in SHRINE_TORII:
+    s.reserve_clearing(_tx, _ty, 38, 28, 30)              # each of the 7 torii arches
+s.reserve_clearing(178, 1030, 48, 34, 30)                 # the village graveyard
 
 # REED MARSH on the low, downstream SE toe of the valley: below the paddy's drainage line the wet-rice
 # cultivation stops, and the un-reclaimed valley floor stays reed WETLAND (wet rice is diked OUT of marsh -
@@ -373,7 +379,8 @@ print(f"footbridges: {n_bridges + 1}")
 s.commons([(630, 215), (930, 170), (1230, 150), (1470, 58), (2160, 58), (2160, 475),
            (1905, 235), (1560, 215), (1200, 225), (900, 248), (700, 255), (630, 258)], role="grazing")   # NORTH up-valley grass hills
 s.commons([(85, 895), (250, 988), (430, 1030), (600, 955), (770, 975),
-           (900, 1075), (1010, 1180), (1080, 1250), (85, 1250)], role="grazing")   # SOUTH back-slope behind the village
+           (900, 1075), (1010, 1180), (2160, 1180), (2160, 1500), (110, 1500)],
+          role="grazing")   # SOUTH back-slope, now a broad band across the whole bottom (down to y1500) to clothe the frame the 7-arch sando pulled south; commons auto-skips the paddy AND the toe marsh, so it only dots the bare margin
 # A FEW managed-WOODLAND patches (coppice / bamboo / tung-oil "economic forest") - the green EXCEPTION amid the
 # cut-over grass hills (China-first: the hills are mostly denuded scrub, with a little managed wood). Sited on the
 # open high ground CLEAR of the crops and never SHADING them: the sun is to the S, so trees cast shadows N - a
@@ -390,24 +397,23 @@ s.commons([(1490, 95), (1770, 95), (1770, 162), (1490, 162)], role="woodland")  
 # doctrine's set-apart rule; moved 2026-07-21 when the headman-kura repack shifted the cluster's west extent
 # and the tight crop clipped the fixed-coordinate plot). Siting rationale in the comment block below.
 s.cemetery(178, 1030, 48, 34, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot. Resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~96x68 ft), not 0.5+ - see settlements.md funerary anchors
+# VILLAGE SHRINE at the SE water-mouth entrance: the tutelary earth-god shrine (土地庙) guarding the feng-shui
+# entry point where the connector track leaves for the road. A small Shinto hall (~30x24 px ~ 275 m2 - a modest
+# earth-god hall, NOT a temple; kind='shrine' satisfies religious_matches_scale, graveyard=False keeps kegare at
+# arm's length). Its 7-torii sando (country-monk rationale in the reserve block above) marches S down the
+# back-slope. Drawn BEFORE the crop, like the graveyard, so the frame stretches to contain the whole avenue
+# (crop_to_content's set-apart-shrine rule). It sits APART from the village, beyond the communal wells, so it
+# keeps its OWN ablution well (remote_shrine_has_own_well); the ring search sites that well clear of the avenue.
+s.shrine_hall(SHRINE[0], SHRINE[1], "", w=30, h=24, kind="shrine", primary=True,
+              torii=SHRINE_TORII, graveyard=False)
+s.shrine_well(SHRINE[0], SHRINE[1])
 s.crop_to_content(margin=30)
 
-# DEFERRED FEATURES drop into the cropped frame. VILLAGE SHRINE at the SE WATER-MOUTH ENTRANCE: the tutelary /
-# earth-god shrine (土地庙) guards the feng-shui entry point where the connector track leaves for the road, set
-# in the water-mouth grove that we already grew there, a small Shinto shrine fronted by a torii. SMALL (~30x24
-# px ~ 275 m2, a touch bigger than a plain farmhouse) - a village earth-god shrine is a modest hall, NOT a
-# temple. (kind='shrine' satisfies religious_matches_scale; graveyard=False - Shinto keeps kegare at arm's length.)
-s.shrine_hall(392, 1074, "", w=30, h=24, kind="shrine", primary=True,
-              torii=[(392, 1114)], graveyard=False)   # no label - the vermilion hall + torii read as a shrine
-# VILLAGE GRAVEYARD on the SW BACK-SLOPE, behind the village and well AWAY from the pond (the water source -
-# graves foul water) and off the field/water front (背山面水: the non-arable back side). The high NW back is
-# taken by the sacred grove + the pond, so the graves sit on the clear lower-W slope below the grove. A village
-# plot (parish=False, not a temple parish ground), set back from all water + kept >=120px from the shrine (kegare).
-# (The graveyard itself is drawn pre-crop above so the frame contains it.)
-# The shrine sits APART from the village (past the graveyard at the water-mouth), beyond reach of the
-# communal wells, so it keeps its OWN well for purification/ablution (temizu) - a remote shrine is watered by
-# its own draw-point, not the village's (remote_shrine_has_own_well).
-s.shrine_well(392, 1074)
+# (VILLAGE SHRINE + its 7-arch avenue and ablution well are drawn ABOVE, before the crop, so the frame contains
+# the whole southward sando.) VILLAGE GRAVEYARD on the SW BACK-SLOPE (the s.cemetery() call above, pre-crop):
+# behind the village and well AWAY from the pond (graves foul the water source) and off the field/water front
+# (背山面水: the non-arable back side); a village plot (parish=False), >=120px from the shrine (kegare). See
+# settlements.md 'Village windbreak' / back-slope.
 
 s.title("Hoshigaoka")   # title placed AFTER everything, so it finds blank space in the framed window
 s.finish(os.path.join(HERE, "hoshigaoka"))
