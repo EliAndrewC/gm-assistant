@@ -171,6 +171,41 @@ rationale), which is the smallest change that moves us from "stylized-and-slight
 "stylized-but-grounded." But **A is genuinely defensible** given how thin the density record is -
 this is exactly the nitty-gritty the GM flagged as often unknowable.
 
+## Companion decision: gate markets at EVERY gate (2026-07-22)
+
+A follow-up question - *would a city have a gate market at each gate?* - is the same *guanxiang*
+(关厢) institution as the extramural lodging above, so it is recorded here. A focused search pass
+(Baidu Baike 关厢; Beijing gate-suburb histories; Shanghai/Beijing wall-and-gate sources) found:
+
+- **The *guanxiang* is a road-driven extramural suburb** - the main street plus residents-and-shops
+  within ~2-3 *li* outside a gate, formed as built-up density pushed *outward along the road*. It is
+  literally the gate market + gate suburb, the same cluster the cheap inns sit in.
+- **It formed at every *trafficked* gate, not just one.** Old Beijing's sixteen gates each had a
+  named *guanxiang* (Guang'anmen, Deshengmen, Yongdingmen, ...). This is stronger than the lodging
+  pass's low-confidence "clusters at the busiest gate" inference: markets were more distributed than
+  cheap inns.
+- **They varied in scale** - a busy gate grew a 大关厢 ("big *guanxiang*") with many shops; a quieter
+  gate a small one - and gates specialized (Beijing's grain gate, coal gate, wine gate).
+
+**Decision (GM): a gate market forms outside EVERY city gate, scaled to that gate's traffic** - the
+check `city_has_gate_market` was tightened from ">= 3 shops outside *a* gate" to ">= 3 outside *each*
+gate" (mirroring `city_flophouse_outside_each_gate`). This is *better*-grounded than the old
+one-gate rule, and it removes an inconsistency (the map already put a flophouse outside every gate
+but a market at only one). Applied: **Tango** gained a smaller north-gate market (its two gates both
+sit on the N-S Imperial road; the south market stays the larger); **Nagahara**'s north (highway)
+gate gained a small stall cluster to sit alongside its river-gate WHARF suburb. The scale asymmetry
+(big vs. small) is deliberate and matches the 大关厢/small distinction. *Caveat:* a genuinely minor
+sally-gate off any main road would historically stay marketless, but the pool cities have no such
+gate (every drawn gate carries a through-road), so the "every gate" rule is exact for them.
+
+The *reliability* caveat mirrors the lodging findings: the *guanxiang* is best-documented for the
+great capitals (Beijing), and the exact per-gate scale for a mid-size provincial seat is thinner -
+but the road-driven formation principle is clear and consistent, and it points to a market at each
+of a city's (road-carrying) gates. Sources: [关厢 (Baidu Baike)](https://baike.baidu.com/item/%E5%85%B3%E5%8E%A2/10087890),
+[京城关厢传奇 (163.com)](https://www.163.com/dy/article/G9AGFITN0517QQCQ.html),
+[Shanghai City Wall and Gates (Visualising China)](https://visualisingchina.net/blog/2020/10/29/shanghai-city-wall-and-gates/),
+[City Wall and City Gate of Beijing](https://www.beijingtrip.com/feature/city-wall.htm).
+
 ## Sources & reliability
 
 Curfew and Japanese-lodging findings rest on reputable secondary sources with multiple independent
