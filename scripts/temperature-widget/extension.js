@@ -377,6 +377,8 @@ class TempBarButton extends PanelMenu.Button {
             const prev = this._sev;
             this._sev = sev;
             const t = Math.round(metric);
+            // Only notify on the way UP (into concerning / bad). Recovery is
+            // not worth an interruption - the gauge color already shows it.
             if (sev > prev) {
                 if (sev === 2)
                     this._notify(`CPU at ${t}°C`,
@@ -384,9 +386,6 @@ class TempBarButton extends PanelMenu.Button {
                 else
                     this._notify(`CPU running hot: ${t}°C`,
                         'Concerning - keep an eye on it.', false);
-            } else if (sev === 0 && prev > 0) {
-                this._notify(`CPU back to normal: ${t}°C`,
-                    'Comfortable headroom again.', false);
             }
 
             this._fraction = Math.max(0.02, this._fractionOf(metric));
