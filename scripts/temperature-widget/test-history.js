@@ -77,6 +77,77 @@ test('median discards a lone outlier and does not mutate its input', () => {
     assert.deepStrictEqual(input, [3, 1, 2], 'input must be untouched');
 });
 
+// --- slewGate: the burst-glitch defense the median cannot provide ----------
+
+const GATE = { maxJumpC: 20, confirmSamples: 3 };
+
+// Drives a sequence of readings through slewGate, threading state, and returns
+// the accepted value after each reading - the metric the gauge would show.
+function runGate(readings, opts = GATE, start = { accepted: null, candidate: null, count: 0 }) {
+    let state = start;
+    const out = [];
+    for (const r of readings) {
+        state = H.slewGate(state, r, opts);
+        out.push(state.accepted);
+    }
+    return out;
+}
+
+test('slewGate trusts the first real reading', () => {
+    assert.deepStrictEqual(
+        H.slewGate({ accepted: null, candidate: null, count: 0 }, 52, GATE),
+        { accepted: 52, candidate: null, count: 0 });
+});
+
+test('slewGate passes an in-band reading through with no lag', () => {
+    // Gradual real drift - every step within maxJumpC - is accepted each poll.
+    assert.deepStrictEqual(runGate([50, 58, 66, 72, 68]), [50, 58, 66, 72, 68]);
+});
+
+test('slewGate holds through a 2-poll burst the median lets slip', () => {
+    // The exact failure observed 2026-07-22: the median of a 2-poll raw burst
+    // still emits two high samples (50,100,100,50); the gate must ignore them.
+    assert.deepStrictEqual(
+        runGate([50, 50, 100, 100, 50, 50]),
+        [50, 50, 50, 50, 50, 50]);
+});
+
+test('slewGate ignores an isolated downward glitch too', () => {
+    // Low glitches were seen as well (stray 24/30 among ~50s).
+    assert.deepStrictEqual(runGate([50, 50, 24, 50, 50]), [50, 50, 50, 50, 50]);
+});
+
+test('slewGate accepts a genuinely sustained excursion after confirmSamples', () => {
+    // A real jump that HOLDS is believed on the 3rd consecutive out-of-band poll.
+    assert.deepStrictEqual(
+        runGate([50, 95, 95, 95, 95]),
+        [50, 50, 50, 95, 95]);
+});
+
+test('slewGate restarts the streak when an excursion is not sustained', () => {
+    // Two highs, then back to baseline, then two highs again: never 3 in a row,
+    // so the metric never leaves baseline.
+    assert.deepStrictEqual(
+        runGate([50, 100, 100, 50, 100, 100, 50]),
+        [50, 50, 50, 50, 50, 50, 50]);
+});
+
+test('slewGate follows a rising ramp toward a new plateau', () => {
+    // A fast ramp whose per-poll steps exceed maxJumpC is gated until it settles,
+    // then accepted - never permanently hidden.
+    assert.deepStrictEqual(
+        runGate([50, 75, 95, 100, 100]),
+        [50, 50, 50, 100, 100]);
+});
+
+test('slewGate blanks on a failed read and re-trusts the next one', () => {
+    assert.deepStrictEqual(
+        H.slewGate({ accepted: 88, candidate: null, count: 0 }, null, GATE),
+        { accepted: null, candidate: null, count: 0 });
+    // After the blank, the next reading is treated as a fresh first read.
+    assert.deepStrictEqual(runGate([50, null, 90]), [50, null, 90]);
+});
+
 test('lock serialize -> parse round-trips', () => {
     assert.deepStrictEqual(
         H.parseLock(H.serializeLock(4242, 'boot-abc', 1234.9)),

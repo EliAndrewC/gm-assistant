@@ -48,13 +48,25 @@ const DEFAULT_CRIT = 100; // assumed only when the chip reports no crit temp
 const EMPTY_AT = 40;  // gauge is empty at/below this temperature
 const HYSTERESIS = 4; // degrees below a threshold before severity drops again
 
-// De-noising the metric. A 10-min sample showed the sensors occasionally
-// return a single wildly-wrong read - package AND hottest core both snapping to
-// exactly 100C for one 3 s poll while the readings on either side sat at ~48C,
-// a 50C swing in 3 s that is not physically possible. Two defenses:
+// De-noising the metric. The sensors occasionally return wildly-wrong reads -
+// package AND hottest core both snapping to ~100C while the readings on either
+// side sit at ~48C, a 50C swing in 3 s that is not physically possible. Three
+// layered defenses:
 //  - SMOOTH_WINDOW: the metric that drives the bar/severity/archive is a MEDIAN
-//    of the last few raw reads, so a lone spike is discarded outright (median,
+//    of the last few raw reads, so a LONE spike is discarded outright (median,
 //    not mean, so it is not averaged in) and never colors the bar.
+//  - MAX_JUMP_C / JUMP_CONFIRM_SAMPLES: a slew/jump gate (History.slewGate)
+//    downstream of the median. The median kills a 1-poll spike but a run of 2+
+//    consecutive bad reads outvotes a 3-wide median and slips through (observed
+//    2026-07-22: the archive logged burst excursions to 98-101C while an
+//    ice-packed, cool-to-touch laptop sat at ~50C). The gate refuses to move
+//    the metric more than MAX_JUMP_C in one poll until the new level HOLDS for
+//    JUMP_CONFIRM_SAMPLES polls, so a burst is ignored while a sustained real
+//    excursion is accepted after a brief delay. See History.slewGate for the
+//    full rationale. MAX_JUMP_C is set well above any real per-poll change
+//    (genuine bursts ramp only a few degrees per 3 s poll) yet far below the
+//    ~50C one-poll leap of a glitch; both numbers are provisional pending a
+//    fine-grained raw capture and easy to retune here.
 //  - CONFIRM_SAMPLES: a severity must hold for this many consecutive polls
 //    before it fires a notification, so brief 1-2 poll excursions (the smoothed
 //    residue at a real burst's edges, or a genuine momentary blip) do not
@@ -62,6 +74,8 @@ const HYSTERESIS = 4; // degrees below a threshold before severity drops again
 //    hardware's own throttling is the actual safety net, so a few seconds'
 //    confirmation delay costs nothing.
 const SMOOTH_WINDOW = 3;
+const MAX_JUMP_C = 20;
+const JUMP_CONFIRM_SAMPLES = 3;
 const CONFIRM_SAMPLES = 3;
 
 const BAR_WIDTH = 80; // px; wide so the fill's approach to the ticks is visible
@@ -265,6 +279,10 @@ class TempBarButton extends PanelMenu.Button {
 
         // De-noising state.
         this._recent = [];      // last few raw metric reads, for the median despike
+        this._accepted = null;  // last metric the slew/jump gate accepted
+        this._jumpCandidate = null; // pending out-of-band level awaiting confirmation
+        this._jumpCount = 0;    // consecutive polls that candidate has held
+        this._lastUpdate = 0;   // ms of the previous poll, to detect a sampling gap
         this._debSev = null;    // severity currently accumulating a confirmation streak
         this._debCount = 0;     // length of that streak, in polls
         this._confirmedSev = 0; // last severity we actually notified about
@@ -381,18 +399,47 @@ class TempBarButton extends PanelMenu.Button {
         this._pkg = pkg;
         this._hottest = hottest;
 
-        // Despike: the metric that drives everything downstream (bar, severity,
-        // graph, archive) is a median of the last SMOOTH_WINDOW raw reads, so a
-        // single spurious sensor value is discarded rather than shown. Until the
-        // window fills (first couple of polls) the raw read is used as-is.
-        let metric = raw;
+        // A real sampling gap (suspend, shell restart) makes the de-noising
+        // history stale: the pre-gap reads no longer predict the post-gap
+        // temperature, and the slew gate would wrongly hold the old value (or
+        // even flash a stale hot reading) for a few polls after resume. So
+        // forget the smoothing/gate state across a gap and judge the resumed
+        // stream fresh. Same GAP_BREAK_SECONDS the graph uses to break its line.
+        if (this._lastUpdate !== 0 &&
+            now - this._lastUpdate > GAP_BREAK_SECONDS * 1000) {
+            this._recent = [];
+            this._accepted = null;
+            this._jumpCandidate = null;
+            this._jumpCount = 0;
+        }
+        this._lastUpdate = now;
+
+        // Despike, stage 1 (median): the metric that drives everything
+        // downstream (bar, severity, graph, archive) starts as a median of the
+        // last SMOOTH_WINDOW raw reads, so a single spurious sensor value is
+        // discarded rather than shown. Until the window fills (first couple of
+        // polls) the raw read is used as-is.
+        let smoothed = raw;
         if (raw !== null) {
             this._recent.push(raw);
             if (this._recent.length > SMOOTH_WINDOW)
                 this._recent.shift();
             if (this._recent.length === SMOOTH_WINDOW)
-                metric = History.median(this._recent);
+                smoothed = History.median(this._recent);
         }
+
+        // Despike, stage 2 (slew/jump gate): the median kills lone spikes but a
+        // run of 2+ consecutive bad reads outvotes it; the gate holds the last
+        // good value through such a burst and only moves on a change that is
+        // either physically plausible or sustained. See History.slewGate.
+        const gate = History.slewGate(
+            { accepted: this._accepted, candidate: this._jumpCandidate, count: this._jumpCount },
+            raw === null ? null : smoothed,
+            { maxJumpC: MAX_JUMP_C, confirmSamples: JUMP_CONFIRM_SAMPLES });
+        this._accepted = gate.accepted;
+        this._jumpCandidate = gate.candidate;
+        this._jumpCount = gate.count;
+        const metric = this._accepted;
         this._metric = metric;
 
         if (metric === null) {
