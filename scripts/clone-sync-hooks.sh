@@ -6,10 +6,10 @@
 # them instead. Wired from .claude/settings.json (project settings, committed):
 #
 #   UserPromptSubmit -> `prompt` mode: every time the GM sends a message, this session's known
-#     clone is auto-synced with main (git pull + render pull-in via sync-with-main.sh sync-in) -
-#     but ONLY when its tree is clean; a dirty tree means mid-task, and yanking main's tip into
-#     half-done work would be sabotage. Stdout is injected into the model's context, so the model
-#     also SEES the sync happen (or why it was skipped).
+#     clone is auto-synced with main (git pull via sync-with-main.sh sync-in) - but ONLY when its
+#     tree is clean; a dirty tree means mid-task, and yanking main's tip into half-done work would
+#     be sabotage. Stdout is injected into the model's context, so the model also SEES the sync
+#     happen (or why it was skipped).
 #
 #   PreToolUse (Edit|Write|NotebookEdit) -> `pretool` mode: the backstop for the first edit of a
 #     session (before any mapping exists) and for anything the prompt hook missed. Editing a file
@@ -18,9 +18,10 @@
 #     always allowed - that is mid-task work. This call also records the session->clone mapping
 #     (keyed by session_id under .clones/.session-clones/) that the prompt hook reads.
 #
-# HEAD equality, not timestamps, is the freshness test: it is the same invariant render-sync's
-# tip-guard uses, needs no clock, and cannot rot. Renders stay safe separately - sync-in pulls
-# main's renders into the clone, and render-sync always REGENERATES before copying out.
+# HEAD equality, not timestamps, is the freshness test: needs no clock and cannot rot. Renders
+# are no longer synced into the clone at all (GM 2026-07-22) - render-sync REGENERATES main's
+# renders in place from main's own tip, so nothing flows clone -> main and the clone never needs
+# main's renders; a clone regenerates whatever map it iterates on.
 set -euo pipefail
 
 MAIN=/gm-assistant
@@ -73,7 +74,7 @@ case $MODE in
       exit 0
     fi
     if out=$(cd "$clone" && scripts/sync-with-main.sh sync-in 2>&1); then
-      echo "clone-sync: auto-synced $clone with main (git + renders)"
+      echo "clone-sync: auto-synced $clone with main (git)"
     else
       echo "clone-sync: auto sync-in FAILED in $clone - resolve before modifying the repo: $(printf '%s' "$out" | tail -2)"
     fi

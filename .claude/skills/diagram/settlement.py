@@ -36,8 +36,10 @@ def _assert_not_main_tree(path: str | None = None) -> None:
     never a workspace (CLAUDE.md "Session clones"): a generator/gate/test writing into main's
     tree races with another session's mid-ritual push-to-checkout (the 2026-07-20 double-push
     post-mortem). Import-time enforcement here covers every Mode B gen, check_village.py, and
-    the pytest suites, since they all import this module. The GM can deliberately override
-    with GM_ASSISTANT_ALLOW_MAIN=1; a session must not."""
+    the pytest suites, since they all import this module. GM_ASSISTANT_ALLOW_MAIN=1 overrides
+    the guard: the GM sets it for a deliberate main-tree run, and the stop-work ritual's
+    render-sync sets it (scoped to its one locked regen-in-main); a session never sets it by
+    hand for anything else."""
     p = os.path.realpath(path if path is not None else __file__)
     if p.startswith("/gm-assistant/") and "/.clones/" not in p and os.environ.get("GM_ASSISTANT_ALLOW_MAIN") != "1":
         raise SystemExit(
