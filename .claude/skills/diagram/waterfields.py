@@ -1382,7 +1382,7 @@ def build_polder(
     # rounded corners, NOT a hard 90-degree CAD grid - the finer laterals (following the jittered bund lines)
     # are visibly crookeder. Feeder -> laterals -> drain stays one connected system; every parcel fronts one.
     fi, di = RING * 0.5, span_s - RING * 0.5  # feeder / drain inner-toe s-lines
-    phf, phd = R.uniform(0, math.tau), R.uniform(0, math.tau)
+    phf = R.uniform(0, math.tau)
 
     def waver(pts_st: list[tuple[float, float]], along: str, amp: float, ph: float) -> list[tuple[float, float]]:
         # gently wave a trunk run: offset the CROSS coord by a low-freq sine so the canal is not dead straight
@@ -1393,38 +1393,74 @@ def build_polder(
             out.append((s + w, t) if along == "t" else (s, t + w))
         return out
 
-    # head: the feeder INLET - starts at the high-corner sluice (fed from the pond through a dike sluice),
-    # runs along the top inner toe to column 1, then dips INTO the block so the source->field hairline anchors
-    head = [grid(fi, RING * 0.4), grid(fi, tt(1)), grid(ss(0) + cell * 0.35, tt(1))]
-    # flank: the rest of the top feeder along the inner toe, gently wavy, wrapping toward the far corner
-    flank = [grid(s, t) for s, t in waver([(fi, tt(1) + (span_t - RING * 0.4 - tt(1)) * k / 6) for k in range(7)], "t", 4.0, phf)]
-    # drain: the low inner-toe collector, gently wavy, sloping to the far outfall corner; then the OUTFALL
-    # crosses the dike (the one low-corner sluice) and the brook carries it off-map downhill
-    drain_run = waver([(di - 6 * (1 - k / 6), span_t * k / 6) for k in range(7)], "t", 3.5, phd)
-    drain_pts = [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in drain_run]]
-    outfall = grid(span_s + 40, span_t)  # through the dike at the low corner
-    drain_pts.append((round(outfall[0], 1), round(outfall[1], 1)))
-    drain_pts.append((round(outfall[0] + dx * 46, 1), round(outfall[1] + dy * 46, 1)))
-    sluice = head[0]
+    # FILLETED CORNERS (research 2026-07-22): an earthen canal EASES its bends - a hard 90-degree interior
+    # corner scours the outer bank and silts the inner, so FAO sets a minimum bend radius of tens of times
+    # the width; a polder corner can't honor the full ideal but it gets a generous FILLET, never a right
+    # angle. So the ring is a rounded rectangle: each corner is a quadratic-bezier fillet of reach `cr`.
+    cr = RING * 0.9
+    corners = [(fi, fi), (fi, span_t - fi), (di, span_t - fi), (di, fi)]  # NW, NE, SE, SW (clockwise)
+
+    def _u(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
+        vx, vy = b[0] - a[0], b[1] - a[1]
+        ln = math.hypot(vx, vy) or 1.0
+        return (vx / ln, vy / ln)
+
+    def _bz(a: tuple[float, float], c: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
+        return ((1 - f) ** 2 * a[0] + 2 * (1 - f) * f * c[0] + f * f * b[0], (1 - f) ** 2 * a[1] + 2 * (1 - f) * f * c[1] + f * f * b[1])
+
+    sides_st: list[list[tuple[float, float]]] = []  # side i runs corner[i] -> corner[i+1], its fillet AT corner[i+1] included
+    for i in range(4):
+        c0, c1, c2 = corners[i], corners[(i + 1) % 4], corners[(i + 2) % 4]
+        d0, d1 = _u(c0, c1), _u(c1, c2)
+        a0 = (c0[0] + d0[0] * cr, c0[1] + d0[1] * cr)  # this side begins after corner[i]'s fillet
+        a1 = (c1[0] - d0[0] * cr, c1[1] - d0[1] * cr)  # ...its straight part ends before corner[i+1]'s fillet
+        run = [(a0[0] + (a1[0] - a0[0]) * k / 6, a0[1] + (a1[1] - a0[1]) * k / 6) for k in range(7)]
+        run = waver(run, "s" if abs(d0[0]) > abs(d0[1]) else "t", 3.5, phf + i * 1.7)  # gentle waver
+        b1 = (c1[0] + d1[0] * cr, c1[1] + d1[1] * cr)  # the fillet arc a1 -> corner[i+1] -> next side's start
+        sides_st.append(run + [_bz(a1, c1, b1, k / 6) for k in range(1, 7)])
+
+    def _mk(pts_st: list[tuple[float, float]], role: str, w: float, wt: float) -> dict[str, Any]:
+        return {"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in pts_st]], "role": role, "w": w, "w_tail": wt}
+
+    # The ring is a CLOSED loop (feeder top + two toe sides + drain bottom), all 4 corners FILLETED. The
+    # INLET is the source->field hairline itself: draw_comb_field draws it from the pond to channels[0]'s far
+    # end, so the feeder is recorded NW-END-LAST (reversed) - the hairline then crosses the dike from the pond
+    # straight onto the feeder's NW corner (the north inlet sluice), no dangling stub. The OUTFALL is the brook,
+    # which taps the MIDDLE of the drain (far from either drain endpoint, so it reads as a mid-run offtake, not
+    # a hard corner) and runs off-map south through the dike (the south sluice).
+    # the feeder is recorded NW-end-last, then extended with a short INLET STUB up through the dike to the
+    # pond rim - a visible sluice channel so the pond plainly charges the ring (the source->field hairline
+    # anchors at the stub's far end for the topology)
+    feeder_rev = [*reversed(sides_st[0]), (-52.0, fi + cr)]
+    sluice = grid(fi, fi)  # the nominal NW inlet corner
+
+    # `seg` tags each ring side so footbridge placement is side-aware (research 2026-07-22: crossings cluster
+    # on the SETTLEMENT side, not all four): e_toe is the settlement (east) side, the rest are unsettled.
+    def _seg(pts_st: list[tuple[float, float]], role: str, w: float, wt: float, seg: str) -> dict[str, Any]:
+        d = _mk(pts_st, role, w, wt)
+        d["seg"] = seg
+        return d
+
     channels = [
-        {"pts": [(round(x, 1), round(y, 1)) for x, y in head], "role": "main", "w": 6.0, "w_tail": 3.0},
-        {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
-        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+        _seg(feeder_rev, "main", 5.0, 4.0, "feeder"),  # feeder (top), NW-end LAST so the source->field hairline anchors at the pond side
+        _seg(sides_st[1], "lateral", 3.4, 3.0, "e_toe"),  # east toe collector (the SETTLEMENT side)
+        _seg(sides_st[2], "drain", 5.0, 5.0, "drain"),  # bottom = drain collector (cross-slope)
+        _seg(sides_st[3], "lateral", 3.4, 3.0, "w_toe"),  # west toe collector
     ]
-    for c in range(1, cols):  # the laterals, one per interior column line, feeder -> drain (inner-toe to inner-toe)
+    for c in range(1, cols):  # the laterals, one per interior column line, feeder (top) -> drain (bottom)
         tc = tt(c)
         lat_pts = [(fi, tc), *[nodes[r][c] for r in range(rows + 1)], (di, tc)]
-        channels.append({"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4})
-    for tc in (RING * 0.5, span_t - RING * 0.5):  # the side toe ditches, feeder -> drain (completing the ring)
-        lat_pts = [(fi, tc), (di, tc)]
-        channels.append({"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4})
-    brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
+        d = {"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4, "seg": "lateral"}
+        channels.append(d)
+    out_t = span_t * 0.5  # the outfall taps the drain at mid-south and runs off-map downhill
+    brook_start, brook_dir = grid(di, out_t), grid(di + 40, out_t)
+    brook = [(round(brook_start[0], 1), round(brook_start[1], 1)), (round(brook_dir[0], 1), round(brook_dir[1], 1))]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
     return {
         "channels": channels,
         "plots": plots,
         "threads": [],
-        "drain": drain_pts,
+        "drain": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in sides_st[2]]],
         "brook": brook,
         "envelope": [(round(x, 1), round(y, 1)) for x, y in envelope],
         "acres": acres,

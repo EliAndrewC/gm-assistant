@@ -5208,10 +5208,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # STANDALONE plank FOOTBRIDGES on the irrigation ditches (opt-in via meta.field_footbridges): field-workers
     # cross a ditch on a plank while walking the bunds, so any long ditch stretch carries at least one plank
     # about midway (these are NOT lane crossings - no path leads to them). Fires if a long ditch has none near it.
+    # EXEMPT the polder ring's UNSETTLED sides (research 2026-07-22, settlements.md 'Polder ring canal'):
+    # crossings cluster on the settlement (east) toe, and the feeder / far toe / drain are walked on the DIKE
+    # CREST, crossed (if at all) at a sluice/culvert, NOT a plank - so those tagged segs need no footbridge.
     if meta.get("field_footbridges"):
         FB_MIN = 140
+        _no_plank_segs = {"feeder", "w_toe", "drain"}
         unplanked = []
         for d in M.get("field_ditches", []):
+            if d.get("seg") in _no_plank_segs:
+                continue
             pts = d["poly"]
             length = sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
             if length < FB_MIN:
@@ -8073,6 +8079,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 "polder_channels_clear_of_dike",
                 in_dike <= 4,
                 f"{in_dike} irrigation-channel point(s) run through the dike earthwork (want <= 4, the inlet/outfall sluice crossings) - the polder RING CANAL runs on the INNER TOE of the dike (field side), not buried in the dike body; water crosses the dike only at the sluices",
+            )
+
+            # STRUCTURES + WINDBREAK KEEP OFF THE DIKE (GM 2026-07-22): the dike is a raised earthwork bank,
+            # not building ground, so no farmhouse footprint and no windbreak grove clump may sit ON it (the
+            # bank carries only its own soil-binding trees). perimeter_dike registers the band as a placement
+            # keep-out; this verifies it. A house corner or a grove clump centre inside the dike band fires.
+            on_dike = []
+            for h in M.get("houses", []):
+                hw, hh = h.get("w", 40) / 2, h.get("h", 26) / 2
+                if any(point_in_poly(h["x"] + sx * hw, h["y"] + sy * hh, band) for sx in (-1, 1) for sy in (-1, 1)):
+                    on_dike.append(("house", round(h["x"]), round(h["y"])))
+            for g in M.get("village_groves", []):
+                on_dike += [("grove", round(cx), round(cy)) for cx, cy in g.get("clumps", []) if point_in_poly(cx, cy, band)]
+            check(
+                "structures_clear_of_dike",
+                not on_dike,
+                f"structure(s)/windbreak clump(s) sitting ON the perimeter dike earthwork: {on_dike[:4]} - the dike is a raised bank, not building ground; houses and the windbreak keep off it",
             )
 
     # A polder's PARCEL fabric must VARY (researched 2026-07-21; grounding in build_polder's docstring).

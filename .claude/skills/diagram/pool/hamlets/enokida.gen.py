@@ -49,6 +49,10 @@ _rng = _random.Random(SEED ^ 0x3B)
 _ex = max(p[0] for p in _env)
 _fcy = sum(p[1] for p in _env) / len(_env)
 CX, CY = _ex + 150, _fcy + 20
+# reserve a WINDWARD GAP over the northern third of the cluster so the NW windbreak has room east of the
+# dike while the south houses still hug the field (same rationale as Kuwabata; settlements.md 'Polder ring canal')
+_dike_e0 = max(p[0] for p in s.M["dikes"][0]["outline"])
+s.block_polys.append([(_dike_e0, CY - 300), (_dike_e0 + 96, CY - 300), (_dike_e0 + 96, CY - 70), (_dike_e0, CY - 70)])
 s.lane_skeleton("spine", CX, CY, 150, 300, clearance=34)
 _seeds = s.cluster_seeds("elongated", CX, CY, 180, 320, 90, _rng)
 _placed = 0
@@ -65,11 +69,17 @@ if _hs:
     _hx = sorted(h["x"] for h in _hs)
     _hy = sorted(h["y"] for h in _hs)
     s.place_wells((_hx[0] - 10, _hy[0] - 10, _hx[-1] + 10, _hy[-1] + 10), spacing=180, near=120)
-_belt = [(CX - 160, CY - 380), (CX + 160, CY - 380), (CX + 160, CY - 330), (CX - 160, CY - 330)]
+# the fengshui WINDBREAK wraps the cluster's WINDWARD (NW) fringe - an L covering the north end + the west
+# side (in the reserved gap), blocking the cold NW monsoon crossing the ponds (GM 2026-07-22)
+_hx1 = max(h["x"] + h["w"] / 2 for h in s.M["houses"])
+_hy0 = min(h["y"] - h["h"] / 2 for h in s.M["houses"])
+_warm0, _warm1 = _dike_e0 + 6, _dike_e0 + 92
+_belt = [(_warm0, _hy0 - 96), (_hx1 + 46, _hy0 - 96), (_hx1 + 46, _hy0 - 44), (_warm1, _hy0 - 44), (_warm1, CY - 80), (_warm0, CY - 80)]
 s.village_grove(_belt, role="windbreak")
 s.bridges()
 if s.M.get("field_ditches"):
-    s.channel_footbridges(spacing=320)
+    # crossings cluster on the settlement (east) side, sparse on the laterals, none on the unsettled ring sides
+    s.channel_footbridges(spacing=320, seg_caps={"feeder": 0, "w_toe": 0, "drain": 0, "e_toe": 3, "lateral": 1})
 s.hinterland(interior_fill=False)  # a polder is a SOLID block - no interior voids to clothe
 s.crop_to_content(margin=44)
 s.title("Enokida")
