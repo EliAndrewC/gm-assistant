@@ -5461,6 +5461,17 @@ def test_twin_axes_wide_cluster_and_bare_manifest():
     assert ax["water_source"] is None and ax["grain_orient"] is None and ax["focal_set"] == frozenset()
 
 
+def test_twin_axes_pond_layout_distinguishes_mosaic_from_grid():
+    # GM 2026-07-22: a mosaic dike-pond (桑基魚塘) and a surveyed grid polder (圩田) of the same water
+    # direction are different KINDS of place; pond_layout is a twin axis so the detector counts the difference.
+    assert "pond_layout" in check_village.TWIN_AXES
+    assert check_village.twin_axes({"meta": {"name": "G", "down_deg": 45}})["pond_layout"] == "grid"  # default
+    assert check_village.twin_axes({"meta": {"name": "M", "down_deg": 45, "pond_layout": "mosaic"}})["pond_layout"] == "mosaic"
+    grid = check_village.twin_axes({"meta": {"name": "G", "down_deg": 45, "field_archetype": "polder_grid"}})
+    mosaic = check_village.twin_axes({"meta": {"name": "M", "down_deg": 45, "pond_layout": "mosaic"}})
+    assert check_village.twin_diff_count(grid, mosaic) >= 1  # they differ on at least the pond_layout axis
+
+
 def test_twin_report_none_axes_are_no_evidence_not_a_diff():
     # a fully-featured map vs a bare one: the bare map's None axes must NOT count as differences (a data
     # gap cannot manufacture distinctiveness) -> the pair stays TWINNED, not spuriously PASS

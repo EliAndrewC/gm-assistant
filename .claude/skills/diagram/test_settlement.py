@@ -2916,6 +2916,40 @@ def test_wall_tower_spacing_px_unknown_tier_falls_back_to_garrison():
     assert settlement.wall_tower_spacing_px(ppf, "nonsense") == settlement.wall_tower_spacing_px(ppf, "garrison")
 
 
+def test_build_polder_mosaic_knob():
+    # GM 2026-07-22: the `mosaic` knob roughs a surveyed polder GRID into an accreted, creek-fitted MOSAIC
+    # (some 桑基魚塘 dike-pond districts read that way; some 圩田 polders read as the clean grid). It must be
+    # deterministic, byte-identical at mosaic=0 (a separate rng drives it), CHANGE the geometry when on, and
+    # make the parcels measurably MORE irregular (skewed toward trapezoids: larger opposite-edge angles).
+    from waterfields import build_polder
+
+    kw = {"down_deg": 90, "rows": 10, "cols": 6, "cell": 160, "parcel_mix": (0.10, 0.0, 0.60), "gap": (11.0, 11.0), "edge_wander": 0.4}
+    grid = build_polder(2200, 2600, (360, 320), 21, mosaic=0.0, **kw)
+    mos = build_polder(2200, 2600, (360, 320), 21, mosaic=0.5, **kw)
+    assert build_polder(2200, 2600, (360, 320), 21, **kw)["plots"] == grid["plots"]  # mosaic=0 == default (byte-stable)
+    assert build_polder(2200, 2600, (360, 320), 21, mosaic=0.5, **kw)["plots"] == mos["plots"]  # deterministic
+    assert mos["plots"] != grid["plots"]  # the knob changes the geometry
+
+    def mean_skew(net):
+        vals = []
+        for p in net["plots"]:
+            q = p["poly"]
+            if len(q) != 4:
+                continue
+
+            def opp(a, b, c, d):
+                v1 = (b[0] - a[0], b[1] - a[1])
+                v2 = (d[0] - c[0], d[1] - c[1])
+                l1 = math.hypot(*v1) or 1.0
+                l2 = math.hypot(*v2) or 1.0
+                return math.degrees(math.acos(max(-1.0, min(1.0, abs(v1[0] * v2[0] + v1[1] * v2[1]) / (l1 * l2)))))
+
+            vals.append(max(opp(q[0], q[1], q[3], q[2]), opp(q[1], q[2], q[0], q[3])))  # angle between opposite edges
+        return sum(vals) / len(vals)
+
+    assert mean_skew(mos) > mean_skew(grid) * 1.15  # the mosaic parcels run visibly more to trapezoids
+
+
 def test_perimeter_dike_gap_off_band_still_draws_full_loop():
     # GM 2026-07-22 (issue 1): perimeter_dike NOTCHES the earthwork at each sluice-crossing gap. A gap point
     # placed FAR from the band keeps every dense point, so the band draws as one full loop (the defensive
