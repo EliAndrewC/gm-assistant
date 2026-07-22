@@ -34,6 +34,14 @@ net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=10, cols=6, cell=160, p
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.meta(dry_furrows_vary=False)
 
+# the PERIMETER DIKE - the defining polder feature, an irregular hand-piled EARTHWORK BAND following the
+# natural water edge in organic non-square bends (fish-scale polder 鱼鳞圩; see s.perimeter_dike +
+# settlements.md 'Perimeter dike'). Drawn FIRST (a ground layer): the fields + ring canal draw ON TOP, so
+# the ring reads running along the dike's inner toe and the inlet/outfall channels read as SLUICES cutting
+# THROUGH the dike (water crosses the dike only there); the east-side houses draw on top later.
+_env = net["envelope"]
+s.perimeter_dike(_env, seed=SEED ^ 0x6D)
+
 # the water SOURCE is a header reservoir (the wild water the inlet sluice draws from) sitting OUTSIDE
 # the dike above the high (NW) corner - the feeder ring canal is charged through a sluice in the dike
 _nw = net["envelope"][0]
@@ -46,18 +54,16 @@ import random as __r
 # not just the low hollows. Everywhere else the overlay is topographically filtered. See research.md D2.
 s.apply_land_use(net, "mulberry_fishpond", __r.Random(SEED ^ 0x55), fraction=0.9, eligible="all")
 
-# the PERIMETER DIKE - the defining polder feature, drawn as an irregular hand-piled EARTHWORK BAND that
-# follows the natural water edge in organic non-square bends (the fish-scale polder 鱼鳞圩 form; see
-# s.perimeter_dike + settlements.md 'Perimeter dike'). The rectilinear grid inside is the SURVEYED part;
-# the outer dike is the organic part. Drawn HERE (before the village) so it sits UNDER the east-side houses.
-_env = net["envelope"]
-s.perimeter_dike(_env, seed=SEED ^ 0x6D)
-
 # the village lines the dry EAST perimeter dike
 _rng = _random.Random(SEED ^ 0x3B)
 _ex = max(p[0] for p in _env)
 _fcy = sum(p[1] for p in _env) / len(_env)
 CX, CY = _ex + 150, _fcy + 20
+# reserve a WINDWARD GAP over the NORTHERN third of the cluster (a no-build strip east of the dike): the
+# north houses shift east to leave room for the NW windbreak, while the south houses still hug the field
+# (field_ringed). This is the only way to fit a west windbreak against an east-dike village facing the ponds.
+_dike_e0 = max(p[0] for p in s.M["dikes"][0]["outline"])
+s.block_polys.append([(_dike_e0, CY - 300), (_dike_e0 + 96, CY - 300), (_dike_e0 + 96, CY - 70), (_dike_e0, CY - 70)])
 s.lane_skeleton("spine", CX, CY, 150, 300, clearance=34)
 _seeds = s.cluster_seeds("elongated", CX, CY, 180, 320, 90, _rng)
 _placed = 0
@@ -74,11 +80,23 @@ if _hs:
     _hx = sorted(h["x"] for h in _hs)
     _hy = sorted(h["y"] for h in _hs)
     s.place_wells((_hx[0] - 10, _hy[0] - 10, _hx[-1] + 10, _hy[-1] + 10), spacing=180, near=120)
-_belt = [(CX - 160, CY - 380), (CX + 160, CY - 380), (CX + 160, CY - 330), (CX - 160, CY - 330)]
+# the fengshui WINDBREAK wraps the cluster's WINDWARD (NW) fringe - the cold winter monsoon blows from the
+# NW (windward default), so the belt is an L covering the NORTH end AND the WEST side of the house strip
+# (GM 2026-07-22: a purely-north belt left the west of the farmhouses exposed). The west arm sits in the
+# gap between the houses and the dike, blocking the wind that crosses the ponds; both arms stay off the dike.
+_hx0 = min(h["x"] - h["w"] / 2 for h in s.M["houses"])
+_hx1 = max(h["x"] + h["w"] / 2 for h in s.M["houses"])
+_hy0 = min(h["y"] - h["h"] / 2 for h in s.M["houses"])
+_hy1 = max(h["y"] + h["h"] / 2 for h in s.M["houses"])
+_warm0, _warm1 = _dike_e0 + 6, _dike_e0 + 92  # the west arm fills the reserved windward gap (north third)
+_belt = [(_warm0, _hy0 - 96), (_hx1 + 46, _hy0 - 96), (_hx1 + 46, _hy0 - 44), (_warm1, _hy0 - 44), (_warm1, CY - 80), (_warm0, CY - 80)]  # L: north arm + west arm down the gap
 s.village_grove(_belt, role="windbreak")
 s.bridges()
 if s.M.get("field_ditches"):
-    s.channel_footbridges(spacing=320)
+    # crossings CLUSTER on the settlement (east) side, sparse on the interior laterals, NONE on the unsettled
+    # feeder / far toe / drain (research 2026-07-22, settlements.md 'Polder ring canal'): people cross to the
+    # fields where they live and then walk the bund network, so plank counts are capped per ring side.
+    s.channel_footbridges(spacing=320, seg_caps={"feeder": 0, "w_toe": 0, "drain": 0, "e_toe": 3, "lateral": 1})
 s.hinterland(interior_fill=False)  # a polder is a SOLID block - no interior voids to clothe
 s.crop_to_content(margin=44)
 s.title("Kuwabata")

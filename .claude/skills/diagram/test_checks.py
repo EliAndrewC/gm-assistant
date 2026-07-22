@@ -5401,6 +5401,17 @@ def test_polder_field_must_fill_its_bbox():
     assert "polder_fills_its_bbox" in f(fan)
 
 
+def test_structures_clear_of_dike():
+    # GM 2026-07-22: no farmhouse and no windbreak clump may sit ON the perimeter dike earthwork band.
+    dike = [[100, 100], [900, 100], [900, 900], [100, 900]]
+    base = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}, "dikes": [{"outline": dike, "w_min": 14.0, "w_max": 38.0}]}
+    assert "structures_clear_of_dike" in f({**base, "houses": [{"x": 500, "y": 500, "w": 40, "h": 26, "rot": 0, "kind": "plain"}]})  # house on the dike
+    assert "structures_clear_of_dike" in f({**base, "village_groves": [{"clumps": [[500, 500], [1200, 1200]]}]})  # a clump on the dike
+    assert "structures_clear_of_dike" not in f({**base, "houses": [{"x": 1200, "y": 500, "w": 40, "h": 26, "rot": 0, "kind": "plain"}], "village_groves": [{"clumps": [[1200, 1200]]}]})
+    # a non-polder map (no dike) never trips it
+    assert "structures_clear_of_dike" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "houses": [{"x": 500, "y": 500, "w": 40, "h": 26, "rot": 0, "kind": "plain"}]})
+
+
 def test_polder_channels_clear_of_dike():
     # GM 2026-07-22: the polder ring canal runs on the INNER TOE of the dike (field side); an irrigation
     # channel buried in the dike band fires (>4 points), a couple of sluice crossings are fine.

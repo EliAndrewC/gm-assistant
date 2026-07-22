@@ -194,9 +194,13 @@ one-gate rule, and it removes an inconsistency (the map already put a flophouse 
 but a market at only one). Applied: **Tango** gained a smaller north-gate market (its two gates both
 sit on the N-S Imperial road; the south market stays the larger); **Nagahara**'s north (highway)
 gate gained a small stall cluster to sit alongside its river-gate WHARF suburb. The scale asymmetry
-(big vs. small) is deliberate and matches the 大关厢/small distinction. *Caveat:* a genuinely minor
-sally-gate off any main road would historically stay marketless, but the pool cities have no such
-gate (every drawn gate carries a through-road), so the "every gate" rule is exact for them.
+(big vs. small) is deliberate and matches the 大关厢/small distinction. The rule is scoped to
+**main-road gates** (GM 2026-07-22): a purely military SALLY gate is traffic-free - it opens onto
+empty field for siege sorties, with no road, market, flophouse, or caravan - so it carries no
+*guan-xiang* and is exempt. The pool cities have no sally-gate (every drawn gate is a main road/river
+gate, all held in `M["gates"]`), so "every gate in `gates`" already equals "every main-road gate."
+A future sally-gate knob would store its gates separately, and the market/flophouse/caravan checks
+(which iterate `gates`) would skip them automatically.
 
 The *reliability* caveat mirrors the lodging findings: the *guanxiang* is best-documented for the
 great capitals (Beijing), and the exact per-gate scale for a mid-size provincial seat is thinner -
