@@ -5335,13 +5335,16 @@ class Settlement:
                 self.M["gate_structs"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "kind": kind, "z": z})
                 if kind == "inspection":
                     self.M["inspection_stations"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "label": "inspection station"})
-            # the gate guard TOWER straddles the WALL just east of the gate, likewise tilted to the wall
-            # there - and NUDGED INWARD so its footing stands on the berm, not in the moat (below)
-            _arc = 78
-            twx, twy, tang_e = self._wall_walk(pts, g_idx, _arc, west=g_east)
-            # walk the tower along the wall until it clears BOTH any kido spot AND this gate's guard
-            # house / inspection footprints - the two sit on opposite flanks of the gate but converge
-            # near the opening on a tight ring (city_gate_towers_clear_of_gate_furniture, GM 2026-07)
+            # the gate guard TOWER straddles the WALL beside the gate, tilted to the wall there and NUDGED
+            # INWARD so its footing stands on the berm (below). It belongs AT the gate: try the near-gate
+            # spot on the PRIMARY flank first, then the OTHER flank at the SAME short arc, and only THEN
+            # step outward - so a kido or the gate furniture blocking one flank sends the tower to the
+            # gate's OTHER side (still at the opening), not marooned far out among the mural bastions (GM
+            # 2026-07-22: the S gate's tower had walked to arc 118 to dodge a ward-gate kido, stranding a
+            # small gate tower mid-curtain while a mamian seated at the gate). Gated by
+            # city_gate_tower_at_its_gate. The tower must clear BOTH any kido spot AND this gate's guard
+            # house / inspection footprints (they sit on opposite flanks but converge near the opening on a
+            # tight ring - city_gate_towers_clear_of_gate_furniture, GM 2026-07).
             _gfurn = [(f["x"], f["y"], f["w"], f["h"]) for f in self.M["gate_structs"] if f.get("kind") in ("guardhouse", "inspection")][-2:]
 
             def _tower_blocked(tx: float, ty: float, _gfurn: Any = _gfurn) -> bool:  # bind loop var (used within this iteration)
@@ -5349,9 +5352,12 @@ class Settlement:
                     return True
                 return any(abs(tx - fx) < (self.px(62) + fw) / 2 + 3 and abs(ty - fy) < (self.px(62) + fh) / 2 + 3 for fx, fy, fw, fh in _gfurn)
 
-            while _tower_blocked(twx, twy) and _arc < 240:
-                _arc += 20  # a kido or the gate furniture sits there - walk the tower further along the wall
-                twx, twy, tang_e = self._wall_walk(pts, g_idx, _arc, west=g_east)
+            _cands = [(a, wf) for a in range(78, 241, 20) for wf in (g_east, not g_east)]  # near-gate first, BOTH flanks per arc; step out only as a last resort
+            twx = twy = tang_e = 0.0
+            for _ci, (_a, _wf) in enumerate(_cands):
+                twx, twy, tang_e = self._wall_walk(pts, g_idx, _a, west=_wf)
+                if not _tower_blocked(twx, twy) or _ci == len(_cands) - 1:
+                    break
             ta = (tang_e + 90) % 180 - 90
             twx, twy = _berm_nudge(twx, twy, self.px(30))
             tz = self._tower(twx, twy, ta, wc, along_ft=52, deep_ft=30)

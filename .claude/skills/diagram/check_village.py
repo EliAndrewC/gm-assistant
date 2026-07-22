@@ -7034,6 +7034,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"gate(s) whose guard house + inspection station are not at the throat (each within {THROAT}px of the opening, flanking the road): {throat_bad} - "
                 f"the checkpoint sits AT the gate so all traffic passes through it, not walked back along the wall",
             )
+            # the gate's own (smaller) TOWER must sit AT its gate - the CLOSEST tower to the opening, not
+            # marooned out along the curtain with a mural bastion seated nearer (GM 2026-07-22: the S gate's
+            # tower had walked to arc 118 to dodge a ward-gate kido, reading as a random small tower
+            # mid-wall while a mamian sat at the gate). A gate tower is a gate_structs "tower"; every other
+            # wall_tower is a mamian. When one flank of the gate is blocked the tower takes the OTHER flank
+            # at the opening (city_wall does this), so it should never be out-distanced by a mural.
+            gate_towers_xy = [(g["x"], g["y"]) for g in gstructs if g.get("kind") == "tower"]
+            murals_xy = [(t["x"], t["y"]) for t in M.get("wall_towers", []) if not any(abs(t["x"] - gtx) < 2 and abs(t["y"] - gty) < 2 for gtx, gty in gate_towers_xy)]
+            stranded = []
+            for g in gates:
+                if not gate_towers_xy:
+                    continue
+                d_gate_tower = min(math.hypot(tx - g[0], ty - g[1]) for tx, ty in gate_towers_xy)
+                d_nearest_mural = min((math.hypot(tx - g[0], ty - g[1]) for tx, ty in murals_xy), default=1e9)
+                if d_nearest_mural + 12 < d_gate_tower:  # a mamian sits meaningfully closer to the gate than the gate's own tower
+                    stranded.append((round(g[0]), round(g[1])))
+            check(
+                "city_gate_tower_at_its_gate",
+                not stranded,
+                f"gate(s) whose own tower is marooned out along the wall while a mural bastion sits closer to the opening: {stranded} - "
+                f"the gate tower belongs AT the gate (place it on the gate's OTHER flank when one side is blocked, not walked far along the curtain)",
+            )
             # a fortified city is TOWERED for enfilading fire along the wall face: guard towers spaced
             # at regular intervals around the whole rampart (a bowshot apart), not only at the gates -
             # so no long bare arc of wall sits uncovered. Spacing is judged by the widest angular gap
