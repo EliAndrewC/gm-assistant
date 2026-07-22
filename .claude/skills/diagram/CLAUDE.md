@@ -6,9 +6,27 @@ auto-loads whenever a session edits files in this directory - which is exactly w
 
 The project-wide iteration doctrine lives in the root [`CLAUDE.md`](../../../CLAUDE.md)
 "Iteration-loop efficiency" section (batch recon into fewer bigger turns; iterate on the ONE
-motivating map, then sweep the pool once at the end; background the final gate; never cut the
-ritual/guardrail steps). Read that first. Below are the DIAGRAM-SPECIFIC lessons that section
-does not cover - each earned by costing real round-trips.
+motivating artifact, then run the full test bed once at the end; background the final gate; never
+cut the ritual/guardrail steps). Read that first; this file carries the concrete diagram numbers
+and the DIAGRAM-SPECIFIC lessons that section does not cover - each earned by costing real
+round-trips.
+
+## Gate and sweep timings (the motivating-artifact loop, concretely)
+
+The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
+numbers. A single map's regen + gate is ~1-7s:
+
+    DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
+
+The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
+it - is ~1 minute. So run the red/green loop against the ONE map (or fixture) that shows the defect,
+where cycles are near-free, and reserve the full sweep for AFTER that map is green. The sweep is
+MANDATORY, though, whenever shared engine code changed (`settlement.py`, `check_village.py`,
+`waterfields.py`): every pool map is a downstream artifact of the engine, so the sweep is what
+proves "no other map regressed" instead of hoping it. Anti-patterns on record: the scale-bar
+feature used the full suite as its FIRST check of an engine change - a failure that would have
+surfaced in ~6s on one map surfaced 17 minutes in; the swept-collar check (11m07s wall) is the
+feature the project-wide 78%-turn-latency profile was taken from.
 
 ## Batch the rendered-map inspection
 
