@@ -1425,7 +1425,12 @@ class Settlement:
         # plots and draws OVER every paddy, exactly as the hand-drawn maps intend. The cities
         # discovered the early-anchor half of this and patched it per-gen (tango/nagahara
         # `late=True`); this makes it automatic and closes their residual multi-fan hole too.
-        for c in sorted(net["channels"], key=lambda c: -c["w"]):
+        # the POLDER RING trunk (feeder / drain / toe collectors) draws LAST, ON TOP of the laterals that feed
+        # it, so every lateral-to-trunk junction is a clean T covered by the trunk - not a lateral end poking a
+        # stub past the trunk into the dike corridor (GM 2026-07-22). Comb nets set no `seg`, so their draw
+        # order (widest-first) is unchanged and byte-identical; only the polder ring re-sorts.
+        _ring_last = {"feeder", "drain", "e_toe", "w_toe"}
+        for c in sorted(net["channels"], key=lambda c: (c.get("seg") in _ring_last, -c["w"])):
             self.field_channel(c["pts"], "#7C9EB0" if c["role"] == "drain" else "#6C9CBE", c["w"], c.get("w_tail", c["w"]), late=True)
         if net["brook"]:
             # the drain-outfall brook shoots STRAIGHT downhill off-map (a fan field's own wiggly brook can
@@ -1678,18 +1683,64 @@ class Settlement:
         # 50% the same year, on identical terrain.
         take = min(len(elig), max(2, round(len(elig) * fraction)))
         chosen = self._pick_overlay_plots(elig, take, clustered=(overlay == "mulberry_fishpond" and eligible != "all"), rng=rng)
+        dikeponds: list[dict[str, Any]] = []
         for p in chosen:
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
-            self.add(f'<polygon points="{pts}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
             cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
             cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
-            if overlay == "mulberry_fishpond":  # a green mulberry DIKE rim around the fish pond
-                self.add(f'<polygon points="{pts}" fill="none" stroke="#6E8B4A" stroke-width="3" stroke-linejoin="round" opacity="0.8"/>')
-            elif overlay == "lotus":  # a few lily pads / blooms
+            if overlay == "mulberry_fishpond":
+                # 桑基魚塘: a raised MULBERRY DIKE (基, green, planted) surrounds an inset fish POND (塘, water).
+                # The pond water sits WITHIN the green banks (not teal filling the whole parcel to its edge) and
+                # its dug corners are ROUNDED - an earthen pond erodes to a rounded outline, never the poured-
+                # concrete right angle a premodern village had no way to make (GM 2026-07-22, issues 3 + 5). So
+                # fill the parcel with the mulberry-bank green, then draw an inset, corner-filleted water body.
+                self.add(f'<polygon points="{pts}" fill="#94A968" stroke="#6E8B4A" stroke-width="2" stroke-linejoin="round" opacity="0.95"/>')
+                wd, wpoly = self._rounded_pond(p["poly"], inset=11.0, reach=16.0, rng=rng)
+                self.add(f'<path d="{wd}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.4"/>')
+                dikeponds.append({"parcel": [[round(x, 1), round(y, 1)] for x, y in p["poly"]], "water": [[round(x, 1), round(y, 1)] for x, y in wpoly]})
+            else:  # lotus - a DEEP-WATER lotus field (teal plot body + a few lily pads / blooms)
+                self.add(f'<polygon points="{pts}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
                 self.add("".join(f'<circle cx="{cx + rng.uniform(-14, 14):.1f}" cy="{cy + rng.uniform(-10, 10):.1f}" r="{rng.uniform(2.5, 4):.1f}" fill="#C98BA6" opacity="0.85"/>' for _ in range(3)))
             n += 1
+        if dikeponds:
+            self.M["dikeponds"] = dikeponds
         self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen]})
         return n
+
+    @staticmethod
+    def _rounded_pond(poly: Sequence[Pt], inset: float, reach: float, rng: random.Random) -> tuple[str, Poly]:
+        """A dug fish-pond within its mulberry-dike parcel: homothetically INSET the parcel (so a green bank
+        shows all round - the pond never reaches the parcel edge) and ROUND every corner with a quadratic
+        fillet of slightly irregular reach (erosion). Returns (svg path `d`, sampled water polygon) - the
+        sample carries the rounding into the manifest so the checks can see the pond is inset + rounded."""
+        n = len(poly)
+        cx = sum(q[0] for q in poly) / n
+        cy = sum(q[1] for q in poly) / n
+        mids = [((poly[i][0] + poly[(i + 1) % n][0]) / 2, (poly[i][1] + poly[(i + 1) % n][1]) / 2) for i in range(n)]
+        apo = sum(math.hypot(mx - cx, my - cy) for mx, my in mids) / n  # centroid->edge-midpoint (the apothem)
+        scale = max(0.4, 1.0 - inset / max(1.0, apo))
+        ins = [(cx + (q[0] - cx) * scale, cy + (q[1] - cy) * scale) for q in poly]
+
+        def toward(frm: Pt, to: Pt, dist: float) -> Pt:
+            vx, vy = to[0] - frm[0], to[1] - frm[1]
+            ln = math.hypot(vx, vy) or 1.0
+            dd = min(dist, ln * 0.45)
+            return (frm[0] + vx / ln * dd, frm[1] + vy / ln * dd)
+
+        a_in: Poly = []
+        b_out: Poly = []
+        for i in range(n):
+            r = reach * rng.uniform(0.8, 1.15)
+            a_in.append(toward(ins[i], ins[(i - 1) % n], r))
+            b_out.append(toward(ins[i], ins[(i + 1) % n], r))
+        d = f"M {b_out[0][0]:.1f} {b_out[0][1]:.1f} "
+        sample: Poly = [b_out[0]]
+        for i in range(1, n + 1):
+            j = i % n
+            d += f"L {a_in[j][0]:.1f} {a_in[j][1]:.1f} Q {ins[j][0]:.1f} {ins[j][1]:.1f} {b_out[j][0]:.1f} {b_out[j][1]:.1f} "
+            mid = (0.25 * a_in[j][0] + 0.5 * ins[j][0] + 0.25 * b_out[j][0], 0.25 * a_in[j][1] + 0.5 * ins[j][1] + 0.25 * b_out[j][1])
+            sample += [a_in[j], mid, b_out[j]]
+        return d + "Z", sample
 
     @staticmethod
     def _pick_overlay_plots(eligible: list[Any], take: int, clustered: bool, rng: random.Random) -> list[Any]:
@@ -3877,7 +3928,7 @@ class Settlement:
         circles = [(o["x"], o["y"], o.get("vr", o["r"]) + wh) for o in self.M.get("wells", []) if bx0 - 40 <= o["x"] <= bx1 + 40 and by0 - 40 <= o["y"] <= by1 + 40]
         return rects, circles
 
-    def perimeter_dike(self, inner_env: Any, seed: int = 0, label: str = "perimeter dike", width: tuple[float, float] = (14.0, 40.0)) -> None:
+    def perimeter_dike(self, inner_env: Any, seed: int = 0, label: str = "perimeter dike", width: tuple[float, float] = (14.0, 40.0), gaps: Any = ()) -> None:
         """A reclaimed-polder PERIMETER DIKE, drawn as an irregular hand-piled EARTHWORK BAND (not a ruled
         tan line). China-first grounding (research 2026-07-22, recorded in settlements.md 'Perimeter dike'):
         a wei-tian 圩田 / dike-pond dike was dredged pond-mud heaped and packed (the 挖塘培基 dig-and-pile
@@ -3934,7 +3985,35 @@ class Settlement:
             inner_s.append((x + nx * R.uniform(0.0, 3.0), y + ny * R.uniform(0.0, 3.0)))
         band = [*outer_s, *reversed(inner_s)]
         d = smooth_closed(band)
-        self.add(f'<path d="{d}" fill="{BUND}" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
+        # SLUICE GAPS (GM 2026-07-22): where a channel crosses the dike (the inlet + outfall sluices), the
+        # earthwork is NOTCHED - a dug gap the water runs THROUGH - instead of the dike running unbroken under
+        # the channel (which read as the water flowing OVER the top of the bank). Split the band into the runs
+        # BETWEEN the gaps and draw each as its own capped strip; with no gaps this is the single full loop,
+        # byte-identical to before. Keep-out, label, width and the recorded outline still use the FULL band.
+        gap_pts = [(float(gx), float(gy)) for gx, gy in gaps]
+        gap_hw = 15.0
+        if gap_pts:
+            keep = [all(math.hypot(x - gx, y - gy) > gap_hw for gx, gy in gap_pts) for x, y, _ei in dense]
+            runs: list[list[int]] = []
+            if all(keep):
+                runs = [list(range(n))]
+            else:
+                start = next(i for i in range(n) if not keep[i])
+                cur: list[int] = []
+                for j in range(n):
+                    i = (start + j) % n
+                    if keep[i]:
+                        cur.append(i)
+                    elif cur:
+                        runs.append(cur)
+                        cur = []
+                if cur:
+                    runs.append(cur)
+            run_paths = [smooth_closed([outer_s[i] for i in run] + [inner_s[i] for i in reversed(run)]) for run in runs if len(run) >= 2]
+        else:
+            run_paths = [d]
+        for rp in run_paths:
+            self.add(f'<path d="{rp}" fill="{BUND}" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
         # MOTTLE + VEGETATION: clip to the band, then scatter earth-tone patches (patch-repairs of different
         # ages), the soil-binding mulberry/willow tree dots, and a faint walked crest path - so the dike reads
         # as a planted lived-on bank, never a uniform stroke.
@@ -3944,7 +4023,7 @@ class Settlement:
         cid = self._cid("dike")
         st = random.getstate()
         random.seed(seed ^ 0x1D)
-        g = [f'<clipPath id="{cid}"><path d="{d}"/></clipPath>', f'<g clip-path="url(#{cid})">']
+        g = [f'<clipPath id="{cid}">' + "".join(f'<path d="{rp}"/>' for rp in run_paths) + "</clipPath>", f'<g clip-path="url(#{cid})">']
         for _ in range(int((bx1 - bx0 + by1 - by0) * 1.6)):
             px, py = random.uniform(bx0, bx1), random.uniform(by0, by1)
             if not point_in_poly(px, py, smoothed):
@@ -3961,7 +4040,15 @@ class Settlement:
         g.append("</g>")
         self.add("".join(g))
         random.setstate(st)
-        self.M.setdefault("dikes", []).append({"outline": [[round(p[0], 1), round(p[1], 1)] for p in smoothed], "label": label, "w_min": round(min(w_seen), 1), "w_max": round(max(w_seen), 1)})
+        self.M.setdefault("dikes", []).append(
+            {
+                "outline": [[round(p[0], 1), round(p[1], 1)] for p in smoothed],
+                "label": label,
+                "w_min": round(min(w_seen), 1),
+                "w_max": round(max(w_seen), 1),
+                "gaps": [[round(gx, 1), round(gy, 1)] for gx, gy in gap_pts],
+            }
+        )
         # the dike is a raised earthwork bank - NO-BUILD ground: houses and the windbreak grove keep OFF it
         # (GM 2026-07-22). Register the band as a placement keep-out so try_place / farmsteads / village_grove
         # flow around it (validated by structures_clear_of_dike).

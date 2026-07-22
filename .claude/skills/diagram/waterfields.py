@@ -1249,6 +1249,7 @@ def build_polder(
     cell: float = 150,
     parcel_mix: tuple[float, float, float] = (0.52, 0.16, 0.12),
     gap: tuple[float, float] = (1.5, 4.0),
+    edge_wander: float = 0.0,
 ) -> dict[str, Any]:
     """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of paddies on flat reclaimed
     low ground, an orthogonal ditch-grid module inside a perimeter dike. Returns build_comb-compatible keys
@@ -1291,9 +1292,37 @@ def build_polder(
     dx, dy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))  # downhill (row) unit
     ux, uy = dy, -dx  # cross (column) unit - the grid extends to the +x/+cross side of the origin
     ox, oy = origin
+    span_s, span_t = rows * cell, cols * cell
+
+    # EDGE WANDER (GM 2026-07-22): a hand-dug polder is NOT a machine-perfect axis-aligned rectangle - its
+    # dikes follow the old water edge, so they run at a slight ANGLE and gently CHANGE direction with the
+    # ground (the 'fish-scale polder' 鱼鳞圩 read; a dead-straight right-angled block is the post-1949
+    # industrial shape). `edge_wander` (0 = the old dead-straight block) drives a SEPARABLE low-frequency
+    # deformation of the whole (s, t) grid: cwarp(s) shifts every contour-row in the CROSS direction (so all
+    # N-S dikes AND every interior column line share it and stay parallel while the block bends), fwarp(t)
+    # shifts every column in the FALL direction (E-W dikes + row lines, likewise). The linear term is an
+    # overall tilt (the dikes are not axis-perfect); the sines are the topology-following bends. Because
+    # EVERY point - envelope, parcels, ring canal, laterals, and the dike that follows the envelope - is
+    # placed through grid(), the whole polder warps as ONE coherent piece and each field edge stays parallel
+    # to its dike section (research 2026-07-22, settlements.md 'Polder edge wander'). Phases come from a
+    # SEPARATE rng so the main draw stream (and every edge_wander=0 map) stays byte-identical.
+    Rw = random.Random(seed ^ 0x5EED)
+    ac = af = cell * 0.9 * edge_wander  # cross / fall wander amplitude (~a module at edge_wander ~ 1)
+    tilt_s, tilt_t = Rw.uniform(-1, 1) * 0.05 * edge_wander, Rw.uniform(-1, 1) * 0.05 * edge_wander
+    cp1, cp2 = Rw.uniform(0, math.tau), Rw.uniform(0, math.tau)  # cross-warp phases
+    fp1, fp2 = Rw.uniform(0, math.tau), Rw.uniform(0, math.tau)  # fall-warp phases
+
+    def cwarp(s: float) -> float:
+        z = s / max(1.0, span_s)
+        return tilt_s * s + ac * (0.6 * math.sin(math.tau * 0.8 * z + cp1) + 0.4 * math.sin(math.tau * 1.7 * z + cp2))
+
+    def fwarp(t: float) -> float:
+        z = t / max(1.0, span_t)
+        return tilt_t * t + af * (0.6 * math.sin(math.tau * 0.7 * z + fp1) + 0.4 * math.sin(math.tau * 1.6 * z + fp2))
 
     def grid(s: float, t: float) -> Pt:
-        return (ox + dx * s + ux * t, oy + dy * s + uy * t)
+        cs, fs = cwarp(s), fwarp(t)
+        return (ox + dx * (s + fs) + ux * (t + cs), oy + dy * (s + fs) + uy * (t + cs))
 
     # jittered bund-node lattice in (s, t) space. Perimeter nodes stay PINNED so the block envelope is
     # straight; only interior nodes waver (minor bunds). A narrow RING corridor (~14 px ~14 ft) is reserved
@@ -1306,7 +1335,6 @@ def build_polder(
     # envelope keeps the full span (the dike's inner face sits on it).
     J = 6.0
     RING = 18.0
-    span_s, span_t = rows * cell, cols * cell
     t_step = (span_t - 2 * RING) / cols
     s_step = (span_s - 2 * RING) / rows
 
@@ -1369,7 +1397,15 @@ def build_polder(
                     for f0, f1 in zip(fs, fs[1:], strict=False):
                         emit([lerp(tl, tr, f0), lerp(tl, tr, f1), lerp(bl, br, f1), lerp(bl, br, f0)], r)
             r = r1
-    envelope = [grid(0, 0), grid(0, span_t), grid(span_s, span_t), grid(span_s, 0), grid(0, 0)]
+    # densify the envelope so the edge-wander CURVATURE is carried into the drawn field, the perimeter dike
+    # that follows it, and the recorded outline - 4 bare corners would read as straight edges between them
+    _ecorn = [(0.0, 0.0), (0.0, span_t), (span_s, span_t), (span_s, 0.0)]
+    envelope = []
+    for _i in range(4):
+        _ea, _eb = _ecorn[_i], _ecorn[(_i + 1) % 4]
+        for _k in range(12):
+            envelope.append(grid(_ea[0] + (_eb[0] - _ea[0]) * _k / 12, _ea[1] + (_eb[1] - _ea[1]) * _k / 12))
+    envelope.append(envelope[0])
     # THE WATER NETWORK IS A CONNECTED INNER RING CANAL (researched 2026-07-22; GM-flagged the old feeder,
     # which ran at s=-12 / s=span+12 - OUTSIDE the envelope, so once the dike became a wide earthwork band
     # the trunk canal sat buried IN the dike). The correct polder hydrology: the trunk canal rings the block
@@ -1431,7 +1467,10 @@ def build_polder(
     # the feeder is recorded NW-end-last, then extended with a short INLET STUB up through the dike to the
     # pond rim - a visible sluice channel so the pond plainly charges the ring (the source->field hairline
     # anchors at the stub's far end for the topology)
-    feeder_rev = [*reversed(sides_st[0]), (-52.0, fi + cr)]
+    # the inlet stub angles up toward the NW corner (t -> fi), not straight out at constant t: under
+    # edge_wander a constant-t stub met the feeder at a ~90 deg bend that the warp tipped past 90 into an
+    # acute turn (water_channels_obtuse_turns); heading toward the corner keeps the feeder->stub bend obtuse.
+    feeder_rev = [*reversed(sides_st[0]), (-52.0, fi)]
     sluice = grid(fi, fi)  # the nominal NW inlet corner
 
     # `seg` tags each ring side so footbridge placement is side-aware (research 2026-07-22: crossings cluster
@@ -1447,14 +1486,32 @@ def build_polder(
         _seg(sides_st[2], "drain", 5.0, 5.0, "drain"),  # bottom = drain collector (cross-slope)
         _seg(sides_st[3], "lateral", 3.4, 3.0, "w_toe"),  # west toe collector
     ]
+
+    def _s_on_side(side_st: list[tuple[float, float]], tq: float) -> float:
+        # the s-coordinate where a ring side (mostly t-monotone) crosses cross-coord tq, so a lateral's END
+        # lands EXACTLY on the feeder/drain centerline - no stub poking past the trunk into the dike corridor
+        # (the 'little bit sticking out at the top' the GM flagged 2026-07-22), and no gap short of it.
+        for i in range(len(side_st) - 1):
+            ta, tb = side_st[i][1], side_st[i + 1][1]
+            if (ta <= tq <= tb or tb <= tq <= ta) and tb != ta:
+                k = (tq - ta) / (tb - ta)
+                return side_st[i][0] + k * (side_st[i + 1][0] - side_st[i][0])
+        return side_st[0][0] if abs(tq - side_st[0][1]) < abs(tq - side_st[-1][1]) else side_st[-1][0]
+
     for c in range(1, cols):  # the laterals, one per interior column line, feeder (top) -> drain (bottom)
         tc = tt(c)
-        lat_pts = [(fi, tc), *[nodes[r][c] for r in range(rows + 1)], (di, tc)]
+        # SNAP the lateral's ends onto the feeder (top) + drain (bottom) centerlines so it FEEDS them at a
+        # clean T-junction instead of overshooting past the trunk (issue: laterals stuck out above the feeder)
+        lat_pts = [(_s_on_side(sides_st[0], tc), tc), *[nodes[r][c] for r in range(rows + 1)], (_s_on_side(sides_st[2], tc), tc)]
         d = {"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4, "seg": "lateral"}
         channels.append(d)
     out_t = span_t * 0.5  # the outfall taps the drain at mid-south and runs off-map downhill
     brook_start, brook_dir = grid(di, out_t), grid(di + 40, out_t)
     brook = [(round(brook_start[0], 1), round(brook_start[1], 1)), (round(brook_dir[0], 1), round(brook_dir[1], 1))]
+    # WHERE THE WATER CROSSES THE DIKE: the inlet sluice (top edge, at the feeder's NW corner) and the outfall
+    # sluice (bottom edge, at the drain's mid-south tap). The gen hands these to perimeter_dike so the dike is
+    # NOTCHED (a dug gap) there instead of the channel running OVER the top of the earthwork bank (GM 2026-07-22).
+    dike_sluices = [grid(0.0, fi + cr), grid(span_s, out_t)]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
     return {
         "channels": channels,
@@ -1469,6 +1526,7 @@ def build_polder(
         "bund_beans": [],
         "furrows_vary": False,
         "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
+        "dike_sluices": [(round(x, 1), round(y, 1)) for x, y in dike_sluices],
     }
 
 
