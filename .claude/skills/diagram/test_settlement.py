@@ -2164,6 +2164,28 @@ def test_perimeter_dike_draws_an_irregular_earthwork_band():
     assert s3.M["dikes"] and not any(len(lbl) > 5 and lbl[5] == "perimeter dike" for lbl in s3.M.get("labels", []))
 
 
+def test_village_grove_skips_the_dike_bank():
+    # a windbreak belt laid ACROSS the perimeter dike must place NO clump on the earthwork bank
+    # (GM 2026-07-22: the dike carries only its own soil-binding trees).
+    s = Settlement(1400, 1400, seed=3)
+    s.meta(name="G", scale="hamlet", ftpx=1, toscale=True, households=8, field_archetype="polder_grid")
+    s.perimeter_dike([(200, 200), (200, 1000), (900, 1000), (900, 200), (200, 200)], seed=5)
+    dike = s.M["dikes"][0]["outline"]
+
+    def pip(x, y, poly):
+        c, j = False, len(poly) - 1
+        for i in range(len(poly)):
+            xi, yi, xj, yj = poly[i][0], poly[i][1], poly[j][0], poly[j][1]
+            if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi + 1e-9) + xi:
+                c = not c
+            j = i
+        return c
+
+    s.village_grove([(150, 150), (360, 150), (360, 280), (150, 280)], role="windbreak")  # a belt straddling the NW dike
+    clumps = s.M["village_groves"][-1]["clumps"]
+    assert clumps and not any(pip(cx, cy, dike) for cx, cy in clumps)  # some clumps, none on the dike
+
+
 def test_build_polder_parcel_fabric():
     from waterfields import build_polder
 
@@ -2195,15 +2217,17 @@ def test_build_polder_parcel_fabric():
         cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
         assert p["low"] == (cy > 320 + RING + 9 * s_step)  # down_deg=90: low rows (r>=9) sit past ss(9)
     assert any(p["low"] for p in plots) and not all(p["low"] for p in plots)
-    # the water network: 1 head feeder + 1 drain + one lateral per interior column line, and every
-    # lateral's ends sit on the feeder / drain lines (the connected jingbang net)
-    roles = [ch["role"] for ch in net["channels"]]
-    assert roles.count("main") == 2 and roles.count("drain") == 1 and roles.count("lateral") == 7  # head + dike-top feeder; 5 interior + 2 toe ditches
+    # the water network is a CLOSED filleted RING (feeder top + 2 toe sides + drain bottom) tagged by `seg`,
+    # plus one lateral per interior column line. The interior laterals run from the feeder inner-toe line to
+    # the drain inner-toe line; the ring sides carry their seg tags.
+    segs = [ch.get("seg") for ch in net["channels"]]
+    assert segs.count("feeder") == 1 and segs.count("e_toe") == 1 and segs.count("w_toe") == 1 and segs.count("drain") == 1
+    assert segs.count("lateral") == 5  # one per interior column line (cols=6 -> 5)
+    roles = {ch.get("seg"): ch["role"] for ch in net["channels"] if ch.get("seg")}
+    assert roles["feeder"] == "main" and roles["drain"] == "drain" and roles["e_toe"] == "lateral"
     for ch in net["channels"]:
-        if ch["role"] != "lateral":
+        if ch.get("seg") != "lateral":  # only the interior column laterals run toe-to-toe
             continue
-        # laterals + toe ditches now run the INNER ring, from the feeder inner-toe line to the drain
-        # inner-toe line (RING*0.5 just inside the envelope), not the old s=+-12 outside the block
         assert abs(ch["pts"][0][1] - (320 + RING * 0.5)) < 1  # starts on the feeder inner-toe line
         assert abs(ch["pts"][-1][1] - (320 + 1650 - RING * 0.5)) < 1  # ends on the drain inner-toe line
     # pond-profile mix: merge-heavy, no 3-cuts, wide dike gaps -> fewer, larger, oblong parcels
