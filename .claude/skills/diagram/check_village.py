@@ -2137,6 +2137,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # hem plots, 2026-07-21) - so the largest single parcel is capped too: pool-wide the
         # honest maximum is ~0.30 acre (biggest hem parcel), villages max ~0.26
         _ds_max = max(_ds_areas)
+        # a garden VEGETABLE bed (daikon/greens/onions/beans - VEG_CROPS, in-wall intensive
+        # tracts) is hand-worked ground, distinctly SMALLER than a grain-field hem strip: cap
+        # each such plot at 0.15 real acres (fixed beds ~0.10; the pre-fix uneven column split
+        # left 0.24-acre veg slabs, the biggest dry parcels on the map - backwards for a kitchen
+        # garden; GM 2026-07-22). Only fires where veg crops exist (cities with a veg tract).
+        _vs_veg = [d for d in _ds_dps if d.get("crop") in {"daikon", "greens", "onions", "beans"}]
+        if _vs_veg:
+            _vs_big = []
+            for _vs_d in _vs_veg:
+                _vs_p = _vs_d["poly"]
+                _vs_a = abs(sum(_vs_p[i][0] * _vs_p[(i + 1) % len(_vs_p)][1] - _vs_p[(i + 1) % len(_vs_p)][0] * _vs_p[i][1] for i in range(len(_vs_p)))) / 2 * _ds_ftpx * _ds_ftpx / 43560
+                if _vs_a > 0.15:
+                    _vs_big.append(round(_vs_a, 3))
+            check(
+                "vegetable_beds_are_intensive",
+                not _vs_big,
+                f"{len(_vs_big)} vegetable-garden bed(s) larger than 0.15 real acres {sorted(_vs_big, reverse=True)[:4]} - "
+                f"an in-wall kitchen-garden tract is INTENSIVE hand-worked ground, its beds smaller than a grain-field "
+                f"hem strip, not the biggest dry parcels on the map (split the tract into even ~55 ft beds)",
+            )
         check(
             "dry_plots_to_scale",
             _ds_mean <= 0.25 and _ds_max <= 0.35,
