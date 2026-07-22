@@ -194,6 +194,7 @@ _OVERLAP_EXEMPT = {
     "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
     "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
     "clearings": "swept-ground records (the shrine keidai / torii sando collar / grave collar), not drawn features at all - they carry the cover-ordinal bookkeeping for scatter_respects_swept_clearings and deliberately CONTAIN their sacred/funerary feature",
+    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (carts, tethered animals, litter) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
@@ -1859,6 +1860,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # defect (the pre-feature Nagahara read fully green while ~17% of its interior was
     # unaccounted open ground); enclosing less starves the program. Open ground is credited
     # only as itemized budget lines (reserve/agri/extras) - never as ambient slack.
+    # every gate STABLES carries its drawn beaten-earth YARD (GM 2026-07-22): the open ground around a gate
+    # stables is deliberate (a wagon-train marshalling yard - carts parked, oxen unyoked and tethered at
+    # rails, teamsters waiting), but left as blank parchment it read as forgotten emptiness. s._stable_yard
+    # fills it with a feathered scatter (scuff, straw, hitching rail + tethered animals, carts, trough, dung
+    # heaps); this gates that no stables reverts to a blank yard. Each yard links to its stables via `of`.
+    if scale == "city":
+        _yards = M.get("stable_yards", [])
+        _yardless = [
+            (round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") == "stables" and not any(abs(yd["of"][0] - b["x"]) < 1 and abs(yd["of"][1] - b["y"]) < 1 for yd in _yards)
+        ]
+        check(
+            "stables_have_yards",
+            not _yardless,
+            f"gate stables with no drawn working yard at {_yardless[:3]} - the open ground around a gate stables is a deliberate wagon-train marshalling yard (carts, tethered oxen, littered beaten earth), not blank parchment; s.stables(...) draws it (yard=True; settlements.md 'Stable yard')",
+        )
+
     if scale == "city" and meta.get("walled") and M.get("wall"):
         bud = meta.get("budget")
         if not bud:

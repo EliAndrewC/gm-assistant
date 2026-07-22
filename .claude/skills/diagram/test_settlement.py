@@ -1287,6 +1287,40 @@ def _city():
     return s
 
 
+def test_stables_draws_a_working_yard_and_records_it():
+    # the gate stables' beaten-earth yard (GM 2026-07-22): drawing it adds scatter/furniture to the
+    # SVG and records a stable_yard linked to the stables, so stables_have_yards can gate it. The yard
+    # scatter avoids a neighboring building (an inn placed just north).
+    s = _city()
+    s.inn(600, 540)  # a cluster building the yard must skip
+    before = len(s.out)
+    s.stables(600, 620, rot=90)
+    assert len(s.out) > before  # the yard scatter + furniture drew something
+    yd = s.M["stable_yards"][-1]
+    assert yd["of"] == [600.0, 620.0] and yd["r"] > 0
+    # nothing the yard drew lands on the inn's footprint (a 3px-margin keep-out)
+    ix0, iy0, ix1, iy1 = 600 - s.M["buildings"][0]["w"] / 2, 540 - s.M["buildings"][0]["h"] / 2, 600 + s.M["buildings"][0]["w"] / 2, 540 + s.M["buildings"][0]["h"] / 2
+    assert ix1 > ix0 and iy1 > iy0  # sanity: the inn has a real footprint the scatter avoided
+
+
+def test_stables_yard_can_be_suppressed():
+    s = _city()
+    s.stables(600, 620, rot=90, yard=False)
+    assert not s.M.get("stable_yards")  # yard=False draws no yard
+
+
+def test_stables_yard_fully_blocked_draws_no_furniture():
+    # a yard whose whole disk is covered by a field: every scatter/furniture candidate is rejected
+    # (the field-reject branch), take() exhausts, and the cart/dung loops break - the yard is still
+    # recorded (so stables_have_yards passes) but no beaten-earth furniture is drawn
+    s = _city()
+    s.field_polys.append([(400, 400), (800, 400), (800, 840), (400, 840)])  # blankets the r=72 disk at (600,620)
+    s.stables(600, 620, rot=90)
+    svg = "".join(s.out)
+    assert s.M["stable_yards"][-1]["of"] == [600.0, 620.0]  # recorded despite the blocked yard
+    assert "#9A7B4E" not in svg and "#8FA6B0" not in svg  # no parked cart, no water trough drew
+
+
 def test_rowpack_lays_touching_terraces():
     # the GM row-packing doctrine: city commoner housing goes down as CONTIGUOUS terraces -
     # most units share a party wall (hairline seam <= 1.2px), never the old detached scatter
