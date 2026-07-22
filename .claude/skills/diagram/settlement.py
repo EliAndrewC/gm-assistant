@@ -1449,9 +1449,10 @@ class Settlement:
             pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1)])
         self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims})
         for c in net["channels"]:
-            self.M["field_ditches"].append(
-                {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
-            )
+            rec = {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
+            if c.get("seg"):  # a polder ring-side tag (feeder/e_toe/w_toe/drain/lateral), so footbridge placement can be side-aware
+                rec["seg"] = c["seg"]
+            self.M["field_ditches"].append(rec)
         # a hairline SOURCE -> field feed carrying the topology (winds a little into the paddy interior). It
         # STARTS at the source (the pond center, or the sluice for a stream) so channel_source_anchored /
         # pond_connected_to_field see it, and carries a gentle perpendicular KINK so channel_winds_gently passes.
@@ -3778,6 +3779,8 @@ class Settlement:
                     continue
                 if any(point_in_poly(jx, jy, d) or edge_dist(jx, jy, d) < 12 for d in self.dry_polys):
                     continue  # the hem strips are barley: trees do not grow in the crop (groves_clear_of_dry_plots)
+                if any(point_in_poly(jx, jy, dk["outline"]) for dk in self.M.get("dikes", [])):
+                    continue  # no windbreak clump ON the perimeter dike bank - it carries only its own soil-binding trees (structures_clear_of_dike)
                 if any(seg_dist(jx, jy, wl[k], wl[k + 1]) < whw + cr for wl, whw in water_lines for k in range(len(wl) - 1)):
                     continue  # no canopy stands over open water (canopy_clear_of_watercourses)
                 if any(seg_dist(jx, jy, lp[k], lp[k + 1]) < buf for lp, buf in corr for k in range(len(lp) - 1)):
@@ -3951,6 +3954,10 @@ class Settlement:
         self.add("".join(g))
         random.setstate(st)
         self.M.setdefault("dikes", []).append({"outline": [[round(p[0], 1), round(p[1], 1)] for p in smoothed], "label": label, "w_min": round(min(w_seen), 1), "w_max": round(max(w_seen), 1)})
+        # the dike is a raised earthwork bank - NO-BUILD ground: houses and the windbreak grove keep OFF it
+        # (GM 2026-07-22). Register the band as a placement keep-out so try_place / farmsteads / village_grove
+        # flow around it (validated by structures_clear_of_dike).
+        self.block_polys.append(smoothed)
         if label:
             # site the label on a clear stretch: the outward-most mid-edge point that is NOT near the village
             houses = self.M.get("houses", [])
@@ -5426,7 +5433,7 @@ class Settlement:
                             n += 1
         return n
 
-    def channel_footbridges(self, spacing: float = 320, min_len: float = 140, plank_w: float = 2.5) -> int:
+    def channel_footbridges(self, spacing: float = 320, min_len: float = 140, plank_w: float = 2.5, seg_caps: Any = None) -> int:
         """Standalone plank FOOTBRIDGES across the irrigation channels, where field-workers cross a ditch while
         walking the paddy bunds - NOT carried by any lane (people reach them along the earthen bunds, so no
         path leads to them). Any ditch stretch longer than `min_len` gets a plank about MIDWAY; a long stretch
@@ -5473,6 +5480,15 @@ class Settlement:
             if total < min_len:
                 continue  # a short stub (e.g. the head-race) is stepped over, no plank
             n = max(1, round(total / spacing))
+            # SIDE-AWARE crossings (research 2026-07-22): on a polder the ring-canal `seg` tag caps crossings
+            # per side - they cluster on the SETTLEMENT (east) toe, sparse on the interior laterals, NONE on
+            # the unsettled feeder / far toe / drain (people cross to the fields where they live, then walk the
+            # bund network). `seg_caps` maps seg -> max planks (0 = none); an untagged ditch uses the spacing.
+            if seg_caps is not None and d.get("seg") in seg_caps:
+                cap = seg_caps[d["seg"]]
+                if cap <= 0:
+                    continue
+                n = min(n, cap)
             w = d.get("w", 4.2)
             for k in range(n):
                 base = (k + 0.5) / n * total  # midway for n=1, evenly spaced otherwise

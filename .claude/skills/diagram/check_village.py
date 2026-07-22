@@ -5275,10 +5275,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # STANDALONE plank FOOTBRIDGES on the irrigation ditches (opt-in via meta.field_footbridges): field-workers
     # cross a ditch on a plank while walking the bunds, so any long ditch stretch carries at least one plank
     # about midway (these are NOT lane crossings - no path leads to them). Fires if a long ditch has none near it.
+    # EXEMPT the polder ring's UNSETTLED sides (research 2026-07-22, settlements.md 'Polder ring canal'):
+    # crossings cluster on the settlement (east) toe, and the feeder / far toe / drain are walked on the DIKE
+    # CREST, crossed (if at all) at a sluice/culvert, NOT a plank - so those tagged segs need no footbridge.
     if meta.get("field_footbridges"):
         FB_MIN = 140
+        _no_plank_segs = {"feeder", "w_toe", "drain"}
         unplanked = []
         for d in M.get("field_ditches", []):
+            if d.get("seg") in _no_plank_segs:
+                continue
             pts = d["poly"]
             length = sum(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(len(pts) - 1))
             if length < FB_MIN:
@@ -7480,17 +7486,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
                 fed = [f["name"] for f in big_out if moat_fed(f)]
                 check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
-            # a gate market (guan-xiang) OUTSIDE EVERY gate, not just one (GM decision 2026-07-22,
+            # a gate market (guan-xiang) OUTSIDE EVERY MAIN-ROAD gate (GM decision 2026-07-22,
             # flophouse-research.md): the extramural gate-suburb formed along the road at each
             # trafficked gate - Beijing's gates all carried one, varying in scale (大关厢 vs small).
-            # A city gate sits on a main/through road, so each earns a market; scale may differ but
-            # each needs >= 3 extramural shops within ~520px. Mirrors city_flophouse_outside_each_gate.
+            # `M["gates"]` holds only the MAIN (road/river-route) gates, so iterating it IS "every
+            # main-road gate": a purely military SALLY gate opens onto empty field with no traffic
+            # and carries no market, so it is NOT recorded in `gates` (it would live in its own
+            # structure if/when the sally-gate knob is added). Each main gate needs >= 3 extramural
+            # shops within ~520px; scale may differ. Mirrors city_flophouse_outside_each_gate.
             biz_out = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant") and not inwall(b["x"], b["y"])]
             gates_wo_market = [i for i, g in enumerate(gates) if sum(1 for b in biz_out if math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520) < 3]
             check(
                 "city_has_gate_market",
                 not gates_wo_market,
-                f"gate(s) without a gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY city gate (each is on a main road; scale may differ but each needs >= 3 extramural shops within ~520px)",
+                f"main-road gate(s) without a gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY main-road city gate (scale may differ but each needs >= 3 extramural shops within ~520px; a sally gate, being traffic-free, is exempt and not in M['gates'])",
             )
             # market-day lodging: a flophouse INSIDE the walls, and one OUTSIDE each gate (for
             # travelers arriving from either direction, who reach the gate after it has shut)
@@ -8147,6 +8156,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 "polder_channels_clear_of_dike",
                 in_dike <= 4,
                 f"{in_dike} irrigation-channel point(s) run through the dike earthwork (want <= 4, the inlet/outfall sluice crossings) - the polder RING CANAL runs on the INNER TOE of the dike (field side), not buried in the dike body; water crosses the dike only at the sluices",
+            )
+
+            # STRUCTURES + WINDBREAK KEEP OFF THE DIKE (GM 2026-07-22): the dike is a raised earthwork bank,
+            # not building ground, so no farmhouse footprint and no windbreak grove clump may sit ON it (the
+            # bank carries only its own soil-binding trees). perimeter_dike registers the band as a placement
+            # keep-out; this verifies it. A house corner or a grove clump centre inside the dike band fires.
+            on_dike = []
+            for h in M.get("houses", []):
+                hw, hh = h.get("w", 40) / 2, h.get("h", 26) / 2
+                if any(point_in_poly(h["x"] + sx * hw, h["y"] + sy * hh, band) for sx in (-1, 1) for sy in (-1, 1)):
+                    on_dike.append(("house", round(h["x"]), round(h["y"])))
+            for g in M.get("village_groves", []):
+                on_dike += [("grove", round(cx), round(cy)) for cx, cy in g.get("clumps", []) if point_in_poly(cx, cy, band)]
+            check(
+                "structures_clear_of_dike",
+                not on_dike,
+                f"structure(s)/windbreak clump(s) sitting ON the perimeter dike earthwork: {on_dike[:4]} - the dike is a raised bank, not building ground; houses and the windbreak keep off it",
             )
 
     # A polder's PARCEL fabric must VARY (researched 2026-07-21; grounding in build_polder's docstring).
