@@ -129,8 +129,9 @@ s.add(f'<g opacity="0.85">{beads}</g>')
 SHRINE = (392, 1074)
 # 7 arches, straight S, at a 15px pitch (~30 ft) - a DENSE senbon-style avenue matching Kikuta. The true-scale
 # torii glyph is only ~8px/16ft wide (GM 2026-07-21), so arches pack close; the torii_spread_out floor is one
-# arch-span (16ft). (Earlier drafts at 52px/104ft then 36px/72ft read as isolated gates rather than an avenue.)
-SHRINE_TORII = [(392, 1114 + i * 15) for i in range(7)]
+# arch-span (16ft). The INNERMOST arch sits at the hall's THRESHOLD (1096 = ~10px below the hall's S edge at
+# 1086), directly in front, not set out with a gap (GM 2026-07-22, shrine_avenue_fronts_the_hall).
+SHRINE_TORII = [(392, 1096 + i * 15) for i in range(7)]
 s.reserve_clearing(SHRINE[0], SHRINE[1], 30, 24, 58)      # the shrine hall
 for _tx, _ty in SHRINE_TORII:
     s.reserve_clearing(_tx, _ty, 38, 28, 30)              # each of the 7 torii arches

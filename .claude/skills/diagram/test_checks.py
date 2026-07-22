@@ -3862,6 +3862,30 @@ def test_torii_spread_out_passes_a_dense_avenue():
     assert "torii_spread_out" not in f(M)
 
 
+# ---- shrine_avenue_fronts_the_hall: a village sando's innermost arch sits at the hall's threshold ----------
+def _shrine_avenue(hall_x, torii_y0):
+    return {
+        "meta": {"scale": "village", "ftpx": 2},
+        "religious": [{"x": hall_x, "y": 400, "w": 30, "h": 24, "kind": "shrine", "rot": 0}],
+        "torii": [[400, torii_y0 + i * 15, i] for i in range(3)],  # a 3-arch sando marching S
+    }
+
+
+def test_shrine_avenue_fronts_the_hall_fires_when_the_arch_is_set_out():
+    # the innermost arch stands well out from the hall front (96 ft > the 36 ft ceiling)
+    assert "shrine_avenue_fronts_the_hall" in f(_shrine_avenue(400, 460))
+
+
+def test_shrine_avenue_fronts_the_hall_passes_at_the_threshold():
+    # innermost arch at the hall's front (24 ft gap)
+    assert "shrine_avenue_fronts_the_hall" not in f(_shrine_avenue(400, 424))
+
+
+def test_shrine_avenue_fronts_the_hall_exempts_a_gateway_beside_the_hall():
+    # Hikari pattern: the hall stands aside the entrance track (200 ft off the avenue axis), arches straddle the track
+    assert "shrine_avenue_fronts_the_hall" not in f(_shrine_avenue(300, 460))
+
+
 def test_bridges_clear_of_houses_fires_when_a_plank_sits_on_a_farmhouse():
     M = {"meta": {"scale": "village"}, "houses": [_farmhouse(400, 300)], "bridges": [{"x": 400, "y": 300, "rot": 0, "span": 24, "w": 6}]}  # a plank ON the house
     assert "bridges_clear_of_houses" in f(M)
