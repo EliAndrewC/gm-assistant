@@ -27,7 +27,10 @@ s = Settlement(W=W, H=H, seed=SEED)
 s.meta(name="Tanada", scale="hamlet", ftpx=1, toscale=True, households=14, down_deg=90, terrain="hill", field_archetype="contour_terraces", nucleated=True, field_footbridges=True)
 
 s._nucleated = True  # communal windbreak, no per-house groves
-net = build_terraces(W, H, TOP, SEED, down_deg=90, n_terraces=16, cross_width=760, fall=1400)
+# n_terraces=32 keeps each step shallow (~44 ft deep) so a cell reads WIDER than deep; each step is then split
+# along the contour into ~0.05-acre leveled cells (build_terraces + settlements.md 'Paddy cell size': a real
+# terrace is a row of small paddies, Longsheng's largest is 0.62 mu / ~0.10 acre). ftpx=1 (a 1 ft/px hamlet).
+net = build_terraces(W, H, TOP, SEED, down_deg=90, n_terraces=32, cross_width=760, fall=1400, ftpx=1)
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.meta(dry_furrows_vary=False)
 
