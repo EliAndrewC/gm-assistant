@@ -5591,6 +5591,28 @@ def test_dikepond_water_within_banks_and_rounded():
     assert "dikepond_corners_rounded" in f({**base, "dikeponds": sharp})
 
 
+def test_polder_floor_is_ring_interior():
+    # GM 2026-07-22: the polder's green field floor must be the ring-canal INTERIOR (hug the outermost
+    # channels), not the dike-boundary envelope. A floor vertex >8 px off the ring fires; a floor on the ring
+    # passes. (No ring channels or no floor recorded -> the check is simply skipped.)
+    ring = [
+        {"poly": [[100, 100], [300, 100]], "role": "main", "seg": "feeder", "field": "p"},
+        {"poly": [[300, 100], [300, 300]], "role": "lateral", "seg": "e_toe", "field": "p"},
+        {"poly": [[300, 300], [100, 300]], "role": "drain", "seg": "drain", "field": "p"},
+        {"poly": [[100, 300], [100, 100]], "role": "lateral", "seg": "w_toe", "field": "p"},
+    ]
+    base = {
+        "meta": {"scale": "hamlet", "field_archetype": "polder_grid"},
+        "field_ditches": ring,
+        "dikes": [{"outline": [[90, 90], [310, 90], [310, 310], [90, 310]], "w_min": 14.0, "w_max": 38.0, "gaps": []}],
+        "fields": [{"name": "p", "kind": "paddy", "outline": [[100, 100], [300, 100], [300, 300], [100, 300]], "bbox": [100, 100, 300, 300]}],
+    }
+    on_ring = {**base, "comb_floors": {"p": [[100, 100], [300, 100], [300, 300], [100, 300]]}}  # the floor IS the ring loop
+    assert "polder_floor_is_ring_interior" not in f(on_ring)
+    off_ring = {**base, "comb_floors": {"p": [[50, 50], [350, 50], [350, 350], [50, 350]]}}  # the dike-boundary envelope, ~50 px out
+    assert "polder_floor_is_ring_interior" in f(off_ring)
+
+
 def test_polder_dike_is_earthwork():
     # GM 2026-07-22: a polder/dike-pond map must record a perimeter-dike earthwork band of VARYING width;
     # a missing dike or a uniform-width one (the reverted post-1949 ruled rectangle) fires.

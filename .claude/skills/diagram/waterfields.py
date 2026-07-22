@@ -1512,6 +1512,11 @@ def build_polder(
     # sluice (bottom edge, at the drain's mid-south tap). The gen hands these to perimeter_dike so the dike is
     # NOTCHED (a dug gap) there instead of the channel running OVER the top of the earthwork bank (GM 2026-07-22).
     dike_sluices = [grid(0.0, fi + cr), grid(span_s, out_t)]
+    # THE FIELD FLOOR (the green greenery) is the INTERIOR of the ring canal - the outermost irrigated
+    # channels - NOT the dike-boundary envelope (GM 2026-07-22). Under edge_wander the ring wavers, and a
+    # separate envelope rectangle drifted in and out of it; concatenating the 4 ring sides gives the closed
+    # inner-toe loop, so the green is bounded exactly by the ring and the canal draws on top of it.
+    floor = [grid(s, t) for s, t in (sides_st[0] + sides_st[1] + sides_st[2] + sides_st[3])]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
     return {
         "channels": channels,
@@ -1527,6 +1532,7 @@ def build_polder(
         "furrows_vary": False,
         "sluice": (round(sluice[0], 1), round(sluice[1], 1)),
         "dike_sluices": [(round(x, 1), round(y, 1)) for x, y in dike_sluices],
+        "floor": [(round(x, 1), round(y, 1)) for x, y in floor],
     }
 
 
