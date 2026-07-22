@@ -67,6 +67,16 @@ test('pruneByAge keeps the cutoff sample (inclusive) and drops older ones', () =
         [[5_000, 2], [5_001, 3], [10_000, 4]]);
 });
 
+test('median discards a lone outlier and does not mutate its input', () => {
+    assert.strictEqual(H.median([48, 100, 46]), 48);   // glitch high spike rejected
+    assert.strictEqual(H.median([100, 48, 100]), 100);  // glitch low dip rejected
+    assert.strictEqual(H.median([50]), 50);
+    assert.strictEqual(H.median([50, 60]), 55);          // even length -> mean of middle two
+    const input = [3, 1, 2];
+    assert.strictEqual(H.median(input), 2);
+    assert.deepStrictEqual(input, [3, 1, 2], 'input must be untouched');
+});
+
 test('lock serialize -> parse round-trips', () => {
     assert.deepStrictEqual(
         H.parseLock(H.serializeLock(4242, 'boot-abc', 1234.9)),

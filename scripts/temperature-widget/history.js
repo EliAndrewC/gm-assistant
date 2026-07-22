@@ -56,6 +56,15 @@ function serializeHistory(samples) {
     return samples.map(([t, c]) => serializeSample(t, c)).join('');
 }
 
+// Median of a list of numbers. Used to despike the temperature metric: a
+// median of the last few raw reads discards a lone spurious value outright
+// (unlike a mean, which would average it in). Does not mutate the input.
+function median(nums) {
+    const sorted = [...nums].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 // Keeps only samples no older than maxAgeMs before `now`. Used both to bound
 // the on-disk file (30-day retention) and to pick the recent window that
 // seeds a freshly-started shell's graph. Boundary is inclusive (t == cutoff
@@ -128,6 +137,7 @@ var HISTORY_EXPORTS = {
     parseHistory,
     serializeSample,
     serializeHistory,
+    median,
     pruneByAge,
     serializeLock,
     parseLock,
