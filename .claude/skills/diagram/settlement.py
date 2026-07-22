@@ -69,6 +69,18 @@ PLANK_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terr
 PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
 
 
+def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, float]:
+    """True drawn half-extents (x half-width, y-up, y-down) of a `_torii` glyph at scale `ftpx`, plus a small
+    stroke pad - used to FRAME torii (crop_to_content) and to verify they sit within the frame (check_village
+    mirrors this function; keep the two in sync). Follows _torii's geometry: s2 = (span_ft/ftpx)/2, rail ends at
+    +/-s2, rail rise s2*7/19, post drop s2*17/19. Replaces the legacy fixed x+/-19 / y-10..+18 box - the
+    pre-true-scale 38px glyph (GM 2026-07-21), which over-reserved ~5x the arch's real footprint of frame margin
+    (a village torii is ~8px/16ft wide, not 38px), pushing the crop out around the end of an approach avenue."""
+    s2 = (span_ft / ftpx) / 2
+    pad = 2.0  # rail/post stroke half-width + a hair, so the frame never clips the vermilion
+    return s2 + pad, s2 * 7.0 / 19.0 + pad, s2 * 17.0 / 19.0 + pad
+
+
 def _signed_area(poly: Poly) -> float:
     a = 0.0
     n = len(poly)
@@ -863,9 +875,10 @@ class Settlement:
                 elif "w" in o and "h" in o:
                     hx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
                     hy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
-        for t in self.M.get("torii", []):  # a torii ARCH is a visible structure and must be
-            hx += [t[0] - 19, t[0] + 19]  # framed too (same box the within-frame check uses:
-            hy += [t[1] - 10, t[1] + 18]  # x +/-19, y -10..+18) - else a gateway can poke past
+        _txh, _tyu, _tyd = torii_halfbox(self.ftpx)  # a torii ARCH is a visible structure and must be framed
+        for t in self.M.get("torii", []):  # too (true glyph half-box, same as the within-frame check) - else a
+            hx += [t[0] - _txh, t[0] + _txh]  # gateway can poke past the crop edge
+            hy += [t[1] - _tyu, t[1] + _tyd]
 
         for fd in self.M.get("fields", []):  # the field's VISIBLE extent, NOT its house-blocking envelope tail
             vb = fd.get("vis_bbox")

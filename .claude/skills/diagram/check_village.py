@@ -320,6 +320,15 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
 
+def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, float]:
+    """Mirror of settlement.torii_halfbox (keep in sync): the true drawn half-extents (x half-width, y-up,
+    y-down) of a torii glyph at scale `ftpx`, plus a small stroke pad. Replaces the legacy fixed x+/-19 /
+    y-10..+18 box (the pre-true-scale 38px glyph, ~5x oversized), used to check torii sit within the frame."""
+    s2 = (span_ft / ftpx) / 2
+    pad = 2.0
+    return s2 + pad, s2 * 7.0 / 19.0 + pad, s2 * 17.0 / 19.0 + pad
+
+
 # STANDALONE plank-footbridge usefulness (mirrors settlement.PLANK_BANK_REACH / PLANK_VILLAGE_REACH /
 # PLANK_ABUTMENT - keep in sync). A footplank is worth building only if BOTH banks reach ground someone
 # walks to; the placement engine (channel_footbridges) enforces it, these checks re-verify from the manifest.
@@ -1577,8 +1586,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         clipped = []
         for k in _HARD_IN_FRAME:
             for o in M.get(k, []):
-                if k == "torii":  # recorded [x, y, z]; arch spans x +/-19, y -10..+18
-                    fx0, fy0, fx1, fy1 = o[0] - 19, o[1] - 10, o[0] + 19, o[1] + 18
+                if k == "torii":  # recorded [x, y, z]; framed at the true glyph half-box (see torii_halfbox)
+                    _txh, _tyu, _tyd = torii_halfbox(meta.get("ftpx", 1))
+                    fx0, fy0, fx1, fy1 = o[0] - _txh, o[1] - _tyu, o[0] + _txh, o[1] + _tyd
                 elif o.get("poly"):
                     xs = [p[0] for p in o["poly"]]
                     ys = [p[1] for p in o["poly"]]
@@ -1649,9 +1659,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 elif "w" in o and "h" in o:
                     fsx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
                     fsy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
+        _txh, _tyu, _tyd = torii_halfbox(meta.get("ftpx", 1))
         for t in M.get("torii", []):
-            fsx += [t[0] - 19, t[0] + 19]
-            fsy += [t[1] - 10, t[1] + 18]
+            fsx += [t[0] - _txh, t[0] + _txh]
+            fsy += [t[1] - _tyu, t[1] + _tyd]
         for fd in fields:
             vb = fd.get("vis_bbox")
             if vb:
@@ -6127,8 +6138,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             sx, sy, sw, sh = shrine
             under = [t for t in torii if sx - 6 <= t[0] <= sx + sw + 6 and sy - 6 <= t[1] <= sy + sh + 6]
             check("torii_clear_of_shrine", not under, f"{len(under)} torii under the shrine")
-        spread = all(math.hypot(torii[i][0] - torii[j][0], torii[i][1] - torii[j][1]) > 25 for i in range(len(torii)) for j in range(i + 1, len(torii)))
-        check("torii_spread_out", spread, "torii too close together")
+        # No two arches closer than one rail-span (16 ft): a dense senbon-style AVENUE may pack the arches
+        # close, but they must not overlap into a vermilion blob. Scale-aware (was a fixed 25px, tuned to the
+        # pre-true-scale 38px glyph - too coarse now the arch is ~8px/16ft at village scale; GM 2026-07-22).
+        _tfloor = 16.0 / meta.get("ftpx", 1)
+        spread = all(math.hypot(torii[i][0] - torii[j][0], torii[i][1] - torii[j][1]) > _tfloor for i in range(len(torii)) for j in range(i + 1, len(torii)))
+        check("torii_spread_out", spread, f"torii closer than one arch-span (~{_tfloor:.0f}px) apart - they overlap into a blob rather than reading as distinct gateways")
 
     # ---- village-specific expectations (from meta) ---------------------------
     abandoned = sum(1 for h in houses if h["kind"] == "abandoned")
@@ -7292,8 +7307,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
             check(
                 "city_samurai_estates_outside",
-                5 <= len(est_out) <= 15,
-                f"{len(est_out)} walled samurai estates outside the walls, expected 5-15 - a walled city's cramped interior pushes wealthy samurai to extramural estates they commute in from",
+                1 <= len(est_out) <= 3,
+                f"{len(est_out)} walled samurai estates shown outside the walls, expected 1-3 - a provincial city's country estates are DISPERSED across the rural district (each an isolated fortified compound by its own land, miles out); a city map shows only the nearest 1-3 at the frame edge, the rest off-map (NOT a cluster of 5+ ringing the moat)",
+            )
+            # ... and the shown estates are DISPERSED, not a tight cluster: each is its own walled compound
+            # on its own landholding with fields between, so no two sit adjacent. A packed clump at one
+            # stretch of wall is the COMMERCIAL SUBURB's density, not the genteel country-estate pattern -
+            # gentry estates scatter by land/scenery, they do not ring the moat (GM 2026-07-22, researched:
+            # China-first absentee-landlord + dispersed-fortified-manor pattern, Japan agreeing). See settlements.md.
+            est_pts = [(mn["x"], mn["y"]) for mn in est_out]
+            EST_MIN_SEP = 200
+            est_too_close = [
+                (round(est_pts[i][0]), round(est_pts[i][1]))
+                for i in range(len(est_pts))
+                for j in range(i + 1, len(est_pts))
+                if math.hypot(est_pts[i][0] - est_pts[j][0], est_pts[i][1] - est_pts[j][1]) < EST_MIN_SEP
+            ]
+            check(
+                "city_samurai_estates_dispersed",
+                not est_too_close,
+                f"samurai estate(s) packed too close together {sorted(set(est_too_close))} - the country estates are separate compounds each on its own land, spread >= {EST_MIN_SEP}px apart, not a cluster ringing the moat (the dense belt hugging the wall is the commercial suburb, not estates)",
             )
             # WHY (the extramural samurai residence is the walled, defensible country ESTATE; a lone
             # UNWALLED samurai house beyond the rampart is defenseless and belongs in the sealed ward

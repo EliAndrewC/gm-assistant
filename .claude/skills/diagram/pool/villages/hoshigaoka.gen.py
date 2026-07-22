@@ -127,10 +127,10 @@ s.add(f'<g opacity="0.85">{beads}</g>')
 # the country monk posted to this shrine is a stickler for the potent number 7 and raised the extra six himself,
 # so the avenue marches S down the back-slope from the hall - a striking gateway for a modest village shrine.
 SHRINE = (392, 1074)
-# 7 arches, straight S, at a 36px pitch (~72 ft) - matching Kikuta's sanctioned 7-torii showcase density, and
-# the tightest that reads as a coherent avenue while clearing the torii_spread_out floor (>25px between any two).
-# (An earlier draft used 52px/104ft, mis-anchored on Hirameki's town monastery; that read as isolated gates.)
-SHRINE_TORII = [(392, 1114 + i * 36) for i in range(7)]
+# 7 arches, straight S, at a 15px pitch (~30 ft) - a DENSE senbon-style avenue matching Kikuta. The true-scale
+# torii glyph is only ~8px/16ft wide (GM 2026-07-21), so arches pack close; the torii_spread_out floor is one
+# arch-span (16ft). (Earlier drafts at 52px/104ft then 36px/72ft read as isolated gates rather than an avenue.)
+SHRINE_TORII = [(392, 1114 + i * 15) for i in range(7)]
 s.reserve_clearing(SHRINE[0], SHRINE[1], 30, 24, 58)      # the shrine hall
 for _tx, _ty in SHRINE_TORII:
     s.reserve_clearing(_tx, _ty, 38, 28, 30)              # each of the 7 torii arches
@@ -382,8 +382,7 @@ print(f"footbridges: {n_bridges + 1}")
 s.commons([(630, 215), (930, 170), (1230, 150), (1470, 58), (2160, 58), (2160, 475),
            (1905, 235), (1560, 215), (1200, 225), (900, 248), (700, 255), (630, 258)], role="grazing")   # NORTH up-valley grass hills
 s.commons([(85, 895), (250, 988), (430, 1030), (600, 955), (770, 975),
-           (900, 1075), (1010, 1180), (2160, 1180), (2160, 1400), (110, 1400)],
-          role="grazing")   # SOUTH back-slope, a band across the bottom (to y1400) clothing the modest frame the 7-arch sando pulls south; commons auto-skips the paddy + toe marsh
+           (900, 1075), (1010, 1180), (1080, 1250), (85, 1250)], role="grazing")   # SOUTH back-slope behind the village (the dense short sando barely extends the frame, so the original band clothes it)
 # A FEW managed-WOODLAND patches (coppice / bamboo / tung-oil "economic forest") - the green EXCEPTION amid the
 # cut-over grass hills (China-first: the hills are mostly denuded scrub, with a little managed wood). Sited on the
 # open high ground CLEAR of the crops and never SHADING them: the sun is to the S, so trees cast shadows N - a
