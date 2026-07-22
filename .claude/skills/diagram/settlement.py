@@ -3799,6 +3799,95 @@ class Settlement:
         circles = [(o["x"], o["y"], o.get("vr", o["r"]) + wh) for o in self.M.get("wells", []) if bx0 - 40 <= o["x"] <= bx1 + 40 and by0 - 40 <= o["y"] <= by1 + 40]
         return rects, circles
 
+    def perimeter_dike(self, inner_env: Any, seed: int = 0, label: str = "perimeter dike", width: tuple[float, float] = (14.0, 40.0)) -> None:
+        """A reclaimed-polder PERIMETER DIKE, drawn as an irregular hand-piled EARTHWORK BAND (not a ruled
+        tan line). China-first grounding (research 2026-07-22, recorded in settlements.md 'Perimeter dike'):
+        a wei-tian 圩田 / dike-pond dike was dredged pond-mud heaped and packed (the 挖塘培基 dig-and-pile
+        cycle that also made the ponds), trapezoidal in section, PLANTED with mulberry/willow to bind the
+        soil, walked and lived on, and constantly breached-and-repaired. The SURVEYED interior grid stays
+        rectilinear, but the OUTER dike FOLLOWED THE NATURAL WATER EDGE (lake/creek/marsh) in gentle curves
+        and non-square bends - the 'fish-scale polder' 鱼鳞圩 form; the dead-straight right-angled rectangle
+        is a POST-1949 industrial shape. So `inner_env` (the rectilinear grid boundary) is the dike's INNER
+        face, and this draws the OUTER face as an organic curve bulging outward by a VARYING amount (the dike
+        width varies - thicker on the exposed water side / at pressure points, pinched where repaired), with
+        rounded non-square corners, filled as a mottled vegetated earthwork. TRUE SCALE: a perimeter dike ran
+        ~6-10 m+ wide (wider than the ~6.7 m inter-pond mulberry dikes it rings, not the old under-scale
+        4.4 px line), so the band is drawn to true width, not floored. Records M['dikes']; labeled (a polder
+        dike is NOT an "obvious" feature - the GM asked for it named)."""
+        from waterfields import BUND
+
+        R = random.Random(seed)
+        pts = list(inner_env)
+        if pts and pts[0] == pts[-1]:
+            pts = pts[:-1]
+        cx = sum(p[0] for p in pts) / len(pts)
+        cy = sum(p[1] for p in pts) / len(pts)
+        wlo, whi = width
+        m = len(pts)
+        dense: list[tuple[float, float, int]] = []
+        for i in range(m):
+            a, b = pts[i], pts[(i + 1) % m]
+            steps = max(3, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 34))
+            for s in range(steps):
+                t = s / steps
+                dense.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, i))
+        n = len(dense)
+        ph0, ph1, ph2 = R.uniform(0, math.tau), R.uniform(0, math.tau), R.uniform(0, math.tau)
+        inner_s: Poly = []
+        outer_s: Poly = []
+        w_seen: list[float] = []
+        for k, (x, y, ei) in enumerate(dense):
+            a, b = pts[ei], pts[(ei + 1) % m]
+            ex, ey = b[0] - a[0], b[1] - a[1]
+            eL = math.hypot(ex, ey) or 1.0
+            nx, ny = -ey / eL, ex / eL  # outward edge normal (flip toward away-from-centroid)
+            if nx * (x - cx) + ny * (y - cy) < 0:
+                nx, ny = -nx, -ny
+            u = k / n * math.tau
+            # broad shoreline-following bulges (u*2) + mid + fine variation - the dike thickens along an old
+            # water edge and pinches where it was repaired, so the outer face reads organic, not a ruled line
+            wf = 0.5 + 0.26 * math.sin(u * 2 + ph0) + 0.22 * math.sin(u * 3 + ph1) + 0.16 * math.sin(u * 5 + ph2)
+            w = wlo + (whi - wlo) * max(0.0, min(1.0, wf)) + R.uniform(-3, 3)
+            w_seen.append(w)
+            outer_s.append((x + nx * w, y + ny * w))
+            inner_s.append((x - nx * R.uniform(0.0, 5.0), y - ny * R.uniform(0.0, 5.0)))  # hugs the grid, slight wobble
+        band = [*outer_s, *reversed(inner_s)]
+        d = smooth_closed(band)
+        self.add(f'<path d="{d}" fill="{BUND}" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
+        # MOTTLE + VEGETATION: clip to the band, then scatter earth-tone patches (patch-repairs of different
+        # ages), the soil-binding mulberry/willow tree dots, and a faint walked crest path - so the dike reads
+        # as a planted lived-on bank, never a uniform stroke.
+        smoothed = smooth_points(band)
+        bx0, bx1 = min(p[0] for p in smoothed), max(p[0] for p in smoothed)
+        by0, by1 = min(p[1] for p in smoothed), max(p[1] for p in smoothed)
+        cid = self._cid("dike")
+        st = random.getstate()
+        random.seed(seed ^ 0x1D)
+        g = [f'<clipPath id="{cid}"><path d="{d}"/></clipPath>', f'<g clip-path="url(#{cid})">']
+        for _ in range(int((bx1 - bx0 + by1 - by0) * 1.6)):
+            px, py = random.uniform(bx0, bx1), random.uniform(by0, by1)
+            if not point_in_poly(px, py, smoothed):
+                continue
+            roll = random.random()
+            if roll < 0.42:  # earth mottle: darker packed / lighter dried patches
+                col = random.choice(["#A8895A", "#B79B68", "#D2BC8C", "#9C8150"])
+                rx, ry = random.uniform(5, 13), random.uniform(4, 9)
+                g.append(f'<ellipse cx="{px:.1f}" cy="{py:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="{col}" opacity="0.4"/>')
+            else:  # soil-binding vegetation: mulberry/willow crowns along the bank
+                col = random.choice(["#6E8B4A", "#7C9A54", "#5E7C40"])
+                r = random.uniform(2.6, 5.0)
+                g.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{r:.1f}" fill="{col}" opacity="0.7"/>')
+        g.append("</g>")
+        self.add("".join(g))
+        random.setstate(st)
+        self.M.setdefault("dikes", []).append({"outline": [[round(p[0], 1), round(p[1], 1)] for p in smoothed], "label": label, "w_min": round(min(w_seen), 1), "w_max": round(max(w_seen), 1)})
+        if label:
+            # site the label on a clear stretch: the outward-most mid-edge point that is NOT near the village
+            houses = self.M.get("houses", [])
+            hx = sum(h["x"] for h in houses) / len(houses) if houses else cx
+            best = max(outer_s, key=lambda p: (p[1] < cy) * 1000 - abs(p[0] - cx) - (200 if (p[0] - cx) * (hx - cx) > 0 else 0))
+            self.label(best[0], best[1] - 8, label, 10, italic=True, color="#6B5836")
+
     def commons(self, poly: Any, role: str = "commons", avoid: Any = ()) -> None:
         """FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far (upslope / windward) side,
         BEYOND the fengshui back-grove: coarse grass, low brush, and a FEW scattered SCRAGGLY pines, kept
