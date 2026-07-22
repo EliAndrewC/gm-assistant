@@ -28,7 +28,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from settlement import Settlement, edge_dist, point_in_poly  # noqa: E402
+from settlement import PLANK_ABUTMENT, Settlement, edge_dist, point_in_poly  # noqa: E402
 import math  # noqa: E402
 
 from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
@@ -348,7 +348,8 @@ for _i, _sl in enumerate(_seg):
         _ax, _ay = _vp[_i]
         _bx, _by = _vp[_i + 1]
         s.bridge(_ax + (_bx - _ax) * _f, _ay + (_by - _ay) * _f,
-                 math.degrees(math.atan2(_by - _ay, _bx - _ax)) + 90, _vc["w"] + 15, 5.5)
+                 math.degrees(math.atan2(_by - _ay, _bx - _ax)) + 90, _vc["w"] + PLANK_ABUTMENT, 2.0)
+        s.M["bridges"][-1]["foot"] = True  # a standalone footplank, same size + validation as channel_footbridges
         break
     _acc += _sl
 print(f"footbridges: {n_bridges + 1}")
