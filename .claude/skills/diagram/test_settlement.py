@@ -2211,8 +2211,10 @@ def test_build_polder_parcel_fabric():
     assert build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=11, cols=6, cell=150)["plots"] == plots
     # splits outnumber merges: more parcels than module bays
     assert len(plots) > 66
-    # the envelope (the dike's inner-face reference) keeps the full span: corners are exact grid multiples
-    assert net["envelope"][0] == (360, 320) and net["envelope"][2] == (360 + 6 * 150, 320 + 11 * 150)
+    # the envelope (the dike's inner-face reference) keeps the full span: it is densified 12 samples/edge
+    # (so the edge-wander curvature is carried into the drawn field/dike), and the corners - at 0, 12, 24, 36 -
+    # are exact grid multiples (edge_wander defaults to 0 here, so no warp)
+    assert net["envelope"][0] == (360, 320) and net["envelope"][24] == (360 + 6 * 150, 320 + 11 * 150)
     RING = 18.0
     s_step = (11 * 150 - 2 * RING) / 11
     # the fabric varies (mirrors the polder_parcels_vary thresholds, with slack): areas spread, oblongs dominate
@@ -2241,11 +2243,25 @@ def test_build_polder_parcel_fabric():
     assert segs.count("lateral") == 5  # one per interior column line (cols=6 -> 5)
     roles = {ch.get("seg"): ch["role"] for ch in net["channels"] if ch.get("seg")}
     assert roles["feeder"] == "main" and roles["drain"] == "drain" and roles["e_toe"] == "lateral"
+
+    # each interior lateral is SNAPPED onto the (gently wavered) feeder + drain centerlines, so its ends lie
+    # ON those ring polylines - a clean T-junction, not an exact di/fi row (the toe lines waver ~3.5 px in s)
+    def _pt_seg(p, a, b):
+        vx, vy = b[0] - a[0], b[1] - a[1]
+        ll = vx * vx + vy * vy or 1.0
+        t = max(0.0, min(1.0, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / ll))
+        return math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy)
+
+    def _near(pt, poly):
+        return min(_pt_seg(pt, poly[i], poly[i + 1]) for i in range(len(poly) - 1))
+
+    feeder_pts = next(ch["pts"] for ch in net["channels"] if ch.get("seg") == "feeder")
+    drain_pts = next(ch["pts"] for ch in net["channels"] if ch.get("seg") == "drain")
     for ch in net["channels"]:
         if ch.get("seg") != "lateral":  # only the interior column laterals run toe-to-toe
             continue
-        assert abs(ch["pts"][0][1] - (320 + RING * 0.5)) < 1  # starts on the feeder inner-toe line
-        assert abs(ch["pts"][-1][1] - (320 + 1650 - RING * 0.5)) < 1  # ends on the drain inner-toe line
+        assert _near(ch["pts"][0], feeder_pts) < 2  # starts ON the feeder inner-toe line
+        assert _near(ch["pts"][-1], drain_pts) < 2  # ends ON the drain inner-toe line
     # pond-profile mix: merge-heavy, no 3-cuts, wide dike gaps -> fewer, larger, oblong parcels
     pond_net = build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0))
     assert len(pond_net["plots"]) < len(plots)
@@ -2873,6 +2889,25 @@ def test_wall_tower_spacing_px_scales_with_tier():
 def test_wall_tower_spacing_px_unknown_tier_falls_back_to_garrison():
     ppf = 1.0 / 3.0
     assert settlement.wall_tower_spacing_px(ppf, "nonsense") == settlement.wall_tower_spacing_px(ppf, "garrison")
+
+
+def test_perimeter_dike_gap_off_band_still_draws_full_loop():
+    # GM 2026-07-22 (issue 1): perimeter_dike NOTCHES the earthwork at each sluice-crossing gap. A gap point
+    # placed FAR from the band keeps every dense point, so the band draws as one full loop (the defensive
+    # all-kept branch) and the gap is still recorded on the manifest.
+    s = Settlement(1000, 1000, seed=1)
+    env = [(200, 200), (800, 200), (800, 800), (200, 800)]
+    s.perimeter_dike(env, seed=7, gaps=[(5000, 5000)])
+    assert s.M["dikes"] and s.M["dikes"][0]["gaps"] == [[5000.0, 5000.0]]
+
+
+def test_perimeter_dike_notches_the_band_at_a_gap_on_it():
+    # a gap ON the band splits the earthwork into runs between the notches (it records the gap and still
+    # draws a dike); the through-gap is where a sluice channel crosses.
+    s = Settlement(1000, 1000, seed=2)
+    env = [(200, 200), (800, 200), (800, 800), (200, 800)]
+    s.perimeter_dike(env, seed=3, gaps=[(500, 200), (500, 800)])
+    assert s.M["dikes"] and len(s.M["dikes"][0]["gaps"]) == 2
 
 
 # ---- near_ring_cropland (feature 013): channel-free dry/garden tiler that packs the flat near ring.

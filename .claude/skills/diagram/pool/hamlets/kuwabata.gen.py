@@ -30,7 +30,7 @@ s._nucleated = True
 # TRUE SCALE (1 px = 1 ft): traditional dike-ponds were 0.4-0.6 ha oblongs with 6-10 m mulberry dikes
 # (build_polder docstring, TRUE-SCALE SIZING) - so a 160 ft module, merge-heavy mix (most ponds 160x320
 # ~0.48 ha, square ~2.4-mu minority), and 22 ft dike gaps.
-net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0))
+net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0), edge_wander=0.4)
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.meta(dry_furrows_vary=False)
 
@@ -40,7 +40,7 @@ s.meta(dry_furrows_vary=False)
 # the ring reads running along the dike's inner toe and the inlet/outfall channels read as SLUICES cutting
 # THROUGH the dike (water crosses the dike only there); the east-side houses draw on top later.
 _env = net["envelope"]
-s.perimeter_dike(_env, seed=SEED ^ 0x6D)
+s.perimeter_dike(_env, seed=SEED ^ 0x6D, gaps=net["dike_sluices"])
 
 # the water SOURCE is a header reservoir (the wild water the inlet sluice draws from) sitting OUTSIDE
 # the dike above the high (NW) corner - the feeder ring canal is charged through a sluice in the dike
@@ -58,7 +58,7 @@ s.apply_land_use(net, "mulberry_fishpond", __r.Random(SEED ^ 0x55), fraction=0.9
 _rng = _random.Random(SEED ^ 0x3B)
 _ex = max(p[0] for p in _env)
 _fcy = sum(p[1] for p in _env) / len(_env)
-CX, CY = _ex + 150, _fcy + 20
+CX, CY = _ex + 120, _fcy + 20  # hug the (edge-wandered) east dike a touch closer so >=5 houses ring the field
 # reserve a WINDWARD GAP over the NORTHERN third of the cluster (a no-build strip east of the dike): the
 # north houses shift east to leave room for the NW windbreak, while the south houses still hug the field
 # (field_ringed). This is the only way to fit a west windbreak against an east-dike village facing the ponds.
