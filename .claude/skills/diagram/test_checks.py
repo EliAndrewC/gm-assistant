@@ -3606,6 +3606,34 @@ def test_city_moat_feeder_matches_width_passes_when_matched():
     assert "city_moat_feeder_matches_width" not in f(_feeder_city(22))
 
 
+def _drain_city(streams):
+    # a closed-moat city (no river); off-map = x<0 / x>1000 (EX0=0, EX1=W for a viewBox-less manifest)
+    return {
+        "meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+        "wall": WALLSQ,
+        "gates": [[500, 200], [500, 800]],
+        "moat": _MOAT,
+        "moat_width": 22,
+        "streams": streams,
+    }
+
+
+_MOAT_FEEDER = {"poly": [[-20, 500], [165, 500]], "frm": None, "to": None, "w": 22}  # off-map W -> moat W rim
+_MOAT_OUTFALL = {"poly": [[835, 500], [1020, 500]], "frm": None, "to": None, "w": 22}  # moat E rim -> off-map E (opposite the feeder)
+
+
+def test_city_moat_has_outfall_passes_with_a_flush_through_ring():
+    # feeder on the W rim + outfall on the E rim (opposite faces) = a flow-through moat; the extra
+    # in-city ditch does NOT reach the moat, so it is not mistaken for a tap
+    inland = {"poly": [[500, 480], [500, 520]], "frm": None, "to": None, "w": 6}
+    assert "city_moat_has_outfall" not in f(_drain_city([_MOAT_FEEDER, _MOAT_OUTFALL, inland]))
+
+
+def test_city_moat_has_outfall_fires_when_a_fed_moat_cannot_drain():
+    # a full-flow feeder into a closed moat with no outfall - conservation of flow, it would overflow
+    assert "city_moat_has_outfall" in f(_drain_city([_MOAT_FEEDER]))
+
+
 # --- settlement wells (town/village/hamlet water access) ---
 def _rural(scale, houses, wells, **extra):
     M = {"meta": {"scale": scale}, "houses": [{"x": x, "y": y, "w": 40, "h": 28, "rot": 0, "kind": "plain"} for (x, y) in houses], "wells": [{"x": x, "y": y, "r": 8} for (x, y) in wells]}
@@ -3737,6 +3765,9 @@ def test_roads_bridge_water_fires_on_an_unbridged_lane_over_a_canal():
 def _footbridge_map(bridges, footbridges=True):
     return {
         "meta": {"scale": "village", **({"field_footbridges": True} if footbridges else {})},
+        # a field STRADDLING the main ditch, so the ditch is PLANKABLE (cultivation both banks) and thus
+        # warrants a plank - a margin ditch with nothing to cross to is exempt (see the plankable-gate test)
+        "fields": [{"name": "p", "kind": "paddy", "outline": [[50, 130], [850, 130], [850, 270], [50, 270]], "bbox": [50, 130, 850, 270]}],
         "field_ditches": [
             {"poly": [[100, 200], [800, 200]], "w": 5, "role": "main", "field": "p"},
             {"poly": [[100, 600], [180, 600]], "w": 4, "role": "branch", "field": "p"},
@@ -3753,6 +3784,33 @@ def test_long_ditches_have_a_footbridge_fires_when_a_long_ditch_is_planless():
 def test_long_ditches_footbridge_check_is_opt_in():
     # without meta.field_footbridges the check does not run at all (a planless ditch is fine)
     assert "long_ditches_have_a_footbridge" not in f(_footbridge_map([], footbridges=False))
+
+
+def test_long_ditches_footbridge_exempts_a_margin_ditch():
+    # a long ditch with cultivation on only ONE side (marsh/scrub the other) is not plankable -> no plank needed
+    M = _footbridge_map([])
+    M["fields"] = [{"name": "p", "kind": "paddy", "outline": [[50, 90], [850, 90], [850, 190], [50, 190]], "bbox": [50, 90, 850, 190]}]  # entirely N of the y=200 ditch
+    assert "long_ditches_have_a_footbridge" not in f(M)
+
+
+# ---- footbridges_reach_useful_ground: a standalone plank must land on field/village/dike both banks ----
+def test_footbridges_reach_useful_ground_fires_when_a_plank_crosses_to_nothing():
+    # a foot-tagged plank on the field's EDGE ditch: paddy on the N bank, bare ground (marsh/scrub) on the S
+    M = _footbridge_map([{"x": 450, "y": 200, "rot": 90, "span": 11, "w": 2, "foot": True}])
+    M["fields"] = [{"name": "p", "kind": "paddy", "outline": [[50, 90], [850, 90], [850, 190], [50, 190]], "bbox": [50, 90, 850, 190]}]  # only N of the ditch
+    assert "footbridges_reach_useful_ground" in f(M)
+
+
+def test_footbridges_reach_useful_ground_passes_when_a_plank_reaches_field_both_banks():
+    # the field straddles the ditch -> both banks cultivated -> the plank is useful
+    assert "footbridges_reach_useful_ground" not in f(_footbridge_map([{"x": 450, "y": 200, "rot": 90, "span": 11, "w": 2, "foot": True}]))
+
+
+def test_footbridges_reach_useful_ground_exempts_untagged_lane_bridges():
+    # a lane-carried crossing (no 'foot' tag) is exempt even with nothing on the far bank - a path leads to it
+    M = _footbridge_map([{"x": 450, "y": 200, "rot": 90, "span": 11, "w": 5}])
+    M["fields"] = [{"name": "p", "kind": "paddy", "outline": [[50, 90], [850, 90], [850, 190], [50, 190]], "bbox": [50, 90, 850, 190]}]
+    assert "footbridges_reach_useful_ground" not in f(M)
 
 
 def test_bridges_clear_of_houses_fires_when_a_plank_sits_on_a_farmhouse():
