@@ -21,16 +21,53 @@ recovers to normal.
 
 Targets GNOME Shell 42 (Ubuntu 22.04, mujina).
 
-## Install / update
+## How to test a change
 
-On the laptop (not inside a container):
+**Always run this ON THE LAPTOP, not inside a container** - the container
+cannot run GNOME Shell, so no UI change can be verified from inside it (see
+[Dev loop caveat](#dev-loop-caveat)). After editing `extension.js`:
+
+1. **Install the new copy:**
+
+   ```bash
+   ./scripts/temperature-widget/install.sh
+   ```
+
+   This copies `extension.js` + `metadata.json` into
+   `~/.local/share/gnome-shell/extensions/temperature-bar@mujina/` and enables
+   it via gsettings. The copy is what any shell (real or nested) loads.
+
+2. **Load it into a shell.** Pick based on session type and how disruptive you
+   want to be:
+
+   - **Wayland, without disturbing your real session (preferred for iterating).**
+     Run a **nested** GNOME Shell in its own window. It is a separate shell
+     instance that loads the same installed extension, so your real panel -
+     and any running Claude Code session, terminals, etc. - are left alone:
+
+     ```bash
+     dbus-run-session -- gnome-shell --nested --wayland
+     ```
+
+     The widget appears in the nested window's top panel; click it to check the
+     popup graph. **Close the window to end the test.** Re-run `install.sh` and
+     relaunch the nested shell for each iteration.
+
+   - **Wayland, make it live for real.** Log out and back in. Only do this once
+     the nested-shell check looks right - a real logout kills your session.
+
+   - **X11.** Press Alt+F2, type `r`, Enter (in-place shell restart, no logout).
+
+## Install / update (make it live)
+
+Same first step as testing:
 
 ```bash
 ./scripts/temperature-widget/install.sh
 ```
 
-Then reload GNOME Shell: on X11 press Alt+F2, type `r`, Enter; on Wayland log
-out and back in. Repeat both steps after any change to `extension.js`.
+Then reload GNOME Shell for your real session: on X11 press Alt+F2, type `r`,
+Enter; on Wayland log out and back in.
 
 To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
 `~/.local/share/gnome-shell/extensions/temperature-bar@mujina/`.
@@ -52,6 +89,14 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
   directly comparable; a sampling gap longer than 30 s (suspend, shell
   restart) breaks the line instead of drawing a fake straight segment
   across it.
+- **The popup graph paints its own opaque dark backdrop** before drawing any
+  lines, rather than drawing straight onto the popup menu's themed background.
+  The menu background's color and opacity are theme-dependent, and on some
+  themes they washed the low-alpha lines out to near-invisible gray (the temp
+  line and both dashed threshold lines all looked grayed-out). A known dark
+  panel underneath lets the lines use full-alpha bright colors that read
+  consistently regardless of shell theme - white 2 px for the temperature
+  trace, full-saturation orange/red for the dashed thresholds.
 - **Judged on the hotter of package temp and hottest core**, same as the
   script - a single core can spike above the package reading.
 - **Hysteresis (4°C) on the way down**: severity drops only once the reading
@@ -71,5 +116,5 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
 The container cannot run GNOME Shell, so UI changes cannot be verified from
 inside it. Logic (sensor discovery, severity state machine) is covered by a
 Node harness with stubbed GNOME imports that was run against the real `/sys`
-during development; visual changes need an install + shell reload on the
-laptop to check.
+during development; visual changes need an install + shell load on the laptop
+to check (see [How to test a change](#how-to-test-a-change)).
