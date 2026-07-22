@@ -30,7 +30,7 @@
 #   done            push, then render-sync (the common full stop-work)
 set -euo pipefail
 
-MAIN=/gm-assistant
+MAIN=${CLONE_MAIN:-/gm-assistant}   # CLONE_MAIN: test seam only; production is always /gm-assistant
 LOCK=$MAIN/.clones/.ritual.lock   # keep this NAME: it is the cross-session lock convention in CLAUDE.md - renaming it would stop serializing against other sessions
 POOL=.claude/skills/diagram/pool
 RENDER_CACHE=.claude/skills/diagram/render_cache.py
@@ -43,6 +43,10 @@ case "$ROOT" in
   "$MAIN"/.clones/*) ;;
   *) die "$ROOT is not a session clone under $MAIN/.clones/" ;;
 esac
+# 'gm-assistant' is a FORBIDDEN clone name (GM 2026-07-22): it is the repository, not a session,
+# and being the old unnamed-default is what let two sessions collide in one working tree. The
+# ritual refuses to run from it so no work can be pushed out of it - rename the session distinctly.
+[ "$(basename "$ROOT")" = "gm-assistant" ] && die "'.clones/gm-assistant' is a FORBIDDEN clone name - 'gm-assistant' is the repository, not a session. Ask the GM to /rename this session to something distinct, then run the ritual from .clones/<that-name>. (CLAUDE.md 'Session clones')"
 cd "$ROOT"
 
 sync_in() {
