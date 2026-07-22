@@ -1556,14 +1556,22 @@ def test_quarter_label_is_drawn_at_the_centroid():
     assert any("yamen precinct" in frag for frag in s.toplabels)
 
 
-def test_quarter_reserve_kinds_each_render_a_surface():
+def test_quarter_reserve_kinds_render_their_ground():
     poly = [(100, 100), (500, 100), (500, 500), (100, 500)]
-    for kind in ("drill_ground", "garden", "agricultural_district"):
+    # drill_ground and garden paint a visible ground surface...
+    for kind in ("drill_ground", "garden"):
         s = _city()
         before = len(s.out)
         s.quarter(poly, "reserve", kind=kind, label=kind)
         assert s.M["quarters"][-1]["kind"] == kind
-        assert len(s.out) > before  # a reserve renders its ground feature
+        assert len(s.out) > before  # a drawn reserve renders its ground feature
+    # ...but an agricultural_district draws NOTHING (GM 2026-07-22 - its combs/farmhouses/label are
+    # the rendering; the old faint dashed boundary was a stray dotted line), yet is still recorded
+    s = _city()
+    before = len(s.out)
+    s.quarter(poly, "reserve", kind="agricultural_district", label="ag")
+    assert s.M["quarters"][-1]["kind"] == "agricultural_district"
+    assert len(s.out) == before  # no boundary line: the fields carry the whole visual
 
 
 def test_quarter_rejects_bad_zone_and_kind_misuse():
