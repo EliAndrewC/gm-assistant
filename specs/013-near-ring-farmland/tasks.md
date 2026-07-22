@@ -69,9 +69,9 @@ description: "Task list for Near-Ring Farmland Density"
 
 **Independent Test**: regenerate Tango; the flat ground outside the wall reads predominantly cultivated; no field/farmstead/cover crosses the wall or moat; every gate approach still bridges the moat; city gate green.
 
-- [ ] T015 [US2] Redesign `pool/provincial-cities/tango.gen.py`: apply `s.near_ring_cropland(...)` to the flat ground OUTSIDE the wall, drop/trim the outside near-ring scrub, respect the moat/wall/gates/ward fences and the segregated burakumin quarter + gate market outside the wall. Leave the in-wall agricultural district and the government compounds intact.
-- [ ] T016 [US2] Iterate single-map regen + gate on Tango until packed AND green: `near_ring_cultivated_fraction` (city scope) plus `city_has_outside_farmland`, `city_fields_close_to_city`, `roads_bridge_water`, wall/moat overlap checks, and the city caste/density checks. City farmhouses do NOT touch the population figure, so ring as densely as the view needs.
-- [ ] T017 [US2] Principle XII spot-review of the rendered `pool/provincial-cities/tango.png`: confirm Elements 1-4 hold outside the wall and nothing crosses the wall/moat. Record the outcome in Tango's review log.
+- [X] T015 [US2] Redesign `pool/provincial-cities/tango.gen.py`: apply `s.near_ring_cropland(...)` to the flat ground OUTSIDE the wall, drop/trim the outside near-ring scrub, respect the moat/wall/gates/ward fences and the segregated burakumin quarter + gate market outside the wall. Leave the in-wall agricultural district and the government compounds intact.
+- [X] T016 [US2] Iterate single-map regen + gate on Tango until packed AND green: `near_ring_cultivated_fraction` (city scope) plus `city_has_outside_farmland`, `city_fields_close_to_city`, `roads_bridge_water`, wall/moat overlap checks, and the city caste/density checks. City farmhouses do NOT touch the population figure, so ring as densely as the view needs.
+- [X] T017 [US2] Principle XII spot-review of the rendered `pool/provincial-cities/tango.png`: confirm Elements 1-4 hold outside the wall and nothing crosses the wall/moat. Record the outcome in Tango's review log.
 
 **Checkpoint**: both a town and a city read packed and pass independently.
 

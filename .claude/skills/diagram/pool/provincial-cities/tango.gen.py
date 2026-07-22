@@ -863,6 +863,16 @@ top_up("merchant_house", (1181, 1350, 1594, 1712), 120,
        count_kinds=("merchant", "merchant_house", "merchant_large"))   # 120 (was 112), region grown W to the row band's own x1181 edge + S to the ring taper: the pair cadence dropped the merchant caste to 102 vs its 105 band floor (~150 target, city_caste_counts_in_band); the finer 6x7 exact sweep finds the SW district's residual seats
 top_up("merchant_house", (1632, 1302, 2050, 1348), 112,
        count_kinds=("merchant", "merchant_house", "merchant_large"))   # the SW district alone saturates ~3 short of the floor - the NE gap band (already a merchant_house terrace strip) takes the residue
+# ===== NEAR-RING FARMLAND: the extramural flat ground reads PACKED (feature 013) =====
+# A provincial governor's seat sits in its province's best basin, so the flat ground just outside the
+# wall is intensively worked, not bare. Fill the extramural band (inside the cropped view) with a quilt
+# of dry-field + garden plots between the paddy fans - no water needed (dry cropland is exempt from the
+# water-source rule). near_ring_cropland auto-skips everything INSIDE the wall (a city's near ring is
+# extramural) plus the fans, farmsteads, estates, gate markets, graves, and the moat. Called last, after
+# every structure + top-up, so it sees them all. Default near_ring_density "dense" (well-sited).
+# WHY: settlements.md "Near-ring farmland density".
+s.near_ring_cropland((973, 729, 2231, 1927), seed=41)
+
 _dw = (sum(1 for b in s.M["buildings"] if b["kind"] in DWELL)
        + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"])))
 if _dw < 562:   # population floor 558 (3000 x 0.93 / 5) + margin
