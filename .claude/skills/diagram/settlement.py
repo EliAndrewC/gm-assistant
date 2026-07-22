@@ -1309,6 +1309,34 @@ class Settlement:
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
+    def comb_base_fill(self, net: dict[str, Any], name: str, color: str = "", full_envelope: bool = False) -> None:
+        """Draw a FIELD FLOOR under a build_comb net's plots and record it (M['comb_floors'][name]),
+        so the parchment BACKGROUND never shows through as bare 'white' at the canal junctions the
+        carve cannot tessellate (the head-race fork, the outfall corner where a supply canal dies at
+        the drain, the confluence wedges - the 'blank bits on the paddies' the GM circled repeatedly,
+        2026-07-22). Call BEFORE drawing the plots. `full_envelope` fills the whole envelope (cities:
+        tight crop, no surrounding scrub, so edge junctions must be covered too); otherwise the fill is
+        clipped to the PLOTS' union bbox (villages/hamlets: hides the nucleated map's harmless phantom
+        tail - the over-declared field_fall - and the scrub matrix covers the rest). Gated by
+        paddy_fan_has_floor. Villages default to a paddy-green floor, cities pass a soil tan."""
+        from waterfields import _RICE_GREEN
+
+        pv = [v for p in net["plots"] for v in p["poly"]]
+        if not pv:
+            return
+        env = net["envelope"]
+        epts = " ".join(f"{x:.1f},{y:.1f}" for x, y in env)
+        col = color or _RICE_GREEN
+        if full_envelope:
+            self.add(f'<polygon points="{epts}" fill="{col}" stroke="none"/>')
+        else:
+            cid = self._cid("padbase")
+            px0, px1 = min(v[0] for v in pv), max(v[0] for v in pv)
+            py0, py1 = min(v[1] for v in pv), max(v[1] for v in pv)
+            self.add(f'<clipPath id="{cid}"><rect x="{px0:.1f}" y="{py0:.1f}" width="{px1 - px0:.1f}" height="{py1 - py0:.1f}"/></clipPath>')
+            self.add(f'<polygon points="{epts}" fill="{col}" clip-path="url(#{cid})"/>')
+        self.M.setdefault("comb_floors", {})[name] = [[round(x, 1), round(y, 1)] for x, y in env]
+
     def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any]) -> list[Pt]:
         """Draw a `build_comb` net (dry hem + flooded paddies + bunds + channels) AND register the field's
         manifest + water topology, in one call - the ~50 lines every comb gen otherwise repeats inline. Feeds
@@ -1318,21 +1346,11 @@ class Settlement:
         to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
         SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
         source_and_sink) see a source. Returns the field envelope polygon."""
-        from waterfields import _RICE_GREEN, BEAN_GREEN, BUND
+        from waterfields import BEAN_GREEN, BUND
 
-        # BASE FILL (feature 012): a paddy-green wash over the whole planted extent BEFORE the plots, so the
-        # imperfect plot tessellation never lets the parchment background show through as bare "white" gaps -
-        # flat wet paddy tiles completely (research.md D5). Filled over the PLOTS' union bbox, NOT the raw
-        # envelope, so a nucleated map's harmless phantom tail (the over-declared field_fall the checks let a
-        # nucleated cluster carry) stays invisible instead of being painted green.
-        pv = [v for p in net["plots"] for v in p["poly"]]
-        if pv:
-            cid = self._cid("padbase")
-            epts = " ".join(f"{x:.1f},{y:.1f}" for x, y in net["envelope"])
-            px0, px1 = min(v[0] for v in pv), max(v[0] for v in pv)
-            py0, py1 = min(v[1] for v in pv), max(v[1] for v in pv)
-            self.add(f'<clipPath id="{cid}"><rect x="{px0:.1f}" y="{py0:.1f}" width="{px1 - px0:.1f}" height="{py1 - py0:.1f}"/></clipPath>')
-            self.add(f'<polygon points="{epts}" fill="{_RICE_GREEN}" clip-path="url(#{cid})"/>')
+        # BASE FILL (feature 012, now via the shared helper): a paddy-green wash under the plots so the
+        # imperfect tessellation never shows the parchment background as bare "white" gaps (research.md D5).
+        self.comb_base_fill(net, name)
 
         for p in net["dry_plots"]:  # the dry upslope hem
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])

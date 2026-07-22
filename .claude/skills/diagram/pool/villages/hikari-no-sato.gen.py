@@ -72,6 +72,7 @@ def add_block(name, sluice, seed, field_fall, offtakes_a, canal_a_len, canal_b_l
                      offtakes_a=offtakes_a, offtakes_b=(),
                      canal_a_len=canal_a_len, canal_b_len=canal_b_len)
     s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
+    s.comb_base_fill(net, name)   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
     for _dp in net["dry_plots"]:
         s.block_polys.append(_dp["poly"])
     for p in net["dry_plots"]:
