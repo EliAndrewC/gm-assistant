@@ -2432,6 +2432,24 @@ def test_city_gate_furniture_at_throat_fires_when_walked_back_along_the_wall():
     assert "city_gate_has_guardhouse" not in fails  # ...which is exactly why the throat check exists
 
 
+def test_city_gate_tower_at_its_gate_passes_when_the_tower_is_closest():
+    # each gate's own tower (a gate_structs "tower") is the CLOSEST tower to its opening; mural bastions sit further
+    M = _fort_city(
+        gate_structs=[{"x": 500, "y": 280, "w": 17, "h": 10, "kind": "tower"}, {"x": 500, "y": 720, "w": 17, "h": 10, "kind": "tower"}],
+        wall_towers=[{"x": 500, "y": 280, "w": 17, "h": 10}, {"x": 420, "y": 250, "w": 21, "h": 13}, {"x": 500, "y": 720, "w": 17, "h": 10}, {"x": 420, "y": 750, "w": 21, "h": 13}],
+    )
+    assert "city_gate_tower_at_its_gate" not in f(M)
+
+
+def test_city_gate_tower_at_its_gate_fires_when_a_mural_is_closer():
+    # the N gate's own tower is marooned out (dist 140) while a mural bastion sits closer (dist 90)
+    M = _fort_city(
+        gate_structs=[{"x": 500, "y": 340, "w": 17, "h": 10, "kind": "tower"}, {"x": 500, "y": 720, "w": 17, "h": 10, "kind": "tower"}],
+        wall_towers=[{"x": 500, "y": 340, "w": 17, "h": 10}, {"x": 500, "y": 290, "w": 21, "h": 13}, {"x": 500, "y": 720, "w": 17, "h": 10}, {"x": 420, "y": 750, "w": 21, "h": 13}],
+    )
+    assert "city_gate_tower_at_its_gate" in f(M)
+
+
 def test_city_has_ring_road_fires_when_missing():
     assert "city_has_ring_road" in f(_fort_city())
 

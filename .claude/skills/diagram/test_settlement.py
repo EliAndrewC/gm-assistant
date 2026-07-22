@@ -596,39 +596,64 @@ def test_label_hits_counts_a_grove_under_the_label():
     assert s._label_hits(500, 500, "Ministry of Test", 12) >= 1
 
 
-def test_city_gate_tower_walks_past_a_kido_planted_at_the_gate():
-    # the gate-guard TOWER's own obstacle walk (_tower_blocked + the while loop): with a kido planted
-    # right where the tower first tries to stand, the tower is blocked and WALKS further along the wall
-    # until it clears, rather than standing on the kido. g_east defaults off, so the tower walks with
-    # west=False - block that span.
+def test_city_gate_tower_flips_to_the_other_flank_when_one_is_blocked():
+    # the gate tower belongs AT the gate: with its PRIMARY flank blocked by a kido span, it does NOT walk
+    # far out along the wall - it flips to the OTHER flank at the same short arc, still at the opening.
     import math as m
 
     s = _crop_settlement()
     s.meta(name="G", scale="city", walled=True, ftpx=3)
     pts = [(round(1000 + 400 * m.cos(2 * m.pi * i / 16)), round(700 + 400 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
-    blocks = [s._wall_walk(pts, 0, a, west=False)[:2] for a in (78, 98, 118)]
+    blocks = [s._wall_walk(pts, 0, a, west=False)[:2] for a in (78, 98, 118)]  # block the PRIMARY (west=False) flank
     s.city_wall(pts, gates=[pts[0]], tower_skip=blocks)
     tower = [gs for gs in s.M["gate_structs"] if gs.get("kind") == "tower"]
     assert tower  # the gate tower is still placed...
-    assert all(m.hypot(tower[0]["x"] - bx, tower[0]["y"] - by) > 45 for bx, by in blocks)  # ...walked clear of the kido span
+    assert m.hypot(tower[0]["x"] - pts[0][0], tower[0]["y"] - pts[0][1]) < 110  # ...AT the gate, not marooned far out
+    assert all(m.hypot(tower[0]["x"] - bx, tower[0]["y"] - by) > 45 for bx, by in blocks)  # on the clear OTHER flank
+
+
+def test_city_gate_tower_steps_out_when_both_near_flanks_are_blocked():
+    # only when BOTH near-gate flanks are blocked does the tower step OUTWARD along the wall (the arc walk):
+    # kido spans on each side of the gate leave it nowhere at the opening, so it walks clear.
+    import math as m
+
+    s = _crop_settlement()
+    s.meta(name="B", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 400 * m.cos(2 * m.pi * i / 16)), round(700 + 400 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
+    blocks = [s._wall_walk(pts, 0, a, west=wf)[:2] for a in (78, 98, 118) for wf in (False, True)]  # BOTH flanks near the gate
+    s.city_wall(pts, gates=[pts[0]], tower_skip=blocks)
+    tower = [gs for gs in s.M["gate_structs"] if gs.get("kind") == "tower"]
+    assert tower and all(m.hypot(tower[0]["x"] - bx, tower[0]["y"] - by) > 45 for bx, by in blocks)  # placed, walked clear of every blocked span
+
+
+def test_city_gate_tower_falls_back_when_every_spot_is_blocked():
+    # both flanks blocked at EVERY arc out to the cap: the tower is still placed exactly once (the last
+    # candidate is taken rather than the loop running past the cap with nothing placed).
+    import math as m
+
+    s = _crop_settlement()
+    s.meta(name="F", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 400 * m.cos(2 * m.pi * i / 16)), round(700 + 400 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
+    blocks = [s._wall_walk(pts, 0, a, west=wf)[:2] for a in range(78, 241, 20) for wf in (False, True)]
+    s.city_wall(pts, gates=[pts[0]], tower_skip=blocks)
+    assert len([gs for gs in s.M["gate_structs"] if gs.get("kind") == "tower"]) == 1
 
 
 def test_city_mural_tower_yields_a_vertex_shoulder_to_shoulder_with_a_gate_tower():
-    # the mural-tower loop skips a wall vertex within 110px of a GATE tower (a mural tower there would
-    # read as a double). Normally the gate tower hugs its gate, and any nearby vertex is already dropped
-    # by the 130px gate filter - so this fires only when the gate tower has WALKED out (blocked at the
-    # gate) toward the next even vertex. A fine 24-gon plus a kido blocking the tower's near spots forces
-    # exactly that: the tower walks out near an even, non-gate vertex, which the mural loop then yields.
+    # the mural-tower loop skips a wall vertex within 110px of a GATE tower (a mural tower there would read
+    # as a double). This fires only when the gate tower has stepped OUT toward the next even vertex - which
+    # now needs BOTH near-gate flanks blocked. A fine 24-gon plus kido spans on both flanks forces exactly
+    # that: the tower walks out near an even, non-gate vertex, which the mural loop then yields.
     import math as m
 
     s = _crop_settlement()
     s.meta(name="M", scale="city", walled=True, ftpx=3)
     pts = [(round(1000 + 420 * m.cos(2 * m.pi * i / 24)), round(700 + 420 * m.sin(2 * m.pi * i / 24))) for i in range(24)]
-    blocks = [s._wall_walk(pts, 0, a, west=False)[:2] for a in (78, 98, 118)]
+    blocks = [s._wall_walk(pts, 0, a, west=wf)[:2] for a in (78, 98, 118) for wf in (False, True)]
     s.city_wall(pts, gates=[pts[0]], tower_skip=blocks)
     gate_towers = [(gs["x"], gs["y"]) for gs in s.M["gate_structs"] if gs.get("kind") == "tower"]
     assert gate_towers and s.M.get("wall_towers")  # both kinds of tower were placed
-    # the gate tower walked clear of the blocked kido span (which is what carried it out near the even
+    # the gate tower walked clear of the blocked kido spans (which is what carried it out near the even
     # vertex the mural loop then yields)
     assert all(m.hypot(gate_towers[0][0] - bx, gate_towers[0][1] - by) > 45 for bx, by in blocks)
 
