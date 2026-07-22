@@ -150,7 +150,7 @@ lived at `scratchpad/temps.csv` during development) showed:
   package tracking).
 
 Under the naive "notify the instant severity rises" logic that fired **6
-notifications (5 critical) in 10 idle minutes**. Two defenses fix it:
+notifications (5 critical) in 10 idle minutes**. Three defenses fix it:
 
 1. **Median-of-3 smoothing (`SMOOTH_WINDOW`).** The metric that drives the bar,
    the severity, the graph, and the archive is the median of the last 3 raw
@@ -160,7 +160,34 @@ notifications (5 critical) in 10 idle minutes**. Two defenses fix it:
    55°C and 45°C - gone. The user opted into smoothing the **bar** too (not just
    notifications), because a glitch that is provably not a real temperature has
    no business flashing the gauge red.
-2. **Notification debounce (`CONFIRM_SAMPLES = 3`).** A severity must hold for 3
+2. **Slew/jump gate (`MAX_JUMP_C = 20`, `JUMP_CONFIRM_SAMPLES = 3`;
+   `History.slewGate`).** Median-of-3 kills a *lone* spike, but a **run of 2+
+   consecutive bad reads outvotes a 3-wide median** and slips through. This was
+   found in the wild on 2026-07-22: with an ice pack under the laptop and the
+   case cool to the touch, the archive still logged burst excursions to
+   98-101°C that snapped back to ~50°C - physically impossible for the real die
+   temperature, and pinning to a suspiciously round 100 just like the
+   development glitches, but 2 polls long instead of 1, so the median passed
+   them. The gate sits downstream of the median and refuses to *move* the
+   accepted metric by more than `MAX_JUMP_C` in a single poll until the new
+   level has *held* for `JUMP_CONFIRM_SAMPLES` polls. So a brief burst is
+   ignored (the metric holds its last good value) while a genuinely sustained
+   excursion is accepted after ~9 s - the same confirmation philosophy as the
+   notification debounce, and harmless for the same reason (hardware throttling,
+   not this gauge, is the safety net), with nothing ever permanently hidden. A
+   normal gradual rise stays within `MAX_JUMP_C` every poll and passes through
+   with **zero** lag; only a physically-impossible single-poll leap engages the
+   gate. `MAX_JUMP_C = 20` sits well above any real per-poll change (genuine
+   bursts ramp only a few degrees per 3 s poll) yet far below the ~50°C
+   one-poll leap of a glitch. **Both numbers are provisional**: they were set
+   from the coarse 30 s archive, and a fine-grained raw capture (per-core, per
+   3 s poll via `sensors`, to distinguish a one-core misread from a
+   package-wide one and to measure real burst lengths) is the intended way to
+   retune them. The gate's de-noising state is reset across a sampling gap
+   longer than `GAP_BREAK_SECONDS` (suspend, shell restart), so a stale pre-gap
+   value cannot be held after resume. The gate logic is pure and lives in
+   `history.js`, unit-tested in `test-history.js`.
+3. **Notification debounce (`CONFIRM_SAMPLES = 3`).** A severity must hold for 3
    consecutive polls (~9 s) before it fires, and fires **once** on the way up
    (not every poll while it stays hot). This catches the residual 1-2 poll
    excursions that survive smoothing. The number is sized from the data:
