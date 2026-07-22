@@ -12,6 +12,7 @@ settlement.py to 100%.
 
 import math
 import os
+import random
 import tempfile
 
 import pytest
@@ -2949,6 +2950,22 @@ def test_build_polder_mosaic_knob():
         return sum(vals) / len(vals)
 
     assert mean_skew(mos) > mean_skew(grid) * 1.15  # the mosaic parcels run visibly more to trapezoids
+
+
+def test_apply_land_use_leaves_a_lone_pond_ungated():
+    # a dike-pond with NO adjacent canal (<46 px) and NO neighbour pond within reach (<52 px) gets no sluice -
+    # the defensive cap that stops a lone basin drawing a giant culvert across bare ground to a distant pond.
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(field_archetype="mulberry_dike_fishpond")
+    net = {
+        "plots": [
+            {"poly": [(100, 100), (200, 100), (200, 200), (100, 200)], "low": True},
+            {"poly": [(1500, 1500), (1600, 1500), (1600, 1600), (1500, 1600)], "low": True},  # far from the other pond
+        ],
+        "channels": [{"pts": [(1900, 100), (1950, 150)]}],  # a canal far from BOTH ponds
+    }
+    s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
+    assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
 
 
 def test_perimeter_dike_gap_off_band_still_draws_full_loop():
