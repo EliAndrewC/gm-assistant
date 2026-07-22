@@ -2183,6 +2183,48 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"at a coarser grain instead of real feet (pass/scale them by grain)",
         )
 
+    # A CITY PADDY FAN HAS A SOIL FLOOR so its canal-JUNCTION triangles are not bare parchment.
+    # The comb carve tessellates its plots but cannot fill the odd wedges where the head-race
+    # forks into the two supply canals, where canal A dies at the drain (the outfall corner), and
+    # at the confluences - these show the bare LAND background (the "blank bits on the paddies"
+    # the GM circled four times, 2026-07-22) because nothing is drawn under the plots. The fix is
+    # a field-floor polygon (== the envelope) drawn first; this check verifies it exists and
+    # covers the fan, by sampling the envelope interior and requiring the floor to contain each
+    # sample. paddy_fan_gapless's 2% tolerance let these small junction triangles slip; the floor
+    # closes them and this check pins it. Only city paddy fields recording plot_polys are gated.
+    if scale == "city":
+        _pf_bad = []
+        for f in M.get("fields", []):
+            if f.get("kind") != "paddy" or not f.get("plot_polys"):
+                continue
+            _pf_out = [(q[0], q[1]) for q in f["outline"]]
+            _pf_floor = [(q[0], q[1]) for q in f.get("floor", [])]
+            bx0 = min(q[0] for q in _pf_out)
+            bx1 = max(q[0] for q in _pf_out)
+            by0 = min(q[1] for q in _pf_out)
+            by1 = max(q[1] for q in _pf_out)
+            _pf_samp = 0
+            _pf_unfloored = 0
+            _pf_gy = by0 + 12
+            while _pf_gy < by1:
+                _pf_gx = bx0 + 12
+                while _pf_gx < bx1:
+                    if point_in_poly(_pf_gx, _pf_gy, _pf_out):
+                        _pf_samp += 1
+                        if not (_pf_floor and point_in_poly(_pf_gx, _pf_gy, _pf_floor)):
+                            _pf_unfloored += 1
+                    _pf_gx += 18
+                _pf_gy += 18
+            if _pf_samp and _pf_unfloored > 0.02 * _pf_samp:
+                _pf_bad.append(f"{f.get('name')} ({_pf_unfloored}/{_pf_samp} interior samples off the floor)")
+        check(
+            "city_paddy_fan_has_floor",
+            not _pf_bad,
+            f"city paddy fan(s) with no soil floor under the plots: {_pf_bad} - the comb carve leaves bare "
+            f"triangles at the canal junctions (head-race fork, outfall corner, confluences) that show the "
+            f"parchment background; draw a field-floor polygon (== the envelope) first and record it as 'floor'",
+        )
+
     # A COMB'S HEAD GROUND IS QUILTED (city-scale): the supply canals run THROUGH cultivated
     # land - paddy below, dry-crop hem above - never through bare parchment. The fan head (the
     # band along the mains and the fork triangle between the arms) is uncommanded by gravity,
