@@ -1,0 +1,152 @@
+# Flophouse / cheap-lodging research findings (2026-07-22)
+
+Research pass evaluating the map convention for cheap traveler/peasant lodging ("flophouses")
+against premodern East-Asian historical norms, per the GM's request to sanity-check a handwaved
+rule. **China-first** (Song/Ming rice-south, the physical/economic layer), Japan corroborating
+(Edo *kichin-yado*, cultural surface). Deep-research pass: 6 search angles, 19 sources fetched, 63
+claims extracted, 25 adversarially verified (3-vote, 2/3-to-kill), 23 confirmed / 2 refuted.
+
+**Status: FINDINGS ONLY. No map or check changes made.** The adjustment options in the last
+section are for the GM to decide on; nothing here has been applied.
+
+## What the maps do now (the convention under evaluation)
+
+- **Town** (`town_has_flophouse`): 1 market-day flophouse, default-on, at the gate market of a
+  walled town / along the road of an unwalled one. `meta(flophouses=N)` to change.
+- **City** (`city_has_flophouse`, `city_flophouse_inside_walls`, `city_flophouse_outside_each_gate`,
+  `city_flophouse_in_humble_quarter`): **one flophouse just outside EVERY gate** (within ~520px,
+  for travelers who reach a shut gate) **plus at least one inside** the walls in a humble quarter
+  (laborer/agrarian, never by temple/merchant/samurai/burakumin). In practice Tango and Nagahara
+  (2 gates each) each carry **4 flophouses: 2 inside + 2 outside** (one outside per gate).
+- Stated rationale in `settlements.md`: the outside-gate flophouse serves **late arrivals who miss
+  the dusk gate-closing**; the inn + stables + yard sit inside for secure overnight animal holding.
+
+The GM's own framing, verbatim: *"a flophouse outside the city walls for late arrivals and inside
+the city walls for peasant visitors, and probably each entrance should have the pair of those
+things."* That is essentially what is encoded.
+
+## Findings, by how well the evidence holds
+
+### Well-documented (high confidence)
+
+1. **The gate curfew was real and strong under the Tang, but had substantially RELAXED by the
+   Song** - which weakens the "stranded outside the walls at dusk" rationale precisely for the
+   period Rokugan is modeled on. Tang cities beat a gate-closing drum at dusk and a gate-opening
+   drum ~4 a.m.; ward gates locked, mounted soldiers patrolled, and violators were flogged (Tang
+   ~20 strokes; Ming 40-50 for the 9pm-3am watches). But under the Song the walled-ward (*fangshi*)
+   system collapsed, ward walls came down, the Kaifeng curfew was formally abolished in 1063, and
+   night markets ran at all hours. **So the curfew-stranding demand driver is a Tang phenomenon;
+   for the Song/Ming rice-south model it is weak and regionally variable.** (8 claims, all 3-0.)
+
+2. **The cheap tier served exactly the low-status clientele the convention targets** - carters and
+   cart-bosses (*che laoban*), itinerant peddlers (*xingfan*), and farmers (*nongmin*) - on communal
+   sleeping platforms holding ~10-30 people (originally mixed-sex, a cloth curtain screening a corner
+   for women: the archetypal flophouse arrangement). The Chinese **cart-inn (*dachedian* 大车店) was
+   a distinct animal-yard type**: a spacious compound, front court for grain/fodder, rear court with
+   stables, hitching posts, feed troughs, water vats - a roadside *service node* that drew repair
+   trades, markets, folk medicine, prostitution, and bandits around it, not a single building.
+   (5 claims, all 3-0.) *Caveat: the heated* kang *and this whole inventory are cold-north Manchurian
+   features; a rice-south equivalent (*jimaodian* 鸡毛店 "chicken-feather inn") would use straw/board
+   bunks. Transfer the pattern, not the* kang.
+
+3. **Japan corroborates the "sleep-on-straw for a few coins" core AND the route-node (not
+   gate-symmetric) siting.** *Kichin-yado* (木賃宿, "firewood fee") were unambiguously the cheapest
+   self-cater tier - a hearth and firewood but no meals, travelers cooking their own provisions
+   (~50 mon vs. the meal-providing *hatago* at ~300 mon). Both attached to *shukuba* **post-stations
+   spaced along the highways** (the Edo Five Routes), i.e. Japanese roadside lodging keyed to
+   travel-route nodes, not city gates. (5 claims, all 3-0.)
+
+### Reasonable inference (medium confidence)
+
+4. **The cheap Chinese tier was sited by travel-distance staging + the gate-suburb, NOT by a
+   systematic inside-vs-outside-each-gate split.** Cart-inns were spaced roughly **every 40 li** (a
+   loaded cart's half-day, mirroring the courier-station *yizhan* stages) and clustered *于交通要道
+   和城关附近* - **along the arterial roads AND near the gate-suburb (*guanxiang* 城关)**, not purely
+   open road and not intramurally. This layers on a much older pattern: *Zhouli* relay rest-houses
+   every 10 li along the roads, and the Southern-Dynasties *dizhan* (邸店) fusing lodging with
+   warehousing/trade. **This supports a "gate-suburb flophouse" and "along the arrival road" - but
+   not a symmetric one-per-gate scheme.** (Confirmed 3-0 where verified; see refutations below.)
+   *Caveat: the richly-documented* dachedian *is a late-Qing/Republican NORTHEAST-China freight-road
+   institution, so it is corroborating detail transferred to a Song/Ming rice-south model, not
+   direct evidence for that period.*
+
+### Genuinely thin / unknown (low confidence - the honest gap)
+
+5. **Number/density per settlement is NOT established by the surviving record.** None of the 23
+   confirmed claims - nor any refuted one - supplies a gazetteer count, guild roster, or per-gate
+   tally of cheap inns for a settlement of any size. The record shows clustering into service nodes
+   and route-stage spacing, which *weakly* favors a clustered "lodging district" at the busy
+   gate-suburb over an even one-per-gate distribution, **but this is inference from clustering
+   behavior, not a measured density.** As the GM anticipated, the peasant/low-status lodging record
+   is genuinely thin: cheap inns rarely appear in gazetteers (方志), which foreground official
+   post-stations (驿) and higher-status *dizhan*/*kezhan*.
+
+### Refuted - do NOT rely on these
+
+- **"Cart-inns sat both along routes AND at the gate-quarter, paired and spaced every 40 li"** was
+  voted down **0-3.** The 40-li spacing is a *route-stage* logic; grafting it onto a gate-pairing
+  scheme is not supported. This is the specific reading closest to our "pair at every gate" rule,
+  and it failed verification.
+- **"The cart-inn was categorically the cheapest tier, with free hot food and rooms cheaper than an
+  ordinary *kezhan*"** was voted down **0-3.** Treat the cart-inn as *a* cheap animal-yard type, not
+  as *the* cheapest tier.
+
+## Assessment: is the convention within norms?
+
+**Directionally yes, but its symmetry is a stylization the evidence does not support.**
+
+- **Supported:** cheap inns *did* concentrate in the gate-suburb (*guanxiang*) and along the
+  arrival roads; a modest intramural cheap inn near a gate is plausible under the Song+ relaxation
+  that put commerce inside the walls at all hours. The clientele (carters, peddlers, market-day
+  farmers) and the animal-yard cart-inn type are solidly attested.
+- **Not supported:** a systematic **one-outside-EACH-gate + one-inside** pairing. The evidence
+  favors **clustering at the busiest gate / principal arrival road** (an "inn street" service node)
+  over even distribution around the perimeter. And the **"stranded outside at dusk" rationale is
+  weak** for the modeled Song/Ming period, since the curfew had relaxed - convenience/route-stage
+  logic, not gate-closing, is the better driver.
+
+So the current 4-per-city (2 in + 2 out, symmetric) reads as *too even and too many*, and rests
+partly on a curfew rationale that is a Tang artifact.
+
+## Options for adjustment (PENDING GM DECISION - not applied)
+
+Ranked from lightest touch to fullest realism:
+
+- **A. Do nothing.** The convention is directionally plausible and the symmetry is a legible
+  cartographic stylization. Historical accuracy of low-status lodging is genuinely unknowable at
+  the density level, so a clean symmetric rule is defensible as "close enough + readable."
+- **B. Concentrate on the main arrival gate (what the research points to).** Bias cheap lodging to
+  the **principal road-gate and its extramural *guanxiang*** as a small cluster - say 2-3 cheap
+  inns, with the **cart-inn + animal yard extramural** - plus maybe **one humble inn inside near
+  that same gate**. Leave the quieter gates *without* a paired flophouse. This drops a city from ~4
+  evenly-spread to ~3-4 clustered at one gate, and matches the route-node + gate-suburb evidence.
+- **C. Re-theme the rationale even if the layout barely changes.** Drop the "stranded by the dusk
+  curfew" justification (a Tang artifact) in favor of "convenience lodging at the busy arrival gate
+  for market-day peasants, carters, and peddlers." Cheap to do; corrects the *why* in the docs.
+- **D. Add the animal-yard cart-inn as a distinct extramural type.** Right now the map pairs a
+  flophouse with an inn+stables at each caravan cluster; the research says the *dachedian* is one
+  integrated animal-yard lodging compound (front fodder court, rear stable court), extramural,
+  drawing a service-node cluster. Could be modeled as a single labeled compound at the main gate's
+  *guanxiang* rather than three separate glyphs. (Larger art/gen change.)
+
+My recommendation if we change anything: **B + C** (concentrate at the main gate, re-theme the
+rationale), which is the smallest change that moves us from "stylized-and-slightly-wrong" to
+"stylized-but-grounded." But **A is genuinely defensible** given how thin the density record is -
+this is exactly the nitty-gritty the GM flagged as often unknowable.
+
+## Sources & reliability
+
+Curfew and Japanese-lodging findings rest on reputable secondary sources with multiple independent
+corroboration (high). Several cart-inn spatial/ethnographic details rest on Chinese
+wiki-encyclopedia pages (zh.wikipedia, Baidu Baike) - adequate for mundane facts, not primary. Key
+sources: SCMP and encyclopedia.com on the Tang curfew; zh.wikipedia + Baidu Baike on *dachedian*;
+japanesewiki / Wikipedia (Hatago) / ryokan.or.jp on *kichin-yado* and *shukuba*;
+chinawriter.com.cn on inn typology.
+
+**Dominant caveat:** time/region skew. The best-documented cheap-inn type (*dachedian*) is
+late-Qing/Republican Northeast China, not Song/Ming Jiangnan; its detail is trustworthy for what it
+describes but is *corroborating*, not direct evidence for the modeled period. Open questions worth a
+later pass: an actual gazetteer/guild count of commercial (not official) lodging for a Song/Ming
+walled town; the physical form of the rice-south *jimaodian* without the northern *kang*; and
+whether any positive evidence exists for cheap inns *inside* the walls near a gate (vs. the absence
+found here).
