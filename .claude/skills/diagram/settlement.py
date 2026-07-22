@@ -2176,9 +2176,15 @@ class Settlement:
             self.label(sum(xs) / len(xs), sum(ys) / len(ys), label, 9, italic=True, color="#5A4326")
 
     def _draw_reserve(self, poly: Any, kind: str) -> None:
-        """Render a reserve quarter's ground as its declared kind. An agricultural_district is drawn
-        by the generator's own field routines (its combs ARE the rendering), so here it only gets a
-        faint boundary; a drill_ground is bare packed earth; a garden is a planted green sward."""
+        """Render a reserve quarter's ground as its declared kind. A drill_ground is bare packed
+        earth with a dashed muster perimeter; a garden is a planted green sward. An
+        agricultural_district draws NOTHING here (GM 2026-07-22): its own combs, farmhouses, and
+        label ARE the rendering - the faint dashed boundary this used to add read as a stray dotted
+        line cutting through the in-wall farmhouses and across the Imperial road above the burakumin
+        neighborhood. The quarter stays DECLARED in M['quarters'] either way (recorded by quarter(),
+        not here), so per-quarter density judging is unaffected."""
+        if kind == "agricultural_district":
+            return  # no boundary line - the generator's fields carry the whole visual
         pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in poly)
         if kind == "drill_ground":
             # a muster / archery field: flat swept earth, a dashed perimeter, a few faint rake lines
@@ -2198,8 +2204,6 @@ class Settlement:
             for k in range(1, 4):
                 ry = y0 + (y1 - y0) * k / 4
                 self.add(f'<line x1="{x0 + 6:.1f}" y1="{ry:.1f}" x2="{x1 - 6:.1f}" y2="{ry:.1f}" stroke="#6E9A40" stroke-width="2.0" stroke-linecap="round" opacity="0.75"/>')
-        else:  # agricultural_district: the generator's fields carry the visual; mark a faint boundary
-            self.add(f'<polygon points="{pts}" fill="none" stroke="#9C8A5E" stroke-width="1.0" stroke-dasharray="3,6" opacity="0.5"/>')
 
     def alley(self, pts: Any, width: float | None = None) -> None:
         """An UNPAVED interior lane (gravel / wood planks, not the dressed earth of a street) that
