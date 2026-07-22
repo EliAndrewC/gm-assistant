@@ -6166,6 +6166,49 @@ def test_town_margins_clothed_passes_when_the_ground_is_worked():
     assert "town_margins_clothed" not in f(M)
 
 
+# ---- near_ring_cultivated_fraction (feature 013): a well-sited town/city sits in packed farmland,
+# so the flat, uncommitted near-ring ground must be CULTIVATED (paddy/veg fields, dry plots, gardens)
+# to the near_ring_density tier's floor. Bare scrub on that ground counts against; the sub-100%
+# threshold leaves room for the genuine fallow/margin scrub. Town + city only.
+def test_near_ring_cultivated_fraction_fires_on_a_sparse_town():
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}}  # bare sheet, 0% cultivated
+    assert "near_ring_cultivated_fraction" in f(M)
+
+
+def test_near_ring_cultivated_fraction_passes_when_the_near_ring_is_cropped():
+    # dry cropland over ~62% of the flat frame clears the dense town floor (0.55)
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "dry_plots": [{"poly": [[0, 0], [1000, 0], [1000, 620], [0, 620]], "crop": "soy", "theta": 0.0}]}
+    assert "near_ring_cultivated_fraction" not in f(M)
+
+
+def test_near_ring_cultivated_fraction_thin_tier_tolerates_a_scrubbier_ring():
+    # ~26% cultivated: fires when declared 'dense' (floor 0.55), passes when declared 'thin' (floor 0.20)
+    cover = [{"poly": [[0, 0], [1000, 0], [1000, 260], [0, 260]], "crop": "soy", "theta": 0.0}]
+    dense = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "dry_plots": cover}
+    thin = {"meta": {"scale": "town", "W": 1000, "H": 1000, "near_ring_density": "thin"}, "dry_plots": cover}
+    assert "near_ring_cultivated_fraction" in f(dense)
+    assert "near_ring_cultivated_fraction" not in f(thin)
+
+
+def test_near_ring_cultivated_fraction_ignores_village_and_hamlet_sheets():
+    for sc in ("village", "hamlet"):
+        M = {"meta": {"scale": sc, "W": 1000, "H": 1000}}  # bare, but the near-ring rule is town/city only
+        assert "near_ring_cultivated_fraction" not in f(M)
+
+
+# ---- dry_plots_off_hill (feature 013): a hill slope carries dry hill-crops/tea/woodland/scrub, never
+# flooded paddy - and the near-ring dry-field tiler must not stray onto it either (no_field_on_hill
+# reads only M["fields"], so this closes the dry-plot half).
+def test_dry_plots_off_hill_fires_when_a_plot_sits_on_the_hill():
+    M = {"meta": {"scale": "town"}, "hill": [500, 500, 200, 150], "dry_plots": [{"poly": [[480, 480], [520, 480], [520, 520], [480, 520]], "crop": "soy", "theta": 0.0}]}
+    assert "dry_plots_off_hill" in f(M)
+
+
+def test_dry_plots_off_hill_passes_when_plots_avoid_the_hill():
+    M = {"meta": {"scale": "town"}, "hill": [500, 500, 200, 150], "dry_plots": [{"poly": [[50, 50], [90, 50], [90, 90], [50, 90]], "crop": "soy", "theta": 0.0}]}
+    assert "dry_plots_off_hill" not in f(M)
+
+
 # ---- scrub_clear_of_urban_fabric (GM 2026-07-21, Hoshizora): settlement ground is CLEARED - a
 # commons/pasture/coppice cover poly that CONTAINS an occupied structure or a wellhead is claiming
 # grazed waste where the town stands. Scrub lives on the outskirts only; field barns are exempt

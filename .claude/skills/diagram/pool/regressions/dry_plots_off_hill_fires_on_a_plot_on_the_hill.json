@@ -1,0 +1,1 @@
+{"meta": {"scale": "town", "W": 1000, "H": 1000}, "hill": [500, 500, 200, 150], "dry_plots": [{"poly": [[470, 470], [530, 470], [530, 530], [470, 530]], "crop": "soy", "theta": 0.0}], "_regression": {"fires": ["dry_plots_off_hill"], "source": "feature 013: a near_ring_cropland dry plot strayed onto the hill slope (the tiler guard broke) - paddy/field needs flat ground."}}

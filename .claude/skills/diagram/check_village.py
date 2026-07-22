@@ -4876,6 +4876,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if hill:
         onhill = [f["name"] for f in fields if any(in_ellipse(px, py, hill) for px, py in f["outline"])]
         check("no_field_on_hill", not onhill, f"on hill: {onhill}")
+        # DRY PLOTS OBEY THE SAME RULE (feature 013): a hill slope carries dry crops / tea / woodland /
+        # scrub, never flooded paddy - but a near-ring dry-field tiler (near_ring_cropland) could stray
+        # onto the slope. no_field_on_hill reads only M["fields"] (paddy/veg envelopes), so this closes
+        # the dry-plot half. A plot may TOUCH the toe; only a plot whose CENTROID sits on the hill fires
+        # (the tiler's own guard keeps plots off the slope, so a centroid on the hill means the guard broke).
+        dp_onhill = [
+            [round(sum(v[0] for v in dp["poly"]) / len(dp["poly"])), round(sum(v[1] for v in dp["poly"]) / len(dp["poly"]))]
+            for dp in M.get("dry_plots", [])
+            if dp.get("poly") and len(dp["poly"]) >= 3 and in_ellipse(sum(v[0] for v in dp["poly"]) / len(dp["poly"]), sum(v[1] for v in dp["poly"]) / len(dp["poly"]), hill)
+        ]
+        check("dry_plots_off_hill", not dp_onhill, f"dry crop plot(s) centered on the hill (paddy/field needs flat ground; a slope carries dry hill-crops/tea/woodland/scrub only): {dp_onhill[:5]}")
 
     # every watercourse - irrigation channel OR natural stream - must connect what it
     # claims to: each end anchored to its pond / off-map edge / field / forest
@@ -5503,6 +5514,107 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "built-up edge (the engine's urban-clearance halo protects fringe features that abut an apron; a poly "
         "that CONTAINS a dwelling/shop/well is claiming grazed waste where the town stands)",
     )
+
+    # NEAR-RING FARMLAND DENSITY (feature 013). A well-sited town/city sits in the middle of its BEST
+    # land, and the near ring the frame shows is the part worked HARDEST (site selection + the von
+    # Thünen intensity gradient; the labor-limited fallow lives at the FAR margins, not hugging the
+    # town). So the flat, waterable near-ring ground must read as PACKED cultivation, not bare scrub.
+    # This measures the fraction of flat, uncommitted near-ring ground that is CULTIVATED (paddy +
+    # vegetable fields, dry hem/hatake plots, gardens) - the mirror of town_margins_clothed above, but
+    # counting only CROPLAND, not "any cover". The denominator EXCLUDES ground already committed to a
+    # non-arable use (the settlement + its urban halo, roads/streets, water, the hill, the wet marsh
+    # toe, graves/cremation/ossuary, pasture/coppice, groves) and, on a walled city, everything INSIDE
+    # the wall (urban, not near-ring farmland). What remains is the flat ground that COULD be cropped;
+    # bare scrub (commons) on it counts AGAINST the fraction, so the tier threshold is < 1.0 to leave
+    # room for the genuine fallow/margin scrub. Tunable per map via meta(near_ring_density=...): "dense"
+    # (well-sited default) demands a packed ring, "thin" (a dry rain-shadow / marginal locale) permits a
+    # scrubbier one - the calibrated-liberty range (settlements.md "Near-ring farmland density"). WHY the
+    # thresholds: today's undensified Hirameki sits at ~33% and Tango's outside-wall band at ~7%, both
+    # declared dense - so the dense floor is set well above them to have teeth. Grounded in budgets.md
+    # "Rice and arable-land math" (the ~4% figure is a domain-wide average, the wrong number for the
+    # immediate hinterland). Town + city only; villages/hamlets keep the satoyama scrub-interleave rule.
+    if scale in ("town", "city"):
+        # threshold[tier][scale]: the minimum cultivated fraction of the flat near ring.
+        # Calibrated against the achievable packed ceiling (feature 013): a walled town/city near ring
+        # tops out ~50% cultivated (town) / ~40% (city) because a real fraction of the extramural flat
+        # ground is genuinely un-croppable - reserved irrigation corridors, the fan-ringing farmsteads,
+        # the manor block - and the countryside proper runs off-frame. The dense floor sits below that
+        # ceiling with margin yet well ABOVE the undensified baseline (Hirameki 30%, Tango 7%), so it has
+        # real teeth: an un-densified 'dense' map fails, a packed one passes, and 'thin' stays reachable
+        # for a dry/marginal locale. See settlements.md "Near-ring farmland density".
+        NRD_THRESHOLD = {
+            "dense": {"town": 0.45, "city": 0.30},
+            "medium": {"town": 0.30, "city": 0.20},
+            "thin": {"town": 0.16, "city": 0.10},
+        }
+        nrd_tier = meta.get("near_ring_density", "dense")
+        nr_thr = NRD_THRESHOLD.get(nrd_tier, NRD_THRESHOLD["dense"])[scale]
+        nr_halo = 30.0 / (meta.get("ftpx") or 1)
+        # cultivated cover: paddy + vegetable fields, the chrysanthemum flower field, dry plots, gardens
+        nr_cult = [f_["outline"] for f_ in M.get("fields", [])] + [f_["outline"] for f_ in M.get("flower_fields", [])]
+        for k_ in ("dry_plots", "gardens"):
+            for o_ in M.get(k_, []) or []:
+                p_ = o_.get("poly") if isinstance(o_, dict) else o_
+                if p_ is not None and len(p_) >= 3:
+                    nr_cult.append(p_)
+        # committed non-arable cover -> a cell here is NOT eligible near-ring ground (excluded from the
+        # denominator entirely, so a graveyard / pasture / coppice is neither cultivated nor counted as bare)
+        nr_skip = []
+        for k_ in ("marshes", "pastures", "forest_patches", "cemeteries", "cremation_grounds", "ossuaries", "village_groves", "groves"):
+            for o_ in M.get(k_, []) or []:
+                p_ = o_.get("poly") if isinstance(o_, dict) else o_
+                if p_ is not None and len(p_) >= 3:
+                    nr_skip.append(p_)
+        nr_boxes = []
+        for v_ in M.values():
+            if isinstance(v_, list) and v_ and isinstance(v_[0], dict) and "x" in v_[0] and "w" in v_[0] and "h" in v_[0]:
+                for o_ in v_:
+                    nr_boxes.append((o_["x"] - o_["w"] / 2 - nr_halo, o_["y"] - o_["h"] / 2 - nr_halo, o_["x"] + o_["w"] / 2 + nr_halo, o_["y"] + o_["h"] / 2 + nr_halo))
+        nr_lines = []
+        if road:
+            nr_lines.append((road, 60.0))
+        nr_lines += [(st_["pts"], st_["w"] / 2 + 40) for st_ in M.get("town_streets", [])]
+        nr_lines += [(ln_["pts"], 30.0) for ln_ in M.get("lanes", [])]
+        nr_lines += [(s_["poly"], 30.0) for s_ in M.get("streams", [])] + [(c2_["poly"], 24.0) for c2_ in M.get("channels", [])] + [(d_["poly"], 20.0) for d_ in M.get("field_ditches", [])]
+        nr_moat = M.get("moat")
+        if nr_moat:
+            nr_lines.append((nr_moat, M.get("moat_width", 22) / 2 + 8))
+        nr_wall = M.get("wall")
+        nr_hill = M.get("hill")
+        nr_pond = M.get("pond")
+        nr_elig = nr_cultc = 0
+        gy = EY0 + 12.5
+        while gy < EY1:
+            gx = EX0 + 12.5
+            while gx < EX1:
+                # a cell inside the rampart of a walled town/city is URBAN FLOOR, not near-ring farmland
+                # (same reading as town_margins_clothed's inside-the-rampart exemption) - the near ring is
+                # the EXTRAMURAL flat ground; the intramural chrysanthemum field / open squares are the town
+                committed = (
+                    (nr_wall is not None and len(nr_wall) >= 3 and point_in_poly(gx, gy, nr_wall))
+                    or (nr_hill is not None and in_ellipse(gx, gy, nr_hill, 1.45))
+                    or (nr_pond is not None and in_ellipse(gx, gy, [nr_pond[0], nr_pond[1], nr_pond[2] + 20, nr_pond[3] + 20]))
+                    or any(bx0 <= gx <= bx1 and by0 <= gy <= by1 for bx0, by0, bx1, by1 in nr_boxes)
+                    or any(any(seg_dist(gx, gy, pl_[i_], pl_[i_ + 1]) < hw_ for i_ in range(len(pl_) - 1)) for pl_, hw_ in nr_lines)
+                    or any(point_in_poly(gx, gy, p_) for p_ in nr_skip)
+                )
+                if committed:
+                    gx += 25
+                    continue
+                nr_elig += 1
+                if any(point_in_poly(gx, gy, p_) for p_ in nr_cult):
+                    nr_cultc += 1
+                gx += 25
+            gy += 25
+        nr_frac = nr_cultc / nr_elig if nr_elig else 1.0
+        check(
+            "near_ring_cultivated_fraction",
+            nr_frac >= nr_thr,
+            f"only {nr_frac:.0%} of the flat near-ring ground is cultivated (below the {nr_thr:.0%} floor for near_ring_density='{nrd_tier}') - "
+            "a well-sited town/city sits in packed farmland: fill the flat clear ground with s.near_ring_cropland(...) "
+            "(dry/garden cropland needs no water source) and keep scrub commons to the frame margins; or, for a genuinely "
+            "dry/marginal locale, declare meta(near_ring_density='medium'|'thin')",
+        )
 
     # NO CANOPY STANDS OVER OPEN WATER (GM audit 2026-07): a village-grove clump drawn across a
     # stream / channel / moat reads as trees growing in the current. The fengshui-pond rule
