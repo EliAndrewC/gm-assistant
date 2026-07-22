@@ -2161,8 +2161,10 @@ def test_build_polder_parcel_fabric():
     assert build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=11, cols=6, cell=150)["plots"] == plots
     # splits outnumber merges: more parcels than module bays
     assert len(plots) > 66
-    # the perimeter dike stays PINNED dead straight: envelope corners are exact grid multiples
+    # the envelope (the dike's inner-face reference) keeps the full span: corners are exact grid multiples
     assert net["envelope"][0] == (360, 320) and net["envelope"][2] == (360 + 6 * 150, 320 + 11 * 150)
+    RING = 18.0
+    s_step = (11 * 150 - 2 * RING) / 11
     # the fabric varies (mirrors the polder_parcels_vary thresholds, with slack): areas spread, oblongs dominate
     dims = []
     for p in plots:
@@ -2179,7 +2181,7 @@ def test_build_polder_parcel_fabric():
     for p in plots:
         assert all(360 <= v[0] <= 360 + 900 and 320 <= v[1] <= 320 + 1650 for v in p["poly"])
         cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
-        assert p["low"] == (cy > 320 + 9 * 150 - 6)  # down_deg=90: low rows sit past row 9 (node jitter <= 6)
+        assert p["low"] == (cy > 320 + RING + 9 * s_step)  # down_deg=90: low rows (r>=9) sit past ss(9)
     assert any(p["low"] for p in plots) and not all(p["low"] for p in plots)
     # the water network: 1 head feeder + 1 drain + one lateral per interior column line, and every
     # lateral's ends sit on the feeder / drain lines (the connected jingbang net)
@@ -2188,8 +2190,10 @@ def test_build_polder_parcel_fabric():
     for ch in net["channels"]:
         if ch["role"] != "lateral":
             continue
-        assert abs(ch["pts"][0][1] - (320 - 12)) < 1  # starts on the feeder line (down_deg=90)
-        assert abs(ch["pts"][-1][1] - (320 + 1650 + 12)) < 1  # ends on the drain line
+        # laterals + toe ditches now run the INNER ring, from the feeder inner-toe line to the drain
+        # inner-toe line (RING*0.5 just inside the envelope), not the old s=+-12 outside the block
+        assert abs(ch["pts"][0][1] - (320 + RING * 0.5)) < 1  # starts on the feeder inner-toe line
+        assert abs(ch["pts"][-1][1] - (320 + 1650 - RING * 0.5)) < 1  # ends on the drain inner-toe line
     # pond-profile mix: merge-heavy, no 3-cuts, wide dike gaps -> fewer, larger, oblong parcels
     pond_net = build_polder(2200, 2600, (360, 320), 21, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0))
     assert len(pond_net["plots"]) < len(plots)

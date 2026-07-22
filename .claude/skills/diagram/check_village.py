@@ -8059,6 +8059,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a polder's perimeter dike must be an irregular earthwork band of VARYING width (drawn present: {bool(dk)}; width {wmn:.0f}-{wmx:.0f} px, want max >= 1.4x min) - a uniform-width or missing dike reads as a post-1949 ruled rectangle, not a hand-piled fish-scale polder",
         )
 
+        # THE RING CANAL RUNS ON THE INNER TOE, CLEAR OF THE DIKE (GM 2026-07-22, researched: the trunk
+        # irrigation/drainage canal rings the block on the INSIDE toe of the perimeter dike, on the field
+        # side - "一河围田 / one river surrounds the field"; outside the dike is the wild water it holds back,
+        # so no channel runs out there, and water crosses the dike ONLY at gated sluices at the inlet +
+        # outfall). So an irrigation channel buried in the dike earthwork is wrong. Teeth: count field-ditch
+        # vertices falling inside the recorded dike band; a couple (the inlet/outfall sluice crossings) are
+        # fine, but a trunk running along inside the dike (the old s=+-12 feeder, ~36 pts in the band) fires.
+        if dk:
+            band = dk["outline"]
+            in_dike = sum(1 for ch in M.get("field_ditches", []) for x, y in ch["poly"] if point_in_poly(x, y, band))
+            check(
+                "polder_channels_clear_of_dike",
+                in_dike <= 4,
+                f"{in_dike} irrigation-channel point(s) run through the dike earthwork (want <= 4, the inlet/outfall sluice crossings) - the polder RING CANAL runs on the INNER TOE of the dike (field side), not buried in the dike body; water crosses the dike only at the sluices",
+            )
+
     # A polder's PARCEL fabric must VARY (researched 2026-07-21; grounding in build_polder's docstring).
     # The surveyed chessboard was the CANAL grid; the parcels inside were a private-tenure patchwork
     # (Buck 1929-33: mean parcel ~1 mu, several scattered per farm; dike-ponds accreted 挖塘培基,
