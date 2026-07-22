@@ -1,0 +1,68 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid"
+ },
+ "dikes": [
+  {
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     900
+    ],
+    [
+     100,
+     900
+    ]
+   ],
+   "w_min": 14.0,
+   "w_max": 38.0
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     200,
+     200
+    ],
+    [
+     300,
+     200
+    ],
+    [
+     400,
+     200
+    ],
+    [
+     500,
+     200
+    ],
+    [
+     600,
+     200
+    ],
+    [
+     700,
+     200
+    ]
+   ],
+   "role": "main",
+   "field": "p"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "polder_channels_clear_of_dike"
+  ],
+  "source": "test_checks.py::test_polder_channels_clear_of_dike"
+ }
+}
