@@ -2310,6 +2310,54 @@ def test_city_wall_towers_spaced_passes_when_ringed():
 _DIAMOND = [[500, 200], [800, 500], [500, 800], [200, 500]]  # a wall whose edges run at 45 deg
 
 
+def _ring_towers(step, wall=None):
+    # evenly-spaced towers walking the WALLSQ perimeter at `step` px - a dense enough ring
+    import math as _m
+
+    w = wall or WALLSQ
+    ring = list(w) + [w[0]]
+    seglens = [_m.hypot(ring[i + 1][0] - ring[i][0], ring[i + 1][1] - ring[i][1]) for i in range(len(ring) - 1)]
+    out = []
+    for i in range(len(ring) - 1):
+        n = max(1, int(seglens[i] / step))
+        for j in range(n):
+            t = j / n
+            out.append({"x": ring[i][0] + (ring[i + 1][0] - ring[i][0]) * t, "y": ring[i][1] + (ring[i + 1][1] - ring[i][1]) * t})
+    return out
+
+
+def test_city_wall_tower_coverage_fires_when_sparse():
+    # only the 2 gate towers: the whole curtain between them sits out of flanking range of a 2nd tower
+    M = _fort_city(wall_towers=[{"x": 500, "y": 200}, {"x": 500, "y": 800}])
+    assert "city_wall_tower_coverage" in f(M)
+
+
+def test_city_wall_tower_coverage_passes_when_densely_ringed():
+    # a 60px-spaced ring keeps every curtain point within garrison range (328 ft / ~121 px) of >= 2 towers
+    assert "city_wall_tower_coverage" not in f(_fort_city(wall_towers=_ring_towers(60)))
+
+
+def test_city_wall_tower_coverage_siege_tier_demands_more_than_garrison():
+    # the SAME 100px-spaced ring passes garrison (R~121) but fails siege (R~78, still >=2): the tier tightens it
+    ring = _ring_towers(100)
+    assert "city_wall_tower_coverage" not in f(_fort_city(wall_towers=ring))
+    siege = _fort_city(wall_towers=ring)
+    siege["meta"] = {**siege["meta"], "wall_defense": "siege"}
+    assert "city_wall_tower_coverage" in f(siege)
+
+
+def test_city_ward_cap_flush_to_wall_fires_when_a_cap_juts():
+    # a straight cap whose far vertex juts 30px off the wall face (the corner-stub artifact)
+    ward = {"name": "samurai", "boundary": [[200, 500], [500, 500]], "wall_caps": [{"x": 200, "y": 500, "pts": [[200, 500], [230, 500]]}]}
+    assert "city_ward_cap_flush_to_wall" in f(_fort_city(wards=[ward]))
+
+
+def test_city_ward_cap_flush_to_wall_passes_when_flush():
+    # a cap that lies ALONG the west wall face (x=200): both vertices sit on the wall
+    ward = {"name": "samurai", "boundary": [[200, 500], [500, 500]], "wall_caps": [{"x": 200, "y": 500, "pts": [[200, 484], [200, 516]]}]}
+    assert "city_ward_cap_flush_to_wall" not in f(_fort_city(wards=[ward]))
+
+
 def test_city_wall_towers_aligned_fires_when_axis_aligned_on_a_slanted_wall():
     M = _fort_city(wall=_DIAMOND, wall_towers=[{"x": 650, "y": 350, "rot": 0}, {"x": 350, "y": 650, "rot": 0}])
     assert "city_wall_towers_aligned" in f(M)

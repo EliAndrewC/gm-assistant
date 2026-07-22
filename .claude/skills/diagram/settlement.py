@@ -494,6 +494,30 @@ def roll_torii_count(scale: str, rng: random.Random) -> int:
     return weights[-1][0]
 
 
+# WALL DEFENSE POSTURE (GM 2026-07-22): a walled city's guard-tower coverage is TUNABLE per city
+# (meta wall_defense=), because how heavily a wall is towered reflects its history and threat exposure -
+# a border city that has repelled sieges packs its towers to the aimed-lethal-bowshot spacing so every
+# stretch of the wall base is under crossfire from >=2 towers; a city that has known centuries of peace
+# runs the sparser Xi'an spacing. Each tier maps to (effective arrow range in FEET, minimum towers that
+# must cover every wall point within that range). The historical grounding (侧射 flanking fire; Shen Kuo's
+# 11th-c. 矢石相及; Xi'an 120 m / Pingyao ~55 m mamian spacing at a ~60 m aimed-lethal bowshot) is in
+# settlements.md. Gated by city_wall_tower_coverage; used to set the mural-tower spacing in city_wall.
+WALL_DEFENSE = {
+    # tier          (arrow_range_ft, min_towers)  placement spacing = range if min==2 else 2*range
+    "siege": (197.0, 2),  # border / besieged city: aimed-lethal bowshot (60 m), >=2 towers EVERYWHERE (Pingyao-dense)
+    "garrison": (328.0, 2),  # garrisoned interior city: full war-bow reach (100 m), >=2 towers everywhere
+    "peaceful": (197.0, 1),  # long-peaceful city: Xi'an crossfire - spacing <= 2x60 m, so >=1 flanking tower within aimed-lethal range everywhere (midpoints get 2)
+}
+
+
+def wall_tower_spacing_px(scale_px_per_ft: float, tier: str) -> float:
+    """Max mural-tower spacing (px) that satisfies a wall_defense tier: the arrow range for a >=2 tier
+    (so a point at any tower has a neighbour within range), or twice it for the >=1 Xi'an tier. Unknown
+    tiers fall back to 'garrison' (the moderate middle). `scale_px_per_ft` is 1/ftpx."""
+    rng_ft, mincov = WALL_DEFENSE.get(tier, WALL_DEFENSE["garrison"])
+    return (rng_ft if mincov == 2 else 2 * rng_ft) * scale_px_per_ft
+
+
 class Settlement:
     def __init__(self, W: int = 1820, H: int = 1180, seed: int = 23) -> None:
         random.seed(seed)
@@ -2147,23 +2171,46 @@ class Settlement:
         self.corridors.append((boundary, 11))  # buildings keep off the fence line
         # the fence ends ABUT the city wall: lay a short wall-stroke CAP over each end so the rampart
         # renders ON TOP of the fence there (the fence runs UNDER the wall), not the fence over the wall.
+        # The cap FOLLOWS the wall (arc-length +/-16 px through any vertex in the span) rather than being a
+        # single straight tangent: a fence that abuts AT a wall corner used to get a straight stub tangent to
+        # one segment only, which juts past the bend and reads as a second wall section overlapping the first
+        # (Nagahara SW, GM 2026-07). A wall-following cap stays flush at both corners and flat runs.
         caps: list[Any] = []
         wall = self.M.get("wall")
         if wall:
-            ring = list(wall) + [wall[0]]
+            pts_w = [(x, y) for x, y in wall]
+            ring = pts_w + [pts_w[0]]
+            perim = self._wall_perimeter(pts_w)
+            n_w = len(pts_w)
+            varcs = []  # cumulative arc of each wall vertex, to fold corners into the cap span
+            _acc = 0.0
+            for i in range(n_w):
+                varcs.append(_acc)
+                _acc += math.hypot(ring[i + 1][0] - ring[i][0], ring[i + 1][1] - ring[i][1])
             for ex, ey in (boundary[0], boundary[-1]):
                 best: Any = None
                 for i in range(len(ring) - 1):
                     cx, cy = seg_closest(ex, ey, ring[i], ring[i + 1])
                     d = math.hypot(cx - ex, cy - ey)
                     if best is None or d < best[0]:
-                        best = (d, (cx, cy), (ring[i + 1][0] - ring[i][0], ring[i + 1][1] - ring[i][1]))
+                        best = (d, (cx, cy))
                 if best and best[0] < 24:  # the end abuts the wall - cap it
-                    (px, py), (tx, ty) = best[1], best[2]
-                    tl = math.hypot(tx, ty) or 1
-                    ux, uy = tx / tl * 16, ty / tl * 16
-                    cz = self.add(f'<path d="M{px - ux:.0f},{py - uy:.0f} L{px + ux:.0f},{py + uy:.0f}" fill="none" stroke="#3A352C" stroke-width="11" stroke-linecap="round"/>')
-                    caps.append({"x": round(px, 1), "y": round(py, 1), "z": cz})
+                    px, py = best[1]
+                    arc = self._wall_arc_of(pts_w, (px, py))
+                    a0, a1 = arc - 16, arc + 16
+                    span: list[tuple[float, tuple[float, float]]] = [
+                        (a0, self._wall_point_at_arc(pts_w, a0)[:2]),
+                        (arc, (px, py)),
+                        (a1, self._wall_point_at_arc(pts_w, a1)[:2]),
+                    ]
+                    for vi in range(n_w):  # fold in any wall vertex the cap crosses, so the cap bends WITH the rampart
+                        for va in (varcs[vi] - perim, varcs[vi], varcs[vi] + perim):
+                            if a0 < va < a1:
+                                span.append((va, (pts_w[vi][0], pts_w[vi][1])))
+                    cappts = [(round(x, 1), round(y, 1)) for _, (x, y) in sorted(span, key=lambda s: s[0])]
+                    dd_cap = "M" + " L".join(f"{x:.0f},{y:.0f}" for x, y in cappts)
+                    cz = self.add(f'<path d="{dd_cap}" fill="none" stroke="#3A352C" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>')
+                    caps.append({"x": round(px, 1), "y": round(py, 1), "z": cz, "pts": [[x, y] for x, y in cappts]})
         self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "wall_caps": caps})
         for gx, gy, horiz in gates:
             self.kido(gx, gy, horizontal=horiz)
@@ -4914,6 +4961,46 @@ class Settlement:
             rem -= seg
             i = j
 
+    @staticmethod
+    def _wall_perimeter(pts: Any) -> float:
+        n = len(pts)
+        return sum(math.hypot(pts[(i + 1) % n][0] - pts[i][0], pts[(i + 1) % n][1] - pts[i][1]) for i in range(n))
+
+    @staticmethod
+    def _wall_point_at_arc(pts: Any, arc: float) -> tuple[float, float, float]:
+        """The (x, y, tangent_deg) at arc-length `arc` measured from vertex 0, walking the ring forward
+        (increasing index). Wraps. Used to seat mural towers at even spacing along the wall."""
+        n = len(pts)
+        arc = arc % Settlement._wall_perimeter(pts)
+        for i in range(n):
+            a, b = pts[i], pts[(i + 1) % n]
+            ex, ey = b[0] - a[0], b[1] - a[1]
+            seg = math.hypot(ex, ey) or 1.0
+            if seg >= arc:
+                t = arc / seg
+                return a[0] + ex * t, a[1] + ey * t, (math.degrees(math.atan2(ey, ex)) + 90) % 180 - 90
+            arc -= seg
+        return pts[0][0], pts[0][1], 0.0  # pragma: no cover - defensive: arc is taken mod perimeter and the segments sum to the perimeter, so the loop always returns first
+
+    @staticmethod
+    def _wall_arc_of(pts: Any, pt: Any) -> float:
+        """Arc-length (from vertex 0) of the point on the ring closest to `pt` - to locate a gate tower as
+        an anchor when filling mural towers between anchors."""
+        n = len(pts)
+        best = (1e18, 0.0)
+        acc = 0.0
+        for i in range(n):
+            a, b = pts[i], pts[(i + 1) % n]
+            ex, ey = b[0] - a[0], b[1] - a[1]
+            seg = math.hypot(ex, ey) or 1.0
+            t = max(0.0, min(1.0, ((pt[0] - a[0]) * ex + (pt[1] - a[1]) * ey) / (seg * seg)))
+            cx, cy = a[0] + ex * t, a[1] + ey * t
+            d = math.hypot(pt[0] - cx, pt[1] - cy)
+            if d < best[0]:
+                best = (d, acc + t * seg)
+            acc += seg
+        return best[1]
+
     def city_wall(self, pts: Any, gates: Any = (), ring_inset: float = 34, guard_east: Any = (), tower_skip: Any = (), water_gates: Any = ()) -> None:
         """A CLOSED city rampart (a full ring, unlike the town's open hill-anchored arc), with a
         gap at each gate in `gates` (each (x,y) on the ring, where the wall runs ~horizontal -
@@ -5064,47 +5151,94 @@ class Settlement:
                         (gs["x"] - gs["w"] / 2 - bm, gs["y"] + gs["h"] / 2 + bm),
                     ]
                 )
-        # GUARD TOWERS at regular intervals around the rampart, in addition to the gate towers: a
-        # fortified city is towered for enfilading fire along the wall face (a bowshot apart), and the
-        # towers also house the stairs up to the parapet. Even spacing at every other wall vertex,
-        # skipping the gate vertices (those already have a tower).
+        # GUARD TOWERS (mamian) around the rampart, in addition to the gate towers, for enfilading
+        # flanking fire along the wall face. SPACING is set by the city's DEFENSE POSTURE (GM 2026-07-22,
+        # meta wall_defense=): a border/besieged city (`siege`) packs them to the aimed-lethal bowshot so
+        # every stretch of wall is under crossfire from >=2 towers; a long-peaceful city (`peaceful`) runs
+        # the sparser Xi'an spacing. The gate towers are fixed ANCHORS; mural towers fill each gap between
+        # anchors so no gap exceeds the tier's max spacing. Gated by city_wall_tower_coverage.
         self.M.setdefault("wall_towers", [])  # the gate towers were already added above (via _tower)
         gate_towers = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") == "tower"]
         # a mural tower must also clear each gate's INSPECTION / GUARD HOUSE (they sit INWARD from the
         # gate, so the 130px gate-vertex filter alone misses them - city_gate_towers_clear_of_gate_furniture)
         gate_furn = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") in ("guardhouse", "inspection")]
-        for i in range(0, n, 2):
-            vx, vy = pts[i]
-            if any(math.hypot(vx - gx, vy - gy) < 130 for gx, gy in gates):
-                continue
-            if any(math.hypot(vx - wx2, vy - wy2) < 70 for wx2, wy2 in water_gates):
-                continue  # the water-gate arch takes this vertex
-            if any(math.hypot(vx - tx2, vy - ty2) < 110 for tx2, ty2 in gate_towers):
-                continue  # a mural tower shoulder-to-shoulder with a gate tower reads as a double (GM, 2026-07)
-            ta_i = tang[i]
-            if any(math.hypot(vx - kx_, vy - ky_) < 62 for kx_, ky_ in tower_skip) or any(math.hypot(vx - fx_, vy - fy_) < 40 for fx_, fy_ in gate_furn):
-                # yield to the future kido by SLIDING a short way along the wall, not jumping a
-                # whole vertex - a vertex jump left a ~360px towerless stretch on Tango's east
-                # wall (the GM: "what if someone attacked the city from the east?"). Try growing
-                # arcs in both directions; the first clear spot wins, so coverage stays even.
-                slid: Any = None
-                for _arc in (44, 62, 80, 98):
-                    for _west in (False, True):
-                        sx_, sy_, se_ = self._wall_walk(pts, i, _arc, west=_west)
-                        if (
-                            all(math.hypot(sx_ - kx_, sy_ - ky_) >= 62 for kx_, ky_ in tower_skip)
-                            and all(math.hypot(sx_ - fx_, sy_ - fy_) >= 40 for fx_, fy_ in gate_furn)
-                            and all(math.hypot(sx_ - gx, sy_ - gy) >= 130 for gx, gy in gates)
-                        ):
-                            slid = (sx_, sy_, (se_ + 90) % 180 - 90)
-                            break
-                    if slid:
+        tier = self.M["meta"].get("wall_defense", "garrison")
+        max_spacing = wall_tower_spacing_px(1.0 / self.ftpx, tier) * 0.85  # margin so a slide off a kido does not push a neighbour gap past the range
+        perim = self._wall_perimeter(pts)
+        placed_tw = list(gate_towers)  # every tower placed so far (min-separation + coverage anchors)
+
+        def _seat_mural(arc: float) -> None:
+            vx, vy, ta_i = self._wall_point_at_arc(pts, arc)
+            if any(math.hypot(vx - gx, vy - gy) < 45 for gx, gy in gates) or any(math.hypot(vx - wx2, vy - wy2) < 40 for wx2, wy2 in water_gates):
+                return  # sits IN the gate / water-gate opening itself - the gate tower owns that spot
+
+            # SLIDE off a kido spot (a ward gate on the wall - avoid OVERLAP only, ~32px), the gate furniture,
+            # or too-close to an existing tower. At siege density a mural sits happily beside a kido.
+            def _blocked(px: float, py: float) -> bool:
+                return (
+                    any(math.hypot(px - kx_, py - ky_) < 32 for kx_, ky_ in tower_skip)
+                    or any(math.hypot(px - fx_, py - fy_) < 40 for fx_, fy_ in gate_furn)
+                    or any(math.hypot(px - tx_, py - ty_) < 28 for tx_, ty_ in placed_tw)
+                )
+
+            if _blocked(vx, vy):
+                for da in (22, -22, 34, -34, 46, -46):
+                    sx_, sy_, se_ = self._wall_point_at_arc(pts, arc + da)
+                    if not _blocked(sx_, sy_) and all(math.hypot(sx_ - gx, sy_ - gy) >= 45 for gx, gy in gates):
+                        vx, vy, ta_i = sx_, sy_, se_
                         break
-                if not slid:
-                    continue  # boxed in on both sides - drop this tower (spacing tolerates one gap)
-                vx, vy, ta_i = slid
+                else:
+                    return  # boxed in - drop this one (the coverage check tolerates a rare short gap; posture is a floor, not a mandate to force a bad tower)
             nvx, nvy = _berm_nudge(vx, vy, self.px(40))
             self._tower(nvx, nvy, ta_i, wc)
+            placed_tw.append((vx, vy))
+
+        if gate_towers:
+            anchors = sorted(self._wall_arc_of(pts, gt) for gt in gate_towers)
+        else:
+            anchors = [0.0]  # no gate towers (unusual) - start the even ring at vertex 0
+            _seat_mural(0.0)
+        for gi in range(len(anchors)):
+            a0 = anchors[gi]
+            a1 = anchors[(gi + 1) % len(anchors)] + (perim if gi == len(anchors) - 1 else 0.0)
+            gap = a1 - a0
+            k = max(0, math.ceil(gap / max_spacing) - 1)  # mural towers to insert so each sub-gap <= max_spacing
+            for j in range(1, k + 1):
+                _seat_mural(a0 + gap * j / (k + 1))
+        # COVERAGE REMEDIATION: a slide off a kido can leave a NEIGHBOURING gap just over range; sweep the
+        # curtain and drop an extra mural into the middle of any run of points still short of the tier's
+        # coverage. This is what turns "spacing <= range" into "coverage >= min everywhere" even after slides.
+        _rng_ft, _mincov = WALL_DEFENSE.get(tier, WALL_DEFENSE["garrison"])
+        _Rpx = _rng_ft / self.ftpx + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's span, not its centre point (matches the coverage check)
+        for _pass in range(5):
+            _nst = max(8, int(perim / 10))  # finer than the check's 18px sampling, so remediation catches every point the check would flag
+            _step = perim / _nst
+            _thin = []
+            for _si in range(_nst):
+                _ra = perim * _si / _nst
+                _px, _py, _junk = self._wall_point_at_arc(pts, _ra)
+                if any(math.hypot(_px - gx, _py - gy) < 130 for gx, gy in gates) or any(math.hypot(_px - fx_, _py - fy_) < 55 for fx_, fy_ in gate_furn):
+                    continue  # inside the gate BARBICAN (gate + guard house + inspection) - a defended complex, exempt from the open-curtain rule
+                if sum(1 for tx_, ty_ in placed_tw if math.hypot(_px - tx_, _py - ty_) <= _Rpx + 1) < _mincov:
+                    _thin.append(_ra)
+            if not _thin:
+                break
+            _runs: list[list[float]] = []
+            for _ra in _thin:
+                if _runs and _ra - _runs[-1][-1] <= 2.5 * _step:
+                    _runs[-1].append(_ra)
+                else:
+                    _runs.append([_ra])
+            _before = len(placed_tw)
+            for _run in _runs:
+                # try the midpoint, then quarters, then near the ends - the first that seats widens coverage
+                for _frac in (0.5, 0.34, 0.66, 0.2, 0.8):
+                    _n0 = len(placed_tw)
+                    _seat_mural(_run[0] + (_run[-1] - _run[0]) * _frac)
+                    if len(placed_tw) > _n0:
+                        break
+            if len(placed_tw) == _before:
+                break  # nothing placeable this pass - a genuinely blocked stretch (the check will report it)
         self.M["wall"] = [[x, y] for x, y in pts]
         self.M["gates"] = [[gx, gy] for gx, gy in gates]
         if gates:
