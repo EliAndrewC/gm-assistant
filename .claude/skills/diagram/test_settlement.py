@@ -1318,7 +1318,7 @@ def test_stables_yard_fully_blocked_draws_no_furniture():
     s.stables(600, 620, rot=90)
     svg = "".join(s.out)
     assert s.M["stable_yards"][-1]["of"] == [600.0, 620.0]  # recorded despite the blocked yard
-    assert "#9A7B4E" not in svg and "#8FA6B0" not in svg  # no parked cart, no water trough drew
+    assert "#7A5A3A" not in svg and "#8FA6B0" not in svg  # no tethered animals, no water trough drew
 
 
 def test_rowpack_lays_touching_terraces():
