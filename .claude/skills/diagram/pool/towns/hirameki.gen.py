@@ -62,7 +62,7 @@ s.meta(
     name="Hirameki",
     scale="town",
     walled=True,
-    torii_expected=8,   # 7-arch Bishamon avenue (GM numerology canon 2026-07-21) + Benten's single entrance arch
+    torii_expected=8,  # 7-arch Bishamon avenue (GM numerology canon 2026-07-21) + Benten's single entrance arch
     downhill="south",
     down_deg=90,
     clan="Lion",
@@ -352,7 +352,9 @@ s.flower_field(CHRYS, "chrysanthemum field", amp=8, flat_west=True)
 # main town monastery (to Bishamon, the Lion patron), on the east side. It has a long, clear
 # approach south to the market cross-street, so it fronts a proper torii AVENUE (sando) of
 # several arches rather than a single gate (monastery_torii_scale_with_space).
-s.shrine_hall(1750, 1050, "Monastery of Bishamon", w=150, h=98, kind="monastery", primary=True, torii=[(1750, 1174), (1750, 1235), (1750, 1296), (1750, 1357), (1750, 1418), (1750, 1479), (1750, 1540)])   # a FULL 7-arch avenue (GM canon 2026-07-21: exactly 7 for a monastery/temple when there's room - the old 4 read as unfinished); the avenue crosses the E-W road (a monzen approach) and continues south
+s.shrine_hall(
+    1750, 1050, "Monastery of Bishamon", w=150, h=98, kind="monastery", primary=True, torii=[(1750, 1174), (1750, 1235), (1750, 1296), (1750, 1357), (1750, 1418), (1750, 1479), (1750, 1540)]
+)  # a FULL 7-arch avenue (GM canon 2026-07-21: exactly 7 for a monastery/temple when there's room - the old 4 read as unfinished); the avenue crosses the E-W road (a monzen approach) and continues south
 # the older, much smaller Benten monastery (Crane patron) on the OPPOSITE (west) side, inside
 # the walls - a relic of the town's time under Crane rule. It is wedged hard against the west
 # rampart and the Imperial chrysanthemum field, so there is room for only a SINGLE torii arch.
@@ -407,7 +409,9 @@ s.frontage(MAIN, (["merchant"] * 3 + ["shop"]) * 6, width=28, spacing=56, rows=2
 s.frontage(CROSS, (["merchant"] * 2 + ["shop"]) * 6, width=22, spacing=56, rows=2)
 # the laborers' and servants' dwellings fill the blocks flanking the core - those next to
 # the cross-street face it; the rest are deep tenement blocks with no street frontage
-s.block_polys.append([(533, 1550), (595, 1550), (595, 1612), (533, 1612)])   # the pack bbox's SW corner pokes past the rampart; the 7-torii reflow (2026-07-21) rolled a laborer into that outside sliver (walled_town_commoners_inside_walls)
+s.block_polys.append(
+    [(533, 1550), (595, 1550), (595, 1612), (533, 1612)]
+)  # the pack bbox's SW corner pokes past the rampart; the 7-torii reflow (2026-07-21) rolled a laborer into that outside sliver (walled_town_commoners_inside_walls)
 s.pack((540, 1200, 1130, 1600), ["servant"] * 13 + ["laborer"] * 13, step=44, face_streets="fill")
 s.pack((1450, 1200, 1880, 1540), ["laborer"] * 17, step=44, face_streets="fill")
 s.label(1300, 1505, "merchant houses & shops", 10, italic=True, color="#5A4326")
@@ -502,7 +506,7 @@ for fx, fy in [
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
-s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
+s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 
 # communal WELLS among the dwellings (placed after them, in the open gaps); households share these, the
@@ -531,7 +535,9 @@ s.commons([(300, 15), (700, 10), (700, 95), (305, 100)], role="grazing")
 s.commons([(1600, 15), (1960, 10), (1955, 95), (1605, 100)], role="grazing")
 s.commons([(10, 290), (90, 300), (85, 900), (12, 890)], role="grazing")
 s.commons([(2510, 15), (2590, 15), (2590, 1985), (2515, 1985)], role="grazing")  # E strip held E of the fringe farm at x2487
-s.commons([(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 995), (216, 995)], role="grazing")  # W apron, notched around the farm row at x229-254 y1126-1257 AND its farm-belt well at (280,1045)
+s.commons(
+    [(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 995), (216, 995)], role="grazing"
+)  # W apron, notched around the farm row at x229-254 y1126-1257 AND its farm-belt well at (280,1045)
 s.commons([(1550, 1730), (1650, 1728), (1655, 1985), (1560, 1985)], role="grazing")  # S strip, held W of the flophouse
 s.commons([(1950, 1495), (2360, 1490), (2370, 1695), (1955, 1700)], role="grazing")
 s.commons([(20, 1400), (230, 1395), (225, 1695), (30, 1690)], role="grazing")
@@ -569,6 +575,16 @@ s.village_grove([(372, 1708), (548, 1712), (546, 1762), (374, 1760)], role="cops
 s.village_grove([(720, 1716), (880, 1712), (882, 1764), (722, 1766)], role="copse")
 s.village_grove([(1800, 1700), (2050, 1690), (2060, 1800), (1900, 1830), (1795, 1790)], role="copse")
 s.village_grove([(2290, 1350), (2378, 1345), (2382, 1462), (2295, 1470)], role="copse")
+
+# ===== NEAR-RING FARMLAND: the flat ground reads PACKED (feature 013) =====
+# Hirameki sits on good bottomland (the county seat is here BECAUSE of the fertile basin), so the
+# flat near ring is intensively worked, not bare scrub. Fill the clear interior ground with a quilt of
+# dry-field + garden plots (no water needed - dry cropland is exempt from fields_show_water_source),
+# leaving a ~120 px outer band for the margin grazing-commons (the labor-limited fallow lives at the
+# FAR edge, not hugging the town). Called AFTER the farmsteads, wells, and windbreak groves so it skips
+# every structure's urban halo and the grove belts; default near_ring_density is "dense" (well-sited).
+# WHY: settlements.md "Near-ring farmland density".
+s.near_ring_cropland((28, 28, 2572, 1972), seed=77, cell_ft=38)
 
 # ===== FIRE DEFENSE: a watch-tower =====
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
