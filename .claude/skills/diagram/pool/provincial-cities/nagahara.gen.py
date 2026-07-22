@@ -128,9 +128,9 @@ s.flophouse(1987, 1266)                                      # outside the EAST 
 # label ground clear of any stray placement.
 s.block_polys.append([(1406, 956), (1464, 956), (1464, 1077), (1406, 1077)])
 s.block_polys.append([(1549, 985), (1696, 985), (1696, 1016), (1549, 1016)])   # keep the N-gate guard-house label ground clear of the pack
-s.stables(1430, 1017, rot=90)   # kept >=75px W of the laborer pack (which starts ~x1504) so the animals have open ground
 s.flophouse(1430, 969, label_below=True)   # 7px up from the shrunk layout's seat so its below-label clears the stables' top edge (labels_clear_of_other_buildings)
 s.inn(1444, 1050)   # nudged E of the Ebisu graveyard label
+s.stables(1430, 1017, rot=90)   # kept >=75px W of the laborer pack (which starts ~x1504) so the animals have open ground; placed AFTER the flophouse + inn so its yard scatter skips them
 # E-gate caravan cluster: a reserved pocket W of the gate furniture (which fills the E-wall
 # strip), N of the main road - reserved up front so the NE laborer pack flows around it
 s.block_polys.append([(1663, 1132), (1825, 1132), (1825, 1315), (1663, 1315)])
