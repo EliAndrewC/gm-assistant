@@ -426,7 +426,7 @@ s.fire_tower(970, 420, label="fire-watch tower")
 # at meta's "medium" density - a real quilt of dry/garden plots between the comb and the pastures, but
 # visibly thinner than dense Hirameki. Auto-skips the pastures/forest (block_polys), the comb, structures,
 # and the groves. Called after the groves so it threads around them. WHY: settlements.md "Near-ring farmland density".
-s.near_ring_cropland((40, 40, 1960, 1260), seed=386)
+s.near_ring_cropland((40, 40, 1960, 1260), seed=386, garden_frac=0.55)
 
 s.title("Hoshizora")
 

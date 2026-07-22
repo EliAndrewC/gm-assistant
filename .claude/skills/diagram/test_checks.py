@@ -6363,6 +6363,46 @@ def test_dry_plots_off_hill_passes_when_plots_avoid_the_hill():
     assert "dry_plots_off_hill" not in f(M)
 
 
+# ---- near_ring_paddy_dominant (feature 014): a wet-rice county seat's flat near ring is PADDY, not dryland
+# grain. Paddy cells (kind="paddy" fields) must dominate dry-grain cells (dry_plots crop != garden) in the
+# near-ring band, scaled by tier. Gardens are the legitimate near-town dry use, not counted against.
+def _paddy_f(x0, y0, x1, y1, name="p"):
+    return {"name": name, "kind": "paddy", "outline": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], "bbox": [x0, y0, x1, y1]}
+
+
+def test_near_ring_paddy_dominant_fires_when_dry_grain_dominates():
+    # a big dry-grain field, only a sliver of paddy -> dry dominates -> fires
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "fields": [_paddy_f(0, 0, 120, 120)], "dry_plots": [{"poly": [[0, 300], [1000, 300], [1000, 900], [0, 900]], "crop": "soy", "theta": 0.0}]}
+    assert "near_ring_paddy_dominant" in f(M)
+
+
+def test_near_ring_paddy_dominant_passes_when_paddy_dominates():
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "fields": [_paddy_f(0, 0, 1000, 700)], "dry_plots": [{"poly": [[0, 800], [200, 800], [200, 900], [0, 900]], "crop": "soy", "theta": 0.0}]}
+    assert "near_ring_paddy_dominant" not in f(M)
+
+
+def test_near_ring_paddy_dominant_ignores_gardens_as_dry_grain():
+    # a large GARDEN dry area is NOT dry-grain; a modest paddy still dominates the grain (there is none)
+    M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "fields": [_paddy_f(0, 0, 300, 300)], "dry_plots": [{"poly": [[0, 400], [1000, 400], [1000, 900], [0, 900]], "crop": "garden", "theta": 0.0}]}
+    assert "near_ring_paddy_dominant" not in f(M)
+
+
+def test_near_ring_paddy_dominant_exempts_a_city_with_an_inwall_agricultural_district():
+    # Tango's case: grows rice INSIDE the walls, so its extramural glacis need not be paddy-dominant
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "agricultural_district": True},
+        "fields": [_paddy_f(0, 0, 80, 80)],
+        "dry_plots": [{"poly": [[0, 300], [1000, 300], [1000, 900], [0, 900]], "crop": "soy", "theta": 0.0}],
+    }
+    assert "near_ring_paddy_dominant" not in f(M)
+
+
+def test_near_ring_paddy_dominant_ignores_village_and_hamlet_sheets():
+    for sc in ("village", "hamlet"):
+        M = {"meta": {"scale": sc, "W": 1000, "H": 1000}, "dry_plots": [{"poly": [[0, 300], [1000, 300], [1000, 900], [0, 900]], "crop": "soy", "theta": 0.0}]}
+        assert "near_ring_paddy_dominant" not in f(M)
+
+
 # ---- scrub_clear_of_urban_fabric (GM 2026-07-21, Hoshizora): settlement ground is CLEARED - a
 # commons/pasture/coppice cover poly that CONTAINS an occupied structure or a wellhead is claiming
 # grazed waste where the town stands. Scrub lives on the outskirts only; field barns are exempt
