@@ -150,9 +150,46 @@ lived at `scratchpad/temps.csv` during development) showed:
   package tracking).
 
 Under the naive "notify the instant severity rises" logic that fired **6
-notifications (5 critical) in 10 idle minutes**. Three defenses fix it:
+notifications (5 critical) in 10 idle minutes**. Four defenses fix it, the
+spatial check first and then the temporal stack:
 
-1. **Median-of-3 smoothing (`SMOOTH_WINDOW`).** The metric that drives the bar,
+1. **Spatial cross-core reject (`MAX_ABOVE_MEDIAN_C = 20`; `History.spatialMetric`).**
+   The primary defense, applied first (in `_readTemps`, upstream of the temporal
+   stack below). A 616-poll per-core capture on 2026-07-22 - laptop on an ice
+   pack, case cool to the touch throughout - pinned the root cause down: **two
+   specific cores, Core 8 and Core 12, intermittently report a spurious
+   ~100-101°C** while every other core sits at ~55°C. Over that sample the two
+   pinned to ≥100°C in 80 and 96 of 616 polls; no other core did so more than 4
+   times. It is provably not real heat - the machine was idle (5-10% CPU) with
+   most cores parked at the 400 MHz floor, and a die a few mm across cannot hold
+   a ~45°C gradient between neighboring cores. The package temp then *inherits*
+   it (package = die max), and the old metric `max(package, hottest core)`
+   amplified that one bad sensor straight onto the gauge.
+
+   A **genuine** hot event is spatially different: real load heats the whole die
+   together. The same capture's true-load stretches ran 94-100% CPU with the
+   whole core set at ~88-92°C (and the clock throttling *down* from 4.6 GHz to
+   ~2.6 GHz - the hardware's own response to real heat). So the discriminator is
+   spatial spread, not magnitude: drop any core more than `MAX_ABOVE_MEDIAN_C`
+   above the *median of all cores*, then take the hottest survivor. A lone stuck
+   core is an outlier and is dropped; an all-cores-hot event has no outlier and
+   passes untouched. `MAX_ABOVE_MEDIAN_C = 20` sits between the two observed
+   clusters - real load spreads only ~12°C above the median, the glitch ~45°C.
+   Package temp is deliberately not a candidate, since it just mirrors the
+   glitching core. (CPU utilization is the clean *offline* discriminator; the
+   hardware throttle counters are not, because a sensor falsely reading 100°C
+   makes the CPU throttle that core on phantom heat, so they tick in both
+   regimes - a minor real cost of the defect, separate from this cosmetic fix.)
+
+   Replaying the fix over a 754-poll capture: polls that would color the bar RED
+   (metric ≥100°C) fall from 188 to 51, orange-or-worse (≥90°C) from 287 to 115,
+   and **all 70 genuine whole-die-hot polls are preserved** - zero real events
+   lost. This is the defense the temporal ones below cannot provide: the glitch
+   runs last up to ~80 s (26 consecutive polls), outlasting any median or
+   debounce window. Pure logic in `history.js`, unit-tested in `test-history.js`.
+   `MAX_ABOVE_MEDIAN_C` is tunable and lives beside the other de-noise constants.
+
+2. **Median-of-3 smoothing (`SMOOTH_WINDOW`).** The metric that drives the bar,
    the severity, the graph, and the archive is the median of the last 3 raw
    reads, not the raw read. A median (not a mean) *discards* a lone outlier
    rather than averaging it in, so a single glitch read never colors the bar or
@@ -160,7 +197,7 @@ notifications (5 critical) in 10 idle minutes**. Three defenses fix it:
    55°C and 45°C - gone. The user opted into smoothing the **bar** too (not just
    notifications), because a glitch that is provably not a real temperature has
    no business flashing the gauge red.
-2. **Slew/jump gate (`MAX_JUMP_C = 20`, `JUMP_CONFIRM_SAMPLES = 3`;
+3. **Slew/jump gate (`MAX_JUMP_C = 20`, `JUMP_CONFIRM_SAMPLES = 3`;
    `History.slewGate`).** Median-of-3 kills a *lone* spike, but a **run of 2+
    consecutive bad reads outvotes a 3-wide median** and slips through. This was
    found in the wild on 2026-07-22: with an ice pack under the laptop and the
@@ -179,15 +216,17 @@ notifications (5 critical) in 10 idle minutes**. Three defenses fix it:
    with **zero** lag; only a physically-impossible single-poll leap engages the
    gate. `MAX_JUMP_C = 20` sits well above any real per-poll change (genuine
    bursts ramp only a few degrees per 3 s poll) yet far below the ~50°C
-   one-poll leap of a glitch. **Both numbers are provisional**: they were set
-   from the coarse 30 s archive, and a fine-grained raw capture (per-core, per
-   3 s poll via `sensors`, to distinguish a one-core misread from a
-   package-wide one and to measure real burst lengths) is the intended way to
-   retune them. The gate's de-noising state is reset across a sampling gap
+   one-poll leap of a glitch. These numbers were set from the coarse 30 s
+   archive; the fine-grained per-core capture (2026-07-22, see defense 1) later
+   confirmed the burst shape and, more importantly, localized the root cause to
+   two stuck core sensors - now handled upstream by the spatial reject. That
+   makes this gate a **secondary** backstop for short all-core bursts rather
+   than the main line against the Core 8/12 glitch. The gate's de-noising state
+   is reset across a sampling gap
    longer than `GAP_BREAK_SECONDS` (suspend, shell restart), so a stale pre-gap
    value cannot be held after resume. The gate logic is pure and lives in
    `history.js`, unit-tested in `test-history.js`.
-3. **Notification debounce (`CONFIRM_SAMPLES = 3`).** A severity must hold for 3
+4. **Notification debounce (`CONFIRM_SAMPLES = 3`).** A severity must hold for 3
    consecutive polls (~9 s) before it fires, and fires **once** on the way up
    (not every poll while it stays hot). This catches the residual 1-2 poll
    excursions that survive smoothing. The number is sized from the data:

@@ -129,6 +129,45 @@ function slewGate(state, reading, opts) {
     return { accepted, candidate: reading, count: nextCount };
 }
 
+/* Spatial despike: the metric for a poll, computed by dropping per-core
+ * readings that sit implausibly far above the rest of the die, then taking the
+ * hottest survivor.
+ *
+ * Silicon conducts heat well, so a single core physically cannot sit tens of
+ * degrees hotter than its on-die neighbors - such a reading is a bad per-core
+ * sensor, not a temperature. This was diagnosed on 2026-07-22 from a 616-poll
+ * per-core capture: two specific cores (Core 8 and Core 12) intermittently
+ * pinned to ~100-101°C while the machine was idle (5-10% CPU) and every other
+ * core sat at ~55°C - a ~45°C gradient across a die a few mm wide, impossible
+ * for a real temperature. A GENUINE hot event looks completely different: the
+ * whole die heats together (all cores within ~12°C of the median) as load and
+ * clock-throttling rise, so NO core is an outlier and nothing is dropped. The
+ * `maxAboveMedianC` band cleanly separates the two - the observed glitch
+ * gradient (~45°C) is far above it while the observed real-load spread (~12°C)
+ * is well below - so a real all-core hot event still drives the gauge while a
+ * lone stuck sensor no longer can.
+ *
+ * This is the PRIMARY defense against the stuck-sensor failure, upstream of the
+ * median and slew gate (which the ~80 s glitch runs outlast). Package temp is
+ * deliberately NOT a candidate here: it mirrors the die max, so it merely
+ * inherits whichever core is glitching.
+ *
+ *   coreTemps   array of per-core temperatures (numbers); nulls are ignored
+ *   opts.maxAboveMedianC  a core more than this above the core median is dropped
+ *
+ * Returns the metric (°C), or null if there are no usable core readings. The
+ * kept set is never empty: the median value itself always satisfies the band
+ * (median <= median + maxAboveMedianC), so at least one core always survives.
+ */
+function spatialMetric(coreTemps, opts) {
+    const temps = coreTemps.filter(t => typeof t === 'number' && isFinite(t));
+    if (temps.length === 0)
+        return null;
+    const cutoff = median(temps) + opts.maxAboveMedianC;
+    const kept = temps.filter(t => t <= cutoff);
+    return Math.max(...kept);
+}
+
 // Keeps only samples no older than maxAgeMs before `now`. Used both to bound
 // the on-disk file (30-day retention) and to pick the recent window that
 // seeds a freshly-started shell's graph. Boundary is inclusive (t == cutoff
@@ -203,6 +242,7 @@ var HISTORY_EXPORTS = {
     serializeHistory,
     median,
     slewGate,
+    spatialMetric,
     pruneByAge,
     serializeLock,
     parseLock,
