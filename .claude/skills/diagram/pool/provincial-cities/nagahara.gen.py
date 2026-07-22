@@ -244,8 +244,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     # canal JUNCTIONS (head-race fork, outfall corner, confluences) read as the field's earthen
     # bund matrix, not the bare parchment background (the GM's "blank bits on the paddies"). See
     # tango.gen.py's comb_field for the full rationale; gated by city_paddy_fan_has_floor.
-    _floor_pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in env)
-    s.add(f'<polygon points="{_floor_pts}" fill="#CDB78C" stroke="none"/>')
+    s.comb_base_fill(net, name, color="#CDB78C", full_envelope=True)   # soil-tan floor over the FULL envelope: a tight-cropped city has no scrub, so edge junctions must be covered too
     for dp in net["dry_plots"]:
         if any(_pt_seg(x, y, ln[i][0], ln[i][1], ln[i + 1][0], ln[i + 1][1]) < 16
                for ln in avoid for (x, y) in dp["poly"] for i in range(len(ln) - 1)):
@@ -270,8 +269,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     s.M["fields"].append({"name": name, "kind": "paddy", "outline": [[x, y] for x, y in env],
                           "bbox": [min(exs), min(eys), max(exs), max(eys)],
                           "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
-                          "plot_polys": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]],
-                          "floor": [[x, y] for x, y in env]})   # the drawn soil-tan field floor (== envelope): a paddy fan must have one so canal-junction triangles are not bare parchment (city_paddy_fan_has_floor)   # the drawn paddy plot POLYGONS, so paddy_fan_gapless can see holes inside the fan ("plots" is taken: the polder checks record [along, cross] parcel spans there)
+                          "plot_polys": [[[round(v[0], 1), round(v[1], 1)] for v in p["poly"]] for p in net["plots"]]})   # the drawn paddy plot POLYGONS, so paddy_fan_gapless can see holes inside the fan ("plots" is taken: the polder checks record [along, cross] parcel spans there)
     for c in net["channels"]:
         s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]],
                                      "role": c["role"], "field": name,

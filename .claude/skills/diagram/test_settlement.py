@@ -1318,7 +1318,7 @@ def test_stables_yard_fully_blocked_draws_no_furniture():
     s.stables(600, 620, rot=90)
     svg = "".join(s.out)
     assert s.M["stable_yards"][-1]["of"] == [600.0, 620.0]  # recorded despite the blocked yard
-    assert "#9A7B4E" not in svg and "#8FA6B0" not in svg  # no parked cart, no water trough drew
+    assert "#7A5A3A" not in svg and "#8FA6B0" not in svg  # no tethered animals, no water trough drew
 
 
 def test_rowpack_lays_touching_terraces():
@@ -2789,3 +2789,12 @@ def test_farm_wells_falls_back_to_envelope_rim_slack():
     assert s.farm_wells() == 1
     wx, wy = s.M["wells"][0]["x"], s.M["wells"][0]["y"]
     assert not (430 <= wx <= 570 and 430 <= wy <= 570)  # seated on rim slack, not on the crop
+
+
+def test_comb_base_fill_noops_on_an_empty_net():
+    """comb_base_fill draws and records nothing when the net has no plots (a degenerate field) -
+    the guard that keeps a plotless comb from emitting a zero-area floor polygon."""
+    s = Settlement(600, 600, seed=1)
+    s.meta(name="Cb", scale="village", ftpx=2)
+    s.comb_base_fill({"plots": [], "envelope": [(0, 0), (10, 0), (10, 10)]}, "empty")
+    assert "empty" not in s.M.get("comb_floors", {})
