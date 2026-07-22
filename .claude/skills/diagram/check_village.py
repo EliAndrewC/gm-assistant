@@ -7799,6 +7799,35 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"the stream feeding the moat is too narrow ({narrow} px vs the {mw}px moat) - a moat's water source "
                     f"must be about as wide as the moat it supplies (pass s.stream(..., width=<moat width>))",
                 )
+                # A FED CLOSED (non-river) MOAT MUST ALSO DRAIN. A moat with a live feeder but no outfall
+                # would overflow: conservation of flow - a perennial stream cannot be held in a wet-rice-
+                # climate moat as a terminal pond (evaporation + seepage cannot absorb a live stream; that
+                # balance belongs to an arid, spring/rain-fed moat). The historical norm is a FLOW-THROUGH
+                # ring - feeder in on the high side, outfall off the LOW side to a lower watercourse, the
+                # current flushing corner-to-corner (Beijing's gated water-passes; the Forbidden City's
+                # NW-in / SE-out moat). The river-moat case is already covered by city_moat_joins_river
+                # (inlet upstream, outlet downstream), so this guards the closed-moat case. See settlements.md.
+                if not rv and moat_is_fed:
+                    mcx, mcy = sum(p[0] for p in moat) / len(moat), sum(p[1] for p in moat) / len(moat)
+                    taps = []  # the moat-rim end of each stream that reaches the moat AND runs off-map: feeder + any outfall
+                    for s in M.get("streams", []):
+                        e0, e1 = s["poly"][0], s["poly"][-1]
+                        if any(e[0] < EX0 or e[0] > EX1 or e[1] < EY0 or e[1] > EY1 for e in (e0, e1)) and min(poly_dist(q[0], q[1], moat) for q in (e0, e1)) <= 32:
+                            taps.append(min((e0, e1), key=lambda e: poly_dist(e[0], e[1], moat)))
+                    # feeder + outfall must attach on OPPOSITE faces (centroid-radials pointing apart, dot < 0)
+                    # so the ring genuinely flushes rather than two inlets crowding one arc
+                    has_outfall = any(
+                        (taps[i][0] - mcx) * (taps[j][0] - mcx) + (taps[i][1] - mcy) * (taps[j][1] - mcy) < 0
+                        for i in range(len(taps))
+                        for j in range(i + 1, len(taps))
+                    )
+                    check(
+                        "city_moat_has_outfall",
+                        has_outfall,
+                        "a fed closed city moat has no outfall - a moat with a live feeder must also DRAIN "
+                        "(conservation of flow: the surplus overflows if it cannot leave), so an outfall stream "
+                        "leaves the LOW rim and runs off-map opposite the feeder to flush the ring; add s.stream(moat rim -> off-map edge)",
+                    )
 
             # RIVER-CITY WATERWORKS (a cargo canal + wharf; only where they are drawn):
             river_c: Any = M.get("river")
