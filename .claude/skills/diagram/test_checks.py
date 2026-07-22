@@ -5632,6 +5632,24 @@ def test_dikepond_water_within_banks_and_rounded():
     assert "dikepond_corners_rounded" in f({**base, "dikeponds": sharp})
 
 
+def test_dikeponds_gated_to_water():
+    # GM 2026-07-22: every 桑基魚塘 pond must GATE to the water network by a sluice reaching a creek/canal or a
+    # neighbour pond; sealed ponds (no sluices) OR sluices that reach nothing fire.
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    canal = {"poly": [[100, 700], [900, 700]], "role": "lateral", "seg": "lateral", "field": "p"}
+    base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}, "fields": [field], "field_ditches": [canal]}
+
+    def rounded(cx, cy):
+        return [[cx + 30 * math.cos(a), cy + 30 * math.sin(a)] for a in [i * math.pi / 6 for i in range(12)]]
+
+    ponds = [{"parcel": [[150 + 120 * i, 640], [250 + 120 * i, 640], [250 + 120 * i, 760], [150 + 120 * i, 760]], "water": rounded(200 + 120 * i, 700)} for i in range(12)]
+    ok = [[[200 + 120 * i + 30, 700], [200 + 120 * i, 700]] for i in range(12)]  # far end ON the canal at y=700
+    assert "dikeponds_gated_to_water" not in f({**base, "dikeponds": ponds, "dikepond_sluices": ok})
+    assert "dikeponds_gated_to_water" in f({**base, "dikeponds": ponds})  # no sluices -> sealed basins fire
+    bad = [[[200 + 120 * i + 30, 700], [200 + 120 * i, 2200]] for i in range(12)]  # far end in open ground -> reaches nothing
+    assert "dikeponds_gated_to_water" in f({**base, "dikeponds": ponds, "dikepond_sluices": bad})
+
+
 def test_polder_floor_is_ring_interior():
     # GM 2026-07-22: the polder's green field floor must be the ring-canal INTERIOR (hug the outermost
     # channels), not the dike-boundary envelope. A floor vertex >8 px off the ring fires; a floor on the ring

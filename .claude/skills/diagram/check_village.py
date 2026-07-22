@@ -8435,6 +8435,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a dug fish pond erodes to ROUNDED corners, not sharp right angles - the recorded pond water polygons must carry the rounding (min sampled vertices {_min_wv}, want >=10 across {_n_dp} ponds); a 4-vertex quad is the pre-fix sharp-cornered parcel",
         )
 
+        # EVERY DIKE-POND GATES TO THE WATER NETWORK (GM 2026-07-22): a 桑基魚塘 pond is not a sealed basin -
+        # each opens by a SLUICE to the adjacent creek/canal (or, for an interior pond, to a neighbour pond that
+        # reaches the network), so it can be filled, flushed and drained (research: the sluice-gate regulates
+        # level and drains the pond at harvest). Teeth: most ponds must carry a recorded sluice, and every
+        # sluice's FAR end must land ON a channel OR another pond's water - a real connection, not a stub to
+        # nowhere. The pre-fix sealed ponds recorded no sluices and fire. Grounding: settlements.md 'Dike-pond sluices'.
+        _sl = M.get("dikepond_sluices", [])
+        _dpw = [d["water"] for d in (_dponds or [])]
+        _chs = [c["poly"] for c in M.get("field_ditches", [])]
+        _bad_far = 0
+        for _s in _sl:
+            _far = _s[1]
+            _on_ch = any(seg_dist(_far[0], _far[1], cp[k], cp[k + 1]) < 6 for cp in _chs for k in range(len(cp) - 1))
+            _in_pd = any(point_in_poly(_far[0], _far[1], w) or min(seg_dist(_far[0], _far[1], w[k], w[(k + 1) % len(w)]) for k in range(len(w))) < 6 for w in _dpw)
+            if not (_on_ch or _in_pd):
+                _bad_far += 1
+        check(
+            "dikeponds_gated_to_water",
+            _n_dp >= 12 and len(_sl) >= 0.85 * _n_dp and _bad_far == 0,
+            f"a mulberry-dike fish pond must GATE to the water network by a sluice (to a creek/canal or a neighbour pond), but {len(_sl)}/{_n_dp} ponds are gated and {_bad_far} sluice(s) reach nothing - a sealed basin cannot be filled, flushed or drained",
+        )
+
     # A polder's PERIMETER DIKE is an irregular hand-piled EARTHWORK, not a ruled line (GM 2026-07-22,
     # researched: the wei-tian / dike-pond dike was dredged pond-mud heaped and packed, planted and
     # breach-repaired, and the OUTER dike followed the natural water edge - the 'fish-scale polder' 鱼鳞圩
