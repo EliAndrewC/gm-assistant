@@ -617,14 +617,20 @@ s.label(1655, 1352, "samurai ward gate", 9, italic=True, color="#5A4326")
 
 # ====================================================================== OUTSIDE the walls
 s.bound = None
-# wealthy samurai walled estates - all to the SE, beyond the moat, SCATTERED and varying in
-# size (~1-1.5 real acres each). The inner ones STRADDLE the cropped SE edge (partly shown);
-# the rest run off-map entirely (a city map is about the city, not its commuter belt).
-EST = [(2201, 1470, 94, 62, "south"), (2160, 1622, 90, 60, "west"), (2104, 1785, 86, 58, "south"),   # straddle the edge
-       (2313, 1561, 84, 56, "west"), (2363, 1724, 76, 50, "south"), (2262, 1896, 72, 48, "north")]    # off-map beyond
-for ex, ey, ew, eh, gd in EST:
+# samurai country estates: DISPERSED walled compounds, each a fortified country seat on its OWN land
+# out in the rural district and mostly OFF-MAP (miles apart) - NOT a cluster ringing the moat (that
+# belt is the commercial gate-suburb). A city map shows only the NEAREST few, SPREAD APART on the
+# open, capital-facing SE/E approaches (the fields fill the other exteriors), each on its own rural
+# road that loops to a gate beyond the frame. See settlements.md 'Historical grounding'. Sizes + the
+# formal-gate direction vary (the auspicious south, or the cityward approach). >= 200px apart
+# (city_samurai_estates_dispersed), at most 3 shown (city_samurai_estates_outside).
+EST = [(2190, 1420, 96, 64, "south", (2231, 1400)),   # upper E-SE, drive off the E edge onto the district road
+       (2150, 1660, 84, 54, "west", (2231, 1665)),    # mid SE
+       (2030, 1855, 76, 48, "north", (2020, 1927))]   # lower S-SE, drive off the S edge (clear of the moat outfall)
+for ex, ey, ew, eh, gd, (lx, ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
-s.label(2160, 1549, "samurai estates", 10, italic=True, color="#3A352C")   # in the open ground between the straddling estates, off the moat
+    s.lane([(ex, ey), (lx, ly)], worn=True, connector=True)   # the estate's own drive out to the rural road (reaches a gate off-frame)
+s.label(2180, 1550, "samurai estates", 10, italic=True, color="#3A352C")   # open ground between the upper-E and mid-SE estates
 # surrounding farmland: large comb fields CLOSE to the city, irrigated from the MOAT, each
 # ringed by the villagers' farmhouses; all run off the map edge. Each comb's SLUICE sits a
 # stride outside the moat rim (computed from the actual moat polyline, so the tap self-corrects)

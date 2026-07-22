@@ -2722,16 +2722,33 @@ def test_walled_city_structural_checks_fire():
     assert "walled_city_has_wall_and_gates" in fails
     assert "city_inspection_station_at_each_gate" in fails
     assert "walled_city_has_burakumin_inside" in fails
-    assert "city_samurai_estates_outside" in fails  # 0 estates, want 5-15
+    assert "city_samurai_estates_outside" in fails  # 0 estates, want 1-3
     assert "city_imperial_road_through" in fails
 
 
 def test_city_samurai_estates_vary_in_size_fires_when_uniform():
-    estates = [{"x": 900 + i * 12, "y": 900, "w": 100, "h": 80} for i in range(6)]  # 6 (in range), all identical
+    estates = [{"x": x, "y": y, "w": 100, "h": 80} for x, y in [(880, 600), (900, 880), (620, 880)]]  # 3 (in range), spread apart, all identical
     M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "manors": estates}
     fails = f(M)
     assert "city_samurai_estates_vary_in_size" in fails
-    assert "city_samurai_estates_outside" not in fails  # 6 IS in the 5-15 range
+    assert "city_samurai_estates_outside" not in fails  # 3 IS in the 1-3 range
+    assert "city_samurai_estates_dispersed" not in fails  # spread >= 200px apart
+
+
+def test_city_samurai_estates_outside_fires_when_too_many():
+    # 4 estates shown - more than the 1-3 a city map should show (the rest are dispersed off-map, miles out)
+    estates = [{"x": x, "y": y, "w": 90 + i * 6, "h": 60} for i, (x, y) in enumerate([(880, 560), (900, 820), (620, 880), (860, 700)])]
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "manors": estates}
+    assert "city_samurai_estates_outside" in f(M)
+
+
+def test_city_samurai_estates_dispersed_fires_on_a_tight_cluster():
+    # 3 estates packed together (< 200px apart) - a cluster ringing the wall, not dispersed country seats
+    estates = [{"x": x, "y": y, "w": 90 + i * 6, "h": 60} for i, (x, y) in enumerate([(860, 840), (900, 900), (960, 870)])]
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "manors": estates}
+    fails = f(M)
+    assert "city_samurai_estates_dispersed" in fails
+    assert "city_samurai_estates_outside" not in fails  # 3 is a valid count; it is the CLUSTERING that fires
 
 
 def test_city_streets_have_buildings_fires_on_an_empty_city_street():
