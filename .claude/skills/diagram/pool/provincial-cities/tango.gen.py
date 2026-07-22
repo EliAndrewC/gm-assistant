@@ -39,7 +39,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from citybudget import CityProgram, budget_to_manifest, plan_city  # noqa: E402
 from settlement import Settlement  # noqa: E402
-from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
+from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+
+# Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this city's 3 ft/px (was hand-set 26px
+# -> ~0.08 acre, at Bray's "large" ceiling). Subdivides the same fans into finer cells; the ~3,000 urban
+# population and every dwelling count are untouched (a city's farmers are not in that figure). See
+# waterfields.paddy_grain / settlements.md 'Paddy cell size'.
+PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=162)
 s.meta(name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3,
@@ -230,7 +236,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         down_deg = (-down_deg) % 360
     net = build_comb(3200, 2700, sluice, seed, down_deg=down_deg, field_fall=field_fall,
                      canal_a_len=canal_a, canal_b_len=canal_b, offtakes_a=offtakes_a,
-                     offtakes_b=offtakes_b, plot_across=26, row_step=(13, 19), dry_band=dry_band,
+                     offtakes_b=offtakes_b, plot_across=PLOT_ACROSS, row_step=ROW_STEP, dry_band=dry_band,
                      grain=2 / 3)  # 3 ft/px city: scale the carve's real-feet minimum-size thresholds (tuned at 2 ft/px) or the fan drops sectors/head plots/closers and shows parchment holes (paddy_fan_gapless)
     if mirror_ym is not None:
         def m(pts):
@@ -280,14 +286,36 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     return net, env, (round(sum(exs) / len(exs), 1), round(sum(eys) / len(eys), 1))
 
 
-def plot_centroid(net, key):
+def plot_centroid(net, key, inset=0.15):
     """Centroid of the plot chosen by `key` over plot centroids - a point guaranteed INSIDE the
     planted field (the envelope centroid of a curved fan can miss, and the water-source checks
-    test the channel END with point_in_poly against the outline)."""
+    test the channel END with point_in_poly against the outline). The result is then pulled `inset`
+    of the way toward the field's MEAN centroid, so an EXTREMUM plot's centroid still clears the
+    smoothed outline edge by the >=10px channel_field_anchored requires - the ~0.05-acre paddy
+    calibration (GM 2026-07-22) shrank the edge cells, putting a raw extremum centroid on the hull."""
     cens = [(sum(v[0] for v in p["poly"]) / len(p["poly"]), sum(v[1] for v in p["poly"]) / len(p["poly"]))
             for p in net["plots"] if not p.get("filler")]   # carve plots only: a filler tile hugging the drain rim can win the extremum and put the topo anchor outside the outline (channel_field_anchored)
     cx, cy = key(cens)
+    mx = sum(c[0] for c in cens) / len(cens)
+    my = sum(c[1] for c in cens) / len(cens)
+    cx += inset * (mx - cx)
+    cy += inset * (my - cy)
     return (round(cx, 1), round(cy, 1))
+
+
+def drain_tail(dr, span=52.0):
+    """The trailing run of a drain polyline spanning ~`span` px, as [start, end]. A drain-sink topology
+    channel used the drain's LAST SEGMENT ([-2:]), but the ~0.05-acre paddy calibration (GM 2026-07-22)
+    made the drain points denser, so that segment is only a few px - and topo_channel's gentle bend then
+    kinks it into an ACUTE turn (a >=5px wind on a <10px chord cannot stay obtuse). Walking back to a
+    ~52px chord gives the bend room to stay obtuse AND wind, and its start still lies ON the drain."""
+    end = dr[-1]
+    acc = 0.0
+    i = len(dr) - 1
+    while i > 0 and acc < span:
+        acc += math.hypot(dr[i][0] - dr[i - 1][0], dr[i][1] - dr[i - 1][1])
+        i -= 1
+    return [tuple(dr[i]), tuple(end)]
 
 
 def topo_channel(pts, frm, to, draw_w=0.0):
@@ -608,7 +636,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     topo_channel([(mp[0], mp[1]), sl, _pd], {"kind": "moat"}, {"kind": "field", "name": nm})
     # sink topology: the collector's runoff leaves the cropped map (the drain marches off-view)
     _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
-    topo_channel([tuple(_dr[-2]), tuple(_dr[-1])], {"kind": "drain"}, {"kind": "offmap"})
+    topo_channel(drain_tail(_dr), {"kind": "drain"}, {"kind": "offmap"})
     s.ring(('poly', _env), 28, 15, ["plain"])
     s.ring(('poly', _env), 22, 40, ["plain"])
     s.ring(('poly', _env), 14, 78, ["plain"])   # an outer ring band past the widened dry hems (2026-07-21): the village-depth quilts claim the near margin, so without it fw1's visible sliver seats no farmhouses (outside_fields_farmhouse_density)
