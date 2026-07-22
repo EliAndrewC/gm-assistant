@@ -140,6 +140,18 @@ def test_crop_ignores_the_commons_which_just_clips_at_the_frame():
     assert s.view == (480, 480, 40, 40)  # hard 490..510 + 10 margin; commons ignored
 
 
+def test_rects_overlap_detects_overlap_and_separation():
+    # the gate-furniture walk-outward uses rects_overlap (SAT); its True branch stopped being covered
+    # incidentally once the gate guard house/inspection went TRUE SCALE (2026-07-22) and no longer
+    # overlapped at their initial walk positions - so test it directly
+    from settlement import rects_overlap
+
+    a = [(0, 0), (10, 0), (10, 10), (0, 10)]
+    assert rects_overlap(a, [(5, 5), (15, 5), (15, 15), (5, 15)]) is True  # corner-overlapping
+    assert rects_overlap(a, [(20, 0), (30, 0), (30, 10), (20, 10)]) is False  # separated on x
+    assert rects_overlap(a, [(0, 20), (10, 20), (10, 30), (0, 30)]) is False  # separated on y
+
+
 def test_box_clear_detects_rect_poly_and_line_obstacles():
     s = _crop_settlement()
     s.M["houses"] = [{"x": 500, "y": 500, "w": 40, "h": 30}]  # rect obstacle

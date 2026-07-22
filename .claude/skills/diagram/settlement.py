@@ -4871,19 +4871,28 @@ class Settlement:
         self.M["ring_road_width"] = width
         return ring
 
-    def _tower(self, x: float, y: float, rot: float = 0.0, wc: str = '#3A352C', tw: float = 38) -> int:
-        """A square guard tower straddling the wall (drawn OVER the rampart), ROTATED to sit square to
-        the wall (rot = the wall's tangent angle there, so a tower on a slanted wall slants with it).
-        Records M['wall_towers'] and reserves a no-build block so the packs leave it clear."""
-        h = tw / 2
+    def _tower(self, x: float, y: float, rot: float = 0.0, wc: str = '#3A352C', along_ft: float = 62, deep_ft: float = 40) -> int:
+        """A wall MAMIAN BASTION (马面/敌台) drawn TO SCALE (GM 2026-07-22, was a fixed-pixel 38 px SQUARE =
+        ~114 ft at 3 ft/px). A mamian is a rectangular spur PROJECTING from the wall face - Xi'an's run
+        ~20 m wide x ~12 m out (~66 x 40 ft) - carrying the enemy-tower building (~30-40 ft) and the stair
+        to the parapet, so it is drawn as a rectangle LONGER along the wall (`along_ft`) than it is deep
+        (`deep_ft`), with the tower building inset. `rot` is the wall's local tangent, so the long axis
+        runs along the wall and the depth projects across it (the caller berm-nudges so the outer part sits
+        on the berm, not in the moat). A GATE tower (chenglou) passes a smaller ~52 x 30 ft. Strokes keep
+        their legibility floor (the stroke convention); the footprint takes no license. Records
+        M['wall_towers'] (w = along, h = deep) and reserves a no-build block. See settlements.md grounding."""
+        al, dp = self.px(along_ft), self.px(deep_ft)
+        tb = self.px(min(34, along_ft * 0.55))  # the enemy-tower building on the spur (~30-40 ft, inset)
         z = self.add_top(
-            f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">'
-            f'<rect x="{-h:.0f}" y="{-h:.0f}" width="{tw}" height="{tw}" fill="#9C8A66" stroke="{wc}" stroke-width="2.4"/>'
-            f'<rect x="{-h + 7:.0f}" y="{-h + 7:.0f}" width="{tw - 14}" height="{tw - 14}" fill="#6B5A3A"/></g>'
+            f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">'
+            f'<rect x="{-al / 2:.1f}" y="{-dp / 2:.1f}" width="{al:.1f}" height="{dp:.1f}" rx="1" fill="#9C8A66" stroke="{wc}" stroke-width="2.0"/>'
+            f'<rect x="{-tb / 2:.1f}" y="{-tb * 0.34:.1f}" width="{tb:.1f}" height="{tb * 0.68:.1f}" rx="1" fill="#6B5A3A"/></g>'
         )
-        self.M.setdefault("wall_towers", []).append({"x": round(x, 1), "y": round(y, 1), "w": tw, "h": tw, "rot": round(rot, 1), "z": z})
-        bm = 24 * max(self.bscale, 0.5)  # a building-half margin at the map's grain (floored: the tower glyph itself is fixed-size)
-        self.block_polys.append([(x - tw / 2 - bm, y - tw / 2 - bm), (x + tw / 2 + bm, y - tw / 2 - bm), (x + tw / 2 + bm, y + tw / 2 + bm), (x - tw / 2 - bm, y + tw / 2 + bm)])
+        self.M.setdefault("wall_towers", []).append({"x": round(x, 1), "y": round(y, 1), "w": round(al, 1), "h": round(dp, 1), "rot": round(rot, 1), "z": z})
+        bm = 12 * max(self.bscale, 0.5)  # a modest half-margin at the map's grain
+        hx, hy = al / 2 + bm, dp / 2 + bm
+        ca, sa = math.cos(math.radians(rot)), math.sin(math.radians(rot))
+        self.block_polys.append([(x + dx * ca - dy * sa, y + dx * sa + dy * ca) for dx, dy in ((-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy))])
         return z
 
     def _wall_walk(self, pts: Any, g_idx: int, arc: float, west: bool = True) -> tuple[float, float, float]:
@@ -4964,8 +4973,11 @@ class Settlement:
             for _side in (-1, 1):
                 _pcx = gx + _tx * 35 * _side - _rox * 10.5  # offset along the wall, shifted inward so
                 _pcy = gy + _ty * 35 * _side - _roy * 10.5  # the post projects ~5px out / ~26px in
-                self.add_wall(f'<g transform="translate({_pcx:.1f},{_pcy:.1f}) rotate({tang[g_idx]:.1f})"><rect x="-7" y="-15.5" width="14" height="31" fill="{wc}"/></g>')
-                self.M["gate_structs"].append({"x": round(_pcx, 1), "y": round(_pcy, 1), "w": 14, "h": 31, "rot": round(tang[g_idx], 1), "kind": "gatepost"})
+                _pw, _ph = self.px(15), self.px(24)  # TRUE SCALE (was 14x31 px = ~42x93 ft): a gate masonry pier ~15 ft across x ~24 ft along the opening
+                self.add_wall(
+                    f'<g transform="translate({_pcx:.1f},{_pcy:.1f}) rotate({tang[g_idx]:.1f})"><rect x="{-_pw / 2:.1f}" y="{-_ph / 2:.1f}" width="{_pw:.1f}" height="{_ph:.1f}" fill="{wc}"/></g>'
+                )
+                self.M["gate_structs"].append({"x": round(_pcx, 1), "y": round(_pcy, 1), "w": round(_pw, 1), "h": round(_ph, 1), "rot": round(tang[g_idx], 1), "kind": "gatepost"})
             # the GUARD HOUSE + INSPECTION STATION sit ON the ring road just inside the gate, each one
             # WALKED along the curving wall (so it picks up the wall's LOCAL tangent there, not the gate
             # vertex's) and pulled in radially to the ring road's centerline (inset `ring_inset`, matching
@@ -4974,7 +4986,14 @@ class Settlement:
             insp_xy: Any = None
             g_east = any(abs(gx - ex) < 2 and abs(gy - ey) < 2 for (ex, ey) in guard_east)
             gh_rect: Any = None
-            for kind, arc, fw, fh, fill in (("guardhouse", 80, 66, 44, "#C9A57A"), ("inspection", 144, 60, 44, "#D8C49A")):
+            # TRUE SCALE (GM 2026-07-22, was fixed-pixel 66x44 / 60x44 = ~198x132 / 180x132 ft at 3 ft/px -
+            # a guardhouse drawn bigger than a temple): footprints in REAL FEET via px(). A gate guard duty
+            # room is a small 1-3 bay building (~34x20 ft, upper end of the 15-35 ft attested range); a gate
+            # inspection hall (sekisho/lijin bansho) ~44x22 ft. Strokes keep their legibility floor (the
+            # stroke convention, SKILL.md 'to scale'); the footprint takes no license. See settlements.md
+            # 'Historical grounding' for the anchors.
+            for kind, arc, fw_ft, fh_ft, fill in (("guardhouse", 80, 34, 20, "#C9A57A"), ("inspection", 144, 44, 22, "#D8C49A")):
+                fw, fh = self.px(fw_ft), self.px(fh_ft)
                 # the inspection station walks OUTWARD from the guard house until the two rects
                 # clear - on a small tight ring the fixed arcs converge and the annex would be
                 # drawn through the guard house (city_gate_guard_inspection_separate)
@@ -4999,19 +5018,19 @@ class Settlement:
                 trim = (
                     f'<line x1="{-fw / 2:.0f}" y1="0" x2="{fw / 2:.0f}" y2="0" stroke="#5A4326" stroke-width="0.8"/>'
                     if kind == "guardhouse"
-                    else f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw}" height="8" fill="#8A6E3E"/>'
+                    else f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw:.1f}" height="{max(fh * 0.18, 2.2):.1f}" fill="#8A6E3E"/>'
                 )
                 z = self.add_top(
                     f'<g transform="translate({fx:.0f},{fy:.0f}) rotate({a:.1f})">'
-                    f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw}" height="{fh}" rx="2" fill="{fill}" stroke="#5A4326" stroke-width="1.8"/>'
+                    f'<rect x="{-fw / 2:.0f}" y="{-fh / 2:.0f}" width="{fw:.1f}" height="{fh:.1f}" rx="1.5" fill="{fill}" stroke="#5A4326" stroke-width="1.2"/>'
                     f'{trim}</g>'
                 )
-                self.M["gate_structs"].append({"x": fx, "y": fy, "w": fw, "h": fh, "rot": round(a, 1), "kind": kind, "z": z})
+                self.M["gate_structs"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "kind": kind, "z": z})
                 if kind == "guardhouse":
                     ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
                     gh_rect = [(fx + ca * px_ - sa * py_, fy + sa * px_ + ca * py_) for px_, py_ in ((-fw / 2, -fh / 2), (fw / 2, -fh / 2), (fw / 2, fh / 2), (-fw / 2, fh / 2))]
                 if kind == "inspection":
-                    self.M["inspection_stations"].append({"x": fx, "y": fy, "w": fw, "h": fh, "rot": round(a, 1), "label": "inspection station"})
+                    self.M["inspection_stations"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "label": "inspection station"})
                     insp_xy = (fx, fy)
             # the gate guard TOWER straddles the WALL just east of the gate, likewise tilted to the wall
             # there - and NUDGED INWARD so its footing stands on the berm, not in the moat (below)
@@ -5025,16 +5044,16 @@ class Settlement:
             def _tower_blocked(tx: float, ty: float, _gfurn: Any = _gfurn) -> bool:  # bind loop var (used within this iteration)
                 if any(math.hypot(tx - kx_, ty - ky_) < 62 for kx_, ky_ in tower_skip):
                     return True
-                return any(abs(tx - fx) < (40 + fw) / 2 + 3 and abs(ty - fy) < (40 + fh) / 2 + 3 for fx, fy, fw, fh in _gfurn)
+                return any(abs(tx - fx) < (self.px(62) + fw) / 2 + 3 and abs(ty - fy) < (self.px(62) + fh) / 2 + 3 for fx, fy, fw, fh in _gfurn)
 
             while _tower_blocked(twx, twy) and _arc < 240:
                 _arc += 20  # a kido or the gate furniture sits there - walk the tower further along the wall
                 twx, twy, tang_e = self._wall_walk(pts, g_idx, _arc, west=g_east)
             ta = (tang_e + 90) % 180 - 90
-            twx, twy = _berm_nudge(twx, twy, 40)
-            tz = self._tower(twx, twy, ta, wc, tw=40)
-            self.M["gate_structs"].append({"x": twx, "y": twy, "w": 40, "h": 40, "rot": round(ta, 1), "kind": "tower", "z": tz})
-            self.label(insp_xy[0] + 14, insp_xy[1] + 45, "gate guard house + inspection", 9, italic=True, color="#5A4326")
+            twx, twy = _berm_nudge(twx, twy, self.px(30))
+            tz = self._tower(twx, twy, ta, wc, along_ft=52, deep_ft=30)
+            self.M["gate_structs"].append({"x": twx, "y": twy, "w": round(self.px(52), 1), "h": round(self.px(30), 1), "rot": round(ta, 1), "kind": "tower", "z": tz})
+            self.label(insp_xy[0], insp_xy[1] + self.px(22) + 6, "gate guard house + inspection", 9, italic=True, color="#5A4326")
             for gs in self.M["gate_structs"][-3:]:
                 bm = 30
                 self.block_polys.append(
@@ -5063,7 +5082,7 @@ class Settlement:
             if any(math.hypot(vx - tx2, vy - ty2) < 110 for tx2, ty2 in gate_towers):
                 continue  # a mural tower shoulder-to-shoulder with a gate tower reads as a double (GM, 2026-07)
             ta_i = tang[i]
-            if any(math.hypot(vx - kx_, vy - ky_) < 62 for kx_, ky_ in tower_skip) or any(math.hypot(vx - fx_, vy - fy_) < 66 for fx_, fy_ in gate_furn):
+            if any(math.hypot(vx - kx_, vy - ky_) < 62 for kx_, ky_ in tower_skip) or any(math.hypot(vx - fx_, vy - fy_) < 40 for fx_, fy_ in gate_furn):
                 # yield to the future kido by SLIDING a short way along the wall, not jumping a
                 # whole vertex - a vertex jump left a ~360px towerless stretch on Tango's east
                 # wall (the GM: "what if someone attacked the city from the east?"). Try growing
@@ -5074,7 +5093,7 @@ class Settlement:
                         sx_, sy_, se_ = self._wall_walk(pts, i, _arc, west=_west)
                         if (
                             all(math.hypot(sx_ - kx_, sy_ - ky_) >= 62 for kx_, ky_ in tower_skip)
-                            and all(math.hypot(sx_ - fx_, sy_ - fy_) >= 66 for fx_, fy_ in gate_furn)
+                            and all(math.hypot(sx_ - fx_, sy_ - fy_) >= 40 for fx_, fy_ in gate_furn)
                             and all(math.hypot(sx_ - gx, sy_ - gy) >= 130 for gx, gy in gates)
                         ):
                             slid = (sx_, sy_, (se_ + 90) % 180 - 90)
@@ -5084,7 +5103,7 @@ class Settlement:
                 if not slid:
                     continue  # boxed in on both sides - drop this tower (spacing tolerates one gap)
                 vx, vy, ta_i = slid
-            nvx, nvy = _berm_nudge(vx, vy, 38)
+            nvx, nvy = _berm_nudge(vx, vy, self.px(40))
             self._tower(nvx, nvy, ta_i, wc)
         self.M["wall"] = [[x, y] for x, y in pts]
         self.M["gates"] = [[gx, gy] for gx, gy in gates]

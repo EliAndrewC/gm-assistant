@@ -533,6 +533,7 @@ for _wc in [(1550, 1165), (1562, 1180), (1540, 1152)]:
 for _wc in [(1570, 1245), (1580, 1258), (1556, 1240)]:
     if s.well_at(*_wc):
         break   # candidate fan: the band's y1300 extension then left the (1545,1282) draw-point at 27 (centroid ~1543,1265) - one more court on the deep rows' seam
+s.place_wells((1490, 950, 1595, 1115), spacing=46)   # a DENSER court grid over the N-gate's two swamped catchments (the (1528,1009)=28 and (1545,1090)=30 draw-points): the true-scale gate furniture (2026-07-22) shrank the guard house/tower and freed ground, so the N rows re-packed denser than the 64px grid could water (city_well_density_sufficient). Seeded BEFORE the rows so each terrace breaks into a court around it
 s.rowpack((1496, 927, 1878, 1127), _lab, court_every=4, eave_ft=3)   # E edge extended to the ring corridor (court_every stays 4: the parameter sweep showed thinner courts LOSE houses here - row phase beats court count - and the idobata courts carry the well-density check)
 s.rowpack((1496, 1142, 1878, 1307), _lab, court_every=4, eave_ft=3)   # y1 1307 (was 1286): the pair cadence costs the band a row vs the old uniform spacing, and the road's own 28px frontage band (rowpack reads it from `lines`, edge ceiling ~y1307.7) is what actually stops the rows - the extra depth lets the last pair seat
 s.label(1621, 1169, "laborer neighborhoods", 10, italic=True, color="#5A4326")   # W of the E-gate caravan flophouse
@@ -814,6 +815,7 @@ top_up("merchant_house", (1490, 1345, 1875, 1657), 160,
 top_up("laborer_large", (1491, 923, 1878, 1294), 32)
 top_up("laborer", (1491, 923, 1878, 1294), 305, count_kinds=("laborer", "laborer_large"))
 top_up("servant", (1490, 1345, 1875, 1657), 90)
+top_up("burakumin", (1282, 1626, 1634, 1755), 30)   # burakumin is a caste FLOOR (~30, city_caste_counts_in_band) - topped up UNCONDITIONALLY here, BEFORE the dwelling-total-capped loop below. Else a reflow that lets the servant/laborer fills reach the 566 cap first starves it: the 2026-07-22 true-scale gate furniture freed N-gate room and did exactly that, dropping burakumin to 20 (the in-loop sweep at the bottom never ran)
 for _kind, _region, _cap in (("servant", (1491, 923, 1878, 1294), 130),   # y0 923 (was 969): the warren's top strip against the N ring arc was outside every servant sweep
                              ("laborer", (1490, 1345, 1875, 1657), 260),
                              ("servant", (1282, 1626, 1630, 1740), 60),
