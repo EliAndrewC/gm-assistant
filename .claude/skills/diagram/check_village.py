@@ -5690,6 +5690,65 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "dry/marginal locale, declare meta(near_ring_density='medium'|'thin')",
         )
 
+        # NEAR-RING PADDY DOMINANCE (feature 014). Feature 013 packed the near ring but filled it with
+        # DRY grain (dry cropland needs no plumbed water, the cheap fill) - historically backwards: a town
+        # sits in the fertile basin BECAUSE of the wet rice, so its flat waterable near ring is PADDY-
+        # dominant. Dry grain is the SECONDARY use on the drier/higher margins; vegetable/market gardens
+        # (crop=="garden") hug the town. This reuses the exact 25px near-ring band + `committed` mask above
+        # and tallies PADDY-covered cells vs DRY-GRAIN-covered cells (dry_plots whose crop != garden;
+        # gardens are the legitimate near-town dry use, not the thing demoted), requiring paddy to DOMINATE
+        # - scaled by tier so a dialed-down map is paddy-LED but sparser, never dry-dominant. REJECTED (per
+        # Constitution XII, recorded so it is never reinvented): the dry-grain-dominant near ring 013 shipped;
+        # the flat waterable valley floor of a wet-rice county seat is paddy, not dryland grain. Grounded in
+        # settlements.md "Near-ring farmland density" + budgets.md (the ~1/3-paddy figure is a DOMAIN-wide
+        # average over hills+margins - the near ring is the most waterable flat ground, so paddy-heavy).
+        # WHY the ratios: a dense well-sited basin reads clearly paddy-led (paddy >= 1.2x dry-grain); a thin
+        # grazing/relay locale need only keep paddy at least TYING dry-grain (paddy >= dry-grain), so the
+        # honest lower-tier answer (a thinner ring where little water reaches) is not forced to dense.
+        # A city with an IN-WALL agricultural district (meta agricultural_district=True, e.g. Tango) grows a
+        # real share of its rice INSIDE the walls - the historically UNUSUAL case that district models - so its
+        # tight extramural glacis need not be paddy-dominant (the intramural paddy carries the burden). Such a
+        # city is exempt from strict extramural dominance; the demoted dry fill still keeps grain off the ring.
+        # Every other city (no in-wall farming) must be extramural-paddy-dominant, moat-fed (Nagahara).
+        nrpd_exempt = scale == "city" and meta.get("agricultural_district")
+        NRPD_RATIO = {"dense": 1.2, "medium": 1.1, "thin": 1.0}
+        nrpd_ratio = NRPD_RATIO.get(nrd_tier, NRPD_RATIO["dense"])
+        nrp_paddy = [f_["outline"] for f_ in M.get("fields", []) if f_.get("kind") == "paddy"]
+        nrp_drygrain = []
+        for o_ in M.get("dry_plots", []) or []:
+            p_ = o_.get("poly") if isinstance(o_, dict) else o_
+            if p_ is not None and len(p_) >= 3 and (not isinstance(o_, dict) or o_.get("crop") != "garden"):
+                nrp_drygrain.append(p_)
+        nrp_pc = nrp_dc = 0
+        gy = EY0 + 12.5
+        while gy < EY1:
+            gx = EX0 + 12.5
+            while gx < EX1:
+                committed = (
+                    (nr_wall is not None and len(nr_wall) >= 3 and point_in_poly(gx, gy, nr_wall))
+                    or (nr_hill is not None and in_ellipse(gx, gy, nr_hill, 1.45))
+                    or (nr_pond is not None and in_ellipse(gx, gy, [nr_pond[0], nr_pond[1], nr_pond[2] + 20, nr_pond[3] + 20]))
+                    or any(bx0 <= gx <= bx1 and by0 <= gy <= by1 for bx0, by0, bx1, by1 in nr_boxes)
+                    or any(any(seg_dist(gx, gy, pl_[i_], pl_[i_ + 1]) < hw_ for i_ in range(len(pl_) - 1)) for pl_, hw_ in nr_lines)
+                    or any(point_in_poly(gx, gy, p_) for p_ in nr_skip)
+                )
+                if not committed:
+                    if any(point_in_poly(gx, gy, p_) for p_ in nrp_paddy):
+                        nrp_pc += 1
+                    elif any(point_in_poly(gx, gy, p_) for p_ in nrp_drygrain):
+                        nrp_dc += 1
+                gx += 25
+            gy += 25
+        check(
+            "near_ring_paddy_dominant",
+            nrpd_exempt or nrp_pc >= nrpd_ratio * nrp_dc,
+            f"near-ring paddy does not dominate: {nrp_pc} paddy cells vs {nrp_dc} dry-grain cells "
+            f"(need paddy >= {nrpd_ratio:g}x dry-grain for near_ring_density='{nrd_tier}') - a wet-rice county seat's "
+            "flat near ring is PADDY, not dryland grain: add near-ring paddy where water reaches (s.near_ring_paddy(...), "
+            "or enlarge the combs), demote the dry grain to the drier/higher margins + a garden band by the town, or - "
+            "where the near ring genuinely lacks water - draw it at a lower near_ring_density tier",
+        )
+
     # NO CANOPY STANDS OVER OPEN WATER (GM audit 2026-07): a village-grove clump drawn across a
     # stream / channel / moat reads as trees growing in the current. The fengshui-pond rule
     # (trees_clear_of_fengshui_ponds) covered only ponds; this closes the running-water half.

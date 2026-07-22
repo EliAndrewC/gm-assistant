@@ -4497,6 +4497,188 @@ class Settlement:
                 placed += 1
         return placed
 
+    def near_ring_paddy(self, bbox: tuple[float, float, float, float], *, seed: int = 0, cell_ft: float = 150.0, ring_farms: int = 0, avoid: Any = ()) -> int:
+        """Fill the flat, CLEAR near-ring ground in `bbox` with WET-RICE PADDY basins - the DOMINANT crop of a
+        wet-rice county seat's flat waterable near ring (feature 014, settlements.md 'Near-ring farmland density').
+        A basin is placed ONLY where it can be LEGITIMATELY WATERED, so `fields_show_water_source` never fires:
+        an outline vertex within ~18px of an `M['streams']` segment (the field bank abuts the stream, the stream
+        NOT crossing the basin), OR in the pond's 1.0-1.10x ring, OR the basin runs OFF the map edge (exempt).
+        Ground with no reachable water is SKIPPED - paddy is never conjured without water (the honest limit: where
+        the near ring genuinely lacks water, draw fewer basins / a lower tier, don't fake it). Draws each basin
+        via `paddy_field` (the true bunded flooded look, rice-dominant crop mix) and records it as a `kind='paddy'`
+        field. Reuses `near_ring_cropland`'s keep-outs. `ring_farms` (city scale) rings each non-off-edge basin
+        with that many farmhouses (`city_outside_fields_have_farmhouses`). Call AFTER the combs + structures so it
+        skips them; call BEFORE the demoted `near_ring_cropland` so grain fills only what paddy did not. Basins
+        stay < 80000px bbox so they are exempt from `common_fields_vary_orientation`. Deterministic own RNG.
+        Returns the basin count. Gated by `near_ring_paddy_dominant`."""
+        bx0, by0, bx1, by1 = bbox
+        bx0, by0 = max(bx0, 12.0), max(by0, 12.0)
+        bx1, by1 = min(bx1, self.W - 12.0), min(by1, self.H - 12.0)
+        if bx1 - bx0 < 10 or by1 - by0 < 10:
+            return 0
+        cell = self.px(cell_ft)
+        rng = random.Random((seed & 0xFFFF) ^ 0x5A17 ^ (int(bx0) * 131) ^ (int(by0) * 17))
+
+        halo_rects, halo_circles = self._urban_keepouts((bx0, by0, bx1, by1))
+        corridors = self._corridor_buffers(3 * self.bscale)
+        pond = self.M.get("pond")
+        hill = self.M.get("hill")
+        wall = self.M.get("wall")
+        walled_city = self.M.get("meta", {}).get("scale") == "city" and wall is not None and len(wall) >= 3
+        streams = [s["poly"] for s in self.M.get("streams", []) if s.get("poly") and len(s["poly"]) >= 2]
+        moat = self.M.get("moat")  # a city moat is a reservoir: paddy CAN be moat-fed via a short intake channel
+        moat_feed = bool(walled_city and moat and len(moat) >= 3)
+        # If the moat is FED by a stream (it has a current), a moat intake must run WITH that current - tap
+        # UPSTREAM of the basin (moat_channels_flow_with_current). Derive the flow exactly as the check does.
+        moat_flow: tuple[float, float] | None = None
+        if moat_feed and moat:
+            for sp in streams:
+                for entry, origin in ((sp[0], sp[-1]), (sp[-1], sp[0])):
+                    if min((seg_dist(entry[0], entry[1], moat[i], moat[i + 1]) for i in range(len(moat) - 1)), default=1e9) <= 35:
+                        dxx, dyy = entry[0] - origin[0], entry[1] - origin[1]
+                        moat_flow = (0.0, 1.0 if dyy > 0 else -1.0) if abs(dyy) >= abs(dxx) else (1.0 if dxx > 0 else -1.0, 0.0)
+                        break
+                if moat_flow:
+                    break
+        # ROADS + FUNERARY are extra keep-outs a paddy basin must clear (fields_clear_of_road / funerary_
+        # clear_of_fields), on top of near_ring_cropland's set. The moat itself gets a setback (city_fields_
+        # clear_of_wall_moat). Roads also block a moat intake channel (roads_bridge_water wants a bridge at a
+        # crossing - simpler to route the channel clear of roads).
+        road_lines = []
+        if self.M.get("road"):
+            road_lines.append((self.M["road"], 34.0))
+        road_lines += [(st["pts"], st.get("w", 20) / 2 + 20) for st in self.M.get("town_streets", [])]
+        funerary = []
+        for k in ("cemeteries", "cremation_grounds", "ossuaries"):
+            for o in self.M.get(k, []) or []:
+                p = o.get("poly") if isinstance(o, dict) else o
+                if isinstance(o, dict) and "x" in o and "w" in o:
+                    funerary.append((o["x"] - o["w"] / 2 - 60, o["y"] - o["h"] / 2 - 60, o["x"] + o["w"] / 2 + 60, o["y"] + o["h"] / 2 + 60))
+                elif p and len(p) >= 3:
+                    xs = [q[0] for q in p]
+                    ys = [q[1] for q in p]
+                    funerary.append((min(xs) - 60, min(ys) - 60, max(xs) + 60, max(ys) + 60))  # a flood-prone paddy sets back from graves (funerary_set_back_from_water)
+        # structure footprints (center + half-diagonal) a moat intake channel must not cross (no_structure_on_channel)
+        struct_cd = []
+        for k in ("houses", "buildings", "manors", "merchant_estates", "storehouses", "religious", "ministries", "flophouses", "governor_mansion", "mausoleums"):
+            for o in self.M.get(k, []) or []:
+                if isinstance(o, dict) and "x" in o and "w" in o:
+                    struct_cd.append((o["x"], o["y"], math.hypot(o["w"] / 2, o["h"] / 2) + 5))
+
+        def _nearest_moat(px: float, py: float) -> tuple[float, float] | None:
+            # the nearest moat vertex UPSTREAM of the basin, so the intake flows WITH the moat current. If the
+            # moat has a current and NO vertex is upstream of the basin (it sits past the moat's headwater end),
+            # there is no honest with-current tap - return None so the basin is skipped, not fed backwards.
+            if not moat:  # pragma: no cover - only called under moat_feed (moat is truthy); guard is for the type-checker
+                return None
+            cand: Any = moat
+            if moat_flow is not None:
+                cand = [mp for mp in moat if (px - mp[0]) * moat_flow[0] + (py - mp[1]) * moat_flow[1] >= 4]
+                if not cand:
+                    return None
+            best = min(cand, key=lambda mp: (mp[0] - px) ** 2 + (mp[1] - py) ** 2)
+            return (best[0], best[1])
+
+        def _channel_clear(a: tuple[float, float], b: tuple[float, float]) -> bool:
+            if any(seg_dist(cx, cy, a, b) < cr for cx, cy, cr in struct_cd):
+                return False
+            if any((fx0 + fx1) / 2 >= min(a[0], b[0]) - 40 and _seg_near_rect(a, b, (fx0, fy0, fx1, fy1)) for fx0, fy0, fx1, fy1 in funerary):
+                return False  # pragma: no cover - defensive: the basin funerary keep-out (60px) already holds channels off graves; this belts the channel line too
+            return not any(any(seg_dist(rp[i][0], rp[i][1], a, b) < hw + 2 for i in range(len(rp))) for rp, hw in road_lines)
+
+        def _seg_near_rect(a: tuple[float, float], b: tuple[float, float], r: tuple[float, float, float, float]) -> bool:
+            cx, cy = (r[0] + r[2]) / 2, (r[1] + r[3]) / 2
+            return seg_dist(cx, cy, a, b) < math.hypot((r[2] - r[0]) / 2, (r[3] - r[1]) / 2)
+
+        def _blocked(px: float, py: float) -> bool:
+            return bool(
+                any(point_in_poly(px, py, ff) for ff in self.field_polys)
+                or any(point_in_poly(px, py, b) for b in self.block_polys)
+                or any(point_in_poly(px, py, d) for d in self.dry_polys)
+                or any(point_in_poly(px, py, c) for c in self.clearings)
+                or any(point_in_poly(px, py, a) for a in avoid)
+                or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)
+                or self._on_watercourse(px, py)
+                or (pond is not None and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
+                or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)
+                or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)
+                or (hill is not None and ((px - hill[0]) / (hill[2] * 1.35)) ** 2 + ((py - hill[1]) / (hill[3] * 1.35)) ** 2 <= 1.0)
+                or (walled_city and wall is not None and point_in_poly(px, py, wall))
+                or any(any(seg_dist(px, py, rp[i], rp[i + 1]) < hw for i in range(len(rp) - 1)) for rp, hw in road_lines)  # off roads/streets (fields_clear_of_road)
+                or any(fx0 <= px <= fx1 and fy0 <= py <= fy1 for fx0, fy0, fx1, fy1 in funerary)  # off graves/cremation/ossuary (funerary_clear_of_fields)
+                or (moat is not None and len(moat) >= 3 and _near_moat(px, py))  # setback off the moat itself (city_fields_clear_of_wall_moat)
+                or _stream_dist(px, py) < 22  # off the streams entirely - a basin never straddles the current (streams_avoid_fields)
+            )
+
+        def _near_moat(px: float, py: float) -> bool:
+            if not moat:  # pragma: no cover - only called when moat is set (the _blocked caller guards it); guard is for the type-checker
+                return False
+            return any(seg_dist(px, py, moat[i], moat[i + 1]) < self.M.get("moat_width", 22) / 2 + 15 for i in range(len(moat) - 1))
+
+        def _stream_dist(px: float, py: float) -> float:
+            return min((seg_dist(px, py, sp[i], sp[i + 1]) for sp in streams for i in range(len(sp) - 1)), default=1e9)
+
+        def _watered(corners: list[tuple[float, float]]) -> bool:
+            # a basin runs OFF the view edge (exempt) or sits in the pond's abut ring; else it needs the moat feed
+            off_edge = any(px < 20 or px > self.W - 20 or py < 20 or py > self.H - 20 for px, py in corners)
+            in_pond_ring = pond is not None and any(1.0 < ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.09 for px, py in corners)
+            return off_edge or in_pond_ring
+
+        # PASS 1: place every legitimately-watered basin (records field_polys) so PASS 2's wells + farm rings
+        # can flow around ALL of them. A city basin the pond/edge does not water is MOAT-FED via a short intake
+        # channel (the moat is a reservoir - historical, and what city_moat_irrigates_fields expects), but only
+        # where that channel runs clear of structures/roads/funerary.
+        blocks: list[tuple[float, float, float, float, float, float]] = []
+        rows = [by0]
+        while rows[-1] < by1 - cell * 0.55:
+            rows.append(min(by1, rows[-1] + cell * rng.uniform(0.85, 1.2)))
+        rows[-1] = by1
+        for ri in range(len(rows) - 1):
+            ry0, ry1 = rows[ri], rows[ri + 1]
+            ncol = max(1, round((bx1 - bx0) / cell))
+            cuts = [bx0 + (bx1 - bx0) * j / ncol for j in range(ncol + 1)]
+            for cj in range(len(cuts) - 1):
+                ix0, iy0, ix1, iy1 = cuts[cj] + 7, ry0 + 7, cuts[cj + 1] - 7, ry1 - 7  # inset -> basins abut with a baulk, never overlap
+                if ix1 - ix0 < 24 or iy1 - iy0 < 24 or (ix1 - ix0) * (iy1 - iy0) >= 79000:  # < 80000px: exempt from common_fields_vary_orientation
+                    continue
+                corners = [(ix0, iy0), (ix1, iy0), (ix1, iy1), (ix0, iy1)]
+                mx, my = (ix0 + ix1) / 2, (iy0 + iy1) / 2
+                edge_pts = corners + [(mx, iy0), (mx, iy1), (ix0, my), (ix1, my)]  # test EDGE midpoints too, so a stream/keep-out crossing an edge between corners is caught
+                if any(_blocked(px, py) for px, py in edge_pts + [(mx, my)]):
+                    continue
+                if any(
+                    ix0 - 22 <= vx <= ix1 + 22 and iy0 - 22 <= vy <= iy1 + 22 for sp in streams for vx, vy in sp
+                ):  # pragma: no cover - defensive redundancy: _blocked's 9-point edge sampling already drops stream-adjacent cells; this catches a bare mid-edge vertex
+                    continue  # no stream vertex near the basin -> the current never runs through it (streams_avoid_fields)
+                moat_x = moat_y = None
+                if not _watered(corners):
+                    if moat_feed:
+                        mp = _nearest_moat(mx, my)
+                        if mp is not None and _channel_clear(mp, (mx, my)):
+                            moat_x, moat_y = mp[0], mp[1]
+                    if moat_x is None:
+                        continue  # NO paddy without a legitimate water source (no with-current moat tap either)
+                name_i = len(blocks)
+                self.paddy_field((ix0, iy0, ix1, iy1), None, f"nrp_{name_i}", amp=6, plot=46)
+                if moat_x is not None:  # draw the moat intake so the basin shows a real water source
+                    self.channel((moat_x, moat_y), (mx, my), {"kind": "moat"}, {"kind": "field", "name": f"nrp_{name_i}"}, amp=6, width=2.5)
+                blocks.append((ix0, iy0, ix1, iy1, mx, my))
+        # PASS 2 (city only): each outside field needs >=2-3 farmhouses + a well (city_outside_fields_have_farmhouses,
+        # field_ringed, farm_wells_within_reach). Wells first (they reserve ground the ring flows around), then rings.
+        if walled_city:
+            for ix0, iy0, ix1, iy1, _mx, _my in blocks:  # rings FIRST, so the well can then sit AMONG the farmhouses
+                self.ring(("poly", [(ix0, iy0), (ix1, iy0), (ix1, iy1), (ix0, iy1)]), max(ring_farms, 8), 14, ["plain"])
+            houses = self.M.get("houses", [])
+            for ix0, iy0, ix1, iy1, mx, my in blocks:  # up to TWO wells per basin (opposite sides) AND within 95px of a farmhouse (wells_among_dwellings + farm_wells_within_reach)
+                dropped = 0
+                for wx, wy in ((ix1 + 15, my), (ix0 - 15, my), (mx, iy1 + 15), (mx, iy0 - 15), (ix1 + 15, iy1 + 15), (ix0 - 15, iy0 - 15)):
+                    if 12 < wx < self.W - 12 and 12 < wy < self.H - 12 and not _blocked(wx, wy) and any((h["x"] - wx) ** 2 + (h["y"] - wy) ** 2 < 90 * 90 for h in houses):
+                        self.well(wx, wy)
+                        dropped += 1
+                        if dropped >= 2:
+                            break
+        return len(blocks)
+
     def _attach_grove(self, hx: float, hy: float, arms: Any) -> None:
         """Draw a farmstead's windbreak grove (its belt arms) and record each arm under its parent house.
         Arms go into `grove_rects` (NOT `placed`) so a neighbor's grove may MERGE with it and the wells
