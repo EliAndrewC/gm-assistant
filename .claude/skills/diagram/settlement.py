@@ -1359,6 +1359,16 @@ class Settlement:
         env = net["envelope"]
         epts = " ".join(f"{x:.1f},{y:.1f}" for x, y in env)
         col = color or _RICE_GREEN
+        # a POLDER supplies an explicit `floor` = the ring-canal INTERIOR (the outermost irrigated channels),
+        # so the green greenery is bounded exactly by the ring rather than by the dike-boundary envelope
+        # rectangle that drifts in and out of the wavering ring (GM 2026-07-22). Fill it as-is; the ring canal
+        # draws on top. Comb nets carry no `floor`, so they keep the envelope/bbox behavior byte-for-byte.
+        floor = net.get("floor")
+        if floor:
+            fpts = " ".join(f"{x:.1f},{y:.1f}" for x, y in floor)
+            self.add(f'<polygon points="{fpts}" fill="{col}" stroke="none"/>')
+            self.M.setdefault("comb_floors", {})[name] = [[round(x, 1), round(y, 1)] for x, y in floor]
+            return
         if full_envelope:
             self.add(f'<polygon points="{epts}" fill="{col}" stroke="none"/>')
         else:
