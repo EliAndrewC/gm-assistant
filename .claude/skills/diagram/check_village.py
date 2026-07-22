@@ -6826,6 +6826,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             check(
                 "city_gate_has_guardhouse", len(gates) >= 2 and not no_guard, f"every city gate needs a guard house + guard tower (>= 2 gate structures within ~180px): {len(no_guard)} gate(s) short"
             )
+            # ... and the guard house + inspection station sit AT THE GATE THROAT - hard by the opening,
+            # flanking the road as it enters - not walked back along the wall. Historically decisive (see
+            # settlements.md 'Historical grounding'): an inspection/tax barrier only works where traffic
+            # is forced single-file, and the gate passage is that one chokepoint in the whole wall; set
+            # the station back along the wall and arrivals disperse into the streets before ever reaching
+            # it. So each must sit within ~70px of its gate vertex (the built placement lands ~35-45px in).
+            # The looser city_inspection_station_at_each_gate / city_gate_has_guardhouse radii (160/180)
+            # deliberately have SLACK for the barbican, and would wave through the old far placement that
+            # walked the pair 80/144px along the wall - THIS check is what gives that rule teeth.
+            THROAT = 70
+            throat_bad = []
+            for g in gates:
+                has_gh = any(s.get("kind") == "guardhouse" and math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in gstructs)
+                has_in = any(math.hypot(s["x"] - g[0], s["y"] - g[1]) <= THROAT for s in ins)
+                if not (has_gh and has_in):
+                    throat_bad.append((round(g[0]), round(g[1])))
+            check(
+                "city_gate_furniture_at_throat",
+                len(gates) >= 2 and not throat_bad,
+                f"gate(s) whose guard house + inspection station are not at the throat (each within {THROAT}px of the opening, flanking the road): {throat_bad} - "
+                f"the checkpoint sits AT the gate so all traffic passes through it, not walked back along the wall",
+            )
             # a fortified city is TOWERED for enfilading fire along the wall face: guard towers spaced
             # at regular intervals around the whole rampart (a bowshot apart), not only at the gates -
             # so no long bare arc of wall sits uncovered. Spacing is judged by the widest angular gap
