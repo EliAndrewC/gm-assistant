@@ -194,6 +194,7 @@ _OVERLAP_EXEMPT = {
     "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
     "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
     "clearings": "swept-ground records (the shrine keidai / torii sando collar / grave collar), not drawn features at all - they carry the cover-ordinal bookkeeping for scatter_respects_swept_clearings and deliberately CONTAIN their sacred/funerary feature",
+    "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -8043,6 +8044,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "dikepond_is_ponds_in_a_block",
             dp_fill >= 0.82 and bool(pond_rec),
             f"a mulberry_dike_fishpond field must be a filled block ({dp_fill:.0%} of bbox) of many mulberry-rimmed fish ponds (enough pond cells: {bool(pond_rec)}) - the 桑基魚塘 system",
+        )
+
+    # A polder's PERIMETER DIKE is an irregular hand-piled EARTHWORK, not a ruled line (GM 2026-07-22,
+    # researched: the wei-tian / dike-pond dike was dredged pond-mud heaped and packed, planted and
+    # breach-repaired, and the OUTER dike followed the natural water edge - the 'fish-scale polder' 鱼鳞圩
+    # form; the dead-straight uniform-width rectangle is a post-1949 industrial shape). So a polder /
+    # dike-pond map must record an `s.perimeter_dike` band (M['dikes']) whose width VARIES along its length
+    # (w_max >= ~1.4x w_min) - a reverted uniform-width stroke, or no dike at all, fires. Grounding:
+    # settlements.md 'Perimeter dike'.
+    if meta.get("field_archetype") in ("polder_grid", "mulberry_dike_fishpond"):
+        dks = M.get("dikes") or []
+        dk = dks[0] if dks else None
+        wmn, wmx = (dk.get("w_min", 0.0), dk.get("w_max", 0.0)) if dk else (0.0, 0.0)
+        check(
+            "polder_dike_is_earthwork",
+            bool(dk) and wmx >= 1.4 * max(1.0, wmn),
+            f"a polder's perimeter dike must be an irregular earthwork band of VARYING width (drawn present: {bool(dk)}; width {wmn:.0f}-{wmx:.0f} px, want max >= 1.4x min) - a uniform-width or missing dike reads as a post-1949 ruled rectangle, not a hand-piled fish-scale polder",
         )
 
     # A polder's PARCEL fabric must VARY (researched 2026-07-21; grounding in build_polder's docstring).

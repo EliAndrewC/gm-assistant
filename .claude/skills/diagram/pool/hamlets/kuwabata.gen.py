@@ -17,7 +17,7 @@ sys.path.insert(0, SKILL)
 from settlement import Settlement  # noqa: E402
 import random as _random  # noqa: E402
 
-from waterfields import BUND, build_polder  # noqa: E402
+from waterfields import build_polder  # noqa: E402
 
 W, H = 2200, 2600
 SEED = 21
@@ -44,10 +44,12 @@ import random as __r
 # not just the low hollows. Everywhere else the overlay is topographically filtered. See research.md D2.
 s.apply_land_use(net, "mulberry_fishpond", __r.Random(SEED ^ 0x55), fraction=0.9, eligible="all")
 
-# the PERIMETER DIKE - a heavier bund ringing the reclaimed block, the defining polder look
+# the PERIMETER DIKE - the defining polder feature, drawn as an irregular hand-piled EARTHWORK BAND that
+# follows the natural water edge in organic non-square bends (the fish-scale polder 鱼鳞圩 form; see
+# s.perimeter_dike + settlements.md 'Perimeter dike'). The rectilinear grid inside is the SURVEYED part;
+# the outer dike is the organic part. Drawn HERE (before the village) so it sits UNDER the east-side houses.
 _env = net["envelope"]
-_dike = " ".join(f"{x:.1f},{y:.1f}" for x, y in _env)
-s.add(f'<polyline points="{_dike}" fill="none" stroke="{BUND}" stroke-width="4.4" stroke-linejoin="round" opacity="0.95"/>')
+s.perimeter_dike(_env, seed=SEED ^ 0x6D)
 
 # the village lines the dry EAST perimeter dike
 _rng = _random.Random(SEED ^ 0x3B)

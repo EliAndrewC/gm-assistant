@@ -5353,6 +5353,18 @@ def test_polder_field_must_fill_its_bbox():
     assert "polder_fills_its_bbox" in f(fan)
 
 
+def test_polder_dike_is_earthwork():
+    # GM 2026-07-22: a polder/dike-pond map must record a perimeter-dike earthwork band of VARYING width;
+    # a missing dike or a uniform-width one (the reverted post-1949 ruled rectangle) fires.
+    base = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}}
+    assert "polder_dike_is_earthwork" in f(base)  # no dike recorded at all
+    assert "polder_dike_is_earthwork" in f({**base, "dikes": [{"outline": [], "w_min": 20.0, "w_max": 22.0}]})  # near-uniform width
+    assert "polder_dike_is_earthwork" not in f({**base, "dikes": [{"outline": [], "w_min": 14.0, "w_max": 38.0}]})
+    assert "polder_dike_is_earthwork" in f({"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}})
+    # a non-polder archetype never trips it
+    assert "polder_dike_is_earthwork" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}})
+
+
 def test_polder_parcel_fabric_must_vary():
     # a polder's parcels must be a PATCHWORK (varied oblongs), never identical cells: the surveyed
     # chessboard was the canal grid, the parcels inside were private-tenure fragments (grounding in
