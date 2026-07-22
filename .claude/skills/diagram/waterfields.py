@@ -504,6 +504,15 @@ def build_comb(
                 piece = [p for p in pre if bc_cuts[i] - 14 <= F.to_uf(*p)[1] <= bc_cuts[i + 1] + 14]
                 if len(piece) >= 2:
                     channels.append({"pts": piece, "w": (5.6 - 1.6 * i / max(1, len(bc_cuts) - 2)) * grain, "role": "main"})
+        elif math.hypot(pre[0][0] - fork[0], pre[0][1] - fork[1]) < 40.0:
+            # a delivery must take off WELL DOWNSTREAM of the head fork. A delivery sprouting AT the
+            # division point (a short canal B whose single offtake lands ~0px from the fork - Tango's
+            # nw1, Hoshizora's west field) turns the clean 3-way bunsuiguchi division into a 4-way STAR
+            # that reads as a crossroads, not water feeding the next channel (GM 2026-07-22). Skip drawing
+            # it - the plots it shapes keep their bunds, only the blue ditch clutter at the fork goes. The
+            # gap between the two offenders (0-1px) and the nearest legitimate delivery (76px) makes 40 a
+            # safe cut across every scale. Gated by channels_join_not_cross_at_fork.
+            continue
         else:
             # a delivery ditch TAPERS as it descends: it sheds water into the paddies it feeds all
             # along its length, so its flow - and width - decreases from full at the canal takeoff to a

@@ -285,6 +285,26 @@ def test_delivery_ditches_taper_exempts_ditches_without_recorded_widths():
     assert "delivery_ditches_taper" not in f(M)
 
 
+# a bunsuiguchi head fork: 3 SUPPLY (main) ditches meet at (100,100) - the head-race in + two supply canals out
+_FORK_MAINS = [
+    {"poly": [[60, 60], [100, 100]], "role": "main", "field": "f"},
+    {"poly": [[100, 100], [160, 100]], "role": "main", "field": "f"},
+    {"poly": [[100, 100], [100, 160]], "role": "main", "field": "f"},
+]
+
+
+def test_channels_join_not_cross_at_fork_fires_on_a_delivery_at_the_division():
+    # a delivery (role "branch") taking off AT the fork - the 4-way star that reads as a crossroads
+    M = {"field_ditches": _FORK_MAINS + [{"poly": [[100, 100], [140, 140]], "role": "branch", "field": "f", "w": 2.7, "w_tail": 1.0}]}
+    assert "channels_join_not_cross_at_fork" in f(M)
+
+
+def test_channels_join_not_cross_at_fork_passes_when_the_delivery_is_downstream():
+    # the delivery branches off a supply canal 50px downstream of the fork - a clean offtake
+    M = {"field_ditches": _FORK_MAINS + [{"poly": [[150, 100], [150, 145]], "role": "branch", "field": "f", "w": 2.7, "w_tail": 1.0}]}
+    assert "channels_join_not_cross_at_fork" not in f(M)
+
+
 def _dryplot(x, theta):
     # a full ~40x36 parcel (one corner nipped): the furrows-vary adjacency radius now derives from the
     # plots' own mean size (1.25x side length, capped 50px), so the fixture plots must be REAL parcels -
