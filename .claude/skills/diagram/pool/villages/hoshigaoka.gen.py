@@ -62,6 +62,7 @@ s.meta(dry_furrows_vary=net["furrows_vary"])   # gentle valley -> dry furrows FA
 # envelope blocks houses AND provides field-adjacency; the dry-field plots are no-build
 # (houses must not sit on standing crops); the pond is already a keepout ellipse via s.pond.
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
+s.comb_base_fill(net, "hoshigaoka-paddies")   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
 for _dp in net["dry_plots"]:
     s.block_polys.append(_dp["poly"])
 s._nucleated = True                  # China-leaning default: a tight nucleated cluster, no per-house grove

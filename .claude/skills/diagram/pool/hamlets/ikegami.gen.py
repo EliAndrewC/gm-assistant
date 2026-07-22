@@ -50,6 +50,7 @@ net = build_comb(W, H, SLUICE, SEED, down_deg=90, field_fall=1150,
 s.meta(dry_furrows_vary=net["furrows_vary"])
 
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
+s.comb_base_fill(net, "ikegami-paddies")   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
 for _dp in net["dry_plots"]:
     s.block_polys.append(_dp["poly"])
 s._nucleated = True
