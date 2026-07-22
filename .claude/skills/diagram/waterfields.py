@@ -34,6 +34,42 @@ from typing import Any
 Pt = tuple[float, float]  # an (x, y) point in map pixels
 Poly = list[Pt]  # a polyline / polygon as a list of points
 
+# ---- PADDY CELL SIZE (the real-feet calibration; GM 2026-07-22) --------------------------------
+# One DRAWN plot is a single leveled, diked paddy cell - and because a paddy must hold water at an
+# EVEN depth, that cell is physically small. This is the researched real-world target for it, so the
+# same real size renders at every map scale instead of being hand-set in pixels per map (which made
+# an identical px grain read as 4x different real area between a 1 ft/px hamlet and a 2 ft/px village).
+#
+# WHY 0.05 acre (~200 m2, ~47 ft square) - China-first, Japan corroborating:
+#   - Francesca Bray, The Rice Economies: a leveled paddy "twenty yards square [~0.083 acre / 335 m2]
+#     would be considered large" - that is the CEILING for one cell, typical valley cells smaller.
+#   - J.L. Buck, Land Utilization in China (16,786 farms, 1929-33): avg ~0.06 ha (0.15 ac) OWNERSHIP
+#     plots - but a plot subdivides into several leveled cells on any slope, so the cell sits below it.
+#   - Japanese se (畝) = 100 m2 (0.025 ac) is the small-paddy unit (floor); tan (段, ~0.245 ac) is a
+#     TAX/allotment unit, not one leveled field.
+#   0.05 ac sits mid-band (above the se floor, well under Bray's ceiling) and keeps a drawn plot ~1.7x
+#   the 46x28 ft (1,288 ft2) farmhouse glyph, so a paddy still visibly outsizes a farmhouse.
+# DELIBERATELY NOT applied to hamlets/towns: they already render ~0.034-0.057 ac (in-band); only the
+# villages (~0.13 ac, over Bray's ceiling) and cities (~0.08 ac, at it) ran large and are pulled down.
+# The population/household invariant is untouched: this subdivides the SAME field envelope into more,
+# smaller cells - total paddy area, farmhouse rings, and the household count are all unchanged. See
+# settlements.md 'Paddy cell size'.
+PADDY_CELL_ACRES = 0.05
+
+
+def paddy_grain(ftpx: float, target_acres: float = PADDY_CELL_ACRES, aspect: float = 0.66, spread: float = 0.16) -> tuple[float, tuple[float, float]]:
+    """`(plot_across, row_step)` in PIXELS that carve a ~`target_acres` leveled cell at this map's `ftpx`.
+    Derived as target_area / ftpx^2 (a real-feet target, so every scale matches), split into an
+    across-canal x along-canal cell of the given `aspect` (= along/across; 0.66 is the mild
+    across-elongation the GM-vetted village paddies already read as). `row_step` is (min, max) at
+    +/-`spread` around the along mean, carrying the organic row variation. This is THE paddy-size
+    calibration lever - one real-feet target in, consistent paddy size out, replacing hand-set px."""
+    target_px2 = target_acres * 43560.0 / (ftpx * ftpx)
+    across = math.sqrt(target_px2 / aspect)
+    along = aspect * across
+    return round(across, 1), (round(along * (1 - spread), 1), round(along * (1 + spread), 1))
+
+
 # A rice field is ONE crop at ONE transplant/growth stage, so its body is a UNIFORM green - the plot-to-plot
 # shade jitter denoted nothing (it was only anti-flatness texture), and the GM asked for it uniform. The bund
 # network + footpaths carry the structure, not color. Kept as a 3-element list of the SAME value so R.choice

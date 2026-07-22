@@ -36,7 +36,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from citybudget import CityProgram, budget_to_manifest, plan_city  # noqa: E402
 from settlement import Settlement  # noqa: E402
-from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
+from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+
+# Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this city's 3 ft/px (was hand-set 26px
+# -> ~0.08 acre, at Bray's "large" ceiling). Subdivides the same fans into finer cells; the ~3,000 urban
+# population and every dwelling count are untouched (a city's farmers are not in that figure). See
+# waterfields.paddy_grain / settlements.md 'Paddy cell size'.
+PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=47)
 s.meta(name="Nagahara", scale="city", walled=True, population=3000, ftpx=3, imperial_road=False,
@@ -128,9 +134,9 @@ s.flophouse(1987, 1266)                                      # outside the EAST 
 # label ground clear of any stray placement.
 s.block_polys.append([(1406, 956), (1464, 956), (1464, 1077), (1406, 1077)])
 s.block_polys.append([(1549, 985), (1696, 985), (1696, 1016), (1549, 1016)])   # keep the N-gate guard-house label ground clear of the pack
-s.stables(1430, 1017, rot=90)   # kept >=75px W of the laborer pack (which starts ~x1504) so the animals have open ground
 s.flophouse(1430, 969, label_below=True)   # 7px up from the shrunk layout's seat so its below-label clears the stables' top edge (labels_clear_of_other_buildings)
 s.inn(1444, 1050)   # nudged E of the Ebisu graveyard label
+s.stables(1430, 1017, rot=90)   # kept >=75px W of the laborer pack (which starts ~x1504) so the animals have open ground; placed AFTER the flophouse + inn so its yard scatter skips them
 # E-gate caravan cluster: a reserved pocket W of the gate furniture (which fills the E-wall
 # strip), N of the main road - reserved up front so the NE laborer pack flows around it
 s.block_polys.append([(1663, 1132), (1825, 1132), (1825, 1315), (1663, 1315)])
@@ -216,7 +222,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         down_deg = (-down_deg) % 360
     net = build_comb(3200, 2700, sluice, seed, down_deg=down_deg, field_fall=field_fall,
                      canal_a_len=canal_a, canal_b_len=canal_b, offtakes_a=offtakes_a,
-                     offtakes_b=offtakes_b, plot_across=26, row_step=(13, 19), dry_band=dry_band,
+                     offtakes_b=offtakes_b, plot_across=PLOT_ACROSS, row_step=ROW_STEP, dry_band=dry_band,
                      grain=2 / 3)  # 3 ft/px city: scale the carve's real-feet minimum-size thresholds (tuned at 2 ft/px) or the fan drops sectors/head plots/closers and shows parchment holes (paddy_fan_gapless)
     if mirror_ym is not None:
         def m(pts):
@@ -271,13 +277,20 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     return net, env, (round(sum(exs) / len(exs), 1), round(sum(eys) / len(eys), 1))
 
 
-def plot_centroid(net, key):
+def plot_centroid(net, key, inset=0.15):
     """Centroid of the plot chosen by `key` over plot centroids - a point guaranteed INSIDE the
     planted field (the envelope centroid of a curved fan can miss, and the water-source checks
-    test the channel END with point_in_poly against the outline)."""
+    test the channel END with point_in_poly against the outline). The result is then pulled `inset`
+    of the way toward the field's MEAN centroid, so an EXTREMUM plot's centroid still clears the
+    smoothed outline edge by the >=10px channel_field_anchored requires - the ~0.05-acre paddy
+    calibration (GM 2026-07-22) shrank the edge cells, putting a raw extremum centroid on the hull."""
     cens = [(sum(v[0] for v in p["poly"]) / len(p["poly"]), sum(v[1] for v in p["poly"]) / len(p["poly"]))
             for p in net["plots"] if not p.get("filler")]   # carve plots only: a filler tile hugging the drain rim can win the extremum and put the topo anchor outside the outline (channel_field_anchored)
     cx, cy = key(cens)
+    mx = sum(c[0] for c in cens) / len(cens)
+    my = sum(c[1] for c in cens) / len(cens)
+    cx += inset * (mx - cx)
+    cy += inset * (my - cy)
     return (round(cx, 1), round(cy, 1))
 
 

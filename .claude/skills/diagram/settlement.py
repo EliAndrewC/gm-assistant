@@ -4621,11 +4621,12 @@ class Settlement:
         bm = 24
         self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
 
-    def stables(self, x: float, y: float, w: Any = None, h: Any = None, rot: float = 0) -> None:
+    def stables(self, x: float, y: float, w: Any = None, h: Any = None, rot: float = 0, yard: bool = True) -> None:
         """A large STABLES - long rows of stalls for a wagon-train's many draft animals (oxen, horses).
         Recorded in M['buildings'] (kind 'stables', non-residential). Wants OPEN GROUND around it. `rot`
-        tilts it to sit parallel to its inn / the road. Place BEFORE any nearby pack.
-        Real size ~92x44 ft (stall rows for a full wagon-train), converted at the map's ftpx."""
+        tilts it to sit parallel to its inn / the road. Place BEFORE any nearby pack, but AFTER its
+        cluster's inn + flophouse (so the yard, `yard=True`, skips them). Real size ~92x44 ft (stall rows
+        for a full wagon-train), converted at the map's ftpx."""
         if w is None:
             w, h = self.px(92), self.px(44)
         hw, hh = w / 2, h / 2
@@ -4645,6 +4646,142 @@ class Settlement:
         self.placed.append((x, y, w, h))
         bm = 24
         self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
+        # the working YARD is CITY-scope for now (its disk radius + furniture are calibrated for city
+        # ftpx=3): a town's single caravan stables keeps its plain open ground until the yard is made
+        # scale-aware. `yard=False` also suppresses it.
+        if yard and self.M.get("meta", {}).get("scale") == "city":
+            self._stable_yard(x, y, w, h)
+
+    def _stable_yard(self, sx: float, sy: float, sw: float, sh: float, r: float = 72.0) -> None:
+        """Draw the working YARD around a gate stables (GM 2026-07-22): the open ground where wagon-trains
+        park, oxen are unyoked and tethered, teamsters wait between stages. Research (settlements.md 'Stable
+        yard'): a beaten-earth forecourt - NO grass (trampled hard, animals hay-fed not grazed) - and NOT a
+        fenced paddock (the least authentic option); its edges are the wall + flanking buildings, its "in
+        active use" signal is carts, animals tethered at a hitching rail, and littered ground (the Qingming
+        Shanghe Tu gate convention). Drawn as a feathered SCATTER (no solid fill, house style - a filled
+        polygon reads as a crisp rhombus) that AUTO-AVOIDS every feature: the stables/inn/flophouse footprints,
+        the road + streets, fields, and water - so it fills only the genuinely open pocket. It does NOT avoid
+        block_polys (those RESERVED the pocket for exactly this) - only real drawn features. Glyph sizes are
+        legibility-tuned for city scale (the wellhead-marker doctrine: a location read, not strict to-scale),
+        so they stay legible where a true ~10 ft cart would be ~3 px. Records M['stable_yards'] linked to the
+        stables so `stables_have_yards` can gate that no gate stables reverts to blank parchment."""
+        st = random.getstate()
+        random.seed(int(abs(sx) * 11 + abs(sy) * 7 + round(r)))
+        corridors = self._corridor_buffers(2.0)  # keep every glyph off the road/street tread
+        # a TIGHT footprint keep-out (real drawn buildings only, ~3px margin so the beaten earth meets the
+        # walls) - NOT the wide urban halo (which would leave a bare ring) and NOT block_polys (the reserved
+        # pocket IS the yard). A rotated building is covered by its half-diagonal square.
+        keep: list[tuple[float, float, float, float]] = []
+        for k in ("buildings", "flophouses", "storehouses", "merchant_estates", "ministries", "religious", "manors", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries"):
+            for o in self.M.get(k, []) or []:
+                ohw, ohh = o["w"] / 2, o["h"] / 2
+                if o.get("rot"):
+                    ohw = ohh = math.hypot(ohw, ohh)
+                m = 3.0
+                if o["x"] + ohw + m < sx - r or o["x"] - ohw - m > sx + r or o["y"] + ohh + m < sy - r or o["y"] - ohh - m > sy + r:
+                    continue
+                keep.append((o["x"] - ohw - m, o["y"] - ohh - m, o["x"] + ohw + m, o["y"] + ohh + m))
+
+        def clear(px: float, py: float, pad: float = 0.0) -> bool:
+            if (px - sx) ** 2 + (py - sy) ** 2 > (r - pad) ** 2:
+                return False
+            if any(x0 <= px <= x1 and y0 <= py <= y1 for x0, y0, x1, y1 in keep):
+                return False
+            if any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hwid for i in range(len(pl) - 1)) for pl, hwid in corridors):
+                return False
+            if any(point_in_poly(px, py, ff) for ff in self.field_polys):
+                return False
+            return not self._on_watercourse(px, py)
+
+        # 1. BEATEN-EARTH scuff + STRAW litter: a feathered scatter so the ground reads TRODDEN, not blank
+        g: list[str] = []
+        feather = 22.0
+        n = int(math.pi * r * r / 46.0)
+        for _ in range(n):
+            a = random.uniform(0, 2 * math.pi)
+            rr = r * math.sqrt(random.random())
+            px, py = sx + rr * math.cos(a), sy + rr * math.sin(a)
+            if not clear(px, py):
+                continue
+            ed = r - rr  # feather to nothing at the disk rim (no hard edge)
+            if ed < feather and random.random() > ed / feather:
+                continue
+            t = random.random()
+            if t < 0.6:  # a scuff speck of beaten earth
+                g.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{random.uniform(0.7, 1.3):.1f}" fill="#A98C60" fill-opacity="0.7"/>')
+            elif t < 0.82:  # a short hoof/cart-rut scuff
+                aa, ln = random.uniform(0, math.pi), random.uniform(3, 6)
+                g.append(
+                    f'<line x1="{px - math.cos(aa) * ln / 2:.1f}" y1="{py - math.sin(aa) * ln / 2:.1f}" x2="{px + math.cos(aa) * ln / 2:.1f}" y2="{py + math.sin(aa) * ln / 2:.1f}" stroke="#9C7E52" stroke-width="0.9" opacity="0.5"/>'
+                )
+            else:  # spilled straw / fodder litter
+                aa, ln = random.uniform(0, math.pi), random.uniform(2.5, 4.5)
+                g.append(
+                    f'<line x1="{px - math.cos(aa) * ln / 2:.1f}" y1="{py - math.sin(aa) * ln / 2:.1f}" x2="{px + math.cos(aa) * ln / 2:.1f}" y2="{py + math.sin(aa) * ln / 2:.1f}" stroke="#D8C176" stroke-width="0.9" opacity="0.8"/>'
+                )
+        self.add("".join(g))
+
+        # 2. FURNITURE: greedily seated at clear spots on rings around the stables (deterministic order)
+        cand: list[Pt] = []
+        for rad in (32.0, 44.0, 56.0, 68.0):
+            for i in range(12):
+                aa = 2 * math.pi * i / 12 + rad  # per-ring phase offset so rings do not align
+                cand.append((sx + rad * math.cos(aa), sy + rad * math.sin(aa)))
+        random.shuffle(cand)
+        used: list[Pt] = []
+
+        def take(pad: float, minsep: float) -> Pt | None:
+            for px, py in cand:
+                if not clear(px, py, pad) or any((px - ux) ** 2 + (py - uy) ** 2 < minsep * minsep for ux, uy in used):
+                    continue
+                used.append((px, py))
+                return (px, py)
+            return None
+
+        # a HITCHING RAIL with a few tethered draft animals - the yard's active "edge" (the authentic answer
+        # to the fence instinct: animals were controlled by rails + picket lines, not paddock fences)
+        hrl = take(10.0, 26.0)
+        if hrl:
+            hx, hy = hrl
+            length = 16.0
+            fg = [f'<line x1="{hx - length / 2:.1f}" y1="{hy:.1f}" x2="{hx + length / 2:.1f}" y2="{hy:.1f}" stroke="#6B4F2A" stroke-width="1.5"/>']
+            for i in range(4):
+                pxp = hx - length / 2 + length * i / 3
+                fg.append(f'<line x1="{pxp:.1f}" y1="{hy - 2.4:.1f}" x2="{pxp:.1f}" y2="{hy + 2.4:.1f}" stroke="#5A4326" stroke-width="1.2"/>')
+            for i in range(3):
+                axp, ayp = hx - length / 3 + length / 3 * i, hy + 5.5
+                if clear(axp, ayp, 2.0):
+                    fg.append(f'<ellipse cx="{axp:.1f}" cy="{ayp:.1f}" rx="3.4" ry="2.1" fill="#7A5A3A" stroke="#4A3626" stroke-width="0.6"/>')
+            self.add("".join(fg))
+        # 2-3 PARKED CARTS: body + two wheels + a tipped-up shaft (unyoked)
+        for _ in range(3):
+            c = take(9.0, 20.0)
+            if not c:
+                break
+            cx, cy = c
+            rd = random.uniform(0, 360)
+            cw, ch = 6.4, 3.8
+            self.add(
+                f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rd:.0f})">'
+                f'<rect x="{-cw / 2:.1f}" y="{-ch / 2:.1f}" width="{cw:.1f}" height="{ch:.1f}" rx="0.6" fill="#9A7B4E" stroke="#5A4326" stroke-width="0.7"/>'
+                f'<circle cx="{-cw / 4:.1f}" cy="{ch / 2:.1f}" r="1.2" fill="#4A3626"/><circle cx="{cw / 4:.1f}" cy="{ch / 2:.1f}" r="1.2" fill="#4A3626"/>'
+                f'<line x1="{cw / 2:.1f}" y1="0" x2="{cw / 2 + 4.5:.1f}" y2="-2.4" stroke="#6B4F2A" stroke-width="1.0"/></g>'
+            )
+        # a stone WATER TROUGH
+        tr = take(8.0, 18.0)
+        if tr:
+            tx, ty = tr
+            self.add(f'<rect x="{tx - 3.2:.1f}" y="{ty - 1.4:.1f}" width="6.4" height="2.8" rx="1.1" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>')
+        # 1-2 DUNG HEAPS - the little "someone works here" tell
+        for _ in range(2):
+            d = take(6.0, 16.0)
+            if not d:
+                break
+            dx, dy = d
+            self.add(f'<ellipse cx="{dx:.1f}" cy="{dy:.1f}" rx="2.5" ry="1.8" fill="#6E5A3A" stroke="#4A3A22" stroke-width="0.5" opacity="0.9"/>')
+
+        self.M.setdefault("stable_yards", []).append({"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)]})
+        random.setstate(st)
 
     # ---- provincial-city features (scale="city")
     def _gapped_ring(self, ring: Any, gates: Any, gap: float = 38, closed: bool = True, water_gates: Any = (), water_gap: float = 24) -> str:
@@ -5745,18 +5882,38 @@ class Settlement:
         TIGHT spread reads as a planned/surveyed grid. Records the two knobs on the manifest. Grounding: old
         wet-rice terraces grew as small irregular paddies fitted to the microtopography; large regular blocks or
         long strips signal a later planned reclamation/allotment (which is why `grid` is typing-gated to a
-        planned field origin). Returns `(plot_across, row_step)` to pass straight into `build_comb`."""
-        size_map = {
-            "small_irregular": (34.0, (20.0, 40.0)),
-            "medium": (48.0, (26.0, 36.0)),
-            "large_block": (70.0, (30.0, 44.0)),
-            "strip": (32.0, (46.0, 66.0)),
-        }
-        if plot_size not in size_map:
+        planned field origin). Returns `(plot_across, row_step)` to pass straight into `build_comb`.
+
+        SIZED IN REAL FEET at ftpx >= 2 (GM 2026-07-22): for a village or provincial city each `plot_size`
+        picks a real-feet CELL-AREA target (acres) and an aspect, and `waterfields.paddy_grain` converts that to
+        px at THIS map's `ftpx` - so the paddy grain is the same real size at every scale (see
+        waterfields.PADDY_CELL_ACRES / settlements.md 'Paddy cell size'). The targets bracket the calibrated
+        norm: `small_irregular` below it, `medium` at it, `large_block` above, `strip` at the norm's area but
+        long-and-narrow (aspect > 1). The ft/px=1 HAMLETS (the only maps that reach this at that scale, via
+        roll_village) stay on the LEGACY px grain: they already render in-band (~0.02-0.06 acre) and the GM
+        asked to leave them untouched, so recalibrating them would only reshuffle vetted maps for no gain."""
+        from waterfields import PADDY_CELL_ACRES, paddy_grain
+
+        if plot_size not in ("small_irregular", "medium", "large_block", "strip"):
             raise ValueError(f"unknown plot_size {plot_size!r}")
         if plot_regularity not in ("organic", "grid"):
             raise ValueError(f"unknown plot_regularity {plot_regularity!r}")
-        across, step = size_map[plot_size]
+        if self.ftpx >= 2:  # village / city: the real-feet calibration
+            # (target_acres, aspect = along/across): small below the norm, large above, strip = norm area but elongated
+            tgt_acres, aspect = {
+                "small_irregular": (PADDY_CELL_ACRES * 0.72, 0.66),
+                "medium": (PADDY_CELL_ACRES, 0.66),
+                "large_block": (PADDY_CELL_ACRES * 1.35, 0.72),
+                "strip": (PADDY_CELL_ACRES, 1.9),
+            }[plot_size]
+            across, step = paddy_grain(self.ftpx, target_acres=tgt_acres, aspect=aspect)
+        else:  # ft/px=1 hamlet: the legacy px grain (already in-band; left untouched by GM request)
+            across, step = {
+                "small_irregular": (34.0, (20.0, 40.0)),
+                "medium": (48.0, (26.0, 36.0)),
+                "large_block": (70.0, (30.0, 44.0)),
+                "strip": (32.0, (46.0, 66.0)),
+            }[plot_size]
         if plot_regularity == "grid":  # collapse the row-step spread toward its mean -> even, surveyed rows
             mid = (step[0] + step[1]) / 2
             step = (mid - 3.0, mid + 3.0)

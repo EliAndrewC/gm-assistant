@@ -13,6 +13,7 @@ Works under pytest OR standalone:
 """
 
 import glob
+import json
 import os
 import runpy
 import sys
@@ -83,15 +84,52 @@ def _channels_under_plots(svgpath):
     return covered
 
 
+def _typical_cell_acres(svgpath, ftpx):
+    """Real-feet area of the TYPICAL leveled paddy cell (a bund-stroked plot polygon), taking the mean
+    of the 45th-75th percentile band (the regular interior cells, above the edge wedges). Pins the
+    ~0.05-acre paddy calibration (GM 2026-07-22, see settlements.md 'Paddy cell size'). SVG-measured,
+    not a manifest gate, because villages do not record plot_polys - same tier as the ditch z-order audit."""
+    import re
+    import statistics
+
+    with open(svgpath) as fh:
+        svg = fh.read()
+
+    def _sl(poly):
+        return abs(sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly)))) / 2
+
+    areas = sorted(
+        _sl([tuple(map(float, p.split(","))) for p in m.group(1).split()]) * ftpx * ftpx
+        for m in re.finditer(r'<polygon points="([^"]+)" fill="#[0-9A-Fa-f]{6}" stroke="#[0-9A-Fa-f]{6}" stroke-width="2"', svg)
+    )
+    if len(areas) < 8:
+        return None
+    band = areas[int(len(areas) * 0.45) : int(len(areas) * 0.75)]
+    return statistics.mean(band) / 43560
+
+
 # one test per village (not one loop over all): a failure names its map directly, and a
 # parallel runner (pytest-xdist) can spread the regens instead of serializing them in one test
 @pytest.mark.parametrize("gen", GENERATORS, ids=[os.path.basename(g) for g in GENERATORS])
 def test_village_passes_gate(gen):
     assert _regen_and_gate(gen), f"{os.path.basename(gen)} failed the gate"
-    covered = _channels_under_plots(gen[: -len(".gen.py")] + ".svg")
+    svg = gen[: -len(".gen.py")] + ".svg"
+    covered = _channels_under_plots(svg)
     assert not covered, (
         f"{os.path.basename(gen)}: {len(covered)} field channel(s) painted UNDER a later plot at {covered[:5]} - route the comb net through the LATE water block (field_channel late=True; see settlement._water)"
     )
+    # PADDY CELL SIZE stays in the calibrated real-feet band (GM 2026-07-22). Scoped to village/city -
+    # every one of those is a valley-paddy comb map, while the hamlet ARCHETYPE demos (terraces / polder /
+    # ribbon) are a different, larger fabric. The band spans plot_texture's small_irregular->large_block
+    # knobs (~0.036-0.0675) plus slop, and above all catches a regression back to the old hand-set ~0.13 ac.
+    with open(gen[: -len(".gen.py")] + ".json") as _fh:
+        manifest = json.load(_fh)
+    meta = manifest.get("meta", {})
+    if meta.get("scale") in ("village", "city"):
+        cell = _typical_cell_acres(svg, meta.get("ftpx") or 2)
+        assert cell is not None and 0.030 <= cell <= 0.072, (
+            f"{os.path.basename(gen)}: typical paddy cell {cell:.3f} ac is outside the calibrated 0.030-0.072 band (see settlements.md 'Paddy cell size')"
+        )
 
 
 if __name__ == "__main__":
