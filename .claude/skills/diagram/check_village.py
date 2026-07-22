@@ -6145,6 +6145,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         spread = all(math.hypot(torii[i][0] - torii[j][0], torii[i][1] - torii[j][1]) > _tfloor for i in range(len(torii)) for j in range(i + 1, len(torii)))
         check("torii_spread_out", spread, f"torii closer than one arch-span (~{_tfloor:.0f}px) apart - they overlap into a blob rather than reading as distinct gateways")
 
+        # A village-shrine SANDO (>= 3 arches marching to the hall) puts its INNERMOST arch at the hall's
+        # THRESHOLD, directly in front, not set out with a gap (GM 2026-07-22, "village shrines only"). Exempt the
+        # modest 1-2 arch entrance (not a processional avenue) and the gateway-BESIDE-the-hall pattern (Hikari:
+        # the hall stands aside the entrance track while the arches straddle the track, so it sits well OFF the
+        # avenue axis). Village-scoped by kind=='shrine' (towns get monasteries, cities temples - a large-temple
+        # sando with a courtyard between the outer arch and the main hall stays legitimate).
+        _ftpx = meta.get("ftpx", 1)
+        _gap_max = 36.0 / _ftpx  # innermost arch within ~36 ft of the hall front
+        _axis_off = 50.0 / _ftpx  # hall >~50 ft off the avenue axis = a gateway beside it, not a sando to it
+        _set_out = []
+        for r in M.get("religious", []):
+            if r.get("kind") != "shrine":
+                continue
+            mine = [t for t in torii if min(M["religious"], key=lambda rr: math.hypot(rr["x"] - t[0], rr["y"] - t[1])) is r]
+            if len(mine) < 3:
+                continue  # a 1-2 arch entrance is not a processional sando
+            near = min(mine, key=lambda t: pt_to_rect(t[0], t[1], r))
+            far = max(mine, key=lambda t: math.hypot(t[0] - r["x"], t[1] - r["y"]))
+            _ax, _ay = near[0] - far[0], near[1] - far[1]
+            _al = math.hypot(_ax, _ay) or 1.0
+            _ax, _ay = _ax / _al, _ay / _al
+            off = abs((r["x"] - near[0]) * (-_ay) + (r["y"] - near[1]) * _ax)  # hall's perpendicular offset from the axis
+            if off > _axis_off:
+                continue  # gateway beside the hall (Hikari), arches lining the track - not a sando to the hall
+            if pt_to_rect(near[0], near[1], r) > _gap_max:
+                _set_out.append((round(r["x"]), round(r["y"])))
+        check(
+            "shrine_avenue_fronts_the_hall",
+            not _set_out,
+            f"{len(_set_out)} village shrine(s) whose torii avenue stands off from the hall at {_set_out[:4]} - the innermost arch of a sando sits at the hall's threshold, directly in front, not set out with a gap",
+        )
+
     # ---- village-specific expectations (from meta) ---------------------------
     abandoned = sum(1 for h in houses if h["kind"] == "abandoned")
     occupied = len(houses) - abandoned

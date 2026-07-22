@@ -1,0 +1,39 @@
+{
+ "meta": {
+  "scale": "village",
+  "ftpx": 2
+ },
+ "religious": [
+  {
+   "x": 400,
+   "y": 400,
+   "w": 30,
+   "h": 24,
+   "kind": "shrine",
+   "rot": 0
+  }
+ ],
+ "torii": [
+  [
+   400,
+   460,
+   0
+  ],
+  [
+   400,
+   475,
+   1
+  ],
+  [
+   400,
+   490,
+   2
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "shrine_avenue_fronts_the_hall"
+  ],
+  "source": "test_checks.py::test_shrine_avenue_fronts_the_hall_fires_when_the_arch_is_set_out"
+ }
+}
