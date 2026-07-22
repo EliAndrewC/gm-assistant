@@ -1250,6 +1250,7 @@ def build_polder(
     parcel_mix: tuple[float, float, float] = (0.52, 0.16, 0.12),
     gap: tuple[float, float] = (1.5, 4.0),
     edge_wander: float = 0.0,
+    mosaic: float = 0.0,
 ) -> dict[str, Any]:
     """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of paddies on flat reclaimed
     low ground, an orthogonal ditch-grid module inside a perimeter dike. Returns build_comb-compatible keys
@@ -1344,9 +1345,37 @@ def build_polder(
     def ss(r: int) -> float:
         return RING + r * s_step
 
-    nodes: list[list[tuple[float, float]]] = [
-        [(ss(r) + (R.uniform(-J, J) if 0 < r < rows else 0.0), tt(c) + (R.uniform(-J, J) if 0 < c < cols else 0.0)) for c in range(cols + 1)] for r in range(rows + 1)
-    ]
+    # MOSAIC knob (GM 2026-07-22, researched): the 圩田 lower-Yangtze polder was a SURVEYED rectilinear grid,
+    # but the Pearl-delta 桑基魚塘 dike-pond accreted household-by-household (挖塘培基) into a MOSAIC of varied
+    # ponds fitted around MEANDERING interior creeks - scholarship describes the historical landscape as
+    # "mosaic-like constructed ponds with meandering natural river systems, [with] the boundary between
+    # constructed and natural blurred" (research 2026-07-22; settlements.md 'Polder mosaic vs grid'). `mosaic`
+    # (0 = the clean surveyed grid, the default) displaces the INTERIOR bund-node lattice by a smooth
+    # CORRELATED field, tapered to 0 at the pinned perimeter so the envelope + dike stay put: neighbouring
+    # nodes move together, so the lattice lines stay continuous but BEND - the interior laterals become
+    # meandering creeks and the parcels skew to trapezoids. Both are historically-grounded looks, so the knob
+    # makes two same-type polders read differently (map variety). The displacement draws from a SEPARATE rng
+    # so the main plot/fill stream - and every mosaic=0 map - stays byte-identical.
+    Rm = random.Random(seed ^ 0x3059)
+    _mph = [Rm.uniform(0, math.tau) for _ in range(4)]
+    _mamp = mosaic * cell * 0.32
+
+    def mdisp(r: int, c: int) -> tuple[float, float]:
+        if mosaic <= 0 or not (0 < r < rows) or not (0 < c < cols):
+            return (0.0, 0.0)  # the perimeter stays pinned; parcels never leave the envelope
+        zr, zc = r / rows, c / cols
+        taper = math.sin(math.pi * zr) * math.sin(math.pi * zc)
+        ds = _mamp * taper * (math.sin(math.tau * 1.3 * zr + _mph[0]) + 0.6 * math.sin(math.tau * 2.1 * zc + _mph[1]))
+        dt = _mamp * taper * (math.sin(math.tau * 1.1 * zc + _mph[2]) + 0.6 * math.sin(math.tau * 1.9 * zr + _mph[3]))
+        return (ds, dt)
+
+    def _node(r: int, c: int) -> tuple[float, float]:
+        js = R.uniform(-J, J) if 0 < r < rows else 0.0  # draw order (s then t) matches the old lattice exactly
+        jt = R.uniform(-J, J) if 0 < c < cols else 0.0
+        md = mdisp(r, c)
+        return (ss(r) + js + md[0], tt(c) + jt + md[1])
+
+    nodes: list[list[tuple[float, float]]] = [[_node(r, c) for c in range(cols + 1)] for r in range(rows + 1)]
 
     def lerp(a: tuple[float, float], b: tuple[float, float], f: float) -> tuple[float, float]:
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)

@@ -1714,6 +1714,12 @@ class Settlement:
             n += 1
         if dikeponds:
             self.M["dikeponds"] = dikeponds
+        # the recolored plots (ponds / lotus) are FIELD GROUND, so the ditch net must draw OVER them: re-anchor
+        # the LATE water block past this overlay. Without it a MEANDERING mosaic lateral, whose midpoint drifts
+        # onto a pond parcel painted here (after the channels were queued), vanishes under it (test_villages
+        # z-order audit). No-op when no late block exists or nothing was overlaid.
+        if n and self._late_water_idx is not None:
+            self._late_water_idx = len(self.out)
         self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen]})
         return n
 

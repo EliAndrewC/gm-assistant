@@ -8624,7 +8624,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 #   - COARSE buckets (which side / which type / which octant), never pixel positions, so genuine near-
 #     variants are not falsely flagged as twins - the axes answer "different KIND of place?", not "moved a
 #     few px?". The 4-of-7 threshold is the tuning target; recorded with its reasoning in settlements.md.
-TWIN_AXES = ("cluster_region", "cluster_shape", "headman_side", "lane_skeleton", "water_source", "focal_set", "grain_orient", "settlement_form")
+TWIN_AXES = ("cluster_region", "cluster_shape", "headman_side", "lane_skeleton", "water_source", "focal_set", "grain_orient", "settlement_form", "pond_layout")
 TWIN_MIN_DIFF = 4  # a same-down_deg pair must differ on >= this many of the 8 axes to read as distinct
 
 
@@ -8711,6 +8711,10 @@ def twin_axes(M: Manifest) -> dict[str, Any]:
     # 8. settlement_form: nucleated blob vs linear ribbon vs dispersed vs water-town - the biggest structural
     #    read of all. Defaults to 'nucleated' (the base form) when a map does not declare it.
     ax["settlement_form"] = meta.get("settlement_form", "nucleated")
+    # 9. pond_layout: a POLDER's parcel geometry - the surveyed rectilinear 'grid' (圩田 lower-Yangtze) vs the
+    #    accreted, creek-fitted 'mosaic' (桑基魚塘 Pearl-delta dike-pond); `build_polder`'s `mosaic` knob. So two
+    #    same-water polders read as different KINDS of place. Defaults to 'grid' (the base surveyed form).
+    ax["pond_layout"] = meta.get("pond_layout", "grid")
     return ax
 
 
