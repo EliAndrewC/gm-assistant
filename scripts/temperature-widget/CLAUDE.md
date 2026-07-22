@@ -14,10 +14,12 @@ the fill creeping toward the ticks, well before the color changes. Clicking
 it opens a popup with the numeric details (verdict, package temp, hottest
 core, headroom, thresholds) plus a graph of the last 2 hours with dashed
 threshold lines and a min/max summary, for "is it my imagination or is it
-getting hotter" questions. The extension also sends desktop notifications the
-moment the temperature crosses INTO the warning range (normal urgency) or the
-bad range (critical urgency, stays on screen). It does NOT notify on recovery -
-the gauge color already shows that, and a "back to normal" popup is just noise.
+getting hotter" questions. The extension also sends a desktop notification once
+the temperature has *stayed* in the warning range (normal urgency) or the bad
+range (critical urgency) for a few polls - see [Notification debounce +
+metric smoothing](#notification-debounce--metric-smoothing) for why it waits
+rather than firing on the first reading. It does NOT notify on recovery - the
+gauge color already shows that, and a "back to normal" popup is just noise.
 
 Targets GNOME Shell 42 (Ubuntu 22.04, mujina).
 
@@ -115,11 +117,14 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
   consistently regardless of shell theme - white 2 px for the temperature
   trace, full-saturation orange/red for the dashed thresholds.
 - **Judged on the hotter of package temp and hottest core**, same as the
-  script - a single core can spike above the package reading.
-- **Hysteresis (4°C) on the way down**: severity drops only once the reading
-  is clearly below the threshold. Without it, a CPU hovering at 89-91°C would
-  flip between green and orange every poll and re-send the "running hot"
-  notification each time it crossed upward again.
+  script - a single core can spike above the package reading. (This raw metric
+  is then median-smoothed before use; see [Notification debounce + metric
+  smoothing](#notification-debounce--metric-smoothing).)
+- **Bar-color hysteresis (4°C) on the way down**: the gauge *color* severity
+  drops only once the reading is clearly below the threshold, so a CPU hovering
+  at 89-91°C does not flip the bar between green and orange every poll. (This
+  governs the bar color only; notification spam is handled separately by the
+  debounce below.)
 - **Sensors are discovered by filename, never by counting**: coretemp's
   `tempN` numbering is sparse on this chip (temp1, temp2..temp10, temp14,
   ...), so a `for i in 1..N` loop that stops at the first gap would silently
@@ -127,6 +132,50 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
 - **Polling is a 3-second sysfs read** - a handful of small in-kernel file
   reads, negligible cost, and fast enough to catch a thermal runaway before
   it reaches throttling.
+
+## Notification debounce + metric smoothing
+
+The bare thresholds fire far too eagerly, because the sensors are noisy. A
+10-minute sample of this machine at idle (196 reads, 3 s apart; the recording
+lived at `scratchpad/temps.csv` during development) showed:
+
+- an idle baseline of ~53°C, but a **max of 102°C**, and **10% of all 3 s
+  intervals jumping ≥10°C**, one of them by 55°C;
+- **provably-spurious single-read glitches**: twice, package *and* hottest core
+  both snapped to *exactly 100°C* for one poll while the readings on either
+  side were 45-52°C (`49 → 100 → 52`, `45 → 100 → 46`). A 50°C rise-and-fall in
+  3 s is not physically possible - the silicon has thermal mass - so these are
+  bad reads, not real temperatures (and they land on a suspiciously round 100);
+- exactly one **genuine** hot burst (~50 s sustained 90-102°C, multiple cores,
+  package tracking).
+
+Under the naive "notify the instant severity rises" logic that fired **6
+notifications (5 critical) in 10 idle minutes**. Two defenses fix it:
+
+1. **Median-of-3 smoothing (`SMOOTH_WINDOW`).** The metric that drives the bar,
+   the severity, the graph, and the archive is the median of the last 3 raw
+   reads, not the raw read. A median (not a mean) *discards* a lone outlier
+   rather than averaging it in, so a single glitch read never colors the bar or
+   enters the record. In the sample, both isolated 100°C glitches smoothed to
+   55°C and 45°C - gone. The user opted into smoothing the **bar** too (not just
+   notifications), because a glitch that is provably not a real temperature has
+   no business flashing the gauge red.
+2. **Notification debounce (`CONFIRM_SAMPLES = 3`).** A severity must hold for 3
+   consecutive polls (~9 s) before it fires, and fires **once** on the way up
+   (not every poll while it stays hot). This catches the residual 1-2 poll
+   excursions that survive smoothing. The number is sized from the data:
+   smoothing + N=3 fired **2** notifications over the 10 min, both inside the
+   genuine burst; the two glitches fired nothing. ~9 s of confirmation delay is
+   harmless because the hardware's own thermal throttling - not this widget - is
+   the actual safety mechanism; the popup is purely informational.
+
+Recovery is **not** notified (the gauge color shows it). And notifications
+reuse **one** `MessageTray.Source` + one `Notification`, updated in place,
+rather than creating a fresh source per fire: the old per-fire-source behavior
+stacked dozens of separately-dismissable banners during an oscillating hot
+spell, which is what made them feel impossible to clear. The widget also
+destroys its own source on `disable()`, so disabling the extension now clears
+its notifications (they used to outlive it, owned by the message tray).
 
 ## Persisted history
 
