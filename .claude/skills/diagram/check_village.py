@@ -5191,6 +5191,34 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"delivery ditch(es) stop at nearly full width {blunt[:3]} - a ditch feeding paddies sheds its water along the way, so it must TAPER to a thread at its stopping point (w_tail < ~0.85*w)",
         )
 
+        # a DELIVERY ditch takes off WELL DOWNSTREAM of the head fork (the bunsuiguchi division where the
+        # head-race splits into the two supply canals) - a delivery sprouting AT the fork turns the clean
+        # 3-way division into a 4-way STAR that reads as a crossroads, not water feeding the next channel
+        # (GM 2026-07-22: Tango's nw1 / Hoshizora's west field - a short canal B whose offtake landed ~0px
+        # from the fork). A fork is a node where >= 3 SUPPLY (main) ditch ends meet; the two offenders sat
+        # 0-1px out while every legitimate delivery took off >= 76px downstream, so 40px is a clean cut.
+        _by_field: dict[Any, list[Any]] = {}
+        for d in ditches:
+            _by_field.setdefault(d.get("field"), []).append(d)
+        fork_deliveries = []
+        for _ds in _by_field.values():
+            _deg: dict[tuple[int, int], int] = {}
+            for d in _ds:
+                if d.get("role") == "main":
+                    for e in (d["poly"][0], d["poly"][-1]):
+                        _deg[(round(e[0]), round(e[1]))] = _deg.get((round(e[0]), round(e[1])), 0) + 1
+            _forks = [n for n, c in _deg.items() if c >= 3]
+            if not _forks:
+                continue
+            for d in _ds:
+                if d.get("role") == "branch" and min(min(math.hypot(e[0] - fx, e[1] - fy) for fx, fy in _forks) for e in (d["poly"][0], d["poly"][-1])) < 40:
+                    fork_deliveries.append((round(d["poly"][0][0]), round(d["poly"][0][1])))
+        check(
+            "channels_join_not_cross_at_fork",
+            not fork_deliveries,
+            f"delivery ditch(es) taking off AT the head fork {fork_deliveries[:4]} - a delivery must branch off a supply canal well DOWNSTREAM of the bunsuiguchi division (>= 40px), else the fork reads as a 4-way crossroads instead of the head-race feeding two canals",
+        )
+
         # CONNECTIVITY: every in-field ditch must trace to BOTH an external SOURCE (a pond feed) and a runoff
         # SINK (an off-map drain or a stream). Build the watercourse graph - channels + streams + field ditches,
         # joined where their polylines come within tol (crossing-aware) - and require each ditch's component to
