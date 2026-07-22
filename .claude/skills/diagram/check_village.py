@@ -7928,11 +7928,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                             taps.append(min((e0, e1), key=lambda e: poly_dist(e[0], e[1], moat)))
                     # feeder + outfall must attach on OPPOSITE faces (centroid-radials pointing apart, dot < 0)
                     # so the ring genuinely flushes rather than two inlets crowding one arc
-                    has_outfall = any(
-                        (taps[i][0] - mcx) * (taps[j][0] - mcx) + (taps[i][1] - mcy) * (taps[j][1] - mcy) < 0
-                        for i in range(len(taps))
-                        for j in range(i + 1, len(taps))
-                    )
+                    has_outfall = any((taps[i][0] - mcx) * (taps[j][0] - mcx) + (taps[i][1] - mcy) * (taps[j][1] - mcy) < 0 for i in range(len(taps)) for j in range(i + 1, len(taps)))
                     check(
                         "city_moat_has_outfall",
                         has_outfall,

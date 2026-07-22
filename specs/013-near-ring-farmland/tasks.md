@@ -83,9 +83,9 @@ description: "Task list for Near-Ring Farmland Density"
 
 **Independent Test**: generate one dense-default and one thin map; the thin near ring is visibly less cultivated; both pass `near_ring_cultivated_fraction` at their respective thresholds.
 
-- [ ] T018 [US3] Choose the dial-down demonstrator: either add a small `meta(near_ring_density="thin")` variant/gen for a dry-locale town, or set the tier on a suitable existing dry map. Confirm the thin threshold lets a genuinely marginal near ring pass while the dense threshold would have failed it.
-- [ ] T019 [US3] Iterate regen + gate on the thin map until green, and confirm the dense default (Hirameki/Tango) still passes - i.e. the knob moves the requirement in both directions and a `"dense"`-declared map cannot pass while sparse (the check's teeth).
-- [ ] T020 [US3] Principle XII spot-review: the thin map's near ring reads visibly thinner/scrubbier than the dense default (Element 5). Record the outcome.
+- [X] T018 [US3] Choose the dial-down demonstrator: either add a small `meta(near_ring_density="thin")` variant/gen for a dry-locale town, or set the tier on a suitable existing dry map. Confirm the thin threshold lets a genuinely marginal near ring pass while the dense threshold would have failed it.
+- [X] T019 [US3] Iterate regen + gate on the thin map until green, and confirm the dense default (Hirameki/Tango) still passes - i.e. the knob moves the requirement in both directions and a `"dense"`-declared map cannot pass while sparse (the check's teeth).
+- [X] T020 [US3] Principle XII spot-review: the thin map's near ring reads visibly thinner/scrubbier than the dense default (Element 5). Record the outcome.
 
 **Checkpoint**: all three stories independently functional; the calibrated-liberty range is represented in the product.
 
@@ -95,11 +95,11 @@ description: "Task list for Near-Ring Farmland Density"
 
 **Purpose**: prove the engine change is safe across the whole pool and close the Principle XII gate.
 
-- [ ] T021 Full-pool sweep (MANDATORY): from `.claude/skills/diagram/`, run `make done` (regenerate every pool map + ruff + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` + the full `check_village` gate over every map). Background it if long; report done only when green.
-- [ ] T022 Verify scope isolation (SC-005): confirm village + hamlet maps are behavior-unchanged (they never call the new method and are out of scope) - their tracked `.json` manifests must not move. Spot-check Hoshizora (2nd town) and Nagahara (2nd city) either stayed clean or were intentionally adjusted, and fix any downstream map the engine change disturbed.
-- [ ] T023 Principle XII CLOSING gate (full pass, before "done"): review the rendered PNGs of Hirameki, Tango, the thin map, Hoshizora, and Nagahara against research.md Elements 1-5 (this is separate from the automated gate - a map can pass every check and still depict something ahistorical). If any picture contradicts an element, fix the MAP, do not rationalize the code. Record each review outcome in the map review logs.
-- [ ] T024 Confirm SC-006: the "why" is present in `settlements.md` (Historical grounding) AND beside the threshold constant / knob default in code; verify with a grep.
-- [ ] T025 Stop-work ritual: commit all clone work with a descriptive message; run `bash scripts/sync-with-main.sh done` from the clone root (locked pull+push back to main + render-sync). Do NOT re-run the gate for any docs-only follow-up.
+- [X] T021 Full-pool sweep (MANDATORY): from `.claude/skills/diagram/`, run `make done` (regenerate every pool map + ruff + `ruff format --check` + `mypy --strict` + `pytest` + `--cov-fail-under=100` + the full `check_village` gate over every map). Background it if long; report done only when green.
+- [X] T022 Verify scope isolation (SC-005): confirm village + hamlet maps are behavior-unchanged (they never call the new method and are out of scope) - their tracked `.json` manifests must not move. Spot-check Hoshizora (2nd town) and Nagahara (2nd city) either stayed clean or were intentionally adjusted, and fix any downstream map the engine change disturbed.
+- [X] T023 Principle XII CLOSING gate (full pass, before "done"): review the rendered PNGs of Hirameki, Tango, the thin map, Hoshizora, and Nagahara against research.md Elements 1-5 (this is separate from the automated gate - a map can pass every check and still depict something ahistorical). If any picture contradicts an element, fix the MAP, do not rationalize the code. Record each review outcome in the map review logs.
+- [X] T024 Confirm SC-006: the "why" is present in `settlements.md` (Historical grounding) AND beside the threshold constant / knob default in code; verify with a grep.
+- [X] T025 Stop-work ritual: commit all clone work with a descriptive message; run `bash scripts/sync-with-main.sh done` from the clone root (locked pull+push back to main + render-sync). Do NOT re-run the gate for any docs-only follow-up.
 
 ---
 
