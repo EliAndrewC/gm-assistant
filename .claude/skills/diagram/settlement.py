@@ -5094,7 +5094,6 @@ class Settlement:
             # tangent and sits SQUARE to the wall, the ring road running lengthwise through it) then
             # pulled in radially to the ring road centerline - the two end up just off either verge of
             # the road at the gate, the road passing between them.
-            insp_xy: Any = None
             g_east = any(abs(gx - ex) < 2 and abs(gy - ey) < 2 for (ex, ey) in guard_east)
             gh_west = not g_east  # guard house on the WEST flank by default; guard_east flips it east (inspection takes the other verge)
             road_half = self.M.get("road_width", 26) / 2  # city_wall runs before s.road, so this is the Imperial-road default
@@ -5128,7 +5127,6 @@ class Settlement:
                 self.M["gate_structs"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "kind": kind, "z": z})
                 if kind == "inspection":
                     self.M["inspection_stations"].append({"x": fx, "y": fy, "w": round(fw, 1), "h": round(fh, 1), "rot": round(a, 1), "label": "inspection station"})
-                    insp_xy = (fx, fy)
             # the gate guard TOWER straddles the WALL just east of the gate, likewise tilted to the wall
             # there - and NUDGED INWARD so its footing stands on the berm, not in the moat (below)
             _arc = 78
