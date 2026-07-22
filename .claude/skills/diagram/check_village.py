@@ -8147,6 +8147,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a mulberry_dike_fishpond field must be a filled block ({dp_fill:.0%} of bbox) of many mulberry-rimmed fish ponds (enough pond cells: {bool(pond_rec)}) - the 桑基魚塘 system",
         )
 
+        # THE POND WATER IS INSET WITHIN ITS MULBERRY BANKS, WITH ROUNDED CORNERS (GM 2026-07-22, issues 3 + 5):
+        # each 桑基魚塘 pond is a dug water body set INSIDE its parcel's green mulberry dike (基) - the water does
+        # NOT fill the parcel to its edge, and its dug corners erode ROUND (a premodern earthen pond has no
+        # poured-concrete right angles). Teeth read the recorded `dikeponds`: every pond's water polygon must lie
+        # inside its parcel (issue 3), and carry the corner rounding as many sampled vertices (issue 5). The
+        # pre-fix full-parcel teal fill recorded no `dikeponds` at all and fires both. Grounding:
+        # apply_land_use / Settlement._rounded_pond + settlements.md 'Dike-pond water'.
+        _dponds = M.get("dikeponds")
+        _n_dp = len(_dponds) if _dponds else 0
+        _spill = sum(1 for d in (_dponds or []) if any(not point_in_poly(wx, wy, d["parcel"]) for wx, wy in d["water"]))
+        check(
+            "dikepond_water_within_banks",
+            _n_dp >= 12 and _spill == 0,
+            f"a mulberry-dike fish pond's water must sit INSIDE its green mulberry banks, not fill the parcel to its edge (recorded ponds {_n_dp}, want >=12; ponds whose water spills past the parcel {_spill}, want 0) - the water 'running off the green interior' is the pre-fix full-parcel fill",
+        )
+        _min_wv = min((len(d["water"]) for d in (_dponds or [])), default=0)
+        check(
+            "dikepond_corners_rounded",
+            _n_dp >= 12 and _min_wv >= 10,
+            f"a dug fish pond erodes to ROUNDED corners, not sharp right angles - the recorded pond water polygons must carry the rounding (min sampled vertices {_min_wv}, want >=10 across {_n_dp} ponds); a 4-vertex quad is the pre-fix sharp-cornered parcel",
+        )
+
     # A polder's PERIMETER DIKE is an irregular hand-piled EARTHWORK, not a ruled line (GM 2026-07-22,
     # researched: the wei-tian / dike-pond dike was dredged pond-mud heaped and packed, planted and
     # breach-repaired, and the OUTER dike followed the natural water edge - the 'fish-scale polder' 鱼鳞圩
@@ -8164,6 +8186,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a polder's perimeter dike must be an irregular earthwork band of VARYING width (drawn present: {bool(dk)}; width {wmn:.0f}-{wmx:.0f} px, want max >= 1.4x min) - a uniform-width or missing dike reads as a post-1949 ruled rectangle, not a hand-piled fish-scale polder",
         )
 
+        # THE DIKES WANDER - NOT A MACHINE-PERFECT RECTANGLE (GM 2026-07-22, issue 4): a hand-dug wei-tian dike
+        # followed the old water edge, so it runs at a slight ANGLE and gently CHANGES direction with the ground
+        # (the 'fish-scale polder' 鱼鳞圩 read); a dead-straight axis-aligned block is the post-1949 land-
+        # consolidation shape. Teeth: in the down-slope frame, most of the field OUTLINE must run OFF both axes -
+        # a pure rectangle scores 0 (every edge axis-aligned) and fires, while the edge-wander block clears the
+        # floor comfortably. Grounding: build_polder 'EDGE WANDER' + settlements.md 'Polder edge wander'.
+        _wdd = math.radians(meta.get("down_deg", 90))
+        _wox, _woy = math.cos(_wdd), math.sin(_wdd)
+        _wol = fields[0]["outline"] if fields else []
+        _wtot = _woff = 0.0
+        for _wi in range(len(_wol) - 1):
+            _wax, _way = _wol[_wi + 1][0] - _wol[_wi][0], _wol[_wi + 1][1] - _wol[_wi][1]
+            _wl = math.hypot(_wax, _way)
+            if _wl < 1:
+                continue
+            _wdev = min(abs(_wax * _wox + _way * _woy), abs(_wax * _woy - _way * _wox)) / _wl  # 0 = on an axis
+            _wtot += _wl
+            if _wdev > 0.05:  # > ~3 deg off the nearer axis
+                _woff += _wl
+        _wfrac = _woff / _wtot if _wtot else 0.0
+        check(
+            "polder_edges_wander",
+            bool(fields) and _wfrac >= 0.30,
+            f"a polder's dikes must WANDER, not run axis-perfect - only {_wfrac:.0%} of the field outline runs off-axis (want >=30%); a dead-straight rectangle is the post-1949 consolidation shape, not a hand-dug fish-scale polder",
+        )
+
         # THE RING CANAL RUNS ON THE INNER TOE, CLEAR OF THE DIKE (GM 2026-07-22, researched: the trunk
         # irrigation/drainage canal rings the block on the INSIDE toe of the perimeter dike, on the field
         # side - "一河围田 / one river surrounds the field"; outside the dike is the wild water it holds back,
@@ -8178,6 +8226,42 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 "polder_channels_clear_of_dike",
                 in_dike <= 4,
                 f"{in_dike} irrigation-channel point(s) run through the dike earthwork (want <= 4, the inlet/outfall sluice crossings) - the polder RING CANAL runs on the INNER TOE of the dike (field side), not buried in the dike body; water crosses the dike only at the sluices",
+            )
+
+            # WATER CROSSES THE DIKE ONLY THROUGH A DUG GAP (GM 2026-07-22, issue 1): the inlet + outfall sluices
+            # pass THROUGH a notch cut in the earthwork, not OVER the top of the unbroken bank (which read as the
+            # water running uphill onto the dike and back down). Teeth: a THROUGH-CROSSER - a water line with a
+            # densified point inside the dike band AND a vertex outside the field outline (so it genuinely runs
+            # from the field, through the dike, to the far / off-map side) - must have a recorded gap within
+            # ~26 px of where it enters the band. The pre-fix dike recorded NO gaps, so every crosser fires. The
+            # incidental ring-canal clipping the inner toe at a concave bend is NOT a crosser (it never leaves the
+            # field), so it is not required to have a gap. Grounding: perimeter_dike gaps + settlements.md.
+            _dgaps = dk.get("gaps", [])
+            _dol = fields[0]["outline"] if fields else []
+
+            def _dike_densify(poly: Any, step: float = 4.0) -> list[tuple[float, float]]:
+                out: list[tuple[float, float]] = []
+                for _i in range(len(poly) - 1):
+                    _a, _b = poly[_i], poly[_i + 1]
+                    _ln = math.hypot(_b[0] - _a[0], _b[1] - _a[1])
+                    _steps = max(1, int(_ln / step))
+                    for _k in range(_steps):
+                        out.append((_a[0] + (_b[0] - _a[0]) * _k / _steps, _a[1] + (_b[1] - _a[1]) * _k / _steps))
+                if poly:
+                    out.append((poly[-1][0], poly[-1][1]))
+                return out
+
+            _waters = [c["poly"] for c in M.get("field_ditches", [])] + [s["poly"] for s in M.get("streams", [])] + [c["poly"] for c in M.get("channels", [])]
+            _ungapped: list[tuple[int, int]] = []
+            for _wpoly in _waters:
+                _inband = [(x, y) for x, y in _dike_densify(_wpoly) if point_in_poly(x, y, band)]
+                _leaves = bool(_dol) and any(not point_in_poly(px, py, _dol) for px, py in _wpoly)
+                if _inband and _leaves and not any(math.hypot(bx - gx, by - gy) <= 26 for bx, by in _inband for gx, gy in _dgaps):
+                    _ungapped.append((round(_inband[0][0]), round(_inband[0][1])))
+            check(
+                "polder_dike_gapped_at_sluices",
+                not _ungapped,
+                f"{len(_ungapped)} channel(s) cross the dike with no dug gap at {_ungapped[:4]} - a polder's inlet/outfall sluice passes THROUGH a notch cut in the earthwork bank, not over the top of it; every through-crossing needs a recorded dike gap",
             )
 
             # STRUCTURES + WINDBREAK KEEP OFF THE DIKE (GM 2026-07-22): the dike is a raised earthwork bank,

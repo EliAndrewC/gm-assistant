@@ -20,6 +20,7 @@ caught next time.
 """
 
 import json
+import math
 import pathlib
 
 import check_village
@@ -5457,6 +5458,61 @@ def test_polder_channels_clear_of_dike():
     assert "polder_channels_clear_of_dike" not in f({**base, "field_ditches": [sluices]})
     # a non-polder archetype never trips it, and no dike -> polder_dike_is_earthwork owns that case
     assert "polder_channels_clear_of_dike" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "dikes": base["dikes"], "field_ditches": [inside]})
+
+
+def test_polder_edges_wander():
+    # GM 2026-07-22 (issue 4): a polder's dikes must WANDER (a hand-dug fish-scale polder), not run axis-perfect.
+    # A dead-straight axis-aligned outline fires; an outline that runs mostly off-axis passes.
+    dike = [{"outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "w_min": 14.0, "w_max": 38.0, "gaps": []}]
+    base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "polder_grid"}, "dikes": dike}
+    # an axis-aligned rectangle - with a leading ZERO-LENGTH segment the check skips - scores 0% off-axis
+    rect = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": [[100, 100], [100, 100], [900, 100], [900, 1300], [100, 1300], [100, 100]], "bbox": [100, 100, 900, 1300]}]}
+    assert "polder_edges_wander" in f(rect)
+    wavy = [(100 + 45 * math.sin(i / 3.0), 100 + i * 24) for i in range(50)] + [(900 + 45 * math.sin(i / 3.0), 1300 - i * 24) for i in range(50)]
+    wavy.append(wavy[0])
+    passd = {**base, "fields": [{"name": "p", "kind": "paddy", "outline": [[round(x, 1), round(y, 1)] for x, y in wavy], "bbox": [55, 100, 945, 1300]}]}
+    assert "polder_edges_wander" not in f(passd)
+
+
+def test_polder_dike_gapped_at_sluices():
+    # GM 2026-07-22 (issue 1): a THROUGH-CROSSER (a water line running from the field, through the dike band,
+    # to outside the field outline) must have a recorded dike gap near where it enters the band; no gap fires.
+    band = [[100, 100], [900, 100], [900, 1300], [100, 1300]]
+    outline = [[150, 150], [850, 150], [850, 1250], [150, 1250]]  # the field outline sits inside the band
+    base = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}, "fields": [{"name": "p", "kind": "paddy", "outline": outline, "bbox": [150, 150, 850, 1250]}]}
+    crosser = {"poly": [[500, 700], [500, 120], [500, 50]], "role": "main", "field": "p"}  # field -> through band -> outside
+    assert "polder_dike_gapped_at_sluices" in f({**base, "dikes": [{"outline": band, "w_min": 14.0, "w_max": 38.0, "gaps": []}], "field_ditches": [crosser]})
+    assert "polder_dike_gapped_at_sluices" not in f({**base, "dikes": [{"outline": band, "w_min": 14.0, "w_max": 38.0, "gaps": [[500, 110]]}], "field_ditches": [crosser]})
+
+
+def test_dikepond_water_within_banks_and_rounded():
+    # GM 2026-07-22 (issues 3 + 5): each 桑基魚塘 pond's water sits INSIDE its parcel with ROUNDED corners
+    # recorded as many sampled vertices. Water spilling past the parcel fires within_banks; a 4-vertex sharp
+    # quad fires corners_rounded; no recorded dikeponds fires both.
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}, "fields": [field]}
+
+    def parcel(cx, cy):
+        return [[cx - 50, cy - 50], [cx + 50, cy - 50], [cx + 50, cy + 50], [cx - 50, cy + 50]]
+
+    def rounded(cx, cy):
+        return [[cx + 30 * math.cos(a), cy + 30 * math.sin(a)] for a in [i * math.pi / 6 for i in range(12)]]
+
+    good = [{"parcel": parcel(200 + 120 * i, 300), "water": rounded(200 + 120 * i, 300)} for i in range(12)]
+    assert "dikepond_water_within_banks" not in f({**base, "dikeponds": good})
+    assert "dikepond_corners_rounded" not in f({**base, "dikeponds": good})
+    # no recorded dikeponds at all -> both fire
+    assert "dikepond_water_within_banks" in f(base)
+    assert "dikepond_corners_rounded" in f(base)
+    # water spilling past its parcel -> within_banks fires (a rounded ring blown up to r=80, past the +-50 bank)
+    spill = [
+        {"parcel": parcel(200 + 120 * i, 300), "water": [[cx, cy] for cx, cy in [(200 + 120 * i + 80 * math.cos(a), 300 + 80 * math.sin(a)) for a in [j * math.pi / 6 for j in range(12)]]]}
+        for i in range(12)
+    ]
+    assert "dikepond_water_within_banks" in f({**base, "dikeponds": spill})
+    # a 4-vertex sharp quad (inside its parcel) -> corners_rounded fires
+    sharp = [{"parcel": parcel(200 + 120 * i, 300), "water": [[190 + 120 * i, 290], [210 + 120 * i, 290], [210 + 120 * i, 310], [190 + 120 * i, 310]]} for i in range(12)]
+    assert "dikepond_corners_rounded" in f({**base, "dikeponds": sharp})
 
 
 def test_polder_dike_is_earthwork():

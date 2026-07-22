@@ -29,7 +29,7 @@ s._nucleated = True
 
 # TRUE SCALE (1 px = 1 ft): rice parcels mean ~1 mu, range ~0.2-3 mu (build_polder docstring, TRUE-SCALE
 # SIZING) - a 110 ft module puts whole bays at ~1.9 mu, halves ~0.9 mu, thirds ~0.6 mu.
-net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=15, cols=8, cell=110)
+net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=15, cols=8, cell=110, edge_wander=0.5)
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.meta(dry_furrows_vary=False)
 
@@ -42,7 +42,7 @@ s.draw_comb_field(net, "enokida-polder", {"kind": "pond", "pond": (_nw[0] + 44, 
 # natural water edge in organic non-square bends (fish-scale polder 鱼鳞圩; see s.perimeter_dike +
 # settlements.md 'Perimeter dike'). Drawn HERE (before the village) so it sits UNDER the east-side houses.
 _env = net["envelope"]
-s.perimeter_dike(_env, seed=SEED ^ 0x6D)
+s.perimeter_dike(_env, seed=SEED ^ 0x6D, gaps=net["dike_sluices"])
 
 # the village lines the dry EAST perimeter dike
 _rng = _random.Random(SEED ^ 0x3B)
