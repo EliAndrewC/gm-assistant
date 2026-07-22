@@ -950,6 +950,7 @@ def test_bridges_spans_a_lane_where_it_crosses_a_canal():
 
 def test_channel_footbridges_plank_each_long_ditch_perpendicular():
     s = _crop_settlement()
+    s.M["fields"] = [{"outline": [[50, 120], [850, 120], [850, 280], [50, 280]]}]  # paddy straddling the y=200 ditch (both banks cultivated)
     s.M["field_ditches"] = [
         {"poly": [[100, 200], [400, 200], [800, 200]], "w": 5, "role": "main"},  # 700px, 2 segments -> two planks at spacing 320
         {"poly": [[100, 400], [160, 400]], "w": 4, "role": "branch"},  # 60px -> below min_len, no plank
@@ -981,12 +982,21 @@ def test_shrine_well_returns_none_when_boxed_in():
 
 def test_channel_footbridges_slides_a_plank_clear_of_a_farmhouse():
     s = _crop_settlement()
+    s.M["fields"] = [{"outline": [[50, 220], [750, 220], [750, 380], [50, 380]]}]  # paddy straddling the y=300 ditch
     s.M["field_ditches"] = [{"poly": [[100, 300], [700, 300]], "w": 5, "role": "main"}]  # 600px E-W ditch
     s.M["houses"] = [{"x": 400, "y": 300, "w": 60, "h": 40, "kind": "plain", "rot": 0}]  # a house ON the ditch midpoint
     n = s.channel_footbridges(spacing=800)  # n=1, midway = (400,300) = on the house
     assert n == 1
     b = s.M["bridges"][0]
     assert not (365 <= b["x"] <= 435) and 190 < b["y"] < 410  # the plank slid ALONG the ditch, off the house footprint
+
+
+def test_channel_footbridges_skips_a_crossing_to_uncultivated_ground():
+    s = _crop_settlement()
+    s.M["fields"] = [{"outline": [[50, 120], [750, 120], [750, 297], [50, 297]]}]  # paddy only NORTH of the ditch; the S bank is marsh/scrub
+    s.M["field_ditches"] = [{"poly": [[100, 300], [700, 300]], "w": 5, "role": "main"}]  # a margin ditch: field one side, nothing the other
+    n = s.channel_footbridges(spacing=800)
+    assert n == 0 and not s.M["bridges"]  # no cultivated ground on the far bank -> no useful crossing -> no plank
 
 
 # --- fragmented dooryard gardens: _garden_beds picks single / flanking / stacked / side-by-side --------

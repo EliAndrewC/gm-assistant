@@ -10,26 +10,26 @@
    "outline": [
     [
      50,
-     130
+     90
     ],
     [
      850,
-     130
+     90
     ],
     [
      850,
-     270
+     190
     ],
     [
      50,
-     270
+     190
     ]
    ],
    "bbox": [
     50,
-    130,
+    90,
     850,
-    270
+    190
    ]
   }
  ],
@@ -65,11 +65,20 @@
    "field": "p"
   }
  ],
- "bridges": [],
+ "bridges": [
+  {
+   "x": 450,
+   "y": 200,
+   "rot": 90,
+   "span": 11,
+   "w": 2,
+   "foot": true
+  }
+ ],
  "_regression": {
   "fires": [
-   "long_ditches_have_a_footbridge"
+   "footbridges_reach_useful_ground"
   ],
-  "source": "test_checks.py::test_long_ditches_have_a_footbridge_fires_when_a_long_ditch_is_planless"
+  "source": "test_checks.py::test_footbridges_reach_useful_ground_fires_when_a_plank_crosses_to_nothing"
  }
 }

@@ -60,6 +60,14 @@ FLOODED_SHADES = ['#93B0A2', '#8AAB9A', '#9DBAAB', '#88A99A', '#9AB6A8']  # just
 RIPE_SHADES = ['#CBBB74', '#C4B36A', '#D1C180']  # ripening rice (golden) - a few plots
 RICE_GREENS = ['#A6C398', '#A2C094', '#A9C69C']  # rice at ONE stage - near-identical greens (reads uniform)
 
+# STANDALONE plank-footbridge geometry, shared by channel_footbridges() (placement) and the
+# footbridges_reach_useful_ground check in check_village.py (which duplicates these three values -
+# keep them in sync). A dobashi footplank spans an ~8 ft ditch with a short landing each bank; it
+# exists so field-workers can cross to the FIELD, so both banks must reach ground worth crossing to.
+PLANK_ABUTMENT = 6.0  # deck = local ditch width + this SHORT abutment (GM 2026-07-22: was 15, far too long for a footplank)
+PLANK_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
+PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
+
 
 def _signed_area(poly: Poly) -> float:
     a = 0.0
@@ -5433,16 +5441,19 @@ class Settlement:
                             n += 1
         return n
 
-    def channel_footbridges(self, spacing: float = 320, min_len: float = 140, plank_w: float = 2.5, seg_caps: Any = None) -> int:
+    def channel_footbridges(self, spacing: float = 320, min_len: float = 140, plank_w: float = 2.0, seg_caps: Any = None) -> int:
         """Standalone plank FOOTBRIDGES across the irrigation channels, where field-workers cross a ditch while
         walking the paddy bunds - NOT carried by any lane (people reach them along the earthen bunds, so no
         path leads to them). Any ditch stretch longer than `min_len` gets a plank about MIDWAY; a long stretch
         gets one roughly every `spacing` px, evenly spaced along it. Each plank crosses PERPENDICULAR to the
-        ditch, spanning its local width plus short abutments. Call AFTER the field ditches are recorded. Bridges
-        draw on the TOP layer (over the water). Records via `bridge()` into M['bridges']; returns the count.
-        DECK WIDTH (1 px = 2 ft): a dobashi footplank is a single-file crossing (~3-5 ft), so `plank_w=2.5`
-        (~5 ft) - the honest upper end, kept just wide enough to read. It must stay NARROWER than a cart lane
-        (~5-6 px); the wider `bridges()` carried-way deck matches the lane it carries, but a footplank does not."""
+        ditch, spanning its local width plus a short abutment. Call AFTER the field ditches are recorded. Bridges
+        draw on the TOP layer (over the water). Records via `bridge()` into M['bridges'] (tagged 'foot'); returns
+        the count. DECK WIDTH (1 px = 2 ft): a dobashi footplank is a single-file crossing (~3-4 ft), so
+        `plank_w=2.0` (~4 ft, GM 2026-07-22: was 2.5) - kept just wide enough to read and NARROWER than a cart
+        lane (~5-6 px); the wider `bridges()` carried-way deck matches the lane it carries, but a footplank does not.
+        USEFULNESS: a plank is placed only where BOTH banks reach ground someone walks to - cultivated field,
+        the village, or a dike (via _plank_reaches_useful_ground). A drain/toe stretch whose far bank opens onto
+        marsh/scrub/off-map carries NO plank (GM 2026-07-22, Hikari no Sato: crossings into the reed marsh)."""
 
         def _at(pts: Any, seg: Any, s: float) -> Any:  # point + heading (deg) at arc-length s along the polyline
             acc = 0.0
@@ -5490,15 +5501,52 @@ class Settlement:
                     continue
                 n = min(n, cap)
             w = d.get("w", 4.2)
+            span = w + PLANK_ABUTMENT  # deck = local ditch width + a short abutment each bank
             for k in range(n):
                 base = (k + 0.5) / n * total  # midway for n=1, evenly spaced otherwise
-                px, py, ang = _at(pts, seg, base)
-                for frac in (0.12, -0.12, 0.24, -0.24, 0.36, -0.36):  # a plank must not land on a home: SLIDE along the ditch to dodge one
-                    if not any(_sat(_corners(px, py, w + 15, plank_w, ang + 90), hc) for hc in houses):
-                        break
+                # SLIDE along the ditch to a spot that (a) misses every home and (b) lands on
+                # useful ground (field/village/dike) on BOTH banks. If no such spot is near this
+                # slot - a marsh/scrub toe stretch with nothing to cross to - it carries NO plank.
+                for frac in (0.0, 0.12, -0.12, 0.24, -0.24, 0.36, -0.36, 0.5, -0.5):
                     px, py, ang = _at(pts, seg, max(0.0, min(total, base + frac * total)))
-                self.bridge(px, py, ang + 90, w + 15, plank_w)  # deck runs ACROSS the ditch (perpendicular)
+                    deck = ang + 90  # deck runs ACROSS the ditch (perpendicular)
+                    if any(_sat(_corners(px, py, span, plank_w, deck), hc) for hc in houses):
+                        continue
+                    if not self._plank_reaches_useful_ground(px, py, deck, span):
+                        continue
+                    self.bridge(px, py, deck, span, plank_w)
+                    self.M["bridges"][-1]["foot"] = True  # a standalone footplank (checked by footbridges_reach_useful_ground)
+                    break
         return len(self.M["bridges"]) - n0
+
+    def _plank_reaches_useful_ground(self, px: float, py: float, deck_deg: float, span: float) -> bool:
+        """A STANDALONE footplank is worth building only if BOTH banks reach ground someone walks to:
+        cultivated field (wet paddy or dry crop), the village (a dwelling within a short reach), or a
+        walked polder-dike crest. A crossing whose far bank opens onto reed marsh, scrub commons, forest,
+        or off-map serves no one - field-workers cross a ditch to reach the FIELD, not to wade into the
+        bog (GM 2026-07-22, Hikari no Sato: drain-toe planks that stepped straight into the reed marsh).
+        The deck spans the ditch along `deck_deg`, so its two ends ARE the two banks; each is sampled a
+        short reach past its abutment. See the footbridges_reach_useful_ground check in check_village.py."""
+        a = math.radians(deck_deg)
+        ux, uy = math.cos(a), math.sin(a)
+        reach = span / 2 + PLANK_BANK_REACH
+        # read the SAME cultivation source the footbridges_reach_useful_ground check reads (the manifest
+        # field outlines + dry plots), so placement and check never disagree - self.field_polys is a
+        # separate blocking-only list that some gens leave empty.
+        crop = [f["outline"] for f in self.M.get("fields", []) if f.get("outline")]
+        crop += [d["poly"] for d in self.M.get("dry_plots", [])]
+        dikes = [dk["outline"] for dk in self.M.get("dikes", []) if dk.get("outline")]
+        houses = self.M.get("houses", [])
+        for sgn in (1.0, -1.0):
+            bx, by = px + ux * reach * sgn, py + uy * reach * sgn
+            if any(point_in_poly(bx, by, p) for p in crop):
+                continue
+            if any(point_in_poly(bx, by, p) for p in dikes):
+                continue
+            if any((bx - h["x"]) ** 2 + (by - h["y"]) ** 2 < PLANK_VILLAGE_REACH**2 for h in houses):
+                continue
+            return False
+        return True
 
     def governor_mansion(self, x: float, y: float, w: float = 320, h: float = 210, label: str = "Governor's Mansion", gate_dir: str = "west") -> Any:
         """The provincial governor's walled mansion - a large compound, grander than a county
