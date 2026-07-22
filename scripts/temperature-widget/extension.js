@@ -391,18 +391,30 @@ class TempBarButton extends PanelMenu.Button {
         const xOf = t => ((t - t0) / (HISTORY_SECONDS * 1000)) * (w - 2) + 1;
         const yOf = temp => (h - 2) - this._fractionOf(temp) * (h - 4) + 1;
 
+        // Opaque dark backdrop. The graph used to draw straight onto the popup
+        // menu's themed background, whose color/opacity is theme-dependent - on
+        // some themes that washed the low-alpha lines out to near-invisible
+        // gray. Painting our own solid dark panel first means the lines below
+        // always sit on a known dark surface, so full-alpha bright colors read
+        // consistently regardless of the shell theme.
+        cr.setSourceRGBA(0.10, 0.11, 0.14, 1);
+        cr.rectangle(0, 0, w, h);
+        cr.fill();
+
         // Frame.
-        cr.setSourceRGBA(1, 1, 1, 0.25);
+        cr.setSourceRGBA(1, 1, 1, 0.4);
         cr.setLineWidth(1);
         cr.rectangle(0.5, 0.5, w - 1, h - 1);
         cr.stroke();
 
-        // Threshold lines, dashed.
-        cr.setDash([3, 3], 0);
+        // Threshold lines, dashed. Full alpha on the dark backdrop so orange
+        // and red read as orange and red, not grayed-out.
+        cr.setLineWidth(1.5);
+        cr.setDash([4, 3], 0);
         for (const [threshold, color] of
             [[this._warnAt, COLORS[1]], [this._badAt, COLORS[2]]]) {
             const [r, g, b] = color;
-            cr.setSourceRGBA(r, g, b, 0.7);
+            cr.setSourceRGBA(r, g, b, 1);
             const y = yOf(threshold);
             cr.moveTo(1, y);
             cr.lineTo(w - 1, y);
@@ -411,8 +423,9 @@ class TempBarButton extends PanelMenu.Button {
         cr.setDash([], 0);
 
         // Temperature line, broken across sampling gaps (suspend etc.).
-        cr.setSourceRGBA(1, 1, 1, 0.9);
-        cr.setLineWidth(1.5);
+        // Bright white at full alpha, 2 px, so it stands off the dark backdrop.
+        cr.setSourceRGBA(1, 1, 1, 1);
+        cr.setLineWidth(2);
         let prevT = null;
         for (const [t, temp] of this._history) {
             if (t < t0)
