@@ -17,7 +17,7 @@ sys.path.insert(0, SKILL)
 from settlement import Settlement  # noqa: E402
 import random as _random  # noqa: E402
 
-from waterfields import BUND, build_polder  # noqa: E402
+from waterfields import build_polder  # noqa: E402
 
 W, H = 2200, 2600
 SEED = 12
@@ -36,10 +36,11 @@ s.meta(dry_furrows_vary=False)
 sluice = net["channels"][0]["pts"][0]
 s.draw_comb_field(net, "enokida-polder", {"kind": "pond", "pond": (sluice[0] - 4, sluice[1] - 62, 82.0, 54.0)})
 
-# the PERIMETER DIKE - a heavier bund ringing the reclaimed block, the defining polder look
+# the PERIMETER DIKE - the defining polder feature, an irregular hand-piled EARTHWORK BAND following the
+# natural water edge in organic non-square bends (fish-scale polder 鱼鳞圩; see s.perimeter_dike +
+# settlements.md 'Perimeter dike'). Drawn HERE (before the village) so it sits UNDER the east-side houses.
 _env = net["envelope"]
-_dike = " ".join(f"{x:.1f},{y:.1f}" for x, y in _env)
-s.add(f'<polyline points="{_dike}" fill="none" stroke="{BUND}" stroke-width="4.4" stroke-linejoin="round" opacity="0.95"/>')
+s.perimeter_dike(_env, seed=SEED ^ 0x6D)
 
 # the village lines the dry EAST perimeter dike
 _rng = _random.Random(SEED ^ 0x3B)
