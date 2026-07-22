@@ -90,6 +90,23 @@ const MAX_JUMP_C = 20;
 const JUMP_CONFIRM_SAMPLES = 3;
 const CONFIRM_SAMPLES = 3;
 
+// Sensors known to misreport on THIS machine, by their `sensors` label. They
+// are HARD-excluded from the displayed/alarming metric (the gauge, severity,
+// notifications, graph, and metric archive), but their raw readings are still
+// recorded to the excluded-sensor archive (EXCLUDED_PATH) so a known-glitchy
+// sensor can be inspected later without ever driving an alarm.
+//
+// This is a by-name complement to the statistical spatial reject
+// (MAX_ABOVE_MEDIAN_C): the spatial check drops whatever is an outlier on a
+// given poll, but a sensor we already KNOW is bad should never drive the gauge
+// even on a poll where its glitch happens to land within the spatial band (e.g.
+// under moderate load, when the rest of the die has risen toward it). Diagnosed
+// 2026-07-22 from a 616-poll per-core capture: Core 8 and Core 12 intermittently
+// pin to ~100C while the machine is idle. Edit this list if a new bad sensor
+// turns up - find it with the per-core capture recipe in CLAUDE.md. Empty on a
+// healthy machine (no exclusions, nothing written to the diagnostic archive).
+const KNOWN_BAD_SENSORS = ['Core 8', 'Core 12'];
+
 const BAR_WIDTH = 80; // px; wide so the fill's approach to the ticks is visible
 
 // History graph shows the last 2 h. The in-memory buffer holds one sample per
@@ -127,6 +144,9 @@ const WRITER_STALE_SECONDS = 12;
 const STATE_DIR = GLib.build_filenamev(
     [GLib.get_user_state_dir(), 'temperature-bar']);
 const HISTORY_PATH = GLib.build_filenamev([STATE_DIR, 'history.jsonl']);
+// Raw readings of the KNOWN_BAD_SENSORS - recorded but never displayed. Kept
+// separate from the metric archive so the display path stays untouched.
+const EXCLUDED_PATH = GLib.build_filenamev([STATE_DIR, 'excluded.jsonl']);
 const LOCK_PATH = GLib.build_filenamev([STATE_DIR, 'writer.lock']);
 
 // Severity -> fill color (RGB 0..1). 0 normal, 1 concerning, 2 bad.
@@ -246,7 +266,9 @@ function discoverSensors() {
                 result.pkg = input;
                 result.crit = readTemp(`${base}/temp${n}_crit`);
             } else {
-                result.cores.push(input);
+                // Keep the label (e.g. "Core 8") alongside the path so a
+                // known-bad sensor can be excluded by name (KNOWN_BAD_SENSORS).
+                result.cores.push({ label, input });
             }
         }
         if (result.pkg || result.cores.length > 0) {
@@ -263,10 +285,11 @@ function discoverSensors() {
         const base = `${tzRoot}/${zone}`;
         if (readTemp(`${base}/temp`) === null)
             continue;
-        if (readFile(`${base}/type`) === 'x86_pkg_temp')
+        const ztype = readFile(`${base}/type`) || '';
+        if (ztype === 'x86_pkg_temp')
             result.pkg = `${base}/temp`;
         else
-            result.cores.push(`${base}/temp`);
+            result.cores.push({ label: ztype, input: `${base}/temp` });
     }
     if (result.pkg || result.cores.length > 0)
         result.source = 'thermal zones';
@@ -309,6 +332,7 @@ class TempBarButton extends PanelMenu.Button {
         this._isWriter = false;
         this._lastPersist = 0;
         this._lastPrune = 0;
+        this._excluded = {};    // latest KNOWN_BAD_SENSORS reads, for the diagnostic archive
 
         // Seed the in-memory graph from the on-disk archive's last 2 h, so a
         // freshly-started shell (including a nested test shell) shows real
@@ -393,30 +417,37 @@ class TempBarButton extends PanelMenu.Button {
 
     _readTemps() {
         const pkg = this._sensors.pkg ? readTemp(this._sensors.pkg) : null;
-        const coreTemps = [];
-        for (const path of this._sensors.cores) {
-            const t = readTemp(path);
-            if (t !== null)
+        const coreTemps = [];   // trusted per-core reads - feed the metric
+        const excluded = {};    // KNOWN_BAD_SENSORS reads - recorded, never shown
+        for (const core of this._sensors.cores) {
+            const t = readTemp(core.input);
+            if (t === null)
+                continue;
+            if (KNOWN_BAD_SENSORS.includes(core.label))
+                excluded[core.label] = t;
+            else
                 coreTemps.push(t);
         }
         const hottest = coreTemps.length ? Math.max(...coreTemps) : null;
         // The metric drops spatial-outlier cores (a bad per-core sensor reading
         // far above the rest of the die) before taking the hottest survivor;
-        // see History.spatialMetric. Package temp is NOT a candidate - it
-        // mirrors the die max, so it merely inherits a glitching core. Fall back
-        // to package only when no per-core sensors were found at all. `pkg` and
-        // `hottest` are still surfaced raw for the popup's diagnostic readout.
+        // see History.spatialMetric. Known-bad sensors are already gone (never
+        // entered coreTemps). Package temp is NOT a candidate - it mirrors the
+        // die max, so it merely inherits a glitching core. Fall back to package
+        // only when no trusted per-core sensors were found at all. `pkg` and
+        // `hottest` are surfaced raw for the popup's diagnostic readout.
         const metric = coreTemps.length
             ? History.spatialMetric(coreTemps, { maxAboveMedianC: MAX_ABOVE_MEDIAN_C })
             : pkg;
-        return { pkg, hottest, metric };
+        return { pkg, hottest, metric, excluded };
     }
 
     _update() {
         const now = Date.now();
-        const { pkg, hottest, metric: raw } = this._readTemps();
+        const { pkg, hottest, metric: raw, excluded } = this._readTemps();
         this._pkg = pkg;
         this._hottest = hottest;
+        this._excluded = excluded;
 
         // A real sampling gap (suspend, shell restart) makes the de-noising
         // history stale: the pre-gap reads no longer predict the post-gap
@@ -505,10 +536,18 @@ class TempBarButton extends PanelMenu.Button {
             return;
         if (this._metric !== null && now - this._lastPersist >= PERSIST_SECONDS * 1000) {
             appendFile(HISTORY_PATH, History.serializeSample(now, this._metric));
+            // Known-bad sensors are excluded from the metric above, but their
+            // raw reads are still recorded here so they can be inspected later
+            // (KNOWN_BAD_SENSORS). Nothing is written on a healthy machine where
+            // the exclusion list is empty.
+            if (Object.keys(this._excluded).length > 0)
+                appendFile(EXCLUDED_PATH,
+                    History.serializeExcludedSample(now, this._excluded));
             this._lastPersist = now;
         }
         if (now - this._lastPrune >= PRUNE_INTERVAL_SECONDS * 1000) {
             this._pruneArchive(now);
+            this._pruneExcluded(now);
             this._lastPrune = now;
         }
     }
@@ -545,6 +584,16 @@ class TempBarButton extends PanelMenu.Button {
         const kept = History.pruneByAge(samples, now, FILE_RETENTION_SECONDS * 1000);
         if (kept.length !== samples.length)
             writeFileAtomic(HISTORY_PATH, History.serializeHistory(kept));
+    }
+
+    // Same retention prune for the excluded-sensor diagnostic archive. It shares
+    // the metric archive's 30-day window - long enough to look back at a
+    // known-glitchy sensor's behavior, bounded so the file cannot grow forever.
+    _pruneExcluded(now) {
+        const samples = History.parseExcluded(readFile(EXCLUDED_PATH) || '');
+        const kept = History.pruneByAge(samples, now, FILE_RETENTION_SECONDS * 1000);
+        if (kept.length !== samples.length)
+            writeFileAtomic(EXCLUDED_PATH, History.serializeExcludedHistory(kept));
     }
 
     _updateMenu() {

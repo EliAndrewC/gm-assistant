@@ -111,13 +111,14 @@ def test_crop_to_content_covers_fields_pond_and_poly_features():
 
 
 def test_crop_to_content_frames_a_torii_arch():
-    # a torii arch is a visible structure: its box (x +/-19, y -10..+18) must be inside the frame, so a torii
-    # standing beyond the houses pushes the crop out to contain it (matches the hard_features_within_frame check)
+    # a torii arch is a visible structure: its TRUE-SCALE glyph box (torii_halfbox) must be inside the frame, so
+    # a torii beyond the houses pushes the crop out to contain it (matches the hard_features_within_frame check).
+    # At ftpx=1 the arch half-box is (10, 4.95, 9.16), so the torii at y=640 reaches S edge ~649 (not the old +18).
     s = _crop_settlement()
     s.M["houses"] = [{"x": 500, "y": 500, "w": 20, "h": 20}]  # hard core 490..510
-    s.M["torii"] = [[500, 640, 1]]  # a gateway S of the houses: box y 630..658
+    s.M["torii"] = [[500, 640, 1]]  # a gateway S of the houses
     s.crop_to_content(margin=0)
-    assert s.view == (481, 490, 38, 168)  # W/E from the torii arch (500 +/-19), S edge = 658
+    assert s.view == (490, 490, 20, 159)  # x from houses/arch (490..510), S edge = torii y 640 + 9.16 rounded
 
 
 def test_crop_to_content_uses_field_outline_when_no_vis_bbox():
