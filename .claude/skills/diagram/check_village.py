@@ -7307,8 +7307,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
             check(
                 "city_samurai_estates_outside",
-                5 <= len(est_out) <= 15,
-                f"{len(est_out)} walled samurai estates outside the walls, expected 5-15 - a walled city's cramped interior pushes wealthy samurai to extramural estates they commute in from",
+                1 <= len(est_out) <= 3,
+                f"{len(est_out)} walled samurai estates shown outside the walls, expected 1-3 - a provincial city's country estates are DISPERSED across the rural district (each an isolated fortified compound by its own land, miles out); a city map shows only the nearest 1-3 at the frame edge, the rest off-map (NOT a cluster of 5+ ringing the moat)",
+            )
+            # ... and the shown estates are DISPERSED, not a tight cluster: each is its own walled compound
+            # on its own landholding with fields between, so no two sit adjacent. A packed clump at one
+            # stretch of wall is the COMMERCIAL SUBURB's density, not the genteel country-estate pattern -
+            # gentry estates scatter by land/scenery, they do not ring the moat (GM 2026-07-22, researched:
+            # China-first absentee-landlord + dispersed-fortified-manor pattern, Japan agreeing). See settlements.md.
+            est_pts = [(mn["x"], mn["y"]) for mn in est_out]
+            EST_MIN_SEP = 200
+            est_too_close = [
+                (round(est_pts[i][0]), round(est_pts[i][1]))
+                for i in range(len(est_pts))
+                for j in range(i + 1, len(est_pts))
+                if math.hypot(est_pts[i][0] - est_pts[j][0], est_pts[i][1] - est_pts[j][1]) < EST_MIN_SEP
+            ]
+            check(
+                "city_samurai_estates_dispersed",
+                not est_too_close,
+                f"samurai estate(s) packed too close together {sorted(set(est_too_close))} - the country estates are separate compounds each on its own land, spread >= {EST_MIN_SEP}px apart, not a cluster ringing the moat (the dense belt hugging the wall is the commercial suburb, not estates)",
             )
             # WHY (the extramural samurai residence is the walled, defensible country ESTATE; a lone
             # UNWALLED samurai house beyond the rampart is defenseless and belongs in the sealed ward
