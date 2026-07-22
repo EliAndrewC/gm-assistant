@@ -24,7 +24,7 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="$HOME/.local/share/gnome-shell/extensions/$UUID"
 
 mkdir -p "$DEST"
-cp "$SRC/metadata.json" "$SRC/extension.js" "$DEST/"
+cp "$SRC/metadata.json" "$SRC/extension.js" "$SRC/history.js" "$DEST/"
 echo "Installed to $DEST"
 
 # Enable by writing the gsettings key directly. The gnome-extensions CLI
