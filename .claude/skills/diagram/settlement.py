@@ -5632,18 +5632,38 @@ class Settlement:
         TIGHT spread reads as a planned/surveyed grid. Records the two knobs on the manifest. Grounding: old
         wet-rice terraces grew as small irregular paddies fitted to the microtopography; large regular blocks or
         long strips signal a later planned reclamation/allotment (which is why `grid` is typing-gated to a
-        planned field origin). Returns `(plot_across, row_step)` to pass straight into `build_comb`."""
-        size_map = {
-            "small_irregular": (34.0, (20.0, 40.0)),
-            "medium": (48.0, (26.0, 36.0)),
-            "large_block": (70.0, (30.0, 44.0)),
-            "strip": (32.0, (46.0, 66.0)),
-        }
-        if plot_size not in size_map:
+        planned field origin). Returns `(plot_across, row_step)` to pass straight into `build_comb`.
+
+        SIZED IN REAL FEET at ftpx >= 2 (GM 2026-07-22): for a village or provincial city each `plot_size`
+        picks a real-feet CELL-AREA target (acres) and an aspect, and `waterfields.paddy_grain` converts that to
+        px at THIS map's `ftpx` - so the paddy grain is the same real size at every scale (see
+        waterfields.PADDY_CELL_ACRES / settlements.md 'Paddy cell size'). The targets bracket the calibrated
+        norm: `small_irregular` below it, `medium` at it, `large_block` above, `strip` at the norm's area but
+        long-and-narrow (aspect > 1). The ft/px=1 HAMLETS (the only maps that reach this at that scale, via
+        roll_village) stay on the LEGACY px grain: they already render in-band (~0.02-0.06 acre) and the GM
+        asked to leave them untouched, so recalibrating them would only reshuffle vetted maps for no gain."""
+        from waterfields import PADDY_CELL_ACRES, paddy_grain
+
+        if plot_size not in ("small_irregular", "medium", "large_block", "strip"):
             raise ValueError(f"unknown plot_size {plot_size!r}")
         if plot_regularity not in ("organic", "grid"):
             raise ValueError(f"unknown plot_regularity {plot_regularity!r}")
-        across, step = size_map[plot_size]
+        if self.ftpx >= 2:  # village / city: the real-feet calibration
+            # (target_acres, aspect = along/across): small below the norm, large above, strip = norm area but elongated
+            tgt_acres, aspect = {
+                "small_irregular": (PADDY_CELL_ACRES * 0.72, 0.66),
+                "medium": (PADDY_CELL_ACRES, 0.66),
+                "large_block": (PADDY_CELL_ACRES * 1.35, 0.72),
+                "strip": (PADDY_CELL_ACRES, 1.9),
+            }[plot_size]
+            across, step = paddy_grain(self.ftpx, target_acres=tgt_acres, aspect=aspect)
+        else:  # ft/px=1 hamlet: the legacy px grain (already in-band; left untouched by GM request)
+            across, step = {
+                "small_irregular": (34.0, (20.0, 40.0)),
+                "medium": (48.0, (26.0, 36.0)),
+                "large_block": (70.0, (30.0, 44.0)),
+                "strip": (32.0, (46.0, 66.0)),
+            }[plot_size]
         if plot_regularity == "grid":  # collapse the row-step spread toward its mean -> even, surveyed rows
             mid = (step[0] + step[1]) / 2
             step = (mid - 3.0, mid + 3.0)

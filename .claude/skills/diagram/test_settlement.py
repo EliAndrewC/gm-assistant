@@ -2051,7 +2051,7 @@ def test_plot_texture_drives_build_comb_grain():
     from waterfields import build_comb
 
     s = Settlement(2000, 2800, seed=1)
-    s.meta(name="Pt", scale="village")
+    s.meta(name="Pt", scale="village", ftpx=2)  # ftpx>=2 -> the real-feet calibration branch (the ft/px=1 hamlet legacy branch is covered by honda/shimizu)
     # small_irregular vs large_block must produce visibly different plot counts on the SAME field
     a_small, step_small = s.plot_texture("small_irregular", "organic")
     a_large, _step_large = s.plot_texture("large_block", "organic")
@@ -2068,6 +2068,22 @@ def test_plot_texture_drives_build_comb_grain():
     for bad in (("huge", "organic"), ("medium", "checkerboard")):
         with pytest.raises(ValueError):
             s.plot_texture(*bad)
+
+
+def test_paddy_grain_hits_the_real_feet_target():
+    # the real-feet paddy calibration (GM 2026-07-22): plot_across x mean row_step, converted at the
+    # map's ftpx, must equal the ~0.05-acre target - the SAME real cell at every scale (see paddy_grain)
+    from waterfields import PADDY_CELL_ACRES, paddy_grain
+
+    for ftpx in (1, 2, 3):
+        across, (rlo, rhi) = paddy_grain(ftpx)
+        mean_row = (rlo + rhi) / 2
+        nominal_acres = across * mean_row * ftpx * ftpx / 43560
+        assert abs(nominal_acres - PADDY_CELL_ACRES) < 0.004, (ftpx, nominal_acres)
+        assert rlo < 0.66 * across < rhi  # the row-step (min,max) straddles the along-canal mean (aspect*across)
+    # a coarser ftpx needs FEWER px per plot for the same real cell; a bigger target -> bigger plot
+    assert paddy_grain(1)[0] > paddy_grain(2)[0] > paddy_grain(3)[0]
+    assert paddy_grain(2, target_acres=0.036)[0] < paddy_grain(2, target_acres=0.0675)[0]
 
 
 def test_build_polder_parcel_fabric():

@@ -2,10 +2,11 @@
 """Ueda ("upper paddy") - the first regular-village variant on the Hoshigaoka foundation.
 
 Same single-field nucleated form as Hoshigaoka, but flowing NE-high -> SW-low (down_deg=135) for variance
-(Hoshigaoka is NW-high). It also exercises the RANDOMIZED POPULATION: village_population() draws from the
-~200-500 distribution (mode 350) off the map seed - SEED=3 draws 300 inhabitants (~60 households), so the
-paddy, pond, and cluster are all sized DOWN from Hoshigaoka's 350. A NE->SW field grows down-and-left, so the
-frame is TALLER than Hoshigaoka's landscape one (the SW toe needs the height). The NE valley-head pond is
+(Hoshigaoka is NW-high). It is the pool's LARGE-village example: population pinned to 425 (~85 households),
+ABOVE the ~350 mode, so the paddy, pond, and cluster are all sized UP from Hoshigaoka's 350 (GM 2026-07-22:
+70 farmhouses is the AVERAGE village, not the maximum - Ueda shows the upper end of the ~200-500 band). A
+NE->SW field grows down-and-left, so the frame is TALLER than Hoshigaoka's landscape one (the SW toe needs
+the height). The NE valley-head pond is
 drawn nudged W (flush with the dry-field strip) so it does not poke past the crop on the E; its N poke is the
 intrinsic cost of a valley-head reservoir, which the crop advisory now exempts automatically (a field-sourcing
 pond is hydrologically anchored). Where its head-race + inflow brook meet the pond, they are CLIPPED to the
@@ -17,16 +18,25 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, SKILL)
-from settlement import Settlement, village_population  # noqa: E402
+from settlement import Settlement  # noqa: E402
 import math      # noqa: E402
 import random    # noqa: E402
 
-from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
+from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+
+# Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at 2 ft/px (was hand-set 48px -> ~0.13 acre).
+# Subdivides the same field into finer cells; farmhouses/households/field area unchanged. See paddy_grain.
+PLOT_ACROSS, ROW_STEP = paddy_grain(2)
 
 SEED = 3
-POP = village_population(random.Random(SEED))        # 300 for SEED=3 (drawn from the 200-500, mode-350 distribution)
-HOUSEHOLDS = round(POP / 5)                           # 60 (the "dwellings x5" rule)
-FIELD_FALL = round(POP * 3.83)                        # ~1150; caps the SW march so paddy ~ POP*0.22 acres (~65 ac)
+POP = 425                                            # PINNED (GM 2026-07-22): a LARGE village (~85 households),
+# above the ~350 mode, to show that 70 farmhouses is the average not the ceiling. 425 = 85 x 5 (the "dwellings
+# x5" rule). Was village_population(SEED)=300; pinning here sizes the paddy, pond, and cluster up to match.
+HOUSEHOLDS = round(POP / 5)                           # 85
+# The DRAWN field shows the village's ON-MAP paddy, sized to the frame (like Hoshigaoka's fixed field_fall=1230
+# for 350 pop) rather than scaled to the pinned 425 - a full ~93-acre sheet for 425 would overflow and swallow
+# the cluster/drain. So the LARGER village reads through its bigger CLUSTER (85 farmhouses), not a giant field.
+FIELD_FALL = 1230                                     # ~the Hoshigaoka field size; the SW toe fits the frame
 
 # a NE->SW field grows down-and-LEFT, so the frame is TALL (the SW toe needs the height); sized to hold the
 # whole field + village + the low-side margin for the drain's outfall + brook.
@@ -49,12 +59,14 @@ print(f"Ueda: population {POP}, households {HOUSEHOLDS}, field_fall {FIELD_FALL}
 
 net = build_comb(W, H, SLUICE, SEED, down_deg=135, field_fall=FIELD_FALL,
                  offtakes_a=(0.25, 0.55, 0.82), offtakes_b=(0.6,),
+                 plot_across=PLOT_ACROSS, row_step=ROW_STEP,
                  dry_keepout=[(POND[0], POND[1], POND[2] + 45)])
 s.meta(dry_furrows_vary=net["furrows_vary"])   # gentle valley -> dry furrows FAN
 
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 for _dp in net["dry_plots"]:
-    s.block_polys.append(_dp["poly"])
+    s.dry_polys.append(_dp["poly"])    # footprint no-build + grove/lane skip (groves_clear_of_dry_plots)
+    s.block_polys.append(_dp["poly"])  # AND the yard-nudge path in farmsteads() reads block_polys, not dry_polys, so a dry plot needs BOTH to keep threshing yards off it too (structures_clear_of_dry_plots)
 s._nucleated = True
 
 
@@ -162,22 +174,23 @@ CX, CY = 790, 1030                   # cluster center on the LOWER/SW flank, dow
 # the spine runs along the cluster's WEST side, so the homesteads pack EAST of it toward the field (the solver
 # hugs each house to the nearest paddy bund; a spine down the middle would catch the houses it pulls east).
 s.lane([(CX - 78, CY - 205), (CX - 66, CY - 65), (CX - 78, CY + 85), (CX - 68, CY + 235)],
-       width=5, clearance=18, worn=True)
+       width=5, clearance=22, worn=True)   # a touch wider clearance so the DENSER 85-house cluster does not pack a homestead onto the spine tread
 _fp = s._nearest_field_point(CX + 190, CY - 30)
 s.lane([(CX - 40, CY - 25), ((CX + _fp[0]) / 2 + 4, (CY - 25 + _fp[1]) / 2 - 4), (_fp[0] - 6, _fp[1] + 2)],
        width=5, clearance=18, worn=True)
 s.lane([(CX - 68, CY + 235), (CX - 340, CY + 310), (CX - 610, CY + 380), (CX - 870, CY + 420)],
        width=6, clearance=18, worn=True, connector=True)   # runs W OFF the left edge (x<0), above the SW marsh
 
-s.headman(CX + 46, CY - 150)         # the largest homestead, fronting the head of the main spine
+s.headman(CX - 130, CY - 120)        # the largest homestead, at the cluster's upper-WEST (clear of the field's
+# west edge, which the larger paddy now brings up to the old headman spot, and west of the spine tread)
 _placed = 1
-for _ in range(220):
+for _ in range(360):                      # more attempts + a LARGER disk for the 85-household cluster (was 220 / 155x240)
     if _placed >= HOUSEHOLDS:
         break
     _a = _rng.uniform(0, 2 * math.pi)
     _rad = _rng.random() ** 0.5
-    _x = CX + math.cos(_a) * _rad * 155   # a concentrated disk; the bundle solver then hugs each homestead to
-    _y = CY + math.sin(_a) * _rad * 240   # the nearest paddy bund and packs it against its neighbors
+    _x = CX + math.cos(_a) * _rad * 200   # a concentrated disk; the bundle solver then hugs each homestead to
+    _y = CY + math.sin(_a) * _rad * 300   # the nearest paddy bund and packs it against its neighbors
     if s.try_place(_x, _y, "plain"):
         _placed += 1
 n_farms = s.farmsteads()
