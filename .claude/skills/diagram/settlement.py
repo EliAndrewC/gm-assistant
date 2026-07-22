@@ -1309,6 +1309,34 @@ class Settlement:
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
+    def comb_base_fill(self, net: dict[str, Any], name: str, color: str = "", full_envelope: bool = False) -> None:
+        """Draw a FIELD FLOOR under a build_comb net's plots and record it (M['comb_floors'][name]),
+        so the parchment BACKGROUND never shows through as bare 'white' at the canal junctions the
+        carve cannot tessellate (the head-race fork, the outfall corner where a supply canal dies at
+        the drain, the confluence wedges - the 'blank bits on the paddies' the GM circled repeatedly,
+        2026-07-22). Call BEFORE drawing the plots. `full_envelope` fills the whole envelope (cities:
+        tight crop, no surrounding scrub, so edge junctions must be covered too); otherwise the fill is
+        clipped to the PLOTS' union bbox (villages/hamlets: hides the nucleated map's harmless phantom
+        tail - the over-declared field_fall - and the scrub matrix covers the rest). Gated by
+        paddy_fan_has_floor. Villages default to a paddy-green floor, cities pass a soil tan."""
+        from waterfields import _RICE_GREEN
+
+        pv = [v for p in net["plots"] for v in p["poly"]]
+        if not pv:
+            return
+        env = net["envelope"]
+        epts = " ".join(f"{x:.1f},{y:.1f}" for x, y in env)
+        col = color or _RICE_GREEN
+        if full_envelope:
+            self.add(f'<polygon points="{epts}" fill="{col}" stroke="none"/>')
+        else:
+            cid = self._cid("padbase")
+            px0, px1 = min(v[0] for v in pv), max(v[0] for v in pv)
+            py0, py1 = min(v[1] for v in pv), max(v[1] for v in pv)
+            self.add(f'<clipPath id="{cid}"><rect x="{px0:.1f}" y="{py0:.1f}" width="{px1 - px0:.1f}" height="{py1 - py0:.1f}"/></clipPath>')
+            self.add(f'<polygon points="{epts}" fill="{col}" clip-path="url(#{cid})"/>')
+        self.M.setdefault("comb_floors", {})[name] = [[round(x, 1), round(y, 1)] for x, y in env]
+
     def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any]) -> list[Pt]:
         """Draw a `build_comb` net (dry hem + flooded paddies + bunds + channels) AND register the field's
         manifest + water topology, in one call - the ~50 lines every comb gen otherwise repeats inline. Feeds
@@ -1318,21 +1346,11 @@ class Settlement:
         to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
         SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
         source_and_sink) see a source. Returns the field envelope polygon."""
-        from waterfields import _RICE_GREEN, BEAN_GREEN, BUND
+        from waterfields import BEAN_GREEN, BUND
 
-        # BASE FILL (feature 012): a paddy-green wash over the whole planted extent BEFORE the plots, so the
-        # imperfect plot tessellation never lets the parchment background show through as bare "white" gaps -
-        # flat wet paddy tiles completely (research.md D5). Filled over the PLOTS' union bbox, NOT the raw
-        # envelope, so a nucleated map's harmless phantom tail (the over-declared field_fall the checks let a
-        # nucleated cluster carry) stays invisible instead of being painted green.
-        pv = [v for p in net["plots"] for v in p["poly"]]
-        if pv:
-            cid = self._cid("padbase")
-            epts = " ".join(f"{x:.1f},{y:.1f}" for x, y in net["envelope"])
-            px0, px1 = min(v[0] for v in pv), max(v[0] for v in pv)
-            py0, py1 = min(v[1] for v in pv), max(v[1] for v in pv)
-            self.add(f'<clipPath id="{cid}"><rect x="{px0:.1f}" y="{py0:.1f}" width="{px1 - px0:.1f}" height="{py1 - py0:.1f}"/></clipPath>')
-            self.add(f'<polygon points="{epts}" fill="{_RICE_GREEN}" clip-path="url(#{cid})"/>')
+        # BASE FILL (feature 012, now via the shared helper): a paddy-green wash under the plots so the
+        # imperfect tessellation never shows the parchment background as bare "white" gaps (research.md D5).
+        self.comb_base_fill(net, name)
 
         for p in net["dry_plots"]:  # the dry upslope hem
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
@@ -4720,35 +4738,51 @@ class Settlement:
                 return (px, py)
             return None
 
-        # a HITCHING RAIL with a few tethered draft animals - the yard's active "edge" (the authentic answer
-        # to the fence instinct: animals were controlled by rails + picket lines, not paddock fences)
-        hrl = take(10.0, 26.0)
-        if hrl:
-            hx, hy = hrl
-            length = 16.0
-            fg = [f'<line x1="{hx - length / 2:.1f}" y1="{hy:.1f}" x2="{hx + length / 2:.1f}" y2="{hy:.1f}" stroke="#6B4F2A" stroke-width="1.5"/>']
-            for i in range(4):
-                pxp = hx - length / 2 + length * i / 3
-                fg.append(f'<line x1="{pxp:.1f}" y1="{hy - 2.4:.1f}" x2="{pxp:.1f}" y2="{hy + 2.4:.1f}" stroke="#5A4326" stroke-width="1.2"/>')
-            for i in range(3):
-                axp, ayp = hx - length / 3 + length / 3 * i, hy + 5.5
+        # HITCHING RAILS with tethered draft animals - the yard's active "edge" (rails + picket lines,
+        # NOT a paddock fence; GM 2026-07-22). A wagon-train ties up MANY animals, so the yard shows two
+        # or three rails: first a ROAD-PARALLEL rail set back from the nearest road/street (its animals
+        # face INTO the yard, rumps to the roadbed - the yard's road-side barrier so nothing strays onto
+        # the through-road), then one or two more at clear interior spots. Animals stand long-axis along
+        # the rail's NORMAL (head at the rail, body into the yard).
+        def draw_hitch(cx: float, cy: float, tx: float, ty: float, nx: float, ny: float) -> None:
+            length, ang = 18.0, math.degrees(math.atan2(ny, nx))
+            ex0, ey0 = cx - tx * length / 2, cy - ty * length / 2
+            fg = [f'<line x1="{ex0:.1f}" y1="{ey0:.1f}" x2="{cx + tx * length / 2:.1f}" y2="{cy + ty * length / 2:.1f}" stroke="#6B4F2A" stroke-width="1.5"/>']
+            for i in range(4):  # posts across the rail
+                pxp, pyp = ex0 + tx * length * i / 3, ey0 + ty * length * i / 3
+                fg.append(f'<line x1="{pxp - nx * 2.4:.1f}" y1="{pyp - ny * 2.4:.1f}" x2="{pxp + nx * 2.4:.1f}" y2="{pyp + ny * 2.4:.1f}" stroke="#5A4326" stroke-width="1.2"/>')
+            for i in range(3):  # tethered animals on the yard-interior side of the rail
+                bxp, byp = ex0 + tx * length * (i + 0.5) / 3, ey0 + ty * length * (i + 0.5) / 3
+                axp, ayp = bxp + nx * 5.5, byp + ny * 5.5
                 if clear(axp, ayp, 2.0):
-                    fg.append(f'<ellipse cx="{axp:.1f}" cy="{ayp:.1f}" rx="3.4" ry="2.1" fill="#7A5A3A" stroke="#4A3626" stroke-width="0.6"/>')
+                    fg.append(f'<ellipse cx="{axp:.1f}" cy="{ayp:.1f}" rx="3.4" ry="2.1" fill="#7A5A3A" stroke="#4A3626" stroke-width="0.6" transform="rotate({ang:.0f} {axp:.1f} {ayp:.1f})"/>')
             self.add("".join(fg))
-        # 2-3 PARKED CARTS: body + two wheels + a tipped-up shaft (unyoked)
-        for _ in range(3):
-            c = take(9.0, 20.0)
-            if not c:
+
+        # (1) the ROAD-PARALLEL edge rail: nearest road/street segment, rail set back into the yard
+        best_seg: Any = None
+        for pl, hwid in corridors:
+            for i in range(len(pl) - 1):
+                cp = seg_closest(sx, sy, pl[i], pl[i + 1])
+                sd = math.hypot(cp[0] - sx, cp[1] - sy)
+                if best_seg is None or sd < best_seg[0]:
+                    best_seg = (sd, cp, pl[i], pl[i + 1], hwid)
+        if best_seg is not None and best_seg[0] < r:
+            _d, (cpx, cpy), pa, pb, hwid = best_seg
+            seglen = math.hypot(pb[0] - pa[0], pb[1] - pa[1]) or 1.0
+            tx, ty = (pb[0] - pa[0]) / seglen, (pb[1] - pa[1]) / seglen  # rail runs ALONG the road
+            ndist = math.hypot(sx - cpx, sy - cpy) or 1.0
+            nx, ny = (sx - cpx) / ndist, (sy - cpy) / ndist  # from road toward the stables (yard side)
+            rcx, rcy = cpx + nx * (hwid + 11.0), cpy + ny * (hwid + 11.0)  # set back off the roadbed into the yard
+            if clear(rcx, rcy, 8.0):
+                draw_hitch(rcx, rcy, tx, ty, nx, ny)
+                used.append((rcx, rcy))
+        # (2) one or two more rails at clear interior spots (a busy train needs the tie-up room)
+        for _ in range(2):
+            spot = take(10.0, 24.0)
+            if not spot:
                 break
-            cx, cy = c
-            rd = random.uniform(0, 360)
-            cw, ch = 6.4, 3.8
-            self.add(
-                f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rd:.0f})">'
-                f'<rect x="{-cw / 2:.1f}" y="{-ch / 2:.1f}" width="{cw:.1f}" height="{ch:.1f}" rx="0.6" fill="#9A7B4E" stroke="#5A4326" stroke-width="0.7"/>'
-                f'<circle cx="{-cw / 4:.1f}" cy="{ch / 2:.1f}" r="1.2" fill="#4A3626"/><circle cx="{cw / 4:.1f}" cy="{ch / 2:.1f}" r="1.2" fill="#4A3626"/>'
-                f'<line x1="{cw / 2:.1f}" y1="0" x2="{cw / 2 + 4.5:.1f}" y2="-2.4" stroke="#6B4F2A" stroke-width="1.0"/></g>'
-            )
+            draw_hitch(spot[0], spot[1], 1.0, 0.0, 0.0, 1.0)
+
         # a stone WATER TROUGH
         tr = take(8.0, 18.0)
         if tr:

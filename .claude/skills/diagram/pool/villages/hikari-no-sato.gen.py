@@ -77,6 +77,7 @@ def add_block(name, sluice, seed, field_fall, offtakes_a, canal_a_len, canal_b_l
                      plot_across=PLOT_ACROSS, row_step=ROW_STEP,
                      canal_a_len=canal_a_len, canal_b_len=canal_b_len)
     s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
+    s.comb_base_fill(net, name)   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
     for _dp in net["dry_plots"]:
         s.dry_polys.append(_dp["poly"])    # footprint no-build + grove/lane skip (groves_clear_of_dry_plots)
         s.block_polys.append(_dp["poly"])  # AND yards: farmsteads()'s yard-nudge reads block_polys, so a dry plot needs BOTH (structures_clear_of_dry_plots)

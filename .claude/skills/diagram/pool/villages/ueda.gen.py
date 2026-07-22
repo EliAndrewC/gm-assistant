@@ -64,6 +64,7 @@ net = build_comb(W, H, SLUICE, SEED, down_deg=135, field_fall=FIELD_FALL,
 s.meta(dry_furrows_vary=net["furrows_vary"])   # gentle valley -> dry furrows FAN
 
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
+s.comb_base_fill(net, "ueda-paddies")   # field floor: no bare parchment at the canal junctions (paddy_fan_has_floor)
 for _dp in net["dry_plots"]:
     s.dry_polys.append(_dp["poly"])    # footprint no-build + grove/lane skip (groves_clear_of_dry_plots)
     s.block_polys.append(_dp["poly"])  # AND the yard-nudge path in farmsteads() reads block_polys, not dry_polys, so a dry plot needs BOTH to keep threshing yards off it too (structures_clear_of_dry_plots)
