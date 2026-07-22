@@ -16,8 +16,8 @@ core, headroom, thresholds) plus a graph of the last 2 hours with dashed
 threshold lines and a min/max summary, for "is it my imagination or is it
 getting hotter" questions. The extension also sends desktop notifications the
 moment the temperature crosses INTO the warning range (normal urgency) or the
-bad range (critical urgency, stays on screen), and a quiet one when it
-recovers to normal.
+bad range (critical urgency, stays on screen). It does NOT notify on recovery -
+the gauge color already shows that, and a "back to normal" popup is just noise.
 
 Targets GNOME Shell 42 (Ubuntu 22.04, mujina).
 
