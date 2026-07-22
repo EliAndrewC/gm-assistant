@@ -148,6 +148,44 @@ test('slewGate blanks on a failed read and re-trusts the next one', () => {
     assert.deepStrictEqual(runGate([50, null, 90]), [50, null, 90]);
 });
 
+// --- spatialMetric: reject a per-core sensor stuck far above the die --------
+
+const SPAT = { maxAboveMedianC: 20 };
+
+test('spatialMetric returns the hottest core when the die is uniform', () => {
+    // Normal spread - nothing is an outlier, so the real hottest wins.
+    assert.strictEqual(H.spatialMetric([54, 55, 56, 58, 60], SPAT), 60);
+});
+
+test('spatialMetric drops a lone stuck-high core (the Core 8/12 glitch)', () => {
+    // Idle die at ~55C with one sensor pinned to 100 - the exact 2026-07-22
+    // signature. The 100 is a ~44C outlier above the median; it is discarded and
+    // the metric reflects the real die temperature.
+    assert.strictEqual(H.spatialMetric([53, 55, 100, 58, 56, 100], SPAT), 58);
+});
+
+test('spatialMetric keeps a genuine all-core hot event', () => {
+    // Real load heats the whole die together (all within the band of the median),
+    // so nothing is dropped and the gauge still sees the true 101.
+    assert.strictEqual(H.spatialMetric([88, 90, 92, 100, 101, 97], SPAT), 101);
+});
+
+test('spatialMetric ignores null/non-finite readings', () => {
+    assert.strictEqual(H.spatialMetric([null, 55, 56, undefined, 57], SPAT), 57);
+});
+
+test('spatialMetric returns null when there are no usable readings', () => {
+    assert.strictEqual(H.spatialMetric([], SPAT), null);
+    assert.strictEqual(H.spatialMetric([null, undefined], SPAT), null);
+});
+
+test('spatialMetric handles a single core and keeps the median itself', () => {
+    assert.strictEqual(H.spatialMetric([72], SPAT), 72);
+    // Even-length: median is the mean of the two middle values; the lower-middle
+    // core always satisfies the band, so the kept set is never empty.
+    assert.strictEqual(H.spatialMetric([50, 100], SPAT), 50);
+});
+
 test('lock serialize -> parse round-trips', () => {
     assert.deepStrictEqual(
         H.parseLock(H.serializeLock(4242, 'boot-abc', 1234.9)),

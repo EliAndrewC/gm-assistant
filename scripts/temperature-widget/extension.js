@@ -50,8 +50,19 @@ const HYSTERESIS = 4; // degrees below a threshold before severity drops again
 
 // De-noising the metric. The sensors occasionally return wildly-wrong reads -
 // package AND hottest core both snapping to ~100C while the readings on either
-// side sit at ~48C, a 50C swing in 3 s that is not physically possible. Three
+// side sit at ~48C, a 50C swing in 3 s that is not physically possible. Four
 // layered defenses:
+//  - MAX_ABOVE_MEDIAN_C: a SPATIAL cross-core check (History.spatialMetric),
+//    the primary defense and applied first, in _readTemps. A 616-poll per-core
+//    capture (2026-07-22) found two specific cores (Core 8, Core 12) pinning to
+//    ~100C while the machine was idle and every other core sat at ~55C - a bad
+//    per-core sensor, since a die a few mm wide cannot hold a 45C gradient. The
+//    metric therefore drops any core more than MAX_ABOVE_MEDIAN_C above the
+//    core median and takes the hottest survivor. A GENUINE hot event heats the
+//    whole die together (all cores within ~12C of the median), so nothing is
+//    dropped and the gauge still rises. This is what the temporal defenses
+//    below cannot do: the glitch runs last up to ~80 s, outlasting any median
+//    or debounce window. See History.spatialMetric for the full rationale.
 //  - SMOOTH_WINDOW: the metric that drives the bar/severity/archive is a MEDIAN
 //    of the last few raw reads, so a LONE spike is discarded outright (median,
 //    not mean, so it is not averaged in) and never colors the bar.
@@ -73,6 +84,7 @@ const HYSTERESIS = 4; // degrees below a threshold before severity drops again
 //    interrupt. ~9 s of persistence is a real thermal event worth a popup; the
 //    hardware's own throttling is the actual safety net, so a few seconds'
 //    confirmation delay costs nothing.
+const MAX_ABOVE_MEDIAN_C = 20;
 const SMOOTH_WINDOW = 3;
 const MAX_JUMP_C = 20;
 const JUMP_CONFIRM_SAMPLES = 3;
@@ -380,16 +392,23 @@ class TempBarButton extends PanelMenu.Button {
     }
 
     _readTemps() {
-        let pkg = this._sensors.pkg ? readTemp(this._sensors.pkg) : null;
-        let hottest = null;
+        const pkg = this._sensors.pkg ? readTemp(this._sensors.pkg) : null;
+        const coreTemps = [];
         for (const path of this._sensors.cores) {
             const t = readTemp(path);
-            if (t !== null && (hottest === null || t > hottest))
-                hottest = t;
+            if (t !== null)
+                coreTemps.push(t);
         }
-        let metric = pkg;
-        if (hottest !== null && (metric === null || hottest > metric))
-            metric = hottest;
+        const hottest = coreTemps.length ? Math.max(...coreTemps) : null;
+        // The metric drops spatial-outlier cores (a bad per-core sensor reading
+        // far above the rest of the die) before taking the hottest survivor;
+        // see History.spatialMetric. Package temp is NOT a candidate - it
+        // mirrors the die max, so it merely inherits a glitching core. Fall back
+        // to package only when no per-core sensors were found at all. `pkg` and
+        // `hottest` are still surfaced raw for the popup's diagnostic readout.
+        const metric = coreTemps.length
+            ? History.spatialMetric(coreTemps, { maxAboveMedianC: MAX_ABOVE_MEDIAN_C })
+            : pkg;
         return { pkg, hottest, metric };
     }
 
