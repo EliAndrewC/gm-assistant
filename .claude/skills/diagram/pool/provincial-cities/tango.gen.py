@@ -663,9 +663,15 @@ _mne = min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2)   #
 topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
-# a gate market just outside the south gate, beyond the moat - stall rows FLANKING the road
-s.frontage([(1602, 1856), (1602, 2003)], ["shop"] * 18, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))   # the guan-xiang gate market is transient SHOPS/stalls, not merchant residences (commoner DWELLINGS shelter inside the wall)
+# a gate market (guan-xiang) OUTSIDE EACH gate - both sit on the N-S Imperial road, so both grow a
+# market suburb (GM decision 2026-07-22; historically a guan-xiang formed at every trafficked gate,
+# scaled to its traffic - see flophouse-research.md). The SOUTH gate opens onto the wider southern
+# approach and carries the bigger market; the NORTH gate's is SMALLER (the 大关厢-vs-small asymmetry),
+# also because the frame crops close above it (moat at y847, view top y729).
+s.frontage([(1602, 1856), (1602, 2003)], ["shop"] * 18, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))   # SOUTH gate: the guan-xiang gate market is transient SHOPS/stalls, not merchant residences (commoner DWELLINGS shelter inside the wall)
 s.label(1685, 1909, "gate market", 10, italic=True, color="#5A4326")
+s.frontage([(1602, 748), (1602, 836)], ["shop"] * 8, skip=IMPROAD, width=s.lw(26), spacing=19, rows=1, jitter=1, setback=s.px(14))   # NORTH gate: the smaller guan-xiang, one stall row each side of the road north of the moat (y847), clear of the N-gate flophouse at x1509
+s.label(1690, 792, "gate market", 10, italic=True, color="#5A4326")
 
 # COMMERCIAL RIBBON along the Imperial road - a city ON a trade route lines its through-road
 # with shops + traveler services (its prime frontage). The central road-market fills the block

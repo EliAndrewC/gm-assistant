@@ -48,6 +48,22 @@ const DEFAULT_CRIT = 100; // assumed only when the chip reports no crit temp
 const EMPTY_AT = 40;  // gauge is empty at/below this temperature
 const HYSTERESIS = 4; // degrees below a threshold before severity drops again
 
+// De-noising the metric. A 10-min sample showed the sensors occasionally
+// return a single wildly-wrong read - package AND hottest core both snapping to
+// exactly 100C for one 3 s poll while the readings on either side sat at ~48C,
+// a 50C swing in 3 s that is not physically possible. Two defenses:
+//  - SMOOTH_WINDOW: the metric that drives the bar/severity/archive is a MEDIAN
+//    of the last few raw reads, so a lone spike is discarded outright (median,
+//    not mean, so it is not averaged in) and never colors the bar.
+//  - CONFIRM_SAMPLES: a severity must hold for this many consecutive polls
+//    before it fires a notification, so brief 1-2 poll excursions (the smoothed
+//    residue at a real burst's edges, or a genuine momentary blip) do not
+//    interrupt. ~9 s of persistence is a real thermal event worth a popup; the
+//    hardware's own throttling is the actual safety net, so a few seconds'
+//    confirmation delay costs nothing.
+const SMOOTH_WINDOW = 3;
+const CONFIRM_SAMPLES = 3;
+
 const BAR_WIDTH = 80; // px; wide so the fill's approach to the ticks is visible
 
 // History graph shows the last 2 h. The in-memory buffer holds one sample per
@@ -247,6 +263,16 @@ class TempBarButton extends PanelMenu.Button {
         this._hottest = null;
         this._fraction = 0;
 
+        // De-noising state.
+        this._recent = [];      // last few raw metric reads, for the median despike
+        this._debSev = null;    // severity currently accumulating a confirmation streak
+        this._debCount = 0;     // length of that streak, in polls
+        this._confirmedSev = 0; // last severity we actually notified about
+
+        // Reused notification source/notification (see _notify).
+        this._source = null;
+        this._notification = null;
+
         // Writer election + persistence bookkeeping.
         this._pid = currentPid();
         this._bootId = currentBootId();
@@ -281,6 +307,11 @@ class TempBarButton extends PanelMenu.Button {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
         }
+        // Tear down our own notification source so disabling the extension
+        // actually clears its notifications (they otherwise outlive the widget,
+        // owned by the message tray). The 'destroy' handler nulls our refs.
+        if (this._source !== null)
+            this._source.destroy();
         // If we held the writer claim, release it so another running instance
         // takes over at once rather than waiting out the heartbeat staleness.
         // Guard on the lock still being ours - never delete a claim a
@@ -346,9 +377,22 @@ class TempBarButton extends PanelMenu.Button {
 
     _update() {
         const now = Date.now();
-        const { pkg, hottest, metric } = this._readTemps();
+        const { pkg, hottest, metric: raw } = this._readTemps();
         this._pkg = pkg;
         this._hottest = hottest;
+
+        // Despike: the metric that drives everything downstream (bar, severity,
+        // graph, archive) is a median of the last SMOOTH_WINDOW raw reads, so a
+        // single spurious sensor value is discarded rather than shown. Until the
+        // window fills (first couple of polls) the raw read is used as-is.
+        let metric = raw;
+        if (raw !== null) {
+            this._recent.push(raw);
+            if (this._recent.length > SMOOTH_WINDOW)
+                this._recent.shift();
+            if (this._recent.length === SMOOTH_WINDOW)
+                metric = History.median(this._recent);
+        }
         this._metric = metric;
 
         if (metric === null) {
@@ -360,34 +404,21 @@ class TempBarButton extends PanelMenu.Button {
             while (this._history.length > 0 && this._history[0][0] < cutoff)
                 this._history.shift();
 
+            // Bar severity: immediate, with downward hysteresis so hovering at
+            // 89-91C does not flip-flop the color every few seconds.
             let sev = 0;
             if (metric >= this._warnAt)
                 sev = 1;
             if (metric >= this._badAt)
                 sev = 2;
-            // On the way down, hold the current severity until the reading is
-            // clearly below the threshold, so hovering at 89-91C does not
-            // flip-flop (and re-notify) every few seconds.
             if (sev < this._sev) {
                 const floor = (this._sev === 2 ? this._badAt : this._warnAt) - HYSTERESIS;
                 if (metric > floor)
                     sev = this._sev;
             }
-
-            const prev = this._sev;
             this._sev = sev;
-            const t = Math.round(metric);
-            // Only notify on the way UP (into concerning / bad). Recovery is
-            // not worth an interruption - the gauge color already shows it.
-            if (sev > prev) {
-                if (sev === 2)
-                    this._notify(`CPU at ${t}°C`,
-                        'At or near the thermal limit - the CPU is throttling or about to.', true);
-                else
-                    this._notify(`CPU running hot: ${t}°C`,
-                        'Concerning - keep an eye on it.', false);
-            }
 
+            this._maybeNotify(metric);
             this._fraction = Math.max(0.02, this._fractionOf(metric));
         }
 
@@ -478,15 +509,64 @@ class TempBarButton extends PanelMenu.Button {
             `Last ${spanMin} min - min ${Math.round(lo)}°C / max ${Math.round(hi)}°C`;
     }
 
+    // Debounced notification. Fires only when a severity has held for
+    // CONFIRM_SAMPLES consecutive polls AND is higher than the last severity we
+    // notified about - so single/double-poll excursions never interrupt, and a
+    // sustained rise notifies exactly once (not every poll while it stays hot).
+    // Recovery is intentionally silent: the gauge color already shows it.
+    _maybeNotify(metric) {
+        const sev = metric >= this._badAt ? 2 : (metric >= this._warnAt ? 1 : 0);
+        if (sev === this._debSev) {
+            this._debCount++;
+        } else {
+            this._debSev = sev;
+            this._debCount = 1;
+        }
+        // Act exactly once, the poll the streak reaches CONFIRM_SAMPLES.
+        if (this._debCount !== CONFIRM_SAMPLES)
+            return;
+        const prevConfirmed = this._confirmedSev;
+        this._confirmedSev = sev;
+        if (sev <= prevConfirmed)
+            return;
+        const t = Math.round(metric);
+        if (sev === 2)
+            this._notify(`CPU at ${t}°C`,
+                'At or near the thermal limit - the CPU is throttling or about to.', true);
+        else
+            this._notify(`CPU running hot: ${t}°C`,
+                'Concerning - keep an eye on it.', false);
+    }
+
+    // Presents a notification, reusing ONE source and ONE notification for the
+    // widget's lifetime and updating it in place. The old code created a fresh
+    // MessageTray.Source on every fire; during an oscillating hot spell that
+    // stacked dozens of separate, individually-dismissable banners that felt
+    // impossible to clear. With a single reused source there is at most one
+    // banner, and it just updates.
     _notify(title, body, critical) {
-        const source = new MessageTray.Source('CPU Temperature',
-            'temperature-symbolic');
-        Main.messageTray.add(source);
-        const notification = new MessageTray.Notification(source, title, body);
-        notification.setUrgency(critical
+        if (this._source === null) {
+            this._source = new MessageTray.Source('CPU Temperature',
+                'temperature-symbolic');
+            this._source.connect('destroy', () => {
+                this._source = null;
+                this._notification = null;
+            });
+            Main.messageTray.add(this._source);
+        }
+        if (this._notification === null) {
+            this._notification = new MessageTray.Notification(
+                this._source, title, body);
+            this._notification.connect('destroy', () => {
+                this._notification = null;
+            });
+        } else {
+            this._notification.update(title, body, { clear: true });
+        }
+        this._notification.setUrgency(critical
             ? MessageTray.Urgency.CRITICAL : MessageTray.Urgency.NORMAL);
-        notification.setTransient(!critical);
-        source.showNotification(notification);
+        this._notification.setTransient(!critical);
+        this._source.showNotification(this._notification);
     }
 
     // The panel gauge: horizontal trough filling left-to-right, with tick
