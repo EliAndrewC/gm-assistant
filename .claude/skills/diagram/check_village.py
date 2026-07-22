@@ -8445,6 +8445,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a polder's dikes must WANDER, not run axis-perfect - only {_wfrac:.0%} of the field outline runs off-axis (want >=30%); a dead-straight rectangle is the post-1949 consolidation shape, not a hand-dug fish-scale polder",
         )
 
+        # THE GREEN FLOOR IS THE RING-CANAL INTERIOR, not the dike-boundary envelope (GM 2026-07-22): the
+        # greenery must be bounded by the OUTERMOST irrigated channels (the feeder/drain/toe ring), so it
+        # follows the wavering ring instead of a separate envelope rectangle that drifts in and out of it.
+        # Teeth: every recorded field-floor vertex must lie within ~8 px of a ring channel centerline; the
+        # pre-fix envelope floor sat ~9-22 px out at the dike boundary and fires. Grounding: build_polder's
+        # `floor` (the concatenated ring sides) + comb_base_fill + settlements.md 'Polder edge wander'.
+        _ring = [d["poly"] for d in M.get("field_ditches", []) if d.get("seg") in ("feeder", "drain", "e_toe", "w_toe")]
+        _flvals = list(M.get("comb_floors", {}).values())
+        if _ring and _flvals:
+            _fl = _flvals[0]
+            _stray = [(round(fx), round(fy)) for fx, fy in _fl if min(seg_dist(fx, fy, rp[i], rp[i + 1]) for rp in _ring for i in range(len(rp) - 1)) > 8]
+            check(
+                "polder_floor_is_ring_interior",
+                not _stray,
+                f"the polder's green field floor must be the INTERIOR of the ring canal (bounded by the outermost channels), but {len(_stray)} floor vertex/vertices sit >8 px off the ring at {_stray[:3]} - a floor drawn to the dike-boundary envelope drifts in and out of the wavering ring",
+            )
+
         # THE RING CANAL RUNS ON THE INNER TOE, CLEAR OF THE DIKE (GM 2026-07-22, researched: the trunk
         # irrigation/drainage canal rings the block on the INSIDE toe of the perimeter dike, on the field
         # side - "一河围田 / one river surrounds the field"; outside the dike is the wild water it holds back,
