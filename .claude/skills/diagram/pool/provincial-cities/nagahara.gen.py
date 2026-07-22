@@ -627,6 +627,14 @@ QUAY = [(2009, 1236), (2009, 1424)]
 s.frontage(QUAY, ["shop"] * 18, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))   # the riverfront wharf is warehouses/SHOPS, not merchant residences (commoner dwellings shelter inside the wall - feature 006)
 s.label(1998, 1201, "wharf", 10, italic=True, color="#5A4326")
 
+# a gate market (guan-xiang) OUTSIDE THE NORTH GATE too: the wharf is the river gate's market, but
+# the north gate is on the road to the Imperial highway, so it grows its own smaller stall cluster
+# (GM decision 2026-07-22 - a guan-xiang at every trafficked gate; flophouse-research.md). A short
+# stall row flanks the NW-slanting north road just above the moat (y888), clear of the N-gate
+# flophouse at (1405, 837).
+s.frontage([(1451, 829), (1418, 763)], ["shop"] * 9, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(16))   # flanks the REAL north-road segment (two of its vertices) so the stalls sit clear of the road bed
+s.label(1508, 806, "gate market", 9, italic=True, color="#5A4326")
+
 # samurai ESTATES across the river to the NORTHEAST (toward Otosan Uchi - a samurai builds his
 # country seat on the capital-facing side), N of the bridge road and clear of it, commuting in
 # over the Hayakawa bridge. Sizes + gate_dir vary; the inner ones straddle the cropped edge.
