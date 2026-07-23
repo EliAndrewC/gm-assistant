@@ -5523,7 +5523,7 @@ class Settlement:
         # walls) - NOT the wide urban halo (which would leave a bare ring) and NOT block_polys (the reserved
         # pocket IS the yard). A rotated building is covered by its half-diagonal square.
         keep: list[tuple[float, float, float, float]] = []
-        for k in ("buildings", "flophouses", "storehouses", "merchant_estates", "ministries", "religious", "manors", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries"):
+        for k in ("buildings", "flophouses", "storehouses", "merchant_estates", "ministries", "religious", "manors", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "houses"):
             for o in self.M.get(k, []) or []:
                 ohw, ohh = o["w"] / 2, o["h"] / 2
                 if o.get("rot"):
@@ -5658,16 +5658,37 @@ class Settlement:
         # stable_troughs_beside_well.
         n_troughs = 3 if r >= 76 else 2
         t_h, t_gap, t_len = 2.0, 1.6, 4.6
+        t_total = n_troughs * t_h + (n_troughs - 1) * t_gap  # the stacked cluster's full height
 
         def beside(wl: dict[str, Any]) -> Pt | None:
-            # a clear cluster spot hugging THIS wellhead: offset by the wellhead edge + half a
-            # trough + a step (~bucket-pour), preferring the yard side, then walking around
-            w_off = wl.get("vr", 4.0) + t_len / 2 + 1.5
+            # a clear cluster spot hugging THIS wellhead, preferring the yard side, then walking
+            # around. The offset is DIRECTION-AWARE: the minimal center distance at which the
+            # cluster BOX (t_len x t_total) clears the well-house roof square along this ray, + a
+            # 1.5 step (~bucket-pour). A fixed `vr + t_len/2` only guarantees HORIZONTAL
+            # clearance - the stack is taller than it is wide, so a near-vertical ray clipped the
+            # roof corner (GM 2026-07-23, Tango's caravan ground). The box is then CORNER-checked
+            # against everything clear() knows (buildings, roads, fields, water, the wall) and
+            # kept off every OTHER wellhead roof - a center-only point test let the rects
+            # themselves land on footprints. Gated by stable_troughs_clear_of_buildings.
+            vr = wl.get("vr", 4.0)
             w_ang0 = math.atan2(sy - wl["y"], sx - wl["x"])
             for w_da in (0.0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, math.pi):
-                wcand = (wl["x"] + math.cos(w_ang0 + w_da) * w_off, wl["y"] + math.sin(w_ang0 + w_da) * w_off)
-                if clear(wcand[0], wcand[1], 2.0, rim=False):
-                    return wcand
+                ux, uy = math.cos(w_ang0 + w_da), math.sin(w_ang0 + w_da)
+                w_off = 1.5 + min(
+                    (vr + t_len / 2) / abs(ux) if abs(ux) > 1e-9 else math.inf,
+                    (vr + t_total / 2) / abs(uy) if abs(uy) > 1e-9 else math.inf,
+                )
+                wcand = (wl["x"] + ux * w_off, wl["y"] + uy * w_off)
+                bx0, by0, bx1, by1 = wcand[0] - t_len / 2, wcand[1] - t_total / 2, wcand[0] + t_len / 2, wcand[1] + t_total / 2
+                if not all(clear(qx, qy, 2.0, rim=False) for qx, qy in ((wcand[0], wcand[1]), (bx0, by0), (bx1, by0), (bx1, by1), (bx0, by1))):
+                    continue
+                if any(
+                    bx0 < ow["x"] + ow.get("vr", 4.0) and bx1 > ow["x"] - ow.get("vr", 4.0) and by0 < ow["y"] + ow.get("vr", 4.0) and by1 > ow["y"] - ow.get("vr", 4.0)
+                    for ow in self.M.get("wells", [])
+                    if ow is not wl
+                ):
+                    continue
+                return wcand
             return None
 
         wp: Pt | None = None
@@ -5687,7 +5708,6 @@ class Settlement:
                     used.append(wp)
         if wp:
             wpx, wpy = wp
-            t_total = n_troughs * t_h + (n_troughs - 1) * t_gap
             for t_i in range(n_troughs):
                 t_y = wpy - t_total / 2 + t_i * (t_h + t_gap)
                 self.add(f'<rect x="{wpx - t_len / 2:.1f}" y="{t_y:.1f}" width="{t_len:.1f}" height="{t_h:.1f}" rx="0.9" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>')
@@ -5702,6 +5722,12 @@ class Settlement:
         yard_rec: dict[str, Any] = {"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)], "troughs": n_troughs if wp else 0}
         if wp:
             yard_rec["troughs_at"] = [round(wp[0], 1), round(wp[1], 1)]  # cluster center - stable_troughs_beside_well anchors on it
+            yard_rec["troughs_box"] = [
+                round(wp[0] - t_len / 2, 1),
+                round(wp[1] - t_total / 2, 1),
+                round(wp[0] + t_len / 2, 1),
+                round(wp[1] + t_total / 2, 1),
+            ]  # drawn extent - stable_troughs_clear_of_buildings tests it
         self.M.setdefault("stable_yards", []).append(yard_rec)
         random.setstate(st)
 
