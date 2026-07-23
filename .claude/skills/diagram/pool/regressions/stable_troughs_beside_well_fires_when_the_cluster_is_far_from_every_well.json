@@ -1,0 +1,38 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3
+ },
+ "stable_yards": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    500,
+    500
+   ],
+   "troughs": 2,
+   "troughs_at": [
+    530.0,
+    500.0
+   ]
+  }
+ ],
+ "wells": [
+  {
+   "x": 700,
+   "y": 500,
+   "r": 8,
+   "vr": 4.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "stable_troughs_beside_well"
+  ],
+  "source": "test_checks.py::test_stable_troughs_beside_well_fires_when_the_cluster_is_far_from_every_well"
+ }
+}

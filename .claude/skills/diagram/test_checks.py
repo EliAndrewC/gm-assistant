@@ -1178,6 +1178,21 @@ def test_groves_clear_of_paddies_fires_on_a_grove_in_a_field():
     assert "groves_clear_of_paddies" in f(M)
 
 
+def test_dry_plots_clear_of_paddies_fires_on_a_hem_plot_in_the_rice():
+    # a neighboring fan's hem quilt punched into this fan's envelope (the Tango fe2-into-fe1 incident)
+    M = {"fields": [_field("p", 440, 440, 600, 600)], "dry_plots": [{"poly": [[560, 560], [640, 560], [640, 640], [560, 640]], "crop": "millet", "theta": 0.4}]}  # NW corner ~40px deep in the paddy
+    assert "dry_plots_clear_of_paddies" in f(M)
+
+
+def test_dry_plots_clear_of_paddies_passes_when_the_hem_abuts_the_bund():
+    # a hem plot legitimately KISSES the envelope across the berm - only real interpenetration fires
+    M = {
+        "fields": [_field("p", 440, 440, 600, 600)],
+        "dry_plots": [{"poly": [[440, 600], [600, 600], [600, 660], [440, 660]], "crop": "barley", "theta": 0.4}],
+    }  # shares the paddy's south edge exactly
+    assert "dry_plots_clear_of_paddies" not in f(M)
+
+
 def test_groves_clear_of_structures_fires_when_a_grove_covers_another_building():
     M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)], "buildings": [bldg(460, 470, "shop")], "groves": [_grove(460, 470, 500, 500)]}  # on the shop, not its own house
     assert "groves_clear_of_structures" in f(M)
@@ -3158,6 +3173,42 @@ def test_city_no_large_empty_space_passes_when_an_animal_ground_claims_the_pocke
     # claims the open ground as deliberate working space (s.animal_ground)
     M = _es_pocket_city(stable_yards=[{"x": 600, "y": 480, "r": 80.0, "of": [600, 480]}])
     assert "city_no_large_empty_space" not in f(M)
+
+
+def test_stable_troughs_beside_well_fires_when_the_cluster_is_far_from_every_well():
+    # the pre-fix Nagahara defect: a trough cluster a real bucket-CARRY (>40 real ft) from every
+    # well - watering is a relay at the wellhead, the bucket poured straight into the trough
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [{"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [530.0, 500.0]}],
+        "wells": [{"x": 700, "y": 500, "r": 8, "vr": 4.0}],  # 170 px = 510 real ft from the cluster
+    }
+    assert "stable_troughs_beside_well" in f(M)
+
+
+def test_stable_troughs_beside_well_fires_when_the_cluster_went_unrecorded():
+    # troughs > 0 with no troughs_at: the anchor is part of the record's contract - an
+    # unrecorded cluster cannot be validated, so it fails rather than passing silently
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [{"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2}],
+        "wells": [{"x": 505, "y": 500, "r": 8, "vr": 4.0}],
+    }
+    assert "stable_troughs_beside_well" in f(M)
+
+
+def test_stable_troughs_beside_well_passes_beside_a_well_and_skips_troughless_yards():
+    # a cluster hugging a wellhead (~24 real ft, the placement's own offset) passes; a yard that
+    # drew no troughs (fully blocked ground) has nothing to anchor and is skipped
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [
+            {"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [492.1, 500.0]},
+            {"x": 800, "y": 800, "r": 60.0, "of": [800, 800], "troughs": 0},
+        ],
+        "wells": [{"x": 500, "y": 500, "r": 8, "vr": 4.0}],  # 7.9 px = 24 real ft from the cluster
+    }
+    assert "stable_troughs_beside_well" not in f(M)
 
 
 def test_city_streets_connected_fires_on_a_gap_wider_than_45px():

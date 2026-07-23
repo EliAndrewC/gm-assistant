@@ -921,7 +921,9 @@ def test_animal_ground_records_a_yard_and_optional_label():
     # the city_no_large_empty_space remedy: a standalone stable-yard scatter claiming a pocket
     s = _crop_settlement()
     s.animal_ground(400, 400, r=60)  # no label - the rails and animals read on their own
-    assert s.M["stable_yards"][-1] == {"x": 400, "y": 400, "r": 60, "of": [400, 400], "troughs": 2}
+    yd = s.M["stable_yards"][-1]
+    assert (yd["x"], yd["y"], yd["r"], yd["of"], yd["troughs"]) == (400, 400, 60, [400, 400], 2)
+    assert "troughs_at" in yd  # the cluster anchor stable_troughs_beside_well validates
     s.animal_ground(700, 700, r=52, label="caravan ground")
     assert s.M["labels"][-1][5] == "caravan ground"  # label boxes are [x0, y0, x1, y1, z, text]
 
@@ -933,18 +935,40 @@ def test_caravan_scale_yard_gets_three_troughs_beside_the_nearest_well():
     s = _crop_settlement()
     s.M["wells"] = [{"x": 500, "y": 400, "r": 8, "vr": 4.0, "shrine": False}]
     s.animal_ground(400, 400, r=80)
-    assert s.M["stable_yards"][-1]["troughs"] == 3
+    yd = s.M["stable_yards"][-1]
+    assert yd["troughs"] == 3
+    assert yd["troughs_at"] == [492.2, 400.0]  # wellhead vr 4.0 + half a 4.6 trough + 1.5 step from the well at x=500
     out = "".join(s.out)
     assert out.count('fill="#8FA6B0"') == 3  # the trough rects
-    assert 'x="489.9"' in out  # cluster at (492.2, 400): wellhead vr 4.0 + half a 4.6 trough + 1.5 step from the well at x=500
+    assert 'x="489.9"' in out  # the cluster's trough rects, centered on troughs_at
 
 
-def test_yard_troughs_fall_back_when_no_well_in_reach():
-    # every recorded well beyond r + 40: the cluster takes a clear interior spot instead
+def test_yard_digs_its_own_well_when_the_near_wellheads_flanks_are_all_blocked():
+    # the Nagahara yard-1 case: a well IS in reach, but a building crowds every flank of the
+    # wellhead, so no bucket-pour spot exists beside it - the yard digs its own well instead
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 400, "y": 460, "r": 8, "vr": 4.0, "shrine": False}]
+    s.M["buildings"] = [{"x": 400, "y": 460, "w": 40, "h": 40}]  # covers the whole flank ring
+    s.animal_ground(400, 400, r=60)
+    assert len(s.M["wells"]) == 2  # the in-reach well was unusable; the yard dug its own
+    nw, ta = s.M["wells"][-1], s.M["stable_yards"][-1]["troughs_at"]
+    assert math.hypot(nw["x"] - ta[0], nw["y"] - ta[1]) <= s.px(40)  # cluster hugs the new wellhead
+
+
+def test_yard_digs_its_own_well_when_none_in_reach():
+    # every recorded well beyond r + 40: the yard sinks its OWN courtyard well and clusters the
+    # troughs beside it (the caravanserai / yizhan post-yard form - GM 2026-07-23, the Nagahara
+    # defect: the old fallback dropped the cluster at a random spot, a 100-241 ft bucket-carry)
     s = _crop_settlement()
     s.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]
     s.animal_ground(400, 400, r=60)
-    assert s.M["stable_yards"][-1]["troughs"] == 2
+    yd = s.M["stable_yards"][-1]
+    assert yd["troughs"] == 2
+    assert len(s.M["wells"]) == 2  # the yard dug its own
+    nw = s.M["wells"][-1]
+    assert math.hypot(nw["x"] - 400, nw["y"] - 400) <= 60  # sunk inside the yard disc
+    ta = yd["troughs_at"]
+    assert math.hypot(nw["x"] - ta[0], nw["y"] - ta[1]) <= s.px(40)  # cluster hugs the new wellhead
 
 
 def _torii_city(**kw):
@@ -2951,6 +2975,27 @@ def test_pond_fill_stays_in_the_shared_block_without_a_late_join():
     assert s.M["pond_layer"]["bedz"] > early["bedz"]  # shared-block covering order holds (same block, z comparable)
     assert s.M["pond_layer"]["late"] is False  # no relocation: the fill stayed in the shared block
     assert svg.index('<ellipse cx="500" cy="250" rx="100" ry="70" fill="#9CB4C8"/>') < svg.index('stroke="#7C9EB0"')  # the non-joining late bed draws later (svg order, cross-block)
+
+
+def test_draw_comb_field_drops_hem_plots_on_a_prior_fan():
+    # multi-fan maps place each fan blind to the others: a hem plot landing on a PREVIOUSLY
+    # recorded fan's rice is dropped via the shared hem_on_paddy predicate (the Tango fe2-into-fe1
+    # incident; gated by dry_plots_clear_of_paddies). The prior fan here is a synthetic field
+    # record blanketing the second comb's hem band, so every hem plot must go.
+    from waterfields import build_comb, hem_on_paddy
+
+    s = Settlement(W=1400, H=1400, seed=5)
+    s.meta(name="Cp", scale="town", ftpx=1, down_deg=90)
+    net = build_comb(1400, 1400, (700, 200), 5, down_deg=90, field_fall=400)
+    net["brook"] = []
+    on_rice = [p for p in net["dry_plots"]]
+    assert on_rice, "the comb must produce a hem for the drop to be observable"
+    blanket = [[0, 0], [1400, 0], [1400, 1400], [0, 1400]]  # covers everything - every hem plot overlaps it
+    assert all(hem_on_paddy(p["poly"], blanket) for p in on_rice)
+    s.M["fields"].append({"name": "prior", "kind": "paddy", "outline": blanket, "bbox": [0, 0, 1400, 1400]})
+    s.draw_comb_field(net, "f1", {"kind": "stream"})
+    assert s.M["dry_plots"] == []  # every hem plot dropped; the paddies themselves still drew
+    assert any(fl["name"] == "f1" for fl in s.M["fields"])
 
 
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
