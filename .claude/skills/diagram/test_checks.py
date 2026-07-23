@@ -3218,12 +3218,46 @@ def test_stable_troughs_beside_well_passes_beside_a_well_and_skips_troughless_ya
     M = {
         "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
         "stable_yards": [
-            {"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [492.1, 500.0]},
+            {"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [492.1, 500.0], "troughs_box": [489.8, 497.2, 494.4, 502.8]},
             {"x": 800, "y": 800, "r": 60.0, "of": [800, 800], "troughs": 0},
         ],
         "wells": [{"x": 500, "y": 500, "r": 8, "vr": 4.0}],  # 7.9 px = 24 real ft from the cluster
     }
-    assert "stable_troughs_beside_well" not in f(M)
+    fails = f(M)
+    assert "stable_troughs_beside_well" not in fails
+    assert "stable_troughs_clear_of_buildings" not in fails  # box clear of the roof square too
+
+
+def test_stable_troughs_clear_of_buildings_fires_when_a_trough_clips_a_well_roof():
+    # the Tango caravan-ground defect: a 3-trough stack hugging its well on a near-vertical ray -
+    # the box bottom reaches into the well-house roof square
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [{"x": 500, "y": 500, "r": 80.0, "of": [500, 500], "troughs": 3, "troughs_at": [502.0, 492.4], "troughs_box": [499.7, 487.8, 504.3, 497.0]}],
+        "wells": [{"x": 500, "y": 500, "r": 8, "vr": 4.0}],  # roof top edge at y=496 < box bottom 497
+    }
+    assert "stable_troughs_clear_of_buildings" in f(M)
+
+
+def test_stable_troughs_clear_of_buildings_fires_when_a_trough_clips_a_building():
+    # the cluster is a bucket-pour from its well, but the drawn rects land on a building footprint
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [{"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [502.0, 492.4], "troughs_box": [499.7, 489.6, 504.3, 495.2]}],
+        "wells": [{"x": 510, "y": 492, "r": 8, "vr": 4.0}],  # beside_well is satisfied
+        "buildings": [{"x": 500, "y": 486, "w": 20, "h": 8}],  # footprint bottom at y=490 > box top 489.6
+    }
+    assert "stable_troughs_clear_of_buildings" in f(M)
+
+
+def test_stable_troughs_clear_of_buildings_fires_when_the_box_went_unrecorded():
+    # troughs > 0 with no troughs_box: the drawn extent is part of the record's contract
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [{"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [492.1, 500.0]}],
+        "wells": [{"x": 500, "y": 500, "r": 8, "vr": 4.0}],
+    }
+    assert "stable_troughs_clear_of_buildings" in f(M)
 
 
 def test_city_streets_connected_fires_on_a_gap_wider_than_45px():
