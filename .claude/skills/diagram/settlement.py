@@ -1129,7 +1129,7 @@ class Settlement:
             self.add(f'<polygon points="{pts}" fill="#A03020" fill-opacity="0.22" stroke="#A03020" stroke-width="4"/>')
             self.M["taxfree"].append([round(cx, 1), round(cy, 1)])
 
-    def _paddy_surface(self, poly: Poly, pts: str, flooded: bool) -> None:
+    def _paddy_surface(self, poly: Poly, pts: str, flooded: bool, cap: int = 22) -> None:
         """A WET paddy: a flooded, mottled sheet (irregular hand-transplanted shoots, plus a faint water sheen
         for a freshly-flooded plot) - NOT ruled rows. Premodern rice was transplanted irregularly; crisp
         checkrow planting (seijoue) is a Meiji improvement, so ruled rows on a paddy read as modern (the same
@@ -1143,7 +1143,9 @@ class Settlement:
             for _ in range(2):
                 yy = random.uniform(y0 + 2, y1 - 2)
                 g.append(f'<line x1="{x0:.0f}" y1="{yy:.0f}" x2="{x1:.0f}" y2="{yy:.0f}" stroke="#CFDFD3" stroke-width="1.5" opacity="0.4"/>')
-        n = min(22, max(3, int((x1 - x0) * (y1 - y0) / 80)))  # sparse irregular shoots (the transplant mottle)
+        n = min(
+            cap, max(3, int((x1 - x0) * (y1 - y0) / 80))
+        )  # sparse irregular shoots (the transplant mottle); cap=22 suits ~0.05-ac comb cells, the polder-leftover repaint raises it for mu-scale parcels
         for _ in range(n):
             g.append(f'<circle cx="{random.uniform(x0, x1):.1f}" cy="{random.uniform(y0, y1):.1f}" r="1.0" fill="#6F9061" opacity="0.5"/>')
         g.append('</g>')
@@ -1771,20 +1773,48 @@ class Settlement:
         # 50% the same year, on identical terrain.
         take = min(len(elig), max(2, round(len(elig) * fraction)))
         chosen = self._pick_overlay_plots(elig, take, clustered=(overlay == "mulberry_fishpond" and eligible != "all"), rng=rng)
+        # LEFTOVERS of a WHOLESALE conversion read as STANDING RICE, not as bare outlines (GM 2026-07-23;
+        # settlements.md 'Polder fourth pass'). Under eligible="all" the base polder drew every parcel as a
+        # flat bund-outlined rectangle, so the few unconverted plots floated as tan outlines around ground
+        # indistinguishable from the floor green (and a FLOODED leftover read as "a pond with no dike").
+        # Repaint them as textured paddy - the transplant mottle is what distinguishes crop from floor -
+        # and erase the bund outline with a same-color covering stroke: inside a dike-pond block the
+        # neighbors' raised banks bound a rice parcel, so its own drawn bund is noise. Painted BEFORE the
+        # ponds so an expanded pond bank overlaps the repaint, never the reverse. Scoped to the archetype
+        # case only: a partial overlay's unconverted plots are ordinary textured comb paddies already.
+        leftover_plots: list[Any] = []
+        if overlay == "mulberry_fishpond" and eligible == "all":
+            chosen_ids = {id(c) for c in chosen}
+            leftover_plots = [p for p in elig if id(p) not in chosen_ids]
+            _lst = random.getstate()  # the decorative mottle must not shift downstream placement
+            for p in leftover_plots:
+                pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
+                lfill = p.get("fill", "#A6C398")
+                self.add(f'<polygon points="{pts}" fill="{lfill}" stroke="{lfill}" stroke-width="3" stroke-linejoin="round"/>')
+                random.seed(int(sum(x for x, _ in p["poly"]) * 7 + sum(y for _, y in p["poly"]) * 13))
+                self._paddy_surface(p["poly"], pts, flooded=(lfill == "#93B7AC"), cap=600)
+            random.setstate(_lst)
         dikeponds: list[dict[str, Any]] = []
         for p in chosen:
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
             cy = sum(v[1] for v in p["poly"]) / len(p["poly"])
             if overlay == "mulberry_fishpond":
-                # 桑基魚塘: a raised MULBERRY DIKE (基, green, planted) surrounds an inset fish POND (塘, water).
-                # The pond water sits WITHIN the green banks (not teal filling the whole parcel to its edge) and
-                # its dug corners are ROUNDED - an earthen pond erodes to a rounded outline, never the poured-
-                # concrete right angle a premodern village had no way to make (GM 2026-07-22, issues 3 + 5). So
-                # fill the parcel with the mulberry-bank green, then draw an inset, corner-filleted water body.
-                self.add(f'<polygon points="{pts}" fill="#94A968" stroke="#6E8B4A" stroke-width="2" stroke-linejoin="round" opacity="0.95"/>')
+                # 桑基魚塘: a raised MULBERRY DIKE (基, planted) surrounds an inset fish POND (塘, water) whose
+                # dug corners are ROUNDED - an earthen pond erodes to a rounded outline, never the poured-
+                # concrete right angle a premodern village had no way to make (GM 2026-07-22, issues 3 + 5).
+                # Fourth pass (GM 2026-07-23, settlements.md 'Polder fourth pass'): the dike draws as PLANTED
+                # GROUND, not a flat green band - the perimeter dike's own treatment (mottled earthen bank)
+                # carrying two planted ROWS of coppiced mulberry crowns (_mulberry_rows). Its corners ease
+                # with small erosion fillets but the dike KEEPS its rectangular character - straight dikes
+                # are attested (see settlements.md 'Polder mosaic'). The negative inset EXPANDS the bank
+                # ~5 px past the parcel so it covers the base parcel's tan bund stroke (with reach <= 9.2
+                # the fillet chord stays outside the covered corner - chord d/sqrt(2) < 5*sqrt(2)).
+                bd, _bpoly = self._rounded_pond(p["poly"], inset=-5.0, reach=8.0, rng=rng)
+                self.add(f'<path d="{bd}" fill="#C2A772" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
                 wd, wpoly = self._rounded_pond(p["poly"], inset=11.0, reach=16.0, rng=rng)
                 self.add(f'<path d="{wd}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.4"/>')
+                self._mulberry_rows(p["poly"], bd, cx, cy, rng)
                 dikeponds.append({"parcel": [[round(x, 1), round(y, 1)] for x, y in p["poly"]], "water": [[round(x, 1), round(y, 1)] for x, y in wpoly]})
             else:  # lotus - a DEEP-WATER lotus field (teal plot body + a few lily pads / blooms)
                 self.add(f'<polygon points="{pts}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
@@ -1845,7 +1875,9 @@ class Settlement:
         # z-order audit). No-op when no late block exists or nothing was overlaid.
         if n and self._late_water_idx is not None:
             self._late_water_idx = len(self.out)
-        self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen]})
+        self.M.setdefault("land_use", []).append(
+            {"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen], "leftover_plots": [_centroid(p["poly"]) for p in leftover_plots]}
+        )
         return n
 
     @staticmethod
@@ -1882,6 +1914,47 @@ class Settlement:
             mid = (0.25 * a_in[j][0] + 0.5 * ins[j][0] + 0.25 * b_out[j][0], 0.25 * a_in[j][1] + 0.5 * ins[j][1] + 0.25 * b_out[j][1])
             sample += [a_in[j], mid, b_out[j]]
         return d + "Z", sample
+
+    def _mulberry_rows(self, poly: Sequence[Pt], bank_d: str, cx: float, cy: float, rng: random.Random) -> None:
+        """The 桑基 (mulberry-dike) half of a dike-pond unit rendered as what it is: PLANTED ground. Sparse
+        earth mottle (patch-repairs, the perimeter dike's look) under two planted ROWS of coppiced mulberry
+        crowns. TRUE SCALE (settlements.md 'Polder fourth pass'): silkworm mulberry was coppiced into low
+        bushes with ~4-6 ft crowns in dense rows (~1 bush per 10-20 sq ft - hundreds per pond), so at
+        1 px = 1 ft honest "actual trees" ARE a packed dot band; the crowns here are r 2.2-3.6 px at ~6 px
+        in-row spacing (the loose end of the attested 3-5 ft, for pixel separation), never inflated glyphs.
+        Rows are homothetic loops between the water inset (11 px) and the expanded bank edge (+5 px);
+        everything clips to the bank path, so a crown may overhang the water edge (organic) but never
+        spills onto the polder floor. Purely decorative - no manifest record, the dikepond checks keep
+        reading parcel + water untouched."""
+        n = len(poly)
+        mids = [((poly[i][0] + poly[(i + 1) % n][0]) / 2, (poly[i][1] + poly[(i + 1) % n][1]) / 2) for i in range(n)]
+        apo = sum(math.hypot(mx - cx, my - cy) for mx, my in mids) / n
+        if apo <= 12.0:
+            return  # a parcel too small to hold the water inset has no bank to plant
+        s_w = max(0.4, 1.0 - 11.0 / apo)  # the water-edge homothety (matches _rounded_pond's inset=11)
+        s_b = 1.0 + 5.0 / apo  # the expanded bank edge (matches the bank's inset=-5)
+        cid = self._cid("mb")
+        g = [f'<clipPath id="{cid}"><path d="{bank_d}"/></clipPath>', f'<g clip-path="url(#{cid})">']
+
+        def walk(scale: float, step: float) -> list[Pt]:
+            loop = [(cx + (q[0] - cx) * scale, cy + (q[1] - cy) * scale) for q in poly]
+            out: list[Pt] = []
+            for a, b in zip(loop, loop[1:] + loop[:1], strict=True):
+                seg = math.hypot(b[0] - a[0], b[1] - a[1])
+                for k in range(int(seg / step)):
+                    f = (k + 0.5) * step / seg
+                    out.append((a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f))
+            return out
+
+        for mx, my in walk(s_w + 0.5 * (s_b - s_w), 30.0):  # earth mottle: packed / dried patches of different ages
+            mcol = rng.choice(("#A8895A", "#B79B68", "#D2BC8C", "#9C8150"))
+            g.append(f'<ellipse cx="{mx + rng.uniform(-3, 3):.1f}" cy="{my + rng.uniform(-3, 3):.1f}" rx="{rng.uniform(4, 8):.1f}" ry="{rng.uniform(3, 6):.1f}" fill="{mcol}" opacity="0.35"/>')
+        for t in (0.30, 0.72):  # two planted rows across the band
+            for x, y in walk(s_w + t * (s_b - s_w), 6.0):
+                ccol = rng.choice(("#6E8B4A", "#7C9A54", "#5E7C40"))
+                g.append(f'<circle cx="{x + rng.uniform(-1.3, 1.3):.1f}" cy="{y + rng.uniform(-1.3, 1.3):.1f}" r="{rng.uniform(2.2, 3.6):.1f}" fill="{ccol}" opacity="0.85"/>')
+        g.append("</g>")
+        self.add("".join(g))
 
     @staticmethod
     def _pick_overlay_plots(eligible: list[Any], take: int, clustered: bool, rng: random.Random) -> list[Any]:
