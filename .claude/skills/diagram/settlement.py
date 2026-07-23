@@ -5440,11 +5440,35 @@ class Settlement:
                 break
             draw_hitch(spot[0], spot[1], 1.0, 0.0, 0.0, 1.0)
 
-        # a stone WATER TROUGH
-        tr = take(8.0, 18.0)
-        if tr:
-            tx, ty = tr
-            self.add(f'<rect x="{tx - 3.2:.1f}" y="{ty - 1.4:.1f}" width="6.4" height="2.8" rx="1.1" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>')
+        # the WATERING POINT (GM 2026-07-23, researched - settlements.md 'Stable yard' watering
+        # paragraph): a working ox drinks ~10 gal/day, a buffalo more, so a wagon-train needs
+        # 300-600 gal in one or two big sessions - one small trough is functionally undersized.
+        # The historical form is 2-3 long troughs (~8-15 ft, ~2 ft of edge per drinking head)
+        # CLUSTERED AT A WELL (animals are led to water in relays, not watered at the rail), so:
+        # anchor the cluster just inside the yard toward the nearest recorded well when one is in
+        # reach, else at a clear interior spot; a caravan-scale ground (r >= 76) gets 3 troughs,
+        # a plain stables yard 2. Drawn ~4.6x2 px each (a ~14 ft trough at city scale, width
+        # floored at the 2px cartographic minimum so the water reads).
+        n_troughs = 3 if r >= 76 else 2
+        wp: Pt | None = None
+        for wl in self.M.get("wells", []) or []:
+            wdist = math.hypot(wl["x"] - sx, wl["y"] - sy)
+            if 1 <= wdist <= r + 40:
+                wf = max(0.0, min(1.0, (r - 26) / wdist))
+                wcand = (sx + (wl["x"] - sx) * wf, sy + (wl["y"] - sy) * wf)
+                if clear(wcand[0], wcand[1], 8.0):
+                    wp = wcand
+                    used.append(wp)
+                    break
+        if wp is None:
+            wp = take(10.0, 24.0)
+        if wp:
+            wpx, wpy = wp
+            t_h, t_gap, t_len = 2.0, 1.6, 4.6
+            t_total = n_troughs * t_h + (n_troughs - 1) * t_gap
+            for t_i in range(n_troughs):
+                t_y = wpy - t_total / 2 + t_i * (t_h + t_gap)
+                self.add(f'<rect x="{wpx - t_len / 2:.1f}" y="{t_y:.1f}" width="{t_len:.1f}" height="{t_h:.1f}" rx="0.9" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>')
         # 1-2 DUNG HEAPS - the little "someone works here" tell
         for _ in range(2):
             d = take(6.0, 16.0)
@@ -5453,7 +5477,7 @@ class Settlement:
             dx, dy = d
             self.add(f'<ellipse cx="{dx:.1f}" cy="{dy:.1f}" rx="2.5" ry="1.8" fill="#6E5A3A" stroke="#4A3A22" stroke-width="0.5" opacity="0.9"/>')
 
-        self.M.setdefault("stable_yards", []).append({"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)]})
+        self.M.setdefault("stable_yards", []).append({"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)], "troughs": n_troughs if wp else 0})
         random.setstate(st)
 
     def animal_ground(self, cx: float, cy: float, r: float = 68.0, label: Any = None) -> None:

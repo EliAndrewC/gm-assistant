@@ -921,9 +921,19 @@ def test_animal_ground_records_a_yard_and_optional_label():
     # the city_no_large_empty_space remedy: a standalone stable-yard scatter claiming a pocket
     s = _crop_settlement()
     s.animal_ground(400, 400, r=60)  # no label - the rails and animals read on their own
-    assert s.M["stable_yards"][-1] == {"x": 400, "y": 400, "r": 60, "of": [400, 400]}
+    assert s.M["stable_yards"][-1] == {"x": 400, "y": 400, "r": 60, "of": [400, 400], "troughs": 2}
     s.animal_ground(700, 700, r=52, label="caravan ground")
     assert s.M["labels"][-1][5] == "caravan ground"  # label boxes are [x0, y0, x1, y1, z, text]
+
+
+def test_caravan_scale_yard_gets_three_troughs_at_the_nearest_well():
+    # the watering point (settlements.md 'Stable yard' watering): a caravan-scale ground (r >= 76)
+    # draws 3 troughs, and the cluster anchors toward a recorded well within reach
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 500, "y": 400, "r": 8, "vr": 4.0, "shrine": False}]
+    s.animal_ground(400, 400, r=80)
+    assert s.M["stable_yards"][-1]["troughs"] == 3
+    assert "".join(s.out).count('fill="#8FA6B0"') == 3  # the trough rects (drawn at the well-side anchor, x ~ 454)
 
 
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
