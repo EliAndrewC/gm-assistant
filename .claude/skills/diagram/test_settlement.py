@@ -2467,6 +2467,14 @@ def test_land_use_overlay_topography_paths():
     s2.meta(name="LU2", scale="village", ftpx=1, down_deg=90)
     n2 = s2.apply_land_use(dry, "mulberry_fishpond", __import__("random").Random(1), fraction=0.9, eligible="all")
     assert n2 > 0 and s2.M["land_use"][-1]["eligible"] == "all"
+    # fourth pass (GM 2026-07-23): the wholesale case repaints its rice leftovers as textured paddy and
+    # records them - every plot is either converted or a recorded leftover, none floats as a bare outline
+    assert len(s2.M["land_use"][-1]["leftover_plots"]) == len(dry["plots"]) - n2
+    # the partial-overlay path records no leftovers (its unconverted plots are ordinary comb paddies)
+    s3 = Settlement(2000, 2800, seed=3)
+    s3.meta(name="LU3", scale="village", ftpx=1, down_deg=90)
+    s3.apply_land_use(net, "mulberry_fishpond", __import__("random").Random(1))
+    assert s3.M["land_use"][-1]["leftover_plots"] == []
     # take >= len(eligible) short-circuits to "convert everything eligible"
     two = [{"poly": [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)], "low": True}] * 2
     assert len(Settlement._pick_overlay_plots(two, 5, clustered=True, rng=__import__("random").Random(1))) == 2
@@ -3151,6 +3159,15 @@ def test_apply_land_use_leaves_a_lone_pond_ungated():
     }
     s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
     assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
+
+
+def test_mulberry_rows_skips_a_parcel_too_small_to_plant():
+    # fourth pass: a parcel whose apothem cannot hold the 11 px water inset has no bank to plant - the
+    # helper draws nothing rather than wrapping crown rows around a degenerate loop.
+    s = Settlement(400, 400, seed=1)
+    before = len(s.out)
+    s._mulberry_rows([(0.0, 0.0), (20.0, 0.0), (20.0, 20.0), (0.0, 20.0)], "M 0 0 Z", 10.0, 10.0, random.Random(1))
+    assert len(s.out) == before
 
 
 def test_perimeter_dike_gap_off_band_still_draws_full_loop():
