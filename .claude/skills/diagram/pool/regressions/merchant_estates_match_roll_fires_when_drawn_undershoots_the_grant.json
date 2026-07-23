@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000,
+  "merchant_estate_roll": 2
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "buildings": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant_house"
+  }
+ ],
+ "merchant_estates": [
+  {
+   "x": 500,
+   "y": 600,
+   "w": 62,
+   "h": 46
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "merchant_estates_match_roll"
+  ],
+  "source": "test_checks.py::test_merchant_estates_match_roll_fires_when_drawn_undershoots_the_grant"
+ }
+}

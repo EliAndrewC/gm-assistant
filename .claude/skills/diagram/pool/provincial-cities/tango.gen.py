@@ -236,14 +236,18 @@ def furrows(poly, color, theta):
     s.add(''.join(g))
 
 
-def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a, offtakes_b=(), dry_band=(14, 26), avoid=(), mirror_ym=None, dry_keepout=()):
+def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a, offtakes_b=(), dry_band=(14, 26), avoid=(), mirror_ym=None, dry_keepout=(), inwall_drain_bias=None):
     """One comb-doctrine field: build the net, draw it, record the manifest. `avoid` lists
     polylines (moat / ring road) a dry-hem plot must not ride - a colliding plot is skipped
     (the hem is texture on the upslope margin, not load-bearing). `mirror_ym` flips the comb's
     CHIRALITY by computing it in a y-mirrored frame about that line and mirroring the geometry
     back: build_comb always spreads its wide (canal B) flank counterclockwise of the fall, and
-    real combs came in both hands - the NW pocket needs the clockwise one. Returns (net,
-    envelope, interior point) - the caller records the source channel + rings the farmhouses."""
+    real combs came in both hands - the NW pocket needs the clockwise one. `inwall_drain_bias`
+    marks an IN-WALL fan: the drain is trimmed through s.inwall_drain_outfall (cut off short of
+    the ring road, sluice-gated, undrawn underground conduit to the moat) BEFORE drawing and
+    recording, so the drawn ditch, the field_ditches record, and the conduit share the cut
+    geometry (gated by inwall_drains_gated_at_cutoff). Returns (net, envelope, interior
+    point) - the caller records the source channel + rings the farmhouses."""
     if mirror_ym is not None:
         sluice = (sluice[0], 2 * mirror_ym - sluice[1])
         down_deg = (-down_deg) % 360
@@ -280,6 +284,9 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         net["bund_beans"] = m(net["bund_beans"])
         if net["brook"]:
             net["brook"] = m(net["brook"])
+    if inwall_drain_bias is not None:
+        _dr = next(c for c in net["channels"] if c["role"] == "drain")
+        _dr["pts"] = s.inwall_drain_outfall(_dr["pts"], moat_bias=inwall_drain_bias)
     env = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]
     s.field_polys.append([(p[0], p[1]) for p in env])
     # FIELD FLOOR (city grain): draw the whole envelope in soil-tan FIRST, under every plot and
@@ -455,30 +462,15 @@ _net1, ENV_NW1, _c1 = comb_field(
     dry_band=(42, 76),
     avoid=(RING,),
     mirror_ym=1111,
+    inwall_drain_bias=(-40, 30),  # aim the underground conduit at the moat rim W-SW of the cutoff
 )  # in-wall hem: 126-228 real ft - near the village hem depth; the avoid clause already drops any plot the crescent cannot hold, so the band may run close to full
 _p1 = plot_centroid(_net1, lambda cs: min(cs, key=lambda c: (c[0] - _c1[0]) ** 2 + (c[1] - _c1[1]) ** 2))
 topo_channel([(1482, 972), (1470, 978), _p1], {"kind": "pond"}, {"kind": "field", "name": "nw1"})
-# the in-wall field's runoff leaves by a WATER GATE: a culvert from the drain's outfall under
-# the ring road + rampart into the moat (drawn in the water block, so the wall renders over it -
-# it reads as flowing beneath the masonry, which is what a real water gate did)
-_dr1 = next(c["pts"] for c in _net1["channels"] if c["role"] == "drain")
-_o1x, _o1y = _dr1[0] if _dr1[0][0] < _dr1[-1][0] else _dr1[-1]  # the outfall = the drain's WEST end
-_mw = min(MOAT, key=lambda p: (p[0] - _o1x + 40) ** 2 + (p[1] - _o1y - 30) ** 2)  # moat rim W-SW of it
-topo_channel([(_o1x, _o1y), (_mw[0], _mw[1])], {"kind": "drain"}, {"kind": "moat"})  # topology: the sink IS the moat
-# ...but the VISIBLE ditch stops SHORT of the patrol road: the runoff drops into an implied
-# UNDERGROUND stone conduit beneath the ring road, rampart and moat (GM: never draw the ditch
-# running through the city wall - the water gate is underground)
-_ucx, _ucy = _mw[0] - _o1x, _mw[1] - _o1y
-_ucl = math.hypot(_ucx, _ucy) or 1.0
-_lo, _hi = 0.0, 1.0
-for _ in range(24):  # where the culvert line meets the ring road loop
-    _mt = (_lo + _hi) / 2
-    if _in_poly(_o1x + _ucx * _mt, _o1y + _ucy * _mt, RING):
-        _lo = _mt
-    else:
-        _hi = _mt
-_te = max(0.15, _lo - 12.0 / _ucl)  # stop ~12px before the ring road bed
-s.field_channel([(_o1x, _o1y), (_o1x + _ucx * _te, _o1y + _ucy * _te)], '#7C9EB0', 3.2, 3.2)
+# the in-wall field's runoff leaves by a WATER GATE (GM 2026-07-23): the drain is TRIMMED to a
+# cutoff clear of the patrol road, a sluice-gate glyph marks the drop, and an UNDRAWN conduit
+# carries the topology under ring road + rampart into the moat - all via inwall_drain_outfall
+# inside comb_field (never draw the ditch running through the city wall; the water gate itself
+# is underground, only the control gate at the drop shows)
 s.ring(('poly', ENV_NW1), 17, 14, ["plain"])
 s.ring(('poly', ENV_NW1), 13, 42, ["plain"])
 s.ring(('poly', ENV_NW1), 10, 70, ["plain"])
@@ -632,9 +624,20 @@ s.merchant_storehouses(8)
 # the merchants' HOMES: terraces in the north band (between the burakumin lane and the avenue,
 # prime central ground) and the mid-block cores; the WEST enclave keeps its spread
 alleys([[(1308, 1346), (1308, 1454)]])  # reaches the avenue bed; the x1480 through-street serves the band's east half
-EST = [(1265, 1387, "south")]
-for ex, ey, gd in EST:
-    s.merchant_estate(ex, ey, gate_dir=gd)
+# WALLED COMPOUND COUNT IS ROLLED, 1-3 per city (GM 2026-07-23): a gated compound is a GRANTED
+# privilege, not a purchase - see MERCHANT_ESTATE_WEIGHTS (settlement.py) for the Edo-privileges
+# reasoning and merchant_estates_match_roll for the gate. The unwalled very-rich homes below stay
+# regardless (the city holds ~12 very-rich families; a compound marks the 1-3 who hold the grant).
+# SEAT VETTING (2026-07-23, via a full-map clear-pocket scan against the PRE-ESTATE fixed features:
+# streets/wall/moat/water, the early fixed wells and their |dx|>=39-or-|dy|>=31 wellhead clearance,
+# frontage shops, civic + label ground - pack housing places AFTER the estates and flows around;
+# late well passes yield to the court blocks). Ground EAST of the x~1620 ward fence is samurai
+# rowpack territory and caste-forbidden (a first seat-2 draft there ate a samurai_large and broke
+# city_samurai_housing_varied). Seat 2 takes the band's NW pocket between the early wells; seat 3
+# the district's SE pocket just west of the ward fence, west-gated toward the district interior.
+# Both pin-vetted with merchant_estates(count=3) against the full gate even though seed 162 rolls
+# 2 - a reseed may seat any of them.
+_n_est = s.merchant_estates([(1265, 1387, "south"), (1360, 1362, "west"), (1580, 1542, "west")])  # seat 2 threads the (1358,1399) fixed home / burakumin strip gap, west-gated onto the x1308 alley
 for mx, my in [(1358, 1399), (1517, 1391)]:
     s.building(mx, my, *s._dims("merchant_large"), "merchant_large")
 s.inn(1570, 1424)  # the roadside inn anchoring the central road-market (before the terraces)

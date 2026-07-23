@@ -702,10 +702,13 @@ for _mrx, _mry in [(1580, 1394), (1580, 1614)]:
 s.frontage([(1501, 1330), (1898, 1330)], (["merchant"] * 3 + ["shop"]) * 16, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14))
 front(MER_ST, (["merchant"] * 3 + ["shop"]) * 8, spacing=19, rows=1)
 s.merchant_storehouses(8)
-EST_M = [(1750, 1548, "south")]
-for ex, ey, gd in EST_M:
-    s.merchant_estate(ex, ey, gate_dir=gd)
-_ML_SPOTS = [(1580, 1394), (1580, 1614)]
+# WALLED COMPOUND COUNT IS ROLLED, 1-3 per city (GM 2026-07-23): a gated compound is a GRANTED
+# privilege - see MERCHANT_ESTATE_WEIGHTS (settlement.py) for the Edo-privileges reasoning and
+# merchant_estates_match_roll for the gate. Seats 2-3 are the _ML_SPOTS very-rich homes, shifted
+# west (1580 -> 1565) so the court wall clears the x1604 roji, gating EAST onto it; an unrolled
+# seat keeps its unwalled large house (the _ML_SPOTS tail below).
+_n_est = s.merchant_estates([(1750, 1548, "south"), (1565, 1394, "east"), (1565, 1614, "east")])
+_ML_SPOTS = [(1580, 1394), (1580, 1614)][_n_est - 1 :]
 _mer = (
     (["merchant_house"] * 2 + ["servant"] + ["laborer"]) * 130
 )  # 2:1:1 (was 3:1:1): interleaving more servants/laborers between the merchant homes is what keeps the merchant-to-merchant nearest-neighbor spread >= 1.3x the laborer warren (city_merchant_housing_spread) while the rows themselves stay contiguous
