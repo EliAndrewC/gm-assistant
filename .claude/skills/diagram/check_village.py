@@ -1909,6 +1909,39 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"stable-yard trough clusters not beside a well at {_tr_far[:3]} - animals are watered by relay at a fixed draw-point, the bucket poured straight from the wellhead, so the cluster hugs a well within ~40 real ft; a yard with no well in reach digs its own courtyard well (s._stable_yard does both; settlements.md 'Stable yard' watering)",
     )
 
+    # TROUGH RECTS DRAW ON OPEN GROUND - the cluster's drawn BOX must not clip any structure (GM
+    # 2026-07-23, after Tango's caravan cluster hugged its well on a near-vertical ray and the
+    # bottom trough clipped the well-house roof corner: the old fixed offset only guaranteed
+    # HORIZONTAL clearance - the stack is taller than it is wide - and only the cluster CENTER was
+    # point-checked, so the rects themselves could land on footprints). Placement records the
+    # drawn extent as `troughs_box`; it is tested against every solid footprint (the yard's own
+    # keep kinds + houses, rotation-exact via SAT) and every wellhead roof square (vr). A yard
+    # with troughs but no recorded box fails - the extent is part of the record's contract.
+    _tb_bad = []
+    for _tb_yd in M.get("stable_yards", []):
+        if not _tb_yd.get("troughs"):
+            continue
+        _tb = _tb_yd.get("troughs_box")
+        if not _tb:
+            _tb_bad.append((round(_tb_yd["x"]), round(_tb_yd["y"])))
+            continue
+        _tb_poly = [(_tb[0], _tb[1]), (_tb[2], _tb[1]), (_tb[2], _tb[3]), (_tb[0], _tb[3])]
+        _tb_hit = any(
+            "w" in _tb_b and "h" in _tb_b and sat_overlap(_tb_poly, rect_corners(_struct_rect(_tb_b)))
+            for _tb_k in ("buildings", "flophouses", "storehouses", "merchant_estates", "ministries", "religious", "manors", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "houses")
+            for _tb_b in M.get(_tb_k, []) or []
+        ) or any(
+            _tb[0] < _tb_w["x"] + _tb_w.get("vr", 4.0) and _tb[2] > _tb_w["x"] - _tb_w.get("vr", 4.0) and _tb[1] < _tb_w["y"] + _tb_w.get("vr", 4.0) and _tb[3] > _tb_w["y"] - _tb_w.get("vr", 4.0)
+            for _tb_w in M.get("wells", [])
+        )
+        if _tb_hit:
+            _tb_bad.append((round(_tb_yd["x"]), round(_tb_yd["y"])))
+    check(
+        "stable_troughs_clear_of_buildings",
+        not _tb_bad,
+        f"stable-yard trough rects clip a structure (or went unrecorded) at yards {_tb_bad[:3]} - the drawn cluster box (troughs_box) must sit on open ground, clear of every building footprint and wellhead roof; s._stable_yard's direction-aware offset + box corner-check places it (settlements.md 'Stable yard' watering)",
+    )
+
     # WALL TOWER COVERAGE by the city's DEFENSE POSTURE (GM 2026-07-22): the interlocking-flanking-fire rule
     # (侧射; Shen Kuo's 11th-c. 矢石相及 - adjacent mamian's fields of fire overlap so an attacker at the base
     # is hit from >=2 towers). TUNABLE per city (meta wall_defense): `siege` = aimed-lethal bowshot (60 m /

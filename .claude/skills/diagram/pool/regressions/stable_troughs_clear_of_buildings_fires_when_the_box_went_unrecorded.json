@@ -1,0 +1,38 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3
+ },
+ "stable_yards": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    500,
+    500
+   ],
+   "troughs": 2,
+   "troughs_at": [
+    492.1,
+    500.0
+   ]
+  }
+ ],
+ "wells": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 8,
+   "vr": 4.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "stable_troughs_clear_of_buildings"
+  ],
+  "source": "test_checks.py::test_stable_troughs_clear_of_buildings_fires_when_the_box_went_unrecorded"
+ }
+}

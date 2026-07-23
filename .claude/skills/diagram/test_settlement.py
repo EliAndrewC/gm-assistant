@@ -943,6 +943,36 @@ def test_caravan_scale_yard_gets_three_troughs_beside_the_nearest_well():
     assert 'x="489.9"' in out  # the cluster's trough rects, centered on troughs_at
 
 
+def test_vertical_hug_offsets_far_enough_to_clear_the_well_house_roof():
+    # the Tango caravan-ground defect (GM 2026-07-23): a 3-trough stack is TALLER than it is
+    # wide, so the old fixed offset (vr + half a trough LENGTH) let a near-vertical ray clip
+    # the roof corner - the direction-aware offset clears the roof square along any ray
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 400, "y": 330, "r": 8, "vr": 4.0, "shrine": False}]  # due north: a vertical ray
+    s.animal_ground(400, 400, r=80)  # caravan scale - 3 troughs
+    yd = s.M["stable_yards"][-1]
+    assert yd["troughs"] == 3
+    bx0, by0, bx1, by1 = yd["troughs_box"]
+    assert by0 >= 330 + 4.0  # the box top clears the roof square's bottom edge
+    assert by0 - (330 + 4.0) == pytest.approx(1.5, abs=0.11)  # ... by exactly the bucket-pour step (round-off)
+
+
+def test_cluster_walks_off_a_neighbor_wells_roof():
+    # an idobata PAIR: the yard sits on well A (dist < 1, skipped as the target), so the cluster
+    # hugs well B - but B's yard-side flank lands on A's roof, so the walk-around must find a
+    # flank clear of BOTH roofs (the neighbor-well rejection)
+    s = _crop_settlement()
+    s.M["wells"] = [
+        {"x": 400, "y": 400, "r": 8, "vr": 4.0, "shrine": False},  # A - under the yard center
+        {"x": 408, "y": 400, "r": 8, "vr": 4.0, "shrine": False},  # B - the target
+    ]
+    s.animal_ground(400, 400, r=60)
+    bx0, by0, bx1, by1 = s.M["stable_yards"][-1]["troughs_box"]
+    for w in s.M["wells"]:
+        vr = w["vr"]
+        assert not (bx0 < w["x"] + vr and bx1 > w["x"] - vr and by0 < w["y"] + vr and by1 > w["y"] - vr)
+
+
 def test_yard_digs_its_own_well_when_the_near_wellheads_flanks_are_all_blocked():
     # the Nagahara yard-1 case: a well IS in reach, but a building crowds every flank of the
     # wellhead, so no bucket-pour spot exists beside it - the yard digs its own well instead
@@ -2467,6 +2497,14 @@ def test_land_use_overlay_topography_paths():
     s2.meta(name="LU2", scale="village", ftpx=1, down_deg=90)
     n2 = s2.apply_land_use(dry, "mulberry_fishpond", __import__("random").Random(1), fraction=0.9, eligible="all")
     assert n2 > 0 and s2.M["land_use"][-1]["eligible"] == "all"
+    # fourth pass (GM 2026-07-23): the wholesale case repaints its rice leftovers as textured paddy and
+    # records them - every plot is either converted or a recorded leftover, none floats as a bare outline
+    assert len(s2.M["land_use"][-1]["leftover_plots"]) == len(dry["plots"]) - n2
+    # the partial-overlay path records no leftovers (its unconverted plots are ordinary comb paddies)
+    s3 = Settlement(2000, 2800, seed=3)
+    s3.meta(name="LU3", scale="village", ftpx=1, down_deg=90)
+    s3.apply_land_use(net, "mulberry_fishpond", __import__("random").Random(1))
+    assert s3.M["land_use"][-1]["leftover_plots"] == []
     # take >= len(eligible) short-circuits to "convert everything eligible"
     two = [{"poly": [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)], "low": True}] * 2
     assert len(Settlement._pick_overlay_plots(two, 5, clustered=True, rng=__import__("random").Random(1))) == 2
@@ -3244,6 +3282,15 @@ def test_apply_land_use_leaves_a_lone_pond_ungated():
     }
     s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
     assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
+
+
+def test_mulberry_rows_skips_a_parcel_too_small_to_plant():
+    # fourth pass: a parcel whose apothem cannot hold the 11 px water inset has no bank to plant - the
+    # helper draws nothing rather than wrapping crown rows around a degenerate loop.
+    s = Settlement(400, 400, seed=1)
+    before = len(s.out)
+    s._mulberry_rows([(0.0, 0.0), (20.0, 0.0), (20.0, 20.0), (0.0, 20.0)], "M 0 0 Z", 10.0, 10.0, random.Random(1))
+    assert len(s.out) == before
 
 
 def test_perimeter_dike_gap_off_band_still_draws_full_loop():
