@@ -926,14 +926,25 @@ def test_animal_ground_records_a_yard_and_optional_label():
     assert s.M["labels"][-1][5] == "caravan ground"  # label boxes are [x0, y0, x1, y1, z, text]
 
 
-def test_caravan_scale_yard_gets_three_troughs_at_the_nearest_well():
+def test_caravan_scale_yard_gets_three_troughs_beside_the_nearest_well():
     # the watering point (settlements.md 'Stable yard' watering): a caravan-scale ground (r >= 76)
-    # draws 3 troughs, and the cluster anchors toward a recorded well within reach
+    # draws 3 troughs, and the cluster HUGS the recorded well - a bucket-pour from the wellhead
+    # (GM 2026-07-23: "otherwise you'd have to carry the water a long way"), even a well past the rim
     s = _crop_settlement()
     s.M["wells"] = [{"x": 500, "y": 400, "r": 8, "vr": 4.0, "shrine": False}]
     s.animal_ground(400, 400, r=80)
     assert s.M["stable_yards"][-1]["troughs"] == 3
-    assert "".join(s.out).count('fill="#8FA6B0"') == 3  # the trough rects (drawn at the well-side anchor, x ~ 454)
+    out = "".join(s.out)
+    assert out.count('fill="#8FA6B0"') == 3  # the trough rects
+    assert 'x="489.9"' in out  # cluster at (492.2, 400): wellhead vr 4.0 + half a 4.6 trough + 1.5 step from the well at x=500
+
+
+def test_yard_troughs_fall_back_when_no_well_in_reach():
+    # every recorded well beyond r + 40: the cluster takes a clear interior spot instead
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]
+    s.animal_ground(400, 400, r=60)
+    assert s.M["stable_yards"][-1]["troughs"] == 2
 
 
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
