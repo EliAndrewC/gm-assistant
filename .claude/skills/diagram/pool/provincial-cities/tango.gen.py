@@ -1154,9 +1154,9 @@ s.place_wells(
     (1176, 993, 1561, 1226), spacing=56, near=88, coverage=False
 )  # FINE grid (the district is laced with field margins + channel corridors), each well gated to sit AMONG homes (near=88), coverage=False so the near-gate stays district-scoped (the global coverage pass would drop wells beside the samurai compounds)
 
-s.crop_city(35, west=100)  # aggressive content crop (GM 2026-07-23): tight 35px past the kept satellites on
-# three sides; the WEST keeps a 100px farm band (no satellite anchors that flank and the GM called its
-# current framing perfect). The gate markets (N/S) and funerary+estates (E) are the true frame drivers.
+s.crop_city(west=100)  # the aggressive default (35px past the kept satellites); the WEST keeps a 100px farm
+# band (no satellite anchors that flank and the GM called its framing perfect). The gate markets (N/S)
+# and funerary+estates (E) are the true frame drivers.
 s.title("Tango")
 
 HERE = os.path.dirname(os.path.abspath(__file__))

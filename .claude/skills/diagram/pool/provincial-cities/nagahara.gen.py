@@ -1053,9 +1053,9 @@ s.place_wells((1094, 962, 1450, 1298), spacing=46, near=48)  # NW monzen, offset
 # hamlet"). Coverage need not be total - the visible fans + open ground read as the head of paddy
 # country continuing beyond the frame.
 
-s.crop_city(35, west=100)  # aggressive content crop (GM 2026-07-23, matching Tango): 35px past the kept
-# satellites (N gate market, far-bank funerary S/E, wharf); the WEST keeps a 100px farm band (no
-# satellite anchors that flank and the GM called the left framing good).
+s.crop_city(west=100)  # the aggressive default (35px past the kept satellites: N gate market, far-bank
+# funerary S/E, wharf); the WEST keeps a 100px farm band (no satellite anchors that flank and the GM
+# called the left framing good).
 s.title("Nagahara")
 
 HERE = os.path.dirname(os.path.abspath(__file__))

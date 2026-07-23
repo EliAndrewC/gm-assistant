@@ -868,7 +868,7 @@ class Settlement:
         "merchant_estates",
     )
 
-    def crop_city(self, margin: float = 100, west: float | None = None, north: float | None = None, east: float | None = None, south: float | None = None) -> None:
+    def crop_city(self, margin: float = 35, west: float | None = None, north: float | None = None, east: float | None = None, south: float | None = None) -> None:
         """CITY content crop (GM 2026-07-23, replacing the hand-tuned wide MARGIN frames): frame the map to
         the moat ring + every KEPT satellite feature (gate markets, flophouses, funerary grounds, wharf
         stalls - the `_CROP_CITY` keys) + every placed LABEL box (labels_within_image demands containment),
@@ -878,7 +878,11 @@ class Settlement:
         AFTER every feature and label, BEFORE `title()` (the title drops into the framed window).
         Per-side margin overrides (west/north/east/south) keep a REPRESENTATIVE FARM BAND on a flank
         with no satellite to anchor the frame - e.g. Tango's west, where nothing but fans lies beyond
-        the moat and the bare `margin` would re-create the pre-2026-07-23 sliver crop."""
+        the moat and the bare `margin` would re-create the pre-2026-07-23 sliver crop.
+        THE AGGRESSIVE 35px MARGIN IS THE DEFAULT FOR ALL CITIES (GM 2026-07-23: "I would like the
+        aggressive crop to be the default for all cities unless I state otherwise") - a new city gen
+        calls `s.crop_city()` bare and adds only the farm-band override for its satellite-less flank
+        (which flank that is varies by city; both current cities happen to use west=100)."""
         hx: list[float] = []
         hy: list[float] = []
         for k in self._CROP_CITY:
