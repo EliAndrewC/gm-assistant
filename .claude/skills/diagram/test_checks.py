@@ -3129,6 +3129,33 @@ def test_city_streets_connected_and_empty_space_fire():
     assert "city_no_large_empty_space" in fails
 
 
+def _es_pocket_city(**extra):
+    # a densely housed city with ONE deliberate bare pocket (~230x120px, the Tango north-gate
+    # shape): houses on a 60px lattice except x 510-690 / y 400-520
+    houses = [{"kind": "laborer", "x": x, "y": y, "w": 30, "h": 22, "rot": 0} for x in range(150, 850, 60) for y in range(150, 850, 60) if not (500 <= x <= 700 and 400 <= y <= 520)]
+    M = {
+        "meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
+        "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
+        "gates": [[500, 100], [500, 900]],
+        "buildings": houses,
+    }
+    M.update(extra)
+    return M
+
+
+def test_city_no_large_empty_space_fires_on_an_unclaimed_pocket():
+    # the footprint-aware rebuild (GM 2026-07-23, Tango's north gate): a pocket far smaller than
+    # the old vast-void threshold still fires when nothing claims it
+    assert "city_no_large_empty_space" in f(_es_pocket_city())
+
+
+def test_city_no_large_empty_space_passes_when_an_animal_ground_claims_the_pocket():
+    # the standing remedy: the SAME pocket goes green once a stable-yard / animal-ground record
+    # claims the open ground as deliberate working space (s.animal_ground)
+    M = _es_pocket_city(stable_yards=[{"x": 600, "y": 480, "r": 80.0, "of": [600, 480]}])
+    assert "city_no_large_empty_space" not in f(M)
+
+
 def test_city_streets_connected_fires_on_a_gap_wider_than_45px():
     # two parallel streets 60px apart: the old 95px tolerance bridged them, the tightened 45px
     # does not - a grid that stops short of the road reads as a separated network, not connected
