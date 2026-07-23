@@ -3289,13 +3289,30 @@ class Settlement:
         g.append(f'<line x1="{-w * 0.30:.1f}" y1="0" x2="{w * 0.30:.1f}" y2="0" stroke="{edge}" stroke-width="0.8" opacity="0.6"/>')
         if kind in ("shop", "merchant"):
             # a BUSINESS: a striped awning along the street frontage + a hanging sign, so
-            # commerce reads as visually distinct from plain housing
-            g.append(f'<rect x="{-w * 0.5:.1f}" y="{h / 2 - 6:.1f}" width="{w}" height="6.5" fill="#A8472E" opacity="0.95"/>')
-            for sx in range(int(-w * 0.5) + 3, int(w * 0.5), 9):
-                g.append(f'<rect x="{sx:.1f}" y="{h / 2 - 6:.1f}" width="4.5" height="6.5" fill="#E8D2A8" opacity="0.55"/>')
-            g.append(f'<rect x="-5.5" y="{h / 2 - 2:.1f}" width="11" height="9" rx="1" fill="#E8D9A8" stroke="#6B4A22" stroke-width="0.8"/>')  # hanging sign
+            # commerce reads as visually distinct from plain housing.
+            # TRUE SCALE with a legibility floor (GM 2026-07-23; was a fixed 6.5px strip + 11x9px
+            # sign, which read as a ~20 ft awning and a 33x27 ft sign at the city's 3 ft/px): a
+            # machiya storefront awning / deep eave runs a real ~3-6 ft, so the strip is 5 ft
+            # scaled with the glyph grain (bscale) exactly like the footprint, floored at 2.4px so
+            # it stays a visible band at city grain (true-or-floored, never inflated past the
+            # floor). Stripe spacing/width scale with the depth to keep the town-tuned proportions.
+            aw = max(5.0 * self.bscale, 2.4)
+            ay = h / 2 - aw  # flush with the front wall - a real awning's street overhang is sub-pixel at every grain
+            g.append(f'<rect x="{-w * 0.5:.1f}" y="{ay:.1f}" width="{w}" height="{aw:.1f}" fill="#A8472E" opacity="0.95"/>')
+            sx = -w * 0.5 + 0.45 * aw
+            while sx < w * 0.5:
+                g.append(f'<rect x="{sx:.1f}" y="{ay:.1f}" width="{0.7 * aw:.1f}" height="{aw:.1f}" fill="#E8D2A8" opacity="0.55"/>')
+                sx += 1.4 * aw
+            # the hanging sign is a LOCATION MARKER, not a to-scale footprint (same doctrine as
+            # the well, GM 2026-07-21): a real kanban is ~2-4 ft and would vanish at any grain, so
+            # it scales with bscale but floors at a legible 6x5px, and it straddles the frontage
+            # line rather than jutting a scaled 20+ ft into an 18-26 ft street.
+            sgw, sgh = max(11 * self.bscale, 6.0), max(9 * self.bscale, 5.0)
+            g.append(f'<rect x="{-sgw / 2:.1f}" y="{h / 2 - sgh / 2:.1f}" width="{sgw:.1f}" height="{sgh:.1f}" rx="1" fill="#E8D9A8" stroke="#6B4A22" stroke-width="0.8"/>')  # hanging sign
         else:
-            g.append(f'<rect x="{-w * 0.16:.1f}" y="{h / 2 - 3:.1f}" width="{w * 0.32:.1f}" height="3.2" fill="{edge}" opacity="0.8"/>')  # door
+            # door stub: scales with the glyph grain like the awning, floored for visibility
+            dh = max(3.2 * self.bscale, 1.6)
+            g.append(f'<rect x="{-w * 0.16:.1f}" y="{h / 2 - dh:.1f}" width="{w * 0.32:.1f}" height="{dh:.1f}" fill="{edge}" opacity="0.8"/>')  # door
         g.append('</g>')
         self.add(''.join(g))
         self.M["buildings"].append({"x": cx, "y": cy, "w": w, "h": h, "kind": kind, "rot": rot})
