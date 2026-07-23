@@ -135,7 +135,7 @@ SHRINE_TORII = [(392, 1096 + i * 15) for i in range(7)]
 s.reserve_clearing(SHRINE[0], SHRINE[1], 30, 24, 58)      # the shrine hall
 for _tx, _ty in SHRINE_TORII:
     s.reserve_clearing(_tx, _ty, 38, 28, 30)              # each of the 7 torii arches
-s.reserve_clearing(178, 1030, 48, 34, 30)                 # the village graveyard
+s.reserve_clearing(178, 1030, 62, 44, 30)                 # the village graveyard (footprint synced with the s.cemetery call below)
 
 # REED MARSH on the low, downstream SE toe of the valley: below the paddy's drainage line the wet-rice
 # cultivation stops, and the un-reclaimed valley floor stays reed WETLAND (wet rice is diked OUT of marsh -
@@ -399,7 +399,7 @@ s.commons([(1490, 95), (1770, 95), (1770, 162), (1490, 162)], role="woodland")  
 # VILLAGE GRAVEYARD on the SW BACK-SLOPE, placed BEFORE the crop so the frame always contains it (the
 # doctrine's set-apart rule; moved 2026-07-21 when the headman-kura repack shifted the cluster's west extent
 # and the tight crop clipped the fixed-coordinate plot). Siting rationale in the comment block below.
-s.cemetery(178, 1030, 48, 34, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot. Resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~96x68 ft), not 0.5+ - see settlements.md funerary anchors
+s.cemetery(178, 1030, 62, 44, parish=False, organic=True)   # no label - the marker rows read as a graveyard; organic = an irregular earthen plot. Resized 2026-07-23: the ground serves the WHOLE ~800-person district (village + ~6 hamlets' urns), ~0.15-0.30 acre -> 124x88 ft - see settlements.md 'District catchment'
 # VILLAGE SHRINE at the SE water-mouth entrance: the tutelary earth-god shrine (土地庙) guarding the feng-shui
 # entry point where the connector track leaves for the road. A small Shinto hall (~30x24 px ~ 275 m2 - a modest
 # earth-god hall, NOT a temple; kind='shrine' satisfies religious_matches_scale, graveyard=False keeps kegare at

@@ -1305,10 +1305,14 @@ CREMATION_FT_MIN, CREMATION_FT_MAX_TOWN, CREMATION_FT_MAX_CITY = 25.0, 90.0, 160
 # the size-inflation license is retired; the drawn mound is now ~22 ft with a 4.5px floor).
 OSSUARY_FT_MIN, OSSUARY_FT_MAX = 8.0, 32.0
 # BURIAL GROUNDS (cremation-then-inter culture, aggressive plot reuse, ~1 generation of active
-# plots): ~10-20 sq ft per urn-grave packed incl. circulation -> village (~350) 0.1-0.25 ac,
-# town (~1,200) 0.25-0.75, city (~3,000) 0.75-2 split across yards. Bands widened a little
-# both ways for glyph rounding; the LADDER must stay monotone with population served.
-BURIAL_AC_BAND = {"village": (0.04, 0.30), "town": (0.10, 0.80), "city": (0.35, 2.20)}
+# plots): ~10-20 sq ft per urn-grave packed incl. circulation. The VILLAGE ground serves the
+# WHOLE ~800-person district (the central village ~350 + ~6 hamlets ~75 each, whose dead are
+# carried here as urns - hamlets draw no ground; settlements.md 'District catchment', GM
+# 2026-07-23): ~800 x ~25-30 deaths/1,000/yr x ~30-yr reuse = ~600-720 active plots ->
+# village 0.15-0.30 ac; town (~1,200 own pop) 0.25-0.75, city (~3,000) 0.75-2 split across
+# yards. Bands widened a little both ways for glyph rounding; the LADDER must stay monotone
+# with population SERVED (district 800 < town 1,200, so the ranges nest fine).
+BURIAL_AC_BAND = {"village": (0.12, 0.38), "town": (0.10, 0.80), "city": (0.35, 2.20)}
 
 # --- doors-face-open + rows-max-two-deep (GM, 2026-07-18) -----------------------------------
 # The boundary between "an eave/drainage gap" (~3-6 real ft between back-to-back rows - rain
@@ -2206,9 +2210,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         check(
             "burial_grounds_sized_to_population",
             lo <= total_ac <= hi,
-            f"total burial ground {total_ac:.2f} acres vs the {scale} band [{lo},{hi}] - size the grounds to the population served "
-            f"(cremation-then-inter culture, ~1 generation of active plots before reuse: village ~0.1-0.25 ac, town ~0.25-0.75, city ~0.75-2 split across yards); "
-            f"the ladder must read MONOTONE with population - a village ground must never dwarf a town's",
+            f"total burial ground {total_ac:.2f} acres vs the {scale} band [{lo},{hi}] - size the grounds to the population SERVED "
+            f"(cremation-then-inter culture, ~1 generation of active plots before reuse: village ~0.15-0.30 ac for the ~800-person DISTRICT it buries - "
+            f"hamlets carry their urns here and draw no ground; town ~0.25-0.75, city ~0.75-2 split across yards); "
+            f"the ladder must read MONOTONE with population served - a village ground must never dwarf a town's",
         )
 
     # FARMSTEADS ARE WITHIN REACH OF A WELL (town/city): the farm belt drinks daily too, and
