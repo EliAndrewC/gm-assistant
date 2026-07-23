@@ -92,7 +92,7 @@ else:  # pragma: no cover - the sweep finds a seat on any sane canvas
 # the 7 TORII march down the sando AWAY from the hall, back toward the village approach
 _ux, _uy = -_ax, -_ay
 _torii = [(round(BEN[0] + _ux * d), round(BEN[1] + _uy * d)) for d in range(34, 34 + 7 * 15, 15)]   # 15px (~30ft) pitch: a DENSE senbon-style avenue (GM 2026-07-22; was 36px/72ft, which read as isolated gates once the torii glyph went true-scale ~8px). Clears the torii_spread_out floor. INNERMOST arch at d=34 from the hall center sits at its THRESHOLD, directly in front (was 58, a sizeable gap; d=34 clears the 44x30 hall's bbox that torii_clear_of_shrine uses while keeping a ~17ft front gap - shrine_avenue_fronts_the_hall)
-s.shrine_hall(BEN[0], BEN[1], "Shrine to Benten", "(Sister Baika's care)", w=44, h=30, kind="shrine", primary=True, torii=_torii, graveyard=False)
+s.shrine_hall(BEN[0], BEN[1], "Shrine to Benten", "(Sister Baika's care)", w=44, h=30, kind="shrine", primary=True, torii=_torii, torii_count=7, graveyard=False)  # PINNED 7 (2026-07-24): Kikuta IS the pool's 7-torii flat-ground avenue exemplar (its dense senbon sando is GM-approved canon), so the per-temple roll is pinned rather than re-rolled
 s.shrine_well(round(BEN[0] - _uy * 46), round(BEN[1] + _ux * 46))  # the priestess's ablution well, beside the hall
 # the village burial ground shares the precinct but stands clear of the hall + the sando
 s.cemetery(round(BEN[0] + _ax * 96 - _uy * 104), round(BEN[1] + _ay * 96 + _ux * 104), 60, 44, parish=False, organic=True, label="village burial ground")  # resized 2026-07-23: the ground serves the WHOLE ~800-person district (village + ~6 hamlets' urns), ~0.15-0.30 acre -> 120x88 ft at 2 ft/px - see settlements.md 'District catchment'

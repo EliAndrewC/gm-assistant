@@ -62,7 +62,6 @@ s.meta(
     name="Hirameki",
     scale="town",
     walled=True,
-    torii_expected=8,  # 7-arch Bishamon avenue (GM numerology canon 2026-07-21) + Benten's single entrance arch
     downhill="south",
     down_deg=90,
     clan="Lion",
@@ -359,7 +358,22 @@ s.shrine_hall(
 # the walls - a relic of the town's time under Crane rule. It is wedged hard against the west
 # rampart and the Imperial chrysanthemum field, so there is room for only a SINGLE torii arch.
 s.shrine_hall(
-    700, 1010, "Monastery of Benten", w=60, h=40, kind="monastery", primary=False, torii=[(700, 1073)], graveyard=False
+    700,
+    1010,
+    "Monastery of Benten",
+    w=60,
+    h=40,
+    kind="monastery",
+    primary=False,
+    # Benten ROLLED the full 7 (2026-07-23 per-temple re-roll) - the old Crane-relic monastery
+    # turns out to be the heavily-patronized one. The avenue is authored as a CURVING sando:
+    # the naive straight-south extension marched five arches through the Imperial chrysanthemum
+    # field (the torii_clear_of_fields regression fixture); instead the arches bend southeast
+    # around the field's NE corner (staying N of its y1126 top edge, S of the theater's y1085
+    # foot) and march down the corridor between the field's east edge (x<=793) and the servant
+    # row at x>=821 - pilgrims walk beside the Imperial planting, never through it.
+    torii=[(700, 1073), (736, 1094), (772, 1115), (797, 1145), (800, 1190), (800, 1235), (800, 1280)],
+    graveyard=False,
 )  # a small relic monastery: its dead go to the Bishamon parish ground (town_monasteries_have_graveyards opt-out)
 
 # street plan: the gate-to-yamen main avenue + a market cross-street (both fully built up).
@@ -506,8 +520,27 @@ for fx, fy in [
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
-s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
+# (farm_wells moved BELOW the commons block, 2026-07-24: well_at now refuses ground inside a
+# scrub/pasture cover, but it can only see covers that exist - the torii re-roll's placement
+# ripple had reseated three farm wells into commons strips registered after them)
 
+
+# COMMONS SCRUB clothes the bare EXTRAMURAL margins (town_margins_clothed - the ground inside
+# the rampart is urban floor and counts as covered; these aprons are the district's grazed
+# commons). The polys trace the OUTSKIRTS only (scrub_clear_of_urban_fabric, GM 2026-07-21):
+# no dwelling/well center may sit inside one - the fringe farm rows, the S burakumin quarter,
+# and the flophouse keep their strips notched, shifted, or dropped; the ground they stand on
+# is urban floor (the 30 ft urban-clearance halo), not grazed waste.
+s.commons([(300, 15), (700, 10), (700, 95), (305, 100)], role="grazing")
+s.commons([(1600, 15), (1960, 10), (1955, 95), (1605, 100)], role="grazing")
+s.commons([(10, 290), (90, 300), (85, 900), (12, 890)], role="grazing")
+s.commons([(2510, 15), (2590, 15), (2590, 1985), (2515, 1985)], role="grazing")  # E strip held E of the fringe farm at x2487
+s.commons(
+    [(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 995), (216, 995)], role="grazing"
+)  # W apron, notched around the farm row at x229-254 y1126-1257 AND its farm-belt well at (280,1045)
+s.commons([(1550, 1730), (1650, 1728), (1655, 1985), (1560, 1985)], role="grazing")  # S strip, held W of the flophouse
+s.commons([(1950, 1495), (2360, 1490), (2370, 1695), (1955, 1700)], role="grazing")
+s.commons([(20, 1400), (230, 1395), (225, 1695), (30, 1690)], role="grazing")
 
 # communal WELLS among the dwellings (placed after them, in the open gaps); households share these, the
 # rest draw from the irrigation channels/streams. Placed AFTER farmsteads() so the FINAL house set
@@ -525,22 +558,7 @@ s.shrine_well(1750, 1050)
 # recorded as a leafy copse instead - the windward check wants role='windbreak' only NW.) Copse
 # scatter then fills the open gaps between homes on strips shaped AROUND the fields and their
 # hems. All AFTER the wells, so the canopy keep-out sees every wellhead.
-# COMMONS SCRUB clothes the bare EXTRAMURAL margins (town_margins_clothed - the ground inside
-# the rampart is urban floor and counts as covered; these aprons are the district's grazed
-# commons). The polys trace the OUTSKIRTS only (scrub_clear_of_urban_fabric, GM 2026-07-21):
-# no dwelling/well center may sit inside one - the fringe farm rows, the S burakumin quarter,
-# and the flophouse keep their strips notched, shifted, or dropped; the ground they stand on
-# is urban floor (the 30 ft urban-clearance halo), not grazed waste.
-s.commons([(300, 15), (700, 10), (700, 95), (305, 100)], role="grazing")
-s.commons([(1600, 15), (1960, 10), (1955, 95), (1605, 100)], role="grazing")
-s.commons([(10, 290), (90, 300), (85, 900), (12, 890)], role="grazing")
-s.commons([(2510, 15), (2590, 15), (2590, 1985), (2515, 1985)], role="grazing")  # E strip held E of the fringe farm at x2487
-s.commons(
-    [(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 995), (216, 995)], role="grazing"
-)  # W apron, notched around the farm row at x229-254 y1126-1257 AND its farm-belt well at (280,1045)
-s.commons([(1550, 1730), (1650, 1728), (1655, 1985), (1560, 1985)], role="grazing")  # S strip, held W of the flophouse
-s.commons([(1950, 1495), (2360, 1490), (2370, 1695), (1955, 1700)], role="grazing")
-s.commons([(20, 1400), (230, 1395), (225, 1695), (30, 1690)], role="grazing")
+s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach); AFTER the commons so well_at can refuse the grazed waste
 
 # The real FOREST mass sits on the open upland CORNERS (the strips beside the farm rows are
 # mostly full of homesteads, so clumps there thin to a scatter): two windward lobes in the NW

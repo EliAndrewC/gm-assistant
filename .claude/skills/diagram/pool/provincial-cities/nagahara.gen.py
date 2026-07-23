@@ -384,7 +384,19 @@ s.shrine_hall(
 )  # a Crab patron (also the warrior fortune); nudged E so its W edge clears the ring road. ONE torii on the approach walk from the monzen lane (torii_count_canonical 1/3/7), threaded W of the fire tower and below the label
 s.block_polys.append([(1120, 1158), (1258, 1158), (1258, 1189), (1120, 1189)])  # Bishamon's below-label band - the monzen pack seated a laborer under the text after the true-size reflow (2026-07-21)
 s.shrine_hall(
-    1396, 1142, "Temple of Ebisu", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True, torii=[(1396, 1196)]
+    1396,
+    1142,
+    "Temple of Ebisu",
+    w=s.px(130),
+    h=s.px(84),
+    kind="temple",
+    primary=True,
+    label_below=True,
+    # Ebisu ROLLED the full 7-arch avenue (per-temple seeded roll, 2026-07-23 re-roll), so the
+    # avenue geometry is authored: a COMPRESSED south sando at ~19px (57 ft) stride - the
+    # donation-row look - ending at y1310, short of the samurai ward fence (~y1330). The naive
+    # 44px single-point extension marched the arches across the fence onto the Ministry of War.
+    torii=[(1396, 1196), (1396, 1215), (1396, 1234), (1396, 1253), (1396, 1272), (1396, 1291), (1396, 1310)],
 )  # the other Crab patron. ONE torii on the approach walk from the monzen lane (torii_count_canonical 1/3/7)
 s.cemetery(1167, 1246, 44, 32, label="graveyard")  # Bishamon's danka parish ground, S of the hall (kept clear of the temple lane)
 s.cemetery(1396, 1075, 44, 32, label="graveyard", label_above=True)  # Ebisu's danka parish ground, N of the hall

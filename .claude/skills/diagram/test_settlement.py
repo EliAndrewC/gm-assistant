@@ -947,6 +947,50 @@ def test_yard_troughs_fall_back_when_no_well_in_reach():
     assert s.M["stable_yards"][-1]["troughs"] == 2
 
 
+def _torii_city(**kw):
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple of Ebisu", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560)], **kw)
+    return s
+
+
+def test_shrine_hall_rolls_torii_count_per_temple():
+    # the 2026-07-23 full re-roll: torii=[...] is avenue GEOMETRY; the COUNT is a seeded
+    # per-temple roll on the tier's TORII_WEIGHTS column, recorded on the religious rec
+    import random as _rr
+
+    from settlement import roll_torii_count
+
+    expect = roll_torii_count("city", _rr.Random(9 * 977 + 600 * 31 + 500 * 57))
+    s = _torii_city()
+    assert s.M["religious"][-1]["torii_count"] == expect
+    assert len(s.M["torii"]) == expect
+
+
+def test_shrine_hall_torii_count_pin_extends_a_single_point_avenue():
+    # the per-temple pin (the per-hall analog of the village 'torii_count' knob): a pinned 7
+    # marches the avenue away from the hall at a 44px stride from the single given point
+    s = _torii_city(torii_count=7)
+    assert s.M["religious"][-1]["torii_count"] == 7
+    assert sorted(t[1] for t in s.M["torii"]) == [560 + 44 * i for i in range(7)]
+
+
+def test_shrine_hall_extends_a_multi_point_avenue_along_its_own_step():
+    # >= 2 given points: extension continues the avenue's OWN stride, not the 44px default
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 580)], torii_count=3)
+    assert sorted(t[1] for t in s.M["torii"]) == [560, 580, 600]
+
+
+def test_shrine_hall_roll_below_geometry_draws_the_first_n():
+    # a roll/pin smaller than the supplied avenue keeps the arches nearest the hall
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598), (600, 636)], torii_count=1)
+    assert [t[1] for t in s.M["torii"]] == [560]
+
+
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
     # the homestead solver rejects a house/yard/garden that lands on a channel/ditch/stream, but NOT the grove
     s = _crop_settlement()
@@ -2690,7 +2734,7 @@ def test_clearings_keep_scrub_off_sacred_and_funerary_ground():
     # shrine_hall with a torii registers a clearing for BOTH the hall and the arch
     s2 = Settlement(1200, 1200, seed=1)
     s2.meta(name="C2", scale="village", ftpx=1, down_deg=90)
-    s2.shrine_hall(600, 600, "Shrine", torii=[(600, 680)])
+    s2.shrine_hall(600, 600, "Shrine", torii=[(600, 680)], torii_count=1)  # pinned so the clearing count is stable under the per-temple roll
     assert len(s2.clearings) == 2  # the hall + the one torii
     # a cemetery registers one too
     s3 = Settlement(1200, 1200, seed=1)
