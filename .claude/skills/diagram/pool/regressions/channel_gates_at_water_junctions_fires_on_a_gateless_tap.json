@@ -1,0 +1,83 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 500,
+  "H": 500
+ },
+ "moat": [
+  [
+   50,
+   100
+  ],
+  [
+   450,
+   100
+  ],
+  [
+   450,
+   110
+  ]
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     100,
+     100
+    ],
+    [
+     100,
+     140
+    ],
+    [
+     110,
+     200
+    ]
+   ],
+   "frm": {
+    "kind": "moat"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f1"
+   },
+   "w": 2.5
+  }
+ ],
+ "fields": [
+  {
+   "name": "f1",
+   "kind": "paddy",
+   "outline": [
+    [
+     60,
+     160
+    ],
+    [
+     160,
+     160
+    ],
+    [
+     160,
+     260
+    ],
+    [
+     60,
+     260
+    ]
+   ],
+   "bbox": [
+    60,
+    160,
+    160,
+    260
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channel_gates_at_water_junctions"
+  ],
+  "source": "test_checks.py::test_channel_gates_at_water_junctions_fires_on_a_gateless_tap"
+ }
+}

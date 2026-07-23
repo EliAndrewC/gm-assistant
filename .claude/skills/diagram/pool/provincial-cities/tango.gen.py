@@ -374,7 +374,7 @@ def topo_channel(pts, frm, to, draw_w=0.0, col='#7C9EB0'):
         mx, my = (pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2
         pts = list(pts[: k + 1]) + [(mx - 12 * (by - ay) / chord, my + 12 * (bx - ax) / chord)] + list(pts[k + 1 :])
     poly = [[round(px, 1), round(py, 1)] for px, py in pts]
-    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5})
+    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5, "drawn": bool(draw_w)})  # drawn=False -> an implied underground conduit (no visible seam, no gate demanded)
     s.corridors.append(([(px, py) for px, py in poly], 33))
     if draw_w:
         s.field_channel([(px, py) for px, py in poly], col, draw_w, draw_w)
@@ -819,6 +819,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0  # outward: away from the city center
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
     s.field_channel([mp, sl], '#9CB4C8', 7, 7)  # the visible tap, in the MOAT'S OWN water color (it carries moat water; the color change happens at the sluice - GM 2026-07-23, mouths must read as confluences, not crossings)
+    s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)  # the intake gate AT the palette seam (tap water -> canal water)
     _net, _env, _cen = comb_field(
         nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,)
     )  # avoid: the moat (the estate driveways are no longer drawn, so no lane keep-outs needed)
@@ -843,6 +844,7 @@ _mp2 = min(_up2, key=lambda p: (p[0] - _tap2[0]) ** 2 + (p[1] - _tap2[1]) ** 2)
 _ol2 = math.hypot(_mp2[0] - CX, _mp2[1] - CY) or 1.0
 _sl2 = (round(_mp2[0] + 30 * (_mp2[0] - CX) / _ol2), round(_mp2[1] + 30 * (_mp2[1] - CY) / _ol2))
 s.field_channel([_mp2, _sl2], '#9CB4C8', 7, 7)  # the visible tap, in the moat's own water color (see the MOAT_FARMS loop)
+s.sluice_gate(_sl2[0], _sl2[1], rot=math.degrees(math.atan2(_sl2[1] - _mp2[1], _sl2[0] - _mp2[0])) + 90)  # the intake gate at the seam
 _nete2, ENV_FE2, _ce2 = comb_field(
     "fe2", _sl2, 20, 82, 155, (90, 125), (55, 80), (0.4, 0.75), dry_band=(47, 88), avoid=(MOAT,), dry_keepout=((2150, 1660, 115), (2300, 1795, 135))
 )  # keepout: the remaining samurai estate at (2150,1660) - the hem must not lap its walls
@@ -864,6 +866,7 @@ _drn = next(c["pts"] for c in _netn["channels"] if c["role"] == "drain")
 _dfx, _dfy = _drn[-1]
 _mne = min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2)  # the moat rim S of the outfall (west of the funerary ground)
 topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
+s.sluice_gate(_dfx, _dfy, rot=math.degrees(math.atan2(_mne[1] - _dfy, _mne[0] - _dfx)) + 90)  # the outfall gate where the field drain hands off to the culvert
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
 # REJECTED (2026-07-23): an fnw1 stream-fed fan in the FAR NW corner - it sat too far out
@@ -881,6 +884,7 @@ _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mnw2 = min(MOAT, key=lambda p: (p[0] - _dfx2) ** 2 + (p[1] - _dfy2 - 90) ** 2)  # the moat rim S of the outfall
 topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
+s.sluice_gate(_dfx2, _dfy2, rot=math.degrees(math.atan2(_mnw2[1] - _dfy2, _mnw2[0] - _dfx2)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FN2), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN2), 22, 40, ["plain"])
 # fse1 + fs3 - the SE corner and the pocket south of the gate market (GM 2026-07-23): both tap the

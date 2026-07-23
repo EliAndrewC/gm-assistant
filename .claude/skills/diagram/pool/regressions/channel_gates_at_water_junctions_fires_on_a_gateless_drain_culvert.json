@@ -1,0 +1,49 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 500,
+  "H": 500
+ },
+ "moat": [
+  [
+   50,
+   100
+  ],
+  [
+   450,
+   100
+  ],
+  [
+   450,
+   110
+  ]
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     200,
+     300
+    ],
+    [
+     200,
+     105
+    ]
+   ],
+   "frm": {
+    "kind": "drain"
+   },
+   "to": {
+    "kind": "moat"
+   },
+   "w": 3.2,
+   "drawn": true
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channel_gates_at_water_junctions"
+  ],
+  "source": "test_checks.py::test_channel_gates_at_water_junctions_fires_on_a_gateless_drain_culvert"
+ }
+}
