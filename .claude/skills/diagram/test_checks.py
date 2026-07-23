@@ -782,6 +782,18 @@ def test_irrigation_channels_hairline_passes_at_the_floor():
     assert "irrigation_channels_hairline" not in f(M)
 
 
+def test_irrigation_channels_hairline_allows_a_drain_outfall_culvert_at_four():
+    # a drain-outfall culvert carries the fan's whole runoff and matches the drain's outfall width
+    # (4.0 at the city grain) - it is not a field ditch, so its ceiling is 4.5 (GM 2026-07-23)
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 4.0}]}
+    assert "irrigation_channels_hairline" not in f(M)
+
+
+def test_irrigation_channels_hairline_still_fires_on_a_fat_drain_culvert():
+    M = {"channels": [{"poly": _CHAN, "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 5.0}]}
+    assert "irrigation_channels_hairline" in f(M)
+
+
 def test_watercourses_wider_than_ditches_fires_when_a_creek_reads_like_a_ditch():
     M = {
         "channels": [{"poly": _CHAN, "frm": {"kind": "offmap"}, "to": {"kind": "field", "name": "f"}, "w": 2.5}],
