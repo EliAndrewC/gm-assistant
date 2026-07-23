@@ -111,11 +111,10 @@ s.quarter(_qwedge(24, 36), "mixed")  # SW government/samurai ward
 s.quarter(_qwedge(36, 48), "mixed")  # NW temple neighborhood + monzen
 SAM_BND = [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)]
 s.corridors.append((SAM_BND, 15))  # reserve the WARD FENCE line before ANY pack so no house (samurai or burakumin) sits ON it (city_ward_fence_clear_of_structures)
-# FRAME (GM 2026-07-23, Tango-recipe rollout): the view opens wide enough to show the comb deltas
-# as real paddy country ringing the city (the old MARGIN=96 crop cut every fan to a sliver, which is
-# why the ring read as bare). The +320 east extension keeping the Hayakawa far bank in view stays.
-MARGIN = 250
-s.set_view(CX - RX - 46 - MARGIN, CY - RY - 46 - MARGIN, 2 * (RX + 46 + MARGIN) + 320, 2 * (RY + 46 + MARGIN))
+# FRAME: content-cropped at the END of the gen via s.crop_city() (GM 2026-07-23, second pass) - the
+# frame hugs the moat ring + the kept satellites (gate markets, wharf, flophouses, the far-bank
+# funerary complex, labels) and the fans CLIP at the edge. The interim hand frame (MARGIN=250 +320
+# east) is superseded; see crop_city's docstring.
 
 # ---- THE through-road (no Imperial spine - meta imperial_road=False): the north road comes
 # down from the distant Imperial highway (off-map NW), enters the north gate, runs the spine
@@ -1054,6 +1053,7 @@ s.place_wells((1094, 962, 1450, 1298), spacing=46, near=48)  # NW monzen, offset
 # hamlet"). Coverage need not be total - the visible fans + open ground read as the head of paddy
 # country continuing beyond the frame.
 
+s.crop_city(100)  # the content crop: moat + kept satellites + labels, fans clipping at the edge
 s.title("Nagahara")
 
 HERE = os.path.dirname(os.path.abspath(__file__))

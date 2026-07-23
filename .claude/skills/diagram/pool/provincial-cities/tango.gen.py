@@ -118,12 +118,10 @@ s.quarter(_clip_h(_NW, 1211, False), "residential")
 # countryside, so estates and farmland run off the edge. A ~90px margin past the moat leaves
 # room for the title (top-left) and compass (top-right) above the rampart, plus a working
 # fringe of moat-fed farmland.
-# FRAME (GM 2026-07-23, feature 014 endgame): the view opens WIDE enough to show the moat-fed comb
-# deltas as real paddy country ringing the city - the old tight MARGIN=96 crop ("a city map is about
-# the city") cut every fan to a ~46px sliver, which is exactly why the ring read as bare/dry even
-# though the combs were always there. The frame is asymmetric: the top edge tucks just under fn1's
-# off-frame sluice (y615 > its y610 tap) so the north fan's source stays honestly off-map.
-s.set_view(809, 615, 1586, 1476)
+# FRAME: content-cropped at the END of the gen via s.crop_city() (GM 2026-07-23, second pass) - the
+# frame hugs the moat ring + the kept satellites (gate markets, flophouses, funerary, labels) and the
+# paddy fans CLIP at the edge ("the point is to show they're there, not to show the entire field").
+# The interim hand frame s.set_view(809, 615, 1586, 1476) is superseded; see crop_city's docstring.
 
 # ---- the Imperial road (N-S spine, off both edges, through both gates), the moat-feeder, gates
 # the label names the IMPERIAL road - placed OUTSIDE the north gate; inside the walls the same
@@ -935,9 +933,9 @@ s.label(1523, 1407, "road market", 9, italic=True, color="#5A4326")
 #  - one extramural common BURIAL GROUND, west of the wall (the exempt outside graveyard)
 #  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (above)
 #  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
-s.cemetery(2320, 871, 90, 64, label="common burial ground")  # shifted out with the widened frame: the funerary ground keeps its place at the map's NE margin, past the fields
-s.cremation_ground(2320, 978)
-s.ossuary(2330, 760)
+s.cemetery(2205, 871, 90, 64, label="common burial ground")  # back inboard for the content crop (2026-07-23 second pass): the funerary anchors the frame, so it sits just past the fields, not at the old wide frame's edge
+s.cremation_ground(2205, 978)
+s.ossuary(2215, 760)
 
 s.bridges()  # spans the Imperial Road over the moat at the north and south gates
 
@@ -1156,6 +1154,7 @@ s.place_wells(
     (1176, 993, 1561, 1226), spacing=56, near=88, coverage=False
 )  # FINE grid (the district is laced with field margins + channel corridors), each well gated to sit AMONG homes (near=88), coverage=False so the near-gate stays district-scoped (the global coverage pass would drop wells beside the samurai compounds)
 
+s.crop_city(100)  # the content crop: moat + kept satellites + labels, fans clipping at the edge
 s.title("Tango")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
