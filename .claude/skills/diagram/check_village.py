@@ -3576,15 +3576,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # the scatter predates this clearing where they overlap - but the SAME ground may have been
             # RESERVED in time: a clearing registered before the cover drew (guard.seq < cov.seq) already
             # made the scatter skip it (s.reserve_clearing first, then the feature registers its own
-            # duplicate collar late - the documented, harmless pattern). Sample the clearing rect: a point
-            # is EXPOSED only if it lies in the cover's poly and in no pre-cover guard clearing.
-            guards = [gbb for g, gbb in zip(_clearings, _clr_bbs, strict=True) if g["seq"] < cov["seq"]]
+            # duplicate collar late - the documented, harmless pattern). Sample the clearing's bbox: a point
+            # is EXPOSED only if it lies in the clearing AND the cover's poly and in no pre-cover guard
+            # clearing. Guards test the exact POLY, not the bbox - clearings are organic blobs (GM
+            # 2026-07-23), and a bbox guard would over-credit a lobed outline with ground it never swept.
+            guards = [g["poly"] for g in _clearings if g["seq"] < cov["seq"]]
             exposed = False
             sy = cbb[1] + 4.0
             while not exposed and sy < cbb[3]:
                 sx = cbb[0] + 4.0
                 while not exposed and sx < cbb[2]:
-                    if point_in_poly(sx, sy, cov["poly"]) and not any(g[0] <= sx <= g[2] and g[1] <= sy <= g[3] for g in guards):
+                    if point_in_poly(sx, sy, cl["poly"]) and point_in_poly(sx, sy, cov["poly"]) and not any(point_in_poly(sx, sy, gp) for gp in guards):
                         exposed = True
                     sx += 8
                 sy += 8

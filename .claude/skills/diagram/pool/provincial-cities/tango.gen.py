@@ -129,7 +129,9 @@ s.quarter(_clip_h(_NW, 1211, False), "residential")
 IMPROAD = [(1602, 595), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 2115)]  # ends past the widened frame (y615/2091)
 s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)  # a moat vertex on the NW
-s.stream([(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66))  # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow); head off the widened frame
+s.stream(
+    [(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66)
+)  # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow); head off the widened frame
 # ... and the moat DRAINS: an outfall leaves the LOW (SE, downstream - N is the high ground) rim
 # and runs off the map, diagonally opposite the NW feeder so the current flushes the ring corner-to-
 # corner (the Forbidden City NW-in / SE-out pattern). A stream-fed moat in a wet rice climate cannot
@@ -701,7 +703,7 @@ MIN_POS = [
 s.block_polys.append(
     [(1906, 1498), (2008, 1498), (2008, 1536), (1906, 1536)]
 )  # the 'Ministry of Justice' below-label band + its 14px office standoff - the avenue frontage seated samurai houses under the label and against the ministry after the true-size reflow (2026-07-21)
-for (mx, my), name in zip(MIN_POS, MINS):
+for (mx, my), name in zip(MIN_POS, MINS, strict=True):
     s.ministry(mx, my, name, w=s.px(130), h=s.px(90))  # label side auto-picked (empty ground wins)
 # Bishamon (the warrior fortune) in the samurai quarter SW corner, off the grid (no street
 # runs up to it at this tight scale, so it needs no torii avenue); new hall in a former
@@ -768,19 +770,21 @@ s.bound = None
 # and a small south seat between fs1's hem and the gate suburb. The manors are registered EARLY in
 # the file purely so every later pack (farm rings, scatter) collision-dodges them - the PLACEMENT
 # PRIORITY is paddy-first; the fans' hems keep off them via per-comb dry_keepout circles.
-EST = [(2150, 1660, 84, 54, "west", (2400, 1676)),    # mid SE, below the fe2 fan
-       (2300, 1795, 108, 68, "south", (2520, 1800)),  # E edge, straddling the tightened content crop (a fraction off-frame, its land running on)
-       (2060, 1855, 76, 48, "north", (2060, 2100))]   # lower SE, threading the pocket between the fs3 fan,
+EST = [
+    (2150, 1660, 84, 54, "west", (2400, 1676)),  # mid SE, below the fe2 fan
+    (2300, 1795, 108, 68, "south", (2520, 1800)),  # E edge, straddling the tightened content crop (a fraction off-frame, its land running on)
+    (2060, 1855, 76, 48, "north", (2060, 2100)),
+]  # lower SE, threading the pocket between the fs3 fan,
 # the outfall stream, and fse1's hem (all three fans keep-outs hold their quilts off it). A seat S of
 # fs1 was tried and rejected: city_estates_toward_capital wants BOTH SE half-planes, and west of the
 # road fails - the recorded limit of paddy-first leftovers on the capital-facing side.
-for ex, ey, ew, eh, gd, (lx, ly) in EST:
+for ex, ey, ew, eh, gd, (_lx, _ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
     # NO drawn driveway (GM 2026-07-23: the long worn drives read as fat roads across the countryside
     # - "I wouldn't think there would be roads there"). The check doctrine agrees: scattered estates
     # "each front their OWN approach lane (NOT drawn at this scale)" (city_estate_gates_vary). The
     # (lx, ly) targets are kept in EST for the record of where each implied approach heads.
-s.label(2180, 1745, "samurai estates", 10, italic=True, color="#3A352C")   # tucked AMONG the estates - a label never pins the frame; relocate it inward before widening the crop (GM 2026-07-23)
+s.label(2180, 1745, "samurai estates", 10, italic=True, color="#3A352C")  # tucked AMONG the estates - a label never pins the frame; relocate it inward before widening the crop (GM 2026-07-23)
 # surrounding farmland: large comb fields CLOSE to the city, irrigated from the MOAT, each
 # ringed by the villagers' farmhouses; all run off the map edge. Each comb's SLUICE sits a
 # stride outside the moat rim (computed from the actual moat polyline, so the tap self-corrects)
@@ -818,14 +822,14 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     mp = min(upstream, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
     _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0  # outward: away from the city center
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
-    s.field_channel([mp, sl], '#9CB4C8', 7, 7)  # the visible tap, in the MOAT'S OWN water color (it carries moat water; the color change happens at the sluice - GM 2026-07-23, mouths must read as confluences, not crossings)
+    s.field_channel(
+        [mp, sl], '#9CB4C8', 7, 7
+    )  # the visible tap, in the MOAT'S OWN water color (it carries moat water; the color change happens at the sluice - GM 2026-07-23, mouths must read as confluences, not crossings)
     s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)  # the intake gate AT the palette seam (tap water -> canal water)
-    _net, _env, _cen = comb_field(
-        nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,)
-    )  # avoid: the moat (the estate driveways are no longer drawn, so no lane keep-outs needed)
+    _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,))  # avoid: the moat (the estate driveways are no longer drawn, so no lane keep-outs needed)
     # source topology: ends at the SOUTHERNMOST plot's centroid - guaranteed inside the outline
     # (city_moat_irrigates_fields) and downstream of the tap (moat_channels_flow_with_current)
-    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda c: c[1]))
+    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))
     topo_channel([(mp[0], mp[1]), sl, _pd], {"kind": "moat"}, {"kind": "field", "name": nm})
     # sink topology: the collector's runoff leaves the cropped map (the drain marches off-view)
     _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
@@ -892,7 +896,9 @@ s.ring(('poly', ENV_FN2), 22, 40, ["plain"])
 # the fields below it. fse1 fills the far SE corner east of the outfall, falling ESE off-frame;
 # fs3 fills the strip west of the outfall below the gate suburb, falling SSW off-frame. Confluence-
 # anchored taps on stream vertices ((1995,2020) / (1936,1880)); drains run off the south frame.
-_nete, ENV_FSE1, _ce = comb_field("fse1", (2030, 2005), 15, 87, 170, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2300, 1795, 135), (2060, 1855, 105)))  # hems off the E-edge + lower-SE estates
+_nete, ENV_FSE1, _ce = comb_field(
+    "fse1", (2030, 2005), 15, 87, 170, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2300, 1795, 135), (2060, 1855, 105))
+)  # hems off the E-edge + lower-SE estates
 _pe = plot_centroid(_nete, lambda cs: min(cs, key=lambda c: c[0]))  # a head plot, nearest the stream tap
 topo_channel([(1995, 2020), (2030, 2005), _pe], {"kind": "stream"}, {"kind": "field", "name": "fse1"})
 _dre = next(c["pts"] for c in _nete["channels"] if c["role"] == "drain")
@@ -936,7 +942,9 @@ s.label(1523, 1407, "road market", 9, italic=True, color="#5A4326")
 #  - one extramural common BURIAL GROUND (the exempt outside graveyard)
 #  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (above)
 #  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
-s.cemetery(2205, 871, 90, 64, parish=False, label="common burial ground")  # parish=False -> ORGANIC Japan-style plot (settlements.md 'shape of the common ground'). Back inboard for the content crop (2026-07-23 second pass): the funerary anchors the frame, so it sits just past the fields, not at the old wide frame's edge
+s.cemetery(
+    2205, 871, 90, 64, parish=False, label="common burial ground"
+)  # parish=False -> ORGANIC Japan-style plot (settlements.md 'shape of the common ground'). Back inboard for the content crop (2026-07-23 second pass): the funerary anchors the frame, so it sits just past the fields, not at the old wide frame's edge
 s.cremation_ground(2205, 978)
 s.ossuary(2215, 760)
 
