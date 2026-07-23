@@ -769,7 +769,7 @@ s.bound = None
 # the file purely so every later pack (farm rings, scatter) collision-dodges them - the PLACEMENT
 # PRIORITY is paddy-first; the fans' hems keep off them via per-comb dry_keepout circles.
 EST = [(2150, 1660, 84, 54, "west", (2400, 1676)),    # mid SE, below the fe2 fan
-       (2390, 1755, 108, 68, "south", (2520, 1760)),  # E edge, a fraction off-frame (its land runs on)
+       (2300, 1795, 108, 68, "south", (2520, 1800)),  # E edge, straddling the tightened content crop (a fraction off-frame, its land running on)
        (2060, 1855, 76, 48, "north", (2060, 2100))]   # lower SE, threading the pocket between the fs3 fan,
 # the outfall stream, and fse1's hem (all three fans keep-outs hold their quilts off it). A seat S of
 # fs1 was tried and rejected: city_estates_toward_capital wants BOTH SE half-planes, and west of the
@@ -780,7 +780,7 @@ for ex, ey, ew, eh, gd, (lx, ly) in EST:
     # - "I wouldn't think there would be roads there"). The check doctrine agrees: scattered estates
     # "each front their OWN approach lane (NOT drawn at this scale)" (city_estate_gates_vary). The
     # (lx, ly) targets are kept in EST for the record of where each implied approach heads.
-s.label(2255, 1715, "samurai estates", 10, italic=True, color="#3A352C")   # in the open gap between the mid-SE and E-edge estates
+s.label(2180, 1745, "samurai estates", 10, italic=True, color="#3A352C")   # tucked AMONG the estates - a label never pins the frame; relocate it inward before widening the crop (GM 2026-07-23)
 # surrounding farmland: large comb fields CLOSE to the city, irrigated from the MOAT, each
 # ringed by the villagers' farmhouses; all run off the map edge. Each comb's SLUICE sits a
 # stride outside the moat rim (computed from the actual moat polyline, so the tap self-corrects)
@@ -844,7 +844,7 @@ _ol2 = math.hypot(_mp2[0] - CX, _mp2[1] - CY) or 1.0
 _sl2 = (round(_mp2[0] + 30 * (_mp2[0] - CX) / _ol2), round(_mp2[1] + 30 * (_mp2[1] - CY) / _ol2))
 s.field_channel([_mp2, _sl2], '#6C9CBE', 7, 7)  # the visible tap: moat rim -> sluice
 _nete2, ENV_FE2, _ce2 = comb_field(
-    "fe2", _sl2, 20, 82, 155, (90, 125), (55, 80), (0.4, 0.75), dry_band=(47, 88), avoid=(MOAT,), dry_keepout=((2150, 1660, 115), (2390, 1755, 135))
+    "fe2", _sl2, 20, 82, 155, (90, 125), (55, 80), (0.4, 0.75), dry_band=(47, 88), avoid=(MOAT,), dry_keepout=((2150, 1660, 115), (2300, 1795, 135))
 )  # keepout: the remaining samurai estate at (2150,1660) - the hem must not lap its walls
 _pd2 = plot_centroid(_nete2, lambda cs: max(cs, key=lambda c: c[1]))
 topo_channel([(_mp2[0], _mp2[1]), _sl2, _pd2], {"kind": "moat"}, {"kind": "field", "name": "fe2"})
@@ -888,7 +888,7 @@ s.ring(('poly', ENV_FN2), 22, 40, ["plain"])
 # the fields below it. fse1 fills the far SE corner east of the outfall, falling ESE off-frame;
 # fs3 fills the strip west of the outfall below the gate suburb, falling SSW off-frame. Confluence-
 # anchored taps on stream vertices ((1995,2020) / (1936,1880)); drains run off the south frame.
-_nete, ENV_FSE1, _ce = comb_field("fse1", (2030, 2005), 15, 87, 170, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2390, 1755, 135), (2060, 1855, 105)))  # hems off the E-edge + lower-SE estates
+_nete, ENV_FSE1, _ce = comb_field("fse1", (2030, 2005), 15, 87, 170, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2300, 1795, 135), (2060, 1855, 105)))  # hems off the E-edge + lower-SE estates
 _pe = plot_centroid(_nete, lambda cs: min(cs, key=lambda c: c[0]))  # a head plot, nearest the stream tap
 topo_channel([(1995, 2020), (2030, 2005), _pe], {"kind": "stream"}, {"kind": "field", "name": "fse1"})
 _dre = next(c["pts"] for c in _nete["channels"] if c["role"] == "drain")
@@ -1154,7 +1154,9 @@ s.place_wells(
     (1176, 993, 1561, 1226), spacing=56, near=88, coverage=False
 )  # FINE grid (the district is laced with field margins + channel corridors), each well gated to sit AMONG homes (near=88), coverage=False so the near-gate stays district-scoped (the global coverage pass would drop wells beside the samurai compounds)
 
-s.crop_city(100)  # the content crop: moat + kept satellites + labels, fans clipping at the edge
+s.crop_city(35, west=100)  # aggressive content crop (GM 2026-07-23): tight 35px past the kept satellites on
+# three sides; the WEST keeps a 100px farm band (no satellite anchors that flank and the GM called its
+# current framing perfect). The gate markets (N/S) and funerary+estates (E) are the true frame drivers.
 s.title("Tango")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
