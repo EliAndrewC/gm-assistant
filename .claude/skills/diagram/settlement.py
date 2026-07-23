@@ -1458,13 +1458,21 @@ class Settlement:
         to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
         SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
         source_and_sink) see a source. Returns the field envelope polygon."""
-        from waterfields import BEAN_GREEN, BUND
+        from waterfields import BEAN_GREEN, BUND, hem_on_paddy
 
         # BASE FILL (feature 012, now via the shared helper): a paddy-green wash under the plots so the
         # imperfect tessellation never shows the parchment background as bare "white" gaps (research.md D5).
         self.comb_base_fill(net, name)
 
+        # a fan's hem is generated blind to the OTHER fans on a multi-fan map, so drop any hem plot
+        # that lands on a previously recorded fan's rice (this fan's own field record is appended
+        # below, AFTER this loop, so a hem's legitimate berm-kiss against its own envelope never
+        # tests). Same predicate as the dry_plots_clear_of_paddies gate - see hem_on_paddy's
+        # docstring (waterfields.py) for the why and the motivating Tango incident.
+        _prior_paddies = [fld["outline"] for fld in self.M["fields"] if fld.get("kind") == "paddy"]
         for p in net["dry_plots"]:  # the dry upslope hem
+            if any(hem_on_paddy(p["poly"], _pol) for _pol in _prior_paddies):
+                continue
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
             self._draw_furrows(p["poly"], p["furrow"], p["theta"])

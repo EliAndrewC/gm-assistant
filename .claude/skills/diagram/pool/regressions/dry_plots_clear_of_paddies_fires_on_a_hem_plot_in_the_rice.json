@@ -1,0 +1,62 @@
+{
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "bbox": [
+    440,
+    440,
+    600,
+    600
+   ],
+   "outline": [
+    [
+     440,
+     440
+    ],
+    [
+     600,
+     440
+    ],
+    [
+     600,
+     600
+    ],
+    [
+     440,
+     600
+    ]
+   ]
+  }
+ ],
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     560,
+     560
+    ],
+    [
+     640,
+     560
+    ],
+    [
+     640,
+     640
+    ],
+    [
+     560,
+     640
+    ]
+   ],
+   "crop": "millet",
+   "theta": 0.4
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dry_plots_clear_of_paddies"
+  ],
+  "source": "test_checks.py::test_dry_plots_clear_of_paddies_fires_on_a_hem_plot_in_the_rice"
+ }
+}
