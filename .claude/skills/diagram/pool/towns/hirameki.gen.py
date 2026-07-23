@@ -437,7 +437,7 @@ s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows 
 # around it): the intramural parish graveyard by the Bishamon monastery, the MAIN extramural
 # common burial ground, and the adjoining cremation ground (monk-run, burakumin assistants)
 s.cemetery(1840, 1160, 88, 62, label="graveyard", label_above=True)
-s.cemetery(2080, 1420, 120, 88, label="common burial ground")
+s.cemetery(2080, 1420, 120, 88, parish=False, label="common burial ground")  # parish=False -> ORGANIC Japan-style plot (settlements.md 'shape of the common ground')
 s.cremation_ground(2100, 1513)
 # the pauper ossuary mound (muenzuka) beside the cremation ground (town_has_ossuary)
 s.ossuary(2180, 1560)
