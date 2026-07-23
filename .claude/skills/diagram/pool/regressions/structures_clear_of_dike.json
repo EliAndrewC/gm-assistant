@@ -1,0 +1,46 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid"
+ },
+ "dikes": [
+  {
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     900
+    ],
+    [
+     100,
+     900
+    ]
+   ],
+   "w_min": 14.0,
+   "w_max": 38.0
+  }
+ ],
+ "houses": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 40,
+   "h": 26,
+   "rot": 0,
+   "kind": "plain"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "structures_clear_of_dike"
+  ],
+  "source": "test_checks.py::test_structures_clear_of_dike"
+ }
+}

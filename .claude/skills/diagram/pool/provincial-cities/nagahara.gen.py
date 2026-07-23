@@ -111,7 +111,10 @@ s.quarter(_qwedge(24, 36), "mixed")  # SW government/samurai ward
 s.quarter(_qwedge(36, 48), "mixed")  # NW temple neighborhood + monzen
 SAM_BND = [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)]
 s.corridors.append((SAM_BND, 15))  # reserve the WARD FENCE line before ANY pack so no house (samurai or burakumin) sits ON it (city_ward_fence_clear_of_structures)
-MARGIN = 96
+# FRAME (GM 2026-07-23, Tango-recipe rollout): the view opens wide enough to show the comb deltas
+# as real paddy country ringing the city (the old MARGIN=96 crop cut every fan to a sliver, which is
+# why the ring read as bare). The +320 east extension keeping the Hayakawa far bank in view stays.
+MARGIN = 250
 s.set_view(CX - RX - 46 - MARGIN, CY - RY - 46 - MARGIN, 2 * (RX + 46 + MARGIN) + 320, 2 * (RY + 46 + MARGIN))
 
 # ---- THE through-road (no Imperial spine - meta imperial_road=False): the north road comes
@@ -119,7 +122,7 @@ s.set_view(CX - RX - 46 - MARGIN, CY - RY - 46 - MARGIN, 2 * (RX + 46 + MARGIN) 
 # to the central crossroads, turns east along the main street, leaves by the river gate, and
 # crosses the Hayakawa bridge toward the southeastern counties - ONE route, both ends off-map
 # (through-traffic is why the city is here; the bend at the crossroads is the market corner)
-ROAD = [(1382, 672), (1413, 751), (1451, 829), (1480, 918), (1480, 1330), (1933, 1330), (2023, 1330), (2071, 1333), (2149, 1335), (2253, 1457), (2357, 1550), (2472, 1650)]
+ROAD = [(1352, 596), (1382, 672), (1413, 751), (1451, 829), (1480, 918), (1480, 1330), (1933, 1330), (2023, 1330), (2071, 1333), (2149, 1335), (2253, 1457), (2357, 1550), (2472, 1650), (2560, 1727)]  # both ends past the widened frame (616/2545)
 s.road(ROAD)  # unlabeled: only Imperial roads get labels (SKILL.md labeling rules)
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the through-road over the river
 
@@ -212,7 +215,7 @@ def furrows(poly, color, theta):
     s.add(''.join(g))
 
 
-def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a, offtakes_b=(), dry_band=(47, 88), avoid=(), mirror_ym=None):
+def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a, offtakes_b=(), dry_band=(47, 88), avoid=(), mirror_ym=None, dry_keepout=()):
     """One comb-doctrine field: build the net, draw it, record the manifest. `avoid` lists
     polylines (moat / ring road) a dry-hem plot must not ride - a colliding plot is skipped
     (the hem is texture on the upslope margin, not load-bearing). `mirror_ym` flips the comb's
@@ -237,6 +240,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         plot_across=PLOT_ACROSS,
         row_step=ROW_STEP,
         dry_band=dry_band,
+        dry_keepout=dry_keepout,
         grain=2 / 3,
     )  # 3 ft/px city: scale the carve's real-feet minimum-size thresholds (tuned at 2 ft/px) or the fan drops sectors/head plots/closers and shows parchment holes (paddy_fan_gapless)
     if mirror_ym is not None:
@@ -757,13 +761,18 @@ s.label(1508, 806, "gate market", 9, italic=True, color="#5A4326")
 # seat on its OWN land, SPREAD APART and mostly OFF-MAP (miles out) - NOT a cluster (that belt is the
 # commercial suburb). They commute in over the bridge. See settlements.md 'Historical grounding'. Sizes
 # + formal-gate direction vary; >= 200px apart (city_samurai_estates_dispersed), at most 3 shown.
-EST = [(2160, 920, 94, 62, "south", (2140, 770)),    # upper NE, drive off the N edge onto the district road
-       (2340, 1120, 84, 56, "west", (2391, 1120)),   # E, drive off the E edge
-       (2160, 1230, 76, 48, "north", (2391, 1255))]  # lower NE, drive out to the bridge road (E)
+# PADDY FIRST (GM 2026-07-23, Tango-recipe): the river-fed fne1 fan claims the far bank's northern
+# ground; the gentry keep the leftover south half of the NE quadrant (capital_dir=northeast needs
+# BOTH half-planes, so this strip between the fan and the wharf road is exactly their ground), one
+# a fraction at the frame edge with its land running on.
+EST = [(2160, 1230, 76, 48, "north", (2391, 1255)),  # lower NE, by the bridge road
+       (2340, 1120, 84, 56, "west", (2391, 1120)),   # E, mid-strip
+       (2500, 1270, 94, 62, "south", (2560, 1300))]  # E edge, a fraction at the frame
 for ex, ey, ew, eh, gd, (lx, ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
-    s.lane([(ex, ey), (lx, ly)], worn=True, connector=True)   # the estate's own drive out to the rural/bridge road (reaches a gate off-frame)
-s.label(2255, 1030, "samurai estates", 10, italic=True, color="#3A352C")   # open ground between the dispersed estates
+    # NO drawn driveway (GM 2026-07-23, Tango-recipe: the long worn drives read as fat roads; the
+    # check doctrine says estate approach lanes are "not drawn at this scale"). Targets kept for record.
+s.label(2337, 1305, "samurai estates", 10, italic=True, color="#3A352C")   # below the estate strip, above the wharf road
 
 # surrounding farmland: three large moat-fed combs on the landward faces; a river-fed comb on
 # the far bank (its tap draws straight off the Hayakawa)
@@ -771,6 +780,7 @@ MOAT_FARMS = [
     ("fw1", (1020, 1090), 190, 21, 170, (150, 200), (90, 120), (0.35, 0.7)),
     ("fw2", (990, 1455), 168, 22, 180, (150, 200), (90, 120), (0.4, 0.75)),
     ("fs1", (1292, 1811), 130, 38, 170, (130, 170), (85, 115), (0.4, 0.78)),
+    ("fss1", (1650, 1800), 100, 39, 170, (120, 160), (80, 110), (0.4, 0.75)),  # S band E of fs1, falling S off-frame (GM 2026-07-23 rollout)
 ]  # fs1's local comb seed 23->38: post-shrink, seed 23's smoothed rim overran the westmost plot by 64px of unplanted claim (field_outline_matches_planting; the drain rim, not the canals - trimming canal spans moved nothing), while seed 38 plants the same footprint to within 34px
 for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     mp = min(MOAT, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
@@ -787,6 +797,43 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     topo_channel([tuple(_dr[-2]), tuple(_dr[-1])], {"kind": "drain"}, {"kind": "offmap"})
     s.ring(('poly', _env), 26, 15, ["plain"])
     s.ring(('poly', _env), 20, 40, ["plain"])
+
+# fnn1 + fnn2 - the north band fans flanking the north road (GM 2026-07-23 rollout: the wide frame
+# opened bare ground above the moat). Both are fn1-pattern: off-map northern source (the high side
+# that also feeds the river), falling S; fnn1 drains off the west frame, fnn2's shallow fall stops
+# above the moat's top rim and its drain empties INTO the moat (the storm-drain pattern).
+_netn1, ENV_FNN1, _cn1 = comb_field("fnn1", (1050, 608), 100, 41, 150, (120, 160), (75, 105), (0.4, 0.75), avoid=(MOAT,))
+_pn1 = plot_centroid(_netn1, lambda cs: min(cs, key=lambda c: c[1]))
+topo_channel([(1050, 602), (1050, 608), _pn1], {"kind": "offmap"}, {"kind": "field", "name": "fnn1"})
+_drn1 = next(c["pts"] for c in _netn1["channels"] if c["role"] == "drain")
+_dfx1, _dfy1 = _drn1[-1]
+_mn1 = min(MOAT, key=lambda mp1: (mp1[0] - _dfx1 - 60) ** 2 + (mp1[1] - _dfy1 - 60) ** 2)  # rim SE of the outfall
+topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)  # empties into the moat
+s.ring(('poly', ENV_FNN1), 24, 15, ["plain"])
+s.ring(('poly', ENV_FNN1), 18, 40, ["plain"])
+_netn2, ENV_FNN2, _cn2 = comb_field("fnn2", (1750, 608), 95, 42, 75, (110, 150), (60, 85), (0.4, 0.8), avoid=(MOAT,))
+_pn2 = plot_centroid(_netn2, lambda cs: min(cs, key=lambda c: c[1]))
+topo_channel([(1750, 602), (1750, 608), _pn2], {"kind": "offmap"}, {"kind": "field", "name": "fnn2"})
+_drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
+_dfx2, _dfy2 = _drn2[-1]
+_mn2 = min(MOAT, key=lambda mp2: (mp2[0] - _dfx2) ** 2 + (mp2[1] - _dfy2 - 90) ** 2)
+topo_channel([(_dfx2, _dfy2), (_mn2[0], _mn2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)
+s.ring(('poly', ENV_FNN2), 22, 15, ["plain"])
+s.ring(('poly', ENV_FNN2), 16, 40, ["plain"])
+# fne1 - the far-bank fan, tapped STRAIGHT OFF the Hayakawa (the river-fed comb the far bank always
+# implied): sluice east of the bank, falling ESE off the east frame; its hem keeps off the estate
+# strip below via dry_keepout. The river IS the source (channel anchor kind "river").
+_nete1, ENV_FNE1, _ce1 = comb_field(
+    "fne1", (2130, 860), 20, 43, 140, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2160, 1230, 105), (2340, 1120, 115), (2500, 1270, 125))
+)
+_pe1 = plot_centroid(_nete1, lambda cs: min(cs, key=lambda c: c[0]))
+topo_channel([(2076, 859), (2130, 860), _pe1], {"kind": "river"}, {"kind": "field", "name": "fne1"})
+s.field_channel([(2076, 859), (2130, 860)], '#6C9CBE', 7, 7)  # the visible tap: river bank -> sluice
+_dre1 = next(c["pts"] for c in _nete1["channels"] if c["role"] == "drain")
+_dfex, _dfey = _dre1[-1]
+topo_channel([(_dfex, _dfey), (2560, _dfey - 38)], {"kind": "drain"}, {"kind": "offmap"}, draw_w=3.2)  # runoff off the east frame (gentle ENE bend, no hairpin)
+s.ring(('poly', ENV_FNE1), 24, 15, ["plain"])
+s.ring(('poly', ENV_FNE1), 18, 40, ["plain"])
 # THE DEAD CROSS THE RIVER: the funerary complex on the far bank, DOWNSTREAM (south) of the
 # city and south of the bridge road - the polluting death-work kept below the city on the
 # current, and bearing the dead over the water suits the geography of the afterlife. (The moat's
@@ -1000,10 +1047,12 @@ s.place_wells((1094, 962, 1450, 1298), spacing=46, near=48)  # NW monzen, offset
 # the paddy fans - no water needed. near_ring_cropland auto-skips everything inside the wall, the fans,
 # structures, estates, graves, the river, and the moat. Called last, after every structure + top-up.
 # Default near_ring_density "dense". WHY: settlements.md "Near-ring farmland density".
-s.near_ring_paddy(
-    (889, 770, 2391, 1890), seed=49, cell_ft=460
-)  # feature 014: wet-rice paddy basins where the river reaches (the dominant near-ring crop); off-edge or farmhouse-ringed for city_outside_fields_have_farmhouses
-s.near_ring_cropland((889, 770, 2391, 1890), seed=52, garden_frac=0.85)  # demoted: gardens by the wall + thin margin grain, filling only what the paddy did not (auto-skips the paddy field_polys)
+# NEAR-RING PADDY IS COMB FIELDS ONLY (GM 2026-07-23, the Tango-recipe rollout). The ring's rice is
+# the MOAT_FARMS combs + the river-fed far-bank fan - real irrigation deltas, the same paddy form as
+# every village. REJECTED (recorded so it is never reinvented): the near_ring_cropland dry/garden tile
+# quilt and near_ring_paddy's gridded square basins ("don't look like any rice paddy in any village or
+# hamlet"). Coverage need not be total - the visible fans + open ground read as the head of paddy
+# country continuing beyond the frame.
 
 s.title("Nagahara")
 

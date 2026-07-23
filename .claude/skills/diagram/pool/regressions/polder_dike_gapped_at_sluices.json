@@ -1,0 +1,87 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid"
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     150,
+     150
+    ],
+    [
+     850,
+     150
+    ],
+    [
+     850,
+     1250
+    ],
+    [
+     150,
+     1250
+    ]
+   ],
+   "bbox": [
+    150,
+    150,
+    850,
+    1250
+   ]
+  }
+ ],
+ "dikes": [
+  {
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     1300
+    ],
+    [
+     100,
+     1300
+    ]
+   ],
+   "w_min": 14.0,
+   "w_max": 38.0,
+   "gaps": []
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     500,
+     700
+    ],
+    [
+     500,
+     120
+    ],
+    [
+     500,
+     50
+    ]
+   ],
+   "role": "main",
+   "field": "p"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "polder_dike_gapped_at_sluices"
+  ],
+  "source": "test_checks.py::test_polder_dike_gapped_at_sluices"
+ }
+}

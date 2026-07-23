@@ -422,11 +422,10 @@ s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="cops
 s.fire_tower(970, 420, label="fire-watch tower")
 
 # ===== NEAR-RING FARMLAND at the MEDIUM tier (feature 013) =====
-# Hoshizora's near ring is worked but not saturated (post-town economy + hayfield/grazing), so fill it
-# at meta's "medium" density - a real quilt of dry/garden plots between the comb and the pastures, but
-# visibly thinner than dense Hirameki. Auto-skips the pastures/forest (block_polys), the comb, structures,
-# and the groves. Called after the groves so it threads around them. WHY: settlements.md "Near-ring farmland density".
-s.near_ring_cropland((40, 40, 1960, 1260), seed=386, garden_frac=0.55)
+# NEAR-RING PADDY IS COMB FIELDS ONLY (GM 2026-07-23, the Tango-recipe rollout): the town's rice is
+# its build_comb fans - real irrigation deltas. REJECTED (recorded so it is never reinvented): the
+# near_ring_cropland dry/garden tile quilt ("tons and tons of dry crop fields everywhere" - the 013
+# composition error). The unfilled ground reads as pasture/commons and the head of country beyond.
 
 s.title("Hoshizora")
 

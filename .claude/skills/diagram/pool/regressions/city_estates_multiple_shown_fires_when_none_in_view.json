@@ -41,8 +41,8 @@
  ],
  "manors": [
   {
-   "x": 600,
-   "y": 600,
+   "x": 1600,
+   "y": 1600,
    "w": 100,
    "h": 80
   },
@@ -57,6 +57,6 @@
   "fires": [
    "city_estates_multiple_shown"
   ],
-  "source": "test_checks.py::test_city_estates_multiple_shown_fires_when_only_one_in_view"
+  "source": "test_checks.py::test_city_estates_multiple_shown_fires_when_none_in_view"
  }
 }

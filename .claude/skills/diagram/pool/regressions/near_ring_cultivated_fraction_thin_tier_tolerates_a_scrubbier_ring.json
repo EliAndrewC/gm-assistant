@@ -1,0 +1,37 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 1000,
+  "H": 1000
+ },
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     0,
+     0
+    ],
+    [
+     1000,
+     0
+    ],
+    [
+     1000,
+     260
+    ],
+    [
+     0,
+     260
+    ]
+   ],
+   "crop": "soy",
+   "theta": 0.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "near_ring_cultivated_fraction"
+  ],
+  "source": "test_checks.py::test_near_ring_cultivated_fraction_thin_tier_tolerates_a_scrubbier_ring"
+ }
+}

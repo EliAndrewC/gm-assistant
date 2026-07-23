@@ -1,0 +1,41 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "hill": [
+  500,
+  500,
+  200,
+  150
+ ],
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     480,
+     480
+    ],
+    [
+     520,
+     480
+    ],
+    [
+     520,
+     520
+    ],
+    [
+     480,
+     520
+    ]
+   ],
+   "crop": "soy",
+   "theta": 0.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dry_plots_off_hill"
+  ],
+  "source": "test_checks.py::test_dry_plots_off_hill_fires_when_a_plot_sits_on_the_hill"
+ }
+}

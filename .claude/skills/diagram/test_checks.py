@@ -3169,17 +3169,33 @@ def test_city_flophouse_outside_each_gate_fires_when_a_gate_lacks_one():
     assert "city_flophouse_outside_each_gate" in f(M)
 
 
-def test_city_estates_multiple_shown_fires_when_only_one_in_view():
+def test_city_estates_multiple_shown_fires_when_none_in_view():
+    # PADDY-FIRST doctrine (GM 2026-07-23): ONE estate in view suffices (the rest sit farther out,
+    # implied off-map) - so the check fires only when NO estate shows at all.
     M = {
         "meta": {"scale": "city", "walled": True, "W": 3000, "H": 3000, "view": [0, 0, 1000, 1000]},
         "wall": WALLSQ,
         "gates": [[500, 200], [500, 800]],
         "manors": [
-            {"x": 600, "y": 600, "w": 100, "h": 80},  # inside the view
+            {"x": 1600, "y": 1600, "w": 100, "h": 80},
             {"x": 2000, "y": 2000, "w": 100, "h": 80},
         ],
-    }  # off the cropped view
+    }  # both off the cropped view
     assert "city_estates_multiple_shown" in f(M)
+
+
+def test_city_estates_multiple_shown_passes_with_a_single_estate_in_view():
+    # the paddy-first floor: a lone estate (even a fraction at the frame edge) is the accurate signal
+    M = {
+        "meta": {"scale": "city", "walled": True, "W": 3000, "H": 3000, "view": [0, 0, 1000, 1000]},
+        "wall": WALLSQ,
+        "gates": [[500, 200], [500, 800]],
+        "manors": [
+            {"x": 990, "y": 600, "w": 100, "h": 80},  # a fraction inside the view edge
+            {"x": 2000, "y": 2000, "w": 100, "h": 80},
+        ],
+    }
+    assert "city_estates_multiple_shown" not in f(M)
 
 
 def test_city_road_label_outside_walls_fires_when_inside():
@@ -6453,13 +6469,13 @@ def test_near_ring_cultivated_fraction_fires_on_a_sparse_town():
 
 
 def test_near_ring_cultivated_fraction_passes_when_the_near_ring_is_cropped():
-    # dry cropland over ~62% of the flat frame clears the dense town floor (0.55)
+    # dry cropland over ~62% of the flat frame clears the dense town floor (0.28, combs-only doctrine)
     M = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "dry_plots": [{"poly": [[0, 0], [1000, 0], [1000, 620], [0, 620]], "crop": "soy", "theta": 0.0}]}
     assert "near_ring_cultivated_fraction" not in f(M)
 
 
 def test_near_ring_cultivated_fraction_thin_tier_tolerates_a_scrubbier_ring():
-    # ~26% cultivated: fires when declared 'dense' (floor 0.55), passes when declared 'thin' (floor 0.20)
+    # ~26% cultivated: fires when declared 'dense' (floor 0.28), passes when declared 'thin' (floor 0.12)
     cover = [{"poly": [[0, 0], [1000, 0], [1000, 260], [0, 260]], "crop": "soy", "theta": 0.0}]
     dense = {"meta": {"scale": "town", "W": 1000, "H": 1000}, "dry_plots": cover}
     thin = {"meta": {"scale": "town", "W": 1000, "H": 1000, "near_ring_density": "thin"}, "dry_plots": cover}

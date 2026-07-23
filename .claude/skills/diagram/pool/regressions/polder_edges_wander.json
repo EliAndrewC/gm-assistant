@@ -1,0 +1,76 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "down_deg": 90,
+  "field_archetype": "polder_grid"
+ },
+ "dikes": [
+  {
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     1300
+    ],
+    [
+     100,
+     1300
+    ]
+   ],
+   "w_min": 14.0,
+   "w_max": 38.0,
+   "gaps": []
+  }
+ ],
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     1300
+    ],
+    [
+     100,
+     1300
+    ],
+    [
+     100,
+     100
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    900,
+    1300
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "polder_edges_wander"
+  ],
+  "source": "test_checks.py::test_polder_edges_wander"
+ }
+}

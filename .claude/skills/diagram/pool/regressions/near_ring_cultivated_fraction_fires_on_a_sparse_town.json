@@ -1,0 +1,13 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 1000,
+  "H": 1000
+ },
+ "_regression": {
+  "fires": [
+   "near_ring_cultivated_fraction"
+  ],
+  "source": "test_checks.py::test_near_ring_cultivated_fraction_fires_on_a_sparse_town"
+ }
+}
