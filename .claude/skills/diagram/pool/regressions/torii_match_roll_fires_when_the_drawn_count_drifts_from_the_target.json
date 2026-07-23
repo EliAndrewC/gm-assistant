@@ -1,0 +1,29 @@
+{
+ "meta": {
+  "scale": "city"
+ },
+ "religious": [
+  {
+   "kind": "temple",
+   "label": "T",
+   "x": 500,
+   "y": 500,
+   "w": 100,
+   "h": 80,
+   "torii_count": 3
+  }
+ ],
+ "torii": [
+  [
+   500,
+   560,
+   1
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "torii_match_roll"
+  ],
+  "source": "test_checks.py::test_torii_match_roll_fires_when_the_drawn_count_drifts_from_the_target"
+ }
+}

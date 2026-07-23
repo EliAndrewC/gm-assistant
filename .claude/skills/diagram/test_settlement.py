@@ -921,7 +921,9 @@ def test_animal_ground_records_a_yard_and_optional_label():
     # the city_no_large_empty_space remedy: a standalone stable-yard scatter claiming a pocket
     s = _crop_settlement()
     s.animal_ground(400, 400, r=60)  # no label - the rails and animals read on their own
-    assert s.M["stable_yards"][-1] == {"x": 400, "y": 400, "r": 60, "of": [400, 400], "troughs": 2}
+    yd = s.M["stable_yards"][-1]
+    assert (yd["x"], yd["y"], yd["r"], yd["of"], yd["troughs"]) == (400, 400, 60, [400, 400], 2)
+    assert "troughs_at" in yd  # the cluster anchor stable_troughs_beside_well validates
     s.animal_ground(700, 700, r=52, label="caravan ground")
     assert s.M["labels"][-1][5] == "caravan ground"  # label boxes are [x0, y0, x1, y1, z, text]
 
@@ -933,18 +935,40 @@ def test_caravan_scale_yard_gets_three_troughs_beside_the_nearest_well():
     s = _crop_settlement()
     s.M["wells"] = [{"x": 500, "y": 400, "r": 8, "vr": 4.0, "shrine": False}]
     s.animal_ground(400, 400, r=80)
-    assert s.M["stable_yards"][-1]["troughs"] == 3
+    yd = s.M["stable_yards"][-1]
+    assert yd["troughs"] == 3
+    assert yd["troughs_at"] == [492.2, 400.0]  # wellhead vr 4.0 + half a 4.6 trough + 1.5 step from the well at x=500
     out = "".join(s.out)
     assert out.count('fill="#8FA6B0"') == 3  # the trough rects
-    assert 'x="489.9"' in out  # cluster at (492.2, 400): wellhead vr 4.0 + half a 4.6 trough + 1.5 step from the well at x=500
+    assert 'x="489.9"' in out  # the cluster's trough rects, centered on troughs_at
 
 
-def test_yard_troughs_fall_back_when_no_well_in_reach():
-    # every recorded well beyond r + 40: the cluster takes a clear interior spot instead
+def test_yard_digs_its_own_well_when_the_near_wellheads_flanks_are_all_blocked():
+    # the Nagahara yard-1 case: a well IS in reach, but a building crowds every flank of the
+    # wellhead, so no bucket-pour spot exists beside it - the yard digs its own well instead
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 400, "y": 460, "r": 8, "vr": 4.0, "shrine": False}]
+    s.M["buildings"] = [{"x": 400, "y": 460, "w": 40, "h": 40}]  # covers the whole flank ring
+    s.animal_ground(400, 400, r=60)
+    assert len(s.M["wells"]) == 2  # the in-reach well was unusable; the yard dug its own
+    nw, ta = s.M["wells"][-1], s.M["stable_yards"][-1]["troughs_at"]
+    assert math.hypot(nw["x"] - ta[0], nw["y"] - ta[1]) <= s.px(40)  # cluster hugs the new wellhead
+
+
+def test_yard_digs_its_own_well_when_none_in_reach():
+    # every recorded well beyond r + 40: the yard sinks its OWN courtyard well and clusters the
+    # troughs beside it (the caravanserai / yizhan post-yard form - GM 2026-07-23, the Nagahara
+    # defect: the old fallback dropped the cluster at a random spot, a 100-241 ft bucket-carry)
     s = _crop_settlement()
     s.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]
     s.animal_ground(400, 400, r=60)
-    assert s.M["stable_yards"][-1]["troughs"] == 2
+    yd = s.M["stable_yards"][-1]
+    assert yd["troughs"] == 2
+    assert len(s.M["wells"]) == 2  # the yard dug its own
+    nw = s.M["wells"][-1]
+    assert math.hypot(nw["x"] - 400, nw["y"] - 400) <= 60  # sunk inside the yard disc
+    ta = yd["troughs_at"]
+    assert math.hypot(nw["x"] - ta[0], nw["y"] - ta[1]) <= s.px(40)  # cluster hugs the new wellhead
 
 
 def _torii_city(**kw):
