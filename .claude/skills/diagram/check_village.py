@@ -196,7 +196,7 @@ _OVERLAP_EXEMPT = {
     "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
     "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
     "clearings": "swept-ground records (the shrine keidai / torii sando collar / grave collar), not drawn features at all - they carry the cover-ordinal bookkeeping for scatter_respects_swept_clearings and deliberately CONTAIN their sacred/funerary feature",
-    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (carts, tethered animals, litter) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards)",
+    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (carts, tethered animals, litter) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
@@ -1881,6 +1881,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not _yardless,
             f"gate stables with no drawn working yard at {_yardless[:3]} - the open ground around a gate stables is a deliberate wagon-train marshalling yard (carts, tethered oxen, littered beaten earth), not blank parchment; s.stables(...) draws it (yard=True; settlements.md 'Stable yard')",
         )
+
+    # STABLE-YARD TROUGHS SIT BESIDE A WELL (GM 2026-07-23: "so that the water doesn't need to be
+    # carried a considerable distance"). The watering point works by RELAY at a fixed draw-point -
+    # a wagon-train drinks 300-600 gal in a session, poured by bucket straight from the wellhead
+    # into the troughs (settlements.md 'Stable yard' watering) - so the cluster must hug a
+    # wellhead: placement offsets it by the wellhead edge + half a trough + a step (~24 real ft
+    # center-to-center at city scale); 40 real ft is that worst case + slack, and any genuine
+    # carry (the pre-fix Nagahara yards sat 100/241 ft out) blows far past it. A yard with no
+    # well in reach digs its OWN courtyard well (the caravanserai / yizhan post-yard form), so
+    # "no well nearby" is never a valid layout; a yard whose trough cluster went unrecorded
+    # (troughs > 0 without troughs_at) fails too - the anchor is part of the contract. Not
+    # scale-gated: wherever a stable yard records troughs, its water is drawn at a well.
+    _tr_ftpx = float(meta.get("ftpx") or 3.0)
+    _tr_wells = M.get("wells", [])
+    _tr_far = []
+    for _tr_yd in M.get("stable_yards", []):
+        if not _tr_yd.get("troughs"):
+            continue
+        _tr_at = _tr_yd.get("troughs_at")
+        if not _tr_at or not _tr_wells or min(math.hypot(w["x"] - _tr_at[0], w["y"] - _tr_at[1]) for w in _tr_wells) > 40.0 / _tr_ftpx:
+            _tr_far.append((round(_tr_yd["x"]), round(_tr_yd["y"])))
+    check(
+        "stable_troughs_beside_well",
+        not _tr_far,
+        f"stable-yard trough clusters not beside a well at {_tr_far[:3]} - animals are watered by relay at a fixed draw-point, the bucket poured straight from the wellhead, so the cluster hugs a well within ~40 real ft; a yard with no well in reach digs its own courtyard well (s._stable_yard does both; settlements.md 'Stable yard' watering)",
+    )
 
     # WALL TOWER COVERAGE by the city's DEFENSE POSTURE (GM 2026-07-22): the interlocking-flanking-fire rule
     # (侧射; Shen Kuo's 11th-c. 矢石相及 - adjacent mamian's fields of fire overlap so an attacker at the base
