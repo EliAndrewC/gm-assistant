@@ -2669,7 +2669,13 @@ def test_clearings_keep_scrub_off_sacred_and_funerary_ground():
     assert len(s.clearings) == 1 and len(s.block_polys) == n_block  # clearings, NOT block_polys
     poly = s.clearings[0]
     xs = [p[0] for p in poly]
-    assert min(xs) == 600 - 20 - 58 and max(xs) == 600 + 20 + 58  # footprint half (20) + extra (58), bscale 1.0
+    ys = [p[1] for p in poly]
+    # the verge is an ORGANIC blob (irregular inward bays), not the padded rectangle: 16 edge samples,
+    # more than 4 distinct x values, contained in the padded rect (bays-only - the claim never grows),
+    # and still generously containing the footprint (a bay cuts at most ~55% of the 58px collar)
+    assert len(poly) == 16 and len({round(px, 1) for px in xs}) > 4
+    assert min(xs) >= 600 - 20 - 58 and max(xs) <= 600 + 20 + 58 and min(ys) >= 600 - 15 - 58 and max(ys) <= 600 + 15 + 58
+    assert all(settlement.point_in_poly(fx, fy, poly) for fx, fy in [(580, 585), (620, 585), (620, 615), (580, 615)])
     # shrine_hall with a torii registers a clearing for BOTH the hall and the arch
     s2 = Settlement(1200, 1200, seed=1)
     s2.meta(name="C2", scale="village", ftpx=1, down_deg=90)
@@ -2680,6 +2686,38 @@ def test_clearings_keep_scrub_off_sacred_and_funerary_ground():
     s3.meta(name="C3", scale="village", ftpx=1, down_deg=90)
     s3.cemetery(600, 600, 90, 60, label="burial ground")
     assert len(s3.clearings) == 1
+
+
+def test_clear_ground_is_deterministic_and_preserves_the_rng_stream():
+    """The organic verge is seeded from its own footprint: identical args -> identical blob (render-sync
+    determinism), and the map's global RNG stream is untouched (saved/restored), so adding or reshaping
+    a collar can never shift any other feature's random draws."""
+    s = Settlement(1200, 1200, seed=1)
+    s.meta(name="D", scale="village", ftpx=1, down_deg=90)
+    random.seed(99)
+    expect = random.random()
+    random.seed(99)
+    s._clear_ground(600, 600, 40, 30, 58)
+    assert random.random() == expect  # the stream is exactly where it was
+    s2 = Settlement(1200, 1200, seed=7)  # different map seed, same collar args
+    s2.meta(name="D2", scale="village", ftpx=1, down_deg=90)
+    s2._clear_ground(600, 600, 40, 30, 58)
+    assert s.M["clearings"][0]["poly"] == s2.M["clearings"][0]["poly"]
+
+
+def test_clear_ground_dedupes_same_center_registrations():
+    """The reserve_clearing-then-feature pattern registers the same collar twice (the feature's own call
+    lands within a few px of the reserve, sometimes with a different footprint/extra). The duplicate
+    REUSES the first blob verbatim - guard and late collar can never disagree about the swept outline -
+    while a genuinely different center gets its own blob."""
+    s = Settlement(1200, 1200, seed=1)
+    s.meta(name="E", scale="village", ftpx=1, down_deg=90)
+    s._clear_ground(600, 600, 60, 46, 30)  # the gen's reserve
+    s._clear_ground(600, 602, 40, 30, 58)  # the feature's own late registration: 2px off, different size
+    assert len(s.clearings) == 2 and s.clearings[0] == s.clearings[1]
+    assert s.M["clearings"][0]["poly"] == s.M["clearings"][1]["poly"]
+    s._clear_ground(900, 900, 40, 30, 58)  # a different feature elsewhere: its own blob
+    assert len(s.clearings) == 3 and s.clearings[2] != s.clearings[1]
 
 
 def test_paddy_features_cover_every_archetype_branch():
