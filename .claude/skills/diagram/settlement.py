@@ -4365,7 +4365,14 @@ class Settlement:
         undrained valley toe below the managed paddy, where wet-rice cultivation stops (wet rice is reclaimed FROM
         marsh - polders diked out into marsh/lake; where reclamation stops it stays reed wetland; `marsh_on_low_ground`
         checks this sits downhill); 'pond_fringe' = the reedy shallow MARGIN of a pond (a water-edge fringe, exempt
-        from the low-ground rule). WHY: settlements.md 'Marsh'. Recorded M['marshes']."""
+        from the low-ground rule); 'defense' = an ENGINEERED defensive wet belt maintained outside a fortified
+        perimeter (Song Hebei frontier marsh belt, numajiro "marsh castles", the flooded-paddy glacis) - it hugs
+        the wall/moat wherever the circuit runs, so it is exempt from the low-ground rule and from
+        `roads_clear_of_marsh` (an approach road through the belt is a CAUSEWAY - the corridor skip keeps its
+        tread bare - and few, constricted approaches are the belt's military purpose); `defense_marsh_girds_the_walls`
+        owns its placement instead. WHY: settlements.md 'Marsh' + 'Defensive marshland'. Recorded M['marshes']."""
+        if role not in ("toe", "pond_fringe", "defense"):
+            raise ValueError(f"unknown marsh role {role!r}; expected 'toe', 'pond_fringe', or 'defense'")
         xs = [p[0] for p in poly]
         ys = [p[1] for p in poly]
         x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
@@ -4431,7 +4438,7 @@ class Settlement:
                 "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
             }
         )
-        if role != "pond_fringe":  # the wet valley TOE is UNBUILDABLE: register it as a no-build keep-out
+        if role != "pond_fringe":  # the wet valley TOE (and the defensive belt) is UNBUILDABLE: register it as a no-build keep-out
             self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in poly])  # so nothing is placed/dug on a bog (a thin pond-fringe shore ring is exempt)
 
     def hinterland(
@@ -4902,18 +4909,26 @@ class Settlement:
         fine - over-clearing by a few px reads the same)."""
         self._clear_ground(x, y, w, h, extra)
 
-    def cemetery(self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool = False) -> None:
+    def cemetery(self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool | None = None) -> None:
         """A BURIAL GROUND - rows of grave markers (sotoba / stone stelae) with a couple of taller
         memorial stupas. Every settlement above a hamlet buries its dead: a Buddhist danka PARISH
         ground sits in a TEMPLE / MONASTERY precinct (death is the Buddhist clergy's business), while
         a Shinto SHRINE keeps death-pollution (kegare) at arm's length - so a graveyard sits well
         clear of any shrine. parish=False marks a NON-parish burial ground (a village-style plot not
         attached to a temple, e.g. one serving an in-wall farm quarter) - exempt from the temple-precinct
-        rule. organic=True draws an IRREGULAR earthen plot (a village burial ground was never surveyed into
-        a ruled rectangle - it grew as an unbounded patch on the waste back-slope); the recorded bbox + the
-        no-build block stay the w x h rectangle, so the placement/clearance checks are unaffected - only the
-        DRAWN ground and the markers within it follow the blob. Records M['cemeteries'] and blocks placement.
+        rule. organic=True draws an IRREGULAR earthen plot; organic=None (the default) DERIVES it from
+        parish: every non-parish COMMON ground is organic, parish precinct plots stay ruled rectangles.
+        Historical grounding (researched 2026-07-23, written up in settlements.md 'shape of the common
+        ground'): Japan's commoner burial grounds - Kyoto's burial fields, village sanmai, Edo's packed
+        temple yards - were unplotted and terrain-following, never surveyed; Song China's state pauper
+        cemeteries (louzeyuan, 1104 on) WERE surveyed walled compounds with numbered rowed plots, so a
+        specific ordered city may pass organic=False to draw that Chinese form deliberately. Rokugan
+        defaults to the Japanese mode (GM decision). The recorded bbox + the no-build block stay the
+        w x h rectangle either way, so the placement/clearance checks are unaffected - only the DRAWN
+        ground and the markers within it follow the blob. Records M['cemeteries'] and blocks placement.
         label_above puts the label over the plot (for a cramped intramural ground whose label would otherwise spill onto its temple)."""
+        if organic is None:
+            organic = not parish
         st = random.getstate()
         random.seed(int(abs(cx) + abs(cy) * 3 + w))
         g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.1f})">']

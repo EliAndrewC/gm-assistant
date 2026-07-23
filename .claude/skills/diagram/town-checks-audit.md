@@ -56,6 +56,10 @@ settlements.md's urban-clearance-halo bullet).
 9. **[DONE `town_margins_clothed`]** (20% allowance; urban fabric + intramural ground count as cover; both towns clothed with role='grazing' commons bands).
    The satoyama bare-margin rule does not run at towns; Hoshizora carries sizable bare tan
    stretches that a village would fail on. Real generator work (a town `hinterland()` pass).
+   The absence of a village-style toe MARSH at towns/cities is deliberate and now has recorded
+   historical grounding - see settlements.md 'Towns and CITIES have NO toe marsh' (the
+   drainage-investment gradient) and 'Defensive marshland' (the one sanctioned urban marsh,
+   `role="defense"`, held ready for a future map).
 10. **[DONE `town_samurai_housing_varied`]** (>= 1 samurai_large among a small majority; both towns place pinned larges). Towns check
     laborer + merchant variety only; town gens place a single samurai kind. Needs
     samurai_large support in the town packs first.

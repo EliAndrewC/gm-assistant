@@ -482,6 +482,20 @@ def test_marsh_pond_fringe_skips_the_open_water():
     assert s.M["marshes"][0]["role"] == "pond_fringe"
 
 
+def test_marsh_defense_role_records_and_blocks_building():
+    s = _crop_settlement()
+    n0 = len(s.block_polys)
+    s.marsh([(150, 150), (450, 150), (450, 450), (150, 450)], role="defense")
+    assert s.M["marshes"][0]["role"] == "defense"
+    assert len(s.block_polys) == n0 + 1  # the wet belt is a no-build keep-out, same as the toe
+
+
+def test_marsh_rejects_an_unknown_role():
+    s = _crop_settlement()
+    with pytest.raises(ValueError, match="unknown marsh role"):
+        s.marsh([(150, 150), (450, 150), (450, 450), (150, 450)], role="bog")
+
+
 def test_pond_anchored_detects_a_watercourse_that_connects_to_the_pond():
     # the cue that a course should snap onto the pond rim: either end's anchor is kind=='pond'
     assert Settlement._pond_anchored({"kind": "pond"}, {"kind": "field"}) is True
@@ -887,6 +901,20 @@ def test_cemetery_organic_draws_an_irregular_plot():
     assert "<path" in frag and 'width="100"' not in frag  # a jittered blob outline, no ruled 100-wide plot rect
     assert s.M["cemeteries"][-1]["w"] == 100  # recorded bbox is still the w x h rectangle
     assert s.block_polys[-1] == [(242, 257), (358, 257), (358, 343), (242, 343)]  # no-build block unchanged (checks unaffected)
+
+
+def test_cemetery_common_ground_defaults_organic():
+    # organic derives from parish: a non-parish COMMON ground is Japan-style organic unless overridden
+    s = _crop_settlement()
+    s.cemetery(300, 300, 100, 70, parish=False)
+    assert "<path" in s.out[-1] and 'width="100"' not in s.out[-1]
+
+
+def test_cemetery_organic_false_keeps_the_louzeyuan_rectangle():
+    # the deliberate per-city override: a plotted Chinese-style charity ground stays a ruled rectangle
+    s = _crop_settlement()
+    s.cemetery(300, 300, 100, 70, parish=False, organic=False)
+    assert 'width="100"' in s.out[-1] and "<path" not in s.out[-1]
 
 
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():

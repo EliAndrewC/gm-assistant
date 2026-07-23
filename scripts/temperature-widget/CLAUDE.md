@@ -226,14 +226,30 @@ spatial check first and then the temporal stack:
    longer than `GAP_BREAK_SECONDS` (suspend, shell restart), so a stale pre-gap
    value cannot be held after resume. The gate logic is pure and lives in
    `history.js`, unit-tested in `test-history.js`.
-4. **Notification debounce (`CONFIRM_SAMPLES = 3`).** A severity must hold for 3
-   consecutive polls (~9 s) before it fires, and fires **once** on the way up
-   (not every poll while it stays hot). This catches the residual 1-2 poll
-   excursions that survive smoothing. The number is sized from the data:
-   smoothing + N=3 fired **2** notifications over the 10 min, both inside the
-   genuine burst; the two glitches fired nothing. ~9 s of confirmation delay is
-   harmless because the hardware's own thermal throttling - not this widget - is
-   the actual safety mechanism; the popup is purely informational.
+4. **Notification debounce (`CONFIRM_SAMPLES_BY_SEV = [3, 20, 3]`, indexed by
+   severity).** A severity must hold for its own count of consecutive polls
+   before it fires, and fires **once** on the way up (not every poll while it
+   stays hot). Any severity change restarts the streak, so "held" means
+   continuously in that state. The counts differ by tier (GM decision
+   2026-07-23, replacing the original one-size `CONFIRM_SAMPLES = 3`):
+
+   - **Bad (red): 3 polls, ~10 s.** At or near the thermal limit, fast notice
+     beats burst-filtering.
+   - **Warn (orange): 20 polls, ~60 s.** The 2026-07-23 RCA showed that real
+     bursty load (high CPU%, clocks throttling, whole die heating together)
+     legitimately spikes the die into the low-to-mid 90s for 10-30 s before
+     the fans catch up - normal turbo behavior for this CPU, self-limited by
+     throttling, and not worth an interruption. Only a warm state sustained
+     for a full minute earns the "keep an eye on it" popup. (The original
+     ~9 s debounce was sized to filter *sensor* noise before the RCA showed
+     the remaining warn-range firings were *real but routine* physics.)
+   - **Normal: 3 polls** - not a notification (recovery is silent); it is just
+     how fast the confirmed-severity floor resets so a later re-escalation can
+     notify again.
+
+   The confirmation delay is harmless at every tier because the hardware's own
+   thermal throttling - not this widget - is the actual safety mechanism; the
+   popup is purely informational.
 
 Recovery is **not** notified (the gauge color shows it). And notifications
 reuse **one** `MessageTray.Source` + one `Notification`, updated in place,
@@ -247,8 +263,9 @@ its notifications (they used to outlive it, owned by the message tray).
 
 The temperature history is written to an on-disk archive at
 `~/.local/state/temperature-bar/history.jsonl` (XDG_STATE_HOME), one JSON
-object per line: `{"t": <unix_ms>, "c": <°C>}`. Three reasons it exists rather
-than the history living purely in memory:
+object per line: `{"t": <unix_ms>, "c": <°C>, "u": <avg CPU %>}` (`u` is
+optional - see below). Three reasons it exists rather than the history living
+purely in memory:
 
 1. **Testable graph.** A nested test shell (see [How to test a
    change](#how-to-test-a-change)) seeds its graph from the archive, so the
@@ -262,6 +279,21 @@ than the history living purely in memory:
 
 Design choices, with the "why":
 
+- **Each sample records the average CPU utilization since the previous one**
+  (`"u"`, integer percent, from the aggregate `/proc/stat` counters; pure
+  logic in `History.parseProcStatCpu` / `cpuUtilizationPct`, unit-tested).
+  Added 2026-07-23 after the second RCA round: utilization is THE
+  discriminator between a stuck sensor and a genuine hot event (a glitch
+  reads 100°C on an idle machine; real heat comes with real load and
+  throttled clocks), and deciding whether that morning's 91-98°C warnings
+  were real required an external temps+load capture precisely because the
+  archive recorded no load data. With `u` on every line the archive answers
+  "was the machine actually working when it got hot?" by itself. Fail-soft
+  and backward compatible: if `/proc/stat` cannot be read the sample is
+  written without `u`, pre-2026-07-23 lines never had it, and a corrupt `u`
+  degrades to a plain `[t, c]` sample - a missing `u` never invalidates the
+  temperature. The graph and severity paths ignore it entirely; it exists
+  for offline analysis.
 - **A sample is persisted every 30 s, not every 3 s.** The gauge still polls
   every 3 s (responsiveness, notifications), but 30 s resolution is plenty for
   trends and keeps the file ~10x smaller: ~2,880 lines/day, ~3 MB across the
