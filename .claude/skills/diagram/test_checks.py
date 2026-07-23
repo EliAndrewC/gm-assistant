@@ -5676,22 +5676,42 @@ def test_dikepond_water_within_banks_and_rounded():
     assert "dikepond_corners_rounded" in f({**base, "dikeponds": sharp})
 
 
-def test_dikeponds_gated_to_water():
-    # GM 2026-07-22: every 桑基魚塘 pond must GATE to the water network by a sluice reaching a creek/canal or a
-    # neighbour pond; sealed ponds (no sluices) OR sluices that reach nothing fire.
-    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
-    canal = {"poly": [[100, 700], [900, 700]], "role": "lateral", "seg": "lateral", "field": "p"}
-    base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}, "fields": [field], "field_ditches": [canal]}
+def test_dikeponds_fed_and_drained():
+    # GM 2026-07-23: down_deg=90 -> downhill is +y. Every 桑基魚塘 pond needs a FEED (network-end UPHILL =
+    # smaller y) AND a DRAIN (network-end DOWNHILL = larger y) on its water, both reaching the network, not
+    # crossing. Sealed / one-way / wrongly-angled / crossing ponds fire.
+    field = {"name": "p", "kind": "paddy", "outline": [[50, 50], [400, 50], [400, 1300], [50, 1300]], "bbox": [50, 50, 400, 1300]}
+    canal = {"poly": [[100, 50], [100, 1250]], "role": "lateral", "seg": "lateral", "field": "p"}  # a vertical canal at x=100
+    base = {"meta": {"scale": "hamlet", "down_deg": 90, "field_archetype": "mulberry_dike_fishpond"}, "fields": [field], "field_ditches": [canal]}
 
-    def rounded(cx, cy):
-        return [[cx + 30 * math.cos(a), cy + 30 * math.sin(a)] for a in [i * math.pi / 6 for i in range(12)]]
+    def rect(cx, cy):
+        return [[cx - 20, cy - 30], [cx + 20, cy - 30], [cx + 20, cy + 30], [cx - 20, cy + 30]]
 
-    ponds = [{"parcel": [[150 + 120 * i, 640], [250 + 120 * i, 640], [250 + 120 * i, 760], [150 + 120 * i, 760]], "water": rounded(200 + 120 * i, 700)} for i in range(12)]
-    ok = [[[200 + 120 * i + 30, 700], [200 + 120 * i, 700]] for i in range(12)]  # far end ON the canal at y=700
-    assert "dikeponds_gated_to_water" not in f({**base, "dikeponds": ponds, "dikepond_sluices": ok})
-    assert "dikeponds_gated_to_water" in f({**base, "dikeponds": ponds})  # no sluices -> sealed basins fire
-    bad = [[[200 + 120 * i + 30, 700], [200 + 120 * i, 2200]] for i in range(12)]  # far end in open ground -> reaches nothing
-    assert "dikeponds_gated_to_water" in f({**base, "dikeponds": ponds, "dikepond_sluices": bad})
+    ponds = [{"parcel": rect(200, 120 + i * 90), "water": rect(200, 120 + i * 90)} for i in range(12)]
+
+    def good_sl():
+        out = []
+        for i in range(12):
+            cy = 120 + i * 90
+            out.append({"a": [200, cy - 30], "b": [100, cy - 50], "kind": "feed"})  # feed: network-end uphill, on the canal
+            out.append({"a": [200, cy + 30], "b": [100, cy + 50], "kind": "drain"})  # drain: network-end downhill, on the canal
+        return out
+
+    assert "dikeponds_fed_and_drained" not in f({**base, "dikeponds": ponds, "dikepond_sluices": good_sl()})
+    assert "dikeponds_fed_and_drained" in f({**base, "dikeponds": ponds})  # no sluices -> sealed
+    bad_feed = good_sl()
+    bad_feed[0] = {"a": [200, 90], "b": [100, 130], "kind": "feed"}  # pond0 feed network-end DOWNHILL -> one-way (drain only)
+    assert "dikeponds_fed_and_drained" in f({**base, "dikeponds": ponds, "dikepond_sluices": bad_feed})
+    bad_drain = good_sl()
+    bad_drain[1] = {"a": [200, 150], "b": [100, 110], "kind": "drain"}  # pond0 drain network-end UPHILL -> drains uphill
+    assert "dikeponds_fed_and_drained" in f({**base, "dikeponds": ponds, "dikepond_sluices": bad_drain})
+    bad_reach = good_sl()
+    bad_reach[0] = {"a": [200, 90], "b": [2000, 70], "kind": "feed"}  # feed far-end reaches nothing
+    assert "dikeponds_fed_and_drained" in f({**base, "dikeponds": ponds, "dikepond_sluices": bad_reach})
+    crossing = good_sl()
+    crossing[0] = {"a": [220, 150], "b": [100, 90], "kind": "feed"}  # pond0: feed goes up-left...
+    crossing[1] = {"a": [220, 90], "b": [100, 150], "kind": "drain"}  # ...drain goes down-left, so the two cross
+    assert "dikeponds_fed_and_drained" in f({**base, "dikeponds": ponds, "dikepond_sluices": crossing})
 
 
 def test_polder_floor_is_ring_interior():

@@ -8495,26 +8495,53 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a dug fish pond erodes to ROUNDED corners, not sharp right angles - the recorded pond water polygons must carry the rounding (min sampled vertices {_min_wv}, want >=10 across {_n_dp} ponds); a 4-vertex quad is the pre-fix sharp-cornered parcel",
         )
 
-        # EVERY DIKE-POND GATES TO THE WATER NETWORK (GM 2026-07-22): a 桑基魚塘 pond is not a sealed basin -
-        # each opens by a SLUICE to the adjacent creek/canal (or, for an interior pond, to a neighbour pond that
-        # reaches the network), so it can be filled, flushed and drained (research: the sluice-gate regulates
-        # level and drains the pond at harvest). Teeth: most ponds must carry a recorded sluice, and every
-        # sluice's FAR end must land ON a channel OR another pond's water - a real connection, not a stub to
-        # nowhere. The pre-fix sealed ponds recorded no sluices and fire. Grounding: settlements.md 'Dike-pond sluices'.
+        # EVERY DIKE-POND IS FED AND DRAINED (GM 2026-07-23): a pond on a slope is plumbed inlet-HIGH,
+        # outlet-LOW so water flows DOWNHILL through it - so each pond carries TWO sluices: a FEEDER from an
+        # uphill point on the creek network (water runs down INTO the pond) and a separate DRAIN to a downhill
+        # point (water runs down OUT of it), and the two must not overlap. Teeth (in the down-slope frame):
+        # every pond must have a feed AND a drain sluice on its water; a feed's network-end must sit UPHILL of
+        # its pond-end and a drain's DOWNHILL; every sluice's far end must reach a channel or another pond (a
+        # real connection); and a pond's feed + drain segments must not cross. Sealed / one-way / uphill-
+        # draining / crossing ponds all fire. Grounding: apply_land_use + settlements.md 'Dike-pond sluices'.
         _sl = M.get("dikepond_sluices", [])
         _dpw = [d["water"] for d in (_dponds or [])]
         _chs = [c["poly"] for c in M.get("field_ditches", [])]
-        _bad_far = 0
-        for _s in _sl:
-            _far = _s[1]
-            _on_ch = any(seg_dist(_far[0], _far[1], cp[k], cp[k + 1]) < 6 for cp in _chs for k in range(len(cp) - 1))
-            _in_pd = any(point_in_poly(_far[0], _far[1], w) or min(seg_dist(_far[0], _far[1], w[k], w[(k + 1) % len(w)]) for k in range(len(w))) < 6 for w in _dpw)
-            if not (_on_ch or _in_pd):
-                _bad_far += 1
+        _fdd = math.radians(float(meta.get("down_deg", 90)))
+        _fdx, _fdy = math.cos(_fdd), math.sin(_fdd)
+
+        def _fdfall(q: Any) -> float:
+            return float(q[0] * _fdx + q[1] * _fdy)
+
+        def _reaches(pt: Any) -> bool:
+            on_ch = any(seg_dist(pt[0], pt[1], cp[k], cp[k + 1]) < 6 for cp in _chs for k in range(len(cp) - 1))
+            in_pd = any(point_in_poly(pt[0], pt[1], w) or min(seg_dist(pt[0], pt[1], w[k], w[(k + 1) % len(w)]) for k in range(len(w))) < 6 for w in _dpw)
+            return on_ch or in_pd
+
+        def _cross(a: Any, b: Any, c: Any, d: Any) -> bool:
+            def _o(p: Any, q: Any, r: Any) -> float:
+                return float((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]))
+
+            return (_o(a, b, c) > 0) != (_o(a, b, d) > 0) and (_o(c, d, a) > 0) != (_o(c, d, b) > 0)
+
+        _fd_bad = 0
+        for _dp in _dponds or []:
+            _w = _dp["water"]
+            _mine = [s for s in _sl if isinstance(s, dict) and min(seg_dist(s["a"][0], s["a"][1], _w[k], _w[(k + 1) % len(_w)]) for k in range(len(_w))) < 3.0]
+            _feeds = [s for s in _mine if s.get("kind") == "feed"]
+            _drains = [s for s in _mine if s.get("kind") == "drain"]
+            if (
+                not _feeds  # sealed / one-way: no feeder ...
+                or not _drains  # ... or no drain
+                or any(_fdfall(s["b"]) >= _fdfall(s["a"]) for s in _feeds)  # a feed's network-end must be UPHILL
+                or any(_fdfall(s["b"]) <= _fdfall(s["a"]) for s in _drains)  # a drain's network-end must be DOWNHILL
+                or any(not _reaches(s["b"]) for s in _mine)  # every sluice's far end reaches the network
+                or any(_cross(f["a"], f["b"], d["a"], d["b"]) for f in _feeds for d in _drains)  # feed + drain must not overlap
+            ):
+                _fd_bad += 1
         check(
-            "dikeponds_gated_to_water",
-            _n_dp >= 12 and len(_sl) >= 0.85 * _n_dp and _bad_far == 0,
-            f"a mulberry-dike fish pond must GATE to the water network by a sluice (to a creek/canal or a neighbour pond), but {len(_sl)}/{_n_dp} ponds are gated and {_bad_far} sluice(s) reach nothing - a sealed basin cannot be filled, flushed or drained",
+            "dikeponds_fed_and_drained",
+            _n_dp >= 12 and len(_sl) >= 1.5 * _n_dp and _fd_bad == 0,
+            f"a mulberry-dike fish pond must be FED from an uphill sluice AND DRAINED by a downhill one (not overlapping), so water flows downhill through it - {_fd_bad} pond(s) are sealed, one-way, wrongly-angled or have crossing connectors (recorded sluices {len(_sl)} for {_n_dp} ponds)",
         )
 
     # A polder's PERIMETER DIKE is an irregular hand-piled EARTHWORK, not a ruled line (GM 2026-07-22,
