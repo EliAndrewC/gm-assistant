@@ -28,6 +28,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from settlement import WALL_DEFENSE, _assert_not_main_tree
+from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
 
@@ -196,7 +197,7 @@ _OVERLAP_EXEMPT = {
     "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
     "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
     "clearings": "swept-ground records (the shrine keidai / torii sando collar / grave collar), not drawn features at all - they carry the cover-ordinal bookkeeping for scatter_respects_swept_clearings and deliberately CONTAIN their sacred/funerary feature",
-    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (carts, tethered animals, litter) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards)",
+    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (carts, tethered animals, litter) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
@@ -1882,6 +1883,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"gate stables with no drawn working yard at {_yardless[:3]} - the open ground around a gate stables is a deliberate wagon-train marshalling yard (carts, tethered oxen, littered beaten earth), not blank parchment; s.stables(...) draws it (yard=True; settlements.md 'Stable yard')",
         )
 
+    # STABLE-YARD TROUGHS SIT BESIDE A WELL (GM 2026-07-23: "so that the water doesn't need to be
+    # carried a considerable distance"). The watering point works by RELAY at a fixed draw-point -
+    # a wagon-train drinks 300-600 gal in a session, poured by bucket straight from the wellhead
+    # into the troughs (settlements.md 'Stable yard' watering) - so the cluster must hug a
+    # wellhead: placement offsets it by the wellhead edge + half a trough + a step (~24 real ft
+    # center-to-center at city scale); 40 real ft is that worst case + slack, and any genuine
+    # carry (the pre-fix Nagahara yards sat 100/241 ft out) blows far past it. A yard with no
+    # well in reach digs its OWN courtyard well (the caravanserai / yizhan post-yard form), so
+    # "no well nearby" is never a valid layout; a yard whose trough cluster went unrecorded
+    # (troughs > 0 without troughs_at) fails too - the anchor is part of the contract. Not
+    # scale-gated: wherever a stable yard records troughs, its water is drawn at a well.
+    _tr_ftpx = float(meta.get("ftpx") or 3.0)
+    _tr_wells = M.get("wells", [])
+    _tr_far = []
+    for _tr_yd in M.get("stable_yards", []):
+        if not _tr_yd.get("troughs"):
+            continue
+        _tr_at = _tr_yd.get("troughs_at")
+        if not _tr_at or not _tr_wells or min(math.hypot(w["x"] - _tr_at[0], w["y"] - _tr_at[1]) for w in _tr_wells) > 40.0 / _tr_ftpx:
+            _tr_far.append((round(_tr_yd["x"]), round(_tr_yd["y"])))
+    check(
+        "stable_troughs_beside_well",
+        not _tr_far,
+        f"stable-yard trough clusters not beside a well at {_tr_far[:3]} - animals are watered by relay at a fixed draw-point, the bucket poured straight from the wellhead, so the cluster hugs a well within ~40 real ft; a yard with no well in reach digs its own courtyard well (s._stable_yard does both; settlements.md 'Stable yard' watering)",
+    )
+
     # WALL TOWER COVERAGE by the city's DEFENSE POSTURE (GM 2026-07-22): the interlocking-flanking-fire rule
     # (侧射; Shen Kuo's 11th-c. 矢石相及 - adjacent mamian's fields of fire overlap so an attacker at the base
     # is hit from >=2 towers). TUNABLE per city (meta wall_defense): `siege` = aimed-lethal bowshot (60 m /
@@ -2975,6 +3002,29 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "no_structure_on_paddy",
             not bad_pd,
             f"{len(bad_pd)} structure(s) stand on a rice paddy - houses, yards, and every other footprint sit on dry ground BESIDE the crop, never in the flooded field",
+        )
+
+        # ... and no DRY plot lies on one either. The hem quilt exists precisely because its ground
+        # sits UPSLOPE of what the canal commands, so dry-crop-on-rice is a contradiction in the
+        # water logic, not a style choice. On a multi-fan map each fan's hem is generated blind to
+        # the other fans - the generators drop any hem plot that hits a previously recorded fan via
+        # the SAME hem_on_paddy predicate this check runs (waterfields.py; the same-source doctrine,
+        # diagram CLAUDE.md), and this gate is what proves the filter worked. First caught: Tango's
+        # fe2 hem punching into fe1's envelope (2026-07-23) - only hand-tuned dry_keepout circles
+        # held fans' hems apart before, and hand tuning missed a spot.
+        dp_on_rice = []
+        _pol_bb = [(ol, (min(p[0] for p in ol), min(p[1] for p in ol), max(p[0] for p in ol), max(p[1] for p in ol))) for ol in paddy_ol_st]
+        for dp in M.get("dry_plots", []):
+            q = dp["poly"]
+            qx0, qy0, qx1, qy1 = min(p[0] for p in q), min(p[1] for p in q), max(p[0] for p in q), max(p[1] for p in q)
+            if any(qx1 >= bx0 and qx0 <= bx1 and qy1 >= by0 and qy0 <= by1 and hem_on_paddy(q, ol) for ol, (bx0, by0, bx1, by1) in _pol_bb):
+                dp_on_rice.append((round((qx0 + qx1) / 2), round((qy0 + qy1) / 2)))
+        check(
+            "dry_plots_clear_of_paddies",
+            not dp_on_rice,
+            f"{len(dp_on_rice)} dry plot(s) overlap a flooded paddy fan (plot centers): {dp_on_rice[:4]} - dry "
+            f"crops grow on the ground the water CANNOT command, so a hem plot never laps onto the rice; on a "
+            f"multi-fan map the hem filter must drop plots that land on a neighboring fan's envelope",
         )
 
     # WATER-WIDTH LADDER - a STROKE CONVENTION, not a size license (GM ruling 2026-07-21). Real

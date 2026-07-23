@@ -36,7 +36,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from citybudget import CityProgram, budget_to_manifest, plan_city  # noqa: E402
 from settlement import Settlement  # noqa: E402
-from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+from waterfields import BEAN_GREEN, BUND, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this city's 3 ft/px (was hand-set 26px
 # -> ~0.08 acre, at Bray's "large" ceiling). Subdivides the same fans into finer cells; the ~3,000 urban
@@ -279,9 +279,12 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     # bund matrix, not the bare parchment background (the GM's "blank bits on the paddies"). See
     # tango.gen.py's comb_field for the full rationale; gated by city_paddy_fan_has_floor.
     s.comb_base_fill(net, name, color="#CDB78C", full_envelope=True)  # soil-tan floor over the FULL envelope: a tight-cropped city has no scrub, so edge junctions must be covered too
+    _prior_paddies = [fld["outline"] for fld in s.M["fields"] if fld.get("kind") == "paddy"]  # fans recorded before this one (own entry is appended below, after this loop)
     for dp in net["dry_plots"]:
         if any(_pt_seg(x, y, ln[i][0], ln[i][1], ln[i + 1][0], ln[i + 1][1]) < 16 for ln in avoid for (x, y) in dp["poly"] for i in range(len(ln) - 1)):
             continue  # hem plot would ride the moat / ring road - skip it
+        if any(hem_on_paddy(dp["poly"], _pol) for _pol in _prior_paddies):
+            continue  # hem plot lands on a NEIGHBORING fan's rice (fans are placed blind to each other; Tango's fe2-into-fe1 incident) - dry_plots_clear_of_paddies
         s.dry_polys.append(dp["poly"])  # footprint-aware: houses/yards/groves stay OFF the crop, not just centered off it
         pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in dp["poly"])
         s.add(f'<polygon points="{pts}" fill="{dp["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')

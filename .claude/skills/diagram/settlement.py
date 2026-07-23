@@ -1464,13 +1464,21 @@ class Settlement:
         to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
         SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
         source_and_sink) see a source. Returns the field envelope polygon."""
-        from waterfields import BEAN_GREEN, BUND
+        from waterfields import BEAN_GREEN, BUND, hem_on_paddy
 
         # BASE FILL (feature 012, now via the shared helper): a paddy-green wash under the plots so the
         # imperfect tessellation never shows the parchment background as bare "white" gaps (research.md D5).
         self.comb_base_fill(net, name)
 
+        # a fan's hem is generated blind to the OTHER fans on a multi-fan map, so drop any hem plot
+        # that lands on a previously recorded fan's rice (this fan's own field record is appended
+        # below, AFTER this loop, so a hem's legitimate berm-kiss against its own envelope never
+        # tests). Same predicate as the dry_plots_clear_of_paddies gate - see hem_on_paddy's
+        # docstring (waterfields.py) for the why and the motivating Tango incident.
+        _prior_paddies = [fld["outline"] for fld in self.M["fields"] if fld.get("kind") == "paddy"]
         for p in net["dry_plots"]:  # the dry upslope hem
+            if any(hem_on_paddy(p["poly"], _pol) for _pol in _prior_paddies):
+                continue
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
             self._draw_furrows(p["poly"], p["furrow"], p["theta"])
@@ -5566,29 +5574,44 @@ class Settlement:
         # 2026-07-23: "otherwise you'd have to carry the water a long way"): the cluster hugs the
         # nearest recorded well within r + 40 - offset from the wellhead by just its visual radius
         # + a trough's half-length (~bucket-pour distance), on the yard side, even when that well
-        # stands at or just past the disc rim - else it takes a clear interior spot. A
+        # stands at or just past the disc rim. A
         # caravan-scale ground (r >= 76) gets 3 troughs, a plain stables yard 2. Drawn ~4.6x2 px
         # each (a ~14 ft trough at city scale, width floored at the 2px cartographic minimum so
-        # the water reads).
+        # the water reads). A yard with NO reachable well (or every wellhead flank blocked) digs
+        # its OWN courtyard well instead of dropping the cluster at a random spot (GM 2026-07-23,
+        # the Nagahara defect - both its yards fell back to 100/241 ft bucket-carries): the
+        # caravanserai and the yizhan post-yard watered whole trains from their own courtyard
+        # well, so "no well nearby" is a reason to sink one, never to carry water. Gated by
+        # stable_troughs_beside_well.
         n_troughs = 3 if r >= 76 else 2
         t_h, t_gap, t_len = 2.0, 1.6, 4.6
-        wp: Pt | None = None
-        for wl in sorted(self.M.get("wells", []) or [], key=lambda o: math.hypot(o["x"] - sx, o["y"] - sy)):
-            wdist = math.hypot(wl["x"] - sx, wl["y"] - sy)
-            if not 1 <= wdist <= r + 40:
-                continue
-            w_off = wl.get("vr", 4.0) + t_len / 2 + 1.5  # wellhead edge + half a trough + a step
-            w_ang0 = math.atan2(sy - wl["y"], sx - wl["x"])  # prefer the yard side, then walk around the wellhead
+
+        def beside(wl: dict[str, Any]) -> Pt | None:
+            # a clear cluster spot hugging THIS wellhead: offset by the wellhead edge + half a
+            # trough + a step (~bucket-pour), preferring the yard side, then walking around
+            w_off = wl.get("vr", 4.0) + t_len / 2 + 1.5
+            w_ang0 = math.atan2(sy - wl["y"], sx - wl["x"])
             for w_da in (0.0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, math.pi):
                 wcand = (wl["x"] + math.cos(w_ang0 + w_da) * w_off, wl["y"] + math.sin(w_ang0 + w_da) * w_off)
                 if clear(wcand[0], wcand[1], 2.0, rim=False):
-                    wp = wcand
-                    used.append(wp)
-                    break
+                    return wcand
+            return None
+
+        wp: Pt | None = None
+        for wl in sorted(self.M.get("wells", []) or [], key=lambda o: math.hypot(o["x"] - sx, o["y"] - sy)):
+            if not 1 <= math.hypot(wl["x"] - sx, wl["y"] - sy) <= r + 40:
+                continue
+            wp = beside(wl)
             if wp:
+                used.append(wp)
                 break
-        if wp is None:
-            wp = take(10.0, 24.0)
+        if wp is None:  # dig the yard's own well at a clear spot, cluster the troughs beside it
+            spot = take(12.0, 24.0)
+            if spot:
+                self.well(spot[0], spot[1])
+                wp = beside(self.M["wells"][-1])
+                if wp:
+                    used.append(wp)
         if wp:
             wpx, wpy = wp
             t_total = n_troughs * t_h + (n_troughs - 1) * t_gap
@@ -5603,7 +5626,10 @@ class Settlement:
             dx, dy = d
             self.add(f'<ellipse cx="{dx:.1f}" cy="{dy:.1f}" rx="2.5" ry="1.8" fill="#6E5A3A" stroke="#4A3A22" stroke-width="0.5" opacity="0.9"/>')
 
-        self.M.setdefault("stable_yards", []).append({"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)], "troughs": n_troughs if wp else 0})
+        yard_rec: dict[str, Any] = {"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)], "troughs": n_troughs if wp else 0}
+        if wp:
+            yard_rec["troughs_at"] = [round(wp[0], 1), round(wp[1], 1)]  # cluster center - stable_troughs_beside_well anchors on it
+        self.M.setdefault("stable_yards", []).append(yard_rec)
         random.setstate(st)
 
     def animal_ground(self, cx: float, cy: float, r: float = 68.0, label: Any = None) -> None:
