@@ -2576,6 +2576,31 @@ def test_ring_road_kept_clear_passes_without_a_ring():
     assert "ring_road_kept_clear" not in f(_fort_city(buildings=[_on_ring_bldg()]))
 
 
+# --- city_graveyard_clear_of_ring_road (burial grounds keep off the ring's FULL drawn width) ---
+def test_city_graveyard_clear_of_ring_road_fires_inside_the_eaves_forgiveness():
+    # the Tango gap: a NARROW city-scale ring (20ft = ~6.7px) with a graveyard edge 2px off the
+    # centerline - deep inside the drawn bed, but ring_road_kept_clear's (width - 6) / 2 forgiven
+    # bed collapses to ~0.33px and waves it through; the graveyard check must still fire
+    M = _fort_city(ring_road=_RING, ring_road_width=20 / 3, cemeteries=[{"x": 218, "y": 500, "w": 40, "h": 30, "rot": 0}])
+    fails = f(M)
+    assert "city_graveyard_clear_of_ring_road" in fails
+    assert "ring_road_kept_clear" not in fails  # the gap this check exists to close
+
+
+def test_city_graveyard_clear_of_ring_road_fires_on_a_mausoleum():
+    M = _fort_city(ring_road=_RING, ring_road_width=15, mausoleums=[{"x": 760, "y": 500, "w": 44, "h": 32, "rot": 0}])
+    assert "city_graveyard_clear_of_ring_road" in f(M)
+
+
+def test_city_graveyard_clear_of_ring_road_passes_when_clear():
+    M = _fort_city(ring_road=_RING, ring_road_width=20 / 3, cemeteries=[{"x": 210, "y": 500, "w": 40, "h": 30, "rot": 0}])
+    assert "city_graveyard_clear_of_ring_road" not in f(M)
+
+
+def test_city_graveyard_clear_of_ring_road_passes_without_a_ring():
+    assert "city_graveyard_clear_of_ring_road" not in f(_fort_city(cemeteries=[{"x": 240, "y": 500, "w": 40, "h": 30, "rot": 0}]))
+
+
 # --- intersections_are_crossroads (lane beds merge, no edge line across a junction) ---
 def test_intersections_are_crossroads_fires_when_edges_over_beds():
     assert "intersections_are_crossroads" in f({"ground_edge_zmax": 50, "ground_bed_zmin": 20})

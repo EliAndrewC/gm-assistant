@@ -7652,6 +7652,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     not on_ring,
                     f"the ring road must run CLEAR of buildings/civic compounds/fields (only the gate guard houses, inspection stations, towers and gated ward fences may sit on it): {sorted(set(on_ring))}",
                 )
+                # ...and the BURIAL grounds keep off the ring road's FULL drawn width (GM, 2026-07-23:
+                # Tango's two intramural graveyards sat squarely ON the drawn ring road and the gate
+                # waved them through). WHY a second, stricter check: ring_road_kept_clear's bed is
+                # (width - 6) / 2 - a fixed ~3px-per-side eaves forgiveness, sized for the default 15px
+                # ring. At city scale (1px = 3ft) the ring road is a ~20ft lane = ~6.7px, so that
+                # forgiveness swallows nearly the whole bed and only a dead-center footprint could fire.
+                # A burial ground has no eaves to forgive - its fence line IS its footprint, and graves
+                # spilling onto the patrol road read as a plain collision - so it clears the full
+                # half-width, no tolerance.
+                rhalf = M.get("ring_road_width", 15) / 2
+                grave_on_ring = [
+                    (round(it["x"]), round(it["y"]))
+                    for it in M.get("cemeteries", []) + M.get("mausoleums", []) + M.get("cremation_grounds", []) + M.get("ossuaries", [])
+                    if footprint_on_line(_foot(it), ring_rd, rhalf)
+                ]
+                check(
+                    "city_graveyard_clear_of_ring_road",
+                    not grave_on_ring,
+                    f"burial ground(s) overlapping the drawn ring road: {grave_on_ring[:4]} - graves do not encroach "
+                    f"on the patrol road at all (no eaves forgiveness on a fence line); shift the ground clear of the ring's full width",
+                )
             buraku_in = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inwall(b["x"], b["y"])]
             # WHY (a walled city cannot do without burakumin labor during a siege, so some live inside): settlements.md "Historical grounding"
             check(
