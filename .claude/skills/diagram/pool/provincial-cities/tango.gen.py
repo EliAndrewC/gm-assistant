@@ -118,16 +118,20 @@ s.quarter(_clip_h(_NW, 1211, False), "residential")
 # countryside, so estates and farmland run off the edge. A ~90px margin past the moat leaves
 # room for the title (top-left) and compass (top-right) above the rampart, plus a working
 # fringe of moat-fed farmland.
-MARGIN = 96
-s.set_view(CX - RX - 46 - MARGIN, CY - RY - 46 - MARGIN, 2 * (RX + 46 + MARGIN), 2 * (RY + 46 + MARGIN))
+# FRAME (GM 2026-07-23, feature 014 endgame): the view opens WIDE enough to show the moat-fed comb
+# deltas as real paddy country ringing the city - the old tight MARGIN=96 crop ("a city map is about
+# the city") cut every fan to a ~46px sliver, which is exactly why the ring read as bare/dry even
+# though the combs were always there. The frame is asymmetric: the top edge tucks just under fn1's
+# off-frame sluice (y615 > its y610 tap) so the north fan's source stays honestly off-map.
+s.set_view(809, 615, 1586, 1476)
 
 # ---- the Imperial road (N-S spine, off both edges, through both gates), the moat-feeder, gates
 # the label names the IMPERIAL road - placed OUTSIDE the north gate; inside the walls the same
 # roadway is a city street (a city, not Imperial, responsibility), so the label must sit beyond a gate
-IMPROAD = [(1602, 709), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 1957)]
+IMPROAD = [(1602, 595), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 2115)]  # ends past the widened frame (y615/2091)
 s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)  # a moat vertex on the NW
-s.stream([(922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66))  # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow)
+s.stream([(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66))  # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow); head off the widened frame
 # ... and the moat DRAINS: an outfall leaves the LOW (SE, downstream - N is the high ground) rim
 # and runs off the map, diagonally opposite the NW feeder so the current flushes the ring corner-to-
 # corner (the Forbidden City NW-in / SE-out pattern). A stream-fed moat in a wet rice climate cannot
@@ -135,7 +139,7 @@ s.stream([(922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66))  # off-m
 # absorb a live stream); see settlements.md's moat-water bullet. Threads S between the Imperial road
 # (x1602) and the westernmost samurai estate (x~2061), off the S edge.
 _mse = min(MOAT, key=lambda p: (p[0] - 1879) ** 2 + (p[1] - 1732) ** 2)  # a moat vertex on the SE (low) rim
-s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020)], width=s.px(66))  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow)
+s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122)], width=s.px(66))  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
 # fixed crossing on the samurai ward fence, but s.ward draws them near the END of the gen - long
@@ -232,7 +236,7 @@ def furrows(poly, color, theta):
     s.add(''.join(g))
 
 
-def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a, offtakes_b=(), dry_band=(14, 26), avoid=(), mirror_ym=None):
+def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offtakes_a, offtakes_b=(), dry_band=(14, 26), avoid=(), mirror_ym=None, dry_keepout=()):
     """One comb-doctrine field: build the net, draw it, record the manifest. `avoid` lists
     polylines (moat / ring road) a dry-hem plot must not ride - a colliding plot is skipped
     (the hem is texture on the upslope margin, not load-bearing). `mirror_ym` flips the comb's
@@ -257,6 +261,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         plot_across=PLOT_ACROSS,
         row_step=ROW_STEP,
         dry_band=dry_band,
+        dry_keepout=dry_keepout,
         grain=2 / 3,
     )  # 3 ft/px city: scale the carve's real-feet minimum-size thresholds (tuned at 2 ft/px) or the fan drops sectors/head plots/closers and shows parchment holes (paddy_fan_gapless)
     if mirror_ym is not None:
@@ -610,7 +615,7 @@ for sx, sy in [
     (1501, 1622),
 ]:  # (1265,1610) -> (1272,1570) 2026-07-21: the old seat sat against the SW wall tower (religious_clear_of_ring_and_towers, GM catch)   # all four INSIDE the temple neighborhood, clustered AWAY from the theater stage (its facing check measures the nearest religious feature - keep Benten nearest) - the S-gate pocket is the furniture's ground
     s.small_shrine(sx, sy)
-s.label(1255, 1546, "temple neighborhood", 9, italic=True, color="#6B2A18")
+s.label(1247, 1562, "temple neighborhood", 9, italic=True, color="#6B2A18")  # below the graveyard/Benten label row (no_label_overlaps, 2026-07-23 wide-frame reflow)
 s.block_polys.append(
     [(1204, 1534), (1306, 1534), (1306, 1554), (1204, 1554)]
 )  # the district label's own ground (true-size halls freed this band, and the SW frontage packed a merchant under the text, 2026-07-21)
@@ -757,20 +762,27 @@ s.label(1655, 1352, "samurai ward gate", 9, italic=True, color="#5A4326")
 
 # ====================================================================== OUTSIDE the walls
 s.bound = None
-# samurai country estates: DISPERSED walled compounds, each a fortified country seat on its OWN land
-# out in the rural district and mostly OFF-MAP (miles apart) - NOT a cluster ringing the moat (that
-# belt is the commercial gate-suburb). A city map shows only the NEAREST few, SPREAD APART on the
-# open, capital-facing SE/E approaches (the fields fill the other exteriors), each on its own rural
-# road that loops to a gate beyond the frame. See settlements.md 'Historical grounding'. Sizes + the
-# formal-gate direction vary (the auspicious south, or the cityward approach). >= 200px apart
-# (city_samurai_estates_dispersed), at most 3 shown (city_samurai_estates_outside).
-EST = [(2190, 1420, 96, 64, "south", (2231, 1400)),   # upper E-SE, drive off the E edge onto the district road
-       (2150, 1660, 84, 54, "west", (2231, 1665)),    # mid SE
-       (2030, 1855, 76, 48, "north", (2020, 1927))]   # lower S-SE, drive off the S edge (clear of the moat outfall)
+# samurai country estates - PADDY FIRST (GM 2026-07-23): the rice paddies claim the near ring
+# BEFORE any estate is placed; the gentry keep only the leftover pockets (most estates sit farther
+# out, implied off-map). With the nine fans seated there proved to be room for 3 after all (GM,
+# same date) - each in ground no fan wanted: the mid-SE gap below fe2, a FRACTION running off the
+# east frame edge (the more historically accurate signal - the estate's land continues off-map),
+# and a small south seat between fs1's hem and the gate suburb. The manors are registered EARLY in
+# the file purely so every later pack (farm rings, scatter) collision-dodges them - the PLACEMENT
+# PRIORITY is paddy-first; the fans' hems keep off them via per-comb dry_keepout circles.
+EST = [(2150, 1660, 84, 54, "west", (2400, 1676)),    # mid SE, below the fe2 fan
+       (2390, 1755, 108, 68, "south", (2520, 1760)),  # E edge, a fraction off-frame (its land runs on)
+       (2060, 1855, 76, 48, "north", (2060, 2100))]   # lower SE, threading the pocket between the fs3 fan,
+# the outfall stream, and fse1's hem (all three fans keep-outs hold their quilts off it). A seat S of
+# fs1 was tried and rejected: city_estates_toward_capital wants BOTH SE half-planes, and west of the
+# road fails - the recorded limit of paddy-first leftovers on the capital-facing side.
 for ex, ey, ew, eh, gd, (lx, ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
-    s.lane([(ex, ey), (lx, ly)], worn=True, connector=True)   # the estate's own drive out to the rural road (reaches a gate off-frame)
-s.label(2180, 1550, "samurai estates", 10, italic=True, color="#3A352C")   # open ground between the upper-E and mid-SE estates
+    # NO drawn driveway (GM 2026-07-23: the long worn drives read as fat roads across the countryside
+    # - "I wouldn't think there would be roads there"). The check doctrine agrees: scattered estates
+    # "each front their OWN approach lane (NOT drawn at this scale)" (city_estate_gates_vary). The
+    # (lx, ly) targets are kept in EST for the record of where each implied approach heads.
+s.label(2255, 1715, "samurai estates", 10, italic=True, color="#3A352C")   # in the open gap between the mid-SE and E-edge estates
 # surrounding farmland: large comb fields CLOSE to the city, irrigated from the MOAT, each
 # ringed by the villagers' farmhouses; all run off the map edge. Each comb's SLUICE sits a
 # stride outside the moat rim (computed from the actual moat polyline, so the tap self-corrects)
@@ -787,6 +799,21 @@ MOAT_FARMS = [
     ("fw1", (1074, 1200), 175, 73, 190, (160, 210), (95, 125), (0.35, 0.7)),
     ("fw2", (1155, 1632), 172, 74, 190, (145, 190), (85, 115), (0.4, 0.75)),
     ("fs1", (1328, 1805), 105, 75, 170, (125, 165), (85, 115), (0.4, 0.78)),
+    # MORE REAL COMBS around the moat ring (GM 2026-07-23: the near-moat spaces are fed by combs -
+    # sluice, canal delta, flooded plots, dry hem, farmhouses - NEVER the square nrp basins, rejected
+    # as "not looking like any rice paddy in any village"). PLACEMENT LESSON (same date): a comb's
+    # fall must run ALONG the visible band, not out of it - fw1's west fall leaves only a 46px sliver
+    # in view, and an east-falling fe1 vanished entirely (plots start ~120px downhill of the tap, past
+    # the frame). fs1's praised look is a delta HEAD filling the band while the fan runs off-frame.
+    #  - fe1: the east band above the samurai estates, falling EAST off-frame like the west fans
+    #    mirror-image (a south fall is impossible here: build_comb's canal-B flank swings 58 deg CCW
+    #    of the fall - southwest, straight across the moat into the city; the mirrored hand swings
+    #    canal A into the rim instead. Tested and rejected 2026-07-23.)
+    #  - The east y1450-1700 stretch stays open ON PURPOSE: that flank is the samurai estates' own
+    #    grounds (the capital-facing side), not paddy - the honest non-crop use, like the NE funerary.
+    #  - REJECTED (2026-07-23): an fs2 fan in the SE gate pocket - the gate suburb, outfall stream,
+    #    and third estate honestly occupy it; every fs2 variant collided (flophouse/road/groves).
+    ("fe1", (2100, 1160), 20, 81, 170, (110, 150), (70, 95), (0.4, 0.75)),
 ]
 for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     upstream = [p for p in MOAT if p[1] < tap[1] - 20]  # moat vertices NORTH of the tap (upstream of the southward current)
@@ -794,7 +821,9 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0  # outward: away from the city center
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
     s.field_channel([mp, sl], '#6C9CBE', 7, 7)  # the visible tap: moat rim -> sluice
-    _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,))
+    _net, _env, _cen = comb_field(
+        nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,)
+    )  # avoid: the moat (the estate driveways are no longer drawn, so no lane keep-outs needed)
     # source topology: ends at the SOUTHERNMOST plot's centroid - guaranteed inside the outline
     # (city_moat_irrigates_fields) and downstream of the tap (moat_channels_flow_with_current)
     _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda c: c[1]))
@@ -807,6 +836,25 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     s.ring(
         ('poly', _env), 14, 78, ["plain"]
     )  # an outer ring band past the widened dry hems (2026-07-21): the village-depth quilts claim the near margin, so without it fw1's visible sliver seats no farmhouses (outside_fields_farmhouse_density)
+# fe2 - the band the old upper-E estate vacated (GM 2026-07-23 paddy-first: "I can definitely see
+# putting another rice paddy in the middle of where the 3 samurai estates are"). Moat-fed like fe1,
+# falling east off-frame; dry_keepout holds its hem quilt off the ONE remaining estate below it.
+_tap2 = (2085, 1520)
+_up2 = [p for p in MOAT if p[1] < _tap2[1] - 20]
+_mp2 = min(_up2, key=lambda p: (p[0] - _tap2[0]) ** 2 + (p[1] - _tap2[1]) ** 2)
+_ol2 = math.hypot(_mp2[0] - CX, _mp2[1] - CY) or 1.0
+_sl2 = (round(_mp2[0] + 30 * (_mp2[0] - CX) / _ol2), round(_mp2[1] + 30 * (_mp2[1] - CY) / _ol2))
+s.field_channel([_mp2, _sl2], '#6C9CBE', 7, 7)  # the visible tap: moat rim -> sluice
+_nete2, ENV_FE2, _ce2 = comb_field(
+    "fe2", _sl2, 20, 82, 155, (90, 125), (55, 80), (0.4, 0.75), dry_band=(47, 88), avoid=(MOAT,), dry_keepout=((2150, 1660, 115), (2390, 1755, 135))
+)  # keepout: the remaining samurai estate at (2150,1660) - the hem must not lap its walls
+_pd2 = plot_centroid(_nete2, lambda cs: max(cs, key=lambda c: c[1]))
+topo_channel([(_mp2[0], _mp2[1]), _sl2, _pd2], {"kind": "moat"}, {"kind": "field", "name": "fe2"})
+_dr2 = next(c["pts"] for c in _nete2["channels"] if c["role"] == "drain")
+topo_channel(drain_tail(_dr2), {"kind": "drain"}, {"kind": "offmap"})
+s.ring(('poly', ENV_FE2), 24, 15, ["plain"])
+s.ring(('poly', ENV_FE2), 18, 40, ["plain"])
+
 # a field running off the NORTH edge - its water is implied off-map (the moat's own source side):
 # the sluice sits above the cropped frame, so the comb's head shows only its canals entering the
 # view; the fall is capped so the drain stays clear of the moat's north rim, and the collector
@@ -820,6 +868,42 @@ _mne = min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2)  # 
 topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
+# REJECTED (2026-07-23): an fnw1 stream-fed fan in the FAR NW corner - it sat too far out
+# (city_fields_close_to_city), risked overlapping fw1's head, and that corner is honestly the
+# feeder-stream's meadow corridor. The far corner stays open scrub along the stream.
+# fn2 - WEST of the Imperial road, north of the city (GM 2026-07-23: "mostly empty space and could
+# surely have a rice paddy"): fn1's twin across the road. Off-map north source (the moat's own
+# source side), falling S-slightly-W with a SHALLOW field_fall so the fan stops above the moat's
+# NW rim curve (rim y863 at x1400); its drain empties into the moat like fn1's (the storm-drain
+# pattern). Clear of the N flophouse (x1509) and the N gate market (x1557+).
+_netn2, ENV_FN2, _cn2 = comb_field("fn2", (1300, 610), 100, 86, 90, (120, 160), (70, 100), (0.4, 0.8), avoid=(MOAT,))
+_pn2 = plot_centroid(_netn2, lambda cs: min(cs, key=lambda c: c[1]))  # a head plot, nearest the off-map source
+topo_channel([(1300, 604), (1300, 610), _pn2], {"kind": "offmap"}, {"kind": "field", "name": "fn2"})
+_drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
+_dfx2, _dfy2 = _drn2[-1]
+_mnw2 = min(MOAT, key=lambda p: (p[0] - _dfx2) ** 2 + (p[1] - _dfy2 - 90) ** 2)  # the moat rim S of the outfall
+topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)
+s.ring(('poly', ENV_FN2), 28, 15, ["plain"])
+s.ring(('poly', ENV_FN2), 22, 40, ["plain"])
+# fse1 + fs3 - the SE corner and the pocket south of the gate market (GM 2026-07-23): both tap the
+# moat's OUTFALL stream - tail-water reuse, the historically standard way a city's drainage watered
+# the fields below it. fse1 fills the far SE corner east of the outfall, falling ESE off-frame;
+# fs3 fills the strip west of the outfall below the gate suburb, falling SSW off-frame. Confluence-
+# anchored taps on stream vertices ((1995,2020) / (1936,1880)); drains run off the south frame.
+_nete, ENV_FSE1, _ce = comb_field("fse1", (2030, 2005), 15, 87, 170, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2390, 1755, 135), (2060, 1855, 105)))  # hems off the E-edge + lower-SE estates
+_pe = plot_centroid(_nete, lambda cs: min(cs, key=lambda c: c[0]))  # a head plot, nearest the stream tap
+topo_channel([(1995, 2020), (2030, 2005), _pe], {"kind": "stream"}, {"kind": "field", "name": "fse1"})
+_dre = next(c["pts"] for c in _nete["channels"] if c["role"] == "drain")
+topo_channel(drain_tail(_dre), {"kind": "drain"}, {"kind": "offmap"})
+s.ring(('poly', ENV_FSE1), 28, 15, ["plain"])
+s.ring(('poly', ENV_FSE1), 22, 40, ["plain"])
+_nets3, ENV_FS3, _cs3 = comb_field("fs3", (1901, 1895), 115, 88, 150, (90, 125), (60, 85), (0.45, 0.8), avoid=(MOAT,), dry_keepout=((2060, 1855, 105),))  # hem off the lower-SE estate
+_ps3 = plot_centroid(_nets3, lambda cs: min(cs, key=lambda c: c[1]))  # a head plot, nearest the stream tap
+topo_channel([(1936, 1880), (1901, 1895), _ps3], {"kind": "stream"}, {"kind": "field", "name": "fs3"})
+_drs3 = next(c["pts"] for c in _nets3["channels"] if c["role"] == "drain")
+topo_channel(drain_tail(_drs3), {"kind": "drain"}, {"kind": "offmap"})
+s.ring(('poly', ENV_FS3), 22, 15, ["plain"])
+s.ring(('poly', ENV_FS3), 16, 40, ["plain"])
 # a gate market (guan-xiang) OUTSIDE EACH gate - both sit on the N-S Imperial road, so both grow a
 # market suburb (GM decision 2026-07-22; historically a guan-xiang formed at every trafficked gate,
 # scaled to its traffic - see flophouse-research.md). The SOUTH gate opens onto the wider southern
@@ -832,7 +916,7 @@ s.label(1685, 1909, "gate market", 10, italic=True, color="#5A4326")
 s.frontage(
     [(1602, 748), (1602, 836)], ["shop"] * 8, skip=IMPROAD, width=s.lw(26), spacing=19, rows=1, jitter=1, setback=s.px(14)
 )  # NORTH gate: the smaller guan-xiang, one stall row each side of the road north of the moat (y847), clear of the N-gate flophouse at x1509
-s.label(1690, 792, "gate market", 10, italic=True, color="#5A4326")
+s.label(1697, 822, "gate market", 10, italic=True, color="#5A4326")  # under the stall row, clear of the Imperial Road label (no_label_overlaps)
 
 # COMMERCIAL RIBBON along the Imperial road - a city ON a trade route lines its through-road
 # with shops + traveler services (its prime frontage). The central road-market fills the block
@@ -851,9 +935,9 @@ s.label(1523, 1407, "road market", 9, italic=True, color="#5A4326")
 #  - one extramural common BURIAL GROUND, west of the wall (the exempt outside graveyard)
 #  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (above)
 #  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
-s.cemetery(2160, 871, 90, 64, label="common burial ground")
-s.cremation_ground(2160, 978)
-s.ossuary(2170, 760)
+s.cemetery(2320, 871, 90, 64, label="common burial ground")  # shifted out with the widened frame: the funerary ground keeps its place at the map's NE margin, past the fields
+s.cremation_ground(2320, 978)
+s.ossuary(2330, 760)
 
 s.bridges()  # spans the Imperial Road over the moat at the north and south gates
 
@@ -1027,17 +1111,15 @@ top_up(
     "merchant_house", (1632, 1302, 2050, 1348), 112, count_kinds=("merchant", "merchant_house", "merchant_large")
 )  # the SW district alone saturates ~3 short of the floor - the NE gap band (already a merchant_house terrace strip) takes the residue
 # ===== NEAR-RING FARMLAND: the extramural flat ground reads PACKED (feature 013) =====
-# A provincial governor's seat sits in its province's best basin, so the flat ground just outside the
-# wall is intensively worked, not bare. Fill the extramural band (inside the cropped view) with a quilt
-# of dry-field + garden plots between the paddy fans - no water needed (dry cropland is exempt from the
-# water-source rule). near_ring_cropland auto-skips everything INSIDE the wall (a city's near ring is
-# extramural) plus the fans, farmsteads, estates, gate markets, graves, and the moat. Called last, after
-# every structure + top-up, so it sees them all. Default near_ring_density "dense" (well-sited).
-# WHY: settlements.md "Near-ring farmland density".
-s.near_ring_paddy(
-    (973, 729, 2231, 1927), seed=41, cell_ft=180
-)  # feature 014: moat-fed wet-rice paddy basins - the dominant extramural crop (a city moat is a reservoir; city_moat_irrigates_fields expects it)
-s.near_ring_cropland((973, 729, 2231, 1927), density="thin", seed=55, garden_frac=1.0)  # demoted: gardens by the wall + thin margin grain, filling only what the paddy did not
+# NEAR-RING PADDY IS COMB FIELDS ONLY (GM 2026-07-23). The extramural ring's rice is the MOAT_FARMS
+# combs above - real irrigation deltas (sluice tap off the moat, head-race forking into canals,
+# flooded plots cascading downhill, dry hem upslope, farmhouses ringed alongside) - the same paddy
+# form as every village and hamlet. REJECTED here (recorded so it is never reinvented): (1) the
+# near_ring_cropland dry/garden tile quilt - it read as "dry crop fields everywhere" on a wet-rice
+# county seat; (2) near_ring_paddy's gridded square basins with per-basin squiggle intakes - "irregular
+# channels feeding ~16 rectangular plots... don't look like any rice paddy in any village or hamlet".
+# Coverage need not be total: the visible fans + open ground read as the head of paddy country
+# continuing beyond the frame (the GM's explicit presumption), so no synthetic fill closes the gaps.
 
 _dw = sum(1 for b in s.M["buildings"] if b["kind"] in DWELL) + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"]))
 if _dw < 562:  # population floor 558 (3000 x 0.93 / 5) + margin
