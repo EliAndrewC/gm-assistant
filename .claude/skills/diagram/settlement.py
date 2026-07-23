@@ -1170,11 +1170,18 @@ class Settlement:
             self.add(f'<polygon points="{pts}" fill="#A03020" fill-opacity="0.22" stroke="#A03020" stroke-width="4"/>')
             self.M["taxfree"].append([round(cx, 1), round(cy, 1)])
 
-    def _paddy_surface(self, poly: Poly, pts: str, flooded: bool, cap: int = 22) -> None:
+    def _paddy_surface(self, poly: Poly, pts: str, flooded: bool, cap: int = 22, pitch: float | None = None) -> None:
         """A WET paddy: a flooded, mottled sheet (irregular hand-transplanted shoots, plus a faint water sheen
         for a freshly-flooded plot) - NOT ruled rows. Premodern rice was transplanted irregularly; crisp
         checkrow planting (seijoue) is a Meiji improvement, so ruled rows on a paddy read as modern (the same
-        era-tell as the consolidation grid). See settlements.md 'Crop mix / paddy surface'."""
+        era-tell as the consolidation grid). See settlements.md 'Crop mix / paddy surface'.
+
+        Two mottle modes. Default (pitch=None): the sparse random scatter every comb map has always drawn
+        (byte-stable). `pitch` (GM 2026-07-23, the polder-leftover repaint): a JITTERED GRID - dot centers
+        ~pitch apart with alternate-row half-offset, +-pitch/3 jitter and ~10% dropout, so spacing lands
+        irregular in the ~2/3..4/3 pitch band and no row or column ever rules through. That is the truer
+        read of traditional transplanting (roughly EVEN density - density drives yield - but never ruled;
+        real hills sit ~1/sq ft, one per PIXEL at 1 ft/px, so any drawable mottle is a sample regardless)."""
         xs = [q[0] for q in poly]
         ys = [q[1] for q in poly]
         x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
@@ -1184,11 +1191,21 @@ class Settlement:
             for _ in range(2):
                 yy = random.uniform(y0 + 2, y1 - 2)
                 g.append(f'<line x1="{x0:.0f}" y1="{yy:.0f}" x2="{x1:.0f}" y2="{yy:.0f}" stroke="#CFDFD3" stroke-width="1.5" opacity="0.4"/>')
-        n = min(
-            cap, max(3, int((x1 - x0) * (y1 - y0) / 80))
-        )  # sparse irregular shoots (the transplant mottle); cap=22 suits ~0.05-ac comb cells, the polder-leftover repaint raises it for mu-scale parcels
-        for _ in range(n):
-            g.append(f'<circle cx="{random.uniform(x0, x1):.1f}" cy="{random.uniform(y0, y1):.1f}" r="1.0" fill="#6F9061" opacity="0.5"/>')
+        if pitch is None:
+            n = min(cap, max(3, int((x1 - x0) * (y1 - y0) / 80)))  # sparse irregular shoots (the transplant mottle); cap=22 suits ~0.05-ac comb cells
+            for _ in range(n):
+                g.append(f'<circle cx="{random.uniform(x0, x1):.1f}" cy="{random.uniform(y0, y1):.1f}" r="1.0" fill="#6F9061" opacity="0.5"/>')
+        else:
+            row = 0
+            yy2 = y0 + random.uniform(0, pitch)
+            while yy2 < y1:
+                xx = x0 + random.uniform(0, pitch) + (pitch / 2 if row % 2 else 0.0)
+                while xx < x1:
+                    if random.random() > 0.1:
+                        g.append(f'<circle cx="{xx + random.uniform(-pitch / 3, pitch / 3):.1f}" cy="{yy2 + random.uniform(-pitch / 3, pitch / 3):.1f}" r="1.0" fill="#6F9061" opacity="0.5"/>')
+                    xx += pitch
+                yy2 += pitch
+                row += 1
         g.append('</g>')
         self.add(''.join(g))
 
@@ -1843,7 +1860,7 @@ class Settlement:
                 lfill = p.get("fill", "#A6C398")
                 self.add(f'<polygon points="{pts}" fill="{lfill}" stroke="{lfill}" stroke-width="3" stroke-linejoin="round"/>')
                 random.seed(int(sum(x for x, _ in p["poly"]) * 7 + sum(y for _, y in p["poly"]) * 13))
-                self._paddy_surface(p["poly"], pts, flooded=(lfill == "#93B7AC"), cap=600)
+                self._paddy_surface(p["poly"], pts, flooded=(lfill == "#93B7AC"), pitch=4.5)  # jittered-grid mottle, ~3-6 px between shoots (GM 2026-07-23)
             random.setstate(_lst)
         dikeponds: list[dict[str, Any]] = []
         # channel centerline segments, for the bush-vs-canal clearance filter in _mulberry_rows (the crowns
@@ -2064,7 +2081,12 @@ class Settlement:
             mcol = rng.choice(("#A8895A", "#B79B68", "#D2BC8C", "#9C8150"))
             g.append(f'<ellipse cx="{mx + rng.uniform(-3, 3):.1f}" cy="{my + rng.uniform(-3, 3):.1f}" rx="{rng.uniform(4, 8):.1f}" ry="{rng.uniform(3, 6):.1f}" fill="{mcol}" opacity="0.35"/>')
         for t in (0.30, 0.72):  # two planted rows across the band
-            for x, y in walk(s_w + t * (s_b - s_w), 6.0):
+            # in-row step 4.4 px: adjacent 4.4-7.2 ft crowns TOUCH but stay non-concentric (the GM's `oo`
+            # not `o o`, 2026-07-23), with bank tan showing in the notches. Measured density lands at
+            # ~1 bush per 23 sq ft (the old 6 px step sat at ~1/31; attested is 1 per 10-20 - still shy of
+            # the low end because only 2 rows fit legibly, but the touching-crown READ now matches a real
+            # planted dike row)
+            for x, y in walk(s_w + t * (s_b - s_w), 4.4):
                 jx, jy = x + rng.uniform(-1.3, 1.3), y + rng.uniform(-1.3, 1.3)
                 r = rng.uniform(2.2, 3.6)
                 ccol = rng.choice(("#6E8B4A", "#7C9A54", "#5E7C40"))
