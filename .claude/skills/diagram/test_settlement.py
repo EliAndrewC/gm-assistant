@@ -3076,3 +3076,113 @@ def test_near_ring_cropland_keeps_a_city_ring_outside_the_wall():
         cx = sum(v[0] for v in p["poly"]) / 4
         cy = sum(v[1] for v in p["poly"]) / 4
         assert not point_in_poly(cx, cy, [(300, 300), (700, 300), (700, 700), (300, 700)])  # no cropland inside the wall
+
+
+# ---- near_ring_paddy (feature 014): moat/stream/edge-watered paddy basins, the dominant near-ring crop.
+def test_near_ring_paddy_returns_zero_for_a_degenerate_bbox():
+    s = _town()
+    assert s.near_ring_paddy((100, 100, 105, 900)) == 0
+
+
+def test_near_ring_paddy_places_off_edge_basins_recorded_as_paddy_fields():
+    s = _town()
+    n = s.near_ring_paddy((0, 0, 1000, 1000), seed=2, cell_ft=180)
+    assert n > 0
+    made = [fld for fld in s.M["fields"] if fld["name"].startswith("nrp_")]
+    assert len(made) == n and all(fld["kind"] == "paddy" for fld in made)
+
+
+def test_near_ring_paddy_skips_interior_ground_with_no_reachable_water():
+    # a town (no moat) with a big frame: interior basins far from the edge have no water -> skipped;
+    # only the off-edge band is filled. So no placed basin sits deep in the middle.
+    s = Settlement(1600, 1600, seed=3)
+    s.meta(name="T", scale="town")
+    s.near_ring_paddy((0, 0, 1600, 1600), seed=3, cell_ft=150)
+    for fld in s.M["fields"]:
+        if fld["name"].startswith("nrp_"):
+            b = fld["bbox"]
+            touches_edge = b[0] < 60 or b[1] < 60 or b[2] > 1540 or b[3] > 1540
+            assert touches_edge  # only edge-watered basins were placed
+
+
+def test_near_ring_paddy_waters_a_basin_from_a_pond_ring():
+    # an INTERIOR bbox (never touches the frame edge, no moat) - so a basin can ONLY be watered by the pond ring
+    s = Settlement(1400, 1400, seed=5)
+    s.meta(name="T", scale="town")
+    s.M["pond"] = [700, 700, 190, 190]
+    n = s.near_ring_paddy((450, 450, 950, 950), seed=5, cell_ft=120)
+    assert n > 0 and any(fld["name"].startswith("nrp_") for fld in s.M["fields"])
+
+
+def test_near_ring_paddy_keeps_basins_off_streams_and_the_hill():
+    s = Settlement(1400, 1400, seed=4)
+    s.meta(name="T", scale="town")
+    s.M["hill"] = [700, 200, 200, 140]
+    s.M["streams"] = [{"poly": [[700, 0], [700, 1400]], "w": 8}]  # a stream down the middle
+    s.near_ring_paddy((0, 0, 1400, 1400), seed=4, cell_ft=150)
+    from settlement import seg_dist
+
+    for fld in s.M["fields"]:
+        if fld["name"].startswith("nrp_"):
+            for vx, vy in fld["outline"]:
+                assert min(seg_dist(vx, vy, (700, 0), (700, 1400)), 999) > 14  # off the stream
+                assert not (((vx - 700) / (200 * 1.35)) ** 2 + ((vy - 200) / (140 * 1.35)) ** 2 <= 1.0)  # off the hill
+
+
+def test_near_ring_paddy_moat_feeds_a_walled_city_basin_with_a_channel():
+    s = Settlement(1400, 1400, seed=6)
+    s.meta(name="C", scale="city")
+    s.M["wall"] = [[500, 500], [900, 500], [900, 900], [500, 900]]
+    s.M["moat"] = [[480, 480], [920, 480], [920, 920], [480, 920]]
+    s.M["moat_width"] = 22
+    # a big building band just outside the west moat: a basin west of it can only be moat-fed by a
+    # channel that would CROSS the building, so that basin is skipped (the channel-clearance keep-out)
+    s.M["buildings"] = [{"x": 430, "y": 700, "w": 60, "h": 340, "rot": 0, "kind": "warehouse"}]
+    n = s.near_ring_paddy((0, 0, 1400, 1400), seed=6, cell_ft=200)
+    assert n > 0
+    # interior (non-off-edge) basins are moat-fed: there is at least one moat->field channel
+    assert any((c.get("frm") or {}).get("kind") == "moat" for c in s.M.get("channels", []))
+    # no moat channel crosses the building (the clearance keep-out held)
+    from settlement import seg_dist
+
+    for c in s.M.get("channels", []):
+        if (c.get("frm") or {}).get("kind") == "moat":
+            assert seg_dist(430, 700, c["poly"][0], c["poly"][-1]) > 25
+
+
+def test_near_ring_paddy_respects_the_moat_current_when_the_moat_is_fed():
+    # a moat fed by a stream from the north flows south; every moat intake must tap upstream of its basin
+    s = Settlement(1600, 1600, seed=7)
+    s.meta(name="C", scale="city")
+    s.M["wall"] = [[600, 600], [1000, 600], [1000, 1000], [600, 1000]]
+    s.M["moat"] = [[580, 580], [1020, 580], [1020, 1020], [580, 1020]]
+    s.M["moat_width"] = 22
+    s.M["streams"] = [{"poly": [[800, 580], [800, 200]], "w": 8}]  # feeder entering the moat top, coming from the north
+    s.near_ring_paddy((0, 0, 1600, 1600), seed=7, cell_ft=220)
+    for c in s.M.get("channels", []):
+        if (c.get("frm") or {}).get("kind") == "moat":
+            (_sx, sy), (_ex, ey) = c["poly"][0], c["poly"][-1]
+            assert ey - sy >= -8  # field-end not upstream (north) of the moat tap - flows with the southward current
+
+
+def test_near_ring_paddy_skips_cells_over_the_orientation_cap():
+    # ~300px+ cells exceed the 80000px bbox cap and are skipped by the size guard; coarser cells therefore
+    # place fewer basins than fine ones (the oversized ones drop out)
+    coarse = _town().near_ring_paddy((0, 0, 1000, 1000), seed=8, cell_ft=320)
+    fine = _town().near_ring_paddy((0, 0, 1000, 1000), seed=8, cell_ft=150)
+    assert isinstance(coarse, int) and fine > coarse
+
+
+def test_near_ring_paddy_keeps_basins_off_a_polygon_cemetery():
+    # a funerary ground recorded as a POLYGON (not an x/w dict) still sets the paddy back (funerary_set_back_from_water)
+    s = Settlement(1400, 1400, seed=9)
+    s.meta(name="C", scale="city")
+    s.M["wall"] = [[560, 560], [840, 560], [840, 840], [560, 840]]
+    s.M["moat"] = [[540, 540], [860, 540], [860, 860], [540, 860]]
+    s.M["moat_width"] = 22
+    s.M["cemeteries"] = [{"poly": [[900, 900], [1050, 900], [1050, 1050], [900, 1050]], "label": "graveyard"}]
+    s.near_ring_paddy((0, 0, 1400, 1400), seed=9, cell_ft=200)
+    for fld in s.M["fields"]:
+        if fld["name"].startswith("nrp_"):
+            for vx, vy in fld["outline"]:
+                assert not (900 - 60 <= vx <= 1050 + 60 and 900 - 60 <= vy <= 1050 + 60)  # set back from the grave poly
