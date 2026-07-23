@@ -584,7 +584,7 @@ s.village_grove([(2290, 1350), (2378, 1345), (2382, 1462), (2295, 1470)], role="
 # FAR edge, not hugging the town). Called AFTER the farmsteads, wells, and windbreak groves so it skips
 # every structure's urban halo and the grove belts; default near_ring_density is "dense" (well-sited).
 # WHY: settlements.md "Near-ring farmland density".
-s.near_ring_cropland((28, 28, 2572, 1972), seed=77, cell_ft=38)
+s.near_ring_cropland((28, 28, 2572, 1972), density="medium", seed=77, cell_ft=38, garden_frac=0.55)
 
 # ===== FIRE DEFENSE: a watch-tower =====
 # Placed LAST, on a cleared seam the dense town already leaves between its building clusters - so it
