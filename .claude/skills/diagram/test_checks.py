@@ -3175,6 +3175,42 @@ def test_city_no_large_empty_space_passes_when_an_animal_ground_claims_the_pocke
     assert "city_no_large_empty_space" not in f(M)
 
 
+def test_stable_troughs_beside_well_fires_when_the_cluster_is_far_from_every_well():
+    # the pre-fix Nagahara defect: a trough cluster a real bucket-CARRY (>40 real ft) from every
+    # well - watering is a relay at the wellhead, the bucket poured straight into the trough
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [{"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [530.0, 500.0]}],
+        "wells": [{"x": 700, "y": 500, "r": 8, "vr": 4.0}],  # 170 px = 510 real ft from the cluster
+    }
+    assert "stable_troughs_beside_well" in f(M)
+
+
+def test_stable_troughs_beside_well_fires_when_the_cluster_went_unrecorded():
+    # troughs > 0 with no troughs_at: the anchor is part of the record's contract - an
+    # unrecorded cluster cannot be validated, so it fails rather than passing silently
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [{"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2}],
+        "wells": [{"x": 505, "y": 500, "r": 8, "vr": 4.0}],
+    }
+    assert "stable_troughs_beside_well" in f(M)
+
+
+def test_stable_troughs_beside_well_passes_beside_a_well_and_skips_troughless_yards():
+    # a cluster hugging a wellhead (~24 real ft, the placement's own offset) passes; a yard that
+    # drew no troughs (fully blocked ground) has nothing to anchor and is skipped
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [
+            {"x": 500, "y": 500, "r": 72.0, "of": [500, 500], "troughs": 2, "troughs_at": [492.1, 500.0]},
+            {"x": 800, "y": 800, "r": 60.0, "of": [800, 800], "troughs": 0},
+        ],
+        "wells": [{"x": 500, "y": 500, "r": 8, "vr": 4.0}],  # 7.9 px = 24 real ft from the cluster
+    }
+    assert "stable_troughs_beside_well" not in f(M)
+
+
 def test_city_streets_connected_fires_on_a_gap_wider_than_45px():
     # two parallel streets 60px apart: the old 95px tolerance bridged them, the tightened 45px
     # does not - a grid that stops short of the road reads as a separated network, not connected
