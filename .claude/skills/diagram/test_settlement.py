@@ -3087,6 +3087,68 @@ def test_draw_comb_field_drops_hem_plots_on_a_prior_fan():
     assert any(fl["name"] == "f1" for fl in s.M["fields"])
 
 
+def _inwall_settlement():
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="C", scale="town", ftpx=1)
+    s.M["ring_road"] = [[100, 100], [900, 100], [900, 900], [100, 900], [100, 100]]
+    s.M["ring_road_width"] = 8
+    s.M["moat"] = [[60, 60], [940, 60], [940, 940], [60, 940]]
+    return s
+
+
+def test_inwall_drain_outfall_trims_gates_and_records_the_conduit():
+    """The in-wall drain handoff (GM 2026-07-23): the drain polyline is trimmed back to half the
+    ring-road width + 10px clear of the ring centerline, a sluice gate sits across the cut, and
+    an UNDRAWN drain->moat conduit starts exactly at the cut (inwall_drains_gated_at_cutoff)."""
+    s = _inwall_settlement()
+    out = s.inwall_drain_outfall([(500, 300), (300, 150), (150, 110)])  # moat-side end LAST, ends 10px off the ring's top segment
+    cut = out[-1]
+    ringd = min(settlement.seg_dist(cut[0], cut[1], a, b) for a, b in [((100, 100), (900, 100)), ((100, 100), (100, 900))])
+    assert ringd >= 13.9  # 8/2 + 10 clear of the centerline
+    assert len(out) < 3 or out[:2] == [(500.0, 300.0), (300.0, 150.0)]  # only the tail was touched
+    g = s.M["sluice_gates"][-1]
+    assert math.hypot(g["x"] - cut[0], g["y"] - cut[1]) < 1.5  # the gate sits AT the cut
+    c = s.M["channels"][-1]
+    assert c["frm"] == {"kind": "drain"} and c["to"] == {"kind": "moat"} and c["drawn"] is False
+    assert c["poly"][0] == [round(cut[0], 1), round(cut[1], 1)]  # the conduit starts at the cut
+
+
+def test_inwall_drain_outfall_normalizes_orientation_and_degenerate_cases():
+    # outfall-FIRST input comes back outfall-first (the caller's orientation is preserved)
+    s = _inwall_settlement()
+    out = s.inwall_drain_outfall([(150, 110), (300, 150), (500, 300)])
+    assert out[-1] == (500.0, 300.0)  # far end untouched, so the cut landed at index 0
+    # no ring road: nothing to trim - the gate still marks the outfall
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.meta(name="C2", scale="town", ftpx=1)
+    s2.M["moat"] = [[60, 60], [940, 60], [940, 940], [60, 940]]
+    out2 = s2.inwall_drain_outfall([(500, 300), (150, 110)])
+    assert out2 == [(500.0, 300.0), (150.0, 110.0)] and s2.M["sluice_gates"]
+    # no moat: gate only - no conduit record, no orientation flip
+    s3 = Settlement(1000, 1000, seed=1)
+    s3.meta(name="C3", scale="town", ftpx=1)
+    s3.M["ring_road"] = [[100, 100], [900, 100], [900, 900], [100, 900], [100, 100]]
+    s3.M["ring_road_width"] = 8
+    n3 = len(s3.M["channels"])
+    s3.inwall_drain_outfall([(500, 300), (150, 110)])
+    assert len(s3.M["channels"]) == n3 and s3.M["sluice_gates"]
+    # the whole polyline hugs the road: left untrimmed (the check flags it), gate at the raw end
+    s4 = _inwall_settlement()
+    out4 = s4.inwall_drain_outfall([(300, 104), (200, 104)])
+    assert out4[-1] == (200.0, 104.0)
+
+
+def test_draw_comb_field_trims_an_inwall_drain_through_the_helper():
+    from waterfields import build_comb
+
+    s = _inwall_settlement()
+    net = build_comb(1000, 1000, (500, 200), 5, down_deg=90, field_fall=300)
+    net["brook"] = []
+    s.draw_comb_field(net, "f1", {"kind": "stream"}, inwall_drain_moat_bias=(0, 0))
+    assert any((c.get("frm") or {}).get("kind") == "drain" and (c.get("to") or {}).get("kind") == "moat" and c.get("drawn") is False for c in s.M["channels"])
+    assert s.M["sluice_gates"]
+
+
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
@@ -3282,6 +3344,34 @@ def test_apply_land_use_leaves_a_lone_pond_ungated():
     }
     s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
     assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
+
+
+def test_dikepond_digs_back_from_a_penetrating_lateral():
+    # GM 2026-07-23: the canal at the toe BOUNDS the bank - a lateral riding inside the parcel line makes
+    # the whole pond unit shrink about its centroid until the bank clears the canal, and the SHRUNK outline
+    # is what dikeponds records (the drawn truth, which mulberry_banks_clear_of_channels then reads).
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(field_archetype="mulberry_dike_fishpond")
+    plot = {"poly": [(100.0, 100.0), (300.0, 100.0), (300.0, 300.0), (100.0, 300.0)], "low": True}
+    net = {"plots": [plot], "channels": [{"pts": [(103.0, 50.0), (103.0, 350.0)]}]}  # rides 3 px inside the west edge
+    s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
+    rec = s.M["dikeponds"][0]["parcel"]
+    assert min(x for x, _ in rec) >= 103.0 + 1.0  # dug back clear of the lateral (>= 1 px past its line)
+
+
+def test_mulberry_rows_crowns_avoid_channels():
+    # GM 2026-07-23: the crowns are coppiced BUSHES - any crown whose circle would reach a channel
+    # centerline (r + 3 px clearance) is dropped, so bushes never stand in the canal at the dike toe.
+    poly = [(0.0, 0.0), (160.0, 0.0), (160.0, 320.0), (0.0, 320.0)]
+
+    def crowns(channels):
+        s = Settlement(600, 600, seed=1)
+        s._mulberry_rows(poly, "M -10 -10 L 170 -10 L 170 330 L -10 330 Z", 80.0, 160.0, random.Random(7), channels)
+        return s.out[-1].count("<circle")
+
+    unblocked = crowns(None)
+    blocked = crowns([((80.0, -20.0), (80.0, 340.0))])  # a canal crossing the top + bottom bank rows
+    assert 0 < blocked < unblocked
 
 
 def test_mulberry_rows_skips_a_parcel_too_small_to_plant():

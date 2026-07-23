@@ -6126,6 +6126,52 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "engineered plumbing, not two strokes crossing",
     )
 
+    # AN IN-WALL DRAIN CUTS OFF AT A GATE BEFORE THE RING ROAD (GM 2026-07-23, Tango's in-wall
+    # nw1 drain: the visible runoff ditch ran up to the patrol road's verge and simply STOPPED -
+    # a bare cut end, unfinished linework). Doctrine: a walled city's in-wall drainage never
+    # visibly pierces road, rampart or moat - the water leaves through an UNDERGROUND stone
+    # culvert, recorded as an undrawn drain->moat conduit (channel_gates_at_water_junctions
+    # deliberately exempts that conduit's invisible moat-side seam). But the DROP into the
+    # culvert is a real engineered structure and the map must say so: the visible ditch is
+    # TRIMMED back to a cut point clear of the ring road and wears a sluice_gate glyph there
+    # (the gate is what tells the reader the ditch drains into artificial plumbing connected to
+    # the moat, even though the connection itself is invisible). The conduit's START is that cut
+    # point - where the water goes underground. For every undrawn drain->moat conduit starting
+    # INSIDE the wall: (a) a drawn stroke must END at the conduit's start (the visible ditch
+    # reaches the drop - within 8px); (b) the cut point stays >= half the ring-road width + 4px
+    # off the ring-road centerline, and no drawn stroke touching it crosses the centerline (the
+    # pre-fix Tango stub lapped 3px PAST it); (c) a sluice_gate sits within 16px of the cut
+    # point (the gate tolerance channel_gates_at_water_junctions uses). Engine helper:
+    # s.inwall_drain_outfall() trims the drain, places the gate, and records the conduit.
+    inwall_bad = []
+    if M.get("wall"):
+        _iring = M.get("ring_road") or []
+        _irhw = (M.get("ring_road_width") or 20) / 2
+        for _ch in M.get("channels", []):
+            if (_ch.get("frm") or {}).get("kind") != "drain" or (_ch.get("to") or {}).get("kind") != "moat" or _ch.get("drawn"):
+                continue  # drawn culverts carry their gate at the drain handoff (checked above)
+            _co = _ch["poly"][0]
+            if not point_in_poly(_co[0], _co[1], M["wall"]):
+                continue  # an outside-the-wall conduit has no rampart to pass under
+            _iw_touch = [dc["pts"] for dc in M.get("drawn_channels", []) if any(math.hypot(dc["pts"][k][0] - _co[0], dc["pts"][k][1] - _co[1]) <= 8 for k in (0, -1))]
+            if not _iw_touch:
+                inwall_bad.append(f"no visible ditch reaches the drop at {(round(_co[0]), round(_co[1]))}")
+            if _iring:
+                if min(seg_dist(_co[0], _co[1], _iring[i], _iring[i + 1]) for i in range(len(_iring) - 1)) < _irhw + 4:
+                    inwall_bad.append(f"cut point {(round(_co[0]), round(_co[1]))} rides the ring road - trim the ditch off short of the patrol road")
+                for _spts in _iw_touch:
+                    if any(segments_cross(_spts[i], _spts[i + 1], _iring[j], _iring[j + 1]) for i in range(len(_spts) - 1) for j in range(len(_iring) - 1)):
+                        inwall_bad.append(f"the ditch at {(round(_co[0]), round(_co[1]))} CROSSES the ring road - it must stop before it")
+            if not any(math.hypot(g["x"] - _co[0], g["y"] - _co[1]) <= 16 for g in M.get("sluice_gates", [])):
+                inwall_bad.append(f"no sluice gate at the cutoff {(round(_co[0]), round(_co[1]))}")
+    check(
+        "inwall_drains_gated_at_cutoff",
+        not inwall_bad,
+        "; ".join(sorted(set(inwall_bad))[:4]) + " - an in-wall drain cuts off short of the ring road and drops through a "
+        "sluice gate into the underground culvert to the moat (the gate glyph is what makes the bare cut end read as "
+        "engineered plumbing); trim the drain through s.inwall_drain_outfall()",
+    )
+
     # large area features (forests, pastures) near a map edge must run OFF it - implying
     # they continue beyond what's drawn. Bounded farm fields are exempt.
     NEAR = 55
@@ -8951,6 +8997,40 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "dikeponds_fed_and_drained",
             _n_dp >= 12 and len(_sl) >= 1.5 * _n_dp and _fd_bad == 0,
             f"a mulberry-dike fish pond must be FED from an uphill sluice AND DRAINED by a downhill one (not overlapping), so water flows downhill through it - {_fd_bad} pond(s) are sealed, one-way, wrongly-angled or have crossing connectors (recorded sluices {len(_sl)} for {_n_dp} ponds)",
+        )
+
+        # MULBERRY BUSHES KEEP CLEAR OF THE CANALS (GM 2026-07-23): the bank planting is coppiced BUSHES
+        # standing ON the dike - not canopy trees that could arch over water - and the ring canal + laterals
+        # are open dug water at the dike toe. A channel centerline running INSIDE a pond's planted bank means
+        # bushes drawn in the canal, a physical impossibility. Teeth: every pond records its `bank` outline
+        # (the planted band's outer edge, which the crown dots fill - so "no canal inside a bank" bounds the
+        # bushes without recording thousands of decorative dots); densified field-ditch centerlines must not
+        # penetrate more than 2 px into any bank (edge-GRAZING is FINE - the canal genuinely runs along the
+        # dike toe, earth meets water there, and the mosaic-bent laterals graze parcel edges by up to
+        # ~1.5 px, which is the toe line clipping the bank rim, not a canal through the dike; the pre-fix
+        # +5 px bank expansion scored penetrations to 6.5 px and fired). A pond missing its `bank` record fires too, so silently
+        # dropping the record cannot disable the check. Placement side: _mulberry_rows filters crown dots
+        # against channel segments at r + 3 px clearance. Grounding: settlements.md 'Polder fourth pass'.
+        _mb_missing = sum(1 for d in (_dponds or []) if "bank" not in d)
+        _mb_banks = [d["bank"] for d in (_dponds or []) if "bank" in d]
+        _mb_boxes = [(min(q[0] for q in b), min(q[1] for q in b), max(q[0] for q in b), max(q[1] for q in b)) for b in _mb_banks]
+        _mb_bad = 0
+        for _mb_cp in _chs:
+            for _mb_k in range(len(_mb_cp) - 1):
+                _mb_a, _mb_b = _mb_cp[_mb_k], _mb_cp[_mb_k + 1]
+                _mb_steps = max(1, int(math.hypot(_mb_b[0] - _mb_a[0], _mb_b[1] - _mb_a[1]) / 6))
+                for _mb_t in range(_mb_steps + 1):
+                    _mb_x = _mb_a[0] + (_mb_b[0] - _mb_a[0]) * _mb_t / _mb_steps
+                    _mb_y = _mb_a[1] + (_mb_b[1] - _mb_a[1]) * _mb_t / _mb_steps
+                    for _mb_poly, _mb_box in zip(_mb_banks, _mb_boxes, strict=True):
+                        if not (_mb_box[0] - 2 <= _mb_x <= _mb_box[2] + 2 and _mb_box[1] - 2 <= _mb_y <= _mb_box[3] + 2):
+                            continue
+                        if point_in_poly(_mb_x, _mb_y, _mb_poly) and min(seg_dist(_mb_x, _mb_y, _mb_poly[_mb_j], _mb_poly[(_mb_j + 1) % len(_mb_poly)]) for _mb_j in range(len(_mb_poly))) > 2.0:
+                            _mb_bad += 1
+        check(
+            "mulberry_banks_clear_of_channels",
+            _n_dp >= 12 and _mb_missing == 0 and _mb_bad == 0,
+            f"mulberry bushes are coppiced shrubs ON the dike and cannot stand in the canal at its toe - no channel centerline may run inside a pond's planted bank ({_mb_bad} channel point(s) penetrate a bank; {_mb_missing} pond(s) missing the `bank` record that gives this check teeth, of {_n_dp} recorded ponds)",
         )
 
     # A polder's PERIMETER DIKE is an irregular hand-piled EARTHWORK, not a ruled line (GM 2026-07-22,
