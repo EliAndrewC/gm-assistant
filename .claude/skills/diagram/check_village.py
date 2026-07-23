@@ -8937,6 +8937,40 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a mulberry-dike fish pond must be FED from an uphill sluice AND DRAINED by a downhill one (not overlapping), so water flows downhill through it - {_fd_bad} pond(s) are sealed, one-way, wrongly-angled or have crossing connectors (recorded sluices {len(_sl)} for {_n_dp} ponds)",
         )
 
+        # MULBERRY BUSHES KEEP CLEAR OF THE CANALS (GM 2026-07-23): the bank planting is coppiced BUSHES
+        # standing ON the dike - not canopy trees that could arch over water - and the ring canal + laterals
+        # are open dug water at the dike toe. A channel centerline running INSIDE a pond's planted bank means
+        # bushes drawn in the canal, a physical impossibility. Teeth: every pond records its `bank` outline
+        # (the planted band's outer edge, which the crown dots fill - so "no canal inside a bank" bounds the
+        # bushes without recording thousands of decorative dots); densified field-ditch centerlines must not
+        # penetrate more than 2 px into any bank (edge-GRAZING is FINE - the canal genuinely runs along the
+        # dike toe, earth meets water there, and the mosaic-bent laterals graze parcel edges by up to
+        # ~1.5 px, which is the toe line clipping the bank rim, not a canal through the dike; the pre-fix
+        # +5 px bank expansion scored penetrations to 6.5 px and fired). A pond missing its `bank` record fires too, so silently
+        # dropping the record cannot disable the check. Placement side: _mulberry_rows filters crown dots
+        # against channel segments at r + 3 px clearance. Grounding: settlements.md 'Polder fourth pass'.
+        _mb_missing = sum(1 for d in (_dponds or []) if "bank" not in d)
+        _mb_banks = [d["bank"] for d in (_dponds or []) if "bank" in d]
+        _mb_boxes = [(min(q[0] for q in b), min(q[1] for q in b), max(q[0] for q in b), max(q[1] for q in b)) for b in _mb_banks]
+        _mb_bad = 0
+        for _mb_cp in _chs:
+            for _mb_k in range(len(_mb_cp) - 1):
+                _mb_a, _mb_b = _mb_cp[_mb_k], _mb_cp[_mb_k + 1]
+                _mb_steps = max(1, int(math.hypot(_mb_b[0] - _mb_a[0], _mb_b[1] - _mb_a[1]) / 6))
+                for _mb_t in range(_mb_steps + 1):
+                    _mb_x = _mb_a[0] + (_mb_b[0] - _mb_a[0]) * _mb_t / _mb_steps
+                    _mb_y = _mb_a[1] + (_mb_b[1] - _mb_a[1]) * _mb_t / _mb_steps
+                    for _mb_poly, _mb_box in zip(_mb_banks, _mb_boxes, strict=True):
+                        if not (_mb_box[0] - 2 <= _mb_x <= _mb_box[2] + 2 and _mb_box[1] - 2 <= _mb_y <= _mb_box[3] + 2):
+                            continue
+                        if point_in_poly(_mb_x, _mb_y, _mb_poly) and min(seg_dist(_mb_x, _mb_y, _mb_poly[_mb_j], _mb_poly[(_mb_j + 1) % len(_mb_poly)]) for _mb_j in range(len(_mb_poly))) > 2.0:
+                            _mb_bad += 1
+        check(
+            "mulberry_banks_clear_of_channels",
+            _n_dp >= 12 and _mb_missing == 0 and _mb_bad == 0,
+            f"mulberry bushes are coppiced shrubs ON the dike and cannot stand in the canal at its toe - no channel centerline may run inside a pond's planted bank ({_mb_bad} channel point(s) penetrate a bank; {_mb_missing} pond(s) missing the `bank` record that gives this check teeth, of {_n_dp} recorded ponds)",
+        )
+
     # A polder's PERIMETER DIKE is an irregular hand-piled EARTHWORK, not a ruled line (GM 2026-07-22,
     # researched: the wei-tian / dike-pond dike was dredged pond-mud heaped and packed, planted and
     # breach-repaired, and the OUTER dike followed the natural water edge - the 'fish-scale polder' 鱼鳞圩

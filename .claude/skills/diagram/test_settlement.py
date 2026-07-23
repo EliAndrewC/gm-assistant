@@ -3233,6 +3233,34 @@ def test_apply_land_use_leaves_a_lone_pond_ungated():
     assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
 
 
+def test_dikepond_digs_back_from_a_penetrating_lateral():
+    # GM 2026-07-23: the canal at the toe BOUNDS the bank - a lateral riding inside the parcel line makes
+    # the whole pond unit shrink about its centroid until the bank clears the canal, and the SHRUNK outline
+    # is what dikeponds records (the drawn truth, which mulberry_banks_clear_of_channels then reads).
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(field_archetype="mulberry_dike_fishpond")
+    plot = {"poly": [(100.0, 100.0), (300.0, 100.0), (300.0, 300.0), (100.0, 300.0)], "low": True}
+    net = {"plots": [plot], "channels": [{"pts": [(103.0, 50.0), (103.0, 350.0)]}]}  # rides 3 px inside the west edge
+    s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
+    rec = s.M["dikeponds"][0]["parcel"]
+    assert min(x for x, _ in rec) >= 103.0 + 1.0  # dug back clear of the lateral (>= 1 px past its line)
+
+
+def test_mulberry_rows_crowns_avoid_channels():
+    # GM 2026-07-23: the crowns are coppiced BUSHES - any crown whose circle would reach a channel
+    # centerline (r + 3 px clearance) is dropped, so bushes never stand in the canal at the dike toe.
+    poly = [(0.0, 0.0), (160.0, 0.0), (160.0, 320.0), (0.0, 320.0)]
+
+    def crowns(channels):
+        s = Settlement(600, 600, seed=1)
+        s._mulberry_rows(poly, "M -10 -10 L 170 -10 L 170 330 L -10 330 Z", 80.0, 160.0, random.Random(7), channels)
+        return s.out[-1].count("<circle")
+
+    unblocked = crowns(None)
+    blocked = crowns([((80.0, -20.0), (80.0, 340.0))])  # a canal crossing the top + bottom bank rows
+    assert 0 < blocked < unblocked
+
+
 def test_mulberry_rows_skips_a_parcel_too_small_to_plant():
     # fourth pass: a parcel whose apothem cannot hold the 11 px water inset has no bank to plant - the
     # helper draws nothing rather than wrapping crown rows around a degenerate loop.

@@ -5771,6 +5771,35 @@ def test_dikepond_water_within_banks_and_rounded():
     assert "dikepond_corners_rounded" in f({**base, "dikeponds": sharp})
 
 
+def test_mulberry_banks_clear_of_channels():
+    # GM 2026-07-23: the bank crowns are coppiced BUSHES on the dike; the canals are open water at its toe.
+    # A channel centerline penetrating >1.5 px inside a recorded bank fires (bushes standing in the canal);
+    # a channel skirting the bank edge passes (the canal genuinely runs along the dike toe); a pond missing
+    # its `bank` record fires (the record is what gives the check teeth).
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [1700, 100], [1700, 500], [100, 500]], "bbox": [100, 100, 1700, 500]}
+    base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}, "fields": [field]}
+
+    def parcel(cx, cy):
+        return [[cx - 50, cy - 50], [cx + 50, cy - 50], [cx + 50, cy + 50], [cx - 50, cy + 50]]
+
+    def rounded(cx, cy):
+        return [[cx + 30 * math.cos(a), cy + 30 * math.sin(a)] for a in [i * math.pi / 6 for i in range(12)]]
+
+    def bank(cx, cy):
+        return [[cx - 55, cy - 55], [cx + 55, cy - 55], [cx + 55, cy + 55], [cx - 55, cy + 55]]
+
+    ponds = [{"parcel": parcel(200 + 120 * i, 300), "water": rounded(200 + 120 * i, 300), "bank": bank(200 + 120 * i, 300)} for i in range(12)]
+    clear = {"poly": [[100, 380], [1700, 380]], "role": "lateral", "field": "p"}  # runs BELOW every bank (banks end at y=355)
+    assert "mulberry_banks_clear_of_channels" not in f({**base, "dikeponds": ponds, "field_ditches": [clear]})
+    grazing = {"poly": [[100, 355], [1700, 355]], "role": "lateral", "field": "p"}  # runs ON the bank edge - the dike toe
+    assert "mulberry_banks_clear_of_channels" not in f({**base, "dikeponds": ponds, "field_ditches": [grazing]})
+    through = {"poly": [[100, 300], [1700, 300]], "role": "lateral", "field": "p"}  # runs THROUGH the middle of every bank
+    assert "mulberry_banks_clear_of_channels" in f({**base, "dikeponds": ponds, "field_ditches": [through]})
+    # a pond whose bank went unrecorded fires - the record is the teeth, dropping it cannot disable the check
+    unrecorded = [{k: v for k, v in p.items() if k != "bank"} for p in ponds]
+    assert "mulberry_banks_clear_of_channels" in f({**base, "dikeponds": unrecorded, "field_ditches": [clear]})
+
+
 def test_dikeponds_fed_and_drained():
     # GM 2026-07-23: down_deg=90 -> downhill is +y. Every 桑基魚塘 pond needs a FEED (network-end UPHILL =
     # smaller y) AND a DRAIN (network-end DOWNHILL = larger y) on its water, both reaching the network, not

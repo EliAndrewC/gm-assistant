@@ -1801,6 +1801,12 @@ class Settlement:
                 self._paddy_surface(p["poly"], pts, flooded=(lfill == "#93B7AC"), cap=600)
             random.setstate(_lst)
         dikeponds: list[dict[str, Any]] = []
+        # channel centerline segments, for the bush-vs-canal clearance filter in _mulberry_rows (the crowns
+        # are coppiced BUSHES on the dike, not canopy - they cannot arch over the open water at the toe)
+        chansegs: list[tuple[Pt, Pt]] = []
+        for ch in net.get("channels", []):
+            cpp = ch["pts"]
+            chansegs += [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for a, b in zip(cpp, cpp[1:], strict=False)]
         for p in chosen:
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
@@ -1813,15 +1819,55 @@ class Settlement:
                 # GROUND, not a flat green band - the perimeter dike's own treatment (mottled earthen bank)
                 # carrying two planted ROWS of coppiced mulberry crowns (_mulberry_rows). Its corners ease
                 # with small erosion fillets but the dike KEEPS its rectangular character - straight dikes
-                # are attested (see settlements.md 'Polder mosaic'). The negative inset EXPANDS the bank
-                # ~5 px past the parcel so it covers the base parcel's tan bund stroke (with reach <= 9.2
-                # the fillet chord stays outside the covered corner - chord d/sqrt(2) < 5*sqrt(2)).
-                bd, _bpoly = self._rounded_pond(p["poly"], inset=-5.0, reach=8.0, rng=rng)
+                # are attested (see settlements.md 'Polder mosaic'). The bank sits at the TRUE parcel line
+                # (inset 0), because the canal at its toe bounds it: an early +5 px expansion put banks over
+                # the wavering laterals in 72 places on Kuwabata (mulberry_banks_clear_of_channels caught
+                # it). The base parcel's tan bund stroke is erased by a floor-color UNDERLAY instead - the
+                # floor, the base parcels, and the cover all share _RICE_GREEN, so it vanishes into both;
+                # the corner fillets expose that same cover, reading as floor.
+                _dm = min(
+                    math.hypot((p["poly"][i][0] + p["poly"][(i + 1) % len(p["poly"])][0]) / 2 - cx, (p["poly"][i][1] + p["poly"][(i + 1) % len(p["poly"])][1]) / 2 - cy) for i in range(len(p["poly"]))
+                )
+                _sc = 1.0 + 2.5 / max(1.0, _dm)
+                cover = " ".join(f"{cx + (x - cx) * _sc:.1f},{cy + (y - cy) * _sc:.1f}" for x, y in p["poly"])
+                self.add(f'<polygon points="{cover}" fill="#A6C398"/>')
+                # THE CANAL AT THE TOE BOUNDS THE BANK (settlements.md 'Mulberry bushes keep clear of the
+                # canals'): where a mosaic-bent lateral rides INSIDE the parcel line (Kuwabata: two west-edge
+                # ponds, up to 3.6 px), the whole pond unit is DUG BACK - shrunk about its centroid until the
+                # bank clears the canal by >= 1 px - rather than drawing bank earth over open water. The
+                # cover above still spans the ORIGINAL parcel, so the base bund stroke stays erased and the
+                # dug-back margin reads as floor. The shrunk outline is what `dikeponds` records, so
+                # mulberry_banks_clear_of_channels and dikepond_water_within_banks read the drawn truth.
+                qpoly: Poly = [(float(qx), float(qy)) for qx, qy in p["poly"]]
+                pen = 0.0
+                qx0, qx1 = min(q[0] for q in qpoly) - 2, max(q[0] for q in qpoly) + 2
+                qy0, qy1 = min(q[1] for q in qpoly) - 2, max(q[1] for q in qpoly) + 2
+                for ca, cb in chansegs:
+                    if max(ca[0], cb[0]) < qx0 or min(ca[0], cb[0]) > qx1 or max(ca[1], cb[1]) < qy0 or min(ca[1], cb[1]) > qy1:
+                        continue
+                    csteps = max(1, int(math.hypot(cb[0] - ca[0], cb[1] - ca[1]) / 4))
+                    for ck in range(csteps + 1):
+                        qpx = ca[0] + (cb[0] - ca[0]) * ck / csteps
+                        qpy = ca[1] + (cb[1] - ca[1]) * ck / csteps
+                        if point_in_poly(qpx, qpy, qpoly):
+                            pen = max(pen, min(seg_dist(qpx, qpy, qpoly[j], qpoly[(j + 1) % len(qpoly)]) for j in range(len(qpoly))))
+                if pen > 0.0:
+                    _s2 = max(0.7, 1.0 - (pen + 1.0) / max(1.0, _dm))
+                    qpoly = [(cx + (qx - cx) * _s2, cy + (qy - cy) * _s2) for qx, qy in qpoly]
+                bd, bpoly = self._rounded_pond(qpoly, inset=0.0, reach=8.0, rng=rng)
                 self.add(f'<path d="{bd}" fill="#C2A772" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
-                wd, wpoly = self._rounded_pond(p["poly"], inset=11.0, reach=16.0, rng=rng)
+                wd, wpoly = self._rounded_pond(qpoly, inset=11.0, reach=16.0, rng=rng)
                 self.add(f'<path d="{wd}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.4"/>')
-                self._mulberry_rows(p["poly"], bd, cx, cy, rng)
-                dikeponds.append({"parcel": [[round(x, 1), round(y, 1)] for x, y in p["poly"]], "water": [[round(x, 1), round(y, 1)] for x, y in wpoly]})
+                self._mulberry_rows(qpoly, bd, cx, cy, rng, chansegs)
+                # `bank` = the planted band's outer edge, recorded so mulberry_banks_clear_of_channels has
+                # manifest teeth: the crowns fill the bank, so "no canal runs inside a bank" bounds the bushes
+                dikeponds.append(
+                    {
+                        "parcel": [[round(x, 1), round(y, 1)] for x, y in qpoly],
+                        "water": [[round(x, 1), round(y, 1)] for x, y in wpoly],
+                        "bank": [[round(x, 1), round(y, 1)] for x, y in bpoly],
+                    }
+                )
             else:  # lotus - a DEEP-WATER lotus field (teal plot body + a few lily pads / blooms)
                 self.add(f'<polygon points="{pts}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.6" stroke-linejoin="round"/>')
                 self.add("".join(f'<circle cx="{cx + rng.uniform(-14, 14):.1f}" cy="{cy + rng.uniform(-10, 10):.1f}" r="{rng.uniform(2.5, 4):.1f}" fill="#C98BA6" opacity="0.85"/>' for _ in range(3)))
@@ -1921,24 +1967,27 @@ class Settlement:
             sample += [a_in[j], mid, b_out[j]]
         return d + "Z", sample
 
-    def _mulberry_rows(self, poly: Sequence[Pt], bank_d: str, cx: float, cy: float, rng: random.Random) -> None:
+    def _mulberry_rows(self, poly: Sequence[Pt], bank_d: str, cx: float, cy: float, rng: random.Random, channels: Sequence[tuple[Pt, Pt]] | None = None) -> None:
         """The 桑基 (mulberry-dike) half of a dike-pond unit rendered as what it is: PLANTED ground. Sparse
         earth mottle (patch-repairs, the perimeter dike's look) under two planted ROWS of coppiced mulberry
         crowns. TRUE SCALE (settlements.md 'Polder fourth pass'): silkworm mulberry was coppiced into low
         bushes with ~4-6 ft crowns in dense rows (~1 bush per 10-20 sq ft - hundreds per pond), so at
         1 px = 1 ft honest "actual trees" ARE a packed dot band; the crowns here are r 2.2-3.6 px at ~6 px
         in-row spacing (the loose end of the attested 3-5 ft, for pixel separation), never inflated glyphs.
-        Rows are homothetic loops between the water inset (11 px) and the expanded bank edge (+5 px);
+        Rows are homothetic loops between the water inset (11 px) and the bank edge (the true parcel line);
         everything clips to the bank path, so a crown may overhang the water edge (organic) but never
-        spills onto the polder floor. Purely decorative - no manifest record, the dikepond checks keep
-        reading parcel + water untouched."""
+        spills onto the polder floor. BUSHES KEEP CLEAR OF THE CANALS (GM 2026-07-23): these are bushes,
+        not canopy trees, so a crown cannot arch over open water - any crown whose circle would reach a
+        channel centerline in `channels` (clearance r + 3 px ~ the canal's half draw width + margin) is
+        dropped; the paired manifest teeth are `mulberry_banks_clear_of_channels`, which reads the
+        recorded per-pond `bank` outline. The dots themselves stay unrecorded (decorative)."""
         n = len(poly)
         mids = [((poly[i][0] + poly[(i + 1) % n][0]) / 2, (poly[i][1] + poly[(i + 1) % n][1]) / 2) for i in range(n)]
         apo = sum(math.hypot(mx - cx, my - cy) for mx, my in mids) / n
         if apo <= 12.0:
             return  # a parcel too small to hold the water inset has no bank to plant
         s_w = max(0.4, 1.0 - 11.0 / apo)  # the water-edge homothety (matches _rounded_pond's inset=11)
-        s_b = 1.0 + 5.0 / apo  # the expanded bank edge (matches the bank's inset=-5)
+        s_b = 1.0  # the bank edge is the TRUE parcel line (the canal at the toe bounds the bank)
         cid = self._cid("mb")
         g = [f'<clipPath id="{cid}"><path d="{bank_d}"/></clipPath>', f'<g clip-path="url(#{cid})">']
 
@@ -1952,13 +2001,31 @@ class Settlement:
                     out.append((a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f))
             return out
 
+        # only channel segments near THIS parcel matter (the parcel bbox padded by the bank + crown reach)
+        px0, px1 = min(q[0] for q in poly) - 20, max(q[0] for q in poly) + 20
+        py0, py1 = min(q[1] for q in poly) - 20, max(q[1] for q in poly) + 20
+        near = [(a, b) for a, b in (channels or []) if max(a[0], b[0]) >= px0 and min(a[0], b[0]) <= px1 and max(a[1], b[1]) >= py0 and min(a[1], b[1]) <= py1]
+
+        def chan_dist(qx: float, qy: float) -> float:
+            best = 1e9
+            for a, b in near:
+                vx, vy = b[0] - a[0], b[1] - a[1]
+                ln2 = vx * vx + vy * vy
+                u = 0.0 if ln2 == 0 else max(0.0, min(1.0, ((qx - a[0]) * vx + (qy - a[1]) * vy) / ln2))
+                best = min(best, math.hypot(qx - (a[0] + u * vx), qy - (a[1] + u * vy)))
+            return best
+
         for mx, my in walk(s_w + 0.5 * (s_b - s_w), 30.0):  # earth mottle: packed / dried patches of different ages
             mcol = rng.choice(("#A8895A", "#B79B68", "#D2BC8C", "#9C8150"))
             g.append(f'<ellipse cx="{mx + rng.uniform(-3, 3):.1f}" cy="{my + rng.uniform(-3, 3):.1f}" rx="{rng.uniform(4, 8):.1f}" ry="{rng.uniform(3, 6):.1f}" fill="{mcol}" opacity="0.35"/>')
         for t in (0.30, 0.72):  # two planted rows across the band
             for x, y in walk(s_w + t * (s_b - s_w), 6.0):
+                jx, jy = x + rng.uniform(-1.3, 1.3), y + rng.uniform(-1.3, 1.3)
+                r = rng.uniform(2.2, 3.6)
                 ccol = rng.choice(("#6E8B4A", "#7C9A54", "#5E7C40"))
-                g.append(f'<circle cx="{x + rng.uniform(-1.3, 1.3):.1f}" cy="{y + rng.uniform(-1.3, 1.3):.1f}" r="{rng.uniform(2.2, 3.6):.1f}" fill="{ccol}" opacity="0.85"/>')
+                if near and chan_dist(jx, jy) < r + 3.0:
+                    continue  # a bush cannot stand in the canal - drop the crown, keep the rng stream stable
+                g.append(f'<circle cx="{jx:.1f}" cy="{jy:.1f}" r="{r:.1f}" fill="{ccol}" opacity="0.85"/>')
         g.append("</g>")
         self.add("".join(g))
 
