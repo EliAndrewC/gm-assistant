@@ -869,7 +869,7 @@ topo_channel([(1878, 604), (1878, 610), _pn], {"kind": "offmap"}, {"kind": "fiel
 _drn = next(c["pts"] for c in _netn["channels"] if c["role"] == "drain")
 _dfx, _dfy = _drn[-1]
 _mne = min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2)  # the moat rim S of the outfall (west of the funerary ground)
-topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
+topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx, _dfy, rot=math.degrees(math.atan2(_mne[1] - _dfy, _mne[0] - _dfx)) + 90)  # the outfall gate where the field drain hands off to the culvert
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
@@ -887,7 +887,7 @@ topo_channel([(1300, 604), (1300, 610), _pn2], {"kind": "offmap"}, {"kind": "fie
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mnw2 = min(MOAT, key=lambda p: (p[0] - _dfx2) ** 2 + (p[1] - _dfy2 - 90) ** 2)  # the moat rim S of the outfall
-topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
+topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx2, _dfy2, rot=math.degrees(math.atan2(_mnw2[1] - _dfy2, _mnw2[0] - _dfx2)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FN2), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN2), 22, 40, ["plain"])

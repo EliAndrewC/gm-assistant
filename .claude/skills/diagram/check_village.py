@@ -3053,11 +3053,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # (1) Irrigation channels are HAIRLINES: at/just above the legibility floor, never fattened toward
     # stream weight. A ditch drawn as a stout line (the old 4.2 px) reads as a watercourse, not a ditch.
     if chan_ws:
-        fat = [w for w in chan_ws if not 2.0 <= w <= 3.5]
+        # a DRAIN-OUTFALL CULVERT is not a field ditch: it carries a whole fan's gathered runoff and
+        # must MATCH the drain's outfall width (6.0 x grain = 4.0 at the city grain) - a culvert
+        # narrower than the ditch it drains read as the water SHRINKING past the gate (GM 2026-07-23,
+        # the widening-drains pass). Its ceiling is 4.5; everything else keeps the hairline band.
+        fat = [c["w"] for c in M.get("channels", []) if "w" in c and not 2.0 <= c["w"] <= (4.5 if (c.get("frm") or {}).get("kind") == "drain" else 3.5)]
         check(
             "irrigation_channels_hairline",
             not fat,
-            f"channel width(s) {sorted(set(fat))} outside the hairline band [2.0, 3.5] px - a field "
+            f"channel width(s) {sorted(set(fat))} outside the hairline band [2.0, 3.5] px (drain-outfall "
+            f"culverts may run to 4.5 - they carry the fan's whole runoff and match the drain's outfall) - a field "
             f"ditch is the thinnest line on the map (~0.3 m, ~1/300 of the paddy it feeds); keep it at "
             f"the legibility floor, distinct from any natural watercourse",
         )
