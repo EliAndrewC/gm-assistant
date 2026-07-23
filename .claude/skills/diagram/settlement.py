@@ -514,6 +514,35 @@ def roll_torii_count(scale: str, rng: random.Random) -> int:
     return weights[-1][0]
 
 
+MERCHANT_ESTATE_WEIGHTS: dict[str, tuple[tuple[int, float], ...]] = {
+    # WALLED MERCHANT COMPOUND COUNT DISTRIBUTION (GM 2026-07-23). A gated compound is a PRIVILEGE
+    # that must be explicitly GRANTED to a merchant family, not a purchase: this mirrors the
+    # Edo-period system of individually granted merchant rights and privileges - an audience with
+    # the daimyo at the New Year's celebration, permission to carry a persistent surname across
+    # generations despite not being samurai (myoji gomen), and the like. So even most VERY rich
+    # merchants do not have one: they can afford the wall, but lack the legal standing to build it.
+    # A provincial city holds ~12 very-rich merchant families (budgets.md, 2% of ~3,000), of whom
+    # only 1-3 hold the grant - rolled 30% / 40% / 30% per city, seeded on the map seed (the same
+    # deterministic re-roll pattern as TORII_WEIGHTS above). "capital" is left to be added when
+    # capital maps exist, like the torii table did for its tiers.
+    "city": ((1, 0.30), (2, 0.40), (3, 0.30)),
+}
+
+
+def roll_merchant_estate_count(scale: str, rng: random.Random) -> int:
+    """Roll how many walled merchant compounds a settlement carries, weighted by
+    MERCHANT_ESTATE_WEIGHTS - see that table for the granted-privilege reasoning. Scales without
+    a column (villages, towns today) do not roll; callers hand-place there."""
+    weights = MERCHANT_ESTATE_WEIGHTS[scale]
+    x = rng.random()
+    acc = 0.0
+    for count, wt in weights:
+        acc += wt
+        if x < acc:
+            return count
+    return weights[-1][0]
+
+
 # WALL DEFENSE POSTURE (GM 2026-07-22): a walled city's guard-tower coverage is TUNABLE per city
 # (meta wall_defense=), because how heavily a wall is towered reflects its history and threat exposure -
 # a border city that has repelled sieges packs its towers to the aimed-lethal-bowshot spacing so every
@@ -3247,6 +3276,35 @@ class Settlement:
         )
         m = 18 * self.bscale  # a building-half margin at the map's grain
         self.block_polys.append([(x0 - m, y0 - m), (x1 + m, y0 - m), (x1 + m, y1 + m), (x0 - m, y1 + m)])
+        # ... and register the court in self.placed (2026-07-23): block_polys tests only a candidate's
+        # CENTER, and at the city grain the block margin (18 real ft = 6px) is thinner than half a pack
+        # house - so a later pack could seat a house whose center cleared the block but whose BODY lapped
+        # the court wall (caught by city_merchant_estates_clear_of_buildings on the Tango seat-3 vet).
+        # self.placed is the SAT-distance registry every _fits candidate keeps real clearance from.
+        self.placed.append((x, y, w, h))
+
+    def merchant_estates(self, seats: Sequence[tuple[float, float, str]], count: int | None = None) -> int:
+        """Place the city's walled merchant compounds: ROLL the count (30/40/30 for 1/2/3 at city
+        scale, MERCHANT_ESTATE_WEIGHTS - a gated compound is an explicitly GRANTED privilege, see
+        the table's reasoning), then seat the first n from `seats`, a hand-vetted ordered list of
+        (x, y, gate_dir) candidates. Provide at least 3 seats so ANY roll can land - each is only
+        used if rolled, and merchant_estate's slide fan + the estate-wall gate checks do the
+        micro-siting safety work. `count=` pins the roll (the torii_count= analog). The resolved
+        target is recorded as meta['merchant_estate_roll'] and gated by merchant_estates_match_roll,
+        so a stale hand count can never ship again (the pre-roll state: both cities hand-placed
+        exactly 1, a copied pattern with no recorded reasoning). The roll consumes NO main-stream
+        RNG (dedicated Random seeded on the map seed), so a map that rolls its old count stays
+        byte-identical."""
+        scale = str(self.M.get("meta", {}).get("scale", "village"))
+        n = int(count) if count is not None else roll_merchant_estate_count(scale, random.Random(self.seed * 1201 + 89))
+        if n > len(seats):
+            raise ValueError(
+                f"merchant_estates rolled {n} compounds but only {len(seats)} vetted seats were provided - add candidate seats (the roll can ask for up to {max(c for c, _ in MERCHANT_ESTATE_WEIGHTS[scale])})"
+            )
+        for ex, ey, gd in seats[:n]:
+            self.merchant_estate(ex, ey, gate_dir=gd)
+        self.M["meta"]["merchant_estate_roll"] = n
+        return n
 
     def road(self, pts: Any, label: Any = None, width: float | None = None, label_xy: Any = None) -> None:
         """A major road (e.g. an Imperial road) - a bordered roadbed. No-build corridor.

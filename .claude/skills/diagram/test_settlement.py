@@ -2977,6 +2977,57 @@ def test_pond_fill_stays_in_the_shared_block_without_a_late_join():
     assert svg.index('<ellipse cx="500" cy="250" rx="100" ry="70" fill="#9CB4C8"/>') < svg.index('stroke="#7C9EB0"')  # the non-joining late bed draws later (svg order, cross-block)
 
 
+def test_roll_merchant_estate_count_distribution():
+    # 30/40/30 for 1/2/3 at city scale - the granted-privilege distribution (MERCHANT_ESTATE_WEIGHTS)
+    import collections
+    import random as _rr
+
+    from settlement import MERCHANT_ESTATE_WEIGHTS, roll_merchant_estate_count
+
+    rng = _rr.Random(7)
+    n = 6000
+    c = collections.Counter(roll_merchant_estate_count("city", rng) for _ in range(n))
+    assert set(c) == {1, 2, 3}
+    for count, wt in MERCHANT_ESTATE_WEIGHTS["city"]:
+        assert abs(c[count] / n - wt) < 0.03
+
+    class _One:  # rng.random() lives in [0,1) so the exhaustion return is defensively dead - prove it anyway (the roll_torii_count precedent)
+        def random(self):
+            return 1.0
+
+    assert roll_merchant_estate_count("city", _One()) == 3  # exhaustion falls to the last bucket
+
+
+def test_merchant_estates_rolls_seats_and_records_the_target():
+    import random as _rr
+
+    from settlement import roll_merchant_estate_count
+
+    s = Settlement(1200, 1200, seed=11)
+    s.meta(name="c", scale="city", ftpx=3)
+    expect = roll_merchant_estate_count("city", _rr.Random(11 * 1201 + 89))  # the method's dedicated stream
+    n = s.merchant_estates([(300, 300, "south"), (600, 300, "south"), (300, 600, "east")])
+    assert n == expect
+    assert len(s.M["merchant_estates"]) == n
+    assert s.M["meta"]["merchant_estate_roll"] == n
+
+
+def test_merchant_estates_pin_overrides_the_roll():
+    s = Settlement(1200, 1200, seed=11)
+    s.meta(name="c", scale="city", ftpx=3)
+    n = s.merchant_estates([(300, 300, "south"), (600, 300, "south"), (300, 600, "east")], count=2)
+    assert n == 2
+    assert len(s.M["merchant_estates"]) == 2
+    assert s.M["meta"]["merchant_estate_roll"] == 2
+
+
+def test_merchant_estates_raises_when_seats_run_short():
+    s = Settlement(1200, 1200, seed=11)
+    s.meta(name="c", scale="city", ftpx=3)
+    with pytest.raises(ValueError, match="vetted seats"):
+        s.merchant_estates([(300, 300, "south")], count=3)
+
+
 def test_draw_comb_field_drops_hem_plots_on_a_prior_fan():
     # multi-fan maps place each fan blind to the others: a hem plot landing on a PREVIOUSLY
     # recorded fan's rice is dropped via the shared hem_on_paddy predicate (the Tango fe2-into-fe1
