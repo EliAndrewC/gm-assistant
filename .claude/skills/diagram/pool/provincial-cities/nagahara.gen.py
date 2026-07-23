@@ -335,7 +335,7 @@ def topo_channel(pts, frm, to, draw_w=0.0, col='#7C9EB0'):
         mx, my = (pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2
         pts = list(pts[: k + 1]) + [(mx - 12 * (by - ay) / chord, my + 12 * (bx - ax) / chord)] + list(pts[k + 1 :])
     poly = [[round(px, 1), round(py, 1)] for px, py in pts]
-    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5})
+    s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5, "drawn": bool(draw_w)})  # drawn=False -> an implied underground conduit (no visible seam, no gate demanded)
     s.corridors.append(([(px, py) for px, py in poly], 33))
     if draw_w:
         s.field_channel([(px, py) for px, py in poly], col, draw_w, draw_w)
@@ -785,7 +785,8 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     mp = min(MOAT, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
     _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
-    s.field_channel([mp, sl], '#6C9CBE', 7, 7)
+    s.field_channel([mp, sl], '#9CB4C8', 7, 7)  # the visible tap, in the MOAT'S OWN water color (confluence, not crossing - GM 2026-07-23)
+    s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)  # the intake gate AT the palette seam (tap water -> canal water)
     _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,))
     _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda c: c[1]))
     # pull the delivery endpoint a touch toward the field centroid so it lands a clear >=10px
@@ -807,7 +808,8 @@ topo_channel([(1050, 602), (1050, 608), _pn1], {"kind": "offmap"}, {"kind": "fie
 _drn1 = next(c["pts"] for c in _netn1["channels"] if c["role"] == "drain")
 _dfx1, _dfy1 = _drn1[-1]
 _mn1 = min(MOAT, key=lambda mp1: (mp1[0] - _dfx1 - 60) ** 2 + (mp1[1] - _dfy1 - 60) ** 2)  # rim SE of the outfall
-topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water  # empties into the moat
+topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth (fnn1) merges into the moat water
+s.sluice_gate(_dfx1, _dfy1, rot=math.degrees(math.atan2(_mn1[1] - _dfy1, _mn1[0] - _dfx1)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FNN1), 24, 15, ["plain"])
 s.ring(('poly', ENV_FNN1), 18, 40, ["plain"])
 _netn2, ENV_FNN2, _cn2 = comb_field("fnn2", (1750, 608), 95, 42, 75, (110, 150), (60, 85), (0.4, 0.8), avoid=(MOAT,))
@@ -817,6 +819,7 @@ _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mn2 = min(MOAT, key=lambda mp2: (mp2[0] - _dfx2) ** 2 + (mp2[1] - _dfy2 - 90) ** 2)
 topo_channel([(_dfx2, _dfy2), (_mn2[0], _mn2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
+s.sluice_gate(_dfx2, _dfy2, rot=math.degrees(math.atan2(_mn2[1] - _dfy2, _mn2[0] - _dfx2)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FNN2), 22, 15, ["plain"])
 s.ring(('poly', ENV_FNN2), 16, 40, ["plain"])
 # fne1 - the far-bank fan, tapped STRAIGHT OFF the Hayakawa (the river-fed comb the far bank always
@@ -828,6 +831,7 @@ _nete1, ENV_FNE1, _ce1 = comb_field(
 _pe1 = plot_centroid(_nete1, lambda cs: min(cs, key=lambda c: c[0]))
 topo_channel([(2076, 859), (2130, 860), _pe1], {"kind": "river"}, {"kind": "field", "name": "fne1"})
 s.field_channel([(2076, 859), (2130, 860)], '#9CB4C8', 7, 7)  # the visible tap, in the RIVER'S own water color (it carries river water; confluence, not crossing)
+s.sluice_gate(2130, 860, rot=90.9)  # the river-intake gate at the seam (tap heading ~ due east)
 _dre1 = next(c["pts"] for c in _nete1["channels"] if c["role"] == "drain")
 _dfex, _dfey = _dre1[-1]
 topo_channel([(_dfex, _dfey), (2560, _dfey - 38)], {"kind": "drain"}, {"kind": "offmap"}, draw_w=3.2)  # runoff off the east frame (gentle ENE bend, no hairpin)
