@@ -1457,7 +1457,7 @@ class Settlement:
             self.add(f'<polygon points="{epts}" fill="{col}" clip-path="url(#{cid})"/>')
         self.M.setdefault("comb_floors", {})[name] = [[round(x, 1), round(y, 1)] for x, y in env]
 
-    def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any]) -> list[Pt]:
+    def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any], inwall_drain_moat_bias: Pt | None = None) -> list[Pt]:
         """Draw a `build_comb` net (dry hem + flooded paddies + bunds + channels) AND register the field's
         manifest + water topology, in one call - the ~50 lines every comb gen otherwise repeats inline. Feeds
         the roll-from-seed entrypoint (which cannot hand-place any of it) but is reusable by any comb gen.
@@ -1465,8 +1465,14 @@ class Settlement:
         the sluice and feeds from it; {"kind":"stream", "stream":[(x,y),...]} runs a brook in from a canvas edge
         to the sluice. Records the field envelope/bbox/vis_bbox, every channel as a field_ditch, and a hairline
         SOURCE->field feed channel so the water-topology checks (fields_show_water_source, field_ditches_reach_
-        source_and_sink) see a source. Returns the field envelope polygon."""
+        source_and_sink) see a source. Returns the field envelope polygon. `inwall_drain_moat_bias` marks an
+        IN-WALL city fan: the drain is trimmed through inwall_drain_outfall (cut off short of the ring road,
+        sluice-gated, underground conduit to the moat) before anything is drawn or recorded."""
         from waterfields import BEAN_GREEN, BUND, hem_on_paddy
+
+        if inwall_drain_moat_bias is not None:
+            _idr = next(c for c in net["channels"] if c["role"] == "drain")
+            _idr["pts"] = self.inwall_drain_outfall(_idr["pts"], moat_bias=inwall_drain_moat_bias)
 
         # BASE FILL (feature 012, now via the shared helper): a paddy-green wash under the plots so the
         # imperfect tessellation never shows the parchment background as bare "white" gaps (research.md D5).
@@ -6325,6 +6331,63 @@ class Settlement:
         z = self.add_top(''.join(g))
         self.M.setdefault("sluice_gates", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "z": z})
         return z
+
+    def inwall_drain_outfall(self, drain_pts: Any, moat_bias: Pt = (0.0, 0.0)) -> list[Pt]:
+        """A walled city's IN-WALL drain handoff (GM 2026-07-23, generalizing Tango's nw1; gated by
+        inwall_drains_gated_at_cutoff): the visible runoff ditch CUTS OFF short of the patrol ring
+        road and drops through a SLUICE GATE into an implied underground stone culvert beneath road,
+        rampart and moat - never draw a ditch running through the city wall (the water gate itself
+        is underground and invisible; the control gate at the drop is the one visible piece of the
+        plumbing, and is what tells the reader the water drains into engineered works connected to
+        the moat). Takes the drain polyline BEFORE it is drawn, TRIMS its moat-side end back to
+        half the ring-road width + 10px clear of the ring-road centerline (the glyph's ~5.4px
+        half-span + the check's 4px margin, so the gate itself stays off the road bed), places the
+        gate ACROSS the ditch at the cut, and records the undrawn drain->moat conduit (cut point ->
+        the moat vertex nearest cut+`moat_bias`, with the standard gentle wind channel_winds_gently
+        expects) plus its no-build corridor. Returns the trimmed polyline in the caller's original
+        orientation - assign it back BEFORE drawing, so the drawn ditch, the field_ditches record,
+        and the conduit all share the same cut geometry (placement and check read the same source)."""
+        ring = self.M.get("ring_road") or []
+        moat = self.M.get("moat") or []
+        pts: list[Pt] = [(float(p[0]), float(p[1])) for p in drain_pts]
+        rev = False
+        if moat:
+
+            def moatd(q: Pt) -> float:
+                return min(math.hypot(q[0] - p[0], q[1] - p[1]) for p in moat)
+
+            if moatd(pts[0]) < moatd(pts[-1]):  # normalize: the outfall (moat-side) end LAST
+                pts, rev = pts[::-1], True
+        cl = self.M.get("ring_road_width", 20) / 2 + 10.0
+        if ring:
+
+            def ringd(q: Pt) -> float:
+                return min(seg_dist(q[0], q[1], ring[i], ring[i + 1]) for i in range(len(ring) - 1))
+
+            i = len(pts) - 1
+            while i > 0 and ringd(pts[i]) < cl:
+                i -= 1  # walk back off the road's clearance zone
+            if ringd(pts[i]) >= cl and i < len(pts) - 1:
+                a, b = pts[i], pts[i + 1]  # the clearance crossing lies on this segment - bisect it
+                lo, hi = 0.0, 1.0
+                for _ in range(24):
+                    m = (lo + hi) / 2
+                    lo, hi = (m, hi) if ringd((a[0] + (b[0] - a[0]) * m, a[1] + (b[1] - a[1]) * m)) >= cl else (lo, m)
+                pts = pts[: i + 1] + [(round(a[0] + (b[0] - a[0]) * lo, 1), round(a[1] + (b[1] - a[1]) * lo, 1))]
+            # else: the whole drain hugs the road - leave it untrimmed and let the check flag it
+        cut = pts[-1]
+        prev = pts[-2] if len(pts) > 1 else cut
+        self.sluice_gate(cut[0], cut[1], rot=math.degrees(math.atan2(cut[1] - prev[1], cut[0] - prev[0])) + 90)
+        if moat:
+            tx, ty = cut[0] + moat_bias[0], cut[1] + moat_bias[1]
+            mv = min(moat, key=lambda p: (p[0] - tx) ** 2 + (p[1] - ty) ** 2)
+            ux, uy = mv[0] - cut[0], mv[1] - cut[1]
+            ul = math.hypot(ux, uy) or 1.0
+            mid = ((cut[0] + mv[0]) / 2 - 12 * uy / ul, (cut[1] + mv[1]) / 2 + 12 * ux / ul)
+            poly = [[round(cut[0], 1), round(cut[1], 1)], [round(mid[0], 1), round(mid[1], 1)], [round(mv[0], 1), round(mv[1], 1)]]
+            self.M["channels"].append({"poly": poly, "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 2.5, "drawn": False})
+            self.corridors.append(([(p[0], p[1]) for p in poly], 33))
+        return pts[::-1] if rev else pts
 
     def canal(self, pts: Any, width: float | None = None) -> float:
         """A navigable CARGO CANAL - the one way water legitimately enters a walled city (through
