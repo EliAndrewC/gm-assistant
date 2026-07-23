@@ -2911,6 +2911,27 @@ def test_late_water_block_carries_sheens_and_splices_after_plots():
     assert rec["sheenz"] > rec["bedz"]
 
 
+def test_draw_comb_field_drops_hem_plots_on_a_prior_fan():
+    # multi-fan maps place each fan blind to the others: a hem plot landing on a PREVIOUSLY
+    # recorded fan's rice is dropped via the shared hem_on_paddy predicate (the Tango fe2-into-fe1
+    # incident; gated by dry_plots_clear_of_paddies). The prior fan here is a synthetic field
+    # record blanketing the second comb's hem band, so every hem plot must go.
+    from waterfields import build_comb, hem_on_paddy
+
+    s = Settlement(W=1400, H=1400, seed=5)
+    s.meta(name="Cp", scale="town", ftpx=1, down_deg=90)
+    net = build_comb(1400, 1400, (700, 200), 5, down_deg=90, field_fall=400)
+    net["brook"] = []
+    on_rice = [p for p in net["dry_plots"]]
+    assert on_rice, "the comb must produce a hem for the drop to be observable"
+    blanket = [[0, 0], [1400, 0], [1400, 1400], [0, 1400]]  # covers everything - every hem plot overlaps it
+    assert all(hem_on_paddy(p["poly"], blanket) for p in on_rice)
+    s.M["fields"].append({"name": "prior", "kind": "paddy", "outline": blanket, "bbox": [0, 0, 1400, 1400]})
+    s.draw_comb_field(net, "f1", {"kind": "stream"})
+    assert s.M["dry_plots"] == []  # every hem plot dropped; the paddies themselves still drew
+    assert any(fl["name"] == "f1" for fl in s.M["fields"])
+
+
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending

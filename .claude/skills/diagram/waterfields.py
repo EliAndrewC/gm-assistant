@@ -204,6 +204,31 @@ def _poly_area(poly: Poly) -> float:
     return abs(s) / 2
 
 
+def hem_on_paddy(quad: Poly, paddy_outline: Poly) -> bool:
+    """Whether a dry hem plot REALLY overlaps a paddy fan's envelope. This is the SHARED predicate
+    behind both the generators' hem filter (draw_comb_field and the city gens' comb_field drop any
+    hem plot that hits a previously recorded fan) and check_village's dry_plots_clear_of_paddies
+    gate, so placement and check provably classify the same geometry the same way (the same-source
+    doctrine, diagram CLAUDE.md). Wet paddy and dry hatake are mutually exclusive ground - the hem
+    exists BECAUSE its ground sits upslope of what the canal commands - so a dry plot on the rice
+    is always a defect, never a variant. On a MULTI-FAN map each fan's hem is placed blind to the
+    other fans (only hand-tuned dry_keepout circles held them apart before), which is exactly how
+    Tango's fe2 hem punched into fe1's envelope (2026-07-23, 13% and 42% of two plots' area in the
+    neighbor's rice) - the incident this predicate closes.
+
+    Tolerance is built in by testing the quad SHRUNK 15% toward its centroid (~2-4px at real hem
+    plot sizes - the same spirit as no_structure_on_paddy's 3px penetration rule): a hem plot
+    legitimately KISSES its own fan's envelope across the berm, and two fans' margins may abut, so
+    only real interpenetration counts."""
+    cx = sum(p[0] for p in quad) / len(quad)
+    cy = sum(p[1] for p in quad) / len(quad)
+    sq = [(cx + (px - cx) * 0.85, cy + (py - cy) * 0.85) for px, py in quad]
+    if _pip(cx, cy, paddy_outline) or any(_pip(px, py, paddy_outline) for px, py in sq):
+        return True
+    n = len(paddy_outline)
+    return any(_seg_x(sq[i], sq[(i + 1) % len(sq)], paddy_outline[j], paddy_outline[(j + 1) % n]) is not None for i in range(len(sq)) for j in range(n))
+
+
 def _dug_polyline(
     R: random.Random,
     F: _Frame,

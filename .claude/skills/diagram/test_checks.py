@@ -1178,6 +1178,21 @@ def test_groves_clear_of_paddies_fires_on_a_grove_in_a_field():
     assert "groves_clear_of_paddies" in f(M)
 
 
+def test_dry_plots_clear_of_paddies_fires_on_a_hem_plot_in_the_rice():
+    # a neighboring fan's hem quilt punched into this fan's envelope (the Tango fe2-into-fe1 incident)
+    M = {"fields": [_field("p", 440, 440, 600, 600)], "dry_plots": [{"poly": [[560, 560], [640, 560], [640, 640], [560, 640]], "crop": "millet", "theta": 0.4}]}  # NW corner ~40px deep in the paddy
+    assert "dry_plots_clear_of_paddies" in f(M)
+
+
+def test_dry_plots_clear_of_paddies_passes_when_the_hem_abuts_the_bund():
+    # a hem plot legitimately KISSES the envelope across the berm - only real interpenetration fires
+    M = {
+        "fields": [_field("p", 440, 440, 600, 600)],
+        "dry_plots": [{"poly": [[440, 600], [600, 600], [600, 660], [440, 660]], "crop": "barley", "theta": 0.4}],
+    }  # shares the paddy's south edge exactly
+    assert "dry_plots_clear_of_paddies" not in f(M)
+
+
 def test_groves_clear_of_structures_fires_when_a_grove_covers_another_building():
     M = {"meta": {"scale": "village"}, "houses": [_farmhouse(500, 500)], "buildings": [bldg(460, 470, "shop")], "groves": [_grove(460, 470, 500, 500)]}  # on the shop, not its own house
     assert "groves_clear_of_structures" in f(M)

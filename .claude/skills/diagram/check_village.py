@@ -28,6 +28,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from settlement import WALL_DEFENSE, _assert_not_main_tree
+from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
 
@@ -2974,6 +2975,29 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "no_structure_on_paddy",
             not bad_pd,
             f"{len(bad_pd)} structure(s) stand on a rice paddy - houses, yards, and every other footprint sit on dry ground BESIDE the crop, never in the flooded field",
+        )
+
+        # ... and no DRY plot lies on one either. The hem quilt exists precisely because its ground
+        # sits UPSLOPE of what the canal commands, so dry-crop-on-rice is a contradiction in the
+        # water logic, not a style choice. On a multi-fan map each fan's hem is generated blind to
+        # the other fans - the generators drop any hem plot that hits a previously recorded fan via
+        # the SAME hem_on_paddy predicate this check runs (waterfields.py; the same-source doctrine,
+        # diagram CLAUDE.md), and this gate is what proves the filter worked. First caught: Tango's
+        # fe2 hem punching into fe1's envelope (2026-07-23) - only hand-tuned dry_keepout circles
+        # held fans' hems apart before, and hand tuning missed a spot.
+        dp_on_rice = []
+        _pol_bb = [(ol, (min(p[0] for p in ol), min(p[1] for p in ol), max(p[0] for p in ol), max(p[1] for p in ol))) for ol in paddy_ol_st]
+        for dp in M.get("dry_plots", []):
+            q = dp["poly"]
+            qx0, qy0, qx1, qy1 = min(p[0] for p in q), min(p[1] for p in q), max(p[0] for p in q), max(p[1] for p in q)
+            if any(qx1 >= bx0 and qx0 <= bx1 and qy1 >= by0 and qy0 <= by1 and hem_on_paddy(q, ol) for ol, (bx0, by0, bx1, by1) in _pol_bb):
+                dp_on_rice.append((round((qx0 + qx1) / 2), round((qy0 + qy1) / 2)))
+        check(
+            "dry_plots_clear_of_paddies",
+            not dp_on_rice,
+            f"{len(dp_on_rice)} dry plot(s) overlap a flooded paddy fan (plot centers): {dp_on_rice[:4]} - dry "
+            f"crops grow on the ground the water CANNOT command, so a hem plot never laps onto the rice; on a "
+            f"multi-fan map the hem filter must drop plots that land on a neighboring fan's envelope",
         )
 
     # WATER-WIDTH LADDER - a STROKE CONVENTION, not a size license (GM ruling 2026-07-21). Real
