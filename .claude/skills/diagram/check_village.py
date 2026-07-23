@@ -5744,20 +5744,25 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # WHY the ratios: a dense well-sited basin reads clearly paddy-led (paddy >= 1.2x dry-grain); a thin
         # grazing/relay locale need only keep paddy at least TYING dry-grain (paddy >= dry-grain), so the
         # honest lower-tier answer (a thinner ring where little water reaches) is not forced to dense.
-        # A city with an IN-WALL agricultural district (meta agricultural_district=True, e.g. Tango) grows a
-        # real share of its rice INSIDE the walls - the historically UNUSUAL case that district models - so its
-        # tight extramural glacis need not be paddy-dominant (the intramural paddy carries the burden). Such a
-        # city is exempt from strict extramural dominance; the demoted dry fill still keeps grain off the ring.
-        # Every other city (no in-wall farming) must be extramural-paddy-dominant, moat-fed (Nagahara).
-        nrpd_exempt = scale == "city" and meta.get("agricultural_district")
+        # NOTE: what counts as dry-grain EXCLUDES a paddy comb's own dry hem (below), so a moated city whose
+        # extramural is an open GLACIS - moat-fed paddy + a thin garden fringe, the rest kept clear for defense
+        # (Tango) - passes as long as its paddy out-covers the FREE-STANDING dry grain (of which a glacis has
+        # little). That is the honest read: the immediate glacis is not packed dry farmland.
         NRPD_RATIO = {"dense": 1.2, "medium": 1.1, "thin": 1.0}
         nrpd_ratio = NRPD_RATIO.get(nrd_tier, NRPD_RATIO["dense"])
         nrp_paddy = [f_["outline"] for f_ in M.get("fields", []) if f_.get("kind") == "paddy"]
+        # a paddy comb's own DRY HEM (the barley/soy upslope margin of the flooded field) is part of the
+        # paddy system, not a competing dry-grain crop - exclude any dry plot sitting within a paddy field's
+        # envelope, so only FREE-STANDING dryland grain (the 013 blanket) counts against paddy dominance.
+        nrp_pbbox = [f_["bbox"] for f_ in M.get("fields", []) if f_.get("kind") == "paddy" and f_.get("bbox")]
         nrp_drygrain = []
         for o_ in M.get("dry_plots", []) or []:
             p_ = o_.get("poly") if isinstance(o_, dict) else o_
             if p_ is not None and len(p_) >= 3 and (not isinstance(o_, dict) or o_.get("crop") != "garden"):
-                nrp_drygrain.append(p_)
+                dcx_ = sum(v_[0] for v_ in p_) / len(p_)
+                dcy_ = sum(v_[1] for v_ in p_) / len(p_)
+                if not any(bx0_ <= dcx_ <= bx1_ and by0_ <= dcy_ <= by1_ for bx0_, by0_, bx1_, by1_ in nrp_pbbox):
+                    nrp_drygrain.append(p_)
         nrp_pc = nrp_dc = 0
         gy = EY0 + 12.5
         while gy < EY1:
@@ -5780,7 +5785,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             gy += 25
         check(
             "near_ring_paddy_dominant",
-            nrpd_exempt or nrp_pc >= nrpd_ratio * nrp_dc,
+            nrp_pc >= nrpd_ratio * nrp_dc,
             f"near-ring paddy does not dominate: {nrp_pc} paddy cells vs {nrp_dc} dry-grain cells "
             f"(need paddy >= {nrpd_ratio:g}x dry-grain for near_ring_density='{nrd_tier}') - a wet-rice county seat's "
             "flat near ring is PADDY, not dryland grain: add near-ring paddy where water reaches (s.near_ring_paddy(...), "

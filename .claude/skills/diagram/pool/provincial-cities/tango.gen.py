@@ -1035,9 +1035,9 @@ top_up(
 # every structure + top-up, so it sees them all. Default near_ring_density "dense" (well-sited).
 # WHY: settlements.md "Near-ring farmland density".
 s.near_ring_paddy(
-    (973, 729, 2231, 1927), seed=41, cell_ft=410
+    (973, 729, 2231, 1927), seed=41, cell_ft=180
 )  # feature 014: moat-fed wet-rice paddy basins - the dominant extramural crop (a city moat is a reservoir; city_moat_irrigates_fields expects it)
-s.near_ring_cropland((973, 729, 2231, 1927), seed=55, garden_frac=0.82)  # demoted: gardens by the wall + thin margin grain, filling only what the paddy did not
+s.near_ring_cropland((973, 729, 2231, 1927), density="thin", seed=55, garden_frac=1.0)  # demoted: gardens by the wall + thin margin grain, filling only what the paddy did not
 
 _dw = sum(1 for b in s.M["buildings"] if b["kind"] in DWELL) + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"]))
 if _dw < 562:  # population floor 558 (3000 x 0.93 / 5) + margin

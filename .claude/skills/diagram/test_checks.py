@@ -6510,12 +6510,13 @@ def test_near_ring_paddy_dominant_ignores_gardens_as_dry_grain():
     assert "near_ring_paddy_dominant" not in f(M)
 
 
-def test_near_ring_paddy_dominant_exempts_a_city_with_an_inwall_agricultural_district():
-    # Tango's case: grows rice INSIDE the walls, so its extramural glacis need not be paddy-dominant
+def test_near_ring_paddy_dominant_excludes_a_paddy_combs_own_dry_hem():
+    # a paddy field's dry HEM (a dry plot within the paddy field's envelope) is part of the paddy system,
+    # not competing dry grain: a big paddy field whose only dry plot sits inside it stays paddy-dominant
     M = {
-        "meta": {"scale": "city", "W": 1000, "H": 1000, "agricultural_district": True},
-        "fields": [_paddy_f(0, 0, 80, 80)],
-        "dry_plots": [{"poly": [[0, 300], [1000, 300], [1000, 900], [0, 900]], "crop": "soy", "theta": 0.0}],
+        "meta": {"scale": "town", "W": 1000, "H": 1000},
+        "fields": [{"name": "comb", "kind": "paddy", "outline": [[0, 0], [900, 0], [900, 700], [0, 700]], "bbox": [0, 0, 900, 700]}],
+        "dry_plots": [{"poly": [[100, 100], [800, 100], [800, 300], [100, 300]], "crop": "barley", "theta": 0.0}],  # a hem INSIDE the paddy bbox
     }
     assert "near_ring_paddy_dominant" not in f(M)
 
