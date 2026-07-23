@@ -889,6 +889,20 @@ def test_cemetery_organic_draws_an_irregular_plot():
     assert s.block_polys[-1] == [(242, 257), (358, 257), (358, 343), (242, 343)]  # no-build block unchanged (checks unaffected)
 
 
+def test_cemetery_common_ground_defaults_organic():
+    # organic derives from parish: a non-parish COMMON ground is Japan-style organic unless overridden
+    s = _crop_settlement()
+    s.cemetery(300, 300, 100, 70, parish=False)
+    assert "<path" in s.out[-1] and 'width="100"' not in s.out[-1]
+
+
+def test_cemetery_organic_false_keeps_the_louzeyuan_rectangle():
+    # the deliberate per-city override: a plotted Chinese-style charity ground stays a ruled rectangle
+    s = _crop_settlement()
+    s.cemetery(300, 300, 100, 70, parish=False, organic=False)
+    assert 'width="100"' in s.out[-1] and "<path" not in s.out[-1]
+
+
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
     # the homestead solver rejects a house/yard/garden that lands on a channel/ditch/stream, but NOT the grove
     s = _crop_settlement()

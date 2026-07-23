@@ -4854,18 +4854,26 @@ class Settlement:
         fine - over-clearing by a few px reads the same)."""
         self._clear_ground(x, y, w, h, extra)
 
-    def cemetery(self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool = False) -> None:
+    def cemetery(self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool | None = None) -> None:
         """A BURIAL GROUND - rows of grave markers (sotoba / stone stelae) with a couple of taller
         memorial stupas. Every settlement above a hamlet buries its dead: a Buddhist danka PARISH
         ground sits in a TEMPLE / MONASTERY precinct (death is the Buddhist clergy's business), while
         a Shinto SHRINE keeps death-pollution (kegare) at arm's length - so a graveyard sits well
         clear of any shrine. parish=False marks a NON-parish burial ground (a village-style plot not
         attached to a temple, e.g. one serving an in-wall farm quarter) - exempt from the temple-precinct
-        rule. organic=True draws an IRREGULAR earthen plot (a village burial ground was never surveyed into
-        a ruled rectangle - it grew as an unbounded patch on the waste back-slope); the recorded bbox + the
-        no-build block stay the w x h rectangle, so the placement/clearance checks are unaffected - only the
-        DRAWN ground and the markers within it follow the blob. Records M['cemeteries'] and blocks placement.
+        rule. organic=True draws an IRREGULAR earthen plot; organic=None (the default) DERIVES it from
+        parish: every non-parish COMMON ground is organic, parish precinct plots stay ruled rectangles.
+        Historical grounding (researched 2026-07-23, written up in settlements.md 'shape of the common
+        ground'): Japan's commoner burial grounds - Kyoto's burial fields, village sanmai, Edo's packed
+        temple yards - were unplotted and terrain-following, never surveyed; Song China's state pauper
+        cemeteries (louzeyuan, 1104 on) WERE surveyed walled compounds with numbered rowed plots, so a
+        specific ordered city may pass organic=False to draw that Chinese form deliberately. Rokugan
+        defaults to the Japanese mode (GM decision). The recorded bbox + the no-build block stay the
+        w x h rectangle either way, so the placement/clearance checks are unaffected - only the DRAWN
+        ground and the markers within it follow the blob. Records M['cemeteries'] and blocks placement.
         label_above puts the label over the plot (for a cramped intramural ground whose label would otherwise spill onto its temple)."""
+        if organic is None:
+            organic = not parish
         st = random.getstate()
         random.seed(int(abs(cx) + abs(cy) * 3 + w))
         g = [f'<g transform="translate({cx:.1f},{cy:.1f}) rotate({rot:.1f})">']

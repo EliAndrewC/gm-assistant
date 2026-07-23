@@ -845,7 +845,7 @@ s.ring(('poly', ENV_FNE1), 18, 40, ["plain"])
 # sit >= 20 + 140 = 160px off its centerline (water_setback caps at 140; cremation is exempt at 30).
 # The shrunk view pulled the river's centerline to x~2080-2083 here, so cemetery/ossuary sit at
 # x>=2290 - west corners ~2245, riverward margin ~162px - while their labels still end < x2391 (view edge)
-s.cemetery(2292, 1725, 90, 64, label="common burial ground")
+s.cemetery(2292, 1725, 90, 64, parish=False, label="common burial ground")  # parish=False -> ORGANIC Japan-style plot (settlements.md 'shape of the common ground')
 s.cremation_ground(2296, 1804)
 s.ossuary(2290, 1650)
 
