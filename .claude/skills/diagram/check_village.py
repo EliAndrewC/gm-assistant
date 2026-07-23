@@ -27,7 +27,7 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import WALL_DEFENSE, _assert_not_main_tree
+from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree
 from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
@@ -1975,6 +1975,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     continue  # inside the gate barbican (gate + its guard house + inspection) - a defended complex, not open curtain
                 if any(math.hypot(_px - _wx, _py - _wy) < 45 for _wx, _wy in _wg):
                     continue  # abutting a water gate: a fortified shuimen opening flanked by its own two towers - the placement code (_seat_mural) will not tower this 40px keep-out, so the check must not demand it (check keep-outs mirror placement keep-outs)
+                if any(math.hypot(_px - _kx, _py - _ky) < KIDO_TOWER_KEEPCLEAR for _kx, _ky in M.get("wall_tower_keepclears", [])):
+                    continue  # a ward-fence junction on the rampart (its kido ward-gate is a manned chokepoint): placement keeps towers KIDO_TOWER_KEEPCLEAR clear of it, so demanding 2-coverage here forces a doubled tower just outside the band (the wall_towers_evenly_spaced artifact) - same mirror-the-keep-out doctrine as the water gate above
                 _cnt = sum(1 for _tx, _ty in _tw if math.hypot(_px - _tx, _py - _ty) <= _R)
                 if _cnt < _mincov:
                     _thin.append((round(_px), round(_py), _cnt))
@@ -1983,6 +1985,55 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not _thin,
             f"{len(_thin)} wall point(s) covered by fewer than {_mincov} tower(s) within the {_tier} arrow range ({_rng_ft:.0f} ft): {_thin[:4]} (x, y, towers-in-range) - a {_tier} city's rampart must keep every curtain point under flanking fire from {_mincov} tower(s); tower the wall closer (meta wall_defense sets the spacing; settlements.md 'Historical grounding')",
         )
+
+        # EVEN TOWER RHYTHM (GM 2026-07-23): Tango's east curtain ran ...54, 76, 32, 54... - two mamian
+        # nearly touching in one spot on an otherwise even ring, visually distracting and historically
+        # wrong (mural towers were built at REGULAR flanking intervals - the same doctrine the coverage
+        # rule above encodes - so a doubled tower reads as an error, not a defensive choice). Cause: the
+        # coverage-remediation pass's old 28px min-separation let a hole-filling tower seat right beside
+        # a neighbor instead of at the local span midpoint. Placement now floors mural separation at
+        # 0.75x the tier's spacing cap (strictly tighter than this gate, since the median gap never
+        # exceeds the cap - so placement and check cannot disagree); this gates the RESULT: no
+        # consecutive mural gap along the curtain may fall under 0.7x the map's median gap. Gate and
+        # water-gate flanking towers are exempt (a barbican pair is legitimately tight). Calibration
+        # 2026-07-23: the three defective pairs sat at 0.58-0.60x median; every legitimate gap in the
+        # pool sat at >= 0.87x - 0.7 splits the bands with margin on both sides.
+        _mur_tw = [
+            (t["x"], t["y"])
+            for t in M.get("wall_towers", [])
+            if not any(math.hypot(t["x"] - _gx, t["y"] - _gy) < _gate_skip for _gx, _gy in _gates) and not any(math.hypot(t["x"] - _wx, t["y"] - _wy) < 130 for _wx, _wy in _wg)
+        ]
+        if len(_mur_tw) >= 8:
+            _cum = [0.0]
+            for _i in range(_nw):
+                _a, _b = _wall[_i], _wall[(_i + 1) % _nw]
+                _cum.append(_cum[-1] + math.hypot(_b[0] - _a[0], _b[1] - _a[1]))
+
+            def _arc_of(px: float, py: float) -> float:
+                best_d, best_arc = float("inf"), 0.0
+                for _i in range(_nw):
+                    _a, _b = _wall[_i], _wall[(_i + 1) % _nw]
+                    _dx, _dy = _b[0] - _a[0], _b[1] - _a[1]
+                    _sl = _dx * _dx + _dy * _dy
+                    _t = max(0.0, min(1.0, ((px - _a[0]) * _dx + (py - _a[1]) * _dy) / _sl)) if _sl else 0.0
+                    _dd = math.hypot(px - _a[0] - _t * _dx, py - _a[1] - _t * _dy)
+                    if _dd < best_d:
+                        best_d, best_arc = _dd, _cum[_i] + _t * math.sqrt(_sl)
+                return best_arc
+
+            _tpos = sorted((_arc_of(_tx2, _ty2), _tx2, _ty2) for _tx2, _ty2 in _mur_tw)
+            _tgaps = [(_tpos[_i + 1][0] - _tpos[_i][0], _tpos[_i], _tpos[_i + 1]) for _i in range(len(_tpos) - 1)]
+            _tgaps.append((_cum[-1] - _tpos[-1][0] + _tpos[0][0], _tpos[-1], _tpos[0]))  # the wrap gap
+            _gsort = sorted(_g for _g, _p, _q in _tgaps)
+            _gmed = _gsort[len(_gsort) // 2]
+            _tight = [(round(_g), (round(_p[1]), round(_p[2])), (round(_q[1]), round(_q[2]))) for _g, _p, _q in _tgaps if _g < 0.7 * _gmed]
+            check(
+                "wall_towers_evenly_spaced",
+                not _tight,
+                f"mural tower pair(s) far closer than the wall's rhythm (gap px, tower, tower; median gap {_gmed:.0f}): {_tight[:3]} - "
+                f"mamian stand at regular flanking intervals, so no open-curtain gap may fall under 0.7x the median; a doubled tower "
+                f"is a remediation-seat artifact, not a defensive choice (gate/water-gate flanking pairs are exempt)",
+            )
 
     if scale == "city" and meta.get("walled") and M.get("wall"):
         bud = meta.get("budget")
