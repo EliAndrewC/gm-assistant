@@ -5335,8 +5335,12 @@ class Settlement:
                     continue
                 keep.append((o["x"] - ohw - m, o["y"] - ohh - m, o["x"] + ohw + m, o["y"] + ohh + m))
 
+        wallp = self.M.get("wall")  # a yard near the rampart (a gate-side animal ground) must not speckle the wall or spill outside it
+
         def clear(px: float, py: float, pad: float = 0.0) -> bool:
             if (px - sx) ** 2 + (py - sy) ** 2 > (r - pad) ** 2:
+                return False
+            if wallp and (not point_in_poly(px, py, wallp) or any(seg_dist(px, py, wallp[i], wallp[i + 1]) < 9 for i in range(len(wallp) - 1))):
                 return False
             if any(x0 <= px <= x1 and y0 <= py <= y1 for x0, y0, x1, y1 in keep):
                 return False
@@ -5451,6 +5455,22 @@ class Settlement:
 
         self.M.setdefault("stable_yards", []).append({"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)]})
         random.setstate(st)
+
+    def animal_ground(self, cx: float, cy: float, r: float = 68.0, label: Any = None) -> None:
+        """EXTRA interior ANIMAL / CARAVAN GROUND - a standalone stable-yard scatter (beaten earth,
+        hitching rails with tethered oxen, carts, a trough, dung heaps) that CLAIMS an open pocket as
+        deliberate working ground. This is the standing EASY REMEDY when city_no_large_empty_space
+        flags unclaimed ground (GM 2026-07-23): where the bare pocket sits near a gate or the
+        stables, more tie-up room for wagon-trains is the natural use - first applied to Tango's
+        north gate, whose Phoenix-border traffic wants marshalling space for caravans coming down
+        from (or departing toward) Phoenix lands. Draws the s._stable_yard scatter at (cx, cy) - it
+        auto-avoids roads, streets, fields, water, the rampart, and every drawn footprint, so it
+        fills only the genuinely open ground - and records M['stable_yards'], which the empty-space
+        detector counts as claimed. The label (e.g. "caravan ground") is optional; the rails and
+        tethered animals usually read on their own."""
+        self._stable_yard(cx, cy, 0.0, 0.0, r=r)
+        if label:
+            self.label(cx, cy, label, 11, italic=True, color="#6B5A3C")
 
     # ---- provincial-city features (scale="city")
     def _gapped_ring(self, ring: Any, gates: Any, gap: float = 38, closed: bool = True, water_gates: Any = (), water_gap: float = 24) -> str:

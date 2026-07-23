@@ -917,6 +917,15 @@ def test_cemetery_organic_false_keeps_the_louzeyuan_rectangle():
     assert 'width="100"' in s.out[-1] and "<path" not in s.out[-1]
 
 
+def test_animal_ground_records_a_yard_and_optional_label():
+    # the city_no_large_empty_space remedy: a standalone stable-yard scatter claiming a pocket
+    s = _crop_settlement()
+    s.animal_ground(400, 400, r=60)  # no label - the rails and animals read on their own
+    assert s.M["stable_yards"][-1] == {"x": 400, "y": 400, "r": 60, "of": [400, 400]}
+    s.animal_ground(700, 700, r=52, label="caravan ground")
+    assert s.M["labels"][-1][5] == "caravan ground"  # label boxes are [x0, y0, x1, y1, z, text]
+
+
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
     # the homestead solver rejects a house/yard/garden that lands on a channel/ditch/stream, but NOT the grove
     s = _crop_settlement()

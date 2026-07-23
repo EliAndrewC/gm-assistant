@@ -8436,53 +8436,145 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     if any(seg_dist(t[0], t[1], sp[i], sp[i + 1]) <= st.get("w", 24) / 2 + 12 for i in range(len(sp) - 1)) and t[2] <= st.get("z", 0):
                         to_under.append((t[0], t[1]))
             check("city_torii_over_streets", not to_under, f"torii arch(es) drawn UNDER a street they span (the street must pass beneath the arch): {to_under}")
-            # no LARGE empty swath inside the walls (ported from wall_hugs_the_town). A city keeps
-            # SOME open ground (drill / refuge / the road's right-of-way), so this is generous,
-            # but a big contiguous region with no buildings, civic structures, fields, or pond
-            # would not have been walled in.
-            occ = [(b["x"], b["y"]) for b in M.get("buildings", []) + houses]
-            for gkey in ("manors", "ministries", "religious", "inspection_stations"):
-                occ += [(o["x"], o["y"]) for o in M.get(gkey, [])]
-            occ += [(o["x"], o["y"]) for o in M.get("flophouses", []) + M.get("storehouses", [])]
-            for one in (M.get("governor_mansion"), M.get("theater_stage")):
-                if one:
-                    occ.append((one["x"], one["y"]))
-            field_polys = [f["outline"] for f in fields]
-            pondE = M.get("pond")
+            # no LARGE empty swath inside the walls (ported from wall_hugs_the_town; REBUILT
+            # footprint-aware, GM 2026-07-23, after Tango shipped a ~230x95px bare pocket just
+            # inside its north gate that read fully green). The old detector sampled an 80px grid
+            # and called a cell "used" within 120px of any building CENTER - a single house
+            # sanitized a 240px-wide disc, so only vast voids could ever fire. Now every claiming
+            # feature counts with its real FOOTPRINT: building/compound/grove rects, field and
+            # ground polys, well / stable-yard / torii discs, the road / street / alley / ring-road
+            # / water rights-of-way, ward fences, the rampart + its patrol strip, and the pond. A
+            # 32px grid marks cells >= 20px clear of ALL of them as dead ground; any contiguous
+            # dead cluster >= 4,000 px2 of core fails. Calibration (2026-07-23, pool-wide dry-run,
+            # settlements.md): Tango's north-gate pocket measures 6,144 px2 of core; the largest
+            # LEGITIMATE opens anywhere else measure 2,048 (Tango) / 1,024 (Nagahara), so the
+            # threshold sits between with ~2x headroom both ways. A city keeps SOME open ground,
+            # but every deliberate open is CLAIMED by a feature record (a working stable yard /
+            # animal ground, a right-of-way, a field); ground claimed by nothing, at
+            # wall-protected premium, would not have been left bare.
+            ES_STEP, ES_MARGIN, ES_MIN = 32, 20.0, 4000
+            es_rects: list[tuple[float, float, float, float]] = []
+            es_singles = [es_s for es_s in (M.get("governor_mansion"), M.get("theater_stage")) if es_s]
+            for es_grp in [
+                M.get(es_k, []) or []
+                for es_k in (
+                    "buildings",
+                    "flophouses",
+                    "storehouses",
+                    "manors",
+                    "ministries",
+                    "religious",
+                    "inspection_stations",
+                    "byres",
+                    "cemeteries",
+                    "mausoleums",
+                    "merchant_estates",
+                    "farm_sheds",
+                    "gardens",
+                    "threshing_yards",
+                    "fire_towers",
+                    "gate_structs",
+                    "groves",
+                )
+            ] + [houses, es_singles]:
+                for es_o in es_grp:
+                    es_hw, es_hh = es_o["w"] / 2, es_o["h"] / 2
+                    if es_o.get("rot"):
+                        es_hw = es_hh = math.hypot(es_hw, es_hh)
+                    es_rects.append((es_o["x"], es_o["y"], es_hw, es_hh))
+            es_discs = [(es_o["x"], es_o["y"], es_o.get("r", 8.0)) for es_o in M.get("wells", []) + M.get("stable_yards", [])]
+            es_discs += [(es_t[0], es_t[1], 14.0) for es_t in M.get("torii", [])]
+            es_polys = [f["outline"] for f in fields] + list((M.get("comb_floors") or {}).values())
+            for es_k in ("dry_plots", "pastures", "commons", "marshes", "forest_patches", "village_groves", "clearings"):
+                es_polys += [es_o["poly"] for es_o in M.get(es_k, []) or []]
+            es_lines: list[tuple[list[Any], float]] = [(w, 20.0)]  # the rampart + its patrol strip is claimed ground
+            if M.get("road"):
+                es_lines.append((M["road"], M.get("road_width", 30) / 2))
+            if M.get("ring_road"):
+                es_lines.append((M["ring_road"], M.get("ring_road_width", 24) / 2))
+            for es_grp2, es_pk, es_dw in (
+                (M.get("roads", []), "pts", 24),
+                (M.get("town_streets", []), "pts", 24),
+                (M.get("alleys", []), "pts", 12),
+                (M.get("streams", []), "poly", 12),
+                (M.get("channels", []), "poly", 8),
+            ):
+                es_lines += [(es_o[es_pk], es_o.get("w", es_dw) / 2) for es_o in es_grp2 or []]
+            es_lines += [(es_o["boundary"], 8.0) for es_o in M.get("wards", [])]
+            es_pond = M.get("pond")
+            es_wx0, es_wy0 = min(p[0] for p in w), min(p[1] for p in w)
+            es_wx1, es_wy1 = max(p[0] for p in w), max(p[1] for p in w)
+            es_ci0, es_cj0 = int(es_wx0 // ES_STEP), int(es_wy0 // ES_STEP)
+            es_ci1, es_cj1 = int(es_wx1 // ES_STEP) + 1, int(es_wy1 // ES_STEP) + 1
 
-            def used(x: float, y: float) -> bool:
-                if any((x - ox) ** 2 + (y - oy) ** 2 < 120 * 120 for ox, oy in occ):
-                    return True
-                if pondE and in_ellipse(x, y, pondE, 1.1):
-                    return True
-                return any(point_in_poly(x, y, fp) for fp in field_polys)
+            def es_cells(bx0: float, by0: float, bx1: float, by1: float) -> list[tuple[int, int]]:
+                """Grid cells whose sample point falls inside the bbox (clamped to the wall window)."""
+                return [
+                    (eci, ecj)
+                    for eci in range(max(es_ci0, math.ceil(bx0 / ES_STEP)), min(es_ci1, math.floor(bx1 / ES_STEP)) + 1)
+                    for ecj in range(max(es_cj0, math.ceil(by0 / ES_STEP)), min(es_cj1, math.floor(by1 / ES_STEP)) + 1)
+                ]
 
-            STEP = 80
-            empty_cells = set()
-            for ci in range(int(Wd // STEP) + 1):
-                for cj in range(int(Hd // STEP) + 1):
-                    x, y = ci * STEP, cj * STEP
-                    if point_in_poly(x, y, w) and not used(x, y):
-                        empty_cells.add((ci, cj))
-            seen_cells, largest = set(), 0
-            for cell in empty_cells:
-                if cell in seen_cells:
+            es_covered: set[tuple[int, int]] = set()
+            for es_rx, es_ry, es_rhw, es_rhh in es_rects:
+                es_covered.update(es_cells(es_rx - es_rhw - ES_MARGIN, es_ry - es_rhh - ES_MARGIN, es_rx + es_rhw + ES_MARGIN, es_ry + es_rhh + ES_MARGIN))
+            for es_dx, es_dy, es_dr in es_discs:
+                es_rr = es_dr + ES_MARGIN
+                es_covered.update([c for c in es_cells(es_dx - es_rr, es_dy - es_rr, es_dx + es_rr, es_dy + es_rr) if (c[0] * ES_STEP - es_dx) ** 2 + (c[1] * ES_STEP - es_dy) ** 2 <= es_rr * es_rr])
+            for es_pts, es_hwid in es_lines:
+                es_rr = es_hwid + ES_MARGIN
+                for es_i in range(len(es_pts) - 1):
+                    es_a, es_b = es_pts[es_i], es_pts[es_i + 1]
+                    es_covered.update(
+                        [
+                            c
+                            for c in es_cells(min(es_a[0], es_b[0]) - es_rr, min(es_a[1], es_b[1]) - es_rr, max(es_a[0], es_b[0]) + es_rr, max(es_a[1], es_b[1]) + es_rr)
+                            if c not in es_covered and seg_dist(c[0] * ES_STEP, c[1] * ES_STEP, es_a, es_b) <= es_rr
+                        ]
+                    )
+            for es_p in es_polys:
+                es_covered.update(
+                    [
+                        c
+                        for c in es_cells(min(q[0] for q in es_p), min(q[1] for q in es_p), max(q[0] for q in es_p), max(q[1] for q in es_p))
+                        if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, es_p)
+                    ]
+                )
+            if es_pond:
+                es_covered.update(
+                    [
+                        c
+                        for c in es_cells(es_pond[0] - es_pond[2] * 1.2, es_pond[1] - es_pond[3] * 1.2, es_pond[0] + es_pond[2] * 1.2, es_pond[1] + es_pond[3] * 1.2)
+                        if c not in es_covered and in_ellipse(c[0] * ES_STEP, c[1] * ES_STEP, es_pond, 1.15)
+                    ]
+                )
+            es_empty = {c for c in es_cells(es_wx0, es_wy0, es_wx1, es_wy1) if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, w)}
+            es_seen: set[tuple[int, int]] = set()
+            es_flagged: list[tuple[int, tuple[int, int]]] = []
+            for es_cell in es_empty:
+                if es_cell in es_seen:
                     continue
-                cell_stack, size = [cell], 0
-                seen_cells.add(cell)
-                while cell_stack:
-                    pi, pj = cell_stack.pop()
-                    size += 1
-                    for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                        nb = (pi + di, pj + dj)
-                        if nb in empty_cells and nb not in seen_cells:
-                            seen_cells.add(nb)
-                            cell_stack.append(nb)
-                largest = max(largest, size)
+                es_stack, es_comp = [es_cell], []
+                es_seen.add(es_cell)
+                while es_stack:
+                    es_c = es_stack.pop()
+                    es_comp.append(es_c)
+                    for es_di, es_dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        es_nb = (es_c[0] + es_di, es_c[1] + es_dj)
+                        if es_nb in es_empty and es_nb not in es_seen:
+                            es_seen.add(es_nb)
+                            es_stack.append(es_nb)
+                es_area = len(es_comp) * ES_STEP * ES_STEP
+                if es_area >= ES_MIN:
+                    es_flagged.append((es_area, (sum(c[0] for c in es_comp) * ES_STEP // len(es_comp), sum(c[1] for c in es_comp) * ES_STEP // len(es_comp))))
+            es_flagged.sort(reverse=True)
+            es_ftpx = meta.get("ftpx", 3)
             check(
                 "city_no_large_empty_space",
-                largest <= 12,
-                f"a contiguous empty region of ~{largest} grid cells (~{largest * STEP * STEP // 1000}k px2) inside the walls - a city does not wall in large unused ground",
+                not es_flagged,
+                "contiguous UNCLAIMED open ground inside the walls: "
+                + "; ".join(f"~{ea} px2 of dead core (~{ea * es_ftpx * es_ftpx / 43560:.1f} ac) centered {ec}" for ea, ec in es_flagged[:3])
+                + " - land inside a wall is at a premium; fill it (extend a quarter / drop in a neighborhood) or claim it as deliberate working ground, e.g. s.animal_ground(...) for extra caravan hitching space near a gate (settlements.md)",
             )
 
     # Tax-free (temple/monk glebe) plots are OPTIONAL - marking them on the map is a choice, not a
