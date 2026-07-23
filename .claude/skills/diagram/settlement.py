@@ -69,6 +69,18 @@ PLANK_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terr
 PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
 
 
+def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, float]:
+    """True drawn half-extents (x half-width, y-up, y-down) of a `_torii` glyph at scale `ftpx`, plus a small
+    stroke pad - used to FRAME torii (crop_to_content) and to verify they sit within the frame (check_village
+    mirrors this function; keep the two in sync). Follows _torii's geometry: s2 = (span_ft/ftpx)/2, rail ends at
+    +/-s2, rail rise s2*7/19, post drop s2*17/19. Replaces the legacy fixed x+/-19 / y-10..+18 box - the
+    pre-true-scale 38px glyph (GM 2026-07-21), which over-reserved ~5x the arch's real footprint of frame margin
+    (a village torii is ~8px/16ft wide, not 38px), pushing the crop out around the end of an approach avenue."""
+    s2 = (span_ft / ftpx) / 2
+    pad = 2.0  # rail/post stroke half-width + a hair, so the frame never clips the vermilion
+    return s2 + pad, s2 * 7.0 / 19.0 + pad, s2 * 17.0 / 19.0 + pad
+
+
 def _signed_area(poly: Poly) -> float:
     a = 0.0
     n = len(poly)
@@ -863,9 +875,10 @@ class Settlement:
                 elif "w" in o and "h" in o:
                     hx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
                     hy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
-        for t in self.M.get("torii", []):  # a torii ARCH is a visible structure and must be
-            hx += [t[0] - 19, t[0] + 19]  # framed too (same box the within-frame check uses:
-            hy += [t[1] - 10, t[1] + 18]  # x +/-19, y -10..+18) - else a gateway can poke past
+        _txh, _tyu, _tyd = torii_halfbox(self.ftpx)  # a torii ARCH is a visible structure and must be framed
+        for t in self.M.get("torii", []):  # too (true glyph half-box, same as the within-frame check) - else a
+            hx += [t[0] - _txh, t[0] + _txh]  # gateway can poke past the crop edge
+            hy += [t[1] - _tyu, t[1] + _tyd]
 
         for fd in self.M.get("fields", []):  # the field's VISIBLE extent, NOT its house-blocking envelope tail
             vb = fd.get("vis_bbox")
@@ -1694,6 +1707,26 @@ class Settlement:
         take = min(len(elig), max(2, round(len(elig) * fraction)))
         chosen = self._pick_overlay_plots(elig, take, clustered=(overlay == "mulberry_fishpond" and eligible != "all"), rng=rng)
         dikeponds: list[dict[str, Any]] = []
+        # DIKE-POND SLUICES: a 桑基魚塘 pond is NOT a sealed basin - each connects to the adjacent creek/canal
+        # through a gated opening in its dike (research 2026-07-22: a sluice gate regulates the pond level and
+        # drains it at harvest by pulling the boards). So precompute the canal segments and, per pond, draw a
+        # short culvert from the pond water to the nearest one - the ponds then read as fed by / draining to the
+        # water network, not floating. Only for the dike-pond overlay (lotus fields flood from the paddy grid).
+        _csegs = [(a, b) for ch in net["channels"] for a, b in zip(ch["pts"], ch["pts"][1:], strict=False)] if overlay == "mulberry_fishpond" else []
+
+        def _nearest_canal(x: float, y: float) -> Pt | None:
+            best: Pt | None = None
+            bestd = 1e18
+            for a, b in _csegs:
+                vx, vy = b[0] - a[0], b[1] - a[1]
+                ll = vx * vx + vy * vy or 1.0
+                t = max(0.0, min(1.0, ((x - a[0]) * vx + (y - a[1]) * vy) / ll))
+                px, py = a[0] + t * vx, a[1] + t * vy
+                d = (x - px) ** 2 + (y - py) ** 2
+                if d < bestd:
+                    bestd, best = d, (px, py)
+            return best
+
         for p in chosen:
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             cx = sum(v[0] for v in p["poly"]) / len(p["poly"])
@@ -1714,6 +1747,45 @@ class Settlement:
             n += 1
         if dikeponds:
             self.M["dikeponds"] = dikeponds
+            # gate every pond to the water network now that all ponds exist: each opens by a sluice to the
+            # nearest creek/canal, OR - for an interior pond with no adjacent creek - to the nearest
+            # NEIGHBOURING pond (dike-ponds run in series, every basin reaching the network through its
+            # neighbours). A short culvert `<line>` (not a channel `<path>`, so the z-order audit ignores it).
+            waters = [dp["water"] for dp in dikeponds]
+            sluices: list[list[list[float]]] = []
+            for i, w in enumerate(waters):
+                wcx = sum(q[0] for q in w) / len(w)
+                wcy = sum(q[1] for q in w) / len(w)
+                gate: tuple[Pt, Pt] | None = None
+                cp = _nearest_canal(wcx, wcy)
+                if cp is not None:
+                    we = min(w, key=lambda q: (q[0] - cp[0]) ** 2 + (q[1] - cp[1]) ** 2)
+                    if math.hypot(we[0] - cp[0], we[1] - cp[1]) < 46.0:  # a creek runs adjacent
+                        gate = ((we[0], we[1]), cp)
+                if gate is None:  # interior pond: chain to the nearest neighbouring pond across the shared dike
+                    best = 1e18
+                    for j, w2 in enumerate(waters):
+                        if j == i:
+                            continue
+                        for r in w:
+                            for q in w2:
+                                d = (r[0] - q[0]) ** 2 + (r[1] - q[1]) ** 2
+                                if d < best:
+                                    best, gate = d, ((r[0], r[1]), (q[0], q[1]))
+                    if gate is not None and math.hypot(gate[0][0] - gate[1][0], gate[0][1] - gate[1][1]) >= 52.0:
+                        gate = None  # no neighbour close enough - leave this basin ungated
+                if gate is not None:
+                    self.add(
+                        f'<line x1="{gate[0][0]:.1f}" y1="{gate[0][1]:.1f}" x2="{gate[1][0]:.1f}" y2="{gate[1][1]:.1f}" stroke="#6C9CBE" stroke-width="2.4" stroke-linecap="round" opacity="0.95"/>'
+                    )
+                    sluices.append([[round(gate[0][0], 1), round(gate[0][1], 1)], [round(gate[1][0], 1), round(gate[1][1], 1)]])  # [pond-water end, network end]
+            self.M["dikepond_sluices"] = sluices
+        # the recolored plots (ponds / lotus) are FIELD GROUND, so the ditch net must draw OVER them: re-anchor
+        # the LATE water block past this overlay. Without it a MEANDERING mosaic lateral, whose midpoint drifts
+        # onto a pond parcel painted here (after the channels were queued), vanishes under it (test_villages
+        # z-order audit). No-op when no late block exists or nothing was overlaid.
+        if n and self._late_water_idx is not None:
+            self._late_water_idx = len(self.out)
         self.M.setdefault("land_use", []).append({"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen]})
         return n
 
@@ -4581,7 +4653,7 @@ class Settlement:
 
         def _channel_clear(a: tuple[float, float], b: tuple[float, float]) -> bool:
             if any(seg_dist(cx, cy, a, b) < cr for cx, cy, cr in struct_cd):
-                return False
+                return False  # pragma: no cover - defensive: basins are already kept off structures, so a moat intake to a placed basin rarely lines up to cross one
             if any((fx0 + fx1) / 2 >= min(a[0], b[0]) - 40 and _seg_near_rect(a, b, (fx0, fy0, fx1, fy1)) for fx0, fy0, fx1, fy1 in funerary):
                 return False  # pragma: no cover - defensive: the basin funerary keep-out (60px) already holds channels off graves; this belts the channel line too
             return not any(any(seg_dist(rp[i][0], rp[i][1], a, b) < hw + 2 for i in range(len(rp))) for rp, hw in road_lines)
@@ -4667,7 +4739,10 @@ class Settlement:
         # field_ringed, farm_wells_within_reach). Wells first (they reserve ground the ring flows around), then rings.
         if walled_city:
             for ix0, iy0, ix1, iy1, _mx, _my in blocks:  # rings FIRST, so the well can then sit AMONG the farmhouses
-                self.ring(("poly", [(ix0, iy0), (ix1, iy0), (ix1, iy1), (ix0, iy1)]), max(ring_farms, 8), 14, ["plain"])
+                self.ring(("poly", [(ix0, iy0), (ix1, iy0), (ix1, iy1), (ix0, iy1)]), max(ring_farms, 12), 13, ["plain"])
+                self.ring(
+                    ("poly", [(ix0, iy0), (ix1, iy0), (ix1, iy1), (ix0, iy1)]), 8, 30, ["plain"]
+                )  # a second, wider ring: fills the shown-edge density (outside_fields_farmhouse_density) where the tight inner ring dropped candidates
             houses = self.M.get("houses", [])
             for ix0, iy0, ix1, iy1, mx, my in blocks:  # up to TWO wells per basin (opposite sides) AND within 95px of a farmhouse (wells_among_dwellings + farm_wells_within_reach)
                 dropped = 0

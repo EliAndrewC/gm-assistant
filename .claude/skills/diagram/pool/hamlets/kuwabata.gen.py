@@ -24,13 +24,25 @@ SEED = 21
 ORIGIN = (360, 320)  # the high (NW) corner; the grid runs S (down) and E (across)
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Kuwabata", scale="hamlet", ftpx=1, toscale=True, households=16, down_deg=90, terrain="low", field_archetype="mulberry_dike_fishpond", nucleated=True, field_footbridges=True)
+s.meta(
+    name="Kuwabata",
+    scale="hamlet",
+    ftpx=1,
+    toscale=True,
+    households=16,
+    down_deg=90,
+    terrain="low",
+    field_archetype="mulberry_dike_fishpond",
+    nucleated=True,
+    field_footbridges=True,
+    pond_layout="mosaic",
+)
 s._nucleated = True
 
 # TRUE SCALE (1 px = 1 ft): traditional dike-ponds were 0.4-0.6 ha oblongs with 6-10 m mulberry dikes
 # (build_polder docstring, TRUE-SCALE SIZING) - so a 160 ft module, merge-heavy mix (most ponds 160x320
 # ~0.48 ha, square ~2.4-mu minority), and 22 ft dike gaps.
-net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0), edge_wander=0.4)
+net = build_polder(W, H, ORIGIN, SEED, down_deg=90, rows=10, cols=6, cell=160, parcel_mix=(0.10, 0.0, 0.60), gap=(11.0, 11.0), edge_wander=0.4, mosaic=0.5)
 s.field_polys.append([(round(x, 1), round(y, 1)) for x, y in net["envelope"]])
 s.meta(dry_furrows_vary=False)
 

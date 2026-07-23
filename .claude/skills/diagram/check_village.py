@@ -320,6 +320,15 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
 
+def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, float]:
+    """Mirror of settlement.torii_halfbox (keep in sync): the true drawn half-extents (x half-width, y-up,
+    y-down) of a torii glyph at scale `ftpx`, plus a small stroke pad. Replaces the legacy fixed x+/-19 /
+    y-10..+18 box (the pre-true-scale 38px glyph, ~5x oversized), used to check torii sit within the frame."""
+    s2 = (span_ft / ftpx) / 2
+    pad = 2.0
+    return s2 + pad, s2 * 7.0 / 19.0 + pad, s2 * 17.0 / 19.0 + pad
+
+
 # STANDALONE plank-footbridge usefulness (mirrors settlement.PLANK_BANK_REACH / PLANK_VILLAGE_REACH /
 # PLANK_ABUTMENT - keep in sync). A footplank is worth building only if BOTH banks reach ground someone
 # walks to; the placement engine (channel_footbridges) enforces it, these checks re-verify from the manifest.
@@ -1577,8 +1586,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         clipped = []
         for k in _HARD_IN_FRAME:
             for o in M.get(k, []):
-                if k == "torii":  # recorded [x, y, z]; arch spans x +/-19, y -10..+18
-                    fx0, fy0, fx1, fy1 = o[0] - 19, o[1] - 10, o[0] + 19, o[1] + 18
+                if k == "torii":  # recorded [x, y, z]; framed at the true glyph half-box (see torii_halfbox)
+                    _txh, _tyu, _tyd = torii_halfbox(meta.get("ftpx", 1))
+                    fx0, fy0, fx1, fy1 = o[0] - _txh, o[1] - _tyu, o[0] + _txh, o[1] + _tyd
                 elif o.get("poly"):
                     xs = [p[0] for p in o["poly"]]
                     ys = [p[1] for p in o["poly"]]
@@ -1649,9 +1659,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 elif "w" in o and "h" in o:
                     fsx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
                     fsy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
+        _txh, _tyu, _tyd = torii_halfbox(meta.get("ftpx", 1))
         for t in M.get("torii", []):
-            fsx += [t[0] - 19, t[0] + 19]
-            fsy += [t[1] - 10, t[1] + 18]
+            fsx += [t[0] - _txh, t[0] + _txh]
+            fsy += [t[1] - _tyu, t[1] + _tyd]
         for fd in fields:
             vb = fd.get("vis_bbox")
             if vb:
@@ -5180,6 +5191,34 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"delivery ditch(es) stop at nearly full width {blunt[:3]} - a ditch feeding paddies sheds its water along the way, so it must TAPER to a thread at its stopping point (w_tail < ~0.85*w)",
         )
 
+        # a DELIVERY ditch takes off WELL DOWNSTREAM of the head fork (the bunsuiguchi division where the
+        # head-race splits into the two supply canals) - a delivery sprouting AT the fork turns the clean
+        # 3-way division into a 4-way STAR that reads as a crossroads, not water feeding the next channel
+        # (GM 2026-07-22: Tango's nw1 / Hoshizora's west field - a short canal B whose offtake landed ~0px
+        # from the fork). A fork is a node where >= 3 SUPPLY (main) ditch ends meet; the two offenders sat
+        # 0-1px out while every legitimate delivery took off >= 76px downstream, so 40px is a clean cut.
+        _by_field: dict[Any, list[Any]] = {}
+        for d in ditches:
+            _by_field.setdefault(d.get("field"), []).append(d)
+        fork_deliveries = []
+        for _ds in _by_field.values():
+            _deg: dict[tuple[int, int], int] = {}
+            for d in _ds:
+                if d.get("role") == "main":
+                    for e in (d["poly"][0], d["poly"][-1]):
+                        _deg[(round(e[0]), round(e[1]))] = _deg.get((round(e[0]), round(e[1])), 0) + 1
+            _forks = [n for n, c in _deg.items() if c >= 3]
+            if not _forks:
+                continue
+            for d in _ds:
+                if d.get("role") == "branch" and min(min(math.hypot(e[0] - fx, e[1] - fy) for fx, fy in _forks) for e in (d["poly"][0], d["poly"][-1])) < 40:
+                    fork_deliveries.append((round(d["poly"][0][0]), round(d["poly"][0][1])))
+        check(
+            "channels_join_not_cross_at_fork",
+            not fork_deliveries,
+            f"delivery ditch(es) taking off AT the head fork {fork_deliveries[:4]} - a delivery must branch off a supply canal well DOWNSTREAM of the bunsuiguchi division (>= 40px), else the fork reads as a 4-way crossroads instead of the head-race feeding two canals",
+        )
+
         # CONNECTIVITY: every in-field ditch must trace to BOTH an external SOURCE (a pond feed) and a runoff
         # SINK (an off-map drain or a stream). Build the watercourse graph - channels + streams + field ditches,
         # joined where their polylines come within tol (crossing-aware) - and require each ditch's component to
@@ -6186,8 +6225,44 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             sx, sy, sw, sh = shrine
             under = [t for t in torii if sx - 6 <= t[0] <= sx + sw + 6 and sy - 6 <= t[1] <= sy + sh + 6]
             check("torii_clear_of_shrine", not under, f"{len(under)} torii under the shrine")
-        spread = all(math.hypot(torii[i][0] - torii[j][0], torii[i][1] - torii[j][1]) > 25 for i in range(len(torii)) for j in range(i + 1, len(torii)))
-        check("torii_spread_out", spread, "torii too close together")
+        # No two arches closer than one rail-span (16 ft): a dense senbon-style AVENUE may pack the arches
+        # close, but they must not overlap into a vermilion blob. Scale-aware (was a fixed 25px, tuned to the
+        # pre-true-scale 38px glyph - too coarse now the arch is ~8px/16ft at village scale; GM 2026-07-22).
+        _tfloor = 16.0 / meta.get("ftpx", 1)
+        spread = all(math.hypot(torii[i][0] - torii[j][0], torii[i][1] - torii[j][1]) > _tfloor for i in range(len(torii)) for j in range(i + 1, len(torii)))
+        check("torii_spread_out", spread, f"torii closer than one arch-span (~{_tfloor:.0f}px) apart - they overlap into a blob rather than reading as distinct gateways")
+
+        # A village-shrine SANDO (>= 3 arches marching to the hall) puts its INNERMOST arch at the hall's
+        # THRESHOLD, directly in front, not set out with a gap (GM 2026-07-22, "village shrines only"). Exempt the
+        # modest 1-2 arch entrance (not a processional avenue) and the gateway-BESIDE-the-hall pattern (Hikari:
+        # the hall stands aside the entrance track while the arches straddle the track, so it sits well OFF the
+        # avenue axis). Village-scoped by kind=='shrine' (towns get monasteries, cities temples - a large-temple
+        # sando with a courtyard between the outer arch and the main hall stays legitimate).
+        _ftpx = meta.get("ftpx", 1)
+        _gap_max = 36.0 / _ftpx  # innermost arch within ~36 ft of the hall front
+        _axis_off = 50.0 / _ftpx  # hall >~50 ft off the avenue axis = a gateway beside it, not a sando to it
+        _set_out = []
+        for r in M.get("religious", []):
+            if r.get("kind") != "shrine":
+                continue
+            mine = [t for t in torii if min(M["religious"], key=lambda rr: math.hypot(rr["x"] - t[0], rr["y"] - t[1])) is r]
+            if len(mine) < 3:
+                continue  # a 1-2 arch entrance is not a processional sando
+            near = min(mine, key=lambda t: pt_to_rect(t[0], t[1], r))
+            far = max(mine, key=lambda t: math.hypot(t[0] - r["x"], t[1] - r["y"]))
+            _ax, _ay = near[0] - far[0], near[1] - far[1]
+            _al = math.hypot(_ax, _ay) or 1.0
+            _ax, _ay = _ax / _al, _ay / _al
+            off = abs((r["x"] - near[0]) * (-_ay) + (r["y"] - near[1]) * _ax)  # hall's perpendicular offset from the axis
+            if off > _axis_off:
+                continue  # gateway beside the hall (Hikari), arches lining the track - not a sando to the hall
+            if pt_to_rect(near[0], near[1], r) > _gap_max:
+                _set_out.append((round(r["x"]), round(r["y"])))
+        check(
+            "shrine_avenue_fronts_the_hall",
+            not _set_out,
+            f"{len(_set_out)} village shrine(s) whose torii avenue stands off from the hall at {_set_out[:4]} - the innermost arch of a sando sits at the hall's threshold, directly in front, not set out with a gap",
+        )
 
     # ---- village-specific expectations (from meta) ---------------------------
     abandoned = sum(1 for h in houses if h["kind"] == "abandoned")
@@ -7351,8 +7426,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
             check(
                 "city_samurai_estates_outside",
-                5 <= len(est_out) <= 15,
-                f"{len(est_out)} walled samurai estates outside the walls, expected 5-15 - a walled city's cramped interior pushes wealthy samurai to extramural estates they commute in from",
+                1 <= len(est_out) <= 3,
+                f"{len(est_out)} walled samurai estates shown outside the walls, expected 1-3 - a provincial city's country estates are DISPERSED across the rural district (each an isolated fortified compound by its own land, miles out); a city map shows only the nearest 1-3 at the frame edge, the rest off-map (NOT a cluster of 5+ ringing the moat)",
+            )
+            # ... and the shown estates are DISPERSED, not a tight cluster: each is its own walled compound
+            # on its own landholding with fields between, so no two sit adjacent. A packed clump at one
+            # stretch of wall is the COMMERCIAL SUBURB's density, not the genteel country-estate pattern -
+            # gentry estates scatter by land/scenery, they do not ring the moat (GM 2026-07-22, researched:
+            # China-first absentee-landlord + dispersed-fortified-manor pattern, Japan agreeing). See settlements.md.
+            est_pts = [(mn["x"], mn["y"]) for mn in est_out]
+            EST_MIN_SEP = 200
+            est_too_close = [
+                (round(est_pts[i][0]), round(est_pts[i][1]))
+                for i in range(len(est_pts))
+                for j in range(i + 1, len(est_pts))
+                if math.hypot(est_pts[i][0] - est_pts[j][0], est_pts[i][1] - est_pts[j][1]) < EST_MIN_SEP
+            ]
+            check(
+                "city_samurai_estates_dispersed",
+                not est_too_close,
+                f"samurai estate(s) packed too close together {sorted(set(est_too_close))} - the country estates are separate compounds each on its own land, spread >= {EST_MIN_SEP}px apart, not a cluster ringing the moat (the dense belt hugging the wall is the commercial suburb, not estates)",
             )
             # WHY (the extramural samurai residence is the walled, defensible country ESTATE; a lone
             # UNWALLED samurai house beyond the rampart is defenseless and belongs in the sealed ward
@@ -8461,6 +8554,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"a dug fish pond erodes to ROUNDED corners, not sharp right angles - the recorded pond water polygons must carry the rounding (min sampled vertices {_min_wv}, want >=10 across {_n_dp} ponds); a 4-vertex quad is the pre-fix sharp-cornered parcel",
         )
 
+        # EVERY DIKE-POND GATES TO THE WATER NETWORK (GM 2026-07-22): a 桑基魚塘 pond is not a sealed basin -
+        # each opens by a SLUICE to the adjacent creek/canal (or, for an interior pond, to a neighbour pond that
+        # reaches the network), so it can be filled, flushed and drained (research: the sluice-gate regulates
+        # level and drains the pond at harvest). Teeth: most ponds must carry a recorded sluice, and every
+        # sluice's FAR end must land ON a channel OR another pond's water - a real connection, not a stub to
+        # nowhere. The pre-fix sealed ponds recorded no sluices and fire. Grounding: settlements.md 'Dike-pond sluices'.
+        _sl = M.get("dikepond_sluices", [])
+        _dpw = [d["water"] for d in (_dponds or [])]
+        _chs = [c["poly"] for c in M.get("field_ditches", [])]
+        _bad_far = 0
+        for _s in _sl:
+            _far = _s[1]
+            _on_ch = any(seg_dist(_far[0], _far[1], cp[k], cp[k + 1]) < 6 for cp in _chs for k in range(len(cp) - 1))
+            _in_pd = any(point_in_poly(_far[0], _far[1], w) or min(seg_dist(_far[0], _far[1], w[k], w[(k + 1) % len(w)]) for k in range(len(w))) < 6 for w in _dpw)
+            if not (_on_ch or _in_pd):
+                _bad_far += 1
+        check(
+            "dikeponds_gated_to_water",
+            _n_dp >= 12 and len(_sl) >= 0.85 * _n_dp and _bad_far == 0,
+            f"a mulberry-dike fish pond must GATE to the water network by a sluice (to a creek/canal or a neighbour pond), but {len(_sl)}/{_n_dp} ponds are gated and {_bad_far} sluice(s) reach nothing - a sealed basin cannot be filled, flushed or drained",
+        )
+
     # A polder's PERIMETER DIKE is an irregular hand-piled EARTHWORK, not a ruled line (GM 2026-07-22,
     # researched: the wei-tian / dike-pond dike was dredged pond-mud heaped and packed, planted and
     # breach-repaired, and the OUTER dike followed the natural water edge - the 'fish-scale polder' 鱼鳞圩
@@ -8683,7 +8798,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 #   - COARSE buckets (which side / which type / which octant), never pixel positions, so genuine near-
 #     variants are not falsely flagged as twins - the axes answer "different KIND of place?", not "moved a
 #     few px?". The 4-of-7 threshold is the tuning target; recorded with its reasoning in settlements.md.
-TWIN_AXES = ("cluster_region", "cluster_shape", "headman_side", "lane_skeleton", "water_source", "focal_set", "grain_orient", "settlement_form")
+TWIN_AXES = ("cluster_region", "cluster_shape", "headman_side", "lane_skeleton", "water_source", "focal_set", "grain_orient", "settlement_form", "pond_layout")
 TWIN_MIN_DIFF = 4  # a same-down_deg pair must differ on >= this many of the 8 axes to read as distinct
 
 
@@ -8770,6 +8885,10 @@ def twin_axes(M: Manifest) -> dict[str, Any]:
     # 8. settlement_form: nucleated blob vs linear ribbon vs dispersed vs water-town - the biggest structural
     #    read of all. Defaults to 'nucleated' (the base form) when a map does not declare it.
     ax["settlement_form"] = meta.get("settlement_form", "nucleated")
+    # 9. pond_layout: a POLDER's parcel geometry - the surveyed rectilinear 'grid' (圩田 lower-Yangtze) vs the
+    #    accreted, creek-fitted 'mosaic' (桑基魚塘 Pearl-delta dike-pond); `build_polder`'s `mosaic` knob. So two
+    #    same-water polders read as different KINDS of place. Defaults to 'grid' (the base surveyed form).
+    ax["pond_layout"] = meta.get("pond_layout", "grid")
     return ax
 
 

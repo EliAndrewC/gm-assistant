@@ -1,0 +1,24 @@
+{
+ "meta": {
+  "scale": "village",
+  "ftpx": 2
+ },
+ "torii": [
+  [
+   400,
+   440,
+   1
+  ],
+  [
+   400,
+   445,
+   2
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "torii_spread_out"
+  ],
+  "source": "test_checks.py::test_torii_spread_out_fires_when_arches_overlap"
+ }
+}

@@ -290,6 +290,55 @@ Design choices, with the "why":
   *separate* session bus, so D-Bus name ownership cannot coordinate across the
   two. A heartbeat file is the portable primitive that works regardless.
 
+## Known-bad sensors: quarantine the display, keep the data
+
+`KNOWN_BAD_SENSORS` (in `extension.js`) lists sensors that misreport on this
+machine, by their `sensors` label - here `['Core 8', 'Core 12']`, the two cores
+the 2026-07-22 RCA localized (see [defense
+1](#notification-debounce--metric-smoothing)). They are **hard-excluded from the
+metric** (gauge, severity, notifications, graph, and the `history.jsonl`
+archive) - they never enter the trusted core set in `_readTemps`, so the spatial
+reject and everything downstream never even sees them.
+
+The GM's rule (2026-07-22): once a sensor is *known* glitchy, it must not be able
+to raise a spurious alarm - **but we still want its raw data on disk in case we
+need to look at it later.** So each excluded sensor's raw reading is recorded, at
+the same 30 s cadence as the metric, to a **separate** archive
+`~/.local/state/temperature-bar/excluded.jsonl`, one line per sample:
+`{"t": <unix_ms>, "v": {"Core 8": <°C>, "Core 12": <°C>}}`. To view it:
+`cat ~/.local/state/temperature-bar/excluded.jsonl`.
+
+Design choices, with the "why":
+
+- **By-name hard-exclude, complementing the statistical spatial reject.** The
+  spatial reject (`MAX_ABOVE_MEDIAN_C`) drops whatever is an outlier on a given
+  poll; the by-name list drops a sensor we *already know* is bad even on a poll
+  where its glitch happens to land within the spatial band - e.g. under moderate
+  load, when the rest of the die has risen toward the stuck ~100. Belt and
+  suspenders: the statistical check catches *new/unknown* bad sensors, the list
+  guarantees the *known* ones can never drive an alarm. Cost: on the rare poll
+  where an excluded core is genuinely the single hottest, the metric under-reads
+  it by a few degrees - acceptable, because we do not trust those two sensors and
+  a real *broad* hot event shows up on every other core anyway.
+- **A separate file, not an extra field on the metric archive.** Keeping the
+  diagnostic data in its own `excluded.jsonl` leaves the metric archive's
+  `[t, c]` shape and its graph-seeding path completely untouched (no schema
+  churn, no risk to the display path). The metric archive stays the record of
+  *what the gauge showed*; the excluded archive is the record of *what the bad
+  sensors said*. Same writer election (only the elected writer appends), same
+  30-day retention prune, both reusing the pure `history.js` helpers
+  (`serializeExcludedSample` / `parseExcluded` / `pruneByAge`), unit-tested.
+- **Nothing is written on a healthy machine.** With an empty `KNOWN_BAD_SENSORS`
+  there are no excluded reads, so `excluded.jsonl` is never created - the whole
+  mechanism is inert until a machine actually has a sensor worth quarantining.
+- **Configured as a documented constant, not a config file** (GM-confirmed
+  2026-07-22). This widget only ever runs on one machine - mujina, the machine it
+  targets (see the header) - so the bad-sensor set is a fixed, machine-specific
+  fact, exactly like every other tunable in this file. A config file would buy
+  runtime editability and portability across machines that this widget will never
+  need, so it would be over-engineering. To change the list, edit the constant
+  and re-run `install.sh` (the same deploy step every other change already uses).
+
 ## Dev loop caveat
 
 The container cannot run GNOME Shell, so UI and IO changes cannot be verified

@@ -12,6 +12,7 @@ settlement.py to 100%.
 
 import math
 import os
+import random
 import tempfile
 
 import pytest
@@ -111,13 +112,14 @@ def test_crop_to_content_covers_fields_pond_and_poly_features():
 
 
 def test_crop_to_content_frames_a_torii_arch():
-    # a torii arch is a visible structure: its box (x +/-19, y -10..+18) must be inside the frame, so a torii
-    # standing beyond the houses pushes the crop out to contain it (matches the hard_features_within_frame check)
+    # a torii arch is a visible structure: its TRUE-SCALE glyph box (torii_halfbox) must be inside the frame, so
+    # a torii beyond the houses pushes the crop out to contain it (matches the hard_features_within_frame check).
+    # At ftpx=1 the arch half-box is (10, 4.95, 9.16), so the torii at y=640 reaches S edge ~649 (not the old +18).
     s = _crop_settlement()
     s.M["houses"] = [{"x": 500, "y": 500, "w": 20, "h": 20}]  # hard core 490..510
-    s.M["torii"] = [[500, 640, 1]]  # a gateway S of the houses: box y 630..658
+    s.M["torii"] = [[500, 640, 1]]  # a gateway S of the houses
     s.crop_to_content(margin=0)
-    assert s.view == (481, 490, 38, 168)  # W/E from the torii arch (500 +/-19), S edge = 658
+    assert s.view == (490, 490, 20, 159)  # x from houses/arch (490..510), S edge = torii y 640 + 9.16 rounded
 
 
 def test_crop_to_content_uses_field_outline_when_no_vis_bbox():
@@ -2916,6 +2918,56 @@ def test_wall_tower_spacing_px_unknown_tier_falls_back_to_garrison():
     assert settlement.wall_tower_spacing_px(ppf, "nonsense") == settlement.wall_tower_spacing_px(ppf, "garrison")
 
 
+def test_build_polder_mosaic_knob():
+    # GM 2026-07-22: the `mosaic` knob roughs a surveyed polder GRID into an accreted, creek-fitted MOSAIC
+    # (some 桑基魚塘 dike-pond districts read that way; some 圩田 polders read as the clean grid). It must be
+    # deterministic, byte-identical at mosaic=0 (a separate rng drives it), CHANGE the geometry when on, and
+    # make the parcels measurably MORE irregular (skewed toward trapezoids: larger opposite-edge angles).
+    from waterfields import build_polder
+
+    kw = {"down_deg": 90, "rows": 10, "cols": 6, "cell": 160, "parcel_mix": (0.10, 0.0, 0.60), "gap": (11.0, 11.0), "edge_wander": 0.4}
+    grid = build_polder(2200, 2600, (360, 320), 21, mosaic=0.0, **kw)
+    mos = build_polder(2200, 2600, (360, 320), 21, mosaic=0.5, **kw)
+    assert build_polder(2200, 2600, (360, 320), 21, **kw)["plots"] == grid["plots"]  # mosaic=0 == default (byte-stable)
+    assert build_polder(2200, 2600, (360, 320), 21, mosaic=0.5, **kw)["plots"] == mos["plots"]  # deterministic
+    assert mos["plots"] != grid["plots"]  # the knob changes the geometry
+
+    def mean_skew(net):
+        vals = []
+        for p in net["plots"]:
+            q = p["poly"]
+            if len(q) != 4:
+                continue
+
+            def opp(a, b, c, d):
+                v1 = (b[0] - a[0], b[1] - a[1])
+                v2 = (d[0] - c[0], d[1] - c[1])
+                l1 = math.hypot(*v1) or 1.0
+                l2 = math.hypot(*v2) or 1.0
+                return math.degrees(math.acos(max(-1.0, min(1.0, abs(v1[0] * v2[0] + v1[1] * v2[1]) / (l1 * l2)))))
+
+            vals.append(max(opp(q[0], q[1], q[3], q[2]), opp(q[1], q[2], q[0], q[3])))  # angle between opposite edges
+        return sum(vals) / len(vals)
+
+    assert mean_skew(mos) > mean_skew(grid) * 1.15  # the mosaic parcels run visibly more to trapezoids
+
+
+def test_apply_land_use_leaves_a_lone_pond_ungated():
+    # a dike-pond with NO adjacent canal (<46 px) and NO neighbour pond within reach (<52 px) gets no sluice -
+    # the defensive cap that stops a lone basin drawing a giant culvert across bare ground to a distant pond.
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(field_archetype="mulberry_dike_fishpond")
+    net = {
+        "plots": [
+            {"poly": [(100, 100), (200, 100), (200, 200), (100, 200)], "low": True},
+            {"poly": [(1500, 1500), (1600, 1500), (1600, 1600), (1500, 1600)], "low": True},  # far from the other pond
+        ],
+        "channels": [{"pts": [(1900, 100), (1950, 150)]}],  # a canal far from BOTH ponds
+    }
+    s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
+    assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
+
+
 def test_perimeter_dike_gap_off_band_still_draws_full_loop():
     # GM 2026-07-22 (issue 1): perimeter_dike NOTCHES the earthwork at each sluice-crossing gap. A gap point
     # placed FAR from the band keeps every dense point, so the band draws as one full loop (the defensive
@@ -3083,10 +3135,19 @@ def test_near_ring_paddy_moat_feeds_a_walled_city_basin_with_a_channel():
     s.M["wall"] = [[500, 500], [900, 500], [900, 900], [500, 900]]
     s.M["moat"] = [[480, 480], [920, 480], [920, 920], [480, 920]]
     s.M["moat_width"] = 22
+    # a big building band just outside the west moat: a basin west of it can only be moat-fed by a
+    # channel that would CROSS the building, so that basin is skipped (the channel-clearance keep-out)
+    s.M["buildings"] = [{"x": 430, "y": 700, "w": 60, "h": 340, "rot": 0, "kind": "warehouse"}]
     n = s.near_ring_paddy((0, 0, 1400, 1400), seed=6, cell_ft=200)
     assert n > 0
     # interior (non-off-edge) basins are moat-fed: there is at least one moat->field channel
     assert any((c.get("frm") or {}).get("kind") == "moat" for c in s.M.get("channels", []))
+    # no moat channel crosses the building (the clearance keep-out held)
+    from settlement import seg_dist
+
+    for c in s.M.get("channels", []):
+        if (c.get("frm") or {}).get("kind") == "moat":
+            assert seg_dist(430, 700, c["poly"][0], c["poly"][-1]) > 25
 
 
 def test_near_ring_paddy_respects_the_moat_current_when_the_moat_is_fed():

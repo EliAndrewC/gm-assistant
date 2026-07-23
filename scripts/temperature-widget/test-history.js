@@ -77,6 +77,47 @@ test('median discards a lone outlier and does not mutate its input', () => {
     assert.deepStrictEqual(input, [3, 1, 2], 'input must be untouched');
 });
 
+// --- excluded-sensor diagnostic archive ------------------------------------
+
+test('serializeExcludedSample rounds t to int and values to 0.1 C', () => {
+    assert.strictEqual(
+        H.serializeExcludedSample(1000.7, { 'Core 8': 100.24, 'Core 12': 58.06 }),
+        '{"t":1001,"v":{"Core 8":100.2,"Core 12":58.1}}\n');
+});
+
+test('serializeExcludedSample drops non-finite sensor values', () => {
+    assert.strictEqual(
+        H.serializeExcludedSample(5, { 'Core 8': Infinity, 'Core 12': 60 }),
+        '{"t":5,"v":{"Core 12":60}}\n');
+});
+
+test('parseExcludedLine round-trips and rejects malformed lines', () => {
+    assert.deepStrictEqual(
+        H.parseExcludedLine('{"t":1001,"v":{"Core 8":100.2}}'),
+        [1001, { 'Core 8': 100.2 }]);
+    for (const bad of [
+        '', '  ', 'not json', '{',
+        '{"t":1001}',                       // no v
+        '{"v":{"Core 8":100}}',             // no t
+        '{"t":"x","v":{}}',                 // t wrong type
+        '{"t":1e999,"v":{}}',               // t -> Infinity
+        '{"t":1,"v":42}',                   // v not an object
+    ]) {
+        assert.strictEqual(H.parseExcludedLine(bad), null, `should reject: ${bad}`);
+    }
+    // Individual non-finite sensor values are dropped, not fatal.
+    assert.deepStrictEqual(
+        H.parseExcludedLine('{"t":1,"v":{"Core 8":1e999,"Core 12":55}}'),
+        [1, { 'Core 12': 55 }]);
+});
+
+test('parseExcluded skips junk and serialize -> parse round-trips', () => {
+    const samples = [[1, { 'Core 8': 100 }], [2, { 'Core 8': 55, 'Core 12': 56 }]];
+    assert.deepStrictEqual(H.parseExcluded(H.serializeExcludedHistory(samples)), samples);
+    // pruneByAge works unchanged on the [t, values] shape.
+    assert.deepStrictEqual(H.pruneByAge(samples, 2, 0), [[2, { 'Core 8': 55, 'Core 12': 56 }]]);
+});
+
 // --- slewGate: the burst-glitch defense the median cannot provide ----------
 
 const GATE = { maxJumpC: 20, confirmSamples: 3 };
