@@ -51,7 +51,6 @@ s.meta(
     name="Hoshizora",
     scale="town",
     walled=False,
-    torii_expected=1,
     monastery_fortunes=["Bishamon"],
     population=680,
     ftpx=1,
@@ -204,7 +203,11 @@ topo_channel([_onmapE, (2010, _onmapE[1] + 95)], {"kind": "drain"}, {"kind": "of
 
 # ---- the Shrine to Bishamon, by the stream
 # a town's religious building is a monastery (not a village shrine), with a torii in front
-s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86, kind="monastery", primary=True, torii=[(215, 892)], label_below=True)
+# ROLLED 3 (2026-07-23 per-temple re-roll, town column 30/60/10). The avenue geometry is
+# authored at a 30px stride ending at y928: the naive 44px extension dropped the third arch at
+# y980, INSIDE the theater court (the stage at (200,990) faces the monastery, so its viewing
+# ground sits directly on the sando axis - the arches stop where the audience ground begins).
+s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86, kind="monastery", primary=True, torii=[(215, 868), (215, 898), (215, 928)], label_below=True)
 
 # ---- the Magistrate's walled manor (county seat) - walls only; its interior
 # (hall, stables, etc.) is the subject of a separate Mode A diagram. TILTED (rot=-30) so its front

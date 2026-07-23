@@ -201,7 +201,7 @@ print(f"farmhouses: {n_farms}")
 # Gated by village_shrine_footprint_within_norms (ceiling 600 m^2).
 BENTEN_TORII = [(CX - 40, CY + 565 + i * 15) for i in range(3)]   # 3-arch sando S of the hall, on its axis, dense 15px pitch, innermost ~10px below the S edge
 s.shrine_hall(CX - 40, CY + 540, "Shrine to Benten", w=44, h=30,
-              torii=BENTEN_TORII, primary=True)   # ichi/ni/san-no-torii leading UP to the hall (torii_count_canonical: 3 is a canonical avenue)
+              torii=BENTEN_TORII, torii_count=3, primary=True)   # ichi/ni/san-no-torii leading UP to the hall - PINNED 3 (2026-07-24): the numbered-avenue form is this map's GM-approved canon (meta torii_expected=3 asserts it), so the per-temple roll is pinned, not re-rolled
 s.shrine_well(CX - 40, CY + 540)     # ablution well: pass the HALL CENTER - the ring search finds the nearest clear spot beside it
 # the still-tended Bishamon village shrine, with the burial ground in its churchyard. It sits in the empty DRY
 # pocket BELOW the E block and to the LEFT of that block's toe marsh - not at the far SW. The SW placement was

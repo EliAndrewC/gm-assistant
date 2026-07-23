@@ -209,7 +209,11 @@ _ccx, _ccy = sum(_hx) / len(_hx), sum(_hy) / len(_hy)
 # hall + torii - shrine_clear_of_grove_trees / torii_clear_of_grove_trees). Small earth-god shrine
 # (~30x24 px ~ 275 m2), no label, torii facing the village (N). graveyard=False (kegare).
 s.shrine_hall(_minx + 30, _maxy + 58, "", w=30, h=24, kind="shrine", primary=True,
-              torii=[(_minx + 30, _maxy + 20)], graveyard=False)
+              # ROLLED 3 in the 2026-07-23 per-temple re-roll (village column 60/30/10), so the
+              # single entrance arch became a short sando: innermost arch at the hall's threshold
+              # (~14px gap < the 18px shrine_avenue_fronts_the_hall floor at 2 ft/px), 16px
+              # (~32 ft) pitch marching north toward the village like Kikuta's dense avenue
+              torii=[(_minx + 30, _maxy + 32), (_minx + 30, _maxy + 16), (_minx + 30, _maxy)], graveyard=False)
 
 # ===== STAGE 4a: COMMUNAL WELLS + DRAFT-ANIMAL BYRES among the FINAL houses (after the shrine so they clear it,
 # before the grove so it skips them). Wells one per ~20-25 households; byres ~one per 4-5 households. =====

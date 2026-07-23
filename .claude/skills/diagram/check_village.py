@@ -779,67 +779,6 @@ def empty_street_runs(M: Manifest, w: Poly, maxgap: float = 130) -> list[tuple[s
     return empty
 
 
-def approach_span(mx: float, my: float, half: float, ux: float, uy: float, M: Manifest, w: Poly, Wd: float, Hd: float) -> float:
-    """March from a religious hall's front edge along (ux, uy) to the first HARD terminus - a
-    town street, a field/flower-field, the rampart, or the map edge - and return the clear
-    length. Buildings are deliberately NOT termini: a torii avenue is a cleared processional way
-    (sando) that displaces dwellings, so its length is set by the public street or barrier it
-    reaches, not by whatever housing it pushes aside. Used to size a monastery's torii avenue."""
-    fields = [f["outline"] for f in M.get("fields", [])] + [f["outline"] for f in M.get("flower_fields", [])]
-    streets = [(st["pts"], st.get("w", 24)) for st in M.get("town_streets", [])]
-    start = half + 12
-    s = start
-    while s < start + 600:
-        px, py = mx + ux * s, my + uy * s
-        if not (0 <= px <= Wd and 0 <= py <= Hd):
-            break
-        if w and not point_in_poly(px, py, w):
-            break
-        if any(point_in_poly(px, py, fp) for fp in fields):
-            break
-        if any(seg_dist(px, py, pts[k], pts[k + 1]) < sw / 2 + 4 for pts, sw in streets for k in range(len(pts) - 1)):
-            break
-        s += 10
-    return s - start
-
-
-def torii_room_for_more(r: dict[str, Any], grp: Sequence[Pt], M: Manifest, w: Poly, Wd: float, Hd: float, pitch: float = 46) -> bool:
-    """Is there clear space for ANOTHER torii beyond a temple's existing avenue `grp`? Find the street/
-    road the torii sit on, head along it AWAY from the temple, and test the next arch-slot (one `pitch`
-    past the farthest torii): it has room if that point is inside the wall and clear of buildings/fields.
-    Buildings are OBSTACLES, never displaced - the check only fills space that is ALREADY open after all
-    the housing is placed, so it never nudges a rearrangement. A temple whose torii aren't on a street,
-    or whose approach is built up to the avenue's end, has no room and is fine as-is."""
-    tc = (sum(t[0] for t in grp) / len(grp), sum(t[1] for t in grp) / len(grp))
-    lanes = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
-    best = None
-    for pts in lanes:
-        for k in range(len(pts) - 1):
-            d = seg_dist(tc[0], tc[1], pts[k], pts[k + 1])
-            if best is None or d < best[0]:
-                best = (d, pts[k], pts[k + 1])
-    if best is None or best[0] > 40:
-        return False  # torii not on a street - no clear approach axis
-    a, b = best[1], best[2]
-    ln = math.hypot(b[0] - a[0], b[1] - a[1]) or 1.0
-    ux, uy = (b[0] - a[0]) / ln, (b[1] - a[1]) / ln
-    if ux * (r["x"] - tc[0]) + uy * (r["y"] - tc[1]) > 0:  # point the axis AWAY from the temple
-        ux, uy = -ux, -uy
-    far = max(grp, key=lambda t: ux * t[0] + uy * t[1])
-    px, py = far[0] + ux * pitch, far[1] + uy * pitch
-    if not (0 <= px <= Wd and 0 <= py <= Hd):
-        return False
-    if w and not point_in_poly(px, py, w):
-        return False
-    if any(point_in_poly(px, py, f["outline"]) for f in M.get("fields", [])):
-        return False
-    # a building within ~a street's frontage distance of the slot means the approach is already a
-    # built-up residential street there (houses LINE it, beside the avenue) - the torii avenue ends
-    # where the frontage begins, so this is NOT open room. A bigger gap = genuinely open ground.
-    CLR = 32
-    return not any(abs(bd["x"] - px) < bd["w"] / 2 + CLR and abs(bd["y"] - py) < bd["h"] / 2 + CLR for bd in M.get("buildings", []) + M.get("houses", []))
-
-
 DEFAULT_MANIFEST: Manifest = {
     "houses": [],
     "fields": [],
@@ -6397,6 +6336,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         _tfloor = 16.0 / meta.get("ftpx", 1)
         spread = all(math.hypot(torii[i][0] - torii[j][0], torii[i][1] - torii[j][1]) > _tfloor for i in range(len(torii)) for j in range(i + 1, len(torii)))
         check("torii_spread_out", spread, f"torii closer than one arch-span (~{_tfloor:.0f}px) apart - they overlap into a blob rather than reading as distinct gateways")
+        # NO ARCH STANDS IN A CROP (torii_clear_of_fields, 2026-07-24): caught during the torii
+        # re-roll when Hirameki's Benten rolled 7 and the naive single-point avenue extension
+        # marched five arches straight through the Imperial chrysanthemum field - torii are
+        # overlap-EXEMPT structures (they legitimately stand over streets), so no generic pass
+        # guarded them against fields. A sando is a cleared processional way: it may run BESIDE
+        # a field (route the avenue's geometry around the crop), never through the planting.
+        _in_field = [(round(t[0]), round(t[1])) for t in torii if any(point_in_poly(t[0], t[1], f["outline"]) for f in M.get("fields", []) + M.get("flower_fields", []))]
+        check(
+            "torii_clear_of_fields",
+            not _in_field,
+            f"torii arch(es) standing IN a field/flower-field at {_in_field[:4]} - a sando runs beside the crop, never through it; route the avenue geometry around the field",
+        )
 
         # A village-shrine SANDO (>= 3 arches marching to the hall) puts its INNERMOST arch at the hall's
         # THRESHOLD, directly in front, not set out with a gap (GM 2026-07-22, "village shrines only"). Exempt the
@@ -6863,37 +6814,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                         run = 0
             check("wall_hugs_the_town", worst <= EMPTY_RUN, f"~{worst:.0f}px of wall runs more than {MAXGAP}px from any building or terrain (it encloses empty space - draw a tighter wall)")
 
-        # a town monastery fronts a torii AVENUE whose form is set by the open approach in front
-        # of it, QUANTIZED to the numerology canon (GM 2026-07-21, superseding the old fill-the-
-        # space band): a monastery with room for an avenue (approach span >= ~3 arch-pitches - the
-        # spacing itself adapts) takes the FULL SEVEN; one wedged into a corner (the Benten
-        # monastery, hard against the west wall and the Imperial field) keeps a modest 1-2 arch
-        # entrance. Nothing in between - 3-6 reads as unfinished (torii_full_avenue_is_seven bans
-        # it globally; this check adds the town-tier "roomy approach OWES the seven" direction).
-        # Each torii is assigned to its nearest monastery; the approach direction is taken from the
-        # monastery toward that group of torii, and the available span runs to the first street/
-        # field/wall/edge (approach_span, which ignores buildings - the avenue displaces them).
-        monks = [r for r in M.get("religious", []) if r.get("kind") == "monastery"]
-        if monks and torii:
-            PITCH = 55  # approx spacing between arches along a sando
-            bad_torii = []
-            for m in monks:
-                grp = [t for t in torii if min(monks, key=lambda r: math.hypot(r["x"] - t[0], r["y"] - t[1])) is m]
-                n = len(grp)
-                if n:
-                    cx, cy = sum(t[0] for t in grp) / n, sum(t[1] for t in grp) / n
-                    dlen = math.hypot(cx - m["x"], cy - m["y"]) or 1.0
-                    span = approach_span(m["x"], m["y"], m["h"] / 2, (cx - m["x"]) / dlen, (cy - m["y"]) / dlen, M, w, Wd, Hd)
-                else:
-                    span = 0.0
-                lo, hi = (7, 7) if span / PITCH >= 3.0 else (1, 2)
-                if not (lo <= n <= hi):
-                    bad_torii.append((m.get("label"), f"{n} torii", f"want {lo}-{hi}", f"~{span:.0f}px"))
-            check(
-                "monastery_torii_scale_with_space",
-                not bad_torii,
-                f"a walled-town monastery's torii avenue must match its approach (roomy approach -> the full SEVEN arches, the numerologically significant count; cramped corner -> a 1-2 arch entrance): {bad_torii}",
-            )
+        # (RETIRED 2026-07-24: monastery_torii_scale_with_space - "roomy approach OWES the seven,
+        # cramped corner keeps 1-2" - is superseded by the per-temple seeded ROLL, and it predated
+        # the 1/3/7 TORII_WEIGHTS table besides (it still banned a count of 3, which the table
+        # rolls at 60% for towns). Avenue completeness is now defined by the roll: shrine_hall
+        # rolls each hall on the tier column, records the target, and torii_match_roll +
+        # torii_count_canonical carry the teeth. Same precedent as torii_full_avenue_is_seven and
+        # city_temple_torii_fill_approach.)
 
         # a walled town almost always accretes a small extramural MARKET (a Chinese guan-xiang)
         # just outside its gate: the gate is a chokepoint where the rural population trades
@@ -8453,23 +8380,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 if runs_up and not any(math.hypot(to[0] - t["x"], to[1] - t["y"]) < 95 for to in torii):
                     no_torii.append(t.get("label"))
             check("city_temple_approach_has_torii", not no_torii, f"temple(s) a city street runs straight up to, with no torii arch in front: {no_torii}")
-            # and a temple's torii avenue should FILL the clear approach space: where a temple HAS torii
-            # (an established sacred approach) and there is still open room along its street for another
-            # arch - AFTER all the housing is placed - it should be filled. This never asks for a building
-            # to move (the next slot is tested only against EXISTING open ground); a temple with no torii,
-            # or one whose approach is built right up to its avenue, is left alone (0-1 torii is fine).
-            temples = [r for r in M.get("religious", []) if r.get("kind") == "temple"]
-            underfilled = []
-            for r in temples:
-                grp = [t for t in torii if min(temples, key=lambda x: math.hypot(x["x"] - t[0], x["y"] - t[1])) is r]
-                if grp and torii_room_for_more(r, grp, M, w, Wd, Hd):
-                    underfilled.append(r.get("label"))
-            check(
-                "city_temple_torii_fill_approach",
-                not underfilled,
-                f"temple(s) with clear room for MORE torii along their approach street, left unfilled (a temple's "
-                f"torii avenue fills the open space leading up to it; this never displaces a building): {underfilled}",
-            )
+            # (RETIRED 2026-07-24: city_temple_torii_fill_approach - "an avenue with open room takes
+            # another arch" - is superseded by the per-temple seeded ROLL: shrine_hall now rolls each
+            # hall's count on the tier's TORII_WEIGHTS column and records the target on the religious
+            # rec, so avenue completeness is defined by the roll, not by remaining street room. A
+            # rolled 1 beside an open street is a hall with one patron gate, not an unfinished avenue.
+            # torii_match_roll (with torii_count_canonical) now carries the teeth. Same precedent as
+            # torii_full_avenue_is_seven's retirement when the numerology rule landed.)
             # a torii arch stands OVER the street it spans - the street passes beneath it - so a
             # torii sitting on a street must be drawn after (higher z than) that street, not under it
             to_under = []
@@ -8677,6 +8594,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "torii_count_canonical",
             not _bad_torii,
             f"hall(s) with a non-numerological torii count (x, y, n): {_bad_torii[:4]} - every shrine/monastery/temple carries exactly 1, 3, or 7 torii (7 is numerologically potent in Rokugan; see settlements.md 'Torii'), or is explicitly marked shrine_hall(torii_outlier=True)",
+        )
+        # DRAWN COUNT MATCHES THE ROLL (GM 2026-07-23, the full re-roll): shrine_hall rolls each
+        # hall's count on the tier's TORII_WEIGHTS column (or takes the torii_count= pin) and records
+        # the target on the religious rec - this gates that the drawn, ATTRIBUTED avenue equals it,
+        # so a stale hand-placed count (the pre-table Tango/Nagahara state) or a misattributed arch
+        # (an extended avenue drifting nearer a NEIGHBOR hall) can never ship silently. Halls
+        # without a recorded target (the village auto-shrine path records meta.torii_count instead)
+        # are skipped.
+        _mismatch = [(round(r["x"]), round(r["y"]), _tcount[id(r)], r["torii_count"]) for r in _proper if "torii_count" in r and _tcount[id(r)] != r["torii_count"]]
+        check(
+            "torii_match_roll",
+            not _mismatch,
+            f"hall(s) whose drawn torii count differs from their rolled/pinned target (x, y, drawn, target): {_mismatch[:4]} - the avenue must carry exactly the rolled/pinned count (shrine_hall torii_count=), and every arch must sit nearest ITS OWN hall (attribution is by nearest proper hall)",
         )
 
     if M.get("pond"):

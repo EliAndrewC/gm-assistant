@@ -2735,10 +2735,29 @@ class Settlement:
         """Place ONE well at (x, y), but only if the spot is clear (a block interior off lanes,
         compounds, the bound, and other placed things - the same `_fits` test place_wells uses).
         Returns True if it placed. For hand-seeding wells into cramped, lane-laced quarters the grid
-        scatter can't reach - pass a generous candidate list and the blocked ones simply no-op."""
+        scatter can't reach - pass a generous candidate list and the blocked ones simply no-op.
+        A spot inside a scrub/pasture/coppice COVER poly is refused too (2026-07-24, caught by
+        scrub_clear_of_urban_fabric when a torii-count ripple reseated three Hirameki farm wells
+        into the grazing commons): a wellhead stands in worked dooryard/margin ground, never out
+        in the grazed waste - and the cover scatter is drawn long before the farm wells, so the
+        well must yield, not the commons."""
+        if self._in_scrub_cover(x, y):
+            return False
         if self._fits(x, y, 2 * r + 14, 2 * r + 14):
             self.well(x, y, r, shrine=shrine)
             return True
+        return False
+
+    def _in_scrub_cover(self, x: float, y: float) -> bool:
+        """Is (x, y) inside a registered scrub/pasture/coppice/marsh COVER poly? Both well paths
+        (well_at hand-seeding + the place_wells grid) refuse such ground - a wellhead stands in
+        worked dooryard/margin ground, never out in the grazed waste (scrub_clear_of_urban_fabric).
+        Only covers registered BEFORE the well call are visible, so gens draw their commons first."""
+        for ck in ("commons", "pastures", "forest_patches", "marshes"):
+            for o in self.M.get(ck, []) or []:
+                p = o.get("poly") if isinstance(o, dict) else o
+                if p is not None and len(p) >= 3 and point_in_poly(x, y, p):
+                    return True
         return False
 
     def place_wells(self, bbox: Any, spacing: float, r: float = 8, near: Any = None, coverage: bool = True) -> list[Pt]:
@@ -2768,7 +2787,7 @@ class Settlement:
             while xx <= x1:
                 for ox, oy in offsets:
                     cx, cy = xx + ox, yy + oy
-                    if self._fits(cx, cy, probe, probe) and (dwell is None or any((b["x"] - cx) ** 2 + (b["y"] - cy) ** 2 < near * near for b in dwell)):
+                    if not self._in_scrub_cover(cx, cy) and self._fits(cx, cy, probe, probe) and (dwell is None or any((b["x"] - cx) ** 2 + (b["y"] - cy) ** 2 < near * near for b in dwell)):
                         self.well(cx, cy, r)
                         out.append((cx, cy))
                         break
@@ -2781,7 +2800,7 @@ class Settlement:
                 if all((b["x"] - wx) ** 2 + (b["y"] - wy) ** 2 > spacing * spacing for wx, wy in out):
                     for ox, oy in ((0, near * 0.6), (near * 0.6, 0), (-near * 0.6, 0), (0, -near * 0.6), (near * 0.45, near * 0.45), (-near * 0.45, near * 0.45)):
                         cx, cy = b["x"] + ox, b["y"] + oy
-                        if self._fits(cx, cy, probe, probe):
+                        if not self._in_scrub_cover(cx, cy) and self._fits(cx, cy, probe, probe):
                             self.well(cx, cy, r)
                             out.append((cx, cy))
                             break
@@ -2923,11 +2942,14 @@ class Settlement:
         graveyard: bool = True,
         label_below: bool = False,
         torii_outlier: bool = False,
+        torii_count: Any = None,
     ) -> None:
         """A standalone religious hall on flat ground. The kind follows settlement
         scale: villages have shrines, towns have monasteries, cities have temples
         (hamlets have none). primary=True marks the settlement's main one (M['shrine'],
-        used by the torii checks). A torii may stand in front (torii=[(x,y),...]).
+        used by the torii checks). torii=[(x,y),...] defines the AVENUE LINE in front; the
+        arch COUNT is rolled per temple on the tier's TORII_WEIGHTS column (seeded, so it is
+        deterministic per map+hall), or pinned with torii_count=N - see the roll block below.
         graveyard=False marks a temple that hosts NO burial ground (a new or special-purpose
         hall, e.g. one founded in a former samurai estate) - city_temples_have_graveyards
         then exempts it; every other temple is expected to have a graveyard in its precinct.
@@ -2939,8 +2961,33 @@ class Settlement:
         Tango's deliberate Daibutsuden-tier landmark is 200 ft) so unscaled px can't slip through."""
         if self.ftpx > 1 and max(w, h) * self.ftpx > 220:
             raise ValueError(f"shrine_hall {w}x{h}px at {self.ftpx} ft/px implies a {max(w, h) * self.ftpx:.0f} ft hall - pass s.px(real_ft), not raw pixels")
+        n_t = 0
         if torii:
-            for tx, ty in torii:
+            # TORII COUNT IS ROLLED PER TEMPLE, the avenue list is GEOMETRY (GM 2026-07-23, the full
+            # re-roll: the town/city gens hand-placed counts that predated the TORII_WEIGHTS table and
+            # were never re-rolled - Tango/Nagahara sat at four 1s and a 3, a ~1%-likely draw under the
+            # city column). `torii` now defines the avenue LINE (points marching AWAY from the hall);
+            # the COUNT comes from a per-temple seeded roll on the tier table (deterministic in the map
+            # seed + hall position), pinnable per temple via torii_count= (the per-hall analog of the
+            # village 'torii_count' knob). Rolling more arches than points extends the avenue along its
+            # own step (or away from the hall at a 44px stride for a single-point approach); rolling
+            # fewer draws the first n. The resolved target is recorded on the religious rec as
+            # 'torii_count' and gated by torii_match_roll, so a stale hand count can never ship again.
+            n_t = (
+                int(torii_count)
+                if torii_count is not None
+                else roll_torii_count(self.M.get("meta", {}).get("scale", "village"), random.Random(self.seed * 977 + int(round(x)) * 31 + int(round(y)) * 57))
+            )
+            pts_t = [(float(tpx), float(tpy)) for tpx, tpy in torii]
+            if len(pts_t) < n_t:
+                if len(pts_t) >= 2:
+                    step_t = (pts_t[-1][0] - pts_t[-2][0], pts_t[-1][1] - pts_t[-2][1])
+                else:
+                    d_t = math.hypot(pts_t[0][0] - x, pts_t[0][1] - y) or 1.0
+                    step_t = ((pts_t[0][0] - x) / d_t * 44.0, (pts_t[0][1] - y) / d_t * 44.0)
+                while len(pts_t) < n_t:
+                    pts_t.append((pts_t[-1][0] + step_t[0], pts_t[-1][1] + step_t[1]))
+            for tx, ty in pts_t[:n_t]:
                 s2 = self.px(16.0) / 2  # matches _torii's default true span
                 # block the arch + a NEIGHBOR'S HALF-FOOTPRINT: packs test footprint centers, so the
                 # margin must absorb half a house (~28 ft) + slack or a house's edge crosses the arch
@@ -2955,9 +3002,10 @@ class Settlement:
         self.add(f'<rect x="{x - w / 2:.0f}" y="{y + h / 2 - 9:.0f}" width="{w}" height="9" fill="#A03020"/>')
         self.add(f'<line x1="{x - w / 2:.0f}" y1="{y:.0f}" x2="{x + w / 2:.0f}" y2="{y:.0f}" stroke="{edge}" stroke-width="0.7"/>')
         self.M["shrines"].append({"x": x, "y": y, "w": w, "h": h, "label": label})
-        self.M["religious"].append(
-            {"kind": kind, "x": x, "y": y, "w": w, "h": h, "label": label, "sublabel": sublabel, "graveyard": graveyard, "torii_outlier": torii_outlier}
-        )  # torii_outlier=True exempts this hall from torii_count_canonical (a deliberately non-numerological gate count, always with a recorded story)
+        rec = {"kind": kind, "x": x, "y": y, "w": w, "h": h, "label": label, "sublabel": sublabel, "graveyard": graveyard, "torii_outlier": torii_outlier}
+        if torii:
+            rec["torii_count"] = n_t  # the resolved roll/pin target - torii_match_roll gates drawn == target
+        self.M["religious"].append(rec)  # torii_outlier=True exempts this hall from torii_count_canonical (a deliberately non-numerological gate count, always with a recorded story)
         if primary:
             self.M["shrine"] = [x - w / 2, y - h / 2, w, h]
         # block a RECT + a building-half margin, at the map's grain (an ellipse undershot the hall

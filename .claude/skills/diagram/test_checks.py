@@ -465,33 +465,25 @@ def test_stream_diverted_into_a_channel_passes_and_open_ended_brook_fires():
     assert "stream_runs_off_edge[0]" in f(open_ended)
 
 
-# ---- monastery_torii_scale_with_space + approach_span ------------------------------------
-def test_approach_span_terminates_at_each_barrier():
-    # March south (0,1) from (500,100) with half-depth 20 (front edge at y132). Each barrier
-    # type must stop the march; with none in range it caps near 600. Buildings are not barriers.
-    cv = check_village
-    base = {"meta": {}}
-    street = cv.approach_span(500, 100, 20, 0, 1, {**base, "town_streets": [{"pts": [[0, 300], [1000, 300]], "w": 24}]}, None, 1000, 1000)
-    field = cv.approach_span(500, 100, 20, 0, 1, {**base, "flower_fields": [{"outline": [[400, 250], [600, 250], [600, 450], [400, 450]]}]}, None, 1000, 1000)
-    walled = cv.approach_span(500, 100, 20, 0, 1, base, [[400, 0], [600, 0], [600, 280], [400, 280]], 1000, 1000)
-    edge = cv.approach_span(500, 100, 20, 0, 1, base, None, 1000, 300)
-    capped = cv.approach_span(500, 100, 20, 0, 1, base, None, 5000, 5000)
-    assert 150 <= street <= 170 and 110 <= field <= 130
-    assert 140 <= walled <= 160 and 160 <= edge <= 180 and capped >= 595
+def test_torii_match_roll_fires_when_the_drawn_count_drifts_from_the_target():
+    # the hall recorded a rolled/pinned target of 3 but only 1 arch is attributed to it
+    M = {"meta": {"scale": "city"}, "religious": [{"kind": "temple", "label": "T", "x": 500, "y": 500, "w": 100, "h": 80, "torii_count": 3}], "torii": [[500, 560, 1]]}
+    assert "torii_match_roll" in f(M)
 
 
-def _mon(label, x, y, w=60, h=40):
-    return {"kind": "monastery", "label": f"Monastery of {label}", "x": x, "y": y, "w": w, "h": h}
+def test_torii_match_roll_passes_on_match_and_skips_unrecorded_halls():
+    # T matches its target; U has no recorded target (the village auto-shrine path) and is skipped
+    M = {
+        "meta": {"scale": "city"},
+        "religious": [
+            {"kind": "temple", "label": "T", "x": 500, "y": 500, "w": 100, "h": 80, "torii_count": 1},
+            {"kind": "temple", "label": "U", "x": 900, "y": 900, "w": 100, "h": 80},
+        ],
+        "torii": [[500, 560, 1], [900, 950, 1]],
+    }
+    assert "torii_match_roll" not in f(M)
 
 
-def test_monastery_torii_scale_fires_when_an_avenue_does_not_fit_its_space():
-    # Two monasteries, but every torii clusters at A: A's single arch underfills its long clear
-    # approach, and B has no arch at all. Both ways of mismatching count-to-space must fire.
-    M = {"meta": {"scale": "town", "walled": True, "W": 1000, "H": 1000}, "wall": WALL, "religious": [_mon("A", 200, 200), _mon("B", 800, 800)], "torii": [[200, 320]]}
-    assert "monastery_torii_scale_with_space" in f(M)
-
-
-# ---- walled_town_has_gate_market: the extramural guan-xiang -------------------------------
 def test_walled_town_has_gate_market_fires_when_no_market_outside():
     # the only business sits INSIDE the wall, so there is no extramural market at the gate
     M = {"meta": {"scale": "town", "walled": True}, "wall": WALL, "gate": [500, 950], "buildings": [bldg(500, 500, kind="merchant")]}
@@ -3476,54 +3468,6 @@ def test_city_temple_approach_has_torii_fires_when_street_runs_up_without_one():
         "town_streets": [{"pts": [[500, 700], [500, 545]], "w": 18}],
     }  # runs up to the south edge (540)
     assert "city_temple_approach_has_torii" in f(M)
-
-
-def _torii_fill_city(temple_xy, torii, streets=None, **extra):
-    M = {
-        "meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000},
-        "wall": WALLSQ,
-        "gates": [[500, 200], [500, 800]],
-        "religious": [{"kind": "temple", "label": "T", "x": temple_xy[0], "y": temple_xy[1], "w": 100, "h": 80}],
-        "torii": [[t[0], t[1], 1] for t in torii],
-    }
-    if streets is not None:
-        M["town_streets"] = [{"pts": p, "w": 18} for p in streets]
-    M.update(extra)
-    return M
-
-
-def test_city_temple_torii_fill_approach_fires_when_room_for_more():
-    # one torii on a street running up to the temple, with clear open street beyond - room for more arches
-    M = _torii_fill_city((500, 300), [(500, 400)], streets=[[[500, 700], [500, 420]]])
-    assert "city_temple_torii_fill_approach" in f(M)
-
-
-def test_city_temple_torii_fill_approach_passes_when_built_up():
-    # the next arch-slot is blocked by a building - the approach is built up, leave it alone
-    M = _torii_fill_city((500, 300), [(500, 400)], streets=[[[500, 380], [500, 700]]], buildings=[{"kind": "laborer", "x": 500, "y": 446, "w": 40, "h": 30, "rot": 0}])
-    assert "city_temple_torii_fill_approach" not in f(M)
-
-
-def test_city_temple_torii_fill_approach_ignores_torii_off_any_street():
-    # the torii isn't on a street, so there's no clear approach axis to extend - exempt
-    M = _torii_fill_city((500, 300), [(500, 400)])
-    assert "city_temple_torii_fill_approach" not in f(M)
-
-
-def test_city_temple_torii_fill_approach_stops_at_the_map_edge():
-    M = _torii_fill_city((500, 80), [(500, 40)], streets=[[[500, 60], [500, 10]]])  # next slot runs off the top edge
-    assert "city_temple_torii_fill_approach" not in f(M)
-
-
-def test_city_temple_torii_fill_approach_stops_at_the_wall():
-    M = _torii_fill_city((500, 500), [(500, 760)], streets=[[[500, 500], [500, 860]]])  # next slot is outside the rampart
-    assert "city_temple_torii_fill_approach" not in f(M)
-
-
-def test_city_temple_torii_fill_approach_stops_at_a_field():
-    fld = {"name": "f", "kind": "dry", "bbox": [470, 420, 530, 480], "outline": [[470, 420], [530, 420], [530, 480], [470, 480]]}
-    M = _torii_fill_city((500, 300), [(500, 400)], streets=[[[500, 380], [500, 700]]], fields=[fld])
-    assert "city_temple_torii_fill_approach" not in f(M)
 
 
 def test_city_temples_clear_of_wall_branches():
