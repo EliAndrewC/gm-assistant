@@ -482,6 +482,20 @@ def test_marsh_pond_fringe_skips_the_open_water():
     assert s.M["marshes"][0]["role"] == "pond_fringe"
 
 
+def test_marsh_defense_role_records_and_blocks_building():
+    s = _crop_settlement()
+    n0 = len(s.block_polys)
+    s.marsh([(150, 150), (450, 150), (450, 450), (150, 450)], role="defense")
+    assert s.M["marshes"][0]["role"] == "defense"
+    assert len(s.block_polys) == n0 + 1  # the wet belt is a no-build keep-out, same as the toe
+
+
+def test_marsh_rejects_an_unknown_role():
+    s = _crop_settlement()
+    with pytest.raises(ValueError, match="unknown marsh role"):
+        s.marsh([(150, 150), (450, 150), (450, 450), (150, 450)], role="bog")
+
+
 def test_pond_anchored_detects_a_watercourse_that_connects_to_the_pond():
     # the cue that a course should snap onto the pond rim: either end's anchor is kind=='pond'
     assert Settlement._pond_anchored({"kind": "pond"}, {"kind": "field"}) is True
