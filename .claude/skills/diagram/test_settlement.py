@@ -3036,6 +3036,68 @@ def test_draw_comb_field_drops_hem_plots_on_a_prior_fan():
     assert any(fl["name"] == "f1" for fl in s.M["fields"])
 
 
+def _inwall_settlement():
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="C", scale="town", ftpx=1)
+    s.M["ring_road"] = [[100, 100], [900, 100], [900, 900], [100, 900], [100, 100]]
+    s.M["ring_road_width"] = 8
+    s.M["moat"] = [[60, 60], [940, 60], [940, 940], [60, 940]]
+    return s
+
+
+def test_inwall_drain_outfall_trims_gates_and_records_the_conduit():
+    """The in-wall drain handoff (GM 2026-07-23): the drain polyline is trimmed back to half the
+    ring-road width + 10px clear of the ring centerline, a sluice gate sits across the cut, and
+    an UNDRAWN drain->moat conduit starts exactly at the cut (inwall_drains_gated_at_cutoff)."""
+    s = _inwall_settlement()
+    out = s.inwall_drain_outfall([(500, 300), (300, 150), (150, 110)])  # moat-side end LAST, ends 10px off the ring's top segment
+    cut = out[-1]
+    ringd = min(settlement.seg_dist(cut[0], cut[1], a, b) for a, b in [((100, 100), (900, 100)), ((100, 100), (100, 900))])
+    assert ringd >= 13.9  # 8/2 + 10 clear of the centerline
+    assert len(out) < 3 or out[:2] == [(500.0, 300.0), (300.0, 150.0)]  # only the tail was touched
+    g = s.M["sluice_gates"][-1]
+    assert math.hypot(g["x"] - cut[0], g["y"] - cut[1]) < 1.5  # the gate sits AT the cut
+    c = s.M["channels"][-1]
+    assert c["frm"] == {"kind": "drain"} and c["to"] == {"kind": "moat"} and c["drawn"] is False
+    assert c["poly"][0] == [round(cut[0], 1), round(cut[1], 1)]  # the conduit starts at the cut
+
+
+def test_inwall_drain_outfall_normalizes_orientation_and_degenerate_cases():
+    # outfall-FIRST input comes back outfall-first (the caller's orientation is preserved)
+    s = _inwall_settlement()
+    out = s.inwall_drain_outfall([(150, 110), (300, 150), (500, 300)])
+    assert out[-1] == (500.0, 300.0)  # far end untouched, so the cut landed at index 0
+    # no ring road: nothing to trim - the gate still marks the outfall
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.meta(name="C2", scale="town", ftpx=1)
+    s2.M["moat"] = [[60, 60], [940, 60], [940, 940], [60, 940]]
+    out2 = s2.inwall_drain_outfall([(500, 300), (150, 110)])
+    assert out2 == [(500.0, 300.0), (150.0, 110.0)] and s2.M["sluice_gates"]
+    # no moat: gate only - no conduit record, no orientation flip
+    s3 = Settlement(1000, 1000, seed=1)
+    s3.meta(name="C3", scale="town", ftpx=1)
+    s3.M["ring_road"] = [[100, 100], [900, 100], [900, 900], [100, 900], [100, 100]]
+    s3.M["ring_road_width"] = 8
+    n3 = len(s3.M["channels"])
+    s3.inwall_drain_outfall([(500, 300), (150, 110)])
+    assert len(s3.M["channels"]) == n3 and s3.M["sluice_gates"]
+    # the whole polyline hugs the road: left untrimmed (the check flags it), gate at the raw end
+    s4 = _inwall_settlement()
+    out4 = s4.inwall_drain_outfall([(300, 104), (200, 104)])
+    assert out4[-1] == (200.0, 104.0)
+
+
+def test_draw_comb_field_trims_an_inwall_drain_through_the_helper():
+    from waterfields import build_comb
+
+    s = _inwall_settlement()
+    net = build_comb(1000, 1000, (500, 200), 5, down_deg=90, field_fall=300)
+    net["brook"] = []
+    s.draw_comb_field(net, "f1", {"kind": "stream"}, inwall_drain_moat_bias=(0, 0))
+    assert any((c.get("frm") or {}).get("kind") == "drain" and (c.get("to") or {}).get("kind") == "moat" and c.get("drawn") is False for c in s.M["channels"])
+    assert s.M["sluice_gates"]
+
+
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
