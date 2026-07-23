@@ -1,0 +1,36 @@
+{
+ "meta": {},
+ "marshes": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 100,
+   "h": 100,
+   "role": "defense",
+   "poly": [
+    [
+     450,
+     450
+    ],
+    [
+     550,
+     450
+    ],
+    [
+     550,
+     550
+    ],
+    [
+     450,
+     550
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "defense_marsh_girds_the_walls"
+  ],
+  "source": "test_checks.py::test_defense_marsh_girds_the_walls_needs_a_fortified_perimeter"
+ }
+}
