@@ -5965,6 +5965,42 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"moat-fed channel(s) running against the moat current (field is upstream of the tap; the feeder makes the moat flow {flow}): {sorted(set(against))}",
             )
 
+    # WATER JOINS WATER AT A CONFLUENCE, NEVER CROSSES IT (GM 2026-07-23, feature 014 endgame: "I can
+    # visually see the intersection where ditches and channels just run into the moat... they just keep
+    # going and aren't intersecting at the edge"). A channel/ditch segment that strictly CROSSES the
+    # moat or river centerline mid-run reads as a line painted straight over the open water - a mouth
+    # must END at the bank instead (the engine's _clip_to_moat/_clip_to_river trim the DRAWING to the
+    # bed edge + cap radius, and taps/culverts wear the receiving water's own color). The RECORDED
+    # topology legitimately ends ON the centerline (the anchor checks demand it), so a crossing on a
+    # polyline's first/last segment whose terminal vertex sits near the crossed water segment is the
+    # sanctioned confluence touch; anything else is a crossing.
+    xing_w = []
+    _wbodies = []
+    if M.get("moat") and len(M["moat"]) >= 3:
+        _wbodies.append(("moat", M["moat"]))
+    if M.get("river") and (M["river"].get("pts") if isinstance(M.get("river"), dict) else None):
+        _wbodies.append(("river", M["river"]["pts"]))
+    if _wbodies:
+        for _ch in M.get("channels", []) + M.get("field_ditches", []):
+            _pl = _ch.get("poly") or []  # a short/absent poly simply yields no segments
+            for _i in range(len(_pl) - 1):
+                _a, _b = _pl[_i], _pl[_i + 1]
+                for _nm, _wb in _wbodies:
+                    for _k in range(len(_wb) - 1):
+                        if not segments_cross(_a, _b, _wb[_k], _wb[_k + 1]):
+                            continue
+                        _conf = (_i == 0 and seg_dist(_pl[0][0], _pl[0][1], _wb[_k], _wb[_k + 1]) < 20) or (_i == len(_pl) - 2 and seg_dist(_pl[-1][0], _pl[-1][1], _wb[_k], _wb[_k + 1]) < 20)
+                        if not _conf:
+                            xing_w.append((_nm, round(_a[0]), round(_a[1])))
+    check(
+        "channels_join_water_not_cross",
+        not xing_w,
+        f"channel/ditch segment(s) CROSS a moat/river centerline mid-run at {sorted(set(xing_w))[:4]} - water joins "
+        "water at a CONFLUENCE (the mouth ends at the bank, engine-trimmed and water-colored), it never runs "
+        "straight across the open water like a painted line; end the polyline at the centerline (the anchor "
+        "convention) instead of passing through",
+    )
+
     # large area features (forests, pastures) near a map edge must run OFF it - implying
     # they continue beyond what's drawn. Bounded farm fields are exempt.
     NEAR = 55
