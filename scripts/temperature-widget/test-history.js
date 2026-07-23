@@ -49,8 +49,29 @@ test('serializeSample rounds time to int and temp to 0.1 C, ends in newline', ()
     assert.strictEqual(H.serializeSample(1000, 71.25), '{"t":1000,"c":71.3}\n'); // .25 -> .3
 });
 
-test('serialize -> parse round-trips a history', () => {
-    const samples = [[1, 40], [2, 41.5], [3, 99.9]];
+test('serializeSample records utilization as an integer percent when usable', () => {
+    assert.strictEqual(H.serializeSample(1000, 71.2, 42.6), '{"t":1000,"c":71.2,"u":43}\n');
+    assert.strictEqual(H.serializeSample(1000, 71.2, 0), '{"t":1000,"c":71.2,"u":0}\n');
+    // No usable utilization -> the field is simply absent, never a sentinel.
+    for (const missing of [undefined, null, NaN, Infinity, '42']) {
+        assert.strictEqual(H.serializeSample(1000, 71.2, missing),
+            '{"t":1000,"c":71.2}\n', `should omit u for: ${missing}`);
+    }
+});
+
+test('parseHistoryLine carries a valid u and drops an invalid one', () => {
+    assert.deepStrictEqual(
+        H.parseHistoryLine('{"t":1000,"c":71.2,"u":43}'), [1000, 71.2, 43]);
+    // A bad u never invalidates the temperature sample (old lines have no u
+    // at all; a corrupt one degrades to the same shape).
+    assert.deepStrictEqual(
+        H.parseHistoryLine('{"t":1000,"c":71.2,"u":"x"}'), [1000, 71.2]);
+    assert.deepStrictEqual(
+        H.parseHistoryLine('{"t":1000,"c":71.2,"u":1e999}'), [1000, 71.2]);
+});
+
+test('serialize -> parse round-trips a history, with and without u', () => {
+    const samples = [[1, 40], [2, 41.5, 55], [3, 99.9, 0]];
     assert.deepStrictEqual(H.parseHistory(H.serializeHistory(samples)), samples);
 });
 
@@ -75,6 +96,48 @@ test('median discards a lone outlier and does not mutate its input', () => {
     const input = [3, 1, 2];
     assert.strictEqual(H.median(input), 2);
     assert.deepStrictEqual(input, [3, 1, 2], 'input must be untouched');
+});
+
+// --- CPU utilization from /proc/stat ----------------------------------------
+
+// A realistic /proc/stat head: aggregate line, then per-core lines that must
+// be ignored (no whitespace after "cpu" in "cpu0").
+const PROC_STAT =
+    'cpu  100 20 30 800 50 0 10 5 0 0\n' +
+    'cpu0 50 10 15 400 25 0 5 2 0 0\n' +
+    'intr 12345\n';
+
+test('parseProcStatCpu reads the aggregate line only', () => {
+    // total = 100+20+30+800+50+0+10+5 = 1015; idle+iowait = 850; busy = 165.
+    assert.deepStrictEqual(H.parseProcStatCpu(PROC_STAT), { busy: 165, total: 1015 });
+});
+
+test('parseProcStatCpu tolerates a short line (bare minimum 4 fields)', () => {
+    assert.deepStrictEqual(
+        H.parseProcStatCpu('cpu 10 0 10 80'), { busy: 20, total: 100 });
+});
+
+test('parseProcStatCpu rejects missing or malformed aggregate lines', () => {
+    for (const bad of ['', 'cpu0 1 2 3 4', 'cpu  a b c d', 'cpu 1 2 3', null, undefined]) {
+        assert.strictEqual(H.parseProcStatCpu(bad), null, `should reject: ${bad}`);
+    }
+});
+
+test('cpuUtilizationPct averages the delta between two snapshots', () => {
+    const prev = { busy: 100, total: 1000 };
+    assert.strictEqual(H.cpuUtilizationPct(prev, { busy: 150, total: 1100 }), 50);
+    assert.strictEqual(H.cpuUtilizationPct(prev, { busy: 100, total: 1100 }), 0);
+    assert.strictEqual(H.cpuUtilizationPct(prev, { busy: 200, total: 1100 }), 100);
+    // Rounding overshoot is clamped to 100.
+    assert.strictEqual(H.cpuUtilizationPct(prev, { busy: 201, total: 1100 }), 100);
+});
+
+test('cpuUtilizationPct returns null on missing, stale, or reset counters', () => {
+    const snap = { busy: 100, total: 1000 };
+    assert.strictEqual(H.cpuUtilizationPct(null, snap), null);
+    assert.strictEqual(H.cpuUtilizationPct(snap, null), null);
+    assert.strictEqual(H.cpuUtilizationPct(snap, snap), null);           // no elapsed time
+    assert.strictEqual(H.cpuUtilizationPct(snap, { busy: 50, total: 1100 }), null); // reset
 });
 
 // --- excluded-sensor diagnostic archive ------------------------------------
