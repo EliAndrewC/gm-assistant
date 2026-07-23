@@ -4970,6 +4970,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if k == "moat":
             mo: Any = M.get("moat")
             return bool(mo) and any(seg_dist(pt[0], pt[1], mo[i], mo[i + 1]) < 34 for i in range(len(mo) - 1))
+        if k == "river":  # a fan tapped straight off a river (Nagahara's Hayakawa far bank, 2026-07-23)
+            rv2: Any = M.get("river")
+            return bool(rv2) and any(seg_dist(pt[0], pt[1], rv2["pts"][i], rv2["pts"][i + 1]) < rv2.get("w", 40) / 2 + 14 for i in range(len(rv2["pts"]) - 1))
         if k == "drain":  # a brook empties FROM the field drain (akusui outfall)
             return any(seg_dist(pt[0], pt[1], dp[i], dp[i + 1]) < 30 for fd in M.get("field_ditches", []) if fd.get("role") == "drain" for dp in [fd["poly"]] for i in range(len(dp) - 1))
         if k == "ditch":
@@ -5663,10 +5666,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # the bare pre-013 Tango ~7% - the dense floor sits between them, so a bare ring still fails
         # while the approved fan-ringed look passes; the real paddy teeth live in
         # near_ring_paddy_dominant + city_moat_irrigates_fields. Towns keep their tight-frame floors.
+        # TOWN floors recalibrated 2026-07-23 with the same combs-only doctrine as the cities: the old
+        # 0.45/0.30/0.16 floors were calibrated WITH the dry/garden tile quilt filling the gaps - the
+        # exact mechanism the GM rejected ("tons and tons of dry crop fields everywhere"), so keeping
+        # them would force the quilt back. Comb-only references: dense five-fan Hirameki ~31%, thin
+        # grazing/relay Hoshizora ~14% - floors sit just under those, keeping bare-ring teeth while
+        # the PADDY teeth live in near_ring_paddy_dominant + the field checks.
         NRD_THRESHOLD = {
-            "dense": {"town": 0.45, "city": 0.12},
-            "medium": {"town": 0.30, "city": 0.08},
-            "thin": {"town": 0.16, "city": 0.05},
+            "dense": {"town": 0.28, "city": 0.12},
+            "medium": {"town": 0.18, "city": 0.08},
+            "thin": {"town": 0.12, "city": 0.05},
         }
         nrd_tier = meta.get("near_ring_density", "dense")
         nr_thr = NRD_THRESHOLD.get(nrd_tier, NRD_THRESHOLD["dense"])[scale]

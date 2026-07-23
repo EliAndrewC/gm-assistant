@@ -1,0 +1,71 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "wards": [
+  {
+   "name": "samurai",
+   "boundary": [
+    [
+     200,
+     500
+    ],
+    [
+     500,
+     500
+    ]
+   ],
+   "wall_caps": [
+    {
+     "x": 200,
+     "y": 500,
+     "pts": [
+      [
+       200,
+       500
+      ],
+      [
+       230,
+       500
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_ward_cap_flush_to_wall"
+  ],
+  "source": "test_checks.py::test_city_ward_cap_flush_to_wall_fires_when_a_cap_juts"
+ }
+}

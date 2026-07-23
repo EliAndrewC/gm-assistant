@@ -1,0 +1,43 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "mulberry_dike_fishpond"
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     1300
+    ],
+    [
+     100,
+     1300
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    900,
+    1300
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dikepond_corners_rounded",
+   "dikepond_water_within_banks"
+  ],
+  "source": "test_checks.py::test_dikepond_water_within_banks_and_rounded"
+ }
+}

@@ -1,0 +1,149 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid"
+ },
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     100,
+     100
+    ],
+    [
+     300,
+     100
+    ]
+   ],
+   "role": "main",
+   "seg": "feeder",
+   "field": "p"
+  },
+  {
+   "poly": [
+    [
+     300,
+     100
+    ],
+    [
+     300,
+     300
+    ]
+   ],
+   "role": "lateral",
+   "seg": "e_toe",
+   "field": "p"
+  },
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     100,
+     300
+    ]
+   ],
+   "role": "drain",
+   "seg": "drain",
+   "field": "p"
+  },
+  {
+   "poly": [
+    [
+     100,
+     300
+    ],
+    [
+     100,
+     100
+    ]
+   ],
+   "role": "lateral",
+   "seg": "w_toe",
+   "field": "p"
+  }
+ ],
+ "dikes": [
+  {
+   "outline": [
+    [
+     90,
+     90
+    ],
+    [
+     310,
+     90
+    ],
+    [
+     310,
+     310
+    ],
+    [
+     90,
+     310
+    ]
+   ],
+   "w_min": 14.0,
+   "w_max": 38.0,
+   "gaps": []
+  }
+ ],
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     300,
+     100
+    ],
+    [
+     300,
+     300
+    ],
+    [
+     100,
+     300
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    300,
+    300
+   ]
+  }
+ ],
+ "comb_floors": {
+  "p": [
+   [
+    50,
+    50
+   ],
+   [
+    350,
+    50
+   ],
+   [
+    350,
+    350
+   ],
+   [
+    50,
+    350
+   ]
+  ]
+ },
+ "_regression": {
+  "fires": [
+   "polder_floor_is_ring_interior"
+  ],
+  "source": "test_checks.py::test_polder_floor_is_ring_interior"
+ }
+}

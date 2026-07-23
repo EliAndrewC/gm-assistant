@@ -1,0 +1,82 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "moat": [
+  [
+   160,
+   160
+  ],
+  [
+   840,
+   160
+  ],
+  [
+   840,
+   840
+  ],
+  [
+   160,
+   840
+  ],
+  [
+   160,
+   160
+  ]
+ ],
+ "moat_width": 22,
+ "streams": [
+  {
+   "poly": [
+    [
+     -20,
+     500
+    ],
+    [
+     165,
+     500
+    ]
+   ],
+   "frm": null,
+   "to": null,
+   "w": 22
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_moat_has_outfall"
+  ],
+  "source": "test_checks.py::test_city_moat_has_outfall_fires_when_a_fed_moat_cannot_drain"
+ }
+}

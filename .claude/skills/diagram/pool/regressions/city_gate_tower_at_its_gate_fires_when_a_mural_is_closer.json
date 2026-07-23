@@ -1,0 +1,82 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "gate_structs": [
+  {
+   "x": 500,
+   "y": 340,
+   "w": 17,
+   "h": 10,
+   "kind": "tower"
+  },
+  {
+   "x": 500,
+   "y": 720,
+   "w": 17,
+   "h": 10,
+   "kind": "tower"
+  }
+ ],
+ "wall_towers": [
+  {
+   "x": 500,
+   "y": 340,
+   "w": 17,
+   "h": 10
+  },
+  {
+   "x": 500,
+   "y": 290,
+   "w": 21,
+   "h": 13
+  },
+  {
+   "x": 500,
+   "y": 720,
+   "w": 17,
+   "h": 10
+  },
+  {
+   "x": 420,
+   "y": 750,
+   "w": 21,
+   "h": 13
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_gate_tower_at_its_gate"
+  ],
+  "source": "test_checks.py::test_city_gate_tower_at_its_gate_fires_when_a_mural_is_closer"
+ }
+}

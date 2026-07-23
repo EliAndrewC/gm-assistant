@@ -3138,6 +3138,10 @@ def test_near_ring_paddy_moat_feeds_a_walled_city_basin_with_a_channel():
     # a big building band just outside the west moat: a basin west of it can only be moat-fed by a
     # channel that would CROSS the building, so that basin is skipped (the channel-clearance keep-out)
     s.M["buildings"] = [{"x": 430, "y": 700, "w": 60, "h": 340, "rot": 0, "kind": "warehouse"}]
+    # a road + a rect-record cemetery: both keep-out builders must run (these paths were exercised by
+    # the pool maps until the 2026-07-23 combs-only doctrine retired the basins from every gen)
+    s.M["road"] = [[0, 1300], [1400, 1300]]
+    s.M["cemeteries"] = [{"x": 1200, "y": 200, "w": 60, "h": 40}]
     n = s.near_ring_paddy((0, 0, 1400, 1400), seed=6, cell_ft=200)
     assert n > 0
     # interior (non-off-edge) basins are moat-fed: there is at least one moat->field channel

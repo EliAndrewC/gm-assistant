@@ -1,0 +1,67 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 1000,
+  "H": 1000
+ },
+ "fields": [
+  {
+   "name": "p",
+   "kind": "paddy",
+   "outline": [
+    [
+     0,
+     0
+    ],
+    [
+     120,
+     0
+    ],
+    [
+     120,
+     120
+    ],
+    [
+     0,
+     120
+    ]
+   ],
+   "bbox": [
+    0,
+    0,
+    120,
+    120
+   ]
+  }
+ ],
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     0,
+     300
+    ],
+    [
+     1000,
+     300
+    ],
+    [
+     1000,
+     900
+    ],
+    [
+     0,
+     900
+    ]
+   ],
+   "crop": "soy",
+   "theta": 0.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "near_ring_paddy_dominant"
+  ],
+  "source": "test_checks.py::test_near_ring_paddy_dominant_fires_when_dry_grain_dominates"
+ }
+}
