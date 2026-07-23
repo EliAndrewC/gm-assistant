@@ -1858,9 +1858,23 @@ class Settlement:
             for p in leftover_plots:
                 pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
                 lfill = p.get("fill", "#A6C398")
-                self.add(f'<polygon points="{pts}" fill="{lfill}" stroke="{lfill}" stroke-width="3" stroke-linejoin="round"/>')
                 random.seed(int(sum(x for x, _ in p["poly"]) * 7 + sum(y for _, y in p["poly"]) * 13))
-                self._paddy_surface(p["poly"], pts, flooded=(lfill == "#93B7AC"), pitch=4.5)  # jittered-grid mottle, ~3-6 px between shoots (GM 2026-07-23)
+                if lfill == "#93B7AC":
+                    # a FLOODED leftover reads with a ROUNDED, slightly IRREGULAR waterline (GM 2026-07-23):
+                    # bund corners silt round and a hand-piled bund toe wanders, so standing water in a
+                    # bunded field never holds a drafting-square corner. Erase the base parcel back to floor
+                    # green, then draw the water a hair inside the bunds with jittered erosion fillets (the
+                    # same _rounded_pond the dug ponds use - smaller inset, and NO water-edge stroke, so a
+                    # flooded field never reads as dug infrastructure). The thin green rim left showing is
+                    # the bund top the water cannot overtop.
+                    self.add(f'<polygon points="{pts}" fill="#A6C398" stroke="#A6C398" stroke-width="3" stroke-linejoin="round"/>')
+                    fd, fpoly = self._rounded_pond(p["poly"], inset=2.5, reach=12.0, rng=rng)
+                    self.add(f'<path d="{fd}" fill="{lfill}"/>')
+                    fpts = " ".join(f"{x:.1f},{y:.1f}" for x, y in fpoly)
+                    self._paddy_surface(fpoly, fpts, flooded=True, pitch=4.5)
+                else:
+                    self.add(f'<polygon points="{pts}" fill="{lfill}" stroke="{lfill}" stroke-width="3" stroke-linejoin="round"/>')
+                    self._paddy_surface(p["poly"], pts, flooded=False, pitch=4.5)  # jittered-grid mottle, ~3-6 px between shoots (GM 2026-07-23)
             random.setstate(_lst)
         dikeponds: list[dict[str, Any]] = []
         # channel centerline segments, for the bush-vs-canal clearance filter in _mulberry_rows (the crowns

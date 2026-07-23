@@ -13,6 +13,7 @@ settlement.py to 100%.
 import math
 import os
 import random
+import re
 import tempfile
 
 import pytest
@@ -3344,6 +3345,18 @@ def test_apply_land_use_leaves_a_lone_pond_ungated():
     }
     s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
     assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
+
+
+def test_flooded_leftover_paddy_gets_rounded_waterline():
+    # GM 2026-07-23: a FLOODED leftover's waterline draws rounded + slightly irregular (bund corners silt
+    # round, the toe wanders) via _rounded_pond - with NO edge stroke, so it never reads as a dug pond
+    # (pond water paths carry the #6C9CBE stroke; the flooded paddy's body is strokeless).
+    s = Settlement(2000, 2000, seed=2)
+    s.meta(field_archetype="mulberry_dike_fishpond")
+    plots = [{"poly": [(100.0 + 220 * i, 100.0), (280.0 + 220 * i, 100.0), (280.0 + 220 * i, 260.0), (100.0 + 220 * i, 260.0)], "low": True, "fill": "#93B7AC"} for i in range(4)]
+    s.apply_land_use({"plots": plots, "channels": []}, "mulberry_fishpond", random.Random(3), fraction=0.5, eligible="all")
+    body = "".join(s.out)
+    assert re.search(r'<path d="[^"]*Q[^"]*" fill="#93B7AC"/>', body)  # a strokeless, corner-filleted water body
 
 
 def test_dikepond_digs_back_from_a_penetrating_lateral():
