@@ -929,11 +929,10 @@ s.label(1523, 1407, "road market", 9, italic=True, color="#5A4326")
 
 # THE DEAD - a full funerary geography (centuries-old city; remains cremated, then interred):
 #  - two intramural TEMPLE GRAVEYARDS (danka parish grounds), by Benten and by Daikoku (above)
-#  - an in-wall burial ground in the agricultural district (NOT a temple parish ground)
-#  - one extramural common BURIAL GROUND, west of the wall (the exempt outside graveyard)
+#  - one extramural common BURIAL GROUND (the exempt outside graveyard)
 #  - the ruling clan's walled MAUSOLEUM by the SE samurai/government quarter (above)
 #  - the CREMATION GROUND + pauper OSSUARY mound outside the wall (monk-run, burakumin assistants)
-s.cemetery(2205, 871, 90, 64, label="common burial ground")  # back inboard for the content crop (2026-07-23 second pass): the funerary anchors the frame, so it sits just past the fields, not at the old wide frame's edge
+s.cemetery(2205, 871, 90, 64, parish=False, label="common burial ground")  # parish=False -> ORGANIC Japan-style plot (settlements.md 'shape of the common ground'). Back inboard for the content crop (2026-07-23 second pass): the funerary anchors the frame, so it sits just past the fields, not at the old wide frame's edge
 s.cremation_ground(2205, 978)
 s.ossuary(2215, 760)
 

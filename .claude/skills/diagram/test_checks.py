@@ -248,6 +248,17 @@ def test_marsh_on_low_ground_ignores_a_pond_fringe():
     assert "marsh_on_low_ground" not in f(M)
 
 
+def test_marsh_on_low_ground_ignores_a_defense_belt():
+    # a defensive wet belt hugs the fortified perimeter wherever the wall runs - here uphill (NW) of the
+    # field; defense_marsh_girds_the_walls owns its placement, so the valley-toe rule leaves it alone
+    M = {
+        "meta": {"scale": "village", "down_deg": 45},
+        "fields": [_field("p", 1000, 1000, 1600, 1600)],
+        "marshes": [{"x": 300, "y": 300, "w": 100, "h": 100, "role": "defense", "poly": [[250, 250], [350, 250], [350, 350], [250, 350]]}],
+    }  # uphill, but exempt
+    assert "marsh_on_low_ground" not in f(M)
+
+
 def test_drain_flows_downhill_fires_when_outfall_is_uphill():
     # down_deg=45 -> fall = x+y. The brook meets the drain at (300,300) [low fall], so that is the OUTFALL,
     # but the head (700,700) is further downhill -> the outfall sits UPHILL of the head -> water runs backwards.
@@ -6288,6 +6299,57 @@ def test_roads_clear_of_marsh_skips_a_degenerate_marsh_poly():
     # a marsh record whose poly is a bare 2-point sliver carries no area to test - skipped, no crash
     M = {"meta": {}, "road": [[100, 500], [900, 500]], "marshes": [{"x": 500, "y": 500, "w": 10, "h": 10, "poly": [[490, 495], [510, 505]]}]}
     assert "roads_clear_of_marsh" not in f(M)
+
+
+def test_roads_clear_of_marsh_exempts_a_defense_belt_causeway():
+    # the approach road CROSSES the defensive wet belt on a causeway (the renderer keeps the tread bare via
+    # the corridor skip) - few, constricted approaches are the belt's military purpose, not a placement error
+    M = {"meta": {}, "road": [[100, 500], [900, 500]], "wall": WALL, "marshes": [{"x": 500, "y": 500, "w": 120, "h": 80, "role": "defense", "poly": [[440, 460], [560, 460], [560, 540], [440, 540]]}]}
+    assert "roads_clear_of_marsh" not in f(M)
+
+
+# ---- defense_marsh_girds_the_walls (the engineered defensive wet belt, GM 2026-07-23) ----------
+def test_defense_marsh_girds_the_walls_needs_a_fortified_perimeter():
+    # a defensive inundation on a map with NO wall or moat defends nothing
+    M = {"meta": {}, "marshes": [{"x": 500, "y": 500, "w": 100, "h": 100, "role": "defense", "poly": [[450, 450], [550, 450], [550, 550], [450, 550]]}]}
+    assert "defense_marsh_girds_the_walls" in f(M)
+
+
+def test_defense_marsh_girds_the_walls_fires_inside_the_circuit():
+    # the wet belt reaches INSIDE the wall - the inundation protects the wall; inside is the town
+    M = {
+        "meta": {},
+        "wall": [[300, 300], [700, 300], [700, 700], [300, 700]],
+        "marshes": [{"x": 500, "y": 500, "w": 100, "h": 100, "role": "defense", "poly": [[450, 450], [550, 450], [550, 550], [450, 550]]}],
+    }
+    assert "defense_marsh_girds_the_walls" in f(M)
+
+
+def test_defense_marsh_girds_the_walls_fires_when_detached():
+    # outside the wall but nowhere near it - a bog detached from the fortification defends nothing
+    M = {
+        "meta": {},
+        "wall": [[300, 300], [700, 300], [700, 700], [300, 700]],
+        "marshes": [{"x": 940, "y": 940, "w": 80, "h": 80, "role": "defense", "poly": [[900, 900], [980, 900], [980, 980], [900, 980]]}],
+    }
+    assert "defense_marsh_girds_the_walls" in f(M)
+
+
+def test_defense_marsh_girds_the_walls_passes_hugging_the_moat():
+    # the belt lies just beyond the moat's outer bank, east of the circuit - the historical form
+    M = {
+        "meta": {},
+        "wall": [[300, 300], [700, 300], [700, 700], [300, 700]],
+        "moat": [[280, 280], [720, 280], [720, 720], [280, 720], [280, 280]],
+        "marshes": [{"x": 760, "y": 500, "w": 60, "h": 400, "role": "defense", "poly": [[730, 300], [790, 300], [790, 700], [730, 700]]}],
+    }
+    assert "defense_marsh_girds_the_walls" not in f(M)
+
+
+def test_defense_marsh_girds_the_walls_skips_a_degenerate_poly():
+    # a 2-point sliver carries no area to test - skipped, no crash (and no wall demanded for it)
+    M = {"meta": {}, "marshes": [{"x": 500, "y": 500, "w": 10, "h": 10, "role": "defense", "poly": [[490, 495], [510, 505]]}]}
+    assert "defense_marsh_girds_the_walls" not in f(M)
 
 
 # ---- drain_ends_reach_water (a collector's free end never dangles in bare ground) ----
