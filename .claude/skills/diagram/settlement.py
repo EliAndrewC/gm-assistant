@@ -559,6 +559,16 @@ WALL_DEFENSE = {
 }
 
 
+KIDO_TOWER_KEEPCLEAR = 62.0
+# px of rampart kept tower-free around a `tower_skip` spot - where a ward FENCE meets the city wall
+# (its kido ward-gate stands there; a mamian's footprint would collide the junction). Placement
+# refuses towers inside this band (city_wall's even-fill), so the coverage check EXEMPTS curtain
+# points inside it too (the check-keep-outs-mirror-placement-keep-outs doctrine, same as the
+# water-gate exemption): the junction is a manned chokepoint, not open curtain - and demanding
+# 2-tower coverage of it forced the remediation pass to seat a DOUBLED tower right outside the
+# band (the Tango/Nagahara adjacent-tower artifacts, GM 2026-07-23, wall_towers_evenly_spaced).
+
+
 def wall_tower_spacing_px(scale_px_per_ft: float, tier: str) -> float:
     """Max mural-tower spacing (px) that satisfies a wall_defense tier: the arrow range for a >=2 tier
     (so a point at any tower has a neighbour within range), or twice it for the >=1 Xi'an tier. Unknown
@@ -6154,7 +6164,7 @@ class Settlement:
             _gfurn = [(f["x"], f["y"], f["w"], f["h"]) for f in self.M["gate_structs"] if f.get("kind") in ("guardhouse", "inspection")][-2:]
 
             def _tower_blocked(tx: float, ty: float, _gfurn: Any = _gfurn) -> bool:  # bind loop var (used within this iteration)
-                if any(math.hypot(tx - kx_, ty - ky_) < 62 for kx_, ky_ in tower_skip):
+                if any(math.hypot(tx - kx_, ty - ky_) < KIDO_TOWER_KEEPCLEAR for kx_, ky_ in tower_skip):
                     return True
                 return any(abs(tx - fx) < (self.px(62) + fw) / 2 + 3 and abs(ty - fy) < (self.px(62) + fh) / 2 + 3 for fx, fy, fw, fh in _gfurn)
 
@@ -6227,10 +6237,18 @@ class Settlement:
             # SLIDE off a kido spot (a ward gate on the wall - avoid OVERLAP only, ~32px), the gate furniture,
             # or too-close to an existing tower. At siege density a mural sits happily beside a kido.
             def _blocked(px: float, py: float) -> bool:
+                # tower-to-tower separation floors at 0.75x the tier's spacing cap (was a flat 28px,
+                # which let a coverage-remediation seat land 32px from a 55px-rhythm neighbor - the
+                # Tango doubled-tower artifact, GM 2026-07-23). 0.75x cap stays strictly tighter than
+                # the wall_towers_evenly_spaced gate (0.7x median; the median never exceeds the cap),
+                # and never blocks a genuine hole-fill: a coverage-thin run only exists in a span
+                # wider than 2x the arrow radius, whose midpoint clears the floor at every tier. The
+                # 28px floor survives for extreme-dense postures. Rejected seats fall to the slide
+                # fan, which walks them toward the local span midpoint - restoring the rhythm.
                 return (
                     any(math.hypot(px - kx_, py - ky_) < 32 for kx_, ky_ in tower_skip)
                     or any(math.hypot(px - fx_, py - fy_) < 40 for fx_, fy_ in gate_furn)
-                    or any(math.hypot(px - tx_, py - ty_) < 28 for tx_, ty_ in placed_tw)
+                    or any(math.hypot(px - tx_, py - ty_) < max(28.0, 0.75 * max_spacing) for tx_, ty_ in placed_tw)
                 )
 
             if _blocked(vx, vy):
@@ -6292,6 +6310,9 @@ class Settlement:
             if len(placed_tw) == _before:
                 break  # nothing placeable this pass - a genuinely blocked stretch (the check will report it)
         self.M["wall"] = [[x, y] for x, y in pts]
+        # record the ward-junction keep-clears so the coverage check can exempt the same band
+        # placement refuses to tower (see KIDO_TOWER_KEEPCLEAR's why-comment)
+        self.M["wall_tower_keepclears"] = [[float(kx), float(ky)] for kx, ky in tower_skip]
         self.M["gates"] = [[gx, gy] for gx, gy in gates]
         if gates:
             self.M["gate"] = [gates[0][0], gates[0][1]]

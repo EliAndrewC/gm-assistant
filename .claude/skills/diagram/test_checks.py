@@ -2392,6 +2392,27 @@ def _ring_towers(step, wall=None):
     return out
 
 
+def test_wall_towers_evenly_spaced_fires_on_a_doubled_tower():
+    # a remediation-style tower squeezed 40px from its 100px-rhythm neighbor (the Tango east-curtain artifact)
+    tw = _ring_towers(100) + [{"x": 240, "y": 200}]
+    assert "wall_towers_evenly_spaced" in f(_fort_city(wall_towers=tw))
+
+
+def test_wall_towers_evenly_spaced_passes_on_an_even_ring():
+    assert "wall_towers_evenly_spaced" not in f(_fort_city(wall_towers=_ring_towers(100)))
+
+
+def test_city_wall_tower_coverage_exempts_the_kido_keepclear_band():
+    # a 300px tower hole in a dense 30px ring on the west curtain: mid-hole, points lose their 2nd tower
+    # (garrison R ~121: the 2nd comes from 30px beyond a hole edge, so the thin band is y~441-559) and the
+    # check fires - unless the hole is a recorded ward-junction keep-clear (wall_tower_keepclears), the
+    # band placement itself refuses to tower (the kido chokepoint; check keep-outs mirror placement
+    # keep-outs, same as the water-gate exemption)
+    tw = [t for t in _ring_towers(30) if not (t["x"] == 200 and 350 < t["y"] < 650)]
+    assert "city_wall_tower_coverage" in f(_fort_city(wall_towers=tw))
+    assert "city_wall_tower_coverage" not in f(_fort_city(wall_towers=tw, wall_tower_keepclears=[[200, 500]]))
+
+
 def test_city_wall_tower_coverage_fires_when_sparse():
     # only the 2 gate towers: the whole curtain between them sits out of flanking range of a 2nd tower
     M = _fort_city(wall_towers=[{"x": 500, "y": 200}, {"x": 500, "y": 800}])
