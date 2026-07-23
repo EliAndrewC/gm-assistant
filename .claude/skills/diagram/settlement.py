@@ -5331,15 +5331,15 @@ class Settlement:
                 if o.get("rot"):
                     ohw = ohh = math.hypot(ohw, ohh)
                 m = 3.0
-                if o["x"] + ohw + m < sx - r or o["x"] - ohw - m > sx + r or o["y"] + ohh + m < sy - r or o["y"] - ohh - m > sy + r:
-                    continue
+                if o["x"] + ohw + m < sx - r - 50 or o["x"] - ohw - m > sx + r + 50 or o["y"] + ohh + m < sy - r - 50 or o["y"] - ohh - m > sy + r + 50:
+                    continue  # +50 past the disc: the watering point may sit at a well just OUTSIDE the yard rim
                 keep.append((o["x"] - ohw - m, o["y"] - ohh - m, o["x"] + ohw + m, o["y"] + ohh + m))
 
         wallp = self.M.get("wall")  # a yard near the rampart (a gate-side animal ground) must not speckle the wall or spill outside it
 
-        def clear(px: float, py: float, pad: float = 0.0) -> bool:
-            if (px - sx) ** 2 + (py - sy) ** 2 > (r - pad) ** 2:
-                return False
+        def clear(px: float, py: float, pad: float = 0.0, rim: bool = True) -> bool:
+            if rim and (px - sx) ** 2 + (py - sy) ** 2 > (r - pad) ** 2:
+                return False  # rim=False for the well-side watering point, which may sit at/just past the disc edge
             if wallp and (not point_in_poly(px, py, wallp) or any(seg_dist(px, py, wallp[i], wallp[i + 1]) < 9 for i in range(len(wallp) - 1))):
                 return False
             if any(x0 <= px <= x1 and y0 <= py <= y1 for x0, y0, x1, y1 in keep):
@@ -5444,27 +5444,36 @@ class Settlement:
         # paragraph): a working ox drinks ~10 gal/day, a buffalo more, so a wagon-train needs
         # 300-600 gal in one or two big sessions - one small trough is functionally undersized.
         # The historical form is 2-3 long troughs (~8-15 ft, ~2 ft of edge per drinking head)
-        # CLUSTERED AT A WELL (animals are led to water in relays, not watered at the rail), so:
-        # anchor the cluster just inside the yard toward the nearest recorded well when one is in
-        # reach, else at a clear interior spot; a caravan-scale ground (r >= 76) gets 3 troughs,
-        # a plain stables yard 2. Drawn ~4.6x2 px each (a ~14 ft trough at city scale, width
-        # floored at the 2px cartographic minimum so the water reads).
+        # CLUSTERED AT A WELL (animals are led to water in relays, not watered at the rail; the
+        # bucket is poured straight from the wellhead, so the troughs sit BESIDE the well - GM
+        # 2026-07-23: "otherwise you'd have to carry the water a long way"): the cluster hugs the
+        # nearest recorded well within r + 40 - offset from the wellhead by just its visual radius
+        # + a trough's half-length (~bucket-pour distance), on the yard side, even when that well
+        # stands at or just past the disc rim - else it takes a clear interior spot. A
+        # caravan-scale ground (r >= 76) gets 3 troughs, a plain stables yard 2. Drawn ~4.6x2 px
+        # each (a ~14 ft trough at city scale, width floored at the 2px cartographic minimum so
+        # the water reads).
         n_troughs = 3 if r >= 76 else 2
+        t_h, t_gap, t_len = 2.0, 1.6, 4.6
         wp: Pt | None = None
-        for wl in self.M.get("wells", []) or []:
+        for wl in sorted(self.M.get("wells", []) or [], key=lambda o: math.hypot(o["x"] - sx, o["y"] - sy)):
             wdist = math.hypot(wl["x"] - sx, wl["y"] - sy)
-            if 1 <= wdist <= r + 40:
-                wf = max(0.0, min(1.0, (r - 26) / wdist))
-                wcand = (sx + (wl["x"] - sx) * wf, sy + (wl["y"] - sy) * wf)
-                if clear(wcand[0], wcand[1], 8.0):
+            if not 1 <= wdist <= r + 40:
+                continue
+            w_off = wl.get("vr", 4.0) + t_len / 2 + 1.5  # wellhead edge + half a trough + a step
+            w_ang0 = math.atan2(sy - wl["y"], sx - wl["x"])  # prefer the yard side, then walk around the wellhead
+            for w_da in (0.0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, math.pi):
+                wcand = (wl["x"] + math.cos(w_ang0 + w_da) * w_off, wl["y"] + math.sin(w_ang0 + w_da) * w_off)
+                if clear(wcand[0], wcand[1], 2.0, rim=False):
                     wp = wcand
                     used.append(wp)
                     break
+            if wp:
+                break
         if wp is None:
             wp = take(10.0, 24.0)
         if wp:
             wpx, wpy = wp
-            t_h, t_gap, t_len = 2.0, 1.6, 4.6
             t_total = n_troughs * t_h + (n_troughs - 1) * t_gap
             for t_i in range(n_troughs):
                 t_y = wpy - t_total / 2 + t_i * (t_h + t_gap)

@@ -31,7 +31,6 @@ estate doctrine), commuting over the bridge.
 
 import math
 import os
-import random as _random
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -121,7 +120,22 @@ s.corridors.append((SAM_BND, 15))  # reserve the WARD FENCE line before ANY pack
 # to the central crossroads, turns east along the main street, leaves by the river gate, and
 # crosses the Hayakawa bridge toward the southeastern counties - ONE route, both ends off-map
 # (through-traffic is why the city is here; the bend at the crossroads is the market corner)
-ROAD = [(1352, 596), (1382, 672), (1413, 751), (1451, 829), (1480, 918), (1480, 1330), (1933, 1330), (2023, 1330), (2071, 1333), (2149, 1335), (2253, 1457), (2357, 1550), (2472, 1650), (2560, 1727)]  # both ends past the widened frame (616/2545)
+ROAD = [
+    (1352, 596),
+    (1382, 672),
+    (1413, 751),
+    (1451, 829),
+    (1480, 918),
+    (1480, 1330),
+    (1933, 1330),
+    (2023, 1330),
+    (2071, 1333),
+    (2149, 1335),
+    (2253, 1457),
+    (2357, 1550),
+    (2472, 1650),
+    (2560, 1727),
+]  # both ends past the widened frame (616/2545)
 s.road(ROAD)  # unlabeled: only Imperial roads get labels (SKILL.md labeling rules)
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the through-road over the river
 
@@ -498,7 +512,7 @@ MIN_POS = [
     (1135, 1467),
     (1430, 1460),
 ]  # 3 N of the avenue, 2 S, all fronting it; Works sits 7px deeper off the avenue than Justice - its 30px scatter apron is marginally under the 30.7 a rotated samurai_large needs (see the phase-1 apron note), and the extra depth keeps the pack's avenue-band houses clear of the 14px office gap (city_government_offices_dont_abut)
-for (mx, my), name in zip(MIN_POS, MINS):
+for (mx, my), name in zip(MIN_POS, MINS, strict=True):
     s.ministry(mx, my, name, w=s.px(130), h=s.px(90))
 s.mausoleum(
     1292, 1608, 44, 32, label="Mausoleum", gate_dir="north", label_below=True
@@ -764,14 +778,16 @@ s.label(1508, 806, "gate market", 9, italic=True, color="#5A4326")
 # ground; the gentry keep the leftover south half of the NE quadrant (capital_dir=northeast needs
 # BOTH half-planes, so this strip between the fan and the wharf road is exactly their ground), one
 # a fraction at the frame edge with its land running on.
-EST = [(2160, 1230, 76, 48, "north", (2391, 1255)),  # lower NE, by the bridge road
-       (2340, 1120, 84, 56, "west", (2391, 1120)),   # E, mid-strip
-       (2500, 1270, 94, 62, "south", (2560, 1300))]  # E edge, a fraction at the frame
-for ex, ey, ew, eh, gd, (lx, ly) in EST:
+EST = [
+    (2160, 1230, 76, 48, "north", (2391, 1255)),  # lower NE, by the bridge road
+    (2340, 1120, 84, 56, "west", (2391, 1120)),  # E, mid-strip
+    (2500, 1270, 94, 62, "south", (2560, 1300)),
+]  # E edge, a fraction at the frame
+for ex, ey, ew, eh, gd, (_lx, _ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
     # NO drawn driveway (GM 2026-07-23, Tango-recipe: the long worn drives read as fat roads; the
     # check doctrine says estate approach lanes are "not drawn at this scale"). Targets kept for record.
-s.label(2337, 1305, "samurai estates", 10, italic=True, color="#3A352C")   # below the estate strip, above the wharf road
+s.label(2337, 1305, "samurai estates", 10, italic=True, color="#3A352C")  # below the estate strip, above the wharf road
 
 # surrounding farmland: three large moat-fed combs on the landward faces; a river-fed comb on
 # the far bank (its tap draws straight off the Hayakawa)
@@ -788,7 +804,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     s.field_channel([mp, sl], '#9CB4C8', 7, 7)  # the visible tap, in the MOAT'S OWN water color (confluence, not crossing - GM 2026-07-23)
     s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)  # the intake gate AT the palette seam (tap water -> canal water)
     _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,))
-    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda c: c[1]))
+    _pd = plot_centroid(_net, lambda cs: max(cs, key=lambda pc: pc[1]))
     # pull the delivery endpoint a touch toward the field centroid so it lands a clear >=10px
     # INSIDE the outline (a bottom-row plot centroid can sit within a bund's width of the edge)
     _pd = (round(0.80 * _pd[0] + 0.20 * _cen[0], 1), round(0.80 * _pd[1] + 0.20 * _cen[1], 1))
@@ -825,9 +841,7 @@ s.ring(('poly', ENV_FNN2), 16, 40, ["plain"])
 # fne1 - the far-bank fan, tapped STRAIGHT OFF the Hayakawa (the river-fed comb the far bank always
 # implied): sluice east of the bank, falling ESE off the east frame; its hem keeps off the estate
 # strip below via dry_keepout. The river IS the source (channel anchor kind "river").
-_nete1, ENV_FNE1, _ce1 = comb_field(
-    "fne1", (2130, 860), 20, 43, 140, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2160, 1230, 105), (2340, 1120, 115), (2500, 1270, 125))
-)
+_nete1, ENV_FNE1, _ce1 = comb_field("fne1", (2130, 860), 20, 43, 140, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2160, 1230, 105), (2340, 1120, 115), (2500, 1270, 125)))
 _pe1 = plot_centroid(_nete1, lambda cs: min(cs, key=lambda c: c[0]))
 topo_channel([(2076, 859), (2130, 860), _pe1], {"kind": "river"}, {"kind": "field", "name": "fne1"})
 s.field_channel([(2076, 859), (2130, 860)], '#9CB4C8', 7, 7)  # the visible tap, in the RIVER'S own water color (it carries river water; confluence, not crossing)
@@ -984,7 +998,7 @@ def _dwell_count():
 # change only, so a del+append of the same count would leave every later bbox misaligned (dead
 # blocks, overlapping houses); in-place substitution keeps the old 30px bboxes as a conservative
 # (superset) pre-filter over the new 16px polys, which stays correct.
-for _ci, _m in zip(range(_CIV_I0, _CIV_I1), s.M["ministries"] + [s.M["governor_mansion"]]):
+for _ci, _m in zip(range(_CIV_I0, _CIV_I1), s.M["ministries"] + [s.M["governor_mansion"]], strict=True):
     s.block_polys[_ci] = [
         (_m["x"] - _m["w"] / 2 - 16, _m["y"] - _m["h"] / 2 - 16),
         (_m["x"] + _m["w"] / 2 + 16, _m["y"] - _m["h"] / 2 - 16),
