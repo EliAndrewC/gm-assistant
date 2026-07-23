@@ -358,7 +358,7 @@ def drain_tail(dr, span=52.0):
     return [tuple(dr[i]), tuple(end)]
 
 
-def topo_channel(pts, frm, to, draw_w=0.0):
+def topo_channel(pts, frm, to, draw_w=0.0, col='#7C9EB0'):
     """Record a water-topology channel through `pts` (source/sink grounding + the winds/hairline
     conventions) and register its no-build corridor so the farmstead rings avoid it - the checks
     treat a recorded channel exactly like a drawn one. A bend is added on the longest segment when
@@ -377,7 +377,7 @@ def topo_channel(pts, frm, to, draw_w=0.0):
     s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5})
     s.corridors.append(([(px, py) for px, py in poly], 33))
     if draw_w:
-        s.field_channel([(px, py) for px, py in poly], '#7C9EB0', draw_w, draw_w)
+        s.field_channel([(px, py) for px, py in poly], col, draw_w, draw_w)
 
 
 # garden-green palette for the in-wall vegetable tract (vs the tan grain crops of a dry hem)
@@ -818,7 +818,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     mp = min(upstream, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
     _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0  # outward: away from the city center
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
-    s.field_channel([mp, sl], '#6C9CBE', 7, 7)  # the visible tap: moat rim -> sluice
+    s.field_channel([mp, sl], '#9CB4C8', 7, 7)  # the visible tap, in the MOAT'S OWN water color (it carries moat water; the color change happens at the sluice - GM 2026-07-23, mouths must read as confluences, not crossings)
     _net, _env, _cen = comb_field(
         nm, sl, dd, sd, ff, ca, cb, oa, dry_band=(47, 88), avoid=(MOAT,)
     )  # avoid: the moat (the estate driveways are no longer drawn, so no lane keep-outs needed)
@@ -842,7 +842,7 @@ _up2 = [p for p in MOAT if p[1] < _tap2[1] - 20]
 _mp2 = min(_up2, key=lambda p: (p[0] - _tap2[0]) ** 2 + (p[1] - _tap2[1]) ** 2)
 _ol2 = math.hypot(_mp2[0] - CX, _mp2[1] - CY) or 1.0
 _sl2 = (round(_mp2[0] + 30 * (_mp2[0] - CX) / _ol2), round(_mp2[1] + 30 * (_mp2[1] - CY) / _ol2))
-s.field_channel([_mp2, _sl2], '#6C9CBE', 7, 7)  # the visible tap: moat rim -> sluice
+s.field_channel([_mp2, _sl2], '#9CB4C8', 7, 7)  # the visible tap, in the moat's own water color (see the MOAT_FARMS loop)
 _nete2, ENV_FE2, _ce2 = comb_field(
     "fe2", _sl2, 20, 82, 155, (90, 125), (55, 80), (0.4, 0.75), dry_band=(47, 88), avoid=(MOAT,), dry_keepout=((2150, 1660, 115), (2300, 1795, 135))
 )  # keepout: the remaining samurai estate at (2150,1660) - the hem must not lap its walls
@@ -863,7 +863,7 @@ topo_channel([(1878, 604), (1878, 610), _pn], {"kind": "offmap"}, {"kind": "fiel
 _drn = next(c["pts"] for c in _netn["channels"] if c["role"] == "drain")
 _dfx, _dfy = _drn[-1]
 _mne = min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2)  # the moat rim S of the outfall (west of the funerary ground)
-topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)
+topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
 # REJECTED (2026-07-23): an fnw1 stream-fed fan in the FAR NW corner - it sat too far out
@@ -880,7 +880,7 @@ topo_channel([(1300, 604), (1300, 610), _pn2], {"kind": "offmap"}, {"kind": "fie
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mnw2 = min(MOAT, key=lambda p: (p[0] - _dfx2) ** 2 + (p[1] - _dfy2 - 90) ** 2)  # the moat rim S of the outfall
-topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)
+topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.ring(('poly', ENV_FN2), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN2), 22, 40, ["plain"])
 # fse1 + fs3 - the SE corner and the pocket south of the gate market (GM 2026-07-23): both tap the

@@ -319,7 +319,7 @@ def plot_centroid(net, key, inset=0.15):
     return (round(cx, 1), round(cy, 1))
 
 
-def topo_channel(pts, frm, to, draw_w=0.0):
+def topo_channel(pts, frm, to, draw_w=0.0, col='#7C9EB0'):
     """Record a water-topology channel through `pts` (source/sink grounding + the winds/hairline
     conventions) and register its no-build corridor so the farmstead rings avoid it - the checks
     treat a recorded channel exactly like a drawn one. A bend is added on the longest segment when
@@ -338,7 +338,7 @@ def topo_channel(pts, frm, to, draw_w=0.0):
     s.M["channels"].append({"poly": poly, "frm": frm, "to": to, "w": draw_w or 2.5})
     s.corridors.append(([(px, py) for px, py in poly], 33))
     if draw_w:
-        s.field_channel([(px, py) for px, py in poly], '#7C9EB0', draw_w, draw_w)
+        s.field_channel([(px, py) for px, py in poly], col, draw_w, draw_w)
 
 
 # ====================================================================== the street skeleton
@@ -807,7 +807,7 @@ topo_channel([(1050, 602), (1050, 608), _pn1], {"kind": "offmap"}, {"kind": "fie
 _drn1 = next(c["pts"] for c in _netn1["channels"] if c["role"] == "drain")
 _dfx1, _dfy1 = _drn1[-1]
 _mn1 = min(MOAT, key=lambda mp1: (mp1[0] - _dfx1 - 60) ** 2 + (mp1[1] - _dfy1 - 60) ** 2)  # rim SE of the outfall
-topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)  # empties into the moat
+topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water  # empties into the moat
 s.ring(('poly', ENV_FNN1), 24, 15, ["plain"])
 s.ring(('poly', ENV_FNN1), 18, 40, ["plain"])
 _netn2, ENV_FNN2, _cn2 = comb_field("fnn2", (1750, 608), 95, 42, 75, (110, 150), (60, 85), (0.4, 0.8), avoid=(MOAT,))
@@ -816,7 +816,7 @@ topo_channel([(1750, 602), (1750, 608), _pn2], {"kind": "offmap"}, {"kind": "fie
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mn2 = min(MOAT, key=lambda mp2: (mp2[0] - _dfx2) ** 2 + (mp2[1] - _dfy2 - 90) ** 2)
-topo_channel([(_dfx2, _dfy2), (_mn2[0], _mn2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2)
+topo_channel([(_dfx2, _dfy2), (_mn2[0], _mn2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=3.2, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.ring(('poly', ENV_FNN2), 22, 15, ["plain"])
 s.ring(('poly', ENV_FNN2), 16, 40, ["plain"])
 # fne1 - the far-bank fan, tapped STRAIGHT OFF the Hayakawa (the river-fed comb the far bank always
@@ -827,7 +827,7 @@ _nete1, ENV_FNE1, _ce1 = comb_field(
 )
 _pe1 = plot_centroid(_nete1, lambda cs: min(cs, key=lambda c: c[0]))
 topo_channel([(2076, 859), (2130, 860), _pe1], {"kind": "river"}, {"kind": "field", "name": "fne1"})
-s.field_channel([(2076, 859), (2130, 860)], '#6C9CBE', 7, 7)  # the visible tap: river bank -> sluice
+s.field_channel([(2076, 859), (2130, 860)], '#9CB4C8', 7, 7)  # the visible tap, in the RIVER'S own water color (it carries river water; confluence, not crossing)
 _dre1 = next(c["pts"] for c in _nete1["channels"] if c["role"] == "drain")
 _dfex, _dfey = _dre1[-1]
 topo_channel([(_dfex, _dfey), (2560, _dfey - 38)], {"kind": "drain"}, {"kind": "offmap"}, draw_w=3.2)  # runoff off the east frame (gentle ENE bend, no hairpin)

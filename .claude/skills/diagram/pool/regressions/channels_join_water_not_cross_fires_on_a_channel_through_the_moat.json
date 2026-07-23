@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 500,
+  "H": 500
+ },
+ "moat": [
+  [
+   50,
+   100
+  ],
+  [
+   450,
+   100
+  ],
+  [
+   450,
+   110
+  ]
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     100,
+     30
+    ],
+    [
+     100,
+     180
+    ]
+   ],
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "offmap"
+   },
+   "w": 2.5
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channels_join_water_not_cross"
+  ],
+  "source": "test_checks.py::test_channels_join_water_not_cross_fires_on_a_channel_through_the_moat"
+ }
+}
