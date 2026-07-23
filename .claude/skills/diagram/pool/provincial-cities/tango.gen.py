@@ -600,8 +600,8 @@ s.ministry(
 # opening west toward the hall (the troupe/festival venue belonging to the temple)
 s.theater_stage(1448, 1503, w=s.px(190), h=s.px(132), rot=90, label="theater stage")
 # Benten's + Daikoku's intramural TEMPLE GRAVEYARDS (danka parish grounds)
-s.cemetery(1216, 1509, 46, 34, label="graveyard")
-s.cemetery(1389, 1677, 56, 40, label="graveyard")
+s.cemetery(1224, 1503, 46, 34, label="graveyard")  # nudged off the SW ring road (city_graveyard_clear_of_ring_road) - still in Benten's precinct
+s.cemetery(1393, 1668, 56, 40, label="graveyard")  # nudged off the S ring road - still in Daikoku's precinct
 # a smattering of small wayside shrines dot the temple neighborhood (non-residential)
 for sx, sy in [
     (1300, 1559),
