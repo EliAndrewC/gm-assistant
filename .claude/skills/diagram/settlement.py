@@ -2152,12 +2152,15 @@ class Settlement:
         out = snap_front(out[::-1])[::-1]  # ...a feeder brook meets it at its mouth (trailing end): clip both
         return out
 
-    def _clip_to_moat(self, pts: Any) -> Any:
+    def _clip_to_moat(self, pts: Any, capr: float = 0.0) -> Any:
         """Snap a channel endpoint that meets the MOAT onto the moat bed's edge - trim any run that
         lies within the bed, restarting the channel at the bed's rim with a ~3px inset so its mouth
         covers the rim stroke - the same clean JOIN `_clip_to_pond` gives a pond-fed channel, so a
         moat tap (or a drain emptying into the moat) never draws its bed as a colored line across
-        the open moat water. No-op when there is no moat."""
+        the open moat water. `capr` is the stroke's CAP RADIUS (half the drawn width): the round
+        linecap inks that far PAST the endpoint, so the inset must back off by it - without this a
+        7px tap's mouth plunged to ~4px of the moat centerline and read as a foreign line crossing
+        half the band (GM 2026-07-23, Tango). No-op when there is no moat."""
         moat = self.M.get("moat")
         if not moat or len(pts) < 2:
             return pts
@@ -2191,7 +2194,52 @@ class Settlement:
             nxt = out[i + 1]
             ux, uy = nxt[0] - f[0], nxt[1] - f[1]
             ul = math.hypot(ux, uy) or 1.0
-            return [(f[0] + ux / ul * (hw - 3), f[1] + uy / ul * (hw - 3))] + out[i + 1 :]
+            return [(f[0] + ux / ul * (hw - 3 + capr), f[1] + uy / ul * (hw - 3 + capr))] + out[i + 1 :]
+
+        out = snap_front(pts)
+        out = snap_front(out[::-1])[::-1]
+        return out
+
+    def _clip_to_river(self, pts: Any, capr: float = 0.0) -> Any:
+        """Snap a channel endpoint that meets the RIVER onto the river bed's edge - the same clean
+        confluence `_clip_to_moat` gives a moat tap (added 2026-07-23 with the mouths-not-crossings
+        rule: Nagahara's fne1 tap started ON the Hayakawa centerline and drew across the half-band).
+        No-op when there is no river."""
+        rv = self.M.get("river")
+        if not rv or not rv.get("pts") or len(pts) < 2:
+            return pts
+        rp = rv["pts"]
+        hw = rv.get("w", 40) / 2
+
+        def foot(q: Pt) -> tuple[Any, Any]:
+            best: Any = None
+            bd: Any = None
+            for i in range(len(rp) - 1):
+                ax, ay = rp[i]
+                bx, by = rp[i + 1]
+                vx, vy = bx - ax, by - ay
+                ll = vx * vx + vy * vy or 1.0
+                t = max(0.0, min(1.0, ((q[0] - ax) * vx + (q[1] - ay) * vy) / ll))
+                fx, fy = ax + vx * t, ay + vy * t
+                d = math.hypot(q[0] - fx, q[1] - fy)
+                if bd is None or d < bd:
+                    bd, best = d, (fx, fy)
+            return best, bd
+
+        def snap_front(seq: Any) -> list[Any]:
+            out = list(seq)
+            if foot(out[0])[1] >= hw:
+                return out
+            i = 0
+            while i + 1 < len(out) and foot(out[i + 1])[1] < hw:
+                i += 1
+            if i + 1 >= len(out):
+                return out  # pragma: no cover - defensive: a tap never lies wholly in the river
+            f, _d = foot(out[i])
+            nxt = out[i + 1]
+            ux, uy = nxt[0] - f[0], nxt[1] - f[1]
+            ul = math.hypot(ux, uy) or 1.0
+            return [(f[0] + ux / ul * (hw - 3 + capr), f[1] + uy / ul * (hw - 3 + capr))] + out[i + 1 :]
 
         out = snap_front(pts)
         out = snap_front(out[::-1])[::-1]
@@ -2266,7 +2314,7 @@ class Settlement:
         An end reaching into a STREAM bed is snapped onto that bed's edge by `_clip_to_stream`
         (the confluence mouth for a drain culvert emptying into a stream).
         Not recorded here - the field_ditches are recorded separately for the checks."""
-        pts = self._clip_to_stream(self._clip_to_moat(self._clip_to_pond(pts)))
+        pts = self._clip_to_stream(self._clip_to_river(self._clip_to_moat(self._clip_to_pond(pts), capr=max(w0, w1) / 2), capr=max(w0, w1) / 2))
         if abs(w1 - w0) < 0.2:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
             self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {}, late=late)

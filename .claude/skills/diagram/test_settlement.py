@@ -3190,3 +3190,20 @@ def test_near_ring_paddy_keeps_basins_off_a_polygon_cemetery():
         if fld["name"].startswith("nrp_"):
             for vx, vy in fld["outline"]:
                 assert not (900 - 60 <= vx <= 1050 + 60 and 900 - 60 <= vy <= 1050 + 60)  # set back from the grave poly
+
+
+def test_clip_to_river_walks_a_multi_point_run_out_of_the_bed():
+    # a channel whose first TWO points lie inside the river bed: the leading-run walk advances past
+    # both and restarts the drawing at the bed edge + cap radius (the pool's taps are 2-point lines,
+    # so only a synthetic multi-point run exercises the walk)
+    s = _crop_settlement()
+    s.M["river"] = {"pts": [(300, 100), (300, 900)], "w": 40}
+    pts = [(300, 400), (310, 420), (400, 500)]  # first two inside the 20px half-bed, third clear
+    out = s._clip_to_river(pts, capr=3.5)
+    assert len(out) == 2  # the in-bed lead collapsed to the bank restart point
+    import math as _m
+
+    d = min(_m.hypot(out[0][0] - 300, out[0][1] - y) for y in range(100, 901))
+    # the (hw - 3 + capr) = 20.5 inset runs ALONG the channel, so its perpendicular distance from the
+    # centerline is shorter on a diagonal approach (here ~16); it must sit backed off inside the bed
+    assert 12.0 <= d <= 21.0

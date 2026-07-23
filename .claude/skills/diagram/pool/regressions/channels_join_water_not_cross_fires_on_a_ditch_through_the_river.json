@@ -1,0 +1,44 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 500,
+  "H": 500
+ },
+ "river": {
+  "pts": [
+   [
+    200,
+    20
+   ],
+   [
+    200,
+    480
+   ]
+  ],
+  "w": 40
+ },
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     80,
+     300
+    ],
+    [
+     350,
+     300
+    ]
+   ],
+   "role": "main",
+   "field": "f1",
+   "w": 4,
+   "w_tail": 4
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channels_join_water_not_cross"
+  ],
+  "source": "test_checks.py::test_channels_join_water_not_cross_fires_on_a_ditch_through_the_river"
+ }
+}
