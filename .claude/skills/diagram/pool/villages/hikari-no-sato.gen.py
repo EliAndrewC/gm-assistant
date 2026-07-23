@@ -219,7 +219,7 @@ s.reserve_clearing(CX - 40, CY + 540, 44, 30, 58)   # Shrine to Benten
 for _bt in BENTEN_TORII:
     s.reserve_clearing(_bt[0], _bt[1], 38, 28, 30)  # its 3 sando arches
 s.reserve_clearing(BX, BY, 30, 24, 58)              # Shrine to Bishamon
-s.reserve_clearing(BX, BY - 110, 46, 32, 30)        # the village graveyard
+s.reserve_clearing(BX, BY - 110, 62, 42, 30)        # the village graveyard (footprint synced with the s.cemetery call below)
 
 # COMMUNAL WELLS + shared draft-animal BYRES among the dwellings
 s.place_wells((CX - 210, CY - 300, CX + 210, CY + 320), spacing=260, near=110)
@@ -261,7 +261,7 @@ n_bridges = s.channel_footbridges(spacing=320)
 print(f"footbridges: {n_bridges}")
 
 # the village burial ground in the Bishamon shrine's churchyard, just N of the hall (moved with the precinct)
-s.cemetery(BX, BY - 110, 46, 32, parish=False, organic=True)  # resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~92x64 ft at 2 ft/px), not 0.5+ - see settlements.md funerary anchors
+s.cemetery(BX, BY - 110, 62, 42, parish=False, organic=True)  # resized 2026-07-23: the ground serves the WHOLE ~800-person district (village + ~6 hamlets' urns), ~0.15-0.30 acre -> 124x84 ft at 2 ft/px - see settlements.md 'District catchment'
 
 # BRIDGES carry every lane over the water it crosses (the connector track + spurs cross ditches/brooks)
 s.bridges()
