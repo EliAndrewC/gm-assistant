@@ -7095,6 +7095,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         mlarge = [b for b in M.get("buildings", []) if b.get("kind") == "merchant_large"]
         msmall = [b for b in M.get("buildings", []) if b.get("kind") == "merchant_house"]
         mest = M.get("merchant_estates", [])
+        # DRAWN COMPOUND COUNT MATCHES THE ROLL (GM 2026-07-23, mirroring torii_match_roll): a
+        # walled/gated compound is a PRIVILEGE explicitly granted to a merchant family - most very
+        # rich merchants can afford one but lack the legal standing to build it (the Edo pattern of
+        # individually granted merchant rights: a New Year's audience with the daimyo, a hereditary
+        # surname, etc. - see MERCHANT_ESTATE_WEIGHTS in settlement.py and settlements.md). The gen
+        # rolls 1-3 grants per city (30/40/30, seeded on the map seed), records the target in
+        # meta['merchant_estate_roll'], and this gates drawn == target - so the pre-roll state
+        # (both cities hand-coding exactly 1, a copied pattern) can never silently return.
+        _mroll = meta.get("merchant_estate_roll")
+        if _mroll is not None:
+            check(
+                "merchant_estates_match_roll",
+                len(mest) == _mroll,
+                f"{len(mest)} walled merchant estate(s) drawn but the seeded roll granted {_mroll} - place exactly the rolled count "
+                f"(the merchant_estates() seat list must carry enough vetted seats; pin with count= only with a recorded reason)",
+            )
         if mlarge or msmall:  # a merchant district whose homes are drawn
             check(
                 "city_merchant_housing_varied",

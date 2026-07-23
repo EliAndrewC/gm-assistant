@@ -1594,6 +1594,21 @@ def _merchant_city(buildings, estates=None):
     return M
 
 
+def test_merchant_estates_match_roll_fires_when_drawn_undershoots_the_grant():
+    # the seeded roll granted 2 compounds but only 1 was drawn (a stale hand count / short seat list)
+    M = _merchant_city([bldg(300, 300, kind="merchant_house")], estates=[{"x": 500, "y": 600, "w": 62, "h": 46}])
+    M["meta"]["merchant_estate_roll"] = 2
+    assert "merchant_estates_match_roll" in f(M)
+
+
+def test_merchant_estates_match_roll_passes_on_the_rolled_count_and_skips_unrolled_maps():
+    M = _merchant_city([bldg(300, 300, kind="merchant_house")], estates=[{"x": 500, "y": 600, "w": 62, "h": 46}])
+    M["meta"]["merchant_estate_roll"] = 1
+    assert "merchant_estates_match_roll" not in f(M)
+    M2 = _merchant_city([bldg(300, 300, kind="merchant_house")], estates=[{"x": 500, "y": 600, "w": 62, "h": 46}])
+    assert "merchant_estates_match_roll" not in f(M2)  # no recorded roll (a hand-placed town) - skipped
+
+
 def test_city_merchant_housing_varied_fires_when_uniform():
     # a merchant quarter of nothing but small uniform houses - no large houses, no walled estates
     M = _merchant_city([bldg(300 + i * 30, 300, kind="merchant_house") for i in range(10)])

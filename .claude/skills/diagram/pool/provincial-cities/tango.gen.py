@@ -632,9 +632,20 @@ s.merchant_storehouses(8)
 # the merchants' HOMES: terraces in the north band (between the burakumin lane and the avenue,
 # prime central ground) and the mid-block cores; the WEST enclave keeps its spread
 alleys([[(1308, 1346), (1308, 1454)]])  # reaches the avenue bed; the x1480 through-street serves the band's east half
-EST = [(1265, 1387, "south")]
-for ex, ey, gd in EST:
-    s.merchant_estate(ex, ey, gate_dir=gd)
+# WALLED COMPOUND COUNT IS ROLLED, 1-3 per city (GM 2026-07-23): a gated compound is a GRANTED
+# privilege, not a purchase - see MERCHANT_ESTATE_WEIGHTS (settlement.py) for the Edo-privileges
+# reasoning and merchant_estates_match_roll for the gate. The unwalled very-rich homes below stay
+# regardless (the city holds ~12 very-rich families; a compound marks the 1-3 who hold the grant).
+# SEAT VETTING (2026-07-23, via a full-map clear-pocket scan against the PRE-ESTATE fixed features:
+# streets/wall/moat/water, the early fixed wells and their |dx|>=39-or-|dy|>=31 wellhead clearance,
+# frontage shops, civic + label ground - pack housing places AFTER the estates and flows around;
+# late well passes yield to the court blocks). Ground EAST of the x~1620 ward fence is samurai
+# rowpack territory and caste-forbidden (a first seat-2 draft there ate a samurai_large and broke
+# city_samurai_housing_varied). Seat 2 takes the band's NW pocket between the early wells; seat 3
+# the district's SE pocket just west of the ward fence, west-gated toward the district interior.
+# Both pin-vetted with merchant_estates(count=3) against the full gate even though seed 162 rolls
+# 2 - a reseed may seat any of them.
+_n_est = s.merchant_estates([(1265, 1387, "south"), (1360, 1362, "west"), (1580, 1542, "west")])  # seat 2 threads the (1358,1399) fixed home / burakumin strip gap, west-gated onto the x1308 alley
 for mx, my in [(1358, 1399), (1517, 1391)]:
     s.building(mx, my, *s._dims("merchant_large"), "merchant_large")
 s.inn(1570, 1424)  # the roadside inn anchoring the central road-market (before the terraces)
