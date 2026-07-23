@@ -2911,6 +2911,48 @@ def test_late_water_block_carries_sheens_and_splices_after_plots():
     assert rec["sheenz"] > rec["bedz"]
 
 
+def test_pond_fill_relocates_to_the_late_block_when_a_late_channel_joins():
+    """The Tango in-wall tank (GM 2026-07-23): a comb head-race joins the pond from the LATE
+    block, which draws after the whole shared water block - so an early fill can never cover the
+    mouth's inside-the-rim overshoot and the cap rides ON TOP of the open water. The fill+sheen
+    relocate to the late block (topmost late bed); the rim EDGE stays early so the mouth's bed
+    still covers it. Manifest records the order for pond_fill_covers_channel_mouths."""
+    with tempfile.TemporaryDirectory() as d:
+        base = os.path.join(d, "t")
+        s = Settlement(1000, 1000, seed=1)
+        s.meta(name="V", scale="village")
+        s.pond(500, 250, 100, 70)
+        s.field_channel([(500, 260), (500, 600)], "#6C9CBE", 5.0, 5.0, late=True)  # sluice inside the pond -> snapped to the rim
+        s.finish(base, render=False)
+        with open(base + ".svg") as _f:
+            svg = _f.read()
+    dc = s.M["drawn_channels"][0]
+    assert dc["late"] and s.M["pond_layer"]["late"] is True  # the fill relocated to the late block
+    assert s.M["pond_layer"]["bedz"] > dc["bedz"]  # fill recorded ABOVE the joining bed (same block)
+    fill = svg.index('<ellipse cx="500" cy="250" rx="100" ry="70" fill="#9CB4C8"/>')
+    assert fill > svg.index('stroke="#6C9CBE"')  # fill drawn AFTER the late bed (covers the cap)
+    assert svg.index('stroke="#5C7488"') < svg.index('stroke="#6C9CBE"')  # rim edge stays early, below the bed
+
+
+def test_pond_fill_stays_in_the_shared_block_without_a_late_join():
+    # a late channel that does NOT touch the pond must not relocate the fill: the shared block's
+    # own pond_fill-last ordering already covers the early feeder's overshoot
+    with tempfile.TemporaryDirectory() as d:
+        base = os.path.join(d, "t")
+        s = Settlement(1000, 1000, seed=1)
+        s.meta(name="V", scale="village")
+        s.pond(500, 250, 100, 70)
+        s.field_channel([(500, 260), (500, 600)], "#6C9CBE", 5.0, 5.0)  # EARLY joining channel
+        s.field_channel([(50, 900), (300, 900)], "#7C9EB0", 3.0, 3.0, late=True)  # late, far from the pond
+        s.finish(base, render=False)
+        with open(base + ".svg") as _f:
+            svg = _f.read()
+    early, late = s.M["drawn_channels"]
+    assert s.M["pond_layer"]["bedz"] > early["bedz"]  # shared-block covering order holds (same block, z comparable)
+    assert s.M["pond_layer"]["late"] is False  # no relocation: the fill stayed in the shared block
+    assert svg.index('<ellipse cx="500" cy="250" rx="100" ry="70" fill="#9CB4C8"/>') < svg.index('stroke="#7C9EB0"')  # the non-joining late bed draws later (svg order, cross-block)
+
+
 def test_draw_comb_field_snaps_the_intake_onto_a_nearby_stream():
     # the hairline intake's START snaps onto the stream centerline when the sluice sits on the
     # bank (within the 30px anchor band) - the confluence at the offtake; a feeder brook ending
