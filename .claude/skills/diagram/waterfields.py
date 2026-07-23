@@ -430,7 +430,12 @@ def build_comb(
     duf.append((hi_u, a_fit + b_fit * hi_u))  # the outfall point (drain's downhill end)
     duf.sort(key=lambda q: q[0])
     dpts = [F.to_xy(u, f) for u, f in duf]
-    channels.append({"pts": dpts, "w": 6.0 * grain, "role": "drain"})
+    # the collector WIDENS downstream - the mirror of the supply taper (GM 2026-07-23): a supply
+    # canal sheds water as it goes and dwindles; the akusui GATHERS the plots' tail-water as it
+    # crosses the low side, so it starts as a thread at its head and carries the fan's whole
+    # runoff at the outfall (duf is u-sorted with the outfall appended at hi_u, so pts[-1] is
+    # the downhill end the gens anchor to the brook/moat/offmap).
+    channels.append({"pts": dpts, "w": 2.2 * grain, "w_tail": 6.0 * grain, "role": "drain"})
 
     # the akusui does NOT just stop: it empties at its outfall into a natural valley BROOK that
     # carries the water off the map downhill (reused by the next village downstream / rejoining the
@@ -1221,7 +1226,7 @@ def build_terraces(
     # the drain is a STRAIGHT descending collector along the foot (a straight amp=0 contour, not the wiggly
     # terrace bottom - following the sine would hairpin), sloping steadily to the low-flank outfall, then turning
     # downhill so the brook continues without an acute bend
-    foot = contour(fall, 0.0, 0.0)
+    foot = contour(fall, 0.0, 0.0)  # (drain widens downstream below - the collector gathers; GM 2026-07-23)
     fe, fw = foot[0], foot[-1]  # east / west foot ends
     n_d = 8
     drain_pts = []
@@ -1234,7 +1239,7 @@ def build_terraces(
     sluice = flank[0]
     channels = [
         {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
-        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+        {"pts": drain_pts, "role": "drain", "w": 2.2, "w_tail": 5.0},  # gathers fe -> fw: thread at its head, full at the low-flank outfall
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]  # straight downhill off-map
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
@@ -1656,7 +1661,12 @@ def build_ribbon(
     sluice = flank[0]
     channels = [
         {"pts": flank, "role": "main", "w": 5.0, "w_tail": 3.0},
-        {"pts": drain_pts, "role": "drain", "w": 5.0, "w_tail": 5.0},
+        {
+            "pts": drain_pts,
+            "role": "drain",
+            "w": 5.0,
+            "w_tail": 5.0,
+        },  # constant ON PURPOSE: this 3-point cross collector gathers from BOTH ends into its CENTRAL outfall (the brook leaves from the middle), so a monotone w->w_tail taper would be wrong on both halves
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
