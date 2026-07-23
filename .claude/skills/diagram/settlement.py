@@ -7890,6 +7890,14 @@ class Settlement:
             lines.append([tuple(p) for p in o["poly"]])
         for ln in self.M.get("lanes", []):
             lines.append([tuple(p) for p in ln["pts"]])
+        # CITY barriers + arteries (caught 2026-07-23, the aggressive Tango content crop): with no blank
+        # corner left, the placard landed straddling the rampart/moat band - the wall, moat, ring road,
+        # and the through-road are obstacles too (crossing the centerline is what the box test catches;
+        # the placard is taller than the wall-moat gap, so it cannot hide between them).
+        for key in ("wall", "moat", "ring_road", "road"):
+            pl = self.M.get(key)
+            if pl and len(pl) >= 2:
+                lines.append([tuple(p) for p in pl])
         return rects, polys, lines
 
     def _box_clear(self, bx0: float, by0: float, bx1: float, by1: float, obs: Any) -> bool:
