@@ -6642,3 +6642,34 @@ def test_scrub_clear_of_urban_fabric_passes_when_scrub_hugs_the_outskirts():
         "wells": [{"x": 800, "y": 300, "r": 8, "vr": 12}],  # outside the poly
     }
     assert "scrub_clear_of_urban_fabric" not in f(M)
+
+
+# ---- channels_join_water_not_cross (GM 2026-07-23): a channel/ditch never runs straight ACROSS the
+# moat/river centerline - water joins water at a confluence (the mouth ends at the bank; the recorded
+# topology ends ON the centerline, so first/last-segment touches at the crossed water segment are the
+# sanctioned join).
+def test_channels_join_water_not_cross_fires_on_a_channel_through_the_moat():
+    M = {
+        "meta": {"scale": "town", "W": 500, "H": 500},
+        "moat": [[50, 100], [450, 100], [450, 110]],
+        "channels": [{"poly": [[100, 30], [100, 180]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "w": 2.5}],
+    }
+    assert "channels_join_water_not_cross" in f(M)
+
+
+def test_channels_join_water_not_cross_exempts_a_tap_ending_on_the_centerline():
+    M = {
+        "meta": {"scale": "town", "W": 500, "H": 500},
+        "moat": [[50, 100], [450, 100], [450, 110]],
+        "channels": [{"poly": [[100, 100], [100, 180]], "frm": {"kind": "moat"}, "to": {"kind": "offmap"}, "w": 2.5}],
+    }
+    assert "channels_join_water_not_cross" not in f(M)
+
+
+def test_channels_join_water_not_cross_fires_on_a_ditch_through_the_river():
+    M = {
+        "meta": {"scale": "town", "W": 500, "H": 500},
+        "river": {"pts": [[200, 20], [200, 480]], "w": 40},
+        "field_ditches": [{"poly": [[80, 300], [350, 300]], "role": "main", "field": "f1", "w": 4, "w_tail": 4}],
+    }
+    assert "channels_join_water_not_cross" in f(M)
