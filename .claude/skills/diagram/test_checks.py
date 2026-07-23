@@ -285,6 +285,26 @@ def test_delivery_ditches_taper_exempts_ditches_without_recorded_widths():
     assert "delivery_ditches_taper" not in f(M)
 
 
+# a bunsuiguchi head fork: 3 SUPPLY (main) ditches meet at (100,100) - the head-race in + two supply canals out
+_FORK_MAINS = [
+    {"poly": [[60, 60], [100, 100]], "role": "main", "field": "f"},
+    {"poly": [[100, 100], [160, 100]], "role": "main", "field": "f"},
+    {"poly": [[100, 100], [100, 160]], "role": "main", "field": "f"},
+]
+
+
+def test_channels_join_not_cross_at_fork_fires_on_a_delivery_at_the_division():
+    # a delivery (role "branch") taking off AT the fork - the 4-way star that reads as a crossroads
+    M = {"field_ditches": _FORK_MAINS + [{"poly": [[100, 100], [140, 140]], "role": "branch", "field": "f", "w": 2.7, "w_tail": 1.0}]}
+    assert "channels_join_not_cross_at_fork" in f(M)
+
+
+def test_channels_join_not_cross_at_fork_passes_when_the_delivery_is_downstream():
+    # the delivery branches off a supply canal 50px downstream of the fork - a clean offtake
+    M = {"field_ditches": _FORK_MAINS + [{"poly": [[150, 100], [150, 145]], "role": "branch", "field": "f", "w": 2.7, "w_tail": 1.0}]}
+    assert "channels_join_not_cross_at_fork" not in f(M)
+
+
 def _dryplot(x, theta):
     # a full ~40x36 parcel (one corner nipped): the furrows-vary adjacency radius now derives from the
     # plots' own mean size (1.25x side length, capped 50px), so the fixture plots must be REAL parcels -
@@ -2722,16 +2742,33 @@ def test_walled_city_structural_checks_fire():
     assert "walled_city_has_wall_and_gates" in fails
     assert "city_inspection_station_at_each_gate" in fails
     assert "walled_city_has_burakumin_inside" in fails
-    assert "city_samurai_estates_outside" in fails  # 0 estates, want 5-15
+    assert "city_samurai_estates_outside" in fails  # 0 estates, want 1-3
     assert "city_imperial_road_through" in fails
 
 
 def test_city_samurai_estates_vary_in_size_fires_when_uniform():
-    estates = [{"x": 900 + i * 12, "y": 900, "w": 100, "h": 80} for i in range(6)]  # 6 (in range), all identical
+    estates = [{"x": x, "y": y, "w": 100, "h": 80} for x, y in [(880, 600), (900, 880), (620, 880)]]  # 3 (in range), spread apart, all identical
     M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "manors": estates}
     fails = f(M)
     assert "city_samurai_estates_vary_in_size" in fails
-    assert "city_samurai_estates_outside" not in fails  # 6 IS in the 5-15 range
+    assert "city_samurai_estates_outside" not in fails  # 3 IS in the 1-3 range
+    assert "city_samurai_estates_dispersed" not in fails  # spread >= 200px apart
+
+
+def test_city_samurai_estates_outside_fires_when_too_many():
+    # 4 estates shown - more than the 1-3 a city map should show (the rest are dispersed off-map, miles out)
+    estates = [{"x": x, "y": y, "w": 90 + i * 6, "h": 60} for i, (x, y) in enumerate([(880, 560), (900, 820), (620, 880), (860, 700)])]
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "manors": estates}
+    assert "city_samurai_estates_outside" in f(M)
+
+
+def test_city_samurai_estates_dispersed_fires_on_a_tight_cluster():
+    # 3 estates packed together (< 200px apart) - a cluster ringing the wall, not dispersed country seats
+    estates = [{"x": x, "y": y, "w": 90 + i * 6, "h": 60} for i, (x, y) in enumerate([(860, 840), (900, 900), (960, 870)])]
+    M = {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "manors": estates}
+    fails = f(M)
+    assert "city_samurai_estates_dispersed" in fails
+    assert "city_samurai_estates_outside" not in fails  # 3 is a valid count; it is the CLUSTERING that fires
 
 
 def test_city_streets_have_buildings_fires_on_an_empty_city_street():
@@ -3830,6 +3867,43 @@ def test_footbridges_reach_useful_ground_exempts_untagged_lane_bridges():
     M = _footbridge_map([{"x": 450, "y": 200, "rot": 90, "span": 11, "w": 5}])
     M["fields"] = [{"name": "p", "kind": "paddy", "outline": [[50, 90], [850, 90], [850, 190], [50, 190]], "bbox": [50, 90, 850, 190]}]
     assert "footbridges_reach_useful_ground" not in f(M)
+
+
+# ---- torii_spread_out: scale-aware floor of one arch-span (16 ft), so dense senbon avenues are legal --------
+def test_torii_spread_out_fires_when_arches_overlap():
+    # two arches closer than one rail-span (16 ft = 8px at village 2 ft/px) collapse into a blob
+    M = {"meta": {"scale": "village", "ftpx": 2}, "torii": [[400, 440, 1], [400, 445, 2]]}
+    assert "torii_spread_out" in f(M)
+
+
+def test_torii_spread_out_passes_a_dense_avenue():
+    # a dense senbon-style avenue (~14px/28ft apart) is fine - denser than the old fixed 25px floor allowed
+    M = {"meta": {"scale": "village", "ftpx": 2}, "torii": [[400, 440 + i * 14, i] for i in range(7)]}
+    assert "torii_spread_out" not in f(M)
+
+
+# ---- shrine_avenue_fronts_the_hall: a village sando's innermost arch sits at the hall's threshold ----------
+def _shrine_avenue(hall_x, torii_y0):
+    return {
+        "meta": {"scale": "village", "ftpx": 2},
+        "religious": [{"x": hall_x, "y": 400, "w": 30, "h": 24, "kind": "shrine", "rot": 0}],
+        "torii": [[400, torii_y0 + i * 15, i] for i in range(3)],  # a 3-arch sando marching S
+    }
+
+
+def test_shrine_avenue_fronts_the_hall_fires_when_the_arch_is_set_out():
+    # the innermost arch stands well out from the hall front (96 ft > the 36 ft ceiling)
+    assert "shrine_avenue_fronts_the_hall" in f(_shrine_avenue(400, 460))
+
+
+def test_shrine_avenue_fronts_the_hall_passes_at_the_threshold():
+    # innermost arch at the hall's front (24 ft gap)
+    assert "shrine_avenue_fronts_the_hall" not in f(_shrine_avenue(400, 424))
+
+
+def test_shrine_avenue_fronts_the_hall_exempts_a_gateway_beside_the_hall():
+    # Hikari pattern: the hall stands aside the entrance track (200 ft off the avenue axis), arches straddle the track
+    assert "shrine_avenue_fronts_the_hall" not in f(_shrine_avenue(300, 460))
 
 
 def test_bridges_clear_of_houses_fires_when_a_plank_sits_on_a_farmhouse():
@@ -5461,6 +5535,17 @@ def test_twin_axes_wide_cluster_and_bare_manifest():
     assert ax["water_source"] is None and ax["grain_orient"] is None and ax["focal_set"] == frozenset()
 
 
+def test_twin_axes_pond_layout_distinguishes_mosaic_from_grid():
+    # GM 2026-07-22: a mosaic dike-pond (桑基魚塘) and a surveyed grid polder (圩田) of the same water
+    # direction are different KINDS of place; pond_layout is a twin axis so the detector counts the difference.
+    assert "pond_layout" in check_village.TWIN_AXES
+    assert check_village.twin_axes({"meta": {"name": "G", "down_deg": 45}})["pond_layout"] == "grid"  # default
+    assert check_village.twin_axes({"meta": {"name": "M", "down_deg": 45, "pond_layout": "mosaic"}})["pond_layout"] == "mosaic"
+    grid = check_village.twin_axes({"meta": {"name": "G", "down_deg": 45, "field_archetype": "polder_grid"}})
+    mosaic = check_village.twin_axes({"meta": {"name": "M", "down_deg": 45, "pond_layout": "mosaic"}})
+    assert check_village.twin_diff_count(grid, mosaic) >= 1  # they differ on at least the pond_layout axis
+
+
 def test_twin_report_none_axes_are_no_evidence_not_a_diff():
     # a fully-featured map vs a bare one: the bare map's None axes must NOT count as differences (a data
     # gap cannot manufacture distinctiveness) -> the pair stays TWINNED, not spuriously PASS
@@ -5589,6 +5674,24 @@ def test_dikepond_water_within_banks_and_rounded():
     # a 4-vertex sharp quad (inside its parcel) -> corners_rounded fires
     sharp = [{"parcel": parcel(200 + 120 * i, 300), "water": [[190 + 120 * i, 290], [210 + 120 * i, 290], [210 + 120 * i, 310], [190 + 120 * i, 310]]} for i in range(12)]
     assert "dikepond_corners_rounded" in f({**base, "dikeponds": sharp})
+
+
+def test_dikeponds_gated_to_water():
+    # GM 2026-07-22: every 桑基魚塘 pond must GATE to the water network by a sluice reaching a creek/canal or a
+    # neighbour pond; sealed ponds (no sluices) OR sluices that reach nothing fire.
+    field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
+    canal = {"poly": [[100, 700], [900, 700]], "role": "lateral", "seg": "lateral", "field": "p"}
+    base = {"meta": {"scale": "hamlet", "field_archetype": "mulberry_dike_fishpond"}, "fields": [field], "field_ditches": [canal]}
+
+    def rounded(cx, cy):
+        return [[cx + 30 * math.cos(a), cy + 30 * math.sin(a)] for a in [i * math.pi / 6 for i in range(12)]]
+
+    ponds = [{"parcel": [[150 + 120 * i, 640], [250 + 120 * i, 640], [250 + 120 * i, 760], [150 + 120 * i, 760]], "water": rounded(200 + 120 * i, 700)} for i in range(12)]
+    ok = [[[200 + 120 * i + 30, 700], [200 + 120 * i, 700]] for i in range(12)]  # far end ON the canal at y=700
+    assert "dikeponds_gated_to_water" not in f({**base, "dikeponds": ponds, "dikepond_sluices": ok})
+    assert "dikeponds_gated_to_water" in f({**base, "dikeponds": ponds})  # no sluices -> sealed basins fire
+    bad = [[[200 + 120 * i + 30, 700], [200 + 120 * i, 2200]] for i in range(12)]  # far end in open ground -> reaches nothing
+    assert "dikeponds_gated_to_water" in f({**base, "dikeponds": ponds, "dikepond_sluices": bad})
 
 
 def test_polder_floor_is_ring_interior():

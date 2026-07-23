@@ -752,13 +752,18 @@ s.frontage(
 )  # flanks the REAL north-road segment (two of its vertices) so the stalls sit clear of the road bed
 s.label(1508, 806, "gate market", 9, italic=True, color="#5A4326")
 
-# samurai ESTATES across the river to the NORTHEAST (toward Otosan Uchi - a samurai builds his
-# country seat on the capital-facing side), N of the bridge road and clear of it, commuting in
-# over the Hayakawa bridge. Sizes + gate_dir vary; the inner ones straddle the cropped edge.
-EST = [(2169, 923, 94, 62, "south"), (2285, 985, 90, 60, "west"), (2165, 1063, 86, 58, "north"), (2299, 1110, 84, 56, "west"), (2190, 1205, 78, 52, "south"), (2337, 1232, 72, 48, "west")]
-for ex, ey, ew, eh, gd in EST:
+# samurai country estates: DISPERSED walled compounds across the Hayakawa to the NORTHEAST (toward
+# Otosan Uchi - a samurai builds his country seat on the capital-facing side), each a fortified country
+# seat on its OWN land, SPREAD APART and mostly OFF-MAP (miles out) - NOT a cluster (that belt is the
+# commercial suburb). They commute in over the bridge. See settlements.md 'Historical grounding'. Sizes
+# + formal-gate direction vary; >= 200px apart (city_samurai_estates_dispersed), at most 3 shown.
+EST = [(2160, 920, 94, 62, "south", (2140, 770)),    # upper NE, drive off the N edge onto the district road
+       (2340, 1120, 84, 56, "west", (2391, 1120)),   # E, drive off the E edge
+       (2160, 1230, 76, 48, "north", (2391, 1255))]  # lower NE, drive out to the bridge road (E)
+for ex, ey, ew, eh, gd, (lx, ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
-s.label(2238, 1299, "samurai estates", 10, italic=True, color="#3A352C")
+    s.lane([(ex, ey), (lx, ly)], worn=True, connector=True)   # the estate's own drive out to the rural/bridge road (reaches a gate off-frame)
+s.label(2255, 1030, "samurai estates", 10, italic=True, color="#3A352C")   # open ground between the dispersed estates
 
 # surrounding farmland: three large moat-fed combs on the landward faces; a river-fed comb on
 # the far bank (its tap draws straight off the Hayakawa)
@@ -996,7 +1001,7 @@ s.place_wells((1094, 962, 1450, 1298), spacing=46, near=48)  # NW monzen, offset
 # structures, estates, graves, the river, and the moat. Called last, after every structure + top-up.
 # Default near_ring_density "dense". WHY: settlements.md "Near-ring farmland density".
 s.near_ring_paddy(
-    (889, 770, 2391, 1890), seed=47, cell_ft=460
+    (889, 770, 2391, 1890), seed=49, cell_ft=460
 )  # feature 014: wet-rice paddy basins where the river reaches (the dominant near-ring crop); off-edge or farmhouse-ringed for city_outside_fields_have_farmhouses
 s.near_ring_cropland((889, 770, 2391, 1890), seed=52, garden_frac=0.85)  # demoted: gardens by the wall + thin margin grain, filling only what the paddy did not (auto-skips the paddy field_polys)
 
