@@ -272,7 +272,7 @@ s.village_grove(_scatter, role="copse", dense=False)
 # before the scatter runs or the scrub dots the swept ground among the markers (scatter only skips clearings
 # that already exist - scatter_respects_swept_clearings; this map shipped with exactly that defect once).
 # Same footprint as the s.cemetery call below (_wmx/_wmy are set in stage 3a above).
-s.reserve_clearing(_wmx - 100, _wmy + 130, 48, 34, 30)
+s.reserve_clearing(_wmx - 100, _wmy + 130, 60, 46, 30)
 # LESSON (2026-07-20, the map's original defect): draw the bands for the FRAME, not the canvas. The first
 # version's bands sat at canvas x 120-1080, but crop_to_content tightens Ueda's view to x>=~505 (the frame
 # hugs the houses/field, and commons are not crop content), so the W/SW band fell entirely OFF-FRAME and 28%
@@ -301,7 +301,7 @@ print(f"footbridges: {n_bridges}")
 # so the burial ground is the shrine's churchyard - village_graveyard_by_shrine). It sits in the clear ground
 # SW of the water-mouth shrine, off the sacred hall + torii (cemetery_clear_of_shrine), south of the grove and
 # north of the marsh, well clear of the far-E field. An organic (unsurveyed) earthen plot; no label.
-s.cemetery(_wmx - 100, _wmy + 130, 48, 34, parish=False, organic=True)  # resized 2026-07-19: a ~350-person village ground is ~0.1-0.25 acre (~92x64 ft at 2 ft/px), not 0.5+ - see settlements.md funerary anchors
+s.cemetery(_wmx - 100, _wmy + 130, 60, 46, parish=False, organic=True)  # resized 2026-07-23: the ground serves the WHOLE ~800-person district (village + ~6 hamlets' urns), ~0.15-0.30 acre -> 120x92 ft at 2 ft/px - see settlements.md 'District catchment'
 
 # CROP the frame to the placed content (the title then drops into the framed space).
 s.crop_to_content(margin=30)

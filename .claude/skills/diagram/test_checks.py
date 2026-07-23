@@ -6189,12 +6189,19 @@ def test_ossuary_to_scale_fires_oversized_passes_in_band():
 
 
 def test_burial_grounds_sized_to_population_fires_on_an_oversized_village_ground():
-    # a 350-person village drawing 0.64 acre (200x140 ft) - 2-3x the 0.1-0.25 acre band, larger than a town's
+    # an ~800-person district drawing 0.64 acre (200x140 ft) - ~2x the 0.15-0.30 acre district band, larger than a town's
     M = {"meta": {"scale": "village", "ftpx": 2}, "cemeteries": [{"x": 500, "y": 500, "w": 100, "h": 70, "rot": 0}]}
     assert "burial_grounds_sized_to_population" in f(M)
-    # a 92x64 ft ground (46x32px at 2 ft/px) = ~0.135 acre - in band
-    ok = {"meta": {"scale": "village", "ftpx": 2}, "cemeteries": [{"x": 500, "y": 500, "w": 46, "h": 32, "rot": 0}]}
+    # a 120x88 ft district ground (60x44px at 2 ft/px) = ~0.24 acre - in band
+    ok = {"meta": {"scale": "village", "ftpx": 2}, "cemeteries": [{"x": 500, "y": 500, "w": 60, "h": 44, "rot": 0}]}
     assert "burial_grounds_sized_to_population" not in f(ok)
+
+
+def test_burial_grounds_sized_to_population_fires_on_a_village_only_undersized_ground():
+    # 60x40 ft (30x20px) = ~0.055 acre - sized as if the central village's ~350 buried alone; the ground
+    # serves the whole ~800-person district (hamlets carry their urns here), so the 0.12 floor flags it
+    M = {"meta": {"scale": "village", "ftpx": 2}, "cemeteries": [{"x": 500, "y": 500, "w": 30, "h": 20, "rot": 0}]}
+    assert "burial_grounds_sized_to_population" in f(M)
 
 
 def test_burial_grounds_sized_to_population_passes_the_city_split():
