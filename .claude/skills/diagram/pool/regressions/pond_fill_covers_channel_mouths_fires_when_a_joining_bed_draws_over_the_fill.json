@@ -1,0 +1,38 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "pond": [
+  500,
+  500,
+  40,
+  25
+ ],
+ "pond_layer": {
+  "bedz": 9,
+  "sheenz": 10,
+  "late": false
+ },
+ "drawn_channels": [
+  {
+   "pts": [
+    [
+     462.5,
+     505.0
+    ],
+    [
+     380.0,
+     560.0
+    ]
+   ],
+   "late": true,
+   "bedz": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "pond_fill_covers_channel_mouths"
+  ],
+  "source": "test_checks.py::test_pond_fill_covers_channel_mouths_fires_when_a_joining_bed_draws_over_the_fill"
+ }
+}

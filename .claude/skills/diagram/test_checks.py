@@ -6707,3 +6707,58 @@ def test_channel_gates_at_water_junctions_exempts_an_underground_conduit():
         "channels": [{"poly": [[200, 300], [200, 105]], "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 2.5}],
     }
     assert "channel_gates_at_water_junctions" not in f(M)
+
+
+# ---- pond_fill_covers_channel_mouths: the Tango in-wall tank (GM 2026-07-23) ----------------
+# The comb head-race joined the pond from the LATE water block, whose beds draw after the whole
+# shared block - so the pond fill could not cover the mouth's inside-the-rim overshoot and the
+# channel's round end-cap rode ON TOP of the open water, reading as an intersection rather than
+# a join. The check verifies the RECORDED z-order: pond fill above every joining bed.
+def test_pond_fill_covers_channel_mouths_fires_when_a_joining_bed_draws_over_the_fill():
+    # bedz values are block-relative offsets, so the LATE joining bed's raw number (8) is SMALLER
+    # than the early fill's (9) even though it draws after - the (late, bedz) pair carries the
+    # real order, and a raw-z comparison would falsely pass exactly this broken-engine shape
+    M = {
+        "meta": {"scale": "village"},
+        "pond": [500, 500, 40, 25],
+        "pond_layer": {"bedz": 9, "sheenz": 10, "late": False},
+        "drawn_channels": [{"pts": [[462.5, 505.0], [380.0, 560.0]], "late": True, "bedz": 8}],  # mouth at the rim, bed ABOVE the fill
+    }
+    assert "pond_fill_covers_channel_mouths" in f(M)
+
+
+def test_pond_fill_covers_channel_mouths_fires_when_the_layering_is_unrecorded():
+    # the pre-fix Tango shape (frozen in pool/regressions/): a comb ditch joins the pond but the
+    # manifest carries no pond_layer / drawn_channels records - the uncovered cap, undetectable by
+    # z-comparison, so the ABSENCE of the records must itself fire
+    M = {
+        "meta": {"scale": "village"},
+        "pond": [500, 500, 40, 25],
+        "field_ditches": [{"poly": [[462.5, 505.0], [380.0, 560.0]], "role": "main", "field": "f1", "w": 5.0}],
+    }
+    assert "pond_fill_covers_channel_mouths" in f(M)
+
+
+def test_pond_fill_covers_channel_mouths_fires_when_a_stroke_crosses_the_open_water():
+    # mouths, not crossings (the pond sibling of channels_join_water_not_cross): a drawn stroke
+    # whose INTERIOR vertex sits deep inside the pond runs straight through the open water
+    M = {
+        "meta": {"scale": "village"},
+        "pond": [500, 500, 40, 25],
+        "pond_layer": {"bedz": 300, "sheenz": 301},
+        "drawn_channels": [{"pts": [[430.0, 460.0], [500.0, 500.0], [570.0, 540.0]], "late": False, "bedz": 100}],
+    }
+    assert "pond_fill_covers_channel_mouths" in f(M)
+
+
+def test_pond_fill_covers_channel_mouths_passes_when_the_fill_covers_the_mouth():
+    # the fixed engine shape: a late channel joins, so the fill RELOCATED to the late block
+    # (late: True) and draws above the joining bed within it
+    M = {
+        "meta": {"scale": "village"},
+        "pond": [500, 500, 40, 25],
+        "pond_layer": {"bedz": 300, "sheenz": 301, "late": True},
+        "drawn_channels": [{"pts": [[462.5, 505.0], [380.0, 560.0]], "late": True, "bedz": 100}],
+        "field_ditches": [{"poly": [[462.5, 505.0], [380.0, 560.0]], "role": "main", "field": "f1", "w": 5.0}],
+    }
+    assert "pond_fill_covers_channel_mouths" not in f(M)
