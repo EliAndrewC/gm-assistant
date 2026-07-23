@@ -226,14 +226,30 @@ spatial check first and then the temporal stack:
    longer than `GAP_BREAK_SECONDS` (suspend, shell restart), so a stale pre-gap
    value cannot be held after resume. The gate logic is pure and lives in
    `history.js`, unit-tested in `test-history.js`.
-4. **Notification debounce (`CONFIRM_SAMPLES = 3`).** A severity must hold for 3
-   consecutive polls (~9 s) before it fires, and fires **once** on the way up
-   (not every poll while it stays hot). This catches the residual 1-2 poll
-   excursions that survive smoothing. The number is sized from the data:
-   smoothing + N=3 fired **2** notifications over the 10 min, both inside the
-   genuine burst; the two glitches fired nothing. ~9 s of confirmation delay is
-   harmless because the hardware's own thermal throttling - not this widget - is
-   the actual safety mechanism; the popup is purely informational.
+4. **Notification debounce (`CONFIRM_SAMPLES_BY_SEV = [3, 20, 3]`, indexed by
+   severity).** A severity must hold for its own count of consecutive polls
+   before it fires, and fires **once** on the way up (not every poll while it
+   stays hot). Any severity change restarts the streak, so "held" means
+   continuously in that state. The counts differ by tier (GM decision
+   2026-07-23, replacing the original one-size `CONFIRM_SAMPLES = 3`):
+
+   - **Bad (red): 3 polls, ~10 s.** At or near the thermal limit, fast notice
+     beats burst-filtering.
+   - **Warn (orange): 20 polls, ~60 s.** The 2026-07-23 RCA showed that real
+     bursty load (high CPU%, clocks throttling, whole die heating together)
+     legitimately spikes the die into the low-to-mid 90s for 10-30 s before
+     the fans catch up - normal turbo behavior for this CPU, self-limited by
+     throttling, and not worth an interruption. Only a warm state sustained
+     for a full minute earns the "keep an eye on it" popup. (The original
+     ~9 s debounce was sized to filter *sensor* noise before the RCA showed
+     the remaining warn-range firings were *real but routine* physics.)
+   - **Normal: 3 polls** - not a notification (recovery is silent); it is just
+     how fast the confirmed-severity floor resets so a later re-escalation can
+     notify again.
+
+   The confirmation delay is harmless at every tier because the hardware's own
+   thermal throttling - not this widget - is the actual safety mechanism; the
+   popup is purely informational.
 
 Recovery is **not** notified (the gauge color shows it). And notifications
 reuse **one** `MessageTray.Source` + one `Notification`, updated in place,
