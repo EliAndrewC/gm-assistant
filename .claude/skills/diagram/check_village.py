@@ -5728,11 +5728,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # meant to judge. Capping by real distance keeps the check meaning the same at ANY frame size.
         # Towns (no wall) keep their tight frames; unchanged there.
         nr_band = (800.0 / (meta.get("ftpx") or 1)) if (scale == "city" and nr_wall is not None and len(nr_wall) >= 3) else None
+        # SAMPLING WINDOW: for a walled city the band is sampled in CANVAS space (the wall bbox expanded
+        # by the band), NOT the view - the manifest records full-canvas geometry, so the near ring exists
+        # whether or not the crop shows it, and the metric must not shift when the frame is tightened
+        # (caught 2026-07-23: the aggressive Nagahara crop clipped band cells and dropped the fraction
+        # below the floor with not one field changed). Towns keep the view window (no wall, no band).
+        if nr_band is not None and nr_wall is not None:
+            _wxs = [p_[0] for p_ in nr_wall]
+            _wys = [p_[1] for p_ in nr_wall]
+            SX0, SY0 = max(0.0, min(_wxs) - nr_band - 25), max(0.0, min(_wys) - nr_band - 25)
+            SX1, SY1 = min(float(Wd), max(_wxs) + nr_band + 25), min(float(Hd), max(_wys) + nr_band + 25)
+        else:
+            SX0, SY0, SX1, SY1 = EX0, EY0, EX1, EY1
         nr_elig = nr_cultc = 0
-        gy = EY0 + 12.5
-        while gy < EY1:
-            gx = EX0 + 12.5
-            while gx < EX1:
+        gy = SY0 + 12.5
+        while gy < SY1:
+            gx = SX0 + 12.5
+            while gx < SX1:
                 # a cell inside the rampart of a walled town/city is URBAN FLOOR, not near-ring farmland
                 # (same reading as town_margins_clothed's inside-the-rampart exemption) - the near ring is
                 # the EXTRAMURAL flat ground; the intramural chrysanthemum field / open squares are the town
@@ -5803,10 +5815,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 if not any(bx0_ - _HEM <= dcx_ <= bx1_ + _HEM and by0_ - _HEM <= dcy_ <= by1_ + _HEM for bx0_, by0_, bx1_, by1_ in nrp_pbbox):
                     nrp_drygrain.append(p_)
         nrp_pc = nrp_dc = 0
-        gy = EY0 + 12.5
-        while gy < EY1:
-            gx = EX0 + 12.5
-            while gx < EX1:
+        gy = SY0 + 12.5  # the same canvas-space band window as the fraction sampler above
+        while gy < SY1:
+            gx = SX0 + 12.5
+            while gx < SX1:
                 committed = (
                     (nr_wall is not None and len(nr_wall) >= 3 and point_in_poly(gx, gy, nr_wall))
                     or (nr_band is not None and nr_wall is not None and poly_dist(gx, gy, nr_wall) > nr_band)  # beyond the near ring: countryside (same cap as the fraction sampler above)
