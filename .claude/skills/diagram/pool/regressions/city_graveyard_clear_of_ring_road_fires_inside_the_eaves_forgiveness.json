@@ -1,0 +1,72 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "ring_road": [
+  [
+   240,
+   240
+  ],
+  [
+   760,
+   240
+  ],
+  [
+   760,
+   760
+  ],
+  [
+   240,
+   760
+  ],
+  [
+   240,
+   240
+  ]
+ ],
+ "ring_road_width": 6.666666666666667,
+ "cemeteries": [
+  {
+   "x": 218,
+   "y": 500,
+   "w": 40,
+   "h": 30,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_graveyard_clear_of_ring_road"
+  ],
+  "source": "test_checks.py::test_city_graveyard_clear_of_ring_road_fires_inside_the_eaves_forgiveness"
+ }
+}

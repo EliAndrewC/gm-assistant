@@ -8488,15 +8488,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             river_c: Any = M.get("river")
             canals_c = M.get("canals", [])
             docks_c = M.get("docks", [])
-            # (1) THE CANAL CONNECTS THE RIVER TO THE DOCK, like a street reaching the road: one end
-            # taps the river (through the water gate), the other feeds the in-city dock basin - a
-            # canal that stops short of the dock is a ditch to nowhere (GM, 2026-07: Nagahara's canal
-            # left a visible gap to the dock). "Reaches" = the end's bed physically meets the target
-            # (within the target's half-extent + the canal half-width + a small tolerance).
+            # (1) THE CANAL CONNECTS THE DOCK TO THE WATER, like a street reaching the road: one end
+            # taps the river OR hands off to the moat (the Suzhou shared-mouth pattern - the city's
+            # canals communicate with the MOAT, and the moat's own downstream river junction is the
+            # navigation entrance), the other feeds the in-city dock basin - a canal that stops short
+            # of the dock is a ditch to nowhere (GM, 2026-07: Nagahara's canal left a visible gap to
+            # the dock). "Reaches" = the end's bed physically meets the target (within the target's
+            # half-extent + the canal half-width + a small tolerance).
             if canals_c:
+                moat_for_canal = M.get("moat") or []
+                mw_for_canal = M.get("moat_width", 22)
 
                 def _end_near_river(e: Pt) -> bool:
                     return bool(river_c) and min(seg_dist(e[0], e[1], river_c["pts"][i], river_c["pts"][i + 1]) for i in range(len(river_c["pts"]) - 1)) <= river_c["w"] / 2 + 14
+
+                def _end_near_moat(e: Pt, chw: float) -> bool:
+                    # the handoff confluence: the canal end sits ON the moat's stroke (bed meets bed)
+                    return len(moat_for_canal) >= 2 and poly_dist(e[0], e[1], moat_for_canal) <= mw_for_canal / 2 + chw + 4
 
                 def _end_near_dock(e: Pt, chw: float) -> bool:
                     # the canal MOUTH opens into the basin: the endpoint sits at the quay edge or
@@ -8507,14 +8515,36 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 for c in canals_c:
                     chw = c.get("w", 12) / 2
                     ends = (c["poly"][0], c["poly"][-1])
-                    if not (any(_end_near_river(e) for e in ends) and (not docks_c or any(_end_near_dock(e, chw) for e in ends))):
+                    if not (any(_end_near_river(e) or _end_near_moat(e, chw) for e in ends) and (not docks_c or any(_end_near_dock(e, chw) for e in ends))):
                         unreached.append([round(c["poly"][0][0]), round(c["poly"][0][1])])
                 check(
                     "city_canal_reaches_dock",
                     not unreached,
-                    f"cargo canal(s) not connecting the river to the dock basin: {unreached[:3]} - one end taps the "
-                    f"river (at the water gate), the other must feed the in-city dock (extend it to the quay, like a "
-                    f"street reaching the road)",
+                    f"cargo canal(s) not connecting the water to the dock basin: {unreached[:3]} - one end taps the "
+                    f"river or hands off to the moat (at the water gate), the other must feed the in-city dock "
+                    f"(extend it to the quay, like a street reaching the road)",
+                )
+                # (1b) ONE MOUTH ON THE RIVER, NOT TWO (GM 2026-07-23, Nagahara's water-gate corner):
+                # where a moat is drawn, a canal must not open its OWN river mouth inside the moat's
+                # stroke corridor - Nagahara's canal tapped the river 36 real ft beside the moat's
+                # downstream junction and rode collinearly inside the moat arm across the whole bank
+                # strip, a smeared doubled channel with a sliver fork at the mouth. Historically the
+                # mouths MERGE: the canal hands off to the moat and the moat's junction is the single
+                # navigation entrance (see settlements.md river-cities, "one mouth on the river").
+                # A canal mouth on open bank AWAY from the moat remains legitimate (real cities had
+                # water gates on the river face itself); only the near-duplicate mouth is the defect.
+                canal_second_mouths = []
+                for c in canals_c:
+                    chw = c.get("w", 12) / 2
+                    for e in (c["poly"][0], c["poly"][-1]):
+                        if _end_near_river(e) and len(moat_for_canal) >= 2 and poly_dist(e[0], e[1], moat_for_canal) <= mw_for_canal / 2 + chw + 8:
+                            canal_second_mouths.append([round(e[0]), round(e[1])])
+                check(
+                    "city_canal_shares_moat_mouth",
+                    not canal_second_mouths,
+                    f"cargo canal end(s) opening a second river mouth alongside the moat's junction: {canal_second_mouths[:3]} - "
+                    f"the canal and the moat share ONE mouth (the Suzhou pattern: end the canal ON the moat and let the "
+                    f"moat's downstream junction be the navigation entrance)",
                 )
             # (2) THE WHARF JETTIES REACH THE BANK: a jetty is a finger running out from the river's
             # near bank into the water - its landward end must TOUCH the bank, not float mid-stream

@@ -2259,13 +2259,30 @@ def test_no_structure_on_canal_fires_and_passes():
 
 
 def test_city_canal_reaches_dock_fires_when_short_and_passes_when_it_feeds_the_basin():
-    # the canal must connect the river to the dock basin (like a street reaching the road)
+    # the canal must connect the water to the dock basin (like a street reaching the road)
     river = {"pts": [[900, 100], [900, 900]], "w": 40}
     dock = [{"x": 400, "y": 500, "w": 54, "h": 34, "rot": 0}]
     short = _fort_city(river=river, docks=dock, canals=[{"poly": [[884, 500], [460, 500]], "w": 14}])  # stops 33px short of the dock
     assert "city_canal_reaches_dock" in f(short)
     reach = _fort_city(river=river, docks=dock, canals=[{"poly": [[884, 500], [418, 500]], "w": 14}])  # end sits in the basin
     assert "city_canal_reaches_dock" not in f(reach)
+
+
+def test_city_canal_shares_moat_mouth_fires_on_a_second_mouth_and_passes_on_the_moat_handoff():
+    # GM 2026-07-23 (Nagahara's water-gate corner): the cargo canal opened its OWN river mouth
+    # 36 real ft beside the moat's downstream junction, riding collinearly inside the moat arm's
+    # stroke - a smeared doubled channel. The Suzhou pattern shares ONE mouth: the canal ends ON
+    # the moat, and the moat's downstream river junction is the navigation entrance. The real
+    # pre-fix manifest is frozen in pool/regressions/.
+    river = {"pts": [[900, 100], [900, 900]], "w": 40}
+    dock = [{"x": 400, "y": 500, "w": 54, "h": 34, "rot": 0}]
+    moat = [[894, 496], [700, 500], [600, 600], [894, 800]]  # open arc, both ends on the river
+    doubled = _fort_city(river=river, docks=dock, moat=moat, moat_width=22, canals=[{"poly": [[884, 508], [418, 500]], "w": 14}])  # own river mouth inside the moat arm's corridor
+    assert "city_canal_shares_moat_mouth" in f(doubled)
+    handoff = _fort_city(river=river, docks=dock, moat=moat, moat_width=22, canals=[{"poly": [[700, 500], [418, 500]], "w": 14}])  # ends ON the moat: the shared mouth
+    fails = f(handoff)
+    assert "city_canal_shares_moat_mouth" not in fails
+    assert "city_canal_reaches_dock" not in fails  # the moat handoff satisfies "reaches the water"
 
 
 def test_city_wharf_jetties_on_bank_fires_when_floating_and_passes_on_the_bank():
