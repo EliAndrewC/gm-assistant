@@ -5655,10 +5655,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # ceiling with margin yet well ABOVE the undensified baseline (Hirameki 30%, Tango 7%), so it has
         # real teeth: an un-densified 'dense' map fails, a packed one passes, and 'thin' stays reachable
         # for a dry/marginal locale. See settlements.md "Near-ring farmland density".
+        # CITY floors recalibrated 2026-07-23 for the combs-only doctrine (GM): a moated city's near
+        # band is structurally moat + farmstead rings + gate suburbs + estate/funerary grounds, and its
+        # paddy arrives as discrete moat-fed comb fans, NOT a wall-to-wall fill (the packed dry-fill
+        # doctrine the old 0.30 floor encoded was REJECTED - "doesn't have to fill all the empty space;
+        # the presumption is there's more we don't see"). Reference points: combs-ringed Tango ~17%,
+        # the bare pre-013 Tango ~7% - the dense floor sits between them, so a bare ring still fails
+        # while the approved fan-ringed look passes; the real paddy teeth live in
+        # near_ring_paddy_dominant + city_moat_irrigates_fields. Towns keep their tight-frame floors.
         NRD_THRESHOLD = {
-            "dense": {"town": 0.45, "city": 0.30},
-            "medium": {"town": 0.30, "city": 0.20},
-            "thin": {"town": 0.16, "city": 0.10},
+            "dense": {"town": 0.45, "city": 0.12},
+            "medium": {"town": 0.30, "city": 0.08},
+            "thin": {"town": 0.16, "city": 0.05},
         }
         nrd_tier = meta.get("near_ring_density", "dense")
         nr_thr = NRD_THRESHOLD.get(nrd_tier, NRD_THRESHOLD["dense"])[scale]
@@ -5695,6 +5703,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         nr_wall = M.get("wall")
         nr_hill = M.get("hill")
         nr_pond = M.get("pond")
+        # NEAR-RING BAND CAP (2026-07-23): on a WALLED CITY the near ring is the ground within ~800 real ft
+        # of the rampart (a few minutes' walk out the gates - wide enough to take in the moat-fed fans' plot mass, since the first ~500 ft is structurally moat + farmstead rings + gate suburbs) - NOT
+        # everything the frame happens to show. The thresholds were calibrated on a tight crop whose visible
+        # extramural WAS that band ("the countryside proper runs off-frame" above); when the frame widened to
+        # show the comb deltas as countryside (GM 2026-07-23, Tango), an uncapped sampler silently redefined
+        # "near ring" as "all visible countryside" and diluted the fraction with ground the check was never
+        # meant to judge. Capping by real distance keeps the check meaning the same at ANY frame size.
+        # Towns (no wall) keep their tight frames; unchanged there.
+        nr_band = (800.0 / (meta.get("ftpx") or 1)) if (scale == "city" and nr_wall is not None and len(nr_wall) >= 3) else None
         nr_elig = nr_cultc = 0
         gy = EY0 + 12.5
         while gy < EY1:
@@ -5705,6 +5722,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # the EXTRAMURAL flat ground; the intramural chrysanthemum field / open squares are the town
                 committed = (
                     (nr_wall is not None and len(nr_wall) >= 3 and point_in_poly(gx, gy, nr_wall))
+                    or (nr_band is not None and nr_wall is not None and poly_dist(gx, gy, nr_wall) > nr_band)  # beyond the near ring: countryside, not judged here
                     or (nr_hill is not None and in_ellipse(gx, gy, nr_hill, 1.45))
                     or (nr_pond is not None and in_ellipse(gx, gy, [nr_pond[0], nr_pond[1], nr_pond[2] + 20, nr_pond[3] + 20]))
                     or any(bx0 <= gx <= bx1 and by0 <= gy <= by1 for bx0, by0, bx1, by1 in nr_boxes)
@@ -5752,8 +5770,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         nrpd_ratio = NRPD_RATIO.get(nrd_tier, NRPD_RATIO["dense"])
         nrp_paddy = [f_["outline"] for f_ in M.get("fields", []) if f_.get("kind") == "paddy"]
         # a paddy comb's own DRY HEM (the barley/soy upslope margin of the flooded field) is part of the
-        # paddy system, not a competing dry-grain crop - exclude any dry plot sitting within a paddy field's
-        # envelope, so only FREE-STANDING dryland grain (the 013 blanket) counts against paddy dominance.
+        # paddy system, not a competing dry-grain crop - exclude any dry plot sitting within OR HUGGING a
+        # paddy field's envelope, so only FREE-STANDING dryland grain (the 013 blanket) counts against
+        # paddy dominance. The hem quilt RINGS the envelope - at the head/flanks it sits OUTSIDE the
+        # recorded bbox by up to the dry_band (~88px city / ~132px village), so the test expands the bbox
+        # by that band; a bare in-bbox test miscounted every comb's head hem as free-standing grain
+        # (caught 2026-07-23 when the near ring became combs-only and the "dry grain" was all hems).
+        _HEM = 135.0
         nrp_pbbox = [f_["bbox"] for f_ in M.get("fields", []) if f_.get("kind") == "paddy" and f_.get("bbox")]
         nrp_drygrain = []
         for o_ in M.get("dry_plots", []) or []:
@@ -5761,7 +5784,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if p_ is not None and len(p_) >= 3 and (not isinstance(o_, dict) or o_.get("crop") != "garden"):
                 dcx_ = sum(v_[0] for v_ in p_) / len(p_)
                 dcy_ = sum(v_[1] for v_ in p_) / len(p_)
-                if not any(bx0_ <= dcx_ <= bx1_ and by0_ <= dcy_ <= by1_ for bx0_, by0_, bx1_, by1_ in nrp_pbbox):
+                if not any(bx0_ - _HEM <= dcx_ <= bx1_ + _HEM and by0_ - _HEM <= dcy_ <= by1_ + _HEM for bx0_, by0_, bx1_, by1_ in nrp_pbbox):
                     nrp_drygrain.append(p_)
         nrp_pc = nrp_dc = 0
         gy = EY0 + 12.5
@@ -5770,6 +5793,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             while gx < EX1:
                 committed = (
                     (nr_wall is not None and len(nr_wall) >= 3 and point_in_poly(gx, gy, nr_wall))
+                    or (nr_band is not None and nr_wall is not None and poly_dist(gx, gy, nr_wall) > nr_band)  # beyond the near ring: countryside (same cap as the fraction sampler above)
                     or (nr_hill is not None and in_ellipse(gx, gy, nr_hill, 1.45))
                     or (nr_pond is not None and in_ellipse(gx, gy, [nr_pond[0], nr_pond[1], nr_pond[2] + 20, nr_pond[3] + 20]))
                     or any(bx0 <= gx <= bx1 and by0 <= gy <= by1 for bx0, by0, bx1, by1 in nr_boxes)
@@ -7945,8 +7969,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"city gate(s) lacking inside caravan facilities (a prominent inn + large stables + flophouse + open ground close to the gate): {caravan_bad}",
             )
 
-            # at least a couple of the samurai estates must fall (even partly) inside the rendered
-            # window, so the map signals that there are several - not just one - country estates
+            # PADDY-FIRST estate doctrine (GM 2026-07-23, superseding the old >=2 floor): the rice
+            # paddies claim the near ring FIRST, and the samurai country estates take only what is
+            # left - most estates sit farther out in the rural district, so a city map showing just
+            # ONE estate (even a fraction running off the frame edge) is the more historically
+            # accurate signal; the rest are implied off-map. At least one must still show.
             def _shown(m: dict[str, Any]) -> bool:
                 hw, hh = m["w"] / 2, m["h"] / 2
                 return bool(m["x"] + hw > EX0 and m["x"] - hw < EX1 and m["y"] + hh > EY0 and m["y"] - hh < EY1)
@@ -7954,8 +7981,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             shown_est = [m for m in M.get("manors", []) if _shown(m)]
             check(
                 "city_estates_multiple_shown",
-                len(shown_est) >= 2,
-                f"{len(shown_est)} samurai estates fall inside the map window - show at least 2 (cropped at the edge is fine) so it reads as several, not one",
+                len(shown_est) >= 1,
+                f"{len(shown_est)} samurai estates fall inside the map window - show at least 1 (a fraction cropped at the edge is fine); the rest of the gentry sit farther out, implied off-map",
             )
             # the Imperial-road label must sit OUTSIDE the walls (inside, the roadway is a city street)
             rlab = M.get("road_label")
