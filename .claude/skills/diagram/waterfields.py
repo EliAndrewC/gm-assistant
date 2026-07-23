@@ -487,11 +487,17 @@ def build_comb(
             t.ditch_f = min(max(t.ditch_f, fd_ - R.uniform(250, 330)), fd_ - 55)
 
     # ---- drawable canals: A tapers past each offtake ("main canals gradually decrease in
-    # size as they are tapped by branch canals" - Tabayashi 1986); ditch prefixes
+    # size as they are tapped by branch canals" - Tabayashi 1986), and it tapers ALL THE WAY DOWN
+    # to a ditch-tail thread (1.6) at its far end (GM 2026-07-23): the supply canal sheds its whole
+    # flow into the offtakes and plots along its run, so past the last offtake it carries almost
+    # nothing and "slowly disappears" exactly like the delivery ditches - the old stepped 6.2 -> 4.0
+    # taper left the top channel reading near-constant beside the dwindling ditches. Each piece now
+    # carries w -> w_tail so the narrowing is continuous within pieces, not a stair of blunt steps.
     cuts = [0.0] + list(offtakes_a) + [1.0]
+    n_a = len(cuts) - 1
     for i in range(len(cuts) - 1):
         piece = [_point_along(a_pts, cuts[i] + (cuts[i + 1] - cuts[i]) * t / 6) for t in range(7)]
-        channels.append({"pts": piece, "w": (6.2 - 2.2 * i / (len(cuts) - 2)) * grain, "role": "main"})
+        channels.append({"pts": piece, "w": (6.2 - 4.6 * i / n_a) * grain, "w_tail": (6.2 - 4.6 * (i + 1) / n_a) * grain, "role": "main"})
     bc_cuts = sorted(F.to_uf(*e[1].pts[0])[1] if False else e[0] for e in []) if False else sorted([bc.f0] + [f for f in getattr(bc, "offtake_fs", [])] + [bc.ditch_f])
     for t in threads:
         pre = [p for p in t.pts if F.to_uf(*p)[1] <= t.ditch_f]
@@ -499,11 +505,13 @@ def build_comb(
             continue
         if t is bc and len(bc_cuts) > 2:
             # canal B is a SUPPLY canal (role "main", like canal A) that narrows past each offtake it
-            # feeds - distinct from the delivery ditches (role "branch"), which taper continuously.
+            # feeds - and, like A, dwindles to a ditch-tail thread at its far end (GM 2026-07-23; see
+            # the canal-A taper note above).
+            m_b = len(bc_cuts) - 1
             for i in range(len(bc_cuts) - 1):
                 piece = [p for p in pre if bc_cuts[i] - 14 <= F.to_uf(*p)[1] <= bc_cuts[i + 1] + 14]
                 if len(piece) >= 2:
-                    channels.append({"pts": piece, "w": (5.6 - 1.6 * i / max(1, len(bc_cuts) - 2)) * grain, "role": "main"})
+                    channels.append({"pts": piece, "w": (5.6 - 4.0 * i / m_b) * grain, "w_tail": (5.6 - 4.0 * (i + 1) / m_b) * grain, "role": "main"})
         elif math.hypot(pre[0][0] - fork[0], pre[0][1] - fork[1]) < 40.0:
             # a delivery must take off WELL DOWNSTREAM of the head fork. A delivery sprouting AT the
             # division point (a short canal B whose single offtake lands ~0px from the fork - Tango's
