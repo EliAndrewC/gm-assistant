@@ -327,9 +327,9 @@ class TempBarButton extends PanelMenu.Button {
         this._jumpCandidate = null; // pending out-of-band level awaiting confirmation
         this._jumpCount = 0;    // consecutive polls that candidate has held
         this._lastUpdate = 0;   // ms of the previous poll, to detect a sampling gap
-        this._debSev = null;    // severity currently accumulating a confirmation streak
-        this._debCount = 0;     // length of that streak, in polls
-        this._confirmedSev = 0; // last severity we actually notified about
+        // Notification debounce state, threaded through History.notifyGate
+        // each poll (see that function for the semantics).
+        this._notifyState = { debSev: null, debCount: 0, confirmedSev: 0 };
 
         // Reused notification source/notification (see _notify).
         this._source = null;
@@ -514,18 +514,13 @@ class TempBarButton extends PanelMenu.Button {
                 this._history.shift();
 
             // Bar severity: immediate, with downward hysteresis so hovering at
-            // 89-91C does not flip-flop the color every few seconds.
-            let sev = 0;
-            if (metric >= this._warnAt)
-                sev = 1;
-            if (metric >= this._badAt)
-                sev = 2;
-            if (sev < this._sev) {
-                const floor = (this._sev === 2 ? this._badAt : this._warnAt) - HYSTERESIS;
-                if (metric > floor)
-                    sev = this._sev;
-            }
-            this._sev = sev;
+            // 89-91C does not flip-flop the color every few seconds. Pure
+            // logic in History.barSeverity, unit-tested.
+            this._sev = History.barSeverity(this._sev, metric, {
+                warnAt: this._warnAt,
+                badAt: this._badAt,
+                hysteresis: HYSTERESIS,
+            });
 
             this._maybeNotify(metric);
             this._fraction = Math.max(0.02, this._fractionOf(metric));
@@ -645,27 +640,26 @@ class TempBarButton extends PanelMenu.Button {
             `Last ${spanMin} min - min ${Math.round(lo)}°C / max ${Math.round(hi)}°C`;
     }
 
-    // Debounced notification. Fires only when a severity has held for its
-    // CONFIRM_SAMPLES_BY_SEV count of consecutive polls AND is higher than the
-    // last severity we notified about - so brief excursions never interrupt,
-    // and a sustained rise notifies exactly once (not every poll while it
-    // stays hot). Any change of severity restarts the streak, so "sustained"
-    // means continuously in that state. Recovery is intentionally silent: the
-    // gauge color already shows it.
+    // Debounced notification. The decide-to-notify state machine is pure
+    // (History.notifyGate, unit-tested); this method just threads the state
+    // and performs the IO the gate asks for: 'notify' shows/updates the
+    // banner, 'dismiss' withdraws it once recovery to normal is confirmed -
+    // a stale "CPU running hot" banner is noise after the CPU has cooled
+    // (GM request 2026-07-23). Recovery itself is still never notified.
     _maybeNotify(metric) {
         const sev = metric >= this._badAt ? 2 : (metric >= this._warnAt ? 1 : 0);
-        if (sev === this._debSev) {
-            this._debCount++;
-        } else {
-            this._debSev = sev;
-            this._debCount = 1;
-        }
-        // Act exactly once, the poll the streak reaches this severity's count.
-        if (this._debCount !== CONFIRM_SAMPLES_BY_SEV[sev])
+        this._notifyState = History.notifyGate(this._notifyState, sev,
+            { confirmSamplesBySev: CONFIRM_SAMPLES_BY_SEV });
+        const action = this._notifyState.action;
+        if (action === 'dismiss') {
+            // Destroying the notification also destroys the (now-empty)
+            // source; both 'destroy' handlers null our refs, and the next
+            // 'notify' recreates them fresh.
+            if (this._notification !== null)
+                this._notification.destroy();
             return;
-        const prevConfirmed = this._confirmedSev;
-        this._confirmedSev = sev;
-        if (sev <= prevConfirmed)
+        }
+        if (action !== 'notify')
             return;
         const t = Math.round(metric);
         if (sev === 2)

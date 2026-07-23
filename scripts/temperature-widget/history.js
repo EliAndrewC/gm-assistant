@@ -287,6 +287,84 @@ function spatialMetric(coreTemps, opts) {
     return Math.max(...kept);
 }
 
+/* Bar-color severity with downward hysteresis.
+ *
+ * 0 = normal (green), 1 = warn (orange), 2 = bad (red), judged against the
+ * warn/bad thresholds. On the way DOWN, the severity only drops once the
+ * metric is clearly below the threshold it came from (hysteresis degrees
+ * under), so a CPU hovering right at a threshold (89-91 C around warn) does
+ * not flip the bar color every poll. A fall that lands below even the lower
+ * band skips straight down - hysteresis never holds a stale color for a
+ * reading that is unambiguously cooler. No reading at all is severity 0: with
+ * no sensors there is nothing to warn about (the gauge goes blank separately).
+ *
+ * Pure and caller-driven, like slewGate: the extension threads the previous
+ * severity back in each poll.
+ */
+function barSeverity(prevSev, metric, opts) {
+    if (metric === null)
+        return 0;
+    let sev = 0;
+    if (metric >= opts.warnAt)
+        sev = 1;
+    if (metric >= opts.badAt)
+        sev = 2;
+    if (sev < prevSev) {
+        const floor = (prevSev === 2 ? opts.badAt : opts.warnAt) - opts.hysteresis;
+        if (metric > floor)
+            sev = prevSev;
+    }
+    return sev;
+}
+
+/* Notification gate: the debounced decide-to-notify state machine.
+ *
+ * Tracks how long the current severity has HELD (any change of severity
+ * restarts the streak, so "held" means continuously in that state) and emits
+ * an action exactly once, on the poll the streak reaches that severity's
+ * confirmation count (opts.confirmSamplesBySev, indexed by severity - see
+ * CONFIRM_SAMPLES_BY_SEV in extension.js for why the tiers differ):
+ *
+ *   'notify'  - the confirmed severity ROSE above the last one acted on:
+ *               show/update the notification at this severity.
+ *   'dismiss' - recovery to normal was confirmed after a notification had
+ *               been shown: withdraw the notification. The popup's job -
+ *               "look at this" - is over once the state it reported is gone,
+ *               so leaving a stale "CPU running hot" banner in the tray is
+ *               noise (GM request 2026-07-23). Recovery is still never
+ *               NOTIFIED; the widget only cleans up after itself.
+ *   null      - nothing to do this poll.
+ *
+ * A confirmed DOWNGRADE that is not full recovery (bad -> sustained warn)
+ * emits nothing: the existing notification stays (its "look at this" is still
+ * live), but confirmedSev drops so a later re-escalation notifies again.
+ *
+ *   state.debSev        severity currently accumulating a streak (null at start)
+ *   state.debCount      length of that streak, in polls
+ *   state.confirmedSev  last severity acted on (0 after recovery/dismissal)
+ *
+ * Returns the next { debSev, debCount, confirmedSev, action }.
+ */
+function notifyGate(state, sev, opts) {
+    let { debSev, debCount, confirmedSev } = state;
+    if (sev === debSev) {
+        debCount++;
+    } else {
+        debSev = sev;
+        debCount = 1;
+    }
+    let action = null;
+    if (debCount === opts.confirmSamplesBySev[sev]) {
+        const prevConfirmed = confirmedSev;
+        confirmedSev = sev;
+        if (sev > prevConfirmed)
+            action = 'notify';
+        else if (sev === 0 && prevConfirmed > 0)
+            action = 'dismiss';
+    }
+    return { debSev, debCount, confirmedSev, action };
+}
+
 // Keeps only samples no older than maxAgeMs before `now`. Used both to bound
 // the on-disk file (30-day retention) and to pick the recent window that
 // seeds a freshly-started shell's graph. Boundary is inclusive (t == cutoff
@@ -368,6 +446,8 @@ var HISTORY_EXPORTS = {
     median,
     slewGate,
     spatialMetric,
+    barSeverity,
+    notifyGate,
     pruneByAge,
     serializeLock,
     parseLock,
