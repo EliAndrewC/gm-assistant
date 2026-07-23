@@ -14,11 +14,15 @@
  */
 'use strict';
 
-// --- Sample history: one JSON object per line, [ms-since-epoch, degrees C]. ---
+// --- Sample history: one JSON object per line ------------------------------
+// [ms-since-epoch, degrees C, optional avg CPU %].
 
-// Parses one line to [t, c], or null if blank/malformed. Malformed lines are
-// skipped rather than fatal - a half-written final line (writer killed
-// mid-append) must not poison the whole history.
+// Parses one line to [t, c] or [t, c, u], or null if blank/malformed.
+// Malformed lines are skipped rather than fatal - a half-written final line
+// (writer killed mid-append) must not poison the whole history. The `u` field
+// (average CPU utilization % since the previous sample) is OPTIONAL: lines
+// written before 2026-07-23 lack it, and a failed /proc/stat read omits it,
+// so a missing or invalid `u` never invalidates the temperature sample.
 function parseHistoryLine(line) {
     const s = String(line).trim();
     if (!s)
@@ -33,6 +37,8 @@ function parseHistoryLine(line) {
         return null;
     if (!isFinite(obj.t) || !isFinite(obj.c))
         return null;
+    if (typeof obj.u === 'number' && isFinite(obj.u))
+        return [obj.t, obj.c, obj.u];
     return [obj.t, obj.c];
 }
 
@@ -47,13 +53,65 @@ function parseHistory(text) {
 }
 
 // Temperatures are stored to 0.1 C - finer precision than the sensors deliver
-// and than any graph pixel can show, so it just wastes bytes.
-function serializeSample(t, c) {
-    return JSON.stringify({ t: Math.round(t), c: Math.round(c * 10) / 10 }) + '\n';
+// and than any graph pixel can show, so it just wastes bytes. Utilization is
+// stored as an integer percent for the same reason, and only when it is a
+// usable number - absence, not a sentinel, marks "could not read".
+function serializeSample(t, c, u) {
+    const out = { t: Math.round(t), c: Math.round(c * 10) / 10 };
+    if (typeof u === 'number' && isFinite(u))
+        out.u = Math.round(u);
+    return JSON.stringify(out) + '\n';
 }
 
 function serializeHistory(samples) {
-    return samples.map(([t, c]) => serializeSample(t, c)).join('');
+    return samples.map(([t, c, u]) => serializeSample(t, c, u)).join('');
+}
+
+// --- CPU utilization: /proc/stat counters -> percent busy -------------------
+//
+// Each persisted sample carries the average CPU utilization since the previous
+// one (the `u` field), because utilization is THE discriminator between a
+// genuine hot event and a stuck sensor: real heat comes with real load, a
+// glitch reads 100 C on an idle machine. Learned 2026-07-23, second RCA round:
+// deciding whether that morning's 91-98 C warnings were real required an
+// external temps+load capture precisely because the archive recorded no load
+// data. With `u` on every line the archive answers "was the machine actually
+// working?" by itself. Pure parsing/arithmetic here; the extension supplies
+// the /proc/stat text and keeps the previous snapshot between persists.
+
+// Parses the aggregate "cpu " line of /proc/stat into cumulative jiffy
+// counters { busy, total }, or null if there is no parseable aggregate line.
+// Fields: user nice system idle iowait irq softirq steal (guest time is
+// already folded into user/nice by the kernel). Idle means idle + iowait;
+// everything else is busy. Only the "cpu " line matters - the per-core
+// "cpuN" lines never match (no whitespace after "cpu").
+function parseProcStatCpu(text) {
+    for (const line of String(text ?? '').split('\n')) {
+        const m = line.match(/^cpu\s+(.*)$/);
+        if (!m)
+            continue;
+        const nums = m[1].trim().split(/\s+/).map(Number);
+        if (nums.length < 4 || nums.some(n => !isFinite(n)))
+            return null;
+        const [user, nice, system, idle, iowait = 0, irq = 0, softirq = 0, steal = 0] = nums;
+        const total = user + nice + system + idle + iowait + irq + softirq + steal;
+        return { busy: total - idle - iowait, total };
+    }
+    return null;
+}
+
+// Average utilization (integer percent, 0..100) between two /proc/stat
+// snapshots, or null when either snapshot is missing, no time has elapsed,
+// or the counters went backward (a reset - jiffies are cumulative, so a
+// negative delta means the numbers cannot be trusted).
+function cpuUtilizationPct(prev, cur) {
+    if (!prev || !cur)
+        return null;
+    const busy = cur.busy - prev.busy;
+    const total = cur.total - prev.total;
+    if (!(total > 0) || busy < 0)
+        return null;
+    return Math.min(100, Math.round(100 * busy / total));
 }
 
 // --- Excluded-sensor diagnostic archive ------------------------------------
@@ -301,6 +359,8 @@ var HISTORY_EXPORTS = {
     parseHistory,
     serializeSample,
     serializeHistory,
+    parseProcStatCpu,
+    cpuUtilizationPct,
     serializeExcludedSample,
     parseExcludedLine,
     parseExcluded,

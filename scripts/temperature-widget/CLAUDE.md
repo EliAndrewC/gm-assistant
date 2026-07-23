@@ -247,8 +247,9 @@ its notifications (they used to outlive it, owned by the message tray).
 
 The temperature history is written to an on-disk archive at
 `~/.local/state/temperature-bar/history.jsonl` (XDG_STATE_HOME), one JSON
-object per line: `{"t": <unix_ms>, "c": <°C>}`. Three reasons it exists rather
-than the history living purely in memory:
+object per line: `{"t": <unix_ms>, "c": <°C>, "u": <avg CPU %>}` (`u` is
+optional - see below). Three reasons it exists rather than the history living
+purely in memory:
 
 1. **Testable graph.** A nested test shell (see [How to test a
    change](#how-to-test-a-change)) seeds its graph from the archive, so the
@@ -262,6 +263,21 @@ than the history living purely in memory:
 
 Design choices, with the "why":
 
+- **Each sample records the average CPU utilization since the previous one**
+  (`"u"`, integer percent, from the aggregate `/proc/stat` counters; pure
+  logic in `History.parseProcStatCpu` / `cpuUtilizationPct`, unit-tested).
+  Added 2026-07-23 after the second RCA round: utilization is THE
+  discriminator between a stuck sensor and a genuine hot event (a glitch
+  reads 100°C on an idle machine; real heat comes with real load and
+  throttled clocks), and deciding whether that morning's 91-98°C warnings
+  were real required an external temps+load capture precisely because the
+  archive recorded no load data. With `u` on every line the archive answers
+  "was the machine actually working when it got hot?" by itself. Fail-soft
+  and backward compatible: if `/proc/stat` cannot be read the sample is
+  written without `u`, pre-2026-07-23 lines never had it, and a corrupt `u`
+  degrades to a plain `[t, c]` sample - a missing `u` never invalidates the
+  temperature. The graph and severity paths ignore it entirely; it exists
+  for offline analysis.
 - **A sample is persisted every 30 s, not every 3 s.** The gauge still polls
   every 3 s (responsiveness, notifications), but 30 s resolution is plenty for
   trends and keeps the file ~10x smaller: ~2,880 lines/day, ~3 MB across the

@@ -333,6 +333,9 @@ class TempBarButton extends PanelMenu.Button {
         this._lastPersist = 0;
         this._lastPrune = 0;
         this._excluded = {};    // latest KNOWN_BAD_SENSORS reads, for the diagnostic archive
+        // Previous /proc/stat snapshot, so each persisted sample can carry the
+        // average CPU utilization since the one before it (History.parseProcStatCpu).
+        this._cpuPrev = History.parseProcStatCpu(readFile('/proc/stat') || '');
 
         // Seed the in-memory graph from the on-disk archive's last 2 h, so a
         // freshly-started shell (including a nested test shell) shows real
@@ -535,7 +538,16 @@ class TempBarButton extends PanelMenu.Button {
         if (!this._isWriter)
             return;
         if (this._metric !== null && now - this._lastPersist >= PERSIST_SECONDS * 1000) {
-            appendFile(HISTORY_PATH, History.serializeSample(now, this._metric));
+            // The sample carries the average CPU utilization since the previous
+            // persist (`u`) - the real-heat-vs-stuck-sensor discriminator; see
+            // History.parseProcStatCpu for the 2026-07-23 rationale. Fail-soft:
+            // an unreadable /proc/stat just writes the sample without `u`.
+            const cpuCur = History.parseProcStatCpu(readFile('/proc/stat') || '');
+            const cpuPct = History.cpuUtilizationPct(this._cpuPrev, cpuCur);
+            if (cpuCur !== null)
+                this._cpuPrev = cpuCur;
+            appendFile(HISTORY_PATH,
+                History.serializeSample(now, this._metric, cpuPct));
             // Known-bad sensors are excluded from the metric above, but their
             // raw reads are still recorded here so they can be inspected later
             // (KNOWN_BAD_SENSORS). Nothing is written on a healthy machine where
