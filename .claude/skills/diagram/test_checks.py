@@ -6673,3 +6673,47 @@ def test_channels_join_water_not_cross_fires_on_a_ditch_through_the_river():
         "field_ditches": [{"poly": [[80, 300], [350, 300]], "role": "main", "field": "f1", "w": 4, "w_tail": 4}],
     }
     assert "channels_join_water_not_cross" in f(M)
+
+
+# ---- channel_gates_at_water_junctions (GM 2026-07-23): a moat/river tap hands off to the comb canal
+# (and a field drain to its outfall culvert) through a visible sluice gate at the junction.
+def test_channel_gates_at_water_junctions_fires_on_a_gateless_tap():
+    M = {
+        "meta": {"scale": "town", "W": 500, "H": 500},
+        "moat": [[50, 100], [450, 100], [450, 110]],
+        "channels": [{"poly": [[100, 100], [100, 140], [110, 200]], "frm": {"kind": "moat"}, "to": {"kind": "offmap"}, "w": 2.5}],
+    }
+    M["channels"][0]["to"] = {"kind": "field", "name": "f1"}
+    M["fields"] = [{"name": "f1", "kind": "paddy", "outline": [[60, 160], [160, 160], [160, 260], [60, 260]], "bbox": [60, 160, 160, 260]}]
+    assert "channel_gates_at_water_junctions" in f(M)
+
+
+def test_channel_gates_at_water_junctions_passes_with_a_gate_at_the_sluice():
+    M = {
+        "meta": {"scale": "town", "W": 500, "H": 500},
+        "moat": [[50, 100], [450, 100], [450, 110]],
+        "channels": [{"poly": [[100, 100], [100, 140], [110, 200]], "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5}],
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[60, 160], [160, 160], [160, 260], [60, 260]], "bbox": [60, 160, 160, 260]}],
+        "sluice_gates": [{"x": 100, "y": 141, "rot": 90, "z": 1}],
+    }
+    assert "channel_gates_at_water_junctions" not in f(M)
+
+
+def test_channel_gates_at_water_junctions_fires_on_a_gateless_drain_culvert():
+    M = {
+        "meta": {"scale": "town", "W": 500, "H": 500},
+        "moat": [[50, 100], [450, 100], [450, 110]],
+        "channels": [{"poly": [[200, 300], [200, 105]], "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 3.2, "drawn": True}],
+    }
+    assert "channel_gates_at_water_junctions" in f(M)
+
+
+def test_channel_gates_at_water_junctions_exempts_an_underground_conduit():
+    # an UNDROWN drain record is an implied underground conduit (Tango's in-wall nw1 drain drops
+    # beneath the ring road, rampart and moat) - no visible seam, no gate demanded
+    M = {
+        "meta": {"scale": "town", "W": 500, "H": 500},
+        "moat": [[50, 100], [450, 100], [450, 110]],
+        "channels": [{"poly": [[200, 300], [200, 105]], "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 2.5}],
+    }
+    assert "channel_gates_at_water_junctions" not in f(M)

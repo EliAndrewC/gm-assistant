@@ -5944,6 +5944,26 @@ class Settlement:
         self.block_polys.append([(x - 18 - bm, y - 11 - bm), (x + 18 + bm, y - 11 - bm), (x + 18 + bm, y + 11 + bm), (x - 18 - bm, y + 11 + bm)])
         return z
 
+    def sluice_gate(self, x: float, y: float, rot: float = 0.0) -> int:
+        """A field-channel SLUICE GATE (the intake/outfall control board the comb doctrine's "sluice-fed
+        head-race" always implied but no map drew - GM 2026-07-23, the mouths-are-confluences pass): two
+        timber posts flanking the channel and a lifted board between them. Drawn wherever a channel
+        CHANGES WATER - a moat/river tap handing off to the comb's own canal (the palette seam sits
+        exactly here, and the gate is what makes it read as engineered rather than two strokes crossing)
+        or a field drain handing off to its outfall culvert. `rot` degrees turns the board ACROSS the
+        channel (pass the channel's heading + 90). ~8px span = a true-scale ~16-24 ft timber intake
+        structure with wing posts at the village/city grains. Top layer, above the water. Records
+        M['sluice_gates'] for `channel_gates_at_water_junctions`."""
+        wc = '#3A352C'
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="-4.6" y="-1.4" width="9.2" height="2.8" fill="#8A7050" stroke="{wc}" stroke-width="1.0"/>')  # the lifted board
+        g.append(f'<rect x="-5.4" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')  # posts
+        g.append(f'<rect x="3.4" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')
+        g.append('</g>')
+        z = self.add_top(''.join(g))
+        self.M.setdefault("sluice_gates", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "z": z})
+        return z
+
     def canal(self, pts: Any, width: float | None = None) -> float:
         """A navigable CARGO CANAL - the one way water legitimately enters a walled city (through
         a water gate; the trunk river never does - the Kaifeng lesson). A middle tier on the

@@ -185,6 +185,7 @@ _OVERLAP_EXEMPT = {
     "kido": "a ward gate sits ON the ward fence at the point a lane passes through it",
     "inspection_stations": "an inspection post sited AT the city gate, part of the gate complex (overlaps the gate furniture)",
     "water_gates": "the shuimen arch stands ON the city wall over its canal - intentional, like the kido on its fence",
+    "sluice_gates": "the field-channel intake/outfall board sits ON its channel at a water-to-water handoff (moat/river tap -> comb canal, drain -> culvert) - the control structure IS the junction",
     "jetties": "planked mooring fingers running out over the river water, like bridge decks",
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
@@ -5999,6 +6000,36 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "water at a CONFLUENCE (the mouth ends at the bank, engine-trimmed and water-colored), it never runs "
         "straight across the open water like a painted line; end the polyline at the centerline (the anchor "
         "convention) instead of passing through",
+    )
+
+    # A WATER-TO-WATER HANDOFF SHOWS ITS CONTROL GATE (GM 2026-07-23, the junction-seams pass): where a
+    # moat/river tap hands off to the comb's own canal (the sluice - the palette seam sits exactly there)
+    # and where a field drain hands off to its outfall culvert into the moat, a sluice_gate glyph must
+    # mark the junction - the control board is what makes the color/direction change read as engineered
+    # plumbing rather than two strokes crossing. The tap's recorded poly is [water-vertex, sluice, plot],
+    # so the gate belongs near poly[1]; a drain culvert's is [drain-end, moat-vertex], gate near poly[0].
+    gateless = []
+    _sgs = M.get("sluice_gates", [])
+    for _ch in M.get("channels", []):
+        _fk = (_ch.get("frm") or {}).get("kind")
+        _tk = (_ch.get("to") or {}).get("kind")
+        _pl = _ch.get("poly") or []
+        _jp = None
+        if _fk in ("moat", "river") and _tk == "field" and len(_pl) >= 2:
+            _jp = _pl[1]  # the sluice point
+        elif _fk == "drain" and _tk == "moat" and _pl and _ch.get("drawn"):
+            _jp = _pl[0]  # the drain -> culvert handoff (drawn culverts only: an UNDROWN record is an
+            # implied underground conduit - Tango's in-wall nw1 drain drops beneath the rampart - with
+            # no visible seam to gate)
+        if _jp is not None and not any(math.hypot(_g["x"] - _jp[0], _g["y"] - _jp[1]) <= 16 for _g in _sgs):
+            gateless.append((round(_jp[0]), round(_jp[1])))
+    check(
+        "channel_gates_at_water_junctions",
+        not gateless,
+        f"water-to-water handoff(s) with no sluice gate at {sorted(set(gateless))[:4]} - a moat/river tap "
+        "hands off to the comb canal (and a drain to its outfall culvert) through a CONTROL GATE; draw "
+        "s.sluice_gate(x, y, rot=<channel heading + 90>) at the junction so the palette seam reads as "
+        "engineered plumbing, not two strokes crossing",
     )
 
     # large area features (forests, pastures) near a map edge must run OFF it - implying
