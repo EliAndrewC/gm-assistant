@@ -5325,6 +5325,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # so a road/street entering a marsh patch is a placement error, not a feature.
         wet_road = []
         for m in M.get("marshes", []):
+            if m.get("role") == "defense":
+                continue  # an approach road THROUGH the defensive wet belt is a CAUSEWAY (the renderer keeps the tread bare via the corridor skip) - few, constricted approaches are the belt's military purpose, not a placement error
             mpoly = m.get("poly") or []
             nmp = len(mpoly)
             if nmp < 3:
@@ -6146,6 +6148,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "the pond overlaps the paddy field - a pond is a distinct water body beside/below the field, joined to it by a channel, not laid over the crop (site the pond clear of the field envelope)",
         )
 
+    # DEFENSIVE MARSHLAND GIRDS A FORTIFIED PERIMETER (role="defense"; settlements.md 'Defensive marshland').
+    # An engineered wet belt is military ground (the Song Hebei frontier marsh-pond belt, numajiro "marsh
+    # castles", the flooded-paddy glacis around castle towns): it exists to deny an attacker footing AT THE
+    # WALL, so it (1) only appears on a map that HAS a wall or moat, (2) stays OUTSIDE the wall circuit (the
+    # inundation protects the wall - inside is the town), and (3) ABUTS the perimeter, within ~60px of the
+    # wall or moat line (~180 ft at city scale: the moat's outer bank + a patrol berm) - a wet belt DETACHED
+    # from the fortification defends nothing. Degenerate (<3-point) polys carry no area to test - skipped.
+    defense_marshes = [m for m in M.get("marshes", []) if m.get("role") == "defense" and len(m.get("poly") or []) >= 3]
+    if defense_marshes:
+        perim_ = [pl for pl in (M.get("wall"), M.get("moat")) if pl]
+        bad_def = []
+        for m in defense_marshes:
+            mp_ = m["poly"]
+            loc_ = (round(m["x"]), round(m["y"]))
+            if not perim_:
+                bad_def.append((loc_, "map has no wall or moat - a defensive inundation defends a fortified perimeter"))
+            elif M.get("wall") and any(point_in_poly(px, py, M["wall"]) for px, py in mp_):
+                bad_def.append((loc_, "reaches INSIDE the wall circuit"))
+            elif min(seg_dist(px, py, pl[i], pl[i + 1]) for pl in perim_ for px, py in mp_ for i in range(len(pl) - 1)) > 60:
+                bad_def.append((loc_, "detached from the perimeter - the belt begins at the moat's outer bank / wall foot"))
+        check(
+            "defense_marsh_girds_the_walls",
+            not bad_def,
+            f"defensive marsh misplaced: {bad_def[:3]} - an engineered wet belt lies OUTSIDE the walls, hugging the moat/wall perimeter it defends",
+        )
+
     # DRAINAGE FLOWS DOWNHILL (matches the map's configured slope). We do NOT require the drain to RUN
     # downhill - a collector (akusui) legitimately runs ACROSS the low margin, ~perpendicular to the fall,
     # to gather runoff from every cascade column; a downhill-running drain would collect nothing. What we
@@ -6162,7 +6190,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # REED MARSH sits on the LOW, downhill ground below the paddy (wet rice is reclaimed FROM marsh; the un-
         # reclaimed valley toe stays wetland). So a marsh must lie DOWNHILL of the field it borders - its centroid's
         # fall must exceed the field centroid's; a marsh on the high/dry side would read wrong. WHY: settlements.md 'Marsh'.
-        marshes_ = [m for m in M.get("marshes", []) if m.get("role") != "pond_fringe"]  # a pond's reedy MARGIN is a water fringe, not the low valley toe - exempt
+        marshes_ = [
+            m for m in M.get("marshes", []) if m.get("role") not in ("pond_fringe", "defense")
+        ]  # a pond's reedy MARGIN is a water fringe, and a DEFENSIVE belt hugs the fortified perimeter wherever the wall runs (defense_marsh_girds_the_walls owns it) - neither is the low valley toe
         if marshes_ and M.get("fields"):
             fol = M["fields"][0]["outline"]
             fcen = (sum(p[0] for p in fol) / len(fol), sum(p[1] for p in fol) / len(fol))

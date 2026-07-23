@@ -4317,7 +4317,14 @@ class Settlement:
         undrained valley toe below the managed paddy, where wet-rice cultivation stops (wet rice is reclaimed FROM
         marsh - polders diked out into marsh/lake; where reclamation stops it stays reed wetland; `marsh_on_low_ground`
         checks this sits downhill); 'pond_fringe' = the reedy shallow MARGIN of a pond (a water-edge fringe, exempt
-        from the low-ground rule). WHY: settlements.md 'Marsh'. Recorded M['marshes']."""
+        from the low-ground rule); 'defense' = an ENGINEERED defensive wet belt maintained outside a fortified
+        perimeter (Song Hebei frontier marsh belt, numajiro "marsh castles", the flooded-paddy glacis) - it hugs
+        the wall/moat wherever the circuit runs, so it is exempt from the low-ground rule and from
+        `roads_clear_of_marsh` (an approach road through the belt is a CAUSEWAY - the corridor skip keeps its
+        tread bare - and few, constricted approaches are the belt's military purpose); `defense_marsh_girds_the_walls`
+        owns its placement instead. WHY: settlements.md 'Marsh' + 'Defensive marshland'. Recorded M['marshes']."""
+        if role not in ("toe", "pond_fringe", "defense"):
+            raise ValueError(f"unknown marsh role {role!r}; expected 'toe', 'pond_fringe', or 'defense'")
         xs = [p[0] for p in poly]
         ys = [p[1] for p in poly]
         x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
@@ -4383,7 +4390,7 @@ class Settlement:
                 "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
             }
         )
-        if role != "pond_fringe":  # the wet valley TOE is UNBUILDABLE: register it as a no-build keep-out
+        if role != "pond_fringe":  # the wet valley TOE (and the defensive belt) is UNBUILDABLE: register it as a no-build keep-out
             self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in poly])  # so nothing is placed/dug on a bog (a thin pond-fringe shore ring is exempt)
 
     def hinterland(
