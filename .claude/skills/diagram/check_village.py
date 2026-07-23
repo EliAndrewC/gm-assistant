@@ -3470,6 +3470,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             pcx, pcy, prx, pry = M["pond"]
             if not (tb[2] < pcx - prx or tb[0] > pcx + prx or tb[3] < pcy - pry or tb[1] > pcy + pry):
                 thit.append("pond")
+        if not thit:
+            # placed LABELS too: a title placard over a feature label erases it (caught 2026-07-23 on the
+            # Tango content crop - the placard landed on the 'pauper ossuary mound' label)
+            for lb2 in M.get("labels", []):
+                if not (tb[2] < lb2[0] or tb[0] > lb2[2] or tb[3] < lb2[1] or tb[1] > lb2[3]):
+                    thit.append(f"label:{lb2[5]}")
+                    break
         check(
             "title_clear_of_features",
             not thit,

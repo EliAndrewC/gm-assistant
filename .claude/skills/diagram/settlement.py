@@ -847,6 +847,58 @@ class Settlement:
         "pastures",
     )
 
+    # what sets a CITY frame (crop_city): the walled city + its KEPT satellites. Deliberately NOT the
+    # farm fans, dry hems, farmhouses, or field infrastructure - on a city map the farmland's job is to
+    # SHOW IT IS THERE, not to be fully contained ("it's okay if farms get cut off... the point is to
+    # show they're there, not to show the entire field" - GM 2026-07-23), so fields CLIP at the edge
+    # like a village's commons. Estates (manors) also clip: a fraction-off-edge estate with its land
+    # running on is the wanted signal (city_estates_multiple_shown needs >= 1 visible - verify per map).
+    _CROP_CITY = (
+        "buildings",  # includes the extramural gate-market / wharf stalls - the kept suburbs
+        "flophouses",
+        "cemeteries",
+        "cremation_grounds",
+        "ossuaries",
+        "mausoleums",
+        "religious",
+        "ministries",
+        "inspection_stations",
+        "fire_towers",
+        "storehouses",
+        "merchant_estates",
+    )
+
+    def crop_city(self, margin: float = 100, west: float | None = None, north: float | None = None, east: float | None = None, south: float | None = None) -> None:
+        """CITY content crop (GM 2026-07-23, replacing the hand-tuned wide MARGIN frames): frame the map to
+        the moat ring + every KEPT satellite feature (gate markets, flophouses, funerary grounds, wharf
+        stalls - the `_CROP_CITY` keys) + every placed LABEL box (labels_within_image demands containment),
+        plus `margin`. The paddy fans, hems, farmhouses, and estates do NOT set the frame - they clip at
+        the edge, reading as country that continues (the whole point of the wide-frame doctrine is kept by
+        `margin`: ~100px past the moat still shows a working band of every fan that hugs the rim). Call
+        AFTER every feature and label, BEFORE `title()` (the title drops into the framed window).
+        Per-side margin overrides (west/north/east/south) keep a REPRESENTATIVE FARM BAND on a flank
+        with no satellite to anchor the frame - e.g. Tango's west, where nothing but fans lies beyond
+        the moat and the bare `margin` would re-create the pre-2026-07-23 sliver crop."""
+        hx: list[float] = []
+        hy: list[float] = []
+        for k in self._CROP_CITY:
+            for o in self.M.get(k, []):
+                if o.get("poly"):  # pragma: no cover - none of the city keys record polys today; symmetry with crop_to_content
+                    hx += [p[0] for p in o["poly"]]
+                    hy += [p[1] for p in o["poly"]]
+                elif "w" in o and "h" in o:
+                    hx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
+                    hy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
+        for mp_ in self.M.get("moat") or []:  # the city itself (moat encloses the wall)
+            hx.append(mp_[0])
+            hy.append(mp_[1])
+        for lb in self.M.get("labels", []):  # placed label boxes: [x0, y0, x1, y1, z, text]
+            hx += [lb[0], lb[2]]
+            hy += [lb[1], lb[3]]
+        x0, y0 = max(0, min(hx) - (west if west is not None else margin)), max(0, min(hy) - (north if north is not None else margin))
+        x1, y1 = min(self.W, max(hx) + (east if east is not None else margin)), min(self.H, max(hy) + (south if south is not None else margin))
+        self.set_view(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
+
     def crop_to_content(self, margin: float = 30) -> None:
         """Frame the map to its CONTENT: set the render viewBox to the bounding box of the HARD features placed
         SO FAR plus `margin`, so the image is exactly as large as the settlement + its fields, tight to `margin`
@@ -7819,6 +7871,9 @@ class Settlement:
                     rects.append((min(xs), min(ys), max(xs), max(ys)))
                 elif "w" in o and "h" in o:
                     rects.append((o["x"] - o["w"] / 2, o["y"] - o["h"] / 2, o["x"] + o["w"] / 2, o["y"] + o["h"] / 2))
+        for lb in self.M.get("labels", []):  # placed LABEL boxes: a title must never cover a label
+            rects.append((lb[0], lb[1], lb[2], lb[3]))  # (caught 2026-07-23: the Tango content crop landed the
+            #                                             placard on the 'pauper ossuary mound' label)
         # NOT the scrub commons: it is sparse GROUND COVER (a feathered scatter of grass tufts on open ground),
         # not a feature with a footprint, and a bold place name reads perfectly well over it. Treating it as an
         # obstacle only worked while some ground was left bare - once the commons properly clothes the field's
