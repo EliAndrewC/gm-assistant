@@ -1,0 +1,34 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "pond": [
+  500,
+  500,
+  40,
+  25
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     462.5,
+     505.0
+    ],
+    [
+     380.0,
+     560.0
+    ]
+   ],
+   "role": "main",
+   "field": "f1",
+   "w": 5.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "pond_fill_covers_channel_mouths"
+  ],
+  "source": "test_checks.py::test_pond_fill_covers_channel_mouths_fires_when_the_layering_is_unrecorded"
+ }
+}

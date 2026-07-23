@@ -174,6 +174,7 @@ _OVERLAP_LINEAR = (
     "crescent_ponds",
 )  # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers; crescent_ponds = the fengshui 半月塘 focal pond, reserved as a placement keep-out so the cluster packs around it)
 _OVERLAP_EXEMPT = {
+    "drawn_channels": "z-order record of the drawn field-channel strokes (post-clip geometry + bedz), not a placement feature: the strokes duplicate the field_ditches/channels ground the structs already avoid, and their mouths deliberately touch the pond/moat/stream they join (pond_fill_covers_channel_mouths reads this record)",
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "farm_sheds": "a farmstead's grain-storehouse kura drawn as an annex abutting its own farmhouse's back wall (farm_sheds_attached verifies the attachment)",
     "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
@@ -6002,6 +6003,65 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "straight across the open water like a painted line; end the polyline at the centerline (the anchor "
         "convention) instead of passing through",
     )
+
+    # THE POND FILL COVERS EVERY JOINING MOUTH (GM 2026-07-23, Tango's in-wall tank: the comb
+    # head-race's round end-cap rendered ON TOP of the pond and the channel read as INTERSECTING
+    # the open water instead of joining it). Doctrine (settlements.md "A pond JOINS its feeders at
+    # the rim"): a joining course must overshoot the rim so its bed covers the rim stroke at the
+    # mouth - the clean gap - which in turn requires the POND FILL to paint over that overshoot.
+    # That is a Z-ORDER property, so it is checked via recorded draw positions like
+    # waterways_merge_at_crossings: the engine records every drawn comb/field channel stroke in
+    # M['drawn_channels'] (post-clip geometry + bedz + late flag) and the pond fill's position in
+    # M['pond_layer'] (relocated into the LATE water block when a late-block channel joins - the
+    # Tango case: the late block draws after the shared block, so an early fill can never cover a
+    # late mouth). bedz values are offsets within their OWN splice block, NOT globally comparable -
+    # cross-block draw order is carried by the (late, bedz) PAIR, compared lexicographically (the
+    # late block always renders after the whole shared block; streams/channels are always early).
+    # Three clauses: (a) a pond join with NO layering records is exactly the uncovered cap (fires
+    # the frozen pre-fix Tango fixture); (b) every z-recorded joining bed must sit BELOW the fill
+    # in (late, bedz) order; (c) a drawn stroke must never run THROUGH the open water mid-run
+    # (mouths, not crossings - the pond sibling of channels_join_water_not_cross). Undrawn
+    # (drawn=False) topology conduits are exempt: nothing rendered, nothing to cover.
+    pond_e = M.get("pond")
+    if pond_e:
+        _pjz: list[tuple[Any, Any, bool]] = []  # (endpoint, bedz, late) of every z-recorded course touching the rim zone
+        for dc in M.get("drawn_channels", []):
+            for pt in (dc["pts"][0], dc["pts"][-1]):
+                if in_ellipse(pt[0], pt[1], pond_e, scale=1.06):
+                    _pjz.append((pt, dc.get("bedz"), bool(dc.get("late"))))
+        for st in M.get("streams", []):
+            for pt in (st["poly"][0], st["poly"][-1]):
+                if in_ellipse(pt[0], pt[1], pond_e, scale=1.06):
+                    _pjz.append((pt, st.get("bedz"), False))
+        for c in M.get("channels", []):
+            # drawn=False marks an implied underground conduit; a record with NO bedz is a gen-side
+            # TOPOLOGY entry (its visible stroke, if any, is recorded separately in drawn_channels -
+            # Hoshigaoka's head-race). Only a bed s.channel actually drew (bedz recorded) can cover
+            # or fail to cover anything.
+            if c.get("drawn") is False or c.get("bedz") is None:
+                continue
+            for pt in (c["poly"][0], c["poly"][-1]):
+                if in_ellipse(pt[0], pt[1], pond_e, scale=1.06):
+                    _pjz.append((pt, c.get("bedz"), False))
+        # a comb ditch is always drawn: a joining ditch record demands a matching drawn stroke record
+        _ditch_joins = any(in_ellipse(pt[0], pt[1], pond_e, scale=1.06) for dd in M.get("field_ditches", []) for pt in (dd["poly"][0], dd["poly"][-1]))
+        _pl = M.get("pond_layer") or {}
+        _pz = _pl.get("bedz")
+        pond_bad: list[str] = []
+        if (_pjz or _ditch_joins) and _pz is None:
+            pond_bad.append("a course joins the pond but M['pond_layer'] records no fill position")
+        if _ditch_joins and not any(in_ellipse(dc["pts"][k][0], dc["pts"][k][1], pond_e, scale=1.06) for dc in M.get("drawn_channels", []) for k in (0, -1)):
+            pond_bad.append("a field ditch joins the pond but no drawn stroke is recorded in M['drawn_channels']")
+        pond_bad += [f"bed at {(round(pt[0]), round(pt[1]))} not under the fill" for pt, bz, blate in _pjz if _pz is not None and (bz is None or (blate, bz) >= (bool(_pl.get("late")), _pz))]
+        pond_bad += [
+            f"drawn stroke runs THROUGH the open water at {(round(q[0]), round(q[1]))}" for dc in M.get("drawn_channels", []) for q in dc["pts"][1:-1] if in_ellipse(q[0], q[1], pond_e, scale=0.9)
+        ]
+        check(
+            "pond_fill_covers_channel_mouths",
+            not pond_bad,
+            "a channel INTERSECTS the pond instead of joining it: " + "; ".join(sorted(set(pond_bad))[:4]) + " - a mouth overshoots the rim (covering the rim stroke) and the pond FILL "
+            "must draw over that overshoot; route the stroke through s.field_channel/s.channel/s.stream and let the engine relocate the fill to the late block when a late course joins",
+        )
 
     # A WATER-TO-WATER HANDOFF SHOWS ITS CONTROL GATE (GM 2026-07-23, the junction-seams pass): where a
     # moat/river tap hands off to the comb's own canal (the sluice - the palette seam sits exactly there)
