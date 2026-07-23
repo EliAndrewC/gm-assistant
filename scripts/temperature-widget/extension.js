@@ -78,17 +78,26 @@ const HYSTERESIS = 4; // degrees below a threshold before severity drops again
 //    (genuine bursts ramp only a few degrees per 3 s poll) yet far below the
 //    ~50C one-poll leap of a glitch; both numbers are provisional pending a
 //    fine-grained raw capture and easy to retune here.
-//  - CONFIRM_SAMPLES: a severity must hold for this many consecutive polls
-//    before it fires a notification, so brief 1-2 poll excursions (the smoothed
-//    residue at a real burst's edges, or a genuine momentary blip) do not
-//    interrupt. ~9 s of persistence is a real thermal event worth a popup; the
-//    hardware's own throttling is the actual safety net, so a few seconds'
-//    confirmation delay costs nothing.
+//  - CONFIRM_SAMPLES_BY_SEV: a severity must hold for this many consecutive
+//    polls (indexed by severity) before it fires a notification, so brief
+//    excursions do not interrupt. The two alert tiers deliberately differ
+//    (GM decision 2026-07-23, after the RCA showed real bursty load
+//    legitimately spikes the die to 95-100C for tens of seconds before the
+//    fans catch up - normal turbo behavior, not an emergency):
+//      - BAD (red, at/near the limit): 3 polls (~10 s). Near the limit, fast
+//        notice is worth an occasional burst-triggered popup.
+//      - WARN (orange, "keep an eye on it"): 20 polls (~60 s). A turbo burst
+//        that clips the warning range for 10-30 s is routine and self-limiting
+//        (throttling is the real safety net); only a genuinely SUSTAINED
+//        warm state is worth an interruption.
+//      - normal: 3 polls - not a notification (recovery is silent), just how
+//        fast the confirmed-severity floor resets so a later re-escalation
+//        can notify again.
 const MAX_ABOVE_MEDIAN_C = 20;
 const SMOOTH_WINDOW = 3;
 const MAX_JUMP_C = 20;
 const JUMP_CONFIRM_SAMPLES = 3;
-const CONFIRM_SAMPLES = 3;
+const CONFIRM_SAMPLES_BY_SEV = [3, 20, 3];
 
 // Sensors known to misreport on THIS machine, by their `sensors` label. They
 // are HARD-excluded from the displayed/alarming metric (the gauge, severity,
@@ -636,11 +645,13 @@ class TempBarButton extends PanelMenu.Button {
             `Last ${spanMin} min - min ${Math.round(lo)}°C / max ${Math.round(hi)}°C`;
     }
 
-    // Debounced notification. Fires only when a severity has held for
-    // CONFIRM_SAMPLES consecutive polls AND is higher than the last severity we
-    // notified about - so single/double-poll excursions never interrupt, and a
-    // sustained rise notifies exactly once (not every poll while it stays hot).
-    // Recovery is intentionally silent: the gauge color already shows it.
+    // Debounced notification. Fires only when a severity has held for its
+    // CONFIRM_SAMPLES_BY_SEV count of consecutive polls AND is higher than the
+    // last severity we notified about - so brief excursions never interrupt,
+    // and a sustained rise notifies exactly once (not every poll while it
+    // stays hot). Any change of severity restarts the streak, so "sustained"
+    // means continuously in that state. Recovery is intentionally silent: the
+    // gauge color already shows it.
     _maybeNotify(metric) {
         const sev = metric >= this._badAt ? 2 : (metric >= this._warnAt ? 1 : 0);
         if (sev === this._debSev) {
@@ -649,8 +660,8 @@ class TempBarButton extends PanelMenu.Button {
             this._debSev = sev;
             this._debCount = 1;
         }
-        // Act exactly once, the poll the streak reaches CONFIRM_SAMPLES.
-        if (this._debCount !== CONFIRM_SAMPLES)
+        // Act exactly once, the poll the streak reaches this severity's count.
+        if (this._debCount !== CONFIRM_SAMPLES_BY_SEV[sev])
             return;
         const prevConfirmed = this._confirmedSev;
         this._confirmedSev = sev;
