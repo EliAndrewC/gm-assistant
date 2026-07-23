@@ -139,8 +139,16 @@ ROAD = [
 s.road(ROAD)  # unlabeled: only Imperial roads get labels (SKILL.md labeling rules)
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the through-road over the river
 
-# ---- the cargo canal: river -> water gate -> dock basin (the Suzhou pattern)
-CANAL = [(2060, 1474), (1981, 1468), (1907, 1460), (1830, 1455)]  # west end reaches INTO the dock basin (feeds it, like a street reaching the road)
+# ---- the cargo canal: moat -> water gate -> dock basin (the Suzhou pattern). ONE mouth on the
+# river, not two (GM 2026-07-23): the canal's original river tap at (2060,1474) sat 36 real ft
+# beside the moat's downstream junction (2074,1462) and rode collinearly INSIDE the moat arm's
+# stroke for the whole bank crossing - a smeared doubled channel with a sliver fork at the mouth.
+# Historically the Suzhou-pattern cargo canal communicates with the MOAT, and the moat's own
+# downstream river junction is the single navigation entrance - so the canal hands off at the
+# moat's outfall-arm corner (MOAT[1], the SE bend the arm springs from; self-correcting if the
+# wall ever resizes) and the moat carries boats the last reach to the river. Gated by
+# city_canal_shares_moat_mouth; see settlements.md river-cities "one mouth on the river, not two".
+CANAL = [MOAT[1], (1907, 1460), (1830, 1455)]  # east end ON the moat corner (the handoff confluence); west end reaches INTO the dock basin (feeds it, like a street reaching the road)
 s.canal(CANAL)
 s.water_gate(1907, 1460, rot=8)
 s.dock(1809, 1455, 54, 34)

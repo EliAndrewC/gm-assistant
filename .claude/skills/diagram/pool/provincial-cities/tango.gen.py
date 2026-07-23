@@ -132,6 +132,13 @@ _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)  # a moat
 s.stream(
     [(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66)
 )  # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow); head off the widened frame
+# The whole scheme reads as a stream DIVERTED around the city - in at the NW rim, around both
+# arcs of the ring, resuming its course off the SE rim - and that is a real, common moat type
+# (GM asked 2026-07-23): dry-site Chinese seats dug the hucheng he by turning a nearby stream
+# through it, and Japanese castle towns fed moats by the same river diversions (Edo turned the
+# Hirakawa into its moat spiral). No trace of the stream's pre-diversion bed is drawn through
+# the city: after centuries of buildup the abandoned course is built over, so its absence is
+# realistic, not an omission. See settlements.md's moat-water bullet for the full grounding.
 # ... and the moat DRAINS: an outfall leaves the LOW (SE, downstream - N is the high ground) rim
 # and runs off the map, diagonally opposite the NW feeder so the current flushes the ring corner-to-
 # corner (the Forbidden City NW-in / SE-out pattern). A stream-fed moat in a wet rice climate cannot
