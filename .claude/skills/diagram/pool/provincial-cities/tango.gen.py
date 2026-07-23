@@ -942,6 +942,16 @@ s.ossuary(2215, 760)
 
 s.bridges()  # spans the Imperial Road over the moat at the north and south gates
 
+# CARAVAN GROUND inside the north gate, east of the road (GM 2026-07-23). The GM caught this
+# pocket as unclaimed bare ground (the red case that drove the footprint-aware
+# city_no_large_empty_space rebuild - frozen in pool/regressions/); the fix claims it as EXTRA
+# animal space rather than packing in more housing: Tango sits on the Phoenix border, so the
+# NORTH gate carries the caravan traffic coming down from (or marshalling to depart toward)
+# Phoenix lands and wants more tie-up room than the south - and the ground adjoins the north
+# stables + flophouse cluster, so hitching rails, tethered oxen, and cart litter are what this
+# corner already is. Placed AFTER the packs/bridges so the scatter sees every footprint.
+s.animal_ground(1705, 952, r=80, label="caravan ground")
+
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
 s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
