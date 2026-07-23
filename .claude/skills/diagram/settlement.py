@@ -557,6 +557,8 @@ class Settlement:
         self._water_idx: int | None = None  # shared-opacity group, then all SHEENS in another, so crossings MERGE
         self._late_water_idx: int | None = None  # a SECOND water block for comb-field channels (opt-in via
         self.late_water: list[dict[str, Any]] = []  # field_channel(late=True)): spliced at its own first-call
+        self._pond_entry: dict[str, Any] | None = None  # the pond's deferred water entry, so flush can RELOCATE
+        # its fill+sheen into the late block when a late-block channel joins it (pond_fill_covers_channel_mouths)
         # position, AFTER the field's plots - a city draws its moat/river first, which anchors the shared
         # block early and would composite the whole ditch network UNDER the later-drawn paddy plots (the
         # network invisible + its uncovered corridors reading as parchment pinstripes; 2026-07-21). The
@@ -1405,11 +1407,15 @@ class Settlement:
             self._water(f'<path d="{stream_curve}" fill="none" stroke="#9CB4C8" stroke-width="5"/>', {})
         self._water(
             f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="#9CB4C8"/>',  # FILL -> shared bed group (topmost bed)
-            {},
+            self.M.setdefault("pond_layer", {"late": False}),  # flush records the fill's bedz/sheenz here, and flips
+            # `late` if it relocates the fill to the late block. bedz values are offsets within their OWN splice
+            # block, so cross-block draw order is carried by the (late, bedz) PAIR - the late block always renders
+            # after the whole shared block (pond_fill_covers_channel_mouths compares the pairs lexicographically)
             sheen=f'<ellipse cx="{cx}" cy="{cy}" rx="{rx - 12}" ry="{ry - 10}" fill="none" stroke="#B6CAD8" stroke-width="1"/>',  # inner highlight
             edge=f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="none" stroke="#5C7488" stroke-width="2.4"/>',  # RIM -> edge layer, below beds
             pond_fill=True,
         )
+        self._pond_entry = self.water[-1]  # so flush can relocate the fill+sheen into the late block (see finish)
         self.M["pond"] = [cx, cy, rx, ry]
         self.ellipses.append((cx, cy, rx, ry))
 
@@ -2395,11 +2401,16 @@ class Settlement:
         `_clip_to_moat` (the same clean-mouth join, for a moated city's taps and drain culverts).
         An end reaching into a STREAM bed is snapped onto that bed's edge by `_clip_to_stream`
         (the confluence mouth for a drain culvert emptying into a stream).
-        Not recorded here - the field_ditches are recorded separately for the checks."""
+        The field_ditches are recorded separately (gen-side) for the topology checks; the DRAWN
+        stroke - post-clip geometry, bed draw position, late flag - is recorded in M['drawn_channels']
+        so pond_fill_covers_channel_mouths can verify the pond fill paints over every joining mouth
+        (and finish() can see whether a LATE stroke joins the pond and relocate the fill)."""
         pts = self._clip_to_stream(self._clip_to_river(self._clip_to_moat(self._clip_to_pond(pts), capr=max(w0, w1) / 2), capr=max(w0, w1) / 2))
+        rec: dict[str, Any] = {"pts": [[round(x, 1), round(y, 1)] for x, y in pts], "late": late}
+        self.M.setdefault("drawn_channels", []).append(rec)  # ONE rec per call: flush writes bedz per piece, so the last (topmost) piece's z sticks
         if abs(w1 - w0) < 0.2:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
-            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {}, late=late)
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{w0:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', rec, late=late)
             return
         n, L = 7, len(pts)
         for k in range(n):
@@ -2408,7 +2419,7 @@ class Settlement:
                 continue
             wk = w0 + (w1 - w0) * (k + 0.5) / n
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in piece)
-            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', {}, late=late)
+            self._water(f'<path d="{dd}" fill="none" stroke="{col}" stroke-width="{wk:.1f}" stroke-linejoin="round" stroke-linecap="round"/>', rec, late=late)
 
     def lane(self, pts: Any, width: float = 16, clearance: float = 22, worn: bool = False, connector: bool = False) -> None:
         """A village lane or connecting path. `worn=True` draws it as UNPAVED TRODDEN EARTH: a NARROW
@@ -8323,6 +8334,17 @@ class Settlement:
             if bed_zs:
                 self.M["ground_bed_zmin"] = min(bed_zs)
             splices.append((self._ground_idx, block))
+        # Does a LATE-block channel JOIN the pond? Then the pond's FILL + SHEEN must RELOCATE into
+        # the late block (GM 2026-07-23, Tango's in-wall tank): the late block draws after the whole
+        # shared block, so an early fill can never cover a late mouth's inside-the-rim overshoot -
+        # the channel's round end-cap rode ON TOP of the open water and read as intersecting the
+        # pond. The rim EDGE stays early (below every bed, so the mouth still covers it); only the
+        # fill and sheen move, re-emitted LAST among the late beds - restoring exactly the covering
+        # order the shared block gives an early feeder. Gated by pond_fill_covers_channel_mouths.
+        _pond_late = False
+        if self.M.get("pond") and self._pond_entry is not None and self._late_water_idx is not None:
+            _pex, _pey, _perx, _pery = self.M["pond"]
+            _pond_late = any(ch["late"] and ((q[0] - _pex) / _perx) ** 2 + ((q[1] - _pey) / _pery) ** 2 <= 1.12 for ch in self.M.get("drawn_channels", []) for q in (ch["pts"][0], ch["pts"][-1]))
         if self._water_idx is not None:  # the watercourse block: all EDGES (pond rims), then all
             wblock: list[Any] = []  # BEDS (one opacity group), then all SHEENS - crossings MERGE
             bedzs: list[Any] = []
@@ -8340,6 +8362,8 @@ class Settlement:
                         w["_sheen"] = w["clip"]["sheen_t"].format(dd=dd)
             wblock.append('<g opacity="0.85">')
             for w in sorted(self.water, key=lambda w: w["pond_fill"]):  # pond FILL drawn LAST (stable sort) so it
+                if _pond_late and w is self._pond_entry:
+                    continue  # fill relocates to the late block (see above) - the rim edge already emitted
                 w["rec"]["bedz"] = self._water_idx + len(wblock)  # covers any feeder's inside-the-rim overshoot
                 bedzs.append(self._water_idx + len(wblock))
                 wblock.append(w["_bed"])
@@ -8347,6 +8371,8 @@ class Settlement:
             wblock.append('<g opacity="0.55">')
             for w in self.water:
                 if w["_sheen"] is not None:
+                    if _pond_late and w is self._pond_entry:
+                        continue  # the pond sheen moves with its fill
                     w["rec"]["sheenz"] = self._water_idx + len(wblock)
                     sheenzs.append(self._water_idx + len(wblock))
                     wblock.append(w["_sheen"])
@@ -8361,12 +8387,21 @@ class Settlement:
             for w in self.late_water:  # first-call position so the ditch net draws OVER the field's plots
                 w["rec"]["bedz"] = self._late_water_idx + len(lblock)
                 lblock.append(w["bed"])
+            if _pond_late:  # the relocated pond FILL: topmost late bed, covering every joining mouth's overshoot
+                pe = self._pond_entry
+                assert pe is not None
+                pe["rec"]["late"] = True  # the fill now lives in the late block (z pairs: see pond())
+                pe["rec"]["bedz"] = self._late_water_idx + len(lblock)
+                lblock.append(pe["_bed"])
             lblock.append('</g>')
             lblock.append('<g opacity="0.55">')
             for w in self.late_water:
                 if w["sheen"] is not None:
                     w["rec"]["sheenz"] = self._late_water_idx + len(lblock)
                     lblock.append(w["sheen"])
+            if _pond_late and self._pond_entry is not None and self._pond_entry["_sheen"] is not None:  # the pond sheen rides above the late beds too
+                self._pond_entry["rec"]["sheenz"] = self._late_water_idx + len(lblock)
+                lblock.append(self._pond_entry["_sheen"])
             lblock.append('</g>')
             splices.append((self._late_water_idx, lblock))
         for idx, block in sorted(splices, key=lambda s: -s[0]):  # high index first so the lower stays valid
