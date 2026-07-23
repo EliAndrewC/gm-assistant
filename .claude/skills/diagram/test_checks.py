@@ -6847,3 +6847,53 @@ def test_pond_fill_covers_channel_mouths_passes_when_the_fill_covers_the_mouth()
         "field_ditches": [{"poly": [[462.5, 505.0], [380.0, 560.0]], "role": "main", "field": "f1", "w": 5.0}],
     }
     assert "pond_fill_covers_channel_mouths" not in f(M)
+
+
+# ---- inwall_drains_gated_at_cutoff: the Tango bare outfall (GM 2026-07-23) -------------------
+# A walled city's in-wall drain leaves through an UNDERGROUND culvert (an undrawn drain->moat
+# conduit); the visible ditch must be trimmed back clear of the patrol ring road and wear a
+# sluice_gate glyph at the cut - otherwise it reads as unfinished linework running into the road.
+_IW_WALL = [[50, 50], [950, 50], [950, 950], [50, 950]]
+_IW_RING = [[100, 100], [900, 100], [900, 900], [100, 900], [100, 100]]
+
+
+def _iw_manifest(conduit_start, stroke=None, gates=(), drawn=False):
+    return {
+        "meta": {"scale": "town", "W": 1000, "H": 1000},
+        "wall": _IW_WALL,
+        "ring_road": _IW_RING,
+        "ring_road_width": 8,
+        "channels": [{"poly": [conduit_start, [200, 250], [60, 300]], "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 2.5, "drawn": drawn}],
+        "drawn_channels": [{"pts": stroke, "late": True, "bedz": 5}] if stroke else [],
+        "sluice_gates": [{"x": g[0], "y": g[1], "rot": 0, "z": 1} for g in gates],
+    }
+
+
+def test_inwall_drains_gated_at_cutoff_fires_when_the_cutoff_is_ungated():
+    M = _iw_manifest([300, 300], stroke=[[500, 300], [300, 300]])  # ditch reaches the drop, road clear, NO gate
+    assert "inwall_drains_gated_at_cutoff" in f(M)
+
+
+def test_inwall_drains_gated_at_cutoff_fires_when_the_ditch_rides_the_ring_road():
+    # cut point 5px off the ring centerline (< half width 4 + 4) and the stroke crosses it
+    M = _iw_manifest([300, 95], stroke=[[300, 300], [300, 95]], gates=((300, 95),))
+    assert "inwall_drains_gated_at_cutoff" in f(M)
+
+
+def test_inwall_drains_gated_at_cutoff_fires_when_no_ditch_reaches_the_drop():
+    M = _iw_manifest([300, 300], stroke=[[500, 300], [400, 300]], gates=((300, 300),))  # nearest stroke end 100px away
+    assert "inwall_drains_gated_at_cutoff" in f(M)
+
+
+def test_inwall_drains_gated_at_cutoff_passes_when_gated_and_clear():
+    M = _iw_manifest([300, 300], stroke=[[500, 300], [300, 300]], gates=((302, 301),))
+    assert "inwall_drains_gated_at_cutoff" not in f(M)
+
+
+def test_inwall_drains_gated_at_cutoff_exempts_drawn_culverts_and_outside_conduits():
+    # a DRAWN drain culvert is the outside-the-wall kind (gated at the drain handoff by
+    # channel_gates_at_water_junctions), and an undrawn conduit STARTING outside the wall has
+    # no rampart to pass under - neither is this check's business
+    assert "inwall_drains_gated_at_cutoff" not in f(_iw_manifest([300, 300], drawn=True))
+    outside = _iw_manifest([980, 500])
+    assert "inwall_drains_gated_at_cutoff" not in f(outside)

@@ -1,0 +1,97 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "ring_road": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ],
+  [
+   100,
+   100
+  ]
+ ],
+ "ring_road_width": 8,
+ "channels": [
+  {
+   "poly": [
+    [
+     300,
+     300
+    ],
+    [
+     200,
+     250
+    ],
+    [
+     60,
+     300
+    ]
+   ],
+   "frm": {
+    "kind": "drain"
+   },
+   "to": {
+    "kind": "moat"
+   },
+   "w": 2.5,
+   "drawn": false
+  }
+ ],
+ "drawn_channels": [
+  {
+   "pts": [
+    [
+     500,
+     300
+    ],
+    [
+     300,
+     300
+    ]
+   ],
+   "late": true,
+   "bedz": 5
+  }
+ ],
+ "sluice_gates": [],
+ "_regression": {
+  "fires": [
+   "inwall_drains_gated_at_cutoff"
+  ],
+  "source": "test_checks.py::test_inwall_drains_gated_at_cutoff_fires_when_the_cutoff_is_ungated"
+ }
+}

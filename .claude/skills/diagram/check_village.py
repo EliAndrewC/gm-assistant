@@ -6126,6 +6126,52 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "engineered plumbing, not two strokes crossing",
     )
 
+    # AN IN-WALL DRAIN CUTS OFF AT A GATE BEFORE THE RING ROAD (GM 2026-07-23, Tango's in-wall
+    # nw1 drain: the visible runoff ditch ran up to the patrol road's verge and simply STOPPED -
+    # a bare cut end, unfinished linework). Doctrine: a walled city's in-wall drainage never
+    # visibly pierces road, rampart or moat - the water leaves through an UNDERGROUND stone
+    # culvert, recorded as an undrawn drain->moat conduit (channel_gates_at_water_junctions
+    # deliberately exempts that conduit's invisible moat-side seam). But the DROP into the
+    # culvert is a real engineered structure and the map must say so: the visible ditch is
+    # TRIMMED back to a cut point clear of the ring road and wears a sluice_gate glyph there
+    # (the gate is what tells the reader the ditch drains into artificial plumbing connected to
+    # the moat, even though the connection itself is invisible). The conduit's START is that cut
+    # point - where the water goes underground. For every undrawn drain->moat conduit starting
+    # INSIDE the wall: (a) a drawn stroke must END at the conduit's start (the visible ditch
+    # reaches the drop - within 8px); (b) the cut point stays >= half the ring-road width + 4px
+    # off the ring-road centerline, and no drawn stroke touching it crosses the centerline (the
+    # pre-fix Tango stub lapped 3px PAST it); (c) a sluice_gate sits within 16px of the cut
+    # point (the gate tolerance channel_gates_at_water_junctions uses). Engine helper:
+    # s.inwall_drain_outfall() trims the drain, places the gate, and records the conduit.
+    inwall_bad = []
+    if M.get("wall"):
+        _iring = M.get("ring_road") or []
+        _irhw = (M.get("ring_road_width") or 20) / 2
+        for _ch in M.get("channels", []):
+            if (_ch.get("frm") or {}).get("kind") != "drain" or (_ch.get("to") or {}).get("kind") != "moat" or _ch.get("drawn"):
+                continue  # drawn culverts carry their gate at the drain handoff (checked above)
+            _co = _ch["poly"][0]
+            if not point_in_poly(_co[0], _co[1], M["wall"]):
+                continue  # an outside-the-wall conduit has no rampart to pass under
+            _iw_touch = [dc["pts"] for dc in M.get("drawn_channels", []) if any(math.hypot(dc["pts"][k][0] - _co[0], dc["pts"][k][1] - _co[1]) <= 8 for k in (0, -1))]
+            if not _iw_touch:
+                inwall_bad.append(f"no visible ditch reaches the drop at {(round(_co[0]), round(_co[1]))}")
+            if _iring:
+                if min(seg_dist(_co[0], _co[1], _iring[i], _iring[i + 1]) for i in range(len(_iring) - 1)) < _irhw + 4:
+                    inwall_bad.append(f"cut point {(round(_co[0]), round(_co[1]))} rides the ring road - trim the ditch off short of the patrol road")
+                for _spts in _iw_touch:
+                    if any(segments_cross(_spts[i], _spts[i + 1], _iring[j], _iring[j + 1]) for i in range(len(_spts) - 1) for j in range(len(_iring) - 1)):
+                        inwall_bad.append(f"the ditch at {(round(_co[0]), round(_co[1]))} CROSSES the ring road - it must stop before it")
+            if not any(math.hypot(g["x"] - _co[0], g["y"] - _co[1]) <= 16 for g in M.get("sluice_gates", [])):
+                inwall_bad.append(f"no sluice gate at the cutoff {(round(_co[0]), round(_co[1]))}")
+    check(
+        "inwall_drains_gated_at_cutoff",
+        not inwall_bad,
+        "; ".join(sorted(set(inwall_bad))[:4]) + " - an in-wall drain cuts off short of the ring road and drops through a "
+        "sluice gate into the underground culvert to the moat (the gate glyph is what makes the bare cut end read as "
+        "engineered plumbing); trim the drain through s.inwall_drain_outfall()",
+    )
+
     # large area features (forests, pastures) near a map edge must run OFF it - implying
     # they continue beyond what's drawn. Bounded farm fields are exempt.
     NEAR = 55
