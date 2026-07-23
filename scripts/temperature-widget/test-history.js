@@ -290,6 +290,134 @@ test('spatialMetric handles a single core and keeps the median itself', () => {
     assert.strictEqual(H.spatialMetric([50, 100], SPAT), 50);
 });
 
+// --- barSeverity: gauge color with downward hysteresis ----------------------
+
+// Mujina's effective thresholds: warn 90, bad 100, hysteresis 4.
+const SEV = { warnAt: 90, badAt: 100, hysteresis: 4 };
+
+// Threads a metric sequence through barSeverity and returns the severity the
+// bar would show after each poll.
+function runSeverity(metrics, start = 0) {
+    let sev = start;
+    return metrics.map(m => (sev = H.barSeverity(sev, m, SEV)));
+}
+
+test('barSeverity maps the plain thresholds on the way up', () => {
+    assert.deepStrictEqual(runSeverity([50, 89.9, 90, 99.9, 100]), [0, 0, 1, 1, 2]);
+});
+
+test('barSeverity holds the color while hovering just under a threshold', () => {
+    // The motivating flip-flop case: oscillating 89-91 stays orange - the
+    // color only drops once no longer above the floor (warnAt - hysteresis,
+    // here 86: 86.1 still holds, exactly 86 releases).
+    assert.deepStrictEqual(
+        runSeverity([91, 89, 91, 89, 86.1, 86]),
+        [1, 1, 1, 1, 1, 0]);
+});
+
+test('barSeverity red releases below badAt - hysteresis', () => {
+    assert.deepStrictEqual(runSeverity([101, 97, 96.1], 0), [2, 2, 2]);
+    // 96 is exactly the floor (badAt - 4): not ABOVE it, so red releases; 95
+    // is in the plain orange band.
+    assert.deepStrictEqual(runSeverity([101, 96], 0), [2, 1]);
+});
+
+test('barSeverity drops straight from red to green when unambiguously cool', () => {
+    // Hysteresis holds a color near ITS threshold; it never staircases a big
+    // fall through orange.
+    assert.deepStrictEqual(runSeverity([101, 55]), [2, 0]);
+});
+
+test('barSeverity treats no reading as normal', () => {
+    assert.strictEqual(H.barSeverity(2, null, SEV), 0);
+});
+
+// --- notifyGate: per-severity debounce + recovery dismissal -----------------
+
+// The shipped tiers: normal resets in 3 polls, warn must hold 20 polls
+// (~60 s), bad fires after 3 (~10 s). See CONFIRM_SAMPLES_BY_SEV.
+const NOTIFY = { confirmSamplesBySev: [3, 20, 3] };
+
+// Threads a severity sequence through notifyGate and returns the non-null
+// actions as [pollIndex, action] pairs - the IO the extension would perform.
+function runNotify(sevs, state = { debSev: null, debCount: 0, confirmedSev: 0 }) {
+    const actions = [];
+    sevs.forEach((sev, i) => {
+        state = H.notifyGate(state, sev, NOTIFY);
+        if (state.action !== null)
+            actions.push([i, state.action]);
+    });
+    return { actions, state };
+}
+
+test('notifyGate fires bad on the 3rd consecutive poll, exactly once', () => {
+    assert.deepStrictEqual(
+        runNotify([0, 0, 2, 2, 2, 2, 2]).actions,
+        [[4, 'notify']]);
+});
+
+test('notifyGate stays silent through a routine turbo burst into orange', () => {
+    // The 2026-07-23 RCA finding encoded as behavior: real bursty load spikes
+    // the die into the warning range for 10-30 s (3-10 polls) and self-limits
+    // via throttling. That must produce NO notification - only a full 60 s
+    // (20 polls) continuously in warn earns the popup.
+    const burst = [0, 0, ...Array(10).fill(1), 0, 0, 0];
+    assert.deepStrictEqual(runNotify(burst).actions, []);
+});
+
+test('notifyGate fires warn after 20 consecutive polls (~60 s)', () => {
+    const sustained = [0, ...Array(20).fill(1)];
+    assert.deepStrictEqual(runNotify(sustained).actions, [[20, 'notify']]);
+});
+
+test('notifyGate restarts the warn streak on any severity change', () => {
+    // 19 polls of warn, one green poll, 19 more: never 20 in a row -> silent.
+    const flap = [...Array(19).fill(1), 0, ...Array(19).fill(1)];
+    assert.deepStrictEqual(runNotify(flap).actions, []);
+});
+
+test('notifyGate escalates from confirmed warn to bad on the fast tier', () => {
+    // A sustained warm spell that then hits the red band: the red popup still
+    // arrives ~10 s after crossing, not 60.
+    const seq = [...Array(20).fill(1), 2, 2, 2];
+    assert.deepStrictEqual(
+        runNotify(seq).actions,
+        [[19, 'notify'], [22, 'notify']]);
+});
+
+test('notifyGate dismisses once recovery from a notified state is confirmed', () => {
+    // Warning shown, then back to green: 3 consecutive normal polls withdraw
+    // the banner (the state it reported is gone), exactly once - continued
+    // green stays silent.
+    const seq = [...Array(20).fill(1), 0, 0, 0, 0, 0];
+    assert.deepStrictEqual(
+        runNotify(seq).actions,
+        [[19, 'notify'], [22, 'dismiss']]);
+});
+
+test('notifyGate never dismisses when nothing was notified', () => {
+    // A burst too short to notify, then green: there is no banner to clean up.
+    assert.deepStrictEqual(runNotify([1, 1, 0, 0, 0, 0]).actions, []);
+});
+
+test('notifyGate re-notifies a fresh episode after a dismissal', () => {
+    const episode = [...Array(20).fill(1), 0, 0, 0];
+    const first = runNotify(episode);
+    assert.deepStrictEqual(first.actions, [[19, 'notify'], [22, 'dismiss']]);
+    const second = runNotify(episode, first.state);
+    assert.deepStrictEqual(second.actions, [[19, 'notify'], [22, 'dismiss']]);
+});
+
+test('notifyGate downgrade bad -> sustained warn keeps the banner but re-arms', () => {
+    // Red confirmed, then a sustained warn plateau: no new action (the banner
+    // stays - its "look at this" is still live), but the confirmed level
+    // drops to warn, so a later return to red notifies again.
+    const seq = [2, 2, 2, ...Array(20).fill(1), 2, 2, 2];
+    assert.deepStrictEqual(
+        runNotify(seq).actions,
+        [[2, 'notify'], [25, 'notify']]);
+});
+
 test('lock serialize -> parse round-trips', () => {
     assert.deepStrictEqual(
         H.parseLock(H.serializeLock(4242, 'boot-abc', 1234.9)),

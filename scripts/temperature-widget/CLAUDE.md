@@ -19,15 +19,21 @@ the temperature has *stayed* in the warning range (normal urgency) or the bad
 range (critical urgency) for a few polls - see [Notification debounce +
 metric smoothing](#notification-debounce--metric-smoothing) for why it waits
 rather than firing on the first reading. It does NOT notify on recovery - the
-gauge color already shows that, and a "back to normal" popup is just noise.
+gauge color already shows that, and a "back to normal" popup is just noise -
+but it DOES withdraw its own notification once recovery is confirmed: a stale
+"CPU running hot" banner sitting in the tray after the CPU has cooled is
+equally noise (GM request 2026-07-23), so the widget cleans up after itself
+silently.
 
 Targets GNOME Shell 42 (Ubuntu 22.04, mujina).
 
 ## How to test a change
 
-**Pure logic runs in the container; UI/IO needs the laptop.** The history
-parse/prune and writer-election logic in `history.js` is unit-tested and
-runnable anywhere:
+**Pure logic runs in the container; UI/IO needs the laptop.** All the
+decision-making lives in `history.js` (archive handling, writer election,
+de-noising, severity, the notification gate - see [Dev loop
+caveat](#dev-loop-caveat) for the full list), is unit-tested, and runs
+anywhere:
 
 ```bash
 node --test scripts/temperature-widget/test-history.js
@@ -124,7 +130,9 @@ To remove: `gnome-extensions disable temperature-bar@mujina`, then delete
   drops only once the reading is clearly below the threshold, so a CPU hovering
   at 89-91°C does not flip the bar between green and orange every poll. (This
   governs the bar color only; notification spam is handled separately by the
-  debounce below.)
+  debounce below.) Pure logic in `History.barSeverity`, unit-tested - including
+  the boundary (releases at exactly threshold - 4) and the fact that a fall to
+  unambiguously-cool never staircases through orange.
 - **Sensors are discovered by filename, never by counting**: coretemp's
   `tempN` numbering is sparse on this chip (temp1, temp2..temp10, temp14,
   ...), so a `for i in 1..N` loop that stops at the first gap would silently
@@ -251,13 +259,33 @@ spatial check first and then the temporal stack:
    thermal throttling - not this widget - is the actual safety mechanism; the
    popup is purely informational.
 
-Recovery is **not** notified (the gauge color shows it). And notifications
-reuse **one** `MessageTray.Source` + one `Notification`, updated in place,
-rather than creating a fresh source per fire: the old per-fire-source behavior
-stacked dozens of separately-dismissable banners during an oscillating hot
-spell, which is what made them feel impossible to clear. The widget also
+   The whole decide-to-notify state machine is pure (`History.notifyGate`,
+   unit-tested in `test-history.js` as scenario tests that double as the
+   behavior spec: the 30 s turbo burst that must stay silent, the 60 s
+   sustained warn that must fire, the fast red tier, streak resets, recovery
+   dismissal, re-arming after a downgrade); `extension.js` just threads the
+   state and performs the IO the gate asks for.
+
+Recovery is **not** notified (the gauge color shows it), but once recovery to
+normal is *confirmed* (3 polls, same count as any severity change) the widget
+**dismisses its own notification** - the banner's "look at this" is over when
+the state it reported is gone (GM request 2026-07-23). Destroying the
+notification cascades to the then-empty source, and the next fire recreates
+both fresh. A confirmed *downgrade* that is not full recovery (bad -> sustained
+warn) deliberately keeps the banner - still worth a look - while re-arming the
+gate so a later return to red notifies again.
+
+Notifications reuse **one** `MessageTray.Source` + one `Notification`, updated
+in place, rather than creating a fresh source per fire: the old per-fire-source
+behavior stacked dozens of separately-dismissable banners during an oscillating
+hot spell, which is what made them feel impossible to clear. The widget also
 destroys its own source on `disable()`, so disabling the extension now clears
-its notifications (they used to outlive it, owned by the message tray).
+its notifications (they used to outlive it, owned by the message tray). Tier
+presentation differs on purpose: the red notification is CRITICAL urgency and
+persists in the tray until dismissed (by the user, by recovery, or by
+`disable()`), while the orange one is normal urgency and transient - a banner
+that shows and goes, leaving nothing in the tray, matching its "keep an eye on
+it" weight.
 
 ## Persisted history
 
@@ -374,14 +402,16 @@ Design choices, with the "why":
 ## Dev loop caveat
 
 The container cannot run GNOME Shell, so UI and IO changes cannot be verified
-from inside it. The **pure logic** (history parse/serialize/prune and the
-writer-election decision) lives in `history.js` and IS runnable in the
-container:
+from inside it. The **pure logic** lives in `history.js` and IS runnable in
+the container - and that now covers all the decision-making: archive
+parse/serialize/prune, the writer election, the metric de-noising stack
+(median / slew gate / spatial reject), CPU-utilization accounting, the
+bar-severity hysteresis, and the notification gate (debounce + dismissal):
 
 ```bash
 node --test scripts/temperature-widget/test-history.js
 ```
 
-Sensor discovery, the severity state machine, the actual file IO, and all
-rendering still need an install + shell load on the laptop to check (see [How
-to test a change](#how-to-test-a-change)).
+What still needs an install + shell load on the laptop is the IO shell around
+those decisions: sensor discovery, actual file IO, notification presentation,
+and all rendering (see [How to test a change](#how-to-test-a-change)).
