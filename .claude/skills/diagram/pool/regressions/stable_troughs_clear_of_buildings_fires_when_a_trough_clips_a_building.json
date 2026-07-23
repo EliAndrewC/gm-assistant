@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3
+ },
+ "stable_yards": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    500,
+    500
+   ],
+   "troughs": 2,
+   "troughs_at": [
+    502.0,
+    492.4
+   ],
+   "troughs_box": [
+    499.7,
+    489.6,
+    504.3,
+    495.2
+   ]
+  }
+ ],
+ "wells": [
+  {
+   "x": 510,
+   "y": 492,
+   "r": 8,
+   "vr": 4.0
+  }
+ ],
+ "buildings": [
+  {
+   "x": 500,
+   "y": 486,
+   "w": 20,
+   "h": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "stable_troughs_clear_of_buildings"
+  ],
+  "source": "test_checks.py::test_stable_troughs_clear_of_buildings_fires_when_a_trough_clips_a_building"
+ }
+}
