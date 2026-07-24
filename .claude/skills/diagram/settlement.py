@@ -2004,6 +2004,12 @@ class Settlement:
         # z-order audit). No-op when no late block exists or nothing was overlaid.
         if n and self._late_water_idx is not None:
             self._late_water_idx = len(self.out)
+            self.out.append("")  # PLACEHOLDER - the flush splice REPLACES the element at the anchor index
+            # (self.out[idx:idx+1] = block), so a re-anchor without a placeholder makes the splice EAT
+            # whatever element lands there next. This one was missing from the start; it went unnoticed
+            # while the next element was inert, until the deferred crown pass below put a pond's entire
+            # crown group in the slot and a bald pond shipped (GM 2026-07-24). Abandoned placeholders
+            # are empty strings, inert in the final SVG - same convention as the late=True anchor.
         # ...but the channels draw UNDER the mulberry canopies (GM 2026-07-24): the canal runs BETWEEN the
         # bushes at ground level, so a crown's leaves may overhang and partly cover the channel stroke -
         # never the channel slicing across a crown. The crown groups are drawn AFTER the late-water anchor
