@@ -3349,6 +3349,71 @@ def test_stable_troughs_clear_of_buildings_fires_when_the_box_went_unrecorded():
     assert "stable_troughs_clear_of_buildings" in f(M)
 
 
+def test_stable_yard_furniture_fires_when_a_rail_tip_reaches_the_road():
+    # the center-only placement bug (GM 2026-07-24): rail center 12px off the road centerline
+    # clears the ~4.3px tread, but the 18px rail's tip (len/2 + 2.4 post reach = 11.4) lands on it
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "road": [[500, 0], [500, 1000]],
+        "road_width": 8.667,
+        "stable_yards": [
+            {
+                "x": 560,
+                "y": 500,
+                "r": 72.0,
+                "of": [560, 500],
+                "troughs": 0,
+                "rails": [{"x": 512, "y": 500, "tx": 1.0, "ty": 0.0, "len": 18.0, "reach": 2.4}],
+                "dung_heaps": [],
+            }
+        ],
+    }
+    assert "stable_yard_furniture_clear_of_roads_walls" in f(M)
+
+
+def test_stable_yard_furniture_fires_when_a_dung_heap_lies_against_the_wall():
+    # a heap whose drawn edge (rx 2.5) reaches inside the rampart's ~5px clearance stroke
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
+        "stable_yards": [
+            {
+                "x": 500,
+                "y": 160,
+                "r": 72.0,
+                "of": [500, 160],
+                "troughs": 0,
+                "rails": [],
+                "dung_heaps": [{"x": 500, "y": 106, "rx": 2.5, "ry": 1.8}],
+            }
+        ],
+    }
+    assert "stable_yard_furniture_clear_of_roads_walls" in f(M)
+
+
+def test_stable_yard_furniture_passes_clear_and_skips_unrecorded_legacy_yards():
+    # a rail 30px off the road and a heap in open ground pass; a legacy yard record with no
+    # rails/dung_heaps keys (the pre-2026-07-24 pinned fixtures) is skipped, never retro-failed
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "road": [[500, 0], [500, 1000]],
+        "road_width": 8.667,
+        "stable_yards": [
+            {
+                "x": 560,
+                "y": 500,
+                "r": 72.0,
+                "of": [560, 500],
+                "troughs": 0,
+                "rails": [{"x": 530, "y": 500, "tx": 0.0, "ty": 1.0, "len": 18.0, "reach": 2.4}],
+                "dung_heaps": [{"x": 585, "y": 520, "rx": 2.5, "ry": 1.8}],
+            },
+            {"x": 300, "y": 300, "r": 60.0, "of": [300, 300], "troughs": 0},
+        ],
+    }
+    assert "stable_yard_furniture_clear_of_roads_walls" not in f(M)
+
+
 def test_city_streets_connected_fires_on_a_gap_wider_than_45px():
     # two parallel streets 60px apart: the old 95px tolerance bridged them, the tightened 45px
     # does not - a grid that stops short of the road reads as a separated network, not connected
