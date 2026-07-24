@@ -227,7 +227,11 @@ Considered and REJECTED (recorded so they are not re-litigated):
    gate), distinct from the manor-gate board (Mode A) which posts the bench's output - the
    two-board split is documented in settlements.md "Notice board (kosatsuba)" and cross-noted
    in buildings.md. Hoshizora: SW road frontage at the theater/flophouse arrival node;
-   Hirameki: main street just inside the front gate.
+   Hirameki: main street just inside the front gate. **Follow-up [DONE 2026-07-24]**: at the
+   coarse tiers the glyph became a LOCATION MARKER (floored at 11 px on the long axis, aspect
+   preserved, manifest keeping true feet in `w`/`h` and the drawn box in `vw`/`vh`) - the true
+   frame's 4x1.7 px at city grain was invisible in practice, which is how Nagahara looked like
+   it had 2 boards when it had 3. Towns and hamlets (1 ft/px) are unaffected.
 2. **Record the URBAN size table's whys** in settlements.md (the one undocumented size
    table), and decide the merchant frontage question: either accept wide-shallow shophouse
    glyphs as a legibility convention (document it), or move toward narrower/deeper frontage
