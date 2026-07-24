@@ -149,7 +149,28 @@ def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, An
 # bridge over water, a guard tower on the wall) is named in _OVERLAP_EXEMPT with its reason. The
 # `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
 # sets, forcing whoever adds it to declare its overlap behavior rather than silently skipping it.
-_OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "ministries", "fire_towers", "drum_towers", "byres", "kosatsuba")
+_OVERLAP_STRUCTS = (
+    "houses",
+    "buildings",
+    "flophouses",
+    "cemeteries",
+    "mausoleums",
+    "cremation_grounds",
+    "ossuaries",
+    "ministries",
+    "fire_towers",
+    "drum_towers",
+    "byres",
+    "kosatsuba",
+    # the trade works (GM 2026-07-24, trade-footprint-research.md)
+    "breweries",
+    "dye_yards",
+    "lumber_yards",
+    "oil_presses",
+    "pawnshops",
+    "bathhouses",
+    "kilns",
+)
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs", "docks")
@@ -3766,6 +3787,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         vics += [("mausoleum", _bb(mu)) for mu in M.get("mausoleums", [])]
         vics += [("cremation", _bb(cg)) for cg in M.get("cremation_grounds", [])]
         vics += [("ossuary", _bb(o)) for o in M.get("ossuaries", [])]
+        # the trade works + the drum tower (GM 2026-07-24): a foreign caption over a brewery/press/
+        # yard is the same defect as one over a house (caught by eye on Nagahara's oil press, which
+        # the Temple of Bishamon caption buried while this check looked only at the keys above)
+        for _twk, _twg in (
+            ("breweries", "brewery"),
+            ("dye_yards", "dye works"),
+            ("lumber_yards", "lumber yard"),
+            ("oil_presses", "oil press"),
+            ("pawnshops", "pawnshop"),
+            ("bathhouses", "bathhouse"),
+            ("kilns", "kiln"),
+            ("drum_towers", "drum tower"),
+        ):
+            vics += [(_twg, _bb(t_)) for t_ in M.get(_twk, [])]
 
         def _label_allows(txt: str) -> set[str]:
             t = txt.lower()
@@ -3795,6 +3830,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}
             if any(w in t for w in ("street", "avenue", "road")):
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
+            for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "drum tower"):
+                if _tw_txt in t:
+                    return {_tw_txt}  # a trade-works caption may cover only its own premises
             return set()  # farmland / market / theater stage / title labels name no building
 
         mislabel = []
@@ -7125,9 +7163,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # decision, not an administrative one: highway frontage, main street by the gate,
         # bridgehead, market corner - the state talking at everyone who passes (Edo's
         # principal board stood at Nihonbashi). A CITY posted MANY boards (the principal
-        # plus subsidiary boards at gates and bridge approaches); one drawn board at the
-        # principal traffic node stands in for the set under the legibility license, same
-        # as the drum tower and the per-quarter fire watch. DISTINCT from the magistrate's
+        # plus subsidiary boards at gates and bridge approaches) - so a city DRAWS the set
+        # (one per main-gate approach corridor at minimum, city_kosatsuba_per_gate) and
+        # LABELS only one representative (GM 2026-07-24: the same one-label convention as
+        # the fire towers and gate markets; an unlabeled board also fits the tight gate
+        # verges a labeled one cannot). DISTINCT from the magistrate's
         # manor-gate board (Mode A program, buildings.md): that one posts the bench's
         # OUTPUT (verdicts, bounties) for people who come TO the court, while this one
         # posts standing law - and the manor/yamen deliberately sits away from the busy
@@ -7145,6 +7185,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if kbs and routes_kb:
             far_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in routes_kb for k in range(len(r) - 1)) > lim_kb]
             check("kosatsuba_by_the_road", not far_kb, f"notice board(s) at {far_kb} stand more than ~60 real ft from every road/main street - a kosatsu is read where people pass")
+        if scale == "city" and kbs and M.get("gates"):
+            # every trafficked gate's approach corridor carries a board (~800 real ft of the
+            # gate - the corridor, not the furnished throat itself)
+            lim_gate_kb = 800.0 / float(meta.get("ftpx") or 1)
+            uncovered_kb = [[round(g[0]), round(g[1])] for g in M["gates"] if min(math.hypot(b["x"] - g[0], b["y"] - g[1]) for b in kbs) > lim_gate_kb]
+            check(
+                "city_kosatsuba_per_gate",
+                not uncovered_kb,
+                f"main gate(s) at {uncovered_kb} have no notice board on their approach corridor - a city posted a board at every trafficked gate (draw them all, label ONE)",
+            )
 
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")), "a walled town must have a wall and a gate")
@@ -7529,7 +7579,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # households, so the warren is dotted with them - one within a short walk of any home. The
         # underground half of the system (aqueducts, cisterns, rain barrels feeding the shafts) is too
         # small or literally subterranean and stays OFF the map; only the wellheads show.
-        wells = M.get("wells", [])
+        # PRIVATE wells (private=True - e.g. the brewery's own courtyard well, GM 2026-07-24) are
+        # premises fixtures, not neighborhood infrastructure: they serve no commoner households, so
+        # they are excluded from ALL the public-well accounting below (reach, density, block-interior
+        # siting, the samurai-ward ban) - exactly as samurai compounds' implied private wells are.
+        wells = [w_ for w_ in M.get("wells", []) if not w_.get("private")]
         if wells:
             wp = M.get("wall") or []
             inw: Any = (lambda x, y: point_in_poly(x, y, wp)) if len(wp) >= 3 else (lambda x, y: True)  # noqa: E731
@@ -8504,6 +8558,63 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not gates_wo_market,
                 f"main-road gate(s) with a too-thin gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY main-road city gate (research: 10-40 structures per trafficked gate; the map draws a >= 6-shop slice within ~520px, outermost may run off the frame; a sally gate, being traffic-free, is exempt and not in M['gates'])",
             )
+            # TRADE WORKS (GM 2026-07-24; trade-footprint-research.md - the trades whose premises
+            # outgrow the generic shop glyph are first-class features; the long tail of trades,
+            # including smiths - Edo Japan never shod horses, so there are NO farriers - stays in
+            # the shop rows). Every provincial city keeps: >= 1 BREWERY in-wall (the town's
+            # largest commercial building; sake/miso/soy; draws its own well); >= 1 DYE WORKS
+            # whose drying/rinsing yard sits ON WATER (a stream/channel/canal, the pond, or the
+            # moat - dyers need vat-fill and rinsing water, NOT bulk water transport, so a
+            # landlocked city keeps dyers too, per the GM); >= 1 OIL PRESS; >= 1 PAWNSHOP (a
+            # shopfront with a walled kura court); >= 1 BATHHOUSE (China-first: commercial baths
+            # attested from the Song). A KILN stands strictly OUTSIDE the walls (fire law +
+            # smoke); a RIVER-PORT city (meta river_port) also keeps >= 1 LUMBER YARD on the
+            # bank - timber moves by water at scale, so a landlocked city has none.
+            _tw_brews = M.get("breweries", [])
+            check(
+                "city_has_brewery",
+                any(inwall(b_["x"], b_["y"]) for b_ in _tw_brews),
+                f"{len(_tw_brews)} brewery compound(s) in-wall - every provincial city keeps at least one sake/miso/soy brewery (s.brewery: vat hall + shopfront + rice kura + its own well; the town's largest commercial building)",
+            )
+            _tw_water: list[tuple[list[Any], float]] = []
+            for _tw_wc in M.get("streams", []) + M.get("channels", []) + M.get("canals", []):
+                _tw_water.append((_tw_wc["poly"], _tw_wc.get("w", 6) / 2))
+            if M.get("moat"):
+                _tw_water.append((M["moat"], M.get("moat_width", 22) / 2))
+            _tw_pond = M.get("pond")
+
+            def _tw_on_water(o_: dict[str, Any], reach: float) -> bool:
+                r_ = max(o_["w"], o_["h"]) / 2
+                if any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + reach for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
+                    return True
+                return _tw_pond is not None and math.hypot(o_["x"] - _tw_pond[0], o_["y"] - _tw_pond[1]) < max(_tw_pond[2], _tw_pond[3]) + r_ + reach
+
+            _tw_dyes = M.get("dye_yards", [])
+            check(
+                "city_has_dye_works",
+                bool(_tw_dyes) and all(_tw_on_water(d_, 40) for d_ in _tw_dyes),
+                f"{len(_tw_dyes)} dye works, on water: {[bool(_tw_dyes) and _tw_on_water(d_, 40) for d_ in _tw_dyes]} - every city keeps a dyer (s.dye_yard), and the drying/rinsing yard must sit ON water (within ~40px of a stream/channel/canal/pond/moat; dyers need rinsing water, not bulk transport, so landlocked cities keep them too)",
+            )
+            check("city_has_oil_press", bool(M.get("oil_presses")), "no oil press - every city keeps a presser's barn (s.oil_press: wedge-and-beam press + ox-driven mill ring, toward the edge)")
+            check("city_has_pawnshop", bool(M.get("pawnshops")), "no pawnshop - every city keeps one (s.pawnshop: shopfront + 2 pledge kura in a walled rear court)")
+            check(
+                "city_has_bathhouse",
+                bool(M.get("bathhouses")),
+                "no bathhouse - every city keeps a sento (s.bathhouse: bath building + furnace chimney + firewood yard; China-first, attested from the Song)",
+            )
+            _tw_kilns = M.get("kilns", [])
+            check(
+                "city_kiln_outside_walls",
+                bool(_tw_kilns) and all(not inwall(k_["x"], k_["y"]) for k_ in _tw_kilns),
+                f"{len(_tw_kilns)} kiln(s), all outside the walls: {all(not inwall(k_['x'], k_['y']) for k_ in _tw_kilns) if _tw_kilns else False} - a city keeps a tile/pottery kiln at its periphery, and fire law + smoke put every kiln strictly OUTSIDE the walls (s.kiln)",
+            )
+            if meta.get("river_port"):
+                _tw_lys = M.get("lumber_yards", [])
+                check(
+                    "city_river_port_has_lumber_yard",
+                    bool(_tw_lys) and all(_tw_on_water(L_, 60) for L_ in _tw_lys),
+                    f"{len(_tw_lys)} lumber yard(s) on the bank - a river-port city keeps a riverside zaimokuya (s.lumber_yard within ~60px of a stream/canal); timber moves by water at scale (a landlocked city has none and skips this check)",
+                )
             # market-day lodging: a flophouse INSIDE the walls, and one OUTSIDE each gate (for
             # travelers arriving from either direction, who reach the gate after it has shut)
             flops = M.get("flophouses", [])
@@ -9023,8 +9134,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     "gardens",
                     "threshing_yards",
                     "fire_towers",
+                    "drum_towers",
                     "gate_structs",
                     "groves",
+                    "breweries",
+                    "dye_yards",
+                    "lumber_yards",
+                    "oil_presses",
+                    "pawnshops",
+                    "bathhouses",
+                    "kilns",
                 )
             ] + [houses, es_singles]:
                 for es_o in es_grp:

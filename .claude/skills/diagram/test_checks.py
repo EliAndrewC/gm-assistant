@@ -3506,6 +3506,44 @@ def test_stable_yard_furniture_passes_clear_and_skips_unrecorded_legacy_yards():
     assert "stable_yard_furniture_clear_of_roads_walls" not in f(M)
 
 
+def test_city_has_dye_works_fires_when_the_yard_is_far_from_water():
+    # a dyer's yard needs rinsing/vat water ON site - a yard in the dry middle of town fails even
+    # though one exists (trade-footprint-research.md; the presence branch is covered by the pinned
+    # pre-trades city fixtures)
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True},
+        "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
+        "gates": [[500, 100]],
+        "streams": [{"poly": [[0, 950], [1000, 950]], "w": 12}],  # far south, ~400px away
+        "dye_yards": [{"x": 500, "y": 500, "w": 27, "h": 17, "rot": 0, "label": "dye works"}],
+    }
+    assert "city_has_dye_works" in f(M)
+
+
+def test_city_kiln_outside_walls_fires_on_an_intramural_kiln():
+    # fire law + smoke: a kiln INSIDE the rampart is the defect even though a kiln exists
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True},
+        "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
+        "gates": [[500, 100]],
+        "kilns": [{"x": 500, "y": 500, "w": 9.3, "h": 6, "rot": 0, "label": "tile kiln"}],
+    }
+    assert "city_kiln_outside_walls" in f(M)
+
+
+def test_city_river_port_has_lumber_yard_fires_when_missing_and_skips_landlocked():
+    # a river-port city (meta river_port) must keep a riverside zaimokuya; a landlocked city
+    # skips the check entirely (the GM's Tango/Nagahara split - timber moves by water at scale)
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True, "river_port": True},
+        "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
+        "gates": [[500, 100]],
+    }
+    assert "city_river_port_has_lumber_yard" in f(M)
+    M["meta"] = {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True}
+    assert "city_river_port_has_lumber_yard" not in f(M)
+
+
 def test_city_streets_connected_fires_on_a_gap_wider_than_45px():
     # two parallel streets 60px apart: the old 95px tolerance bridged them, the tightened 45px
     # does not - a grid that stops short of the road reads as a separated network, not connected
@@ -5191,6 +5229,28 @@ def test_city_has_kosatsuba_fires_when_absent():
     # at the principal node stands in for the set
     assert "city_has_kosatsuba" in f({"meta": {"scale": "city"}})
     assert "city_has_kosatsuba" not in f({"meta": {"scale": "city", "kosatsuba": False}})
+
+
+def test_city_kosatsuba_per_gate_fires_on_an_uncovered_gate():
+    # draw the SET: every main gate's approach corridor carries a board (~800 real ft);
+    # one gate covered, the other bare -> fires and names the bare gate's coordinates
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "kosatsuba": [_kosatsuba(500, 520)],
+        "road": [[0, 500], [2000, 500]],
+        "gates": [[520, 500], [1900, 500]],
+    }
+    assert "city_kosatsuba_per_gate" in f(M)
+
+
+def test_city_kosatsuba_per_gate_passes_when_every_gate_is_covered():
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "kosatsuba": [_kosatsuba(500, 520), _kosatsuba(1880, 520)],
+        "road": [[0, 500], [2000, 500]],
+        "gates": [[520, 500], [1900, 500]],
+    }
+    assert "city_kosatsuba_per_gate" not in f(M)
 
 
 def test_city_kosatsuba_siting_threshold_is_scale_aware():

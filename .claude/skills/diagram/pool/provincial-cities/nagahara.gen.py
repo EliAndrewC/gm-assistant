@@ -48,7 +48,7 @@ PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=47)
 s.meta(
-    name="Nagahara", scale="city", walled=True, population=3000, ftpx=3, wall_defense="siege", imperial_road=False, clan="Crab", capital_dir="northeast"
+    name="Nagahara", scale="city", walled=True, population=3000, ftpx=3, wall_defense="siege", imperial_road=False, river_port=True, clan="Crab", capital_dir="northeast"
 )  # Crab city -> temples to Bishamon + Ebisu; estates toward Otosan Uchi (NE)
 
 # ---- feature 009: BUDGET-FIRST wall sizing. The space budget is computed BEFORE anything is
@@ -147,6 +147,17 @@ s.road(ROAD)  # unlabeled: only Imperial roads get labels (SKILL.md labeling rul
 # road so every later pack/frontage flows around its reserved block; clears the (1565,1394)
 # merchant estate's west wall (x1534).
 s.drum_tower(1500, 1362)
+
+# TRADE WORKS (GM 2026-07-24, trade-footprint-research.md; settlements.md "Trade works"): placed
+# early so every later pack/frontage flows around them. Nagahara is a RIVER PORT (meta
+# river_port=True): it keeps ALL of them, including the riverside lumber yard at the wharf.
+s.brewery(1568, 1075)  # NE quarter, clear of the x1605 street - the town's largest commercial building
+s.dye_yard(1855, 1428)  # on the in-wall cargo canal, west of the dock basin
+s.lumber_yard(2052, 1478)  # the wharf's zaimokuya, on the west bank south of the jetties
+s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street, west of Bishamon's graveyard (its old 1130,1180 seat sat under the Temple of Bishamon caption)
+s.pawnshop(1620, 1240)  # NE merchant quarter
+s.bathhouse(1836, 1230)  # the NE warren's sento, at its east edge (sited clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata)
+s.kiln(2210, 1520)  # tile kiln OUTSIDE the walls on the far bank, south of the bridge road
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the through-road over the river
 
 # ---- the cargo canal: moat -> water gate -> dock basin (the Suzhou pattern). ONE mouth on the
@@ -1129,7 +1140,11 @@ s.title("Nagahara")
 # probed-clear verge NORTH of the caravan stable's animal yard (spot history: 33px inside
 # the north gate stood on the gate structs; the next sat inside the stable yard's trough
 # disc - stable_yards are DISCS (x, y, r), which rect-only probes miss).
-s.kosatsuba(1773, 1149, rot=90)
+s.kosatsuba(1773, 1149, rot=90)  # the LABELED representative (one-label convention)
+# ...and the north road gate's board, UNLABELED (GM 2026-07-24: draw the set, label one -
+# like the fire towers and gate markets), 51px inside the gate on the road verge, aligned
+# to the road's local ~72 deg bearing.
+s.kosatsuba(1492, 961, rot=72, label=None)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

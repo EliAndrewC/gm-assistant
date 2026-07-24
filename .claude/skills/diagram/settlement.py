@@ -2908,7 +2908,7 @@ class Settlement:
         bm = 16
         self.block_polys.append([(x0 - bm, y0 - bm), (x + w / 2 + bm, y0 - bm), (x + w / 2 + bm, y + h / 2 + bm + 16), (x0 - bm, y + h / 2 + bm + 16)])
 
-    def well(self, x: float, y: float, r: float = 8, shrine: bool = False) -> None:
+    def well(self, x: float, y: float, r: float = 8, shrine: bool = False, private: bool = False) -> None:
         """A public NEIGHBORHOOD WELL (井戸) - a stone curb under an open-sided well-house roof, the
         shared draw-point and social hub (the idobata, where a tenement block's gossip happened). One
         served a courtyard / cluster of ~10-20 households. SMALLER than a house and sits in a block
@@ -2934,7 +2934,7 @@ class Settlement:
         self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb:.1f}" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>')  # stone curb
         self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb * 0.47:.1f}" fill="#2E4C58"/>')  # dark water in the shaft
         self.M["wells"].append(
-            {"x": round(x, 1), "y": round(y, 1), "r": r, "vr": round(vroof, 1), "shrine": shrine}
+            {"x": round(x, 1), "y": round(y, 1), "r": r, "vr": round(vroof, 1), "shrine": shrine, "private": private}
         )  # shrine=True marks an ablution (temizu) well - wells_sized_to_population counts only the communal household draw-wells
         # reserve only a TIGHT courtyard around the small wellhead (not a whole house-plot): houses ring
         # it closely, as in a real tenement court, so a well costs roughly its own footprint, not several
@@ -4056,9 +4056,174 @@ class Settlement:
         self.M.setdefault("drum_towers", []).append({"x": round(x, 1), "y": round(y, 1), "w": tw, "h": tw, "rot": 0.0, "z": z, "label": label})
         self.placed.append((x, y, tw, tw))
         bm = 12
-        self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
+        # the block reserves the caption band below too, so packs cannot slide a house under it
+        self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm + 15), (x - h - bm, y + h + bm + 15)])
         self.label(x, y + h + 12, label, 9, italic=True, color="#4A3318")
         return z
+
+    # ---- TRADE WORKS (GM 2026-07-24, trade-footprint-research.md): the trades whose real
+    # premises outgrow the generic shop glyph - big attached works, yards, and outbuildings that
+    # visibly show at map scale. Each records a first-class manifest entry (overlap-checked) and
+    # blocks placement; sizes are TRUE feet via self.px. The long tail of trades (tofu, noodles,
+    # apothecary, teahouse, cooper, smith - Edo Japan never shod horses, so there are NO farriers)
+    # deliberately stays inside the generic shop rows.
+
+    def _trade_record(self, key: str, x: float, y: float, w: float, h: float, rot: float, label: str, bm: float = 10.0) -> None:
+        """Record + block one trade-works footprint (shared tail of the trade glyph methods)."""
+        self.M.setdefault(key, []).append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "rot": round(rot, 1), "label": label})
+        self.placed.append((x, y, w, h))
+        hw, hh = w / 2 + bm, h / 2 + bm
+        # the block also reserves the LABEL band below the footprint - at the CAPTION's width,
+        # which can exceed the feature's (the "bathhouse" text is wider than the 16px building) -
+        # so the later packs cannot slide a house under the text (labels_clear_of_other_buildings;
+        # the bathhouse/drum tower captions caught this on 2026-07-24's first regen)
+        self.block_polys.append([(x - hw, y - hh), (x + hw, y - hh), (x + hw, y + hh), (x - hw, y + hh)])
+        if label:
+            # the band anchors at the RAW footprint edge (y + h/2) - the caption box starts ~y+h/2+6,
+            # so anchoring at the margin-inflated hh left its top half unguarded (the bathhouse
+            # caption's merchant_house graze, 2026-07-24). +10 width slack because rowpack tests
+            # corners but pack/place_wells test centers only (settlement init comment ~line 642).
+            bw_ = max(hw, 2.9 * len(label) + 10)
+            self.block_polys.append([(x - bw_, y + h / 2), (x + bw_, y + h / 2), (x + bw_, y + h / 2 + 26), (x - bw_, y + h / 2 + 26)])
+        if label:
+            self.label(x, y + h / 2 + 11, label, 9, italic=True, color="#5A4326")
+
+    def brewery(self, x: float, y: float, rot: float = 0.0, label: str = "brewery") -> None:
+        """A SAKE/MISO/SOY BREWERY compound - the biggest trade premises in a provincial seat
+        (trade-footprint-research.md: a minimal sakagura is a 60-120 ft vat hall BEHIND a normal
+        shopfront, 3-8x the shophouse footprint, very often the town's largest commercial building;
+        1-2 per seat of ~3,000; brewers were town elite, sited IN town on good well water). Drawn
+        as the long gabled VAT HALL (ridge + fermentation-vat circles + a masonry chimney), the
+        street SHOPFRONT attached at one end, a rice KURA at the other, and the brewery's OWN WELL
+        (mandatory water) in the working corner. Records M['breweries'] (city_has_brewery)."""
+        hw_, hh_ = self.px(96) / 2, self.px(36) / 2  # the vat hall
+        sw_, sh_ = self.px(40) / 2, self.px(26) / 2  # the shopfront
+        kw_, kh_ = self.px(22) / 2, self.px(15) / 2  # the rice kura
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        hall_cy = -sh_  # hall strip on top, shop + kura row below
+        g.append(f'<rect x="{-hw_:.1f}" y="{hall_cy - hh_:.1f}" width="{hw_ * 2:.1f}" height="{hh_ * 2:.1f}" rx="2" fill="#D9C8A4" stroke="#5A4326" stroke-width="1.8"/>')
+        g.append(f'<line x1="{-hw_ + 2:.1f}" y1="{hall_cy:.1f}" x2="{hw_ - 2:.1f}" y2="{hall_cy:.1f}" stroke="#5A4326" stroke-width="0.9" opacity="0.7"/>')  # the ridge
+        for vi in (-0.55, -0.15, 0.25):  # fermentation vats down the hall
+            g.append(f'<circle cx="{hw_ * 2 * vi:.1f}" cy="{hall_cy + hh_ * 0.35:.1f}" r="1.7" fill="none" stroke="#5A4326" stroke-width="0.8" opacity="0.8"/>')
+        g.append(f'<rect x="{hw_ - 4.6:.1f}" y="{hall_cy - hh_ - 2.6:.1f}" width="3.4" height="3.4" fill="#5A4326"/>')  # the masonry kamado chimney
+        g.append(f'<rect x="{-hw_:.1f}" y="{hh_ - sh_ * 0 - 0.5:.1f}" width="{sw_ * 2:.1f}" height="{sh_ * 2:.1f}" rx="2" fill="#D8C49A" stroke="#6B4F2A" stroke-width="1.6"/>')  # the shopfront
+        aw_ = max(5.0 * self.bscale, 2.4)
+        g.append(f'<rect x="{-hw_:.1f}" y="{-0.5 + sh_ * 2 - aw_:.1f}" width="{sw_ * 2:.1f}" height="{aw_:.1f}" fill="#A8472E" opacity="0.95"/>')  # its awning band
+        g.append(f'<rect x="{hw_ - kw_ * 2:.1f}" y="{-0.5:.1f}" width="{kw_ * 2:.1f}" height="{kh_ * 2:.1f}" rx="1" fill="#F2EFE4" stroke="#4A3318" stroke-width="1.4"/>')  # the rice kura
+        g.append('</g>')
+        self.add(''.join(g))
+        th_ = math.radians(rot)
+        wx_, wy_ = x + math.cos(th_) * hw_ * 0.35 + math.sin(th_) * (sh_ + 3), y + math.sin(th_) * hw_ * 0.35 + math.cos(th_) * (sh_ + 3)
+        self.well(wx_, wy_, private=True)  # the brewery's OWN well (mandatory brewing water) - a premises fixture, excluded from the public idobata accounting
+        self._trade_record("breweries", x, y, self.px(96), self.px(36) + self.px(26), rot, label)
+
+    def dye_yard(self, x: float, y: float, rot: float = 0.0, label: str = "dye works") -> None:
+        """A DYER's premises (kon-ya): the workshop fits a shophouse - the GROUND does not. Drying
+        poles/racks dominated the dyer's block (Hiroshige's Kanda Konya-cho), and rinsing happened
+        in open water, so the yard sits ON water: a stream, channel, canal, the pond, or the moat
+        (city_has_dye_works enforces the adjacency; ~2,000-5,000 sq ft of racks at town scale,
+        bolts run 35-40 ft). Drawn as the small vat WORKSHOP + rack lines hung with indigo cloth.
+        Records M['dye_yards']."""
+        yw_, yh_ = self.px(80), self.px(52)
+        ww_, wh_ = self.px(36) / 2, self.px(24) / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{ww_ * 2:.1f}" height="{wh_ * 2:.1f}" rx="2" fill="#C2B190" stroke="#6B5A3A" stroke-width="1.6"/>')  # the vat workshop
+        for di_ in (0.62, 0.82):  # sunken indigo vats by the workshop door
+            g.append(f'<circle cx="{-yw_ / 2 + ww_ * 2 * di_ + 2:.1f}" cy="{-yh_ / 2 + wh_ * 2 + 2.6:.1f}" r="1.6" fill="#3F5E7E" stroke="#2C3F52" stroke-width="0.6"/>')
+        rx0_ = -yw_ / 2 + ww_ * 2 + 3
+        for ri_ in range(4):  # the drying racks, hung with bolt-lengths of indigo cloth
+            ry_ = -yh_ / 2 + 2.5 + ri_ * (yh_ - 5) / 3
+            g.append(f'<line x1="{rx0_:.1f}" y1="{ry_:.1f}" x2="{yw_ / 2 - 1.5:.1f}" y2="{ry_:.1f}" stroke="#6B4F2A" stroke-width="1.0"/>')
+            for ci_ in (0.15, 0.5, 0.8):
+                cx0_ = rx0_ + (yw_ / 2 - 1.5 - rx0_) * ci_
+                g.append(f'<line x1="{cx0_:.1f}" y1="{ry_:.1f}" x2="{cx0_ + 3.6:.1f}" y2="{ry_:.1f}" stroke="#3F5E7E" stroke-width="2.2" opacity="0.9"/>')
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("dye_yards", x, y, yw_, yh_, rot, label)
+
+    def lumber_yard(self, x: float, y: float, rot: float = 0.0, label: str = "lumber yard") -> None:
+        """A riverside LUMBER YARD (zaimokuya) - stacked timber + a river landing; stock moves by
+        water at scale, so this is a RIVER-PORT feature only (city_river_port_has_lumber_yard;
+        a landlocked city has none - the GM's Tango/Nagahara split). Small office + stack rows.
+        Records M['lumber_yards']."""
+        yw_, yh_ = self.px(90), self.px(60)
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{self.px(24):.1f}" height="{self.px(16):.1f}" rx="2" fill="#D8C49A" stroke="#6B4F2A" stroke-width="1.5"/>')  # the office/house
+        for sx_, sy_ in ((0.05, -0.25), (0.42, -0.25), (0.05, 0.28), (0.42, 0.28), (-0.32, 0.28)):
+            ox_, oy_ = -yw_ / 2 + yw_ * (sx_ + 0.28), -yh_ / 2 + yh_ * (sy_ + 0.42)
+            for li_ in range(4):  # one squared-timber stack
+                g.append(f'<line x1="{ox_ - 4.6:.1f}" y1="{oy_ + li_ * 1.5 - 2.2:.1f}" x2="{ox_ + 4.6:.1f}" y2="{oy_ + li_ * 1.5 - 2.2:.1f}" stroke="#8A6B42" stroke-width="1.1"/>')
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("lumber_yards", x, y, yw_, yh_, rot, label)
+
+    def oil_press(self, x: float, y: float, rot: float = 0.0, label: str = "oil press") -> None:
+        """An OIL PRESSER's barn (aburaya / youfang): the wedge-and-beam press is a massive timber
+        machine plus an ox-driven edge-runner mill on a ~20-25 ft circular track - a barn-scale
+        works (~40-60 x 25-30 ft), fire-conscious, toward the town edge. Barn + the mill ring.
+        Records M['oil_presses'] (city_has_oil_press)."""
+        bw_, bh_ = self.px(54) / 2, self.px(30) / 2
+        ring_r = self.px(22) / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-bw_ - ring_r * 0.9:.1f}" y="{-bh_:.1f}" width="{bw_ * 2:.1f}" height="{bh_ * 2:.1f}" rx="2" fill="#C9A57A" stroke="#5A4326" stroke-width="1.7"/>')  # the press barn
+        g.append(f'<line x1="{-bw_ - ring_r * 0.9 + 2:.1f}" y1="0" x2="{bw_ - ring_r * 0.9 - 2:.1f}" y2="0" stroke="#5A4326" stroke-width="0.9" opacity="0.7"/>')
+        rcx_ = bw_ + ring_r * 0.35
+        g.append(f'<circle cx="{rcx_:.1f}" cy="0" r="{ring_r:.1f}" fill="none" stroke="#7A5A30" stroke-width="1.1" stroke-dasharray="3,2"/>')  # the ox track
+        g.append(f'<circle cx="{rcx_:.1f}" cy="0" r="1.3" fill="#5A4326"/>')  # the edge-runner post
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("oil_presses", x, y, self.px(54) + ring_r * 2.5, self.px(30), rot, label)
+
+    def pawnshop(self, x: float, y: float, rot: float = 0.0, label: str = "pawnshop") -> None:
+        """A PAWNSHOP (shichiya): an ordinary shopfront whose tell is STORAGE - pledges are bulky,
+        so the broker keeps 2-3 fireproof kura in a walled rear court (the existing kura glyph
+        multiplied, per trade-footprint-research.md). Records M['pawnshops'] (city_has_pawnshop)."""
+        sw_, sh_ = self.px(48) / 2, self.px(32) / 2
+        kw_, kh_ = self.px(20) / 2, self.px(14) / 2
+        ch_ = kh_ * 2 + 4.5  # the rear court's depth
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(
+            f'<rect x="{-sw_:.1f}" y="{-sh_ - ch_ / 2 + ch_:.1f}" width="{sw_ * 2:.1f}" height="{sh_ * 2:.1f}" rx="2" fill="#D8C49A" stroke="#6B4F2A" stroke-width="1.6"/>'
+        )  # the shopfront (street side)
+        aw_ = max(5.0 * self.bscale, 2.4)
+        g.append(f'<rect x="{-sw_:.1f}" y="{-sh_ - ch_ / 2 + ch_ + sh_ * 2 - aw_:.1f}" width="{sw_ * 2:.1f}" height="{aw_:.1f}" fill="#A8472E" opacity="0.95"/>')
+        g.append(f'<rect x="{-sw_ - 1.5:.1f}" y="{-sh_ - ch_ / 2 - 1.5:.1f}" width="{sw_ * 2 + 3:.1f}" height="{ch_ + 1.5:.1f}" fill="none" stroke="#4A3318" stroke-width="1.1"/>')  # the court wall
+        for ki_ in (-0.52, 0.02):  # the pledge kura pair in the walled court
+            g.append(f'<rect x="{sw_ * 2 * ki_:.1f}" y="{-sh_ - ch_ / 2 + 1.6:.1f}" width="{kw_ * 2:.1f}" height="{kh_ * 2:.1f}" rx="1" fill="#F2EFE4" stroke="#4A3318" stroke-width="1.4"/>')
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("pawnshops", x, y, self.px(48) + 3, self.px(32) + ch_, rot, label)
+
+    def bathhouse(self, x: float, y: float, rot: float = 0.0, label: str = "bathhouse") -> None:
+        """A BATHHOUSE (sento; China-first correct - commercial baths are attested from the Song):
+        a shophouse-scale bath building with a rear furnace + chimney, and the visible extra - the
+        firewood stack yard behind. Records M['bathhouses'] (city_has_bathhouse)."""
+        bw_, bh_ = self.px(48) / 2, self.px(32) / 2
+        wd_ = self.px(16)  # the woodpile band behind
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-bw_:.1f}" y="{-bh_ - wd_ / 2 + wd_:.1f}" width="{bw_ * 2:.1f}" height="{bh_ * 2:.1f}" rx="2" fill="#D8C49A" stroke="#6B4F2A" stroke-width="1.6"/>')
+        g.append(f'<rect x="{bw_ - 4.4:.1f}" y="{-bh_ - wd_ / 2 + wd_ - 2.4:.1f}" width="3.2" height="3.2" fill="#5A4326"/>')  # the furnace chimney
+        for li_ in range(3):  # the firewood stacks
+            g.append(
+                f'<line x1="{-bw_ + 2:.1f}" y1="{-bh_ - wd_ / 2 + 1.8 + li_ * 1.7:.1f}" x2="{-bw_ + 2 + self.px(20):.1f}" y2="{-bh_ - wd_ / 2 + 1.8 + li_ * 1.7:.1f}" stroke="#8A6B42" stroke-width="1.2"/>'
+            )
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("bathhouses", x, y, self.px(48), self.px(32) + wd_, rot, label)
+
+    def kiln(self, x: float, y: float, label: str = "tile kiln") -> None:
+        """A TILE/POTTERY KILN at the town's periphery - fire law and smoke pushed kilns OUTSIDE
+        the walls (city_kiln_outside_walls; tanneries likewise go downstream with the extramural
+        burakumin quarter, but stay a documented note, not a drawn feature). A low earthen mound
+        kiln with its stoke mouth and a smoke wisp. Records M['kilns']."""
+        rx_, ry_ = self.px(28) / 2, self.px(18) / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f})">']
+        g.append(f'<ellipse cx="0" cy="0" rx="{rx_:.1f}" ry="{ry_:.1f}" fill="#B08968" stroke="#5A4326" stroke-width="1.5"/>')
+        g.append(f'<rect x="{-rx_ - 2.2:.1f}" y="-1.6" width="3.4" height="3.2" fill="#4A3318"/>')  # the stoke mouth
+        g.append(f'<path d="M {rx_ * 0.4:.1f} {-ry_ - 1.5:.1f} q 2 -3 0.5 -6" fill="none" stroke="#9A9A92" stroke-width="1.1" opacity="0.75"/>')  # smoke
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("kilns", x, y, rx_ * 2, ry_ * 2, 0.0, label)
 
     def _draw_threshing_yard(self, cx: float, cy: float, w: float, h: float, poly: Any) -> None:
         """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack). The

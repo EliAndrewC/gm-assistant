@@ -122,10 +122,32 @@ def test_emit_svg_contains_courts_buildings_and_walls() -> None:
         assert token in svg
 
 
+def test_emit_svg_draws_the_practice_ground_and_its_equipment() -> None:
+    # The practice-ground zone (buildings.md program item) emits the swept patch plus the
+    # durable equipment - weapon rack + two striking-post markers - not just a named rect.
+    prog = c.county_magistracy_program()
+    svg = c.emit_svg(prog, c.place(prog))
+    assert "practice ground" in svg
+    assert "url(#keiko-earth)" in svg
+    assert "striking posts" in svg
+    assert svg.count('fill="#7A5430"') == 2  # the two tategi post markers
+    assert '#8C6F3E' in svg  # the weapon rack
+
+
 def test_county_magistracy_places_without_overflow() -> None:
     res = c.place(c.county_magistracy_program())
     assert res.overflow == []
     assert len(res.placed) == 15
+
+
+def test_county_magistracy_buildings_clear_the_spine() -> None:
+    # The practice ground (and every other spine zone) is reserved ground: no placed
+    # building may overlap it - the E column must flow past the new zone, not into it.
+    prog = c.county_magistracy_program()
+    res = c.place(prog)
+    for p in res.placed:
+        for z in prog.spine:
+            assert not c._rect_overlap(p.x_ft, p.y_ft, p.spec.w_ft, p.spec.h_ft, z.x_ft, z.y_ft, z.w_ft, z.h_ft), f"{p.spec.name} overlaps spine zone {z.name}"
 
 
 def test_main_writes_a_draft(tmp_path, capsys) -> None:

@@ -4,8 +4,9 @@
 Mode A compound plans are hand-authored, but their COMPOSITION (buildings ringing the
 courts, the open court-spine held in the center) is easy to get wrong by hand. This module
 lets a compound be declared as a feet-based program - the envelope, the reserved court-spine
-(forecourt -> oshirasu -> garden), and a list of buildings each sized IN FEET with a wall
-tag - and arranges them PERIMETER-FIRST into a composed draft SVG the GM then refines.
+(forecourt -> oshirasu -> garden, plus named yards like the practice ground), and a list of
+buildings each sized IN FEET with a wall tag - and arranges them PERIMETER-FIRST into a
+composed draft SVG the GM then refines.
 
 Footage is the source unit; pixels are derived (FTPX) only at emit time. The placer is the
 Mode A analog of the Mode B water-first generator: a fixed ordering (reserve the spine, then
@@ -41,6 +42,7 @@ COURT_FILL: dict[str, str] = {
     "oshirasu": "url(#oshirasu-sand)",
     "garden": "url(#garden-stipple)",
     "yard": "url(#court-earth)",
+    "practice ground": "url(#keiko-earth)",  # swept keiko earth (buildings.md "Practice ground")
 }
 
 
@@ -255,7 +257,10 @@ _DEFS = (
     '<circle cx="8" cy="2" r="0.5" fill="#C9B884"/></pattern>'
     '<pattern id="garden-stipple" patternUnits="userSpaceOnUse" width="14" height="14">'
     '<rect width="14" height="14" fill="#BFCFA0"/><circle cx="3" cy="3" r="0.8" fill="#7A8C5C"/>'
-    '<circle cx="10" cy="9" r="0.8" fill="#7A8C5C"/></pattern></defs>'
+    '<circle cx="10" cy="9" r="0.8" fill="#7A8C5C"/></pattern>'
+    '<pattern id="keiko-earth" patternUnits="userSpaceOnUse" width="16" height="16">'
+    '<rect width="16" height="16" fill="#E2CE9E"/><line x1="0" y1="5" x2="16" y2="5" stroke="#C2A46C" stroke-width="0.5"/>'
+    '<line x1="0" y1="13" x2="16" y2="13" stroke="#C2A46C" stroke-width="0.5"/></pattern></defs>'
 )
 
 
@@ -284,6 +289,15 @@ def emit_svg(program: CompoundProgram, result: PlaceResult, margin_ft: float = 2
     for z in program.spine:  # reserved open courts, drawn + named
         parts.append(rect(z.x_ft, z.y_ft, z.w_ft, z.h_ft, COURT_FILL.get(z.name, "url(#court-earth)"), "#9C7A40", 0.8))
         parts.append(label(z.x_ft + z.w_ft / 2, z.y_ft + z.h_ft / 2, z.name, 11, True, "#5C4318"))
+        if z.name == "practice ground":
+            # The program item's durable equipment (buildings.md "Practice ground"): a weapon
+            # rack on the zone's south edge (the hand-refined map moves it flush to the
+            # adjacent lodging's wall) and two tategi striking posts as r2 location markers.
+            parts.append(rect(z.x_ft + z.w_ft / 2 - 4, z.y2 - 2, 8, 2, "#8C6F3E", "#4A3318", 0.8))
+            parts.append(label(z.x_ft + z.w_ft / 2, z.y_ft + 8, "striking posts", 8, True, "#5C4830"))
+            for dx_ft, dy_ft in ((-5.0, 14.0), (5.0, 27.0)):
+                cx, cy = z.x_ft + z.w_ft / 2 + dx_ft, z.y_ft + dy_ft
+                parts.append(f'<circle cx="{ox + cx * FTPX:.0f}" cy="{oy + cy * FTPX:.0f}" r="2" fill="#7A5430" stroke="#4A3318" stroke-width="0.8"/>')
     for p in result.placed:  # buildings
         fill, stroke = KINDS.get(p.spec.kind, KINDS["service"])
         parts.append(rect(p.x_ft, p.y_ft, p.spec.w_ft, p.spec.h_ft, fill, stroke, 2))
@@ -310,14 +324,22 @@ def county_magistracy_program() -> CompoundProgram:
     """A generic county magistracy declared entirely in feet (the placer composes it).
 
     Building masses are sized to land in the ~37-42% jin'ya coverage band (real jin'ya
-    consolidate into a few large masses); the spine (garden -> oshirasu -> forecourt) sits
-    clear of the wall rows so the placer never has to overlap it.
+    consolidate into a few large masses); the spine (garden -> oshirasu -> forecourt, plus
+    the practice ground beside the barracks) sits clear of the wall rows so the placer never
+    has to overlap it.
     """
     env = Envelope(w_ft=270.0, h_ft=200.0, divider_ft=90.0, gate_w_ft=13.0)
     spine = (
         CourtZone("garden", 50.0, 36.0, 165.0, 24.0),  # inner court, between residence and karo
         CourtZone("oshirasu", 68.0, 126.0, 132.0, 39.0),  # outer court, before the office-hall dais
         CourtZone("forecourt", 118.0, 166.0, 36.0, 31.0),  # just inside the main gate
+        # Practice ground beside where the watch lodges (the E-wall barracks lands at x 237,
+        # y 128 under the current masses): 33 x 42 ft = 1,386 sqft, inside the 1,200-2,000
+        # sqft full-platoon band at ~90-135 sqft per drilling samurai (buildings.md
+        # "Practice ground" + the dojo-is-a-city-institution grounding). Placed east of the
+        # oshirasu (ends x 200) and west of the E column (starts x 237) so the wall rows
+        # still flow past it without overflow.
+        CourtZone("practice ground", 202.0, 126.0, 33.0, 42.0),
     )
     b = BuildingSpec
     buildings = (

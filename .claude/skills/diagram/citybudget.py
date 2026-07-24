@@ -64,6 +64,12 @@ CIVIC_PROGRAM: tuple[tuple[str, int | None, float], ...] = (
     # Bell-and-drum tower (GM 2026-07-24): the walled seat's timekeeping/curfew tower at the main
     # street crossing - a ~70 ft masonry platform (23.3 px at 3 ft/px) + its reserved clear block.
     ("bell-and-drum tower", 1, 600.0),
+    # Trade works (GM 2026-07-24, trade-footprint-research.md): the trades whose premises outgrow
+    # the shop glyph. The brewery is the big one (vat hall + shopfront + kura + well, ~32x20 px
+    # drawn + margins); the dye yard, oil press, pawnshop court, and bathhouse together add
+    # ~1,100 px^2 drawn. Kilns and lumber yards sit OUTSIDE the walls and cost no interior.
+    ("brewery compound", 1, 800.0),
+    ("trade works (dye yard, oil press, pawn court, bathhouse)", None, 1_150.0),
 )
 
 # One in-wall water feature: a pond (landlocked) or the cargo canal + dock basin (river city).

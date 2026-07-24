@@ -4,8 +4,9 @@ Research pass 2026-07-24 (GM question during the provincial-city audit follow-up
 trades whose real premises - attached works, yards, outbuildings - are materially bigger than a
 shophouse, i.e. significant space our maps are not representing?"). Setting frame: Song/Ming
 China first, Edo Japan second; city maps at 1 px = 3 ft draw commerce as generic ~48x32 ft
-shop rowhouses + merchant kura + dedicated inn/stables/flophouse glyphs. **Status: findings
-recorded, drawing decisions PENDING the GM (candidates listed at the end).**
+shop rowhouses + merchant kura + dedicated inn/stables/flophouse glyphs. **Status: DECIDED and
+IMPLEMENTED (GM 2026-07-24) - all candidates below are live features; see settlements.md
+"TRADE WORKS" for the drawn rules and check names.**
 
 ## The shortlist - visibly bigger than a rowhouse at this scale
 
@@ -54,13 +55,18 @@ recorded, drawing decisions PENDING the GM (candidates listed at the end).**
   the periphery or nearby villages); tanneries/slaughter go downstream-riverside with the
   outside-the-walls burakumin quarter, never inside.
 
-## Candidate map features (GM decision pending)
+## The implemented features (GM 2026-07-24: "I'd like all of them")
 
-- A **brewery compound** feature (shopfront + long vat hall + kura + well, 1-2 per city) - the
-  single biggest unrepresented structure; arguably the merchant-estate tier of workshops.
-- A **dyer's drying yard** (rack-line yard or riverbank frontage, river cities especially).
-- A **riverside lumber yard** (river cities; pairs naturally with Nagahara's wharf).
-- An **oil-press barn** (1, toward the edge).
-- Cheap wins within existing vocabulary: pawnbroker = 2-3 clustered kura behind one shop;
-  sento = shop + woodpile; tile kiln as edge set-dressing; tannery as a note on the extramural
-  burakumin quarter, not a drawn feature.
+- **Brewery compound** (`s.brewery`, `city_has_brewery`): vat hall + shopfront + rice kura + its
+  own PRIVATE well. Both cities keep one; Tango's stands on the pond (brewers site on water).
+- **Dyer's drying yard** (`s.dye_yard`, `city_has_dye_works`): must sit ON water (~40px). BOTH
+  cities - the GM's call: dyeing needs rinsing water, not bulk water transport, so a landlocked
+  city keeps its dyers (Tango's is on the pond; Nagahara's on the cargo canal).
+- **Riverside lumber yard** (`s.lumber_yard`, `city_river_port_has_lumber_yard`, gated on
+  `meta(river_port=True)`): Nagahara's stands at the wharf; landlocked Tango deliberately has
+  NONE - timber is the trade that genuinely needs water transport at scale.
+- **Oil-press barn** (`s.oil_press`, `city_has_oil_press`): barn + ox-track ring, toward the edge.
+- **Pawnshop** (`s.pawnshop`, `city_has_pawnshop`): shopfront + 2 pledge kura in a walled court.
+- **Bathhouse** (`s.bathhouse`, `city_has_bathhouse`): bath building + chimney + firewood yard.
+- **Kiln** (`s.kiln`, `city_kiln_outside_walls`): strictly OUTSIDE the walls. The tannery stays a
+  documented note on the extramural burakumin quarter, not a drawn feature.
