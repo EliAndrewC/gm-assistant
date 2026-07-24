@@ -1228,7 +1228,11 @@ s.title("Tango")
 # main-gate node when one board stands for the set. Label BELOW (south, into the city, away
 # from the gate). Placed LAST on a verge probed clear INCLUDING the gate furniture and the
 # label box (the first two spots stood in the furnished gate throat).
-s.kosatsuba(1584, 1091, rot=90)
+s.kosatsuba(1584, 1091, rot=90)  # the LABELED representative (one-label convention)
+# ...and the south gate's board, UNLABELED (GM 2026-07-24: draw the set, label one - like the
+# fire towers and gate markets). The bare board fits the tight south verge that could not
+# hold a label box (both label orientations landed on the gate furniture).
+s.kosatsuba(1588, 1760, rot=90, label=None)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}
