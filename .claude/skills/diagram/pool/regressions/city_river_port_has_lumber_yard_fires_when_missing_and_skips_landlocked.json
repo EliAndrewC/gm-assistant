@@ -1,0 +1,40 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3,
+  "walled": true,
+  "river_port": true
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   100
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_river_port_has_lumber_yard"
+  ],
+  "source": "test_checks.py::test_city_river_port_has_lumber_yard_fires_when_missing_and_skips_landlocked"
+ }
+}

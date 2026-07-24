@@ -1,0 +1,64 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3,
+  "walled": true
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   100
+  ]
+ ],
+ "streams": [
+  {
+   "poly": [
+    [
+     0,
+     950
+    ],
+    [
+     1000,
+     950
+    ]
+   ],
+   "w": 12
+  }
+ ],
+ "dye_yards": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 27,
+   "h": 17,
+   "rot": 0,
+   "label": "dye works"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_has_dye_works"
+  ],
+  "source": "test_checks.py::test_city_has_dye_works_fires_when_the_yard_is_far_from_water"
+ }
+}
