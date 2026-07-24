@@ -427,6 +427,19 @@ s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="cops
 # Meiji-and-later institution. The kura on the manor, headman, and merchant houses carry the
 # fire story here. WHY: settlements.md "Fire towers".
 
+# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the state's standing law on the Imperial Road
+# frontage (GM 2026-07-24, from the town deep audit; settlements.md "Notice board"). Sited on
+# the road verge where the manor's north-gate approach meets the highway - the SW arrival
+# stretch shared by the flophouse, theater ground, and monastery approach - because the packed
+# merchant frontage upstream has no clear verge (the manifest probe found none; the built
+# street is honestly FULL). The Takayama jinya-mae pattern: the board is ROAD-sited (the
+# traffic criterion; kosatsuba_by_the_road), and the seat of authority happens to front the
+# same road - distinct from the manor's own Mode A gate board, which posts verdicts and
+# bounties for those who come to court. Aligned to the road (rot=-30), placed LAST on a
+# probed-clear verge like the fire furniture (clear of the manor's ROTATED corner - the -30
+# tilt swings it up to y~980, which sank the first spot at (500, 968)).
+s.kosatsuba(400, 930, rot=-30)
+
 # ===== NEAR-RING FARMLAND at the MEDIUM tier (feature 013) =====
 # NEAR-RING PADDY IS COMB FIELDS ONLY (GM 2026-07-23, the Tango-recipe rollout): the town's rice is
 # its build_comb fans - real irrigation deltas. REJECTED (recorded so it is never reinvented): the

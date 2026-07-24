@@ -66,11 +66,11 @@ s.meta(
     down_deg=90,
     clan="Lion",
     monastery_fortunes=["Bishamon", "Benten"],
-    population=785,
+    population=780,
     ftpx=1,
     toscale=True,
     nucleated=True,
-)  # residents DEPICTED (dwellings x5 = 157 x 5); urban housing full, most farms off-map - a slice of the ~1,200 county. ftpx=1 -> bscale 1.0. (Was 820 before the 2026-07-24 gate-market authored=landed fix; the pack ending earlier shifts the RNG and the farm rings settle at 71 farmhouses.)
+)  # residents DEPICTED (dwellings x5 = 156 x 5); urban housing full, most farms off-map - a slice of the ~1,200 county. ftpx=1 -> bscale 1.0. (Was 820 before the 2026-07-24 gate-market authored=landed fix; the pack ending earlier shifts the RNG and the farm rings settle at 71 farmhouses.)
 
 # ---- OUTSIDE the walls: the two valley streams. The WEST stream now BENDS southeast below
 # the w2 field and runs to the s1 comb's sluice, where a weir swallows it whole into the
@@ -424,6 +424,22 @@ s.pack((861, 964, 1764, 1183), ["samurai_large"] * 2 + ["samurai"] * 7, step=70)
 s.label(1030, 950, "samurai neighborhood", 11, italic=True)
 
 # merchants + shops FRONT the main avenue and the market cross-street (facing them)
+# The guan-xiang GATE MARKET, fixed explicitly BEFORE the street frontage runs (GM 2026-07-24,
+# evolved twice: a 12-item pack silently landed 4 - the drift that motivated the _shortfall
+# warning - and the trimmed exact-request pack then re-rolled to 1 with the next upstream
+# engine change, because a grid scan's spots are RNG-coupled. An exact-count documented
+# feature gets FIXED coordinates; the fill=True street scan below flows around them). These
+# are the probed-stable verge spots flanking the main street south of the gate. The market is
+# TRAFFIC-scaled, not population-scaled (towns levy no import tariffs - settlements.md "gate
+# market"): 4 premises is the thin-but-honest end of the ~4-8 band for one trafficked gate -
+# the s1 paddy comb genuinely pinches every other road-front spot (the 1836/1888 grid rows
+# are all blocked). NO run-off-frame stalls: the truncation device needs a canvas larger than
+# the view (city maps crop; a town canvas IS the view, and _fits keeps builds 26px clear of
+# the frame edge), so the road running off the edge carries the "more beyond" signal itself.
+s.building(1252, 1840, 54, 36, "merchant", rot=-90)
+s.building(1368, 1848, 54, 36, "merchant", rot=90)
+s.building(1258, 1933, 54, 36, "merchant", rot=-90)
+s.building(1342, 1933, 54, 36, "merchant", rot=90)
 s.frontage(MAIN, (["merchant"] * 3 + ["shop"]) * 6, width=28, spacing=56, rows=2, fill=True)
 s.frontage(CROSS, (["merchant"] * 2 + ["shop"]) * 6, width=22, spacing=56, rows=2, fill=True)
 # the laborers' and servants' dwellings fill the blocks flanking the core - those next to
@@ -432,23 +448,20 @@ s.block_polys.append(
     [(533, 1550), (595, 1550), (595, 1612), (533, 1612)]
 )  # the pack bbox's SW corner pokes past the rampart; the 7-torii reflow (2026-07-21) rolled a laborer into that outside sliver (walled_town_commoners_inside_walls)
 s.pack((540, 1200, 1130, 1600), ["servant"] * 13 + ["laborer"] * 13, step=44, face_streets="fill", fill=True)
-s.pack((1450, 1200, 1880, 1540), ["laborer"] * 17, step=44, face_streets="fill")
+s.building(1668, 1316, 34, 24, "laborer")  # the 25th laborer pinned explicitly (2026-07-24): the two tenement scans land ~24 total as the RNG shifts, and the town_caste_count[laborer] floor is 25 - same lone-cottage precedent as the x1418 one above (probed clear of buildings, the rampart, AND the Bishamon sando - the first two spots hit the wall and a torii)
+s.pack((1450, 1200, 1880, 1540), ["laborer"] * 20, step=44, face_streets="fill", fill=True)  # capacity budget (2026-07-24): the scan lands ~15-18 as the RNG shifts; town_caste_count[laborer] is the real guard on the total
 s.label(1300, 1505, "merchant houses & shops", 10, italic=True, color="#5A4326")
 s.label(800, 1560, "laborers' & servants' tenements", 9, italic=True, color="#5A4326")
 
-# ---- OUTSIDE: a small guan-xiang gate-market, the segregated burakumin neighborhood, farm rings
-# The market is TRAFFIC-scaled, not population-scaled (GM 2026-07-24; towns levy no import
-# tariffs - see settlements.md "gate market"): ~4-8 permanent premises for a county seat's one
-# trafficked gate. Hirameki lands 4 (the thin-but-honest end): 2 merchant houses the MAIN
-# street frontage strings through the gate, plus the 2 packed here - the s1 paddy comb and the
-# collision radii around the frontage pair genuinely pinch every other road-front spot (probed
-# 2026-07-24; the 1836/1888 grid rows are all blocked). The old authoring asked s.pack for 12
-# businesses and silently landed a fraction - the drift that motivated the _shortfall warning;
-# the request now matches the ground the map actually has. NO run-off-frame stalls here: the
-# truncation device needs a canvas larger than the view (the city maps crop; a town canvas IS
-# the view, and _fits keeps builds 26px clear of the frame edge), so at town scale the road
-# running off the edge carries the "more beyond the map" signal by itself.
-s.pack((1080, 1810, 1540, 1980), ["merchant"] * 2, step=52, face_streets=True)
+# ---- OUTSIDE: the gate market (fixed above, before the street frontage), the segregated
+# burakumin neighborhood, farm rings
+# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the state's standing law on the main street
+# JUST INSIDE the front gate (GM 2026-07-24, from the town deep audit; settlements.md "Notice
+# board"): every arrival passes it, gate-market traffic included. East verge, aligned to the
+# street (rot=90), on a probed-clear seam a block up from the gate (the first spot at y1690
+# hung the label over the gate structs). NOT at the manor gate up the hill - the manor's own
+# board (Mode A) posts verdicts and bounties for those who come to court.
+s.kosatsuba(1330, 1630, rot=90)
 s.label(1120, 1795, "gate market", 10, italic=True, color="#5A4326")
 # the market flophouse (kichin-yado), OUTSIDE the gate beside the gate market: far-traveling
 # peasants who reach the town after the gate shuts at dusk sleep here for a sen before market day
@@ -549,7 +562,7 @@ s.farmsteads()
 # is urban floor (the 30 ft urban-clearance halo), not grazed waste.
 s.commons([(300, 15), (700, 10), (700, 95), (305, 100)], role="grazing")
 s.commons([(1600, 15), (1960, 10), (1955, 95), (1605, 100)], role="grazing")
-s.commons([(10, 290), (90, 300), (85, 900), (12, 890)], role="grazing")
+s.commons([(10, 290), (90, 300), (88, 590), (60, 620), (58, 900), (12, 890)], role="grazing")  # E edge stepped in below y~600 (2026-07-24): the W farm ring's scatter drops houses to x~82 there, and scrub hugs the built edge, it never contains a dwelling (scrub_clear_of_urban_fabric)
 s.commons([(2510, 15), (2590, 15), (2590, 1985), (2515, 1985)], role="grazing")  # E strip held E of the fringe farm at x2487
 s.commons(
     [(210, 790), (520, 800), (540, 1690), (230, 1700), (230, 1330), (295, 1330), (295, 995), (216, 995)], role="grazing"

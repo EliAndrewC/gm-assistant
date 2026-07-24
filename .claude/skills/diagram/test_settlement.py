@@ -294,6 +294,16 @@ def test_frontage_shortfall_is_reported(capsys):
     assert "FRONTAGE SHORTFALL" in capsys.readouterr().out
 
 
+def test_kosatsuba_records_a_blocking_struct():
+    # the notice board records its manifest entry at true size (~12x5 ft) and reserves its
+    # verge (a later pack must not bury the board)
+    s = _town()
+    z = s.kosatsuba(500, 500, rot=15)
+    kb = s.M["kosatsuba"][0]
+    assert (kb["x"], kb["y"], kb["w"], kb["h"], kb["rot"]) == (500, 500, 12, 5, 15) and z > 0
+    assert not s._fits(500, 500, 20, 20)
+
+
 def test_fill_declares_a_capacity_budget_and_stays_silent(capsys):
     # fill=True marks the request as "place up to N" (the city district-fill idiom), so an
     # under-fill is intended, not drift - no warning
