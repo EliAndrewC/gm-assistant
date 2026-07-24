@@ -266,6 +266,11 @@ s.cemetery(BX, BY - 110, 62, 42, parish=False, organic=True)  # resized 2026-07-
 # BRIDGES carry every lane over the water it crosses (the connector track + spurs cross ditches/brooks)
 s.bridges()
 
+# THE OFFICIAL NOTICE BOARD (kosatsuba), auto-sited on a lane verge at the busiest node (GM
+# 2026-07-24: every settlement tier posts the state's standing law - the ofuregaki reached the
+# peasantry through this board via the settlement's literate reader; see settlements.md and
+# settlement.place_kosatsuba). Placed BEFORE the crop so the frame contains it.
+s.place_kosatsuba()
 s.crop_to_content(margin=30)
 
 _ACRES = sum(abs(sum(p["poly"][i][0] * p["poly"][(i + 1) % len(p["poly"])][1]

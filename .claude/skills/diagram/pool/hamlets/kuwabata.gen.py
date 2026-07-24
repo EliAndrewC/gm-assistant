@@ -134,6 +134,11 @@ if s.M.get("field_ditches"):
     # fields where they live and then walk the bund network, so plank counts are capped per ring side.
     s.channel_footbridges(spacing=320, seg_caps={"feeder": 0, "w_toe": 0, "drain": 0, "e_toe": 3, "lateral": 1})
 s.hinterland(interior_fill=False)  # a polder is a SOLID block - no interior voids to clothe
+# THE OFFICIAL NOTICE BOARD (kosatsuba), auto-sited on a lane verge at the busiest node (GM
+# 2026-07-24: every settlement tier posts the state's standing law - the ofuregaki reached the
+# peasantry through this board via the settlement's literate reader; see settlements.md and
+# settlement.place_kosatsuba). Placed BEFORE the crop so the frame contains it.
+s.place_kosatsuba()
 s.crop_to_content(margin=44)
 s.title("Kuwabata")
 print(s.finish(os.path.join(HERE, "kuwabata")))

@@ -258,6 +258,11 @@ n_bridges = s.channel_footbridges(spacing=300)
 print(f"footbridges: {n_bridges}")
 
 # CROP to the placed content (the commons bleeds off-frame; the hard features fit with a margin)
+# THE OFFICIAL NOTICE BOARD (kosatsuba), auto-sited on a lane verge at the busiest node (GM
+# 2026-07-24: every settlement tier posts the state's standing law - the ofuregaki reached the
+# peasantry through this board via the settlement's literate reader; see settlements.md and
+# settlement.place_kosatsuba). Placed BEFORE the crop so the frame contains it.
+s.place_kosatsuba()
 s.crop_to_content(margin=48)   # a touch wider so the strewn ring's edge wells sit inside the frame (and more red-clay margin shows)
 
 # NO SHRINE (religious_matches_scale: a hamlet has none), NO GRAVEYARD (its dead go to the village district's

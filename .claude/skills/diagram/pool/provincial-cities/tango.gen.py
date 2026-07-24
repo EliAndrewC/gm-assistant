@@ -1229,21 +1229,24 @@ s.crop_city(west=100)  # the aggressive default (35px past the kept satellites);
 # and funerary+estates (E) are the true frame drivers.
 s.title("Tango")
 
-# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the principal board just inside the NORTH
-# gate on the Imperial road's west verge, below the gate's guard/inspection throat (GM
-# 2026-07-24; settlements.md "Notice board"). A
-# real city posted MANY boards (Edo: Nihonbashi + per-gate boards); this ONE stands in for
-# the set under the legibility license, like the drum tower - the south market gate would be
-# the busier node, but its inside verge is too built-up to hold even the label (both label
-# orientations land on the gate structure; probed 2026-07-24), and a main-gate node is a
-# main-gate node when one board stands for the set. Label BELOW (south, into the city, away
-# from the gate). Placed LAST on a verge probed clear INCLUDING the gate furniture and the
-# label box (the first two spots stood in the furnished gate throat).
+# ===== THE OFFICIAL NOTICE BOARDS (kosatsuba) - a city draws the SET (GM 2026-07-24,
+# settlements.md "Notice board"): the PRINCIPAL board at the central market node plus one on
+# every main gate's approach corridor (Edo: the Nihonbashi high-board + per-gate boards;
+# city_has_kosatsuba floors the count at gates + 1). Only ONE board carries the label -
+# whichever has room for it (GM: no particular board; the same one-label convention as the
+# fire towers and gate markets). Here that is the NORTH gate board, on the Imperial road's
+# west verge below the gate's guard/inspection throat, label BELOW (south, into the city,
+# away from the gate) - the south market gate's verge is too built-up to hold even the label
+# (both label orientations land on the gate structure; probed 2026-07-24). All placed LAST
+# on verges probed clear INCLUDING the gate furniture and the label box.
 s.kosatsuba(1584, 1091, rot=90)  # the LABELED representative (one-label convention)
-# ...and the south gate's board, UNLABELED (GM 2026-07-24: draw the set, label one - like the
-# fire towers and gate markets). The bare board fits the tight south verge that could not
-# hold a label box (both label orientations landed on the gate furniture).
+# ...the south gate's board, UNLABELED - the bare board fits the tight south verge that
+# could not hold a label box (both label orientations landed on the gate furniture).
 s.kosatsuba(1588, 1760, rot=90, label=None)
+# ...and the PRINCIPAL board at the central road-market (GM 2026-07-24, the 3rd board: the
+# city's Nihonbashi-equivalent node), on the market cross-street's south verge beside the
+# roadside inn - unlabeled, the north-gate board already carries the set's one label.
+s.kosatsuba(1525, 1439, rot=0, label=None)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}
