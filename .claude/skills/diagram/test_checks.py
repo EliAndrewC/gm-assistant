@@ -5056,6 +5056,44 @@ def test_unwalled_town_needs_no_fire_tower():
     assert "town_has_fire_tower" not in fails
 
 
+# ---- the official notice board (kosatsuba) ----
+
+
+def _kosatsuba(x, y):
+    return {"x": x, "y": y, "w": 12, "h": 5, "rot": 0}
+
+
+def test_town_has_kosatsuba_fires_when_absent():
+    # every town, walled or not (GM 2026-07-24): the state's edict board stood in every
+    # Edo town and village
+    assert "town_has_kosatsuba" in f({"meta": {"scale": "town", "walled": False}})
+    assert "town_has_kosatsuba" in f({"meta": {"scale": "town", "walled": True}})
+
+
+def test_town_kosatsuba_passes_by_a_main_street():
+    # sited on the traffic artery: within ~60 ft of a road or main street (town_streets branch)
+    M = {"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "town_streets": [{"pts": [[0, 500], [1000, 500]]}]}
+    fails = f(M)
+    assert "town_has_kosatsuba" not in fails and "kosatsuba_by_the_road" not in fails
+
+
+def test_kosatsuba_by_the_road_fires_when_marooned():
+    # a board deep in the back blocks defeats the institution (road branch of the routes)
+    M = {"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 900)], "road": [[0, 500], [1000, 500]]}
+    assert "kosatsuba_by_the_road" in f(M)
+
+
+def test_town_kosatsuba_opt_out():
+    # a suppressed or backwater seat may omit it
+    assert "town_has_kosatsuba" not in f({"meta": {"scale": "town", "kosatsuba": False}})
+
+
+def test_kosatsuba_routeless_map_skips_the_siting_check():
+    # no road/street recorded: presence still gates, the siting check stays quiet
+    fails = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 900)]})
+    assert "kosatsuba_by_the_road" not in fails
+
+
 def test_city_has_fire_towers_fires_with_one():
     assert "city_has_fire_towers" in f({"meta": {"scale": "city"}, "fire_towers": [_tower(500, 500)]})
 

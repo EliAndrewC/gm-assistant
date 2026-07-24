@@ -692,6 +692,7 @@ class Settlement:
             "ossuaries": [],
             "moat_layer": None,
             "fire_towers": [],
+            "kosatsuba": [],
             "field_ditches": [],
             "village_groves": [],
             "commons": [],
@@ -3992,6 +3993,33 @@ class Settlement:
         self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
         if label:
             self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
+        return z
+
+    def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board") -> int:
+        """The KOSATSUBA - the settlement's official notice board: a small roofed frame posting
+        the state's STANDING LAW (edicts, porter/packhorse rate tables, ban lists). Sited at the
+        most TRAFFICKED public point - the highway frontage, the main street by the gate, a
+        bridgehead or market corner - because it is the state talking at everyone who passes
+        (Edo's principal board stood at Nihonbashi, the bridgehead). NEVER defaulted to the
+        magistrate's manor gate: the manor's own board (Mode A program, buildings.md) posts the
+        bench's OUTPUT (verdicts, bounties) for people who come to court, and the manor sits at
+        the settlement edge where feet do not pass. True size ~12x5 ft (a 7x3 ft board under a
+        small roof); the label carries the read. Records M['kosatsuba'] (an overlap-checked
+        struct). WHY: settlements.md 'Notice board (kosatsuba)'. Place LAST, on a clear verge
+        beside the road, like the fire tower."""
+        w, h = self.px(12), self.px(5)
+        hw, hh = w / 2, h / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1" fill="#7A5A30" stroke="#5A3F1E" stroke-width="0.8"/>')  # the little tiled roof, seen from above
+        g.append(f'<line x1="{-hw:.1f}" y1="0" x2="{hw:.1f}" y2="0" stroke="#EFE6CC" stroke-width="0.9"/>')  # the ridge
+        g.append('</g>')
+        z = self.add_top(''.join(g))
+        self.M["kosatsuba"].append({"x": round(x, 1), "y": round(y, 1), "w": w, "h": h, "rot": round(rot, 1), "z": z, "label": label})
+        self.placed.append((x, y, w, h))
+        bm = 6
+        self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
+        if label:
+            self.label(x, y + hh + 11, label, 8, italic=True, color="#7A5A30")
         return z
 
     def drum_tower(self, x: float, y: float, tw: float | None = None, label: str = "drum tower") -> int:

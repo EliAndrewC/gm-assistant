@@ -149,7 +149,7 @@ def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, An
 # bridge over water, a guard tower on the wall) is named in _OVERLAP_EXEMPT with its reason. The
 # `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
 # sets, forcing whoever adds it to declare its overlap behavior rather than silently skipping it.
-_OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "ministries", "fire_towers", "drum_towers", "byres")
+_OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "ministries", "fire_towers", "drum_towers", "byres", "kosatsuba")
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs", "docks")
@@ -7049,6 +7049,25 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # Meiji-and-later institution. WHY: settlements.md "Fire towers". Opt out per-map with
         # meta(fire_tower=False).
         check("walled_town_has_fire_tower", len(M.get("fire_towers", [])) >= 1, "a walled town's dense wooden core needs a fire-watch tower (s.fire_tower(...); meta(fire_tower=False) to omit)")
+
+    if scale == "town" and meta.get("kosatsuba", True):
+        # THE OFFICIAL NOTICE BOARD (kosatsuba), default-on for EVERY town, walled or not
+        # (GM 2026-07-24, from the town deep audit). Every Edo town and village kept the
+        # state's edict board, and its siting was a TRAFFIC decision, not an administrative
+        # one: highway frontage, main street by the gate, bridgehead, market corner - the
+        # state talking at everyone who passes (Edo's principal board stood at Nihonbashi).
+        # DISTINCT from the magistrate's manor-gate board (Mode A program, buildings.md):
+        # that one posts the bench's OUTPUT (verdicts, bounties) for people who come TO the
+        # court, while this one posts standing law - and the manor deliberately sits at the
+        # settlement edge (manor_gate_faces_town) where feet do not pass, so the town board
+        # must never default there. WHY: settlements.md "Notice board (kosatsuba)". Opt out
+        # for a suppressed/backwater seat with meta(kosatsuba=False).
+        kbs = M.get("kosatsuba") or []
+        check("town_has_kosatsuba", len(kbs) >= 1, "a county seat posts the state's standing law on an official notice board (s.kosatsuba(...); meta(kosatsuba=False) to omit)")
+        routes_kb = ([M["road"]] if M.get("road") else []) + [st["pts"] for st in M.get("town_streets", [])]
+        if kbs and routes_kb:
+            far_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in routes_kb for k in range(len(r) - 1)) > 60]
+            check("kosatsuba_by_the_road", not far_kb, f"notice board(s) at {far_kb} stand more than ~60 ft from every road/main street - a kosatsu is read where people pass")
 
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")), "a walled town must have a wall and a gate")
