@@ -281,13 +281,14 @@ a kettle, in a town where every household flexes toward the road**:
   of north-China carting inns): same shape - farm-courtyard households selling fodder, stabling,
   food, and floor space, often doubling as grain brokers.
 
-### Implication for L7R provincial cities (pending GM decision at Minami time)
+### The L7R provincial-city inn program (DECIDED, GM 2026-07-24)
 
 A non-post-station highway seat of ~3,000 (no sankin-kotai; official travel uses the budgets.md
-waystations) defensibly runs ~8-15 lodging houses: 2-4 proper inns + 5-8 small family hatago + the
-2-4 flophouses already drawn - 1 per ~200-350 residents, vs a true shukuba's 1 per 20-75. On the
-MAP the small family hatago are indistinguishable from shop/merchant row houses by design - they
-ARE shophouses whose back rooms take lodgers - so the likely drawing answer is a documented
-"several of the gate-market and road-market shops also sleep travelers" note (and perhaps an inn
-kind for the 2-4 proper ones, which we already draw), NOT 10+ new dedicated buildings. To be
-decided with the GM before Minami.
+waystations) runs ~8-15 lodging houses: the 2-4 proper inns (kind "inn", the caravan-cluster
+inns the cities already draw) + 5-8 small family hatago + the 2-4 flophouses. **The small family
+hatago are NOT new buildings**: on the map they are deliberately indistinguishable from the
+shop/merchant row houses, because that is what they were - shophouses whose back rooms take
+lodgers, households in the meal-trade/farming/porterage economy above. So the drawn inn program
+is: dedicated glyphs for the proper inns + flophouses only, and this documented convention that
+several of the road-market and gate-market shops also sleep travelers. No check counts the
+implied hatago (they are shop-kind rows); the inn/flophouse floors stay as gated today.
