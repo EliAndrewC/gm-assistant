@@ -65,12 +65,13 @@ CX, CY, RX, RY = 1480, 1330, round(BUDGET.wall.rx), round(BUDGET.wall.ry)  # 449
 NRING = 20
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)), round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, EGATE, WGATE_PT = WALL[0], WALL[5], WALL[6]
-KIDO_SPOTS = [(1469, 1330, True), (1469, 1403, True), (1062, 1311, True), (1234, 1660, True)]
-for kx, ky, kh in KIDO_SPOTS:
-    if kh:
-        s.block_polys.append([(kx - 25, ky - 38), (kx + 45, ky - 38), (kx + 45, ky + 26), (kx - 25, ky + 26)])
-    else:
-        s.block_polys.append([(kx - 38, ky - 25), (kx + 26, ky - 25), (kx + 26, ky + 45), (kx - 38, ky + 45)])
+KIDO_SPOTS = [(1469, 1330), (1469, 1403), (1062, 1311), (1234, 1660)]
+# reservations are SYMMETRIC squares now that the kido rotates onto the fence tangent and hangs
+# its guard box on the ward-interior flank (GM 2026-07-24) - which side the box lands on depends
+# on the fence direction, so the old one-sided rects (tuned to the legacy axis-aligned flanks)
+# no longer bound it; +/-45 x +/-40 covers the rotated glyph at any angle with the ~17px margin
+for kx, ky in KIDO_SPOTS:
+    s.block_polys.append([(kx - 45, ky - 40), (kx + 45, ky - 40), (kx + 45, ky + 40), (kx - 45, ky + 40)])
 s.city_wall(
     WALL,
     gates=[NGATE, EGATE],
@@ -612,7 +613,7 @@ s.pack((1073, 1309, 1469, 1612), (["samurai"] * 3 + ["samurai_large"]) * 150, st
 s.label(
     1426, 1534, "samurai neighborhood", 10, italic=True, color="#3A352C"
 )  # E of the governor's mansion among the ward's samurai (x1426: the label box's W edge must clear the mansion's E edge at x~1365), clear of the burakumin rows to the S
-s.ward("samurai", [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)], gates=[(1469, 1330, True), (1469, 1403, True), (1062, 1311, True), (1234, 1660, True)])  # 2 street kido + 2 ring-road kido
+s.ward("samurai", [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)], gates=[(1469, 1330), (1469, 1403), (1062, 1311), (1234, 1660)])  # 2 street kido + 2 ring-road kido; each aligns to its fence run (the SW ring-road kido sits on the ~159deg slant) and hangs its guard box ward-side - s.ward computes both
 s.label(1433, 1317, "samurai ward gate", 9, italic=True, color="#5A4326")  # inside the ward by the E-fence kido, off the merchant frontage
 
 # ====================================================================== N + NE: the LABORER quarter

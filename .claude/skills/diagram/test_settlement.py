@@ -223,6 +223,21 @@ def test_kido_records_ward_gates_in_both_orientations():
     s.kido(300, 500, horizontal=False)  # N-S street gate
     assert len(s.M["kido"]) == 2
     assert s.M["kido"][0]["horizontal"] and not s.M["kido"][1]["horizontal"]
+    assert s.M["kido"][0]["rot"] == 90.0 and s.M["kido"][1]["rot"] == 0.0  # legacy flags map to the axis angles
+
+
+def test_ward_kido_aligns_to_fence_tangent_and_guards_the_interior():
+    # GM 2026-07-24: the kido is a gap IN the fence - a slanted fence run gets a slanted gate
+    # (rot = the local fence tangent; a 30deg fence means a 30deg gate, never an axis-aligned
+    # stamp), and the guard box hangs on the ward-interior flank (the ward's own gate watch).
+    s = Settlement(1000, 1000, seed=1)
+    s.ward("slant", [(100, 100), (400, 400), (700, 400)], gates=[(250, 250), (550, 400, True)])  # legacy 3-tuple accepted, flag ignored
+    k45, k0 = s.M["kido"][-2], s.M["kido"][-1]
+    assert abs(k45["rot"] - 45.0) < 0.5  # the 45deg run gets a 45deg gate
+    assert abs(k0["rot"] - 0.0) < 0.5  # the flat run stays flat (the ignored legacy flag did NOT force 90)
+    # the fence centroid (400, 300) sits NORTH of the flat run at y400, so the guard box hangs
+    # north of the bar: the glyph's bbox reaches well north of the fence line and stays snug south
+    assert k0["bbox"][1] < 400 - 25 and k0["bbox"][3] < 400 + 25
 
 
 def test_seg_closest_degenerate_segment():

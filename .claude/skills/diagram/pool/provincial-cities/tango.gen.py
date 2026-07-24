@@ -763,12 +763,12 @@ s.ward(
     "samurai",
     [(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)],
     gates=[
-        (1622, 1455, True),  # the government avenue pierces the W fence
-        (1704, 1364, False),
-        (1805, 1364, False),
-        (1896, 1364, False),  # the commoner lanes enter at kido gates
-        (2065, 1364, False),
-        (1655, 1748, True),
+        (1622, 1455),  # the government avenue pierces the W fence
+        (1704, 1364),
+        (1805, 1364),
+        (1896, 1364),  # the commoner lanes enter at kido gates
+        (2065, 1364),
+        (1655, 1748),  # on the SW jog's ~44deg slant - s.ward rotates it onto the fence tangent (GM 2026-07-24)
     ],
 )  # the RING ROAD crosses the fence (E and SW) - gated
 s.label(1655, 1352, "samurai ward gate", 9, italic=True, color="#5A4326")

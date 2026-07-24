@@ -1,0 +1,70 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "wards": [
+  {
+   "name": "w",
+   "boundary": [
+    [
+     300,
+     300
+    ],
+    [
+     600,
+     600
+    ]
+   ],
+   "z": 1,
+   "wall_caps": []
+  }
+ ],
+ "kido": [
+  {
+   "x": 450,
+   "y": 450,
+   "horizontal": true,
+   "bbox": [
+    430,
+    430,
+    470,
+    470
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "kido_aligned_with_ward_fence"
+  ],
+  "source": "test_checks.py::test_kido_aligned_with_ward_fence_fires_when_axis_aligned_on_a_slant_and_passes_when_rotated"
+ }
+}
