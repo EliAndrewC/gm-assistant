@@ -45,6 +45,6 @@
   "fires": [
    "city_has_bathhouse"
   ],
-  "source": "test_checks.py::test_city_bathhouse_count_follows_the_population_band"
+  "source": "test_checks.py::test_city_bathhouse_count_follows_the_population_formula"
  }
 }

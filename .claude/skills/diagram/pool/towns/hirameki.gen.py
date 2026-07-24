@@ -468,6 +468,12 @@ s.label(1120, 1795, "gate market", 10, italic=True, color="#5A4326")
 s.flophouse(1720, 1880)
 s.pack((2120, 1690, 2340, 1960), ["burakumin"] * 14, step=46)
 s.label(2230, 1680, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
+# the TANNING YARD (GM 2026-07-24) - the easiest siting in the pool, because Hirameki already put
+# its burakumin where the trade needs them: OUTSIDE the wall, at the SOUTH (downhill, down_deg=90)
+# end of the quarter, on the east valley stream. The yard takes the strip between the quarter and
+# the stream bank, so the workers reach it without crossing the water and every drop it fouls
+# leaves the map southward, below the town. water="stream": a live current to stake hides in.
+s.tanning_yard(2375, 1900, rot=90, pits=4, water="stream")  # x set so the yard ground stops AT the bank and the staking frames reach into the shallows - hides soak in the current, not beside it
 # a noticeable minority of merchant houses keep a fireproof kura (rent-rice / bulk goods of the
 # absentee landlords whose tenants farm the surrounding land), drawn AFTER the businesses exist
 s.merchant_storehouses(6)

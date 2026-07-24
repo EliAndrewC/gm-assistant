@@ -1,0 +1,56 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1
+ },
+ "streams": [
+  {
+   "poly": [
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     900
+    ]
+   ],
+   "w": 8
+  }
+ ],
+ "buildings": [
+  {
+   "x": 200,
+   "y": 200,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "burakumin"
+  },
+  {
+   "x": 466,
+   "y": 560,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  }
+ ],
+ "tanning_yards": [
+  {
+   "x": 466,
+   "y": 500,
+   "w": 58,
+   "h": 41,
+   "rot": 0,
+   "label": "tanning yard"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "tanning_yard_clear_of_dwellings"
+  ],
+  "source": "test_checks.py::test_tanning_yard_clear_of_dwellings_fires_when_a_house_stands_beside_it"
+ }
+}

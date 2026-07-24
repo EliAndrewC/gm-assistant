@@ -302,6 +302,19 @@ s.block_polys.append([(615, 855), (835, 855), (835, 940), (615, 940)])
 # there stands hard against the quarter's door row (city_house_doors_unblocked)
 s.block_polys.append([(1720, 590), (2010, 590), (2010, 665), (1720, 665)])
 
+# ---- the TANNING YARD, on the NE comb's drain at the field's low toe (GM 2026-07-24). Hoshizora
+# has no watercourse anywhere near the burakumin quarter - the valley stream runs across the far
+# WEST - so the yard takes the one water the quarter does reach: the drainage ditch under the NE
+# field, ~280 ft below their doors. That ditch is the honest site rather than a convenience: the
+# NE comb is fed by its own brook off the high ground NE and discharges OFF-MAP EAST, hydrologically
+# separate from the west stream the town drinks and irrigates from, so nothing the yard fouls comes
+# back through Hoshizora. water="ditch" (not a live stream): an irrigation drain has no current to
+# stake hides in, so this yard ponds its own soak through a gated intake cut. Placed BEFORE the farm
+# rings so they pack around its block - it lands in the gap between the field toe and the forest.
+# rot=90 lays the yard's water side due EAST, square onto the ditch, in the free pocket between the
+# field's toe and the forest edge - the one piece of ground here that is neither cropped nor wooded.
+s.tanning_yard(1947, 875, rot=90, pits=4, water="ditch")
+
 # ---- farmhouses: the town's farmer majority (still the largest single group), ringed
 # several-deep around the comb envelopes - generously, since each needs room for its
 # threshing yard (some get dropped). Dense rings so the shown field edges read WORKED

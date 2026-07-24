@@ -158,6 +158,12 @@ s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street
 s.pawnshop(1620, 1240)  # NE merchant quarter
 s.bathhouses([(1836, 1230), (1368, 1270)])  # population-band roll (seed 47 -> 2): seat 1 at the NE warren's east edge (clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata), seat 2 in the NW monzen west of the theater
 s.kiln(2210, 1520)  # tile kiln OUTSIDE the walls on the far bank, south of the bridge road
+# the TANNING YARD (GM 2026-07-24) on the Hayakawa's WEST bank, south of the wall - the textbook
+# siting, and the reason the SE burakumin quarter sits where it does. It is downstream of
+# EVERYTHING the city puts in the water: below the moat's outflow junction (y~1521), below the
+# wharf and the dock basin, below the in-wall cargo canal's dyer. Same bank as the quarter, so no
+# crossing; the funerary complex keeps the far bank. water="stream": a full river to stake in.
+s.tanning_yard(2057, 1810, rot=90, pits=12, water="stream")  # ground stops AT the Hayakawa bank; the staking frames reach into the shallows
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the through-road over the river
 
 # ---- the cargo canal: moat -> water gate -> dock basin (the Suzhou pattern). ONE mouth on the

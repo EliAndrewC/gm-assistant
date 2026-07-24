@@ -3934,3 +3934,24 @@ def test_settlement_form_dike_top_is_low_ground_gated():
     low.meta(name="Sl", scale="village", terrain="low")
     low.pin_knob("settlement_form", "dike_top")
     assert low.resolve("settlement_form") == "dike_top"
+
+
+def test_tanning_yard_two_row_layout_and_ditch_intake():
+    # The pool covers 4 pits on a ditch (Hoshizora) and 12 on live water (Tango/Nagahara); this
+    # reaches the branches between - an ODD pit count over one row, where the last row is short
+    # and the pit loop must stop at `pits` rather than filling the grid.
+    s = _town()
+    s.tanning_yard(400, 400, rot=0, pits=7, water="ditch")
+    y = s.M["tanning_yards"][0]
+    assert (y["w"], y["h"]) == (58.0, 50.0)  # 2 rows of 4 -> 14 + 11*4 wide, 2*9 + 32 tall
+    svg = "".join(s.out)
+    assert svg.count('fill="#8E8A6A"') == 7  # exactly 7 pits drawn, not the 8 the grid would hold
+    assert '#9CB4C8' in svg  # the gated intake cut (ditch variant), not staking frames
+
+
+def test_tanning_yard_stream_variant_draws_staking_frames():
+    s = _town()
+    s.tanning_yard(400, 400, pits=4, water="stream")
+    svg = "".join(s.out)
+    assert '#9CB4C8' not in svg  # no intake cut on live water
+    assert svg.count('stroke="#6B4F2A"') >= 4  # three stakes + the frame rail out in the shallows

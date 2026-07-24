@@ -7474,3 +7474,76 @@ def test_marsh_on_low_ground_exempts_the_waterside_fringe():
     assert "marsh_on_low_ground" not in f(west_fringe)  # same fall as the field centroid - exempt
     uphill_toe = {**base, "marshes": [{"x": 700, "y": 200, "w": 800, "h": 200, "rot": 0, "role": "toe", "poly": [[300, 100], [1100, 100], [1100, 300], [300, 300]]}]}
     assert "marsh_on_low_ground" in f(uphill_toe)  # a TOE marsh uphill of the paddy still fires
+
+
+# ---- tanning yards (GM 2026-07-24) ---------------------------------------------------------
+# Water, not settlement size, is the gate: tanning soaks hides for 1-2 weeks, so the yard must
+# abut a watercourse; the stench keeps it outside the walls and off the ordinary houses; and the
+# burakumin's OWN houses are exempt from that separation, because living on the ground they work
+# is what the segregated quarter IS.
+def _ty_map(**over):
+    M = {
+        "meta": {"scale": "town", "walled": False, "ftpx": 1},
+        "streams": [{"poly": [[500, 100], [500, 900]], "w": 8}],
+        "buildings": [bldg(200, 200, kind="burakumin"), bldg(240, 200, kind="burakumin")],
+        "tanning_yards": [{"x": 466, "y": 500, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}],
+    }
+    M.update(over)
+    return M
+
+
+def test_settlement_has_tanning_yard_fires_when_a_watered_town_keeps_none():
+    M = _ty_map()
+    M.pop("tanning_yards")
+    assert "settlement_has_tanning_yard" in f(M)
+
+
+def test_settlement_has_tanning_yard_passes_when_the_settlement_has_no_water():
+    M = _ty_map(streams=[])  # no watercourse -> no tannery is CORRECT, not a defect
+    M.pop("tanning_yards")
+    assert "settlement_has_tanning_yard" not in f(M)
+
+
+def test_settlement_has_tanning_yard_passes_when_there_is_no_burakumin_quarter():
+    M = _ty_map(buildings=[bldg(200, 200)])
+    M.pop("tanning_yards")
+    assert "settlement_has_tanning_yard" not in f(M)
+
+
+def test_tanning_yard_on_water_fires_when_the_yard_sits_on_dry_ground():
+    M = _ty_map(tanning_yards=[{"x": 180, "y": 500, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}])
+    assert "tanning_yard_on_water" in f(M)
+
+
+def test_tanning_yard_on_water_passes_on_the_bank():
+    assert "tanning_yard_on_water" not in f(_ty_map())
+
+
+def test_tanning_yard_outside_walls_fires_when_the_work_is_inside():
+    M = _ty_map(
+        meta={"scale": "city", "walled": True, "ftpx": 3},
+        wall=WALL,
+        tanning_yards=[{"x": 500, "y": 500, "w": 27, "h": 17, "rot": 0, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_outside_walls" in f(M)
+
+
+def test_tanning_yard_outside_walls_passes_beyond_the_rampart():
+    M = _ty_map(
+        meta={"scale": "city", "walled": True, "ftpx": 3},
+        wall=WALL,
+        streams=[{"poly": [[500, 100], [500, 1300]], "w": 8}],
+        tanning_yards=[{"x": 500, "y": 1100, "w": 27, "h": 17, "rot": 0, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_outside_walls" not in f(M)
+
+
+def test_tanning_yard_clear_of_dwellings_fires_when_a_house_stands_beside_it():
+    M = _ty_map(buildings=[bldg(200, 200, kind="burakumin"), bldg(466, 560)])  # a merchant 60 ft away
+    assert "tanning_yard_clear_of_dwellings" in f(M)
+
+
+def test_tanning_yard_clear_of_dwellings_exempts_the_burakumin_quarter():
+    # the same 60 ft gap, but the neighbor is burakumin: they live on the ground they work
+    M = _ty_map(buildings=[bldg(466, 560, kind="burakumin")])
+    assert "tanning_yard_clear_of_dwellings" not in f(M)

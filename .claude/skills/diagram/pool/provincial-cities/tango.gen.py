@@ -186,6 +186,13 @@ s.oil_press(1852, 1062)  # NE quarter, mid-band clear of the y1145 street and th
 s.pawnshop(1755, 1325)  # NE merchant_house band (the explicit merchant_large pair owns the 1508,1395 ground)
 s.bathhouses([(1680, 1310), (1232, 1160)])  # population-band roll (seed 162 -> 2): seat 1 on the merchant_house band by the road market (sited OUTSIDE the NE pre-pack well grid's box - a block in the warren swallowed well candidates and swamped the (1864,1226) idobata), seat 2 in the west merchant homes
 s.kiln(2282, 830)  # tile kiln OUTSIDE the east wall, east of the common burial ground (2160-2250) and south of the ossuary (fire law + smoke)
+# the TANNING YARD (GM 2026-07-24) on the MOAT OUTFALL, below the SE estates. Tango is the awkward
+# case: it is a dry seat whose burakumin live IN-wall (the siege need), and the moat feeder enters
+# at the clean NW rim - so the only honest water for a tannery is the outfall stream leaving the
+# LOW SE rim, downstream of the whole city. Sited below the last estate (2060,1855) so the stench
+# runs away from the samurai seats rather than through them; the workers commute out the SE gate,
+# which is a long walk and is meant to be (the indignity is the point, GM 2026-07-24).
+s.tanning_yard(1971, 1910, rot=270, pits=12, water="stream")  # ground stops AT the outfall bank; the staking frames reach into the water
 
 
 def grid(streets, width_ft=18):
