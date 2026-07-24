@@ -1,0 +1,11 @@
+{
+ "meta": {
+  "scale": "hamlet"
+ },
+ "_regression": {
+  "fires": [
+   "hamlet_has_kosatsuba"
+  ],
+  "source": "test_checks.py::test_village_and_hamlet_have_kosatsuba"
+ }
+}

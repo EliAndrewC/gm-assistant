@@ -73,8 +73,9 @@ IMPLEMENTED (GM 2026-07-24) - all candidates below are live features; see settle
   each watercourse's real half-width): stacks on dry ground, the landing is the jetty's job.
 - **Oil-press barn** (`s.oil_press`, `city_has_oil_press`): barn + ox-track ring, toward the edge.
 - **Pawnshop** (`s.pawnshop`, `city_has_pawnshop`): shopfront + 2 pledge kura in a walled court.
-- **Bathhouse** (`s.bathhouse`, `city_has_bathhouse`): bath building + chimney + a fenced fuel
-  yard of firewood stacks. ONE per ~3,000 is period-typical (Edo 1808: 523 sento for ~1.1M,
-  ~1 per 2,100 residents); a busy seat may keep two.
+- **Bathhouse** (`s.bathhouses` roll + `city_has_bathhouse`): bath building + chimney + a fenced
+  fuel yard of firewood stacks. Count rolls from the population band (GM 2026-07-24): <3,000
+  keeps 1, ~3,000 rolls 1-2, >=4,000 keeps 2 - anchored on Edo's peak ratio (1808: 523 sento
+  for ~1.1M, ~1 per 2,100 residents), i.e. ~pop/2,000 clamped to [1, 2].
 - **Kiln** (`s.kiln`, `city_kiln_outside_walls`): strictly OUTSIDE the walls. The tannery stays a
   documented note on the extramural burakumin quarter, not a drawn feature.
