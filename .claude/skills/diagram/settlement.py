@@ -6354,7 +6354,16 @@ class Settlement:
             self.M["gate"] = [gates[0][0], gates[0][1]]
         self.corridors.append(([(x, y) for x, y in ring], 46))
 
-    def moat(self, ring: Any, gap: float = 42, width: float | None = None, river: Any = None, river_cut: float = 150) -> list[Pt]:
+    def moat(
+        self,
+        ring: Any,
+        gap: float = 42,
+        width: float | None = None,
+        river: Any = None,
+        river_cut: float = 150,
+        river_inlet_tilt: float = 10.0,
+        river_outlet_tilt: float = 22.0,
+    ) -> list[Pt]:
         """A water moat encircling the city wall - the wall RING pushed outward from its centroid
         by `gap`. Records M['moat']. Feed it from off-map with a stream (AS WIDE as the moat, by
         conservation of flow) and tap it for irrigation channels to the outside fields. A no-build
@@ -6363,7 +6372,13 @@ class Settlement:
         `river=<pts>` makes it an OPEN moat for a river-bank city: the arc facing the river (moat
         vertices within `river_cut` of the river centerline) is dropped and both open ends extend
         ONTO the river, which closes the water ring itself - inlet upstream, outlet downstream,
-        so the current flushes the moat (the historical norm; see settlements.md river-city entry)."""
+        so the current flushes the moat (the historical norm; see settlements.md river-city entry).
+        CONVENTION: `river` pts run UPSTREAM-FIRST (source before mouth) - the junction tilts and
+        the city_moat_junction_angles check both key on it. The two junction feet are NOT square
+        perpendicular tees (that was an rfoot artifact): the INLET (upstream end) shifts upstream
+        by `river_inlet_tilt` degrees off square, the OUTLET sweeps downstream by
+        `river_outlet_tilt` - see settlements.md "junction angles follow the current" for the
+        hydrology (confluences merge at downstream angles; intakes stay near-square for sediment)."""
         if width is None:
             width = self.px(66)  # a provincial-seat moat ~66 ft across (26px at the old 2.55 ft/px grain)
         cx = sum(p[0] for p in ring) / len(ring)
@@ -6391,7 +6406,40 @@ class Settlement:
             while rdist(mo[i]) >= river_cut:
                 keep.append(mo[i])
                 i = (i + 1) % n0
-            mo = [rfoot(keep[0])] + keep + [rfoot(keep[-1])]  # both open ends join the river centerline
+            # THE JUNCTION FEET TILT WITH THE CURRENT (GM 2026-07-24 hydrology review; see
+            # settlements.md river-cities "junction angles follow the current"). The perpendicular
+            # rfoot projection gave both arms identical square tees - an algorithm artifact, not a
+            # decision. Real waterworks are ASYMMETRIC: the OUTLET sweeps visibly downstream
+            # (confluence hydraulics - a square tee drives the exit jet across the river; natural
+            # tributaries and drainage returns join pointing downstream) while the INLET stays
+            # near-square with only a slight upstream tilt, never smoothly flow-aligned (an offtake
+            # aligned with the current drinks the river's bedload and silts the ring - classical
+            # headworks kept intakes near-square under a sluice). Shift = arm length * tan(tilt),
+            # so each end sits exactly its tilt off square regardless of arm length.
+            cum = [0.0]
+            for i2 in range(len(river) - 1):
+                cum.append(cum[-1] + math.hypot(river[i2 + 1][0] - river[i2][0], river[i2 + 1][1] - river[i2][1]))
+
+            def r_arc(q: Any) -> float:
+                k2 = min(range(len(river) - 1), key=lambda i3: seg_dist(q[0], q[1], river[i3], river[i3 + 1]))
+                fx, fy = seg_closest(q[0], q[1], river[k2], river[k2 + 1])
+                return cum[k2] + math.hypot(fx - river[k2][0], fy - river[k2][1])
+
+            def r_at(sa: float) -> Pt:
+                sa = max(0.0, min(cum[-1], sa))
+                k3 = next(i4 for i4 in range(len(river) - 1) if cum[i4 + 1] >= sa)
+                t = (sa - cum[k3]) / ((cum[k3 + 1] - cum[k3]) or 1.0)
+                return (river[k3][0] + (river[k3 + 1][0] - river[k3][0]) * t, river[k3][1] + (river[k3 + 1][1] - river[k3][1]) * t)
+
+            arc_a, arc_b = r_arc(keep[0]), r_arc(keep[-1])
+            arm_a = math.hypot(keep[0][0] - rfoot(keep[0])[0], keep[0][1] - rfoot(keep[0])[1])
+            arm_b = math.hypot(keep[-1][0] - rfoot(keep[-1])[0], keep[-1][1] - rfoot(keep[-1])[1])
+            t_in, t_out = math.tan(math.radians(river_inlet_tilt)), math.tan(math.radians(river_outlet_tilt))
+            if arc_a <= arc_b:  # keep[0]'s end is the upstream INLET (river pts run upstream-first)
+                end_a, end_b = r_at(arc_a - arm_a * t_in), r_at(arc_b + arm_b * t_out)
+            else:
+                end_a, end_b = r_at(arc_a + arm_a * t_out), r_at(arc_b - arm_b * t_in)
+            mo = [end_a] + keep + [end_b]  # both open ends join the river centerline, tilted with the current
         else:
             mo.append(mo[0])
         dd = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in mo)

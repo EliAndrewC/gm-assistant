@@ -8439,6 +8439,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                         not loose,
                         f"open moat end(s) not joining the river: {loose} - the moat taps the river upstream and returns downstream (the current flushes it); extend the ends onto the river",
                     )
+                    # JUNCTION ANGLES FOLLOW THE CURRENT (GM 2026-07-24 hydrology review; the old
+                    # square tees were an rfoot-projection artifact, not a decision - settlements.md
+                    # river-cities "junction angles follow the current"): the OUTLET (downstream
+                    # junction) sweeps visibly downstream - junction angle is a primary confluence
+                    # flow control, a square tee drives the exit jet across the river, and natural
+                    # tributaries / drainage returns join pointing downstream - while the INLET
+                    # stays square or tilts upstream, never smoothly flow-aligned (an offtake
+                    # aligned with the current drinks the river's bedload and silts the ring;
+                    # classical headworks kept intakes near-square under sluice control). Measured
+                    # as each junction's arclength displacement off its adjacent kept vertex's
+                    # square foot. CONVENTION: river pts run upstream-first (s.moat documents it).
+                    if len(moat) >= 3:
+                        rcum = [0.0]
+                        for ri2 in range(len(rpts) - 1):
+                            rcum.append(rcum[-1] + math.hypot(rpts[ri2 + 1][0] - rpts[ri2][0], rpts[ri2 + 1][1] - rpts[ri2][1]))
+
+                        def j_arc(q: Any) -> float:
+                            kj = min(range(len(rpts) - 1), key=lambda i7: seg_dist(q[0], q[1], rpts[i7], rpts[i7 + 1]))
+                            fxj, fyj = seg_closest(q[0], q[1], rpts[kj], rpts[kj + 1])
+                            return rcum[kj] + math.hypot(fxj - rpts[kj][0], fyj - rpts[kj][1])
+
+                        disp_a = j_arc(moat[0]) - j_arc(moat[1])
+                        disp_b = j_arc(moat[-1]) - j_arc(moat[-2])
+                        inlet_disp, outlet_disp = (disp_a, disp_b) if j_arc(moat[0]) <= j_arc(moat[-1]) else (disp_b, disp_a)
+                        check(
+                            "city_moat_junction_angles",
+                            outlet_disp >= 12 and inlet_disp <= 4,
+                            f"moat-river junction angles fight the current (inlet downstream-shift {inlet_disp:.0f}px, outlet {outlet_disp:.0f}px): "
+                            f"the outlet must SWEEP DOWNSTREAM (>= 12px off the square foot - a square tee drives the exit jet across the river) "
+                            f"and the inlet must stay square or tilt upstream (<= 4px - a flow-aligned intake drinks the river's bedload); "
+                            f"tune river_inlet_tilt/river_outlet_tilt on s.moat()",
+                        )
                 else:
                     check("city_moat_surrounds_wall", len(w) >= 3 and all(point_in_poly(wx, wy, moat) for wx, wy in w), "the moat must encircle the wall (every wall point inside the moat ring)")
                 moat_is_fed = any(
