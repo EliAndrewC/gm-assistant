@@ -578,6 +578,25 @@ def test_moat_river_junction_feet_tilt_with_the_current():
     assert out_shift > in_shift  # the outlet sweeps harder - the researched asymmetry
 
 
+def test_moat_river_junction_tilts_follow_a_reversed_river():
+    # the OTHER branch of the tilt bookkeeping (keep[0]'s end downstream): same asymmetry when the
+    # river runs bottom -> top (upstream-first pts reversed). Deterministic on purpose - this branch
+    # was previously covered only by whichever orientation a pool map happened to roll, so an rng
+    # shift elsewhere dropped it out of coverage (2026-07-24).
+    import math as m
+
+    s = _crop_settlement()
+    s.meta(name="RT2", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 300 * m.cos(2 * m.pi * i / 16)), round(700 + 300 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
+    river = [(1360, 1300), (1360, 100)]  # flows bottom -> top (upstream-first)
+    mo = s.moat(pts, gap=24, river=river)
+    (outlet, adj_out), (inlet, adj_in) = sorted([(mo[0], mo[1]), (mo[-1], mo[-2])], key=lambda e: e[0][1])
+    in_shift = inlet[1] - adj_in[1]  # upstream is +y now: the inlet foot shifts DOWN off square
+    out_shift = adj_out[1] - outlet[1]  # the outlet foot sweeps UP, downstream with the current
+    assert in_shift > 0  # inlet tilts upstream, never smoothly flow-aligned
+    assert out_shift > in_shift  # the outlet sweeps harder - the researched asymmetry
+
+
 def test_clip_to_moat_whole_path_inside_is_left_alone():
     s = _crop_settlement()
     s.M["moat"] = [(300, 100), (300, 900)]
