@@ -36,12 +36,37 @@ def test_place_hugs_each_wall() -> None:
         ),
     )
     pos = {p.spec.name: (p.x_ft, p.y_ft) for p in c.place(prog).placed}
-    assert pos["N"][1] == 0.0
-    assert pos["Souter"][1] == env.h_ft - 10
-    assert pos["W"][0] == 0.0
-    assert pos["E"][0] == env.w_ft - 10
-    assert pos["divout"][1] == env.divider_ft
-    assert pos["divin"][1] == env.divider_ft - 10
+    wall, div = c._wall_clearance_ft("N"), c._wall_clearance_ft("divider")
+    assert pos["N"][1] == wall
+    assert pos["Souter"][1] == env.h_ft - 10 - wall
+    assert pos["W"][0] == wall
+    assert pos["E"][0] == env.w_ft - 10 - wall
+    assert pos["divout"][1] == env.divider_ft + div
+    assert pos["divin"][1] == env.divider_ft - 10 - div
+
+
+def test_placed_buildings_clear_the_wall_ink_on_every_wall() -> None:
+    # A wall is drawn centered on the boundary, so half its thickness lies inside; a building
+    # placed at the raw boundary is drawn INSIDE the masonry (pack_audit structures_on_walls).
+    env = _env()
+    prog = c.CompoundProgram(
+        "t",
+        env,
+        (),
+        (
+            _b("N", 20, 10, "inner", "N"),
+            _b("S", 20, 10, "outer", "S"),
+            _b("W", 10, 20, "inner", "W"),
+            _b("E", 10, 20, "inner", "E"),
+            _b("divout", 30, 10, "outer", "divider"),
+            _b("divin", 30, 10, "inner", "divider"),
+        ),
+    )
+    wall, div = c._wall_clearance_ft("N"), c._wall_clearance_ft("divider")
+    p = {x.spec.name: x for x in c.place(prog).placed}
+    assert p["N"].y_ft >= wall and p["S"].y2 <= env.h_ft - wall
+    assert p["W"].x_ft >= wall and p["E"].x2 <= env.w_ft - wall
+    assert p["divin"].y2 <= env.divider_ft - div and p["divout"].y_ft >= env.divider_ft + div
 
 
 def test_place_fire_gap_between_same_wall_buildings() -> None:
@@ -79,8 +104,8 @@ def test_place_ns_row_owns_the_corner_and_ew_column_flows_below() -> None:
     # The N row (higher tier) takes the NW corner; the W column flows below it, not overlapping.
     prog = c.CompoundProgram("t", _env(w=200.0), (), (_b("wwall", 40, 20, "inner", "W"), _b("nwall", 30, 10, "inner", "N")))
     p = {x.spec.name: x for x in c.place(prog).placed}
-    assert p["nwall"].x_ft == 3.0 and p["nwall"].y_ft == 0.0  # N owns the corner
-    assert p["wwall"].x_ft == 0.0 and p["wwall"].y_ft >= p["nwall"].y2  # W flows below
+    assert p["nwall"].x_ft == 3.0 and p["nwall"].y_ft == c._wall_clearance_ft("N")  # N owns the corner
+    assert p["wwall"].x_ft == c._wall_clearance_ft("W") and p["wwall"].y_ft >= p["nwall"].y2  # W flows below
     assert not _rects_overlap(p["nwall"], p["wwall"])
 
 
@@ -94,7 +119,7 @@ def test_divider_hall_centers_between_the_ew_columns() -> None:
         (_b("hall", 120, 12, "outer", "divider", order=10), _b("wkura", 30, 20, "outer", "W", order=6), _b("ekura", 30, 20, "outer", "E", order=6)),
     )
     p = {x.spec.name: x for x in c.place(prog).placed}
-    assert p["wkura"].x_ft == 0.0 and p["ekura"].x2 == 200.0
+    assert p["wkura"].x_ft == c._wall_clearance_ft("W") and p["ekura"].x2 == 200.0 - c._wall_clearance_ft("E")
     assert p["hall"].x_ft >= p["wkura"].x2  # hall flows past the W column, not into the corner
 
 

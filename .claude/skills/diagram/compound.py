@@ -26,6 +26,19 @@ from dataclasses import dataclass, field
 FTPX: float = 3.0  # 3 px = 1 ft (emit-time only)
 FIRE_GAP_FT: float = 7.0  # default gap between hugging buildings (a real fire-gap)
 WALL_MARGIN_FT: float = 3.0  # a building's inset from the very corner / wall stroke
+# A wall is a built object with real thickness, drawn to scale and CENTERED on the boundary it
+# marks - so half of it stands inside the interior, and ground the wall occupies is not ground a
+# building can stand on. A hugging building therefore abuts the wall's INNER FACE (inset by half
+# the wall's thickness), never the raw boundary. Placing at the boundary drew every wall-ranging
+# building 1.5 ft inside the masonry, and since the wall is painted last it ate their outlines
+# (GM caught the hand-authored version of this on Ochiba, 2026-07-24; the check that now guards
+# it is pack_audit.structures_on_walls, and buildings.md "Walls and gates" carries the rule).
+WALL_INK_FT: float = 3.0  # compound wall: 9 px at 3 px = 1 ft
+DIVIDER_INK_FT: float = 2.0  # internal court divider: 6 px
+OUTLINE_CLEAR_FT: float = 0.5  # a hair beyond the ink, so the wall does not swallow the BUILDING'S
+# own outline stroke (a rect drawn exactly flush loses its edge under the wall and reads as merging
+# into it). 0.5 ft matches the gap the hand-authored Ochiba leaves between its servants' quarters
+# and the north wall - the house style this rule was reverse-engineered from.
 
 # palette keys -> (fill, stroke) reused from the Mode A vocabulary (SKILL.md)
 KINDS: dict[str, tuple[str, str]] = {
@@ -158,19 +171,29 @@ def _rank_depth(env: Envelope, already: list[Placed], spec: BuildingSpec) -> flo
     return max(depths) if depths else 0.0
 
 
+def _wall_clearance_ft(wall: str) -> float:
+    """Ground a hugging building must leave for the wall's own INK: half the wall's thickness,
+    because the wall is drawn centered on the boundary, plus a hair for its own outline (see
+    WALL_INK_FT / OUTLINE_CLEAR_FT). 2 ft off a compound wall, 1.5 ft off a court divider."""
+    return (DIVIDER_INK_FT if wall == "divider" else WALL_INK_FT) / 2 + OUTLINE_CLEAR_FT
+
+
 def _cross_coord(env: Envelope, spec: BuildingSpec, already: list[Placed]) -> float:
-    """Fixed cross-axis top-left coord (y for N/S/divider, x for E/W). Rank 2 is offset inward
-    past the rank-1 row already on that wall."""
+    """Fixed cross-axis top-left coord (y for N/S/divider, x for E/W). Rank 1 abuts the wall's
+    inner face; rank 2 is offset inward past the rank-1 row already on that wall."""
+    clear = _wall_clearance_ft(spec.wall)
     if spec.wall == "divider":  # backs the internal divider; no second rank
-        return env.divider_ft if spec.court == "outer" else env.divider_ft - spec.h_ft
-    off = (_rank_depth(env, already, spec) + FIRE_GAP_FT) if spec.rank > 1 else 0.0
+        return env.divider_ft + clear if spec.court == "outer" else env.divider_ft - spec.h_ft - clear
+    # inward depth of this building's own face: the wall ink for rank 1, the rank-1 row + a
+    # fire-gap for rank 2 (which already clears the ink, since that row sits beyond it)
+    depth = (_rank_depth(env, already, spec) + FIRE_GAP_FT) if spec.rank > 1 else clear
     if spec.wall == "N":
-        return off
+        return depth
     if spec.wall == "S":
-        return env.h_ft - spec.h_ft - off
+        return env.h_ft - spec.h_ft - depth
     if spec.wall == "W":
-        return off
-    return env.w_ft - spec.w_ft - off  # "E"
+        return depth
+    return env.w_ft - spec.w_ft - depth  # "E"
 
 
 def _rect_overlap(ax: float, ay: float, aw: float, ah: float, bx: float, by: float, bw: float, bh: float) -> bool:
@@ -330,14 +353,18 @@ def county_magistracy_program() -> CompoundProgram:
     """
     env = Envelope(w_ft=270.0, h_ft=200.0, divider_ft=90.0, gate_w_ft=13.0)
     spine = (
-        CourtZone("garden", 50.0, 36.0, 165.0, 24.0),  # inner court, between residence and karo
+        # inner court, between residence and karo. Its north edge clears the N-wall row's new
+        # inward face: the 36 ft residence now starts 2 ft in (clear of the wall ink), ending at
+        # 38, so a garden starting at 36 would overlap it and shove it off its wall entirely.
+        CourtZone("garden", 50.0, 38.0, 165.0, 22.0),
         CourtZone("oshirasu", 68.0, 126.0, 132.0, 39.0),  # outer court, before the office-hall dais
         CourtZone("forecourt", 118.0, 166.0, 36.0, 31.0),  # just inside the main gate
-        # Practice ground beside where the watch lodges (the E-wall barracks lands at x 237,
+        # Practice ground beside where the watch lodges (the E-wall barracks lands at x 235,
         # y 128 under the current masses): 33 x 42 ft = 1,386 sqft, inside the 1,200-2,000
         # sqft full-platoon band at ~90-135 sqft per drilling samurai (buildings.md
         # "Practice ground" + the dojo-is-a-city-institution grounding). Placed east of the
-        # oshirasu (ends x 200) and west of the E column (starts x 237) so the wall rows
+        # oshirasu (ends x 200) and west of the E column, whose barracks now abuts the swept
+        # patch at x 235 - which is what "beside the watch's lodging" means - so the wall rows
         # still flow past it without overflow.
         CourtZone("practice ground", 202.0, 126.0, 33.0, 42.0),
     )

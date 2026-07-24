@@ -18,6 +18,9 @@ Read-only. Parses a hand-authored compound SVG and reports the numbers that make
   - ALIGNED BUILDING GAPS: pairs of buildings stacked on a shared edge with empty
     ground between them. A ~6 ft fire-gap around a plaster KURA is correct; a
     12-16 ft gap between ordinary wooden service buildings is loose slack.
+  - STRUCTURES ON WALLS: a footprint drawn across the INK of a compound wall or a
+    court divider. A wall is a built object with real thickness, so a structure
+    either abuts it or stands clear - it can never occupy the same ground.
 
 "Empty %" and "largest empty CONNECTED region" are deliberately NOT the headline
 numbers: the open ground is one connected blob (courtyard network), so a
@@ -84,6 +87,18 @@ LABEL_OVERLAP_MIN_PX: float = 3.0  # two labels overlapping by more than this co
 DOOR_MAX_AREA_PX: float = 250.0  # a door glyph is small (a kura door); bigger dark rects are hearths/blocks
 DOOR_FLUSH_TOL_PX: float = 1.5  # a door within this of a building edge reads as ON the wall
 DOOR_NEAR_PX: float = 12.0  # a door candidate this close to an edge is TRYING to be in the wall (vs a deep interior marker)
+
+# --- structures vs wall ink (a structure may ABUT a wall, never occupy it) ---
+# Every roofed/built footprint colour, with NO area floor: the motivating defect was a 26x8 px
+# ENTRY PORCH laid across Ochiba's court divider (GM caught it, 2026-07-24), and the
+# MIN_BLDG_AREA_PX floor that keeps furniture out of the coverage math would have hidden it.
+# Porches, sheds and privies are small but they are still built things standing on the ground.
+STRUCTURE_FILLS: frozenset[str] = BUILDING_FILLS | BUILDING_PATTERNS
+WALL_KIND: dict[str, str] = {WALL_STROKE: "compound wall", DIVIDER_STROKE: "court divider"}
+WALL_OVERLAP_MIN_PX: float = 0.5  # sub-pixel contact is a flush abutment + integer-emit rounding,
+# not a structure standing in the masonry. The pool's tightest LEGITIMATE clearance is 0.5 px
+# (Hayakawa's south-wall stables/gatehouse row) and the smallest real defect found was 3 px, so
+# this threshold has ~1 px of margin on the passing side and 6x on the failing side.
 
 Grid = list[list[bool]]
 
@@ -168,6 +183,8 @@ class ParsedPlan:
     wells: tuple[Rect, ...] = ()  # well-curb rects, for the 'well' group-label proximity check
     dark_rects: tuple[Rect, ...] = ()  # dark-filled rects, for the black-on-black legibility check
     door_rects: tuple[Rect, ...] = ()  # small dark rects (door glyphs), for the door-on-a-wall check
+    wall_bands: tuple[Rect, ...] = ()  # the INKED band of each wall/divider stroke (`fill` = its stroke colour)
+    structures: tuple[Rect, ...] = ()  # every built footprint, NO area floor (porches/sheds count)
 
     @property
     def bounds(self) -> tuple[float, float, float, float]:
@@ -244,6 +261,51 @@ def _parse_labels(text: str) -> list[Label]:
     return out
 
 
+_ELEM_RE = re.compile(r"<(/?)(g|line)\b([^>]*?)/?>")
+
+
+def _wall_bands(text: str) -> list[Rect]:
+    """The INKED band of every wall / court-divider stroke, as an axis-aligned rect.
+
+    Handles both authoring forms present in the pool - a `<g stroke=... stroke-width=...>`
+    wrapping bare `<line>`s (the hand-authored plans) and stand-alone `<line stroke=...
+    stroke-width=.../>` (compound.py's emitter) - by tracking `<g>` attribute inheritance, so a
+    plan drawn either way is checked rather than silently skipped.
+
+    Parsed separately from `wall_segs` on purpose: those stay CENTERLINE segments because
+    `_gate_openings` measures the gaps BETWEEN them, and widening them by the stroke would shrink
+    every measured opening by a stroke width. `fill` carries the stroke colour so the report can
+    name which barrier was hit. Mode A walls are axis-aligned, so a run is classified by its
+    longer axis; a `stroke-linecap="square"` run also inks half a stroke past each endpoint.
+    """
+    stack: list[dict[str, str]] = []
+    out: list[Rect] = []
+    for m in _ELEM_RE.finditer(text):
+        closing, name, attrs = m.group(1), m.group(2), m.group(3)
+        if name == "g":
+            if not closing:
+                stack.append(dict(_ATTR_RE.findall(attrs)))
+            elif stack:
+                stack.pop()
+            continue
+        d: dict[str, str] = {}
+        for frame in stack:
+            d.update(frame)
+        d.update(dict(_ATTR_RE.findall(attrs)))
+        stroke = d.get("stroke", "")
+        if stroke not in WALL_KIND or "x1" not in d:
+            continue
+        sw = float(d.get("stroke-width", "1"))
+        hw = sw / 2
+        cap = hw if d.get("stroke-linecap") == "square" else 0.0
+        x1, y1, x2, y2 = (float(d[k]) for k in ("x1", "y1", "x2", "y2"))
+        if abs(y2 - y1) <= abs(x2 - x1):  # horizontal run
+            out.append(Rect(min(x1, x2) - cap, min(y1, y2) - hw, abs(x2 - x1) + 2 * cap, sw, stroke, m.start()))
+        else:
+            out.append(Rect(min(x1, x2) - hw, min(y1, y2) - cap, sw, abs(y2 - y1) + 2 * cap, stroke, m.start()))
+    return out
+
+
 def parse_svg(text: str) -> ParsedPlan:
     """Parse an SVG into interior / building / open-feature / point-glyph rects + labels + walls."""
     rects = [Rect(float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4)), m.group(5), m.start()) for m in _RECT_RE.finditer(text)]
@@ -290,6 +352,8 @@ def parse_svg(text: str) -> ParsedPlan:
         wells,
         dark_rects,
         door_rects,
+        tuple(_wall_bands(text)),
+        tuple(r for r in rects if r.fill in STRUCTURE_FILLS),
     )
 
 
@@ -712,6 +776,46 @@ def floating_doors(plan: ParsedPlan) -> list[FloatingDoor]:
     return out
 
 
+@dataclass(frozen=True)
+class StructureOnWall:
+    """A built footprint drawn across the ink of a wall, i.e. standing inside the masonry."""
+
+    x: float  # structure center, SVG px
+    y: float
+    w_ft: float  # the structure's size, to identify it in the source
+    h_ft: float
+    into_ft: float  # how far it reaches into the wall's ink
+    wall: str  # "compound wall" | "court divider"
+
+
+def structures_on_walls(plan: ParsedPlan, min_px: float = WALL_OVERLAP_MIN_PX) -> list[StructureOnWall]:
+    """Structures overlapping the ink of a compound wall or a court divider, worst first.
+
+    A wall is a built object with real thickness (drawn at true scale - 3 ft for the compound
+    wall, 2 ft for the divider - and centered on the boundary, so half of it lies inside), not a
+    boundary line with no substance. Two things go wrong when a structure is drawn across it:
+    the plan asserts a building and a wall occupy the same ground, and the render shows it -
+    the wall is painted last, so it eats the structure's own outline and the structure reads as
+    bleeding through the masonry. The correct relation is ABUT: a jin'ya's buildings back the
+    wall with their rear eaves nearly touching it, which the check permits (a flush edge scores
+    zero overlap). Where a structure genuinely IS part of the wall - a nagayamon gatehouse, a
+    postern - the established idiom is to draw the wall as segments BROKEN around it (already
+    used for Ochiba's kitchen postern and both south gates), which states the relationship
+    explicitly and leaves no ink to overlap.
+    """
+    out: list[StructureOnWall] = []
+    for s in plan.structures:
+        worst: tuple[float, str] | None = None
+        for band in plan.wall_bands:
+            ov = _overlap_px(s.x, s.y, s.x2, s.y2, band)
+            if ov > min_px and (worst is None or ov > worst[0]):
+                worst = (ov, WALL_KIND[band.fill])
+        if worst is not None:
+            out.append(StructureOnWall(s.x + s.w / 2, s.y + s.h / 2, s.w / FTPX, s.h / FTPX, worst[0] / FTPX, worst[1]))
+    out.sort(key=lambda r: r.into_ft, reverse=True)
+    return out
+
+
 def _blocked(
     buildings: tuple[Rect, ...],
     i: int,
@@ -844,6 +948,18 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
         lines.append(f"    DOOR ADRIFT: a door at svg({dr.x:.0f},{dr.y:.0f}) floats {dr.gap_ft:.1f} ft inside the building - set it on the wall")
     for tw in tubs_on_wells(plan):
         lines.append(f"    TUB ON WELL: a fire-water tub at svg({tw.x:.0f},{tw.y:.0f}) overlaps a well - move it to a different eaves corner")
+    lines.append("STRUCTURE/WALL check (a structure abuts a wall, never stands in it):")
+    if not plan.wall_bands:
+        lines.append("    (no wall strokes in this plan)")
+    else:
+        onwall = structures_on_walls(plan)
+        if not onwall:
+            lines.append(f"    all {len(plan.structures)} structures clear the wall ink: OK")
+        lines += [
+            f"    ON WALL: a {sw.w_ft:.0f} x {sw.h_ft:.0f} ft structure at svg({sw.x:.0f},{sw.y:.0f}) reaches {sw.into_ft:.1f} ft into the {sw.wall} - "
+            "set it against the wall's inner face, or break the wall around it if it IS part of the wall"
+            for sw in onwall
+        ]
     return "\n".join(lines)
 
 
