@@ -697,6 +697,60 @@ def test_field_supply_visibly_sourced_passes_on_a_pond_rim():
     assert "field_supply_visibly_sourced[x]" not in f(M)
 
 
+# ---- watercourses join, they do not cross (GM 2026-07-24, Enokida's polder laterals) --------
+def _tips_M(lateral):
+    # a paddy ringed by a horizontal main (top) and drain (bottom), both w 5 -> band half-width
+    # 2.5, with one lateral spanning them; `lateral` is the lateral's polyline
+    return {
+        "meta": {"scale": "hamlet", "W": 400, "H": 400},
+        "fields": [_field("x", 0, 0, 300, 300)],
+        "field_ditches": [
+            {"poly": [[0, 100], [300, 100]], "role": "main", "field": "x", "w": 5, "w_tail": 5},
+            {"poly": [[0, 250], [300, 250]], "role": "drain", "field": "x", "w": 5, "w_tail": 5},
+            {"poly": lateral, "role": "lateral", "field": "x", "w": 3.2, "w_tail": 2.4},
+        ],
+    }
+
+
+def test_field_ditch_tips_land_on_the_trunk_fires_on_a_tip_past_the_canal():
+    # both tips 6px BEYOND the trunk centerline: inside near_any's 13px net (so field_ditches_terminate
+    # is happy) but 3.5px outside the trunk's drawn band, so a stub shows through
+    assert "field_ditch_tips_land_on_the_trunk" in f(_tips_M([[100, 256], [100, 94]]))
+
+
+def test_field_ditch_tips_land_on_the_trunk_passes_on_a_tip_in_the_band():
+    # tips 1px off the centerline - buried under the trunks' own strokes, a clean T at each end
+    assert "field_ditch_tips_land_on_the_trunk" not in f(_tips_M([[100, 249], [100, 101]]))
+
+
+def _cross_M(*strokes):
+    return {"meta": {"scale": "hamlet", "W": 400, "H": 400}, "drawn_channels": [dict(s) for s in strokes]}
+
+
+def test_water_channels_join_not_cross_fires_on_a_stub_through_the_trunk():
+    # the vertical stroke crosses the trunk and stops 6px past it; the trunk's own nearest end is
+    # 100px away, so NEITHER tip is buried in the other's band -> it reads as a 4-way intersection.
+    # The third stroke is far off in the corner (the bbox-reject path).
+    M = _cross_M(
+        {"pts": [[0, 100], [200, 100]], "w0": 5, "w1": 5},
+        {"pts": [[100, 150], [100, 94]], "w0": 3, "w1": 3},
+        {"pts": [[380, 380], [390, 390]], "w0": 3, "w1": 3},
+    )
+    assert "water_channels_join_not_cross" in f(M)
+
+
+def test_water_channels_join_not_cross_passes_on_a_shallow_offtake():
+    # a delivery taking off at a shallow angle overruns the crossing along its OWN line by ~40px,
+    # yet its tip stays 1px off the trunk centerline - under the ink, a clean Y. The second pair
+    # (widths defaulted, bboxes overlapping but never crossing) exercises the no-crossing path.
+    M = _cross_M(
+        {"pts": [[0, 100], [200, 100]], "w0": 5, "w1": 5},
+        {"pts": [[150, 140], [50, 99]], "w0": 3, "w1": 3},
+        {"pts": [[10, 200], [190, 200]]},
+    )
+    assert "water_channels_join_not_cross" not in f(M)
+
+
 def test_field_supply_visibly_sourced_passes_on_a_river_bank():
     # a comb origin sitting directly on a RIVER bed is sourced (Nagahara's far-bank fan pattern)
     M = _supply_M([450, 110])
