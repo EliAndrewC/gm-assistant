@@ -24,7 +24,9 @@ SEED = 9
 TOP = (820, 300)  # the valley head; the ribbon meanders S down the valley floor
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Yatsuda", scale="hamlet", ftpx=1, toscale=True, households=16, down_deg=90, terrain="narrow_valley", field_archetype="ribbon_valley", nucleated=True, field_footbridges=True)
+s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Yatsuda", scale="hamlet", ftpx=1, toscale=True, households=16, down_deg=90, terrain="narrow_valley", field_archetype="ribbon_valley", nucleated=True, field_footbridges=True)
 s._nucleated = True
 
 # n_bands=48 steps the valley floor down in ~42 ft cross-bunds, and each band splits across the width into

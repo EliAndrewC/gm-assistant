@@ -39,7 +39,9 @@ SLUICE = (760, 320)                  # the field head, upper-left; the comb fans
 FTPX = 1
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Akagahara", scale="hamlet", ftpx=FTPX, toscale=True, households=15, down_deg=90,   # N-high -> downhill = due S
+s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Akagahara", scale="hamlet", ftpx=FTPX, toscale=True, households=15, down_deg=90,   # N-high -> downhill = due S
        nucleated=False, field_footbridges=True, pond_role="drainage")   # DISPERSED farmsteads; the pond DRAINS the field (a reservoir below)
 
 # Comb supply net marching due S from the head sluice. field_fall sizes the paddy to ~15 households (~20 acres)

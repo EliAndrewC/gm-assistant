@@ -48,6 +48,7 @@ PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=47)
 s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Nagahara", scale="city", walled=True, population=3000, ftpx=3, wall_defense="siege", imperial_road=False, river_port=True, clan="Crab", capital_dir="northeast"
 )  # Crab city -> temples to Bishamon + Ebisu; estates toward Otosan Uchi (NE)
 

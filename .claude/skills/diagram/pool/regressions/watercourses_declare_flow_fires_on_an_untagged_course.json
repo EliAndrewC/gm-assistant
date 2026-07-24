@@ -1,0 +1,30 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1,
+  "down_deg": 90,
+  "water_flow": 90
+ },
+ "streams": [
+  {
+   "poly": [
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     900
+    ]
+   ],
+   "w": 8
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "watercourses_declare_flow"
+  ],
+  "source": "test_checks.py::test_watercourses_declare_flow_fires_on_an_untagged_course"
+ }
+}

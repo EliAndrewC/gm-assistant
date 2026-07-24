@@ -7429,6 +7429,75 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"{len(outside_biz)} business(es) outside the gate - a walled town has a small gate market (guan-xiang) of a few shophouses unless meta(gate_market=False)",
                 )
 
+    # WATER FLOW DIRECTION (GM 2026-07-24; the "why" lives in settlements.md "WATER FLOW").
+    # Every map declares a DRAINAGE BEARING - where this landscape sends its water - and every
+    # watercourse declares which way it runs. Before this, direction lived only in gen docstrings,
+    # so no check could read it and "downstream" was unverifiable; the tannery work is what
+    # exposed the gap. Angles use the same convention as down_deg (0 = east, 90 = south).
+    _wf_courses: list[tuple[str, dict[str, Any]]] = []
+    for _wf_key in ("streams", "canals"):
+        _wf_courses += [(_wf_key, o) for o in (M.get(_wf_key) or [])]
+    if _wf_courses or M.get("moat"):
+        _wf = meta.get("water_flow")
+        check(
+            "water_flow_declared",
+            _wf is not None,
+            "no meta(water_flow=...) - every map with water declares the DRAINAGE BEARING (where the "
+            "landscape sends its water, 0 = east / 90 = south). It is settled BEFORE the map is drawn, "
+            "because it decides which end of the settlement is downstream and therefore where the "
+            "polluting trades, the burakumin quarter and the drains can go",
+        )
+        _wf_dd = meta.get("down_deg")
+        if _wf is not None and _wf_dd is not None:
+            _wf_off = abs((float(_wf) - float(_wf_dd) + 180) % 360 - 180)
+            # STRICTLY under 90: water cannot run uphill. It may run very NEARLY along the contour -
+            # that is what an artificial contour canal IS (aligned near-parallel to the contours,
+            # deviating only enough to keep a working gradient) - so a large divergence is realistic
+            # and only a NET UPHILL component is impossible. Widest in this pool: 60 deg.
+            check(
+                "water_flow_consistent_with_slope",
+                _wf_off < 90,
+                f"water_flow {_wf} deg runs {_wf_off:.0f} deg off the land's fall (down_deg {_wf_dd}) - at 90 deg or "
+                f"more the water would have a NET UPHILL component, which gravity does not allow. Divergences "
+                f"approaching 90 are fine and expected (a valley floor runs across the valley sides' fall; a contour "
+                f"canal is built almost parallel to the contours) - it is crossing 90 that is impossible",
+            )
+        # "level" IS a declaration - a navigable canal has no drainage bearing by nature, not by omission
+        _wf_undeclared = [f"{kk}[{i}]" for i, (kk, o) in enumerate(_wf_courses) if o.get("flow_deg") is None and o.get("flow") != "level"]
+        check(
+            "watercourses_declare_flow",
+            not _wf_undeclared,
+            f"watercourse(s) with no flow direction: {_wf_undeclared} - every stream/river/canal records which way "
+            f"its water runs (s.stream/river/canal flow=, polyline authored UPSTREAM-FIRST by convention, "
+            f"flow='reverse' for one stored the other way round)",
+        )
+        if _wf is not None:
+            _wf_against = []
+            for _wfk, _wfo in _wf_courses:
+                _wfd = _wfo.get("flow_deg")
+                if _wfd is None:
+                    continue
+                _wfv = abs((float(_wfd) - float(_wf) + 180) % 360 - 180)
+                if _wfv >= 90:
+                    _wf_against.append((_wfk, round(float(_wfd)), round(_wfv)))
+            check(
+                "watercourses_flow_downstream",
+                not _wf_against,
+                f"watercourse(s) running AGAINST the map's drainage bearing (course, flow_deg, divergence): {_wf_against} "
+                f"- with water_flow {_wf} deg, a course 90 deg or more off it is carrying water back up the landscape. "
+                f"Either its flow tag is reversed or the map's declared bearing is wrong. (A real cross-drainage "
+                f"tributary would need the bearing revisited, not the check relaxed. Widest in this pool: 69 deg.)",
+            )
+        if M.get("moat"):
+            _mf = M.get("moat_flow")
+            check(
+                "moat_declares_circulation",
+                bool(_mf and _mf.get("inlet") and _mf.get("outlet")),
+                "moat with no recorded circulation - a ring has no upstream end, so it records the point where its "
+                "water ENTERS and the point where it LEAVES (s.moat derives these for an open river-cut moat; a "
+                "closed moat's gen declares them with s.moat_flow). Without them a moated city has no downstream side",
+            )
+
     # TANNING YARDS (GM 2026-07-24; the "why" lives in settlements.md "TANNING YARDS"). Unlike the
     # other trade works these are NOT a city-only feature: a county town's burakumin hold the whole
     # county's carcass rights (danna-ba), so the town tans too - just at ~4 pits rather than ~12.

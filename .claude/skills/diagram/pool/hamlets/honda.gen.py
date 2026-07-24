@@ -25,7 +25,9 @@ W, H = 2000, 2600
 SEED = 8
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Honda", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+s.meta(
+    water_flow=85,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Honda", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
 s.pin_knob("land_use_overlay", "mulberry_fishpond")  # PINNED to showcase the land-use overlay (US4); the rest still rolls
 knobs = s.roll_village("Honda", households=18, down_deg=90, water_kind="pond", field_fall=1260)
 print("rolled:", knobs)

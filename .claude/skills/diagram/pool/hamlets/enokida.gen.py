@@ -24,7 +24,9 @@ SEED = 12
 ORIGIN = (360, 320)  # the high (NW) corner; the grid runs S (down) and E (across)
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Enokida", scale="hamlet", ftpx=1, toscale=True, households=16, down_deg=90, terrain="low", field_archetype="polder_grid", nucleated=True, field_footbridges=True)
+s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Enokida", scale="hamlet", ftpx=1, toscale=True, households=16, down_deg=90, terrain="low", field_archetype="polder_grid", nucleated=True, field_footbridges=True)
 s._nucleated = True
 
 # TRUE SCALE (1 px = 1 ft): rice parcels mean ~1 mu, range ~0.2-3 mu (build_polder docstring, TRUE-SCALE

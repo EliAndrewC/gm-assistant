@@ -48,6 +48,7 @@ s = Settlement(2000, 1300, seed=386)
 # downhill=[-0.42, 0.91] / down_deg=115: the land falls SSW, obliquely along the stream and
 # the Imperial Road (both descend toward the low SW corner); every channel + drain runs with it.
 s.meta(
+    water_flow=145,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Hoshizora",
     scale="town",
     walled=False,
@@ -79,7 +80,15 @@ s.road(ROAD, label="Imperial Road")
 
 # ---- WATER + FARMLAND: water-first combs (see docstring). The stream runs NE -> SW between
 # the hay upland (NW) and the farm wedge (SE), roughly parallel to the road, off the west edge.
-s.stream([(-15, 640), (230, 500), (470, 360), (700, 210), (880, -15)])
+s.stream(
+    [(-15, 640), (230, 500), (470, 360), (700, 210), (880, -15)],
+    frm={"kind": "offmap"},
+    to={"kind": "offmap"},
+    flow="reverse",
+)  # FLOW: NE (high) -> SW (low), which is the REVERSE of the stored point order - the polyline was
+# authored west-end-first. Tagged rather than reordered because the point list feeds stream_at_y and
+# the comb sluice geometry below. This is the map that motivated the flow tag: without it the poly
+# order reads as a stream running 151 deg AGAINST the slope, which is physically impossible.
 
 
 def topo_channel(pts, frm, to, draw_w=0.0):

@@ -2365,14 +2365,52 @@ class Settlement:
         self.shrine(x, y, w_ft, h_ft, kind="shrine")
         self.note_focal("secondary_shrine")
 
-    def stream(self, pts: Any, frm: Any = None, to: Any = None, width: float = 9) -> None:
+    def _flow_record(self, rec: dict[str, Any], pts: Any, flow: str) -> None:
+        """Tag one watercourse record with its flow direction and the derived downstream bearing.
+
+        `flow_deg` is the bearing of the NET upstream->downstream vector, in the map's angle
+        convention (the same one `down_deg` uses: 0 = east, 90 = south, y-down screen space). The
+        net vector, not the last segment, because a winding stream's local heading says nothing
+        about where its water is going - and every rule that cares ("is the tannery downstream of
+        the town?") is about the net journey."""
+        if flow not in ("forward", "reverse", "level"):
+            raise ValueError(f"watercourse flow must be 'forward', 'reverse' or 'level', got {flow!r}")
+        if flow == "level":
+            # A NAVIGABLE cut (the cargo canal) is not a drainage course and gets NO bearing. It is
+            # dug at the level of the water it joins - which is exactly what lets barges pole both
+            # ways along it - so its gradient is nil, the water gate's sluice holds it at river
+            # level, and a dead-end dock basin has no through-flow at all. Claiming a downstream
+            # direction for it would be a fiction, so it declares "level" instead and the
+            # drainage-bearing check skips it.
+            rec["flow"] = flow
+            rec["flow_deg"] = None
+            return
+        p = [(float(x), float(y)) for x, y in pts]
+        ux, uy = (p[0], p[-1]) if flow == "forward" else (p[-1], p[0])
+        vx, vy = ux[0] - uy[0], ux[1] - uy[1]
+        rec["flow"] = flow
+        # upstream -> downstream is (downstream - upstream); we built (upstream - downstream) above
+        rec["flow_deg"] = round(math.degrees(math.atan2(-vy, -vx)) % 360, 1)
+
+    def stream(self, pts: Any, frm: Any = None, to: Any = None, width: float = 9, flow: str = "forward") -> None:
         """A natural watercourse. If frm/to anchors are given (e.g. a forest brook
         feeding a pond), it is recorded and the gate checks it actually connects
         them - just like an irrigation channel. `width` is the water's drawn width
-        (a stream FEEDING A MOAT should be as wide as the moat, by conservation of flow)."""
+        (a stream FEEDING A MOAT should be as wide as the moat, by conservation of flow).
+
+        FLOW DIRECTION (GM 2026-07-24). Every watercourse declares which way the water runs,
+        because "downstream" is a real constraint on siting - tanneries, dyers' rinse water,
+        the burakumin quarter, the moat's flushing current - and it was previously carried only
+        in gen docstrings, where no check could read it. CANONICAL CONVENTION: `pts` is authored
+        UPSTREAM-FIRST, so poly[0] is the source end. This formalizes the convention s.moat's
+        `river=` already relied on. `flow="reverse"` marks a polyline stored the other way round
+        (reversing point order renders identically, so the tag is for the rare case where the
+        drawing code wants the other order). The derived bearing is recorded as `flow_deg`, so
+        checks read ONE number rather than re-deriving direction from anchor semantics."""
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in pts)
         # always recorded so the gate can check it (anchors optional - only some streams connect things)
         rec = {"poly": [[x, y] for x, y in pts], "frm": frm, "to": to, "w": width}
+        self._flow_record(rec, pts, flow)
         self.M["streams"].append(rec)
         bed_t = f'<path d="{{dd}}" fill="none" stroke="#9CB4C8" stroke-width="{width}" stroke-linejoin="round" stroke-linecap="round"/>'
         # lighter mid-current highlight (NOT a dashed lane line - this is water, not a road)
@@ -2383,7 +2421,7 @@ class Settlement:
         )
         self.corridors.append(([(x, y) for x, y in pts], max(30, width / 2 + 20)))  # no-build: keep houses off the stream
 
-    def river(self, pts: Any, width: float | None = None) -> float:
+    def river(self, pts: Any, width: float | None = None, flow: str = "forward") -> float:
         """A RIVER - the trunk waterway a river-bank city sits on (most provincial cities do;
         the moat taps it upstream and returns downstream, and the river itself serves as the
         water defense on its flank - Xiangyang/Pingyao/Okayama pattern, see settlements.md).
@@ -2391,8 +2429,9 @@ class Settlement:
         that compare watercourse weights know this one legitimately outweighs the dug moat."""
         if width is None:
             width = self.px(120)  # a serious provincial river ~120 ft across
-        self.stream(pts, frm={"kind": "offmap"}, to={"kind": "offmap"}, width=width)
+        self.stream(pts, frm={"kind": "offmap"}, to={"kind": "offmap"}, width=width, flow=flow)
         self.M["river"] = {"pts": [[x, y] for x, y in pts], "w": width}
+        self._flow_record(self.M["river"], pts, flow)  # the trunk river's own record carries it too
         return width
 
     def channel(self, start: Any, end: Any, frm: Any, to: Any, amp: float = 15, width: float = 2.5, pts: Any = None) -> None:
@@ -7147,14 +7186,25 @@ class Settlement:
             t_in, t_out = math.tan(math.radians(river_inlet_tilt)), math.tan(math.radians(river_outlet_tilt))
             if arc_a <= arc_b:  # keep[0]'s end is the upstream INLET (river pts run upstream-first)
                 end_a, end_b = r_at(arc_a - arm_a * t_in), r_at(arc_b + arm_b * t_out)
+                in_pt, out_pt = end_a, end_b
             else:
                 end_a, end_b = r_at(arc_a + arm_a * t_out), r_at(arc_b - arm_b * t_in)
+                in_pt, out_pt = end_b, end_a
             mo = [end_a] + keep + [end_b]  # both open ends join the river centerline, tilted with the current
+            # an OPEN moat knows its own flow: the two junction feet ARE the inlet and outlet, and
+            # which is which already fell out of the upstream-first river convention above.
+            inlet, outlet = [round(in_pt[0], 1), round(in_pt[1], 1)], [round(out_pt[0], 1), round(out_pt[1], 1)]
         else:
             mo.append(mo[0])
         dd = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in mo)
         self.M["moat"] = [[round(x, 1), round(y, 1)] for x, y in mo]
         self.M["moat_width"] = width
+        # WHICH WAY THE MOAT FLUSHES (GM 2026-07-24). A moat is a ring, so it has no upstream end -
+        # its water enters at one point and leaves at another, running BOTH ways around the circuit.
+        # Recording the two points is what lets a check ask "is this feature downstream?" of a moated
+        # city at all; a closed moat's gen passes them (it dug the feeder and the outfall itself).
+        if river is not None:
+            self.M["moat_flow"] = {"inlet": inlet, "outlet": outlet}
         ml: dict[str, Any] = {}  # records the moat's bed/sheen draw positions
         self.M["moat_layer"] = ml
         self._water(  # routed through the shared water groups so a feeder stream merges into it cleanly
@@ -7262,7 +7312,17 @@ class Settlement:
             self.corridors.append(([(p[0], p[1]) for p in poly], 33))
         return pts[::-1] if rev else pts
 
-    def canal(self, pts: Any, width: float | None = None) -> float:
+    def moat_flow(self, inlet: Pt, outlet: Pt) -> None:
+        """Declare a CLOSED moat's circulation: where its water enters the ring and where it leaves.
+
+        An open (river-cut) moat derives this itself - its two junction feet ARE the inlet and
+        outlet. A closed moat cannot: the ring is dug first and its feeder and outfall are drawn
+        afterward, so the gen names the two points. Water runs BOTH ways around the circuit from
+        inlet to outlet, which is why a moated city has no single "downstream" side and a rule
+        about downstream siting has to reason from these two points."""
+        self.M["moat_flow"] = {"inlet": [round(inlet[0], 1), round(inlet[1], 1)], "outlet": [round(outlet[0], 1), round(outlet[1], 1)]}
+
+    def canal(self, pts: Any, width: float | None = None, flow: str = "level") -> float:
         """A navigable CARGO CANAL - the one way water legitimately enters a walled city (through
         a water gate; the trunk river never does - the Kaifeng lesson). A middle tier on the
         water-width ladder: clearly heavier than an irrigation hairline, clearly lighter than the
@@ -7272,6 +7332,7 @@ class Settlement:
             width = self.px(36)  # a poling barge canal ~36 ft
         dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)
         rec = {"poly": [[round(x, 1), round(y, 1)] for x, y in pts], "w": width}
+        self._flow_record(rec, pts, flow)
         self.M.setdefault("canals", []).append(rec)
         self._water(
             f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width}" stroke-linejoin="round" stroke-linecap="round"/>',

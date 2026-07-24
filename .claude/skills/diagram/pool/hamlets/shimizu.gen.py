@@ -24,7 +24,9 @@ W, H = 2000, 2600
 SEED = 7
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Shimizu", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
+s.meta(
+    water_flow=85,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Shimizu", scale="hamlet", ftpx=1, toscale=True, households=18, field_footbridges=True)
 knobs = s.roll_village("Shimizu", households=18, down_deg=90, water_kind="pond", field_fall=1260)
 print("rolled:", knobs)
 print(s.finish(os.path.join(HERE, "shimizu")))
