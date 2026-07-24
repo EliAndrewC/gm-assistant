@@ -7104,10 +7104,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # city_temple_torii_fill_approach.)
 
         # a walled town almost always accretes a small extramural MARKET (a Chinese guan-xiang)
-        # just outside its gate: the gate is a chokepoint where the rural population trades
-        # without entering the walls, travelers buy services, and vendors dodge the intramural
-        # tax and market regulation. So a few businesses should sit OUTSIDE the wall near the
-        # gate - unless the town opts out with meta(gate_market=False) (a purely military fort,
+        # just outside its gate. The WHY is traffic, not taxes (GM 2026-07-24, correcting the
+        # rationale ported from the city tier): towns levy NO import tariffs (budgets.md puts
+        # the whole tariff apparatus at provincial-city and capital gates only), and the county
+        # magistrate governs the WHOLE county, so standing outside the gate crosses no tax or
+        # regulatory line. The honest drivers are through-road travelers buying services without
+        # detouring inside, the market-day chokepoint where the rural catchment trades, and late
+        # arrivals at a gate shut for the night - so the market scales with GATE TRAFFIC, not
+        # town population: typically ~4-8 permanent premises (floor >= 3), the small end of the
+        # researched 10-40-per-trafficked-CITY-gate band. WHY: settlements.md "gate market" +
+        # flophouse-research.md. Opt out with meta(gate_market=False) (a purely military fort,
         # or a depopulated / suppressed gate).
         if meta.get("gate_market", True):
             gate = M.get("gate")
@@ -8344,8 +8350,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # `M["gates"]` holds only the MAIN (road/river-route) gates, so iterating it IS "every
             # main-road gate": a purely military SALLY gate opens onto empty field with no traffic
             # and carries no market, so it is NOT recorded in `gates` (it would live in its own
-            # structure if/when the sally-gate knob is added). Each main gate needs >= 3 extramural
-            # shops within ~520px; scale may differ. Mirrors city_flophouse_outside_each_gate.
+            # structure if/when the sally-gate knob is added). Mirrors city_flophouse_outside_each_gate.
             # FLOOR RAISED 3 -> 6 (GM 2026-07-24): the researched guan-xiang ran 10-40 structures
             # per trafficked gate (Beijing's 大关厢 the high end); our belt is a SLICE like the
             # samurai estates and the farmland - the drawn shops string along the approach road and
