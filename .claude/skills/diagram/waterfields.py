@@ -107,6 +107,79 @@ def aze_w(ftpx: float) -> float:
 
 BEAN_GREEN = '#7C9A4E'  # azemame (bund soybeans) - the beaded-bund accent
 
+
+# HAND-PILED EARTHWORK IS NEVER RULED (GM 2026-07-24). A farmer building a rectangular basin out of
+# puddled mud INTENDS four straight sides and a right angle at each corner, and gets neither. Two
+# separate physical reasons, and both are worth drawing:
+#   - CORNERS ROUND. A right angle in soft earth cannot stand: the apex is the thinnest, least
+#     supported point of the ridge, it slumps under its own weight and under every rain, and it is
+#     the one spot on the bund that every person, ox, and carrying-pole cuts across rather than
+#     walking to the point. Re-plastering (azenuri) each spring restores the ridge, not the geometry,
+#     so the corner converges on a walked-and-slumped curve of a few feet' radius. This is the same
+#     argument `Settlement._rounded_pond` already makes for the dug fish ponds - it applies to every
+#     earthwork the farmers piled, not just the ones holding fish.
+#   - EDGES WANDER. A bund is paced and eyeballed between two corners, re-cut a little differently
+#     every year as parcels are split, sold, and re-plastered, so a "straight" 100 ft run bows by a
+#     foot or two. It is straight in intent and to the eye at a distance, not to the ruler.
+# The dead-straight, sharp-cornered cell is the machine-cut signature of 20th-century consolidation
+# (Japan's 1963 hojo seibi), the same anachronism `polder_parcels_vary` and `polder_edges_wander`
+# already guard at the fabric and block scale - this is that same rule at the level of the single
+# parcel outline. Teeth: `polder_parcels_are_organic`. See settlements.md 'Polder fifth pass'.
+def organic_parcel(
+    poly: Poly,
+    rng: random.Random,
+    fillet: float,
+    bow: float,
+    bow_cap: float,
+    arc: int = 5,
+    bows: int = 3,
+) -> Poly:
+    """Soften a ruled parcel quad into a hand-piled one: fillet every corner with a quadratic bezier
+    of jittered reach (`fillet` px, the walked-and-slumped corner radius) and bow each straight run
+    by a half-sine of amplitude `bow` x its length, capped at `bow_cap` px. Returns a SAMPLED polygon
+    (not a path), so every downstream consumer - the manifest record, the point-in-poly checks, the
+    dike-pond overlay - keeps working on an ordinary polygon; `arc`/`bows` set the sampling density.
+
+    `bow_cap` is the caller's guarantee that two neighbouring parcels cannot bow into each other: it
+    must leave a positive gap given the inset the caller applied, or the drawn bunds would touch."""
+    n = len(poly)
+    if n < 3:
+        return list(poly)
+
+    def toward(frm: Pt, to: Pt, dist: float) -> Pt:
+        vx, vy = to[0] - frm[0], to[1] - frm[1]
+        ln = math.hypot(vx, vy) or 1.0
+        dd = min(dist, ln * 0.42)  # never eat more than the edge can spare, so slivers stay valid
+        return (frm[0] + vx / ln * dd, frm[1] + vy / ln * dd)
+
+    a_in: Poly = []  # the point on the INCOMING edge where corner i's fillet starts
+    b_out: Poly = []  # ...and on the outgoing edge where it ends
+    for i in range(n):
+        # Reach is drawn INDEPENDENTLY for the two legs of each corner, not once per corner: a corner
+        # slumps toward whichever side is walked, loaded, or under-plastered, so the curve runs further
+        # down one bund than the other. A single symmetric reach per corner is what makes a filleted
+        # rectangle read as a drawn-on border-radius instead of as earth.
+        a_in.append(toward(poly[i], poly[(i - 1) % n], fillet * rng.uniform(0.45, 1.5)))
+        b_out.append(toward(poly[i], poly[(i + 1) % n], fillet * rng.uniform(0.45, 1.5)))
+    out: Poly = []
+    for i in range(n):
+        for k in range(arc + 1):  # the corner arc: a_in[i] -> control poly[i] -> b_out[i]
+            f = k / arc
+            w0, w1, w2 = (1 - f) ** 2, 2 * (1 - f) * f, f * f
+            out.append((w0 * a_in[i][0] + w1 * poly[i][0] + w2 * b_out[i][0], w0 * a_in[i][1] + w1 * poly[i][1] + w2 * b_out[i][1]))
+        p0, p1 = b_out[i], a_in[(i + 1) % n]  # the straight run to the next corner - it WANDERS, not bows
+        ex, ey = p1[0] - p0[0], p1[1] - p0[1]
+        ln = math.hypot(ex, ey) or 1.0
+        amp = min(bow * ln, bow_cap)
+        for k in range(1, bows + 1):
+            f = k / (bows + 1)
+            # each sample offsets independently, so the run reads as re-cut-by-eye rather than as one
+            # clean arc; the sin() taper still pins both ends on the fillet so the corners meet exactly
+            d = amp * rng.uniform(-1.0, 1.0) * math.sin(math.pi * f)
+            out.append((p0[0] + ex * f - ey / ln * d, p0[1] + ey * f + ex / ln * d))
+    return out
+
+
 # DRY-FIELD (hatake) crops on ground the irrigation cannot command - the upslope margin
 # above the supply canal. Each: fill + furrow-line color (dry crops are ridge-cultivated).
 DRY_CROPS = {
@@ -1320,8 +1393,10 @@ def build_polder(
     cell: float = 150,
     parcel_mix: tuple[float, float, float] = (0.52, 0.16, 0.12),
     gap: tuple[float, float] = (1.5, 4.0),
+    split_gap: float | None = None,
     edge_wander: float = 0.0,
     mosaic: float = 0.0,
+    organic: tuple[float, float] = (0.05, 0.02),
 ) -> dict[str, Any]:
     """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of paddies on flat reclaimed
     low ground, an orthogonal ditch-grid module inside a perimeter dike. Returns build_comb-compatible keys
@@ -1351,6 +1426,12 @@ def build_polder(
       ~110 ft module hits this: whole bay ~1.9 mu, halves ~0.9 mu, thirds ~0.6 mu, rare merges ~3.7 mu.
       `gap` default (1.5, 4.0): between-row gaps 3 px (~1 m walking bund, attested 20-50 cm + stroke) and
       8 px column corridors carrying the 3.2 px lateral (a bang 浜 field ditch + spoil banks, ~2.4 m).
+      A GAP IS ONLY AS WIDE AS WHAT RUNS IN IT (`split_gap`, GM 2026-07-24): `gap[1]` is the width of a
+      DITCH corridor, so it belongs only on the module column lines, where a lateral actually runs. The
+      lines INSIDE a bay - where a holding was split into side-by-side strips - carry no ditch, just a
+      walking bund, so they take `split_gap` (default `gap[0]`, the same 3 ft the row-edge bunds get).
+      Drawing them at the corridor width put a bare 8 ft strip between two strips of one holding, which
+      is both wider than any attested plain aze and a promise of water that is not there.
     - DIKE-POND (mulberry_dike_fishpond archetype): traditional ponds were 0.4-0.6 ha (6-9 mu) oblong
       rectangles, dikes 6-10 m wide (Ruddle & Zhong / FAO; CAVEAT: earliest well-attested sizes are
       Republican-to-1980s surveys of the traditional landscape, not Ming/Qing documents). A ~160 ft
@@ -1452,25 +1533,38 @@ def build_polder(
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
 
     g_s, g_t = gap  # (row-edge bund gap, column-edge ditch-corridor gap) - see TRUE-SCALE SIZING above
+    g_x = g_s if split_gap is None else split_gap  # intra-bay split line: a walking bund, no ditch
 
-    def inset(quad: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    def inset(quad: list[tuple[float, float]], gt_lo: float, gt_hi: float) -> list[tuple[float, float]]:
         # the gap = the bund / mulberry dike between parcels (and the ditch corridor on column edges).
         # Bbox-scaling about the centroid is exact for the axis-aligned case and near-exact for these
-        # gently jittered quads (all built in (s, t) space).
+        # gently jittered quads (all built in (s, t) space). The two CROSS-direction gaps are passed in
+        # per parcel, because a bay's outer edges sit on the module column lines (ditch corridors) while
+        # a side-by-side split inside it does not - see `split_gap` in TRUE-SCALE SIZING above.
         s_lo, s_hi = min(p[0] for p in quad), max(p[0] for p in quad)
         t_lo, t_hi = min(p[1] for p in quad), max(p[1] for p in quad)
-        cs, ct = (s_lo + s_hi) / 2, (t_lo + t_hi) / 2
+        cs = (s_lo + s_hi) / 2
         ks = max(0.0, s_hi - s_lo - 2 * g_s) / max(1e-9, s_hi - s_lo)
-        kt = max(0.0, t_hi - t_lo - 2 * g_t) / max(1e-9, t_hi - t_lo)
-        return [(cs + (p[0] - cs) * ks, ct + (p[1] - ct) * kt) for p in quad]
+        kt = max(0.0, t_hi - t_lo - gt_lo - gt_hi) / max(1e-9, t_hi - t_lo)
+        return [(cs + (p[0] - cs) * ks, t_lo + gt_lo + (p[1] - t_lo) * kt) for p in quad]
 
+    # The organic pass draws from its OWN rng so that adding it left every parcel CORNER byte-identical
+    # (the main stream R still drives the lattice jitter, splits, merges, and ring waver in the same
+    # order it always did) - only the outline between those corners softens.
+    RO = random.Random(seed ^ 0x0BA5E)
+    o_fillet, o_bow = organic
     plots: list[dict[str, Any]] = []
 
-    def emit(quad_st: list[tuple[float, float]], r: int) -> None:
+    def emit(quad_st: list[tuple[float, float]], r: int, gt_lo: float = -1.0, gt_hi: float = -1.0) -> None:
         low = r >= rows - 2  # the lowest rows of the polder (feature 010)
-        poly = [grid(s, t) for s, t in inset(quad_st)]
+        gt_lo, gt_hi = (g_t if gt_lo < 0 else gt_lo), (g_t if gt_hi < 0 else gt_hi)
+        quad = [grid(s, t) for s, t in inset(quad_st, gt_lo, gt_hi)]
+        # cap the edge bow so two neighbours can never bow into contact: each side of a shared bund may
+        # eat at most half of what the insets opened, less a 1 px hairline the drawn aze strokes keep
+        cap = max(0.0, min(g_s, gt_lo, gt_hi) - 0.5)
+        poly = organic_parcel(quad, RO, fillet=o_fillet * cell, bow=o_bow, bow_cap=cap)
         fill = FLOODED if low else R.choice(RICE_GREENS)
-        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in poly], "fill": fill, "low": low})
+        plots.append({"poly": [(round(x, 1), round(y, 1)) for x, y in poly], "quad": [(round(x, 1), round(y, 1)) for x, y in quad], "fill": fill, "low": low})
 
     p_split2, p_split3, p_merge = parcel_mix
     for c in range(cols):
@@ -1491,11 +1585,15 @@ def build_polder(
                 cuts = [R.uniform(0.38, 0.62)] if n_cuts == 1 else [R.uniform(0.26, 0.4), R.uniform(0.6, 0.74)]
                 fs = [0.0, *cuts, 1.0]
                 if R.random() < 0.5:  # cut ACROSS the fall - sub-parcels stack down the block
+                    # every cross-fall line (module row edge or intra-bay cut alike) is a plain walking
+                    # bund at g_s, so these need no per-parcel gap override
                     for f0, f1 in zip(fs, fs[1:], strict=False):
                         emit([lerp(tl, bl, f0), lerp(tr, br, f0), lerp(tr, br, f1), lerp(tl, bl, f1)], r)
                 else:  # cut ALONG the fall - side-by-side strips
-                    for f0, f1 in zip(fs, fs[1:], strict=False):
-                        emit([lerp(tl, tr, f0), lerp(tl, tr, f1), lerp(bl, br, f1), lerp(bl, br, f0)], r)
+                    # only the OUTER two edges sit on module column lines (where a lateral runs); the
+                    # cuts between the strips are bunds, so they take the narrow `g_x` gap
+                    for k, (f0, f1) in enumerate(zip(fs, fs[1:], strict=False)):
+                        emit([lerp(tl, tr, f0), lerp(tl, tr, f1), lerp(bl, br, f1), lerp(bl, br, f0)], r, g_t if k == 0 else g_x, g_t if f1 == 1.0 else g_x)
             r = r1
     # densify the envelope so the edge-wander CURVATURE is carried into the drawn field, the perimeter dike
     # that follows it, and the recorded outline - 4 bare corners would read as straight edges between them

@@ -9915,6 +9915,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"{unfronted}/{len(pl)} polder parcel(s) have no ditch frontage - a polder interior is a jingbang creek-and-ditch net where EVERY basin fronts a supply/drain ditch; a parcel out of reach of any ditch (or recorded without a centroid) has no water",
         )
 
+        # HAND-PILED EARTHWORK IS NEVER RULED (GM 2026-07-24, looking at Enokida: "the lines themselves
+        # appear perfectly straight and have sharp angles rather than looking like the kind of organically
+        # grown shapes that you get when humans create such bunds by hand"). A farmer piling a rectangular
+        # basin out of puddled mud INTENDS four straight sides and a right angle at each corner and gets
+        # neither: a right angle in soft earth is the thinnest, least-supported point of the ridge, so it
+        # slumps under its own weight and under every rain, and it is the one spot everyone cuts across
+        # rather than walking to the point - the corner converges on a walked-and-slumped curve. The runs
+        # between corners are paced and eyeballed, re-cut a little differently each time a holding is
+        # split or re-plastered, so they wander by a foot or two over a hundred. The ruled, sharp-cornered
+        # cell is the machine signature of 20th-century consolidation - the same anachronism
+        # polder_parcels_vary guards at the fabric scale and polder_edges_wander at the block scale; this
+        # is that rule at the scale of one parcel outline. Grounding: waterfields.organic_parcel.
+        # TEETH: the recorded per-parcel [.., vertex count, sharpest turn in degrees]. A ruled quad is 4
+        # vertices turning ~90 degrees at each; the filleted, wandering outline runs 36 vertices with a
+        # worst turn of ~52 across both pool polders, so 12 / 65 sits clear of both readings. A polder
+        # that records the pre-fix 4-element parcel format fails rather than passing by omission.
+        shaped = [p for p in pl if len(p) >= 6]
+        ruled = [p for p in shaped if p[4] < 12 or p[5] > 65]
+        check(
+            "polder_parcels_are_organic",
+            bool(pl) and len(shaped) == len(pl) and not ruled,
+            f"{len(pl) - len(shaped)} parcel(s) record no outline shape and {len(ruled)} are drawn RULED (want every parcel >=12 vertices and no turn >65 deg; n={len(pl)}) - a bund is hand-piled mud whose corners slump and get walked round and whose runs are paced by eye, so a parcel of dead-straight sides meeting at sharp angles reads as machine-cut land consolidation, not as earth",
+        )
+
     # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -
     # so its extent ALONG the fall is much greater than its extent ACROSS it. That aspect is the archetype's
     # teeth: a ribbon reads as a winding valley strip, not a broad fan/block.
