@@ -4099,8 +4099,13 @@ class Settlement:
         hall_cy = -sh_  # hall strip on top, shop + kura row below
         g.append(f'<rect x="{-hw_:.1f}" y="{hall_cy - hh_:.1f}" width="{hw_ * 2:.1f}" height="{hh_ * 2:.1f}" rx="2" fill="#D9C8A4" stroke="#5A4326" stroke-width="1.8"/>')
         g.append(f'<line x1="{-hw_ + 2:.1f}" y1="{hall_cy:.1f}" x2="{hw_ - 2:.1f}" y2="{hall_cy:.1f}" stroke="#5A4326" stroke-width="0.9" opacity="0.7"/>')  # the ridge
-        for vi in (-0.55, -0.15, 0.25):  # fermentation vats down the hall
-            g.append(f'<circle cx="{hw_ * 2 * vi:.1f}" cy="{hall_cy + hh_ * 0.35:.1f}" r="1.7" fill="none" stroke="#5A4326" stroke-width="0.8" opacity="0.8"/>')
+        for vi in (
+            -0.72,
+            -0.28,
+            0.2,
+            0.6,
+        ):  # the hall's fermentation tanks, drawn diagrammatically INSIDE the footprint (a vat is interior fixture, not a freestanding object - GM catch 2026-07-24: the old hw_*2*vi math pushed one past the hall's end wall)
+            g.append(f'<circle cx="{hw_ * vi:.1f}" cy="{hall_cy + hh_ * 0.3:.1f}" r="1.7" fill="none" stroke="#5A4326" stroke-width="0.8" opacity="0.8"/>')
         g.append(f'<rect x="{hw_ - 4.6:.1f}" y="{hall_cy - hh_ - 2.6:.1f}" width="3.4" height="3.4" fill="#5A4326"/>')  # the masonry kamado chimney
         g.append(f'<rect x="{-hw_:.1f}" y="{hh_ - sh_ * 0 - 0.5:.1f}" width="{sw_ * 2:.1f}" height="{sh_ * 2:.1f}" rx="2" fill="#D8C49A" stroke="#6B4F2A" stroke-width="1.6"/>')  # the shopfront
         aw_ = max(5.0 * self.bscale, 2.4)
@@ -4195,14 +4200,16 @@ class Settlement:
         a shophouse-scale bath building with a rear furnace + chimney, and the visible extra - the
         firewood stack yard behind. Records M['bathhouses'] (city_has_bathhouse)."""
         bw_, bh_ = self.px(48) / 2, self.px(32) / 2
-        wd_ = self.px(16)  # the woodpile band behind
+        wd_ = self.px(22)  # the FUEL YARD band behind - the furnace's firewood store, the sento's visible extra (GM 2026-07-24: the first 3-line woodpile read too subtle to register as a yard)
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-bw_:.1f}" y="{-bh_ - wd_ / 2 + wd_:.1f}" width="{bw_ * 2:.1f}" height="{bh_ * 2:.1f}" rx="2" fill="#D8C49A" stroke="#6B4F2A" stroke-width="1.6"/>')
         g.append(f'<rect x="{bw_ - 4.4:.1f}" y="{-bh_ - wd_ / 2 + wd_ - 2.4:.1f}" width="3.2" height="3.2" fill="#5A4326"/>')  # the furnace chimney
-        for li_ in range(3):  # the firewood stacks
-            g.append(
-                f'<line x1="{-bw_ + 2:.1f}" y1="{-bh_ - wd_ / 2 + 1.8 + li_ * 1.7:.1f}" x2="{-bw_ + 2 + self.px(20):.1f}" y2="{-bh_ - wd_ / 2 + 1.8 + li_ * 1.7:.1f}" stroke="#8A6B42" stroke-width="1.2"/>'
-            )
+        g.append(f'<line x1="{-bw_:.1f}" y1="{-bh_ - wd_ / 2:.1f}" x2="{bw_:.1f}" y2="{-bh_ - wd_ / 2:.1f}" stroke="#6B4F2A" stroke-width="0.9" opacity="0.7"/>')  # the fuel yard's back fence line
+        for sxo_ in (-bw_ + 2, 1.5):  # two firewood stacks fill the fuel yard
+            for li_ in range(4):
+                g.append(
+                    f'<line x1="{sxo_:.1f}" y1="{-bh_ - wd_ / 2 + 1.9 + li_ * 1.6:.1f}" x2="{sxo_ + self.px(18):.1f}" y2="{-bh_ - wd_ / 2 + 1.9 + li_ * 1.6:.1f}" stroke="#8A6B42" stroke-width="1.2"/>'
+                )
         g.append('</g>')
         self.add(''.join(g))
         self._trade_record("bathhouses", x, y, self.px(48), self.px(32) + wd_, rot, label)

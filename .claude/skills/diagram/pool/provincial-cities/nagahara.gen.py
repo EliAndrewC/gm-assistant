@@ -153,7 +153,7 @@ s.drum_tower(1500, 1362)
 # river_port=True): it keeps ALL of them, including the riverside lumber yard at the wharf.
 s.brewery(1568, 1075)  # NE quarter, clear of the x1605 street - the town's largest commercial building
 s.dye_yard(1855, 1428)  # on the in-wall cargo canal, west of the dock basin
-s.lumber_yard(2052, 1478)  # the wharf's zaimokuya, on the west bank south of the jetties
+s.lumber_yard(1994, 1456)  # the wharf's zaimokuya on the dry tongue between the moat outflow and the river (grid-scanned: ~20px clear of every waterline, still within the bank's reach) - lumber_yard_clear_of_water: stacks stand on DRY ground; the landing is the jetty's job
 s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street, west of Bishamon's graveyard (its old 1130,1180 seat sat under the Temple of Bishamon caption)
 s.pawnshop(1620, 1240)  # NE merchant quarter
 s.bathhouse(1836, 1230)  # the NE warren's sento, at its east edge (sited clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata)

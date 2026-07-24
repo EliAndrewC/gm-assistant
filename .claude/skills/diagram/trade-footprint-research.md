@@ -61,12 +61,20 @@ IMPLEMENTED (GM 2026-07-24) - all candidates below are live features; see settle
   own PRIVATE well. Both cities keep one; Tango's stands on the pond (brewers site on water).
 - **Dyer's drying yard** (`s.dye_yard`, `city_has_dye_works`): must sit ON water (~40px). BOTH
   cities - the GM's call: dyeing needs rinsing water, not bulk water transport, so a landlocked
-  city keeps its dyers (Tango's is on the pond; Nagahara's on the cargo canal).
+  city keeps its dyers (Tango's is on the pond; Nagahara's on the cargo canal). *Water scale
+  (GM question 2026-07-24):* a full river is NOT needed - 1-2 dyers' spent liquor is trivial
+  dilution in a working stream; fouled-irrigation pollution is a dyer-DISTRICT problem, i.e. a
+  capital-tier concern (a capital's dye street sits downstream of its intakes). Tango's dyer
+  rinses to the drainage side (channels to the moat), never the field-supply channels.
 - **Riverside lumber yard** (`s.lumber_yard`, `city_river_port_has_lumber_yard`, gated on
   `meta(river_port=True)`): Nagahara's stands at the wharf; landlocked Tango deliberately has
-  NONE - timber is the trade that genuinely needs water transport at scale.
+  NONE - timber is the trade that genuinely needs water transport at scale. The yard abuts the
+  bank but never overlaps the water (`lumber_yard_clear_of_water`, GM rule 2026-07-24, tested at
+  each watercourse's real half-width): stacks on dry ground, the landing is the jetty's job.
 - **Oil-press barn** (`s.oil_press`, `city_has_oil_press`): barn + ox-track ring, toward the edge.
 - **Pawnshop** (`s.pawnshop`, `city_has_pawnshop`): shopfront + 2 pledge kura in a walled court.
-- **Bathhouse** (`s.bathhouse`, `city_has_bathhouse`): bath building + chimney + firewood yard.
+- **Bathhouse** (`s.bathhouse`, `city_has_bathhouse`): bath building + chimney + a fenced fuel
+  yard of firewood stacks. ONE per ~3,000 is period-typical (Edo 1808: 523 sento for ~1.1M,
+  ~1 per 2,100 residents); a busy seat may keep two.
 - **Kiln** (`s.kiln`, `city_kiln_outside_walls`): strictly OUTSIDE the walls. The tannery stays a
   documented note on the extramural burakumin quarter, not a drawn feature.

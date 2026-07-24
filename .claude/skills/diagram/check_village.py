@@ -8615,6 +8615,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     bool(_tw_lys) and all(_tw_on_water(L_, 60) for L_ in _tw_lys),
                     f"{len(_tw_lys)} lumber yard(s) on the bank - a river-port city keeps a riverside zaimokuya (s.lumber_yard within ~60px of a stream/canal); timber moves by water at scale (a landlocked city has none and skips this check)",
                 )
+            # ... AND A LUMBER YARD NEVER OVERLAPS THE WATER (GM 2026-07-24, second pass): the
+            # yard ABUTS the bank - stock arrives by water - but stacked timber stands on DRY
+            # ground (logs in the current float away; the landing is the jetty's job). The
+            # generic no_structure_on_stream check cannot see this defect: it tests a fixed ~6px
+            # half-width tuned for village brooks, and Nagahara's 40px river swallowed a yard
+            # corner without tripping it (the pinned real fixture). Tested here against every
+            # watercourse's REAL half-width (streams/channels/canals + the moat via _tw_water),
+            # sampling the yard rect's corners, edge midpoints, and center (records are axis-
+            # aligned; rot stays 0 in s.lumber_yard).
+            _ly_wet = []
+            for L_ in M.get("lumber_yards", []):
+                _lw2, _lh2 = L_["w"] / 2, L_["h"] / 2
+                _lpts = [(L_["x"] + _ldx, L_["y"] + _ldy) for _ldx in (-_lw2, 0.0, _lw2) for _ldy in (-_lh2, 0.0, _lh2)]
+                if any(seg_dist(_qx, _qy, _pl[i], _pl[i + 1]) < _hw for _qx, _qy in _lpts for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
+                    _ly_wet.append((round(L_["x"]), round(L_["y"])))
+            check(
+                "lumber_yard_clear_of_water",
+                not _ly_wet,
+                f"lumber yard(s) overlapping open water at {_ly_wet} - the yard abuts the bank but its stacks stand on dry ground (logs in the current float away); pull the yard back to the waterline, tested at each watercourse's real half-width",
+            )
             # market-day lodging: a flophouse INSIDE the walls, and one OUTSIDE each gate (for
             # travelers arriving from either direction, who reach the gate after it has shut)
             flops = M.get("flophouses", [])
