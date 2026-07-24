@@ -7068,10 +7068,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # city_temple_torii_fill_approach.)
 
         # a walled town almost always accretes a small extramural MARKET (a Chinese guan-xiang)
-        # just outside its gate: the gate is a chokepoint where the rural population trades
-        # without entering the walls, travelers buy services, and vendors dodge the intramural
-        # tax and market regulation. So a few businesses should sit OUTSIDE the wall near the
-        # gate - unless the town opts out with meta(gate_market=False) (a purely military fort,
+        # just outside its gate. The WHY is traffic, not taxes (GM 2026-07-24, correcting the
+        # rationale ported from the city tier): towns levy NO import tariffs (budgets.md puts
+        # the whole tariff apparatus at provincial-city and capital gates only), and the county
+        # magistrate governs the WHOLE county, so standing outside the gate crosses no tax or
+        # regulatory line. The honest drivers are through-road travelers buying services without
+        # detouring inside, the market-day chokepoint where the rural catchment trades, and late
+        # arrivals at a gate shut for the night - so the market scales with GATE TRAFFIC, not
+        # town population: typically ~4-8 permanent premises (floor >= 3), the small end of the
+        # researched 10-40-per-trafficked-CITY-gate band. WHY: settlements.md "gate market" +
+        # flophouse-research.md. Opt out with meta(gate_market=False) (a purely military fort,
         # or a depopulated / suppressed gate).
         if meta.get("gate_market", True):
             gate = M.get("gate")
