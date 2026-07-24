@@ -98,9 +98,15 @@ def _typical_cell_acres(svgpath, ftpx):
     def _sl(poly):
         return abs(sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly)))) / 2
 
+    from waterfields import AZE
+
+    # comb plots carry the AZE bund stroke at aze_w's 2-decimal width (the patchwork field() path
+    # formats its width to 1 decimal, so \d+\.\d\d selects exactly the comb cells, as the old
+    # literal stroke-width="2" did) - keyed to the AZE constant so a recolor cannot silently
+    # de-match this parser again (the 2026-07-24 aze recolor broke the old hardcoded signature)
     areas = sorted(
         _sl([tuple(map(float, p.split(","))) for p in m.group(1).split()]) * ftpx * ftpx
-        for m in re.finditer(r'<polygon points="([^"]+)" fill="#[0-9A-Fa-f]{6}" stroke="#[0-9A-Fa-f]{6}" stroke-width="2"', svg)
+        for m in re.finditer(rf'<polygon points="([^"]+)" fill="#[0-9A-Fa-f]{{6}}" stroke="{AZE}" stroke-width="\d+\.\d\d"', svg)
     )
     if len(areas) < 8:
         return None
