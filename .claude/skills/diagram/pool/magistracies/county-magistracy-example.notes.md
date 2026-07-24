@@ -18,3 +18,11 @@ pool SVG (particulars, relics, annotations, the scale bar, and the crop are adde
 
 Not run through building-review / size-audit as a finished map (it is a placer example, not a
 finished instance); the packing/composition metrics are checked via pack_audit.
+
+2026-07-24 wall-ink clearance: regenerated after `compound.py` stopped seating wall-hugging
+buildings on the wall CENTERLINE. The wall is drawn at true thickness centered on the
+boundary, so half of it lies inside - every rank-1 building here had been standing 1.5 ft
+inside the masonry, with its own outline swallowed by the wall stroke. The placer now leaves
+the ink plus a hair (2 ft off a compound wall, 1.5 ft off the divider), and the inner-court
+garden zone moved 36 -> 38 ft so the shifted N-wall row still clears it. Checked by
+`pack_audit.py` `structures_on_walls`; see buildings.md "Walls and gates".
