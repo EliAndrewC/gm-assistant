@@ -26,6 +26,8 @@ lint format typecheck test: | guard
 
 lint:
 	python3 -m ruff check .
+	python3 ../../../scripts/check-duplicate-defs.py --selftest
+	python3 ../../../scripts/check-duplicate-defs.py ../../..
 
 format:
 	python3 -m ruff format --check .

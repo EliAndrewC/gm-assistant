@@ -1987,14 +1987,14 @@ def test_relax_gardens_south_nudges_an_east_shaded_garden_south():
 
 
 # ---- s.quarter: first-class zoned regions (feature 006) -----------------------------------
-def _city():
+def _zoned_city():  # was a second '_city' shadowing the line-1665 helper (seed 1 vs 3) - renamed 2026-07-24, now gated by scripts/check-duplicate-defs.py
     s = Settlement(2000, 2000, seed=1)
     s.meta(name="C", scale="city", walled=True, population=3000, ftpx=3)
     return s
 
 
 def test_quarter_records_zone_without_drawing_for_non_reserve():
-    s = _city()
+    s = _zoned_city()
     poly = [(100, 100), (400, 100), (400, 400), (100, 400)]
     before = len(s.out)
     s.quarter(poly, "residential")
@@ -2005,7 +2005,7 @@ def test_quarter_records_zone_without_drawing_for_non_reserve():
 
 
 def test_quarter_label_is_drawn_at_the_centroid():
-    s = _city()
+    s = _zoned_city()
     s.quarter([(0, 0), (200, 0), (200, 200), (0, 200)], "civic", label="yamen precinct")
     assert s.M["quarters"][-1]["name"] == "yamen precinct"
     assert any("yamen precinct" in frag for frag in s.toplabels)
@@ -2015,14 +2015,14 @@ def test_quarter_reserve_kinds_render_their_ground():
     poly = [(100, 100), (500, 100), (500, 500), (100, 500)]
     # drill_ground and garden paint a visible ground surface...
     for kind in ("drill_ground", "garden"):
-        s = _city()
+        s = _zoned_city()
         before = len(s.out)
         s.quarter(poly, "reserve", kind=kind, label=kind)
         assert s.M["quarters"][-1]["kind"] == kind
         assert len(s.out) > before  # a drawn reserve renders its ground feature
     # ...but an agricultural_district draws NOTHING (GM 2026-07-22 - its combs/farmhouses/label are
     # the rendering; the old faint dashed boundary was a stray dotted line), yet is still recorded
-    s = _city()
+    s = _zoned_city()
     before = len(s.out)
     s.quarter(poly, "reserve", kind="agricultural_district", label="ag")
     assert s.M["quarters"][-1]["kind"] == "agricultural_district"
@@ -2030,7 +2030,7 @@ def test_quarter_reserve_kinds_render_their_ground():
 
 
 def test_quarter_rejects_bad_zone_and_kind_misuse():
-    s = _city()
+    s = _zoned_city()
     poly = [(0, 0), (100, 0), (100, 100), (0, 100)]
     try:
         s.quarter(poly, "industrial")
