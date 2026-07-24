@@ -1,11 +1,25 @@
 #!/usr/bin/env python3
-"""Kuwabata (榎田) - a POLDER-grid village (feature 005 US4 field_archetype='polder_grid').
+"""Kuwabata (桑畑, "mulberry field") - the MULBERRY-DIKE FISH-POND hamlet (field_archetype='mulberry_dike_fishpond').
 
-A second field-GEOMETRY archetype: a rectilinear block on flat reclaimed LOW ground - a straight ditch-grid
-module whose bays subdivide into a varied parcel patchwork - inside a perimeter dike (China-first: the wei-tian 圩田 polders of the
-lower-Yangtze lake plains - the planned, surveyed opposite of the organic valley comb). Water enters the
-high corner, a perimeter feeder supplies the grid, and it drains to the low corner; the village lines the
-dry perimeter dike on the east side.
+Polder GEOMETRY (build_polder: a rectilinear block on flat reclaimed LOW ground inside a perimeter dike -
+China-first: the wei-tian 圩田 polders of the lower-Yangtze lake plains) carried to the dike-pond system's
+rare WHOLESALE-CONVERSION end state (桑基魚塘, the full mulberry_fishpond overlay at eligible="all"):
+(almost) every former paddy cell has been dug into a fish pond and the spoil piled into a mulberry-planted
+dike around it. Water enters the high corner, a perimeter feeder supplies the block, and it drains to the
+low corner; the village lines the dry perimeter dike on the east side. See research.md D2 of
+specs/010-land-use-overlay-grounding for why the end state is the exception and the scattered overlay is
+the norm.
+
+ECONOMY (GM-confirmed 2026-07-24): Kuwabata is a cash-crop settlement, not a subsistence one - the
+rice-farmer's analog of the tobacco/indigo switch. The ponds are stocked artificial fisheries (historically
+carp polyculture), and the household economy is: sell silk (mulberry leaves feed silkworms; silkworm waste
+feeds the fish; dredged pond mud fertilizes the mulberries - silk is the bigger earner), sell fish at
+market, buy grain in. Historically, gazetteers found the total absence of rice remarkable enough to record
+("no paddy within its bounds, it buys grain from outside"). Placement implication: full conversion only
+happens with reliable water transport to a substantial town/city that buys the silk and fish and sells the
+grain - wherever Kuwabata sits, a river or canal link to such a market is implied. Open flavor hook, NOT
+yet canon anywhere wider: L7R land tax is assessed in koku of rice, so Kuwabata's tax is presumably
+commuted to cash or silk - the headman's annual headache being the silver-for-rice conversion rate.
 """
 
 import os
