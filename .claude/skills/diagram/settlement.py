@@ -562,6 +562,14 @@ WALL_DEFENSE = {
 }
 
 
+KOSATSUBA_MARKER_MIN_PX = 11.0
+# Long-axis floor in px for the DRAWN notice-board glyph (see Settlement.kosatsuba). 11 px is the
+# size the true 12x5 ft frame already draws itself at 1 ft/px - the hamlet/town tiers, where the
+# board has always read fine - so the floor is calibrated to "as legible as it is on a town map",
+# not to a number picked for the city. It lands the city marker (11x4.6 px at 3 ft/px) just above
+# the city wellhead glyph (~8 px), which is the smallest thing on a city map that reliably reads.
+
+
 KIDO_TOWER_KEEPCLEAR = 62.0
 # px of rampart kept tower-free around a `tower_skip` spot - where a ward FENCE meets the city wall
 # (its kido ward-gate stands there; a mamian's footprint would collide the junction). Placement
@@ -4014,16 +4022,31 @@ class Settlement:
         the settlement edge where feet do not pass. True size ~12x5 ft (a 7x3 ft board under a
         small roof); the label carries the read. Records M['kosatsuba'] (an overlap-checked
         struct). WHY: settlements.md 'Notice board (kosatsuba)'. Place LAST, on a clear verge
-        beside the road, like the fire tower."""
+        beside the road, like the fire tower.
+
+        The DRAWN glyph is a LOCATION MARKER at the coarse tiers (GM call 2026-07-24, taking the
+        escape settlements.md documented): the true 12x5 ft frame draws 6x2.5 px at village grain
+        and 4x1.7 px at city grain - at city scale, rotated upright, that is a 1.7 px sliver that
+        reads as gate hardware, not a feature (Nagahara: two of its three boards were invisible
+        until the GM went looking, and the one that read did so only by its label). So the glyph
+        is floored at KOSATSUBA_MARKER_MIN_PX on its long axis with the 12:5 aspect preserved -
+        the wells' doctrine exactly (SKILL.md 'to scale'): the marker denotes the board's
+        TO-SCALE LOCATION with legible pixels that are not themselves claimed to be to scale. The
+        floor NEVER shrinks a board, so hamlets and towns (1 ft/px) still draw the true 12x5 px;
+        only village and city grain lift. The manifest keeps the TRUE w/h (so a size audit reads
+        real feet) and records the drawn box as vw/vh, which is what the overlap checks and the
+        placement reservation use - the pixels that can actually collide."""
         w, h = self.px(12), self.px(5)
-        hw, hh = w / 2, h / 2
+        k = max(1.0, KOSATSUBA_MARKER_MIN_PX / w)  # marker floor, aspect preserved
+        vw, vh = w * k, h * k
+        hw, hh = vw / 2, vh / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
-        g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1" fill="#7A5A30" stroke="#5A3F1E" stroke-width="0.8"/>')  # the little tiled roof, seen from above
+        g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{vw:.1f}" height="{vh:.1f}" rx="1" fill="#7A5A30" stroke="#5A3F1E" stroke-width="0.8"/>')  # the little tiled roof, seen from above
         g.append(f'<line x1="{-hw:.1f}" y1="0" x2="{hw:.1f}" y2="0" stroke="#EFE6CC" stroke-width="0.9"/>')  # the ridge
         g.append('</g>')
         z = self.add_top(''.join(g))
-        self.M["kosatsuba"].append({"x": round(x, 1), "y": round(y, 1), "w": w, "h": h, "rot": round(rot, 1), "z": z, "label": label})
-        self.placed.append((x, y, w, h))
+        self.M["kosatsuba"].append({"x": round(x, 1), "y": round(y, 1), "w": w, "h": h, "vw": round(vw, 1), "vh": round(vh, 1), "rot": round(rot, 1), "z": z, "label": label})
+        self.placed.append((x, y, vw, vh))
         bm = 6
         self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
         if label:
@@ -4052,7 +4075,10 @@ class Settlement:
             return None
         ftpx = float(self.M["meta"].get("ftpx") or 1)
         lim = 60.0 / ftpx  # kosatsuba_by_the_road: ~60 REAL feet from a route, in px
-        w, h = self.px(12), self.px(5)
+        # probe with the DRAWN marker box, not the true footprint (village grain floors the glyph
+        # to ~11x4.6 px - see kosatsuba): the spot has to hold the pixels that get drawn there
+        w = max(self.px(12), KOSATSUBA_MARKER_MIN_PX)
+        h = w * 5 / 12
         # (pts, tread width) per route; road/lane manifest fields carry no width, so assume
         # a generous tread for the bed-avoidance test below
         routes: list[tuple[list[Pt], float]] = []

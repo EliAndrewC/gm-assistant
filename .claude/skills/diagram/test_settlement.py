@@ -310,10 +310,28 @@ def test_kosatsuba_records_a_blocking_struct():
     z = s.kosatsuba(500, 500, rot=15)
     kb = s.M["kosatsuba"][0]
     assert (kb["x"], kb["y"], kb["w"], kb["h"], kb["rot"]) == (500, 500, 12, 5, 15) and z > 0
+    assert (kb["vw"], kb["vh"]) == (12, 5)  # at 1 ft/px the true frame already clears the marker floor
     assert not s._fits(500, 500, 20, 20)
     assert s.M["labels"][-1][1] > 500  # default label sits BELOW the board
     s.kosatsuba(800, 500, label_above=True)  # gate-adjacent boards label ABOVE (clear of the gate)
     assert s.M["labels"][-1][1] < 500
+
+
+def test_kosatsuba_draws_a_location_marker_at_the_coarse_tiers():
+    # GM 2026-07-24: at village (2 ft/px) and city (3 ft/px) grain the true 12x5 ft frame draws a
+    # 2.5 px / 1.7 px sliver that reads as fence hardware, so the GLYPH floors at the long-axis
+    # marker minimum with the 12:5 aspect preserved. The manifest keeps TRUE feet in w/h and the
+    # drawn box in vw/vh; the drawn box is what is reserved against later placement.
+    for ftpx in (2, 3):
+        s = Settlement(1000, 1000, seed=1)
+        s.meta(name="C", scale="city" if ftpx == 3 else "village", ftpx=ftpx)
+        s.kosatsuba(500, 500)
+        kb = s.M["kosatsuba"][0]
+        assert (kb["w"], kb["h"]) == (12 / ftpx, 5 / ftpx)  # true size, unchanged
+        assert kb["vw"] == settlement.KOSATSUBA_MARKER_MIN_PX  # floored on the long axis...
+        assert kb["vh"] == round(settlement.KOSATSUBA_MARKER_MIN_PX * 5 / 12, 1)  # ...aspect preserved
+        assert s.placed[-1] == pytest.approx((500, 500, settlement.KOSATSUBA_MARKER_MIN_PX, settlement.KOSATSUBA_MARKER_MIN_PX * 5 / 12))  # the DRAWN box is reserved
+        assert f'width="{kb["vw"]:.1f}"' in s.top[-1]  # and drawn
 
 
 def test_place_kosatsuba_sites_on_the_lane_verge_at_the_busiest_node():
