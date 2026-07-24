@@ -1,0 +1,124 @@
+{
+ "meta": {
+  "scale": "town",
+  "W": 1000,
+  "H": 1000
+ },
+ "streams": [
+  {
+   "poly": [
+    [
+     100,
+     100
+    ],
+    [
+     800,
+     100
+    ]
+   ],
+   "w": 9
+  }
+ ],
+ "fields": [
+  {
+   "name": "x",
+   "kind": "paddy",
+   "bbox": [
+    300,
+    300,
+    600,
+    600
+   ],
+   "outline": [
+    [
+     300,
+     300
+    ],
+    [
+     600,
+     300
+    ],
+    [
+     600,
+     600
+    ],
+    [
+     300,
+     600
+    ]
+   ]
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     450,
+     250
+    ],
+    [
+     450,
+     320
+    ],
+    [
+     460,
+     400
+    ]
+   ],
+   "role": "main",
+   "field": "x",
+   "w": 4
+  }
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     440,
+     104
+    ],
+    [
+     445,
+     180
+    ],
+    [
+     450,
+     250
+    ]
+   ],
+   "frm": {
+    "kind": "stream"
+   },
+   "to": {
+    "kind": "field",
+    "name": "x"
+   },
+   "w": 2.5,
+   "drawn": false
+  }
+ ],
+ "drawn_channels": [
+  {
+   "pts": [
+    [
+     450,
+     250
+    ],
+    [
+     450,
+     320
+    ],
+    [
+     460,
+     400
+    ]
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "field_supply_visibly_sourced[x]"
+  ],
+  "source": "test_checks.py::test_field_supply_visibly_sourced_ignores_the_combs_own_canal"
+ }
+}

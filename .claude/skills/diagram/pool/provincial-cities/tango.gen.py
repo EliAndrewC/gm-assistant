@@ -930,6 +930,12 @@ _nete, ENV_FSE1, _ce = comb_field(
     "fse1", (2030, 2005), 15, 87, 170, (110, 150), (70, 95), (0.4, 0.75), avoid=(MOAT,), dry_keepout=((2300, 1795, 135), (2060, 1855, 105))
 )  # hems off the E-edge + lower-SE estates
 _pe = plot_centroid(_nete, lambda cs: min(cs, key=lambda c: c[0]))  # a head plot, nearest the stream tap
+# the VISIBLE tap off the outfall stream + the intake gate at the seam - same idiom as the moat-fed
+# combs (GM 2026-07-24: without it the comb's head-race hung in open ground short of the stream;
+# field_supply_visibly_sourced now gates this). field_channel's _clip_to_stream snaps the stream
+# end onto the bed edge, so the mouth reads as a clean confluence.
+s.field_channel([(1995, 2020), (2030, 2005)], '#9CB4C8', 7, 7)
+s.sluice_gate(2030, 2005, rot=math.degrees(math.atan2(2005 - 2020, 2030 - 1995)) + 90)
 topo_channel([(1995, 2020), (2030, 2005), _pe], {"kind": "stream"}, {"kind": "field", "name": "fse1"})
 _dre = next(c["pts"] for c in _nete["channels"] if c["role"] == "drain")
 topo_channel(drain_tail(_dre), {"kind": "drain"}, {"kind": "offmap"})
@@ -937,6 +943,8 @@ s.ring(('poly', ENV_FSE1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FSE1), 22, 40, ["plain"])
 _nets3, ENV_FS3, _cs3 = comb_field("fs3", (1901, 1895), 115, 88, 150, (90, 125), (60, 85), (0.45, 0.8), avoid=(MOAT,), dry_keepout=((2060, 1855, 105),))  # hem off the lower-SE estate
 _ps3 = plot_centroid(_nets3, lambda cs: min(cs, key=lambda c: c[1]))  # a head plot, nearest the stream tap
+s.field_channel([(1936, 1880), (1901, 1895)], '#9CB4C8', 7, 7)  # the visible tap (see fse1's note - this was the canal the GM caught starting in open ground)
+s.sluice_gate(1901, 1895, rot=math.degrees(math.atan2(1895 - 1880, 1901 - 1936)) + 90)
 topo_channel([(1936, 1880), (1901, 1895), _ps3], {"kind": "stream"}, {"kind": "field", "name": "fs3"})
 _drs3 = next(c["pts"] for c in _nets3["channels"] if c["role"] == "drain")
 topo_channel(drain_tail(_drs3), {"kind": "drain"}, {"kind": "offmap"})

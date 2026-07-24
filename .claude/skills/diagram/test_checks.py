@@ -659,6 +659,98 @@ def test_channel_source_anchored_fires_on_bad_anchor():
     assert "channel_source_anchored[0]" in f(M)
 
 
+# ---- field_supply_visibly_sourced: an undrawn supply conduit whose comb origin dangles -------
+# (Tango fs3, GM 2026-07-24: the recorded tap sat on a stream vertex but nothing was DRAWN
+# between stream and comb, so the main canal's head hung in open ground short of the bank)
+def _supply_M(main_head, drawn_channels=None, drawn=False):
+    # a stream along y=100 (w 9), a paddy at (300,300)-(600,600), one main ditch into it whose
+    # head is `main_head`, and an undrawn supply conduit recorded stream -> field
+    return {
+        "meta": {"scale": "town", "W": 1000, "H": 1000},
+        "streams": [{"poly": [[100, 100], [800, 100]], "w": 9}],
+        "fields": [_field("x", 300, 300, 600, 600)],
+        "field_ditches": [{"poly": [main_head, [450, 320], [460, 400]], "role": "main", "field": "x", "w": 4}],
+        "channels": [{"poly": [[440, 104], [445, 180], main_head], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "x"}, "w": 2.5, "drawn": drawn}],
+        "drawn_channels": drawn_channels or [],
+    }
+
+
+def test_field_supply_visibly_sourced_fires_on_a_dangling_comb_origin():
+    # origin (450,250): 150px from the stream, far from every view edge; the only drawn stroke
+    # is nowhere near the origin, so it cannot rescue it
+    assert "field_supply_visibly_sourced[x]" in f(_supply_M([450, 250], drawn_channels=[{"pts": [[900, 900], [950, 950]]}]))
+
+
+def test_field_supply_visibly_sourced_passes_on_a_moat_bank():
+    # a comb origin on the moat bed is sourced (the moat-fed city-comb pattern)
+    M = _supply_M([450, 110])
+    M["streams"] = []
+    M["moat"] = [[100, 100], [800, 100], [800, 105]]
+    M["moat_width"] = 26
+    assert "field_supply_visibly_sourced[x]" not in f(M)
+
+
+def test_field_supply_visibly_sourced_passes_on_a_pond_rim():
+    # a comb origin inside/on the pond ellipse is sourced (Tango's in-wall nw1 comb)
+    M = _supply_M([450, 250])
+    M["pond"] = [455, 255, 30, 20]
+    assert "field_supply_visibly_sourced[x]" not in f(M)
+
+
+def test_field_supply_visibly_sourced_passes_on_a_river_bank():
+    # a comb origin sitting directly on a RIVER bed is sourced (Nagahara's far-bank fan pattern)
+    M = _supply_M([450, 110])
+    M["streams"] = []
+    M["river"] = {"pts": [[100, 100], [800, 100]], "w": 40}
+    assert "field_supply_visibly_sourced[x]" not in f(M)
+
+
+def test_field_supply_visibly_sourced_passes_on_a_cargo_canal():
+    # a comb origin on a cargo-canal bank is sourced (a Lion-lands water-town form)
+    M = _supply_M([450, 104])
+    M["streams"] = []
+    M["canals"] = [{"poly": [[100, 100], [800, 100]], "w": 12}]
+    assert "field_supply_visibly_sourced[x]" not in f(M)
+
+
+def test_field_supply_visibly_sourced_passes_on_a_cascade_ditch():
+    # tail-water reuse: the origin sits on ANOTHER comb's ditch (the standard way a city's
+    # drainage waters the fields below it - Hirameki's e2 pattern)
+    M = _supply_M([450, 250])
+    M["field_ditches"].append({"poly": [[300, 248], [600, 252]], "role": "drain", "field": "other", "w": 4})
+    assert "field_supply_visibly_sourced[x]" not in f(M)
+
+
+def test_field_supply_visibly_sourced_skips_a_field_with_no_mains():
+    # no main ditches recorded for the fed field -> nothing visible starts anywhere; not this check's call
+    M = _supply_M([450, 250])
+    M["field_ditches"] = []
+    assert not any(c.startswith("field_supply_visibly_sourced") for c in f(M))
+
+
+def test_field_supply_visibly_sourced_passes_with_a_drawn_tap():
+    # a drawn tap stroke joins the origin to the stream bed - the visual chain is complete
+    M = _supply_M([450, 250], drawn_channels=[{"pts": [[450, 104], [450, 250]]}])
+    assert "field_supply_visibly_sourced[x]" not in f(M)
+
+
+def test_field_supply_visibly_sourced_ignores_the_combs_own_canal():
+    # the only drawn stroke at the origin is the comb's own main heading INTO the field - it
+    # carries water downstream, not from a source, so the origin still dangles
+    M = _supply_M([450, 250], drawn_channels=[{"pts": [[450, 250], [450, 320], [460, 400]]}])
+    assert "field_supply_visibly_sourced[x]" in f(M)
+
+
+def test_field_supply_visibly_sourced_passes_at_the_view_edge():
+    # an origin at the map edge is presumed to continue off-map (the fn1/fn2 pattern)
+    assert "field_supply_visibly_sourced[x]" not in f(_supply_M([450, 20]))
+
+
+def test_field_supply_visibly_sourced_skips_a_drawn_supply_channel():
+    # a DRAWN supply channel carries its own visual continuity (its ends are anchor-checked)
+    assert "field_supply_visibly_sourced[x]" not in f(_supply_M([450, 250], drawn=True))
+
+
 def test_streams_avoid_fields_fires():
     M = {"fields": [_field("f", 100, 100, 400, 400)], "streams": [{"poly": [[200, 200], [200, 500]]}]}  # first point sits inside the field
     assert "streams_avoid_fields" in f(M)
