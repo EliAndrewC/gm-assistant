@@ -4571,9 +4571,13 @@ class Settlement:
             run_paths = [d]
         for rp in run_paths:
             self.add(f'<path d="{rp}" fill="{BUND}" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
-        # MOTTLE + VEGETATION: clip to the band, then scatter earth-tone patches (patch-repairs of different
-        # ages), the soil-binding mulberry/willow tree dots, and a faint walked crest path - so the dike reads
-        # as a planted lived-on bank, never a uniform stroke.
+        # MOTTLE + PLANTED ROWS (reworked GM 2026-07-24 - accuracy pass; settlements.md 'Perimeter dike'):
+        # the old render scattered crowns at random over the band, but dike planting was ROW planting along
+        # the alignment - a WILLOW row on the water face (wave-wash armor + withy supply; the Qing Willow
+        # Palisade statute of one whip per 5 chi ~ 5.5 ft is the closest attested in-row figure, and willow-
+        # fascine rows on erosive soil run 1-1.5 m apart, the same soil mechanics) and a MULBERRY row on the
+        # inner face (the dike is prime sericulture ground - Lake Tai mulberry sat on the tang banks). Earth
+        # mottle (patch-repairs of different ages) stays scattered - repairs, unlike planting, ARE haphazard.
         smoothed = smooth_points(band)
         bx0, bx1 = min(p[0] for p in smoothed), max(p[0] for p in smoothed)
         by0, by1 = min(p[1] for p in smoothed), max(p[1] for p in smoothed)
@@ -4581,19 +4585,36 @@ class Settlement:
         st = random.getstate()
         random.seed(seed ^ 0x1D)
         g = [f'<clipPath id="{cid}">' + "".join(f'<path d="{rp}"/>' for rp in run_paths) + "</clipPath>", f'<g clip-path="url(#{cid})">']
-        for _ in range(int((bx1 - bx0 + by1 - by0) * 1.6)):
+        for _ in range(int((bx1 - bx0 + by1 - by0) * 0.7)):
             px, py = random.uniform(bx0, bx1), random.uniform(by0, by1)
             if not point_in_poly(px, py, smoothed):
                 continue
-            roll = random.random()
-            if roll < 0.42:  # earth mottle: darker packed / lighter dried patches
-                col = random.choice(["#A8895A", "#B79B68", "#D2BC8C", "#9C8150"])
-                rx, ry = random.uniform(5, 13), random.uniform(4, 9)
-                g.append(f'<ellipse cx="{px:.1f}" cy="{py:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="{col}" opacity="0.4"/>')
-            else:  # soil-binding vegetation: mulberry/willow crowns along the bank
-                col = random.choice(["#6E8B4A", "#7C9A54", "#5E7C40"])
-                r = random.uniform(2.6, 5.0)
-                g.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{r:.1f}" fill="{col}" opacity="0.7"/>')
+            col = random.choice(["#A8895A", "#B79B68", "#D2BC8C", "#9C8150"])  # earth mottle: darker packed / lighter dried patches
+            rx, ry = random.uniform(5, 13), random.uniform(4, 9)
+            g.append(f'<ellipse cx="{px:.1f}" cy="{py:.1f}" rx="{rx:.1f}" ry="{ry:.1f}" fill="{col}" opacity="0.4"/>')
+        # the two planted rows follow each band RUN (so they skip the sluice notches with the earthwork).
+        # In-row spacings are drawn at the loose end (willow 8.5 px vs the attested ~5.5 ft; mulberry 4.4 px
+        # at the loose end of 3-5 ft) so crowns read as touching runs, not a fused hedge - the same
+        # legibility precedent as the pond banks (settlements.md 'Polder fourth pass', quantified departure).
+        veg_runs = runs if gap_pts else [list(range(n))]
+
+        def _row_walk(frac: float, step: float) -> list[Pt]:
+            out2: list[Pt] = []
+            for vrun in veg_runs:
+                line = [(inner_s[i][0] + (outer_s[i][0] - inner_s[i][0]) * frac, inner_s[i][1] + (outer_s[i][1] - inner_s[i][1]) * frac) for i in vrun]
+                for a2, b2 in zip(line, line[1:], strict=False):
+                    seg = math.hypot(b2[0] - a2[0], b2[1] - a2[1])
+                    for k2 in range(int(seg / step)):
+                        f2 = (k2 + 0.5) * step / seg
+                        out2.append((a2[0] + (b2[0] - a2[0]) * f2, a2[1] + (b2[1] - a2[1]) * f2))
+            return out2
+
+        for wx, wy in _row_walk(0.74, 8.5):  # the WILLOW row rides the outer (water) face - pollarded, larger crowns
+            wcol = random.choice(("#7C9856", "#87A45C", "#6E8B4A"))
+            g.append(f'<circle cx="{wx + random.uniform(-1.4, 1.4):.1f}" cy="{wy + random.uniform(-1.4, 1.4):.1f}" r="{random.uniform(3.5, 5.5):.1f}" fill="{wcol}" opacity="0.75"/>')
+        for mx2, my2 in _row_walk(0.26, 4.4):  # the MULBERRY row on the inner face - coppiced, same form as the pond banks
+            mcol2 = random.choice(("#6E8B4A", "#7C9A54", "#5E7C40"))
+            g.append(f'<circle cx="{mx2 + random.uniform(-1.2, 1.2):.1f}" cy="{my2 + random.uniform(-1.2, 1.2):.1f}" r="{random.uniform(2.2, 3.6):.1f}" fill="{mcol2}" opacity="0.85"/>')
         g.append("</g>")
         self.add("".join(g))
         random.setstate(st)
