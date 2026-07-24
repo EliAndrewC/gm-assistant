@@ -1943,6 +1943,51 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"stable-yard trough rects clip a structure (or went unrecorded) at yards {_tb_bad[:3]} - the drawn cluster box (troughs_box) must sit on open ground, clear of every building footprint and wellhead roof; s._stable_yard's direction-aware offset + box corner-check places it (settlements.md 'Stable yard' watering)",
     )
 
+    # HITCHING RAILS + DUNG HEAPS keep off the ROADS and the WALL (GM 2026-07-24). The road-side
+    # rail's whole PURPOSE is keeping tethered stock off the through-road, so a rail whose drawn
+    # extent (posts included) reaches the roadbed defeats itself and bars the public way; a dung
+    # heap on the tread fouls it, and either against the rampart sits in the wall's patrol
+    # clearance. The old placement tested only each glyph's CENTER point, so an 18px rail could
+    # lay its tip on a road or against the wall; s._stable_yard now probes the full extent AND
+    # records the furniture ('rails' / 'dung_heaps' on each M['stable_yards'] entry) so this
+    # check can hold the drawn geometry to it.
+    _sy_yards = M.get("stable_yards", [])
+    if _sy_yards:
+        _fw_ways: list[tuple[list[Any], float]] = []
+        if M.get("road"):
+            _fw_ways.append((M["road"], M.get("road_width", 26) / 2))
+        if M.get("ring_road"):
+            _fw_ways.append((M["ring_road"], M.get("ring_road_width", 20) / 2))
+        for _st in M.get("town_streets", []) or []:
+            _fw_ways.append((_st["pts"], _st.get("w", 6) / 2))
+        for _al in M.get("alleys", []) or []:
+            _fw_ways.append((_al["pts"], _al.get("w", 4) / 2))
+        _fw_wall = M.get("wall")
+        _FW_WALL_HALF = 5.0  # the rampart stroke + a hair of patrol clearance
+
+        def _fw_hit(qx: float, qy: float, pad: float) -> bool:
+            for _pl, _hw in _fw_ways:
+                if any(seg_dist(qx, qy, _pl[i], _pl[i + 1]) < _hw + pad for i in range(len(_pl) - 1)):
+                    return True
+            return _fw_wall is not None and any(seg_dist(qx, qy, _fw_wall[i], _fw_wall[i + 1]) < _FW_WALL_HALF + pad for i in range(len(_fw_wall) - 1))
+
+        _fw_bad: list[tuple[float, float]] = []
+        for _yd in _sy_yards:
+            for _rl in _yd.get("rails", []) or []:
+                _half = _rl["len"] / 2 + _rl.get("reach", 2.4)
+                if any(_fw_hit(_rl["x"] + _rl["tx"] * _t, _rl["y"] + _rl["ty"] * _t, 0.0) for _t in (-_half, -_half / 2, 0.0, _half / 2, _half)):
+                    _fw_bad.append((round(_rl["x"]), round(_rl["y"])))
+            for _dh in _yd.get("dung_heaps", []) or []:
+                if _fw_hit(_dh["x"], _dh["y"], max(_dh.get("rx", 2.5), _dh.get("ry", 1.8))):
+                    _fw_bad.append((round(_dh["x"]), round(_dh["y"])))
+        check(
+            "stable_yard_furniture_clear_of_roads_walls",
+            not _fw_bad,
+            f"hitching rail(s)/dung heap(s) overlapping a road or the wall at {_fw_bad[:4]} - yard furniture "
+            f"keeps off the public tread and the rampart's clearance (the road-side rail exists to keep stock "
+            f"OFF the through-road); s._stable_yard probes each rail's full extent and each heap's edge",
+        )
+
     # WALL TOWER COVERAGE by the city's DEFENSE POSTURE (GM 2026-07-22): the interlocking-flanking-fire rule
     # (侧射; Shen Kuo's 11th-c. 矢石相及 - adjacent mamian's fields of fire overlap so an attacker at the base
     # is hit from >=2 towers). TUNABLE per city (meta wall_defense): `siege` = aimed-lethal bowshot (60 m /

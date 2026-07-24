@@ -1,0 +1,53 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ]
+ ],
+ "stable_yards": [
+  {
+   "x": 500,
+   "y": 160,
+   "r": 72.0,
+   "of": [
+    500,
+    160
+   ],
+   "troughs": 0,
+   "rails": [],
+   "dung_heaps": [
+    {
+     "x": 500,
+     "y": 106,
+     "rx": 2.5,
+     "ry": 1.8
+    }
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "stable_yard_furniture_clear_of_roads_walls"
+  ],
+  "source": "test_checks.py::test_stable_yard_furniture_fires_when_a_dung_heap_lies_against_the_wall"
+ }
+}

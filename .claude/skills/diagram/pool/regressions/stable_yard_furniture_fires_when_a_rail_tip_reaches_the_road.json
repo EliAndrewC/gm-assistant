@@ -1,0 +1,48 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3
+ },
+ "road": [
+  [
+   500,
+   0
+  ],
+  [
+   500,
+   1000
+  ]
+ ],
+ "road_width": 8.667,
+ "stable_yards": [
+  {
+   "x": 560,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    560,
+    500
+   ],
+   "troughs": 0,
+   "rails": [
+    {
+     "x": 512,
+     "y": 500,
+     "tx": 1.0,
+     "ty": 0.0,
+     "len": 18.0,
+     "reach": 2.4
+    }
+   ],
+   "dung_heaps": []
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "stable_yard_furniture_clear_of_roads_walls"
+  ],
+  "source": "test_checks.py::test_stable_yard_furniture_fires_when_a_rail_tip_reaches_the_road"
+ }
+}

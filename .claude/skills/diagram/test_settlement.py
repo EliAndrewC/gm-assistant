@@ -1007,10 +1007,12 @@ def test_animal_ground_records_a_yard_and_optional_label():
     # the city_no_large_empty_space remedy: a standalone stable-yard scatter claiming a pocket
     s = _crop_settlement()
     s.animal_ground(400, 400, r=60)  # no label - the rails and animals read on their own
+    s.flush_stable_yards()
     yd = s.M["stable_yards"][-1]
     assert (yd["x"], yd["y"], yd["r"], yd["of"], yd["troughs"]) == (400, 400, 60, [400, 400], 2)
     assert "troughs_at" in yd  # the cluster anchor stable_troughs_beside_well validates
     s.animal_ground(700, 700, r=52, label="caravan ground")
+    s.flush_stable_yards()
     assert s.M["labels"][-1][5] == "caravan ground"  # label boxes are [x0, y0, x1, y1, z, text]
 
 
@@ -1021,6 +1023,7 @@ def test_caravan_scale_yard_gets_three_troughs_beside_the_nearest_well():
     s = _crop_settlement()
     s.M["wells"] = [{"x": 500, "y": 400, "r": 8, "vr": 4.0, "shrine": False}]
     s.animal_ground(400, 400, r=80)
+    s.flush_stable_yards()
     yd = s.M["stable_yards"][-1]
     assert yd["troughs"] == 3
     assert yd["troughs_at"] == [492.2, 400.0]  # wellhead vr 4.0 + half a 4.6 trough + 1.5 step from the well at x=500
@@ -1036,6 +1039,7 @@ def test_vertical_hug_offsets_far_enough_to_clear_the_well_house_roof():
     s = _crop_settlement()
     s.M["wells"] = [{"x": 400, "y": 330, "r": 8, "vr": 4.0, "shrine": False}]  # due north: a vertical ray
     s.animal_ground(400, 400, r=80)  # caravan scale - 3 troughs
+    s.flush_stable_yards()
     yd = s.M["stable_yards"][-1]
     assert yd["troughs"] == 3
     bx0, by0, bx1, by1 = yd["troughs_box"]
@@ -1053,6 +1057,7 @@ def test_cluster_walks_off_a_neighbor_wells_roof():
         {"x": 408, "y": 400, "r": 8, "vr": 4.0, "shrine": False},  # B - the target
     ]
     s.animal_ground(400, 400, r=60)
+    s.flush_stable_yards()
     bx0, by0, bx1, by1 = s.M["stable_yards"][-1]["troughs_box"]
     for w in s.M["wells"]:
         vr = w["vr"]
@@ -1066,6 +1071,7 @@ def test_yard_digs_its_own_well_when_the_near_wellheads_flanks_are_all_blocked()
     s.M["wells"] = [{"x": 400, "y": 460, "r": 8, "vr": 4.0, "shrine": False}]
     s.M["buildings"] = [{"x": 400, "y": 460, "w": 40, "h": 40}]  # covers the whole flank ring
     s.animal_ground(400, 400, r=60)
+    s.flush_stable_yards()
     assert len(s.M["wells"]) == 2  # the in-reach well was unusable; the yard dug its own
     nw, ta = s.M["wells"][-1], s.M["stable_yards"][-1]["troughs_at"]
     assert math.hypot(nw["x"] - ta[0], nw["y"] - ta[1]) <= s.px(40)  # cluster hugs the new wellhead
@@ -1078,6 +1084,7 @@ def test_yard_digs_its_own_well_when_none_in_reach():
     s = _crop_settlement()
     s.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]
     s.animal_ground(400, 400, r=60)
+    s.flush_stable_yards()
     yd = s.M["stable_yards"][-1]
     assert yd["troughs"] == 2
     assert len(s.M["wells"]) == 2  # the yard dug its own
@@ -1588,6 +1595,7 @@ def test_stables_draws_a_working_yard_and_records_it():
     s.inn(600, 540)  # a cluster building the yard must skip
     before = len(s.out)
     s.stables(600, 620, rot=90)
+    s.flush_stable_yards()
     assert len(s.out) > before  # the yard scatter + furniture drew something
     yd = s.M["stable_yards"][-1]
     assert yd["of"] == [600.0, 620.0] and yd["r"] > 0
@@ -1599,6 +1607,7 @@ def test_stables_draws_a_working_yard_and_records_it():
 def test_stables_yard_can_be_suppressed():
     s = _city()
     s.stables(600, 620, rot=90, yard=False)
+    s.flush_stable_yards()
     assert not s.M.get("stable_yards")  # yard=False draws no yard
 
 
@@ -1609,6 +1618,7 @@ def test_stables_yard_fully_blocked_draws_no_furniture():
     s = _city()
     s.field_polys.append([(400, 400), (800, 400), (800, 840), (400, 840)])  # blankets the r=72 disk at (600,620)
     s.stables(600, 620, rot=90)
+    s.flush_stable_yards()
     svg = "".join(s.out)
     assert s.M["stable_yards"][-1]["of"] == [600.0, 620.0]  # recorded despite the blocked yard
     assert "#7A5A3A" not in svg and "#8FA6B0" not in svg  # no tethered animals, no water trough drew

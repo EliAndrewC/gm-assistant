@@ -588,6 +588,9 @@ class Settlement:
         self.knob_pins: dict[str, Any] = {}  # knobs the spec pinned explicitly (bypass the roll)
         self._resolved_knobs: dict[str, Any] = {}  # knobs resolved so far, fed into later knobs' typing context
         self.out: list[str] = []
+        self._pending_yards: list[
+            tuple[float, float, float, float, float, Any]
+        ] = []  # stable-yard scatters queued at stables()/animal_ground() time, DRAWN at crop time when every way/footprint exists (GM 2026-07-24: a yard drawn at stables-time could not see later-drawn streets, so its furniture landed on them)
         self.top: list[str] = []  # deferred TOP layer (gate furniture, torii, kido) - over roads/buildings
         self.toplabels: list[str] = []  # deferred LABEL layer - the very last thing drawn, so TEXT is never
         #                           covered by anything (a label must always be fully readable)
@@ -928,6 +931,7 @@ class Settlement:
         aggressive crop to be the default for all cities unless I state otherwise") - a new city gen
         calls `s.crop_city()` bare and adds only the farm-band override for its satellite-less flank
         (which flank that is varies by city; both current cities happen to use west=100)."""
+        self.flush_stable_yards()  # yards draw HERE, seeing the complete map (GM 2026-07-24); their labels must exist before the frame is computed
         hx: list[float] = []
         hy: list[float] = []
         wallp = self.M.get("wall")
@@ -4495,6 +4499,11 @@ class Settlement:
         trees, scrub, and other vegetation must not be drawn ON. Returns [(polyline, buffer), ...]."""
         corr = [([tuple(p) for p in ln["pts"]], ln.get("w", 6) / 2 + extra) for ln in self.M.get("lanes", [])]
         corr += [([tuple(p) for p in s["pts"]], s.get("w", 10) / 2 + extra) for s in self.M.get("town_streets", [])]
+        # alleys + the city ring road are ways too (GM 2026-07-24: yard furniture kept off "roads"
+        # must mean EVERY tread - a rail tip on an alley is the same defect as one on the road)
+        corr += [([tuple(p) for p in a["pts"]], a.get("w", 4) / 2 + extra) for a in self.M.get("alleys", [])]
+        if self.M.get("ring_road"):
+            corr.append(([tuple(p) for p in self.M["ring_road"]], self.M.get("ring_road_width", 20) / 2 + extra))
         if self.M.get("road"):
             corr.append(([tuple(p) for p in self.M["road"]], self.M.get("road_width", 26) / 2 + extra))
         return corr
@@ -5903,7 +5912,12 @@ class Settlement:
         # ftpx=3): a town's single caravan stables keeps its plain open ground until the yard is made
         # scale-aware. `yard=False` also suppresses it.
         if yard and self.M.get("meta", {}).get("scale") == "city":
-            self._stable_yard(x, y, w, h)
+            # QUEUED, not drawn (GM 2026-07-24): the yard scatter keeps its furniture off every
+            # way and footprint it can SEE, but a stables placed early could not see the streets
+            # drawn after it - so a heap landed on a later street (Nagahara wharf yard). Yards now
+            # draw at crop time (flush_stable_yards, auto-run by crop_city), when the map is
+            # complete - the same-data-as-the-checks doctrine (settlements.md, PLANK BRIDGES).
+            self._pending_yards.append((x, y, w, h, 72.0, None))
 
     def _stable_yard(self, sx: float, sy: float, sw: float, sh: float, r: float = 72.0) -> None:
         """Draw the working YARD around a gate stables (GM 2026-07-22): the open ground where wagon-trains
@@ -5987,9 +6001,12 @@ class Settlement:
         random.shuffle(cand)
         used: list[Pt] = []
 
-        def take(pad: float, minsep: float) -> Pt | None:
+        def take(pad: float, minsep: float, probes: tuple[Pt, ...] = ((0.0, 0.0),)) -> Pt | None:
+            # `probes` are offsets from the candidate that must ALL be clear - a rail or heap is
+            # not a point, so its tips/edges are tested too (GM 2026-07-24: furniture off the
+            # roads and the wall; a center-only test let an 18px rail lay its tip on the tread)
             for px, py in cand:
-                if not clear(px, py, pad) or any((px - ux) ** 2 + (py - uy) ** 2 < minsep * minsep for ux, uy in used):
+                if any((px - ux) ** 2 + (py - uy) ** 2 < minsep * minsep for ux, uy in used) or not all(clear(px + ox, py + oy, pad) for ox, oy in probes):
                     continue
                 used.append((px, py))
                 return (px, py)
@@ -6001,8 +6018,12 @@ class Settlement:
         # face INTO the yard, rumps to the roadbed - the yard's road-side barrier so nothing strays onto
         # the through-road), then one or two more at clear interior spots. Animals stand long-axis along
         # the rail's NORMAL (head at the rail, body into the yard).
+        rails: list[dict[str, float]] = []
+        heaps: list[dict[str, float]] = []
+
         def draw_hitch(cx: float, cy: float, tx: float, ty: float, nx: float, ny: float) -> None:
             length, ang = 18.0, math.degrees(math.atan2(ny, nx))
+            rails.append({"x": round(cx, 1), "y": round(cy, 1), "tx": round(tx, 3), "ty": round(ty, 3), "len": length, "reach": 2.4})
             ex0, ey0 = cx - tx * length / 2, cy - ty * length / 2
             fg = [f'<line x1="{ex0:.1f}" y1="{ey0:.1f}" x2="{cx + tx * length / 2:.1f}" y2="{cy + ty * length / 2:.1f}" stroke="#6B4F2A" stroke-width="1.5"/>']
             for i in range(4):  # posts across the rail
@@ -6030,12 +6051,16 @@ class Settlement:
             ndist = math.hypot(sx - cpx, sy - cpy) or 1.0
             nx, ny = (sx - cpx) / ndist, (sy - cpy) / ndist  # from road toward the stables (yard side)
             rcx, rcy = cpx + nx * (hwid + 11.0), cpy + ny * (hwid + 11.0)  # set back off the roadbed into the yard
-            if clear(rcx, rcy, 8.0):
+            # probe the rail's FULL extent (tips + post reach = len/2 + 2.4), not just its center -
+            # a tip on the roadbed or against the rampart is exactly what the rail exists to prevent
+            # (GM 2026-07-24; stable_yard_furniture_clear_of_roads_walls)
+            if all(clear(rcx + tx * e, rcy + ty * e, 8.0) for e in (-11.4, 0.0, 11.4)):
                 draw_hitch(rcx, rcy, tx, ty, nx, ny)
                 used.append((rcx, rcy))
-        # (2) one or two more rails at clear interior spots (a busy train needs the tie-up room)
+        # (2) one or two more rails at clear interior spots (a busy train needs the tie-up room);
+        # tips probed like the road rail
         for _ in range(2):
-            spot = take(10.0, 24.0)
+            spot = take(10.0, 24.0, probes=((-11.4, 0.0), (0.0, 0.0), (11.4, 0.0)))
             if not spot:
                 break
             draw_hitch(spot[0], spot[1], 1.0, 0.0, 0.0, 1.0)
@@ -6102,7 +6127,9 @@ class Settlement:
                 used.append(wp)
                 break
         if wp is None:  # dig the yard's own well at a clear spot, cluster the troughs beside it
-            spot = take(12.0, 24.0)
+            # the dug well is a PUBLIC wellhead (visual r 8), so probe its head's reach - the well
+            # checks test way-distance at half-width + 8, tighter than clear()'s corridor buffer
+            spot = take(12.0, 24.0, probes=((0.0, 0.0), (8.0, 0.0), (-8.0, 0.0), (0.0, 8.0), (0.0, -8.0), (5.7, 5.7), (-5.7, 5.7), (5.7, -5.7), (-5.7, -5.7)))
             if spot:
                 self.well(spot[0], spot[1])
                 wp = beside(self.M["wells"][-1])
@@ -6113,15 +6140,25 @@ class Settlement:
             for t_i in range(n_troughs):
                 t_y = wpy - t_total / 2 + t_i * (t_h + t_gap)
                 self.add(f'<rect x="{wpx - t_len / 2:.1f}" y="{t_y:.1f}" width="{t_len:.1f}" height="{t_h:.1f}" rx="0.9" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>')
-        # 1-2 DUNG HEAPS - the little "someone works here" tell
+        # 1-2 DUNG HEAPS - the little "someone works here" tell; the ellipse's EDGE points are
+        # probed too (GM 2026-07-24: a heap must not foul the road tread or the rampart clearance)
         for _ in range(2):
-            d = take(6.0, 16.0)
+            d = take(6.0, 16.0, probes=((0.0, 0.0), (-2.5, 0.0), (2.5, 0.0), (0.0, -1.8), (0.0, 1.8)))
             if not d:
                 break
             dx, dy = d
+            heaps.append({"x": round(dx, 1), "y": round(dy, 1), "rx": 2.5, "ry": 1.8})
             self.add(f'<ellipse cx="{dx:.1f}" cy="{dy:.1f}" rx="2.5" ry="1.8" fill="#6E5A3A" stroke="#4A3A22" stroke-width="0.5" opacity="0.9"/>')
 
-        yard_rec: dict[str, Any] = {"x": round(sx, 1), "y": round(sy, 1), "r": round(r, 1), "of": [round(sx, 1), round(sy, 1)], "troughs": n_troughs if wp else 0}
+        yard_rec: dict[str, Any] = {
+            "x": round(sx, 1),
+            "y": round(sy, 1),
+            "r": round(r, 1),
+            "of": [round(sx, 1), round(sy, 1)],
+            "troughs": n_troughs if wp else 0,
+            "rails": rails,  # recorded so stable_yard_furniture_clear_of_roads_walls can test the drawn extents
+            "dung_heaps": heaps,
+        }
         if wp:
             yard_rec["troughs_at"] = [round(wp[0], 1), round(wp[1], 1)]  # cluster center - stable_troughs_beside_well anchors on it
             yard_rec["troughs_box"] = [
@@ -6145,9 +6182,22 @@ class Settlement:
         fills only the genuinely open ground - and records M['stable_yards'], which the empty-space
         detector counts as claimed. The label (e.g. "caravan ground") is optional; the rails and
         tethered animals usually read on their own."""
-        self._stable_yard(cx, cy, 0.0, 0.0, r=r)
-        if label:
-            self.label(cx, cy, label, 11, italic=True, color="#6B5A3C")
+        self._pending_yards.append((cx, cy, 0.0, 0.0, r, label))  # queued like the stables yards - drawn at crop time when every way exists (GM 2026-07-24)
+
+    def flush_stable_yards(self) -> None:
+        """Draw every queued stable-yard scatter (stables() gate yards + animal_ground() pockets).
+        Runs at CROP time - crop_city calls it first - so the yard sees the COMPLETE map: every
+        street/alley/ring road and every footprint, not just what happened to be drawn before the
+        stables call (GM 2026-07-24: a wharf-yard dung heap landed on a street drawn later). The
+        scatter's own seeded RNG makes the deferral ripple-free for every other feature; a late
+        flush also means the watering point sees every real well, so the dig-your-own fallback
+        fires only when the neighborhood genuinely has none in reach. Idempotent (drains the queue);
+        unit tests call it directly after stables()/animal_ground()."""
+        pending, self._pending_yards = self._pending_yards, []
+        for sx, sy, sw, sh, r, label in pending:
+            self._stable_yard(sx, sy, sw, sh, r=r)
+            if label:
+                self.label(sx, sy, label, 11, italic=True, color="#6B5A3C")
 
     # ---- provincial-city features (scale="city")
     def _gapped_ring(self, ring: Any, gates: Any, gap: float = 38, closed: bool = True, water_gates: Any = (), water_gap: float = 24) -> str:
