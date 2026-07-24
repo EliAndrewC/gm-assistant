@@ -53,8 +53,11 @@ def rect_corners(h: dict[str, Any]) -> list[tuple[float, float]]:
 
 def _struct_rect(s: dict[str, Any]) -> dict[str, Any]:
     """Normalize a solid footprint feature to a rect for the overlap tests. Every solid feature now
-    carries w/h(/rot)."""
-    return {"x": s["x"], "y": s["y"], "w": s["w"], "h": s["h"], "rot": s.get("rot", 0)}
+    carries w/h(/rot). A LOCATION MARKER (a feature whose true footprint is sub-glyph, so it draws
+    at a legibility floor - the kosatsuba; see Settlement.kosatsuba) also carries vw/vh, the box it
+    actually occupies on the map: overlap is about DRAWN pixels colliding, so the marker's visual
+    box is what the checks must clear, exactly as the wells' clearance uses `vr` over `r`."""
+    return {"x": s["x"], "y": s["y"], "w": s.get("vw", s["w"]), "h": s.get("vh", s["h"]), "rot": s.get("rot", 0)}
 
 
 def _box_hits_poly(box: tuple[float, float, float, float], poly: Poly) -> bool:

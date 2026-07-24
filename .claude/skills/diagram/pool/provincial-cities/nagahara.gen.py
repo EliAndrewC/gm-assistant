@@ -1151,7 +1151,7 @@ s.kosatsuba(1492, 961, rot=72, label=None)
 # bend where the through-road turns east IS the market corner - the city's
 # Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the
 # crossroads - unlabeled, the east-avenue board already carries the set's one label.
-s.kosatsuba(1465, 1346, rot=90, label=None)
+s.kosatsuba(1465, 1378, rot=90, label=None)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}
