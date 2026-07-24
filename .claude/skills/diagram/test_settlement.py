@@ -310,10 +310,28 @@ def test_kosatsuba_records_a_blocking_struct():
     z = s.kosatsuba(500, 500, rot=15)
     kb = s.M["kosatsuba"][0]
     assert (kb["x"], kb["y"], kb["w"], kb["h"], kb["rot"]) == (500, 500, 12, 5, 15) and z > 0
+    assert (kb["vw"], kb["vh"]) == (12, 5)  # at 1 ft/px the true frame already clears the marker floor
     assert not s._fits(500, 500, 20, 20)
     assert s.M["labels"][-1][1] > 500  # default label sits BELOW the board
     s.kosatsuba(800, 500, label_above=True)  # gate-adjacent boards label ABOVE (clear of the gate)
     assert s.M["labels"][-1][1] < 500
+
+
+def test_kosatsuba_draws_a_location_marker_at_the_coarse_tiers():
+    # GM 2026-07-24: at village (2 ft/px) and city (3 ft/px) grain the true 12x5 ft frame draws a
+    # 2.5 px / 1.7 px sliver that reads as fence hardware, so the GLYPH floors at the long-axis
+    # marker minimum with the 12:5 aspect preserved. The manifest keeps TRUE feet in w/h and the
+    # drawn box in vw/vh; the drawn box is what is reserved against later placement.
+    for ftpx in (2, 3):
+        s = Settlement(1000, 1000, seed=1)
+        s.meta(name="C", scale="city" if ftpx == 3 else "village", ftpx=ftpx)
+        s.kosatsuba(500, 500)
+        kb = s.M["kosatsuba"][0]
+        assert (kb["w"], kb["h"]) == (12 / ftpx, 5 / ftpx)  # true size, unchanged
+        assert kb["vw"] == settlement.KOSATSUBA_MARKER_MIN_PX  # floored on the long axis...
+        assert kb["vh"] == round(settlement.KOSATSUBA_MARKER_MIN_PX * 5 / 12, 1)  # ...aspect preserved
+        assert s.placed[-1] == pytest.approx((500, 500, settlement.KOSATSUBA_MARKER_MIN_PX, settlement.KOSATSUBA_MARKER_MIN_PX * 5 / 12))  # the DRAWN box is reserved
+        assert f'width="{kb["vw"]:.1f}"' in s.top[-1]  # and drawn
 
 
 def test_place_kosatsuba_sites_on_the_lane_verge_at_the_busiest_node():
@@ -1650,24 +1668,30 @@ def _city():
     return s
 
 
-def test_bathhouses_roll_follows_the_population_band():
-    # GM rule 2026-07-24: <3,000 keeps exactly 1 sento, >=4,000 keeps 2; ~3,000 rolls 1-2
-    # (Edo's peak ratio, ~1 per ~2,100 residents); count= pins; too few seats is loud
-    s = _city()
-    s.M["meta"]["population"] = 2000
+def test_bathhouses_roll_follows_the_population_formula():
+    # GM formula 2026-07-24 (second refinement): 1 per full 2,000 population + a remainder-
+    # fraction chance of one extra (2,500 -> 1 + 25%, 3,000 -> 1 + 50%, 4,000 -> exactly 2);
+    # count= pins; too few seats is loud. Own Settlements with pinned seeds (the module has two
+    # _city helpers and the later one shadows - a seed-3 assumption here failed on seed 1):
+    # seed 2's dedicated roll is 0.670 (extra misses at 50%), seed 1's is 0.258 (extra lands).
+    def city_(seed, pop):
+        s_ = Settlement(1200, 1200, seed=seed)
+        s_.meta(name="C", scale="city", ftpx=3)
+        s_.M["meta"]["population"] = pop
+        return s_
+
+    s = city_(2, 2000)  # zero remainder: exactly 1, no roll can add
     assert s.bathhouses([(300, 300), (600, 600)]) == 1
     assert s.M["meta"]["bathhouse_roll"] == 1 and len(s.M["bathhouses"]) == 1
-    s2 = _city()
-    s2.M["meta"]["population"] = 4000
+    s2 = city_(2, 4000)  # two full units, zero remainder: exactly 2
     assert s2.bathhouses([(300, 300), (600, 600)]) == 2
     assert len(s2.M["bathhouses"]) == 2
-    s3 = _city()
-    s3.M["meta"]["population"] = 3000
-    assert s3.bathhouses([(300, 300), (600, 600)], count=1) == 1  # pin overrides the roll
-    s4 = _city()
-    s4.M["meta"]["population"] = 4000
+    assert city_(2, 3000).bathhouses([(300, 300), (600, 600)]) == 1  # roll 0.670 >= 0.50: no extra
+    assert city_(1, 3000).bathhouses([(300, 300), (600, 600)]) == 2  # roll 0.258 < 0.50: extra lands
+    assert city_(2, 3000).bathhouses([(300, 300), (600, 600)], count=2) == 2  # pin overrides the roll
+    s4 = city_(2, 4000)
     with pytest.raises(ValueError, match="vetted seats"):
-        s4.bathhouses([(300, 300)])  # a 2-roll needs 2 seats
+        s4.bathhouses([(300, 300)])  # a guaranteed 2 needs 2 seats
 
 
 def test_stables_draws_a_working_yard_and_records_it():
