@@ -1879,6 +1879,7 @@ class Settlement:
         dikeponds: list[dict[str, Any]] = []
         # channel centerline segments, for the bush-vs-canal clearance filter in _mulberry_rows (the crowns
         # are coppiced BUSHES on the dike, not canopy - they cannot arch over the open water at the toe)
+        crown_q: list[tuple[Poly, str, float, float]] = []  # deferred _mulberry_rows args - crowns draw LAST, above the channel strokes
         chansegs: list[tuple[Pt, Pt]] = []
         for ch in net.get("channels", []):
             cpp = ch["pts"]
@@ -1934,7 +1935,7 @@ class Settlement:
                 self.add(f'<path d="{bd}" fill="#C2A772" stroke="#9C8558" stroke-width="1.2" stroke-linejoin="round" opacity="0.95"/>')
                 wd, wpoly = self._rounded_pond(qpoly, inset=11.0, reach=16.0, rng=rng)
                 self.add(f'<path d="{wd}" fill="{colors[overlay]}" stroke="#6C9CBE" stroke-width="1.4"/>')
-                self._mulberry_rows(qpoly, bd, cx, cy, rng, chansegs)
+                crown_q.append((qpoly, bd, cx, cy))  # crowns drawn after the late-water anchor (see below)
                 # `bank` = the planted band's outer edge, recorded so mulberry_banks_clear_of_channels has
                 # manifest teeth: the crowns fill the bank, so "no canal runs inside a bank" bounds the bushes
                 dikeponds.append(
@@ -2003,6 +2004,13 @@ class Settlement:
         # z-order audit). No-op when no late block exists or nothing was overlaid.
         if n and self._late_water_idx is not None:
             self._late_water_idx = len(self.out)
+        # ...but the channels draw UNDER the mulberry canopies (GM 2026-07-24): the canal runs BETWEEN the
+        # bushes at ground level, so a crown's leaves may overhang and partly cover the channel stroke -
+        # never the channel slicing across a crown. The crown groups are drawn AFTER the late-water anchor
+        # above, so the channel block inserted there at flush time lands beneath them; the bank/water/rice
+        # FILLS stay before the anchor (ground the channels must cover).
+        for cq_poly, cq_bd, cq_cx, cq_cy in crown_q:
+            self._mulberry_rows(cq_poly, cq_bd, cq_cx, cq_cy, rng, chansegs)
         self.M.setdefault("land_use", []).append(
             {"overlay": overlay, "count": n, "eligible": eligible, "plots": [_centroid(p["poly"]) for p in chosen], "leftover_plots": [_centroid(p["poly"]) for p in leftover_plots]}
         )
@@ -2052,11 +2060,13 @@ class Settlement:
         in-row spacing (the loose end of the attested 3-5 ft, for pixel separation), never inflated glyphs.
         Rows are homothetic loops between the water inset (11 px) and the bank edge (the true parcel line);
         everything clips to the bank path, so a crown may overhang the water edge (organic) but never
-        spills onto the polder floor. BUSHES KEEP CLEAR OF THE CANALS (GM 2026-07-23): these are bushes,
-        not canopy trees, so a crown cannot arch over open water - any crown whose circle would reach a
-        channel centerline in `channels` (clearance r + 3 px ~ the canal's half draw width + margin) is
-        dropped; the paired manifest teeth are `mulberry_banks_clear_of_channels`, which reads the
-        recorded per-pond `bank` outline. The dots themselves stay unrecorded (decorative)."""
+        spills onto the polder floor. BUSHES KEEP CLEAR OF THE CANALS (GM 2026-07-23, refined 2026-07-24):
+        the bush TRUNK stays off the canal - any crown whose CENTER lies within 3.5 px of a channel
+        centerline in `channels` is dropped - but the crown EDGE may overhang the water, and the caller
+        draws these crown groups AFTER the late-water anchor, so an overhanging leaf edge covers the
+        channel stroke rather than the channel slicing across a crown (the canal runs BETWEEN the bushes
+        at ground level). The paired manifest teeth are `mulberry_banks_clear_of_channels`, which reads
+        the recorded per-pond `bank` outline. The dots themselves stay unrecorded (decorative)."""
         n = len(poly)
         mids = [((poly[i][0] + poly[(i + 1) % n][0]) / 2, (poly[i][1] + poly[(i + 1) % n][1]) / 2) for i in range(n)]
         apo = sum(math.hypot(mx - cx, my - cy) for mx, my in mids) / n
@@ -2104,8 +2114,11 @@ class Settlement:
                 jx, jy = x + rng.uniform(-1.3, 1.3), y + rng.uniform(-1.3, 1.3)
                 r = rng.uniform(2.2, 3.6)
                 ccol = rng.choice(("#6E8B4A", "#7C9A54", "#5E7C40"))
-                if near and chan_dist(jx, jy) < r + 3.0:
-                    continue  # a bush cannot stand in the canal - drop the crown, keep the rng stream stable
+                # the bush TRUNK stays off the canal (center > 3.5 px from the centerline), but the crown
+                # EDGE may overhang the water (GM 2026-07-24): crowns draw ABOVE the channel strokes, so an
+                # overhanging leaf edge covers the channel - never the channel slicing across a crown
+                if near and chan_dist(jx, jy) < 3.5:
+                    continue
                 g.append(f'<circle cx="{jx:.1f}" cy="{jy:.1f}" r="{r:.1f}" fill="{ccol}" opacity="0.85"/>')
         g.append("</g>")
         self.add("".join(g))
