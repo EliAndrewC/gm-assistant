@@ -3585,6 +3585,27 @@ def test_city_kiln_outside_walls_fires_on_an_intramural_kiln():
     assert "city_kiln_outside_walls" in f(M)
 
 
+def test_city_bathhouse_count_follows_the_population_band():
+    # GM rule 2026-07-24: <3,000 keeps exactly 1 sento, ~3,000 rolls 1-2, >=4,000 keeps 2
+    # (Edo's peak ratio, ~1 per ~2,100 residents); a recorded roll must match the drawn count
+    def city(pop, n_baths, roll=None):
+        meta = {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True, "population": pop}
+        if roll is not None:
+            meta["bathhouse_roll"] = roll
+        return {
+            "meta": meta,
+            "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
+            "gates": [[500, 100]],
+            "bathhouses": [{"x": 400 + 60 * i, "y": 500, "w": 16, "h": 16, "rot": 0, "label": "bathhouse"} for i in range(n_baths)],
+        }
+
+    assert "city_has_bathhouse" in f(city(4000, 1))  # a ~4,000 seat keeps TWO
+    assert "city_has_bathhouse" in f(city(2000, 2))  # a ~2,000 seat keeps ONE
+    assert "city_has_bathhouse" in f(city(3000, 1, roll=2))  # the drawn count must match the recorded roll
+    assert "city_has_bathhouse" not in f(city(3000, 2, roll=2))  # in-band and roll-matched passes
+    assert "city_has_bathhouse" not in f(city(3000, 1, roll=1))
+
+
 def test_city_river_port_has_lumber_yard_fires_when_missing_and_skips_landlocked():
     # a river-port city (meta river_port) must keep a riverside zaimokuya; a landlocked city
     # skips the check entirely (the GM's Tango/Nagahara split - timber moves by water at scale)

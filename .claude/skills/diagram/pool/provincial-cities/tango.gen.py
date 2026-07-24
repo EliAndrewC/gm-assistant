@@ -184,7 +184,7 @@ s.brewery(1560, 1000)  # on the agri district's open ground east of the pond (br
 s.dye_yard(1497, 1012)  # on the NW pond's south bank (rinsing + vat water)
 s.oil_press(1852, 1062)  # NE quarter, mid-band clear of the y1145 street and the x1990 alley (fire-conscious, toward the edge)
 s.pawnshop(1755, 1325)  # NE merchant_house band (the explicit merchant_large pair owns the 1508,1395 ground)
-s.bathhouse(1680, 1310)  # the sento on the busy merchant_house band by the road market (sited OUTSIDE the NE pre-pack well grid's box - a block in the warren swallowed well candidates and swamped the (1864,1226) idobata)
+s.bathhouses([(1680, 1310), (1232, 1160)])  # population-band roll (seed 162 -> 2): seat 1 on the merchant_house band by the road market (sited OUTSIDE the NE pre-pack well grid's box - a block in the warren swallowed well candidates and swamped the (1864,1226) idobata), seat 2 in the west merchant homes
 s.kiln(2282, 830)  # tile kiln OUTSIDE the east wall, east of the common burial ground (2160-2250) and south of the ossuary (fire law + smoke)
 
 

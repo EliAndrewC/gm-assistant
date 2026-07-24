@@ -156,7 +156,7 @@ s.dye_yard(1855, 1428)  # on the in-wall cargo canal, west of the dock basin
 s.lumber_yard(1994, 1456)  # the wharf's zaimokuya on the dry tongue between the moat outflow and the river (grid-scanned: ~20px clear of every waterline, still within the bank's reach) - lumber_yard_clear_of_water: stacks stand on DRY ground; the landing is the jetty's job
 s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street, west of Bishamon's graveyard (its old 1130,1180 seat sat under the Temple of Bishamon caption)
 s.pawnshop(1620, 1240)  # NE merchant quarter
-s.bathhouse(1836, 1230)  # the NE warren's sento, at its east edge (sited clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata)
+s.bathhouses([(1836, 1230), (1368, 1270)])  # population-band roll (seed 47 -> 2): seat 1 at the NE warren's east edge (clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata), seat 2 in the NW monzen west of the theater
 s.kiln(2210, 1520)  # tile kiln OUTSIDE the walls on the far bank, south of the bridge road
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the through-road over the river
 
