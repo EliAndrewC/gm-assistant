@@ -308,6 +308,11 @@ print(f"footbridges: {n_bridges}")
 s.cemetery(_wmx - 100, _wmy + 130, 60, 46, parish=False, organic=True)  # resized 2026-07-23: the ground serves the WHOLE ~800-person district (village + ~6 hamlets' urns), ~0.15-0.30 acre -> 120x92 ft at 2 ft/px - see settlements.md 'District catchment'
 
 # CROP the frame to the placed content (the title then drops into the framed space).
+# THE OFFICIAL NOTICE BOARD (kosatsuba), auto-sited on a lane verge at the busiest node (GM
+# 2026-07-24: every settlement tier posts the state's standing law - the ofuregaki reached the
+# peasantry through this board via the settlement's literate reader; see settlements.md and
+# settlement.place_kosatsuba). Placed BEFORE the crop so the frame contains it.
+s.place_kosatsuba()
 s.crop_to_content(margin=30)
 
 s.title("Ueda")

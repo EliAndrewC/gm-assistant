@@ -1133,18 +1133,25 @@ s.crop_city(west=100)  # the aggressive default (35px past the kept satellites: 
 # called the left framing good).
 s.title("Nagahara")
 
-# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the principal board on the east-gate
-# approach avenue, west verge, well inside the gate (GM 2026-07-24; settlements.md "Notice
-# board"). A real city posted MANY boards (Edo: Nihonbashi + per-gate boards); this one
-# stands in for the set under the legibility license, like the fire watch. Placed LAST on a
-# probed-clear verge NORTH of the caravan stable's animal yard (spot history: 33px inside
-# the north gate stood on the gate structs; the next sat inside the stable yard's trough
-# disc - stable_yards are DISCS (x, y, r), which rect-only probes miss).
+# ===== THE OFFICIAL NOTICE BOARDS (kosatsuba) - a city draws the SET (GM 2026-07-24,
+# settlements.md "Notice board"): the PRINCIPAL board at the central market node plus one on
+# every main gate's approach corridor (Edo: the Nihonbashi high-board + per-gate boards;
+# city_has_kosatsuba floors the count at gates + 1). Only ONE board carries the label -
+# whichever has room for it (GM: no particular board; the same one-label convention as the
+# fire towers and gate markets). Here that is the east-gate approach avenue board, west
+# verge, well inside the gate - placed LAST on a probed-clear verge NORTH of the caravan
+# stable's animal yard (spot history: 33px inside the north gate stood on the gate structs;
+# the next sat inside the stable yard's trough disc - stable_yards are DISCS (x, y, r),
+# which rect-only probes miss). It also covers the river gate's corridor.
 s.kosatsuba(1773, 1149, rot=90)  # the LABELED representative (one-label convention)
-# ...and the north road gate's board, UNLABELED (GM 2026-07-24: draw the set, label one -
-# like the fire towers and gate markets), 51px inside the gate on the road verge, aligned
-# to the road's local ~72 deg bearing.
+# ...the north road gate's board, UNLABELED, 51px inside the gate on the road verge,
+# aligned to the road's local ~72 deg bearing.
 s.kosatsuba(1492, 961, rot=72, label=None)
+# ...and the PRINCIPAL board at the central crossroads (GM 2026-07-24, the 3rd board: the
+# bend where the through-road turns east IS the market corner - the city's
+# Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the
+# crossroads - unlabeled, the east-avenue board already carries the set's one label.
+s.kosatsuba(1465, 1346, rot=90, label=None)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

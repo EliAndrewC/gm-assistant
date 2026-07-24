@@ -7254,31 +7254,39 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # meta(fire_tower=False).
         check("walled_town_has_fire_tower", len(M.get("fire_towers", [])) >= 1, "a walled town's dense wooden core needs a fire-watch tower (s.fire_tower(...); meta(fire_tower=False) to omit)")
 
-    if scale in ("town", "city") and meta.get("kosatsuba", True):
-        # THE OFFICIAL NOTICE BOARD (kosatsuba), default-on for EVERY town and city
-        # (GM 2026-07-24, from the town deep audit; ported up to cities the same day).
-        # Every Edo settlement kept the state's edict board, and its siting was a TRAFFIC
-        # decision, not an administrative one: highway frontage, main street by the gate,
-        # bridgehead, market corner - the state talking at everyone who passes (Edo's
-        # principal board stood at Nihonbashi). A CITY posted MANY boards (the principal
-        # plus subsidiary boards at gates and bridge approaches) - so a city DRAWS the set
-        # (one per main-gate approach corridor at minimum, city_kosatsuba_per_gate) and
-        # LABELS only one representative (GM 2026-07-24: the same one-label convention as
-        # the fire towers and gate markets; an unlabeled board also fits the tight gate
-        # verges a labeled one cannot). DISTINCT from the magistrate's
-        # manor-gate board (Mode A program, buildings.md): that one posts the bench's
-        # OUTPUT (verdicts, bounties) for people who come TO the court, while this one
-        # posts standing law - and the manor/yamen deliberately sits away from the busy
-        # frontage, so the settlement board must never default there. WHY: settlements.md
-        # "Notice board (kosatsuba)". Opt out for a suppressed/backwater seat with
-        # meta(kosatsuba=False).
+    if scale in ("town", "city", "village", "hamlet") and meta.get("kosatsuba", True):
+        # THE OFFICIAL NOTICE BOARD (kosatsuba), default-on at EVERY settlement tier
+        # (GM 2026-07-24, from the town deep audit; ported to cities, then to villages
+        # and hamlets, the same day). Every Edo settlement down to the hamlet kept the
+        # state's edict board - the ofuregaki circulars reached the peasantry through it,
+        # via the headman, who was REQUIRED to be functionally literate (he received,
+        # copied, and relayed the circulars); one reader per settlement makes the board
+        # work, and officials also read notices aloud, so peasant literacy is no
+        # objection. Siting was a TRAFFIC decision, not an administrative one: highway
+        # frontage, main street by the gate, bridgehead, market corner, the village's
+        # main lane - the state talking at everyone who passes (Edo's principal board
+        # stood at Nihonbashi). A CITY posted MANY boards, so a city DRAWS the set - the
+        # principal board at its central market node PLUS one per main-gate approach
+        # corridor (floor = gates + 1; city_kosatsuba_per_gate covers the corridors) -
+        # and LABELS only one, whichever board has room for the label (GM 2026-07-24:
+        # the same one-label convention as the fire towers and gate markets; an
+        # unlabeled board also fits the tight gate verges a labeled one cannot).
+        # DISTINCT from the magistrate's manor-gate board (Mode A program, buildings.md):
+        # that one posts the bench's OUTPUT (verdicts, bounties) for people who come TO
+        # the court, while this one posts standing law - and the manor/yamen deliberately
+        # sits away from the busy frontage, so the settlement board must never default
+        # there. WHY: settlements.md "Notice board (kosatsuba)". Opt out for a
+        # suppressed/backwater seat with meta(kosatsuba=False).
         kbs = M.get("kosatsuba") or []
+        floor_kb = (len(M.get("gates") or []) + 1) if scale == "city" else 1
         check(
-            "town_has_kosatsuba" if scale == "town" else "city_has_kosatsuba",
-            len(kbs) >= 1,
-            "the seat posts the state's standing law on an official notice board (s.kosatsuba(...); meta(kosatsuba=False) to omit)",
+            f"{scale}_has_kosatsuba",
+            len(kbs) >= floor_kb,
+            f"a city posts the SET: {floor_kb} boards - the principal at the central market node + one per main gate (s.kosatsuba(...); meta(kosatsuba=False) to omit)"
+            if scale == "city"
+            else "the settlement posts the state's standing law on an official notice board (s.kosatsuba(...) or s.place_kosatsuba(); meta(kosatsuba=False) to omit)",
         )
-        routes_kb = ([M["road"]] if M.get("road") else []) + [st["pts"] for st in M.get("town_streets", [])]
+        routes_kb = ([M["road"]] if M.get("road") else []) + [st["pts"] for st in M.get("town_streets", [])] + ([M["lane"]] if M.get("lane") else []) + [ln["pts"] for ln in M.get("lanes", [])]
         lim_kb = 60.0 / float(meta.get("ftpx") or 1)  # ~60 REAL feet at any scale
         if kbs and routes_kb:
             far_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in routes_kb for k in range(len(r) - 1)) > lim_kb]
