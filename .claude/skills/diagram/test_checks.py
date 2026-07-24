@@ -2285,6 +2285,19 @@ def test_city_canal_shares_moat_mouth_fires_on_a_second_mouth_and_passes_on_the_
     assert "city_canal_reaches_dock" not in fails  # the moat handoff satisfies "reaches the water"
 
 
+def test_kido_aligned_with_ward_fence_fires_when_axis_aligned_on_a_slant_and_passes_when_rotated():
+    # GM 2026-07-24 (live on both cities, frozen in pool/regressions/: Nagahara's ~159deg SW
+    # ring-road kido, Tango's ~44deg S jog kido): the kido's roofed bar spans the gap IN the
+    # fence, so it rotates with the local fence tangent; axis-aligned-on-a-slant is the defect.
+    ward = [{"name": "w", "boundary": [[300, 300], [600, 600]], "z": 1, "wall_caps": []}]
+    stamp = _fort_city(wards=ward, kido=[{"x": 450, "y": 450, "horizontal": True, "bbox": [430, 430, 470, 470]}])  # legacy flag: a 90deg gate on a 45deg fence
+    assert "kido_aligned_with_ward_fence" in f(stamp)
+    turned = _fort_city(wards=ward, kido=[{"x": 450, "y": 450, "rot": 45.0, "bbox": [430, 430, 470, 470]}])
+    assert "kido_aligned_with_ward_fence" not in f(turned)
+    free = _fort_city(wards=ward, kido=[{"x": 100, "y": 900, "horizontal": True, "bbox": [80, 880, 120, 920]}])  # far from any fence - nothing to align to
+    assert "kido_aligned_with_ward_fence" not in f(free)
+
+
 def test_city_moat_junction_angles_fires_on_square_tees_and_passes_when_tilted():
     # GM 2026-07-24 (Nagahara hydrology review): both moat-river junctions met the river as
     # identical square tees - an rfoot-projection artifact. The outlet must sweep downstream

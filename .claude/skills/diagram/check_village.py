@@ -7479,6 +7479,41 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         shortfalls = lane_ward_shortfalls(M)
         check("city_lanes_reach_ward_gates", not shortfalls, f"lane(s) at a neighborhood (ward) wall that should extend to it and end at a gate: {shortfalls}")
 
+        # THE KIDO SITS IN THE FENCE, SO IT ALIGNS WITH THE FENCE (GM 2026-07-24): the roofed bar
+        # spans the gap in the ward fence - on a slanted fence run (Nagahara's SW ring-road kido on
+        # a ~159deg run, Tango's S jog kido on a ~44deg run) an axis-aligned glyph reads as a stamp
+        # dropped on the map, not a gate IN the fence. Same doctrine as city_wall_towers_aligned
+        # for the rampart towers. s.kido records the drawn angle as 'rot' (legacy manifests fall
+        # back to the horizontal flag: True -> 90, False -> 0); it must match the nearest fence
+        # segment's tangent mod 180 within ~7 degrees. The guard box needs no separate check - it
+        # is part of the kido group and rotates with it (s.ward puts it on the ward-interior flank).
+        wards_k = M.get("wards", [])
+        if wards_k:
+            kido_off = []
+            for kd2 in M.get("kido", []):
+                best2 = None  # (distance, tangent angle) of the nearest ward-fence segment
+                for wd2 in wards_k:
+                    b2 = wd2["boundary"]
+                    for i8 in range(len(b2) - 1):
+                        d8 = seg_dist(kd2["x"], kd2["y"], b2[i8], b2[i8 + 1])
+                        if best2 is None or d8 < best2[0]:
+                            best2 = (d8, math.degrees(math.atan2(b2[i8 + 1][1] - b2[i8][1], b2[i8 + 1][0] - b2[i8][0])))
+                if best2 is None or best2[0] > 16:
+                    continue  # a free-standing kido (nothing near enough to align to)
+                want8 = best2[1] % 180.0
+                got8 = float(kd2["rot"]) % 180.0 if "rot" in kd2 else (90.0 if kd2.get("horizontal") else 0.0)
+                diff8 = abs(got8 - want8)
+                diff8 = min(diff8, 180.0 - diff8)
+                if diff8 > 7.0:
+                    kido_off.append([round(kd2["x"]), round(kd2["y"]), round(diff8)])
+            check(
+                "kido_aligned_with_ward_fence",
+                not kido_off,
+                f"ward gate(s) not aligned with their fence (x, y, degrees off): {kido_off} - the kido's roofed bar "
+                f"spans the gap IN the fence, so it rotates with the local fence tangent (s.ward computes it from the "
+                f"boundary; pass rot= to s.kido for a hand-placed gate)",
+            )
+
         if meta.get("walled"):
             w = M.get("wall") or []
             gates = M.get("gates", [])

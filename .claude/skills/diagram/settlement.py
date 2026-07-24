@@ -2625,40 +2625,56 @@ class Settlement:
             mid = pts[len(pts) // 2]
             self.label(mid[0] + 38, mid[1], label, 11, italic=True, color="#5A4326")
 
-    def kido(self, x: float, y: float, horizontal: bool = True, sw: float | None = None) -> None:
+    def kido(self, x: float, y: float, horizontal: bool = True, sw: float | None = None, rot: float | None = None, guard_side: int | None = None) -> None:
         """A kido - a wooden WARD GATE barring a street at a quarter boundary, manned and shut at
         night to keep the samurai quarter apart from the commoners. A small city seals its wards
         with GATES, not internal ramparts (the walled-ward / fang system was a great-capital, Tang-
         era thing). Drawn OVER the street (a roofed gateway + posts + a guard box); records M['kido'].
-        horizontal=True for an E-W street (gate bars N-S), False for an N-S street."""
+        THE GATE SITS IN THE FENCE, SO IT ALIGNS WITH THE FENCE (GM 2026-07-24): the roofed bar
+        spans the gap in the ward fence, so its long axis runs along the LOCAL FENCE TANGENT -
+        pass `rot` (degrees, the fence direction; s.ward computes it from the boundary polyline).
+        An axis-aligned kido on a slanted fence run reads as a stamp dropped on the map, not a
+        gate in a fence (kido_aligned_with_ward_fence pins it). The guard box rotates with the
+        group; `guard_side` (+1 = the local +y flank, -1 = the -y flank) picks which side of the
+        fence it stands on - s.ward passes the WARD-INTERIOR side (the gate watch belongs to the
+        ward it seals). Legacy `horizontal` (True = an E-W street through a N-S fence) remains as
+        the fallback when rot is omitted, reproducing the old axis-aligned drawings exactly."""
         if sw is None:
             sw = self.lw(18)  # the barred opening spans a real ~18 ft street
         hw = sw / 2 + 5
-        roof: tuple[float, float, float, float]
-        if horizontal:  # street runs E-W; the gateway spans N-S
-            roof = (x - 7, y - hw, 14, 2 * hw)
-            posts = [(x - 8, y - hw - 1, 16, 4), (x - 8, y + hw - 3, 16, 4)]
-            guard = (x + 12, y - hw - 13, 16, 15)
-        else:  # street runs N-S; the gateway spans E-W
-            roof = (x - hw, y - 7, 2 * hw, 14)
-            posts = [(x - hw - 1, y - 8, 4, 16), (x + hw - 3, y - 8, 4, 16)]
-            guard = (x - hw - 13, y + 12, 15, 16)
-        g = ['<g>', f'<rect x="{roof[0]:.0f}" y="{roof[1]:.0f}" width="{roof[2]:.0f}" height="{roof[3]:.0f}" rx="1.5" fill="#8A6E3E" stroke="#3F3018" stroke-width="1.5"/>']
+        if rot is None:
+            rot = 90.0 if horizontal else 0.0
+        if guard_side is None:
+            guard_side = -1 if horizontal else 1  # the legacy flanks (E of a N-S gate, S of an E-W one)
+        # local frame: the gateway bar spans the X axis; rotate(rot) turns it onto the fence tangent
+        roof = (-hw, -7.0, 2 * hw, 14.0)
+        posts = [(-hw - 1, -8.0, 4.0, 16.0), (hw - 3, -8.0, 4.0, 16.0)]
+        guard = (-hw - 13, 12.0 if guard_side >= 0 else -28.0, 15.0, 16.0)
+        g = [f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{roof[0]:.0f}" y="{roof[1]:.0f}" width="{roof[2]:.0f}" height="{roof[3]:.0f}" rx="1.5" fill="#8A6E3E" stroke="#3F3018" stroke-width="1.5"/>')
         for px, py, pw, ph in posts:
-            g.append(f'<rect x="{px:.0f}" y="{py:.0f}" width="{pw}" height="{ph}" fill="#3F3018"/>')
-        g.append(f'<rect x="{guard[0]:.0f}" y="{guard[1]:.0f}" width="{guard[2]}" height="{guard[3]}" rx="1" fill="#CDB890" stroke="#5A4326" stroke-width="1.2"/>')
+            g.append(f'<rect x="{px:.0f}" y="{py:.0f}" width="{pw:.0f}" height="{ph:.0f}" fill="#3F3018"/>')
+        g.append(f'<rect x="{guard[0]:.0f}" y="{guard[1]:.0f}" width="{guard[2]:.0f}" height="{guard[3]:.0f}" rx="1" fill="#CDB890" stroke="#5A4326" stroke-width="1.2"/>')
         g.append('</g>')
         z = self.add_top(''.join(g))
-        rects = [roof] + posts + [guard]  # the gate's full drawn footprint (for the labels-on-top check)
-        bbox = [min(r[0] for r in rects), min(r[1] for r in rects), max(r[0] + r[2] for r in rects), max(r[1] + r[3] for r in rects)]
-        self.M.setdefault("kido", []).append({"x": round(x, 1), "y": round(y, 1), "horizontal": horizontal, "z": z, "bbox": bbox})
+        cr, sr = math.cos(math.radians(rot)), math.sin(math.radians(rot))
+        corners = [
+            (x + rcx * cr - rcy * sr, y + rcx * sr + rcy * cr) for rx_, ry_, rw_, rh_ in [roof, *posts, guard] for rcx, rcy in ((rx_, ry_), (rx_ + rw_, ry_), (rx_, ry_ + rh_), (rx_ + rw_, ry_ + rh_))
+        ]  # the gate's full drawn footprint, rotated (for the labels-on-top check)
+        bbox = [round(min(c[0] for c in corners), 1), round(min(c[1] for c in corners), 1), round(max(c[0] for c in corners), 1), round(max(c[1] for c in corners), 1)]
+        self.M.setdefault("kido", []).append({"x": round(x, 1), "y": round(y, 1), "horizontal": abs(sr) >= abs(cr), "rot": round(rot % 180.0, 1), "z": z, "bbox": bbox})
 
     def ward(self, name: str, boundary: Any, gates: Any) -> None:
         """An internal WARD boundary - a light earthwork/palisade fence (NOT a city rampart) that
         SEALS a quarter (the samurai/government ward) off the commoner streets, so its kido gates
         cannot simply be walked around: the fence is continuous between the gates, its ends abut
         the city wall, and a street may pierce it ONLY at a gate. `boundary` is the fence polyline;
-        `gates` are (x, y, horizontal) kido where a street crosses it. Records M['wards']."""
+        `gates` are (x, y) kido seats where a street crosses it (a legacy third element - the old
+        horizontal flag - is accepted and ignored). PLACEMENT RULE (GM 2026-07-24): each kido
+        ALIGNS WITH THE LOCAL FENCE TANGENT at its seat - the gate is a gap IN the fence, so a
+        30-degree fence run gets a 30-degree gate, never an axis-aligned stamp - and its guard
+        box stands on the WARD-INTERIOR flank (the gate watch belongs to the ward it seals).
+        Records M['wards']."""
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in boundary)
         fz = self.add(f'<path d="{dd}" fill="none" stroke="#9C8A5E" stroke-width="5" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add(f'<path d="{dd}" fill="none" stroke="#4A3A22" stroke-width="1.3" stroke-dasharray="2,7" opacity="0.85"/>')  # palisade
@@ -2706,8 +2722,15 @@ class Settlement:
                     cz = self.add(f'<path d="{dd_cap}" fill="none" stroke="#3A352C" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>')
                     caps.append({"x": round(px, 1), "y": round(py, 1), "z": cz, "pts": [[x, y] for x, y in cappts]})
         self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "wall_caps": caps})
-        for gx, gy, horiz in gates:
-            self.kido(gx, gy, horizontal=horiz)
+        icx = sum(p[0] for p in boundary) / len(boundary)  # the fence polyline's centroid sits toward the ward interior
+        icy = sum(p[1] for p in boundary) / len(boundary)
+        for gate in gates:
+            gx, gy = gate[0], gate[1]
+            gseg = min(range(len(boundary) - 1), key=lambda gi: seg_dist(gx, gy, boundary[gi], boundary[gi + 1]))
+            grot = math.degrees(math.atan2(boundary[gseg + 1][1] - boundary[gseg][1], boundary[gseg + 1][0] - boundary[gseg][0]))
+            gnx, gny = -math.sin(math.radians(grot)), math.cos(math.radians(grot))  # the local +y flank, in map coords
+            gside = 1 if (icx - gx) * gnx + (icy - gy) * gny >= 0 else -1  # guard box toward the ward interior
+            self.kido(gx, gy, rot=grot, guard_side=gside)
 
     _QUARTER_ZONES = ("residential", "civic", "mixed", "reserve")
     _RESERVE_KINDS = ("drill_ground", "garden", "agricultural_district")
