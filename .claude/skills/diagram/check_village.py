@@ -5168,6 +5168,74 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         straight = math.hypot(end[0] - start[0], end[1] - start[1])
         check(f"channel_directness[{tag}]", straight == 0 or polyline_len(poly) <= 1.6 * straight, f"len {polyline_len(poly):.0f} vs straight {straight:.0f}")
 
+    # A SUPPLY CONDUIT FEEDING A PADDY MUST BE VISIBLY SOURCED (GM 2026-07-24, Tango fs3): an
+    # irrigation canal can never just START in the middle of nowhere - it must tap on-map water
+    # or come in from the view edge (presumed to continue off-map). channel_source_anchored
+    # already checks the RECORDED topology, but a `drawn: False` conduit (an implied underground
+    # channel whose visual is carried by the comb's own drawn head-race) can lie visually: Tango's
+    # fs3 recorded its tap on a stream vertex, drew nothing between stream and comb, and the main
+    # canal's head hung in open ground 38px from the bank. So for every UNDRAWN supply conduit,
+    # the point where visible water actually starts - the comb origin, i.e. the fed field's
+    # main-ditch head nearest the recorded source - must itself (a) sit at/past the view edge,
+    # (b) sit on source water (stream/moat/pond/river/cargo-canal bed, or another comb's ditch -
+    # tail-water cascade, the standard way a city's drainage waters the fields below it), or
+    # (c) be joined to such a point by a DRAWN tap stroke. Tap strokes are read from
+    # M['drawn_channels'] (post-clip geometry - the check reads what was actually drawn, per the
+    # same-manifest rule in the dev-loop doc); a drawn stroke whose far end lies in or along the
+    # fed field's own outline is the comb's own canal heading downstream, not a tap.
+    def _on_source_water(pt: Pt, own: Any) -> bool:
+        if any(seg_dist(pt[0], pt[1], sp[i], sp[i + 1]) <= st.get("w", 9) / 2 + 4 for st in M.get("streams", []) for sp in [st["poly"]] for i in range(len(sp) - 1)):
+            return True
+        mo3: Any = M.get("moat")
+        if mo3 and any(seg_dist(pt[0], pt[1], mo3[i], mo3[(i + 1) % len(mo3)]) <= M.get("moat_width", 26) / 2 + 4 for i in range(len(mo3))):
+            return True
+        if pond and in_ellipse(pt[0], pt[1], pond, 1.05):
+            return True
+        rv3: Any = M.get("river")
+        if rv3 and any(seg_dist(pt[0], pt[1], rv3["pts"][i], rv3["pts"][i + 1]) <= rv3.get("w", 40) / 2 + 4 for i in range(len(rv3["pts"]) - 1)):
+            return True
+        if any(seg_dist(pt[0], pt[1], cp[i], cp[i + 1]) <= cn.get("w", 12) / 2 + 4 for cn in M.get("canals", []) for cp in [cn["poly"]] for i in range(len(cp) - 1)):
+            return True
+        return any(
+            seg_dist(pt[0], pt[1], dp[i], dp[i + 1]) <= fd2.get("w", 4) / 2 + 4 for fd2 in M.get("field_ditches", []) if fd2.get("field") != own for dp in [fd2["poly"]] for i in range(len(dp) - 1)
+        )
+
+    def _at_view_edge(pt: Pt) -> bool:
+        return bool(min(pt[0] - EX0, EX1 - pt[0], pt[1] - EY0, EY1 - pt[1]) <= 32)
+
+    supply_mains: dict[Any, list[Poly]] = {}
+    for fd3 in M.get("field_ditches", []):
+        if fd3.get("role") == "main":
+            supply_mains.setdefault(fd3.get("field"), []).append(fd3["poly"])
+    for c in M["channels"]:
+        cto = c.get("to") or {}
+        if cto.get("kind") != "field" or c.get("drawn", True) is not False:
+            continue  # a DRAWN supply channel carries its own visual continuity (ends anchor-checked above)
+        fld = cto.get("name")
+        fmains = supply_mains.get(fld)
+        if not fmains:
+            continue
+        csrc = c["poly"][0]
+        origin = min((m[0] for m in fmains), key=lambda h: math.hypot(h[0] - csrc[0], h[1] - csrc[1]))
+        ok = _at_view_edge(origin) or _on_source_water(origin, fld)
+        fo3: Any = field_by.get(fld)
+        if not ok and fo3:
+            for dcr in M.get("drawn_channels", []):
+                dpts = dcr["pts"]
+                if len(dpts) < 2 or min(seg_dist(origin[0], origin[1], dpts[i], dpts[i + 1]) for i in range(len(dpts) - 1)) > 4:
+                    continue
+                far = max((dpts[0], dpts[-1]), key=lambda e: math.hypot(e[0] - origin[0], e[1] - origin[1]))
+                if point_in_poly(far[0], far[1], fo3["outline"]) or edge_dist(far[0], far[1], fo3["outline"]) <= 8:
+                    continue  # the comb's own canal heading INTO the field, not a tap
+                if _on_source_water(far, fld) or _at_view_edge(far):
+                    ok = True
+                    break
+        check(
+            f"field_supply_visibly_sourced[{fld}]",
+            ok,
+            f"comb origin {origin} hangs in open ground: no on-map water source, no view-edge entry, no drawn tap stroke (an irrigation canal cannot start in the middle of nowhere)",
+        )
+
     # natural streams: those that declare anchors must connect them (e.g. a forest
     # brook into a pond); and NO stream may run through a farm field
     def stream_through_field(poly: Poly, outline: Poly, frm: Any, to: Any) -> bool:
