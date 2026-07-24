@@ -294,6 +294,15 @@ def test_frontage_shortfall_is_reported(capsys):
     assert "FRONTAGE SHORTFALL" in capsys.readouterr().out
 
 
+def test_pack_face_streets_true_skips_streetless_ground(capsys):
+    # face_streets=True means businesses line a frontage ONLY: with no street within reach,
+    # every grid spot is skipped and nothing places (the branch Hirameki's gate-market pack
+    # exercised until 2026-07-24, when the market moved to fixed coordinates)
+    s = _town()
+    n = s.pack((100, 100, 400, 400), ["shop"] * 2, face_streets=True)
+    assert n == 0 and "PACK SHORTFALL" in capsys.readouterr().out
+
+
 def test_kosatsuba_records_a_blocking_struct():
     # the notice board records its manifest entry at true size (~12x5 ft) and reserves its
     # verge (a later pack must not bury the board)
