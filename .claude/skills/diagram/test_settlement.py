@@ -558,6 +558,26 @@ def test_river_canal_dock_jetty_water_gate_defaults():
     assert s.M["moat"][0] != s.M["moat"][-1]  # OPEN arc (ends do not close on themselves)
 
 
+def test_moat_river_junction_feet_tilt_with_the_current():
+    # GM 2026-07-24 hydrology review: the junction feet are NOT square rfoot tees. The upstream
+    # (inlet) end shifts UPSTREAM off its square foot - a near-square, sediment-wary intake with
+    # only a slight tilt - and the downstream (outlet) end sweeps DOWNSTREAM further (confluences
+    # merge at downstream angles). River pts run upstream-first; a vertical river makes the
+    # shifts pure y offsets, so the asymmetry is directly measurable.
+    import math as m
+
+    s = _crop_settlement()
+    s.meta(name="RT", scale="city", walled=True, ftpx=3)
+    pts = [(round(1000 + 300 * m.cos(2 * m.pi * i / 16)), round(700 + 300 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
+    river = [(1360, 100), (1360, 1300)]  # flows top -> bottom (upstream-first)
+    mo = s.moat(pts, gap=24, river=river)
+    (inlet, adj_in), (outlet, adj_out) = sorted([(mo[0], mo[1]), (mo[-1], mo[-2])], key=lambda e: e[0][1])
+    in_shift = adj_in[1] - inlet[1]  # upstream (negative-y) shift of the inlet foot off square
+    out_shift = outlet[1] - adj_out[1]  # downstream (positive-y) sweep of the outlet foot
+    assert in_shift > 0  # inlet tilts upstream, never smoothly flow-aligned
+    assert out_shift > in_shift  # the outlet sweeps harder - the researched asymmetry
+
+
 def test_clip_to_moat_whole_path_inside_is_left_alone():
     s = _crop_settlement()
     s.M["moat"] = [(300, 100), (300, 900)]

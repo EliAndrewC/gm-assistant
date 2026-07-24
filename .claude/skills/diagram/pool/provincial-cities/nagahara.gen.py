@@ -7,7 +7,9 @@ China first, Japan agreeing - Xiangyang's Han-river face, Pingyao on the Fen, Ok
 Asahi): the trunk river NEVER runs through the walls (the Kaifeng flood lesson - the one great
 city that let a river in was devastated seven times); instead the city stands ON the bank, the
 river IS the water defense on its flank, and the dug moat covers the three landward faces,
-tapping the river upstream (NE) and returning downstream (SE) so the current flushes it.
+tapping the river upstream (NE) and returning downstream (SE) so the current flushes it; the
+junction feet tilt WITH the current (inlet near-square, outlet swept downstream - s.moat's
+default tilts; settlements.md "junction angles follow the current", GM 2026-07-24).
 
 NO IMPERIAL ROAD: the Imperial highway passes ~10 miles north. A NORTH ROAD leaves the north
 gate slanting slightly north-west to meet it (way off-map); the EAST ROAD crosses the Hayakawa

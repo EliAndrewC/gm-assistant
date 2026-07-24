@@ -2285,6 +2285,19 @@ def test_city_canal_shares_moat_mouth_fires_on_a_second_mouth_and_passes_on_the_
     assert "city_canal_reaches_dock" not in fails  # the moat handoff satisfies "reaches the water"
 
 
+def test_city_moat_junction_angles_fires_on_square_tees_and_passes_when_tilted():
+    # GM 2026-07-24 (Nagahara hydrology review): both moat-river junctions met the river as
+    # identical square tees - an rfoot-projection artifact. The outlet must sweep downstream
+    # (confluences merge at downstream angles; a square tee drives the exit jet across the
+    # river) and the inlet must stay square-to-upstream (a flow-aligned intake drinks bedload).
+    # The real pre-tilt manifest is frozen in pool/regressions/.
+    river = {"pts": [[900, 100], [900, 900]], "w": 40}  # upstream-first: flows N -> S
+    square = _fort_city(river=river, moat=[[894, 300], [700, 300], [700, 800], [894, 800]], moat_width=22)
+    assert "city_moat_junction_angles" in f(square)  # the outlet meets the river as a square tee
+    tilted = _fort_city(river=river, moat=[[894, 260], [700, 300], [700, 800], [894, 860]], moat_width=22)
+    assert "city_moat_junction_angles" not in f(tilted)  # inlet tilted upstream, outlet swept downstream
+
+
 def test_city_wharf_jetties_on_bank_fires_when_floating_and_passes_on_the_bank():
     # a jetty is a finger from the near bank into the water, not a bar floating mid-stream
     river = {"pts": [[900, 100], [900, 900]], "w": 40}  # centerline x900, near (city) bank x880
