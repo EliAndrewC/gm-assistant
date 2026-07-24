@@ -3704,3 +3704,75 @@ def test_clip_to_river_walks_a_multi_point_run_out_of_the_bed():
     # the (hw - 3 + capr) = 20.5 inset runs ALONG the channel, so its perpendicular distance from the
     # centerline is shorter on a diagonal approach (here ~16); it must sit backed off inside the bed
     assert 12.0 <= d <= 21.0
+
+
+def test_dike_top_houses_seats_a_single_file_on_the_crest():
+    # GM 2026-07-24 (settlements.md 'Polder siting Q&A'): the ISLET-polder settlement form - houses in
+    # single file ON the dike crest, each on a widened-crest platform, tagged on_dike in the manifest.
+    import check_village
+
+    s = Settlement(1400, 1400, seed=5)
+    s.meta(name="DT", scale="hamlet", ftpx=1, toscale=True, households=8, terrain="low", field_archetype="polder_grid")
+    env = [(300, 300), (1100, 300), (1100, 1100), (300, 1100)]
+    s.perimeter_dike(env, seed=7, gaps=[(500, 300), (700, 300)])
+    dk = s.M["dikes"][0]
+    # the crest centerline is recorded, and every crest point sits on the band
+    assert len(dk["crest"]) >= 60
+    assert all(check_village.poly_dist(cx, cy, dk["outline"]) <= 6 for cx, cy in dk["crest"])
+    st = random.getstate()
+    n = s.dike_top_houses(8, seed=11, span=(0.0, 0.25), gap_clear=60.0)  # the top (north) run, which carries both sluice gaps
+    assert random.getstate() == st  # stream-neutral: the helper never ripples the map's main rng
+    tagged = [h for h in s.M["houses"] if h.get("on_dike")]
+    assert n == len(tagged) and 4 <= n < 8  # the sluice-gap skips cost sites - nobody builds over the notch
+    for h in tagged:
+        assert check_village.poly_dist(h["x"], h["y"], dk["outline"]) <= 14  # seated on the band
+        assert all(math.hypot(h["x"] - gx, h["y"] - gy) >= 60 for gx, gy in ((500, 300), (700, 300)))
+        assert h["platform"][0] > h["w"] and h["platform"][1] > h["h"]  # the widened-crest pad outsizes the house
+    assert s.M["meta"]["settlement_form"] == "dike_top"  # the helper declares the form
+    # single file: a crowded call self-spaces (spacing skips), so a short span caps well under the ask
+    n2 = s.dike_top_houses(30, seed=3, span=(0.5, 0.75))
+    assert 0 < n2 < 30
+    # determinism: an identical settlement re-run lands identical houses
+    s2 = Settlement(1400, 1400, seed=5)
+    s2.meta(name="DT", scale="hamlet", ftpx=1, toscale=True, households=8, terrain="low", field_archetype="polder_grid")
+    s2.perimeter_dike(env, seed=7, gaps=[(500, 300), (700, 300)])
+    s2.dike_top_houses(8, seed=11, span=(0.0, 0.25), gap_clear=60.0)
+    assert [h for h in s2.M["houses"] if h.get("on_dike")] == tagged
+
+
+def test_farmsteads_keep_dike_top_houses():
+    # farmsteads() rebuilds M['houses'] from the pending-bundle survivors; dike-top houses are not
+    # pending farmsteads, so they must survive the rebuild rather than being silently dropped.
+    s = Settlement(1400, 1400, seed=5)
+    s.meta(name="DT", scale="hamlet", ftpx=1, toscale=True, households=8, terrain="low", field_archetype="polder_grid")
+    s.perimeter_dike([(300, 300), (1100, 300), (1100, 1100), (300, 1100)], seed=7)
+    s.dike_top_houses(4, seed=11, span=(0.0, 0.25))
+    before = [h for h in s.M["houses"] if h.get("on_dike")]
+    assert before
+    s.farmsteads()
+    assert [h for h in s.M["houses"] if h.get("on_dike")] == before
+
+
+def test_marsh_waterside_role():
+    # the un-reclaimed wet wild outside a polder dike (settlements.md 'Polder siting Q&A'): a valid
+    # role, recorded like any marsh; an unknown role still raises.
+    s = Settlement(1400, 1400, seed=5)
+    s.meta(name="WS", scale="hamlet", ftpx=1, toscale=True)
+    s.marsh([(0, 200), (260, 200), (260, 1200), (0, 1200)], role="waterside")
+    assert s.M["marshes"][-1]["role"] == "waterside"
+    with pytest.raises(ValueError):
+        s.marsh([(0, 0), (10, 0), (10, 10)], role="lagoon")
+
+
+def test_settlement_form_dike_top_is_low_ground_gated():
+    # dike_top stands ON a polder's perimeter dike, so the form needs the polder terrain (low reclaimed
+    # ground); anywhere else the typing rule rejects it (settlements.md 'Polder waterward fringe + dike-top housing').
+    dry = Settlement(1200, 1200, seed=1)
+    dry.meta(name="Sd", scale="village", terrain="hill")
+    dry.pin_knob("settlement_form", "dike_top")
+    with pytest.raises(ValueError):
+        dry.resolve("settlement_form")
+    low = Settlement(1200, 1200, seed=1)
+    low.meta(name="Sl", scale="village", terrain="low")
+    low.pin_knob("settlement_form", "dike_top")
+    assert low.resolve("settlement_form") == "dike_top"

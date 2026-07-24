@@ -7032,3 +7032,53 @@ def test_inwall_drains_gated_at_cutoff_exempts_drawn_culverts_and_outside_condui
     assert "inwall_drains_gated_at_cutoff" not in f(_iw_manifest([300, 300], drawn=True))
     outside = _iw_manifest([980, 500])
     assert "inwall_drains_gated_at_cutoff" not in f(outside)
+
+
+def test_dike_top_houses_on_the_dike():
+    # GM 2026-07-24 (settlements.md 'Polder siting Q&A'): the on_dike tag (dike_top_houses,
+    # settlement_form 'dike_top') exempts a house from structures_clear_of_dike - so the tag must be
+    # honest: a tagged house must actually be seated on the recorded dike band.
+    dike = [[100, 100], [900, 100], [900, 900], [100, 900]]
+    base = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}, "dikes": [{"outline": dike, "w_min": 14.0, "w_max": 38.0}]}
+    on = {**base, "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain", "on_dike": True}]}
+    assert "dike_top_houses_on_the_dike" not in f(on)
+    assert "structures_clear_of_dike" not in f(on)  # the crest house is exempt from the keep-off rule
+    off = {**base, "houses": [{"x": 1300, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain", "on_dike": True}]}
+    assert "dike_top_houses_on_the_dike" in f(off)  # a tagged house floating off the bank
+    # tagged houses on a map with NO dike at all fire too - the tag is never a free pass
+    assert "dike_top_houses_on_the_dike" in f({"meta": {"scale": "hamlet"}, "houses": [{"x": 500, "y": 500, "w": 46, "h": 28, "rot": 0, "kind": "plain", "on_dike": True}]})
+
+
+def test_polder_waterward_flanks_wet():
+    # GM 2026-07-24 (settlements.md 'Polder siting Q&A'): outside the dike on a declared water-facing
+    # flank must READ wet (waterside/toe marsh or open water), not the same dry scrub as the landward shore.
+    dike = [[300, 300], [1100, 300], [1100, 1100], [300, 1100]]
+    dry = {"meta": {"scale": "hamlet", "field_archetype": "polder_grid", "waterward": ["W", "E", "N", "S"]}, "dikes": [{"outline": dike, "w_min": 14.0, "w_max": 38.0}]}
+    assert "polder_waterward_flanks_wet" in f(dry)  # all four declared, nothing wet anywhere
+    wet_w = {
+        **dry,
+        "meta": {**dry["meta"], "waterward": ["W"]},
+        "marshes": [{"x": 200, "y": 700, "w": 200, "h": 900, "role": "waterside", "poly": [[100, 250], [300, 250], [300, 1150], [100, 1150]]}],
+    }
+    assert "polder_waterward_flanks_wet" not in f(wet_w)  # a waterside reed fringe covers the west flank
+    wet_s = {
+        **dry,
+        "meta": {**dry["meta"], "waterward": ["S"]},
+        "marshes": [{"x": 700, "y": 1300, "w": 1040, "h": 330, "role": "toe", "poly": [[180, 1120], [1220, 1120], [1220, 1450], [180, 1450]]}],
+    }
+    assert "polder_waterward_flanks_wet" not in f(wet_s)  # the auto toe marsh already wets the low flank
+    # an undeclared map skips (a valley comb has no dike facing water)
+    assert "polder_waterward_flanks_wet" not in f({"meta": {"scale": "hamlet", "field_archetype": "polder_grid"}, "dikes": dry["dikes"]})
+
+
+def test_marsh_on_low_ground_exempts_the_waterside_fringe():
+    # a polder's waterside fringe surrounds the dike regardless of the fall direction (the polder floor
+    # sits BELOW the outside water level) - only the valley-toe role must lie downhill of the paddy.
+    base = {
+        "meta": {"scale": "hamlet", "down_deg": 90},
+        "fields": [{"name": "p", "kind": "paddy", "outline": [[300, 300], [1100, 300], [1100, 1100], [300, 1100]], "bbox": [300, 300, 1100, 1100]}],
+    }
+    west_fringe = {**base, "marshes": [{"x": 200, "y": 700, "w": 200, "h": 900, "rot": 0, "role": "waterside", "poly": [[100, 250], [300, 250], [300, 1150], [100, 1150]]}]}
+    assert "marsh_on_low_ground" not in f(west_fringe)  # same fall as the field centroid - exempt
+    uphill_toe = {**base, "marshes": [{"x": 700, "y": 200, "w": 800, "h": 200, "rot": 0, "role": "toe", "poly": [[300, 100], [1100, 100], [1100, 300], [300, 300]]}]}
+    assert "marsh_on_low_ground" in f(uphill_toe)  # a TOE marsh uphill of the paddy still fires

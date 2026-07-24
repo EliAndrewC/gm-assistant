@@ -80,6 +80,16 @@ import random as __r
 # not just the low hollows. Everywhere else the overlay is topographically filtered. See research.md D2.
 s.apply_land_use(net, "mulberry_fishpond", __r.Random(SEED ^ 0x55), fraction=0.9, eligible="all")
 
+# the WATERWARD FRINGE (GM 2026-07-24, settlements.md 'Polder siting Q&A'): same landward-margin siting as
+# Enokida - dry shore east (the village side), fluctuating wet wild west + the already-wet south toe. The
+# waterside reed strip hugs the dike's outer face (reeds auto-skip the band + ponds via the keep-outs) and
+# runs off the west frame; meta.waterward declares the water-facing flanks for polder_waterward_flanks_wet.
+_dol = s.M["dikes"][0]["outline"]
+_dwx = min(p[0] for p in _dol)
+_dny, _dsy = min(p[1] for p in _dol), max(p[1] for p in _dol)
+s.marsh([(-20, _dny - 30), (_dwx + 60, _dny - 30), (_dwx + 60, _dsy + 20), (-20, _dsy + 20)], role="waterside")
+s.meta(waterward=["W", "S"])
+
 # the village lines the dry EAST perimeter dike
 _rng = _random.Random(SEED ^ 0x3B)
 _ex = max(p[0] for p in _env)

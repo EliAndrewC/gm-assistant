@@ -1,0 +1,42 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid",
+  "waterward": [
+   "W",
+   "E",
+   "N",
+   "S"
+  ]
+ },
+ "dikes": [
+  {
+   "outline": [
+    [
+     300,
+     300
+    ],
+    [
+     1100,
+     300
+    ],
+    [
+     1100,
+     1100
+    ],
+    [
+     300,
+     1100
+    ]
+   ],
+   "w_min": 14.0,
+   "w_max": 38.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "polder_waterward_flanks_wet"
+  ],
+  "source": "test_checks.py::test_polder_waterward_flanks_wet"
+ }
+}
