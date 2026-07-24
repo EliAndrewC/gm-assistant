@@ -4969,24 +4969,26 @@ def _tower(x, y):
     return {"x": x, "y": y, "w": 26, "h": 26, "rot": 0}
 
 
-def test_town_has_fire_tower_fires_when_absent():
-    # EVERY town now (GM audit 2026-07 widened this from walled-only): unwalled county seats too
-    assert "town_has_fire_tower" in f({"meta": {"scale": "town", "walled": True}})
-    assert "town_has_fire_tower" in f({"meta": {"scale": "town", "walled": False}})
+def test_walled_town_has_fire_tower_fires_when_absent():
+    # WALLED towns only (GM 2026-07-24, reverting the 2026-07 audit widening): an unwalled seat
+    # keeps fire bells and kura, not a tower - see settlements.md "Fire towers"
+    assert "walled_town_has_fire_tower" in f({"meta": {"scale": "town", "walled": True}})
 
 
-def test_town_has_fire_tower_passes_with_one():
-    assert "town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)]})
+def test_walled_town_has_fire_tower_passes_with_one():
+    assert "walled_town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True}, "fire_towers": [_tower(500, 500)]})
 
 
-def test_town_has_fire_tower_opt_out():
-    assert "town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True, "fire_tower": False}})
+def test_walled_town_has_fire_tower_opt_out():
+    assert "walled_town_has_fire_tower" not in f({"meta": {"scale": "town", "walled": True, "fire_tower": False}})
 
 
 def test_unwalled_town_needs_no_fire_tower():
-    # an OPEN road-town relies on its road and field gaps; the presence check is walled-only
+    # an OPEN town's detached fabric has its own natural breaks; the presence check is walled-only
+    # (and the widened town_has_fire_tower name must stay gone)
     fails = f({"meta": {"scale": "town", "walled": False}})
     assert "walled_town_has_fire_tower" not in fails
+    assert "town_has_fire_tower" not in fails
 
 
 def test_city_has_fire_towers_fires_with_one():

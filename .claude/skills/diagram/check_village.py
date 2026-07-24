@@ -6957,12 +6957,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"it sits at the settlement's edge, so its gate should open toward the town/road (no fixed default; south is the formal fallback)",
         )
 
-    if scale == "town" and meta.get("fire_tower", True):
-        # EVERY town's dense wooden core needs a fire-watch tower over its rooftops - a walled
-        # town's rampart traps a fire in, and an unwalled county seat's packed road-front core
-        # burns just the same (GM audit 2026-07 widened this from walled-only). WHY:
-        # settlements.md "Fire towers". Opt out per-map with meta(fire_tower=False).
-        check("town_has_fire_tower", len(M.get("fire_towers", [])) >= 1, "a town's dense wooden core needs a fire-watch tower (s.fire_tower(...); meta(fire_tower=False) to omit)")
+    if scale == "town" and meta.get("walled") and meta.get("fire_tower", True):
+        # WALLED towns only (GM 2026-07-24, REVERTING the 2026-07 audit widening to all towns).
+        # The audit argued an unwalled seat's "packed road-front core burns just the same", but an
+        # unwalled town is drawn at detached village grain (bscale 1.0, field gaps for natural
+        # breaks) - not the contiguous row fabric the hinomi-yagura historically watched - and
+        # real unwalled administrative seats (jin'ya/daikansho towns) kept fire BELLS, stored
+        # water, and fireproof kura, not watch towers; the freestanding rural tower is a
+        # Meiji-and-later institution. WHY: settlements.md "Fire towers". Opt out per-map with
+        # meta(fire_tower=False).
+        check("walled_town_has_fire_tower", len(M.get("fire_towers", [])) >= 1, "a walled town's dense wooden core needs a fire-watch tower (s.fire_tower(...); meta(fire_tower=False) to omit)")
 
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")), "a walled town must have a wall and a gate")
