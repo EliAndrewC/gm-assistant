@@ -40,7 +40,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from citybudget import CityProgram, budget_to_manifest, plan_city  # noqa: E402
 from settlement import Settlement  # noqa: E402
-from waterfields import BEAN_GREEN, BUND, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
+from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this city's 3 ft/px (was hand-set 26px
 # -> ~0.08 acre, at Bray's "large" ceiling). Subdivides the same fans into finer cells; the ~3,000 urban
@@ -319,7 +319,7 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         s.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in dp["poly"]], "crop": dp["crop"], "theta": round(dp["theta"], 3)})
     for p in net["plots"]:
         pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in p["poly"])
-        s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{BUND}" stroke-width="2" stroke-linejoin="round"/>')
+        s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(s.ftpx):.2f}" stroke-linejoin="round"/>')
     beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
     s.add(f'<g opacity="0.85">{beads}</g>')
     for c in sorted(net["channels"], key=lambda c: -c["w"]):

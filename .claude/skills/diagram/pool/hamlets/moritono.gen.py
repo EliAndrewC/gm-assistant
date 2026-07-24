@@ -24,7 +24,7 @@ from settlement import Settlement  # noqa: E402
 import math  # noqa: E402
 import random as _random  # noqa: E402
 
-from waterfields import BEAN_GREEN, BUND, build_comb  # noqa: E402
+from waterfields import AZE, BEAN_GREEN, aze_w, build_comb  # noqa: E402
 
 W, H = 2600, 1500                     # wide: the E-high(forest) -> W-low valley, water flowing E -> W
 SEED = 44
@@ -80,7 +80,7 @@ for p in net["dry_plots"]:
                              "crop": p["crop"], "theta": round(p["theta"], 3)})
 for p in net["plots"]:
     pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in p["poly"])
-    s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{BUND}" stroke-width="2" stroke-linejoin="round"/>')
+    s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(s.ftpx):.2f}" stroke-linejoin="round"/>')
 
 beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
 s.add(f'<g opacity="0.85">{beads}</g>')
