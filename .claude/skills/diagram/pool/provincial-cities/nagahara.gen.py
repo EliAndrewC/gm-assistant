@@ -114,7 +114,8 @@ s.quarter(_qwedge(36, 48), "mixed")  # NW temple neighborhood + monzen
 SAM_BND = [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)]
 s.corridors.append((SAM_BND, 15))  # reserve the WARD FENCE line before ANY pack so no house (samurai or burakumin) sits ON it (city_ward_fence_clear_of_structures)
 # FRAME: content-cropped at the END of the gen via s.crop_city() (GM 2026-07-23, second pass) - the
-# frame hugs the moat ring + the kept satellites (gate markets, wharf, flophouses, the far-bank
+# frame hugs the moat ring + the kept satellites (gate-market flophouses + labels, the far-bank
+# (the market SHOP strings themselves clip at the frame per the slice doctrine, GM 2026-07-24)
 # funerary complex, labels) and the fans CLIP at the edge. The interim hand frame (MARGIN=250 +320
 # east) is superseded; see crop_city's docstring.
 
@@ -423,6 +424,12 @@ for sx, sy in [
 ]:  # small wayside shrines (one is Suitengu, the river fortune) - clustered clear of the graveyards; the first sits E of the monzen roji at x1250 (it rode the lane's bed at its old 1258 seat)
     s.small_shrine(sx, sy)
 s.label(1292, 1299, "temple neighborhood", 9, italic=True, color="#6B2A18")
+# ADEPT-MONK HOUSING (GM 2026-07-24, settlements.md "City temples"): 2-3 ordinary homes per
+# complex for the married adepts among its 15-30 monks - drawn identical to laborer houses
+# (kind "monk_house" exists for the checks/budget/population math, not the eye). Placed before
+# the monzen pack so the warren flows around them.
+s.pack((1213, 1155, 1268, 1200), ["monk_house"] * 3, step=15)  # Bishamon's, E of the hall among the wayside shrines
+s.pack((1425, 1118, 1492, 1172), ["monk_house"] * 3, step=15)  # Ebisu's, E of the hall clear of the sando
 
 # MONZEN-MACHI: the temple town's commoner housing (pilgrims' inns, shrine craftsmen, their
 # servants) packs the NW ground around the halls. A temple neighborhood was historically DENSE
@@ -787,6 +794,10 @@ s.frontage(
     QUAY, ["shop"] * 18, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14)
 )  # the riverfront wharf is warehouses/SHOPS, not merchant residences (commoner dwellings shelter inside the wall - feature 006)
 s.label(1998, 1201, "wharf", 10, italic=True, color="#5A4326")
+# the river gate's own approach-road stall string (the wharf is the bulk market, but the gate
+# keeps a >= 6-shop guan-xiang slice too - GM 2026-07-24; research: 10-40 structures per
+# trafficked gate, the drawn belt a slice like the estates and farmland)
+s.frontage([(1953, 1330), (2085, 1330)], ["shop"] * 8, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(15))
 
 # a gate market (guan-xiang) OUTSIDE THE NORTH GATE too: the wharf is the river gate's market, but
 # the north gate is on the road to the Imperial highway, so it grows its own smaller stall cluster
@@ -794,8 +805,8 @@ s.label(1998, 1201, "wharf", 10, italic=True, color="#5A4326")
 # stall row flanks the NW-slanting north road just above the moat (y888), clear of the N-gate
 # flophouse at (1405, 837).
 s.frontage(
-    [(1451, 829), (1418, 763)], ["shop"] * 9, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(16)
-)  # flanks the REAL north-road segment (two of its vertices) so the stalls sit clear of the road bed
+    [(1451, 829), (1413, 751), (1385, 680)], ["shop"] * 16, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(16)
+)  # flanks the REAL north-road vertices so the stalls sit clear of the road bed (a straight chord across the road's bend put a stall ON it, no_structure_on_road); the row runs past the frame top (view starts y743) so the outermost stalls are cut - the "more beyond the map" slice convention (GM 2026-07-24; research: 10-40 structures per trafficked gate, >= 6 drawn per gate)
 s.label(1508, 806, "gate market", 9, italic=True, color="#5A4326")
 
 # samurai country estates: DISPERSED walled compounds across the Hayakawa to the NORTHEAST (toward

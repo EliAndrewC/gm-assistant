@@ -178,6 +178,13 @@ def plan_city(program: CityProgram, canvas: tuple[float, float] | None = None) -
         ),
     ]
     lines += [BudgetLine(label, count, area * k, "fixed civic program floor at Tango-measured compound footprints (research.md A)") for label, count, area in CIVIC_PROGRAM]
+    # Adept-monk housing (GM 2026-07-24): each of the 2 temple precincts keeps 2-3 ordinary homes
+    # in its neighborhood for the married adepts among its 15-30 monks (temple-density canon,
+    # settlements.md "City temples"). Clergy are not a lay caste, so these 5 households ride
+    # OUTSIDE the caste table's 600 families - a small civic-adjacent line at packed gross cost.
+    lines.append(
+        BudgetLine("adept-monk houses by the temple precincts", 5, 5 * C_PACKED * k, "2 temple precincts x 2-3 adept-monk households at C_PACKED gross (clergy live outside the lay caste table)")
+    )
     water_label = "cargo canal + dock basin" if program.river else "pond"
     lines.append(BudgetLine(water_label, 1, WATER_AREA * k, "one in-wall water feature - Tango pond 2,865 / Nagahara canal+dock 2,834 px^2 measured"))
     lines.extend(program.extras)

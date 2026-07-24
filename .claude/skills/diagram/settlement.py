@@ -896,7 +896,7 @@ class Settlement:
     # like a village's commons. Estates (manors) also clip: a fraction-off-edge estate with its land
     # running on is the wanted signal (city_estates_multiple_shown needs >= 1 visible - verify per map).
     _CROP_CITY = (
-        "buildings",  # includes the extramural gate-market / wharf stalls - the kept suburbs
+        "buildings",  # in-wall stock + extramural caravan clusters; the extramural gate-market/wharf SHOP string is excluded below - it clips at the frame per the slice doctrine (GM 2026-07-24)
         "flophouses",
         "cemeteries",
         "cremation_grounds",
@@ -927,8 +927,16 @@ class Settlement:
         (which flank that is varies by city; both current cities happen to use west=100)."""
         hx: list[float] = []
         hy: list[float] = []
+        wallp = self.M.get("wall")
         for k in self._CROP_CITY:
             for o in self.M.get(k, []):
+                if k == "buildings" and o.get("kind") == "shop" and wallp and not point_in_poly(o["x"], o["y"], wallp):
+                    # the extramural gate-market / wharf stall STRING does not set the frame - it
+                    # CLIPS at the edge like the paddy fans and estates, the cut-off stalls reading
+                    # as "the suburb continues" (the slice doctrine, GM 2026-07-24). The market's
+                    # flophouse and its label still anchor the frame, so a working band of every
+                    # gate market stays in view.
+                    continue
                 if o.get("poly"):  # pragma: no cover - none of the city keys record polys today; symmetry with crop_to_content
                     hx += [p[0] for p in o["poly"]]
                     hy += [p[1] for p in o["poly"]]
@@ -3582,6 +3590,12 @@ class Settlement:
         "laborer": ('#C2B190', '#6B5A3A', 34, 24),  # laborer dwelling (the standard ~87% - poorer hinin)
         "laborer_large": ('#CBB684', '#6B5A3A', 50, 34),  # a 'master' (rich) laborer's larger home (~12.5% of laborers, budgets.md) - the wealthier hinin who line the back streets
         "servant": ('#CDBE9C', '#6B5A3A', 30, 22),  # servant quarters (small)
+        "monk_house": (
+            '#C2B190',
+            '#6B5A3A',
+            34,
+            24,
+        ),  # an adept-monk household's home in a temple neighborhood (GM 2026-07-24) - DELIBERATELY identical to a laborer dwelling on the sheet (no label, no glyph of its own); the distinct kind exists for the checks, the budget, and the population math, not the eye
         "barn": ('#C9A57A', '#6B4F2A', 84, 56),
         "samurai": ('#DDB87A', '#5A3F1E', 56, 40),  # a junior samurai's small city house (most of the neighborhood)
         "samurai_large": ('#E0BC80', '#5A3F1E', 82, 58),  # a senior samurai's large city house (a minority; walled estates are OUTSIDE the walls)
