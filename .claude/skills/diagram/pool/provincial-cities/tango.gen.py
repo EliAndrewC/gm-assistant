@@ -948,11 +948,11 @@ s.ring(('poly', ENV_FS3), 16, 40, ["plain"])
 # approach and carries the bigger market; the NORTH gate's is SMALLER (the 大关厢-vs-small asymmetry),
 # also because the frame crops close above it (moat at y847, view top y729).
 s.frontage(
-    [(1602, 1856), (1602, 2050)], ["shop"] * 24, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14)
+    [(1602, 1856), (1602, 2050)], ["shop"] * 24, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), fill=True
 )  # SOUTH gate: the guan-xiang gate market is transient SHOPS/stalls, not merchant residences (commoner DWELLINGS shelter inside the wall). The row runs past the frame bottom (view ends y2021) - the cut-off shops say "the suburb continues", the same slice convention as the estates and farmland (GM 2026-07-24; research: 10-40 structures per trafficked gate)
 s.label(1685, 1909, "gate market", 10, italic=True, color="#5A4326")
 s.frontage(
-    [(1602, 688), (1602, 836)], ["shop"] * 14, skip=IMPROAD, width=s.lw(26), spacing=19, rows=1, jitter=1, setback=s.px(14)
+    [(1602, 688), (1602, 836)], ["shop"] * 14, skip=IMPROAD, width=s.lw(26), spacing=19, rows=1, jitter=1, setback=s.px(14), fill=True
 )  # NORTH gate: the smaller guan-xiang, one stall row each side of the road north of the moat (y847), clear of the N-gate flophouse at x1509; the row now runs past the frame top (view starts y718) so the outermost stalls are cut - the "more beyond the map" slice convention (GM 2026-07-24)
 s.label(1697, 822, "gate market", 10, italic=True, color="#5A4326")  # under the stall row, clear of the Imperial Road label (no_label_overlaps)
 

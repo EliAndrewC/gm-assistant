@@ -23,6 +23,7 @@ import random
 import shutil
 import subprocess
 import sys
+from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any, cast
 
@@ -3823,11 +3824,13 @@ class Settlement:
                 break
         return n
 
-    def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False) -> int:
+    def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False, fill: bool = False) -> int:
         """Densely fill a district bbox with a list of building kinds (one building
         each), grid-scan + jitter, skipping the road, blocked regions, and occupied
         spots. With face_streets, each building rotates to face its nearest street.
-        Returns the number placed (leftovers are 'off-map')."""
+        Returns the number placed. Leftovers WARN via _shortfall unless fill=True
+        declares the request a capacity BUDGET ("place up to N") rather than an exact
+        count - the city gens' 600-samurai district fills are the idiom."""
         x0, y0, x1, y1 = bbox
         items = list(items)
         n = 0
@@ -3872,7 +3875,23 @@ class Settlement:
                     n += 1
                 gx += step
             gy += step
+        if not fill:
+            self._shortfall("pack", bbox, n, items)
         return n
+
+    @staticmethod
+    def _shortfall(fn: str, where: Any, placed: int, left: list[Any]) -> None:
+        """A placement helper SILENTLY dropping what does not fit is how authored-vs-landed
+        drift happens (the 2026-07-24 town audit: Hirameki's gate market authored 12
+        businesses, landed 4, and nothing said so - the "no silent caps" principle applied
+        to pack/frontage). Loudly report any shortfall; the gen author decides whether to
+        make room, trim the request to the ground truth, or mark the call fill=True when
+        the request is deliberately a capacity budget. An unmarked warning is a standing
+        TODO to make that call."""
+        if left:
+            want = placed + len(left)
+            kinds = ", ".join(f"{k} x{c}" for k, c in Counter(left).items())
+            print(f"{fn.upper()} SHORTFALL at {where}: placed {placed}/{want} (dropped {kinds})")
 
     def pasture(self, shape: Any, label: Any = None, amp: float = 40, label_xy: Any = None) -> None:
         """Hayfield / grazing land (pastureland, around the barns) - open grass with
@@ -7147,7 +7166,18 @@ class Settlement:
         return all(math.hypot(x - gx, y - gy) >= r + math.hypot(gw, gh) / 2 + 4 for gx, gy, gw, gh in self.grove_rects)
 
     def frontage(
-        self, street: Any, items: Any, width: float = 24, setback: float = 10, spacing: float = 58, both: bool = True, rows: int = 1, rowgap: float = 9, jitter: float = 4, skip: Any = None
+        self,
+        street: Any,
+        items: Any,
+        width: float = 24,
+        setback: float = 10,
+        spacing: float = 58,
+        both: bool = True,
+        rows: int = 1,
+        rowgap: float = 9,
+        jitter: float = 4,
+        skip: Any = None,
+        fill: bool = False,
     ) -> int:
         """Place buildings in row(s) along a street, each rotated so its FRONTAGE faces the
         street (shophouses lining the road). rows=2 stacks a second row BACK-TO-BACK behind the
@@ -7209,6 +7239,8 @@ class Settlement:
                     else:
                         break
             d += spacing
+        if not fill:
+            self._shortfall("frontage", (street[0], street[-1]), placed, items)
         return placed
 
     @staticmethod

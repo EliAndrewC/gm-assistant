@@ -234,7 +234,7 @@ s.label(1200, 1058, "barns", 10, italic=True)
 # BUSINESSES front the Imperial Road (the high street), each facing the roadbed; the
 # laborers' and servants' housing sits back off the road, behind the shopfronts.
 ROAD_CORE = [(470, 945), (760, 760), (1060, 600), (1360, 450), (1700, 278)]
-s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 11, width=26, setback=16, spacing=48, rows=2, skip=ROAD)
+s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 11, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
 s.label(972, 586, "merchant houses & shops", 11, italic=True, color="#5A4326")
 # a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH / RICH
 # merchants in big homes DIRECTLY BEHIND the storefronts (the merchant family lives over/behind its own
@@ -249,7 +249,7 @@ for lx, ly in [(1328, 235), (740, 298), (1445, 745)]:
 s.building(1625, 1000, *s._dims("laborer"), "laborer")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
 s.pack((680, 190, 1150, 395), ["laborer"] * 11, step=40)  # laborers at the budgets.md band floor (25 total with the SE pack + the 3 masters) so the depicted farmer cohort stays the plurality
-s.pack((1165, 700, 1600, 925), ["servant"] * 16 + ["laborer"] * 14, step=40)
+s.pack((1165, 700, 1600, 925), ["servant"] * 16 + ["laborer"] * 14, step=40, fill=True)
 s.label(1010, 224, "laborers' dwellings", 10, italic=True, color="#5A4326")  # the set-back is self-evident on the map (annotations explain the unusual, not the universal)
 
 # ---- the segregated burakumin neighborhood (NE edge). Set back a full 74+ ft behind the
@@ -257,7 +257,7 @@ s.label(1010, 224, "laborers' dwellings", 10, italic=True, color="#5A4326")  # t
 # behind a shop as row housing that must lie parallel, and this quarter is its own cluster,
 # not part of the shopfront rows. (Shifted up ~80px from its old spot so the NE pocket comb
 # below it has room for its head.)
-s.pack((1725, 395, 2005, 600), ["burakumin"] * 16, step=42)
+s.pack((1725, 395, 2005, 600), ["burakumin"] * 16, step=42, fill=True)
 s.label(1855, 382, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 
 # ---- samurai houses, around the magistrate's manor (SW); their servants live within
@@ -267,7 +267,7 @@ s.label(1855, 382, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 # the junior pack then flows around them (town_samurai_housing_varied)
 s.building(885, 1045, *s._dims("samurai_large"), "samurai_large")
 s.building(660, 1268, *s._dims("samurai_large"), "samurai_large")
-s.pack((620, 1010, 920, 1295), ["samurai"] * 8, step=54)
+s.pack((620, 1010, 920, 1295), ["samurai"] * 8, step=54, fill=True)
 s.label(770, 1268, "samurai houses", 11, italic=True)  # over the cluster - kept above the bottom image edge (canvas H=1300)
 
 # a noticeable minority of merchant houses keep a fireproof kura (the absentee landlords'

@@ -273,6 +273,36 @@ def test_frontage_runs_out_of_items_mid_row():
     assert sum(1 for b in s.M["buildings"] if b["kind"] == "merchant") == 1
 
 
+def test_pack_shortfall_is_reported(capsys):
+    # the "no silent caps" principle applied to placement (2026-07-24 town audit: Hirameki's
+    # gate market authored 12 businesses, landed 4, and nothing said so)
+    s = _town()
+    s.pack((100, 100, 130, 130), ["merchant"] * 3)  # room for at most one grid spot
+    out = capsys.readouterr().out
+    assert "PACK SHORTFALL" in out and "merchant" in out
+
+
+def test_pack_full_placement_stays_silent(capsys):
+    s = _town()
+    s.pack((100, 100, 900, 900), ["merchant"] * 2)
+    assert "SHORTFALL" not in capsys.readouterr().out
+
+
+def test_frontage_shortfall_is_reported(capsys):
+    s = _town()
+    s.frontage([(100, 500), (160, 500)], ["merchant"] * 8)  # a 60px street cannot host 8
+    assert "FRONTAGE SHORTFALL" in capsys.readouterr().out
+
+
+def test_fill_declares_a_capacity_budget_and_stays_silent(capsys):
+    # fill=True marks the request as "place up to N" (the city district-fill idiom), so an
+    # under-fill is intended, not drift - no warning
+    s = _town()
+    s.pack((100, 100, 130, 130), ["merchant"] * 3, fill=True)
+    s.frontage([(100, 500), (160, 500)], ["merchant"] * 8, fill=True)
+    assert "SHORTFALL" not in capsys.readouterr().out
+
+
 def test_granary_draws_a_storehouse_row():
     # opt-in rice-transit granary: a row of n fireproof kura, recorded for town_has_granary
     s = _town()

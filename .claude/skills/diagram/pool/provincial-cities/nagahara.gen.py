@@ -803,7 +803,7 @@ s.label(1998, 1201, "wharf", 10, italic=True, color="#5A4326")
 # the river gate's own approach-road stall string (the wharf is the bulk market, but the gate
 # keeps a >= 6-shop guan-xiang slice too - GM 2026-07-24; research: 10-40 structures per
 # trafficked gate, the drawn belt a slice like the estates and farmland)
-s.frontage([(1953, 1330), (2085, 1330)], ["shop"] * 8, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(15))
+s.frontage([(1953, 1330), (2085, 1330)], ["shop"] * 8, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(15), fill=True)
 
 # a gate market (guan-xiang) OUTSIDE THE NORTH GATE too: the wharf is the river gate's market, but
 # the north gate is on the road to the Imperial highway, so it grows its own smaller stall cluster
@@ -811,7 +811,7 @@ s.frontage([(1953, 1330), (2085, 1330)], ["shop"] * 8, skip=ROAD, width=s.lw(22)
 # stall row flanks the NW-slanting north road just above the moat (y888), clear of the N-gate
 # flophouse at (1405, 837).
 s.frontage(
-    [(1451, 829), (1413, 751), (1385, 680)], ["shop"] * 16, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(16)
+    [(1451, 829), (1413, 751), (1385, 680)], ["shop"] * 16, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(16), fill=True
 )  # flanks the REAL north-road vertices so the stalls sit clear of the road bed (a straight chord across the road's bend put a stall ON it, no_structure_on_road); the row runs past the frame top (view starts y743) so the outermost stalls are cut - the "more beyond the map" slice convention (GM 2026-07-24; research: 10-40 structures per trafficked gate, >= 6 drawn per gate)
 s.label(1508, 806, "gate market", 9, italic=True, color="#5A4326")
 
