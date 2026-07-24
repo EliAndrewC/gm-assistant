@@ -4024,6 +4024,73 @@ class Settlement:
             self.label(x, y - hh - 11 if label_above else y + hh + 11, label, 8, italic=True, color="#7A5A30")
         return z
 
+    def place_kosatsuba(self, label: str = "notice board") -> Pt | None:
+        """AUTO-SITE the settlement kosatsuba on a lane/road verge at the busiest clear node -
+        the village/hamlet tiers' procedural sibling of the town/city hand placement (GM
+        2026-07-24: EVERY settlement tier carries the board; the ofuregaki circulars reached
+        the peasantry through it via the settlement's one required-literate reader - the
+        headman, or a hamlet's senior farmer answering to the village headman - and officials
+        also read notices aloud, so even a 50-inhabitant hamlet's board works). Deterministic:
+        draws NO RNG, so calling it inside `roll_village` cannot perturb a rolled map's seed
+        stream. Reads the SAME manifest route fields the validator's siting check reads
+        (`M['road']` + `M['lane']` + `M['lanes']` - the dev-loop same-source doctrine) and
+        probes candidate verge spots with `_fits`, scoring for the most dwellings within ~260
+        px (siting is a TRAFFIC decision - the state talks at everyone who passes) while
+        hugging the verge. Call AFTER the lanes, homesteads, and wells and BEFORE the crop, so
+        the frame contains the board. No-op under meta(kosatsuba=False); returns the spot, or
+        None when no verge inside the validator's ~60-real-ft siting band fits (the
+        settlement-tier check would then fire - place by hand or widen the lane network)."""
+        if not self.M["meta"].get("kosatsuba", True):
+            return None
+        ftpx = float(self.M["meta"].get("ftpx") or 1)
+        lim = 60.0 / ftpx  # kosatsuba_by_the_road: ~60 REAL feet from a route, in px
+        w, h = self.px(12), self.px(5)
+        # (pts, tread width) per route; road/lane manifest fields carry no width, so assume
+        # a generous tread for the bed-avoidance test below
+        routes: list[tuple[list[Pt], float]] = []
+        if self.M.get("road"):
+            routes.append(([(p[0], p[1]) for p in self.M["road"]], 18.0))
+        if self.M.get("lane"):
+            routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
+        routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
+        spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
+
+        def off_every_bed(x: float, y: float) -> bool:
+            # the board hugs the verge, so the lane corridor's no-build clearance (a HOUSE
+            # setback: homesteads must not crowd the tread) is deliberately bypassed
+            # (_fits corridors=False) - but the board must still stand off the TREAD of
+            # every route, including ones it was not sampled from (a junction spot offset
+            # from lane A can land on lane B)
+            return all(seg_dist(x, y, rp[k], rp[k + 1]) >= rw / 2 + h / 2 + 3 for rp, rw in routes for k in range(len(rp) - 1))
+
+        best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
+        for pts, _rw in routes:
+            for i in range(len(pts) - 1):
+                (ax, ay), (bx, by) = pts[i], pts[i + 1]
+                seg = math.hypot(bx - ax, by - ay)
+                if not seg:
+                    continue
+                ux, uy = -(by - ay) / seg, (bx - ax) / seg  # verge normal
+                rot = math.degrees(math.atan2(by - ay, bx - ax))  # long axis along the route
+                for t in range(int(seg // 12) + 1):
+                    f = t * 12 / seg
+                    mx, my = ax + (bx - ax) * f, ay + (by - ay) * f
+                    for side in (1.0, -1.0):
+                        off = _rw / 2 + h / 2 + 4
+                        while off <= lim:
+                            x, y = mx + ux * off * side, my + uy * off * side
+                            if off_every_bed(x, y) and self._fits(x, y, w, h, corridors=False):
+                                busy = sum(1 for sx, sy in spots if math.hypot(x - sx, y - sy) < 260)
+                                score = busy * 10 - off / 3  # busiest node first, verge-hugging tiebreak
+                                if best is None or score > best[0]:
+                                    best = (score, x, y, rot)
+                            off += 5.0
+        if best is None:
+            return None
+        _, x, y, rot = best
+        self.kosatsuba(x, y, rot, label=label)
+        return (x, y)
+
     def drum_tower(self, x: float, y: float, tw: float | None = None, label: str = "drum tower") -> int:
         """A combined BELL-AND-DRUM TOWER (zhonggulou) - the timekeeping/curfew institution of a
         WALLED seat (GM 2026-07-24). Morning bell, evening drum: dawn gate-opening, the dusk
@@ -7494,12 +7561,12 @@ class Settlement:
                     return True
         return False
 
-    def _fits(self, x: float, y: float, w: float, h: float, skip: Any = None) -> bool:
+    def _fits(self, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True) -> bool:
         if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:  # keep clear of edges + title
             return False
         if self.bound and not point_in_poly(x, y, self.bound):  # stay inside a bounding ring (city wall)
             return False
-        if self._in_blocked(x, y) or self._near_corridor(x, y, skip):
+        if self._in_blocked(x, y) or (corridors and self._near_corridor(x, y, skip)):
             return False
         r = math.hypot(w, h) / 2
         for px, py, pw, ph in self.placed:
@@ -8094,6 +8161,9 @@ class Settlement:
         self.bridges()  # carry the lanes over any water they cross
         if self.M.get("field_ditches"):  # planks over the long irrigation ditches
             self.channel_footbridges(spacing=300)
+        # the official notice board on a lane verge at the busiest node (GM 2026-07-24: every
+        # tier posts the state's standing law; deterministic, so the seed stream is untouched)
+        self.place_kosatsuba()
         # `lay_hinterland=False`: a caller that supplies its OWN sacred precinct AFTER roll_village (the
         # civic_shrine=False path) must defer the scrub/marsh scatter until its shrine/torii/graveyard have
         # registered their swept-ground clearings, or the scrub scatters over ground that should read tended.

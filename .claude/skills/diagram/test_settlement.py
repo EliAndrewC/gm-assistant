@@ -316,6 +316,47 @@ def test_kosatsuba_records_a_blocking_struct():
     assert s.M["labels"][-1][1] < 500
 
 
+def test_place_kosatsuba_sites_on_the_lane_verge_at_the_busiest_node():
+    # the village/hamlet auto-placer (GM 2026-07-24): the board lands inside the validator's
+    # ~60-real-ft siting band, off the tread, clear of structures - and at the BUSY end of
+    # the lane (siting is a traffic decision), not the empty one
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="T", scale="hamlet", ftpx=1)
+    s.lane([(100, 500), (900, 500)], width=6, clearance=22, worn=True)
+    for i in range(4):
+        s.M["houses"].append({"x": 700.0 + 40 * i, "y": 560.0, "w": 30, "h": 20, "kind": "plain", "rot": 0})
+        s.placed.append((700.0 + 40 * i, 560.0, 30, 20))
+    spot = s.place_kosatsuba()
+    assert spot is not None
+    kb = s.M["kosatsuba"][0]
+    assert abs(kb["y"] - 500) <= 60  # inside the kosatsuba_by_the_road band
+    assert kb["x"] > 500  # the busy east end, not the empty west end
+    assert kb["rot"] == 0  # long axis along the lane
+
+
+def test_place_kosatsuba_reads_road_and_lane_routes_and_skips_degenerate_segments():
+    # the placer reads the SAME manifest route fields as the validator (road + lane + lanes);
+    # a zero-length segment (duplicate consecutive points) is skipped, not divided by
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="T", scale="hamlet", ftpx=1)
+    s.M["road"] = [[100, 300], [100, 300], [900, 300]]
+    s.M["lane"] = [[100, 700], [900, 700]]
+    assert s.place_kosatsuba() is not None
+    assert len(s.M["kosatsuba"]) == 1
+
+
+def test_place_kosatsuba_opt_out_and_no_routes():
+    # meta(kosatsuba=False) is the suppressed/backwater opt-out; with no routes at all there
+    # is no verge to site on - both return None and place nothing
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="T", scale="hamlet", ftpx=1, kosatsuba=False)
+    s.lane([(100, 500), (900, 500)], width=6, clearance=22, worn=True)
+    assert s.place_kosatsuba() is None and not s.M["kosatsuba"]
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.meta(name="T", scale="hamlet", ftpx=1)
+    assert s2.place_kosatsuba() is None and not s2.M["kosatsuba"]
+
+
 def test_fill_declares_a_capacity_budget_and_stays_silent(capsys):
     # fill=True marks the request as "place up to N" (the city district-fill idiom), so an
     # under-fill is intended, not drift - no warning
