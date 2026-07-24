@@ -4109,22 +4109,30 @@ class Settlement:
         braced-frame fire towers. Stands at the main street crossing, near (not inside) the yamen.
         Records M['drum_towers'] (an overlap-checked struct) and reserves a no-build block."""
         if tw is None:
-            tw = self.px(70)  # a county-tier platform is ~60-80 ft square; 70 ft is the round middle
+            tw = self.px(
+                36
+            )  # county-tier footprint RE-VERIFIED (GM eye + research 2026-07-24): Pingyao's Market Tower - the wealthy-county showpiece - is ATTESTED at 133.4 m^2 plan (~38 ft square); these towers dominate by HEIGHT (50-60 ft), not plan, so ~36 ft = one rowhouse width reads correctly. The first-draft 70 ft was contaminated by garrison street-arch platforms (Dingbian 52 ft, Xingcheng 66 ft) - that variant is prefecture/garrison tier, never a 3,000-person seat
         h = tw / 2
         hi = tw * 0.31  # the pavilion atop the platform
         g = [f'<g transform="translate({x:.0f},{y:.0f})">']
         g.append(f'<rect x="{-h:.1f}" y="{-h:.1f}" width="{tw:.1f}" height="{tw:.1f}" rx="1.5" fill="#E3D7B8" stroke="#4A3318" stroke-width="2.4"/>')  # the masonry platform
         g.append(f'<rect x="{-hi:.1f}" y="{-hi:.1f}" width="{hi * 2:.1f}" height="{hi * 2:.1f}" rx="1" fill="#C9A57A" stroke="#4A3318" stroke-width="1.5"/>')  # the timber pavilion
         g.append(f'<line x1="{-hi:.1f}" y1="0" x2="{hi:.1f}" y2="0" stroke="#4A3318" stroke-width="0.9" opacity="0.7"/>')  # the pavilion roof ridge
-        g.append(f'<circle cx="{-tw * 0.155:.1f}" cy="0" r="{tw * 0.105:.1f}" fill="#8A4A2A" stroke="#4A3318" stroke-width="0.8"/>')  # the great drum
-        g.append(f'<circle cx="{tw * 0.155:.1f}" cy="0" r="{tw * 0.08:.1f}" fill="#6B5A3A" stroke="#4A3318" stroke-width="0.8"/>')  # the bell
+        g.append(
+            f'<circle cx="{-tw * 0.155:.1f}" cy="0" r="{max(tw * 0.105, 1.2):.1f}" fill="#8A4A2A" stroke="#4A3318" stroke-width="0.8"/>'
+        )  # the great drum (radius floored - legible at the corrected 12px platform)
+        g.append(f'<circle cx="{tw * 0.155:.1f}" cy="0" r="{max(tw * 0.08, 0.9):.1f}" fill="#6B5A3A" stroke="#4A3318" stroke-width="0.8"/>')  # the bell
         g.append('</g>')
         z = self.add_top(''.join(g))
         self.M.setdefault("drum_towers", []).append({"x": round(x, 1), "y": round(y, 1), "w": tw, "h": tw, "rot": 0.0, "z": z, "label": label})
         self.placed.append((x, y, tw, tw))
         bm = 12
-        # the block reserves the caption band below too, so packs cannot slide a house under it
-        self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm + 15), (x - h - bm, y + h + bm + 15)])
+        # the block reserves the caption band below too, AT THE CAPTION'S WIDTH - the corrected
+        # 36 ft platform is narrower than the "drum tower" text, so a footprint-width band let
+        # rowpack houses slide under the caption's ends (GM tower-resize ripple, 2026-07-24)
+        self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
+        cb_ = max(h + bm, 2.9 * len(label) + 10)
+        self.block_polys.append([(x - cb_, y + h), (x + cb_, y + h), (x + cb_, y + h + 26), (x - cb_, y + h + 26)])
         self.label(x, y + h + 12, label, 9, italic=True, color="#4A3318")
         return z
 
@@ -4199,16 +4207,19 @@ class Settlement:
         yw_, yh_ = self.px(80), self.px(52)
         ww_, wh_ = self.px(36) / 2, self.px(24) / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(
+            f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{yw_:.1f}" height="{yh_:.1f}" rx="1.5" fill="#E7DBB8" fill-opacity="0.75" stroke="#B99F72" stroke-width="0.8"/>'
+        )  # the yard's tamped ground - without it the racks read as stray marks at fit zoom (GM missed the whole works, 2026-07-24)
         g.append(f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{ww_ * 2:.1f}" height="{wh_ * 2:.1f}" rx="2" fill="#C2B190" stroke="#6B5A3A" stroke-width="1.6"/>')  # the vat workshop
         for di_ in (0.62, 0.82):  # sunken indigo vats by the workshop door
             g.append(f'<circle cx="{-yw_ / 2 + ww_ * 2 * di_ + 2:.1f}" cy="{-yh_ / 2 + wh_ * 2 + 2.6:.1f}" r="1.6" fill="#3F5E7E" stroke="#2C3F52" stroke-width="0.6"/>')
         rx0_ = -yw_ / 2 + ww_ * 2 + 3
         for ri_ in range(4):  # the drying racks, hung with bolt-lengths of indigo cloth
             ry_ = -yh_ / 2 + 2.5 + ri_ * (yh_ - 5) / 3
-            g.append(f'<line x1="{rx0_:.1f}" y1="{ry_:.1f}" x2="{yw_ / 2 - 1.5:.1f}" y2="{ry_:.1f}" stroke="#6B4F2A" stroke-width="1.0"/>')
-            for ci_ in (0.15, 0.5, 0.8):
+            g.append(f'<line x1="{rx0_:.1f}" y1="{ry_:.1f}" x2="{yw_ / 2 - 1.5:.1f}" y2="{ry_:.1f}" stroke="#6B4F2A" stroke-width="1.3"/>')
+            for ci_ in (0.12, 0.38, 0.62, 0.85):
                 cx0_ = rx0_ + (yw_ / 2 - 1.5 - rx0_) * ci_
-                g.append(f'<line x1="{cx0_:.1f}" y1="{ry_:.1f}" x2="{cx0_ + 3.6:.1f}" y2="{ry_:.1f}" stroke="#3F5E7E" stroke-width="2.2" opacity="0.9"/>')
+                g.append(f'<line x1="{cx0_:.1f}" y1="{ry_:.1f}" x2="{cx0_ + 3.4:.1f}" y2="{ry_:.1f}" stroke="#3F5E7E" stroke-width="2.8" opacity="0.92"/>')
         g.append('</g>')
         self.add(''.join(g))
         self._trade_record("dye_yards", x, y, yw_, yh_, rot, label)
@@ -4284,6 +4295,32 @@ class Settlement:
         g.append('</g>')
         self.add(''.join(g))
         self._trade_record("bathhouses", x, y, self.px(48), self.px(32) + wd_, rot, label)
+
+    def bathhouses(self, seats: Sequence[tuple[float, float]], count: int | None = None) -> int:
+        """Place the city's sento, COUNT ROLLED FROM THE POPULATION BAND (GM rule 2026-07-24):
+        a seat under ~3,000 keeps exactly ONE, a ~3,000 seat rolls 1-2 (50/50), a ~4,000 seat
+        keeps TWO - anchored on Edo's own peak ratio of ~1 sento per ~2,100 residents (1808:
+        523 sento for ~1.1M), so the band is ~pop/2000 clamped to [1, 2]. Seats are hand-vetted
+        (x, y) candidates, first n drawn - provide 2 so any roll can land; `count=` pins the
+        roll (the merchant_estates analog). Recorded as meta['bathhouse_roll'] and gated by
+        city_has_bathhouse, so a stale hand count can never ship. The roll consumes NO
+        main-stream RNG (dedicated Random on the map seed): a map rolling its old count stays
+        byte-identical."""
+        pop = int(self.M.get("meta", {}).get("population") or 3000)
+        if count is not None:
+            n = int(count)
+        elif pop < 3000:
+            n = 1
+        elif pop >= 4000:
+            n = 2
+        else:
+            n = random.Random(self.seed * 1409 + 53).choice((1, 2))
+        if n > len(seats):
+            raise ValueError(f"bathhouses rolled {n} but only {len(seats)} vetted seats were provided - add candidates (the population band can ask for up to 2)")
+        for bx_, by_ in seats[:n]:
+            self.bathhouse(bx_, by_)
+        self.M["meta"]["bathhouse_roll"] = n
+        return n
 
     def kiln(self, x: float, y: float, label: str = "tile kiln") -> None:
         """A TILE/POTTERY KILN at the town's periphery - fire law and smoke pushed kilns OUTSIDE
