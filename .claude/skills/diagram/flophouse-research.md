@@ -226,3 +226,68 @@ later pass: an actual gazetteer/guild count of commercial (not official) lodging
 walled town; the physical form of the rice-south *jimaodian* without the northern *kang*; and
 whether any positive evidence exists for cheap inns *inside* the walls near a gate (vs. the absence
 found here).
+
+## Inn counts, occupancy, and the by-employment household (research 2026-07-24; feeds the PENDING Minami inn-program decision)
+
+Two research passes, prompted by the city audit finding that our cities draw 2-3 inns while
+Edo-period registers show 20-40+ hatago in post towns of comparable size. Recorded here so the
+Minami-era decision starts from findings, not memory.
+
+### Pass 1 - how big, and were they full?
+
+- The 1843 highway registers class hatago by street frontage: large = 5+ ken (~30 ft), medium ~4
+  ken, small = 3 ken (~18 ft) or less. Hiratsuka-juku's 54 hatago: 2 large / 29 medium / 23 small -
+  ~43% were the tiny class, a family house renting 2-4 rooms (~6-15 guests on shared-room *aiyado*
+  norms). A large hatago (~190-230 m^2 floor, e.g. the preserved Ohashiya at Akasaka-juku) packed
+  ~20-40 guests in 8-12 rooms.
+- NOT full nightly: the honjin at Koriyama-shuku hosted processions an average of 22.7 days/YEAR;
+  honjin ran deficits nationwide. The system was sized for spikes - one daimyo train was 600-700
+  people needing lodging in a single night, and the 1830 okage-mairi put ~100,000-200,000 pilgrims
+  per day on the Ise roads at peak. Between spikes: half-empty, surviving on meals, sake, and
+  meshimori onna (the 1718 two-per-inn cap exists because inns competed on prostitution; Ageo's
+  41 hatago at pop 793 is a brothel town). Tout culture (tome-onna dragging travelers indoors) is
+  what a chronically oversupplied market looks like.
+- China ran visibly thinner: no sankin-kotai analog, official travel used the closed yizhan
+  courier system, commercial inns clustered in the gate guan-xiang - a trunk-route county seat
+  had an inn street of order a dozen inns. The Japanese post town is the historical outlier.
+
+### Pass 2 - what were the small ones doing the rest of the year? (GM question)
+
+The right model is NOT "a hotel standing empty." It is **a house with a license, spare rooms, and
+a kettle, in a town where every household flexes toward the road**:
+
+- **Lodging was the add-on, not the base.** *Hatago* originally meant the horse-fodder basket,
+  then the food shops (hatago-ya) selling meals to passing traffic, which only later added beds -
+  the meal/tea/rest DAY-trade to passing travelers was the ancestral and steady business. Post
+  towns were legally agricultural settlements; residents held fields, and the town income mix was
+  hatago + kichin-yado + teahouses + sundries (sandals, tobacco, souvenirs) + goods transport.
+- **The forwarding office was the real base industry.** Post-town households held tax-exempt
+  plots (jishi-men) + stipends precisely in exchange for the tenma levy (each Tokaido station: 100
+  horses + 100 porters on standing duty through the toiyaba). Freight, courier relay, and paid
+  above-quota traffic were steady wages; small hatago households filled their own duty days and
+  took porter work in slack season. The toiya (forwarding agent) was the number-two man in town
+  after the honjin operator - and typically ran a side business himself, most commonly sake.
+- **Surge capacity was town-wide requisition, not spare hotel rooms.** Ahead of a procession,
+  quartermaster advance parties assigned lodging across the whole town (yadowari - name-placards
+  hung on assigned houses): retainers spilled into hatago, temples, and ordinary commoner houses.
+  Labor surged through sukego corvee from villages first ~7, later up to ~25 miles out (Princess
+  Kazunomiya's 1861 passage: 8,000 porters + 3,000 horses per day; Wada station once called up
+  28,695 sukego laborers in a day). Capacity was ELASTIC: on a spike night the whole town becomes
+  the inn.
+- **The register counts households in the trade, not buildings built as hotels.** The 1843 counts
+  (Kameyama-juku pop 1,549 - 21 hatago; Hiratsuka 443 houses - 54 hatago) are registry categories;
+  with ~half at 3-ken frontage these are ordinary townhouses whose front room fed travelers and
+  whose back rooms slept them. China (thinner evidence, inferred from Ming route books + studies
+  of north-China carting inns): same shape - farm-courtyard households selling fodder, stabling,
+  food, and floor space, often doubling as grain brokers.
+
+### Implication for L7R provincial cities (pending GM decision at Minami time)
+
+A non-post-station highway seat of ~3,000 (no sankin-kotai; official travel uses the budgets.md
+waystations) defensibly runs ~8-15 lodging houses: 2-4 proper inns + 5-8 small family hatago + the
+2-4 flophouses already drawn - 1 per ~200-350 residents, vs a true shukuba's 1 per 20-75. On the
+MAP the small family hatago are indistinguishable from shop/merchant row houses by design - they
+ARE shophouses whose back rooms take lodgers - so the likely drawing answer is a documented
+"several of the gate-market and road-market shops also sleep travelers" note (and perhaps an inn
+kind for the 2-4 proper ones, which we already draw), NOT 10+ new dedicated buildings. To be
+decided with the GM before Minami.
