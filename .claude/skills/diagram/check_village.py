@@ -195,7 +195,7 @@ _OVERLAP_LINEAR = (
     "crescent_ponds",
 )  # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers; crescent_ponds = the fengshui 半月塘 focal pond, reserved as a placement keep-out so the cluster packs around it)
 _OVERLAP_EXEMPT = {
-    "drawn_channels": "z-order record of the drawn field-channel strokes (post-clip geometry + bedz), not a placement feature: the strokes duplicate the field_ditches/channels ground the structs already avoid, and their mouths deliberately touch the pond/moat/stream they join (pond_fill_covers_channel_mouths reads this record)",
+    "drawn_channels": "z-order record of the drawn field-channel strokes (post-clip geometry + stroke widths w0/w1 + bedz), not a placement feature: the strokes duplicate the field_ditches/channels ground the structs already avoid, and their mouths deliberately touch the pond/moat/stream they join (pond_fill_covers_channel_mouths and water_channels_join_not_cross read this record - it is the only source that says what was actually stroked, and how wide)",
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
     "farm_sheds": "a farmstead's grain-storehouse kura drawn as an annex abutting its own farmhouse's back wall (farm_sheds_attached verifies the attachment)",
     "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
@@ -5456,6 +5456,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"lateral must END on the main canal or the drain (not stop, and not stub past it toward the edge)",
         )
 
+        # ...and it must END ON the trunk, not merely NEAR it. near_any's 13px tolerance above answers
+        # "is this lateral tied into the net at all"; a lateral whose tip stops (or overruns) several px
+        # off the trunk CENTERLINE is tied in topologically but draws wrong - a visible gap short of the
+        # canal, or a stub through it. The tip must land inside the trunk's own drawn band (its stroke
+        # half-width, +1px for the 0.1px coordinate rounding and the round linecap). Measured across the
+        # pool this spared every map: outside the two polders every lateral tip already sat at distance
+        # 0.00 from its trunk, and the polders' 3.5-5.3px residuals are exactly the warp error the
+        # build_polder xy-snap now removes.
+        _tip_off: list[tuple[int, int]] = []
+        for fname in {d["field"] for d in ditches}:
+            _tip_trunks = [(d["poly"], max(d.get("w", 3.0), d.get("w_tail", 3.0)) / 2) for d in ditches if d["field"] == fname and d["role"] in ("main", "drain")]
+            for lat in [d["poly"] for d in ditches if d["field"] == fname and d["role"] == "lateral"]:
+                for end in (lat[0], lat[-1]):
+                    _tip_slack = [min(seg_dist(end[0], end[1], tp[i], tp[i + 1]) for i in range(len(tp) - 1)) - th for tp, th in _tip_trunks]
+                    if _tip_slack and min(_tip_slack) > 1.0:
+                        _tip_off.append((round(end[0]), round(end[1])))
+        check(
+            "field_ditch_tips_land_on_the_trunk",
+            not _tip_off,
+            f"lateral tip(s) landing off the trunk canal's drawn band at {sorted(set(_tip_off))[:5]} - a lateral "
+            f"must end ON the main/drain centerline, so it reads as a T-junction rather than a ditch stopping "
+            f"short of the canal or poking a stub through it",
+        )
+
         # DELIVERY DITCHES TAPER: a delivery ditch (role "branch") sheds its water into the paddies all
         # along its length, so its flow dwindles and it must NARROW toward the point where it stops - not
         # end abruptly at full width, which reads as a jarring blunt stub. Where head/tail widths are
@@ -5572,6 +5596,80 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "field_ditches_reach_source_and_sink",
             not ungrounded,
             f"in-field ditch(es) not grounded: {ungrounded[:4]} - a SUPPLY ditch (main/branch/lateral) must trace to the pond source; the DRAIN must trace to a runoff sink (off-map / stream / brook)",
+        )
+
+    # WATERCOURSES JOIN, THEY DO NOT CROSS (GM 2026-07-24, Enokida: "many of the irrigated channels
+    # intersect rather than joining"). Where two irrigation strokes meet, one of them must END there -
+    # a T (a lateral delivering into the ring trunk) or a Y (a delivery taking off downstream) - never a
+    # 4-way X with a stub poking out the far side. Real wet-rice hydrology has no crossings to draw: a
+    # ditch either feeds another ditch or is fed by it, and where two courses genuinely had to pass at
+    # different levels the builders put in an aqueduct or a siphon, which is a distinct structure this
+    # vocabulary does not have. So any X on these maps is a drawing error.
+    #
+    # HOW A JOIN IS TOLD FROM A CROSSING: at every crossing point, take each stroke's endpoint nearest
+    # that point and ask whether that TIP sits inside the OTHER stroke's drawn band (perpendicular
+    # distance to its centerline <= its stroke half-width). If either tip is buried in the other's
+    # band, the meeting is a junction and the overrun is invisible under the ink. If NEITHER is, the
+    # stub shows and it reads as a crossing.
+    #
+    # The measure is PERPENDICULAR TO THE OTHER STROKE rather than run-length along the stub's own
+    # line, and that is the whole trick: a delivery ditch taking off at a shallow angle runs several px
+    # past the crossing yet stays under the trunk's stroke the entire way (correct, and it looks it),
+    # while the same overrun on a near-perpendicular T pokes straight out the far side. A run-length
+    # rule cannot separate those; the perpendicular one is exactly "does the stub show". Swept over
+    # every pool map it flagged Enokida's polder laterals (tips 2.0-2.8px outside the ring's band) and
+    # nothing else - Honda's, Ikegami's, Nagahara's and Hoshizora's comb offtakes overrun by a similar
+    # 4-8px along their own line but stay inside the canal band, and all four read as clean Y-junctions.
+    # The 1px slack absorbs the 0.1px coordinate rounding and the round linecap.
+    #
+    # Read from drawn_channels (the post-clip record of what was actually STROKED, widths included),
+    # not from field_ditches/channels: those carry pre-clip geometry, so a mouth snapped onto a pond or
+    # a stream would be judged at a position it is never drawn at.
+    _wj_strokes = [c for c in M.get("drawn_channels", []) or [] if len(c.get("pts") or []) >= 2]
+    if _wj_strokes:
+
+        def _wj_band(c: Any) -> float:
+            return max(float(c.get("w0", 3.0)), float(c.get("w1", 3.0))) / 2
+
+        def _wj_bbox(pts: Poly) -> tuple[float, float, float, float]:
+            xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+            return min(xs), min(ys), max(xs), max(ys)
+
+        def _wj_tip_outside(pts: Poly, other: Poly, other_half: float, at: Pt) -> float:
+            """How far the end of `pts` NEAREST the crossing sits OUTSIDE `other`'s drawn band."""
+            tip = min((pts[0], pts[-1]), key=lambda e: math.hypot(e[0] - at[0], e[1] - at[1]))
+            return min(seg_dist(tip[0], tip[1], other[i], other[i + 1]) for i in range(len(other) - 1)) - other_half
+
+        _wj_boxes = [_wj_bbox(c["pts"]) for c in _wj_strokes]
+        _wj_cross: list[tuple[int, int]] = []
+        for ia in range(len(_wj_strokes)):
+            for ib in range(ia + 1, len(_wj_strokes)):
+                ax0, ay0, ax1, ay1 = _wj_boxes[ia]
+                bx0, by0, bx1, by1 = _wj_boxes[ib]
+                if ax1 < bx0 or bx1 < ax0 or ay1 < by0 or by1 < ay0:
+                    continue
+                pa, pb = _wj_strokes[ia]["pts"], _wj_strokes[ib]["pts"]
+                ha, hb = _wj_band(_wj_strokes[ia]), _wj_band(_wj_strokes[ib])
+                _wj_worst: tuple[float, Pt] | None = None
+                for i in range(len(pa) - 1):
+                    for j in range(len(pb) - 1):
+                        if not segments_cross(pa[i], pa[i + 1], pb[j], pb[j + 1]):
+                            continue
+                        at = seg_intersect(pa[i], pa[i + 1], pb[j], pb[j + 1])
+                        if at is None:
+                            continue  # pragma: no cover - segments_cross already excludes the parallel case
+                        _wj_stub = min(_wj_tip_outside(pa, pb, hb, at), _wj_tip_outside(pb, pa, ha, at))
+                        if _wj_worst is None or _wj_stub > _wj_worst[0]:
+                            _wj_worst = (_wj_stub, at)
+                if _wj_worst is not None and _wj_worst[0] > 1.0:
+                    _wj_cross.append((round(_wj_worst[1][0]), round(_wj_worst[1][1])))
+        check(
+            "water_channels_join_not_cross",
+            not _wj_cross,
+            f"irrigation channel(s) CROSSING rather than joining at {sorted(set(_wj_cross))[:5]} - where two "
+            f"watercourses meet, one must END at the junction (a T feeding the trunk, or a Y taking off from it); "
+            f"neither tip lands inside the other's drawn band here, so a stub pokes out the far side and the pair "
+            f"reads as a 4-way intersection. Snap the joining stroke's tip onto the other's drawn centerline",
         )
 
     # no farm field overlaps a road OR a town street (the roadbed/street band must not clip
