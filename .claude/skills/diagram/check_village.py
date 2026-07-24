@@ -173,6 +173,7 @@ _OVERLAP_STRUCTS = (
     "pawnshops",
     "bathhouses",
     "kilns",
+    "tanning_yards",
 )
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
@@ -3801,6 +3802,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             ("pawnshops", "pawnshop"),
             ("bathhouses", "bathhouse"),
             ("kilns", "kiln"),
+            ("tanning_yards", "tanning yard"),
             ("drum_towers", "drum tower"),
         ):
             vics += [(_twg, _bb(t_)) for t_ in M.get(_twk, [])]
@@ -3833,7 +3835,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}
             if any(w in t for w in ("street", "avenue", "road")):
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
-            for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "drum tower"):
+            for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "tanning yard", "drum tower"):
                 if _tw_txt in t:
                     return {_tw_txt}  # a trade-works caption may cover only its own premises
             return set()  # farmland / market / theater stage / title labels name no building
@@ -7427,6 +7429,79 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"{len(outside_biz)} business(es) outside the gate - a walled town has a small gate market (guan-xiang) of a few shophouses unless meta(gate_market=False)",
                 )
 
+    # TANNING YARDS (GM 2026-07-24; the "why" lives in settlements.md "TANNING YARDS"). Unlike the
+    # other trade works these are NOT a city-only feature: a county town's burakumin hold the whole
+    # county's carcass rights (danna-ba), so the town tans too - just at ~4 pits rather than ~12.
+    # WATER, not settlement size, is the gate: tanning is a water process (shironameshi stakes hides
+    # in the river for 1-2 weeks before de-hairing) and every attested tannery sits on a watercourse
+    # at the settlement's edge - the caste's own name for itself was kawaramono, "riverbed people".
+    if scale in ("town", "city"):
+        _ty_ftpx = float(meta.get("ftpx") or 1.0)
+
+        def _ty_px(ft: float) -> float:
+            return ft / _ty_ftpx
+
+        _ty_water: list[tuple[list[Any], float]] = []
+        for _ty_wc in (M.get("streams") or []) + (M.get("channels") or []) + (M.get("canals") or []):
+            _ty_poly = _ty_wc.get("poly") or _ty_wc.get("pts")
+            if _ty_poly:
+                _ty_water.append((_ty_poly, _ty_wc.get("w", 6) / 2))
+        if M.get("moat"):
+            _ty_water.append((M["moat"], M.get("moat_width", 22) / 2))
+        _ty_yards = M.get("tanning_yards") or []
+        _ty_bur = [b for b in (M.get("buildings") or []) if b.get("kind") == "burakumin"]
+
+        def _ty_on_water(o_: dict[str, Any], reach_ft: float) -> bool:
+            r_ = max(o_["w"], o_["h"]) / 2
+            return any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + _ty_px(reach_ft) for _pl, _hw in _ty_water for i in range(len(_pl) - 1))
+
+        # A settlement with BOTH a burakumin quarter and running water tans its own hides; one with
+        # no watercourse at all keeps no tannery, whatever its size, and is exempt.
+        if _ty_bur and _ty_water:
+            check(
+                "settlement_has_tanning_yard",
+                bool(_ty_yards),
+                "no tanning yard - a town or city with a burakumin quarter AND a watercourse works its territory's fallen "
+                "draft stock into leather (s.tanning_yard: soaking pits + drying racks + work shed on the bank). Water is "
+                "the gate, not size: a settlement with no running water keeps none and is exempt from this check",
+            )
+        if _ty_yards:
+            check(
+                "tanning_yard_on_water",
+                all(_ty_on_water(t_, 20.0) for t_ in _ty_yards),
+                f"tanning yard(s) on water: {[_ty_on_water(t_, 20.0) for t_ in _ty_yards]} - tanning is a WATER process (hides soak "
+                f"1-2 weeks before de-hairing), so the yard must ABUT a stream/channel/canal/moat (within ~20 ft of the bank); "
+                f"a yard set back on dry ground could not work",
+            )
+            if meta.get("walled") and M.get("wall"):
+                _ty_in = [(round(t_["x"]), round(t_["y"])) for t_ in _ty_yards if point_in_poly(t_["x"], t_["y"], M["wall"])]
+                check(
+                    "tanning_yard_outside_walls",
+                    not _ty_in,
+                    f"tanning yard(s) INSIDE the walls: {_ty_in} - the stench and the death-pollution put the tanning ground "
+                    f"strictly outside, with the kiln (the workers may live in-wall; the WORK may not)",
+                )
+            # Stench separation from ordinary dwellings. The burakumin's OWN houses are exempt by
+            # design, not by oversight: kawaramono lived on the ground they worked, and that
+            # adjacency is what the segregated quarter IS. The floor is the crematory's existing
+            # 120 ft (town_has_cremation_ground) - the established project figure for "a nuisance
+            # kept off the houses" - rather than a fresh invented number.
+            _ty_burxy = {(round(b["x"], 2), round(b["y"], 2)) for b in _ty_bur}
+            _ty_dwell = [(h["x"], h["y"]) for h in (M.get("houses") or [])]
+            _ty_dwell += [(b["x"], b["y"]) for b in (M.get("buildings") or []) if b.get("kind") not in ("shop", "stables", "barn") and (round(b["x"], 2), round(b["y"], 2)) not in _ty_burxy]
+            _ty_close = []
+            for t_ in _ty_yards:
+                _ty_near = min((math.hypot(t_["x"] - dx_, t_["y"] - dy_) for dx_, dy_ in _ty_dwell), default=1e9)
+                if _ty_near < _ty_px(120.0):
+                    _ty_close.append((round(t_["x"]), round(t_["y"]), round(_ty_near * _ty_ftpx)))
+            check(
+                "tanning_yard_clear_of_dwellings",
+                not _ty_close,
+                f"tanning yard(s) too close to ordinary dwellings (x, y, ft): {_ty_close} - a continuously-stinking works "
+                f"stands off the houses by at least the crematory's 120 ft. Burakumin dwellings are deliberately EXEMPT: "
+                f"they live on the ground they work, which is what the segregated quarter is",
+            )
+
     if scale == "city":
         # A PROVINCIAL CITY (budgets.md: ~2,000-4,000, avg ~3,000; 600 households - servants 120,
         # laborers 240, merchants 150, burakumin 30, samurai 60; ZERO in-city farmers). Placing
@@ -9292,6 +9367,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     "pawnshops",
                     "bathhouses",
                     "kilns",
+                    "tanning_yards",
                 )
             ] + [houses, es_singles]:
                 for es_o in es_grp:

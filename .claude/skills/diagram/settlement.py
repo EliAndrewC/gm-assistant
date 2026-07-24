@@ -4372,9 +4372,9 @@ class Settlement:
 
     def kiln(self, x: float, y: float, label: str = "tile kiln") -> None:
         """A TILE/POTTERY KILN at the town's periphery - fire law and smoke pushed kilns OUTSIDE
-        the walls (city_kiln_outside_walls; tanneries likewise go downstream with the extramural
-        burakumin quarter, but stay a documented note, not a drawn feature). A low earthen mound
-        kiln with its stoke mouth and a smoke wisp. Records M['kilns']."""
+        the walls (city_kiln_outside_walls; the tannery, the other nuisance trade banished to the
+        edge, is a drawn feature too - see s.tanning_yard). A low earthen mound kiln with its
+        stoke mouth and a smoke wisp. Records M['kilns']."""
         rx_, ry_ = self.px(28) / 2, self.px(18) / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f})">']
         g.append(f'<ellipse cx="0" cy="0" rx="{rx_:.1f}" ry="{ry_:.1f}" fill="#B08968" stroke="#5A4326" stroke-width="1.5"/>')
@@ -4383,6 +4383,83 @@ class Settlement:
         g.append('</g>')
         self.add(''.join(g))
         self._trade_record("kilns", x, y, rx_ * 2, ry_ * 2, 0.0, label)
+
+    def tanning_yard(self, x: float, y: float, rot: float = 0.0, pits: int = 4, water: str = "stream", label: str = "tanning yard") -> None:
+        """A TANNING YARD - the burakumin trade, and the one that decides where their quarter sits.
+
+        The GROUND, not the building, is the feature: soaking pits, drying racks, and a small work
+        shed on marginal land at the settlement's edge, ON water. The `rot` should lay the yard's
+        WATER SIDE (local -y, where the pits and the intake sit) against the bank.
+
+        Historical grounding (the "why" - see settlements.md "TANNING YARDS"):
+          - Hides come from FALLEN DRAFT STOCK, not butchery: the kawata held carcass rights over a
+            defined territory (danna-ba), so a county town's burakumin work the whole county's dead
+            oxen and horses. l7r.md agrees - daimyo push surplus horses onto farms as draft animals,
+            and they are "often slaughtered and eaten" when the fodder runs short.
+          - So THROUGHPUT IS SMALL and scales with the territory served, which is what `pits`
+            encodes: a county of ~6,800 inhabitants sheds on the order of a couple dozen carcasses a
+            year (~4 pits), a provincial city adds the daimyo's stable and the armor/saddle/drum/
+            bellows demand of ~300 samurai (~12). This is a seasonal yard, never an industry.
+          - WATER IS THE REAL GATE, not settlement size. Tanning is a water process - the Japanese
+            shironameshi method stakes raw hides in the river for 1-2 weeks before de-hairing - and
+            every archaeologically-known tannery sits on a watercourse at the settlement's edge.
+            The caste's own name for itself was kawaramono, "riverbed people". A settlement with no
+            running water keeps no tannery whatever its size.
+          - Pit size is the excavated medieval figure: ~1.4 m (4.6 ft) across, ~0.4 m deep.
+
+        `water="stream"` draws staking frames out in the shallows (live water, the shironameshi
+        picture); `water="ditch"` draws a gated intake cut instead, for a yard that sits on an
+        irrigation drain and must pond its own water. Records M['tanning_yards']."""
+        rows = 1 if pits <= 5 else 2
+        per_row = math.ceil(pits / rows)
+        yw_, yh_ = self.px(14 + 11 * per_row), self.px(rows * 9 + 32)
+        pw_, ph_ = self.px(9), self.px(5)
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(
+            f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{yw_:.1f}" height="{yh_:.1f}" rx="1.5" fill="#D9CBA2" fill-opacity="0.9" stroke="#A98E54" stroke-width="1.0"/>'
+        )  # the yard's tamped, sodden working ground - a shade dirtier than the dye yard's (same convention: without a ground plane the pits read as stray marks at fit zoom)
+        drawn = 0
+        for r_ in range(rows):  # the SOAKING / LIME PITS, ranked along the water side
+            ry_ = -yh_ / 2 + self.px(4) + r_ * self.px(9)
+            for c_ in range(per_row):
+                if drawn >= pits:
+                    break
+                drawn += 1
+                g.append(
+                    f'<rect x="{-yw_ / 2 + self.px(7) + c_ * self.px(11) - pw_ / 2:.1f}" y="{ry_:.1f}" width="{pw_:.1f}" height="{ph_:.1f}" rx="0.6" fill="#8E8A6A" stroke="#544D33" stroke-width="0.8"/>'
+                )
+        rky_ = yh_ / 2 - self.px(14)  # the DRYING RACKS - hides pegged out to cure for 2-4 months
+        for ri_ in range(2):
+            ly_ = rky_ + ri_ * self.px(7)
+            g.append(f'<line x1="{-yw_ / 2 + self.px(4):.1f}" y1="{ly_:.1f}" x2="{yw_ / 2 - self.px(20):.1f}" y2="{ly_:.1f}" stroke="#7A5A30" stroke-width="1.1"/>')
+            # hides hung over the rail: one fewer than the pit columns, which is exactly how many
+            # clear the shed's corner - the rail stops at yw_/2 - px(20), so hide i sits at
+            # px(8) + 11i and the last one that fits is i = per_row - 2 (derived, not guarded).
+            for hi_ in range(max(0, per_row - 1)):
+                hx_ = -yw_ / 2 + self.px(8) + hi_ * self.px(11)
+                g.append(f'<rect x="{hx_:.1f}" y="{ly_ - self.px(2.4):.1f}" width="{self.px(7):.1f}" height="{self.px(4.6):.1f}" rx="1" fill="#D8C9A6" stroke="#9A8358" stroke-width="0.6"/>')
+        shw_, shh_ = self.px(14), self.px(10)  # the work shed - knives, salt, and the rapeseed oil for kneading
+        g.append(
+            f'<rect x="{yw_ / 2 - shw_ - self.px(3):.1f}" y="{yh_ / 2 - shh_ - self.px(3):.1f}" width="{shw_:.1f}" height="{shh_:.1f}" rx="1.5" fill="#C2B190" stroke="#6B5A3A" stroke-width="1.4"/>'
+        )
+        if water == "ditch":
+            # a GATED INTAKE cut: a yard on an irrigation drain cannot stake hides in a current, so
+            # it ponds its own water - the cut runs off the yard's water side to the ditch bank.
+            cw_ = self.px(5)
+            g.append(f'<rect x="{-cw_ / 2:.1f}" y="{-yh_ / 2 - self.px(11):.1f}" width="{cw_:.1f}" height="{self.px(11):.1f}" fill="#9CB4C8" stroke="#5C7488" stroke-width="0.7"/>')
+            g.append(f'<line x1="{-cw_:.1f}" y1="{-yh_ / 2 - self.px(4):.1f}" x2="{cw_:.1f}" y2="{-yh_ / 2 - self.px(4):.1f}" stroke="#4A3318" stroke-width="1.4"/>')  # the sluice gate
+        else:
+            # STAKING FRAMES out in the shallows - raw hides pegged into the current to soften and
+            # to let the water start the hair (the shironameshi soak: 1 week summer, 2 winter).
+            for si_ in range(3):
+                sx_ = -yw_ / 2 + self.px(10) + si_ * self.px(13)
+                g.append(f'<line x1="{sx_:.1f}" y1="{-yh_ / 2 - self.px(9):.1f}" x2="{sx_:.1f}" y2="{-yh_ / 2 - self.px(2):.1f}" stroke="#6B4F2A" stroke-width="1.2"/>')
+            g.append(
+                f'<line x1="{-yw_ / 2 + self.px(8):.1f}" y1="{-yh_ / 2 - self.px(7):.1f}" x2="{-yw_ / 2 + self.px(38):.1f}" y2="{-yh_ / 2 - self.px(7):.1f}" stroke="#6B4F2A" stroke-width="1.0"/>'
+            )
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("tanning_yards", x, y, yw_, yh_, rot, label)
 
     def _draw_threshing_yard(self, cx: float, cy: float, w: float, h: float, poly: Any) -> None:
         """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack). The
