@@ -2589,11 +2589,15 @@ class Settlement:
         An end reaching into a STREAM bed is snapped onto that bed's edge by `_clip_to_stream`
         (the confluence mouth for a drain culvert emptying into a stream).
         The field_ditches are recorded separately (gen-side) for the topology checks; the DRAWN
-        stroke - post-clip geometry, bed draw position, late flag - is recorded in M['drawn_channels']
-        so pond_fill_covers_channel_mouths can verify the pond fill paints over every joining mouth
-        (and finish() can see whether a LATE stroke joins the pond and relocate the fill)."""
+        stroke - post-clip geometry, STROKE WIDTHS, bed draw position, late flag - is recorded in
+        M['drawn_channels'] so pond_fill_covers_channel_mouths can verify the pond fill paints over
+        every joining mouth (and finish() can see whether a LATE stroke joins the pond and relocate
+        the fill). The widths ride along because water_channels_join_not_cross judges a junction by
+        whether the joining stroke's tip lands inside the OTHER stroke's drawn band - which needs
+        that band's width, and needs it from the post-clip record rather than the pre-clip
+        field_ditches/channels (the two diverge wherever a mouth was snapped onto open water)."""
         pts = self._clip_to_stream(self._clip_to_river(self._clip_to_moat(self._clip_to_pond(pts), capr=max(w0, w1) / 2), capr=max(w0, w1) / 2))
-        rec: dict[str, Any] = {"pts": [[round(x, 1), round(y, 1)] for x, y in pts], "late": late}
+        rec: dict[str, Any] = {"pts": [[round(x, 1), round(y, 1)] for x, y in pts], "late": late, "w0": round(w0, 2), "w1": round(w1, 2)}
         self.M.setdefault("drawn_channels", []).append(rec)  # ONE rec per call: flush writes bedz per piece, so the last (topmost) piece's z sticks
         if abs(w1 - w0) < 0.2:
             dd = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in pts)

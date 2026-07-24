@@ -1521,11 +1521,16 @@ def build_polder(
     phf = R.uniform(0, math.tau)
 
     def waver(pts_st: list[tuple[float, float]], along: str, amp: float, ph: float) -> list[tuple[float, float]]:
-        # gently wave a trunk run: offset the CROSS coord by a low-freq sine so the canal is not dead straight
+        # Gently wave a trunk run: offset the CROSS coord by a low-freq sine so the canal is not dead
+        # straight - TAPERED to zero at both ends of the run, so each side still starts and finishes
+        # exactly on the fillet endpoints it continues from. Untapered, the sine displaced a side's
+        # first/last point by up to `amp` off its neighbour's fillet end, opening a small kink at each
+        # ring corner (up to 3.7px on Kuwabata - enough for the toe collector's tip to leave the drawn
+        # band of the trunk it joins). The ring canal is a CLOSED loop; its corners must actually close.
         out = []
         m2 = max(1, len(pts_st) - 1)
         for i, (s, t) in enumerate(pts_st):
-            w = amp * math.sin(ph + 2.2 * math.pi * i / m2)
+            w = amp * math.sin(math.pi * i / m2) * math.sin(ph + 2.2 * math.pi * i / m2)
             out.append((s + w, t) if along == "t" else (s, t + w))
         return out
 
@@ -1588,9 +1593,9 @@ def build_polder(
     ]
 
     def _s_on_side(side_st: list[tuple[float, float]], tq: float) -> float:
-        # the s-coordinate where a ring side (mostly t-monotone) crosses cross-coord tq, so a lateral's END
-        # lands EXACTLY on the feeder/drain centerline - no stub poking past the trunk into the dike corridor
-        # (the 'little bit sticking out at the top' the GM flagged 2026-07-22), and no gap short of it.
+        # the s-coordinate where a ring side (mostly t-monotone) crosses cross-coord tq - the POSITION
+        # GUESS for a lateral's end, so it meets the feeder/drain at roughly its own column line rather
+        # than wherever the nearest-point projection below would slide it.
         for i in range(len(side_st) - 1):
             ta, tb = side_st[i][1], side_st[i + 1][1]
             if (ta <= tq <= tb or tb <= tq <= ta) and tb != ta:
@@ -1598,12 +1603,38 @@ def build_polder(
                 return side_st[i][0] + k * (side_st[i + 1][0] - side_st[i][0])
         return side_st[0][0] if abs(tq - side_st[0][1]) < abs(tq - side_st[-1][1]) else side_st[-1][0]
 
+    # SNAP the lateral ends onto the feeder (top) + drain (bottom) centerlines so each lateral FEEDS the
+    # trunk at a clean T instead of poking a stub past it. The snap must happen in DRAWN (xy) space, not
+    # in (s, t): grid() is a NONLINEAR warp (edge_wander's cwarp/fwarp, plus mosaic), so a point sitting
+    # exactly on the straight st-space chord between two trunk vertices maps a few px OFF the straight
+    # xy-space segment the trunk is actually drawn along. That residual is why Enokida's laterals still
+    # crossed the ring and stuck ~2-5 px past it, reading as a 4-way intersection rather than a junction
+    # (GM 2026-07-24; the earlier st-space-only fix, GM 2026-07-22, removed the gross stubs but not this).
+    # So: take _s_on_side as the position guess, map to xy, then project the tip onto the trunk's own
+    # drawn polyline - exact whatever the warp does. Gated by water_channels_join_not_cross.
+    feeder_xy = [grid(s, t) for s, t in sides_st[0]]
+    drain_xy = [grid(s, t) for s, t in sides_st[2]]
+
+    def _onto(pt: Pt, poly: list[Pt]) -> Pt:
+        """The closest point on a drawn polyline - snaps a lateral's tip onto the trunk centerline."""
+        best, bd = pt, float("inf")
+        for i in range(len(poly) - 1):
+            (ax, ay), (bx, by) = poly[i], poly[i + 1]
+            dx, dy = bx - ax, by - ay
+            ln = dx * dx + dy * dy
+            k = 0.0 if ln == 0 else max(0.0, min(1.0, ((pt[0] - ax) * dx + (pt[1] - ay) * dy) / ln))
+            cand = (ax + k * dx, ay + k * dy)
+            dist = math.hypot(pt[0] - cand[0], pt[1] - cand[1])
+            if dist < bd:
+                best, bd = cand, dist
+        return best
+
     for c in range(1, cols):  # the laterals, one per interior column line, feeder (top) -> drain (bottom)
         tc = tt(c)
-        # SNAP the lateral's ends onto the feeder (top) + drain (bottom) centerlines so it FEEDS them at a
-        # clean T-junction instead of overshooting past the trunk (issue: laterals stuck out above the feeder)
         lat_pts = [(_s_on_side(sides_st[0], tc), tc), *[nodes[r][c] for r in range(rows + 1)], (_s_on_side(sides_st[2], tc), tc)]
-        d = {"pts": [(round(x, 1), round(y, 1)) for x, y in [grid(s, t) for s, t in lat_pts]], "role": "lateral", "w": 3.2, "w_tail": 2.4, "seg": "lateral"}
+        lat_xy = [grid(s, t) for s, t in lat_pts]
+        lat_xy[0], lat_xy[-1] = _onto(lat_xy[0], feeder_xy), _onto(lat_xy[-1], drain_xy)
+        d = {"pts": [(round(x, 1), round(y, 1)) for x, y in lat_xy], "role": "lateral", "w": 3.2, "w_tail": 2.4, "seg": "lateral"}
         channels.append(d)
     out_t = span_t * 0.5  # the outfall taps the drain at mid-south and runs off-map downhill
     brook_start, brook_dir = grid(di, out_t), grid(di + 40, out_t)
