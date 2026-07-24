@@ -220,8 +220,14 @@ Considered and REJECTED (recorded so they are not re-litigated):
 
 ## 8. Recommendations, ranked
 
-1. Add the **kosatsuba** to both maps (tiny glyph + `town_has_kosatsuba`-style default-on
-   check, opt-out for suppressed/backwater seats), with the grounding above.
+1. **[DONE 2026-07-24]** Add the **kosatsuba** to both maps - `s.kosatsuba(...)` glyph (true
+   ~12x5 ft), `town_has_kosatsuba` default-on + `kosatsuba_by_the_road` siting check (within
+   ~60 ft of a road/street), `meta(kosatsuba=False)` opt-out. Placement follows the follow-up
+   research: the TOWN board is a traffic institution (highway frontage / main street by the
+   gate), distinct from the manor-gate board (Mode A) which posts the bench's output - the
+   two-board split is documented in settlements.md "Notice board (kosatsuba)" and cross-noted
+   in buildings.md. Hoshizora: SW road frontage at the theater/flophouse arrival node;
+   Hirameki: main street just inside the front gate.
 2. **Record the URBAN size table's whys** in settlements.md (the one undocumented size
    table), and decide the merchant frontage question: either accept wide-shallow shophouse
    glyphs as a legibility convention (document it), or move toward narrower/deeper frontage

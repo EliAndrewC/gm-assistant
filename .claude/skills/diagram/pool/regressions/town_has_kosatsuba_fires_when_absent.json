@@ -1,0 +1,12 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false
+ },
+ "_regression": {
+  "fires": [
+   "town_has_kosatsuba"
+  ],
+  "source": "test_checks.py::test_town_has_kosatsuba_fires_when_absent"
+ }
+}

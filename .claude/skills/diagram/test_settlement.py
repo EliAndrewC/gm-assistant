@@ -294,6 +294,16 @@ def test_frontage_shortfall_is_reported(capsys):
     assert "FRONTAGE SHORTFALL" in capsys.readouterr().out
 
 
+def test_kosatsuba_records_a_blocking_struct():
+    # the notice board records its manifest entry at true size (~12x5 ft) and reserves its
+    # verge (a later pack must not bury the board)
+    s = _town()
+    z = s.kosatsuba(500, 500, rot=15)
+    kb = s.M["kosatsuba"][0]
+    assert (kb["x"], kb["y"], kb["w"], kb["h"], kb["rot"]) == (500, 500, 12, 5, 15) and z > 0
+    assert not s._fits(500, 500, 20, 20)
+
+
 def test_fill_declares_a_capacity_budget_and_stays_silent(capsys):
     # fill=True marks the request as "place up to N" (the city district-fill idiom), so an
     # under-fill is intended, not drift - no warning
@@ -1672,6 +1682,17 @@ def test_pack_core_skips_the_street_facing_band():
 
     for b in s.M["buildings"]:
         assert _m.hypot(0, b["y"] - 500) > 76 or not (100 <= b["x"] <= 900)
+
+
+def test_pack_businesses_only_line_the_frontage():
+    # face_streets=True (businesses mode): a spot with no street within reach places NOTHING -
+    # shops exist to catch passing feet, they never scatter into a streetless interior. (This
+    # mode lost its last pool caller in the 2026-07-24 Hirameki roadway rework; the unit test
+    # keeps the API branch alive and covered.)
+    s = Settlement(1000, 1000, seed=2)
+    s.meta(name="T", scale="town")
+    s.pack((150, 300, 850, 700), ["merchant"] * 6, step=40, face_streets=True)
+    assert s.M["buildings"] == []
 
 
 def _hamlet_with_field(down_deg):
