@@ -1129,7 +1129,11 @@ s.title("Nagahara")
 # probed-clear verge NORTH of the caravan stable's animal yard (spot history: 33px inside
 # the north gate stood on the gate structs; the next sat inside the stable yard's trough
 # disc - stable_yards are DISCS (x, y, r), which rect-only probes miss).
-s.kosatsuba(1773, 1149, rot=90)
+s.kosatsuba(1773, 1149, rot=90)  # the LABELED representative (one-label convention)
+# ...and the north road gate's board, UNLABELED (GM 2026-07-24: draw the set, label one -
+# like the fire towers and gate markets), 51px inside the gate on the road verge, aligned
+# to the road's local ~72 deg bearing.
+s.kosatsuba(1492, 961, rot=72, label=None)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

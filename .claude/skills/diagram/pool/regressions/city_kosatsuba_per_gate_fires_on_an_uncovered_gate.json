@@ -1,0 +1,41 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "kosatsuba": [
+  {
+   "x": 500,
+   "y": 520,
+   "w": 12,
+   "h": 5,
+   "rot": 0
+  }
+ ],
+ "road": [
+  [
+   0,
+   500
+  ],
+  [
+   2000,
+   500
+  ]
+ ],
+ "gates": [
+  [
+   520,
+   500
+  ],
+  [
+   1900,
+   500
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "city_kosatsuba_per_gate"
+  ],
+  "source": "test_checks.py::test_city_kosatsuba_per_gate_fires_on_an_uncovered_gate"
+ }
+}

@@ -5193,6 +5193,28 @@ def test_city_has_kosatsuba_fires_when_absent():
     assert "city_has_kosatsuba" not in f({"meta": {"scale": "city", "kosatsuba": False}})
 
 
+def test_city_kosatsuba_per_gate_fires_on_an_uncovered_gate():
+    # draw the SET: every main gate's approach corridor carries a board (~800 real ft);
+    # one gate covered, the other bare -> fires and names the bare gate's coordinates
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "kosatsuba": [_kosatsuba(500, 520)],
+        "road": [[0, 500], [2000, 500]],
+        "gates": [[520, 500], [1900, 500]],
+    }
+    assert "city_kosatsuba_per_gate" in f(M)
+
+
+def test_city_kosatsuba_per_gate_passes_when_every_gate_is_covered():
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "kosatsuba": [_kosatsuba(500, 520), _kosatsuba(1880, 520)],
+        "road": [[0, 500], [2000, 500]],
+        "gates": [[520, 500], [1900, 500]],
+    }
+    assert "city_kosatsuba_per_gate" not in f(M)
+
+
 def test_city_kosatsuba_siting_threshold_is_scale_aware():
     # the ~60 ft siting limit is REAL feet: 30 px off the road passes at town grain (30 ft)
     # but fires at city grain (1 px = 3 ft -> 90 ft)

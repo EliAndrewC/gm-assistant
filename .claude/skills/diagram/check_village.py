@@ -7125,9 +7125,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # decision, not an administrative one: highway frontage, main street by the gate,
         # bridgehead, market corner - the state talking at everyone who passes (Edo's
         # principal board stood at Nihonbashi). A CITY posted MANY boards (the principal
-        # plus subsidiary boards at gates and bridge approaches); one drawn board at the
-        # principal traffic node stands in for the set under the legibility license, same
-        # as the drum tower and the per-quarter fire watch. DISTINCT from the magistrate's
+        # plus subsidiary boards at gates and bridge approaches) - so a city DRAWS the set
+        # (one per main-gate approach corridor at minimum, city_kosatsuba_per_gate) and
+        # LABELS only one representative (GM 2026-07-24: the same one-label convention as
+        # the fire towers and gate markets; an unlabeled board also fits the tight gate
+        # verges a labeled one cannot). DISTINCT from the magistrate's
         # manor-gate board (Mode A program, buildings.md): that one posts the bench's
         # OUTPUT (verdicts, bounties) for people who come TO the court, while this one
         # posts standing law - and the manor/yamen deliberately sits away from the busy
@@ -7145,6 +7147,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if kbs and routes_kb:
             far_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in routes_kb for k in range(len(r) - 1)) > lim_kb]
             check("kosatsuba_by_the_road", not far_kb, f"notice board(s) at {far_kb} stand more than ~60 real ft from every road/main street - a kosatsu is read where people pass")
+        if scale == "city" and kbs and M.get("gates"):
+            # every trafficked gate's approach corridor carries a board (~800 real ft of the
+            # gate - the corridor, not the furnished throat itself)
+            lim_gate_kb = 800.0 / float(meta.get("ftpx") or 1)
+            uncovered_kb = [[round(g[0]), round(g[1])] for g in M["gates"] if min(math.hypot(b["x"] - g[0], b["y"] - g[1]) for b in kbs) > lim_gate_kb]
+            check(
+                "city_kosatsuba_per_gate",
+                not uncovered_kb,
+                f"main gate(s) at {uncovered_kb} have no notice board on their approach corridor - a city posted a board at every trafficked gate (draw them all, label ONE)",
+            )
 
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")), "a walled town must have a wall and a gate")
