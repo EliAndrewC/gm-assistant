@@ -570,12 +570,13 @@ def test_moat_river_junction_feet_tilt_with_the_current():
     s.meta(name="RT", scale="city", walled=True, ftpx=3)
     pts = [(round(1000 + 300 * m.cos(2 * m.pi * i / 16)), round(700 + 300 * m.sin(2 * m.pi * i / 16))) for i in range(16)]
     river = [(1360, 100), (1360, 1300)]  # flows top -> bottom (upstream-first)
-    mo = s.moat(pts, gap=24, river=river)
-    (inlet, adj_in), (outlet, adj_out) = sorted([(mo[0], mo[1]), (mo[-1], mo[-2])], key=lambda e: e[0][1])
-    in_shift = adj_in[1] - inlet[1]  # upstream (negative-y) shift of the inlet foot off square
-    out_shift = outlet[1] - adj_out[1]  # downstream (positive-y) sweep of the outlet foot
-    assert in_shift > 0  # inlet tilts upstream, never smoothly flow-aligned
-    assert out_shift > in_shift  # the outlet sweeps harder - the researched asymmetry
+    for ring in (pts, pts[::-1]):  # both ring orientations: keep[0] lands downstream on one, upstream on the other
+        mo = s.moat(ring, gap=24, river=river)
+        (inlet, adj_in), (outlet, adj_out) = sorted([(mo[0], mo[1]), (mo[-1], mo[-2])], key=lambda e: e[0][1])
+        in_shift = adj_in[1] - inlet[1]  # upstream (negative-y) shift of the inlet foot off square
+        out_shift = outlet[1] - adj_out[1]  # downstream (positive-y) sweep of the outlet foot
+        assert in_shift > 0  # inlet tilts upstream, never smoothly flow-aligned
+        assert out_shift > in_shift  # the outlet sweeps harder - the researched asymmetry
 
 
 def test_moat_river_junction_tilts_follow_a_reversed_river():
