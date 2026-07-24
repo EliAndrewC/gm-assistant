@@ -311,6 +311,9 @@ def test_kosatsuba_records_a_blocking_struct():
     kb = s.M["kosatsuba"][0]
     assert (kb["x"], kb["y"], kb["w"], kb["h"], kb["rot"]) == (500, 500, 12, 5, 15) and z > 0
     assert not s._fits(500, 500, 20, 20)
+    assert s.M["labels"][-1][1] > 500  # default label sits BELOW the board
+    s.kosatsuba(800, 500, label_above=True)  # gate-adjacent boards label ABOVE (clear of the gate)
+    assert s.M["labels"][-1][1] < 500
 
 
 def test_fill_declares_a_capacity_budget_and_stays_silent(capsys):

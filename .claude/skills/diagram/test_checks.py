@@ -5186,6 +5186,23 @@ def test_kosatsuba_routeless_map_skips_the_siting_check():
     assert "kosatsuba_by_the_road" not in fails
 
 
+def test_city_has_kosatsuba_fires_when_absent():
+    # cities port the institution up (GM 2026-07-24): a city posted MANY boards; one drawn
+    # at the principal node stands in for the set
+    assert "city_has_kosatsuba" in f({"meta": {"scale": "city"}})
+    assert "city_has_kosatsuba" not in f({"meta": {"scale": "city", "kosatsuba": False}})
+
+
+def test_city_kosatsuba_siting_threshold_is_scale_aware():
+    # the ~60 ft siting limit is REAL feet: 30 px off the road passes at town grain (30 ft)
+    # but fires at city grain (1 px = 3 ft -> 90 ft)
+    road = [[0, 500], [1000, 500]]
+    assert "kosatsuba_by_the_road" not in f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "road": road})
+    assert "kosatsuba_by_the_road" in f({"meta": {"scale": "city", "ftpx": 3}, "kosatsuba": [_kosatsuba(500, 530)], "road": road})
+    ok = f({"meta": {"scale": "city", "ftpx": 3}, "kosatsuba": [_kosatsuba(500, 515)], "road": road})
+    assert "kosatsuba_by_the_road" not in ok and "city_has_kosatsuba" not in ok
+
+
 def test_city_has_fire_towers_fires_with_one():
     assert "city_has_fire_towers" in f({"meta": {"scale": "city"}, "fire_towers": [_tower(500, 500)]})
 
