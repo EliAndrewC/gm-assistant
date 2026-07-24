@@ -69,6 +69,11 @@ s.bridges()
 if s.M.get("field_ditches"):
     s.channel_footbridges(spacing=320)
 s.hinterland()  # a narrow ribbon leaves plenty of dry valley-side ground to clothe
+# THE OFFICIAL NOTICE BOARD (kosatsuba), auto-sited on a lane verge at the busiest node (GM
+# 2026-07-24: every settlement tier posts the state's standing law - the ofuregaki reached the
+# peasantry through this board via the settlement's literate reader; see settlements.md and
+# settlement.place_kosatsuba). Placed BEFORE the crop so the frame contains it.
+s.place_kosatsuba()
 s.crop_to_content(margin=44)
 s.title("Yatsuda")
 print(s.finish(os.path.join(HERE, "yatsuda")))

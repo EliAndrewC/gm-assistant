@@ -5279,10 +5279,31 @@ def test_kosatsuba_routeless_map_skips_the_siting_check():
 
 
 def test_city_has_kosatsuba_fires_when_absent():
-    # cities port the institution up (GM 2026-07-24): a city posted MANY boards; one drawn
-    # at the principal node stands in for the set
+    # cities port the institution up (GM 2026-07-24): a city DRAWS the set
     assert "city_has_kosatsuba" in f({"meta": {"scale": "city"}})
     assert "city_has_kosatsuba" not in f({"meta": {"scale": "city", "kosatsuba": False}})
+
+
+def test_city_kosatsuba_floor_is_gates_plus_central():
+    # the principal central board + one per main gate (GM 2026-07-24): 2 gates -> floor 3
+    road = [[0, 500], [2000, 500]]
+    gates = [[520, 500], [1900, 500]]
+    two = f({"meta": {"scale": "city", "ftpx": 3}, "kosatsuba": [_kosatsuba(500, 520), _kosatsuba(1880, 520)], "road": road, "gates": gates})
+    assert "city_has_kosatsuba" in two
+    three = f({"meta": {"scale": "city", "ftpx": 3}, "kosatsuba": [_kosatsuba(500, 520), _kosatsuba(1880, 520), _kosatsuba(1200, 515)], "road": road, "gates": gates})
+    assert "city_has_kosatsuba" not in three
+
+
+def test_village_and_hamlet_have_kosatsuba():
+    # the ofuregaki reached the peasantry through the village/hamlet board via the literate
+    # headman (GM 2026-07-24); siting works off the LANE network at these tiers
+    assert "village_has_kosatsuba" in f({"meta": {"scale": "village"}})
+    assert "hamlet_has_kosatsuba" in f({"meta": {"scale": "hamlet"}})
+    assert "hamlet_has_kosatsuba" not in f({"meta": {"scale": "hamlet", "kosatsuba": False}})
+    ok = f({"meta": {"scale": "village", "ftpx": 2}, "kosatsuba": [_kosatsuba(500, 512)], "lanes": [{"pts": [[0, 500], [1000, 500]], "w": 5}]})
+    assert "village_has_kosatsuba" not in ok and "kosatsuba_by_the_road" not in ok
+    marooned = f({"meta": {"scale": "hamlet"}, "kosatsuba": [_kosatsuba(500, 700)], "lane": [[0, 500], [1000, 500]]})
+    assert "kosatsuba_by_the_road" in marooned
 
 
 def test_city_kosatsuba_per_gate_fires_on_an_uncovered_gate():
