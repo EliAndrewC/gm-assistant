@@ -23,6 +23,7 @@ import random
 import shutil
 import subprocess
 import sys
+from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any, cast
 
@@ -3825,11 +3826,13 @@ class Settlement:
                 break
         return n
 
-    def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False) -> int:
+    def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False, fill: bool = False) -> int:
         """Densely fill a district bbox with a list of building kinds (one building
         each), grid-scan + jitter, skipping the road, blocked regions, and occupied
         spots. With face_streets, each building rotates to face its nearest street.
-        Returns the number placed (leftovers are 'off-map')."""
+        Returns the number placed. Leftovers WARN via _shortfall unless fill=True
+        declares the request a capacity BUDGET ("place up to N") rather than an exact
+        count - the city gens' 600-samurai district fills are the idiom."""
         x0, y0, x1, y1 = bbox
         items = list(items)
         n = 0
@@ -3874,7 +3877,23 @@ class Settlement:
                     n += 1
                 gx += step
             gy += step
+        if not fill:
+            self._shortfall("pack", bbox, n, items)
         return n
+
+    @staticmethod
+    def _shortfall(fn: str, where: Any, placed: int, left: list[Any]) -> None:
+        """A placement helper SILENTLY dropping what does not fit is how authored-vs-landed
+        drift happens (the 2026-07-24 town audit: Hirameki's gate market authored 12
+        businesses, landed 4, and nothing said so - the "no silent caps" principle applied
+        to pack/frontage). Loudly report any shortfall; the gen author decides whether to
+        make room, trim the request to the ground truth, or mark the call fill=True when
+        the request is deliberately a capacity budget. An unmarked warning is a standing
+        TODO to make that call."""
+        if left:
+            want = placed + len(left)
+            kinds = ", ".join(f"{k} x{c}" for k, c in Counter(left).items())
+            print(f"{fn.upper()} SHORTFALL at {where}: placed {placed}/{want} (dropped {kinds})")
 
     def pasture(self, shape: Any, label: Any = None, amp: float = 40, label_xy: Any = None) -> None:
         """Hayfield / grazing land (pastureland, around the barns) - open grass with
@@ -3969,6 +3988,38 @@ class Settlement:
         self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
         if label:
             self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
+        return z
+
+    def drum_tower(self, x: float, y: float, tw: float | None = None, label: str = "drum tower") -> int:
+        """A combined BELL-AND-DRUM TOWER (zhonggulou) - the timekeeping/curfew institution of a
+        WALLED seat (GM 2026-07-24). Morning bell, evening drum: dawn gate-opening, the dusk
+        gate-closing that starts the street curfew, the five night watches, alarm and ceremony.
+        Part of the standard county-seat kit (yamen, temples, drum tower); a county seat had ONE
+        combined tower - the paired gulou/zhonglou on an axis is capital grammar (Pingyao, a
+        wealthy county seat, has exactly one Market Tower, ~60 ft). Distinct from the fire towers:
+        fire watch was a SEPARATE institution in both reference cultures (Song Kaifeng ran
+        dedicated fire-lookout towers; Edo split the licensed toki-no-kane time bell from the
+        hinomi-yagura). Drawn as a heavy masonry platform (county tier ~60-80 ft square) carrying
+        a timber pavilion with the drum and the bell - visibly heavier-built than the skeletal
+        braced-frame fire towers. Stands at the main street crossing, near (not inside) the yamen.
+        Records M['drum_towers'] (an overlap-checked struct) and reserves a no-build block."""
+        if tw is None:
+            tw = self.px(70)  # a county-tier platform is ~60-80 ft square; 70 ft is the round middle
+        h = tw / 2
+        hi = tw * 0.31  # the pavilion atop the platform
+        g = [f'<g transform="translate({x:.0f},{y:.0f})">']
+        g.append(f'<rect x="{-h:.1f}" y="{-h:.1f}" width="{tw:.1f}" height="{tw:.1f}" rx="1.5" fill="#E3D7B8" stroke="#4A3318" stroke-width="2.4"/>')  # the masonry platform
+        g.append(f'<rect x="{-hi:.1f}" y="{-hi:.1f}" width="{hi * 2:.1f}" height="{hi * 2:.1f}" rx="1" fill="#C9A57A" stroke="#4A3318" stroke-width="1.5"/>')  # the timber pavilion
+        g.append(f'<line x1="{-hi:.1f}" y1="0" x2="{hi:.1f}" y2="0" stroke="#4A3318" stroke-width="0.9" opacity="0.7"/>')  # the pavilion roof ridge
+        g.append(f'<circle cx="{-tw * 0.155:.1f}" cy="0" r="{tw * 0.105:.1f}" fill="#8A4A2A" stroke="#4A3318" stroke-width="0.8"/>')  # the great drum
+        g.append(f'<circle cx="{tw * 0.155:.1f}" cy="0" r="{tw * 0.08:.1f}" fill="#6B5A3A" stroke="#4A3318" stroke-width="0.8"/>')  # the bell
+        g.append('</g>')
+        z = self.add_top(''.join(g))
+        self.M.setdefault("drum_towers", []).append({"x": round(x, 1), "y": round(y, 1), "w": tw, "h": tw, "rot": 0.0, "z": z, "label": label})
+        self.placed.append((x, y, tw, tw))
+        bm = 12
+        self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
+        self.label(x, y + h + 12, label, 9, italic=True, color="#4A3318")
         return z
 
     def _draw_threshing_yard(self, cx: float, cy: float, w: float, h: float, poly: Any) -> None:
@@ -7212,7 +7263,18 @@ class Settlement:
         return all(math.hypot(x - gx, y - gy) >= r + math.hypot(gw, gh) / 2 + 4 for gx, gy, gw, gh in self.grove_rects)
 
     def frontage(
-        self, street: Any, items: Any, width: float = 24, setback: float = 10, spacing: float = 58, both: bool = True, rows: int = 1, rowgap: float = 9, jitter: float = 4, skip: Any = None
+        self,
+        street: Any,
+        items: Any,
+        width: float = 24,
+        setback: float = 10,
+        spacing: float = 58,
+        both: bool = True,
+        rows: int = 1,
+        rowgap: float = 9,
+        jitter: float = 4,
+        skip: Any = None,
+        fill: bool = False,
     ) -> int:
         """Place buildings in row(s) along a street, each rotated so its FRONTAGE faces the
         street (shophouses lining the road). rows=2 stacks a second row BACK-TO-BACK behind the
@@ -7274,6 +7336,8 @@ class Settlement:
                     else:
                         break
             d += spacing
+        if not fill:
+            self._shortfall("frontage", (street[0], street[-1]), placed, items)
         return placed
 
     @staticmethod
