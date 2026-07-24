@@ -46,3 +46,11 @@ the garden bath pavilion, altars/relics/annotations, wells, latrines, fire-tubs)
 round-trip achieved its goal: the placer can now express a fully-composed residential court,
 not just an administrative one. A NEW manor can start from a draft like this and be
 hand-refined, and the residential-court composition will already be right.
+
+2026-07-24 wall-ink clearance: regenerated after `compound.py` stopped seating wall-hugging
+buildings on the wall CENTERLINE. The wall is drawn at true thickness centered on the
+boundary, so half of it lies inside - every rank-1 building here had been standing 1.5 ft
+inside the masonry, with its own outline swallowed by the wall stroke. The placer now leaves
+the ink plus a hair (2 ft off a compound wall, 1.5 ft off the divider), and the inner-court
+garden zone moved 36 -> 38 ft so the shifted N-wall row still clears it. Checked by
+`pack_audit.py` `structures_on_walls`; see buildings.md "Walls and gates".
