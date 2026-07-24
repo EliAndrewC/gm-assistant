@@ -3402,6 +3402,20 @@ def test_apply_land_use_leaves_a_lone_pond_ungated():
     assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
 
 
+def test_apply_land_use_reanchor_leaves_a_placeholder_slot():
+    # GM 2026-07-24 (the bald pond): the flush splice REPLACES the element at _late_water_idx
+    # (self.out[idx:idx+1] = block), so every anchor assignment must be followed by an empty-string
+    # placeholder. The overlay re-anchor lacked one, so the splice ate the next-appended element -
+    # which, after the crown-deferral change, was a pond's entire crown group.
+    s = Settlement(2000, 2000, seed=1)
+    s.meta(field_archetype="mulberry_dike_fishpond")
+    s._late_water_idx = len(s.out)
+    s.out.append("")  # a live late-water anchor, as a comb-field channel draw would leave it
+    plots = [{"poly": [(100.0 + 220 * i, 100.0), (280.0 + 220 * i, 100.0), (280.0 + 220 * i, 260.0), (100.0 + 220 * i, 260.0)], "low": True} for i in range(2)]
+    s.apply_land_use({"plots": plots, "channels": []}, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
+    assert s._late_water_idx is not None and s.out[s._late_water_idx] == ""  # the slot the splice consumes is a placeholder, never real content
+
+
 def test_flooded_leftover_paddy_gets_rounded_waterline():
     # GM 2026-07-23: a FLOODED leftover's waterline draws rounded + slightly irregular (bund corners silt
     # round, the toe wanders) via _rounded_pond - with NO edge stroke, so it never reads as a dug pond
