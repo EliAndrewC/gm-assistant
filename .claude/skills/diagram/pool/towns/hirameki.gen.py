@@ -390,6 +390,11 @@ CROSS = [(849, 1400), (1300, 1388), (1837, 1403)]
 assert CROSS[0][0] >= CHRYS[2] + 30, "market cross-street must start clear of the chrysanthemum field"
 s.street(MAIN, width=28, main=True, label="main street")
 s.street(CROSS, width=22)
+# BELL-AND-DRUM TOWER (GM 2026-07-24): Hirameki is WALLED, so it keeps the timekeeping/curfew
+# tower of a walled seat - a town-tier 60 ft platform (the poorer end of the 60-80 ft county
+# band) at the NE corner of the main crossing (settlements.md "The bell-and-drum tower").
+# Unwalled Hoshizora has no gates to close and is exempt: its time signal is the monastery bell.
+s.drum_tower(1352, 1325, tw=s.px(60))
 
 # the town's THEATER STAGE - a roofed performance stage facing an open viewing ground - sited in the Benten
 # monastery's precinct, just EAST of it (the NW diagonal rampart hems the ground directly north of Benten),

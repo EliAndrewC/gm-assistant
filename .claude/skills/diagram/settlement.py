@@ -3969,6 +3969,38 @@ class Settlement:
             self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
         return z
 
+    def drum_tower(self, x: float, y: float, tw: float | None = None, label: str = "drum tower") -> int:
+        """A combined BELL-AND-DRUM TOWER (zhonggulou) - the timekeeping/curfew institution of a
+        WALLED seat (GM 2026-07-24). Morning bell, evening drum: dawn gate-opening, the dusk
+        gate-closing that starts the street curfew, the five night watches, alarm and ceremony.
+        Part of the standard county-seat kit (yamen, temples, drum tower); a county seat had ONE
+        combined tower - the paired gulou/zhonglou on an axis is capital grammar (Pingyao, a
+        wealthy county seat, has exactly one Market Tower, ~60 ft). Distinct from the fire towers:
+        fire watch was a SEPARATE institution in both reference cultures (Song Kaifeng ran
+        dedicated fire-lookout towers; Edo split the licensed toki-no-kane time bell from the
+        hinomi-yagura). Drawn as a heavy masonry platform (county tier ~60-80 ft square) carrying
+        a timber pavilion with the drum and the bell - visibly heavier-built than the skeletal
+        braced-frame fire towers. Stands at the main street crossing, near (not inside) the yamen.
+        Records M['drum_towers'] (an overlap-checked struct) and reserves a no-build block."""
+        if tw is None:
+            tw = self.px(70)  # a county-tier platform is ~60-80 ft square; 70 ft is the round middle
+        h = tw / 2
+        hi = tw * 0.31  # the pavilion atop the platform
+        g = [f'<g transform="translate({x:.0f},{y:.0f})">']
+        g.append(f'<rect x="{-h:.1f}" y="{-h:.1f}" width="{tw:.1f}" height="{tw:.1f}" rx="1.5" fill="#E3D7B8" stroke="#4A3318" stroke-width="2.4"/>')  # the masonry platform
+        g.append(f'<rect x="{-hi:.1f}" y="{-hi:.1f}" width="{hi * 2:.1f}" height="{hi * 2:.1f}" rx="1" fill="#C9A57A" stroke="#4A3318" stroke-width="1.5"/>')  # the timber pavilion
+        g.append(f'<line x1="{-hi:.1f}" y1="0" x2="{hi:.1f}" y2="0" stroke="#4A3318" stroke-width="0.9" opacity="0.7"/>')  # the pavilion roof ridge
+        g.append(f'<circle cx="{-tw * 0.155:.1f}" cy="0" r="{tw * 0.105:.1f}" fill="#8A4A2A" stroke="#4A3318" stroke-width="0.8"/>')  # the great drum
+        g.append(f'<circle cx="{tw * 0.155:.1f}" cy="0" r="{tw * 0.08:.1f}" fill="#6B5A3A" stroke="#4A3318" stroke-width="0.8"/>')  # the bell
+        g.append('</g>')
+        z = self.add_top(''.join(g))
+        self.M.setdefault("drum_towers", []).append({"x": round(x, 1), "y": round(y, 1), "w": tw, "h": tw, "rot": 0.0, "z": z, "label": label})
+        self.placed.append((x, y, tw, tw))
+        bm = 12
+        self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
+        self.label(x, y + h + 12, label, 9, italic=True, color="#4A3318")
+        return z
+
     def _draw_threshing_yard(self, cx: float, cy: float, w: float, h: float, poly: Any) -> None:
         """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack). The
         outer footprint is a slightly-irregular quad (`poly`, absolute corner coords) - a swept work surface

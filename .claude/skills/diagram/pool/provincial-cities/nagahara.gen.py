@@ -141,6 +141,12 @@ ROAD = [
     (2560, 1727),
 ]  # both ends past the widened frame (616/2545)
 s.road(ROAD)  # unlabeled: only Imperial roads get labels (SKILL.md labeling rules)
+# BELL-AND-DRUM TOWER (GM 2026-07-24): the walled seat's timekeeping/curfew tower at the SE
+# corner of the trunk road's bend - Nagahara's main crossing is the elbow where the north road
+# meets the river-gate road (settlements.md "The bell-and-drum tower"). Placed right after the
+# road so every later pack/frontage flows around its reserved block; clears the (1565,1394)
+# merchant estate's west wall (x1534).
+s.drum_tower(1500, 1362)
 s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the through-road over the river
 
 # ---- the cargo canal: moat -> water gate -> dock basin (the Suzhou pattern). ONE mouth on the
