@@ -7762,6 +7762,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             ]  # FARMHOUSES are commoner households in this vote: a farm-belt well (s.farm_wells) sits among farmsteads far from any urban dwelling, and judging it by the nearest IN-WALL houses mislabeled it samurai (Nagahara's SW belt, 2026-07-21)
             sam_wells = []
             for w in wells:
+                if len(wp) >= 3 and not inw(w["x"], w["y"]):
+                    # the samurai QUARTER is intramural by definition - an extramural well (a farm-belt
+                    # or gate-suburb well) cannot sit "in" it, and letting in-wall samurai houses vote
+                    # across the rampart mislabeled a SE farm well (Tango, 2026-07-24 trade-works ripple)
+                    continue
                 near_dw = sorted(dwl, key=lambda d: math.hypot(d[0] - w["x"], d[1] - w["y"]))[:3]
                 if near_dw and sum(1 for d in near_dw if d[2]) * 2 >= len(near_dw):  # most of its nearest neighbors are samurai
                     sam_wells.append((round(w["x"]), round(w["y"])))
@@ -8706,10 +8711,21 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             )
             check("city_has_oil_press", bool(M.get("oil_presses")), "no oil press - every city keeps a presser's barn (s.oil_press: wedge-and-beam press + ox-driven mill ring, toward the edge)")
             check("city_has_pawnshop", bool(M.get("pawnshops")), "no pawnshop - every city keeps one (s.pawnshop: shopfront + 2 pledge kura in a walled rear court)")
+            # BATHHOUSE COUNT FOLLOWS THE POPULATION BAND (GM rule 2026-07-24): under ~3,000
+            # exactly ONE sento, a ~3,000 seat rolls 1-2, a ~4,000 seat keeps TWO - Edo's own
+            # peak ratio was ~1 per ~2,100 residents (1808: 523 sento for ~1.1M), so the band is
+            # ~pop/2000 clamped to [1, 2]. A recorded roll (meta bathhouse_roll, s.bathhouses)
+            # must also match the drawn count, so a stale hand count cannot ship.
+            _bh_n = len(M.get("bathhouses", []))
+            _bh_pop = int(meta.get("population") or 3000)
+            _bh_allowed = {1} if _bh_pop < 3000 else ({2} if _bh_pop >= 4000 else {1, 2})
+            _bh_roll = meta.get("bathhouse_roll")
             check(
                 "city_has_bathhouse",
-                bool(M.get("bathhouses")),
-                "no bathhouse - every city keeps a sento (s.bathhouse: bath building + furnace chimney + firewood yard; China-first, attested from the Song)",
+                _bh_n in _bh_allowed and (_bh_roll is None or _bh_n == _bh_roll),
+                f"{_bh_n} bathhouse(s) at population {_bh_pop} (rolled {_bh_roll}) - the sento count follows the "
+                f"population band (s.bathhouses: <3,000 keeps 1, ~3,000 rolls 1-2, >=4,000 keeps 2; Edo's peak "
+                f"ratio was ~1 per ~2,100 residents), and a recorded roll must match the drawn count",
             )
             _tw_kilns = M.get("kilns", [])
             check(

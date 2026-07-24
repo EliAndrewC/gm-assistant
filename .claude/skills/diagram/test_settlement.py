@@ -1668,6 +1668,26 @@ def _city():
     return s
 
 
+def test_bathhouses_roll_follows_the_population_band():
+    # GM rule 2026-07-24: <3,000 keeps exactly 1 sento, >=4,000 keeps 2; ~3,000 rolls 1-2
+    # (Edo's peak ratio, ~1 per ~2,100 residents); count= pins; too few seats is loud
+    s = _city()
+    s.M["meta"]["population"] = 2000
+    assert s.bathhouses([(300, 300), (600, 600)]) == 1
+    assert s.M["meta"]["bathhouse_roll"] == 1 and len(s.M["bathhouses"]) == 1
+    s2 = _city()
+    s2.M["meta"]["population"] = 4000
+    assert s2.bathhouses([(300, 300), (600, 600)]) == 2
+    assert len(s2.M["bathhouses"]) == 2
+    s3 = _city()
+    s3.M["meta"]["population"] = 3000
+    assert s3.bathhouses([(300, 300), (600, 600)], count=1) == 1  # pin overrides the roll
+    s4 = _city()
+    s4.M["meta"]["population"] = 4000
+    with pytest.raises(ValueError, match="vetted seats"):
+        s4.bathhouses([(300, 300)])  # a 2-roll needs 2 seats
+
+
 def test_stables_draws_a_working_yard_and_records_it():
     # the gate stables' beaten-earth yard (GM 2026-07-22): drawing it adds scatter/furniture to the
     # SVG and records a stable_yard linked to the stables, so stables_have_yards can gate it. The yard
