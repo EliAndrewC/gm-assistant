@@ -20,6 +20,12 @@
       <circle cx="12" cy="2" r="0.6" fill="#A88E58"/>
       <circle cx="9" cy="13" r="0.6" fill="#A88E58"/>
     </pattern>
+    <!-- Swept keiko earth (practice ground - lighter than court-earth, faint broom lines) -->
+    <pattern id="keiko-earth" patternUnits="userSpaceOnUse" width="16" height="16">
+      <rect width="16" height="16" fill="#E2CE9E"/>
+      <line x1="0" y1="5" x2="16" y2="5" stroke="#C2A46C" stroke-width="0.5"/>
+      <line x1="0" y1="13" x2="16" y2="13" stroke="#C2A46C" stroke-width="0.5"/>
+    </pattern>
     <!-- Oshirasu (white-sand hearing court) -->
     <pattern id="oshirasu-sand" patternUnits="userSpaceOnUse" width="12" height="12">
       <rect width="12" height="12" fill="#F2EAD0"/>
@@ -204,7 +210,7 @@
   <g>
     <circle cx="484" cy="764" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
     <circle cx="536" cy="764" r="2.5" fill="#F5F2E8" stroke="#9C9484" stroke-width="1"/>
-    <text x="596" y="782" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">salt wards</text>
+    <text x="478" y="780" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">salt wards</text>
   </g>
 
   <!-- Notice board just outside the wall, hugging the main gate (a kosatsu is read where
@@ -522,6 +528,28 @@
     <text x="740" y="520" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">&amp; seals</text>
   </g>
 
+  <!-- Practice ground (postern yard): the duty watch's daily keiko happens on
+       swept multi-use ground, not in a dedicated building - a dojo is a city
+       institution (buildings.md grounding, 2026-07-24). This yard is also the
+       bale staging ground on tax days - time-shared, the period-honest
+       arrangement, and part of this county's river-logistics story (hence the
+       instance note). The rack and striking posts are the durable equipment
+       that marks the ground as established. ~28 x 25 ft serves the ~6-8
+       samurai of the duty watch (~90-135 sqft per drilling samurai; staff
+       housing is option (c), so the seniors live in town). -->
+  <g>
+    <rect x="788" y="468" width="84" height="76" fill="url(#keiko-earth)" stroke="#A8875A" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="830" y="486" text-anchor="middle" font-size="9" font-style="italic" fill="#3A2E1C">practice ground</text>
+    <text x="830" y="498" text-anchor="middle" font-size="7.5" font-style="italic" fill="#5C4830">(doubles as bale yard)</text>
+    <!-- tategi striking posts (~1 ft standing posts - r2 location markers) -->
+    <text x="816" y="510" text-anchor="middle" font-size="7" font-style="italic" fill="#5C4830">striking posts</text>
+    <circle cx="800" cy="518" r="2" fill="#7A5430" stroke="#4A3318" stroke-width="0.8"/>
+    <circle cx="814" cy="530" r="2" fill="#7A5430" stroke="#4A3318" stroke-width="0.8"/>
+    <!-- weapon rack flush against the granary's north face -->
+    <rect x="798" y="544" width="24" height="6" fill="#8C6F3E" stroke="#4A3318" stroke-width="0.8"/>
+    <text x="794" y="547" text-anchor="end" font-size="7" font-style="italic" fill="#5C4830">weapon rack</text>
+  </g>
+
   <!-- Granary (raised kura, E side - a staging store). 43x26 ft, a single
        staging kura; depth trimmed from a ~38 ft fat box to a real single-kura
        footprint, kept under a residence block (size-audit 2026-07) -->
@@ -553,6 +581,10 @@
     <rect x="655" y="698" width="105" height="47" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.5"/>
     <line x1="690" y1="698" x2="690" y2="745" stroke="#6B4F2A" stroke-width="1"/>
     <line x1="725" y1="698" x2="725" y2="745" stroke="#6B4F2A" stroke-width="1"/>
+    <!-- court-facing door (informal) - every lodging block gets a drawn way in
+         (building-review entrance sweep, 2026-07-24; Ochiba's barracks already
+         had one) -->
+    <rect x="694" y="692" width="24" height="6" fill="#B89868" stroke="#6B4F2A" stroke-width="0.8"/>
     <text x="707" y="716" text-anchor="middle" font-size="11" font-weight="bold" fill="#3A2E1C">barracks</text>
     <text x="707" y="729" text-anchor="middle" font-size="8" font-style="italic" fill="#5C4830">duty watch only</text>
   </g>
