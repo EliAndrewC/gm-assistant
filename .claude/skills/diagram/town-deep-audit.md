@@ -137,6 +137,27 @@ gate market was 3x the size it is. Either widen the pack rect / add a second row
 land, or reduce the request to match the ground truth - and consider a pack-shortfall warning
 (the "no silent caps" principle applied to `s.pack`).
 
+**RESOLVED (GM decision 2026-07-24, follow-up conversation):** budgets.md confirms towns levy
+NO import tariffs (the whole apparatus - Yasuki Taka gate collection, tariff-audit yoriki - is
+provincial-city/capital-only, ~2,700 collection points vs an impossible ~14,400 town gates),
+so the doctrine's tax-dodge rationale was corrected to traffic + market-day + night-arrival
+drivers, and the size guidance settled at **typically ~4-8 premises, floor >= 3, scaling with
+gate traffic not population**. The 4 landed premises turn out to be the honest ground truth:
+2 come from the MAIN-street frontage stringing through the gate and 2 from the pack, and a
+placement probe showed every other road-front spot genuinely blocked (the s1 paddy comb +
+collision radii - the suburb is FULL). The gen now authors exactly what lands, declared
+population synced to the depicted 785 (the earlier-ending pack shifts the RNG; the farm rings
+settle at 71 farmhouses). Run-off-frame truncation is a CITY device (their canvas extends past
+the cropped view); a town canvas IS the view and `_fits` keeps builds 26px clear of the edge,
+so the town-tier continuation signal is the road running off the edge. `_shortfall` warnings
+now print from `pack`/`frontage` (the "no silent caps" fix) - and immediately revealed the
+request-as-budget idiom across the pool gens (Hirameki MAIN frontage 8/24, tenements 19/26;
+Hoshizora road core 27/44; the city gens' capacity fills up to 3/600). The idiom got a name:
+`fill=True` declares a request a capacity budget ("place up to N") and silences the warning;
+an UNMARKED warning is a standing TODO to decide drift-vs-budget. The town gens' budget
+sites are annotated; the CITY gens still print theirs - left loud on purpose for the city
+session to annotate (or trim) with its own knowledge of which numbers are load-bearing.
+
 ## 6. Internal inconsistencies
 
 1. **Servant convention contradicts the gate band and both maps.** settlements.md's modeling
@@ -210,8 +231,9 @@ Considered and REJECTED (recorded so they are not re-litigated):
 4. **Document the town/city fabric split** (detached provincial machiya vs city row-packing)
    with the Izumida grounding, so the city doctrine's "did not build detached" line stops
    implicitly indicting the town maps.
-5. **Fix the Hirameki gate market** authored-vs-landed drift (5), and consider a pack
-   shortfall warning.
+5. **[DONE 2026-07-24]** Fix the Hirameki gate market authored-vs-landed drift (5) - resolved
+   with the traffic-not-taxes doctrine correction, authored=landed, and the `_shortfall`
+   warning in `pack`/`frontage`; see the RESOLVED block in section 5.
 6. Refresh the **stale bscale paragraph** (6.2).
 7. Decide the **abstraction doctrine** for named trades (brewery/chaya/farrier/pawnshop):
    one documented sentence, or promote the brewery to a drawn feature on one map.
