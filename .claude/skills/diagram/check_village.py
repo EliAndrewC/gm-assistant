@@ -149,7 +149,7 @@ def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, An
 # bridge over water, a guard tower on the wall) is named in _OVERLAP_EXEMPT with its reason. The
 # `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
 # sets, forcing whoever adds it to declare its overlap behavior rather than silently skipping it.
-_OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "ministries", "fire_towers", "byres")
+_OVERLAP_STRUCTS = ("houses", "buildings", "flophouses", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "ministries", "fire_towers", "drum_towers", "byres")
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
 _OVERLAP_TARGETS = ("manors", "religious", "shrines", "gate_structs", "docks")
@@ -4922,6 +4922,42 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"the exterior common burial ground should be noticeably larger than the cramped intramural "
                     f"ground (outside {bo:.0f}px2 vs inside {bi:.0f}px2; want >= 1.3x) - there is room beyond the walls",
                 )
+
+        # BELL-AND-DRUM TOWER (GM 2026-07-24; settlements.md "The bell-and-drum tower"). The
+        # morning-bell/evening-drum institution followed the WALL, not the population: the tower
+        # signaled dawn gate-opening, the dusk gate-closing that began the street curfew, and the
+        # five night watches - so every WALLED seat (city or walled town) keeps EXACTLY ONE
+        # combined tower at the main street crossing (the county-seat kit; a paired gulou/zhonglou
+        # on an axis is capital grammar - Pingyao, a wealthy county seat, has exactly one). An
+        # UNWALLED town has no gates to close: its time signal is the monastery's bell (the Edo
+        # toki-no-kane pattern, usually a contracted temple bell), implied within the precinct -
+        # no tower, no glyph. Fire watch was a SEPARATE institution in both reference cultures
+        # (Song Kaifeng ran dedicated fire-lookout towers; Edo split the licensed time bell from
+        # the hinomi-yagura), so the fire towers do not satisfy this check and the drum tower is
+        # not fire watch. "At the main crossing" = within ~80px of two NON-PARALLEL road/street
+        # segments (a corner of the central crossroads).
+        if wall and scale in ("town", "city"):
+            dts = M.get("drum_towers", [])
+            ways = ([M["road"]] if M.get("road") else []) + [st.get("pts", []) for st in M.get("town_streets", [])]
+
+            def _dt_at_crossing(t: dict[str, Any]) -> bool:
+                angs = []
+                for wy in ways:
+                    for i in range(len(wy) - 1):
+                        if seg_dist(t["x"], t["y"], wy[i], wy[i + 1]) < 80:
+                            angs.append(math.atan2(wy[i + 1][1] - wy[i][1], wy[i + 1][0] - wy[i][0]) % math.pi)
+                return any(min(abs(a - b), math.pi - abs(a - b)) > 0.5 for a in angs for b in angs)
+
+            ok_dt = len(dts) == 1 and _inside(dts[0]["x"], dts[0]["y"]) and _dt_at_crossing(dts[0])
+            check(
+                "walled_settlement_has_drum_tower",
+                ok_dt,
+                f"{len(dts)} bell-and-drum tower(s) at the main crossing - every walled seat keeps EXACTLY ONE "
+                f"combined bell-and-drum tower (s.drum_tower) inside the walls at the main street crossing "
+                f"(within ~80px of two non-parallel road/street segments); it signals the gate curfew and the "
+                f"night watches, which the fire towers do not cover; an unwalled town is exempt (its time "
+                f"signal is the monastery's bell)",
+            )
 
         if scale == "town":
             # every monastery that CAN host a graveyard keeps one in its precinct (the town analog

@@ -569,6 +569,10 @@ for fan in (
     for c in fan:
         if s.well_at(*c):
             break  # candidate fan: first clear spot wins (splits a 27-32-household draw-point)
+# BELL-AND-DRUM TOWER (GM 2026-07-24): the walled seat's timekeeping/curfew tower, at the NE
+# corner of the road x main-street crossing (settlements.md "The bell-and-drum tower"); placed
+# before the NE rowpacks so the terraces flow around its reserved block.
+s.drum_tower(1632, 1252)
 s.rowpack((1720, 1003, 2013, 1135), (["laborer"] * 3 + ["servant"]) * 60, court_every=3)
 s.rowpack((1622, 1153, 2054, 1247), (["laborer"] * 3 + ["servant"]) * 50, court_every=3)
 s.rowpack((1622, 1251, 2054, 1298), (["laborer"] * 3 + ["servant"]) * 26, court_every=3)
