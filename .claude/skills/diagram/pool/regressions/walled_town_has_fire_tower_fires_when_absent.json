@@ -1,0 +1,12 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": true
+ },
+ "_regression": {
+  "fires": [
+   "walled_town_has_fire_tower"
+  ],
+  "source": "test_checks.py::test_walled_town_has_fire_tower_fires_when_absent"
+ }
+}

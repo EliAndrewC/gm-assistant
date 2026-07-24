@@ -419,10 +419,13 @@ s.village_grove([(20, 330), (180, 365), (130, 545), (20, 520)], role="copse", de
 s.village_grove([(700, 270), (780, 330), (795, 690), (715, 640)], role="copse", dense=False)
 s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="copse", dense=False)
 
-# ===== FIRE DEFENSE: a fire-watch tower (hinomi-yagura) - every town's dense wooden core
-# needs one, walled or not (town_has_fire_tower); on the manifest-scanned clearest seam
-# between the laborers' quarter and the road-front core
-s.fire_tower(970, 420, label="fire-watch tower")
+# ===== FIRE DEFENSE: deliberately NO fire-watch tower (GM 2026-07-24, reverting the audit's
+# briefly-widened town_has_fire_tower). The hinomi-yagura belongs to a dense ENCLOSED wooden
+# core; Hoshizora's detached village-grain fabric (bscale 1.0, field gaps on every side) has
+# its natural breaks, and a real unwalled county seat (a jin'ya/daikansho town) kept fire
+# bells, stored water, and fireproof kura instead - the freestanding rural watch tower is a
+# Meiji-and-later institution. The kura on the manor, headman, and merchant houses carry the
+# fire story here. WHY: settlements.md "Fire towers".
 
 # ===== NEAR-RING FARMLAND at the MEDIUM tier (feature 013) =====
 # NEAR-RING PADDY IS COMB FIELDS ONLY (GM 2026-07-23, the Tango-recipe rollout): the town's rice is

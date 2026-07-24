@@ -27,10 +27,14 @@ settlements.md's urban-clearance-halo bullet).
    The jokamachi doctrine in Hirameki's own docstring - urban castes INSIDE the rampart, only
    farms/burakumin/gate-market outside - is enforced by nothing. A regenerated walled town
    could spill laborers outside and pass. Adoption cost: none expected (Hirameki conforms).
-2. **[DONE `town_has_fire_tower`]** - widened from walled-only; Hoshizora got its tower on a scanned seam. `walled_town_has_fire_tower` exists; Hoshizora
-   (unwalled, dense road-front core) has no tower and no requirement. Either extend the check
-   to all towns or record why unwalled county seats are exempt. Adoption cost: add a tower to
-   Hoshizora on a scanned-clear seam.
+2. **[REVERTED 2026-07-24 - `walled_town_has_fire_tower`, walled-only again]** - the audit
+   originally widened this to every town ("Hoshizora's packed road-front core burns just the
+   same") and Hoshizora got a tower on a scanned seam. The GM questioned it and research sided
+   with the original walled-only doctrine: the hinomi-yagura is the institution of a dense
+   ENCLOSED contiguous core; an unwalled seat is drawn at detached village grain with field-gap
+   breaks, and real unwalled administrative seats (jin'ya/daikansho towns) kept fire bells,
+   stored water, and fireproof kura, not watch towers - the freestanding rural tower is
+   Meiji-and-later. Hoshizora's tower removed; full grounding in settlements.md "Fire towers".
 3. **[DONE `town_monasteries_have_graveyards`]** (graveyard=False opt-out; Hirameki's relic Benten monastery opted out). Both current
    towns carry parish grounds by hand; nothing requires the next one to. Adoption: none.
 4. **[DONE `burakumin_quarter_segregated`]** (towns only - calibration showed city ward seams run ~10px, so cities need quarter-level treatment). The quarter is doctrine
