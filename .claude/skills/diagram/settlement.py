@@ -4301,24 +4301,22 @@ class Settlement:
         self._trade_record("bathhouses", x, y, self.px(48), self.px(32) + wd_, rot, label)
 
     def bathhouses(self, seats: Sequence[tuple[float, float]], count: int | None = None) -> int:
-        """Place the city's sento, COUNT ROLLED FROM THE POPULATION BAND (GM rule 2026-07-24):
-        a seat under ~3,000 keeps exactly ONE, a ~3,000 seat rolls 1-2 (50/50), a ~4,000 seat
-        keeps TWO - anchored on Edo's own peak ratio of ~1 sento per ~2,100 residents (1808:
-        523 sento for ~1.1M), so the band is ~pop/2000 clamped to [1, 2]. Seats are hand-vetted
+        """Place the city's sento, COUNT ROLLED FROM POPULATION (GM formula 2026-07-24): ONE
+        bathhouse per full 2,000 population, plus a chance of one EXTRA equal to the remainder
+        fraction - a 2,500 seat keeps 1 + a 25% roll, a 3,000 seat 1 + 50%, a 4,000 seat exactly
+        2 (floored at 1) - anchored on Edo's own peak ratio of ~1 sento per ~2,100 residents
+        (1808: 523 sento for ~1.1M). Seats are hand-vetted
         (x, y) candidates, first n drawn - provide 2 so any roll can land; `count=` pins the
         roll (the merchant_estates analog). Recorded as meta['bathhouse_roll'] and gated by
         city_has_bathhouse, so a stale hand count can never ship. The roll consumes NO
         main-stream RNG (dedicated Random on the map seed): a map rolling its old count stays
         byte-identical."""
         pop = int(self.M.get("meta", {}).get("population") or 3000)
-        if count is not None:
-            n = int(count)
-        elif pop < 3000:
-            n = 1
-        elif pop >= 4000:
-            n = 2
-        else:
-            n = random.Random(self.seed * 1409 + 53).choice((1, 2))
+        # GM formula (2026-07-24, second refinement): 1 bathhouse per full 2,000 population, plus
+        # a chance of ONE extra equal to the remainder fraction - a 2,500 seat has 1 guaranteed +
+        # a 25% roll, a 3,000 seat 1 + 50%, a 4,000 seat exactly 2. Floored at 1; count= pins.
+        rolled = max(1, pop // 2000 + (1 if random.Random(self.seed * 1409 + 53).random() < (pop % 2000) / 2000 else 0))
+        n = int(count) if count is not None else rolled
         if n > len(seats):
             raise ValueError(f"bathhouses rolled {n} but only {len(seats)} vetted seats were provided - add candidates (the population band can ask for up to 2)")
         for bx_, by_ in seats[:n]:
