@@ -405,6 +405,22 @@ def _centroid(poly: Sequence[Pt]) -> list[float]:
     return [round(sum(p[0] for p in poly) / len(poly), 1), round(sum(p[1] for p in poly) / len(poly), 1)]
 
 
+def _max_turn_deg(poly: Sequence[Pt]) -> float:
+    """The SHARPEST turn anywhere on a closed outline, in degrees (0 = dead straight through the
+    vertex). A ruled quad scores ~90; an outline whose corners are filleted spreads that turning over
+    several vertices and scores far less, which is what tells hand-piled earth from a CAD rectangle."""
+    n = len(poly)
+    worst = 0.0
+    for i in range(n):
+        ax, ay = poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]
+        bx, by = poly[(i + 1) % n][0] - poly[i][0], poly[(i + 1) % n][1] - poly[i][1]
+        la, lb = math.hypot(ax, ay), math.hypot(bx, by)
+        if la < 1e-9 or lb < 1e-9:
+            continue  # a duplicate vertex turns through no angle at all
+        worst = max(worst, math.degrees(math.acos(max(-1.0, min(1.0, (ax * bx + ay * by) / (la * lb))))))
+    return worst
+
+
 def _land_use_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     """A LAND-USE overlay must suit the setting: mulberry_fishpond + lotus are wet/valley uses fine on ordinary
     paddy land; a tea_fringe needs some hill/terrace margin (`ctx['terrain']` hill, or a terrace archetype) to
@@ -1627,9 +1643,13 @@ class Settlement:
         exs, eys = [p[0] for p in env], [p[1] for p in env]
         pvx = [v[0] for p in net["plots"] for v in p["poly"]]
         pvy = [v[1] for p in net["plots"] for v in p["poly"]]
-        # Per-plot [along-fall span, cross-fall span, centroid x, centroid y], so parcel-fabric checks
-        # (polder_parcels_vary, polder_parcels_front_water) measure the DRAWN geometry from the manifest
-        # rather than trusting a builder self-report.
+        # Per-plot [along-fall span, cross-fall span, centroid x, centroid y, vertex count, sharpest
+        # turn in degrees], so parcel-fabric checks (polder_parcels_vary, polder_parcels_front_water,
+        # polder_parcels_are_organic) measure the DRAWN geometry from the manifest rather than trusting
+        # a builder self-report. The last two are the OUTLINE shape: a ruled quad is 4 vertices with a
+        # ~90-degree turn at each, a hand-piled parcel spreads the same total turning over a filleted,
+        # wandering outline - so the pair separates earth from CAD without recording every vertex (the
+        # full outlines would roughly double a polder manifest for no extra teeth).
         ddp = float(self.M["meta"].get("down_deg", 90))
         pdx, pdy = math.cos(math.radians(ddp)), math.sin(math.radians(ddp))
         pdims = []
@@ -1637,7 +1657,7 @@ class Settlement:
             al = [vx * pdx + vy * pdy for vx, vy in p["poly"]]
             cr = [vx * pdy - vy * pdx for vx, vy in p["poly"]]
             pcx, pcy = _centroid(p["poly"])
-            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1)])
+            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1), len(p["poly"]), round(_max_turn_deg(p["poly"]), 1)])
         self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims})
         for c in net["channels"]:
             rec = {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}

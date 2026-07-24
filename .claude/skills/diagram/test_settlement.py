@@ -3503,7 +3503,7 @@ def test_build_polder_mosaic_knob():
     def mean_skew(net):
         vals = []
         for p in net["plots"]:
-            q = p["poly"]
+            q = p["quad"]  # the ruled parcel BEFORE the organic pass - the skew lives in its corners
             if len(q) != 4:
                 continue
 

@@ -1,0 +1,93 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "W": 400,
+  "H": 400
+ },
+ "fields": [
+  {
+   "name": "x",
+   "kind": "paddy",
+   "bbox": [
+    0,
+    0,
+    300,
+    300
+   ],
+   "outline": [
+    [
+     0,
+     0
+    ],
+    [
+     300,
+     0
+    ],
+    [
+     300,
+     300
+    ],
+    [
+     0,
+     300
+    ]
+   ]
+  }
+ ],
+ "field_ditches": [
+  {
+   "poly": [
+    [
+     0,
+     100
+    ],
+    [
+     300,
+     100
+    ]
+   ],
+   "role": "main",
+   "field": "x",
+   "w": 5,
+   "w_tail": 5
+  },
+  {
+   "poly": [
+    [
+     0,
+     250
+    ],
+    [
+     300,
+     250
+    ]
+   ],
+   "role": "drain",
+   "field": "x",
+   "w": 5,
+   "w_tail": 5
+  },
+  {
+   "poly": [
+    [
+     100,
+     256
+    ],
+    [
+     100,
+     94
+    ]
+   ],
+   "role": "lateral",
+   "field": "x",
+   "w": 3.2,
+   "w_tail": 2.4
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "field_ditch_tips_land_on_the_trunk"
+  ],
+  "source": "test_checks.py::test_field_ditch_tips_land_on_the_trunk_fires_on_a_tip_past_the_canal"
+ }
+}
