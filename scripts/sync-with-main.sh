@@ -61,6 +61,14 @@ sync_in() {
 
 push_cmd() {
   [ -z "$(git status --porcelain)" ] || die "uncommitted changes - commit first (the ritual never writes your commit for you)"
+  # DUPLICATE-DEF GUARD (GM 2026-07-24): a cross-session merge gave test_settlement.py two
+  # _city() helpers - the later silently shadowed the earlier and broke a seeded test - and ruff
+  # F811 cannot see this class (pyflakes only flags UNUSED redefinitions; an early helper is
+  # always used before the shadow). Screened HERE so every push is covered, merges and
+  # docs-only pushes included - the gates do not necessarily run for those. The selftest runs
+  # first: a checker that cannot prove it still bites is the failure mode that motivated it.
+  python3 "$ROOT/scripts/check-duplicate-defs.py" --selftest >/dev/null || die "check-duplicate-defs selftest failed - the guard itself is broken; fix scripts/check-duplicate-defs.py before pushing"
+  python3 "$ROOT/scripts/check-duplicate-defs.py" "$ROOT" || die "duplicate top-level definitions (above) - a later def silently shadows the earlier; fix before pushing"
   # files OUR unpushed commits touch, captured BEFORE the pull so the overlap test is honest.
   # INCOMING files = what the pull moves HEAD across - NOT a diff against post-push origin/main,
   # which contains our own commits and false-flags every push (the script's own first dogfood run
