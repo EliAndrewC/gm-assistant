@@ -1,0 +1,30 @@
+{
+ "meta": {
+  "scale": "town"
+ },
+ "kosatsuba": [
+  {
+   "x": 500,
+   "y": 900,
+   "w": 12,
+   "h": 5,
+   "rot": 0
+  }
+ ],
+ "road": [
+  [
+   0,
+   500
+  ],
+  [
+   1000,
+   500
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "kosatsuba_by_the_road"
+  ],
+  "source": "test_checks.py::test_kosatsuba_by_the_road_fires_when_marooned"
+ }
+}
