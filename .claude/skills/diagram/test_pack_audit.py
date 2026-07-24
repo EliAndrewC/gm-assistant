@@ -563,3 +563,77 @@ def test_tub_on_well_flagged_and_clear_passes() -> None:
 def test_format_report_tub_on_well_section() -> None:
     svg = _svg(_rect(0, 0, 300, 300, COURT), _rect(0, 0, 50, 120, "#DDB87A"), _rect(50, 50, 22, 22, pa.WELL_FILL), _tubgroup('<circle cx="60" cy="60" r="5"/>'))
     assert "TUB ON WELL" in pa.format_report(pa.parse_svg(svg))
+
+
+# --- structures on walls (a structure abuts a wall, never occupies it) ---
+
+
+def test_wall_bands_read_from_group_and_from_standalone_lines() -> None:
+    # both authoring forms in the pool: <g>-inherited attrs (hand-authored) and per-line attrs
+    # (compound.py's emitter). Missing either would make the check silently vacuous on that form.
+    grouped = _svg(_rect(0, 0, 300, 300, COURT), _wallgroup((0, 100, 300, 100)))
+    inline = _svg(_rect(0, 0, 300, 300, COURT), f'<line x1="0" y1="100" x2="300" y2="100" stroke="{pa.WALL_STROKE}" stroke-width="9"/>')
+    for svg in (grouped, inline):
+        bands = pa.parse_svg(svg).wall_bands
+        assert len(bands) == 1
+        assert (bands[0].y, bands[0].h) == (95.5, 9.0)  # ink straddles the line, half each side
+
+
+def test_wall_bands_orient_by_longer_axis_and_extend_a_square_linecap() -> None:
+    svg = _svg(
+        _rect(0, 0, 300, 300, COURT),
+        f'<g stroke="{pa.DIVIDER_STROKE}" stroke-width="6"><line x1="50" y1="20" x2="50" y2="280"/></g>',
+        f'<g stroke="{pa.WALL_STROKE}" stroke-width="9" stroke-linecap="square"><line x1="100" y1="10" x2="200" y2="10"/></g>',
+    )
+    vertical, capped = pa.parse_svg(svg).wall_bands
+    assert (vertical.x, vertical.w, vertical.h) == (47.0, 6.0, 260.0)  # thin across, long down
+    assert (capped.x, capped.w) == (95.5, 109.0)  # a square cap inks half a stroke past each end
+
+
+def test_structure_crossing_a_wall_is_flagged_and_a_flush_one_passes() -> None:
+    wall = _wallgroup((0, 100, 300, 100))  # ink spans y 95.5..104.5
+    across = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(20, 60, 60, 42, "#DDB87A")))  # y2=102
+    hit = pa.structures_on_walls(across)
+    assert len(hit) == 1
+    assert hit[0].wall == "compound wall"
+    assert hit[0].into_ft == pytest.approx(6.5 / pa.FTPX)
+    assert (hit[0].w_ft, hit[0].h_ft) == (20.0, 14.0)
+    flush = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(20, 60, 60, 35, "#DDB87A")))  # y2=95, abuts
+    assert pa.structures_on_walls(flush) == []
+
+
+def test_small_structures_are_checked_even_below_the_building_area_floor() -> None:
+    # the motivating defect was a 26x8 px entry porch (208 px2, under MIN_BLDG_AREA_PX)
+    porch = _rect(20, 92, 26, 8, "#C9A57A")
+    plan = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _wallgroup((0, 100, 300, 100)), porch))
+    assert plan.buildings == ()  # too small to be a building mass...
+    assert pa.structures_on_walls(plan)  # ...but still a structure standing in the wall
+
+
+def test_structures_on_walls_reports_the_divider_and_the_worst_overlap_first() -> None:
+    svg = _svg(
+        _rect(0, 0, 300, 300, COURT),
+        f'<g stroke="{pa.DIVIDER_STROKE}" stroke-width="6"><line x1="0" y1="150" x2="300" y2="150"/></g>',  # ink 147..153
+        _rect(20, 120, 60, 29, "#DDB87A"),  # y2=149 -> 2 px in
+        _rect(120, 120, 60, 32, "#DDB87A"),  # y2=152 -> 5 px in
+    )
+    hit = pa.structures_on_walls(pa.parse_svg(svg))
+    assert [h.wall for h in hit] == ["court divider", "court divider"]
+    assert hit[0].into_ft > hit[1].into_ft  # worst first
+
+
+def test_format_report_structure_wall_section_states_each_case() -> None:
+    nowall = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 60, 60, "#DDB87A"))))
+    assert "no wall strokes in this plan" in nowall
+    ok = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _wallgroup((0, 190, 200, 190)), _rect(0, 0, 60, 60, "#DDB87A"))))
+    assert "structures clear the wall ink: OK" in ok
+    bad = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _wallgroup((0, 100, 200, 100)), _rect(0, 60, 60, 45, "#DDB87A"))))
+    assert "ON WALL" in bad
+
+
+def test_structure_on_wall_fires_on_the_frozen_ochiba_fixture() -> None:
+    # the frozen pre-fix Ochiba still carries the karo's-house entry porch laid across the court
+    # divider - the defect the GM caught (2026-07-24) and the reason this check exists.
+    with open(os.path.join(_FIX, "ochiba-layout-red.svg")) as fh:
+        hit = pa.structures_on_walls(pa.parse_svg(fh.read()))
+    assert [(h.wall, round(h.into_ft, 1)) for h in hit] == [("court divider", 1.0)]
