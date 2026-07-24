@@ -81,6 +81,30 @@ RICE_GREENS = [_RICE_GREEN, _RICE_GREEN, _RICE_GREEN]
 FLOODED = '#93B7AC'
 RIPE_GOLD = '#C9BA79'
 BUND = '#C2A772'
+# AZE: the paddy plot-boundary stroke, split from BUND (GM 2026-07-24). BUND stays the broad
+# exposed-earth AREA fill (perimeter dikes, dike-top house pads - true-width earthworks); AZE is
+# the LINE between paddies: the puddled-mud ridge (aze / tiangeng) re-plastered each spring
+# (azenuri) to seal the basin. A plain aze ran ~1-2 ft wide and ~1 ft high (walking bunds,
+# azemichi, 2-5 ft), so AZE_FT below draws it near TRUE scale instead of the old 1.7-2.6 px
+# tan (~3-5 ft at village grain) - a dark line stays legible at half the width where the light
+# tan needed inflation. The hue is the GM's pick from a 5-color ladder rendered on Hoshigaoka
+# (2026-07-24): red-leaning dark mud, chosen over the lighter chestnut #7A5230 that reads more
+# nameably "brown" at hairline width - at map view this dark a line blends toward black against
+# the rice green, and the GM preferred that weight. Accuracy
+# is deliberately mixed: the color is honest for SPRING (fresh azenuri mud); by high summer -
+# the season the paddy surfaces depict - real bunds green over with grass and azemame and all
+# but vanish, so a dark visible bund network is a stylization that keeps the field structure
+# readable. See settlements.md 'Paddy plot grain'.
+AZE = '#6E4520'
+AZE_FT = 1.5  # drawn aze width in real feet; convert at the map's ftpx, floored for raster visibility
+
+
+def aze_w(ftpx: float) -> float:
+    """Paddy bund stroke width in px at this map's scale: AZE_FT real feet, floored at 0.5 px
+    so the city scale (3 ft/px) keeps a faint-but-present line instead of vanishing."""
+    return max(AZE_FT / ftpx, 0.5)
+
+
 BEAN_GREEN = '#7C9A4E'  # azemame (bund soybeans) - the beaded-bund accent
 
 # DRY-FIELD (hatake) crops on ground the irrigation cannot command - the upslope margin

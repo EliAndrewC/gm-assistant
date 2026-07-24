@@ -31,7 +31,7 @@ sys.path.insert(0, SKILL)
 from settlement import PLANK_ABUTMENT, Settlement, edge_dist, point_in_poly  # noqa: E402
 import math  # noqa: E402
 
-from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this map's 2 ft/px, replacing the old
 # hand-set build_comb defaults (48px plots -> ~0.13 acre real, over Bray's "large" ceiling). This subdivides
@@ -112,8 +112,8 @@ for p in net["dry_plots"]:
 # paddies (the water is drawn OVER them, along their edges)
 for p in net["plots"]:
     pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in p["poly"])
-    s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{BUND}" '
-          f'stroke-width="2" stroke-linejoin="round"/>')
+    s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" '
+          f'stroke-width="{aze_w(s.ftpx):.2f}" stroke-linejoin="round"/>')
 
 # AZEMAME: soybeans beaded along a fraction of the paddy bunds (sub-pixel, so symbolic)
 beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>'

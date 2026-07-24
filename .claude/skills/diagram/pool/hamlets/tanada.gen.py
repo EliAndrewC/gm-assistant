@@ -17,7 +17,7 @@ from settlement import Settlement  # noqa: E402
 import math  # noqa: E402
 import random as _random  # noqa: E402
 
-from waterfields import BUND, build_terraces  # noqa: E402
+from waterfields import AZE, build_terraces  # noqa: E402
 
 W, H = 1900, 2600
 SEED = 5
@@ -41,7 +41,7 @@ s.draw_comb_field(net, "tanada-terraces", {"kind": "pond", "pond": (sluice[0] - 
 # the RETAINING BUNDS - the stone/earth lip at each terrace's downhill edge, the defining terrace look
 for bl in net["bund_lines"]:
     pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in bl)
-    s.add(f'<polyline points="{pts}" fill="none" stroke="{BUND}" stroke-width="2.6" stroke-linejoin="round" opacity="0.95"/>')
+    s.add(f'<polyline points="{pts}" fill="none" stroke="{AZE}" stroke-width="2.6" stroke-linejoin="round" opacity="0.95"/>')
 s.M["terrace_bunds"] = [[[round(x, 1), round(y, 1)] for x, y in bl] for bl in net["bund_lines"]]  # for the contour_terraces check
 
 # the hamlet sits on the dry LOW-FLANK shoulder (east side, t=+1), clear of the high-flank supply channel

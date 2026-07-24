@@ -1029,9 +1029,11 @@ class Settlement:
         declared scales (audit 2026-07-21): the village grain (plot=34 at 2 ft/px -> ~435 m2) sits
         inside the real 130-600 m2 basin band, and the default (46 -> ~785 m2 at 2 ft/px) is within
         the real parcel range (mean ~1 mu = ~600 m2, merged holdings larger) - no legibility
-        inflation is in play, and the houses are true-scale too. The bund stroke thins with the
-        grain to suit. See the "Paddy plot grain" entry in the settlements.md historical grounding."""
-        bund = 0.03 * plot + 0.35  # bund (aze) stroke thins with the plot grain: ~2.6 at the old 76, ~1.7 at 46
+        inflation is in play, and the houses are true-scale too. The bund stroke draws at near-true
+        aze width for the map scale. See the "Paddy plot grain" entry in the settlements.md historical grounding."""
+        from waterfields import AZE, aze_w
+
+        bund = aze_w(self.ftpx)  # near-true-scale aze stroke (~1.5 real ft; the why lives at waterfields.AZE)
         if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape):
             bbox = tuple(shape)
             outline = organic_bbox(bbox, amp)
@@ -1059,7 +1061,7 @@ class Settlement:
         random.seed(int(abs(x0) * 7 + abs(y0) * 13 + abs(x1) * 3 + len(name)))  # roll, growth stage and mottle
         plots = self._paddy_plots((ex0, ey0, ex1, ey1), plot)  # are decorative and must NOT shift
         self.add(f'<g clip-path="url(#{cid})">')  # downstream house placement
-        self.add(f'<rect x="{ex0:.0f}" y="{ey0:.0f}" width="{ex1 - ex0:.0f}" height="{ey1 - ey0:.0f}" fill="#C2A772"/>')
+        self.add(f'<rect x="{ex0:.0f}" y="{ey0:.0f}" width="{ex1 - ex0:.0f}" height="{ey1 - ey0:.0f}" fill="{AZE}"/>')
         interior: list[Any] = []
         for poly in plots:
             pts = ' '.join(f'{q[0]:.0f},{q[1]:.0f}' for q in poly)
@@ -1083,11 +1085,11 @@ class Settlement:
                     fill, flooded = random.choice(RIPE_SHADES), False
                 else:
                     fill, flooded = random.choice(PADDY_SHADES), False
-                self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
+                self.add(f'<polygon points="{pts}" fill="{fill}" stroke="{AZE}" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
                 self._paddy_surface(poly, pts, flooded)
             else:
                 fill = 'url(#drycrop)' if crop == 'dry' else '#9CB36A'
-                self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
+                self.add(f'<polygon points="{pts}" fill="{fill}" stroke="{AZE}" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
                 self._rows(poly, pts, crop)  # dryland crops ARE ridge/row-cultivated
             if point_in_poly(cx, cy, smoothed):
                 interior.append((poly, cx, cy))
@@ -1291,7 +1293,9 @@ class Settlement:
         d = smooth_closed(outline)
         cid = self._cid('fld')
         self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
-        bund = 0.03 * plot + 0.35
+        from waterfields import AZE, aze_w
+
+        bund = aze_w(self.ftpx)
 
         # WATER FRAME: f = downhill (NW->SE, the fall line), u = contour. Orthonormal, so xy<->uf is exact.
         rt = 0.70710678
@@ -1339,7 +1343,7 @@ class Settlement:
             i += random.randint(4, 6)
 
         self.add(f'<g clip-path="url(#{cid})">')
-        self.add(f'<rect x="{ex0:.0f}" y="{ey0:.0f}" width="{ex1 - ex0:.0f}" height="{ey1 - ey0:.0f}" fill="#C2A772"/>')
+        self.add(f'<rect x="{ex0:.0f}" y="{ey0:.0f}" width="{ex1 - ex0:.0f}" height="{ey1 - ey0:.0f}" fill="{AZE}"/>')
         interior: list[Any] = []
         ndry, nrice = 0, 0
         for k in range(len(ub) - 1):
@@ -1359,7 +1363,7 @@ class Settlement:
                 if un_irrig or edgef + random.uniform(-0.08, 0.08) > 0.6:
                     crop = 'dry' if random.random() < 0.62 else 'soy'
                     fill = 'url(#drycrop)' if crop == 'dry' else '#9CB36A'
-                    self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
+                    self.add(f'<polygon points="{pts}" fill="{fill}" stroke="{AZE}" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
                     self._rows(quad, pts, crop)
                     ndry += 1
                 else:
@@ -1371,7 +1375,7 @@ class Settlement:
                         fill, flooded = random.choice(RIPE_SHADES), False
                     else:
                         fill, flooded = random.choice(RICE_GREENS), False
-                    self.add(f'<polygon points="{pts}" fill="{fill}" stroke="#C2A772" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
+                    self.add(f'<polygon points="{pts}" fill="{fill}" stroke="{AZE}" stroke-width="{bund:.1f}" stroke-linejoin="round"/>')
                     self._paddy_surface(quad, pts, flooded)
                     nrice += 1
                 if point_in_poly(cx, cy, smoothed):
@@ -1540,7 +1544,7 @@ class Settlement:
         source_and_sink) see a source. Returns the field envelope polygon. `inwall_drain_moat_bias` marks an
         IN-WALL city fan: the drain is trimmed through inwall_drain_outfall (cut off short of the ring road,
         sluice-gated, underground conduit to the moat) before anything is drawn or recorded."""
-        from waterfields import BEAN_GREEN, BUND, hem_on_paddy
+        from waterfields import AZE, BEAN_GREEN, aze_w, hem_on_paddy
 
         if inwall_drain_moat_bias is not None:
             _idr = next(c for c in net["channels"] if c["role"] == "drain")
@@ -1566,7 +1570,7 @@ class Settlement:
             self.block_polys.append(p["poly"])  # dry cropland is no-build ground; keep farmsteads off it
         for p in net["plots"]:  # the flooded paddies
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
-            self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{BUND}" stroke-width="2" stroke-linejoin="round"/>')
+            self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(self.ftpx):.2f}" stroke-linejoin="round"/>')
             # Record the LOW/WET plots (feature 010). This is the topographic ELIGIBILITY set the
             # plot-based land-use overlays draw from. It is written HERE, by the field pass, so that
             # `overlays_on_wet_ground_only` compares two INDEPENDENTLY-produced records rather than

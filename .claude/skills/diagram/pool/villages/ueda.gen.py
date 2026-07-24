@@ -22,7 +22,7 @@ from settlement import Settlement  # noqa: E402
 import math      # noqa: E402
 import random    # noqa: E402
 
-from waterfields import BEAN_GREEN, BUND, build_comb, paddy_grain  # noqa: E402
+from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at 2 ft/px (was hand-set 48px -> ~0.13 acre).
 # Subdivides the same field into finer cells; farmhouses/households/field area unchanged. See paddy_grain.
@@ -105,8 +105,8 @@ for p in net["dry_plots"]:
 
 for p in net["plots"]:
     pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in p["poly"])
-    s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{BUND}" '
-          f'stroke-width="2" stroke-linejoin="round"/>')
+    s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" '
+          f'stroke-width="{aze_w(s.ftpx):.2f}" stroke-linejoin="round"/>')
 
 beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>'
                 for x, y in net["bund_beans"])
