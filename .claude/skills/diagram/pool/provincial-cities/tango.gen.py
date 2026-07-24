@@ -119,7 +119,8 @@ s.quarter(_clip_h(_NW, 1211, False), "residential")
 # room for the title (top-left) and compass (top-right) above the rampart, plus a working
 # fringe of moat-fed farmland.
 # FRAME: content-cropped at the END of the gen via s.crop_city() (GM 2026-07-23, second pass) - the
-# frame hugs the moat ring + the kept satellites (gate markets, flophouses, funerary, labels) and the
+# frame hugs the moat ring + the kept satellites (gate-market flophouses + labels, funerary, labels) and the
+# (the market SHOP strings themselves clip at the frame per the slice doctrine, GM 2026-07-24)
 # paddy fans CLIP at the edge ("the point is to show they're there, not to show the entire field").
 # The interim hand frame s.set_view(809, 615, 1586, 1476) is superseded; see crop_city's docstring.
 
@@ -621,6 +622,12 @@ s.label(1247, 1562, "temple neighborhood", 9, italic=True, color="#6B2A18")  # b
 s.block_polys.append(
     [(1204, 1534), (1306, 1534), (1306, 1554), (1204, 1554)]
 )  # the district label's own ground (true-size halls freed this band, and the SW frontage packed a merchant under the text, 2026-07-21)
+# ADEPT-MONK HOUSING (GM 2026-07-24, settlements.md "City temples"): 2-3 ordinary homes per
+# complex for the married adepts among its 15-30 monks - drawn identical to laborer houses
+# (kind "monk_house" exists for the checks/budget/population math, not the eye). Placed before
+# the SW frontages/packs so the merchant quarter flows around them.
+s.pack((1252, 1478, 1316, 1530), ["monk_house"] * 3, step=15)  # Benten's, between the graveyard and the hall
+s.pack((1390, 1540, 1424, 1580), ["monk_house"] * 2, step=14)  # Daikoku's, N of the hall below the theater ground
 s.frontage(
     [(1159, 1455), (1602, 1455)], (["merchant"] * 3 + ["shop"]) * 20, width=s.lw(20), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14), skip=AVENUE
 )  # skip=AVENUE: the sub-segment must match the avenue's REGISTERED corridor or its own street rejects it
@@ -723,7 +730,13 @@ for (mx, my), name in zip(MIN_POS, MINS, strict=True):
 # samurai compound - keeps NO burial ground
 s.shrine_hall(
     1671, 1663, "Temple of Bishamon", w=s.px(200), h=s.px(140), kind="temple", graveyard=False, label_below=True, torii=[(1602, 1610), (1602, 1572), (1602, 1534)]
-)  # THREE straddling the MAIN ROAD at the temple frontage (the monzen pattern - the road runs under the arches; torii_count_canonical)
+)
+# Bishamon's adepts (GM 2026-07-24; kind renders as a laborer house): the only clear pocket in
+# the ward's SE corner is the strip between the caption band (bottom ~y1712), the S-gate guard
+# furniture on the diagonal road (top ~y1734), and the ring-road corridor east of x1725 - too
+# hemmed for pack's grid, so the two homes are seated explicitly.
+s.building(1694, 1722, s.px(34), s.px(24), kind="monk_house")
+s.building(1713, 1722, s.px(34), s.px(24), kind="monk_house")  # THREE straddling the MAIN ROAD at the temple frontage (the monzen pattern - the road runs under the arches; torii_count_canonical)
 s.block_polys.append([(1596, 1681), (1746, 1681), (1746, 1730), (1596, 1730)])  # keep the hall's below-label strip clear of the samurai packs (covers a large house's half-footprint past the box)
 s.block_polys.append([(1623, 1625), (1719, 1625), (1719, 1700), (1623, 1700)])  # a ~14px apron around the hall itself - the scatter pack kept rolling a house onto its +4 check margin
 # the ruling clan's walled MAUSOLEUM by the government quarter (the elite crypts)
@@ -931,12 +944,12 @@ s.ring(('poly', ENV_FS3), 16, 40, ["plain"])
 # approach and carries the bigger market; the NORTH gate's is SMALLER (the 大关厢-vs-small asymmetry),
 # also because the frame crops close above it (moat at y847, view top y729).
 s.frontage(
-    [(1602, 1856), (1602, 2003)], ["shop"] * 18, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14)
-)  # SOUTH gate: the guan-xiang gate market is transient SHOPS/stalls, not merchant residences (commoner DWELLINGS shelter inside the wall)
+    [(1602, 1856), (1602, 2050)], ["shop"] * 24, skip=IMPROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(14)
+)  # SOUTH gate: the guan-xiang gate market is transient SHOPS/stalls, not merchant residences (commoner DWELLINGS shelter inside the wall). The row runs past the frame bottom (view ends y2021) - the cut-off shops say "the suburb continues", the same slice convention as the estates and farmland (GM 2026-07-24; research: 10-40 structures per trafficked gate)
 s.label(1685, 1909, "gate market", 10, italic=True, color="#5A4326")
 s.frontage(
-    [(1602, 748), (1602, 836)], ["shop"] * 8, skip=IMPROAD, width=s.lw(26), spacing=19, rows=1, jitter=1, setback=s.px(14)
-)  # NORTH gate: the smaller guan-xiang, one stall row each side of the road north of the moat (y847), clear of the N-gate flophouse at x1509
+    [(1602, 688), (1602, 836)], ["shop"] * 14, skip=IMPROAD, width=s.lw(26), spacing=19, rows=1, jitter=1, setback=s.px(14)
+)  # NORTH gate: the smaller guan-xiang, one stall row each side of the road north of the moat (y847), clear of the N-gate flophouse at x1509; the row now runs past the frame top (view starts y718) so the outermost stalls are cut - the "more beyond the map" slice convention (GM 2026-07-24)
 s.label(1697, 822, "gate market", 10, italic=True, color="#5A4326")  # under the stall row, clear of the Imperial Road label (no_label_overlaps)
 
 # COMMERCIAL RIBBON along the Imperial road - a city ON a trade route lines its through-road

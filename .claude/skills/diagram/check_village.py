@@ -844,6 +844,7 @@ DWELLING_KINDS = {
     "merchant",
     "merchant_house",
     "merchant_large",
+    "monk_house",  # adept-monk households by the temple precincts (GM 2026-07-24) - real resident families, so they count as housing; they are deliberately ABSENT from the caste bands (clergy are not a lay caste)
 }  # samurai_large was missing (a senior samurai house is a dwelling like every other _large variant) - found when Tango's population count kept landing 5 short of its generator's
 BUSINESS_KINDS = {"shop", "merchant"}
 HOUSEHOLD = 5
@@ -854,7 +855,7 @@ HOUSEHOLD = 5
 # gate/approach-road (guan-xiang) market. So a commoner dwelling outside the wall is the true
 # anomaly (it defeats the wall and has no economic anchor) and is flagged hard-zero; samurai are
 # NOT commoners (their country seats are a legitimate extramural category).
-COMMONER_KINDS = {"laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house", "merchant_large"}
+COMMONER_KINDS = {"laborer", "laborer_large", "servant", "burakumin", "merchant", "merchant_house", "merchant_large", "monk_house"}
 EXTRAMURAL_COMMONER_MAX = 0  # GM decision (FR-002): hard zero, no allowance the generator can drift into
 
 
@@ -7355,7 +7356,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # commoners and share the same wells, so they ride along. A dwelling too far from any well is
             # a neighborhood the water network forgot.
             REACH = 290
-            COMMON = {"laborer", "laborer_large", "burakumin", "merchant", "merchant_house", "merchant_large"}
+            COMMON = {"laborer", "laborer_large", "burakumin", "merchant", "merchant_house", "merchant_large", "monk_house"}
             dry = [
                 (round(b["x"]), round(b["y"]))
                 for b in M.get("buildings", [])
@@ -7940,6 +7941,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     near_sh >= 3,
                     f"the temple neighborhood ({len(clustered)} clustered temples) has only {near_sh} small wayside shrine(s) - dot it with a few more (s.small_shrine)",
                 )
+            # ADEPT-MONK HOUSING (GM 2026-07-24). A city temple is a blank-court COMPLEX like the
+            # governor's yamen - the subject of its own Mode A diagram, a big walled rectangle on the
+            # city map - and its celibate resident monks live INSIDE the precinct, implied. But a
+            # share of each complex's 15-30 monks are married ADEPTS (adepts marry and raise
+            # children), and those households keep ordinary homes in the temple's neighborhood. So
+            # every major temple needs >= 2 dwellings of kind "monk_house" within ~170px - drawn
+            # deliberately identical to a laborer house (no label, no glyph of its own; the manifest
+            # kind exists so this check, the budget, and the population math can see households the
+            # caste bands must NOT count - clergy are not a lay caste).
+            monk_h = [b for b in M.get("buildings", []) if b.get("kind") == "monk_house"]
+            t_unserved = [t.get("label", (round(t["x"]), round(t["y"]))) for t in temples if sum(1 for m in monk_h if math.hypot(m["x"] - t["x"], m["y"] - t["y"]) <= 170) < 2]
+            check(
+                "city_temples_have_monk_housing",
+                not t_unserved,
+                f"major temple(s) without adept-monk housing nearby: {t_unserved} - each temple complex keeps 2-3 "
+                f"ordinary homes (kind 'monk_house', drawn identical to a laborer house) in its neighborhood for the "
+                f"married adepts among its 15-30 monks (the celibate monks live inside the precinct, implied)",
+            )
+            stray_mh = [(round(m["x"]), round(m["y"])) for m in monk_h if not temples or min(math.hypot(m["x"] - t["x"], m["y"] - t["y"]) for t in temples) > 170]
+            check(
+                "city_monk_houses_by_their_temple",
+                not stray_mh,
+                f"monk house(s) stranded away from every temple (>170px): {stray_mh} - an adept's household lives in its temple's neighborhood, not scattered across the city",
+            )
             # the outside samurai estates: no overlapping each other, none over the wall or moat
             est_corners = [rect_corners_xywh(mn, 0) for mn in est_out]
             est_overlap = [1 for i in range(len(est_out)) for j in range(i + 1, len(est_out)) if sat_overlap(est_corners[i], est_corners[j])]
@@ -8285,12 +8310,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # and carries no market, so it is NOT recorded in `gates` (it would live in its own
             # structure if/when the sally-gate knob is added). Each main gate needs >= 3 extramural
             # shops within ~520px; scale may differ. Mirrors city_flophouse_outside_each_gate.
+            # FLOOR RAISED 3 -> 6 (GM 2026-07-24): the researched guan-xiang ran 10-40 structures
+            # per trafficked gate (Beijing's 大关厢 the high end); our belt is a SLICE like the
+            # samurai estates and the farmland - the drawn shops string along the approach road and
+            # the outermost may be CUT by the frame, the truncation itself saying "more beyond the
+            # map". >= 6 shown per gate keeps the slice reading like a suburb instead of a shed row.
             biz_out = [b for b in M.get("buildings", []) if b.get("kind") in ("shop", "merchant") and not inwall(b["x"], b["y"])]
-            gates_wo_market = [i for i, g in enumerate(gates) if sum(1 for b in biz_out if math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520) < 3]
+            gates_wo_market = [i for i, g in enumerate(gates) if sum(1 for b in biz_out if math.hypot(b["x"] - g[0], b["y"] - g[1]) <= 520) < 6]
             check(
                 "city_has_gate_market",
                 not gates_wo_market,
-                f"main-road gate(s) without a gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY main-road city gate (scale may differ but each needs >= 3 extramural shops within ~520px; a sally gate, being traffic-free, is exempt and not in M['gates'])",
+                f"main-road gate(s) with a too-thin gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY main-road city gate (research: 10-40 structures per trafficked gate; the map draws a >= 6-shop slice within ~520px, outermost may run off the frame; a sally gate, being traffic-free, is exempt and not in M['gates'])",
             )
             # market-day lodging: a flophouse INSIDE the walls, and one OUTSIDE each gate (for
             # travelers arriving from either direction, who reach the gate after it has shut)
