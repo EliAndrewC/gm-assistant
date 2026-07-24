@@ -1229,6 +1229,22 @@ s.crop_city(west=100)  # the aggressive default (35px past the kept satellites);
 # and funerary+estates (E) are the true frame drivers.
 s.title("Tango")
 
+# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the principal board just inside the NORTH
+# gate on the Imperial road's west verge, below the gate's guard/inspection throat (GM
+# 2026-07-24; settlements.md "Notice board"). A
+# real city posted MANY boards (Edo: Nihonbashi + per-gate boards); this ONE stands in for
+# the set under the legibility license, like the drum tower - the south market gate would be
+# the busier node, but its inside verge is too built-up to hold even the label (both label
+# orientations land on the gate structure; probed 2026-07-24), and a main-gate node is a
+# main-gate node when one board stands for the set. Label BELOW (south, into the city, away
+# from the gate). Placed LAST on a verge probed clear INCLUDING the gate furniture and the
+# label box (the first two spots stood in the furnished gate throat).
+s.kosatsuba(1584, 1091, rot=90)  # the LABELED representative (one-label convention)
+# ...and the south gate's board, UNLABELED (GM 2026-07-24: draw the set, label one - like the
+# fire towers and gate markets). The bare board fits the tight south verge that could not
+# hold a label box (both label orientations landed on the gate furniture).
+s.kosatsuba(1588, 1760, rot=90, label=None)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}
 for b in s.M["buildings"]:

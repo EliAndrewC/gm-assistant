@@ -1133,6 +1133,19 @@ s.crop_city(west=100)  # the aggressive default (35px past the kept satellites: 
 # called the left framing good).
 s.title("Nagahara")
 
+# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the principal board on the east-gate
+# approach avenue, west verge, well inside the gate (GM 2026-07-24; settlements.md "Notice
+# board"). A real city posted MANY boards (Edo: Nihonbashi + per-gate boards); this one
+# stands in for the set under the legibility license, like the fire watch. Placed LAST on a
+# probed-clear verge NORTH of the caravan stable's animal yard (spot history: 33px inside
+# the north gate stood on the gate structs; the next sat inside the stable yard's trough
+# disc - stable_yards are DISCS (x, y, r), which rect-only probes miss).
+s.kosatsuba(1773, 1149, rot=90)  # the LABELED representative (one-label convention)
+# ...and the north road gate's board, UNLABELED (GM 2026-07-24: draw the set, label one -
+# like the fire towers and gate markets), 51px inside the gate on the road verge, aligned
+# to the road's local ~72 deg bearing.
+s.kosatsuba(1492, 961, rot=72, label=None)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}
 for b in s.M["buildings"]:
