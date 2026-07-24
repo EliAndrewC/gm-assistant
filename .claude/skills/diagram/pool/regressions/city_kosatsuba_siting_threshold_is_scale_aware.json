@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "kosatsuba": [
+  {
+   "x": 500,
+   "y": 530,
+   "w": 12,
+   "h": 5,
+   "rot": 0
+  }
+ ],
+ "road": [
+  [
+   0,
+   500
+  ],
+  [
+   1000,
+   500
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "kosatsuba_by_the_road"
+  ],
+  "source": "test_checks.py::test_city_kosatsuba_siting_threshold_is_scale_aware"
+ }
+}

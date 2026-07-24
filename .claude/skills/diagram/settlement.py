@@ -3995,7 +3995,7 @@ class Settlement:
             self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
         return z
 
-    def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board") -> int:
+    def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board", label_above: bool = False) -> int:
         """The KOSATSUBA - the settlement's official notice board: a small roofed frame posting
         the state's STANDING LAW (edicts, porter/packhorse rate tables, ban lists). Sited at the
         most TRAFFICKED public point - the highway frontage, the main street by the gate, a
@@ -4019,7 +4019,9 @@ class Settlement:
         bm = 6
         self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
         if label:
-            self.label(x, y + hh + 11, label, 8, italic=True, color="#7A5A30")
+            # label_above: for a board standing just inside a gate, the default below-label
+            # would hang over the gate structure (labels_clear_of_other_buildings)
+            self.label(x, y - hh - 11 if label_above else y + hh + 11, label, 8, italic=True, color="#7A5A30")
         return z
 
     def drum_tower(self, x: float, y: float, tw: float | None = None, label: str = "drum tower") -> int:
