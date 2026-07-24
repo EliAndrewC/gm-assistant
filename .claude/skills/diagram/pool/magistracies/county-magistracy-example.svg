@@ -2,7 +2,7 @@
 <defs><pattern id="court-earth" patternUnits="userSpaceOnUse" width="16" height="16"><rect width="16" height="16" fill="#D9C28E"/><circle cx="4" cy="6" r="0.6" fill="#A88E58"/><circle cx="12" cy="2" r="0.6" fill="#A88E58"/></pattern><pattern id="oshirasu-sand" patternUnits="userSpaceOnUse" width="12" height="12"><rect width="12" height="12" fill="#F2EAD0"/><circle cx="3" cy="4" r="0.5" fill="#C9B884"/><circle cx="8" cy="2" r="0.5" fill="#C9B884"/></pattern><pattern id="garden-stipple" patternUnits="userSpaceOnUse" width="14" height="14"><rect width="14" height="14" fill="#BFCFA0"/><circle cx="3" cy="3" r="0.8" fill="#7A8C5C"/><circle cx="10" cy="9" r="0.8" fill="#7A8C5C"/></pattern></defs>
 <rect x="0" y="0" width="930" height="720" fill="#EFE3C2"/>
 <rect x="60" y="60" width="810" height="600" fill="url(#court-earth)" stroke="none" stroke-width="0"/>
-<text x="465" y="33" text-anchor="middle" font-size="20" font-weight="bold" fill="#3A2E1C">County Magistracy (draft)</text>
+<text x="465" y="33" text-anchor="middle" font-size="20" font-weight="bold" fill="#3A2E1C">County Magistracy (example)</text>
 <text x="465" y="51" text-anchor="middle" font-size="10" font-style="italic" fill="#6B4F2A">(perimeter-first composed draft - refine by hand)</text>
 <rect x="210" y="168" width="495" height="72" fill="url(#garden-stipple)" stroke="#9C7A40" stroke-width="0.8"/>
 <text x="458" y="204" text-anchor="middle" font-size="11" font-style="italic" fill="#5C4318">garden</text>

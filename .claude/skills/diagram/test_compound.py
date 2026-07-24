@@ -139,7 +139,7 @@ def test_main_default_path(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / "pool" / "magistracies").mkdir(parents=True)
     assert c.main([]) == 0
-    assert (tmp_path / "pool" / "magistracies" / "county-magistracy-draft.svg").exists()
+    assert (tmp_path / "pool" / "magistracies" / "county-magistracy-example.svg").exists()
 
 
 def test_main_reports_overflow(tmp_path, monkeypatch, capsys) -> None:
