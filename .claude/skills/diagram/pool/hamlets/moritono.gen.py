@@ -33,7 +33,9 @@ POND = (1700, 800, 92, 58)            # cx, cy, rx, ry - the tameike at the E he
 SLUICE = (POND[0] - POND[2] + 8, POND[1] + 6)   # the single outlet on the pond's downhill (W) foot
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Moritono", scale="hamlet", ftpx=FTPX, toscale=True, households=16, down_deg=180,   # E-high -> downhill = due W
+s.meta(
+    water_flow=135,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Moritono", scale="hamlet", ftpx=FTPX, toscale=True, households=16, down_deg=180,   # E-high -> downhill = due W
        nucleated=True, field_footbridges=True)   # pond_role defaults to "source" (the tameike FEEDS the field)
 
 # Comb supply net marching due W from the head sluice; field_fall caps the paddy to ~16 households, bounded

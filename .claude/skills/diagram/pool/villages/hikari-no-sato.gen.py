@@ -38,7 +38,9 @@ SEED = 38
 FTPX = 2
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Hikari no Sato", scale="village", ftpx=FTPX, households=70, down_deg=90,   # N-high -> downhill = due S
+s.meta(
+    water_flow=30,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Hikari no Sato", scale="village", ftpx=FTPX, households=70, down_deg=90,   # N-high -> downhill = due S
        nucleated=True, field_footbridges=True, torii_expected=3, shrine_on_hill=False,   # 3 = the Benten sando; the Bishamon hall is a deliberate 0-torii outlier
        fallow_implies_abandoned=False, has_pond=False)   # stream-fed, no pond
 

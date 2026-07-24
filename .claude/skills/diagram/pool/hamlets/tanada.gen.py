@@ -24,7 +24,9 @@ SEED = 5
 TOP = (1050, 300)  # the high catchment; terraces step downhill (due S)
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Tanada", scale="hamlet", ftpx=1, toscale=True, households=14, down_deg=90, terrain="hill", field_archetype="contour_terraces", nucleated=True, field_footbridges=True)
+s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Tanada", scale="hamlet", ftpx=1, toscale=True, households=14, down_deg=90, terrain="hill", field_archetype="contour_terraces", nucleated=True, field_footbridges=True)
 
 s._nucleated = True  # communal windbreak, no per-house groves
 # n_terraces=32 keeps each step shallow (~44 ft deep) so a cell reads WIDER than deep; each step is then split

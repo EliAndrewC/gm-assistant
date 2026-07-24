@@ -7547,3 +7547,57 @@ def test_tanning_yard_clear_of_dwellings_exempts_the_burakumin_quarter():
     # the same 60 ft gap, but the neighbor is burakumin: they live on the ground they work
     M = _ty_map(buildings=[bldg(466, 560, kind="burakumin")])
     assert "tanning_yard_clear_of_dwellings" not in f(M)
+
+
+# ---- water flow direction (GM 2026-07-24) --------------------------------------------------
+def _wf_map(**over):
+    M = {
+        "meta": {"scale": "town", "walled": False, "ftpx": 1, "down_deg": 90, "water_flow": 90},
+        "streams": [{"poly": [[500, 100], [500, 900]], "w": 8, "flow": "forward", "flow_deg": 90.0}],
+    }
+    M.update(over)
+    return M
+
+
+def test_water_flow_declared_fires_when_a_watered_map_declares_no_bearing():
+    M = _wf_map(meta={"scale": "town", "walled": False, "ftpx": 1, "down_deg": 90})
+    assert "water_flow_declared" in f(M)
+
+
+def test_water_flow_consistent_with_slope_fires_when_water_would_run_uphill():
+    # 90 deg or more off the fall = a net uphill component, which gravity forbids
+    M = _wf_map(meta={"scale": "town", "walled": False, "ftpx": 1, "down_deg": 90, "water_flow": 270})
+    assert "water_flow_consistent_with_slope" in f(M)
+
+
+def test_water_flow_consistent_with_slope_passes_a_near_contour_divergence():
+    # 85 deg off the fall is a CONTOUR work (a canal is built near-parallel to the contours),
+    # realistic and must not be flagged - only crossing 90 is impossible
+    M = _wf_map(meta={"scale": "town", "walled": False, "ftpx": 1, "down_deg": 90, "water_flow": 5})
+    assert "water_flow_consistent_with_slope" not in f(M)
+
+
+def test_watercourses_declare_flow_fires_on_an_untagged_course():
+    M = _wf_map(streams=[{"poly": [[500, 100], [500, 900]], "w": 8}])
+    assert "watercourses_declare_flow" in f(M)
+
+
+def test_watercourses_declare_flow_accepts_a_level_canal():
+    M = _wf_map(canals=[{"poly": [[100, 500], [900, 500]], "w": 12, "flow": "level", "flow_deg": None}])
+    assert "watercourses_declare_flow" not in f(M)
+
+
+def test_watercourses_flow_downstream_fires_on_a_course_running_against_the_bearing():
+    M = _wf_map(streams=[{"poly": [[500, 900], [500, 100]], "w": 8, "flow": "forward", "flow_deg": 270.0}])
+    assert "watercourses_flow_downstream" in f(M)
+
+
+def test_watercourses_flow_downstream_exempts_the_level_canal():
+    # Nagahara's cargo canal runs against the drainage and is CORRECT - it is a navigation cut
+    M = _wf_map(canals=[{"poly": [[900, 500], [100, 500]], "w": 12, "flow": "level", "flow_deg": None}])
+    assert "watercourses_flow_downstream" not in f(M)
+
+
+def test_moat_declares_circulation_fires_on_a_moat_with_no_inlet_or_outlet():
+    M = _wf_map(meta={"scale": "city", "walled": True, "ftpx": 3, "water_flow": 90}, wall=WALL, moat=WALL)
+    assert "moat_declares_circulation" in f(M)

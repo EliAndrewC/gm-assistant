@@ -50,6 +50,7 @@ PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=162)
 s.meta(
+    water_flow=70,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3, wall_defense="siege", clan="Crane", capital_dir="southeast"
 )  # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
 
@@ -148,6 +149,7 @@ s.stream(
 # (x1602) and the westernmost samurai estate (x~2061), off the S edge.
 _mse = min(MOAT, key=lambda p: (p[0] - 1879) ** 2 + (p[1] - 1732) ** 2)  # a moat vertex on the SE (low) rim
 s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122)], width=s.px(66))  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
+s.moat_flow(_mnw, _mse)  # the closed ring flushes NW (feeder) -> SE (outfall), running BOTH ways round
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
 # fixed crossing on the samurai ward fence, but s.ward draws them near the END of the gen - long

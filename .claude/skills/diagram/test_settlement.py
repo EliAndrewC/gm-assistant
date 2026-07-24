@@ -3955,3 +3955,31 @@ def test_tanning_yard_stream_variant_draws_staking_frames():
     svg = "".join(s.out)
     assert '#9CB4C8' not in svg  # no intake cut on live water
     assert svg.count('stroke="#6B4F2A"') >= 4  # three stakes + the frame rail out in the shallows
+
+
+def test_flow_record_tags_direction_and_derives_the_bearing():
+    s = _town()
+    s.stream([(100, 100), (100, 400)])  # authored upstream-first: runs due south
+    s.stream([(300, 400), (300, 100)], flow="reverse")  # stored south-first, water runs NORTH
+    a, b = s.M["streams"]
+    assert (a["flow"], a["flow_deg"]) == ("forward", 90.0)
+    assert (b["flow"], b["flow_deg"]) == ("reverse", 90.0)  # reversed -> also flows south
+
+
+def test_navigable_canal_is_level_and_carries_no_bearing():
+    s = _town()
+    s.canal([(100, 100), (400, 100)])
+    rec = s.M["canals"][0]
+    assert rec["flow"] == "level" and rec["flow_deg"] is None
+
+
+def test_flow_record_rejects_an_unknown_direction():
+    s = _town()
+    with pytest.raises(ValueError, match="forward"):
+        s.stream([(0, 0), (10, 10)], flow="downhill-ish")
+
+
+def test_moat_flow_declares_a_closed_ring_circulation():
+    s = _town()
+    s.moat_flow((120.44, 200.51), (800.0, 640.0))
+    assert s.M["moat_flow"] == {"inlet": [120.4, 200.5], "outlet": [800.0, 640.0]}

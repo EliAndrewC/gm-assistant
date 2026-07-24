@@ -33,7 +33,9 @@ HOUSEHOLDS = knob_rng(SEED, "households").randrange(46, 70)
 WATER_KIND = "pond" if knob_rng(SEED, "water_kind").random() < 0.5 else "stream"
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Kikuta", scale="village", ftpx=2, toscale=True, households=HOUSEHOLDS, down_deg=45, nucleated=True, field_footbridges=True, torii_expected=7, shrine_on_hill=False)
+s.meta(
+    water_flow=40,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Kikuta", scale="village", ftpx=2, toscale=True, households=HOUSEHOLDS, down_deg=45, nucleated=True, field_footbridges=True, torii_expected=7, shrine_on_hill=False)
 
 # ROLL the whole village. civic_shrine=False + frame=False: this gen supplies Kikuta's OWN sacred precinct
 # (the Benten hall + its 7 torii + the burial ground) and crops the frame itself, AFTER placing them.

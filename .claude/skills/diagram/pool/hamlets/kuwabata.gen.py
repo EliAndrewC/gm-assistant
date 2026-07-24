@@ -39,6 +39,7 @@ ORIGIN = (360, 320)  # the high (NW) corner; the grid runs S (down) and E (acros
 
 s = Settlement(W=W, H=H, seed=SEED)
 s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Kuwabata",
     scale="hamlet",
     ftpx=1,

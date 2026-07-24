@@ -59,6 +59,7 @@ s = Settlement(2600, 2000, seed=77)
 # main one is to Bishamon (Lion's), and a much smaller, older one to Benten (Crane's) sits
 # on the far side of town - a relic of Crane rule. Hence monastery_fortunes is set explicitly.
 s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Hirameki",
     scale="town",
     walled=True,

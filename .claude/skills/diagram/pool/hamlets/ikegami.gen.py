@@ -40,7 +40,9 @@ SLUICE = (760, 320)                  # the field head, upper-left; the comb fans
 FTPX = 1
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Ikegami", scale="hamlet", ftpx=FTPX, toscale=True, households=15, down_deg=90,   # N-high -> downhill = due S
+s.meta(
+    water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Ikegami", scale="hamlet", ftpx=FTPX, toscale=True, households=15, down_deg=90,   # N-high -> downhill = due S
        nucleated=True, field_footbridges=True, pond_role="drainage")   # the pond DRAINS the field (a reservoir below), not feeds it
 
 # Comb supply net marching due S from the head sluice. field_fall CAPS the march so the paddy is

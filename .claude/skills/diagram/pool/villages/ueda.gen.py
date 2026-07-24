@@ -51,7 +51,9 @@ SLUICE = (POND[0] - round(0.64 * PRX), POND[1] + round(0.78 * PRY))   # the sing
 POND_DRAW = (POND[0] - 157, POND[1], PRX, PRY)
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Ueda", scale="village", ftpx=2, households=HOUSEHOLDS, down_deg=135,   # NE-high -> downhill = SW (135 deg)
+s.meta(
+    water_flow=75,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Ueda", scale="village", ftpx=2, households=HOUSEHOLDS, down_deg=135,   # NE-high -> downhill = SW (135 deg)
        nucleated=True, field_footbridges=True)
 # (The pond is a valley-head reservoir feeding the field, so the crop advisory now exempts it automatically -
 # no meta(crop_advisory=False) needed. It is drawn nudged W so its E edge is flush with the fields.)

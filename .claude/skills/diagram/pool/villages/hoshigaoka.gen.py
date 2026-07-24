@@ -45,7 +45,9 @@ SLUICE = (513, 282)                 # the single outlet on the pond's downhill f
 SEED = 7
 
 s = Settlement(W=W, H=H, seed=SEED)
-s.meta(name="Hoshigaoka", scale="village", ftpx=2, households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
+s.meta(
+    water_flow=10,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+name="Hoshigaoka", scale="village", ftpx=2, households=70, down_deg=45,   # NW-high -> downhill = SE (45 deg)
        nucleated=True,                                                   # a clustered village -> a COMMUNAL fengshui windbreak, not per-house groves
        lane_skeleton="spine", settlement_form="nucleated",              # feature 005: Hoshigaoka is a compact NUCLEATED village on a single spine - the structural contrast with Kikuta's LINEAR ribbon
        field_footbridges=True)                                          # long irrigation ditches carry plank footbridges (long_ditches_have_a_footbridge)
