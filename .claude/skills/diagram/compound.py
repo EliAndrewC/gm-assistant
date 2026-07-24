@@ -339,12 +339,12 @@ def county_magistracy_program() -> CompoundProgram:
         b("gatehouse", "dark", 42.0, 15.0, "outer", "S", order=8),
         b("stables", "service", 33.0, 23.0, "outer", "S", order=5),
     )
-    return CompoundProgram("County Magistracy (draft)", env, spine, buildings)
+    return CompoundProgram("County Magistracy (example)", env, spine, buildings)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
-    out = args[0] if args else "pool/magistracies/county-magistracy-draft.svg"
+    out = args[0] if args else "pool/magistracies/county-magistracy-example.svg"
     program = county_magistracy_program()
     result = place(program)
     with open(out, "w", encoding="utf-8") as fh:

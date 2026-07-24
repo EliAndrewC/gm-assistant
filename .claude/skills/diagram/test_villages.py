@@ -28,7 +28,7 @@ POOL = os.path.join(HERE, "pool")
 
 def _is_village_gen(gen):
     """A Mode B VILLAGE gen builds on the settlement engine (`settlement.py`) and emits a JSON manifest the
-    check_village gate reads. Mode A COMPOUND gens (built on `compound.py`, e.g. ochiba-recomposed) also live
+    check_village gate reads. Mode A COMPOUND gens (built on `compound.py`, e.g. ochiba-roundtrip-test) also live
     in pool/ but are hand-plan SVGs with NO village manifest - running one produces nothing to gate (and may
     raise SystemExit from its own `__main__` guard). They are not villages, so this test skips them; they carry
     their own tests. Discriminate by which engine the gen imports (every village gen imports settlement; no
