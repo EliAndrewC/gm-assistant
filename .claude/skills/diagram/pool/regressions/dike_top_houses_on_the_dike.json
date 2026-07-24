@@ -1,0 +1,47 @@
+{
+ "meta": {
+  "scale": "hamlet",
+  "field_archetype": "polder_grid"
+ },
+ "dikes": [
+  {
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     900,
+     100
+    ],
+    [
+     900,
+     900
+    ],
+    [
+     100,
+     900
+    ]
+   ],
+   "w_min": 14.0,
+   "w_max": 38.0
+  }
+ ],
+ "houses": [
+  {
+   "x": 1300,
+   "y": 500,
+   "w": 46,
+   "h": 28,
+   "rot": 0,
+   "kind": "plain",
+   "on_dike": true
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dike_top_houses_on_the_dike"
+  ],
+  "source": "test_checks.py::test_dike_top_houses_on_the_dike"
+ }
+}

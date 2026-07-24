@@ -44,6 +44,18 @@ s.draw_comb_field(net, "enokida-polder", {"kind": "pond", "pond": (_nw[0] + 44, 
 _env = net["envelope"]
 s.perimeter_dike(_env, seed=SEED ^ 0x6D, gaps=net["dike_sluices"])
 
+# the WATERWARD FRINGE (GM 2026-07-24, settlements.md 'Polder siting Q&A'): Enokida is a landward-MARGIN
+# polder - the village sits on the naturally dry shore to the EAST, but outside the dike on the WEST is the
+# fluctuating wet wild the polder was reclaimed from (reed marsh / mudflat at low stage, sheet water at
+# flood), and the SOUTH toe is already wet (the auto toe marsh at the outfall side). The waterside strip
+# hugs the band's outer face (reeds auto-skip the dike + field via the block/field keep-outs) and runs off
+# the west frame; meta.waterward declares the water-facing flanks so polder_waterward_flanks_wet has teeth.
+_dol = s.M["dikes"][0]["outline"]
+_dwx = min(p[0] for p in _dol)
+_dny, _dsy = min(p[1] for p in _dol), max(p[1] for p in _dol)
+s.marsh([(-20, _dny - 30), (_dwx + 60, _dny - 30), (_dwx + 60, _dsy + 20), (-20, _dsy + 20)], role="waterside")
+s.meta(waterward=["W", "S"])
+
 # the village lines the dry EAST perimeter dike
 _rng = _random.Random(SEED ^ 0x3B)
 _ex = max(p[0] for p in _env)

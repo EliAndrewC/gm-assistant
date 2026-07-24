@@ -6450,8 +6450,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # reclaimed valley toe stays wetland). So a marsh must lie DOWNHILL of the field it borders - its centroid's
         # fall must exceed the field centroid's; a marsh on the high/dry side would read wrong. WHY: settlements.md 'Marsh'.
         marshes_ = [
-            m for m in M.get("marshes", []) if m.get("role") not in ("pond_fringe", "defense")
-        ]  # a pond's reedy MARGIN is a water fringe, and a DEFENSIVE belt hugs the fortified perimeter wherever the wall runs (defense_marsh_girds_the_walls owns it) - neither is the low valley toe
+            m for m in M.get("marshes", []) if m.get("role") not in ("pond_fringe", "defense", "waterside")
+        ]  # a pond's reedy MARGIN is a water fringe, a DEFENSIVE belt hugs the fortified perimeter wherever the wall runs (defense_marsh_girds_the_walls owns it), and a polder's WATERSIDE fringe surrounds the dike regardless of fall (the polder floor is below the outside water level; polder_waterward_flanks_wet owns it) - none of these is the low valley toe
         if marshes_ and M.get("fields"):
             fol = M["fields"][0]["outline"]
             fcen = (sum(p[0] for p in fol) / len(fol), sum(p[1] for p in fol) / len(fol))
@@ -9354,6 +9354,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # keep-out; this verifies it. A house corner or a grove clump centre inside the dike band fires.
             on_dike = []
             for h in M.get("houses", []):
+                if h.get("on_dike"):
+                    continue  # a dike_top_houses house LIVES on the bank (settlement_form 'dike_top') - dike_top_houses_on_the_dike verifies it instead
                 hw, hh = h.get("w", 40) / 2, h.get("h", 26) / 2
                 if any(point_in_poly(h["x"] + sx * hw, h["y"] + sy * hh, band) for sx in (-1, 1) for sy in (-1, 1)):
                     on_dike.append(("house", round(h["x"]), round(h["y"])))
@@ -9364,6 +9366,65 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not on_dike,
                 f"structure(s)/windbreak clump(s) sitting ON the perimeter dike earthwork: {on_dike[:4]} - the dike is a raised bank, not building ground; houses and the windbreak keep off it",
             )
+
+    # DIKE-TOP HOUSES REALLY SIT ON THE DIKE (GM 2026-07-24, settlements.md 'Polder siting Q&A'): a house
+    # tagged `on_dike` (placed by dike_top_houses, settlement_form 'dike_top') is exempt from
+    # structures_clear_of_dike - so the tag must not be a free pass. Every tagged house's center must lie
+    # ON the recorded dike band (or within the small platform slack - the widened-crest house pad bulges
+    # the band a touch). A tagged house floating off the bank, or tagged houses on a map with no dike at
+    # all, fires.
+    _dtag = [h for h in M.get("houses", []) if h.get("on_dike")]
+    if _dtag:
+        _dbands = [dk["outline"] for dk in M.get("dikes", []) if dk.get("outline")]
+        _doff = [(round(h["x"]), round(h["y"])) for h in _dtag if not any(poly_dist(h["x"], h["y"], b) <= 14 for b in _dbands)]
+        check(
+            "dike_top_houses_on_the_dike",
+            not _doff,
+            f"house(s) tagged on_dike but not ON the dike band: {_doff[:4]} - the on_dike tag exempts a house from structures_clear_of_dike, so it is only honest for a house actually seated on the crest (dike_top_houses)",
+        )
+
+    # THE WATERWARD FLANKS ARE WET (GM 2026-07-24, settlements.md 'Polder siting Q&A'): outside a polder's
+    # dike is the FLUCTUATING WATER it was reclaimed from - lake, creek, reed marsh, mudflat - except on a
+    # landward flank where the polder abuts the natural shore (the margin-polder case; reclamation advanced
+    # FROM the shore). A map declares its water-facing flanks in meta.waterward (compass letters, frame
+    # axes); each declared flank must then actually READ wet - sampled just outside the dike band's extreme
+    # on that side, most points must land in recorded wet cover (a waterside/toe marsh poly or the header
+    # pond). Undeclared maps skip (a non-polder map has no dike to face water).
+    _ww = [str(c) for c in (meta.get("waterward") or [])]
+    _dks_all = M.get("dikes") or []
+    if _ww and _dks_all:
+        _bpts = [p for dk in _dks_all for p in dk.get("outline", [])]
+        _bx0, _bx1 = min(p[0] for p in _bpts), max(p[0] for p in _bpts)
+        _by0, _by1 = min(p[1] for p in _bpts), max(p[1] for p in _bpts)
+        _wetp = [m["poly"] for m in M.get("marshes", []) if m.get("role") in ("waterside", "toe") and m.get("poly")]
+        _pnd = M.get("pond")
+
+        def _is_wet(px: float, py: float) -> bool:
+            if any(point_in_poly(px, py, wp) for wp in _wetp):
+                return True
+            if not _pnd:
+                return False
+            return bool(((px - _pnd[0]) / max(1e-9, _pnd[2])) ** 2 + ((py - _pnd[1]) / max(1e-9, _pnd[3])) ** 2 <= 1.0)
+
+        _dryf = []
+        for _fl in _ww:
+            _K = 20
+            if _fl in ("W", "E"):
+                _fx = (_bx0 - 28) if _fl == "W" else (_bx1 + 28)
+                _lo, _hi = _by0 + 0.15 * (_by1 - _by0), _by1 - 0.15 * (_by1 - _by0)
+                _samples = [(_fx, _lo + (_hi - _lo) * k / (_K - 1)) for k in range(_K)]
+            else:
+                _fy = (_by0 - 28) if _fl == "N" else (_by1 + 28)
+                _lo, _hi = _bx0 + 0.15 * (_bx1 - _bx0), _bx1 - 0.15 * (_bx1 - _bx0)
+                _samples = [(_lo + (_hi - _lo) * k / (_K - 1), _fy) for k in range(_K)]
+            _wetc = sum(1 for px, py in _samples if _is_wet(px, py))
+            if _wetc < 0.7 * _K:
+                _dryf.append((_fl, _wetc))
+        check(
+            "polder_waterward_flanks_wet",
+            not _dryf,
+            f"declared waterward flank(s) read DRY outside the dike: {_dryf} (flank, wet samples of 20; want >=14) - outside a polder dike on a water-facing flank is the fluctuating wet wild it holds back (waterside marsh / open water), not the same dry scrub as the landward shore",
+        )
 
     # A polder's PARCEL fabric must VARY (researched 2026-07-21; grounding in build_polder's docstring).
     # The surveyed chessboard was the CANAL grid; the parcels inside were a private-tenure patchwork
