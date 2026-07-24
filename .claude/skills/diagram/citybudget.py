@@ -61,6 +61,9 @@ CIVIC_PROGRAM: tuple[tuple[str, int | None, float], ...] = (
     ("temple precincts", 2, 16_250.0),
     ("minor civic (theater, flophouses, funerary, inspection, kura)", None, 17_440.0),
     ("shops, inns, stables", 21, 4_700.0),
+    # Bell-and-drum tower (GM 2026-07-24): the walled seat's timekeeping/curfew tower at the main
+    # street crossing - a ~70 ft masonry platform (23.3 px at 3 ft/px) + its reserved clear block.
+    ("bell-and-drum tower", 1, 600.0),
 )
 
 # One in-wall water feature: a pond (landlocked) or the cargo canal + dock basin (river city).
