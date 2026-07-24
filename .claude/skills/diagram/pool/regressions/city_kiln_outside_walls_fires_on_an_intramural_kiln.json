@@ -1,0 +1,49 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3,
+  "walled": true
+ },
+ "wall": [
+  [
+   100,
+   100
+  ],
+  [
+   900,
+   100
+  ],
+  [
+   900,
+   900
+  ],
+  [
+   100,
+   900
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   100
+  ]
+ ],
+ "kilns": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 9.3,
+   "h": 6,
+   "rot": 0,
+   "label": "tile kiln"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_kiln_outside_walls"
+  ],
+  "source": "test_checks.py::test_city_kiln_outside_walls_fires_on_an_intramural_kiln"
+ }
+}

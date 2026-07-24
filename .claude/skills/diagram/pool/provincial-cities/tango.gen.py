@@ -176,6 +176,17 @@ s.flophouse(1574, 1620)
 s.inn(1574, 1655)
 s.stables(1574, 1687, rot=90)
 
+# TRADE WORKS (GM 2026-07-24, trade-footprint-research.md; settlements.md "Trade works"): the
+# trades whose premises outgrow the shop glyph, placed BEFORE the frontages/packs so the quarters
+# flow around them. Tango is LANDLOCKED: no lumber yard (timber moves by water at scale), but the
+# dyer stays - dyeing needs rinsing water (here the NW pond), not bulk transport.
+s.brewery(1560, 1000)  # on the agri district's open ground east of the pond (brewers site on WATER - same logic as the dyer next door; the packed SW quarter had no clean 120x60 ft ground: the compound's center-tested block kept colliding with pack edge-reach)
+s.dye_yard(1497, 1012)  # on the NW pond's south bank (rinsing + vat water)
+s.oil_press(1852, 1062)  # NE quarter, mid-band clear of the y1145 street and the x1990 alley (fire-conscious, toward the edge)
+s.pawnshop(1755, 1325)  # NE merchant_house band (the explicit merchant_large pair owns the 1508,1395 ground)
+s.bathhouse(1680, 1310)  # the sento on the busy merchant_house band by the road market (sited OUTSIDE the NE pre-pack well grid's box - a block in the warren swallowed well candidates and swamped the (1864,1226) idobata)
+s.kiln(2282, 830)  # tile kiln OUTSIDE the east wall, east of the common burial ground (2160-2250) and south of the ossuary (fire law + smoke)
+
 
 def grid(streets, width_ft=18):
     for st in streets:
