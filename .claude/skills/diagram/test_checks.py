@@ -5072,7 +5072,7 @@ def test_town_has_kosatsuba_fires_when_absent():
 
 def test_town_kosatsuba_passes_by_a_main_street():
     # sited on the traffic artery: within ~60 ft of a road or main street (town_streets branch)
-    M = {"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "town_streets": [{"pts": [[0, 500], [1000, 500]]}]}
+    M = {"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "town_streets": [{"pts": [[0, 500], [1000, 500]], "w": 28}]}
     fails = f(M)
     assert "town_has_kosatsuba" not in fails and "kosatsuba_by_the_road" not in fails
 
