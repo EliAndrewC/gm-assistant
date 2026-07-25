@@ -724,6 +724,9 @@ def build_comb(
     # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
     # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
     return {
+        "down_deg": down_deg,  # the LOCAL fall this fan was carved to - recorded so the drainage-slope
+        # checks can judge each drain against ITS OWN field rather than one map-level constant (a city
+        # ringed by farmland genuinely drains several ways at once; GM 2026-07-25)
         "channels": channels,
         "plots": plots,
         "threads": threads,

@@ -300,6 +300,9 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
     recording, so the drawn ditch, the field_ditches record, and the conduit share the cut
     geometry (gated by inwall_drains_gated_at_cutoff). Returns (net, envelope, interior
     point) - the caller records the source channel + rings the farmhouses."""
+    _drawn_dd = down_deg  # the fall of the DRAWN fan: mirroring about a horizontal axis negates a
+    # direction, so the negation below and the mirror afterwards cancel. Stamp this, not the negated
+    # working value, or a mirrored fan records a fall 90 deg off what is on the map.
     if mirror_ym is not None:
         sluice = (sluice[0], 2 * mirror_ym - sluice[1])
         down_deg = (-down_deg) % 360
@@ -338,7 +341,8 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
             net["brook"] = m(net["brook"])
     if inwall_drain_bias is not None:
         _dr = next(c for c in net["channels"] if c["role"] == "drain")
-        _dr["pts"] = s.inwall_drain_outfall(_dr["pts"], moat_bias=inwall_drain_bias)
+        _dr["pts"] = s.inwall_drain_outfall(_dr["pts"], moat_bias=inwall_drain_bias, field_name=name)
+        _dr["trimmed"] = True  # conduit stub, not a contour collector (drain_runs_cross_slope exempts it)
     env = [(round(x, 1), round(y, 1)) for x, y in net["envelope"]]
     s.field_polys.append([(p[0], p[1]) for p in env])
     # FIELD FLOOR (city grain): draw the whole envelope in soil-tan FIRST, under every plot and
@@ -379,6 +383,10 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         {
             "name": name,
             "kind": "paddy",
+            # this fan's OWN fall (GM 2026-07-25). A city is ringed by farmland that genuinely drains
+            # several ways at once, so the drainage-slope checks judge each drain against its own
+            # field's slope rather than one map-level constant. `down_deg` here is post-mirror.
+            "down_deg": _drawn_dd,
             "outline": [[x, y] for x, y in env],
             "bbox": [min(exs), min(eys), max(exs), max(eys)],
             "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
@@ -386,7 +394,10 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         }
     )  # the drawn paddy plot POLYGONS, so paddy_fan_gapless can see holes inside the fan ("plots" is taken: the polder checks record [along, cross] parcel spans there)
     for c in net["channels"]:
-        s.M["field_ditches"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)})
+        _fdr = {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
+        if c.get("trimmed"):
+            _fdr["trimmed"] = True
+        s.M["field_ditches"].append(_fdr)
     return net, env, (round(sum(exs) / len(exs), 1), round(sum(eys) / len(eys), 1))
 
 
@@ -908,7 +919,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     topo_channel([(mp[0], mp[1]), sl, _pd], {"kind": "moat"}, {"kind": "field", "name": nm})
     # sink topology: the collector's runoff leaves the cropped map (the drain marches off-view)
     _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
-    topo_channel(drain_tail(_dr), {"kind": "drain"}, {"kind": "offmap"})
+    topo_channel(drain_tail(_dr), {"kind": "drain", "name": nm}, {"kind": "offmap"})
     s.ring(('poly', _env), 28, 15, ["plain"])
     s.ring(('poly', _env), 22, 40, ["plain"])
     s.ring(
@@ -930,7 +941,7 @@ _nete2, ENV_FE2, _ce2 = comb_field(
 _pd2 = plot_centroid(_nete2, lambda cs: max(cs, key=lambda c: c[1]))
 topo_channel([(_mp2[0], _mp2[1]), _sl2, _pd2], {"kind": "moat"}, {"kind": "field", "name": "fe2"})
 _dr2 = next(c["pts"] for c in _nete2["channels"] if c["role"] == "drain")
-topo_channel(drain_tail(_dr2), {"kind": "drain"}, {"kind": "offmap"})
+topo_channel(drain_tail(_dr2), {"kind": "drain", "name": "fe2"}, {"kind": "offmap"})
 s.ring(('poly', ENV_FE2), 24, 15, ["plain"])
 s.ring(('poly', ENV_FE2), 18, 40, ["plain"])
 
@@ -944,7 +955,7 @@ topo_channel([(1878, 604), (1878, 610), _pn], {"kind": "offmap"}, {"kind": "fiel
 _drn = next(c["pts"] for c in _netn["channels"] if c["role"] == "drain")
 _dfx, _dfy = _drn[-1]
 _mne = min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2)  # the moat rim S of the outfall (west of the funerary ground)
-topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
+topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain", "name": "fn1"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx, _dfy, rot=math.degrees(math.atan2(_mne[1] - _dfy, _mne[0] - _dfx)) + 90)  # the outfall gate where the field drain hands off to the culvert
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
@@ -962,7 +973,7 @@ topo_channel([(1300, 604), (1300, 610), _pn2], {"kind": "offmap"}, {"kind": "fie
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mnw2 = min(MOAT, key=lambda p: (p[0] - _dfx2) ** 2 + (p[1] - _dfy2 - 90) ** 2)  # the moat rim S of the outfall
-topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
+topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain", "name": "fn2"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx2, _dfy2, rot=math.degrees(math.atan2(_mnw2[1] - _dfy2, _mnw2[0] - _dfx2)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FN2), 28, 15, ["plain"])
 s.ring(('poly', ENV_FN2), 22, 40, ["plain"])
@@ -983,7 +994,7 @@ s.field_channel([(1995, 2020), (2030, 2005)], '#9CB4C8', 7, 7)
 s.sluice_gate(2030, 2005, rot=math.degrees(math.atan2(2005 - 2020, 2030 - 1995)) + 90)
 topo_channel([(1995, 2020), (2030, 2005), _pe], {"kind": "stream"}, {"kind": "field", "name": "fse1"})
 _dre = next(c["pts"] for c in _nete["channels"] if c["role"] == "drain")
-topo_channel(drain_tail(_dre), {"kind": "drain"}, {"kind": "offmap"})
+topo_channel(drain_tail(_dre), {"kind": "drain", "name": "fse1"}, {"kind": "offmap"})
 s.ring(('poly', ENV_FSE1), 28, 15, ["plain"])
 s.ring(('poly', ENV_FSE1), 22, 40, ["plain"])
 _nets3, ENV_FS3, _cs3 = comb_field("fs3", (1901, 1895), 115, 88, 150, (90, 125), (60, 85), (0.45, 0.8), avoid=(MOAT,), dry_keepout=((2060, 1855, 105),))  # hem off the lower-SE estate
@@ -992,7 +1003,7 @@ s.field_channel([(1936, 1880), (1901, 1895)], '#9CB4C8', 7, 7)  # the visible ta
 s.sluice_gate(1901, 1895, rot=math.degrees(math.atan2(1895 - 1880, 1901 - 1936)) + 90)
 topo_channel([(1936, 1880), (1901, 1895), _ps3], {"kind": "stream"}, {"kind": "field", "name": "fs3"})
 _drs3 = next(c["pts"] for c in _nets3["channels"] if c["role"] == "drain")
-topo_channel(drain_tail(_drs3), {"kind": "drain"}, {"kind": "offmap"})
+topo_channel(drain_tail(_drs3), {"kind": "drain", "name": "fs3"}, {"kind": "offmap"})
 s.ring(('poly', ENV_FS3), 22, 15, ["plain"])
 s.ring(('poly', ENV_FS3), 16, 40, ["plain"])
 # a gate market (guan-xiang) OUTSIDE EACH gate - both sit on the N-S Imperial road, so both grow a
