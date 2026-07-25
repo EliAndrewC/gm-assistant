@@ -2087,7 +2087,7 @@ class Settlement:
         self.M.setdefault("field_ponds", []).append({"x": round(cx, 1), "y": round(cy, 1), "rx": round(rx, 1), "ry": round(ry, 1)})
 
     def _plot_rock(self, plot: dict[str, Any], rng: random.Random) -> None:
-        """A bedrock OUTCROP the terrace risers wrap around - a cluster of grey boulders. Recorded in
+        """A bedrock OUTCROP the terrace risers wrap around - a cluster of gray boulders. Recorded in
         M['field_rocks']. Small (a few plot-fractions), off-center so it reads as a natural obstacle."""
         cx, cy, hx, hy = self._plot_center_span(plot["poly"])
         cx += rng.uniform(-hx * 0.3, hx * 0.3)
@@ -7625,7 +7625,7 @@ class Settlement:
         # curtain and drop an extra mural into the middle of any run of points still short of the tier's
         # coverage. This is what turns "spacing <= range" into "coverage >= min everywhere" even after slides.
         _rng_ft, _mincov = WALL_DEFENSE.get(tier, WALL_DEFENSE["garrison"])
-        _Rpx = _rng_ft / self.ftpx + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's span, not its centre point (matches the coverage check)
+        _Rpx = _rng_ft / self.ftpx + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's span, not its center point (matches the coverage check)
         for _pass in range(5):
             _nst = max(8, int(perim / 10))  # finer than the check's 18px sampling, so remediation catches every point the check would flag
             _step = perim / _nst

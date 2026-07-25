@@ -189,7 +189,7 @@ def test_title_falls_back_to_the_corner_when_no_blank_space():
     assert s.M["title"]["bbox"][0] == 30  # fell back to view left + 30
 
 
-def test_title_without_a_view_centres_on_the_canvas():
+def test_title_without_a_view_centers_on_the_canvas():
     s = _crop_settlement()  # no set_view -> self.view is None
     s.M["fields"] = [{"outline": [[-10, -10], [2010, -10], [2010, 1510], [-10, 1510]]}]  # full-canvas cover -> no gap
     s.title("Y")
@@ -2569,8 +2569,8 @@ def test_cluster_seeds_shapes_generate_and_record():
 
     # split forms two lateral lobes -> the x-distribution is bimodal (few points near the center line)
     spl = s.cluster_seeds("split", 500, 700, 150, 220, 300, _r.Random(9))
-    near_centre = sum(1 for p in spl if abs(p[0] - 500) < 30)
-    assert near_centre < 0.15 * len(spl)  # a gap between the two sub-hamlets
+    near_center = sum(1 for p in spl if abs(p[0] - 500) < 30)
+    assert near_center < 0.15 * len(spl)  # a gap between the two sub-hamlets
 
 
 def test_cluster_anchor_places_each_position_on_the_right_dry_margin():
