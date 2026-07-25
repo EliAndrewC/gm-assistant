@@ -1401,8 +1401,20 @@ def test_village_windbreak_on_windward_side_fires_on_a_lee_belt():
 
 
 def test_village_groves_clear_of_paddies_fires_on_a_grove_in_a_field():
+    # no recorded clumps -> the bbox center is all there is to test (older maps)
     M = _nuc_village_M(_nuc_grid(), [{"x": 600, "y": 600, "w": 40, "h": 40, "rot": 0, "role": "copse"}], fields=[_field("p", 540, 540, 700, 700)])
     assert "village_groves_clear_of_paddies" in f(M)
+
+
+def test_village_groves_clear_of_paddies_tests_the_trees_not_the_bounding_box():
+    # a crescent belt hugging the field edge can have its BOX center over the crop while every tree in it
+    # stands on dry ground (Ueda's 87-clump back belt) - that must pass ...
+    field = [_field("p", 540, 540, 700, 700)]
+    crescent = {"x": 600, "y": 600, "w": 200, "h": 200, "rot": 0, "role": "windbreak", "r": 14, "clumps": [[480, 520], [500, 480], [520, 460]]}
+    assert "village_groves_clear_of_paddies" not in f(_nuc_village_M(_nuc_grid(), [crescent], fields=field))
+    # ... while a single tree actually standing in the paddy fires, even with the box center on dry ground
+    intruder = {"x": 300, "y": 300, "w": 200, "h": 200, "rot": 0, "role": "copse", "r": 11, "clumps": [[260, 260], [600, 600]]}
+    assert "village_groves_clear_of_paddies" in f(_nuc_village_M(_nuc_grid(), [intruder], fields=field))
 
 
 def test_commons_clear_of_paddies_fires_when_scrub_sits_in_a_field():
