@@ -328,9 +328,11 @@ def test_format_report_tub_section_states_each_case() -> None:
     none = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 60, 60, "#DDB87A"))))
     assert "no fire-water tubs" in none
     ok = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="106" cy="50" r="5"/>'))))
-    assert "all 1 tubs sit against" in ok
+    assert "all 1 tubs sit outside, against" in ok
     bad = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="160" cy="50" r="5"/>'))))
     assert "move it to a wall" in bad
+    inside = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="50" cy="50" r="5"/>'))))
+    assert "TUB INDOORS" in inside and "move it OUT against the wall" in inside
 
 
 # --- round-1 rendering checks: layers, label placement, legibility ---
@@ -551,6 +553,35 @@ def test_frozen_fixtures_show_the_floating_kura_door() -> None:
     for name in ("ochiba-layout-red.svg", "hayakawa-layout-red.svg"):
         with open(os.path.join(_FIX, name)) as fh:
             assert pa.floating_doors(pa.parse_svg(fh.read()))  # the kura door 2 px inside its wall
+
+
+def test_tubs_indoors_flags_inside_and_passes_outside() -> None:
+    """A tensuioke is gutter-fed and bucket-served, so it belongs OUTSIDE the wall it serves."""
+    svg = _svg(
+        _rect(0, 0, 300, 300, COURT),
+        _rect(0, 0, 100, 100, "#DDB87A"),
+        _tubgroup('<circle cx="10" cy="10" r="5"/>', '<circle cx="50" cy="50" r="5"/>', '<circle cx="106" cy="50" r="5"/>'),
+    )
+    indoors = pa.tubs_indoors(pa.parse_svg(svg))
+    # the 106 tub is outside and passes; the other two are inside, deepest first
+    assert [round(t.depth_ft, 1) for t in indoors] == [16.7, 3.3]
+    assert (indoors[0].x, indoors[0].y) == (50, 50)
+
+
+def test_tubs_indoors_with_no_buildings_flags_nothing() -> None:
+    assert pa.tubs_indoors(pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _tubgroup('<circle cx="50" cy="50" r="5"/>')))) == []
+
+
+def test_tubs_indoors_fires_on_the_frozen_ubame_red_fixture() -> None:
+    """Red fixture: every one of Ubame's 19 tubs was drawn inside its building (GM, 2026-07-25).
+
+    The negative-fixture counterpart of pool/regressions/ for Mode A - coverage alone would not
+    prove this check has teeth, a recorded red-then-green does.
+    """
+    with open(os.path.join(_FIX, "ubame-tubs-inside-red.svg")) as fh:
+        plan = pa.parse_svg(fh.read())
+    assert len(pa.tubs_indoors(plan)) == 19
+    assert pa.fire_water_adrift(plan) == []  # adrift passed it: the two checks are complementary
 
 
 def test_tub_on_well_flagged_and_clear_passes() -> None:
