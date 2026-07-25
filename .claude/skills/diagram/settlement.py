@@ -6947,6 +6947,15 @@ class Settlement:
                     fg.append(f'<ellipse cx="{axp:.1f}" cy="{ayp:.1f}" rx="3.4" ry="2.1" fill="#7A5A3A" stroke="#4A3626" stroke-width="0.6" transform="rotate({ang:.0f} {axp:.1f} {ayp:.1f})"/>')
             self.add("".join(fg))
 
+        # rails also seat SYMMETRICALLY clear of any EARLIER yard's dung heaps (GM 2026-07-25
+        # round 2): the heap-vs-rail clearance below is map-wide, so a later yard must not lay
+        # a rail into a neighboring yard's muck pile either - same 25px hold on the
+        # heap-center-to-rail-line distance, measured against this candidate's drawn segment
+        prior_heaps = [(h_["x"], h_["y"]) for yd_ in self.M.get("stable_yards", []) or [] for h_ in yd_.get("dung_heaps", []) or []]
+
+        def _rail_clear_of_heaps(cx: float, cy: float, tx_: float, ty_: float) -> bool:
+            return all(seg_dist(hx_, hy_, (cx - tx_ * 9.0, cy - ty_ * 9.0), (cx + tx_ * 9.0, cy + ty_ * 9.0)) >= 25.0 for hx_, hy_ in prior_heaps)
+
         # (1) the ROAD-PARALLEL edge rail: nearest road/street segment, rail set back into the yard
         best_seg: Any = None
         for pl, hwid in corridors:
@@ -6965,7 +6974,7 @@ class Settlement:
             # probe the rail's FULL extent (tips + post reach = len/2 + 2.4), not just its center -
             # a tip on the roadbed or against the rampart is exactly what the rail exists to prevent
             # (GM 2026-07-24; stable_yard_furniture_clear_of_roads_walls)
-            if all(clear(rcx + tx * e, rcy + ty * e, 8.0) for e in (-11.4, 0.0, 11.4)):
+            if all(clear(rcx + tx * e, rcy + ty * e, 8.0) for e in (-11.4, 0.0, 11.4)) and _rail_clear_of_heaps(rcx, rcy, tx, ty):
                 draw_hitch(rcx, rcy, tx, ty, nx, ny)
                 used.append((rcx, rcy))
         # (2) one or two more rails at clear interior spots (a busy train needs the tie-up room);
@@ -6974,6 +6983,8 @@ class Settlement:
             spot = take(10.0, 24.0, probes=((-11.4, 0.0), (0.0, 0.0), (11.4, 0.0)))
             if not spot:
                 break
+            if not _rail_clear_of_heaps(spot[0], spot[1], 1.0, 0.0):
+                continue
             draw_hitch(spot[0], spot[1], 1.0, 0.0, 0.0, 1.0)
 
         # the WATERING POINT (GM 2026-07-23, researched - settlements.md 'Stable yard' watering
@@ -7054,13 +7065,20 @@ class Settlement:
 
         # 1-2 DUNG HEAPS - the little "someone works here" tell; the ellipse's EDGE points are
         # probed too (GM 2026-07-24: a heap must not foul the road tread or the rampart clearance),
-        # and a heap keeps ~15px clear of every RAIL LINE (GM 2026-07-25: both flanks of a rail
-        # are tie-up space - a heap in the tethered-animal row blocks one side; the check floor
-        # is 14px / 42 ft, placement holds 15 for slack)
+        # and a heap keeps WELL clear of every RAIL LINE ON THE MAP (GM 2026-07-25, two rounds:
+        # round 1 held 15px, which parks the heap's edge ~8 ft behind the tethered-animal row -
+        # the GM still read that as "directly next to the hitching posts", blocking the tie-up
+        # flank - and it tested only THIS yard's rails, so a heap could sit 22px from a
+        # NEIGHBORING yard's rail with nothing measuring the pair, Nagahara's SE yards being the
+        # live case. Round 2: check floor 24px / 72 ft from every rail on the map, placement
+        # holds 25 for slack - the heap's edge ends ~38 ft past the animals' rumps, unambiguously
+        # out of the working row while still close enough to read as the yard's muck pile)
+        all_rails = rails + [r_ for yd_ in self.M.get("stable_yards", []) or [] for r_ in yd_.get("rails", []) or []]
+
         def _clear_of_rails(hpx: float, hpy: float) -> bool:
-            for rl_ in rails:
+            for rl_ in all_rails:
                 rh_ = rl_["len"] / 2
-                if seg_dist(hpx, hpy, (rl_["x"] - rl_["tx"] * rh_, rl_["y"] - rl_["ty"] * rh_), (rl_["x"] + rl_["tx"] * rh_, rl_["y"] + rl_["ty"] * rh_)) < 15.0:
+                if seg_dist(hpx, hpy, (rl_["x"] - rl_["tx"] * rh_, rl_["y"] - rl_["ty"] * rh_), (rl_["x"] + rl_["tx"] * rh_, rl_["y"] + rl_["ty"] * rh_)) < 25.0:
                     return False
             return True
 
