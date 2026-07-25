@@ -2253,6 +2253,21 @@ def test_crop_hugs_content_reveals_only_a_band_of_a_canvas_filling_forest():
     assert "crop_hugs_content" not in f({**M, "forest_edge": None})
 
 
+def test_crop_hugs_content_is_not_excused_by_a_forest_running_off_both_canvas_ends():
+    # the wood's N-S tree line runs off BOTH ends of the canvas - it is running ALONG that axis, not
+    # bounding anything, so it cannot excuse a frame held open to the canvas top (GM 2026-07-25: this
+    # is what pinned Moritono's north edge 127px past the northernmost real content). The house is the
+    # only vertical content, so a full-height view is loose and a snug one passes.
+    M = {
+        "meta": {"scale": "hamlet", "ftpx": 1, "W": 1000, "H": 500, "view": [150, 0, 360, 500]},
+        "houses": [{"x": 200, "y": 300, "w": 40, "h": 30, "rot": 0, "kind": "plain"}],
+        "forest": [[400, -10], [400, 510], [1000, 510], [1000, -10]],
+        "forest_edge": [[400, -10], [400, 510]],
+    }
+    assert "crop_hugs_content" in f(M)
+    assert "crop_hugs_content" not in f({**M, "meta": {**M["meta"], "view": [150, 255, 360, 90]}})
+
+
 def test_hard_features_within_frame_lets_the_windbreak_clip_but_not_vanish():
     # a windbreak POKING past the frame edge is fine (part visible = "the wood continues";
     # the crop no longer holds the frame open for it) ...
@@ -5650,6 +5665,27 @@ def test_wells_clear_of_trees_fires_on_grove_forest_woodland_grect_but_passes_wh
     assert "wells_clear_of_trees" not in f(clear)
 
 
+def test_wells_clear_of_trees_fires_on_a_drawn_crown_over_the_wellhead():
+    # the reserved-area tests above are coarse (where trees MAY stand); tree_crowns is where they DO.
+    # A crown drawn onto the wellhead fires even with no grove/forest record anywhere near it.
+    base = {"meta": {"scale": "village"}, "houses": [bldg(300, 300, "laborer")]}
+    well = {"x": 500, "y": 500, "r": 8, "vr": 12}
+    assert "wells_clear_of_trees" in f({**base, "wells": [well], "tree_crowns": [508, 495, 9]})
+    assert "wells_clear_of_trees" not in f({**base, "wells": [well], "tree_crowns": [540, 495, 9]})
+
+
+def test_structures_clear_of_trees_fires_when_a_crown_is_drawn_over_a_building():
+    # a tree drawn on a roof erases the building - no drawn crown may overlap any ROOFED footprint,
+    # and a ROTATED building is covered conservatively by its half-diagonal (as at placement).
+    base = {"meta": {"scale": "town"}, "houses": [bldg(300, 300, "laborer")]}
+    assert "structures_clear_of_trees" in f({**base, "buildings": [bldg(600, 600, "servant")], "tree_crowns": [618, 600, 8]})
+    assert "structures_clear_of_trees" not in f({**base, "buildings": [bldg(600, 600, "servant")], "tree_crowns": [660, 600, 8]})
+    # ... every roofed kind counts, not just dwellings (here a storehouse), and a crown that only
+    # reaches the OPEN yard beside a building is fine - yards have their own sun rules
+    assert "structures_clear_of_trees" in f({**base, "storehouses": [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0}], "tree_crowns": [822, 800, 6]})
+    assert "structures_clear_of_trees" not in f({**base, "threshing_yards": [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0, "of": [300, 300]}], "tree_crowns": [800, 800, 6]})
+
+
 def test_sacred_and_graves_off_marsh_fires_and_passes_on_dry_ground():
     # a shrine hall or a graveyard must NOT sit on a reed marsh (the wet valley toe) - only on dry ground.
     marsh = [[400, 400], [700, 400], [700, 700], [400, 700]]  # a toe marsh
@@ -7098,6 +7134,39 @@ def test_village_windbreak_embraces_cluster_passes_when_the_belt_nestles():
     belt = {"x": 590, "y": 420, "w": 300, "h": 50, "role": "windbreak", "clumps": [[470 + j * 22, 425] for j in range(14)]}
     M = {"meta": {"scale": "village", "nucleated": True}, "houses": houses, "village_groves": [belt]}
     assert "village_windbreak_embraces_cluster" not in f(M)
+
+
+def _thin_belt_cluster(**extra):
+    # 12 farmhouses behind a belt that NESTLES and carries 12 clumps (so the embrace test is satisfied)
+    # but whose crowns are small - the shape a too-thin belt takes: present, adjacent, and no wall.
+    houses = [{"x": 500 + i * 30, "y": 500, "w": 23, "h": 14, "kind": "plain", "rot": 0} for i in range(12)]
+    belt = {"x": 620, "y": 430, "w": 300, "h": 20, "role": "windbreak", "r": 6, "clumps": [[500 + j * 26, 430] for j in range(12)]}
+    return {"meta": {"scale": "village", "nucleated": True}, "houses": houses, "village_groves": [belt], **extra}
+
+
+def test_village_windbreak_scales_with_cluster_fires_on_a_belt_too_thin_for_the_cluster():
+    M = _thin_belt_cluster()
+    fails = f(M)
+    assert "village_windbreak_scales_with_cluster" in fails and "village_windbreak_embraces_cluster" not in fails
+
+
+def test_village_windbreak_scales_with_cluster_counts_per_house_groves():
+    # a map that ALSO groves its farmhouses (Hikari-no-Sato does both) banks those yashikirin footprints
+    M = _thin_belt_cluster(groves=[_grove(500 + i * 30 - 18, 480, 500 + i * 30, 500, w=40, h=40) for i in range(12)])
+    assert "village_windbreak_scales_with_cluster" not in f(M)
+
+
+def test_village_windbreak_forest_exempts_only_when_it_shelters_the_cluster():
+    # a REAL FOREST standing at the cluster's windward (NW) back, within nestling reach, IS the wind wall
+    near = _thin_belt_cluster(forest=[[400, 360], [420, 420], [400, 470]])
+    assert "village_windbreak_scales_with_cluster" not in f(near)
+    # ... but a wood on the LEE side, half a map away, shelters nothing - no exemption (Moritono's Shirin
+    # Forest, 1,089 ft east of the hamlet under an NW wind, GM 2026-07-25)
+    far = _thin_belt_cluster(forest=[[1500, 200], [1520, 600], [1500, 900]])
+    assert "village_windbreak_scales_with_cluster" in f(far)
+    # ... and neither does a wood that is CLOSE but downwind (the lee side of the same cluster)
+    lee = _thin_belt_cluster(forest=[[900, 560], [940, 600], [900, 640]])
+    assert "village_windbreak_scales_with_cluster" in f(lee)
 
 
 def test_geometry_within_canvas_fires_on_a_stray_town_wall_vertex():

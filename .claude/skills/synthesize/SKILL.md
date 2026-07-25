@@ -247,3 +247,64 @@ sentinels are handled automatically: the block is replaced in place and the
 markers dropped. Report exactly what was written and where. If
 `update_character` raises, tell the GM the save did not complete and their
 existing notes are unchanged.
+
+## Step 5 - Portrait (MANDATORY when the record has none)
+
+**Every NPC gets a portrait** (GM rule, 2026-07-25). This skill normally runs on
+characters that already have one, so the step is conditional - but it is not
+optional, and it is never something to offer the GM as a follow-up. If the
+record has no portrait, generate and attach one before reporting done.
+
+The signal is the `bio` field: an existing portrait appears there as a
+`[[File:...]]` embed. If `bio` has no embed, run this:
+
+```bash
+cd /gm-assistant/webapp && python3 - <<'PY'
+import l7r, json, re, base64
+from chargen import art, op, opsynth
+h = json.load(open("[SCRATCH]/synthesize-handoff.json"))
+body = op.get_character_body(h["id"]) or {}
+if "[[File:" in (body.get("bio") or ""):
+    raise SystemExit("already has a portrait - leave it alone")
+d = opsynth.character_dict_for_art(body) if hasattr(opsynth, "character_dict_for_art") else {
+    "full_name": body.get("name", ""), "tags": body.get("tags") or [],
+    "public": body.get("description") or "", "private": body.get("game_master_info") or "",
+    "character_type": h.get("caste", "Samurai"),
+}
+prompt = art.generate_prompt(d)
+img = base64.b64decode(art.generate_image_base64(prompt))
+safe = re.sub(r"[^a-zA-Z0-9]", "", h["name"].replace(" ", ""))
+fname = f"{safe}.png"
+open(f"[SCRATCH]/{fname}", "wb").write(img)
+open("[SCRATCH]/synthesize-art-prompt.txt", "w").write(prompt)
+print("PORTRAIT:", f"[SCRATCH]/{fname}", "| bytes:", len(img))
+PY
+```
+
+**Read the saved PNG yourself** to confirm it is a real portrait and
+caste-correct (a monk must not come back as a sword-bearing samurai; see the
+caste-awareness note in the `/chargen` skill). If it is wrong or a refusal /
+text-only image, fix the PROMPT and regenerate - never post-process around it.
+Then attach both the cropped avatar and the full-body embed:
+
+```bash
+cd /gm-assistant/webapp && python3 - <<'PY'
+import l7r, json, re
+from chargen import art, op
+h = json.load(open("[SCRATCH]/synthesize-handoff.json"))
+safe = re.sub(r"[^a-zA-Z0-9]", "", h["name"].replace(" ", ""))
+fname = f"{safe}.png"
+img = open(f"[SCRATCH]/{fname}", "rb").read()
+x, y, w, hh = art.get_headshot_crop(img)
+op.upload_avatar(art.crop_headshot(img, x, y, w, hh), fname)   # browser-sim path
+fid = op.upload_image(img, fname).get("id")
+body = op.get_character_body(h["id"]) or {}
+embed = f"[[File:{fid} | class=media-item-align-none | {fname}]]"
+op.update_character(h["id"], bio=(embed + "\r\n" + (body.get("bio") or "")).strip())
+print("Attached avatar + bio embed to", h["name"])
+PY
+```
+
+Avatars go via the browser-sim path (`op.upload_avatar`) - the OAuth API
+silently no-ops on avatar fields, so a "successful" OAuth call proves nothing.
+Report the portrait alongside the backstory.
