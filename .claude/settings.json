@@ -25,6 +25,28 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/batching-hooks.sh pretool",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read|Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/batching-hooks.sh posttool",
+            "timeout": 10
+          }
+        ]
       }
     ]
   }
