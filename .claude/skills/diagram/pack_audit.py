@@ -105,11 +105,22 @@ DOOR_FLUSH_TOL_PX: float = 1.5  # a door within this of a building edge reads as
 DOOR_NEAR_PX: float = 12.0  # a door candidate this close to an edge is TRYING to be in the wall (vs a deep interior marker)
 
 # --- structures vs wall ink (a structure may ABUT a wall, never occupy it) ---
-# Every roofed/built footprint colour, with NO area floor: the motivating defect was a 26x8 px
+# Every roofed/built footprint color, with NO area floor: the motivating defect was a 26x8 px
 # ENTRY PORCH laid across Ochiba's court divider (GM caught it, 2026-07-24), and the
 # MIN_BLDG_AREA_PX floor that keeps furniture out of the coverage math would have hidden it.
 # Porches, sheds and privies are small but they are still built things standing on the ground.
-STRUCTURE_FILLS: frozenset[str] = BUILDING_FILLS | BUILDING_PATTERNS
+UTILITY_FILLS: frozenset[str] = frozenset({"#7E726A", WELL_FILL})  # privies/sheds + well curbs
+STRUCTURE_FILLS: frozenset[str] = BUILDING_FILLS | BUILDING_PATTERNS | UTILITY_FILLS
+# Why UTILITY_FILLS had to be added (2026-07-25): the comment above already said privies count, but
+# the fill list did not contain the privy color, so all 23 utility rects in the pool went
+# unchecked - documented intent and implementation had silently drifted apart.
+#
+# And why this list stays ENUMERATED, where the occlusion check went deliberately fill-blind: the
+# two rules have opposite defaults. NOTHING may legitimately bury a foreground item, so there the
+# safe rule is "any later shape counts". But plenty of things legitimately occupy wall ink - gate
+# posts flank an opening, threshold and boundary stones mark a crossing, salt wards flank a door -
+# so "anything that is not ground" would flag every one of them. A structure is a ROOFED, standing
+# thing, and that has to be named rather than inferred.
 WALL_KIND: dict[str, str] = {WALL_STROKE: "compound wall", DIVIDER_STROKE: "court divider"}
 WALL_OVERLAP_MIN_PX: float = 0.5  # sub-pixel contact is a flush abutment + integer-emit rounding,
 # not a structure standing in the masonry. The pool's tightest LEGITIMATE clearance is 0.5 px
@@ -199,7 +210,7 @@ class ParsedPlan:
     wells: tuple[Rect, ...] = ()  # well-curb rects, for the 'well' group-label proximity check
     dark_rects: tuple[Rect, ...] = ()  # dark-filled rects, for the black-on-black legibility check
     door_rects: tuple[Rect, ...] = ()  # small dark rects (door glyphs), for the door-on-a-wall check
-    wall_bands: tuple[Rect, ...] = ()  # the INKED band of each wall/divider stroke (`fill` = its stroke colour)
+    wall_bands: tuple[Rect, ...] = ()  # the INKED band of each wall/divider stroke (`fill` = its stroke color)
     structures: tuple[Rect, ...] = ()  # every built footprint, NO area floor (porches/sheds count)
     fills: tuple[Rect, ...] = ()  # every drawn rect (any fill) - the fill-blind occluder set
     furniture: tuple[Rect, ...] = ()  # sub-building rects (privy, door, board, mat): foreground
@@ -299,7 +310,7 @@ def _wall_bands(text: str) -> list[Rect]:
 
     Parsed separately from `wall_segs` on purpose: those stay CENTERLINE segments because
     `_gate_openings` measures the gaps BETWEEN them, and widening them by the stroke would shrink
-    every measured opening by a stroke width. `fill` carries the stroke colour so the report can
+    every measured opening by a stroke width. `fill` carries the stroke color so the report can
     name which barrier was hit. Mode A walls are axis-aligned, so a run is classified by its
     longer axis; a `stroke-linecap="square"` run also inks half a stroke past each endpoint.
     """
