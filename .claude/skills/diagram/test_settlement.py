@@ -1338,6 +1338,28 @@ def test_ward_refuses_a_fence_laid_across_a_standing_torii():
         s.ward("samurai", [(300, 700), (900, 700)], gates=[])
 
 
+def test_open_seat_answers_where_a_feature_can_actually_stand():
+    # GM 2026-07-25: fitting one extra well into a packed quarter cost three regenerate-and-check
+    # cycles of hand-picked coordinates because nothing outside the engine could ask _fits where
+    # there was room. open_seat asks it directly, so its answer is what placement will actually take.
+    s = Settlement(1200, 1200, seed=3)
+    s.meta(name="T", scale="town")
+    s.block_polys.append([(390, 390), (500, 390), (500, 510), (390, 510)])  # the left half of the rect is no-build
+    seat = s.open_seat((400, 400, 600, 500), 20, 20)
+    assert seat is not None and s._fits(seat[0], seat[1], 20, 20)  # a seat the real placement path accepts
+    assert seat[0] >= 500 and not s._in_blocked(*seat)  # ... off the blocked ground, which a manifest-only scan could not have known
+
+    far = s.open_seat((400, 400, 600, 500), 20, 20, clear_of=[(600, 500)])  # stand away from an existing feature
+    assert far is not None and math.hypot(far[0] - 600, far[1] - 500) > math.hypot(seat[0] - 600, seat[1] - 500)
+
+    s.M["commons"] = [{"poly": [(490, 380), (620, 380), (620, 520), (490, 520)]}]  # grazed waste over the clear half
+    assert s.open_seat((400, 400, 600, 500), 20, 20, well=True) is None  # a wellhead may not stand in it...
+    assert s.open_seat((400, 400, 600, 500), 20, 20) is not None  # ... though anything else may
+
+    s.block_polys.append([(0, 0), (1200, 0), (1200, 1200), (0, 1200)])  # nowhere left at all
+    assert s.open_seat((400, 400, 600, 500), 20, 20) is None
+
+
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
     # the homestead solver rejects a house/yard/garden that lands on a channel/ditch/stream, but NOT the grove
     s = _crop_settlement()
