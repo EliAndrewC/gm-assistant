@@ -194,7 +194,7 @@ s.kiln(2282, 830)  # tile kiln OUTSIDE the east wall, east of the common burial 
 # LOW SE rim, downstream of the whole city. Sited below the last estate (2060,1855) so the stench
 # runs away from the samurai seats rather than through them; the workers commute out the SE gate,
 # which is a long walk and is meant to be (the indignity is the point, GM 2026-07-24).
-s.tanning_yard(1971, 1910, rot=270, pits=12, water="stream")  # ground stops AT the outfall bank; the staking frames reach into the water
+s.tanning_yard(1974, 1908, rot=270, pits=12, water="stream")  # ground stops AT the outfall bank (~0.8 ft clear, tanning_yard_clear_of_water); the staking frames reach into the water
 
 
 def grid(streets, width_ft=18):
