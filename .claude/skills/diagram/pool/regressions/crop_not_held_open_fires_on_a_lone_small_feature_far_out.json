@@ -1,0 +1,41 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1,
+  "W": 1200,
+  "H": 1400
+ },
+ "buildings": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 540,
+   "y": 500,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  },
+  {
+   "x": 520,
+   "y": 900,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "merchant"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "crop_not_held_open_by_one_feature"
+  ],
+  "source": "test_checks.py::test_crop_not_held_open_fires_on_a_lone_small_feature_far_out"
+ }
+}
