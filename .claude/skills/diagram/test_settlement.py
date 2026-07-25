@@ -2613,18 +2613,24 @@ def test_bund_junctions_pile_earth_only_where_bunds_actually_cross():
     before = len(s.out)
     s.bund_junctions(grid_plots, "j-paddies")
     drawn = "".join(s.out[before:])
-    # a 3x3 block of touching cells has exactly 4 interior 4-way crossings; its edge/T corners get nothing
-    assert drawn.count("<polygon") == 4, drawn.count("<polygon")
-    assert 'fill="#6E4520"' in drawn
-    # the nodes sit ON the interior crossings, at ~5 real ft across (never a legibility blob)
+    # A 3x3 block of touching cells has exactly 4 interior 4-way crossings, and each crossing is piled
+    # as a SEPARATE fillet per quadrant (never one disc centered on the node - a repeated stamp reads
+    # more machine-made than the sharp cross it replaces), with about a quarter of quadrants left bare.
+    # So: more than one mark per crossing, fewer than all 16, and none at all on the edge/T corners.
     import re as _re
 
-    xs = [float(v.split(",")[0]) for v in _re.findall(r"points=\"([^\"]+)\"", drawn) for v in v.split(" ")]
-    assert min(xs) > 130 and max(xs) < 230, (min(xs), max(xs))  # the two interior x lines are 140 and 180
-    for pts in _re.findall(r"points=\"([^\"]+)\"", drawn):
+    marks = _re.findall(r'points="([^"]+)"', drawn)
+    assert 4 < len(marks) <= 16, len(marks)
+    assert 'fill="#6E4520"' in drawn
+    for pts in marks:
         vs = [tuple(float(q) for q in v.split(",")) for v in pts.split(" ")]
+        # every mark is a fillet AT one of the four interior crossings (140/180 x 140/180)
+        assert any(max(abs(v[0] - jx) for v in vs) < 9 and max(abs(v[1] - jy) for v in vs) < 9 for jx in (140.0, 180.0) for jy in (140.0, 180.0)), pts
         span = max(max(v[i] for v in vs) - min(v[i] for v in vs) for i in (0, 1))
-        assert 2.5 <= span <= 8.0, span  # ~4-6 ft node, jittered - not inflated
+        assert 0.5 <= span <= 9.0, span  # a few feet of piled earth, jittered - not a legibility blob
+    # the quadrants really do differ: the marks are not all the same size (that was the stamped look)
+    areas = sorted(max(max(float(v.split(",")[i]) for v in pts.split(" ")) - min(float(v.split(",")[i]) for v in pts.split(" ")) for i in (0, 1)) for pts in marks)
+    assert areas[-1] > areas[0] * 1.5, areas
     # deterministic: the same field redraws identically (a salted str hash() would break this)
     s2 = Settlement(400, 400)
     s2.meta(name="j", scale="hamlet", ftpx=1)
