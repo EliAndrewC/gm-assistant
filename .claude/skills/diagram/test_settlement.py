@@ -415,6 +415,28 @@ def test_forest_patch_uses_default_label_position():
     assert s.M["forest_patches"]
 
 
+def test_tree_stand_canopy_is_deferred_and_never_drawn_over_a_building_or_well():
+    # the canopy is QUEUED at forest_patch() time and drawn at flush, so it is filtered against the
+    # COMPLETE map: a building and a well placed AFTER the wood still end up with clear roofs.
+    s = _town()
+    s.forest_patch([(300, 300), (900, 300), (900, 900), (300, 900)])
+    assert not s.M["tree_crowns"]  # nothing drawn yet - only the litter floor is down
+    s.building(600, 600, 60, 40, "merchant", 0)
+    s.well(500, 500)
+    s.flush_tree_stands()
+    crowns = s.M["tree_crowns"]
+    assert crowns  # the stand itself did draw
+    b = s.M["buildings"][-1]
+    wl = s.M["wells"][-1]
+    for i in range(0, len(crowns), 3):
+        x, y, r = crowns[i], crowns[i + 1], crowns[i + 2]
+        assert not (abs(x - b["x"]) < b["w"] / 2 + r and abs(y - b["y"]) < b["h"] / 2 + r)
+        assert math.hypot(x - wl["x"], y - wl["y"]) >= r + wl.get("vr", wl["r"])
+    n = len(crowns)
+    s.flush_tree_stands()  # idempotent - the queue is drained
+    assert len(s.M["tree_crowns"]) == n
+
+
 def test_fringe_trees_keep_off_the_crop():
     # the wood's advance-growth fringe seeds on waste ground, never in a worked field
     s = _town()

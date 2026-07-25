@@ -373,6 +373,31 @@ def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, flo
 # PLANK_ABUTMENT - keep in sync). A footplank is worth building only if BOTH banks reach ground someone
 # walks to; the placement engine (channel_footbridges) enforces it, these checks re-verify from the manifest.
 FOREST_REVEAL_FT = 110.0  # mirrors settlement.FOREST_REVEAL_FT - how deep the crop reveals a canvas-filling wood
+# Mirrors settlement._CANOPY_STRUCT_KEYS (keep in sync): every ROOFED structure a tree may not be drawn on.
+CANOPY_STRUCT_KEYS = (
+    "houses",
+    "buildings",
+    "storehouses",
+    "flophouses",
+    "byres",
+    "farm_sheds",
+    "religious",
+    "shrines",
+    "manors",
+    "ministries",
+    "inspection_stations",
+    "merchant_estates",
+    "fire_towers",
+    "drum_towers",
+    "breweries",
+    "pawnshops",
+    "bathhouses",
+    "oil_presses",
+    "kilns",
+    "mausoleums",
+    "gate_structs",
+    "wall_towers",
+)
 FOOT_ABUTMENT = 6.0  # deck = local ditch width + this abutment (settlement.PLANK_ABUTMENT)
 FOOT_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
 FOOT_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the village (a place worth crossing to)
@@ -844,6 +869,7 @@ DEFAULT_MANIFEST: Manifest = {
     "shrine": None,
     "forest": None,
     "forest_edge": None,
+    "tree_crowns": [],
     "storehouses": [],
     "flophouses": [],
     "road": None,
@@ -1555,6 +1581,40 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
         if not ok:
             fails.append(name)
+
+    # EVERY canopy crown the map draws, as (x, y, r) - forest/copse stands, their fringes, the fengshui
+    # grove clumps and the per-house yashikirin belts all record here (settlement._record_crowns). Stored
+    # flat because a to-scale map draws thousands. This is the DRAWN geometry, not the reserved area, so
+    # it is what the "nothing is drawn under a tree" checks measure.
+    _tc = M.get("tree_crowns") or []
+    crowns = [(_tc[i], _tc[i + 1], _tc[i + 2]) for i in range(0, len(_tc) - 2, 3)]
+
+    # NO TREE IS DRAWN ON A ROOF (GM 2026-07-25). A crown over a building hides the building - the map
+    # loses a structure the reader is meant to see - so no drawn crown may overlap any ROOFED footprint.
+    # This is stricter than the old reserved-area rules, which let a grove "hug the eaves": the fix at
+    # placement is per-crown (the stand THINS around a building rather than retreating from it), so the
+    # check has to read the crowns too. Open-air yards/gardens are deliberately out of scope - they have
+    # their own sun-corridor rules, and a crown over a yard corner is a real thing.
+    if crowns:
+        under = []
+        for k in CANOPY_STRUCT_KEYS:
+            for o in M.get(k) or []:
+                hw, hh = o.get("vw", o["w"]) / 2, o.get("vh", o["h"]) / 2  # the DRAWN box
+                if o.get("rot"):
+                    hw = hh = math.hypot(hw, hh)  # mirrors settlement._canopy_keepouts
+                for tx, ty, tr in crowns:
+                    dx, dy = max(abs(tx - o["x"]) - hw, 0.0), max(abs(ty - o["y"]) - hh, 0.0)
+                    if dx * dx + dy * dy < tr * tr:
+                        under.append((k, round(o["x"]), round(o["y"])))
+                        break
+        check(
+            "structures_clear_of_trees",
+            not under,
+            f"{len(under)} building(s) sit UNDER a drawn tree crown: {under[:4]} - a tree drawn on a roof "
+            f"erases the building; the grove/stand must THIN around it (settlement._crown_covers filters "
+            f"every crown at draw time, and a wood drawn BEFORE the buildings blocks its canopy reach so "
+            f"later placement stays out from under it)",
+        )
 
     # Every HARD feature the frame is meant to CONTAIN must actually lie INSIDE the rendered window. A deferred
     # feature placed AFTER crop_to_content - a set-apart back-slope graveyard, an outlying shrine, the wells -
@@ -4044,6 +4104,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     or any(abs(wx - gx) < gw / 2 + vr and abs(wy - gy) < gh / 2 + vr for gx, gy, gw, gh in _grects)
                     or (_forest and point_in_poly(wx, wy, _forest))
                     or any(point_in_poly(wx, wy, p) for p in _wl_polys)
+                    # ... and no DRAWN crown may reach the head either (the reserved-area tests above are
+                    # coarse: a grove's recorded rect/clump is where its trees MAY stand, tree_crowns is
+                    # where they actually DO). See structures_clear_of_trees for the same rule on roofs.
+                    or any(math.hypot(wx - tx, wy - ty) < vr + tr for tx, ty, tr in crowns)
                 ):
                     on_trees.append((round(wx), round(wy)))
             check(

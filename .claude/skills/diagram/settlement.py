@@ -642,6 +642,9 @@ class Settlement:
         self._pending_yards: list[
             tuple[float, float, float, float, float, Any]
         ] = []  # stable-yard scatters queued at stables()/animal_ground() time, DRAWN at crop time when every way/footprint exists (GM 2026-07-24: a yard drawn at stables-time could not see later-drawn streets, so its furniture landed on them)
+        self._pending_stands: list[
+            tuple[Poly, int, bool]
+        ] = []  # tree-stand canopies queued at forest()/forest_patch() time, DRAWN at crop time when every building + well exists (see flush_tree_stands)
         self.top: list[str] = []  # deferred TOP layer (gate furniture, torii, kido) - over roads/buildings
         self.toplabels: list[str] = []  # deferred LABEL layer - the very last thing drawn, so TEXT is never
         #                           covered by anything (a label must always be fully readable)
@@ -725,6 +728,7 @@ class Settlement:
             "shrine": None,
             "forest": None,
             "forest_edge": None,
+            "tree_crowns": [],
             "road": None,
             "wall": None,
             "gate": None,
@@ -931,6 +935,7 @@ class Settlement:
     # image is undifferentiated crowns (GM 2026-07-25: "only enough to make it clear the forest is
     # there"). Bounded copses (forest_patch) are framed whole - their shape is the point.
     FOREST_REVEAL_FT = 110.0
+    CANOPY_PAD = 0.6  # placement-only clearance so a kept crown survives the manifest's 0.1px rounding (see _crown_covers)
 
     _CROP_HARD = (
         "houses",
@@ -995,6 +1000,7 @@ class Settlement:
         calls `s.crop_city()` bare and adds only the farm-band override for its satellite-less flank
         (which flank that is varies by city; both current cities happen to use west=100)."""
         self.flush_stable_yards()  # yards draw HERE, seeing the complete map (GM 2026-07-24); their labels must exist before the frame is computed
+        self.flush_tree_stands()  # ... and so does every wood's canopy, so no crown lands on a building placed after it
         hx: list[float] = []
         hy: list[float] = []
         wallp = self.M.get("wall")
@@ -1037,6 +1043,7 @@ class Settlement:
         (We used to extend the frame to preserve 2/3 of a trailing commons, but the GM wants the frame tight to
         the real content - a graveyard, the pond - never held open by empty back-slope grazing, so the commons
         now clips like the marsh instead of dragging the frame out.)"""
+        self.flush_tree_stands()  # the woods' canopy draws HERE, seeing the complete map (see flush_tree_stands)
         hx: list[float] = []
         hy: list[float] = []
         for k in self._CROP_HARD:
@@ -3547,17 +3554,39 @@ class Settlement:
         crowns are NOT clipped, so they break the outline the way a real wood does (a clipped stand
         reads as a ruled terrain boundary, which is the exact defect this replaced). `floor` is
         therefore drawn INSET from `poly` - its hard edge has to sit under the canopy - and
-        `outliers` scatters a thinning fringe of advance growth on the cut-over margin outside,
-        each registered as a block poly so later placement never drops a building on one."""
-        xs = [p[0] for p in poly]
-        ys = [p[1] for p in poly]
-        step = self.px(self.CANOPY_SPACING_FT)
-        rad = self.px(self.CANOPY_R_FT)
+        `outliers` scatters a thinning fringe of advance growth on the cut-over margin outside.
+
+        The FLOOR is drawn here; the CROWNS are QUEUED and drawn at crop time (flush_tree_stands),
+        the same deferral the stable yards use. A wood is usually drawn EARLY - it is terrain, and
+        the settlement is sited against it - but "no crown on a roof" can only be honored against
+        buildings that already exist, and half the map is placed after the wood. Deferring the
+        canopy alone (the litter floor stays down where it belongs, under everything) lets the
+        filter see the COMPLETE map. Labels are unaffected: they live in the topmost layer."""
         # the FLOOR: shaded leaf litter and understory glimpsed between the crowns. Not a terrain
         # wash - under a closed canopy hardly any of it shows, and its outline is buried under the
         # trees whose centers stand inside it.
         d = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in (floor or poly)) + ' Z'
         self.add(f'<path d="{d}" fill="{self.FOREST_FLOOR}"/>')
+        self._pending_stands.append((list(poly), seed, outliers))
+
+    def flush_tree_stands(self) -> None:
+        """Draw the canopy of every queued tree stand (see _tree_stand). Runs at CROP time, so each
+        crown is tested against the COMPLETE map - every building and wellhead, not just the ones
+        that happened to precede the wood - and a crown that would cover one is simply not drawn:
+        the stand THINS around the structure instead of retreating from it. Deterministic (each
+        stand re-seeds its own RNG, state saved/restored), so deferring ripples nothing. Idempotent;
+        unit tests call it directly after forest()/forest_patch()."""
+        pending, self._pending_stands = self._pending_stands, []
+        for poly, seed, outliers in pending:
+            self._draw_stand(poly, seed, outliers)
+
+    def _draw_stand(self, poly: Poly, seed: int, outliers: bool) -> None:
+        """One queued stand's canopy: the crowns inside `poly` plus (optionally) its fringe outside,
+        each filtered so no tree is drawn on a roof or a wellhead."""
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        step = self.px(self.CANOPY_SPACING_FT)
+        rad = self.px(self.CANOPY_R_FT)
         st = random.getstate()
         random.seed(seed)
         trees: list[tuple[float, float, float, str]] = []
@@ -3573,12 +3602,15 @@ class Settlement:
                     trees.append((tx, ty, rad * (random.uniform(1.05, 1.4) if big else random.uniform(0.75, 1.05)), kind))
                 xx += step
             yy += step
-        self.add(''.join(self._crowns(trees)))
+        # no crown is drawn on a roof or a wellhead - and by flush time that means EVERY one of them
+        reach = rad * 1.4
+        krect, kcirc = self._canopy_keepouts((min(xs) - reach, min(ys) - reach, max(xs) + reach, max(ys) + reach))
+        self.add(''.join(self._crowns([t for t in trees if not self._crown_covers(t[0], t[1], t[2], krect, kcirc, self.CANOPY_PAD)])))
         if outliers:
-            self.add(''.join(self._crowns(self._stand_fringe(poly, step, rad))))
+            self.add(''.join(self._crowns(self._stand_fringe(poly, step, rad, krect, kcirc))))
         random.setstate(st)
 
-    def _stand_fringe(self, poly: Poly, step: float, rad: float) -> list[tuple[float, float, float, str]]:
+    def _stand_fringe(self, poly: Poly, step: float, rad: float, krect: Any, kcirc: Any) -> list[tuple[float, float, float, str]]:
         """The cut-over FRINGE of a wood: scattered advance growth thinning out past the tree line,
         kept off every bit of ground already spoken for. Advance growth comes in THICKETS, not as an
         even sprinkle, so a coarse position-seeded mask (~5 crowns across) decides which stretches of
@@ -3604,18 +3636,19 @@ class Settlement:
                 thicket = 1.0 if self._hjit(round(tx / (step * 5)), round(ty / (step * 5)), 31.0) > 0.42 else 0.12
                 if gap > band or keep > thicket * (1 - gap / band) ** 1.4:  # thins out with distance from the wood
                     continue
-                if self._fringe_blocked(tx, ty, r):
+                if self._fringe_blocked(tx, ty, r) or self._crown_covers(tx, ty, r, krect, kcirc, self.CANOPY_PAD):
                     continue
                 out.append((tx, ty, r, kind))
-                self.block_polys.append([(tx - r, ty - r), (tx + r, ty - r), (tx + r, ty + r), (tx - r, ty + r)])
             yy += step * 1.7
         return out
 
     def _crowns(self, trees: Sequence[tuple[float, float, float, str]]) -> list[str]:
         """SVG for a set of (x, y, r, kind) canopy crowns, drawn back-to-front so the stand layers
         with depth. One circle per tree (plus a dark apex for a conifer) - the same two-tone crown
-        the grove clumps use, so a wood and a windbreak read as the same kind of thing."""
+        the grove clumps use, so a wood and a windbreak read as the same kind of thing. Records every
+        crown it emits (M['tree_crowns'])."""
         out: list[str] = []
+        self._record_crowns([(t[0], t[1], t[2]) for t in trees])
         for tx, ty, r, kind in sorted(trees, key=lambda t: t[1]):
             col = "#4A6733" if kind == "conifer" else ("#6E8B43" if (int(tx) + int(ty)) % 2 else "#7C9A4E")
             out.append(f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="{r:.1f}" fill="{col}" stroke="#3C5526" stroke-width="0.7"/>')
@@ -5069,6 +5102,12 @@ class Settlement:
             kind = "bamboo" if roll < b_th else ("conifer" if roll < c_th else "broadleaf")
             size = random.uniform(1.25, 1.7) if random.random() < 0.25 else random.uniform(0.72, 1.05)  # a few emergent crowns over many small
             items.append((px, py, kind, size))
+        # NO CROWN ON A ROOF OR A WELLHEAD (GM 2026-07-25). A yashikirin belt is drawn hard against the
+        # house it shelters and a village copse threads between the dwellings, so the stand is filtered
+        # tree-by-tree rather than pushed back as a whole: it THINS where it would cover a building and
+        # keeps its shape everywhere else. Crown centers below are relative to (cx, cy); keep-outs absolute.
+        krect, kcirc = self._canopy_keepouts((cx - w / 2 - 9 * bs, cy - h / 2 - 9 * bs, cx + w / 2 + 9 * bs, cy + h / 2 + 9 * bs))
+        drawn: list[tuple[float, float, float]] = []
         g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
         # Draw back-to-front so the stand layers with depth. Each CROWN is one tree at real size (~5-6 m; a few
         # emergents larger) - that is the to-scale reading, and it is unchanged. We deliberately DROP two kinds
@@ -5079,16 +5118,23 @@ class Settlement:
         # SVG + rsvg raster roughly halve.
         for px, py, kind, s in sorted(items, key=lambda t: t[1]):
             if kind == "bamboo":  # one compact culm + leafy top (symbolic, was 6)
+                if self._crown_covers(cx + px, cy + py - 4 * bs, 3.0 * bs, krect, kcirc, self.CANOPY_PAD):
+                    continue
+                drawn.append((cx + px, cy + py - 4 * bs, 3.0 * bs))
                 g.append(f'<line x1="{px:.1f}" y1="{py + 4 * bs:.1f}" x2="{px:.1f}" y2="{py - 4 * bs:.1f}" stroke="#88A646" stroke-width="{1.4 * bs:.2f}"/>')
                 g.append(f'<circle cx="{px:.1f}" cy="{py - 4 * bs:.1f}" r="{3.0 * bs:.1f}" fill="#BBD06A"/>')
                 continue
             rr = (4.6 if kind == "conifer" else 4.0) * s * bs  # one crown = one tree, sized to a real ~5-6 m canopy
             col = "#496733" if kind == "conifer" else random.choice(["#7C9A4E", "#6E8B43"])
+            if self._crown_covers(cx + px, cy + py - 3 * bs, rr, krect, kcirc, self.CANOPY_PAD):
+                continue
+            drawn.append((cx + px, cy + py - 3 * bs, rr))
             g.append(f'<circle cx="{px:.1f}" cy="{py - 3 * bs:.1f}" r="{rr:.1f}" fill="{col}" stroke="#3C5526" stroke-width="0.8"/>')
             if kind == "conifer":
                 g.append(f'<circle cx="{px:.1f}" cy="{py - 3 * bs:.1f}" r="{rr * 0.4:.1f}" fill="#364D22" opacity="0.55"/>')  # dense dark apex
         g.append('</g>')
         self.add(''.join(g))
+        self._record_crowns(drawn)
         random.setstate(st)
 
     def village_grove(self, poly: Any, role: str = "windbreak", dense: bool = True) -> int:
@@ -5239,6 +5285,69 @@ class Settlement:
     # to their edge, but nobody sweeps a 30 ft apron around a vegetable bed)
     _HALO_STRUCT_KEYS = ("houses", "buildings", "storehouses", "flophouses", "byres", "farm_sheds", "religious", "shrines", "manors", "ministries", "inspection_stations")
     _HALO_PLOT_KEYS = ("gardens", "threshing_yards")
+    # NO TREE IS DRAWN ON A ROOF OR A WELLHEAD (GM 2026-07-25). Every ROOFED structure on the map,
+    # plus the wellheads - the keep-out that every canopy crown is tested against (_crown_covers).
+    # Open-air work grounds (threshing yards, kitchen gardens, tanning/dye yards, cremation grounds)
+    # are deliberately NOT here: they have their own sun-corridor and clearance rules, and a tree
+    # overhanging the CORNER of a yard is a real thing, while a tree drawn on a roof is just a
+    # building you can no longer see.
+    _CANOPY_STRUCT_KEYS = _HALO_STRUCT_KEYS + (
+        "merchant_estates",
+        "fire_towers",
+        "drum_towers",
+        "breweries",
+        "pawnshops",
+        "bathhouses",
+        "oil_presses",
+        "kilns",
+        "mausoleums",
+        "gate_structs",
+        "wall_towers",
+    )
+
+    def _canopy_keepouts(self, bbox: tuple[float, float, float, float]) -> tuple[list[tuple[float, float, float, float]], list[tuple[float, float, float]]]:
+        """Every drawn BUILDING footprint (as x, y, half-w, half-h) and WELLHEAD (as x, y, r) near `bbox` -
+        the keep-out a tree CROWN may not cover. Distinct from _urban_keepouts, the 30 ft swept halo the
+        ground-cover scatters honor: a tree may stand hard against a wall (real groves hug the eaves), it
+        may only not be DRAWN ON the roof - so the halo here is zero. A rotated structure is covered
+        conservatively by its half-diagonal square. Prefiltered to `bbox`, since the caller tests every
+        crown of a stand against this list."""
+        bx0, by0, bx1, by1 = bbox
+        rects: list[tuple[float, float, float, float]] = []
+        for k in self._CANOPY_STRUCT_KEYS:
+            for o in self.M.get(k, []) or []:
+                # the DRAWN box (a location marker like the kosatsuba draws at a legibility floor
+                # above its true footprint, and overlap here is about drawn pixels - same reason the
+                # wells use vr over r)
+                hw, hh = o.get("vw", o["w"]) / 2, o.get("vh", o["h"]) / 2
+                if o.get("rot"):
+                    hw = hh = math.hypot(hw, hh)
+                if o["x"] + hw >= bx0 and o["x"] - hw <= bx1 and o["y"] + hh >= by0 and o["y"] - hh <= by1:
+                    rects.append((o["x"], o["y"], hw, hh))
+        circles = [(o["x"], o["y"], o.get("vr", o["r"])) for o in self.M.get("wells", []) if bx0 <= o["x"] <= bx1 and by0 <= o["y"] <= by1]
+        return rects, circles
+
+    @staticmethod
+    def _crown_covers(x: float, y: float, r: float, rects: Sequence[tuple[float, float, float, float]], circles: Sequence[tuple[float, float, float]], pad: float = 0.0) -> bool:
+        """Whether a canopy crown of radius `r` centered at (x, y) would cover any keep-out from
+        _canopy_keepouts - i.e. whether drawing this one tree would hide a building or a wellhead.
+        `pad` is a placement-side margin ONLY: the manifest rounds crown coordinates to 0.1 px, so a
+        crown drawn exactly TANGENT to a wall can round to a hair of overlap and fire the check that
+        re-reads it. Drawing passes a small pad so a kept crown is unambiguously clear; the check
+        itself stays exact (pad 0), which is what keeps its teeth."""
+        for cx, cy, hw, hh in rects:
+            dx, dy = max(abs(x - cx) - hw, 0.0), max(abs(y - cy) - hh, 0.0)
+            if dx * dx + dy * dy < (r + pad) ** 2:
+                return True
+        return any((x - wx) ** 2 + (y - wy) ** 2 < (r + pad + wr) ** 2 for wx, wy, wr in circles)
+
+    def _record_crowns(self, crowns: Sequence[tuple[float, float, float]]) -> None:
+        """Record drawn canopy crowns as a flat [x, y, r, ...] run in M['tree_crowns'] - the manifest
+        record of EVERY tree this map draws, which is what structures_clear_of_trees / wells_clear_of_trees
+        test. Flat rather than per-tree dicts because a to-scale map draws thousands of them (see
+        settlements.md, 'No tree is drawn on a roof')."""
+        for x, y, r in crowns:
+            self.M["tree_crowns"] += [round(x, 1), round(y, 1), round(r, 1)]
 
     def _urban_keepouts(self, bbox: tuple[float, float, float, float]) -> tuple[list[tuple[float, float, float, float]], list[tuple[float, float, float]]]:
         """Axis-aligned keep-out rects + wellhead keep-out circles for the urban-clearance halo (see the
@@ -9249,6 +9358,7 @@ class Settlement:
         GROVES (the back layer), (2) after a south-nudge relaxation, draw the yards/gardens/houses on top."""
         survivors: list[Any] = []
         bundled: list[Any] = []
+        arms: list[tuple[float, float, float, float, tuple[int, int]]] = []
         for rec in self._pending_farmsteads:
             geom = rec.get("geom")
             if geom is None:  # abandoned ruin / dispersed headman: lone house
@@ -9259,7 +9369,7 @@ class Settlement:
                 if key not in geom:  # nucleated bundle: no per-house grove
                     continue
                 cx, cy, w, h = geom[key]
-                self._draw_grove(cx, cy, w, h, face)
+                arms.append((cx, cy, w, h, face))
                 self.M["groves"].append({"x": round(cx, 1), "y": round(cy, 1), "w": w, "h": h, "rot": 0, "of": [rec["x"], rec["y"]], "face": list(face)})
                 self.grove_rects.append((cx, cy, w, h))
             bundled.append(rec)
@@ -9270,6 +9380,14 @@ class Settlement:
             self._attach_yard(rec["x"], rec["y"], geom["yard"])
             self._attach_garden(rec["x"], rec["y"], geom["gardens"])
             self.house(rec["x"], rec["y"], rec["w"], rec["h"], rec["kind"], rec["rot"], shed=rec["shed"], shed_side=rec.get("shed_side", "W"))
+        # The yashikirin arms DRAW LAST, after every house/shed of this pass is down (GM 2026-07-25).
+        # They used to draw first, as a back layer the house painted over - which hid the overlap
+        # rather than preventing it, and left crowns geometrically under roofs. Drawing them after
+        # means _draw_grove's keep-out sees the houses, so the belt THINS off the walls instead: no
+        # tree is drawn over a building anywhere on the map, by one rule rather than by z-order.
+        # (The arm rects themselves are recorded above, before _relax_gardens_south, which needs them.)
+        for cx, cy, w, h, face in arms:
+            self._draw_grove(cx, cy, w, h, face)
         self.M["houses"] = [h for h in self.M["houses"] if h.get("on_dike")] + survivors  # dike-top houses (dike_top_houses) are not pending farmsteads - keep them
         return len(survivors)
 
@@ -9638,6 +9756,10 @@ class Settlement:
         return None
 
     def finish(self, basepath: str, render: bool = True, png_width: int = 2600) -> int:
+        # BACKSTOP for the deferred canopy: crop_to_content / crop_city normally flush it, but a map
+        # that frames to the bare canvas never calls either (Hoshizora), and a queued stand that is
+        # never flushed is a wood with no trees. Idempotent, so the usual crop-time flush still wins.
+        self.flush_tree_stands()
         if getattr(self, "_road_label", None):
             text, lx, ly = self._road_label
             rd = self.M.get("road") or []
