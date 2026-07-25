@@ -103,7 +103,24 @@ are famously confusingly similar. Within one set:
 
 - No two names may start with the same letter.
 - No two names may rhyme (heuristic: a shared trailing run of 3+ letters).
+  - **Exception for "-ko" names**: when both names end in `-ko`, the threshold
+    is 4 letters, not 3. The shared tail must reach past the vowel to the
+    consonant opening the penultimate syllable - that is, the last *two*
+    syllables must match rather than just the `ko`. Yuriko/Mariko and
+    Michiko/Sachiko still rhyme; Yuriko/Reiko and Haruko/Yasuko do not.
 - No two names may be only 1 letter different from each other.
+
+**Why "-ko" is special** (GM rule, 2026-07-25): `-ko` is by far the most common
+ending for female given names, so at a flat 3-letter threshold every `-ko` name
+collides with every other one sharing its preceding vowel. The whole `-ko` space
+collapses into five rhyme classes (`-ako`, `-eko`, `-iko`, `-oko`, `-uko`),
+which rejects roughly a fifth of the female pool per name already chosen. In
+practice this made mixed-gender sets impossible past four or five women: a
+Reiji-domain roster with Yuriko, Masako, and Okayo already in it left **zero**
+valid female candidates in the 100-name pool. The 4-letter threshold restores
+useful headroom while still catching the genuinely confusable pairs. The change
+is purely a relaxation - it can only turn a conflict into a non-conflict, so
+name sets generated before it remain valid and were deliberately left alone.
 
 `pick_name.py` enforces this automatically for batch picks via
 `similarity.set_conflict()`. When generating names directly (fallback path) or

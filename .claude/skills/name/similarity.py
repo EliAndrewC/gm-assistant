@@ -39,21 +39,45 @@ def is_too_similar(candidate, existing_names):
     return False
 
 
+# Minimum shared trailing run for two names to count as rhyming.  The "-ko"
+# case gets its own, higher threshold - see the rhymes() docstring for why.
+RHYME_MIN_TAIL = 3
+KO_RHYME_MIN_TAIL = 4
+
+
 def rhymes(a, b):
     """Heuristic rhyme check for romanized names.
 
     Two names count as rhyming when they share a trailing run of 3+ letters
-    (Hitomi/Naomi, Haruko/Yasuko). In romaji that captures the final
-    syllable-plus-vowel cluster, which is what makes two Japanese names land
-    on the same beat when spoken. A 2-letter shared tail (Kazuki/Hideki) is
-    below the confusion threshold - most female names end in one of a handful
-    of standard suffixes, so 2 letters would reject nearly everything.
+    (Hitomi/Naomi). In romaji that captures the final syllable-plus-vowel
+    cluster, which is what makes two Japanese names land on the same beat when
+    spoken. A 2-letter shared tail (Kazuki/Hideki) is below the confusion
+    threshold - most names end in one of a handful of standard suffixes, so 2
+    letters would reject nearly everything.
+
+    THE "-ko" EXCEPTION (GM rule, 2026-07-25). When BOTH names end in "ko",
+    the threshold rises to 4. "-ko" is by far the most common ending for
+    female given names, so at a 3-letter tail the entire "-ko" space collapses
+    into just five rhyme classes - "-ako", "-eko", "-iko", "-oko", "-uko" -
+    and every "-ko" name conflicts with every other one sharing its preceding
+    vowel. In practice that rejected roughly a fifth of the female pool per
+    name already chosen, and a set with five women in it could exhaust the
+    100-name pool outright (observed 2026-07-25: zero candidates remained for
+    a sixth). Requiring 4 letters forces the shared tail past the vowel to the
+    consonant opening the penultimate syllable - i.e. the last TWO syllables
+    must match, not merely the "ko". So Yuriko/Mariko and Michiko/Sachiko
+    still rhyme, while Yuriko/Reiko and Haruko/Yasuko no longer do.
+
+    Note this is purely a relaxation: it can only ever turn a True into a
+    False. No set of names that was valid under the old rule becomes invalid
+    under this one, so existing rosters need no revisiting.
     """
     a, b = a.lower(), b.lower()
     i = 0
     while i < min(len(a), len(b)) and a[-1 - i] == b[-1 - i]:
         i += 1
-    return i >= 3
+    both_end_in_ko = a.endswith("ko") and b.endswith("ko")
+    return i >= (KO_RHYME_MIN_TAIL if both_end_in_ko else RHYME_MIN_TAIL)
 
 
 def set_conflict(a, b):
