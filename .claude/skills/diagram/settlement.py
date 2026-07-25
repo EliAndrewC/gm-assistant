@@ -832,6 +832,38 @@ KOSATSUBA_MARKER_MIN_PX = 11.0
 # the city wellhead glyph (~8 px), which is the smallest thing on a city map that reliably reads.
 
 
+BOUNDARY_MARKER_MIN_PX = 7.0
+# Long-axis floor in px for the DRAWN dosojin stone (see Settlement.boundary_marker). A real
+# roadside boundary stone is ~3 ft, which draws 3 px at town grain and 1 px at city grain - sub-glyph
+# at EVERY tier, so this is a location marker in the wells' sense, never a size claim. 7 px is below
+# the wellhead glyph (~8 px) on purpose: the stone should read as the smallest deliberate mark on the
+# map, because that is what it is.
+
+EXECUTION_GROUND_DEAD_CLEAR_FT = 400.0
+# Minimum real feet between an execution ground and any funerary feature (cemetery, cremation ground,
+# ossuary, mausoleum), enforced by execution_ground_clear_of_the_dead.
+#
+# THIS NUMBER IS A MAP-LEGIBILITY FLOOR, NOT A HISTORICAL MEASUREMENT, and saying so is the
+# disclosure Principle XII's calibrated-liberty clause requires. In reality the two were not
+# separated by feet at all: the executed went into a pit AT the execution ground (Kozukappara's
+# burials were haphazard enough that a memorial hall was founded beside it in 1667 for exactly that
+# reason), while the community's own dead went to temple graveyards elsewhere in the city entirely -
+# typically a different road out of town, often a mile off. Our maps are a few thousand feet across
+# and cannot hold that, so we compress it and keep the RELATIVE ordering honest instead: the
+# execution ground is always the further-out, more polluted of the two. 150 ft is one band above the
+# project's existing pollution constant (the cremation ground and tanning yard demand 120 ft clear of
+# dwellings) because 120 ft separates polluted ground from CLEAN ground, whereas two polluted grounds
+# at that spacing read as one precinct - which is the exact conflation this rule exists to prevent.
+#
+# RAISED 150 -> 400 by the Principle XII artifact review (2026-07-25), which is exactly the kind of
+# thing that review exists to catch: Nagahara's ground passed the 150 ft rule at 225 ft and STILL
+# read, in the rendered PNG, as part of the burial cluster next door. 150 ft was derived by analogy
+# to the dwelling-separation constant; 400 ft is derived from the picture - it is the distance at
+# which, at the coarsest grain we draw (3 ft/px, so 133 px), the two grounds are unmistakably two
+# places. The automated check proved internal consistency and the number was still wrong; only
+# looking at the artifact could show that.
+# WHY (full): settlements.md "Execution ground".
+
 KIDO_TOWER_KEEPCLEAR = 62.0
 # px of rampart kept tower-free around a `tower_skip` spot - where a ward FENCE meets the city wall
 # (its kido ward-gate stands there; a mamian's footprint would collide the junction). Placement
@@ -1132,6 +1164,9 @@ class Settlement:
             "mausoleums": [],
             "cremation_grounds": [],
             "ossuaries": [],
+            "punishment_spots": [],
+            "execution_grounds": [],
+            "boundary_markers": [],
             "moat_layer": None,
             "fire_towers": [],
             "kosatsuba": [],
@@ -1345,6 +1380,9 @@ class Settlement:
         "mausoleums",
         "cremation_grounds",
         "ossuaries",
+        "punishment_spots",
+        "execution_grounds",
+        "boundary_markers",
         "forest_patches",
         "pastures",
     )
@@ -1362,6 +1400,11 @@ class Settlement:
         "cremation_grounds",
         "ossuaries",
         "mausoleums",
+        # the justice works are KEPT satellites too: an execution ground that clipped at the frame
+        # would read as "somewhere off that way", which is the one thing its siting is not
+        "punishment_spots",
+        "execution_grounds",
+        "boundary_markers",
         "religious",
         "ministries",
         "inspection_stations",
@@ -4924,6 +4967,98 @@ class Settlement:
         self.kosatsuba(x, y, rot, label=label)
         return (x, y)
 
+    def place_punishment_spot(self, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:
+        """AUTO-SITE the punishment ground on a street verge at the busiest clear node - the notice
+        board's sibling, and for the same reason: both institutions are sited by FOOT TRAFFIC, so
+        both want the same probe rather than a hand-picked rect. (Hand rects were tried first on
+        three maps and all three failed `punishment_spot_by_the_traffic` the same way: `open_seat`
+        ties toward the rect's CENTER, which is the open ground behind the frontage, precisely where
+        this feature must not be.) Deterministic - draws no RNG.
+
+        Reads the SAME manifest route fields the validator reads (the dev-loop same-source doctrine),
+        including `town_streets`, which the board's village-tier probe does not need. Keeps the spot
+        inside the rampart where there is one - the display faces the town, not the road out; that is
+        the execution ground's job. No-op under meta(punishment_spot=False). Returns the spot, or
+        None when no verge fits (the presence check then fires - place by hand)."""
+        if not self.M["meta"].get("punishment_spot", True):
+            return None
+        ftpx = float(self.M["meta"].get("ftpx") or 1)
+        lim = 60.0 / ftpx  # punishment_spot_by_the_traffic: ~60 REAL feet from a street
+        w, h = self.px(30), self.px(12)
+        routes: list[tuple[list[Pt], float]] = []
+        if self.M.get("road"):
+            routes.append(([(p[0], p[1]) for p in self.M["road"]], float(self.M.get("road_width") or 18)))
+        routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [])
+        routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
+        if not routes:
+            return None
+        wall = self.M.get("wall")
+        spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
+
+        def off_every_bed(x: float, y: float) -> bool:
+            return all(seg_dist(x, y, rp[k], rp[k + 1]) >= rw / 2 + h / 2 + 3 for rp, rw in routes for k in range(len(rp) - 1))
+
+        best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
+        for pts, _rw in routes:
+            for i in range(len(pts) - 1):
+                (ax, ay), (bx, by) = pts[i], pts[i + 1]
+                seg = math.hypot(bx - ax, by - ay)
+                if not seg:
+                    continue
+                ux, uy = -(by - ay) / seg, (bx - ax) / seg
+                rot = math.degrees(math.atan2(by - ay, bx - ax))
+                for t in range(int(seg // 12) + 1):
+                    f = t * 12 / seg
+                    mx, my = ax + (bx - ax) * f, ay + (by - ay) * f
+                    for side in (1.0, -1.0):
+                        off = _rw / 2 + h / 2 + 4
+                        while off <= lim:
+                            x, y = mx + ux * off * side, my + uy * off * side
+                            if (not wall or len(wall) < 3 or point_in_poly(x, y, wall)) and off_every_bed(x, y) and self._fits(x, y, w, h, corridors=False):
+                                busy = sum(1 for sx, sy in spots if math.hypot(x - sx, y - sy) < 260)
+                                score = busy * 10 - off / 3
+                                if best is None or score > best[0]:
+                                    best = (score, x, y, rot)
+                            off += 5.0
+        if best is None:
+            return None
+        _, x, y, rot = best
+        if label and label_xy is None:
+            # A verge-hugging feature's DEFAULT below-label lands on the frontage it hugs - that is
+            # not bad luck, it is what "hugging the frontage" means, and it fired on all three maps.
+            # So probe the label too: below, above, then left/right, first clear box wins.
+            tw = self._text_width(label, 9) / 2 + 2
+            th = 5.0
+            # ROTATION-AWARE boxes: labels_clear_of_other_buildings tests each building's axis-aligned
+            # bounding box, and a rotated shopfront's AABB is much larger than its w/h - probing the
+            # unrotated rect passed here and still failed the gate.
+            boxes = []
+            for key in ("buildings", "houses", "flophouses", "religious", "manors", "storehouses", "merchant_estates", "ministries", "gate_structs"):
+                # every key listed above holds w/h-bearing dicts - the same assumption
+                # check_village's `_bb` makes about the same registries - so no guard is needed here
+                for o in self.M.get(key) or []:
+                    a = math.radians(o.get("rot", 0) or 0)
+                    ca, sa = math.cos(a), math.sin(a)
+                    hw2, hh2 = o["w"] / 2, o["h"] / 2
+                    xs = [o["x"] + dx * ca - dy * sa for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
+                    ys = [o["y"] + dx * sa + dy * ca for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
+                    boxes.append((min(xs), min(ys), max(xs), max(ys)))
+            labs = [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
+            cands = []
+            for ring in range(0, 9):  # walk outward: the near bands are dense frontage, so keep looking
+                d = ring * 14
+                cands += [(x, y + h / 2 + 11 + d), (x, y - h / 2 - 9 - d), (x - tw - w / 2 - 6 - d, y + 3), (x + tw + w / 2 + 6 + d, y + 3)]
+            for lx, ly in cands:
+                box = (lx - tw, ly - 7.2, lx + tw, ly + th)
+                if any(box[0] < bx1 and bx0 < box[2] and box[1] < by1 and by0 < box[3] for bx0, by0, bx1, by1 in boxes):
+                    continue
+                if any(box[0] < l2 and l0 < box[2] and box[1] < l3 and l1 < box[3] for l0, l1, l2, l3 in labs):
+                    continue
+                label_xy = (lx, ly)
+                break
+        self.punishment_spot(x, y, rot, label=label, label_xy=label_xy)
+        return (x, y)
+
     def drum_tower(self, x: float, y: float, tw: float | None = None, label: str = "drum tower") -> int:
         """A combined BELL-AND-DRUM TOWER (zhonggulou) - the timekeeping/curfew institution of a
         WALLED seat (GM 2026-07-24). Morning bell, evening drum: dawn gate-opening, the dusk
@@ -7082,6 +7217,166 @@ class Settlement:
         self.block_polys.append([(cx - orx - m, cy - ory - m), (cx + orx + m, cy - ory - m), (cx + orx + m, cy + ory + m), (cx - orx - m, cy + ory + m)])
         if label:
             self.label(cx, cy + ory + 12, label, 11, italic=True, color="#6B5A3C")
+
+    def punishment_spot(self, x: float, y: float, rot: float = 0.0, label: str | None = "punishment ground", label_above: bool = False, label_xy: Pt | None = None) -> None:
+        """The PUNISHMENT GROUND - the everyday face of the magistrate's authority, in the middle of
+        town: a cangue frame, a flogging post, and a kneeling stone on a patch of tamped earth at the
+        market or the magistracy frontage. ~30x12 ft, true size at every tier.
+
+        Historical grounding (the "why" - see settlements.md "Punishment spot"):
+          - This is a DISPLAY installation, not a place of execution and not a courtroom. The Chinese
+            evidence splits the two cleanly: the bamboo beating (chi / zhang) was a COURT act
+            administered inside the yamen courtyard in front of the magistrate's bench - which in our
+            maps is the Mode A magistracy, already drawn - while the 枷 jia, the cangue, was public.
+            An offender wore it for one to six months with THEIR NAME, THE CRIME, AND THE SENTENCE
+            inscribed on the boards in large characters, displayed at a marketplace, a crossroads, or
+            an official gate. Japan corroborates from the other side: sarashi (exposure) and the
+            public flogging post sat at the bottom of the Edo punishment ladder.
+          - GOVERNING VARIABLE: foot traffic. Both traditions site the display where the most people
+            pass, not where it is administratively convenient - the same criterion the notice board
+            already answers to (kosatsuba_by_the_road).
+          - It draws NO notice board. The crime text rides on the cangue itself, exactly as the
+            historical inscription did, and the settlement already has a kosatsuba (a separate
+            institution posting the state's standing law) plus the magistrate's own gate board in the
+            Mode A program. A third board here would be a modeling error dressed up as detail.
+
+        Records M['punishment_spots']; reserves ground. Call BEFORE the urban packs - it sits where
+        packing pressure is highest, and reserving after the pack means fighting for a seat that no
+        longer exists (see the DRAW ORDER map in this skill's CLAUDE.md)."""
+        w, h = self.px(30), self.px(12)
+        hw, hh = w / 2, h / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1" fill="#C6B79A" fill-opacity="0.9" stroke="#8A7550" stroke-width="1.0"/>')  # tamped, foot-polished earth
+        cw = self.px(5)  # the CANGUE frame - the heavy board collar, seen from above as a slotted square
+        g.append(f'<rect x="{-hw + self.px(2):.1f}" y="{-cw / 2:.1f}" width="{cw:.1f}" height="{cw:.1f}" rx="0.6" fill="#B49A6E" stroke="#5A4526" stroke-width="1.0"/>')
+        g.append(f'<circle cx="{-hw + self.px(2) + cw / 2:.1f}" cy="0" r="{max(cw * 0.22, 0.9):.1f}" fill="#4A3D28"/>')  # the neck hole
+        g.append(f'<ellipse cx="0" cy="0" rx="{max(self.px(1.6), 1.0):.1f}" ry="{max(self.px(1.1), 0.8):.1f}" fill="#A8A294" stroke="#5A584F" stroke-width="0.7"/>')  # the kneeling stone
+        pr = max(self.px(0.9), 0.9)  # the FLOGGING POST
+        g.append(f'<circle cx="{hw - self.px(3):.1f}" cy="0" r="{pr:.1f}" fill="#7A5A30" stroke="#4A3418" stroke-width="0.8"/>')
+        g.append("</g>")
+        self.add_top("".join(g))
+        self.M["punishment_spots"].append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "rot": round(rot, 1), "label": label})
+        self.placed.append((x, y, w, h))
+        bm = 6
+        self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
+        if label:
+            # The ground belongs at the magistracy frontage, which is the most label-congested ground
+            # on a town map - so it needs both escapes. `label_above` flips the side; `label_xy` places
+            # the label outright (the paddy_field convention), for the case Hoshizora hit, where the
+            # only clear VERGE for the ground sits directly under the manor's own label box and the
+            # only clear TEXT band is a little further down, between that label and the manor itself.
+            lx, ly = label_xy if label_xy else (x, y - hh - 9 if label_above else y + hh + 11)
+            self.label(lx, ly, label, 9, italic=True, color="#6B5A3C")
+
+    def execution_ground(self, cx: float, cy: float, rot: float = 0.0, screened: bool | None = None, label: str | None = "execution ground") -> None:
+        """The EXECUTION GROUND (keijou) - bare waste ground on the road past the settlement's
+        boundary stone, where the Empire carries out the death sentences its magistrates confirm.
+        `rot` lays the ground's ROAD SIDE (local -y, where the head-display stand faces) toward the
+        road, the same convention the tanning yard uses for its water side.
+
+        Historical grounding (the "why" - see settlements.md "Execution ground"):
+          - WHY A COUNTY SEAT HAS ONE AT ALL. China and Japan disagree here and the reconciliation is
+            load-bearing. Japan monopolized executions at castle towns and pushed them outside the
+            settlement for kegare (death pollution); village authority topped out at banishment. But
+            under the Chinese system a county magistrate could not CONFIRM a death sentence - capital
+            cases climbed to the Board of Punishments and the emperor's autumn check-marking - and
+            the confirmed sentence came back DOWN to be carried out at the county seat where the
+            crime happened, because local deterrence was the entire point. So: China supplies the
+            jurisdiction (the seat executes), Japan supplies the siting (outside the built edge).
+            This is also why the canon county budget funds a jail with no execution line while
+            "ceremonial executions" appear only at domain and Imperial level - the county jail is a
+            HOLDING PEN for the condemned while the warrant travels, not a punishment in itself.
+          - GOVERNING VARIABLE: the road and the direction of pollution - NOT population, and not the
+            settlement's geometric edge. The ground exists to be seen by travelers arriving, so it
+            sits on the busiest road; kegare puts it downwind, downstream, and on the outcast side,
+            beyond the burakumin quarter.
+          - SIZE. Suzugamori, which served Edo (a city of one million) for 220 years, measured
+            74 x 16.2 m - about 243 x 53 ft, a third of an acre. Execution grounds are SMALL; the
+            deterrent is the sight of the posts from the highway, not acreage. Our tiers scale down
+            from that anchor by execution volume.
+          - VOLUME, which is what sets the county tier's CHARACTER. At ~1-3 executions per 100,000
+            per year, a county of ~7,000-8,000 inhabitants reaches the formal channel about once
+            every 5-10 years (bandit sweeps add batches). So a county ground is a weedy, half-
+            forgotten patch with socket stones and no standing posts - it must read DISUSED. Only at
+            city scale and above does it earn screening and permanent furniture. Drawing a county
+            ground as a busy scaffold would assert something false about how often Rokugan kills.
+
+        Records M['execution_grounds']; reserves ground. Call beside the funerary cluster (phase 4),
+        before the hinterland scrub and village_grove, so no crown is drawn onto it."""
+        city = self.M["meta"].get("scale") == "city"
+        gw, gh = (self.px(100), self.px(60)) if city else (self.px(60), self.px(60))
+        if screened is None:
+            screened = city  # a county ground is open to the road on every side; a city ground is hoarded on three
+        hw, hh = gw / 2, gh / 2
+        g = [f'<g transform="translate({cx:.0f},{cy:.0f}) rotate({rot:.1f})">']
+        # the bare ground itself: pale, dry, unbunded - deliberately unlike both the field greens and
+        # the built tans, because "this is not farmland and not a yard" is the whole read. The dashed
+        # edge says the ground has no boundary anyone maintains.
+        g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{gw:.1f}" height="{gh:.1f}" rx="2" fill="#CFC6B4" stroke="#8F8566" stroke-width="1.2" stroke-dasharray="4,3"/>')
+        if screened:  # the hoarding - three sides, the ROAD side (local -y) left open, because being seen is the point
+            sx, sy = hw + self.px(1), hh + self.px(1)
+            g.append(f'<path d="M {-sx:.1f} {-sy:.1f} L {-sx:.1f} {sy:.1f} L {sx:.1f} {sy:.1f} L {sx:.1f} {-sy:.1f}" fill="none" stroke="#6B5A3C" stroke-width="1.6"/>')
+        # the CRUCIFIXION SOCKETS - stone bases with a square mortise. The permanent thing at a county
+        # ground is the SOCKET, not a standing post: posts were raised for a sentence and taken down.
+        for i in (-1, 1):
+            sxp, syp = i * gw * 0.22, -gh * 0.16
+            ss = max(self.px(3), 2.0)
+            g.append(f'<rect x="{sxp - ss / 2:.1f}" y="{syp - ss / 2:.1f}" width="{ss:.1f}" height="{ss:.1f}" rx="0.5" fill="#A8A294" stroke="#4A463C" stroke-width="0.8"/>')
+            g.append(f'<rect x="{sxp - ss / 6:.1f}" y="{syp - ss / 6:.1f}" width="{ss / 3:.1f}" height="{ss / 3:.1f}" fill="#3A352C"/>')  # the mortise, standing empty
+        stk = max(self.px(1.2), 1.0)  # the IRON STAKE for burning - Edo burned arsonists, and a Rokugani town fears fire above all
+        g.append(f'<circle cx="0" cy="{gh * 0.30:.1f}" r="{stk:.1f}" fill="#4A463C" stroke="#2E2A22" stroke-width="0.7"/>')
+        bw, bh = max(self.px(10), 4.0), max(self.px(6), 3.0)  # the SAND BED with its head-hole
+        g.append(f'<rect x="{-bw / 2:.1f}" y="{-gh * 0.34 - bh / 2:.1f}" width="{bw:.1f}" height="{bh:.1f}" rx="1" fill="#DED3B4" stroke="#9A8A63" stroke-width="0.8"/>')
+        g.append(f'<circle cx="0" cy="{-gh * 0.34:.1f}" r="{max(bh * 0.2, 0.8):.1f}" fill="#5A463A"/>')
+        dw = max(self.px(8), 4.0)  # the HEAD-DISPLAY STAND with its crime board, on the ROAD side, facing out
+        g.append(f'<rect x="{-dw / 2:.1f}" y="{-hh + self.px(2):.1f}" width="{dw:.1f}" height="{max(self.px(2.5), 1.4):.1f}" rx="0.5" fill="#8A7550" stroke="#4A3418" stroke-width="0.8"/>')
+        g.append(f'<line x1="{dw * 0.75:.1f}" y1="{-hh + self.px(1):.1f}" x2="{dw * 0.75:.1f}" y2="{-hh + self.px(6):.1f}" stroke="#5A4326" stroke-width="1.1"/>')  # the crime board's post
+        wr = max(
+            self.px(2.0), 1.6
+        )  # the WELL - for washing the blade and sluicing the ground (Suzugamori kept one). Drawn, NOT recorded in M['wells']: it serves no household and must not enter the well-density accounting.
+        g.append(f'<circle cx="{-gw * 0.34:.1f}" cy="{gh * 0.30:.1f}" r="{wr:.1f}" fill="#B9C7C4" stroke="#4A5A58" stroke-width="0.9"/>')
+        pw_, ph_ = max(self.px(12), 5.0), max(self.px(8), 3.5)  # the DISPOSAL PIT, at the back - the executed are not carried to the community's ground
+        g.append(f'<ellipse cx="{gw * 0.30:.1f}" cy="{gh * 0.30:.1f}" rx="{pw_ / 2:.1f}" ry="{ph_ / 2:.1f}" fill="#8C7A56" stroke="#5A4A30" stroke-width="0.9"/>')
+        if not screened:  # WEEDS: the county ground is used about once a decade, so it must read DISUSED
+            for wx, wy in ((-0.30, -0.36), (0.34, -0.30), (-0.16, 0.10), (0.20, 0.06), (-0.36, 0.14)):
+                g.append(f'<path d="M {wx * gw:.1f} {wy * gh:.1f} l -1.4 -3.0 M {wx * gw:.1f} {wy * gh:.1f} l 1.4 -3.2" fill="none" stroke="#8A9464" stroke-width="0.8"/>')
+        g.append("</g>")
+        self.add("".join(g))
+        self.M["execution_grounds"].append({"x": round(cx, 1), "y": round(cy, 1), "w": round(gw, 1), "h": round(gh, 1), "rot": round(rot, 1), "screened": bool(screened), "label": label})
+        self.placed.append((cx, cy, gw, gh))
+        bm = 8
+        self.block_polys.append([(cx - hw - bm, cy - hh - bm), (cx + hw + bm, cy - hh - bm), (cx + hw + bm, cy + hh + bm), (cx - hw - bm, cy + hh + bm)])
+        if label:
+            self.label(cx, cy + hh + 13, label, 11, italic=True, color="#6B5A3C")
+
+    def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone") -> None:
+        """A DOSOJIN (sae no kami) stone at the settlement's ritual boundary - where the road leaves
+        clean ground. Usually a paired male-female figure carved on one stone.
+
+        Historical grounding (the "why" - see settlements.md "Boundary marker"): dosojin stand at
+        village boundaries, mountain passes, and crossroads, and the etymology is the point - `sae`
+        means "to block", and the deity's job is to stop evil, pestilence, and POLLUTION from
+        entering the settlement. That is what makes it structural rather than decorative here: it
+        turns "outside the settlement" from a vague spatial claim into a stated ritual boundary, and
+        gives the execution ground its reason for being where it is. The ground is not merely far
+        from the houses; it is on the far side of the stone that keeps pollution out.
+
+        A LOCATION MARKER: a real stone is ~3 ft, sub-glyph at every tier, so the true footprint is
+        recorded in w/h and the drawn box in vw/vh - the wells' and kosatsuba's doctrine exactly
+        (SKILL.md "to scale"). Records M['boundary_markers']."""
+        w = h = self.px(3)
+        k = max(1.0, BOUNDARY_MARKER_MIN_PX / w)  # marker floor, aspect preserved
+        vw, vh = w * k, h * k
+        hw, hh = vw / 2, vh / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{vw:.1f}" height="{vh:.1f}" rx="{hw * 0.6:.1f}" fill="#A8A294" stroke="#4A463C" stroke-width="0.9"/>')  # the weathered stone
+        g.append(f'<line x1="0" y1="{-hh * 0.5:.1f}" x2="0" y2="{hh * 0.5:.1f}" stroke="#4A463C" stroke-width="0.7"/>')  # the seam between the paired figures
+        g.append("</g>")
+        self.add_top("".join(g))
+        self.M["boundary_markers"].append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "vw": round(vw, 1), "vh": round(vh, 1), "rot": round(rot, 1), "label": label})
+        self.placed.append((x, y, vw, vh))
+        if label:
+            self.label(x, y + hh + 10, label, 8, italic=True, color="#6B5A3C")
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary") -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT

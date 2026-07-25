@@ -325,6 +325,21 @@ s.block_polys.append([(1720, 590), (2010, 590), (2010, 665), (1720, 665)])
 # field's toe and the forest edge - the one piece of ground here that is neither cropped nor wooded.
 s.tanning_yard(1948, 882, rot=90, pits=4, water="ditch")  # off the hoshizora-ne paddy corner and its drain ditch (tanning_yard_clear_of_water/_fields); the intake cut still reaches the channel
 
+# ---- the EXECUTION GROUND, on the Imperial Road where it leaves the county NE (feature 015;
+# settlements.md "Execution ground"). Sited by the road and by the direction pollution runs, not by
+# distance: Hoshizora's burakumin quarter is the NE pack at (1725-2005, 395-600), so the outcast
+# side of this town is its northeast, and the ground lies past it on the highway out. The boundary
+# stone stands first, at the bend by (1900,170) - the dosojin marks where the road leaves clean
+# ground, and the ground sits beyond it. Both are offset off the 26 ft carriageway (structs must
+# clear the road) but well inside the ~120 ft that keeps the posts readable from it. Placed BEFORE
+# the farm rings so the bundles pack around them. This is a COUNTY ground: bare, unfenced, weedy,
+# empty post sockets - a county of ~7,000 reaches the formal channel about once a decade.
+# Both sit INSIDE the canvas: crop_to_content clamps the frame to W/H, so a feature (or its label)
+# placed past the edge cannot be framed - the first siting put the ground at x=2109 and the label
+# ran off the image even though the ground itself drew fine.
+s.boundary_marker(1809, 263)
+s.execution_ground(1930, 227, rot=-28)
+
 # ---- farmhouses: the town's farmer majority (still the largest single group), ringed
 # several-deep around the comb envelopes - generously, since each needs room for its
 # threshing yard (some get dropped). Dense rings so the shown field edges read WORKED
@@ -468,6 +483,35 @@ s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="cops
 # probed-clear verge like the fire furniture (clear of the manor's ROTATED corner - the -30
 # tilt swings it up to y~980, which sank the first spot at (500, 968)).
 s.kosatsuba(400, 930, rot=-30)
+
+# ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone on the same
+# SW arrival stretch (feature 015; settlements.md "Punishment spot"). Its governing variable is
+# foot traffic, which is why it lands here rather than at the market: the packed merchant frontage
+# upstream has no clear verge (the same finding that sited the notice board), and this stretch is
+# where the manor's approach, the theater ground, and the monastery path all meet the highway - the
+# busiest clear ground in town. It is a DISPLAY installation and carries no board of its own: the
+# crime rides on the cangue, and the standing law is already posted a few paces off. Probed with
+# open_seat AFTER the packs and the board, so the seat is one the engine will actually take.
+# The rect hugs the highway's SE verge on the stretch between the manor approach and the core, so
+# the seat comes out ON the traffic (punishment_spot_by_the_traffic wants ~60 real ft) rather than
+# in the open ground behind it - open_seat ties toward the rect's center, so the rect IS the intent.
+# It also starts east of the manor's own label box (x 431-569), which the first seat's label sat on.
+# (Two tighter rects further up the highway - (600,760,840,880) and (560,860,760,960) - both came
+# back EMPTY: the packed merchant frontage upstream genuinely has no verge, the same finding that
+# sited the notice board on this stretch. So the probe takes the whole arrival stretch and is pushed
+# away from the manor's LABEL box instead, whose center the clear_of argument names - the first seat
+# put the ground's label straight over it.)
+_ps = s.open_seat((300, 840, 800, 1010), s.px(30), s.px(12))
+assert _ps, "no clear verge for the punishment ground on the highway frontage"
+# The probe returns ONE seat here - (552,944), the single clear verge on the stretch - and it sits
+# directly under the manor's own label box (x 431-569, y 956-971), so the default below-label
+# collided with it and the above-label landed on a merchant. The GROUND is right, so the LABEL moves:
+# label_xy puts it up-and-left of the ground, the nearest text band that is clear of every feature
+# AND every other label. (Two things this cost, worth not repeating: steering the probe with
+# clear_of only pushed the ground off the traffic, which is the one thing this feature cannot be;
+# and the obvious band below the manor's label is NOT free - the manor is drawn rot=-30, so its
+# swung corner reaches up to y~980, well above the y=1030 its axis-aligned box suggests.)
+s.punishment_spot(*_ps, rot=-30, label_xy=(518, 926))
 
 # ===== NEAR-RING FARMLAND at the MEDIUM tier (feature 013) =====
 # NEAR-RING PADDY IS COMB FIELDS ONLY (GM 2026-07-23, the Tango-recipe rollout): the town's rice is
