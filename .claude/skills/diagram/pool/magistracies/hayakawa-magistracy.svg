@@ -135,9 +135,9 @@
     <line x1="140" y1="150" x2="880" y2="150"/>
     <!-- West (broken by the kitchen postern at y=294..320 and the
          stable-yard service gate at y=690..720) -->
-    <line x1="140" y1="150" x2="140" y2="294"/>
-    <line x1="140" y1="320" x2="140" y2="690"/>
-    <line x1="140" y1="720" x2="140" y2="750"/>
+    <line x1="140" y1="150" x2="140" y2="289.5"/>
+    <line x1="140" y1="324.5" x2="140" y2="685.5"/>
+    <line x1="140" y1="724.5" x2="140" y2="750"/>
     <!-- East, above the annex -->
     <line x1="880" y1="150" x2="880" y2="180"/>
     <!-- Annex perimeter (the accreted guest wing) -->
@@ -145,21 +145,21 @@
     <line x1="1000" y1="400" x2="880" y2="400"/>
     <!-- East, annex to postern (landing gate 496..534 = 12.7 ft - the honest
          two-way cart-gate minimum) -->
-    <line x1="880" y1="400" x2="880" y2="496"/>
+    <line x1="880" y1="400" x2="880" y2="491.5"/>
     <!-- (annex east wall is broken by the guests' river door at y=332..356 - an
          ~8 ft formal guest gate, no cart uses it, so it is narrower than the
          bale-cart landing gate; size-audit opening-vs-purpose 2026-07 - opening
          into the guest garden: guest doors feed courts, not flanks) -->
-    <line x1="1000" y1="180" x2="1000" y2="332"/>
-    <line x1="1000" y1="356" x2="1000" y2="400"/>
+    <line x1="1000" y1="180" x2="1000" y2="327.5"/>
+    <line x1="1000" y1="360.5" x2="1000" y2="400"/>
     <!-- East, postern to SE corner -->
-    <line x1="880" y1="534" x2="880" y2="750"/>
+    <line x1="880" y1="538.5" x2="880" y2="750"/>
     <!-- South, west of gate (opening 490..530 = 13.3 ft - a real carriage
          gate's passage; the old 27 ft opening confused gate-structure width
          with passage width, caught by size-audit 2026-07) -->
-    <line x1="140" y1="750" x2="490" y2="750"/>
+    <line x1="140" y1="750" x2="485.5" y2="750"/>
     <!-- South, east of gate -->
-    <line x1="530" y1="750" x2="880" y2="750"/>
+    <line x1="534.5" y1="750" x2="880" y2="750"/>
   </g>
 
   <!-- Gate posts (flank the south gate opening) -->
@@ -277,7 +277,6 @@
   <!-- Formal entry porch (genkan) at the reception block -->
   <g>
     <rect x="248" y="286" width="40" height="14" fill="#C9A57A" stroke="#5A3F1E" stroke-width="1.2"/>
-    <text x="268" y="312" text-anchor="middle" font-size="8" font-style="italic" fill="#3A2E1C">entry porch</text>
   </g>
 
   <!-- Kitchen + pantries (west range) - 40x33 ft; a large institutional
