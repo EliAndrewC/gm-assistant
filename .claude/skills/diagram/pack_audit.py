@@ -68,7 +68,16 @@ _TEXT_RE = re.compile(r"<text\s([^>]*)>(.*?)</text>", re.DOTALL)
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
 _INNER_TAG_RE = re.compile(r"<[^>]*>")
 CHAR_W_FRAC: float = 0.55  # a serif glyph's advance width as a fraction of font-size (bbox estimate)
-CHAR_W_BOLD: float = 0.72  # bold caps (RESIDENCE, building names) run wider
+CHAR_W_BOLD: float = 0.72  # bold ALL-CAPS band labels (RESIDENCE, HEARING COURT) run widest
+CHAR_W_BOLD_MIXED: float = 0.60  # ...but mixed-case bold (building names) is much narrower than caps.
+# Measured 2026-07-25 by rendering real pool strings through resvg/DejaVu Serif and reading the ink
+# extents: at 0.72 the all-caps band labels land at 0.95-0.99x of true width (right), while
+# mixed-case bold came out 1.26-1.27x (way over). That 26% phantom width was enough to make the
+# widened occlusion check report a FALSE positive on Ochiba - "Tatsuya's quarters" was estimated to
+# run into the residence's connecting corridor when the real ink stops 7 px short of it. 0.60 lands
+# mixed-case at 0.96-1.06x: still biased slightly LONG, which is the safe direction for a check that
+# is looking for overlaps.
+CAPS_RATIO: float = 0.8  # a label with >= this share of upper-case letters is a caps label
 WELL_FILL = "#9C8C70"  # well-curb stone
 WALL_STROKE = "#2D2A24"  # the compound wall (and gate posts / well-mouths share this dark ink)
 _WALL_GROUP_RE = re.compile(rf'<g stroke="{re.escape(WALL_STROKE)}"[^>]*>(.*?)</g>', re.DOTALL)
@@ -77,7 +86,14 @@ DARK_FILLS: frozenset[str] = frozenset({"#2D2A24", "#3A2010", "#3A2418", "#1A141
 LABEL_DARK_LUMA: float = 0.42  # a label whose own fill is darker than this is "black ink" for legibility
 MIN_DARK_AREA_PX: float = 150.0  # ignore tiny dark markers (kura door, altar square) - only a real dark BLOCK or wall hurts legibility
 DARK_MIN_OVERLAP_PX: float = 2.5  # a label must sit ON a dark feature by at least this much (not just graze an edge)
-OCCLUSION_MIN_PX: float = 3.0  # a later feature must cover at least this much of a label/tub to count
+OCCLUSION_MIN_PX: float = 3.0  # a later feature must cover at least this much of a foreground item to count
+# The occlusion check is deliberately fill-BLIND on the occluder side: ANY rect or glyph drawn later
+# counts, not just the fills this tool happens to classify as a building or a garden. Enumerating
+# occluders by fill is what let two real defects through (2026-07-25) - a note box (an unclassified
+# solid fill) painted over the bounty bill, and a NEW pattern (url(#cart-gravel), unknown to
+# OPEN_PATTERNS) painted over a privy. A palette grows; "drawn later, covers it" does not.
+FURNITURE_MAX_AREA_PX: float = MIN_BLDG_AREA_PX  # a rect below the building floor is furniture
+# (privy, door, board, hearth, stilt, mat) - foreground that belongs ABOVE the fills, like a label.
 GROUP_LABEL_GLYPHS: dict[str, str] = {"fire-water tub": "tub", "well": "well"}  # label text -> glyph kind it names
 GROUP_LABEL_MAX_FT: float = 9.0  # a glyph-group label must sit within this of a glyph it names
 NOTICE_BOARD_MAX_FT: float = 20.0  # a notice board must sit within this of a gate opening to be read
@@ -185,6 +201,8 @@ class ParsedPlan:
     door_rects: tuple[Rect, ...] = ()  # small dark rects (door glyphs), for the door-on-a-wall check
     wall_bands: tuple[Rect, ...] = ()  # the INKED band of each wall/divider stroke (`fill` = its stroke colour)
     structures: tuple[Rect, ...] = ()  # every built footprint, NO area floor (porches/sheds count)
+    fills: tuple[Rect, ...] = ()  # every drawn rect (any fill) - the fill-blind occluder set
+    furniture: tuple[Rect, ...] = ()  # sub-building rects (privy, door, board, mat): foreground
 
     @property
     def bounds(self) -> tuple[float, float, float, float]:
@@ -241,6 +259,13 @@ class TubAdrift:
     gap_ft: float  # distance from tub center to the nearest building
 
 
+def _bold_char_w(text: str) -> float:
+    """Per-character advance for BOLD text: caps labels run wider than mixed-case ones."""
+    letters = [c for c in text if c.isalpha()]
+    caps = sum(c.isupper() for c in letters) / len(letters) if letters else 0.0
+    return CHAR_W_BOLD if caps >= CAPS_RATIO else CHAR_W_BOLD_MIXED
+
+
 def _parse_labels(text: str) -> list[Label]:
     """Text labels with an estimated bbox (from font-size x string length) + draw-order pos."""
     out: list[Label] = []
@@ -253,7 +278,7 @@ def _parse_labels(text: str) -> list[Label]:
         fs = float(attrs.get("font-size", "13"))
         ls = float(attrs.get("letter-spacing", "0"))
         n = len(content)
-        frac = CHAR_W_BOLD if attrs.get("font-weight") == "bold" else CHAR_W_FRAC
+        frac = _bold_char_w(content) if attrs.get("font-weight") == "bold" else CHAR_W_FRAC
         w = n * fs * frac + ls * max(n - 1, 0)
         anchor = attrs.get("text-anchor", "start")
         left = x - w / 2 if anchor == "middle" else (x - w if anchor == "end" else x)
@@ -338,6 +363,8 @@ def parse_svg(text: str) -> ParsedPlan:
             x1, y1, x2, y2 = (float(ln.group(i)) for i in range(1, 5))
             wall_segs.append(Rect(min(x1, x2), min(y1, y2), max(abs(x2 - x1), 2.0), max(abs(y2 - y1), 2.0)))
     wells = tuple(r for r in rects if r.fill == WELL_FILL)
+    fills = tuple(r for r in rects if r.fill != INTERIOR_FILL)
+    furniture = tuple(r for r in fills if r.area_px < FURNITURE_MAX_AREA_PX)
     dark_rects = tuple(r for r in rects if r.fill in DARK_FILLS and r.area_px >= MIN_DARK_AREA_PX)
     door_rects = tuple(r for r in rects if r.fill in DARK_FILLS and r.area_px < DOOR_MAX_AREA_PX)
     return ParsedPlan(
@@ -354,6 +381,8 @@ def parse_svg(text: str) -> ParsedPlan:
         door_rects,
         tuple(_wall_bands(text)),
         tuple(r for r in rects if r.fill in STRUCTURE_FILLS),
+        fills=fills,
+        furniture=furniture,
     )
 
 
@@ -617,9 +646,9 @@ def tubs_on_wells(plan: ParsedPlan, min_px: float = TUB_WELL_MIN_PX) -> list[Tub
 
 @dataclass(frozen=True)
 class Occluded:
-    """A label or tub painted over by a feature drawn later in the SVG (not on the top layer)."""
+    """A foreground item painted over by anything drawn later in the SVG (not on the top layer)."""
 
-    kind: str  # "label" | "tub"
+    kind: str  # "label" | "tub" | "well" | "feature"
     text: str  # label text, or "" for a tub
     x: float
     y: float
@@ -631,17 +660,36 @@ def _overlap_px(ax: float, ay: float, ax2: float, ay2: float, b: Rect) -> float:
 
 
 def occluded_foreground(plan: ParsedPlan, min_px: float = OCCLUSION_MIN_PX) -> list[Occluded]:
-    """Labels/tubs painted OVER by a feature (building/garden) drawn LATER in the SVG - i.e. they
-    are not on the top layer, so they read as buried (a label's ink, a tub's rim). Draw-order rule:
-    every label and tub belongs above the fills, so ANY later feature overlapping one is a defect."""
-    feats = plan.buildings + plan.open_features
+    """Foreground items painted OVER by anything drawn LATER in the SVG - i.e. not on the top
+    layer, so they read as buried (a label's ink, a tub's rim, a privy that vanishes).
+
+    Draw-order rule: labels, point glyphs and furniture-scale features all belong ABOVE the
+    fills, so any later rect or glyph covering one is a defect. Both sides of that test are
+    deliberately broad - the occluder side is fill-BLIND (see OCCLUSION_MIN_PX) and the occluded
+    side spans labels, tubs, wells and every sub-building rect - because the two defects this
+    check was widened for (2026-07-25) each slipped through a narrow enumeration: a note box was
+    not a "building or garden", and a privy was not a "label or tub".
+    """
+    occluders = plan.fills + plan.glyphs
     out: list[Occluded] = []
+
+    def buried(x: float, y: float, x2: float, y2: float, pos: int) -> bool:
+        # A later shape wholly INSIDE the item is its own detailing (a well-mouth circle in its
+        # curb, a hearth's fire in its hearth), not something painted over it.
+        return any(f.pos > pos and _overlap_px(x, y, x2, y2, f) >= min_px and not (f.x >= x and f.y >= y and f.x2 <= x2 and f.y2 <= y2) for f in occluders)
+
     for lab in plan.labels:
-        if any(f.pos > lab.pos and _overlap_px(lab.x, lab.y, lab.x2, lab.y2, f) >= min_px for f in feats):
+        if buried(lab.x, lab.y, lab.x2, lab.y2, lab.pos):
             out.append(Occluded("label", lab.text, lab.cx, lab.cy))
     for t in plan.tubs:
-        if any(f.pos > t.pos and _overlap_px(t.x, t.y, t.x2, t.y2, f) >= min_px for f in feats):
+        if buried(t.x, t.y, t.x2, t.y2, t.pos):
             out.append(Occluded("tub", "", t.x + t.w / 2, t.y + t.h / 2))
+    for w in plan.wells:
+        if buried(w.x, w.y, w.x2, w.y2, w.pos):
+            out.append(Occluded("well", "", w.x + w.w / 2, w.y + w.h / 2))
+    for f0 in plan.furniture:
+        if buried(f0.x, f0.y, f0.x2, f0.y2, f0.pos):
+            out.append(Occluded("feature", "", f0.x + f0.w / 2, f0.y + f0.h / 2))
     return out
 
 
