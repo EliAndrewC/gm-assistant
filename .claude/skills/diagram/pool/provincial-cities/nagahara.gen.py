@@ -37,7 +37,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from citybudget import CityProgram, budget_to_manifest, plan_city  # noqa: E402
-from settlement import Settlement  # noqa: E402
+from settlement import Settlement, moat_swept_tap  # noqa: E402
 from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
 # Paddy CELL grain calibrated to a real-feet target (~0.05 acre) at this city's 3 ft/px (was hand-set 26px
@@ -870,6 +870,11 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     mp = min(MOAT, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
     _ol = math.hypot(mp[0] - CX, mp[1] - CY) or 1.0
     sl = (round(mp[0] + 30 * (mp[0] - CX) / _ol), round(mp[1] + 30 * (mp[1] - CY) / _ol))
+    # SWEEP THE THROAT DOWNSTREAM (GM 2026-07-25). `sl` above is untouched, so the comb field this
+    # feeds does not move; only the MOAT-SIDE end walks upstream, turning a square tap into the acute
+    # downstream-pointing offtake canal practice calls for (optimum 15-45 deg, "30 or 45 instead of 90").
+    _mfl = s.M["moat_flow"]
+    mp = moat_swept_tap(MOAT, _mfl["inlet"], _mfl["outlet"], sl, mp)
     s.field_channel([mp, sl], '#9CB4C8', 7, 7)  # the visible tap, in the MOAT'S OWN water color (confluence, not crossing - GM 2026-07-23)
     s.sluice_gate(sl[0], sl[1], rot=math.degrees(math.atan2(sl[1] - mp[1], sl[0] - mp[0])) + 90)  # the intake gate AT the palette seam (tap water -> canal water)
     _net, _env, _cen = comb_field(nm, sl, dd, sd, ff, ca, cb, oa, avoid=(MOAT,))
@@ -892,7 +897,7 @@ _pn1 = plot_centroid(_netn1, lambda cs: min(cs, key=lambda c: c[1]))
 topo_channel([(1050, 602), (1050, 608), _pn1], {"kind": "offmap"}, {"kind": "field", "name": "fnn1"})
 _drn1 = next(c["pts"] for c in _netn1["channels"] if c["role"] == "drain")
 _dfx1, _dfy1 = _drn1[-1]
-_mn1 = min(MOAT, key=lambda mp1: (mp1[0] - _dfx1 - 60) ** 2 + (mp1[1] - _dfy1 - 60) ** 2)  # rim SE of the outfall
+_mn1 = moat_swept_tap(MOAT, s.M["moat_flow"]["inlet"], s.M["moat_flow"]["outlet"], (_dfx1, _dfy1), min(MOAT, key=lambda mp1: (mp1[0] - _dfx1 - 60) ** 2 + (mp1[1] - _dfy1 - 60) ** 2), arriving=True)  # rim SE of the outfall
 topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain", "name": "fnn1"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth (fnn1) merges into the moat water
 s.sluice_gate(_dfx1, _dfy1, rot=math.degrees(math.atan2(_mn1[1] - _dfy1, _mn1[0] - _dfx1)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FNN1), 24, 15, ["plain"])
@@ -902,7 +907,7 @@ _pn2 = plot_centroid(_netn2, lambda cs: min(cs, key=lambda c: c[1]))
 topo_channel([(1750, 602), (1750, 608), _pn2], {"kind": "offmap"}, {"kind": "field", "name": "fnn2"})
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
-_mn2 = min(MOAT, key=lambda mp2: (mp2[0] - _dfx2) ** 2 + (mp2[1] - _dfy2 - 90) ** 2)
+_mn2 = moat_swept_tap(MOAT, s.M["moat_flow"]["inlet"], s.M["moat_flow"]["outlet"], (_dfx2, _dfy2), min(MOAT, key=lambda mp2: (mp2[0] - _dfx2) ** 2 + (mp2[1] - _dfy2 - 90) ** 2), arriving=True)
 topo_channel([(_dfx2, _dfy2), (_mn2[0], _mn2[1])], {"kind": "drain", "name": "fnn2"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx2, _dfy2, rot=math.degrees(math.atan2(_mn2[1] - _dfy2, _mn2[0] - _dfx2)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FNN2), 22, 15, ["plain"])
