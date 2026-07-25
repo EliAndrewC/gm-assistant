@@ -2236,6 +2236,23 @@ def test_crop_hugs_content_passes_on_a_snug_frame():
     assert "crop_hugs_content" not in f(M)
 
 
+def test_crop_hugs_content_reveals_only_a_band_of_a_canvas_filling_forest():
+    # a wood drawn to the canvas edge is frame-setting only to FOREST_REVEAL_FT past its TREE LINE
+    # (deeper in it is identical crowns), so a frame that stops there is snug, not "held open"...
+    # (deeper in it is identical crowns), so a view opened 190px past the tree line is HELD OPEN
+    M = {
+        "meta": {"scale": "hamlet", "ftpx": 1, "W": 1000, "H": 500, "view": [150, 45, 550, 110]},
+        "houses": [{"x": 200, "y": 100, "w": 40, "h": 30, "rot": 0, "kind": "plain"}],
+        "forest": [[400, 0], [400, 500], [1000, 500], [1000, 0]],
+        "forest_edge": [[400, 0], [400, 500]],
+    }
+    assert "crop_hugs_content" in f(M)
+    assert "crop_hugs_content" not in f({**M, "meta": {**M["meta"], "view": [150, 45, 360, 110]}})  # snug: the reveal band exactly
+    # a wood recorded WITHOUT its tree line keeps the legacy rule - the whole clamped polygon is
+    # frame-setting, so the same wide view reads as snug
+    assert "crop_hugs_content" not in f({**M, "forest_edge": None})
+
+
 def test_hard_features_within_frame_lets_the_windbreak_clip_but_not_vanish():
     # a windbreak POKING past the frame edge is fine (part visible = "the wood continues";
     # the crop no longer holds the frame open for it) ...

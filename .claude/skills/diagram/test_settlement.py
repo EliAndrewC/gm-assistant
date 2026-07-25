@@ -415,6 +415,15 @@ def test_forest_patch_uses_default_label_position():
     assert s.M["forest_patches"]
 
 
+def test_fringe_trees_keep_off_the_crop():
+    # the wood's advance-growth fringe seeds on waste ground, never in a worked field
+    s = _town()
+    s.field_polys.append([(100, 100), (400, 100), (400, 400), (100, 400)])
+    assert s._fringe_blocked(250, 250, 8) is True  # inside the crop
+    assert s._fringe_blocked(392, 250, 8) is True  # ... and within a crown's reach of its edge
+    assert s._fringe_blocked(700, 700, 8) is False  # open waste ground
+
+
 def test_wall_with_a_label():
     s = _town()
     s.wall([(100, 100), (200, 300), (150, 500)], label="rampart")
