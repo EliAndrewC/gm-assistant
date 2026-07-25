@@ -140,8 +140,16 @@ wall time is model-turn latency (root CLAUDE.md, 2026-07-20 profile), so each ex
 pure cost. Instead: in ONE Bash call, crop EVERY region you want to look at (all four viewports of
 a defect, before/after of several maps, the toe + the top + a control), then Read them together in
 the next turn. A footbridge review that touched 3 maps should be ~2 turns of imagery, not ~10.
-Coordinate mapping helper: manifest coords -> PNG px is `(coord - viewBox_origin) * (png_w /
-viewBox_w)`; grep the `.svg` `viewBox` once and reuse it for every crop on that map.
+**Use [`crop_map.py`](crop_map.py) rather than re-writing the arithmetic** - it reads the viewBox
+itself and takes as many regions as you like in one invocation, which is the batching win made easy:
+
+    python3 crop_map.py pool/towns/hoshizora 1600,900,220 1200,400,150   # x,y,radius (world coords)
+    python3 crop_map.py pool/hamlets/moritono --box 2100,150,2418,760 --zoom 1.5
+    python3 crop_map.py pool/villages/ueda --whole --zoom 0.4            # whole map, downscaled
+
+It prints one path per line - feed them straight to Read, together. (The conversion is
+`(coord - viewBox_origin) * (png_w / viewBox_w)`; it was hand-written five times in one session,
+once wrong, which is why it is a script now.)
 
 ## Run the cheap linters BEFORE the full gate
 
@@ -204,6 +212,18 @@ otherwise the rule is optional in practice no matter how firmly it is written.
 `settlement_declares_a_land_fall` is the model: it demands a map-level `down_deg` or a per-field fall
 on every paddy, and says in its own message that a map declaring nothing SKIPS every drainage rule
 while still showing green. Prefer this to widening the gate quietly.
+
+## Build check-test manifests with the fixture builders
+
+`test_checks.py` hands `gate()` hand-built manifests carrying only the keys the check under test
+reads. That focus is right, but it has a tax: a record often must carry a key some OTHER check
+indexes unconditionally (a threshing yard's `of`, a grove's `face`), and omitting it does not fail
+your test - it raises a `KeyError` from an unrelated check, costing a fix-and-rerun cycle to
+diagnose. Use the builders at the top of the file (`manifest`, `house`, `yard`, `garden`, `well`,
+`grove`, `vgrove`, `bldg`); they carry the required keys and take `**kw` overrides.
+`test_fixture_builders_survive_every_check` runs every check against one of each and is what keeps
+them complete - if a check starts indexing a new required key, it fails there once instead of
+ambushing the next person to write a test.
 
 ## Placement and its check must read the SAME manifest source
 
