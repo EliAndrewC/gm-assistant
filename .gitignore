@@ -2,6 +2,7 @@ __pycache__
 *.lock
 .env
 .coverage
+.coverage.*   # pytest-xdist writes one per worker: .coverage.<host>.<pid>.<rand>
 
 # Local virtualenv + test runner caches.
 .venv/
