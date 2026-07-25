@@ -3600,10 +3600,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # without being in any wet toe). Needs the map's slope (meta.down_deg) + a drain ditch; skipped otherwise.
     # WHY: the GM (2026-07) flagged dispersed farmhouses strewn S of a drainage ditch into marshland - see
     # settlements.md 'Marsh'.
+    # PER-FIELD FALL here too (GM 2026-07-25): each drain carries its OWN downslope, so a map that
+    # declares no single bearing - the two provincial cities, whose fans fall 210 deg apart - is still
+    # checked. This was the last of the three drainage-slope checks left on the map-level constant,
+    # which meant it silently skipped both cities even after the other two were converted.
     down_deg = meta.get("down_deg")
-    drains = [fd["poly"] for fd in M.get("field_ditches", []) if fd.get("role") == "drain" and len(fd.get("poly", [])) >= 2]
-    if houses and down_deg is not None and drains and not meta.get("nucleated"):
-        dux, duy = math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg))
+    _fdd_here = {f.get("name"): f["down_deg"] for f in M.get("fields", []) if f.get("down_deg") is not None}
+    drains = [(fd["poly"], _fdd_here.get(fd.get("field"), down_deg)) for fd in M.get("field_ditches", []) if fd.get("role") == "drain" and len(fd.get("poly", [])) >= 2]
+    drains = [(pl_, dd_) for pl_, dd_ in drains if dd_ is not None]
+    # NOT APPLIED AT CITY SCALE (GM decision 2026-07-25). City farms are RING-placed - s.ring lays
+    # them around the whole field envelope as a unit, so the low-side arc necessarily lands below the
+    # collector; by this check's own rationale that belongs with the NUCLEATED exemption ("a cluster is
+    # placed as a unit"), not the dispersed case it was written for. It is also RIGHT for a moated city:
+    # the farms round a moat legitimately differ by local topography - some drain INTO the moat, others
+    # have their paddies FED BY it - and expecting every one of them to sit above its field's collector
+    # imposes a uniformity the ground does not have. (For the record, turning it on flags 25% of Tango's
+    # farmhouses and 42% of Nagahara's: the ring algorithm, not stray misplacements.)
+    if houses and drains and not meta.get("nucleated") and scale != "city":
         # the WET TOE is a BAND below the collector (~240 real ft - the marsh/reclaimed strip the
         # runoff keeps soggy), not an infinite downslope slab: without this cap the first town
         # with drains (Hirameki) had tenements flagged 780px away, across the town wall, merely
@@ -3611,7 +3624,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         toe_px = 240.0 / float(meta.get("ftpx", 1) or 1)
         in_toe = []
         for h in houses + M.get("buildings", []):
-            for dp in drains:
+            for dp, _ddd in drains:
+                dux, duy = math.cos(math.radians(_ddd)), math.sin(math.radians(_ddd))
                 best = None
                 for si in range(len(dp) - 1):
                     ax, ay = dp[si]
@@ -7759,6 +7773,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     len(outside_biz) >= 3,
                     f"{len(outside_biz)} business(es) outside the gate - a walled town has a small gate market (guan-xiang) of a few shophouses unless meta(gate_market=False)",
                 )
+
+    # A MAP MUST DECLARE ITS LAND FALL (GM 2026-07-25). This closes the hole that let the whole
+    # problem happen: the drainage-slope block, `downhill_direction_valid` and `marsh_on_low_ground`
+    # are ALL gated on a fall being declared, and the code's own comment said "maps without the tag
+    # are exempt (slope unknown)" - so the two provincial cities, which declared none, silently
+    # skipped every one of those checks for months and nobody could tell from a green gate. Exempt
+    # is exactly what a map must not be. Either form counts: a map-level `meta(down_deg)`, or a
+    # per-field fall on every paddy (which is what a settlement ringed by farmland needs, since its
+    # fans drain several ways at once and no single bearing describes them).
+    _lf_paddies = [f for f in M.get("fields") or [] if f.get("kind") == "paddy"]
+    if _lf_paddies or M.get("field_ditches"):
+        _lf_missing = [f.get("name") for f in _lf_paddies if f.get("down_deg") is None]
+        check(
+            "settlement_declares_a_land_fall",
+            meta.get("down_deg") is not None or (bool(_lf_paddies) and not _lf_missing),
+            f"no land fall declared - give the map a meta(down_deg=...) or a per-field fall on every paddy "
+            f"(paddies without one: {_lf_missing}). Every drainage-slope rule is gated on this, so a map that "
+            f"declares nothing SKIPS them all and still shows a green gate - which is how both provincial "
+            f"cities went unvalidated. Water flow (meta water_flow) is a separate declaration and does not substitute",
+        )
 
     # WATER FLOW DIRECTION (GM 2026-07-24; the "why" lives in settlements.md "WATER FLOW").
     # Every map declares a DRAINAGE BEARING - where this landscape sends its water - and every
