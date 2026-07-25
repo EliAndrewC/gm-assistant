@@ -684,6 +684,29 @@ def test_small_structures_are_checked_even_below_the_building_area_floor() -> No
     assert pa.structures_on_walls(plan)  # ...but still a structure standing in the wall
 
 
+def test_utility_structures_are_checked_for_standing_in_a_wall() -> None:
+    """A privy is a built thing standing on the ground, and the fill list had drifted from the rule.
+
+    The comment above STRUCTURE_FILLS already said privies count, but the list did not contain the
+    privy color, so all 23 utility rects in the pool went unchecked (found 2026-07-25).
+    """
+    wall = _wallgroup((0, 100, 300, 100))  # ink spans y 95.5..104.5
+    privy = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(20, 92, 18, 22, "#7E726A")))
+    assert len(pa.structures_on_walls(privy)) == 1
+    well = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(20, 92, 22, 22, pa.WELL_FILL)))
+    assert len(pa.structures_on_walls(well)) == 1
+    clear = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(20, 60, 18, 22, "#7E726A")))
+    assert pa.structures_on_walls(clear) == []
+
+
+def test_structures_on_walls_fires_on_the_frozen_privy_in_wall_fixture() -> None:
+    """Red fixture: Ubame's stable-yard privy pushed 8 ft south, into the compound wall."""
+    with open(os.path.join(_FIX, "ubame-privy-in-wall-red.svg")) as fh:
+        hits = pa.structures_on_walls(pa.parse_svg(fh.read()))
+    assert len(hits) == 1
+    assert hits[0].wall == "compound wall"
+
+
 def test_structures_on_walls_reports_the_divider_and_the_worst_overlap_first() -> None:
     svg = _svg(
         _rect(0, 0, 300, 300, COURT),
