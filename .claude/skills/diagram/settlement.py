@@ -208,6 +208,48 @@ def village_population(rng: random.Random) -> int:
     return rng.choices([p for p, _ in _VILLAGE_POP_DIST], weights=[w for _, w in _VILLAGE_POP_DIST])[0]
 
 
+def fillet_polyline(pts: Poly, radius: float, steps: int = 6, min_turn_deg: float = 8.0) -> Poly:
+    """Round every interior corner of a drawn watercourse, returning a densified polyline (so callers
+    keep building plain `M ... L ...` paths and the taper/piece machinery is unaffected).
+
+    WHY (GM 2026-07-25): flowing water in an EARTHEN channel has no mitred corners. A dug ditch that
+    changes direction does it on a swept bend, because a sharp corner scours on the outside and silts
+    on the inside until the water has rounded it itself - the maintenance crew re-digs the bend, not
+    the corner. Sharp corners belong to masonry (a stone-lined aqueduct, a sluice box, a revetted
+    canal), and nothing at village/town scale in this setting is lined: these are hand-dug earth
+    ditches with grass banks. HOW BIG: an alluvial channel's bend radius runs ~2-3 channel widths
+    (Leopold & Wolman's meander geometry), and a dug farm ditch's bend is no tighter, so callers pass
+    ~2.5x the drawn width and the bend scales with the ditch instead of being a fixed drawing quirk -
+    a big head-race sweeps, a thin lateral turns tight, both at the same real ratio.
+
+    `radius` is the target cut-back along each leg, capped at 35% of either adjacent segment, so two
+    neighboring corners can never eat the segment between them (0.35 + 0.35 < 1) and a short offtake
+    stub keeps its shape. Corners gentler than `min_turn_deg` are left alone - there is no visible
+    elbow to round, and rounding them would only add points."""
+    if len(pts) < 3 or radius <= 0:
+        return [(float(x), float(y)) for x, y in pts]
+    out: Poly = [(float(pts[0][0]), float(pts[0][1]))]
+    for i in range(1, len(pts) - 1):
+        p0, p1, p2 = pts[i - 1], pts[i], pts[i + 1]
+        v0, v1 = (p0[0] - p1[0], p0[1] - p1[1]), (p2[0] - p1[0], p2[1] - p1[1])
+        l0, l1 = math.hypot(*v0), math.hypot(*v1)
+        if l0 < 1e-6 or l1 < 1e-6:
+            continue  # a repeated vertex bends nothing
+        cosang = max(-1.0, min(1.0, (v0[0] * v1[0] + v0[1] * v1[1]) / (l0 * l1)))
+        if 180.0 - math.degrees(math.acos(cosang)) < min_turn_deg:
+            out.append((float(p1[0]), float(p1[1])))
+            continue
+        d = min(radius, 0.35 * l0, 0.35 * l1)
+        a = (p1[0] + v0[0] / l0 * d, p1[1] + v0[1] / l0 * d)
+        b = (p1[0] + v1[0] / l1 * d, p1[1] + v1[1] / l1 * d)
+        for s in range(steps + 1):  # quadratic bend, the corner itself as the control point
+            t = s / steps
+            mt = 1 - t
+            out.append((mt * mt * a[0] + 2 * mt * t * p1[0] + t * t * b[0], mt * mt * a[1] + 2 * mt * t * p1[1] + t * t * b[1]))
+    out.append((float(pts[-1][0]), float(pts[-1][1])))
+    return out
+
+
 def smooth_closed(pts: Poly) -> str:
     n = len(pts)
     d = f'M{pts[0][0]:.1f},{pts[0][1]:.1f}'
@@ -2836,6 +2878,11 @@ class Settlement:
         that band's width, and needs it from the post-clip record rather than the pre-clip
         field_ditches/channels (the two diverge wherever a mouth was snapped onto open water)."""
         pts = self._clip_to_stream(self._clip_to_river(self._clip_to_moat(self._clip_to_pond(pts), capr=max(w0, w1) / 2), capr=max(w0, w1) / 2))
+        # ROUND THE BENDS: an earthen ditch turns on a swept curve, never a mitred corner (see
+        # fillet_polyline for the why and the ~2.5-widths radius). Applied AFTER the mouth clips so a
+        # snapped pond/moat/stream junction keeps its exact endpoint, and the DRAWN geometry recorded
+        # below is the filleted line, which is what the mouth-cover and join checks measure.
+        pts = fillet_polyline(pts, 2.5 * max(w0, w1))
         rec: dict[str, Any] = {"pts": [[round(x, 1), round(y, 1)] for x, y in pts], "late": late, "w0": round(w0, 2), "w1": round(w1, 2)}
         self.M.setdefault("drawn_channels", []).append(rec)  # ONE rec per call: flush writes bedz per piece, so the last (topmost) piece's z sticks
         if abs(w1 - w0) < 0.2:

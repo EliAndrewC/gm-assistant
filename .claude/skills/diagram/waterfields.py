@@ -395,6 +395,54 @@ def _point_along(pts: Poly, frac: float) -> Pt:
     return pts[-1]
 
 
+def round_channel_joints(channels: list[dict[str, Any]], min_turn_deg: float = 8.0, steps: int = 6) -> None:
+    """Round the bend where one drawn channel CONTINUES into the next, in place.
+
+    A dug run is emitted as SEVERAL records so its width can taper (head-race -> main -> main ...),
+    which means the run's own changes of direction fall at the SEAM between two records, where
+    `settlement.fillet_polyline` - which only rounds a polyline's interior vertices - cannot reach
+    them. That seam was the sharpest water on the maps: Moritono's head-race left the tameike due
+    west and met the field-edge main at a mitred elbow (GM 2026-07-25). The doctrine and the
+    ~2.5-channel-widths radius are documented at `settlement.fillet_polyline`; here the arc is dug
+    out of BOTH records - the upstream one gives up its last stretch and carries the whole bend, the
+    downstream one starts where the bend ends - because trimming only one side would leave the
+    other's square tip poking out of the curve.
+
+    Only a TRUE continuation is rounded: exactly two channels meeting, one ending and one starting.
+    A node where a branch ALSO leaves is a junction, not a bend - an offtake is a notch cut in the
+    bank, and the main running past it is not turning there anyway."""
+    ends: dict[tuple[float, float], list[tuple[int, int]]] = {}
+    for i, c in enumerate(channels):
+        if len(c["pts"]) >= 2:
+            for which, p in ((0, c["pts"][0]), (1, c["pts"][-1])):
+                ends.setdefault((round(p[0], 1), round(p[1], 1)), []).append((i, which))
+    for touch in ends.values():
+        if len(touch) != 2 or {w for _, w in touch} != {0, 1}:
+            continue  # a lone end, or a junction where a branch leaves: not a bend
+        a_i = next(i for i, w in touch if w == 1)
+        b_i = next(i for i, w in touch if w == 0)
+        A, B = channels[a_i], channels[b_i]
+        pv, P, nx = A["pts"][-2], A["pts"][-1], B["pts"][1]
+        v0, v1 = (pv[0] - P[0], pv[1] - P[1]), (nx[0] - P[0], nx[1] - P[1])
+        l0, l1 = math.hypot(*v0), math.hypot(*v1)
+        if l0 < 1e-6 or l1 < 1e-6:
+            continue
+        cosang = max(-1.0, min(1.0, (v0[0] * v1[0] + v0[1] * v1[1]) / (l0 * l1)))
+        if 180.0 - math.degrees(math.acos(cosang)) < min_turn_deg:
+            continue  # no visible elbow to round
+        w = max(A.get("w_tail", A["w"]), B["w"])
+        d = min(2.5 * w, 0.35 * l0, 0.35 * l1)
+        a = (P[0] + v0[0] / l0 * d, P[1] + v0[1] / l0 * d)
+        b = (P[0] + v1[0] / l1 * d, P[1] + v1[1] / l1 * d)
+        arc = []
+        for s in range(steps + 1):
+            t = s / steps
+            mt = 1 - t
+            arc.append((round(mt * mt * a[0] + 2 * mt * t * P[0] + t * t * b[0], 1), round(mt * mt * a[1] + 2 * mt * t * P[1] + t * t * b[1], 1)))
+        A["pts"] = A["pts"][:-1] + arc  # the upstream record carries the whole bend ...
+        B["pts"] = [arc[-1]] + B["pts"][1:]  # ... and the downstream one picks up where it ends
+
+
 def build_comb(
     W: float,
     H: float,
@@ -723,6 +771,7 @@ def build_comb(
     # gentle-valley village spreads them (the patchwork quilt, default); a STEEP/terraced village narrows the
     # spread so the rows converge back onto the contour (ridge-along-contour erosion control) and no variation
     # is required. Threshold at ~0.3 rad (~17 deg): above it the plots visibly fan, below it they read aligned.
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {
         "down_deg": down_deg,  # the LOCAL fall this fan was carved to - recorded so the drainage-slope
         # checks can judge each drain against ITS OWN field rather than one map-level constant (a city
@@ -1427,6 +1476,7 @@ def build_terraces(
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]  # straight downhill off-map
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {
         "channels": channels,
         "plots": plots,
@@ -1842,6 +1892,7 @@ def build_polder(
     # inner-toe loop, so the green is bounded exactly by the ring and the canal draws on top of it.
     floor = [grid(s, t) for s, t in (sides_st[0] + sides_st[1] + sides_st[2] + sides_st[3])]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {
         "channels": channels,
         "plots": plots,
@@ -1943,6 +1994,7 @@ def build_ribbon(
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
+    round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {
         "channels": channels,
         "plots": plots,
