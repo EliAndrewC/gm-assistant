@@ -5870,6 +5870,8 @@ class Settlement:
         "mausoleums",
         "gate_structs",
         "wall_towers",
+        "martial_halls",
+        "dojos",
     )
 
     def _canopy_keepouts(self, bbox: tuple[float, float, float, float]) -> tuple[list[tuple[float, float, float, float]], list[tuple[float, float, float]]]:
@@ -8555,6 +8557,164 @@ class Settlement:
         if label_below is None:
             label_below = self._label_hits(x, y - h / 2 - 9, name, 9) > self._label_hits(x, y + h / 2 + 11, name, 9)
         self.label(x, y + h / 2 + 11 if label_below else y - h / 2 - 9, name, 9, italic=True, color="#463653")
+
+    # ---- martial training: the state hall and the private dojos (GM 2026-07-25) ---------------
+    # A DOJO IS A CITY INSTITUTION. The county tier draws a practice ground and no dojo at all
+    # (buildings.md, "A dojo is a city institution; county training is courtyard keiko"): a county
+    # town holds ~20 resident samurai, which is no student body and no living for a sensei, and the
+    # rural anchors agree - an Edo daikansho/jin'ya had no bugeijo in its program and a Chinese
+    # county yamen had no training hall at all. The PROVINCIAL CITY is the first tier that supports
+    # one, and it supports two KINDS, which is why there are two glyphs here:
+    #
+    #   martial_hall  the STATE institution - the martial wing of the provincial school, where the
+    #                 province's samurai youth are schooled and the officer cohort drills. Exactly
+    #                 ONE per provincial city, always. Historically the hanko's bugeijo, and hanko
+    #                 were built IN CASTLE TOWNS for the domain's own retainers - so the tier that
+    #                 seats a governor and ~225 working samurai is the tier that seats the hall.
+    #   dojo          a PRIVATE machi-dojo, a retired sensei or noted duelist teaching a named
+    #                 style out of a hall in the samurai quarter. COUNT ROLLS from the samurai
+    #                 cohort (see `dojos`).
+    #
+    # The two share a FORM (a long plank-floored hall with a kamiza head + a training yard with
+    # striking posts) and split on COLOR: state violet, the same family as the ministries, vs the
+    # ordinary building tan of a private establishment in a residential quarter.
+    DOJO_SAMURAI_FRAC = 0.10  # a provincial city is ~10% samurai (budgets.md: ~300 of ~3,000)
+    DOJO_PER_SAMURAI = 200  # GM formula 2026-07-25: 1 private dojo per 200 samurai + a remainder roll
+
+    def _dojo_hall(self, g: list[str], x0: float, y0: float, w: float, h: float, fill: str, edge: str, head: str) -> None:
+        """The shared DOJO HALL glyph: a long rectangle with a plank-floor grain running lengthwise
+        and the KAMIZA (the head of the hall, where the shrine alcove sits and students bow in)
+        marked as a band across the short end. The plank grain is what says 'sprung wooden floor'
+        rather than 'another shophouse' at a glance - the one interior feature a top-down dojo has."""
+        g.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1.5" fill="{fill}" stroke="{edge}" stroke-width="1.6"/>')
+        g.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{max(w * 0.13, 2.6):.1f}" height="{h:.1f}" fill="{head}" opacity="0.9"/>')  # the kamiza end
+        for pi in range(1, 4):  # the plank-floor grain, lengthwise
+            py = y0 + h * pi / 4
+            g.append(f'<line x1="{x0 + 1.2:.1f}" y1="{py:.1f}" x2="{x0 + w - 1.2:.1f}" y2="{py:.1f}" stroke="{edge}" stroke-width="0.55" opacity="0.5"/>')
+
+    def _keiko_gear(self, g: list[str], rack: tuple[float, float], posts: Sequence[tuple[float, float]], edge: str) -> None:
+        """The training yard's durable equipment - a WEAPON RACK and the kenjutsu striking posts
+        (tategi). Both are sub-glyph at city scale (a rack is ~8x2 real ft = under 3px at 3 ft/px),
+        so they follow the Mode A stroke convention and draw as LOCATION MARKERS at a fixed legible
+        size rather than to scale. What makes a training ground read as ESTABLISHED is the gear
+        practice leaves behind, so the markers carry more meaning than their footprint does."""
+        g.append(f'<line x1="{rack[0]:.1f}" y1="{rack[1]:.1f}" x2="{rack[0] + 5.0:.1f}" y2="{rack[1]:.1f}" stroke="{edge}" stroke-width="2.0" stroke-linecap="round"/>')
+        for px_, py_ in posts:
+            g.append(f'<circle cx="{px_:.1f}" cy="{py_:.1f}" r="1.7" fill="none" stroke="{edge}" stroke-width="1.1"/>')
+
+    def martial_hall(self, x: float, y: float, rot: float = 0.0, label: str = "martial hall", label_below: bool | None = None, label_xy: Pt | None = None) -> None:
+        """The PROVINCIAL MARTIAL HALL - the state training institution, one per provincial city.
+
+        REAL FEET (the sizes are researched, not chosen for legibility - see settlements.md
+        "Historical grounding: martial training in a provincial city"). The compound is sized to its
+        PROGRAM rather than rounded up: the lane sets the width and the hall-plus-lane sets the
+        depth, and everything else is circulation.
+          - the hall              60 x 36 ft = 2,160 sqft = 120 tatami (a mat is 3 x 6 ft). At the
+                                  ~90-135 sqft per drilling samurai that buildings.md already
+                                  established for the county practice ground, that floor holds
+                                  ~20 pairs at once - the officer cohort plus a school class
+          - the sensei's house    40 x 24 ft, a modest samurai dwelling (compare the 56 x 40 ft
+                                  junior samurai city house)
+          - the archery lane      100 x 26 ft of swept ground with an AZUCHI (earthen butt) at the
+                                  far end. 100 ft covers the kyudo standard 28 m / 92 ft shooting
+                                  distance - the same ~90 ft clear lane the Mode A azuchi uses
+          - the walled compound   130 x 100 ft (13,000 sqft, ~0.30 acre) = lane + butt + wall
+                                  margins across, hall + lane + circulation deep. Well BELOW a
+                                  ministry office compound (224 x 148 ft), which is right: a
+                                  ministry is a bureau of clerks and archives, this is one hall and
+                                  a yard
+        The lane is INSIDE the compound wall: the hall's whole point is that the province's youth
+        train in one enclosed place, and an unwalled shooting lane in a city street is a hazard.
+        Records M['martial_halls'] with its lane length in real feet (city_has_martial_hall,
+        city_martial_hall_has_archery_range)."""
+        f = self.px
+        cw, ch = f(130) / 2, f(100) / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-cw:.1f}" y="{-ch:.1f}" width="{cw * 2:.1f}" height="{ch * 2:.1f}" rx="2" fill="#E7E1EC" stroke="#463653" stroke-width="1.7"/>')
+        ly0, ly1 = f(12), f(38)  # the archery lane's south band
+        lx0, lx1 = -cw + f(7), -cw + f(107)
+        g.append(f'<rect x="{lx0:.1f}" y="{ly0:.1f}" width="{lx1 - lx0:.1f}" height="{ly1 - ly0:.1f}" fill="#E3D9BE" stroke="#B9A57C" stroke-width="0.8"/>')
+        g.append(f'<line x1="{lx0 + f(6):.1f}" y1="{ly0:.1f}" x2="{lx0 + f(6):.1f}" y2="{ly1:.1f}" stroke="#8A7448" stroke-width="0.8"/>')  # the shooting line
+        g.append(f'<rect x="{lx1:.1f}" y="{ly0:.1f}" width="{f(10):.1f}" height="{ly1 - ly0:.1f}" rx="1" fill="#A98C58" stroke="#6B5228" stroke-width="1.1"/>')  # the azuchi butt
+        self._dojo_hall(g, -cw + f(7), -ch + f(6), f(60), f(36), "#CDBBD6", "#463653", "#6A4A78")
+        g.append(f'<rect x="{f(10):.1f}" y="{-ch + f(6):.1f}" width="{f(40):.1f}" height="{f(24):.1f}" rx="1.5" fill="#DDB87A" stroke="#5A3F1E" stroke-width="1.4"/>')  # the sensei's house
+        self._keiko_gear(g, (-cw + f(10), 0.0), [(-cw + f(32), f(3)), (-cw + f(44), f(3))], "#463653")
+        g.append('</g>')
+        self.add(''.join(g))
+        self.M.setdefault("martial_halls", []).append(
+            {"x": round(x, 1), "y": round(y, 1), "w": round(f(130), 1), "h": round(f(100), 1), "rot": round(rot, 1), "label": label, "range_ft": round((lx1 - lx0) * self.ftpx, 1)}
+        )
+        self.placed.append((x, y, f(130), f(100)))
+        # a modest stand-clear apron (14px, the office-abut clearance), NOT the ministries' 26: the
+        # hall is not a government office for city_government_offices_dont_abut, and a samurai ward
+        # is packed tightly enough that every px of apron costs a house it must not spend
+        bm = max(30 * self.bscale, 14)
+        self.block_polys.append([(x - cw - bm, y - ch - bm), (x + cw + bm, y - ch - bm), (x + cw + bm, y + ch + bm), (x - cw - bm, y + ch + bm)])
+        # THE CAPTION IS WHAT BINDS, not the compound. "martial hall" is ~70px of italic text
+        # against a 43x33px footprint at the city rung, so in a ward packed to its space budget the
+        # hall very often fits somewhere its caption does not. Two escapes, in order: auto-pick the
+        # emptier SIDE the way s.ministry does (a below-caption on a hall seated beside the yamen
+        # lands squarely on the governor's mansion), and if neither side is clear, let the gen hand
+        # the caption a `label_xy` in a nearby pocket - the same move Tango makes for the governor's
+        # own caption. Either way the band the caption takes is reserved so a later pack cannot
+        # slide a house under the text (labels_clear_of_other_buildings).
+        if label_below is None:
+            label_below = self._label_hits(x, y - ch - 9, label, 9) > self._label_hits(x, y + ch + 11, label, 9)
+        lx_, ly_ = label_xy if label_xy else (x, y + ch + 11 if label_below else y - ch - 9)
+        bw_ = max(cw + bm, 2.9 * len(label) + 10)
+        by_ = ly_ - 11 if label_xy else (y + ch if label_below else y - ch - 26)
+        self.block_polys.append([(lx_ - bw_, by_), (lx_ + bw_, by_), (lx_ + bw_, by_ + 26), (lx_ - bw_, by_ + 26)])
+        self.label(lx_, ly_, label, 9, italic=True, color="#463653")
+
+    def dojo(self, x: float, y: float, rot: float = 0.0, label: str = "dojo") -> None:
+        """A PRIVATE DOJO (machi-dojo) in the samurai quarter.
+
+        REAL FEET: the lot is 76 x 44 ft (~3,300 sqft) - a walled establishment about the size of a
+        senior samurai's house - holding a 44 x 24 ft hall (1,056 sqft = ~59 tatami) and a training
+        yard with a weapon rack and two striking posts. 59 mats is the LOW end of the Edo town-dojo
+        band on purpose: the famous commercial dojos were a bakumatsu, million-person-city
+        phenomenon, and a provincial seat of ~3,000 has not had that boom. NO archery lane - there
+        is no room for a 92 ft shot on a 76 ft lot, and the butt is the state hall's to keep.
+        Records M['dojos'] (city_dojo_count_follows_samurai, city_dojos_among_samurai)."""
+        f = self.px
+        lw, lh = f(76) / 2, f(44) / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-lw:.1f}" y="{-lh:.1f}" width="{lw * 2:.1f}" height="{lh * 2:.1f}" rx="1.5" fill="#EFE7D2" stroke="#5A4326" stroke-width="1.3"/>')
+        self._dojo_hall(g, -lw + f(3), -lh + f(3), f(44), f(24), "#D9C8A4", "#5A4326", "#8A6B42")
+        self._keiko_gear(g, (-lw + f(6), lh - f(6)), [(f(14), f(2)), (f(24), f(2))], "#5A4326")
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("dojos", x, y, f(76), f(44), rot, label)
+
+    def dojos(self, seats: Sequence[tuple[float, float]], count: int | None = None) -> int:
+        """Place the city's PRIVATE dojos, COUNT ROLLED FROM THE SAMURAI COHORT (GM formula
+        2026-07-25, the bathhouse pattern applied to a samurai-driven institution): ONE dojo per
+        full 200 samurai, plus a chance of one EXTRA equal to the remainder fraction. A provincial
+        city of 3,000 is ~10% samurai = ~300, so it keeps 1 guaranteed + a 50% roll; a 4,000 seat
+        (~400 samurai) keeps exactly 2. Floored at 1 - the private tail is never empty at this tier.
+
+        WHY THE SAMURAI COUNT AND NOT THE POPULATION: a dojo serves samurai and nobody else, so the
+        cohort is the causal driver; the city's total population only matters through it. (The
+        divisor works out to 1 per 2,000 inhabitants, which coincides with the bathhouse divisor by
+        arithmetic accident, not by design - if a city's samurai share is ever declared away from
+        10%, this follows the samurai and the bathhouses do not.) The countryside cohort is
+        deliberately NOT counted: a provincial city's size already scales with the countryside that
+        feeds it, so asking about it twice would double-count (GM 2026-07-25).
+
+        Seats are hand-vetted (x, y) candidates, first n drawn - provide 2 so any roll can land;
+        `count=` pins the roll. Recorded as meta['dojo_roll'] and gated by
+        city_dojo_count_follows_samurai, so a stale hand count can never ship. The roll consumes NO
+        main-stream RNG (dedicated Random on the map seed): a map rolling its old count stays
+        byte-identical."""
+        samurai = round(int(self.M.get("meta", {}).get("population") or 3000) * self.DOJO_SAMURAI_FRAC)
+        rolled = max(1, samurai // self.DOJO_PER_SAMURAI + (1 if random.Random(self.seed * 2777 + 91).random() < (samurai % self.DOJO_PER_SAMURAI) / self.DOJO_PER_SAMURAI else 0))
+        n = int(count) if count is not None else rolled
+        if n > len(seats):
+            raise ValueError(f"dojos rolled {n} but only {len(seats)} vetted seats were provided - add candidates (the samurai band can ask for up to 2)")
+        for dx_, dy_ in seats[:n]:
+            self.dojo(dx_, dy_)
+        self.M["meta"]["dojo_roll"] = n
+        return n
 
     def _label_hits(self, lx: float, ly: float, text: str, size: float) -> int:
         """How many already-placed footprints (buildings/houses + homestead groves) a label at

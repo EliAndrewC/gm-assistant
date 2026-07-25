@@ -4494,3 +4494,60 @@ def test_moat_swept_tap_scores_a_zero_length_throat_as_unusable():
     ring = [(400, 300), (700, 300), (700, 700), (400, 700), (400, 300)]
     got = settlement.moat_swept_tap(ring, (400, 300), (700, 700), (400, 500), (400, 500), want_deg=-1.0, max_back=40.0)
     assert isinstance(got, tuple)
+
+
+def test_dojos_roll_follows_the_samurai_cohort():
+    # GM formula 2026-07-25: 1 private dojo per full 200 SAMURAI (the city's ~10% share of its
+    # population) + a remainder-fraction chance of one extra, floored at 1; count= pins; too few
+    # seats is loud. The samurai cohort is the driver, not the population - a dojo serves samurai
+    # and nobody else - so the constants are read off the class rather than assumed here.
+    def city_(seed, pop):
+        s_ = Settlement(1200, 1200, seed=seed)
+        s_.meta(name="C", scale="city", ftpx=3)
+        s_.M["meta"]["population"] = pop
+        return s_
+
+    assert Settlement.DOJO_SAMURAI_FRAC == 0.10 and Settlement.DOJO_PER_SAMURAI == 200
+    s = city_(2, 2000)  # 200 samurai = one full unit, zero remainder: exactly 1, no roll can add
+    assert s.dojos([(300, 300), (600, 600)]) == 1
+    assert s.M["meta"]["dojo_roll"] == 1 and len(s.M["dojos"]) == 1
+    s2 = city_(2, 4000)  # 400 samurai = two full units, zero remainder: exactly 2
+    assert s2.dojos([(300, 300), (600, 600)]) == 2
+    assert len(s2.M["dojos"]) == 2
+    # 3,000 -> 300 samurai -> 1 guaranteed + a 50% roll; the two seeds below straddle it
+    rolls = {seed: city_(seed, 3000).dojos([(300, 300), (600, 600)]) for seed in (47, 162)}
+    assert set(rolls.values()) <= {1, 2}
+    assert city_(47, 3000).dojos([(300, 300), (600, 600)], count=2) == 2  # a pin overrides the roll
+    s4 = city_(2, 4000)
+    with pytest.raises(ValueError, match="vetted seats"):
+        s4.dojos([(300, 300)])  # a guaranteed 2 needs 2 seats
+
+
+def test_martial_hall_and_dojo_draw_their_researched_program():
+    # sizes are TRUE feet, not legibility choices (settlements.md "Historical grounding: martial
+    # training in a provincial city"): the state hall is a 130x100 ft compound whose archery lane
+    # covers the kyudo standard 92 ft shot, a private dojo a 76x44 ft lot with no lane at all.
+    s = Settlement(1200, 1200, seed=3)
+    s.meta(name="C", scale="city", ftpx=3)
+    s.martial_hall(400, 400)
+    s.dojo(800, 800)
+    (mh,) = s.M["martial_halls"]
+    assert (round(mh["w"] * 3), round(mh["h"] * 3)) == (130, 100)
+    assert mh["range_ft"] >= 90  # city_martial_hall_has_archery_range's floor
+    assert mh["label"] == "martial hall"
+    (dj,) = s.M["dojos"]
+    assert (round(dj["w"] * 3), round(dj["h"] * 3)) == (76, 44)
+    assert "range_ft" not in dj  # no archery lane on a 76 ft lot - the butt is the state hall's
+    # the state hall is drawn in government violet, the private hall in ordinary building tan
+    assert "#CDBBD6" in s.out[-2] and "#D9C8A4" in s.out[-1]
+
+
+def test_martial_hall_caption_takes_the_emptier_side():
+    # "martial hall" is wide relative to a 43x33 px compound, so the caption side is a real
+    # decision: a hall seated beside the yamen would otherwise drop its label on the governor.
+    s = Settlement(1200, 1200, seed=3)
+    s.meta(name="C", scale="city", ftpx=3)
+    s.building(400, 440, 120, 40, kind="samurai")  # a neighbor directly BELOW the hall's seat
+    s.martial_hall(400, 400)
+    lab = [L for L in s.M["labels"] if len(L) > 5 and L[5] == "martial hall"][0]
+    assert lab[1] < 400  # pushed ABOVE the compound, away from the occupied side

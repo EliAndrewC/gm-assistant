@@ -62,7 +62,7 @@ s.meta(budget=budget_to_manifest(BUDGET))
 
 # ---- the rampart: a closed ring with a NORTH gate (the north road) and an EAST river gate
 # (the bridge road), plus a WATER GATE south of the river gate where the cargo canal enters
-CX, CY, RX, RY = 1480, 1330, round(BUDGET.wall.rx), round(BUDGET.wall.ry)  # 449x418 from the budget
+CX, CY, RX, RY = 1480, 1330, round(BUDGET.wall.rx), round(BUDGET.wall.ry)  # 452x421 from the budget (449x418 before the martial-hall program line, 2026-07-25)
 NRING = 20
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)), round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, EGATE, WGATE_PT = WALL[0], WALL[5], WALL[6]
@@ -424,7 +424,7 @@ grid([SAM_ST, MER_V1, MER_V2])
 # samurai quarter (below). SUITENGU, the river fortune a river city honors, is a small wayside
 # shrine among the smattering (unlabeled), NOT a great temple (city_temples_dedicated).
 TEMPLE_LANE = [
-    (1073, 1216),
+    (1067, 1216),
     (1480, 1216),
 ]  # the E-W temple-neighborhood street; Rites + Ebisu front it, it meets the spine; W end lands IN the ring bed (ring centerline x~1029.5 at y1204) so it makes a clean T, not a sliver-short stub (city_streets_meet_through_lanes)
 grid([TEMPLE_LANE], width_ft=18)
@@ -647,6 +647,18 @@ s.block_polys.append(
 # junior-samurai ROW BARRACKS (kumi-yashiki nagaya, the Tango precedent) fill the two flank bands
 # the scatter pack cannot reach - rowpack's tighter standoffs (5.8px ring edge, 13px street edge)
 # use the ground between the civic aprons and the ring arc that the pack's corridor gates waste:
+# MARTIAL TRAINING (GM 2026-07-25). The state PROVINCIAL MARTIAL HALL takes the ward's east band,
+# between the governor's mansion and the east ward fence - its own walled compound, not a wing of
+# the yamen, but inside the ward whose samurai it drills and near the government it answers to.
+# Placed BEFORE the flank barracks and the pack so the rows flow around it. The seat was chosen by
+# SWEEP, not by eye: the ward is packed to its budget, so what matters is which seat costs the
+# fewest samurai houses (city_samurai_housing_sufficient floors the quarter at 39, and the seats
+# tried ran 35-43). No pocket in this ward can hold the caption OUTSIDE the compound, so it is
+# hand-placed CENTERED ON it (label_xy) - the same move this gen's governor's mansion makes, and
+# the reason s.martial_hall takes label_xy at all.
+s.martial_hall(1385, 1429, label_xy=(1385, 1437))  # x1385 is the MIDDLE of a 4px window: below x1383 the compound
+# runs under the 'Governor's Mansion' caption (which reaches x1361), above x1387 it touches the Ministry of Justice's
+# west wall at x1408 - so do not nudge this seat without re-checking both
 s.rowpack((1122, 1523, 1200, 1604), ["samurai"] * 24, court_every=6, eave_ft=3)  # W flank, below the Ministry of Works apron, riding the SW ring arc (the bound clips the taper)
 s.rowpack(
     (1390, 1505, 1452, 1565), ["samurai"] * 20, court_every=6, eave_ft=3
@@ -664,6 +676,11 @@ front(
 # glyphs full-size, the usable ground is now two bands - W of the yamen (ring arc to the mansion's
 # W apron) and E of it (mansion apron to the fence corridor at x1469-15; see the fence-corridor
 # width 15 trade-off note above) - and the coarser step 13 scan stranded seats in both.
+# PRIVATE dojos - count ROLLED from the samurai cohort (s.dojos: 1 per full 200 samurai + a
+# remainder chance; ~300 samurai here -> 1 + a 50% roll, which this seed does not take). Seated
+# AFTER the flank barracks and the avenue frontage, so the seat is real ground rather than a
+# guess; seat 2 is the ground a 2-roll would use.
+s.dojos([(1180, 1450), (1420, 1440)])
 s.pack((1073, 1309, 1469, 1612), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill")
 s.label(
     1426, 1534, "samurai neighborhood", 10, italic=True, color="#3A352C"
@@ -674,7 +691,7 @@ s.label(1433, 1317, "samurai ward gate", 9, italic=True, color="#5A4326")  # ins
 # ====================================================================== N + NE: the LABORER quarter
 # one big contiguous block E of the spine, laced with a street grid wired to the N-gate spine;
 # master laborers front the streets, terraces pack the blocks; the E-gate caravan pocket is clear.
-LAB_H = [(1480, 1134), (1845, 1134)]  # E end reaches the ring bed at a clean T-junction
+LAB_H = [(1480, 1134), (1851, 1134)]  # E end reaches the ring bed at a clean T-junction
 # LAB_V1 runs all the way S to the main street (a T at the road centerline - stopping in the
 # 46px approach band reads as a dead-end sliver); LAB_V2 spans LAB_H down to MER_V2's top end,
 # so the two collinear streets read as one continuous N-S line with no near-miss gap at either end
@@ -1182,7 +1199,7 @@ s.title("Nagahara")
 s.kosatsuba(1773, 1149, rot=90)  # the LABELED representative (one-label convention)
 # ...the north road gate's board, UNLABELED, 51px inside the gate on the road verge,
 # aligned to the road's local ~72 deg bearing.
-s.kosatsuba(1492, 961, rot=72, label=None)
+s.kosatsuba(1492, 951, rot=72, label=None)  # nudged 10px up the wall (2026-07-25): the martial-hall budget line grew the derived ring 3px, the N-quarter pack reflowed, and a laborer_large came to rest under the board's old seat
 # ...and the PRINCIPAL board at the central crossroads (GM 2026-07-24, the 3rd board: the
 # bend where the through-road turns east IS the market corner - the city's
 # Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the
