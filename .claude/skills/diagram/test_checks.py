@@ -6653,6 +6653,27 @@ def test_torii_clear_of_walls():
     assert "torii_clear_of_walls" in f({**base, "wards": [{**fence, "boundary": [[599, 700], [601, 701]]}], "torii": [[600, 700, 9]]})
 
 
+def test_torii_avenue_pitch_capped():
+    # GM 2026-07-25 after the spacing research: Rokugan's sando is the 1/3/7 SET of formal gateways,
+    # not a donation row (a designated-site special case) and not ranked ichi/ni/san gates (200 m -
+    # 1.3 km apart), so the pitch is a house rule - ~20 ft, never more than two rail-spans (32 ft).
+    # The motivating cases were town/city avenues at 45-114 ft; the village avenues at ~30 ft pass.
+    def m(pitch_px, n=3, ftpx=1, **rel):
+        return {
+            "meta": {"scale": "town", "ftpx": ftpx},
+            "religious": [{"kind": "monastery", "x": 500, "y": 500, "w": 40, "h": 28, **rel}],
+            "torii": [[500, 560 + pitch_px * i, 9] for i in range(n)],
+        }
+
+    assert "torii_avenue_pitch_capped" in f(m(61))  # Hirameki's Bishamon, the town case
+    assert "torii_avenue_pitch_capped" in f(m(38, ftpx=3))  # Tango's Bishamon at 114 ft, the widest in the pool
+    assert "torii_avenue_pitch_capped" not in f(m(20))  # the house pitch
+    assert "torii_avenue_pitch_capped" not in f(m(16, ftpx=2))  # a village avenue at 32 ft sits AT the cap and passes
+    assert "torii_avenue_pitch_capped" in f(m(17, ftpx=2))  # ... 34 ft does not
+    assert "torii_avenue_pitch_capped" not in f(m(61, torii_outlier=True))  # a designated donation-row site is exempt
+    assert "torii_avenue_pitch_capped" not in f(m(61, n=1))  # a lone arch has no pitch to measure
+
+
 def test_torii_count_canonical_numerology():
     # counts are exactly {1, 3, 7} at every proper hall (GM 2026-07-21 numerology ruling; supersedes
     # the retired torii_full_avenue_is_seven and its {1, 2, 7} set): 2 and 4 fire (Hikari's old Benten
