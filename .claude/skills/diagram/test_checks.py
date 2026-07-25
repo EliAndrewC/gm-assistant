@@ -3729,7 +3729,7 @@ def test_dung_heaps_clear_of_hitch_rails_passes_at_24px_or_more():
 
 def test_city_has_dye_works_fires_when_the_yard_is_far_from_water():
     # a dyer's yard needs rinsing/vat water ON site - a yard in the dry middle of town fails even
-    # though one exists (trade-footprint-research.md; the presence branch is covered by the pinned
+    # though one exists (settlements.md "TRADE WORKS"; the presence branch is covered by the pinned
     # pre-trades city fixtures)
     M = {
         "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True},
@@ -3739,6 +3739,65 @@ def test_city_has_dye_works_fires_when_the_yard_is_far_from_water():
         "dye_yards": [{"x": 500, "y": 500, "w": 27, "h": 17, "rot": 0, "label": "dye works"}],
     }
     assert "city_has_dye_works" in f(M)
+
+
+def _farrier_map(fx, fy, sx=200, sy=200, scale="town", **meta_kw):
+    meta = {"scale": scale, "W": 1000, "H": 1000, "ftpx": 1}
+    meta.update(meta_kw)
+    return {
+        "meta": meta,
+        "buildings": [{"x": sx, "y": sy, "w": 92, "h": 44, "kind": "stables", "rot": 0}],
+        "farriers": [{"x": fx, "y": fy, "w": 28, "h": 38, "rot": 0, "label": "farrier"}],
+    }
+
+
+def test_farrier_serves_a_stables_fires_on_a_forge_with_no_stables_in_reach():
+    # a shoeing forge earns its own premises ONLY where horses concentrate (settlements.md
+    # "TRADE WORKS" -> FARRIERY): the ordinary smith who also shoes stays inside the shop rows,
+    # so a forge on a random street corner is the European coaching-inn image, not a Rokugani seat
+    assert "farrier_serves_a_stables" in f(_farrier_map(800, 800))
+    M = _farrier_map(800, 800)
+    M["buildings"] = []  # ... and a map with NO stables at all fails the same way
+    assert "farrier_serves_a_stables" in f(M)
+
+
+def test_farrier_serves_a_stables_passes_beside_the_caravan_yard():
+    # 250 real ft is the reach; at ftpx=1 a forge 120px off its stables is well inside it
+    assert "farrier_serves_a_stables" not in f(_farrier_map(320, 200))
+
+
+def test_farrier_keeps_fire_gap_fires_on_a_forge_against_the_stall_range():
+    # an OPEN forge against a hay-and-timber stall range is the fire a stable yard does not
+    # survive, so the smithy stands across the ground, never attached. Both an overlapping forge
+    # and one merely crowding the wall are the same defect.
+    assert "farrier_keeps_fire_gap" in f(_farrier_map(200, 200))  # squarely on top of the stables
+    assert "farrier_keeps_fire_gap" in f(_farrier_map(200, 240))  # 5 ft of daylight - not enough
+
+
+def test_farrier_keeps_fire_gap_passes_at_a_real_fire_gap():
+    # ~6 real ft clear of every footprint (buildings.md's wooden-service fire gap) is the floor
+    assert "farrier_keeps_fire_gap" not in f(_farrier_map(200, 250))
+
+
+def test_city_has_farrier_fires_on_a_city_with_no_shoeing_forge():
+    # a provincial city's gate caravan yard concentrates enough horses to keep a dedicated forge
+    M = _farrier_map(320, 200, scale="city", walled=True)
+    M["farriers"] = []
+    M["wall"] = [[100, 100], [900, 100], [900, 900], [100, 900]]
+    M["gates"] = [[500, 100]]
+    assert "city_has_farrier" in f(M)
+
+
+def test_imperial_road_town_farrier_is_gated_on_the_declaration():
+    # the deliberate Hoshizora/Hirameki split: a relay/post town ON the Imperial Road works
+    # courier and caravan horses hard enough to keep a forge; a market town off the road does not,
+    # so the check is gated on meta(imperial_road=True) rather than on town scale alone
+    M = _farrier_map(320, 200, imperial_road=True)
+    M["farriers"] = []
+    assert "imperial_road_town_has_farrier" in f(M)
+    off_road = _farrier_map(320, 200)
+    off_road["farriers"] = []
+    assert "imperial_road_town_has_farrier" not in f(off_road)
 
 
 def test_city_kiln_outside_walls_fires_on_an_intramural_kiln():

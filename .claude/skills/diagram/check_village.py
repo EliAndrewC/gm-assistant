@@ -165,7 +165,7 @@ _OVERLAP_STRUCTS = (
     "drum_towers",
     "byres",
     "kosatsuba",
-    # the trade works (GM 2026-07-24, trade-footprint-research.md)
+    # the trade works (GM 2026-07-24, settlements.md "TRADE WORKS")
     "breweries",
     "dye_yards",
     "lumber_yards",
@@ -173,6 +173,7 @@ _OVERLAP_STRUCTS = (
     "pawnshops",
     "bathhouses",
     "kilns",
+    "farriers",
     "tanning_yards",
 )
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
@@ -442,6 +443,7 @@ CANOPY_STRUCT_KEYS = (
     "bathhouses",
     "oil_presses",
     "kilns",
+    "farriers",
     "mausoleums",
     "gate_structs",
     "wall_towers",
@@ -2105,6 +2107,65 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         not _tr_far,
         f"stable-yard trough clusters not beside a well at {_tr_far[:3]} - animals are watered by relay at a fixed draw-point, the bucket poured straight from the wellhead, so the cluster hugs a well within ~40 real ft; a yard with no well in reach digs its own courtyard well (s._stable_yard does both; settlements.md 'Stable yard' watering)",
     )
+
+    # THE FARRIER'S FORGE STANDS BESIDE A STABLES, AND KEEPS ITS FIRE GAP (GM 2026-07-25, the
+    # iron-horseshoe decision; full grounding in settlements.md "TRADE WORKS" -> FARRIERY). Rokugan
+    # shoes horses in IRON where Edo Japan used woven straw, but that changes an ordinary smith's
+    # REPERTOIRE, not his premises - a town kaji-ya still fits the generic shop glyph. A drawn
+    # farrier is therefore only correct where horses CONCENTRATE, which in map terms is the
+    # caravan/relay stable yard: a shoeing forge on a random street corner is the European
+    # coaching-inn image the trade research warned about, not a Rokugani seat. And it must NOT abut
+    # the stall range - an open forge against hay and timber is the fire a yard does not survive,
+    # so real yards kept the smithy across the ground. The gap anchor is buildings.md's ~6-8 ft
+    # wooden-service fire gap; the measure runs from the WHOLE recorded footprint (shed + apron),
+    # which is deliberately conservative, since the shed sits at the apron's far end.
+    _fr_all = M.get("farriers", [])
+    _fr_ftpx = float(meta.get("ftpx") or 3.0)
+    _fr_stables = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
+
+    def _fr_poly(o_: dict[str, Any]) -> list[tuple[float, float]]:
+        hw_, hh_ = o_["w"] / 2, o_["h"] / 2
+        th_ = math.radians(o_.get("rot") or 0.0)
+        c_, s_ = math.cos(th_), math.sin(th_)
+        return [(o_["x"] + dx_ * c_ - dy_ * s_, o_["y"] + dx_ * s_ + dy_ * c_) for dx_, dy_ in ((-hw_, -hh_), (hw_, -hh_), (hw_, hh_), (-hw_, hh_))]
+
+    def _fr_gap(p_: list[tuple[float, float]], q_: list[tuple[float, float]]) -> float:
+        """Exact clear distance between two (possibly rotated) footprints; negative if they touch.
+        Rotation-EXACT on purpose: the half-diagonal approximation the overlap checks use is fine
+        for "do these collide" but would demand ~28 extra feet of gap around a rotated stables and
+        push the forge absurdly far off its own yard."""
+        if sat_overlap(p_, q_):
+            return -1.0
+        return min(seg_dist(vx_, vy_, r_[i_], r_[(i_ + 1) % 4]) for a_, r_ in ((p_, q_), (q_, p_)) for vx_, vy_ in a_ for i_ in range(4))
+
+    _fr_orphan = [(round(f_["x"]), round(f_["y"])) for f_ in _fr_all if not _fr_stables or min(math.hypot(f_["x"] - b_["x"], f_["y"] - b_["y"]) for b_ in _fr_stables) > 250.0 / _fr_ftpx]
+    check(
+        "farrier_serves_a_stables",
+        not _fr_orphan,
+        f"farrier(s) with no stables within ~250 real ft at {_fr_orphan[:3]} - a shoeing forge earns its own premises ONLY where horses concentrate (a gate caravan yard, an Imperial-road relay town); an ordinary smith who also shoes stays inside the generic shop rows (s.farrier; settlements.md 'TRADE WORKS' -> FARRIERY)",
+    )
+    _fr_tight = []
+    for _fr in _fr_all:
+        _frp = _fr_poly(_fr)
+        if any(_fr_gap(_frp, _fr_poly(_fo)) < 6.0 / _fr_ftpx for _frk in _OVERLAP_STRUCTS + ("manors", "religious") if _frk != "farriers" for _fo in M.get(_frk, []) or []):
+            _fr_tight.append((round(_fr["x"]), round(_fr["y"])))
+    check(
+        "farrier_keeps_fire_gap",
+        not _fr_tight,
+        f"farrier(s) crowding a neighboring structure at {_fr_tight[:3]} - an OPEN forge against a hay-and-timber stall range is the fire a stable yard does not survive, so the smithy stands across the ground, never attached (>= ~6 real ft clear of every footprint; buildings.md's wooden-service fire gap)",
+    )
+    if scale == "city":
+        check(
+            "city_has_farrier",
+            bool(_fr_all),
+            "no farrier - a provincial city's gate caravan yard concentrates enough horses to keep a dedicated shoeing forge (s.farrier beside the stables; the Imperial relay + cheap continental iron are why Rokugan shoes in iron at all)",
+        )
+    elif meta.get("imperial_road"):
+        check(
+            "imperial_road_town_has_farrier",
+            bool(_fr_all),
+            "no farrier in an Imperial-road town - a relay/post town on the Imperial road works courier and caravan horses hard enough to keep a shoeing forge at its stables (s.farrier); a town OFF the Imperial road does not declare meta(imperial_road=True) and is exempt, which is the deliberate Hoshizora/Hirameki split",
+        )
 
     # TROUGH RECTS DRAW ON OPEN GROUND - the cluster's drawn BOX must not clip any structure (GM
     # 2026-07-23, after Tango's caravan cluster hugged its well on a near-vertical ray and the
@@ -4053,6 +4114,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             ("pawnshops", "pawnshop"),
             ("bathhouses", "bathhouse"),
             ("kilns", "kiln"),
+            ("farriers", "farrier"),
             ("tanning_yards", "tanning yard"),
             ("drum_towers", "drum tower"),
         ):
@@ -9472,10 +9534,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not gates_wo_market,
                 f"main-road gate(s) with a too-thin gate market (guan-xiang): {gates_wo_market} - a market suburb forms outside EVERY main-road city gate (research: 10-40 structures per trafficked gate; the map draws a >= 6-shop slice within ~520px, outermost may run off the frame; a sally gate, being traffic-free, is exempt and not in M['gates'])",
             )
-            # TRADE WORKS (GM 2026-07-24; trade-footprint-research.md - the trades whose premises
+            # TRADE WORKS (GM 2026-07-24; settlements.md "TRADE WORKS" - the trades whose premises
             # outgrow the generic shop glyph are first-class features; the long tail of trades,
-            # including smiths - Edo Japan never shod horses, so there are NO farriers - stays in
-            # the shop rows). Every provincial city keeps: >= 1 BREWERY in-wall (the town's
+            # including the ordinary SMITH, stays in the shop rows - Rokugan DOES shoe horses in
+            # iron, but that changes his repertoire, not his footprint, so only a horse
+            # CONCENTRATION earns a drawn farrier). Every provincial city keeps: >= 1 BREWERY
+            # in-wall (the town's
             # largest commercial building; sake/miso/soy; draws its own well); >= 1 DYE WORKS
             # whose drying/rinsing yard sits ON WATER (a stream/channel/canal, the pond, or the
             # moat - dyers need vat-fill and rinsing water, NOT bulk water transport, so a

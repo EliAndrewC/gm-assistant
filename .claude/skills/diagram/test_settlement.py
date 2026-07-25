@@ -1787,6 +1787,52 @@ def test_bathhouses_roll_follows_the_population_formula():
         s4.bathhouses([(300, 300)])  # a guaranteed 2 needs 2 seats
 
 
+def test_farrier_draws_a_forge_shed_with_a_working_apron_and_records_it():
+    # the shoeing forge (GM 2026-07-25, settlements.md "TRADE WORKS" -> FARRIERY): an open-sided
+    # shed plus the apron the animal is actually stood on, recorded as a first-class trade work so
+    # farrier_serves_a_stables / farrier_keeps_fire_gap can gate its siting. Sizes are TRUE feet -
+    # a 20x18 ft shed on a 28x20 ft apron - so the record is the full 28x38 ft footprint.
+    s = _city()
+    before = len(s.out)
+    s.farrier(600, 620)
+    assert len(s.out) > before
+    fr = s.M["farriers"][-1]
+    assert (fr["x"], fr["y"]) == (600, 620)
+    assert fr["w"] == round(s.px(28), 1) and fr["h"] == round(s.px(38), 1)
+    assert fr["label"] == "farrier"
+    assert "#8FA6B0" in s.out[-1]  # the quench tub - a forge always has water at hand
+
+
+def test_farrier_caption_clears_a_ROTATED_footprints_drawn_extent():
+    # a rotated record's drawn vertical extent is its axis-aligned half-height, not h/2, so the
+    # caption must hang off THAT or it lands inside the record's own bbox and
+    # labels_clear_of_other_buildings reports "'farrier' over a farrier" (the rot=150 Hoshizora
+    # forge, GM 2026-07-25). An UNROTATED farrier keeps the plain h/2 anchor.
+    s0, s90 = _city(), _city()
+    s0.farrier(600, 620)
+    s90.farrier(600, 620, rot=90)
+    flat = [L for L in s0.M["labels"] if L[5] == "farrier"][0]
+    turned = [L for L in s90.M["labels"] if L[5] == "farrier"][0]
+    assert flat[1] > 620 + s0.px(38) / 2  # below the unrotated footprint
+    # rotated 90 the drawn half-height is w/2 (< h/2), so its caption rides HIGHER, not lower
+    assert 620 + s90.px(28) / 2 < turned[1] < flat[1]
+
+
+def test_stable_yard_scatter_keeps_off_the_farriers_forge():
+    # the farrier is the one trade work sited INSIDE a stable yard, so it must be in the yard's
+    # keep-out set - otherwise the scatter speckles straw litter across the forge and its apron.
+    s = _city()
+    s.farrier(660, 620)
+    s.stables(600, 620, rot=90)
+    s.flush_stable_yards()
+    fr = s.M["farriers"][-1]
+    yd = s.M["stable_yards"][-1]
+    hw, hh = fr["w"] / 2 + 3, fr["h"] / 2 + 3
+    for key in ("rails", "dung_heaps"):
+        for o in yd.get(key) or []:
+            assert not (abs(o["x"] - fr["x"]) < hw and abs(o["y"] - fr["y"]) < hh), f"{key} on the forge"
+
+
 def test_stables_draws_a_working_yard_and_records_it():
     # the gate stables' beaten-earth yard (GM 2026-07-22): drawing it adds scatter/furniture to the
     # SVG and records a stable_yard linked to the stables, so stables_have_yards can gate it. The yard

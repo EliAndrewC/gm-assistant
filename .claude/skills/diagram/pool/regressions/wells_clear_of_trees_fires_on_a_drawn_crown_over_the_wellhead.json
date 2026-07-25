@@ -1,6 +1,9 @@
 {
  "meta": {
-  "scale": "village"
+  "scale": "village",
+  "ftpx": 1,
+  "W": 1000,
+  "H": 1000
  },
  "houses": [
   {

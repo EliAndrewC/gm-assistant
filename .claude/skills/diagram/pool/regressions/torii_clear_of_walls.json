@@ -1,0 +1,36 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3
+ },
+ "wards": [
+  {
+   "name": "samurai",
+   "boundary": [
+    [
+     300,
+     700
+    ],
+    [
+     900,
+     700
+    ]
+   ],
+   "z": 10,
+   "wall_caps": []
+  }
+ ],
+ "torii": [
+  [
+   600,
+   699,
+   9
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "torii_clear_of_walls"
+  ],
+  "source": "test_checks.py::test_torii_clear_of_walls"
+ }
+}

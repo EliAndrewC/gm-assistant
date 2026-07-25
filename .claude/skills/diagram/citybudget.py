@@ -65,14 +65,16 @@ CIVIC_PROGRAM: tuple[tuple[str, int | None, float], ...] = (
     # the first draft oversized): a ~36 ft platform (Pingyao's Market Tower, ATTESTED 133.4 m^2
     # plan ~ 38 ft square - these towers dominate by height, not plan) = 12 px + its clear block.
     ("bell-and-drum tower", 1, 250.0),
-    # Trade works (GM 2026-07-24, trade-footprint-research.md): the trades whose premises outgrow
+    # Trade works (GM 2026-07-24, settlements.md "TRADE WORKS"): the trades whose premises outgrow
     # the shop glyph. The brewery is the big one (vat hall + shopfront + kura + well, ~32x20 px
     # drawn + margins); the dye yard, oil press, pawnshop court, and 1-2 bathhouses (the sento
     # count rolls from the population band, s.bathhouses) together add ~1,100-1,350 px^2 drawn -
-    # the line carries the 2-bath figure so a 2-roll never starves. Kilns and lumber yards sit
-    # OUTSIDE the walls and cost no interior.
+    # the line carries the 2-bath figure so a 2-roll never starves - and the FARRIER's shoeing
+    # forge (GM 2026-07-25) adds ~120 px^2 more (a 28x38 ft shed-plus-apron is 9.3x12.7 px at
+    # ftpx=3), so the line is 1,500. Kilns and lumber yards sit OUTSIDE the walls and cost no
+    # interior.
     ("brewery compound", 1, 800.0),
-    ("trade works (dye yard, oil press, pawn court, 1-2 bathhouses)", None, 1_350.0),
+    ("trade works (dye yard, oil press, pawn court, 1-2 bathhouses, farrier)", None, 1_500.0),
 )
 
 # One in-wall water feature: a pond (landlocked) or the cargo canal + dock basin (river city).
