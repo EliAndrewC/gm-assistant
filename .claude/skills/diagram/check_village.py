@@ -7526,7 +7526,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
         # A settlement with BOTH a burakumin quarter and running water tans its own hides; one with
         # no watercourse at all keeps no tannery, whatever its size, and is exempt.
-        if _ty_bur and _ty_water:
+        # meta(tannery=False) is the documented opt-out for a settlement that HAS water but no
+        # legitimate site on it - the same "declare the deliberate exception" pattern as
+        # monastery_fortunes. Tango is the case: its only downstream watercourse is tapped for
+        # irrigation ~100 px below the moat, and the sole ground below that tap drags the frame
+        # far enough south to strand other off-map features. A dry inland seat sends its hides
+        # away, exactly as it buys its timber elsewhere for want of navigable water.
+        if _ty_bur and _ty_water and meta.get("tannery") is not False:
             check(
                 "settlement_has_tanning_yard",
                 bool(_ty_yards),
@@ -7541,6 +7547,70 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"tanning yard(s) on water: {[_ty_on_water(t_, 20.0) for t_ in _ty_yards]} - tanning is a WATER process (hides soak "
                 f"1-2 weeks before de-hairing), so the yard must ABUT a stream/channel/canal/moat (within ~20 ft of the bank); "
                 f"a yard set back on dry ground could not work",
+            )
+
+            # DOWNSTREAM OF EVERY DRAW (GM 2026-07-25). The rule tanneries actually turn on: the
+            # foul water must not reach anything anyone draws from. This is NOT testable by
+            # projecting onto the map's drainage bearing - Hoshizora's yard sits on a watercourse
+            # hydrologically separate from the town's, so a single-bearing projection calls it
+            # "upstream" of a town it cannot reach. It IS testable now that flow direction is
+            # recorded, in two clauses against the yard's OWN course:
+            #   (a) that course must not DISCHARGE into anything drawn from - a pond, a field, the
+            #       moat, an irrigation ditch. Emptying to off-map (or into a field drain that
+            #       does) is the only honest ending for a tannery's water.
+            #   (b) no intake may sit DOWNSTREAM of the yard along that same course. Graph
+            #       topology alone cannot see this - a channel tapping the river 200 ft below the
+            #       yard and one tapping it 200 ft above are the same edge - so this clause
+            #       compares ARC POSITION along the course, oriented by the recorded flow.
+            def _ty_arc(poly: Any, x: float, y: float) -> tuple[float, float]:
+                """(arc length to the closest point on `poly`, total length)."""
+                best, run, at = None, 0.0, 0.0
+                for i in range(len(poly) - 1):
+                    ax, ay, bx, by = poly[i][0], poly[i][1], poly[i + 1][0], poly[i + 1][1]
+                    seg = math.hypot(bx - ax, by - ay)
+                    d = seg_dist(x, y, poly[i], poly[i + 1])
+                    if best is None or d < best:
+                        t_par = 0.0 if seg == 0 else max(0.0, min(1.0, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / (seg * seg)))
+                        best, at = d, run + t_par * seg
+                    run += seg
+                return at, run
+
+            _ty_bad_sink, _ty_below = [], []
+            for t_ in _ty_yards:
+                # a yard's course may be a natural stream OR a dug channel (Hoshizora's sits on an
+                # irrigation drain), so both are candidates. A channel is directional by its own
+                # frm->to; only a stream carries a flow tag that can reverse the polyline's sense.
+                _cands = [(o, False) for o in (M.get("channels") or []) if o.get("poly")] + [(o, True) for o in (M.get("streams") or []) if o.get("poly")]
+                if not _cands:
+                    continue
+                _co, _is_stream = min(_cands, key=lambda oc: min(seg_dist(t_["x"], t_["y"], oc[0]["poly"][i], oc[0]["poly"][i + 1]) for i in range(len(oc[0]["poly"]) - 1)))
+                _rev = _is_stream and _co.get("flow") == "reverse"
+                # frm/to are anchored by POLYLINE ORDER, so flow decides which is downstream
+                _sink = (_co.get("to") if not _rev else _co.get("frm")) or {}
+                if _sink.get("kind") not in ("offmap", "drain"):
+                    _ty_bad_sink.append((round(t_["x"]), round(t_["y"]), _sink.get("kind")))
+                _at, _tot = _ty_arc(_co["poly"], t_["x"], t_["y"])
+                _yard_at = (_tot - _at) if _rev else _at
+                for _dr in [c["poly"][0] for c in (M.get("channels") or []) if (c.get("frm") or {}).get("kind") in ("stream", "river")] + [[g["x"], g["y"]] for g in (M.get("sluice_gates") or [])]:
+                    if min(seg_dist(_dr[0], _dr[1], _co["poly"][i], _co["poly"][i + 1]) for i in range(len(_co["poly"]) - 1)) > 34:
+                        continue  # not on THIS course
+                    _da, _ = _ty_arc(_co["poly"], _dr[0], _dr[1])
+                    _draw_at = (_tot - _da) if _rev else _da
+                    if _draw_at > _yard_at + 8:
+                        _ty_below.append((round(t_["x"]), round(t_["y"]), round(_dr[0]), round(_dr[1])))
+            check(
+                "tanning_yard_discharges_to_nothing_drawn_from",
+                not _ty_bad_sink,
+                f"tanning yard(s) on a watercourse that empties into something people draw from (x, y, sink): {_ty_bad_sink} - "
+                f"a tannery's water may end off-map or in a field drain that does, never in a supply pond, an irrigation "
+                f"ditch, a field or the moat",
+            )
+            check(
+                "tanning_yard_below_every_intake",
+                not _ty_below,
+                f"tanning yard(s) with a water intake DOWNSTREAM of them on the same course (yard x, y, intake x, y): {_ty_below} - "
+                f"every sluice, weir and channel head on the yard's own watercourse must lie UPSTREAM of it, or it is fouling "
+                f"water that is drawn below",
             )
             if meta.get("walled") and M.get("wall"):
                 _ty_in = [(round(t_["x"]), round(t_["y"])) for t_ in _ty_yards if point_in_poly(t_["x"], t_["y"], M["wall"])]
