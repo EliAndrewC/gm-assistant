@@ -6573,6 +6573,27 @@ def test_torii_and_religious_clear_of_works_and_ring():
     assert "religious_clear_of_ring_and_towers" not in f({**base, "religious": [hall]})
 
 
+def test_torii_clear_of_walls():
+    # GM 2026-07-25, caught on Nagahara: the 7th arch of the Ebisu sando stood IN the samurai ward
+    # fence. A torii is a FREESTANDING gateway and a wall is a continuous barrier, so an arch never
+    # stands in one - a way through a wall is a GATE. Every wall counts: the city rampart, a ward
+    # fence (and its wall-cap), and the perimeter of a walled compound.
+    base = {"meta": {"scale": "city", "ftpx": 3}}
+    fence = {"name": "samurai", "boundary": [[300, 700], [900, 700]], "z": 10, "wall_caps": []}
+    manor = {"x": 400, "y": 400, "w": 60, "h": 40, "rot": 0, "wall_w": 2}
+    assert "torii_clear_of_walls" in f({**base, "wards": [fence], "torii": [[600, 699, 9]]})  # the Nagahara defect
+    assert "torii_clear_of_walls" not in f({**base, "wards": [fence], "torii": [[600, 680, 9]]})  # the sando stops short
+    assert "torii_clear_of_walls" in f({**base, "wall": WALL, "torii": [[500, 52, 9]]})  # standing in the rampart
+    assert "torii_clear_of_walls" in f({**base, "wards": [{**fence, "wall_caps": [{"x": 300, "y": 700, "z": 3, "pts": [[290, 690], [290, 760]]}]}], "torii": [[290, 730, 9]]})
+    assert "torii_clear_of_walls" in f({**base, "manors": [manor], "torii": [[400, 420, 9]]})  # in a compound wall
+    assert "torii_clear_of_walls" not in f({**base, "manors": [manor], "torii": [[400, 460, 9]]})
+    assert "torii_clear_of_walls" in f({**base, "governor_mansion": {**manor, "x": 700}, "torii": [[700, 420, 9]]})
+    assert "torii_clear_of_walls" in f({**base, "merchant_estates": [{**manor, "y": 200}], "torii": [[430, 200, 9]]})
+    assert "torii_clear_of_walls" in f({**base, "mausoleums": [{**manor, "y": 900}], "torii": [[370, 900, 9]]})
+    # a run that ENDS inside the arch box, crossing none of its edges, still counts as standing in it
+    assert "torii_clear_of_walls" in f({**base, "wards": [{**fence, "boundary": [[599, 700], [601, 701]]}], "torii": [[600, 700, 9]]})
+
+
 def test_torii_count_canonical_numerology():
     # counts are exactly {1, 3, 7} at every proper hall (GM 2026-07-21 numerology ruling; supersedes
     # the retired torii_full_avenue_is_seven and its {1, 2, 7} set): 2 and 4 fire (Hikari's old Benten

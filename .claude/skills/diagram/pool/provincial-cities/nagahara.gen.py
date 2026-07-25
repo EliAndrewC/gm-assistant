@@ -437,10 +437,13 @@ s.shrine_hall(
     primary=True,
     label_below=True,
     # Ebisu ROLLED the full 7-arch avenue (per-temple seeded roll, 2026-07-23 re-roll), so the
-    # avenue geometry is authored: a COMPRESSED south sando at ~19px (57 ft) stride - the
-    # donation-row look - ending at y1310, short of the samurai ward fence (~y1330). The naive
-    # 44px single-point extension marched the arches across the fence onto the Ministry of War.
-    torii=[(1396, 1196), (1396, 1215), (1396, 1234), (1396, 1253), (1396, 1272), (1396, 1291), (1396, 1310)],
+    # avenue geometry is authored: a COMPRESSED south sando at 17px (51 ft) stride - the
+    # donation-row look - ending at y1298, a clear 13px short of the samurai ward fence, whose
+    # north run is at y1311 (SAM_BND above). The naive 44px single-point extension marched the
+    # arches across the fence onto the Ministry of War; the 19px stride this replaces still put
+    # the 7th arch AT y1310, standing in the fence itself (GM 2026-07-25 - torii_clear_of_walls
+    # now gates it, and the fence is drawn after the temple here so the gen must leave the room).
+    torii=[(1396, 1196), (1396, 1213), (1396, 1230), (1396, 1247), (1396, 1264), (1396, 1281), (1396, 1298)],
 )  # the other Crab patron. ONE torii on the approach walk from the monzen lane (torii_count_canonical 1/3/7)
 s.cemetery(1167, 1246, 44, 32, label="graveyard")  # Bishamon's danka parish ground, S of the hall (kept clear of the temple lane)
 s.cemetery(1396, 1075, 44, 32, label="graveyard", label_above=True)  # Ebisu's danka parish ground, N of the hall

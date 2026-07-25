@@ -160,6 +160,97 @@ def segments_cross(a: Pt, b: Pt, c: Pt, d: Pt) -> bool:
     return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
 
 
+# ---------------------------------------------------------------------------------------------
+# A TORII STANDS CLEAR OF EVERY WALL (GM 2026-07-25, caught on Nagahara: the seventh arch of the
+# Ebisu sando stood in the samurai ward fence). WHY: a torii is a FREESTANDING gateway - two posts
+# in open ground that carry no load and close nothing, marking the threshold of sacred ground. A
+# wall is its opposite: a continuous barrier whose whole purpose is that you cannot walk through
+# it. So an arch drawn ON a wall run is impossible construction twice over - the posts stand inside
+# the palisade, and the "gateway" opens onto a barrier. Where a way genuinely pierces a wall the
+# opening is a GATE STRUCTURE (the city gate, a ward kido), never an arch. A torii over an ordinary
+# street or lane stays legitimate: a sando arch spans its road, and a road is not a barrier.
+#
+# The rule is enforced from BOTH ends, because either feature may be drawn first (see CLAUDE.md
+# "DRAW ORDER"): _torii refuses a seat standing in a wall already drawn (and shrine_hall shortens
+# its avenue to fit rather than fail), while every wall-drawing method re-asks the question once
+# its own run is on the page. check_village's torii_clear_of_walls is the manifest-level backstop,
+# and all three read the SAME wall_runs() / torii_wall_conflicts() below.
+
+
+def _rect_ring(x: float, y: float, w: float, h: float, rot: float = 0.0) -> Poly:
+    """The closed corner ring of a (possibly rotated) w x h rect centered at (x, y)."""
+    c, s = math.cos(math.radians(rot)), math.sin(math.radians(rot))
+    pts: Poly = [(x + dx * c - dy * s, y + dx * s + dy * c) for dx, dy in ((-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2))]
+    return pts + [pts[0]]
+
+
+def wall_runs(M: Manifest) -> list[tuple[str, Poly, float]]:
+    """Every WALL on a settlement map as (label, polyline, half-width px): the city rampart, each
+    ward fence (plus the short wall-stroke caps where it abuts the rampart), and the perimeter of
+    every walled compound - manor, governor's mansion, merchant estate, mausoleum. The half-widths
+    are the DRAWN stroke half-widths (city_wall's 11 px rampart, ward's 5 px fence and 11 px cap,
+    each compound's recorded wall_w), so the test is against the ink actually on the page."""
+    runs: list[tuple[str, Poly, float]] = []
+    ring = M.get("wall")
+    if ring:
+        pts: Poly = [(float(p[0]), float(p[1])) for p in ring]
+        runs.append(("the city wall", pts + [pts[0]], 5.5))
+    for wd in M.get("wards", []):
+        runs.append((f"the {wd.get('name', 'ward')} ward fence", [(float(p[0]), float(p[1])) for p in wd["boundary"]], 2.5))
+        for cap in wd.get("wall_caps", []):
+            runs.append(("a ward fence wall-cap", [(float(p[0]), float(p[1])) for p in cap.get("pts", [])], 5.5))
+    walled: list[tuple[str, Any]] = [(lbl, c) for lbl, key in (("a manor wall", "manors"), ("a merchant estate wall", "merchant_estates"), ("a mausoleum wall", "mausoleums")) for c in M.get(key, [])]
+    if M.get("governor_mansion"):
+        walled.append(("the governor's mansion wall", M["governor_mansion"]))
+    for lbl, c in walled:
+        if not all(k in c for k in ("x", "y", "w", "h")):
+            continue  # a synthetic fixture compound recorded for some other check's sake carries no footprint to wall
+        runs.append((lbl, _rect_ring(c["x"], c["y"], c["w"], c["h"], float(c.get("rot", 0) or 0)), float(c.get("wall_w", 2.0)) / 2))
+    return [(lbl, p, half) for lbl, p, half in runs if len(p) >= 2]
+
+
+def _box_hits_run(box: tuple[float, float, float, float], pts: Poly, half: float) -> bool:
+    """Does an axis-aligned box (x0, y0, x1, y1) reach a polyline drawn `2 * half` px thick? The
+    wall's stroke is a THICK line, so the box must clear its EDGE, not its centerline - and a run
+    that merely ends inside the box (crossing no edge) counts too."""
+    x0, y0, x1, y1 = box
+    edges = (((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0)))
+    for i in range(len(pts) - 1):
+        a, b = (pts[i][0], pts[i][1]), (pts[i + 1][0], pts[i + 1][1])
+        if x0 <= a[0] <= x1 and y0 <= a[1] <= y1:
+            return True
+        for e0, e1 in edges:
+            if segments_cross(a, b, e0, e1):
+                return True
+            if min(seg_dist(a[0], a[1], e0, e1), seg_dist(b[0], b[1], e0, e1), seg_dist(e0[0], e0[1], a, b), seg_dist(e1[0], e1[1], a, b)) < half:
+                return True
+    return False
+
+
+def torii_seat_on_wall(M: Manifest, tx: float, ty: float, ftpx: float, runs: list[tuple[str, Poly, float]] | None = None) -> str | None:
+    """The label of the wall an arch seated at (tx, ty) would stand in, or None if it stands clear.
+    Asked of ONE candidate seat before it is drawn; `runs` caches wall_runs(M) across a sweep. The
+    arch's extent is torii_halfbox - the same true-scale glyph box the crop and frame checks use."""
+    txh, tyu, tyd = torii_halfbox(ftpx)
+    for lbl, pts, half in wall_runs(M) if runs is None else runs:
+        if _box_hits_run((tx - txh, ty - tyu, tx + txh, ty + tyd), pts, half):
+            return lbl
+    return None
+
+
+def torii_wall_conflicts(M: Manifest) -> list[tuple[float, float, str]]:
+    """Every recorded arch standing in a wall, as [(x, y, wall label), ...] - the whole-manifest
+    form of torii_seat_on_wall, shared by the engine's post-draw guards and by check_village."""
+    ftpx = float(M.get("meta", {}).get("ftpx", 1) or 1)
+    runs = wall_runs(M)
+    bad = []
+    for t in M.get("torii") or []:
+        lbl = torii_seat_on_wall(M, float(t[0]), float(t[1]), ftpx, runs)
+        if lbl:
+            bad.append((round(float(t[0]), 1), round(float(t[1]), 1), lbl))
+    return bad
+
+
 def _union_area(rects: Any) -> float:
     """Total area covered by a set of axis-aligned rects (x0, y0, x1, y1), counting overlap ONCE. The grove's
     belt arms abut at the windward corner, so summing their areas double-counts it; the honest grove footprint
@@ -3144,6 +3235,7 @@ class Settlement:
             gnx, gny = -math.sin(math.radians(grot)), math.cos(math.radians(grot))  # the local +y flank, in map coords
             gside = 1 if (icx - gx) * gnx + (icy - gy) * gny >= 0 else -1  # guard box toward the ward interior
             self.kido(gx, gy, rot=grot, guard_side=gside)
+        self._assert_walls_clear_of_torii(f"the {name} ward fence")  # a fence laid across a standing arch (Nagahara 2026-07-25)
 
     _QUARTER_ZONES = ("residential", "civic", "mixed", "reserve")
     _RESERVE_KINDS = ("drill_ground", "garden", "agricultural_district")
@@ -3562,6 +3654,60 @@ class Settlement:
                     return (x, y)
         return None
 
+    def _assert_walls_clear_of_torii(self, what: str) -> None:
+        """Re-ask the torii/wall question the moment a WALL is on the page. A wall drawn AFTER an
+        arch cannot be dodged by the arch (see CLAUDE.md "DRAW ORDER"), and neither feature can move
+        once drawn - so the honest response is to fail the generator and let the author resite the
+        geometry, exactly as the merchant-estate wall does when its slide fan runs out."""
+        bad = torii_wall_conflicts(self.M)
+        if bad:
+            raise ValueError(
+                f"{what} runs through torii arch(es) at {[(x, y) for x, y, _ in bad]} (in {bad[0][2]}) - a wall is a "
+                f"continuous barrier and a torii is a freestanding gateway, so an arch never stands in one (a way "
+                f"through a wall is a GATE: the city gate, a ward kido). Move the arch or the wall - or draw the wall "
+                f"BEFORE the hall, and shrine_hall shortens its avenue to stop short of it automatically."
+            )
+
+    def _avenue_short_of_walls(self, seats: list[Pt]) -> list[Pt]:
+        """Shorten a torii avenue so it stops SHORT of any wall (see wall_runs) - neither standing an
+        arch in one nor marching the run across one, since a sando is a single approach and cannot
+        continue on the far side of a barrier. It is a LINE of arches walking away from its hall, so
+        the honest correction is to pull the whole run BACK - scale every seat's offset from the first
+        arch by the largest factor that keeps the run clear - rather than shove one arch out of step
+        with its neighbors (which would just straddle the wall). The first arch (nearest the hall)
+        never moves, and the search floors out once the stride would close to the arch's own width,
+        since arches that touch are no avenue at all. Only walls ALREADY DRAWN are visible here (see
+        CLAUDE.md "DRAW ORDER"); a wall laid later ACROSS an arch is caught by the wall methods'
+        _assert_walls_clear_of_torii, and at the manifest by torii_clear_of_walls."""
+        runs = wall_runs(self.M)
+
+        def fit(f: float) -> list[Pt] | None:
+            moved = [(seats[0][0] + (sx - seats[0][0]) * f, seats[0][1] + (sy - seats[0][1]) * f) for sx, sy in seats]
+            if any(torii_seat_on_wall(self.M, mx, my, self.ftpx, runs) is not None for mx, my in moved):
+                return None
+            for _lbl, pts, _half in runs:  # ... and the WALK the arches stand on stays on ONE side of every wall
+                if any(segments_cross(moved[i], moved[i + 1], pts[j], pts[j + 1]) for i in range(len(moved) - 1) for j in range(len(pts) - 1)):
+                    return None
+            return moved
+
+        if not runs:
+            return seats
+        whole = fit(1.0)
+        if whole is not None:
+            return whole
+        span = math.hypot(seats[-1][0] - seats[0][0], seats[-1][1] - seats[0][1])
+        floor_f = 2 * torii_halfbox(self.ftpx)[0] * (len(seats) - 1) / span if span else 1.0  # arches must not close up on each other
+        f = 1.0
+        while f - 0.02 > floor_f:
+            f -= 0.02
+            if (short := fit(f)) is not None:
+                return short
+        raise ValueError(
+            f"the torii avenue from ({seats[0][0]:.0f},{seats[0][1]:.0f}) cannot be shortened clear of "
+            f"{torii_seat_on_wall(self.M, seats[0][0], seats[0][1], self.ftpx, runs) or 'a wall'} without closing the "
+            f"arches up on each other - resite the hall or its approach in the gen so the sando has open ground to run in."
+        )
+
     def _torii(self, tx: float, ty: float, span_ft: float = 16.0) -> int:
         """Draw ONE torii arch TRUE SCALE (GM 2026-07-21) and record it in M['torii']; returns the
         z-handle. `span_ft` is the TOP-RAIL span in real feet: a standard shrine/approach torii runs
@@ -3570,6 +3716,13 @@ class Settlement:
         village scale and 114 ft at city scale. Proportions keep the authored glyph's 38:24 rail:height
         ratio; STROKES keep a legibility floor (stroke convention - see SKILL.md "to scale"), never a
         footprint license."""
+        wall = torii_seat_on_wall(self.M, tx, ty, self.ftpx)  # an arch never stands IN a barrier - see the wall_runs block
+        if wall:
+            raise ValueError(
+                f"torii at ({tx:.0f},{ty:.0f}) would stand in {wall} - a torii is a freestanding gateway on open "
+                f"ground, never set into a barrier (a way through a wall is a GATE). Move the arch clear; a shrine_hall "
+                f"avenue shortens itself to fit, so a hand-placed arch is what lands here."
+            )
         s2 = self.px(span_ft) / 2  # half the top-rail span; the glyph was authored at s2=19px
         c2, p2 = s2 * 16 / 19, s2 * 12 / 19  # crossbar half-span, post offset
         hz, hd = s2 * 7 / 19, s2 * 17 / 19  # rail rise above / post drop below the crossbar
@@ -3676,7 +3829,7 @@ class Settlement:
                     step_t = ((pts_t[0][0] - x) / d_t * 44.0, (pts_t[0][1] - y) / d_t * 44.0)
                 while len(pts_t) < n_t:
                     pts_t.append((pts_t[-1][0] + step_t[0], pts_t[-1][1] + step_t[1]))
-            for tx, ty in pts_t[:n_t]:
+            for tx, ty in self._avenue_short_of_walls(pts_t[:n_t]):  # the sando stops SHORT of any wall already drawn
                 s2 = self.px(16.0) / 2  # matches _torii's default true span
                 # block the arch + a NEIGHBOR'S HALF-FOOTPRINT: packs test footprint centers, so the
                 # margin must absorb half a house (~28 ft) + slack or a house's edge crosses the arch
@@ -3955,6 +4108,7 @@ class Settlement:
                 "wall_w": round(ww, 2),
             }
         )
+        self._assert_walls_clear_of_torii("the manor wall")
         m = max(
             36 * self.bscale, 26
         )  # a building-half margin at the map's grain, floored so a standard dwelling's corner keeps the 14px office-abut clearance (a samurai_large needs seed luck - the sweep handles it)
@@ -4044,6 +4198,7 @@ class Settlement:
         self.M.setdefault("merchant_estates", []).append(
             {"x": round(x, 1), "y": round(y, 1), "w": w, "h": h, "gate": [round(gx, 1), round(gy, 1)], "gate_dir": gate_dir, "gate_w": round(mgg, 2), "wall_w": round(mww, 2)}
         )
+        self._assert_walls_clear_of_torii("the merchant estate wall")
         m = 18 * self.bscale  # a building-half margin at the map's grain
         self.block_polys.append([(x0 - m, y0 - m), (x1 + m, y0 - m), (x1 + m, y1 + m), (x0 - m, y1 + m)])
         # ... and register the court in self.placed (2026-07-23): block_polys tests only a candidate's
@@ -6642,6 +6797,7 @@ class Settlement:
             self.add(f'<rect x="{sx - 3:.0f}" y="{cy - 9:.0f}" width="6" height="18" rx="2" fill="#B7B0A0" stroke="#5A584F" stroke-width="0.8"/>')
             self.add(f'<circle cx="{sx:.0f}" cy="{cy - 9:.0f}" r="3.4" fill="#B7B0A0" stroke="#5A584F" stroke-width="0.8"/>')
         self.M["mausoleums"].append({"x": cx, "y": cy, "w": w, "h": h, "rot": 0, "label": label, "gate_dir": gate_dir, "ward_walls": ward_walls, "gate_w": round(2 * mgg, 2), "wall_w": round(mww, 2)})
+        self._assert_walls_clear_of_torii("the mausoleum wall")
         self.placed.append((cx, cy, w, h))
         m = 30 * self.bscale  # a building-half margin at the map's grain
         self.block_polys.append([(x0 - m, y0 - m), (x1 + m, y0 - m), (x1 + m, y1 + m), (x0 - m, y1 + m)])

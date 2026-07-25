@@ -1250,6 +1250,53 @@ def test_shrine_hall_roll_below_geometry_draws_the_first_n():
     assert [t[1] for t in s.M["torii"]] == [560]
 
 
+def _walled_city(fence=((300, 700), (900, 700))):
+    # a city with ONE wall already drawn (a ward fence), so the torii placement can see it
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.ward("samurai", list(fence), gates=[])
+    return s
+
+
+def test_torii_refuses_a_seat_standing_in_a_wall():
+    # a torii is a freestanding gateway; an arch set INTO a barrier is impossible construction, so
+    # the primitive refuses it outright (the hand-placed path - an avenue shortens itself instead)
+    s = _walled_city()
+    with pytest.raises(ValueError, match="would stand in the samurai ward fence"):
+        s.torii_path([(600, 600), (600, 700), (600, 800)])
+
+
+def test_shrine_hall_shortens_its_avenue_short_of_a_wall():
+    # the avenue is pulled BACK as a whole (uniform stride, first arch fixed) so the rolled count
+    # still fits on open ground rather than marching the last arches into the fence. The authored
+    # run is 560..788 at a 38px stride, which seats the 5th arch AT the fence (y712).
+    s = _walled_city(fence=((300, 712), (900, 712)))
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598)], torii_count=7)
+    ys = [t[1] for t in s.M["torii"]]
+    assert len(ys) == 7 and ys[0] == 560  # every rolled arch drawn; the one nearest the hall never moves
+    assert ys[-1] < 705 and settlement.torii_wall_conflicts(s.M) == []  # shortened to stop before the fence, all clear
+    strides = [ys[i + 1] - ys[i] for i in range(6)]
+    assert max(strides) - min(strides) <= 0.2  # ... and still evenly spaced (the run is scaled, not re-seated one by one)
+
+
+def test_shrine_hall_refuses_an_avenue_that_cannot_be_shortened_clear():
+    # if even the first arch stands in the wall, no shortening helps: fail the gen rather than
+    # close the arches up on each other or fudge the geometry
+    s = _walled_city(fence=((300, 560), (900, 560)))
+    with pytest.raises(ValueError, match="cannot be shortened clear of the samurai ward fence"):
+        s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598)], torii_count=7)
+
+
+def test_ward_refuses_a_fence_laid_across_a_standing_torii():
+    # the Nagahara case (GM 2026-07-25): the fence is drawn AFTER the temple, so the avenue could not
+    # have avoided it - the wall side must catch it, since neither feature can move once drawn
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 700)], torii_count=1)
+    with pytest.raises(ValueError, match=r"the samurai ward fence runs through torii arch\(es\) at \[\(600.0, 700.0\)\]"):
+        s.ward("samurai", [(300, 700), (900, 700)], gates=[])
+
+
 def test_rect_on_water_blocks_a_solid_part_on_an_irrigation_line():
     # the homestead solver rejects a house/yard/garden that lands on a channel/ditch/stream, but NOT the grove
     s = _crop_settlement()
