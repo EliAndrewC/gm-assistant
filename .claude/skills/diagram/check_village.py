@@ -27,7 +27,7 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes
+from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes, forest_frame_span
 from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
@@ -373,6 +373,31 @@ def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, flo
 # PLANK_ABUTMENT - keep in sync). A footplank is worth building only if BOTH banks reach ground someone
 # walks to; the placement engine (channel_footbridges) enforces it, these checks re-verify from the manifest.
 FOREST_REVEAL_FT = 110.0  # mirrors settlement.FOREST_REVEAL_FT - how deep the crop reveals a canvas-filling wood
+# Mirrors settlement._CANOPY_STRUCT_KEYS (keep in sync): every ROOFED structure a tree may not be drawn on.
+CANOPY_STRUCT_KEYS = (
+    "houses",
+    "buildings",
+    "storehouses",
+    "flophouses",
+    "byres",
+    "farm_sheds",
+    "religious",
+    "shrines",
+    "manors",
+    "ministries",
+    "inspection_stations",
+    "merchant_estates",
+    "fire_towers",
+    "drum_towers",
+    "breweries",
+    "pawnshops",
+    "bathhouses",
+    "oil_presses",
+    "kilns",
+    "mausoleums",
+    "gate_structs",
+    "wall_towers",
+)
 FOOT_ABUTMENT = 6.0  # deck = local ditch width + this abutment (settlement.PLANK_ABUTMENT)
 FOOT_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
 FOOT_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the village (a place worth crossing to)
@@ -844,6 +869,7 @@ DEFAULT_MANIFEST: Manifest = {
     "shrine": None,
     "forest": None,
     "forest_edge": None,
+    "tree_crowns": [],
     "storehouses": [],
     "flophouses": [],
     "road": None,
@@ -1556,6 +1582,40 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if not ok:
             fails.append(name)
 
+    # EVERY canopy crown the map draws, as (x, y, r) - forest/copse stands, their fringes, the fengshui
+    # grove clumps and the per-house yashikirin belts all record here (settlement._record_crowns). Stored
+    # flat because a to-scale map draws thousands. This is the DRAWN geometry, not the reserved area, so
+    # it is what the "nothing is drawn under a tree" checks measure.
+    _tc = M.get("tree_crowns") or []
+    crowns = [(_tc[i], _tc[i + 1], _tc[i + 2]) for i in range(0, len(_tc) - 2, 3)]
+
+    # NO TREE IS DRAWN ON A ROOF (GM 2026-07-25). A crown over a building hides the building - the map
+    # loses a structure the reader is meant to see - so no drawn crown may overlap any ROOFED footprint.
+    # This is stricter than the old reserved-area rules, which let a grove "hug the eaves": the fix at
+    # placement is per-crown (the stand THINS around a building rather than retreating from it), so the
+    # check has to read the crowns too. Open-air yards/gardens are deliberately out of scope - they have
+    # their own sun-corridor rules, and a crown over a yard corner is a real thing.
+    if crowns:
+        under = []
+        for k in CANOPY_STRUCT_KEYS:
+            for o in M.get(k) or []:
+                hw, hh = o.get("vw", o["w"]) / 2, o.get("vh", o["h"]) / 2  # the DRAWN box
+                if o.get("rot"):
+                    hw = hh = math.hypot(hw, hh)  # mirrors settlement._canopy_keepouts
+                for tx, ty, tr in crowns:
+                    dx, dy = max(abs(tx - o["x"]) - hw, 0.0), max(abs(ty - o["y"]) - hh, 0.0)
+                    if dx * dx + dy * dy < tr * tr:
+                        under.append((k, round(o["x"]), round(o["y"])))
+                        break
+        check(
+            "structures_clear_of_trees",
+            not under,
+            f"{len(under)} building(s) sit UNDER a drawn tree crown: {under[:4]} - a tree drawn on a roof "
+            f"erases the building; the grove/stand must THIN around it (settlement._crown_covers filters "
+            f"every crown at draw time, and a wood drawn BEFORE the buildings blocks its canopy reach so "
+            f"later placement stays out from under it)",
+        )
+
     # Every HARD feature the frame is meant to CONTAIN must actually lie INSIDE the rendered window. A deferred
     # feature placed AFTER crop_to_content - a set-apart back-slope graveyard, an outlying shrine, the wells -
     # can land outside the tight frame and be silently CLIPPED (caught the Ueda west graveyard, which the crop
@@ -1658,9 +1718,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             pcx, pcy, prx, pry = M["pond"]
             fsx += [pcx - prx, pcx + prx]
             fsy += [pcy - pry, pcy + pry]
-        if M.get("forest"):  # the big EDGE forest is frame-setting, canvas-clamped like the crop -
-            fsy += [min(max(fp[1], 0), Hd) for fp in M["forest"]]  # and revealed only a band deep
-            fsx += forest_reveal_x(M["forest"], M.get("forest_edge"), FOREST_REVEAL_FT / meta.get("ftpx", 1), Wd)
+        if M.get("forest"):  # the big EDGE forest is frame-setting exactly as the crop counts it:
+            # revealed only a band deep on the axis it FACES, and not frame-setting at all on the
+            # axis it RUNS ALONG (a tree line off both canvas ends bounds nothing) - forest_frame_span.
+            _fx = forest_reveal_x(M["forest"], M.get("forest_edge"), FOREST_REVEAL_FT / meta.get("ftpx", 1), Wd)
+            _fy = [min(max(fp[1], 0), Hd) for fp in M["forest"]]
+            _fsx, _fsy = forest_frame_span(_fx, Wd, fsx), forest_frame_span(_fy, Hd, fsy)
+            fsx += list(_fsx)
+            fsy += list(_fsy)
         if fsx:
             ALLOW = 56
             _edge_slack = {
@@ -4080,6 +4145,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     or any(abs(wx - gx) < gw / 2 + vr and abs(wy - gy) < gh / 2 + vr for gx, gy, gw, gh in _grects)
                     or (_forest and point_in_poly(wx, wy, _forest))
                     or any(point_in_poly(wx, wy, p) for p in _wl_polys)
+                    # ... and no DRAWN crown may reach the head either (the reserved-area tests above are
+                    # coarse: a grove's recorded rect/clump is where its trees MAY stand, tree_crowns is
+                    # where they actually DO). See structures_clear_of_trees for the same rule on roofs.
+                    or any(math.hypot(wx - tx, wy - ty) < vr + tr for tx, ty, tr in crowns)
                 ):
                     on_trees.append((round(wx), round(wy)))
             check(
@@ -4661,14 +4730,21 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # of a farmhouse. Far corner forest masses are welcome extras; a map with ONLY far
                 # masses is decoration, not a wind wall. Calibrated 2026-07: approved maps nestle
                 # at 37-131px (Kikuta's ribbon belt is the 131 outlier).
-                # a map whose wood is a REAL FOREST (M["forest"], the edge-feature wood - Moritono's
-                # Shirin Forest) is exempt: the hamlet nestles against the forest itself, the
-                # strongest windbreak of all. Small forest_patches do NOT exempt.
-                subst_wb = [] if M.get("forest") else [g for g in windbreaks if len(g.get("clumps", [])) >= 12]
+                # a map whose wood is a REAL FOREST (M["forest"], the edge-feature wood) can let that
+                # forest BE the windbreak - the strongest wind wall of all - but ONLY where the wood
+                # actually shelters THIS cluster: its tree line must come within the same NESTLE
+                # distance of a farmhouse AND stand WINDWARD of the cluster centroid. A blanket
+                # "has a forest -> exempt" is what let Moritono pass with an 11-clump belt while its
+                # Shirin Forest sat 1,089 ft away on the LEE (E) side under an NW wind (GM 2026-07-25):
+                # a wood downwind and a fifth of a mile off breaks no wind. Small forest_patches do NOT exempt.
+                fline = M.get("forest") or []
+                fnear = min(((seg_dist(h["x"], h["y"], fline[i], fline[i + 1]), fline[i]) for h in houses for i in range(len(fline) - 1)), default=None)
+                forest_shelters = fnear is not None and fnear[0] <= 150 and (fnear[1][0] - ccx) * wvx + (fnear[1][1] - ccy) * wvy > 0
+                subst_wb = [] if forest_shelters else [g for g in windbreaks if len(g.get("clumps", [])) >= 12]
                 nestle_d = min((min(math.hypot(c[0] - h["x"], c[1] - h["y"]) for c in g["clumps"] for h in houses) for g in subst_wb), default=None)
                 check(
                     "village_windbreak_embraces_cluster",
-                    bool(M.get("forest")) or (bool(subst_wb) and nestle_d is not None and nestle_d <= 150),
+                    forest_shelters or (bool(subst_wb) and nestle_d is not None and nestle_d <= 150),
                     f"no substantial windbreak belt (>= 12 clumps) nestles against the farm cluster (nearest {None if nestle_d is None else round(nestle_d)}px; want <= 150) - "
                     f"the back-village grove EMBRACES the houses' windward fringe; far corner masses alone are decoration",
                 )
@@ -4677,6 +4753,31 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     not lee,
                     f"the village windbreak sits on the LEE/sunny side of the cluster, not the windward {windward}: "
                     f"{lee[:2]} - the back-village grove shelters the high windward edge and leaves the sunny field side open",
+                )
+                # THE BELT SCALES WITH THE CLUSTER (GM 2026-07-25, after Moritono's belt read as a few
+                # blobs behind 16 farmhouses). The >= 12-clump embrace test above is a FIXED floor, so a
+                # belt sized for a 5-house corner passes unchanged behind a whole hamlet. Measure the
+                # SHELTER the map actually draws - the windbreak's canopy disks plus any per-house
+                # yashikirin footprints (a map may do both, e.g. Hikari-no-Sato) - against the ROOF area
+                # it shelters. Both sides are px^2, so the ratio is scale-free (a 2 ft/px village draws
+                # smaller roofs AND, per meta()'s village bscale exemption, larger clumps; the ratio is
+                # unaffected). WHY this framing: the doctrine (settlements.md 'Village windbreak') wants
+                # the belt to be the settlement's LARGEST vegetation feature, and the research figure -
+                # a modest village back grove under 1 ha, ~1,800 sq ft per household - sits near ratio
+                # ~1.3 at our house sizes. So 0.40 is a floor against absurdity, not a target: a wind
+                # wall covering less than half the ground its own roofs do is decoration. Calibrated on
+                # the pool 2026-07-25: approved maps run 0.45 (Hoshizora, a town whose farm zone is a
+                # thin wedge) through 7.27 (Hikari-no-Sato); Moritono's belt scored 0.30.
+                canopy = sum(len(g.get("clumps", [])) * math.pi * g.get("r", 14) ** 2 for g in windbreaks)
+                canopy += sum(g.get("w", 0) * g.get("h", 0) for g in M.get("groves", []))
+                roofs = sum(h.get("w", 0) * h.get("h", 0) for h in houses)
+                check(
+                    "village_windbreak_scales_with_cluster",
+                    forest_shelters or canopy >= 0.40 * roofs,
+                    f"the windbreak is too small for the cluster it shelters: {round(canopy)}px^2 of canopy over "
+                    f"{len(houses)} farmhouses covering {round(roofs)}px^2 of roof (ratio {canopy / roofs if roofs else 0:.2f}; want >= 0.40) - "
+                    f"the back-village grove is the settlement's LARGEST vegetation feature, so deepen the belt "
+                    f"(more clump rows) or wrap it further around the windward faces",
                 )
             # every village grove (of any role) is DRY woodland - its center must not sit in a flooded paddy
             vg_in_paddy = [(round(g["x"]), round(g["y"])) for g in vgroves if any(point_in_poly(g["x"], g["y"], ol) for ol in fields_ol)]

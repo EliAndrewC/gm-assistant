@@ -3,7 +3,13 @@ cherrypy
 configobj
 google-genai
 jinja2
-opencv-python-headless
+# Pinned below 5.0: OpenCV 5 removed the legacy Haar cascade API
+# (cv2.CascadeClassifier / cv2.data.haarcascades) that art.get_headshot_crop
+# uses to find the face for an avatar crop.  Unpinned, pip-compile resolved to
+# 5.0.0.93 and every portrait upload died with AttributeError (caught 2026-07-25;
+# art.py is outside the 100%-coverage set, so no test flagged it).  Moving to
+# OpenCV 5 means porting to FaceDetectorYN, which needs a downloaded model file.
+opencv-python-headless<5
 pillow
 pyyaml
 requests

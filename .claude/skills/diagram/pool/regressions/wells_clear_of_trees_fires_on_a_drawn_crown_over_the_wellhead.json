@@ -1,0 +1,34 @@
+{
+ "meta": {
+  "scale": "village"
+ },
+ "houses": [
+  {
+   "x": 300,
+   "y": 300,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "laborer"
+  }
+ ],
+ "wells": [
+  {
+   "x": 500,
+   "y": 500,
+   "r": 8,
+   "vr": 12
+  }
+ ],
+ "tree_crowns": [
+  508,
+  495,
+  9
+ ],
+ "_regression": {
+  "fires": [
+   "wells_clear_of_trees"
+  ],
+  "source": "test_checks.py::test_wells_clear_of_trees_fires_on_a_drawn_crown_over_the_wellhead"
+ }
+}
