@@ -215,18 +215,21 @@ demanded by the check (or vice versa). Read the MANIFEST fields (`M["fields"]` o
 empty. When a new check pairs with new placement logic, factor the shared predicate so both sides
 provably use it.
 
-## A container rebuild dirties every manifest - and that is NOT a nondeterministic generator
+## A dirty tracked manifest with no code change behind it: suspect the MEASUREMENT, not the generator
 
-`title()` sizes its placard by MEASURING the name's glyphs: `_text_width` asks PIL for the advance
-width of DejaVu Serif Bold, the face resvg substitutes for `serif`, so the padding is true rather
-than estimated (that accuracy is why the measurement exists - see its docstring). The cost is that
-the recorded `title` and `scalebar` bboxes are a function of the INSTALLED font and PIL version,
-neither of which git carries. Rebuild the container, regenerate the pool, and every Mode B manifest
-comes back ~1 px different in those two keys (seen 2026-07-25, after a laptop crash took the old
-container with it: all 16 maps dirty, nothing else changed).
+`title()` sizes its placard by measuring the name's glyphs with PIL (`_text_width`), and that
+measurement is recorded in the manifest - so anything environmental that shifts it by a fraction of a
+pixel rewrites every titled map's bytes with no code change in the diff. That is what a container
+rebuild did on 2026-07-25: PIL picks its layout engine by what is installed (RAQM where libraqm is
+present, BASIC where it is not) and the two disagree at the subpixel level, so all 16 titled
+manifests came back dirty at once. The fix was to PIN the engine - see `_text_width`'s docstring and
+`test_text_width_is_pinned_to_the_basic_layout_engine`, which holds the pin so it cannot come loose
+silently - and the pool is byte-reproducible on any container again.
 
-**Tell it apart from a real nondeterminism bug** - which `render-sync` warns about in almost the same
-words - by diffing the manifests SEMANTICALLY, key by key (`json.load` both sides and compare), never
-as text: these are single-line JSON files, so a text diff always shows the whole file and tells you
-nothing. `title` + `scalebar` moving uniformly on EVERY map is the font-metric signature. A house, a
-ditch, a crown, a count moving is a real bug. Commit the drift so the next session starts clean.
+The transferable part is the DIAGNOSIS, because `render-sync` reports this and a genuinely
+nondeterministic generator in the same words. Diff the manifests SEMANTICALLY, key by key
+(`json.load` both sides and compare) - never as text, since these are single-line JSON files where a
+text diff always shows the whole file and tells you nothing. Only `title`/`scalebar` moving, by a
+hair, uniformly across every map, is a measurement-environment signature; a house, a ditch, a crown
+or a count moving is a real bug. And when a recorded value depends on something git does not carry,
+pin the dependency rather than re-recording the drift - re-recording just waits for the next rebuild.
