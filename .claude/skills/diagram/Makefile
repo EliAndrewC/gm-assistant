@@ -6,7 +6,19 @@
 
 .PHONY: done lint format typecheck test guard
 
-done: lint format typecheck test
+# Runs EVERY phase and reports all failures together (GM 2026-07-25). It used to be
+# `done: lint format typecheck test`, which make stops at the first failure - so a lint slip hid a
+# type error hid a coverage hole, and each hidden failure cost another full round trip to discover.
+# Phases stay in cheap-to-expensive order so the fast ones report first, but none of them short-
+# circuits the rest. Exit is non-zero if any phase failed, so this is exactly as strict as before.
+done:
+	@fail=""; \
+	for phase in lint format typecheck test; do \
+	  printf '\n\033[1m== %s ==\033[0m\n' "$$phase"; \
+	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
+	done; \
+	if [ -n "$$fail" ]; then printf '\n\033[1mGATE FAILED:%s\033[0m (every phase ran - fix them together, then re-run once)\n' "$$fail"; exit 1; fi; \
+	printf '\n\033[1mgate green\033[0m\n'
 
 # Refuse to run from the MAIN /gm-assistant tree (CLAUDE.md "Session clones": main is the
 # integration point, never a workspace - work runs in .clones/<session-name>). Every target
@@ -39,4 +51,5 @@ typecheck:
 # 2026-07-20 on 22 cores), plain serial pytest otherwise - xdist is a speedup, not a requirement.
 # The coverage gate combines worker data, so the 100% requirement holds either way.
 test:
-	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto; else python3 -m pytest; fi
+	@if python3 -c "import xdist" >/dev/null 2>&1; then python3 -m pytest -n auto; else python3 -m pytest; fi; ec=$$?; \
+	if [ $$ec -ne 0 ]; then python3 ../../../scripts/uncovered-in-diff.py || true; fi; exit $$ec
