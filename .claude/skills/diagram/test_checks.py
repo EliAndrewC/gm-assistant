@@ -7901,3 +7901,38 @@ def test_drainage_slope_checks_skip_a_drain_whose_field_declares_no_fall():
     fails = f(M)
     assert "drain_flows_downhill" not in fails
     assert "drain_runs_cross_slope" not in fails
+
+
+# ---- settlement_declares_a_land_fall (GM 2026-07-25) ----------------------------------------
+def _fall_map(**over):
+    M = {
+        "meta": {"scale": "town", "walled": False, "ftpx": 1, "W": 1200, "H": 1200},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 100], [500, 100], [500, 500], [100, 500]], "bbox": [100, 100, 500, 500], "vis_bbox": [100, 100, 500, 500]}],
+    }
+    M.update(over)
+    return M
+
+
+def test_settlement_declares_a_land_fall_fires_when_nothing_declares_a_slope():
+    # the hole that let both provincial cities skip every drainage-slope rule behind a green gate
+    assert "settlement_declares_a_land_fall" in f(_fall_map())
+
+
+def test_settlement_declares_a_land_fall_accepts_a_map_level_bearing():
+    M = _fall_map()
+    M["meta"]["down_deg"] = 90
+    assert "settlement_declares_a_land_fall" not in f(M)
+
+
+def test_settlement_declares_a_land_fall_accepts_per_field_falls_with_no_map_bearing():
+    # what a settlement ringed by farmland needs: its fans drain several ways, so no single bearing
+    M = _fall_map()
+    M["fields"][0]["down_deg"] = 90
+    assert "settlement_declares_a_land_fall" not in f(M)
+
+
+def test_settlement_declares_a_land_fall_is_not_satisfied_by_water_flow_alone():
+    # water_flow is where the water GOES; down_deg is how the land LIES. Different facts.
+    M = _fall_map()
+    M["meta"]["water_flow"] = 90
+    assert "settlement_declares_a_land_fall" in f(M)
