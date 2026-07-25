@@ -88,8 +88,8 @@
     <line x1="200" y1="150" x2="1000" y2="150"/>
     <!-- West (broken by the kitchen postern at y=374..394 - a ~6.7 ft handcart
          door, not a cart gate; size-audit opening-vs-purpose, 2026-07) -->
-    <line x1="200" y1="150" x2="200" y2="369.5"/>
-    <line x1="200" y1="398.5" x2="200" y2="750"/>
+    <line x1="200" y1="150" x2="200" y2="374"/>
+    <line x1="200" y1="394" x2="200" y2="750"/>
     <!-- East -->
     <line x1="1000" y1="150" x2="1000" y2="750"/>
     <!-- South, west of gate (broken by the service gate at x=400..428,
@@ -97,10 +97,10 @@
          Main gate opening 580..620 = 13.3 ft - a real carriage-gate passage
          (the old 27 ft opening confused structure width with passage width,
          caught by size-audit 2026-07) -->
-    <line x1="200" y1="750" x2="395.5" y2="750"/>
-    <line x1="432.5" y1="750" x2="575.5" y2="750"/>
+    <line x1="200" y1="750" x2="400" y2="750"/>
+    <line x1="428" y1="750" x2="580" y2="750"/>
     <!-- South, east of gate -->
-    <line x1="624.5" y1="750" x2="1000" y2="750"/>
+    <line x1="620" y1="750" x2="1000" y2="750"/>
   </g>
 
   <!-- Gate posts (flank the south gate opening) -->
@@ -535,6 +535,7 @@
   <!-- Formal entry porch (genkan) at the reception block -->
   <g>
     <rect x="380" y="286" width="40" height="14" fill="#C9A57A" stroke="#5A3F1E" stroke-width="1.2"/>
+    <text x="400" y="312" text-anchor="middle" font-size="8" font-style="italic" fill="#3A2E1C">entry porch</text>
   </g>
 
   <!-- ============================================================ -->

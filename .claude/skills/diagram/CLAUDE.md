@@ -214,3 +214,19 @@ demanded by the check (or vice versa). Read the MANIFEST fields (`M["fields"]` o
 `M["dry_plots"]`), NOT engine-internal blocking lists like `self.field_polys` that some gens leave
 empty. When a new check pairs with new placement logic, factor the shared predicate so both sides
 provably use it.
+
+## A container rebuild dirties every manifest - and that is NOT a nondeterministic generator
+
+`title()` sizes its placard by MEASURING the name's glyphs: `_text_width` asks PIL for the advance
+width of DejaVu Serif Bold, the face resvg substitutes for `serif`, so the padding is true rather
+than estimated (that accuracy is why the measurement exists - see its docstring). The cost is that
+the recorded `title` and `scalebar` bboxes are a function of the INSTALLED font and PIL version,
+neither of which git carries. Rebuild the container, regenerate the pool, and every Mode B manifest
+comes back ~1 px different in those two keys (seen 2026-07-25, after a laptop crash took the old
+container with it: all 16 maps dirty, nothing else changed).
+
+**Tell it apart from a real nondeterminism bug** - which `render-sync` warns about in almost the same
+words - by diffing the manifests SEMANTICALLY, key by key (`json.load` both sides and compare), never
+as text: these are single-line JSON files, so a text diff always shows the whole file and tells you
+nothing. `title` + `scalebar` moving uniformly on EVERY map is the font-metric signature. A house, a
+ditch, a crown, a count moving is a real bug. Commit the drift so the next session starts clean.

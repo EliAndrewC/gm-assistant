@@ -707,6 +707,59 @@ def test_structures_on_walls_fires_on_the_frozen_privy_in_wall_fixture() -> None
     assert hits[0].wall == "compound wall"
 
 
+def _capped_wallgroup(*segs: tuple[float, float, float, float]) -> str:
+    lines = "".join(f'<line x1="{a}" y1="{b}" x2="{c}" y2="{d}"/>' for a, b, c, d in segs)
+    return f'<g stroke="{pa.WALL_STROKE}" stroke-width="9" stroke-linecap="square">{lines}</g>'
+
+
+def test_wall_openings_measure_the_ink_so_a_square_cap_shows_up() -> None:
+    """The same endpoints give a 13.3 ft passage with butt caps and 10.3 ft with square ones.
+
+    The cap inks 1.5 ft past each endpoint, so writing the intended opening AS the endpoints loses
+    a full stroke width of passage - the defect that had all three pool manors 3 ft narrow than
+    their own comments claimed (2026-07-25).
+    """
+    butt = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _wallgroup((0, 100, 100, 100), (140, 100, 300, 100))))
+    assert [round(o.ft, 1) for o in pa.wall_openings(butt)] == [13.3]
+    capped = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _capped_wallgroup((0, 100, 100, 100), (140, 100, 300, 100))))
+    assert [round(o.ft, 1) for o in pa.wall_openings(capped)] == [10.3]
+
+
+def test_wall_openings_handle_a_vertical_wall_and_sort_widest_first() -> None:
+    plan = pa.parse_svg(
+        _svg(
+            _rect(0, 0, 300, 300, COURT),
+            _wallgroup((100, 0, 100, 100), (100, 140, 100, 300), (200, 0, 200, 150), (200, 160, 200, 300)),
+        )
+    )
+    got = pa.wall_openings(plan)
+    assert [round(o.ft, 1) for o in got] == [13.3, 3.3]  # widest first
+    assert (got[0].x, got[0].y) == (100.0, 120.0)  # on the wall, at the middle of the gap
+
+
+def test_wall_openings_ignores_a_gap_too_wide_to_be_a_gate() -> None:
+    """A gap past OPENING_MAX_PX is a wall broken around a structure, not a passage."""
+    plan = pa.parse_svg(_svg(_rect(0, 0, 400, 400, COURT), _wallgroup((0, 100, 100, 100), (190, 100, 400, 100))))
+    assert pa.wall_openings(plan) == []
+
+
+def test_wall_openings_report_the_ink_on_the_frozen_capped_gates_fixture() -> None:
+    """Red fixture: Ochiba before the cap correction - every opening one stroke (3 ft) narrow.
+
+    Its comments claim a 13.3 ft main gate, a 9.3 ft service gate and a 6.7 ft kitchen postern.
+    """
+    with open(os.path.join(_FIX, "ochiba-capped-gates-red.svg")) as fh:
+        got = [round(o.ft, 1) for o in pa.wall_openings(pa.parse_svg(fh.read()))]
+    assert got == [10.3, 6.3, 3.7]
+
+
+def test_format_report_gate_openings_section_states_each_case() -> None:
+    none = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _wallgroup((0, 190, 200, 190)))))
+    assert "no openings found in the compound wall" in none
+    some = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _wallgroup((0, 100, 100, 100), (140, 100, 300, 100)))))
+    assert "13.3 ft  at svg(120,100)" in some
+
+
 def test_structures_on_walls_reports_the_divider_and_the_worst_overlap_first() -> None:
     svg = _svg(
         _rect(0, 0, 300, 300, COURT),

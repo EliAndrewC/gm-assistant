@@ -97,6 +97,8 @@ FURNITURE_MAX_AREA_PX: float = MIN_BLDG_AREA_PX  # a rect below the building flo
 GROUP_LABEL_GLYPHS: dict[str, str] = {"fire-water tub": "tub", "well": "well"}  # label text -> glyph kind it names
 GROUP_LABEL_MAX_FT: float = 9.0  # a glyph-group label must sit within this of a glyph it names
 NOTICE_BOARD_MAX_FT: float = 20.0  # a notice board must sit within this of a gate opening to be read
+OPENING_MAX_PX: float = 80.0  # a wider gap in the wall is a structural break (a wall drawn around a
+# building that IS part of it), not a gate - see `wall_openings`
 NUDGE_STEP_PX: float = 4.0
 NUDGE_MAX_PX: float = 40.0  # search radius for a legibility-clearing nudge
 LABEL_OVERLAP_MIN_PX: float = 3.0  # two labels overlapping by more than this collide/smear
@@ -736,22 +738,53 @@ def orphan_group_labels(plan: ParsedPlan, max_ft: float = GROUP_LABEL_MAX_FT) ->
     return out
 
 
-def _gate_openings(plan: ParsedPlan) -> list[tuple[float, float]]:
-    """Midpoints of gaps in the compound wall - the gate/postern openings."""
-    ops: list[tuple[float, float]] = []
+@dataclass(frozen=True)
+class WallOpening:
+    """A gap in the compound wall's INK - the passage a cart actually drives through."""
+
+    x: float
+    y: float
+    ft: float
+
+
+def wall_openings(plan: ParsedPlan) -> list[WallOpening]:
+    """Openings in the compound wall, measured from the INK, widest first.
+
+    Measured from `wall_bands` - which model `stroke-linecap="square"`, a run inking half a stroke
+    past each endpoint - and NOT from the line endpoints. That difference IS the check. WHY
+    (2026-07-25): all three pool manors were authored by writing each intended opening as the two
+    flanking ENDPOINTS, which a 9 px capped wall then narrowed by a full stroke width, so every
+    stated 13.3 ft main gate rendered as 10.3 ft of passage. On Ubame that had quietly made the
+    goods-cart gate WIDER than the ceremonial main gate - a hierarchy inversion nobody intended.
+    Nothing in the audit measured ink, so the error was invisible in the report: it had to be found
+    by eye on one map, and it then sat unfixed on the other two until they were hand-checked.
+    Reporting ink width makes "ink equals intent" something an author reads off the audit.
+
+    The correct authoring idiom is to pull each flanking endpoint back by half a stroke (4.5 px on
+    the 9 px compound wall) so the CAP lands on the intended edge - never to write the endpoints at
+    the opening's coordinates and hope the cap is not there.
+    """
+    out: list[WallOpening] = []
     for horiz in (True, False):
-        groups: dict[int, list[Rect]] = {}
-        for s in plan.wall_segs:
-            if (s.w >= s.h) != horiz:
+        groups: dict[float, list[Rect]] = {}
+        for band in plan.wall_bands:
+            if band.fill != WALL_STROKE or (band.w >= band.h) != horiz:
                 continue
-            groups.setdefault(round(s.y if horiz else s.x), []).append(s)
+            groups.setdefault(round(band.y + band.h / 2 if horiz else band.x + band.w / 2, 1), []).append(band)
         for key, segs in groups.items():
             segs.sort(key=lambda s: s.x if horiz else s.y)
             for a, b in zip(segs, segs[1:], strict=False):
                 gap = (b.x - a.x2) if horiz else (b.y - a.y2)
-                if 0 < gap < 80:
-                    ops.append(((a.x2 + b.x) / 2, key) if horiz else (key, (a.y2 + b.y) / 2))
-    return ops
+                if 0 < gap < OPENING_MAX_PX:
+                    mid = (a.x2 + b.x) / 2 if horiz else (a.y2 + b.y) / 2
+                    out.append(WallOpening(mid if horiz else key, key if horiz else mid, gap / FTPX))
+    out.sort(key=lambda o: o.ft, reverse=True)
+    return out
+
+
+def _gate_openings(plan: ParsedPlan) -> list[tuple[float, float]]:
+    """Midpoints of gaps in the compound wall - the gate/postern openings."""
+    return [(o.x, o.y) for o in wall_openings(plan)]
 
 
 @dataclass(frozen=True)
@@ -1044,6 +1077,11 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
         lines.append(f"    DOOR ADRIFT: a door at svg({dr.x:.0f},{dr.y:.0f}) floats {dr.gap_ft:.1f} ft inside the building - set it on the wall")
     for tw in tubs_on_wells(plan):
         lines.append(f"    TUB ON WELL: a fire-water tub at svg({tw.x:.0f},{tw.y:.0f}) overlaps a well - move it to a different eaves corner")
+    lines.append("GATE OPENINGS (compound wall, measured from the INK - a square cap eats 1.5 ft per end):")
+    openings = wall_openings(plan)
+    if not openings:
+        lines.append("    (no openings found in the compound wall)")
+    lines += [f"    {o.ft:5.1f} ft  at svg({o.x:.0f},{o.y:.0f})   compare with the width this opening's comment claims" for o in openings]
     lines.append("STRUCTURE/WALL check (a structure abuts a wall, never stands in it):")
     if not plan.wall_bands:
         lines.append("    (no wall strokes in this plan)")
