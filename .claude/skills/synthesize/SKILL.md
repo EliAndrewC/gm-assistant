@@ -295,16 +295,37 @@ h = json.load(open("[SCRATCH]/synthesize-handoff.json"))
 safe = re.sub(r"[^a-zA-Z0-9]", "", h["name"].replace(" ", ""))
 fname = f"{safe}.png"
 img = open(f"[SCRATCH]/{fname}", "rb").read()
+
+# Headshot -> avatar. upload_avatar() only PUTS the image and returns an id; on
+# an existing character that id must then be BOUND via the edit form, which is
+# what set_character_avatar does. Skipping the bind leaves the character with
+# no headshot even though every call returned 200 (caught 2026-07-25).
 x, y, w, hh = art.get_headshot_crop(img)
-op.upload_avatar(art.crop_headshot(img, x, y, w, hh), fname)   # browser-sim path
+upload_id = op.upload_avatar(art.crop_headshot(img, x, y, w, hh), fname).get("id")
+op.set_character_avatar(h["slug"], upload_id)
+
+# Full body -> an embed at the top of the public bio.
 fid = op.upload_image(img, fname).get("id")
 body = op.get_character_body(h["id"]) or {}
 embed = f"[[File:{fid} | class=media-item-align-none | {fname}]]"
 op.update_character(h["id"], bio=(embed + "\r\n" + (body.get("bio") or "")).strip())
-print("Attached avatar + bio embed to", h["name"])
+
+# VERIFY - the only trustworthy check. Page HTML does not expose the portrait,
+# and every avatar call returns 200 whether or not it took effect.
+url = next((c.get("avatar_url") for c in op.existing_characters() if c["id"] == h["id"]), None)
+print("avatar_url:", url or "*** STILL MISSING - the bind did not take ***")
 PY
 ```
 
-Avatars go via the browser-sim path (`op.upload_avatar`) - the OAuth API
-silently no-ops on avatar fields, so a "successful" OAuth call proves nothing.
-Report the portrait alongside the backstory.
+Two traps here, both of which return 200 while doing nothing:
+
+- **The OAuth API silently no-ops on avatar fields** - every variant was probed
+  exhaustively. Avatars only move through the browser-sim path.
+- **`upload_avatar()` does not attach anything.** It posts the image to
+  `/uploads` and hands back an id. `create_character()` binds that id through
+  the form's `new_avatar_upload_id` field, so a NEW character is fine - but for
+  an existing one you must call `op.set_character_avatar(slug, upload_id)`,
+  which re-submits the edit form with the id patched in.
+
+Always confirm with `avatar_url` from `op.existing_characters()`. Report the
+portrait alongside the backstory.
