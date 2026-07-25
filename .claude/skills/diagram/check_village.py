@@ -27,7 +27,19 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes, forest_frame_span, moat_current_at, torii_wall_conflicts
+from settlement import (
+    KIDO_TOWER_KEEPCLEAR,
+    WALL_DEFENSE,
+    _assert_not_main_tree,
+    crop_boxes,
+    forest_frame_span,
+    moat_current_at,
+    rail_quad,
+    sat_overlap,
+    torii_wall_conflicts,
+    trough_quad,
+    wellhead_quad,
+)
 from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
@@ -223,23 +235,10 @@ _OVERLAP_EXEMPT = {
     "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
     "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
     "clearings": "swept-ground records (the shrine keidai / torii sando collar / grave collar), not drawn features at all - they carry the cover-ordinal bookkeeping for scatter_respects_swept_clearings and deliberately CONTAIN their sacred/funerary feature",
-    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (hitching rails, trough, dung heaps, litter; no animal glyphs - the maps render no humans or animals) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well)",
+    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (hitching rails, trough, dung heaps, litter; no animal glyphs - the maps render no humans or animals) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well); `troughs_box` and `rails` record the furniture's DRAWN extents, which must not intersect each other or any wellhead (wells_troughs_rails_clear_of_each_other)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
-
-
-def sat_overlap(p: Poly, q: Poly) -> bool:
-    for poly in (p, q):
-        for i in range(len(poly)):
-            x1, y1 = poly[i]
-            x2, y2 = poly[(i + 1) % len(poly)]
-            nx, ny = -(y2 - y1), (x2 - x1)
-            pa = [nx * x + ny * y for x, y in p]
-            qa = [nx * x + ny * y for x, y in q]
-            if max(pa) < min(qa) or max(qa) < min(pa):
-                return False
-    return True
 
 
 def seg_closest(px: float, py: float, a: Pt, b: Pt) -> tuple[float, float]:
@@ -2273,6 +2272,52 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"keeps off the public tread and the rampart's clearance (the road-side rail exists to keep stock "
             f"OFF the through-road); s._stable_yard probes each rail's full extent and each heap's edge",
         )
+
+    # WELLS, TROUGHS, AND HITCHING POSTS NEVER OVERLAP ONE ANOTHER (GM 2026-07-25). The motivating
+    # defect was Nagahara's flophouse yard: a hitching rail drawn straight ACROSS a wellhead, with
+    # the trough cluster stacked on both - three glyphs on one spot, where a reader can no longer
+    # tell which is which, and the layout it implies is nonsense (nobody draws water through a rail,
+    # and no yard ties its animals over its own draw-point). They collide because they are placed at
+    # three different moments - the wells long before the yard exists, the rails when it draws, the
+    # cluster after - so nothing had ever measured the pair. This check is deliberately GEOMETRIC
+    # and glyph-level: it demands only that the DRAWN extents not intersect, not any working
+    # clearance, because the troughs are SUPPOSED to hug their well (the bucket-pour relay,
+    # stable_troughs_beside_well) and animals are supposed to stand between rail and trough. Near is
+    # right; on top of is not. Extents come from the shared quad builders in settlement.py, the same
+    # ones s._stable_yard places against (with YARD_GLYPH_SLACK of margin), so placement and check
+    # can never drift apart. Every pair on the map is tested, ACROSS yards as well as within one -
+    # the cross-yard hole is what the dung-heap rule had to be widened for twice.
+    _wtr: list[tuple[str, list[tuple[float, float]], float, float, float]] = []
+
+    def _wtr_add(kind: str, quad: list[tuple[float, float]], cx: float, cy: float) -> None:
+        _wtr.append((kind, quad, cx, cy, max(math.hypot(qx - cx, qy - cy) for qx, qy in quad)))
+
+    for _wtr_w in M.get("wells", []) or []:
+        _wtr_add("well", wellhead_quad(_wtr_w), _wtr_w["x"], _wtr_w["y"])
+    for _wtr_yd in M.get("stable_yards", []) or []:
+        _wtr_box = _wtr_yd.get("troughs_box")
+        if _wtr_box:
+            _wtr_add("troughs", trough_quad(_wtr_box), (_wtr_box[0] + _wtr_box[2]) / 2, (_wtr_box[1] + _wtr_box[3]) / 2)
+        for _wtr_rl in _wtr_yd.get("rails", []) or []:
+            _wtr_add("hitching rail", rail_quad(_wtr_rl), _wtr_rl["x"], _wtr_rl["y"])
+    _wtr_bad = []
+    for _wtr_i in range(len(_wtr)):
+        _ka, _qa, _ax, _ay, _ra = _wtr[_wtr_i]
+        for _wtr_j in range(_wtr_i + 1, len(_wtr)):
+            _kb, _qb, _bx, _by, _rb = _wtr[_wtr_j]
+            if math.hypot(_ax - _bx, _ay - _by) > _ra + _rb:  # circumradii cannot reach: no overlap possible
+                continue
+            if sat_overlap(_qa, _qb):
+                _wtr_bad.append((f"{_ka}/{_kb}", round(_ax), round(_ay)))
+    check(
+        "wells_troughs_rails_clear_of_each_other",
+        not _wtr_bad,
+        f"wellhead/trough/hitching-rail glyphs drawn on top of each other at {_wtr_bad[:4]} - these three "
+        f"stand SIDE BY SIDE at a watering point (the troughs hug their well, the animals stand between rail "
+        f"and trough), but their drawn extents must not intersect: stacked, they read as one unidentifiable "
+        f"smear and imply a yard that ties its stock across its own draw-point (s._stable_yard's _glyph_free "
+        f"places all three; settlements.md 'Stable yard' watering)",
+    )
 
     # WALL TOWER COVERAGE by the city's DEFENSE POSTURE (GM 2026-07-22): the interlocking-flanking-fire rule
     # (侧射; Shen Kuo's 11th-c. 矢石相及 - adjacent mamian's fields of fire overlap so an attacker at the base
