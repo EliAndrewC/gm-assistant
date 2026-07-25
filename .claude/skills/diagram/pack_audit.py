@@ -97,6 +97,10 @@ FURNITURE_MAX_AREA_PX: float = MIN_BLDG_AREA_PX  # a rect below the building flo
 GROUP_LABEL_GLYPHS: dict[str, str] = {"fire-water tub": "tub", "well": "well"}  # label text -> glyph kind it names
 GROUP_LABEL_MAX_FT: float = 9.0  # a glyph-group label must sit within this of a glyph it names
 NOTICE_BOARD_MAX_FT: float = 20.0  # a notice board must sit within this of a gate opening to be read
+PASSAGE_DEPTH_PX: float = 9.0  # the gateway zone reaches 3 ft in front of and behind the wall ink -
+# a stone set just inside or just outside the masonry is still in the track a cart drives through
+PASSAGE_CLEAR_MIN_PX: float = 0.5  # sub-pixel contact is a flush jamb (a gate post abutting the
+# opening edge) plus integer-emit rounding, not an object standing in the passage
 OPENING_MAX_PX: float = 80.0  # a wider gap in the wall is a structural break (a wall drawn around a
 # building that IS part of it), not a gate - see `wall_openings`
 NUDGE_STEP_PX: float = 4.0
@@ -740,11 +744,20 @@ def orphan_group_labels(plan: ParsedPlan, max_ft: float = GROUP_LABEL_MAX_FT) ->
 
 @dataclass(frozen=True)
 class WallOpening:
-    """A gap in the compound wall's INK - the passage a cart actually drives through."""
+    """A gap in the compound wall's INK - the passage a cart actually drives through.
+
+    `span1..span2` is the gap along the wall, `across1..across2` the ink's own thickness; together
+    they are the gateway rect that `passage_blockers` keeps clear.
+    """
 
     x: float
     y: float
     ft: float
+    horiz: bool = True
+    span1: float = 0.0
+    span2: float = 0.0
+    across1: float = 0.0
+    across2: float = 0.0
 
 
 def wall_openings(plan: ParsedPlan) -> list[WallOpening]:
@@ -777,8 +790,48 @@ def wall_openings(plan: ParsedPlan) -> list[WallOpening]:
                 gap = (b.x - a.x2) if horiz else (b.y - a.y2)
                 if 0 < gap < OPENING_MAX_PX:
                     mid = (a.x2 + b.x) / 2 if horiz else (a.y2 + b.y) / 2
-                    out.append(WallOpening(mid if horiz else key, key if horiz else mid, gap / FTPX))
+                    s1, s2 = (a.x2, b.x) if horiz else (a.y2, b.y)
+                    t1, t2 = (a.y, a.y2) if horiz else (a.x, a.x2)
+                    out.append(WallOpening(mid if horiz else key, key if horiz else mid, gap / FTPX, horiz, s1, s2, t1, t2))
     out.sort(key=lambda o: o.ft, reverse=True)
+    return out
+
+
+@dataclass(frozen=True)
+class PassageBlocker:
+    """A furniture-scale object standing in a gateway, where the traffic goes."""
+
+    x: float
+    y: float
+    w_ft: float
+    h_ft: float
+    opening_ft: float
+
+
+def passage_blockers(plan: ParsedPlan) -> list[PassageBlocker]:
+    """Furniture-scale objects standing in a gate's PASSAGE - the track that carts and people use.
+
+    WHY (GM 2026-07-25): a threshold stone is an ABOVE-GROUND marker set on either side of the road,
+    not paving laid flush with it, so nothing may stand between a gateway's jambs. Ochiba's vermillion
+    pair had been drawn "centered in the gate threshold" - what the vocabulary used to say - which put
+    both stones INSIDE a 13.3 ft passage and left 5.3 ft of clear track between them, so a cart would
+    have had to roll over a stone meant to stand proud of the ground. That is the SECOND round of this
+    defect: a single large stone squarely across the passage was caught by eye in 2026-07 and "fixed"
+    into the pair, which is precisely the history that argues for a check rather than a habit.
+
+    Two exclusions, both deliberate. BUILDINGS do not count: a mass filling a gap in the wall is the
+    wall-broken-around-a-structure idiom (Ubame's parley room stands in the border wall exactly that
+    way), not a blocked gate. GROUND COVER does not count either - gravel, swept keiko earth and
+    garden stipple run through a gateway by design. What has to stay out is the furniture: stones,
+    point glyphs, tubs, well curbs, posts set in the track.
+    """
+    out: list[PassageBlocker] = []
+    for o in wall_openings(plan):
+        x1, y1, x2, y2 = (o.span1, o.across1 - PASSAGE_DEPTH_PX, o.span2, o.across2 + PASSAGE_DEPTH_PX) if o.horiz else (o.across1 - PASSAGE_DEPTH_PX, o.span1, o.across2 + PASSAGE_DEPTH_PX, o.span2)
+        for r in plan.furniture + plan.wells + plan.glyphs + plan.tubs:
+            if min(r.x2, x2) - max(r.x, x1) > PASSAGE_CLEAR_MIN_PX and min(r.y2, y2) - max(r.y, y1) > PASSAGE_CLEAR_MIN_PX:
+                out.append(PassageBlocker(r.x + r.w / 2, r.y + r.h / 2, r.w / FTPX, r.h / FTPX, o.ft))
+    out.sort(key=lambda b: b.w_ft * b.h_ft, reverse=True)
     return out
 
 
@@ -1082,6 +1135,16 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
     if not openings:
         lines.append("    (no openings found in the compound wall)")
     lines += [f"    {o.ft:5.1f} ft  at svg({o.x:.0f},{o.y:.0f})   compare with the width this opening's comment claims" for o in openings]
+    blocked = passage_blockers(plan)
+    if blocked:
+        lines.append("PASSAGE check (a gateway's track stays clear - stones and posts flank it, they never stand in it):")
+        lines += [
+            f"    IN THE PASSAGE: a {b.w_ft:.1f} x {b.h_ft:.1f} ft object at svg({b.x:.0f},{b.y:.0f}) stands in a {b.opening_ft:.1f} ft opening - "
+            "move it clear of the road (a threshold stone flanks the passage, above ground)"
+            for b in blocked
+        ]
+    else:
+        lines.append("PASSAGE check: every gateway's track is clear: OK")
     lines.append("STRUCTURE/WALL check (a structure abuts a wall, never stands in it):")
     if not plan.wall_bands:
         lines.append("    (no wall strokes in this plan)")

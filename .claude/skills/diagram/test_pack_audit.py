@@ -753,6 +753,45 @@ def test_wall_openings_report_the_ink_on_the_frozen_capped_gates_fixture() -> No
     assert got == [10.3, 6.3, 3.7]
 
 
+def test_passage_blockers_flags_furniture_in_the_track_and_spares_a_flanking_jamb() -> None:
+    """A stone IN the gateway fires; the same stone moved outside the opening span does not."""
+    wall = _wallgroup((0, 100, 100, 100), (140, 100, 300, 100))  # a 40 px (13.3 ft) opening at x 100..140
+    inside = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(112, 96, 10, 14, "#A03020")))
+    hit = pa.passage_blockers(inside)
+    assert len(hit) == 1
+    assert round(hit[0].opening_ft, 1) == 13.3
+    flanking = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(86, 110, 10, 14, "#A03020")))
+    assert pa.passage_blockers(flanking) == []
+    jamb = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(84, 94, 16, 14, pa.WALL_STROKE)))
+    assert pa.passage_blockers(jamb) == []  # a gate post abutting the opening edge is not IN it
+
+
+def test_passage_blockers_catch_a_vertical_gateway_and_ignore_ground_and_masses() -> None:
+    """A privy corner in a west-wall service gate fires (Hayakawa had one); ground cover never does."""
+    wall = _wallgroup((100, 0, 100, 100), (100, 140, 100, 300))
+    privy = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(104, 130, 16, 18, "#7E726A")))
+    assert len(pa.passage_blockers(privy)) == 1
+    ground = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(60, 90, 120, 120, "url(#garden-stipple)")))
+    assert pa.passage_blockers(ground) == []  # gravel and stipple run through a gateway by design
+    mass = pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), wall, _rect(85, 100, 30, 40, "#DDB87A")))
+    assert pa.passage_blockers(mass) == []  # a structure IN the wall is the broken-wall idiom
+
+
+def test_passage_blockers_fire_on_the_frozen_stones_in_passage_fixture() -> None:
+    """Red fixture: Ochiba's vermillion pair as it was drawn INSIDE the 13.3 ft main-gate passage."""
+    with open(os.path.join(_FIX, "ochiba-stones-in-passage-red.svg")) as fh:
+        hits = pa.passage_blockers(pa.parse_svg(fh.read()))
+    assert len(hits) == 2
+    assert all(round(h.w_ft, 1) == 3.3 and round(h.h_ft, 1) == 4.7 for h in hits)
+
+
+def test_format_report_passage_section_states_each_case() -> None:
+    ok = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _wallgroup((0, 100, 100, 100), (140, 100, 300, 100)))))
+    assert "every gateway's track is clear: OK" in ok
+    bad = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _wallgroup((0, 100, 100, 100), (140, 100, 300, 100)), _rect(112, 96, 10, 14, "#A03020"))))
+    assert "IN THE PASSAGE" in bad
+
+
 def test_format_report_gate_openings_section_states_each_case() -> None:
     none = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _wallgroup((0, 190, 200, 190)))))
     assert "no openings found in the compound wall" in none
