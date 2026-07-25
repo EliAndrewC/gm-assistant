@@ -4277,8 +4277,11 @@ class Settlement:
         # rowpack houses slide under the caption's ends (GM tower-resize ripple, 2026-07-24)
         self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
         cb_ = max(h + bm, 2.9 * len(label) + 10)
-        self.block_polys.append([(x - cb_, y + h), (x + cb_, y + h), (x + cb_, y + h + 26), (x - cb_, y + h + 26)])
-        self.label(x, y + h + 12, label, 9, italic=True, color="#4A3318")
+        self.block_polys.append([(x - cb_, y + h), (x + cb_, y + h), (x + cb_, y + h + 40), (x - cb_, y + h + 40)])
+        # the caption is TWO LINES, "drum/bell" over "tower" (GM 2026-07-24): the county tower is
+        # genuinely the combined zhonggulou - both instruments in one building, and both are drawn
+        self.label(x, y + h + 12, "drum/bell", 9, italic=True, color="#4A3318")
+        self.label(x, y + h + 24, "tower", 9, italic=True, color="#4A3318")
         return z
 
     # ---- TRADE WORKS (GM 2026-07-24, trade-footprint-research.md): the trades whose real
@@ -6670,10 +6673,28 @@ class Settlement:
             for t_i in range(n_troughs):
                 t_y = wpy - t_total / 2 + t_i * (t_h + t_gap)
                 self.add(f'<rect x="{wpx - t_len / 2:.1f}" y="{t_y:.1f}" width="{t_len:.1f}" height="{t_h:.1f}" rx="0.9" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>')
+
         # 1-2 DUNG HEAPS - the little "someone works here" tell; the ellipse's EDGE points are
-        # probed too (GM 2026-07-24: a heap must not foul the road tread or the rampart clearance)
+        # probed too (GM 2026-07-24: a heap must not foul the road tread or the rampart clearance),
+        # and a heap keeps ~15px clear of every RAIL LINE (GM 2026-07-25: both flanks of a rail
+        # are tie-up space - a heap in the tethered-animal row blocks one side; the check floor
+        # is 14px / 42 ft, placement holds 15 for slack)
+        def _clear_of_rails(hpx: float, hpy: float) -> bool:
+            for rl_ in rails:
+                rh_ = rl_["len"] / 2
+                if seg_dist(hpx, hpy, (rl_["x"] - rl_["tx"] * rh_, rl_["y"] - rl_["ty"] * rh_), (rl_["x"] + rl_["tx"] * rh_, rl_["y"] + rl_["ty"] * rh_)) < 15.0:
+                    return False
+            return True
+
         for _ in range(2):
-            d = take(6.0, 16.0, probes=((0.0, 0.0), (-2.5, 0.0), (2.5, 0.0), (0.0, -1.8), (0.0, 1.8)))
+            d = None
+            for hcx, hcy in cand:
+                if any((hcx - ux) ** 2 + (hcy - uy) ** 2 < 16 * 16 for ux, uy in used) or not _clear_of_rails(hcx, hcy):
+                    continue
+                if all(clear(hcx + ox_, hcy + oy_, 6.0) for ox_, oy_ in ((0.0, 0.0), (-2.5, 0.0), (2.5, 0.0), (0.0, -1.8), (0.0, 1.8))):
+                    d = (hcx, hcy)
+                    used.append(d)
+                    break
             if not d:
                 break
             dx, dy = d
