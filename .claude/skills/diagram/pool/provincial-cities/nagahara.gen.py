@@ -533,7 +533,14 @@ for _wc in [(1330, 1170), (1320, 1140), (1310, 1178)]:
         break  # candidate fan (first clear seat wins): a court in the Bishamon-pocket band's SE corner - the (1292,1098) draw-point serves ~30 households whose southern half (y1140-1193) needs its own idobata (city_well_density_sufficient); the hall and the wayside shrines guard everything further W
 s.place_wells((1228, 1058, 1356, 1100), spacing=52)  # courts for the theater-south terrace strip
 s.place_wells((1170, 957, 1395, 1003), spacing=56)  # courts for the ring-front strip N of the theater
-s.place_wells((1360, 1232, 1458, 1298), spacing=56)  # courts for the temple-lane SE pocket
+# the temple-lane SE pocket: spacing tightened 56 -> 42 (2026-07-25) so it gets a SECOND idobata.
+# The avenue re-pitch (arches re-laid at the ~20 ft house stride) freed the ground the old 51 ft
+# sando had blocked, the SE rowpack seated 5 more houses in it, and the single (1444,1260)
+# draw-point went to 29 households - over the 26 ceiling (city_well_density_sufficient). Hand-picked
+# well_at seats all failed here: the ward fence at y1311 carries a 15px no-build corridor (a
+# wellhead's own radius puts anything below y~1285 inside it) and the rest of the pocket is packed,
+# so the grid scan is what finds the pair of seats that fit.
+s.place_wells((1360, 1232, 1458, 1298), spacing=42)
 for _wc in [
     (1181, 1041),
     (1187, 1053),
