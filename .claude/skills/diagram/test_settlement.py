@@ -1594,6 +1594,21 @@ def test_text_width_measures_the_render_font_and_falls_back(monkeypatch):
     assert s._text_width("Akagahara", 30) == 9 * 30 * 0.62
 
 
+def test_text_width_is_pinned_to_the_basic_layout_engine():
+    # A title placard is sized from this measurement and RECORDED in the manifest, so the pool is
+    # only byte-reproducible if the measurement depends on the font file alone. PIL otherwise picks
+    # its layout engine by what the container has installed - RAQM where libraqm is present, BASIC
+    # where it is not - and the two disagree in both directions at the sub-pixel level. A container
+    # rebuild after a laptop crash (2026-07-25) gained libraqm and thereby dirtied all 16 titled pool
+    # manifests with no code change behind it. These exact numbers are the BASIC ones the committed
+    # manifests were built with; a failure here means the pin came loose (or PIL changed BASIC), and
+    # it must be resolved deliberately - regenerating the pool - not by editing the expectations.
+    s = _crop_settlement()
+    assert s._text_width("Honda", 30) == 110.0
+    assert s._text_width("Hoshizora", 30) == 170.0
+    assert s._text_width("Tango", 30) == 103.953125
+
+
 def test_roll_torii_count_distributions():
     # the GM's tier weights (2026-07-21): 1/3/7 only, village 60/30/10, town 30/60/10,
     # city 30/40/30, capital 10/60/30; unknown scales roll the conservative village column

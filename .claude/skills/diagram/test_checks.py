@@ -37,6 +37,80 @@ def bldg(x, y, kind="merchant", rot=0, w=40, h=28):
     return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "kind": kind}
 
 
+# ---- fixture builders -------------------------------------------------------------------------
+# Every test below hands `gate()` a hand-built manifest containing only the keys ITS check reads.
+# That is the right shape for a focused test, but it has a recurring tax: a feature record is often
+# required to carry a key some OTHER check indexes unconditionally (a threshing yard's "of", a
+# grove's "face"), and omitting it does not fail the test you are writing - it raises a KeyError
+# from an unrelated check, which costs a fix-and-rerun cycle to diagnose. These builders carry the
+# required keys so new tests do not rediscover them one crash at a time; pass **kw to override
+# anything. `test_fixture_builders_survive_every_check` is the guarantee that they stay complete.
+def manifest(**over):
+    """A minimally-valid manifest: sane meta plus whatever feature lists the test supplies."""
+    M = {"meta": {"scale": "village", "ftpx": 1, "W": 1000, "H": 1000}}
+    M.update(over)
+    return M
+
+
+def house(x, y, kind="plain", rot=0, w=46, h=28, **kw):
+    return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "kind": kind, **kw}
+
+
+def yard(x, y, of=None, w=36, h=26, **kw):
+    """A threshing yard. `of` (the house it belongs to) is indexed unconditionally - the omission
+    that motivated these builders."""
+    return {"x": x, "y": y, "w": w, "h": h, "rot": 0, "of": list(of or (x, y)), **kw}
+
+
+def garden(x, y, of=None, w=22, h=24, **kw):
+    return {"x": x, "y": y, "w": w, "h": h, "rot": 0, "of": list(of or (x, y)), **kw}
+
+
+def well(x, y, r=8, vr=12, **kw):
+    """A wellhead. `r` is the clearance radius, `vr` the DRAWN head - checks use vr for overlap."""
+    return {"x": x, "y": y, "r": r, "vr": vr, **kw}
+
+
+def grove(x, y, of=None, w=40, h=30, face=(0, -1), **kw):
+    """One arm of a per-house yashikirin belt."""
+    return {"x": x, "y": y, "w": w, "h": h, "rot": 0, "of": list(of or (x, y)), "face": list(face), **kw}
+
+
+def vgrove(poly, role="windbreak", clumps=None, r=14, **kw):
+    """A communal fengshui grove: an outline plus the clump centers actually drawn in it."""
+    xs = [p[0] for p in poly]
+    ys = [p[1] for p in poly]
+    return {
+        "x": sum(xs) / len(xs),
+        "y": sum(ys) / len(ys),
+        "w": max(xs) - min(xs),
+        "h": max(ys) - min(ys),
+        "rot": 0,
+        "role": role,
+        "r": r,
+        "poly": [list(p) for p in poly],
+        "clumps": [list(c) for c in (clumps if clumps is not None else [(sum(xs) / len(xs), sum(ys) / len(ys))])],
+        **kw,
+    }
+
+
+def test_fixture_builders_survive_every_check():
+    """The builders above must produce records EVERY check can read without a KeyError - that is
+    the whole point of them. If a check starts indexing a new required key, this fails here once
+    instead of ambushing the next person who writes a test."""
+    M = manifest(
+        houses=[house(300, 300)],
+        buildings=[bldg(600, 600)],
+        threshing_yards=[yard(300, 340, of=(300, 300))],
+        gardens=[garden(340, 300, of=(300, 300))],
+        wells=[well(500, 500)],
+        groves=[grove(260, 260, of=(300, 300))],
+        village_groves=[vgrove([(700, 700), (800, 700), (800, 800), (700, 800)])],
+        tree_crowns=[900, 900, 6],
+    )
+    f(M)  # must not raise; which checks FAIL is irrelevant here - only that they all ran
+
+
 # ---- streets_have_buildings: the case that motivated this file ----------------------------
 # A building beside a north-south lane but FRONTING the east-west cross-street (it is nearer
 # the cross) must NOT count as serving the lane - so a lane with only such neighbors reads as
@@ -5729,22 +5803,22 @@ def test_wells_clear_of_trees_fires_on_grove_forest_woodland_grect_but_passes_wh
 def test_wells_clear_of_trees_fires_on_a_drawn_crown_over_the_wellhead():
     # the reserved-area tests above are coarse (where trees MAY stand); tree_crowns is where they DO.
     # A crown drawn onto the wellhead fires even with no grove/forest record anywhere near it.
-    base = {"meta": {"scale": "village"}, "houses": [bldg(300, 300, "laborer")]}
-    well = {"x": 500, "y": 500, "r": 8, "vr": 12}
-    assert "wells_clear_of_trees" in f({**base, "wells": [well], "tree_crowns": [508, 495, 9]})
-    assert "wells_clear_of_trees" not in f({**base, "wells": [well], "tree_crowns": [540, 495, 9]})
+    base = manifest(houses=[bldg(300, 300, "laborer")])
+    wl = well(500, 500)
+    assert "wells_clear_of_trees" in f({**base, "wells": [wl], "tree_crowns": [508, 495, 9]})
+    assert "wells_clear_of_trees" not in f({**base, "wells": [wl], "tree_crowns": [540, 495, 9]})
 
 
 def test_structures_clear_of_trees_fires_when_a_crown_is_drawn_over_a_building():
     # a tree drawn on a roof erases the building - no drawn crown may overlap any ROOFED footprint,
     # and a ROTATED building is covered conservatively by its half-diagonal (as at placement).
-    base = {"meta": {"scale": "town"}, "houses": [bldg(300, 300, "laborer")]}
+    base = manifest(meta={"scale": "town"}, houses=[bldg(300, 300, "laborer")])
     assert "structures_clear_of_trees" in f({**base, "buildings": [bldg(600, 600, "servant")], "tree_crowns": [618, 600, 8]})
     assert "structures_clear_of_trees" not in f({**base, "buildings": [bldg(600, 600, "servant")], "tree_crowns": [660, 600, 8]})
     # ... every roofed kind counts, not just dwellings (here a storehouse), and a crown that only
     # reaches the OPEN yard beside a building is fine - yards have their own sun rules
     assert "structures_clear_of_trees" in f({**base, "storehouses": [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0}], "tree_crowns": [822, 800, 6]})
-    assert "structures_clear_of_trees" not in f({**base, "threshing_yards": [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0, "of": [300, 300]}], "tree_crowns": [800, 800, 6]})
+    assert "structures_clear_of_trees" not in f({**base, "threshing_yards": [yard(800, 800, of=(300, 300))], "tree_crowns": [800, 800, 6]})
 
 
 def test_sacred_and_graves_off_marsh_fires_and_passes_on_dry_ground():
