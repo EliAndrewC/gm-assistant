@@ -187,6 +187,10 @@ _OVERLAP_STRUCTS = (
     "kilns",
     "farriers",
     "tanning_yards",
+    # martial training (GM 2026-07-25): the state hall and the private dojos - solid compounds like
+    # any other civic/private premises, so they overlap nothing
+    "martial_halls",
+    "dojos",
 )
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
@@ -446,7 +450,18 @@ CANOPY_STRUCT_KEYS = (
     "mausoleums",
     "gate_structs",
     "wall_towers",
+    "martial_halls",
+    "dojos",
 )
+# Martial training in a provincial city (GM 2026-07-25). The first two mirror
+# settlement.DOJO_SAMURAI_FRAC / DOJO_PER_SAMURAI - keep in sync, they are the roll the gate holds
+# the map to. RANGE_FT is the kyudo standard 28 m shot (92 ft), rounded down to the ~90 ft clear
+# lane the Mode A azuchi already uses. QUARTER_PX is "in or against the samurai neighborhood" at the
+# city rung (3 ft/px -> ~780 real ft, about a quarter's width), not a precise siting rule.
+DOJO_SAMURAI_FRAC = 0.10
+DOJO_PER_SAMURAI = 200
+DOJO_RANGE_FT = 90.0
+DOJO_QUARTER_PX = 260.0
 FOOT_ABUTMENT = 6.0  # deck = local ditch width + this abutment (settlement.PLANK_ABUTMENT)
 FOOT_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
 FOOT_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the village (a place worth crossing to)
@@ -4162,6 +4177,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             ("farriers", "farrier"),
             ("tanning_yards", "tanning yard"),
             ("drum_towers", "drum tower"),
+            ("martial_halls", "martial hall"),
+            ("dojos", "dojo"),
         ):
             vics += [(_twg, _bb(t_)) for t_ in M.get(_twk, [])]
 
@@ -4195,7 +4212,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
             if "drum/bell" in t or t.strip() == "tower":  # the two-line zhonggulou caption (GM 2026-07-24)
                 return {"drum tower"}
-            for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "tanning yard", "drum tower"):
+            for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "tanning yard", "drum tower", "martial hall", "dojo"):
                 if _tw_txt in t:
                     return {_tw_txt}  # a trade-works caption may cover only its own premises
             return set()  # farmland / market / theater stage / title labels name no building
@@ -8390,6 +8407,64 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"houses, juniors small ones, and samurai walled estates sit OUTSIDE the walls (only the "
                 f"governor's mansion is walled within)",
             )
+        # MARTIAL TRAINING (GM 2026-07-25; settlements.md "Historical grounding: martial training in
+        # a provincial city"). The provincial city is the FIRST tier that supports a dojo at all -
+        # a county town's ~20 resident samurai are no student body and no living for a sensei, which
+        # is why the county magistracy draws a practice ground and no dojo (buildings.md). It
+        # supports two kinds, and both are required here:
+        #   - EXACTLY ONE state PROVINCIAL MARTIAL HALL, inside the walls. Historically the hanko's
+        #     bugeijo, and hanko were built in castle towns for the domain's own retainers - the
+        #     tier that seats a governor and ~225 working samurai is the tier that seats the hall.
+        #     It is its OWN compound, not a wing of the governor's yamen.
+        #   - PRIVATE dojos, count rolled from the samurai cohort (s.dojos): 1 per full 200 samurai
+        #     plus a remainder-fraction chance of one extra, floored at 1. A ~3,000 city is ~10%
+        #     samurai = ~300, so 1 + a 50% roll. Total martial establishments therefore land at 2-3,
+        #     matching the ~1 per ~100 resident samurai the research put a provincial city at.
+        # The ARCHERY LANE is the state hall's alone and sits INSIDE its compound wall: 90 ft is the
+        # kyudo standard 28 m shot (the same clear lane the Mode A azuchi uses), and a private lot
+        # has no room for it. A recorded roll must match the drawn count, so a stale hand count
+        # cannot ship - the bathhouse ratchet, applied to a samurai-driven institution.
+        _mhalls = M.get("martial_halls", [])
+        _mhwall = M.get("wall") or []
+        _mhout = [(round(mh_["x"]), round(mh_["y"])) for mh_ in _mhalls if len(_mhwall) >= 3 and not point_in_poly(mh_["x"], mh_["y"], _mhwall)]
+        check(
+            "city_has_martial_hall",
+            len(_mhalls) == 1 and not _mhout,
+            f"{len(_mhalls)} provincial martial hall(s), outside the walls at {_mhout} - every provincial city keeps "
+            f"exactly ONE state martial hall in its own compound inside the rampart (s.martial_hall: the martial wing "
+            f"of the provincial school, where the province's youth are schooled and the officer cohort drills; the "
+            f"hanko's bugeijo, built in castle towns for the domain's own retainers - a county town has none)",
+        )
+        _mhshort = [(round(mh_["x"]), round(mh_["y"]), mh_.get("range_ft", 0)) for mh_ in _mhalls if mh_.get("range_ft", 0) < DOJO_RANGE_FT]
+        check(
+            "city_martial_hall_has_archery_range",
+            not _mhshort,
+            f"martial hall(s) whose archery lane is shorter than the {DOJO_RANGE_FT:.0f} ft standard shot: {_mhshort} - "
+            f"the hall's yard carries a full-length lane with an azuchi butt at its head (kyudo shoots at 28 m / 92 ft), "
+            f"drawn inside the compound wall where a shooting lane belongs",
+        )
+        _cdojos = M.get("dojos", [])
+        _dj_sam = round((meta.get("population") or 3000) * DOJO_SAMURAI_FRAC)
+        _dj_floor = max(1, _dj_sam // DOJO_PER_SAMURAI)
+        _dj_allowed = {_dj_floor} if _dj_sam % DOJO_PER_SAMURAI == 0 else {_dj_floor, _dj_floor + 1}
+        _dj_roll = meta.get("dojo_roll")
+        check(
+            "city_dojo_count_follows_samurai",
+            len(_cdojos) in _dj_allowed and (_dj_roll is None or len(_cdojos) == _dj_roll),
+            f"{len(_cdojos)} private dojo(s) for a ~{_dj_sam}-samurai city (rolled {_dj_roll}) - the count follows the "
+            f"GM formula (s.dojos: 1 per full {DOJO_PER_SAMURAI} samurai + a remainder-fraction chance of one extra, "
+            f"floored at 1, so ~300 samurai -> 1 + 50% and ~400 -> exactly 2), and a recorded roll must match the drawn "
+            f"count. The countryside cohort is deliberately not counted - a city's size already scales with the "
+            f"countryside that feeds it",
+        )
+        _dj_far = [(round(o_["x"]), round(o_["y"])) for o_ in _mhalls + _cdojos if not any(math.hypot(o_["x"] - b_["x"], o_["y"] - b_["y"]) < DOJO_QUARTER_PX for b_ in samurai_h)]
+        check(
+            "city_dojos_among_samurai",
+            not _dj_far,
+            f"martial hall / dojo(s) with no samurai housing within {DOJO_QUARTER_PX:.0f}px: {_dj_far} - a dojo serves "
+            f"samurai and nobody else, so both the state hall and the private halls stand in or against the samurai "
+            f"neighborhood, not out among the merchant rows or the laborer warrens",
+        )
         check("city_has_merchant_district", bk.get("merchant", 0) >= 12, f"{bk.get('merchant', 0)} merchant houses - a provincial city needs a merchant district")
         check(
             "city_has_laborer_neighborhoods",
@@ -8856,10 +8931,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             ring2: Any = list(w) + [w[0]]
             misaligned = []
             for t in towers:
-                ek = min(range(len(ring2) - 1), key=lambda k: seg_dist(t["x"], t["y"], ring2[k], ring2[k + 1]))
-                edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
-                d = (t.get("rot", 0) - edge_ang) % 90
-                if min(d, 90 - d) > 15:
+                # THE TWO NEAREST EDGES, not just the nearest (GM 2026-07-25). A tower seated near a
+                # VERTEX of the wall N-gon is legitimately square to EITHER of the runs that meet
+                # there - placement takes its tangent from one side, and which side `seg_dist` calls
+                # "nearest" can flip on a sub-pixel move. That is exactly what happened when the
+                # martial hall's budget line grew Nagahara's derived ring by 1px: an untouched tower
+                # at (1909, 1200) kept its rot of 80.4 while the nearest-edge lookup crossed from the
+                # 80.4 deg run to the 61.3 deg one, and a correct tower failed. Scoring the best of
+                # the two nearest edges makes the check read the geometry the way placement wrote it;
+                # it does NOT weaken the rule, because an axis-aligned tower on a slanted stretch is
+                # still off BOTH adjacent runs by more than the tolerance.
+                order = sorted(range(len(ring2) - 1), key=lambda k: seg_dist(t["x"], t["y"], ring2[k], ring2[k + 1]))
+                twr_off = 90.0
+                for ek in order[:2]:
+                    edge_ang = math.degrees(math.atan2(ring2[ek + 1][1] - ring2[ek][1], ring2[ek + 1][0] - ring2[ek][0]))
+                    d = (t.get("rot", 0) - edge_ang) % 90
+                    twr_off = min(twr_off, d, 90 - d)
+                if twr_off > 15:
                     misaligned.append((round(t["x"]), round(t["y"])))
             check("city_wall_towers_aligned", not misaligned, f"guard tower(s) not square to the wall - a tower should rotate to the wall's tangent there, not stay axis-aligned: {misaligned}")
             # the GATE FURNITURE - the guard house + inspection station that sit along the ring road just
@@ -10210,6 +10298,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     "bathhouses",
                     "kilns",
                     "tanning_yards",
+                    "martial_halls",
+                    "dojos",
                 )
             ] + [houses, es_singles]:
                 for es_o in es_grp:

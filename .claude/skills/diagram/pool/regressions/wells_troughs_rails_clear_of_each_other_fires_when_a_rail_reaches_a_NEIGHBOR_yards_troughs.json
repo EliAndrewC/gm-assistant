@@ -1,0 +1,65 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3
+ },
+ "stable_yards": [
+  {
+   "x": 480,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    480,
+    500
+   ],
+   "troughs": 0,
+   "rails": [
+    {
+     "x": 500,
+     "y": 500,
+     "tx": 1.0,
+     "ty": 0.0,
+     "len": 18.0,
+     "reach": 2.4
+    }
+   ]
+  },
+  {
+   "x": 560,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    560,
+    500
+   ],
+   "troughs": 2,
+   "troughs_at": [
+    506.0,
+    500.0
+   ],
+   "troughs_box": [
+    503.7,
+    497.2,
+    508.3,
+    502.8
+   ],
+   "rails": []
+  }
+ ],
+ "wells": [
+  {
+   "x": 512,
+   "y": 500,
+   "r": 8,
+   "vr": 4.0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "wells_troughs_rails_clear_of_each_other"
+  ],
+  "source": "test_checks.py::test_wells_troughs_rails_clear_of_each_other_fires_when_a_rail_reaches_a_NEIGHBOR_yards_troughs"
+ }
+}

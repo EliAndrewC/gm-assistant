@@ -1,0 +1,38 @@
+{
+ "meta": {
+  "scale": "town",
+  "ftpx": 1
+ },
+ "religious": [
+  {
+   "kind": "monastery",
+   "x": 500,
+   "y": 500,
+   "w": 40,
+   "h": 28
+  }
+ ],
+ "torii": [
+  [
+   500,
+   560,
+   9
+  ],
+  [
+   500,
+   621,
+   9
+  ],
+  [
+   500,
+   682,
+   9
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "torii_avenue_pitch_capped"
+  ],
+  "source": "test_checks.py::test_torii_avenue_pitch_capped"
+ }
+}

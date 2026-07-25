@@ -8342,3 +8342,57 @@ def test_moat_junction_skips_degenerate_channels():
     for poly in ([[400, 500]], [[400, 500], [400, 500]]):
         M = _mj_map({"poly": poly, "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5})
         assert "moat_junctions_swept_with_the_current" not in f(M)
+
+
+def _martial_city(pop=3000, halls=1, dojos=1, roll=None, range_ft=100.0, hall_xy=(400, 500), dojo_xy=(460, 500), sam_xy=(430, 520)):
+    """A minimal provincial city carrying the martial-training program (GM 2026-07-25)."""
+    meta = {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True, "population": pop}
+    if roll is not None:
+        meta["dojo_roll"] = roll
+    return {
+        "meta": meta,
+        "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
+        "gates": [[500, 100]],
+        "buildings": [bldg(sam_xy[0] + 20 * i, sam_xy[1], kind="samurai") for i in range(10)],
+        "martial_halls": [{"x": hall_xy[0], "y": hall_xy[1], "w": 43.3, "h": 33.3, "rot": 0, "label": "martial hall", "range_ft": range_ft} for _ in range(halls)],
+        "dojos": [{"x": dojo_xy[0] + 40 * i, "y": dojo_xy[1], "w": 25.3, "h": 14.7, "rot": 0, "label": "dojo"} for i in range(dojos)],
+    }
+
+
+def test_city_martial_hall_is_required_exactly_once_and_inside_the_walls():
+    # a provincial city is the first tier that supports a dojo at all, and the STATE hall is a
+    # program item rather than a roll - exactly one, inside the rampart, in its own compound
+    assert "city_has_martial_hall" not in f(_martial_city())
+    assert "city_has_martial_hall" in f(_martial_city(halls=0))  # a county town has none; a city must
+    assert "city_has_martial_hall" in f(_martial_city(halls=2))  # the state institution is singular
+    assert "city_has_martial_hall" in f(_martial_city(hall_xy=(50, 500), sam_xy=(60, 520)))  # outside the wall
+
+
+def test_city_martial_hall_keeps_a_full_length_archery_lane():
+    # the lane covers the kyudo standard 28 m / 92 ft shot (floored at the ~90 ft clear lane the
+    # Mode A azuchi uses); a lane shorter than that is not a shooting ground
+    assert "city_martial_hall_has_archery_range" not in f(_martial_city(range_ft=100.0))
+    assert "city_martial_hall_has_archery_range" not in f(_martial_city(range_ft=90.0))
+    assert "city_martial_hall_has_archery_range" in f(_martial_city(range_ft=60.0))
+
+
+def test_city_dojo_count_follows_the_samurai_cohort_formula():
+    # GM formula 2026-07-25: 1 private dojo per full 200 samurai (a city's ~10% share) + a
+    # remainder-fraction chance of one extra, floored at 1; a recorded roll must match the drawn
+    # count. 2,000 -> 200 samurai -> exactly 1; 3,000 -> 300 -> 1 or 2; 4,000 -> 400 -> exactly 2.
+    assert "city_dojo_count_follows_samurai" not in f(_martial_city(pop=2000, dojos=1))
+    assert "city_dojo_count_follows_samurai" in f(_martial_city(pop=2000, dojos=2))
+    assert "city_dojo_count_follows_samurai" not in f(_martial_city(pop=3000, dojos=1))
+    assert "city_dojo_count_follows_samurai" not in f(_martial_city(pop=3000, dojos=2))
+    assert "city_dojo_count_follows_samurai" in f(_martial_city(pop=3000, dojos=3))
+    assert "city_dojo_count_follows_samurai" in f(_martial_city(pop=4000, dojos=1))
+    assert "city_dojo_count_follows_samurai" in f(_martial_city(pop=3000, dojos=1, roll=2))  # stale hand count
+    assert "city_dojo_count_follows_samurai" not in f(_martial_city(pop=3000, dojos=1, roll=1))
+
+
+def test_city_dojos_stand_among_the_samurai_they_serve():
+    # a dojo serves samurai and nobody else, so both the state hall and the private halls sit in
+    # or against the samurai neighborhood - not out among the merchant rows or laborer warrens
+    assert "city_dojos_among_samurai" not in f(_martial_city())
+    assert "city_dojos_among_samurai" in f(_martial_city(dojo_xy=(830, 850)))  # a private hall adrift
+    assert "city_dojos_among_samurai" in f(_martial_city(hall_xy=(830, 180)))  # the state hall adrift
