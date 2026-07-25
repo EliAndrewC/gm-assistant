@@ -107,6 +107,25 @@ def forest_reveal_x(forest: Poly, edge: Poly | None, reveal: float, w: float) ->
     return ex + [min(x + reveal, w) for x in ex]
 
 
+def forest_frame_span(vals: Sequence[float], limit: float, other: Sequence[float]) -> tuple[float, float]:
+    """One axis of the EDGE forest's frame contribution (mirrored by check_village's crop_hugs_content -
+    keep the two in sync). `vals` are the wood's already-clamped values on that axis, `limit` the canvas
+    size, `other` every value the REST of the content contributes there.
+
+    A tree line that runs off BOTH ends of an axis is running ALONG it, not bounding anything: the wood
+    continues past whatever frame we choose, so pinning that edge to the canvas holds the view open for
+    more of the same crowns - the identical waste the reveal band already rejects on the axis the wood
+    FACES (GM 2026-07-25: Moritono's north edge sat at the canvas top because the Shirin Forest, an
+    east-edge wood drawn from y=-10 to y=1510, spanned the full height, while the northernmost real
+    content - a well - stood 157px in; the tree line still runs off a tighter north edge, which is the
+    reading we want). On such an axis the wood takes the span the rest of the content sets, so it can
+    neither extend nor shrink the frame. Otherwise its own span is content, as before."""
+    lo, hi = min(vals), max(vals)
+    if lo <= 0 and hi >= limit and len(other):
+        return max(0.0, min(other)), min(limit, max(other))
+    return min(max(lo, 0.0), limit), min(max(hi, 0.0), limit)
+
+
 def point_in_poly(px: float, py: float, poly: Poly) -> bool:
     inside = False
     n = len(poly)
@@ -631,6 +650,76 @@ def wall_tower_spacing_px(scale_px_per_ft: float, tier: str) -> float:
     return (rng_ft if mincov == 2 else 2 * rng_ft) * scale_px_per_ft
 
 
+def crop_boxes(M: Any, city: bool, ftpx: float, W: float, H: float) -> list[tuple[float, float, float, float, str]]:
+    """Every feature that SETS the render frame, as labeled boxes (x0, x1, y0, y1, what).
+
+    SINGLE SOURCE OF TRUTH, shared by `crop_to_content` / `crop_city` - which reduce it to a
+    bounding box - and by check_village's `crop_not_held_open_by_one_feature`, which asks the
+    opposite question: WHICH feature is setting each edge, and is it out there on its own?
+    Keeping one list is what stops the crop and the check that gates it from drifting apart
+    (the recurring engine trap recorded in the dev-loop doc: placement and its check must read
+    the same manifest source). The two crops take DIFFERENT sets by design - a city frames on
+    its moat ring, satellites and labels while its paddy fans and farmhouses clip at the edge -
+    so the `city` flag selects which."""
+    out: list[tuple[float, float, float, float, str]] = []
+
+    def add(o: Any, k: str, i: int) -> None:
+        # some area keys (forest_patches, pastures) record a RAW POLYGON, not a dict - they are
+        # drawn ground and set the frame like any other area
+        if not isinstance(o, dict):
+            xs = [p[0] for p in o]
+            ys = [p[1] for p in o]
+            out.append((min(xs), max(xs), min(ys), max(ys), f"{k}[{i}]"))
+            return
+        lab = f"{k}[{i}]" + (f" '{o.get('label')}'" if o.get("label") else "")
+        if o.get("poly"):
+            xs = [p[0] for p in o["poly"]]
+            ys = [p[1] for p in o["poly"]]
+            out.append((min(xs), max(xs), min(ys), max(ys), lab))
+        elif "r" in o:  # a well records {x, y, r} - no poly, no w/h
+            out.append((o["x"] - o["r"], o["x"] + o["r"], o["y"] - o["r"], o["y"] + o["r"], lab))
+        elif "w" in o and "h" in o:
+            out.append((o["x"] - o["w"] / 2, o["x"] + o["w"] / 2, o["y"] - o["h"] / 2, o["y"] + o["h"] / 2, lab))
+
+    if city:
+        wallp = M.get("wall")
+        for k in Settlement._CROP_CITY:
+            for i, o in enumerate(M.get(k, [])):
+                if k == "buildings" and o.get("kind") == "shop" and wallp and not point_in_poly(o["x"], o["y"], wallp):
+                    continue  # the extramural gate-market / wharf stall STRING clips at the edge (the slice doctrine)
+                add(o, k, i)
+        for mp_ in M.get("moat") or []:  # the city itself (moat encloses the wall)
+            out.append((mp_[0], mp_[0], mp_[1], mp_[1], "moat"))
+        for i, lb in enumerate(M.get("labels", [])):  # placed label boxes: [x0, y0, x1, y1, z, text]
+            out.append((lb[0], lb[2], lb[1], lb[3], f"label {lb[5]!r}" if len(lb) > 5 else f"labels[{i}]"))
+        return out
+    for k in Settlement._CROP_HARD:
+        for i, o in enumerate(M.get(k, [])):
+            add(o, k, i)
+    _txh, _tyu, _tyd = torii_halfbox(ftpx)  # a torii ARCH is a visible structure and must be framed
+    for i, t in enumerate(M.get("torii", [])):
+        out.append((t[0] - _txh, t[0] + _txh, t[1] - _tyu, t[1] + _tyd, f"torii[{i}]"))
+    for fd in M.get("fields", []):  # the field's VISIBLE extent, NOT its house-blocking envelope tail
+        vb = fd.get("vis_bbox")
+        if vb:
+            out.append((vb[0], vb[2], vb[1], vb[3], f"field {fd.get('name')}"))
+        else:
+            xs = [p[0] for p in fd["outline"]]
+            ys = [p[1] for p in fd["outline"]]
+            out.append((min(xs), max(xs), min(ys), max(ys), f"field {fd.get('name')}"))
+    if M.get("pond"):
+        cx, cy, rx, ry = M["pond"]
+        out.append((cx - rx, cx + rx, cy - ry, cy + ry, "pond"))
+    if M.get("forest"):  # a big EDGE feature: revealed a band deep on the axis it FACES, and not
+        fpts = M["forest"]  # frame-setting at all on the axis it RUNS ALONG (see forest_frame_span)
+        fxs = forest_reveal_x(fpts, M.get("forest_edge"), Settlement.FOREST_REVEAL_FT / ftpx, W)
+        fys = [min(max(p[1], 0), H) for p in fpts]
+        x0, x1 = forest_frame_span(fxs, W, [v for b in out for v in (b[0], b[1])])
+        y0, y1 = forest_frame_span(fys, H, [v for b in out for v in (b[2], b[3])])
+        out.append((x0, x1, y0, y1, "forest"))
+    return out
+
+
 class Settlement:
     def __init__(self, W: int = 1820, H: int = 1180, seed: int = 23) -> None:
         random.seed(seed)
@@ -1001,33 +1090,17 @@ class Settlement:
         (which flank that is varies by city; both current cities happen to use west=100)."""
         self.flush_stable_yards()  # yards draw HERE, seeing the complete map (GM 2026-07-24); their labels must exist before the frame is computed
         self.flush_tree_stands()  # ... and so does every wood's canopy, so no crown lands on a building placed after it
-        hx: list[float] = []
-        hy: list[float] = []
-        wallp = self.M.get("wall")
-        for k in self._CROP_CITY:
-            for o in self.M.get(k, []):
-                if k == "buildings" and o.get("kind") == "shop" and wallp and not point_in_poly(o["x"], o["y"], wallp):
-                    # the extramural gate-market / wharf stall STRING does not set the frame - it
-                    # CLIPS at the edge like the paddy fans and estates, the cut-off stalls reading
-                    # as "the suburb continues" (the slice doctrine, GM 2026-07-24). The market's
-                    # flophouse and its label still anchor the frame, so a working band of every
-                    # gate market stays in view.
-                    continue
-                if o.get("poly"):  # pragma: no cover - none of the city keys record polys today; symmetry with crop_to_content
-                    hx += [p[0] for p in o["poly"]]
-                    hy += [p[1] for p in o["poly"]]
-                elif "w" in o and "h" in o:
-                    hx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
-                    hy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
-        for mp_ in self.M.get("moat") or []:  # the city itself (moat encloses the wall)
-            hx.append(mp_[0])
-            hy.append(mp_[1])
-        for lb in self.M.get("labels", []):  # placed label boxes: [x0, y0, x1, y1, z, text]
-            hx += [lb[0], lb[2]]
-            hy += [lb[1], lb[3]]
+        _cboxes = self._crop_boxes(city=True)
+        hx = [v for b in _cboxes for v in (b[0], b[1])]
+        hy = [v for b in _cboxes for v in (b[2], b[3])]
         x0, y0 = max(0, min(hx) - (west if west is not None else margin)), max(0, min(hy) - (north if north is not None else margin))
         x1, y1 = min(self.W, max(hx) + (east if east is not None else margin)), min(self.H, max(hy) + (south if south is not None else margin))
         self.set_view(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
+
+    def _crop_boxes(self, city: bool) -> list[tuple[float, float, float, float, str]]:
+        """This map's frame-setting boxes - see the module-level `crop_boxes`, which check_village
+        reads too so the crop and the check that gates it cannot drift apart."""
+        return crop_boxes(self.M, city, self.ftpx, self.W, self.H)
 
     def crop_to_content(self, margin: float = 30) -> None:
         """Frame the map to its CONTENT: set the render viewBox to the bounding box of the HARD features placed
@@ -1044,45 +1117,9 @@ class Settlement:
         the real content - a graveyard, the pond - never held open by empty back-slope grazing, so the commons
         now clips like the marsh instead of dragging the frame out.)"""
         self.flush_tree_stands()  # the woods' canopy draws HERE, seeing the complete map (see flush_tree_stands)
-        hx: list[float] = []
-        hy: list[float] = []
-        for k in self._CROP_HARD:
-            for o in self.M.get(k, []):
-                if o.get("poly"):
-                    hx += [p[0] for p in o["poly"]]
-                    hy += [p[1] for p in o["poly"]]
-                elif "r" in o:  # a well records {x, y, r} - no poly, no w/h. Latent bug found 2026-07-20:
-                    hx += [o["x"] - o["r"], o["x"] + o["r"]]  # wells never set the frame at all, and the
-                    hy += [o["y"] - o["r"], o["y"] + o["r"]]  # windbreak band silently covered for them until
-                    #                                           the grove stopped counting (crop_hugs_content)
-                elif "w" in o and "h" in o:
-                    hx += [o["x"] - o["w"] / 2, o["x"] + o["w"] / 2]
-                    hy += [o["y"] - o["h"] / 2, o["y"] + o["h"] / 2]
-        _txh, _tyu, _tyd = torii_halfbox(self.ftpx)  # a torii ARCH is a visible structure and must be framed
-        for t in self.M.get("torii", []):  # too (true glyph half-box, same as the within-frame check) - else a
-            hx += [t[0] - _txh, t[0] + _txh]  # gateway can poke past the crop edge
-            hy += [t[1] - _tyu, t[1] + _tyd]
-
-        for fd in self.M.get("fields", []):  # the field's VISIBLE extent, NOT its house-blocking envelope tail
-            vb = fd.get("vis_bbox")
-            if vb:
-                hx += [vb[0], vb[2]]
-                hy += [vb[1], vb[3]]
-            else:
-                hx += [p[0] for p in fd["outline"]]
-                hy += [p[1] for p in fd["outline"]]
-        if self.M.get("pond"):
-            cx, cy, rx, ry = self.M["pond"]
-            hx += [cx - rx, cx + rx]
-            hy += [cy - ry, cy + ry]
-        if self.M.get("forest"):  # the FOREST is a big EDGE feature (a point-list, not dicts), CLAMPED
-            fpts = self.M["forest"]  # to the canvas so the view never opens past the edge (the wood fills
-            hy += [min(max(p[1], 0), self.H) for p in fpts]  # to the frame edge and bleeds beyond it)
-            # ACROSS the wood, though, the frame stops a shallow REVEAL band past the TREE LINE
-            # (FOREST_REVEAL_FT): a few ranks of canopy prove the wood is there and running off the
-            # map, and everything deeper is identical crowns. Falls back to the full polygon for a
-            # wood recorded without its tree line.
-            hx += forest_reveal_x(fpts, self.M.get("forest_edge"), self.px(self.FOREST_REVEAL_FT), self.W)
+        _boxes = self._crop_boxes(city=False)
+        hx = [v for b in _boxes for v in (b[0], b[1])]
+        hy = [v for b in _boxes for v in (b[2], b[3])]
         if not hx:  # pragma: no cover - crop is called only after the hard features are placed
             return
         # clamp the frame to the canvas: never open the view PAST the map edge (an EDGE feature like the forest

@@ -81,7 +81,7 @@ numpy==2.5.1
     # via opencv-python-headless
 oauthlib==3.3.1
     # via requests-oauthlib
-opencv-python-headless==5.0.0.93
+opencv-python-headless==4.13.0.92
     # via -r requirements.in
 pillow==12.3.0
     # via -r requirements.in
