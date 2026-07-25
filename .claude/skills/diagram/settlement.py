@@ -107,6 +107,25 @@ def forest_reveal_x(forest: Poly, edge: Poly | None, reveal: float, w: float) ->
     return ex + [min(x + reveal, w) for x in ex]
 
 
+def forest_frame_span(vals: Sequence[float], limit: float, other: Sequence[float]) -> tuple[float, float]:
+    """One axis of the EDGE forest's frame contribution (mirrored by check_village's crop_hugs_content -
+    keep the two in sync). `vals` are the wood's already-clamped values on that axis, `limit` the canvas
+    size, `other` every value the REST of the content contributes there.
+
+    A tree line that runs off BOTH ends of an axis is running ALONG it, not bounding anything: the wood
+    continues past whatever frame we choose, so pinning that edge to the canvas holds the view open for
+    more of the same crowns - the identical waste the reveal band already rejects on the axis the wood
+    FACES (GM 2026-07-25: Moritono's north edge sat at the canvas top because the Shirin Forest, an
+    east-edge wood drawn from y=-10 to y=1510, spanned the full height, while the northernmost real
+    content - a well - stood 157px in; the tree line still runs off a tighter north edge, which is the
+    reading we want). On such an axis the wood takes the span the rest of the content sets, so it can
+    neither extend nor shrink the frame. Otherwise its own span is content, as before."""
+    lo, hi = min(vals), max(vals)
+    if lo <= 0 and hi >= limit and len(other):
+        return max(0.0, min(other)), min(limit, max(other))
+    return min(max(lo, 0.0), limit), min(max(hi, 0.0), limit)
+
+
 def point_in_poly(px: float, py: float, poly: Poly) -> bool:
     inside = False
     n = len(poly)
@@ -691,11 +710,13 @@ def crop_boxes(M: Any, city: bool, ftpx: float, W: float, H: float) -> list[tupl
     if M.get("pond"):
         cx, cy, rx, ry = M["pond"]
         out.append((cx - rx, cx + rx, cy - ry, cy + ry, "pond"))
-    if M.get("forest"):  # a big EDGE feature: y clamped to the canvas, x revealed only a band deep
-        fpts = M["forest"]
-        fys = [min(max(p[1], 0), H) for p in fpts]
+    if M.get("forest"):  # a big EDGE feature: revealed a band deep on the axis it FACES, and not
+        fpts = M["forest"]  # frame-setting at all on the axis it RUNS ALONG (see forest_frame_span)
         fxs = forest_reveal_x(fpts, M.get("forest_edge"), Settlement.FOREST_REVEAL_FT / ftpx, W)
-        out.append((min(fxs), max(fxs), min(fys), max(fys), "forest"))
+        fys = [min(max(p[1], 0), H) for p in fpts]
+        x0, x1 = forest_frame_span(fxs, W, [v for b in out for v in (b[0], b[1])])
+        y0, y1 = forest_frame_span(fys, H, [v for b in out for v in (b[2], b[3])])
+        out.append((x0, x1, y0, y1, "forest"))
     return out
 
 
