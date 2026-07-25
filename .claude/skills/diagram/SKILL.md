@@ -177,7 +177,7 @@ For sizing - samurai per town, building footprint conventions, role hierarchies 
 
 ## Render pipeline
 
-**Setup - run this check once when the skill loads** (passwordless sudo is always available wherever this skill runs):
+**Setup - run this check once when the skill loads** (passwordless sudo is always available wherever this skill runs; the repo-wide installer is [`container-scripts/setup-dev-env.sh`](../../../container-scripts/setup-dev-env.sh), and `--check` verifies the whole environment in ~3s):
 
 ```sh
 which resvg >/dev/null || sudo apt-get install -y resvg
