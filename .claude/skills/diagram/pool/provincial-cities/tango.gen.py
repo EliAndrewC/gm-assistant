@@ -814,6 +814,21 @@ SAM_MIX = (["samurai"] * 3 + ["samurai_large"]) * 6
 front(
     [[(1927, 1470), (1927, 1582)]], SAM_MIX * 2, spacing=18, rows=2
 )  # senior houses front the avenue's E leg; items sized past the slots so the list never binds before the ground does, and rows=2 seats a rear ura-dana row back-to-back behind the frontage (the engine's frontage doctrine) - both leak-fix re-seat measures, 2026-07-20
+# MARTIAL TRAINING (GM 2026-07-25). The state PROVINCIAL MARTIAL HALL takes the pocket east of the
+# yamen - its own walled compound (never a wing of the governor's), with the government it answers
+# to on one side and the samurai housing it serves on the other. Placed BEFORE the row barracks and
+# the scatter pack, like the NE fire tower, so the rows flow around it rather than having to be
+# carved out afterward - but AFTER the avenue frontage, whose ground it would otherwise take. Seat
+# found with s.open_seat over the ward rect rather than guessed (skill CLAUDE.md), then walked 3px
+# east: open_seat cleared the compound itself, and the avenue's own street bed still clipped it.
+# x1956 is the west-most seat whose caption also clears the yamen - "martial hall" is a wide label
+# for a 43x33px compound, so the caption, not the compound, is what binds here.
+s.martial_hall(1956, 1569)
+# PRIVATE dojos - a retired sensei or noted duelist teaching a named style, count ROLLED from the
+# samurai cohort (s.dojos: 1 per full 200 samurai + a remainder chance; ~300 samurai here -> 1 + a
+# 50% roll, which this seed does not take). Seat 1 sits among the kumi-yashiki rows south of the
+# yamen; seat 2 (the ground the 2-roll would use) waits in the NE arc pocket.
+s.dojos([(1856, 1636), (2028, 1412)])
 s.rowpack(
     (1645, 1460, 1700, 1615), (["samurai"] * 4 + ["samurai_large"]) * 12, court_every=8
 )  # the WEST-FENCE nagaya strip (leak-fix re-seat, 2026-07-20): the ward must hold the full ~54-house resident cohort in-wall now that city_samurai_houses_inside_walls bars the SE overflow, and the scatter pack saturates ~40 - junior-samurai row-barracks lining the compound edge are the period-correct denser form (kumi-yashiki rows along the fence); x1 1700 keeps a >=14px gap to the yamen's W wall (city_government_offices_dont_abut), y0 1460 clears the Ministry of Revenue + its label
