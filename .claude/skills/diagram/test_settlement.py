@@ -1228,18 +1228,19 @@ def test_shrine_hall_rolls_torii_count_per_temple():
 
 def test_shrine_hall_torii_count_pin_extends_a_single_point_avenue():
     # the per-temple pin (the per-hall analog of the village 'torii_count' knob): a pinned 7
-    # marches the avenue away from the hall at a 44px stride from the single given point
+    # marches the avenue away from the hall at the HOUSE PITCH (TORII_PITCH_FT, 20 real ft) from
+    # the single given point - it was a fixed 44px until 2026-07-25, which is 132 ft at city scale
     s = _torii_city(torii_count=7)
     assert s.M["religious"][-1]["torii_count"] == 7
-    assert sorted(t[1] for t in s.M["torii"]) == [560 + 44 * i for i in range(7)]
+    assert sorted(t[1] for t in s.M["torii"]) == pytest.approx([560 + s.px(settlement.TORII_PITCH_FT) * i for i in range(7)], abs=0.1)
 
 
 def test_shrine_hall_extends_a_multi_point_avenue_along_its_own_step():
     # >= 2 given points: extension continues the avenue's OWN stride, not the 44px default
     s = Settlement(1200, 1200, seed=9)
     s.meta(name="T", scale="city", ftpx=3, down_deg=90)
-    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 580)], torii_count=3)
-    assert sorted(t[1] for t in s.M["torii"]) == [560, 580, 600]
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 570)], torii_count=3)
+    assert sorted(t[1] for t in s.M["torii"]) == [560, 570, 580]  # a 10px (30 ft) authored stride is inside the pitch band, so it stands
 
 
 def test_shrine_hall_roll_below_geometry_draws_the_first_n():
@@ -1269,12 +1270,13 @@ def test_torii_refuses_a_seat_standing_in_a_wall():
 def test_shrine_hall_shortens_its_avenue_short_of_a_wall():
     # the avenue is pulled BACK as a whole (uniform stride, first arch fixed) so the rolled count
     # still fits on open ground rather than marching the last arches into the fence. The authored
-    # run is 560..788 at a 38px stride, which seats the 5th arch AT the fence (y712).
-    s = _walled_city(fence=((300, 712), (900, 712)))
-    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598)], torii_count=7)
+    # run is 560..620 at a 10px (30 ft, inside the pitch band) stride, seating its last arch AT the
+    # fence (y620).
+    s = _walled_city(fence=((300, 620), (900, 620)))
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 570)], torii_count=7)
     ys = [t[1] for t in s.M["torii"]]
     assert len(ys) == 7 and ys[0] == 560  # every rolled arch drawn; the one nearest the hall never moves
-    assert ys[-1] < 705 and settlement.torii_wall_conflicts(s.M) == []  # shortened to stop before the fence, all clear
+    assert ys[-1] < 614 and settlement.torii_wall_conflicts(s.M) == []  # shortened to stop before the fence, all clear
     strides = [ys[i + 1] - ys[i] for i in range(6)]
     assert max(strides) - min(strides) <= 0.2  # ... and still evenly spaced (the run is scaled, not re-seated one by one)
 
@@ -1284,7 +1286,46 @@ def test_shrine_hall_refuses_an_avenue_that_cannot_be_shortened_clear():
     # close the arches up on each other or fudge the geometry
     s = _walled_city(fence=((300, 560), (900, 560)))
     with pytest.raises(ValueError, match="cannot be shortened clear of the samurai ward fence"):
-        s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598)], torii_count=7)
+        s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 570)], torii_count=7)
+
+
+def test_shrine_hall_repitches_an_overwide_avenue_along_its_own_line():
+    # GM 2026-07-25: the gen authors the avenue's LINE, the engine owns its STRIDE. An authored run
+    # wider than two rail-spans is re-laid at the ~20 ft house pitch, resampled by arc length along
+    # the authored line - so a CURVED sando keeps its curve and its innermost seat, only tightening.
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598), (640, 636)], torii_count=3)
+    ts = s.M["torii"]
+    step = s.px(settlement.TORII_PITCH_FT)
+    assert (ts[0][0], ts[0][1]) == (600, 560)  # the innermost arch keeps the seat the gen chose
+    gaps = [math.hypot(ts[i + 1][0] - ts[i][0], ts[i + 1][1] - ts[i][1]) for i in range(2)]
+    assert gaps == pytest.approx([step, step], abs=0.15)  # evenly re-pitched to the house stride
+    assert all(t[0] == 600 for t in ts)  # ... and still on the authored line's first leg (it never reaches the bend)
+
+
+def test_shrine_hall_leaves_an_avenue_inside_the_pitch_band_alone():
+    # the village avenues (~30 ft, 1.9 rail-spans) are deliberate and must not be re-pitched: within
+    # the band the gen's own spacing stands, so only the over-wide town/city runs are touched
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="V", scale="village", ftpx=2, down_deg=90)
+    s.shrine_hall(600, 500, "Shrine", w=s.px(60), h=s.px(48), torii=[(600, 560), (600, 575), (600, 590)], torii_count=3)
+    assert [t[1] for t in s.M["torii"]] == [560, 575, 590]
+
+
+def test_shrine_hall_shortens_an_avenue_that_would_straddle_a_wall():
+    # a run that BRACKETS a wall without any single arch touching it is still wrong: a sando is one
+    # approach and cannot continue on the far side of a barrier, so the walk between the arches is
+    # tested too. Here (at 2 ft/px) the fence at y585 falls inside the ~7px gap between the glyph
+    # boxes of the arches at y576 and y592 - no arch stands in it - and the whole run is still pulled
+    # back to the near side. A per-arch nudge would have "fixed" it by straddling.
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="V", scale="village", ftpx=2, down_deg=90)
+    s.ward("samurai", [(300, 585), (900, 585)], gates=[])
+    s.shrine_hall(600, 500, "Shrine", w=s.px(60), h=s.px(48), torii=[(600, 560), (600, 576)], torii_count=3)
+    ys = [t[1] for t in s.M["torii"]]
+    assert len(ys) == 3 and ys[0] == 560
+    assert max(ys) < 582 and settlement.torii_wall_conflicts(s.M) == []  # entirely on the near side of the fence
 
 
 def test_ward_refuses_a_fence_laid_across_a_standing_torii():
