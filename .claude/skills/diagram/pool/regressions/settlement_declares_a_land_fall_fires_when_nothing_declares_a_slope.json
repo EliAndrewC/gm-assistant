@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1,
+  "W": 1200,
+  "H": 1200
+ },
+ "fields": [
+  {
+   "name": "f1",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     500
+    ],
+    [
+     100,
+     500
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    500,
+    500
+   ],
+   "vis_bbox": [
+    100,
+    100,
+    500,
+    500
+   ]
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "settlement_declares_a_land_fall"
+  ],
+  "source": "test_checks.py::test_settlement_declares_a_land_fall_fires_when_nothing_declares_a_slope"
+ }
+}
