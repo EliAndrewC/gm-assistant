@@ -9799,11 +9799,22 @@ class Settlement:
         what resvg substitutes for 'serif'), via PIL; falls back to a calibrated estimate when PIL or
         the font is absent. WHY (GM 2026-07-21): the em/char estimates under-measured wide lowercase
         names - 'Akagahara' measured 180px against a 167px estimate, and the missing 14px ran the
-        name off its placard's right edge. Measuring the actual glyphs makes the padding true."""
+        name off its placard's right edge. Measuring the actual glyphs makes the padding true.
+
+        The layout engine is PINNED to BASIC, and that pin is load-bearing (2026-07-25). PIL picks its
+        engine at runtime - RAQM when libraqm happens to be installed, BASIC when it is not - and the
+        two disagree: BASIC sums integer-rounded glyph advances, RAQM sums true subpixel ones, so the
+        same name measures 110.00 vs 110.59 ('Honda') or 103.95 vs 101.70 ('Tango'). That fraction of
+        a pixel sizes the title placard, which is recorded in the manifest, so a container that merely
+        HAS libraqm regenerates every titled map to different bytes: a laptop crash and a container
+        rebuild dirtied all 16 tracked pool manifests at once, with no code change behind it. Which
+        engine is not the point (both are within a pixel of what resvg draws, under 12px of padding) -
+        being a pure function of the font FILE is, so the pool stays byte-reproducible on any
+        container. `test_text_width_is_pinned_to_the_basic_layout_engine` holds the pin."""
         try:
             from PIL import ImageFont
 
-            f = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf", int(round(fs)))
+            f = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf", int(round(fs)), layout_engine=ImageFont.Layout.BASIC)
             return float(f.getlength(s))
         except Exception:  # PIL / font absent: the engine stays standalone on a generous estimate
             return len(s) * fs * 0.62
