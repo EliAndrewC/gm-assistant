@@ -50,12 +50,6 @@ PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=162)
 s.meta(
-    tannery=False,  # PROVISIONAL (GM to confirm 2026-07-25): Tango keeps NO tanning yard. Its only
-    # downstream water is the moat outfall, and field fse1 taps that outfall for irrigation at
-    # (1995,2020) - barely 100px below the rim - so any yard above the tap fouls the southeastern
-    # paddies, and the only clean ground below it sits so far south it drags the frame past the
-    # off-map tails of the Imperial road and a field drain. The dry-site logic already governs this
-    # map elsewhere: Tango has no lumber yard either, for want of navigable water. Hides go downriver.
     water_flow=70,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3, wall_defense="siege", clan="Crane", capital_dir="southeast"
 )  # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
@@ -134,7 +128,7 @@ s.quarter(_clip_h(_NW, 1211, False), "residential")
 # ---- the Imperial road (N-S spine, off both edges, through both gates), the moat-feeder, gates
 # the label names the IMPERIAL road - placed OUTSIDE the north gate; inside the walls the same
 # roadway is a city street (a city, not Imperial, responsibility), so the label must sit beyond a gate
-IMPROAD = [(1602, 595), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 2115)]  # ends past the widened frame (y615/2091)
+IMPROAD = [(1602, 595), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 2290)]  # ends past the widened frame; the south tail reaches 2290 because the tannery, which must sit below BOTH outfall taps, pulls the crop ~180px south
 s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)  # a moat vertex on the NW
 s.stream(
@@ -154,7 +148,7 @@ s.stream(
 # absorb a live stream); see settlements.md's moat-water bullet. Threads S between the Imperial road
 # (x1602) and the westernmost samurai estate (x~2061), off the S edge.
 _mse = min(MOAT, key=lambda p: (p[0] - 1879) ** 2 + (p[1] - 1732) ** 2)  # a moat vertex on the SE (low) rim
-s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122)], width=s.px(66), frm={"kind": "moat"}, to={"kind": "offmap"})  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
+s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122), (2072, 2245)], width=s.px(66), frm={"kind": "moat"}, to={"kind": "offmap"})  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
 s.moat_flow(_mnw, _mse)  # the closed ring flushes NW (feeder) -> SE (outfall), running BOTH ways round
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
@@ -194,6 +188,18 @@ s.oil_press(1852, 1062)  # NE quarter, mid-band clear of the y1145 street and th
 s.pawnshop(1755, 1325)  # NE merchant_house band (the explicit merchant_large pair owns the 1508,1395 ground)
 s.bathhouses([(1680, 1310), (1232, 1160)])  # population-band roll (seed 162 -> 2): seat 1 on the merchant_house band by the road market (sited OUTSIDE the NE pre-pack well grid's box - a block in the warren swallowed well candidates and swamped the (1864,1226) idobata), seat 2 in the west merchant homes
 s.kiln(2282, 830)  # tile kiln OUTSIDE the east wall, east of the common burial ground (2160-2250) and south of the ossuary (fire law + smoke)
+# the TANNING YARD (GM 2026-07-25) on the moat outfall, BELOW every intake. The outfall is not a
+# waste channel - it is an irrigation supply: fs3 taps it at (1936,1880) and fse1 at (1995,2020)
+# (GM 2026-07-23). A yard below the estates would sit above fse1's tap and foul the SE paddies,
+# so it goes below BOTH taps and clear of fse1's feeder corridor. That reach lies past the old
+# frame bottom, so the crop grows ~180px south - which also brings fse1's farmland, previously
+# cropped out entirely, into view. Every off-map tail stays within the offmap anchor tolerance.
+s.tanning_yard(1988, 2068, rot=90, pits=12, water="stream")
+# keep-out ring: tanning_yard_clear_of_dwellings wants 120 ft (40px at this scale) clear of every
+# ordinary house, and the trade-record block only reserves the footprint + caption - so the SE farm
+# rings packed a farmhouse 100 ft away. Blocked BEFORE the fields run, the same guard Hoshizora puts
+# round its crematory. Radius 46px: 40 for the rule + a farmhouse half-footprint, since blocks test centers.
+s.block_polys.append([(1988 + 46 * math.cos(a), 2068 + 46 * math.sin(a)) for a in [i * math.pi / 6 for i in range(12)]])
 # the TANNING YARD (GM 2026-07-24) on the MOAT OUTFALL, below the SE estates. Tango is the awkward
 # case: it is a dry seat whose burakumin live IN-wall (the siege need), and the moat feeder enters
 # at the clean NW rim - so the only honest water for a tannery is the outfall stream leaving the
