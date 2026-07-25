@@ -1,0 +1,56 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3
+ },
+ "stable_yards": [
+  {
+   "x": 400,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    400,
+    500
+   ],
+   "troughs": 0,
+   "rails": [],
+   "dung_heaps": [
+    {
+     "x": 480,
+     "y": 500,
+     "rx": 2.5,
+     "ry": 1.8
+    }
+   ]
+  },
+  {
+   "x": 560,
+   "y": 500,
+   "r": 72.0,
+   "of": [
+    560,
+    500
+   ],
+   "troughs": 0,
+   "rails": [
+    {
+     "x": 500,
+     "y": 500,
+     "tx": 0.0,
+     "ty": 1.0,
+     "len": 18.0,
+     "reach": 2.4
+    }
+   ],
+   "dung_heaps": []
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "dung_heaps_clear_of_hitch_rails"
+  ],
+  "source": "test_checks.py::test_dung_heaps_clear_of_hitch_rails_fires_across_yards_within_24px"
+ }
+}

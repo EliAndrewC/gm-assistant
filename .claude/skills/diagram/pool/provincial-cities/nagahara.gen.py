@@ -149,7 +149,7 @@ s.road(ROAD)  # unlabeled: only Imperial roads get labels (SKILL.md labeling rul
 # merchant estate's west wall (x1534).
 s.drum_tower(1500, 1362)
 
-# TRADE WORKS (GM 2026-07-24, trade-footprint-research.md; settlements.md "Trade works"): placed
+# TRADE WORKS (GM 2026-07-24, settlements.md "TRADE WORKS"): placed
 # early so every later pack/frontage flows around them. Nagahara is a RIVER PORT (meta
 # river_port=True): it keeps ALL of them, including the riverside lumber yard at the wharf.
 s.brewery(1568, 1075)  # NE quarter, clear of the x1605 street - the town's largest commercial building
@@ -200,6 +200,11 @@ s.block_polys.append([(1663, 1132), (1825, 1132), (1825, 1315), (1663, 1315)])
 s.flophouse(1700, 1163, label_below=True)
 s.inn(1700, 1205)
 s.stables(1752, 1246, rot=90)
+# the FARRIER's shoeing forge on the caravan yard (GM 2026-07-25): a provincial city's gate
+# stables concentrates enough horses to keep a dedicated forge, and iron shoeing is what the
+# Imperial relay + cheap continental iron buy Rokugan. Set OFF the stall range, never attached -
+# an open forge against hay and timber is the fire the yard does not survive.
+s.farrier(1756, 1192, rot=90)
 
 
 def grid(streets, width_ft=18):

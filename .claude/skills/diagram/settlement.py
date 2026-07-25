@@ -4909,14 +4909,17 @@ class Settlement:
         self.label(x, y + h + 24, "tower", 9, italic=True, color="#4A3318")
         return z
 
-    # ---- TRADE WORKS (GM 2026-07-24, trade-footprint-research.md): the trades whose real
-    # premises outgrow the generic shop glyph - big attached works, yards, and outbuildings that
-    # visibly show at map scale. Each records a first-class manifest entry (overlap-checked) and
-    # blocks placement; sizes are TRUE feet via self.px. The long tail of trades (tofu, noodles,
-    # apothecary, teahouse, cooper, smith - Edo Japan never shod horses, so there are NO farriers)
-    # deliberately stays inside the generic shop rows.
+    # ---- TRADE WORKS (GM 2026-07-24; grounding in settlements.md "TRADE WORKS"): the trades whose
+    # real premises outgrow the generic shop glyph - big attached works, yards, and outbuildings
+    # that visibly show at map scale. Each records a first-class manifest entry (overlap-checked)
+    # and blocks placement; sizes are TRUE feet via self.px. The long tail of trades (tofu,
+    # noodles, apothecary, teahouse, cooper, and the ordinary town SMITH) deliberately stays inside
+    # the generic shop rows - including the smith's hoof work. Rokugan DOES shoe horses in iron
+    # (GM 2026-07-25, reversing the old "no farriers" null result), but that changes the smith's
+    # repertoire, not his footprint; only where horses CONCENTRATE does farriery earn its own
+    # premises, which is what s.farrier draws.
 
-    def _trade_record(self, key: str, x: float, y: float, w: float, h: float, rot: float, label: str, bm: float = 10.0) -> None:
+    def _trade_record(self, key: str, x: float, y: float, w: float, h: float, rot: float, label: str, bm: float = 10.0, lab_off: float | None = None) -> None:
         """Record + block one trade-works footprint (shared tail of the trade glyph methods)."""
         self.M.setdefault(key, []).append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "rot": round(rot, 1), "label": label})
         self.placed.append((x, y, w, h))
@@ -4926,19 +4929,28 @@ class Settlement:
         # so the later packs cannot slide a house under the text (labels_clear_of_other_buildings;
         # the bathhouse/drum tower captions caught this on 2026-07-24's first regen)
         self.block_polys.append([(x - hw, y - hh), (x + hw, y - hh), (x + hw, y + hh), (x - hw, y + hh)])
+        # the caption normally hangs off the RAW footprint half-height, but a ROTATED record's drawn
+        # vertical extent is its axis-aligned half-height, (w/2)|sin| + (h/2)|cos| - and a caption
+        # anchored at h/2 then lands INSIDE the record's own bbox, which
+        # labels_clear_of_other_buildings reports as "'farrier' over a farrier" (GM 2026-07-25, the
+        # rot=150 Hoshizora forge). A rotated caller passes its rotated half-height as `lab_off`.
+        # NOT applied globally on purpose: the formula would also push the four rot=90 tanning-yard
+        # captions ~5px down, which grows those maps' content crop, and on Tango a 5px taller frame
+        # left an off-map channel anchor stranded INSIDE the frame (channel_field_anchored). Those
+        # captions already clear their own footprints, so the churn would buy nothing.
+        eh_ = h / 2 if lab_off is None else lab_off
         if label:
-            # the band anchors at the RAW footprint edge (y + h/2) - the caption box starts ~y+h/2+6,
-            # so anchoring at the margin-inflated hh left its top half unguarded (the bathhouse
+            # the band anchors at the RAW footprint edge - the caption box starts ~edge+6, so
+            # anchoring at the margin-inflated hh left its top half unguarded (the bathhouse
             # caption's merchant_house graze, 2026-07-24). +10 width slack because rowpack tests
             # corners but pack/place_wells test centers only (settlement init comment ~line 642).
             bw_ = max(hw, 2.9 * len(label) + 10)
-            self.block_polys.append([(x - bw_, y + h / 2), (x + bw_, y + h / 2), (x + bw_, y + h / 2 + 26), (x - bw_, y + h / 2 + 26)])
-        if label:
-            self.label(x, y + h / 2 + 11, label, 9, italic=True, color="#5A4326")
+            self.block_polys.append([(x - bw_, y + eh_), (x + bw_, y + eh_), (x + bw_, y + eh_ + 26), (x - bw_, y + eh_ + 26)])
+            self.label(x, y + eh_ + 11, label, 9, italic=True, color="#5A4326")
 
     def brewery(self, x: float, y: float, rot: float = 0.0, label: str = "brewery") -> None:
         """A SAKE/MISO/SOY BREWERY compound - the biggest trade premises in a provincial seat
-        (trade-footprint-research.md: a minimal sakagura is a 60-120 ft vat hall BEHIND a normal
+        (settlements.md "TRADE WORKS": a minimal sakagura is a 60-120 ft vat hall BEHIND a normal
         shopfront, 3-8x the shophouse footprint, very often the town's largest commercial building;
         1-2 per seat of ~3,000; brewers were town elite, sited IN town on good well water). Drawn
         as the long gabled VAT HALL (ridge + fermentation-vat circles + a masonry chimney), the
@@ -5033,7 +5045,7 @@ class Settlement:
     def pawnshop(self, x: float, y: float, rot: float = 0.0, label: str = "pawnshop") -> None:
         """A PAWNSHOP (shichiya): an ordinary shopfront whose tell is STORAGE - pledges are bulky,
         so the broker keeps 2-3 fireproof kura in a walled rear court (the existing kura glyph
-        multiplied, per trade-footprint-research.md). Records M['pawnshops'] (city_has_pawnshop)."""
+        multiplied, per settlements.md "TRADE WORKS"). Records M['pawnshops'] (city_has_pawnshop)."""
         sw_, sh_ = self.px(48) / 2, self.px(32) / 2
         kw_, kh_ = self.px(20) / 2, self.px(14) / 2
         ch_ = kh_ * 2 + 4.5  # the rear court's depth
@@ -5092,6 +5104,75 @@ class Settlement:
             self.bathhouse(bx_, by_)
         self.M["meta"]["bathhouse_roll"] = n
         return n
+
+    def farrier(self, x: float, y: float, rot: float = 0.0, label: str = "farrier") -> None:
+        """A FARRIER's shoeing forge - the one hoof-care premises that earns its own footprint
+        (grounding: settlements.md "TRADE WORKS", the FARRIERY sub-entry).
+
+        Rokugan shoes horses in IRON where Edo Japan used woven straw, for two reasons that are
+        both already in the GM's canon: continental ore makes iron a normal industrial good (the
+        Tatarano/Kuroiwa/Ubame iron districts in l7r.md), and the Imperial relay puts institutional
+        mileage on horses no island economy ever demanded (budgets.md staffs busy trunk waystations
+        with "a smith for shoeing horses"; l7r.md's Moto Khuyag is a Rokugani-born farrier). Straw
+        survives everywhere iron is not worth it - peasant pack horses, oxen on soft paddy tracks,
+        poor and mountain provinces - because it is free, not because iron is unknown.
+
+        An ORDINARY town smith still fits the generic shop glyph: shoeing changes his repertoire,
+        not his premises. This feature is only for where horses CONCENTRATE - a city gate's caravan
+        yard, an Imperial-road relay town - which is why it must stand beside a stables and nowhere
+        else (farrier_serves_a_stables).
+
+        Drawn as the open-sided forge SHED (hearth, smoke hood, anvil, quench tub) plus the working
+        APRON in front, where the animal is actually stood. The apron carries the shoeing post and
+        the OX-SHOEING FRAME - the timber stocks a cloven-hoofed ox has to be slung in, because it
+        cannot balance on three legs while a foot is worked, and Rokugan's draft animal is mostly
+        the ox.
+
+        Sizes (TRUE feet, no legibility inflation): an 18-20 ft village smithy is the anchor, and
+        the apron is a horse's length (~8 ft) plus room to lead one in and turn it. The shed is
+        deliberately NOT attached to the stables - an open forge against a hay-and-timber stall
+        range is a fire the yard does not survive, so real yards kept the smithy across the ground
+        (farrier_keeps_fire_gap). Records M['farriers']."""
+        sw_, sh_ = self.px(20), self.px(18)  # the forge shed
+        aw_, ah_ = self.px(28), self.px(20)  # the working apron in front of it
+        top_ = -(sh_ + ah_) / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        # the APRON ground plane first, under everything - beaten earth, the same convention the dye
+        # and tanning yards use: without a ground plane the furniture reads as stray marks at fit zoom
+        g.append(
+            f'<rect x="{-aw_ / 2:.1f}" y="{top_ + sh_:.1f}" width="{aw_:.1f}" height="{ah_:.1f}" rx="1.5" fill="#DCCBA6" fill-opacity="0.7" stroke="#B99F72" stroke-width="0.8" stroke-dasharray="3,2"/>'
+        )  # DASHED edge: open working ground, not a roofed room (a solid box read as a second building at town scale)
+        g.append(f'<rect x="{-sw_ / 2:.1f}" y="{top_:.1f}" width="{sw_:.1f}" height="{sh_:.1f}" rx="1" fill="#C2A87C" stroke="none"/>')
+        # THREE walls and an OPEN front: the smoke and the horse both need the opening, so the
+        # apron-side edge is drawn as an eaves line, never a wall stroke
+        g.append(
+            f'<path d="M {-sw_ / 2:.1f} {top_ + sh_:.1f} L {-sw_ / 2:.1f} {top_:.1f} L {sw_ / 2:.1f} {top_:.1f} L {sw_ / 2:.1f} {top_ + sh_:.1f}" fill="none" stroke="#5A4326" stroke-width="1.7"/>'
+        )
+        g.append(f'<line x1="{-sw_ / 2:.1f}" y1="{top_ + sh_:.1f}" x2="{sw_ / 2:.1f}" y2="{top_ + sh_:.1f}" stroke="#8A6B42" stroke-width="0.8" opacity="0.7"/>')
+        hw_, hh_ = self.px(5), max(self.px(3), 1.2)  # the masonry hearth against the back wall
+        g.append(f'<rect x="{-hw_ / 2:.1f}" y="{top_ + 0.8:.1f}" width="{hw_:.1f}" height="{hh_:.1f}" fill="#4A3318"/>')
+        ch_ = max(self.px(2.5), 1.0)  # its smoke hood, breaking the back roofline
+        g.append(f'<rect x="{-ch_ / 2:.1f}" y="{top_ - ch_:.1f}" width="{ch_:.1f}" height="{ch_:.1f}" fill="#5A4326"/>')
+        av_ = max(self.px(2), 0.9)  # the anvil on its block, standing clear of the hearth
+        g.append(f'<rect x="{-self.px(4) - av_ / 2:.1f}" y="{top_ + sh_ * 0.55:.1f}" width="{av_:.1f}" height="{max(self.px(1.6), 0.8):.1f}" fill="#3E3226"/>')
+        g.append(f'<circle cx="{self.px(4):.1f}" cy="{top_ + sh_ * 0.6:.1f}" r="{max(self.px(2.4) / 2, 0.8):.1f}" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.6"/>')  # the quench tub
+        apy_ = top_ + sh_ + ah_ / 2
+        g.append(f'<circle cx="{-aw_ / 2 + self.px(5):.1f}" cy="{apy_:.1f}" r="{max(self.px(1.2), 0.7):.1f}" fill="#6B4F2A"/>')  # the shoeing post - a horse is tied short while its feet are worked
+        # the OX-SHOEING FRAME (stocks), ~7 x 4 ft: four posts and two rails, the animal slung in a
+        # belly band and its foot strapped up to a rail
+        fx0_, fy0_, fw_, fh_ = self.px(1), apy_ - self.px(2), self.px(7), self.px(4)
+        for ry_ in (fy0_, fy0_ + fh_):
+            g.append(f'<line x1="{fx0_:.1f}" y1="{ry_:.1f}" x2="{fx0_ + fw_:.1f}" y2="{ry_:.1f}" stroke="#6B4F2A" stroke-width="1.1"/>')
+        for pxp_ in (fx0_, fx0_ + fw_):
+            for pyp_ in (fy0_, fy0_ + fh_):
+                g.append(f'<circle cx="{pxp_:.1f}" cy="{pyp_:.1f}" r="{max(self.px(0.9), 0.6):.1f}" fill="#5A4326"/>')
+        g.append(
+            f'<ellipse cx="{-aw_ / 2 + self.px(3):.1f}" cy="{top_ + sh_ + self.px(3):.1f}" rx="{max(self.px(3) / 2, 1.0):.1f}" ry="{max(self.px(2) / 2, 0.8):.1f}" fill="#5C5750" opacity="0.85"/>'
+        )  # the clinker heap - forge waste, swept out daily
+        g.append('</g>')
+        self.add(''.join(g))
+        th_ = math.radians(rot)
+        self._trade_record("farriers", x, y, aw_, sh_ + ah_, rot, label, lab_off=abs(aw_ / 2 * math.sin(th_)) + abs((sh_ + ah_) / 2 * math.cos(th_)))
 
     def kiln(self, x: float, y: float, label: str = "tile kiln") -> None:
         """A TILE/POTTERY KILN at the town's periphery - fire law and smoke pushed kilns OUTSIDE
@@ -5726,6 +5807,7 @@ class Settlement:
         "bathhouses",
         "oil_presses",
         "kilns",
+        "farriers",
         "mausoleums",
         "gate_structs",
         "wall_towers",
@@ -7177,7 +7259,24 @@ class Settlement:
         # walls) - NOT the wide urban halo (which would leave a bare ring) and NOT block_polys (the reserved
         # pocket IS the yard). A rotated building is covered by its half-diagonal square.
         keep: list[tuple[float, float, float, float]] = []
-        for k in ("buildings", "flophouses", "storehouses", "merchant_estates", "ministries", "religious", "manors", "cemeteries", "mausoleums", "cremation_grounds", "ossuaries", "houses"):
+        # "farriers" belongs here because the shoeing forge stands ON this yard by design (GM
+        # 2026-07-25) - it is the one trade work sited INSIDE a stable yard, so without it the
+        # scatter would speckle straw litter across the forge's apron and roof
+        for k in (
+            "buildings",
+            "flophouses",
+            "storehouses",
+            "merchant_estates",
+            "ministries",
+            "religious",
+            "manors",
+            "cemeteries",
+            "mausoleums",
+            "cremation_grounds",
+            "ossuaries",
+            "houses",
+            "farriers",
+        ):
             for o in self.M.get(k, []) or []:
                 ohw, ohh = o["w"] / 2, o["h"] / 2
                 if o.get("rot"):

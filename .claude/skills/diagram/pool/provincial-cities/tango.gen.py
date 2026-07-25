@@ -180,12 +180,17 @@ s.flophouse(1704, 1862)  # outside the SOUTH gate, by the gate market
 s.flophouse(1645, 991)
 s.inn(1645, 1029)
 s.stables(1643, 1066, rot=90)
+# the FARRIER's shoeing forge on the caravan yard (GM 2026-07-25): a provincial city's gate
+# stables concentrates enough horses to keep a dedicated forge, and iron shoeing is what the
+# Imperial relay + cheap continental iron buy Rokugan. Set OFF the stall range, never attached -
+# an open forge against hay and timber is the fire the yard does not survive.
+s.farrier(1673, 1100, rot=90)  # the N-gate yard has the open ground; the S-gate cluster is boxed in by the temple neighborhood
 # S-gate caravan cluster, WEST of the road inside the gate, below the temple neighborhood
 s.flophouse(1574, 1620)
 s.inn(1574, 1655)
 s.stables(1574, 1687, rot=90)
 
-# TRADE WORKS (GM 2026-07-24, trade-footprint-research.md; settlements.md "Trade works"): the
+# TRADE WORKS (GM 2026-07-24, settlements.md "TRADE WORKS"): the
 # trades whose premises outgrow the shop glyph, placed BEFORE the frontages/packs so the quarters
 # flow around them. Tango is LANDLOCKED: no lumber yard (timber moves by water at scale), but the
 # dyer stays - dyeing needs rinsing water (here the NW pond), not bulk transport.
