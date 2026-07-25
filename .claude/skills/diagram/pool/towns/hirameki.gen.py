@@ -218,7 +218,7 @@ netW1 = mirror_comb(
 netW1["brook"] = []
 ENV_W1, DR_W1 = comb("hirameki-w1", netW1, {"kind": "stream", "stream": [(430, -12), (426, 150), (420, 330)]})
 toe_block(DR_W1)
-topo_channel([DR_W1[-1], stream_at_y(WS, DR_W1[-1][1] + 16)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
+topo_channel([DR_W1[-1], stream_at_y(WS, DR_W1[-1][1] + 16)], {"kind": "drain", "name": "hirameki-w1"}, {"kind": "stream"}, draw_w=2.5)
 
 # w2: MIRRORED, fed by a brook in from the west edge, collector discharges off-map west
 netW2 = mirror_comb(
@@ -267,10 +267,10 @@ def _drain_at_x(dr, x):
 
 
 _onW2 = _drain_at_x(DR_W2, 35)
-topo_channel([_onW2, (-14, _onW2[1] + 22)], {"kind": "drain"}, {"kind": "offmap"})
+topo_channel([_onW2, (-14, _onW2[1] + 22)], {"kind": "drain", "name": "hirameki-w2"}, {"kind": "offmap"})
 # the collector's EAST end would otherwise dangle mid-air beside the stream: a short relief
 # culvert tees the excess back into the stream at a proper confluence
-topo_channel([DR_W2[0], (stream_at_y(WS, DR_W2[0][1] + 17))], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
+topo_channel([DR_W2[0], (stream_at_y(WS, DR_W2[0][1] + 17))], {"kind": "drain", "name": "hirameki-w2"}, {"kind": "stream"}, draw_w=2.5)
 
 # e1: default chirality, own hill brook off the N edge, collector culverts east into the stream
 netE1 = build_comb(
@@ -279,7 +279,7 @@ netE1 = build_comb(
 netE1["brook"] = []
 ENV_E1, DR_E1 = comb("hirameki-e1", netE1, {"kind": "stream", "stream": [(2140, -12), (2136, 160), (2130, 330)]})
 toe_block(DR_E1, depth=140)  # shallower: e2's head needs its worked margin below
-topo_channel([DR_E1[-1], stream_at_y(ES, DR_E1[-1][1] + 40)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
+topo_channel([DR_E1[-1], stream_at_y(ES, DR_E1[-1][1] + 40)], {"kind": "drain", "name": "hirameki-e1"}, {"kind": "stream"}, draw_w=2.5)
 
 # e2: CASCADE-fed from e1 (the connector below carries the source topology), collector
 # culverts east into the stream
@@ -301,11 +301,11 @@ toe_block(DR_E2)
 # the cascade water, then diving into the fan for the to=field anchor
 topo_channel(
     [DR_E1[-1], (2262, 930), (2170, 1000), (2174, 1062)],
-    {"kind": "drain"},
+    {"kind": "drain", "name": "hirameki-e1"},
     {"kind": "field", "name": "hirameki-e2"},
     draw_w=2.5,
 )
-topo_channel([DR_E2[-1], stream_at_y(ES, DR_E2[-1][1] + 22)], {"kind": "drain"}, {"kind": "stream"}, draw_w=2.5)
+topo_channel([DR_E2[-1], stream_at_y(ES, DR_E2[-1][1] + 22)], {"kind": "drain", "name": "hirameki-e2"}, {"kind": "stream"}, draw_w=2.5)
 
 # s1: the rerouted west stream ends AT this sluice (fully diverted); runs off the bottom edge
 netS1 = build_comb(
@@ -314,7 +314,7 @@ netS1 = build_comb(
 netS1["brook"] = []
 ENV_S1, DR_S1 = comb("hirameki-s1", netS1, {"kind": "stream"})  # no polyline: the west stream IS the source
 _onS1 = DR_S1[0]
-topo_channel([_onS1, (_onS1[0] + 12, _onS1[1] + 30)], {"kind": "drain"}, {"kind": "offmap"})
+topo_channel([_onS1, (_onS1[0] + 12, _onS1[1] + 30)], {"kind": "drain", "name": "hirameki-s1"}, {"kind": "offmap"})
 
 # ---- the hill (north) with the Magistrate's Manor on top (the citadel)
 sx, sy = s.hill(1300, 480, 560, 360, steep=True)

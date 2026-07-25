@@ -1737,7 +1737,8 @@ class Settlement:
 
         if inwall_drain_moat_bias is not None:
             _idr = next(c for c in net["channels"] if c["role"] == "drain")
-            _idr["pts"] = self.inwall_drain_outfall(_idr["pts"], moat_bias=inwall_drain_moat_bias)
+            _idr["pts"] = self.inwall_drain_outfall(_idr["pts"], moat_bias=inwall_drain_moat_bias, field_name=name)
+            _idr["trimmed"] = True  # a TRIMMED in-wall drain is a conduit stub, not a contour collector - drain_runs_cross_slope exempts it
 
         # BASE FILL (feature 012, now via the shared helper): a paddy-green wash under the plots so the
         # imperfect tessellation never shows the parchment background as bare "white" gaps (research.md D5).
@@ -1832,9 +1833,14 @@ class Settlement:
             cr = [vx * pdy - vy * pdx for vx, vy in p["poly"]]
             pcx, pcy = _centroid(p["poly"])
             pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1), len(p["poly"]), _sharp_corners(p["poly"])])
-        self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims})
+        _fld: dict[str, Any] = {"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims}
+        if net.get("down_deg") is not None:
+            _fld["down_deg"] = net["down_deg"]  # this fan's LOCAL fall (see build_comb)
+        self.M["fields"].append(_fld)
         for c in net["channels"]:
             rec = {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
+            if c.get("trimmed"):  # a TRIMMED in-wall drain is a conduit stub, not a contour collector
+                rec["trimmed"] = True
             if c.get("seg"):  # a polder ring-side tag (feeder/e_toe/w_toe/drain/lateral), so footbridge placement can be side-aware
                 rec["seg"] = c["seg"]
             self.M["field_ditches"].append(rec)
@@ -7647,7 +7653,7 @@ class Settlement:
         self.M.setdefault("sluice_gates", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "z": z})
         return z
 
-    def inwall_drain_outfall(self, drain_pts: Any, moat_bias: Pt = (0.0, 0.0)) -> list[Pt]:
+    def inwall_drain_outfall(self, drain_pts: Any, moat_bias: Pt = (0.0, 0.0), field_name: str = "") -> list[Pt]:
         """A walled city's IN-WALL drain handoff (GM 2026-07-23, generalizing Tango's nw1; gated by
         inwall_drains_gated_at_cutoff): the visible runoff ditch CUTS OFF short of the patrol ring
         road and drops through a SLUICE GATE into an implied underground stone culvert beneath road,
@@ -7700,7 +7706,10 @@ class Settlement:
             ul = math.hypot(ux, uy) or 1.0
             mid = ((cut[0] + mv[0]) / 2 - 12 * uy / ul, (cut[1] + mv[1]) / 2 + 12 * ux / ul)
             poly = [[round(cut[0], 1), round(cut[1], 1)], [round(mid[0], 1), round(mid[1], 1)], [round(mv[0], 1), round(mv[1], 1)]]
-            self.M["channels"].append({"poly": poly, "frm": {"kind": "drain"}, "to": {"kind": "moat"}, "w": 2.5, "drawn": False})
+            _frm: dict[str, Any] = {"kind": "drain"}
+            if field_name:  # NAME the field so the drain->outfall attribution is exact, not by proximity
+                _frm["name"] = field_name
+            self.M["channels"].append({"poly": poly, "frm": _frm, "to": {"kind": "moat"}, "w": 2.5, "drawn": False})
             self.corridors.append(([(p[0], p[1]) for p in poly], 33))
         return pts[::-1] if rev else pts
 
