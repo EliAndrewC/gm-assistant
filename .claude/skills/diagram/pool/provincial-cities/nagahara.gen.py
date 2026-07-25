@@ -960,6 +960,18 @@ s.cemetery(2292, 1725, 90, 64, parish=False, label="common burial ground")  # pa
 s.cremation_ground(2296, 1804)
 s.ossuary(2290, 1650)
 
+# ---- the EXECUTION GROUND and its boundary stone (feature 015; settlements.md "Execution ground").
+# Sited by the way OUT and by the direction pollution runs, not by distance: the ground lies on the
+# south side, the same side as the burakumin quarter (the caste that performs every execution that
+# is not a samurai's), outside the moat and wall, clear of the farmland, and a good distance from the
+# funerary cluster - the community's tended dead and the disposed unmourned are two different kinds
+# of death and must not read as one precinct. The dosojin stone stands between town and ground: sae
+# means "to block", and it is what makes the ground "outside" rather than merely far.
+# A CITY ground: screened on three sides, road side open (see Tango for the volume reasoning).
+s.boundary_marker(2132, 1322)
+s.execution_ground(2412, 1550, rot=8)
+
+
 s.bridges()
 s.farmsteads()
 s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
@@ -1188,6 +1200,14 @@ s.kosatsuba(1492, 961, rot=72, label=None)
 # Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the
 # crossroads - unlabeled, the east-avenue board already carries the set's one label.
 s.kosatsuba(1465, 1378, rot=90, label=None)
+
+# ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone at the town's
+# busiest public point (feature 015; settlements.md "Punishment spot"). A DISPLAY installation:
+# the crime rides on the cangue, so it draws no board of its own. Probed with open_seat after
+# the packs by place_punishment_spot, which scores street verges by traffic - the same probe
+# the notice board uses, because both institutions are sited by the same variable.
+s.place_punishment_spot()
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

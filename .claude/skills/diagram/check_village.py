@@ -28,6 +28,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from settlement import (
+    EXECUTION_GROUND_DEAD_CLEAR_FT,
     KIDO_TOWER_KEEPCLEAR,
     WALL_DEFENSE,
     _assert_not_main_tree,
@@ -177,6 +178,10 @@ _OVERLAP_STRUCTS = (
     "drum_towers",
     "byres",
     "kosatsuba",
+    # the justice works (settlements.md "Punishment spot" / "Execution ground" / "Boundary marker")
+    "punishment_spots",
+    "execution_grounds",
+    "boundary_markers",
     # the trade works (GM 2026-07-24, settlements.md "TRADE WORKS")
     "breweries",
     "dye_yards",
@@ -7905,6 +7910,182 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not uncovered_kb,
                 f"main gate(s) at {uncovered_kb} have no notice board on their approach corridor - a city posted a board at every trafficked gate (draw them all, label ONE)",
             )
+
+    # ===== THE JUSTICE WORKS: the punishment ground (in town) and the execution ground (outside) =====
+    # Two separate institutions, used at wildly different frequencies and sited by OPPOSITE logics, so
+    # conflating them would be a modeling error. WHY (all of it): settlements.md "Punishment spot",
+    # "Execution ground", "Boundary marker". The short version: a county seat HAS an execution ground
+    # because the Chinese confirmation chain sends the sentence back down to be carried out where the
+    # crime happened (which is also why the canon county budget funds a jail but no execution line -
+    # the jail holds the condemned while the warrant travels); Japanese kegare then pushes the ground
+    # past the built edge. The punishment ground stays in the core because its governing variable is
+    # foot traffic - it is a DISPLAY, and the beating itself is a court act inside the magistracy.
+    psp_j = M.get("punishment_spots") or []
+    exg_j = M.get("execution_grounds") or []
+    bms_j = M.get("boundary_markers") or []
+    ftpx_j = float(meta.get("ftpx") or 1)
+    dwell_j = M.get("houses", []) + [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]
+    wall_j: Poly = M.get("wall") or []
+
+    def _inwall_j(px: float, py: float) -> bool:
+        return len(wall_j) >= 3 and point_in_poly(px, py, wall_j)
+
+    if scale in ("hamlet", "village"):
+        # Village authority topped out at banishment, and capital sentences were confirmed far above
+        # the county. A settlement with no magistrate's court has neither institution.
+        check("punishment_spot_only_at_a_seat_of_justice", not psp_j, f"a {scale} has no magistrate and no court - the punishment ground belongs to a county seat and above")
+        check("execution_ground_only_at_a_seat_of_justice", not exg_j, f"a {scale} has no magistrate and no court - the execution ground belongs to a county seat and above")
+
+    if scale in ("town", "city"):
+        routes_j = ([M["road"]] if M.get("road") else []) + [st["pts"] for st in M.get("town_streets", [])] + ([M["lane"]] if M.get("lane") else []) + [ln["pts"] for ln in M.get("lanes", [])]
+
+        def _route_dist_j(px: float, py: float) -> float:
+            return min(seg_dist(px, py, r[k], r[k + 1]) for r in routes_j for k in range(len(r) - 1))
+
+        if meta.get("punishment_spot", True):
+            check(
+                f"{scale}_has_punishment_spot",
+                bool(psp_j),
+                "a seat of justice keeps a public punishment ground - cangue frame, flogging post, kneeling stone (s.punishment_spot(...); meta(punishment_spot=False) to omit)",
+            )
+        if meta.get("execution_ground", True):
+            check(
+                f"{scale}_has_execution_ground",
+                bool(exg_j),
+                "a seat of justice keeps an execution ground outside the settlement (s.execution_ground(...) + s.boundary_marker(...); meta(execution_ground=False) to omit)",
+            )
+
+        if psp_j:
+            # IN THE CORE. Walled: inside the rampart. Unwalled: genuinely among the dwellings, not
+            # merely on the map - a display nobody walks past is not a display.
+            if wall_j:
+                out_p = [(round(p["x"]), round(p["y"])) for p in psp_j if not _inwall_j(p["x"], p["y"])]
+            else:
+                near_lim_p = 400.0 / ftpx_j
+                out_p = [(round(p["x"]), round(p["y"])) for p in psp_j if sum(1 for h in dwell_j if math.hypot(p["x"] - h["x"], p["y"] - h["y"]) < near_lim_p) < 5]
+            check(
+                "punishment_spot_in_the_core",
+                not out_p,
+                f"punishment ground(s) at {out_p} stand outside the built core - the cangue is displayed where the town passes it daily, at the market or the magistracy frontage",
+            )
+            if routes_j:
+                lim_p = 60.0 / ftpx_j  # ~60 REAL feet, the notice board's traffic criterion - same reason
+                far_p = [(round(p["x"]), round(p["y"])) for p in psp_j if _route_dist_j(p["x"], p["y"]) > lim_p]
+                check(
+                    "punishment_spot_by_the_traffic",
+                    not far_p,
+                    f"punishment ground(s) at {far_p} stand more than ~60 real ft from every street - shaming is sited on foot traffic, not on administrative convenience",
+                )
+
+        if exg_j:
+            core_j = (sum(h["x"] for h in dwell_j) / len(dwell_j), sum(h["y"] for h in dwell_j) / len(dwell_j)) if dwell_j else None
+            # OUTSIDE THE SETTLEMENT. Death pollution keeps the ground beyond the rampart, and beyond
+            # the dwellings when there is no rampart to measure from. 120 real ft is the project's
+            # standing pollution separation (the cremation ground and tanning yard use it too).
+            lim_out_j = 120.0 / ftpx_j
+            bad_out_j = [(round(e["x"]), round(e["y"])) for e in exg_j if _inwall_j(e["x"], e["y"]) or (dwell_j and min(math.hypot(e["x"] - h["x"], e["y"] - h["y"]) for h in dwell_j) < lim_out_j)]
+            check(
+                "execution_ground_outside_the_settlement",
+                not bad_out_j,
+                f"execution ground(s) at {bad_out_j} sit inside the settlement (in the walls, or within ~120 real ft of a dwelling) - kegare puts the ground past the built edge",
+            )
+            # ON THE WAY OUT. The ground exists to be SEEN by travelers arriving; a ground hidden in a
+            # back field deters nobody, which is the whole reason it is sited where it is. The anchor
+            # is the road WHERE THERE IS ONE - but a walled seat's drawn streets all stop at the
+            # rampart, so for those the exit itself is the anchor: the gate is the road (Hirameki
+            # draws no extramural road at all, and measuring only to its intramural streets made the
+            # rule unsatisfiable rather than strict).
+            # A drawn road is a LINE, so the ground must hug it: ~120 real ft, the same order as
+            # Suzugamori sitting on the Tokaido. A gate is a POINT standing in for the road that
+            # leaves it, and the ground sits some way DOWN that road rather than on its threshold -
+            # Edo's grounds were miles out along their highways - so the gate anchor gets ~400 ft.
+            # Measuring a gate at the road's tolerance made the rule unsatisfiable on Hirameki, whose
+            # only anchors are gates because every street it draws stops at the rampart.
+            exits_j = [(g[0], g[1]) for g in (M.get("gates") or [])] + ([(M["gate"][0], M["gate"][1])] if M.get("gate") else [])
+            lim_road_j, lim_gate_j = 120.0 / ftpx_j, 400.0 / ftpx_j
+            if routes_j or exits_j:
+
+                def _off_the_way_out_j(px: float, py: float) -> bool:
+                    if routes_j and _route_dist_j(px, py) <= lim_road_j:
+                        return False
+                    return not any(math.hypot(px - gx, py - gy) <= lim_gate_j for gx, gy in exits_j)
+
+                far_e = [(round(e["x"]), round(e["y"])) for e in exg_j if _off_the_way_out_j(e["x"], e["y"])]
+                check(
+                    "execution_ground_by_the_road",
+                    not far_e,
+                    f"execution ground(s) at {far_e} stand more than ~120 real ft from every road and every gate - the posts are meant to be read by everyone leaving town",
+                )
+            if core_j and bms_j:
+                # PAST THE BOUNDARY STONE. The marker must lie between the settlement and the ground:
+                # nearer the core than the ground is, AND nearer the ground than the core is.
+                # ...and the stone itself stands OUTSIDE the settlement it bounds: a dosojin inside the
+                # rampart bounds nothing, and would satisfy the between-ness arithmetic while asserting
+                # the opposite of what the stone means.
+                out_bms_j = [b for b in bms_j if not _inwall_j(b["x"], b["y"])]
+                unmarked_j = [
+                    (round(e["x"]), round(e["y"]))
+                    for e in exg_j
+                    if not any(
+                        math.hypot(b["x"] - core_j[0], b["y"] - core_j[1]) < math.hypot(e["x"] - core_j[0], e["y"] - core_j[1])
+                        and math.hypot(b["x"] - e["x"], b["y"] - e["y"]) < math.hypot(e["x"] - core_j[0], e["y"] - core_j[1])
+                        for b in out_bms_j
+                    )
+                ]
+                check(
+                    "execution_ground_past_the_boundary_marker",
+                    not unmarked_j,
+                    f"execution ground(s) at {unmarked_j} have no boundary stone between them and the settlement - the dosojin is what makes the ground 'outside', and sae means 'to block'",
+                )
+            elif core_j:
+                check(
+                    "execution_ground_past_the_boundary_marker",
+                    False,
+                    "an execution ground needs a boundary stone (s.boundary_marker(...)) on the road between it and the settlement - the ritual boundary the ground sits beyond",
+                )
+            # CLEAR OF THE COMMUNITY'S DEAD. Two different kinds of death: the tended ancestral dead
+            # and the disposed unmourned. The executed go in the pit AT the ground; they are never
+            # carried to the parish burial ground, and the two must not read as one precinct.
+            dead_j = (M.get("cemeteries") or []) + (M.get("cremation_grounds") or []) + (M.get("ossuaries") or []) + (M.get("mausoleums") or [])
+            lim_dead_j = EXECUTION_GROUND_DEAD_CLEAR_FT / ftpx_j
+            crowd_j = [
+                (round(e["x"]), round(e["y"])) for e in exg_j if any(math.hypot(e["x"] - d["x"], e["y"] - d["y"]) - max(e["w"], e["h"]) / 2 - max(d["w"], d["h"]) / 2 < lim_dead_j for d in dead_j)
+            ]
+            check(
+                "execution_ground_clear_of_the_dead",
+                not crowd_j,
+                f"execution ground(s) at {crowd_j} sit within ~{EXECUTION_GROUND_DEAD_CLEAR_FT:.0f} real ft of a burial ground, cremation ground, ossuary, or mausoleum - the executed are disposed of where they die, never among the community's dead",
+            )
+            # OFF THE FARMLAND. Waste ground: gravel bar, dry riverbed, sandy bluff. Nobody plants
+            # where the Empire kills, and nobody kills on land that pays tax.
+            farm_j = [f["outline"] for f in M.get("fields", []) if f.get("outline")] + [d["poly"] for d in M.get("dry_plots", []) if d.get("poly")]
+            on_farm_j = [(round(e["x"]), round(e["y"])) for e in exg_j if any(_box_hits_poly((e["x"] - e["w"] / 2, e["y"] - e["h"] / 2, e["x"] + e["w"] / 2, e["y"] + e["h"] / 2), p) for p in farm_j)]
+            check(
+                "execution_ground_off_the_farmland",
+                not on_farm_j,
+                f"execution ground(s) at {on_farm_j} overlap cultivated land - the ground is waste land, and taxed paddy is the last place it would go",
+            )
+            bur_j = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin"]
+            if core_j and bur_j:
+                # ON THE OUTCAST SIDE. Pollution runs ONE way out of a settlement, and the burakumin
+                # quarter already marks which way that is - the same people handle the fallen stock,
+                # the tanning, the corpses, and (per l7r.md) every execution that is not a samurai's.
+                # So the ground shares their side of the town.
+                #
+                # DIRECTION ONLY, deliberately (it began as "further out than the quarter as well",
+                # which was unsatisfiable on a walled town: Hirameki's quarter is EXTRAMURAL at the SE
+                # corner, so "further out" put the ground off the canvas). The claim the research
+                # actually supports is directional - downwind, downstream, the outcast side - and
+                # radius is an artifact of where the wall happens to be. The spec has this as a SHOULD
+                # for the same reason: where it conflicts with the road placement, the road wins.
+                bcx_j = sum(b["x"] for b in bur_j) / len(bur_j)
+                bcy_j = sum(b["y"] for b in bur_j) / len(bur_j)
+                wrong_j = [(round(e["x"]), round(e["y"])) for e in exg_j if (e["x"] - core_j[0]) * (bcx_j - core_j[0]) + (e["y"] - core_j[1]) * (bcy_j - core_j[1]) <= 0]
+                check(
+                    "execution_ground_on_the_outcast_side",
+                    not wrong_j,
+                    f"execution ground(s) at {wrong_j} lie on the opposite side of the settlement from the burakumin quarter - pollution runs ONE way out of a town, and the caste that performs the executions lives on that side",
+                )
 
     if scale == "town" and meta.get("walled"):
         check("walled_town_has_wall", bool(M.get("wall")) and bool(M.get("gate")), "a walled town must have a wall and a gate")

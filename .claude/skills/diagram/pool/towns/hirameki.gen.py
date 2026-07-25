@@ -463,6 +463,14 @@ s.label(800, 1560, "laborers' & servants' tenements", 9, italic=True, color="#5A
 # hung the label over the gate structs). NOT at the manor gate up the hill - the manor's own
 # board (Mode A) posts verdicts and bounties for those who come to court.
 s.kosatsuba(1330, 1630, rot=90)
+
+# ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone at the town's
+# busiest public point (feature 015; settlements.md "Punishment spot"). A DISPLAY installation:
+# the crime rides on the cangue, so it draws no board of its own. Probed with open_seat after
+# the packs by place_punishment_spot, which scores street verges by traffic - the same probe
+# the notice board uses, because both institutions are sited by the same variable.
+s.place_punishment_spot()
+
 s.label(1120, 1795, "gate market", 10, italic=True, color="#5A4326")
 # the market flophouse (kichin-yado), OUTSIDE the gate beside the gate market: far-traveling
 # peasants who reach the town after the gate shuts at dusk sleep here for a sen before market day
@@ -491,6 +499,17 @@ s.cemetery(2080, 1420, 120, 88, parish=False, label="common burial ground")  # p
 s.cremation_ground(2100, 1513)
 # the pauper ossuary mound (muenzuka) beside the cremation ground (town_has_ossuary)
 s.ossuary(2180, 1560)
+
+# ---- the EXECUTION GROUND and its boundary stone (feature 015; settlements.md "Execution ground").
+# Sited by the way OUT and by the direction pollution runs, not by distance: the ground lies on the
+# south side, the same side as the burakumin quarter (the caste that performs every execution that
+# is not a samurai's), outside the rampart, clear of the farmland, and a good distance from the
+# funerary cluster - the community's tended dead and the disposed unmourned are two different kinds
+# of death and must not read as one precinct. The dosojin stone stands between town and ground: sae
+# means "to block", and it is what makes the ground "outside" rather than merely far.
+s.boundary_marker(1660, 1644)
+s.execution_ground(1620, 1900, rot=20)
+
 # keep-out ring: town_has_cremation_ground demands the crematory stay >120 ft from every dwelling
 s.block_polys.append([(2100 + 132 * math.cos(a), 1513 + 132 * math.sin(a)) for a in [i * math.pi / 4 for i in range(8)]])
 
