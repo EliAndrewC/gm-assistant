@@ -344,6 +344,10 @@ def comb_field(name, sluice, down_deg, seed, field_fall, canal_a, canal_b, offta
         {
             "name": name,
             "kind": "paddy",
+            # this fan's OWN fall (GM 2026-07-25). A city is ringed by farmland that genuinely drains
+            # several ways at once, so the drainage-slope checks judge each drain against its own
+            # field's slope rather than one map-level constant. `down_deg` here is post-mirror.
+            "down_deg": down_deg,
             "outline": [[x, y] for x, y in env],
             "bbox": [min(exs), min(eys), max(exs), max(eys)],
             "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
@@ -875,7 +879,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     _pd = (round(0.80 * _pd[0] + 0.20 * _cen[0], 1), round(0.80 * _pd[1] + 0.20 * _cen[1], 1))
     topo_channel([(mp[0], mp[1]), sl, _pd], {"kind": "moat"}, {"kind": "field", "name": nm})
     _dr = next(c["pts"] for c in _net["channels"] if c["role"] == "drain")
-    topo_channel([tuple(_dr[-2]), tuple(_dr[-1])], {"kind": "drain"}, {"kind": "offmap"})
+    topo_channel([tuple(_dr[-2]), tuple(_dr[-1])], {"kind": "drain", "name": nm}, {"kind": "offmap"})
     s.ring(('poly', _env), 26, 15, ["plain"])
     s.ring(('poly', _env), 20, 40, ["plain"])
 
@@ -889,7 +893,7 @@ topo_channel([(1050, 602), (1050, 608), _pn1], {"kind": "offmap"}, {"kind": "fie
 _drn1 = next(c["pts"] for c in _netn1["channels"] if c["role"] == "drain")
 _dfx1, _dfy1 = _drn1[-1]
 _mn1 = min(MOAT, key=lambda mp1: (mp1[0] - _dfx1 - 60) ** 2 + (mp1[1] - _dfy1 - 60) ** 2)  # rim SE of the outfall
-topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth (fnn1) merges into the moat water
+topo_channel([(_dfx1, _dfy1), (_mn1[0], _mn1[1])], {"kind": "drain", "name": "fnn1"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth (fnn1) merges into the moat water
 s.sluice_gate(_dfx1, _dfy1, rot=math.degrees(math.atan2(_mn1[1] - _dfy1, _mn1[0] - _dfx1)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FNN1), 24, 15, ["plain"])
 s.ring(('poly', ENV_FNN1), 18, 40, ["plain"])
@@ -899,7 +903,7 @@ topo_channel([(1750, 602), (1750, 608), _pn2], {"kind": "offmap"}, {"kind": "fie
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mn2 = min(MOAT, key=lambda mp2: (mp2[0] - _dfx2) ** 2 + (mp2[1] - _dfy2 - 90) ** 2)
-topo_channel([(_dfx2, _dfy2), (_mn2[0], _mn2[1])], {"kind": "drain"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
+topo_channel([(_dfx2, _dfy2), (_mn2[0], _mn2[1])], {"kind": "drain", "name": "fnn2"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx2, _dfy2, rot=math.degrees(math.atan2(_mn2[1] - _dfy2, _mn2[0] - _dfx2)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FNN2), 22, 15, ["plain"])
 s.ring(('poly', ENV_FNN2), 16, 40, ["plain"])
@@ -913,7 +917,7 @@ s.field_channel([(2076, 859), (2130, 860)], '#9CB4C8', 7, 7)  # the visible tap,
 s.sluice_gate(2130, 860, rot=90.9)  # the river-intake gate at the seam (tap heading ~ due east)
 _dre1 = next(c["pts"] for c in _nete1["channels"] if c["role"] == "drain")
 _dfex, _dfey = _dre1[-1]
-topo_channel([(_dfex, _dfey), (2560, _dfey - 38)], {"kind": "drain"}, {"kind": "offmap"}, draw_w=4.0)  # runoff off the east frame (gentle ENE bend, no hairpin)
+topo_channel([(_dfex, _dfey), (2560, _dfey - 38)], {"kind": "drain", "name": "fne1"}, {"kind": "offmap"}, draw_w=4.0)  # runoff off the east frame (gentle ENE bend, no hairpin)
 s.ring(('poly', ENV_FNE1), 24, 15, ["plain"])
 s.ring(('poly', ENV_FNE1), 18, 40, ["plain"])
 # THE DEAD CROSS THE RIVER: the funerary complex on the far bank, DOWNSTREAM (south) of the
