@@ -111,7 +111,7 @@ def test_reiji_is_an_all_dynasty_domain() -> None:
     provincial = config['provincial_lineages']['reiji']
     provinces = config['locations']['reiji']['provinces']
 
-    assert len(lineages) == 6  # reiji + five provincial lineages
+    assert len(lineages) == 7  # reiji + six provincial lineages
     # Every lineage but the ruling one is provincial - no cosmopolitan lineages.
     assert set(lineages) - {'reiji'} == set(provincial)
     # ...and between them they cover every province exactly once.

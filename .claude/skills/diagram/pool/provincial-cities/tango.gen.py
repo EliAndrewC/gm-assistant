@@ -213,11 +213,12 @@ s.block_polys.append([(1988 + 46 * math.cos(a), 2068 + 46 * math.sin(a)) for a i
 # LOW SE rim, downstream of the whole city. Sited below the last estate (2060,1855) so the stench
 # runs away from the samurai seats rather than through them; the workers commute out the SE gate,
 # which is a long walk and is meant to be (the indignity is the point, GM 2026-07-24).
-# MOVED DOWNSTREAM 2026-07-25, by the new tanning_yard_below_every_intake check on its first run.
-# The first seat (1971,1910) was below the estates as intended but ABOVE the point where field
-# fse1 taps this same outfall for irrigation at (1995,2020) - so the yard fouled the water the
-# southeastern paddies drink. The yard now sits below that intake, on the outfall's last reach
-# before it leaves the map: past the estates, past the tap, nothing downstream but off-map.  # ground stops AT the outfall bank; the staking frames reach into the water
+# RESITED 2026-07-25 by the new tanning_yard_below_every_intake check on its first run: the
+# first seat (1971,1910) was below the estates as intended but ABOVE the point where field fse1
+# taps this same outfall for irrigation at (1995,2020) - the yard fouled the water the
+# southeastern paddies drink. The final seat (1988,2068) sits below BOTH outfall taps, on the
+# outfall's last reach before off-map; the frame grew ~180px south to hold it (space-budget
+# note above). A briefly-committed tannery=False resolution was reversed the same day.
 
 
 def grid(streets, width_ft=18):
