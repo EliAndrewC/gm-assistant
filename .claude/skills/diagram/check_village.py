@@ -10251,10 +10251,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # pair during the first survey). Each recorded torii is attributed to the NEAREST proper hall.
     _proper = [r for r in M.get("religious", []) if r.get("kind") != "small_shrine"]
     if _proper:
-        _tcount = {id(r): 0 for r in _proper}
+        _tarch: dict[int, list[Any]] = {id(r): [] for r in _proper}
         for _t in torii:
             _nr = min(_proper, key=lambda r: math.hypot(r["x"] - _t[0], r["y"] - _t[1]))
-            _tcount[id(_nr)] += 1
+            _tarch[id(_nr)].append(_t)
+        _tcount = {k: len(v) for k, v in _tarch.items()}
         _bad_torii = [(round(r["x"]), round(r["y"]), _tcount[id(r)]) for r in _proper if _tcount[id(r)] not in (1, 3, 7) and not r.get("torii_outlier")]
         check(
             "torii_count_canonical",
@@ -10273,6 +10274,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "torii_match_roll",
             not _mismatch,
             f"hall(s) whose drawn torii count differs from their rolled/pinned target (x, y, drawn, target): {_mismatch[:4]} - the avenue must carry exactly the rolled/pinned count (shrine_hall torii_count=), and every arch must sit nearest ITS OWN hall (attribution is by nearest proper hall)",
+        )
+
+        # AN AVENUE'S ARCHES STAND CLOSE TOGETHER (GM 2026-07-25, after the spacing research pass -
+        # settlements.md 'Torii'). WHY: Rokugan's sando is the 1/3/7 SET of formal gateways, not a
+        # Fushimi-style donation row (donation rows are a designated-site special case here: Shinden
+        # Togashi, the Temple of Amaterasu, the Ki Rin Shrine and their like), so neither real-world
+        # spacing regime is the model - a donation row nearly touches (~0.5-1 m), ranked ichi/ni/san
+        # gates stand 200 m - 1.3 km apart, and there is nothing in between to copy. The house rule:
+        # ~20 ft center-to-center, never more than TWO rail-spans (32 ft), past which the arches read
+        # as isolated gates strung across the map rather than one approach. This is the CEILING to
+        # torii_spread_out's one-span floor. The village avenues (~30 ft) sit at the top of the band
+        # by GM preference, hence the half-foot of rounding slack; the town/city avenues that motivated
+        # it ran 45-114 ft. settlement._avenue_pitch re-lays anything over the cap at the ~20 ft
+        # standard, so the gen authors the avenue's LINE and the engine owns its stride.
+        # Measured per hall over its ATTRIBUTED arches (a single-arch hall has no pitch); an explicit
+        # torii_outlier hall - the designated donation-row site - is exempt, as it is from the count rule.
+        _pcap = 16.0 * 2.0 + 0.5
+        _ft = float(meta.get("ftpx", 1) or 1)
+        _wide = []
+        for r in _proper:
+            _ts = _tarch[id(r)]
+            if r.get("torii_outlier") or len(_ts) < 2:
+                continue
+            _worst = max(min(math.hypot(a[0] - b[0], a[1] - b[1]) for b in _ts if b is not a) for a in _ts) * _ft
+            if _worst > _pcap:
+                _wide.append((round(r["x"]), round(r["y"]), round(_worst)))
+        check(
+            "torii_avenue_pitch_capped",
+            not _wide,
+            f"hall(s) whose avenue strings its arches too far apart (x, y, worst gap ft): {_wide[:4]} - an avenue's arches "
+            f"stand ~20 ft apart and never more than two rail-spans (32 ft); further apart they read as isolated gates, "
+            f"not one approach (settlements.md 'Torii'). Author the avenue's LINE and let shrine_hall set the pitch.",
         )
 
     if M.get("pond"):

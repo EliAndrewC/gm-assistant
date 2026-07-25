@@ -70,6 +70,21 @@ PLANK_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terr
 PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
 
 
+# TORII AVENUE PITCH (GM 2026-07-25, after a research pass - see settlements.md 'Torii'). Rokugan's
+# sando is the 1/3/7 SET of formal gateways, NOT a Fushimi-style donation row: donation rows are a
+# designated-site special case here (Shinden Togashi, the Temple of Amaterasu, the Ki Rin Shrine and
+# their like), so NEITHER real-world spacing regime is the model. The research found only two: a
+# donation row's arches nearly touch (~0.5-1 m in the dense tunnel, "several yards" where it loosens),
+# and ranked ichi/ni/san gates stand 200 m - 1.3 km apart (off the map at every settlement scale).
+# Our avenues fall between, so the spacing is a house rule rather than a copied fact: arches stand
+# ~20 ft apart center-to-center, and NEVER more than two rail-spans (32 ft), past which a sando reads
+# as a line of isolated gates rather than one approach. The floor is the existing one arch-span
+# (torii_spread_out) so they never overlap into a blob. Village avenues sit at the top of the band
+# (~30 ft) by GM preference and are deliberately left alone - the cap, not the target, is the rule.
+TORII_PITCH_FT = 20.0  # the usual stride: what the engine lays when it sets an avenue's pitch
+TORII_PITCH_MAX_SPANS = 2.0  # the ceiling, in torii rail-spans (32 ft for a standard 16 ft arch)
+
+
 def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, float]:
     """True drawn half-extents (x half-width, y-up, y-down) of a `_torii` glyph at scale `ftpx`, plus a small
     stroke pad - used to FRAME torii (crop_to_content) and to verify they sit within the frame (check_village
@@ -3668,6 +3683,32 @@ class Settlement:
                 f"BEFORE the hall, and shrine_hall shortens its avenue to stop short of it automatically."
             )
 
+    def _avenue_pitch(self, seats: list[Pt]) -> list[Pt]:
+        """Hold a torii avenue to the house PITCH (see TORII_PITCH_FT / TORII_PITCH_MAX_SPANS). The gen
+        authors the avenue's LINE; the engine owns its stride, the same division of labor as the COUNT
+        (rolled, not authored). An avenue whose arches stand more than the cap apart is re-laid at the
+        standard ~20 ft, resampled by arc length ALONG the authored line - so it keeps its direction and
+        its curve, and its innermost arch keeps the seat the gen chose at the hall's threshold; only the
+        stride changes. Within the band the gen's own spacing stands untouched (the village avenues at
+        ~30 ft are deliberate), so this fires only on the over-wide city/town runs."""
+        if len(seats) < 2:
+            return seats
+        gaps = [math.hypot(seats[i + 1][0] - seats[i][0], seats[i + 1][1] - seats[i][1]) for i in range(len(seats) - 1)]
+        if max(gaps) <= self.px(16.0) * TORII_PITCH_MAX_SPANS:
+            return seats
+
+        def along(dist: float) -> Pt:
+            d = dist
+            for i in range(len(seats) - 1):
+                if d <= gaps[i] or i == len(seats) - 2:  # the last segment also carries any run PAST the authored line
+                    t = d / gaps[i] if gaps[i] else 0.0
+                    return (seats[i][0] + (seats[i + 1][0] - seats[i][0]) * t, seats[i][1] + (seats[i + 1][1] - seats[i][1]) * t)
+                d -= gaps[i]
+            return seats[-1]  # pragma: no cover - unreachable: the i == len-2 branch always returns
+
+        step = self.px(TORII_PITCH_FT)
+        return [along(step * i) for i in range(len(seats))]
+
     def _avenue_short_of_walls(self, seats: list[Pt]) -> list[Pt]:
         """Shorten a torii avenue so it stops SHORT of any wall (see wall_runs) - neither standing an
         arch in one nor marching the run across one, since a sando is a single approach and cannot
@@ -3675,8 +3716,8 @@ class Settlement:
         the honest correction is to pull the whole run BACK - scale every seat's offset from the first
         arch by the largest factor that keeps the run clear - rather than shove one arch out of step
         with its neighbors (which would just straddle the wall). The first arch (nearest the hall)
-        never moves, and the search floors out once the stride would close to the arch's own width,
-        since arches that touch are no avenue at all. Only walls ALREADY DRAWN are visible here (see
+        never moves, and the search floors out once the stride would close to one rail-span, since
+        arches that touch are no avenue at all. Only walls ALREADY DRAWN are visible here (see
         CLAUDE.md "DRAW ORDER"); a wall laid later ACROSS an arch is caught by the wall methods'
         _assert_walls_clear_of_torii, and at the manifest by torii_clear_of_walls."""
         runs = wall_runs(self.M)
@@ -3696,7 +3737,11 @@ class Settlement:
         if whole is not None:
             return whole
         span = math.hypot(seats[-1][0] - seats[0][0], seats[-1][1] - seats[0][1])
-        floor_f = 2 * torii_halfbox(self.ftpx)[0] * (len(seats) - 1) / span if span else 1.0  # arches must not close up on each other
+        # The stride may tighten to just over ONE rail-span - the same floor torii_spread_out enforces,
+        # so placement and check agree. (Measure it on the true 16 ft span, NOT torii_halfbox: that box
+        # carries a 2 px stroke pad, which at 3 ft/px is nearly as wide as the arch itself and left a
+        # 30 ft-pitch city avenue with almost no room to shorten.)
+        floor_f = self.px(16.0) * 1.02 * (len(seats) - 1) / span if span else 1.0
         f = 1.0
         while f - 0.02 > floor_f:
             f -= 0.02
@@ -3826,10 +3871,10 @@ class Settlement:
                     step_t = (pts_t[-1][0] - pts_t[-2][0], pts_t[-1][1] - pts_t[-2][1])
                 else:
                     d_t = math.hypot(pts_t[0][0] - x, pts_t[0][1] - y) or 1.0
-                    step_t = ((pts_t[0][0] - x) / d_t * 44.0, (pts_t[0][1] - y) / d_t * 44.0)
+                    step_t = ((pts_t[0][0] - x) / d_t * self.px(TORII_PITCH_FT), (pts_t[0][1] - y) / d_t * self.px(TORII_PITCH_FT))
                 while len(pts_t) < n_t:
                     pts_t.append((pts_t[-1][0] + step_t[0], pts_t[-1][1] + step_t[1]))
-            for tx, ty in self._avenue_short_of_walls(pts_t[:n_t]):  # the sando stops SHORT of any wall already drawn
+            for tx, ty in self._avenue_short_of_walls(self._avenue_pitch(pts_t[:n_t])):  # house pitch, then stop SHORT of any wall already drawn
                 s2 = self.px(16.0) / 2  # matches _torii's default true span
                 # block the arch + a NEIGHBOR'S HALF-FOOTPRINT: packs test footprint centers, so the
                 # margin must absorb half a house (~28 ft) + slack or a house's edge crosses the arch
