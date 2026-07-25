@@ -6988,8 +6988,25 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # brook / off-map) must be the lower-ground end, and the discharge brook must head downhill. `fall` =
     # projection onto the downhill unit vector (meta.down_deg); higher fall = further downhill = lower ground.
     _dd = M["meta"].get("down_deg")
-    if _dd is not None:
-        _dv = (math.cos(math.radians(_dd)), math.sin(math.radians(_dd)))
+    # PER-FIELD FALL (GM 2026-07-25). A settlement ringed by farmland genuinely drains SEVERAL WAYS
+    # AT ONCE - Tango's fans fall across a 210 deg spread (15 to 225), Nagahara's across 170 - so no
+    # single map-level down_deg can describe it, and a sweep of every bearing at 10 deg steps found
+    # none that satisfied these checks on either city. Each drain is therefore judged against ITS OWN
+    # field's fall, which `field_ditches` already makes possible (every ditch records its `field`).
+    # Maps that declare a map-level down_deg and no per-field slopes are UNCHANGED: the lookup simply
+    # falls back to the map value, so every hamlet/village/town behaves exactly as before.
+    _field_dd = {f.get("name"): f["down_deg"] for f in M.get("fields", []) if f.get("down_deg") is not None}
+    _dv = (math.cos(math.radians(_dd)), math.sin(math.radians(_dd))) if _dd is not None else (0.0, 0.0)
+
+    def _dvec_of(deg: float) -> tuple[float, float]:
+        return (math.cos(math.radians(deg)), math.sin(math.radians(deg)))
+
+    def _ditch_dv(fd_: dict[str, Any]) -> tuple[float, float] | None:
+        """The fall vector to judge THIS ditch by: its own field's, else the map's, else none."""
+        _d = _field_dd.get(fd_.get("field"), _dd)
+        return None if _d is None else _dvec_of(_d)
+
+    if _dd is not None or _field_dd:
 
         def fall(p: Pt) -> float:
             return p[0] * _dv[0] + p[1] * _dv[1]
@@ -7015,20 +7032,66 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         def _near_stream(pt: Pt) -> bool:
             return any(seg_dist(pt[0], pt[1], sp[i], sp[i + 1]) < 30 for st in streams_ for sp in [st["poly"]] for i in range(len(sp) - 1))
 
+        # WHICH END DISCHARGES IS RECORDED, NOT GUESSED (GM 2026-07-25). Every drain->sink topology
+        # channel NAMES its field, so a drain is matched to its OWN discharge channels exactly -
+        # proximity matching was unreliable (Hirameki carries seven such channels and several sit on
+        # top of a different field's drain). Each named channel indicates the drain END it leaves
+        # from; a collector may have SEVERAL culverts along it, and the discharge the check cares
+        # about is the LOWEST of them. The check keeps its teeth on the case that matters: when the
+        # only recorded discharge sits at the drain's HIGH end, the water is running backwards.
+        # Read each channel's SINK end, not its on-drain end: a discharge channel may leave from a
+        # point PARTWAY along the collector (Hirameki's w2 runs off-map west from x=35, mid-drain),
+        # so matching its on-drain point to a drain endpoint misses it. The sink is whichever of the
+        # channel's two ends lies FARTHER from the drain line; when both lie on it - a 2-point drain
+        # whose discharge channel IS the drain, which is what Tango's fans carve - the polyline's
+        # last point is the sink by construction.
+        _drain_topo: dict[str, list[Any]] = {}
+        for _tc in M.get("channels", []):
+            _tfr = _tc.get("frm") or {}
+            if _tfr.get("kind") == "drain" and _tfr.get("name") and _tc.get("poly"):
+                _drain_topo.setdefault(_tfr["name"], []).append(_tc["poly"])
+
         up_drain, up_disch = [], []
         for fd in M.get("field_ditches", []):
             if fd.get("role") != "drain":
                 continue
+            _fv = _ditch_dv(fd)
+            if _fv is None:
+                continue
+
+            def _dfall(p: Pt, _v: tuple[float, float] = _fv) -> float:
+                """Fall projected on THIS drain's own field, not the map-level bearing."""
+                return p[0] * _v[0] + p[1] * _v[1]
+
             p = fd["poly"]
             e0, e1 = p[0], p[-1]
+
             # the OUTFALL is the end that meets a brook or runs off-map (else default to the lower end)
-            if _near_stream(e1) or at_edge(e1):
-                out, head = e1, e0
-            elif _near_stream(e0) or at_edge(e0):
-                out, head = e0, e1
+            _dline = fd["poly"]
+
+            def _off_drain(q_: Any, _dl: Any = _dline) -> float:
+                return min(seg_dist(q_[0], q_[1], _dl[i_], _dl[i_ + 1]) for i_ in range(len(_dl) - 1))
+
+            # Pool ALL the evidence for "this end discharges" - a named discharge channel, a brook
+            # alongside, the frame edge - then take the LOWEST such end. A collector legitimately
+            # carries several sinks (Hirameki's w2 runs off-map west AND tees a relief culvert back
+            # to the stream at its east end; s1 runs off BOTH ends past the bottom edge), so any one
+            # signal alone mis-reads. The check keeps its teeth on the case that matters: when every
+            # piece of evidence puts the discharge at the drain's HIGH end, the water runs backwards.
+            _ind: list[Any] = []
+            for _tp in _drain_topo.get(fd.get("field")) or []:
+                _a_, _b_ = _tp[0], _tp[-1]
+                _sink: Any = _b_ if _off_drain(_b_) >= _off_drain(_a_) - 1.0 else _a_
+                _da_ = math.hypot(e0[0] - _sink[0], e0[1] - _sink[1])
+                _db_ = math.hypot(e1[0] - _sink[0], e1[1] - _sink[1])
+                _ind.append(e1 if _db_ < _da_ else e0)
+            _ind += [e_ for e_ in (e0, e1) if _near_stream(e_) or at_edge(e_)]
+            if _ind:  # the manifest names this drain's discharge(s): take the LOWEST one
+                out = max(_ind, key=_dfall)
+                head = e0 if out is e1 else e1
             else:
-                out, head = (e1, e0) if fall(e1) >= fall(e0) else (e0, e1)
-            if fall(out) < fall(head) - 8:  # outfall is UPHILL of the head - water runs backwards
+                out, head = (e1, e0) if _dfall(e1) >= _dfall(e0) else (e0, e1)
+            if _dfall(out) < _dfall(head) - 8:  # outfall is UPHILL of the head - water runs backwards
                 up_drain.append([round(out[0]), round(out[1])])
         for st in streams_:  # a drainage brook must head downhill off the field
             if (st.get("frm") or {}).get("kind") == "drain":
@@ -7054,12 +7117,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         for fd in M.get("field_ditches", []):
             if fd.get("role") != "drain":
                 continue
+            if fd.get("trimmed"):
+                # an IN-WALL drain is cut off short of the patrol ring and sluice-gated into an
+                # underground conduit to the moat, so what survives is the last leg to that outfall -
+                # a stub, not a collector spanning the field's low edge. Judging its bearing against
+                # "must run along the contour" is a category error: Tango's nw1 is 2 points and 134px
+                # where every untrimmed drain on the map runs 159-231px.
+                continue
             a, b = fd["poly"][0], fd["poly"][-1]
             vx, vy = b[0] - a[0], b[1] - a[1]
             vlen = math.hypot(vx, vy)
             if vlen < 1:  # pragma: no cover - a real drain spans the field's low edge; guards a 0-length poly
                 continue
-            along = abs(vx * _dv[0] + vy * _dv[1]) / vlen  # |cos(angle to the fall)|
+            _cv = _ditch_dv(fd)
+            if _cv is None:
+                continue
+            along = abs(vx * _cv[0] + vy * _cv[1]) / vlen  # |cos(angle to THIS field's fall)|
             if along > 0.65:
                 crossy.append(round(math.degrees(math.acos(min(1.0, along)))))
         check(

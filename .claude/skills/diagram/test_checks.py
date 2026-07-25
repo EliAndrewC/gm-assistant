@@ -7820,3 +7820,84 @@ def test_crop_not_held_open_honors_the_declared_opt_out():
     M = _crop_map(buildings=[bldg(500, 500), bldg(540, 500), bldg(520, 900)])
     M["meta"]["crop_outlier_ok"] = True
     assert "crop_not_held_open_by_one_feature" not in f(M)
+
+
+# ---- per-field drainage slope (GM 2026-07-25) -----------------------------------------------
+def _drain_map(**over):
+    M = {
+        "meta": {"scale": "village", "ftpx": 2, "down_deg": 90, "W": 1200, "H": 1400},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[200, 200], [900, 200], [900, 900], [200, 900]], "bbox": [200, 200, 900, 900], "vis_bbox": [200, 200, 900, 900]}],
+        # a collector running straight DOWN a 90 deg (south) fall - what the check exists to catch
+        "field_ditches": [{"role": "drain", "field": "f1", "poly": [[400, 300], [430, 800]], "w": 1.5}],
+    }
+    M.update(over)
+    return M
+
+
+def test_drain_runs_cross_slope_fires_on_a_drain_running_with_the_fall():
+    assert "drain_runs_cross_slope" in f(_drain_map())
+
+
+def test_drain_runs_cross_slope_uses_the_FIELD_s_own_fall_not_the_map_s():
+    # same drain, but this field falls EAST (0 deg) - so the drain now runs across its own contour
+    # and is correct. A city ringed by farmland drains several ways at once; one map-level constant
+    # cannot describe it (Tango's fans span 210 deg).
+    M = _drain_map()
+    M["fields"][0]["down_deg"] = 0
+    assert "drain_runs_cross_slope" not in f(M)
+
+
+def test_drain_runs_cross_slope_exempts_a_trimmed_inwall_drain():
+    # an in-wall drain is cut short of the patrol ring and sluice-gated into a conduit to the moat,
+    # so what remains is the last leg to the outfall - a stub, not a contour collector
+    M = _drain_map()
+    M["field_ditches"][0]["trimmed"] = True
+    assert "drain_runs_cross_slope" not in f(M)
+
+
+def test_drain_flows_downhill_reads_the_NAMED_discharge_channel_over_an_uphill_edge():
+    # Nagahara's fnn2 exactly: the drain's HEAD sits inside the 32px at_edge tolerance of the frame's
+    # TOP (upslope), so the edge signal alone called the high end the outfall and reported the water
+    # running backwards. A discharge channel NAMING this field puts the real outfall at the tail, and
+    # pooling the evidence and taking the LOWEST end resolves it.
+    M = _drain_map(
+        field_ditches=[{"role": "drain", "field": "f1", "poly": [[400, 20], [700, 300]], "w": 1.5}],
+        channels=[{"poly": [[700, 300], [780, 360]], "frm": {"kind": "drain", "name": "f1"}, "to": {"kind": "offmap"}, "w": 2.5}],
+    )
+    assert "drain_flows_downhill" not in f(M)
+
+
+def test_drain_flows_downhill_ignores_a_discharge_channel_naming_ANOTHER_field():
+    # the whole point of naming: Hirameki carries seven discharge channels and several sit on top of
+    # a different field's drain, so proximity matching mis-attributed them
+    M = _drain_map(
+        field_ditches=[{"role": "drain", "field": "f1", "poly": [[400, 20], [700, 300]], "w": 1.5}],
+        channels=[{"poly": [[700, 300], [780, 360]], "frm": {"kind": "drain", "name": "SOMEWHERE-ELSE"}, "to": {"kind": "offmap"}, "w": 2.5}],
+    )
+    assert "drain_flows_downhill" in f(M)
+
+
+def test_drain_flows_downhill_still_fires_on_a_genuinely_backwards_drain():
+    # outfall on a stream at the HIGH end: the evidence is a real sink, so the check must still bite
+    M = _drain_map(
+        streams=[{"poly": [[300, 250], [900, 250]], "w": 8, "flow": "forward", "flow_deg": 0.0, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}],
+        field_ditches=[{"role": "drain", "field": "f1", "poly": [[400, 260], [430, 800]], "w": 1.5}],
+    )
+    assert "drain_flows_downhill" in f(M)
+
+
+def test_drainage_slope_checks_skip_a_drain_whose_field_declares_no_fall():
+    # a city declares no map-level down_deg (no single bearing can describe a settlement whose fans
+    # fall 210 deg apart), so a drain belonging to a field WITHOUT its own slope has nothing to be
+    # judged against - it is skipped rather than measured against a fiction
+    M = {
+        "meta": {"scale": "city", "ftpx": 3, "W": 3200, "H": 2700},
+        "fields": [
+            {"name": "has_slope", "kind": "paddy", "outline": [[200, 200], [900, 200], [900, 900], [200, 900]], "bbox": [200, 200, 900, 900], "vis_bbox": [200, 200, 900, 900], "down_deg": 90},
+            {"name": "no_slope", "kind": "paddy", "outline": [[1200, 200], [1900, 200], [1900, 900], [1200, 900]], "bbox": [1200, 200, 1900, 900], "vis_bbox": [1200, 200, 1900, 900]},
+        ],
+        "field_ditches": [{"role": "drain", "field": "no_slope", "poly": [[1300, 300], [1330, 800]], "w": 1.5}],
+    }
+    fails = f(M)
+    assert "drain_flows_downhill" not in fails
+    assert "drain_runs_cross_slope" not in fails
