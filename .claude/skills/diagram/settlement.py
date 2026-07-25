@@ -1557,6 +1557,61 @@ class Settlement:
             self.add(f'<polygon points="{epts}" fill="{col}" clip-path="url(#{cid})"/>')
         self.M.setdefault("comb_floors", {})[name] = [[round(x, 1), round(y, 1)] for x, y in env]
 
+    def bund_junctions(self, plots: Sequence[Mapping[str, Any]], name: str) -> None:
+        """Pile earth into every bund CROSSING (GM 2026-07-25). Same rule as the polder's organic parcels -
+        hand-piled mud has no sharp corners - but a SHARED-BARRIER field needs the opposite operation to
+        express it. A polder's parcels are separate polygons with a real gap between them, so rounding is
+        SUBTRACTIVE: each parcel gives up its corners and the bund, being the space between, just widens.
+        A comb/terrace/ribbon carve has no gap - the bund IS the shared line, and the carve is required to
+        tessellate (`paddy_fan_gapless`) - so shrinking the cells would tear holes in the field. The
+        correct operation is ADDITIVE: leave the carve untouched and pile material into the junction, so
+        the crossing stops being two hairlines meeting at a point and becomes a lumpy node of bund, and
+        the four basin corners read rounded because the earth has taken them.
+
+        This is the truest part of the whole rule. A bund junction is the most-worked point in a field:
+        four basins push water at it, it carries the crossing foot traffic, it is where someone stands to
+        open and close the water, and it is the first thing to slump and get re-piled - so it genuinely
+        carries more earth than the runs between. TRUE SCALE: a plain aze runs ~1.5 ft (`AZE_FT`) and a
+        junction node widens to ~4-6 ft, which is 4-6 px at hamlet scale and honestly sub-2 px at city
+        scale. It is floored at the stroke width so it never disappears, but never inflated past the
+        attested node - a legibility-sized dot here would be a fake 15 ft earthwork at every crossing.
+
+        A junction is found from the DRAWN geometry, not declared: wherever >=3 plot corners coincide,
+        bunds cross. That makes the pass self-selecting - a polder's parcels are inset away from each
+        other and share no corner at all, so nothing is drawn on the archetype that must not get it."""
+        from waterfields import AZE, aze_w
+
+        cells: dict[tuple[int, int], list[list[float]]] = {}
+        for p in plots:
+            for x, y in p["poly"]:
+                node = None
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        for cand in cells.get((int(x // 1) + dx, int(y // 1) + dy), []):
+                            if abs(cand[0] - x) < 0.75 and abs(cand[1] - y) < 0.75:
+                                node = cand
+                                break
+                        if node:
+                            break
+                    if node:
+                        break
+                if node:
+                    node[2] += 1
+                else:
+                    cells.setdefault((int(x // 1), int(y // 1)), []).append([x, y, 1.0])
+        rng = random.Random(int(hashlib.md5(name.encode()).hexdigest()[:8], 16))  # str hash() is salted per process - a map must redraw identically
+        base = max(2.5 / self.ftpx, aze_w(self.ftpx) * 1.1)  # ~5 ft node radius, floored at the drawn aze
+        out = []
+        for bucket in cells.values():
+            for x, y, n in bucket:
+                if n < 3:
+                    continue  # a run, a T-stub, or a field-edge corner - only real crossings get piled
+                r = base * rng.uniform(0.75, 1.3)  # no two re-pilings match
+                pts = " ".join(f"{x + r * (1 + 0.24 * rng.uniform(-1, 1)) * math.cos(a):.1f},{y + r * (1 + 0.24 * rng.uniform(-1, 1)) * math.sin(a):.1f}" for a in [i * math.tau / 7 for i in range(7)])
+                out.append(f'<polygon points="{pts}"/>')
+        if out:
+            self.add(f'<g fill="{AZE}" stroke="none">{"".join(out)}</g>')
+
     def draw_comb_field(self, net: dict[str, Any], name: str, source: dict[str, Any], inwall_drain_moat_bias: Pt | None = None) -> list[Pt]:
         """Draw a `build_comb` net (dry hem + flooded paddies + bunds + channels) AND register the field's
         manifest + water topology, in one call - the ~50 lines every comb gen otherwise repeats inline. Feeds
@@ -1601,6 +1656,7 @@ class Settlement:
             # reading back the overlay's own self-report - a check that reads one source has no teeth.
             if p.get("low"):
                 self.M.setdefault("wet_plots", []).append(_centroid(p["poly"]))
+        self.bund_junctions(net["plots"], name)
         beads = "".join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
         self.add(f'<g opacity="0.85">{beads}</g>')
         sluice = net["channels"][0]["pts"][0]
