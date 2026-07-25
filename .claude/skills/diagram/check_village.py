@@ -2005,6 +2005,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             for _dh in _yd.get("dung_heaps", []) or []:
                 if _fw_hit(_dh["x"], _dh["y"], max(_dh.get("rx", 2.5), _dh.get("ry", 1.8))):
                     _fw_bad.append((round(_dh["x"]), round(_dh["y"])))
+        # ... AND DUNG HEAPS KEEP CLEAR OF THE HITCHING RAILS (GM 2026-07-25, render review):
+        # both flanks of a rail are working tie-up space - a heap dumped against it sits in the
+        # tethered-animal row and blocks one side. Near the working edge is RIGHT (muck
+        # accumulates where the animals stand); touching is not. Floor: ~14px (42 real ft) from
+        # the rail line - just beyond the ~9px animal row, close enough to read as the yard's
+        # muck pile. Fixtures: the pinned Tango (7.9px) + Nagahara (12.6px) real captures.
+        _dh_bad2 = []
+        for _yd2 in _sy_yards:
+            for _dh2 in _yd2.get("dung_heaps", []) or []:
+                for _rl2 in _yd2.get("rails", []) or []:
+                    _rh2 = _rl2["len"] / 2
+                    if seg_dist(_dh2["x"], _dh2["y"], (_rl2["x"] - _rl2["tx"] * _rh2, _rl2["y"] - _rl2["ty"] * _rh2), (_rl2["x"] + _rl2["tx"] * _rh2, _rl2["y"] + _rl2["ty"] * _rh2)) < 14.0:
+                        _dh_bad2.append((round(_dh2["x"]), round(_dh2["y"])))
+                        break
+        check(
+            "dung_heaps_clear_of_hitch_rails",
+            not _dh_bad2,
+            f"dung heap(s) against a hitching rail at {_dh_bad2} - both flanks of a rail are tie-up space, so a heap "
+            f"keeps ~14px (42 ft) clear of the rail line (just beyond the tethered-animal row); near the working "
+            f"edge is right, touching is not",
+        )
         check(
             "stable_yard_furniture_clear_of_roads_walls",
             not _fw_bad,
@@ -3835,6 +3856,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}
             if any(w in t for w in ("street", "avenue", "road")):
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
+            if "drum/bell" in t or t.strip() == "tower":  # the two-line zhonggulou caption (GM 2026-07-24)
+                return {"drum tower"}
             for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "tanning yard", "drum tower"):
                 if _tw_txt in t:
                     return {_tw_txt}  # a trade-works caption may cover only its own premises
