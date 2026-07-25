@@ -7100,6 +7100,39 @@ def test_village_windbreak_embraces_cluster_passes_when_the_belt_nestles():
     assert "village_windbreak_embraces_cluster" not in f(M)
 
 
+def _thin_belt_cluster(**extra):
+    # 12 farmhouses behind a belt that NESTLES and carries 12 clumps (so the embrace test is satisfied)
+    # but whose crowns are small - the shape a too-thin belt takes: present, adjacent, and no wall.
+    houses = [{"x": 500 + i * 30, "y": 500, "w": 23, "h": 14, "kind": "plain", "rot": 0} for i in range(12)]
+    belt = {"x": 620, "y": 430, "w": 300, "h": 20, "role": "windbreak", "r": 6, "clumps": [[500 + j * 26, 430] for j in range(12)]}
+    return {"meta": {"scale": "village", "nucleated": True}, "houses": houses, "village_groves": [belt], **extra}
+
+
+def test_village_windbreak_scales_with_cluster_fires_on_a_belt_too_thin_for_the_cluster():
+    M = _thin_belt_cluster()
+    fails = f(M)
+    assert "village_windbreak_scales_with_cluster" in fails and "village_windbreak_embraces_cluster" not in fails
+
+
+def test_village_windbreak_scales_with_cluster_counts_per_house_groves():
+    # a map that ALSO groves its farmhouses (Hikari-no-Sato does both) banks those yashikirin footprints
+    M = _thin_belt_cluster(groves=[_grove(500 + i * 30 - 18, 480, 500 + i * 30, 500, w=40, h=40) for i in range(12)])
+    assert "village_windbreak_scales_with_cluster" not in f(M)
+
+
+def test_village_windbreak_forest_exempts_only_when_it_shelters_the_cluster():
+    # a REAL FOREST standing at the cluster's windward (NW) back, within nestling reach, IS the wind wall
+    near = _thin_belt_cluster(forest=[[400, 360], [420, 420], [400, 470]])
+    assert "village_windbreak_scales_with_cluster" not in f(near)
+    # ... but a wood on the LEE side, half a map away, shelters nothing - no exemption (Moritono's Shirin
+    # Forest, 1,089 ft east of the hamlet under an NW wind, GM 2026-07-25)
+    far = _thin_belt_cluster(forest=[[1500, 200], [1520, 600], [1500, 900]])
+    assert "village_windbreak_scales_with_cluster" in f(far)
+    # ... and neither does a wood that is CLOSE but downwind (the lee side of the same cluster)
+    lee = _thin_belt_cluster(forest=[[900, 560], [940, 600], [900, 640]])
+    assert "village_windbreak_scales_with_cluster" in f(lee)
+
+
 def test_geometry_within_canvas_fires_on_a_stray_town_wall_vertex():
     M = {"meta": {"scale": "town", "W": 2000, "H": 1300}, "wall": [[300, 300], [9999999, 300], [700, 700]]}
     assert "geometry_within_canvas" in f(M)

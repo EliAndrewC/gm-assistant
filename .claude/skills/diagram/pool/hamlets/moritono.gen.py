@@ -186,22 +186,50 @@ print(f"byres: {len(n_byres)}")
 # rough ground too (around the manor + between the pond and the forest), skipping the forest/manor/pond blocks.
 s.hinterland()
 
-# WINDBREAK - the fengshui wood on the high/windward N back of the cluster, plus a leafy copse among the homes.
-_hx = [h["x"] for h in s.M["houses"]]
-_hy = [h["y"] for h in s.M["houses"]]
-_minx, _maxx, _miny, _maxy = min(_hx), max(_hx), min(_hy), max(_hy)
-_ccx = sum(_hx) / len(_hx)
+# WINDBREAK - the communal fengshui wood (风水林) on the high/windward back of the cluster, plus a leafy
+# copse among the homes. The belt is an L wrapping BOTH windward faces - a deep band across the N back
+# and a shorter arm down the W flank - because the winter monsoon comes out of the NW (the `windward`
+# default), so a north-only band leaves the west flank bare. Two sizing rules, both learned the hard way
+# (GM 2026-07-25, when this belt read as three blobs behind 16 farmhouses):
+#   1. SET BACK off the homesteads. The old outline ran its inner edge through the northern house row, so
+#      most of the clumps it could have grown were rejected as landing on a house/yard/garden. The stand
+#      grows BEHIND the houses (~45 ft clear), not among them - the copse is what fills the inner gaps.
+#   2. DEEP enough for several clump rows. At ~30 ft the old band held ONE row of crowns; the belt wants
+#      ~80-120 ft so the canopies overlap into a wall. Sized here to ~0.5 ha of footprint, in the band the
+#      other 16-household hamlets sit in (Enokida 0.45 ha, Kuwabata 0.39) and under the research figure
+#      for a modest back grove (<1 ha - settlements.md 'Village windbreak'). village_windbreak_scales_
+#      with_cluster now gates this: canopy area >= 0.40x the roof area it shelters.
+# The two communal WELLS stand inside the band and carve their own clearings out of it (village_grove
+# keeps canopy off a wellhead), which is how a real draw-point sits in a back grove.
+_hx0 = min(h["x"] - h["w"] / 2 for h in s.M["houses"])
+_hx1 = max(h["x"] + h["w"] / 2 for h in s.M["houses"])
+_hy0 = min(h["y"] - h["h"] / 2 for h in s.M["houses"])
+_hy1 = max(h["y"] + h["h"] / 2 for h in s.M["houses"])
 
 
 def _rag(pts, amp=11):
     return [(x + _rng.uniform(-amp, amp), y + _rng.uniform(-amp, amp)) for x, y in pts]
 
 
-_belt = [(_minx - 16, _miny - 4), (_minx + 24, _miny - 44), (_ccx, _miny - 64),
-         (_maxx - 24, _miny - 44), (_maxx + 16, _miny - 4),
-         (_maxx + 30, _miny - 30), (_ccx, _miny - 96), (_minx - 30, _miny - 30)]
-s.village_grove(_rag(_belt), role="windbreak")
-_scatter = [(_minx - 14, _miny - 14), (_maxx + 14, _miny - 14), (_maxx + 14, _maxy + 14), (_minx - 14, _maxy + 14)]
+def _densify(pts, step=70):
+    """Walk the outline dropping intermediate vertices, so _rag has enough points to make the edge ragged
+    (a 6-vertex L jittered at its corners alone still reads as a ruled rectangle)."""
+    out = []
+    for i, p in enumerate(pts):
+        q = pts[(i + 1) % len(pts)]
+        n = max(1, int(math.hypot(q[0] - p[0], q[1] - p[1]) / step))
+        out += [(p[0] + (q[0] - p[0]) * k / n, p[1] + (q[1] - p[1]) * k / n) for k in range(n)]
+    return out
+
+
+# the L: N band (y: -125..-45 off the top houses) + W arm (x: -115..-30 off the west houses), the arm
+# stopping short of the connector lane's keep-out so no clump is dropped onto the track.
+_belt = [(_hx0 - 115, _hy0 - 125), (_hx1 + 35, _hy0 - 125), (_hx1 + 35, _hy0 - 45),
+         (_hx0 - 30, _hy0 - 45), (_hx0 - 30, _hy0 + 75), (_hx0 - 115, _hy0 + 75)]
+s.village_grove(_rag(_densify(_belt)), role="windbreak")
+# the dooryard copse fills the OPEN gaps among + around the homesteads (its scatter skips every building,
+# yard, garden and lane), so it spans the cluster's full footprint rather than the house-center box.
+_scatter = [(_hx0 - 40, _hy0 - 40), (_hx1 + 40, _hy0 - 40), (_hx1 + 40, _hy1 + 40), (_hx0 - 40, _hy1 + 40)]
 s.village_grove(_scatter, role="copse", dense=False)
 
 # PLANK FOOTBRIDGES across the irrigation ditches
