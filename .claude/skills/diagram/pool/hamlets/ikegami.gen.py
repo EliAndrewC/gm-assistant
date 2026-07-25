@@ -90,6 +90,7 @@ for p in net["plots"]:
     pts = ' '.join(f'{x:.1f},{y:.1f}' for x, y in p["poly"])
     s.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(s.ftpx):.2f}" stroke-linejoin="round"/>')
 
+s.bund_junctions(net["plots"], "ikegami-paddies")  # pile earth into every bund CROSSING (see Settlement.bund_junctions)
 beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>' for x, y in net["bund_beans"])
 s.add(f'<g opacity="0.85">{beads}</g>')
 
