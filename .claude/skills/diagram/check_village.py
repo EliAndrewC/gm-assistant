@@ -348,6 +348,18 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
 
+def forest_reveal_x(forest: Poly, edge: Any, reveal: float, w: float) -> list[float]:
+    """Mirror of settlement.forest_reveal_x (keep in sync): the x-values a canvas-filling FOREST
+    contributes to the frame. The wood is drawn to the canvas edge, but the crop reveals only the
+    tree line plus `reveal` px of canopy behind it - deeper in it is identical crowns, and holding
+    the frame open for them is wasted image. This is the crop rule, so crop_hugs_content (which
+    gates how tight the crop is) has to measure by exactly the same rule."""
+    if not edge:
+        return [min(max(p[0], 0), w) for p in forest]
+    ex = [min(max(p[0], 0), w) for p in edge]
+    return ex + [min(x + reveal, w) for x in ex]
+
+
 def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, float]:
     """Mirror of settlement.torii_halfbox (keep in sync): the true drawn half-extents (x half-width, y-up,
     y-down) of a torii glyph at scale `ftpx`, plus a small stroke pad. Replaces the legacy fixed x+/-19 /
@@ -360,6 +372,7 @@ def torii_halfbox(ftpx: float, span_ft: float = 16.0) -> tuple[float, float, flo
 # STANDALONE plank-footbridge usefulness (mirrors settlement.PLANK_BANK_REACH / PLANK_VILLAGE_REACH /
 # PLANK_ABUTMENT - keep in sync). A footplank is worth building only if BOTH banks reach ground someone
 # walks to; the placement engine (channel_footbridges) enforces it, these checks re-verify from the manifest.
+FOREST_REVEAL_FT = 110.0  # mirrors settlement.FOREST_REVEAL_FT - how deep the crop reveals a canvas-filling wood
 FOOT_ABUTMENT = 6.0  # deck = local ditch width + this abutment (settlement.PLANK_ABUTMENT)
 FOOT_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
 FOOT_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the village (a place worth crossing to)
@@ -830,6 +843,7 @@ DEFAULT_MANIFEST: Manifest = {
     "summit": None,
     "shrine": None,
     "forest": None,
+    "forest_edge": None,
     "storehouses": [],
     "flophouses": [],
     "road": None,
@@ -1644,9 +1658,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             pcx, pcy, prx, pry = M["pond"]
             fsx += [pcx - prx, pcx + prx]
             fsy += [pcy - pry, pcy + pry]
-        for fp in M.get("forest") or []:  # the big EDGE forest is frame-setting, canvas-clamped like the crop
-            fsx.append(min(max(fp[0], 0), Wd))
-            fsy.append(min(max(fp[1], 0), Hd))
+        if M.get("forest"):  # the big EDGE forest is frame-setting, canvas-clamped like the crop -
+            fsy += [min(max(fp[1], 0), Hd) for fp in M["forest"]]  # and revealed only a band deep
+            fsx += forest_reveal_x(M["forest"], M.get("forest_edge"), FOREST_REVEAL_FT / meta.get("ftpx", 1), Wd)
         if fsx:
             ALLOW = 56
             _edge_slack = {

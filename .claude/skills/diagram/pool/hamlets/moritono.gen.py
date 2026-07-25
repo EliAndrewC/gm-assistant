@@ -135,9 +135,13 @@ s.M["channels"].append({"poly": [[round(SLUICE[0], 1), round(SLUICE[1], 1)],
                         "frm": {"kind": "pond"}, "to": {"kind": "field", "name": "moritono-paddies"}, "w": 2.5})
 
 # THE SHIRIN FOREST fills the EAST behind an irregular tree-line (the high wooded ground). Blocks houses; it is
-# the hamlet's woodland - so no separate managed-woodland patches are needed, the forest IS the wood.
-s.forest([(2270, -10), (2222, 200), (2276, 430), (2216, 690), (2278, 940), (2232, 1190), (2270, 1510)],
-         label="Shirin Forest", label_xy=(2440, 720))
+# the hamlet's woodland - so no separate managed-woodland patches are needed, the forest IS the wood. Drawn as a
+# stand of individual trees at true canopy density (settlement._tree_stand), with a fringe of advance growth
+# thinning out onto the scrub, so the wood's edge is made of trees rather than a ruled line. The frame reveals
+# only ~110 ft of canopy past the tree line (FOREST_REVEAL_FT) - enough to read as a wood running off the map.
+s.forest([(2262, -10), (2238, 118), (2276, 246), (2222, 372), (2258, 498), (2214, 624), (2270, 746),
+          (2226, 874), (2278, 1002), (2232, 1128), (2264, 1256), (2224, 1384), (2270, 1510)],
+         label="Shirin Forest", label_xy=(2320, 700))
 
 # THE MAGISTRATE'S MANOR - a walled hunting lodge at the forest's edge, gate facing WEST toward the hamlet it
 # oversees. A samurai estate ADJACENT to the hamlet, not part of it (only walls + gate + court; its interior is
