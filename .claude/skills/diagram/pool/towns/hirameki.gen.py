@@ -78,8 +78,8 @@ s.meta(
 # irrigation head (its lower course IS s1's water supply). The EAST stream runs through.
 WS = [(250, -10), (175, 470), (255, 940), (160, 1400), (300, 1620), (560, 1680), (700, 1700)]
 ES = [(2430, -10), (2390, 560), (2460, 1100), (2400, 2010)]
-s.stream(WS)
-s.stream(ES)
+s.stream(WS, frm={"kind": "offmap"}, to={"kind": "ditch"})  # in off the north edge; its lower course IS s1's supply - the weir swallows it whole into the irrigation head
+s.stream(ES, frm={"kind": "offmap"}, to={"kind": "offmap"})  # runs through, north edge to south edge
 
 
 def topo_channel(pts, frm, to, draw_w=0.0):

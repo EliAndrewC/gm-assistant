@@ -7484,7 +7484,7 @@ def test_marsh_on_low_ground_exempts_the_waterside_fringe():
 def _ty_map(**over):
     M = {
         "meta": {"scale": "town", "walled": False, "ftpx": 1},
-        "streams": [{"poly": [[500, 100], [500, 900]], "w": 8}],
+        "streams": [{"poly": [[500, 100], [500, 900]], "w": 8, "flow": "forward", "flow_deg": 90.0, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}],
         "buildings": [bldg(200, 200, kind="burakumin"), bldg(240, 200, kind="burakumin")],
         "tanning_yards": [{"x": 466, "y": 500, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}],
     }
@@ -7654,3 +7654,50 @@ def test_watercourses_flow_downstream_exempts_the_level_canal():
 def test_moat_declares_circulation_fires_on_a_moat_with_no_inlet_or_outlet():
     M = _wf_map(meta={"scale": "city", "walled": True, "ftpx": 3, "water_flow": 90}, wall=WALL, moat=WALL)
     assert "moat_declares_circulation" in f(M)
+
+
+def test_settlement_has_tanning_yard_honors_the_declared_opt_out():
+    # meta(tannery=False): a settlement with water but no legitimate site on it (Tango)
+    M = _ty_map(meta={"scale": "city", "walled": False, "ftpx": 3, "tannery": False})
+    M.pop("tanning_yards")
+    assert "settlement_has_tanning_yard" not in f(M)
+
+
+def test_tanning_yard_discharges_to_nothing_drawn_from_fires_on_a_course_feeding_a_pond():
+    M = _ty_map(streams=[{"poly": [[500, 100], [500, 900]], "w": 8, "flow": "forward", "flow_deg": 90.0, "frm": {"kind": "offmap"}, "to": {"kind": "pond"}}])
+    assert "tanning_yard_discharges_to_nothing_drawn_from" in f(M)
+
+
+def test_tanning_yard_discharges_to_nothing_drawn_from_passes_when_it_ends_off_map():
+    assert "tanning_yard_discharges_to_nothing_drawn_from" not in f(_ty_map())
+
+
+def test_tanning_yard_discharges_reads_the_sink_by_FLOW_not_polyline_order():
+    # stored downstream-first: frm is the SINK. Reading frm/to by position would call this clean.
+    M = _ty_map(streams=[{"poly": [[500, 900], [500, 100]], "w": 8, "flow": "reverse", "flow_deg": 270.0, "frm": {"kind": "pond"}, "to": {"kind": "offmap"}}])
+    assert "tanning_yard_discharges_to_nothing_drawn_from" in f(M)
+
+
+def test_tanning_yard_below_every_intake_fires_on_a_tap_downstream_of_the_yard():
+    # the real Tango defect: a field taps the yard's own course BELOW it
+    M = _ty_map(channels=[{"poly": [[500, 700], [700, 720]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5}])
+    assert "tanning_yard_below_every_intake" in f(M)
+
+
+def test_tanning_yard_below_every_intake_passes_when_the_tap_is_upstream():
+    M = _ty_map(channels=[{"poly": [[500, 300], [700, 320]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5}])
+    assert "tanning_yard_below_every_intake" not in f(M)
+
+
+def test_tanning_yard_downstream_checks_skip_a_yard_with_no_watercourse_at_all():
+    # degenerate but the guard is real: no course to reason about means no downstream verdict
+    M = _ty_map(streams=[])
+    assert "tanning_yard_discharges_to_nothing_drawn_from" not in f(M)
+    assert "tanning_yard_below_every_intake" not in f(M)
+
+
+def test_tanning_yard_below_every_intake_ignores_an_intake_on_a_DIFFERENT_course():
+    # Hoshizora's real situation: the town's intakes are on a watercourse the yard's water never
+    # reaches, so they must not be charged against it
+    M = _ty_map(channels=[{"poly": [[100, 700], [180, 720]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5}])
+    assert "tanning_yard_below_every_intake" not in f(M)
