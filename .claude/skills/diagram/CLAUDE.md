@@ -47,6 +47,55 @@ earlier.** Two compounding mistakes, both cheap to avoid:
   actually changed since the gate went green, and if that is markdown, re-run nothing (root
   CLAUDE.md, "docs-only diffs skip the gate").
 
+## NEVER poll a backgrounded command - and it is now ENFORCED
+
+Backgrounding the gate and then *watching* it is worse than running it in the foreground. Profile of
+a 31-minute feature (2026-07-25): **10.9 minutes - 35% of the whole task - went to polling two gates
+that had already finished.** The gates took 97s and 98s; the waits took 351s and 401s, both running
+their full iteration budget because of this:
+
+    for i in $(seq 1 80); do if ! pgrep -f "make done" >/dev/null 2>&1; then break; fi; command sleep 5; done
+
+`pgrep -f "make done"` **matches its own shell** - the pattern is an argument of the very command
+line being searched - so the `break` can never fire. And the loop was pointless anyway: a
+backgrounded Bash command NOTIFIES you when it exits. Background the gate, spend the turn on the
+docs or the commit message, and act on the notification.
+
+[`scripts/no-poll-hooks.sh`](../../../scripts/no-poll-hooks.sh) (tested by `test-no-poll-hooks.sh`)
+now BLOCKS the pattern at PreToolUse: `pgrep -f` / `pkill -f` with a literal pattern, any loop
+containing a `sleep`, and the `command sleep` / `/bin/sleep` / `env sleep` forms that exist only to
+dodge the harness's own foreground-sleep guard. A genuine wait on EXTERNAL state (a server port)
+passes by putting `POLL_OK` in the command with a note saying what it waits for. Same rationale as
+the batching hook: "background the final gate" was already written down here, and the session
+followed it and then blocked on the gate anyway.
+
+## Before the gate, run the WHOLE affected test file - not a `-k` subset
+
+That same profile paid an extra gate round trip (98s plus two turns) for a failure a local run would
+have caught: the change altered geometry an existing test depended on, and the pre-gate check was
+`pytest -k torii`, which did not include that test. The whole files for the modules you touched cost
+~45s and reach every test the change can. So: cheap linters, then whole files, then the gate ONCE.
+
+    python3 -m ruff format . && python3 -m ruff check . && python3 -m mypy
+    python3 -m pytest test_settlement.py test_checks.py -q -n auto --no-cov    # the files you touched, WHOLE
+    make done                                                                  # once, backgrounded, not watched
+
+## Ask the ENGINE where a feature fits - do not guess coordinates
+
+When a map change ripples (an avenue shortens, ground frees, a pack seats more houses, a well goes
+over its household cap), the fix needs a spot for one more feature. **Guessing coordinates and
+regenerating is the most expensive loop in this skill**: 2026-07-25 spent three regenerate-and-check
+cycles on two full batches of hand-picked well seats, every one refused. A scan of the MANIFEST
+cannot predict `_fits` - those refusals came from a ward fence's 15px no-build corridor, which no
+manifest records.
+
+`s.open_seat(rect, w, h, clear_of=[...], well=True)` asks the engine's own `_fits`, at the point in
+the gen where the feature would be placed, and returns the best clear seat (furthest from
+`clear_of`, ties toward the rect center) or `None` if the ground is genuinely full. It found the
+seat both hand-picked batches had missed, first try. Reach for it on any "this pocket needs one more
+X" - and note the DRAW ORDER caveat: it can only see what has been drawn so far, so call it where
+the feature belongs, not earlier.
+
 ## Read derived geometry from the MANIFEST, not by re-running the generators
 
 Second-biggest sink in that same profile: **7.6 minutes across three runs of a throwaway analysis

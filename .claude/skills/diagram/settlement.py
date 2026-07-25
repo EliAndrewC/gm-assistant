@@ -3544,6 +3544,42 @@ class Settlement:
             return True
         return False
 
+    def open_seat(self, rect: Any, w: float, h: float, step: float = 4.0, clear_of: Any = (), well: bool = False) -> Pt | None:
+        """WHERE can a `w` x `h` feature actually stand inside `rect` (x0, y0, x1, y1)? Scans the
+        rect and returns the best clear seat, or None if the ground is genuinely full.
+
+        WHY THIS EXISTS (GM 2026-07-25, from a transcript profile): fitting one extra well into a
+        packed quarter took THREE regenerate-and-check cycles - two batches of hand-picked
+        coordinates, every one of them rejected - because the engine knows where a feature can go
+        and nothing outside it could ask. Guessing from a manifest is worse than useless: a scan
+        that sees only building rects recommends seats that `_fits` then refuses for reasons that
+        never appear in the manifest at all (a ward fence's no-build corridor, a block poly, the
+        bound ring). So this asks the SAME `_fits` the real placement path asks, at the same moment
+        in the gen, and the answer is therefore the truth rather than a guess.
+
+        `clear_of` is a list of (x, y) to stand away FROM - pass the existing wells/features of the
+        same kind and the seat returned is the one that splits the catchment best (maximum distance
+        to the nearest of them, ties broken toward the rect's center). `well=True` also applies the
+        wellhead-specific refusal (`_in_scrub_cover`), so the seat it returns is one `well_at` will
+        actually take. Call it right where the feature would be placed - what fits depends entirely
+        on what has been drawn so far (see CLAUDE.md "DRAW ORDER")."""
+        x0, y0, x1, y1 = (float(v) for v in rect)
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        pts = [(float(px), float(py)) for px, py in clear_of]
+        best: tuple[float, float, Pt] | None = None
+        gy = y0
+        while gy <= y1:
+            gx = x0
+            while gx <= x1:
+                if (not well or not self._in_scrub_cover(gx, gy)) and self._fits(gx, gy, w, h):
+                    apart = min((math.hypot(gx - px, gy - py) for px, py in pts), default=0.0)
+                    central = -math.hypot(gx - cx, gy - cy)  # tie-break toward the middle of the rect
+                    if best is None or (apart, central) > (best[0], best[1]):
+                        best = (apart, central, (gx, gy))
+                gx += step
+            gy += step
+        return best[2] if best else None
+
     def _in_scrub_cover(self, x: float, y: float) -> bool:
         """Is (x, y) inside a registered scrub/pasture/coppice/marsh COVER poly? Both well paths
         (well_at hand-seeding + the place_wells grid) refuse such ground - a wellhead stands in
