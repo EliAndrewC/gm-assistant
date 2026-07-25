@@ -4868,13 +4868,21 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"the back-village grove is the settlement's LARGEST vegetation feature, so deepen the belt "
                     f"(more clump rows) or wrap it further around the windward faces",
                 )
-            # every village grove (of any role) is DRY woodland - its center must not sit in a flooded paddy
-            vg_in_paddy = [(round(g["x"]), round(g["y"])) for g in vgroves if any(point_in_poly(g["x"], g["y"], ol) for ol in fields_ol)]
+            # every village grove (of any role) is DRY woodland - no TREE may stand in a flooded paddy. Test the
+            # DRAWN CLUMPS, not the recorded bbox center (GM 2026-07-25, same correction commons_clear_of_paddies
+            # already took): a back-village belt is a long crescent hugging the field edge, so the center of the
+            # box around it can sit over the crop while every tree in it stands on dry ground - Ueda's 87-clump
+            # belt scored exactly that. Testing the clumps also gives the check MORE teeth, not less: it now
+            # measures the same thing the placement does (village_grove skips a clump landing in a field), so a
+            # gen whose engine-side field list is empty - the recurring trap - is caught here instead of hidden.
+            # A grove that records no clumps at all falls back to its center, for older maps; one that records
+            # neither (a bare poly, as some check fixtures carry) contributes no test point rather than raising.
+            vg_pts = [c for g in vgroves for c in (g.get("clumps") or ([[g["x"], g["y"]]] if "x" in g and "y" in g else []))]
+            vg_in_paddy = [(round(c[0]), round(c[1])) for c in vg_pts if any(point_in_poly(c[0], c[1], ol) for ol in fields_ol)]
             check(
                 "village_groves_clear_of_paddies",
                 not vg_in_paddy,
-                f"village grove(s) sit IN a flooded paddy (center over water): {vg_in_paddy[:3]} - the fengshui "
-                f"windbreak stands on dry ground at the cluster's back and entrance, never out in the paddy",
+                f"village grove tree(s) stand IN a flooded paddy: {vg_in_paddy[:3]} - the fengshui windbreak stands on dry ground at the cluster's back and entrance, never out in the paddy",
             )
 
             # A grove clump (a tree blob, radius r) may abut a farmstead - trees stand right up against a house

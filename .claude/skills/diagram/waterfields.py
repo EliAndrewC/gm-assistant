@@ -635,7 +635,14 @@ def build_comb(
     # crosses the low side, so it starts as a thread at its head and carries the fan's whole
     # runoff at the outfall (duf is u-sorted with the outfall appended at hi_u, so pts[-1] is
     # the downhill end the gens anchor to the brook/moat/offmap).
-    channels.append({"pts": dpts, "w": 2.2 * grain, "w_tail": 6.0 * grain, "role": "drain"})
+    # The head is a THREAD - the same 1.5*grain the delivery ditches taper down to (GM 2026-07-25).
+    # At its high end a collector is draining the toe of ONE paddy, so there is no flow there to carry:
+    # the width has to come from what the ditch must BE, not from what it moves, and a hand-dug earthen
+    # ditch that gets cleaned out every year needs a bottom you can put a hoe into (~1 ft) plus standing
+    # side slopes, i.e. ~1.5 ft across the top. Below that it is not a maintained ditch at all, it is the
+    # seasonal furrow a farmer re-cuts at each drawdown. So the hydraulic floor and the maintenance floor
+    # meet exactly at the finest ditch the supply side already draws, and the drain starts there.
+    channels.append({"pts": dpts, "w": 1.5 * grain, "w_tail": 6.0 * grain, "role": "drain"})
 
     # the akusui does NOT just stop: it empties at its outfall into a natural valley BROOK that
     # carries the water off the map downhill (reused by the next village downstream / rejoining the
@@ -1472,7 +1479,7 @@ def build_terraces(
     sluice = flank[0]
     channels = [
         {"pts": [(round(x, 1), round(y, 1)) for x, y in flank], "role": "main", "w": 6.0, "w_tail": 3.0},
-        {"pts": drain_pts, "role": "drain", "w": 2.2, "w_tail": 5.0},  # gathers fe -> fw: thread at its head, full at the low-flank outfall
+        {"pts": drain_pts, "role": "drain", "w": 1.5, "w_tail": 5.0},  # gathers fe -> fw: a THREAD at its head (see build_comb's drain), full at the low-flank outfall
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]  # straight downhill off-map
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
@@ -1988,9 +1995,9 @@ def build_ribbon(
         {
             "pts": drain_pts,
             "role": "drain",
-            "w": 5.0,
+            "w": 1.5,
             "w_tail": 5.0,
-        },  # constant ON PURPOSE: this 3-point cross collector gathers from BOTH ends into its CENTRAL outfall (the brook leaves from the middle), so a monotone w->w_tail taper would be wrong on both halves
+        },  # gathers across the foot into the outfall at its FAR end (drain_pts runs near flank -> center -> far flank -> downhill stub, and the brook leaves from that stub), so the taper is monotone like every other collector: a thread where it starts, full where it discharges. (An older comment here claimed the outfall was central and the width therefore constant - the geometry above says otherwise.)
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
