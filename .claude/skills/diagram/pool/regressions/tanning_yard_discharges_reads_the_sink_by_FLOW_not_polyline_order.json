@@ -1,26 +1,26 @@
 {
  "meta": {
-  "scale": "city",
-  "walled": true,
-  "ftpx": 3
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1
  },
  "streams": [
   {
    "poly": [
     [
      500,
-     100
+     900
     ],
     [
      500,
-     900
+     100
     ]
    ],
    "w": 8,
-   "flow": "forward",
-   "flow_deg": 90.0,
+   "flow": "reverse",
+   "flow_deg": 270.0,
    "frm": {
-    "kind": "offmap"
+    "kind": "pond"
    },
    "to": {
     "kind": "offmap"
@@ -47,36 +47,18 @@
  ],
  "tanning_yards": [
   {
-   "x": 500,
+   "x": 466,
    "y": 500,
-   "w": 27,
-   "h": 17,
+   "w": 58,
+   "h": 41,
    "rot": 0,
    "label": "tanning yard"
   }
  ],
- "wall": [
-  [
-   50,
-   50
-  ],
-  [
-   950,
-   50
-  ],
-  [
-   950,
-   950
-  ],
-  [
-   50,
-   950
-  ]
- ],
  "_regression": {
   "fires": [
-   "tanning_yard_outside_walls"
+   "tanning_yard_discharges_to_nothing_drawn_from"
   ],
-  "source": "test_checks.py::test_tanning_yard_outside_walls_fires_when_the_work_is_inside"
+  "source": "test_checks.py::test_tanning_yard_discharges_reads_the_sink_by_FLOW_not_polyline_order"
  }
 }

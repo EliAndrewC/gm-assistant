@@ -1,8 +1,8 @@
 {
  "meta": {
-  "scale": "city",
-  "walled": true,
-  "ftpx": 3
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1
  },
  "streams": [
   {
@@ -47,36 +47,40 @@
  ],
  "tanning_yards": [
   {
-   "x": 500,
+   "x": 466,
    "y": 500,
-   "w": 27,
-   "h": 17,
+   "w": 58,
+   "h": 41,
    "rot": 0,
    "label": "tanning yard"
   }
  ],
- "wall": [
-  [
-   50,
-   50
-  ],
-  [
-   950,
-   50
-  ],
-  [
-   950,
-   950
-  ],
-  [
-   50,
-   950
-  ]
+ "channels": [
+  {
+   "poly": [
+    [
+     500,
+     700
+    ],
+    [
+     700,
+     720
+    ]
+   ],
+   "frm": {
+    "kind": "stream"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f1"
+   },
+   "w": 2.5
+  }
  ],
  "_regression": {
   "fires": [
-   "tanning_yard_outside_walls"
+   "tanning_yard_below_every_intake"
   ],
-  "source": "test_checks.py::test_tanning_yard_outside_walls_fires_when_the_work_is_inside"
+  "source": "test_checks.py::test_tanning_yard_below_every_intake_fires_on_a_tap_downstream_of_the_yard"
  }
 }
