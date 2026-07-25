@@ -7034,7 +7034,15 @@ class Settlement:
                 bxp, byp = ex0 + tx * length * (i + 0.5) / 3, ey0 + ty * length * (i + 0.5) / 3
                 axp, ayp = bxp + nx * 5.5, byp + ny * 5.5
                 if clear(axp, ayp, 2.0):
-                    fg.append(f'<ellipse cx="{axp:.1f}" cy="{ayp:.1f}" rx="3.4" ry="2.1" fill="#7A5A3A" stroke="#4A3626" stroke-width="0.6" transform="rotate({ang:.0f} {axp:.1f} {ayp:.1f})"/>')
+                    # body + a HEAD poking at the rail (GM 2026-07-25, round 3 of the "dung
+                    # heaps at the hitching posts" complaint: the heaps themselves had been
+                    # moved twice, but a bare dark ellipse at the posts is indistinguishable
+                    # from the dung-heap glyph, so the tethered oxen READ as muck piles dumped
+                    # against the rail. The head circle - the animals already face the rail -
+                    # plus a hide lighter than heap #6E5A3A make the blob read as livestock)
+                    fg.append(f'<ellipse cx="{axp:.1f}" cy="{ayp:.1f}" rx="3.4" ry="2.1" fill="#8A6A46" stroke="#4A3626" stroke-width="0.6" transform="rotate({ang:.0f} {axp:.1f} {ayp:.1f})"/>')
+                    hxp, hyp = bxp + nx * 1.9, byp + ny * 1.9
+                    fg.append(f'<circle cx="{hxp:.1f}" cy="{hyp:.1f}" r="1.2" fill="#8A6A46" stroke="#4A3626" stroke-width="0.5"/>')
             self.add("".join(fg))
 
         # rails also seat SYMMETRICALLY clear of any EARLIER yard's dung heaps (GM 2026-07-25
