@@ -7665,3 +7665,32 @@ def test_tanning_yard_below_every_intake_ignores_an_intake_on_a_DIFFERENT_course
     # reaches, so they must not be charged against it
     M = _ty_map(channels=[{"poly": [[100, 700], [180, 720]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5}])
     assert "tanning_yard_below_every_intake" not in f(M)
+
+
+# ---- crop_not_held_open_by_one_feature (GM 2026-07-25) --------------------------------------
+def _crop_map(**over):
+    M = {
+        "meta": {"scale": "town", "walled": False, "ftpx": 1, "W": 1200, "H": 1400},
+        "buildings": [bldg(500, 500), bldg(540, 500), bldg(520, 480)],
+    }
+    M.update(over)
+    return M
+
+
+def test_crop_not_held_open_fires_on_a_lone_small_feature_far_out():
+    # one 28px-tall building ~400px south of everything else: it alone makes the image taller
+    M = _crop_map(buildings=[bldg(500, 500), bldg(540, 500), bldg(520, 900)])
+    assert "crop_not_held_open_by_one_feature" in f(M)
+
+
+def test_crop_not_held_open_spares_a_LARGE_outlying_feature():
+    # a pond out on its own is the outlying CONTENT - big, and meant to be there. This is the
+    # case that made the rule a RATIO rather than a flat gap (ponds measured 1.03-1.35x in the pool)
+    M = _crop_map(pond=[520, 900, 200, 200])
+    assert "crop_not_held_open_by_one_feature" not in f(M)
+
+
+def test_crop_not_held_open_honors_the_declared_opt_out():
+    M = _crop_map(buildings=[bldg(500, 500), bldg(540, 500), bldg(520, 900)])
+    M["meta"]["crop_outlier_ok"] = True
+    assert "crop_not_held_open_by_one_feature" not in f(M)

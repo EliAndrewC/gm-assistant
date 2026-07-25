@@ -50,6 +50,13 @@ PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=162)
 s.meta(
+    crop_outlier_ok=True,  # DECLARED (GM 2026-07-25): the tanning yard's caption alone holds Tango's
+    # frame ~180px open to the south - crop_not_held_open_by_one_feature is right to flag it. It stays
+    # because a RULE forces the yard out there: tanning_yard_below_every_intake puts it below fse1's
+    # irrigation tap at (1995,2020), and the tap channel's corridor blocks everything up to y~2052.
+    # The shallowest legal seat saves 8px of a 1402px image and is still flagged, so there is nothing
+    # to gain by nudging it. The declaration is the point: the extra image is now a deliberate,
+    # reasoned cost rather than silent bloat.
     water_flow=70,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3, wall_defense="siege", clan="Crane", capital_dir="southeast"
 )  # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
