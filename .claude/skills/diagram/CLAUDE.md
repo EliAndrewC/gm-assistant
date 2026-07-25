@@ -124,6 +124,36 @@ and, for each candidate predicate (marsh-only vs both-banks-cultivated vs cultiv
 the footbridge rule's edge cases (polder toe-planks cross onto the DIKE; village-edge planks cross
 to houses; dry-to-wet crossings) surfaced in one pass instead of five.
 
+## A check that never RUNS looks exactly like a check that passes
+
+Three separate times in one feature (2026-07-25, the water-flow work) the defect was **not a bad map
+but a check that was silently not running**, and each time the gate was green throughout. The shape is
+always the same: a rule gated on an OPTIONAL declaration that almost nothing declares.
+
+- `meta(down_deg)` gated the whole drainage-slope block, `downhill_direction_valid` and
+  `marsh_on_low_ground`. The two provincial cities declared none, so they were never validated by any
+  of them - the code even said so out loud: *"maps without the tag are exempt (slope unknown)"*.
+- The legacy `meta(downhill)` gated `channels_flow_downhill`. Only **2 of 17** maps declared it, so 15
+  skipped that check entirely.
+- `moat_channels_flow_with_current` needed a stream END within 35px of the moat ring. Nagahara's river
+  ends off-map (it is the MOAT's ends that meet the river), so it **never ran there at all** - and on
+  Tango it ran only because the feeder happened to be drawn before the outfall.
+
+**The cheap diagnostic.** Coverage does not catch this: the gated branch is exercised by SOME map, so
+the lines are covered while other maps never reach them. What catches it is asking, per map, whether
+the check appears in the output at all:
+
+    python3 check_village.py pool/<type>/<map>.json | grep -c "<check_name>"     # 0 = never ran
+
+Run that across the pool for any check whose body sits behind `if meta.get(...)` or
+`if <thing> is not None:`. A `0` on a map that plainly has the feature is the bug.
+
+**The ratchet.** When a rule needs a declaration to work, add a check that the DECLARATION EXISTS -
+otherwise the rule is optional in practice no matter how firmly it is written.
+`settlement_declares_a_land_fall` is the model: it demands a map-level `down_deg` or a per-field fall
+on every paddy, and says in its own message that a map declaring nothing SKIPS every drainage rule
+while still showing green. Prefer this to widening the gate quietly.
+
 ## Placement and its check must read the SAME manifest source
 
 A recurring engine trap (footbridges 2026-07-22; recorded in [`settlements.md`](settlements.md)
