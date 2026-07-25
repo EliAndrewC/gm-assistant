@@ -1,0 +1,74 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1,
+  "W": 1200,
+  "H": 1200,
+  "down_deg": 90
+ },
+ "fields": [
+  {
+   "name": "f1",
+   "kind": "paddy",
+   "outline": [
+    [
+     100,
+     100
+    ],
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     500
+    ],
+    [
+     100,
+     500
+    ]
+   ],
+   "bbox": [
+    100,
+    100,
+    500,
+    500
+   ],
+   "vis_bbox": [
+    100,
+    100,
+    500,
+    500
+   ]
+  }
+ ],
+ "channels": [
+  {
+   "poly": [
+    [
+     300,
+     600
+    ],
+    [
+     300,
+     300
+    ]
+   ],
+   "frm": {
+    "kind": "stream"
+   },
+   "to": {
+    "kind": "field",
+    "name": "f1"
+   },
+   "w": 2.5
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "channels_flow_downhill"
+  ],
+  "source": "test_checks.py::test_channels_flow_downhill_runs_from_down_deg_without_the_legacy_downhill_tag"
+ }
+}
