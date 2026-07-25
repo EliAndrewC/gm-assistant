@@ -2599,6 +2599,48 @@ def test_village_grove_skips_the_dike_bank():
     assert clumps and not any(pip(cx, cy, dike) for cx, cy in clumps)  # some clumps, none on the dike
 
 
+def test_bund_junctions_pile_earth_only_where_bunds_actually_cross():
+    # GM 2026-07-25: on a SHARED-BARRIER field the bund is the line, so the hand-piled-earth rule is
+    # additive - material goes into the crossings, which rounds the basin corners without touching a
+    # carve that has to tessellate. A junction is found from the drawn geometry (>=3 coincident plot
+    # corners), which makes the pass self-selecting: separate, inset parcels share no corner, so the
+    # polder archetype - which expresses the same rule subtractively - gets nothing drawn on it.
+    s = Settlement(400, 400)
+    s.meta(name="j", scale="hamlet", ftpx=1)
+    grid_plots = [
+        {"poly": [(100.0 + 40 * c, 100.0 + 40 * r), (140.0 + 40 * c, 100.0 + 40 * r), (140.0 + 40 * c, 140.0 + 40 * r), (100.0 + 40 * c, 140.0 + 40 * r)]} for r in range(3) for c in range(3)
+    ]
+    before = len(s.out)
+    s.bund_junctions(grid_plots, "j-paddies")
+    drawn = "".join(s.out[before:])
+    # a 3x3 block of touching cells has exactly 4 interior 4-way crossings; its edge/T corners get nothing
+    assert drawn.count("<polygon") == 4, drawn.count("<polygon")
+    assert 'fill="#6E4520"' in drawn
+    # the nodes sit ON the interior crossings, at ~5 real ft across (never a legibility blob)
+    import re as _re
+
+    xs = [float(v.split(",")[0]) for v in _re.findall(r"points=\"([^\"]+)\"", drawn) for v in v.split(" ")]
+    assert min(xs) > 130 and max(xs) < 230, (min(xs), max(xs))  # the two interior x lines are 140 and 180
+    for pts in _re.findall(r"points=\"([^\"]+)\"", drawn):
+        vs = [tuple(float(q) for q in v.split(",")) for v in pts.split(" ")]
+        span = max(max(v[i] for v in vs) - min(v[i] for v in vs) for i in (0, 1))
+        assert 2.5 <= span <= 8.0, span  # ~4-6 ft node, jittered - not inflated
+    # deterministic: the same field redraws identically (a salted str hash() would break this)
+    s2 = Settlement(400, 400)
+    s2.meta(name="j", scale="hamlet", ftpx=1)
+    b2 = len(s2.out)
+    s2.bund_junctions(grid_plots, "j-paddies")
+    assert "".join(s2.out[b2:]) == drawn
+    # SEPARATED parcels (the polder carve: every parcel inset off its neighbours) share no corner at all
+    inset_plots = [
+        {"poly": [(p["poly"][0][0] + 2, p["poly"][0][1] + 2), (p["poly"][0][0] + 38, p["poly"][0][1] + 2), (p["poly"][0][0] + 38, p["poly"][0][1] + 38), (p["poly"][0][0] + 2, p["poly"][0][1] + 38)]}
+        for p in grid_plots
+    ]
+    b3 = len(s.out)
+    s.bund_junctions(inset_plots, "j-polder")
+    assert len(s.out) == b3  # nothing drawn - no crossing exists to pile
+
+
 def test_build_polder_parcel_fabric():
     from waterfields import build_polder
 

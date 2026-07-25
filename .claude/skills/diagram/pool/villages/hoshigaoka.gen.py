@@ -118,6 +118,7 @@ for p in net["plots"]:
           f'stroke-width="{aze_w(s.ftpx):.2f}" stroke-linejoin="round"/>')
 
 # AZEMAME: soybeans beaded along a fraction of the paddy bunds (sub-pixel, so symbolic)
+s.bund_junctions(net["plots"], "hoshigaoka-paddies")  # pile earth into every bund CROSSING (see Settlement.bund_junctions)
 beads = ''.join(f'<circle cx="{x}" cy="{y}" r="1.4" fill="{BEAN_GREEN}"/>'
                 for x, y in net["bund_beans"])
 s.add(f'<g opacity="0.85">{beads}</g>')
