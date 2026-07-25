@@ -6570,19 +6570,37 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # where it feeds the field (poly[-1]). A channel angled the other way would carry the
     # stream's water away from the field, not into it. <dir> is a cardinal name or [dx,dy]
     # vector in map coords (+y = south). Maps without the tag are exempt (slope unknown).
+    # ONE DIRECTION MODEL, NOT THREE (GM 2026-07-25). These two were gated on the LEGACY
+    # meta(downhill) - a cardinal name or vector - which only 2 of 17 maps ever declared, so 15 maps
+    # (both provincial cities among them) skipped them entirely behind a green gate: the same
+    # silent-skip that hid the drainage-slope rules. The fall now comes from `downhill` where a map
+    # declares it, else meta(down_deg), and per-channel from the TARGET FIELD's own fall when it has
+    # one - a settlement ringed by farmland drains several ways at once, so the field a channel feeds
+    # is the right authority for whether that channel runs downhill into it.
     downhill = meta.get("downhill")
-    if downhill and channels:
-        dvec = unit_dir(downhill)
-        check("downhill_direction_valid", bool(dvec), f"meta(downhill={downhill!r}) is not a cardinal name or [dx,dy] vector")
-        if dvec:
-            uphill = []
-            for c in channels:
-                (sx, sy), (ex, ey) = c["poly"][0], c["poly"][-1]
-                vx, vy = ex - sx, ey - sy
-                L = math.hypot(vx, vy)
-                if L > 0 and (vx * dvec[0] + vy * dvec[1]) < 0.2 * L:  # not clearly running downhill
-                    uphill.append(c["to"].get("name", "?"))
-            check("channels_flow_downhill", not uphill, f"channel(s) not running downhill (source must be uphill of the field) for downhill={downhill}: {sorted(set(uphill))}")
+    _dh_dd = meta.get("down_deg")
+    _dh_fields = {f.get("name"): f["down_deg"] for f in M.get("fields", []) if f.get("down_deg") is not None}
+
+    def _dh_vec(deg: float) -> tuple[float, float]:
+        return (math.cos(math.radians(deg)), math.sin(math.radians(deg)))
+
+    _dh_map = unit_dir(downhill) if downhill else (_dh_vec(_dh_dd) if _dh_dd is not None else None)
+    if downhill:
+        check("downhill_direction_valid", bool(unit_dir(downhill)), f"meta(downhill={downhill!r}) is not a cardinal name or [dx,dy] vector")
+    if (_dh_map or _dh_fields) and channels:
+        uphill = []
+        for c in channels:
+            _cto = (c.get("to") or {}).get("name")
+            _cdd = _dh_fields.get(_cto) if _cto else None
+            dvec = _dh_vec(_cdd) if _cdd is not None else _dh_map
+            if dvec is None:
+                continue  # neither this channel's field nor the map declares a fall - nothing to judge it by
+            (sx, sy), (ex, ey) = c["poly"][0], c["poly"][-1]
+            vx, vy = ex - sx, ey - sy
+            L = math.hypot(vx, vy)
+            if L > 0 and (vx * dvec[0] + vy * dvec[1]) < 0.2 * L:  # not clearly running downhill
+                uphill.append(c["to"].get("name", "?"))
+        check("channels_flow_downhill", not uphill, f"channel(s) not running downhill (source must be uphill of the field it feeds): {sorted(set(uphill))}")
 
     # the same flow logic applies to a city MOAT: the moat is fed by a stream entering from one
     # side (the source), so the moat water heads that-source-to-the-far-side direction (Tango's
@@ -6592,6 +6610,29 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     moat_ring: Any = M.get("moat")
     mfed = [c for c in channels if (c.get("frm") or {}).get("kind") == "moat"]
     if moat_ring and len(moat_ring) >= 3 and mfed:
+        # READ THE RECORDED CIRCULATION (GM 2026-07-25). This used to re-derive the moat's current by
+        # taking the FIRST stream whose end touches the ring and snapping its entry heading to a
+        # cardinal - fragile twice over: on a river-cut city BOTH the feeder and the outfall touch the
+        # ring, so the answer depended on which the gen happened to draw first, and the cardinal snap
+        # threw away up to 45 degrees. s.moat_flow / s.moat now record the inlet and outlet outright,
+        # so the current is simply inlet -> outlet. Falls back to the old derivation for a moat with
+        # no recorded circulation (moat_declares_circulation is what stops that being silent).
+        # THE CURRENT COMES FROM THE RECORDED CIRCULATION (GM 2026-07-25), snapped to a cardinal as
+        # this check has always done. Two fragilities in the old derivation are gone: it took the
+        # FIRST stream whose end touched the ring, so on a river-cut city the answer depended on
+        # draw order; and it required a stream END within 35px of the ring, which Nagahara's river
+        # (ends off-map, the MOAT's ends meeting IT) never satisfies - so the check silently never
+        # ran there at all. inlet -> outlet is the moat's net travel and needs no guessing.
+        # The cardinal snap is deliberate and load-bearing: an irrigation offtake leaves the ring
+        # roughly PERPENDICULAR, so its component along a precisely-measured tangent is near
+        # arbitrary. The coarse hemisphere is what makes the test mean "the field is not back
+        # upstream", rather than a coin flip on the along-ring component.
+        flow = None
+        _mfl = M.get("moat_flow") or {}
+        if _mfl.get("inlet") and _mfl.get("outlet"):
+            _mi, _mo = _mfl["inlet"], _mfl["outlet"]
+            _mdx, _mdy = _mo[0] - _mi[0], _mo[1] - _mi[1]
+            flow = (0, 1 if _mdy > 0 else -1) if abs(_mdy) >= abs(_mdx) else (1 if _mdx > 0 else -1, 0)
         feeder = None
         for st in streams_m:
             ends = (st["poly"][0], st["poly"][-1])
@@ -6600,10 +6641,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 entry = ends_on_moat[0]
                 feeder = (entry, ends[1] if ends[0] == entry else ends[0])
                 break
-        if feeder:
+        if flow is None and feeder:
             entry, origin = feeder
             dx, dy = entry[0] - origin[0], entry[1] - origin[1]  # the heading the feeder water enters on
             flow = (0, 1 if dy > 0 else -1) if abs(dy) >= abs(dx) else (1 if dx > 0 else -1, 0)  # snapped to a cardinal
+        if flow is not None:
             against = []
             for c in mfed:
                 (sx, sy), (ex, ey) = c["poly"][0], c["poly"][-1]  # frm=moat, so poly[0] is the moat tap
@@ -9585,7 +9627,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     # sits between wall and bank, so the river runs further out than a dug moat) -
                     # and BOTH open moat ends must actually JOIN the river (inlet upstream, outlet
                     # downstream, the current flushing the ring).
-                    rpts = rv["pts"]
+                    # READ THE RIVER'S RECORDED FLOW rather than assuming its point order (GM
+                    # 2026-07-25). Everything below - the arc-length ordering that decides which moat
+                    # foot is the upstream INLET and which the downstream OUTLET, and the junction
+                    # tilts keyed on it - takes increasing arc length to mean "downstream". That IS
+                    # the upstream-first authoring convention, but hard-coding it means a river tagged
+                    # flow="reverse" would be measured exactly backwards with nothing to catch it.
+                    # Reverse the points when the record says so, and the convention becomes an
+                    # assertion instead of an assumption.
+                    rpts = rv["pts"][::-1] if rv.get("flow") == "reverse" else rv["pts"]
 
                     def rdist(q: Pt) -> float:
                         return min(seg_dist(q[0], q[1], rpts[i], rpts[i + 1]) for i in range(len(rpts) - 1))

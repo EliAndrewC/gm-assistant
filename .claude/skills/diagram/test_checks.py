@@ -7936,3 +7936,56 @@ def test_settlement_declares_a_land_fall_is_not_satisfied_by_water_flow_alone():
     M = _fall_map()
     M["meta"]["water_flow"] = 90
     assert "settlement_declares_a_land_fall" in f(M)
+
+
+# ---- one direction model, not three (GM 2026-07-25) -----------------------------------------
+def test_channels_flow_downhill_runs_from_down_deg_without_the_legacy_downhill_tag():
+    # it used to be gated on meta(downhill), which only 2 of 17 maps declared - so 15 maps, both
+    # cities among them, skipped it entirely behind a green gate
+    M = {
+        "meta": {"scale": "town", "walled": False, "ftpx": 1, "W": 1200, "H": 1200, "down_deg": 90},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 100], [500, 100], [500, 500], [100, 500]], "bbox": [100, 100, 500, 500], "vis_bbox": [100, 100, 500, 500]}],
+        "channels": [{"poly": [[300, 600], [300, 300]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5}],  # runs NORTH, i.e. uphill
+    }
+    assert "channels_flow_downhill" in f(M)
+
+
+def test_channels_flow_downhill_judges_a_channel_by_the_FIELD_it_feeds():
+    # same channel, but this field's own fall is north - so the channel now runs downhill INTO it.
+    # A settlement ringed by farmland drains several ways, so the target field is the authority.
+    M = {
+        "meta": {"scale": "town", "walled": False, "ftpx": 1, "W": 1200, "H": 1200, "down_deg": 90},
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 100], [500, 100], [500, 500], [100, 500]], "bbox": [100, 100, 500, 500], "vis_bbox": [100, 100, 500, 500], "down_deg": 270}],
+        "channels": [{"poly": [[300, 600], [300, 300]], "frm": {"kind": "stream"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5}],
+    }
+    assert "channels_flow_downhill" not in f(M)
+
+
+_MOAT_RING = [[400, 300], [700, 300], [700, 700], [400, 700], [400, 300]]
+
+
+def _moat_map(**over):
+    M = {
+        "meta": {"scale": "city", "walled": True, "ftpx": 3, "W": 3200, "H": 2700, "down_deg": 90},
+        "wall": [[450, 350], [650, 350], [650, 650], [450, 650]],
+        "moat": _MOAT_RING,
+        "moat_flow": {"inlet": [400, 300], "outlet": [700, 700]},  # enters NW, leaves SE -> heads south
+        "fields": [{"name": "fs", "kind": "paddy", "outline": [[300, 800], [600, 800], [600, 1000], [300, 1000]], "bbox": [300, 800, 600, 1000], "vis_bbox": [300, 800, 600, 1000]}],
+        "channels": [{"poly": [[500, 700], [480, 900]], "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "fs"}, "w": 2.5}],
+    }
+    M.update(over)
+    return M
+
+
+def test_moat_channels_flow_with_current_takes_the_current_from_moat_flow():
+    # a southward-heading offtake agrees with an inlet-NW/outlet-SE circulation
+    assert "moat_channels_flow_with_current" not in f(_moat_map())
+
+
+def test_moat_channels_flow_with_current_fires_on_an_offtake_back_upstream():
+    # the same moat, but the field lies NORTH of the tap - water would run from the field INTO the moat
+    M = _moat_map(
+        fields=[{"name": "fn", "kind": "paddy", "outline": [[300, 60], [600, 60], [600, 200], [300, 200]], "bbox": [300, 60, 600, 200], "vis_bbox": [300, 60, 600, 200]}],
+        channels=[{"poly": [[500, 300], [480, 100]], "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "fn"}, "w": 2.5}],
+    )
+    assert "moat_channels_flow_with_current" in f(M)
