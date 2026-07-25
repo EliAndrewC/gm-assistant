@@ -4080,3 +4080,79 @@ def test_moat_flow_declares_a_closed_ring_circulation():
     s = _town()
     s.moat_flow((120.44, 200.51), (800.0, 640.0))
     assert s.M["moat_flow"] == {"inlet": [120.4, 200.5], "outlet": [800.0, 640.0]}
+
+
+def _max_turn_deg(pts):
+    """The sharpest direction change anywhere along a polyline, in degrees."""
+    worst = 0.0
+    for i in range(1, len(pts) - 1):
+        (ax, ay), (bx, by), (cx, cy) = pts[i - 1], pts[i], pts[i + 1]
+        v0, v1 = (ax - bx, ay - by), (cx - bx, cy - by)
+        l0, l1 = math.hypot(*v0), math.hypot(*v1)
+        if l0 < 1e-9 or l1 < 1e-9:
+            continue
+        cosang = max(-1.0, min(1.0, (v0[0] * v1[0] + v0[1] * v1[1]) / (l0 * l1)))
+        worst = max(worst, 180.0 - math.degrees(math.acos(cosang)))
+    return worst
+
+
+def test_fillet_polyline_rounds_a_square_corner_into_a_sweep():
+    # a right-angle elbow becomes a swept bend: no vertex still turns anywhere near 90 degrees, the
+    # ends are untouched (a snapped pond/moat mouth must stay exactly where it was), and the corner
+    # itself is gone from the line
+    pts = [(0.0, 0.0), (200.0, 0.0), (200.0, 200.0)]
+    out = settlement.fillet_polyline(pts, 25.0)
+    assert out[0] == (0.0, 0.0) and out[-1] == (200.0, 200.0)
+    assert (200.0, 0.0) not in out
+    assert _max_turn_deg(out) < 20  # was 90
+    assert len(out) == 9  # the two ends plus the arc's 7 samples
+
+
+def test_fillet_polyline_caps_the_bend_on_short_segments():
+    # the cut-back never exceeds 35% of either leg, so two corners cannot eat the segment between
+    # them and a short stub keeps its shape (radius 500 asked for on 100px legs)
+    out = settlement.fillet_polyline([(0.0, 0.0), (100.0, 0.0), (100.0, 100.0)], 500.0)
+    assert min(x for x, _ in out[1:-1]) >= 64.9  # 100 - 35% of the leg
+    assert max(y for _, y in out[:-1]) <= 35.1
+
+
+def test_fillet_polyline_leaves_gentle_bends_and_degenerate_input_alone():
+    gentle = [(0.0, 0.0), (100.0, 2.0), (200.0, 4.0)]  # ~0 degrees of turn: nothing to round
+    assert settlement.fillet_polyline(gentle, 25.0) == gentle
+    assert settlement.fillet_polyline([(0.0, 0.0), (10.0, 0.0)], 25.0) == [(0.0, 0.0), (10.0, 0.0)]  # too few points
+    assert settlement.fillet_polyline([(0.0, 0.0), (10.0, 0.0), (20.0, 0.0)], 0.0) == [(0.0, 0.0), (10.0, 0.0), (20.0, 0.0)]  # no radius
+    dup = [(0.0, 0.0), (100.0, 0.0), (100.0, 0.0), (100.0, 100.0)]  # a repeated vertex bends nothing
+    assert settlement.fillet_polyline(dup, 25.0)[0] == (0.0, 0.0)
+
+
+def test_round_channel_joints_sweeps_the_seam_between_two_records():
+    # a run emitted as two tapering records turns at the SEAM, where fillet_polyline cannot reach it
+    from waterfields import round_channel_joints
+
+    a = {"pts": [(0.0, 0.0), (200.0, 0.0)], "w": 7.0, "role": "main"}
+    b = {"pts": [(200.0, 0.0), (200.0, 200.0)], "w": 6.0, "role": "main"}
+    round_channel_joints([a, b])
+    assert a["pts"][-1] == b["pts"][0]  # still one continuous run
+    assert _max_turn_deg(a["pts"] + b["pts"][1:]) < 20  # was 90
+    assert (200.0, 0.0) not in a["pts"] + b["pts"]
+
+
+def test_round_channel_joints_leaves_offtakes_and_gentle_seams_alone():
+    from waterfields import round_channel_joints
+
+    # a node where a BRANCH also leaves is a junction, not a bend: an offtake is a notch in the bank
+    a = {"pts": [(0.0, 0.0), (200.0, 0.0)], "w": 7.0, "role": "main"}
+    b = {"pts": [(200.0, 0.0), (200.0, 200.0)], "w": 6.0, "role": "main"}
+    branch = {"pts": [(200.0, 0.0), (400.0, 40.0)], "w": 4.0, "role": "branch"}
+    round_channel_joints([a, b, branch])
+    assert a["pts"] == [(0.0, 0.0), (200.0, 0.0)] and b["pts"] == [(200.0, 0.0), (200.0, 200.0)]
+    # ... and a seam that barely bends has no elbow to round
+    c = {"pts": [(0.0, 0.0), (200.0, 0.0)], "w": 7.0, "role": "main"}
+    d = {"pts": [(200.0, 0.0), (400.0, 6.0)], "w": 6.0, "role": "main"}
+    round_channel_joints([c, d])
+    assert c["pts"] == [(0.0, 0.0), (200.0, 0.0)]
+    # ... and neither a zero-length leg nor a one-point record trips it up
+    e = {"pts": [(0.0, 0.0), (200.0, 0.0)], "w": 7.0, "role": "main"}
+    g = {"pts": [(200.0, 0.0), (200.0, 0.0), (200.0, 200.0)], "w": 6.0, "role": "main"}
+    round_channel_joints([e, g, {"pts": [(9.0, 9.0)], "w": 1.0, "role": "main"}])
+    assert e["pts"] == [(0.0, 0.0), (200.0, 0.0)]
