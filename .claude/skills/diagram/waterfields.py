@@ -152,6 +152,7 @@ def organic_parcel(
         dd = min(dist, ln * 0.42)  # never eat more than the edge can spare, so slivers stay valid
         return (frm[0] + vx / ln * dd, frm[1] + vy / ln * dd)
 
+    reach: list[float] = []  # each corner's own (smaller) leg, which sets how much its arc may be roughed
     a_in: Poly = []  # the point on the INCOMING edge where corner i's fillet starts
     b_out: Poly = []  # ...and on the outgoing edge where it ends
     for i in range(n):
@@ -159,18 +160,47 @@ def organic_parcel(
         # slumps toward whichever side is walked, loaded, or under-plastered, so the curve runs further
         # down one bund than the other. A single symmetric reach per corner is what makes a filleted
         # rectangle read as a drawn-on border-radius instead of as earth.
-        a_in.append(toward(poly[i], poly[(i - 1) % n], fillet * rng.uniform(0.45, 1.5)))
-        b_out.append(toward(poly[i], poly[(i + 1) % n], fillet * rng.uniform(0.45, 1.5)))
+        #
+        # The SPREAD is the whole point (GM 2026-07-25, on the first version: "it just kind of looks
+        # like you put a circle at each intersection, which actually makes it look less natural").
+        # A tight band of reaches gives every corner the same radius, so four parcels rounding away
+        # from one junction cut a clean disc out of it, and a repeated identical mark reads as a stamp
+        # - MORE machine-made than the sharp corner it replaced. The physical truth is that corners
+        # differ enormously: the one on the walked side is worn to a broad sweep while the one behind
+        # a neighbour's bund keeps almost its full angle for years. So the reach is drawn from a WIDE
+        # triangular distribution - a long tail up to ~2.2x, a floor near 0.12x that leaves a corner
+        # all but square - and the arc itself is roughed below, since a mathematically clean curve is
+        # the other half of what reads as stamped.
+        ra, rb = fillet * rng.triangular(0.12, 2.2, 0.7), fillet * rng.triangular(0.12, 2.2, 0.7)
+        reach.append(min(ra, rb))
+        a_in.append(toward(poly[i], poly[(i - 1) % n], ra))
+        b_out.append(toward(poly[i], poly[(i + 1) % n], rb))
     out: Poly = []
     for i in range(n):
-        for k in range(arc + 1):  # the corner arc: a_in[i] -> control poly[i] -> b_out[i]
-            f = k / arc
+        # roughness scales with THIS corner's own reach, never the global fillet: on a corner drawn
+        # nearly square the arc spans under a pixel, and a fixed-size wobble there is bigger than the
+        # arc itself - the samples scatter instead of curving, folding the outline back on itself into
+        # spikes (measured: turns of 180 degrees, and a visible burr on the render)
+        rough = reach[i] * 0.18  # the arc is a slumped mud shoulder, not a drafted curve
+        # Sample density follows the SIZE of the arc. A corner drawn nearly square spans a fraction of
+        # a pixel; cutting that into six samples puts them 0.2 px apart, where the roughness above (or
+        # plain float noise) reverses the direction of travel and the outline grows a burr. So a big
+        # sweep gets the full sampling and a tight corner gets a single midpoint - which is also the
+        # honest record of what it is, a corner that never really rounded.
+        steps = max(1, min(arc, int(reach[i] * 0.8)))
+        for k in range(steps + 1):  # the corner arc: a_in[i] -> control poly[i] -> b_out[i]
+            f = k / steps
             w0, w1, w2 = (1 - f) ** 2, 2 * (1 - f) * f, f * f
-            out.append((w0 * a_in[i][0] + w1 * poly[i][0] + w2 * b_out[i][0], w0 * a_in[i][1] + w1 * poly[i][1] + w2 * b_out[i][1]))
+            jx = rough * rng.uniform(-1, 1) * math.sin(math.pi * f)  # pinned at both ends so the arc still meets its runs
+            jy = rough * rng.uniform(-1, 1) * math.sin(math.pi * f)
+            out.append((w0 * a_in[i][0] + w1 * poly[i][0] + w2 * b_out[i][0] + jx, w0 * a_in[i][1] + w1 * poly[i][1] + w2 * b_out[i][1] + jy))
         p0, p1 = b_out[i], a_in[(i + 1) % n]  # the straight run to the next corner - it WANDERS, not bows
         ex, ey = p1[0] - p0[0], p1[1] - p0[1]
         ln = math.hypot(ex, ey) or 1.0
-        amp = min(bow * ln, bow_cap)
+        # ...and the run's wander is likewise bounded by the run's OWN length. With a long fillet tail
+        # the straight part between two corners can be a stub a pixel long, and a wander sized for a
+        # 100 ft bund applied across it is another way to fold the outline into a spike.
+        amp = min(bow * ln, bow_cap, ln * 0.1)
         for k in range(1, bows + 1):
             f = k / (bows + 1)
             # each sample offsets independently, so the run reads as re-cut-by-eye rather than as one
@@ -656,7 +686,7 @@ def build_comb(
             # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
             channels.append({"pts": pre, "w": (5.6 if t is bc else 4.0) * grain, "w_tail": 1.5 * grain, "role": "branch"})
 
-    plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step, grain)
+    plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step, grain, seed)
 
     envelope = [p for p in a_pts] + [p for p in threads[-1].pts] + list(reversed(dpts)) + list(reversed(threads[0].pts))
 
@@ -884,12 +914,14 @@ def _carve(
     plot_across: float,
     row_step: tuple[float, float],
     g: float = 1.0,
+    seed: int = 0,
 ) -> list[dict[str, Any]]:
     """Carve paddy plots between adjacent threads. Above a thread's takeoff the boundary
     falls back to its parent path (canal / parent ditch); below its end, to the DRAIN - so
     plots hug the canal at the top and reach the collector at the bottom, never spilling
-    past either. Rows are contour-parallel bunds (the cascade steps down them)."""
+    past either. Rows step down the fall, each one wandering on its own (see `rphase` below)."""
     plots: list[dict[str, Any]] = []
+    _RW = random.Random(seed ^ 0x12005)  # the row-wander stream, separate so the canal skeleton is unmoved
 
     def bnd(t: _Thread, f: float) -> Pt:
         if f < t.f0 and t.fallback is not None:
@@ -946,6 +978,24 @@ def _carve(
             continue
         nsub = max(1, round(width_mid / plot_across))
         phase = [R.uniform(0, 6.28) for _ in range(nsub + 2)]
+        # THE ROW LINES WANDER TOO (GM 2026-07-25: "even human-made bunds won't be perfectly parallel to
+        # one another"). The cross wobble above moves a point ALONG its contour, which bends the column
+        # bunds; the row bunds were left running at a constant fall value, i.e. dead straight and exactly
+        # parallel to one another all the way down the sector - the machine-made read the GM caught on
+        # the polder, in the one place the comb still had it. So a point also shifts a little IN FALL,
+        # by a profile that depends on where it sits along the row (`rphase[j]`) and on which row it is
+        # (the `fv` term), so no two rows carry the same shape and the strip between them is wider at
+        # one end than the other. Pinned at j=0 and j=n, exactly like the cross wobble, so the sector's
+        # thread boundaries - the canals every parcel is measured off - do not move at all.
+        rphase = [_RW.uniform(0, 6.28) for _ in range(nsub + 2)]
+        rowamp = 0.13 * sum(row_step) / 2
+        # The wander is tapered to zero at the sector's first and last row, because those two are not
+        # free lines: the head row sits ON the supply canal (it takes water through bund cuts) and the
+        # closing rank sits ON the drain collector. Both are pinned by the water, so only the rows
+        # between them drift - which also keeps the fan's own extent exactly where the gen placed the
+        # village, gardens, and label against it. `rspan` is filled in once f_hi is known below; while
+        # it is degenerate the wander is simply off, so the f_hi probe itself is not perturbed.
+        rspan = [f_lo, f_lo]
 
         def edge(  # bind loop vars (used within this iteration)
             fv: float,
@@ -955,15 +1005,23 @@ def _carve(
             B: _Thread = B,
             phase: list[float] = phase,
             nsub: int = nsub,
+            rphase: list[float] = rphase,
+            rowamp: float = rowamp,
+            rspan: list[float] = rspan,
         ) -> Pt:
             a, b = bnd(A, fv), bnd(B, fv)
             t = j / n
             x = a[0] + t * (b[0] - a[0])
             y = a[1] + t * (b[1] - a[1])
-            if 0 < j < n:  # interior bunds waver along contour
+            if 0 < j < n:  # interior bunds waver along contour...
                 wob = 5.0 * math.sin(fv / 70 + phase[min(j, nsub + 1)])
                 x += F.c[0] * wob
                 y += F.c[1] * wob
+                if rspan[1] > rspan[0]:  # ...and drift in fall, so no two rows run parallel
+                    ft = max(0.0, min(1.0, (fv - rspan[0]) / (rspan[1] - rspan[0])))
+                    rw = rowamp * math.sin(fv / 47 + rphase[min(j, nsub + 1)]) * math.sin(math.pi * ft)
+                    x += F.d[0] * rw
+                    y += F.d[1] * rw
             return (x, y)
 
         def drain_f_at(fv: float, j_: int, n_: int) -> float:
@@ -975,6 +1033,7 @@ def _carve(
         f_hi = min(f_hi0, min(drain_f_at(f_hi0, j, nsub) for j in range(nsub + 1)) - 32 * g)
         if f_hi - f_lo < 24 * g:
             continue
+        rspan[0], rspan[1] = f_lo, f_hi  # the row wander is live now that the sector's span is known
         sector_start = len(plots)
         rows = [f_lo]
         f = f_lo
@@ -1396,6 +1455,7 @@ def build_polder(
     split_gap: float | None = None,
     edge_wander: float = 0.0,
     mosaic: float = 0.0,
+    line_wander: float = 0.10,
     organic: tuple[float, float] = (0.05, 0.02),
 ) -> dict[str, Any]:
     """POLDER GRID (圩田 wei-tian / reclaimed-marsh grid): a rectilinear block of paddies on flat reclaimed
@@ -1521,11 +1581,43 @@ def build_polder(
         dt = _mamp * taper * (math.sin(math.tau * 1.1 * zc + _mph[2]) + 0.6 * math.sin(math.tau * 1.9 * zr + _mph[3]))
         return (ds, dt)
 
+    # EVERY BUND LINE WANDERS ON ITS OWN (GM 2026-07-25: "even human-made bunds won't be perfectly
+    # parallel to one another in the way that these are depicted"). This is the root of the machine-made
+    # read, and it outranks the corner treatment: `edge_wander` and `mosaic` both warp the lattice
+    # COHERENTLY - they bend the block as one piece, on purpose, so that each field edge stays parallel
+    # to its own section of dike - which means every interior line keeps exactly its neighbours' shape
+    # and the spacing between two bunds never changes. Real fragmented tenure does not look like that: a
+    # bund is laid by eye between two points, by a different household in a different decade, so
+    # neighbouring lines drift, converge, and open out again, and the strip between them is wider at one
+    # end than the other. So each row line and each column line gets its OWN low-frequency profile,
+    # amplitude and phase drawn per line. Because a node is shared by its row and its column, the
+    # lattice stays consistent - lines still meet, parcels are still quads, the laterals that follow the
+    # column nodes just meander with them. Each profile is tapered to zero at both ends of its line and
+    # suppressed entirely on the four boundary lines, so the envelope, the perimeter dike, and the ring
+    # canal are untouched. Drawn from a separate rng, so `line_wander=0` reproduces the old lattice.
+    RW = random.Random(seed ^ 0x11FE)
+    _lwa = line_wander * cell
+    _rowp = [(RW.uniform(0.35, 1.0) * _lwa * RW.choice((-1.0, 1.0)), RW.uniform(0, math.tau), RW.uniform(0.9, 2.3)) for _ in range(rows + 1)]
+    _colp = [(RW.uniform(0.35, 1.0) * _lwa * RW.choice((-1.0, 1.0)), RW.uniform(0, math.tau), RW.uniform(0.9, 2.3)) for _ in range(cols + 1)]
+
+    def lwander(r: int, c: int) -> tuple[float, float]:
+        ds = dt = 0.0
+        if 0 < r < rows and cols:
+            amp, ph, k = _rowp[r]
+            u = c / cols
+            ds = amp * math.sin(math.pi * u) * math.sin(ph + k * math.pi * u)
+        if 0 < c < cols and rows:
+            amp, ph, k = _colp[c]
+            u = r / rows
+            dt = amp * math.sin(math.pi * u) * math.sin(ph + k * math.pi * u)
+        return (ds, dt)
+
     def _node(r: int, c: int) -> tuple[float, float]:
         js = R.uniform(-J, J) if 0 < r < rows else 0.0  # draw order (s then t) matches the old lattice exactly
         jt = R.uniform(-J, J) if 0 < c < cols else 0.0
         md = mdisp(r, c)
-        return (ss(r) + js + md[0], tt(c) + jt + md[1])
+        lw = lwander(r, c)
+        return (ss(r) + js + md[0] + lw[0], tt(c) + jt + md[1] + lw[1])
 
     nodes: list[list[tuple[float, float]]] = [[_node(r, c) for c in range(cols + 1)] for r in range(rows + 1)]
 

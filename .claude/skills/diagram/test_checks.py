@@ -6429,20 +6429,24 @@ def test_polder_parcels_must_front_a_ditch():
 
 def test_polder_parcels_must_be_organic():
     # GM 2026-07-24: a hand-piled bund has slumped, walked-round corners and paced-by-eye runs, so a
-    # parcel drawn as a ruled quad (4 vertices, ~90-degree turns) is the machine-cut consolidation
-    # signature and must fire. The pre-fix 4-element parcel record (no outline shape at all) fires too -
-    # no passing by omission - and the organic 36-vertex outline passes.
+    # parcel drawn as a ruled quad (4 vertices, all 4 corners square) is the machine-cut consolidation
+    # signature and must fire, as does a whole fabric on which nothing has eased. The pre-fix 4-element
+    # parcel record (no outline shape at all) fires too - no passing by omission. Individual parcels
+    # whose corners all stayed square are HONEST (reach is drawn from a wide spread on purpose), so the
+    # corner rule is a fabric mean, not a per-parcel bound.
     field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
     lat = {"poly": [[500, 88], [500, 1312]], "role": "lateral", "field": "p", "w": 3.2, "w_tail": 2.4}
-    ruled = [[140, 70, 430, 100 + 90 * i, 4, 90.0] for i in range(7)] + [[140, 140, 570, 100 + 160 * i, 4, 89.2] for i in range(7)]
-    organic = [[*p[:4], 36, 48.5] for p in ruled]
+    ruled = [[140, 70, 430, 100 + 90 * i, 4, 4] for i in range(7)] + [[140, 140, 570, 100 + 160 * i, 4, 4] for i in range(7)]
+    organic = [[*p[:4], 30, 1] for p in ruled]
     for arch in ("polder_grid", "mulberry_dike_fishpond"):
         base = {"meta": {"scale": "hamlet", "field_archetype": arch}, "field_ditches": [lat]}
         assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": ruled}]})
         assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [p[:4] for p in ruled]}]})  # pre-fix record
         assert "polder_parcels_are_organic" in f({**base, "fields": [field]})  # no parcel geometry at all
-        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [*organic, ruled[0]]}]})  # one ruled parcel is enough
-        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [[*p[:4], 8, 48.5] for p in ruled]}]})  # rounded but barely sampled
+        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [*organic, ruled[0]]}]})  # one ruled few-vertex quad is enough
+        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [[*p[:4], 8, 1] for p in ruled]}]})  # eased but barely sampled
+        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [[*p[:4], 30, 3] for p in ruled]}]})  # densely sampled, but nothing has eased
+        assert "polder_parcels_are_organic" not in f({**base, "fields": [{**field, "plots": [*organic[:-2], [*organic[0][:4], 30, 4]]}]})  # a few all-square parcels are honest
         assert "polder_parcels_are_organic" not in f({**base, "fields": [{**field, "plots": organic}]})
     # a non-polder archetype never trips it
     assert "polder_parcels_are_organic" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": ruled}]})

@@ -10171,16 +10171,21 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # cell is the machine signature of 20th-century consolidation - the same anachronism
         # polder_parcels_vary guards at the fabric scale and polder_edges_wander at the block scale; this
         # is that rule at the scale of one parcel outline. Grounding: waterfields.organic_parcel.
-        # TEETH: the recorded per-parcel [.., vertex count, sharpest turn in degrees]. A ruled quad is 4
-        # vertices turning ~90 degrees at each; the filleted, wandering outline runs 36 vertices with a
-        # worst turn of ~52 across both pool polders, so 12 / 65 sits clear of both readings. A polder
-        # that records the pre-fix 4-element parcel format fails rather than passing by omission.
+        # TEETH: the recorded per-parcel [.., vertex count, count of still-square corners], measured on
+        # two levels because the rule works on two levels. PER PARCEL, >=12 vertices: a ruled quad has
+        # 4, and no amount of easing gets a genuinely hand-drawn outline down near that. ACROSS THE
+        # FABRIC, a mean of <=2.5 square corners per parcel: corner reach is drawn from a wide spread
+        # precisely so that SOME corners stay square (the one behind a neighbour's bund never gets
+        # walked), so no per-parcel corner rule can be right - but a field where nothing has eased
+        # scores the full 4.0, and both pool polders sit at ~1.4, so the threshold is clear of both.
+        # A polder recording the pre-fix 4-element parcel format fails rather than passing by omission.
         shaped = [p for p in pl if len(p) >= 6]
-        ruled = [p for p in shaped if p[4] < 12 or p[5] > 65]
+        ruled = [p for p in shaped if p[4] < 12]
+        sq_mean = sum(p[5] for p in shaped) / len(shaped) if shaped else 4.0
         check(
             "polder_parcels_are_organic",
-            bool(pl) and len(shaped) == len(pl) and not ruled,
-            f"{len(pl) - len(shaped)} parcel(s) record no outline shape and {len(ruled)} are drawn RULED (want every parcel >=12 vertices and no turn >65 deg; n={len(pl)}) - a bund is hand-piled mud whose corners slump and get walked round and whose runs are paced by eye, so a parcel of dead-straight sides meeting at sharp angles reads as machine-cut land consolidation, not as earth",
+            bool(pl) and len(shaped) == len(pl) and not ruled and sq_mean <= 2.5,
+            f"{len(pl) - len(shaped)} parcel(s) record no outline shape, {len(ruled)} are drawn as ruled few-vertex quads (want >=12 vertices each), and corners ease on too few of them (mean {sq_mean:.2f} still-square corners per parcel, want <=2.5 of 4; n={len(pl)}) - a bund is hand-piled mud whose corners slump and get walked round and whose runs are paced by eye, so a fabric of dead-straight sides meeting at sharp angles reads as machine-cut land consolidation, not as earth",
         )
 
     # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -
