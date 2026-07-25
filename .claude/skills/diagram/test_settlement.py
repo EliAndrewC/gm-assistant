@@ -19,7 +19,7 @@ import tempfile
 import pytest
 
 import settlement
-from settlement import Settlement, _centroid
+from settlement import Settlement, _centroid, seg_dist
 
 
 def _town():
@@ -1760,6 +1760,39 @@ def test_stables_yard_fully_blocked_draws_no_furniture():
     svg = "".join(s.out)
     assert s.M["stable_yards"][-1]["of"] == [600.0, 620.0]  # recorded despite the blocked yard
     assert "#7A5A3A" not in svg and "#8FA6B0" not in svg  # no tethered animals, no water trough drew
+
+
+def test_stable_yard_rails_avoid_a_neighboring_yards_heap():
+    # round 2 (GM 2026-07-25): a later yard must not lay a rail into an earlier yard's muck
+    # pile. The baseline _city() stables yard seats its first interior rail at (582.4, 646.7)
+    # (seeded RNG); a prior yard's heap planted exactly there forces the candidate through the
+    # _rail_clear_of_heaps rejection, and every rail that does draw keeps the 25px hold
+    s = _city()
+    s.M["stable_yards"] = [{"x": 460, "y": 620, "r": 72.0, "of": [460, 620], "troughs": 0, "rails": [], "dung_heaps": [{"x": 582.4, "y": 646.7, "rx": 2.5, "ry": 1.8}]}]
+    s.stables(600, 620, rot=90)
+    s.flush_stable_yards()
+    yd = s.M["stable_yards"][-1]
+    for r in yd["rails"]:
+        h = r["len"] / 2
+        d = seg_dist(582.4, 646.7, (r["x"] - r["tx"] * h, r["y"] - r["ty"] * h), (r["x"] + r["tx"] * h, r["y"] + r["ty"] * h))
+        assert d >= 24.9, f"rail at ({r['x']}, {r['y']}) laid {d:.1f}px from the neighboring yard's heap"
+
+
+def test_stable_yard_heaps_avoid_a_neighboring_yards_rails():
+    # round 2 (GM 2026-07-25): heap clearance is map-wide, not same-yard-only (the Nagahara
+    # 22.5px cross-yard defect). The baseline yard drops its first heap at (656.0, 618.6); a
+    # prior yard's rail planted there pushes this yard's heaps to spots >= 25px from it
+    s = _city()
+    fake_rail = {"x": 656.0, "y": 618.6, "tx": 1.0, "ty": 0.0, "len": 18.0, "reach": 2.4}
+    s.M["stable_yards"] = [{"x": 740, "y": 620, "r": 72.0, "of": [740, 620], "troughs": 0, "rails": [fake_rail], "dung_heaps": []}]
+    s.stables(600, 620, rot=90)
+    s.flush_stable_yards()
+    yd = s.M["stable_yards"][-1]
+    assert yd["dung_heaps"], "the yard should still find room for its muck pile"
+    h = fake_rail["len"] / 2
+    for dh in yd["dung_heaps"]:
+        d = seg_dist(dh["x"], dh["y"], (fake_rail["x"] - h, fake_rail["y"]), (fake_rail["x"] + h, fake_rail["y"]))
+        assert d >= 24.9, f"heap at ({dh['x']}, {dh['y']}) sits {d:.1f}px from the neighboring yard's rail"
 
 
 def test_rowpack_lays_touching_terraces():
