@@ -1056,7 +1056,7 @@ s.bridges()  # spans the Imperial Road over the moat at the north and south gate
 # animal space rather than packing in more housing: Tango sits on the Phoenix border, so the
 # NORTH gate carries the caravan traffic coming down from (or marshalling to depart toward)
 # Phoenix lands and wants more tie-up room than the south - and the ground adjoins the north
-# stables + flophouse cluster, so hitching rails, tethered oxen, and cart litter are what this
+# stables + flophouse cluster, so hitching rails and ground litter are what this
 # corner already is. Placed AFTER the packs/bridges so the scatter sees every footprint.
 s.animal_ground(1705, 952, r=80, label="caravan ground")
 
