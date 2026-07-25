@@ -3604,6 +3604,55 @@ def test_stable_yard_furniture_passes_clear_and_skips_unrecorded_legacy_yards():
     assert "stable_yard_furniture_clear_of_roads_walls" not in f(M)
 
 
+def test_dung_heaps_clear_of_hitch_rails_fires_across_yards_within_24px():
+    # round 2 (GM 2026-07-25): the heap sits 20px from a NEIGHBORING yard's rail - inside the
+    # 24px floor, yet round 1's same-yard-only pairing (and its 14px floor) passed exactly this
+    # shape (the real Nagahara round-2 capture: 16.4px same-yard, 22.5px cross-yard)
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [
+            {
+                "x": 400,
+                "y": 500,
+                "r": 72.0,
+                "of": [400, 500],
+                "troughs": 0,
+                "rails": [],
+                "dung_heaps": [{"x": 480, "y": 500, "rx": 2.5, "ry": 1.8}],
+            },
+            {
+                "x": 560,
+                "y": 500,
+                "r": 72.0,
+                "of": [560, 500],
+                "troughs": 0,
+                "rails": [{"x": 500, "y": 500, "tx": 0.0, "ty": 1.0, "len": 18.0, "reach": 2.4}],
+                "dung_heaps": [],
+            },
+        ],
+    }
+    assert "dung_heaps_clear_of_hitch_rails" in f(M)
+
+
+def test_dung_heaps_clear_of_hitch_rails_passes_at_24px_or_more():
+    # the muck pile belongs NEAR the yard's working edge - 30px off the rail line is fine
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [
+            {
+                "x": 500,
+                "y": 500,
+                "r": 72.0,
+                "of": [500, 500],
+                "troughs": 0,
+                "rails": [{"x": 500, "y": 500, "tx": 0.0, "ty": 1.0, "len": 18.0, "reach": 2.4}],
+                "dung_heaps": [{"x": 530, "y": 500, "rx": 2.5, "ry": 1.8}],
+            }
+        ],
+    }
+    assert "dung_heaps_clear_of_hitch_rails" not in f(M)
+
+
 def test_city_has_dye_works_fires_when_the_yard_is_far_from_water():
     # a dyer's yard needs rinsing/vat water ON site - a yard in the dry middle of town fails even
     # though one exists (trade-footprint-research.md; the presence branch is covered by the pinned

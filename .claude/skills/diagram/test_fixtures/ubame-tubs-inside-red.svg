@@ -617,25 +617,25 @@
        eaves corner. Weighted to the kitchen (2). The plaster kura - tax archive and
        charcoal store - carry none: halls burn, kura endure. -->
   <g fill="#8FB0C6" stroke="#3A5060" stroke-width="1">
-    <circle cx="219" cy="324" r="3.8"/>
-    <circle cx="219" cy="436" r="3.8"/>
-    <circle cx="219" cy="210" r="3.8"/>
-    <circle cx="257" cy="212" r="3.8"/>
-    <circle cx="246" cy="290" r="3.8"/>
-    <circle cx="537" cy="232" r="3.8"/>
-    <circle cx="844" cy="310" r="3.8"/>
-    <circle cx="358" cy="438" r="3.8"/>
-    <circle cx="435" cy="369" r="3.8"/>
-    <circle cx="794" cy="348" r="3.8"/>
-    <circle cx="940" cy="280" r="3.8"/>
-    <circle cx="354" cy="558" r="3.8"/>
-    <circle cx="708" cy="552" r="3.8"/>
-    <circle cx="854" cy="560" r="3.8"/>
-    <circle cx="664" cy="736" r="3.8"/>
-    <circle cx="306" cy="697.7" r="3.8"/>
-    <circle cx="358" cy="652" r="3.8"/>
-    <circle cx="952" cy="646" r="3.8"/>
-    <circle cx="1025" cy="532" r="3.8"/>
+    <circle cx="219" cy="335" r="3.8"/>
+    <circle cx="219" cy="425" r="3.8"/>
+    <circle cx="219" cy="199" r="3.8"/>
+    <circle cx="257" cy="222" r="3.8"/>
+    <circle cx="256" cy="290" r="3.8"/>
+    <circle cx="537" cy="242" r="3.8"/>
+    <circle cx="834" cy="310" r="3.8"/>
+    <circle cx="368" cy="438" r="3.8"/>
+    <circle cx="435" cy="359" r="3.8"/>
+    <circle cx="804" cy="348" r="3.8"/>
+    <circle cx="950" cy="280" r="3.8"/>
+    <circle cx="364" cy="558" r="3.8"/>
+    <circle cx="718" cy="552" r="3.8"/>
+    <circle cx="844" cy="560" r="3.8"/>
+    <circle cx="674" cy="736" r="3.8"/>
+    <circle cx="296" cy="734" r="3.8"/>
+    <circle cx="348" cy="652" r="3.8"/>
+    <circle cx="952" cy="636" r="3.8"/>
+    <circle cx="1035" cy="532" r="3.8"/>
   </g>
-  <text x="226" y="327" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
+  <text x="228" y="339" text-anchor="start" font-size="8" font-style="italic" fill="#3A5060">fire-water tubs</text>
 </svg>
