@@ -5650,6 +5650,27 @@ def test_wells_clear_of_trees_fires_on_grove_forest_woodland_grect_but_passes_wh
     assert "wells_clear_of_trees" not in f(clear)
 
 
+def test_wells_clear_of_trees_fires_on_a_drawn_crown_over_the_wellhead():
+    # the reserved-area tests above are coarse (where trees MAY stand); tree_crowns is where they DO.
+    # A crown drawn onto the wellhead fires even with no grove/forest record anywhere near it.
+    base = {"meta": {"scale": "village"}, "houses": [bldg(300, 300, "laborer")]}
+    well = {"x": 500, "y": 500, "r": 8, "vr": 12}
+    assert "wells_clear_of_trees" in f({**base, "wells": [well], "tree_crowns": [508, 495, 9]})
+    assert "wells_clear_of_trees" not in f({**base, "wells": [well], "tree_crowns": [540, 495, 9]})
+
+
+def test_structures_clear_of_trees_fires_when_a_crown_is_drawn_over_a_building():
+    # a tree drawn on a roof erases the building - no drawn crown may overlap any ROOFED footprint,
+    # and a ROTATED building is covered conservatively by its half-diagonal (as at placement).
+    base = {"meta": {"scale": "town"}, "houses": [bldg(300, 300, "laborer")]}
+    assert "structures_clear_of_trees" in f({**base, "buildings": [bldg(600, 600, "servant")], "tree_crowns": [618, 600, 8]})
+    assert "structures_clear_of_trees" not in f({**base, "buildings": [bldg(600, 600, "servant")], "tree_crowns": [660, 600, 8]})
+    # ... every roofed kind counts, not just dwellings (here a storehouse), and a crown that only
+    # reaches the OPEN yard beside a building is fine - yards have their own sun rules
+    assert "structures_clear_of_trees" in f({**base, "storehouses": [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0}], "tree_crowns": [822, 800, 6]})
+    assert "structures_clear_of_trees" not in f({**base, "threshing_yards": [{"x": 800, "y": 800, "w": 40, "h": 30, "rot": 0, "of": [300, 300]}], "tree_crowns": [800, 800, 6]})
+
+
 def test_sacred_and_graves_off_marsh_fires_and_passes_on_dry_ground():
     # a shrine hall or a graveyard must NOT sit on a reed marsh (the wet valley toe) - only on dry ground.
     marsh = [[400, 400], [700, 400], [700, 700], [400, 700]]  # a toe marsh

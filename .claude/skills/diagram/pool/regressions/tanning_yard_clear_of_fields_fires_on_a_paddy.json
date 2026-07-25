@@ -16,7 +16,15 @@
      900
     ]
    ],
-   "w": 8
+   "w": 8,
+   "flow": "forward",
+   "flow_deg": 90.0,
+   "frm": {
+    "kind": "offmap"
+   },
+   "to": {
+    "kind": "offmap"
+   }
   }
  ],
  "buildings": [
