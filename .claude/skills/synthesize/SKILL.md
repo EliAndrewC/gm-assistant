@@ -149,6 +149,27 @@ engine's tested instructions - keep honoring them):
   the season in parentheses: "the Month of the Goat (the 2nd month of summer)".
   The year starts on the 1st day of spring, so months 1-3 are spring, 4-6
   summer, 7-9 autumn, 10-12 winter.
+- **Illness, injury and death: name it, and make the course pre-modern.** If a
+  character is ailing, crippled, scarred, or dying, decide what they actually
+  have before you write the sentence - "specificity is the soul of narrative"
+  (GM, 2026-07-25). Rokugan has no antibiotics, no germ theory, and no surgery
+  worth the name, so **check the duration against the mechanism**: untreated
+  infection kills in days to weeks, never over years. A decline that runs for
+  years needs a genuinely chronic mechanism - consumption, a chronic
+  suppurating wound that eventually poisons the body, dropsy and a failing
+  heart, a growth, a wasting flux, a parasite burden. If an OLD wound is what
+  is killing someone LATE, bridge the gap explicitly: they survived the acute
+  injury, and some named chronic sequela is what is killing them now. Never
+  write "never recovered, and died some years later."
+  Then **show it rather than diagnose it** - nobody in Rokugan can name an
+  infection or an organ failure. Write what is observable (the discharge, the
+  fevers that come and go, the weight lost, the swelling that starts at the
+  ankles and works upward, the cough, the smell managed with incense) and let
+  any in-world explanation be humoral or spiritual. A useful trick for showing
+  that a character knows their own prognosis without clinical language: have
+  them recognize the course from a relative who died of the same thing.
+  The same check applies to childbirth, infant mortality, duel and battle
+  wounds, eyesight, teeth, and old age.
 - Grounded and mundane by default: the supernatural is real but rare and
   ambiguous; no magic, curses, or literal supernatural events unless the
   character's own details clearly point that way - and keep it uncertain even then.
