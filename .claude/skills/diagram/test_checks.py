@@ -3727,6 +3727,78 @@ def test_dung_heaps_clear_of_hitch_rails_passes_at_24px_or_more():
     assert "dung_heaps_clear_of_hitch_rails" not in f(M)
 
 
+def test_wells_troughs_rails_clear_of_each_other_fires_on_nagaharas_rail_across_its_well():
+    # the real GM-caught defect (2026-07-25), verbatim geometry: an 18px rail laid straight over a
+    # wellhead roof square AND over the trough cluster hugging it - three glyphs on one spot
+    M = {
+        "meta": {"scale": "city", "W": 2000, "H": 2000, "ftpx": 3},
+        "stable_yards": [
+            {
+                "x": 1390,
+                "y": 1020,
+                "r": 72.0,
+                "of": [1390, 1020],
+                "troughs": 2,
+                "troughs_at": [1388.8, 1018.7],
+                "troughs_box": [1386.5, 1015.9, 1391.1, 1021.5],
+                "rails": [{"x": 1386.0, "y": 1016.2, "tx": 1.0, "ty": 0.0, "len": 18.0, "reach": 2.4}],
+            }
+        ],
+        "wells": [{"x": 1381.0, "y": 1019.0, "r": 8, "vr": 4.0}],
+    }
+    fails = f(M)
+    assert "wells_troughs_rails_clear_of_each_other" in fails
+
+
+def test_wells_troughs_rails_clear_of_each_other_fires_when_a_rail_reaches_a_NEIGHBOR_yards_troughs():
+    # the cross-yard hole the dung-heap rule had to be widened for twice: two yards sit close
+    # enough that yard A's rail lies over yard B's trough cluster - a pair no within-one-yard
+    # loop would ever measure. Rail spans x 491-509; B's cluster starts at 503.7.
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [
+            {"x": 480, "y": 500, "r": 72.0, "of": [480, 500], "troughs": 0, "rails": [{"x": 500, "y": 500, "tx": 1.0, "ty": 0.0, "len": 18.0, "reach": 2.4}]},
+            {"x": 560, "y": 500, "r": 72.0, "of": [560, 500], "troughs": 2, "troughs_at": [506.0, 500.0], "troughs_box": [503.7, 497.2, 508.3, 502.8], "rails": []},
+        ],
+        "wells": [{"x": 512, "y": 500, "r": 8, "vr": 4.0}],
+    }
+    assert "wells_troughs_rails_clear_of_each_other" in f(M)
+
+
+def test_wells_troughs_rails_clear_of_each_other_fires_on_two_wellheads_sunk_on_one_spot():
+    # wells are placed by machinery that predates the yards entirely, so the rule has to cover the
+    # well/well pair too - two roof squares 5px apart are one unreadable blob
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "wells": [{"x": 800, "y": 800, "r": 8, "vr": 4.0}, {"x": 805, "y": 803, "r": 8, "vr": 4.0}],
+    }
+    assert "wells_troughs_rails_clear_of_each_other" in f(M)
+
+
+def test_wells_troughs_rails_clear_of_each_other_passes_when_the_three_stand_side_by_side():
+    # the rule is GLYPH-level, not a working clearance: the troughs are SUPPOSED to hug their well
+    # (the bucket-pour relay) and animals stand between rail and trough, so a cluster 1.6px off the
+    # roof square and a rail a short walk away are all correct. Near is right; on top of is not.
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3},
+        "stable_yards": [
+            {
+                "x": 500,
+                "y": 500,
+                "r": 72.0,
+                "of": [500, 500],
+                "troughs": 2,
+                "troughs_at": [492.1, 500.0],
+                "troughs_box": [489.8, 497.2, 494.4, 502.8],
+                "rails": [{"x": 500, "y": 540, "tx": 1.0, "ty": 0.0, "len": 18.0, "reach": 2.4}],
+                "dung_heaps": [],
+            }
+        ],
+        "wells": [{"x": 500, "y": 500, "r": 8, "vr": 4.0}, {"x": 470, "y": 500, "r": 8, "vr": 4.0}],
+    }
+    assert "wells_troughs_rails_clear_of_each_other" not in f(M)
+
+
 def test_city_has_dye_works_fires_when_the_yard_is_far_from_water():
     # a dyer's yard needs rinsing/vat water ON site - a yard in the dry middle of town fails even
     # though one exists (settlements.md "TRADE WORKS"; the presence branch is covered by the pinned

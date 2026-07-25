@@ -1206,6 +1206,119 @@ def test_yard_digs_its_own_well_when_none_in_reach():
     assert math.hypot(nw["x"] - ta[0], nw["y"] - ta[1]) <= s.px(40)  # cluster hugs the new wellhead
 
 
+def _yard_glyphs(s, yards=None):
+    """Every drawn well / trough cluster / hitching rail on the map as (label, quad) - built with
+    the SAME shared builders the placement and the check both use (settlement.wellhead_quad etc.),
+    so these tests measure the drawn extents rather than a test-local guess at them."""
+    out = [(f"well@{w['x']:.0f},{w['y']:.0f}", settlement.wellhead_quad(w)) for w in s.M.get("wells", [])]
+    for i, yd in enumerate(yards if yards is not None else s.M.get("stable_yards", [])):
+        if yd.get("troughs_box"):
+            out.append((f"troughs@yard{i}", settlement.trough_quad(yd["troughs_box"])))
+        for rl in yd.get("rails", []) or []:
+            out.append((f"rail@{rl['x']:.0f},{rl['y']:.0f}", settlement.rail_quad(rl)))
+    return out
+
+
+def _assert_no_glyph_overlaps(s, yards=None):
+    g = _yard_glyphs(s, yards)
+    for i in range(len(g)):
+        for j in range(i + 1, len(g)):
+            assert not settlement.sat_overlap(g[i][1], g[j][1]), f"{g[i][0]} overlaps {g[j][0]}"
+
+
+def test_hitching_rails_refuse_a_seat_across_a_wellhead():
+    # the GM-caught Nagahara defect (2026-07-25): a rail drawn straight over a wellhead. The yard's
+    # RNG is seeded on its own position, so the seats it takes are deterministic - draw the yard
+    # once to learn where its rails land, then sink a wellhead on each of those exact spots. Before
+    # the rule, `clear()` knew nothing about wells and the second yard drew the identical rails,
+    # straight across all three heads; now it must walk to clear ground instead.
+    bare = _crop_settlement()
+    bare.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]  # out of reach, so nothing near the yard
+    bare.animal_ground(400, 400, r=60)
+    bare.flush_stable_yards()
+    seats = [(rl["x"], rl["y"]) for rl in bare.M["stable_yards"][-1]["rails"]]
+    assert len(seats) == 2  # the two interior rails (no road in this bare fixture, so no road-parallel rail)
+
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": sx, "y": sy, "r": 8, "vr": 4.0, "shrine": False} for sx, sy in seats]
+    s.animal_ground(400, 400, r=60)
+    s.flush_stable_yards()
+    yd = s.M["stable_yards"][-1]
+    assert yd["rails"]  # the train still ties up somewhere - the rule moves rails, it does not delete them
+    assert [(rl["x"], rl["y"]) for rl in yd["rails"]] != seats  # ... and they are NOT the old on-the-wellhead seats
+    _assert_no_glyph_overlaps(s)
+
+
+def test_the_trough_cluster_walks_off_a_rail_already_seated():
+    # the other half of the Nagahara defect: the watering point is placed AFTER the rails, and it is
+    # PINNED - it must hug its well - so it is the side that has to walk. Sink the well 10.5px
+    # beyond a known rail seat, off the rail itself but close enough that the natural yard-side
+    # flank (well + ~8px bucket-pour offset) lands the cluster squarely on the rail. Before the
+    # rule, beside() knew nothing about rails and stacked the troughs on the posts.
+    bare = _crop_settlement()
+    bare.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]  # out of reach: nothing near the yard
+    bare.animal_ground(400, 400, r=60)
+    bare.flush_stable_yards()
+    sx, sy = [(rl["x"], rl["y"]) for rl in bare.M["stable_yards"][-1]["rails"]][0]  # a horizontal rail north of the yard center
+
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": sx, "y": sy - 10.5, "r": 8, "vr": 4.0, "shrine": False}]
+    s.animal_ground(400, 400, r=60)
+    s.flush_stable_yards()
+    yd = s.M["stable_yards"][-1]
+    assert yd["troughs"] == 2 and yd["rails"]  # the yard still waters its train and still ties it up
+    _assert_no_glyph_overlaps(s)
+
+
+def test_a_yard_digs_its_own_well_clear_of_its_own_rails():
+    # the dig-your-own-well fallback draws a THIRD glyph after the rails are down, so it predicts
+    # its own head size (_well_vr) and seats clear of them
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]  # far out of reach: the yard sinks its own
+    s.animal_ground(400, 400, r=60)
+    s.flush_stable_yards()
+    yd = s.M["stable_yards"][-1]
+    assert len(s.M["wells"]) == 2 and yd["troughs"] == 2 and yd["rails"]
+    _assert_no_glyph_overlaps(s)
+
+
+def test_a_rail_refuses_a_seat_on_an_EARLIER_yards_trough_cluster():
+    # the cross-yard branch, reached by CONSTRUCTION since no natural yard spacing produces it (see
+    # the preventive-guard test below): a neighboring yard just north has already put its watering
+    # point at our yard's first rail seat, so that seat must be refused and the rail retried
+    bare = _crop_settlement()
+    bare.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]
+    bare.animal_ground(400, 400, r=60)
+    bare.flush_stable_yards()
+    sx, sy = [(rl["x"], rl["y"]) for rl in bare.M["stable_yards"][-1]["rails"]][0]
+
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 900, "y": 900, "r": 8, "vr": 4.0, "shrine": False}]
+    s.M["stable_yards"] = [
+        {"x": 400, "y": 340, "r": 40.0, "of": [400, 340], "troughs": 2, "troughs_at": [sx, sy], "troughs_box": [sx - 2.3, sy - 2.8, sx + 2.3, sy + 2.8], "rails": [], "dung_heaps": []}
+    ]
+    s.animal_ground(400, 400, r=60)
+    s.flush_stable_yards()
+    yd = s.M["stable_yards"][-1]
+    assert yd["rails"] and (sx, sy) not in [(rl["x"], rl["y"]) for rl in yd["rails"]]  # seat refused, rail retried elsewhere
+    _assert_no_glyph_overlaps(s)
+
+
+def test_a_second_yards_furniture_keeps_off_the_first_yards_glyphs():
+    # PREVENTIVE guard, not a reproduction: no natural two-yard spacing yet produces a cross-yard
+    # collision (searched the 90-150px x 0-90px offset grid at three yard radii, 2026-07-25), but
+    # each yard still measures against every EARLIER yard's rails and cluster - the dung-heap rule
+    # shipped without that and had to be widened for exactly this hole twice. The check is what
+    # actually catches it, from whatever direction it arrives; this holds the placement side honest.
+    s = _crop_settlement()
+    s.M["wells"] = [{"x": 460, "y": 400, "r": 8, "vr": 4.0, "shrine": False}]  # in reach of BOTH yards
+    s.animal_ground(400, 400, r=60)
+    s.animal_ground(520, 400, r=60)
+    s.flush_stable_yards()
+    assert len(s.M["stable_yards"]) == 2
+    _assert_no_glyph_overlaps(s)
+
+
 def _torii_city(**kw):
     s = Settlement(1200, 1200, seed=9)
     s.meta(name="T", scale="city", ftpx=3, down_deg=90)

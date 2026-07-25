@@ -199,6 +199,58 @@ def _rect_ring(x: float, y: float, w: float, h: float, rot: float = 0.0) -> Poly
     return pts + [pts[0]]
 
 
+def sat_overlap(p: Sequence[Sequence[float]], q: Sequence[Sequence[float]]) -> bool:
+    """Do two CONVEX polygons overlap? (separating-axis test; touching edges do not count.)"""
+    for poly in (p, q):
+        for i in range(len(poly)):
+            x1, y1 = poly[i]
+            x2, y2 = poly[(i + 1) % len(poly)]
+            nx, ny = -(y2 - y1), (x2 - x1)
+            pa = [nx * x + ny * y for x, y in p]
+            qa = [nx * x + ny * y for x, y in q]
+            if max(pa) < min(qa) or max(qa) < min(pa):
+                return False
+    return True
+
+
+# --- STABLE-YARD GLYPH EXTENTS: wells, trough clusters, hitching rails ------------------------
+# These three MUST NOT OVERLAP ONE ANOTHER (GM 2026-07-25). The motivating defect was Nagahara's
+# flophouse yard, which drew a hitching rail straight ACROSS a wellhead and then stacked the trough
+# cluster on both: three glyphs piled on one spot, where the reader can no longer tell which is
+# which, and the layout it implies is nonsense - you cannot draw water through a rail, and no yard
+# ties its animals across its own draw-point. They collide because they are placed at three
+# different moments (wells long before the yard, then the rails, then the cluster), so each stage
+# has to test the DRAWN extent of everything already on the map.
+#
+# The builders below are the ONE definition of each glyph's drawn extent, shared by the placement
+# in `_stable_yard` and by the `wells_troughs_rails_clear_of_each_other` check that gates it - the
+# placement-and-check-read-the-same-data doctrine (see settlements.md "PLANK BRIDGES"): change what
+# gets drawn and both sides move together instead of drifting into disagreement. `grow` inflates a
+# quad by the placement's slack; the CHECK always passes 0, so a map that only just satisfies the
+# check was in fact placed with room to spare.
+YARD_GLYPH_SLACK = 2.0  # px (~6 real ft at city scale) of placement slack over the check's strict no-overlap floor
+
+
+def wellhead_quad(w: Mapping[str, Any], grow: float = 0.0) -> Poly:
+    """A wellhead's drawn extent: the well-house ROOF square (the curb and shaft draw inside it)."""
+    e = w.get("vr", 4.0) + grow
+    return [(w["x"] - e, w["y"] - e), (w["x"] + e, w["y"] - e), (w["x"] + e, w["y"] + e), (w["x"] - e, w["y"] + e)]
+
+
+def trough_quad(box: Sequence[float], grow: float = 0.0) -> Poly:
+    """A watering point's drawn extent: the stacked trough rects' full envelope - a stable-yard
+    record's `troughs_box`, not one trough."""
+    return [(box[0] - grow, box[1] - grow), (box[2] + grow, box[1] - grow), (box[2] + grow, box[3] + grow), (box[0] - grow, box[3] + grow)]
+
+
+def rail_quad(rl: Mapping[str, Any], grow: float = 0.0) -> Poly:
+    """A hitching rail's drawn extent: its `len` along the tangent by the posts' `reach` to either
+    side. The POSTS are the glyph's real width - the bare rail line is a hairline nobody reads."""
+    h, e = rl["len"] / 2 + grow, rl.get("reach", 2.4) + grow
+    tx, ty = rl["tx"], rl["ty"]
+    return [(rl["x"] + tx * sh * h - ty * se * e, rl["y"] + ty * sh * h + tx * se * e) for sh, se in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+
+
 def wall_runs(M: Manifest) -> list[tuple[str, Poly, float]]:
     """Every WALL on a settlement map as (label, polyline, half-width px): the city rampart, each
     ward fence (plus the short wall-stroke caps where it abuts the rampart), and the perimeter of
@@ -3402,6 +3454,15 @@ class Settlement:
         bm = 16
         self.block_polys.append([(x0 - bm, y0 - bm), (x + w / 2 + bm, y0 - bm), (x + w / 2 + bm, y + h / 2 + bm + 16), (x0 - bm, y + h / 2 + bm + 16)])
 
+    def _well_vr(self) -> float:
+        """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
+        In FEET at this map's ftpx on a to-scale tier (a ~24.8 ft well-house); on the legacy tiers
+        it scales with the urban glyph grain. Factored out of well() because PLACEMENT has to
+        predict the glyph before it is drawn: the stable yard's dig-your-own-well fallback needs
+        the head's size to keep it off a hitching rail or a neighboring yard's troughs
+        (wellhead_quad / wells_troughs_rails_clear_of_each_other)."""
+        return self.px(12.376) if self._toscale() else 11.9 * self.bscale
+
     def well(self, x: float, y: float, r: float = 8, shrine: bool = False, private: bool = False) -> None:
         """A public NEIGHBORHOOD WELL (井戸) - a stone curb under an open-sided well-house roof, the
         shared draw-point and social hub (the idobata, where a tenement block's gossip happened). One
@@ -3418,10 +3479,8 @@ class Settlement:
         # consistent ~0.55x a dwelling at every scale - fixed pixels would make it look right in the
         # dense city but far too small beside a village/town's larger houses. It stays SMALLER than a
         # house regardless of the larger COURTYARD footprint reserved for placement.
-        if self._toscale():  # dimensions in FEET, drawn at this map's ftpx (a ~24.8 ft well-house)
-            vroof, vcurb = self.px(12.376), self.px(9.36)
-        else:  # legacy tiers: the wellhead scales with the urban glyph grain (bscale)
-            vroof, vcurb = 11.9 * self.bscale, 9.0 * self.bscale
+        vroof = self._well_vr()
+        vcurb = self.px(9.36) if self._toscale() else 9.0 * self.bscale
         self.add(
             f'<rect x="{x - vroof:.1f}" y="{y - vroof:.1f}" width="{2 * vroof:.1f}" height="{2 * vroof:.1f}" rx="1.5" fill="#C7B084" stroke="#6B5836" stroke-width="1.1" opacity="0.55"/>'
         )  # the well-house roof, light so the curb reads through
@@ -7361,9 +7420,14 @@ class Settlement:
         rails: list[dict[str, float]] = []
         heaps: list[dict[str, float]] = []
 
+        def rail_rec(cx: float, cy: float, tx: float, ty: float) -> dict[str, float]:
+            """The record a rail at this seat WOULD get - built before the rail is committed so a
+            candidate can be tested at its true drawn extent (rail_quad) like everything else."""
+            return {"x": round(cx, 1), "y": round(cy, 1), "tx": round(tx, 3), "ty": round(ty, 3), "len": 18.0, "reach": 2.4}
+
         def draw_hitch(cx: float, cy: float, tx: float, ty: float, nx: float, ny: float) -> None:
             length = 18.0
-            rails.append({"x": round(cx, 1), "y": round(cy, 1), "tx": round(tx, 3), "ty": round(ty, 3), "len": length, "reach": 2.4})
+            rails.append(rail_rec(cx, cy, tx, ty))
             ex0, ey0 = cx - tx * length / 2, cy - ty * length / 2
             fg = [f'<line x1="{ex0:.1f}" y1="{ey0:.1f}" x2="{cx + tx * length / 2:.1f}" y2="{cy + ty * length / 2:.1f}" stroke="#6B4F2A" stroke-width="1.5"/>']
             for i in range(4):  # posts across the rail
@@ -7379,6 +7443,28 @@ class Settlement:
 
         def _rail_clear_of_heaps(cx: float, cy: float, tx_: float, ty_: float) -> bool:
             return all(seg_dist(hx_, hy_, (cx - tx_ * 9.0, cy - ty_ * 9.0), (cx + tx_ * 9.0, cy + ty_ * 9.0)) >= 25.0 for hx_, hy_ in prior_heaps)
+
+        # WELLS, TROUGHS, AND HITCHING POSTS NEVER OVERLAP ONE ANOTHER (GM 2026-07-25; the full
+        # reasoning sits with the quad builders at the top of this module and in settlements.md
+        # 'Stable yard'). Each of the three is placed at a different moment, so every stage tests
+        # the DRAWN extents of whatever already exists: a rail avoids every wellhead on the map,
+        # the trough cluster avoids the rails, and the dug-your-own wellhead avoids both. Prior
+        # yards count too - two yards can sit close enough to collide across the gap between them,
+        # which is the same cross-yard lesson the dung-heap rule had to learn twice.
+        prior_boxes = [yd_["troughs_box"] for yd_ in self.M.get("stable_yards", []) or [] if yd_.get("troughs_box")]
+        prior_rails = [r_ for yd_ in self.M.get("stable_yards", []) or [] for r_ in yd_.get("rails", []) or []]
+
+        def _glyph_free(q: Poly, hug: Any = None) -> bool:
+            """True when the drawn extent `q` overlaps no OTHER yard glyph (wellhead, trough
+            cluster, hitching rail). Everything `q` is measured against is inflated by
+            YARD_GLYPH_SLACK - except `hug`, the one wellhead a trough cluster deliberately stands
+            beside, which is tested at TRUE extent: that bucket-pour gap is a deliberate ~1.5px and
+            inflating it would shove the troughs away from the well they exist to be poured from."""
+            if any(sat_overlap(q, wellhead_quad(w_, 0.0 if w_ is hug else YARD_GLYPH_SLACK)) for w_ in self.M.get("wells", []) or []):
+                return False
+            if any(sat_overlap(q, trough_quad(b_, YARD_GLYPH_SLACK)) for b_ in prior_boxes):
+                return False
+            return not any(sat_overlap(q, rail_quad(r_, YARD_GLYPH_SLACK)) for r_ in (*rails, *prior_rails))
 
         # (1) the ROAD-PARALLEL edge rail: nearest road/street segment, rail set back into the yard
         best_seg: Any = None
@@ -7398,18 +7484,25 @@ class Settlement:
             # probe the rail's FULL extent (tips + post reach = len/2 + 2.4), not just its center -
             # a tip on the roadbed or against the rampart is exactly what the rail exists to prevent
             # (GM 2026-07-24; stable_yard_furniture_clear_of_roads_walls)
-            if all(clear(rcx + tx * e, rcy + ty * e, 8.0) for e in (-11.4, 0.0, 11.4)) and _rail_clear_of_heaps(rcx, rcy, tx, ty):
+            if all(clear(rcx + tx * e, rcy + ty * e, 8.0) for e in (-11.4, 0.0, 11.4)) and _rail_clear_of_heaps(rcx, rcy, tx, ty) and _glyph_free(rail_quad(rail_rec(rcx, rcy, tx, ty))):
                 draw_hitch(rcx, rcy, tx, ty, nx, ny)
                 used.append((rcx, rcy))
         # (2) one or two more rails at clear interior spots (a busy train needs the tie-up room);
         # tips probed like the road rail
-        for _ in range(2):
+        # bounded RETRIES, not two attempts: a candidate refused by the heap/glyph rules must not
+        # COST the yard a rail - a wagon-train's tie-up room is the whole "in active use" signal, so
+        # keep walking the candidate rings until two rails are seated or the ground is genuinely full
+        seated = 0
+        for _ in range(8):
+            if seated >= 2:
+                break
             spot = take(10.0, 24.0, probes=((-11.4, 0.0), (0.0, 0.0), (11.4, 0.0)))
             if not spot:
                 break
-            if not _rail_clear_of_heaps(spot[0], spot[1], 1.0, 0.0):
+            if not _rail_clear_of_heaps(spot[0], spot[1], 1.0, 0.0) or not _glyph_free(rail_quad(rail_rec(spot[0], spot[1], 1.0, 0.0))):
                 continue
             draw_hitch(spot[0], spot[1], 1.0, 0.0, 0.0, 1.0)
+            seated += 1
 
         # the WATERING POINT (GM 2026-07-23, researched - settlements.md 'Stable yard' watering
         # paragraph): a working ox drinks ~10 gal/day, a buffalo more, so a wagon-train needs
@@ -7440,9 +7533,11 @@ class Settlement:
             # 1.5 step (~bucket-pour). A fixed `vr + t_len/2` only guarantees HORIZONTAL
             # clearance - the stack is taller than it is wide, so a near-vertical ray clipped the
             # roof corner (GM 2026-07-23, Tango's caravan ground). The box is then CORNER-checked
-            # against everything clear() knows (buildings, roads, fields, water, the wall) and
-            # kept off every OTHER wellhead roof - a center-only point test let the rects
-            # themselves land on footprints. Gated by stable_troughs_clear_of_buildings.
+            # against everything clear() knows (buildings, roads, fields, water, the wall) - a
+            # center-only point test let the rects themselves land on footprints - and passed
+            # through _glyph_free, which keeps it off every OTHER wellhead roof, off every
+            # hitching rail, and off any neighboring yard's cluster. Gated by
+            # stable_troughs_clear_of_buildings + wells_troughs_rails_clear_of_each_other.
             vr = wl.get("vr", 4.0)
             w_ang0 = math.atan2(sy - wl["y"], sx - wl["x"])
             for w_da in (0.0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, math.pi):
@@ -7455,11 +7550,7 @@ class Settlement:
                 bx0, by0, bx1, by1 = wcand[0] - t_len / 2, wcand[1] - t_total / 2, wcand[0] + t_len / 2, wcand[1] + t_total / 2
                 if not all(clear(qx, qy, 2.0, rim=False) for qx, qy in ((wcand[0], wcand[1]), (bx0, by0), (bx1, by0), (bx1, by1), (bx0, by1))):
                     continue
-                if any(
-                    bx0 < ow["x"] + ow.get("vr", 4.0) and bx1 > ow["x"] - ow.get("vr", 4.0) and by0 < ow["y"] + ow.get("vr", 4.0) and by1 > ow["y"] - ow.get("vr", 4.0)
-                    for ow in self.M.get("wells", [])
-                    if ow is not wl
-                ):
+                if not _glyph_free(trough_quad([bx0, by0, bx1, by1]), hug=wl):
                     continue
                 return wcand
             return None
@@ -7476,7 +7567,9 @@ class Settlement:
             # the dug well is a PUBLIC wellhead (visual r 8), so probe its head's reach - the well
             # checks test way-distance at half-width + 8, tighter than clear()'s corridor buffer
             spot = take(12.0, 24.0, probes=((0.0, 0.0), (8.0, 0.0), (-8.0, 0.0), (0.0, 8.0), (0.0, -8.0), (5.7, 5.7), (-5.7, 5.7), (5.7, -5.7), (-5.7, -5.7)))
-            if spot:
+            # the dug head is a GLYPH like any other: predict its roof square (_well_vr) and refuse
+            # a seat that would put it on a rail, on another wellhead, or on a neighbor's troughs
+            if spot and _glyph_free(wellhead_quad({"x": spot[0], "y": spot[1], "vr": self._well_vr()})):
                 self.well(spot[0], spot[1])
                 wp = beside(self.M["wells"][-1])
                 if wp:
