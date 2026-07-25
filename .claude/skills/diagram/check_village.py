@@ -348,6 +348,54 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
 
+class GridIndex:
+    """A uniform-grid spatial index for the "what is near here?" queries several checks make
+    THOUSANDS of times against the same features. Each item is inserted under every cell its
+    influence bbox touches; a query returns only the items in the queried cell(s), which is a
+    superset of the true neighbors, so the caller still runs its exact test - the index prunes,
+    it never decides.
+
+    WHY (profiled 2026-07-25, after a feature spent an hour and the gate was suspected): the
+    naive form is a full scan per query, and two checks were doing exactly that.
+    `city_fan_heads_quilted` tested each of ~3,000 canal-side sample points against EVERY plot
+    polygon and ditch on the map - 14M segment-distance calls, ~58% of Tango's 17s gate.
+    `structures_clear_of_trees` tested every structure against every drawn crown - 1,049 x 7,440
+    on Tango. Both are point-vs-local-geometry questions, so pruning to the local cell is a pure
+    constant-factor win with identical verdicts (the gate's whole regression corpus is replayed
+    against the pre-index results to prove that).
+
+    Cell size is the one tuning knob: too small wastes memory on cell lists, too large stops
+    pruning. Pick it near the size of the features being indexed."""
+
+    __slots__ = ("cell", "bins")
+
+    def __init__(self, cell: float) -> None:
+        self.cell = max(float(cell), 1.0)
+        self.bins: dict[tuple[int, int], list[Any]] = {}
+
+    def add(self, x0: float, y0: float, x1: float, y1: float, payload: Any) -> None:
+        """Index `payload` under every cell its influence bbox touches."""
+        c = self.cell
+        for gx in range(int(x0 // c), int(x1 // c) + 1):
+            for gy in range(int(y0 // c), int(y1 // c) + 1):
+                self.bins.setdefault((gx, gy), []).append(payload)
+
+    def near(self, x: float, y: float) -> list[Any]:
+        """Candidates whose influence bbox may reach (x, y). Empty list when nothing is close."""
+        return self.bins.get((int(x // self.cell), int(y // self.cell)), [])
+
+    def near_rect(self, x0: float, y0: float, x1: float, y1: float) -> list[Any]:
+        """Candidates near any part of a rect, de-duplicated by identity (an item spanning several
+        of the queried cells is returned once)."""
+        c = self.cell
+        seen: dict[int, Any] = {}
+        for gx in range(int(x0 // c), int(x1 // c) + 1):
+            for gy in range(int(y0 // c), int(y1 // c) + 1):
+                for it in self.bins.get((gx, gy), ()):
+                    seen[id(it)] = it
+        return list(seen.values())
+
+
 def forest_reveal_x(forest: Poly, edge: Any, reveal: float, w: float) -> list[float]:
     """Mirror of settlement.forest_reveal_x (keep in sync): the x-values a canvas-filling FOREST
     contributes to the frame. The wood is drawn to the canvas edge, but the crop reveals only the
@@ -1588,6 +1636,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # it is what the "nothing is drawn under a tree" checks measure.
     _tc = M.get("tree_crowns") or []
     crowns = [(_tc[i], _tc[i + 1], _tc[i + 2]) for i in range(0, len(_tc) - 2, 3)]
+    # INDEXED for the same reason _hq_covered is: a to-scale map draws thousands of crowns and
+    # carries hundreds of structures, and every "is anything under a tree" question is local. Each
+    # crown is indexed by its own disc bbox; a caller queries the rect it cares about grown by the
+    # LARGEST crown radius, so no overlap can be pruned away. Cell = 4x the mean crown.
+    _cr_max = max((c[2] for c in crowns), default=0.0)
+    crown_grid = GridIndex(max(4 * (sum(c[2] for c in crowns) / len(crowns)) if crowns else 1.0, 8.0))
+    for _c in crowns:
+        crown_grid.add(_c[0] - _c[2], _c[1] - _c[2], _c[0] + _c[2], _c[1] + _c[2], _c)
 
     # NO TREE IS DRAWN ON A ROOF (GM 2026-07-25). A crown over a building hides the building - the map
     # loses a structure the reader is meant to see - so no drawn crown may overlap any ROOFED footprint.
@@ -1602,7 +1658,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 hw, hh = o.get("vw", o["w"]) / 2, o.get("vh", o["h"]) / 2  # the DRAWN box
                 if o.get("rot"):
                     hw = hh = math.hypot(hw, hh)  # mirrors settlement._canopy_keepouts
-                for tx, ty, tr in crowns:
+                for tx, ty, tr in crown_grid.near_rect(o["x"] - hw - _cr_max, o["y"] - hh - _cr_max, o["x"] + hw + _cr_max, o["y"] + hh + _cr_max):
                     dx, dy = max(abs(tx - o["x"]) - hw, 0.0), max(abs(ty - o["y"]) - hh, 0.0)
                     if dx * dx + dy * dy < tr * tr:
                         under.append((k, round(o["x"]), round(o["y"])))
@@ -2603,11 +2659,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             rr_ = _hq_ring
             return rr_ is not None and min(seg_dist(qx, qy, rr_[i2], rr_[i2 + 1]) for i2 in range(len(rr_) - 1)) < _hq_ringw / 2 + 12 / _hq_ftpx
 
+        # INDEXED (2026-07-25): this ran ~3,000 sample points against every plot polygon and every
+        # ditch on the map - 14M seg_dist calls, ~58% of a city gate. Same test, pruned to the local
+        # cell. A polygon is indexed by its bbox GROWN by the tolerance (so an edge-proximity hit is
+        # never missed), a ditch/channel by each segment's bbox grown by its own half-width + tol.
+        _hq_grid = GridIndex(max(4 * _hq_tol, 24.0 / _hq_ftpx))
+        for _hq_cp in _hq_covers:
+            _hq_cxs = [q[0] for q in _hq_cp]
+            _hq_cys = [q[1] for q in _hq_cp]
+            _hq_grid.add(min(_hq_cxs) - _hq_tol, min(_hq_cys) - _hq_tol, max(_hq_cxs) + _hq_tol, max(_hq_cys) + _hq_tol, ("p", _hq_cp, 0.0))
+        for _hq_lp, _hq_lw in _hq_lines:
+            _hq_r = _hq_lw / 2 + _hq_tol
+            for _hq_k in range(len(_hq_lp) - 1):
+                _hq_a, _hq_b = _hq_lp[_hq_k], _hq_lp[_hq_k + 1]
+                _hq_grid.add(min(_hq_a[0], _hq_b[0]) - _hq_r, min(_hq_a[1], _hq_b[1]) - _hq_r, max(_hq_a[0], _hq_b[0]) + _hq_r, max(_hq_a[1], _hq_b[1]) + _hq_r, ("s", _hq_a, _hq_b, _hq_r))
+
         def _hq_covered(qx: float, qy: float) -> bool:
-            for cp in _hq_covers:
-                if point_in_poly(qx, qy, cp) or any(seg_dist(qx, qy, cp[k], cp[(k + 1) % len(cp)]) < _hq_tol for k in range(len(cp))):
+            for _it in _hq_grid.near(qx, qy):
+                if _it[0] == "p":
+                    _pp = _it[1]
+                    if point_in_poly(qx, qy, _pp) or any(seg_dist(qx, qy, _pp[_j], _pp[(_j + 1) % len(_pp)]) < _hq_tol for _j in range(len(_pp))):
+                        return True
+                elif seg_dist(qx, qy, _it[1], _it[2]) < _it[3]:
                     return True
-            return any(any(seg_dist(qx, qy, lp[k], lp[k + 1]) < lw / 2 + _hq_tol for k in range(len(lp) - 1)) for lp, lw in _hq_lines)
+            return False
 
         for f in _hq_fields:
             _hq_mains = [d for d in M.get("field_ditches", []) if d.get("field") == f.get("name") and d.get("role") == "main"]
@@ -4148,7 +4223,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     # ... and no DRAWN crown may reach the head either (the reserved-area tests above are
                     # coarse: a grove's recorded rect/clump is where its trees MAY stand, tree_crowns is
                     # where they actually DO). See structures_clear_of_trees for the same rule on roofs.
-                    or any(math.hypot(wx - tx, wy - ty) < vr + tr for tx, ty, tr in crowns)
+                    or any(math.hypot(wx - tx, wy - ty) < vr + tr for tx, ty, tr in crown_grid.near_rect(wx - vr - _cr_max, wy - vr - _cr_max, wx + vr + _cr_max, wy + vr + _cr_max))
                 ):
                     on_trees.append((round(wx), round(wy)))
             check(
@@ -5554,11 +5629,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     dry_polys_c = [dp["poly"] for dp in M.get("dry_plots", [])]
     if dry_polys_c:
         on_dry = []
+        # INDEXED like _hq_covered (2026-07-25): this was every structure against every dry plot with
+        # a full corner/crossing test - 3.5M segments_cross calls on a city, the gate's #2 cost after
+        # the head-band sampler. The grid prunes to plots whose bbox can reach the footprint; the
+        # exact test below is unchanged, so the verdicts are identical.
+        _dp_grid = GridIndex(64.0)
+        for _dp in dry_polys_c:
+            _dxs = [q[0] for q in _dp]
+            _dys = [q[1] for q in _dp]
+            _dp_grid.add(min(_dxs), min(_dys), max(_dxs), max(_dys), _dp)
         for mkey in ("houses", "buildings", "threshing_yards", "flophouses", "storehouses", "cemeteries", "cremation_grounds", "ossuaries", "mausoleums"):
             for it in M.get(mkey, []) or []:
                 fc = rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 20), "h": it.get("h", 14), "rot": it.get("rot", 0)})
                 fc = [(it["x"] + (px - it["x"]) * 0.94, it["y"] + (py - it["y"]) * 0.94) for px, py in fc]
-                for poly in dry_polys_c:
+                for poly in _dp_grid.near_rect(min(q[0] for q in fc), min(q[1] for q in fc), max(q[0] for q in fc), max(q[1] for q in fc)):
                     if (
                         any(point_in_poly(px, py, poly) for px, py in fc)
                         or any(point_in_poly(qx, qy, fc) for qx, qy in poly)
