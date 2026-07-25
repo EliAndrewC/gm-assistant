@@ -92,6 +92,21 @@ def _signed_area(poly: Poly) -> float:
     return a / 2
 
 
+def forest_reveal_x(forest: Poly, edge: Poly | None, reveal: float, w: float) -> list[float]:
+    """The x-values a canvas-filling FOREST contributes to the crop frame (mirrored by
+    check_village.forest_reveal_x - keep the two in sync; the crop and the check that gates the
+    crop's tightness must read the same rule from the same manifest fields).
+
+    The wood is drawn all the way to the canvas edge, but the frame only REVEALS a shallow band of
+    it past the tree line: the tree line itself plus `reveal` px of canopy behind it. Deeper in it
+    is identical crowns, and a frame held open for them is wasted image (GM 2026-07-25). Without a
+    recorded tree line (M['forest_edge']) the whole clamped polygon sets the frame, as it used to."""
+    if not edge:
+        return [min(max(p[0], 0), w) for p in forest]
+    ex = [min(max(p[0], 0), w) for p in edge]
+    return ex + [min(x + reveal, w) for x in ex]
+
+
 def point_in_poly(px: float, py: float, poly: Poly) -> bool:
     inside = False
     n = len(poly)
@@ -709,6 +724,7 @@ class Settlement:
             "summit": None,
             "shrine": None,
             "forest": None,
+            "forest_edge": None,
             "road": None,
             "wall": None,
             "gate": None,
@@ -906,6 +922,16 @@ class Settlement:
     # hugs the cluster, so the houses' own margin always keeps part of it in view; hard_features_within_frame
     # requires partial visibility (not containment) for it, and crop_hugs_content gates the tightness.
     # Homestead "groves" stay: each hugs its own farmhouse, so it never drags the frame anyway.
+    # A WOOD is drawn as individual trees at true density (see _tree_stand for the research).
+    CANOPY_SPACING_FT = 13.0  # ~600 canopy stems/ha - one tree per ~180 sq ft
+    CANOPY_R_FT = 8.5  # mean crown radius; a real canopy crown is ~5-8 m across
+    FOREST_FLOOR = "#5C7042"  # shaded litter/understory between the crowns, not a terrain wash
+    # How deep a canvas-filling wood is REVEALED by the crop: ~8 ranks of trees past the tree line.
+    # That is enough for the canopy to close and read as a wood running off the frame; beyond it the
+    # image is undifferentiated crowns (GM 2026-07-25: "only enough to make it clear the forest is
+    # there"). Bounded copses (forest_patch) are framed whole - their shape is the point.
+    FOREST_REVEAL_FT = 110.0
+
     _CROP_HARD = (
         "houses",
         "gardens",
@@ -1042,10 +1068,14 @@ class Settlement:
             cx, cy, rx, ry = self.M["pond"]
             hx += [cx - rx, cx + rx]
             hy += [cy - ry, cy + ry]
-        if self.M.get("forest"):  # the FOREST is a big EDGE feature (a point-list, not
-            fpts = self.M["forest"]  # dicts): frame to include it, CLAMPED to the canvas so
-            hx += [min(max(p[0], 0), self.W) for p in fpts]  # the view never opens past the edge (the forest fills
-            hy += [min(max(p[1], 0), self.H) for p in fpts]  # to the frame edge and bleeds beyond)
+        if self.M.get("forest"):  # the FOREST is a big EDGE feature (a point-list, not dicts), CLAMPED
+            fpts = self.M["forest"]  # to the canvas so the view never opens past the edge (the wood fills
+            hy += [min(max(p[1], 0), self.H) for p in fpts]  # to the frame edge and bleeds beyond it)
+            # ACROSS the wood, though, the frame stops a shallow REVEAL band past the TREE LINE
+            # (FOREST_REVEAL_FT): a few ranks of canopy prove the wood is there and running off the
+            # map, and everything deeper is identical crowns. Falls back to the full polygon for a
+            # wood recorded without its tree line.
+            hx += forest_reveal_x(fpts, self.M.get("forest_edge"), self.px(self.FOREST_REVEAL_FT), self.W)
         if not hx:  # pragma: no cover - crop is called only after the hard features are placed
             return
         # clamp the frame to the canvas: never open the view PAST the map edge (an EDGE feature like the forest
@@ -3487,40 +3517,143 @@ class Settlement:
             self.label(x, y + h / 2 + 16, sublabel, 9, italic=True, color=edge)
 
     # ---- landscape / estate features
+    def _tree_stand(self, poly: Poly, seed: int, floor: Poly | None = None, outliers: bool = True) -> None:
+        """Fill `poly` with INDIVIDUAL TREES - the ONE way this engine draws a wood (GM 2026-07-25).
+
+        A forest is NOT a terrain type here. It used to be drawn as a flat pale wash under a widely-
+        spaced grid of identical dots, which read as patterned ground rather than as trees, and did
+        not match how every other piece of vegetation on these maps is already drawn (the
+        yashikirin, the fengshui belt, the dooryard copse - all real crowns, via _draw_grove). So a
+        wood is now a STAND: every canopy tree is one drawn crown at true size and true spacing, and
+        the polygon survives only as DATA (what it blocks, what it frames, where the brook comes
+        from) - never as a shape you can see the outline of.
+
+        DENSITY / SIZE - the why (research 2026-07-25; China-first per the setting's geography note,
+        cross-checked against Japanese satoyama hill wood):
+          - A closed premodern hill wood - the mixed broadleaf/conifer cover of a settled valley's
+            back slope, cut over for fuel and timber on a rotation - carries roughly 500-800 CANOPY
+            stems per hectare. 1 ha = 107,639 sq ft, so ~600 stems/ha is one canopy tree per ~180
+            sq ft: a mean spacing near 13 ft. That is CANOPY_SPACING_FT.
+          - Canopy crowns in such a stand run ~5-8 m across (16-26 ft), with occasional emergents
+            wider. CANOPY_R_FT = 8.5 is the mean radius; each crown is jittered 0.75-1.4x, so drawn
+            diameters land inside the real band, a few emergents over many smaller crowns.
+          - Crowns of ~17 ft mean diameter on 13 ft centers OVERLAP, and that is the point: closure
+            is what makes a wood a wood. Same finding as the mulberry rows (see _mulberry_rows) -
+            at a to-scale grain the honest drawing of real planted density IS a packed mass of
+            crowns, not sparse symbols spaced for the eye.
+          - NOTHING is inflated for legibility. At 1 ft/px a crown is r ~6-12 px; at a coarser grain
+            it shrinks with the map, exactly like the buildings do.
+        The stand's EDGE is made by the trees themselves - there is no boundary stroke and the
+        crowns are NOT clipped, so they break the outline the way a real wood does (a clipped stand
+        reads as a ruled terrain boundary, which is the exact defect this replaced). `floor` is
+        therefore drawn INSET from `poly` - its hard edge has to sit under the canopy - and
+        `outliers` scatters a thinning fringe of advance growth on the cut-over margin outside,
+        each registered as a block poly so later placement never drops a building on one."""
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        step = self.px(self.CANOPY_SPACING_FT)
+        rad = self.px(self.CANOPY_R_FT)
+        # the FLOOR: shaded leaf litter and understory glimpsed between the crowns. Not a terrain
+        # wash - under a closed canopy hardly any of it shows, and its outline is buried under the
+        # trees whose centers stand inside it.
+        d = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in (floor or poly)) + ' Z'
+        self.add(f'<path d="{d}" fill="{self.FOREST_FLOOR}"/>')
+        st = random.getstate()
+        random.seed(seed)
+        trees: list[tuple[float, float, float, str]] = []
+        yy = min(ys)
+        while yy <= max(ys) + step:
+            xx = min(xs)
+            while xx <= max(xs) + step:
+                tx = xx + random.uniform(-step * 0.42, step * 0.42)
+                ty = yy + random.uniform(-step * 0.42, step * 0.42)
+                big = random.random() < 0.18
+                kind = "conifer" if random.random() < 0.34 else "broadleaf"
+                if point_in_poly(tx, ty, poly):
+                    trees.append((tx, ty, rad * (random.uniform(1.05, 1.4) if big else random.uniform(0.75, 1.05)), kind))
+                xx += step
+            yy += step
+        self.add(''.join(self._crowns(trees)))
+        if outliers:
+            self.add(''.join(self._crowns(self._stand_fringe(poly, step, rad))))
+        random.setstate(st)
+
+    def _stand_fringe(self, poly: Poly, step: float, rad: float) -> list[tuple[float, float, float, str]]:
+        """The cut-over FRINGE of a wood: scattered advance growth thinning out past the tree line,
+        kept off every bit of ground already spoken for. Advance growth comes in THICKETS, not as an
+        even sprinkle, so a coarse position-seeded mask (~5 crowns across) decides which stretches of
+        the margin have seeded at all and which have been kept clear by grazing and fuel-cutting.
+        Each fringe tree becomes a block poly, so a later farmstead cannot land on it."""
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        band = step * 2.6
+        out: list[tuple[float, float, float, str]] = []
+        yy = min(ys) - band
+        while yy <= max(ys) + band:
+            xx = min(xs) - band
+            while xx <= max(xs) + band:
+                tx = xx + random.uniform(-step * 0.55, step * 0.55)
+                ty = yy + random.uniform(-step * 0.55, step * 0.55)
+                keep = random.random()
+                kind = "conifer" if random.random() < 0.3 else "broadleaf"
+                r = rad * random.uniform(0.55, 0.95)
+                xx += step * 1.15
+                if point_in_poly(tx, ty, poly):
+                    continue
+                gap = edge_dist(tx, ty, poly)
+                thicket = 1.0 if self._hjit(round(tx / (step * 5)), round(ty / (step * 5)), 31.0) > 0.42 else 0.12
+                if gap > band or keep > thicket * (1 - gap / band) ** 1.4:  # thins out with distance from the wood
+                    continue
+                if self._fringe_blocked(tx, ty, r):
+                    continue
+                out.append((tx, ty, r, kind))
+                self.block_polys.append([(tx - r, ty - r), (tx + r, ty - r), (tx + r, ty + r), (tx - r, ty + r)])
+            yy += step * 1.7
+        return out
+
+    def _crowns(self, trees: Sequence[tuple[float, float, float, str]]) -> list[str]:
+        """SVG for a set of (x, y, r, kind) canopy crowns, drawn back-to-front so the stand layers
+        with depth. One circle per tree (plus a dark apex for a conifer) - the same two-tone crown
+        the grove clumps use, so a wood and a windbreak read as the same kind of thing."""
+        out: list[str] = []
+        for tx, ty, r, kind in sorted(trees, key=lambda t: t[1]):
+            col = "#4A6733" if kind == "conifer" else ("#6E8B43" if (int(tx) + int(ty)) % 2 else "#7C9A4E")
+            out.append(f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="{r:.1f}" fill="{col}" stroke="#3C5526" stroke-width="0.7"/>')
+            if kind == "conifer":
+                out.append(f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="{r * 0.4:.1f}" fill="#364D22" opacity="0.55"/>')
+        return out
+
+    def _fringe_blocked(self, tx: float, ty: float, r: float) -> bool:
+        """Whether a fringe tree at (tx, ty) would land on ground already spoken for - anything
+        blocking, a field or dry plot, open water, or a way. The wood's margin grows on waste
+        ground, never in the crop or on the road."""
+        if any(point_in_poly(tx, ty, b) for b in self.block_polys):
+            return True
+        if any(point_in_poly(tx, ty, f) or edge_dist(tx, ty, f) < r for f in self.field_polys + self.dry_polys):
+            return True
+        if self._on_watercourse(tx, ty, pad=r):
+            return True
+        return any(seg_dist(tx, ty, lp[k], lp[k + 1]) < buf + r for lp, buf in self._corridor_buffers() for k in range(len(lp) - 1))
+
     def forest(self, west_edge: Any, label: str = "", label_xy: Any = None) -> None:
-        """A woodland filling east of an irregular tree-line to the canvas edge.
-        Blocks houses. Deterministic tree scatter (RNG saved/restored) so it never
-        perturbs house placement."""
+        """A woodland filling east of an irregular tree-line to the canvas edge, drawn as a stand of
+        INDIVIDUAL TREES (see _tree_stand for the density research). Blocks houses. Deterministic
+        (RNG saved/restored) so it never perturbs house placement. The TREE LINE is recorded
+        separately from the filled polygon because the frame reveals only a shallow band of wood
+        past it (crop_to_content) - deeper in it is undifferentiated canopy, i.e. wasted image."""
         pts = list(west_edge) + [(self.W + 12, west_edge[-1][1]), (self.W + 12, west_edge[0][1])]
-        cid = self._cid('forest')
-        d = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in pts) + ' Z'
-        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
-        self.add(f'<path d="{d}" fill="#A9B98C"/>')
         xs = [p[0] for p in pts]
         ys = [p[1] for p in pts]
-        st = random.getstate()
-        random.seed(9)
-        self.add(f'<g clip-path="url(#{cid})">')
-        yy = min(ys) + 16
-        while yy < max(ys):
-            xx = min(xs) + 16
-            while xx < max(xs):
-                tx, ty = xx + random.uniform(-9, 9), yy + random.uniform(-9, 9)
-                if point_in_poly(tx, ty, pts):
-                    r = random.uniform(6, 9)
-                    self.add(f'<circle cx="{tx:.0f}" cy="{ty:.0f}" r="{r:.1f}" fill="#6E8B4C" stroke="#4E6B3C" stroke-width="0.7"/>')
-                    self.add(f'<circle cx="{tx - 1.5:.0f}" cy="{ty - 1.5:.0f}" r="{r * 0.4:.1f}" fill="#8FA968"/>')
-                xx += 34
-            yy += 30
-        self.add('</g>')
-        random.setstate(st)
-        de = 'M' + ' L'.join(f'{x:.0f},{y:.0f}' for x, y in west_edge)
-        self.add(f'<path d="{de}" fill="none" stroke="#4E6B3C" stroke-width="2.5"/>')
+        # the litter floor is pushed a crown's width BACK from the tree line (the canvas side stays
+        # put) so its straight edge lies under the canopy and the trees alone make the wood's edge
+        inset = self.px(self.CANOPY_R_FT)
+        self._tree_stand(pts, seed=9, floor=[(x + inset, y) for x, y in west_edge] + pts[len(west_edge) :])
         self.block_polys.append(pts)
         self.M["forest"] = [[round(x, 1), round(y, 1)] for x, y in pts]
+        self.M["forest_edge"] = [[round(x, 1), round(y, 1)] for x, y in west_edge]
         if label:
             lx, ly = label_xy if label_xy else (min(xs) + (self.W - min(xs)) / 2, (min(ys) + max(ys)) / 2)
-            self.label(lx, ly, label, 14, italic=True, weight="bold", color="#3E5631")
+            self.label(lx, ly, label, 14, italic=True, weight="bold", color="#22301A")
 
     def manor(self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0, gate_ft: float = 12.0) -> None:
         """A walled samurai compound (e.g. a magistrate's manor / hunting lodge) shown
@@ -7720,32 +7853,19 @@ class Settlement:
         return n
 
     def forest_patch(self, base: Any, label: Any = None, label_xy: Any = None) -> None:
-        """A bounded copse (organic polygon), as opposed to forest() which fills to
-        the canvas edge. Blocks houses; deterministic tree scatter."""
+        """A bounded copse (organic polygon), as opposed to forest() which fills to the canvas edge.
+        Same stand of INDIVIDUAL TREES (see _tree_stand), just a closed one - so it is framed whole,
+        because unlike a canvas-filling wood its SHAPE is the feature. Blocks houses; deterministic."""
         outline = organic_poly(base, 22)
         sm = smooth_points(outline)
-        d = smooth_closed(outline)
-        cid = self._cid('copse')
-        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
-        self.add(f'<path d="{d}" fill="#A9B98C" stroke="#4E6B3C" stroke-width="1.5"/>')
         xs = [p[0] for p in sm]
         ys = [p[1] for p in sm]
-        st = random.getstate()
-        random.seed(12)
-        self.add(f'<g clip-path="url(#{cid})">')
-        yy = min(ys) + 12
-        while yy < max(ys):
-            xx = min(xs) + 12
-            while xx < max(xs):
-                tx, ty = xx + random.uniform(-8, 8), yy + random.uniform(-8, 8)
-                if point_in_poly(tx, ty, sm):
-                    rr = random.uniform(6, 9)
-                    self.add(f'<circle cx="{tx:.0f}" cy="{ty:.0f}" r="{rr:.1f}" fill="#6E8B4C" stroke="#4E6B3C" stroke-width="0.7"/>')
-                    self.add(f'<circle cx="{tx - 1.5:.0f}" cy="{ty - 1.5:.0f}" r="{rr * 0.4:.1f}" fill="#8FA968"/>')
-                xx += 30
-            yy += 28
-        self.add('</g>')
-        random.setstate(st)
+        # the litter floor shrinks toward the copse's center by a crown's width, so its edge sits
+        # under the canopy (see _tree_stand: the crowns are what the copse's outline is made of)
+        ccx, ccy = sum(xs) / len(xs), sum(ys) / len(ys)
+        apo = min(math.hypot(x - ccx, y - ccy) for x, y in sm)
+        k = max(0.35, 1 - self.px(self.CANOPY_R_FT) / max(apo, 1.0))
+        self._tree_stand(sm, seed=12, floor=[(ccx + (x - ccx) * k, ccy + (y - ccy) * k) for x, y in sm])
         self.block_polys.append(sm)
         self.M["forest_patches"].append([[round(x, 1), round(y, 1)] for x, y in sm])
         if label:
