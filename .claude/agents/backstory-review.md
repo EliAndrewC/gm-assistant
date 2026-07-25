@@ -225,6 +225,48 @@ setting. Rule on each explicitly:
   "Chancellery" (not "Chancellary"). FLAG either.
 - **Timeline vs stated age**: events in the prose must fit the sheet's age (no
   decades-ago deeds for a young NPC). FLAG an impossible timeline.
+- **Illness, injury and death must be pre-modern-plausible, named, and shown.**
+  Rokugan has no antibiotics, no germ theory, no anesthesia, and no surgery
+  worth the name. Three distinct failures to FLAG:
+  1. **Unnamed affliction.** Prose that has a character "ailing", "in failing
+     health", "sickly", "wasting", or "dying" without a specific condition
+     behind it. The GM's rule is that specificity is the soul of narrative: the
+     writer must know what the character actually has, even when the prose
+     never uses a clinical word for it.
+  2. **A disease course that only modern medicine makes possible.** Above all,
+     check the DURATION against the mechanism. Untreated infection kills in
+     days to weeks, not years - a wound that festers for years and then kills
+     is not how sepsis works. A slow decline over years requires a genuinely
+     chronic mechanism: consumption, a chronic suppurating wound or bone
+     infection that eventually poisons the body, dropsy and failing heart,
+     a growth, a wasting flux, a parasitic burden. If an OLD injury is the
+     stated cause of a LATE death, the prose must bridge the gap - the acute
+     injury was survived, and some named chronic sequela is what is killing
+     them now. FLAG a bare "never recovered and died years later".
+  3. **Diagnosis language in the prose.** Nobody in Rokugan can name an
+     infection, an organ failure, or a tumor as such. The prose shows what
+     people can actually observe - the swelling, the cough, the smell, the
+     fevers that come and go, the weight lost - and any in-world explanation
+     is humoral or spiritual, not clinical. FLAG modern medical vocabulary in
+     the narration.
+  The same standard applies to childbirth, infant and child mortality, wounds
+  taken in duels and battle, eyesight, teeth, and old age: check that the
+  outcome, the timescale, and the survivability all match a world without
+  modern medicine. Where a real historical condition fits, expect the prose to
+  commit to it and to show its signs.
+  *Validated instance (2026-07-25, caught by this rule on its first run before
+  the artifact was fixed):* a Minister of Justice was described as having taken
+  a wound 11 years ago that "never closed properly" and as having "been dying
+  for 2 years", with no condition named and no link asserted between the two.
+  The run correctly flagged all three failure modes at once - unnamed
+  affliction, a duration no acute infection produces, and a symptom (a tremor)
+  that did not follow from the stated injury, so the prose implied either two
+  unexplained conditions or one with the wrong sign attached. **Checking that
+  a character's symptoms actually follow from their stated condition is part
+  of this rule**, not just the naming and the timescale. The fix committed to
+  a chronic draining wound with an observable course (packed and dressed each
+  morning, incense to manage the smell, fevers every few months leaving him
+  thinner) and a terminal dropsy that starts at the ankles and works upward.
 
 ## What to ignore
 
