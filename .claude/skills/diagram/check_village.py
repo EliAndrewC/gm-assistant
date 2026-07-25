@@ -27,7 +27,7 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes, forest_frame_span, moat_current_at
+from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes, forest_frame_span, moat_current_at, torii_wall_conflicts
 from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
@@ -3054,6 +3054,24 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "torii_clear_of_halls_towers_ring",
         not bad_tor_pl,
         f"torii arch(es) overlapping a temple/shrine hall, guard tower/gate structure, or the ring-road corridor: {sorted(set(bad_tor_pl))[:4]} - an arch stands clear on its approach (an ordinary street through the arch is fine; the patrol ring is not)",
+    )
+
+    # ... AND CLEAR OF EVERY WALL (GM 2026-07-25, caught on Nagahara: the seventh arch of the Ebisu
+    # sando stood in the samurai ward fence). A torii is a FREESTANDING gateway - posts in open
+    # ground, carrying nothing, closing nothing - while a wall is a continuous barrier, so an arch
+    # drawn on a wall run is impossible construction: the posts stand inside the palisade and the
+    # gateway opens onto a barrier. Where a way pierces a wall the opening is a GATE STRUCTURE (the
+    # city gate, a ward kido), never an arch. The rule and its geometry live in settlement.py's
+    # wall_runs block, which the PLACEMENT side reads too (shrine_hall shortens a sando that would
+    # reach a wall; _torii and each wall-drawing method refuse the conflict outright) - this is the
+    # manifest-level backstop over the city rampart, ward fences and every walled compound.
+    tor_wall = torii_wall_conflicts(M)
+    check(
+        "torii_clear_of_walls",
+        not tor_wall,
+        f"torii arch(es) standing in a wall: {tor_wall[:4]} - a torii is a freestanding gateway on open ground and a "
+        f"wall is a continuous barrier; a way through a wall is a GATE (the city gate, a ward kido), never an arch. "
+        f"Move the arch clear - or draw the wall BEFORE the hall, and shrine_hall stops its avenue short of it.",
     )
     bad_rel_pl = []
     for r in M.get("religious", []):
