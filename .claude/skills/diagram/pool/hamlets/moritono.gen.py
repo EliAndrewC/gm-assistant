@@ -91,8 +91,11 @@ s.add(f'<g opacity="0.85">{beads}</g>')
 # THE FOREST BROOK: a natural brook out of the Shirin Forest (off-map E, through the wood) that feeds the pond -
 # the water source comes from the high wooded ground, not from nowhere. frm=forest (a source) -> to=pond. Drawn
 # BEFORE the pond so the pond covers the junction. Runs in from the E, S of the manor, to the pond's E rim.
+# The brook is SHORT (GM 2026-07-25): the wood stands close over the hamlet's east shoulder, so the reach of
+# open water between tree line and reservoir is ~190 ft rather than the ~400 it used to be - which is what
+# lets the forest and the lodge sit EAST_SHIFT closer in and the whole image crop that much narrower.
 pcx, pcy, prx, pry = POND
-s.stream([(W, 852), (2320, 842), (2080, 826), (1900, 814), (pcx + prx - 6, pcy + 2)],
+s.stream([(W, 900), (2300, 878), (2100, 850), (1950, 826), (pcx + prx - 6, pcy + 2)],
          frm={"kind": "offmap"}, to={"kind": "pond"}, width=7)
 s.pond(pcx, pcy, prx, pry)
 
@@ -139,14 +142,23 @@ s.M["channels"].append({"poly": [[round(SLUICE[0], 1), round(SLUICE[1], 1)],
 # stand of individual trees at true canopy density (settlement._tree_stand), with a fringe of advance growth
 # thinning out onto the scrub, so the wood's edge is made of trees rather than a ruled line. The frame reveals
 # only ~110 ft of canopy past the tree line (FOREST_REVEAL_FT) - enough to read as a wood running off the map.
-s.forest([(2262, -10), (2238, 118), (2276, 246), (2222, 372), (2258, 498), (2214, 624), (2270, 746),
-          (2226, 874), (2278, 1002), (2232, 1128), (2264, 1256), (2224, 1384), (2270, 1510)],
-         label="Shirin Forest", label_xy=(2320, 700))
+# EAST_SHIFT pulls the whole east assembly - tree line, lodge, and the brook's visible reach - in toward the
+# hamlet (GM 2026-07-25). Nothing about the wood's distance was load-bearing: it simply stood ~230 ft further
+# out than it needed to, and since the east crop edge is the tree line + the reveal band, every foot of that
+# gap was image spent on empty scrub. The floor is the brook: the pond's reed fringe ends at x~1832, so the
+# tree line cannot come closer than a readable open reach of water (~150-200 ft) without the brook vanishing
+# into the wood. Do NOT push it further - the map is not to be made narrow at the cost of the water reading.
+EAST_SHIFT = 232
+s.forest([(x - EAST_SHIFT, y) for x, y in
+          [(2262, -10), (2238, 118), (2276, 246), (2222, 372), (2258, 498), (2214, 624), (2270, 746),
+           (2226, 874), (2278, 1002), (2232, 1128), (2264, 1256), (2224, 1384), (2270, 1510)]],
+         label="Shirin Forest", label_xy=(2320 - EAST_SHIFT, 700))
 
 # THE MAGISTRATE'S MANOR - a walled hunting lodge at the forest's edge, gate facing WEST toward the hamlet it
 # oversees. A samurai estate ADJACENT to the hamlet, not part of it (only walls + gate + court; its interior is
-# its own Mode A diagram).
-s.manor(2070, 470, 240, 300, "Magistrate's Manor", "hunting lodge by the Shirin Forest", gate_dir="west")
+# its own Mode A diagram). It moves in with the wood; sitting a little further N keeps its SW corner clear of
+# the tameike's reed fringe now that the two share a band of x.
+s.manor(2070 - EAST_SHIFT, 440, 240, 300, "Magistrate's Manor", "hunting lodge by the Shirin Forest", gate_dir="west")
 
 # FARMHOUSES: a small nucleated cluster on the N margin of the field (clear of the E manor/pond/forest), the
 # paddy fanning W below it toward the drain + marsh. NO HEADMAN - a hamlet's overseer lives in the main village.
