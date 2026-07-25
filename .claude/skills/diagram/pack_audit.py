@@ -565,6 +565,38 @@ def fire_water_adrift(plan: ParsedPlan, max_gap_ft: float = TUB_MAX_GAP_FT) -> l
 
 
 @dataclass(frozen=True)
+class TubIndoors:
+    """A fire-water tub drawn INSIDE a building instead of against its outside wall."""
+
+    x: float
+    y: float
+    depth_ft: float  # how far the tub's center lies inside the footprint
+
+
+def tubs_indoors(plan: ParsedPlan) -> list[TubIndoors]:
+    """Fire-water tubs standing INSIDE a building footprint rather than against its outside wall.
+
+    A tensuioke stands in the open at the foot of a downspout, catching what the roof sheds, so
+    it belongs OUTSIDE the wall it serves. Drawn inside the footprint it is fed by nothing and
+    stands where no bucket line can reach it - the two things the tub exists for. This is the
+    companion of `fire_water_adrift`: that check pulls a tub IN toward a building, this one keeps
+    it OUT of one, and only the narrow band along the outside wall - where a real tub stands -
+    satisfies both. Worst (deepest inside) first.
+    """
+    out: list[TubIndoors] = []
+    for t in plan.tubs:
+        cx, cy = t.x + t.w / 2, t.y + t.h / 2
+        depth = 0.0
+        for b in plan.buildings:
+            if b.x <= cx <= b.x2 and b.y <= cy <= b.y2:
+                depth = max(depth, min(cx - b.x, b.x2 - cx, cy - b.y, b.y2 - cy))
+        if depth > 0:
+            out.append(TubIndoors(cx, cy, depth / FTPX))
+    out.sort(key=lambda t: t.depth_ft, reverse=True)
+    return out
+
+
+@dataclass(frozen=True)
 class TubOnWell:
     """A fire-water tub glyph overlapping a well glyph - they smear into one blob."""
 
@@ -927,9 +959,14 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
         lines.append("    (no fire-water tubs in this plan)")
     else:
         adrift = fire_water_adrift(plan)
-        if not adrift:
-            lines.append(f"    (all {len(plan.tubs)} tubs sit against a building)")
+        indoors = tubs_indoors(plan)
+        if not adrift and not indoors:
+            lines.append(f"    (all {len(plan.tubs)} tubs sit outside, against a building)")
         lines += [f"    tub at svg({t.x:.0f},{t.y:.0f}) is {t.gap_ft:.1f} ft from the nearest building - move it to a wall/eaves" for t in adrift]
+        lines += [
+            f"    TUB INDOORS: a fire-water tub at svg({t.x:.0f},{t.y:.0f}) stands {t.depth_ft:.1f} ft INSIDE a building - a tensuioke is gutter-fed and bucket-served, so move it OUT against the wall"
+            for t in indoors
+        ]
     lines.append("LAYER/LABEL checks:")
     occ = occluded_foreground(plan)
     if not occ:

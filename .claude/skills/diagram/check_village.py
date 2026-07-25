@@ -2176,26 +2176,34 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             for _dh in _yd.get("dung_heaps", []) or []:
                 if _fw_hit(_dh["x"], _dh["y"], max(_dh.get("rx", 2.5), _dh.get("ry", 1.8))):
                     _fw_bad.append((round(_dh["x"]), round(_dh["y"])))
-        # ... AND DUNG HEAPS KEEP CLEAR OF THE HITCHING RAILS (GM 2026-07-25, render review):
-        # both flanks of a rail are working tie-up space - a heap dumped against it sits in the
-        # tethered-animal row and blocks one side. Near the working edge is RIGHT (muck
-        # accumulates where the animals stand); touching is not. Floor: ~14px (42 real ft) from
-        # the rail line - just beyond the ~9px animal row, close enough to read as the yard's
-        # muck pile. Fixtures: the pinned Tango (7.9px) + Nagahara (12.6px) real captures.
+        # ... AND DUNG HEAPS KEEP CLEAR OF THE HITCHING RAILS (GM 2026-07-25, two render
+        # reviews): both flanks of a rail are working tie-up space - a heap dumped against it
+        # sits where the animals stand and blocks one side. Round 1 floored at 14px (42 ft),
+        # "just beyond the ~9px animal row" - the GM still read the result as directly against
+        # the posts (a heap edge ~8 ft off the animals' rumps IS the working row), and the loop
+        # paired each heap only with its OWN yard's rails, so Nagahara carried a heap 22.5px
+        # from a NEIGHBORING yard's rail that nothing measured. Round 2: floor 24px (72 ft)
+        # from EVERY rail on the map (placement holds 25 for slack) - the heap's edge ends
+        # ~38 ft past the animal row, clearly out of the tie-up space, still close enough to
+        # read as the yard's muck pile. Fixtures: the pinned Tango (7.9px) + Nagahara (12.6px)
+        # round-1 captures, plus the round-2 Nagahara capture (16.4px same-yard + 22.5px
+        # cross-yard) that PASSED the round-1 floor.
+        _dh_all_rails = [_rl2 for _yd2 in _sy_yards for _rl2 in _yd2.get("rails", []) or []]
         _dh_bad2 = []
         for _yd2 in _sy_yards:
             for _dh2 in _yd2.get("dung_heaps", []) or []:
-                for _rl2 in _yd2.get("rails", []) or []:
+                for _rl2 in _dh_all_rails:
                     _rh2 = _rl2["len"] / 2
-                    if seg_dist(_dh2["x"], _dh2["y"], (_rl2["x"] - _rl2["tx"] * _rh2, _rl2["y"] - _rl2["ty"] * _rh2), (_rl2["x"] + _rl2["tx"] * _rh2, _rl2["y"] + _rl2["ty"] * _rh2)) < 14.0:
+                    if seg_dist(_dh2["x"], _dh2["y"], (_rl2["x"] - _rl2["tx"] * _rh2, _rl2["y"] - _rl2["ty"] * _rh2), (_rl2["x"] + _rl2["tx"] * _rh2, _rl2["y"] + _rl2["ty"] * _rh2)) < 24.0:
                         _dh_bad2.append((round(_dh2["x"]), round(_dh2["y"])))
                         break
         check(
             "dung_heaps_clear_of_hitch_rails",
             not _dh_bad2,
-            f"dung heap(s) against a hitching rail at {_dh_bad2} - both flanks of a rail are tie-up space, so a heap "
-            f"keeps ~14px (42 ft) clear of the rail line (just beyond the tethered-animal row); near the working "
-            f"edge is right, touching is not",
+            f"dung heap(s) against a hitching rail at {_dh_bad2} - both flanks of every rail on the map are tie-up "
+            f"space, so a heap keeps ~24px (72 ft) clear of each rail line, its edge well past the tethered-animal "
+            f"row (the 14px round-1 floor still read as touching); near the yard's working edge is right, in the "
+            f"tie-up row is not",
         )
         check(
             "stable_yard_furniture_clear_of_roads_walls",

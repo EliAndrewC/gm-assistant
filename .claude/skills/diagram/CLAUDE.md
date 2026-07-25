@@ -57,6 +57,57 @@ centers, `tree_crowns`, ditch polylines are all in there. Re-run a generator whe
 what it DRAWS; read the manifest when you need to know what it drew. If the geometry you need is not
 recorded, that is usually a sign the CHECK needs it too - record it once and both problems go away.
 
+## DRAW ORDER: read this BEFORE changing where anything is placed or drawn
+
+Most of what a Mode B feature gets wrong is not geometry, it is ORDER. A drawing method sees only
+what is in `self.M` at the moment it runs, and a placement method avoids only what is in the
+registries at the moment it runs - so "tree not drawn on a roof" and "building not placed under a
+canopy" are the SAME rule enforced from two different points in the sequence. This map cost four
+fail-read-fix cycles to reconstruct on 2026-07-25; it is written down so nobody pays for it twice.
+
+**The three registries, and who honors them:**
+
+| registry | holds | consulted by |
+|---|---|---|
+| `block_polys` | no-build polygons (field envelopes, the wood, dry plots, the manor court) | `_rect_blocked` tests a whole FOOTPRINT (homestead bundles); `_fits` -> `_in_blocked` tests only the candidate's CENTER (urban packs) |
+| `placed` | `(x,y,w,h)` of everything already standing | `_fits` keeps each candidate a half-diagonal + 4px clear |
+| `grove_rects` | tree footprints, deliberately kept OUT of `placed` so adjacent groves may abut | `_fits` (same clearance rule), `_east_trees` (garden morning-sun) |
+
+**That `_fits` asymmetry is the trap.** A block poly stops a farmstead whose footprint merely touches
+it, but stops an urban building only when its CENTER lands inside - so a wide building can put half
+its roof over blocked ground. If a feature must keep whole footprints out, `placed`/`grove_rects`
+(distance-based) is the registry that does it; `block_polys` alone is not enough.
+
+**The order a Mode B gen runs in** (Moritono is the clean example):
+
+1. **terrain + water** - fields, channels, streams, pond, marsh
+2. **big terrain features** - `forest()` / `forest_patch()`. EARLY, because the settlement is sited
+   against them; their FLOOR draws here but their CANOPY is deferred (see 7)
+3. **ways** - road, lanes, streets
+4. **structures** - `manor()`, `farmsteads()`, urban packs, `place_wells()`, `draft_byres()`,
+   `place_kosatsuba()`. Inside `farmsteads()` the bundle path records grove rects first (the garden
+   relaxation needs them), then draws yards/gardens/houses, then draws the yashikirin arms LAST
+5. **ground cover** - `hinterland()` scrub + marsh (skips structures via `_urban_keepouts`)
+6. **communal vegetation** - `village_grove()`. LATE, so its per-crown filter sees every structure
+7. **crop** - `crop_to_content()` / `crop_city()`, which first run `flush_stable_yards()` and
+   `flush_tree_stands()`: the deferred yard furniture and every wood's canopy draw HERE, against the
+   complete map. `finish()` re-runs the tree flush as a backstop for a gen that never crops
+8. `title()`, `finish()`
+
+**The two rules that fall out of it:**
+
+- **Must not be drawn ON something?** Run AFTER it, or defer to the flush. Drawing early and letting
+  the later feature paint over it hides the overlap instead of preventing it - which is exactly what
+  the yashikirin used to do, leaving crowns geometrically under roofs while looking fine.
+- **Must RESERVE ground?** Run BEFORE placement AND register in a registry that the placer in
+  question actually honors (see the asymmetry above).
+
+**Changing any of this deserves a design pass first.** Read the paths above and settle the ordering
+on paper before editing - the failure mode is discovering the sequence one gate failure at a time,
+which is what turned a small rule into four fix-fail-read cycles. If a change needs a feature to
+move between phases, say so explicitly in the commit: phase moves are the changes most likely to
+have effects far from the diff.
+
 ## When a check is slow, INDEX it - do not coarsen it
 
 The gate's cost is dominated by a handful of checks that ask a local question with a global scan.
