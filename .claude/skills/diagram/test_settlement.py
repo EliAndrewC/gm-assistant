@@ -1892,14 +1892,32 @@ def test_ministry_auto_label_side_prefers_empty_ground():
 
 
 def test_crop_to_content_includes_forest_clamped_to_canvas():
-    # the forest is a big EDGE feature recorded as a POINT-LIST (not dicts): the crop frames to include it,
-    # CLAMPED to the canvas so the view never opens past the edge (an edge feature must REACH the frame edge,
-    # not stop short). Exercises the forest branch + all four clamp arms.
+    # the forest is a big EDGE feature recorded as a POINT-LIST (not dicts). On the axis it FACES, the crop
+    # frames it CLAMPED to the canvas so the view never opens past the edge (an edge feature must REACH the
+    # frame edge, not stop short). On the axis it RUNS ALONG - here N-S, off BOTH canvas ends - it sets
+    # nothing, so that edge stays tight to the real content instead of being pinned to the canvas.
     s = Settlement(2000, 1500, seed=1)
     s.M["houses"] = [{"x": 30, "y": 700, "w": 20, "h": 20}]
     s.M["forest"] = [[1800, -10], [1820, 750], [1800, 1510], [2012, 1510], [2012, -10]]  # fills the E to canvas+12
     s.crop_to_content(margin=40)
-    assert s.view == (0, 0, 2000, 1500)  # clamped to the whole canvas (forest reaches every edge)
+    assert s.view == (0, 650, 2000, 100)  # E edge clamped to the canvas; N/S tight to the house
+
+
+def test_crop_to_content_frames_a_forest_that_ends_inside_the_canvas():
+    # ... but a tree line that STOPS inside the canvas bounds something real, so its own span is content
+    s = Settlement(2000, 1500, seed=1)
+    s.M["houses"] = [{"x": 30, "y": 700, "w": 20, "h": 20}]
+    s.M["forest"] = [[1800, 300], [1820, 750], [1800, 1200], [2012, 1200], [2012, 300]]
+    s.crop_to_content(margin=40)
+    assert s.view == (0, 260, 2000, 980)
+
+
+def test_crop_boxes_keeps_a_lone_forests_own_span():
+    # a map with NOTHING but the wood has no other content to take its span from, so the run-along axis
+    # falls back to the forest's own clamped span
+    s = Settlement(2000, 1500, seed=1)
+    s.M["forest"] = [[1800, -10], [1800, 1510], [2012, 1510], [2012, -10]]
+    assert s._crop_boxes(city=False) == [(1800.0, 2000.0, 0.0, 1500.0, "forest")]
 
 
 def test_hinterland_skip_sides_drops_a_scrub_band():
