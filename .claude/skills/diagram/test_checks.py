@@ -8050,3 +8050,48 @@ def test_moat_channels_flow_with_current_fires_on_an_offtake_back_upstream():
         channels=[{"poly": [[500, 300], [480, 100]], "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "fn"}, "w": 2.5}],
     )
     assert "moat_channels_flow_with_current" in f(M)
+
+
+# ---- moat junctions swept with the current (GM 2026-07-25) ----------------------------------
+# sampled every 50px: a 4-vertex square is too coarse for a mid-edge tap, since the nearest-vertex
+# tangent then picks up the wrong edge entirely
+_MJ_RING = [[x, 300] for x in range(400, 700, 50)] + [[700, y] for y in range(300, 700, 50)] + [[x, 700] for x in range(700, 400, -50)] + [[400, y] for y in range(700, 300, -50)] + [[400, 300]]
+_MJ_FLOW = {"inlet": [400, 300], "outlet": [700, 700]}  # enters NW, leaves SE
+
+
+def _mj_map(chan):
+    return {
+        "meta": {"scale": "city", "walled": True, "ftpx": 3, "W": 3200, "H": 2700, "down_deg": 90},
+        "wall": [[450, 350], [650, 350], [650, 650], [450, 650]],
+        "moat": _MJ_RING,
+        "moat_flow": _MJ_FLOW,
+        "fields": [{"name": "f1", "kind": "paddy", "outline": [[100, 800], [400, 800], [400, 1000], [100, 1000]], "bbox": [100, 800, 400, 1000], "vis_bbox": [100, 800, 400, 1000], "down_deg": 90}],
+        "channels": [chan],
+    }
+
+
+def test_moat_junction_fires_on_a_SQUARE_offtake():
+    # a tap leaving at 90 deg is the defect canal practice warns about ("30 or 45 instead of 90") -
+    # it sheds sediment into its own mouth and says nothing about which way the water runs
+    M = _mj_map({"poly": [[400, 500], [340, 500], [250, 850]], "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5})
+    assert "moat_junctions_swept_with_the_current" in f(M)
+
+
+def test_moat_junction_passes_an_offtake_swept_downstream():
+    # same tap, but the throat leaves angled WITH the current (the west arc runs south here)
+    M = _mj_map({"poly": [[400, 450], [340, 520], [250, 850]], "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5})
+    assert "moat_junctions_swept_with_the_current" not in f(M)
+
+
+def test_moat_junction_fires_on_a_drain_arriving_against_the_current():
+    # Tango's fn2: the culvert doubled back to meet the rim pointing upstream
+    M = _mj_map({"poly": [[250, 850], [340, 700], [400, 620]], "frm": {"kind": "drain", "name": "f1"}, "to": {"kind": "moat"}, "w": 2.5})
+    assert "moat_junctions_swept_with_the_current" in f(M)
+
+
+def test_moat_junction_skips_degenerate_channels():
+    # a one-point poly has no heading, and a zero-length first step has no direction: both are
+    # skipped rather than crashing or being scored
+    for poly in ([[400, 500]], [[400, 500], [400, 500]]):
+        M = _mj_map({"poly": poly, "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5})
+        assert "moat_junctions_swept_with_the_current" not in f(M)
