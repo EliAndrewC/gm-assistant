@@ -27,7 +27,7 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree
+from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes
 from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
@@ -1675,6 +1675,42 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not _edge_loose,
                 f"view edge(s) held open past the frame-setting content by more than {ALLOW}px: {_edge_loose} - prefer the smaller crop; a band whose only extra content is more windbreak grove (or open ground) is wasted image, so let the grove clip at the edge (crop_to_content no longer counts village_groves)",
             )
+    # ONE FEATURE MUST NOT HOLD THE WHOLE FRAME OPEN (GM 2026-07-25). crop_hugs_content asks
+    # whether the MARGIN is generous; this asks the opposite question - whether a single element,
+    # standing far outside everything else, is by itself forcing a bigger image. Move it and the
+    # whole map crops tighter, so it is worth knowing about.
+    #
+    # THE DISCRIMINATOR IS THE RATIO, NOT THE GAP. A pond or a forest that extends the frame IS
+    # the outlying content: big, and meant to be out there. Measured across the pool, every
+    # legitimate case has a gap roughly equal to the feature's own size (ponds 1.03-1.35x,
+    # moritono's forest 1.14x), while Tango's tanning-yard caption stood 178 px past everything
+    # with a 10 px box of its own - 17.8x. So the rule is "further than its own size", with a
+    # 60 px floor so a trivial shift is not worth reporting. Reads crop_boxes(), the SAME
+    # contributor list the crop itself uses, so the two cannot drift apart.
+    _cb = crop_boxes(M, scale == "city", meta.get("ftpx", 1), Wd, Hd)
+    # (outer-most value, that feature's own extent on this axis, what it is) - built with
+    # LITERAL indices per side so each value stays a float rather than a tuple-union
+    _sides = (
+        ("west", [(-b[0], b[1] - b[0], b[4]) for b in _cb]),
+        ("east", [(b[1], b[1] - b[0], b[4]) for b in _cb]),
+        ("north", [(-b[2], b[3] - b[2], b[4]) for b in _cb]),
+        ("south", [(b[3], b[3] - b[2], b[4]) for b in _cb]),
+    )
+    _lone = []
+    for _side, _vals in _sides:
+        if len(_vals) < 2:
+            continue
+        _r = sorted(_vals, key=lambda v: -v[0])
+        _gap, _own = _r[0][0] - _r[1][0], _r[0][1]
+        if _gap > max(60.0, 3.0 * _own) and not meta.get("crop_outlier_ok"):
+            _lone.append(f"{_side}: {_r[0][2]} stands {_gap:.0f}px past the next feature in (its own extent is only {_own:.0f}px)")
+    check(
+        "crop_not_held_open_by_one_feature",
+        not _lone,
+        f"a single feature is holding the frame open: {_lone} - move it inward and the whole map crops tighter. "
+        f"If it genuinely belongs out there (a rule forces it, or the far ground is the point), declare "
+        f"meta(crop_outlier_ok=True) with the reason",
+    )
 
     # population is DWELLINGS x ~5, NEVER total buildings: a town/city's shops, government
     # offices, flophouses, kura and gate furniture house no one, so counting them as housing
