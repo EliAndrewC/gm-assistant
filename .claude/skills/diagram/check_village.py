@@ -27,7 +27,7 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes
+from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes, forest_frame_span
 from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
@@ -1658,9 +1658,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             pcx, pcy, prx, pry = M["pond"]
             fsx += [pcx - prx, pcx + prx]
             fsy += [pcy - pry, pcy + pry]
-        if M.get("forest"):  # the big EDGE forest is frame-setting, canvas-clamped like the crop -
-            fsy += [min(max(fp[1], 0), Hd) for fp in M["forest"]]  # and revealed only a band deep
-            fsx += forest_reveal_x(M["forest"], M.get("forest_edge"), FOREST_REVEAL_FT / meta.get("ftpx", 1), Wd)
+        if M.get("forest"):  # the big EDGE forest is frame-setting exactly as the crop counts it:
+            # revealed only a band deep on the axis it FACES, and not frame-setting at all on the
+            # axis it RUNS ALONG (a tree line off both canvas ends bounds nothing) - forest_frame_span.
+            _fx = forest_reveal_x(M["forest"], M.get("forest_edge"), FOREST_REVEAL_FT / meta.get("ftpx", 1), Wd)
+            _fy = [min(max(fp[1], 0), Hd) for fp in M["forest"]]
+            _fsx, _fsy = forest_frame_span(_fx, Wd, fsx), forest_frame_span(_fy, Hd, fsy)
+            fsx += list(_fsx)
+            fsy += list(_fsy)
         if fsx:
             ALLOW = 56
             _edge_slack = {
