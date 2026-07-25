@@ -2,7 +2,20 @@
         screenshots dom-audit ui-verify guard
 
 # The Principle X "done" checklist. A change is not done until `make done` passes.
-done: lint format-check types test cov
+#
+# Runs EVERY phase and reports all failures together (GM 2026-07-25). It used to be
+# `done: lint format-check types test cov`, which make stops at the first failure - so a lint slip
+# hid a type error hid a coverage hole, and each hidden failure cost another full round trip to
+# discover. Phases stay in cheap-to-expensive order so the fast ones report first, but none of them
+# short-circuits the rest. Exit is non-zero if any phase failed: exactly as strict as before.
+done:
+	@fail=""; \
+	for phase in lint format-check types test cov; do \
+	  printf '\n\033[1m== %s ==\033[0m\n' "$$phase"; \
+	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
+	done; \
+	if [ -n "$$fail" ]; then printf '\n\033[1mGATE FAILED:%s\033[0m (every phase ran - fix them together, then re-run once)\n' "$$fail"; exit 1; fi; \
+	printf '\n\033[1mgate green\033[0m\n'
 
 # Refuse to run from the MAIN /gm-assistant tree (CLAUDE.md "Session clones": main is the
 # integration point, never a workspace - work runs in .clones/<session-name>). Every target
@@ -41,7 +54,8 @@ test:
 
 cov:
 	@if [ -d l7r ]; then \
-		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov-report=term-missing --cov-fail-under=100; \
+		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov-report=term-missing --cov-fail-under=100; ec=$$?; \
+		if [ $$ec -ne 0 ]; then python3 ../scripts/uncovered-in-diff.py || true; fi; exit $$ec; \
 	else \
 		echo "[done] No l7r/ package yet — coverage check skipped"; \
 	fi
