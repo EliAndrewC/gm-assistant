@@ -27,7 +27,7 @@ import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes, forest_frame_span
+from settlement import KIDO_TOWER_KEEPCLEAR, WALL_DEFENSE, _assert_not_main_tree, crop_boxes, forest_frame_span, moat_current_at
 from waterfields import hem_on_paddy
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
@@ -6665,6 +6665,65 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"moat-fed channel(s) running against the moat current (field is upstream of the tap; the feeder makes the moat flow {flow}): {sorted(set(against))}",
             )
 
+    # A MOAT JUNCTION IS SWEPT WITH THE CURRENT (GM 2026-07-25). Where a channel meets the moat, its
+    # LOCAL heading at the junction must carry a downstream component - a tributary joins a trunk
+    # pointing downstream, and an irrigation offtake takes off downstream so the water turns in
+    # smoothly instead of doubling back on itself. The engine already holds moat<->RIVER junctions to
+    # exactly this (city_moat_junction_angles: inlet near-square, outlet swept downstream); this
+    # extends it to moat<->CHANNEL junctions, which nothing checked.
+    #
+    # NOTE the quantity: the LOCAL segment at the junction, NOT the channel's net vector to its field.
+    # The net vector is near-arbitrary for an offtake that leaves the ring roughly perpendicular (that
+    # is why moat_channels_flow_with_current above keeps a coarse cardinal test and is NOT this check).
+    # The current is the ring TANGENT at the tap, in the direction of travel along that tap's own arc -
+    # a ring has no single downstream side, since water entering the inlet runs BOTH ways round to the
+    # outlet. WHAT IT CAUGHT (GM's eye, then this check): every offtake on BOTH cities stepped upstream,
+    # because the offtake tee was drawn as mirrored geometry whose along-rim step was never oriented to
+    # the local flow; plus Tango's fn2 drain culvert doubling back to enter at 138 deg and Nagahara's
+    # fnn1 at 115 deg. Fixtures: the pre-fix Tango and Nagahara manifests in pool/regressions/.
+    _mjr: Any = M.get("moat")
+    _mjf = M.get("moat_flow") or {}
+    if _mjr and len(_mjr) >= 3 and _mjf.get("inlet") and _mjf.get("outlet"):
+        _mjn = len(_mjr)
+
+        def _mj_current(tap_: Any) -> tuple[float, float] | None:
+            return moat_current_at(_mjr, _mjf["inlet"], _mjf["outlet"], tap_)
+
+        _mj_bad = []
+        for _mjc in M.get("channels", []):
+            _mjp = _mjc.get("poly") or []
+            if len(_mjp) < 2:
+                continue
+            _mfr, _mto = (_mjc.get("frm") or {}), (_mjc.get("to") or {})
+            if _mfr.get("kind") == "moat":  # an OFFTAKE leaves the ring: its mouth is the first step
+                _tap, _head, _who, _role = _mjp[0], (_mjp[1][0] - _mjp[0][0], _mjp[1][1] - _mjp[0][1]), _mto.get("name", "?"), "offtake"
+            elif _mto.get("kind") == "moat":  # a DRAIN arrives: its last step is the entry
+                _tap, _head, _who, _role = _mjp[-1], (_mjp[-1][0] - _mjp[-2][0], _mjp[-1][1] - _mjp[-2][1]), _mfr.get("name", "?"), "drain"
+            else:
+                continue
+            _cur = _mj_current(_tap)
+            _hl = math.hypot(*_head)
+            if _cur is None or _hl == 0:
+                continue
+            _along = (_head[0] * _cur[0] + _head[1] * _cur[1]) / _hl
+            # A SQUARE TAP IS THE DEFECT, not merely an upstream-facing one. Canal practice: the best
+            # offtake alignment is 0 deg to the parent, separating out in transition, and the studied
+            # optimum for water and sediment is 15-45 deg - explicitly "30 or 45 INSTEAD OF 90". A
+            # perpendicular junction sheds sediment into its own mouth and, on the page, says nothing
+            # about which way the water goes. 75 deg is the generous line for "clearly swept": well
+            # outside the textbook band, and the engine's two correct junctions (nw1 35, fn1 41) sit
+            # comfortably inside it.
+            if _along <= math.cos(math.radians(75.0)):
+                _mj_bad.append(f"{_who} ({_role}, {math.degrees(math.acos(max(-1.0, min(1.0, _along)))):.0f} deg)")
+        check(
+            "moat_junctions_swept_with_the_current",
+            not _mj_bad,
+            f"moat junction(s) not swept downstream: {_mj_bad} - where a channel meets the moat its local heading at "
+            f"the junction must carry a DOWNSTREAM component. A tributary joins pointing downstream and an offtake "
+            f"takes off downstream; a junction angled back up the current reads as water doubling on itself. Flip the "
+            f"offtake tee's along-rim step (or the drain culvert's landing point) to the downstream side",
+        )
+
     # WATER JOINS WATER AT A CONFLUENCE, NEVER CROSSES IT (GM 2026-07-23, feature 014 endgame: "I can
     # visually see the intersection where ditches and channels just run into the moat... they just keep
     # going and aren't intersecting at the edge"). A channel/ditch segment that strictly CROSSES the
@@ -7145,6 +7204,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _ind: list[Any] = []
             for _tp in _drain_topo.get(fd.get("field")) or []:
                 _a_, _b_ = _tp[0], _tp[-1]
+                # If exactly ONE culvert end sits on exactly ONE drain ENDPOINT, that endpoint is
+                # where it leaves from - read it directly. The sink-end fallback below is for a
+                # culvert leaving PARTWAY along the collector (Hirameki's w2 at x=35), where no
+                # endpoint coincides; but preferring the sink there would mis-read a culvert that
+                # doubles back, since its far end can land nearer the drain's other end (Nagahara's
+                # fnn2 leaves its tail and runs west, ending 151px from the head and 182 from the
+                # tail). On a 2-point drain whose culvert IS the drain both ends coincide, which is
+                # ambiguous - fall through to the sink rule, which reads it correctly.
+                _hits = [_de for _ce in (_a_, _b_) for _de in (e0, e1) if math.hypot(_ce[0] - _de[0], _ce[1] - _de[1]) < 15]
+                if len(_hits) == 1:
+                    _ind.append(_hits[0])
+                    continue
                 _sink: Any = _b_ if _off_drain(_b_) >= _off_drain(_a_) - 1.0 else _a_
                 _da_ = math.hypot(e0[0] - _sink[0], e0[1] - _sink[1])
                 _db_ = math.hypot(e1[0] - _sink[0], e1[1] - _sink[1])
