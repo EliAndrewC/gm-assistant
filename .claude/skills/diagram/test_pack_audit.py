@@ -555,6 +555,49 @@ def test_frozen_fixtures_show_the_floating_kura_door() -> None:
             assert pa.floating_doors(pa.parse_svg(fh.read()))  # the kura door 2 px inside its wall
 
 
+def test_bold_label_width_splits_caps_from_mixed_case() -> None:
+    """Calibrated against RENDERED ink (2026-07-25, resvg/DejaVu Serif over real pool strings):
+    all-caps bold measures ~0.72 of font-size per character, mixed-case bold ~0.60. Using the caps
+    figure for mixed case over-measured labels by ~26%, enough to produce a false occlusion finding
+    on Ochiba ("Tatsuya's quarters" estimated into a corridor its real ink stops 7 px short of).
+    """
+    assert pa._bold_char_w("HEARING COURT") == pa.CHAR_W_BOLD
+    assert pa._bold_char_w("RESIDENCE") == pa.CHAR_W_BOLD
+    assert pa._bold_char_w("Tatsuya's quarters") == pa.CHAR_W_BOLD_MIXED
+    assert pa._bold_char_w("sealed charcoal store") == pa.CHAR_W_BOLD_MIXED
+    assert pa._bold_char_w("100") == pa.CHAR_W_BOLD_MIXED  # no letters -> the narrow, safe default
+
+
+def test_occlusion_is_fill_blind_and_covers_furniture() -> None:
+    """The occluder side must not be an enumerated palette, and furniture is foreground too.
+
+    Both defects this widening was written for slipped a narrow enumeration: a note box was not a
+    'building or garden', and a privy was not a 'label or tub'.
+    """
+    privy, note_box = _rect(50, 50, 18, 22, "#7E726A"), _rect(40, 40, 80, 60, "#F2EAD0")
+    svg = _svg(_rect(0, 0, 300, 300, COURT), privy, note_box)
+    buried = pa.occluded_foreground(pa.parse_svg(svg))
+    assert [o.kind for o in buried] == ["feature"]
+    # same two shapes, privy drawn LAST: correct order, nothing buried
+    assert pa.occluded_foreground(pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), note_box, privy))) == []
+
+
+def test_occlusion_ignores_a_shape_drawn_inside_its_own_parent() -> None:
+    """A well-mouth circle sits in its curb and a fire circle in its hearth - that is detailing,
+    not burial, and treating it as burial flags every well and hearth in the pool."""
+    svg = _svg(_rect(0, 0, 300, 300, COURT), _rect(50, 50, 22, 22, pa.WELL_FILL), '<circle cx="61" cy="61" r="6" fill="#2D2A24"/>')
+    assert pa.occluded_foreground(pa.parse_svg(svg)) == []
+
+
+def test_occlusion_fires_on_the_frozen_ubame_red_fixture() -> None:
+    """Red fixture: the note box painting over the bounty bill, and the cart-yard gravel painting
+    over the privy beneath it (both real, both shipped, both invisible to the narrow check)."""
+    with open(os.path.join(_FIX, "ubame-occlusion-red.svg")) as fh:
+        occ = pa.occluded_foreground(pa.parse_svg(fh.read()))
+    assert any(o.kind == "label" and "100 koku" in o.text for o in occ)
+    assert any(o.kind == "feature" for o in occ)
+
+
 def test_tubs_indoors_flags_inside_and_passes_outside() -> None:
     """A tensuioke is gutter-fed and bucket-served, so it belongs OUTSIDE the wall it serves."""
     svg = _svg(
