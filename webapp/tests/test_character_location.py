@@ -97,12 +97,29 @@ def test_reiji_ruling_lineage_is_cosmopolitan() -> None:
     assert _Samurai(**REIJI, lineage='reiji', base_rank=10).location == 'Shiro Reiji'
 
 
-def test_reiji_lineages_are_equally_weighted() -> None:
+def test_reiji_is_an_all_dynasty_domain() -> None:
+    """Every Reiji province is a dynasty province.
+
+    The Reiji domain is deliberately unusual (see l7r.md "The Reiji Domain"):
+    the ruling lineage administers the capital and nothing else, and each of
+    the other five lineages holds one province, so the domain has no
+    cosmopolitan lineages and no stewardship provinces at all.
+    """
     from chargen import config
 
     lineages = config['house']['reiji']
-    assert len(lineages) == 4  # reiji, obana, noriko, sugino
-    assert len(set(lineages.values())) == 1  # all four share one weight
+    provincial = config['provincial_lineages']['reiji']
+    provinces = config['locations']['reiji']['provinces']
+
+    assert len(lineages) == 6  # reiji + five provincial lineages
+    # Every lineage but the ruling one is provincial - no cosmopolitan lineages.
+    assert set(lineages) - {'reiji'} == set(provincial)
+    # ...and between them they cover every province exactly once.
+    assert sorted(provincial.values()) == sorted(provinces)
+    # The five provincial lineages share one weight; the ruling lineage is bigger.
+    provincial_weights = {lineages[name] for name in provincial}
+    assert len(provincial_weights) == 1
+    assert lineages['reiji'] > provincial_weights.pop()
 
 
 def test_house_without_location_config_has_no_location() -> None:
