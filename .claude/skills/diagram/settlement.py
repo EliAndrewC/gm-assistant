@@ -415,25 +415,37 @@ def _field_archetype_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
     return req is None or terrain == req
 
 
+def _toward(frm: Pt, to: Pt, dist: float) -> Pt:
+    """A point `dist` along the way from `frm` to `to`, never past 45% of the run - so a fillet leg
+    piled onto a short plot edge still leaves that edge with a middle."""
+    vx, vy = to[0] - frm[0], to[1] - frm[1]
+    ln = math.hypot(vx, vy) or 1.0
+    dd = min(dist, ln * 0.45)
+    return (frm[0] + vx / ln * dd, frm[1] + vy / ln * dd)
+
+
 def _centroid(poly: Sequence[Pt]) -> list[float]:
     """Rounded centroid of a plot polygon - the identity a land-use record and a wet-plot record share."""
     return [round(sum(p[0] for p in poly) / len(poly), 1), round(sum(p[1] for p in poly) / len(poly), 1)]
 
 
-def _max_turn_deg(poly: Sequence[Pt]) -> float:
-    """The SHARPEST turn anywhere on a closed outline, in degrees (0 = dead straight through the
-    vertex). A ruled quad scores ~90; an outline whose corners are filleted spreads that turning over
-    several vertices and scores far less, which is what tells hand-piled earth from a CAD rectangle."""
+def _sharp_corners(poly: Sequence[Pt]) -> int:
+    """How many vertices of a closed outline turn through more than 60 degrees - i.e. how many corners
+    are still essentially square. A ruled quad scores 4. Counting them, rather than taking the SHARPEST
+    turn, is what survives the rule getting more honest: once corner reach is drawn from a wide spread
+    some corners legitimately stay near-square (the one behind a neighbour's bund never gets walked),
+    so a max is a statistic about the single least-rounded corner on the parcel and says nothing about
+    the parcel. The count does: it separates 'a few corners never rounded' from 'nothing rounded'."""
     n = len(poly)
-    worst = 0.0
+    hard = 0
     for i in range(n):
         ax, ay = poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]
         bx, by = poly[(i + 1) % n][0] - poly[i][0], poly[(i + 1) % n][1] - poly[i][1]
         la, lb = math.hypot(ax, ay), math.hypot(bx, by)
         if la < 1e-9 or lb < 1e-9:
             continue  # a duplicate vertex turns through no angle at all
-        worst = max(worst, math.degrees(math.acos(max(-1.0, min(1.0, (ax * bx + ay * by) / (la * lb))))))
-    return worst
+        hard += math.degrees(math.acos(max(-1.0, min(1.0, (ax * bx + ay * by) / (la * lb))))) > 60.0
+    return hard
 
 
 def _land_use_ok(v: Any, ctx: Mapping[str, Any]) -> bool:
@@ -1624,17 +1636,28 @@ class Settlement:
 
         A junction is found from the DRAWN geometry, not declared: wherever >=3 plot corners coincide,
         bunds cross. That makes the pass self-selecting - a polder's parcels are inset away from each
-        other and share no corner at all, so nothing is drawn on the archetype that must not get it."""
+        other and share no corner at all, so nothing is drawn on the archetype that must not get it.
+
+        NOT A DISC AT THE CROSSING (GM 2026-07-25, on the first version): a blob centered on the node
+        reads as a stamped circle, and a stamp is LESS natural than the sharp cross it replaced - at
+        4-6 px no amount of jitter on a 7-gon's radius survives rasterization, and every junction gets
+        the same mark. Earth does not arrive symmetrically anyway. So the node is built the way it is
+        actually piled: as a separate FILLET IN EACH QUADRANT - one per plot corner meeting here, each
+        with its own two independently-drawn legs and its own outward bulge, and roughly a quarter of
+        quadrants left bare (nobody re-piles all four corners of a crossing in the same season). The
+        irregularity is then structural rather than cosmetic: a junction can be piled heavily on one
+        side and untouched on the other, and no two crossings on a map carry the same mark."""
         from waterfields import AZE, aze_w
 
-        cells: dict[tuple[int, int], list[list[float]]] = {}
-        for p in plots:
-            for x, y in p["poly"]:
+        cells: dict[tuple[int, int], list[list[tuple[float, float] | list[tuple[int, int]]]]] = {}
+        for pi, p in enumerate(plots):
+            for vi, (x, y) in enumerate(p["poly"]):
                 node = None
                 for dx in (-1, 0, 1):
                     for dy in (-1, 0, 1):
                         for cand in cells.get((int(x // 1) + dx, int(y // 1) + dy), []):
-                            if abs(cand[0] - x) < 0.75 and abs(cand[1] - y) < 0.75:
+                            cxy = cast("tuple[float, float]", cand[0])
+                            if abs(cxy[0] - x) < 0.75 and abs(cxy[1] - y) < 0.75:
                                 node = cand
                                 break
                         if node:
@@ -1642,19 +1665,32 @@ class Settlement:
                     if node:
                         break
                 if node:
-                    node[2] += 1
+                    cast("list[tuple[int, int]]", node[1]).append((pi, vi))
                 else:
-                    cells.setdefault((int(x // 1), int(y // 1)), []).append([x, y, 1.0])
+                    cells.setdefault((int(x // 1), int(y // 1)), []).append([(x, y), [(pi, vi)]])
         rng = random.Random(int(hashlib.md5(name.encode()).hexdigest()[:8], 16))  # str hash() is salted per process - a map must redraw identically
-        base = max(2.5 / self.ftpx, aze_w(self.ftpx) * 1.1)  # ~5 ft node radius, floored at the drawn aze
+        base = max(2.5 / self.ftpx, aze_w(self.ftpx) * 1.1)  # ~5 ft of piled earth, floored at the drawn aze
         out = []
         for bucket in cells.values():
-            for x, y, n in bucket:
-                if n < 3:
+            for _xy, members in bucket:
+                corners = cast("list[tuple[int, int]]", members)
+                if len(corners) < 3:
                     continue  # a run, a T-stub, or a field-edge corner - only real crossings get piled
-                r = base * rng.uniform(0.75, 1.3)  # no two re-pilings match
-                pts = " ".join(f"{x + r * (1 + 0.24 * rng.uniform(-1, 1)) * math.cos(a):.1f},{y + r * (1 + 0.24 * rng.uniform(-1, 1)) * math.sin(a):.1f}" for a in [i * math.tau / 7 for i in range(7)])
-                out.append(f'<polygon points="{pts}"/>')
+                for pi, vi in corners:
+                    if rng.random() < 0.25:
+                        continue  # this quadrant has not been re-piled lately
+                    poly = plots[pi]["poly"]
+                    n = len(poly)
+                    v = poly[vi]
+                    a = _toward(v, poly[(vi - 1) % n], base * rng.uniform(0.5, 2.0))  # each leg of the fillet
+                    b = _toward(v, poly[(vi + 1) % n], base * rng.uniform(0.5, 2.0))  # is piled on its own
+                    mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+                    bulge = rng.uniform(0.15, 0.45)  # how far the pile swells past the chord into the basin
+                    cx_, cy_ = mx + (mx - v[0]) * bulge, my + (my - v[1]) * bulge
+                    arc = " ".join(
+                        f"{(1 - f) ** 2 * a[0] + 2 * (1 - f) * f * cx_ + f * f * b[0]:.1f},{(1 - f) ** 2 * a[1] + 2 * (1 - f) * f * cy_ + f * f * b[1]:.1f}" for f in (0.0, 0.25, 0.5, 0.75, 1.0)
+                    )
+                    out.append(f'<polygon points="{arc} {v[0]:.1f},{v[1]:.1f}"/>')
         if out:
             self.add(f'<g fill="{AZE}" stroke="none">{"".join(out)}</g>')
 
@@ -1753,13 +1789,13 @@ class Settlement:
         exs, eys = [p[0] for p in env], [p[1] for p in env]
         pvx = [v[0] for p in net["plots"] for v in p["poly"]]
         pvy = [v[1] for p in net["plots"] for v in p["poly"]]
-        # Per-plot [along-fall span, cross-fall span, centroid x, centroid y, vertex count, sharpest
-        # turn in degrees], so parcel-fabric checks (polder_parcels_vary, polder_parcels_front_water,
+        # Per-plot [along-fall span, cross-fall span, centroid x, centroid y, vertex count, count of
+        # still-square corners], so parcel-fabric checks (polder_parcels_vary, polder_parcels_front_water,
         # polder_parcels_are_organic) measure the DRAWN geometry from the manifest rather than trusting
-        # a builder self-report. The last two are the OUTLINE shape: a ruled quad is 4 vertices with a
-        # ~90-degree turn at each, a hand-piled parcel spreads the same total turning over a filleted,
-        # wandering outline - so the pair separates earth from CAD without recording every vertex (the
-        # full outlines would roughly double a polder manifest for no extra teeth).
+        # a builder self-report. The last two are the OUTLINE shape: a ruled quad is 4 vertices with all
+        # 4 corners square, while a hand-piled parcel carries a densely sampled, wandering outline on
+        # which most - not all - corners have eased. The pair separates earth from CAD without recording
+        # every vertex (the full outlines would roughly double a polder manifest for no extra teeth).
         ddp = float(self.M["meta"].get("down_deg", 90))
         pdx, pdy = math.cos(math.radians(ddp)), math.sin(math.radians(ddp))
         pdims = []
@@ -1767,7 +1803,7 @@ class Settlement:
             al = [vx * pdx + vy * pdy for vx, vy in p["poly"]]
             cr = [vx * pdy - vy * pdx for vx, vy in p["poly"]]
             pcx, pcy = _centroid(p["poly"])
-            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1), len(p["poly"]), round(_max_turn_deg(p["poly"]), 1)])
+            pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1), len(p["poly"]), _sharp_corners(p["poly"])])
         self.M["fields"].append({"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims})
         for c in net["channels"]:
             rec = {"poly": [[round(x, 1), round(y, 1)] for x, y in c["pts"]], "role": c["role"], "field": name, "w": round(c["w"], 1), "w_tail": round(c.get("w_tail", c["w"]), 1)}
@@ -8564,7 +8600,13 @@ class Settlement:
                     placed = 1
                     break
         # seeds are shaped in the margin frame, then rotated onto it - so the band hugs the margin at any fall
-        for lx, ly in self.cluster_seeds(cluster_shape, 0.0, 0.0, lat, dep, int(households * 3.0) + 18, rng):
+        # The candidate pool is deliberately generous. `cluster_seeds` draws one seed at a time, so a
+        # longer list only APPENDS candidates - the leading ones are unchanged, and any map that fills
+        # its quota breaks out below and is byte-identical. The old 3x+18 left no headroom: Honda seated
+        # exactly 15 houses for 18 households, the floor of the households_consistent band, so the small
+        # geometry shift from the per-line bund wander (settlements.md 'Polder fifth pass', sixth) cost
+        # it one house and failed the gate. A map should not sit one rejected candidate from failing.
+        for lx, ly in self.cluster_seeds(cluster_shape, 0.0, 0.0, lat, dep, int(households * 6.0) + 30, rng):
             if placed >= households:
                 break
             if self.try_place(ccx + alx * lx + tdx * ly, ccy + aly * lx + tdy * ly, "plain"):

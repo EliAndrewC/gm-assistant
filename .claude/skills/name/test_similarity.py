@@ -71,7 +71,7 @@ class TestRhymes:
         assert rhymes("Naomi", "Hitomi") is True
 
     def test_shared_suffix_case_insensitive(self):
-        assert rhymes("HARUKO", "yasuko") is True
+        assert rhymes("MICHIKO", "sachiko") is True
 
     def test_two_letter_suffix_not_rhyme(self):
         assert rhymes("Kazuki", "Hideki") is False
@@ -82,6 +82,46 @@ class TestRhymes:
     def test_short_name_fully_contained_in_suffix(self):
         # Common suffix "ko" is only 2 letters, below the rhyme threshold
         assert rhymes("Ko", "Yoko") is False
+
+
+class TestKoRhymeException:
+    """Both names ending in "ko" need a 4-letter tail, not 3.
+
+    Otherwise the whole "-ko" space collapses into five rhyme classes keyed on
+    the preceding vowel and exhausts the female pool. See rhymes().
+    """
+
+    def test_shared_vowel_plus_ko_is_not_enough(self):
+        # "iko" is a 3-letter tail, which would rhyme under the general rule.
+        assert rhymes("Yuriko", "Reiko") is False
+
+    def test_shared_vowel_plus_ko_is_not_enough_other_vowel(self):
+        # "uko" - the pair the old docstring cited as a rhyming example.
+        assert rhymes("Haruko", "Yasuko") is False
+
+    def test_matching_penultimate_syllable_still_rhymes(self):
+        # "riko" reaches past the vowel to the consonant: last two syllables match.
+        assert rhymes("Yuriko", "Mariko") is True
+
+    def test_longer_matching_tail_still_rhymes(self):
+        assert rhymes("Michiko", "Sachiko") is True
+
+    def test_exception_does_not_apply_when_only_one_ends_in_ko(self):
+        # Sadako/Wakako share "ako" but the tail stops there, so no rhyme;
+        # Naomi/Hitomi is unaffected by the exception entirely.
+        assert rhymes("Sadako", "Wakako") is False
+        assert rhymes("Naomi", "Hitomi") is True
+
+    def test_ko_pair_still_caught_by_edit_distance(self):
+        # Riko/Miko no longer "rhyme", but set_conflict still rejects them -
+        # edit distance 1 is the safety net under the relaxed rhyme rule.
+        assert rhymes("Riko", "Miko") is False
+        assert set_conflict("Riko", "Miko") is True
+
+    def test_relaxation_unblocks_a_real_generated_pair(self):
+        # The pair that motivated the rule: Yuriko was already on the Reiji
+        # roster, which rejected every remaining female name in the pool.
+        assert set_conflict("Yuriko", "Reiko") is False
 
 
 class TestSetConflict:

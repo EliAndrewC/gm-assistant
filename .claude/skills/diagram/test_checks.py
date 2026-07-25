@@ -6446,20 +6446,24 @@ def test_polder_parcels_must_front_a_ditch():
 
 def test_polder_parcels_must_be_organic():
     # GM 2026-07-24: a hand-piled bund has slumped, walked-round corners and paced-by-eye runs, so a
-    # parcel drawn as a ruled quad (4 vertices, ~90-degree turns) is the machine-cut consolidation
-    # signature and must fire. The pre-fix 4-element parcel record (no outline shape at all) fires too -
-    # no passing by omission - and the organic 36-vertex outline passes.
+    # parcel drawn as a ruled quad (4 vertices, all 4 corners square) is the machine-cut consolidation
+    # signature and must fire, as does a whole fabric on which nothing has eased. The pre-fix 4-element
+    # parcel record (no outline shape at all) fires too - no passing by omission. Individual parcels
+    # whose corners all stayed square are HONEST (reach is drawn from a wide spread on purpose), so the
+    # corner rule is a fabric mean, not a per-parcel bound.
     field = {"name": "p", "kind": "paddy", "outline": [[100, 100], [900, 100], [900, 1300], [100, 1300]], "bbox": [100, 100, 900, 1300]}
     lat = {"poly": [[500, 88], [500, 1312]], "role": "lateral", "field": "p", "w": 3.2, "w_tail": 2.4}
-    ruled = [[140, 70, 430, 100 + 90 * i, 4, 90.0] for i in range(7)] + [[140, 140, 570, 100 + 160 * i, 4, 89.2] for i in range(7)]
-    organic = [[*p[:4], 36, 48.5] for p in ruled]
+    ruled = [[140, 70, 430, 100 + 90 * i, 4, 4] for i in range(7)] + [[140, 140, 570, 100 + 160 * i, 4, 4] for i in range(7)]
+    organic = [[*p[:4], 30, 1] for p in ruled]
     for arch in ("polder_grid", "mulberry_dike_fishpond"):
         base = {"meta": {"scale": "hamlet", "field_archetype": arch}, "field_ditches": [lat]}
         assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": ruled}]})
         assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [p[:4] for p in ruled]}]})  # pre-fix record
         assert "polder_parcels_are_organic" in f({**base, "fields": [field]})  # no parcel geometry at all
-        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [*organic, ruled[0]]}]})  # one ruled parcel is enough
-        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [[*p[:4], 8, 48.5] for p in ruled]}]})  # rounded but barely sampled
+        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [*organic, ruled[0]]}]})  # one ruled few-vertex quad is enough
+        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [[*p[:4], 8, 1] for p in ruled]}]})  # eased but barely sampled
+        assert "polder_parcels_are_organic" in f({**base, "fields": [{**field, "plots": [[*p[:4], 30, 3] for p in ruled]}]})  # densely sampled, but nothing has eased
+        assert "polder_parcels_are_organic" not in f({**base, "fields": [{**field, "plots": [*organic[:-2], [*organic[0][:4], 30, 4]]}]})  # a few all-square parcels are honest
         assert "polder_parcels_are_organic" not in f({**base, "fields": [{**field, "plots": organic}]})
     # a non-polder archetype never trips it
     assert "polder_parcels_are_organic" not in f({"meta": {"scale": "hamlet", "field_archetype": "valley_paddy"}, "fields": [{**field, "plots": ruled}]})
@@ -7564,6 +7568,59 @@ def test_tanning_yard_clear_of_dwellings_exempts_the_burakumin_quarter():
     # the same 60 ft gap, but the neighbor is burakumin: they live on the ground they work
     M = _ty_map(buildings=[bldg(466, 560, kind="burakumin")])
     assert "tanning_yard_clear_of_dwellings" not in f(M)
+
+
+def test_tanning_yard_clear_of_water_fires_when_the_ground_crosses_the_bank():
+    # the yard edge 10 px past the stream's drawn edge - the real Tango defect: the tamped
+    # ground read as a platform over the water
+    M = _ty_map(tanning_yards=[{"x": 476, "y": 500, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}])
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_fires_when_a_ditch_threads_under_the_rect():
+    # a thin field drain crossing UNDER the yard between its corners - the real Hoshizora
+    # defect; corner-sampling cannot see this, seg_to_rect_dist can
+    M = _ty_map(field_ditches=[{"poly": [[400, 300], [466, 500], [530, 700]], "role": "drain", "field": "t-ne", "w": 2.2, "w_tail": 2.2}])
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_fires_when_the_yard_sits_in_the_pond():
+    M = _ty_map(pond=[466, 530, 30, 20])
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_fires_when_the_river_swallows_a_corner():
+    # tested at the river's REAL half-width (the lumber-yard lesson): a 40 px river's edge
+    # reaches 20 px out, far past the generic ~6 px stroke the village checks assume
+    M = _ty_map(river={"pts": [[520, 100], [520, 900]], "w": 60})
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_passes_on_the_bank():
+    # the baseline yard abuts the stream's edge with the frames overhanging - the design
+    assert "tanning_yard_clear_of_water" not in f(_ty_map())
+
+
+def test_tanning_yard_clear_of_fields_fires_on_a_paddy():
+    M = _ty_map(fields=[{"name": "t-ne", "kind": "paddy", "outline": [[300, 400], [480, 400], [480, 600], [300, 600]], "bbox": [300, 400, 480, 600]}])
+    assert "tanning_yard_clear_of_fields" in f(M)
+
+
+def test_tanning_yard_clear_of_fields_fires_on_a_dry_plot():
+    M = _ty_map(dry_plots=[{"poly": [[430, 480], [470, 480], [470, 520], [430, 520]], "crop": "millet"}])
+    assert "tanning_yard_clear_of_fields" in f(M)
+
+
+def test_tanning_yard_clear_of_fields_fires_when_the_yard_engulfs_a_flower_patch():
+    # the poly entirely inside the rect: no edges cross, only the vertex-in-rect test sees it
+    M = _ty_map(flower_fields=[{"kind": "chrysanthemum", "outline": [[460, 495], [470, 495], [470, 505], [460, 505]]}])
+    assert "tanning_yard_clear_of_fields" in f(M)
+
+
+def test_tanning_yard_clear_of_fields_passes_beside_the_field():
+    # abutting cropland is fine - marginal bank ground borders the fields; only OVERLAP fires
+    M = _ty_map(fields=[{"name": "t-ne", "kind": "paddy", "outline": [[300, 400], [430, 400], [430, 600], [300, 600]], "bbox": [300, 400, 430, 600]}])
+    assert "tanning_yard_clear_of_fields" not in f(M)
 
 
 # ---- water flow direction (GM 2026-07-24) --------------------------------------------------

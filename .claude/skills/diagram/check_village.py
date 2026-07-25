@@ -7713,6 +7713,80 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"stands off the houses by at least the crematory's 120 ft. Burakumin dwellings are deliberately EXEMPT: "
                 f"they live on the ground they work, which is what the segregated quarter is",
             )
+            # ... AND THE YARD'S GROUND NEVER OVERLAPS THE WATER (GM 2026-07-25, after the real
+            # Tango yard drifted ~10 ft into its stream and the Hoshizora yard landed on a drain
+            # ditch; both frozen in pool/regressions/). Same doctrine as lumber_yard_clear_of_water:
+            # tanning_yard_on_water demands the bank within ~20 ft, but the tamped ground itself
+            # stays DRY - the soaking pits are dug earth (a pit dug below the waterline is just
+            # more stream) and the racks cure hides for 2-4 months, which standing water would rot.
+            # The staking frames are the ONE sanctioned in-water element: s.tanning_yard draws them
+            # BEYOND the ground rect, out in the shallows, so this check never sees them - a yard
+            # that reads as "a platform over the water" is this defect, not a design. Tested with
+            # the rect's true rotation against every watercourse's REAL half-width (the lumber-yard
+            # lesson: the generic ~6px check misses a wide river), via seg_to_rect_dist so a thin
+            # field ditch THREADING UNDER the rect between its corners is caught too (the Hoshizora
+            # capture; corner-sampling cannot see it). Exact abutment of the bank line is legal.
+            _ty_water_all = list(_ty_water)
+            _ty_riv = M.get("river") or {}
+            _ty_rp = _ty_riv.get("poly") or _ty_riv.get("pts")
+            if _ty_rp:
+                _ty_water_all.append((_ty_rp, _ty_riv.get("w", 40) / 2))
+            for _ty_d in M.get("field_ditches") or []:
+                _ty_water_all.append((_ty_d["poly"], max(_ty_d.get("w", 4), _ty_d.get("w_tail", 0)) / 2))
+            _ty_pond = M.get("pond")
+            _ty_wet = []
+            for t_ in _ty_yards:
+                _ty_hit = any(seg_to_rect_dist((_pl[i][0], _pl[i][1]), (_pl[i + 1][0], _pl[i + 1][1]), t_) < _hw - 1e-6 for _pl, _hw in _ty_water_all for i in range(len(_pl) - 1))
+                if not _ty_hit and _ty_pond:
+                    # center-in-rect + BOUNDARY sampling, not corner-in-ellipse alone: the pond
+                    # can lap over a rect EDGE between two corners (same blind spot the ditch
+                    # case has for corner-sampling, just with the shapes' roles swapped)
+                    _ty_hit = pt_to_rect(_ty_pond[0], _ty_pond[1], t_) == 0 or any(
+                        pt_to_rect(_ty_pond[0] + _ty_pond[2] * math.cos(_ty_a * math.tau / 32), _ty_pond[1] + _ty_pond[3] * math.sin(_ty_a * math.tau / 32), t_) == 0 for _ty_a in range(32)
+                    )
+                if _ty_hit:
+                    _ty_wet.append((round(t_["x"]), round(t_["y"])))
+            check(
+                "tanning_yard_clear_of_water",
+                not _ty_wet,
+                f"tanning yard ground overlapping open water at {_ty_wet} - the yard ABUTS the bank (the pits and "
+                f"intake want the water within ~20 ft) but its tamped ground stays DRY: pits dug below the waterline "
+                f"are just more stream, and hides curing 2-4 months on the racks rot if the ground floods. Only the "
+                f"staking frames stand in the water, and they are drawn BEYOND the ground rect. Tested at each "
+                f"watercourse's real half-width (streams/channels/canals/river/moat/field ditches/pond), rotation-aware",
+            )
+            # ... NOR CROPLAND. The trade's whole siting logic is MARGINAL riverbank ground - the
+            # caste's own name, kawaramono ("riverbed people"), records that they worked the
+            # unplowable floodway edges precisely because taxed, producing land was never theirs
+            # to take. A paddy is a flooded basin (no tamped work floor stands in one), and the
+            # pits' lime and bate liquor poison the soil for cropping - so a yard drawn on a field
+            # asserts ground that is simultaneously worked by a farmer and ruined for farming.
+            _ty_cropolys = [f_["outline"] for f_ in M.get("fields") or [] if f_.get("outline")]
+            _ty_cropolys += [p_["poly"] for p_ in M.get("dry_plots") or [] if p_.get("poly")]
+            _ty_cropolys += [f_["outline"] for f_ in M.get("flower_fields") or [] if f_.get("outline")]
+            _ty_on_crop = []
+            for t_ in _ty_yards:
+                _ty_sc = rect_corners(t_)
+                for _ty_ol in _ty_cropolys:
+                    if (
+                        any(point_in_poly(cx_, cy_, _ty_ol) for cx_, cy_ in _ty_sc)
+                        or any(pt_to_rect(vx_, vy_, t_) == 0 for vx_, vy_ in _ty_ol)
+                        or any(
+                            segments_cross((_ty_ol[k_][0], _ty_ol[k_][1]), (_ty_ol[(k_ + 1) % len(_ty_ol)][0], _ty_ol[(k_ + 1) % len(_ty_ol)][1]), _ty_sc[e_], _ty_sc[(e_ + 1) % 4])
+                            for k_ in range(len(_ty_ol))
+                            for e_ in range(4)
+                        )
+                    ):
+                        _ty_on_crop.append((round(t_["x"]), round(t_["y"])))
+                        break
+            check(
+                "tanning_yard_clear_of_fields",
+                not _ty_on_crop,
+                f"tanning yard(s) on cropland at {_ty_on_crop} - the yard sits on MARGINAL bank ground (kawaramono, "
+                f"'riverbed people', worked the unplowable floodway edges), never on a field: a paddy is a flooded "
+                f"basin that cannot carry a tamped work floor, and the pits' lime and bate liquor poison cropping "
+                f"soil. Tested against field outlines, dry plots, and flower fields, rotation-aware",
+            )
 
     if scale == "city":
         # A PROVINCIAL CITY (budgets.md: ~2,000-4,000, avg ~3,000; 600 households - servants 120,
@@ -10221,16 +10295,21 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # cell is the machine signature of 20th-century consolidation - the same anachronism
         # polder_parcels_vary guards at the fabric scale and polder_edges_wander at the block scale; this
         # is that rule at the scale of one parcel outline. Grounding: waterfields.organic_parcel.
-        # TEETH: the recorded per-parcel [.., vertex count, sharpest turn in degrees]. A ruled quad is 4
-        # vertices turning ~90 degrees at each; the filleted, wandering outline runs 36 vertices with a
-        # worst turn of ~52 across both pool polders, so 12 / 65 sits clear of both readings. A polder
-        # that records the pre-fix 4-element parcel format fails rather than passing by omission.
+        # TEETH: the recorded per-parcel [.., vertex count, count of still-square corners], measured on
+        # two levels because the rule works on two levels. PER PARCEL, >=12 vertices: a ruled quad has
+        # 4, and no amount of easing gets a genuinely hand-drawn outline down near that. ACROSS THE
+        # FABRIC, a mean of <=2.5 square corners per parcel: corner reach is drawn from a wide spread
+        # precisely so that SOME corners stay square (the one behind a neighbour's bund never gets
+        # walked), so no per-parcel corner rule can be right - but a field where nothing has eased
+        # scores the full 4.0, and both pool polders sit at ~1.4, so the threshold is clear of both.
+        # A polder recording the pre-fix 4-element parcel format fails rather than passing by omission.
         shaped = [p for p in pl if len(p) >= 6]
-        ruled = [p for p in shaped if p[4] < 12 or p[5] > 65]
+        ruled = [p for p in shaped if p[4] < 12]
+        sq_mean = sum(p[5] for p in shaped) / len(shaped) if shaped else 4.0
         check(
             "polder_parcels_are_organic",
-            bool(pl) and len(shaped) == len(pl) and not ruled,
-            f"{len(pl) - len(shaped)} parcel(s) record no outline shape and {len(ruled)} are drawn RULED (want every parcel >=12 vertices and no turn >65 deg; n={len(pl)}) - a bund is hand-piled mud whose corners slump and get walked round and whose runs are paced by eye, so a parcel of dead-straight sides meeting at sharp angles reads as machine-cut land consolidation, not as earth",
+            bool(pl) and len(shaped) == len(pl) and not ruled and sq_mean <= 2.5,
+            f"{len(pl) - len(shaped)} parcel(s) record no outline shape, {len(ruled)} are drawn as ruled few-vertex quads (want >=12 vertices each), and corners ease on too few of them (mean {sq_mean:.2f} still-square corners per parcel, want <=2.5 of 4; n={len(pl)}) - a bund is hand-piled mud whose corners slump and get walked round and whose runs are paced by eye, so a fabric of dead-straight sides meeting at sharp angles reads as machine-cut land consolidation, not as earth",
         )
 
     # A RIBBON-VALLEY field (feature 005 US4) is LONG and NARROW - a thin strip strung down a confined valley -
