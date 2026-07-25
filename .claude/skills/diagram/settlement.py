@@ -773,6 +773,7 @@ class Settlement:
         self._pending_yards: list[
             tuple[float, float, float, float, float, Any]
         ] = []  # stable-yard scatters queued at stables()/animal_ground() time, DRAWN at crop time when every way/footprint exists (GM 2026-07-24: a yard drawn at stables-time could not see later-drawn streets, so its furniture landed on them)
+        # DEFERRED: drawn at crop time, not where it is called. See "DRAW ORDER" in CLAUDE.md.
         self._pending_stands: list[
             tuple[Poly, int, bool]
         ] = []  # tree-stand canopies queued at forest()/forest_patch() time, DRAWN at crop time when every building + well exists (see flush_tree_stands)
@@ -799,6 +800,12 @@ class Settlement:
         self.bscale = 1.0  # urban-building footprint scale (a large town packs at a finer grain)
         self.ftpx = 1.0  # declared REAL scale, feet per pixel - set via meta(ftpx=...); the
         #                           glyph library is calibrated at town scale (1 ft/px), so 1.0 = identity
+        # THE THREE PLACEMENT REGISTRIES. Which one a feature registers in decides which placers
+        # avoid it, and they are NOT equivalent - `_fits` (urban packs) point-tests block_polys but
+        # DISTANCE-tests placed/grove_rects, so block_polys alone does not keep a whole footprint
+        # out. Before adding to any of them, or changing when a feature is drawn relative to them,
+        # read the "DRAW ORDER" section of this skill's CLAUDE.md and settle the sequence first -
+        # ordering bugs surface far from the code that causes them.
         self.placed: list[Any] = []  # (x, y, w, h)
         self.grove_rects: list[Any] = []  # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
         #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
@@ -5192,6 +5199,9 @@ class Settlement:
             kind = "bamboo" if roll < b_th else ("conifer" if roll < c_th else "broadleaf")
             size = random.uniform(1.25, 1.7) if random.random() < 0.25 else random.uniform(0.72, 1.05)  # a few emergent crowns over many small
             items.append((px, py, kind, size))
+        # ORDER-SENSITIVE: this reads M, so it can only avoid structures that ALREADY EXIST when the
+        # grove is drawn. That is why the yashikirin arms draw after their farmstead's house and why
+        # village_grove() is called late in a gen (see "DRAW ORDER" in CLAUDE.md before moving either).
         # NO CROWN ON A ROOF OR A WELLHEAD (GM 2026-07-25). A yashikirin belt is drawn hard against the
         # house it shelters and a village copse threads between the dwellings, so the stand is filtered
         # tree-by-tree rather than pushed back as a whole: it THINS where it would cover a building and
