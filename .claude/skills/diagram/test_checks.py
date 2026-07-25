@@ -7570,6 +7570,59 @@ def test_tanning_yard_clear_of_dwellings_exempts_the_burakumin_quarter():
     assert "tanning_yard_clear_of_dwellings" not in f(M)
 
 
+def test_tanning_yard_clear_of_water_fires_when_the_ground_crosses_the_bank():
+    # the yard edge 10 px past the stream's drawn edge - the real Tango defect: the tamped
+    # ground read as a platform over the water
+    M = _ty_map(tanning_yards=[{"x": 476, "y": 500, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}])
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_fires_when_a_ditch_threads_under_the_rect():
+    # a thin field drain crossing UNDER the yard between its corners - the real Hoshizora
+    # defect; corner-sampling cannot see this, seg_to_rect_dist can
+    M = _ty_map(field_ditches=[{"poly": [[400, 300], [466, 500], [530, 700]], "role": "drain", "field": "t-ne", "w": 2.2, "w_tail": 2.2}])
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_fires_when_the_yard_sits_in_the_pond():
+    M = _ty_map(pond=[466, 530, 30, 20])
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_fires_when_the_river_swallows_a_corner():
+    # tested at the river's REAL half-width (the lumber-yard lesson): a 40 px river's edge
+    # reaches 20 px out, far past the generic ~6 px stroke the village checks assume
+    M = _ty_map(river={"pts": [[520, 100], [520, 900]], "w": 60})
+    assert "tanning_yard_clear_of_water" in f(M)
+
+
+def test_tanning_yard_clear_of_water_passes_on_the_bank():
+    # the baseline yard abuts the stream's edge with the frames overhanging - the design
+    assert "tanning_yard_clear_of_water" not in f(_ty_map())
+
+
+def test_tanning_yard_clear_of_fields_fires_on_a_paddy():
+    M = _ty_map(fields=[{"name": "t-ne", "kind": "paddy", "outline": [[300, 400], [480, 400], [480, 600], [300, 600]], "bbox": [300, 400, 480, 600]}])
+    assert "tanning_yard_clear_of_fields" in f(M)
+
+
+def test_tanning_yard_clear_of_fields_fires_on_a_dry_plot():
+    M = _ty_map(dry_plots=[{"poly": [[430, 480], [470, 480], [470, 520], [430, 520]], "crop": "millet"}])
+    assert "tanning_yard_clear_of_fields" in f(M)
+
+
+def test_tanning_yard_clear_of_fields_fires_when_the_yard_engulfs_a_flower_patch():
+    # the poly entirely inside the rect: no edges cross, only the vertex-in-rect test sees it
+    M = _ty_map(flower_fields=[{"kind": "chrysanthemum", "outline": [[460, 495], [470, 495], [470, 505], [460, 505]]}])
+    assert "tanning_yard_clear_of_fields" in f(M)
+
+
+def test_tanning_yard_clear_of_fields_passes_beside_the_field():
+    # abutting cropland is fine - marginal bank ground borders the fields; only OVERLAP fires
+    M = _ty_map(fields=[{"name": "t-ne", "kind": "paddy", "outline": [[300, 400], [430, 400], [430, 600], [300, 600]], "bbox": [300, 400, 430, 600]}])
+    assert "tanning_yard_clear_of_fields" not in f(M)
+
+
 # ---- water flow direction (GM 2026-07-24) --------------------------------------------------
 def _wf_map(**over):
     M = {

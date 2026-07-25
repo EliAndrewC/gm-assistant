@@ -1,0 +1,79 @@
+{
+ "meta": {
+  "scale": "town",
+  "walled": false,
+  "ftpx": 1
+ },
+ "streams": [
+  {
+   "poly": [
+    [
+     500,
+     100
+    ],
+    [
+     500,
+     900
+    ]
+   ],
+   "w": 8
+  }
+ ],
+ "buildings": [
+  {
+   "x": 200,
+   "y": 200,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "burakumin"
+  },
+  {
+   "x": 240,
+   "y": 200,
+   "w": 40,
+   "h": 28,
+   "rot": 0,
+   "kind": "burakumin"
+  }
+ ],
+ "tanning_yards": [
+  {
+   "x": 466,
+   "y": 500,
+   "w": 58,
+   "h": 41,
+   "rot": 0,
+   "label": "tanning yard"
+  }
+ ],
+ "dry_plots": [
+  {
+   "poly": [
+    [
+     430,
+     480
+    ],
+    [
+     470,
+     480
+    ],
+    [
+     470,
+     520
+    ],
+    [
+     430,
+     520
+    ]
+   ],
+   "crop": "millet"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "tanning_yard_clear_of_fields"
+  ],
+  "source": "test_checks.py::test_tanning_yard_clear_of_fields_fires_on_a_dry_plot"
+ }
+}

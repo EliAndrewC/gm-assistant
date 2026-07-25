@@ -322,7 +322,7 @@ s.block_polys.append([(1720, 590), (2010, 590), (2010, 665), (1720, 665)])
 # rings so they pack around its block - it lands in the gap between the field toe and the forest.
 # rot=90 lays the yard's water side due EAST, square onto the ditch, in the free pocket between the
 # field's toe and the forest edge - the one piece of ground here that is neither cropped nor wooded.
-s.tanning_yard(1947, 875, rot=90, pits=4, water="ditch")
+s.tanning_yard(1948, 882, rot=90, pits=4, water="ditch")  # off the hoshizora-ne paddy corner and its drain ditch (tanning_yard_clear_of_water/_fields); the intake cut still reaches the channel
 
 # ---- farmhouses: the town's farmer majority (still the largest single group), ringed
 # several-deep around the comb envelopes - generously, since each needs room for its
