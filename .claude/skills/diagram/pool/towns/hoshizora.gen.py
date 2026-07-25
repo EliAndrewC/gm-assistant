@@ -59,6 +59,7 @@ s.meta(
     nucleated=True,
     downhill=[-0.42, 0.91],
     down_deg=115,
+    imperial_road=True,  # a POST/RELAY town on the Imperial Road - what earns it a farrier (imperial_road_town_has_farrier)
     pond_role="drainage",
     near_ring_density="thin",  # DIAL-DOWN (feature 013): a post/relay town on the Imperial Road whose frame is dominated by horse-relay HAYFIELDS/grazing + forest, leaving little croppable ground - so its near ring reads genuinely THIN (a light quilt of cropland among the pasture, ~20% cultivated vs dense Hirameki's ~50%). The knob's low tier; the check floor drops to match so a grazing/relay locale is not forced to look like a pure farming basin.
 )  # residents DEPICTED (dwellings x5); urban housing full, most farms off-map - a slice of the ~1,200 county (the nucleated to-scale farm rows pack ~135 dwellings around the combs). ftpx=1: the GM's town scale, 1px=1ft
@@ -400,6 +401,12 @@ for fx, fy in [
 # but a county town needs only the ONE; it FRONTS the Imperial Road on the quiet SW approach (caravans pull up to it)
 s.inn(276, 1116, rot=150)
 s.stables(276, 1202, rot=150)
+# the FARRIER's shoeing forge on the stables' open SE ground (GM 2026-07-25): a relay town on the
+# Imperial Road works courier and caravan horses hard enough to keep a dedicated forge, where an
+# ordinary market town's smith just shoes in his shop row (Hirameki declares no imperial_road and
+# draws none). Set well off the stall range, never attached to it - an open forge against hay and
+# timber is the fire the yard does not survive (farrier_keeps_fire_gap).
+s.farrier(300, 1255, rot=150)
 
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
