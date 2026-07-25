@@ -190,7 +190,7 @@ s.block_polys.append(
         (POND[0] - POND[2] - 34, POND[1] + POND[3] + 34),
     ]
 )  # wide pad: block_polys tests centers, so the pad must absorb a house half-footprint
-topo_channel([_outA, ((_outA[0] + POND[0]) / 2, (_outA[1] + POND[1]) / 2 + 14), (POND[0], POND[1])], {"kind": "drain"}, {"kind": "pond"}, draw_w=2.5)
+topo_channel([_outA, ((_outA[0] + POND[0]) / 2, (_outA[1] + POND[1]) / 2 + 14), (POND[0], POND[1])], {"kind": "drain", "name": "hoshizora-west"}, {"kind": "pond"}, draw_w=2.5)
 
 # THE NE POCKET COMB ("hoshizora-ne"): the west TIP of a larger field running off the east
 # edge (a town map shows a slice of the county's farmland). Fed by a brook off the high
@@ -208,7 +208,7 @@ for _dp in netE["dry_plots"]:
 _drainE = [c for c in netE["channels"] if c["role"] == "drain"][0]["pts"]
 _onmapE = [p for p in _drainE if p[0] < 1995][-1]
 # sink stub angled SSE (mostly along the fall) so channels_flow_downhill holds; ends off-map east
-topo_channel([_onmapE, (2010, _onmapE[1] + 95)], {"kind": "drain"}, {"kind": "offmap"})
+topo_channel([_onmapE, (2010, _onmapE[1] + 95)], {"kind": "drain", "name": "hoshizora-ne"}, {"kind": "offmap"})
 
 # ---- the Shrine to Bishamon, by the stream
 # a town's religious building is a monastery (not a village shrine), with a torii in front

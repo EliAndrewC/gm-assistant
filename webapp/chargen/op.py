@@ -193,6 +193,80 @@ def create_character(
     return response
 
 
+def set_character_avatar(slug, avatar_upload_id):
+    """
+    Bind an already-uploaded avatar to an EXISTING character.
+
+    `upload_avatar()` only posts the image to /uploads and hands back an id; it
+    does not attach it to anything. At creation time `create_character()` binds
+    that id via the character form's `new_avatar_upload_id` field - but for a
+    character that already exists there is no equivalent, and the OAuth
+    `update_character()` silently no-ops on every avatar field we have probed.
+    So the only path is the edit form (browser-sim), which is what this does.
+
+    Caught 2026-07-25: a /synthesize run called upload_avatar() on an existing
+    character, got a 200 and a real upload id back, and the character still had
+    no headshot - the upload succeeded and simply belonged to nothing.
+
+    The edit form round-trips the whole record, so every field is echoed back
+    verbatim and only the avatar id is changed; otherwise saving the form would
+    blank the description, bio, and GM notes. Unchecked checkboxes are omitted
+    (Rails pairs each with a hidden field carrying the default), which also
+    keeps `notifiees[]` unchecked so the save does not spam the campaign.
+    """
+    from bs4 import BeautifulSoup
+
+    session = _get_browser_session()
+    campaign_url = _get_campaign_base_url()
+
+    edit = session.get(f'{campaign_url}/characters/{slug}/edit')
+    edit.raise_for_status()
+    soup = BeautifulSoup(edit.text, 'html.parser')
+    form = soup.find('form', action=f'/characters/{slug}')
+    if form is None:
+        raise ValueError(f'Could not find the edit form for character {slug!r}')
+
+    payload = {}
+    for field in form.find_all(['input', 'textarea']):
+        name = field.get('name')
+        if not name or field.get('type') == 'file':
+            continue
+        if field.name == 'textarea':
+            # Per the HTML spec a newline immediately after <textarea> is part
+            # of the markup, not the value, and browsers drop it. get_text()
+            # keeps it, so echoing the form back verbatim would prepend one
+            # newline to description/bio/gm_info on EVERY save and accumulate
+            # (caught 2026-07-25: each field grew by exactly 1 byte per call).
+            text = field.get_text()
+            payload[name] = text[1:] if text.startswith('\n') else text
+        elif field.get('type') == 'checkbox':
+            if field.has_attr('checked'):
+                payload[name] = field.get('value', '1')
+        else:
+            payload[name] = field.get('value', '')
+
+    payload['new_avatar_upload_id'] = str(avatar_upload_id)
+    payload.pop('no_avatar_image', None)
+    payload['commit'] = 'Save'
+
+    response = session.post(f'{campaign_url}/characters/{slug}', data=payload)
+    if response.status_code == 200:
+        cherrypy.log(f'Set avatar {avatar_upload_id} on character {slug}')
+    elif response.status_code == 422:
+        raise ValueError(
+            f'Failed to set avatar on {slug} (422). The authenticity_token may '
+            'have expired. Update it in development-secrets.ini.'
+        )
+    elif response.status_code == 403:
+        raise ValueError(
+            f'Failed to set avatar on {slug} (403). The session_cookie may have '
+            'expired. Update it in development-secrets.ini.'
+        )
+    else:
+        response.raise_for_status()
+    return response
+
+
 def upload_image(image_data: bytes, filename: str) -> dict:
     """
     Upload an image to Obsidian Portal and return the file info.
