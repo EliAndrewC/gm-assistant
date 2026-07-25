@@ -222,7 +222,7 @@ _OVERLAP_EXEMPT = {
     "field_rocks": "feature 012: a bedrock outcrop the terrace risers wrap around, drawn ON the paddy - validated by paddy_features_match_archetype (bedrock archetypes only)",
     "field_graves": "feature 012: a rare in-field grave island (calibrated liberty) the flat paddy tiles around, drawn ON the paddy - validated by paddy_features_match_archetype",
     "clearings": "swept-ground records (the shrine keidai / torii sando collar / grave collar), not drawn features at all - they carry the cover-ordinal bookkeeping for scatter_respects_swept_clearings and deliberately CONTAIN their sacred/funerary feature",
-    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (carts, tethered animals, litter) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well)",
+    "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (hitching rails, trough, dung heaps, litter; no animal glyphs - the maps render no humans or animals) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
@@ -2067,7 +2067,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # every gate STABLES carries its drawn beaten-earth YARD (GM 2026-07-22): the open ground around a gate
     # stables is deliberate (a wagon-train marshalling yard - carts parked, oxen unyoked and tethered at
     # rails, teamsters waiting), but left as blank parchment it read as forgotten emptiness. s._stable_yard
-    # fills it with a feathered scatter (scuff, straw, hitching rail + tethered animals, carts, trough, dung
+    # fills it with a feathered scatter (scuff, straw, hitching rails, trough, dung
     # heaps); this gates that no stables reverts to a blank yard. Each yard links to its stables via `of`.
     if scale == "city":
         _yards = M.get("stable_yards", [])
@@ -2077,7 +2077,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         check(
             "stables_have_yards",
             not _yardless,
-            f"gate stables with no drawn working yard at {_yardless[:3]} - the open ground around a gate stables is a deliberate wagon-train marshalling yard (carts, tethered oxen, littered beaten earth), not blank parchment; s.stables(...) draws it (yard=True; settlements.md 'Stable yard')",
+            f"gate stables with no drawn working yard at {_yardless[:3]} - the open ground around a gate stables is a deliberate wagon-train marshalling yard (hitching rails, littered beaten earth), not blank parchment; s.stables(...) draws it (yard=True; settlements.md 'Stable yard')",
         )
 
     # STABLE-YARD TROUGHS SIT BESIDE A WELL (GM 2026-07-23: "so that the water doesn't need to be
@@ -2201,9 +2201,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "dung_heaps_clear_of_hitch_rails",
             not _dh_bad2,
             f"dung heap(s) against a hitching rail at {_dh_bad2} - both flanks of every rail on the map are tie-up "
-            f"space, so a heap keeps ~24px (72 ft) clear of each rail line, its edge well past the tethered-animal "
-            f"row (the 14px round-1 floor still read as touching); near the yard's working edge is right, in the "
-            f"tie-up row is not",
+            f"space, so a heap keeps ~24px (72 ft) clear of each rail line, its edge well past the row where the "
+            f"animals stand (the 14px round-1 floor still read as touching); near the yard's working edge is "
+            f"right, in the tie-up row is not",
         )
         check(
             "stable_yard_furniture_clear_of_roads_walls",

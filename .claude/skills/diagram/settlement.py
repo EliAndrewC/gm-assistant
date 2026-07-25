@@ -7013,36 +7013,26 @@ class Settlement:
                 return (px, py)
             return None
 
-        # HITCHING RAILS with tethered draft animals - the yard's active "edge" (rails + picket lines,
-        # NOT a paddock fence; GM 2026-07-22). A wagon-train ties up MANY animals, so the yard shows two
-        # or three rails: first a ROAD-PARALLEL rail set back from the nearest road/street (its animals
-        # face INTO the yard, rumps to the roadbed - the yard's road-side barrier so nothing strays onto
-        # the through-road), then one or two more at clear interior spots. Animals stand long-axis along
-        # the rail's NORMAL (head at the rail, body into the yard).
+        # HITCHING RAILS - the yard's active "edge" (rails + picket lines, NOT a paddock fence;
+        # GM 2026-07-22). A wagon-train ties up MANY animals, so the yard shows two or three
+        # rails: first a ROAD-PARALLEL rail set back from the nearest road/street (the yard's
+        # road-side barrier so nothing strays onto the through-road), then one or two more at
+        # clear interior spots. Rails draw as BARE posts - NO animal glyphs (GM 2026-07-25,
+        # ending the "dung heaps at the hitching posts" saga: the drawn oxen kept reading as
+        # muck piles no matter how the glyph was styled, and the standing doctrine is that
+        # these maps render no humans, so they render no animals either; the rail itself plus
+        # the beaten-earth litter carry the "in active use" signal).
         rails: list[dict[str, float]] = []
         heaps: list[dict[str, float]] = []
 
         def draw_hitch(cx: float, cy: float, tx: float, ty: float, nx: float, ny: float) -> None:
-            length, ang = 18.0, math.degrees(math.atan2(ny, nx))
+            length = 18.0
             rails.append({"x": round(cx, 1), "y": round(cy, 1), "tx": round(tx, 3), "ty": round(ty, 3), "len": length, "reach": 2.4})
             ex0, ey0 = cx - tx * length / 2, cy - ty * length / 2
             fg = [f'<line x1="{ex0:.1f}" y1="{ey0:.1f}" x2="{cx + tx * length / 2:.1f}" y2="{cy + ty * length / 2:.1f}" stroke="#6B4F2A" stroke-width="1.5"/>']
             for i in range(4):  # posts across the rail
                 pxp, pyp = ex0 + tx * length * i / 3, ey0 + ty * length * i / 3
                 fg.append(f'<line x1="{pxp - nx * 2.4:.1f}" y1="{pyp - ny * 2.4:.1f}" x2="{pxp + nx * 2.4:.1f}" y2="{pyp + ny * 2.4:.1f}" stroke="#5A4326" stroke-width="1.2"/>')
-            for i in range(3):  # tethered animals on the yard-interior side of the rail
-                bxp, byp = ex0 + tx * length * (i + 0.5) / 3, ey0 + ty * length * (i + 0.5) / 3
-                axp, ayp = bxp + nx * 5.5, byp + ny * 5.5
-                if clear(axp, ayp, 2.0):
-                    # body + a HEAD poking at the rail (GM 2026-07-25, round 3 of the "dung
-                    # heaps at the hitching posts" complaint: the heaps themselves had been
-                    # moved twice, but a bare dark ellipse at the posts is indistinguishable
-                    # from the dung-heap glyph, so the tethered oxen READ as muck piles dumped
-                    # against the rail. The head circle - the animals already face the rail -
-                    # plus a hide lighter than heap #6E5A3A make the blob read as livestock)
-                    fg.append(f'<ellipse cx="{axp:.1f}" cy="{ayp:.1f}" rx="3.4" ry="2.1" fill="#8A6A46" stroke="#4A3626" stroke-width="0.6" transform="rotate({ang:.0f} {axp:.1f} {ayp:.1f})"/>')
-                    hxp, hyp = bxp + nx * 1.9, byp + ny * 1.9
-                    fg.append(f'<circle cx="{hxp:.1f}" cy="{hyp:.1f}" r="1.2" fill="#8A6A46" stroke="#4A3626" stroke-width="0.5"/>')
             self.add("".join(fg))
 
         # rails also seat SYMMETRICALLY clear of any EARLIER yard's dung heaps (GM 2026-07-25
@@ -7217,7 +7207,7 @@ class Settlement:
 
     def animal_ground(self, cx: float, cy: float, r: float = 68.0, label: Any = None) -> None:
         """EXTRA interior ANIMAL / CARAVAN GROUND - a standalone stable-yard scatter (beaten earth,
-        hitching rails with tethered oxen, carts, a trough, dung heaps) that CLAIMS an open pocket as
+        hitching rails, a trough, dung heaps) that CLAIMS an open pocket as
         deliberate working ground. This is the standing EASY REMEDY when city_no_large_empty_space
         flags unclaimed ground (GM 2026-07-23): where the bare pocket sits near a gate or the
         stables, more tie-up room for wagon-trains is the natural use - first applied to Tango's
@@ -7225,8 +7215,8 @@ class Settlement:
         from (or departing toward) Phoenix lands. Draws the s._stable_yard scatter at (cx, cy) - it
         auto-avoids roads, streets, fields, water, the rampart, and every drawn footprint, so it
         fills only the genuinely open ground - and records M['stable_yards'], which the empty-space
-        detector counts as claimed. The label (e.g. "caravan ground") is optional; the rails and
-        tethered animals usually read on their own."""
+        detector counts as claimed. The label (e.g. "caravan ground") is optional; the rails
+        usually read on their own."""
         self._pending_yards.append((cx, cy, 0.0, 0.0, r, label))  # queued like the stables yards - drawn at crop time when every way exists (GM 2026-07-24)
 
     def flush_stable_yards(self) -> None:

@@ -1759,7 +1759,7 @@ def test_stables_yard_fully_blocked_draws_no_furniture():
     s.flush_stable_yards()
     svg = "".join(s.out)
     assert s.M["stable_yards"][-1]["of"] == [600.0, 620.0]  # recorded despite the blocked yard
-    assert "#8A6A46" not in svg and "#8FA6B0" not in svg  # no tethered animals, no water trough drew
+    assert not s.M["stable_yards"][-1]["rails"] and "#8FA6B0" not in svg  # no rails seated, no water trough drew
 
 
 def test_stable_yard_rails_avoid_a_neighboring_yards_heap():
