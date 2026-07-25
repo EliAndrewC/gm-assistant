@@ -2225,7 +2225,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         _wall = M["wall"]
         _tier = meta.get("wall_defense", "garrison")
         _rng_ft, _mincov = WALL_DEFENSE.get(_tier, WALL_DEFENSE["garrison"])
-        _R = _rng_ft / float(meta.get("ftpx") or 3.0) + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's parapet span, not its centre point
+        _R = _rng_ft / float(meta.get("ftpx") or 3.0) + 12.0  # +12 px: a mamian's half-footprint - an archer shoots from the tower's parapet span, not its center point
         _tw = [(t["x"], t["y"]) for t in M.get("wall_towers", [])] + [(g["x"], g["y"]) for g in M.get("gate_structs", []) if g.get("kind") == "tower"]
         _gates = M.get("gates", [])
         _barb = [(g["x"], g["y"]) for g in M.get("gate_structs", []) if g.get("kind") in ("guardhouse", "inspection")]  # barbican guard structures
@@ -10591,7 +10591,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # STRUCTURES + WINDBREAK KEEP OFF THE DIKE (GM 2026-07-22): the dike is a raised earthwork bank,
             # not building ground, so no farmhouse footprint and no windbreak grove clump may sit ON it (the
             # bank carries only its own soil-binding trees). perimeter_dike registers the band as a placement
-            # keep-out; this verifies it. A house corner or a grove clump centre inside the dike band fires.
+            # keep-out; this verifies it. A house corner or a grove clump center inside the dike band fires.
             on_dike = []
             for h in M.get("houses", []):
                 if h.get("on_dike"):
