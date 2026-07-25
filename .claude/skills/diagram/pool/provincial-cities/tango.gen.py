@@ -50,6 +50,12 @@ PLOT_ACROSS, ROW_STEP = paddy_grain(3)
 
 s = Settlement(3200, 2700, seed=162)
 s.meta(
+    tannery=False,  # PROVISIONAL (GM to confirm 2026-07-25): Tango keeps NO tanning yard. Its only
+    # downstream water is the moat outfall, and field fse1 taps that outfall for irrigation at
+    # (1995,2020) - barely 100px below the rim - so any yard above the tap fouls the southeastern
+    # paddies, and the only clean ground below it sits so far south it drags the frame past the
+    # off-map tails of the Imperial road and a field drain. The dry-site logic already governs this
+    # map elsewhere: Tango has no lumber yard either, for want of navigable water. Hides go downriver.
     water_flow=70,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3, wall_defense="siege", clan="Crane", capital_dir="southeast"
 )  # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
@@ -132,7 +138,7 @@ IMPROAD = [(1602, 595), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 2
 s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)  # a moat vertex on the NW
 s.stream(
-    [(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66)
+    [(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66), frm={"kind": "offmap"}, to={"kind": "moat"}
 )  # off-map NW source feeding the moat - as WIDE as the moat (it must supply the moat's full flow); head off the widened frame
 # The whole scheme reads as a stream DIVERTED around the city - in at the NW rim, around both
 # arcs of the ring, resuming its course off the SE rim - and that is a real, common moat type
@@ -148,7 +154,7 @@ s.stream(
 # absorb a live stream); see settlements.md's moat-water bullet. Threads S between the Imperial road
 # (x1602) and the westernmost samurai estate (x~2061), off the S edge.
 _mse = min(MOAT, key=lambda p: (p[0] - 1879) ** 2 + (p[1] - 1732) ** 2)  # a moat vertex on the SE (low) rim
-s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122)], width=s.px(66))  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
+s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122)], width=s.px(66), frm={"kind": "moat"}, to={"kind": "offmap"})  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
 s.moat_flow(_mnw, _mse)  # the closed ring flushes NW (feeder) -> SE (outfall), running BOTH ways round
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
@@ -194,7 +200,11 @@ s.kiln(2282, 830)  # tile kiln OUTSIDE the east wall, east of the common burial 
 # LOW SE rim, downstream of the whole city. Sited below the last estate (2060,1855) so the stench
 # runs away from the samurai seats rather than through them; the workers commute out the SE gate,
 # which is a long walk and is meant to be (the indignity is the point, GM 2026-07-24).
-s.tanning_yard(1974, 1908, rot=270, pits=12, water="stream")  # ground stops AT the outfall bank (~0.8 ft clear, tanning_yard_clear_of_water); the staking frames reach into the water
+# REMOVED 2026-07-25, by the new tanning_yard_below_every_intake check on its first run. The
+# first seat (1971,1910) was below the estates as intended but ABOVE the point where field fse1
+# taps this same outfall for irrigation at (1995,2020) - so the yard fouled the water the
+# southeastern paddies drink - and the only clean ground below the tap drags the frame past the
+# off-map tails (see meta tannery=False above, and settlements.md per-map siting). No yard here.
 
 
 def grid(streets, width_ft=18):
