@@ -58,7 +58,11 @@ C_SPACED = 2480.0
 CIVIC_PROGRAM: tuple[tuple[str, int | None, float], ...] = (
     ("governor's mansion (yamen)", 1, 17_730.0),
     ("six provincial ministries", 6, 7_980.0),
-    ("temple precincts", 2, 16_250.0),
+    # The TEMPLE PRECINCTS row used to sit here as ("temple precincts", 2, 16_250.0). Feature 016
+    # moved it onto CityProgram knobs, because temple COUNT is not a fixed program floor: a Fox
+    # city runs eight small precincts where an ordinary clan runs two great ones (l7r.md "Fox
+    # Temples"; research/religion-and-death.md). It is re-inserted at exactly this position by
+    # plan_city so line ORDER - and therefore every shipped manifest's bytes - is unchanged.
     ("minor civic (theater, flophouses, funerary, inspection, kura)", None, 17_440.0),
     ("shops, inns, stables", 21, 4_700.0),
     # Bell-and-drum tower (GM 2026-07-24; footprint RE-VERIFIED same day after the GM's eye caught
@@ -82,6 +86,28 @@ CIVIC_PROGRAM: tuple[tuple[str, int | None, float], ...] = (
     ("brewery compound", 1, 800.0),
     ("trade works (dye yard, oil press, pawn court, 1-2 bathhouses, farrier)", None, 1_500.0),
 )
+
+#: the civic row the temple line is re-inserted directly AFTER (see CIVIC_PROGRAM's comment).
+#: Held as a constant, and pinned by test_the_temple_line_keeps_its_place_in_the_civic_sequence,
+#: because a silent move would rewrite every shipped manifest's bytes without changing a number.
+MINISTRIES_LABEL = "six provincial ministries"
+
+#: Default temple program - the two great complexes the CIVIC_PROGRAM row used to hard-code.
+#: Tango-measured; see settlements/cities/sizing.md and research/religion-and-death.md.
+#: NOTE the CIVIC_PROGRAM convention: every row's third field is the row TOTAL, not a per-unit
+#: cost (the six ministries are 7,980 px^2 for all six). The retired temple row read
+#: ("temple precincts", 2, 16_250.0) - 16,250 for BOTH precincts - so the per-precinct figure is
+#: half of it, ~8,125 px^2 (~73,000 sq ft, ~1.7 acres at 3 ft/px). Getting this backwards doubles
+#: every city's temple ground; the pinned shipped-program test is what catches it.
+TEMPLE_PRECINCTS = 2
+TEMPLE_PRECINCT_PX2 = 8_125.0
+
+#: Adept-monk households per precinct. The default 2.5 x 2 precincts = the 5 households the old
+#: hard-coded line carried. A FOX precinct runs much higher (research/religion-and-death.md
+#: finding 3): only its three Bonds are celibate and the rest of its clergy are hereditary
+#: householders living out among the laity, so its families are drawn as ordinary houses around
+#: the compound rather than implied inside it.
+MONK_HOUSES_PER_PRECINCT = 2.5
 
 # One in-wall water feature: a pond (landlocked) or the cargo canal + dock basin (river city).
 # Measured: Tango pond 2,865 px^2; Nagahara canal-in-wall + dock 2,834 px^2 - same budget line.
@@ -129,6 +155,11 @@ class CityProgram:
     aspect: float = 0.93  # RY/RX; both shipped cities are near-round (Tango 0.938, Nagahara 0.931)
     nring: int = 20  # wall vertices; the shipped gens draw 20-22-gon rings
     extras: tuple[BudgetLine, ...] = field(default_factory=tuple)
+    # The TEMPLE PROGRAM (feature 016). Defaults reproduce the old hard-coded civic row exactly.
+    # A city declaring more than 2 precincts also owes meta(temple_exception=...) at the gate.
+    temple_precincts: int = TEMPLE_PRECINCTS
+    temple_precinct_px2: float = TEMPLE_PRECINCT_PX2
+    monk_houses_per_precinct: float = MONK_HOUSES_PER_PRECINCT
 
 
 @dataclass(frozen=True)
@@ -197,13 +228,34 @@ def plan_city(program: CityProgram, canvas: tuple[float, float] | None = None) -
             f"2/3 of {families['samurai']} samurai families x C_SPACED {C_SPACED:.0f} px^2 gross (Tango samurai-ward; rest hold extramural estates)",
         ),
     ]
-    lines += [BudgetLine(label, count, area * k, "fixed civic program floor at Tango-measured compound footprints (research.md A)") for label, count, area in CIVIC_PROGRAM]
-    # Adept-monk housing (GM 2026-07-24): each of the 2 temple precincts keeps 2-3 ordinary homes
-    # in its neighborhood for the married adepts among its 15-30 monks (temple-density canon,
-    # settlements.md "City temples"). Clergy are not a lay caste, so these 5 households ride
-    # OUTSIDE the caste table's 600 families - a small civic-adjacent line at packed gross cost.
+    # The TEMPLE line is knob-driven (feature 016) but keeps the position the hard-coded civic row
+    # held, directly after the ministries - line order is manifest bytes, so a move would dirty
+    # every shipped city for no arithmetic reason.
+    n_temples = program.temple_precincts
+    temple_line = BudgetLine(
+        "temple precincts",
+        n_temples,
+        n_temples * program.temple_precinct_px2 * k,
+        f"{n_temples} precinct(s) x {program.temple_precinct_px2:.0f} px^2 (Tango-measured complex; a Fox city declares more, smaller ones - research/religion-and-death.md)",
+    )
+    for label, count, area in CIVIC_PROGRAM:
+        lines.append(BudgetLine(label, count, area * k, "fixed civic program floor at Tango-measured compound footprints (research.md A)"))
+        if label == MINISTRIES_LABEL:
+            lines.append(temple_line)
+    # Adept-monk housing (GM 2026-07-24): each temple precinct keeps ordinary homes in its
+    # neighborhood for the married adepts among its monks (temple-density canon, settlements.md
+    # "City temples"). Clergy are not a lay caste, so these households ride OUTSIDE the caste
+    # table's 600 families - a small civic-adjacent line at packed gross cost. The count scales
+    # with the precinct count because a city's clergy housing is a property of its temples, not a
+    # constant: a Fox city's hereditary householder clergy need far more of it (feature 016).
+    n_monk_houses = round(n_temples * program.monk_houses_per_precinct)
     lines.append(
-        BudgetLine("adept-monk houses by the temple precincts", 5, 5 * C_PACKED * k, "2 temple precincts x 2-3 adept-monk households at C_PACKED gross (clergy live outside the lay caste table)")
+        BudgetLine(
+            "adept-monk houses by the temple precincts",
+            n_monk_houses,
+            n_monk_houses * C_PACKED * k,
+            f"{n_temples} temple precinct(s) x {program.monk_houses_per_precinct:g} adept-monk households at C_PACKED gross (clergy live outside the lay caste table)",
+        )
     )
     water_label = "cargo canal + dock basin" if program.river else "pond"
     lines.append(BudgetLine(water_label, 1, WATER_AREA * k, "one in-wall water feature - Tango pond 2,865 / Nagahara canal+dock 2,834 px^2 measured"))
