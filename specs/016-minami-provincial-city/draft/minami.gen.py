@@ -197,7 +197,7 @@ def label_ground(x, y, halfw=54, halfh=8):
     s.block_polys.append([(x - halfw, y - halfh), (x + halfw, y - halfh), (x + halfw, y + halfh), (x - halfw, y + halfh)])
 
 
-for _lx, _ly2, _hw in ((1560, 1188, 64), (1150, 1348, 56), (1214, 1444, 42), (1668, 1314, 60), (1256, 1648, 68), (1352, 1160, 40)):
+for _lx, _ly2, _hw in ((1560, 1216, 64), (1150, 1348, 56), (1214, 1470, 42), (1668, 1314, 60), (1362, 1136, 32), (1424, 1359, 30), (1162, 1613, 28), (1256, 1645, 78)):
     label_ground(_lx, _ly2, _hw)
 
 _LBL_DONE = 0
@@ -233,7 +233,7 @@ s.dye_yard(1162, 1596)  # on the in-wall cargo canal, north of the dock basin
 s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
 s.oil_press(1548, 1300)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
-s.bathhouses([(1436, 1176), (1250, 1400)])
+s.bathhouses([(1402, 1166), (1250, 1400)])
 s.kiln(640, 1180)  # OUTSIDE the walls on the far bank
 s.tanning_yard(866, 1700, rot=90, pits=12, water="stream")  # east bank, DOWNSTREAM of dock, dyer and moat outfall
 s.bridge(818, 1332, 4, RIVER_W + 26, 15)
@@ -254,14 +254,14 @@ s.flophouse(1330, 806, label_below=True)  # outside the NORTH gate
 s.flophouse(900, 1268)  # outside the WEST river gate, on the wharf
 s.block_polys.append([(1424, 962), (1500, 962), (1500, 1080), (1424, 1080)])
 s.corridors.append(([(1450, 970), (1450, 1080)], 40))
-s.flophouse(1450, 972, label_below=True)
-s.inn(1452, 1052)
+s.flophouse(1450, 972)
+s.inn(1422, 1052)
 s.stables(1450, 1016, rot=90)
 s.farrier(1508, 1010, rot=90)
 s.animal_ground(1462, 1042, r=38)
 s.block_polys.append([(1004, 1176), (1136, 1176), (1136, 1320), (1004, 1320)])
 s.corridors.append(([(1040, 1200), (1040, 1300)], 46))
-s.flophouse(1040, 1212, label_below=True)
+s.flophouse(1040, 1176, label_below=True)
 s.inn(1032, 1280)
 s.stables(1082, 1292, rot=90)
 
@@ -382,8 +382,8 @@ precinct(1268, 1490, "Daikoku", [(1268, 1532)], graveyard=True)
 # declare graveyard=False): they are economic institutions holding forest usufruct, not eight
 # parishes, and burial ground is constrained by suitable LAND rather than by foundation count.
 s.cemetery(1232, 1042, 46, 32, label="graveyard")  # Inari's
-s.cemetery(1046, 1246, 42, 30, label="graveyard")  # Ebisu's
-s.cemetery(1358, 1540, 42, 30, label="graveyard")  # Daikoku's
+s.cemetery(1046, 1246, 42, 30, label="graveyard", label_above=True)  # Ebisu's
+s.cemetery(1358, 1540, 42, 30, label="graveyard", label_above=True)  # Daikoku's
 
 # ---- TEMPLE FAMILY HOUSING: 6 households per precinct, drawn identical to laborer houses. Each
 # pocket is RESERVED first so the later terrace strips flow around it - competing for ground after
@@ -434,7 +434,7 @@ s.ward("samurai", WARD_FENCE, gates=KIDO_SPOTS)
 s.block_polys.append([(1644, 1190), (1744, 1190), (1744, 1276), (1644, 1276)])
 s.corridors.append(([(1660, 1232), (1730, 1232)], 40))
 s.theater_stage(1694, 1232, w=s.px(210), h=s.px(146), rot=180, label="theater stage")
-s.fire_tower(1636, 1076, label=None)
+s.fire_tower(1596, 1030, label=None)
 front([LAB_V], (["shop"] + ["laborer_large"] * 3) * 12, spacing=18, rows=2)
 
 s.place_wells((1430, 980, 1790, 1300), spacing=54)
@@ -451,7 +451,7 @@ for _i, _y0 in enumerate(range(1164, 1268, 52)):
 s.rowpack((1424, 1132, 1796, 1162), _lab, court_every=3, eave_ft=2)
 
 front([CROSS_H], (["merchant"] * 3 + ["shop"]) * 22, spacing=19, rows=2)
-s.label(1560, 1188, "laborer neighborhoods", 10, italic=True, color="#5A4326")
+s.label(1560, 1216, "laborer neighborhoods", 10, italic=True, color="#5A4326")
 
 # ====================================================================== NW: merchants + the dock
 s.fire_tower(1362, 1120, label="fire tower")
@@ -490,7 +490,7 @@ for _y0 in range(1488, 1700, 52):
     s.rowpack((1022, _y0, 1396, _y0 + 42), _sw2, court_every=4, eave_ft=2)
 for _y0 in range(1475, 1700, 26):
     s.rowpack((1022, _y0, 1396, _y0 + 22), _sw2, court_every=4, eave_ft=2)
-s.label(1214, 1444, "burakumin", 10, italic=True, color="#6B4F2A")
+s.label(1214, 1470, "burakumin", 10, italic=True, color="#6B4F2A")
 # THE TIMBER AND CHARCOAL WORKING GROUND - the declared budget line, DRAWN as its kind rather than
 # left as ambient slack: beaten earth with stacking rails, in the SE of the burakumin quarter where
 # the raft cargo comes up from the landing.
