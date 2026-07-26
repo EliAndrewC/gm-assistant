@@ -169,6 +169,117 @@ def test_pre_feature_nagahara_is_priced_as_over_enclosed():
     assert measured > b.required_interior_px2 * (1 + check_village.BUDGET_TOL_OVER)
 
 
+# ---- the shipped programs are PINNED (feature 016 regression net) ---------------------------
+#
+# Feature 016 moved the temple program out of the static CIVIC_PROGRAM tuple and onto CityProgram
+# knobs so a Fox city can declare eight small precincts instead of two great ones. The knobs
+# default to the values the tuple carried, so BOTH shipped cities must reprice bit-for-bit. These
+# literals were captured from the pre-refactor code and are deliberately hard-coded rather than
+# recomputed: a test that derives its expectation from the code it guards cannot catch a drift.
+
+#: (label, count, area_px2) for every line plan_city emitted for the shipped programs, pre-016.
+_TANGO_LINES_PRE_016 = [
+    ("packed row housing (laborer/servant/merchant/burakumin)", 540, 372_600.0),
+    ("samurai houses in-wall", 40, 99_200.0),
+    ("governor's mansion (yamen)", 1, 17_730.0),
+    ("six provincial ministries", 6, 7_980.0),
+    ("temple precincts", 2, 16_250.0),
+    ("minor civic (theater, flophouses, funerary, inspection, kura)", None, 17_440.0),
+    ("shops, inns, stables", 21, 4_700.0),
+    ("bell-and-drum tower", 1, 250.0),
+    ("provincial martial hall + 1-2 private dojos", None, 2_200.0),
+    ("brewery compound", 1, 800.0),
+    ("trade works (dye yard, oil press, pawn court, 1-2 bathhouses, farrier)", None, 1_500.0),
+    ("adept-monk houses by the temple precincts", 5, 3_450.0),
+    ("pond", 1, 2_900.0),
+    ("circulation (trunk + ring road + streets + alleys)", None, 49_089.743590),
+    ("agricultural district (in-wall farms, declared reserve)", None, 105_192.307692),
+]
+
+_NAGAHARA_LINES_PRE_016 = [
+    *[ln for ln in _TANGO_LINES_PRE_016 if ln[0] not in ("pond", "circulation (trunk + ring road + streets + alleys)", "agricultural district (in-wall farms, declared reserve)")],
+    ("cargo canal + dock basin", 1, 2_900.0),
+    ("circulation (trunk + ring road + streets + alleys)", None, 41_172.043011),
+]
+
+
+def _tango_program(**kw):
+    """Tango's shipped program - pop 3000, agricultural district, 22-vertex ring."""
+    return CityProgram(population=3000, agricultural_district=True, aspect=457 / 487, nring=22, **kw)
+
+
+def _nagahara_program(**kw):
+    """Nagahara's shipped program - pop 3000, river city, no agricultural district."""
+    return CityProgram(population=3000, river=True, aspect=460 / 494, nring=20, **kw)
+
+
+@pytest.mark.parametrize(
+    "program,expected_lines,expected_rx,expected_ry,expected_required",
+    [
+        (_tango_program(), _TANGO_LINES_PRE_016, 491.063756, 460.813422, 701_282.051282),
+        (_nagahara_program(), _NAGAHARA_LINES_PRE_016, 452.111512, 420.994525, 588_172.043011),
+    ],
+    ids=["tango", "nagahara"],
+)
+def test_shipped_city_programs_price_exactly_as_they_did_before_the_temple_knobs(program, expected_lines, expected_rx, expected_ry, expected_required):
+    b = plan_city(program, canvas=(3200, 2700))
+    assert [(ln.label, ln.count, pytest.approx(ln.area_px2, abs=1e-6)) for ln in b.lines] == expected_lines
+    assert b.wall.rx == pytest.approx(expected_rx, abs=1e-6)
+    assert b.wall.ry == pytest.approx(expected_ry, abs=1e-6)
+    assert b.required_interior_px2 == pytest.approx(expected_required, abs=1e-6)
+
+
+# ---- the temple program as declared knobs (feature 016) -------------------------------------
+
+
+def _line(budget, label):
+    return next(ln for ln in budget.lines if ln.label == label)
+
+
+def test_the_temple_line_keeps_its_place_in_the_civic_sequence():
+    """Line ORDER is manifest bytes: the knob-driven temple row must land exactly where the
+    hard-coded CIVIC_PROGRAM row sat, directly after the ministries."""
+    labels = [ln.label for ln in plan_city(_prog()).lines]
+    assert labels.index("temple precincts") == labels.index(citybudget.MINISTRIES_LABEL) + 1
+
+
+def test_the_default_temple_knobs_reproduce_the_retired_hard_coded_row():
+    b = plan_city(_prog())
+    temple = _line(b, "temple precincts")
+    assert (temple.count, temple.area_px2) == (2, 16_250.0)  # the row CIVIC_PROGRAM used to carry
+    assert _line(b, "adept-monk houses by the temple precincts").count == 5
+
+
+def test_a_fox_eight_precinct_program_prices_eight_precincts_and_scales_the_clergy_line():
+    """Minami's program: eight modest precincts, each well under the 8,125 px^2 default, with
+    hereditary temple families living OUT (research/religion-and-death.md finding 3)."""
+    b = plan_city(_prog(population=2360, river=True, temple_precincts=8, temple_precinct_px2=3_400.0, monk_houses_per_precinct=6.0))
+    temple = _line(b, "temple precincts")
+    assert temple.count == 8
+    assert temple.area_px2 == pytest.approx(8 * 3_400.0)
+    assert temple.area_px2 / 8 < citybudget.TEMPLE_PRECINCT_PX2  # every precinct smaller than a normal complex
+    monks = _line(b, "adept-monk houses by the temple precincts")
+    assert monks.count == 48  # 8 precincts x 6 households, NOT the retired constant 5
+    assert monks.area_px2 == pytest.approx(48 * citybudget.C_PACKED)
+
+
+def test_the_clergy_line_basis_records_the_derivation_not_just_the_total():
+    monks = _line(plan_city(_prog(temple_precincts=8, monk_houses_per_precinct=6.0)), "adept-monk houses by the temple precincts")
+    assert "8 temple precinct(s)" in monks.basis and "6 adept-monk households" in monks.basis
+
+
+def test_an_extras_line_such_as_the_inari_uplift_survives_into_the_budget():
+    uplift = BudgetLine("Inari precinct uplift", 1, 1_600.0, "the Fox Inari precinct stands slightly larger than its seven siblings")
+    b = plan_city(_prog(temple_precincts=8, extras=(uplift,)))
+    assert _line(b, "Inari precinct uplift") == uplift
+
+
+def test_a_smaller_population_derives_a_smaller_ring():
+    small = plan_city(_prog(population=2360, river=True))
+    standard = plan_city(_prog(population=3000, river=True))
+    assert small.wall.rx < standard.wall.rx and small.required_interior_px2 < standard.required_interior_px2
+
+
 # ---- scale conversion ----------------------------------------------------------------------
 
 

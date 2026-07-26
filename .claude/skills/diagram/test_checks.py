@@ -3025,6 +3025,42 @@ def _temple_city(religious):
     return {"meta": {"scale": "city", "walled": True, "W": 1000, "H": 1000}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]], "religious": religious}
 
 
+def _n_temples(n):
+    return [{"kind": "temple", "x": 200 + 60 * i, "y": 400, "w": 80, "h": 60, "rot": 0, "label": f"Temple of X{i}"} for i in range(n)]
+
+
+def test_city_multi_temple_exception_fires_on_a_third_temple_with_nothing_declared():
+    """religion-and-death.md has always said >2 major temples is the MARKED exception, but until
+    feature 016 nothing enforced it - a city could draw six temples and ship green."""
+    M = _temple_city(_n_temples(3))
+    assert "city_multi_temple_exception_declared" in f(M)
+
+
+def test_city_multi_temple_exception_passes_once_a_recognized_reason_is_declared():
+    M = _temple_city(_n_temples(3))
+    M["meta"]["temple_exception"] = "changed_hands"
+    assert "city_multi_temple_exception_declared" not in f(M)
+
+
+def test_city_multi_temple_exception_passes_for_the_fox_eight_precinct_program():
+    M = _temple_city(_n_temples(8))
+    M["meta"]["temple_exception"] = "fox_structure"
+    assert "city_multi_temple_exception_declared" not in f(M)
+
+
+def test_city_multi_temple_exception_rejects_an_unrecognized_reason():
+    """A fixed vocabulary, not free text: an unrecognized reason must FAIL rather than pass by
+    virtue of being non-empty, or the declaration stops meaning anything."""
+    M = _temple_city(_n_temples(3))
+    M["meta"]["temple_exception"] = "because the GM said so"
+    assert "city_multi_temple_exception_declared" in f(M)
+
+
+def test_city_multi_temple_exception_leaves_the_ordinary_two_temple_city_alone():
+    M = _temple_city(_n_temples(2))
+    assert "city_multi_temple_exception_declared" not in f(M)
+
+
 def test_city_temple_neighborhood_has_shrines_fires_when_bare():
     rel = [{"kind": "temple", "x": 400, "y": 400, "w": 80, "h": 60}, {"kind": "temple", "x": 550, "y": 420, "w": 80, "h": 60}]
     assert "city_temple_neighborhood_has_shrines" in f(_temple_city(rel))

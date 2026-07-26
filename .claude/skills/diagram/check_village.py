@@ -380,6 +380,18 @@ def seg_to_rect_dist(a: Pt, b: Pt, rect: dict[str, Any]) -> float:
 
 
 # the 2 patron fortunes of each Great Clan - a town defaults to one monastery for each
+# The recognized justifications for a city carrying MORE than two major temples
+# (settlements/religion-and-death.md). A fixed vocabulary rather than free text: the doctrine
+# enumerates the exceptions, so an unrecognized reason must FAIL rather than pass by virtue of
+# being non-empty - otherwise the declaration stops meaning anything and becomes a rubber stamp.
+#   large         - an especially large city
+#   pious         - a pilgrimage destination (the monzen-machi inversion)
+#   changed_hands - kept the old ruler's temple after passing between clans (Tango)
+#   fox_structure - the Fox seven-temple structure: many modest precincts, each an economic house
+#                   holding forest usufruct, rather than two great complexes (Minami; l7r.md
+#                   "Fox Temples", research/religion-and-death.md)
+TEMPLE_EXCEPTIONS = {"large", "pious", "changed_hands", "fox_structure"}
+
 CLAN_FORTUNES = {
     "crab": {"Bishamon", "Ebisu"},
     "crane": {"Benten", "Daikoku"},
@@ -9684,6 +9696,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"major city temples {sorted(set(major))}: stray non-patron {stray_t}, missing patron {missing} "
                     f"(clan {clan_t!r} patrons {sorted(declared_t)}); a city has a great temple to each of its two "
                     f"patron fortunes (+ optionally Bishamon in the samurai quarter), the rest small shrines",
+                )
+            # MORE THAN TWO MAJOR TEMPLES IS THE MARKED EXCEPTION, AND IT MUST BE DECLARED (feature
+            # 016). settlements/religion-and-death.md has enumerated the recognized justifications
+            # since it was written, but nothing enforced them - so a city could quietly draw six
+            # temples and ship green, which is the "a check that never RUNS looks exactly like a
+            # check that passes" shape one level up: the RULE existed and the check did not. The
+            # declaration is meta(temple_exception=...), from the fixed TEMPLE_EXCEPTIONS vocabulary.
+            major_t = [r for r in rel if r.get("kind") == "temple"]
+            if len(major_t) > 2:
+                exc = meta.get("temple_exception")
+                check(
+                    "city_multi_temple_exception_declared",
+                    exc in TEMPLE_EXCEPTIONS,
+                    f"{len(major_t)} major temples but meta(temple_exception=...) is {exc!r} - a city defaults to TWO great "
+                    f"complexes (one per patron fortune); more is the marked exception and must name its reason, one of "
+                    f"{sorted(TEMPLE_EXCEPTIONS)} (see settlements/religion-and-death.md)",
                 )
             # a TEMPLE NEIGHBORHOOD (>= 2 temples clustered together) should be dotted with a smattering of
             # small wayside SHRINES (s.small_shrine - non-residential, kind 'small_shrine'). A lone temple
