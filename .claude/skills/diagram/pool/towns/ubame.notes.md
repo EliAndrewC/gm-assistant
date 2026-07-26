@@ -134,6 +134,32 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
   documented answer to a packing artifact, and the cover shortfall left over was closed
   deterministically by computing the actual bare cells and placing grazing commons on them.
 
+- **2026-07-26 `settlement-review` round 1 (the agent's founding run).** The GM asked whether a Mode B
+  reviewer existed; it did not - `building-review` and `size-audit` are both Mode A only, and
+  `size-audit` hardcodes 3 px = 1 ft, so pointing it at a town map would have reported every feature
+  at three times its real size. `settlement-review` was written and TDD'd against this map with the
+  forge-as-face and blob-windbreak defects deliberately re-planted; **the whole gate was green
+  throughout**. It caught both planted defects and **four more nobody planted**. Verified against the
+  manifest before acting - three held, one did not:
+  - **APPLIED, and each became an automated check first**: the trunk road ran **18 px inside the
+    compound's south wall**, 80 ft from its own gate (`manors` is an overlap TARGET, never a
+    candidate, so nothing had ever tested a compound's wall against a roadbed) -> road dropped south,
+    new check `manor_walls_clear_of_ways`; three kitchen gardens and two commons reached **43 px past
+    the border** onto Fox soil, which these very notes promised did not happen -> commons clipped, a
+    no-build strip registered inside the line, new check
+    `structures_stay_on_their_side_of_a_border` (tested on the CENTER, so the magistracy's wall may
+    still stand on the line).
+  - **APPLIED, no check**: both monasteries' innermost torii was drawn through its own hall's
+    caption; one `village_grove` call silently drew nothing (a no-op in a gen is the same shape as a
+    check that never runs); the high street carried 6 shops against the gen's own stated ~14, now 9
+    with the merchant dwellings still in band.
+  - **NOT REPRODUCED**: a reported tree crown on the theater stage roof - the manifest shows zero
+    crowns in that footprint, so it was most likely scrub tufts read off the raster. Recorded because
+    "verify the finding before acting on it" is the durable lesson, not a footnote.
+  - **CONFIRMED by the reviewer and left alone**: the diverging nuisance axes, the unlabeled trunk
+    road, the execution ground on the west road rather than the frontier approach, the manor drawn at
+    its Mode A envelope, and the twin-detector verdict ("reads as its own place, not a re-skin").
+
 ## Negative fixtures frozen from this map
 
 Six, in [`../regressions/`](../regressions/) - each the real Ubame manifest with exactly one thing
