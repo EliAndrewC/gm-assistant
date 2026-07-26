@@ -249,6 +249,58 @@ _OVERLAP_EXEMPT = {
     "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (hitching rails, trough, dung heaps, litter; no animal glyphs - the maps render no humans or animals) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well); `troughs_box` and `rails` record the furniture's DRAWN extents, which must not intersect each other or any wellhead (wells_troughs_rails_clear_of_each_other)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
+# ---- label classification registry (GM 2026-07-26) --------------------------------------------
+# The sibling of _OVERLAP_STRUCTS, for the OTHER thing a new feature has to be protected from: a
+# CAPTION landing on it. labels_clear_of_other_buildings used to build its victim list from ~22
+# hand-written manifest keys, which is the same bug the keep-clear contract retired - and it had
+# already fallen behind twice over. When the martial hall went in, `martial_halls` and `dojos` had
+# to be remembered into it; a day later the execution-ground feature landed and `punishment_spots`,
+# `execution_grounds` and `boundary_markers` were not in it either, so a foreign caption could sit
+# squarely on an execution ground with the gate green.
+#
+# Now every solid feature is classified here exactly once. The GROUP name is what a caption must
+# NAME to be allowed to cover the feature - and because the group name is the caption word, that
+# permission is derived rather than hand-listed too (see _label_allows).
+_LABEL_GROUP = {
+    "flophouses": "flophouse",
+    "religious": "temple",
+    "ministries": "ministry",
+    "governor_mansion": "governor",
+    "gate_structs": "gate",
+    "merchant_estates": "merchant",
+    "manors": "estate",
+    "cemeteries": "cemetery",
+    "mausoleums": "mausoleum",
+    "cremation_grounds": "cremation",
+    "ossuaries": "ossuary",
+    "breweries": "brewery",
+    "dye_yards": "dye works",
+    "lumber_yards": "lumber yard",
+    "oil_presses": "oil press",
+    "pawnshops": "pawnshop",
+    "bathhouses": "bathhouse",
+    "kilns": "kiln",
+    "farriers": "farrier",
+    "tanning_yards": "tanning yard",
+    "drum_towers": "drum tower",
+    "martial_halls": "martial hall",
+    "dojos": "dojo",
+    "fire_towers": "fire tower",
+    "kosatsuba": "notice board",
+    "punishment_spots": "punishment ground",
+    "execution_grounds": "execution ground",
+    "boundary_markers": "boundary marker",
+    "houses": "farmhouse",
+}
+# `buildings` is the one key whose group is not fixed: each record carries its own `kind`, and _grp
+# folds those kinds into groups (samurai_large -> samurai, and so on).
+_LABEL_BY_KIND = ("buildings",)
+_LABEL_EXEMPT = {
+    "byres": "a draft-ox byre is an ANNEX abutting its own farmhouse (draft_byres places it against the wall), so it shares the house's ground and any caption cleared for the house is cleared for it",
+}
+_LABEL_CLASSIFIED = set(_LABEL_GROUP) | set(_LABEL_BY_KIND) | set(_LABEL_EXEMPT)
+_LABEL_GROUPS = frozenset(_LABEL_GROUP.values())
+
 _OVERLAP_SINGLETONS = ("governor_mansion",)  # solid footprints the manifest stores as ONE dict, not a list
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -3155,6 +3207,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"a bridge over water, a guard tower on a wall), to _OVERLAP_EXEMPT with the reason.",
     )
 
+    # ...and the same completeness guard for CAPTIONS. A feature protected from every solid neighbor
+    # is still not protected from a label dropped on top of it, and that list fell behind twice before
+    # it was made a registry (GM 2026-07-26). Every solid key must name the label GROUP a caption has
+    # to use to be allowed over it, or be excused in _LABEL_EXEMPT with a reason.
+    unlabeled = sorted(k for k in _OVERLAP_STRUCTS + _OVERLAP_SINGLETONS if k not in _LABEL_CLASSIFIED)
+    check(
+        "every_solid_feature_classified_for_labels",
+        not unlabeled,
+        f"map feature(s) {unlabeled} are not classified for LABELS. Give each one its caption GROUP in _LABEL_GROUP "
+        f"(the group name is the word a caption must contain to be allowed to cover it) or, if a caption over it is "
+        f"harmless, name it in _LABEL_EXEMPT with the reason.",
+    )
+
     # no structure overlaps the magistrate's manor walls (a tilted manor uses its rotated corners)
     bad_m = []
     for mn in M.get("manors", []):
@@ -4215,36 +4280,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             ys = [it["y"] + dx * sa + dy * ca for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
             return min(xs), min(ys), max(xs), max(ys)
 
-        vics = [(_grp(b.get("kind", "")), _bb(b)) for b in M.get("buildings", []) if _grp(b.get("kind", "")) not in LABEL_FREE]
-        vics += [("flophouse", _bb(fp)) for fp in M.get("flophouses", [])]
-        vics += [("temple", _bb(r)) for r in M.get("religious", [])]
-        vics += [("ministry", _bb(mi)) for mi in M.get("ministries", [])]
-        vics += [("governor", _bb(M["governor_mansion"]))] if M.get("governor_mansion") else []
-        vics += [("gate", _bb(gs)) for gs in M.get("gate_structs", [])]
-        vics += [("merchant", _bb(e)) for e in M.get("merchant_estates", [])]
-        vics += [("estate", _bb(mn)) for mn in M.get("manors", [])]
-        vics += [("cemetery", _bb(c)) for c in M.get("cemeteries", [])]
-        vics += [("mausoleum", _bb(mu)) for mu in M.get("mausoleums", [])]
-        vics += [("cremation", _bb(cg)) for cg in M.get("cremation_grounds", [])]
-        vics += [("ossuary", _bb(o)) for o in M.get("ossuaries", [])]
-        # the trade works + the drum tower (GM 2026-07-24): a foreign caption over a brewery/press/
-        # yard is the same defect as one over a house (caught by eye on Nagahara's oil press, which
-        # the Temple of Bishamon caption buried while this check looked only at the keys above)
-        for _twk, _twg in (
-            ("breweries", "brewery"),
-            ("dye_yards", "dye works"),
-            ("lumber_yards", "lumber yard"),
-            ("oil_presses", "oil press"),
-            ("pawnshops", "pawnshop"),
-            ("bathhouses", "bathhouse"),
-            ("kilns", "kiln"),
-            ("farriers", "farrier"),
-            ("tanning_yards", "tanning yard"),
-            ("drum_towers", "drum tower"),
-            ("martial_halls", "martial hall"),
-            ("dojos", "dojo"),
-        ):
-            vics += [(_twg, _bb(t_)) for t_ in M.get(_twk, [])]
+        # EVERY solid feature is a caption victim, read from the _LABEL_GROUP registry rather than a
+        # hand-written key list (GM 2026-07-26). The list this replaced had fallen behind twice: the
+        # martial hall and the dojo had to be remembered into it, and the execution-ground feature's
+        # three keys were never in it at all, so a foreign caption over an execution ground shipped
+        # green. Anything deliberately NOT a victim is named in _LABEL_EXEMPT with its reason, and
+        # every_solid_feature_classified_for_labels fires if a new key is in neither.
+        vics = [(_grp(b.get("kind", "")), _bb(b)) for k_ in _LABEL_BY_KIND for b in M.get(k_, []) if _grp(b.get("kind", "")) not in LABEL_FREE]
+        for _lk, _lg in _LABEL_GROUP.items():
+            _lrecs = M.get(_lk)
+            if isinstance(_lrecs, dict):  # governor_mansion is a singleton, not a list
+                _lrecs = [_lrecs]
+            vics += [(_lg, _bb(r_)) for r_ in (_lrecs or []) if isinstance(r_, dict) and "w" in r_]
 
         def _label_allows(txt: str) -> set[str]:
             t = txt.lower()
@@ -4266,8 +4313,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"samurai", "estate"}
             if "laborer" in t or "laborer" in t:
                 return {"laborer"}
-            if "burakumin" in t or "agricultur" in t:  # the in-wall farming district also houses burakumin
-                return {"burakumin"}
+            if "burakumin" in t or "agricultur" in t:  # the in-wall farming district houses burakumin AND works its farms
+                return {"burakumin", "farmhouse"}
             if "barn" in t:
                 return {"barn"}
             if "merchant" in t:
@@ -4276,10 +4323,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
             if "drum/bell" in t or t.strip() == "tower":  # the two-line zhonggulou caption (GM 2026-07-24)
                 return {"drum tower"}
-            for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "tanning yard", "drum tower", "martial hall", "dojo"):
-                if _tw_txt in t:
-                    return {_tw_txt}  # a trade-works caption may cover only its own premises
-            return set()  # farmland / market / theater stage / title labels name no building
+            # A CAPTION MAY ALWAYS COVER THE THING IT NAMES, derived rather than hand-listed: the
+            # _LABEL_GROUP registry's group names ARE the caption words ("brewery", "martial hall",
+            # "execution ground"), so a new feature earns this permission by being classified, with
+            # no second list to remember. The branches above stay because they are SYNONYMS - a
+            # caption says "Temple of Benten" or "Governor's Mansion", not "temple" or "governor".
+            named = {g for g in _LABEL_GROUPS if g in t}
+            return named  # empty for farmland / market / theater stage / title labels, which name no building
 
         mislabel = []
         for L in M.get("labels", []):
@@ -8595,6 +8645,63 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"'riverbed people', worked the unplowable floodway edges), never on a field: a paddy is a flooded "
                 f"basin that cannot carry a tamped work floor, and the pits' lime and bate liquor poison cropping "
                 f"soil. Tested against field outlines, dry plots, and flower fields, rotation-aware",
+            )
+            # ... AND IT LIES ALONG THE BANK IT WORKS (GM 2026-07-26). A tanning yard is a working
+            # FRONTAGE, not a building: the soaking pits and the intake sit on the water side
+            # (local -y), the drying racks stand behind them, and every hide crosses from one to
+            # the other. So the yard's long axis runs WITH the watercourse - a stream at 30 deg
+            # takes a yard at 30 deg. Set the yard square to the map instead and the near corner
+            # goes in the water while the far corner strands a yard-length inland: the pits at one
+            # end sit on the bank and the pits at the other end do not, which is the one thing this
+            # layout cannot absorb, since the whole point of the ground is that the pit rank and
+            # the staking frames share a single edge of water. Riverside works follow their bank
+            # for the same reason a wharf does. Shape is city_wall_towers_aligned's: compare the
+            # RECORDED rot against the bearing of the water it fronts, mod 180 (a 180 deg flip is
+            # the same yard; a 90 deg turn stands it ACROSS the bank instead of along it).
+            #
+            # WHICH course is "its water" is decided by REACH, not by nearest. A yard at a
+            # confluence legitimately fronts either course that meets there, and the
+            # nearest-by-centerline answer is not even stable: Hoshizora's yard sits 3 px from a
+            # drain ditch bearing 43 deg and 5 px from the channel its intake cut actually taps at
+            # 83 deg, so by centerline the ditch wins and by intent the channel does. The reference
+            # set is therefore every course whose BANK - centerline distance minus that course's
+            # REAL half-width, the same measure tanning_yard_clear_of_water uses, since a 40px
+            # river's centerline is 20px from a yard that abuts it - falls inside the same ~20 ft
+            # reach tanning_yard_on_water calls "on the water", and the yard need only be square to
+            # ONE of them. A yard with NO bank in that reach is already failing
+            # tanning_yard_on_water, so this check abstains rather than reporting one defect twice.
+            #
+            # TOLERANCE is 15 deg - the wall-towers figure, not the gate furniture's 6 - because
+            # rot is set by hand against a hand-drawn meandering polyline, so a correct yard sits a
+            # few degrees off whichever segment it happens to be measured against (Hoshizora's own
+            # fronting channel bends from 83 to 56 deg within 50 px). It still separates cleanly,
+            # because the failure mode is not a small wobble but an AXIS-ALIGNED yard on a diagonal
+            # bank, which is 20-45 deg off: the pool's three good yards sit at 2.1, 3.8 and 7.2 deg
+            # while the pre-fix Tango yard sat at 22.9 (frozen in pool/regressions/).
+            _ty_skew = []
+            for t_ in _ty_yards:
+                _ty_off, _ty_fronts = 90.0, False
+                for _ty_pl, _ty_hw in _ty_water_all:
+                    for i in range(len(_ty_pl) - 1):
+                        _ty_a = (_ty_pl[i][0], _ty_pl[i][1])
+                        _ty_b = (_ty_pl[i + 1][0], _ty_pl[i + 1][1])
+                        # a repeated point carries no bearing - skip it rather than read it as 0 deg
+                        if _ty_a == _ty_b or max(0.0, seg_to_rect_dist(_ty_a, _ty_b, t_) - _ty_hw) > _ty_px(20.0):
+                            continue
+                        _ty_fronts = True
+                        _ty_da = (t_.get("rot", 0) - math.degrees(math.atan2(_ty_b[1] - _ty_a[1], _ty_b[0] - _ty_a[0]))) % 180
+                        _ty_off = min(_ty_off, _ty_da, 180 - _ty_da)
+                if _ty_fronts and _ty_off > 15.0:
+                    _ty_skew.append((round(t_["x"]), round(t_["y"]), round(_ty_off)))
+            check(
+                "tanning_yard_square_to_its_water",
+                not _ty_skew,
+                f"tanning yard(s) set askew to the bank they work (x, y, degrees off): {_ty_skew} - the yard's long "
+                f"axis runs WITH its watercourse, so a stream at 30 deg takes a yard at 30 deg (s.tanning_yard's rot "
+                f"lays the water side, local -y, against the bank). Square to the map on a diagonal bank puts one "
+                f"corner in the water and strands the far end inland, so half the pit rank loses the edge of water "
+                f"the whole ground exists to share. Judged against ANY course whose bank lies within the ~20 ft "
+                f"on-water reach - a yard at a confluence may follow either - within 15 deg",
             )
 
     if scale == "city":

@@ -4302,7 +4302,7 @@ class Settlement:
             lx, ly = label_xy if label_xy else (min(xs) + (self.W - min(xs)) / 2, (min(ys) + max(ys)) / 2)
             self.label(lx, ly, label, 14, italic=True, weight="bold", color="#22301A")
 
-    def manor(self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0, gate_ft: float = 12.0) -> None:
+    def manor(self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0, gate_ft: float = 12.0, label_xy: Pt | None = None) -> None:
         """A walled samurai compound (e.g. a magistrate's manor / hunting lodge) shown
         as a feature on a settlement map: ONLY the walls + gate + empty court. The
         interior is deliberately not drawn here - it is the subject of its own Mode A
@@ -4390,7 +4390,11 @@ class Settlement:
         self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in blk])
         ys = [c[1] for c in corners]
         if label:
-            self.label(x, min(ys) - 12, label, 14, weight="bold")
+            # the caption hangs above the walls by default; `label_xy` moves it when something
+            # legitimately occupies that band - a ROTATED manor swings its corner up into the
+            # text, and a punishment ground sited at the gate (which is where it belongs) sits
+            # under it (GM 2026-07-26, Hoshizora). Same escape as s.martial_hall.
+            self.label(*(label_xy or (x, min(ys) - 12)), label, 14, weight="bold")
         if sublabel:
             self.label(x, max(ys) + 18, sublabel, 9, italic=True)
 
@@ -5478,7 +5482,12 @@ class Settlement:
 
         The GROUND, not the building, is the feature: soaking pits, drying racks, and a small work
         shed on marginal land at the settlement's edge, ON water. The `rot` should lay the yard's
-        WATER SIDE (local -y, where the pits and the intake sit) against the bank.
+        WATER SIDE (local -y, where the pits and the intake sit) against the bank - which means
+        `rot` is the BANK'S OWN BEARING there, not a right angle off the map: a stream running at
+        30 deg takes a yard at 30 deg. The pit rank and the staking frames share one edge of water,
+        so a yard left square to the map on a slanted bank puts one corner in the stream and
+        strands the far end of the rank inland. `tanning_yard_square_to_its_water` holds this to
+        within 15 deg of any course whose bank lies inside the ~20 ft on-water reach.
 
         Historical grounding (the "why" - see settlements.md "TANNING YARDS"):
           - Hides come from FALLEN DRAFT STOCK, not butchery: the kawata held carcass rights over a

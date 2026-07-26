@@ -206,12 +206,17 @@ s.kiln(2282, 830)  # tile kiln OUTSIDE the east wall, east of the common burial 
 # so it goes below BOTH taps and clear of fse1's feeder corridor. That reach lies past the old
 # frame bottom, so the crop grows ~180px south - which also brings fse1's farmland, previously
 # cropped out entirely, into view. Every off-map tail stays within the offmap anchor tolerance.
-s.tanning_yard(1988, 2068, rot=90, pits=12, water="stream")
+# rot follows the OUTFALL, not the map (GM 2026-07-26, tanning_yard_square_to_its_water): this
+# reach runs (1995,2020)->(2038,2122), bearing 67.1, so a yard left square at rot=90 stood 23 deg
+# askew - one corner in the stream and the far end of the pit rank stranded inland. Turned to the
+# bank's own bearing and nudged ~4px down the normal, so the ground still clears the bank by ~5 ft
+# and the staking frames reach into the shallows.
+s.tanning_yard(1992, 2066, rot=67.1, pits=12, water="stream")
 # keep-out ring: tanning_yard_clear_of_dwellings wants 120 ft (40px at this scale) clear of every
 # ordinary house, and the trade-record block only reserves the footprint + caption - so the SE farm
 # rings packed a farmhouse 100 ft away. Blocked BEFORE the fields run, the same guard Hoshizora puts
 # round its crematory. Radius 46px: 40 for the rule + a farmhouse half-footprint, since blocks test centers.
-s.block_polys.append([(1988 + 46 * math.cos(a), 2068 + 46 * math.sin(a)) for a in [i * math.pi / 6 for i in range(12)]])
+s.block_polys.append([(1992 + 46 * math.cos(a), 2066 + 46 * math.sin(a)) for a in [i * math.pi / 6 for i in range(12)]])
 # the TANNING YARD (GM 2026-07-24) on the MOAT OUTFALL, below the SE estates. Tango is the awkward
 # case: it is a dry seat whose burakumin live IN-wall (the siege need), and the moat feeder enters
 # at the clean NW rim - so the only honest water for a tannery is the outfall stream leaving the

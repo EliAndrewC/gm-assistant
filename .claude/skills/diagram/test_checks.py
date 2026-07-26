@@ -7911,7 +7911,9 @@ def _ty_map(**over):
         "meta": {"scale": "town", "walled": False, "ftpx": 1},
         "streams": [{"poly": [[500, 100], [500, 900]], "w": 8, "flow": "forward", "flow_deg": 90.0, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}],
         "buildings": [bldg(200, 200, kind="burakumin"), bldg(240, 200, kind="burakumin")],
-        "tanning_yards": [{"x": 466, "y": 500, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}],
+        # rot 90 lays the yard along the vertical stream: the shared fixture must be a LEGAL
+        # yard, or every test in this family quietly carries tanning_yard_square_to_its_water
+        "tanning_yards": [{"x": 466, "y": 500, "w": 58, "h": 41, "rot": 90, "label": "tanning yard"}],
     }
     M.update(over)
     return M
@@ -7994,9 +7996,10 @@ def test_tanning_yard_clear_of_water_fires_when_the_yard_sits_in_the_pond():
 
 
 def test_tanning_yard_clear_of_water_fires_when_the_river_swallows_a_corner():
-    # tested at the river's REAL half-width (the lumber-yard lesson): a 40 px river's edge
-    # reaches 20 px out, far past the generic ~6 px stroke the village checks assume
-    M = _ty_map(river={"pts": [[520, 100], [520, 900]], "w": 60})
+    # tested at the river's REAL half-width (the lumber-yard lesson): a 60 px river's edge reaches
+    # 30 px out and swallows the yard's corner while its CENTERLINE stands 23 px clear of the
+    # ground - far past the generic ~6 px stroke the village checks assume
+    M = _ty_map(river={"pts": [[510, 100], [510, 900]], "w": 60})
     assert "tanning_yard_clear_of_water" in f(M)
 
 
@@ -8025,6 +8028,80 @@ def test_tanning_yard_clear_of_fields_passes_beside_the_field():
     # abutting cropland is fine - marginal bank ground borders the fields; only OVERLAP fires
     M = _ty_map(fields=[{"name": "t-ne", "kind": "paddy", "outline": [[300, 400], [430, 400], [430, 600], [300, 600]], "bbox": [300, 400, 430, 600]}])
     assert "tanning_yard_clear_of_fields" not in f(M)
+
+
+# ---- and the yard runs WITH its bank (GM 2026-07-26) ----------------------------------------
+# A diagonal stream takes a diagonal yard: the pit rank and the staking frames share one edge of
+# water, so a yard left square to the map on a slanted bank puts one corner in the stream and
+# strands the far end of the rank inland. The reference bank is any course within the on-water
+# reach - measured to the BANK, not the centerline - so a yard at a confluence may follow either.
+_TY_DIAG = [[400, 300], [600, 600]]  # bearing 56.3
+
+
+def test_tanning_yard_square_to_its_water_fires_on_an_axis_aligned_yard_on_a_diagonal_bank():
+    M = _ty_map(
+        streams=[{"poly": _TY_DIAG, "w": 8, "flow": "forward", "flow_deg": 56.3, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}],
+        tanning_yards=[{"x": 466, "y": 473, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_square_to_its_water" in f(M)
+
+
+def test_tanning_yard_square_to_its_water_passes_when_the_yard_follows_the_bank():
+    M = _ty_map(
+        streams=[{"poly": _TY_DIAG, "w": 8, "flow": "forward", "flow_deg": 56.3, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}],
+        tanning_yards=[{"x": 476, "y": 466, "w": 58, "h": 41, "rot": 56.3, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_square_to_its_water" not in f(M)
+
+
+def test_tanning_yard_square_to_its_water_accepts_a_180_degree_flip():
+    # the same ground with the water side on the other long edge is the same alignment
+    M = _ty_map(
+        streams=[{"poly": _TY_DIAG, "w": 8, "flow": "forward", "flow_deg": 56.3, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}],
+        tanning_yards=[{"x": 476, "y": 466, "w": 58, "h": 41, "rot": 236.3, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_square_to_its_water" not in f(M)
+
+
+def test_tanning_yard_square_to_its_water_passes_at_a_confluence_when_square_to_either_course():
+    # the yard follows the vertical stream; the 40 deg course also runs past it, and being 50 deg
+    # off THAT one is not a defect - a yard on two banks legitimately lies along one of them
+    M = _ty_map(
+        streams=[
+            {"poly": [[500, 100], [500, 900]], "w": 8, "flow": "forward", "flow_deg": 90.0, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}},
+            {"poly": [[361, 470], [552, 630]], "w": 8, "flow": "forward", "flow_deg": 39.9, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}},
+        ],
+        tanning_yards=[{"x": 466, "y": 500, "w": 58, "h": 41, "rot": 90, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_square_to_its_water" not in f(M)
+
+
+def test_tanning_yard_square_to_its_water_abstains_when_no_bank_is_in_reach():
+    # a yard on dry ground is tanning_yard_on_water's defect; do not report it twice
+    M = _ty_map(tanning_yards=[{"x": 180, "y": 500, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}])
+    assert "tanning_yard_on_water" in f(M)
+    assert "tanning_yard_square_to_its_water" not in f(M)
+
+
+def test_tanning_yard_square_to_its_water_measures_a_wide_course_from_its_BANK():
+    # a 80 ft river's centerline is 50 px from this yard - out of the 20 ft reach - but its bank is
+    # 10 px away, which is the edge the yard actually works. Read from the centerline the check
+    # would abstain here; read from the bank it catches the yard sitting 56 deg across it.
+    M = _ty_map(
+        river={"poly": [[216, 342], [354, 550]], "w": 80},
+        tanning_yards=[{"x": 200, "y": 473, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_square_to_its_water" in f(M)
+
+
+def test_tanning_yard_square_to_its_water_ignores_a_repeated_polyline_point():
+    # a duplicated vertex has no bearing - read as 0 deg it would wave this axis-aligned yard
+    # through, since the point itself is the nearest bit of water to the rect
+    M = _ty_map(
+        streams=[{"poly": [[400, 300], [500, 450], [500, 450], [600, 600]], "w": 8, "flow": "forward", "flow_deg": 56.3, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}],
+        tanning_yards=[{"x": 466, "y": 473, "w": 58, "h": 41, "rot": 0, "label": "tanning yard"}],
+    )
+    assert "tanning_yard_square_to_its_water" in f(M)
 
 
 # ---- water flow direction (GM 2026-07-24) --------------------------------------------------
@@ -8683,3 +8760,39 @@ def test_granary_stores_are_solid_structs_for_every_keep_clear_rule():
     assert "ring_road_kept_clear" in f(M)
     M["granary"]["stores"][0]["y"] = 300  # ...and off the lane it is fine
     assert "ring_road_kept_clear" not in f(M)
+
+
+def _label_map(caption, key, **extra):
+    """A city carrying one solid feature at (500, 500) with `caption` written across it."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True, "population": 3000},
+        "wall": WALL,
+        "gates": [[500, 50]],
+        "labels": [[470, 492, 530, 508, 1, caption]],
+    }
+    M[key] = [solid(key, 500, 500)]
+    M.update(extra)
+    return M
+
+
+def test_labels_clear_of_other_buildings_reads_the_label_registry():
+    """A caption may cover only what it NAMES, and EVERY solid feature is a victim - read from
+    _LABEL_GROUP rather than a hand-written key list (GM 2026-07-26). The execution ground is the
+    worked example: its three keys shipped absent from the old list, so a foreign caption over one
+    passed the gate. The permission side is derived from the same registry - a group's name IS the
+    caption word - so a newly classified feature needs no second entry to caption itself."""
+    for key, own in (("execution_grounds", "execution ground"), ("punishment_spots", "punishment ground"), ("fire_towers", "fire tower"), ("martial_halls", "martial hall")):
+        assert "labels_clear_of_other_buildings" in f(_label_map("Temple of Benten", key)), key
+        assert "labels_clear_of_other_buildings" not in f(_label_map(own, key)), key
+    # ...and a caption naming a DIFFERENT registered feature is still a mislabel
+    assert "labels_clear_of_other_buildings" in f(_label_map("dojo", "execution_grounds"))
+
+
+def test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key(monkeypatch):
+    """The ratchet: a new solid feature must declare the caption group that may cover it, or be
+    excused in _LABEL_EXEMPT. Without this, forgetting is silent - which is exactly how the list
+    this replaced fell behind twice."""
+    M = _label_map("Temple of Benten", "martial_halls")
+    assert "every_solid_feature_classified_for_labels" not in f(M)
+    monkeypatch.setattr(check_village, "_OVERLAP_STRUCTS", check_village._OVERLAP_STRUCTS + ("hawk_mews",))
+    assert "every_solid_feature_classified_for_labels" in f(M)
