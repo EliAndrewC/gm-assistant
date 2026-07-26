@@ -96,6 +96,36 @@ seat both hand-picked batches had missed, first try. Reach for it on any "this p
 X" - and note the DRAW ORDER caveat: it can only see what has been drawn so far, so call it where
 the feature belongs, not earlier.
 
+## Siting a feature with interacting rules: adjudicate against the GATE, never a re-statement of it
+
+`open_seat` (above) answers "does this fit here?" - geometry only. When a feature's placement is
+governed by many INTERACTING rules, that is not enough: the justice works (feature 015) must be
+outside the wall, on the way out, past the boundary stone, clear of the community's dead, off the
+farmland, on the outcast side, clear of every structure, and inside the map's current view. Use
+[`site_justice.py`](site_justice.py):
+
+    python3 site_justice.py pool/provincial-cities/nagahara.json execution_ground --limit=25
+    python3 site_justice.py pool/towns/hirameki.json boundary_marker --ground=1620,1900
+
+It proposes seats **cheapest-on-the-frame first** (`frame_cost=0` means the crop is unchanged by
+that seat) and adjudicates each one by building a trial manifest and running `check_village.gate()`
+on it, reporting the checks that fail there but not with the feature absent.
+
+**The lesson, which generalizes past this feature.** Its predecessor was a scratchpad script that
+re-implemented every rule as its own predicate, and it drifted *within a single session*: a
+relaxation made to satisfy one map silently persisted and put Nagahara's boundary stone in a field
+off the highway. The gate accepted it because the rule it broke was not yet checked, and only the
+rendered PNG showed the problem. So a siting tool must never restate a rule - it must ASK the gate.
+New rules are then picked up for free, and the tool cannot disagree with the checker. This is the
+same trap as "placement and its check must read the SAME manifest source" (below), one level up.
+The cheap geometric pass in that file is a RANKING only: it orders candidates to keep the number of
+gate runs small, and it never rejects, so a stale heuristic costs runtime rather than correctness.
+
+**Known limit:** label collisions cannot be judged from a manifest - a label box is produced at draw
+time, not recorded for a hypothetical placement - so `labels_clear_of_other_buildings` and
+`no_label_overlaps` still surface only on regeneration. That is why `punishment_spot` and
+`execution_ground` both take `label_above` / `label_xy`.
+
 ## Read derived geometry from the MANIFEST, not by re-running the generators
 
 Second-biggest sink in that same profile: **7.6 minutes across three runs of a throwaway analysis
