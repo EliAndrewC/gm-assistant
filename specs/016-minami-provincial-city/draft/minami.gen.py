@@ -197,7 +197,7 @@ def label_ground(x, y, halfw=54, halfh=13):
     s.block_polys.append([(x - halfw, y - halfh), (x + halfw, y - halfh), (x + halfw, y + halfh), (x - halfw, y + halfh)])
 
 
-for _lx, _ly2, _hw in ((1560, 1216, 64), (1150, 1348, 56), (1214, 1470, 42), (1668, 1314, 60), (1362, 1136, 32), (1424, 1359, 30), (1162, 1613, 28), (1256, 1645, 78)):
+for _lx, _ly2, _hw in ((1560, 1216, 64), (1150, 1348, 56), (1214, 1470, 42), (1668, 1314, 60), (1362, 1136, 32), (1424, 1359, 30), (1162, 1613, 34), (1256, 1645, 86)):
     label_ground(_lx, _ly2, _hw)
 
 _LBL_DONE = 0
@@ -233,7 +233,7 @@ s.dye_yard(1162, 1596)  # on the in-wall cargo canal, north of the dock basin
 s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
 s.oil_press(1548, 1300)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
-s.bathhouses([(1402, 1166), (1250, 1400)])
+s.bathhouses([(1416, 1160), (1250, 1400)])
 s.kiln(640, 1180)  # OUTSIDE the walls on the far bank
 s.tanning_yard(866, 1700, rot=90, pits=12, water="stream")  # east bank, DOWNSTREAM of dock, dyer and moat outfall
 s.bridge(818, 1332, 4, RIVER_W + 26, 15)
@@ -332,7 +332,8 @@ alleys(ALLEYS)
 for _al in ALLEYS:
     s.corridors.append((_al, 8))
     (_ax0, _ay0), (_ax1, _ay1) = _al[0], _al[-1]
-    s.block_polys.append([(min(_ax0, _ax1) - 8, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + 8, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + 8, max(_ay0, _ay1) + 8), (min(_ax0, _ax1) - 8, max(_ay0, _ay1) + 8)])
+    _apad = 20 if _ax0 == 1756 else 8
+    s.block_polys.append([(min(_ax0, _ax1) - _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, max(_ay0, _ay1) + 8), (min(_ax0, _ax1) - _apad, max(_ay0, _ay1) + 8)])
 
 # ====================================================================== THE EIGHT PRECINCTS
 TW, TH = s.px(96), s.px(66)  # the seven siblings, ~0.70 acre drawn
@@ -514,8 +515,8 @@ s.label(916, 1164, "wharf", 10, italic=True, color="#5A4326")
 MKT_OFF = 0
 WMARKET_LINE = [(560, 1344 + MKT_OFF), (866, 1332 + MKT_OFF)]
 NMARKET_LINE = [(1389 - MKT_OFF, 828), (1373 - MKT_OFF, 700), (1365 - MKT_OFF, 624)]
-s.frontage(WMARKET_LINE, ["shop"] * 12, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(20), fill=True)
-s.frontage(NMARKET_LINE, ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(20), fill=True)
+s.frontage(WMARKET_LINE, ["shop"] * 12, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(32), fill=True)
+s.frontage(NMARKET_LINE, ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(32), fill=True)
 s.label(1236, 790, "gate market", 9, italic=True, color="#5A4326")
 
 # samurai country estates: dispersed walled compounds NORTHEAST of the city, toward Otosan Uchi.
@@ -629,7 +630,7 @@ MOAT_FARMS = [
     ("fne1", (1790, 1120), 345, 22, 180, (160, 210), (95, 130), (0.4, 0.75)),  # NE face, falling NNE
     ("fe1", (1900, 1450), 10, 38, 185, (165, 215), (100, 135), (0.4, 0.78)),  # E face, falling E
     ("fs1", (1420, 1800), 85, 39, 185, (155, 200), (95, 130), (0.4, 0.75)),  # S face, falling S
-    ("fsw1", (1046, 1820), 120, 44, 175, (150, 195), (92, 125), (0.4, 0.75)),  # SW face, falling SSW (clear of the re-derived ring's outfall)
+    ("fsw1", (1210, 1852), 120, 44, 175, (150, 195), (92, 125), (0.4, 0.75)),  # SW face, falling SSW - east of the Hayakawa, clear of the re-derived ring's outfall
 ]
 for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     mp = min(MOAT, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
@@ -781,7 +782,7 @@ _LAB = ("laborer", "laborer_large")
 # puts ~12.5% of laborers in larger homes; city_laborer_housing_varied wants 6-20%)
 # tight draw-point passes for the courts the gate names as over the ~26-household cap. BEFORE
 # the fills, so each reserves its court rather than arriving to find the ground taken.
-for _wr in ((1610, 1080, 1710, 1180), (1530, 1190, 1630, 1290), (1280, 1215, 1380, 1315), (1015, 1405, 1115, 1505), (1215, 1610, 1315, 1700), (1425, 1010, 1520, 1100)):
+for _wr in ((1610, 1080, 1710, 1180), (1530, 1190, 1630, 1290), (1280, 1215, 1380, 1315), (1015, 1405, 1115, 1505), (1215, 1610, 1315, 1700), (1425, 1010, 1466, 1100)):
     _wseat = s.open_seat(_wr, 18, 18, well=True)
     if _wseat:
         s.well(*_wseat)
