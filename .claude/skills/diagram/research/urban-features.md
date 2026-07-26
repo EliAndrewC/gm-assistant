@@ -251,3 +251,70 @@ same fact this drawn line is the cartographic expression of.
 - [Ton'ya](https://en.wikipedia.org/wiki/Ton%27ya) / [Fires in Edo](https://en.wikipedia.org/wiki/Fires_in_Edo)
 - [What is the unit called a koku? (Sizes)](https://www.sizes.com/units/koku.htm) - the charcoal *hyō* is of indeterminate size
 - [Nanbu-Date border mounds](https://en.wikipedia.org/wiki/Nanbu-Date_border_mounds) / [Kuniezu](https://en.wikipedia.org/wiki/Kuniezu) / [Mukoyama, linear borders in early modern Japan](https://journals.sagepub.com/doi/full/10.1177/13540661221133206)
+
+## Wells in crop fields: two different objects, and only one of them is ours
+
+**The question** (GM, 2026-07-26): the overlap matrix forbids a well overlapping a dry crop plot.
+"Should dry plots have wells? I could see a wheat field having a well in the middle of it if that's
+where the water is - but I'm not a farmer."
+
+**CHINA FIRST - a well in a dry field is real, and it is a whole system.** The north-China plain is
+dryland farming on loess with 400-800 mm of annual rain concentrated in the summer monsoon, so crops
+are chronically drought-exposed. Groundwater lifting is the answer, and the gear is well documented:
+the **jiegao** (桔槔, a shadoof - pile, lever, rod and counterweight, the operator standing on beams
+at the well mouth) and the **lulu** (辘轳, a windlass on a support frame over the well). During the
+**Ming and Qing the lulu became the usual groundwater-lifting device of the north**, and it was
+upgraded rather than replaced: animal power instead of human, multiple containers at once, and wells
+driven to tens of meters. So yes - a wheat field with a well in the middle of it is an entirely real
+picture, and the north-China field well is a substantial installation with lifting machinery over it.
+
+**JAPAN - dry fields leaned on rain and groundwater precisely BECAUSE they lost the canal fight.**
+*Hatake* was the upland/dry allocation as against *suiden* paddy, and small independent farmers "had
+to do with rainfall or natural underground sources," settling for millet, hemp, barley, wheat and
+buckwheat. That was not a preference: in the later Tokugawa period new irrigation schemes for hata
+fields were proposed repeatedly and defeated, because downstream canal-holders' established water
+rights blocked any new upstream draw. The canals went to rice; the dry fields got the sky and the
+water table.
+
+**But the DOMESTIC well is a different object.** The Japanese village well is a social institution
+before it is a water source - *kabata* spring-wells stood in houses and in the community and served
+drinking, cooking and washing, and were "cherished as places where water could be obtained from
+nature and where people gathered for a chat." Villages sited themselves along rivers where drawing
+water was easy. And well COUNT was governed: the **kabu-ido** system was a set of community rules
+regulating the number of wells per village, administered by the residents rather than by any
+authority, specifically to de-escalate conflict over groundwater.
+
+### The decision
+
+**Our `wells` glyph is the DOMESTIC draw-point, so it stays off the crop.** The glyph we draw is a
+stone curb under an open-sided roof, and the gate already demands a dwelling within ~95 px
+(`wells_among_dwellings`) - it *is* the *idobata*, the neighborhood gathering point. A lone curb in
+the middle of a hatake plot is therefore wrong **as drawn**, and the overlap matrix's `GROUND` x
+`SOLID` rule is right to forbid it. The reason is not that field wells never existed; it is that our
+well means something else.
+
+**Two further reasons the north-China field well is the wrong analog here.** First, an irrigation
+well is *identified by its lifting gear* - a windlass frame or a shadoof lever standing over it - and
+our glyph has none, so a reader could not tell the two apart. Second, our dry plots are the hem and
+margin around wet-rice combs in a monsoon valley, not the rain-starved loess dryland the system was
+built for; the water those plots need arrives as rain and as the field's own ditches.
+
+**If we ever want one, it is a NEW FEATURE, not a relaxation.** An irrigation well (`s.field_well`,
+say) would be a distinct glyph - the curb plus a windlass frame or shadoof - with its own siting rule
+(in the dry plot it serves, not among the houses) and its own scope (a dry upland county, not a
+paddy valley). That would be a genuinely good addition for a dryland district and should be built as
+one, rather than by letting the domestic well wander into the crop.
+
+**One honest tension recorded.** The kabu-ido finding - villages capping their own well numbers to
+limit conflict - cuts mildly against this project's deliberate liberty of drawing 2-3x the
+historical well count (see "Wells - research + deliberate liberty"). The liberty stands, because it
+expresses the setting's thesis that Rokugan is unusually well-run; but it IS a liberty, and the
+historical direction of travel was restriction, not generosity.
+
+### Sources
+
+- [History of Irrigation - irrigation tools (jiegao, lulu)](http://www.irripro.net/en/nd.jsp?id=113) and [Lulu](https://baike.baidu.com/en/item/L%C3%B9lu/1467455) - the shadoof and windlass, and the Ming-Qing upgrade to animal power and deeper wells
+- [History of agriculture in China](https://grokipedia.com/page/History_of_agriculture_in_China) - loess dryland farming, 400-800 mm rainfall, drought exposure
+- [Passing on "The Japanese Experience" (IDE)](https://d-arch.ide.go.jp/je_archive/english/society/wp_je_unu4.html) - hatake vs suiden; small farmers on "rainfall or natural underground sources"; the defeated late-Tokugawa hata irrigation schemes
+- [Harie Shozu no Sato, the kabata wells](https://ihcsacafe-en.ihcsa.or.jp/news/harie/) - the domestic/social character of the village well
+- [Groundwater commons and the kabu-ido rules](https://link.springer.com/article/10.1007/s12685-022-00302-1) - community regulation of the NUMBER of wells per village

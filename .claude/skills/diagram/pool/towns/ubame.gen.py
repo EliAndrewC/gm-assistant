@@ -313,7 +313,12 @@ s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows;
 # Fox delegation arrives by. That is a deliberate siting call, not an accident of the rules: a county
 # does not conduct its executions at the gate its neighbor's envoys ride through. A county of ~7,000
 # reaches the formal channel about once a decade, so this is bare, unfenced, weedy ground.
-s.boundary_marker(247, 807)  # seat proposed and adjudicated by site_justice.py against check_village.gate() - the hand-picked one stood inside a merchant house
+# The stone stands on the west road where it leaves the last houses, ~88 ft short of the ground.
+# Seat proposed and adjudicated by site_justice.py against check_village.gate(). Twice: the
+# hand-picked seat stood inside a merchant house, and the tool's first answer (247, 807) stood in
+# among the west-end frontage - legal only because the check that governs the stone fails while
+# there is no stone, so a useless seat added no NEW failure. Both holes are closed (GM, 2026-07-26).
+s.boundary_marker(127, 887)
 s.execution_ground(125, 975, rot=-16)
 
 # a no-build band along the road's south verge through the core: the outer farm ring reached up

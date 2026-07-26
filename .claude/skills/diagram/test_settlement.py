@@ -5014,3 +5014,52 @@ def test_merchant_storehouse_is_never_drawn_across_a_neighbor():
     s2 = _town()
     s2.building(500, 500, 54, 36, "merchant", rot=0)
     assert s2.merchant_storehouses(count=4) == 1  # nothing behind it - the annex is fine
+
+
+def test_region_blocked_catches_a_keepout_against_a_cell_EDGE():
+    """The bug this exists to stop: a keep-out sitting against the middle of a cell EDGE touches
+    neither the centre nor any corner, so centre-plus-corner sampling passes it. That is how a
+    wellhead ended up 1 px inside a hatake plot with every sample point clear."""
+    cell = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
+    assert not settlement.region_blocked(cell, [], [], [], [])
+    # a small circle hugging the middle of the LEFT edge - no corner is near it, the centre is 50 away
+    assert settlement.region_blocked(cell, [], [(-4.0, 50.0, 6.0)], [], [])
+    assert not settlement.region_blocked(cell, [], [(-40.0, 50.0, 6.0)], [], [])
+    assert settlement.region_blocked(cell, [(-4.0, 50.0, 6.0)], [], [], [])  # same, as a pond
+    # a ditch threading across the cell's middle, touching no corner
+    assert settlement.region_blocked(cell, [], [], [([(-20.0, 50.0), (120.0, 50.0)], 1.0)], [])
+    assert not settlement.region_blocked(cell, [], [], [([(-20.0, 300.0), (120.0, 300.0)], 1.0)], [])
+    # a polygon overlapping a corner
+    assert settlement.region_blocked(cell, [], [], [], [[(90.0, 90.0), (150.0, 90.0), (150.0, 150.0), (90.0, 150.0)]])
+    assert not settlement.region_blocked(cell, [], [], [], [[(300.0, 300.0), (350.0, 300.0), (350.0, 350.0), (300.0, 350.0)]])
+
+
+def test_quad_hits_seg_covers_all_three_ways_a_line_can_meet_a_cell():
+    """A stroked line meets a cell in three distinct ways, and each needs its own test: an ENDPOINT
+    lying in (or near) the cell, the line CROSSING an edge, and the line merely GRAZING a corner
+    without crossing anything. The third is the one that point sampling misses."""
+    cell = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
+    assert settlement.quad_hits_seg(cell, (50.0, 50.0), (300.0, 50.0), 1.0)  # endpoint INSIDE
+    assert settlement.quad_hits_seg(cell, (-50.0, 50.0), (150.0, 50.0), 1.0)  # CROSSES both edges
+    assert settlement.quad_hits_seg(cell, (-50.0, -5.0), (150.0, -5.0), 8.0)  # GRAZES the top corners
+    assert not settlement.quad_hits_seg(cell, (-50.0, -5.0), (150.0, -5.0), 2.0)  # ...same line, too thin to reach
+    assert not settlement.quad_hits_seg(cell, (-50.0, 500.0), (150.0, 500.0), 8.0)  # nowhere near
+
+
+def test_point_quad_dist_is_zero_inside_and_grows_outside():
+    cell = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)]
+    assert settlement.point_quad_dist(5, 5, cell) == 0.0
+    assert 2.9 < settlement.point_quad_dist(-3, 5, cell) < 3.1
+
+
+def test_hard_polys_footprint_test_refuses_what_the_centre_test_allowed():
+    """The split that fixes centre-vs-footprint: `hard_polys` (crop, pond, bog, a field's own
+    ditches) is tested against the WHOLE footprint, while `block_polys` keeps the centre test its
+    soft reservations - caption bands, aprons, fence standoffs - were tuned for."""
+    s = _town()
+    plot = [(500.0, 500.0), (600.0, 500.0), (600.0, 600.0), (500.0, 600.0)]
+    s.block_polys.append(plot)
+    assert s._fits(490, 550, 46, 28)  # centre (490) is outside the plot, so the centre test allows it...
+    s.hard_polys.append(plot)
+    assert not s._fits(490, 550, 46, 28)  # ...but the footprint runs to 513, well inside it
+    assert s._fits(300, 300, 46, 28)  # well clear, still fine

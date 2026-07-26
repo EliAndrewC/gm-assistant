@@ -175,6 +175,24 @@ def test_propose_returns_only_seats_the_gate_accepts():
         assert not sj.new_failures(M, "execution_ground", s["x"], s["y"], base)
 
 
+def test_propose_rejects_a_seat_that_leaves_the_features_own_check_failing():
+    """The `curable` half of adjudication - the half whose absence shipped a bad map.
+
+    A feature whose ABSENCE is itself a gate failure puts that check into `base`, so a seat which
+    leaves it failing adds nothing NEW and scored as legal. That is how the tool recommended the
+    seat that put Ubame's boundary stone among the west-end shops (GM, 2026-07-26)."""
+    M = town(execution_grounds=[{"x": 1700, "y": 1060, "w": 60, "h": 60, "rot": 0, "screened": False, "label": "execution ground"}], boundary_markers=[])
+    base = sj.failures(sj._with(M, "boundary_marker", []))
+    assert "execution_ground_past_the_boundary_marker" in base  # failing because there is no stone
+    among_the_houses = (620.0, 1000.0)  # on the road, between core and ground, 67 ft from a house
+    assert not sj.new_failures(M, "boundary_marker", *among_the_houses, base)  # adds nothing NEW...
+    seats = sj.propose(M, "boundary_marker", limit=40, step=120.0)
+    assert seats
+    for s in seats:  # ...yet every seat the tool returns actually CURES the check
+        trial = sj._with(M, "boundary_marker", [sj.record(M, "boundary_marker", s["x"], s["y"])])
+        assert "execution_ground_past_the_boundary_marker" not in sj.failures(trial)
+
+
 def test_propose_finds_nothing_when_every_ranked_seat_is_illegal():
     # limit=1 with a step that lands the single best-ranked candidate on the road.
     assert sj.propose(town(), "execution_ground", limit=1, step=900.0) == []
