@@ -66,17 +66,13 @@ s = Settlement(3200, 2700, seed=61)
 # households do: 8 precincts x 6 hereditary temple families = 48 real households, 240 residents. So
 # the lay figure is set 240 BELOW the declared total and the two add back up:
 #     472 lay families + 48 temple families = 520 dwellings x 5 = 2,600 residents
-# LAY_POP was 2360 (a ~2,600 total). The DRAWN city honestly holds ~440 dwellings, not the 504 the
-# space budget predicts, and the shortfall is a real finding rather than a tuning failure: eight
-# scattered temple precincts - each with its compound, its caption band and its ring of temple
-# families - fragment the commoner quarters far more than the two-complex program citybudget was
-# calibrated on, and fragmentation costs packing efficiency the model does not price. The wall is
-# kept (city_capacity reads the ring as right, and the enclosure still sits inside
-# city_wall_matches_budget's +8% tolerance); the POPULATION comes down to what the map delivers.
-# ~2,300 also sits honestly for the Fox: the Empire's smallest domain, with "less than half the
-# farmland of an average domain" (l7r.md), keeping its provincial seat in the lower half of the
-# 2,000-4,000 band.
-LAY_POP = 2000
+# The declared figure is the SPEC's (FR-010), and the wall is sized to it rather than the population
+# being trimmed to whatever the first layout happened to hold. An earlier pass did the latter -
+# dropped the lay figure to 2,000 and pinned the old ring - which is exactly the failure mode of
+# quietly building the city wrong; the shortfall it found was real, but the fix belongs in the space
+# budget and therefore in the WALL (the skill's own doctrine: if the capacity report wants a resize,
+# fix the budget model, not the map).
+LAY_POP = 2360
 TEMPLE_PRECINCTS = 8
 MONK_PER_PRECINCT = 6
 MONK_HOUSES = TEMPLE_PRECINCTS * MONK_PER_PRECINCT
@@ -103,7 +99,18 @@ BUDGET = plan_city(
         population=LAY_POP,
         river=True,
         temple_precincts=TEMPLE_PRECINCTS,
-        temple_precinct_px2=3_400.0,  # ~30,600 sq ft, ~0.70 acre - modest against the 8,125 default
+        # THE DRAWN PRECINCT, not just its hall compound. 3,400 px^2 priced the walled compound alone
+        # (~0.70 acre) and left out everything else a precinct actually plants in the fabric, which is
+        # what a wall has to enclose. Measured off this map, per precinct: hall compound block ~5,125,
+        # torii approach and its stand-clear ~1,720, the caption band ~1,000, wayside shrines ~1,790.
+        # The halls have NOT grown - only the accounting has.
+        temple_precinct_px2=8_600.0,
+        # NO fragmentation premium. An earlier pass measured the 431x400 ring predicting 504 in-wall
+        # dwellings against 449 drawn - ~12% short - and was about to price that gap as an extras
+        # line. It is gone because the shortfall was never the wall: it was top_up holding 3px off
+        # every neighbor (so every fill was detached by construction) and two hand-rolled caption
+        # reservations double-booking ~1,450 interior grid points. With those fixed the map packs
+        # slightly BETTER than the budget predicts, so a premium here would oversize the ring.
         monk_houses_per_precinct=float(MONK_PER_PRECINCT),
         extras=(
             BudgetLine("Inari precinct uplift", 1, 1_600.0, "the Inari precinct stands ~1.0 acre against its siblings' ~0.70 - the largest of the eight, still under an ordinary city's single complex"),
@@ -117,13 +124,11 @@ BUDGET = plan_city(
 )
 s.meta(budget=budget_to_manifest(BUDGET))
 
-# The ring is PINNED at the 431x400 the pop-2,600 program derived, not re-derived from the reduced
-# one. Rationale: city_capacity reads this ring as the right size for what the map holds (inherent
-# capacity 540 against a ~460 target - "densify", never "shrink"), and the enclosure still sits
-# inside city_wall_matches_budget's +8% tolerance. Re-deriving would shrink the ring ~20px and
-# invalidate every seat on the map for no gain in honesty - the wall is right; the budget's
-# DWELLING prediction is what the eight-precinct program breaks (see LAY_POP above).
-CX, CY, RX, RY = 1400, 1330, 431, 400
+# THE WALL COMES FROM THE BUDGET (FR-011), never hand-picked and never pinned to a previous run's
+# value. Everything laid out below - the quarter wedges, the ring road, the moat, the gates - is
+# derived from RX/RY, so re-deriving the ring moves them together.
+CX, CY = 1400, 1330
+RX, RY = round(BUDGET.wall.rx), round(BUDGET.wall.ry)
 NRING = 20
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)), round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, WGATE, WGATE_PT = WALL[0], WALL[15], WALL[13]
@@ -132,8 +137,24 @@ NGATE, WGATE, WGATE_PT = WALL[0], WALL[15], WALL[13]
 # ENDS abut solid rampart - on the wall's east face between vertices 4-5, and on its south face
 # between 9-10 - so the wall closes the other two sides and there is no walk-around gap. Four kido:
 # two where the commoner streets pierce it, two where the ring road crosses its ends.
-WARD_FENCE = [(1820, 1286), (1420, 1306), (1420, 1660), (1455, 1718)]
-KIDO_SPOTS = [(1420, 1330), (1420, 1450), (1798, 1287), (1443, 1700)]
+# These were laid out against the 431x400 ring the first budget derived. They are RING-RELATIVE
+# features - the fence's two ends have to keep abutting solid rampart, the kido have to keep
+# meeting the streets that pierce it - so they scale with the ring rather than being re-typed every
+# time the budget re-derives it. Sizes never scale, only positions: the city spreads, it does not
+# inflate (feedback: no size inflation in to-scale diagrams).
+_SX, _SY = RX / 431.0, RY / 400.0
+
+
+def _ring_rel(x, y):
+    return (round(CX + (x - CX) * _SX), round(CY + (y - CY) * _SY))
+
+
+# Design coordinates re-solved against the re-derived ring: both ends must PENETRATE solid rampart
+# (they land 6px and 3px past it), and the north segment had to come ~6px south of its old line so
+# it clears Bishamon's torii avenue by 14px - a fence is a continuous barrier and an arch is a
+# freestanding gateway, so an arch may never stand in one.
+WARD_FENCE = [_ring_rel(1829, 1293), _ring_rel(1420, 1312), _ring_rel(1420, 1666), _ring_rel(1460, 1725)]
+KIDO_SPOTS = [_ring_rel(1420, 1330), _ring_rel(1420, 1450), _ring_rel(1798, 1294), _ring_rel(1443, 1700)]
 
 s.city_wall(WALL, gates=[NGATE, WGATE], guard_east=[NGATE], water_gates=[WGATE_PT], ring_inset=22)
 
@@ -218,11 +239,11 @@ s.bridge(818, 1332, 4, RIVER_W + 26, 15)
 # ---- the cargo canal: the moat's downstream corner -> water gate -> dock basin. ONE mouth on the
 # river: the canal communicates with the MOAT and the moat's own outfall junction is the single
 # navigation entrance (the Suzhou pattern).
-CANAL = [MOAT[-2], (1051, 1565), (1128, 1572)]
+CANAL = [MOAT[-2], _ring_rel(1051, 1565), _ring_rel(1128, 1572)]
 s.canal(CANAL)
-s.water_gate(1051, 1565, rot=152)
-s.dock(1152, 1574, 54, 34)
-s.bridge(1098, 1568, 84, 34, 12)  # the ring road bridges the canal just inside the wall
+s.water_gate(*_ring_rel(1051, 1565), rot=152)
+s.dock(*_ring_rel(1152, 1574), 54, 34)
+s.bridge(*_ring_rel(1098, 1568), 84, 34, 12)  # the ring road bridges the canal just inside the wall
 
 # ---- civic amenities placed FIRST so the dense packs flow around them.
 s.flophouse(1330, 806, label_below=True)  # outside the NORTH gate
@@ -358,7 +379,7 @@ for _y0, _x1 in ((1310, 1780), (1596, 1712), (1650, 1690)):
 # lays contiguous terraces. Density added here therefore has to come from rows, not from scraps.
 # The three strips are the ground the mansion, its forecourt block and the ministry aprons leave:
 # the ward's west flank, its east flank below the martial hall, and the NE pocket.
-s.rowpack((1424, 1470, 1478, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
+s.rowpack((1440, 1470, 1494, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
 s.rowpack((1664, 1528, 1714, 1642), (["servant"] * 4 + ["laborer"]) * 30, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring
 s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
 s.pack((1452, 1312, 1782, 1672), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
