@@ -380,12 +380,36 @@ OVERLAP_CLASS: dict[str, str] = {
     # tanning_yard_clear_of_fields and fields_clear_of_road all test real geometry.
     "fields": "PADDY_RECONSTRUCTED",
     **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond")},
-    **{k: "WAY" for k in ("road", "town_streets", "alleys", "lanes")},
+    **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes")},
     # ANNEX - belongs to a named parent and abuts IT (and nothing else)
     **{k: "ANNEX" for k in ("gardens", "threshing_yards", "farm_sheds", "storehouses", "byres")},
     # --- PERMISSIVE CLASSES (never tested; each row below records WHY) ---------------------------
-    **{k: "COVER" for k in ("commons", "pastures", "marsh")},
+    **{k: "COVER" for k in ("commons", "pastures", "marsh", "marshes")},
     **{k: "OVERLAY" for k in ("quarters", "wards")},
+    # a caravan yard is beaten WORKING GROUND, like grazing: its rails, troughs and litter stand on
+    # it by design, and that is what the yard IS
+    **{k: "COVER" for k in ("stable_yards",)},
+    # FIXTURE - a control structure deliberately built ON another feature, where the overlap is the
+    # whole point. Reasons, carried over from the older _OVERLAP_EXEMPT entries:
+    #   bridges             span water to carry a way over it
+    #   kido                a ward gate sits ON the ward fence where a lane passes through
+    #   water_gates         the shuimen arch stands ON the city wall over its canal
+    #   sluice_gates        the intake/outfall board sits ON its channel - the control structure IS the junction
+    #   inspection_stations an inspection post is part of the gate complex it stands in
+    #   jetties             planked mooring fingers run out OVER the river
+    #   wall_towers         guard towers stand ON the wall
+    #   docks               a landing stands at the waterline by definition
+    #   gate_structs        the guard station and tower ARE the gate complex, standing on wall and road
+    **{k: "FIXTURE" for k in ("bridges", "kido", "water_gates", "sluice_gates", "inspection_stations", "jetties", "wall_towers", "docks", "gate_structs")},
+    # RECORD - bookkeeping geometry that duplicates ground already classified elsewhere, or an
+    # in-field flourish drawn ON the paddy by design (feature 012). Never tested.
+    #   drawn_channels  a z-order record of the drawn field-channel strokes; the ground it covers is
+    #                   the field_ditches/channels the matrix already reasons about
+    #   field_ponds / field_rocks / field_graves / crescent_ponds
+    #                   a pocket pond, bedrock outcrop, grave island or crescent pond sunk INTO one
+    #                   paddy plot, the field tiling around it - the overlap is the feature
+    #   borders         a drawn jurisdictional line is a LINE OF LAW, not a physical object
+    **{k: "RECORD" for k in ("drawn_channels", "field_ponds", "field_rocks", "field_graves", "crescent_ponds", "borders")},
     **{k: "VEGETATION" for k in ("village_groves", "groves", "forest", "tree_stands", "tree_crowns")},
 }
 # A permissive class may be overlapped by anything, and is never extracted. The reason matters as
@@ -401,6 +425,8 @@ _MATRIX_PERMISSIVE = {
     # question. Vegetation records are also envelopes (a `forest` is a stand outline, a grove a belt
     # outline) whose ink lives in `tree_crowns` - see the drawn-extent rule in matrix_extents.
     "VEGETATION": "canopy overlap is governed by the canopy keep-out contract, which tests recorded crowns; the matrix does not re-decide it",
+    "RECORD": "bookkeeping geometry or an in-field flourish drawn ON its own paddy by design - not ground the matrix reasons about",
+    "FIXTURE": "a control structure deliberately built ON another feature (a bridge over water, a sluice on its channel, a tower on the wall) - the overlap is the whole point of the thing",
     "PADDY_RECONSTRUCTED": "a paddy plot's extent is reconstructed from recorded spans rather than stored, so it is an approximation - the precise paddy checks (harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields, tanning_yard_clear_of_fields) test real geometry and remain authoritative",
 }
 _MATRIX_SAME_CLASS_OK = {
@@ -432,6 +458,8 @@ _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
 }
 # A record naming its PARENT may overlap that parent and nothing else - strictly stronger than the
 # blanket per-pair exemptions this replaces, because an annex on somebody ELSE's building stays a defect.
+# manifest lists that carry coordinates but are NOT drawn ground the matrix reasons about
+_MX_NOT_GEOMETRY = frozenset({"labels", "torii", "tree_crowns", "wet_plots", "bund_junctions", "footbridges", "knobs", "clearings"})
 _MATRIX_PARENT_FIELD = {
     "gardens": "of",
     "threshing_yards": "of",
@@ -2634,32 +2662,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"overlapping feature(s) whose classes forbid it: {[(a, b, x, y) for a, b, x, y in _mx_bad[:4]]} - the overlap MATRIX decides every pair from one classification (OVERLAP_CLASS + the policy above), so this is not a missing per-pair rule. Either the drawing is wrong, or the pair genuinely may overlap and needs a permission WITH ITS REASON in _MATRIX_PERMISSIVE / _MATRIX_SAME_KEY_OK / _MATRIX_ALLOWED_PAIRS / _MATRIX_ALLOWED_KEYS",
     )
     # the ratchet: a drawn geometric key nobody classified
+    # DERIVED from the manifest, not from a hand list - a ratchet that enumerates its own keys is
+    # the same defect this feature exists to abolish, and it showed: the hand-listed version passed
+    # an unseen river city silently while TEN of its keys (bridges, jetties, kido, sluice_gates,
+    # wall_towers, water_gates, docks, inspection_stations, gate_structs, stable_yards) had no class
+    # at all. A key counts as drawn geometry when its records carry a position or an outline.
     _mx_unclassified = sorted(
-        {
-            k
-            for k in (
-                "houses",
-                "buildings",
-                "dry_plots",
-                "fields",
-                "streams",
-                "channels",
-                "field_ditches",
-                "wells",
-                "gardens",
-                "threshing_yards",
-                "storehouses",
-                "farm_sheds",
-                "commons",
-                "pastures",
-                "village_groves",
-                "lanes",
-                "town_streets",
-                "alleys",
-                "pond",
-            )
-            if M.get(k) and k not in OVERLAP_CLASS
-        }
+        {k for k, v in M.items() if k not in OVERLAP_CLASS and k not in _MX_NOT_GEOMETRY and isinstance(v, list) and v and isinstance(v[0], dict) and ("x" in v[0] or "poly" in v[0] or "pts" in v[0])}
     )
     check(
         "every_feature_classified_for_matrix",
