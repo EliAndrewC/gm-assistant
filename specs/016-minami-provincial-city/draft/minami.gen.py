@@ -244,6 +244,7 @@ s.bridge(818, 1332, 4, RIVER_W + 26, 15)
 CANAL = [MOAT[-2], _ring_rel(1051, 1565), _ring_rel(1128, 1572)]
 s.canal(CANAL)
 s.corridors.append((CANAL, 30))
+s.block_polys.append([(min(p[0] for p in CANAL) - 14, min(p[1] for p in CANAL) - 14), (max(p[0] for p in CANAL) + 14, min(p[1] for p in CANAL) - 14), (max(p[0] for p in CANAL) + 14, max(p[1] for p in CANAL) + 14), (min(p[0] for p in CANAL) - 14, max(p[1] for p in CANAL) + 14)])
 s.water_gate(*_ring_rel(1051, 1565), rot=152)
 s.dock(*_ring_rel(1152, 1574), 54, 34)
 s.bridge(*_ring_rel(1098, 1568), 84, 34, 12)  # the ring road bridges the canal just inside the wall
@@ -505,8 +506,16 @@ QUAY = [(908, 1188), (908, 1290)]
 s.frontage(QUAY, ["shop"] * 16, skip=ROAD, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(30))
 s.label(916, 1164, "wharf", 10, italic=True, color="#5A4326")
 # the river gate's own approach-stall string, and the north gate's market
-s.frontage([(700, 1376), (866, 1370)], ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(20), fill=True)
-s.frontage([(1351, 828), (1335, 700), (1327, 624)], ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(20), fill=True)
+# The market line IS the road: s.frontage seats a rank on EACH side of its line ~15px out, and
+# skip=ROAD keeps the bed itself clear. So the two ranks straddle the approach road at ~15px -
+# clear of the roadbed, inside the 28px that counts as fronting it, and exactly how a guan-xiang
+# market looks. Any other offset puts one rank on the road (at 26) or one rank 49px out in the
+# fields (at 34): the ranks are 31px apart and the legal band is only 14 wide.
+MKT_OFF = 0
+WMARKET_LINE = [(700, 1338 + MKT_OFF), (866, 1332 + MKT_OFF)]
+NMARKET_LINE = [(1389 - MKT_OFF, 828), (1373 - MKT_OFF, 700), (1365 - MKT_OFF, 624)]
+s.frontage(WMARKET_LINE, ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(20), fill=True)
+s.frontage(NMARKET_LINE, ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(20), fill=True)
 s.label(1236, 790, "gate market", 9, italic=True, color="#5A4326")
 
 # samurai country estates: dispersed walled compounds NORTHEAST of the city, toward Otosan Uchi.
@@ -828,7 +837,7 @@ s.place_wells(SW_Q, spacing=42, near=48)
 s.place_wells((1440, 960, 1720, 1240), spacing=46, near=48)
 s.place_wells((1020, 1020, 1382, 1300), spacing=46, near=48)
 s.place_wells((1020, 1370, 1382, 1670), spacing=46, near=48)
-for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390, 1690), (1010, 1400, 1130, 1520), (1260, 1440, 1380, 1620), (1370, 1000, 1490, 1110), (1040, 1420, 1180, 1560), (1240, 1500, 1380, 1640), (1400, 1010, 1520, 1120)):
+for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390, 1690), (1010, 1400, 1130, 1520), (1260, 1440, 1380, 1620), (1370, 1000, 1490, 1110), (1040, 1420, 1180, 1560), (1240, 1500, 1380, 1640), (1400, 1010, 1520, 1120), (1280, 1220, 1380, 1310), (1090, 1470, 1200, 1560), (1210, 1610, 1320, 1700), (1380, 1020, 1480, 1100)):
     s.place_wells(_wr, spacing=38, near=46)
 for _wr in ((1100, 1200, 1400, 1320), (1200, 1350, 1400, 1450), (1220, 1500, 1400, 1620), (1440, 1180, 1560, 1270), (1080, 1220, 1240, 1320), (1260, 1220, 1400, 1320)):
     s.place_wells(_wr, spacing=34, near=44)
