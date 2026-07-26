@@ -58,6 +58,11 @@ s.meta(
     # to gain by nudging it. The declaration is the point: the extra image is now a deliberate,
     # reasoned cost rather than silent bloat.
     water_flow=70,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
+    # Tango carries THREE major temples, one past the two-patron default, and feature 016 made
+    # that exception declare itself rather than pass unremarked: the city changed hands between
+    # Lion and Crane, so it keeps the union of the two patron pairs (Bishamon + Daikoku + Benten,
+    # Daikoku shared) and its Lion-legacy Temple of Bishamon is a converted samurai estate.
+    temple_exception="changed_hands",
     name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3, wall_defense="siege", clan="Crane", capital_dir="southeast"
 )  # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
 

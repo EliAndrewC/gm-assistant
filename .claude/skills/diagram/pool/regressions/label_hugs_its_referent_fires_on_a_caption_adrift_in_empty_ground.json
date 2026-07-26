@@ -1,0 +1,25 @@
+{
+ "meta": {},
+ "labels": [
+  [
+   400,
+   500,
+   486,
+   512.6,
+   1,
+   "Imperial Road",
+   [
+    540,
+    400,
+    549,
+    700
+   ]
+  ]
+ ],
+ "_regression": {
+  "fires": [
+   "label_hugs_its_referent"
+  ],
+  "source": "test_checks.py::test_label_hugs_its_referent_fires_on_a_caption_adrift_in_empty_ground"
+ }
+}
