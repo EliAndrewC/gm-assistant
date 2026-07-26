@@ -1230,7 +1230,7 @@ s.kosatsuba(1492, 954, rot=72, label=None)  # nudged 10px up the wall (2026-07-2
 # bend where the through-road turns east IS the market corner - the city's
 # Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the
 # crossroads - unlabeled, the east-avenue board already carries the set's one label.
-s.kosatsuba(1465, 1378, rot=90, label=None)
+s.kosatsuba(1448, 1392, rot=90, label=None)  # 21px clear of the ward fence's x1469 leg AND 11px off the y1403 street: a board hugs a ROADSIDE, not a fence (the ward fence became a matrix BARRIER, 2026-07-26, and kosatsuba_by_the_road wants it within ~20px of a way)
 
 # ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone at the town's
 # busiest public point (feature 015; settlements.md "Punishment spot"). A DISPLAY installation:
