@@ -832,6 +832,20 @@ KOSATSUBA_MARKER_MIN_PX = 11.0
 # the city wellhead glyph (~8 px), which is the smallest thing on a city map that reliably reads.
 
 
+PUNISHMENT_SPOT_FT = (30.0, 12.0)  # the cangue frame + post + kneeling stone, true size at every tier
+BOUNDARY_MARKER_FT = 3.0  # a real roadside dosojin stone (drawn as a marker - see BOUNDARY_MARKER_MIN_PX)
+
+
+def execution_ground_ft(scale: str) -> tuple[float, float]:
+    """Tier footprint of an execution ground in REAL FEET, scaled down from the Suzugamori anchor
+    (74 x 16.2 m serving Edo) by execution volume - see settlements.md "Execution ground".
+
+    SHARED DATA, deliberately: Settlement.execution_ground draws from this, and site_justice.py
+    sizes its trial placements from it, so a tool proposing a seat can never disagree with the
+    engine about how big the thing it is seating actually is."""
+    return (100.0, 60.0) if scale == "city" else (60.0, 60.0)
+
+
 BOUNDARY_MARKER_MIN_PX = 7.0
 # Long-axis floor in px for the DRAWN dosojin stone (see Settlement.boundary_marker). A real
 # roadside boundary stone is ~3 ft, which draws 3 px at town grain and 1 px at city grain - sub-glyph
@@ -3646,7 +3660,32 @@ class Settlement:
             return True
         return False
 
-    def open_seat(self, rect: Any, w: float, h: float, step: float = 4.0, clear_of: Any = (), well: bool = False) -> Pt | None:
+    def _footprint_clear(self, x: float, y: float, w: float, h: float) -> bool:
+        """Is the WHOLE `w` x `h` footprint at (x, y) inside the bound and off every block/corridor?
+
+        `_fits` deliberately tests only a candidate's CENTER against `self.bound`, `block_polys` and
+        the corridors (it is footprint-aware only for `placed` / `grove_rects`). That asymmetry is
+        what lets a dense urban pack put a house's eaves over the edge of a block poly, and changing
+        it wholesale would reflow every packed quarter in the pool - so this tightens exactly one
+        thing: **the bound**.
+
+        The distinction is soft reservation vs hard boundary. `block_polys` and corridors are
+        RESERVATIONS - a label band, a civic apron, a fence standoff - and a footprint overhanging
+        one by a few px is routine and invisible; demanding the whole footprint clear them cost
+        Nagahara a well and pushed Hoshizora's punishment ground off its street when it was tried.
+        `self.bound` is a HARD EDGE: the ring-road loop a city packs inside, or the wall. A footprint
+        that crosses it is drawn on the patrol road, which is a defect at any overhang - and it is
+        exactly how the martial hall got a seat whose SE corner crossed Tango's ring bed while its
+        center sat comfortably inside the bound (GM 2026-07-25).
+
+        Nine samples (four corners, four edge midpoints, the center) - enough for any bound bigger
+        than a quarter of the footprint, and free at the scale open_seat is called at. Corridors and block
+        polys stay center-tested here, deliberately - see above."""
+        hw, hh = w / 2, h / 2
+        pts = [(x + dx, y + dy) for dx in (-hw, 0.0, hw) for dy in (-hh, 0.0, hh)]
+        return not self.bound or all(point_in_poly(px, py, self.bound) for px, py in pts)
+
+    def open_seat(self, rect: Any, w: float, h: float, step: float = 4.0, clear_of: Any = (), well: bool = False, footprint: bool = True) -> Pt | None:
         """WHERE can a `w` x `h` feature actually stand inside `rect` (x0, y0, x1, y1)? Scans the
         rect and returns the best clear seat, or None if the ground is genuinely full.
 
@@ -3664,7 +3703,11 @@ class Settlement:
         to the nearest of them, ties broken toward the rect's center). `well=True` also applies the
         wellhead-specific refusal (`_in_scrub_cover`), so the seat it returns is one `well_at` will
         actually take. Call it right where the feature would be placed - what fits depends entirely
-        on what has been drawn so far (see CLAUDE.md "DRAW ORDER")."""
+        on what has been drawn so far (see CLAUDE.md "DRAW ORDER").
+
+        The seat returned is clear along its WHOLE FOOTPRINT, not merely at its center - see
+        `_footprint_clear` for why that differs from `_fits` and why only this API tightens it.
+        `footprint=False` falls back to the bare center test, i.e. exactly what a pack would take."""
         x0, y0, x1, y1 = (float(v) for v in rect)
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         pts = [(float(px), float(py)) for px, py in clear_of]
@@ -3673,7 +3716,7 @@ class Settlement:
         while gy <= y1:
             gx = x0
             while gx <= x1:
-                if (not well or not self._in_scrub_cover(gx, gy)) and self._fits(gx, gy, w, h):
+                if (not well or not self._in_scrub_cover(gx, gy)) and self._fits(gx, gy, w, h) and (not footprint or self._footprint_clear(gx, gy, w, h)):
                     apart = min((math.hypot(gx - px, gy - py) for px, py in pts), default=0.0)
                     central = -math.hypot(gx - cx, gy - cy)  # tie-break toward the middle of the rect
                     if best is None or (apart, central) > (best[0], best[1]):
@@ -4984,7 +5027,7 @@ class Settlement:
             return None
         ftpx = float(self.M["meta"].get("ftpx") or 1)
         lim = 60.0 / ftpx  # punishment_spot_by_the_traffic: ~60 REAL feet from a street
-        w, h = self.px(30), self.px(12)
+        w, h = self.px(PUNISHMENT_SPOT_FT[0]), self.px(PUNISHMENT_SPOT_FT[1])
         routes: list[tuple[list[Pt], float]] = []
         if self.M.get("road"):
             routes.append(([(p[0], p[1]) for p in self.M["road"]], float(self.M.get("road_width") or 18)))
@@ -7245,7 +7288,7 @@ class Settlement:
         Records M['punishment_spots']; reserves ground. Call BEFORE the urban packs - it sits where
         packing pressure is highest, and reserving after the pack means fighting for a seat that no
         longer exists (see the DRAW ORDER map in this skill's CLAUDE.md)."""
-        w, h = self.px(30), self.px(12)
+        w, h = self.px(PUNISHMENT_SPOT_FT[0]), self.px(PUNISHMENT_SPOT_FT[1])
         hw, hh = w / 2, h / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1" fill="#C6B79A" fill-opacity="0.9" stroke="#8A7550" stroke-width="1.0"/>')  # tamped, foot-polished earth
@@ -7306,7 +7349,8 @@ class Settlement:
         Records M['execution_grounds']; reserves ground. Call beside the funerary cluster (phase 4),
         before the hinterland scrub and village_grove, so no crown is drawn onto it."""
         city = self.M["meta"].get("scale") == "city"
-        gw, gh = (self.px(100), self.px(60)) if city else (self.px(60), self.px(60))
+        _gwft, _ghft = execution_ground_ft("city" if city else "town")
+        gw, gh = self.px(_gwft), self.px(_ghft)
         if screened is None:
             screened = city  # a county ground is open to the road on every side; a city ground is hoarded on three
         hw, hh = gw / 2, gh / 2
@@ -7368,7 +7412,7 @@ class Settlement:
         A LOCATION MARKER: a real stone is ~3 ft, sub-glyph at every tier, so the true footprint is
         recorded in w/h and the drawn box in vw/vh - the wells' and kosatsuba's doctrine exactly
         (SKILL.md "to scale"). Records M['boundary_markers']."""
-        w = h = self.px(3)
+        w = h = self.px(BOUNDARY_MARKER_FT)
         k = max(1.0, BOUNDARY_MARKER_MIN_PX / w)  # marker floor, aspect preserved
         vw, vh = w * k, h * k
         hw, hh = vw / 2, vh / 2
