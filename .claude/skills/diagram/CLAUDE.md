@@ -157,6 +157,53 @@ which is what turned a small rule into four fix-fail-read cycles. If a change ne
 move between phases, say so explicitly in the commit: phase moves are the changes most likely to
 have effects far from the diff.
 
+## Adding a new map feature: the KEEP-CLEAR CONTRACT (read this before writing the glyph)
+
+The GM's observation, 2026-07-25, after the martial hall shipped sitting on Tango's ring road:
+*"every time we add a new type of thing, I end up looking at the map and saying 'oh, this new thing
+should not overlap with X'."* That is now a solved problem, and this is the whole of what you have
+to do.
+
+**One registry, and everything follows from it.** A new footprint feature goes in
+`_OVERLAP_STRUCTS` (check_village.py) - or, if it is MEANT to overlap something, in
+`_OVERLAP_EXEMPT` with the reason. You cannot forget: `every_feature_classified_for_overlap` fires
+when a generator emits a feature key nobody classified. Membership alone then gates the feature off
+**fourteen hazards** - the wall, the moat, the road, streets and alleys, streams, channels, the
+cargo canal, the pond, manor walls, religious halls, gate furniture, torii arches, the ring road,
+and every other solid structure - because every one of those checks builds its footprints from the
+registry via `solid_structs(M)`.
+
+**The failure mode this replaced.** The `no_structure_on_*` battery was always registry-driven, but
+a handful of keep-clear checks predated it and hand-listed their own keys. A feature could be
+correctly classified, correctly cleared of all thirteen battery hazards, and still sit on the ring
+road - because `ring_road_kept_clear` was reading eight keys nobody had updated. A check that never
+sees your feature looks exactly like a check that passes, so this was invisible until the GM looked
+at a rendered map. Four such checks now read `solid_structs(M)`: `ring_road_kept_clear`,
+`city_government_offices_dont_abut`, `city_wells_in_block_interiors`, and the merchant-estate
+court test.
+
+**The ratchet.** `test_checks.py::test_every_solid_struct_is_gated_off_every_hazard` plants one
+instance of EVERY registered key squarely on EVERY hazard and demands the hazard's check fire. If a
+keep-clear check ever falls back to a hand list, that test names both the key and the hazard.
+Verified to have teeth: reverting `ring_road_kept_clear` to its old list fails it with 21 keys
+listed. **Adding a hazard row to `_HAZARDS` extends the contract to every existing feature at
+once** - that is the cheap way to answer the next "should not overlap with X".
+
+**So the checklist for a new feature is:** write the glyph; record it under a new manifest key; add
+that key to `_OVERLAP_STRUCTS`; run the suite. If the feature needs a keep-clear rule no existing
+hazard covers, add a hazard row rather than a bespoke check with its own key list.
+
+**Two things the contract does NOT cover, so still think about them:**
+
+- **Placement, as opposed to validation.** `_fits` tests an urban candidate's CENTER against
+  `block_polys` while testing whole footprints against `placed` (see DRAW ORDER below), and
+  `s.bound` is likewise a center test - which is exactly why `open_seat` happily returned a
+  martial-hall seat whose footprint crossed the ring bed even though its center was inside the
+  bound. A seat that passes `open_seat` still has to be gated.
+- **Gap rules, not overlap rules.** `city_government_offices_dont_abut` wants 14px of daylight, not
+  merely no overlap; the hazard table only proves the overlap case. When a feature must keep a
+  DISTANCE from something, that is still a per-rule decision.
+
 ## When a check is slow, INDEX it - do not coarsen it
 
 The gate's cost is dominated by a handful of checks that ask a local question with a global scan.

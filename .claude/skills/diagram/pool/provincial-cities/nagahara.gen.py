@@ -647,18 +647,21 @@ s.block_polys.append(
 # junior-samurai ROW BARRACKS (kumi-yashiki nagaya, the Tango precedent) fill the two flank bands
 # the scatter pack cannot reach - rowpack's tighter standoffs (5.8px ring edge, 13px street edge)
 # use the ground between the civic aprons and the ring arc that the pack's corridor gates waste:
-# MARTIAL TRAINING (GM 2026-07-25). The state PROVINCIAL MARTIAL HALL takes the ward's east band,
-# between the governor's mansion and the east ward fence - its own walled compound, not a wing of
-# the yamen, but inside the ward whose samurai it drills and near the government it answers to.
-# Placed BEFORE the flank barracks and the pack so the rows flow around it. The seat was chosen by
-# SWEEP, not by eye: the ward is packed to its budget, so what matters is which seat costs the
-# fewest samurai houses (city_samurai_housing_sufficient floors the quarter at 39, and the seats
-# tried ran 35-43). No pocket in this ward can hold the caption OUTSIDE the compound, so it is
-# hand-placed CENTERED ON it (label_xy) - the same move this gen's governor's mansion makes, and
-# the reason s.martial_hall takes label_xy at all.
-s.martial_hall(1385, 1429, label_xy=(1385, 1437))  # x1385 is the MIDDLE of a 4px window: below x1383 the compound
-# runs under the 'Governor's Mansion' caption (which reaches x1361), above x1387 it touches the Ministry of Justice's
-# west wall at x1408 - so do not nudge this seat without re-checking both
+# MARTIAL TRAINING (GM 2026-07-25). The state PROVINCIAL MARTIAL HALL sits in the GAP OF THE
+# MINISTRY ROW, between Revenue and Retainers - its own walled compound, not a wing of the yamen,
+# but along the government row and inside the ward whose samurai it drills. Placed BEFORE the flank
+# barracks and the pack so the rows flow around it. The seat was chosen by SWEEP, not by eye: this
+# ward is packed to its budget, so what matters is which seat costs the fewest samurai houses
+# (city_samurai_housing_sufficient floors the quarter at 39, and the seats tried ran 33-43). The
+# ministry-row gap wins because it is CIVIC ground - a compound there displaces almost no housing -
+# and it is one of the few spots that also keeps the 14px government-office standoff. That standoff
+# is why the first two seats failed: city_government_offices_dont_abut only started seeing this
+# compound on 2026-07-25, when it stopped reading a hand list of keys and read the struct registry.
+# No pocket in this ward can hold the caption OUTSIDE the compound, so it is hand-placed CENTERED
+# ON it (label_xy) - the same move this gen's governor's mansion makes, and the reason
+# s.martial_hall takes label_xy at all. The ward lands on EXACTLY the 39-house floor: re-check
+# city_samurai_housing_sufficient before moving anything in this quarter.
+s.martial_hall(1190, 1363, label_xy=(1190, 1366))
 s.rowpack((1122, 1523, 1200, 1604), ["samurai"] * 24, court_every=6, eave_ft=3)  # W flank, below the Ministry of Works apron, riding the SW ring arc (the bound clips the taper)
 s.rowpack(
     (1390, 1505, 1452, 1565), ["samurai"] * 20, court_every=6, eave_ft=3
@@ -680,7 +683,7 @@ front(
 # remainder chance; ~300 samurai here -> 1 + a 50% roll, which this seed does not take). Seated
 # AFTER the flank barracks and the avenue frontage, so the seat is real ground rather than a
 # guess; seat 2 is the ground a 2-roll would use.
-s.dojos([(1180, 1450), (1420, 1440)])
+s.dojos([(1186, 1450), (1420, 1440)])  # seat 1 nudged 6px east 2026-07-25: at x1180 the lot sat inside the Ministry of Works' 14px office standoff
 s.pack((1073, 1309, 1469, 1612), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill")
 s.label(
     1426, 1534, "samurai neighborhood", 10, italic=True, color="#3A352C"
