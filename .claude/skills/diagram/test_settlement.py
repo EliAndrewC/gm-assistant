@@ -4700,3 +4700,101 @@ def test_open_seat_refuses_a_seat_whose_FOOTPRINT_crosses_the_bound():
     assert s.open_seat(over, 80, 20) is None
     assert s.open_seat(over, 80, 20, footprint=False) is not None  # the old center-only behavior
     assert s.open_seat((300, 300, 400, 320), 80, 20) is not None  # well inside the bound: fine
+
+
+# ---- the LABEL STANDOFF LADDER (GM 2026-07-26) ------------------------------------------------
+# The rule under test is "among seats that cover nothing, the NEAREST to the subject wins" - the
+# term the old overlap-count-only scorer was missing, which let a caption float in empty ground.
+def _ladder_map():
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="L", scale="town")
+    return s
+
+
+def test_label_ladder_seats_a_caption_at_the_minimum_standoff_when_the_ground_is_clear():
+    s = _ladder_map()
+    box = (400.0, 400.0, 500.0, 440.0)  # wider than tall -> below/above are the primary seats
+    lx, ly = s._best_label_spot(box, "market", 10)
+    assert settlement.box_gap(s._label_box(lx, ly, "market", 10), box) == pytest.approx(settlement.LABEL_MIN_AIR)
+
+
+def test_label_ladder_steps_outward_past_an_obstacle_and_stops_at_the_first_clear_rung():
+    s = _ladder_map()
+    box = (400.0, 400.0, 500.0, 440.0)
+    clear = s._best_label_spot(box, "market", 10)
+    assert settlement.box_gap(s._label_box(*clear, "market", 10), box) == pytest.approx(settlement.LABEL_MIN_AIR)
+    for cy in range(370, 476, 7):  # ring the subject so the first rungs are blocked on every side
+        for cx in range(330, 576, 12):
+            if not (395 < cx < 505 and 395 < cy < 445):
+                s.building(cx, cy, 10, 6)
+    lx, ly = s._best_label_spot(box, "market", 10)
+    gap = settlement.box_gap(s._label_box(lx, ly, "market", 10), box)
+    assert gap > settlement.LABEL_MIN_AIR  # the near rungs were blocked...
+    assert s._label_hits(lx, ly, "market", 10, pad=0.0, linepad=0.0) == 0  # ...and it kept climbing to clear ground
+
+
+def test_label_ladder_slides_along_the_long_axis_only():
+    # A subject much taller than wide (a road segment, a stall row) is captioned BESIDE it. Sliding
+    # ACROSS such a box walks the caption diagonally away while its nominal standoff still reads as
+    # small - the first cut of this put "Imperial Road" 43px out at a nominal 5px of air.
+    s = _ladder_map()
+    tall = (500.0, 200.0, 510.0, 800.0)
+    for sl in (-200.0, 200.0):
+        seat = s._best_label_spot(tall, "road", 12, slides=(sl,))
+        # a slide runs ALONG the subject, so the seat stays tight against it however far it slides;
+        # an across-axis slide walked the caption out to 43px at a nominal 5px of air
+        assert settlement.box_gap(s._label_box(*seat, "road", 12), tall) <= settlement.LABEL_AIR_CAP * 12
+
+
+def test_label_ladder_refuses_a_seat_outside_the_cropped_view():
+    # a clipped label is unreadable (labels_within_image), so out-of-frame candidates are DISCARDED
+    s = _ladder_map()
+    box = (100.0, 100.0, 200.0, 140.0)
+    free = s._best_label_spot(box, "market", 10)
+    assert free[1] > box[3]  # unconstrained, a wide subject is captioned BELOW
+    s.M["meta"]["view"] = [60, 60, 400, 90]  # ...but the frame now ends just under the subject
+    framed = s._best_label_spot(box, "market", 10)
+    assert framed[1] < box[1]  # so the caption moves ABOVE rather than out of the picture
+
+
+def test_label_ladder_falls_back_to_the_least_covered_seat_when_nothing_is_clear():
+    s = _ladder_map()
+    box = (400.0, 400.0, 500.0, 440.0)
+    for cy in range(320, 540, 10):  # blanket every rung on every side
+        for cx in range(300, 620, 10):
+            s.building(cx, cy, 14, 8)
+    lx, ly = s._best_label_spot(box, "market", 10)
+    assert s._label_hits(lx, ly, "market", 10, pad=0.0, linepad=0.0) > 0
+
+
+def test_place_caption_defers_to_finish_and_records_its_subject_box_for_the_gate():
+    # DEFERRED on purpose: a caption seated at call time is judged against half a map (see
+    # place_caption's note - Tango's north market caption landed on an execution ground that did
+    # not exist yet). Nothing is in M["labels"] until finish() flushes them.
+    s = _ladder_map()
+    box = (400.0, 400.0, 500.0, 440.0)
+    s.place_caption("market", box, 10)
+    s.place_caption("ferry", (700.0, 200.0, 720.0, 600.0), 10, slides=(0.0, 40.0))  # explicit slides
+    assert not [L for L in s.M["labels"] if L[5] in ("market", "ferry")]
+    with tempfile.TemporaryDirectory() as d:
+        s.finish(os.path.join(d, "t"), render=False)
+    rec = next(L for L in s.M["labels"] if L[5] == "market")
+    assert rec[6] == [400.0, 400.0, 500.0, 440.0]
+    assert any(L[5] == "ferry" for L in s.M["labels"])
+
+
+def test_place_caption_refuses_an_empty_subject():
+    # s.frontage_box is None when the row placed nothing - captioning it is a gen-script bug
+    s = _ladder_map()
+    with pytest.raises(ValueError, match="no subject box"):
+        s.place_caption("market", None, 10)
+
+
+def test_frontage_records_the_row_extent_for_place_caption():
+    s = _ladder_map()
+    s.street([(200, 500), (800, 500)], width=30)
+    s.frontage([(200, 500), (800, 500)], ["shop"] * 6, width=30, spacing=60, setback=20, fill=True)
+    box = s.frontage_box
+    assert box is not None and box[2] > box[0] and box[3] > box[1]
+    s.frontage([(200, 500), (800, 500)], [], width=30, spacing=60, setback=20, fill=True)
+    assert s.frontage_box is None  # a row that placed nothing leaves no stale box behind
