@@ -8661,3 +8661,39 @@ def test_granary_stores_are_solid_structs_for_every_keep_clear_rule():
     assert "ring_road_kept_clear" in f(M)
     M["granary"]["stores"][0]["y"] = 300  # ...and off the lane it is fine
     assert "ring_road_kept_clear" not in f(M)
+
+
+def _label_map(caption, key, **extra):
+    """A city carrying one solid feature at (500, 500) with `caption` written across it."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True, "population": 3000},
+        "wall": WALL,
+        "gates": [[500, 50]],
+        "labels": [[470, 492, 530, 508, 1, caption]],
+    }
+    M[key] = [solid(key, 500, 500)]
+    M.update(extra)
+    return M
+
+
+def test_labels_clear_of_other_buildings_reads_the_label_registry():
+    """A caption may cover only what it NAMES, and EVERY solid feature is a victim - read from
+    _LABEL_GROUP rather than a hand-written key list (GM 2026-07-26). The execution ground is the
+    worked example: its three keys shipped absent from the old list, so a foreign caption over one
+    passed the gate. The permission side is derived from the same registry - a group's name IS the
+    caption word - so a newly classified feature needs no second entry to caption itself."""
+    for key, own in (("execution_grounds", "execution ground"), ("punishment_spots", "punishment ground"), ("fire_towers", "fire tower"), ("martial_halls", "martial hall")):
+        assert "labels_clear_of_other_buildings" in f(_label_map("Temple of Benten", key)), key
+        assert "labels_clear_of_other_buildings" not in f(_label_map(own, key)), key
+    # ...and a caption naming a DIFFERENT registered feature is still a mislabel
+    assert "labels_clear_of_other_buildings" in f(_label_map("dojo", "execution_grounds"))
+
+
+def test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key(monkeypatch):
+    """The ratchet: a new solid feature must declare the caption group that may cover it, or be
+    excused in _LABEL_EXEMPT. Without this, forgetting is silent - which is exactly how the list
+    this replaced fell behind twice."""
+    M = _label_map("Temple of Benten", "martial_halls")
+    assert "every_solid_feature_classified_for_labels" not in f(M)
+    monkeypatch.setattr(check_village, "_OVERLAP_STRUCTS", check_village._OVERLAP_STRUCTS + ("hawk_mews",))
+    assert "every_solid_feature_classified_for_labels" in f(M)

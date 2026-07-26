@@ -224,7 +224,11 @@ s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86, kind="monastery", 
 # wall runs PARALLEL to the Imperial Road, which crosses NW-to-NE just past this SW edge; the gate
 # (north side) opens onto that road. The tilted footprint reshuffles the dense town's seeded packs,
 # which is why this map's seed (386) was chosen - it lands the depicted population back on its mark.
-s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)
+s.manor(
+    500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30, label_xy=(462, 964)
+)  # caption shifted 38px WEST (2026-07-26): the punishment ground is sited at the manor gate BY DESIGN, and the
+# default centered caption grazed its swung corner. The ground is where it has to be (punishment_spot_by_the_traffic),
+# so the label moves. Only visible once labels_clear_of_other_buildings read the registry instead of a hand list
 
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
 # traveling in for market day arrive - they sleep on straw for a sen a night. (Nudged west of

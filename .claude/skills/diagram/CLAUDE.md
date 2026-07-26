@@ -219,9 +219,23 @@ Verified to have teeth: reverting `ring_road_kept_clear` to its old list fails i
 listed. **Adding a hazard row to `_HAZARDS` extends the contract to every existing feature at
 once** - that is the cheap way to answer the next "should not overlap with X".
 
+**The same contract covers CAPTIONS** (GM 2026-07-26). A feature protected from every solid
+neighbor is still not protected from a label dropped on top of it, and
+`labels_clear_of_other_buildings` had its own hand-written list of ~22 keys that had already fallen
+behind twice - `martial_halls`/`dojos` had to be remembered into it, and a day later
+`punishment_spots`/`execution_grounds`/`boundary_markers` were absent, so a foreign caption over an
+execution ground shipped green. `_LABEL_GROUP` now maps each manifest key to the caption GROUP a
+label must name to be allowed over it, `_LABEL_EXEMPT` excuses the few that do not need protecting
+(with the reason), and `every_solid_feature_classified_for_labels` fires when a key is in neither.
+The permission side is derived from the same registry - a group's name IS its caption word
+("brewery", "martial hall", "execution ground") - so a classified feature can caption itself with
+no second list to remember. The named branches in `_label_allows` survive only for SYNONYMS: a
+caption reads "Temple of Benten" or "Governor's Mansion", not "temple" or "governor".
+
 **So the checklist for a new feature is:** write the glyph; record it under a new manifest key; add
-that key to `_OVERLAP_STRUCTS`; run the suite. If the feature needs a keep-clear rule no existing
-hazard covers, add a hazard row rather than a bespoke check with its own key list.
+that key to `_OVERLAP_STRUCTS` and give it a caption group in `_LABEL_GROUP`; run the suite. If the
+feature needs a keep-clear rule no existing hazard covers, add a hazard row rather than a bespoke
+check with its own key list.
 
 **The placement side, which the GM asked about next.** `_fits` tests an urban candidate's CENTER
 against `s.bound`, `block_polys` and the corridors, and whole footprints only against `placed` /

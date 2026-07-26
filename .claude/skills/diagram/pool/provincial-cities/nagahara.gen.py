@@ -1220,7 +1220,7 @@ s.title("Nagahara")
 s.kosatsuba(1773, 1149, rot=90)  # the LABELED representative (one-label convention)
 # ...the north road gate's board, UNLABELED, 51px inside the gate on the road verge,
 # aligned to the road's local ~72 deg bearing.
-s.kosatsuba(1492, 951, rot=72, label=None)  # nudged 10px up the wall (2026-07-25): the martial-hall budget line grew the derived ring 3px, the N-quarter pack reflowed, and a laborer_large came to rest under the board's old seat
+s.kosatsuba(1492, 954, rot=72, label=None)  # nudged 10px up the wall (2026-07-25): the martial-hall budget line grew the derived ring 3px, the N-quarter pack reflowed, and a laborer_large came to rest under the board's old y961 seat. y951 then overshot into the gate's 'guard / inspection stations' caption band (y940-950), which only surfaced when the label check started reading the registry - y957 is the gap between the two
 # ...and the PRINCIPAL board at the central crossroads (GM 2026-07-24, the 3rd board: the
 # bend where the through-road turns east IS the market corner - the city's
 # Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the

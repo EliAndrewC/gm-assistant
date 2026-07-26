@@ -40,7 +40,7 @@ Code comments (`check_village.py` especially) point at sections by name, in the 
 | Shrines; Torii; City temples; District catchment; Swept ground around sacred + funerary features | `religion-and-death.md` |
 | Crop advisory | `presentation.md` |
 | Notice board (kosatsuba); Punishment spot; Execution ground; Boundary marker; TRADE WORKS; TANNING YARDS; Stable yard; Wells (incl. "Wells - research + deliberate liberty"); The bell-and-drum tower | `urban-features.md` |
-| Fire towers; Sizing the wall to the population; In-wall VEGETABLE tracts; gate market; junction angles follow the current | `cities.md` |
+| Fire towers; Sizing the wall to the population; In-wall VEGETABLE tracts; gate market; junction angles follow the current; Historical grounding: martial training in a provincial city | `cities.md` |
 | Perimeter dike; Polder ring canal / mosaic / edge wander / siting Q&A / fourth pass / fifth pass; Dike-pond sluices; Dike-pond water | `archetypes.md` |
 
 A bare `settlements.md "Historical grounding"` pointer means "the grounding for whatever rule this check enforces" - find it in that rule's topic file above.
@@ -108,7 +108,7 @@ Pull from `/gm-assistant/setting/median-domain.md`, `demographics.md`, `village-
 
 ### The validator (`check_village.py`)
 
-**Adding a new footprint feature? You do not have to enumerate what it must not overlap.** Put its manifest key in `_OVERLAP_STRUCTS` (the `every_feature_classified_for_overlap` check forces you to classify it either way) and it is gated off all fifteen keep-clear hazards at once, because every one of those checks builds its footprints from that registry via `solid_structs(M)`. `test_every_solid_struct_is_gated_off_every_hazard` proves it, key by key and hazard by hazard. The rationale, the placement-side rule (`open_seat` verifies a whole footprint against the bound), and the one thing that is still per-rule (a new CLEARANCE rule needs its own hazard row) are in [`CLAUDE.md`](CLAUDE.md), "Adding a new map feature: the KEEP-CLEAR CONTRACT".
+**Adding a new footprint feature? You do not have to enumerate what it must not overlap, or what may be written across it.** Put its manifest key in `_OVERLAP_STRUCTS` (the `every_feature_classified_for_overlap` check forces you to classify it either way) and it is gated off all fifteen keep-clear hazards at once, because every one of those checks builds its footprints from that registry via `solid_structs(M)`. `test_every_solid_struct_is_gated_off_every_hazard` proves it, key by key and hazard by hazard. Its sibling `_LABEL_GROUP` does the same job for CAPTIONS - name the group a label must use to be allowed over the feature, and `every_solid_feature_classified_for_labels` fires if you forget. The rationale, the placement-side rule (`open_seat` verifies a whole footprint against the bound), and the one thing that is still per-rule (a new CLEARANCE rule needs its own hazard row) are in [`CLAUDE.md`](CLAUDE.md), "Adding a new map feature: the KEEP-CLEAR CONTRACT".
 
 The generator emits a manifest the validator asserts against; it must pass before a settlement map is presented. It works for **any** village/hamlet, not just Kikuta: the UNIVERSAL invariants are always checked, while the VILLAGE-SPECIFIC expectations are read from `manifest["meta"]` and from each channel's `frm`/`to` anchors.
 
