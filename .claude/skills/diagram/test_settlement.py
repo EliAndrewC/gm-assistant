@@ -4684,3 +4684,19 @@ def test_martial_hall_caption_takes_the_emptier_side():
     s.martial_hall(400, 400)
     lab = [L for L in s.M["labels"] if len(L) > 5 and L[5] == "martial hall"][0]
     assert lab[1] < 400  # pushed ABOVE the compound, away from the occupied side
+
+
+def test_open_seat_refuses_a_seat_whose_FOOTPRINT_crosses_the_bound():
+    """The martial-hall bug, as a unit test (GM 2026-07-25). s.bound is the ring-road loop a city
+    packs inside, and `_fits` tests only a candidate's CENTER against it - so open_seat handed back
+    a compound seat whose SE corner lay across Tango's patrol bed. open_seat now tests the whole
+    footprint against the bound (and ONLY the bound: block polys and corridors are soft
+    reservations a footprint may legitimately overhang, and tightening those cost two pool maps a
+    feature apiece when it was tried)."""
+    s = Settlement(1200, 1200, seed=3)
+    s.meta(name="C", scale="city", ftpx=3)
+    s.bound = [[100, 100], [700, 100], [700, 700], [100, 700]]
+    over = (665, 300, 695, 320)  # every candidate here keeps its CENTER inside x=700 but its right edge past it
+    assert s.open_seat(over, 80, 20) is None
+    assert s.open_seat(over, 80, 20, footprint=False) is not None  # the old center-only behavior
+    assert s.open_seat((300, 300, 400, 320), 80, 20) is not None  # well inside the bound: fine
