@@ -8052,13 +8052,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # only anchors are gates because every street it draws stops at the rampart.
             exits_j = [(g[0], g[1]) for g in (M.get("gates") or [])] + ([(M["gate"][0], M["gate"][1])] if M.get("gate") else [])
             lim_road_j, lim_gate_j = 120.0 / ftpx_j, 400.0 / ftpx_j
+
+            def _off_the_way_out_j(px: float, py: float) -> bool:
+                # Shared by the ground and by its boundary stone - both are road furniture, so both
+                # answer to the same band rather than to two magic numbers that could drift apart.
+                if routes_j and _route_dist_j(px, py) <= lim_road_j:
+                    return False
+                return not any(math.hypot(px - gx, py - gy) <= lim_gate_j for gx, gy in exits_j)
+
             if routes_j or exits_j:
-
-                def _off_the_way_out_j(px: float, py: float) -> bool:
-                    if routes_j and _route_dist_j(px, py) <= lim_road_j:
-                        return False
-                    return not any(math.hypot(px - gx, py - gy) <= lim_gate_j for gx, gy in exits_j)
-
                 far_e = [(round(e["x"]), round(e["y"])) for e in exg_j if _off_the_way_out_j(e["x"], e["y"])]
                 check(
                     "execution_ground_by_the_road",
@@ -8068,10 +8070,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if core_j and bms_j:
                 # PAST THE BOUNDARY STONE. The marker must lie between the settlement and the ground:
                 # nearer the core than the ground is, AND nearer the ground than the core is.
-                # ...and the stone itself stands OUTSIDE the settlement it bounds: a dosojin inside the
-                # rampart bounds nothing, and would satisfy the between-ness arithmetic while asserting
-                # the opposite of what the stone means.
-                out_bms_j = [b for b in bms_j if not _inwall_j(b["x"], b["y"])]
+                # ...and the stone itself stands OUTSIDE the settlement it bounds AND ON THE WAY OUT.
+                # A dosojin inside the rampart bounds nothing; one sitting in an open field off the
+                # road bounds nothing either. Both would satisfy the between-ness arithmetic above
+                # while asserting the opposite of what the stone means - `sae` blocks pollution at
+                # the point the ROAD leaves clean ground, so the stone has to stand on that road.
+                # (The road half of this was found by eye on a rendered Nagahara, not by the gate:
+                # between-ness alone had let the stone drift into a field southwest of the highway.)
+                out_bms_j = [b for b in bms_j if not _inwall_j(b["x"], b["y"]) and not _off_the_way_out_j(b["x"], b["y"])]
                 unmarked_j = [
                     (round(e["x"]), round(e["y"]))
                     for e in exg_j
