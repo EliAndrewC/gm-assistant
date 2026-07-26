@@ -104,7 +104,7 @@ Every task names the verification that must pass before it is checked off (Princ
   historical truth.
   *Verify*: a written element-by-element confirmation appended to `research.md`.
 
-- [ ] **T015** Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done` from
+- [x] **T015** Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done` from
   inside it (locked pull + push, then render-sync). Never force-push.
 
 ## Dependency notes

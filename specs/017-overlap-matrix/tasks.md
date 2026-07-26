@@ -12,6 +12,6 @@
 - [ ] **T008** Fix the dry crop plot over the stream on Ubame (FR-012). NOT DONE - itemized in `_MATRIX_OUTSTANDING` with the other 10 real defects the first run found. See the report.
 - [ ] **T009** Retire the per-pair checks the matrix subsumes (FR-010). NOT DONE - deliberately deferred: the matrix is additive first, and retiring proven checks while 11 real defects are still outstanding would remove the precise geometry that currently governs them.
 - [x] **T010** Document the contract in `settlements.md` where authors will read it: "classify the key, get every rule."
-- [ ] **T011** Cheap linters, whole affected test files, then `make done` ONCE, backgrounded.
-- [ ] **T012** Confirm no map's DEPICTION changed except the fixed defect (the scoped Principle XII close).
-- [ ] **T013** Stop-work ritual: commit in the clone, then `sync-with-main.sh done`.
+- [x] **T011** Cheap linters, whole affected test files, then `make done` ONCE, backgrounded.
+- [x] **T012** Confirm no map's DEPICTION changed except the fixed defect (the scoped Principle XII close).
+- [x] **T013** Stop-work ritual: commit in the clone, then `sync-with-main.sh done`.
