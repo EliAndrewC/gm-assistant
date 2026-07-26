@@ -53,7 +53,7 @@ fuel out into the hills. What comes down to the town is finished charcoal and pi
 
 Full grounding, with the China-first research and the one disclosed divergence (Ubame follows the
 Japanese two-site tatara/okaji split, not the Chinese adjacent-hearth arrangement, because dispersed
-fuel forces two sites): specs/016-ubame-town/research.md and settlements/urban-features.md.
+fuel forces two sites): specs/107-ubame-town/research.md and settlements/urban-features.md.
 """
 
 import math

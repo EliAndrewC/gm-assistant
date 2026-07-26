@@ -14,19 +14,19 @@ POOL = Path("/gm-assistant/.claude/skills/relic/pool")
 # Maps clan slug → family/lineage surnames associated with that clan.
 # Used to detect clan from named_entity.
 CLAN_FAMILIES = {
-    "crab":     ["Hida", "Hiruma", "Kuni", "Yasuki", "Toritaka", "Kaiu"],
-    "crane":    ["Doji", "Kakita", "Daidoji", "Asahina"],
-    "dragon":   ["Mirumoto", "Kitsuki", "Togashi", "Agasha"],
-    "fox":      ["Kitsune", "Hokke", "Toke", "Saike", "Nanke"],
-    "lion":     ["Akodo", "Matsu", "Ikoma", "Kitsu", "Damasu"],
-    "phoenix":  ["Isawa", "Shiba", "Asako"],
+    "crab": ["Hida", "Hiruma", "Kuni", "Yasuki", "Toritaka", "Kaiu"],
+    "crane": ["Doji", "Kakita", "Daidoji", "Asahina"],
+    "dragon": ["Mirumoto", "Kitsuki", "Togashi", "Agasha"],
+    "fox": ["Kitsune", "Hokke", "Toke", "Saike", "Nanke"],
+    "lion": ["Akodo", "Matsu", "Ikoma", "Kitsu", "Damasu"],
+    "phoenix": ["Isawa", "Shiba", "Asako"],
     "scorpion": ["Bayushi", "Shosuro", "Soshi", "Yogo", "Michio"],
-    "unicorn":  ["Shinjo", "Ide", "Iuchi", "Otaku", "Utaku", "Moto"],
-    "mantis":   ["Yoritomo", "Moshi", "Shione"],
-    "sparrow":  ["Suzume"],
-    "wasp":     ["Tsuruchi"],
-    "dragonfly":["Tonbo"],
-    "hare":     ["Usagi"],
+    "unicorn": ["Shinjo", "Ide", "Iuchi", "Otaku", "Utaku", "Moto"],
+    "mantis": ["Yoritomo", "Moshi", "Shione"],
+    "sparrow": ["Suzume"],
+    "wasp": ["Tsuruchi"],
+    "dragonfly": ["Tonbo"],
+    "hare": ["Usagi"],
 }
 
 FORTUNES = {
@@ -97,10 +97,14 @@ def main(dry_run: bool = False):
             else:
                 # multiple clans - pick the first one mentioned in named_entity
                 # if any; else just first detected.
-                in_named = [c for c in clans if any(
-                    re.search(r"\b" + re.escape(fam) + r"\b", named)
-                    for fam in CLAN_FAMILIES[c]
-                )]
+                in_named = [
+                    c
+                    for c in clans
+                    if any(
+                        re.search(r"\b" + re.escape(fam) + r"\b", named)
+                        for fam in CLAN_FAMILIES[c]
+                    )
+                ]
                 clan_tag = in_named[0] if in_named else clans[0]
 
             new_temple = temple_field(clan_tag, fortune_slug)
@@ -133,15 +137,17 @@ def main(dry_run: bool = False):
             new_fm = "\n".join(new_lines)
             new_text = "---\n" + new_fm + "\n---\n\n" + body
 
-            changes.append({
-                "path": str(f),
-                "name": fields.get("name", "?"),
-                "named_entity": named,
-                "old_temple": fields.get("temple_suggestion", ""),
-                "new_temple": new_temple,
-                "clan": clan_tag,
-                "detected": clans,
-            })
+            changes.append(
+                {
+                    "path": str(f),
+                    "name": fields.get("name", "?"),
+                    "named_entity": named,
+                    "old_temple": fields.get("temple_suggestion", ""),
+                    "new_temple": new_temple,
+                    "clan": clan_tag,
+                    "detected": clans,
+                }
+            )
 
             if not dry_run:
                 f.write_text(new_text, encoding="utf-8")
@@ -158,7 +164,7 @@ def main(dry_run: bool = False):
         for c in rs:
             print(f"  - {c['name']}")
             print(f"      named_entity: {c['named_entity'][:70]}")
-            if len(c['detected']) > 1:
+            if len(c["detected"]) > 1:
                 print(f"      detected:     {c['detected']} → picked '{c['clan']}'")
 
 

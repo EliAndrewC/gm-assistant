@@ -32,8 +32,18 @@ def changed_lines(base: str) -> dict[str, set[int]]:
     blamed. Both the worktree and the index are included (a session about to be told its coverage
     is short has usually not committed yet)."""
     try:
-        root = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip()
-        out = subprocess.run(["git", "diff", "-U0", base, "--"], capture_output=True, text=True, check=True).stdout
+        root = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        out = subprocess.run(
+            ["git", "diff", "-U0", base, "--"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
     except (subprocess.CalledProcessError, FileNotFoundError):
         return {}
     files: dict[str, set[int]] = {}
@@ -56,12 +66,28 @@ def uncovered() -> dict[str, set[int]]:
         # fail_under=100, and `coverage json` honors it and exits non-zero, which would otherwise
         # look to us like "no coverage data" exactly when there is some. check=False for the same
         # reason - the report is written regardless of the exit status.
-        subprocess.run([sys.executable, "-m", "coverage", "json", "-q", "--fail-under=0", "-o", "/tmp/.uncovered-in-diff.json"], capture_output=True, check=False)
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "coverage",
+                "json",
+                "-q",
+                "--fail-under=0",
+                "-o",
+                "/tmp/.uncovered-in-diff.json",
+            ],
+            capture_output=True,
+            check=False,
+        )
         with open("/tmp/.uncovered-in-diff.json") as fh:
             data = json.load(fh)
     except Exception:
         return {}
-    return {os.path.abspath(f): set(d.get("missing_lines", [])) for f, d in data.get("files", {}).items()}
+    return {
+        os.path.abspath(f): set(d.get("missing_lines", []))
+        for f, d in data.get("files", {}).items()
+    }
 
 
 def main() -> int:
@@ -69,11 +95,17 @@ def main() -> int:
     diff, miss = changed_lines(base), uncovered()
     if not diff or not miss:
         return 0
-    hits = [(path, sorted(diff[path] & miss[path])) for path in sorted(diff) if path in miss and diff[path] & miss[path]]
+    hits = [
+        (path, sorted(diff[path] & miss[path]))
+        for path in sorted(diff)
+        if path in miss and diff[path] & miss[path]
+    ]
     if not hits:
         return 0
     total = sum(len(v) for _, v in hits)
-    print(f"\n\033[1muncovered lines you changed ({total}) - these are what the coverage gate is failing on:\033[0m")
+    print(
+        f"\n\033[1muncovered lines you changed ({total}) - these are what the coverage gate is failing on:\033[0m"
+    )
     for path, lines in hits:
         try:
             src = open(path).read().splitlines()
@@ -83,7 +115,9 @@ def main() -> int:
         for n in lines:
             text = src[n - 1].strip() if n <= len(src) else ""
             print(f"    {n:>6}  {text[:110]}")
-    print("  -> add a test that reaches each, or delete the line if it is unreachable\n")
+    print(
+        "  -> add a test that reaches each, or delete the line if it is unreachable\n"
+    )
     return 0
 
 

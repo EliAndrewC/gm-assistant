@@ -15,7 +15,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 BASE = "http://127.0.0.1:8123"
-OUT  = Path("/tmp/relics-shots")
+OUT = Path("/tmp/relics-shots")
 OUT.mkdir(exist_ok=True)
 
 # (label, width, height, device_scale_factor)
@@ -23,14 +23,14 @@ OUT.mkdir(exist_ok=True)
 # Subtracting Chrome's UI (~120px), the viewport is ~1850 x ~1050.
 # At 200% zoom, effective CSS viewport is ~925 x ~525.
 VIEWPORTS = [
-    ("gm-100",       1850, 1050, 1),   # user's actual viewport, 100% zoom
-    ("gm-200",        925,  525, 1),   # user's actual viewport, 200% zoom
-    ("tablet",        800, 1100, 1),
-    ("mobile",        390,  844, 2),
+    ("gm-100", 1850, 1050, 1),  # user's actual viewport, 100% zoom
+    ("gm-200", 925, 525, 1),  # user's actual viewport, 200% zoom
+    ("tablet", 800, 1100, 1),
+    ("mobile", 390, 844, 2),
 ]
 
 PAGES = [
-    ("index",  "/index.html"),
+    ("index", "/index.html"),
     ("detail", "/relic.html?slug=honest-masu-of-yasuki-bunzo"),
 ]
 

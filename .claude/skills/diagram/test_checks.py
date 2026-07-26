@@ -9038,3 +9038,90 @@ def test_a_caption_over_a_wellhead_is_caught():
     assert "labels_clear_of_other_buildings" in f(wmap("merchant houses & shops"))
     assert "labels_clear_of_other_buildings" not in f(wmap("well"))  # a caption may name what it covers
     assert "wells" in check_village._LABEL_GROUP
+
+
+# ---- feature 017: the overlap matrix -------------------------------------------------------------
+def _mx_map(**over):
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1200, "H": 1200, "name": "Nowhere", "down_deg": 90})
+    M.update(over)
+    return M
+
+
+def test_matrix_policy_resolves_every_pair_from_one_classification():
+    """The point of the feature: no per-pair rules. A class decides everything."""
+    assert check_village.matrix_policy("dry_plots", "streams") is None  # GROUND x WATER - the motivating defect
+    assert check_village.matrix_policy("dry_plots", "road") is None  # GROUND x WAY
+    assert check_village.matrix_policy("houses", "buildings") is None  # SOLID x SOLID
+    assert check_village.matrix_policy("commons", "houses")  # COVER is permissive - the GM's own example
+    assert check_village.matrix_policy("quarters", "houses")  # an overlay contains features
+    assert check_village.matrix_policy("streams", "channels")  # confluence
+    assert check_village.matrix_policy("road", "town_streets")  # junction
+    assert check_village.matrix_policy("road", "streams")  # bridged crossing
+    assert check_village.matrix_policy("religious", "shrines")  # one hall recorded under two keys
+    assert check_village.matrix_policy("dry_plots", "dry_plots")  # adjacent hem plots share headlands
+    assert check_village.matrix_policy("village_groves", "houses")  # canopy is the canopy contract's job
+    assert check_village.matrix_policy("hawk_mews", "houses") == "unclassified"
+
+
+def test_features_do_not_overlap_catches_a_crop_plot_in_a_watercourse():
+    """The defect this feature was opened for, caught by the GENERAL rule with no pair-specific code."""
+    plot = [[500, 500], [560, 500], [560, 560], [500, 560]]
+    M = _mx_map(dry_plots=[{"poly": plot, "crop": "barley", "theta": 0}], streams=[{"poly": [[530, 400], [530, 700]], "w": 9}])
+    assert "features_do_not_overlap" in f(M)
+    M["streams"] = [{"poly": [[900, 400], [900, 700]], "w": 9}]  # moved clear
+    assert "features_do_not_overlap" not in f(M)
+
+
+def test_matrix_permits_an_annex_on_its_OWN_parent_only():
+    """Strictly stronger than the blanket exemption it replaces: a kura behind its own shop is fine,
+    the same kura drawn across a NEIGHBOR's building is a defect - which the blanket form could not
+    express, and which the first pool run duly found twice."""
+    own = _mx_map(buildings=[bldg(500, 500)], storehouses=[{"x": 500, "y": 512, "w": 20, "h": 14, "of": [500, 500]}])
+    other = _mx_map(buildings=[bldg(500, 500), bldg(560, 500)], storehouses=[{"x": 556, "y": 500, "w": 20, "h": 14, "of": [500, 500]}])
+    assert "features_do_not_overlap" not in f(own)
+    assert "features_do_not_overlap" in f(other)
+
+
+def test_matrix_permits_two_annexes_of_one_household_to_abut():
+    M = _mx_map(
+        houses=[house(500, 500)],
+        threshing_yards=[yard(500, 540, of=(500, 500))],
+        gardens=[garden(500, 552, of=(500, 500))],
+    )
+    assert "features_do_not_overlap" not in f(M)
+
+
+def test_matrix_permits_a_ditch_on_its_own_field_but_not_another():
+    M = _mx_map(
+        fields=[
+            {
+                "name": "west",
+                "kind": "paddy",
+                "outline": [[400, 400], [700, 400], [700, 700], [400, 700]],
+                "bbox": [400, 400, 700, 700],
+                "vis_bbox": [400, 400, 700, 700],
+                "plots": [[60, 60, 550, 550, 4, 4]],
+            }
+        ],
+        field_ditches=[{"poly": [[550, 400], [550, 700]], "w": 1.5, "field": "west", "role": "main"}],
+        houses=[house(551, 480)],
+    )
+    fails = f(M)
+    assert "features_do_not_overlap" in fails  # the HOUSE is on the ditch, and it is nobody's annex
+
+
+def test_every_feature_classified_for_matrix_is_the_ratchet(monkeypatch):
+    """A drawn key with no class must fail BY NAME - the whole promise is 'add one line and you are
+    protected', which only holds if forgetting the line is loud."""
+    M = _mx_map(houses=[house(500, 500)])
+    assert "every_feature_classified_for_matrix" not in f(M)
+    monkeypatch.delitem(check_village.OVERLAP_CLASS, "houses")
+    assert "every_feature_classified_for_matrix" in f(M)
+
+
+def test_matrix_reads_drawn_extents_not_envelopes():
+    """A commons is an ENVELOPE around a sparse scatter and is permissive besides, so it is never
+    even extracted; testing envelopes is what made the motivating survey over-report ~2x."""
+    M = _mx_map(commons=[{"x": 500, "y": 500, "w": 400, "h": 400, "rot": 0, "role": "grazing", "poly": [[300, 300], [700, 300], [700, 700], [300, 700]]}], houses=[house(500, 500)])
+    assert "features_do_not_overlap" not in f(M)
+    assert not [e for e in check_village.matrix_extents(M) if e[0] == "commons"]

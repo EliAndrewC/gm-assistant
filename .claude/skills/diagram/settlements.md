@@ -114,6 +114,32 @@ Pull from `/gm-assistant/setting/median-domain.md`, `demographics.md`, `village-
 
 **Adding a new footprint feature? You do not have to enumerate what it must not overlap, or what may be written across it.** Put its manifest key in `_OVERLAP_STRUCTS` (the `every_feature_classified_for_overlap` check forces you to classify it either way) and it is gated off all fifteen keep-clear hazards at once, because every one of those checks builds its footprints from that registry via `solid_structs(M)`. `test_every_solid_struct_is_gated_off_every_hazard` proves it, key by key and hazard by hazard. Its sibling `_LABEL_GROUP` does the same job for CAPTIONS - name the group a label must use to be allowed over the feature, and `every_solid_feature_classified_for_labels` fires if you forget. The rationale, the placement-side rule (`open_seat` verifies a whole footprint against the bound), and the one thing that is still per-rule (a new CLEARANCE rule needs its own hazard row) are in [`CLAUDE.md`](CLAUDE.md), "Adding a new map feature: the KEEP-CLEAR CONTRACT".
 
+**Adding a feature? Give it an OVERLAP CLASS and it is governed against everything at once.** The
+`OVERLAP_CLASS` matrix (feature 017) replaced the per-pair rules that used to accumulate one map at
+a time - the GM's "whack-a-mole, where every time we make a new map I see a few more things which
+have never happened to overlap before but now they do". Every geometric key gets ONE class -
+`SOLID` (an exclusive built footprint), `GROUND` (cultivated ground worked as a surface), `WATER`,
+`WAY`, `ANNEX` (belongs to a named parent), or a permissive class - and a class-by-class policy,
+**forbidden by default**, decides every pair. `features_do_not_overlap` enforces it and
+`every_feature_classified_for_matrix` fails by name when a drawn key has no class.
+
+Three things worth knowing before you add a permission:
+
+- **Permissive classes exist and are load-bearing.** `COVER` (grazing commons, pasture, scrub) is
+  *what the ground IS*, not an object on it - a well or a house built on grazing is the normal case.
+  That is the distinction the whole design turns on, and it is why the matrix does not cry wolf.
+  Contrast `GROUND`, which is worked as a surface and is ruined by anything standing in it.
+- **The matrix reads DRAWN extents, never envelopes.** A field's smoothed `outline` bows outside its
+  plots, a grove's `poly` is a belt outline whose ink is its clumps, a commons is a scatter. The
+  survey that motivated this feature found 101 overlapping pairs pool-wide by comparing envelopes;
+  measured on drawn extents the same pool has 11 real ones. Paddy is a special case - a plot's
+  polygon is not stored, only its spans, so the reconstruction is permissive HERE and the precise
+  paddy checks stay authoritative.
+- **A permission must carry its reason**, in `_MATRIX_PERMISSIVE` / `_MATRIX_SAME_KEY_OK` /
+  `_MATRIX_ALLOWED_PAIRS` / `_MATRIX_ALLOWED_KEYS`. A silenced pair with a weak reason is visible;
+  an absent rule is not. `_MATRIX_OUTSTANDING` is the itemized list of real defects found on the
+  first run and not yet fixed - work owed, named by map and coordinate, not a blanket grandfather.
+
 The generator emits a manifest the validator asserts against; it must pass before a settlement map is presented. It works for **any** village/hamlet, not just Kikuta: the UNIVERSAL invariants are always checked, while the VILLAGE-SPECIFIC expectations are read from `manifest["meta"]` and from each channel's `frm`/`to` anchors.
 
 - **Universal (always):** no farmhouse overlaps (rotated-rect SAT); nothing on a lane / **irrigation channel** (`no_structure_on_channel`, same footprint test as streams) / **road** (`no_structure_on_road`) / **stream** (`no_structure_on_stream`) / manor / **wall** (`no_structure_on_wall`) / **moat** (`no_structure_on_moat`) / **town street** (`no_structure_on_street`) / **religious hall** (`no_structure_on_religious`) / **gate guard station + tower** (`no_structure_on_gate`) / **torii arch** (`no_structure_on_torii`) - and **every solid feature (the funerary structures, wayside shrines, ministries) is checked by all of these exactly like a building** (see the overlap-classification principle above; `every_feature_classified_for_overlap` fails if a new feature is left unclassified; the per-farmstead **threshing yards** are the exception - an annex abutting their own farmhouse, so overlap-exempt against it, but still kept off the paddies) - the manor, hall, gate structures, and each torii block a rect plus a building-half margin, because an ellipse undershoots their corners; all houses field-adjacent; every (on-map) field ringed; no cultivation on a hill; houses face south; the headman's house is the largest; no two body labels overlap; the per-farmstead threshing yards keep their footprint out of the flooded paddies (`harvest_yards_clear_of_paddies`); each channel is anchored at both ends, winds gently, and is reasonably direct; any torii are clear of the shrine and spread out; fields stay clear of any road or town street, incl. the road running out the gate (`fields_clear_of_road`) and never cross a wall (`fields_clear_of_wall` - abut only); every fully-on-map field shows a water source - a channel feeding it or the field abutting a stream/pond (`fields_show_water_source`); streams never run through fields (`streams_avoid_fields`); roads/streams/large terrain run off the map edge (`edge_features_run_off_map`); the religious building matches the settlement scale (`religious_matches_scale`); roads/streets are a ground layer drawn UNDER anything that legitimately sits on them - a gatehouse or a label (`roads_drawn_under_overlays`); in a town, businesses front the streets (`businesses_front_streets`), street-fronting buildings face the street they line (`buildings_face_street`), and dwellings stay off the main commercial frontage (`housing_off_main_street`).

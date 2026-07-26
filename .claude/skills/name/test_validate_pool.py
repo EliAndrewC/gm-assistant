@@ -45,6 +45,7 @@ class TestValidatePool:
         write_pool(female_path, [{"name": "Hanako", "gender": "female"}])
 
         from validate_pool import validate
+
         # validate() only calls sys.exit(1) on error, otherwise returns normally
         validate()  # Should not raise
         output = capsys.readouterr().out
@@ -52,13 +53,17 @@ class TestValidatePool:
 
     def test_duplicate_detected(self, pool_env, capsys):
         tmp_path, male_path, female_path, campaign_path = pool_env
-        write_pool(male_path, [
-            {"name": "Takeshi", "gender": "male"},
-            {"name": "Takeshi", "gender": "male"},
-        ])
+        write_pool(
+            male_path,
+            [
+                {"name": "Takeshi", "gender": "male"},
+                {"name": "Takeshi", "gender": "male"},
+            ],
+        )
         write_pool(female_path, [])
 
         from validate_pool import validate
+
         with pytest.raises(SystemExit):
             validate()
         output = capsys.readouterr().out
@@ -71,6 +76,7 @@ class TestValidatePool:
         campaign_path.write_text("Satoru\n")
 
         from validate_pool import validate
+
         with pytest.raises(SystemExit):
             validate()
         output = capsys.readouterr().out
@@ -82,6 +88,7 @@ class TestValidatePool:
         write_pool(female_path, [{"name": "Chiyoko", "gender": "female"}])
 
         from validate_pool import validate
+
         with pytest.raises(SystemExit):
             validate()
         output = capsys.readouterr().out
@@ -91,14 +98,18 @@ class TestValidatePool:
 class TestFixPool:
     def test_removes_campaign_conflicts(self, pool_env, capsys):
         tmp_path, male_path, female_path, campaign_path = pool_env
-        write_pool(male_path, [
-            {"name": "Satoru", "gender": "male"},
-            {"name": "Takeshi", "gender": "male"},
-        ])
+        write_pool(
+            male_path,
+            [
+                {"name": "Satoru", "gender": "male"},
+                {"name": "Takeshi", "gender": "male"},
+            ],
+        )
         write_pool(female_path, [])
         campaign_path.write_text("Satoru\n")
 
         from fix_pool import fix
+
         fix()
 
         remaining = read_pool(male_path)
@@ -112,6 +123,7 @@ class TestFixPool:
         write_pool(female_path, [{"name": "Chiyoko", "gender": "female"}])
 
         from fix_pool import fix
+
         fix()
 
         male_remaining = read_pool(male_path)
@@ -127,6 +139,7 @@ class TestFixPool:
         write_pool(female_path, [{"name": "Hanako", "gender": "female"}])
 
         from fix_pool import fix
+
         fix()
         output = capsys.readouterr().out
         assert "0 removed" in output

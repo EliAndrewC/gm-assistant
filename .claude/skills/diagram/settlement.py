@@ -547,6 +547,13 @@ def smooth_points(pts: Poly, steps: int = 10) -> Poly:
     return out
 
 
+def rot_rect(cx: float, cy: float, w: float, h: float, deg: float = 0.0) -> Poly:
+    """The four corners of a (possibly rotated) footprint - the shape most placement tests want."""
+    th = math.radians(deg or 0.0)
+    c, sn = math.cos(th), math.sin(th)
+    return [(cx + dx * c - dy * sn, cy + dx * sn + dy * c) for dx, dy in ((-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2))]
+
+
 def rects_overlap(p: Poly, q: Poly) -> bool:
     """Separating-axis overlap for two convex quads (corner lists)."""
     for poly in (p, q):
@@ -3721,6 +3728,34 @@ class Settlement:
         bm = 16
         self.block_polys.append([(x0 - bm, y0 - bm), (x + w / 2 + bm, y0 - bm), (x + w / 2 + bm, y + h / 2 + bm + 16), (x0 - bm, y + h / 2 + bm + 16)])
 
+    def _well_ground_clear(self, cx: float, cy: float, vr: float | None = None) -> bool:
+        """Is this ground fit to sink a WELLHEAD in? You do not dig a well in a watercourse, and you
+        do not dig one in the middle of a crop plot.
+
+        Placement predicted everything else about a well site - lanes, compounds, the bound, its
+        neighbors - but never the water or the crop, so the overlap matrix (feature 017) found four
+        wells standing in ditches, a channel and a hatake plot across three maps. Tested against the
+        DRAWN head (`_well_vr`), because what a reader sees is ink on ink."""
+        vr = self._well_vr() if vr is None else vr
+        for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
+            for rec in self.M.get(key, []) or []:
+                pts = rec.get("poly") or rec.get("pts")
+                if not pts:
+                    continue  # pragma: no cover - defensive: every watercourse carries a path
+                lim = float(rec.get("w") or dw) / 2 + vr
+                if any(seg_dist(cx, cy, pts[i], pts[i + 1]) < lim for i in range(len(pts) - 1)):
+                    return False
+        pond = self.M.get("pond")
+        if pond and ((cx - pond[0]) ** 2) / ((pond[2] + vr) ** 2) + ((cy - pond[1]) ** 2) / ((pond[3] + vr) ** 2) < 1.0:
+            return False
+        for dp in self.M.get("dry_plots", []) or []:
+            poly = dp.get("poly")
+            if not poly:
+                continue  # pragma: no cover - defensive: every dry plot carries an outline
+            if point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly))):
+                return False
+        return True
+
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
         In FEET at this map's ftpx on a to-scale tier (a ~24.8 ft well-house); on the legacy tiers
@@ -3863,7 +3898,7 @@ class Settlement:
         into the grazing commons): a wellhead stands in worked dooryard/margin ground, never out
         in the grazed waste - and the cover scatter is drawn long before the farm wells, so the
         well must yield, not the commons."""
-        if self._in_scrub_cover(x, y):
+        if self._in_scrub_cover(x, y) or not self._well_ground_clear(x, y):
             return False
         if self._fits(x, y, 2 * r + 14, 2 * r + 14):
             self.well(x, y, r, shrine=shrine)
@@ -3974,7 +4009,12 @@ class Settlement:
             while xx <= x1:
                 for ox, oy in offsets:
                     cx, cy = xx + ox, yy + oy
-                    if not self._in_scrub_cover(cx, cy) and self._fits(cx, cy, probe, probe) and (dwell is None or any((b["x"] - cx) ** 2 + (b["y"] - cy) ** 2 < near * near for b in dwell)):
+                    if (
+                        not self._in_scrub_cover(cx, cy)
+                        and self._well_ground_clear(cx, cy)
+                        and self._fits(cx, cy, probe, probe)
+                        and (dwell is None or any((b["x"] - cx) ** 2 + (b["y"] - cy) ** 2 < near * near for b in dwell))
+                    ):
                         self.well(cx, cy, r)
                         out.append((cx, cy))
                         break
@@ -7953,6 +7993,14 @@ class Settlement:
             if self.M.get("road"):
                 beds.append((self.M["road"], self.M.get("road_width", 26) / 2))
             if any(seg_dist(ox, oy, pts[k], pts[k + 1]) < half + max(kw, kh) / 2 + 3 for pts, half in beds for k in range(len(pts) - 1)):
+                continue
+            # ...and never ACROSS A NEIGHBOR. The kura is an annex of its OWN shop - that is what
+            # makes its overlap legitimate - so a kura tucked behind a narrow shopfront that happens
+            # to back onto the next lot's larger house is a defect, not an annex. The overlap matrix
+            # (feature 017) found exactly that twice, because the old blanket storehouse exemption
+            # could only say "a kura may overlap a building", never "its own".
+            kq = rot_rect(ox, oy, kw, kh, b["rot"])
+            if any(other is not b and rects_overlap(kq, rot_rect(other["x"], other["y"], other["w"], other["h"], other.get("rot", 0))) for other in self.M["buildings"]):
                 continue
             self.add(
                 f'<g transform="translate({ox:.0f},{oy:.0f}) rotate({b["rot"]:.0f})">'

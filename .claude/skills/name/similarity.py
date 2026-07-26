@@ -108,8 +108,14 @@ if __name__ == "__main__":
     # Quick test
     test_names = ["Chiyo", "Akari"]
     print(f"Chiyo vs Chiyoko: {is_too_similar('Chiyoko', test_names)}")  # True
-    print(f"Akemi vs Akari: {is_too_similar('Akemi', test_names)}")  # False (edit dist 2)
-    print(f"Chiyu vs Chiyo: {is_too_similar('Chiyu', test_names)}")  # True (edit dist 1)
+    print(
+        f"Akemi vs Akari: {is_too_similar('Akemi', test_names)}"
+    )  # False (edit dist 2)
+    print(
+        f"Chiyu vs Chiyo: {is_too_similar('Chiyu', test_names)}"
+    )  # True (edit dist 1)
     print(f"Haruka vs Akari: {is_too_similar('Haruka', test_names)}")  # False
     print(f"Naomi vs Hitomi rhyme: {rhymes('Naomi', 'Hitomi')}")  # True
-    print(f"Kaito vs Kenji set-conflict: {set_conflict('Kaito', 'Kenji')}")  # True (same initial)
+    print(
+        f"Kaito vs Kenji set-conflict: {set_conflict('Kaito', 'Kenji')}"
+    )  # True (same initial)

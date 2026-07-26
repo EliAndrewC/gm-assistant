@@ -318,6 +318,341 @@ _LABEL_EXEMPT = {
 _LABEL_CLASSIFIED = set(_LABEL_GROUP) | set(_LABEL_BY_KIND) | set(_LABEL_EXEMPT)
 _LABEL_GROUPS = frozenset(_LABEL_GROUP.values())
 
+# ============================ THE OVERLAP MATRIX (feature 017) ============================
+# WHY THIS EXISTS (GM 2026-07-26). `_OVERLAP_STRUCTS` models **structure x hazard** - a building
+# against a road, wall, stream, torii. It has no notion of **ground x ground**, which is where
+# `dry_plots x water` lives, so a dry crop field could sit in a stream with the gate fully green
+# while a manor on a road got its own bespoke check. The GM's words: "it's like playing whack-a-mole
+# where every time we make a new map, I see a few more things which have never happened to overlap
+# before but now they do... I'd like to make sure our automated checks aren't just individually
+# listing 'X cannot overlap with Y, N cannot overlap with M'."
+#
+# So: every geometric key gets ONE CLASS and a class-by-class policy decides every pair at once.
+# FORBIDDEN BY DEFAULT; every permission carries its reason. Adding a feature is one line here.
+OVERLAP_CLASS: dict[str, str] = {
+    # --- TESTED CLASSES -------------------------------------------------------------------------
+    # SOLID - an exclusive built footprint
+    **{
+        k: "SOLID"
+        for k in (
+            "houses",
+            "buildings",
+            "flophouses",
+            "manors",
+            "religious",
+            "shrines",
+            "ministries",
+            "merchant_estates",
+            "cemeteries",
+            "cremation_grounds",
+            "ossuaries",
+            "mausoleums",
+            "fire_towers",
+            "drum_towers",
+            "martial_halls",
+            "dojos",
+            "kosatsuba",
+            "punishment_spots",
+            "execution_grounds",
+            "boundary_markers",
+            "theater_stage",
+            "wells",
+            "breweries",
+            "dye_yards",
+            "lumber_yards",
+            "oil_presses",
+            "pawnshops",
+            "bathhouses",
+            "kilns",
+            "farriers",
+            "tanning_yards",
+            "charcoal_yards",
+            "refining_forges",
+        )
+    },
+    # GROUND - cultivated / engineered ground worked AS A SURFACE: anything standing in it ruins it
+    **{k: "GROUND" for k in ("dry_plots", "flower_fields", "fallow_patches")},
+    # PADDY is GROUND in principle but RECONSTRUCTED in practice: a plot's polygon is not stored, so
+    # its extent is rebuilt from recorded spans as an oriented bounding box (see matrix_extents).
+    # That is good enough to reason with and NOT good enough to accuse another feature with, so
+    # paddy is permissive HERE and the precise paddy rules stay authoritative -
+    # harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields,
+    # tanning_yard_clear_of_fields and fields_clear_of_road all test real geometry.
+    "fields": "PADDY_RECONSTRUCTED",
+    **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond")},
+    **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes")},
+    # ANNEX - belongs to a named parent and abuts IT (and nothing else)
+    **{k: "ANNEX" for k in ("gardens", "threshing_yards", "farm_sheds", "storehouses", "byres")},
+    # --- PERMISSIVE CLASSES (never tested; each row below records WHY) ---------------------------
+    **{k: "COVER" for k in ("commons", "pastures", "marsh", "marshes")},
+    **{k: "OVERLAY" for k in ("quarters", "wards")},
+    # a caravan yard is beaten WORKING GROUND, like grazing: its rails, troughs and litter stand on
+    # it by design, and that is what the yard IS
+    **{k: "COVER" for k in ("stable_yards",)},
+    # FIXTURE - a control structure deliberately built ON another feature, where the overlap is the
+    # whole point. Reasons, carried over from the older _OVERLAP_EXEMPT entries:
+    #   bridges             span water to carry a way over it
+    #   kido                a ward gate sits ON the ward fence where a lane passes through
+    #   water_gates         the shuimen arch stands ON the city wall over its canal
+    #   sluice_gates        the intake/outfall board sits ON its channel - the control structure IS the junction
+    #   inspection_stations an inspection post is part of the gate complex it stands in
+    #   jetties             planked mooring fingers run out OVER the river
+    #   wall_towers         guard towers stand ON the wall
+    #   docks               a landing stands at the waterline by definition
+    #   gate_structs        the guard station and tower ARE the gate complex, standing on wall and road
+    **{k: "FIXTURE" for k in ("bridges", "kido", "water_gates", "sluice_gates", "inspection_stations", "jetties", "wall_towers", "docks", "gate_structs")},
+    # RECORD - bookkeeping geometry that duplicates ground already classified elsewhere, or an
+    # in-field flourish drawn ON the paddy by design (feature 012). Never tested.
+    #   drawn_channels  a z-order record of the drawn field-channel strokes; the ground it covers is
+    #                   the field_ditches/channels the matrix already reasons about
+    #   field_ponds / field_rocks / field_graves / crescent_ponds
+    #                   a pocket pond, bedrock outcrop, grave island or crescent pond sunk INTO one
+    #                   paddy plot, the field tiling around it - the overlap is the feature
+    #   borders         a drawn jurisdictional line is a LINE OF LAW, not a physical object
+    **{k: "RECORD" for k in ("drawn_channels", "field_ponds", "field_rocks", "field_graves", "crescent_ponds", "borders")},
+    **{k: "VEGETATION" for k in ("village_groves", "groves", "forest", "tree_stands", "tree_crowns")},
+}
+# A permissive class may be overlapped by anything, and is never extracted. The reason matters as
+# much as the fact - these are the rows that stop the matrix crying wolf.
+_MATRIX_PERMISSIVE = {
+    # the GM's own example, and the distinction the whole design turns on
+    "COVER": "permissive ground cover - grazing, pasture and scrub describe what the ground IS, not an object occupying it, so a well, a house or a field built on it is the normal case and the cover simply stops there (contrast GROUND, which is worked as a surface and is ruined by anything standing in it)",
+    "OVERLAY": "a declarative zoning overlay (quarter, ward) CONTAINS features by definition",
+    # Deliberately out of scope rather than unclassified: canopy-vs-structure is already governed
+    # precisely by the keep-clear/canopy contract (Settlement._CANOPY_STRUCT_KEYS + the ratchet added
+    # in feature 016), which tests recorded CROWNS and knows which grounds a bough may legitimately
+    # overhang. Re-deciding that here would duplicate proven machinery and risk two verdicts on one
+    # question. Vegetation records are also envelopes (a `forest` is a stand outline, a grove a belt
+    # outline) whose ink lives in `tree_crowns` - see the drawn-extent rule in matrix_extents.
+    "VEGETATION": "canopy overlap is governed by the canopy keep-out contract, which tests recorded crowns; the matrix does not re-decide it",
+    "RECORD": "bookkeeping geometry or an in-field flourish drawn ON its own paddy by design - not ground the matrix reasons about",
+    "FIXTURE": "a control structure deliberately built ON another feature (a bridge over water, a sluice on its channel, a tower on the wall) - the overlap is the whole point of the thing",
+    "PADDY_RECONSTRUCTED": "a paddy plot's extent is reconstructed from recorded spans rather than stored, so it is an approximation - the precise paddy checks (harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields, tanning_yard_clear_of_fields) test real geometry and remain authoritative",
+}
+_MATRIX_SAME_CLASS_OK = {
+    "WATER": "watercourses meet at confluences",
+    "WAY": "ways meet at junctions",
+    # two annexes of the SAME parent (a farmhouse's yard, garden, shed and grove arms) abut one
+    # another as a matter of course; the parent-scope test below is what keeps them honest, since an
+    # annex touching a DIFFERENT household's annex is still a defect
+    "ANNEX": None,
+}
+# same-KEY permissions: records of one kind that legitimately touch each other
+_MATRIX_SAME_KEY_OK = {
+    "dry_plots": "adjacent hatake plots in one quilt abut and share their headlands, exactly as paddy plots share bunds",
+    "fields": "paddy plots in one fan abut and share their bunds - and a plot's extent is reconstructed from recorded spans, not a stored polygon, so the reconstruction slightly overstates an irregular plot",
+}
+_MATRIX_ALLOWED_PAIRS: dict[frozenset[str], str] = {
+    frozenset({"WATER", "WAY"}): "a way crosses water at a bridge; unbridged crossings are gated separately by roads_bridge_watercourses",
+}
+# per-KEY-PAIR permissions for genuine one-offs the class policy is too coarse to express
+_MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
+    frozenset({"religious", "shrines"}): "shrine_hall records one hall under BOTH keys - these are the same object, not two",
+    frozenset(
+        {"channels", "dry_plots"}
+    ): "a supply canal hugs the fan's HIGH DRY MARGIN by design (the comb doctrine), and the dry hem IS that margin - a plot may be crossed by the irrigation that serves it. A NATURAL watercourse is a different matter and stays forbidden: dry_plots x streams is the defect this whole feature was opened for",
+    frozenset(
+        {"kosatsuba", "lanes"}
+    ): "the notice board hugs the roadside BY DESIGN - place_kosatsuba deliberately bypasses the lane corridor's no-build clearance, which is a house setback, because a board that everyone passes is the whole institution (settlements/urban-features.md, 'Notice board')",
+    frozenset({"buildings", "merchant_estates"}): "a merchant estate is a walled COURT drawn around an inner building that is itself a checked struct",
+}
+# A record naming its PARENT may overlap that parent and nothing else - strictly stronger than the
+# blanket per-pair exemptions this replaces, because an annex on somebody ELSE's building stays a defect.
+# manifest lists that carry coordinates but are NOT drawn ground the matrix reasons about
+_MX_NOT_GEOMETRY = frozenset({"labels", "torii", "tree_crowns", "wet_plots", "bund_junctions", "footbridges", "knobs", "clearings"})
+_MATRIX_PARENT_FIELD = {
+    "gardens": "of",
+    "threshing_yards": "of",
+    "farm_sheds": "of",
+    "byres": "of",
+    "storehouses": "of",
+    "field_ditches": "field",  # a field's own irrigation, drawn ON it by design
+}
+
+
+def matrix_policy(ka: str, kb: str) -> str | None:
+    """The reason this pair may overlap, or None if FORBIDDEN. Unclassified keys abstain here and
+    are reported by the ratchet check instead. ANNEX x ANNEX resolves to None here on purpose: the
+    permission is conditional on a SHARED PARENT, which only the caller can test."""
+    ca, cb = OVERLAP_CLASS.get(ka), OVERLAP_CLASS.get(kb)
+    if ca is None or cb is None:
+        return "unclassified"
+    for cls, why in _MATRIX_PERMISSIVE.items():
+        if cls in (ca, cb):
+            return why
+    pk = _MATRIX_ALLOWED_KEYS.get(frozenset({ka, kb}))
+    if pk:
+        return pk
+    if ka == kb and ka in _MATRIX_SAME_KEY_OK:
+        return _MATRIX_SAME_KEY_OK[ka]
+    if ca == cb:
+        return _MATRIX_SAME_CLASS_OK.get(ca)
+    return _MATRIX_ALLOWED_PAIRS.get(frozenset({ca, cb}))
+
+
+def _mx_same(a: Any, b: Any) -> bool:
+    """Does a parent reference point at this record? Tolerant, because a parent is stored as a
+    rounded coordinate pair and the child's own id is rounded independently."""
+    if a is None or b is None:
+        return False
+    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)) and len(a) == 2 and len(b) == 2:
+        return math.hypot(float(a[0]) - float(b[0]), float(a[1]) - float(b[1])) <= 1.5
+    return bool(a == b)
+
+
+# THE OUTSTANDING LIST (2026-07-26). Real defects the matrix found on its first pool-wide run,
+# itemized BY MAP AND COORDINATE so the gate can be green while they are worked down. This is
+# deliberately NOT a blanket grandfather list: every class PAIR is classified (that was the point of
+# the feature), these are individual map defects, and because each entry names a position a NEW
+# defect of the same kind is still caught. Every line here is work owed, not a permission.
+_MATRIX_OUTSTANDING: dict[str, dict[tuple[str, str], int]] = {
+    # Keyed by (map, PAIR) with a COUNT, deliberately not by coordinate: a coordinate-keyed list is
+    # brittle to regeneration - a plot shifting a fraction of a pixel silently un-baselines itself -
+    # while a count still catches any NEW instance of the same pair and still shrinks visibly.
+    # Every line is WORK OWED, not a permission.
+    #
+    # 2026-07-26: the matrix's first pool run found 11. Seven are fixed; these four remain, each
+    # with its cause diagnosed:
+    #   Hirameki  a ring-placed farmhouse laps a hem plot's corner - placement tests the house's
+    #             CENTER against dry ground while the matrix tests its footprint
+    #   Ubame     a comb's dry hem plot lies across the valley stream; the hem comes from build_comb
+    #             and the stream is authored separately, so neither knows about the other
+    #   Hoshigaoka  one ring-placed farmhouse still laps its field's own ditch (the hand-placed
+    #             headman that lay across two of them was moved)
+    #   Kikuta    a well sits on a hem plot - a DRAW-ORDER problem, not a missing guard:
+    #             roll_village() places wells before draw_comb_field records any dry_plots, so the
+    #             new _well_ground_clear guard has nothing to see yet at that moment
+    "Hirameki": {("dry_plots", "houses"): 1},
+    "Ubame": {("dry_plots", "streams"): 1},
+    "Hoshigaoka": {("field_ditches", "houses"): 1},
+    "Kikuta": {("dry_plots", "wells"): 1},
+}
+
+
+def matrix_violations(M: Mapping[str, Any]) -> list[tuple[str, str, float, float]]:
+    """Every FORBIDDEN overlap on the map, as (key_a, key_b, x, y).
+
+    The conditional permissions live here rather than in `matrix_policy`, because each depends on
+    the two RECORDS rather than on their classes alone: an annex may lie on its own parent (and only
+    its own), two annexes of one household may abut, a supply channel may reach the field it feeds,
+    and a trade work's private well stands inside its own court."""
+    ext = matrix_extents(M)
+    if not ext:
+        return []  # pragma: no cover - every real map draws something
+    priv = {(round(w_["x"], 1), round(w_["y"], 1)) for w_ in M.get("wells", []) or [] if w_.get("private")}
+    polys = [p for _k, p, _i, _pa in ext]
+    boxes = [(min(q[0] for q in p), min(q[1] for q in p), max(q[0] for q in p), max(q[1] for q in p)) for p in polys]
+    gi = GridIndex(120)
+    for idx, bx in enumerate(boxes):
+        gi.add(bx[0], bx[1], bx[2], bx[3], idx)
+    seen: set[tuple[int, int]] = set()
+    out: list[tuple[str, str, float, float]] = []
+    for i, (ki, _pi, idi, pari) in enumerate(ext):
+        del _pi
+        bi = boxes[i]
+        for j in gi.near_rect(*bi):
+            if j <= i or (i, j) in seen:
+                continue
+            seen.add((i, j))
+            kj, _pj, idj, parj = ext[j]
+            del _pj
+            if matrix_policy(ki, kj):
+                continue
+            bj = boxes[j]
+            if bi[2] < bj[0] or bi[0] > bj[2] or bi[3] < bj[1] or bi[1] > bj[3]:
+                continue
+            if _mx_same(pari, idj) or _mx_same(parj, idi):
+                continue  # an annex on its OWN parent
+            if OVERLAP_CLASS.get(ki) == "ANNEX" and OVERLAP_CLASS.get(kj) == "ANNEX" and _mx_same(pari, parj):
+                continue  # two annexes of one household
+            if "wells" in (ki, kj) and ((idi in priv) or (idj in priv)):
+                continue  # a trade work's own private well, inside its own court
+            if sat_overlap(polys[i], polys[j]):
+                cx = sum(q[0] for q in polys[i]) / len(polys[i])
+                cy = sum(q[1] for q in polys[i]) / len(polys[i])
+                out.append((ki, kj, round(cx), round(cy)))
+    return out
+
+
+def _mx_rect(o: Mapping[str, Any]) -> list[tuple[float, float]]:
+    """A record's DRAWN box: `vw`/`vh` where a marker draws above its true size, else w/h."""
+    hw = float(o.get("vw", o.get("w", 0))) / 2
+    hh = float(o.get("vh", o.get("h", 0))) / 2
+    th = math.radians(float(o.get("rot") or 0.0))
+    c, s_ = math.cos(th), math.sin(th)
+    return [(o["x"] + dx * c - dy * s_, o["y"] + dx * s_ + dy * c) for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
+
+
+def _mx_stroke(pts: Sequence[Any], hw: float) -> list[list[tuple[float, float]]]:
+    """One quad per segment of a linear feature at its TRUE half-width - never the ink width, since a
+    hairline stroke floor draws a 1 ft ditch 4 px wide and that slop must not manufacture a defect."""
+    quads: list[list[tuple[float, float]]] = []
+    for i in range(len(pts) - 1):
+        ax, ay = float(pts[i][0]), float(pts[i][1])
+        bx, by = float(pts[i + 1][0]), float(pts[i + 1][1])
+        ln = math.hypot(bx - ax, by - ay) or 1.0
+        nx, ny = -(by - ay) / ln * hw, (bx - ax) / ln * hw
+        quads.append([(ax + nx, ay + ny), (bx + nx, by + ny), (bx - nx, by - ny), (ax - nx, ay - ny)])
+    return quads
+
+
+_MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0}
+
+
+def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, float]], Any, Any]]:
+    """Every DRAWN extent as (key, polygon, own_id, parent_id).
+
+    DRAWN, not recorded. Several features store an ENVELOPE far larger than the ink inside it - a
+    paddy field's smoothed `outline` bows well outside its plots, a grove's `poly` is a belt outline
+    whose ink is its clumps, a commons `poly` surrounds a sparse grass scatter. A survey that
+    compared envelopes reported 101 overlapping pairs pool-wide, roughly half of them artifacts of
+    exactly that; a matrix built on envelopes would inherit those, cry wolf, and be switched off.
+    So this reads what is actually inked, and permissive classes are not extracted at all.
+    """
+    out: list[tuple[str, list[tuple[float, float]], Any, Any]] = []
+    for k, cls in OVERLAP_CLASS.items():
+        if cls in _MATRIX_PERMISSIVE:
+            continue
+        rec = M.get(k)
+        recs: list[Any] = [rec] if isinstance(rec, dict) and "x" in rec else (rec if isinstance(rec, list) else [])
+        pfield = _MATRIX_PARENT_FIELD.get(k)
+        if k == "wells":
+            for w_ in recs:
+                r_ = float(w_.get("vr") or w_.get("r") or 8.0)
+                out.append((k, [(w_["x"] + r_ * math.cos(i * math.pi / 6), w_["y"] + r_ * math.sin(i * math.pi / 6)) for i in range(12)], (round(w_["x"], 1), round(w_["y"], 1)), None))
+        elif k == "pond":
+            p_ = M.get("pond")
+            if p_:
+                out.append((k, [(p_[0] + p_[2] * math.cos(a_), p_[1] + p_[3] * math.sin(a_)) for a_ in [i * math.pi / 8 for i in range(16)]], None, None))
+        elif k == "road":
+            for q in _mx_stroke(M.get("road") or [], float(M.get("road_width") or 26.0) / 2):
+                out.append((k, q, None, None))
+        elif k in _MX_LINE_W:
+            for r2_ in recs:
+                pl2 = r2_.get("poly") or r2_.get("pts")
+                if not pl2:
+                    continue  # pragma: no cover - defensive: every linear record carries a path
+                par = r2_.get(pfield) if pfield else None
+                for q in _mx_stroke(pl2, float(r2_.get("w") or _MX_LINE_W[k]) / 2):
+                    out.append((k, q, None, par))
+        else:
+            for o_ in recs:
+                if not isinstance(o_, dict):
+                    continue  # pragma: no cover - defensive: classified keys store dicts
+                par = o_.get(pfield) if pfield else None
+                pid = tuple(par) if isinstance(par, list) else par
+                if "x" in o_ and (o_.get("w") or o_.get("vw")):
+                    out.append((k, _mx_rect(o_), (round(o_["x"], 1), round(o_["y"], 1)), pid))
+                elif o_.get("poly") and len(o_["poly"]) > 2:
+                    # POLYGON-ONLY records - a dry hatake plot stores `poly`/`crop`/`theta` and no
+                    # x/w at all. An earlier cut of this extractor required x+w and so skipped every
+                    # one of them SILENTLY, which made the very defect this feature exists to catch
+                    # (a dry crop plot in a watercourse) disappear from its own dry run. A feature
+                    # that is never extracted looks exactly like a feature with nothing wrong.
+                    out.append((k, [(q[0], q[1]) for q in o_["poly"]], None, pid))
+    return out
+
+
 _OVERLAP_SINGLETONS = ("governor_mansion",)  # solid footprints the manifest stores as ONE dict, not a list
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -2315,6 +2650,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             bool(_fr_all),
             "no farrier in an Imperial-road town - a relay/post town on the Imperial road works courier and caravan horses hard enough to keep a shoeing forge at its stables (s.farrier); a town OFF the Imperial road does not declare meta(imperial_road=True) and is exempt, which is the deliberate Hoshizora/Hirameki split",
         )
+
+    # ===== THE OVERLAP MATRIX (feature 017) - one general rule in place of per-pair whack-a-mole.
+    # Every geometric key has a class; a class-by-class policy forbids by default; conditional
+    # permissions (an annex on its own parent, a canal serving its own hem) live in
+    # matrix_violations. Adding a feature = one line in OVERLAP_CLASS and it is protected against
+    # everything, which is the entire point (GM 2026-07-26).
+    _mx_name = str(meta.get("name") or "")
+    _mx_known = _MATRIX_OUTSTANDING.get(_mx_name, {})
+    _mx_seen: dict[tuple[str, str], list[tuple[str, str, float, float]]] = {}
+    for _v in matrix_violations(M):
+        _mx_key: tuple[str, str] = (min(_v[0], _v[1]), max(_v[0], _v[1]))
+        _mx_seen.setdefault(_mx_key, []).append(_v)
+    _mx_bad = [v for pair, vs in _mx_seen.items() for v in vs[_mx_known.get(pair, 0) :]]
+    check(
+        "features_do_not_overlap",
+        not _mx_bad,
+        f"overlapping feature(s) whose classes forbid it: {[(a, b, x, y) for a, b, x, y in _mx_bad[:4]]} - the overlap MATRIX decides every pair from one classification (OVERLAP_CLASS + the policy above), so this is not a missing per-pair rule. Either the drawing is wrong, or the pair genuinely may overlap and needs a permission WITH ITS REASON in _MATRIX_PERMISSIVE / _MATRIX_SAME_KEY_OK / _MATRIX_ALLOWED_PAIRS / _MATRIX_ALLOWED_KEYS",
+    )
+    # the ratchet: a drawn geometric key nobody classified
+    # DERIVED from the manifest, not from a hand list - a ratchet that enumerates its own keys is
+    # the same defect this feature exists to abolish, and it showed: the hand-listed version passed
+    # an unseen river city silently while TEN of its keys (bridges, jetties, kido, sluice_gates,
+    # wall_towers, water_gates, docks, inspection_stations, gate_structs, stable_yards) had no class
+    # at all. A key counts as drawn geometry when its records carry a position or an outline.
+    _mx_unclassified = sorted(
+        {k for k, v in M.items() if k not in OVERLAP_CLASS and k not in _MX_NOT_GEOMETRY and isinstance(v, list) and v and isinstance(v[0], dict) and ("x" in v[0] or "poly" in v[0] or "pts" in v[0])}
+    )
+    check(
+        "every_feature_classified_for_matrix",
+        not _mx_unclassified,
+        f"drawn feature key(s) {_mx_unclassified} have no entry in OVERLAP_CLASS - give each one a class (SOLID / GROUND / WATER / WAY / ANNEX, or a permissive class WITH its reason) and it is governed against every other feature at once",
+    )
 
     # ===== A COMPOUND'S OWN WALL KEEPS OFF THE WAYS (found by the settlement-review agent, 2026-07-26).
     # `manors` sits in _OVERLAP_TARGETS - the registry of things OTHER features must avoid - and never

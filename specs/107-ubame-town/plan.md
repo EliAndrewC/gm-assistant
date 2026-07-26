@@ -2,7 +2,7 @@
 
 **Branch**: `main` (session-clone workflow) | **Date**: 2026-07-26 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `specs/016-ubame-town/spec.md`
+**Input**: Feature specification from `specs/107-ubame-town/spec.md`
 
 ## Summary
 
@@ -111,7 +111,7 @@ regenerate byte-identically except where a deliberate change says otherwise
 ### Documentation (this feature)
 
 ```text
-specs/016-ubame-town/
+specs/107-ubame-town/
 ├── plan.md              # this file
 ├── research.md          # Phase 0 - the Principle XII opening bookend
 ├── data-model.md        # Phase 1 - manifest keys, meta knobs, check contracts
