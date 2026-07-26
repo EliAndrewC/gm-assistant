@@ -832,6 +832,20 @@ KOSATSUBA_MARKER_MIN_PX = 11.0
 # the city wellhead glyph (~8 px), which is the smallest thing on a city map that reliably reads.
 
 
+PUNISHMENT_SPOT_FT = (30.0, 12.0)  # the cangue frame + post + kneeling stone, true size at every tier
+BOUNDARY_MARKER_FT = 3.0  # a real roadside dosojin stone (drawn as a marker - see BOUNDARY_MARKER_MIN_PX)
+
+
+def execution_ground_ft(scale: str) -> tuple[float, float]:
+    """Tier footprint of an execution ground in REAL FEET, scaled down from the Suzugamori anchor
+    (74 x 16.2 m serving Edo) by execution volume - see settlements.md "Execution ground".
+
+    SHARED DATA, deliberately: Settlement.execution_ground draws from this, and site_justice.py
+    sizes its trial placements from it, so a tool proposing a seat can never disagree with the
+    engine about how big the thing it is seating actually is."""
+    return (100.0, 60.0) if scale == "city" else (60.0, 60.0)
+
+
 BOUNDARY_MARKER_MIN_PX = 7.0
 # Long-axis floor in px for the DRAWN dosojin stone (see Settlement.boundary_marker). A real
 # roadside boundary stone is ~3 ft, which draws 3 px at town grain and 1 px at city grain - sub-glyph
@@ -4984,7 +4998,7 @@ class Settlement:
             return None
         ftpx = float(self.M["meta"].get("ftpx") or 1)
         lim = 60.0 / ftpx  # punishment_spot_by_the_traffic: ~60 REAL feet from a street
-        w, h = self.px(30), self.px(12)
+        w, h = self.px(PUNISHMENT_SPOT_FT[0]), self.px(PUNISHMENT_SPOT_FT[1])
         routes: list[tuple[list[Pt], float]] = []
         if self.M.get("road"):
             routes.append(([(p[0], p[1]) for p in self.M["road"]], float(self.M.get("road_width") or 18)))
@@ -7245,7 +7259,7 @@ class Settlement:
         Records M['punishment_spots']; reserves ground. Call BEFORE the urban packs - it sits where
         packing pressure is highest, and reserving after the pack means fighting for a seat that no
         longer exists (see the DRAW ORDER map in this skill's CLAUDE.md)."""
-        w, h = self.px(30), self.px(12)
+        w, h = self.px(PUNISHMENT_SPOT_FT[0]), self.px(PUNISHMENT_SPOT_FT[1])
         hw, hh = w / 2, h / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-hw:.1f}" y="{-hh:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1" fill="#C6B79A" fill-opacity="0.9" stroke="#8A7550" stroke-width="1.0"/>')  # tamped, foot-polished earth
@@ -7306,7 +7320,8 @@ class Settlement:
         Records M['execution_grounds']; reserves ground. Call beside the funerary cluster (phase 4),
         before the hinterland scrub and village_grove, so no crown is drawn onto it."""
         city = self.M["meta"].get("scale") == "city"
-        gw, gh = (self.px(100), self.px(60)) if city else (self.px(60), self.px(60))
+        _gwft, _ghft = execution_ground_ft("city" if city else "town")
+        gw, gh = self.px(_gwft), self.px(_ghft)
         if screened is None:
             screened = city  # a county ground is open to the road on every side; a city ground is hoarded on three
         hw, hh = gw / 2, gh / 2
@@ -7368,7 +7383,7 @@ class Settlement:
         A LOCATION MARKER: a real stone is ~3 ft, sub-glyph at every tier, so the true footprint is
         recorded in w/h and the drawn box in vw/vh - the wells' and kosatsuba's doctrine exactly
         (SKILL.md "to scale"). Records M['boundary_markers']."""
-        w = h = self.px(3)
+        w = h = self.px(BOUNDARY_MARKER_FT)
         k = max(1.0, BOUNDARY_MARKER_MIN_PX / w)  # marker floor, aspect preserved
         vw, vh = w * k, h * k
         hw, hh = vw / 2, vh / 2

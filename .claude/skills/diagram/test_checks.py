@@ -8448,6 +8448,14 @@ def test_execution_ground_past_the_boundary_marker_fires_when_the_stone_is_beyon
     assert "execution_ground_past_the_boundary_marker" in f(_justice_town(boundary_markers=[bstone(1800, 1060)]))
 
 
+def test_execution_ground_past_the_boundary_marker_fires_when_the_stone_is_off_the_road():
+    # Between the settlement and the ground, but sitting in open field 300 ft off the highway. The
+    # between-ness arithmetic alone accepted this and it is still wrong: sae blocks pollution where
+    # the ROAD leaves clean ground, so a stone that marks no road marks nothing. (Found by eye on a
+    # rendered Nagahara while every check was green - hence this fixture.)
+    assert "execution_ground_past_the_boundary_marker" in f(_justice_town(boundary_markers=[bstone(1100, 1300)]))
+
+
 def test_execution_ground_clear_of_the_dead_fires_beside_the_burial_ground():
     M = _justice_town(cemeteries=[{"x": 1560, "y": 1060, "w": 100, "h": 80, "rot": 0, "parish": False}])
     assert "execution_ground_clear_of_the_dead" in f(M)
