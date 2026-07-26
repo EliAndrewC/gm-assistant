@@ -1,7 +1,7 @@
 # county-magistracy-example - design notes (placer worked example)
 
 This is NOT a hand-authored map. It is the worked-example OUTPUT of the perimeter-first
-placer ([`../compound.py`](../compound.py), feature 008): `county_magistracy_program()`
+placer ([`../compound.py`](../../compound.py), feature 008): `county_magistracy_program()`
 declares a generic county magistracy entirely in FEET (envelope, the reserved court-spine,
 and buildings sized in feet with wall tags), and `place()` + `emit_svg()` compose it.
 
