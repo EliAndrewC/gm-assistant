@@ -341,6 +341,11 @@ for _al in ALLEYS:
     _apad = 20 if _ax0 in (1544, 1756) else 8
     s.block_polys.append([(min(_ax0, _ax1) - _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, max(_ay0, _ay1) + 8), (min(_ax0, _ax1) - _apad, max(_ay0, _ay1) + 8)])
 
+for _wbox in ((1230, 1580, 1330, 1650), (1290, 1650, 1390, 1710), (1400, 1030, 1500, 1090), (1520, 1200, 1630, 1280), (1596, 1010, 1690, 1070), (1030, 1420, 1130, 1480)):
+    _ws = s.open_seat(_wbox, 18, 18, well=True)
+    if _ws:
+        s.well(*_ws)
+
 # ====================================================================== THE EIGHT PRECINCTS
 TW, TH = s.px(96), s.px(66)  # the seven siblings, ~0.70 acre drawn
 IW, IH = s.px(118), s.px(80)  # Inari, the largest of the eight
@@ -454,7 +459,7 @@ for _y0 in range(1002, 1140, 25):
     s.rowpack((1408, _y0, 1804, _y0 + 22), _lab, court_every=3, eave_ft=2)
 _merstrip = ["merchant_house"] * 240
 for _i, _y0 in enumerate(range(1164, 1268, 52)):
-    s.rowpack((1410, _y0, 1802, _y0 + 44), _merstrip if _i % 2 else _lab, court_every=3, eave_ft=2)
+    s.rowpack((1396, _y0, 1856, _y0 + 44), _merstrip if _i % 2 else _lab, court_every=3, eave_ft=2)
 for _y0 in range(900, 946, 22):
     s.rowpack((1276, _y0, 1528, _y0 + 20), _lab, court_every=3, eave_ft=2)
 s.rowpack((1424, 1132, 1796, 1162), _lab, court_every=3, eave_ft=2)
@@ -479,7 +484,7 @@ for _y0 in range(1300, 1330, 28):
 for _y0 in range(1150, 1320, 50):
     s.rowpack((956, _y0, 1408, _y0 + 42), _mer, court_every=3, eave_ft=2)
 for _y0 in range(1175, 1320, 50):
-    s.rowpack((984, _y0, 1408, _y0 + 40), _mer, court_every=3, eave_ft=2)
+    s.rowpack((956, _y0, 1408, _y0 + 40), _mer, court_every=3, eave_ft=2)
 for _y0 in range(1170, 1310, 25):
     s.rowpack((1020, _y0, 1398, _y0 + 22), _mer, court_every=3, eave_ft=2)
 s.merchant_storehouses(8)
@@ -790,7 +795,8 @@ _LAB = ("laborer", "laborer_large")
 # puts ~12.5% of laborers in larger homes; city_laborer_housing_varied wants 6-20%)
 # tight draw-point passes for the courts the gate names as over the ~26-household cap. BEFORE
 # the fills, so each reserves its court rather than arriving to find the ground taken.
-for _wr in ((1610, 1080, 1710, 1180), (1530, 1190, 1630, 1290), (1280, 1215, 1380, 1315), (1015, 1405, 1115, 1505), (1215, 1610, 1315, 1700), (1425, 1010, 1466, 1100)):
+for _wr in ((1610, 1080, 1710, 1180), (1530, 1190, 1630, 1290), (1280, 1215, 1380, 1315), (1015, 1405, 1115, 1505), (1215, 1610, 1315, 1700), (1425, 1010, 1466, 1100),
+            (1500, 960, 1640, 1070), (1000, 1400, 1140, 1520), (1200, 1500, 1350, 1620), (1240, 1590, 1380, 1700), (1360, 960, 1470, 1070), (1500, 1180, 1650, 1300)):
     _wseat = s.open_seat(_wr, 18, 18, well=True)
     if _wseat:
         s.well(*_wseat)
