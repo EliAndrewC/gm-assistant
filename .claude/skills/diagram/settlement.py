@@ -547,6 +547,60 @@ def smooth_points(pts: Poly, steps: int = 10) -> Poly:
     return out
 
 
+def region_blocked(quad: Poly, circles: Sequence[tuple[float, float, float]], halo: Sequence[tuple[float, float, float]], lines: Sequence[tuple[Any, float]], polys: Sequence[Poly]) -> bool:
+    """Does a cell REGION meet any keep-out? Circles by distance-to-region, stroked lines by
+    segment-to-region, polygons by containment-or-crossing.
+
+    Factored out of near_ring_cropland so it can be tested directly: the bug it exists to stop is a
+    keep-out that sits against the middle of a cell EDGE, touching neither the cell's centre nor any
+    of its corners, which is how a wellhead ended up 1 px inside a hatake plot with every sample
+    point clear."""
+    if any(point_quad_dist(cx, cy, quad) < r for cx, cy, r in circles):
+        return True
+    if any(point_quad_dist(cx, cy, quad) < r for cx, cy, r in halo):
+        return True
+    if any(quad_hits_seg(quad, pl[i], pl[i + 1], hw) for pl, hw in lines for i in range(len(pl) - 1)):
+        return True
+    return any(quad_hits_poly(quad, gp) for gp in polys)
+
+
+def quad_hits_poly(quad: Poly, poly: Poly) -> bool:
+    """Does a convex cell REGION meet an arbitrary polygon? Containment either way, plus edge
+    crossings - so a polygon threading between the cell's sample points is still caught."""
+    if any(point_in_poly(qx, qy, poly) for qx, qy in quad):
+        return True
+    if any(point_in_poly(px, py, quad) for px, py in poly):
+        return True
+    for i in range(len(quad)):
+        a, b = quad[i], quad[(i + 1) % len(quad)]
+        for j in range(len(poly)):
+            c, d = poly[j], poly[(j + 1) % len(poly)]
+            if segments_cross(a, b, c, d):
+                return True
+    return False
+
+
+def point_quad_dist(px: float, py: float, quad: Poly) -> float:
+    """Distance from a point to a convex cell region; 0 inside it."""
+    if point_in_poly(px, py, quad):
+        return 0.0
+    return min(seg_dist(px, py, quad[i], quad[(i + 1) % len(quad)]) for i in range(len(quad)))
+
+
+def quad_hits_seg(quad: Poly, a: Pt, b: Pt, hw: float) -> bool:
+    """Does a stroked line (segment + half-width) meet a cell region? Tests the SEGMENT against the
+    cell's edges, not just its corners - a ditch crossing the middle of a cell touches no corner."""
+    if point_quad_dist(a[0], a[1], quad) < hw or point_quad_dist(b[0], b[1], quad) < hw:
+        return True
+    for i in range(len(quad)):
+        c, d = quad[i], quad[(i + 1) % len(quad)]
+        if segments_cross(a, b, c, d):
+            return True
+        if seg_dist(c[0], c[1], a, b) < hw or seg_dist(d[0], d[1], a, b) < hw:
+            return True
+    return False
+
+
 def rot_rect(cx: float, cy: float, w: float, h: float, deg: float = 0.0) -> Poly:
     """The four corners of a (possibly rotated) footprint - the shape most placement tests want."""
     th = math.radians(deg or 0.0)
@@ -1230,6 +1284,17 @@ class Settlement:
         self.field_polys: list[Any] = []  # smoothed outlines used for blocking
         self.ellipses: list[Any] = []  # (cx, cy, rx, ry) hill/pond/manor - block houses
         self.block_polys: list[Any] = []  # arbitrary no-build polygons (e.g. forest)
+        # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its centre.
+        # `block_polys` deliberately mixes two different things - hard ground (crop, pond, bog) and
+        # SOFT reservations (caption bands, civic aprons, fence standoffs) that a footprint routinely
+        # overhangs by a few px - which is why footprint-testing all of it was tried once and reverted
+        # (it cost Nagahara a well and pushed Hoshizora's punishment ground off its street). The split
+        # IS the fix: hard ground gets the footprint test it always needed, soft reservations keep the
+        # centre test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
+        # centre while the matrix tests its footprint, then maybe the placement test is wrong?"
+        self.hard_polys: list[Any] = []
+        self._hard_cache_key: tuple[int, int, int] | None = None
+        self._hard_cache: list[Any] = []
         # SWEPT/TENDED GROUND around sacred + funerary features - a keep-out for the LOOSE HINTERLAND
         # SCATTER (commons scrub + marsh reeds) ONLY, not for building placement and not for the grove.
         # A shrine precinct, the ground under a torii and along its sando, and the collar tended around
@@ -2224,9 +2289,29 @@ class Settlement:
         # tests). Same predicate as the dry_plots_clear_of_paddies gate - see hem_on_paddy's
         # docstring (waterfields.py) for the why and the motivating Tango incident.
         _prior_paddies = [fld["outline"] for fld in self.M["fields"] if fld.get("kind") == "paddy"]
+        # WHAT IS ALREADY ON THE MAP (GM go-ahead 2026-07-26). build_comb lays the fan from pure
+        # geometry, and draw_comb_field used to render it blind - it was the ONLY placer that
+        # consulted nothing - so a hem plot could be drawn straight across a watercourse that had
+        # been authored earlier (Ubame's stream). Now the hem yields to standing water. Maps whose
+        # hems touch no water are unaffected, byte for byte, because nothing is skipped there.
+        _wet: list[tuple[Any, float]] = []
+        for _wk, _wdw in (("streams", 9.0), ("channels", 2.5), ("canals", 14.0)):
+            for _wr in self.M.get(_wk, []) or []:
+                _wpl = _wr.get("poly") or _wr.get("pts")
+                if _wpl:
+                    _wet.append((_wpl, float(_wr.get("w") or _wdw) / 2))
+        _wpond = self.M.get("pond")
+
+        def _hem_on_water(poly: Poly) -> bool:
+            if any(quad_hits_seg(poly, pl_[i], pl_[i + 1], hw_) for pl_, hw_ in _wet for i in range(len(pl_) - 1)):
+                return True
+            return _wpond is not None and point_quad_dist(_wpond[0], _wpond[1], poly) < max(_wpond[2], _wpond[3])
+
         for p in net["dry_plots"]:  # the dry upslope hem
             if any(hem_on_paddy(p["poly"], _pol) for _pol in _prior_paddies):
                 continue
+            if _hem_on_water(p["poly"]):
+                continue  # standing water was here first - the crop stops at the bank
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
             self._draw_furrows(p["poly"], p["furrow"], p["theta"])
@@ -4027,7 +4112,7 @@ class Settlement:
                 if all((b["x"] - wx) ** 2 + (b["y"] - wy) ** 2 > spacing * spacing for wx, wy in out):
                     for ox, oy in ((0, near * 0.6), (near * 0.6, 0), (-near * 0.6, 0), (0, -near * 0.6), (near * 0.45, near * 0.45), (-near * 0.45, near * 0.45)):
                         cx, cy = b["x"] + ox, b["y"] + oy
-                        if not self._in_scrub_cover(cx, cy) and self._fits(cx, cy, probe, probe):
+                        if not self._in_scrub_cover(cx, cy) and self._well_ground_clear(cx, cy) and self._fits(cx, cy, probe, probe):
                             self.well(cx, cy, r)
                             out.append((cx, cy))
                             break
@@ -7248,6 +7333,25 @@ class Settlement:
         # which can sit a little outside their loose belt poly); tested by plot BBOX in the loop, the precise guard
         grove_clumps = [(float(c[0]), float(c[1])) for g in self.M.get("village_groves", []) for c in g.get("clumps", [])]
 
+        def _blocked_region(quad: Poly) -> bool:
+            """The same keep-outs as `_blocked`, tested against the whole CELL rather than a few
+            points on it. Only the keep-outs a cell can STRADDLE without touching a sample point need
+            this; the rest are already caught by the cheap point test above."""
+            water = [
+                (pl_, float(rec_.get("w") or dw_) / 2)
+                for key_, dw_ in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0))
+                for rec_ in (self.M.get(key_, []) or [])
+                for pl_ in [rec_.get("poly") or rec_.get("pts")]
+                if pl_
+            ]
+            return region_blocked(
+                quad,
+                [(pond[0], pond[1], max(pond[2], pond[3]))] if pond is not None else [],
+                list(halo_circles),
+                list(corridors) + water,
+                [gp for grp in (self.field_polys, self.block_polys, self.dry_polys, self.clearings, list(avoid), grove_polys) for gp in grp if len(gp) >= 3],
+            )
+
         def _blocked(px: float, py: float) -> bool:
             return bool(
                 any(point_in_poly(px, py, ff) for ff in self.field_polys)  # off the paddy envelopes
@@ -7290,7 +7394,12 @@ class Settlement:
                 ]
                 mx = sum(p[0] for p in quad) / 4
                 my = sum(p[1] for p in quad) / 4
-                if _blocked(mx, my) or any(_blocked(px, py) for px, py in quad):
+                # REGION test, not point sampling. Centre-plus-corners was the old form and it leaks:
+                # a small keep-out sitting against the middle of a cell EDGE touches neither the
+                # centre nor any corner, which is exactly how a wellhead ended up 1 px inside a
+                # hatake plot (the overlap matrix found it; the sample points had all cleared the
+                # well's 20 ft apron). The cheap point test runs first as a prefilter.
+                if _blocked(mx, my) or any(_blocked(px, py) for px, py in quad) or _blocked_region(quad):
                     continue
                 qx0, qy0 = min(p[0] for p in quad) - 12, min(p[1] for p in quad) - 12
                 qx1, qy1 = max(p[0] for p in quad) + 12, max(p[1] for p in quad) + 12
@@ -7492,7 +7601,13 @@ class Settlement:
             for ix0, iy0, ix1, iy1, mx, my in blocks:  # up to TWO wells per basin (opposite sides) AND within 95px of a farmhouse (wells_among_dwellings + farm_wells_within_reach)
                 dropped = 0
                 for wx, wy in ((ix1 + 15, my), (ix0 - 15, my), (mx, iy1 + 15), (mx, iy0 - 15), (ix1 + 15, iy1 + 15), (ix0 - 15, iy0 - 15)):
-                    if 12 < wx < self.W - 12 and 12 < wy < self.H - 12 and not _blocked(wx, wy) and any((h["x"] - wx) ** 2 + (h["y"] - wy) ** 2 < 90 * 90 for h in houses):
+                    if (
+                        12 < wx < self.W - 12
+                        and 12 < wy < self.H - 12
+                        and not _blocked(wx, wy)
+                        and self._well_ground_clear(wx, wy)
+                        and any((h["x"] - wx) ** 2 + (h["y"] - wy) ** 2 < 90 * 90 for h in houses)
+                    ):
                         self.well(wx, wy)
                         dropped += 1
                         if dropped >= 2:
@@ -8433,7 +8548,7 @@ class Settlement:
             spot = take(12.0, 24.0, probes=((0.0, 0.0), (8.0, 0.0), (-8.0, 0.0), (0.0, 8.0), (0.0, -8.0), (5.7, 5.7), (-5.7, 5.7), (5.7, -5.7), (-5.7, -5.7)))
             # the dug head is a GLYPH like any other: predict its roof square (_well_vr) and refuse
             # a seat that would put it on a rail, on another wellhead, or on a neighbor's troughs
-            if spot and _glyph_free(wellhead_quad({"x": spot[0], "y": spot[1], "vr": self._well_vr()})):
+            if spot and self._well_ground_clear(spot[0], spot[1]) and _glyph_free(wellhead_quad({"x": spot[0], "y": spot[1], "vr": self._well_vr()})):
                 self.well(spot[0], spot[1])
                 wp = beside(self.M["wells"][-1])
                 if wp:
@@ -10000,12 +10115,71 @@ class Settlement:
                     return True
         return False
 
+    def _hard_ground(self) -> list[Any]:
+        """Every HARD no-build polygon, read from the MANIFEST plus anything a gen registered by hand.
+
+        Manifest-sourced on purpose. The first cut kept a `hard_polys` registry that `draw_comb_field`
+        populated - and it was EMPTY on any map whose field is drawn by a different path (the polder
+        and contour archetypes have their own), so the rule silently did nothing there. Reading the
+        drawn record instead makes it order-independent and impossible for a gen to forget: the same
+        placement-and-check-read-the-same-source doctrine the footbridges taught us. Cached on the
+        record counts, since this is called once per placement candidate."""
+        dp, fd = self.M.get("dry_plots", []) or [], self.M.get("field_ditches", []) or []
+        key = (len(dp), len(fd), len(self.hard_polys))
+        if self._hard_cache_key == key:
+            return self._hard_cache
+        out: list[Any] = [list(self.hard_polys)[i] for i in range(len(self.hard_polys))]
+        out += [[(q[0], q[1]) for q in d["poly"]] for d in dp if d.get("poly") and len(d["poly"]) >= 3]
+        for ch in fd:
+            pts = ch.get("poly") or ch.get("pts")
+            if not pts:
+                continue  # pragma: no cover - defensive: every ditch carries a path
+            hw = float(ch.get("w") or 1.5) / 2 + 2.0
+            for k in range(len(pts) - 1):
+                ax, ay = pts[k]
+                bx, by = pts[k + 1]
+                ln = math.hypot(bx - ax, by - ay) or 1.0
+                nx, ny = -(by - ay) / ln * hw, (bx - ax) / ln * hw
+                out.append([(ax + nx, ay + ny), (bx + nx, by + ny), (bx - nx, by - ny), (ax - nx, ay - ny)])
+        self._hard_cache_key, self._hard_cache = key, out
+        return out
+
+    def _hard_clear(self, x: float, y: float, w: float, h: float) -> bool:
+        """Is this footprint clear of HARD no-build ground (crop, pond, bog, a field's own ditches)?
+
+        Factored out of `_fits` because placement is not the only moment that needs it:
+        `_solve_homestead` NUDGES a farmstead after it has already passed `_fits`, to make room for
+        its yard, garden and grove - and nothing re-tested the moved position, so a steading that
+        genuinely cleared every keep-out where it was placed could be shifted onto a ditch or a hem
+        plot afterwards. That was the last root cause behind the overlap matrix's residue."""
+        hard = self._hard_ground()
+        if not hard:
+            return True
+        # ROTATION ALLOWANCE. `_fits` is called before a farmhouse is given its small random tilt
+        # (+/-5 deg), so the box tested here is axis-aligned while the box DRAWN and RECORDED is
+        # rotated - and a rotated rect reaches further on both axes than its unrotated self. Testing
+        # the swept extent closes that gap; without it a steading clears at placement and laps a hem
+        # plot once tilted, which is exactly one of the defects the overlap matrix kept reporting.
+        _th = math.radians(5.0)
+        w = w * math.cos(_th) + h * math.sin(_th)
+        h = w * math.sin(_th) + h * math.cos(_th)
+        fp = [(x - w / 2, y - h / 2), (x + w / 2, y - h / 2), (x + w / 2, y + h / 2), (x - w / 2, y + h / 2)]
+        fx0, fy0, fx1, fy1 = x - w / 2, y - h / 2, x + w / 2, y + h / 2
+        for hp, (hx0, hy0, hx1, hy1) in zip(hard, self._poly_bboxes(hard), strict=False):
+            if fx1 < hx0 or fx0 > hx1 or fy1 < hy0 or fy0 > hy1:
+                continue
+            if quad_hits_poly(fp, hp):
+                return False
+        return True
+
     def _fits(self, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True) -> bool:
         if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:  # keep clear of edges + title
             return False
         if self.bound and not point_in_poly(x, y, self.bound):  # stay inside a bounding ring (city wall)
             return False
         if self._in_blocked(x, y) or (corridors and self._near_corridor(x, y, skip)):
+            return False
+        if not self._hard_clear(x, y, w, h):
             return False
         r = math.hypot(w, h) / 2
         for px, py, pw, ph in self.placed:
@@ -10952,6 +11126,8 @@ class Settlement:
             return True
         if fields and self._rect_on_water(rect):
             return True
+        if fields and not self._hard_clear(rect[0], rect[1], rect[2], rect[3]):
+            return True  # HARD ground read from the manifest (crop plots + a field's own ditches)
         cx, cy, w, h = rect
         for px, py in self._rect_corners(rect) + [(cx, cy)]:
             for ex, ey, rx, ry in self.ellipses:

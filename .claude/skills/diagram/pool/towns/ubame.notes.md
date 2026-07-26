@@ -164,10 +164,30 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
     road, the execution ground on the west road rather than the frontier approach, the manor drawn at
     its Mode A envelope, and the twin-detector verdict ("reads as its own place, not a re-skin").
 
+- **2026-07-26 the boundary stone was inside the town, and the gate could not see it** (GM, reading
+  the render: *"I would have expected it was at the edge of the settlement, but that doesn't seem to
+  be the case"*). The dosojin stood at (247, 807), 91 real ft from the nearest merchant house and
+  right beside the punishment ground and a wellhead - in among the west-end frontage rather than
+  past it. Two holes, both now closed, and the shape of each is worth more than the fix:
+  - **The check.** `execution_ground_past_the_boundary_marker` tested the stone's "outside" as
+    `not _inwall_j(...)`. Ubame is UNWALLED, and there that predicate is False for every point on
+    the map - so the clause did not relax, it passed anything. The execution ground had carried a
+    dwelling-distance fallback for exactly this since it was written; the stone never got one. It
+    now shares that 120 ft figure on an unwalled map, while a rampart still settles it outright
+    where there is one (see `settlements/urban-features.md`, "The boundary stone").
+  - **The siting tool.** `site_justice.py` had proposed that seat and still did after the check was
+    fixed, because it scores a candidate as `gate(with it) - gate(without it)` and the governing
+    check FAILS while there is no stone at all - so a useless seat added nothing new. `propose` now
+    also requires a seat to cure what the absence breaks.
+  - Re-seated to (127, 887) - on the west road where it leaves the last houses, 204 ft from the
+    nearest dwelling, 88 ft short of the ground it bounds.
+
 ## Negative fixtures frozen from this map
 
-Six, in [`../regressions/`](../regressions/) - each the real Ubame manifest with exactly one thing
+Seven, in [`../regressions/`](../regressions/) - each the real Ubame manifest with exactly one thing
 broken, so every new check has a case it demonstrably fires on:
+`execution_ground_past_the_boundary_marker` (the stone standing among the west-end dwellings - the
+map exactly as it shipped, frozen before the re-seat),
 `charcoal_yard_keeps_fire_gap` (a yard 20 ft off a house), `charcoal_yard_has_cooling_ground` (a
 covered-only yard), `settlement_has_charcoal_yard` and `settlement_has_refining_forge` (a declared
 district drawing nothing), `refining_forge_stands_off_dwellings` (a forge 30 ft off a house), and

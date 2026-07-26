@@ -121,6 +121,16 @@ same trap as "placement and its check must read the SAME manifest source" (below
 The cheap geometric pass in that file is a RANKING only: it orders candidates to keep the number of
 gate runs small, and it never rejects, so a stale heuristic costs runtime rather than correctness.
 
+**The second trap, found the same way (2026-07-26): "adds no new failure" is only HALF of legal.**
+The tool's baseline is the gate with the feature ABSENT - so for a feature whose absence is itself a
+failure, the very check that governs it is already IN the baseline, and a seat that leaves it
+failing adds nothing new and scores as legal. Every candidate stone therefore looked equally good,
+and the tool duly recommended the one that put Ubame's dosojin among the west-end shops. `propose`
+now also requires a seat to CURE the checks the absence causes, with "curable" derived from the gate
+(a check some adjudicated seat clears) rather than declared - so the tool still names no rule of its
+own. The general lesson: when an oracle scores a candidate as a DELTA against a baseline, ask what
+the baseline is already failing, because a delta cannot see a rule the empty case breaks too.
+
 **Known limit:** label collisions cannot be judged from a manifest - a label box is produced at draw
 time, not recorded for a hypothetical placement - so `labels_clear_of_other_buildings` and
 `no_label_overlaps` still surface only on regeneration. That is why `punishment_spot` and
@@ -186,6 +196,46 @@ on paper before editing - the failure mode is discovering the sequence one gate 
 which is what turned a small rule into four fix-fail-read cycles. If a change needs a feature to
 move between phases, say so explicitly in the commit: phase moves are the changes most likely to
 have effects far from the diff.
+
+## CENTRE vs FOOTPRINT: the three ways placement and the checks disagree
+
+The GM, 2026-07-26, after the overlap matrix kept finding things the placer had allowed: *"if
+placement is only testing the house's centre while the matrix tests its footprint, then maybe the
+placement test is wrong? Are there other placement checks which are only checking the centre? That
+could explain a lot of overlap issues as well as a lot of inefficiencies."* Both halves were right,
+and there turned out to be **three** distinct disagreements, not one. Know which you are looking at
+before you touch anything.
+
+**1. Centre-tested keep-outs (UNDER-restrictive -> overlaps).** `_fits` tested a candidate's CENTRE
+against `block_polys` and the corridors, so a footprint could hang over blocked ground by up to half
+its width. Fixed by SPLITTING the registry: `hard_polys` (crop, pond, bog, a field's own ditches) is
+tested against the whole footprint; `block_polys` keeps the centre test. **Do not merge them back.**
+Footprint-testing all of `block_polys` was tried once and reverted, because it also contains SOFT
+reservations - caption bands, civic aprons, fence standoffs - that a footprint routinely overhangs
+by a few px, and tightening those cost Nagahara a well and pushed Hoshizora's punishment ground off
+its street. The split is the fix; the conflation was the bug.
+
+**2. Circumscribed-circle collision (OVER-restrictive -> wasted ground).** Against `placed` and
+`grove_rects`, `_fits` still uses half-diagonal circles, not real footprints. For a 46x28 house that
+is r=26.9 against a true half-width of 23, so two such houses are forced >=57.8 px apart centre to
+centre where true touching is 28. It never permits a real overlap - it just wastes up to ~2x the
+spacing, which is a real cause of "the packer says the ground is full" when it is not. Replacing it
+with a SAT footprint test would relax spacing on every dense map and re-roll their populations, so
+it is a deliberate, separately-verified change, not a drive-by.
+
+**3. Placement tests a DIFFERENT footprint than the one drawn (still open).** `_fits` is called with
+a farmhouse's BASE rect, but the drawn steading can exceed it - a wealth render scale, an attached
+shed, a rotation. So a candidate that genuinely cleared every keep-out at its placement size laps one
+at its drawn size, and no amount of fixing (1) reaches it. Hoshizora's gen already works around this
+by inflating its hem plots ~8 px (`grow_poly`), which treats the symptom locally. The real fix is for
+the placer to test the size it is going to DRAW.
+
+**The general lesson.** A point test is right for a SCATTER (each tuft is a point) and wrong for
+anything with an extent. The same trap bit the ground-cover tiler: `near_ring_cropland` sampled a
+cell's centre and four corners, which a small keep-out sitting against an edge MIDPOINT slips
+between - that is how a wellhead ended up 1 px inside a hatake plot. Region-vs-region helpers
+(`quad_hits_poly`, `quad_hits_seg`, `point_quad_dist`) exist now; use them rather than adding sample
+points.
 
 ## Adding a new map feature: the KEEP-CLEAR CONTRACT (read this before writing the glyph)
 
