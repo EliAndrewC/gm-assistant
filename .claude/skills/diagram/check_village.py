@@ -247,6 +247,58 @@ _OVERLAP_EXEMPT = {
     "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (hitching rails, trough, dung heaps, litter; no animal glyphs - the maps render no humans or animals) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well); `troughs_box` and `rails` record the furniture's DRAWN extents, which must not intersect each other or any wellhead (wells_troughs_rails_clear_of_each_other)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
+# ---- label classification registry (GM 2026-07-26) --------------------------------------------
+# The sibling of _OVERLAP_STRUCTS, for the OTHER thing a new feature has to be protected from: a
+# CAPTION landing on it. labels_clear_of_other_buildings used to build its victim list from ~22
+# hand-written manifest keys, which is the same bug the keep-clear contract retired - and it had
+# already fallen behind twice over. When the martial hall went in, `martial_halls` and `dojos` had
+# to be remembered into it; a day later the execution-ground feature landed and `punishment_spots`,
+# `execution_grounds` and `boundary_markers` were not in it either, so a foreign caption could sit
+# squarely on an execution ground with the gate green.
+#
+# Now every solid feature is classified here exactly once. The GROUP name is what a caption must
+# NAME to be allowed to cover the feature - and because the group name is the caption word, that
+# permission is derived rather than hand-listed too (see _label_allows).
+_LABEL_GROUP = {
+    "flophouses": "flophouse",
+    "religious": "temple",
+    "ministries": "ministry",
+    "governor_mansion": "governor",
+    "gate_structs": "gate",
+    "merchant_estates": "merchant",
+    "manors": "estate",
+    "cemeteries": "cemetery",
+    "mausoleums": "mausoleum",
+    "cremation_grounds": "cremation",
+    "ossuaries": "ossuary",
+    "breweries": "brewery",
+    "dye_yards": "dye works",
+    "lumber_yards": "lumber yard",
+    "oil_presses": "oil press",
+    "pawnshops": "pawnshop",
+    "bathhouses": "bathhouse",
+    "kilns": "kiln",
+    "farriers": "farrier",
+    "tanning_yards": "tanning yard",
+    "drum_towers": "drum tower",
+    "martial_halls": "martial hall",
+    "dojos": "dojo",
+    "fire_towers": "fire tower",
+    "kosatsuba": "notice board",
+    "punishment_spots": "punishment ground",
+    "execution_grounds": "execution ground",
+    "boundary_markers": "boundary marker",
+    "houses": "farmhouse",
+}
+# `buildings` is the one key whose group is not fixed: each record carries its own `kind`, and _grp
+# folds those kinds into groups (samurai_large -> samurai, and so on).
+_LABEL_BY_KIND = ("buildings",)
+_LABEL_EXEMPT = {
+    "byres": "a draft-ox byre is an ANNEX abutting its own farmhouse (draft_byres places it against the wall), so it shares the house's ground and any caption cleared for the house is cleared for it",
+}
+_LABEL_CLASSIFIED = set(_LABEL_GROUP) | set(_LABEL_BY_KIND) | set(_LABEL_EXEMPT)
+_LABEL_GROUPS = frozenset(_LABEL_GROUP.values())
+
 _OVERLAP_SINGLETONS = ("governor_mansion",)  # solid footprints the manifest stores as ONE dict, not a list
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
 
@@ -3153,6 +3205,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"a bridge over water, a guard tower on a wall), to _OVERLAP_EXEMPT with the reason.",
     )
 
+    # ...and the same completeness guard for CAPTIONS. A feature protected from every solid neighbor
+    # is still not protected from a label dropped on top of it, and that list fell behind twice before
+    # it was made a registry (GM 2026-07-26). Every solid key must name the label GROUP a caption has
+    # to use to be allowed over it, or be excused in _LABEL_EXEMPT with a reason.
+    unlabeled = sorted(k for k in _OVERLAP_STRUCTS + _OVERLAP_SINGLETONS if k not in _LABEL_CLASSIFIED)
+    check(
+        "every_solid_feature_classified_for_labels",
+        not unlabeled,
+        f"map feature(s) {unlabeled} are not classified for LABELS. Give each one its caption GROUP in _LABEL_GROUP "
+        f"(the group name is the word a caption must contain to be allowed to cover it) or, if a caption over it is "
+        f"harmless, name it in _LABEL_EXEMPT with the reason.",
+    )
+
     # no structure overlaps the magistrate's manor walls (a tilted manor uses its rotated corners)
     bad_m = []
     for mn in M.get("manors", []):
@@ -4188,36 +4253,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             ys = [it["y"] + dx * sa + dy * ca for dx, dy in ((-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh))]
             return min(xs), min(ys), max(xs), max(ys)
 
-        vics = [(_grp(b.get("kind", "")), _bb(b)) for b in M.get("buildings", []) if _grp(b.get("kind", "")) not in LABEL_FREE]
-        vics += [("flophouse", _bb(fp)) for fp in M.get("flophouses", [])]
-        vics += [("temple", _bb(r)) for r in M.get("religious", [])]
-        vics += [("ministry", _bb(mi)) for mi in M.get("ministries", [])]
-        vics += [("governor", _bb(M["governor_mansion"]))] if M.get("governor_mansion") else []
-        vics += [("gate", _bb(gs)) for gs in M.get("gate_structs", [])]
-        vics += [("merchant", _bb(e)) for e in M.get("merchant_estates", [])]
-        vics += [("estate", _bb(mn)) for mn in M.get("manors", [])]
-        vics += [("cemetery", _bb(c)) for c in M.get("cemeteries", [])]
-        vics += [("mausoleum", _bb(mu)) for mu in M.get("mausoleums", [])]
-        vics += [("cremation", _bb(cg)) for cg in M.get("cremation_grounds", [])]
-        vics += [("ossuary", _bb(o)) for o in M.get("ossuaries", [])]
-        # the trade works + the drum tower (GM 2026-07-24): a foreign caption over a brewery/press/
-        # yard is the same defect as one over a house (caught by eye on Nagahara's oil press, which
-        # the Temple of Bishamon caption buried while this check looked only at the keys above)
-        for _twk, _twg in (
-            ("breweries", "brewery"),
-            ("dye_yards", "dye works"),
-            ("lumber_yards", "lumber yard"),
-            ("oil_presses", "oil press"),
-            ("pawnshops", "pawnshop"),
-            ("bathhouses", "bathhouse"),
-            ("kilns", "kiln"),
-            ("farriers", "farrier"),
-            ("tanning_yards", "tanning yard"),
-            ("drum_towers", "drum tower"),
-            ("martial_halls", "martial hall"),
-            ("dojos", "dojo"),
-        ):
-            vics += [(_twg, _bb(t_)) for t_ in M.get(_twk, [])]
+        # EVERY solid feature is a caption victim, read from the _LABEL_GROUP registry rather than a
+        # hand-written key list (GM 2026-07-26). The list this replaced had fallen behind twice: the
+        # martial hall and the dojo had to be remembered into it, and the execution-ground feature's
+        # three keys were never in it at all, so a foreign caption over an execution ground shipped
+        # green. Anything deliberately NOT a victim is named in _LABEL_EXEMPT with its reason, and
+        # every_solid_feature_classified_for_labels fires if a new key is in neither.
+        vics = [(_grp(b.get("kind", "")), _bb(b)) for k_ in _LABEL_BY_KIND for b in M.get(k_, []) if _grp(b.get("kind", "")) not in LABEL_FREE]
+        for _lk, _lg in _LABEL_GROUP.items():
+            _lrecs = M.get(_lk)
+            if isinstance(_lrecs, dict):  # governor_mansion is a singleton, not a list
+                _lrecs = [_lrecs]
+            vics += [(_lg, _bb(r_)) for r_ in (_lrecs or []) if isinstance(r_, dict) and "w" in r_]
 
         def _label_allows(txt: str) -> set[str]:
             t = txt.lower()
@@ -4239,8 +4286,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"samurai", "estate"}
             if "laborer" in t or "laborer" in t:
                 return {"laborer"}
-            if "burakumin" in t or "agricultur" in t:  # the in-wall farming district also houses burakumin
-                return {"burakumin"}
+            if "burakumin" in t or "agricultur" in t:  # the in-wall farming district houses burakumin AND works its farms
+                return {"burakumin", "farmhouse"}
             if "barn" in t:
                 return {"barn"}
             if "merchant" in t:
@@ -4249,10 +4296,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
             if "drum/bell" in t or t.strip() == "tower":  # the two-line zhonggulou caption (GM 2026-07-24)
                 return {"drum tower"}
-            for _tw_txt in ("brewery", "dye works", "lumber yard", "oil press", "pawnshop", "bathhouse", "kiln", "tanning yard", "drum tower", "martial hall", "dojo"):
-                if _tw_txt in t:
-                    return {_tw_txt}  # a trade-works caption may cover only its own premises
-            return set()  # farmland / market / theater stage / title labels name no building
+            # A CAPTION MAY ALWAYS COVER THE THING IT NAMES, derived rather than hand-listed: the
+            # _LABEL_GROUP registry's group names ARE the caption words ("brewery", "martial hall",
+            # "execution ground"), so a new feature earns this permission by being classified, with
+            # no second list to remember. The branches above stay because they are SYNONYMS - a
+            # caption says "Temple of Benten" or "Governor's Mansion", not "temple" or "governor".
+            named = {g for g in _LABEL_GROUPS if g in t}
+            return named  # empty for farmland / market / theater stage / title labels, which name no building
 
         mislabel = []
         for L in M.get("labels", []):
