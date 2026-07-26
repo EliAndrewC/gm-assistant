@@ -806,10 +806,10 @@ top_up("laborer_large", SW_Q, 24)
 # then each caste to its budgets.md target across every quarter that can hold it
 for _kind, _regions, _target, _ck in (
     ("samurai", (SE_Q,), 52, ("samurai", "samurai_large")),
-    ("merchant_house", (NW_Q, SW_Q), 130, _MERCH),
+    ("merchant_house", (NW_Q, SW_Q), 112, _MERCH),
     ("burakumin", (SW_Q,), 26, ("burakumin",)),
-    ("laborer", (NE_Q, SW_Q, NW_Q), 208, _LAB),
-    ("servant", (NW_Q, NE_Q, SW_Q, SE_Q), 104, ("servant",)),
+    ("laborer", (NE_Q, SW_Q, NW_Q), 188, _LAB),
+    ("servant", (NW_Q, NE_Q, SW_Q, SE_Q), 94, ("servant",)),
 ):
     for _region in _regions:
         if sum(1 for b in s.M["buildings"] if b["kind"] in _ck) >= _target:
@@ -835,18 +835,18 @@ s.pack(SE_Q, ["servant"] * 90, step=11, face_streets="fill")
 # whole-interior sweeps: the per-quarter regions leave ground stranded at their seams, and the
 # budget promises 520 dwellings, so the last passes are limited by the ground and nothing else.
 ALL_Q = (1032, 980, 1800, 1690)
-top_up("merchant_house", ALL_Q, 130, count_kinds=_MERCH)
-top_up("laborer", ALL_Q, 208, count_kinds=_LAB)
-top_up("servant", ALL_Q, 104)
+top_up("merchant_house", ALL_Q, 112, count_kinds=_MERCH)
+top_up("laborer", ALL_Q, 188, count_kinds=_LAB)
+top_up("servant", ALL_Q, 94)
 top_up("samurai", SE_Q, 52, count_kinds=("samurai", "samurai_large"))
 top_up("burakumin", SW_Q, 26)
 for _pass in range(3):
     for _rg in (NW_Q, SW_Q, NE_Q, ALL_Q):
-        top_up("merchant_house", _rg, 130, count_kinds=_MERCH)
+        top_up("merchant_house", _rg, 112, count_kinds=_MERCH)
     for _rg in (NE_Q, NW_Q, SW_Q, SE_Q, ALL_Q):
-        top_up("laborer", _rg, 208, count_kinds=_LAB)
+        top_up("laborer", _rg, 188, count_kinds=_LAB)
     for _rg in (NW_Q, NE_Q, SW_Q, SE_Q, ALL_Q):
-        top_up("servant", _rg, 104)
+        top_up("servant", _rg, 94)
 
 for _mx, _my in _ML_SPOTS:
     s.building(_mx, _my, *s._dims("merchant_large"), "merchant_large")
