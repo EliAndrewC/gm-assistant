@@ -191,7 +191,7 @@ s.quarter(_qwedge(36, 48), "mixed")  # NW merchants + the dock
 s.corridors.append((WARD_FENCE, 14))
 
 
-def label_ground(x, y, halfw=54, halfh=8):
+def label_ground(x, y, halfw=54, halfh=13):
     """Reserve a caption's ground BEFORE the packs run - labels are drawn LAST, so a district or
     trade-works caption that nobody reserved comes to rest on a roof (labels_clear_of_other_buildings)."""
     s.block_polys.append([(x - halfw, y - halfh), (x + halfw, y - halfh), (x + halfw, y + halfh), (x - halfw, y + halfh)])
@@ -344,7 +344,7 @@ def precinct(x, y, fortune, torii, w=TW, h=TH, primary=False, graveyard=False, l
     _cap = s.M["labels"][-1]
     _cx0, _cy0, _cx1, _cy1 = _cap[0], _cap[1], _cap[2], _cap[3]
     _cmid = (_cy0 + _cy1) / 2
-    s.block_polys.append([(_cx0 - 8, _cmid - 12), (_cx1 + 8, _cmid - 12), (_cx1 + 8, _cmid + 12), (_cx0 - 8, _cmid + 12)])
+    s.block_polys.append([(_cx0 - 12, _cmid - 16), (_cx1 + 12, _cmid - 16), (_cx1 + 12, _cmid + 16), (_cx0 - 12, _cmid + 16)])
     s.corridors.append(([(_cx0 - 4, _cmid), (_cx1 + 4, _cmid)], (_cy1 - _cy0) + 12))
     # the caption's own ground, reserved BOTH ways: a block poly (which the packs centre-test) and
     # a corridor (which the fills honor). "Temple of Fukurokujin" is a wide box, so the band is
@@ -629,7 +629,7 @@ MOAT_FARMS = [
     ("fne1", (1790, 1120), 345, 22, 180, (160, 210), (95, 130), (0.4, 0.75)),  # NE face, falling NNE
     ("fe1", (1900, 1450), 10, 38, 185, (165, 215), (100, 135), (0.4, 0.78)),  # E face, falling E
     ("fs1", (1420, 1800), 85, 39, 185, (155, 200), (95, 130), (0.4, 0.75)),  # S face, falling S
-    ("fsw1", (1080, 1740), 120, 44, 175, (150, 195), (92, 125), (0.4, 0.75)),  # SW face, falling SSW
+    ("fsw1", (1046, 1820), 120, 44, 175, (150, 195), (92, 125), (0.4, 0.75)),  # SW face, falling SSW (clear of the re-derived ring's outfall)
 ]
 for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     mp = min(MOAT, key=lambda p: (p[0] - tap[0]) ** 2 + (p[1] - tap[1]) ** 2)
@@ -779,6 +779,12 @@ _MERCH = ("merchant", "merchant_house", "merchant_large")
 _LAB = ("laborer", "laborer_large")
 # the wealthier 'master' cohort FIRST, into gaps the plain fill would otherwise claim (budgets.md
 # puts ~12.5% of laborers in larger homes; city_laborer_housing_varied wants 6-20%)
+# tight draw-point passes for the courts the gate names as over the ~26-household cap. BEFORE
+# the fills, so each reserves its court rather than arriving to find the ground taken.
+for _wr in ((1610, 1080, 1710, 1180), (1530, 1190, 1630, 1290), (1280, 1215, 1380, 1315), (1015, 1405, 1115, 1505), (1215, 1610, 1315, 1700), (1425, 1010, 1520, 1100)):
+    _wseat = s.open_seat(_wr, 18, 18, well=True)
+    if _wseat:
+        s.well(*_wseat)
 top_up("samurai_large", SE_Q, 6)
 top_up("laborer_large", NE_Q, 18)
 top_up("laborer_large", SW_Q, 24)
