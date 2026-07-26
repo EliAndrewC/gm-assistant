@@ -158,7 +158,17 @@ case $MODE in
 
     # (3) claim, then the stale-base check.
     claim
-    if [ "$(git -C "$clone" rev-parse HEAD 2>/dev/null)" != "$(git -C "$MAIN" rev-parse HEAD 2>/dev/null)" ]; then
+    # BEHIND means "main's tip is missing from this clone's history" - NOT "the two HEADs differ".
+    # The equality test this replaces (GM-reported 2026-07-25) deadlocked the normal workflow: the
+    # moment a session COMMITS in its clone the tree is clean and the HEADs differ, so every later
+    # edit was blocked until it pushed - which broke any multi-commit work unit, spec-kit's
+    # per-step commits above all. --is-ancestor lets a clone that is merely AHEAD keep working
+    # while still blocking a genuinely stale or diverged one. A non-zero exit covers both the
+    # "not an ancestor" case and the "main's tip is not even in this clone's object store" case
+    # (a local clone hardlinks objects at clone time; commits main gains afterward are absent
+    # until a fetch), and both of those mean stale.
+    main_head=$(git -C "$MAIN" rev-parse HEAD 2>/dev/null)
+    if [ -n "$main_head" ] && ! git -C "$clone" merge-base --is-ancestor "$main_head" HEAD 2>/dev/null; then
       echo "BLOCKED: $clone has a clean tree (a new work unit) but its HEAD is behind main - new work must not build on a stale base. Run: cd $clone && scripts/sync-with-main.sh sync-in   (CLAUDE.md 'Session clones' / sync-in rule)" >&2
       exit 2
     fi

@@ -4496,6 +4496,130 @@ def test_moat_swept_tap_scores_a_zero_length_throat_as_unusable():
     assert isinstance(got, tuple)
 
 
+# ---- the justice works (feature 015) ----------------------------------------------------------
+def test_punishment_spot_records_true_size_and_reserves_ground():
+    s = _town()
+    s.punishment_spot(400, 400, rot=30)
+    p = s.M["punishment_spots"][0]
+    assert (p["w"], p["h"]) == (30.0, 12.0)  # ~30x12 real ft, true size at town grain (1 ft/px)
+    assert p["rot"] == 30.0
+    assert (400, 400, 30.0, 12.0) in s.placed  # reserved against the urban pack
+    assert s.block_polys  # and against footprint-blocking placers
+
+
+def test_punishment_spot_draws_no_notice_board():
+    # The crime text rides on the cangue, exactly as the historical inscription did - the
+    # settlement kosatsuba is a SEPARATE institution and must not be duplicated here.
+    s = _town()
+    s.punishment_spot(400, 400)
+    assert not s.M["kosatsuba"]
+
+
+def test_execution_ground_is_sized_and_screened_by_tier():
+    t = _town()
+    t.execution_ground(500, 500)
+    e = t.M["execution_grounds"][0]
+    assert (e["w"], e["h"]) == (60.0, 60.0)  # county tier: ~60x60 real ft
+    assert e["screened"] is False  # a county ground is open to the road on every side
+    c = _city()
+    c.execution_ground(500, 500)
+    ec = c.M["execution_grounds"][0]
+    assert (ec["w"], ec["h"]) == (round(c.px(100), 1), round(c.px(60), 1))  # city tier: ~100x60 real ft
+    assert ec["screened"] is True
+
+
+def test_execution_ground_screening_can_be_forced():
+    s = _town()
+    s.execution_ground(500, 500, screened=True)
+    assert s.M["execution_grounds"][0]["screened"] is True
+    assert 'stroke-width="1.6"' in "".join(s.out)  # the hoarding on three sides
+
+
+def test_execution_ground_reads_disused_at_county_tier():
+    # ~1 execution per county per 5-10 years: the unscreened ground carries weeds and EMPTY post
+    # sockets, never standing posts. A busy scaffold would assert something false about Rokugan.
+    s = _town()
+    s.execution_ground(500, 500)
+    svg = "".join(s.out)
+    assert svg.count('stroke="#8A9464"') == 5  # the weed ticks
+    assert svg.count('fill="#3A352C"') == 2  # two empty crucifixion mortises
+
+
+def test_execution_ground_keeps_its_well_out_of_the_household_accounting():
+    # The ground's well washes the blade; it serves no household and must never enter the
+    # well-density checks.
+    s = _town()
+    s.execution_ground(500, 500)
+    assert not s.M["wells"]
+
+
+def test_boundary_marker_is_a_location_marker():
+    s = _town()
+    s.boundary_marker(300, 300)
+    b = s.M["boundary_markers"][0]
+    assert (b["w"], b["h"]) == (3.0, 3.0)  # TRUE footprint: a real stone is ~3 ft
+    assert b["vw"] == b["vh"] == settlement.BOUNDARY_MARKER_MIN_PX  # DRAWN at the legibility floor
+    assert (300, 300, b["vw"], b["vh"]) in s.placed  # overlap uses the drawn box, like the wells
+
+
+def test_boundary_marker_floor_never_shrinks_a_stone():
+    # The marker floor lifts a sub-glyph stone; it must not shrink one that already draws larger.
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="B", scale="town", ftpx=0.25)  # 4 px per foot - the true stone is already 12 px
+    s.boundary_marker(300, 300)
+    b = s.M["boundary_markers"][0]
+    assert b["vw"] == b["w"] == 12.0
+
+
+def test_justice_works_can_be_unlabeled():
+    s = _town()
+    s.punishment_spot(200, 200, label=None)
+    s.execution_ground(500, 500, label=None)
+    s.boundary_marker(700, 700, label=None)
+    assert not s.M["labels"]
+
+
+def test_place_punishment_spot_is_a_no_op_when_opted_out():
+    s = _town()
+    s.meta(punishment_spot=False)
+    s.road([(100, 500), (900, 500)])
+    assert s.place_punishment_spot() is None
+    assert not s.M["punishment_spots"]
+
+
+def test_place_punishment_spot_needs_a_street_to_site_on():
+    # No road, no town street, no lane: there is no traffic to site the display on, so the siter
+    # declines rather than dropping it somewhere arbitrary (the presence check then fires).
+    s = _town()
+    assert s.place_punishment_spot() is None
+
+
+def test_place_punishment_spot_skips_a_degenerate_route_segment():
+    s = _town()
+    s.M["road"] = [[100, 500], [100, 500], [900, 500]]  # a repeated point: zero-length segment
+    assert s.place_punishment_spot() is not None
+
+
+def test_place_punishment_spot_declines_when_no_verge_is_within_the_siting_band():
+    # At a very coarse grain the ~60-real-ft band is narrower than the road's own tread plus the
+    # feature, so no candidate offset is legal at all - the siter must return None, not guess.
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="C", scale="city", ftpx=30)
+    s.road([(100, 500), (900, 500)])
+    assert s.place_punishment_spot() is None
+
+
+def test_place_punishment_spot_walks_the_label_off_a_building_it_would_cover():
+    s = _town()
+    s.road([(100, 500), (900, 500)])
+    s.building(145, 536, 20, 20, "merchant")  # sits under the DEFAULT below-label, not under the spot
+    spot = s.place_punishment_spot()
+    assert spot is not None
+    lb = [line for line in s.M["labels"] if len(line) > 5 and line[5] == "punishment ground"][0]
+    below_default = spot[1] + s.px(12) / 2 + 11
+    assert abs((lb[1] + lb[3]) / 2 - below_default) > 4  # the label moved off its default band
+
+
 def test_dojos_roll_follows_the_samurai_cohort():
     # GM formula 2026-07-25: 1 private dojo per full 200 SAMURAI (the city's ~10% share of its
     # population) + a remainder-fraction chance of one extra, floored at 1; count= pins; too few
