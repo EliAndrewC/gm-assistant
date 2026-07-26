@@ -1293,6 +1293,8 @@ class Settlement:
         # centre test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
         # centre while the matrix tests its footprint, then maybe the placement test is wrong?"
         self.hard_polys: list[Any] = []
+        self._hard_cache_key: tuple[int, int, int] | None = None
+        self._hard_cache: list[Any] = []
         # SWEPT/TENDED GROUND around sacred + funerary features - a keep-out for the LOOSE HINTERLAND
         # SCATTER (commons scrub + marsh reeds) ONLY, not for building placement and not for the grove.
         # A shrine precinct, the ground under a torii and along its sando, and the collar tended around
@@ -2287,15 +2289,34 @@ class Settlement:
         # tests). Same predicate as the dry_plots_clear_of_paddies gate - see hem_on_paddy's
         # docstring (waterfields.py) for the why and the motivating Tango incident.
         _prior_paddies = [fld["outline"] for fld in self.M["fields"] if fld.get("kind") == "paddy"]
+        # WHAT IS ALREADY ON THE MAP (GM go-ahead 2026-07-26). build_comb lays the fan from pure
+        # geometry, and draw_comb_field used to render it blind - it was the ONLY placer that
+        # consulted nothing - so a hem plot could be drawn straight across a watercourse that had
+        # been authored earlier (Ubame's stream). Now the hem yields to standing water. Maps whose
+        # hems touch no water are unaffected, byte for byte, because nothing is skipped there.
+        _wet: list[tuple[Any, float]] = []
+        for _wk, _wdw in (("streams", 9.0), ("channels", 2.5), ("canals", 14.0)):
+            for _wr in self.M.get(_wk, []) or []:
+                _wpl = _wr.get("poly") or _wr.get("pts")
+                if _wpl:
+                    _wet.append((_wpl, float(_wr.get("w") or _wdw) / 2))
+        _wpond = self.M.get("pond")
+
+        def _hem_on_water(poly: Poly) -> bool:
+            if any(quad_hits_seg(poly, pl_[i], pl_[i + 1], hw_) for pl_, hw_ in _wet for i in range(len(pl_) - 1)):
+                return True
+            return _wpond is not None and point_quad_dist(_wpond[0], _wpond[1], poly) < max(_wpond[2], _wpond[3])
+
         for p in net["dry_plots"]:  # the dry upslope hem
             if any(hem_on_paddy(p["poly"], _pol) for _pol in _prior_paddies):
                 continue
+            if _hem_on_water(p["poly"]):
+                continue  # standing water was here first - the crop stops at the bank
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="#A98C58" stroke-width="1.4" stroke-linejoin="round"/>')
             self._draw_furrows(p["poly"], p["furrow"], p["theta"])
             self.M["dry_plots"].append({"poly": [[round(x, 1), round(y, 1)] for x, y in p["poly"]], "crop": p["crop"], "theta": round(p["theta"], 3)})
             self.block_polys.append(p["poly"])  # dry cropland is no-build ground; keep farmsteads off it
-            self.hard_polys.append(p["poly"])  # ...and HARD: a footprint may not lap it, only clear it
         for p in net["plots"]:  # the flooded paddies
             pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in p["poly"])
             self.add(f'<polygon points="{pts}" fill="{p["fill"]}" stroke="{AZE}" stroke-width="{aze_w(self.ftpx):.2f}" stroke-linejoin="round"/>')
@@ -2382,21 +2403,6 @@ class Settlement:
             if c.get("seg"):  # a polder ring-side tag (feeder/e_toe/w_toe/drain/lateral), so footbridge placement can be side-aware
                 rec["seg"] = c["seg"]
             self.M["field_ditches"].append(rec)
-        # THE COMB'S OWN DITCHES ARE HARD GROUND for everything else. A field's ditches are drawn ON
-        # its paddy by design (the matrix permits that by parent scope), but a farmhouse standing on
-        # one is a defect - and nothing tested it, because the ditches live inside the field envelope
-        # that only centre-blocks. Registered as stroked quads so a footprint must clear them.
-        for _ch in self.M.get("field_ditches", []) or []:
-            _pts = _ch.get("poly") or _ch.get("pts")
-            if not _pts or _ch.get("field") != name:
-                continue
-            _hw = float(_ch.get("w") or 1.5) / 2 + 2.0
-            for _k in range(len(_pts) - 1):
-                _ax, _ay = _pts[_k]
-                _bx, _by = _pts[_k + 1]
-                _ln = math.hypot(_bx - _ax, _by - _ay) or 1.0
-                _nx, _ny = -(_by - _ay) / _ln * _hw, (_bx - _ax) / _ln * _hw
-                self.hard_polys.append([(_ax + _nx, _ay + _ny), (_bx + _nx, _by + _ny), (_bx - _nx, _by - _ny), (_ax - _nx, _ay - _ny)])
         # a hairline SOURCE -> field feed carrying the topology (winds a little into the paddy interior). It
         # STARTS at the source (the pond center, or the sluice for a stream) so channel_source_anchored /
         # pond_connected_to_field see it, and carries a gentle perpendicular KINK so channel_winds_gently passes.
@@ -10050,6 +10056,63 @@ class Settlement:
                     return True
         return False
 
+    def _hard_ground(self) -> list[Any]:
+        """Every HARD no-build polygon, read from the MANIFEST plus anything a gen registered by hand.
+
+        Manifest-sourced on purpose. The first cut kept a `hard_polys` registry that `draw_comb_field`
+        populated - and it was EMPTY on any map whose field is drawn by a different path (the polder
+        and contour archetypes have their own), so the rule silently did nothing there. Reading the
+        drawn record instead makes it order-independent and impossible for a gen to forget: the same
+        placement-and-check-read-the-same-source doctrine the footbridges taught us. Cached on the
+        record counts, since this is called once per placement candidate."""
+        dp, fd = self.M.get("dry_plots", []) or [], self.M.get("field_ditches", []) or []
+        key = (len(dp), len(fd), len(self.hard_polys))
+        if self._hard_cache_key == key:
+            return self._hard_cache
+        out: list[Any] = [list(self.hard_polys)[i] for i in range(len(self.hard_polys))]
+        out += [[(q[0], q[1]) for q in d["poly"]] for d in dp if d.get("poly") and len(d["poly"]) >= 3]
+        for ch in fd:
+            pts = ch.get("poly") or ch.get("pts")
+            if not pts:
+                continue  # pragma: no cover - defensive: every ditch carries a path
+            hw = float(ch.get("w") or 1.5) / 2 + 2.0
+            for k in range(len(pts) - 1):
+                ax, ay = pts[k]
+                bx, by = pts[k + 1]
+                ln = math.hypot(bx - ax, by - ay) or 1.0
+                nx, ny = -(by - ay) / ln * hw, (bx - ax) / ln * hw
+                out.append([(ax + nx, ay + ny), (bx + nx, by + ny), (bx - nx, by - ny), (ax - nx, ay - ny)])
+        self._hard_cache_key, self._hard_cache = key, out
+        return out
+
+    def _hard_clear(self, x: float, y: float, w: float, h: float) -> bool:
+        """Is this footprint clear of HARD no-build ground (crop, pond, bog, a field's own ditches)?
+
+        Factored out of `_fits` because placement is not the only moment that needs it:
+        `_solve_homestead` NUDGES a farmstead after it has already passed `_fits`, to make room for
+        its yard, garden and grove - and nothing re-tested the moved position, so a steading that
+        genuinely cleared every keep-out where it was placed could be shifted onto a ditch or a hem
+        plot afterwards. That was the last root cause behind the overlap matrix's residue."""
+        hard = self._hard_ground()
+        if not hard:
+            return True
+        # ROTATION ALLOWANCE. `_fits` is called before a farmhouse is given its small random tilt
+        # (+/-5 deg), so the box tested here is axis-aligned while the box DRAWN and RECORDED is
+        # rotated - and a rotated rect reaches further on both axes than its unrotated self. Testing
+        # the swept extent closes that gap; without it a steading clears at placement and laps a hem
+        # plot once tilted, which is exactly one of the defects the overlap matrix kept reporting.
+        _th = math.radians(5.0)
+        w = w * math.cos(_th) + h * math.sin(_th)
+        h = w * math.sin(_th) + h * math.cos(_th)
+        fp = [(x - w / 2, y - h / 2), (x + w / 2, y - h / 2), (x + w / 2, y + h / 2), (x - w / 2, y + h / 2)]
+        fx0, fy0, fx1, fy1 = x - w / 2, y - h / 2, x + w / 2, y + h / 2
+        for hp, (hx0, hy0, hx1, hy1) in zip(hard, self._poly_bboxes(hard), strict=False):
+            if fx1 < hx0 or fx0 > hx1 or fy1 < hy0 or fy0 > hy1:
+                continue
+            if quad_hits_poly(fp, hp):
+                return False
+        return True
+
     def _fits(self, x: float, y: float, w: float, h: float, skip: Any = None, corridors: bool = True) -> bool:
         if x < 55 or x > self.W - 55 or y < 88 or y > self.H - 26:  # keep clear of edges + title
             return False
@@ -10057,14 +10120,8 @@ class Settlement:
             return False
         if self._in_blocked(x, y) or (corridors and self._near_corridor(x, y, skip)):
             return False
-        if self.hard_polys:
-            fp = [(x - w / 2, y - h / 2), (x + w / 2, y - h / 2), (x + w / 2, y + h / 2), (x - w / 2, y + h / 2)]
-            fx0, fy0, fx1, fy1 = x - w / 2, y - h / 2, x + w / 2, y + h / 2
-            for hp, (hx0, hy0, hx1, hy1) in zip(self.hard_polys, self._poly_bboxes(self.hard_polys), strict=False):
-                if fx1 < hx0 or fx0 > hx1 or fy1 < hy0 or fy0 > hy1:
-                    continue
-                if quad_hits_poly(fp, hp):
-                    return False
+        if not self._hard_clear(x, y, w, h):
+            return False
         r = math.hypot(w, h) / 2
         for px, py, pw, ph in self.placed:
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:
@@ -11010,6 +11067,8 @@ class Settlement:
             return True
         if fields and self._rect_on_water(rect):
             return True
+        if fields and not self._hard_clear(rect[0], rect[1], rect[2], rect[3]):
+            return True  # HARD ground read from the manifest (crop plots + a field's own ditches)
         cx, cy, w, h = rect
         for px, py in self._rect_corners(rect) + [(cx, cy)]:
             for ex, ey, rx, ry in self.ellipses:
