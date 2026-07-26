@@ -8984,3 +8984,21 @@ def test_border_checks_abstain_when_there_is_no_border_or_no_housing():
     M["borders"] = [{"poly": [[900, 0], [900, 1200]], "label": "b"}]
     M["buildings"] = []
     assert "structures_stay_on_their_side_of_a_border" not in f(M)
+
+
+def test_a_caption_over_a_wellhead_is_caught():
+    """`wells` sits in _OVERLAP_EXEMPT (a wellhead may kiss a dense-city building), and the
+    classification ratchet iterates the OVERLAP registry - so a wellhead fell outside BOTH label
+    registries and a caption drawn across one was invisible. Found by settlement-review round 2.
+    A wellhead also has no w/h: its drawn extent is the marker radius `vr`, so classifying it was
+    not enough on its own - the victim builder filtered on "w" and would have skipped it."""
+
+    def wmap(text):
+        M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000})
+        M["wells"] = [well(500, 500, vr=14)]
+        M["labels"] = [[440, 494, 560, 506, 1, text]]
+        return M
+
+    assert "labels_clear_of_other_buildings" in f(wmap("merchant houses & shops"))
+    assert "labels_clear_of_other_buildings" not in f(wmap("well"))  # a caption may name what it covers
+    assert "wells" in check_village._LABEL_GROUP

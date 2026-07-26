@@ -262,11 +262,24 @@ one did not.
   on the line stays legal).
 - **ANNOTATION - a caption pierced by its own feature (unplanted, CONFIRMED).** Both monasteries'
   innermost torii was drawn through its own hall's caption box, reading as a smudge on the text.
-- **A finding that did NOT reproduce (recorded deliberately).** The agent reported a tree crown and
-  scrub drawn on the theater stage roof; checking the manifest found **zero** crowns within the
-  stage footprint - it had most likely read hinterland scrub tufts on the raster. *Verify findings
-  against the manifest before acting on them.* An independent reviewer earns its keep on the four
-  that held; it is still a reader of pixels, and pixels are ambiguous.
+- **A finding I wrongly dismissed, and the real lesson (corrected 2026-07-26 by round 2).** The
+  founding run reported scrub drawn on the theater stage roof. I "verified" it against the manifest,
+  found nothing, and recorded it as NOT REPRODUCED. **The agent was right and I was wrong.** Round 2
+  found the ink and named its exact coordinates - three `#94A063` scrub circles inside the stage
+  footprint - and the reason my check missed it is doubly instructive:
+  - I queried `theater_stages`; the manifest key is **`theater_stage`**, singular. The lookup
+    returned an empty list, the loop body never ran, my script printed nothing, and I read that
+    silence as a zero. **A verification that never runs looks exactly like a verification that
+    passes** - the same trap the checks themselves are written to avoid, committed while checking
+    somebody else's work.
+  - Even with the right key it would have failed, because **hinterland scrub is not recorded in the
+    manifest at all**. No manifest audit can see it, which is precisely why an agent that reads
+    PIXELS is not redundant with the gate.
+
+  So the rule is NOT "distrust the reviewer." It is: **when a finding is about INK, verify it in the
+  SVG, not the manifest** - confirm the key exists and the query returned rows before believing a
+  negative result. A reviewer looking at pixels can see things the manifest structurally cannot
+  record.
 
 **The lesson the founding run teaches about scope**: every one of the six findings was invisible to
 ~300 green geometric checks, and none of them was a near-miss on a threshold. They were a glyph that

@@ -303,6 +303,10 @@ _LABEL_GROUP = {
     "execution_grounds": "execution ground",
     "boundary_markers": "boundary marker",
     "houses": "farmhouse",
+    # a WELLHEAD is a drawn glyph a caption can bury, but it is _OVERLAP_EXEMPT (a well may kiss a
+    # dense-city building), so it fell outside the classification ratchet - which iterates the
+    # overlap registry - and a caption on a wellhead was invisible. Found by settlement-review 2026-07-26.
+    "wells": "well",
 }
 # `buildings` is the one key whose group is not fixed: each record carries its own `kind`, and _grp
 # folds those kinds into groups (samurai_large -> samurai, and so on).
@@ -4504,7 +4508,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _lrecs = M.get(_lk)
             if isinstance(_lrecs, dict):  # governor_mansion is a singleton, not a list
                 _lrecs = [_lrecs]
-            vics += [(_lg, _bb(r_)) for r_ in (_lrecs or []) if isinstance(r_, dict) and "w" in r_]
+            for r_ in _lrecs or []:
+                if not isinstance(r_, dict):
+                    continue  # pragma: no cover - defensive: every classified key stores dicts
+                if "w" in r_:
+                    vics.append((_lg, _bb(r_)))
+                elif r_.get("vr"):
+                    # a WELLHEAD has no w/h - its drawn extent is the marker radius `vr` (SKILL.md's
+                    # location-marker doctrine). Without this branch, adding "wells" to _LABEL_GROUP
+                    # would classify it and still check nothing, because the builder filtered on "w".
+                    _vr = float(r_["vr"])
+                    vics.append((_lg, (r_["x"] - _vr, r_["y"] - _vr, r_["x"] + _vr, r_["y"] + _vr)))
 
         def _label_allows(txt: str) -> set[str]:
             t = txt.lower()

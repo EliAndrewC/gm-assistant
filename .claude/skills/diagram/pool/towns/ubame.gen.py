@@ -274,7 +274,7 @@ s.block_polys.append([(1740, 700), (1975, 700), (1975, 905), (1740, 905)])
 # marginal bank ground. rot follows the BANK's own bearing there (the yard is a working frontage, so
 # its water side must lie along the water, not square to the map). Its 120 ft stench keep-out is
 # registered BEFORE the farm rings, so the steadings pack around it instead of crowding it.
-s.tanning_yard(1395, 1300, rot=102, pits=4, water="stream")
+s.tanning_yard(1395, 1300, rot=102, pits=4, water="stream", lab_off=36)  # lab_off: at rot=102 the yard's drawn extent is 33px, so the default h/2 caption sat inside its own boundary stroke and read as "tanning-yard" struck through
 s.block_polys.append([(1395 + 155 * math.cos(a), 1300 + 155 * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]])
 
 # ---- urban core: the businesses front the trunk road (the high street), each facing the roadbed;
@@ -282,7 +282,7 @@ s.block_polys.append([(1395 + 155 * math.cos(a), 1300 + 155 * math.sin(a)) for a
 # shops, ~29 laborer dwellings, ~5 standalone servants, ~12 burakumin, 5-10 samurai.
 ROAD_CORE = [(1500, 490), (1180, 573), (860, 655), (540, 740), (260, 820)]
 s.frontage(ROAD_CORE, (["merchant"] * 2 + ["shop"]) * 16, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
-s.label(1010, 512, "merchant houses & shops", 11, italic=True, color="#5A4326")
+s.label(840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326")  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it)
 s.merchant_residences(3)
 # the ~3 MASTER (rich) laborers get larger dwellings at the edge of the warren
 for lx, ly in [(268, 1060), (700, 1030), (960, 405)]:
