@@ -8594,29 +8594,43 @@ def _haz_base():
     }
 
 
-# (name, the check that must fire, where the struct goes, the hazard geometry laid under it)
+# (name, the check that must fire, where the struct goes, the hazard geometry laid under it, keys
+# the rule DELIBERATELY does not govern). Most rows plant the struct ON the hazard, which is the
+# overlap contract; the last row plants it a few px AWAY, because a CLEARANCE rule is the other
+# shape a keep-clear rule comes in - and it broke in exactly the same way, with
+# city_government_offices_dont_abut never having seen the martial hall or the dojo, so both shipped
+# inside its 14px standoff.
 _HAZARDS = (
-    ("the town wall", "no_structure_on_wall", (500, 50), lambda: {}),
-    ("the moat", "no_structure_on_moat", (500, 500), lambda: {"moat": [[400, 500], [600, 500]], "moat_width": 22}),
-    ("the road", "no_structure_on_road", (500, 500), lambda: {"road": [[400, 500], [600, 500]], "road_width": 26}),
-    ("a street", "no_structure_on_street", (500, 500), lambda: {"town_streets": [{"pts": [[400, 500], [600, 500]], "w": 24}]}),
-    ("a stream", "no_structure_on_stream", (500, 500), lambda: {"streams": [{"poly": [[400, 500], [600, 500]], "w": 12}]}),
-    ("an irrigation channel", "no_structure_on_channel", (500, 500), lambda: {"channels": [{"poly": [[400, 500], [600, 500]], "w": 10, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}]}),
-    ("the cargo canal", "no_structure_on_canal", (500, 500), lambda: {"canals": [{"poly": [[400, 500], [600, 500]], "w": 20}]}),
-    ("the pond", "no_structure_on_pond", (500, 500), lambda: {"pond": [500, 500, 60, 40]}),
-    ("the manor walls", "no_structure_on_manor", (500, 500), lambda: {"manors": [{"x": 500, "y": 500, "w": 80, "h": 60, "rot": 0}]}),
-    ("a religious hall", "no_structure_on_religious", (500, 500), lambda: {"religious": [{"x": 500, "y": 500, "w": 60, "h": 40, "kind": "temple", "label": "Temple of Bishamon"}]}),
-    ("the gate furniture", "no_structure_on_gate", (500, 500), lambda: {"gate_structs": [{"x": 500, "y": 500, "w": 30, "h": 16, "rot": 0, "kind": "guardhouse"}]}),
-    ("a torii arch", "no_structure_on_torii", (500, 500), lambda: {"torii": [[500, 500, 10]]}),
-    ("another structure", "no_structure_overlaps", (500, 500), lambda: {"flophouses": [{"x": 500, "y": 500, "w": 30, "h": 22, "rot": 0, "label": "flophouse"}]}),
-    ("the ring road", "ring_road_kept_clear", (500, 500), lambda: {"ring_road": [[400, 500], [600, 500]], "ring_road_width": 15}),
+    ("the town wall", "no_structure_on_wall", (500, 50), lambda: {}, ()),
+    ("the moat", "no_structure_on_moat", (500, 500), lambda: {"moat": [[400, 500], [600, 500]], "moat_width": 22}, ()),
+    ("the road", "no_structure_on_road", (500, 500), lambda: {"road": [[400, 500], [600, 500]], "road_width": 26}, ()),
+    ("a street", "no_structure_on_street", (500, 500), lambda: {"town_streets": [{"pts": [[400, 500], [600, 500]], "w": 24}]}, ()),
+    ("a stream", "no_structure_on_stream", (500, 500), lambda: {"streams": [{"poly": [[400, 500], [600, 500]], "w": 12}]}, ()),
+    ("an irrigation channel", "no_structure_on_channel", (500, 500), lambda: {"channels": [{"poly": [[400, 500], [600, 500]], "w": 10, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}]}, ()),
+    ("the cargo canal", "no_structure_on_canal", (500, 500), lambda: {"canals": [{"poly": [[400, 500], [600, 500]], "w": 20}]}, ()),
+    ("the pond", "no_structure_on_pond", (500, 500), lambda: {"pond": [500, 500, 60, 40]}, ()),
+    ("the manor walls", "no_structure_on_manor", (500, 500), lambda: {"manors": [{"x": 500, "y": 500, "w": 80, "h": 60, "rot": 0}]}, ()),
+    ("a religious hall", "no_structure_on_religious", (500, 500), lambda: {"religious": [{"x": 500, "y": 500, "w": 60, "h": 40, "kind": "temple", "label": "Temple of Bishamon"}]}, ()),
+    ("the gate furniture", "no_structure_on_gate", (500, 500), lambda: {"gate_structs": [{"x": 500, "y": 500, "w": 30, "h": 16, "rot": 0, "kind": "guardhouse"}]}, ()),
+    ("a torii arch", "no_structure_on_torii", (500, 500), lambda: {"torii": [[500, 500, 10]]}, ()),
+    ("another structure", "no_structure_overlaps", (500, 500), lambda: {"flophouses": [{"x": 500, "y": 500, "w": 30, "h": 22, "rot": 0, "label": "flophouse"}]}, ()),
+    ("the ring road", "ring_road_kept_clear", (500, 500), lambda: {"ring_road": [[400, 500], [600, 500]], "ring_road_width": 15}, ()),
+    (
+        "a government office's 14px standoff",
+        "city_government_offices_dont_abut",
+        (500, 528),  # 6px of daylight from the ministry below - inside the 14px the rule demands
+        lambda: {"ministries": [{"x": 500, "y": 500, "w": 44, "h": 30, "name": "Ministry of War"}]},
+        ("cemeteries", "mausoleums", "cremation_grounds", "ossuaries"),  # the documented funerary exclusion
+    ),
 )
 
 
-@pytest.mark.parametrize("hazard,expect,where,build", _HAZARDS, ids=[h[0].replace(" ", "_") for h in _HAZARDS])
-def test_every_solid_struct_is_gated_off_every_hazard(hazard, expect, where, build):
+@pytest.mark.parametrize("hazard,expect,where,build,exempt", _HAZARDS, ids=[h[0].replace(" ", "_").replace("'", "") for h in _HAZARDS])
+def test_every_solid_struct_is_gated_off_every_hazard(hazard, expect, where, build, exempt):
     missed = []
     for key in check_village._OVERLAP_STRUCTS:
+        if key in exempt:
+            continue
         M = _haz_base()
         M.update(build())
         M.setdefault(key, []).append(solid(key, *where))
