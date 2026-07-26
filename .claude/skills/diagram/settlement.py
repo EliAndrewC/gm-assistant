@@ -168,6 +168,62 @@ def seg_dist(px: float, py: float, a: Pt, b: Pt) -> float:
     return math.hypot(px - cx, py - cy)
 
 
+# ---- the travelled ways, and the gate that bars one ------------------------------------------
+# A kido is a gate ACROSS A WAY, so what it squares to is the way, not the fence it hangs in (GM
+# 2026-07-26). These helpers are the single definition of "a road runs through here", shared by
+# s.ward/s.kido (which place the gate) and check_village (which grades it), so placer and checker
+# cannot drift - the same discipline as torii_wall_conflicts above.
+LANE_THROUGH_TOL = 12.0  # a lane whose centerline passes within this of a gate seat runs THROUGH the gate (the kido's roofed bar is ~16px long, so a lane this near is one the bar spans)
+LANE_CROSSES_MIN_DEG = (
+    25.0  # ...and it must actually CROSS the fence rather than run ALONGSIDE it: a street laid parallel to the ward fence never passes through the gate, so it must not be what the gate squares to
+)
+
+
+def lane_runs(M: Manifest) -> list[tuple[Poly, float]]:
+    """Every travelled way on the map as (polyline, bed half-width): the major/Imperial roads, the
+    town streets, the gravel alleys, and the city ring road. Deliberately NOT walls, fences or
+    watercourses - this answers "what could someone walk or cart along here"."""
+    runs: list[tuple[Poly, float]] = []
+    roads: Any = M.get("roads")
+    if not roads and M.get("road"):
+        roads = [{"pts": M["road"], "w": M.get("road_width", 26)}]
+    for rd in roads or []:
+        runs.append(([(float(p[0]), float(p[1])) for p in rd["pts"]], float(rd.get("w", 26)) / 2))
+    for st in M.get("town_streets") or []:
+        runs.append(([(float(p[0]), float(p[1])) for p in st["pts"]], float(st.get("w", 18)) / 2))
+    for al in M.get("alleys") or []:
+        runs.append(([(float(p[0]), float(p[1])) for p in al["pts"]], float(al.get("w", 6)) / 2))
+    if M.get("ring_road"):
+        runs.append(([(float(p[0]), float(p[1])) for p in M["ring_road"]], float(M.get("ring_road_width", 20)) / 2))
+    return runs
+
+
+def lane_through_gate(M: Manifest, x: float, y: float, fence_deg: float) -> tuple[float, float] | None:
+    """The travelled way a ward gate seated at (x, y) BARS, as (tangent degrees, bed half-width), or
+    None if the gate stands in open fence with no lane through it. `fence_deg` is the local fence
+    tangent, used only to reject a lane running ALONGSIDE the fence (which the gate does not bar).
+    The nearest true crossing wins where several lanes are close."""
+    best: tuple[float, float, float] | None = None
+    for pts, half in lane_runs(M):
+        for i in range(len(pts) - 1):
+            d = seg_dist(x, y, pts[i], pts[i + 1])
+            if d > LANE_THROUGH_TOL:
+                continue
+            a = math.degrees(math.atan2(pts[i + 1][1] - pts[i][1], pts[i + 1][0] - pts[i][0]))
+            if abs(((a - fence_deg + 90.0) % 180.0) - 90.0) < LANE_CROSSES_MIN_DEG:
+                continue  # runs alongside the fence, not through the gate
+            if best is None or d < best[0]:
+                best = (d, a, half)
+    return None if best is None else (best[1], best[2])
+
+
+def kido_bar_deg(lane_deg: float, fence_deg: float) -> float:
+    """The angle a ward gate's roofed bar takes: SQUARE TO THE LANE it bars. Returned as the
+    representative nearest the fence direction, so the guard box's ward-interior flank (which s.ward
+    resolves against the bar's local +y) keeps the same sense whichever way the fence was drawn."""
+    return fence_deg + (((lane_deg + 90.0) - fence_deg + 90.0) % 180.0 - 90.0)
+
+
 def box_gap(a: Sequence[float], b: Sequence[float]) -> float:
     """Clear separation between two axis-aligned boxes (x0, y0, x1, y1) - 0 when they touch or
     overlap. The single measure behind the label standoff ladder below AND behind the gate's
@@ -286,6 +342,15 @@ def trough_quad(box: Sequence[float], grow: float = 0.0) -> Poly:
     """A watering point's drawn extent: the stacked trough rects' full envelope - a stable-yard
     record's `troughs_box`, not one trough."""
     return [(box[0] - grow, box[1] - grow), (box[2] + grow, box[1] - grow), (box[2] + grow, box[3] + grow), (box[0] - grow, box[3] + grow)]
+
+
+def tower_quad(t: Mapping[str, Any], grow: float = 0.0) -> Poly:
+    """A wall tower's drawn footprint: its `w` x `h` mamian rect turned onto the wall's local
+    tangent (`rot`). The default 38 x 38 is the pre-to-scale mamian, for a legacy record."""
+    hw_, hh_ = t.get("w", 38) / 2 + grow, t.get("h", 38) / 2 + grow
+    a = math.radians(t.get("rot", 0))
+    ca, sa = math.cos(a), math.sin(a)
+    return [(t["x"] + dx * ca - dy * sa, t["y"] + dx * sa + dy * ca) for dx, dy in ((-hw_, -hh_), (hw_, -hh_), (hw_, hh_), (-hw_, hh_))]
 
 
 def rail_quad(rl: Mapping[str, Any], grow: float = 0.0) -> Poly:
@@ -3301,20 +3366,106 @@ class Settlement:
             mid = pts[len(pts) // 2]
             self.label(mid[0] + 38, mid[1], label, 11, italic=True, color="#5A4326")
 
+    _Rect = tuple[float, float, float, float]
+
+    def _kido_rects(self, x: float, y: float, rot: float, guard_side: int, hw: float) -> tuple[_Rect, list[_Rect], _Rect, Callable[[_Rect], Poly]]:
+        """The local rects a kido glyph at (x, y) is built from - (roof, posts, guard, to_corners) -
+        with the guard box already slid clear of the roadbed. Local frame: the gateway bar spans the
+        X axis and rotate(rot) turns it onto the bar angle, so local +x is ACROSS the lane and local
+        +y along it. Factored out because two callers need the SAME geometry: kido() draws it, and
+        kido_reservation() reserves the ground it will stand on long before it is drawn."""
+        roof = (-hw, -7.0, 2 * hw, 14.0)
+        posts = [(-hw - 1, -8.0, 4.0, 16.0), (hw - 3, -8.0, 4.0, 16.0)]
+        cr, sr = math.cos(math.radians(rot)), math.sin(math.radians(rot))
+
+        def to_corners(rect: Settlement._Rect) -> Poly:
+            """The rect's four corners in map coords, in WINDING order (so a caller may use the
+            result as a polygon, not merely as a point cloud for a bbox)."""
+            rx0, ry0, rw, rh = rect
+            return [(x + a * cr - b * sr, y + a * sr + b * cr) for a, b in ((rx0, ry0), (rx0 + rw, ry0), (rx0 + rw, ry0 + rh), (rx0, ry0 + rh))]
+
+        # THE GUARD BOX TAKES THE NEAREST CLEAR SPOT BESIDE THE OPENING, on the ward-interior flank
+        # (the `guard_side` +/-y set by the caller). It starts just beyond the bar's end and walks
+        # OUTWARD, trying the near side of the opening first and the far side at the same distance,
+        # until it stands clear of two things:
+        #   - every LANE BED, by a verge of ~12 real ft. Straight-line arithmetic is not enough: the
+        #     ring road CURVES as it passes the gate, so a box set back along the road walks into a
+        #     bed it started clear of (Tango's east ward gate, GM 2026-07-26).
+        #   - every WALL TOWER already standing. The rampart is drawn long before s.ward, and the
+        #     ward fence meets the wall exactly where the last kido hangs, so the box can slide onto
+        #     a mural bastion (Nagahara's west ward gate). The kido cannot move and the tower will
+        #     not (a coverage-thin curtain needs it), so the BOX is what yields - it simply stands on
+        #     the other flank of its own gateway, which is as plausible a spot for a watch shack.
+        #   - the RAMPART and any compound wall it could be pushed onto. Its OWN ward fence is
+        #     excluded: the fence runs through the gate by construction, so the gate's furniture
+        #     stands on it by design (excluding it is what lets the box sit beside its own fence).
+        y0 = 12.0 if guard_side >= 0 else -28.0
+        verge = max(self.px(12), 4.0)
+        runs = [(pts, half + verge) for pts, half in lane_runs(self.M)]
+        runs += [(pts, half) for lbl, pts, half in wall_runs(self.M) if "ward fence" not in lbl]
+        towers = [tower_quad(t) for t in list(self.M.get("wall_towers") or []) + [g for g in (self.M.get("gate_structs") or []) if g.get("kind") == "tower"]]
+        guard: Settlement._Rect = (-hw - 13, y0, 15.0, 16.0)
+        for step in range(24):  # bounded: 24 x 1.5px is far more walk than any real crossing needs
+            for cand in ((-hw - 13 - 1.5 * step, y0, 15.0, 16.0), (hw - 2 + 1.5 * step, y0, 15.0, 16.0)):
+                gc = to_corners(cand)
+                blocked = any(seg_dist(cx, cy, pts[i], pts[i + 1]) < clear for pts, clear in runs for i in range(len(pts) - 1) for (cx, cy) in gc)
+                if not blocked and not any(sat_overlap(gc, tq) for tq in towers):
+                    return roof, posts, cand, to_corners
+        return roof, posts, guard, to_corners  # pragma: no cover - nowhere clear within 36px of the opening on either flank; keep the traditional seat and let kido_guard_box_clear_of_lanes report it
+
+    def kido_seat(self, x: float, y: float, boundary: Any) -> tuple[float, int]:
+        """The (bar angle, guard flank) a kido seated at (x, y) on the ward fence `boundary` will
+        take: square to the lane running through it, else along the local fence tangent, with the
+        guard box on the ward-interior side. s.ward calls this for every gate it draws; a gen calls
+        it (via kido_reservation) to reserve that ground BEFORE the packs run."""
+        i = min(range(len(boundary) - 1), key=lambda j: seg_dist(x, y, boundary[j], boundary[j + 1]))
+        fence = math.degrees(math.atan2(boundary[i + 1][1] - boundary[i][1], boundary[i + 1][0] - boundary[i][0]))
+        lane = lane_through_gate(self.M, x, y, fence)
+        rot = kido_bar_deg(lane[0], fence) if lane else fence
+        nx, ny = -math.sin(math.radians(rot)), math.cos(math.radians(rot))  # the local +y flank, in map coords
+        icx = sum(p[0] for p in boundary) / len(boundary)  # the fence polyline's centroid sits toward the ward interior
+        icy = sum(p[1] for p in boundary) / len(boundary)
+        return rot, (1 if (icx - x) * nx + (icy - y) * ny >= 0 else -1)
+
+    def kido_reservation(self, x: float, y: float, boundary: Any, margin: float = 17.0) -> Poly:
+        """The no-build rect a gen should `block_polys.append(...)` for a ward gate at (x, y), sized
+        to the glyph that will actually be drawn there. THE ORDERING TRAP this solves (it is why the
+        helper exists rather than a hand-written rect in each gen): s.ward runs near the END of a
+        city gen, long after the packs, so the gates' ground must be reserved up front - but the
+        glyph's extent is NOT symmetric (it reaches ~36px on the guard-box flank and ~10px on the
+        other) and its angle now depends on the lane it bars, so a hand-tuned rect goes stale the
+        moment a fence or a road moves, and a square big enough to be safe at any angle costs real
+        housing (Tango lost its merchant band and a well to one). `margin` inflates the rect by a
+        large dwelling's half-diagonal, since block_polys are CENTER-tested for urban packs.
+        Call it AFTER the lanes through the gates are drawn, so kido_seat sees them."""
+        rot, side = self.kido_seat(x, y, boundary)
+        roof, posts, guard, to_corners = self._kido_rects(x, y, rot, side, self.lw(18) / 2 + 5)
+        cs = [c for rect in (roof, *posts, guard) for c in to_corners(rect)]
+        x0, y0 = min(c[0] for c in cs) - margin, min(c[1] for c in cs) - margin
+        x1, y1 = max(c[0] for c in cs) + margin, max(c[1] for c in cs) + margin
+        return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
     def kido(self, x: float, y: float, horizontal: bool = True, sw: float | None = None, rot: float | None = None, guard_side: int | None = None) -> None:
         """A kido - a wooden WARD GATE barring a street at a quarter boundary, manned and shut at
         night to keep the samurai quarter apart from the commoners. A small city seals its wards
         with GATES, not internal ramparts (the walled-ward / fang system was a great-capital, Tang-
         era thing). Drawn OVER the street (a roofed gateway + posts + a guard box); records M['kido'].
-        THE GATE SITS IN THE FENCE, SO IT ALIGNS WITH THE FENCE (GM 2026-07-24): the roofed bar
-        spans the gap in the ward fence, so its long axis runs along the LOCAL FENCE TANGENT -
-        pass `rot` (degrees, the fence direction; s.ward computes it from the boundary polyline).
-        An axis-aligned kido on a slanted fence run reads as a stamp dropped on the map, not a
-        gate in a fence (kido_aligned_with_ward_fence pins it). The guard box rotates with the
-        group; `guard_side` (+1 = the local +y flank, -1 = the -y flank) picks which side of the
-        fence it stands on - s.ward passes the WARD-INTERIOR side (the gate watch belongs to the
-        ward it seals). Legacy `horizontal` (True = an E-W street through a N-S fence) remains as
-        the fallback when rot is omitted, reproducing the old axis-aligned drawings exactly."""
+        THE GATE SQUARES TO WHAT IT BARS (GM 2026-07-26): a kido exists to shut a WAY, so where a
+        street, alley, road or the ring road runs through the seat, the roofed bar stands SQUARE
+        ACROSS THAT LANE and the fence meets it at whatever angle the fence happens to run; only
+        where no lane passes through does the bar fall back to the LOCAL FENCE TANGENT (the earlier
+        GM 2026-07-24 rule, which is still what a gate in open fence wants). The two agree wherever
+        a lane meets its fence squarely, which is most crossings; they diverge on an oblique one -
+        Tango's SW ring-road gate sat 38 degrees off square to the road it barred, and read as a
+        stamp dropped on the roadbed. Pass `rot` (degrees) for the bar angle; s.ward computes it via
+        lane_through_gate/kido_bar_deg, and kido_aligned_with_ward_fence grades it the same way.
+        The guard box rotates with the group; `guard_side` (+1 = the local +y flank, -1 = the -y
+        flank) picks which side it stands on - s.ward passes the WARD-INTERIOR side (the gate watch
+        belongs to the ward it seals). It is then NUDGED clear of any lane bed it would otherwise
+        stand in: the box is a small building on the verge, not an obstruction in the road, and a
+        ring road that CURVES past the gate walks under a box placed on straight-line arithmetic
+        (Tango's east ward gate, GM 2026-07-26). Legacy `horizontal` (True = an E-W street through
+        a N-S fence) remains the fallback when rot is omitted, reproducing the old drawings."""
         if sw is None:
             sw = self.lw(18)  # the barred opening spans a real ~18 ft street
         hw = sw / 2 + 5
@@ -3322,10 +3473,8 @@ class Settlement:
             rot = 90.0 if horizontal else 0.0
         if guard_side is None:
             guard_side = -1 if horizontal else 1  # the legacy flanks (E of a N-S gate, S of an E-W one)
-        # local frame: the gateway bar spans the X axis; rotate(rot) turns it onto the fence tangent
-        roof = (-hw, -7.0, 2 * hw, 14.0)
-        posts = [(-hw - 1, -8.0, 4.0, 16.0), (hw - 3, -8.0, 4.0, 16.0)]
-        guard = (-hw - 13, 12.0 if guard_side >= 0 else -28.0, 15.0, 16.0)
+        roof, posts, guard, _corners = self._kido_rects(x, y, rot, guard_side, hw)
+        cr, sr = math.cos(math.radians(rot)), math.sin(math.radians(rot))
         g = [f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{roof[0]:.0f}" y="{roof[1]:.0f}" width="{roof[2]:.0f}" height="{roof[3]:.0f}" rx="1.5" fill="#8A6E3E" stroke="#3F3018" stroke-width="1.5"/>')
         for px, py, pw, ph in posts:
@@ -3333,12 +3482,28 @@ class Settlement:
         g.append(f'<rect x="{guard[0]:.0f}" y="{guard[1]:.0f}" width="{guard[2]:.0f}" height="{guard[3]:.0f}" rx="1" fill="#CDB890" stroke="#5A4326" stroke-width="1.2"/>')
         g.append('</g>')
         z = self.add_top(''.join(g))
-        cr, sr = math.cos(math.radians(rot)), math.sin(math.radians(rot))
-        corners = [
-            (x + rcx * cr - rcy * sr, y + rcx * sr + rcy * cr) for rx_, ry_, rw_, rh_ in [roof, *posts, guard] for rcx, rcy in ((rx_, ry_), (rx_ + rw_, ry_), (rx_, ry_ + rh_), (rx_ + rw_, ry_ + rh_))
-        ]  # the gate's full drawn footprint, rotated (for the labels-on-top check)
+        corners = [c for rect in (roof, *posts, guard) for c in _corners(rect)]  # the gate's full drawn footprint, rotated (for the labels-on-top check)
         bbox = [round(min(c[0] for c in corners), 1), round(min(c[1] for c in corners), 1), round(max(c[0] for c in corners), 1), round(max(c[1] for c in corners), 1)]
-        self.M.setdefault("kido", []).append({"x": round(x, 1), "y": round(y, 1), "horizontal": abs(sr) >= abs(cr), "rot": round(rot % 180.0, 1), "z": z, "bbox": bbox})
+        self.M.setdefault("kido", []).append(
+            {
+                "x": round(x, 1),
+                "y": round(y, 1),
+                "horizontal": abs(sr) >= abs(cr),
+                "rot": round(rot % 180.0, 1),
+                "z": z,
+                "bbox": bbox,
+                "guard": [
+                    [round(cx, 1), round(cy, 1)] for cx, cy in _corners(guard)
+                ],  # the watch box's own footprint, so kido_guard_box_clear_of_lanes can grade it (the bbox alone cannot tell box from bar)
+                # ...and the TRUE (rotated) footprint of every part. The bbox is an axis-aligned box
+                # round the whole group - honest while every kido was axis-aligned, badly overstated
+                # now that they turn onto their lane: Nagahara's SW gate at 115deg has a bbox ~60%
+                # larger than the glyph, and the keep-clear checks read it as overlapping a mural
+                # tower the gate in fact clears (GM 2026-07-26). bbox stays for the label-occlusion
+                # pass, where over-stating is the safe direction.
+                "parts": [[[round(cx, 1), round(cy, 1)] for cx, cy in _corners(rect)] for rect in (roof, *posts, guard)],
+            }
+        )
 
     def ward(self, name: str, boundary: Any, gates: Any) -> None:
         """An internal WARD boundary - a light earthwork/palisade fence (NOT a city rampart) that
@@ -3346,11 +3511,13 @@ class Settlement:
         cannot simply be walked around: the fence is continuous between the gates, its ends abut
         the city wall, and a street may pierce it ONLY at a gate. `boundary` is the fence polyline;
         `gates` are (x, y) kido seats where a street crosses it (a legacy third element - the old
-        horizontal flag - is accepted and ignored). PLACEMENT RULE (GM 2026-07-24): each kido
-        ALIGNS WITH THE LOCAL FENCE TANGENT at its seat - the gate is a gap IN the fence, so a
-        30-degree fence run gets a 30-degree gate, never an axis-aligned stamp - and its guard
-        box stands on the WARD-INTERIOR flank (the gate watch belongs to the ward it seals).
-        Records M['wards']."""
+        horizontal flag - is accepted and ignored). PLACEMENT RULE (GM 2026-07-26, refining the
+        2026-07-24 fence rule): each kido SQUARES TO THE LANE RUNNING THROUGH IT - a gate exists to
+        shut a way, so the bar stands across the roadbed and the fence meets it obliquely if that is
+        how the fence runs. Only a gate with no lane through it falls back to the LOCAL FENCE
+        TANGENT (never an axis-aligned stamp on a slanted run). Its guard box stands on the
+        WARD-INTERIOR flank (the gate watch belongs to the ward it seals), nudged clear of the
+        roadbed by s.kido. Records M['wards']."""
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in boundary)
         fz = self.add(f'<path d="{dd}" fill="none" stroke="#9C8A5E" stroke-width="5" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add(f'<path d="{dd}" fill="none" stroke="#4A3A22" stroke-width="1.3" stroke-dasharray="2,7" opacity="0.85"/>')  # palisade
@@ -3398,14 +3565,9 @@ class Settlement:
                     cz = self.add(f'<path d="{dd_cap}" fill="none" stroke="#3A352C" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>')
                     caps.append({"x": round(px, 1), "y": round(py, 1), "z": cz, "pts": [[x, y] for x, y in cappts]})
         self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "wall_caps": caps})
-        icx = sum(p[0] for p in boundary) / len(boundary)  # the fence polyline's centroid sits toward the ward interior
-        icy = sum(p[1] for p in boundary) / len(boundary)
         for gate in gates:
             gx, gy = gate[0], gate[1]
-            gseg = min(range(len(boundary) - 1), key=lambda gi: seg_dist(gx, gy, boundary[gi], boundary[gi + 1]))
-            grot = math.degrees(math.atan2(boundary[gseg + 1][1] - boundary[gseg][1], boundary[gseg + 1][0] - boundary[gseg][0]))
-            gnx, gny = -math.sin(math.radians(grot)), math.cos(math.radians(grot))  # the local +y flank, in map coords
-            gside = 1 if (icx - gx) * gnx + (icy - gy) * gny >= 0 else -1  # guard box toward the ward interior
+            grot, gside = self.kido_seat(gx, gy, boundary)  # square to the lane it bars (the fence only where no lane runs through); guard box toward the ward interior
             self.kido(gx, gy, rot=grot, guard_side=gside)
         self._assert_walls_clear_of_torii(f"the {name} ward fence")  # a fence laid across a standing arch (Nagahara 2026-07-25)
 
@@ -8421,6 +8583,13 @@ class Settlement:
                 # 28px floor survives for extreme-dense postures. Rejected seats fall to the slide
                 # fan, which walks them toward the local span midpoint - restoring the rhythm.
                 return (
+                    # 32, NOT the even-fill's KIDO_TOWER_KEEPCLEAR (62): a remediation seat exists
+                    # because that run is coverage-thin, and widening this band to 62 was tried
+                    # (2026-07-26) - it dropped a legitimate tower 45px from Nagahara's SW ward
+                    # junction, which cleared the kido glyph by ~9px, and left a curtain point just
+                    # OUTSIDE the exempt band uncovered. The kido's own glyph is what a tower must
+                    # not sit on, and s.kido enforces that from its side by seating the guard box on
+                    # whichever flank of the opening is clear of the towers already standing.
                     any(math.hypot(px - kx_, py - ky_) < 32 for kx_, ky_ in tower_skip)
                     or any(math.hypot(px - fx_, py - fy_) < 40 for fx_, fy_ in gate_furn)
                     or any(math.hypot(px - tx_, py - ty_) < max(28.0, 0.75 * max_spacing) for tx_, ty_ in placed_tw)

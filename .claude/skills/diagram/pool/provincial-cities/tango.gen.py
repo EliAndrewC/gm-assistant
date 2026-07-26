@@ -163,12 +163,14 @@ s.moat_flow(_mnw, _mse)  # the closed ring flushes NW (feeder) -> SE (outfall), 
 # after the packs - so without these block_polys a row house lands under a guard box (the boxes
 # hang W of a vertical kido, N of a horizontal one; reserved with a ~17px margin (a samurai_large's
 # half-diagonal) so a footprint CENTER-test keeps whole footprints out). Also feeds tower_skip.
-KIDO_SPOTS = [(1622, 1455, True), (1704, 1364, False), (1805, 1364, False), (1896, 1364, False), (2065, 1364, False), (1655, 1748, True)]
-for kx, ky, kh in KIDO_SPOTS:
-    if kh:
-        s.block_polys.append([(kx - 25, ky - 38), (kx + 45, ky - 38), (kx + 45, ky + 26), (kx - 25, ky + 26)])
-    else:
-        s.block_polys.append([(kx - 38, ky - 25), (kx + 26, ky - 25), (kx + 26, ky + 45), (kx - 38, ky + 45)])
+WARD_FENCE = [(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)]  # hoisted from the s.ward call below so the gates' ground can be reserved up front
+KIDO_SPOTS = [(1622, 1455), (1704, 1364), (1805, 1364), (1896, 1364), (2065, 1364), (1655, 1748)]
+# s.kido_reservation asks the ENGINE for the ground each gate will take, rather than hand-writing a
+# rect per spot: the glyph's angle now follows the lane it bars and its guard box slides clear of
+# the roadbed, so a hand-tuned rect goes stale silently (and a square big enough to be safe at any
+# angle cost Tango its merchant band and a well when it was tried).
+for kx, ky in KIDO_SPOTS:
+    s.block_polys.append(s.kido_reservation(kx, ky, WARD_FENCE))
 
 # civic amenities placed FIRST, so the dense packs flow around them.
 # CARAVAN facilities just INSIDE each gate (a transit zone): a flophouse + a prominent INN + a
@@ -860,14 +862,16 @@ s.rowpack(
 s.corridors.append(
     ([(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)], 16)
 )  # reserve the WARD FENCE line before the pack so no samurai house sits ON the fence (city_ward_fence_clear_of_structures)
-s.pack((1624, 1377, 2084, 1742), (["samurai"] * 3 + ["samurai_large"]) * 150, step=11, face_streets="fill")
+s.pack(
+    (1624, 1377, 2084, 1742), (["samurai"] * 2 + ["samurai_large"]) * 150, step=11, face_streets="fill"
+)  # 1-in-3 large, not 1-in-4 (GM 2026-07-26): the ward-gate reservations are sized to the real glyph now, and the ground they took back from the quarter cost a senior house - the packer skips a large that will not fit, so offering more of them is what restores the rank mix (city_samurai_housing_varied wants >= 3)
 s.label(1762, 1691, "samurai neighborhood", 10, italic=True, color="#3A352C")
 # the samurai/government WARD: a continuous earthwork fence (W + N), ends abutting the city
 # wall, so the kido gates can't be walked around. The W leg jogs east below the quarter to
 # abut SOLID wall clear of the S gate opening at x1600.
 s.ward(
     "samurai",
-    [(1681, 1777), (1622, 1720), (1622, 1364), (2088, 1364)],
+    WARD_FENCE,
     gates=[
         (1622, 1455),  # the government avenue pierces the W fence
         (1704, 1364),

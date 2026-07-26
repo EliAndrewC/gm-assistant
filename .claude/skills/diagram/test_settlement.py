@@ -240,6 +240,48 @@ def test_ward_kido_aligns_to_fence_tangent_and_guards_the_interior():
     assert k0["bbox"][1] < 400 - 25 and k0["bbox"][3] < 400 + 25
 
 
+def test_ward_kido_squares_to_the_lane_it_bars_and_keeps_its_box_off_the_roadbed():
+    # GM 2026-07-26: the gate shuts a WAY. A 45deg fence crossed by a HORIZONTAL street gets a
+    # gate square to the street (90deg), not to the fence - and the watch box stands on the verge.
+    s = Settlement(1000, 1000, seed=1)
+    s.street([(100, 450), (900, 450)])
+    s.ward("slant", [(300, 300), (600, 600)], gates=[(450, 450)])
+    k = s.M["kido"][-1]
+    assert abs(k["rot"] - 90.0) < 0.5  # square across the street, NOT the fence's 45deg
+    st = s.M["town_streets"][-1]
+    half = st["w"] / 2
+    assert all(abs(cy - 450) > half for _, cy in k["guard"])  # the box is beside the roadbed, not in it
+
+
+def test_kido_reservation_covers_the_glyph_the_ward_will_actually_draw():
+    # the gen must reserve a ward gate's ground before the packs run, but s.ward draws it near the
+    # END - so the reservation has to predict the glyph. It does that by asking the engine for the
+    # same seat s.ward will take, which is why it is a method and not a rect in the gen.
+    s = Settlement(1000, 1000, seed=1)
+    s.street([(100, 450), (900, 450)])
+    fence = [(300, 300), (600, 600)]
+    res = s.kido_reservation(450, 450, fence, margin=0.0)
+    s.ward("slant", fence, gates=[(450, 450)])
+    k = s.M["kido"][-1]
+    x0, y0 = min(p[0] for p in res), min(p[1] for p in res)
+    x1, y1 = max(p[0] for p in res), max(p[1] for p in res)
+    assert (x0, y0, x1, y1) == pytest.approx(tuple(k["bbox"]), abs=0.2)  # a zero-margin reservation IS the drawn glyph's extent
+    assert min(p[0] for p in s.kido_reservation(450, 450, fence)) < x0  # ...and the default margin inflates it
+
+
+def test_kido_guard_box_takes_the_far_flank_when_the_near_one_is_blocked():
+    # the box yields, never the gate: where the near side of the opening is taken (here by a wall
+    # tower standing at the rampart, the Nagahara case), it seats on the other side of its own
+    # gateway rather than overlapping (which no generic overlap pass would catch - kido are exempt)
+    s = Settlement(1000, 1000, seed=1)
+    s.street([(100, 450), (900, 450)])
+    s.M["wall_towers"] = [{"x": 430, "y": 436, "w": 26, "h": 26, "rot": 0}]  # stands on the near flank of the opening (the rampart side), where the box would sit
+    s.ward("slant", [(300, 300), (600, 600)], gates=[(450, 450)])
+    k = s.M["kido"][-1]
+    assert not settlement.sat_overlap([(c[0], c[1]) for c in k["guard"]], settlement.tower_quad(s.M["wall_towers"][0]))
+    assert sum(c[1] for c in k["guard"]) / 4 > 450  # it crossed to the other side of its own gateway (local +x, which the 90deg bar puts SOUTH)
+
+
 def test_seg_closest_degenerate_segment():
     assert settlement.seg_closest(0, 0, (5, 5), (5, 5)) == (5, 5)
 
