@@ -12,35 +12,100 @@
 
 **Loop discipline** (skill CLAUDE.md): iterate on the ONE map with `DIAGRAM_SKIP_RENDER=1 python3 pool/provincial-cities/minami.gen.py && python3 check_village.py pool/provincial-cities/minami.json` (~1-7s); run the ~80s `make done` sweep ONCE at the end, backgrounded, and never poll it.
 
-## STATUS (2026-07-26)
+## STATUS (2026-07-26, second pass)
 
-**Engine work COMPLETE and green** (Phases 1-3, T01-T10). **The map is a running first draft**
-(T11 partial): it generates 364 features and passes **216 of ~244** gate checks. It is parked at
-`specs/016-minami-provincial-city/draft/minami.gen.py`, deliberately NOT under `pool/`, because
-`test_villages.py` globs `pool/*/*.gen.py` and gates every map it finds - a red map there would
-break the suite for every other session. Move it into `pool/provincial-cities/` once green.
+**Engine work COMPLETE and green** (Phases 1-3, T01-T10, T20). **The map gates at 8 failures of
+~370 checks** and `check_village.py <m>.json --capacity` reads **SIZED_AND_PACKED** - 449 dwellings
+placed in-wall against a 448 target, wall scale x1.00. Still parked at
+`specs/016-minami-provincial-city/draft/`, NOT under `pool/`, because `test_villages.py` globs
+`pool/*/*.gen.py` and a red map there breaks the suite for every other session.
 
-Remaining gate failures, grouped (each is signposted by its own check message, and both shipped
-gens show the pattern to copy):
+**A NOTE ON THIS FILE'S HISTORY.** Two sessions edited this generator concurrently for several
+hours (the first was believed crashed but was live). Measurements taken during that window are not
+trustworthy - the generator looked nondeterministic because the source was changing between runs.
+It is deterministic: identical source gives byte-identical output, verified.
 
-1. **Missing civic furniture** - `city_has_cremation_ground`, `city_has_ossuary`,
-   `city_has_kosatsuba` (3 boards), `city_has_punishment_spot`, `city_has_execution_ground`,
-   `city_has_mausoleum` (one is drawn but not being seen - check its seat relative to the ward),
-   `walled_settlement_has_drum_tower`, `city_temples_have_graveyards` (Hotei/Jurojin/Bishamon).
-2. **Under-packed** - 303 urban buildings against the ~520 target, so
-   `population_consistent_with_housing`, `city_caste_counts_in_band`,
-   `city_residential_quarters_dense_enough` and `city_samurai_housing_sufficient` all trail. The
-   SE ward is the worst (the samurai pack seats ~12 of 480): its region needs re-cutting around
-   the civic aprons the way Nagahara's does.
-3. **Overlaps to clear** - structures on the road/wall/moat/street/torii/religious halls; the
-   Inari hall sits on a lane (`shrine_halls_clear_of_lanes`); Daikoku is in the ring-road corridor.
-4. **Placement rules** - `tanning_yard_on_water` (the yard must abut the bank),
-   `near_ring_cultivated_fraction` (no farmland drawn yet), `funerary_set_back_from_water`,
-   `walled_exterior_cemetery_larger`, `alleys_serve_buildings`, and a label-collision batch.
-5. **Frame** - `crop_not_held_open_by_one_feature` on three labels.
+### The declared population is the crux, and it is a GM decision
 
-Use `s.open_seat` / `site_justice.py` for the re-seating rather than guessing coordinates - the
-skill's dev-loop doc is explicit that hand-picked seats are the most expensive loop here.
+`spec.md` FR-010 says population ~2,600. The map cannot hold that: it delivers ~450 dwellings
+where 2,600 needs 520. The first session lowered `LAY_POP` to **2000** (declared total 2,240, since
+the 48 temple families ride outside the lay caste table and add 240), and that is where it sits.
+`LAY_POP` cannot go lower - `citybudget.POP_MIN` is 2000.
+
+Its reasoning, which measurement supports: eight scattered precincts - each with a compound, a
+caption band and a ring of temple families - fragment the commoner quarters far more than the
+two-complex program `citybudget` was calibrated on, and fragmentation costs packing efficiency the
+model does not price. Note the clergy count is NOT a lever: a monk house is one dwelling and five
+residents, exactly break-even.
+
+So the options, all spec-level:
+1. Accept 2,240 (current). Cheapest; contradicts FR-010's 2,600.
+2. Re-derive a LARGER wall from a budget that prices fragmentation - the project's own doctrine
+   ("if it wants a resize, fix the budget model, not the wall"). The honest fix, biggest change:
+   every hand-placed seat on the map is absolute, so the ring moving invalidates them.
+3. Trim the program (7 precincts, or a smaller timber ground) to buy back interior.
+
+### Remaining 8 failures, and what each actually needs
+
+1. `labels_clear_of_other_buildings` (~14 collisions) - **the one to do next, and do it by MOVING
+   the captions, not by reserving more ground.** Reserving costs ~40 dwellings and still leaves ~12;
+   flipping `label_below` or passing `label_xy` costs nothing. Offenders are the temple captions plus
+   bathhouse/brewery, flophouse/cemetery, flophouse/stables, guard-stations/flophouse, notice
+   board, dye works, burakumin, samurai neighborhood.
+2. `city_samurai_housing_sufficient` (28, wants 29) and `city_caste_counts_in_band` (samurai) - one
+   or two more in-wall samurai. Do NOT add extramural estates: `city_samurai_estates_outside` caps
+   the drawn country seats at 3.
+3. `city_row_housing_touches` (176/327, wants 180) - four more touching pairs.
+4. `city_well_density_sufficient` + `city_neighborhoods_have_wells` - more draw-points. Careful:
+   adding a head near the merchant warren once made density WORSE by shifting nearest-well
+   assignment; verify each pass.
+5. `businesses_front_streets` (19/40) - kind `merchant` is a shop-house and belongs on a frontage;
+   interior rowpacks should carry only `merchant_house`.
+6. `no_structure_on_street` - `place_punishment_spot()` auto-sites on a street verge and picks a
+   node ~2px off the x1300 roji, which the check reads as a structure on the alley. Its verge probe
+   does not honor corridors, so widening the roji's corridor does not move it; `site_justice.py`
+   finds no legal seat among 60. Use the manual `s.punishment_spot(x, y, ...)` API.
+
+### THE REGISTRY MAP - read this before touching any reservation
+
+Which placer honors which registry, verified against `settlement.py` rather than assumed. Getting
+this wrong cost most of a session:
+
+| placer | block_polys | corridors | placed |
+|---|---|---|---|
+| `rowpack` | YES (`_in_blocked`) | **NO** | yes |
+| `top_up`, `place_wells`, the `_fits` packs | yes | YES (`_near_corridor`) | yes |
+
+Both are **centre**-tested; the difference is shape, not footprint-vs-centre. So a caption band needs
+BOTH entries - a corridor alone lets the terraces walk under the text, a block poly alone lets the
+fills do it. The original `precinct()` comment said exactly this; half the implementation was
+missing, and removing the other half looked like a 33-dwelling win right up until the captions came
+back. `reserve_caption_ground()` now does both, sized from the RECORDED label box (half-extents =
+caption half-height + the widest row kind's), which is why it replaced two hand-rolled guesses.
+
+**And it is ORDER-sensitive:** each precinct's caption must be reserved inside `precinct()`, before
+the per-precinct `monk_house` pack runs - a pack only avoids what is in the registries when it runs.
+
+### Other things worth not re-deriving
+
+- **`top_up`'s clearance is why the fills were detached.** Its exact sweep held 3px off every
+  neighbor, so every dwelling it seated was detached by construction - the reason the fills ran out
+  of ground early AND why `city_row_housing_touches` stalled. A final party-wall pass at **gap=2.4**
+  is the measured threshold: below it, fills seated behind a row block doorways
+  (`city_house_doors_unblocked`) and stack terraces three deep (`city_rows_max_two_deep`).
+- **Do NOT shift the x1300 roji.** Moving it 10px east reflowed every rowpack in the western
+  quarters and took caption collisions from 2 to 15. A lane is load-bearing for everything that
+  packs around it.
+- **The SE ward is CORRECTLY low-density** (0.47/1000px^2 against the SW's 1.84). Samurai plots are
+  C_SPACED 2,480px^2 against a commoner's C_PACKED 690, and the quarter also carries the yamen, six
+  ministries, the mausoleum, the martial hall and two dojos. Chasing density there fights the budget.
+  Servants do NOT belong inside a gated ward - terracing them there starved both samurai checks.
+- **`city_capacity` runs under the check name `city_wall_sized_to_population`**, so grepping the
+  gate for "city_capacity" returns 0 and looks like a check that never runs. The CLI is
+  `check_village.py <m>.json --capacity [--capacity-map]`; its per-quarter density table is what
+  located the starving quarters, and it is the tool to answer "wall or packing?".
+- `city_government_offices_dont_abut` measures the **rotated** bbox, which a diagonal
+  `face_streets` seat inflates ~40% (the offender cleared 15.5px square and failed at 12.4px turned).
 
 ## Phase 1: Setup and guardrails
 
