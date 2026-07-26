@@ -96,6 +96,36 @@ seat both hand-picked batches had missed, first try. Reach for it on any "this p
 X" - and note the DRAW ORDER caveat: it can only see what has been drawn so far, so call it where
 the feature belongs, not earlier.
 
+## Siting a feature with interacting rules: adjudicate against the GATE, never a re-statement of it
+
+`open_seat` (above) answers "does this fit here?" - geometry only. When a feature's placement is
+governed by many INTERACTING rules, that is not enough: the justice works (feature 015) must be
+outside the wall, on the way out, past the boundary stone, clear of the community's dead, off the
+farmland, on the outcast side, clear of every structure, and inside the map's current view. Use
+[`site_justice.py`](site_justice.py):
+
+    python3 site_justice.py pool/provincial-cities/nagahara.json execution_ground --limit=25
+    python3 site_justice.py pool/towns/hirameki.json boundary_marker --ground=1620,1900
+
+It proposes seats **cheapest-on-the-frame first** (`frame_cost=0` means the crop is unchanged by
+that seat) and adjudicates each one by building a trial manifest and running `check_village.gate()`
+on it, reporting the checks that fail there but not with the feature absent.
+
+**The lesson, which generalizes past this feature.** Its predecessor was a scratchpad script that
+re-implemented every rule as its own predicate, and it drifted *within a single session*: a
+relaxation made to satisfy one map silently persisted and put Nagahara's boundary stone in a field
+off the highway. The gate accepted it because the rule it broke was not yet checked, and only the
+rendered PNG showed the problem. So a siting tool must never restate a rule - it must ASK the gate.
+New rules are then picked up for free, and the tool cannot disagree with the checker. This is the
+same trap as "placement and its check must read the SAME manifest source" (below), one level up.
+The cheap geometric pass in that file is a RANKING only: it orders candidates to keep the number of
+gate runs small, and it never rejects, so a stale heuristic costs runtime rather than correctness.
+
+**Known limit:** label collisions cannot be judged from a manifest - a label box is produced at draw
+time, not recorded for a hypothetical placement - so `labels_clear_of_other_buildings` and
+`no_label_overlaps` still surface only on regeneration. That is why `punishment_spot` and
+`execution_ground` both take `label_above` / `label_xy`.
+
 ## Read derived geometry from the MANIFEST, not by re-running the generators
 
 Second-biggest sink in that same profile: **7.6 minutes across three runs of a throwaway analysis
@@ -168,10 +198,10 @@ to do.
 `_OVERLAP_STRUCTS` (check_village.py) - or, if it is MEANT to overlap something, in
 `_OVERLAP_EXEMPT` with the reason. You cannot forget: `every_feature_classified_for_overlap` fires
 when a generator emits a feature key nobody classified. Membership alone then gates the feature off
-**fourteen hazards** - the wall, the moat, the road, streets and alleys, streams, channels, the
+**fifteen hazards** - the wall, the moat, the road, streets and alleys, streams, channels, the
 cargo canal, the pond, manor walls, religious halls, gate furniture, torii arches, the ring road,
-and every other solid structure - because every one of those checks builds its footprints from the
-registry via `solid_structs(M)`.
+every other solid structure, and the 14px government-office standoff - because every one of those
+checks builds its footprints from the registry via `solid_structs(M)`.
 
 **The failure mode this replaced.** The `no_structure_on_*` battery was always registry-driven, but
 a handful of keep-clear checks predated it and hand-listed their own keys. A feature could be
@@ -193,16 +223,27 @@ once** - that is the cheap way to answer the next "should not overlap with X".
 that key to `_OVERLAP_STRUCTS`; run the suite. If the feature needs a keep-clear rule no existing
 hazard covers, add a hazard row rather than a bespoke check with its own key list.
 
-**Two things the contract does NOT cover, so still think about them:**
+**The placement side, which the GM asked about next.** `_fits` tests an urban candidate's CENTER
+against `s.bound`, `block_polys` and the corridors, and whole footprints only against `placed` /
+`grove_rects` (see DRAW ORDER below). `open_seat` now closes the half of that gap that matters:
+it verifies the whole FOOTPRINT against **the bound**, because a bound is a hard edge (the
+ring-road loop, the wall) and a footprint crossing it is drawn on the patrol road at any overhang -
+which is exactly how the martial hall got its seat. `block_polys` and corridors stay center-tested
+even there, deliberately: those are soft RESERVATIONS (a label band, a civic apron, a fence
+standoff) that a footprint routinely overhangs by a few px, and tightening them was tried and cost
+Nagahara a well and pushed Hoshizora's punishment ground off its street. The bound-only rule
+changes nothing in the pool. `footprint=False` gets the old center-only answer, i.e. what a pack
+would take. (`test_open_seat_refuses_a_seat_whose_FOOTPRINT_crosses_the_bound` holds this.)
 
-- **Placement, as opposed to validation.** `_fits` tests an urban candidate's CENTER against
-  `block_polys` while testing whole footprints against `placed` (see DRAW ORDER below), and
-  `s.bound` is likewise a center test - which is exactly why `open_seat` happily returned a
-  martial-hall seat whose footprint crossed the ring bed even though its center was inside the
-  bound. A seat that passes `open_seat` still has to be gated.
-- **Gap rules, not overlap rules.** `city_government_offices_dont_abut` wants 14px of daylight, not
-  merely no overlap; the hazard table only proves the overlap case. When a feature must keep a
-  DISTANCE from something, that is still a per-rule decision.
+**Gap rules are in the table now, but one row each.** A clearance rule ("14px of daylight", not
+"no overlap") is the other shape a keep-clear rule comes in, and it broke identically:
+`city_government_offices_dont_abut` had never seen the martial hall or the dojo, so both shipped
+inside its standoff. A `_HAZARDS` row expresses a gap simply by planting the struct NEAR the hazard
+instead of on it, so the contract covers it - but unlike the overlap hazards, each new distance
+rule still needs its own row. A row's fifth field lists keys the rule DELIBERATELY does not govern
+(the funerary compounds are excluded from the office standoff: a clan crypt against the yamen is a
+real adjacency), so a deliberate exclusion is visible in the contract rather than hidden in a
+check.
 
 ## When a check is slow, INDEX it - do not coarsen it
 
