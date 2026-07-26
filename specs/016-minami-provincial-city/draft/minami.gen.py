@@ -118,6 +118,12 @@ BUDGET = plan_city(
             BudgetLine("Inari precinct uplift", 1, 1_600.0, "the Inari precinct stands ~1.0 acre against its siblings' ~0.70 - the largest of the eight, still under an ordinary city's single complex"),
             BudgetLine("timber + charcoal working ground", 1, 18_100.0, "log stacking, sawpits and charcoal godowns inside the wall (the drawn yard is r=76px) - the storage end of the Fox forest trade; the kilns are outside by fire law"),
             BudgetLine("gate marshalling grounds", 2, 9_000.0, "beaten-earth hitching and wagon-train ground inside each main gate (drawn, r=38px each) - a seat on a clan road with no waystations for a day's travel either side stables the traffic itself"),
+            BudgetLine(
+                "laneway excess over the flat circulation allowance",
+                1,
+                13_000.0,
+                "citybudget allows a flat 7% of interior for circulation (43,675 px^2 here) and Minami draws more, because eight precincts sited by TRADE across the commoner quarters all have to be reached: the ring, street and roji BEDS alone measure 56,936 px^2. Only that measured excess is charged, and conservatively - it counts neither the trunk road's in-wall run nor any frontage standoff band. This is real ground under real lanes, unlike a caption band, which is why it belongs in the space budget and the wall follows it",
+            ),
         ),
         aspect=0.93,
         nring=20,
@@ -233,7 +239,7 @@ s.dye_yard(1162, 1596)  # on the in-wall cargo canal, north of the dock basin
 s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
 s.oil_press(1548, 1300)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
-s.bathhouses([(1416, 1160), (1250, 1400)])
+s.bathhouses([(1416, 1180), (1250, 1400)])
 s.kiln(640, 1180)  # OUTSIDE the walls on the far bank
 s.tanning_yard(866, 1700, rot=90, pits=12, water="stream")  # east bank, DOWNSTREAM of dock, dyer and moat outfall
 s.bridge(818, 1332, 4, RIVER_W + 26, 15)
@@ -513,7 +519,7 @@ s.label(916, 1164, "wharf", 10, italic=True, color="#5A4326")
 # market looks. Any other offset puts one rank on the road (at 26) or one rank 49px out in the
 # fields (at 34): the ranks are 31px apart and the legal band is only 14 wide.
 MKT_OFF = 0
-WMARKET_LINE = [(560, 1344 + MKT_OFF), (866, 1332 + MKT_OFF)]
+WMARKET_LINE = [(672, 1340 + MKT_OFF), (866, 1332 + MKT_OFF)]
 NMARKET_LINE = [(1389 - MKT_OFF, 828), (1373 - MKT_OFF, 700), (1365 - MKT_OFF, 624)]
 s.frontage(WMARKET_LINE, ["shop"] * 12, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(32), fill=True)
 s.frontage(NMARKET_LINE, ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(32), fill=True)
