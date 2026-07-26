@@ -506,31 +506,15 @@ def _mx_same(a: Any, b: Any) -> bool:
 # the feature), these are individual map defects, and because each entry names a position a NEW
 # defect of the same kind is still caught. Every line here is work owed, not a permission.
 _MATRIX_OUTSTANDING: dict[str, dict[tuple[str, str], int]] = {
-    # Keyed by (map, PAIR) with a COUNT, deliberately not by coordinate: a coordinate-keyed list is
-    # brittle to regeneration, while a count still catches any NEW instance and still shrinks visibly.
+    # Keyed by (map, PAIR) with a COUNT - not by coordinate, which proved brittle to regeneration.
     # Every line is WORK OWED, not a permission.
     #
-    # 2026-07-26, round 2. The matrix's first run found 11 across 6 maps; 8 are now fixed by four
-    # engine changes (the well-ground guard on all three well paths, the region test for cropland
-    # cells, the hard/soft block_polys split with footprint testing, and in-field ditches registered
-    # as hard ground). THESE THREE SHARE ONE NEWLY-FOUND CAUSE, which is worth naming because it is
-    # a third distinct centre-vs-footprint failure and none of our earlier fixes reach it:
+    # 2026-07-26 final: the matrix found 11 defects across 6 maps on its first pool run, and ALL
+    # ELEVEN are now fixed. What is left belongs to another session.
     #
-    #   PLACEMENT TESTS A DIFFERENT FOOTPRINT THAN THE ONE DRAWN. `_fits` is called with a
-    #   farmhouse's BASE rect, but the drawn steading can exceed it - a wealth render scale, an
-    #   attached shed, a rotation - so a candidate that genuinely cleared every keep-out at its
-    #   placement size laps one at its drawn size. Hoshizora's own gen already works around this by
-    #   inflating its hem plots ~8 px (`grow_poly`), which is the symptom treated locally rather
-    #   than the cause. The real fix is for the placer to test the size it is going to DRAW.
-    "Hirameki": {("dry_plots", "houses"): 1},
-    "Hoshigaoka": {("field_ditches", "houses"): 1},
-    # ...and one of a different kind: a comb's dry hem is laid by build_comb's geometry with NO
-    # avoidance of anything already on the map, so the hem crosses the valley stream. draw_comb_field
-    # needs a clip-or-drop step; it is the only placer on the map that consults nothing.
-    "Ubame": {("dry_plots", "streams"): 1},
-    # NOT OURS - Minami is another session's work in progress (GM: leave it alone). Recorded so our
-    # gate stays green without touching their map; these are theirs to fix, and the matrix found
-    # them on a map it had never seen, which is the feature working as intended.
+    # NOT OURS - Minami is a work in progress in the 016 session (GM: leave it alone). Recorded so
+    # our gate stays green without touching their map. The matrix found these on a map it had never
+    # seen and was never tuned against, which is the whole feature working as intended.
     "Minami": {("dry_plots", "manors"): 2, ("field_ditches", "manors"): 2, ("alleys", "religious"): 1, ("alleys", "shrines"): 1, ("drum_towers", "merchant_estates"): 1},
 }
 
