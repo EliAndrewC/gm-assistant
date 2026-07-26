@@ -62,7 +62,11 @@ def pick(gender, count, peasant=False):
 
         if not pool:
             label = f"peasant {g}" if peasant else g
-            print(json.dumps({"error": f"No {label} names in pool. Run pool generation first."}))
+            print(
+                json.dumps(
+                    {"error": f"No {label} names in pool. Run pool generation first."}
+                )
+            )
             continue
 
         # Filter out names too similar to campaign names (loose rule) or to
@@ -79,7 +83,11 @@ def pick(gender, count, peasant=False):
         ]
 
         if not valid:
-            print(json.dumps({"error": f"No valid {g} names remain after similarity filtering."}))
+            print(
+                json.dumps(
+                    {"error": f"No valid {g} names remain after similarity filtering."}
+                )
+            )
             continue
 
         # Pick randomly
@@ -114,7 +122,9 @@ def parse_args(argv):
             continue
 
         # Strip optional x prefix for count (e.g. x3)
-        stripped = arg.lstrip("x") if arg.startswith("x") and arg[1:].isdigit() else None
+        stripped = (
+            arg.lstrip("x") if arg.startswith("x") and arg[1:].isdigit() else None
+        )
         if stripped and stripped.isdigit():
             count = int(stripped)
             continue

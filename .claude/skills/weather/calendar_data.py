@@ -31,7 +31,9 @@ from typing import TypedDict
 
 CALENDAR_MD = Path(__file__).resolve().parent.parent / "calendar" / "SKILL.md"
 
-MONTH_RE = re.compile(r"^(\d+)(?:st|nd|rd|th) Month: (\S+) \((.*)\), Month of the (.+)$")
+MONTH_RE = re.compile(
+    r"^(\d+)(?:st|nd|rd|th) Month: (\S+) \((.*)\), Month of the (.+)$"
+)
 DAY_RE = re.compile(r"^(\d+)(?:st|nd|rd|th) Day(?: \(([^)]+)\))?: (.+)$")
 META_RE = re.compile(r"^(Seasonal colou?r|Flowers of [^:]+): (.+)$")
 
@@ -75,8 +77,16 @@ def parse_calendar(path: Path | None = None) -> dict[int, Month]:
 
         m = MONTH_RE.match(stripped)
         if m:
-            cur = Month(month=int(m[1]), name=m[2], meaning=_clean_meaning(m[3]),
-                        zodiac=m[4], span="", meta=[], intro=[], days={})
+            cur = Month(
+                month=int(m[1]),
+                name=m[2],
+                meaning=_clean_meaning(m[3]),
+                zodiac=m[4],
+                span="",
+                meta=[],
+                intro=[],
+                days={},
+            )
             months[cur["month"]] = cur
             day, in_head = None, True
             continue
@@ -115,8 +125,10 @@ if __name__ == "__main__":  # pragma: no cover - manual inspection aid
     cal = parse_calendar()
     for n in sorted(cal):
         mo = cal[n]
-        print(f"{n:2d} {mo['name']} ({mo['meaning']}), {mo['zodiac']} - {mo['span']}"
-              f"  [{len(mo['meta'])} meta, {len(mo['intro'])} intro, {len(mo['days'])} days]")
+        print(
+            f"{n:2d} {mo['name']} ({mo['meaning']}), {mo['zodiac']} - {mo['span']}"
+            f"  [{len(mo['meta'])} meta, {len(mo['intro'])} intro, {len(mo['days'])} days]"
+        )
         for dn in sorted(mo["days"]):
             dd = mo["days"][dn]
             print(f"     {dn:2d} {dd['title']!r:60} ({len(dd['body'])} paras)")

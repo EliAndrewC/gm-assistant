@@ -84,7 +84,9 @@ def local_clock(iso: str, source_offset_seconds: int, target_tz: ZoneInfo) -> st
     return local.strftime("%-I:%M %p")
 
 
-def daily_mean_cloud(hourly: dict[str, list], source_offset_seconds: int, target_tz: ZoneInfo) -> dict[str, float]:
+def daily_mean_cloud(
+    hourly: dict[str, list], source_offset_seconds: int, target_tz: ZoneInfo
+) -> dict[str, float]:
     """Average hourly cloud_cover into a per-date mean, keyed by real local date."""
     buckets: dict[str, list[float]] = {}
     tz = timezone(timedelta(seconds=source_offset_seconds))
@@ -131,7 +133,11 @@ def build(raw_path: Path, out_path: Path) -> int:
 
 def main() -> None:
     here = Path(__file__).parent
-    raw_path = Path(sys.argv[1]) if len(sys.argv) > 1 else here / "raw" / "roanoke-rapids-2015.json"
+    raw_path = (
+        Path(sys.argv[1])
+        if len(sys.argv) > 1
+        else here / "raw" / "roanoke-rapids-2015.json"
+    )
     out_path = Path(sys.argv[2]) if len(sys.argv) > 2 else here / "weather-2015.csv"
     n = build(raw_path, out_path)
     print(f"Wrote {n} days to {out_path}")

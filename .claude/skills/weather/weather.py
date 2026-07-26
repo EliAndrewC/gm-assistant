@@ -59,17 +59,36 @@ MONTHS = {
 # start; Gregorian spans are 29-32 days, so a day or two can land in a gap (or a
 # 1-day overlap) at boundaries - immaterial for a lookup.
 MONTH_STARTS = {
-    1: (2, 4), 2: (3, 6), 3: (4, 5), 4: (5, 6), 5: (6, 6), 6: (7, 7),
-    7: (8, 8), 8: (9, 8), 9: (10, 8), 10: (11, 7), 11: (12, 7), 12: (1, 5),
+    1: (2, 4),
+    2: (3, 6),
+    3: (4, 5),
+    4: (5, 6),
+    5: (6, 6),
+    6: (7, 7),
+    7: (8, 8),
+    8: (9, 8),
+    9: (10, 8),
+    10: (11, 7),
+    11: (12, 7),
+    12: (1, 5),
 }
 
 # Factors to convert Open-Meteo length/precip units to inches (units vary by
 # request: here snowfall came back in inch, snow_depth in ft).
-_TO_INCH = {"inch": 1.0, "in": 1.0, "cm": 0.393701, "mm": 0.0393701, "ft": 12.0, "m": 39.3701}
+_TO_INCH = {
+    "inch": 1.0,
+    "in": 1.0,
+    "cm": 0.393701,
+    "mm": 0.0393701,
+    "ft": 12.0,
+    "m": 39.3701,
+}
 
 
 def load_places() -> list[dict]:
-    return [json.loads(line) for line in REGISTRY.read_text().splitlines() if line.strip()]
+    return [
+        json.loads(line) for line in REGISTRY.read_text().splitlines() if line.strip()
+    ]
 
 
 def find_place(query: str) -> dict | None:
@@ -87,7 +106,9 @@ def find_place(query: str) -> dict | None:
 
 
 def ordinal(n: int) -> str:
-    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    suffix = (
+        "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    )
     return f"{n}{suffix}"
 
 
@@ -95,26 +116,60 @@ def to_gregorian(month: int, day: int, year: int) -> date:
     """Rokugani (month, day) -> Gregorian date within the weather year."""
     gmonth, gday = MONTH_STARTS[month]
     g = date(year, gmonth, gday) + timedelta(days=day - 1)
-    return date(year, g.month, g.day)  # wrap any roll into next January back onto this year
+    return date(
+        year, g.month, g.day
+    )  # wrap any roll into next January back onto this year
 
 
 def moon(day: int) -> tuple[str, int, str]:
     illum = round((day - 1) / 14 * 100) if day <= 15 else round((30 - day) / 15 * 100)
     if day in (1, 30):
-        return "new moon", illum, "moonless - the moon rides with the sun; the night is dark"
+        return (
+            "new moon",
+            illum,
+            "moonless - the moon rides with the sun; the night is dark",
+        )
     if day <= 6:
-        return "waxing crescent", illum, "a thin evening moon that sets soon after dusk; late night is dark"
+        return (
+            "waxing crescent",
+            illum,
+            "a thin evening moon that sets soon after dusk; late night is dark",
+        )
     if day <= 8:
-        return "first quarter", illum, "half-moon overhead at dusk, setting near midnight"
+        return (
+            "first quarter",
+            illum,
+            "half-moon overhead at dusk, setting near midnight",
+        )
     if day <= 14:
-        return "waxing gibbous", illum, "a bright moon up for most of the night, setting before dawn"
+        return (
+            "waxing gibbous",
+            illum,
+            "a bright moon up for most of the night, setting before dawn",
+        )
     if day == 15:
-        return "full moon", illum, "a full moon up all night, rising at sunset and setting at dawn"
+        return (
+            "full moon",
+            illum,
+            "a full moon up all night, rising at sunset and setting at dawn",
+        )
     if day <= 21:
-        return "waning gibbous", illum, "the early night is dark; a bright moon rises later and lingers past dawn"
+        return (
+            "waning gibbous",
+            illum,
+            "the early night is dark; a bright moon rises later and lingers past dawn",
+        )
     if day <= 23:
-        return "last quarter", illum, "no moon in the evening; a half-moon rises around midnight"
-    return "waning crescent", illum, "a dark evening; a thin moon rises only in the small hours before dawn"
+        return (
+            "last quarter",
+            illum,
+            "no moon in the evening; a half-moon rises around midnight",
+        )
+    return (
+        "waning crescent",
+        illum,
+        "a dark evening; a thin moon rises only in the small hours before dawn",
+    )
 
 
 def describe_sky(mean: float) -> str:
@@ -141,13 +196,25 @@ def hourly_local(raw: dict) -> list[dict]:
     snowfall = h.get("snowfall") or [0.0] * len(h["time"])
     depth = h.get("snow_depth") or [0.0] * len(h["time"])
     out = []
-    for iso, t, c, p, sf, sd in zip(h["time"], h["temperature_2m"], h["cloud_cover"],
-                                    h["precipitation"], snowfall, depth):
+    for iso, t, c, p, sf, sd in zip(
+        h["time"],
+        h["temperature_2m"],
+        h["cloud_cover"],
+        h["precipitation"],
+        snowfall,
+        depth,
+    ):
         dt = datetime.fromisoformat(iso).replace(tzinfo=src).astimezone(tz)
-        out.append({
-            "dt": dt, "temp": t, "cloud": c, "precip": p,
-            "snowfall": (sf or 0.0) * sf_k, "depth": (sd or 0.0) * sd_k,
-        })
+        out.append(
+            {
+                "dt": dt,
+                "temp": t,
+                "cloud": c,
+                "precip": p,
+                "snowfall": (sf or 0.0) * sf_k,
+                "depth": (sd or 0.0) * sd_k,
+            }
+        )
     return out
 
 
@@ -164,7 +231,9 @@ def daily_cloud(records: list[dict]) -> dict[date, float]:
 
 
 def period(records: list[dict], day: date, h_start: int, h_end: int) -> dict | None:
-    rows = [r for r in records if r["dt"].date() == day and h_start <= r["dt"].hour < h_end]
+    rows = [
+        r for r in records if r["dt"].date() == day and h_start <= r["dt"].hour < h_end
+    ]
     if not rows:
         return None
     temps = [r["temp"] for r in rows]
@@ -251,7 +320,11 @@ def overcast_streak(daily: dict, cloud_map: dict, i: int) -> int:
 def dry_info(daily: dict, i: int) -> tuple[bool, int, int]:
     today_wet = daily["precipitation_sum"][i] >= WET_IN
     dry_run = back_run(lambda k: daily["precipitation_sum"][k] < WET_IN, i)
-    prior_dry = back_run(lambda k: daily["precipitation_sum"][k] < WET_IN, i - 1) if today_wet else 0
+    prior_dry = (
+        back_run(lambda k: daily["precipitation_sum"][k] < WET_IN, i - 1)
+        if today_wet
+        else 0
+    )
     return today_wet, dry_run, prior_dry
 
 
@@ -275,8 +348,10 @@ def build_notes(daily: dict, i: int, target: date, cloud_map: dict) -> list[str]
     dhi, tag, norm_hi, norm_lo = temp_anomaly(daily, i)
     pos = "early" if target.day <= 10 else "mid" if target.day <= 20 else "late"
     when = f"{pos} {target.strftime('%B')}"
-    notes = [f"high {round(daily['temperature_2m_max'][i])} F is {dhi:+.0f} F vs the "
-             f"{when} norm ({norm_hi:.0f}/{norm_lo:.0f}) - {tag}"]
+    notes = [
+        f"high {round(daily['temperature_2m_max'][i])} F is {dhi:+.0f} F vs the "
+        f"{when} norm ({norm_hi:.0f}/{norm_lo:.0f}) - {tag}"
+    ]
     oc = overcast_streak(daily, cloud_map, i)
     if oc >= 2:
         notes.append(f"{ordinal(oc)} overcast day in a row")
@@ -291,9 +366,11 @@ def build_notes(daily: dict, i: int, target: date, cloud_map: dict) -> list[str]
 def load_year(place: dict):
     year_file = place.get("year_file")
     if not year_file:
-        return (f"REJECTED: no weather year cached for {place['place']} "
-                f"(analog: {place['us_analog']}). Fetch one with: "
-                f'python3 fetch_analog.py "{place["place"]}" <year>')
+        return (
+            f"REJECTED: no weather year cached for {place['place']} "
+            f"(analog: {place['us_analog']}). Fetch one with: "
+            f'python3 fetch_analog.py "{place["place"]}" <year>'
+        )
     raw_path = RAW_DIR / year_file
     if not raw_path.exists():
         return f"REJECTED: registry points {place['place']} at {year_file}, but raw/{year_file} is missing."
@@ -322,7 +399,9 @@ def report(place: dict, month: int, day: int, night: bool) -> str:
     i = daily["time"].index(target.isoformat())
     records = hourly_local(raw)
     by_date = group_by_date(records)
-    cloud_map = {d: sum(r["cloud"] for r in rows) / len(rows) for d, rows in by_date.items()}
+    cloud_map = {
+        d: sum(r["cloud"] for r in rows) / len(rows) for d, rows in by_date.items()
+    }
 
     offset = int(raw["utc_offset_seconds"])
     tz = ZoneInfo(raw.get("timezone", "America/New_York"))
@@ -333,8 +412,9 @@ def report(place: dict, month: int, day: int, night: bool) -> str:
 
     if night:
         nxt = target + timedelta(days=1)
-        night_rows = ([r for r in by_date.get(target, []) if r["dt"].hour >= 18]
-                      + [r for r in by_date.get(nxt, []) if r["dt"].hour < 6])
+        night_rows = [r for r in by_date.get(target, []) if r["dt"].hour >= 18] + [
+            r for r in by_date.get(nxt, []) if r["dt"].hour < 6
+        ]
         lines += [
             "",
             f"  Sun: set {sunset}     Moon: {phase} (~{illum}% lit) - {moon_note}",
@@ -379,7 +459,9 @@ def main() -> None:
             night = True
             args = [a for a in args if a != flag]
     if len(args) != 3:
-        sys.exit('Usage: python3 weather.py "<place>" <month 1-12> <day 1-30> [--night]')
+        sys.exit(
+            'Usage: python3 weather.py "<place>" <month 1-12> <day 1-30> [--night]'
+        )
     query = args[0]
     try:
         month, day = int(args[1]), int(args[2])

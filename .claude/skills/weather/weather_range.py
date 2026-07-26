@@ -31,7 +31,11 @@ REPORTS = W.HERE / "reports"
 
 
 def slug(name: str) -> str:
-    return "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-").replace("--", "-")
+    return (
+        "".join(c if c.isalnum() else "-" for c in name.lower())
+        .strip("-")
+        .replace("--", "-")
+    )
 
 
 def rok_range(sm: int, sd: int, em: int, ed: int):
@@ -57,7 +61,9 @@ def build_rows(raw: dict, year: int, cells):
     daily = raw["daily"]
     records = W.hourly_local(raw)
     by_date = W.group_by_date(records)
-    cloud_map = {d: sum(r["cloud"] for r in rows) / len(rows) for d, rows in by_date.items()}
+    cloud_map = {
+        d: sum(r["cloud"] for r in rows) / len(rows) for d, rows in by_date.items()
+    }
     offset = int(raw["utc_offset_seconds"])
     tz = ZoneInfo(raw.get("timezone", "America/New_York"))
 
@@ -65,18 +71,21 @@ def build_rows(raw: dict, year: int, cells):
     for month, day in cells:
         target = W.to_gregorian(month, day, year)
         i = daily["time"].index(target.isoformat())
-        rows.append({
-            "month": month, "day": day,
-            "greg": datetime(year, target.month, target.day),
-            "hi": round(daily["temperature_2m_max"][i]),
-            "lo": round(daily["temperature_2m_min"][i]),
-            "cloud": cloud_map.get(target, 0),
-            "precip": daily["precipitation_sum"][i],
-            "snow": W.snow_day(by_date.get(target, [])),
-            "sunrise": local_clock(daily["sunrise"][i], offset, tz),
-            "sunset": local_clock(daily["sunset"][i], offset, tz),
-            "tags": W.note_tags(daily, cloud_map, i),
-        })
+        rows.append(
+            {
+                "month": month,
+                "day": day,
+                "greg": datetime(year, target.month, target.day),
+                "hi": round(daily["temperature_2m_max"][i]),
+                "lo": round(daily["temperature_2m_min"][i]),
+                "cloud": cloud_map.get(target, 0),
+                "precip": daily["precipitation_sum"][i],
+                "snow": W.snow_day(by_date.get(target, [])),
+                "sunrise": local_clock(daily["sunrise"][i], offset, tz),
+                "sunset": local_clock(daily["sunset"][i], offset, tz),
+                "tags": W.note_tags(daily, cloud_map, i),
+            }
+        )
     return rows
 
 
@@ -204,14 +213,19 @@ thead th.kebab-col { text-align: right; }
 @media print { .kebab-col, .kebab-menu { display: none; } }
 """
 
-for _token, _key in (("__PLAIN__", "plain"), ("__RAIN__", "rain"),
-                     ("__SNOW__", "snow"), ("__DETAIL__", "detail")):
+for _token, _key in (
+    ("__PLAIN__", "plain"),
+    ("__RAIN__", "rain"),
+    ("__SNOW__", "snow"),
+    ("__DETAIL__", "detail"),
+):
     CSS = CSS.replace(_token, ROW_COLORS[_key])
 
 
 def month_modal_json(cal: dict, months: list[int]) -> str:
     """Serialise just the months present in this range, for the header modal."""
     import json
+
     out = {}
     for n in months:
         mo = cal.get(n)
@@ -285,8 +299,14 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
     title = f"{place['place']} - {range_label(sm, sd, em, ed)}"
     span = f"{rows[0]['greg']:%b %-d} - {rows[-1]['greg']:%b %-d, %Y}"
 
-    columns = [("rok", "Rokugani"), ("date", "Date"), ("cal", "Calendar"),
-               ("hilo", "Hi / Lo"), ("sky", "Sky"), ("rain", "Rain")]
+    columns = [
+        ("rok", "Rokugani"),
+        ("date", "Date"),
+        ("cal", "Calendar"),
+        ("hilo", "Hi / Lo"),
+        ("sky", "Sky"),
+        ("rain", "Rain"),
+    ]
     if has_snow:
         columns += [("newsnow", "New snow"), ("ground", "Ground"), ("peak", "Peak")]
     columns += [("sun", "Sun (rise / set)"), ("notes", "Notes")]
@@ -312,28 +332,45 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
             # else on the header row still collapses/expands the month.
             mname = f"{W.ordinal(cur_month)} Month - {name} ({meaning})"
             rest = f", Month of the {zod} - {lo:%b %-d} to {hi:%b %-d}"
-            body.append(f'<tr class="mhead" data-month="{cur_month}"><td colspan="{ncols}">'
-                        f'<span class="chev">&#9662;</span>'
-                        f'<button class="mname" data-month="{cur_month}" '
-                        f'title="Seasonal notes for this month">{esc(mname)}</button>'
-                        f'{esc(rest)}</td></tr>')
+            body.append(
+                f'<tr class="mhead" data-month="{cur_month}"><td colspan="{ncols}">'
+                f'<span class="chev">&#9662;</span>'
+                f'<button class="mname" data-month="{cur_month}" '
+                f'title="Seasonal notes for this month">{esc(mname)}</button>'
+                f"{esc(rest)}</td></tr>"
+            )
 
         cls = "snow" if r["snow"] else ("rain" if r["precip"] >= W.WET_IN else "")
         entry = cal.get(r["month"], {}).get("days", {}).get(r["day"])
-        rid = f'{r["month"]}-{r["day"]:02d}'
+        rid = f"{r['month']}-{r['day']:02d}"
         if entry:
-            calcell = (f'<button class="calbtn" data-day="{rid}">'
-                       f'{esc(entry["title"])}</button>')
+            calcell = (
+                f'<button class="calbtn" data-day="{rid}">'
+                f"{esc(entry['title'])}</button>"
+            )
         else:
             calcell = "-"
         cell = {
             "rok": (str(r["day"]), ""),
-            "date": (f'{r["greg"]:%b %-d}', ""),
+            "date": (f"{r['greg']:%b %-d}", ""),
             "cal": (calcell, "cal"),
-            "hilo": (f'<span class="hi">{r["hi"]}</span> / <span class="lo">{r["lo"]}</span> &deg;F', ""),
-            "sky": (f'{esc(W.describe_sky(r["cloud"]))} <span class="muted">{r["cloud"]:.0f}%</span>', ""),
-            "rain": ((f'{r["precip"]:.2f}"', "") if r["precip"] >= W.WET_IN else ("-", "muted")),
-            "sun": (f'{esc(compact_time(r["sunrise"]))} / {esc(compact_time(r["sunset"]))}', ""),
+            "hilo": (
+                f'<span class="hi">{r["hi"]}</span> / <span class="lo">{r["lo"]}</span> &deg;F',
+                "",
+            ),
+            "sky": (
+                f'{esc(W.describe_sky(r["cloud"]))} <span class="muted">{r["cloud"]:.0f}%</span>',
+                "",
+            ),
+            "rain": (
+                (f'{r["precip"]:.2f}"', "")
+                if r["precip"] >= W.WET_IN
+                else ("-", "muted")
+            ),
+            "sun": (
+                f"{esc(compact_time(r['sunrise']))} / {esc(compact_time(r['sunset']))}",
+                "",
+            ),
             "notes": (" &middot; ".join(esc(t) for t in r["tags"]), "tags"),
         }
         if has_snow:
@@ -341,7 +378,10 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
             if s:
                 new = f'{s["new"]:.1f}"' if s["new"] >= W.SNOW_IN else "-"
                 cell["newsnow"] = (new, "snowcell")
-                cell["ground"] = (f'{s["start"]:.1f} &rarr; {s["end"]:.1f}"', "snowcell")
+                cell["ground"] = (
+                    f'{s["start"]:.1f} &rarr; {s["end"]:.1f}"',
+                    "snowcell",
+                )
                 cell["peak"] = (f'{s["peak"]:.1f}"', "snowcell")
             else:
                 cell["newsnow"] = cell["ground"] = cell["peak"] = ("-", "muted")
@@ -355,19 +395,29 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
             tds.append(f'<td data-col="{k}"{attr}>{inner}</td>')
         tds.append('<td class="kebab-col"></td>')
         rowcls = ("drow dayrow " + cls).strip()
-        body.append(f'<tr class="{rowcls}" data-month="{r["month"]}" data-day="{rid}">'
-                    + "".join(tds) + "</tr>")
+        body.append(
+            f'<tr class="{rowcls}" data-month="{r["month"]}" data-day="{rid}">'
+            + "".join(tds)
+            + "</tr>"
+        )
 
         if entry:
             # Pre-rendered and hidden rather than built in JS: keeps the file
             # printable and searchable (ctrl-F finds collapsed festival text).
-            paras = "".join(f"<p>{esc(p)}</p>" for p in entry["body"]) or \
-                '<p class="none">No further detail in the calendar for this day.</p>'
-            greg = f' <span class="muted">({esc(entry["greg"])})</span>' if entry["greg"] else ""
+            paras = (
+                "".join(f"<p>{esc(p)}</p>" for p in entry["body"])
+                or '<p class="none">No further detail in the calendar for this day.</p>'
+            )
+            greg = (
+                f' <span class="muted">({esc(entry["greg"])})</span>'
+                if entry["greg"]
+                else ""
+            )
             body.append(
                 f'<tr class="drow detail" data-month="{r["month"]}" data-detail="{rid}">'
                 f'<td colspan="{ncols}"><h4>{W.ordinal(r["day"])} Day{greg} - '
-                f'{esc(entry["title"])}</h4>{paras}</td></tr>')
+                f"{esc(entry['title'])}</h4>{paras}</td></tr>"
+            )
 
     empty_cols = [k for k, _ in columns if k not in nonempty]
     empty_js = "[" + ", ".join(f'"{k}"' for k in empty_cols) + "]"
@@ -377,17 +427,24 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
     # reason the snow columns are: describing a color the table never shows is
     # just noise. Thresholds are read from weather.py so they cannot drift.
     import json
+
     legend = [
-        (ROW_COLORS["plain"], "Dry",
-         f"No measurable precipitation (under {W.WET_IN:g} in)."),
-        (ROW_COLORS["rain"], "Rain",
-         f"{W.WET_IN:g} in or more of precipitation."),
+        (
+            ROW_COLORS["plain"],
+            "Dry",
+            f"No measurable precipitation (under {W.WET_IN:g} in).",
+        ),
+        (ROW_COLORS["rain"], "Rain", f"{W.WET_IN:g} in or more of precipitation."),
     ]
     if has_snow:
-        legend.append((ROW_COLORS["snow"], "Snow",
-                       "Snow fell, or lay on the ground."))
-    legend.append((ROW_COLORS["detail"], "Calendar entry",
-                   "An expanded festival or observance, not a day of weather."))
+        legend.append((ROW_COLORS["snow"], "Snow", "Snow fell, or lay on the ground."))
+    legend.append(
+        (
+            ROW_COLORS["detail"],
+            "Calendar entry",
+            "An expanded festival or observance, not a day of weather.",
+        )
+    )
     legend_js = json.dumps(legend)
 
     # Notes, not entries: the precedence rule is the single most useful
@@ -397,14 +454,16 @@ def render(place: dict, rows: list, sm, sd, em, ed, cal: dict) -> str:
     if has_snow:
         notes.append("A day that both rained and snowed is shaded as snow.")
     notes_js = json.dumps(notes)
-    snow_note = "" if has_snow else " No snow fell in this range, so snow columns are omitted."
+    snow_note = (
+        "" if has_snow else " No snow fell in this range, so snow columns are omitted."
+    )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)}</title><style>{CSS}</style><style id="colhide"></style><style id="monthhide"></style></head>
 <body><div class="wrap">
 <h1>{esc(title)}</h1>
-<p class="sub"><b>{esc(place['place'])}</b> ({esc(house_label(place))}) &mdash; <span class="tip" title="Weather is indifferent to the plot by design.">real recorded weather</span> for its climate analog, <b>{esc(place['us_analog'])}</b>. {esc(span)}.{snow_note}</p>
+<p class="sub"><b>{esc(place["place"])}</b> ({esc(house_label(place))}) &mdash; <span class="tip" title="Weather is indifferent to the plot by design.">real recorded weather</span> for its climate analog, <b>{esc(place["us_analog"])}</b>. {esc(span)}.{snow_note}</p>
 <div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>
 {chr(10).join(body)}
 </tbody></table></div>
@@ -562,9 +621,11 @@ def main() -> None:
     if "--out" in args:
         k = args.index("--out")
         out = Path(args[k + 1])
-        args = args[:k] + args[k + 2:]
+        args = args[:k] + args[k + 2 :]
     if len(args) != 5:
-        sys.exit('Usage: python3 weather_range.py "<place>" <start_month> <start_day> <end_month> <end_day> [--out file.html]')
+        sys.exit(
+            'Usage: python3 weather_range.py "<place>" <start_month> <start_day> <end_month> <end_day> [--out file.html]'
+        )
     query, nums = args[0], args[1:]
     try:
         sm, sd, em, ed = (int(x) for x in nums)
@@ -588,7 +649,10 @@ def main() -> None:
 
     if out is None:
         REPORTS.mkdir(exist_ok=True)
-        out = REPORTS / f"{slug(place['place'])}-{rows[0]['greg']:%Y%m%d}-{rows[-1]['greg']:%Y%m%d}.html"
+        out = (
+            REPORTS
+            / f"{slug(place['place'])}-{rows[0]['greg']:%Y%m%d}-{rows[-1]['greg']:%Y%m%d}.html"
+        )
     out.write_text(html)
     print(f"Wrote {len(rows)} days to {out.resolve()}")
 

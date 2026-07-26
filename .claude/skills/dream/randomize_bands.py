@@ -22,7 +22,7 @@ import random
 from collections.abc import Sequence
 
 # The label every scene guarantees, and the face pinned to it.
-MEANINGFUL = 'meaningful'
+MEANINGFUL = "meaningful"
 PINNED_FACE = 10
 DIE_FACES = tuple(range(1, 11))
 
@@ -44,16 +44,16 @@ def assign_bands(
     if the counts do not fit the remaining faces.
     """
     if pinned_face not in faces:
-        raise ValueError(f'pinned face {pinned_face} is not among the die faces')
+        raise ValueError(f"pinned face {pinned_face} is not among the die faces")
     if any(count < 0 for count in band_counts.values()):
-        raise ValueError('band counts must be non-negative')
+        raise ValueError("band counts must be non-negative")
 
     shufflable = [face for face in faces if face != pinned_face]
     requested = sum(band_counts.values())
     if requested > len(shufflable):
         raise ValueError(
-            f'requested {requested} faces across bands but only '
-            f'{len(shufflable)} are free (face {pinned_face} is pinned to {meaningful})'
+            f"requested {requested} faces across bands but only "
+            f"{len(shufflable)} are free (face {pinned_face} is pinned to {meaningful})"
         )
 
     pool = list(shufflable)
@@ -63,7 +63,9 @@ def assign_bands(
     cursor = 0
     for band, count in band_counts.items():
         if band == meaningful:
-            raise ValueError(f'do not pass the pinned band {meaningful!r} in band_counts')
+            raise ValueError(
+                f"do not pass the pinned band {meaningful!r} in band_counts"
+            )
         for face in pool[cursor : cursor + count]:
             mapping[face] = band
         cursor += count
@@ -75,32 +77,48 @@ def assign_bands(
 def format_table(mapping: dict[int, str]) -> str:
     """Render the face-to-band mapping as a face-ordered text table."""
     width = max((len(band) for band in mapping.values()), default=0)
-    lines = ['face | band', '-----+-----']
+    lines = ["face | band", "-----+-----"]
     for face in sorted(mapping):
-        lines.append(f'{face:>4} | {mapping[face]:<{width}}')
-    return '\n'.join(lines)
+        lines.append(f"{face:>4} | {mapping[face]:<{width}}")
+    return "\n".join(lines)
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Randomize a dream scene d10 band map.')
-    parser.add_argument('--none', type=int, default=0, help='faces for the no-dream band')
-    parser.add_argument('--unrelated', type=int, default=0, help='faces for the noise band')
-    parser.add_argument(
-        '--misleading', type=int, default=0, help='faces for the misleading band (optional)'
+    parser = argparse.ArgumentParser(
+        description="Randomize a dream scene d10 band map."
     )
     parser.add_argument(
-        '--seed', type=int, default=None, help='optional seed (for reproducing a specific scene)'
+        "--none", type=int, default=0, help="faces for the no-dream band"
+    )
+    parser.add_argument(
+        "--unrelated", type=int, default=0, help="faces for the noise band"
+    )
+    parser.add_argument(
+        "--misleading",
+        type=int,
+        default=0,
+        help="faces for the misleading band (optional)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="optional seed (for reproducing a specific scene)",
     )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> str:
     args = _parse_args(argv)
-    counts = {'none': args.none, 'unrelated': args.unrelated, 'misleading': args.misleading}
+    counts = {
+        "none": args.none,
+        "unrelated": args.unrelated,
+        "misleading": args.misleading,
+    }
     counts = {band: n for band, n in counts.items() if n}
     mapping = assign_bands(counts, random.Random(args.seed))
     return format_table(mapping)
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     print(main())
