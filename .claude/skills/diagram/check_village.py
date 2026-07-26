@@ -303,6 +303,10 @@ _LABEL_GROUP = {
     "execution_grounds": "execution ground",
     "boundary_markers": "boundary marker",
     "houses": "farmhouse",
+    # a WELLHEAD is a drawn glyph a caption can bury, but it is _OVERLAP_EXEMPT (a well may kiss a
+    # dense-city building), so it fell outside the classification ratchet - which iterates the
+    # overlap registry - and a caption on a wellhead was invisible. Found by settlement-review 2026-07-26.
+    "wells": "well",
 }
 # `buildings` is the one key whose group is not fixed: each record carries its own `kind`, and _grp
 # folds those kinds into groups (samurai_large -> samurai, and so on).
@@ -2311,6 +2315,91 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             bool(_fr_all),
             "no farrier in an Imperial-road town - a relay/post town on the Imperial road works courier and caravan horses hard enough to keep a shoeing forge at its stables (s.farrier); a town OFF the Imperial road does not declare meta(imperial_road=True) and is exempt, which is the deliberate Hoshizora/Hirameki split",
         )
+
+    # ===== A COMPOUND'S OWN WALL KEEPS OFF THE WAYS (found by the settlement-review agent, 2026-07-26).
+    # `manors` sits in _OVERLAP_TARGETS - the registry of things OTHER features must avoid - and never
+    # in _OVERLAP_STRUCTS, so the whole no_structure_on_* battery reads a manor as a hazard and nothing
+    # reads it as a candidate. The compound's own wall was therefore ungoverned against the roadbed,
+    # and a trunk road duly ran 18 px inside a magistracy's south wall, 80 ft from its own gate, with
+    # the gate fully green. A wall standing in a public carriageway is the same defect as a house
+    # standing in one; it just had nobody watching for it.
+    _mw_ways: list[tuple[list[Any], float]] = []
+    _mw_rd = M.get("road") or []
+    if _mw_rd:
+        _mw_ways.append((_mw_rd, float(M.get("road_width") or 26.0) / 2.0))
+    for _mw_st in M.get("town_streets", []) or []:
+        _mw_ways.append((_mw_st["pts"], float(_mw_st.get("w", 20)) / 2.0))
+
+    def _mw_gap(rect: list[tuple[float, float]], seg_a: Any, seg_b: Any) -> float:
+        """Clear distance between a (possibly rotated) footprint and one way segment; 0 if they meet."""
+        if point_in_poly(seg_a[0], seg_a[1], rect) or point_in_poly(seg_b[0], seg_b[1], rect):
+            return 0.0
+        best = min(seg_dist(rect[i][0], rect[i][1], seg_a, seg_b) for i in range(len(rect)))
+        for i in range(len(rect)):
+            j = (i + 1) % len(rect)
+            if segments_cross(rect[i], rect[j], seg_a, seg_b):
+                return 0.0
+            best = min(best, seg_dist(seg_a[0], seg_a[1], rect[i], rect[j]), seg_dist(seg_b[0], seg_b[1], rect[i], rect[j]))
+        return best
+
+    _mw_bad = []
+    for _mw_mn in M.get("manors", []) or []:
+        _mw_rect = _fr_poly(_mw_mn)
+        for _mw_pl, _mw_hw in _mw_ways:
+            if any(_mw_gap(_mw_rect, _mw_pl[i], _mw_pl[i + 1]) < _mw_hw for i in range(len(_mw_pl) - 1)):
+                _mw_bad.append((round(_mw_mn["x"]), round(_mw_mn["y"])))
+                break
+    check(
+        "manor_walls_clear_of_ways",
+        not _mw_bad,
+        f"compound wall(s) standing in a roadbed at {_mw_bad[:3]} - a manor is a footprint like any other where a WAY is concerned, and a carriageway running through the compound's own wall is a drawing error, not a right of way. Move the road off the wall (or the compound off the road); the gate is always green here otherwise, because `manors` is an overlap TARGET and never a candidate",
+    )
+
+    # ===== NOTHING IS BUILT ON THE FAR SIDE OF A DRAWN BORDER (found by the settlement-review agent,
+    # 2026-07-26). A border is deliberately overlap-EXEMPT - a frontier magistracy stands its wall ON
+    # the line by design - but "the wall may sit on the line" is not "the settlement may build across
+    # it." Water and roads cross a jurisdiction freely; buildings, yards and gardens do not, because
+    # the ground on the far side belongs to somebody else. Ubame's own notes promised its cover was
+    # "kept west of the border" while three kitchen gardens and two commons reached 43 px past it.
+    # The test is on the CENTER, which is what keeps the deliberate case legal: the magistracy's
+    # center is on its own side and only its wall touches the line.
+    _bd_lines = M.get("borders", []) or []
+    if _bd_lines:
+        _bd_homes = M.get("houses", []) + [_b for _b in M.get("buildings", []) if _b.get("kind") in DWELLING_KINDS]
+        if _bd_homes:
+            _bd_cx = sum(_h["x"] for _h in _bd_homes) / len(_bd_homes)
+            _bd_cy = sum(_h["y"] for _h in _bd_homes) / len(_bd_homes)
+
+            def _bd_side(px_: float, py_: float, poly_: list[Any]) -> float:
+                """Signed side of the border polyline, taken at its nearest segment."""
+                best_d, best_s = float("inf"), 0.0
+                for i in range(len(poly_) - 1):
+                    ax_, ay_ = poly_[i]
+                    bx_, by_ = poly_[i + 1]
+                    d_ = seg_dist(px_, py_, poly_[i], poly_[i + 1])
+                    if d_ < best_d:
+                        best_d = d_
+                        best_s = (bx_ - ax_) * (py_ - ay_) - (by_ - ay_) * (px_ - ax_)
+                return best_s
+
+            _bd_bad = []
+            for _bd_poly in _bd_lines:
+                _bd_pl = _bd_poly["poly"]
+                _bd_ours = _bd_side(_bd_cx, _bd_cy, _bd_pl)
+                if _bd_ours == 0:
+                    continue  # pragma: no cover - a settlement centered exactly on its own border has no near side
+                for _bd_k in ("houses", "buildings", "gardens", "threshing_yards", "farm_sheds", "byres", "storehouses") + _OVERLAP_STRUCTS:
+                    for _bd_r in M.get(_bd_k, []) or []:
+                        if not isinstance(_bd_r, dict) or "x" not in _bd_r:
+                            continue  # pragma: no cover - defensive: every listed key stores dicts
+                        if _bd_side(_bd_r["x"], _bd_r["y"], _bd_pl) * _bd_ours < 0:
+                            _bd_bad.append((_bd_k, round(_bd_r["x"]), round(_bd_r["y"])))
+            _bd_bad = sorted(set(_bd_bad))
+            check(
+                "structures_stay_on_their_side_of_a_border",
+                not _bd_bad,
+                f"feature(s) built on the FAR side of a drawn border at {_bd_bad[:4]} - the ground over the line belongs to the neighboring clan, so a settlement's buildings, yards and gardens stop at it. Water and roads may cross freely, and a compound may stand its WALL on the line (the test is on the center, so that case stays legal) - but building across it is a jurisdictional claim the map should not make",
+            )
 
     # ===== THE CHARCOAL DISTRICT'S TRADE WORKS (feature 016; full grounding in
     # settlements/urban-features.md "CHARCOAL YARDS" and "REFINING FORGES", research in
@@ -4431,7 +4520,17 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _lrecs = M.get(_lk)
             if isinstance(_lrecs, dict):  # governor_mansion is a singleton, not a list
                 _lrecs = [_lrecs]
-            vics += [(_lg, _bb(r_)) for r_ in (_lrecs or []) if isinstance(r_, dict) and "w" in r_]
+            for r_ in _lrecs or []:
+                if not isinstance(r_, dict):
+                    continue  # pragma: no cover - defensive: every classified key stores dicts
+                if "w" in r_:
+                    vics.append((_lg, _bb(r_)))
+                elif r_.get("vr"):
+                    # a WELLHEAD has no w/h - its drawn extent is the marker radius `vr` (SKILL.md's
+                    # location-marker doctrine). Without this branch, adding "wells" to _LABEL_GROUP
+                    # would classify it and still check nothing, because the builder filtered on "w".
+                    _vr = float(r_["vr"])
+                    vics.append((_lg, (r_["x"] - _vr, r_["y"] - _vr, r_["x"] + _vr, r_["y"] + _vr)))
 
         def _label_allows(txt: str) -> set[str]:
             t = txt.lower()
