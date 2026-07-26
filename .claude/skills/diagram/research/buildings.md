@@ -1,6 +1,6 @@
 # Historical grounding: the "why" behind the Mode A realism checks
 
-*Part of the Mode A compound/building docs - the scale, vocabulary, composition rules and checklist live in [`../buildings.md`](../buildings.md).*
+*The research behind the Mode A rules in [`../buildings.md`](../buildings.md). Findings, anchors and disclosed departures live here so the rule file stays operational; this file is where citations and deeper historical context get added as they accumulate.*
 
 **Load this file when:** you are about to change a Mode A convention, size, or check - or you want to know why a rule is the way it is before overriding it. Not needed to simply DRAW a compound from the vocabulary.
 

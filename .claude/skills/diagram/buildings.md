@@ -1,5 +1,7 @@
 # Mode A: Compound and building plans
 
+**Research:** the historical basis for these rules - what was found, the decision it drove, and every disclosed departure - is in [`research/buildings.md`](research/buildings.md). Load it when you are CHANGING a rule or questioning one, not to follow it.
+
 This file is the Mode A half of the /diagram skill: interior plan views of manors, magistracies, temples, keeps, and battlefields, hand-authored in SVG.  Read [`SKILL.md`](SKILL.md) first for everything shared (principles, workflow, labeling, style conventions, render pipeline, output convention); this file adds the Mode A building vocabulary, checklist, and historical grounding.  The canonical template is [`pool/magistracies/ochiba-magistracy.svg`](pool/magistracies/ochiba-magistracy.svg) - copy it as the starting point for a new compound plan and edit from there rather than rebuilding from scratch.
 
 ## Scale
@@ -159,4 +161,4 @@ Before declaring done (Mode A):
 
 ## Historical grounding
 
-The research behind every Mode A convention, size and check - what was found, the decision it drove, and each disclosed departure from literal reality - lives in [`buildings/grounding.md`](buildings/grounding.md). Per project policy every research-driven rule carries its reasoning; load that file before changing a convention or a magic number, not merely to draw a compound.
+The research behind every Mode A convention, size and check - what was found, the decision it drove, and each disclosed departure from literal reality - lives in [`research/buildings.md`](research/buildings.md). Per project policy every research-driven rule carries its reasoning; load that file before changing a convention or a magic number, not merely to draw a compound.
