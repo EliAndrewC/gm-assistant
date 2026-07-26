@@ -18,7 +18,7 @@ Settlement maps are landscape plans - a hamlet, village, or town sitting in its 
 | [`settlements/religion-and-death.md`](settlements/religion-and-death.md) | The map carries a shrine, torii, monastery, temple precinct, graveyard, mausoleum, cremation ground, or ossuary. |
 | [`settlements/presentation.md`](settlements/presentation.md) | Writing any label, subtitle, or annotation, and setting the crop.  Short - read it in full. |
 | [`settlements/towns.md`](settlements/towns.md) | The subject is a county seat (`meta(scale="town")`), walled or unwalled. |
-| [`settlements/cities.md`](settlements/cities.md) | The subject is a provincial city (`meta(scale="city")`).  The biggest file: wall/moat/tower program, government quarter, quarter density, budget-first wall sizing, the river-city variant. |
+| [`settlements/cities.md`](settlements/cities.md) | The subject is a provincial city (`meta(scale="city")`).  **Itself an index** - it holds the tier definition, population/caste numbers and the city-scale check list, over six subject files in [`settlements/cities/`](settlements/cities/): `sizing` (budget-first wall planning - read FIRST), `defenses`, `fabric`, `government`, `hinterland`, `river-cities`. |
 | [`settlements/urban-features.md`](settlements/urban-features.md) | Drawing a town OR a city - the vocabulary both tiers share: notice board, justice works, trade works, tanning yards, stable yards, wells, drum tower, gate furniture, caste/status zoning. |
 | [`settlements/archetypes.md`](settlements/archetypes.md) | ONLY when the map uses a non-default `field_archetype` (contour_terraces, polder_grid, ribbon_valley, mulberry_dike) or a land-use overlay (mulberry_fishpond, lotus, tea_fringe).  A plain valley_paddy village does not need it. |
 
@@ -40,7 +40,10 @@ Code comments (`check_village.py` especially) point at sections by name, in the 
 | Shrines; Torii; City temples; District catchment; Swept ground around sacred + funerary features | `religion-and-death.md` |
 | Crop advisory | `presentation.md` |
 | Notice board (kosatsuba); Punishment spot; Execution ground; Boundary marker; TRADE WORKS; TANNING YARDS; Stable yard; Wells (incl. "Wells - research + deliberate liberty"); The bell-and-drum tower | `urban-features.md` |
-| Fire towers; Sizing the wall to the population; In-wall VEGETABLE tracts; gate market; junction angles follow the current | `cities.md` |
+| Sizing the wall to the population | `cities/sizing.md` |
+| Fire towers | `cities/fabric.md` |
+| In-wall VEGETABLE tracts; gate market | `cities/hinterland.md` |
+| junction angles follow the current | `cities/river-cities.md` |
 | Perimeter dike; Polder ring canal / mosaic / edge wander / siting Q&A / fourth pass / fifth pass; Dike-pond sluices; Dike-pond water | `archetypes.md` |
 
 A bare `settlements.md "Historical grounding"` pointer means "the grounding for whatever rule this check enforces" - find it in that rule's topic file above.
