@@ -180,7 +180,7 @@ for _lx, _ly2, _hw in ((1560, 1188, 64), (1150, 1348, 56), (1214, 1444, 42), (15
 _LBL_DONE = 0
 
 
-def reserve_caption_ground(pad=11):
+def reserve_caption_ground(pad=14):
     """Reserve, as a CORRIDOR, the ground under every caption emitted since the last call.
 
     A block poly is not enough on its own. The urban packs centre-test block_polys (_fits ->
@@ -273,7 +273,7 @@ grid([MER_V, LAB_V, SW_V, EAST_ST, WARD_V])
 ALLEYS = [[(1120, 1124), (1120, 1330)], [(1490, 1014), (1490, 1150)], [(1640, 1150), (1640, 1230)], [(1300, 1330), (1300, 1606)]]
 alleys(ALLEYS)
 for _al in ALLEYS:
-    s.corridors.append((_al, 20))
+    s.corridors.append((_al, 8))
 
 # ====================================================================== THE EIGHT PRECINCTS
 TW, TH = s.px(96), s.px(66)  # the seven siblings, ~0.70 acre drawn
@@ -285,9 +285,6 @@ def precinct(x, y, fortune, torii, w=TW, h=TH, primary=False, graveyard=False, l
     # the caption's own ground, reserved BOTH ways: a block poly (which the packs centre-test) and
     # a corridor (which the fills honor). "Temple of Fukurokujin" is a wide box, so the band is
     # generous - labels_clear_of_other_buildings does not forgive a roof under the text.
-    _ly = y + h / 2 + 15 if label_below else y - h / 2 - 15
-    _hw = min(76.0, 22 + 3.4 * len(f"Temple of {fortune}"))
-    s.block_polys.append([(x - _hw, _ly - 8), (x + _hw, _ly - 8), (x + _hw, _ly + 8), (x - _hw, _ly + 8)])
 
 
 # --- NW: the LENDING temples, by the dock and the merchant district. Ebisu (honest commerce, the
@@ -345,9 +342,6 @@ for _m in s.M["ministries"] + [s.M["governor_mansion"]]:
 _CIV_I1 = len(s.block_polys)
 for _m in s.M["mausoleums"]:
     s.block_polys.append([(_m["x"] - _m["w"] / 2 - 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] + _m["h"] / 2 + 16), (_m["x"] - _m["w"] / 2 - 16, _m["y"] + _m["h"] / 2 + 16)])
-for _L in s.M["labels"]:
-    if len(_L) > 5 and _L[5].startswith("Ministry"):
-        s.block_polys.append([(_L[0] - 17, _L[1] - 13), (_L[2] + 17, _L[1] - 13), (_L[2] + 17, _L[3] + 13), (_L[0] - 17, _L[3] + 13)])
 s.block_polys.append([(1724, 1384), (1762, 1384), (1762, 1430), (1724, 1430)])
 s.martial_hall(1700, 1500, label_xy=(1700, 1503))
 s.dojos([(1452, 1408), (1740, 1420)])
