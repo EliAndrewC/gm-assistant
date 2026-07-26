@@ -30,8 +30,10 @@ from typing import Any
 from settlement import (
     EXECUTION_GROUND_DEAD_CLEAR_FT,
     KIDO_TOWER_KEEPCLEAR,
+    LABEL_AIR_CAP,
     WALL_DEFENSE,
     _assert_not_main_tree,
+    box_gap,
     crop_boxes,
     forest_frame_span,
     moat_current_at,
@@ -3987,6 +3989,31 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 2 and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4
     ]
     check("no_label_overlaps", not ov, f"{len(ov)} overlapping label pair(s)")
+
+    # A caption must HUG the thing it names. "Empty ground wins" (the label doctrine) used to be the
+    # only rule, and empty ground is plentiful - so a caption could satisfy it 55px out with nothing
+    # but bare land between it and its subject, reading as if it named whatever it had drifted next
+    # to (Tango's south "gate market" ended up nearer the flophouse than the stalls). The engine's
+    # standoff ladder now seats such a caption at the NEAREST clear spot and records the subject's
+    # box as element [6] of the label record; this measures the FINISHED gap from the recorded
+    # boxes, so it verifies the outcome rather than re-deriving the placer's own arithmetic.
+    #
+    # Only ladder-placed captions carry a referent. A district/zone caption ("samurai neighborhood",
+    # "agricultural district") names an AREA, not a feature, and is deliberately exempt - it is
+    # governed instead by city_labels_placed_with_subject.
+    adrift = []
+    for L in labels:
+        if len(L) < 7 or not L[6]:
+            continue
+        lab_size = (L[3] - L[1]) / 1.05  # the recorded box is ascent (0.8) + descender (0.25) tall
+        lab_gap = box_gap(L[:4], L[6])
+        if lab_gap > LABEL_AIR_CAP * lab_size:
+            adrift.append(f"{L[5]!r} {lab_gap:.0f}px from its subject (cap {LABEL_AIR_CAP * lab_size:.0f}px)")
+    check(
+        "label_hugs_its_referent",
+        not adrift,
+        f"caption(s) floating too far from the feature they name - the standoff ladder could not seat them near their subject, so move the subject or caption it by hand: {sorted(adrift)}",
+    )
 
     # the TITLE (the map's place name) must sit over BLANK space, not on a building / field / water / grove -
     # the reader has to be able to read it. The generator searches for a clear box (crop_to_content first, so the
