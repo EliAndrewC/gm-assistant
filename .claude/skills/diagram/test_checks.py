@@ -8975,3 +8975,66 @@ def test_a_border_line_under_a_compound_wall_trips_nothing():
     M["borders"] = [{"poly": [[900, 0], [900, 1000]], "label": "the Fox border"}]
     M["manors"] = [{"x": 900, "y": 400, "w": 250, "h": 180, "rot": 0, "label": "Magistrate's Manor"}]
     assert not [c for c in f(M) if "border" in c]
+
+
+# ---- found by the settlement-review agent, 2026-07-26 -------------------------------------------
+def test_manor_walls_clear_of_ways_fires_on_a_road_through_the_compound():
+    """`manors` lives in _OVERLAP_TARGETS - the registry of things others must avoid - and never in
+    _OVERLAP_STRUCTS, so the whole no_structure_on_* battery reads a manor as a hazard and nothing
+    reads it as a candidate. The compound's own wall was ungoverned against the roadbed, and a trunk
+    road ran 18 px inside a magistracy's south wall with the gate fully green."""
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1200, "H": 1200})
+    M["manors"] = [{"x": 600, "y": 300, "w": 290, "h": 200, "rot": 0, "label": "Magistrate's Manor"}]
+    M["road"], M["road_width"] = [[0, 395], [1200, 395]], 26  # north edge 382, INSIDE the south wall at 400
+    assert "manor_walls_clear_of_ways" in f(M)
+    M["road"] = [[0, 460], [1200, 460]]  # north edge 447, clear of it
+    assert "manor_walls_clear_of_ways" not in f(M)
+
+
+def test_structures_stay_on_their_side_of_a_border():
+    """A border is overlap-EXEMPT so a frontier compound may stand its WALL on the line - but that
+    is not licence to build ACROSS it. The test is on the CENTER, which is exactly what keeps the
+    deliberate case legal while catching a garden that wandered onto the neighbor's ground."""
+
+    def bmap(*extra_buildings, **kw):
+        M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1200, "H": 1200})
+        M["borders"] = [{"poly": [[900, 0], [900, 1200]], "label": "the Fox border"}]
+        M["houses"] = [house(400, 400), house(460, 400), house(400, 460)]  # the settlement is WEST
+        M.update(kw)
+        M["buildings"] = list(extra_buildings)
+        return M
+
+    assert "structures_stay_on_their_side_of_a_border" not in f(bmap(bldg(600, 400)))
+    assert "structures_stay_on_their_side_of_a_border" in f(bmap(bldg(1000, 400)))  # over the line
+    # a garden or a yard counts too - it is our ground being claimed, not just our roofs
+    assert "structures_stay_on_their_side_of_a_border" in f(bmap(gardens=[garden(1020, 500)]))
+    # ...and a compound whose WALL sits on the line but whose CENTER is ours stays legal
+    assert "structures_stay_on_their_side_of_a_border" not in f(bmap(manors=[{"x": 755, "y": 300, "w": 290, "h": 200, "rot": 0, "label": "M"}]))
+
+
+def test_border_checks_abstain_when_there_is_no_border_or_no_housing():
+    """A map with no drawn border has no side to be on, and one with no dwellings has no side to
+    judge from - neither may raise a finding, and neither may crash."""
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1200, "H": 1200}, buildings=[bldg(1000, 400)])
+    assert "structures_stay_on_their_side_of_a_border" not in f(M)
+    M["borders"] = [{"poly": [[900, 0], [900, 1200]], "label": "b"}]
+    M["buildings"] = []
+    assert "structures_stay_on_their_side_of_a_border" not in f(M)
+
+
+def test_a_caption_over_a_wellhead_is_caught():
+    """`wells` sits in _OVERLAP_EXEMPT (a wellhead may kiss a dense-city building), and the
+    classification ratchet iterates the OVERLAP registry - so a wellhead fell outside BOTH label
+    registries and a caption drawn across one was invisible. Found by settlement-review round 2.
+    A wellhead also has no w/h: its drawn extent is the marker radius `vr`, so classifying it was
+    not enough on its own - the victim builder filtered on "w" and would have skipped it."""
+
+    def wmap(text):
+        M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000})
+        M["wells"] = [well(500, 500, vr=14)]
+        M["labels"] = [[440, 494, 560, 506, 1, text]]
+        return M
+
+    assert "labels_clear_of_other_buildings" in f(wmap("merchant houses & shops"))
+    assert "labels_clear_of_other_buildings" not in f(wmap("well"))  # a caption may name what it covers
+    assert "wells" in check_village._LABEL_GROUP

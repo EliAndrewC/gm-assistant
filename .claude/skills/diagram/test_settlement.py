@@ -4890,3 +4890,30 @@ def test_border_line_caption_defaults_to_the_lines_midpoint_and_is_registered():
     m = len(s2.M["labels"])
     s2.border_line([(900, 0), (900, 800)], label="pinned", label_xy=(700, 300))
     assert len(s2.M["labels"]) == m + 1
+
+
+def test_every_roofed_feature_is_a_canopy_keepout():
+    """THE RATCHET behind "no tree is drawn on a roof". The canopy keep-out was a hand list until a
+    reviewer found scrub on a theater stage; settlement.py cannot import check_village (circular),
+    so the roofed set is written out - and this holds it against the real overlap registry. Every
+    solid feature must be either a canopy keep-out or explicitly named open-air ground, so a new
+    feature cannot silently fall outside both the way `theater_stage` did."""
+    import check_village
+
+    classified = set(Settlement._CANOPY_STRUCT_KEYS) | set(Settlement._CANOPY_OPEN_AIR_KEYS)
+    missing = sorted(k for k in check_village._OVERLAP_STRUCTS if k not in classified)
+    assert not missing, (
+        f"solid feature(s) {missing} are neither a canopy keep-out nor declared open-air ground - add them to Settlement._CANOPY_ROOFED_KEYS (a tree may not stand on a roof) or to _CANOPY_OPEN_AIR_KEYS with the reason"
+    )
+
+
+def test_reclist_reads_a_singleton_record_as_well_as_a_list():
+    """A few features are stored as a bare dict, not a list - which is why their keys are singular.
+    Iterating one blindly yields its string KEYS and `o["w"]` then raises TypeError; that is exactly
+    how adding `theater_stage` to the keep-out lists crashed every gen until this helper existed."""
+    s = _town()
+    s.M["theater_stage"] = {"x": 10, "y": 20, "w": 30, "h": 40}
+    assert s._reclist("theater_stage") == [{"x": 10, "y": 20, "w": 30, "h": 40}]
+    s.M["houses"] = [{"x": 1, "y": 2, "w": 3, "h": 4}, {"x": 5, "y": 6, "w": 7, "h": 8}]
+    assert len(s._reclist("houses")) == 2
+    assert s._reclist("no_such_key") == []

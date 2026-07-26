@@ -71,7 +71,7 @@ s.meta(
     scale="town",
     walled=False,  # centuries of peace with the Fox - GM, 2026-07-26
     clan="Scorpion",  # -> the two default monasteries, Benten and Jurojin (CLAN_FORTUNES)
-    population=635,
+    population=590,
     ftpx=1,
     toscale=True,
     nucleated=True,
@@ -98,7 +98,7 @@ s.pasture([(-60, -60), (900, -60), (1000, 130), (820, 265), (300, 300), (-60, 21
 
 # ---- the trunk road (UNLABELED - not an Imperial road): in from the Fox border at the east, past
 # the magistracy's south gate, then WSW across the map and off the west edge toward Shiro Daika
-ROAD = [(2320, 300), (2125, 335), (1900, 400), (1600, 470), (1300, 545), (1000, 622), (700, 702), (400, 788), (100, 872), (-200, 955)]
+ROAD = [(2320, 336), (2125, 372), (1900, 404), (1600, 470), (1300, 545), (1000, 622), (700, 702), (400, 788), (100, 872), (-200, 955)]
 s.road(ROAD)
 
 # ---- WATER: the valley stream, down off the NE mountains under the border, across the trunk road at
@@ -226,8 +226,8 @@ topo_channel([_outA, ((_outA[0] + POND[0]) / 2, (_outA[1] + POND[1]) / 2 + 14), 
 s.manor(BORDER_X - 145, 240, 290, 200, "Magistrate's Manor", gate_dir="south", label_xy=(1958, 112))  # 290x200 ft = the envelope on pool/magistracies/ubame-magistracy.svg; centered so the east wall stands ON the border
 
 # ---- the two monasteries: Scorpion's patron fortunes, Benten and Jurojin
-s.shrine_hall(430, 1180, "Monastery of Benten", w=132, h=86, kind="monastery", primary=True, torii=[(430, 1248), (430, 1278)], label_below=True)
-s.shrine_hall(1230, 300, "Monastery of Jurojin", w=118, h=78, kind="monastery", torii=[(1230, 362), (1230, 392)], label_below=True)
+s.shrine_hall(430, 1180, "Monastery of Benten", w=132, h=86, kind="monastery", primary=True, torii=[(430, 1272), (430, 1302)], label_below=True)
+s.shrine_hall(1230, 300, "Monastery of Jurojin", w=118, h=78, kind="monastery", torii=[(1230, 386), (1230, 416)], label_below=True)
 
 # ---- the THEATER STAGE in the Benten precinct, EAST of the hall with its viewing ground opening
 # WEST toward it (rot=90) - the audience gathers between stage and hall
@@ -248,7 +248,7 @@ s.cemetery(1230, 200, 84, 56, label="graveyard", label_above=True)
 
 # reserve both torii avenues BEFORE the packs: an arch is a structure like any other, and the
 # warren would otherwise seat a dwelling on one (no_structure_on_torii)
-for _tx, _ty in ((430, 1263), (1230, 377)):
+for _tx, _ty in ((430, 1287), (1230, 401)):
     s.block_polys.append([(_tx - 58, _ty - 46), (_tx + 58, _ty - 46), (_tx + 58, _ty + 46), (_tx - 58, _ty + 46)])
 
 # ---- the market flophouse off the road where peasants coming in for market day arrive
@@ -274,15 +274,15 @@ s.block_polys.append([(1740, 700), (1975, 700), (1975, 905), (1740, 905)])
 # marginal bank ground. rot follows the BANK's own bearing there (the yard is a working frontage, so
 # its water side must lie along the water, not square to the map). Its 120 ft stench keep-out is
 # registered BEFORE the farm rings, so the steadings pack around it instead of crowding it.
-s.tanning_yard(1395, 1300, rot=102, pits=4, water="stream")
+s.tanning_yard(1395, 1300, rot=102, pits=4, water="stream", lab_off=36)  # lab_off: at rot=102 the yard's drawn extent is 33px, so the default h/2 caption sat inside its own boundary stroke and read as "tanning-yard" struck through
 s.block_polys.append([(1395 + 155 * math.cos(a), 1300 + 155 * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]])
 
 # ---- urban core: the businesses front the trunk road (the high street), each facing the roadbed;
 # the housing sits back behind the shopfronts. Counts per budgets.md - ~24 merchant houses, ~14
 # shops, ~29 laborer dwellings, ~5 standalone servants, ~12 burakumin, 5-10 samurai.
 ROAD_CORE = [(1500, 490), (1180, 573), (860, 655), (540, 740), (260, 820)]
-s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 13, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
-s.label(1010, 512, "merchant houses & shops", 11, italic=True, color="#5A4326")
+s.frontage(ROAD_CORE, (["merchant"] * 2 + ["shop"]) * 16, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
+s.label(840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326")  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it)
 s.merchant_residences(3)
 # the ~3 MASTER (rich) laborers get larger dwellings at the edge of the warren
 for lx, ly in [(268, 1060), (700, 1030), (960, 405)]:
@@ -319,6 +319,12 @@ s.execution_ground(125, 975, rot=-16)
 # a no-build band along the road's south verge through the core: the outer farm ring reached up
 # into the shop rows, where a bundle's kitchen garden lapped a storefront (gardens_clear_of_structures)
 s.block_polys.append([(880, 600), (1560, 435), (1600, 600), (930, 762)])
+
+# THE BORDER IS A NO-BUILD EDGE FOR OUR OWN PLACEMENT. The line itself is overlap-exempt (the
+# magistracy stands its wall on it by design), but that permits a WALL on the line, not a settlement
+# building ACROSS it - the ground beyond belongs to the Fox. Registered before the rings so the
+# eastern farmsteads pack short of it (structures_stay_on_their_side_of_a_border).
+s.block_polys.append([(BORDER_X - 34, -60), (2260, -60), (2260, 1560), (BORDER_X - 34, 1560)])
 
 # ---- farmhouses: the farmer majority, ringed several-deep around the comb envelopes
 for bb, rings in ((("poly", ENV_A), [(48, 14), (42, 40), (34, 66), (26, 92)]), (("poly", ENV_B), [(26, 14), (22, 40), (18, 66)])):
@@ -379,8 +385,8 @@ s.commons([(-40, 1030), (104, 1044), (96, 1180), (-40, 1168)], role="grazing")
 s.commons([(-40, 460), (58, 474), (52, 600), (-40, 590)], role="grazing")
 s.commons([(-40, 1330), (70, 1342), (64, 1470), (-40, 1462)], role="grazing")
 s.commons([(1060, -40), (1620, -40), (1640, 165), (1080, 175)], role="grazing")
-s.commons([(1900, 450), (2160, 460), (2152, 600), (1908, 590)], role="grazing")
-s.commons([(1950, 650), (2160, 660), (2152, 850), (1958, 840)], role="grazing")
+s.commons([(1900, 450), (2104, 460), (2097, 600), (1908, 590)], role="grazing")
+s.commons([(1950, 650), (2104, 660), (2097, 850), (1958, 840)], role="grazing")
 s.commons([(1750, 900), (2050, 910), (2042, 1050), (1758, 1040)], role="grazing")
 s.commons([(1600, 0), (1850, 10), (1842, 200), (1608, 190)], role="grazing")
 s.commons([(150, 300), (330, 310), (322, 580), (158, 570)], role="grazing")
@@ -398,7 +404,7 @@ s.commons([(-40, 200), (120, 214), (112, 400), (-40, 388)], role="grazing")
 s.village_grove([(1002, 618), (1108, 662), (1092, 828), (1046, 1000), (1002, 1152), (922, 1160), (908, 1000), (922, 830), (944, 662)], role="windbreak")
 # ...and the leafy scatter filling the OPEN gaps through the farm belt
 s.village_grove([(1080, 1290), (1220, 1400), (1140, 1470), (1010, 1400)], role="copse", dense=False)
-s.village_grove([(1620, 1000), (1730, 1015), (1715, 1120), (1605, 1105)], role="copse", dense=False)
+s.village_grove([(1180, 640), (1300, 660), (1285, 780), (1165, 762)], role="copse", dense=False)
 
 # ===== FIRE DEFENSE: deliberately NO fire-watch tower. The hinomi-yagura belongs to a dense ENCLOSED
 # wooden core; an unwalled county seat at detached village grain has field-gaps for natural breaks,
