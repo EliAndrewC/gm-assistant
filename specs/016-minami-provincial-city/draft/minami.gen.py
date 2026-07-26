@@ -291,7 +291,22 @@ grid([CROSS_H, MAIN_E], width_ft=22)
 CROSS_FRONT = True
 grid([MER_V, LAB_V, SW_V, EAST_ST, WARD_V])
 # block-interior roji, laid with the streets so every quarter's terraces flow around them
-ALLEYS = [[(1120, 1124), (1120, 1330)], [(1490, 1014), (1490, 1150)], [(1640, 1150), (1640, 1230)], [(1300, 1330), (1300, 1606)]]
+# The skeleton above was laid out against the 431x400 ring. The re-derived 456x424 ring adds an
+# outer band the old lanes never reach, and 90 dwellings ended up further than 95px from any street
+# OR alley - a warren with no way in or out (no_isolated_dwelling_cluster). These five roji lace
+# that band: the southern terraces below the burakumin strips, the ward's south-east flank, the
+# north gate approach, and the river-gate quarter.
+ALLEYS = [
+    [(1120, 1124), (1120, 1330)],
+    [(1490, 1014), (1490, 1150)],
+    [(1640, 1150), (1640, 1230)],
+    [(1300, 1330), (1300, 1606)],
+    [(1372, 1596), (1372, 1728)],
+    [(1544, 1592), (1544, 1707)],
+    [(1740, 1470), (1740, 1577)],
+    [(1300, 943), (1300, 1046)],
+    [(1002, 1330), (1002, 1436)],
+]
 alleys(ALLEYS)
 for _al in ALLEYS:
     s.corridors.append((_al, 8))
@@ -368,7 +383,7 @@ s.martial_hall(1700, 1500, label_xy=(1700, 1503))
 s.dojos([(1452, 1408), (1740, 1420)])
 reserve_caption_ground()
 front([MAIN_E], (["samurai_large"] + ["samurai"] * 2) * 10, spacing=19, rows=2)
-for _y0, _x1 in ((1310, 1780), (1596, 1712), (1650, 1690)):
+for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
     s.rowpack((1462, _y0, _x1, _y0 + 40), ["samurai"] * 30, court_every=4, eave_ft=2)
 # THE YAMEN'S DOMESTIC STAFF, in terraces rather than scatter. city_capacity read the SE at
 # 0.48 dwellings/1000px^2 against the SW's 1.66 - the emptiest quarter in the city - and budgets.md
@@ -382,7 +397,7 @@ for _y0, _x1 in ((1310, 1780), (1596, 1712), (1650, 1690)):
 s.rowpack((1440, 1470, 1494, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
 s.rowpack((1664, 1528, 1714, 1642), (["servant"] * 4 + ["laborer"]) * 30, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring
 s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
-s.pack((1452, 1312, 1782, 1672), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
+s.pack((1452, 1312, 1836, 1716), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
 s.label(1580, 1300, "samurai neighborhood", 10, italic=True, color="#3A352C")
 s.ward("samurai", WARD_FENCE, gates=KIDO_SPOTS)
 
@@ -721,7 +736,7 @@ for _ci, _m in zip(range(_CIV_I0, _CIV_I1), s.M["ministries"] + [s.M["governor_m
 NE_Q = (1424, 968, 1790, 1258)
 NW_Q = (1030, 1030, 1386, 1312)
 SW_Q = (1044, 1366, 1386, 1660)
-SE_Q = (1452, 1312, 1782, 1672)
+SE_Q = (1452, 1312, 1836, 1716)
 
 _MERCH = ("merchant", "merchant_house", "merchant_large")
 _LAB = ("laborer", "laborer_large")
