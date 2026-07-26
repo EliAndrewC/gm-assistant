@@ -6,6 +6,7 @@
 
 | Research file | Grounds the rules in |
 |---|---|
+| [`archetypes.md`](archetypes.md) | [`../settlements/archetypes.md`](../settlements/archetypes.md) |
 | [`buildings.md`](buildings.md) | [`../buildings.md`](../buildings.md) |
 | [`cities/defenses.md`](cities/defenses.md) | [`../settlements/cities/defenses.md`](../settlements/cities/defenses.md) |
 | [`cities/fabric.md`](cities/fabric.md) | [`../settlements/cities/fabric.md`](../settlements/cities/fabric.md) |
@@ -15,6 +16,7 @@
 | [`fields.md`](fields.md) | [`../settlements/fields.md`](../settlements/fields.md) |
 | [`homesteads.md`](homesteads.md) | [`../settlements/homesteads.md`](../settlements/homesteads.md) |
 | [`religion-and-death.md`](religion-and-death.md) | [`../settlements/religion-and-death.md`](../settlements/religion-and-death.md) |
+| [`towns.md`](towns.md) | [`../settlements/towns.md`](../settlements/towns.md) |
 | [`urban-features.md`](urban-features.md) | [`../settlements/urban-features.md`](../settlements/urban-features.md) |
 | [`vegetation.md`](vegetation.md) | [`../settlements/vegetation.md`](../settlements/vegetation.md) |
 | [`water.md`](water.md) | [`../settlements/water.md`](../settlements/water.md) |
