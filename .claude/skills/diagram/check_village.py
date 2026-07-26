@@ -509,16 +509,23 @@ _MATRIX_OUTSTANDING: dict[str, dict[tuple[str, str], int]] = {
     # Keyed by (map, PAIR) with a COUNT, deliberately not by coordinate: a coordinate-keyed list is
     # brittle to regeneration - a plot shifting a fraction of a pixel silently un-baselines itself -
     # while a count still catches any NEW instance of the same pair and still shrinks visibly.
-    # a well sunk in a watercourse: place_wells does not yet test ditches/channels
-    "Tango": {("field_ditches", "wells"): 1},
-    "Hoshizora": {("channels", "wells"): 1, ("field_ditches", "wells"): 1, ("buildings", "storehouses"): 1},
-    "Kikuta": {("dry_plots", "wells"): 1},
-    # a farmstead standing on its own field's irrigation ditch
-    "Hoshigaoka": {("field_ditches", "houses"): 3},
+    # Every line is WORK OWED, not a permission.
+    #
+    # 2026-07-26: the matrix's first pool run found 11. Seven are fixed; these four remain, each
+    # with its cause diagnosed:
+    #   Hirameki  a ring-placed farmhouse laps a hem plot's corner - placement tests the house's
+    #             CENTER against dry ground while the matrix tests its footprint
+    #   Ubame     a comb's dry hem plot lies across the valley stream; the hem comes from build_comb
+    #             and the stream is authored separately, so neither knows about the other
+    #   Hoshigaoka  one ring-placed farmhouse still laps its field's own ditch (the hand-placed
+    #             headman that lay across two of them was moved)
+    #   Kikuta    a well sits on a hem plot - a DRAW-ORDER problem, not a missing guard:
+    #             roll_village() places wells before draw_comb_field records any dry_plots, so the
+    #             new _well_ground_clear guard has nothing to see yet at that moment
     "Hirameki": {("dry_plots", "houses"): 1},
-    # a merchant kura across a NEIGHBOR's building rather than its own shop - exactly the case the
-    # old blanket storehouse exemption could not express - plus the motivating crop-plot-in-a-stream
-    "Ubame": {("buildings", "storehouses"): 1, ("dry_plots", "streams"): 1},
+    "Ubame": {("dry_plots", "streams"): 1},
+    "Hoshigaoka": {("field_ditches", "houses"): 1},
+    "Kikuta": {("dry_plots", "wells"): 1},
 }
 
 

@@ -4917,3 +4917,40 @@ def test_reclist_reads_a_singleton_record_as_well_as_a_list():
     s.M["houses"] = [{"x": 1, "y": 2, "w": 3, "h": 4}, {"x": 5, "y": 6, "w": 7, "h": 8}]
     assert len(s._reclist("houses")) == 2
     assert s._reclist("no_such_key") == []
+
+
+def test_well_ground_clear_refuses_water_and_crop():
+    """You do not sink a well in a watercourse, and you do not sink one in a crop plot. Placement
+    predicted everything else about a well site - lanes, compounds, the bound, its neighbors - but
+    never the water or the crop, which is how the overlap matrix found four wells standing in
+    ditches, a channel and a hatake plot across three maps."""
+    s = _town()
+    assert s._well_ground_clear(500, 500)  # bare ground
+    s.M["streams"] = [{"poly": [[500, 300], [500, 700]], "w": 9}]
+    assert not s._well_ground_clear(500, 500)
+    assert s._well_ground_clear(900, 500)  # well clear of it
+    s.M["streams"] = []
+    s.M["field_ditches"] = [{"poly": [[400, 500], [600, 500]], "w": 1.5}]
+    assert not s._well_ground_clear(500, 500)
+    s.M["field_ditches"] = []
+    s.M["pond"] = [500, 500, 40, 24]
+    assert not s._well_ground_clear(505, 500)
+    assert s._well_ground_clear(900, 900)
+    s.M["pond"] = None
+    s.M["dry_plots"] = [{"poly": [[480, 480], [560, 480], [560, 560], [480, 560]], "crop": "barley", "theta": 0}]
+    assert not s._well_ground_clear(520, 520)  # inside the plot
+    assert not s._well_ground_clear(474, 520)  # its drawn head laps the plot's edge
+    assert s._well_ground_clear(900, 900)
+
+
+def test_merchant_storehouse_is_never_drawn_across_a_neighbor():
+    """A kura's overlap is legitimate only because it is an annex of ITS OWN shop. One tucked behind
+    a narrow shopfront that happens to back onto the next lot's larger house is a defect - the case
+    the old blanket storehouse exemption could not express, and which the matrix found twice."""
+    s = _town()
+    s.building(500, 500, 54, 36, "merchant", rot=0)
+    s.building(500, 455, 86, 60, "merchant_large", rot=0)  # squarely BEHIND it (rot=0 puts the kura north)
+    assert s.merchant_storehouses(count=4) == 0
+    s2 = _town()
+    s2.building(500, 500, 54, 36, "merchant", rot=0)
+    assert s2.merchant_storehouses(count=4) == 1  # nothing behind it - the annex is fine
