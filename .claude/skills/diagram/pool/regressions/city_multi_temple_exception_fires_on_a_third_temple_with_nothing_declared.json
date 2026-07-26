@@ -1,0 +1,71 @@
+{
+ "meta": {
+  "scale": "city",
+  "walled": true,
+  "W": 1000,
+  "H": 1000
+ },
+ "wall": [
+  [
+   200,
+   200
+  ],
+  [
+   800,
+   200
+  ],
+  [
+   800,
+   800
+  ],
+  [
+   200,
+   800
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   200
+  ],
+  [
+   500,
+   800
+  ]
+ ],
+ "religious": [
+  {
+   "kind": "temple",
+   "x": 200,
+   "y": 400,
+   "w": 80,
+   "h": 60,
+   "rot": 0,
+   "label": "Temple of X0"
+  },
+  {
+   "kind": "temple",
+   "x": 260,
+   "y": 400,
+   "w": 80,
+   "h": 60,
+   "rot": 0,
+   "label": "Temple of X1"
+  },
+  {
+   "kind": "temple",
+   "x": 320,
+   "y": 400,
+   "w": 80,
+   "h": 60,
+   "rot": 0,
+   "label": "Temple of X2"
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "city_multi_temple_exception_declared"
+  ],
+  "source": "test_checks.py::test_city_multi_temple_exception_fires_on_a_third_temple_with_nothing_declared"
+ }
+}
