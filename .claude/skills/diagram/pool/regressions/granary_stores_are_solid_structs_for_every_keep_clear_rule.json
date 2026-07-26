@@ -1,0 +1,70 @@
+{
+ "meta": {
+  "scale": "city",
+  "ftpx": 3,
+  "W": 1000,
+  "H": 1000,
+  "walled": true,
+  "population": 3000
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "gates": [
+  [
+   50,
+   500
+  ]
+ ],
+ "gate": [
+  50,
+  500
+ ],
+ "ring_road": [
+  [
+   400,
+   500
+  ],
+  [
+   600,
+   500
+  ]
+ ],
+ "ring_road_width": 15,
+ "granary": {
+  "x": 500,
+  "y": 500,
+  "w": 60,
+  "h": 40,
+  "stores": [
+   {
+    "x": 500,
+    "y": 500,
+    "w": 18,
+    "h": 14,
+    "rot": 0
+   }
+  ]
+ },
+ "_regression": {
+  "fires": [
+   "ring_road_kept_clear"
+  ],
+  "source": "test_checks.py::test_granary_stores_are_solid_structs_for_every_keep_clear_rule"
+ }
+}
