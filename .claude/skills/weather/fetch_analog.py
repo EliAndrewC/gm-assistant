@@ -42,7 +42,9 @@ HOURLY = "temperature_2m,relative_humidity_2m,precipitation,snowfall,snow_depth,
 
 def slug(analog: str) -> str:
     base = analog.split(",")[0].split("(")[0].strip().lower()
-    return "".join(c if c.isalnum() else "-" for c in base).strip("-").replace("--", "-")
+    return (
+        "".join(c if c.isalnum() else "-" for c in base).strip("-").replace("--", "-")
+    )
 
 
 def find_place(query: str) -> dict:
@@ -51,7 +53,9 @@ def find_place(query: str) -> dict:
     for p in places:
         if p["place"].lower() == q or q in p["place"].lower():
             return p
-    sys.exit(f"No place matching '{query}'. Known: {', '.join(p['place'] for p in places)}")
+    sys.exit(
+        f"No place matching '{query}'. Known: {', '.join(p['place'] for p in places)}"
+    )
 
 
 def main() -> None:
@@ -75,7 +79,9 @@ def main() -> None:
 
     data = json.loads(out.read_text())
     n = len(data["daily"]["time"])
-    print(f"Saved {n} days for {place['place']} ({place['us_analog']}) -> raw/{out.name}")
+    print(
+        f"Saved {n} days for {place['place']} ({place['us_analog']}) -> raw/{out.name}"
+    )
     print(f'Now set  "year_file": "{out.name}"  for {place["place"]} in places.jsonl')
 
 

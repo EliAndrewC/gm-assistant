@@ -46,7 +46,9 @@ def duplicate_defs(path: Path) -> list[tuple[str, int, int]]:
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     seen: dict[str, int] = {}
     out: list[tuple[str, int, int]] = []
-    for node in tree.body:  # module top level ONLY: if/try-nested defs are conditional by design
+    for node in (
+        tree.body
+    ):  # module top level ONLY: if/try-nested defs are conditional by design
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             continue
         if any("overload" in ast.unparse(dec) for dec in node.decorator_list):
@@ -67,17 +69,23 @@ def run(root: str = ".", scan_roots: tuple[str, ...] = SCAN_ROOTS) -> tuple[int,
         if not base.is_dir():
             continue
         for p in sorted(base.rglob("*.py")):
-            if SKIP_PARTS.intersection(p.relative_to(base).parts):  # RELATIVE parts - see docstring
+            if SKIP_PARTS.intersection(
+                p.relative_to(base).parts
+            ):  # RELATIVE parts - see docstring
                 continue
             scanned += 1
             try:
                 found = duplicate_defs(p)
-            except SyntaxError as exc:  # a truncated merge artifact is exactly worth failing on
+            except (
+                SyntaxError
+            ) as exc:  # a truncated merge artifact is exactly worth failing on
                 print(f"{p}: unparseable ({exc})")
                 bad += 1
                 continue
             for name, first, dup in found:
-                print(f"{p}:{dup}: duplicate top-level def '{name}' (first defined at line {first}) - the later definition silently shadows the earlier one")
+                print(
+                    f"{p}:{dup}: duplicate top-level def '{name}' (first defined at line {first}) - the later definition silently shadows the earlier one"
+                )
                 bad += 1
     return bad, scanned
 
@@ -87,13 +95,22 @@ def selftest() -> int:
     with tempfile.TemporaryDirectory() as td:
         pkg = Path(td) / "webapp"
         pkg.mkdir()
-        (pkg / "dup.py").write_text("def f():\n    return 1\n\n\ndef g():\n    return f()\n\n\ndef f():\n    return 2\n")
-        (pkg / "clean.py").write_text("def a():\n    return 1\n\n\nclass B:\n    def a(self):  # a method may share a module-level name\n        return 2\n")
+        (pkg / "dup.py").write_text(
+            "def f():\n    return 1\n\n\ndef g():\n    return f()\n\n\ndef f():\n    return 2\n"
+        )
+        (pkg / "clean.py").write_text(
+            "def a():\n    return 1\n\n\nclass B:\n    def a(self):  # a method may share a module-level name\n        return 2\n"
+        )
         bad, scanned = run(td)
         if bad != 1 or scanned != 2:
-            print(f"check-duplicate-defs SELFTEST FAILED: expected exactly 1 problem over 2 files, got {bad} over {scanned}", file=sys.stderr)
+            print(
+                f"check-duplicate-defs SELFTEST FAILED: expected exactly 1 problem over 2 files, got {bad} over {scanned}",
+                file=sys.stderr,
+            )
             return 1
-    print("check-duplicate-defs: selftest ok (planted duplicate fires, clean module passes)")
+    print(
+        "check-duplicate-defs: selftest ok (planted duplicate fires, clean module passes)"
+    )
     return 0
 
 
@@ -103,10 +120,16 @@ def main(argv: list[str]) -> int:
     root = argv[0] if argv else "."
     bad, scanned = run(root)
     if scanned == 0:
-        print(f"check-duplicate-defs: scanned ZERO files under {root!r} - wrong root? failing loudly (the first draft passed by scanning nothing)", file=sys.stderr)
+        print(
+            f"check-duplicate-defs: scanned ZERO files under {root!r} - wrong root? failing loudly (the first draft passed by scanning nothing)",
+            file=sys.stderr,
+        )
         return 1
     if bad:
-        print(f"check-duplicate-defs: {bad} problem(s) over {scanned} files - a shadowed helper breaks whoever still calls the old one", file=sys.stderr)
+        print(
+            f"check-duplicate-defs: {bad} problem(s) over {scanned} files - a shadowed helper breaks whoever still calls the old one",
+            file=sys.stderr,
+        )
         return 1
     return 0
 

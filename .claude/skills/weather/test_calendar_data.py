@@ -88,7 +88,8 @@ def test_titles_keep_their_english_gloss(cal):
 def test_parses_a_synthetic_month(tmp_path):
     """Whole-shape check on a minimal file, independent of the real SKILL.md."""
     src = tmp_path / "SKILL.md"
-    src.write_text(textwrap.dedent("""\
+    src.write_text(
+        textwrap.dedent("""\
         preamble that must be ignored
 
         5th Month: Satsuki ("sprout"), Month of the Goat
@@ -103,14 +104,20 @@ def test_parses_a_synthetic_month(tmp_path):
         Body of the first day.
 
         5th Day: Ayame no sekku
-        """))
+        """)
+    )
     cal = C.parse_calendar(src)
     mo = cal[5]
     assert mo["meaning"] == "sprout"
-    assert mo["meta"] == [("Seasonal color", "Iris combination"),
-                          ("Flowers of Satsuki", "ayame iris")]
+    assert mo["meta"] == [
+        ("Seasonal color", "Iris combination"),
+        ("Flowers of Satsuki", "ayame iris"),
+    ]
     assert mo["intro"] == ["Intro paragraph one.", "Intro paragraph two."]
-    assert mo["days"][1] == {"day": 1, "greg": "6 Jun",
-                             "title": "Houshu (seed sowing)",
-                             "body": ["Body of the first day."]}
+    assert mo["days"][1] == {
+        "day": 1,
+        "greg": "6 Jun",
+        "title": "Houshu (seed sowing)",
+        "body": ["Body of the first day."],
+    }
     assert mo["days"][5]["body"] == []

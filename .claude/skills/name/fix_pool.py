@@ -63,8 +63,12 @@ def fix():
     save_pool(male_path, final_male)
     save_pool(female_path, final_female)
 
-    print(f"\nmale: {len(male_pool)} -> {len(final_male)} ({len(male_pool) - len(final_male)} removed)")
-    print(f"female: {len(female_pool)} -> {len(final_female)} ({len(female_pool) - len(final_female)} removed)")
+    print(
+        f"\nmale: {len(male_pool)} -> {len(final_male)} ({len(male_pool) - len(final_male)} removed)"
+    )
+    print(
+        f"female: {len(female_pool)} -> {len(final_female)} ({len(female_pool) - len(final_female)} removed)"
+    )
     print("\nDone. Run validate_pool.py to confirm.")
 
 

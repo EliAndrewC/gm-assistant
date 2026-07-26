@@ -81,7 +81,9 @@ class TestLoadPool:
 
     def test_empty_lines_skipped(self, tmp_path):
         pool_file = tmp_path / "pool.jsonl"
-        pool_file.write_text('{"name": "A", "gender": "male"}\n\n{"name": "B", "gender": "male"}\n')
+        pool_file.write_text(
+            '{"name": "A", "gender": "male"}\n\n{"name": "B", "gender": "male"}\n'
+        )
         result = load_pool(str(pool_file))
         assert len(result) == 2
 
@@ -114,13 +116,48 @@ class TestPick:
         campaign = tmp_path / "campaign-names.txt"
 
         male_entries = [
-            {"name": "Takeshi", "gender": "male", "format": 1, "explanation": "test", "notes": "test", "peasant": True},
-            {"name": "Noboru", "gender": "male", "format": 2, "explanation": "test", "notes": "test", "peasant": False},
-            {"name": "Isao", "gender": "male", "format": 3, "explanation": "test", "notes": "test", "peasant": True},
+            {
+                "name": "Takeshi",
+                "gender": "male",
+                "format": 1,
+                "explanation": "test",
+                "notes": "test",
+                "peasant": True,
+            },
+            {
+                "name": "Noboru",
+                "gender": "male",
+                "format": 2,
+                "explanation": "test",
+                "notes": "test",
+                "peasant": False,
+            },
+            {
+                "name": "Isao",
+                "gender": "male",
+                "format": 3,
+                "explanation": "test",
+                "notes": "test",
+                "peasant": True,
+            },
         ]
         female_entries = [
-            {"name": "Hanako", "gender": "female", "format": 1, "explanation": "test", "notes": "test", "peasant": True},
-            {"name": "Kimiko", "gender": "female", "format": 2, "explanation": "test", "notes": "test", "peasant": False},
+            {
+                "name": "Hanako",
+                "gender": "female",
+                "format": 1,
+                "explanation": "test",
+                "notes": "test",
+                "peasant": True,
+            },
+            {
+                "name": "Kimiko",
+                "gender": "female",
+                "format": 2,
+                "explanation": "test",
+                "notes": "test",
+                "peasant": False,
+            },
         ]
 
         male_pool.write_text("\n".join(json.dumps(e) for e in male_entries) + "\n")
@@ -135,6 +172,7 @@ class TestPick:
     def _extract_names(self, output):
         """Extract bold name from markdown output lines like **Name** - ..."""
         import re
+
         return re.findall(r"\*\*(\w+)\*\*", output)
 
     def test_pick_one_male(self, pool_dir, capsys):

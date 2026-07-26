@@ -44,7 +44,9 @@ def validate():
     # Check each pool name against campaign names
     for entry in all_pool:
         if is_too_similar(entry["name"], campaign_names):
-            errors.append(f"TOO SIMILAR TO CAMPAIGN: {entry['name']} ({entry['gender']})")
+            errors.append(
+                f"TOO SIMILAR TO CAMPAIGN: {entry['name']} ({entry['gender']})"
+            )
 
     # Check each pool name against all OTHER pool names
     for i, entry in enumerate(all_pool):
@@ -55,9 +57,16 @@ def validate():
                 if entry["name"].lower() == other.lower():
                     continue
                 from similarity import edit_distance
+
                 ed = edit_distance(entry["name"], other)
-                if ed <= 1 or entry["name"].lower().startswith(other.lower()) or other.lower().startswith(entry["name"].lower()):
-                    errors.append(f"TOO SIMILAR IN POOL: {entry['name']} <-> {other} (edit_dist={ed}, prefix={entry['name'].lower().startswith(other.lower()) or other.lower().startswith(entry['name'].lower())})")
+                if (
+                    ed <= 1
+                    or entry["name"].lower().startswith(other.lower())
+                    or other.lower().startswith(entry["name"].lower())
+                ):
+                    errors.append(
+                        f"TOO SIMILAR IN POOL: {entry['name']} <-> {other} (edit_dist={ed}, prefix={entry['name'].lower().startswith(other.lower()) or other.lower().startswith(entry['name'].lower())})"
+                    )
                     break
 
     # Summary
@@ -73,7 +82,9 @@ def validate():
             print(f"  {e}")
         sys.exit(1)
     else:
-        print("ALL CHECKS PASSED - no duplicates, no similarities to campaign names or between pool names.")
+        print(
+            "ALL CHECKS PASSED - no duplicates, no similarities to campaign names or between pool names."
+        )
 
 
 if __name__ == "__main__":

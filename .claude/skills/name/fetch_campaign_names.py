@@ -13,6 +13,7 @@ CHARACTERS_URL = f"{CAMPAIGN_URL}/characters"
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(SKILL_DIR, ".env")
 
+
 def load_session_cookie():
     """Load session cookie from .env file or environment variable."""
     # Check environment variable first
@@ -27,9 +28,16 @@ def load_session_cookie():
                 if line.startswith("OBSIDIAN_SESSION_COOKIE="):
                     return line.split("=", 1)[1].strip().strip('"').strip("'")
     print("ERROR: No session cookie found.", file=sys.stderr)
-    print(f"Set OBSIDIAN_SESSION_COOKIE in {ENV_PATH} or as an environment variable.", file=sys.stderr)
-    print(f"Example: echo 'OBSIDIAN_SESSION_COOKIE=your_cookie_here' > {ENV_PATH}", file=sys.stderr)
+    print(
+        f"Set OBSIDIAN_SESSION_COOKIE in {ENV_PATH} or as an environment variable.",
+        file=sys.stderr,
+    )
+    print(
+        f"Example: echo 'OBSIDIAN_SESSION_COOKIE=your_cookie_here' > {ENV_PATH}",
+        file=sys.stderr,
+    )
     sys.exit(1)
+
 
 SESSION_COOKIE = load_session_cookie()
 
@@ -57,8 +65,14 @@ def scrape_characters_page(session, url):
         return [], None
 
     if "Pre Human Check" in resp.text:
-        print("ERROR: Bot protection triggered. Session cookie may be expired.", file=sys.stderr)
-        print("Re-extract cookies from Chrome DevTools and update the script.", file=sys.stderr)
+        print(
+            "ERROR: Bot protection triggered. Session cookie may be expired.",
+            file=sys.stderr,
+        )
+        print(
+            "Re-extract cookies from Chrome DevTools and update the script.",
+            file=sys.stderr,
+        )
         with open("/tmp/obsidian-debug.html", "w") as f:
             f.write(resp.text)
         sys.exit(1)
@@ -127,7 +141,9 @@ if __name__ == "__main__":
     full_names = fetch_all_names()
 
     if not full_names:
-        print("No characters found. The session cookie may be expired.", file=sys.stderr)
+        print(
+            "No characters found. The session cookie may be expired.", file=sys.stderr
+        )
         sys.exit(1)
 
     personal_names = extract_personal_names(full_names)
@@ -138,7 +154,9 @@ if __name__ == "__main__":
         for name in unique_personal:
             f.write(name + "\n")
 
-    print(f"Found {len(full_names)} characters, extracted {len(unique_personal)} unique personal names.")
+    print(
+        f"Found {len(full_names)} characters, extracted {len(unique_personal)} unique personal names."
+    )
     print(f"Saved to {output_path}")
 
     # Also print them for verification
