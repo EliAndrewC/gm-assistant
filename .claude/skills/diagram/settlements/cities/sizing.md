@@ -16,9 +16,42 @@ The hard question every city raises is *"do the walls enclose too much empty spa
 - **The verdict** is one of four, and each says exactly what to do next:
   - **`too_small`** - even well-packed the wall cannot hold the target (`inherent_cap < 0.9*T`). ENLARGE the wall (multiply all coordinates by `suggested_wall_scale` about the wall center).
   - **`too_big`** - far more room than the target needs (`inherent_cap > 1.4*T`). SHRINK it.
-  - **`underpacked`** - the WALL is right but the placement is too sparse (`placed < (1 - population_tol)*T`, i.e. below the *same* line the `population_consistent_with_housing` check fails at, default 7%). Do NOT resize - add dwellings / densify the quarters.
+  - **`underpacked`** - the WALL is right but the placement is too sparse (`placed < (1 - population_tol)*T`, i.e. below the *same* line the `population_consistent_with_housing` check fails at). Do NOT resize - add dwellings / densify the quarters.
   - **`about_right`** - wall sized and packed to target. Done.
 - **`city_wall_sized_to_population`** is the gate check that fails on `too_small` / `too_big`, so a mis-sized wall is a first-class, automated finding rather than something discovered by hand late.
+
+### THE DECLARED POPULATION IS EXACT - there is no allowance (GM, 2026-07-26)
+
+`population_consistent_with_housing` used to pass anything within **7%** of the declared figure.
+That band is **gone**: `population_tol` now defaults to `0.0`, and a map must draw
+`population / HOUSEHOLD` dwellings **exactly**.
+
+**Why.** A declared population is a promise about what the map CONTAINS, and a 7% band is how a city
+ends up quietly smaller than the figure on its own placard - Minami was signed off at 486 dwellings
+against a 520 target and read as green. In the GM's words: *"if we have a target population with math
+indicating a target number of dwellings we must ALWAYS meet that number EXACTLY."*
+
+**What to do when the ground will not take them.** Grow the **wall**, from the budget - never trim the
+declared figure to fit the layout. That is the same instruction `city_capacity` already gives
+(`enlarge` is a WALL fault); the tolerance removal just closes the escape hatch of shrinking the
+population instead. Where the budget is genuinely under-counting, correct the budget: Minami's
+`temple_precinct_px2` was pricing a precinct's hall compound and not the ground the drawn precinct
+occupies, and both Minami and Nagahara carry a measured `laneway excess` line because the flat 7%
+circulation allowance does not cover what they actually draw.
+
+**How to hit it exactly.** All three cities now end with a `fill_exactly(target)` pass. It asks one
+caste at a time for precisely the shortfall - `top_up` stops the moment that caste's tally reaches the
+figure asked, so it cannot overshoot - smallest footprints first, because those are what still fit
+once the quarters are full. Two things it must get right, both learned the hard way:
+
+- **Count what the CHECK counts.** Each gen's local `DWELL` tuple omits `monk_house`, and a city with
+  an `agricultural_district` also counts its in-wall farmhouses. Driving the local tally to the target
+  overshot Tango by 15.
+- **Respect the caste CEILINGS.** Filling smallest-first pushes one caste past its +/-30% band
+  otherwise (Tango's servants reached 159 against a 156 ceiling).
+
+If the loop stalls short, it returns and the CHECK fails - loudly, which is correct. A stalled fill
+means the wall is too small, and that is a budget question, not a population question.
 - **`--capacity-map` prints an ASCII map of the interior classification** (each cell 40px), so the report shows WHERE the open ground is, not just how much. Read it to decide *where* to add a quarter (or that the open ground is all civic precinct / setback and the answer is denser packing, not a new quarter).
 
 **The Nagahara worked example (the wall-sizing process in action, 2026-07):** first cut at 430x400 declared 3,000 -> `enlarge` (inherent 446 < 600), suggested scale x1.13. Scaled the whole generator x1.15 about the center -> `densify` (wall now right, placement sparse). The `--capacity-map` showed the open ground was the civic-committed west half (temple neighborhood NW, sealed government ward SW). The first pass densified the east; feature 006 later showed the honest fix was to fill the empty NW itself (the monzen pocket) so the quarter is not merely under-built - see the per-quarter doctrine below. End state: `sized_and_packed`.

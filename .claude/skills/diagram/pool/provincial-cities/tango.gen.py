@@ -1297,7 +1297,7 @@ top_up(
 # continuing beyond the frame (the GM's explicit presumption), so no synthetic fill closes the gaps.
 
 _dw = sum(1 for b in s.M["buildings"] if b["kind"] in DWELL) + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"]))
-if _dw < 562:  # population floor 558 (3000 x 0.93 / 5) + margin
+if _dw < 562:  # a legacy pre-fill nudge; the exact figure is now driven by fill_exactly() below (the 7% band is gone, so the target is 600 on the nose, not a 558 floor)
     top_up("laborer", (1632, 1008, 2051, 1350), sum(1 for b in s.M["buildings"] if b["kind"] == "laborer") + (562 - _dw))
 
 
@@ -1330,6 +1330,82 @@ for _kind, _region, _cap in (
 s.place_wells(
     (1176, 993, 1561, 1226), spacing=56, near=88, coverage=False
 )  # FINE grid (the district is laced with field margins + channel corridors), each well gated to sit AMONG homes (near=88), coverage=False so the near-gate stays district-scoped (the global coverage pass would drop wells beside the samurai compounds)
+
+# ====================================================================== EXACTLY the declared figure
+# population_consistent_with_housing allows NO band any more (GM 2026-07-26): a declared population is
+# a promise about what the map CONTAINS, so the arithmetic has to close exactly - population /
+# HOUSEHOLD dwellings, not "within 7%". Each pass asks one caste for exactly the shortfall and top_up
+# stops the moment that caste's tally reaches the figure asked, so it cannot overshoot. Smallest
+# footprints first, because they are what still fits once the quarters are full. If the ground
+# genuinely cannot take them the loop stalls and the CHECK fails, which is the right outcome: the
+# answer is a bigger wall from the budget, never a smaller declared figure.
+def fill_exactly(target):
+    _wx0, _wy0 = min(p[0] for p in WALL), min(p[1] for p in WALL)
+    _wx1, _wy1 = max(p[0] for p in WALL), max(p[1] for p in WALL)
+    _all = (_wx0, _wy0, _wx1, _wy1)  # top_up's ok() rejects anything outside WALL itself
+    _order = (
+        ("servant", ("servant",)),
+        ("laborer", ("laborer", "laborer_large")),
+        ("merchant_house", ("merchant", "merchant_house", "merchant_large")),
+        ("burakumin", ("burakumin",)),
+        ("samurai", ("samurai", "samurai_large")),
+    )
+    # COUNT WHAT THE CHECK COUNTS. Each gen's local DWELL tuple omits monk_house, but
+    # population_consistent_with_housing counts it - so driving the local tally to the target
+    # overshoots by exactly the monk-house count (Tango: 606 against 600). Use the check's set.
+    _CHECKED = ("laborer", "laborer_large", "servant", "burakumin", "samurai", "samurai_large", "merchant", "merchant_house", "merchant_large", "monk_house")
+
+    def _dw_all():
+        # Tango declares an agricultural_district, and for such a city the check counts the in-wall
+        # FARMHOUSES as dwellings too - counting only the urban ones drove the fill 15 past the target.
+        return sum(1 for b in s.M["buildings"] if b["kind"] in _CHECKED) + sum(1 for h in s.M["houses"] if _inwall(h["x"], h["y"]))
+
+    # RESPECT THE CASTE CEILINGS. Filling smallest-footprint-first is what makes the last seats
+    # findable, but unchecked it pushes one caste past its +/-30% band (Tango's servants went to 159
+    # against a 156 ceiling). Each caste is asked for no more than its ceiling; the loop then moves to
+    # the next. The ceiling counts what city_caste_counts_in_band counts - walled estates and manors
+    # included - so the two cannot disagree.
+    _FRAC = {"servant": 0.20, "laborer": 0.40, "merchant_house": 0.25, "burakumin": 0.05, "samurai": 0.10}
+    _EXTRA = {"merchant_house": len(s.M.get("merchant_estates", []) or []), "samurai": len(s.M.get("manors", []) or [])}
+    for _ in range(30):
+        if _dw_all() >= target:
+            return
+        _moved = False
+        for _k, _ck in _order:
+            _short = target - _dw_all()
+            if _short <= 0:
+                break
+            _have = sum(1 for b in s.M["buildings"] if b["kind"] in _ck)
+            _ceil = int(1.3 * _FRAC[_k] * target) - _EXTRA.get(_k, 0)
+            if _have >= _ceil:
+                continue
+            _n0 = _dw_all()
+            top_up(_k, _all, min(_have + _short, _ceil), count_kinds=_ck)
+            _moved = _moved or _dw_all() > _n0
+        if not _moved:
+            return
+
+
+fill_exactly(3000 // 5)
+
+# draw-points for the two courts the shortened x1896 roji re-balanced past the ~26-household cap.
+# ASKED of the engine (open_seat runs the same _fits the real placement path runs), at a 14px box -
+# a wellhead is r=8, so an 18px box will not fit gaps a 14px one does.
+# EVEN THE DRAW-POINTS OUT rather than chasing heads one at a time: adding a well changes which court
+# every neighbor belongs to, so point fixes just relocate the overloaded head. Sweep the interior,
+# only where households actually stand (a seat in open ground is a wellhead in a field, not a
+# draw-point), asking open_seat for each seat at a 14px box - a wellhead is r=8, so 18px will not fit
+# gaps 14px does.
+_tgx0, _tgy0 = min(p[0] for p in WALL), min(p[1] for p in WALL)
+_tgx1, _tgy1 = max(p[0] for p in WALL), max(p[1] for p in WALL)
+for _bxT in range(int(_tgx0), int(_tgx1), 78):
+    for _byT in range(int(_tgy0), int(_tgy1), 78):
+        if sum(1 for b in s.M["buildings"] if _bxT <= b["x"] <= _bxT + 78 and _byT <= b["y"] <= _byT + 78) < 5:
+            continue
+        _wsT = s.open_seat((_bxT, _byT, _bxT + 78, _byT + 78), 14, 14, well=True)
+        if _wsT:
+            s.well(*_wsT)
+
 
 s.crop_city(west=100)  # the aggressive default (35px past the kept satellites); the WEST keeps a 100px farm
 # band (no satellite anchors that flank and the GM called its framing perfect). The gate markets (N/S)
@@ -1365,7 +1441,12 @@ s.kosatsuba(1525, 1439, rot=0, label=None)
 # the crime rides on the cangue, so it draws no board of its own. Probed with open_seat after
 # the packs by place_punishment_spot, which scores street verges by traffic - the same probe
 # the notice board uses, because both institutions are sited by the same variable.
-s.place_punishment_spot()
+# HAND-SITED, 10px west of the auto-probe's choice. place_punishment_spot() scores street verges by
+# foot traffic but does not read the roji corridors, so it picked a node whose display board clipped
+# the x1896 alley - invisible until the overlap matrix stopped treating lanes and fixtures as
+# permissive. Shortening the ALLEY was the alternative and is worse: it freed ground the packs filled,
+# which pushed two idobata courts to 32 and 27 households against the ~26 cap.
+s.punishment_spot(1880, 1136, label="punishment ground")
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))

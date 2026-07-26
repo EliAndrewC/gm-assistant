@@ -492,6 +492,9 @@ _MATRIX_ALLOWED_PAIRS: dict[frozenset[str], str] = {
 _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
     frozenset({"religious", "shrines"}): "shrine_hall records one hall under BOTH keys - these are the same object, not two",
     frozenset(
+        {"wards", "wall_towers"}
+    ): "a ward fence ENDS at the rampart - that is exactly what city_ward_fence_meets_wall demands, so commoners cannot walk around it - and a wall tower stands ON the rampart. A fence end butting into a tower's footprint IS the fence reaching solid wall. (Its route is held by city_ward_fence_meets_wall and city_samurai_ward_sealed, so this cannot excuse a fence wandering through a tower mid-span.)",
+    frozenset(
         {"gate_structs", "wall_towers"}
     ): "a city gate's own TOWER is recorded under both keys - identical x/y/w/h/rot, the same object rather than two (verified on Minami: tower(1323,902) w17h10 appears in each list). The same duplicate-record case as religious x shrines",
     frozenset(

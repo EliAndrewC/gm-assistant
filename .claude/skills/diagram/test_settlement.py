@@ -1601,6 +1601,30 @@ def test_bridges_spans_a_lane_where_it_crosses_a_canal():
     assert abs(s.M["bridges"][0]["x"] - 300) < 2 and abs(s.M["bridges"][0]["y"] - 300) < 2
 
 
+def test_place_punishment_spot_probes_for_a_clear_caption_seat():
+    """The display board's caption gets its own probe, because a verge-hugging feature's default
+    below-label lands on the frontage it hugs - which is what 'hugging the frontage' means."""
+    s = _crop_settlement()
+    s.street([(200, 300), (800, 300)], width=10)
+    # a shopfront row along the south verge, so the caption's DEFAULT seat below the board is taken
+    # and the probe has to walk outward to a clear one
+    for _bx in range(210, 800, 30):
+        s.building(_bx, 322, 26, 16, "shop")
+    # ...and existing CAPTIONS strung along the verge bands, so the probe also has to reject seats
+    # that are clear of every building but would bury another label
+    for _ly in range(240, 390, 9):
+        for _lx in range(210, 820, 55):
+            s.label(_lx, _ly, "riverside quarter", 9)
+    spot = s.place_punishment_spot()
+    assert spot is not None and s.M["punishment_spots"]
+    cap = next(lb for lb in s.M["labels"] if len(lb) > 5 and lb[5] == "punishment ground")
+    # the real property: wherever the probe put it, the caption sits on NO shopfront
+    for b in s.M["buildings"]:
+        bx0, by0 = b["x"] - b["w"] / 2, b["y"] - b["h"] / 2
+        bx1, by1 = b["x"] + b["w"] / 2, b["y"] + b["h"] / 2
+        assert not (cap[0] < bx1 and bx0 < cap[2] and cap[1] < by1 and by0 < cap[3]), f"caption on {b['kind']} at ({b['x']}, {b['y']})"
+
+
 def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     s = _crop_settlement()
     z = s.log_boom(400, 300, rot=90)
