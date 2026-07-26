@@ -203,7 +203,7 @@ def label_ground(x, y, halfw=54, halfh=13):
     s.block_polys.append([(x - halfw, y - halfh), (x + halfw, y - halfh), (x + halfw, y + halfh), (x - halfw, y + halfh)])
 
 
-for _lx, _ly2, _hw in ((1560, 1216, 64), (1150, 1348, 56), (1214, 1470, 42), (1668, 1314, 60), (1362, 1136, 32), (1424, 1359, 30), (1162, 1613, 34), (1256, 1645, 86)):
+for _lx, _ly2, _hw in ((1560, 1216, 64), (1150, 1348, 56), (1214, 1470, 42), (1668, 1314, 60), (1362, 1136, 32), (1424, 1359, 30), (1120, 1613, 34), (1256, 1669, 86)):
     label_ground(_lx, _ly2, _hw)
 
 _LBL_DONE = 0
@@ -235,7 +235,7 @@ s.drum_tower(1366, 1386)  # the bell-and-drum tower at the SW corner of the cent
 
 # ---- TRADE WORKS, placed early so every later pack flows around them.
 s.brewery(1466, 1198)
-s.dye_yard(1162, 1596)  # on the in-wall cargo canal, north of the dock basin
+s.dye_yard(1120, 1596)  # on the in-wall cargo canal, north of the dock basin
 s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
 s.oil_press(1548, 1300)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
@@ -338,7 +338,7 @@ alleys(ALLEYS)
 for _al in ALLEYS:
     s.corridors.append((_al, 8))
     (_ax0, _ay0), (_ax1, _ay1) = _al[0], _al[-1]
-    _apad = 20 if _ax0 == 1756 else 8
+    _apad = 20 if _ax0 in (1544, 1756) else 8
     s.block_polys.append([(min(_ax0, _ax1) - _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, max(_ay0, _ay1) + 8), (min(_ax0, _ax1) - _apad, max(_ay0, _ay1) + 8)])
 
 # ====================================================================== THE EIGHT PRECINCTS
@@ -446,10 +446,10 @@ front([LAB_V], (["shop"] + ["laborer_large"] * 3) * 12, spacing=18, rows=2)
 
 s.place_wells((1430, 980, 1790, 1300), spacing=54)
 _lab = (["laborer"] * 4 + ["servant"]) * 140
-for _y0 in range(990, 1140, 50):
-    s.rowpack((1408, _y0, 1804, _y0 + 42), _lab, court_every=3, eave_ft=2)
-for _y0 in range(1015, 1140, 50):
-    s.rowpack((1408, _y0, 1804, _y0 + 40), _lab, court_every=3, eave_ft=2)
+for _y0 in range(946, 1140, 50):
+    s.rowpack((1396, _y0, 1856, _y0 + 42), _lab, court_every=3, eave_ft=2)
+for _y0 in range(971, 1140, 50):
+    s.rowpack((1396, _y0, 1856, _y0 + 40), _lab, court_every=3, eave_ft=2)
 for _y0 in range(1002, 1140, 25):
     s.rowpack((1408, _y0, 1804, _y0 + 22), _lab, court_every=3, eave_ft=2)
 _merstrip = ["merchant_house"] * 240
@@ -489,10 +489,10 @@ front([SW_V], (["merchant"] + ["burakumin"] + ["laborer"]) * 18, spacing=19, row
 s.place_wells((1020, 1360, 1390, 1680), spacing=54)
 _sw = ["merchant_house"] * 225
 for _y0 in range(1344, 1448, 52):
-    s.rowpack((1022, _y0, 1396, _y0 + 44), _sw, court_every=4, eave_ft=2)
+    s.rowpack((1004, _y0, 1404, _y0 + 44), _sw, court_every=4, eave_ft=2)
 _sw2 = (["laborer"] * 2 + ["servant"] * 2 + ["burakumin"]) * 45
-for _y0 in range(1462, 1700, 52):
-    s.rowpack((1022, _y0, 1396, _y0 + 44), _sw2, court_every=4, eave_ft=2)
+for _y0 in range(1462, 1748, 52):
+    s.rowpack((1004, _y0, 1404, _y0 + 44), _sw2, court_every=4, eave_ft=2)
 for _y0 in range(1488, 1700, 52):
     s.rowpack((1022, _y0, 1396, _y0 + 42), _sw2, court_every=4, eave_ft=2)
 for _y0 in range(1475, 1700, 26):
@@ -501,7 +501,7 @@ s.label(1214, 1470, "burakumin", 10, italic=True, color="#6B4F2A")
 # THE TIMBER AND CHARCOAL WORKING GROUND - the declared budget line, DRAWN as its kind rather than
 # left as ambient slack: beaten earth with stacking rails, in the SE of the burakumin quarter where
 # the raft cargo comes up from the landing.
-s.animal_ground(1256, 1648, r=76, label="timber + charcoal ground")
+s.animal_ground(1256, 1672, r=76, label="timber + charcoal ground")
 
 # ====================================================================== OUTSIDE the walls
 s.bound = None
@@ -678,8 +678,8 @@ s.cemetery(600, 1700, 92, 66, parish=False, label="common burial ground")
 s.cremation_ground(604, 1800)
 s.ossuary(596, 1614)
 
-s.boundary_marker(761, 1312)  # ON the west road verge, where the road leaves clean ground (seat from site_justice.py)
-s.execution_ground(642, 1374, rot=6, label_above=True)
+s.boundary_marker(658, 1354)  # ON the west road verge, where the road leaves clean ground (seat from site_justice.py)
+s.execution_ground(556, 1378, rot=6, label_above=True)
 
 s.bridges()
 s.farmsteads()
