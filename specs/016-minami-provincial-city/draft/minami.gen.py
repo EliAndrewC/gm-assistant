@@ -455,6 +455,8 @@ for _y0 in range(1002, 1140, 25):
 _merstrip = ["merchant_house"] * 240
 for _i, _y0 in enumerate(range(1164, 1268, 52)):
     s.rowpack((1410, _y0, 1802, _y0 + 44), _merstrip if _i % 2 else _lab, court_every=3, eave_ft=2)
+for _y0 in range(900, 946, 22):
+    s.rowpack((1276, _y0, 1528, _y0 + 20), _lab, court_every=3, eave_ft=2)
 s.rowpack((1424, 1132, 1796, 1162), _lab, court_every=3, eave_ft=2)
 
 front([CROSS_H], (["merchant"] * 3 + ["shop"]) * 22, spacing=19, rows=2)
@@ -474,10 +476,10 @@ for _y0 in range(1036, 1148, 56):
     s.rowpack((1216, _y0, 1382, _y0 + 48), _mer, court_every=3, eave_ft=2)
 for _y0 in range(1300, 1330, 28):
     s.rowpack((1044, _y0, 1382, _y0 + 24), _mer, court_every=3, eave_ft=2)
-for _y0 in range(1158, 1310, 50):
-    s.rowpack((1020, _y0, 1398, _y0 + 42), _mer, court_every=3, eave_ft=2)
-for _y0 in range(1183, 1310, 50):
-    s.rowpack((1020, _y0, 1398, _y0 + 40), _mer, court_every=3, eave_ft=2)
+for _y0 in range(1150, 1320, 50):
+    s.rowpack((956, _y0, 1408, _y0 + 42), _mer, court_every=3, eave_ft=2)
+for _y0 in range(1175, 1320, 50):
+    s.rowpack((984, _y0, 1408, _y0 + 40), _mer, court_every=3, eave_ft=2)
 for _y0 in range(1170, 1310, 25):
     s.rowpack((1020, _y0, 1398, _y0 + 22), _mer, court_every=3, eave_ft=2)
 s.merchant_storehouses(8)
