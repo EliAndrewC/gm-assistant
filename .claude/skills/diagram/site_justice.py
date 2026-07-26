@@ -173,14 +173,29 @@ def propose(M: Manifest, kind: str, limit: int = 25, step: float = 0.0, rot: flo
     """Legal seats for `kind`, cheapest-on-the-frame first.
 
     Ranks candidates by (frame cost, distance to the way out) and adjudicates the best `limit` of
-    them against the real gate, returning those that add no new failure."""
+    them against the real gate, keeping the seats that add no new failure AND that actually CURE
+    the failures the feature's absence causes.
+
+    THE SECOND HALF IS NOT OPTIONAL, and leaving it out is subtle enough that it shipped a bad map.
+    `base` is the gate with the feature ABSENT, and for a feature whose absence is itself a failure
+    the governing check is therefore already IN base - so a seat that leaves it failing adds nothing
+    NEW and passed as legal. That is exactly how this tool recommended the seat that put Ubame's
+    boundary stone among the west-end shops: `execution_ground_past_the_boundary_marker` fails with
+    no stone on the map at all, so every seat, good or useless, scored identically (GM, 2026-07-26).
+
+    `curable` is derived from the gate rather than declared: a check is curable by this feature if
+    SOME adjudicated seat clears it. So the tool still names no rule of its own - it learns which
+    checks the feature answers for by watching the gate answer them - and a check nothing can fix
+    (a defect elsewhere on the map) stays out of `curable` instead of rejecting every seat."""
     step = step or max(24.0, 40.0 / float(M["meta"].get("ftpx") or 1))
     base = failures(_with(M, kind, []))
     box = content_box(M, kind)
     ranked = sorted(candidates(M, kind, step), key=lambda p: rank_key(M, kind, p, box))
+    scored = [(x, y, failures(_with(M, kind, [record(M, kind, x, y, rot)]))) for x, y in ranked[:limit]]
+    curable = {c for c in base if any(c not in f for _, _, f in scored)}
     ok: list[dict[str, Any]] = []
-    for x, y in ranked[:limit]:
-        if not new_failures(M, kind, x, y, base, rot):
+    for x, y, f in scored:
+        if not (f - base) and not (f & curable):
             ok.append({"x": round(x), "y": round(y), "frame_cost": round(frame_cost(M, kind, x, y, box=box)), "way_out": round(way_out_distance(M, x, y))})
     return ok
 

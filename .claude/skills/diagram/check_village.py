@@ -8721,7 +8721,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # the dwellings when there is no rampart to measure from. 120 real ft is the project's
             # standing pollution separation (the cremation ground and tanning yard use it too).
             lim_out_j = 120.0 / ftpx_j
-            bad_out_j = [(round(e["x"]), round(e["y"])) for e in exg_j if _inwall_j(e["x"], e["y"]) or (dwell_j and min(math.hypot(e["x"] - h["x"], e["y"] - h["y"]) for h in dwell_j) < lim_out_j)]
+
+            def _beyond_the_dwellings_j(px: float, py: float) -> bool:
+                return not dwell_j or min(math.hypot(px - h["x"], py - h["y"]) for h in dwell_j) >= lim_out_j
+
+            bad_out_j = [(round(e["x"]), round(e["y"])) for e in exg_j if _inwall_j(e["x"], e["y"]) or not _beyond_the_dwellings_j(e["x"], e["y"])]
             check(
                 "execution_ground_outside_the_settlement",
                 not bad_out_j,
@@ -8760,13 +8764,36 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # PAST THE BOUNDARY STONE. The marker must lie between the settlement and the ground:
                 # nearer the core than the ground is, AND nearer the ground than the core is.
                 # ...and the stone itself stands OUTSIDE the settlement it bounds AND ON THE WAY OUT.
-                # A dosojin inside the rampart bounds nothing; one sitting in an open field off the
+                # A dosojin among the houses bounds nothing; one sitting in an open field off the
                 # road bounds nothing either. Both would satisfy the between-ness arithmetic above
                 # while asserting the opposite of what the stone means - `sae` blocks pollution at
-                # the point the ROAD leaves clean ground, so the stone has to stand on that road.
-                # (The road half of this was found by eye on a rendered Nagahara, not by the gate:
-                # between-ness alone had let the stone drift into a field southwest of the highway.)
-                out_bms_j = [b for b in bms_j if not _inwall_j(b["x"], b["y"]) and not _off_the_way_out_j(b["x"], b["y"])]
+                # the point the ROAD leaves clean ground, so the stone has to stand on that road,
+                # past the last dwelling. "Outside" is the SAME predicate the ground answers to, for
+                # the same kegare reason and off the same 120 ft separation: the stone is the line
+                # the ground sits beyond, so a stone drawn inside the built edge would put that line
+                # in the wrong place and quietly certify a ground that is too close in.
+                # (The road half was found by eye on a rendered Nagahara, not by the gate:
+                # between-ness alone had let the stone drift into a field southwest of the highway.
+                # The built-edge half was found by eye on Ubame: its dosojin stood 91 real ft from
+                # the nearest merchant house, in among the west-end frontage beside the punishment
+                # ground and a wellhead, with a fully green gate - because "outside" was tested as
+                # `not _inwall_j(...)` alone and Ubame is UNWALLED, where that returns False for
+                # every point on the map. A wall-only test does not merely relax on an unwalled
+                # map, it passes anything. GM, 2026-07-26.)
+                def _outside_the_settlement_j(px: float, py: float) -> bool:
+                    # WHY THE STONE'S "OUTSIDE" IS NOT THE GROUND'S. A rampart IS the settlement's
+                    # edge, so a stone beyond it is past the line by construction, and the roadside
+                    # suburb that grows outside a town gate is legitimately close to it - Hirameki's
+                    # stone stands 104 ft from an extramural laborer row and is correctly sited.
+                    # The ground keeps BOTH clauses instead, because kegare is a separation from
+                    # PEOPLE and does not care which side of the wall those people live on. The
+                    # stone only has to mark where clean ground ends. So: with a rampart the wall
+                    # settles it; without one the built edge is only definable as a distance from
+                    # the last dwelling, and that reuses the same 120 ft rather than inventing a
+                    # second number for the same phrase.
+                    return not _inwall_j(px, py) if wall_j else _beyond_the_dwellings_j(px, py)
+
+                out_bms_j = [b for b in bms_j if _outside_the_settlement_j(b["x"], b["y"]) and not _off_the_way_out_j(b["x"], b["y"])]
                 unmarked_j = [
                     (round(e["x"]), round(e["y"]))
                     for e in exg_j
@@ -8779,7 +8806,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 check(
                     "execution_ground_past_the_boundary_marker",
                     not unmarked_j,
-                    f"execution ground(s) at {unmarked_j} have no boundary stone between them and the settlement - the dosojin is what makes the ground 'outside', and sae means 'to block'",
+                    f"execution ground(s) at {unmarked_j} have no boundary stone between them and the settlement - the dosojin is what makes the ground 'outside', and sae means 'to block' (a stone inside the built edge, or off the road out, does not count as one)",
                 )
             elif core_j:
                 check(

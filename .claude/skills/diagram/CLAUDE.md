@@ -121,6 +121,16 @@ same trap as "placement and its check must read the SAME manifest source" (below
 The cheap geometric pass in that file is a RANKING only: it orders candidates to keep the number of
 gate runs small, and it never rejects, so a stale heuristic costs runtime rather than correctness.
 
+**The second trap, found the same way (2026-07-26): "adds no new failure" is only HALF of legal.**
+The tool's baseline is the gate with the feature ABSENT - so for a feature whose absence is itself a
+failure, the very check that governs it is already IN the baseline, and a seat that leaves it
+failing adds nothing new and scores as legal. Every candidate stone therefore looked equally good,
+and the tool duly recommended the one that put Ubame's dosojin among the west-end shops. `propose`
+now also requires a seat to CURE the checks the absence causes, with "curable" derived from the gate
+(a check some adjudicated seat clears) rather than declared - so the tool still names no rule of its
+own. The general lesson: when an oracle scores a candidate as a DELTA against a baseline, ask what
+the baseline is already failing, because a delta cannot see a rule the empty case breaks too.
+
 **Known limit:** label collisions cannot be judged from a manifest - a label box is produced at draw
 time, not recorded for a hypothetical placement - so `labels_clear_of_other_buildings` and
 `no_label_overlaps` still surface only on regeneration. That is why `punishment_spot` and

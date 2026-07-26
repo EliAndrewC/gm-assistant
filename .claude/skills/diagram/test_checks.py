@@ -8537,14 +8537,18 @@ def bstone(x, y, rot=0, w=3, h=3, vw=7, vh=7, **kw):
 def _justice_town(**over):
     """A town that PASSES every justice check: a core around x=500 on an east-west road, the
     punishment ground on the town's frontage, the burakumin quarter east of the core, the boundary
-    stone beyond it, and the execution ground beyond that - clear of the burial ground."""
+    stone beyond it, and the execution ground beyond that - clear of the burial ground.
+
+    The stone sits 160 ft past the outcast quarter, not 100: this is an UNWALLED town, so the stone
+    answers to the same ~120 ft "past the built edge" clearance the ground does, and the quarter's
+    huts are dwellings like any other."""
     M = {
         "meta": {"scale": "town", "ftpx": 1, "W": 2000, "H": 2000},
         "road": [[100, 1000], [1900, 1000]],
         "houses": [house(440 + 30 * i, 940) for i in range(6)],
         "buildings": [bldg(1000, 1010, kind="burakumin")],
         "punishment_spots": [pspot(520, 1020)],
-        "boundary_markers": [bstone(1100, 1010)],
+        "boundary_markers": [bstone(1160, 1010)],
         "execution_grounds": [exground(1500, 1060)],
         "cemeteries": [{"x": 1500, "y": 500, "w": 100, "h": 80, "rot": 0, "parish": False}],
     }
@@ -8623,6 +8627,25 @@ def test_execution_ground_past_the_boundary_marker_fires_when_the_stone_is_off_t
     # the ROAD leaves clean ground, so a stone that marks no road marks nothing. (Found by eye on a
     # rendered Nagahara while every check was green - hence this fixture.)
     assert "execution_ground_past_the_boundary_marker" in f(_justice_town(boundary_markers=[bstone(1100, 1300)]))
+
+
+def test_execution_ground_past_the_boundary_marker_fires_when_the_stone_stands_among_the_dwellings():
+    # On the road and correctly between core and ground, but 67 real ft from the nearest house - a
+    # dosojin inside the built edge marks nothing, exactly like one inside a rampart. This is the
+    # UNWALLED case, and it is the one that shipped: "outside" was tested as `not _inwall_j(...)`,
+    # which is False for every point on a map with no wall, so the clause passed anything at all and
+    # Ubame's stone stood among the west-end shops with a green gate (GM, 2026-07-26).
+    assert "execution_ground_past_the_boundary_marker" in f(_justice_town(boundary_markers=[bstone(620, 1000)]))
+
+
+def test_execution_ground_past_the_boundary_marker_accepts_a_walled_towns_stone_beside_the_suburb():
+    # The deliberate divergence from the GROUND's version of "outside", pinned so nobody unifies
+    # them: where there is a rampart the wall IS the edge, so a stone beyond it is past the line
+    # even with roadside suburb against it (Hirameki's stands 104 ft from an extramural laborer
+    # row). The ground keeps both clauses because kegare is a separation from people wherever they
+    # live; the stone only has to say where clean ground ends.
+    M = _justice_town(wall=WALL, buildings=[bldg(1000, 1010, kind="burakumin"), bldg(1210, 1010, kind="laborer")])
+    assert "execution_ground_past_the_boundary_marker" not in f(M)
 
 
 def test_execution_ground_clear_of_the_dead_fires_beside_the_burial_ground():
