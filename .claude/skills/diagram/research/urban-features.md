@@ -134,3 +134,120 @@ Castes lived apart. Burakumin cluster at the margin (a town's edge, or outside a
 
 **Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
 Following imperial Chinese *yamen* and Japanese *jokamachi* practice, government offices cluster around the **governor's mansion** (the grandest compound) and FRONT an official avenue, never floating mid-block. A provincial city carries the **Six provincial Ministries** (one being Rites, sited in the temple neighborhood). The state taxes trade: **inspection/tariff stations at every gate**, **caravan facilities** (inn + stables + animal pasture) on the trade route, a **tax-rice granary** at a collecting magistracy, and **markets** springing up just outside the gates. A county-seat **town** is run by a magistrate from a walled manor.
+
+## Charcoal yards: a tallied depot, a cooling ground, and a weighing floor
+
+**China first.** Charcoal was an industrial input at state scale. Song iron-smelting households were
+government-regulated, with state support that explicitly included **charcoal supplies**, and a large
+Ming ironworks is recorded with **200 charcoal producers** alongside 200 furnace-tenders and 300
+miners - the fuel workforce as large as the furnace workforce. Northern Song output reached roughly
+125,000 tons of iron a year by 1078, about six times the ~800 CE level, and it ran on charcoal until
+it had deforested large parts of north China, after which coal largely displaced charcoal by the end
+of the 11th century. **The decision this drove:** a charcoal store is a *supervised, tallied
+commodity depot*, not a shop's back room - which is exactly the relationship the Mode A magistracy
+sheet already draws ("charcoal and bar iron, sealed here, never owned").
+
+**Japan corroborating.** The *ton'ya* / *toiya* was the wholesaler-warehouseman of the Edo economy,
+and fire-resistant stores were built of stone or behind mortar walls precisely because urban timber
+burned. Edo's serious fires cluster in winter, when charcoal braziers were in use.
+
+**The finding that CHANGED the design.** Freshly produced charcoal absorbs oxygen from the air fast
+enough to heat itself to ignition; **tightly packed masses of fines are the worst case**, and
+high-volatile charcoal can self-ignite below 150 °C. The documented handling rule is to stand freshly
+discharged charcoal **in the open, separate from previously cooled and conditioned stock, for at
+least 24 hours**; charcoal exposed to air for **eight days** is no longer considered hazardous.
+Water-spraying does not reliably prevent it. The first design was "sheds plus a weighing floor";
+this says that is wrong, and the yard now draws an **open cooling apron set apart from the covered
+sheds**. That is the difference between a generic warehouse glyph and a charcoal yard.
+
+**The finding that justified a feature that would otherwise look like decoration.** The charcoal
+*hyō* / *tawara* had **no standard weight** in the traditional Japanese system, unlike rice (a *kan*
+is 3.75 kg, but the charcoal bale itself was indeterminate). A commodity with no standard bale cannot
+be traded by count - it must be **weighed at the point of sale**. That is the weighing floor, and it
+is independently why the magistracy's hold on the trade is documentary rather than proprietary.
+
+**What determines it in reality:** the commodity's physics and its measure - dryness (value),
+self-heating (separation and a cooling ground), and the absent standard bale (a weighing floor and a
+sealed tally). Not town size, and not wealth.
+
+**The 30 ft fire gap, derived.** Reasoned against this project's existing separations rather than
+invented: ~6 ft for an attended forge against hay, 120 ft for putrefaction carried on air. The
+charcoal hazard is an **unattended** ignition in a large fuel mass, so it belongs between them, and
+30 ft is about one flame-height clear of a fully-involved 10-12 ft stack - the usual rule of thumb
+for radiant ignition of adjacent timber. **Rejected: reusing the 120 ft nuisance figure**, which
+defends against smell over distance and would push the yard off the cart route it exists to serve.
+
+## Refining forges: smelting goes to the fuel, refining comes to the town
+
+**China first.** Ming ironworks converted blast-furnace pig iron to wrought iron by **fining**,
+Chinese *chao* 炒, literally "stir-frying": an **open fire under a forced blast, fuelled with
+charcoal**, into which wood, charcoal and broken cast iron were charged and then stirred with an iron
+rod once semi-molten. Song Yingxing describes a rectangular hearth (*tang*) set a few *chi* from the
+blast-furnace outlet and a few *cun* lower, with workers standing on a protective wall above it,
+stirring with willow poles (which burned down 2-3 *cun* per cycle) while spreading a mineral additive
+(*wuchaoni*). The practice runs back to the Eastern Han - the excavated smelting-and-fining site at
+Xuxiebian in Sichuan.
+
+**Japan corroborating.** The tatara's chief product was pig iron (*zuku*), and the 17th century
+answered it with a **two-stage refining process**, the **ōkaji** 大鍛冶. *Kera* went first to the
+*dōba* to be crushed and sorted; the low-carbon fractions then went to the *ōkajiba*, which turned
+out flat bars called ***wari-tetsu*** 割鉄. At their 18th-19th century peak the ironworks of the
+Chugoku Mountains produced **80% of Japan's iron** this way. Two operations, two sites.
+
+**THE DISCLOSED DIVERGENCE.** The *Chinese* arrangement puts the fining hearth a few feet from the
+blast-furnace outlet so the iron runs in still molten - **one** site. Rokugan's charcoal counties
+cannot do that: a kiln reduces roughly six parts wood to one of charcoal, so the kiln goes to the
+wood and the furnace follows the fuel into the hills, miles from the seat. So the design follows the
+**Japanese two-site pattern** - cold pig comes down and is re-melted at the town forge.
+
+This is a resolution rather than a fudge, and the reason is economic. The Chinese single-site
+arrangement is viable exactly where ore, fuel and a workforce of hundreds can be concentrated at one
+state-supervised complex, which is what the 200/300/200 staffing describes. A county-scale trade
+strung along dispersed oak stands cannot concentrate the one input that matters most.
+**Dispersed fuel forces two sites.** Per the China-first rule, GM setting canon overrides the
+historical default where they differ - and here the canon and the Japanese practice agree.
+
+**What determines it in reality:** economy and topography. Whether smelting and refining share a site
+is decided by whether fuel, ore and labor can be concentrated - one site where they can, two where
+the fuel is dispersed through hill forest, with the smelter at the fuel and the refinery in the
+valley settlement where the carts, the market and the tally are.
+
+**Rejected:** drawing kilns or a tatara furnace on a town map at all. Canon and arithmetic both
+forbid it, and the Chinese 200-charcoal-producers figure shows the fuel workforce lives out at the
+stands, not in the seat.
+
+## Drawing a clan border
+
+Linear, demarcated borders were **not** foreign to early modern Japan: domains were already building
+a territorial order with agreed boundaries and mutual exclusion, evidenced by boundary disputes,
+boundary markers and map-making. The worked example is the **Nanbu-Date border mounds** - a series of
+**earth mounds** marking the ~130 km boundary between Morioka (Nanbu) and Sendai (Date), re-confirmed
+by the shogunate in **1642**; such markers were common under the Tokugawa. Separately, the shogunate
+ordered every province to produce **kuniezu** 国絵図, provincial land maps with the boundaries drawn
+on them - so **putting the line on a map is itself the authentic act**.
+
+**The decision.** Draw the LINE, not the mound. The Mode A `ubame-magistracy.notes.md` had already
+reserved against the mound ("the physically large period border markers were earthen *mounds*, which
+is a different thing and not what is drawn") and used ~3 ft boundary pillars as location markers; the
+Nanbu-Date finding confirms that reservation. A mound is a *structure*, which everything would then
+have to stay clear of - the opposite of what a frontier magistracy wants, since its whole design
+stands its east wall ON the line with a parley room built into that wall. So `M['borders']` carries a
+polyline with **no footprint** and is classified overlap-exempt.
+
+**What determines it in reality:** jurisdiction, and the need to have agreed it in advance. A border
+exists where two authorities have negotiated and recorded it - which is why the Mode A parley room,
+with the line across its floor and kneeling mats on each side, is the architectural expression of the
+same fact this drawn line is the cartographic expression of.
+
+### Sources
+
+- [History of Iron and Steel Making Technology in Japan (Tetsu-to-Hagané vol. 91)](https://www.jstage.jst.go.jp/article/tetsutohagane1955/91/1/91_1_2/_article)
+- [Ohitayama Tatara Iron Works](https://en.wikipedia.org/wiki/Ohitayama_Tatara_Iron_Works) - *dōba*, *ōkajiba*, *wari-tetsu*, the Chugoku 80% share
+- [Donald Wagner, Iron production in three Ming texts](https://donwagner.dk/MingFe/MingFe.html) - the *chao* fining hearth, Song Yingxing, the 200/300/200 staffing
+- [Donald Wagner, Traditional Chinese fining and puddling](http://donwagner.dk/arch-iron/eu/fining-puddling-china-eu.html)
+- [Cast Iron Smelting and Fining: an Eastern Han site at Xuxiebian, Sichuan](https://muse.jhu.edu/article/725769)
+- [FAO, Charcoal safety precautions (ch. 5)](https://www.fao.org/4/X5555E/x5555e06.htm) - self-heating, fines, the 24-hour and 8-day rule
+- [Economy of the Song dynasty](https://grokipedia.com/page/Economy_of_the_Song_dynasty) - charcoal-driven output, regulated smelting households
+- [Ton'ya](https://en.wikipedia.org/wiki/Ton%27ya) / [Fires in Edo](https://en.wikipedia.org/wiki/Fires_in_Edo)
+- [What is the unit called a koku? (Sizes)](https://www.sizes.com/units/koku.htm) - the charcoal *hyō* is of indeterminate size
+- [Nanbu-Date border mounds](https://en.wikipedia.org/wiki/Nanbu-Date_border_mounds) / [Kuniezu](https://en.wikipedia.org/wiki/Kuniezu) / [Mukoyama, linear borders in early modern Japan](https://journals.sagepub.com/doi/full/10.1177/13540661221133206)

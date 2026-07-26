@@ -4840,3 +4840,53 @@ def test_frontage_records_the_row_extent_for_place_caption():
     assert box is not None and box[2] > box[0] and box[3] > box[1]
     s.frontage([(200, 500), (800, 500)], [], width=30, spacing=60, setback=20, fill=True)
     assert s.frontage_box is None  # a row that placed nothing leaves no stale box behind
+
+
+# ---- feature 016: the charcoal district's trade works -------------------------------------------
+def test_charcoal_yard_records_its_sheds_and_its_cooling_apron():
+    """The apron is part of the record's contract, not decoration: charcoal self-heats, so a yard
+    must have open ground to stand a fresh load apart from the conditioned stock. `sheds` floors at
+    one - a yard with no roof over the conditioned stock is not a charcoal yard."""
+    s = _town()
+    s.charcoal_yard(400, 400, rot=-17, sheds=2)
+    s.charcoal_yard(700, 700, sheds=0)  # floored
+    a, b = s.M["charcoal_yards"]
+    assert a["sheds"] == 2 and b["sheds"] == 1
+    assert len(a["apron"]) == 4 and a["w"] == 88 and a["h"] == 58
+    assert a["label"] == "charcoal yard" and a["rot"] == -17.0
+
+
+def test_refining_forge_records_its_two_hearths():
+    """Two hearths because the refining is a TWO-STAGE process on both sides of the research - the
+    Japanese okaji and the Chinese chao fining both work the iron through more than one heat."""
+    s = _town()
+    s.refining_forge(400, 400, label="refining forge")
+    r = s.M["refining_forges"][0]
+    assert r["hearths"] == 2 and (r["w"], r["h"]) == (74, 48)
+
+
+def test_border_line_records_a_poly_with_no_footprint():
+    """A jurisdictional line has no w/h on purpose: it reserves nothing and blocks nothing, which
+    is why it is overlap-exempt. It also must NOT register a placement footprint."""
+    s = _town()
+    before = len(s.placed)
+    s.border_line([(900, -20), (900, 1020)])
+    b = s.M["borders"][0]
+    assert b["poly"] == [[900, -20.0], [900, 1020.0]] and b["label"] == ""
+    assert "w" not in b and "h" not in b
+    assert len(s.placed) == before  # nothing reserved
+
+
+def test_border_line_caption_defaults_to_the_lines_midpoint_and_is_registered():
+    """The caption goes through self.label(), so the label-collision checks can see it. An earlier
+    draft emitted raw <text>, which is invisible to every label check - and duly shipped a border
+    caption sitting on a wellhead with a green gate."""
+    s = _town()
+    n = len(s.M["labels"])
+    s.border_line([(900, 0), (900, 400), (900, 800)], label="the Fox border")
+    assert len(s.M["labels"]) == n + 1
+    assert s.M["labels"][-1][-1] == "the Fox border"
+    s2 = _town()
+    m = len(s2.M["labels"])
+    s2.border_line([(900, 0), (900, 800)], label="pinned", label_xy=(700, 300))
+    assert len(s2.M["labels"]) == m + 1
