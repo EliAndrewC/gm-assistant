@@ -12,6 +12,10 @@ Every entry: what the research found, the decision it drove, and any deliberate 
 
 **Grounds:** `town_has_kosatsuba`, `kosatsuba_by_the_road`, `city_has_kosatsuba`, `city_kosatsuba_per_gate`, `village_has_kosatsuba`, `hamlet_has_kosatsuba`
 
+**Evidence:** attested
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
+
 Every Edo town AND village kept the official edict board - standing shogunal/domain law, porter and packhorse rate tables, currency regulations, ban edicts - and its siting was a TRAFFIC decision, not an administrative one: busy street corners, checkpoints, bridgeheads, the gate or center of the settlement, "in a prominent position alongside the main highway". Edo's principal board stood at Nihonbashi (the bridgehead where the five highways began), post towns' mid-shuku by the transport office - not at the government office.
 
 
@@ -21,6 +25,10 @@ the ofuregaki circulars reached the peasantry through exactly this board, posted
 ## The justice works - why a county seat executes, and why the ground is outside
 
 **Grounds:** the punishment-ground and execution-ground vocabulary and their twelve checks (feature 015)
+
+**Evidence:** attested, corroborated, setting-canon, liberty
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
 
 - **THE JUSTICE WORKS: WHY A COUNTY SEAT EXECUTES, AND WHY THE GROUND IS OUTSIDE** (drives the punishment-ground and execution-ground vocabulary above and their twelve checks; feature 015, 2026-07-25).
   - *The China/Japan split, and how it resolves.* This is one of the few places the two grounding traditions genuinely disagree, so the reconciliation is load-bearing rather than decorative. **Japan** pushed executions OUT of the settlement for kegare (death pollution) - Edo's three grounds all sat at highway entrances outside the center, castle towns monopolized them, and village authority topped out at banishment. **China** executed in the marketplace (棄市 *qishi*, "abandon in the market"; Qing Beijing's Caishikou was the vegetable market at a crossroads outside Xuanwumen), and although a county magistrate could not CONFIRM a death sentence - capital cases climbed to the Board of Punishments and the emperor's autumn check-marking (秋審 *qiushen*) - the confirmed sentence came back DOWN and was carried out at the county seat where the crime happened, because local deterrence was the point. So: **China supplies the jurisdiction (the seat executes), Japan supplies the siting (past the built edge).** That is exactly what this file's town doctrine already asks for - "what would a Chinese county seat administered by samurai do?"
@@ -36,6 +44,10 @@ the ofuregaki circulars reached the peasantry through exactly this board, posted
 
 **Grounds:** `s.brewery`, `s.dye_yard`, `s.lumber_yard`, `s.oil_press`, `s.pawnshop`, `s.bathhouse`, `s.kiln`, `s.farrier` and their checks
 
+**Evidence:** attested, corroborated, setting-canon
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
+
 - **TRADE WORKS - which trades outgrow the generic shop glyph, and why** (drives `s.brewery`, `s.dye_yard`, `s.lumber_yard`, `s.oil_press`, `s.pawnshop`, `s.bathhouse`/`s.bathhouses`, `s.kiln`, `s.farrier` and their checks; the DRAWN rules live under "Provincial cities" above. Research pass 2026-07-24, from the GM's question during the provincial-city audit - "are there trades whose real premises, with their attached works, yards, and outbuildings, are materially bigger than a shophouse, i.e. significant space our maps are not representing?" - plus the farriery reversal of 2026-07-25.)
   - *Where this entry came from.* It absorbs the former `trade-footprint-research.md`, a separate per-question research file. That file had already duplicated its own conclusions into the rules paragraph above, and the duplication is exactly what bit: when the GM reversed the horseshoe finding, the stale claim "there are NO FARRIERS" was living in THREE places (the research file, the rules paragraph, and a `settlement.py` comment) and every one had to be found and fixed. The standing convention that follows: **the rule and its why belong in this file, stated once**; a standalone research file is for a derivation too long to inline (`flophouse-research.md`) or a dated point-in-time audit (`town-deep-audit.md`), and it must never restate a rule the operative doc also states.
   - *The frame.* Song/Ming China first, Edo Japan second. City maps at 1 px = 3 ft already draw commerce as generic ~48x32 ft shop rowhouses plus merchant kura and dedicated inn/stables/flophouse glyphs, so the only question is which trades BREAK that glyph.
@@ -50,6 +62,10 @@ the ofuregaki circulars reached the peasantry through exactly this board, posted
 
 **Grounds:** `settlement_has_tanning_yard`, `tanning_yard_on_water`, `pits` sizing
 
+**Evidence:** attested, setting-canon
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
+
 - *Why towns tan too, and this is not a city-only trade.* The GM's opening guess was that most towns would have no tannery. The research says otherwise, because of where hides come from: NOT butchery but **fallen draft stock**. Under the Tokugawa status order the kawata held carcass rights over a defined service territory (*danna-ba*) - when an ox or horse died it became that community's property automatically, with no compensation to the owner. So a county town's ~12 burakumin households (budgets.md town tier: 60 inhabitants) work the whole county's dead animals, not just the town's. L7R canon supplies the same stream from the other end: `l7r.md` has daimyo giving surplus horses to village headmen to distribute to farms as draft animals, and those horses "often slaughtered and eaten when the need for meat outweighs the capacity of the peasants to feed those horses."
   - *Throughput is small, and scales with the territory served - which is what `pits` encodes.* A county of ~6,800 inhabitants sheds on the order of a couple dozen carcasses a year, so the town yard is a **seasonal works of ~4 pits**, never an industry. A provincial city adds the daimyo's stable (several hundred horses per domain) and the armor/saddle/drum/bellows demand of its ~300 samurai, so it runs **~12**. That ratio is why the city yard draws roughly 1.7x the town yard's area rather than 5x: pits, not prestige, set the size. For comparison, the largest excavated urban tannery at Northampton ran 36-37 pits - far past anything in this pool.
   - *WATER is the real gate, not settlement size.* Tanning is a water process: the Japanese *shironameshi* method stakes raw hides in the river for one week in summer and two in winter before the hair is knifed off, and every archaeologically-attested tannery sits on a watercourse at the settlement's edge. The caste's own name for itself was *kawaramono*, "riverbed people." Hence the check's shape: a town or city with a burakumin quarter **and** a watercourse must have a yard; one with no running water keeps none whatever its size, and is exempt rather than failing.
@@ -60,11 +76,19 @@ the ofuregaki circulars reached the peasantry through exactly this board, posted
 
 **Grounds:** `s.drum_tower`, `walled_settlement_has_drum_tower`
 
+**Evidence:** attested, corroborated
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
+
 *What the research found:* the "morning bell, evening drum" institution (dawn gate-opening, the dusk gate-closing that began the street curfew, the five night watches, alarm and ceremony) was part of the standard Ming county-seat kit alongside the yamen, the Confucian temple, and the City God temple - common approaching standard in walled northern seats. A county seat had ONE tower - a drum tower, a combined bell-and-drum tower, or a market tower straddling the main street; the paired gulou + zhonglou on an axis is CAPITAL grammar (Beijing, Xi'an), and Pingyao, a wealthy county seat, has exactly one (the ~60 ft Market Tower on South Street). County-tier form (footprint RE-VERIFIED 2026-07-24, second research pass after the GM's eye caught the first-draft 70 ft platform oversized): **Pingyao's Market Tower - the wealthy-county showpiece - is ATTESTED at 133.4 m^2 plan, ~38 ft square**; these towers dominated by HEIGHT (50-60 ft), not plan, and Kawagoe's famous time-bell tower served a town of tens of thousands from a <20 ft base. The 50-66 ft square examples (Dingbian 52 ft, Xingcheng 66 ft) are the tower-over-street-arch type - garrison/prefecture fabric, never a 3,000-person seat - and the original 60-80 ft figure was contaminated by them. The drawn band is therefore **30-45 ft: ~36 ft at city tier, ~30 ft at town tier** - one rowhouse width, which is exactly how they read in plan. Siting: the central crossroads near (not inside) the yamen; poorer seats made do with a *qiaolou* - a drum tower over the yamen's own gate (a recognized cheaper variant, not drawn here). Critically, FIRE WATCH WAS A SEPARATE INSTITUTION in both reference cultures - Song Kaifeng ran 20+ dedicated *wanghuolou* fire-lookout towers with a standing brigade, and Edo split the licensed *toki no kane* time bell from the *hinomi-yagura* fire towers - so the fire towers do not cover the timekeeping/curfew niche. *The decision it drove:* every walled seat (provincial city or walled town) draws exactly ONE combined bell-and-drum tower at its main street crossing (a corner of the crossing, not straddling the street), 70 ft at city tier, ~60 ft at town tier, visibly heavier-built than the skeletal fire towers; the capital tier may take the full paired gulou/zhonglou when it exists (and the street-arch platform type, 50-66 ft, is available as a garrison-city variant). **An UNWALLED town is exempt**: it has no gates to close, and its time signal is the monastery's bell - the Edo pattern, where most towns contracted a temple bell rather than building a tower - implied within the precinct, no glyph (Hoshizora). The tower follows the WALL, not the population. The caption reads **"drum/bell" over "tower"** (GM 2026-07-24): the drawn building is genuinely the combined *zhonggulou* - both instruments in one pavilion, and both are drawn - so the label says so. *Audibility - one central tower covers the whole seat with enormous margin (GM sanity check 2026-07-24, researched).* The geometry: Tango's farthest in-wall resident stands ~1,640 ft (500 m) from its tower and the farthest drawn gate-suburb structure ~790 m; Nagahara ~435 m / ~920 m. The attested anchors dwarf those distances: Edo's Kokucho time bell BILLED ~400-410 blocks of households "within earshot" (*kane-yaku-sen*, 4 mon per month per house - an effective fee radius of ~1.2-1.4 km in a far denser, noisier city, and a conservative figure, since only admitted hearers were billed); Basho casually heard the Ueno/Asakusa bells ~3-4 km away across the river; Beijing's single drum tower timed the watches for an inner city ~6.5 x 5.3 km. Acoustically, a large bell or great drum runs ~110-130 dB near the tower; at a 500-730 m city edge that arrives ~40 dB above a premodern NIGHT noise floor (~25-35 dBA, when the watches matter most) - loud, not merely detectable, everywhere inside the walls and suburbs, and the low frequencies diffract over one-story rooflines. One tower stops sufficing only past a ~2-3 km radius of daytime urban din, so even the future ~12,000-pop capital tier (~1 mi across) needs no second tower on audibility grounds: the historical scaling answers are Edo's multiplied fee-district bells vs the China-first pattern of ONE monumental tower whose watches ward night-watchmen relay through the streets with clappers and gongs - the capital tier should take the latter (grander tower, implied watchmen, still exactly one).
 
 ## Stable yards - beaten earth, hitching rails, and watering by relay
 
 **Grounds:** `stables_have_yards`, `stable_troughs_beside_well`, `dung_heaps_clear_of_hitch_rails`
+
+**Evidence:** attested, reconstruction
+
+**Sources:** [`qingming-shanghe-tu`](SOURCES.md#qingming-shanghe-tu)
 
 - *What the research found (China-first, Song/Ming-Qing; Edo Japan secondary; sources incl. the Qingming Shanghe Tu 清明上河図 gate scene, the caravanserai court, the Chinese hitching post 拴马桩, the yizhan 驿站 / shukuba post-station).* A city-gate cart/animal yard was **beaten tamped earth** - NO grass (trampled hard, and the animals were **hay-fed at mangers, not grazed** there) - and, crucially, **NOT a fenced paddock** (the least authentic option; a rail fence belongs to an inn's private back-yard or a walled caravanserai). Its edges are the wall + flanking buildings; its "in active use" signal is **carts, animals tethered at hitching rails / picket lines, and littered ground** (the Qingming convention: clustered carts and pack animals, no fence, no lawn). WELL-ATTESTED: the hitching post as a Chinese fixture, the Qingming gate scene, the caravanserai court. INFERRED (reasoned from those norms - no source describes an ordinary gate cart-yard's ground directly): the no-grass beaten-earth surface and the open-not-fenced edge.
 
@@ -75,22 +99,38 @@ the ofuregaki circulars reached the peasantry through exactly this board, posted
 
 **Grounds:** `wells_sized_to_population`, `city_well_density_sufficient`
 
+**Evidence:** attested, corroborated, liberty
+
+**Sources:** [`sphere-unicef`](SOURCES.md#sphere-unicef)
+
 *What the research found:* a pre-modern south-China rice village of ~70 households ran **1-3 communal drinking wells total, 2 typical** - drinking water came mostly from SURFACE water (canal/pond/stream, stored in vats, settled, boiled), which is why schistosomiasis was endemic in the Yangtze rice belt for two millennia and why >70% of rural China still drank untreated surface water in the early 1980s; wells were expensive durable capital financed by per-family subscription and dug only as surface quality forced; the classical jingtian "8 families per well" is a Warring-States ideal nobody practiced. Japan corroborates from the other side: valley villages sited on springs/streams needed few or no communal wells, the famous dense pattern (~10-18 households per well, the idobata gossip circle) is URBAN nagaya tenement density, and per-household wells appear only on shallow-water-table plains. Capacity is never the constraint (one open well serves ~400 people by Sphere/UNICEF anchors, and a nucleated village is ~250m across so carrying distance never binds) - digging cost and morning queueing are.
 
 
 
 ## Commercial frontage and wealth-stratified housing
 
+**Evidence:** researched
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
 In premodern Japanese castle-towns (*jokamachi*) and Chinese cities the valuable street frontage is COMMERCE: shops and workshops line the high street, each facing the road, while dwellings sit behind them or in the block interior reached by alleys. A merchant family lived over/behind its own shop (so merchant residences sit directly behind the storefronts, sharing their orientation). Housing was **stratified by wealth** - a few rich households in large homes or walled courtyard estates, most in modest/uniform dwellings, never one size - and the merchant quarter SPREADS (courtyard compounds) while the laborer warren packs dense and uniform.
 
 ## Communal wells and the samurai exception
 
+**Evidence:** researched
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
 Commoner *machi* shared **public wells in the block interiors** (courtyard wells), roughly **1 per ~10-20 households** - enough that no quarter lacks water, not one on every corner. The samurai/government quarter shows **NO public wells**: noble and official households drew from **private wells inside their own walled compounds** (a status + security distinction), so a communal well there would read wrong.
 
 ## Caste geography and status zoning
 
+**Evidence:** researched
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
 Castes lived apart. Burakumin cluster at the margin (a town's edge, or outside a city) - but a WALLED city keeps at least one burakumin neighborhood INSIDE, because it cannot do without their labor during a siege. The samurai/government quarter is sealed off the commoner streets by **kido ward-gates shut at night** (status separation + night security; a small provincial city uses kido, not the continuous walled wards of a great Tang-style capital). The cheap flophouse (*kichin-yado*) belongs in a humble laborer/agrarian quarter, not beside the temples, merchants, or samurai. Wealthy samurai kept walled country **estates outside the walls** and commuted in, for roomier houses than cramped city lots allowed.
 
 ## Government and commerce of a seat of administration
 
+**Evidence:** researched
+
+**Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
 Following imperial Chinese *yamen* and Japanese *jokamachi* practice, government offices cluster around the **governor's mansion** (the grandest compound) and FRONT an official avenue, never floating mid-block. A provincial city carries the **Six provincial Ministries** (one being Rites, sited in the temple neighborhood). The state taxes trade: **inspection/tariff stations at every gate**, **caravan facilities** (inn + stables + animal pasture) on the trade route, a **tax-rice granary** at a collecting magistracy, and **markets** springing up just outside the gates. A county-seat **town** is run by a magistrate from a walled manor.
