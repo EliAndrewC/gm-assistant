@@ -10,10 +10,18 @@ OUT = Path(__file__).parent / "relics.json"
 
 FORTUNES = {
     "benten": {"name": "Benten", "domain": "Fortune of romantic love", "kanji": "弁天"},
-    "bishamon": {"name": "Bishamon", "domain": "Fortune of strength", "kanji": "毘沙門"},
+    "bishamon": {
+        "name": "Bishamon",
+        "domain": "Fortune of strength",
+        "kanji": "毘沙門",
+    },
     "daikoku": {"name": "Daikoku", "domain": "Fortune of wealth", "kanji": "大黒"},
     "ebisu": {"name": "Ebisu", "domain": "Fortune of honest work", "kanji": "恵比寿"},
-    "fukurokujin": {"name": "Fukurokujin", "domain": "Fortune of wisdom and mercy", "kanji": "福禄寿"},
+    "fukurokujin": {
+        "name": "Fukurokujin",
+        "domain": "Fortune of wisdom and mercy",
+        "kanji": "福禄寿",
+    },
     "hotei": {"name": "Hotei", "domain": "Fortune of contentment", "kanji": "布袋"},
     "jurojin": {"name": "Jurojin", "domain": "Fortune of longevity", "kanji": "寿老人"},
 }

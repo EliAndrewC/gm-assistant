@@ -55,7 +55,9 @@ class TestScrapeCharactersPage:
             def get(self, url, headers=None):
                 return FakeResponse()
 
-        names, next_url = scrape_characters_page(FakeSession(), "http://example.com/characters")
+        names, next_url = scrape_characters_page(
+            FakeSession(), "http://example.com/characters"
+        )
         assert names == ["Akodo Taka", "Bayushi Kana"]
         assert next_url is not None
         assert "page=2" in next_url
@@ -69,7 +71,9 @@ class TestScrapeCharactersPage:
             def get(self, url, headers=None):
                 return FakeResponse()
 
-        names, next_url = scrape_characters_page(FakeSession(), "http://example.com/characters")
+        names, next_url = scrape_characters_page(
+            FakeSession(), "http://example.com/characters"
+        )
         assert names == ["Moto Batu"]
         assert next_url is None
 
@@ -82,6 +86,8 @@ class TestScrapeCharactersPage:
             def get(self, url, headers=None):
                 return FakeResponse()
 
-        names, next_url = scrape_characters_page(FakeSession(), "http://example.com/characters")
+        names, next_url = scrape_characters_page(
+            FakeSession(), "http://example.com/characters"
+        )
         assert names == []
         assert next_url is None
