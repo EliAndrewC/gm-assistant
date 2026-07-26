@@ -5639,6 +5639,197 @@ class Settlement:
         self.add(''.join(g))
         self._trade_record("kilns", x, y, rx_ * 2, ry_ * 2, 0.0, label)
 
+    def charcoal_yard(self, x: float, y: float, rot: float = 0.0, sheds: int = 2, label: str = "charcoal yard") -> None:
+        """A CHARCOAL WHOLESALER's yard (sumi-don'ya) - the fuel store of a charcoal district.
+
+        `rot` lays the yard's ROAD SIDE against local -y, the same convention the tanning yard uses
+        for its water side: a charcoal yard is a CART frontage, and every bale crosses one edge.
+
+        Historical grounding (the "why" - see settlements/urban-features.md "CHARCOAL YARDS"):
+          - CHINA FIRST. Charcoal was an industrial input at state scale: Song iron-smelting
+            households were government-regulated with support that explicitly included charcoal
+            supplies, and a large Ming ironworks is recorded with 200 charcoal producers alongside
+            200 furnace-tenders and 300 miners. So a charcoal store is a SUPERVISED, TALLIED
+            commodity depot, not a shop's back room - which is exactly the relationship the Mode A
+            magistracy sheet draws ("charcoal and bar iron, sealed here, never owned").
+          - JAPAN CORROBORATING. The ton'ya / toiya was the wholesaler-warehouseman of the Edo
+            economy, and fire-resistant stores were built precisely because urban timber burned.
+          - THE STOCK MUST STAY DRY, which is why it draws under ROOFED sheds: white charcoal
+            commands its premium for an odorless, smokeless burn, and damp stock loses it.
+          - THE STOCK SELF-HEATS, which is why the yard draws an OPEN COOLING APRON set apart from
+            those sheds. Fresh charcoal absorbs oxygen fast enough to heat itself to ignition, worst
+            of all as tightly-packed FINES; the documented handling rule is to stand new charcoal in
+            the open, separate from cooled and conditioned stock, for at least 24 hours (8 days of
+            air exposure clears it). A yard that put arriving loads straight in with the conditioned
+            stock would burn down, so the apron is not decoration - it is the rule made visible.
+          - THE WEIGHING FLOOR is here because the charcoal tawara had NO standard weight in the
+            traditional system (unlike rice). A commodity with no standard bale cannot be traded by
+            count; it must be weighed at the point of sale. That is also why the magistracy's hold on
+            this trade is documentary - a seal on the tally is worth something only because the
+            quantity is not self-evident from the load.
+
+        Sizes are TRUE feet at the map's grain (no legibility inflation), pitched against the pool's
+        other bulk-goods yards - the lumber yard's 90x60 and the dye yard's 80x52.
+
+        Records M['charcoal_yards'] with `sheds` and the `apron` rect (charcoal_yard_keeps_fire_gap,
+        settlement_has_charcoal_yard)."""
+        yw_, yh_ = self.px(88), self.px(58)
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(
+            f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{yw_:.1f}" height="{yh_:.1f}" rx="1.5" fill="#E0D2AC" fill-opacity="0.8" stroke="#B99F72" stroke-width="0.9"/>'
+        )  # the yard's tamped cart ground - the same ground-plane convention the dye/tanning yards use, without which the furniture reads as stray marks at fit zoom
+        # THE ROOFED STACKING SHEDS, on the far side from the road: open-sided, mat-roofed, the
+        # conditioned stock stacked in tawara on a raised timber floor (off the damp ground)
+        shw_, shh_ = self.px(34), self.px(18)
+        for si_ in range(max(1, sheds)):
+            sy_ = -self.px(14) + si_ * self.px(26)
+            sx_ = self.px(14)
+            g.append(f'<rect x="{sx_ - shw_ / 2:.1f}" y="{sy_ - shh_ / 2:.1f}" width="{shw_:.1f}" height="{shh_:.1f}" rx="1" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.6"/>')
+            g.append(f'<line x1="{sx_ - shw_ / 2 + 2:.1f}" y1="{sy_:.1f}" x2="{sx_ + shw_ / 2 - 2:.1f}" y2="{sy_:.1f}" stroke="#6B4F2A" stroke-width="0.8" opacity="0.7"/>')  # the ridge
+            for bi_ in range(4):  # the stacked tawara bales, charcoal-dark
+                bx_ = sx_ - shw_ / 2 + self.px(5) + bi_ * self.px(8)
+                g.append(f'<rect x="{bx_:.1f}" y="{sy_ - self.px(4):.1f}" width="{self.px(5):.1f}" height="{self.px(8):.1f}" rx="1.4" fill="#2E2A26" opacity="0.9"/>')
+        # THE COOLING APRON - open ground, deliberately SET APART from the covered sheds, where a
+        # newly-arrived load stands until it has stopped taking up oxygen (the 24-hour rule above).
+        # Dashed, because it is open working ground and not a roofed room.
+        aw_, ah_ = self.px(30), self.px(20)
+        acx_, acy_ = -self.px(26), self.px(12)
+        g.append(
+            f'<rect x="{acx_ - aw_ / 2:.1f}" y="{acy_ - ah_ / 2:.1f}" width="{aw_:.1f}" height="{ah_:.1f}" rx="1.5" fill="#D2C49E" fill-opacity="0.6" stroke="#A98E54" stroke-width="0.9" stroke-dasharray="3,2"/>'
+        )
+        for ci_ in range(3):  # new loads standing apart, not yet under cover
+            g.append(
+                f'<rect x="{acx_ - aw_ / 2 + self.px(4) + ci_ * self.px(8):.1f}" y="{acy_ - self.px(3):.1f}" width="{self.px(5):.1f}" height="{self.px(6):.1f}" rx="1.2" fill="#2E2A26" opacity="0.75"/>'
+            )
+        # THE WEIGHING FLOOR on the road edge, with its beam scale - the bale has no standard
+        # weight, so nothing leaves this yard until it has been weighed
+        wfw_, wfh_ = self.px(16), self.px(14)
+        wfx_, wfy_ = -self.px(26), -self.px(14)
+        g.append(f'<rect x="{wfx_ - wfw_ / 2:.1f}" y="{wfy_ - wfh_ / 2:.1f}" width="{wfw_:.1f}" height="{wfh_:.1f}" rx="1" fill="#D8C49A" stroke="#6B4F2A" stroke-width="1.4"/>')
+        g.append(f'<line x1="{wfx_:.1f}" y1="{wfy_ - self.px(5):.1f}" x2="{wfx_:.1f}" y2="{wfy_ + self.px(4):.1f}" stroke="#5A4326" stroke-width="1.2"/>')  # the scale post
+        g.append(f'<line x1="{wfx_ - self.px(5):.1f}" y1="{wfy_ - self.px(4):.1f}" x2="{wfx_ + self.px(5):.1f}" y2="{wfy_ - self.px(4):.1f}" stroke="#5A4326" stroke-width="1.2"/>')  # its beam
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("charcoal_yards", x, y, yw_, yh_, rot, label)
+        self.M["charcoal_yards"][-1]["sheds"] = max(1, sheds)
+        self.M["charcoal_yards"][-1]["apron"] = [round(acx_, 1), round(acy_, 1), round(aw_, 1), round(ah_, 1)]
+
+    def refining_forge(self, x: float, y: float, rot: float = 0.0, label: str = "refining forge") -> None:
+        """A REFINING FORGE - an okaji 大鍛冶, where pig iron smelted out at the fuel is worked into
+        wrought bar. `rot` lays the OPEN WORKING FRONT toward local +y.
+
+        Historical grounding (the "why" - see settlements/urban-features.md "REFINING FORGES"):
+          - CHINA FIRST. Ming ironworks converted blast-furnace pig to wrought iron by FINING,
+            Chinese chao 炒, "stir-frying": an OPEN fire under a forced blast, fuelled with charcoal,
+            into which wood, charcoal and broken cast iron were charged and then stirred with an iron
+            rod once semi-molten. Song Yingxing describes a rectangular hearth with the workers
+            standing on a wall above it, stirring with willow poles. The practice runs back to the
+            Eastern Han (the smelting-and-fining site at Xuxiebian in Sichuan).
+          - JAPAN CORROBORATING. The tatara's chief product was pig iron (zuku), and the 17th century
+            answered it with a TWO-STAGE refining process, the okaji: kera went first to the doba to
+            be crushed and sorted, then the low-carbon fractions to the okajiba, which turned out
+            flat bars called wari-tetsu 割鉄. At their peak the Chugoku ironworks made 80% of Japan's
+            iron this way.
+          - THE ONE DISCLOSED DIVERGENCE. The CHINESE arrangement sets the fining hearth a few feet
+            from the blast-furnace outlet so the iron runs in still molten - one site. Rokugan's
+            charcoal counties cannot: a kiln reduces roughly six parts wood to one of charcoal, so
+            the kiln goes to the wood and the furnace follows the fuel into the hills, miles from the
+            seat. So this follows the JAPANESE two-site pattern - cold pig comes down and is
+            re-melted here. The reason is economic, not aesthetic: the Chinese single site works
+            precisely where ore, fuel and hundreds of workers can be concentrated, and DISPERSED FUEL
+            FORCES TWO SITES. The smelting furnaces are never drawn; they are off in the hills.
+
+        Drawn as the OPEN-SIDED shed over TWO hearths (the two-stage refining) with the blast between
+        them, its own charcoal store, the quench trough, stacked bar iron, and the slag heap - the
+        waste and the product together are what tell a reader this is a refinery and not a smithy.
+
+        Records M['refining_forges'] with `hearths` (refining_forge_stands_off_dwellings,
+        refining_forge_downwind, settlement_has_refining_forge)."""
+        yw_, yh_ = self.px(74), self.px(48)
+        shw_, shh_ = self.px(44), self.px(26)
+        scx_, scy_ = -self.px(6), -self.px(10)
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(
+            f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{yw_:.1f}" height="{yh_:.1f}" rx="1.5" fill="#DCCBA6" fill-opacity="0.7" stroke="#B99F72" stroke-width="0.9"/>'
+        )  # the working ground
+        g.append(f'<rect x="{scx_ - shw_ / 2:.1f}" y="{scy_ - shh_ / 2:.1f}" width="{shw_:.1f}" height="{shh_:.1f}" rx="1" fill="#C2A87C" stroke="none"/>')
+        # THREE walls and an OPEN front: a fining hearth is an open fire and has to vent, and the
+        # stock is worked from the front - so the working edge draws as an eaves line, never a wall
+        g.append(
+            f'<path d="M {scx_ - shw_ / 2:.1f} {scy_ + shh_ / 2:.1f} L {scx_ - shw_ / 2:.1f} {scy_ - shh_ / 2:.1f} '
+            f'L {scx_ + shw_ / 2:.1f} {scy_ - shh_ / 2:.1f} L {scx_ + shw_ / 2:.1f} {scy_ + shh_ / 2:.1f}" fill="none" stroke="#5A4326" stroke-width="1.7"/>'
+        )
+        g.append(f'<line x1="{scx_ - shw_ / 2:.1f}" y1="{scy_ + shh_ / 2:.1f}" x2="{scx_ + shw_ / 2:.1f}" y2="{scy_ + shh_ / 2:.1f}" stroke="#8A6B42" stroke-width="0.8" opacity="0.7"/>')
+        # THE WORKING RANGE, ranked along the back wall: hearth - hearth - bellows, in ONE row and
+        # deliberately LEFT-WEIGHTED. The first draft set the two hearths symmetrically about the
+        # center with the bellows below them and the fuel store beneath that, which rendered as a
+        # FACE - two red eyes, a nose and a mouth - the same pareidolia that got the tethered-oxen
+        # glyphs retired (GM 2026-07-25). A working range reads as a range only if it is a row and
+        # the row is off-center, so nothing on this glyph is mirrored about its axis.
+        for hx_ in (-self.px(15), -self.px(2)):  # the TWO hearths - the two-stage refining, drawn
+            g.append(f'<rect x="{scx_ + hx_ - self.px(5):.1f}" y="{scy_ - self.px(7):.1f}" width="{self.px(10):.1f}" height="{self.px(7):.1f}" rx="0.8" fill="#3E3226"/>')
+            # the fire reads as a BAR banked at the hearth mouth, not a filled block centered in it
+            g.append(f'<rect x="{scx_ + hx_ - self.px(3.6):.1f}" y="{scy_ - self.px(2.4):.1f}" width="{self.px(7.2):.1f}" height="{self.px(1.6):.1f}" fill="#A8472E" opacity="0.85"/>')
+            g.append(
+                f'<rect x="{scx_ + hx_ - self.px(1.4):.1f}" y="{scy_ - shh_ / 2 - self.px(2.6):.1f}" width="{self.px(2.8):.1f}" height="{self.px(2.8):.1f}" fill="#5A4326"/>'
+            )  # its smoke hood, breaking the back roofline
+        g.append(
+            f'<rect x="{scx_ + self.px(8):.1f}" y="{scy_ - self.px(6.5):.1f}" width="{self.px(9):.1f}" height="{self.px(6):.1f}" rx="0.8" fill="#8A6B42" stroke="#5A4326" stroke-width="0.7"/>'
+        )  # the blast - one bellows at the end of the range, serving both hearths
+        g.append(f'<rect x="{scx_ - self.px(9):.1f}" y="{scy_ + self.px(4):.1f}" width="{self.px(5):.1f}" height="{self.px(3):.1f}" fill="#3E3226"/>')  # the anvil block on the working floor
+        csw_, csh_ = self.px(24), self.px(16)  # THE CHARCOAL STORE: the fuel is the input this works consumes most of
+        csx_, csy_ = self.px(20), self.px(13)
+        g.append(f'<rect x="{csx_ - csw_ / 2:.1f}" y="{csy_ - csh_ / 2:.1f}" width="{csw_:.1f}" height="{csh_:.1f}" rx="1" fill="#C2B190" stroke="#6B5A3A" stroke-width="1.4"/>')
+        for bi_ in range(3):
+            g.append(
+                f'<rect x="{csx_ - csw_ / 2 + self.px(3) + bi_ * self.px(7):.1f}" y="{csy_ - self.px(3):.1f}" width="{self.px(4):.1f}" height="{self.px(6):.1f}" rx="1.2" fill="#2E2A26" opacity="0.85"/>'
+            )
+        g.append(
+            f'<rect x="{-self.px(14):.1f}" y="{self.px(11):.1f}" width="{self.px(10):.1f}" height="{self.px(5):.1f}" rx="1" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>'
+        )  # the quench trough
+        for li_ in range(4):  # the stacked wari-tetsu - the flat bars this forge exists to make
+            g.append(
+                f'<line x1="{-self.px(32):.1f}" y1="{self.px(8) + li_ * self.px(2.2):.1f}" x2="{-self.px(19):.1f}" y2="{self.px(8) + li_ * self.px(2.2):.1f}" stroke="#5C5750" stroke-width="1.3"/>'
+            )
+        g.append(f'<ellipse cx="{self.px(2):.1f}" cy="{self.px(18):.1f}" rx="{self.px(9) / 2:.1f}" ry="{self.px(6) / 2:.1f}" fill="#4A453E" opacity="0.85"/>')  # the slag heap
+        g.append('</g>')
+        self.add(''.join(g))
+        self._trade_record("refining_forges", x, y, yw_, yh_, rot, label)
+        self.M["refining_forges"][-1]["hearths"] = 2
+
+    def border_line(self, pts: Sequence[tuple[float, float]], label: str = "", label_xy: tuple[float, float] | None = None) -> None:
+        """A drawn CLAN / jurisdictional BORDER - a line of law, not a physical object.
+
+        Historical grounding: linear, demarcated borders were not foreign to early modern Japan -
+        domains were already building a territorial order with agreed boundaries and mutual
+        exclusion, evidenced by boundary disputes, boundary markers and map-making. The worked
+        example is the Nanbu-Date border mounds, ~130 km of earth mounds dividing Morioka from
+        Sendai, re-confirmed by the shogunate in 1642. And the shogunate ordered every province to
+        draw its boundaries on a kuniezu 国絵図 - so putting the line on a map is itself the
+        authentic act, which is what this method does.
+
+        The PHYSICAL period marker was a MOUND, and a mound is a structure that would then have to be
+        kept clear of everything - which is the opposite of the arrangement a frontier magistracy
+        wants (the Mode A ubame-magistracy sheet stands its east wall ON the line, with the border
+        running across a parley room's floor). So the line is drawn as a LINE and classified in
+        _OVERLAP_EXEMPT: it reserves nothing, blocks nothing, and is overlapped by design.
+
+        Records M['borders'] with `poly` + `label` and deliberately NO w/h."""
+        poly = [[round(px_, 1), round(py_, 1)] for px_, py_ in pts]
+        d = "M " + " L ".join(f"{px_:.1f} {py_:.1f}" for px_, py_ in pts)
+        self.add(f'<path d="{d}" fill="none" stroke="#6B2A18" stroke-width="{max(self.lw(3), 2.6):.1f}" stroke-dasharray="14,7,4,7" opacity="0.85"/>')
+        if label:
+            lx_, ly_ = label_xy if label_xy else (pts[len(pts) // 2][0], pts[len(pts) // 2][1] - 14)
+            # Drawn through self.label(), NOT as raw <text>. A caption emitted straight into the SVG
+            # is invisible to the label-collision checks - it is not in the registry, so nothing can
+            # test it - and the first draft's border caption duly shipped sitting on a wellhead with
+            # a green gate. A caption that is not registered cannot be checked, which looks exactly
+            # like a caption that is fine (CLAUDE.md, "a check that never RUNS looks exactly like a
+            # check that passes"). self.label() also puts it in the top layer, so no ground feature
+            # paints over it.
+            self.label(lx_, ly_, label, 12, italic=True, color="#6B2A18")
+        self.M.setdefault("borders", []).append({"poly": poly, "label": label})
+
     def tanning_yard(self, x: float, y: float, rot: float = 0.0, pits: int = 4, water: str = "stream", label: str = "tanning yard") -> None:
         """A TANNING YARD - the burakumin trade, and the one that decides where their quarter sits.
 

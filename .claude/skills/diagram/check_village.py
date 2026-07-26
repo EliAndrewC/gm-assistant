@@ -197,6 +197,12 @@ _OVERLAP_STRUCTS = (
     "kilns",
     "farriers",
     "tanning_yards",
+    # the charcoal district's trade works (feature 016). For OVERLAP purposes these are ordinary
+    # solid premises like any other; what is special about them is a SEPARATION rule each
+    # (charcoal_yard_keeps_fire_gap, refining_forge_stands_off_dwellings), which is a different
+    # shape and lives in its own check rather than in this registry.
+    "charcoal_yards",
+    "refining_forges",
     # martial training (GM 2026-07-25): the state hall and the private dojos - solid compounds like
     # any other civic/private premises, so they overlap nothing
     "martial_halls",
@@ -228,6 +234,7 @@ _OVERLAP_LINEAR = (
 _OVERLAP_EXEMPT = {
     "drawn_channels": "z-order record of the drawn field-channel strokes (post-clip geometry + stroke widths w0/w1 + bedz), not a placement feature: the strokes duplicate the field_ditches/channels ground the structs already avoid, and their mouths deliberately touch the pond/moat/stream they join (pond_fill_covers_channel_mouths and water_channels_join_not_cross read this record - it is the only source that says what was actually stroked, and how wide)",
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
+    "borders": "a drawn CLAN/jurisdictional border is a LINE OF LAW, not a physical object - it has no footprint (no w/h), reserves no ground and blocks nothing. Being overlapped is the POINT: a frontier magistracy stands its wall ON the line so the border runs across the parley-room floor (the Mode A ubame-magistracy sheet), and the period PHYSICAL marker - an earthen mound, as at the Nanbu-Date boundary - is deliberately NOT what this draws, precisely because a mound would be a structure everything then had to stay clear of",
     "farm_sheds": "a farmstead's grain-storehouse kura drawn as an annex abutting its own farmhouse's back wall (farm_sheds_attached verifies the attachment)",
     "threshing_yards": "a farmstead's threshing/drying yard drawn as an annex abutting its own farmhouse",
     "gardens": "a farmstead's dooryard kitchen garden drawn as a plot abutting its own farmhouse",
@@ -285,6 +292,8 @@ _LABEL_GROUP = {
     "kilns": "kiln",
     "farriers": "farrier",
     "tanning_yards": "tanning yard",
+    "charcoal_yards": "charcoal yard",
+    "refining_forges": "refining forge",
     "drum_towers": "drum tower",
     "martial_halls": "martial hall",
     "dojos": "dojo",
@@ -299,6 +308,7 @@ _LABEL_GROUP = {
 # folds those kinds into groups (samurai_large -> samurai, and so on).
 _LABEL_BY_KIND = ("buildings",)
 _LABEL_EXEMPT = {
+    "borders": "a jurisdictional line has no footprint to protect - there is nothing under it to be buried by a caption, and its own caption is drawn in the top layer so no ground feature can paint over it",
     "byres": "a draft-ox byre is an ANNEX abutting its own farmhouse (draft_byres places it against the wall), so it shares the house's ground and any caption cleared for the house is cleared for it",
 }
 _LABEL_CLASSIFIED = set(_LABEL_GROUP) | set(_LABEL_BY_KIND) | set(_LABEL_EXEMPT)
@@ -2301,6 +2311,106 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             bool(_fr_all),
             "no farrier in an Imperial-road town - a relay/post town on the Imperial road works courier and caravan horses hard enough to keep a shoeing forge at its stables (s.farrier); a town OFF the Imperial road does not declare meta(imperial_road=True) and is exempt, which is the deliberate Hoshizora/Hirameki split",
         )
+
+    # ===== THE CHARCOAL DISTRICT'S TRADE WORKS (feature 016; full grounding in
+    # settlements/urban-features.md "CHARCOAL YARDS" and "REFINING FORGES", research in
+    # research/urban-features.md).
+    #
+    # The SEPARATION LADDER these two join, and why each rung sits where it does. Every figure is
+    # placed against the ones this project already uses rather than invented, because the whole
+    # value of a magic number is that a later reader can see what it was reasoned against:
+    #
+    #     ~6 ft   farrier from a stall range   sparks from an ATTENDED open forge onto hay
+    #      30 ft  charcoal yard from anything  a stack that self-heats UNATTENDED
+    #      60 ft  refining forge from homes    a live worked fire under forced blast, + noise/smoke
+    #     120 ft  crematory / tanning yard     putrefaction and smoke carried on the air
+    #
+    # NOTE THE SCOPING ASYMMETRY, which is deliberate. The two PRESENCE checks are gated on an
+    # opt-in meta knob (only a fuel or iron county should own one of these). The three SITING checks
+    # are gated on the FEATURE's presence instead, so a yard or forge drawn on ANY map - declared or
+    # not - is still fully validated. That is the mitigation for this file's standing hazard: "a
+    # check that never RUNS looks exactly like a check that passes."
+    _cy_all = M.get("charcoal_yards", [])
+    _rf_all = M.get("refining_forges", [])
+    _cd_ftpx = float(meta.get("ftpx") or 1.0)
+    if meta.get("charcoal_district"):
+        check(
+            "settlement_has_charcoal_yard",
+            bool(_cy_all),
+            "meta(charcoal_district=True) declares a fuel district - it must draw a wholesaler's charcoal yard (s.charcoal_yard: roofed stacking sheds + an OPEN cooling apron set apart from them + a weighing floor)",
+        )
+    # THE FIRE GAP. Charcoal self-heats: fresh charcoal absorbs oxygen fast enough to raise its own
+    # temperature to ignition, worst of all as tightly-packed fines, which is why the documented
+    # handling rule stands new stock in the open away from conditioned stock for at least 24 hours.
+    # The hazard is therefore an UNATTENDED ignition inside a large fuel mass - which is why 30 ft
+    # sits an order above the attended-forge figure and well below the nuisance figures: it is about
+    # one flame-height clear of a fully-involved 10-12 ft stack, the usual rule of thumb for radiant
+    # ignition of adjacent timber. It is emphatically NOT the 120 ft nuisance figure - that defends
+    # against smell carried on air, and borrowing it here would push the yard off the cart route
+    # that is its entire reason for existing.
+    _cy_tight = []
+    for _cy in _cy_all:
+        _cyp = _fr_poly(_cy)
+        _cy_near = [_o for _o in solid_structs(M, "manors", "religious", exclude=("charcoal_yards",)) if _fr_gap(_cyp, _fr_poly(_o)) < 30.0 / _cd_ftpx]
+        if _cy_near:
+            _cy_tight.append((round(_cy["x"]), round(_cy["y"])))
+    check(
+        "charcoal_yard_keeps_fire_gap",
+        not _cy_tight,
+        f"charcoal yard(s) crowding a neighboring structure at {_cy_tight[:3]} - a charcoal stack self-heats and can ignite with nobody watching it, so the yard stands >= ~30 real ft clear of every footprint (about one flame-height off a fully-involved stack); settlements/urban-features.md 'CHARCOAL YARDS'",
+    )
+    # THE COOLING APRON is part of the record's contract, not decoration: a yard that put arriving
+    # loads straight under cover with the conditioned stock is the yard that burns down. A yard
+    # drawn without one is recording a layout nobody would build.
+    _cy_noapron = [(round(_cy["x"]), round(_cy["y"])) for _cy in _cy_all if not _cy.get("apron") or not _cy.get("sheds")]
+    check(
+        "charcoal_yard_has_cooling_ground",
+        not _cy_noapron,
+        f"charcoal yard(s) with no open cooling apron or no roofed shed at {_cy_noapron[:3]} - fresh charcoal must stand in the OPEN, apart from conditioned stock, before it goes under cover (the 24-hour rule), and the conditioned stock must be ROOFED because a damp burn loses the premium the trade exists for",
+    )
+
+    if meta.get("iron_district"):
+        check(
+            "settlement_has_refining_forge",
+            bool(_rf_all),
+            "meta(iron_district=True) declares an iron district - it must draw the refinery that turns hill-smelted pig into bar (s.refining_forge: an open-sided two-hearth okajiba + charcoal store + slag heap). The SMELTING furnaces are never drawn: a kiln reduces six parts wood to one of charcoal, so the furnace follows the fuel out into the hills",
+        )
+    if _rf_all:
+        _rf_homes = M.get("houses", []) + [_b for _b in M.get("buildings", []) if _b.get("kind") in DWELLING_KINDS]
+        # THE STANDOFF. A fining hearth is an OPEN fire under a forced blast, worked with a rod
+        # while the iron is semi-molten - so the sparks, the noise and the smoke are not incidental
+        # to the process, they ARE the process. 60 ft is half the putrefaction figure (this does not
+        # rot) and double the charcoal yard's (a live attended fire is a worse ignition source than
+        # a fuel stack, but somebody is standing at it).
+        _rf_close = []
+        for _rf2 in _rf_all:
+            _rfp = _fr_poly(_rf2)
+            if any(_fr_gap(_rfp, _fr_poly(_h)) < 60.0 / _cd_ftpx for _h in _rf_homes):
+                _rf_close.append((round(_rf2["x"]), round(_rf2["y"])))
+        check(
+            "refining_forge_stands_off_dwellings",
+            not _rf_close,
+            f"refining forge(s) among the housing at {_rf_close[:3]} - an open charcoal hearth under a forced blast throws sparks, noise and smoke all season, so it stands >= ~60 real ft off every dwelling (half the crematory/tannery nuisance figure, double the charcoal yard's fire gap)",
+        )
+        # SMOKE GOES DOWNWIND, FILTH GOES DOWNSTREAM - two separate axes, and this is the rule for
+        # the first of them. Keyed off the map's own meta(windward=...) (default NW, the East Asian
+        # winter monsoon), so a map with a different exposure gets a different answer rather than a
+        # hardcoded corner. On a map where downwind and downstream point the same way this looks
+        # redundant; on one where they diverge it is the only thing placing the forge.
+        _RF_WINDV = {"N": (0.0, -1.0), "S": (0.0, 1.0), "E": (1.0, 0.0), "W": (-1.0, 0.0), "NW": (-1.0, -1.0), "NE": (1.0, -1.0), "SW": (-1.0, 1.0), "SE": (1.0, 1.0)}
+        _rf_wind = str(meta.get("windward", "NW")).upper().strip()
+        _rf_wx, _rf_wy = _RF_WINDV.get(_rf_wind, (-1.0, -1.0))
+        _rf_dwell_pts = [(_h["x"], _h["y"]) for _h in _rf_homes]
+        if _rf_dwell_pts:
+            _rf_cx = sum(_p[0] for _p in _rf_dwell_pts) / len(_rf_dwell_pts)
+            _rf_cy2 = sum(_p[1] for _p in _rf_dwell_pts) / len(_rf_dwell_pts)
+            # downwind is the direction the wind BLOWS TOWARD, i.e. away from the windward quarter
+            _rf_upwind = [(round(_r["x"]), round(_r["y"])) for _r in _rf_all if (_r["x"] - _rf_cx) * -_rf_wx + (_r["y"] - _rf_cy2) * -_rf_wy <= 0]
+            check(
+                "refining_forge_downwind",
+                not _rf_upwind,
+                f"refining forge(s) UPWIND of the housing at {_rf_upwind[:3]} - the prevailing wind is declared {_rf_wind}, so the forge's smoke must be carried away from the dwellings, not over them; put it on the downwind side of the settlement's center of housing",
+            )
 
     # TROUGH RECTS DRAW ON OPEN GROUND - the cluster's drawn BOX must not clip any structure (GM
     # 2026-07-23, after Tango's caravan cluster hugged its well on a near-vertical ray and the

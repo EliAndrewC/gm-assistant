@@ -8866,3 +8866,112 @@ def test_every_solid_feature_classified_for_labels_fires_on_an_unclassified_key(
     assert "every_solid_feature_classified_for_labels" not in f(M)
     monkeypatch.setattr(check_village, "_OVERLAP_STRUCTS", check_village._OVERLAP_STRUCTS + ("hawk_mews",))
     assert "every_solid_feature_classified_for_labels" in f(M)
+
+
+# ---- feature 016: the charcoal district's trade works ------------------------------------------
+def _fuel_map(**over):
+    """A town carrying one charcoal yard at (500, 500) on otherwise empty ground."""
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000})
+    M["charcoal_yards"] = [{"x": 500, "y": 500, "w": 88, "h": 58, "rot": 0, "label": "charcoal yard", "sheds": 2, "apron": [-26, 12, 30, 20]}]
+    M.update(over)
+    return M
+
+
+def _forge_map(fx=500.0, fy=500.0, homes=(), windward="NW"):
+    """A town carrying one refining forge, plus whatever dwellings the test supplies."""
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000, "windward": windward})
+    M["refining_forges"] = [{"x": fx, "y": fy, "w": 74, "h": 48, "rot": 0, "label": "refining forge", "hearths": 2}]
+    M["houses"] = [house(hx, hy) for hx, hy in homes]
+    return M
+
+
+def test_charcoal_yard_keeps_fire_gap_fires_on_a_crowded_yard():
+    """Charcoal self-heats: freshly-made charcoal absorbs oxygen fast enough to raise its own
+    temperature to ignition, worst of all as tightly-packed fines. The hazard is therefore an
+    UNATTENDED ignition inside a large fuel mass, which is why the gap (30 real ft, about one
+    flame-height off a fully-involved stack) is an order above the attended-forge figure and well
+    below the crematory's smell-carried-on-air figure."""
+    tight = _fuel_map(houses=[house(500, 500 + 29 + 14 + 20)])  # 20 real ft off the yard
+    clear = _fuel_map(houses=[house(500, 500 + 29 + 14 + 60)])  # 60 real ft off it
+    assert "charcoal_yard_keeps_fire_gap" in f(tight)
+    assert "charcoal_yard_keeps_fire_gap" not in f(clear)
+
+
+def test_charcoal_yard_keeps_fire_gap_measures_in_REAL_feet_not_pixels():
+    """The threshold converts through meta.ftpx, so 30 ft means the same distance at every tier -
+    a pixel constant would silently become 90 ft on a 3 ft/px city sheet."""
+    M = _fuel_map(houses=[house(500, 500 + 29 + 14 + 20)])
+    M["meta"]["ftpx"] = 3  # the same PIXEL gap is now 60 real ft, which clears
+    assert "charcoal_yard_keeps_fire_gap" not in f(M)
+
+
+def test_charcoal_yard_has_cooling_ground_fires_on_a_covered_only_yard():
+    """A yard with no open apron has nowhere to stand a fresh load apart from the conditioned
+    stock, which is the documented handling rule (24 hours in the open; 8 days of air clears it).
+    A roofed shed is equally required - the county's premium good is bought for a dry burn."""
+    assert "charcoal_yard_has_cooling_ground" in f(_fuel_map(charcoal_yards=[{"x": 500, "y": 500, "w": 88, "h": 58, "rot": 0, "label": "charcoal yard", "sheds": 2}]))
+    assert "charcoal_yard_has_cooling_ground" in f(_fuel_map(charcoal_yards=[{"x": 500, "y": 500, "w": 88, "h": 58, "rot": 0, "label": "charcoal yard", "sheds": 0, "apron": [0, 0, 30, 20]}]))
+    assert "charcoal_yard_has_cooling_ground" not in f(_fuel_map())
+
+
+def test_settlement_has_charcoal_yard_fires_only_when_the_district_is_declared():
+    """Opt-in, like meta(granary=True): an ordinary county seat declares nothing and is exempt."""
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000, "charcoal_district": True})
+    assert "settlement_has_charcoal_yard" in f(M)
+    del M["meta"]["charcoal_district"]
+    assert "settlement_has_charcoal_yard" not in f(M)
+
+
+def test_settlement_has_refining_forge_fires_only_when_the_district_is_declared():
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000, "iron_district": True})
+    assert "settlement_has_refining_forge" in f(M)
+    del M["meta"]["iron_district"]
+    assert "settlement_has_refining_forge" not in f(M)
+
+
+def test_refining_forge_stands_off_dwellings():
+    """A fining hearth is an OPEN fire under a forced blast, worked with a rod while the iron is
+    semi-molten - the sparks, noise and smoke are the process, not a side effect. 60 real ft: half
+    the crematory's nuisance figure (this does not rot), double the fuel stack's (this one is a
+    live ignition source, but somebody is standing at it)."""
+    close = _forge_map(homes=[(500, 500 + 24 + 14 + 30)])
+    clear = _forge_map(homes=[(500, 500 + 24 + 14 + 70)])
+    assert "refining_forge_stands_off_dwellings" in f(close)
+    assert "refining_forge_stands_off_dwellings" not in f(clear)
+
+
+def test_refining_forge_downwind_reads_the_maps_own_windward_declaration():
+    """SMOKE goes downwind, FILTH goes downstream - two separate axes. This is the first: keyed off
+    meta(windward=...), so a map with a different exposure gets a different answer instead of a
+    hardcoded corner. Under the default NW monsoon the forge belongs SE of the housing."""
+    homes = [(300, 300), (360, 300), (300, 360)]
+    assert "refining_forge_downwind" not in f(_forge_map(700, 700, homes))  # SE of the housing
+    assert "refining_forge_downwind" in f(_forge_map(60, 60, homes))  # NW of it - straight upwind
+    # ...and reversing the declared wind reverses the verdict, which is the whole point of the knob
+    assert "refining_forge_downwind" in f(_forge_map(700, 700, homes, windward="SE"))
+    assert "refining_forge_downwind" not in f(_forge_map(60, 60, homes, windward="SE"))
+
+
+def test_refining_forge_downwind_abstains_when_the_map_has_no_dwellings():
+    """Nothing to smoke over, nothing to judge - the rule must not divide by an empty centroid."""
+    assert "refining_forge_downwind" not in f(_forge_map(60, 60, ()))
+
+
+def test_the_new_trade_works_are_classified_in_both_registries():
+    """The KEEP-CLEAR CONTRACT: registry membership alone gates a feature off every hazard and
+    protects it from foreign captions. The border LINE is the deliberate exception - it is a line
+    of law with no footprint, so it is exempt on both sides."""
+    for key in ("charcoal_yards", "refining_forges"):
+        assert key in check_village._OVERLAP_STRUCTS, key
+        assert key in check_village._LABEL_GROUP, key
+    assert "borders" in check_village._OVERLAP_EXEMPT
+    assert "borders" in check_village._LABEL_EXEMPT
+
+
+def test_a_border_line_under_a_compound_wall_trips_nothing():
+    """A frontier magistracy stands its wall ON the line so the border runs across the parley-room
+    floor (the Mode A ubame-magistracy sheet). Being overlapped is the arrangement, not a defect."""
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000})
+    M["borders"] = [{"poly": [[900, 0], [900, 1000]], "label": "the Fox border"}]
+    M["manors"] = [{"x": 900, "y": 400, "w": 250, "h": 180, "rot": 0, "label": "Magistrate's Manor"}]
+    assert not [c for c in f(M) if "border" in c]
