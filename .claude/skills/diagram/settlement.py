@@ -5766,10 +5766,19 @@ class Settlement:
         # FACE - two red eyes, a nose and a mouth - the same pareidolia that got the tethered-oxen
         # glyphs retired (GM 2026-07-25). A working range reads as a range only if it is a row and
         # the row is off-center, so nothing on this glyph is mirrored about its axis.
-        for hx_ in (-self.px(15), -self.px(2)):  # the TWO hearths - the two-stage refining, drawn
+        # ONE hearth lit, ONE banked - they must not read as a matched PAIR (settlement-review round 2
+        # judged the first anti-pareidolia pass only partial: the layout was no longer mirrored, but two
+        # identical saturated marks side by side still read as eyes). Two hearths of a two-stage process
+        # are genuinely at different heats at any moment, so the honest drawing is also the safe one.
+        for hi_, hx_ in enumerate((-self.px(15), -self.px(2))):  # the TWO hearths - the two-stage refining
             g.append(f'<rect x="{scx_ + hx_ - self.px(5):.1f}" y="{scy_ - self.px(7):.1f}" width="{self.px(10):.1f}" height="{self.px(7):.1f}" rx="0.8" fill="#3E3226"/>')
             # the fire reads as a BAR banked at the hearth mouth, not a filled block centered in it
-            g.append(f'<rect x="{scx_ + hx_ - self.px(3.6):.1f}" y="{scy_ - self.px(2.4):.1f}" width="{self.px(7.2):.1f}" height="{self.px(1.6):.1f}" fill="#A8472E" opacity="0.85"/>')
+            if hi_ == 0:
+                g.append(f'<rect x="{scx_ + hx_ - self.px(3.6):.1f}" y="{scy_ - self.px(2.4):.1f}" width="{self.px(7.2):.1f}" height="{self.px(1.6):.1f}" fill="#A8472E" opacity="0.85"/>')
+            else:
+                g.append(
+                    f'<rect x="{scx_ + hx_ - self.px(3.0):.1f}" y="{scy_ - self.px(2.2):.1f}" width="{self.px(6.0):.1f}" height="{self.px(1.3):.1f}" fill="#6B6055" opacity="0.8"/>'
+                )  # banked: raked ash, no flame
             g.append(
                 f'<rect x="{scx_ + hx_ - self.px(1.4):.1f}" y="{scy_ - shh_ / 2 - self.px(2.6):.1f}" width="{self.px(2.8):.1f}" height="{self.px(2.8):.1f}" fill="#5A4326"/>'
             )  # its smoke hood, breaking the back roofline
@@ -5830,7 +5839,7 @@ class Settlement:
             self.label(lx_, ly_, label, 12, italic=True, color="#6B2A18")
         self.M.setdefault("borders", []).append({"poly": poly, "label": label})
 
-    def tanning_yard(self, x: float, y: float, rot: float = 0.0, pits: int = 4, water: str = "stream", label: str = "tanning yard") -> None:
+    def tanning_yard(self, x: float, y: float, rot: float = 0.0, pits: int = 4, water: str = "stream", label: str = "tanning yard", lab_off: float | None = None) -> None:
         """A TANNING YARD - the burakumin trade, and the one that decides where their quarter sits.
 
         The GROUND, not the building, is the feature: soaking pits, drying racks, and a small work
@@ -5910,7 +5919,9 @@ class Settlement:
             )
         g.append('</g>')
         self.add(''.join(g))
-        self._trade_record("tanning_yards", x, y, yw_, yh_, rot, label)
+        self._trade_record(
+            "tanning_yards", x, y, yw_, yh_, rot, label, lab_off=lab_off
+        )  # lab_off: a ROTATED yard's drawn extent exceeds h/2, so its caption lands inside its own boundary stroke and renders struck through (settlement-review round 2). Opt-in per map rather than global - see _trade_record
 
     def _draw_threshing_yard(self, cx: float, cy: float, w: float, h: float, poly: Any) -> None:
         """Draw one small tamped earthen threshing/drying yard (a straw mat + a little hazakake rack). The
@@ -6437,7 +6448,14 @@ class Settlement:
     _HALO_PLOT_FT = 8.0
     # occupied structures (people live/work in them: full dooryard halo) vs tended ground plots (kept clear
     # to their edge, but nobody sweeps a 30 ft apron around a vegetable bed)
-    _HALO_STRUCT_KEYS = ("houses", "buildings", "storehouses", "flophouses", "byres", "farm_sheds", "religious", "shrines", "manors", "ministries", "inspection_stations")
+    _HALO_STRUCT_KEYS = ("houses", "buildings", "storehouses", "flophouses", "byres", "farm_sheds", "religious", "shrines", "manors", "ministries", "inspection_stations", "theater_stage")
+    # `theater_stage` added 2026-07-26: hinterland scrub was drawn ON the stage's roof, and it took an
+    # independent reviewer's eye to see it because SCRUB IS NOT RECORDED IN THE MANIFEST - no gate check
+    # and no manifest audit can reach this class of defect at all. (This halo is deliberately NARROWER
+    # than the canopy rule below: it sweeps a 30 ft dooryard apron, so every key added here also strips
+    # ground cover for 30 ft around it and moves `town_margins_clothed`. Roofed civic/trade premises are
+    # therefore NOT bulk-added here - they are handled by the canopy contract, which is about ink on a
+    # roof rather than about how much of the sheet reads as worked.)
     _HALO_PLOT_KEYS = ("gardens", "threshing_yards")
     # NO TREE IS DRAWN ON A ROOF OR A WELLHEAD (GM 2026-07-25). Every ROOFED structure on the map,
     # plus the wellheads - the keep-out that every canopy crown is tested against (_crown_covers).
@@ -6445,22 +6463,54 @@ class Settlement:
     # are deliberately NOT here: they have their own sun-corridor and clearance rules, and a tree
     # overhanging the CORNER of a yard is a real thing, while a tree drawn on a roof is just a
     # building you can no longer see.
-    _CANOPY_STRUCT_KEYS = _HALO_STRUCT_KEYS + (
-        "merchant_estates",
+    # OPEN-AIR WORKING GROUND - deliberately NOT a canopy keep-out. These records are a patch of
+    # ground, not a roof: a tree overhanging the corner of a yard is a real thing, and each of these
+    # has its own clearance and sun-corridor rules. Every OTHER solid feature is a keep-out by
+    # default (below), so this tuple is the only place a new feature can legitimately opt out - and
+    # `test_every_roofed_feature_is_a_canopy_keepout` fails if a key is in neither.
+    _CANOPY_OPEN_AIR_KEYS = (
+        "gardens",  # a dooryard bed; a bough over its edge is normal
+        "threshing_yards",  # a swept work floor abutting its own farmhouse
+        "tanning_yards",  # a pit yard on a bank - open ground by definition
+        "dye_yards",  # drying racks in the open
+        "lumber_yards",  # stacked timber in the open
+        "charcoal_yards",  # a cart yard whose roofed sheds are interior detail, not the record
+        "refining_forges",  # an open-sided works; the record is its whole working ground
+        "cremation_grounds",  # open ground with a pyre platform
+        "execution_grounds",  # bare, unfenced waste ground - the bareness IS the feature
+        "punishment_spots",  # a patch of tamped earth on a verge
+        "boundary_markers",  # a stone
+        "ossuaries",  # a low earth mound
+        "cemeteries",  # an open burial ground; trees among graves are correct
+        "kosatsuba",  # a board on a post at the verge
+    )
+    # NO TREE IS DRAWN ON A ROOF OR A WELLHEAD (GM 2026-07-25; DERIVED 2026-07-26). Every roofed
+    # structure plus the wellheads - the keep-out every canopy crown is tested against (_crown_covers).
+    # This was a HAND LIST until a reviewer found scrub on a theater stage; the list is now the overlap
+    # registry minus the open-air exemptions above, so a new roofed feature is covered by default and
+    # forgetting is impossible. Same move that retired `ring_road_kept_clear`'s hand list.
+    # Features that are not in check_village's _OVERLAP_STRUCTS at all (they are targets or exempt
+    # there) but are still roofed things a crown must not cover.
+    _CANOPY_EXTRA_KEYS = ("merchant_estates", "wall_towers", "gate_structs", "theater_stage")
+    # Every ROOFED premises from the overlap registry. settlement.py cannot import check_village
+    # (circular), so this tuple is written out - and
+    # `test_every_roofed_feature_is_a_canopy_keepout` holds it against the real registry, failing
+    # with the offending key by name if a new feature is in neither this nor _CANOPY_OPEN_AIR_KEYS.
+    # The TEST is the ratchet; the tuple is just the data.
+    _CANOPY_ROOFED_KEYS = (
+        "mausoleums",
         "fire_towers",
         "drum_towers",
         "breweries",
+        "oil_presses",
         "pawnshops",
         "bathhouses",
-        "oil_presses",
         "kilns",
         "farriers",
-        "mausoleums",
-        "gate_structs",
-        "wall_towers",
         "martial_halls",
         "dojos",
     )
+    _CANOPY_STRUCT_KEYS = _HALO_STRUCT_KEYS + _CANOPY_EXTRA_KEYS + _CANOPY_ROOFED_KEYS
 
     def _canopy_keepouts(self, bbox: tuple[float, float, float, float]) -> tuple[list[tuple[float, float, float, float]], list[tuple[float, float, float]]]:
         """Every drawn BUILDING footprint (as x, y, half-w, half-h) and WELLHEAD (as x, y, r) near `bbox` -
@@ -6472,7 +6522,7 @@ class Settlement:
         bx0, by0, bx1, by1 = bbox
         rects: list[tuple[float, float, float, float]] = []
         for k in self._CANOPY_STRUCT_KEYS:
-            for o in self.M.get(k, []) or []:
+            for o in self._reclist(k):
                 # the DRAWN box (a location marker like the kosatsuba draws at a legibility floor
                 # above its true footprint, and overlap here is about drawn pixels - same reason the
                 # wells use vr over r)
@@ -6506,6 +6556,19 @@ class Settlement:
         for x, y, r in crowns:
             self.M["tree_crowns"] += [round(x, 1), round(y, 1), round(r, 1)]
 
+    def _reclist(self, key: str) -> list[dict[str, Any]]:
+        """Records under `key`, whether the manifest stores a LIST of them or a single dict.
+
+        A few features are singletons stored as a bare dict (`theater_stage`, `governor_mansion`) -
+        which is why their keys are singular. Iterating one of those blindly yields its string KEYS,
+        and `o["w"]` then raises `TypeError: string indices must be integers`. check_village has the
+        same shape in `_OVERLAP_SINGLETONS`; this is the settlement-side counterpart.
+        """
+        rec = self.M.get(key)
+        if isinstance(rec, dict):
+            return [rec]
+        return [r for r in (rec or []) if isinstance(r, dict)]
+
     def _urban_keepouts(self, bbox: tuple[float, float, float, float]) -> tuple[list[tuple[float, float, float, float]], list[tuple[float, float, float]]]:
         """Axis-aligned keep-out rects + wellhead keep-out circles for the urban-clearance halo (see the
         constants above), built from every structure/plot/well recorded in M so far. A rotated structure is
@@ -6518,7 +6581,7 @@ class Settlement:
         for keys, halo_ft in ((self._HALO_STRUCT_KEYS, self._HALO_STRUCT_FT), (self._HALO_PLOT_KEYS, self._HALO_PLOT_FT)):
             halo = halo_ft * self.bscale
             for k in keys:
-                for o in self.M.get(k, []) or []:
+                for o in self._reclist(k):
                     hw, hh = o["w"] / 2, o["h"] / 2
                     if o.get("rot"):
                         hw = hh = math.hypot(hw, hh)  # conservative: the rotated rect fits in its half-diagonal square

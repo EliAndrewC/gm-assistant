@@ -153,9 +153,13 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
     caption; one `village_grove` call silently drew nothing (a no-op in a gen is the same shape as a
     check that never runs); the high street carried 6 shops against the gen's own stated ~14, now 9
     with the merchant dwellings still in band.
-  - **NOT REPRODUCED**: a reported tree crown on the theater stage roof - the manifest shows zero
-    crowns in that footprint, so it was most likely scrub tufts read off the raster. Recorded because
-    "verify the finding before acting on it" is the durable lesson, not a footnote.
+  - **WRONGLY DISMISSED, corrected by round 2**: the reported vegetation on the theater stage roof
+    was REAL. My verification queried `theater_stages`; the manifest key is `theater_stage`,
+    singular, so the lookup returned nothing, the loop never ran, and I read the empty output as a
+    zero. Round 2 named the exact ink - three `#94A063` scrub circles inside the stage footprint in
+    `ubame.svg`. Even the corrected query would have failed: hinterland scrub is not recorded in the
+    manifest at all, so no manifest audit can ever see it. The durable lesson is the opposite of
+    what I first wrote: when a finding is about INK, verify it in the SVG.
   - **CONFIRMED by the reviewer and left alone**: the diverging nuisance axes, the unlabeled trunk
     road, the execution ground on the west road rather than the frontier approach, the manor drawn at
     its Mode A envelope, and the twin-detector verdict ("reads as its own place, not a re-skin").
