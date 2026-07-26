@@ -821,9 +821,17 @@ front(
 # carved out afterward - but AFTER the avenue frontage, whose ground it would otherwise take. Seat
 # found with s.open_seat over the ward rect rather than guessed (skill CLAUDE.md), then walked 3px
 # east: open_seat cleared the compound itself, and the avenue's own street bed still clipped it.
-# x1956 is the west-most seat whose caption also clears the yamen - "martial hall" is a wide label
+# x1958 is the west-most seat whose caption also clears the yamen - "martial hall" is a wide label
 # for a 43x33px compound, so the caption, not the compound, is what binds here.
-s.martial_hall(1956, 1569)
+#
+# RESEATED 2026-07-25 (GM caught it by eye, y1569 -> y1552). The first seat sat ON THE RING ROAD:
+# open_seat had approved it because s.bound tests a candidate's CENTER, and the compound's center
+# was inside the ring while its SE corner crossed the patrol bed. The gate stayed green because
+# ring_road_kept_clear was reading a hand-written list of manifest keys that predated this feature -
+# now fixed at the root (it reads solid_structs(M); see the KEEP-CLEAR CONTRACT in the skill's
+# CLAUDE.md). The seat is boxed on three sides: the avenue's street bed at x1927 to the west, the
+# wall to the east, and the ring's south-east arc below.
+s.martial_hall(1958, 1552)
 # PRIVATE dojos - a retired sensei or noted duelist teaching a named style, count ROLLED from the
 # samurai cohort (s.dojos: 1 per full 200 samurai + a remainder chance; ~300 samurai here -> 1 + a
 # 50% roll, which this seed does not take). Seat 1 sits among the kumi-yashiki rows south of the
@@ -1313,7 +1321,12 @@ s.title("Tango")
 s.kosatsuba(1584, 1091, rot=90)  # the LABELED representative (one-label convention)
 # ...the south gate's board, UNLABELED - the bare board fits the tight south verge that
 # could not hold a label box (both label orientations landed on the gate furniture).
-s.kosatsuba(1588, 1760, rot=90, label=None)
+s.kosatsuba(1588, 1760, rot=90, label=None)  # ...ON the ring-road verge, which is legitimate here and now EXPLICITLY
+# exempt rather than accidentally so (2026-07-25): the generalized ring_road_kept_clear flagged this board, and a probe
+# confirmed there is no clear seat anywhere in the band a board must stay in (kosatsuba_by_the_road wants it within ~60
+# real ft of a road, and the whole roadside is built up). A notice board is gate furniture like the guard house already
+# lining the lane beside it - see the gate-precinct exemption in ring_road_kept_clear, scoped so a board out on an open
+# stretch of patrol lane is still a defect.
 # ...and the PRINCIPAL board at the central road-market (GM 2026-07-24, the 3rd board: the
 # city's Nihonbashi-equivalent node), on the market cross-street's south verge beside the
 # roadside inn - unlabeled, the north-gate board already carries the set's one label.

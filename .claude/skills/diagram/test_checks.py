@@ -23,6 +23,8 @@ import json
 import math
 import pathlib
 
+import pytest
+
 import check_village
 import settlement
 
@@ -8396,3 +8398,107 @@ def test_city_dojos_stand_among_the_samurai_they_serve():
     assert "city_dojos_among_samurai" not in f(_martial_city())
     assert "city_dojos_among_samurai" in f(_martial_city(dojo_xy=(830, 850)))  # a private hall adrift
     assert "city_dojos_among_samurai" in f(_martial_city(hall_xy=(830, 180)))  # the state hall adrift
+
+
+# ---- THE KEEP-CLEAR CONTRACT (GM 2026-07-25) --------------------------------------------------
+# _OVERLAP_STRUCTS is a PROMISE: "this feature is solid, and must not overlap anything." The
+# promise is only worth as much as the checks that actually read the registry, and the recurring
+# way it breaks is a keep-clear check that hand-lists its own manifest keys and quietly falls
+# behind - which looks exactly like a passing check. The martial hall is the worked example: it
+# was correctly registered, correctly cleared of all thirteen no_structure_on_* hazards, and sat
+# squarely on Tango's ring road with a green gate, because ring_road_kept_clear was reading eight
+# keys nobody had updated. The GM found it by eye. That is the failure mode this test retires.
+#
+# It plants ONE instance of EVERY registered key squarely on EVERY hazard and demands the hazard's
+# own check fire. So a new map feature cannot be added without either being gated everywhere or
+# failing HERE, with both the key and the hazard named. Adding a hazard to the table below extends
+# the contract to every existing feature at once.
+_SOLID_EXTRAS = {
+    "houses": {"kind": "plain"},
+    "buildings": {"kind": "laborer"},
+    "ministries": {"name": "Ministry of War"},
+    "kosatsuba": {"vw": 11.0, "vh": 4.6, "label": "notice board"},
+    "martial_halls": {"label": "martial hall", "range_ft": 100.0},
+    "dojos": {"label": "dojo"},
+    "breweries": {"label": "brewery"},
+    "dye_yards": {"label": "dye works"},
+    "lumber_yards": {"label": "lumber yard"},
+    "oil_presses": {"label": "oil press"},
+    "pawnshops": {"label": "pawnshop"},
+    "bathhouses": {"label": "bathhouse"},
+    "kilns": {"label": "kiln"},
+    "farriers": {"label": "farrier"},
+    "tanning_yards": {"label": "tanning yard"},
+    "fire_towers": {"label": "fire tower"},
+    "drum_towers": {"label": "drum tower"},
+}
+
+
+def solid(key, x, y, w=18.0, h=14.0):
+    """One record of manifest key `key`, planted at (x, y). Mirrors the per-key fields the checks
+    index unconditionally, the same job the fixture builders above do for houses and yards."""
+    return {"x": x, "y": y, "w": w, "h": h, "rot": 0, **_SOLID_EXTRAS.get(key, {})}
+
+
+_HAZ_META = {"scale": "city", "ftpx": 3, "W": 1000, "H": 1000, "walled": True, "population": 3000}
+
+
+def _haz_base():
+    """A walled-city shell every hazard shares. It carries a wall + gate + ring road because the
+    city checks index them unconditionally; the hazards that are not under test sit far from
+    (500, 500), so only the one being exercised is under the planted struct."""
+    return {
+        "meta": dict(_HAZ_META),
+        "wall": WALL,
+        "gates": [[50, 500]],
+        "gate": [50, 500],
+        "ring_road": [[100, 100], [900, 100], [900, 900], [100, 900], [100, 100]],
+        "ring_road_width": 15,
+    }
+
+
+# (name, the check that must fire, where the struct goes, the hazard geometry laid under it)
+_HAZARDS = (
+    ("the town wall", "no_structure_on_wall", (500, 50), lambda: {}),
+    ("the moat", "no_structure_on_moat", (500, 500), lambda: {"moat": [[400, 500], [600, 500]], "moat_width": 22}),
+    ("the road", "no_structure_on_road", (500, 500), lambda: {"road": [[400, 500], [600, 500]], "road_width": 26}),
+    ("a street", "no_structure_on_street", (500, 500), lambda: {"town_streets": [{"pts": [[400, 500], [600, 500]], "w": 24}]}),
+    ("a stream", "no_structure_on_stream", (500, 500), lambda: {"streams": [{"poly": [[400, 500], [600, 500]], "w": 12}]}),
+    ("an irrigation channel", "no_structure_on_channel", (500, 500), lambda: {"channels": [{"poly": [[400, 500], [600, 500]], "w": 10, "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}}]}),
+    ("the cargo canal", "no_structure_on_canal", (500, 500), lambda: {"canals": [{"poly": [[400, 500], [600, 500]], "w": 20}]}),
+    ("the pond", "no_structure_on_pond", (500, 500), lambda: {"pond": [500, 500, 60, 40]}),
+    ("the manor walls", "no_structure_on_manor", (500, 500), lambda: {"manors": [{"x": 500, "y": 500, "w": 80, "h": 60, "rot": 0}]}),
+    ("a religious hall", "no_structure_on_religious", (500, 500), lambda: {"religious": [{"x": 500, "y": 500, "w": 60, "h": 40, "kind": "temple", "label": "Temple of Bishamon"}]}),
+    ("the gate furniture", "no_structure_on_gate", (500, 500), lambda: {"gate_structs": [{"x": 500, "y": 500, "w": 30, "h": 16, "rot": 0, "kind": "guardhouse"}]}),
+    ("a torii arch", "no_structure_on_torii", (500, 500), lambda: {"torii": [[500, 500, 10]]}),
+    ("another structure", "no_structure_overlaps", (500, 500), lambda: {"flophouses": [{"x": 500, "y": 500, "w": 30, "h": 22, "rot": 0, "label": "flophouse"}]}),
+    ("the ring road", "ring_road_kept_clear", (500, 500), lambda: {"ring_road": [[400, 500], [600, 500]], "ring_road_width": 15}),
+)
+
+
+@pytest.mark.parametrize("hazard,expect,where,build", _HAZARDS, ids=[h[0].replace(" ", "_") for h in _HAZARDS])
+def test_every_solid_struct_is_gated_off_every_hazard(hazard, expect, where, build):
+    missed = []
+    for key in check_village._OVERLAP_STRUCTS:
+        M = _haz_base()
+        M.update(build())
+        M.setdefault(key, []).append(solid(key, *where))
+        if expect not in f(M):
+            missed.append(key)
+    assert not missed, (
+        f"{missed} sit on {hazard} without tripping {expect} - every _OVERLAP_STRUCTS key must be gated off every "
+        f"hazard. The check is probably reading a hand-written list of manifest keys instead of solid_structs(M)."
+    )
+
+
+def test_granary_stores_are_solid_structs_for_every_keep_clear_rule():
+    """A granary's kura are solid buildings like any other, but the manifest nests them under
+    M['granary']['stores'] instead of a top-level list key, so the _OVERLAP_STRUCTS loop cannot
+    reach them - solid_structs splices them in by hand. This holds that splice: without it a
+    tax granary could be built across the patrol road and nothing would say so."""
+    M = _haz_base()
+    M["ring_road"] = [[400, 500], [600, 500]]
+    M["granary"] = {"x": 500, "y": 500, "w": 60, "h": 40, "stores": [{"x": 500, "y": 500, "w": 18, "h": 14, "rot": 0}]}
+    assert "ring_road_kept_clear" in f(M)
+    M["granary"]["stores"][0]["y"] = 300  # ...and off the lane it is fine
+    assert "ring_road_kept_clear" not in f(M)

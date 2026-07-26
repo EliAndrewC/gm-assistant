@@ -24,7 +24,7 @@ rules record their why next to the rule - see CLAUDE.md "Generation Behavior".)
 import json
 import math
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from settlement import (
@@ -242,7 +242,39 @@ _OVERLAP_EXEMPT = {
     "stable_yards": "the gate stables' beaten-earth working yard (s._stable_yard) - a feathered ground scatter (hitching rails, trough, dung heaps, litter; no animal glyphs - the maps render no humans or animals) that deliberately SURROUNDS its stables and fills the open pocket; a ground record, not a keep-clear structure (validated by stables_have_yards). `troughs` counts the watering point's troughs and `troughs_at` records the cluster center, which must hug a wellhead (validated by stable_troughs_beside_well); `troughs_box` and `rails` record the furniture's DRAWN extents, which must not intersect each other or any wellhead (wells_troughs_rails_clear_of_each_other)",
     "dikes": "the reclaimed-polder PERIMETER dike earthwork band (s.perimeter_dike) - a walked, lived-on planted bank the village lines and the feeder/drain channels + footbridges cross by design; a broad ground feature, not a keep-clear structure (validated by polder_dike_is_earthwork)",
 }
+_OVERLAP_SINGLETONS = ("governor_mansion",)  # solid footprints the manifest stores as ONE dict, not a list
 _OVERLAP_CLASSIFIED = set(_OVERLAP_STRUCTS) | set(_OVERLAP_TARGETS) | set(_OVERLAP_LINEAR) | set(_OVERLAP_EXEMPT)
+
+
+def solid_structs(M: Mapping[str, Any], *extra: str, exclude: tuple[str, ...] = ()) -> list[dict[str, Any]]:
+    """EVERY solid footprint on the map, read from the _OVERLAP_STRUCTS registry.
+
+    WHY THIS EXISTS (GM 2026-07-25). The `no_structure_on_*` battery has always been registry-driven:
+    it builds its rects from _OVERLAP_STRUCTS, so classifying a new feature there - which
+    `every_feature_classified_for_overlap` already FORCES - wires it into all thirteen hazards at
+    once (wall, moat, road, street, stream, channel, canal, pond, manor, religious hall, gate
+    furniture, torii, and every other structure). But a handful of keep-clear checks predate that
+    battery and hand-listed their own keys instead, so each new feature had to be remembered into
+    each of them - and a forgotten one looks exactly like a passing check.
+
+    That is precisely how the martial hall came to sit on Tango's ring road with a green gate: the
+    hall was correctly classified in _OVERLAP_STRUCTS and correctly cleared of all thirteen battery
+    hazards, but `ring_road_kept_clear` was reading its own list of eight keys that nobody had
+    updated. The fix is not to remember harder - it is for every keep-clear check to read the SAME
+    registry, which is what this helper is for, and for `test_every_solid_struct_is_gated_off_every_hazard`
+    to prove that each registered key really does trip each hazard's check.
+
+    `extra` names _OVERLAP_TARGETS keys a particular hazard must ALSO keep clear of - "religious"
+    for the ring road (a temple may not stand on the patrol lane), which is not in _OVERLAP_STRUCTS
+    because halls are what structs avoid rather than structs themselves. `exclude` drops keys a
+    particular rule deliberately does not govern; use it only with a stated reason at the call site,
+    since a silent omission is the exact bug this helper exists to prevent. Records without a drawn
+    footprint are skipped, so a caller can pass a key whose dicts are positional-only."""
+    out = [s for k in _OVERLAP_STRUCTS + extra if k not in exclude for s in (M.get(k) or [])]
+    out += [M[k] for k in _OVERLAP_SINGLETONS if k not in exclude and M.get(k)]
+    if M.get("granary") and "granary" not in exclude:
+        out += M["granary"]["stores"]
+    return [s for s in out if isinstance(s, dict) and "x" in s and "w" in s]
 
 
 def seg_closest(px: float, py: float, a: Pt, b: Pt) -> tuple[float, float]:
@@ -8649,7 +8681,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # other, but a government office keeps a clear gap from every other building/compound around it.
         OFFICE_GAP = 14
         offices = ([("the governor's yamen", _gv)] if _gv else []) + [(mi.get("name", "a ministry"), mi) for mi in M.get("ministries", [])]
-        others = M.get("buildings", []) + M.get("ministries", []) + M.get("religious", []) + M.get("flophouses", []) + M.get("merchant_estates", []) + ([_gv] if _gv else [])
+        # every solid footprint, from the registry - an office must not abut a martial hall or a
+        # brewery any more than it may abut a house (GM 2026-07-25; see solid_structs). The FUNERARY
+        # compounds are the one deliberate exclusion: the ruling clan's walled crypt standing against
+        # the governor's yamen is a real adjacency (the house's dead beside the house's seat), not a
+        # packing error, and Nagahara has drawn it that way since long before this check read the
+        # registry. Burial ground siting has its own battery (funerary_clear_of_fields, the
+        # burial-ground checks); this rule is about a bureau not being crowded by ordinary premises.
+        others = solid_structs(M, "religious", "merchant_estates", exclude=("cemeteries", "mausoleums", "cremation_grounds", "ossuaries"))
 
         def _edge_gap(a: dict[str, Any], b: dict[str, Any]) -> float:
             ax0, ay0, ax1, ay1 = _bb(a)
@@ -8721,7 +8760,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             wlanes = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])]
             lane_w = [st.get("w", 24) for st in M.get("town_streets", [])] + ([M.get("road_width", 26)] if M.get("road") else []) + [10 for _ in M.get("alleys", [])]
             _gov = M.get("governor_mansion")
-            structs = M.get("buildings", []) + M.get("flophouses", []) + M.get("religious", []) + M.get("ministries", []) + M.get("merchant_estates", []) + ([_gov] if _gov else [])
+            structs = solid_structs(M, "religious", "merchant_estates")  # registry-driven, so a new feature cannot silently host a wellhead
             bad_well = []
             for w in wells:
                 wx, wy, wr = w["x"], w["y"], w.get("r", 8)
@@ -9119,31 +9158,36 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not bad_meet,
                 f"street/alley(s) not meeting the Imperial road / ring road cleanly at a junction - stopping a sliver short of it or poking a sliver past it: {sorted(set(bad_meet))}",
             )
-            # the RING ROAD is a CLEAR patrol road: it must run clear of buildings, civic compounds
-            # (ministries, the governor's yamen, temples) and fields. The gate guard houses / inspection
-            # stations / towers DO sit along it (wall furniture, not in these lists, so exempt), and a
-            # ward fence may cross it - but only at a gated kido (enforced by city_samurai_ward_sealed,
-            # which has the ring road in its netlines). Overlap = the ring's BED passes through a footprint.
+            # the RING ROAD is a CLEAR patrol road: it must run clear of EVERY solid footprint and of
+            # fields. The gate guard houses / inspection stations / towers DO sit along it (wall
+            # furniture - `gate_structs` and `wall_towers` are overlap TARGETS and EXEMPT respectively,
+            # so the registry leaves them out), and a ward fence may cross it - but only at a gated kido
+            # (enforced by city_samurai_ward_sealed, which has the ring road in its netlines). Overlap =
+            # the ring's BED passes through a footprint.
+            #
+            # READS THE REGISTRY, NOT A HAND LIST (GM 2026-07-25). This check used to name its own eight
+            # keys, so every new feature had to be remembered into it - and the martial hall, correctly
+            # classified and correctly cleared of all thirteen no_structure_on_* hazards, sat squarely on
+            # Tango's ring road with the gate green because nobody had. See solid_structs' docstring.
             if ring_rd:
                 rbed = (M.get("ring_road_width", 15) - 6) / 2
-                rgov = M.get("governor_mansion")
 
                 def _foot(it: dict[str, Any]) -> list[tuple[float, float]]:
                     return rect_corners(it) if "rot" in it else rect_corners_xywh(it, 0)
 
+                # ...except an official NOTICE BOARD inside a GATE PRECINCT. A kosatsuba is street
+                # furniture, not a compound: a ~12x5 ft post-and-roof board that must stand within ~60
+                # real ft of a road where people pass (kosatsuba_by_the_road), which at a gate means the
+                # same crowded verge the guard house, inspection station and towers already line. Scoped
+                # to the precinct on purpose - a board out on an open stretch of patrol lane is still a
+                # defect. Radius matches the barbican keep-out city_wall_tower_coverage uses.
+                _kb_gates = [g for g in (M.get("gates") or [])] + ([M["gate"]] if M.get("gate") else [])
+
+                def _ring_exempt(it: dict[str, Any]) -> bool:
+                    return it.get("label") in (None, "notice board") and "vw" in it and any(math.hypot(it["x"] - g[0], it["y"] - g[1]) < 130 for g in _kb_gates)
+
                 on_ring = [
-                    it.get("name") or it.get("label") or it.get("kind") or "compound"
-                    for it in (
-                        M.get("buildings", [])
-                        + M.get("ministries", [])
-                        + M.get("religious", [])
-                        + ([rgov] if rgov else [])
-                        + M.get("cemeteries", [])
-                        + M.get("mausoleums", [])
-                        + M.get("cremation_grounds", [])
-                        + M.get("ossuaries", [])
-                    )
-                    if footprint_on_line(_foot(it), ring_rd, rbed)
+                    it.get("name") or it.get("label") or it.get("kind") or "compound" for it in solid_structs(M, "religious") if footprint_on_line(_foot(it), ring_rd, rbed) and not _ring_exempt(it)
                 ]
                 on_ring += ["field:" + f["name"] for f in fields if footprint_on_line(f["outline"], ring_rd, rbed)]
                 check(
@@ -9325,8 +9369,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             mest_wm = [(round(mest[i]["x"]), round(mest[i]["y"])) for i in range(len(mest)) if footprint_on_line(mest_corners[i], w, 9) or (moat and footprint_on_line(mest_corners[i], moat, 13))]
             check("city_merchant_estates_clear_of_wall_moat", not mest_wm, f"walled merchant estate(s) overlapping the city wall or moat (keep them well inside the rampart): {mest_wm}")
             civics = M.get("religious", []) + M.get("ministries", []) + ([M["governor_mansion"]] if M.get("governor_mansion") else [])
-            other_struct = [rect_corners_xywh(o, 0) for o in civics] + [rect_corners(b) for b in M.get("buildings", [])]
-            other_xy = [(o["x"], o["y"]) for o in civics] + [(b["x"], b["y"]) for b in M.get("buildings", [])]
+            # registry-driven (GM 2026-07-25): an estate court may not swallow ANY solid footprint
+            others_me = [o for o in solid_structs(M, "religious") if o is not None]
+            other_struct = [rect_corners(o) if "rot" in o else rect_corners_xywh(o, 0) for o in others_me]
+            other_xy = [(o["x"], o["y"]) for o in others_me]
             mest_bld = []
             for i in range(len(mest)):
                 e = mest[i]
