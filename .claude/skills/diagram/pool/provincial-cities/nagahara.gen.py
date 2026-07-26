@@ -66,13 +66,11 @@ CX, CY, RX, RY = 1480, 1330, round(BUDGET.wall.rx), round(BUDGET.wall.ry)  # 452
 NRING = 20
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)), round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, EGATE, WGATE_PT = WALL[0], WALL[5], WALL[6]
+WARD_FENCE = [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)]  # hoisted from the s.ward call below so the gates' ground can be reserved up front
 KIDO_SPOTS = [(1469, 1330), (1469, 1403), (1062, 1311), (1234, 1660)]
-# reservations are SYMMETRIC squares now that the kido rotates onto the fence tangent and hangs
-# its guard box on the ward-interior flank (GM 2026-07-24) - which side the box lands on depends
-# on the fence direction, so the old one-sided rects (tuned to the legacy axis-aligned flanks)
-# no longer bound it; +/-45 x +/-40 covers the rotated glyph at any angle with the ~17px margin
-for kx, ky in KIDO_SPOTS:
-    s.block_polys.append([(kx - 45, ky - 40), (kx + 45, ky - 40), (kx + 45, ky + 40), (kx - 45, ky + 40)])
+# s.kido_reservation asks the ENGINE for the ground each gate will take (GM 2026-07-26), rather than
+# a symmetric square guessed to be big enough at any angle: the glyph's angle follows the LANE it
+# bars and its guard box slides clear of the roadbed, so only the engine knows its real extent
 s.city_wall(
     WALL,
     gates=[NGATE, EGATE],
@@ -92,6 +90,13 @@ RIVER_W = s.river(RIVER)
 MOAT = s.moat(WALL, gap=24, river=RIVER, river_cut=136)  # river_cut scaled with the x0.9083 shrink
 RING = s.ring_road(WALL, inset=22)
 s.bound = [list(p) for p in RING]
+
+# the WARD GATES' ground, reserved before anything builds. ORDERING: this must run AFTER the ring
+# road is drawn - two of the four gates bar the ring road, and kido_reservation can only square the
+# gate to a lane the manifest already carries (the other two bar streets that meet their fence at a
+# right angle, where lane and fence give the same answer anyway).
+for kx, ky in KIDO_SPOTS:
+    s.block_polys.append(s.kido_reservation(kx, ky, WARD_FENCE))
 
 
 # ---- DECLARED QUARTERS (feature 006): tile the interior into zoned wedges split at the crossroads
@@ -688,7 +693,7 @@ s.pack((1073, 1309, 1469, 1612), (["samurai"] * 3 + ["samurai_large"]) * 150, st
 s.label(
     1426, 1534, "samurai neighborhood", 10, italic=True, color="#3A352C"
 )  # E of the governor's mansion among the ward's samurai (x1426: the label box's W edge must clear the mansion's E edge at x~1365), clear of the burakumin rows to the S
-s.ward("samurai", [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)], gates=[(1469, 1330), (1469, 1403), (1062, 1311), (1234, 1660)])  # 2 street kido + 2 ring-road kido; each aligns to its fence run (the SW ring-road kido sits on the ~159deg slant) and hangs its guard box ward-side - s.ward computes both
+s.ward("samurai", WARD_FENCE, gates=[(1469, 1330), (1469, 1403), (1062, 1311), (1234, 1660)])  # 2 street kido + 2 ring-road kido; each aligns to its fence run (the SW ring-road kido sits on the ~159deg slant) and hangs its guard box ward-side - s.ward computes both
 s.label(1433, 1317, "samurai ward gate", 9, italic=True, color="#5A4326")  # inside the ward by the E-fence kido, off the merchant frontage
 
 # ====================================================================== N + NE: the LABORER quarter

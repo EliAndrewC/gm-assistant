@@ -36,6 +36,9 @@ from settlement import (
     box_gap,
     crop_boxes,
     forest_frame_span,
+    kido_bar_deg,
+    lane_runs,
+    lane_through_gate,
     moat_current_at,
     rail_quad,
     sat_overlap,
@@ -929,6 +932,21 @@ def onmap_field_edge(poly: Poly, x0: float, y0: float, x1: float, y1: float, eps
         if not on_rect:
             total += math.hypot(b[0] - a[0], b[1] - a[1])
     return total
+
+
+def kido_quads(kd: Mapping[str, Any]) -> list[Poly]:
+    """A ward gate's drawn footprint as its TRUE (rotated) parts - the roofed bar, its two posts and
+    the guard box. Falls back to the axis-aligned `bbox` for a legacy manifest that never recorded
+    the parts. Use this, not `bbox`, for any keep-clear rule: once a kido turns onto the lane it
+    bars, its AABB can be half again the size of the glyph and reads as overlapping neighbors the
+    gate plainly clears (Nagahara's SW gate at 115 degrees, GM 2026-07-26)."""
+    parts = kd.get("parts")
+    if parts:
+        return [[(float(c[0]), float(c[1])) for c in q] for q in parts]
+    bb = kd.get("bbox")
+    if not bb:
+        return []
+    return [[(bb[0], bb[1]), (bb[2], bb[1]), (bb[2], bb[3]), (bb[0], bb[3])]]
 
 
 def footprint_on_line(sc: Poly, sp: Poly, hw: float) -> bool:
@@ -9177,14 +9195,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         shortfalls = lane_ward_shortfalls(M)
         check("city_lanes_reach_ward_gates", not shortfalls, f"lane(s) at a neighborhood (ward) wall that should extend to it and end at a gate: {shortfalls}")
 
-        # THE KIDO SITS IN THE FENCE, SO IT ALIGNS WITH THE FENCE (GM 2026-07-24): the roofed bar
-        # spans the gap in the ward fence - on a slanted fence run (Nagahara's SW ring-road kido on
-        # a ~159deg run, Tango's S jog kido on a ~44deg run) an axis-aligned glyph reads as a stamp
-        # dropped on the map, not a gate IN the fence. Same doctrine as city_wall_towers_aligned
-        # for the rampart towers. s.kido records the drawn angle as 'rot' (legacy manifests fall
-        # back to the horizontal flag: True -> 90, False -> 0); it must match the nearest fence
-        # segment's tangent mod 180 within ~7 degrees. The guard box needs no separate check - it
-        # is part of the kido group and rotates with it (s.ward puts it on the ward-interior flank).
+        # THE KIDO SQUARES TO WHAT IT BARS (GM 2026-07-26, refining the 2026-07-24 fence rule).
+        # A kido is a gate across a WAY: it is shut at night to stop traffic, so the roofed bar
+        # stands SQUARE ACROSS THE LANE that runs through it, and the fence meets the gate at
+        # whatever angle the fence happens to run. The two readings agree wherever a lane crosses
+        # its fence squarely - which is most crossings, and why the fence rule held up for two
+        # days - and diverge exactly where a lane meets the fence obliquely: Tango's SW ring-road
+        # gate, drawn on its ~44deg fence jog while the ring road passed at ~172deg, sat 38 degrees
+        # off square to the road it was supposedly barring and read as a glyph dropped on the
+        # roadbed. Only a gate with NO lane through it falls back to the fence tangent (still never
+        # an axis-aligned stamp on a slanted run - Nagahara's SW kido, Tango's S jog, both frozen
+        # in pool/regressions/). lane_through_gate/kido_bar_deg are the SAME functions s.ward
+        # places with, so placer and checker cannot drift. s.kido records the drawn angle as 'rot'
+        # (legacy manifests fall back to the horizontal flag: True -> 90, False -> 0); it must match
+        # within ~7 degrees mod 180.
         wards_k = M.get("wards", [])
         if wards_k:
             kido_off = []
@@ -9198,18 +9222,41 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                             best2 = (d8, math.degrees(math.atan2(b2[i8 + 1][1] - b2[i8][1], b2[i8 + 1][0] - b2[i8][0])))
                 if best2 is None or best2[0] > 16:
                     continue  # a free-standing kido (nothing near enough to align to)
-                want8 = best2[1] % 180.0
+                lane8 = lane_through_gate(M, kd2["x"], kd2["y"], best2[1])
+                want8 = (kido_bar_deg(lane8[0], best2[1]) if lane8 else best2[1]) % 180.0
                 got8 = float(kd2["rot"]) % 180.0 if "rot" in kd2 else (90.0 if kd2.get("horizontal") else 0.0)
                 diff8 = abs(got8 - want8)
                 diff8 = min(diff8, 180.0 - diff8)
                 if diff8 > 7.0:
-                    kido_off.append([round(kd2["x"]), round(kd2["y"]), round(diff8)])
+                    kido_off.append([round(kd2["x"]), round(kd2["y"]), round(diff8), "lane" if lane8 else "fence"])
             check(
                 "kido_aligned_with_ward_fence",
                 not kido_off,
-                f"ward gate(s) not aligned with their fence (x, y, degrees off): {kido_off} - the kido's roofed bar "
-                f"spans the gap IN the fence, so it rotates with the local fence tangent (s.ward computes it from the "
-                f"boundary; pass rot= to s.kido for a hand-placed gate)",
+                f"ward gate(s) not square to what they bar (x, y, degrees off, what it should follow): {kido_off} - a kido "
+                f"shuts a WAY, so its roofed bar stands SQUARE ACROSS the lane running through it; only a gate with no lane "
+                f"through it follows the local fence tangent (s.ward computes both; pass rot= to s.kido for a hand-placed gate)",
+            )
+            # ...AND THE GUARD BOX STANDS ON THE VERGE, NOT IN THE ROAD (GM 2026-07-26). The watch
+            # box beside the gate is a small building - the one solid thing in the kido group - and
+            # a patrol road or street with a shack in its bed is not passable. It is not covered by
+            # the overlap registry (the whole kido group is deliberately overlap-exempt, since the
+            # bar MUST span the lane and the fence), so it needs this one rule of its own. The
+            # placement side slides the box out until it clears every bed by a ~12 ft verge; this
+            # fires only on an actual encroachment of the drawn bed, leaving that verge as slack.
+            box_on_lane = []
+            for kd3 in M.get("kido", []):
+                gbox = kd3.get("guard")
+                if not gbox:
+                    continue  # a legacy manifest that never recorded the box
+                gpoly = [(float(c[0]), float(c[1])) for c in gbox]
+                if any(footprint_on_line(gpoly, pts, half) for pts, half in lane_runs(M)):
+                    box_on_lane.append([round(kd3["x"]), round(kd3["y"])])
+            check(
+                "kido_guard_box_clear_of_lanes",
+                not box_on_lane,
+                f"ward gate(s) whose guard box stands IN a roadbed: {box_on_lane} - the gate's watch box is a building on the "
+                f"verge beside the way, never an obstruction in it (s.kido slides it clear; a curving ring road is the case "
+                f"straight-line arithmetic misses)",
             )
 
         if meta.get("walled"):
@@ -9377,12 +9424,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # the neighboring wall vertex.
             k_hit = []
             for kd in M.get("kido", []):
-                bb = kd.get("bbox")
-                if not bb:
-                    continue
-                kc = [(bb[0], bb[1]), (bb[2], bb[1]), (bb[2], bb[3]), (bb[0], bb[3])]
-                for t in M.get("wall_towers", []) + [g_ for g_ in M.get("gate_structs", []) if g_.get("kind") == "tower"]:
-                    if sat_overlap(kc, rect_corners({"x": t["x"], "y": t["y"], "w": t.get("w", 38), "h": t.get("h", 38), "rot": t.get("rot", 0)})):
+                for kc in kido_quads(kd):
+                    if any(
+                        sat_overlap(kc, rect_corners({"x": t["x"], "y": t["y"], "w": t.get("w", 38), "h": t.get("h", 38), "rot": t.get("rot", 0)}))
+                        for t in M.get("wall_towers", []) + [g_ for g_ in M.get("gate_structs", []) if g_.get("kind") == "tower"]
+                    ):
                         k_hit.append((round(kd["x"]), round(kd["y"])))
                         break
             check(
@@ -9418,12 +9464,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # under the guard box (GM, 2026-07: caught twice, on both fence-end gates)
             kb_hit = []
             for kd in M.get("kido", []):
-                bb = kd.get("bbox")
-                if not bb:
-                    continue
-                kc = [(bb[0], bb[1]), (bb[2], bb[1]), (bb[2], bb[3]), (bb[0], bb[3])]
-                for key_ in ("buildings", "houses", "flophouses", "storehouses"):
-                    if any(sat_overlap(kc, rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 20), "h": it.get("h", 14), "rot": it.get("rot", 0)})) for it in M.get(key_, []) or []):
+                for kc in kido_quads(kd):
+                    if any(
+                        sat_overlap(kc, rect_corners({"x": it["x"], "y": it["y"], "w": it.get("w", 20), "h": it.get("h", 14), "rot": it.get("rot", 0)}))
+                        for key_ in ("buildings", "houses", "flophouses", "storehouses")
+                        for it in M.get(key_, []) or []
+                    ):
                         kb_hit.append((round(kd["x"]), round(kd["y"])))
                         break
             check(

@@ -2589,6 +2589,40 @@ def test_kido_aligned_with_ward_fence_fires_when_axis_aligned_on_a_slant_and_pas
     assert "kido_aligned_with_ward_fence" not in f(free)
 
 
+def test_kido_aligned_squares_to_the_lane_it_bars_not_the_oblique_fence_it_hangs_in():
+    # GM 2026-07-26: a kido shuts a WAY, so where a lane runs through the seat the bar stands
+    # SQUARE ACROSS THE LANE, and the fence meets it at whatever angle the fence runs. Tango's SW
+    # ring-road gate followed its ~44deg fence jog while the road it barred ran at ~172deg - 38deg
+    # off square to its own roadbed. Here: a 45deg fence, a HORIZONTAL street through the gate, so
+    # the bar wants 90deg (vertical, across the street), NOT the fence's 45.
+    ward = [{"name": "w", "boundary": [[300, 300], [600, 600]], "z": 1, "wall_caps": []}]
+    street = [{"pts": [[300, 450], [600, 450]], "w": 18}]
+    fenced = _fort_city(wards=ward, town_streets=street, kido=[{"x": 450, "y": 450, "rot": 45.0, "bbox": [430, 430, 470, 470]}])
+    assert "kido_aligned_with_ward_fence" in f(fenced)  # square to the FENCE is now the defect, because a lane runs through
+    squared = _fort_city(wards=ward, town_streets=street, kido=[{"x": 450, "y": 450, "rot": 90.0, "bbox": [430, 430, 470, 470]}])
+    assert "kido_aligned_with_ward_fence" not in f(squared)
+    # a street laid ALONGSIDE the fence is not something the gate bars, so it must not be what the
+    # gate squares to - the fence tangent still rules there
+    along = _fort_city(wards=ward, town_streets=[{"pts": [[300, 290], [600, 590]], "w": 18}], kido=[{"x": 450, "y": 450, "rot": 45.0, "bbox": [430, 430, 470, 470]}])
+    assert "kido_aligned_with_ward_fence" not in f(along)
+
+
+def test_kido_guard_box_clear_of_lanes_fires_when_the_watch_box_stands_in_the_roadbed():
+    # GM 2026-07-26 (Tango's two ring-road ward gates): the gate's watch box is a small BUILDING on
+    # the verge beside the way - the bar spans the road, the box does not stand in it. The whole
+    # kido group is overlap-exempt (the bar must cross the lane and the fence), so this is the one
+    # rule that protects the box, and it needs the box's own recorded footprint: the group bbox
+    # cannot tell the bar from the shack.
+    ward = [{"name": "w", "boundary": [[300, 450], [600, 450]], "z": 1, "wall_caps": []}]
+    ring = [[200, 500], [800, 500]]
+    inbed = _fort_city(wards=ward, ring_road=ring, ring_road_width=20, kido=[{"x": 450, "y": 450, "rot": 0.0, "bbox": [430, 430, 470, 510], "guard": [[440, 492], [460, 492], [460, 508], [440, 508]]}])
+    assert "kido_guard_box_clear_of_lanes" in f(inbed)
+    verge = _fort_city(wards=ward, ring_road=ring, ring_road_width=20, kido=[{"x": 450, "y": 450, "rot": 0.0, "bbox": [430, 430, 470, 470], "guard": [[440, 452], [460, 452], [460, 468], [440, 468]]}])
+    assert "kido_guard_box_clear_of_lanes" not in f(verge)
+    legacy = _fort_city(wards=ward, ring_road=ring, ring_road_width=20, kido=[{"x": 450, "y": 450, "rot": 0.0, "bbox": [430, 430, 470, 510]}])  # a manifest from before the box was recorded
+    assert "kido_guard_box_clear_of_lanes" not in f(legacy)
+
+
 def test_city_moat_junction_angles_fires_on_square_tees_and_passes_when_tilted():
     # GM 2026-07-24 (Nagahara hydrology review): both moat-river junctions met the river as
     # identical square tees - an rfoot-projection artifact. The outlet must sweep downstream
