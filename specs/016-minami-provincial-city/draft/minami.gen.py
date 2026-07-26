@@ -180,7 +180,7 @@ for _lx, _ly2, _hw in ((1560, 1188, 64), (1150, 1348, 56), (1214, 1444, 42), (15
 _LBL_DONE = 0
 
 
-def reserve_caption_ground(pad=14):
+def reserve_caption_ground(pad=11):
     """Reserve, as a CORRIDOR, the ground under every caption emitted since the last call.
 
     A block poly is not enough on its own. The urban packs centre-test block_polys (_fits ->
@@ -273,7 +273,7 @@ grid([MER_V, LAB_V, SW_V, EAST_ST, WARD_V])
 ALLEYS = [[(1120, 1124), (1120, 1330)], [(1490, 1014), (1490, 1150)], [(1640, 1150), (1640, 1230)], [(1300, 1330), (1300, 1606)]]
 alleys(ALLEYS)
 for _al in ALLEYS:
-    s.corridors.append((_al, 8))
+    s.corridors.append((_al, 20))
 
 # ====================================================================== THE EIGHT PRECINCTS
 TW, TH = s.px(96), s.px(66)  # the seven siblings, ~0.70 acre drawn
@@ -348,6 +348,7 @@ for _m in s.M["mausoleums"]:
 for _L in s.M["labels"]:
     if len(_L) > 5 and _L[5].startswith("Ministry"):
         s.block_polys.append([(_L[0] - 17, _L[1] - 13), (_L[2] + 17, _L[1] - 13), (_L[2] + 17, _L[3] + 13), (_L[0] - 17, _L[3] + 13)])
+s.block_polys.append([(1724, 1384), (1762, 1384), (1762, 1430), (1724, 1430)])
 s.martial_hall(1700, 1500, label_xy=(1700, 1503))
 s.dojos([(1452, 1408), (1740, 1420)])
 reserve_caption_ground()
@@ -365,7 +366,7 @@ for _y0, _x1 in ((1310, 1780), (1596, 1712), (1650, 1690)):
 # the ward's west flank, its east flank below the martial hall, and the NE pocket.
 s.rowpack((1424, 1470, 1478, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
 s.rowpack((1664, 1528, 1714, 1642), (["servant"] * 4 + ["laborer"]) * 30, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring
-s.rowpack((1682, 1428, 1784, 1492), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics
+s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
 s.pack((1452, 1312, 1782, 1672), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
 s.label(1580, 1300, "samurai neighborhood", 10, italic=True, color="#3A352C")
 s.ward("samurai", WARD_FENCE, gates=KIDO_SPOTS)
@@ -603,7 +604,7 @@ s.cemetery(600, 1700, 92, 66, parish=False, label="common burial ground")
 s.cremation_ground(604, 1800)
 s.ossuary(596, 1614)
 
-s.boundary_marker(742, 1358)  # ON the west road verge, where the road leaves clean ground
+s.boundary_marker(761, 1312)  # ON the west road verge, where the road leaves clean ground (seat from site_justice.py)
 s.execution_ground(642, 1374, rot=6, label_above=True)
 
 s.bridges()
@@ -773,6 +774,7 @@ for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390
     s.place_wells(_wr, spacing=38, near=46)
 for _wr in ((1100, 1200, 1400, 1320), (1200, 1350, 1400, 1450), (1220, 1500, 1400, 1620), (1440, 1180, 1560, 1270), (1080, 1220, 1240, 1320), (1260, 1220, 1400, 1320)):
     s.place_wells(_wr, spacing=34, near=44)
+s.place_wells((1540, 1000, 1700, 1100), spacing=30, near=42)  # the north laborer terraces outgrew the (1605,1047) head
 
 s.crop_city(margin=30, west=70)
 s.title("Minami")
