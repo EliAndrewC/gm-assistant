@@ -62,6 +62,11 @@ _TUB_GROUP_RE = re.compile(rf'<g fill="{re.escape(FIRE_WATER_FILL)}"[^>]*>(.*?)<
 TUB_MAX_GAP_FT: float = 3.5  # a wall-hugging tub sits ~1.7-2 ft from a wall (its own radius + eaves);
 # beyond this it is adrift in the court with no roof draining into it.
 TUB_WELL_MIN_PX: float = 1.0  # a fire-water tub overlapping a well glyph by more than this sits ON it
+TUB_BLDG_MIN_PX: float = 0.5  # ...and reaching this far past a building's edge, it is drawn INTO the
+# building. A tub is meant to stand ~1.7-2 ft OFF the wall, so unlike a wall-abutting structure it has
+# no legitimate flush case - any real contact is a defect and this is a rounding floor, not a
+# tolerance. Same 0.5 px floor as WALL_OVERLAP_MIN_PX and for the same reason: emit rounding and
+# stroke width put sub-pixel ink over an edge that is geometrically clear.
 
 # --- text labels (for the layer/legibility/proximity checks) ---
 _TEXT_RE = re.compile(r"<text\s([^>]*)>(.*?)</text>", re.DOTALL)
@@ -611,34 +616,47 @@ def fire_water_adrift(plan: ParsedPlan, max_gap_ft: float = TUB_MAX_GAP_FT) -> l
 
 
 @dataclass(frozen=True)
-class TubIndoors:
-    """A fire-water tub drawn INSIDE a building instead of against its outside wall."""
+class TubInBuilding:
+    """A fire-water tub whose glyph reaches into a building instead of standing clear of it."""
 
     x: float
     y: float
-    depth_ft: float  # how far the tub's center lies inside the footprint
+    into_ft: float  # how far the tub's BODY reaches past the footprint edge
 
 
-def tubs_indoors(plan: ParsedPlan) -> list[TubIndoors]:
-    """Fire-water tubs standing INSIDE a building footprint rather than against its outside wall.
+def tubs_in_buildings(plan: ParsedPlan, min_px: float = TUB_BLDG_MIN_PX) -> list[TubInBuilding]:
+    """Fire-water tubs whose glyph overlaps a building footprint instead of standing clear of it.
 
     A tensuioke stands in the open at the foot of a downspout, catching what the roof sheds, so
-    it belongs OUTSIDE the wall it serves. Drawn inside the footprint it is fed by nothing and
+    it belongs OUTSIDE the wall it serves. Drawn into the footprint it is fed by nothing and
     stands where no bucket line can reach it - the two things the tub exists for. This is the
     companion of `fire_water_adrift`: that check pulls a tub IN toward a building, this one keeps
     it OUT of one, and only the narrow band along the outside wall - where a real tub stands -
-    satisfies both. Worst (deepest inside) first.
+    satisfies both. Worst (deepest in) first.
+
+    The measure is the DRAWN DISC's penetration past the nearest footprint edge, not its center's
+    position (GM catch 2026-07-26, Ubame's karo's-house tub). A center test asks "is the tub
+    indoors?", but what the GM sees is INK ON INK, and a tub whose center sits a hair outside the
+    wall still has a quarter of its body inside the room - the same defect, drawn smaller. Center
+    tests are also discontinuous: a tub creeping in registers nothing at all until its center
+    crosses, then jumps to a whole radius. Penetration rises smoothly from the first pixel of
+    contact, so the check has no blind band where a real overlap scores zero. Disc geometry
+    rather than the parsed square bbox because a tub set diagonally off a building CORNER
+    overlaps the bbox while its round body stands clear - a bbox test would flag a good tub.
     """
-    out: list[TubIndoors] = []
+    out: list[TubInBuilding] = []
     for t in plan.tubs:
-        cx, cy = t.x + t.w / 2, t.y + t.h / 2
-        depth = 0.0
+        cx, cy, rad = t.x + t.w / 2, t.y + t.h / 2, t.w / 2
+        into = 0.0
         for b in plan.buildings:
-            if b.x <= cx <= b.x2 and b.y <= cy <= b.y2:
-                depth = max(depth, min(cx - b.x, b.x2 - cx, cy - b.y, b.y2 - cy))
-        if depth > 0:
-            out.append(TubIndoors(cx, cy, depth / FTPX))
-    out.sort(key=lambda t: t.depth_ft, reverse=True)
+            gap = _point_rect_dist(cx, cy, b)
+            # center outside: the disc reaches (rad - gap) past the edge. Center inside: it reaches
+            # its own radius PLUS the center's depth, so the two cases join continuously at gap=0.
+            inside = min(cx - b.x, b.x2 - cx, cy - b.y, b.y2 - cy) if gap == 0 else -gap
+            into = max(into, rad + inside)
+        if into >= min_px:
+            out.append(TubInBuilding(cx, cy, into / FTPX))
+    out.sort(key=lambda t: t.into_ft, reverse=True)
     return out
 
 
@@ -1104,13 +1122,13 @@ def format_report(plan: ParsedPlan, cell: int = 2) -> str:
         lines.append("    (no fire-water tubs in this plan)")
     else:
         adrift = fire_water_adrift(plan)
-        indoors = tubs_indoors(plan)
-        if not adrift and not indoors:
-            lines.append(f"    (all {len(plan.tubs)} tubs sit outside, against a building)")
+        intruding = tubs_in_buildings(plan)
+        if not adrift and not intruding:
+            lines.append(f"    (all {len(plan.tubs)} tubs sit outside, clear of every building)")
         lines += [f"    tub at svg({t.x:.0f},{t.y:.0f}) is {t.gap_ft:.1f} ft from the nearest building - move it to a wall/eaves" for t in adrift]
         lines += [
-            f"    TUB INDOORS: a fire-water tub at svg({t.x:.0f},{t.y:.0f}) stands {t.depth_ft:.1f} ft INSIDE a building - a tensuioke is gutter-fed and bucket-served, so move it OUT against the wall"
-            for t in indoors
+            f"    TUB IN BUILDING: a fire-water tub at svg({t.x:.0f},{t.y:.0f}) reaches {t.into_ft:.1f} ft INTO a building - a tensuioke is gutter-fed and bucket-served, so move it OUT clear of the wall"
+            for t in intruding
         ]
     lines.append("LAYER/LABEL checks:")
     occ = occluded_foreground(plan)
