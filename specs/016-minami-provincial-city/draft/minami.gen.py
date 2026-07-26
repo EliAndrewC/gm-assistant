@@ -243,6 +243,7 @@ s.bridge(818, 1332, 4, RIVER_W + 26, 15)
 # navigation entrance (the Suzhou pattern).
 CANAL = [MOAT[-2], _ring_rel(1051, 1565), _ring_rel(1128, 1572)]
 s.canal(CANAL)
+s.corridors.append((CANAL, 30))
 s.water_gate(*_ring_rel(1051, 1565), rot=152)
 s.dock(*_ring_rel(1152, 1574), 54, 34)
 s.bridge(*_ring_rel(1098, 1568), 84, 34, 12)  # the ring road bridges the canal just inside the wall
@@ -379,7 +380,7 @@ precinct(1268, 1490, "Daikoku", [(1268, 1532)], graveyard=True)
 # ---- THE SHARED BURIAL GROUNDS. Eight precincts do NOT get eight graveyards (the five above
 # declare graveyard=False): they are economic institutions holding forest usufruct, not eight
 # parishes, and burial ground is constrained by suitable LAND rather than by foundation count.
-s.cemetery(1232, 1042, 46, 32, label="graveyard", label_above=True)  # Inari's
+s.cemetery(1232, 1042, 46, 32, label="graveyard")  # Inari's
 s.cemetery(1046, 1246, 42, 30, label="graveyard")  # Ebisu's
 s.cemetery(1358, 1540, 42, 30, label="graveyard")  # Daikoku's
 
@@ -420,6 +421,7 @@ for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
 # lays contiguous terraces. Density added here therefore has to come from rows, not from scraps.
 # The three strips are the ground the mansion, its forecourt block and the ministry aprons leave:
 # the ward's west flank, its east flank below the martial hall, and the NE pocket.
+s.block_polys.append([(1454, 1484), (1492, 1484), (1492, 1606), (1454, 1606)])
 s.rowpack((1440, 1470, 1494, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
 s.rowpack((1664, 1528, 1714, 1642), (["servant"] * 4 + ["laborer"]) * 30, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring
 s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
@@ -447,16 +449,16 @@ for _i, _y0 in enumerate(range(1164, 1268, 52)):
     s.rowpack((1410, _y0, 1802, _y0 + 44), _merstrip if _i % 2 else _lab, court_every=3, eave_ft=2)
 s.rowpack((1424, 1132, 1796, 1162), _lab, court_every=3, eave_ft=2)
 
-front([CROSS_H], (["merchant"] + ["laborer_large"] + ["shop"] * 2) * 22, spacing=19, rows=2)
+front([CROSS_H], (["merchant"] * 3 + ["shop"]) * 22, spacing=19, rows=2)
 s.label(1560, 1188, "laborer neighborhoods", 10, italic=True, color="#5A4326")
 
 # ====================================================================== NW: merchants + the dock
-s.fire_tower(1352, 1160, label="fire tower")
+s.fire_tower(1362, 1120, label="fire tower")
 
 _n_est = s.merchant_estates([(1330, 1372, "north"), (1256, 1104, "east"), (1210, 1620, "east")])
 _ML_SPOTS = [(1344, 1380), (1268, 1104)][_n_est - 1 :]
 s.frontage([(1040, 1330), (1390, 1330)], (["merchant"] * 5 + ["shop"]) * 18, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(46))
-front([MER_V], (["merchant"] * 2 + ["shop"] * 2) * 14, spacing=19, rows=2)
+front([MER_V], (["merchant"] * 3 + ["shop"]) * 14, spacing=19, rows=2)
 s.place_wells((1044, 1034, 1380, 1300), spacing=54)
 _mer = ["merchant_house"] * 650
 for _y0 in range(1036, 1148, 56):
@@ -503,8 +505,8 @@ QUAY = [(908, 1188), (908, 1290)]
 s.frontage(QUAY, ["shop"] * 16, skip=ROAD, width=s.lw(18), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(30))
 s.label(916, 1164, "wharf", 10, italic=True, color="#5A4326")
 # the river gate's own approach-stall string, and the north gate's market
-s.frontage([(700, 1382), (866, 1376)], ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(20), fill=True)
-s.frontage([(1300, 828), (1318, 700), (1330, 624)], ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(20), fill=True)
+s.frontage([(700, 1376), (866, 1370)], ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(20), fill=True)
+s.frontage([(1351, 828), (1335, 700), (1327, 624)], ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, rows=1, jitter=1, setback=s.px(20), fill=True)
 s.label(1236, 790, "gate market", 9, italic=True, color="#5A4326")
 
 # samurai country estates: dispersed walled compounds NORTHEAST of the city, toward Otosan Uchi.
@@ -826,7 +828,7 @@ s.place_wells(SW_Q, spacing=42, near=48)
 s.place_wells((1440, 960, 1720, 1240), spacing=46, near=48)
 s.place_wells((1020, 1020, 1382, 1300), spacing=46, near=48)
 s.place_wells((1020, 1370, 1382, 1670), spacing=46, near=48)
-for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390, 1690), (1010, 1400, 1130, 1520), (1260, 1440, 1380, 1620), (1370, 1000, 1490, 1110)):
+for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390, 1690), (1010, 1400, 1130, 1520), (1260, 1440, 1380, 1620), (1370, 1000, 1490, 1110), (1040, 1420, 1180, 1560), (1240, 1500, 1380, 1640), (1400, 1010, 1520, 1120)):
     s.place_wells(_wr, spacing=38, near=46)
 for _wr in ((1100, 1200, 1400, 1320), (1200, 1350, 1400, 1450), (1220, 1500, 1400, 1620), (1440, 1180, 1560, 1270), (1080, 1220, 1240, 1320), (1260, 1220, 1400, 1320)):
     s.place_wells(_wr, spacing=34, near=44)
