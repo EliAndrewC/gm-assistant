@@ -47,48 +47,31 @@
  ],
  "tanning_yards": [
   {
-   "x": 466,
-   "y": 500,
+   "x": 200,
+   "y": 473,
    "w": 58,
    "h": 41,
-   "rot": 90,
+   "rot": 0,
    "label": "tanning yard"
   }
  ],
- "fields": [
-  {
-   "name": "t-ne",
-   "kind": "paddy",
-   "outline": [
-    [
-     300,
-     400
-    ],
-    [
-     480,
-     400
-    ],
-    [
-     480,
-     600
-    ],
-    [
-     300,
-     600
-    ]
+ "river": {
+  "poly": [
+   [
+    216,
+    342
    ],
-   "bbox": [
-    300,
-    400,
-    480,
-    600
+   [
+    354,
+    550
    ]
-  }
- ],
+  ],
+  "w": 80
+ },
  "_regression": {
   "fires": [
-   "tanning_yard_clear_of_fields"
+   "tanning_yard_square_to_its_water"
   ],
-  "source": "test_checks.py::test_tanning_yard_clear_of_fields_fires_on_a_paddy"
+  "source": "test_checks.py::test_tanning_yard_square_to_its_water_measures_a_wide_course_from_its_BANK"
  }
 }

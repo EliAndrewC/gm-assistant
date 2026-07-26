@@ -8569,6 +8569,63 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"basin that cannot carry a tamped work floor, and the pits' lime and bate liquor poison cropping "
                 f"soil. Tested against field outlines, dry plots, and flower fields, rotation-aware",
             )
+            # ... AND IT LIES ALONG THE BANK IT WORKS (GM 2026-07-26). A tanning yard is a working
+            # FRONTAGE, not a building: the soaking pits and the intake sit on the water side
+            # (local -y), the drying racks stand behind them, and every hide crosses from one to
+            # the other. So the yard's long axis runs WITH the watercourse - a stream at 30 deg
+            # takes a yard at 30 deg. Set the yard square to the map instead and the near corner
+            # goes in the water while the far corner strands a yard-length inland: the pits at one
+            # end sit on the bank and the pits at the other end do not, which is the one thing this
+            # layout cannot absorb, since the whole point of the ground is that the pit rank and
+            # the staking frames share a single edge of water. Riverside works follow their bank
+            # for the same reason a wharf does. Shape is city_wall_towers_aligned's: compare the
+            # RECORDED rot against the bearing of the water it fronts, mod 180 (a 180 deg flip is
+            # the same yard; a 90 deg turn stands it ACROSS the bank instead of along it).
+            #
+            # WHICH course is "its water" is decided by REACH, not by nearest. A yard at a
+            # confluence legitimately fronts either course that meets there, and the
+            # nearest-by-centerline answer is not even stable: Hoshizora's yard sits 3 px from a
+            # drain ditch bearing 43 deg and 5 px from the channel its intake cut actually taps at
+            # 83 deg, so by centerline the ditch wins and by intent the channel does. The reference
+            # set is therefore every course whose BANK - centerline distance minus that course's
+            # REAL half-width, the same measure tanning_yard_clear_of_water uses, since a 40px
+            # river's centerline is 20px from a yard that abuts it - falls inside the same ~20 ft
+            # reach tanning_yard_on_water calls "on the water", and the yard need only be square to
+            # ONE of them. A yard with NO bank in that reach is already failing
+            # tanning_yard_on_water, so this check abstains rather than reporting one defect twice.
+            #
+            # TOLERANCE is 15 deg - the wall-towers figure, not the gate furniture's 6 - because
+            # rot is set by hand against a hand-drawn meandering polyline, so a correct yard sits a
+            # few degrees off whichever segment it happens to be measured against (Hoshizora's own
+            # fronting channel bends from 83 to 56 deg within 50 px). It still separates cleanly,
+            # because the failure mode is not a small wobble but an AXIS-ALIGNED yard on a diagonal
+            # bank, which is 20-45 deg off: the pool's three good yards sit at 2.1, 3.8 and 7.2 deg
+            # while the pre-fix Tango yard sat at 22.9 (frozen in pool/regressions/).
+            _ty_skew = []
+            for t_ in _ty_yards:
+                _ty_off, _ty_fronts = 90.0, False
+                for _ty_pl, _ty_hw in _ty_water_all:
+                    for i in range(len(_ty_pl) - 1):
+                        _ty_a = (_ty_pl[i][0], _ty_pl[i][1])
+                        _ty_b = (_ty_pl[i + 1][0], _ty_pl[i + 1][1])
+                        # a repeated point carries no bearing - skip it rather than read it as 0 deg
+                        if _ty_a == _ty_b or max(0.0, seg_to_rect_dist(_ty_a, _ty_b, t_) - _ty_hw) > _ty_px(20.0):
+                            continue
+                        _ty_fronts = True
+                        _ty_da = (t_.get("rot", 0) - math.degrees(math.atan2(_ty_b[1] - _ty_a[1], _ty_b[0] - _ty_a[0]))) % 180
+                        _ty_off = min(_ty_off, _ty_da, 180 - _ty_da)
+                if _ty_fronts and _ty_off > 15.0:
+                    _ty_skew.append((round(t_["x"]), round(t_["y"]), round(_ty_off)))
+            check(
+                "tanning_yard_square_to_its_water",
+                not _ty_skew,
+                f"tanning yard(s) set askew to the bank they work (x, y, degrees off): {_ty_skew} - the yard's long "
+                f"axis runs WITH its watercourse, so a stream at 30 deg takes a yard at 30 deg (s.tanning_yard's rot "
+                f"lays the water side, local -y, against the bank). Square to the map on a diagonal bank puts one "
+                f"corner in the water and strands the far end inland, so half the pit rank loses the edge of water "
+                f"the whole ground exists to share. Judged against ANY course whose bank lies within the ~20 ft "
+                f"on-water reach - a yard at a confluence may follow either - within 15 deg",
+            )
 
     if scale == "city":
         # A PROVINCIAL CITY (budgets.md: ~2,000-4,000, avg ~3,000; 600 households - servants 120,
