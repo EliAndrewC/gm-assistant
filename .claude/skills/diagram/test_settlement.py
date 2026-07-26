@@ -4528,6 +4528,15 @@ def test_execution_ground_is_sized_and_screened_by_tier():
     assert ec["screened"] is True
 
 
+def test_execution_ground_label_can_flip_above_the_ground():
+    # The ground shares the outskirts with the polluting trades, whose small glyphs the default
+    # below-label can land on (Nagahara's tile kiln).
+    s = _town()
+    s.execution_ground(500, 500, label_above=True)
+    lb = [line for line in s.M["labels"] if len(line) > 5 and line[5] == "execution ground"][0]
+    assert (lb[1] + lb[3]) / 2 < 500
+
+
 def test_execution_ground_screening_can_be_forced():
     s = _town()
     s.execution_ground(500, 500, screened=True)

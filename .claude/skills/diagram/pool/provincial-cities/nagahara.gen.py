@@ -985,8 +985,14 @@ s.ossuary(2290, 1650)
 # of death and must not read as one precinct. The dosojin stone stands between town and ground: sae
 # means "to block", and it is what makes the ground "outside" rather than merely far.
 # A CITY ground: screened on three sides, road side open (see Tango for the volume reasoning).
-s.boundary_marker(2132, 1322)
-s.execution_ground(2412, 1550, rot=8)
+# PULLED IN (GM 2026-07-26): the ground had been sited further out along the road, where its own
+# LABEL - not the ground - was the outermost thing on the map's east side and so held the whole
+# frame open by ~82 px past the next content in. Everything else about this seat is as good or
+# better (it is more closely aligned with the outcast side than the old one), and the crop is
+# tighter for free. crop_not_held_open_by_one_feature does not catch this: it hunts a LONE outlier
+# (gap > 3x its own size) and here the outermost pair was the ground and its own caption.
+s.boundary_marker(1952, 1308)  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
+s.execution_ground(2244, 1502, rot=8, label_above=True)  # the default below-label lands on the tile kiln at (2210,1520)
 
 
 s.bridges()

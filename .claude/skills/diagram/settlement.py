@@ -7270,7 +7270,7 @@ class Settlement:
             lx, ly = label_xy if label_xy else (x, y - hh - 9 if label_above else y + hh + 11)
             self.label(lx, ly, label, 9, italic=True, color="#6B5A3C")
 
-    def execution_ground(self, cx: float, cy: float, rot: float = 0.0, screened: bool | None = None, label: str | None = "execution ground") -> None:
+    def execution_ground(self, cx: float, cy: float, rot: float = 0.0, screened: bool | None = None, label: str | None = "execution ground", label_above: bool = False) -> None:
         """The EXECUTION GROUND (keijou) - bare waste ground on the road past the settlement's
         boundary stone, where the Empire carries out the death sentences its magistrates confirm.
         `rot` lays the ground's ROAD SIDE (local -y, where the head-display stand faces) toward the
@@ -7349,7 +7349,9 @@ class Settlement:
         bm = 8
         self.block_polys.append([(cx - hw - bm, cy - hh - bm), (cx + hw + bm, cy - hh - bm), (cx + hw + bm, cy + hh + bm), (cx - hw - bm, cy + hh + bm)])
         if label:
-            self.label(cx, cy + hh + 13, label, 11, italic=True, color="#6B5A3C")
+            # label_above: the ground shares the settlement's outskirts with the polluting trades
+            # (kiln, tanning yard), whose small glyphs the default below-label can land on
+            self.label(cx, cy - hh - 8 if label_above else cy + hh + 13, label, 11, italic=True, color="#6B5A3C")
 
     def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone") -> None:
         """A DOSOJIN (sae no kami) stone at the settlement's ritual boundary - where the road leaves
