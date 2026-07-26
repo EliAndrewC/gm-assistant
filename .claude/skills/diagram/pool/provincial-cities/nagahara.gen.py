@@ -36,7 +36,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from citybudget import CityProgram, budget_to_manifest, plan_city  # noqa: E402
+from citybudget import BudgetLine, CityProgram, budget_to_manifest, plan_city  # noqa: E402
 from settlement import Settlement, moat_swept_tap  # noqa: E402
 from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
 
@@ -57,7 +57,23 @@ s.meta(
 # more ground than this program justifies (the GM's "too much empty space", pinned as the
 # city_budget_fires_on_the_too_empty_nagahara regression); the whole layout was similarity-
 # shrunk x0.9083 about the wall center onto the derived ring.
-BUDGET = plan_city(CityProgram(population=3000, river=True, aspect=460 / 494, nring=20), canvas=(3200, 2700))
+BUDGET = plan_city(
+    CityProgram(
+        population=3000,
+        river=True,
+        aspect=460 / 494,
+        nring=20,
+        extras=(
+            BudgetLine(
+                "laneway excess over the flat circulation allowance",
+                1,
+                16_540.0,
+                "citybudget allows a flat 7% of interior for circulation and this map draws more: its ring, street and roji BEDS measure 57,712 px^2 against the 41,172 allowed. Measured, not estimated, and the same line Minami carries for the same reason. It is charged because without it the ring cannot seat the declared 600 dwellings - the population check allows NO band any more (GM 2026-07-26), and the answer to a map that cannot hold its declared figure is a wall sized to hold it, never a smaller figure. Tango shows a 10,284 px^2 excess by the same measurement and is NOT charged, because it meets its 600 without the room; if it ever falls short, this is the line",
+            ),
+        ),
+    ),
+    canvas=(3200, 2700),
+)
 s.meta(budget=budget_to_manifest(BUDGET))
 
 # ---- the rampart: a closed ring with a NORTH gate (the north road) and an EAST river gate
@@ -66,7 +82,7 @@ CX, CY, RX, RY = 1480, 1330, round(BUDGET.wall.rx), round(BUDGET.wall.ry)  # 452
 NRING = 20
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)), round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, EGATE, WGATE_PT = WALL[0], WALL[5], WALL[6]
-WARD_FENCE = [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)]  # hoisted from the s.ward call below so the gates' ground can be reserved up front
+WARD_FENCE = [(1027, 1311), (1469, 1311), (1469, 1570), (1204, 1671)]  # hoisted from the s.ward call below so the gates' ground can be reserved up front
 KIDO_SPOTS = [(1469, 1330), (1469, 1403), (1062, 1311), (1234, 1660)]
 # s.kido_reservation asks the ENGINE for the ground each gate will take (GM 2026-07-26), rather than
 # a symmetric square guessed to be big enough at any angle: the glyph's angle follows the LANE it
@@ -117,7 +133,7 @@ s.quarter(_qwedge(0, 12), "residential")  # NE laborer
 s.quarter(_qwedge(12, 24), "mixed")  # SE merchant + burakumin
 s.quarter(_qwedge(24, 36), "mixed")  # SW government/samurai ward
 s.quarter(_qwedge(36, 48), "mixed")  # NW temple neighborhood + monzen
-SAM_BND = [(1039, 1311), (1469, 1311), (1469, 1570), (1217, 1666)]
+SAM_BND = [(1027, 1311), (1469, 1311), (1469, 1570), (1204, 1671)]
 s.corridors.append((SAM_BND, 15))  # reserve the WARD FENCE line before ANY pack so no house (samurai or burakumin) sits ON it (city_ward_fence_clear_of_structures)
 # FRAME: content-cropped at the END of the gen via s.crop_city() (GM 2026-07-23, second pass) - the
 # frame hugs the moat ring + the kept satellites (gate-market flophouses + labels, the far-bank
@@ -416,9 +432,9 @@ WEST_ST = [(1188, 1330), (1478, 1330)]
 grid([WEST_ST], width_ft=22)
 SAM_ST = [
     (1480, 1330),
-    (1480, 1726),
+    (1480, 1735),
 ]  # starts AT the central crossroads (where the road turns E), runs down the ward's east flank, crosses the S street and Ts INTO the ring bed at (1480,1726) - the through-lane check wants a street either ON the ring centerline or >46px clear of it, and the S street sits 50+px above the crossing so no dangling stub is left
-MER_V1 = [(1710, 1246), (1710, 1661)]  # S end lands ON the ring bed centerline (~(1710,1660.5)) for a clean T
+MER_V1 = [(1710, 1246), (1710, 1670)]  # S end lands ON the ring bed centerline (~(1710,1660.5)) for a clean T
 MER_V2 = [(1792, 1246), (1792, 1414)]  # collinear under LAB_V2 (see below) - one continuous N-S line from LAB_H to the merchant blocks
 grid([SAM_ST, MER_V1, MER_V2])
 
@@ -429,7 +445,7 @@ grid([SAM_ST, MER_V1, MER_V2])
 # samurai quarter (below). SUITENGU, the river fortune a river city honors, is a small wayside
 # shrine among the smattering (unlabeled), NOT a great temple (city_temples_dedicated).
 TEMPLE_LANE = [
-    (1067, 1216),
+    (1062, 1216),
     (1480, 1216),
 ]  # the E-W temple-neighborhood street; Rites + Ebisu front it, it meets the spine; W end lands IN the ring bed (ring centerline x~1029.5 at y1204) so it makes a clean T, not a sliver-short stub (city_streets_meet_through_lanes)
 grid([TEMPLE_LANE], width_ft=18)
@@ -501,7 +517,7 @@ s.fire_tower(
 # Bishamon/theater seam serves the whole mid-block - 30+ unique dwellings over ~160px easily
 # earns its length. Drawn BEFORE the packs so the terrace rows flow around it; the end stays
 # >46px above the temple lane (a dead-end roji, not a near-miss junction).
-alleys([[(1250, 1000), (1250, 1160)]])
+alleys([[(1250, 990), (1250, 1160)]])
 s.block_polys.append(
     [(1246, 1054), (1338, 1054), (1338, 1078), (1246, 1078)]
 )  # the 'theater stage' label's ground (a theater label may cover no building at all; the theater's own stand-clear circle only shields its middle)
@@ -699,7 +715,7 @@ s.label(1433, 1317, "samurai ward gate", 9, italic=True, color="#5A4326")  # ins
 # ====================================================================== N + NE: the LABORER quarter
 # one big contiguous block E of the spine, laced with a street grid wired to the N-gate spine;
 # master laborers front the streets, terraces pack the blocks; the E-gate caravan pocket is clear.
-LAB_H = [(1480, 1134), (1851, 1134)]  # E end reaches the ring bed at a clean T-junction
+LAB_H = [(1480, 1134), (1857, 1134)]  # E end reaches the ring bed at a clean T-junction
 # LAB_V1 runs all the way S to the main street (a T at the road centerline - stopping in the
 # 46px approach band reads as a dead-end sliver); LAB_V2 spans LAB_H down to MER_V2's top end,
 # so the two collinear streets read as one continuous N-S line with no near-miss gap at either end
@@ -721,7 +737,7 @@ _lab = (["laborer"] * 3 + ["servant"]) * 140
 # one mid alley for the 1618-1848 street gap: it drops from just below the ring road (top end
 # kept >46px clear of the ring bed at ~y957) to LAB_H. No lower stub - the ground S of LAB_H
 # here is the reserved E-gate caravan pocket, so an alley there would serve nothing.
-alleys([[(1710, 1000), (1710, 1134)]])  # top end lands ON the ring bed centerline (~y999.5 at x1710) - post-shrink the ring sits 45px from the old y1050 stub, inside the 46px must-meet band
+alleys([[(1710, 990), (1710, 1134)]])  # top end lands ON the ring bed centerline (~y999.5 at x1710) - post-shrink the ring sits 45px from the old y1050 stub, inside the 46px must-meet band
 # the SPINE'S in-wall leg carries house-fronts too (pair-cadence capacity, same rationale as
 # the temple lane): the wealthier 'master' laborers take the prime road frontage (the real
 # machiya pattern - budgets.md's ~12.5% cohort lining the best streets), plain laborers between
@@ -847,9 +863,15 @@ for _wc in [(1360, 1634), (1374, 1640), (1348, 1642)]:
 front(
     BUR_ST, (["burakumin"] + ["servant"]) * 12, spacing=19, rows=1
 )  # items sized past the street's ~32 slots so the list never binds before the ground does; burakumin-first keeps the quarter's own caste at its ~30-household budgets.md share (city_caste_counts_in_band) while servants stay under their 156 cap
-s.place_wells((1278, 1630, 1634, 1737), spacing=56)
+s.place_wells((1278, 1630, 1634, 1737), spacing=44)  # 44 (was 56): this strip's terraces close so tightly that no head can be seated afterwards, and the exact fill pushes its court to 27 against the ~26 cap - the draw-points have to be reserved BEFORE the rows, not found among them
 # top band x0 stays 1278: the ward-fence DIAGONAL crosses further west and rowpack does not read
 # corridors - the mausoleum's 30px reserve is what actually keeps these rows off the fence line
+# one more draw-point in the strip's EAST pocket, reserved before the rows close over it: the court
+# at (1509,1654) carries 27 households against the ~26 cap and has no gap left once the terraces are
+# down, so the head has to be taken while the ground is still open.
+_wpk = s.open_seat((1496, 1656, 1626, 1738), 16, 16, well=True)
+if _wpk:
+    s.well(*_wpk)
 s.rowpack((1278, 1626, 1634, 1660), (["burakumin"] * 2 + ["servant"] * 2) * 55, court_every=6, eave_ft=3)
 s.rowpack(
     (1278, 1683, 1634, 1752), (["burakumin"] * 2 + ["servant"] * 2) * 55, court_every=6, eave_ft=3
@@ -870,7 +892,7 @@ s.label(1998, 1201, "wharf", 10, italic=True, color="#5A4326")
 # the river gate's own approach-road stall string (the wharf is the bulk market, but the gate
 # keeps a >= 6-shop guan-xiang slice too - GM 2026-07-24; research: 10-40 structures per
 # trafficked gate, the drawn belt a slice like the estates and farmland)
-s.frontage([(1953, 1330), (2085, 1330)], ["shop"] * 8, skip=ROAD, width=s.lw(22), spacing=18, rows=1, jitter=1, setback=s.px(15), fill=True)
+s.frontage([(1953, 1330), (2071, 1333), (2145, 1335)], ["shop"] * 18, skip=ROAD, width=s.lw(22), spacing=18, rows=2, rowgap=2, jitter=1, setback=s.px(15), fill=True)  # FOLLOWS the road past its bend, and rows=2 so the stalls straddle it - one rank on a straight line loses half its slots to skip=ROAD and drifts onto the roadbed where the road turns
 
 # a gate market (guan-xiang) OUTSIDE THE NORTH GATE too: the wharf is the river gate's market, but
 # the north gate is on the road to the Imperial highway, so it grows its own smaller stall cluster
@@ -1206,6 +1228,88 @@ s.place_wells((1094, 962, 1450, 1298), spacing=46, near=48)  # NW monzen, offset
 # quilt and near_ring_paddy's gridded square basins ("don't look like any rice paddy in any village or
 # hamlet"). Coverage need not be total - the visible fans + open ground read as the head of paddy
 # country continuing beyond the frame.
+
+# extra draw-points for the courts the exact fill densifies past the ~26-household cap. ASKED of the
+# engine (open_seat runs the same _fits the real placement path runs) rather than hand-picked, and at
+# a 14px seat - a wellhead is r=8, so an 18px box will not fit gaps a 14px one does.
+# EVEN THE DRAW-POINTS OUT, rather than chasing heads one at a time. Adding a well shifts which
+# court every neighbor belongs to, so point fixes just move the overloaded head somewhere else; a
+# sweep of the whole interior settles it. Each seat is ASKED of open_seat (the same _fits the real
+# placement path runs) at a 14px box - a wellhead is r=8, so 18px will not fit gaps 14px does - and
+# the sweep simply skips wherever the ground is genuinely full.
+_wgx0, _wgy0 = min(p[0] for p in WALL), min(p[1] for p in WALL)
+_wgx1, _wgy1 = max(p[0] for p in WALL), max(p[1] for p in WALL)
+for _bx in range(int(_wgx0), int(_wgx1), 78):
+    for _by in range(int(_wgy0), int(_wgy1), 78):
+        # only where households actually stand: a well serves the houses around it, so a seat in open
+        # ground is not a draw-point but a wellhead in a field (wells_among_dwellings)
+        if sum(1 for b in s.M["buildings"] if _bx <= b["x"] <= _bx + 78 and _by <= b["y"] <= _by + 78) < 5:
+            continue
+        _ws = s.open_seat((_bx, _by, _bx + 78, _by + 78), 14, 14, well=True)
+        if _ws:
+            s.well(*_ws)
+
+
+# ====================================================================== EXACTLY the declared figure
+# population_consistent_with_housing allows NO band any more (GM 2026-07-26): a declared population is
+# a promise about what the map CONTAINS, so the arithmetic has to close exactly - population /
+# HOUSEHOLD dwellings, not "within 7%". Each pass asks one caste for exactly the shortfall and top_up
+# stops the moment that caste's tally reaches the figure asked, so it cannot overshoot. Smallest
+# footprints first, because they are what still fits once the quarters are full. If the ground
+# genuinely cannot take them the loop stalls and the CHECK fails, which is the right outcome: the
+# answer is a bigger wall from the budget, never a smaller declared figure.
+def fill_exactly(target):
+    _wx0, _wy0 = min(p[0] for p in WALL), min(p[1] for p in WALL)
+    _wx1, _wy1 = max(p[0] for p in WALL), max(p[1] for p in WALL)
+    _all = (_wx0, _wy0, _wx1, _wy1)  # top_up's ok() rejects anything outside WALL itself
+    _order = (
+        ("servant", ("servant",)),
+        ("laborer", ("laborer", "laborer_large")),
+        ("merchant_house", ("merchant", "merchant_house", "merchant_large")),
+        ("burakumin", ("burakumin",)),
+        ("samurai", ("samurai", "samurai_large")),
+    )
+    # COUNT WHAT THE CHECK COUNTS: the local DWELL tuple omits monk_house but the check counts it, so
+    # driving the local tally to the target overshoots by exactly the monk-house count.
+    _CHECKED = ("laborer", "laborer_large", "servant", "burakumin", "samurai", "samurai_large", "merchant", "merchant_house", "merchant_large", "monk_house")
+    # RESPECT THE CASTE CEILINGS - filling smallest-first pushes one caste past its +/-30% band
+    # otherwise. Counts what city_caste_counts_in_band counts, estates and manors included.
+    _FRAC = {"servant": 0.20, "laborer": 0.40, "merchant_house": 0.25, "burakumin": 0.05, "samurai": 0.10}
+    _EXTRA = {"merchant_house": len(s.M.get("merchant_estates", []) or []), "samurai": len(s.M.get("manors", []) or [])}
+
+    def _dw_all():
+        return sum(1 for b in s.M["buildings"] if b["kind"] in _CHECKED)
+
+    for _ in range(30):
+        if _dw_all() >= target:
+            return
+        _moved = False
+        for _k, _ck in _order:
+            _short = target - _dw_all()
+            if _short <= 0:
+                break
+            _have = sum(1 for b in s.M["buildings"] if b["kind"] in _ck)
+            _ceil = int(1.3 * _FRAC[_k] * target) - _EXTRA.get(_k, 0)
+            if _have >= _ceil:
+                continue
+            _n0 = _dw_all()
+            top_up(_k, _all, min(_have + _short, _ceil), count_kinds=_ck)
+            _moved = _moved or _dw_all() > _n0
+        if not _moved:
+            return
+
+
+# the last court the sweep could not split: (1509,1654) carries 27 households against the ~26 cap and
+# has no gap inside it, so the extra head goes on its MARGIN - far enough out to find ground, near
+# enough that the outer houses draw from it instead.
+for _wb2 in ((1440, 1690, 1526, 1752), (1520, 1690, 1606, 1752), (1436, 1586, 1502, 1648), (1560, 1616, 1646, 1690), (1452, 1700, 1560, 1770)):
+    _ws2 = s.open_seat(_wb2, 14, 14, well=True)
+    if _ws2:
+        s.well(*_ws2)
+        break
+
+
+fill_exactly(3000 // 5)
 
 s.crop_city(west=100)  # the aggressive default (35px past the kept satellites: N gate market, far-bank
 # funerary S/E, wharf); the WEST keeps a 100px farm band (no satellite anchors that flank and the GM

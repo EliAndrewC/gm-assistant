@@ -430,6 +430,30 @@ s.farrier(300, 1255, rot=150)
 
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
+
+# ====================================================================== EXACTLY the declared figure
+# population_consistent_with_housing allows NO band any more (GM 2026-07-26): a declared population
+# is a promise about what the map CONTAINS, so a town must draw population / HOUSEHOLD dwellings on
+# the nose, not "within 7%". This adds the shortfall one seat at a time and stops the moment the
+# figure is met, so it cannot overshoot; each seat is ASKED of open_seat (the same _fits the real
+# placement path runs) rather than guessed. LABORERS, because that caste sits at its band floor here
+# while servants sit near their ceiling - the total must close without pushing a caste out of band.
+# Runs AFTER farmsteads() because at town scale the check counts farmhouses as dwellings too.
+_TARGET_DW = 680 // 5
+_CHK_DW = ("laborer", "laborer_large", "servant", "burakumin", "samurai", "samurai_large", "merchant", "merchant_house", "merchant_large", "monk_house")
+
+
+def _dw_now():
+    return sum(1 for b in s.M["buildings"] if b["kind"] in _CHK_DW) + len(s.M["houses"])
+
+
+_fw, _fh = s._dims("laborer")
+for _frg in ((680, 190, 1150, 395), (1165, 700, 1600, 925), (1725, 395, 2005, 600)):
+    while _dw_now() < _TARGET_DW:
+        _fst = s.open_seat(_frg, _fw + 4, _fh + 4)
+        if not _fst:
+            break
+        s.building(_fst[0], _fst[1], _fw, _fh, "laborer", 0)
 s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 
