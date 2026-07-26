@@ -102,9 +102,11 @@ BUDGET = plan_city(
         # THE DRAWN PRECINCT, not just its hall compound. 3,400 px^2 priced the walled compound alone
         # (~0.70 acre) and left out everything else a precinct actually plants in the fabric, which is
         # what a wall has to enclose. Measured off this map, per precinct: hall compound block ~5,125,
-        # torii approach and its stand-clear ~1,720, the caption band ~1,000, wayside shrines ~1,790.
-        # The halls have NOT grown - only the accounting has.
-        temple_precinct_px2=8_600.0,
+        # torii approach and its stand-clear ~1,720, the caption band ~4,000 (a caption box is ~150px
+        # wide and its band must clear the widest row kind's overhang on both sides - reserved in BOTH
+        # registries, since rowpack honors block_polys and the _fits placers honor corridors),
+        # wayside shrines ~1,790. The halls have NOT grown - only the accounting has.
+        temple_precinct_px2=11_600.0,
         # NO fragmentation premium. An earlier pass measured the 431x400 ring predicting 504 in-wall
         # dwellings against 449 drawn - ~12% short - and was about to price that gap as an extras
         # line. It is gone because the shortfall was never the wall: it was top_up holding 3px off
@@ -195,7 +197,7 @@ def label_ground(x, y, halfw=54, halfh=8):
     s.block_polys.append([(x - halfw, y - halfh), (x + halfw, y - halfh), (x + halfw, y + halfh), (x - halfw, y + halfh)])
 
 
-for _lx, _ly2, _hw in ((1560, 1188, 64), (1150, 1348, 56), (1214, 1444, 42), (1580, 1300, 60), (1256, 1648, 68), (1352, 1160, 40)):
+for _lx, _ly2, _hw in ((1560, 1188, 64), (1150, 1348, 56), (1214, 1444, 42), (1668, 1314, 60), (1256, 1648, 68), (1352, 1160, 40)):
     label_ground(_lx, _ly2, _hw)
 
 _LBL_DONE = 0
@@ -296,20 +298,39 @@ grid([MER_V, LAB_V, SW_V, EAST_ST, WARD_V])
 # OR alley - a warren with no way in or out (no_isolated_dwelling_cluster). These five roji lace
 # that band: the southern terraces below the burakumin strips, the ward's south-east flank, the
 # north gate approach, and the river-gate quarter.
+def _ring_y(x, south=True):
+    """The y where a vertical roji meets the ring road BED, read from the drawn ring polygon.
+
+    Not an ellipse estimate: the ring is a 20-gon whose chords sit inside the ellipse, so an
+    ellipse figure lands 3-4px past the bed and city_streets_meet_through_lanes reads that as a
+    lane poking past its junction. Reading the polygon also means a re-derived wall moves every
+    roji end with it instead of leaving five hand-typed numbers to re-solve."""
+    _R = s.M["ring_road"]
+    _R = _R["pts"] if isinstance(_R, dict) else _R
+    _ys = []
+    for _i in range(len(_R)):
+        (_x0, _y0), (_x1, _y1) = _R[_i], _R[(_i + 1) % len(_R)]
+        if (_x0 - x) * (_x1 - x) <= 0 and _x0 != _x1:
+            _ys.append(_y0 + (_y1 - _y0) * (x - _x0) / (_x1 - _x0))
+    return round(max(_ys) if south else min(_ys))
+
+
 ALLEYS = [
     [(1120, 1124), (1120, 1330)],
     [(1490, 1014), (1490, 1150)],
     [(1640, 1150), (1640, 1230)],
     [(1300, 1330), (1300, 1606)],
-    [(1372, 1596), (1372, 1728)],
-    [(1544, 1592), (1544, 1707)],
-    [(1740, 1470), (1740, 1577)],
-    [(1300, 943), (1300, 1046)],
+    [(1372, 1596), (1372, _ring_y(1372))],
+    [(1544, 1592), (1544, _ring_y(1544))],
+    [(1756, 1470), (1756, _ring_y(1756))],
+    [(1300, _ring_y(1300, south=False)), (1300, 1046)],
     [(1002, 1330), (1002, 1436)],
 ]
 alleys(ALLEYS)
 for _al in ALLEYS:
     s.corridors.append((_al, 8))
+    (_ax0, _ay0), (_ax1, _ay1) = _al[0], _al[-1]
+    s.block_polys.append([(min(_ax0, _ax1) - 8, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + 8, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + 8, max(_ay0, _ay1) + 8), (min(_ax0, _ax1) - 8, max(_ay0, _ay1) + 8)])
 
 # ====================================================================== THE EIGHT PRECINCTS
 TW, TH = s.px(96), s.px(66)  # the seven siblings, ~0.70 acre drawn
@@ -318,6 +339,11 @@ IW, IH = s.px(118), s.px(80)  # Inari, the largest of the eight
 
 def precinct(x, y, fortune, torii, w=TW, h=TH, primary=False, graveyard=False, label_below=True, torii_count=1):
     s.shrine_hall(x, y, f"Temple of {fortune}", w=w, h=h, kind="temple", primary=primary, graveyard=graveyard, label_below=label_below, torii=torii, torii_count=torii_count)
+    _cap = s.M["labels"][-1]
+    _cx0, _cy0, _cx1, _cy1 = _cap[0], _cap[1], _cap[2], _cap[3]
+    _cmid = (_cy0 + _cy1) / 2
+    s.block_polys.append([(_cx0 - 8, _cmid - 12), (_cx1 + 8, _cmid - 12), (_cx1 + 8, _cmid + 12), (_cx0 - 8, _cmid + 12)])
+    s.corridors.append(([(_cx0 - 4, _cmid), (_cx1 + 4, _cmid)], (_cy1 - _cy0) + 12))
     # the caption's own ground, reserved BOTH ways: a block poly (which the packs centre-test) and
     # a corridor (which the fills honor). "Temple of Fukurokujin" is a wide box, so the band is
     # generous - labels_clear_of_other_buildings does not forgive a roof under the text.
@@ -327,20 +353,20 @@ def precinct(x, y, fortune, torii, w=TW, h=TH, primary=False, graveyard=False, l
 # wharf's fortune) and Fukurokujin share the moneylending trade in Fox lands, so they sit together -
 # the city's one genuine temple cluster, which is why the wayside shrines gather here.
 precinct(1160, 1210, "Ebisu", [(1160, 1252)], primary=True, graveyard=True)
-precinct(1310, 1206, "Fukurokujin", [(1310, 1248)])
+precinct(1310, 1206, "Fukurokujin", [(1310, 1248)], label_below=False)
 for sx, sy in [(1240, 1258), (1258, 1288), (1224, 1290)]:
     s.small_shrine(sx, sy)
 
 # --- W: BENTEN by the dock - the water fortune, and the temple that lends against a wedding
-precinct(1082, 1512, "Benten", [(1082, 1548)], label_below=False)
+precinct(1082, 1512, "Benten", [(1082, 1548)])
 
 # --- N-CENTRAL: INARI, the largest of the eight. The Fox clan's own fortune - rice and foxes - and
 # the temple that keeps the Inari paddy reserve whose harvest Inari shrines buy Empire-wide.
-precinct(1300, 1046, "Inari", [(1300, 1074), (1300, 1081), (1300, 1088), (1300, 1095), (1300, 1102), (1300, 1109), (1300, 1116)], w=IW, h=IH, graveyard=True, torii_count=7)
+precinct(1300, 1046, "Inari", [(1300, 1074), (1300, 1081), (1300, 1088), (1300, 1095), (1300, 1102), (1300, 1109), (1300, 1116)], w=IW, h=IH, graveyard=True, torii_count=7, label_below=False)
 
 # --- NE: the laborer quarter's pair
-precinct(1512, 1074, "Hotei", [(1512, 1116)])
-precinct(1682, 1090, "Jurojin", [(1682, 1132)])
+precinct(1512, 1074, "Hotei", [(1512, 1116)], label_below=False)
+precinct(1682, 1090, "Jurojin", [(1682, 1132)], label_below=False)
 for sx, sy in [(1556, 1064), (1572, 1098), (1538, 1108)]:
     s.small_shrine(sx, sy)
 
@@ -348,7 +374,7 @@ for sx, sy in [(1556, 1064), (1572, 1098), (1538, 1108)]:
 precinct(1520, 1256, "Bishamon", [(1520, 1292)])
 
 # --- SW: DAIKOKU by the timber and charcoal ground - the fortune of wealth and stores
-precinct(1268, 1490, "Daikoku", [(1268, 1532)], graveyard=True, label_below=False)
+precinct(1268, 1490, "Daikoku", [(1268, 1532)], graveyard=True)
 
 # ---- THE SHARED BURIAL GROUNDS. Eight precincts do NOT get eight graveyards (the five above
 # declare graveyard=False): they are economic institutions holding forest usufruct, not eight
@@ -380,7 +406,7 @@ for _m in s.M["mausoleums"]:
     s.block_polys.append([(_m["x"] - _m["w"] / 2 - 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] + _m["h"] / 2 + 16), (_m["x"] - _m["w"] / 2 - 16, _m["y"] + _m["h"] / 2 + 16)])
 s.block_polys.append([(1724, 1384), (1762, 1384), (1762, 1430), (1724, 1430)])
 s.martial_hall(1700, 1500, label_xy=(1700, 1503))
-s.dojos([(1452, 1408), (1740, 1420)])
+s.dojos([(1452, 1408), (1786, 1444)])
 reserve_caption_ground()
 front([MAIN_E], (["samurai_large"] + ["samurai"] * 2) * 10, spacing=19, rows=2)
 for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
@@ -398,7 +424,7 @@ s.rowpack((1440, 1470, 1494, 1608), ["samurai"] * 16, court_every=4, eave_ft=2) 
 s.rowpack((1664, 1528, 1714, 1642), (["servant"] * 4 + ["laborer"]) * 30, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring
 s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
 s.pack((1452, 1312, 1836, 1716), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
-s.label(1580, 1300, "samurai neighborhood", 10, italic=True, color="#3A352C")
+s.label(1668, 1314, "samurai neighborhood", 10, italic=True, color="#3A352C")
 s.ward("samurai", WARD_FENCE, gates=KIDO_SPOTS)
 
 # ====================================================================== NE: the laborer quarter
@@ -416,7 +442,7 @@ for _y0 in range(1015, 1140, 50):
     s.rowpack((1408, _y0, 1804, _y0 + 40), _lab, court_every=3, eave_ft=2)
 for _y0 in range(1002, 1140, 25):
     s.rowpack((1408, _y0, 1804, _y0 + 22), _lab, court_every=3, eave_ft=2)
-_merstrip = (["merchant_house"] * 4 + ["merchant"]) * 60
+_merstrip = ["merchant_house"] * 240
 for _i, _y0 in enumerate(range(1164, 1268, 52)):
     s.rowpack((1410, _y0, 1802, _y0 + 44), _merstrip if _i % 2 else _lab, court_every=3, eave_ft=2)
 s.rowpack((1424, 1132, 1796, 1162), _lab, court_every=3, eave_ft=2)
@@ -429,10 +455,10 @@ s.fire_tower(1352, 1160, label="fire tower")
 
 _n_est = s.merchant_estates([(1330, 1372, "north"), (1256, 1104, "east"), (1210, 1620, "east")])
 _ML_SPOTS = [(1344, 1380), (1268, 1104)][_n_est - 1 :]
-s.frontage([(1040, 1330), (1390, 1330)], (["merchant"] * 3 + ["shop"]) * 18, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(46))
+s.frontage([(1040, 1330), (1390, 1330)], (["merchant"] * 5 + ["shop"]) * 18, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(46))
 front([MER_V], (["merchant"] * 2 + ["shop"] * 2) * 14, spacing=19, rows=2)
 s.place_wells((1044, 1034, 1380, 1300), spacing=54)
-_mer = (["merchant_house"] * 4 + ["merchant"]) * 130
+_mer = ["merchant_house"] * 650
 for _y0 in range(1036, 1148, 56):
     s.rowpack((1044, _y0, 1140, _y0 + 48), _mer, court_every=3, eave_ft=2)
     s.rowpack((1216, _y0, 1382, _y0 + 48), _mer, court_every=3, eave_ft=2)
@@ -451,7 +477,7 @@ s.label(1150, 1348, "merchant district", 10, italic=True, color="#5A4326")
 s.fire_tower(1150, 1400, label=None)
 front([SW_V], (["merchant"] + ["burakumin"] + ["laborer"]) * 18, spacing=19, rows=2)
 s.place_wells((1020, 1360, 1390, 1680), spacing=54)
-_sw = (["merchant_house"] * 4 + ["merchant"]) * 45
+_sw = ["merchant_house"] * 225
 for _y0 in range(1344, 1448, 52):
     s.rowpack((1022, _y0, 1396, _y0 + 44), _sw, court_every=4, eave_ft=2)
 _sw2 = (["laborer"] * 2 + ["servant"] * 2 + ["burakumin"]) * 45
@@ -800,7 +826,7 @@ s.place_wells(SW_Q, spacing=42, near=48)
 s.place_wells((1440, 960, 1720, 1240), spacing=46, near=48)
 s.place_wells((1020, 1020, 1382, 1300), spacing=46, near=48)
 s.place_wells((1020, 1370, 1382, 1670), spacing=46, near=48)
-for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390, 1690)):
+for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390, 1690), (1010, 1400, 1130, 1520), (1260, 1440, 1380, 1620), (1370, 1000, 1490, 1110)):
     s.place_wells(_wr, spacing=38, near=46)
 for _wr in ((1100, 1200, 1400, 1320), (1200, 1350, 1400, 1450), (1220, 1500, 1400, 1620), (1440, 1180, 1560, 1270), (1080, 1220, 1240, 1320), (1260, 1220, 1400, 1320)):
     s.place_wells(_wr, spacing=34, near=44)
