@@ -216,7 +216,7 @@ s.lane([(CX + 4, CY + 245), (CX + 48, CY + 360), (CX + 78, CY + 490), (CX + 112,
 # optional focal feature (the twin-detector reads focal_set, so this is a distinctiveness axis vs Kikuta).
 s.crescent_pond(335, 908, 48, facing_deg=270)
 
-s.headman(475, CY - 60)  # +20px E (2026-07-26): at 455 the headman's 46x28 footprint lay across two of its own field's irrigation ditches - found by the overlap matrix, which is the first rule that ever compared a house against a ditch              # the largest homestead, fronting the head of the main lane
+s.headman(499, CY - 44)  # seat swept against the real gate (2026-07-26): the original (455, CY-60) lay across two of its own field's irrigation ditches and its first correction still lapped one - the overlap matrix is the first rule that ever compared a house against a ditch
 _placed = 1
 for _ in range(240):
     if _placed >= 70:
