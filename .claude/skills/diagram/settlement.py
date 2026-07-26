@@ -5434,7 +5434,12 @@ class Settlement:
 
         The GROUND, not the building, is the feature: soaking pits, drying racks, and a small work
         shed on marginal land at the settlement's edge, ON water. The `rot` should lay the yard's
-        WATER SIDE (local -y, where the pits and the intake sit) against the bank.
+        WATER SIDE (local -y, where the pits and the intake sit) against the bank - which means
+        `rot` is the BANK'S OWN BEARING there, not a right angle off the map: a stream running at
+        30 deg takes a yard at 30 deg. The pit rank and the staking frames share one edge of water,
+        so a yard left square to the map on a slanted bank puts one corner in the stream and
+        strands the far end of the rank inland. `tanning_yard_square_to_its_water` holds this to
+        within 15 deg of any course whose bank lies inside the ~20 ft on-water reach.
 
         Historical grounding (the "why" - see settlements.md "TANNING YARDS"):
           - Hides come from FALLEN DRAFT STOCK, not butchery: the kawata held carcass rights over a
