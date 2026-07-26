@@ -1601,6 +1601,42 @@ def test_bridges_spans_a_lane_where_it_crosses_a_canal():
     assert abs(s.M["bridges"][0]["x"] - 300) < 2 and abs(s.M["bridges"][0]["y"] - 300) < 2
 
 
+def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
+    s = _crop_settlement()
+    z = s.log_boom(400, 300, rot=90)
+    b = s.M["log_booms"][0]
+    assert b["z"] == z and b["len"] == round(s.px(330), 1)  # the default pen, ~330 real ft of chained logs
+    # moored ALONG the current (rot 90), so its recorded box is TALL, not wide - the matrix reads this
+    assert b["h"] > b["w"] and abs(b["h"] - b["len"]) < 1.0
+
+
+def test_log_boom_labels_below_itself_unless_told_otherwise():
+    s = _crop_settlement()
+    s.log_boom(400, 300, rot=0, length=90, label="log boom")
+    assert any(len(lb) > 5 and lb[5] == "log boom" for lb in s.M["labels"])
+    s2 = _crop_settlement()
+    s2.log_boom(400, 300, rot=0, length=90, label=None)
+    assert not any(len(lb) > 5 and lb[5] == "log boom" for lb in s2.M["labels"])
+
+
+def test_bridge_refuses_a_second_deck_on_a_crossing_that_already_has_one():
+    """ONE DECK PER CROSSING - the guard lives in bridge() so every caller is covered.
+
+    Minami shipped two decks over the Hayakawa 3px apart (a hand-placed one plus the automatic pass),
+    and honda/hoshigaoka/kikuta each carried two footplanks at the SAME point. None was caught because
+    bridges were invisible to the overlap matrix."""
+    s = _crop_settlement()
+    z1 = s.bridge(300, 300, 0, 60, 12)
+    z2 = s.bridge(303, 301, 0, 60, 12)  # the same crossing, a few px off
+    assert len(s.M["bridges"]) == 1 and z2 == z1  # returns the standing deck rather than drawing a second
+    # ...but two genuinely distinct footplanks a few px apart still both draw (the tolerance scales
+    # with the deck, so a narrow plank keeps a narrow exclusion)
+    s2 = _crop_settlement()
+    s2.bridge(300, 300, 0, 8, 2)
+    s2.bridge(306, 300, 0, 8, 2)
+    assert len(s2.M["bridges"]) == 2
+
+
 def test_channel_footbridges_plank_each_long_ditch_perpendicular():
     s = _crop_settlement()
     s.M["fields"] = [{"outline": [[50, 120], [850, 120], [850, 280], [50, 280]]}]  # paddy straddling the y=200 ditch (both banks cultivated)

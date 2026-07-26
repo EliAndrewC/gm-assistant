@@ -248,6 +248,7 @@ _OVERLAP_EXEMPT = {
     "water_gates": "the shuimen arch stands ON the city wall over its canal - intentional, like the kido on its fence",
     "sluice_gates": "the field-channel intake/outfall board sits ON its channel at a water-to-water handoff (moat/river tap -> comb canal, drain -> culvert) - the control structure IS the junction",
     "jetties": "planked mooring fingers running out over the river water, like bridge decks",
+    "log_booms": "a cabled chain of floating logs holding rafted timber against the bank - it FLOATS on the river, so overlapping the water is the whole point, exactly as a jetty deck does",
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
     "quarters": "declarative zoning overlays (feature 006), not solid structures - they intentionally contain buildings and are validated by the city_quarters_* / per-quarter density checks",
@@ -273,6 +274,7 @@ _OVERLAP_EXEMPT = {
 # permission is derived rather than hand-listed too (see _label_allows).
 _LABEL_GROUP = {
     "flophouses": "flophouse",
+    "log_booms": "log boom",
     "religious": "temple",
     "ministries": "ministry",
     "governor_mansion": "governor",
@@ -385,7 +387,13 @@ OVERLAP_CLASS: dict[str, str] = {
     **{k: "ANNEX" for k in ("gardens", "threshing_yards", "farm_sheds", "storehouses", "byres")},
     # --- PERMISSIVE CLASSES (never tested; each row below records WHY) ---------------------------
     **{k: "COVER" for k in ("commons", "pastures", "marsh", "marshes")},
-    **{k: "OVERLAY" for k in ("quarters", "wards")},
+    "quarters": "OVERLAY",
+    # A WARD IS NOT A QUARTER. A quarter is a zoning word; a ward is a walled enclosure whose FENCE
+    # is a physical barrier everything except its own kido must stand clear of. Classed OVERLAY it was
+    # never extracted, which is why a guard station, a notice board and an oil press all came to rest
+    # on Minami's ward fence with a green gate. Extracted as the STROKE of its boundary (the fence
+    # line), not as its interior - the interior does contain features, by definition.
+    "wards": "BARRIER",
     # a caravan yard is beaten WORKING GROUND, like grazing: its rails, troughs and litter stand on
     # it by design, and that is what the yard IS
     **{k: "COVER" for k in ("stable_yards",)},
@@ -400,7 +408,8 @@ OVERLAP_CLASS: dict[str, str] = {
     #   wall_towers         guard towers stand ON the wall
     #   docks               a landing stands at the waterline by definition
     #   gate_structs        the guard station and tower ARE the gate complex, standing on wall and road
-    **{k: "FIXTURE" for k in ("bridges", "kido", "water_gates", "sluice_gates", "inspection_stations", "jetties", "wall_towers", "docks", "gate_structs")},
+    #   log_booms           a cabled log pen floats ON the river it holds timber in
+    **{k: "FIXTURE" for k in ("bridges", "kido", "water_gates", "sluice_gates", "inspection_stations", "jetties", "wall_towers", "docks", "gate_structs", "log_booms")},
     # RECORD - bookkeeping geometry that duplicates ground already classified elsewhere, or an
     # in-field flourish drawn ON the paddy by design (feature 012). Never tested.
     #   drawn_channels  a z-order record of the drawn field-channel strokes; the ground it covers is
@@ -417,7 +426,7 @@ OVERLAP_CLASS: dict[str, str] = {
 _MATRIX_PERMISSIVE = {
     # the GM's own example, and the distinction the whole design turns on
     "COVER": "permissive ground cover - grazing, pasture and scrub describe what the ground IS, not an object occupying it, so a well, a house or a field built on it is the normal case and the cover simply stops there (contrast GROUND, which is worked as a surface and is ruined by anything standing in it)",
-    "OVERLAY": "a declarative zoning overlay (quarter, ward) CONTAINS features by definition",
+    "OVERLAY": "a declarative zoning overlay (a QUARTER) CONTAINS features by definition - it describes what a district is for, not an object standing in it",
     # Deliberately out of scope rather than unclassified: canopy-vs-structure is already governed
     # precisely by the keep-clear/canopy contract (Settlement._CANOPY_STRUCT_KEYS + the ratchet added
     # in feature 016), which tests recorded CROWNS and knows which grounds a bough may legitimately
@@ -426,8 +435,38 @@ _MATRIX_PERMISSIVE = {
     # outline) whose ink lives in `tree_crowns` - see the drawn-extent rule in matrix_extents.
     "VEGETATION": "canopy overlap is governed by the canopy keep-out contract, which tests recorded crowns; the matrix does not re-decide it",
     "RECORD": "bookkeeping geometry or an in-field flourish drawn ON its own paddy by design - not ground the matrix reasons about",
-    "FIXTURE": "a control structure deliberately built ON another feature (a bridge over water, a sluice on its channel, a tower on the wall) - the overlap is the whole point of the thing",
     "PADDY_RECONSTRUCTED": "a paddy plot's extent is reconstructed from recorded spans rather than stored, so it is an approximation - the precise paddy checks (harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields, tanning_yard_clear_of_fields) test real geometry and remain authoritative",
+}
+# WHAT EACH FIXTURE IS MOUNTED ON (GM 2026-07-26). FIXTURE used to be a PERMISSIVE class, which had
+# two compounding effects: `matrix_extents` skips permissive classes entirely, so all ten fixture keys
+# were never extracted and therefore invisible to every matrix check in BOTH directions; and
+# `matrix_policy` returned a permission whenever either side was a fixture, so anything could sit on
+# one. In Minami that hid 56 solid built objects - 4 bridges, 4 ward gates, 24 wall towers, 10 gate
+# structures, 6 sluice gates, 3 jetties, 2 inspection stations, 1 dock - and it is how the map came to
+# carry TWO overlapping bridges over the same crossing, a guard station on the ward fence and an oil
+# press across a ward gate, all with a green gate.
+#
+# "The overlap is the whole point" is true only OF THE THING THE FIXTURE IS BUILT ON. A bridge is
+# built on water and on the way it carries; it is not built on another bridge, and a ward gate is not
+# built on an oil press. So each fixture names its mounts - CLASSES or specific KEYS - and may overlap
+# nothing else, including another fixture of its own kind. Entries are deliberately MINIMAL: a
+# genuine adjacency the sweep surfaces should be added here with its reason, not pre-permitted.
+_FIXTURE_MOUNTS: dict[str, frozenset[str]] = {
+    "bridges": frozenset({"WATER", "WAY"}),  # spans the water to carry the way over it
+    "docks": frozenset({"WATER", "WAY"}),  # a landing stands at the waterline, reached from the quay
+    "jetties": frozenset({"WATER"}),  # planked mooring fingers run out OVER the river
+    "log_booms": frozenset({"WATER"}),  # a cabled log pen floats ON the river it holds timber in
+    "sluice_gates": frozenset({"WATER"}),  # the intake/outfall board IS the water-to-water junction
+    "water_gates": frozenset({"WATER"}),  # the shuimen arch stands over its canal (and on the city wall, which is not a matrix feature)
+    "kido": frozenset({"WAY", "wards"}),  # a ward gate sits ON the ward fence where a lane passes through
+    "gate_structs": frozenset({"WAY"}),  # the guard station and tower ARE the city gate complex, standing on the wall and the road
+    "inspection_stations": frozenset({"WAY", "gate_structs"}),  # an inspection post is part of the gate complex it stands in
+    # A tower stands ON the rampart, which the matrix does not model - so its footprint floats free
+    # and brushes whatever passes close to the wall line. The moat and its irrigation taps run at the
+    # rampart's foot by construction (Tango's moat-fed channel passes under the tower line), and the
+    # tower is elevated above them, so water is a legitimate mount; anything SOLID against a tower is
+    # still a defect.
+    "wall_towers": frozenset({"WATER"}),
 }
 _MATRIX_SAME_CLASS_OK = {
     "WATER": "watercourses meet at confluences",
@@ -439,15 +478,22 @@ _MATRIX_SAME_CLASS_OK = {
 }
 # same-KEY permissions: records of one kind that legitimately touch each other
 _MATRIX_SAME_KEY_OK = {
+    "wards": "consecutive segments of ONE fence share their corner - the extractor strokes a polyline into one quad per segment, so neighbors always meet. Two DIFFERENT wards' fences crossing is a real defect and is caught by city_ward_fence_clear_of_structures' own ward-x-ward test",
     "dry_plots": "adjacent hatake plots in one quilt abut and share their headlands, exactly as paddy plots share bunds",
     "fields": "paddy plots in one fan abut and share their bunds - and a plot's extent is reconstructed from recorded spans, not a stored polygon, so the reconstruction slightly overstates an irregular plot",
 }
 _MATRIX_ALLOWED_PAIRS: dict[frozenset[str], str] = {
     frozenset({"WATER", "WAY"}): "a way crosses water at a bridge; unbridged crossings are gated separately by roads_bridge_watercourses",
+    frozenset(
+        {"WAY", "BARRIER"}
+    ): "a way PIERCES a ward fence - that is what a kido is for. The rule that matters is not whether a street crosses the fence but whether every crossing has a gate, and that is held by city_samurai_ward_sealed + city_kido_on_ward_fence, which fire on an ungated crossing",
 }
 # per-KEY-PAIR permissions for genuine one-offs the class policy is too coarse to express
 _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
     frozenset({"religious", "shrines"}): "shrine_hall records one hall under BOTH keys - these are the same object, not two",
+    frozenset(
+        {"gate_structs", "wall_towers"}
+    ): "a city gate's own TOWER is recorded under both keys - identical x/y/w/h/rot, the same object rather than two (verified on Minami: tower(1323,902) w17h10 appears in each list). The same duplicate-record case as religious x shrines",
     frozenset(
         {"channels", "dry_plots"}
     ): "a supply canal hugs the fan's HIGH DRY MARGIN by design (the comb doctrine), and the dry hem IS that margin - a plot may be crossed by the irrigation that serves it. A NATURAL watercourse is a different matter and stays forbidden: dry_plots x streams is the defect this whole feature was opened for",
@@ -477,12 +523,23 @@ def matrix_policy(ka: str, kb: str) -> str | None:
     ca, cb = OVERLAP_CLASS.get(ka), OVERLAP_CLASS.get(kb)
     if ca is None or cb is None:
         return "unclassified"
+    # A FIXTURE may overlap ONLY what it declares itself mounted on (_FIXTURE_MOUNTS), by class or by
+    # key - never anything else, and never another fixture unless that key is named. This replaces a
+    # blanket permissive class that made ten keys invisible; see that registry's comment.
+    pk_first = _MATRIX_ALLOWED_KEYS.get(frozenset({ka, kb}))
+    if pk_first:
+        return pk_first
+    if "FIXTURE" in (ca, cb):
+        for fk, ok, oc in ((ka, kb, cb), (kb, ka, ca)):
+            if OVERLAP_CLASS.get(fk) != "FIXTURE":
+                continue
+            mounts = _FIXTURE_MOUNTS.get(fk, frozenset())
+            if ok in mounts or oc in mounts:
+                return f"{fk} is mounted on {ok} by design"
+        return None
     for cls, why in _MATRIX_PERMISSIVE.items():
         if cls in (ca, cb):
             return why
-    pk = _MATRIX_ALLOWED_KEYS.get(frozenset({ka, kb}))
-    if pk:
-        return pk
     if ka == kb and ka in _MATRIX_SAME_KEY_OK:
         return _MATRIX_SAME_KEY_OK[ka]
     if ca == cb:
@@ -596,6 +653,12 @@ def _mx_stroke(pts: Sequence[Any], hw: float) -> list[list[tuple[float, float]]]
     return quads
 
 
+# a fixture's DRAWN box, in its own record's vocabulary (see matrix_extents)
+_MX_FIXTURE_BOX: dict[str, Any] = {
+    "bridges": lambda o: (float(o["span"]), float(o["w"])),  # the deck: span along the way, deck width across
+    "jetties": lambda o: (float(o["len"]), 6.4),  # the planked finger, at the width the glyph draws
+    "sluice_gates": lambda o: (11.0, 11.0),  # the board and its cheeks - a small square control structure
+}
 _MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0}
 
 
@@ -616,7 +679,19 @@ def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, fl
         rec = M.get(k)
         recs: list[Any] = [rec] if isinstance(rec, dict) and "x" in rec else (rec if isinstance(rec, list) else [])
         pfield = _MATRIX_PARENT_FIELD.get(k)
-        if k == "wells":
+        if k == "wards":
+            # the fence LINE at a hair's width: a fence is thin, and a generous stroke would
+            # manufacture defects out of houses that merely front it
+            for wd in recs:
+                for q in _mx_stroke(wd.get("boundary") or [], 2.5):
+                    out.append((k, q, None, None))
+        elif k in _MX_FIXTURE_BOX:
+            # fixtures record their extent in their own vocabulary (a bridge stores span x deck-w, a
+            # jetty a length, a sluice nothing at all), so each says how to read its drawn box
+            for o_ in recs:
+                bw, bh = _MX_FIXTURE_BOX[k](o_)
+                out.append((k, _mx_rect({"x": o_["x"], "y": o_["y"], "w": bw, "h": bh, "rot": o_.get("rot", 0)}), (round(o_["x"], 1), round(o_["y"], 1)), None))
+        elif k == "wells":
             for w_ in recs:
                 r_ = float(w_.get("vr") or w_.get("r") or 8.0)
                 out.append((k, [(w_["x"] + r_ * math.cos(i * math.pi / 6), w_["y"] + r_ * math.sin(i * math.pi / 6)) for i in range(12)], (round(w_["x"], 1), round(w_["y"], 1)), None))
@@ -2350,7 +2425,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             dwellings = len(houses) + urban
         est = dwellings * HOUSEHOLD
         pop = meta["population"]
-        tol = meta.get("population_tol", 0.07)  # the map should DELIVER the declared figure, not merely be in a wide band
+        # NO ALLOWANCE (GM 2026-07-26). This was 7%, and the slack is exactly how a map ends up
+        # quietly smaller than the figure it declares: Minami was signed off at 486 dwellings against
+        # a 520 target and read as green. The GM's rule is direct - "if we have a target population
+        # with math indicating a target number of dwellings we must ALWAYS meet that number EXACTLY".
+        # A declared population is a promise about what the map CONTAINS, so the arithmetic has to
+        # close: population / HOUSEHOLD dwellings, no band. When the ground cannot take them the
+        # answer is a bigger wall from the budget, never a smaller declared figure.
+        tol = meta.get("population_tol", 0.0)
         farm_note = "" if scale == "city" else "farmhouses + "
         check(
             "population_consistent_with_housing",
