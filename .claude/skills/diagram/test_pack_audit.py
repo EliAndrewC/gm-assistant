@@ -328,11 +328,14 @@ def test_format_report_tub_section_states_each_case() -> None:
     none = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 60, 60, "#DDB87A"))))
     assert "no fire-water tubs" in none
     ok = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="106" cy="50" r="5"/>'))))
-    assert "all 1 tubs sit outside, against" in ok
+    assert "all 1 tubs sit outside, clear of every building" in ok
     bad = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="160" cy="50" r="5"/>'))))
     assert "move it to a wall" in bad
     inside = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="50" cy="50" r="5"/>'))))
-    assert "TUB INDOORS" in inside and "move it OUT against the wall" in inside
+    assert "TUB IN BUILDING" in inside and "move it OUT clear of the wall" in inside
+    # a straddler reports too, at its true sub-foot penetration rather than the center's clean zero
+    straddle = pa.format_report(pa.parse_svg(_svg(_rect(0, 0, 200, 200, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="50" cy="102" r="5"/>'))))
+    assert "TUB IN BUILDING" in straddle and "reaches 1.0 ft INTO" in straddle
 
 
 # --- round-1 rendering checks: layers, label placement, legibility ---
@@ -598,33 +601,73 @@ def test_occlusion_fires_on_the_frozen_ubame_red_fixture() -> None:
     assert any(o.kind == "feature" for o in occ)
 
 
-def test_tubs_indoors_flags_inside_and_passes_outside() -> None:
+def test_tubs_in_buildings_flags_inside_and_passes_clear() -> None:
     """A tensuioke is gutter-fed and bucket-served, so it belongs OUTSIDE the wall it serves."""
     svg = _svg(
         _rect(0, 0, 300, 300, COURT),
         _rect(0, 0, 100, 100, "#DDB87A"),
         _tubgroup('<circle cx="10" cy="10" r="5"/>', '<circle cx="50" cy="50" r="5"/>', '<circle cx="106" cy="50" r="5"/>'),
     )
-    indoors = pa.tubs_indoors(pa.parse_svg(svg))
-    # the 106 tub is outside and passes; the other two are inside, deepest first
-    assert [round(t.depth_ft, 1) for t in indoors] == [16.7, 3.3]
-    assert (indoors[0].x, indoors[0].y) == (50, 50)
+    hits = pa.tubs_in_buildings(pa.parse_svg(svg))
+    # the 106 tub stands a px clear and passes; the other two are in the footprint, deepest first
+    assert [round(t.into_ft, 1) for t in hits] == [18.3, 5.0]
+    assert (hits[0].x, hits[0].y) == (50, 50)
 
 
-def test_tubs_indoors_with_no_buildings_flags_nothing() -> None:
-    assert pa.tubs_indoors(pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _tubgroup('<circle cx="50" cy="50" r="5"/>')))) == []
+def test_tubs_in_buildings_flags_a_tub_straddling_the_wall() -> None:
+    """The center-test blind spot the GM caught on Ubame (2026-07-26).
+
+    This tub's CENTER is outside the footprint - the old `tubs_indoors` scored it a clean zero -
+    but 3 of its 5 px of body are in the room, which is the ink-on-ink the GM sees. Measuring the
+    DISC's penetration rather than the center's position is the whole point of the check.
+    """
+    svg = _svg(_rect(0, 0, 300, 300, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="50" cy="102" r="5"/>'))
+    assert [round(t.into_ft, 2) for t in pa.tubs_in_buildings(pa.parse_svg(svg))] == [1.0]
 
 
-def test_tubs_indoors_fires_on_the_frozen_ubame_red_fixture() -> None:
-    """Red fixture: every one of Ubame's 19 tubs was drawn inside its building (GM, 2026-07-25).
+def test_tubs_in_buildings_spares_a_tub_set_off_a_corner_diagonally() -> None:
+    """Why disc geometry, not the parsed square bbox: a tub tucked diagonally off a building's
+    corner overlaps the bbox on both axes while its round body stands genuinely clear. A bbox test
+    would flag this good tub - the house style puts tubs ~2 px off a wall, so corner tubs are
+    routine and a bbox rule would cry wolf on every one of them."""
+    svg = _svg(_rect(0, 0, 300, 300, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="104" cy="104" r="5"/>'))
+    plan = pa.parse_svg(svg)
+    assert pa._overlap_px(plan.tubs[0].x, plan.tubs[0].y, plan.tubs[0].x2, plan.tubs[0].y2, plan.buildings[0]) > 0  # the bbox DOES overlap
+    assert pa.tubs_in_buildings(plan) == []  # ...but the disc does not
+
+
+def test_tubs_in_buildings_tolerates_sub_pixel_grazing() -> None:
+    """The 0.5 px floor is emit rounding and stroke width, not a licensed overlap: a tub whose disc
+    reaches 0.3 px past the edge is drawn flush, not drawn inside."""
+    svg = _svg(_rect(0, 0, 300, 300, COURT), _rect(0, 0, 100, 100, "#DDB87A"), _tubgroup('<circle cx="50" cy="104.7" r="5"/>'))
+    assert pa.tubs_in_buildings(pa.parse_svg(svg)) == []
+
+
+def test_tubs_in_buildings_with_no_buildings_flags_nothing() -> None:
+    assert pa.tubs_in_buildings(pa.parse_svg(_svg(_rect(0, 0, 300, 300, COURT), _tubgroup('<circle cx="50" cy="50" r="5"/>')))) == []
+
+
+def test_tubs_in_buildings_fires_on_the_frozen_ubame_red_fixtures() -> None:
+    """Two red fixtures, one per failure mode, both of which `fire_water_adrift` passes clean.
 
     The negative-fixture counterpart of pool/regressions/ for Mode A - coverage alone would not
     prove this check has teeth, a recorded red-then-green does.
+
+    - `ubame-tubs-inside-red.svg`: all 19 tubs at INSIDE corners (GM, 2026-07-25).
+    - `ubame-tub-straddle-red.svg`: 18 of those fixed, but the bath's tub was re-seated 2.2 px off
+      the bath's SOUTH wall - into a 9 px alley too narrow for a 7.6 px tub, so it landed 0.8 px
+      inside karo's house (GM, 2026-07-26). ONE tub out of 19 is the point: the straddle is the
+      residue a center test leaves behind after the gross version of the same defect is fixed.
     """
     with open(os.path.join(_FIX, "ubame-tubs-inside-red.svg")) as fh:
-        plan = pa.parse_svg(fh.read())
-    assert len(pa.tubs_indoors(plan)) == 19
-    assert pa.fire_water_adrift(plan) == []  # adrift passed it: the two checks are complementary
+        inside = pa.parse_svg(fh.read())
+    assert len(pa.tubs_in_buildings(inside)) == 19
+    assert pa.fire_water_adrift(inside) == []  # adrift passed it: the two checks are complementary
+
+    with open(os.path.join(_FIX, "ubame-tub-straddle-red.svg")) as fh:
+        straddle = pa.parse_svg(fh.read())
+    assert [round(t.into_ft, 2) for t in pa.tubs_in_buildings(straddle)] == [0.27]
+    assert pa.fire_water_adrift(straddle) == []
 
 
 def test_tub_on_well_flagged_and_clear_passes() -> None:
