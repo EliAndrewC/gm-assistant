@@ -47,11 +47,7 @@ import math
 import os
 import sys
 
-# WORK IN PROGRESS - deliberately NOT under pool/, because test_villages.py globs pool/*/*.gen.py
-# and gates every map it finds: a red map there breaks the suite for every other session. Move
-# this file to pool/provincial-cities/ (and drop the SKILL path shim below) once it gates clean.
-SKILL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".claude", "skills", "diagram")
-sys.path.insert(0, os.path.abspath(SKILL))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from citybudget import BudgetLine, CityProgram, budget_to_manifest, plan_city  # noqa: E402
 from settlement import Settlement, moat_swept_tap  # noqa: E402
 from waterfields import AZE, BEAN_GREEN, aze_w, build_comb, hem_on_paddy, paddy_grain  # noqa: E402
@@ -341,7 +337,8 @@ for _al in ALLEYS:
     _apad = 20 if _ax0 in (1544, 1756) else 8
     s.block_polys.append([(min(_ax0, _ax1) - _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, max(_ay0, _ay1) + 8), (min(_ax0, _ax1) - _apad, max(_ay0, _ay1) + 8)])
 
-for _wbox in ((1230, 1580, 1330, 1650), (1290, 1650, 1390, 1710), (1400, 1030, 1500, 1090), (1520, 1200, 1630, 1280), (1596, 1010, 1690, 1070), (1030, 1420, 1130, 1480)):
+for _wbox in ((1230, 1580, 1330, 1650), (1290, 1650, 1390, 1710), (1400, 1030, 1500, 1090), (1520, 1200, 1630, 1280), (1596, 1010, 1690, 1070), (1030, 1420, 1130, 1480),
+              (1090, 1480, 1190, 1545), (1500, 950, 1600, 1010), (1310, 950, 1410, 1010), (1090, 1396, 1180, 1452), (958, 1412, 1030, 1500), (1010, 1500, 1100, 1560)):
     _ws = s.open_seat(_wbox, 18, 18, well=True)
     if _ws:
         s.well(*_ws)
