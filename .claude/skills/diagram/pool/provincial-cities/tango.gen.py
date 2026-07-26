@@ -1076,6 +1076,20 @@ s.cemetery(
 s.cremation_ground(2205, 978)
 s.ossuary(2215, 760)
 
+# ---- the EXECUTION GROUND and its boundary stone (feature 015; settlements.md "Execution ground").
+# Sited by the way OUT and by the direction pollution runs, not by distance: the ground lies on the
+# north side, the same side as the burakumin quarter (the caste that performs every execution that
+# is not a samurai's), outside the moat and wall, clear of the farmland, and a good distance from the
+# funerary cluster - the community's tended dead and the disposed unmourned are two different kinds
+# of death and must not read as one precinct. The dosojin stone stands between town and ground: sae
+# means "to block", and it is what makes the ground "outside" rather than merely far.
+# A CITY ground: screened on three sides with the road side open, ~100x60 ft (the Suzugamori
+# shape), because a province of ~40,000 reaches the formal channel about once a year - often
+# enough to keep the hoarding standing, unlike a county seat's weedy patch.
+s.boundary_marker(1492, 828)
+s.execution_ground(1686, 770, rot=-4)
+
+
 s.bridges()  # spans the Imperial Road over the moat at the north and south gates
 
 # CARAVAN GROUND inside the north gate, east of the road (GM 2026-07-23). The GM caught this
@@ -1331,6 +1345,14 @@ s.kosatsuba(1588, 1760, rot=90, label=None)  # ...ON the ring-road verge, which 
 # city's Nihonbashi-equivalent node), on the market cross-street's south verge beside the
 # roadside inn - unlabeled, the north-gate board already carries the set's one label.
 s.kosatsuba(1525, 1439, rot=0, label=None)
+
+# ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone at the town's
+# busiest public point (feature 015; settlements.md "Punishment spot"). A DISPLAY installation:
+# the crime rides on the cangue, so it draws no board of its own. Probed with open_seat after
+# the packs by place_punishment_spot, which scores street verges by traffic - the same probe
+# the notice board uses, because both institutions are sited by the same variable.
+s.place_punishment_spot()
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}

@@ -96,6 +96,22 @@ echo b > "$FMAIN2/f"; git -C "$FMAIN2" commit -qam b   # advance main past the c
 OUT=$(printf '{"session_id":"sid-me","tool_input":{"file_path":"%s/.clones/miscellaneous/a.txt"}}' "$FMAIN2" \
       | CLONE_MAIN="$FMAIN2" CLONE_SESSIONS_DIR="$SESS" "$HOOK" pretool 2>&1); check "canonical clone behind main -> sync-in block" 2 $?
 
+# ...but a clone that is merely AHEAD of main (the normal state right after committing your own
+# work, before the push back) must keep working. The equality test this replaced blocked it, which
+# deadlocked every multi-commit work unit - GM-reported 2026-07-25, spec-kit's per-step commits.
+FMAIN3=$TMP/main3; git init -q "$FMAIN3"; git -C "$FMAIN3" config user.email t@t; git -C "$FMAIN3" config user.name t
+echo a > "$FMAIN3/f"; git -C "$FMAIN3" add f; git -C "$FMAIN3" commit -qm a
+mkdir -p "$FMAIN3/.clones"; git clone -q "$FMAIN3" "$FMAIN3/.clones/miscellaneous"
+git -C "$FMAIN3/.clones/miscellaneous" config user.email t@t; git -C "$FMAIN3/.clones/miscellaneous" config user.name t
+echo c > "$FMAIN3/.clones/miscellaneous/f"; git -C "$FMAIN3/.clones/miscellaneous" commit -qam c  # clone ahead, tree clean
+OUT=$(printf '{"session_id":"sid-me","tool_input":{"file_path":"%s/.clones/miscellaneous/a.txt"}}' "$FMAIN3" \
+      | CLONE_MAIN="$FMAIN3" CLONE_SESSIONS_DIR="$SESS" "$HOOK" pretool 2>&1); check "canonical clone AHEAD of main, clean -> allowed" 0 $?
+
+# a DIVERGED clone (each side has a commit the other lacks) is still stale and must block
+git -C "$FMAIN3" commit -q --allow-empty -m d   # main advances too, after the clone's own commit
+OUT=$(printf '{"session_id":"sid-me","tool_input":{"file_path":"%s/.clones/miscellaneous/a.txt"}}' "$FMAIN3" \
+      | CLONE_MAIN="$FMAIN3" CLONE_SESSIONS_DIR="$SESS" "$HOOK" pretool 2>&1); check "canonical clone diverged from main -> sync-in block" 2 $?
+
 # ---- sync-with-main.sh gm-assistant refusal ---------------------------------------------------
 OUT=$(cd "$FMAIN/.clones/gm-assistant" && CLONE_MAIN="$FMAIN" "$RITUAL" sync-in 2>&1); RC=$?
 check "ritual refuses to run from .clones/gm-assistant" 1 "$RC"

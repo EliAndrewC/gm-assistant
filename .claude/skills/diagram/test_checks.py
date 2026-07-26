@@ -109,6 +109,9 @@ def test_fixture_builders_survive_every_check():
         groves=[grove(260, 260, of=(300, 300))],
         village_groves=[vgrove([(700, 700), (800, 700), (800, 800), (700, 800)])],
         tree_crowns=[900, 900, 6],
+        punishment_spots=[pspot(400, 500)],
+        execution_grounds=[exground(880, 200)],
+        boundary_markers=[bstone(700, 350)],
     )
     f(M)  # must not raise; which checks FAIL is irrelevant here - only that they all ran
 
@@ -8344,6 +8347,140 @@ def test_moat_junction_skips_degenerate_channels():
     for poly in ([[400, 500]], [[400, 500], [400, 500]]):
         M = _mj_map({"poly": poly, "frm": {"kind": "moat"}, "to": {"kind": "field", "name": "f1"}, "w": 2.5})
         assert "moat_junctions_swept_with_the_current" not in f(M)
+
+
+# ---- the justice works (feature 015) ----------------------------------------------------------
+# Two institutions sited by OPPOSITE logics: the punishment ground lives on the town's foot
+# traffic, the execution ground lives outside the settlement past the boundary stone and clear of
+# the community's dead. Each fixture below breaks exactly one of those rules.
+def pspot(x, y, rot=0, w=30, h=12, **kw):
+    return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "label": "punishment ground", **kw}
+
+
+def exground(x, y, rot=0, w=60, h=60, screened=False, **kw):
+    return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "screened": screened, "label": "execution ground", **kw}
+
+
+def bstone(x, y, rot=0, w=3, h=3, vw=7, vh=7, **kw):
+    return {"x": x, "y": y, "w": w, "h": h, "vw": vw, "vh": vh, "rot": rot, "label": "boundary stone", **kw}
+
+
+def _justice_town(**over):
+    """A town that PASSES every justice check: a core around x=500 on an east-west road, the
+    punishment ground on the town's frontage, the burakumin quarter east of the core, the boundary
+    stone beyond it, and the execution ground beyond that - clear of the burial ground."""
+    M = {
+        "meta": {"scale": "town", "ftpx": 1, "W": 2000, "H": 2000},
+        "road": [[100, 1000], [1900, 1000]],
+        "houses": [house(440 + 30 * i, 940) for i in range(6)],
+        "buildings": [bldg(1000, 1010, kind="burakumin")],
+        "punishment_spots": [pspot(520, 1020)],
+        "boundary_markers": [bstone(1100, 1010)],
+        "execution_grounds": [exground(1500, 1060)],
+        "cemeteries": [{"x": 1500, "y": 500, "w": 100, "h": 80, "rot": 0, "parish": False}],
+    }
+    M.update(over)
+    return M
+
+
+def test_justice_town_fixture_passes_every_justice_check():
+    # The control. Without it, a check that fires on EVERYTHING would look like a working check.
+    bad = f(_justice_town())
+    assert not {n for n in bad if n.startswith(("punishment_spot", "execution_ground", "town_has_punishment", "town_has_execution"))}
+
+
+def test_town_has_punishment_spot_fires_when_the_seat_keeps_none():
+    assert "town_has_punishment_spot" in f(_justice_town(punishment_spots=[]))
+
+
+def test_town_has_punishment_spot_can_be_opted_out():
+    M = _justice_town(punishment_spots=[])
+    M["meta"] = {**M["meta"], "punishment_spot": False}
+    assert "town_has_punishment_spot" not in f(M)
+
+
+def test_town_has_execution_ground_fires_when_the_seat_keeps_none():
+    assert "town_has_execution_ground" in f(_justice_town(execution_grounds=[]))
+
+
+def test_town_has_execution_ground_can_be_opted_out():
+    M = _justice_town(execution_grounds=[])
+    M["meta"] = {**M["meta"], "execution_ground": False}
+    assert "town_has_execution_ground" not in f(M)
+
+
+def test_punishment_spot_in_the_core_fires_on_a_spot_out_in_the_fields():
+    # Out by the execution ground, where nobody passes it - a display nobody sees is not a display.
+    assert "punishment_spot_in_the_core" in f(_justice_town(punishment_spots=[pspot(1600, 1300)]))
+
+
+def test_punishment_spot_in_the_core_fires_outside_a_rampart():
+    M = _justice_town(wall=WALL, punishment_spots=[pspot(520, 1020)])
+    assert "punishment_spot_in_the_core" in f(M)  # the core sits outside this fixture's square wall
+
+
+def test_punishment_spot_by_the_traffic_fires_on_a_spot_off_the_street():
+    # In among the houses but ~150 ft back from the road: shaming is sited on foot traffic.
+    assert "punishment_spot_by_the_traffic" in f(_justice_town(punishment_spots=[pspot(520, 850)]))
+
+
+def test_execution_ground_outside_the_settlement_fires_on_a_ground_among_the_dwellings():
+    assert "execution_ground_outside_the_settlement" in f(_justice_town(execution_grounds=[exground(520, 1000)]))
+
+
+def test_execution_ground_outside_the_settlement_fires_inside_a_wall():
+    M = _justice_town(wall=WALL, execution_grounds=[exground(500, 500)], boundary_markers=[bstone(480, 480)])
+    assert "execution_ground_outside_the_settlement" in f(M)
+
+
+def test_execution_ground_by_the_road_fires_on_a_ground_hidden_off_the_highway():
+    # The posts are meant to be read from the road; 400 ft back into a field deters nobody.
+    M = _justice_town(execution_grounds=[exground(1500, 1400)], boundary_markers=[bstone(1100, 1200)])
+    assert "execution_ground_by_the_road" in f(M)
+
+
+def test_execution_ground_past_the_boundary_marker_fires_when_the_stone_is_missing():
+    assert "execution_ground_past_the_boundary_marker" in f(_justice_town(boundary_markers=[]))
+
+
+def test_execution_ground_past_the_boundary_marker_fires_when_the_stone_is_beyond_the_ground():
+    # A stone further out than the ground marks nothing - the ground would sit INSIDE the boundary.
+    assert "execution_ground_past_the_boundary_marker" in f(_justice_town(boundary_markers=[bstone(1800, 1060)]))
+
+
+def test_execution_ground_clear_of_the_dead_fires_beside_the_burial_ground():
+    M = _justice_town(cemeteries=[{"x": 1560, "y": 1060, "w": 100, "h": 80, "rot": 0, "parish": False}])
+    assert "execution_ground_clear_of_the_dead" in f(M)
+
+
+def test_execution_ground_clear_of_the_dead_fires_beside_a_cremation_ground():
+    # The rule covers the whole funerary family, not the cemetery alone.
+    M = _justice_town(cremation_grounds=[{"x": 1540, "y": 1100, "w": 75, "h": 52, "rot": 0}])
+    assert "execution_ground_clear_of_the_dead" in f(M)
+
+
+def test_execution_ground_off_the_farmland_fires_on_a_ground_in_a_paddy():
+    M = _justice_town(fields=[{"name": "north", "kind": "paddy", "outline": [[1400, 960], [1700, 960], [1700, 1200], [1400, 1200]], "bbox": [1400, 960, 1700, 1200], "plots": [], "down_deg": 90}])
+    assert "execution_ground_off_the_farmland" in f(M)
+
+
+def test_execution_ground_on_the_outcast_side_fires_on_the_opposite_side():
+    # West of the core while the burakumin quarter lies east - pollution runs ONE way out of a town.
+    M = _justice_town(execution_grounds=[exground(-600, 1060)], boundary_markers=[bstone(0, 1020)])
+    assert "execution_ground_on_the_outcast_side" in f(M)
+
+
+def test_execution_ground_on_the_outcast_side_is_skipped_without_a_quarter():
+    # A settlement with no burakumin dwellings has no outcast side to measure against.
+    M = _justice_town(buildings=[], execution_grounds=[exground(-600, 1060)], boundary_markers=[bstone(0, 1020)])
+    assert "execution_ground_on_the_outcast_side" not in f(M)
+
+
+def test_the_justice_works_are_forbidden_below_a_seat_of_justice():
+    M = manifest(punishment_spots=[pspot(500, 500)], execution_grounds=[exground(900, 900)])
+    bad = f(M)  # manifest() is a VILLAGE - no magistrate, no court
+    assert "punishment_spot_only_at_a_seat_of_justice" in bad
+    assert "execution_ground_only_at_a_seat_of_justice" in bad
 
 
 def _martial_city(pop=3000, halls=1, dojos=1, roll=None, range_ft=100.0, hall_xy=(400, 500), dojo_xy=(460, 500), sam_xy=(430, 520)):
