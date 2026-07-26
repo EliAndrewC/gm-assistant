@@ -3,7 +3,7 @@
 This is NOT a replacement for `ochiba-magistracy.svg`. It is the OUTPUT of feeding the
 EXISTING hand-authored Ochiba's real program (envelope, court-spine, and building masses
 measured off the finished map at 3 px = 1 ft) back through the perimeter-first placer
-([`../compound.py`](../compound.py), feature 008), to test whether the placer composes
+([`../compound.py`](../../compound.py), feature 008), to test whether the placer composes
 Ochiba the way the GM hand-composed it.
 
 Regenerate: `python3 pool/magistracies/ochiba-roundtrip-test.gen.py` (from the skill dir). The program lives

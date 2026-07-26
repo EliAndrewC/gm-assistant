@@ -1,0 +1,59 @@
+{
+ "meta": {
+  "scale": "city",
+  "W": 1000,
+  "H": 1000,
+  "ftpx": 3,
+  "walled": true,
+  "population": 3000
+ },
+ "wall": [
+  [
+   50,
+   50
+  ],
+  [
+   950,
+   50
+  ],
+  [
+   950,
+   950
+  ],
+  [
+   50,
+   950
+  ]
+ ],
+ "gates": [
+  [
+   500,
+   50
+  ]
+ ],
+ "labels": [
+  [
+   470,
+   492,
+   530,
+   508,
+   1,
+   "Temple of Benten"
+  ]
+ ],
+ "execution_grounds": [
+  {
+   "x": 500,
+   "y": 500,
+   "w": 18.0,
+   "h": 14.0,
+   "rot": 0
+  }
+ ],
+ "_regression": {
+  "fires": [
+   "labels_clear_of_other_buildings"
+  ],
+  "source": "test_checks.py::test_labels_clear_of_other_buildings_reads_the_label_registry"
+ }
+}
