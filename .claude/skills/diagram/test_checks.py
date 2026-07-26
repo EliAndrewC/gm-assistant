@@ -2193,6 +2193,28 @@ def test_no_label_overlaps_passes_when_clear():
     assert "no_label_overlaps" not in f(M)
 
 
+# --- label_hugs_its_referent (a caption must sit against the feature it names) ---
+# Element [6] of a label record is the subject box, written only by the standoff-ladder path. The
+# real defect: Tango's "Imperial Road" 55px off the roadway with nothing but bare ground between,
+# which the overlap-only scorer scored as perfect. Box heights below are ascent+descender = 1.05x
+# the font size, which is how the check recovers the size to scale its cap.
+def test_label_hugs_its_referent_fires_on_a_caption_adrift_in_empty_ground():
+    M = {"meta": {}, "labels": [[400, 500, 486, 512.6, 1, "Imperial Road", [540, 400, 549, 700]]]}
+    assert "label_hugs_its_referent" in f(M)
+
+
+def test_label_hugs_its_referent_passes_a_caption_tucked_against_its_subject():
+    M = {"meta": {}, "labels": [[400, 500, 486, 512.6, 1, "Imperial Road", [491, 400, 500, 700]]]}
+    assert "label_hugs_its_referent" not in f(M)
+
+
+def test_label_hugs_its_referent_skips_a_caption_with_no_subject():
+    # a district caption names an AREA, not a feature, so it records no referent and is exempt
+    # (city_labels_placed_with_subject governs those instead)
+    M = {"meta": {}, "labels": [[400, 500, 560, 512.6, 1, "samurai neighborhood"]]}
+    assert "label_hugs_its_referent" not in f(M)
+
+
 def test_title_clear_of_features_passes_over_blank_space():
     M = {"meta": {"scale": "village"}, "houses": [{"x": 300, "y": 300, "w": 60, "h": 40, "rot": 0, "kind": "plain"}], "title": {"name": "V", "bbox": [800, 50, 900, 90]}}
     assert "title_clear_of_features" not in f(M)
