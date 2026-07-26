@@ -8,17 +8,25 @@
   {
    "poly": [
     [
-     500,
-     100
+     400,
+     300
     ],
     [
      500,
-     900
+     450
+    ],
+    [
+     500,
+     450
+    ],
+    [
+     600,
+     600
     ]
    ],
    "w": 8,
    "flow": "forward",
-   "flow_deg": 90.0,
+   "flow_deg": 56.3,
    "frm": {
     "kind": "offmap"
    },
@@ -48,47 +56,17 @@
  "tanning_yards": [
   {
    "x": 466,
-   "y": 500,
+   "y": 473,
    "w": 58,
    "h": 41,
-   "rot": 90,
+   "rot": 0,
    "label": "tanning yard"
-  }
- ],
- "fields": [
-  {
-   "name": "t-ne",
-   "kind": "paddy",
-   "outline": [
-    [
-     300,
-     400
-    ],
-    [
-     480,
-     400
-    ],
-    [
-     480,
-     600
-    ],
-    [
-     300,
-     600
-    ]
-   ],
-   "bbox": [
-    300,
-    400,
-    480,
-    600
-   ]
   }
  ],
  "_regression": {
   "fires": [
-   "tanning_yard_clear_of_fields"
+   "tanning_yard_square_to_its_water"
   ],
-  "source": "test_checks.py::test_tanning_yard_clear_of_fields_fires_on_a_paddy"
+  "source": "test_checks.py::test_tanning_yard_square_to_its_water_ignores_a_repeated_polyline_point"
  }
 }
