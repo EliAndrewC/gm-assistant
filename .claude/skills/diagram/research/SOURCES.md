@@ -122,6 +122,84 @@ Named real-world cases the rules are calibrated against. They are evidence, but 
 | Edo Kokucho time bell | billed ~400-410 blocks 'within earshot' - the bell-audibility anchor |
 | Shunde county | ~4.6% dike-pond in 1581 while containing townships already over 50% - the scatter was normal |
 
+### `kanazawa-teramachi`
+
+VISIT KANAZAWA official travel guide, Teramachi Temple Area
+
+*Used for:* ~70 temples clustered in one castle-town temple district
+
+### `takada-teramachi`
+
+Takada Teramachi tourism site / Joetsu Stories
+
+*Used for:* ~25 temples relocated to Takada in the 1614 wave
+
+### `takayama-teramachi`
+
+Japan Travel, "Takayama's historic 'Temple Town'"
+
+*Used for:* "over 10 temples and shrines" in a SMALL castle town - the size-matched anchor for the city tier
+
+### `jokamachi-wiki`
+
+Japanese Wiki Corpus, *Jokamachi*
+
+*Used for:* the teramachi sited at the jokamachi's outer rim, its precincts forming part of the city defenses
+
+### `pingyao-chenghuangmiao`
+
+Wikipedia, City God Temple of Pingyao
+
+*Used for:* the City God temple as a complex of three distinct temples on one county-seat site
+
+### `chinaknowledge-tang-econ`
+
+chinaknowledge.de, Tang-period economy
+
+*Used for:* monastic land and dependents funding mills, oil presses and other enterprises
+
+### `inexhaustible-treasuries`
+
+*Studies in Chinese Religions* 5(2), "Giving while keeping: inexhaustible treasuries and inalienable wealth in medieval China"
+
+*Used for:* the wu-jin-zang interest-earning endowment; Xuanzong's 713 liquidation
+
+### `tontine-monastery-lending`
+
+The Tontine Coffee-House, "Buddhist Monastery Lending"
+
+*Used for:* monasteries as pawnbrokers; the 1202 Song lay-partnership pawnshop *ju*
+
+### `pawnbroking-history`
+
+Wikipedia, History of pawnbroking
+
+*Used for:* pawnbroking limited to Buddhist monasteries prior to the Tang
+
+### `zhengyi-householder-priests`
+
+Grokipedia, *Zhengyi Dao*; Patheos, Taoism leadership and clergy
+
+*Used for:* married priests residing in households, hereditary ordination within families
+
+### `kannushi-wiki`
+
+Wikipedia, Shinto priest / Kannushi
+
+*Used for:* hereditary shrine office, up to 100 generations; abolished 1871, persists by local preference
+
+### `jodo-shinshu-marriage`
+
+Seattle Betsuin, "Jodo Shinshu and Marriage"
+
+*Used for:* the Tokugawa exemption permitting a married temple head to keep priestly status
+
+### `tricycle-temple-wives`
+
+Tricycle, "Temple Wives of Japan"
+
+*Used for:* the bomori institution and eldest-son succession
+
 ## Setting canon
 
 `l7r.md` and `budgets.md` (the GM's own notes) are cited inline by filename rather than keyed here - they are canon rather than research, and an entry resting on them carries the `setting-canon` evidence class.
