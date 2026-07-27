@@ -302,6 +302,17 @@ def test_kido_guard_box_stands_clear_of_its_own_ward_fence():
     assert (min(p[0] for p in res), min(p[1] for p in res)) == pytest.approx(tuple(s.M["kido"][-1]["bbox"][:2]), abs=0.2)
 
 
+def test_clear_label_seat_walks_out_and_gives_up_when_nothing_is_clear():
+    # a verge-hugging feature puts its DEFAULT below-label on the frontage it hugs, so the seat is
+    # probed: below, above, then left/right, walking outward. On a frontage packed solid there is
+    # no clear box at all, and the siter must be told so rather than handed a seat on a shopfront.
+    s = _town()
+    assert s.clear_label_seat(500, 500, 30, 12, "notice board") == (500, 517)  # the default below-seat, when it is clear
+    s.M["buildings"] = [{"x": 500, "y": 500, "w": 2000, "h": 2000, "rot": 0, "kind": "merchant"}]
+    assert s.clear_label_seat(500, 500, 30, 12, "notice board") is None
+    assert not s.label_seat_clear(500, 517, 26.0)
+
+
 def test_stroke_quads_makes_one_quad_per_segment():
     qs = settlement.stroke_quads([(0, 0), (100, 0), (100, 100)], 5.0)
     assert len(qs) == 2 and all(len(q) == 4 for q in qs)
