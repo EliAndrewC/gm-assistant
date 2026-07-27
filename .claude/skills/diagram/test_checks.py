@@ -39,6 +39,33 @@ def bldg(x, y, kind="merchant", rot=0, w=40, h=28):
     return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "kind": kind}
 
 
+# ---- annotated check exemptions (GM 2026-07-27) -------------------------------------------------
+# A genuinely unusual settlement may switch a named check off, but only WITH ITS REASON on the map.
+# The three properties that keep that safe are tested here: an exemption never reads as a PASS, a
+# reason has to be a real sentence, and an exemption that has stopped excusing anything is deleted.
+_XREASON = "Hirameki was an unwalled town walled in haste mid-war after changing hands, so its rampart was never sized to a population budget"
+
+
+def test_an_exemption_suppresses_its_check_but_is_not_a_pass():
+    bare = manifest()
+    assert "village_has_headman" in f(bare)  # the check really does fire on this fixture
+    exempt = manifest(meta={"scale": "village", "ftpx": 1, "W": 1000, "H": 1000, "check_exemptions": {"village_has_headman": _XREASON}})
+    assert "village_has_headman" not in f(exempt)
+
+
+def test_an_exemption_without_a_real_reason_is_refused():
+    M = manifest(meta={"scale": "village", "ftpx": 1, "W": 1000, "H": 1000, "check_exemptions": {"village_has_headman": "n/a"}})
+    assert "exemption_reasons_given" in f(M)
+
+
+def test_a_stale_exemption_fires_so_it_gets_deleted():
+    """An exemption whose check passes on its own excuses nothing and hides the rule from the next
+    map that breaks it - the same ratchet as a stale label_ground entry."""
+    M = manifest(meta={"scale": "village", "ftpx": 1, "W": 1000, "H": 1000, "check_exemptions": {"no_structure_overlaps": _XREASON}})
+    assert "no_structure_overlaps" not in f(M)  # it was passing anyway
+    assert "exemptions_still_needed" in f(M)
+
+
 # ---- fixture builders -------------------------------------------------------------------------
 # Every test below hands `gate()` a hand-built manifest containing only the keys ITS check reads.
 # That is the right shape for a focused test, but it has a recurring tax: a feature record is often
