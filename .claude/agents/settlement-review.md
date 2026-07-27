@@ -24,7 +24,7 @@ only defects needing **judgment** come to a subagent. So:
 |---|---|
 | does A overlap B | does this glyph *read* as what it depicts |
 | is the belt within N px of a farmhouse | is it a **belt** or a blob |
-| is the manor's footprint clear of the road | does its size agree with its **own Mode A sheet** |
+| is the manor's footprint clear of the road | does the face it presents agree with its **own Mode A sheet** (NOT its size - the manor is a box glyph) |
 | is `town_margins_clothed` under 20% | is that cover **there for a reason**, or to satisfy the check |
 | are the caste counts in band | does the caste **geography** make sense |
 | is there a label | does the label say something **non-obvious** |
@@ -95,12 +95,25 @@ containment or count - never form. For each such feature, state the intended for
 
 ### Agreement with a Mode A sheet of the same place
 
-If any compound on this map - a magistrate's manor, a keep, a temple - has its **own hand-authored
-Mode A plan** in `pool/magistracies/` (or a sibling folder), the two artifacts depict ONE place and
-must agree. Check: envelope dimensions in real feet, orientation, gate direction, and which face
-addresses the settlement. **A disagreement is an error, and the Mode A sheet is authoritative** - it
-is the detailed drawing. Nothing in the automated gate compares two artifacts, so if you skip this
-nobody catches it.
+**READ THE CONVENTION FIRST (GM 2026-07-27): a compound on a settlement map is a GLYPH - always a
+box - and the box is a SIMPLIFICATION, not a scale reduction.** So the following are NOT defects and
+must not be reported as any severity:
+
+- the Mode B footprint differing from the Mode A sheet in **shape, proportion or size** (the real
+  compound may not be rectangular at all);
+- features the Mode A sheet draws **outside** the walls - gate boards, a bounty board, an approach
+  fork to a cart gate or parley door - being **absent** from the settlement map;
+- the settlement map showing no interior when the Mode A sheet is full of buildings.
+
+The glyph is presumed to CONTAIN everything the detailed sheet shows. (This section previously said
+a disagreement was an error and the Mode A sheet authoritative; that produced a false ERROR on
+Ubame - the magistracy's two gate boards - which was withdrawn.)
+
+What is still worth checking, because it is about the compound's RELATIONSHIP to the settlement
+rather than its drawn extent: **which face addresses the town**, **gate direction**, and **where the
+compound sits** (on the border, on the hill, at the road). Those are claims both artifacts make
+about the same place and a contradiction there is real. Nothing in the automated gate compares two
+artifacts, so if you skip that nobody catches it.
 
 ### Annotations and labels
 
