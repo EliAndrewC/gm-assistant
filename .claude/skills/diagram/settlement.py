@@ -5581,6 +5581,13 @@ class Settlement:
         if self.M.get("lane"):
             routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
         routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
+        # TOWN STREETS TOO - the same source `kosatsuba_by_the_road` reads (the dev-loop
+        # same-source doctrine). This probe was written for the village/hamlet tiers, where the
+        # network is `lane`/`lanes`, and the omission was invisible while the towns hand-placed
+        # their boards. The moment Hirameki switched to the auto-siter it surfaced as a hard
+        # stop: that town has NO road and NO lanes at all - its whole network is town_streets -
+        # so the probe had not one candidate seat to consider and returned None (GM 2026-07-27).
+        routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [])
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
 
         beds = way_beds(self.M)  # EVERY way bed, not just the routes candidates were sampled from
