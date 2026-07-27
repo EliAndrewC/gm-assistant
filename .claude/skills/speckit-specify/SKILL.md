@@ -82,6 +82,13 @@ Given that feature description, do this:
 
    Specs live under the default `specs/` directory unless the user explicitly provides `SPECIFY_FEATURE_DIRECTORY`.
 
+   **NO FEATURE BRANCH.** This project stays on `main` (CLAUDE.md, GM 2026-07-27). The
+   `before_specify` hook that ran `speckit.git.feature` is `enabled: false`, and
+   `scripts/no-branch-hooks.sh` blocks a hand-rolled one. Instead **`export
+   SPECIFY_FEATURE=NNN-slug`** once, matching the `specs/` directory name: `common.sh`'s
+   `get_current_branch()` returns it ahead of asking git, so `check_feature_branch()` in
+   `setup-plan.sh` and `setup-tasks.sh` passes for the rest of the plan -> tasks -> implement run.
+
    **Resolution order for `SPECIFY_FEATURE_DIRECTORY`**:
    1. If the user explicitly provided `SPECIFY_FEATURE_DIRECTORY` (e.g., via environment variable, argument, or configuration), use it as-is
    2. Otherwise, auto-generate it under `specs/`:
