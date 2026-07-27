@@ -57,6 +57,10 @@ check_all() {
     _t "python: ruff mypy"                       "python3 -m ruff --version; python3 -m mypy --version"
     _t "playwright chromium (UI screenshots)"    "python3 -c 'from playwright.sync_api import sync_playwright
 with sync_playwright() as p: p.chromium.launch().close()'"
+    # the claude() wrapper that appends this repo's standing authorizations to the system prompt.
+    # ~/.bashrc is NOT on a bind mount (only the repo and ~/.claude survive a rebuild), so this has
+    # to be re-established on every fresh container exactly like the apt and pip state.
+    _t "claude() system-prompt wrapper"          "grep -qF 'gm-assistant append-system-prompt' $HOME/.bashrc"
     return $bad
 }
 
@@ -96,6 +100,36 @@ echo "==> playwright browser + its OS libraries"
 # not in this image. --with-deps apt-installs those too (it shells out to sudo, which is why this
 # script belongs inside the container). ~180MB download, skipped when already unpacked.
 python3 -m playwright install --with-deps chromium >/dev/null
+
+# ---- the claude() wrapper ----------------------------------------------------------------------
+# WHY a system-prompt append and not a CLAUDE.md line: CLAUDE.md sits BELOW the system prompt in the
+# instruction hierarchy, so Claude Code's default "do not call the Agent tool unless the user
+# requested it" outranks this project's own mandate to run a review subagent before declaring work
+# done. On 2026-07-27 that silently suppressed the required settlement-review pass on three city
+# maps - nothing broke and nothing warned, the mandate just lost. --append-system-prompt lands
+# after that line with the same authority. The TEXT lives in container-scripts/append-system-prompt.md
+# (version-controlled and reviewable); this only installs the loader.
+echo "==> claude() system-prompt wrapper"
+# rewrite rather than append-if-absent, so editing the block below actually reaches an existing container
+touch "$HOME/.bashrc"
+if grep -qF '>>> gm-assistant append-system-prompt >>>' "$HOME/.bashrc"; then
+    sed -i '/# >>> gm-assistant append-system-prompt >>>/,/# <<< gm-assistant append-system-prompt <<</d' "$HOME/.bashrc"
+fi
+cat >> "$HOME/.bashrc" <<'BASHRC_BLOCK'
+# >>> gm-assistant append-system-prompt >>>
+# Appends this repo's standing authorizations to every session's system prompt.
+# Edit the text in container-scripts/append-system-prompt.md - this only loads it.
+claude() {
+    local _asp=/gm-assistant/container-scripts/append-system-prompt.md
+    if [ -r "$_asp" ]; then
+        command claude --append-system-prompt "$(cat "$_asp")" "$@"
+    else
+        command claude "$@"
+    fi
+}
+# <<< gm-assistant append-system-prompt <<<
+BASHRC_BLOCK
+echo "    installed - takes effect in NEW shells (or run: source ~/.bashrc)"
 
 echo "==> verifying"
 if check_all; then
