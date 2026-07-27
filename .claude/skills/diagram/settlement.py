@@ -198,6 +198,44 @@ def lane_runs(M: Manifest) -> list[tuple[Poly, float]]:
     return runs
 
 
+def way_beds(M: Manifest) -> list[tuple[Poly, float]]:
+    """Every DRAWN way BED as (polyline, half-width): `lane_runs` (roads, town streets, alleys, the
+    ring road) PLUS the village/hamlet lane network (`lane`, `lanes`), which lane_runs does not carry.
+
+    This is the AVOIDANCE list for a verge-hugging feature - the notice board and the punishment
+    ground, which both site themselves on a frontage and both deliberately bypass the lane CORRIDOR
+    (a house setback: homesteads must not crowd the tread, while a board that everyone passes is the
+    whole institution). Bypassing the corridor must not mean standing in the roadbed, so each siter
+    still tests every bed - and it must be EVERY bed, not merely the ones it sampled candidates
+    from: a spot offset from street A can land on alley B, and each siter had built its own partial
+    list (the board's omitted town_streets and alleys, the punishment ground's omitted alleys and
+    the ring road), so a seat clipping an alley was proposed rather than refused and had to be
+    hand-sited (Tango, reported by another session 2026-07-27). The gate caught it after the fact -
+    the overlap matrix forbids SOLID x WAY - so this closes the PLACEMENT half of the same rule.
+    """
+    runs = lane_runs(M)
+    if M.get("lane"):
+        runs.append(([(float(p[0]), float(p[1])) for p in M["lane"]], 4.0))
+    for ln in M.get("lanes") or []:
+        runs.append(([(float(p[0]), float(p[1])) for p in ln["pts"]], float(ln.get("w", 8)) / 2))
+    return runs
+
+
+def stroke_quads(pts: Sequence[Any], hw: float) -> list[Poly]:
+    """One quad per segment of a polyline at half-width `hw` - a linear feature as real polygons, so
+    a caller can SAT-test against it instead of measuring to sample points (a corner-distance test
+    misses a line passing through the MIDDLE of a box, which is exactly the ward-fence-through-the-
+    guard-box case it was hiding)."""
+    quads: list[Poly] = []
+    for i in range(len(pts) - 1):
+        ax, ay = float(pts[i][0]), float(pts[i][1])
+        bx, by = float(pts[i + 1][0]), float(pts[i + 1][1])
+        ln = math.hypot(bx - ax, by - ay) or 1.0
+        nx, ny = -(by - ay) / ln * hw, (bx - ax) / ln * hw
+        quads.append([(ax + nx, ay + ny), (bx + nx, by + ny), (bx - nx, by - ny), (ax - nx, ay - ny)])
+    return quads
+
+
 def lane_through_gate(M: Manifest, x: float, y: float, fence_deg: float) -> tuple[float, float] | None:
     """The travelled way a ward gate seated at (x, y) BARS, as (tangent degrees, bed half-width), or
     None if the gate stands in open fence with no lane through it. `fence_deg` is the local fence
@@ -552,7 +590,7 @@ def region_blocked(quad: Poly, circles: Sequence[tuple[float, float, float]], ha
     segment-to-region, polygons by containment-or-crossing.
 
     Factored out of near_ring_cropland so it can be tested directly: the bug it exists to stop is a
-    keep-out that sits against the middle of a cell EDGE, touching neither the cell's centre nor any
+    keep-out that sits against the middle of a cell EDGE, touching neither the cell's center nor any
     of its corners, which is how a wellhead ended up 1 px inside a hatake plot with every sample
     point clear."""
     if any(point_quad_dist(cx, cy, quad) < r for cx, cy, r in circles):
@@ -1298,14 +1336,14 @@ class Settlement:
         self.field_polys: list[Any] = []  # smoothed outlines used for blocking
         self.ellipses: list[Any] = []  # (cx, cy, rx, ry) hill/pond/manor - block houses
         self.block_polys: list[Any] = []  # arbitrary no-build polygons (e.g. forest)
-        # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its centre.
+        # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its center.
         # `block_polys` deliberately mixes two different things - hard ground (crop, pond, bog) and
         # SOFT reservations (caption bands, civic aprons, fence standoffs) that a footprint routinely
         # overhangs by a few px - which is why footprint-testing all of it was tried once and reverted
         # (it cost Nagahara a well and pushed Hoshizora's punishment ground off its street). The split
         # IS the fix: hard ground gets the footprint test it always needed, soft reservations keep the
-        # centre test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
-        # centre while the matrix tests its footprint, then maybe the placement test is wrong?"
+        # center test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
+        # center while the matrix tests its footprint, then maybe the placement test is wrong?"
         self.hard_polys: list[Any] = []
         self._hard_cache_key: tuple[int, int, int] | None = None
         self._hard_cache: list[Any] = []
@@ -3474,7 +3512,7 @@ class Settlement:
 
     _Rect = tuple[float, float, float, float]
 
-    def _kido_rects(self, x: float, y: float, rot: float, guard_side: int, hw: float) -> tuple[_Rect, list[_Rect], _Rect, Callable[[_Rect], Poly]]:
+    def _kido_rects(self, x: float, y: float, rot: float, guard_side: int, hw: float, fences: Sequence[Poly] = ()) -> tuple[_Rect, list[_Rect], _Rect, Callable[[_Rect], Poly]]:
         """The local rects a kido glyph at (x, y) is built from - (roof, posts, guard, to_corners) -
         with the guard box already slid clear of the roadbed. Local frame: the gateway bar spans the
         X axis and rotate(rot) turns it onto the bar angle, so local +x is ACROSS the lane and local
@@ -3502,20 +3540,32 @@ class Settlement:
         #     a mural bastion (Nagahara's west ward gate). The kido cannot move and the tower will
         #     not (a coverage-thin curtain needs it), so the BOX is what yields - it simply stands on
         #     the other flank of its own gateway, which is as plausible a spot for a watch shack.
-        #   - the RAMPART and any compound wall it could be pushed onto. Its OWN ward fence is
-        #     excluded: the fence runs through the gate by construction, so the gate's furniture
-        #     stands on it by design (excluding it is what lets the box sit beside its own fence).
+        #   - the RAMPART and any compound wall it could be pushed onto.
+        #   - THE WARD FENCE ITSELF (GM 2026-07-27: "ward gates seem to sometimes overlap with
+        #     neighborhood walls"). The gateway - roof and posts - stands ON the fence, because the
+        #     gate IS the opening in it; the guard box does NOT. It is a small building on the verge
+        #     beside the gate, and a fence line drawn through the middle of it reads as a mistake,
+        #     which is what it is. This was excluded on the reasoning that "the fence runs through
+        #     the gate by construction", which is true of the GATEWAY and was over-applied to its
+        #     furniture. Perpendicular crossings were fine either way (the box sits along the lane,
+        #     off the fence line); it is the OBLIQUE crossings that cut the box, and two of the
+        #     pool's fourteen gates were cut. Tested with SAT against the stroked fence, not by
+        #     corner distances: a line through the CENTRE of a 15x16 box leaves every corner ~8px
+        #     clear, so the corner test the lane beds use would have reported it clear.
         y0 = 12.0 if guard_side >= 0 else -28.0
         verge = max(self.px(12), 4.0)
         runs = [(pts, half + verge) for pts, half in lane_runs(self.M)]
         runs += [(pts, half) for lbl, pts, half in wall_runs(self.M) if "ward fence" not in lbl]
         towers = [tower_quad(t) for t in list(self.M.get("wall_towers") or []) + [g for g in (self.M.get("gate_structs") or []) if g.get("kind") == "tower"]]
+        # 4.0 = the fence's 2.5px drawn half-width plus a hair: the box may stand hard against its
+        # own fence (that is where a gate watch belongs), it may not be cut by it
+        fq = [q for f in fences for q in stroke_quads(f, 4.0)]
         guard: Settlement._Rect = (-hw - 13, y0, 15.0, 16.0)
         for step in range(24):  # bounded: 24 x 1.5px is far more walk than any real crossing needs
             for cand in ((-hw - 13 - 1.5 * step, y0, 15.0, 16.0), (hw - 2 + 1.5 * step, y0, 15.0, 16.0)):
                 gc = to_corners(cand)
                 blocked = any(seg_dist(cx, cy, pts[i], pts[i + 1]) < clear for pts, clear in runs for i in range(len(pts) - 1) for (cx, cy) in gc)
-                if not blocked and not any(sat_overlap(gc, tq) for tq in towers):
+                if not blocked and not any(sat_overlap(gc, tq) for tq in towers) and not any(sat_overlap(gc, q) for q in fq):
                     return roof, posts, cand, to_corners
         return roof, posts, guard, to_corners  # pragma: no cover - nowhere clear within 36px of the opening on either flank; keep the traditional seat and let kido_guard_box_clear_of_lanes report it
 
@@ -3545,7 +3595,9 @@ class Settlement:
         large dwelling's half-diagonal, since block_polys are CENTER-tested for urban packs.
         Call it AFTER the lanes through the gates are drawn, so kido_seat sees them."""
         rot, side = self.kido_seat(x, y, boundary)
-        roof, posts, guard, to_corners = self._kido_rects(x, y, rot, side, self.lw(18) / 2 + 5)
+        # the fence goes in explicitly: at reservation time s.ward has not run, so M['wards'] is
+        # still empty and the drawn call's wall_runs lookup would find nothing to agree with
+        roof, posts, guard, to_corners = self._kido_rects(x, y, rot, side, self.lw(18) / 2 + 5, fences=[[(float(p[0]), float(p[1])) for p in boundary]])
         cs = [c for rect in (roof, *posts, guard) for c in to_corners(rect)]
         x0, y0 = min(c[0] for c in cs) - margin, min(c[1] for c in cs) - margin
         x1, y1 = max(c[0] for c in cs) + margin, max(c[1] for c in cs) + margin
@@ -3579,7 +3631,9 @@ class Settlement:
             rot = 90.0 if horizontal else 0.0
         if guard_side is None:
             guard_side = -1 if horizontal else 1  # the legacy flanks (E of a N-S gate, S of an E-W one)
-        roof, posts, guard, _corners = self._kido_rects(x, y, rot, guard_side, hw)
+        # the ward fences only, NOT their wall-caps: kido_reservation reserves ground against the
+        # bare boundary polyline (the caps do not exist yet then), and the two must agree
+        roof, posts, guard, _corners = self._kido_rects(x, y, rot, guard_side, hw, fences=[pts for lbl, pts, _hw in wall_runs(self.M) if lbl.endswith("ward fence")])
         cr, sr = math.cos(math.radians(rot)), math.sin(math.radians(rot))
         g = [f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{roof[0]:.0f}" y="{roof[1]:.0f}" width="{roof[2]:.0f}" height="{roof[3]:.0f}" rx="1.5" fill="#8A6E3E" stroke="#3F3018" stroke-width="1.5"/>')
@@ -4239,6 +4293,86 @@ class Settlement:
         step = self.px(TORII_PITCH_FT)
         return [along(step * i) for i in range(len(seats))]
 
+    def _avenue_at_threshold(self, x: float, y: float, w: float, h: float, seats: list[Pt]) -> list[Pt]:
+        """Seat a sando's INNERMOST arch ONE PITCH off the hall's front, sliding the whole run in along
+        the face it approaches. The gen authors the avenue's LINE; the engine already owned its COUNT
+        (the tier roll) and its STRIDE (`_avenue_pitch`), and this hands it the THRESHOLD too.
+
+        WHY (GM 2026-07-27): "torii arches appear to be a sensible distance apart from each other but
+        appear to start a huge distance away from city temples. The distance from the front of the
+        temple should be the same as the distance between each torii arch." The gens had been
+        authoring the whole run by hand, and once `_avenue_pitch` took over the stride the two numbers
+        stopped agreeing: Tango's Bishamon sando stood 139 ft off its hall with 20 ft between arches -
+        three arches marooned up a street past a flophouse, reading as marks beside an unrelated
+        building - and Nagahara's Ebisu avenue began 120 ft south of its temple, in the middle of a
+        housing block with the caption and two rows of houses between hall and first gate. An approach
+        that does not TOUCH its hall is not an approach.
+
+        The correction is a TRANSLATION, never a re-shaping: the run keeps its direction, its curve and
+        its stride, and only its distance from the hall changes. It slides along the outward normal from
+        the hall's FOOTPRINT to the innermost arch (`pt_to_rect`'s geometry, per CLAUDE.md's "Gap VERDICT
+        reads footprints, never centres") - so a run authored square in front of the hall walks straight
+        in down its own axis, while one authored off to the side is pulled onto the flank it actually
+        stands off, which is what makes the beside-the-hall gates read as that hall's. A run authored
+        THROUGH the hall is left alone: that is `torii_clear_of_shrine`'s defect to report, not this
+        method's to paper over."""
+        if not seats:
+            return seats
+        pitch = math.hypot(seats[1][0] - seats[0][0], seats[1][1] - seats[0][1]) if len(seats) > 1 else self.px(TORII_PITCH_FT)
+        nx = min(max(seats[0][0], x - w / 2), x + w / 2)  # the nearest point of the hall's footprint: the FRONT it stands off
+        ny = min(max(seats[0][1], y - h / 2), y + h / 2)
+        gap = math.hypot(seats[0][0] - nx, seats[0][1] - ny)
+        if gap < 1e-6:  # the innermost arch is ON the hall - torii_clear_of_shrine's business
+            return seats
+        ux, uy, shift = (seats[0][0] - nx) / gap, (seats[0][1] - ny) / gap, pitch - gap
+        return [(sx + ux * shift, sy + uy * shift) for sx, sy in seats]
+
+    def _hall_caption_y(self, x: float, y: float, w: float, h: float, label: str, label_below: bool, seats: list[Pt]) -> float:
+        """The baseline y of a hall's caption, kept OUT OF ITS OWN SANDO (GM 2026-07-27: an arch must
+        "never be covered by the 'temple of X' label"). A hall's caption and its approach both want the
+        ground at the hall's face, so the two collided the moment `_avenue_at_threshold` brought the
+        arches in - and they were already colliding before it, three times in the shipped pool (Minami's
+        'Temple of Bishamon' and Hoshizora's 'Monastery of Bishamon' each sat on their own arch, Kikuta's
+        'Shrine to Benten' on its sando). The caption goes to the hall's BACK when its avenue owns the
+        front: the gen's `label_below` is honored unless the arches are there, in which case the caption
+        takes the other side. If both sides are fouled the requested side stands and
+        `labels_clear_of_other_buildings` reports it - the engine does not get to hide a map that has no
+        room for both.
+
+        THREE candidate baselines, tried in a STRICT ORDER: the side the gen asked for, then that same
+        side pushed clear PAST the far end of the avenue, and only then the opposite side. Arches veto a
+        candidate; the first survivor wins. If all three are fouled the requested side stands and
+        `labels_clear_of_other_buildings` reports it - the engine does not get to hide a map that has no
+        room for both.
+
+        WHY AN ORDER RATHER THAN A SCORE. The first version scored the survivors with `_label_hits`, the
+        way `ministry` picks its label side, and it was wrong here for a DRAW ORDER reason: a hall goes
+        in early, so at this point `_label_hits` can see almost nothing - Nagahara's fire tower, the
+        graveyard's neighbors and the monk houses are all drawn later - and a blind score flipped
+        Bishamon's caption to the hall's north side, onto a fire tower that did not exist yet. The gen
+        author DOES know what is on each side, which is what `label_below` says; so honor it, and when
+        the sando takes that ground, step past the sando rather than around the hall. Hoshizora is why
+        stepping past has to exist at all: its monastery's parish graveyard sits deliberately at the
+        BACK of the hall, so flipping the caption off the sando would just bury it in the cemetery.
+
+        The label box measured here is `_record_label`'s recorded box, deliberately: placement and check
+        must read the SAME geometry (CLAUDE.md, "Placement and its check must read the SAME manifest
+        source"), or the engine congratulates itself on a clearance the gate does not see."""
+        below, above = y + h / 2 + 22, y - h / 2 - 10
+        want, alt = (below, above) if label_below else (above, below)
+        if not seats:
+            return want
+        lhw = len(label) * 13 * 0.55 / 2  # _record_label's box for a size-13 caption, half-width
+        txh, tyu, tyd = torii_halfbox(self.ftpx)
+        # past the far end of the sando, on whichever side the avenue actually runs
+        beyond = max(ty + tyd for _, ty in seats) + 22 if sum(ty for _, ty in seats) / len(seats) > y else min(ty - tyu for _, ty in seats) - 10
+
+        def fouled(ly: float) -> bool:
+            top, bot = ly - 13 * 0.8, ly + 13 * 0.25  # ...and its vertical extent
+            return any(abs(tx - x) < lhw + txh and top < ty + tyd and ty - tyu < bot for tx, ty in seats)
+
+        return next((ly for ly in (want, beyond, alt) if not fouled(ly)), want)
+
     def _avenue_short_of_walls(self, seats: list[Pt]) -> list[Pt]:
         """Shorten a torii avenue so it stops SHORT of any wall (see wall_runs) - neither standing an
         arch in one nor marching the run across one, since a sando is a single approach and cannot
@@ -4379,6 +4513,7 @@ class Settlement:
         if self.ftpx > 1 and max(w, h) * self.ftpx > 220:
             raise ValueError(f"shrine_hall {w}x{h}px at {self.ftpx} ft/px implies a {max(w, h) * self.ftpx:.0f} ft hall - pass s.px(real_ft), not raw pixels")
         n_t = 0
+        seats_t: list[Pt] = []  # the DRAWN avenue - the caption below reads it to stay out of the sando
         if torii:
             # TORII COUNT IS ROLLED PER TEMPLE, the avenue list is GEOMETRY (GM 2026-07-23, the full
             # re-roll: the town/city gens hand-placed counts that predated the TORII_WEIGHTS table and
@@ -4404,7 +4539,16 @@ class Settlement:
                     step_t = ((pts_t[0][0] - x) / d_t * self.px(TORII_PITCH_FT), (pts_t[0][1] - y) / d_t * self.px(TORII_PITCH_FT))
                 while len(pts_t) < n_t:
                     pts_t.append((pts_t[-1][0] + step_t[0], pts_t[-1][1] + step_t[1]))
-            for tx, ty in self._avenue_short_of_walls(self._avenue_pitch(pts_t[:n_t])):  # house pitch, then stop SHORT of any wall already drawn
+            # STRIDE, then THRESHOLD, then walls - and the threshold AGAIN. _avenue_short_of_walls
+            # shortens a blocked run by scaling every seat's offset from the first arch, which pulls
+            # the STRIDE in while leaving the threshold at the old, wider pitch; re-seating afterwards
+            # is what keeps "the gap to the hall equals the gap between arches" true on a shortened
+            # avenue too (Nagahara's Ebisu sando is the one that shortens). The second pass only ever
+            # slides the run TOWARD the hall, over ground the first arch already stood clear of.
+            seats_t = self._avenue_pitch(pts_t[:n_t])
+            seats_t = self._avenue_short_of_walls(self._avenue_at_threshold(x, y, w, h, seats_t))
+            seats_t = self._avenue_at_threshold(x, y, w, h, seats_t)
+            for tx, ty in seats_t:
                 s2 = self.px(16.0) / 2  # matches _torii's default true span
                 # block the arch + a NEIGHBOR'S HALF-FOOTPRINT: packs test footprint centers, so the
                 # margin must absorb half a house (~28 ft) + slack or a house's edge crosses the arch
@@ -4434,7 +4578,17 @@ class Settlement:
         self.block_polys.append([(x - w / 2 - bm, y - h / 2 - bm), (x + w / 2 + bm, y - h / 2 - bm), (x + w / 2 + bm, y + h / 2 + bm), (x - w / 2 - bm, y + h / 2 + bm)])
         self._clear_ground(x, y, w, h, 58)  # the swept shrine precinct - scrub kept off the tended keidai (the grove, if any, is separate)
         if label:
-            self.label(x, y + h / 2 + 22 if label_below else y - h / 2 - 10, label, 13, weight="bold", color=edge)
+            self.label(x, self._hall_caption_y(x, y, w, h, label, label_below, seats_t), label, 13, weight="bold", color=edge)
+            # RESERVE the caption's own ground (GM 2026-07-27). Every gen that draws a hall had been
+            # hand-writing a block_poly under its caption - Tango's Benten and Nagahara's Bishamon each
+            # carry one, re-seated by hand every time the hall moved - and the moment _hall_caption_y
+            # started choosing the side, those hand bands were reserving ground the caption had left.
+            # A caption's band belongs to whoever knows where the caption went, which is here. The pad
+            # absorbs half a dwelling, because block_polys is CENTRE-tested (CLAUDE.md, "CENTRE vs
+            # FOOTPRINT"); the stale hand bands are now merely redundant, not wrong.
+            _lb = self.M["labels"][-1]
+            _lp = max(14 * self.bscale, 8.0)  # half a dwelling past the recorded box, which is already ~13% wider than the drawn glyphs
+            self.block_polys.append([(_lb[0] - _lp, _lb[1] - _lp), (_lb[2] + _lp, _lb[1] - _lp), (_lb[2] + _lp, _lb[3] + _lp), (_lb[0] - _lp, _lb[3] + _lp)])
         if sublabel:
             self.label(x, y + h / 2 + 16, sublabel, 9, italic=True, color=edge)
 
@@ -5332,7 +5486,14 @@ class Settlement:
         magistrate's manor gate: the manor's own board (Mode A program, buildings.md) posts the
         bench's OUTPUT (verdicts, bounties) for people who come to court, and the manor sits at
         the settlement edge where feet do not pass. True size ~12x5 ft (a 7x3 ft board under a
-        small roof); the label carries the read. Records M['kosatsuba'] (an overlap-checked
+        small roof); the label carries the read.
+
+        `rot` IS THE ROAD'S BEARING, not a free choice. The glyph's long axis is the board's
+        FACE, so a board must stand square to the way it fronts - broadside to the traffic that
+        reads it. Turned perpendicular, the face goes edge-on to everyone approaching and the
+        institution fails while the siting checks stay green (that is exactly how Nagahara's
+        third board shipped, GM 2026-07-27). Hand placements must pass the fronted route's
+        bearing; `place_kosatsuba` derives it. Held by `kosatsuba_faces_the_road`. Records M['kosatsuba'] (an overlap-checked
         struct). WHY: settlements.md 'Notice board (kosatsuba)'. Place LAST, on a clear verge
         beside the road, like the fire tower.
 
@@ -5366,6 +5527,72 @@ class Settlement:
             # would hang over the gate structure (labels_clear_of_other_buildings)
             self.label(x, y - hh - 11 if label_above else y + hh + 11, label, 8, italic=True, color="#7A5A30")
         return z
+
+    def label_blockers(self, skip_key: str | None = None) -> list[tuple[float, float, float, float]]:
+        """Every axis-aligned box a caption must miss: any manifest list of dicts carrying w/h, plus
+        every caption already placed.
+
+        DERIVED, never hand-listed. This was a list of nine keys and it fell behind exactly the way
+        the CAPTION and KEEP-CLEAR registries did before they became registries (CLAUDE.md, "the
+        KEEP-CLEAR CONTRACT"): `dye_yards` was never in it, so when a reflow put Minami\'s punishment
+        ground beside the dye works the probe reported a clear box and the gate reported a caption on
+        a dye works (2026-07-27). A probe that cannot see a feature looks exactly like a probe that
+        passes. Nothing here needs to know WHICH lists exist, so a new feature is covered the day it
+        is drawn; `skip_key` drops the captioned feature\'s own glyph.
+
+        ROTATION-AWARE, because `labels_clear_of_other_buildings` tests each building\'s AABB and a
+        rotated shopfront\'s AABB is much larger than its w/h - probing the unrotated rect passes here
+        and still fails the gate."""
+        boxes: list[tuple[float, float, float, float]] = []
+        for key, recs in self.M.items():
+            if key == skip_key or not isinstance(recs, list):
+                continue
+            for o in recs:
+                if not (isinstance(o, dict) and all(isinstance(o.get(f), (int, float)) for f in ("x", "y", "w", "h"))):
+                    continue
+                a = math.radians(o.get("rot", 0) or 0)
+                ca, sa = math.cos(a), math.sin(a)
+                hw2, hh2 = o["w"] / 2, o["h"] / 2
+                cs = ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))
+                xs = [o["x"] + dx * ca - dy * sa for dx, dy in cs]
+                ys = [o["y"] + dx * sa + dy * ca for dx, dy in cs]
+                boxes.append((min(xs), min(ys), max(xs), max(ys)))
+        boxes += [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
+        return boxes
+
+    def label_caption_hw(self, label: str, size: float) -> float:
+        """A caption\'s half-width AS RECORDED. `_record_label` writes len(text) * size * 0.55, and
+        that is what `labels_clear_of_other_buildings` tests - so probing the PIL-measured glyph box
+        (~2px narrower per side at caption size) is the same class of bug as a hand-written victim
+        list: the probe reports clear and the gate reports a collision on the 2px it could not see
+        (Minami, 2026-07-27). Placement and its check read the SAME geometry."""
+        return len(label) * size * 0.55 / 2
+
+    def label_seat_clear(self, lx: float, ly: float, tw: float, size: float = 9.0, boxes: list[tuple[float, float, float, float]] | None = None) -> bool:
+        """Is a caption box centred at (lx, ly) clear of every blocker? `boxes` lets a caller that
+        probes many seats build the blocker list once."""
+        bx = self.label_blockers() if boxes is None else boxes
+        b = (lx - tw, ly - size * 0.8, lx + tw, ly + size * 0.25)
+        return not any(b[0] < x1 and x0 < b[2] and b[1] < y1 and y0 < b[3] for x0, y0, x1, y1 in bx)
+
+    def clear_label_seat(self, x: float, y: float, w: float, h: float, label: str, size: float = 9.0, skip_key: str | None = None) -> Pt | None:
+        """A caption seat for a verge-hugging feature: below, above, then left and right, walking
+        OUTWARD, first clear box wins; None when nothing is clear.
+
+        A feature that hugs the frontage puts its default below-label ON that frontage - not bad luck
+        but what "hugging the frontage" means, and it fired on all three maps that first used this
+        probe. SIXTEEN rings, not nine: these features are sited at the BUSIEST node by definition, so
+        the ground around them is the most crowded on the map, and nine ran out on Minami - at which
+        point the caption fell back to its default seat, on top of three dwellings. A probe that gives
+        up silently is worse than no probe, so callers must handle None rather than inherit a seat."""
+        tw = self.label_caption_hw(label, size)
+        boxes = self.label_blockers(skip_key)
+        for ring in range(16):
+            d = ring * 14
+            for lx, ly in ((x, y + h / 2 + 11 + d), (x, y - h / 2 - 9 - d), (x - tw - w / 2 - 6 - d, y + 3), (x + tw + w / 2 + 6 + d, y + 3)):
+                if self.label_seat_clear(lx, ly, tw, size, boxes):
+                    return (lx, ly)
+        return None
 
     def place_kosatsuba(self, label: str = "notice board") -> Pt | None:
         """AUTO-SITE the settlement kosatsuba on a lane/road verge at the busiest clear node -
@@ -5401,15 +5628,20 @@ class Settlement:
         routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
 
+        beds = way_beds(self.M)  # EVERY way bed, not just the routes candidates were sampled from
+
         def off_every_bed(x: float, y: float) -> bool:
             # the board hugs the verge, so the lane corridor's no-build clearance (a HOUSE
             # setback: homesteads must not crowd the tread) is deliberately bypassed
             # (_fits corridors=False) - but the board must still stand off the TREAD of
             # every route, including ones it was not sampled from (a junction spot offset
-            # from lane A can land on lane B)
-            return all(seg_dist(x, y, rp[k], rp[k + 1]) >= rw / 2 + h / 2 + 3 for rp, rw in routes for k in range(len(rp) - 1))
+            # from lane A can land on lane B, or on a town street or alley this tier's
+            # candidate list does not carry at all - see way_beds)
+            return all(seg_dist(x, y, bp[k], bp[k + 1]) >= bhw + h / 2 + 3 for bp, bhw in beds for k in range(len(bp) - 1))
 
-        best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
+        tw_lab = self.label_caption_hw(label, 8.0) if label else 0.0  # the caption half-width the seat must also hold, as RECORDED
+        kb_boxes = self.label_blockers("kosatsuba")  # built once: the probe tests many seats against the same map
+        cands: list[tuple[int, float, float, float, float, int | None]] = []  # (busy, score, x, y, rot, label_above|None)
         for pts, _rw in routes:
             for i in range(len(pts) - 1):
                 (ax, ay), (bx, by) = pts[i], pts[i + 1]
@@ -5417,7 +5649,9 @@ class Settlement:
                 if not seg:
                     continue
                 ux, uy = -(by - ay) / seg, (bx - ax) / seg  # verge normal
-                rot = math.degrees(math.atan2(by - ay, bx - ax))  # long axis along the route
+                # long axis ALONG the route: the board's face is broadside to the traffic that
+                # reads it, never edge-on (kosatsuba_faces_the_road; see kosatsuba's docstring)
+                rot = math.degrees(math.atan2(by - ay, bx - ax))
                 for t in range(int(seg // 12) + 1):
                     f = t * 12 / seg
                     mx, my = ax + (bx - ax) * f, ay + (by - ay) * f
@@ -5427,14 +5661,29 @@ class Settlement:
                             x, y = mx + ux * off * side, my + uy * off * side
                             if off_every_bed(x, y) and self._fits(x, y, w, h, corridors=False):
                                 busy = sum(1 for sx, sy in spots if math.hypot(x - sx, y - sy) < 260)
-                                score = busy * 10 - off / 3  # busiest node first, verge-hugging tiebreak
-                                if best is None or score > best[0]:
-                                    best = (score, x, y, rot)
+                                # THE CAPTION IS PART OF THE SEAT (GM 2026-07-27). The glyph is 11 px
+                                # and fits almost anywhere; its caption does not, and the busiest
+                                # frontage is exactly where there is least room for one - so a siter
+                                # that hunts for ground big enough to hold BOTH walks away from the
+                                # traffic and out to the quiet end of the road, which is how Ubame's
+                                # board came to stand across the bridge from its own town.
+                                lab = 0 if self.label_seat_clear(x, y + h / 2 + 11, tw_lab, 8.0, kb_boxes) else (1 if self.label_seat_clear(x, y - h / 2 - 11, tw_lab, 8.0, kb_boxes) else None)
+                                cands.append((busy, busy * 10 - off / 3, x, y, rot, lab))
                             off += 5.0
-        if best is None:
+        if not cands:
             return None
-        _, x, y, rot = best
-        self.kosatsuba(x, y, rot, label=label)
+        # ON THE TRAFFIC IS THE RULE; A FITTING CAPTION IS ONLY THE PREFERENCE WITHIN IT. Scoring the
+        # caption as a flat bonus large enough to outrank traffic was tried first and re-committed the
+        # original sin at one remove: where no seat on a tight village frontage has a clear caption,
+        # EVERY caption-clear seat is out in the fields, so all three village boards walked off the
+        # frontage and their captions ran off the cropped frame. Open ground for a caption is abundant
+        # exactly where nobody is - the same trap as open verge for the board. So the busiest node
+        # sets a floor (60% of the best count available), and the caption chooses only among the seats
+        # that already stand on the traffic. A board with nowhere to put its caption is still placed,
+        # so labels_clear_of_other_buildings reports it rather than the siter hiding it.
+        floor = 0.6 * max(c[0] for c in cands)
+        _b, _s, x, y, rot, lab = max((c for c in cands if c[0] >= floor), key=lambda c: (c[5] is not None, c[1]))
+        self.kosatsuba(x, y, rot, label=label, label_above=bool(lab))
         return (x, y)
 
     def place_punishment_spot(self, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:
@@ -5464,9 +5713,12 @@ class Settlement:
             return None
         wall = self.M.get("wall")
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
+        beds = way_beds(self.M)  # see way_beds: EVERY bed, including the alleys and the ring road
+        # this list does not sample candidates from - a display bypasses the lane CORRIDOR
+        # deliberately (it is a house setback), never the roadbed itself
 
         def off_every_bed(x: float, y: float) -> bool:
-            return all(seg_dist(x, y, rp[k], rp[k + 1]) >= rw / 2 + h / 2 + 3 for rp, rw in routes for k in range(len(rp) - 1))
+            return all(seg_dist(x, y, bp[k], bp[k + 1]) >= bhw + h / 2 + 3 for bp, bhw in beds for k in range(len(bp) - 1))
 
         best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
         for pts, _rw in routes:
@@ -5497,35 +5749,7 @@ class Settlement:
             # A verge-hugging feature's DEFAULT below-label lands on the frontage it hugs - that is
             # not bad luck, it is what "hugging the frontage" means, and it fired on all three maps.
             # So probe the label too: below, above, then left/right, first clear box wins.
-            tw = self._text_width(label, 9) / 2 + 2
-            th = 5.0
-            # ROTATION-AWARE boxes: labels_clear_of_other_buildings tests each building's axis-aligned
-            # bounding box, and a rotated shopfront's AABB is much larger than its w/h - probing the
-            # unrotated rect passed here and still failed the gate.
-            boxes = []
-            for key in ("buildings", "houses", "flophouses", "religious", "manors", "storehouses", "merchant_estates", "ministries", "gate_structs"):
-                # every key listed above holds w/h-bearing dicts - the same assumption
-                # check_village's `_bb` makes about the same registries - so no guard is needed here
-                for o in self.M.get(key) or []:
-                    a = math.radians(o.get("rot", 0) or 0)
-                    ca, sa = math.cos(a), math.sin(a)
-                    hw2, hh2 = o["w"] / 2, o["h"] / 2
-                    xs = [o["x"] + dx * ca - dy * sa for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
-                    ys = [o["y"] + dx * sa + dy * ca for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
-                    boxes.append((min(xs), min(ys), max(xs), max(ys)))
-            labs = [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
-            cands = []
-            for ring in range(0, 9):  # walk outward: the near bands are dense frontage, so keep looking
-                d = ring * 14
-                cands += [(x, y + h / 2 + 11 + d), (x, y - h / 2 - 9 - d), (x - tw - w / 2 - 6 - d, y + 3), (x + tw + w / 2 + 6 + d, y + 3)]
-            for lx, ly in cands:
-                box = (lx - tw, ly - 7.2, lx + tw, ly + th)
-                if any(box[0] < bx1 and bx0 < box[2] and box[1] < by1 and by0 < box[3] for bx0, by0, bx1, by1 in boxes):
-                    continue
-                if any(box[0] < l2 and l0 < box[2] and box[1] < l3 and l1 < box[3] for l0, l1, l2, l3 in labs):
-                    continue
-                label_xy = (lx, ly)
-                break
+            label_xy = self.clear_label_seat(x, y, w, h, label, skip_key="punishment_spots")
         self.punishment_spot(x, y, rot, label=label, label_xy=label_xy)
         return (x, y)
 
@@ -7490,9 +7714,9 @@ class Settlement:
                 ]
                 mx = sum(p[0] for p in quad) / 4
                 my = sum(p[1] for p in quad) / 4
-                # REGION test, not point sampling. Centre-plus-corners was the old form and it leaks:
+                # REGION test, not point sampling. Center-plus-corners was the old form and it leaks:
                 # a small keep-out sitting against the middle of a cell EDGE touches neither the
-                # centre nor any corner, which is exactly how a wellhead ended up 1 px inside a
+                # center nor any corner, which is exactly how a wellhead ended up 1 px inside a
                 # hatake plot (the overlap matrix found it; the sample points had all cleared the
                 # well's 20 ft apron). The cheap point test runs first as a prefilter.
                 if _blocked(mx, my) or any(_blocked(px, py) for px, py in quad) or _blocked_region(quad):
@@ -7800,7 +8024,9 @@ class Settlement:
         fine - over-clearing by a few px reads the same)."""
         self._clear_ground(x, y, w, h, extra)
 
-    def cemetery(self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool | None = None) -> None:
+    def cemetery(
+        self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool | None = None, label_xy: Pt | None = None
+    ) -> None:
         """A BURIAL GROUND - rows of grave markers (sotoba / stone stelae) with a couple of taller
         memorial stupas. Every settlement above a hamlet buries its dead: a Buddhist danka PARISH
         ground sits in a TEMPLE / MONASTERY precinct (death is the Buddhist clergy's business), while
@@ -7856,7 +8082,10 @@ class Settlement:
         self._clear_ground(cx, cy, w, h, 30)  # the tended grave collar - scrub trimmed back off the markers (the waste around it stays scrubby)
         if label:
             ly = cy - h / 2 - 8 if label_above else cy + h / 2 + 14
-            self.label(cx, ly, label, 11, italic=True, color="#6B5A3C")
+            # label_xy slides the caption ALONG the plot it names (it must still hug it) - a parish
+            # graveyard often sits shoulder to shoulder with its temple, and the two captions can meet
+            _lx, _ly = label_xy if label_xy else (cx, ly)
+            self.label(_lx, _ly, label, 11, italic=True, color="#6B5A3C")
 
     def _ward_fence_cap(self, a: Any, b: Any, tol: float = 16) -> int | None:
         """If the axis-aligned wall segment a-b runs ALONG a neighborhood (ward) fence, re-stamp the
@@ -8121,7 +8350,7 @@ class Settlement:
             # (kiln, tanning yard), whose small glyphs the default below-label can land on
             self.label(cx, cy - hh - 8 if label_above else cy + hh + 13, label, 11, italic=True, color="#6B5A3C")
 
-    def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone") -> None:
+    def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone", label_xy: Pt | None = None) -> None:
         """A DOSOJIN (sae no kami) stone at the settlement's ritual boundary - where the road leaves
         clean ground. Usually a paired male-female figure carved on one stone.
 
@@ -8148,7 +8377,10 @@ class Settlement:
         self.M["boundary_markers"].append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "vw": round(vw, 1), "vh": round(vh, 1), "rot": round(rot, 1), "label": label})
         self.placed.append((x, y, vw, vh))
         if label:
-            self.label(x, y + hh + 10, label, 8, italic=True, color="#6B5A3C")
+            # the default below-seat lands on the road the stone stands beside, which at a city gate
+            # is the gate throat itself - label_xy hands it to open ground (Nagahara's east gate)
+            _lx, _ly = label_xy if label_xy else (x, y + hh + 10)
+            self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C")
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary") -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
@@ -8218,7 +8450,13 @@ class Settlement:
                 f'<rect x="{-kw / 2:.0f}" y="{-kh / 2:.0f}" width="{kw}" height="{kh}" rx="1.5" fill="#E8E0CE" stroke="#6B5A3C" stroke-width="1.4"/>'
                 f'<rect x="{-kw / 2:.0f}" y="{-kh / 2:.0f}" width="{kw}" height="4.5" fill="#5A4A30"/></g>'
             )  # dark fireproof roof
-            self.M["storehouses"].append({"x": ox, "y": oy, "w": kw, "h": kh, "of": [b["x"], b["y"]]})
+            # RECORD THE ROTATION. The kura is DRAWN at its shopfront's angle and was recorded without
+            # one, so every manifest reader rebuilt it as an axis-aligned box a couple of px wider than
+            # the thing on the page - placement cleared a merchant_large by 0.37px and the overlap
+            # matrix, reading the un-rotated record, reported a 0.6px collision (Tango, 2026-07-27).
+            # Placement and its check must read the same geometry; here they could not, because the
+            # manifest did not carry it.
+            self.M["storehouses"].append({"x": ox, "y": oy, "w": kw, "h": kh, "rot": b["rot"], "of": [b["x"], b["y"]]})
             self.placed.append((ox, oy, kw, kh))  # later packs (the city terraces) must flow around the annex
             placed += 1
         return placed
@@ -8909,7 +9147,25 @@ class Settlement:
         ring = list(pts) + [pts[0]]
         # the rampart renders in the WALL layer (over the ground lanes - a street running into the wall
         # passes UNDER it) with a GENUINE gap at each gate, so the road shows through the opening
-        dd = self._gapped_ring(ring, gates, 38, water_gates=water_gates)
+        # TRUE SCALE for the gate THROAT (GM 2026-07-27, closing bookend on Minami). The 2026-07-22
+        # pass converted the gate furniture's FOOTPRINTS to real feet but left the OFFSETS that
+        # POSITION them as fixed pixels, so at a city's 1 px = 3 ft everything stood three times too
+        # far apart: the wall opened a 2*38 = 76 px = 228 ft hole, the piers stood +-35 px = +-105 ft
+        # apart, and the guard buildings were set back from a "26" roadway that was really 78 ft wide.
+        # A 228 ft opening is not a gate - no leaf spans it, it cannot be shut, and it forces none of
+        # the single file an inspection barrier exists to create. On the render it read as a plain
+        # breach in the rampart, which is what sent us looking; every check still passed, because the
+        # posts existed, flanked the road symmetrically and cleared the moat. Anchors, China first: a
+        # Ming provincial city's gate tunnel runs ~13-23 ft clear (Nanjing Zhonghua ~23 ft, Xi'an
+        # ~20 ft), and an Edo castle-town koraimon is narrower again. The trunk road entering is 26 ft,
+        # and a gate NARROWS its road rather than widening for it, so the throat passes the road and no
+        # more. Sizes in FEET through px(), so a town at 1 px = 1 ft is unaffected.
+        gate_clear, pier_ft = 30.0, 15.0  # clear opening; masonry pier across (matches the pier footprint below)
+        gate_gap = self.px(gate_clear) / 2 + self.px(pier_ft)  # HALF the wall opening: the clear throat plus one pier each side
+        pier_off = self.px(gate_clear) / 2 + self.px(pier_ft) / 2  # pier centre, inner face landing on the jamb
+        # A cargo canal is wider than a road - Minami's is 36 ft - and a Suzhou-pattern shuimen sets its
+        # arch INTO the wall with a pier to either side, so the opening is the canal plus ~12 ft a side.
+        dd = self._gapped_ring(ring, gates, gate_gap, water_gates=water_gates, water_gap=self.px(60.0) / 2)
         self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add_wall(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
         cx = sum(p[0] for p in pts) / len(pts)
@@ -8947,8 +9203,8 @@ class Settlement:
             _rl = math.hypot(_rox, _roy) or 1.0
             _rox, _roy = _rox / _rl, _roy / _rl  # unit radial OUTWARD
             for _side in (-1, 1):
-                _pcx = gx + _tx * 35 * _side - _rox * 10.5  # offset along the wall, shifted inward so
-                _pcy = gy + _ty * 35 * _side - _roy * 10.5  # the post projects ~5px out / ~26px in
+                _pcx = gx + _tx * pier_off * _side - _rox * self.px(31.5)  # offset along the wall, shifted inward so
+                _pcy = gy + _ty * pier_off * _side - _roy * self.px(31.5)  # the post projects ~5 ft out / ~78 ft in
                 _pw, _ph = self.px(15), self.px(24)  # TRUE SCALE (was 14x31 px = ~42x93 ft): a gate masonry pier ~15 ft across x ~24 ft along the opening
                 self.add_wall(
                     f'<g transform="translate({_pcx:.1f},{_pcy:.1f}) rotate({tang[g_idx]:.1f})"><rect x="{-_pw / 2:.1f}" y="{-_ph / 2:.1f}" width="{_pw:.1f}" height="{_ph:.1f}" fill="{wc}"/></g>'
@@ -8970,7 +9226,10 @@ class Settlement:
             # the road at the gate, the road passing between them.
             g_east = any(abs(gx - ex) < 2 and abs(gy - ey) < 2 for (ex, ey) in guard_east)
             gh_west = not g_east  # guard house on the WEST flank by default; guard_east flips it east (inspection takes the other verge)
-            road_half = self.M.get("road_width", 26) / 2  # city_wall runs before s.road, so this is the Imperial-road default
+            # px(26): city_wall runs before s.road, so this falls back to the Imperial-road default -
+            # which is a width in FEET and must be converted, or a city sets its guard buildings back
+            # from a roadway three times wider than the one that will actually be drawn (GM 2026-07-27).
+            road_half = self.M.get("road_width", self.px(26)) / 2
             # TRUE SCALE (GM 2026-07-22, was fixed-pixel 66x44 / 60x44 = ~198x132 / 180x132 ft at 3 ft/px -
             # a guardhouse drawn bigger than a temple): footprints in REAL FEET via px(). A gate guard duty
             # room is a small 1-3 bay building (~34x20 ft, upper end of the 15-35 ft attested range); a gate
@@ -10008,6 +10267,22 @@ class Settlement:
                 n += 1
         for gs in self.M.get("gate_structs", []) + self.M.get("wall_towers", []):
             if abs(gs["x"] - lx) < hw + gs["w"] / 2 and abs(gs["y"] - ly) < hh + gs["h"] / 2:
+                n += 1
+        # TORII ARCHES count too (GM 2026-07-27: an arch is "never covered by the 'temple of X'
+        # label"). Without this the standoff ladder is blind to a sando - it cannot avoid what it
+        # cannot see - and Tango's theater-stage caption, seated by that ladder, walked straight onto
+        # Benten's arch the moment _avenue_at_threshold brought it in to the hall.
+        _txh, _tyu, _tyd = torii_halfbox(self.ftpx)
+        for _t in self.M.get("torii", []):
+            if abs(_t[0] - lx) < hw + _txh and _t[1] - _tyu < ly + hh and ly - hh < _t[1] + _tyd:
+                n += 1
+        # ...and WELLHEADS, for the same reason: a well is a caption victim in check_village's
+        # _LABEL_GROUP (a drawn glyph a caption can bury) but has no w/h, so it is in none of the
+        # registries above and the ladder could not see it - which is how Tango's cremation-ground
+        # caption came to sit on one. Its drawn extent is the marker radius `vr`.
+        for _w in self.M.get("wells", []):
+            _vr = float(_w.get("vr") or _w.get("r") or 0)
+            if abs(_w["x"] - lx) < hw + _vr and abs(_w["y"] - ly) < hh + _vr:
                 n += 1
         # the LINE features a label must not straddle: the rampart, the moat, the road itself,
         # and open water - tested as stroke-vs-label-box distance on the box's corner/center points

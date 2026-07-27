@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from settlement import Settlement  # noqa: E402
 from waterfields import build_comb  # noqa: E402
 
-s = Settlement(2000, 1300, seed=390)
+s = Settlement(2000, 1300, seed=479)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.

@@ -247,9 +247,9 @@ _LBL_DONE = 0
 def reserve_caption_ground(pad=14):
     """Reserve, as a CORRIDOR, the ground under every caption emitted since the last call.
 
-    A block poly is not enough on its own. The urban packs centre-test block_polys (_fits ->
+    A block poly is not enough on its own. The urban packs center-test block_polys (_fits ->
     _in_blocked looks at the candidate's CENTER only, see the skill CLAUDE.md DRAW ORDER note), so a
-    wide roof whose centre clears the band still comes to rest with half of itself under the text -
+    wide roof whose center clears the band still comes to rest with half of itself under the text -
     which is exactly what labels_clear_of_other_buildings kept firing on. A corridor is
     distance-tested, so it keeps whole FOOTPRINTS off. Call it at each point where a phase has
     finished drawing captioned features and before the next phase packs houses around them; the
@@ -278,7 +278,7 @@ s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clea
 # (rot ~89, the river's own slight eastward lean going south), never across it: a boom strung over
 # the channel would dam the river it works. Caption on the far bank so it does not sit on the water.
 s.log_boom(827, 1420, rot=89, length=100, label_xy=(762, 1392))
-s.oil_press(1606, 1268)
+s.oil_press(1622, 1268)  # +16 east of the obvious seat: its auto-caption otherwise runs into the Temple of Bishamon's (they cleared by 0.7 px, under no_label_overlaps' 2 px estimation slack, and read as touching)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
 s.bathhouses([(1416, 1180), (1250, 1424)])
 s.kiln(640, 1180)  # OUTSIDE the walls on the far bank
@@ -293,6 +293,7 @@ s.corridors.append((CANAL, 30))
 s.block_polys.append([(min(p[0] for p in CANAL) - 14, min(p[1] for p in CANAL) - 14), (max(p[0] for p in CANAL) + 14, min(p[1] for p in CANAL) - 14), (max(p[0] for p in CANAL) + 14, max(p[1] for p in CANAL) + 14), (min(p[0] for p in CANAL) - 14, max(p[1] for p in CANAL) + 14)])
 s.water_gate(*_ring_rel(1051, 1565), rot=152)
 s.dock(*_ring_rel(1152, 1574), 54, 34)
+s.label(1130, 1584, "cargo basin", 9, italic=True, color="#5A7A8C")  # else it reads as an ornamental pond; above the basin is monk_house ground
 s.bridge(*_ring_rel(1098, 1568), 84, 34, 12)  # the ring road bridges the canal just inside the wall
 
 # ---- civic amenities placed FIRST so the dense packs flow around them.
@@ -310,6 +311,13 @@ s.corridors.append(([(1040, 1200), (1040, 1300)], 46))
 s.flophouse(1040, 1176, label_below=True)
 s.inn(1032, 1280)
 s.stables(1082, 1292, rot=90)
+# the river-gate stables' TIE-UP GROUND on its open (east) side. city_gate_caravan_facilities allows
+# at most four dwellings within 75px of a gate stables - dozens of draft animals need somewhere to
+# stand - and the merchant rows had been packing to exactly that limit, so the 2026-07-27 torii reflow
+# tipped it to five without anything moving toward the stables. The north gate has s.animal_ground for
+# the same job; that call CLAIMS ground for the empty-space detector but reserves none, so the pocket
+# has to be blocked here, before the packs run.
+s.block_polys.append([(1136, 1248), (1174, 1248), (1174, 1332), (1136, 1332)])
 
 
 def grid(streets, width_ft=18):
@@ -376,7 +384,11 @@ for _al in ALLEYS:
 
 for _wbox in ((1230, 1580, 1330, 1650), (1290, 1650, 1390, 1710), (1400, 1030, 1500, 1090), (1520, 1200, 1630, 1280), (1596, 1010, 1690, 1070), (1030, 1420, 1130, 1480),
               (1090, 1480, 1190, 1545), (1500, 950, 1600, 1010), (1310, 950, 1410, 1010), (1090, 1396, 1180, 1452), (958, 1412, 1030, 1500), (1010, 1500, 1100, 1560),
-              (1290, 1630, 1400, 1720), (1600, 1080, 1710, 1180), (1360, 1700, 1460, 1780), (1556, 1140, 1648, 1206)):
+              (1290, 1630, 1400, 1720), (1600, 1080, 1710, 1180), (1360, 1700, 1460, 1780), (1556, 1140, 1648, 1206),
+              # the SW warren south of Benten: the 2026-07-27 civic-apron widening pushed households
+              # onto the one well at (1277, 1563) and took it to 27, one past city_well_density_sufficient's
+              # 26. Two more probes here share the load - the engine picks whichever pocket actually fits.
+              (1180, 1516, 1268, 1578), (1330, 1540, 1424, 1604)):
     _ws = s.open_seat(_wbox, 18, 18, well=True)
     if _ws:
         s.well(*_ws)
@@ -393,7 +405,7 @@ def precinct(x, y, fortune, torii, w=TW, h=TH, primary=False, graveyard=False, l
     _cmid = (_cy0 + _cy1) / 2
     s.block_polys.append([(_cx0 - 12, _cmid - 16), (_cx1 + 12, _cmid - 16), (_cx1 + 12, _cmid + 16), (_cx0 - 12, _cmid + 16)])
     s.corridors.append(([(_cx0 - 4, _cmid), (_cx1 + 4, _cmid)], (_cy1 - _cy0) + 12))
-    # the caption's own ground, reserved BOTH ways: a block poly (which the packs centre-test) and
+    # the caption's own ground, reserved BOTH ways: a block poly (which the packs center-test) and
     # a corridor (which the fills honor). "Temple of Fukurokujin" is a wide box, so the band is
     # generous - labels_clear_of_other_buildings does not forgive a roof under the text.
 
@@ -419,7 +431,9 @@ precinct(1682, 1090, "Jurojin", [(1682, 1132)], label_below=False)
 for sx, sy in [(1556, 1064), (1572, 1098), (1538, 1108)]:
     s.small_shrine(sx, sy)
 
-# --- SE: BISHAMON in the samurai ward - the warrior fortune
+# --- SE: BISHAMON on the LABORER side of the ward fence - the warrior fortune, but a Fox precinct is
+# sited by its trade and Bishamon's is the armorers' and porters' custom, not the bushi's own chapel
+# (the ward fence runs y~1304 at this x; the precinct stands ~144 ft north of it, deliberately)
 precinct(1520, 1256, "Bishamon", [(1520, 1292)])
 
 # --- SW: DAIKOKU by the timber and charcoal ground - the fortune of wealth and stores
@@ -430,7 +444,10 @@ precinct(1268, 1490, "Daikoku", [(1268, 1532)], graveyard=True)
 # parishes, and burial ground is constrained by suitable LAND rather than by foundation count.
 s.cemetery(1232, 1042, 46, 32, label="graveyard")  # Inari's
 s.cemetery(1046, 1246, 42, 30, label="graveyard", label_above=True)  # Ebisu's
-s.cemetery(1358, 1540, 42, 30, label="graveyard", label_above=True)  # Daikoku's
+s.cemetery(1358, 1540, 42, 30, label="graveyard", label_above=True, label_xy=(1372, 1514))  # Daikoku's; caption slid east
+# along its own plot - centered it cleared the Temple of Daikoku caption by 2.0 px, which passes the AABB
+# check and still reads as touching, because an italic's ink leans outside the box the check measures.
+# Below-seat is not the answer here: the ground under this plot is solid burakumin/laborer terrace.
 
 # ---- TEMPLE FAMILY HOUSING: 6 households per precinct, drawn identical to laborer houses. Each
 # pocket is RESERVED first so the later terrace strips flow around it - competing for ground after
@@ -449,13 +466,18 @@ for (mx, my), name in zip(MIN_POS, MINS, strict=True):
 s.mausoleum(1500, 1630, 44, 32, label="Mausoleum", gate_dir="north", label_below=True)
 _CIV_I0 = len(s.block_polys)
 for _m in s.M["ministries"] + [s.M["governor_mansion"]]:
-    s.block_polys.append([(_m["x"] - _m["w"] / 2 - 30, _m["y"] - _m["h"] / 2 - 22), (_m["x"] + _m["w"] / 2 + 22, _m["y"] - _m["h"] / 2 - 22), (_m["x"] + _m["w"] / 2 + 22, _m["y"] + _m["h"] / 2 + 22), (_m["x"] - _m["w"] / 2 - 22, _m["y"] + _m["h"] / 2 + 22)])
+    # 30px of apron, not 22. block_polys is CENTRE-tested (CLAUDE.md, "CENTRE vs FOOTPRINT"), so an
+    # apron sized to the 14px office standoff alone lets a dwelling park half its width inside it: the
+    # Ministry of Works ended up 13.4px from a samurai_large whose CENTRE was 5px outside the old band.
+    # 30 = the 14px standoff + half the widest dwelling that packs here (~27px samurai_large).
+    s.block_polys.append([(_m["x"] - _m["w"] / 2 - 30, _m["y"] - _m["h"] / 2 - 30), (_m["x"] + _m["w"] / 2 + 30, _m["y"] - _m["h"] / 2 - 30), (_m["x"] + _m["w"] / 2 + 30, _m["y"] + _m["h"] / 2 + 30), (_m["x"] - _m["w"] / 2 - 30, _m["y"] + _m["h"] / 2 + 30)])
 _CIV_I1 = len(s.block_polys)
 for _m in s.M["mausoleums"]:
     s.block_polys.append([(_m["x"] - _m["w"] / 2 - 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] + _m["h"] / 2 + 16), (_m["x"] - _m["w"] / 2 - 16, _m["y"] + _m["h"] / 2 + 16)])
 s.block_polys.append([(1724, 1384), (1762, 1384), (1762, 1430), (1724, 1430)])
 s.martial_hall(1700, 1500, label_xy=(1700, 1503))
-s.dojos([(1452, 1408), (1786, 1444)])
+s.dojos([(1452, 1394), (1786, 1444)])  # first seat nudged NORTH off the ward kido at (1421,1450): its caption ran across the gate's guard post.
+# North, not east: an eastward nudge reflowed the SE burakumin rows and pushed the (1385,1617) wellhead to 27 households, one over the ceiling.
 reserve_caption_ground()
 front([MAIN_E], (["samurai_large"] + ["samurai"] * 2) * 10, spacing=19, rows=2)
 for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
@@ -570,10 +592,26 @@ s.frontage(NMARKET_LINE, ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, ro
 s.label(1236, 790, "gate market", 9, italic=True, color="#5A4326")
 
 # samurai country estates: dispersed walled compounds NORTHEAST of the city, toward Otosan Uchi.
-EST = [(1990, 1006, 76, 48, "west", (2080, 1026)), (2170, 880, 84, 56, "south", (2240, 900)), (2340, 1100, 94, 62, "west", (2400, 1130))]
+# KNOWN DEFECT, verified and deliberately NOT fixed here (settlement-review + closing bookend,
+# 2026-07-27). All three compounds are invisible to a reader:
+#   * (1990,1006) is PAINTED OVER by a paddy plot of comb field fne1. Verified in the ink, not the
+#     manifest - the compound group is emitted at SVG char ~232k and the covering polygon at ~354k,
+#     so the field wins on document order. A crop centered on the estate shows only green quilt.
+#   * (2170,880) and (2340,1100) fall outside the rendered view entirely (x max 2082).
+# So the "samurai estates" caption names three compounds and points at none, while check_village
+# still counts all three into the samurai caste band. Nothing catches it: `manors` is an overlap
+# TARGET and never a STRUCT, so field-on-manor is untested.
+# WHY IT IS STILL HERE: both obvious fixes reflow the rural belt, and `farmsteads()` on the city
+# path spaces house-to-house without measuring the ANNEX envelope - so any reflow drops a pair whose
+# kitchen garden and neighbor's tool shed overlap by a fraction of a pixel. Moving this block after
+# the comb fields (which does fix the paddy) and re-siting the estates in-frame BOTH produced
+# ('gardens','farm_sheds',2235,1365), a real 0.15 px overlap the matrix rightly fails. The fix that
+# holds is in the packer's annex clearance, with the regen budget to re-sweep the pool behind it.
+EST = [(1990, 1006, 76, 48, "west", (2080, 1026)), (2170, 880, 84, 56, "south", (2240, 900)), (2340, 1100, 94, 62, "east", (2400, 1130))]
 for ex, ey, ew, eh, gd, (_lx, _ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
 s.label(2010, 1070, "samurai estates", 10, italic=True, color="#3A352C")
+
 
 
 # ====================================================================== WATER-FIRST COMB FIELDS
@@ -722,7 +760,7 @@ s.cemetery(600, 1700, 92, 66, parish=False, label="common burial ground")
 s.cremation_ground(604, 1800)
 s.ossuary(596, 1614)
 
-s.boundary_marker(658, 1354)  # ON the west road verge, where the road leaves clean ground (seat from site_justice.py)
+s.boundary_marker(658, 1354, label_xy=(620, 1366))  # ON the west road verge, where the road leaves clean ground (seat from site_justice.py); caption pulled west off a gate-market stall at (682.7,1359.2)
 s.execution_ground(556, 1378, rot=6, label_above=True)
 
 s.bridges()
@@ -965,7 +1003,7 @@ s.kosatsuba(1398, 1348, rot=90)
 s.kosatsuba(1384, 974, rot=78, label=None)  # the north gate's board, on the road verge inside
 s.kosatsuba(1016, 1348, rot=0, label=None)  # the river gate's board
 
-s.place_punishment_spot()
+s.place_punishment_spot(label_xy=(1270, 1454))  # the auto-caption sat 106 px east of its own spot AND across the ward kido at (1421,1450)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 nb = {}
