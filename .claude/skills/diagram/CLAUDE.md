@@ -349,7 +349,7 @@ a `poly`/`outline` ring, a stroked polyline, or a `parts` list of rotated quads.
 NONE of those is extracted as nothing, and a feature the extractor never reaches is invisible to
 every matrix check in both directions no matter how carefully it is classified and mounted - which
 looks exactly like a feature with nothing wrong. Three keys were in that state until an audit went
-looking (`kido`, which records only a centre and its parts; `roads`, the multi-road list;
+looking (`kido`, which records only a center and its parts; `roads`, the multi-road list;
 `flower_fields`, whose ring is called `outline`, not `poly`), and the ward gate had been hiding a
 notice board sitting on its guard box and two guard boxes cut by their own ward fence. The audit is
 cheap and worth re-running whenever a new key appears - per manifest, compare each classified key's
@@ -357,6 +357,28 @@ record count against `collections.Counter(k for k, *_ in matrix_extents(M))`; an
 and no extents is blind. And where one glyph draws SEVERAL rects, record them as `parts` (rotated
 corner quads) rather than a bounding box, and split out any part that does not share the whole
 feature's permissions - a gateway may stand on the fence it pierces, its watch box may not.
+
+**The same disease turns up in PLACEMENT PROBES, where it is quieter.** `place_punishment_spot`
+probes candidate boxes for its own caption before committing to one, and that probe had its own
+hand-written list of nine manifest keys - `dye_yards` was never in it, so when a reflow put Minami's
+punishment ground beside the dye works the probe reported a clear box and the gate reported a caption
+on a dye works (2026-07-27). It now iterates **any manifest list of dicts carrying w/h**, so nothing
+has to be remembered into it. Two sibling lessons from the same defect, both worth generalizing:
+
+- **A probe must measure the box the CHECK will measure.** That probe sized its trial box with
+  `_text_width` (the PIL glyph measurement) while `labels_clear_of_other_buildings` reads the box
+  `_record_label` writes (`len(text) * size * 0.55`), which is ~2px wider per side at caption size. The
+  probe cleared, the gate did not. Same rule as "placement and its check read the SAME manifest
+  source", one level down: geometry, not just data.
+- **A probe that gives up silently is worse than no probe.** When none of its nine candidate rings
+  was clear it left `label_xy` as None and the caption fell back to the default seat - on top of three
+  dwellings. It searches sixteen rings now, but the shape of the bug is the fallback, not the number.
+
+**And a caption that is DEFERRED cannot be reserved by reading it back.** `place_caption` seats at
+`finish()`, so `s.M["labels"][-1]` right after the call returns some *earlier* label, and a gen that
+reserves that box reserves the wrong ground (tango's theater stage, 2026-07-27). Worse, the ladder
+seats a deferred caption against a map that is already full, so it takes the LEAST-BAD spot rather
+than a clear one. A deferred caption's ground has to be reserved by hand, BEFORE the packs run.
 
 **So the checklist for a new feature is:** write the glyph; record it under a new manifest key; add
 that key to `_OVERLAP_STRUCTS` and give it a caption group in `_LABEL_GROUP`; run the suite. If the
