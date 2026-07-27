@@ -312,9 +312,15 @@ s.block_polys.append([(72 + 136 * math.cos(a), 815 + 136 * math.sin(a)) for a in
 # ROTATED along the diagonal road, and the bundle packer's axis-aligned placed-rect test cannot
 # see a rotated corner - one farm kept packing into a shop's swung corner (no_structure_overlaps)
 s.block_polys.append([(615, 855), (835, 855), (835, 940), (615, 940)])
-# ...and a thin strip between the burakumin quarter and the NE comb's head: a bundle packed
-# there stands hard against the quarter's door row (city_house_doors_unblocked)
-s.block_polys.append([(1720, 590), (2010, 590), (2010, 665), (1720, 665)])
+# ...and the SEGREGATION COLLAR around the burakumin quarter: 60 ft of open ground on every side,
+# the band `burakumin_quarter_segregated` demands (settlements.md "The burakumin quarter"). This
+# started life as a thin strip on the south side only - a bundle packed there stood hard against
+# the quarter's door row (city_house_doors_unblocked) - and the farm ring then closed in on the
+# other three sides instead, leaving eight farmhouses inside the seam and one 5 ft from a hut. The
+# check could not see it while it measured CENTER to center at 40 ft, which is less than the two
+# houses' own half-diagonals (GM audit, 2026-07-27). Registered BEFORE the farm rings, like the
+# crematory's keep-out ring above, so the bundles pack around it rather than into it.
+s.block_polys.append([(1665, 335), (2065, 335), (2065, 660), (1665, 660)])
 
 # ---- the TANNING YARD, on the NE comb's drain at the field's low toe (GM 2026-07-24). Hoshizora
 # has no watercourse anywhere near the burakumin quarter - the valley stream runs across the far

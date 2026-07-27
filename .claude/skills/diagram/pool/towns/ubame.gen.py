@@ -111,7 +111,7 @@ s.border_line([(BORDER_X, -60), (BORDER_X, 1560)], label="the Fox border", label
 # ---- terrain: the ubame-oak stand on the NE high ground (the charcoal country, whose kilns are off
 # among the stands), and grazing on the dry upper margin west
 s.forest_patch([(1560, -60), (2260, -60), (2260, 95), (2100, 122), (1880, 108), (1700, 60), (1600, 20)], label="ubame oak", label_xy=(1810, 40))
-s.pasture([(-60, -60), (900, -60), (1000, 130), (820, 265), (300, 300), (-60, 210)], label="grazing", label_xy=(430, 140))
+s.pasture([(-60, -60), (900, -60), (1000, 130), (820, 265), (300, 300), (-60, 210)], label="hayfields & grazing", label_xy=(430, 140))  # the polygon is full of hay bales; "grazing" alone restated the green and left ~30 bales unexplained (settlement-review). Hoshizora captions the identical glyph the same way.
 
 # ---- the trunk road (UNLABELED - not an Imperial road): in from the Fox border at the east, past
 # the magistracy's south gate, then WSW across the map and off the west edge toward Shiro Daika
@@ -295,8 +295,10 @@ s.tanning_yard(1395, 1300, rot=102, pits=4, water="stream", lab_off=36)  # lab_o
 s.block_polys.append([(1395 + 155 * math.cos(a), 1300 + 155 * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]])
 
 # ---- urban core: the businesses front the trunk road (the high street), each facing the roadbed;
-# the housing sits back behind the shopfronts. Counts per budgets.md - ~24 merchant houses, ~14
-# shops, ~29 laborer dwellings, ~5 standalone servants, ~12 burakumin, 5-10 samurai.
+# the housing sits back behind the shopfronts. budgets.md TARGETS - ~24 merchant houses, ~14 shops,
+# ~29 laborer dwellings, ~5 standalone servants, ~12 burakumin, 5-10 samurai. What actually fits the
+# frontage differs, and the drawn counts are the honest ones: 9 shops (settled in review round 1,
+# which found 6 against the stated ~14) and 9 servants. A target is not a promise the ground can keep.
 ROAD_CORE = [(1500, 490), (1180, 573), (860, 655), (540, 740), (260, 820)]
 s.frontage(ROAD_CORE, (["merchant"] * 2 + ["shop"]) * 16, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
 s.label(840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326")  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it)
@@ -336,7 +338,7 @@ s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows;
 # among the west-end frontage - legal only because the check that governs the stone fails while
 # there is no stone, so a useless seat added no NEW failure. Both holes are closed (GM, 2026-07-26).
 s.boundary_marker(127, 887)
-s.execution_ground(125, 975, rot=-16)
+s.execution_ground(60, 820, rot=164)
 
 # a no-build band along the road's south verge through the core: the outer farm ring reached up
 # into the shop rows, where a bundle's kitchen garden lapped a storefront (gardens_clear_of_structures)
@@ -384,6 +386,12 @@ cull_wet_toe(_drainA)
 # a caravan INN + STABLES fronting the trunk road on the quiet west approach, with open ground beside
 # the stables for the wagon-train animals. NO farrier: this is a domain road, not an Imperial relay.
 s.inn(170, 768, rot=-16)
+# The inn is drawn as a plain block like any merchant house, so without a caption it is invisible AS
+# an inn - and the flophouse beside it is labeled, which made the omission read as a judgment that
+# the flophouse mattered more (settlement-review). Seated by the standoff ladder, not by hand.
+s.place_caption("caravan inn", (131, 735, 209, 801))  # the ROTATED extent (rot=-16), not the raw 66x48 footprint:
+# seated against the unrotated box the ladder put the caption 3 px onto the inn's own corner. Give a caption the
+# extent the feature is DRAWN at, or it is cleared against a building that is not the one on the page.
 s.stables(112, 686, rot=-16)
 
 s.farmsteads()
@@ -403,19 +411,33 @@ s.near_ring_cropland((700, 1140, 1300, 1480), seed=11)  # the garden band south 
 s.near_ring_cropland((150, 180, 1150, 560), seed=13)  # the upper dry margin north of the road
 
 # COMMONS SCRUB on the bare outskirts only - the built-up EDGE, never the town's own floor
+# THE WEST-EDGE SLIVERS ARE NOT CHECK-SHAPED, though they look it, and this is written down so the
+# finding does not get "fixed" again. settlement-review (2026-07-26) read these four as frame-clipped
+# rectangles with no place-reason - laundered cover. Merging them into ONE west-margin band was tried
+# and FAILED `scrub_clear_of_urban_fabric`: the band swallowed the stables at (112, 686) and the
+# burakumin houses at (104, 1261) / (100, 1312), and scrub may not claim ground the town stands on.
+# The four are the GAPS BETWEEN the west-edge buildings. Their shape is dictated by the fabric, which
+# is exactly what a real common along a built edge looks like. Dropping them instead puts the sheet at
+# 21% bare against a 20% allowance, so they are not spare either. (The EASTERN four genuinely were one
+# strip mis-drawn as boxes - that merge stands, above.)
 s.commons([(-40, 1030), (104, 1044), (96, 1180), (-40, 1168)], role="grazing")
 s.commons([(-40, 460), (58, 474), (52, 600), (-40, 590)], role="grazing")
 s.commons([(-40, 1330), (70, 1342), (64, 1470), (-40, 1462)], role="grazing")
 s.commons([(1060, -40), (1620, -40), (1640, 165), (1080, 175)], role="grazing")
-s.commons([(1900, 450), (2104, 460), (2097, 600), (1908, 590)], role="grazing")
-s.commons([(1950, 650), (2104, 660), (2097, 850), (1958, 840)], role="grazing")
-s.commons([(1750, 900), (2050, 910), (2042, 1050), (1758, 1040)], role="grazing")
+# THE FRONTIER STRIP - ONE shape, not four. These four rectangles were laid down separately to close
+# a cover shortfall, and drew as three stacked tuft blocks with bare aisles between them: an edge no
+# landscape produces, and the giveaway that the polygons were satisfying a check rather than being a
+# place (settlement-review, 2026-07-26). The ground has a real reason to exist - it is the standing
+# ground for the ox-teams waiting on sealed charcoal loads at the border - and its true form is a
+# STRIP along the line. Merging swallows the aisles, so cover goes UP: ~116k px of boxes becomes
+# ~141k of continuous grazing. West edge at x=1900 clears the charcoal yard (east edge 1881) and the
+# refining forge (1892), both of which stand on their own fire gaps and must not be grazed over.
+s.commons([(1900, 450), (2104, 462), (2096, 1112), (1908, 1100)], role="grazing")
 s.commons([(1600, 0), (1850, 10), (1842, 200), (1608, 190)], role="grazing")
 s.commons([(150, 300), (330, 310), (322, 580), (158, 570)], role="grazing")
 s.commons([(900, 1200), (1150, 1210), (1142, 1400), (908, 1390)], role="grazing")
 s.commons([(680, 1160), (900, 1169), (893, 1340), (687, 1331)], role="grazing")
 s.commons([(1160, 1360), (1440, 1369), (1433, 1500), (1167, 1491)], role="grazing")
-s.commons([(2040, 880), (2110, 889), (2104, 1120), (2047, 1111)], role="grazing")
 s.commons([(960, 0), (1120, 9), (1113, 240), (967, 231)], role="grazing")
 s.commons([(1120, 1080), (1400, 1089), (1393, 1220), (1127, 1211)], role="grazing")
 s.commons([(-40, 200), (120, 214), (112, 400), (-40, 388)], role="grazing")

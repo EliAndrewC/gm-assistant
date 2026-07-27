@@ -182,6 +182,59 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
   - Re-seated to (127, 887) - on the west road where it leaves the last houses, 204 ft from the
     nearest dwelling, 88 ft short of the ground it bounds.
 
+- **2026-07-26 `settlement-review` round 3**, run against a freshly re-rendered sheet. (The PNG had
+  been STALE: `finish()` writes the svg and then rasterizes, so a generator that dies in between - as
+  every gen did during the `_reclist` crash, with stderr suppressed - leaves a new svg beside an old
+  png. Any judgment made on that file in the interim was made on a picture of a different map.)
+  - **APPLIED, engine**: `theater_stage` seated its caption at `cy + hh + 16`, the reach along +y
+    only when the stage is UPRIGHT. Ubame's stands at rot=90, where the ground reaches `hw`, so the
+    caption sat INSIDE its own ground with the outline stroke through the text. No check saw it -
+    `labels_clear_of_other_buildings` polices captions on features they do NOT name, and this one
+    was on the one it did. Correcting the reach ALONE then dropped Tango's caption onto a monk
+    house, which is the lesson: a hand seat knows the geometry and nothing about the neighbors. It
+    now goes through `place_caption`'s standoff ladder against the ROTATED extent, hinted at the
+    historical seat so every upright stage in the pool stays exactly where it was.
+  - **APPLIED, engine**: the painted-pine roundel is gone. The kagami-ita's pine is on the VERTICAL
+    back board - a plan view cannot see it - and drawn as a green disc it borrowed the sheet's own
+    vegetation idiom and read as a bush growing on the stage. Two review rounds blamed scrub for
+    that read; the scrub was real and removed, but the misread survived because the GLYPH supplied
+    it. A defect can have two independent causes, and killing one does not prove the other absent.
+  - **APPLIED, check**: a `theater stage` caption may now sit on `temple` ground. That is not an
+    exemption bolted on to make a map pass - the stage IS temple furniture (`theater_stage_by_temple`
+    enforces the siting), so once the caption is seated properly it is inside a precinct wherever it
+    lands. The allowance is scoped, and the test asserts a stage caption on a MERCHANT house still fires.
+  - **APPLIED, gen**: the inn is captioned (the flophouse beside it was, which made the omission
+    read as a judgment); "grazing" -> "hayfields & grazing" on a pasture drawn full of hay bales;
+    the stale "~14 shops / ~5 servants" comment now records the drawn 9 and 9 as the honest counts.
+    The inn caption's first seat was boxed against the UNROTATED footprint and duly landed 3 px on
+    the inn's own corner - the centre-vs-footprint family again, this time in a caption box.
+  - **APPLIED, gen**: the four eastern commons became ONE frontier strip. They had drawn as stacked
+    tuft blocks with bare aisles between them; the ground's real reason is the ox-team standing
+    ground for sealed charcoal loads, and a strip is its true form. Merging RAISED cover (~116k px
+    of boxes -> ~141k continuous), which is the tell that the boxes were the wrong shape rather than
+    the right amount.
+  - **REJECTED, with evidence**: the four west-edge slivers, reported as check-shaped cover with no
+    place-reason. Merging them into one west-margin band fails `scrub_clear_of_urban_fabric` - the
+    band swallows the stables and two burakumin houses, and scrub may not claim ground the town
+    stands on. They are the GAPS BETWEEN the west-edge buildings, shaped by the fabric. Dropping
+    them instead lands the sheet at 21% bare against a 20% allowance. Recorded in the gen so the
+    finding is not "fixed" again by the next reader.
+  - **DEFERRED to the GM, a convention question rather than a defect**: the Mode A magistracy sheet
+    draws a notice board and a roofed bounty board outside the south gate; the town sheet draws that
+    ground bare. Mode B draws manors as an envelope plus a gate gap (Hoshizora identical), so it is
+    not contradicting so much as declining to draw compound furniture - but this furniture stands
+    OUTSIDE the wall, on ground the town sheet does depict, and one board carries the campaign's
+    bounty. Answering it for Ubame alone would put it out of step with the other towns.
+  - **CONFIRMED and left alone**: the pareidolia fix on the forge holds (no face); the windbreak is a
+    belt, not a blob; the manor agrees with its Mode A sheet at 290 x 200 with its east wall ON the
+    line; both nuisance axes diverge and every nuisance is on its correct one; the trunk road is
+    correctly unlabeled; the twin-detector still reads "its own place" - with the fair caveat that
+    the ARMATURE is Hoshizora's and a reader who knows that map will recognize it.
+  - **STILL OPEN, engine-wide, reported not fixed**: the forge reads as a machine at fit zoom; the
+    west comb's toe degenerates into slivers too acute to hold water (`build_comb`, visible on
+    Hoshizora too); the town tier draws NO lanes at all, so warrens read as scatters rather than
+    fabric; the windbreak faces west against a declared NW wind.
+
 ## Negative fixtures frozen from this map
 
 Seven, in [`../regressions/`](../regressions/) - each the real Ubame manifest with exactly one thing
