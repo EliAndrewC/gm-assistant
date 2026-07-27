@@ -311,6 +311,13 @@ s.corridors.append(([(1040, 1200), (1040, 1300)], 46))
 s.flophouse(1040, 1176, label_below=True)
 s.inn(1032, 1280)
 s.stables(1082, 1292, rot=90)
+# the river-gate stables' TIE-UP GROUND on its open (east) side. city_gate_caravan_facilities allows
+# at most four dwellings within 75px of a gate stables - dozens of draft animals need somewhere to
+# stand - and the merchant rows had been packing to exactly that limit, so the 2026-07-27 torii reflow
+# tipped it to five without anything moving toward the stables. The north gate has s.animal_ground for
+# the same job; that call CLAIMS ground for the empty-space detector but reserves none, so the pocket
+# has to be blocked here, before the packs run.
+s.block_polys.append([(1136, 1248), (1174, 1248), (1174, 1332), (1136, 1332)])
 
 
 def grid(streets, width_ft=18):
@@ -377,7 +384,11 @@ for _al in ALLEYS:
 
 for _wbox in ((1230, 1580, 1330, 1650), (1290, 1650, 1390, 1710), (1400, 1030, 1500, 1090), (1520, 1200, 1630, 1280), (1596, 1010, 1690, 1070), (1030, 1420, 1130, 1480),
               (1090, 1480, 1190, 1545), (1500, 950, 1600, 1010), (1310, 950, 1410, 1010), (1090, 1396, 1180, 1452), (958, 1412, 1030, 1500), (1010, 1500, 1100, 1560),
-              (1290, 1630, 1400, 1720), (1600, 1080, 1710, 1180), (1360, 1700, 1460, 1780), (1556, 1140, 1648, 1206)):
+              (1290, 1630, 1400, 1720), (1600, 1080, 1710, 1180), (1360, 1700, 1460, 1780), (1556, 1140, 1648, 1206),
+              # the SW warren south of Benten: the 2026-07-27 civic-apron widening pushed households
+              # onto the one well at (1277, 1563) and took it to 27, one past city_well_density_sufficient's
+              # 26. Two more probes here share the load - the engine picks whichever pocket actually fits.
+              (1180, 1516, 1268, 1578), (1330, 1540, 1424, 1604)):
     _ws = s.open_seat(_wbox, 18, 18, well=True)
     if _ws:
         s.well(*_ws)
@@ -455,7 +466,11 @@ for (mx, my), name in zip(MIN_POS, MINS, strict=True):
 s.mausoleum(1500, 1630, 44, 32, label="Mausoleum", gate_dir="north", label_below=True)
 _CIV_I0 = len(s.block_polys)
 for _m in s.M["ministries"] + [s.M["governor_mansion"]]:
-    s.block_polys.append([(_m["x"] - _m["w"] / 2 - 30, _m["y"] - _m["h"] / 2 - 22), (_m["x"] + _m["w"] / 2 + 22, _m["y"] - _m["h"] / 2 - 22), (_m["x"] + _m["w"] / 2 + 22, _m["y"] + _m["h"] / 2 + 22), (_m["x"] - _m["w"] / 2 - 22, _m["y"] + _m["h"] / 2 + 22)])
+    # 30px of apron, not 22. block_polys is CENTRE-tested (CLAUDE.md, "CENTRE vs FOOTPRINT"), so an
+    # apron sized to the 14px office standoff alone lets a dwelling park half its width inside it: the
+    # Ministry of Works ended up 13.4px from a samurai_large whose CENTRE was 5px outside the old band.
+    # 30 = the 14px standoff + half the widest dwelling that packs here (~27px samurai_large).
+    s.block_polys.append([(_m["x"] - _m["w"] / 2 - 30, _m["y"] - _m["h"] / 2 - 30), (_m["x"] + _m["w"] / 2 + 30, _m["y"] - _m["h"] / 2 - 30), (_m["x"] + _m["w"] / 2 + 30, _m["y"] + _m["h"] / 2 + 30), (_m["x"] - _m["w"] / 2 - 30, _m["y"] + _m["h"] / 2 + 30)])
 _CIV_I1 = len(s.block_polys)
 for _m in s.M["mausoleums"]:
     s.block_polys.append([(_m["x"] - _m["w"] / 2 - 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] - _m["h"] / 2 - 16), (_m["x"] + _m["w"] / 2 + 16, _m["y"] + _m["h"] / 2 + 16), (_m["x"] - _m["w"] / 2 - 16, _m["y"] + _m["h"] / 2 + 16)])

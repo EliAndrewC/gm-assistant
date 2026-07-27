@@ -252,7 +252,7 @@ rule is in, in a comment, at the point of the test.**
 | **CLASSIFICATION / counting** - "which ward", "how many inside the wall", "what share of this quarter is civic" | center, deliberately | a building belongs to ONE ward; footprint-testing double-counts a building on a seam and the ward populations stop summing to the town | the 29 `point_in_poly(b["x"], b["y"], wall)` sites |
 | **ASSOCIATION / reach** - "is there a well within reach", "do monk houses cluster at their temple", "is this yard on the water" | center, deliberately | the tolerance (75-480 px) dwarfs the footprints and the question is neighborhood membership, not clearance; converting them re-tunes ~21 calibrated constants to fix nothing | `settlement_dwellings_watered`, `city_monk_houses_by_their_temple`, `_ty_on_water` |
 | **PREFILTER** in front of an exact test | circumscribed radius, deliberately | over-stating an extent can only ADMIT a pair the exact test then rejects - the index prunes, it never decides. Tightening these would start rejecting before the exact test runs | `fire_tower_standoff`, `no_structure_overlaps`, `city_house_doors_unblocked`, `within_edge_gap`'s own prefilter |
-| **POINT FIXTURE** - a distance to a gate, torii, kido, sluice gate or bridge | point, unavoidably | these are recorded as bare `[x, y]` in the manifest and have no footprint to test. If one ever gains `w`/`h`, the rules that measure to it become gap verdicts and move to row 1 | `city_inspection_station_at_each_gate`, `city_kosatsuba_per_gate`, `city_temple_approach_has_torii`, `wall_towers_evenly_spaced` |
+| **POINT FIXTURE** - a distance to a gate, torii, sluice gate or bridge | point, unavoidably | these are recorded as bare `[x, y]` in the manifest and have no footprint to test. If one ever gains `w`/`h`, the rules that measure to it become gap verdicts and move to row 1. **The kido left this row on 2026-07-27**: it never had `w`/`h` either, but it records `parts` - each drawn rect's rotated corner quad - and `guard`, so it always had a real footprint that nothing read. The trigger condition is therefore not "gains `w`/`h`" but "records ANY drawn extent"; check the record, not the two field names | `city_inspection_station_at_each_gate`, `city_kosatsuba_per_gate`, `city_temple_approach_has_torii`, `wall_towers_evenly_spaced` |
 
 **The three conventions that were live before this, and what each cost.** Raw center-to-center
 understates clearance by the sum of both half-extents, so a rule promising 120 ft delivered ~60;
@@ -342,6 +342,43 @@ The permission side is derived from the same registry - a group's name IS its ca
 ("brewery", "martial hall", "execution ground") - so a classified feature can caption itself with
 no second list to remember. The named branches in `_label_allows` survive only for SYNONYMS: a
 caption reads "Temple of Benten" or "Governor's Mansion", not "temple" or "governor".
+
+**RECORD A FOOTPRINT THE EXTRACTOR CAN READ - classification is only half.** GM, 2026-07-27: *"in
+general we always want overlap checks to use full footprints."* `matrix_extents` reads `x`+`w`/`vw`,
+a `poly`/`outline` ring, a stroked polyline, or a `parts` list of rotated quads. A record matching
+NONE of those is extracted as nothing, and a feature the extractor never reaches is invisible to
+every matrix check in both directions no matter how carefully it is classified and mounted - which
+looks exactly like a feature with nothing wrong. Three keys were in that state until an audit went
+looking (`kido`, which records only a center and its parts; `roads`, the multi-road list;
+`flower_fields`, whose ring is called `outline`, not `poly`), and the ward gate had been hiding a
+notice board sitting on its guard box and two guard boxes cut by their own ward fence. The audit is
+cheap and worth re-running whenever a new key appears - per manifest, compare each classified key's
+record count against `collections.Counter(k for k, *_ in matrix_extents(M))`; any key with records
+and no extents is blind. And where one glyph draws SEVERAL rects, record them as `parts` (rotated
+corner quads) rather than a bounding box, and split out any part that does not share the whole
+feature's permissions - a gateway may stand on the fence it pierces, its watch box may not.
+
+**The same disease turns up in PLACEMENT PROBES, where it is quieter.** `place_punishment_spot`
+probes candidate boxes for its own caption before committing to one, and that probe had its own
+hand-written list of nine manifest keys - `dye_yards` was never in it, so when a reflow put Minami's
+punishment ground beside the dye works the probe reported a clear box and the gate reported a caption
+on a dye works (2026-07-27). It now iterates **any manifest list of dicts carrying w/h**, so nothing
+has to be remembered into it. Two sibling lessons from the same defect, both worth generalizing:
+
+- **A probe must measure the box the CHECK will measure.** That probe sized its trial box with
+  `_text_width` (the PIL glyph measurement) while `labels_clear_of_other_buildings` reads the box
+  `_record_label` writes (`len(text) * size * 0.55`), which is ~2px wider per side at caption size. The
+  probe cleared, the gate did not. Same rule as "placement and its check read the SAME manifest
+  source", one level down: geometry, not just data.
+- **A probe that gives up silently is worse than no probe.** When none of its nine candidate rings
+  was clear it left `label_xy` as None and the caption fell back to the default seat - on top of three
+  dwellings. It searches sixteen rings now, but the shape of the bug is the fallback, not the number.
+
+**And a caption that is DEFERRED cannot be reserved by reading it back.** `place_caption` seats at
+`finish()`, so `s.M["labels"][-1]` right after the call returns some *earlier* label, and a gen that
+reserves that box reserves the wrong ground (tango's theater stage, 2026-07-27). Worse, the ladder
+seats a deferred caption against a map that is already full, so it takes the LEAST-BAD spot rather
+than a clear one. A deferred caption's ground has to be reserved by hand, BEFORE the packs run.
 
 **So the checklist for a new feature is:** write the glyph; record it under a new manifest key; add
 that key to `_OVERLAP_STRUCTS` and give it a caption group in `_LABEL_GROUP`; run the suite. If the
