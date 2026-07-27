@@ -4791,6 +4791,85 @@ def test_roads_bridge_water_fires_on_an_unbridged_lane_over_a_canal():
     assert "roads_bridge_water" not in f(M)
 
 
+def test_roads_bridge_water_fires_where_the_ring_road_crosses_the_cargo_canal():
+    """The RING ROAD is a carried way and the CARGO CANAL is a watercourse.
+
+    Neither was in the crossing scan until 2026-07-27, so a city's ring-over-canal crossing was
+    invisible to this check AND to s.bridges() - which is why Minami's and Nagahara's were
+    hand-placed and both went crooked."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "ring_road": [[100, 500], [900, 500]],
+        "ring_road_width": 7,
+        "canals": [{"poly": [[500, 100], [500, 900]], "w": 12}],
+        "bridges": [],
+    }
+    assert "roads_bridge_water" in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 0, "span": 40, "w": 7}]
+    assert "roads_bridge_water" not in f(M)
+
+
+def test_roads_bridge_water_ignores_an_undrawn_conduit_channel():
+    """An UNDRAWN channel (topo_channel's `drawn: False`) is a buried conduit recorded for water
+    topology - there is no seam on the ground, so a way over its line crosses nothing. Tango's ring
+    road runs over three of them; demanding decks there would put timber over a drain nobody can see."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "ring_road": [[100, 500], [900, 500]],
+        "ring_road_width": 7,
+        "channels": [{"poly": [[500, 100], [500, 900]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "w": 2.5, "drawn": False}],
+        "bridges": [],
+    }
+    assert "roads_bridge_water" not in f(M)
+    M["channels"][0]["drawn"] = True  # ...but a channel that IS dug and drawn must be carried over
+    assert "roads_bridge_water" in f(M)
+
+
+# --- a bridge must lie ON its crossing and run ALONG the way it carries ---
+def _skew_bridge_map(**kw):
+    # the E-W road crosses the N-S stream at (500, 500); the deck under test is `bridges[0]`
+    M = _bridge_map([{"x": 500, "y": 500, "rot": 0, "span": 37, "w": 26}])
+    M["bridges"][0].update(kw)
+    return M
+
+
+def test_bridges_align_with_their_way_passes_a_solved_deck():
+    # a deck seated on the crossing and bearing with the road - what s.bridges() produces
+    assert "bridges_align_with_their_way" not in f(_skew_bridge_map())
+    # ...and a deck may point either way along the road: a plank has no forward direction
+    assert "bridges_align_with_their_way" not in f(_skew_bridge_map(rot=180))
+
+
+def test_bridges_align_with_their_way_fires_on_a_skewed_deck():
+    # GM 2026-07-27, Minami's cargo basin: the deck was 39 deg off the way it carried, so the road
+    # read as running straight through the water past a crooked plank
+    fails = f(_skew_bridge_map(rot=39))
+    assert "bridges_align_with_their_way" in fails
+    assert "roads_bridge_water" not in fails  # the older rule is satisfied by ANY deck within 40px - that is the gap
+
+
+def test_bridges_align_with_their_way_fires_on_a_deck_beside_its_crossing():
+    # seated 17px east of where the way actually meets the water (Minami's offset), correctly angled
+    fails = f(_skew_bridge_map(x=517))
+    assert "bridges_align_with_their_way" in fails
+    assert "roads_bridge_water" not in fails
+
+
+def test_bridges_align_with_their_way_fires_on_a_deck_that_carries_nothing():
+    # a deck over water with no way on it at all: either the way or the watercourse is unrecorded
+    M = _bridge_map([{"x": 500, "y": 500, "rot": 0, "span": 37, "w": 26}])
+    del M["road"]
+    assert "bridges_align_with_their_way" in f(M)
+
+
+def test_bridges_align_with_their_way_exempts_standalone_footplanks():
+    """A `foot` plank is carried by no way and crosses its ditch PERPENDICULAR by construction, so
+    the alignment rule would fire on every correct one. Its own rules are long_ditches_have_a_
+    footbridge and footbridges_reach_useful_ground."""
+    M = _skew_bridge_map(rot=90, foot=True)  # square across the road it is nowhere near carrying
+    assert "bridges_align_with_their_way" not in f(M)
+
+
 def _footbridge_map(bridges, footbridges=True):
     return {
         "meta": {"scale": "village", **({"field_footbridges": True} if footbridges else {})},

@@ -202,7 +202,8 @@ CANAL = [MOAT[1], (1907, 1460), (1830, 1455)]  # east end ON the moat corner (th
 s.canal(CANAL)
 s.water_gate(1907, 1460, rot=8)
 s.dock(1809, 1455, 54, 34)
-s.bridge(1879, 1457, 95, 34, 12)  # the ring road bridges the canal just inside the wall
+# The ring road bridges the canal just inside the wall - SOLVED by s.bridges() at the end of the
+# gen (this deck was hand-placed and sat 15px / 24 deg off its crossing; see Minami, same defect).
 
 # civic amenities placed FIRST, so the dense packs flow around them.
 s.flophouse(1405, 837, label_below=True)  # outside the NORTH gate

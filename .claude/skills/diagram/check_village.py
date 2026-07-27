@@ -494,8 +494,8 @@ _MATRIX_PERMISSIVE = {
 # genuine adjacency the sweep surfaces should be added here with its reason, not pre-permitted.
 _FIXTURE_MOUNTS: dict[str, frozenset[str]] = {
     "bridges": frozenset(
-        {"WATER", "WAY", "wall"}
-    ),  # spans the water to carry the way over it - and a bridge on a moated approach lands ON the rampart at its water gate, which is the crossing the wall is pierced for
+        {"WATER", "WAY", "wall", "water_gates"}
+    ),  # spans the water to carry the way over it - and a bridge on a moated approach lands ON the rampart at its water gate, which is the crossing the wall is pierced for. `water_gates` was added 2026-07-27 with Nagahara's ring-road canal deck: the ring runs a fixed inset inside the rampart, so where a cargo canal enters through a shuimen the ring necessarily crosses it a few paces INSIDE the arch (Nagahara 39 real ft), and the gate structure's own apron and the deck share that ground - the Suzhou pattern, where the wall road crosses each canal on a bridge at the water gate. Shortening the deck does not separate them (checked: even a bare-abutment span still lands inside the gate footprint), which is what says this is an adjacency rather than a drawing error
     "docks": frozenset({"WATER", "WAY"}),  # a landing stands at the waterline, reached from the quay
     "jetties": frozenset({"WATER"}),  # planked mooring fingers run out OVER the river
     "log_booms": frozenset({"WATER"}),  # a cabled log pen floats ON the river it holds timber in
@@ -7325,15 +7325,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"the pond overlaps rice paddy field(s) {sorted(set(wet_paddy))} - a pond sits BESIDE the crop (a reservoir above it or a tameike below it), joined by a channel, never over the planted paddy",
         )
 
-    # WHERE A ROAD (or town street) CROSSES A WATERCOURSE, a bridge must carry it over - a road does
-    # not simply run through open water. Crossings are road/street segments intersecting a stream, an
-    # irrigation channel, or the city moat (a walled city's approach road crosses the moat at each
-    # gate). Every such crossing must have a recorded bridge near the intersection point. (A road that
-    # merely runs ALONGSIDE water, never intersecting it, needs no bridge - only true crossings count.)
+    # WHERE A WAY CROSSES A WATERCOURSE, a bridge must carry it over - a way does not simply run
+    # through open water. Crossings are road / RING ROAD / street / lane segments intersecting a
+    # stream, an irrigation channel, a field ditch, the navigable cargo canal, or the city moat (a
+    # walled city's approach road crosses the moat at each gate). Every such crossing must have a
+    # recorded bridge near the intersection point. (A way merely running ALONGSIDE water, never
+    # intersecting it, needs no bridge - only true crossings count.)
+    #
+    # The way and water sets here MIRROR settlement.bridges(), which draws from the same two lists -
+    # they must stay in step or the engine places decks the gate does not ask for, or (worse) the
+    # gate stays silent about a crossing the engine never saw. The ring road and the cargo canal were
+    # missing from BOTH until 2026-07-27, which is why Minami's and Nagahara's canal crossings were
+    # hand-placed and both went crooked (see bridges_align_with_their_way, below).
+    #
+    # An UNDRAWN channel (`drawn: False`, from topo_channel) is a buried conduit recorded for water
+    # topology only - there is no seam on the ground, so a way crossing its line crosses nothing and
+    # needs no deck. Tango's ring road runs over three of them.
     bridges = M.get("bridges", [])
-    waters_b = [s["poly"] for s in M.get("streams", [])] + [c["poly"] for c in M.get("channels", [])] + [d["poly"] for d in M.get("field_ditches", [])] + ([M["moat"]] if M.get("moat") else [])
-    carried_b = ([road] if road else []) + [st["pts"] for st in M.get("town_streets", [])] + [ln["pts"] for ln in M.get("lanes", [])]
-    unbridged = []
+    waters_b = (
+        [s["poly"] for s in M.get("streams", [])]
+        + [c["poly"] for c in M.get("channels", []) if c.get("drawn", True)]
+        + [d["poly"] for d in M.get("field_ditches", [])]
+        + [c["poly"] for c in M.get("canals", [])]
+        + ([M["moat"]] if M.get("moat") else [])
+    )
+    carried_b = ([road] if road else []) + ([M["ring_road"]] if M.get("ring_road") else []) + [st["pts"] for st in M.get("town_streets", [])] + [ln["pts"] for ln in M.get("lanes", [])]
+    xings_b = []  # (point, way heading in degrees) for every way x water crossing on the map
     for rpts in carried_b:
         for i in range(len(rpts) - 1):
             ra, rb = rpts[i], rpts[i + 1]
@@ -7341,9 +7358,49 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 for j in range(len(wpts) - 1):
                     if segments_cross(ra, rb, wpts[j], wpts[j + 1]):
                         p = seg_intersect(ra, rb, wpts[j], wpts[j + 1])
-                        if p is not None and not any(math.hypot(b["x"] - p[0], b["y"] - p[1]) <= 40 for b in bridges):
-                            unbridged.append((round(p[0]), round(p[1])))
+                        if p is not None:
+                            xings_b.append((p, math.degrees(math.atan2(rb[1] - ra[1], rb[0] - ra[0]))))
+    unbridged = [(round(p[0]), round(p[1])) for p, _ in xings_b if not any(math.hypot(b["x"] - p[0], b["y"] - p[1]) <= 40 for b in bridges)]
     check("roads_bridge_water", not unbridged, f"a road/street crosses water with no bridge at {sorted(set(unbridged))} - carry it over (call s.bridges() after laying all roads and water)")
+
+    # A BRIDGE MUST LIE ON ITS CROSSING AND RUN ALONG THE WAY IT CARRIES (GM 2026-07-27, Minami's
+    # cargo-basin bridge). The rule above only asks that SOME deck be within 40px of each crossing,
+    # which a deck sitting beside the crossing at a wrong angle satisfies - and the eye reads that as
+    # the road running straight through the water with a crooked plank next to it, which is exactly
+    # what the GM saw. So each carried deck is paired with the nearest crossing and must sit ON it
+    # (within BRIDGE_SEAT_TOL) and share its bearing (within BRIDGE_ROT_TOL, mod 180 - a deck has no
+    # forward direction). EVIDENCE for the tolerances: every deck s.bridges() solves lands 0.0-1.0 px
+    # and 0.0-1.0 deg off its crossing (rounding only), while the two hand-placed canal decks were
+    # 17px/39deg (Minami) and 15px/24deg (Nagahara) off - two orders of magnitude adrift, so a tight
+    # tolerance separates them cleanly with room to spare.
+    #
+    # A deck with NO crossing under it at all fails the same check: it carries nothing, so either the
+    # way or the watercourse it was drawn for is not in the manifest.
+    #
+    # STANDALONE plank footbridges (`foot`) are exempt: no way carries them, they cross the ditch
+    # PERPENDICULAR by construction, and their own rules are long_ditches_have_a_footbridge /
+    # footbridges_reach_useful_ground.
+    BRIDGE_SEAT_TOL, BRIDGE_ROT_TOL = 8.0, 8.0
+    crooked = []
+    for b in bridges:
+        if b.get("foot"):
+            continue
+        near_x = min(xings_b, key=lambda pv: math.hypot(pv[0][0] - b["x"], pv[0][1] - b["y"]), default=None)
+        if near_x is None:
+            crooked.append(f"({round(b['x'])},{round(b['y'])}) carries no way over any water")
+            continue
+        (px_, py_), heading = near_x
+        seat_off = math.hypot(px_ - b["x"], py_ - b["y"])
+        deck_skew = abs((b.get("rot", 0.0) - heading + 90) % 180 - 90)
+        if seat_off > BRIDGE_SEAT_TOL:
+            crooked.append(f"({round(b['x'])},{round(b['y'])}) sits {seat_off:.0f}px off its crossing at ({round(px_)},{round(py_)})")
+        elif deck_skew > BRIDGE_ROT_TOL:
+            crooked.append(f"({round(b['x'])},{round(b['y'])}) is rot {b.get('rot', 0.0):.0f} but its way bears {heading:.0f} ({deck_skew:.0f} deg askew)")
+    check(
+        "bridges_align_with_their_way",
+        not crooked,
+        f"{len(crooked)} bridge(s) not seated on the crossing they carry: {crooked[:3]} - a deck lies ON the intersection and runs ALONG the way, or the way runs through the water beside it; solve it with s.bridges() instead of hand-placing coordinates",
+    )
 
     # STANDALONE plank FOOTBRIDGES on the irrigation ditches (opt-in via meta.field_footbridges): field-workers
     # cross a ditch on a plank while walking the bunds, so any long ditch stretch carries at least one plank

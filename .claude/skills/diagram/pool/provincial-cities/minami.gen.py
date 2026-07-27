@@ -294,7 +294,10 @@ s.block_polys.append([(min(p[0] for p in CANAL) - 14, min(p[1] for p in CANAL) -
 s.water_gate(*_ring_rel(1051, 1565), rot=152)
 s.dock(*_ring_rel(1152, 1574), 54, 34)
 s.label(1130, 1584, "cargo basin", 9, italic=True, color="#5A7A8C")  # else it reads as an ornamental pond; above the basin is monk_house ground
-s.bridge(*_ring_rel(1098, 1568), 84, 34, 12)  # the ring road bridges the canal just inside the wall
+# The ring road bridges the canal just inside the wall - SOLVED by s.bridges() at the end of the
+# gen, not hand-placed here. The deck used to be written out at design coordinates and went 17px
+# and 39 deg adrift when the ring was re-derived, so the road ran through the water beside it
+# (GM 2026-07-27; bridges_align_with_their_way).
 
 # ---- civic amenities placed FIRST so the dense packs flow around them.
 s.flophouse(1330, 806, label_below=True)  # outside the NORTH gate

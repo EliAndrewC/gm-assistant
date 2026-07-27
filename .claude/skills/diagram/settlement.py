@@ -9922,15 +9922,28 @@ class Settlement:
         return z
 
     def bridges(self) -> int:
-        """Auto-span every place a road or town street CROSSES a watercourse with a s.bridge(),
-        oriented along the road. Call AFTER all roads/streets AND all water (streams, channels,
-        the moat) are placed - a watercourse added later would leave an unbridged crossing (which
-        the `roads_bridge_water` check then flags). Returns the number of bridges drawn. Historically
-        a walled city's approach road crossed the moat on a bridge at each gate, and a country road
-        crossed a stream on a timber bridge."""
+        """Auto-span every place a way CROSSES a watercourse with a s.bridge(), oriented ALONG the
+        way. Call AFTER all ways (road, ring road, streets, lanes) AND all water (streams, channels,
+        the cargo canal, the moat) are placed - a watercourse added later would leave an unbridged
+        crossing (which the `roads_bridge_water` check then flags). Returns the number of bridges
+        drawn. Historically a walled city's approach road crossed the moat on a bridge at each gate,
+        and a country road crossed a stream on a timber bridge.
+
+        SOLVE THE CROSSING, NEVER EYEBALL IT (GM 2026-07-27, Minami's cargo-basin bridge). A deck
+        hand-placed at design coordinates goes crooked and slides off its crossing the moment the
+        geometry around it is re-derived: Minami's canal bridge sat 17 px east of where the ring
+        road actually met the canal and 39 deg off its bearing, so the road simply ran through the
+        water beside it (Nagahara's was 15 px / 24 deg off, the same way). Both were hand-placed
+        because this pass could not SEE the crossing - the RING ROAD was not a carried way here and
+        the cargo CANAL was not a watercourse - so both are scanned now, and the checks
+        `roads_bridge_water` + `bridges_align_with_their_way` re-derive the same crossings from the
+        manifest. Anything this pass finds is aligned by construction; hand-place a deck only for a
+        crossing this pass genuinely cannot see, and expect the alignment check to test it."""
         carried: list[Any] = []
         if self.M.get("road"):
             carried.append((self.M["road"], self.M.get("road_width", 26)))
+        if self.M.get("ring_road"):  # the in-wall ring crosses the cargo canal / an in-wall watercourse like any other way
+            carried.append((self.M["ring_road"], self.M.get("ring_road_width", 8)))
         for st in self.M.get("town_streets", []):
             carried.append((st["pts"], st["w"]))
         for ln in self.M.get("lanes", []):  # a village LANE/path crosses a canal on a plank footbridge
@@ -9939,9 +9952,12 @@ class Settlement:
         for s in self.M.get("streams", []):
             waters.append((s["poly"], s.get("w", 9)))
         for c in self.M.get("channels", []):
-            waters.append((c["poly"], 4.2))
+            if c.get("drawn", True):  # an UNDRAWN channel is a buried conduit (topo_channel): nothing on the ground to bridge
+                waters.append((c["poly"], c.get("w", 4.2)))
         for d in self.M.get("field_ditches", []):  # the irrigation canals a village path must bridge to reach the paddy
             waters.append((d["poly"], d.get("w", 4.2)))
+        for cn in self.M.get("canals", []):  # the navigable cargo canal - the widest thing a city way crosses short of the moat
+            waters.append((cn["poly"], cn.get("w", 12)))
         if self.M.get("moat"):
             waters.append((self.M["moat"], self.M.get("moat_width", 22)))
         n = 0
