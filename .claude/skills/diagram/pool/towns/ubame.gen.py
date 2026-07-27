@@ -82,6 +82,23 @@ s.meta(
     iron_district=True,  # feature 016 -> settlement_has_refining_forge
     pond_role="drainage",
     near_ring_density="thin",  # HONEST, not a shortfall: charcoal-and-iron country in oak hills, where the fuel stands are the crop and the flat waterable ground is one narrow ribbon along the single valley stream
+    # DECLARED OVERRIDE (GM 2026-07-27). The general rule is that the burakumin quarter and the
+    # tanning yard face the same way out of a settlement, because kegare leaves a place one way.
+    # In this valley the two candidate "downstream" directions genuinely disagree, and the map is
+    # honest about following both: the LAND falls southwest (down_deg=135), which is where the
+    # pollution geography went - quarter, execution ground, cemeteries and cremation ground all sit
+    # west - while the only WATER that can soak a hide is the valley stream in the east. There is no
+    # watercourse within ~1,000 ft of the quarter, so the yard cannot join it and the rule cannot be
+    # satisfied by moving one feature. This is terrain, not an unconsidered placement.
+    waivers={
+        "tanning_yard_on_the_outcast_side": (
+            "Ubame's land falls southwest (down_deg=135), so its pollution geography went west - the burakumin "
+            "quarter, the execution ground, the cemeteries and the cremation ground are all on that side. Its only "
+            "tannable water is the valley stream in the EAST, with no watercourse within ~1,000 ft of the quarter, "
+            "so the yard must sit east and the fall and the water point different ways. A hill valley is allowed to "
+            "have its low ground and its running water disagree; the map follows both rather than faking one."
+        )
+    },
 )  # NOTE: imperial_road is deliberately NOT declared - a domain trunk road, so no label and no farrier
 
 BORDER_X = 2125

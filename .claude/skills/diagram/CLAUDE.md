@@ -352,6 +352,44 @@ rule still needs its own row. A row's fifth field lists keys the rule DELIBERATE
 real adjacency), so a deliberate exclusion is visible in the contract rather than hidden in a
 check.
 
+## Declared overrides: a map may break a rule, but only IN WRITING
+
+Every placement rule in this engine is a GENERALIZATION, and a specific place is allowed to have a
+specific history that beats it. Tango's samurai take the southeast because the Emperor lies that
+way, which pushes the outcast quarter opposite its own tanning yard. Hirameki's walls were thrown up
+in a hurry when a war turned an interior county into a border one, which is why that town looks
+non-standard in several ways. The GM's rule (2026-07-27): **rules and checks are overrideable - and
+an override must carry a documented explanation.**
+
+    s.meta(waivers={"tanning_yard_on_the_outcast_side": "The Emperor lies southeast of Tango ..."})
+
+The gate then prints `WAIVE <check>` instead of `PASS`, lists every waiver again in a closing
+summary, and keeps the name out of the failure list. Two meta-checks keep the hatch from rotting:
+
+- **`waivers_are_documented`** - the value must be 60+ characters of actual REASON. "by design" and
+  `True` both fail. The waiver text is the only record that the map broke the rule on purpose, so it
+  states the place's history, not the fact of the exemption.
+- **`waivers_are_live`** - the waiver must name a check that ACTUALLY FAILED on this map. A waiver
+  whose defect was since fixed, whose check this scale never runs, or whose name is a typo is stale
+  and fails. Waivers therefore rot loudly instead of accumulating into a map that is quietly exempt
+  from rules nobody remembers it was breaking.
+
+Neither meta-check is itself waivable, or the hatch would swallow its own guard
+(`test_the_waiver_meta_checks_cannot_themselves_be_waived`).
+
+**When NOT to reach for it.** A waiver is for a place with a REASON, never for a map that is simply
+inconvenient to fix, and never as a way to ship a red gate. If you find yourself writing the reason
+and it is really "another session owns this file" or "re-siting is a lot of work", the honest move is
+to fix the map or ask the GM - the mechanism is built to make that distinction visible, so using it
+to paper over the second kind turns the whole audit trail into noise. And when a rule genuinely
+needs to bend for a whole CLASS of maps rather than one place, change the rule, not each map.
+
+**Freeze the pre-waiver manifest as a regression fixture.** A waived map no longer fails, so the
+check has no live map holding it honest. Drop the manifest as it stood BEFORE the waiver into
+`pool/regressions/` with a `_regression` block (see
+`tanning_yard_on_the_outcast_side_fires_on_the_pre_waiver_tango.json`) so a refactor that neuters
+the check is still loud.
+
 ## When a check is slow, INDEX it - do not coarsen it
 
 The gate's cost is dominated by a handful of checks that ask a local question with a global scan.

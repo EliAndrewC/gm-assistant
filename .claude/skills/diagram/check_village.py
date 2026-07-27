@@ -2295,9 +2295,27 @@ def city_capacity(M: Manifest, step: float = 8, grid_step: float | None = None) 
     }
 
 
+# ---- WAIVERS: a map may decline a rule, but only in writing (GM 2026-07-27) --------------------
+# Every placement rule here is a GENERALIZATION, and a specific place is allowed to have a specific
+# history that overrides it - Tango's samurai take the southeast because the Emperor lies that way,
+# Hirameki's burakumin stayed outside walls that were thrown up in a hurry when a war turned an
+# interior county into a border one. What must NOT happen is that overriding a rule looks like
+# passing it. So a map waives a named check by declaring meta(waivers={"check_name": "why"}), the
+# gate prints WAIVE rather than PASS, and two meta-checks keep the escape hatch honest:
+#   - the reason must be a real explanation (WAIVER_MIN_REASON chars), not "n/a" or "by design";
+#   - the waiver must be LIVE - a waiver on a check that now passes, or on a name that no longer
+#     exists, is stale and fails. Waivers therefore rot loudly instead of silently accumulating
+#     into a map that is exempt from rules nobody remembers it was ever breaking.
+# The meta-checks themselves are NOT waivable, or the hatch would swallow its own guard.
+WAIVER_MIN_REASON = 60
+WAIVER_META_CHECKS = frozenset({"waivers_are_documented", "waivers_are_live"})
+
+
 def gate(M: Manifest, verbose: bool = True) -> list[str]:
     """Run every check over a manifest dict M and return the list of FAILED check names.
-    verbose prints the PASS/FAIL lines. Pass a synthetic M to unit-test a single check."""
+    verbose prints the PASS/FAIL lines. Pass a synthetic M to unit-test a single check.
+    A check named in meta(waivers=...) prints WAIVE and does not enter the failure list; see
+    WAIVER_MIN_REASON above for the rules that keep that hatch from rotting."""
     # tolerate sparse synthetic manifests (unit tests build only the keys a check needs)
     M = {**DEFAULT_MANIFEST, **M}
     meta = M.get("meta", {})
@@ -2310,8 +2328,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     _vw = meta.get("view")
     EX0, EY0, EX1, EY1 = (_vw[0], _vw[1], _vw[0] + _vw[2], _vw[1] + _vw[3]) if _vw else (0, 0, Wd, Hd)
     fails: list[str] = []
+    # see WAIVER_MIN_REASON above. _waived records what was actually excused (so a waiver that
+    # never fired can be reported as stale); _ran records every check name the gate reached, so a
+    # waiver naming a check this map's scale never runs is caught as stale too, not silently kept.
+    _waivers: dict[str, Any] = dict(meta.get("waivers") or {})
+    _waived: dict[str, Any] = {}
+    _ran: set[str] = set()
 
     def check(name: str, ok: Any, detail: str = "") -> None:
+        _ran.add(name)
+        if not ok and name in _waivers and name not in WAIVER_META_CHECKS:
+            _waived[name] = _waivers[name]
+            if verbose:
+                print(f"WAIVE {name}  -> waived: {_waivers[name]}")
+            return
         if verbose:
             print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
         if not ok:
@@ -9548,6 +9578,58 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"stands off the houses by at least the crematory's 120 ft. Burakumin dwellings are deliberately EXEMPT: "
                 f"they live on the ground they work, which is what the segregated quarter is",
             )
+            # ---- THE YARD SHARES THE QUARTER'S SIDE OF THE SETTLEMENT (GM 2026-07-27) --------------
+            # The rule kegare actually follows is DIRECTIONAL, not metric: pollution leaves a
+            # settlement ONE way, and the outcast quarter is the marker of which way that is. Edo
+            # stacked the Asakusa outcast community, the Kozukappara execution ground and the
+            # Yoshiwara at the northeast kimon; Kyoto put its communities on the riverbeds and the
+            # southern roads out. So this is deliberately NOT a distance rule, and an earlier draft
+            # that measured feet was WRONG: a walled city legitimately keeps its quarter inside at
+            # the margin (siege labor, night soil, corpse and execution duty, and the leather CRAFT -
+            # sandals, drum heads, armor lacing - which is clean, quiet work done at home) while the
+            # wet, stinking phase of the trade (soak, unhair, dry) goes out to the water. Nagahara's
+            # yard stands ~1,390 ft from its quarter and is correct. What is NOT correct is the yard
+            # facing the opposite way out of town from the quarter, which puts the tanners' daily
+            # carcass haul straight through the rest of the settlement - the traffic real castle
+            # towns routed around with designated carcass ways.
+            # Same form and same threshold as execution_ground_on_the_outcast_side, whose rule this
+            # simply extends to the other burakumin-run works: a dot product against the quarter's
+            # bearing from the core, i.e. "within the same half of the compass". The CREMATION ground
+            # is deliberately NOT covered - it is monk-run and follows the temple/funerary complex,
+            # which need not be the outcast side at all (Hoshizora's stands 130 ft from its monastery
+            # and almost exactly opposite the quarter, and that is a correct map).
+            _ty_dwell_all = (M.get("houses") or []) + [b for b in (M.get("buildings") or []) if b.get("kind") in DWELLING_KINDS]
+            _ty_core = (sum(h["x"] for h in _ty_dwell_all) / len(_ty_dwell_all), sum(h["y"] for h in _ty_dwell_all) / len(_ty_dwell_all)) if _ty_dwell_all else None
+            # The core counts EVERY dwelling including the quarter's own (the same population
+            # execution_ground_on_the_outcast_side measures from - the quarter is part of the
+            # settlement). That makes the test meaningless when the quarter is ALL there is: the
+            # core lands on the quarter and no bearing exists. A settlement with nothing but
+            # burakumin dwellings has no "rest of town" for the works to be on the far side of, so
+            # the rule abstains rather than firing on a degenerate vector.
+            if _ty_core and any(d.get("kind") != "burakumin" for d in _ty_dwell_all):
+                _ty_bcx = sum(b["x"] for b in _ty_bur) / len(_ty_bur)
+                _ty_bcy = sum(b["y"] for b in _ty_bur) / len(_ty_bur)
+                _ty_wrong = [
+                    (
+                        round(t_["x"]),
+                        round(t_["y"]),
+                        round(
+                            math.degrees(abs((math.atan2(t_["y"] - _ty_core[1], t_["x"] - _ty_core[0]) - math.atan2(_ty_bcy - _ty_core[1], _ty_bcx - _ty_core[0]) + math.pi) % (2 * math.pi) - math.pi))
+                        ),
+                    )
+                    for t_ in _ty_yards
+                    if (t_["x"] - _ty_core[0]) * (_ty_bcx - _ty_core[0]) + (t_["y"] - _ty_core[1]) * (_ty_bcy - _ty_core[1]) <= 0
+                ]
+                check(
+                    "tanning_yard_on_the_outcast_side",
+                    not _ty_wrong,
+                    f"tanning yard(s) facing the opposite way out of the settlement from the burakumin quarter "
+                    f"(x, y, degrees off the quarter's bearing): {_ty_wrong} - kegare leaves a settlement ONE way, and "
+                    f"the quarter marks which way. A yard on the far side sends the tanners' carcass haul back through "
+                    f"the whole settlement every day. Distance is fine (a city quarter stays in-wall while the works go "
+                    f"out to the water); the BEARING is not. Where a specific place overrides this on purpose, waive it "
+                    f"with meta(waivers=...) and say why",
+                )
             # ... AND THE YARD'S GROUND NEVER OVERLAPS THE WATER (GM 2026-07-25, after the real
             # Tango yard drifted ~10 ft into its stream and the Hoshizora yard landed on a drain
             # ditch; both frozen in pool/regressions/). Same doctrine as lumber_yard_clear_of_water:
@@ -12409,7 +12491,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"or set meta(crop_advisory=False) to silence)"
                 )
 
+    # ---- the waiver hatch audits itself (GM 2026-07-27; the "why" is at WAIVER_MIN_REASON) ------
+    # Runs LAST, because it can only judge the waivers once every check has had its chance to fire.
+    _wv_thin = sorted(k for k, v in _waivers.items() if not isinstance(v, str) or len(v.strip()) < WAIVER_MIN_REASON)
+    check(
+        "waivers_are_documented",
+        not _wv_thin,
+        f"waiver(s) with no real explanation: {_wv_thin} - a waiver's value is the REASON this particular place "
+        f"overrides the rule ({WAIVER_MIN_REASON}+ chars of it), and it is the only record that the map broke the "
+        f"rule on purpose. Write the history ('the Emperor lies southeast, so the samurai quarter...'), not 'by design'",
+    )
+    _wv_stale = sorted(set(_waivers) - set(_waived) - WAIVER_META_CHECKS)
+    check(
+        "waivers_are_live",
+        not _wv_stale,
+        f"stale waiver(s): {_wv_stale} - each names a check that did NOT fail on this map (it now passes, this "
+        f"scale never runs it, or the name is a typo/renamed). Delete it: a waiver kept past the defect it "
+        f"excused is how a map ends up exempt from rules nobody remembers it was breaking. "
+        f"Checks that ran: {len(_ran)}",
+    )
     if verbose:
+        if _waived:
+            print("\n" + "\n".join(f"WAIVED {k}: {v}" for k, v in sorted(_waived.items())))
         print(f"\n{len(fails)} failing check(s): {fails}" if fails else "\nALL CHECKS PASSED")
     return fails
 
