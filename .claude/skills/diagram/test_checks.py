@@ -6798,6 +6798,10 @@ def test_torii_and_religious_clear_of_works_and_ring():
     shrine_on_tower = {"kind": "small_shrine", "x": 521, "y": 509, "w": 11, "h": 8}
     assert "religious_clear_of_ring_and_towers" in f({**base, "religious": [shrine_on_tower]})
     assert "religious_clear_of_ring_and_towers" in f({**base, "religious": [{**hall, "y": 890}]})
+    # ...and a hall standing ON THE EDGE of the roadbed without crossing its centerline: entirely
+    # south of y=900 but lapping the bed's 896-904 span. Crossing and proximity are separate
+    # branches of the corridor test and this is the one only proximity catches.
+    assert "religious_clear_of_ring_and_towers" in f({**base, "religious": [{**hall, "y": 916}]})
     assert "religious_clear_of_ring_and_towers" not in f({**base, "religious": [hall]})
 
 
@@ -9231,3 +9235,151 @@ def test_a_waived_check_prints_WAIVE_and_a_closing_summary(capsys):
     out = capsys.readouterr().out
     assert "WAIVE tanning_yard_on_the_outcast_side" in out
     assert "WAIVED tanning_yard_on_the_outcast_side: The Emperor lies southeast" in out
+
+
+def test_matrix_survives_geometry_far_off_the_canvas():
+    """A stray vertex must not make the overlap matrix allocate the world.
+
+    `GridIndex.add` inserts under every cell an item's bbox touches, so ONE feature reaching far
+    off-map costs a dict entry per 120 px in BOTH axes. The `city_geometry_within_canvas` fixture
+    plants a wall vertex at 9,000,000 on a 3,200 px canvas - once `wall` was classified as a solid,
+    that became ~5.6 BILLION cells and gigabytes of RAM, and the run had to be killed by hand
+    (2026-07-26). The index box is now clamped to the canvas on BOTH insert and query - clamping
+    only the insert leaves the query walking exactly the same cells.
+
+    Timed rather than asserted structurally on purpose: the failure mode is unbounded work, and the
+    margin here is enormous (well under a second when correct, effectively forever when not), so it
+    is not a flaky threshold.
+    """
+    import time
+
+    M = manifest(meta={"scale": "city", "ftpx": 3, "W": 3200, "H": 2700, "name": "Nowhere"})
+    M["wall"] = [[100, 100], [3000, 100], [9000000, 9000000], [100, 2600], [100, 100]]
+    # The stray wall vertex still yields quads that REACH the canvas, so it only exercises the
+    # clamp. The second house is wholly off-map and exercises the skip on both the insert and the
+    # query side - a feature nothing on the canvas can meet is not the overlap matrix's business.
+    M["houses"] = [house(500, 500), house(50000, 50000)]
+    t0 = time.time()
+    check_village.matrix_violations(M)
+    assert time.time() - t0 < 5.0, "the overlap matrix is walking cells for off-canvas geometry again - clamp the index box on BOTH insert and query"
+
+
+def test_theater_stage_caption_may_sit_on_its_precinct_but_not_on_the_town():
+    """A stage caption is allowed onto TEMPLE ground, and nothing else it does not name.
+
+    `theater_stage` sites the stage inside a temple/monastery precinct (and
+    `theater_stage_by_temple` enforces it), so once the caption is seated by the standoff ladder
+    against the stage's rotated extent, every seat within reach of its subject lands on precinct
+    ground. Before this, correcting the rotation-blind caption offset simply moved Tango's caption
+    off its own stage and onto a monk house, then onto a hall - a green map made worse by a fix.
+
+    The second half is the part that matters: the allowance is scoped to `temple`, so a stage
+    caption dumped on a merchant house still fires. An allowance nobody bounds is not a rule.
+    """
+    M = manifest(meta={"scale": "city", "ftpx": 3, "W": 2000, "H": 2000, "name": "Nowhere"})
+    M["religious"] = [{"x": 500, "y": 500, "w": 300, "h": 300, "kind": "temple"}]
+    M["labels"] = [[440, 480, 560, 492, 1, "theater stage"]]
+    assert "labels_clear_of_other_buildings" not in check_village.gate(M, verbose=False)
+
+    M["buildings"] = [{"x": 1200, "y": 1200, "w": 40, "h": 30, "kind": "merchant"}]
+    M["labels"] = [[1180, 1190, 1240, 1202, 1, "theater stage"]]
+    assert "labels_clear_of_other_buildings" in check_village.gate(M, verbose=False)
+
+
+# ---- THE FOOTPRINT-VS-CENTER RATCHET ------------------------------------------------------------
+# Every gap VERDICT reads true footprints, never a center and never a circumscribed radius. That was
+# a rule in a document once and it did not hold: three conventions coexisted in check_village.py and
+# two of them shipped live defects (a boundary stone among the shops, an execution ground 105 ft from
+# a laborer's wall, a burakumin quarter with a 5 ft seam, a cremation ground ~50 ft from a farmhouse).
+# So the rule is a test instead, in the shape that already worked for the keep-clear contract.
+#
+# THE CONSTRUCTION. Each entry plants two features at exactly the offset where the two conventions
+# DISAGREE - close enough that the footprints violate the rule, far enough that the centers do not
+# (or the reverse, where the old approximation's error ran the other way) - and pins which verdict is
+# right. Numbers are derived from the recorded sizes and the rule's own limit, so an entry says what
+# it means rather than carrying a magic offset. A check that quietly reverts to centers fails here by
+# name; one that reverts to half-diagonals fails the entries whose rects are elongated.
+#
+# TEETH, VERIFIED (2026-07-27), because 100% coverage proves nothing about a ratchet: reverting the
+# helper to raw center distance breaks exactly the first three entries, and reverting it to
+# circumscribed radii breaks exactly the other three. The two halves are complementary by design -
+# either convention coming back fails this test by name.
+def _ratchet_execution_ground(dx):
+    return _justice_town(houses=[house(440 + 30 * i, 940) for i in range(6)] + [house(1500 + dx, 1060)])
+
+
+def _ratchet_cremation(dx):
+    return manifest(meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000}, cremation_grounds=[{"x": 500, "y": 500, "w": 116, "h": 80, "rot": 0}], houses=[house(500 + dx, 500)])
+
+
+def _ratchet_burakumin(dx):
+    return manifest(meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000}, buildings=[bldg(500, 500, kind="burakumin", w=38, h=26), bldg(500 + dx, 500, kind="laborer", w=34, h=24)])
+
+
+def _ratchet_dead(dy):
+    # An ELONGATED burial ground, measured along its SHORT axis: half-extent 20, but max(w,h)/2 = 100.
+    # This is the entry that fails if anyone puts the circumscribed radius back.
+    return _justice_town(cemeteries=[{"x": 1500, "y": 1060 + dy, "w": 200, "h": 40, "rot": 0, "parish": False}])
+
+
+def _ratchet_well(dy):
+    return manifest(meta={"scale": "village", "ftpx": 1}, buildings=[bldg(500, 500, kind="merchant", w=200, h=40)], wells=[well(500, 500 + dy)])
+
+
+def _ratchet_shed(dx):
+    return manifest(meta={"scale": "village", "ftpx": 1}, houses=[house(500, 500)], farm_sheds=[{"x": 500 + dx, "y": 500, "w": 20, "h": 14, "rot": 0}])
+
+
+_GAP_RATCHET = (
+    # (check, build, offset, must_fire, why this offset is the disagreement point)
+    ("execution_ground_outside_the_settlement", _ratchet_execution_ground, 121, True, "centers 121 px apart clears the 120 px rule; the two walls are only 68 px apart"),
+    ("town_has_cremation_ground", _ratchet_cremation, 121, True, "a 116 px wide pyre 121 px from a house CENTER stands 40 px from its wall"),
+    ("burakumin_quarter_segregated", _ratchet_burakumin, 61, True, "61 px between centers is 25 px of open ground - less than half the 60 px seam"),
+    ("execution_ground_clear_of_the_dead", _ratchet_dead, 460, False, "410 px of true daylight, which the old max(w,h)/2 radius scored as 330 and wrongly failed"),
+    ("wells_among_dwellings", _ratchet_well, 190, True, "158 px from the hall's wall - the half-diagonal of a 200x40 hall scored it as 88 and wrongly passed"),
+    ("farm_sheds_attached", _ratchet_shed, 48, True, "15 px of daylight is not 'attached'; two half-diagonals scored it as 48 against a 49 px threshold"),
+)
+
+
+@pytest.mark.parametrize(("name", "build", "offset", "must_fire", "why"), _GAP_RATCHET, ids=[r[0] for r in _GAP_RATCHET])
+def test_gap_verdicts_read_footprints_not_centers(name, build, offset, must_fire, why):
+    fired = name in f(build(offset))
+    assert fired == must_fire, f"{name}: expected {'a failure' if must_fire else 'no failure'} at the disagreement offset ({why}) - this check is measuring centers or circumscribed radii again"
+
+
+def test_edge_gap_handles_a_wellhead_which_is_drawn_as_a_disc_not_a_rect():
+    """A well records r/vr and NO w/h, so a gap helper that assumes rects raises KeyError rather
+    than measuring anything. That shipped for one turn on 2026-07-27 and the pool scan called it
+    clean, because a crashing gate prints no FAIL lines - the file's own 'a check that never RUNS
+    looks exactly like a check that passes'."""
+    hall = bldg(500, 500, w=100, h=40)
+    assert check_village.edge_gap(well(500, 600), hall) == pytest.approx(600 - 500 - 20 - 12)
+    assert check_village.edge_gap(hall, well(500, 600)) == pytest.approx(600 - 500 - 20 - 12)
+    assert check_village.edge_gap(well(500, 500), well(500, 560)) == pytest.approx(60 - 12 - 12)
+    assert check_village.edge_gap(well(500, 500), hall) == 0.0  # inside the hall's footprint
+
+
+def test_execution_ground_no_nearer_the_houses_than_its_stone_fires_when_the_ground_is_further_in():
+    """The GM's formulation, 2026-07-27: the stone should be closer to the town's edge than the
+    ground. The between-ness test above cannot see this - it compares two distances to the core
+    CENTROID, which orders the pair radially about one point while a settlement is not a disc. Here
+    the ground keeps its 126 px of kegare clearance and is still 10 px further IN than the stone that
+    is supposed to bound it, so both of the older rules are satisfied and the map is still wrong."""
+    M = _justice_town(boundary_markers=[bstone(1160, 1010)], execution_grounds=[exground(1500, 1060)], houses=[house(440 + 30 * i, 940) for i in range(6)] + [house(1500, 1230)])
+    assert "execution_ground_past_the_boundary_marker" not in f(M)  # the centroid arithmetic is satisfied...
+    assert "execution_ground_no_nearer_the_houses_than_its_stone" in f(M)  # ...and the ground is still inside the line
+
+
+def test_execution_ground_no_nearer_the_houses_than_its_stone_measures_a_walled_seat_to_its_RAMPART():
+    """And the settlement edge is the WALL where there is one. Measuring a walled city to its
+    nearest dwelling lets an isolated farmstead in the hinterland stand for the town - Tango's
+    ground sits in the extramural fields with a farmhouse further out than itself, which read as
+    'nearer the town' than a stone plainly between the city and it."""
+    M = _justice_town(wall=WALL, boundary_markers=[bstone(1000, 1010)], execution_grounds=[exground(1500, 1060)], houses=[house(440 + 30 * i, 940) for i in range(6)] + [house(1620, 1060)])
+    assert "execution_ground_no_nearer_the_houses_than_its_stone" not in f(M)
+
+
+def test_burakumin_quarter_segregated_passes_across_a_real_seam():
+    # The control for the ratchet entry: 60 ft of open ground between the walls is the rule met.
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000}, buildings=[bldg(500, 500, kind="burakumin", w=38, h=26), bldg(500 + 19 + 17 + 61, 500, kind="laborer", w=34, h=24)])
+    assert "burakumin_quarter_segregated" not in f(M)

@@ -28,6 +28,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from settlement import (
+    BOUNDARY_STONE_CLEAR_FT,
     EXECUTION_GROUND_DEAD_CLEAR_FT,
     KIDO_TOWER_KEEPCLEAR,
     LABEL_AIR_CAP,
@@ -372,6 +373,12 @@ OVERLAP_CLASS: dict[str, str] = {
             "refining_forges",
         )
     },
+    # The rampart and the torii arches are SOLID: things must keep off them. All of these were
+    # UNCLASSIFIED until 2026-07-26 because the ratchet inspected only keys whose records are lists
+    # of DICTS - a wall is a bare list of points, a torii a bare [x, y, z] triple - and a ratchet
+    # that enumerates one record shape has exactly the blindness this feature exists to abolish.
+    # `lane` (singular) is the same plural/singular trap that had already hidden `marshes` and `roads`.
+    **{k: "SOLID" for k in ("wall", "torii")},
     # GROUND - cultivated / engineered ground worked AS A SURFACE: anything standing in it ruins it
     **{k: "GROUND" for k in ("dry_plots", "flower_fields", "fallow_patches")},
     # PADDY is GROUND in principle but RECONSTRUCTED in practice: a plot's polygon is not stored, so
@@ -381,7 +388,7 @@ OVERLAP_CLASS: dict[str, str] = {
     # harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields,
     # tanning_yard_clear_of_fields and fields_clear_of_road all test real geometry.
     "fields": "PADDY_RECONSTRUCTED",
-    **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond")},
+    **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond", "moat")},
     **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes")},
     # ANNEX - belongs to a named parent and abuts IT (and nothing else)
     **{k: "ANNEX" for k in ("gardens", "threshing_yards", "farm_sheds", "storehouses", "byres")},
@@ -418,7 +425,10 @@ OVERLAP_CLASS: dict[str, str] = {
     #                   a pocket pond, bedrock outcrop, grave island or crescent pond sunk INTO one
     #                   paddy plot, the field tiling around it - the overlap is the feature
     #   borders         a drawn jurisdictional line is a LINE OF LAW, not a physical object
-    **{k: "RECORD" for k in ("drawn_channels", "field_ponds", "field_rocks", "field_graves", "crescent_ponds", "borders")},
+    **{k: "RECORD" for k in ("drawn_channels", "field_ponds", "field_rocks", "field_graves", "crescent_ponds", "borders", "forest_edge", "lane")},
+    # the intramural patrol strip has its OWN precise rule (ring_road_kept_clear), which knows the
+    # real bed width and which frontages may legitimately stand against it; the matrix defers
+    **{k: "RING_ROAD" for k in ("ring_road",)},
     **{k: "VEGETATION" for k in ("village_groves", "groves", "forest", "tree_stands", "tree_crowns")},
 }
 # A permissive class may be overlapped by anything, and is never extracted. The reason matters as
@@ -434,6 +444,7 @@ _MATRIX_PERMISSIVE = {
     # question. Vegetation records are also envelopes (a `forest` is a stand outline, a grove a belt
     # outline) whose ink lives in `tree_crowns` - see the drawn-extent rule in matrix_extents.
     "VEGETATION": "canopy overlap is governed by the canopy keep-out contract, which tests recorded crowns; the matrix does not re-decide it",
+    "RING_ROAD": "the intramural patrol strip is governed precisely by ring_road_kept_clear, which knows its real bed width; the matrix does not re-decide it",
     "RECORD": "bookkeeping geometry or an in-field flourish drawn ON its own paddy by design - not ground the matrix reasons about",
     "PADDY_RECONSTRUCTED": "a paddy plot's extent is reconstructed from recorded spans rather than stored, so it is an approximation - the precise paddy checks (harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields, tanning_yard_clear_of_fields) test real geometry and remain authoritative",
 }
@@ -452,21 +463,28 @@ _MATRIX_PERMISSIVE = {
 # nothing else, including another fixture of its own kind. Entries are deliberately MINIMAL: a
 # genuine adjacency the sweep surfaces should be added here with its reason, not pre-permitted.
 _FIXTURE_MOUNTS: dict[str, frozenset[str]] = {
-    "bridges": frozenset({"WATER", "WAY"}),  # spans the water to carry the way over it
+    "bridges": frozenset(
+        {"WATER", "WAY", "wall"}
+    ),  # spans the water to carry the way over it - and a bridge on a moated approach lands ON the rampart at its water gate, which is the crossing the wall is pierced for
     "docks": frozenset({"WATER", "WAY"}),  # a landing stands at the waterline, reached from the quay
     "jetties": frozenset({"WATER"}),  # planked mooring fingers run out OVER the river
     "log_booms": frozenset({"WATER"}),  # a cabled log pen floats ON the river it holds timber in
     "sluice_gates": frozenset({"WATER"}),  # the intake/outfall board IS the water-to-water junction
-    "water_gates": frozenset({"WATER"}),  # the shuimen arch stands over its canal (and on the city wall, which is not a matrix feature)
+    "water_gates": frozenset(
+        {"WATER", "wall"}
+    ),  # the shuimen arch stands over its canal AND on the city wall - the wall IS a matrix feature now (classified SOLID for feature 017), so the mount it always had must be stated
     "kido": frozenset({"WAY", "wards"}),  # a ward gate sits ON the ward fence where a lane passes through
-    "gate_structs": frozenset({"WAY"}),  # the guard station and tower ARE the city gate complex, standing on the wall and the road
+    "gate_structs": frozenset({"WAY", "wall"}),  # the guard station and tower ARE the city gate complex, standing on the wall and the road - both mounts now stated, since `wall` is classified
     "inspection_stations": frozenset({"WAY", "gate_structs"}),  # an inspection post is part of the gate complex it stands in
-    # A tower stands ON the rampart, which the matrix does not model - so its footprint floats free
-    # and brushes whatever passes close to the wall line. The moat and its irrigation taps run at the
+    # A tower stands ON the rampart. That mount is now EXPLICIT: `wall` was unclassified when these
+    # entries were written ("which the matrix does not model"), and classifying it SOLID turned every
+    # tower, gate complex, water gate and moat bridge in the pool into a violation of a rule they had
+    # always satisfied. The lesson is that a mount list written against an unclassified neighbor is
+    # silently incomplete - it records only the mounts the matrix could see at the time. The moat and its irrigation taps run at the
     # rampart's foot by construction (Tango's moat-fed channel passes under the tower line), and the
     # tower is elevated above them, so water is a legitimate mount; anything SOLID against a tower is
     # still a defect.
-    "wall_towers": frozenset({"WATER"}),
+    "wall_towers": frozenset({"WATER", "wall"}),
 }
 _MATRIX_SAME_CLASS_OK = {
     "WATER": "watercourses meet at confluences",
@@ -478,6 +496,8 @@ _MATRIX_SAME_CLASS_OK = {
 }
 # same-KEY permissions: records of one kind that legitimately touch each other
 _MATRIX_SAME_KEY_OK = {
+    "wall": "consecutive rampart segments meet at every corner - the wall is one continuous work, drawn as a chain of strokes",
+    "torii": "the arches of one approach avenue are a series along the sando, spaced by design",
     "wards": "consecutive segments of ONE fence share their corner - the extractor strokes a polyline into one quad per segment, so neighbors always meet. Two DIFFERENT wards' fences crossing is a real defect and is caught by city_ward_fence_clear_of_structures' own ward-x-ward test",
     "dry_plots": "adjacent hatake plots in one quilt abut and share their headlands, exactly as paddy plots share bunds",
     "fields": "paddy plots in one fan abut and share their bunds - and a plot's extent is reconstructed from recorded spans, not a stored polygon, so the reconstruction slightly overstates an irregular plot",
@@ -490,7 +510,17 @@ _MATRIX_ALLOWED_PAIRS: dict[frozenset[str], str] = {
 }
 # per-KEY-PAIR permissions for genuine one-offs the class policy is too coarse to express
 _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
+    **{
+        frozenset(
+            {"wall", w}
+        ): "a way or a watercourse passes THROUGH the rampart at its gate or water gate - that opening is the point of a gate, and no_structure_on_wall still governs anything BUILT on the rampart"
+        for w in ("road", "roads", "town_streets", "alleys", "lanes", "canals", "channels", "streams", "moat")
+    },
+    **{frozenset({"torii", w}): "a torii STANDS OVER its approach - an arch spanning the sando is the whole form of the thing" for w in ("road", "roads", "town_streets", "alleys", "lanes")},
     frozenset({"religious", "shrines"}): "shrine_hall records one hall under BOTH keys - these are the same object, not two",
+    frozenset(
+        {"wards", "wall"}
+    ): "a ward fence ENDS at the rampart - city_ward_fence_meets_wall demands exactly that, so commoners cannot walk around it. The same adjacency was already stated for {wards, wall_towers}; it needed stating for the wall ITSELF once `wall` was classified SOLID. (The route is held by city_ward_fence_meets_wall + city_samurai_ward_sealed, so this cannot excuse a fence running along INSIDE the rampart.)",
     frozenset(
         {"wards", "wall_towers"}
     ): "a ward fence ENDS at the rampart - that is exactly what city_ward_fence_meets_wall demands, so commoners cannot walk around it - and a wall tower stands ON the rampart. A fence end butting into a tower's footprint IS the fence reaching solid wall. (Its route is held by city_ward_fence_meets_wall and city_samurai_ward_sealed, so this cannot excuse a fence wandering through a tower mid-span.)",
@@ -508,7 +538,10 @@ _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
 # A record naming its PARENT may overlap that parent and nothing else - strictly stronger than the
 # blanket per-pair exemptions this replaces, because an annex on somebody ELSE's building stays a defect.
 # manifest lists that carry coordinates but are NOT drawn ground the matrix reasons about
-_MX_NOT_GEOMETRY = frozenset({"labels", "torii", "tree_crowns", "wet_plots", "bund_junctions", "footbridges", "knobs", "clearings"})
+# Manifest lists carrying coordinates that are NOT drawn ground. `gates` is a list of GAP POSITIONS
+# in the wall (the furniture in the gap is `gate_structs`); `wall_tower_keepclears` is a reservation,
+# not ink; `forest_edge` is an envelope whose ink is `tree_crowns` and is classified RECORD above.
+_MX_NOT_GEOMETRY = frozenset({"labels", "tree_crowns", "wet_plots", "bund_junctions", "footbridges", "knobs", "clearings", "gates", "wall_tower_keepclears"})
 _MATRIX_PARENT_FIELD = {
     "gardens": "of",
     "threshing_yards": "of",
@@ -592,15 +625,38 @@ def matrix_violations(M: Mapping[str, Any]) -> list[tuple[str, str, float, float
     priv = {(round(w_["x"], 1), round(w_["y"], 1)) for w_ in M.get("wells", []) or [] if w_.get("private")}
     polys = [p for _k, p, _i, _pa in ext]
     boxes = [(min(q[0] for q in p), min(q[1] for q in p), max(q[0] for q in p), max(q[1] for q in p)) for p in polys]
+    # CLAMP THE INDEX BOX TO THE CANVAS. GridIndex.add inserts under every cell an item's bbox
+    # touches, so one feature reaching far off-map costs a dict entry per 120 px in BOTH axes. A
+    # malformed map is not hypothetical - `city_geometry_within_canvas` is checked with a fixture
+    # planting a wall vertex at 9,000,000 on a 3,200 px canvas, which is ~5.6 BILLION cells and
+    # gigabytes of RAM (found the hard way, 2026-07-26: the run had to be killed by hand). The index
+    # only PRUNES - every surviving pair is still tested against the real polygons - so clamping the
+    # indexed extent changes no verdict for anything actually on the map. Two features BOTH off the
+    # canvas may no longer be compared, which is the right division of labour: geometry that is not
+    # on the map is `city_geometry_within_canvas`'s business, not the overlap matrix's.
+    _mx_w = float(M.get("meta", {}).get("W") or 4000)
+    _mx_h = float(M.get("meta", {}).get("H") or 4000)
+
+    def _mx_clamp(b: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+        return (max(b[0], -_mx_w), max(b[1], -_mx_h), min(b[2], _mx_w * 2), min(b[3], _mx_h * 2))
+
+    # Clamp for BOTH insert and query: `near_rect` walks the cells of the box it is GIVEN, so
+    # querying with the unclamped extent costs exactly as much as inserting with it did.
+    cboxes = [_mx_clamp(b) for b in boxes]
     gi = GridIndex(120)
-    for idx, bx in enumerate(boxes):
-        gi.add(bx[0], bx[1], bx[2], bx[3], idx)
+    for idx, cb in enumerate(cboxes):
+        if cb[2] < cb[0] or cb[3] < cb[1]:
+            continue  # wholly off the canvas - nothing on the map can meet it
+        gi.add(cb[0], cb[1], cb[2], cb[3], idx)
     seen: set[tuple[int, int]] = set()
     out: list[tuple[str, str, float, float]] = []
     for i, (ki, _pi, idi, pari) in enumerate(ext):
         del _pi
         bi = boxes[i]
-        for j in gi.near_rect(*bi):
+        cbi = cboxes[i]
+        if cbi[2] < cbi[0] or cbi[3] < cbi[1]:
+            continue
+        for j in gi.near_rect(*cbi):
             if j <= i or (i, j) in seen:
                 continue
             seen.add((i, j))
@@ -692,9 +748,16 @@ def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, fl
             p_ = M.get("pond")
             if p_:
                 out.append((k, [(p_[0] + p_[2] * math.cos(a_), p_[1] + p_[3] * math.sin(a_)) for a_ in [i * math.pi / 8 for i in range(16)]], None, None))
-        elif k == "road":
-            for q in _mx_stroke(M.get("road") or [], float(M.get("road_width") or 26.0) / 2):
+        elif k in ("road", "moat", "ring_road", "wall", "lane"):
+            _w = {"road": float(M.get("road_width") or 26.0), "moat": float(M.get("moat_width") or 22.0), "ring_road": 20.0, "wall": 10.0, "lane": 6.0}[k]
+            for q in _mx_stroke(M.get(k) or [], _w / 2):
                 out.append((k, q, None, None))
+        elif k == "torii":
+            hw_, up_, dn_ = torii_halfbox(float(M.get("meta", {}).get("ftpx") or 1))
+            for t_ in recs:
+                if isinstance(t_, (list, tuple)) and len(t_) >= 2:
+                    tx_, ty_ = float(t_[0]), float(t_[1])
+                    out.append((k, [(tx_ - hw_, ty_ - up_), (tx_ + hw_, ty_ - up_), (tx_ + hw_, ty_ + dn_), (tx_ - hw_, ty_ + dn_)], None, None))
         elif k in _MX_LINE_W:
             for r2_ in recs:
                 pl2 = r2_.get("poly") or r2_.get("pts")
@@ -873,6 +936,76 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     if point_in_poly(px, py, poly):
         return 0.0
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
+
+
+def edge_gap(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
+    """The TRUE gap in px between two rotated footprints - the distance you could measure on the
+    ground between the nearest points of two buildings. 0.0 if they overlap or touch.
+
+    THE ONE MEASUREMENT ANY GAP VERDICT USES (GM, 2026-07-26). Before this there were THREE
+    conventions in the file for the same question, and all three were wrong in different ways:
+
+      - raw center-to-center (`math.hypot(a["x"] - b["x"], ...)`) understates the real clearance by
+        the sum of both half-extents, so a rule promising 120 ft delivered as little as ~60 at town
+        scale. Two live defects shipped this way: an execution ground and a boundary stone both
+        sited inside the line they were supposed to be outside of.
+      - the circumscribed radius (`0.5 * math.hypot(w, h)`) is the half-DIAGONAL, which exceeds the
+        true half-extent by up to 41% on a square and more on an elongated rect;
+      - `max(w, h) / 2` is the same error, differently sized.
+
+    And the approximations' error FLIPS SIGN with the rule: subtracting too much makes a
+    "must be far" rule strict and a "must be near" rule lenient, so they cannot even be reasoned
+    about as a uniform safety margin. Since the closest pair of two convex polygons is always a
+    vertex of one against an edge of the other, the exact answer costs a few `poly_dist` calls -
+    there was never a reason to approximate it.
+
+    Centers remain correct for CLASSIFICATION ("which ward is this in" - a building belongs to one
+    ward, not 0.6 of one), for ASSOCIATION/REACH whose tolerance dwarfs the footprints, and for
+    PREFILTERS. See the dev-loop doc, "Centres, footprints, and aggregates"."""
+    da, db = _gap_disc(a), _gap_disc(b)
+    if da is not None and db is not None:
+        return max(0.0, math.hypot(da[0] - db[0], da[1] - db[1]) - da[2] - db[2])
+    if da is not None:
+        return max(0.0, poly_dist(da[0], da[1], rect_corners(_struct_rect(dict(b)))) - da[2])
+    if db is not None:
+        return max(0.0, poly_dist(db[0], db[1], rect_corners(_struct_rect(dict(a)))) - db[2])
+    ca, cb = rect_corners(_struct_rect(dict(a))), rect_corners(_struct_rect(dict(b)))
+    if sat_overlap(ca, cb):
+        return 0.0
+    return min(min(poly_dist(px, py, cb) for px, py in ca), min(poly_dist(px, py, ca) for px, py in cb))
+
+
+def _gap_disc(o: Mapping[str, Any]) -> tuple[float, float, float] | None:
+    """(x, y, radius) if this feature is drawn as a DISC rather than a rect, else None.
+
+    A wellhead is the case: it records `r` (clearance) and `vr` (the drawn head) and carries no
+    w/h at all, so treating every feature as a rect is not merely imprecise here, it raises
+    KeyError. Found the hard way on 2026-07-27, and the way it was found is worth more than the
+    bug: a crashing gate prints no FAIL lines, so a pool scan that greps for FAIL read the crash
+    as CLEAN - the file's own "a check that never RUNS looks exactly like a check that passes",
+    committed by the person who had just written it down. Scan for the exit code, not for FAIL.
+
+    `vr` over `r` for the same reason `_struct_rect` prefers vw/vh: a clearance rule is about the
+    ink on the map, and the drawn head is what a reader sees."""
+    if "w" in o:
+        return None
+    return float(o["x"]), float(o["y"]), float(o.get("vr", o.get("r", 0.0)))
+
+
+def _gap_reach(o: Mapping[str, Any]) -> float:
+    """A circumscribed radius for the pair prefilter - deliberately generous (see within_edge_gap)."""
+    d = _gap_disc(o)
+    return d[2] if d is not None else math.hypot(o.get("vw", o["w"]), o.get("vh", o["h"])) / 2
+
+
+def within_edge_gap(a: Mapping[str, Any], b: Mapping[str, Any], lim: float) -> bool:
+    """Is the true gap between two footprints at most `lim` px? Center-distance prefiltered, so a
+    check may ask it of every pair on a city without the exact test running on all of them - the
+    index-prunes-never-decides rule applied to a pair test. The prefilter uses circumscribed radii
+    deliberately: over-estimating an extent can only admit a pair the exact test then rejects."""
+    if math.hypot(a["x"] - b["x"], a["y"] - b["y"]) > lim + _gap_reach(a) + _gap_reach(b):
+        return False
+    return edge_gap(a, b) <= lim
 
 
 class GridIndex:
@@ -2780,7 +2913,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # wall_towers, water_gates, docks, inspection_stations, gate_structs, stable_yards) had no class
     # at all. A key counts as drawn geometry when its records carry a position or an outline.
     _mx_unclassified = sorted(
-        {k for k, v in M.items() if k not in OVERLAP_CLASS and k not in _MX_NOT_GEOMETRY and isinstance(v, list) and v and isinstance(v[0], dict) and ("x" in v[0] or "poly" in v[0] or "pts" in v[0])}
+        {
+            k
+            for k, v in M.items()
+            if k not in OVERLAP_CLASS
+            and k not in _MX_NOT_GEOMETRY
+            and isinstance(v, list)
+            and v
+            and (
+                (isinstance(v[0], dict) and ("x" in v[0] or "poly" in v[0] or "pts" in v[0]))
+                # ...OR a bare POLYLINE / point list - how the wall, moat, ring road and torii are
+                # stored. The first cut inspected only DICT records and so passed five unclassified
+                # keys in silence: a ratchet that enumerates one record shape has the same blindness
+                # this feature exists to abolish.
+                or (isinstance(v[0], (list, tuple)) and len(v[0]) >= 2 and all(isinstance(c, (int, float)) for c in v[0][:2]))
+            )
+        }
     )
     check(
         "every_feature_classified_for_matrix",
@@ -3260,6 +3408,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         subj = [b for b in M.get("buildings", []) if "w" in b]
         blockers = subj + [h for h in M.get("houses", []) if "w" in h]
         bcorn = [rect_corners(_struct_rect(b)) for b in blockers]
+        # PREFILTER RADII, not a verdict (family: prefilter - see edge_gap). The circumscribed
+        # radius is the right tool here precisely because it over-states an extent: over-stating can
+        # only admit a candidate the exact `point_in_poly` below then rejects, so the index prunes
+        # and never decides. Do NOT "fix" these to true extents - that would start rejecting pairs
+        # before the exact test sees them.
         bdiag = [math.hypot(b["w"], b["h"]) / 2 for b in blockers]
 
         def _face_blocked(b: dict[str, Any], sgn: float) -> bool:
@@ -3967,14 +4120,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     _rw2 = float(M.get("ring_road_width") or 0) / 2
     _tow = [g for g in list(M.get("gate_structs", [])) + list(M.get("wall_towers", [])) + list(M.get("fire_towers", [])) if isinstance(g, dict) and "w" in g]
 
-    def _ring_hit(x: float, y: float, half: float) -> bool:
-        return bool(_ring) and any(seg_dist(x, y, _ring[i], _ring[i + 1]) < _rw2 + half for i in range(len(_ring) - 1))
+    def _ring_hit_poly(poly: list[tuple[float, float]]) -> bool:
+        """Does a FOOTPRINT reach the ring-road bed? Corner-to-segment, not center-plus-a-radius:
+        the circumscribed radius this used to pass over-states an elongated hall's reach along one
+        axis and under-states nothing, so it flagged halls that were genuinely clear while a long
+        thin one laid across the lane could still slip through the far side of the same
+        approximation (GM audit, 2026-07-27)."""
+        for i in range(len(_ring) - 1):
+            a, b = _ring[i], _ring[i + 1]
+            # CROSSING FIRST, then proximity. Corner-sampling alone answers "is a corner near the
+            # centerline", which is not the question: a hall laid ACROSS the lane can have every
+            # corner outside the bed while its flanks straddle it - the y=890 hall over a bed
+            # spanning 896-904 has its nearest corner exactly _rw2 away and overlaps 8 px of
+            # roadbed. The old circumscribed-radius form caught that case by being loose enough,
+            # which is not the same as being right; this catches it by asking the real question.
+            if any(segments_cross(a, b, poly[k], poly[(k + 1) % len(poly)]) for k in range(len(poly))):
+                return True
+            if min(min(seg_dist(px, py, a, b) for px, py in poly), poly_dist(a[0], a[1], poly), poly_dist(b[0], b[1], poly)) < _rw2:
+                return True
+        return False
+
+    def _torii_poly(t: Sequence[float]) -> list[tuple[float, float]]:
+        return [(t[0] - _ts2, t[1] - _ts2), (t[0] + _ts2, t[1] - _ts2), (t[0] + _ts2, t[1] + _ts2), (t[0] - _ts2, t[1] + _ts2)]
 
     bad_tor_pl = []
     for t in M.get("torii", []):
-        hit_rel = any(abs(t[0] - r["x"]) < r["w"] / 2 + _ts2 and abs(t[1] - r["y"]) < r["h"] / 2 + _ts2 for r in M.get("religious", []))
-        hit_tw = any(abs(t[0] - g["x"]) < g["w"] / 2 + _ts2 and abs(t[1] - g["y"]) < g["h"] / 2 + _ts2 for g in _tow)
-        if hit_rel or hit_tw or _ring_hit(t[0], t[1], _ts2):
+        _torp = _torii_poly(t)
+        # ROTATED corners on the hall/tower side. The axis-aligned `abs(dx) < w/2 + pad` form this
+        # replaces reads a tilted hall as its upright box, which is neither its footprint nor a
+        # conservative cover of it - it misses the swung corners and invents ground at the flats.
+        hit_rel = any(sat_overlap(_torp, rect_corners(_struct_rect(r))) for r in M.get("religious", []))
+        hit_tw = any(sat_overlap(_torp, rect_corners(_struct_rect(g))) for g in _tow)
+        if hit_rel or hit_tw or _ring_hit_poly(_torp):
             bad_tor_pl.append((round(t[0]), round(t[1])))
     check(
         "torii_clear_of_halls_towers_ring",
@@ -4001,8 +4178,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     )
     bad_rel_pl = []
     for r in M.get("religious", []):
-        hit_tw = any(abs(r["x"] - g["x"]) < (r["w"] + g["w"]) / 2 and abs(r["y"] - g["y"]) < (r["h"] + g["h"]) / 2 for g in _tow)
-        if hit_tw or _ring_hit(r["x"], r["y"], max(r["w"], r["h"]) / 2):
+        _relp = rect_corners(_struct_rect(r))
+        hit_tw = any(sat_overlap(_relp, rect_corners(_struct_rect(g))) for g in _tow)
+        if hit_tw or _ring_hit_poly(_relp):
             bad_rel_pl.append((r.get("label") or r["kind"], round(r["x"]), round(r["y"])))
     check(
         "religious_clear_of_ring_and_towers",
@@ -5034,6 +5212,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
             if "drum/bell" in t or t.strip() == "tower":  # the two-line zhonggulou caption (GM 2026-07-24)
                 return {"drum tower"}
+            if "theater stage" in t:
+                # A theater stage is TEMPLE FURNITURE - `theater_stage`'s own docstring sites it in a
+                # temple/monastery precinct, and `theater_stage_by_temple` enforces that. So its
+                # caption is inside a precinct wherever it sits, and the halls are the only things
+                # near enough to caption it against. Same shape as "samurai" -> {"samurai", "estate"}:
+                # the label may cover the enclosure its subject belongs to, not just its own glyph.
+                return {"temple"}
             # A CAPTION MAY ALWAYS COVER THE THING IT NAMES, derived rather than hand-listed: the
             # _LABEL_GROUP registry's group names ARE the caption words ("brewery", "martial hall",
             # "execution ground"), so a new feature earns this permission by being classified, with
@@ -5081,8 +5266,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if all_wells:
         dwell_all = M.get("buildings", []) + M.get("houses", []) + M.get("religious", [])
         stray = [
-            (round(wl["x"]), round(wl["y"])) for wl in all_wells if dwell_all and min(math.hypot(wl["x"] - b["x"], wl["y"] - b["y"]) - 0.5 * math.hypot(b["w"], b["h"]) for b in dwell_all) > 95
-        ]  # gap to the served building's EDGE (fair to a large hall)
+            (round(wl["x"]), round(wl["y"])) for wl in all_wells if dwell_all and not any(within_edge_gap(wl, b, 95) for b in dwell_all)
+        ]  # the TRUE gap to the served building's edge (fair to a large hall); the half-diagonal this used
+        # to subtract over-stated a big hall's extent by up to 41% - see edge_gap (GM audit, 2026-07-27)
         check(
             "wells_among_dwellings",
             not stray,
@@ -5260,8 +5446,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     continue  # a hilltop/mountain shrine draws from a spring/basin, not a dug well
                 if min((math.hypot(r["x"] - b["x"], r["y"] - b["y"]) for b in dwell), default=1e9) <= SHRINE_FAR:
                     continue  # among/near the houses -> shares the village wells
-                near_well = min((math.hypot(r["x"] - wl["x"], r["y"] - wl["y"]) for wl in wells), default=1e9)
-                if near_well - 0.5 * math.hypot(r["w"], r["h"]) > SHRINE_WELL_GAP:  # gap to the hall's EDGE (a big monastery's well sits further out)
+                if not any(within_edge_gap(r, wl, SHRINE_WELL_GAP) for wl in wells):  # the TRUE gap to the hall's edge (a big monastery's well sits further out)
                     wellless.append((round(r["x"]), round(r["y"])))
             check(
                 "remote_shrine_has_own_well",
@@ -5355,8 +5540,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if sheds and M.get("houses"):
                 stranded = []
                 for sd in sheds:
-                    h = min(M["houses"], key=lambda h: math.hypot(sd["x"] - h["x"], sd["y"] - h["y"]))
-                    if math.hypot(sd["x"] - h["x"], sd["y"] - h["y"]) > 0.5 * math.hypot(h["w"], h["h"]) + 0.5 * math.hypot(sd["w"], sd["h"]) + 10:
+                    if not any(within_edge_gap(sd, h, 10) for h in M["houses"]):  # 10 px of true daylight; two half-diagonals used to stand in for the two extents
                         stranded.append((round(sd["x"]), round(sd["y"])))
                 check(
                     "farm_sheds_attached",
@@ -6347,7 +6531,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if scale == "town":
             # a county town cremates too - a cremation ground at the edge, clear of the dwellings
             dwell_t = M.get("houses", []) + [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]
-            far_crem = [c for c in crem if all(math.hypot(c["x"] - h["x"], c["y"] - h["y"]) > 120 for h in dwell_t)] if dwell_t else crem
+            # 120 real ft to the DWELLING'S EDGE, not to its center - the standing pollution
+            # separation, measured the way it would be paced out. (Converted 2026-07-27: this was
+            # the third instance of the center-distance defect, and the one nobody had noticed,
+            # since a cremation ground is drawn large enough that the two forms differ by ~50 ft.)
+            _crem_lim = 120.0 / float(meta.get("ftpx") or 1)
+            far_crem = [c for c in crem if not any(within_edge_gap(c, h, _crem_lim) for h in dwell_t)] if dwell_t else crem
             check(
                 "town_has_cremation_ground",
                 bool(far_crem),
@@ -8410,13 +8599,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"samurai housing lacks rank variety (large={sl_t}, small={ss_t}) - the senior official(s) at a county seat keep a larger house among the juniors' small ones",
             )
         # THE BURAKUMIN QUARTER IS SEGREGATED - the doctrine word on every map, previously enforced
-        # nowhere (GM audit 2026-07): no other caste's dwelling stands within 40px of a burakumin
-        # dwelling. TOWN-scoped: a city's ward system zones quarters wall-to-wall, so its
+        # nowhere (GM audit 2026-07): a band of OPEN GROUND separates it from every other caste's
+        # housing. TOWN-scoped: a city's ward system zones quarters wall-to-wall, so its
         # segregation is zoning, not open ground (Tango/Nagahara adjacent-quarter seams run ~10px).
+        #
+        # 60 REAL FT BETWEEN THE WALLS, and both halves of that were wrong before 2026-07-27.
+        # It read "within 40px" measured CENTER TO CENTER, and 40 ft is less than the two
+        # half-diagonals of the houses it separates (44-51 ft here), so two roofs could touch and
+        # still pass a check whose message promised open ground. Hoshizora duly sat at a 23.6 ft
+        # seam, green. WHY 60: the rule has to distinguish a separate quarter from a dense one, and
+        # dwellings inside a quarter pack at ~10-30 ft, so the seam must be several times that to
+        # read as a gap at all rather than as a wide lane. Deliberately WELL BELOW the 120 ft
+        # pollution separation, because this is a zoning statement about who lives beside whom, not
+        # a buffer against kegare - the burakumin quarter is set apart, not held at arm's length,
+        # and the historical eta hamlet sits at the village edge or across its stream rather than a
+        # fixed distance out.
+        BURAKUMIN_SEAM_FT = 60.0
         bur_t = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin"]
         oth_t = [b for b in M.get("buildings", []) if b.get("kind") in ("laborer", "laborer_large", "servant", "merchant", "merchant_house", "merchant_large", "samurai", "samurai_large")] + houses
         if bur_t and oth_t:
-            close_t = [(round(b["x"]), round(b["y"])) for b in bur_t if any(math.hypot(b["x"] - o["x"], b["y"] - o["y"]) < 40 for o in oth_t)]
+            _seam = BURAKUMIN_SEAM_FT / float(meta.get("ftpx") or 1)
+            close_t = [(round(b["x"]), round(b["y"])) for b in bur_t if any(within_edge_gap(b, o, _seam) for o in oth_t)]
             check(
                 "burakumin_quarter_segregated",
                 not close_t,
@@ -8821,10 +9024,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # standing pollution separation (the cremation ground and tanning yard use it too).
             lim_out_j = 120.0 / ftpx_j
 
-            def _beyond_the_dwellings_j(px: float, py: float) -> bool:
-                return not dwell_j or min(math.hypot(px - h["x"], py - h["y"]) for h in dwell_j) >= lim_out_j
+            def _beyond_the_dwellings_j(r: Mapping[str, Any]) -> bool:
+                # FOOTPRINT, not center (GM, 2026-07-27). A 60x60 ft ground's corner reaches ~42 ft
+                # past its center and a city's 100x60 one ~58, so the center-to-center form of this
+                # rule delivered as little as half the clearance it promised. It takes the whole
+                # RECORD rather than a point for exactly that reason - there is no way to ask this
+                # question correctly from an (x, y).
+                return not dwell_j or not any(within_edge_gap(r, h, lim_out_j) for h in dwell_j)
 
-            bad_out_j = [(round(e["x"]), round(e["y"])) for e in exg_j if _inwall_j(e["x"], e["y"]) or not _beyond_the_dwellings_j(e["x"], e["y"])]
+            def _nearest_dwelling_gap_j(r: Mapping[str, Any]) -> float:
+                return min((edge_gap(r, h) for h in dwell_j), default=float("inf"))
+
+            bad_out_j = [(round(e["x"]), round(e["y"])) for e in exg_j if _inwall_j(e["x"], e["y"]) or not _beyond_the_dwellings_j(e)]
             check(
                 "execution_ground_outside_the_settlement",
                 not bad_out_j,
@@ -8879,20 +9090,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # `not _inwall_j(...)` alone and Ubame is UNWALLED, where that returns False for
                 # every point on the map. A wall-only test does not merely relax on an unwalled
                 # map, it passes anything. GM, 2026-07-26.)
-                def _outside_the_settlement_j(px: float, py: float) -> bool:
+                def _outside_the_settlement_j(r: Mapping[str, Any]) -> bool:
                     # WHY THE STONE'S "OUTSIDE" IS NOT THE GROUND'S. A rampart IS the settlement's
                     # edge, so a stone beyond it is past the line by construction, and the roadside
-                    # suburb that grows outside a town gate is legitimately close to it - Hirameki's
-                    # stone stands 104 ft from an extramural laborer row and is correctly sited.
-                    # The ground keeps BOTH clauses instead, because kegare is a separation from
-                    # PEOPLE and does not care which side of the wall those people live on. The
-                    # stone only has to mark where clean ground ends. So: with a rampart the wall
-                    # settles it; without one the built edge is only definable as a distance from
-                    # the last dwelling, and that reuses the same 120 ft rather than inventing a
-                    # second number for the same phrase.
-                    return not _inwall_j(px, py) if wall_j else _beyond_the_dwellings_j(px, py)
+                    # suburb that grows outside a town gate is legitimately close to it. The ground
+                    # keeps the dwelling clause as well, because kegare is a separation from PEOPLE
+                    # and does not care which side of the wall those people live on.
+                    #
+                    # AND THE UNWALLED FIGURE IS 60 FT, NOT THE GROUND'S 120 (corrected 2026-07-27).
+                    # The first draft of this rule reused 120 "rather than invent a second number
+                    # for the same phrase" - which was the wrong instinct, and the audit that found
+                    # the center-distance defects is what exposed it. 120 ft is a POLLUTION
+                    # separation: it exists to hold a polluting installation off housing. A dosojin
+                    # pollutes nothing. It is a marker standing where the road leaves clean ground,
+                    # and a real one stands at the village edge, not a bowshot beyond it. All it
+                    # needs is to be clear of the built-up area rather than among it, which is the
+                    # same "legible band of open ground" question the burakumin seam asks - hence
+                    # the same 60 ft. Borrowing the bigger number also squeezed the stone between
+                    # its own floor and the ground beyond it into a ~25 ft band on Hoshizora, which
+                    # is the smell of a constraint doing a job that is not its own.
+                    return not _inwall_j(r["x"], r["y"]) if wall_j else not any(within_edge_gap(r, h, BOUNDARY_STONE_CLEAR_FT / ftpx_j) for h in dwell_j)
 
-                out_bms_j = [b for b in bms_j if _outside_the_settlement_j(b["x"], b["y"]) and not _off_the_way_out_j(b["x"], b["y"])]
+                out_bms_j = [b for b in bms_j if _outside_the_settlement_j(b) and not _off_the_way_out_j(b["x"], b["y"])]
                 unmarked_j = [
                     (round(e["x"]), round(e["y"]))
                     for e in exg_j
@@ -8913,14 +9132,59 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     False,
                     "an execution ground needs a boundary stone (s.boundary_marker(...)) on the road between it and the settlement - the ritual boundary the ground sits beyond",
                 )
+            if bms_j and dwell_j:
+                # ...AND THE STONE STANDS NEARER THE HOUSES THAN THE GROUND DOES (GM, 2026-07-27:
+                # "I would have expected that the boundary stone would always be closer to the
+                # town's edge than the execution ground itself. Was that not always the case?").
+                # It was not. The between-ness test above is two distances to the core CENTROID -
+                # the mean position of every dwelling - which orders the two features radially about
+                # one point and says nothing about the built EDGE. A settlement is not a disc, so
+                # the stone can be further out along the west road while the ground sits nearer a
+                # different stretch of housing: Ubame's ground came within 124 ft of the laborers'
+                # quarter while its stone stood 204 ft out, and 86 of 118 dwellings were nearer the
+                # killing ground than the stone that supposedly bounded it. Tango (427 of 849) and
+                # Minami had the same defect.
+                #
+                # THIS IS NOT A FOOTPRINT BUG AND FOOTPRINTS DO NOT FIX IT. The arithmetic was
+                # sound; the geometry it stood for was not. An AGGREGATE (the centroid) was
+                # standing in for a DISTRIBUTED thing (the built edge), and the cure is to measure
+                # to the nearest dwelling - whatever direction it lies in - rather than to the
+                # average of all of them. Kept as its own check rather than folded into the one
+                # above so the two failures are told apart: "no stone bounds this ground" and "the
+                # stone bounds it on paper only" want different fixes.
+                # WHAT "THE TOWN'S EDGE" IS, MEASURED. The rampart where there is one; the nearest
+                # dwelling where there is not - the same definition the "outside" test above uses,
+                # for the same reason, and it matters here more than there. Measuring a walled
+                # city to its nearest dwelling makes an ISOLATED FARMHOUSE in the hinterland stand
+                # for the settlement: Tango's execution ground sits in the extramural fields, and
+                # the closest house to it is a farmstead 132 ft to its EAST - further out than the
+                # ground itself - so a nearest-dwelling reading called the ground "nearer the town"
+                # than a stone that plainly stands between the city and it (161 ft from the wall
+                # against the ground's 295). A scattered farmstead is not the built edge; the wall
+                # is. Unwalled, the nearest dwelling is the only edge there is to measure to.
+                def _settlement_edge_gap_j(r: Mapping[str, Any]) -> float:
+                    if wall_j:
+                        return min(poly_dist(px, py, wall_j) for px, py in rect_corners(_struct_rect(dict(r))))
+                    return _nearest_dwelling_gap_j(r)
+
+                worst_j = []
+                for e in exg_j:
+                    eg = _settlement_edge_gap_j(e)
+                    if all(_settlement_edge_gap_j(b) > eg for b in bms_j):
+                        worst_j.append((round(e["x"]), round(e["y"]), round(eg * ftpx_j), round(min(_settlement_edge_gap_j(b) for b in bms_j) * ftpx_j)))
+                check(
+                    "execution_ground_no_nearer_the_houses_than_its_stone",
+                    not worst_j,
+                    f"execution ground(s) (x, y, ground_gap_ft, stone_gap_ft) {worst_j} stand CLOSER to the settlement edge (the rampart, or the nearest dwelling where there is none) than the boundary stone that bounds them - "
+                    f"then the ground lies inside the stone's line for those households, whatever the arithmetic about the town's middle says. Move the ground further out, "
+                    f"or the stone nearer the built edge",
+                )
             # CLEAR OF THE COMMUNITY'S DEAD. Two different kinds of death: the tended ancestral dead
             # and the disposed unmourned. The executed go in the pit AT the ground; they are never
             # carried to the parish burial ground, and the two must not read as one precinct.
             dead_j = (M.get("cemeteries") or []) + (M.get("cremation_grounds") or []) + (M.get("ossuaries") or []) + (M.get("mausoleums") or [])
             lim_dead_j = EXECUTION_GROUND_DEAD_CLEAR_FT / ftpx_j
-            crowd_j = [
-                (round(e["x"]), round(e["y"])) for e in exg_j if any(math.hypot(e["x"] - d["x"], e["y"] - d["y"]) - max(e["w"], e["h"]) / 2 - max(d["w"], d["h"]) / 2 < lim_dead_j for d in dead_j)
-            ]
+            crowd_j = [(round(e["x"]), round(e["y"])) for e in exg_j if any(within_edge_gap(e, d, lim_dead_j) for d in dead_j)]
             check(
                 "execution_ground_clear_of_the_dead",
                 not crowd_j,
@@ -9191,6 +9455,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         _ty_bur = [b for b in (M.get("buildings") or []) if b.get("kind") == "burakumin"]
 
         def _ty_on_water(o_: dict[str, Any], reach_ft: float) -> bool:
+            # Family: ASSOCIATION/REACH - "does this yard stand on the water", not "how many feet of
+            # daylight are between them". The reach tolerance is tens of feet against a yard's own
+            # extent, so the radius is a fair stand-in and the question is neighborhood membership
+            # rather than a gap. Deliberately left on centers (GM audit, 2026-07-27).
             r_ = max(o_["w"], o_["h"]) / 2
             return any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + _ty_px(reach_ft) for _pl, _hw in _ty_water for i in range(len(_pl) - 1))
 
@@ -10896,7 +11164,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _tw_pond = M.get("pond")
 
             def _tw_on_water(o_: dict[str, Any], reach: float) -> bool:
-                r_ = max(o_["w"], o_["h"]) / 2
+                r_ = max(o_["w"], o_["h"]) / 2  # family: ASSOCIATION/REACH, as _ty_on_water above
                 if any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + reach for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
                     return True
                 return _tw_pond is not None and math.hypot(o_["x"] - _tw_pond[0], o_["y"] - _tw_pond[1]) < max(_tw_pond[2], _tw_pond[3]) + r_ + reach

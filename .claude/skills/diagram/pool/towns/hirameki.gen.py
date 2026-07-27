@@ -497,7 +497,10 @@ s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows 
 # common burial ground, and the adjoining cremation ground (monk-run, burakumin assistants)
 s.cemetery(1840, 1160, 88, 62, label="graveyard", label_above=True)
 s.cemetery(2080, 1420, 120, 88, parish=False, label="common burial ground")  # parish=False -> ORGANIC Japan-style plot (settlements.md 'shape of the common ground')
-s.cremation_ground(2100, 1513)
+# Moved out from (2100, 1513) on 2026-07-27: the 120 ft clearance this ground owes the dwellings
+# was being measured center to center, which read 111 ft as comfortable when the pyre was really
+# ~50 ft from a farmhouse wall. Now 184 ft to the nearest dwelling, edge to edge.
+s.cremation_ground(2210, 1483)
 # the pauper ossuary mound (muenzuka) beside the cremation ground (town_has_ossuary)
 s.ossuary(2180, 1560)
 

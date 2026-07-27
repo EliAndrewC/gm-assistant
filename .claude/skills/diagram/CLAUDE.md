@@ -237,6 +237,49 @@ between - that is how a wellhead ended up 1 px inside a hatake plot. Region-vs-r
 (`quad_hits_poly`, `quad_hits_seg`, `point_quad_dist`) exist now; use them rather than adding sample
 points.
 
+## Centres, footprints, and aggregates: which one a rule is allowed to use
+
+The GM, 2026-07-27, after the boundary-stone defect: *"I'm not sure it EVER makes sense to use a
+centre instead of a footprint... we've had a lot of bugs slip through because of using centres,
+which makes me wonder whether we should just ban them."* An audit of all 42 centre-distance sites
+and 29 `point_in_poly`-on-a-centre sites says: a blanket ban would break three things that are
+right, and would still have missed the defect that prompted it. **Four families. Say which one your
+rule is in, in a comment, at the point of the test.**
+
+| family | measure | why | examples |
+|---|---|---|---|
+| **Gap VERDICT** - "N ft of clearance", "these must not overlap" | `edge_gap` / `within_edge_gap` / `sat_overlap` on real rotated corners. **Never** a centre, **never** a circumscribed radius | the answer is a distance you could pace out between two walls | `execution_ground_outside_the_settlement`, `town_has_cremation_ground`, `burakumin_quarter_segregated`, `execution_ground_clear_of_the_dead`, `wells_among_dwellings`, `farm_sheds_attached` |
+| **CLASSIFICATION / counting** - "which ward", "how many inside the wall", "what share of this quarter is civic" | centre, deliberately | a building belongs to ONE ward; footprint-testing double-counts a building on a seam and the ward populations stop summing to the town | the 29 `point_in_poly(b["x"], b["y"], wall)` sites |
+| **ASSOCIATION / reach** - "is there a well within reach", "do monk houses cluster at their temple", "is this yard on the water" | centre, deliberately | the tolerance (75-480 px) dwarfs the footprints and the question is neighbourhood membership, not clearance; converting them re-tunes ~21 calibrated constants to fix nothing | `settlement_dwellings_watered`, `city_monk_houses_by_their_temple`, `_ty_on_water` |
+| **PREFILTER** in front of an exact test | circumscribed radius, deliberately | over-stating an extent can only ADMIT a pair the exact test then rejects - the index prunes, it never decides. Tightening these would start rejecting before the exact test runs | `fire_tower_standoff`, `no_structure_overlaps`, `city_house_doors_unblocked`, `within_edge_gap`'s own prefilter |
+
+**The three conventions that were live before this, and what each cost.** Raw centre-to-centre
+understates clearance by the sum of both half-extents, so a rule promising 120 ft delivered ~60;
+`0.5 * math.hypot(w, h)` is the half-DIAGONAL, over by up to 41% on a square and more on a long
+rect; `max(w, h) / 2` is the same error differently sized. The approximations' error **flips sign**
+with the rule - subtracting too much makes a "must be far" rule strict and a "must be near" rule
+lenient - so they are not even a uniform safety margin.
+
+**The ratchet, not the doc.** `test_gap_verdicts_read_footprints_not_centers` plants two features at
+exactly the offset where the conventions disagree and pins which verdict is right. Verified to have
+teeth: reverting the helper to raw centres breaks three of its six entries, reverting it to
+circumscribed radii breaks the other three. **Add an entry when you add a gap rule** - a rule that
+lives only in this table has already been proven not to hold.
+
+**And a fourth axis, which no footprint discipline reaches: AGGREGATE PROXIES.** The boundary-stone
+defect was not a footprint bug. `dist(stone, centroid) < dist(ground, centroid)` would stay green
+with perfect geometry on both sides, because the centroid - an average of every dwelling - was
+standing in for the built EDGE, and a settlement is not a disc. **Never let an aggregate stand in
+for the distributed thing a verdict is about.** Measure to the nearest member (or, where the
+settlement has a rampart, to the wall - the edge it actually has). `execution_ground_on_the_outcast_
+side` still dots against the centroid and that is correct: a BEARING is an aggregate question. A
+DISTANCE is not.
+
+**Known debt, recorded as debt rather than design:** `_fits` centre-testing `block_polys` (item 1
+above). The honest reading is that those polygons are drawn wrong - keep-out plus slack baked in,
+with the centre test handing the slack back - and the principled fix is to shrink them to the true
+keep-out and footprint-test. That re-tunes margins pool-wide, so it is a separate pass.
+
 ## Adding a new map feature: the KEEP-CLEAR CONTRACT (read this before writing the glyph)
 
 The GM's observation, 2026-07-25, after the martial hall shipped sitting on Tango's ring road:
@@ -370,6 +413,30 @@ fire on trees that were deliberately never drawn.)
 Verify an optimization the same way: capture `sorted(gate(M))` for every manifest in `pool/**` before
 the change, re-run after, and diff. Anything but "NONE" means the optimization changed behavior.
 Run that sweep with `-n auto`-style parallelism or in the background - serial it is ~13 minutes.
+
+### A `GridIndex` box is a COST, so clamp it - on insert AND on query
+
+`GridIndex` allocates a dict entry per 120 px cell of the box it is handed, in both axes. That is
+fine for anything on the map and catastrophic for anything that is not: the regression fixture
+`city_geometry_within_canvas_fires_on_a_stray_vertex.json` plants a wall vertex at **9,000,000** on a
+3,200 px canvas, so the moment `wall` became a SOLID in `OVERLAP_CLASS` and got stroked into quads,
+one feature asked for ~5.6 billion cells. The gate ate gigabytes of RAM and the GM had to kill it by
+hand (2026-07-26). **Negative fixtures contain deliberately insane geometry - any new code that
+consumes raw manifest coordinates will meet it.**
+
+Two rules, and the second is the one that is easy to half-do:
+
+1. **Clamp the index box to the canvas** (`meta.W`/`meta.H`, generously - a couple of canvases of
+   slack). Clamping only shrinks, and a polygon's on-canvas part is always inside the clamped box, so
+   no real overlap can be lost. Geometry wholly off the canvas is skipped; that is
+   `city_geometry_within_canvas`'s business, not the overlap matrix's.
+2. **Clamp the QUERY box too.** `near_rect` walks the cells of the box it is *given*. Clamping only
+   the insert leaves the query iterating exactly the same billions of cells - which is precisely the
+   half-fix that shipped first here and looked plausible for a whole turn.
+
+`test_matrix_survives_geometry_far_off_the_canvas` in `test_checks.py` is the guard, timed rather
+than structural on purpose: the failure mode is unbounded work, and the correct-vs-broken margin is
+a fraction of a second against effectively forever.
 
 ## Batch the rendered-map inspection
 
