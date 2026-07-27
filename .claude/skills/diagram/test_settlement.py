@@ -282,6 +282,54 @@ def test_kido_guard_box_takes_the_far_flank_when_the_near_one_is_blocked():
     assert sum(c[1] for c in k["guard"]) / 4 > 450  # it crossed to the other side of its own gateway (local +x, which the 90deg bar puts SOUTH)
 
 
+def test_kido_guard_box_stands_clear_of_its_own_ward_fence():
+    # GM 2026-07-27: "ward gates seem to sometimes overlap with neighborhood walls". The GATEWAY
+    # stands on the fence - it IS the opening - but the guard box is a building on the verge, and
+    # an oblique crossing used to cut straight through it (2 of the pool's 14 gates). SAT against
+    # the stroked fence, not corner distances: a line through a 15x16 box's middle leaves every
+    # corner ~8px clear, so the corner test the lane beds use reported it clear.
+    fence = [(300, 300), (600, 600)]
+    s = Settlement(1000, 1000, seed=1)
+    s.street([(100, 450), (900, 450)])
+    s.ward("slant", fence, gates=[(450, 450)])
+    box = [(c[0], c[1]) for c in s.M["kido"][-1]["guard"]]
+    assert not any(settlement.sat_overlap(box, q) for q in settlement.stroke_quads(fence, 4.0))
+    # and the RESERVATION agrees with the drawn glyph, which is why the fence goes in explicitly:
+    # at reservation time s.ward has not run, so M['wards'] is still empty
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.street([(100, 450), (900, 450)])
+    res = s2.kido_reservation(450, 450, fence, margin=0.0)
+    assert (min(p[0] for p in res), min(p[1] for p in res)) == pytest.approx(tuple(s.M["kido"][-1]["bbox"][:2]), abs=0.2)
+
+
+def test_clear_label_seat_walks_out_and_gives_up_when_nothing_is_clear():
+    # a verge-hugging feature puts its DEFAULT below-label on the frontage it hugs, so the seat is
+    # probed: below, above, then left/right, walking outward. On a frontage packed solid there is
+    # no clear box at all, and the siter must be told so rather than handed a seat on a shopfront.
+    s = _town()
+    assert s.clear_label_seat(500, 500, 30, 12, "notice board") == (500, 517)  # the default below-seat, when it is clear
+    s.M["buildings"] = [{"x": 500, "y": 500, "w": 2000, "h": 2000, "rot": 0, "kind": "merchant"}]
+    assert s.clear_label_seat(500, 500, 30, 12, "notice board") is None
+    assert not s.label_seat_clear(500, 517, 26.0)
+
+
+def test_stroke_quads_makes_one_quad_per_segment():
+    qs = settlement.stroke_quads([(0, 0), (100, 0), (100, 100)], 5.0)
+    assert len(qs) == 2 and all(len(q) == 4 for q in qs)
+    assert settlement.stroke_quads([(0, 0)], 5.0) == []
+    assert settlement.stroke_quads([(7, 7), (7, 7)], 5.0)  # a degenerate segment still yields a quad rather than dividing by zero
+
+
+def test_way_beds_carries_the_lane_network_lane_runs_does_not():
+    # the AVOIDANCE list for a verge-hugging feature: lane_runs' roads/streets/alleys/ring road
+    # PLUS the village lane network. Each siter used to build its own partial list, which is how a
+    # punishment ground came to clip an alley (reported by another session, Tango 2026-07-27).
+    M = {"road": [[0, 100], [500, 100]], "alleys": [{"pts": [[0, 300], [500, 300]], "w": 6}], "lane": [[0, 500], [500, 500]], "lanes": [{"pts": [[0, 700], [500, 700]], "w": 8}]}
+    beds = settlement.way_beds(M)
+    assert len(beds) == 4 and len(settlement.lane_runs(M)) == 2
+    assert sorted(round(b[0][0][1]) for b in beds) == [100, 300, 500, 700]
+
+
 def test_seg_closest_degenerate_segment():
     assert settlement.seg_closest(0, 0, (5, 5), (5, 5)) == (5, 5)
 
@@ -820,7 +868,11 @@ def test_city_wall_gateposts_orient_to_the_wall_tangent():
     assert len(posts) == 2
     assert all(abs(abs(p["rot"]) - 90) < 25 for p in posts)  # tangent ~vertical, not the old rot 0
     # the two posts straddle the gate along the tangent (N and S of it), not E and W
-    assert abs(posts[0]["y"] - posts[1]["y"]) > 40 and abs(posts[0]["x"] - posts[1]["x"]) < 30
+    # > 10, not the old > 40: the throat is TO SCALE since 2026-07-27 (30 ft clear + a 15 ft pier a
+    # side = 15 px between post centres at 1 px = 3 ft), where it used to open a 210 ft gap. The
+    # assertion here is about ORIENTATION - N and S of the opening, not E and W - so it must not
+    # re-encode the old spacing as its threshold.
+    assert abs(posts[0]["y"] - posts[1]["y"]) > 10 and abs(posts[0]["x"] - posts[1]["x"]) < 30
 
 
 def test_moat_closes_into_a_ring_without_a_river():
@@ -1386,8 +1438,10 @@ def test_shrine_hall_torii_count_pin_extends_a_single_point_avenue():
     # marches the avenue away from the hall at the HOUSE PITCH (TORII_PITCH_FT, 20 real ft) from
     # the single given point - it was a fixed 44px until 2026-07-25, which is 132 ft at city scale
     s = _torii_city(torii_count=7)
+    step = s.px(settlement.TORII_PITCH_FT)
+    y0 = 500 + s.px(84) / 2 + step  # the hall's front edge + one pitch - _avenue_at_threshold owns the seat now
     assert s.M["religious"][-1]["torii_count"] == 7
-    assert sorted(t[1] for t in s.M["torii"]) == pytest.approx([560 + s.px(settlement.TORII_PITCH_FT) * i for i in range(7)], abs=0.1)
+    assert sorted(t[1] for t in s.M["torii"]) == pytest.approx([y0 + step * i for i in range(7)], abs=0.1)
 
 
 def test_shrine_hall_extends_a_multi_point_avenue_along_its_own_step():
@@ -1395,7 +1449,9 @@ def test_shrine_hall_extends_a_multi_point_avenue_along_its_own_step():
     s = Settlement(1200, 1200, seed=9)
     s.meta(name="T", scale="city", ftpx=3, down_deg=90)
     s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 570)], torii_count=3)
-    assert sorted(t[1] for t in s.M["torii"]) == [560, 570, 580]  # a 10px (30 ft) authored stride is inside the pitch band, so it stands
+    # a 10px (30 ft) authored stride is inside the pitch band, so it stands - but the whole run is
+    # slid in to the hall's threshold (front edge y514 + the 10px stride), which is _avenue_at_threshold's job
+    assert sorted(t[1] for t in s.M["torii"]) == pytest.approx([524, 534, 544], abs=0.1)
 
 
 def test_shrine_hall_roll_below_geometry_draws_the_first_n():
@@ -1403,7 +1459,7 @@ def test_shrine_hall_roll_below_geometry_draws_the_first_n():
     s = Settlement(1200, 1200, seed=9)
     s.meta(name="T", scale="city", ftpx=3, down_deg=90)
     s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598), (600, 636)], torii_count=1)
-    assert [t[1] for t in s.M["torii"]] == [560]
+    assert [t[1] for t in s.M["torii"]] == pytest.approx([500 + s.px(84) / 2 + s.px(settlement.TORII_PITCH_FT)], abs=0.1)  # ...seated at the threshold
 
 
 def _walled_city(fence=((300, 700), (900, 700))):
@@ -1423,24 +1479,29 @@ def test_torii_refuses_a_seat_standing_in_a_wall():
 
 
 def test_shrine_hall_shortens_its_avenue_short_of_a_wall():
-    # the avenue is pulled BACK as a whole (uniform stride, first arch fixed) so the rolled count
-    # still fits on open ground rather than marching the last arches into the fence. The authored
-    # run is 560..620 at a 10px (30 ft, inside the pitch band) stride, seating its last arch AT the
-    # fence (y620).
-    s = _walled_city(fence=((300, 620), (900, 620)))
+    # the avenue is pulled BACK as a whole (uniform stride) so the rolled count still fits on open
+    # ground rather than marching the last arches into the fence. The run is threshold-seated at the
+    # hall's front edge (y514) with a 10px (30 ft, inside the pitch band) stride, so 7 arches would
+    # reach y584 and cross the fence at y570.
+    s = _walled_city(fence=((300, 570), (900, 570)))
     s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 570)], torii_count=7)
     ys = [t[1] for t in s.M["torii"]]
-    assert len(ys) == 7 and ys[0] == 560  # every rolled arch drawn; the one nearest the hall never moves
-    assert ys[-1] < 614 and settlement.torii_wall_conflicts(s.M) == []  # shortened to stop before the fence, all clear
+    assert len(ys) == 7  # every rolled arch is drawn
+    assert ys[-1] < 566 and settlement.torii_wall_conflicts(s.M) == []  # shortened to stop before the fence, all clear
     strides = [ys[i + 1] - ys[i] for i in range(6)]
     assert max(strides) - min(strides) <= 0.2  # ... and still evenly spaced (the run is scaled, not re-seated one by one)
+    # ...and the THRESHOLD is re-taken after the shortening: pulling the stride in would otherwise
+    # leave the innermost arch standing at the old, wider gap from the hall (GM 2026-07-27).
+    assert ys[0] - 514 == pytest.approx(strides[0], abs=0.2)
 
 
 def test_shrine_hall_refuses_an_avenue_that_cannot_be_shortened_clear():
     # if even the first arch stands in the wall, no shortening helps: fail the gen rather than
     # close the arches up on each other or fudge the geometry
-    s = _walled_city(fence=((300, 560), (900, 560)))
-    with pytest.raises(ValueError, match="cannot be shortened clear of the samurai ward fence"):
+    # (the message names "a wall" rather than the fence here: no single arch STANDS in it - it is the
+    # walk between them that crosses - so torii_seat_on_wall has no run to name for the first arch)
+    s = _walled_city(fence=((300, 545), (900, 545)))
+    with pytest.raises(ValueError, match="cannot be shortened clear of a wall"):
         s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 570)], torii_count=7)
 
 
@@ -1453,7 +1514,7 @@ def test_shrine_hall_repitches_an_overwide_avenue_along_its_own_line():
     s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 560), (600, 598), (640, 636)], torii_count=3)
     ts = s.M["torii"]
     step = s.px(settlement.TORII_PITCH_FT)
-    assert (ts[0][0], ts[0][1]) == (600, 560)  # the innermost arch keeps the seat the gen chose
+    assert ts[0][0] == 600 and ts[0][1] == pytest.approx(500 + s.px(84) / 2 + step, abs=0.1)  # innermost arch one pitch off the hall's front
     gaps = [math.hypot(ts[i + 1][0] - ts[i][0], ts[i + 1][1] - ts[i][1]) for i in range(2)]
     assert gaps == pytest.approx([step, step], abs=0.15)  # evenly re-pitched to the house stride
     assert all(t[0] == 600 for t in ts)  # ... and still on the authored line's first leg (it never reaches the bend)
@@ -1465,22 +1526,25 @@ def test_shrine_hall_leaves_an_avenue_inside_the_pitch_band_alone():
     s = Settlement(1200, 1200, seed=9)
     s.meta(name="V", scale="village", ftpx=2, down_deg=90)
     s.shrine_hall(600, 500, "Shrine", w=s.px(60), h=s.px(48), torii=[(600, 560), (600, 575), (600, 590)], torii_count=3)
-    assert [t[1] for t in s.M["torii"]] == [560, 575, 590]
+    # the 15px stride survives untouched; only the run's distance from the hall changes (front edge y512 + 15)
+    assert [t[1] for t in s.M["torii"]] == pytest.approx([527, 542, 557], abs=0.1)
 
 
 def test_shrine_hall_shortens_an_avenue_that_would_straddle_a_wall():
     # a run that BRACKETS a wall without any single arch touching it is still wrong: a sando is one
     # approach and cannot continue on the far side of a barrier, so the walk between the arches is
-    # tested too. Here (at 2 ft/px) the fence at y585 falls inside the ~7px gap between the glyph
-    # boxes of the arches at y576 and y592 - no arch stands in it - and the whole run is still pulled
-    # back to the near side. A per-arch nudge would have "fixed" it by straddling.
+    # tested too. Here (at 2 ft/px) the hall's front edge is y544 and the authored 16px stride seats
+    # the run at y560/576/592, so the fence at y585 falls inside the ~7px gap between the glyph boxes
+    # of the arches at y576 and y592 - no arch stands in it - and the whole run is still pulled back to
+    # the near side. A per-arch nudge would have "fixed" it by straddling.
     s = Settlement(1200, 1200, seed=9)
     s.meta(name="V", scale="village", ftpx=2, down_deg=90)
     s.ward("samurai", [(300, 585), (900, 585)], gates=[])
-    s.shrine_hall(600, 500, "Shrine", w=s.px(60), h=s.px(48), torii=[(600, 560), (600, 576)], torii_count=3)
+    s.shrine_hall(600, 532, "Shrine", w=s.px(60), h=s.px(48), torii=[(600, 560), (600, 576)], torii_count=3)
     ys = [t[1] for t in s.M["torii"]]
-    assert len(ys) == 3 and ys[0] == 560
+    assert len(ys) == 3
     assert max(ys) < 582 and settlement.torii_wall_conflicts(s.M) == []  # entirely on the near side of the fence
+    assert ys[0] - 544 == pytest.approx(ys[1] - ys[0], abs=0.2)  # ...and the tightened stride is re-matched at the hall's front
 
 
 def test_ward_refuses_a_fence_laid_across_a_standing_torii():
@@ -1488,9 +1552,75 @@ def test_ward_refuses_a_fence_laid_across_a_standing_torii():
     # have avoided it - the wall side must catch it, since neither feature can move once drawn
     s = Settlement(1200, 1200, seed=9)
     s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    # the arch is seated by _avenue_at_threshold at the hall's front edge (y514) + one 20 ft pitch
     s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 700)], torii_count=1)
-    with pytest.raises(ValueError, match=r"the samurai ward fence runs through torii arch\(es\) at \[\(600.0, 700.0\)\]"):
-        s.ward("samurai", [(300, 700), (900, 700)], gates=[])
+    with pytest.raises(ValueError, match=r"the samurai ward fence runs through torii arch\(es\) at \[\(600.0, 520.7\)\]"):
+        s.ward("samurai", [(300, 521), (900, 521)], gates=[])
+
+
+def test_avenue_at_threshold_slides_a_marooned_sando_in_to_its_hall():
+    # GM 2026-07-27: "the distance from the front of the temple should be the same as the distance
+    # between each torii arch". Tango's Bishamon sando was spaced right at 20 ft and authored 139 ft
+    # away, so it read as three red marks beside an unrelated building. The run keeps its direction,
+    # its curve and its stride - only its distance from the hall changes.
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 700), (600, 710)], torii_count=3)
+    ys = [t[1] for t in s.M["torii"]]
+    strides = [ys[i + 1] - ys[i] for i in range(2)]
+    assert strides == pytest.approx([10, 10], abs=0.1)  # the authored 10px (30 ft) stride is inside the pitch band and stands
+    assert ys[0] - (500 + s.px(84) / 2) == pytest.approx(10, abs=0.1)  # ...and the gap to the hall now MATCHES it
+
+
+def test_avenue_at_threshold_pulls_a_beside_the_hall_gate_onto_the_flank_it_stands_off():
+    # a run authored off to the SIDE is measured to the hall's nearest FACE, not its centre (the
+    # footprint discipline), so it slides onto the flank it actually stands off rather than diagonally
+    # in toward the middle of the building - which is what makes a beside-the-hall gate read as
+    # belonging to that hall.
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple", w=s.px(130), h=s.px(84), kind="temple", torii=[(760, 500)], torii_count=1)
+    (tx, ty, _z) = s.M["torii"][0]
+    assert ty == 500  # stayed on its own line
+    assert tx - (600 + s.px(130) / 2) == pytest.approx(s.px(settlement.TORII_PITCH_FT), abs=0.1)
+
+
+def test_avenue_at_threshold_leaves_a_degenerate_avenue_alone():
+    # nothing to seat, and an arch drawn ON the hall is torii_clear_of_shrine's defect to report -
+    # this method translates a sando, it does not paper over a broken one
+    s = Settlement(600, 600, seed=1)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    assert s._avenue_at_threshold(300, 300, 40, 30, []) == []
+    on_the_hall = [(300.0, 300.0), (300.0, 320.0)]
+    assert s._avenue_at_threshold(300, 300, 40, 30, on_the_hall) == on_the_hall
+
+
+def test_label_hits_counts_gate_furniture_arches_and_wellheads():
+    # the ladder's scorer must see every drawn glyph a caption can bury. A torii is a bare [x, y, z]
+    # triple and a wellhead has no w/h, so neither is in self.placed and both were invisible to it
+    # (GM 2026-07-27) - which is how Tango's theater-stage caption walked onto Benten's gate and its
+    # cremation-ground caption onto a well.
+    s = Settlement(600, 600, seed=1)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    assert s._label_hits(300, 300, "caption", 11) == 0
+    s.M.setdefault("gate_structs", []).append({"x": 300, "y": 300, "w": 20, "h": 12})
+    s.M["torii"].append([300, 300, 1])
+    s.M["wells"].append({"x": 300, "y": 300, "r": 8, "vr": 4})
+    assert s._label_hits(300, 300, "caption", 11) == 3
+
+
+def test_hall_caption_steps_out_of_its_own_sando():
+    # GM 2026-07-27: an arch is "never covered by the 'temple of X' label". A hall's caption and its
+    # approach both want the ground at the hall's face, so bringing the arches to the threshold put
+    # the two on the same spot - the caption takes the hall's other side.
+    s = Settlement(1200, 1200, seed=9)
+    s.meta(name="T", scale="city", ftpx=3, down_deg=90)
+    s.shrine_hall(600, 500, "Temple of Ebisu", w=s.px(130), h=s.px(84), kind="temple", torii=[(600, 700)], torii_count=7, label_below=True)
+    cap = [L for L in s.M["labels"] if L[5] == "Temple of Ebisu"][0]
+    arches = [(t[0], t[1]) for t in s.M["torii"]]
+    txh, tyu, tyd = settlement.torii_halfbox(s.ftpx)
+    assert not any(cap[0] < ax + txh and ax - txh < cap[2] and cap[1] < ay + tyd and ay - tyu < cap[3] for ax, ay in arches)
+    assert cap[1] > max(ay for _, ay in arches)  # here it stayed on the gen's side, stepping past the far end of the sando
 
 
 def test_open_seat_answers_where_a_feature_can_actually_stand():
@@ -5018,11 +5148,11 @@ def test_merchant_storehouse_is_never_drawn_across_a_neighbor():
 
 def test_region_blocked_catches_a_keepout_against_a_cell_EDGE():
     """The bug this exists to stop: a keep-out sitting against the middle of a cell EDGE touches
-    neither the centre nor any corner, so centre-plus-corner sampling passes it. That is how a
+    neither the center nor any corner, so center-plus-corner sampling passes it. That is how a
     wellhead ended up 1 px inside a hatake plot with every sample point clear."""
     cell = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
     assert not settlement.region_blocked(cell, [], [], [], [])
-    # a small circle hugging the middle of the LEFT edge - no corner is near it, the centre is 50 away
+    # a small circle hugging the middle of the LEFT edge - no corner is near it, the center is 50 away
     assert settlement.region_blocked(cell, [], [(-4.0, 50.0, 6.0)], [], [])
     assert not settlement.region_blocked(cell, [], [(-40.0, 50.0, 6.0)], [], [])
     assert settlement.region_blocked(cell, [(-4.0, 50.0, 6.0)], [], [], [])  # same, as a pond
@@ -5052,14 +5182,14 @@ def test_point_quad_dist_is_zero_inside_and_grows_outside():
     assert 2.9 < settlement.point_quad_dist(-3, 5, cell) < 3.1
 
 
-def test_hard_polys_footprint_test_refuses_what_the_centre_test_allowed():
-    """The split that fixes centre-vs-footprint: `hard_polys` (crop, pond, bog, a field's own
-    ditches) is tested against the WHOLE footprint, while `block_polys` keeps the centre test its
+def test_hard_polys_footprint_test_refuses_what_the_center_test_allowed():
+    """The split that fixes center-vs-footprint: `hard_polys` (crop, pond, bog, a field's own
+    ditches) is tested against the WHOLE footprint, while `block_polys` keeps the center test its
     soft reservations - caption bands, aprons, fence standoffs - were tuned for."""
     s = _town()
     plot = [(500.0, 500.0), (600.0, 500.0), (600.0, 600.0), (500.0, 600.0)]
     s.block_polys.append(plot)
-    assert s._fits(490, 550, 46, 28)  # centre (490) is outside the plot, so the centre test allows it...
+    assert s._fits(490, 550, 46, 28)  # center (490) is outside the plot, so the center test allows it...
     s.hard_polys.append(plot)
     assert not s._fits(490, 550, 46, 28)  # ...but the footprint runs to 513, well inside it
     assert s._fits(300, 300, 46, 28)  # well clear, still fine

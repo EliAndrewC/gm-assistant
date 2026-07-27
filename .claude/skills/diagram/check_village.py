@@ -310,7 +310,32 @@ _LABEL_GROUP = {
     # dense-city building), so it fell outside the classification ratchet - which iterates the
     # overlap registry - and a caption on a wellhead was invisible. Found by settlement-review 2026-07-26.
     "wells": "well",
+    # THE SAME HOLE, ONE CLASS OVER (settlement-review 2026-07-27). The ratchet at
+    # `labels_cover_every_feature` iterates the overlap registry, and `matrix_extents` SKIPS the
+    # permissive classes outright - so every key registered "FIXTURE" is invisible to it and can go
+    # unclassified for labels for ever. On Minami that let two captions ("punishment ground" and a
+    # "dojo") be drawn straight through a ward kido's guard post, each biting a notch out of its
+    # outline so a clean square rendered as two disconnected corners, with the gate fully green.
+    # A kido and a dock are both solid drawn glyphs a caption can bury, so both are victims here.
+    # (A concurrent session has since moved `kido` off the POINT FIXTURE row - it always had a
+    # footprint - which fixes its overlap handling but not this: label classification is a separate
+    # registry, and an unclassified key stays invisible to captions whatever its overlap class.)
+    "kido": "ward gate",
+    "docks": "dock",
+    # a TORII ARCH, likewise (GM 2026-07-27: an arch must "never be covered by the 'temple of X'
+    # label"). Its group word appears in no caption any map draws, so NOTHING may cover an arch -
+    # correct, because a sando's whole legibility is the ROW it makes, and a caption laid across it
+    # breaks the row into unrelated marks. The commonest offender was the hall's OWN caption, which
+    # wants the same ground the approach does. See the torii branch in the victim builder: an arch is
+    # recorded as a bare [x, y, z] triple, so the registry loop cannot pick it up on its own.
+    "torii": "torii",
 }
+# STILL UNCLASSIFIED, and known to be (2026-07-27): the other six FIXTURE keys - `bridges`,
+# `water_gates`, `sluice_gates`, `inspection_stations`, `jetties`, `wall_towers`. They are drawn
+# glyphs a caption could bury exactly like the two above, and nothing will tell us when one does,
+# because the ratchet cannot reach the permissive classes. Left open deliberately rather than
+# half-closed: adding them is one line each, but each may fire on a finished map in the pool, and
+# that is a fix to make with the regen budget to see it through - not a line to add blind.
 # `buildings` is the one key whose group is not fixed: each record carries its own `kind`, and _grp
 # folds those kinds into groups (samurai_large -> samurai, and so on).
 _LABEL_BY_KIND = ("buildings",)
@@ -373,6 +398,11 @@ OVERLAP_CLASS: dict[str, str] = {
             "refining_forges",
         )
     },
+    # A ward gate's GUARD BOX is a small building on the verge beside the gateway, not part of the
+    # opening: it is SOLID and rides none of the gate's fence/roadbed mounts (see matrix_extents,
+    # which splits it out of `kido`). Not a manifest key - it is extracted from the gate's own
+    # `parts` - so nothing reads M['kido_guard_box'] and the classification ratchet never sees it.
+    "kido_guard_box": "SOLID",
     # The rampart and the torii arches are SOLID: things must keep off them. All of these were
     # UNCLASSIFIED until 2026-07-26 because the ratchet inspected only keys whose records are lists
     # of DICTS - a wall is a bare list of points, a torii a bare [x, y, z] triple - and a ratchet
@@ -534,6 +564,9 @@ _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
         {"kosatsuba", "lanes"}
     ): "the notice board hugs the roadside BY DESIGN - place_kosatsuba deliberately bypasses the lane corridor's no-build clearance, which is a house setback, because a board that everyone passes is the whole institution (settlements/urban-features.md, 'Notice board')",
     frozenset({"buildings", "merchant_estates"}): "a merchant estate is a walled COURT drawn around an inner building that is itself a checked struct",
+    frozenset(
+        {"wall", "flower_fields"}
+    ): "an ornamental bed laid FLUSH against the inside of the town wall - s.flower_field's `flat_west` flag exists for exactly that (it straightens the edge so it can run against the rampart), so the bed's straight face meeting the wall's drawn stroke is the feature working, not a defect. Anything BUILT on the rampart is still governed by no_structure_on_wall; this permits planting, which occupies no rampart",
 }
 # A record naming its PARENT may overlap that parent and nothing else - strictly stronger than the
 # blanket per-pair exemptions this replaces, because an annex on somebody ELSE's building stays a defect.
@@ -605,10 +638,10 @@ _MATRIX_OUTSTANDING: dict[str, dict[tuple[str, str], int]] = {
     # 2026-07-26 final: the matrix found 11 defects across 6 maps on its first pool run, and ALL
     # ELEVEN are now fixed. What is left belongs to another session.
     #
-    # NOT OURS - Minami is a work in progress in the 016 session (GM: leave it alone). Recorded so
-    # our gate stays green without touching their map. The matrix found these on a map it had never
-    # seen and was never tuned against, which is the whole feature working as intended.
-    "Minami": {("dry_plots", "manors"): 2, ("field_ditches", "manors"): 2, ("alleys", "religious"): 1, ("alleys", "shrines"): 1, ("drum_towers", "merchant_estates"): 1},
+    # (Minami's five were recorded here while it was another session's work in progress; all five are
+    # fixed and the entry is gone. A line left here after its defect is fixed does not just rot - it
+    # TOLERATES that many real defects on that map for ever after, which is why the guard below now
+    # fails on one.)
 }
 
 
@@ -708,7 +741,7 @@ _MX_FIXTURE_BOX: dict[str, Any] = {
     "jetties": lambda o: (float(o["len"]), 6.4),  # the planked finger, at the width the glyph draws
     "sluice_gates": lambda o: (11.0, 11.0),  # the board and its cheeks - a small square control structure
 }
-_MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0}
+_MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0, "roads": 26.0}
 
 
 def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, float]], Any, Any]]:
@@ -734,6 +767,39 @@ def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, fl
             for wd in recs:
                 for q in _mx_stroke(wd.get("boundary") or [], 2.5):
                     out.append((k, q, None, None))
+        elif k == "kido":
+            # THE FULL DRAWN FOOTPRINT, AND IT IS TWO DIFFERENT THINGS (GM 2026-07-27: "in general
+            # we always want overlap checks to use full footprints"). A ward gate is a roofed bar +
+            # two posts + a guard box standing off to ONE flank, so no single centred w/h rect
+            # describes it - and, carrying no w/h at all, it fell through every branch here and was
+            # extracted as NOTHING. Classified, mounted, and completely invisible: a notice board
+            # came to rest squarely on Nagahara's guard box with the gate green. That is the failure
+            # _FIXTURE_MOUNTS was written to end, one level down - a mount list cannot help a
+            # feature the extractor never reaches.
+            #
+            # The parts are then NOT interchangeable. The gateway (roof + posts) is a genuine
+            # FIXTURE on the fence: the gate IS the opening, so it may stand on the ward line and on
+            # the way it bars. The GUARD BOX is a small building on the verge beside it, and rides
+            # no such permission - it is extracted as `kido_guard_box`, classed SOLID, so the matrix
+            # forbids it against the fence, the roadbed and everything built. The GM's second
+            # observation, same day: "ward gates seem to sometimes overlap with neighborhood walls".
+            # They did - on oblique crossings, where the box sits along the lane and the fence does
+            # not - and both cases were invisible because the whole gate rode the gateway's mount.
+            #
+            # `parts` is each drawn rect's ROTATED corner quad, recorded by the glyph itself, so
+            # this is the ink and not a bounding box (the record also keeps `bbox`, which for a gate
+            # at 45 degrees claims ~2x the ground the gate covers). All parts share ONE object id,
+            # carried as both own-id and parent-id, so the existing annex-on-its-own-parent test
+            # stops the pieces of one gate accusing each other; the key-tagged 3-tuple cannot
+            # collide with another key's 2-tuple (x, y) id, so it excuses nothing but its own glyph.
+            for o_ in recs:
+                oid = (k, round(float(o_.get("x", 0)), 1), round(float(o_.get("y", 0)), 1))
+                gq = [(round(float(q[0]), 1), round(float(q[1]), 1)) for q in (o_.get("guard") or [])]
+                for qd in o_.get("parts") or []:
+                    if len(qd) > 2:
+                        poly = [(float(q[0]), float(q[1])) for q in qd]
+                        is_guard = gq and [(round(a, 1), round(b, 1)) for a, b in poly] == gq
+                        out.append(("kido_guard_box" if is_guard else k, poly, oid, oid))
         elif k in _MX_FIXTURE_BOX:
             # fixtures record their extent in their own vocabulary (a bridge stores span x deck-w, a
             # jetty a length, a sluice nothing at all), so each says how to read its drawn box
@@ -774,13 +840,15 @@ def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, fl
                 pid = tuple(par) if isinstance(par, list) else par
                 if "x" in o_ and (o_.get("w") or o_.get("vw")):
                     out.append((k, _mx_rect(o_), (round(o_["x"], 1), round(o_["y"], 1)), pid))
-                elif o_.get("poly") and len(o_["poly"]) > 2:
+                elif len(o_.get("poly") or o_.get("outline") or ()) > 2:
                     # POLYGON-ONLY records - a dry hatake plot stores `poly`/`crop`/`theta` and no
                     # x/w at all. An earlier cut of this extractor required x+w and so skipped every
                     # one of them SILENTLY, which made the very defect this feature exists to catch
                     # (a dry crop plot in a watercourse) disappear from its own dry run. A feature
                     # that is never extracted looks exactly like a feature with nothing wrong.
-                    out.append((k, [(q[0], q[1]) for q in o_["poly"]], None, pid))
+                    # `outline` is the same shape under another name (a flower bed's ring), and it
+                    # cost exactly that silence until 2026-07-27.
+                    out.append((k, [(q[0], q[1]) for q in (o_.get("poly") or o_["outline"])], None, pid))
     return out
 
 
@@ -961,7 +1029,7 @@ def edge_gap(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
 
     Centers remain correct for CLASSIFICATION ("which ward is this in" - a building belongs to one
     ward, not 0.6 of one), for ASSOCIATION/REACH whose tolerance dwarfs the footprints, and for
-    PREFILTERS. See the dev-loop doc, "Centres, footprints, and aggregates"."""
+    PREFILTERS. See the dev-loop doc, "Centers, footprints, and aggregates"."""
     da, db = _gap_disc(a), _gap_disc(b)
     if da is not None and db is not None:
         return max(0.0, math.hypot(da[0] - db[0], da[1] - db[1]) - da[2] - db[2])
@@ -2846,19 +2914,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     _fr_stables = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
 
     def _fr_poly(o_: dict[str, Any]) -> list[tuple[float, float]]:
-        hw_, hh_ = o_["w"] / 2, o_["h"] / 2
-        th_ = math.radians(o_.get("rot") or 0.0)
-        c_, s_ = math.cos(th_), math.sin(th_)
-        return [(o_["x"] + dx_ * c_ - dy_ * s_, o_["y"] + dx_ * s_ + dy_ * c_) for dx_, dy_ in ((-hw_, -hh_), (hw_, -hh_), (hw_, hh_), (-hw_, hh_))]
+        return rect_corners(_struct_rect(o_))
 
-    def _fr_gap(p_: list[tuple[float, float]], q_: list[tuple[float, float]]) -> float:
-        """Exact clear distance between two (possibly rotated) footprints; negative if they touch.
-        Rotation-EXACT on purpose: the half-diagonal approximation the overlap checks use is fine
-        for "do these collide" but would demand ~28 extra feet of gap around a rotated stables and
-        push the forge absurdly far off its own yard."""
-        if sat_overlap(p_, q_):
-            return -1.0
-        return min(seg_dist(vx_, vy_, r_[i_], r_[(i_ + 1) % 4]) for a_, r_ in ((p_, q_), (q_, p_)) for vx_, vy_ in a_ for i_ in range(4))
+    # `_fr_gap` is gone: it was feature 016's own exact footprint-gap helper, written before
+    # `edge_gap` existed and doing the same job by the same method. Two correct helpers for one
+    # question is how the three WRONG conventions got started, so the call sites now use edge_gap
+    # and take records rather than pre-built corner lists (GM, 2026-07-27). The only behavioral
+    # difference is that an overlap now reads 0.0 instead of -1.0, which every call site - all of
+    # them `< some_positive_gap` - treats identically.
 
     _fr_orphan = [(round(f_["x"]), round(f_["y"])) for f_ in _fr_all if not _fr_stables or min(math.hypot(f_["x"] - b_["x"], f_["y"] - b_["y"]) for b_ in _fr_stables) > 250.0 / _fr_ftpx]
     check(
@@ -2868,8 +2931,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     )
     _fr_tight = []
     for _fr in _fr_all:
-        _frp = _fr_poly(_fr)
-        if any(_fr_gap(_frp, _fr_poly(_fo)) < 6.0 / _fr_ftpx for _frk in _OVERLAP_STRUCTS + ("manors", "religious") if _frk != "farriers" for _fo in M.get(_frk, []) or []):
+        if any(edge_gap(_fr, _fo) < 6.0 / _fr_ftpx for _frk in _OVERLAP_STRUCTS + ("manors", "religious") if _frk != "farriers" for _fo in M.get(_frk, []) or []):
             _fr_tight.append((round(_fr["x"]), round(_fr["y"])))
     check(
         "farrier_keeps_fire_gap",
@@ -2905,6 +2967,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "features_do_not_overlap",
         not _mx_bad,
         f"overlapping feature(s) whose classes forbid it: {[(a, b, x, y) for a, b, x, y in _mx_bad[:4]]} - the overlap MATRIX decides every pair from one classification (OVERLAP_CLASS + the policy above), so this is not a missing per-pair rule. Either the drawing is wrong, or the pair genuinely may overlap and needs a permission WITH ITS REASON in _MATRIX_PERMISSIVE / _MATRIX_SAME_KEY_OK / _MATRIX_ALLOWED_PAIRS / _MATRIX_ALLOWED_KEYS",
+    )
+    # ...and the ratchet on the ratchet. An _MATRIX_OUTSTANDING line is WORK OWED, so once the defect
+    # it records is fixed the line does not merely rot - it goes on TOLERATING that many real
+    # overlaps of that pair on that map for ever, which is exactly the hole a debt register is
+    # supposed to close. (Minami's five outstanding pairs were fixed by the 016 session while the
+    # entry recording them stayed behind, so the map could have silently regressed on any of them.)
+    # Same rule, and same reason, as waivers_are_live.
+    _mx_stale = sorted(pair for pair, allow in _mx_known.items() if len(_mx_seen.get(pair, [])) < allow)
+    check(
+        "matrix_debts_still_owed",
+        not _mx_stale,
+        f"_MATRIX_OUTSTANDING still records {_mx_stale} for {_mx_name!r}, but the map no longer draws that many - the debt is PAID. Delete the line: left there it tolerates that many real overlaps of the pair for ever, which is the opposite of what a debt register is for",
     )
     # the ratchet: a drawn geometric key nobody classified
     # DERIVED from the manifest, not from a hand list - a ratchet that enumerates its own keys is
@@ -3059,8 +3133,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # that is its entire reason for existing.
     _cy_tight = []
     for _cy in _cy_all:
-        _cyp = _fr_poly(_cy)
-        _cy_near = [_o for _o in solid_structs(M, "manors", "religious", exclude=("charcoal_yards",)) if _fr_gap(_cyp, _fr_poly(_o)) < 30.0 / _cd_ftpx]
+        _cy_near = [_o for _o in solid_structs(M, "manors", "religious", exclude=("charcoal_yards",)) if edge_gap(_cy, _o) < 30.0 / _cd_ftpx]
         if _cy_near:
             _cy_tight.append((round(_cy["x"]), round(_cy["y"])))
     check(
@@ -3093,8 +3166,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # a fuel stack, but somebody is standing at it).
         _rf_close = []
         for _rf2 in _rf_all:
-            _rfp = _fr_poly(_rf2)
-            if any(_fr_gap(_rfp, _fr_poly(_h)) < 60.0 / _cd_ftpx for _h in _rf_homes):
+            if any(edge_gap(_rf2, _h) < 60.0 / _cd_ftpx for _h in _rf_homes):
                 _rf_close.append((round(_rf2["x"]), round(_rf2["y"])))
         check(
             "refining_forge_stands_off_dwellings",
@@ -5181,6 +5253,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     # would classify it and still check nothing, because the builder filtered on "w".
                     _vr = float(r_["vr"])
                     vics.append((_lg, (r_["x"] - _vr, r_["y"] - _vr, r_["x"] + _vr, r_["y"] + _vr)))
+        # A TORII is recorded as a bare [x, y, z] triple, not a dict, so the loop above skipped it even
+        # once it was classified - the same trap the wellhead's `vr` branch documents, one shape further
+        # out. Its drawn extent is the true-scale glyph box (torii_halfbox), which settlement._torii and
+        # the frame checks read too.
+        _tzh, _tzu, _tzd = torii_halfbox(float(M.get("meta", {}).get("ftpx", 1) or 1))
+        for _tv in M.get("torii", []):
+            vics.append((_LABEL_GROUP["torii"], (_tv[0] - _tzh, _tv[1] - _tzu, _tv[0] + _tzh, _tv[1] + _tzd)))
 
         def _label_allows(txt: str) -> set[str]:
             t = txt.lower()
@@ -8940,6 +9019,37 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if kbs and routes_kb:
             far_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in routes_kb for k in range(len(r) - 1)) > lim_kb]
             check("kosatsuba_by_the_road", not far_kb, f"notice board(s) at {far_kb} stand more than ~60 real ft from every road/main street - a kosatsu is read where people pass")
+            # ORIENTATION, the other half of siting (GM 2026-07-27, catching Nagahara's third
+            # board). A kosatsu is a BROADSIDE signboard: a 7x3 ft face under a little roof,
+            # read by someone walking past without leaving the road. Standing it PERPENDICULAR
+            # to the road turns the face edge-on to everyone approaching, so the traffic the
+            # siting check fought for sees the board's ~6 in of thickness - the institution
+            # fails while both the presence and distance checks stay green. Historically the
+            # boards stood square to the highway frontage (the post-town kosatsuba, Edo's
+            # Nihonbashi high-board) for exactly that reason. The glyph's LONG axis (`rot`) is
+            # the board's face, so the rule is: rot must run within FACE_DEG of some route
+            # SEGMENT inside the siting band. Any segment in the band counts, not merely the
+            # nearest - a board at a junction or on a bend legitimately faces one of the two
+            # ways that meet there (Nagahara's north board fronts a cross street 19px off
+            # while a perpendicular one passes 15px away; the road-bend boards sit 12-18deg
+            # off their nearest segment). 30deg keeps ~87% of the face presented to traffic
+            # and leaves ~12deg of headroom over the worst legitimate case in the pool.
+            face_deg_kb = 30.0
+            edgeon_kb = []
+            for b_kb in kbs:
+                devs_kb = [
+                    abs((float(b_kb.get("rot") or 0.0) - math.degrees(math.atan2(r[k + 1][1] - r[k][1], r[k + 1][0] - r[k][0])) + 90) % 180 - 90)
+                    for r in routes_kb
+                    for k in range(len(r) - 1)
+                    if seg_dist(b_kb["x"], b_kb["y"], r[k], r[k + 1]) <= lim_kb
+                ]
+                if devs_kb and min(devs_kb) > face_deg_kb:
+                    edgeon_kb.append((round(b_kb["x"]), round(b_kb["y"]), round(min(devs_kb))))
+            check(
+                "kosatsuba_faces_the_road",
+                not edgeon_kb,
+                f"notice board(s) at {edgeon_kb} (x, y, degrees off) stand edge-on to the way they front - a kosatsu is a broadside signboard, so its long axis runs ALONG the road (rot = the road's bearing), never across it",
+            )
         if scale == "city" and kbs and M.get("gates"):
             # every trafficked gate's approach corridor carries a board (~800 real ft of the
             # gate - the corridor, not the furnished throat itself)
@@ -9564,11 +9674,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # 120 ft (town_has_cremation_ground) - the established project figure for "a nuisance
             # kept off the houses" - rather than a fresh invented number.
             _ty_burxy = {(round(b["x"], 2), round(b["y"], 2)) for b in _ty_bur}
-            _ty_dwell = [(h["x"], h["y"]) for h in (M.get("houses") or [])]
-            _ty_dwell += [(b["x"], b["y"]) for b in (M.get("buildings") or []) if b.get("kind") not in ("shop", "stables", "barn") and (round(b["x"], 2), round(b["y"], 2)) not in _ty_burxy]
+            _ty_dwell = list(M.get("houses") or [])
+            _ty_dwell += [b for b in (M.get("buildings") or []) if b.get("kind") not in ("shop", "stables", "barn") and (round(b["x"], 2), round(b["y"], 2)) not in _ty_burxy]
             _ty_close = []
             for t_ in _ty_yards:
-                _ty_near = min((math.hypot(t_["x"] - dx_, t_["y"] - dy_) for dx_, dy_ in _ty_dwell), default=1e9)
+                # WALL TO WALL. This kept its center-to-center form through the 2026-07-27 sweep
+                # because that sweep grepped for two `["x"]` in one call and this compared a record
+                # against an unpacked (x, y) tuple - so the audit's own method had the same shape of
+                # blind spot as the bug it was hunting. Tango's yard read 150 ft and stood 76.
+                _ty_near = min((edge_gap(t_, h_) for h_ in _ty_dwell), default=1e9)
                 if _ty_near < _ty_px(120.0):
                     _ty_close.append((round(t_["x"]), round(t_["y"]), round(_ty_near * _ty_ftpx)))
             check(
@@ -11974,6 +12088,48 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"hall(s) whose avenue strings its arches too far apart (x, y, worst gap ft): {_wide[:4]} - an avenue's arches "
             f"stand ~20 ft apart and never more than two rail-spans (32 ft); further apart they read as isolated gates, "
             f"not one approach (settlements.md 'Torii'). Author the avenue's LINE and let shrine_hall set the pitch.",
+        )
+
+        # ...AND THE AVENUE STARTS AT ITS HALL (GM 2026-07-27): "the distance from the front of the
+        # temple should be the same as the distance between each torii arch". WHY: fixing the STRIDE
+        # (above) left the other half of the same defect standing. An avenue could be perfectly spaced
+        # at 20 ft and still be authored yards from the temple it serves - Tango's Bishamon sando stood
+        # 139 ft off, three arches up a street on the far side of a flophouse, and Nagahara's Ebisu
+        # avenue began 120 ft south of its hall with the caption and two rows of houses in between.
+        # Neither read as that temple's approach; they read as red marks near some other building. So
+        # the gap from the hall's FOOTPRINT to the nearest arch is measured against the avenue's OWN
+        # pitch, and settlement._avenue_at_threshold seats it there exactly - the gen authors the
+        # LINE, the engine owns the count, the stride AND the threshold.
+        #
+        # An UPPER bound, not an equality, and the asymmetry is deliberate. The village path (the
+        # civic-shrine roll and the gens' own s.shrine + _torii runs) seats its arches at 0.6-0.9 of
+        # its 30 ft stride, which the GM approved as canon on 2026-07-22 - and that day's rule,
+        # shrine_avenue_fronts_the_hall, already owns the LOWER bound ("the innermost arch sits at the
+        # hall's threshold, not set out with a gap"). This one owns the upper, so the two meet without
+        # either forcing cosmetic churn on maps the GM has already signed off.
+        #
+        # A single arch has no pitch of its own, so it is measured against the engine's standard stride
+        # (TORII_PITCH_FT, 20 ft) - the same number _avenue_at_threshold seats it at. torii_outlier
+        # halls are exempt here as they are from the count and pitch rules: a designated donation-row
+        # site is not a 1/3/7 sando and is not measured like one.
+        _THRESH_SLACK_FT = 4.0  # rounding + the sub-foot drift a shortened run leaves behind
+        _marooned = []
+        for r in _proper:
+            _ts = _tarch[id(r)]
+            if r.get("torii_outlier") or not _ts:
+                continue
+            _near = min(_ts, key=lambda t: pt_to_rect(t[0], t[1], r))
+            _gap = pt_to_rect(_near[0], _near[1], r) * _ft
+            _pitch = min(math.hypot(a[0] - _near[0], a[1] - _near[1]) for a in _ts if a is not _near) * _ft if len(_ts) > 1 else 20.0
+            if _gap > _pitch + _THRESH_SLACK_FT:
+                _marooned.append((round(r["x"]), round(r["y"]), round(_gap), round(_pitch)))
+        check(
+            "torii_avenue_meets_the_hall",
+            not _marooned,
+            f"hall(s) whose sando starts too far out (x, y, gap to the hall ft, pitch ft): {_marooned[:4]} - the "
+            f"innermost arch stands one PITCH off the hall's front, so the gap to the temple matches the gap between "
+            f"arches; further out the avenue reads as gates belonging to nothing. Author the avenue's LINE and let "
+            f"shrine_hall seat the threshold (settlement._avenue_at_threshold).",
         )
 
     if M.get("pond"):
