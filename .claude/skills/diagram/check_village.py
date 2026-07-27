@@ -28,6 +28,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from settlement import (
+    BOUNDARY_STONE_CLEAR_FT,
     EXECUTION_GROUND_DEAD_CLEAR_FT,
     KIDO_TOWER_KEEPCLEAR,
     LABEL_AIR_CAP,
@@ -935,6 +936,76 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     if point_in_poly(px, py, poly):
         return 0.0
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
+
+
+def edge_gap(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
+    """The TRUE gap in px between two rotated footprints - the distance you could measure on the
+    ground between the nearest points of two buildings. 0.0 if they overlap or touch.
+
+    THE ONE MEASUREMENT ANY GAP VERDICT USES (GM, 2026-07-26). Before this there were THREE
+    conventions in the file for the same question, and all three were wrong in different ways:
+
+      - raw center-to-center (`math.hypot(a["x"] - b["x"], ...)`) understates the real clearance by
+        the sum of both half-extents, so a rule promising 120 ft delivered as little as ~60 at town
+        scale. Two live defects shipped this way: an execution ground and a boundary stone both
+        sited inside the line they were supposed to be outside of.
+      - the circumscribed radius (`0.5 * math.hypot(w, h)`) is the half-DIAGONAL, which exceeds the
+        true half-extent by up to 41% on a square and more on an elongated rect;
+      - `max(w, h) / 2` is the same error, differently sized.
+
+    And the approximations' error FLIPS SIGN with the rule: subtracting too much makes a
+    "must be far" rule strict and a "must be near" rule lenient, so they cannot even be reasoned
+    about as a uniform safety margin. Since the closest pair of two convex polygons is always a
+    vertex of one against an edge of the other, the exact answer costs a few `poly_dist` calls -
+    there was never a reason to approximate it.
+
+    Centers remain correct for CLASSIFICATION ("which ward is this in" - a building belongs to one
+    ward, not 0.6 of one), for ASSOCIATION/REACH whose tolerance dwarfs the footprints, and for
+    PREFILTERS. See the dev-loop doc, "Centres, footprints, and aggregates"."""
+    da, db = _gap_disc(a), _gap_disc(b)
+    if da is not None and db is not None:
+        return max(0.0, math.hypot(da[0] - db[0], da[1] - db[1]) - da[2] - db[2])
+    if da is not None:
+        return max(0.0, poly_dist(da[0], da[1], rect_corners(_struct_rect(dict(b)))) - da[2])
+    if db is not None:
+        return max(0.0, poly_dist(db[0], db[1], rect_corners(_struct_rect(dict(a)))) - db[2])
+    ca, cb = rect_corners(_struct_rect(dict(a))), rect_corners(_struct_rect(dict(b)))
+    if sat_overlap(ca, cb):
+        return 0.0
+    return min(min(poly_dist(px, py, cb) for px, py in ca), min(poly_dist(px, py, ca) for px, py in cb))
+
+
+def _gap_disc(o: Mapping[str, Any]) -> tuple[float, float, float] | None:
+    """(x, y, radius) if this feature is drawn as a DISC rather than a rect, else None.
+
+    A wellhead is the case: it records `r` (clearance) and `vr` (the drawn head) and carries no
+    w/h at all, so treating every feature as a rect is not merely imprecise here, it raises
+    KeyError. Found the hard way on 2026-07-27, and the way it was found is worth more than the
+    bug: a crashing gate prints no FAIL lines, so a pool scan that greps for FAIL read the crash
+    as CLEAN - the file's own "a check that never RUNS looks exactly like a check that passes",
+    committed by the person who had just written it down. Scan for the exit code, not for FAIL.
+
+    `vr` over `r` for the same reason `_struct_rect` prefers vw/vh: a clearance rule is about the
+    ink on the map, and the drawn head is what a reader sees."""
+    if "w" in o:
+        return None
+    return float(o["x"]), float(o["y"]), float(o.get("vr", o.get("r", 0.0)))
+
+
+def _gap_reach(o: Mapping[str, Any]) -> float:
+    """A circumscribed radius for the pair prefilter - deliberately generous (see within_edge_gap)."""
+    d = _gap_disc(o)
+    return d[2] if d is not None else math.hypot(o.get("vw", o["w"]), o.get("vh", o["h"])) / 2
+
+
+def within_edge_gap(a: Mapping[str, Any], b: Mapping[str, Any], lim: float) -> bool:
+    """Is the true gap between two footprints at most `lim` px? Center-distance prefiltered, so a
+    check may ask it of every pair on a city without the exact test running on all of them - the
+    index-prunes-never-decides rule applied to a pair test. The prefilter uses circumscribed radii
+    deliberately: over-estimating an extent can only admit a pair the exact test then rejects."""
+    if math.hypot(a["x"] - b["x"], a["y"] - b["y"]) > lim + _gap_reach(a) + _gap_reach(b):
+        return False
+    return edge_gap(a, b) <= lim
 
 
 class GridIndex:
@@ -3307,6 +3378,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         subj = [b for b in M.get("buildings", []) if "w" in b]
         blockers = subj + [h for h in M.get("houses", []) if "w" in h]
         bcorn = [rect_corners(_struct_rect(b)) for b in blockers]
+        # PREFILTER RADII, not a verdict (family: prefilter - see edge_gap). The circumscribed
+        # radius is the right tool here precisely because it over-states an extent: over-stating can
+        # only admit a candidate the exact `point_in_poly` below then rejects, so the index prunes
+        # and never decides. Do NOT "fix" these to true extents - that would start rejecting pairs
+        # before the exact test sees them.
         bdiag = [math.hypot(b["w"], b["h"]) / 2 for b in blockers]
 
         def _face_blocked(b: dict[str, Any], sgn: float) -> bool:
@@ -4014,14 +4090,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     _rw2 = float(M.get("ring_road_width") or 0) / 2
     _tow = [g for g in list(M.get("gate_structs", [])) + list(M.get("wall_towers", [])) + list(M.get("fire_towers", [])) if isinstance(g, dict) and "w" in g]
 
-    def _ring_hit(x: float, y: float, half: float) -> bool:
-        return bool(_ring) and any(seg_dist(x, y, _ring[i], _ring[i + 1]) < _rw2 + half for i in range(len(_ring) - 1))
+    def _ring_hit_poly(poly: list[tuple[float, float]]) -> bool:
+        """Does a FOOTPRINT reach the ring-road bed? Corner-to-segment, not center-plus-a-radius:
+        the circumscribed radius this used to pass over-states an elongated hall's reach along one
+        axis and under-states nothing, so it flagged halls that were genuinely clear while a long
+        thin one laid across the lane could still slip through the far side of the same
+        approximation (GM audit, 2026-07-27)."""
+        for i in range(len(_ring) - 1):
+            a, b = _ring[i], _ring[i + 1]
+            # CROSSING FIRST, then proximity. Corner-sampling alone answers "is a corner near the
+            # centerline", which is not the question: a hall laid ACROSS the lane can have every
+            # corner outside the bed while its flanks straddle it - the y=890 hall over a bed
+            # spanning 896-904 has its nearest corner exactly _rw2 away and overlaps 8 px of
+            # roadbed. The old circumscribed-radius form caught that case by being loose enough,
+            # which is not the same as being right; this catches it by asking the real question.
+            if any(segments_cross(a, b, poly[k], poly[(k + 1) % len(poly)]) for k in range(len(poly))):
+                return True
+            if min(min(seg_dist(px, py, a, b) for px, py in poly), poly_dist(a[0], a[1], poly), poly_dist(b[0], b[1], poly)) < _rw2:
+                return True
+        return False
+
+    def _torii_poly(t: Sequence[float]) -> list[tuple[float, float]]:
+        return [(t[0] - _ts2, t[1] - _ts2), (t[0] + _ts2, t[1] - _ts2), (t[0] + _ts2, t[1] + _ts2), (t[0] - _ts2, t[1] + _ts2)]
 
     bad_tor_pl = []
     for t in M.get("torii", []):
-        hit_rel = any(abs(t[0] - r["x"]) < r["w"] / 2 + _ts2 and abs(t[1] - r["y"]) < r["h"] / 2 + _ts2 for r in M.get("religious", []))
-        hit_tw = any(abs(t[0] - g["x"]) < g["w"] / 2 + _ts2 and abs(t[1] - g["y"]) < g["h"] / 2 + _ts2 for g in _tow)
-        if hit_rel or hit_tw or _ring_hit(t[0], t[1], _ts2):
+        _torp = _torii_poly(t)
+        # ROTATED corners on the hall/tower side. The axis-aligned `abs(dx) < w/2 + pad` form this
+        # replaces reads a tilted hall as its upright box, which is neither its footprint nor a
+        # conservative cover of it - it misses the swung corners and invents ground at the flats.
+        hit_rel = any(sat_overlap(_torp, rect_corners(_struct_rect(r))) for r in M.get("religious", []))
+        hit_tw = any(sat_overlap(_torp, rect_corners(_struct_rect(g))) for g in _tow)
+        if hit_rel or hit_tw or _ring_hit_poly(_torp):
             bad_tor_pl.append((round(t[0]), round(t[1])))
     check(
         "torii_clear_of_halls_towers_ring",
@@ -4048,8 +4148,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     )
     bad_rel_pl = []
     for r in M.get("religious", []):
-        hit_tw = any(abs(r["x"] - g["x"]) < (r["w"] + g["w"]) / 2 and abs(r["y"] - g["y"]) < (r["h"] + g["h"]) / 2 for g in _tow)
-        if hit_tw or _ring_hit(r["x"], r["y"], max(r["w"], r["h"]) / 2):
+        _relp = rect_corners(_struct_rect(r))
+        hit_tw = any(sat_overlap(_relp, rect_corners(_struct_rect(g))) for g in _tow)
+        if hit_tw or _ring_hit_poly(_relp):
             bad_rel_pl.append((r.get("label") or r["kind"], round(r["x"]), round(r["y"])))
     check(
         "religious_clear_of_ring_and_towers",
@@ -5135,8 +5236,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if all_wells:
         dwell_all = M.get("buildings", []) + M.get("houses", []) + M.get("religious", [])
         stray = [
-            (round(wl["x"]), round(wl["y"])) for wl in all_wells if dwell_all and min(math.hypot(wl["x"] - b["x"], wl["y"] - b["y"]) - 0.5 * math.hypot(b["w"], b["h"]) for b in dwell_all) > 95
-        ]  # gap to the served building's EDGE (fair to a large hall)
+            (round(wl["x"]), round(wl["y"])) for wl in all_wells if dwell_all and not any(within_edge_gap(wl, b, 95) for b in dwell_all)
+        ]  # the TRUE gap to the served building's edge (fair to a large hall); the half-diagonal this used
+        # to subtract over-stated a big hall's extent by up to 41% - see edge_gap (GM audit, 2026-07-27)
         check(
             "wells_among_dwellings",
             not stray,
@@ -5314,8 +5416,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     continue  # a hilltop/mountain shrine draws from a spring/basin, not a dug well
                 if min((math.hypot(r["x"] - b["x"], r["y"] - b["y"]) for b in dwell), default=1e9) <= SHRINE_FAR:
                     continue  # among/near the houses -> shares the village wells
-                near_well = min((math.hypot(r["x"] - wl["x"], r["y"] - wl["y"]) for wl in wells), default=1e9)
-                if near_well - 0.5 * math.hypot(r["w"], r["h"]) > SHRINE_WELL_GAP:  # gap to the hall's EDGE (a big monastery's well sits further out)
+                if not any(within_edge_gap(r, wl, SHRINE_WELL_GAP) for wl in wells):  # the TRUE gap to the hall's edge (a big monastery's well sits further out)
                     wellless.append((round(r["x"]), round(r["y"])))
             check(
                 "remote_shrine_has_own_well",
@@ -5409,8 +5510,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if sheds and M.get("houses"):
                 stranded = []
                 for sd in sheds:
-                    h = min(M["houses"], key=lambda h: math.hypot(sd["x"] - h["x"], sd["y"] - h["y"]))
-                    if math.hypot(sd["x"] - h["x"], sd["y"] - h["y"]) > 0.5 * math.hypot(h["w"], h["h"]) + 0.5 * math.hypot(sd["w"], sd["h"]) + 10:
+                    if not any(within_edge_gap(sd, h, 10) for h in M["houses"]):  # 10 px of true daylight; two half-diagonals used to stand in for the two extents
                         stranded.append((round(sd["x"]), round(sd["y"])))
                 check(
                     "farm_sheds_attached",
@@ -6401,7 +6501,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if scale == "town":
             # a county town cremates too - a cremation ground at the edge, clear of the dwellings
             dwell_t = M.get("houses", []) + [b for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS]
-            far_crem = [c for c in crem if all(math.hypot(c["x"] - h["x"], c["y"] - h["y"]) > 120 for h in dwell_t)] if dwell_t else crem
+            # 120 real ft to the DWELLING'S EDGE, not to its center - the standing pollution
+            # separation, measured the way it would be paced out. (Converted 2026-07-27: this was
+            # the third instance of the center-distance defect, and the one nobody had noticed,
+            # since a cremation ground is drawn large enough that the two forms differ by ~50 ft.)
+            _crem_lim = 120.0 / float(meta.get("ftpx") or 1)
+            far_crem = [c for c in crem if not any(within_edge_gap(c, h, _crem_lim) for h in dwell_t)] if dwell_t else crem
             check(
                 "town_has_cremation_ground",
                 bool(far_crem),
@@ -8464,13 +8569,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"samurai housing lacks rank variety (large={sl_t}, small={ss_t}) - the senior official(s) at a county seat keep a larger house among the juniors' small ones",
             )
         # THE BURAKUMIN QUARTER IS SEGREGATED - the doctrine word on every map, previously enforced
-        # nowhere (GM audit 2026-07): no other caste's dwelling stands within 40px of a burakumin
-        # dwelling. TOWN-scoped: a city's ward system zones quarters wall-to-wall, so its
+        # nowhere (GM audit 2026-07): a band of OPEN GROUND separates it from every other caste's
+        # housing. TOWN-scoped: a city's ward system zones quarters wall-to-wall, so its
         # segregation is zoning, not open ground (Tango/Nagahara adjacent-quarter seams run ~10px).
+        #
+        # 60 REAL FT BETWEEN THE WALLS, and both halves of that were wrong before 2026-07-27.
+        # It read "within 40px" measured CENTER TO CENTER, and 40 ft is less than the two
+        # half-diagonals of the houses it separates (44-51 ft here), so two roofs could touch and
+        # still pass a check whose message promised open ground. Hoshizora duly sat at a 23.6 ft
+        # seam, green. WHY 60: the rule has to distinguish a separate quarter from a dense one, and
+        # dwellings inside a quarter pack at ~10-30 ft, so the seam must be several times that to
+        # read as a gap at all rather than as a wide lane. Deliberately WELL BELOW the 120 ft
+        # pollution separation, because this is a zoning statement about who lives beside whom, not
+        # a buffer against kegare - the burakumin quarter is set apart, not held at arm's length,
+        # and the historical eta hamlet sits at the village edge or across its stream rather than a
+        # fixed distance out.
+        BURAKUMIN_SEAM_FT = 60.0
         bur_t = [b for b in M.get("buildings", []) if b.get("kind") == "burakumin"]
         oth_t = [b for b in M.get("buildings", []) if b.get("kind") in ("laborer", "laborer_large", "servant", "merchant", "merchant_house", "merchant_large", "samurai", "samurai_large")] + houses
         if bur_t and oth_t:
-            close_t = [(round(b["x"]), round(b["y"])) for b in bur_t if any(math.hypot(b["x"] - o["x"], b["y"] - o["y"]) < 40 for o in oth_t)]
+            _seam = BURAKUMIN_SEAM_FT / float(meta.get("ftpx") or 1)
+            close_t = [(round(b["x"]), round(b["y"])) for b in bur_t if any(within_edge_gap(b, o, _seam) for o in oth_t)]
             check(
                 "burakumin_quarter_segregated",
                 not close_t,
@@ -8875,10 +8994,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # standing pollution separation (the cremation ground and tanning yard use it too).
             lim_out_j = 120.0 / ftpx_j
 
-            def _beyond_the_dwellings_j(px: float, py: float) -> bool:
-                return not dwell_j or min(math.hypot(px - h["x"], py - h["y"]) for h in dwell_j) >= lim_out_j
+            def _beyond_the_dwellings_j(r: Mapping[str, Any]) -> bool:
+                # FOOTPRINT, not center (GM, 2026-07-27). A 60x60 ft ground's corner reaches ~42 ft
+                # past its center and a city's 100x60 one ~58, so the center-to-center form of this
+                # rule delivered as little as half the clearance it promised. It takes the whole
+                # RECORD rather than a point for exactly that reason - there is no way to ask this
+                # question correctly from an (x, y).
+                return not dwell_j or not any(within_edge_gap(r, h, lim_out_j) for h in dwell_j)
 
-            bad_out_j = [(round(e["x"]), round(e["y"])) for e in exg_j if _inwall_j(e["x"], e["y"]) or not _beyond_the_dwellings_j(e["x"], e["y"])]
+            def _nearest_dwelling_gap_j(r: Mapping[str, Any]) -> float:
+                return min((edge_gap(r, h) for h in dwell_j), default=float("inf"))
+
+            bad_out_j = [(round(e["x"]), round(e["y"])) for e in exg_j if _inwall_j(e["x"], e["y"]) or not _beyond_the_dwellings_j(e)]
             check(
                 "execution_ground_outside_the_settlement",
                 not bad_out_j,
@@ -8933,20 +9060,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # `not _inwall_j(...)` alone and Ubame is UNWALLED, where that returns False for
                 # every point on the map. A wall-only test does not merely relax on an unwalled
                 # map, it passes anything. GM, 2026-07-26.)
-                def _outside_the_settlement_j(px: float, py: float) -> bool:
+                def _outside_the_settlement_j(r: Mapping[str, Any]) -> bool:
                     # WHY THE STONE'S "OUTSIDE" IS NOT THE GROUND'S. A rampart IS the settlement's
                     # edge, so a stone beyond it is past the line by construction, and the roadside
-                    # suburb that grows outside a town gate is legitimately close to it - Hirameki's
-                    # stone stands 104 ft from an extramural laborer row and is correctly sited.
-                    # The ground keeps BOTH clauses instead, because kegare is a separation from
-                    # PEOPLE and does not care which side of the wall those people live on. The
-                    # stone only has to mark where clean ground ends. So: with a rampart the wall
-                    # settles it; without one the built edge is only definable as a distance from
-                    # the last dwelling, and that reuses the same 120 ft rather than inventing a
-                    # second number for the same phrase.
-                    return not _inwall_j(px, py) if wall_j else _beyond_the_dwellings_j(px, py)
+                    # suburb that grows outside a town gate is legitimately close to it. The ground
+                    # keeps the dwelling clause as well, because kegare is a separation from PEOPLE
+                    # and does not care which side of the wall those people live on.
+                    #
+                    # AND THE UNWALLED FIGURE IS 60 FT, NOT THE GROUND'S 120 (corrected 2026-07-27).
+                    # The first draft of this rule reused 120 "rather than invent a second number
+                    # for the same phrase" - which was the wrong instinct, and the audit that found
+                    # the center-distance defects is what exposed it. 120 ft is a POLLUTION
+                    # separation: it exists to hold a polluting installation off housing. A dosojin
+                    # pollutes nothing. It is a marker standing where the road leaves clean ground,
+                    # and a real one stands at the village edge, not a bowshot beyond it. All it
+                    # needs is to be clear of the built-up area rather than among it, which is the
+                    # same "legible band of open ground" question the burakumin seam asks - hence
+                    # the same 60 ft. Borrowing the bigger number also squeezed the stone between
+                    # its own floor and the ground beyond it into a ~25 ft band on Hoshizora, which
+                    # is the smell of a constraint doing a job that is not its own.
+                    return not _inwall_j(r["x"], r["y"]) if wall_j else not any(within_edge_gap(r, h, BOUNDARY_STONE_CLEAR_FT / ftpx_j) for h in dwell_j)
 
-                out_bms_j = [b for b in bms_j if _outside_the_settlement_j(b["x"], b["y"]) and not _off_the_way_out_j(b["x"], b["y"])]
+                out_bms_j = [b for b in bms_j if _outside_the_settlement_j(b) and not _off_the_way_out_j(b["x"], b["y"])]
                 unmarked_j = [
                     (round(e["x"]), round(e["y"]))
                     for e in exg_j
@@ -8967,14 +9102,59 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     False,
                     "an execution ground needs a boundary stone (s.boundary_marker(...)) on the road between it and the settlement - the ritual boundary the ground sits beyond",
                 )
+            if bms_j and dwell_j:
+                # ...AND THE STONE STANDS NEARER THE HOUSES THAN THE GROUND DOES (GM, 2026-07-27:
+                # "I would have expected that the boundary stone would always be closer to the
+                # town's edge than the execution ground itself. Was that not always the case?").
+                # It was not. The between-ness test above is two distances to the core CENTROID -
+                # the mean position of every dwelling - which orders the two features radially about
+                # one point and says nothing about the built EDGE. A settlement is not a disc, so
+                # the stone can be further out along the west road while the ground sits nearer a
+                # different stretch of housing: Ubame's ground came within 124 ft of the laborers'
+                # quarter while its stone stood 204 ft out, and 86 of 118 dwellings were nearer the
+                # killing ground than the stone that supposedly bounded it. Tango (427 of 849) and
+                # Minami had the same defect.
+                #
+                # THIS IS NOT A FOOTPRINT BUG AND FOOTPRINTS DO NOT FIX IT. The arithmetic was
+                # sound; the geometry it stood for was not. An AGGREGATE (the centroid) was
+                # standing in for a DISTRIBUTED thing (the built edge), and the cure is to measure
+                # to the nearest dwelling - whatever direction it lies in - rather than to the
+                # average of all of them. Kept as its own check rather than folded into the one
+                # above so the two failures are told apart: "no stone bounds this ground" and "the
+                # stone bounds it on paper only" want different fixes.
+                # WHAT "THE TOWN'S EDGE" IS, MEASURED. The rampart where there is one; the nearest
+                # dwelling where there is not - the same definition the "outside" test above uses,
+                # for the same reason, and it matters here more than there. Measuring a walled
+                # city to its nearest dwelling makes an ISOLATED FARMHOUSE in the hinterland stand
+                # for the settlement: Tango's execution ground sits in the extramural fields, and
+                # the closest house to it is a farmstead 132 ft to its EAST - further out than the
+                # ground itself - so a nearest-dwelling reading called the ground "nearer the town"
+                # than a stone that plainly stands between the city and it (161 ft from the wall
+                # against the ground's 295). A scattered farmstead is not the built edge; the wall
+                # is. Unwalled, the nearest dwelling is the only edge there is to measure to.
+                def _settlement_edge_gap_j(r: Mapping[str, Any]) -> float:
+                    if wall_j:
+                        return min(poly_dist(px, py, wall_j) for px, py in rect_corners(_struct_rect(dict(r))))
+                    return _nearest_dwelling_gap_j(r)
+
+                worst_j = []
+                for e in exg_j:
+                    eg = _settlement_edge_gap_j(e)
+                    if all(_settlement_edge_gap_j(b) > eg for b in bms_j):
+                        worst_j.append((round(e["x"]), round(e["y"]), round(eg * ftpx_j), round(min(_settlement_edge_gap_j(b) for b in bms_j) * ftpx_j)))
+                check(
+                    "execution_ground_no_nearer_the_houses_than_its_stone",
+                    not worst_j,
+                    f"execution ground(s) (x, y, ground_gap_ft, stone_gap_ft) {worst_j} stand CLOSER to the settlement edge (the rampart, or the nearest dwelling where there is none) than the boundary stone that bounds them - "
+                    f"then the ground lies inside the stone's line for those households, whatever the arithmetic about the town's middle says. Move the ground further out, "
+                    f"or the stone nearer the built edge",
+                )
             # CLEAR OF THE COMMUNITY'S DEAD. Two different kinds of death: the tended ancestral dead
             # and the disposed unmourned. The executed go in the pit AT the ground; they are never
             # carried to the parish burial ground, and the two must not read as one precinct.
             dead_j = (M.get("cemeteries") or []) + (M.get("cremation_grounds") or []) + (M.get("ossuaries") or []) + (M.get("mausoleums") or [])
             lim_dead_j = EXECUTION_GROUND_DEAD_CLEAR_FT / ftpx_j
-            crowd_j = [
-                (round(e["x"]), round(e["y"])) for e in exg_j if any(math.hypot(e["x"] - d["x"], e["y"] - d["y"]) - max(e["w"], e["h"]) / 2 - max(d["w"], d["h"]) / 2 < lim_dead_j for d in dead_j)
-            ]
+            crowd_j = [(round(e["x"]), round(e["y"])) for e in exg_j if any(within_edge_gap(e, d, lim_dead_j) for d in dead_j)]
             check(
                 "execution_ground_clear_of_the_dead",
                 not crowd_j,
@@ -9245,6 +9425,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         _ty_bur = [b for b in (M.get("buildings") or []) if b.get("kind") == "burakumin"]
 
         def _ty_on_water(o_: dict[str, Any], reach_ft: float) -> bool:
+            # Family: ASSOCIATION/REACH - "does this yard stand on the water", not "how many feet of
+            # daylight are between them". The reach tolerance is tens of feet against a yard's own
+            # extent, so the radius is a fair stand-in and the question is neighborhood membership
+            # rather than a gap. Deliberately left on centers (GM audit, 2026-07-27).
             r_ = max(o_["w"], o_["h"]) / 2
             return any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + _ty_px(reach_ft) for _pl, _hw in _ty_water for i in range(len(_pl) - 1))
 
@@ -10898,7 +11082,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             _tw_pond = M.get("pond")
 
             def _tw_on_water(o_: dict[str, Any], reach: float) -> bool:
-                r_ = max(o_["w"], o_["h"]) / 2
+                r_ = max(o_["w"], o_["h"]) / 2  # family: ASSOCIATION/REACH, as _ty_on_water above
                 if any(seg_dist(o_["x"], o_["y"], _pl[i], _pl[i + 1]) < _hw + r_ + reach for _pl, _hw in _tw_water for i in range(len(_pl) - 1)):
                     return True
                 return _tw_pond is not None and math.hypot(o_["x"] - _tw_pond[0], o_["y"] - _tw_pond[1]) < max(_tw_pond[2], _tw_pond[3]) + r_ + reach
