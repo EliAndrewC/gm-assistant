@@ -237,6 +237,49 @@ between - that is how a wellhead ended up 1 px inside a hatake plot. Region-vs-r
 (`quad_hits_poly`, `quad_hits_seg`, `point_quad_dist`) exist now; use them rather than adding sample
 points.
 
+## Centres, footprints, and aggregates: which one a rule is allowed to use
+
+The GM, 2026-07-27, after the boundary-stone defect: *"I'm not sure it EVER makes sense to use a
+centre instead of a footprint... we've had a lot of bugs slip through because of using centres,
+which makes me wonder whether we should just ban them."* An audit of all 42 centre-distance sites
+and 29 `point_in_poly`-on-a-centre sites says: a blanket ban would break three things that are
+right, and would still have missed the defect that prompted it. **Four families. Say which one your
+rule is in, in a comment, at the point of the test.**
+
+| family | measure | why | examples |
+|---|---|---|---|
+| **Gap VERDICT** - "N ft of clearance", "these must not overlap" | `edge_gap` / `within_edge_gap` / `sat_overlap` on real rotated corners. **Never** a centre, **never** a circumscribed radius | the answer is a distance you could pace out between two walls | `execution_ground_outside_the_settlement`, `town_has_cremation_ground`, `burakumin_quarter_segregated`, `execution_ground_clear_of_the_dead`, `wells_among_dwellings`, `farm_sheds_attached` |
+| **CLASSIFICATION / counting** - "which ward", "how many inside the wall", "what share of this quarter is civic" | centre, deliberately | a building belongs to ONE ward; footprint-testing double-counts a building on a seam and the ward populations stop summing to the town | the 29 `point_in_poly(b["x"], b["y"], wall)` sites |
+| **ASSOCIATION / reach** - "is there a well within reach", "do monk houses cluster at their temple", "is this yard on the water" | centre, deliberately | the tolerance (75-480 px) dwarfs the footprints and the question is neighbourhood membership, not clearance; converting them re-tunes ~21 calibrated constants to fix nothing | `settlement_dwellings_watered`, `city_monk_houses_by_their_temple`, `_ty_on_water` |
+| **PREFILTER** in front of an exact test | circumscribed radius, deliberately | over-stating an extent can only ADMIT a pair the exact test then rejects - the index prunes, it never decides. Tightening these would start rejecting before the exact test runs | `fire_tower_standoff`, `no_structure_overlaps`, `city_house_doors_unblocked`, `within_edge_gap`'s own prefilter |
+
+**The three conventions that were live before this, and what each cost.** Raw centre-to-centre
+understates clearance by the sum of both half-extents, so a rule promising 120 ft delivered ~60;
+`0.5 * math.hypot(w, h)` is the half-DIAGONAL, over by up to 41% on a square and more on a long
+rect; `max(w, h) / 2` is the same error differently sized. The approximations' error **flips sign**
+with the rule - subtracting too much makes a "must be far" rule strict and a "must be near" rule
+lenient - so they are not even a uniform safety margin.
+
+**The ratchet, not the doc.** `test_gap_verdicts_read_footprints_not_centers` plants two features at
+exactly the offset where the conventions disagree and pins which verdict is right. Verified to have
+teeth: reverting the helper to raw centres breaks three of its six entries, reverting it to
+circumscribed radii breaks the other three. **Add an entry when you add a gap rule** - a rule that
+lives only in this table has already been proven not to hold.
+
+**And a fourth axis, which no footprint discipline reaches: AGGREGATE PROXIES.** The boundary-stone
+defect was not a footprint bug. `dist(stone, centroid) < dist(ground, centroid)` would stay green
+with perfect geometry on both sides, because the centroid - an average of every dwelling - was
+standing in for the built EDGE, and a settlement is not a disc. **Never let an aggregate stand in
+for the distributed thing a verdict is about.** Measure to the nearest member (or, where the
+settlement has a rampart, to the wall - the edge it actually has). `execution_ground_on_the_outcast_
+side` still dots against the centroid and that is correct: a BEARING is an aggregate question. A
+DISTANCE is not.
+
+**Known debt, recorded as debt rather than design:** `_fits` centre-testing `block_polys` (item 1
+above). The honest reading is that those polygons are drawn wrong - keep-out plus slack baked in,
+with the centre test handing the slack back - and the principled fix is to shrink them to the true
+keep-out and footprint-test. That re-tunes margins pool-wide, so it is a separate pass.
+
 ## Adding a new map feature: the KEEP-CLEAR CONTRACT (read this before writing the glyph)
 
 The GM's observation, 2026-07-25, after the martial hall shipped sitting on Tango's ring road:

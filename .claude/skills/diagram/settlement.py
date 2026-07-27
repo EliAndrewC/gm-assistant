@@ -1024,6 +1024,20 @@ BOUNDARY_MARKER_MIN_PX = 7.0
 # the wellhead glyph (~8 px) on purpose: the stone should read as the smallest deliberate mark on the
 # map, because that is what it is.
 
+BOUNDARY_STONE_CLEAR_FT = 60.0
+# Minimum real feet of open ground between a dosojin and the nearest dwelling on an UNWALLED map,
+# enforced by execution_ground_past_the_boundary_marker. Where there is a rampart the wall settles
+# "outside" instead and this does not apply.
+#
+# WHY 60 AND NOT THE 120 THE POLLUTION RULES USE. The stone is a MARKER, not a polluting
+# installation: it says where the road leaves clean ground, and a real one stands at the village
+# edge rather than a bowshot past it. What it must not do is stand AMONG the houses, so the figure
+# is the same "legible band of open ground" the burakumin seam asks for - several times the ~10-30
+# ft that dwellings inside a quarter pack at, so the gap reads as a gap rather than as a wide lane.
+# The first draft of the rule reused the 120 ft pollution separation for the sake of having one
+# number; that squeezed the stone between its own floor and the ground it bounds into a ~25 ft band
+# on Hoshizora, which is how a borrowed constant announces itself (GM, 2026-07-27).
+
 EXECUTION_GROUND_DEAD_CLEAR_FT = 400.0
 # Minimum real feet between an execution ground and any funerary feature (cemetery, cremation ground,
 # ossuary, mausoleum), enforced by execution_ground_clear_of_the_dead.

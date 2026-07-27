@@ -321,7 +321,7 @@ s._nucleated = True  # town-fringe farms pack in tight mutually-sheltering rows;
 # among the west-end frontage - legal only because the check that governs the stone fails while
 # there is no stone, so a useless seat added no NEW failure. Both holes are closed (GM, 2026-07-26).
 s.boundary_marker(127, 887)
-s.execution_ground(125, 975, rot=-16)
+s.execution_ground(60, 820, rot=164)
 
 # a no-build band along the road's south verge through the core: the outer farm ring reached up
 # into the shop rows, where a bundle's kitchen garden lapped a storefront (gardens_clear_of_structures)
