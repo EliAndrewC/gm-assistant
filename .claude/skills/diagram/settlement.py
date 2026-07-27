@@ -168,6 +168,47 @@ def seg_dist(px: float, py: float, a: Pt, b: Pt) -> float:
     return math.hypot(px - cx, py - cy)
 
 
+def ring_touches(cx: float, cy: float, r: float, ring: Poly) -> bool:
+    """Does a disc of radius r at (cx, cy) lap this ring - inside it, or within r of an edge?"""
+    return point_in_poly(cx, cy, ring) or any(seg_dist(cx, cy, ring[i], ring[(i + 1) % len(ring)]) < r for i in range(len(ring)))
+
+
+def paddy_wet_rings(M: Manifest) -> list[Poly]:
+    """The rings that are a paddy field's WATER - the ground a wellhead may not stand in.
+
+    `Settlement._well_ground_clear` (placement) and `wells_clear_of_paddies` (the verdict) both read
+    this ONE function, so the siter and the check cannot disagree about where the water is - the trap
+    recorded in this skill's CLAUDE.md under "Placement and its check must read the SAME manifest
+    source".
+
+    PREFER THE DRAWN PLOTS. `plot_polys` holds the individual bunded basins as they are drawn, so it
+    is the ink a reader sees, and reading it leaves the fan's unplanted RIM SLACK available - which
+    matters, because the smoothed `outline` is an ENVELOPE claiming more ground than the crop fills,
+    and that margin is exactly where `farm_wells` seats the well of a steading boxed in by crop (see
+    its fallback, and the two tests that pin it). Treating the envelope as water refuses legitimate
+    margin, and on Tango's east fan it left a steading with no legal seat anywhere.
+
+    FALL BACK TO THE OUTLINE where a field records no plots, rather than skipping that field. Only
+    the three provincial cities record `plot_polys` today; all 23 rural paddy fields in the pool
+    record just an outline, so a plots-only rule would silently never run on a single hamlet,
+    village or town - and a check that never runs looks exactly like a check that passes (same
+    CLAUDE.md). Where the plots are not recorded the fan is drawn as one wet body anyway, so its
+    outline IS the edge of the water. The fallback costs nothing today: swept across the pool, no
+    well on any map stands inside a paddy outline."""
+    rings: list[Poly] = []
+    for fl in M.get("fields") or []:
+        if fl.get("kind") != "paddy":
+            continue
+        drawn = [r for r in ([(float(p[0]), float(p[1])) for p in q] for q in (fl.get("plot_polys") or [])) if len(r) > 2]
+        if drawn:
+            rings.extend(drawn)
+            continue
+        ring = [(float(p[0]), float(p[1])) for p in (fl.get("outline") or [])]
+        if len(ring) > 2:
+            rings.append(ring)
+    return rings
+
+
 # ---- the travelled ways, and the gate that bars one ------------------------------------------
 # A kido is a gate ACROSS A WAY, so what it squares to is the way, not the fence it hangs in (GM
 # 2026-07-26). These helpers are the single definition of "a road runs through here", shared by
@@ -3914,7 +3955,16 @@ class Settlement:
                 continue  # pragma: no cover - defensive: every dry plot carries an outline
             if point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly))):
                 return False
-        return True
+        # AND THE WET ONES, which is where it actually matters (GM 2026-07-27: "wells on dry crops
+        # are okay, but not in rice paddies, surely"). The line above says "you do not dig one in the
+        # middle of a crop plot" and covered only the DRY plots; a paddy is a puddled, bunded basin
+        # held under standing water, so a head sunk there stands in the water it is an alternative
+        # to. Nothing else caught it either - the overlap matrix classes `fields` permissive because
+        # a plot's polygon is not stored - so this is the placement half of `wells_clear_of_paddies`,
+        # and both halves read `paddy_wet_rings` (see it for why the DRAWN basins, not the smoothed
+        # envelope, are the water). Same strictness as the dry-plot rule: the drawn head may not lap
+        # the crop.
+        return not any(ring_touches(cx, cy, vr, ring) for ring in paddy_wet_rings(self.M))
 
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
@@ -4185,6 +4235,13 @@ class Settlement:
             # well-less: any dwelling with no well within `spacing` gets one dropped in a clear spot beside it.
             for b in dwell:
                 if all((b["x"] - wx) ** 2 + (b["y"] - wy) ** 2 > spacing * spacing for wx, wy in out):
+                    # SIX SEATS, deliberately not a wider walk (tried 2026-07-27 and reverted): a
+                    # 64-candidate ring walk does find a seat for a dwelling boxed in by refused
+                    # ground, but on a CITY it also seats wells the block-interior rule rejects -
+                    # over a ministry, on a lane - because `_fits` and `_well_ground_clear` are not
+                    # the whole of what a city well must satisfy. A dwelling this cannot reach is
+                    # better reported by farm_wells_within_reach and hand-seeded with `well_at`,
+                    # which is what the gens already do for cramped quarters.
                     for ox, oy in ((0, near * 0.6), (near * 0.6, 0), (-near * 0.6, 0), (0, -near * 0.6), (near * 0.45, near * 0.45), (-near * 0.45, near * 0.45)):
                         cx, cy = b["x"] + ox, b["y"] + oy
                         if not self._in_scrub_cover(cx, cy) and self._well_ground_clear(cx, cy) and self._fits(cx, cy, probe, probe):

@@ -41,7 +41,9 @@ from settlement import (
     lane_runs,
     lane_through_gate,
     moat_current_at,
+    paddy_wet_rings,
     rail_quad,
+    ring_touches,
     sat_overlap,
     torii_wall_conflicts,
     trough_quad,
@@ -5413,6 +5415,37 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not stray,
             f"well(s) standing in open ground with no building within ~95px - a well serves the households around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}",
         )
+
+        # AND NOT IN A RICE PADDY (GM 2026-07-27: "wells on dry crops are okay, but not in rice
+        # paddies, surely"). A paddy is a puddled, bunded basin held under standing water through the
+        # growing season: a wellhead drawn in one is standing in the water it is supposed to be an
+        # alternative to, and a shaft sunk there takes the field's own surface water. Dry crops are
+        # a different matter and stay allowed - a hatake plot is worked ground you can walk on.
+        #
+        # THE GAP THIS CLOSES, which was wider than it looked. `_well_ground_clear` already refused a
+        # stream, channel, ditch, canal, pond and DRY plot, its docstring saying "you do not dig one
+        # in the middle of a crop plot" - the wet plots, where it matters most, were simply never
+        # added. Nor could the overlap matrix catch it: `fields` is classed PADDY_RECONSTRUCTED, i.e.
+        # permissive, because a plot's polygon is not stored and its rebuilt extent is too
+        # approximate to accuse anything with. So this is one of the "precise paddy checks" that
+        # class defers to. It reads `paddy_wet_rings` - the DRAWN basins where a field records them,
+        # the outline where it does not - which is the same water the SITER reads, so the two cannot
+        # disagree; that helper carries the why of both halves. Note what the drawn-basin reading
+        # deliberately still ALLOWS: the fan's unplanted rim slack, inside the smoothed envelope but
+        # clear of every basin, which is legitimate margin ground and is where a boxed-in steading's
+        # well goes. Strictness matches the dry-plot rule exactly - the DRAWN head may not lap water.
+        wet_rings = paddy_wet_rings(M)
+        if wet_rings:
+            in_paddy = []
+            for wl in all_wells:
+                vr_w = float(wl.get("vr") or wl.get("r") or 8.0)
+                if any(ring_touches(wl["x"], wl["y"], vr_w, ring) for ring in wet_rings):
+                    in_paddy.append((round(wl["x"]), round(wl["y"])))
+            check(
+                "wells_clear_of_paddies",
+                not in_paddy,
+                f"wellhead(s) at {in_paddy[:4]} standing in a rice paddy - a paddy is flooded and bunded, so a well cannot be sunk in one (a DRY plot is different and is allowed, and so is the fan's unplanted rim slack); move the head onto the dooryard/margin ground it serves",
+            )
 
         # THE WELL IS A LOCATION MARKER under the stroke convention (GM ruling 2026-07-21): a real
         # curb is ~3-4 ft (sub-glyph at every scale), so the wellhead marks the well's TO-SCALE
