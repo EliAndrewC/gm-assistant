@@ -63,6 +63,24 @@ s.meta(
     # Lion and Crane, so it keeps the union of the two patron pairs (Bishamon + Daikoku + Benten,
     # Daikoku shared) and its Lion-legacy Temple of Bishamon is a converted samurai estate.
     temple_exception="changed_hands",
+    # DECLARED OVERRIDE (GM 2026-07-27). Everywhere else the burakumin quarter, the execution ground
+    # and the tanning yard share one bearing out of the settlement, because kegare leaves a place one
+    # way. Tango does not, and the reason is the same capital_dir the estates already answer to: the
+    # Emperor lies SOUTHEAST, so Tango gives its southeast to the governor's yamen and the samurai -
+    # a cultural claim on that quarter that outranks the pollution geography - and the outcast
+    # quarter is pushed to the northwest opposite it. The yard cannot follow the quarter northwest,
+    # because tanning_yard_below_every_intake pins it below fse1's irrigation tap in the south. So
+    # the two ends up facing apart. This is Tango's specific history overriding a general rule, which
+    # is exactly what a waiver is for - not a defect, and not a licence for the next city.
+    waivers={
+        "tanning_yard_on_the_outcast_side": (
+            "The Emperor lies southeast of Tango (meta capital_dir), so the southeast quarter is claimed by the "
+            "governor's yamen and the samurai estates - a status claim that outranks pollution geography - and the "
+            "burakumin quarter sits northwest opposite them. The yard cannot join it there: the city's irrigation taps "
+            "at (1936,1880) and (1995,2020) force the tanning ground south of both, per tanning_yard_below_every_intake. "
+            "Quarter northwest and works south is therefore forced by two rules meeting, not by an unconsidered placement."
+        )
+    },
     name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3, wall_defense="siege", clan="Crane", capital_dir="southeast"
 )  # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
 

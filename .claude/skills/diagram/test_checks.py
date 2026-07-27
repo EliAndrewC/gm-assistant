@@ -9148,3 +9148,86 @@ def test_matrix_reads_drawn_extents_not_envelopes():
     M = _mx_map(commons=[{"x": 500, "y": 500, "w": 400, "h": 400, "rot": 0, "role": "grazing", "poly": [[300, 300], [700, 300], [700, 700], [300, 700]]}], houses=[house(500, 500)])
     assert "features_do_not_overlap" not in f(M)
     assert not [e for e in check_village.matrix_extents(M) if e[0] == "commons"]
+
+
+# ---- the tanning yard shares the quarter's SIDE (GM 2026-07-27) ---------------------------------
+# Distance is deliberately NOT the test - a walled city keeps its quarter in-wall at the margin
+# while the works go out to the water, and Nagahara's legal yard stands ~1,390 ft from its quarter.
+# What the rule forbids is the yard facing the OPPOSITE way out of town, which routes the tanners'
+# daily carcass haul back through the whole settlement. The "why" is in settlements/urban-features.md.
+
+
+def _side_map(bur, others, **over):
+    """The shared tanning fixture plus real NON-burakumin dwellings, which is what gives the
+    settlement a center for the quarter to have a side OF. Yard and stream are _ty_map's, so the
+    rest of the tanning family stays satisfied and only the bearing varies."""
+    M = _ty_map(buildings=[bldg(x, y, kind="burakumin") for x, y in bur] + [bldg(x, y) for x, y in others])
+    M.update(over)
+    return M
+
+
+def test_tanning_yard_on_the_outcast_side_fires_when_the_yard_faces_the_other_way():
+    # core ~(290,410) sits BETWEEN the quarter (northwest) and the yard at (466,500) to the southeast
+    assert "tanning_yard_on_the_outcast_side" in f(_side_map([(200, 200), (240, 200)], [(360, 620), (360, 620)]))
+
+
+def test_tanning_yard_on_the_outcast_side_passes_when_far_but_on_the_same_side():
+    """The Nagahara case: ~300px of separation is FINE as long as the bearing agrees - the rule is
+    directional, and a metric rule here would condemn a correct city map."""
+    assert "tanning_yard_on_the_outcast_side" not in f(_side_map([(380, 800), (420, 800)], [(200, 200), (240, 200)]))
+
+
+def test_tanning_yard_on_the_outcast_side_abstains_with_no_ordinary_dwellings():
+    """All-burakumin fixture: the core lands ON the quarter, so no bearing exists and the rule has
+    nothing to say. It must abstain rather than fire on a degenerate zero-length vector."""
+    assert "tanning_yard_on_the_outcast_side" not in f(_ty_map())
+
+
+# ---- the waiver hatch, and the two checks that keep it honest -----------------------------------
+
+_WHY = "The Emperor lies southeast, so that quarter is claimed by the governor's yamen and the samurai estates, and the irrigation taps force the tanning ground to the south regardless."
+
+
+def _waived_map(waivers):
+    M = _side_map([(200, 200), (240, 200)], [(360, 620), (360, 620)])
+    M["meta"] = {**M["meta"], "waivers": waivers}
+    return M
+
+
+def test_a_waiver_excuses_the_named_check():
+    assert "tanning_yard_on_the_outcast_side" not in f(_waived_map({"tanning_yard_on_the_outcast_side": _WHY}))
+
+
+def test_waivers_are_documented_fires_on_a_reason_too_thin_to_be_one():
+    assert "waivers_are_documented" in f(_waived_map({"tanning_yard_on_the_outcast_side": "by design"}))
+
+
+def test_waivers_are_documented_fires_when_the_reason_is_not_even_text():
+    assert "waivers_are_documented" in f(_waived_map({"tanning_yard_on_the_outcast_side": True}))
+
+
+def test_waivers_are_live_fires_on_a_waiver_whose_check_now_passes():
+    """The rot this prevents: a map keeps collecting waivers for defects it no longer has, and ends
+    up exempt from rules nobody remembers it was ever breaking."""
+    M = _waived_map({"tanning_yard_on_the_outcast_side": _WHY, "tanning_yard_on_water": _WHY})
+    assert "waivers_are_live" in f(M)
+
+
+def test_waivers_are_live_fires_on_a_name_no_check_has():
+    assert "waivers_are_live" in f(_waived_map({"tanning_yard_on_the_outcast_side": _WHY, "tanning_yard_on_watr": _WHY}))
+
+
+def test_the_waiver_meta_checks_cannot_themselves_be_waived():
+    """Otherwise the hatch swallows its own guard: one waiver silencing waivers_are_live would let
+    every other waiver rot unreported."""
+    M = _waived_map({"waivers_are_live": _WHY, "tanning_yard_on_watr": _WHY})
+    assert "waivers_are_live" in f(M)
+
+
+def test_a_waived_check_prints_WAIVE_and_a_closing_summary(capsys):
+    """A waiver must never read as a PASS in the gate output - the whole point is that the override
+    is visible to whoever runs it."""
+    check_village.gate(_waived_map({"tanning_yard_on_the_outcast_side": _WHY}), verbose=True)
+    out = capsys.readouterr().out
+    assert "WAIVE tanning_yard_on_the_outcast_side" in out
+    assert "WAIVED tanning_yard_on_the_outcast_side: The Emperor lies southeast" in out
