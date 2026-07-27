@@ -325,6 +325,21 @@ The permission side is derived from the same registry - a group's name IS its ca
 no second list to remember. The named branches in `_label_allows` survive only for SYNONYMS: a
 caption reads "Temple of Benten" or "Governor's Mansion", not "temple" or "governor".
 
+**RECORD A FOOTPRINT THE EXTRACTOR CAN READ - classification is only half.** GM, 2026-07-27: *"in
+general we always want overlap checks to use full footprints."* `matrix_extents` reads `x`+`w`/`vw`,
+a `poly`/`outline` ring, a stroked polyline, or a `parts` list of rotated quads. A record matching
+NONE of those is extracted as nothing, and a feature the extractor never reaches is invisible to
+every matrix check in both directions no matter how carefully it is classified and mounted - which
+looks exactly like a feature with nothing wrong. Three keys were in that state until an audit went
+looking (`kido`, which records only a centre and its parts; `roads`, the multi-road list;
+`flower_fields`, whose ring is called `outline`, not `poly`), and the ward gate had been hiding a
+notice board sitting on its guard box and two guard boxes cut by their own ward fence. The audit is
+cheap and worth re-running whenever a new key appears - per manifest, compare each classified key's
+record count against `collections.Counter(k for k, *_ in matrix_extents(M))`; any key with records
+and no extents is blind. And where one glyph draws SEVERAL rects, record them as `parts` (rotated
+corner quads) rather than a bounding box, and split out any part that does not share the whole
+feature's permissions - a gateway may stand on the fence it pierces, its watch box may not.
+
 **So the checklist for a new feature is:** write the glyph; record it under a new manifest key; add
 that key to `_OVERLAP_STRUCTS` and give it a caption group in `_LABEL_GROUP`; run the suite. If the
 feature needs a keep-clear rule no existing hazard covers, add a hazard row rather than a bespoke
