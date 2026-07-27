@@ -5003,3 +5003,33 @@ def test_hard_polys_footprint_test_refuses_what_the_centre_test_allowed():
     s.hard_polys.append(plot)
     assert not s._fits(490, 550, 46, 28)  # ...but the footprint runs to 513, well inside it
     assert s._fits(300, 300, 46, 28)  # well clear, still fine
+
+
+def test_theater_stage_caption_clears_the_rotated_ground():
+    """A caption must be seated against the extent the feature is DRAWN at, not its raw half-height.
+
+    `theater_stage` offset its label by `cy + hh + 16`, the reach along +y only when the stage is
+    upright. Ubame's stage stands at rot=90, where the ground reaches `hw` along +y - so the caption
+    landed INSIDE the ground it names, the outline stroke running through the text
+    (settlement-review, 2026-07-26). No check saw it: `labels_clear_of_other_buildings` polices a
+    caption sitting on features it does NOT name, and this one sat on the one it did.
+
+    Correcting the reach alone was not enough - a hand seat knows nothing about its neighbors, and
+    the corrected offset dropped Tango's caption onto a monk house. So the caption is now seated by
+    the STANDOFF LADDER against the rotated extent, HINTED at the historical spot, which keeps every
+    upright stage exactly where it was whenever that seat is clear.
+
+    Asserted on the queued caption rather than M["labels"]: `place_caption` defers seating until
+    `finish()`, so the label does not exist yet at this point.
+    """
+    for rot, box, hint in (
+        (90, (458, 340, 542, 460), (500, 476)),  # rotated: reach along +y is hw=60, not hh=42
+        (0, (440, 358, 560, 442), (500, 458)),  # upright: cy + hh + 16, the historical seat
+    ):
+        s = _town()
+        s.theater_stage(500, 400, 120, 84, rot=rot, label="theater stage")
+        assert len(s._captions) == 1, "the stage caption must be queued for the standoff ladder"
+        text, bx, _sz, _it, _wt, _co, hi, _sl = s._captions[0]
+        assert text == "theater stage"
+        assert tuple(round(v) for v in bx) == box, f"rot={rot}: caption boxed against the wrong extent"
+        assert tuple(round(v) for v in hi) == hint, f"rot={rot}: caption hinted at the wrong seat"

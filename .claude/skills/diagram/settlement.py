@@ -5196,7 +5196,9 @@ class Settlement:
                 g.append(f'<circle cx="{px:.0f}" cy="{ry:.0f}" r="1.7" fill="#8A7A56" opacity="0.5"/>')
         g.append(f'<rect x="{-sw / 2:.0f}" y="{sy:.0f}" width="{sw:.0f}" height="{sh:.0f}" rx="2" fill="#C9A57A" stroke="#5A3F1E" stroke-width="1.8"/>')  # stage platform
         g.append(f'<rect x="{-sw / 2:.0f}" y="{sy:.0f}" width="{sw:.0f}" height="{sh * 0.36:.0f}" fill="#7A5A30"/>')  # its roof
-        g.append(f'<circle cx="0" cy="{sy + sh * 0.56:.0f}" r="{sh * 0.24:.0f}" fill="#6E8B4A" opacity="0.6"/>')  # a hint of the painted pine backdrop
+        # NO painted-pine roundel. The kagami-ita's pine is painted on the VERTICAL back board, so a
+        # plan view cannot see it at all - and drawn as a green disc it used the sheet's own
+        # vegetation idiom and read as a bush growing on the stage (settlement-review, Ubame).
         g.append(f'<rect x="{-sw / 2:.0f}" y="{sy + sh - 2.5:.0f}" width="{sw:.0f}" height="2.5" fill="#5A3F1E" opacity="0.6"/>')  # stage-front lip onto the ground
         g.append('</g>')
         self.add(''.join(g))
@@ -5204,7 +5206,19 @@ class Settlement:
         R = math.hypot(hw, hh) + sh * 0.5  # rotation-safe covering radius (stage + ground)
         self.ellipses.append((cx, cy, R, R))
         if label:
-            self.label(cx, cy + hh + 16, label, 11, italic=True)
+            # Offset from the ROTATED extent, not the raw half-height. At rot=90 the ground's reach
+            # along +y is hw, not hh, so the caption landed INSIDE the ground it names, with the
+            # outline stroke running through the text (settlement-review, Ubame, 2026-07-26).
+            # Identical to the old expression at rot=0, so unrotated stages are untouched.
+            # Seat by the STANDOFF LADDER against the stage's ROTATED extent, hinted at the historical
+            # spot. Two bugs, one fix: the old `cy + hh + 16` used the unrotated half-height, so a
+            # rot=90 stage captioned INSIDE its own ground (Ubame); and a hand seat has no idea what
+            # else is there, so simply correcting the reach dropped Tango's caption onto a monk house.
+            # The hint keeps every UNROTATED stage exactly where it was whenever that seat is clear.
+            _a = math.radians(rot)
+            _rx = abs(hw * math.cos(_a)) + abs(hh * math.sin(_a))
+            _ry = abs(hw * math.sin(_a)) + abs(hh * math.cos(_a))
+            self.place_caption(label, (cx - _rx, cy - _ry, cx + _rx, cy + _ry), 11, italic=True, hint=(cx, cy + _ry + 16))
 
     def fire_tower(self, x: float, y: float, tw: float | None = None, rot: float = 0.0, label: str = "fire tower") -> int:
         """A HINOMI-YAGURA (fire-watch tower): a tall, slender braced-timber tower with a lookout
