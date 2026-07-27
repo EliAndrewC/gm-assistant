@@ -282,6 +282,43 @@ def test_kido_guard_box_takes_the_far_flank_when_the_near_one_is_blocked():
     assert sum(c[1] for c in k["guard"]) / 4 > 450  # it crossed to the other side of its own gateway (local +x, which the 90deg bar puts SOUTH)
 
 
+def test_kido_guard_box_stands_clear_of_its_own_ward_fence():
+    # GM 2026-07-27: "ward gates seem to sometimes overlap with neighborhood walls". The GATEWAY
+    # stands on the fence - it IS the opening - but the guard box is a building on the verge, and
+    # an oblique crossing used to cut straight through it (2 of the pool's 14 gates). SAT against
+    # the stroked fence, not corner distances: a line through a 15x16 box's middle leaves every
+    # corner ~8px clear, so the corner test the lane beds use reported it clear.
+    fence = [(300, 300), (600, 600)]
+    s = Settlement(1000, 1000, seed=1)
+    s.street([(100, 450), (900, 450)])
+    s.ward("slant", fence, gates=[(450, 450)])
+    box = [(c[0], c[1]) for c in s.M["kido"][-1]["guard"]]
+    assert not any(settlement.sat_overlap(box, q) for q in settlement.stroke_quads(fence, 4.0))
+    # and the RESERVATION agrees with the drawn glyph, which is why the fence goes in explicitly:
+    # at reservation time s.ward has not run, so M['wards'] is still empty
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.street([(100, 450), (900, 450)])
+    res = s2.kido_reservation(450, 450, fence, margin=0.0)
+    assert (min(p[0] for p in res), min(p[1] for p in res)) == pytest.approx(tuple(s.M["kido"][-1]["bbox"][:2]), abs=0.2)
+
+
+def test_stroke_quads_makes_one_quad_per_segment():
+    qs = settlement.stroke_quads([(0, 0), (100, 0), (100, 100)], 5.0)
+    assert len(qs) == 2 and all(len(q) == 4 for q in qs)
+    assert settlement.stroke_quads([(0, 0)], 5.0) == []
+    assert settlement.stroke_quads([(7, 7), (7, 7)], 5.0)  # a degenerate segment still yields a quad rather than dividing by zero
+
+
+def test_way_beds_carries_the_lane_network_lane_runs_does_not():
+    # the AVOIDANCE list for a verge-hugging feature: lane_runs' roads/streets/alleys/ring road
+    # PLUS the village lane network. Each siter used to build its own partial list, which is how a
+    # punishment ground came to clip an alley (reported by another session, Tango 2026-07-27).
+    M = {"road": [[0, 100], [500, 100]], "alleys": [{"pts": [[0, 300], [500, 300]], "w": 6}], "lane": [[0, 500], [500, 500]], "lanes": [{"pts": [[0, 700], [500, 700]], "w": 8}]}
+    beds = settlement.way_beds(M)
+    assert len(beds) == 4 and len(settlement.lane_runs(M)) == 2
+    assert sorted(round(b[0][0][1]) for b in beds) == [100, 300, 500, 700]
+
+
 def test_seg_closest_degenerate_segment():
     assert settlement.seg_closest(0, 0, (5, 5), (5, 5)) == (5, 5)
 
@@ -5096,11 +5133,11 @@ def test_merchant_storehouse_is_never_drawn_across_a_neighbor():
 
 def test_region_blocked_catches_a_keepout_against_a_cell_EDGE():
     """The bug this exists to stop: a keep-out sitting against the middle of a cell EDGE touches
-    neither the centre nor any corner, so centre-plus-corner sampling passes it. That is how a
+    neither the center nor any corner, so center-plus-corner sampling passes it. That is how a
     wellhead ended up 1 px inside a hatake plot with every sample point clear."""
     cell = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
     assert not settlement.region_blocked(cell, [], [], [], [])
-    # a small circle hugging the middle of the LEFT edge - no corner is near it, the centre is 50 away
+    # a small circle hugging the middle of the LEFT edge - no corner is near it, the center is 50 away
     assert settlement.region_blocked(cell, [], [(-4.0, 50.0, 6.0)], [], [])
     assert not settlement.region_blocked(cell, [], [(-40.0, 50.0, 6.0)], [], [])
     assert settlement.region_blocked(cell, [(-4.0, 50.0, 6.0)], [], [], [])  # same, as a pond
@@ -5130,14 +5167,14 @@ def test_point_quad_dist_is_zero_inside_and_grows_outside():
     assert 2.9 < settlement.point_quad_dist(-3, 5, cell) < 3.1
 
 
-def test_hard_polys_footprint_test_refuses_what_the_centre_test_allowed():
-    """The split that fixes centre-vs-footprint: `hard_polys` (crop, pond, bog, a field's own
-    ditches) is tested against the WHOLE footprint, while `block_polys` keeps the centre test its
+def test_hard_polys_footprint_test_refuses_what_the_center_test_allowed():
+    """The split that fixes center-vs-footprint: `hard_polys` (crop, pond, bog, a field's own
+    ditches) is tested against the WHOLE footprint, while `block_polys` keeps the center test its
     soft reservations - caption bands, aprons, fence standoffs - were tuned for."""
     s = _town()
     plot = [(500.0, 500.0), (600.0, 500.0), (600.0, 600.0), (500.0, 600.0)]
     s.block_polys.append(plot)
-    assert s._fits(490, 550, 46, 28)  # centre (490) is outside the plot, so the centre test allows it...
+    assert s._fits(490, 550, 46, 28)  # center (490) is outside the plot, so the center test allows it...
     s.hard_polys.append(plot)
     assert not s._fits(490, 550, 46, 28)  # ...but the footprint runs to 513, well inside it
     assert s._fits(300, 300, 46, 28)  # well clear, still fine

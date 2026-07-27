@@ -198,6 +198,44 @@ def lane_runs(M: Manifest) -> list[tuple[Poly, float]]:
     return runs
 
 
+def way_beds(M: Manifest) -> list[tuple[Poly, float]]:
+    """Every DRAWN way BED as (polyline, half-width): `lane_runs` (roads, town streets, alleys, the
+    ring road) PLUS the village/hamlet lane network (`lane`, `lanes`), which lane_runs does not carry.
+
+    This is the AVOIDANCE list for a verge-hugging feature - the notice board and the punishment
+    ground, which both site themselves on a frontage and both deliberately bypass the lane CORRIDOR
+    (a house setback: homesteads must not crowd the tread, while a board that everyone passes is the
+    whole institution). Bypassing the corridor must not mean standing in the roadbed, so each siter
+    still tests every bed - and it must be EVERY bed, not merely the ones it sampled candidates
+    from: a spot offset from street A can land on alley B, and each siter had built its own partial
+    list (the board's omitted town_streets and alleys, the punishment ground's omitted alleys and
+    the ring road), so a seat clipping an alley was proposed rather than refused and had to be
+    hand-sited (Tango, reported by another session 2026-07-27). The gate caught it after the fact -
+    the overlap matrix forbids SOLID x WAY - so this closes the PLACEMENT half of the same rule.
+    """
+    runs = lane_runs(M)
+    if M.get("lane"):
+        runs.append(([(float(p[0]), float(p[1])) for p in M["lane"]], 4.0))
+    for ln in M.get("lanes") or []:
+        runs.append(([(float(p[0]), float(p[1])) for p in ln["pts"]], float(ln.get("w", 8)) / 2))
+    return runs
+
+
+def stroke_quads(pts: Sequence[Any], hw: float) -> list[Poly]:
+    """One quad per segment of a polyline at half-width `hw` - a linear feature as real polygons, so
+    a caller can SAT-test against it instead of measuring to sample points (a corner-distance test
+    misses a line passing through the MIDDLE of a box, which is exactly the ward-fence-through-the-
+    guard-box case it was hiding)."""
+    quads: list[Poly] = []
+    for i in range(len(pts) - 1):
+        ax, ay = float(pts[i][0]), float(pts[i][1])
+        bx, by = float(pts[i + 1][0]), float(pts[i + 1][1])
+        ln = math.hypot(bx - ax, by - ay) or 1.0
+        nx, ny = -(by - ay) / ln * hw, (bx - ax) / ln * hw
+        quads.append([(ax + nx, ay + ny), (bx + nx, by + ny), (bx - nx, by - ny), (ax - nx, ay - ny)])
+    return quads
+
+
 def lane_through_gate(M: Manifest, x: float, y: float, fence_deg: float) -> tuple[float, float] | None:
     """The travelled way a ward gate seated at (x, y) BARS, as (tangent degrees, bed half-width), or
     None if the gate stands in open fence with no lane through it. `fence_deg` is the local fence
@@ -552,7 +590,7 @@ def region_blocked(quad: Poly, circles: Sequence[tuple[float, float, float]], ha
     segment-to-region, polygons by containment-or-crossing.
 
     Factored out of near_ring_cropland so it can be tested directly: the bug it exists to stop is a
-    keep-out that sits against the middle of a cell EDGE, touching neither the cell's centre nor any
+    keep-out that sits against the middle of a cell EDGE, touching neither the cell's center nor any
     of its corners, which is how a wellhead ended up 1 px inside a hatake plot with every sample
     point clear."""
     if any(point_quad_dist(cx, cy, quad) < r for cx, cy, r in circles):
@@ -1298,14 +1336,14 @@ class Settlement:
         self.field_polys: list[Any] = []  # smoothed outlines used for blocking
         self.ellipses: list[Any] = []  # (cx, cy, rx, ry) hill/pond/manor - block houses
         self.block_polys: list[Any] = []  # arbitrary no-build polygons (e.g. forest)
-        # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its centre.
+        # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its center.
         # `block_polys` deliberately mixes two different things - hard ground (crop, pond, bog) and
         # SOFT reservations (caption bands, civic aprons, fence standoffs) that a footprint routinely
         # overhangs by a few px - which is why footprint-testing all of it was tried once and reverted
         # (it cost Nagahara a well and pushed Hoshizora's punishment ground off its street). The split
         # IS the fix: hard ground gets the footprint test it always needed, soft reservations keep the
-        # centre test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
-        # centre while the matrix tests its footprint, then maybe the placement test is wrong?"
+        # center test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
+        # center while the matrix tests its footprint, then maybe the placement test is wrong?"
         self.hard_polys: list[Any] = []
         self._hard_cache_key: tuple[int, int, int] | None = None
         self._hard_cache: list[Any] = []
@@ -3474,7 +3512,7 @@ class Settlement:
 
     _Rect = tuple[float, float, float, float]
 
-    def _kido_rects(self, x: float, y: float, rot: float, guard_side: int, hw: float) -> tuple[_Rect, list[_Rect], _Rect, Callable[[_Rect], Poly]]:
+    def _kido_rects(self, x: float, y: float, rot: float, guard_side: int, hw: float, fences: Sequence[Poly] = ()) -> tuple[_Rect, list[_Rect], _Rect, Callable[[_Rect], Poly]]:
         """The local rects a kido glyph at (x, y) is built from - (roof, posts, guard, to_corners) -
         with the guard box already slid clear of the roadbed. Local frame: the gateway bar spans the
         X axis and rotate(rot) turns it onto the bar angle, so local +x is ACROSS the lane and local
@@ -3502,20 +3540,32 @@ class Settlement:
         #     a mural bastion (Nagahara's west ward gate). The kido cannot move and the tower will
         #     not (a coverage-thin curtain needs it), so the BOX is what yields - it simply stands on
         #     the other flank of its own gateway, which is as plausible a spot for a watch shack.
-        #   - the RAMPART and any compound wall it could be pushed onto. Its OWN ward fence is
-        #     excluded: the fence runs through the gate by construction, so the gate's furniture
-        #     stands on it by design (excluding it is what lets the box sit beside its own fence).
+        #   - the RAMPART and any compound wall it could be pushed onto.
+        #   - THE WARD FENCE ITSELF (GM 2026-07-27: "ward gates seem to sometimes overlap with
+        #     neighborhood walls"). The gateway - roof and posts - stands ON the fence, because the
+        #     gate IS the opening in it; the guard box does NOT. It is a small building on the verge
+        #     beside the gate, and a fence line drawn through the middle of it reads as a mistake,
+        #     which is what it is. This was excluded on the reasoning that "the fence runs through
+        #     the gate by construction", which is true of the GATEWAY and was over-applied to its
+        #     furniture. Perpendicular crossings were fine either way (the box sits along the lane,
+        #     off the fence line); it is the OBLIQUE crossings that cut the box, and two of the
+        #     pool's fourteen gates were cut. Tested with SAT against the stroked fence, not by
+        #     corner distances: a line through the CENTRE of a 15x16 box leaves every corner ~8px
+        #     clear, so the corner test the lane beds use would have reported it clear.
         y0 = 12.0 if guard_side >= 0 else -28.0
         verge = max(self.px(12), 4.0)
         runs = [(pts, half + verge) for pts, half in lane_runs(self.M)]
         runs += [(pts, half) for lbl, pts, half in wall_runs(self.M) if "ward fence" not in lbl]
         towers = [tower_quad(t) for t in list(self.M.get("wall_towers") or []) + [g for g in (self.M.get("gate_structs") or []) if g.get("kind") == "tower"]]
+        # 4.0 = the fence's 2.5px drawn half-width plus a hair: the box may stand hard against its
+        # own fence (that is where a gate watch belongs), it may not be cut by it
+        fq = [q for f in fences for q in stroke_quads(f, 4.0)]
         guard: Settlement._Rect = (-hw - 13, y0, 15.0, 16.0)
         for step in range(24):  # bounded: 24 x 1.5px is far more walk than any real crossing needs
             for cand in ((-hw - 13 - 1.5 * step, y0, 15.0, 16.0), (hw - 2 + 1.5 * step, y0, 15.0, 16.0)):
                 gc = to_corners(cand)
                 blocked = any(seg_dist(cx, cy, pts[i], pts[i + 1]) < clear for pts, clear in runs for i in range(len(pts) - 1) for (cx, cy) in gc)
-                if not blocked and not any(sat_overlap(gc, tq) for tq in towers):
+                if not blocked and not any(sat_overlap(gc, tq) for tq in towers) and not any(sat_overlap(gc, q) for q in fq):
                     return roof, posts, cand, to_corners
         return roof, posts, guard, to_corners  # pragma: no cover - nowhere clear within 36px of the opening on either flank; keep the traditional seat and let kido_guard_box_clear_of_lanes report it
 
@@ -3545,7 +3595,9 @@ class Settlement:
         large dwelling's half-diagonal, since block_polys are CENTER-tested for urban packs.
         Call it AFTER the lanes through the gates are drawn, so kido_seat sees them."""
         rot, side = self.kido_seat(x, y, boundary)
-        roof, posts, guard, to_corners = self._kido_rects(x, y, rot, side, self.lw(18) / 2 + 5)
+        # the fence goes in explicitly: at reservation time s.ward has not run, so M['wards'] is
+        # still empty and the drawn call's wall_runs lookup would find nothing to agree with
+        roof, posts, guard, to_corners = self._kido_rects(x, y, rot, side, self.lw(18) / 2 + 5, fences=[[(float(p[0]), float(p[1])) for p in boundary]])
         cs = [c for rect in (roof, *posts, guard) for c in to_corners(rect)]
         x0, y0 = min(c[0] for c in cs) - margin, min(c[1] for c in cs) - margin
         x1, y1 = max(c[0] for c in cs) + margin, max(c[1] for c in cs) + margin
@@ -3579,7 +3631,9 @@ class Settlement:
             rot = 90.0 if horizontal else 0.0
         if guard_side is None:
             guard_side = -1 if horizontal else 1  # the legacy flanks (E of a N-S gate, S of an E-W one)
-        roof, posts, guard, _corners = self._kido_rects(x, y, rot, guard_side, hw)
+        # the ward fences only, NOT their wall-caps: kido_reservation reserves ground against the
+        # bare boundary polyline (the caps do not exist yet then), and the two must agree
+        roof, posts, guard, _corners = self._kido_rects(x, y, rot, guard_side, hw, fences=[pts for lbl, pts, _hw in wall_runs(self.M) if lbl.endswith("ward fence")])
         cr, sr = math.cos(math.radians(rot)), math.sin(math.radians(rot))
         g = [f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{roof[0]:.0f}" y="{roof[1]:.0f}" width="{roof[2]:.0f}" height="{roof[3]:.0f}" rx="1.5" fill="#8A6E3E" stroke="#3F3018" stroke-width="1.5"/>')
@@ -5380,7 +5434,14 @@ class Settlement:
         magistrate's manor gate: the manor's own board (Mode A program, buildings.md) posts the
         bench's OUTPUT (verdicts, bounties) for people who come to court, and the manor sits at
         the settlement edge where feet do not pass. True size ~12x5 ft (a 7x3 ft board under a
-        small roof); the label carries the read. Records M['kosatsuba'] (an overlap-checked
+        small roof); the label carries the read.
+
+        `rot` IS THE ROAD'S BEARING, not a free choice. The glyph's long axis is the board's
+        FACE, so a board must stand square to the way it fronts - broadside to the traffic that
+        reads it. Turned perpendicular, the face goes edge-on to everyone approaching and the
+        institution fails while the siting checks stay green (that is exactly how Nagahara's
+        third board shipped, GM 2026-07-27). Hand placements must pass the fronted route's
+        bearing; `place_kosatsuba` derives it. Held by `kosatsuba_faces_the_road`. Records M['kosatsuba'] (an overlap-checked
         struct). WHY: settlements.md 'Notice board (kosatsuba)'. Place LAST, on a clear verge
         beside the road, like the fire tower.
 
@@ -5449,13 +5510,16 @@ class Settlement:
         routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
 
+        beds = way_beds(self.M)  # EVERY way bed, not just the routes candidates were sampled from
+
         def off_every_bed(x: float, y: float) -> bool:
             # the board hugs the verge, so the lane corridor's no-build clearance (a HOUSE
             # setback: homesteads must not crowd the tread) is deliberately bypassed
             # (_fits corridors=False) - but the board must still stand off the TREAD of
             # every route, including ones it was not sampled from (a junction spot offset
-            # from lane A can land on lane B)
-            return all(seg_dist(x, y, rp[k], rp[k + 1]) >= rw / 2 + h / 2 + 3 for rp, rw in routes for k in range(len(rp) - 1))
+            # from lane A can land on lane B, or on a town street or alley this tier's
+            # candidate list does not carry at all - see way_beds)
+            return all(seg_dist(x, y, bp[k], bp[k + 1]) >= bhw + h / 2 + 3 for bp, bhw in beds for k in range(len(bp) - 1))
 
         best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
         for pts, _rw in routes:
@@ -5465,7 +5529,9 @@ class Settlement:
                 if not seg:
                     continue
                 ux, uy = -(by - ay) / seg, (bx - ax) / seg  # verge normal
-                rot = math.degrees(math.atan2(by - ay, bx - ax))  # long axis along the route
+                # long axis ALONG the route: the board's face is broadside to the traffic that
+                # reads it, never edge-on (kosatsuba_faces_the_road; see kosatsuba's docstring)
+                rot = math.degrees(math.atan2(by - ay, bx - ax))
                 for t in range(int(seg // 12) + 1):
                     f = t * 12 / seg
                     mx, my = ax + (bx - ax) * f, ay + (by - ay) * f
@@ -5512,9 +5578,12 @@ class Settlement:
             return None
         wall = self.M.get("wall")
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
+        beds = way_beds(self.M)  # see way_beds: EVERY bed, including the alleys and the ring road
+        # this list does not sample candidates from - a display bypasses the lane CORRIDOR
+        # deliberately (it is a house setback), never the roadbed itself
 
         def off_every_bed(x: float, y: float) -> bool:
-            return all(seg_dist(x, y, rp[k], rp[k + 1]) >= rw / 2 + h / 2 + 3 for rp, rw in routes for k in range(len(rp) - 1))
+            return all(seg_dist(x, y, bp[k], bp[k + 1]) >= bhw + h / 2 + 3 for bp, bhw in beds for k in range(len(bp) - 1))
 
         best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
         for pts, _rw in routes:
@@ -7553,9 +7622,9 @@ class Settlement:
                 ]
                 mx = sum(p[0] for p in quad) / 4
                 my = sum(p[1] for p in quad) / 4
-                # REGION test, not point sampling. Centre-plus-corners was the old form and it leaks:
+                # REGION test, not point sampling. Center-plus-corners was the old form and it leaks:
                 # a small keep-out sitting against the middle of a cell EDGE touches neither the
-                # centre nor any corner, which is exactly how a wellhead ended up 1 px inside a
+                # center nor any corner, which is exactly how a wellhead ended up 1 px inside a
                 # hatake plot (the overlap matrix found it; the sample points had all cleared the
                 # well's 20 ft apron). The cheap point test runs first as a prefilter.
                 if _blocked(mx, my) or any(_blocked(px, py) for px, py in quad) or _blocked_region(quad):
