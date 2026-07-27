@@ -310,7 +310,22 @@ _LABEL_GROUP = {
     # dense-city building), so it fell outside the classification ratchet - which iterates the
     # overlap registry - and a caption on a wellhead was invisible. Found by settlement-review 2026-07-26.
     "wells": "well",
+    # THE SAME HOLE, ONE CLASS OVER (settlement-review 2026-07-27). The ratchet at
+    # `labels_cover_every_feature` iterates the overlap registry, and `matrix_extents` SKIPS the
+    # permissive classes outright - so every key registered "FIXTURE" is invisible to it and can go
+    # unclassified for labels for ever. On Minami that let two captions ("punishment ground" and a
+    # "dojo") be drawn straight through a ward kido's guard post, each biting a notch out of its
+    # outline so a clean square rendered as two disconnected corners, with the gate fully green.
+    # A kido and a dock are both solid drawn glyphs a caption can bury, so both are victims here.
+    "kido": "ward gate",
+    "docks": "dock",
 }
+# STILL UNCLASSIFIED, and known to be (2026-07-27): the other six FIXTURE keys - `bridges`,
+# `water_gates`, `sluice_gates`, `inspection_stations`, `jetties`, `wall_towers`. They are drawn
+# glyphs a caption could bury exactly like the two above, and nothing will tell us when one does,
+# because the ratchet cannot reach the permissive classes. Left open deliberately rather than
+# half-closed: adding them is one line each, but each may fire on a finished map in the pool, and
+# that is a fix to make with the regen budget to see it through - not a line to add blind.
 # `buildings` is the one key whose group is not fixed: each record carries its own `kind`, and _grp
 # folds those kinds into groups (samurai_large -> samurai, and so on).
 _LABEL_BY_KIND = ("buildings",)

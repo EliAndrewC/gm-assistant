@@ -820,7 +820,11 @@ def test_city_wall_gateposts_orient_to_the_wall_tangent():
     assert len(posts) == 2
     assert all(abs(abs(p["rot"]) - 90) < 25 for p in posts)  # tangent ~vertical, not the old rot 0
     # the two posts straddle the gate along the tangent (N and S of it), not E and W
-    assert abs(posts[0]["y"] - posts[1]["y"]) > 40 and abs(posts[0]["x"] - posts[1]["x"]) < 30
+    # > 10, not the old > 40: the throat is TO SCALE since 2026-07-27 (30 ft clear + a 15 ft pier a
+    # side = 15 px between post centres at 1 px = 3 ft), where it used to open a 210 ft gap. The
+    # assertion here is about ORIENTATION - N and S of the opening, not E and W - so it must not
+    # re-encode the old spacing as its threshold.
+    assert abs(posts[0]["y"] - posts[1]["y"]) > 10 and abs(posts[0]["x"] - posts[1]["x"]) < 30
 
 
 def test_moat_closes_into_a_ring_without_a_river():
