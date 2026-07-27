@@ -55,11 +55,11 @@ cartographic reason, which is the one thing a to-scale mode may not do. Captions
    | `rowpack` | YES (`_in_blocked`) | **NO** | yes |
    | `top_up`, `place_wells`, the `_fits` packs | yes | YES (`_near_corridor`) | yes |
 
-   Both are **centre**-tested; the difference is shape, not footprint-vs-centre. So anything that
+   Both are **center**-tested; the difference is shape, not footprint-vs-center. So anything that
    must be kept clear of BOTH the terraces and the fills needs BOTH entries - a corridor alone lets
    the rows walk through it, a block poly alone lets the fills do it. And because both are
-   centre-tested, a band must be sized to the caption's half-extent PLUS the widest kind's
-   (`merchant_house` 16.7x11.3, a wellhead r=8), or a wide roof whose centre clears it still
+   center-tested, a band must be sized to the caption's half-extent PLUS the widest kind's
+   (`merchant_house` 16.7x11.3, a wellhead r=8), or a wide roof whose center clears it still
    overhangs.
 
 2. **`top_up`'s 3px standoff is why its fills were detached** - which starved the dwelling count AND
