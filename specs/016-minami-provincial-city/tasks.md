@@ -16,14 +16,15 @@
 
 **`ALL CHECKS PASSED`** on `pool/provincial-cities/minami.json`, at the SPECIFIED population of
 **2,600** (FR-010). `check_village.py pool/provincial-cities/minami.json --capacity` reads
-**SIZED_AND_PACKED** - 503 dwellings placed in-wall against a 520 target. The generator is
+**SIZED_AND_PACKED** and the map draws **exactly 520** dwellings against its 520 target (the 7%
+population band was removed on 2026-07-27; the figure is now met on the nose). The generator is
 deterministic (identical source -> byte-identical manifest, verified) and now lives under
 `pool/provincial-cities/`, so `test_villages.py` gates it with every other map.
 
 The wall was **sized to the population**, not the population trimmed to the layout. An intermediate
 pass did the latter - dropped the lay figure to 2,000 and pinned the old ring - and that was
 reverted: if the enclosure cannot hold the declared figure, the enclosure is what is wrong. The ring
-came back from `plan_city` (FR-011) at 471x438 (was 431x400), paid for by two measured budget
+came back from `plan_city` (FR-011) at a circular 462x462 (was 431x400), paid for by two measured budget
 corrections. Full reasoning, the registry map, and the five expensive lessons are in
 [`pool/provincial-cities/minami.notes.md`](../../.claude/skills/diagram/pool/provincial-cities/minami.notes.md).
 
@@ -81,9 +82,14 @@ whether open ground is a real feature), and land the research/doc tasks T14-T17 
 
 - [x] T19 Run the FULL sweep ONCE, backgrounded, and act on the notification - do not poll: `make done`. Fix everything it lists together, then re-run once.
 - [x] T20 Prove SC-002 by semantic key-by-key diff (never a text diff - these are single-line JSON files). **DONE, and the criterion was corrected**: every budget line's label/count/area, the derived wall and all geometry are unchanged on both cities; the only diffs are Tango's intended `temple_exception` and two `basis` strings that now state their derivation. Both cities re-gate `ALL CHECKS PASSED`.
-- [x] T21 **Principle XII CLOSING BOOKEND (NON-NEGOTIABLE)**: render at full width, read the PNG back, and re-examine it against each of research.md's six findings - the eight precincts modest and Inari largest; precincts sited by trade rather than belted at the rim; temple families ringing each precinct and indistinguishable from laborer houses; 2-4 shared burial grounds; timber yard on the bank with kilns outside; a wall whose tower ring reads as peaceful rather than siege. `check_village` proves internal consistency, never historical truth - a map can pass every check and still depict something that never existed.
-- [x] T22 Batch the map inspection (do NOT crop-and-read one region per turn): in ONE `crop_map.py` call, crop every region worth looking at - each temple precinct, the river works, the timber ground, the gates - then Read them together.
+- [ ] T21 **Principle XII CLOSING BOOKEND (NON-NEGOTIABLE)**: render at full width, read the PNG back, and re-examine it against each of research.md's six findings - the eight precincts modest and Inari largest; precincts sited by trade rather than belted at the rim; temple families ringing each precinct and indistinguishable from laborer houses; 2-4 shared burial grounds; timber yard on the bank with kilns outside; a wall whose tower ring reads as peaceful rather than siege. `check_village` proves internal consistency, never historical truth - a map can pass every check and still depict something that never existed.
+- [ ] T22 Batch the map inspection (do NOT crop-and-read one region per turn): in ONE `crop_map.py` call, crop every region worth looking at - each temple precinct, the river works, the timber ground, the gates - then Read them together.
 - [ ] T23 Stop-work ritual: commit in the clone, then `scripts/sync-with-main.sh done` from inside it (locked pull + push, then render-sync). Never force-push.
+
+**T21/T22 were checked off in error** and are re-opened (2026-07-27). A whole-map render was read
+several times during the build, and the four quarters were cropped early on - but the FINAL map was
+never re-examined region by region against research.md's six findings, which is what the closing
+bookend actually asks for. `check_village` proves internal consistency, never historical truth.
 
 ## Dependencies
 

@@ -39,6 +39,22 @@ def bldg(x, y, kind="merchant", rot=0, w=40, h=28):
     return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "kind": kind}
 
 
+# ---- the matrix debt register rots loudly ------------------------------------------------------
+def test_a_paid_matrix_debt_fires_so_the_line_gets_deleted(monkeypatch):
+    """An _MATRIX_OUTSTANDING line is WORK OWED. Once the defect is fixed the line does not just rot -
+    it goes on tolerating that many real overlaps of that pair for ever. Minami's five were fixed
+    while the entry recording them stayed behind."""
+    monkeypatch.setitem(check_village._MATRIX_OUTSTANDING, "Nowhere", {("dry_plots", "manors"): 2})
+    M = manifest(meta={"scale": "village", "ftpx": 1, "W": 1000, "H": 1000, "name": "Nowhere"})
+    assert "matrix_debts_still_owed" in f(M)  # the map draws neither, so the debt is paid
+
+
+def test_an_unpaid_matrix_debt_stays_quiet(monkeypatch):
+    monkeypatch.setitem(check_village._MATRIX_OUTSTANDING, "Nowhere", {})
+    M = manifest(meta={"scale": "village", "ftpx": 1, "W": 1000, "H": 1000, "name": "Nowhere"})
+    assert "matrix_debts_still_owed" not in f(M)
+
+
 # ---- fixture builders -------------------------------------------------------------------------
 # Every test below hands `gate()` a hand-built manifest containing only the keys ITS check reads.
 # That is the right shape for a focused test, but it has a recurring tax: a feature record is often
