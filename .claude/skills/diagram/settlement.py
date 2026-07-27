@@ -4608,6 +4608,14 @@ class Settlement:
         as a feature on a settlement map: ONLY the walls + gate + empty court. The
         interior is deliberately not drawn here - it is the subject of its own Mode A
         diagram, and drawing speculative interior buildings here would contradict it.
+
+        THE MANOR IS A GLYPH, NOT A SCALE DRAWING (GM 2026-07-27). It is ALWAYS a box, and
+        the box is a simplification: the compound may be a different shape entirely on its
+        own Mode A sheet. So a Mode B manor is NOT required to match its Mode A plan in
+        footprint, proportion, or size, and features the Mode A sheet draws OUTSIDE the
+        walls - gate boards, an approach fork, a bounty board - need not appear here at all.
+        The manor glyph is PRESUMED to include everything the detailed sheet shows. Read a
+        difference between the two artifacts as the convention working, not as a defect.
         gate_dir (north/south/east/west) is the wall the main gate opens through - face it
         toward whatever the compound fronts (the town / road it sits at the edge of). There
         is no universal default direction (it depends where the town is), but SOUTH is the
