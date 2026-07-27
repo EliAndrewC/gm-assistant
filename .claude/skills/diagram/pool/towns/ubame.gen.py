@@ -64,7 +64,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from settlement import Settlement  # noqa: E402
 from waterfields import build_comb  # noqa: E402
 
-s = Settlement(2200, 1500, seed=914)
+s = Settlement(2200, 1500, seed=923)
 s.meta(
     water_flow=135,  # DRAINAGE BEARING: the valley sends its water SW, off the NE mountains (0=E, 90=S)
     name="Ubame",
@@ -308,12 +308,14 @@ for lx, ly in [(268, 1060), (700, 1030), (960, 405)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 # the laborers' and servants' warren, set FURTHER back than the merchant residences with a clear
 # radial gap between the two bands (merchant_residences_behind_businesses)
-s.pack((300, 960, 780, 1180), ["laborer"] * 16 + ["servant"] * 12, step=40, fill=True)
-s.pack((520, 300, 1150, 470), ["laborer"] * 12 + ["servant"] * 8, step=40, fill=True)
+s.pack((300, 960, 860, 1180), ["laborer"] * 16 + ["servant"] * 12, step=40, fill=True, footpaths=3)  # bbox widened to pay for the footpath corridor
+s.pack((520, 300, 1230, 470), ["laborer"] * 12 + ["servant"] * 8, step=40, fill=True, footpaths=3)  # ditto
 s.label(520, 942, "laborers' dwellings", 10, italic=True, color="#5A4326")
 
 # ---- the segregated burakumin quarter, at the low southwest - the downstream corner, which is also
 # the outcast side the execution ground lies past
+# No footpaths here: the burakumin quarter is only two rows deep, and a two-row block fronts open
+# ground on both sides already - an internal path would be a line drawn for its own sake.
 s.pack((90, 1250, 380, 1470), ["burakumin"] * 14, step=42, fill=True)
 s.label(235, 1228, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 

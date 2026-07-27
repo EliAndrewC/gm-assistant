@@ -5093,17 +5093,69 @@ class Settlement:
                 break
         return n
 
-    def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False, fill: bool = False) -> int:
+    def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False, fill: bool = False, footpaths: int = 0) -> int:
         """Densely fill a district bbox with a list of building kinds (one building
         each), grid-scan + jitter, skipping the road, blocked regions, and occupied
         spots. With face_streets, each building rotates to face its nearest street.
         Returns the number placed. Leftovers WARN via _shortfall unless fill=True
         declares the request a capacity BUDGET ("place up to N") rather than an exact
-        count - the city gens' 600-samurai district fills are the idiom."""
+        count - the city gens' 600-samurai district fills are the idiom.
+
+        `footpaths=N` lays a worn TRODDEN PATH across the district every N*step of its
+        depth - before the scan, so `_fits` refuses any spot on the tread - and the quarter
+        then reads as BLOCKS rather than a scatter of boxes.
+        WHY (GM 2026-07-27, after settlement-review found the warrens had no circulation
+        at all): a dense commoner quarter is served by narrow TRODDEN FOOTPATHS between
+        the house rows - not paved streets, which were far beyond a quarter's means. The
+        cities already carry `alleys` + `town_streets`; it was the UNWALLED TOWNS whose
+        warrens hung straight off the trunk road with nothing between them (Hoshizora and
+        Ubame both recorded zero lanes, zero alleys and zero streets).
+
+        The path is laid FIRST rather than threaded between placed buildings, which is the
+        whole point: clearance is then true by construction, instead of a path dodging
+        jittered footprints and clipping one every few maps. It costs a little capacity
+        (a ~30px no-build band), so a district that was exactly full may need a slightly
+        bigger bbox. Default 0 keeps every existing map bit-identical - no corridor, and
+        no RNG draw that could shift a single downstream spot."""
         x0, y0, x1, y1 = bbox
         items = list(items)
         n = 0
         gy = y0 + step / 2
+        if footpaths:
+            # Lay the paths BEFORE the scan, so `_fits` refuses any spot on the tread and the
+            # clearance is true by construction. The first design reserved every Nth GRID ROW
+            # instead, which was depth-dependent and therefore useless here: under the exact-
+            # population rule these quarters are only two or three rows deep, so the reserved row
+            # was never reached and the pack drew no path at all. Spacing off the bbox rather than
+            # off the row counter makes the paths independent of how many houses are requested.
+            _spacing = footpaths * step
+            _py = y0 + _spacing
+            while _py < y1 - step * 0.5:
+                # TRIM THE PATH TO GROUND THAT IS ACTUALLY FREE. A corridor only refuses spots taken
+                # AFTER it exists, so anything already standing - a district bbox routinely overlaps
+                # the road frontage placed earlier in the gen - is immune to it and the tread would be
+                # drawn straight through a shopfront. So walk the span, keep the longest clear run,
+                # and emit only if enough of it survives to read as a path rather than a stub.
+                # Clearance is scaled to the STEP because `_near_corridor` tests a building's CENTER:
+                # at a flat 15 a house sat 15px off the tread and put its footprint through it (the
+                # centre-vs-footprint family again - see the skill CLAUDE.md).
+                _clr = max(20.0, step * 0.62)
+                _run: list[float] = []
+                _best: list[float] = []
+                _px = x0 + 4
+                while _px <= x1 - 4:
+                    if self._fits(_px, _py, step * 0.5, step * 0.5, corridors=False):
+                        _run.append(_px)
+                    else:
+                        if len(_run) > len(_best):
+                            _best = _run
+                        _run = []
+                    _px += 10
+                if len(_run) > len(_best):
+                    _best = _run
+                if _best and (_best[-1] - _best[0]) >= 0.4 * (x1 - x0):
+                    self.lane([(_best[0], _py), (_best[-1], _py)], width=5, clearance=_clr, worn=True)
+                _py += _spacing
         while gy < y1 and items:
             gx = x0 + step / 2
             while gx < x1 and items:
@@ -5921,6 +5973,10 @@ class Settlement:
             f'L {scx_ + shw_ / 2:.1f} {scy_ - shh_ / 2:.1f} L {scx_ + shw_ / 2:.1f} {scy_ + shh_ / 2:.1f}" fill="none" stroke="#5A4326" stroke-width="1.7"/>'
         )
         g.append(f'<line x1="{scx_ - shw_ / 2:.1f}" y1="{scy_ + shh_ / 2:.1f}" x2="{scx_ + shw_ / 2:.1f}" y2="{scy_ + shh_ / 2:.1f}" stroke="#8A6B42" stroke-width="0.8" opacity="0.7"/>')
+        # THE RIDGE. Without it the shed is a plain tan rectangle - a casing - and everything inside
+        # it reads as components mounted on a panel. A ridge line down the roof is the one mark that
+        # says "this is a BUILDING seen from above", and it costs nothing.
+        g.append(f'<line x1="{scx_ - shw_ / 2 + 1:.1f}" y1="{scy_ - shh_ / 6:.1f}" x2="{scx_ + shw_ / 2 - 1:.1f}" y2="{scy_ - shh_ / 6:.1f}" stroke="#8A6B42" stroke-width="1.1" opacity="0.55"/>')
         # THE WORKING RANGE, ranked along the back wall: hearth - hearth - bellows, in ONE row and
         # deliberately LEFT-WEIGHTED. The first draft set the two hearths symmetrically about the
         # center with the bellows below them and the fuel store beneath that, which rendered as a
@@ -5950,16 +6006,20 @@ class Settlement:
         csw_, csh_ = self.px(24), self.px(16)  # THE CHARCOAL STORE: the fuel is the input this works consumes most of
         csx_, csy_ = self.px(20), self.px(13)
         g.append(f'<rect x="{csx_ - csw_ / 2:.1f}" y="{csy_ - csh_ / 2:.1f}" width="{csw_:.1f}" height="{csh_:.1f}" rx="1" fill="#C2B190" stroke="#6B5A3A" stroke-width="1.4"/>')
-        for bi_ in range(3):
-            g.append(
-                f'<rect x="{csx_ - csw_ / 2 + self.px(3) + bi_ * self.px(7):.1f}" y="{csy_ - self.px(3):.1f}" width="{self.px(4):.1f}" height="{self.px(6):.1f}" rx="1.2" fill="#2E2A26" opacity="0.85"/>'
-            )
+        # ONE charcoal bay with a single division, not three tabs. Three evenly-spaced dark chips
+        # inside a light casing is the visual grammar of a CONTROL PANEL, and that is how the whole
+        # glyph was reading at fit zoom (settlement-review: "a small machine"). A fuel store is one
+        # heap under one roof; the division says it is filled from one end and drawn from the other.
+        g.append(f'<rect x="{csx_ - csw_ / 2 + self.px(3):.1f}" y="{csy_ - self.px(3):.1f}" width="{csw_ - self.px(6):.1f}" height="{self.px(6):.1f}" rx="1.2" fill="#2E2A26" opacity="0.8"/>')
+        g.append(f'<line x1="{csx_ + self.px(2):.1f}" y1="{csy_ - self.px(3):.1f}" x2="{csx_ + self.px(2):.1f}" y2="{csy_ + self.px(3):.1f}" stroke="#C2B190" stroke-width="1.1" opacity="0.9"/>')
         g.append(
-            f'<rect x="{-self.px(14):.1f}" y="{self.px(11):.1f}" width="{self.px(10):.1f}" height="{self.px(5):.1f}" rx="1" fill="#8FA6B0" stroke="#5A6B72" stroke-width="0.7"/>'
-        )  # the quench trough
+            f'<rect x="{-self.px(14):.1f}" y="{self.px(13):.1f}" width="{self.px(10):.1f}" height="{self.px(5):.1f}" rx="1" fill="#9AA5A0" stroke="#66706B" stroke-width="0.7"/>'
+        )  # the quench trough - a DESATURATED slate-green. It was the only saturated blue on the
+        # whole sheet, which made a 10ft trough pull the eye like an indicator lamp on a machine;
+        # water reads from the trough's SHAPE and its place by the anvil, not from being blue.
         for li_ in range(4):  # the stacked wari-tetsu - the flat bars this forge exists to make
             g.append(
-                f'<line x1="{-self.px(32):.1f}" y1="{self.px(8) + li_ * self.px(2.2):.1f}" x2="{-self.px(19):.1f}" y2="{self.px(8) + li_ * self.px(2.2):.1f}" stroke="#5C5750" stroke-width="1.3"/>'
+                f'<line x1="{-self.px(32):.1f}" y1="{self.px(10) + li_ * self.px(2.2):.1f}" x2="{-self.px(19):.1f}" y2="{self.px(10) + li_ * self.px(2.2):.1f}" stroke="#5C5750" stroke-width="1.3"/>'
             )
         g.append(f'<ellipse cx="{self.px(2):.1f}" cy="{self.px(18):.1f}" rx="{self.px(9) / 2:.1f}" ry="{self.px(6) / 2:.1f}" fill="#4A453E" opacity="0.85"/>')  # the slag heap
         g.append('</g>')

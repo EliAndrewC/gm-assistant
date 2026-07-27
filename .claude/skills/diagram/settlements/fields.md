@@ -84,3 +84,32 @@ Every DRAWN paddy plot is one leveled, diked cell - and because a paddy must hol
      - **Crop structure - a fragmented PATCHWORK, not clean ribbons.** Holdings were scattered (each household ~several small non-contiguous plots) and multiple-/inter-cropped, so adjacent small plots carry DIFFERENT crops that cluster rather than forming full-height single-crop stripes. v2 assigns crop PER-PLOT with spatial coherence (usually inherit the neighbor, sometimes switch) so the margin reads as a mosaic. Crops (`DRY_CROPS`): barley/wheat (mugi), millet (awa/hie/kibi), buckwheat (soba), field soybean (daizu) - grain + pulses, the winter/dry-ground staples. These are FIELD-scale hatake, distinct from the dooryard KITCHEN garden (a separate, smaller near-house feature).
      - **Dry-field FURROWS vary PER PLOT (`dry_plot_furrows_vary`) - corrected 2026-07.** Dry crops are ridge-and-furrow row-cultivated (unlike the flooded paddy sheet). The FIRST version ran every plot's furrows ALONG the contour (`theta0`, tiny jitter) on the "ridge-along-contour dams rain / checks runoff" rationale - but that is a **STEEP-slope erosion measure**, and it made every plot's rows identical, so adjacent family strips were indistinguishable (the GM caught this). On a **GENTLE** valley margin contour ridging is not forced; the accurate look is the **patchwork quilt** - a fragmented mosaic where each family strip is plowed to its OWN orientation, so neighboring plots run their rows different ways. So v2 now gives each dry plot a furrow angle spread up to **~1.1 rad (~63 deg) either side of the contour** (never straight down-slope), assigned by dropping each plot's angle into the **widest gap** between the angles of its already-placed neighbors - which GUARANTEES a real separation from every neighbor (and uses exactly ONE `R` draw per plot, as the old contour code did, so the plot GEOMETRY is byte-identical - only the angles changed). `dry_plot_furrows_vary` gates it: no two EDGE-adjacent dry plots (centroids within ~50 px) may run within ~6 deg of the same direction (compared mod pi - a furrow is an undirected line). So a reader can tell adjacent plots apart by row direction as well as by crop color. **PARAMETERIZED both ways** via `build_comb(..., furrow_spread=RAD)` (the half-fan either side of the contour): the default **~1.1 rad** gives the gentle-valley patchwork (Hoshigaoka); a genuinely STEEP / terraced hill village passes a **small** value (e.g. `furrow_spread=0.06`) so the rows converge back onto the contour (ridge-along-contour erosion control). `build_comb` returns `furrows_vary` (True when `furrow_spread >= ~0.3`); the gen records it as `meta(dry_furrows_vary=...)`, and `dry_plot_furrows_vary` only REQUIRES variation when that flag is True - so a declared contour village's aligned rows are correct and do not fire the check. (One `R` draw per plot either way, so `furrow_spread` never perturbs the plot geometry - only the angles.)
      - **Azemame (bund soybeans) - drawn SYMBOLICALLY.** Soybeans grown on the paddy BUND crests (aze-mame, "ridge beans") were universal - a food crop wedged onto otherwise-idle bund tops (NOT the paddy's nitrogen supply; a flooded paddy fixes its own N via cyanobacteria/azolla - see the v1 nitrogen note). At 1px=2ft a single bund-top bean row is genuinely SUB-PIXEL, so it is drawn as a green BEAD line along a fraction (`bean_frac`, ~0.28) of the paddy bunds - an honest legibility SYMBOL, not to literal scale (unlike the dry plots, paddies, and water, whose footprints ARE to scale). GM chose the beaded-bund representation over alternatives.
+
+
+### The fan's toe is a headland, not a row of fake basins
+
+Where a comb fan narrows to its collector vertex, both the carve and the wedge filler used to emit
+cells that taper to a point - Ubame's west comb ended in about eight acute triangles radiating from
+the vertex, and Hoshizora showed the same. **A paddy is a LEVEL BASIN**: it is bunded and holds
+standing water to a uniform depth, so a sliver that acute cannot be leveled or bunded at any sane
+cost. Real fan and terrace systems end in a headland, or simply leave the odd corner unpaddied,
+rather than pretend - which is also why the fix reads better than the defect did.
+
+`build_comb` now drops any plot whose **thickness** falls under `_TOE_MIN_THICKNESS` (0.16) of
+`plot_across`. Three things about that rule are worth keeping:
+
+- **It measures thickness, not area** - the inradius proxy `2*Area/Perimeter`. An acute sliver can
+  carry a respectable area while being too narrow ANYWHERE to hold water, so an area floor would
+  keep exactly the wrong cells.
+- **The threshold was measured, not chosen.** Healthy plots run a median 0.25-0.39 of `plot_across`
+  across the pool, with every fan trailing off toward 0.000. Ubame's west comb has exactly EIGHT
+  plots under 0.16 - precisely the "~8 thin triangular slivers" a reviewer counted by eye on the
+  render, which is an independent corroboration from pixels of a threshold picked from geometry.
+- **Dropping is visually free** because the fan carries a base floor under its plots
+  (`comb_base_fill`, enforced by `paddy_fan_has_floor`), so the ground reads as the fan's own toe
+  rather than as a hole.
+
+The cost is not uniform: sparse town fans shed 7-8 cells, but a dense city fan can shed 15 of 62
+(~24%) where its p25 already sits near the threshold. Every map still passes the gate,
+`paddy_fan_gapless` included - but a city fan is the place to LOOK if this is ever retuned, because
+the gate is not the eye.

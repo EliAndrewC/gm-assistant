@@ -91,3 +91,54 @@
   - Drawn as a dashed jurisdictional polyline with a caption, recorded as `M['borders']` with a `poly` and **deliberately no `w`/`h`**. It reserves nothing and blocks nothing, and **being overlapped is the point**: a frontier magistracy stands its wall ON the line so the border runs across a parley room's floor (the Mode A [`pool/magistracies/ubame-magistracy.svg`](../pool/magistracies/ubame-magistracy.svg)).
   - The **physical** period marker was an earthen MOUND (the Nanbu-Date boundary), and a mound is a structure everything would then have to stay clear of - the opposite of the arrangement a frontier compound wants. So this draws the LINE and leaves the physical markers to the Mode A sheet's boundary pillars.
   - The caption goes through `self.label()`, never raw `<text>`. A caption emitted straight into the SVG is invisible to every label-collision check, and the first draft's border caption duly shipped sitting on a wellhead with a green gate - the standing "a check that never RUNS looks exactly like a check that passes" trap, in its caption form.
+
+
+## Circulation inside a dense quarter: worn footpaths, not streets
+
+A `settlement-review` pass found the warrens reading as a scatter of identical boxes rather than as
+fabric, and the manifests confirmed it precisely: the CITIES were fine (Tango 6 alleys + 8 streets,
+Minami 9 + 7, Nagahara 3 + 10) and walled Hirameki had 2 streets, but the **unwalled towns had
+nothing at all** - Hoshizora and Ubame each recorded zero lanes, zero alleys and zero streets, so
+every warren hung straight off the trunk road.
+
+**A dense commoner quarter is served by narrow TRODDEN FOOTPATHS between the house rows** - packed
+earth, single-track, no paving, which was far beyond a quarter's means (the same reasoning behind
+`lane(worn=True)` at hamlet and village scale). They are paths, not streets, and they should never
+be drawn or labeled as streets.
+
+`s.pack(..., footpaths=N)` lays one every `N * step` of the district's depth. Two implementation
+points, both learned the hard way:
+
+- **The path is laid BEFORE the grid scan**, so `_fits` refuses any spot on the tread and the
+  clearance is true by construction. The first design reserved every Nth grid ROW instead, which was
+  depth-dependent and therefore useless: under the exact-population rule these quarters are only two
+  or three rows deep, so the reserved row was never reached and no path was drawn at all.
+- **The path is TRIMMED to ground that is actually free.** A corridor only refuses spots taken after
+  it exists, and a district bbox routinely overlaps frontage placed earlier in the gen, so an
+  untrimmed tread was drawn straight through a shopfront. The longest clear run is kept, and the
+  path is emitted only if enough survives to read as a path rather than a stub.
+- **Clearance scales with `step`**, because `_near_corridor` tests a building's CENTER: at a flat
+  margin a house sat 15px off the tread and put its footprint through it. (The centre-vs-footprint
+  family again - see the skill's `CLAUDE.md`.)
+
+Expect a footpath to shift the packing: it costs a little capacity, which moves caste counts and
+every downstream jittered spot. The documented answer is the one used here - widen the district a
+little, then **pick a seed that lands the counts back in band** (Ubame 914 -> 923).
+
+## The refining forge should read as a yard, not an appliance
+
+The anti-pareidolia work (no face) held, but the glyph still read as "a small machine / control
+panel" at fit zoom. The cause was grammar rather than size, and the fixes cost no scale:
+
+- **One charcoal bay with a single division, not three evenly-spaced tabs.** Three dark chips inside
+  a light casing is the visual grammar of a control panel. A fuel store is one heap under one roof.
+- **The quench trough is desaturated slate-green, not blue.** It was the only saturated blue on the
+  sheet, so a 10 ft trough pulled the eye like an indicator lamp. Water reads from the trough's
+  SHAPE and its place by the anvil.
+- **The shed has a RIDGE line.** Without it the roof is a plain tan rectangle - a casing - and
+  everything inside reads as components mounted on a panel. The ridge is the one mark that says
+  "this is a building seen from above".
+- **More air** between the working range and the stock on the floor.
+
+Do NOT fix this kind of read by inflating the glyph: the to-scale rule stands, and the levers are
+count, contrast and spacing.
