@@ -4720,6 +4720,36 @@ def test_remote_shrine_among_the_houses_is_exempt():
     assert "remote_shrine_has_own_well" not in f(M)
 
 
+def test_wells_clear_of_paddies_fires_on_a_well_in_the_fan():
+    # GM 2026-07-27: "wells on dry crops are okay, but not in rice paddies, surely". A paddy is a
+    # puddled, bunded basin held under standing water - a wellhead drawn in one stands in the water
+    # it is an alternative to. Nothing saw it before: _well_ground_clear refused a stream, channel,
+    # ditch, canal, pond and DRY plot but never a wet one, and the overlap matrix classes `fields`
+    # PADDY_RECONSTRUCTED (permissive) because a plot polygon is not stored. The real instance is
+    # frozen in pool/regressions/ (Tango's well laid against a drawn basin of the fe1 fan).
+    basin = [[600, 600], [900, 600], [900, 900], [600, 900]]
+    paddy = {"name": "f1", "kind": "paddy", "outline": [[400, 400], [900, 400], [900, 900], [400, 900]], "bbox": [400, 400, 900, 900], "plot_polys": [basin]}
+    inside = manifest(fields=[paddy], wells=[well(750, 750)], houses=[house(750, 950)])
+    assert "wells_clear_of_paddies" in f(inside)
+    outside = manifest(fields=[paddy], wells=[well(750, 990)], houses=[house(750, 950)])
+    assert "wells_clear_of_paddies" not in f(outside)
+    # the DRAWN head may not lap a basin either - the same strictness as the dry-plot rule
+    grazing = manifest(fields=[paddy], wells=[well(750, 594, vr=12)], houses=[house(750, 950)])
+    assert "wells_clear_of_paddies" in f(grazing)
+    # ...but the fan's unplanted RIM SLACK stays legal: inside the smoothed envelope, clear of every
+    # drawn basin. That margin is where farm_wells seats the well of a steading boxed in by crop, and
+    # reading the envelope as water instead is what left Tango's east pair with no seat at all
+    slack = manifest(fields=[paddy], wells=[well(450, 450)], houses=[house(450, 950)])
+    assert "wells_clear_of_paddies" not in f(slack)
+    # a field recording NO drawn basins falls back to its outline, so the rural tiers - which record
+    # none - are not silently exempt from a rule the cities are held to
+    unplotted = manifest(fields=[{k: v for k, v in paddy.items() if k != "plot_polys"}], wells=[well(450, 450)], houses=[house(450, 950)])
+    assert "wells_clear_of_paddies" in f(unplotted)
+    # ...and a DRY plot is expressly allowed: this rule is about standing water, not about crops
+    dry = manifest(dry_plots=[{"poly": [[400, 400], [900, 400], [900, 900], [400, 900]], "crop": "barley"}], wells=[well(650, 650)], houses=[house(650, 940)])
+    assert "wells_clear_of_paddies" not in f(dry)
+
+
 def test_wells_among_dwellings_fires_on_a_stray_well():
     # a well far out in open country, no house beside it
     assert "wells_among_dwellings" in f(_rural("village", [(300, 300)], [(900, 900)]))

@@ -313,6 +313,23 @@ def test_clear_label_seat_walks_out_and_gives_up_when_nothing_is_clear():
     assert not s.label_seat_clear(500, 517, 26.0)
 
 
+def test_a_wellhead_is_refused_in_the_paddy_water_and_allowed_on_the_rim():
+    # the PLACEMENT half of wells_clear_of_paddies - both halves read paddy_wet_rings, so the siter
+    # and the check cannot disagree about where the water is (the same-source doctrine)
+    s = _town()
+    basin = [[600, 600], [900, 600], [900, 900], [600, 900]]
+    s.M["fields"] = [{"name": "f1", "kind": "paddy", "outline": [[400, 400], [900, 400], [900, 900], [400, 900]], "plot_polys": [basin]}]
+    assert not s._well_ground_clear(750, 750)  # in the water
+    assert not s._well_ground_clear(750, 594)  # the drawn head laps a basin's edge
+    assert s._well_ground_clear(450, 450)  # the fan's unplanted rim slack, inside the envelope
+    s.M["fields"][0]["plot_polys"] = [[[0, 0], [1, 1]]]  # a field drawing no real basins...
+    assert not s._well_ground_clear(450, 450)  # ...falls back to its outline, as the rural tiers do
+    s.M["fields"][0]["outline"] = [[0, 0]]  # and one drawing nothing at all contributes no water
+    assert s._well_ground_clear(450, 450)
+    s.M["fields"][0]["kind"] = "dry"  # a DRY field is not this rule's business
+    assert s._well_ground_clear(750, 750)
+
+
 def test_stroke_quads_makes_one_quad_per_segment():
     qs = settlement.stroke_quads([(0, 0), (100, 0), (100, 100)], 5.0)
     assert len(qs) == 2 and all(len(q) == 4 for q in qs)
