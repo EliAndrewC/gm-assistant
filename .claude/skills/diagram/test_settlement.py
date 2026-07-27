@@ -1731,6 +1731,21 @@ def test_bridges_spans_a_lane_where_it_crosses_a_canal():
     assert abs(s.M["bridges"][0]["x"] - 300) < 2 and abs(s.M["bridges"][0]["y"] - 300) < 2
 
 
+def test_bridges_carries_the_ring_road_over_the_cargo_canal_but_not_over_a_buried_conduit():
+    """The ring road is a carried way and the cargo canal a watercourse - the pair that used to be
+    invisible here, so both cities hand-placed that deck and both went crooked (GM 2026-07-27). An
+    UNDRAWN channel is a buried conduit, though: nothing on the ground to bridge."""
+    s = _crop_settlement()
+    s.M["ring_road"] = [[100, 300], [500, 300]]
+    s.M["ring_road_width"] = 7
+    s.M["canals"] = [{"poly": [[300, 150], [300, 450]], "w": 12}]
+    s.M["channels"] = [{"poly": [[200, 150], [200, 450]], "frm": None, "to": None, "w": 2.5, "drawn": False}]
+    assert s.bridges() == 1  # the canal only - the conduit is not a crossing
+    deck = s.M["bridges"][0]
+    assert abs(deck["x"] - 300) < 2 and abs(deck["y"] - 300) < 2  # ON the crossing, solved not eyeballed
+    assert deck["rot"] == 0 and deck["w"] == 7  # ALONG the ring road, and as wide as the way it carries
+
+
 def test_place_punishment_spot_probes_for_a_clear_caption_seat():
     """The display board's caption gets its own probe, because a verge-hugging feature's default
     below-label lands on the frontage it hugs - which is what 'hugging the frontage' means."""
