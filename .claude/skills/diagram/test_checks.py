@@ -9618,3 +9618,42 @@ def test_burakumin_quarter_segregated_passes_across_a_real_seam():
     # The control for the ratchet entry: 60 ft of open ground between the walls is the rule met.
     M = manifest(meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000}, buildings=[bldg(500, 500, kind="burakumin", w=38, h=26), bldg(500 + 19 + 17 + 61, 500, kind="laborer", w=34, h=24)])
     assert "burakumin_quarter_segregated" not in f(M)
+
+
+# --- city_ward_fence_joins_wall_not_crosses (a neighborhood wall ENDS at the rampart) -----------
+def _ward_wall(boundary, **extra):
+    """A ward fence against the square WALL enclosure, with the engine's recorded stroke widths."""
+    return manifest(wall=WALL, wall_stroke=11.0, wards=[{"boundary": boundary, "stroke": 5.0}], **extra)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_fires_on_an_end_poking_through():
+    # the fence runs up to the north rampart (y50) and out the far side by 10px
+    M = _ward_wall([[500, 400], [500, 40]])
+    assert "city_ward_fence_joins_wall_not_crosses" in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_clear_when_the_end_lands_on_the_centerline():
+    # ending ON the wall line is the JOIN: the 2.5px linecap tip stays inside the 5.5px rampart band
+    M = _ward_wall([[500, 400], [500, 50]])
+    assert "city_ward_fence_joins_wall_not_crosses" not in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_reads_the_INK_not_the_vertex():
+    # the Minami shape, and the reason the defect shipped green: the end vertex sits only 4px
+    # outside the wall - well inside city_ward_fence_meets_wall's 10px tolerance, so THAT check
+    # passes - but the fence's round linecap inks 2.5px further, putting 1px of palisade past the
+    # rampart's 5.5px half-width. Testing the recorded coordinate alone would see nothing here.
+    M = _ward_wall([[500, 400], [500, 46]])
+    assert "city_ward_fence_meets_wall" not in f(M)
+    assert "city_ward_fence_joins_wall_not_crosses" in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_fires_on_a_crossing_mid_run():
+    # both ENDS are inside; the fence dives out through the north rampart and back mid-run
+    M = _ward_wall([[400, 400], [500, 20], [600, 400]])
+    assert "city_ward_fence_joins_wall_not_crosses" in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_ignores_a_degenerate_boundary():
+    M = _ward_wall([[500, 400]])
+    assert "city_ward_fence_joins_wall_not_crosses" not in f(M)
