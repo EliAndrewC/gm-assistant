@@ -153,6 +153,34 @@ The generator emits a manifest the validator asserts against; it must pass befor
 
    **STANDING REQUIREMENT - capture every "bad" map as a regression fixture.** 100% line coverage does NOT prove a check has teeth: a check whose condition is silently always-true still runs its `check(...)` line on every passing map, so coverage stays green while the check is dead. The cure is a manifest that actually *trips* it. So: **whenever you add OR refine a check - or you eyeball a generated map and find a flaw the gate let through - save the manifest of that bad map into `pool/regressions/<name>.json` with a `_regression` block** (`{"fires": ["the_check_that_should_catch_it"], "source": "..."}`), then make the check catch it. The maps we generate while iterating toward one we're happy with are exactly this corpus: each "oh, that one wasn't good enough" is a free, real negative fixture - don't throw it away, drop its `.json` (manifest only; the PNG re-renders from it) into `pool/regressions/`. `test_regressions.py` globs the directory, so a new file is picked up with no wiring. The backfill of the existing in-test fixtures into this corpus was produced by `make_regressions.py` (re-run it to regenerate the auto-captured set); going forward the discipline needs no tooling - just save the manifest. Note the corpus currently pins the ~80 checks that have a negative fixture; the remaining checks are still only exercised on their PASS path (real maps), so prefer adding a captured failure for any check you touch that lacks one.
 
+## When a settlement is genuinely unusual: WAIVE the rule in writing, never relax it
+
+Some settlements are not ordinary, and a rule that is right for every planned seat can be wrong for
+one of them. The mechanism is `s.meta(waivers={...})` - the gate prints `WAIVE` rather than `PASS`,
+the reason must be 60+ characters of actual explanation, and a waiver that has stopped excusing
+anything fails as stale. The full contract is in the skill's [`CLAUDE.md`](CLAUDE.md), "a map may
+override a rule in writing"; what follows is when a SETTLEMENT deserves one.
+
+**Hirameki** is the worked case (GM, 2026-07-27). It stood UNWALLED and was walled in HASTE during
+the Lion/Crane war, after it changed hands - the rampart was thrown around the town that was already
+there, so unlike a planned seat its enclosure was never sized to a population budget at all. Two
+consequences follow, and both cost dwellings a planned town would have housed: a chrysanthemum field
+stands INSIDE the walls for symbolic reasons, and there is no burakumin quarter, excluded for
+logistical ones. So it cannot land on `population / HOUSEHOLD` exactly, and it waives
+`population_consistent_with_housing` on exactly that ground.
+
+**Reach for a waiver only when the settlement's PREMISE conflicts with the rule** - not when a map is
+merely hard to tune. The distinction is worth being strict about, because the failure mode is
+identical from the outside: Minami also could not meet its declared population at first, but its
+oddity (eight temple precincts scattered by trade) turned out to be something the space BUDGET could
+price honestly, so the answer there was a bigger wall, not a waiver. Try to fix the model first; waive
+only when the map is telling you something true about the place.
+
+**And the process lesson, which is the more valuable half:** *lock the rules in against ORDINARY
+settlements first.* Tango and Hirameki were both drawn early and both are atypical, so for a long
+time the defaults were being bent to fit the exceptions. Build the normal cases until the rules are
+settled, then let the unusual ones earn waivers.
+
 ## Historical grounding: the "why" behind the realism checks
 
 **Requirement (project rule, restated here):** whenever historical research drives a check, a generation rule, or a magic number, record the *reasoning* here next to the rule - not just the rule. The check is the "what"; this section is the "why," so a future reader (or a future us, after the research has fallen out of memory / context) can revisit a decision without redoing the legwork. Source citations are optional; the reasoning is mandatory. Each entry: what the research found, the decision it drove, and any deliberate departure from literal scale (we draw small features oversized for legibility - see "Core principle: roughly to scale" in [`SKILL.md`](SKILL.md) - but keep *relative* sizes roughly honest).

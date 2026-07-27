@@ -197,19 +197,19 @@ which is what turned a small rule into four fix-fail-read cycles. If a change ne
 move between phases, say so explicitly in the commit: phase moves are the changes most likely to
 have effects far from the diff.
 
-## CENTRE vs FOOTPRINT: the three ways placement and the checks disagree
+## CENTER vs FOOTPRINT: the three ways placement and the checks disagree
 
 The GM, 2026-07-26, after the overlap matrix kept finding things the placer had allowed: *"if
-placement is only testing the house's centre while the matrix tests its footprint, then maybe the
-placement test is wrong? Are there other placement checks which are only checking the centre? That
+placement is only testing the house's center while the matrix tests its footprint, then maybe the
+placement test is wrong? Are there other placement checks which are only checking the center? That
 could explain a lot of overlap issues as well as a lot of inefficiencies."* Both halves were right,
 and there turned out to be **three** distinct disagreements, not one. Know which you are looking at
 before you touch anything.
 
-**1. Centre-tested keep-outs (UNDER-restrictive -> overlaps).** `_fits` tested a candidate's CENTRE
+**1. Center-tested keep-outs (UNDER-restrictive -> overlaps).** `_fits` tested a candidate's CENTER
 against `block_polys` and the corridors, so a footprint could hang over blocked ground by up to half
 its width. Fixed by SPLITTING the registry: `hard_polys` (crop, pond, bog, a field's own ditches) is
-tested against the whole footprint; `block_polys` keeps the centre test. **Do not merge them back.**
+tested against the whole footprint; `block_polys` keeps the center test. **Do not merge them back.**
 Footprint-testing all of `block_polys` was tried once and reverted, because it also contains SOFT
 reservations - caption bands, civic aprons, fence standoffs - that a footprint routinely overhangs
 by a few px, and tightening those cost Nagahara a well and pushed Hoshizora's punishment ground off
@@ -217,8 +217,8 @@ its street. The split is the fix; the conflation was the bug.
 
 **2. Circumscribed-circle collision (OVER-restrictive -> wasted ground).** Against `placed` and
 `grove_rects`, `_fits` still uses half-diagonal circles, not real footprints. For a 46x28 house that
-is r=26.9 against a true half-width of 23, so two such houses are forced >=57.8 px apart centre to
-centre where true touching is 28. It never permits a real overlap - it just wastes up to ~2x the
+is r=26.9 against a true half-width of 23, so two such houses are forced >=57.8 px apart center to
+center where true touching is 28. It never permits a real overlap - it just wastes up to ~2x the
 spacing, which is a real cause of "the packer says the ground is full" when it is not. Replacing it
 with a SAT footprint test would relax spacing on every dense map and re-roll their populations, so
 it is a deliberate, separately-verified change, not a drive-by.
@@ -232,28 +232,29 @@ the placer to test the size it is going to DRAW.
 
 **The general lesson.** A point test is right for a SCATTER (each tuft is a point) and wrong for
 anything with an extent. The same trap bit the ground-cover tiler: `near_ring_cropland` sampled a
-cell's centre and four corners, which a small keep-out sitting against an edge MIDPOINT slips
+cell's center and four corners, which a small keep-out sitting against an edge MIDPOINT slips
 between - that is how a wellhead ended up 1 px inside a hatake plot. Region-vs-region helpers
 (`quad_hits_poly`, `quad_hits_seg`, `point_quad_dist`) exist now; use them rather than adding sample
 points.
 
-## Centres, footprints, and aggregates: which one a rule is allowed to use
+## Centers, footprints, and aggregates: which one a rule is allowed to use
 
 The GM, 2026-07-27, after the boundary-stone defect: *"I'm not sure it EVER makes sense to use a
-centre instead of a footprint... we've had a lot of bugs slip through because of using centres,
-which makes me wonder whether we should just ban them."* An audit of all 42 centre-distance sites
-and 29 `point_in_poly`-on-a-centre sites says: a blanket ban would break three things that are
+center instead of a footprint... we've had a lot of bugs slip through because of using centers,
+which makes me wonder whether we should just ban them."* An audit of all 42 center-distance sites
+and 29 `point_in_poly`-on-a-center sites says: a blanket ban would break three things that are
 right, and would still have missed the defect that prompted it. **Four families. Say which one your
 rule is in, in a comment, at the point of the test.**
 
 | family | measure | why | examples |
 |---|---|---|---|
-| **Gap VERDICT** - "N ft of clearance", "these must not overlap" | `edge_gap` / `within_edge_gap` / `sat_overlap` on real rotated corners. **Never** a centre, **never** a circumscribed radius | the answer is a distance you could pace out between two walls | `execution_ground_outside_the_settlement`, `town_has_cremation_ground`, `burakumin_quarter_segregated`, `execution_ground_clear_of_the_dead`, `wells_among_dwellings`, `farm_sheds_attached` |
-| **CLASSIFICATION / counting** - "which ward", "how many inside the wall", "what share of this quarter is civic" | centre, deliberately | a building belongs to ONE ward; footprint-testing double-counts a building on a seam and the ward populations stop summing to the town | the 29 `point_in_poly(b["x"], b["y"], wall)` sites |
-| **ASSOCIATION / reach** - "is there a well within reach", "do monk houses cluster at their temple", "is this yard on the water" | centre, deliberately | the tolerance (75-480 px) dwarfs the footprints and the question is neighbourhood membership, not clearance; converting them re-tunes ~21 calibrated constants to fix nothing | `settlement_dwellings_watered`, `city_monk_houses_by_their_temple`, `_ty_on_water` |
+| **Gap VERDICT** - "N ft of clearance", "these must not overlap" | `edge_gap` / `within_edge_gap` / `sat_overlap` on real rotated corners. **Never** a center, **never** a circumscribed radius | the answer is a distance you could pace out between two walls | `execution_ground_outside_the_settlement`, `town_has_cremation_ground`, `burakumin_quarter_segregated`, `execution_ground_clear_of_the_dead`, `wells_among_dwellings`, `farm_sheds_attached` |
+| **CLASSIFICATION / counting** - "which ward", "how many inside the wall", "what share of this quarter is civic" | center, deliberately | a building belongs to ONE ward; footprint-testing double-counts a building on a seam and the ward populations stop summing to the town | the 29 `point_in_poly(b["x"], b["y"], wall)` sites |
+| **ASSOCIATION / reach** - "is there a well within reach", "do monk houses cluster at their temple", "is this yard on the water" | center, deliberately | the tolerance (75-480 px) dwarfs the footprints and the question is neighborhood membership, not clearance; converting them re-tunes ~21 calibrated constants to fix nothing | `settlement_dwellings_watered`, `city_monk_houses_by_their_temple`, `_ty_on_water` |
 | **PREFILTER** in front of an exact test | circumscribed radius, deliberately | over-stating an extent can only ADMIT a pair the exact test then rejects - the index prunes, it never decides. Tightening these would start rejecting before the exact test runs | `fire_tower_standoff`, `no_structure_overlaps`, `city_house_doors_unblocked`, `within_edge_gap`'s own prefilter |
+| **POINT FIXTURE** - a distance to a gate, torii, kido, sluice gate or bridge | point, unavoidably | these are recorded as bare `[x, y]` in the manifest and have no footprint to test. If one ever gains `w`/`h`, the rules that measure to it become gap verdicts and move to row 1 | `city_inspection_station_at_each_gate`, `city_kosatsuba_per_gate`, `city_temple_approach_has_torii`, `wall_towers_evenly_spaced` |
 
-**The three conventions that were live before this, and what each cost.** Raw centre-to-centre
+**The three conventions that were live before this, and what each cost.** Raw center-to-center
 understates clearance by the sum of both half-extents, so a rule promising 120 ft delivered ~60;
 `0.5 * math.hypot(w, h)` is the half-DIAGONAL, over by up to 41% on a square and more on a long
 rect; `max(w, h) / 2` is the same error differently sized. The approximations' error **flips sign**
@@ -262,9 +263,26 @@ lenient - so they are not even a uniform safety margin.
 
 **The ratchet, not the doc.** `test_gap_verdicts_read_footprints_not_centers` plants two features at
 exactly the offset where the conventions disagree and pins which verdict is right. Verified to have
-teeth: reverting the helper to raw centres breaks three of its six entries, reverting it to
-circumscribed radii breaks the other three. **Add an entry when you add a gap rule** - a rule that
-lives only in this table has already been proven not to hold.
+teeth: of its nine entries, reverting the helper to raw centers breaks six and reverting it to
+circumscribed radii breaks the other three - every entry is caught by one revert or the other. **Add
+an entry when you add a gap rule** - a rule that lives only in this table has already been proven
+not to hold.
+
+**THE SWEEP IS DONE; DO NOT REDO IT, EXTEND IT.** Two passes, because the first one's METHOD had the
+same shape of blind spot as the bug it was hunting. Pass 1 grepped `math.hypot(...["x"]...["x"]...)`
+and found 42 sites across 34 checks. That regex cannot see a record compared against an unpacked
+`(x, y)` tuple, which hid a second tranche of 45 sites across 36 checks - and one of them,
+`tanning_yard_clear_of_dwellings`, was a live 120 ft gap verdict reading 150 ft where the yard's own
+corner stood 76 ft from a farmhouse wall (Tango). Everything else in the second tranche classified
+as point-fixture, association/reach, classification, or one SIDE test
+(`dwellings_above_field_drain`, whose "is the house clearly on the wet side" question is a bearing,
+and deliberately center-based). If you add a distance rule, put it in the right row of the table
+above and give it a ratchet entry - that is cheaper than a third sweep.
+
+**One measurement, not several.** `edge_gap` is now the only exact footprint-gap helper.
+`_fr_gap`/`_fr_poly` - feature 016's own, written before it and doing the same job by the same
+method - was folded in on 2026-07-27. Two CORRECT helpers for one question is how the three wrong
+conventions got started; if you find yourself writing a third, use `edge_gap`.
 
 **And a fourth axis, which no footprint discipline reaches: AGGREGATE PROXIES.** The boundary-stone
 defect was not a footprint bug. `dist(stone, centroid) < dist(ground, centroid)` would stay green
@@ -275,9 +293,9 @@ settlement has a rampart, to the wall - the edge it actually has). `execution_gr
 side` still dots against the centroid and that is correct: a BEARING is an aggregate question. A
 DISTANCE is not.
 
-**Known debt, recorded as debt rather than design:** `_fits` centre-testing `block_polys` (item 1
+**Known debt, recorded as debt rather than design:** `_fits` center-testing `block_polys` (item 1
 above). The honest reading is that those polygons are drawn wrong - keep-out plus slack baked in,
-with the centre test handing the slack back - and the principled fix is to shrink them to the true
+with the center test handing the slack back - and the principled fix is to shrink them to the true
 keep-out and footprint-test. That re-tunes margins pool-wide, so it is a separate pass.
 
 ## Adding a new map feature: the KEEP-CLEAR CONTRACT (read this before writing the glyph)
@@ -391,6 +409,13 @@ summary, and keeps the name out of the failure list. Two meta-checks keep the ha
 
 Neither meta-check is itself waivable, or the hatch would swallow its own guard
 (`test_the_waiver_meta_checks_cannot_themselves_be_waived`).
+
+**The process lesson behind the waivers** (GM 2026-07-27), which is worth more than the mechanism:
+**lock the rules in against ORDINARY settlements first.** Tango and Hirameki were both drawn early
+and both are atypical - Tango's samurai take the southeast because the Emperor lies that way,
+Hirameki was walled in haste mid-war when a county turned into a border - so for a long time the
+defaults were being bent to fit the exceptions instead of the other way round. Build the normal cases
+until the rules are settled, then let the unusual ones earn waivers.
 
 **When NOT to reach for it.** A waiver is for a place with a REASON, never for a map that is simply
 inconvenient to fix, and never as a way to ship a red gate. If you find yourself writing the reason

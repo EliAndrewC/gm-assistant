@@ -59,6 +59,25 @@ s = Settlement(2600, 2000, seed=77)
 # main one is to Bishamon (Lion's), and a much smaller, older one to Benten (Crane's) sits
 # on the far side of town - a relic of Crane rule. Hence monastery_fortunes is set explicitly.
 s.meta(
+    # HIRAMEKI IS NOT AN ORDINARY TOWN, and the exemption below says so on the map itself rather than
+    # in a tolerance (GM 2026-07-27). It stood UNWALLED and was walled in HASTE during the Lion/Crane
+    # war, after it changed hands - the rampart was thrown around the town that was already there, so
+    # unlike a planned seat its enclosure was never sized to a population budget at all. Two of its
+    # oddities follow from that and both cost dwellings a planned town would have housed: a
+    # chrysanthemum field stands INSIDE the walls for symbolic reasons, and there is no burakumin
+    # quarter - excluded for logistical ones. So the map cannot be expected to land on
+    # population / HOUSEHOLD exactly, and driving it there by hand only distorted the town: every
+    # attempt moved a caste out of its band, put a farmhouse in the scrub, or was silently backfilled
+    # by a fill=True pack (removing one samurai from a no-fill pack raised the total by one).
+    #
+    # This is a WAIVER, not a relaxation: the check still runs and reports WAIVE, the rule stays exact
+    # for every other settlement, and waivers_are_live deletes this the day the map meets its figure on
+    # its own. The GM's retrospective is worth keeping with it - lock the rules in
+    # against ORDINARY settlements first, and let the unusual ones earn annotated exemptions, rather
+    # than bending the defaults to fit the exceptions.
+    waivers={
+        "population_consistent_with_housing": "Hirameki was an unwalled town walled in haste mid-war after changing hands, so its rampart was thrown around the existing town rather than sized to a population budget; it also gives ground inside the walls to a symbolic chrysanthemum field and omits the burakumin quarter for logistical reasons, so its dwelling count cannot land on population/HOUSEHOLD exactly (GM 2026-07-27)",
+    },
     water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
     name="Hirameki",
     scale="town",

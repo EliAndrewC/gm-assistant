@@ -590,7 +590,7 @@ def region_blocked(quad: Poly, circles: Sequence[tuple[float, float, float]], ha
     segment-to-region, polygons by containment-or-crossing.
 
     Factored out of near_ring_cropland so it can be tested directly: the bug it exists to stop is a
-    keep-out that sits against the middle of a cell EDGE, touching neither the cell's centre nor any
+    keep-out that sits against the middle of a cell EDGE, touching neither the cell's center nor any
     of its corners, which is how a wellhead ended up 1 px inside a hatake plot with every sample
     point clear."""
     if any(point_quad_dist(cx, cy, quad) < r for cx, cy, r in circles):
@@ -1336,14 +1336,14 @@ class Settlement:
         self.field_polys: list[Any] = []  # smoothed outlines used for blocking
         self.ellipses: list[Any] = []  # (cx, cy, rx, ry) hill/pond/manor - block houses
         self.block_polys: list[Any] = []  # arbitrary no-build polygons (e.g. forest)
-        # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its centre.
+        # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its center.
         # `block_polys` deliberately mixes two different things - hard ground (crop, pond, bog) and
         # SOFT reservations (caption bands, civic aprons, fence standoffs) that a footprint routinely
         # overhangs by a few px - which is why footprint-testing all of it was tried once and reverted
         # (it cost Nagahara a well and pushed Hoshizora's punishment ground off its street). The split
         # IS the fix: hard ground gets the footprint test it always needed, soft reservations keep the
-        # centre test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
-        # centre while the matrix tests its footprint, then maybe the placement test is wrong?"
+        # center test they were tuned for. GM 2026-07-26: "if placement is only testing the house's
+        # center while the matrix tests its footprint, then maybe the placement test is wrong?"
         self.hard_polys: list[Any] = []
         self._hard_cache_key: tuple[int, int, int] | None = None
         self._hard_cache: list[Any] = []
@@ -7499,9 +7499,9 @@ class Settlement:
                 ]
                 mx = sum(p[0] for p in quad) / 4
                 my = sum(p[1] for p in quad) / 4
-                # REGION test, not point sampling. Centre-plus-corners was the old form and it leaks:
+                # REGION test, not point sampling. Center-plus-corners was the old form and it leaks:
                 # a small keep-out sitting against the middle of a cell EDGE touches neither the
-                # centre nor any corner, which is exactly how a wellhead ended up 1 px inside a
+                # center nor any corner, which is exactly how a wellhead ended up 1 px inside a
                 # hatake plot (the overlap matrix found it; the sample points had all cleared the
                 # well's 20 ft apron). The cheap point test runs first as a prefilter.
                 if _blocked(mx, my) or any(_blocked(px, py) for px, py in quad) or _blocked_region(quad):
