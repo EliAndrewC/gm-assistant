@@ -333,6 +333,30 @@ Verify an optimization the same way: capture `sorted(gate(M))` for every manifes
 the change, re-run after, and diff. Anything but "NONE" means the optimization changed behavior.
 Run that sweep with `-n auto`-style parallelism or in the background - serial it is ~13 minutes.
 
+### A `GridIndex` box is a COST, so clamp it - on insert AND on query
+
+`GridIndex` allocates a dict entry per 120 px cell of the box it is handed, in both axes. That is
+fine for anything on the map and catastrophic for anything that is not: the regression fixture
+`city_geometry_within_canvas_fires_on_a_stray_vertex.json` plants a wall vertex at **9,000,000** on a
+3,200 px canvas, so the moment `wall` became a SOLID in `OVERLAP_CLASS` and got stroked into quads,
+one feature asked for ~5.6 billion cells. The gate ate gigabytes of RAM and the GM had to kill it by
+hand (2026-07-26). **Negative fixtures contain deliberately insane geometry - any new code that
+consumes raw manifest coordinates will meet it.**
+
+Two rules, and the second is the one that is easy to half-do:
+
+1. **Clamp the index box to the canvas** (`meta.W`/`meta.H`, generously - a couple of canvases of
+   slack). Clamping only shrinks, and a polygon's on-canvas part is always inside the clamped box, so
+   no real overlap can be lost. Geometry wholly off the canvas is skipped; that is
+   `city_geometry_within_canvas`'s business, not the overlap matrix's.
+2. **Clamp the QUERY box too.** `near_rect` walks the cells of the box it is *given*. Clamping only
+   the insert leaves the query iterating exactly the same billions of cells - which is precisely the
+   half-fix that shipped first here and looked plausible for a whole turn.
+
+`test_matrix_survives_geometry_far_off_the_canvas` in `test_checks.py` is the guard, timed rather
+than structural on purpose: the failure mode is unbounded work, and the correct-vs-broken margin is
+a fraction of a second against effectively forever.
+
 ## Batch the rendered-map inspection
 
 Reading a map means: render -> crop the region(s) of interest -> Read the PNG. The turn-latency

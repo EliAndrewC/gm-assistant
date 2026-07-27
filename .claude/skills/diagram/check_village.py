@@ -370,6 +370,12 @@ OVERLAP_CLASS: dict[str, str] = {
             "refining_forges",
         )
     },
+    # The rampart and the torii arches are SOLID: things must keep off them. All of these were
+    # UNCLASSIFIED until 2026-07-26 because the ratchet inspected only keys whose records are lists
+    # of DICTS - a wall is a bare list of points, a torii a bare [x, y, z] triple - and a ratchet
+    # that enumerates one record shape has exactly the blindness this feature exists to abolish.
+    # `lane` (singular) is the same plural/singular trap that had already hidden `marshes` and `roads`.
+    **{k: "SOLID" for k in ("wall", "torii")},
     # GROUND - cultivated / engineered ground worked AS A SURFACE: anything standing in it ruins it
     **{k: "GROUND" for k in ("dry_plots", "flower_fields", "fallow_patches")},
     # PADDY is GROUND in principle but RECONSTRUCTED in practice: a plot's polygon is not stored, so
@@ -379,7 +385,7 @@ OVERLAP_CLASS: dict[str, str] = {
     # harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields,
     # tanning_yard_clear_of_fields and fields_clear_of_road all test real geometry.
     "fields": "PADDY_RECONSTRUCTED",
-    **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond")},
+    **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond", "moat")},
     **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes")},
     # ANNEX - belongs to a named parent and abuts IT (and nothing else)
     **{k: "ANNEX" for k in ("gardens", "threshing_yards", "farm_sheds", "storehouses", "byres")},
@@ -409,7 +415,10 @@ OVERLAP_CLASS: dict[str, str] = {
     #                   a pocket pond, bedrock outcrop, grave island or crescent pond sunk INTO one
     #                   paddy plot, the field tiling around it - the overlap is the feature
     #   borders         a drawn jurisdictional line is a LINE OF LAW, not a physical object
-    **{k: "RECORD" for k in ("drawn_channels", "field_ponds", "field_rocks", "field_graves", "crescent_ponds", "borders")},
+    **{k: "RECORD" for k in ("drawn_channels", "field_ponds", "field_rocks", "field_graves", "crescent_ponds", "borders", "forest_edge", "lane")},
+    # the intramural patrol strip has its OWN precise rule (ring_road_kept_clear), which knows the
+    # real bed width and which frontages may legitimately stand against it; the matrix defers
+    **{k: "RING_ROAD" for k in ("ring_road",)},
     **{k: "VEGETATION" for k in ("village_groves", "groves", "forest", "tree_stands", "tree_crowns")},
 }
 # A permissive class may be overlapped by anything, and is never extracted. The reason matters as
@@ -425,6 +434,7 @@ _MATRIX_PERMISSIVE = {
     # question. Vegetation records are also envelopes (a `forest` is a stand outline, a grove a belt
     # outline) whose ink lives in `tree_crowns` - see the drawn-extent rule in matrix_extents.
     "VEGETATION": "canopy overlap is governed by the canopy keep-out contract, which tests recorded crowns; the matrix does not re-decide it",
+    "RING_ROAD": "the intramural patrol strip is governed precisely by ring_road_kept_clear, which knows its real bed width; the matrix does not re-decide it",
     "RECORD": "bookkeeping geometry or an in-field flourish drawn ON its own paddy by design - not ground the matrix reasons about",
     "FIXTURE": "a control structure deliberately built ON another feature (a bridge over water, a sluice on its channel, a tower on the wall) - the overlap is the whole point of the thing",
     "PADDY_RECONSTRUCTED": "a paddy plot's extent is reconstructed from recorded spans rather than stored, so it is an approximation - the precise paddy checks (harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields, tanning_yard_clear_of_fields) test real geometry and remain authoritative",
@@ -439,6 +449,8 @@ _MATRIX_SAME_CLASS_OK = {
 }
 # same-KEY permissions: records of one kind that legitimately touch each other
 _MATRIX_SAME_KEY_OK = {
+    "wall": "consecutive rampart segments meet at every corner - the wall is one continuous work, drawn as a chain of strokes",
+    "torii": "the arches of one approach avenue are a series along the sando, spaced by design",
     "dry_plots": "adjacent hatake plots in one quilt abut and share their headlands, exactly as paddy plots share bunds",
     "fields": "paddy plots in one fan abut and share their bunds - and a plot's extent is reconstructed from recorded spans, not a stored polygon, so the reconstruction slightly overstates an irregular plot",
 }
@@ -447,6 +459,13 @@ _MATRIX_ALLOWED_PAIRS: dict[frozenset[str], str] = {
 }
 # per-KEY-PAIR permissions for genuine one-offs the class policy is too coarse to express
 _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
+    **{
+        frozenset(
+            {"wall", w}
+        ): "a way or a watercourse passes THROUGH the rampart at its gate or water gate - that opening is the point of a gate, and no_structure_on_wall still governs anything BUILT on the rampart"
+        for w in ("road", "roads", "town_streets", "alleys", "lanes", "canals", "channels", "streams", "moat")
+    },
+    **{frozenset({"torii", w}): "a torii STANDS OVER its approach - an arch spanning the sando is the whole form of the thing" for w in ("road", "roads", "town_streets", "alleys", "lanes")},
     frozenset({"religious", "shrines"}): "shrine_hall records one hall under BOTH keys - these are the same object, not two",
     frozenset(
         {"channels", "dry_plots"}
@@ -459,7 +478,10 @@ _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
 # A record naming its PARENT may overlap that parent and nothing else - strictly stronger than the
 # blanket per-pair exemptions this replaces, because an annex on somebody ELSE's building stays a defect.
 # manifest lists that carry coordinates but are NOT drawn ground the matrix reasons about
-_MX_NOT_GEOMETRY = frozenset({"labels", "torii", "tree_crowns", "wet_plots", "bund_junctions", "footbridges", "knobs", "clearings"})
+# Manifest lists carrying coordinates that are NOT drawn ground. `gates` is a list of GAP POSITIONS
+# in the wall (the furniture in the gap is `gate_structs`); `wall_tower_keepclears` is a reservation,
+# not ink; `forest_edge` is an envelope whose ink is `tree_crowns` and is classified RECORD above.
+_MX_NOT_GEOMETRY = frozenset({"labels", "tree_crowns", "wet_plots", "bund_junctions", "footbridges", "knobs", "clearings", "gates", "wall_tower_keepclears"})
 _MATRIX_PARENT_FIELD = {
     "gardens": "of",
     "threshing_yards": "of",
@@ -532,15 +554,38 @@ def matrix_violations(M: Mapping[str, Any]) -> list[tuple[str, str, float, float
     priv = {(round(w_["x"], 1), round(w_["y"], 1)) for w_ in M.get("wells", []) or [] if w_.get("private")}
     polys = [p for _k, p, _i, _pa in ext]
     boxes = [(min(q[0] for q in p), min(q[1] for q in p), max(q[0] for q in p), max(q[1] for q in p)) for p in polys]
+    # CLAMP THE INDEX BOX TO THE CANVAS. GridIndex.add inserts under every cell an item's bbox
+    # touches, so one feature reaching far off-map costs a dict entry per 120 px in BOTH axes. A
+    # malformed map is not hypothetical - `city_geometry_within_canvas` is checked with a fixture
+    # planting a wall vertex at 9,000,000 on a 3,200 px canvas, which is ~5.6 BILLION cells and
+    # gigabytes of RAM (found the hard way, 2026-07-26: the run had to be killed by hand). The index
+    # only PRUNES - every surviving pair is still tested against the real polygons - so clamping the
+    # indexed extent changes no verdict for anything actually on the map. Two features BOTH off the
+    # canvas may no longer be compared, which is the right division of labour: geometry that is not
+    # on the map is `city_geometry_within_canvas`'s business, not the overlap matrix's.
+    _mx_w = float(M.get("meta", {}).get("W") or 4000)
+    _mx_h = float(M.get("meta", {}).get("H") or 4000)
+
+    def _mx_clamp(b: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+        return (max(b[0], -_mx_w), max(b[1], -_mx_h), min(b[2], _mx_w * 2), min(b[3], _mx_h * 2))
+
+    # Clamp for BOTH insert and query: `near_rect` walks the cells of the box it is GIVEN, so
+    # querying with the unclamped extent costs exactly as much as inserting with it did.
+    cboxes = [_mx_clamp(b) for b in boxes]
     gi = GridIndex(120)
-    for idx, bx in enumerate(boxes):
-        gi.add(bx[0], bx[1], bx[2], bx[3], idx)
+    for idx, cb in enumerate(cboxes):
+        if cb[2] < cb[0] or cb[3] < cb[1]:
+            continue  # wholly off the canvas - nothing on the map can meet it
+        gi.add(cb[0], cb[1], cb[2], cb[3], idx)
     seen: set[tuple[int, int]] = set()
     out: list[tuple[str, str, float, float]] = []
     for i, (ki, _pi, idi, pari) in enumerate(ext):
         del _pi
         bi = boxes[i]
-        for j in gi.near_rect(*bi):
+        cbi = cboxes[i]
+        if cbi[2] < cbi[0] or cbi[3] < cbi[1]:
+            continue
+        for j in gi.near_rect(*cbi):
             if j <= i or (i, j) in seen:
                 continue
             seen.add((i, j))
@@ -614,9 +659,16 @@ def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, fl
             p_ = M.get("pond")
             if p_:
                 out.append((k, [(p_[0] + p_[2] * math.cos(a_), p_[1] + p_[3] * math.sin(a_)) for a_ in [i * math.pi / 8 for i in range(16)]], None, None))
-        elif k == "road":
-            for q in _mx_stroke(M.get("road") or [], float(M.get("road_width") or 26.0) / 2):
+        elif k in ("road", "moat", "ring_road", "wall", "lane"):
+            _w = {"road": float(M.get("road_width") or 26.0), "moat": float(M.get("moat_width") or 22.0), "ring_road": 20.0, "wall": 10.0, "lane": 6.0}[k]
+            for q in _mx_stroke(M.get(k) or [], _w / 2):
                 out.append((k, q, None, None))
+        elif k == "torii":
+            hw_, up_, dn_ = torii_halfbox(float(M.get("meta", {}).get("ftpx") or 1))
+            for t_ in recs:
+                if isinstance(t_, (list, tuple)) and len(t_) >= 2:
+                    tx_, ty_ = float(t_[0]), float(t_[1])
+                    out.append((k, [(tx_ - hw_, ty_ - up_), (tx_ + hw_, ty_ - up_), (tx_ + hw_, ty_ + dn_), (tx_ - hw_, ty_ + dn_)], None, None))
         elif k in _MX_LINE_W:
             for r2_ in recs:
                 pl2 = r2_.get("poly") or r2_.get("pts")
@@ -2665,7 +2717,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # wall_towers, water_gates, docks, inspection_stations, gate_structs, stable_yards) had no class
     # at all. A key counts as drawn geometry when its records carry a position or an outline.
     _mx_unclassified = sorted(
-        {k for k, v in M.items() if k not in OVERLAP_CLASS and k not in _MX_NOT_GEOMETRY and isinstance(v, list) and v and isinstance(v[0], dict) and ("x" in v[0] or "poly" in v[0] or "pts" in v[0])}
+        {
+            k
+            for k, v in M.items()
+            if k not in OVERLAP_CLASS
+            and k not in _MX_NOT_GEOMETRY
+            and isinstance(v, list)
+            and v
+            and (
+                (isinstance(v[0], dict) and ("x" in v[0] or "poly" in v[0] or "pts" in v[0]))
+                # ...OR a bare POLYLINE / point list - how the wall, moat, ring road and torii are
+                # stored. The first cut inspected only DICT records and so passed five unclassified
+                # keys in silence: a ratchet that enumerates one record shape has the same blindness
+                # this feature exists to abolish.
+                or (isinstance(v[0], (list, tuple)) and len(v[0]) >= 2 and all(isinstance(c, (int, float)) for c in v[0][:2]))
+            )
+        }
     )
     check(
         "every_feature_classified_for_matrix",
