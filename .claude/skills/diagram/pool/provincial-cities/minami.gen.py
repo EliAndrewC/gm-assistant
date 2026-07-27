@@ -281,7 +281,7 @@ s.log_boom(827, 1420, rot=89, length=100, label_xy=(762, 1392))
 s.oil_press(1622, 1268)  # +16 east of the obvious seat: its auto-caption otherwise runs into the Temple of Bishamon's (they cleared by 0.7 px, under no_label_overlaps' 2 px estimation slack, and read as touching)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
 s.bathhouses([(1416, 1180), (1250, 1424)])
-s.kiln(640, 1180)  # the KILN WORKS OUTSIDE the walls on the far bank
+s.kiln(640, 1180, rot=270)  # the KILN WORKS OUTSIDE the walls on the far bank - siting confirmed sound by settlement-review 2026-07-27 (a quarter mile clear of every funerary feature, and on the far side of the trunk road from the execution ground), so only the climb bearing changed. rot=270 lays it due NORTH, uphill against meta water_flow=90
 s.tanning_yard(866, 1840, rot=90, pits=12, water="stream")  # DOWNSTREAM of the moat outfall on the east bank: the re-derived ring pushed the moat to y1816, and a tanning yard's tamped ground must stay dry (pits below the waterline are just more stream)
 
 # ---- the cargo canal: the moat's downstream corner -> water gate -> dock basin. ONE mouth on the

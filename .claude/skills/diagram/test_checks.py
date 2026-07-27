@@ -9119,13 +9119,13 @@ def test_refining_forge_downwind_abstains_when_the_map_has_no_dwellings():
     assert "refining_forge_downwind" not in f(_forge_map(60, 60, ()))
 
 
-def _kiln_map(quarters=((500.0, 570.0),), body=(500.0, 470.0), ftpx=1, **over):
+def _kiln_map(quarters=((500.0, 570.0),), body=(500.0, 470.0), ftpx=1, rot=0.0, **over):
     """A town carrying one kiln WORKS at (500, 500): a 140x120 ft ground, the 46x16 ft kiln body
     at `body`, and a 28x18 ft cottage at each of `quarters`."""
     M = manifest(meta={"scale": "town", "ftpx": ftpx, "W": 1000, "H": 1000})
-    rec = {"x": 500.0, "y": 500.0, "w": 140.0, "h": 120.0, "rot": 0.0, "label": "kiln", "quarters": [[qx, qy, 28.0, 18.0] for qx, qy in quarters]}
+    rec = {"x": 500.0, "y": 500.0, "w": 140.0, "h": 120.0, "rot": rot, "label": "kiln works", "quarters": [[qx, qy, 28.0, 18.0, rot] for qx, qy in quarters]}
     if body is not None:
-        rec["body"] = [body[0], body[1], 46.0, 16.0, 0.0]
+        rec["body"] = [body[0], body[1], 46.0, 16.0, rot]
     M["kilns"] = [rec]
     M.update(over)
     return M
@@ -9172,6 +9172,30 @@ def test_kiln_keeps_fire_gap_measures_in_REAL_feet_not_pixels():
     rather than silently becoming 180 ft on a 3 ft/px city sheet."""
     M = _kiln_map(quarters=((500.0, 470 + 8 + 20 + 9),), ftpx=3)  # the same PIXEL gap is now 60 real ft
     assert "kiln_keeps_fire_gap" not in f(M)
+
+
+def test_kiln_quarters_carry_the_works_ROTATION():
+    """A cottage is drawn inside the works' rotated group, so a record without the rotation puts a
+    box at the right place with the wrong ORIENTATION. Both consumers read the same helper, and a
+    four-element record predates the field and is read as rot=0 - which is what it was."""
+    rotated = _kiln_map(rot=90.0)
+    assert check_village.kiln_quarters(rotated["kilns"][0])[0]["rot"] == 90.0
+    legacy = {"quarters": [[10.0, 20.0, 28.0, 18.0]]}  # a pre-2026-07-27 record, four elements
+    assert check_village.kiln_quarters(legacy)[0]["rot"] == 0.0
+    assert check_village.kiln_quarters({}) == []
+
+
+def test_kiln_keeps_fire_gap_is_measured_on_the_ROTATED_cottage():
+    """The bug this guards: with the cottage recorded unrotated, a works turned on its side reports
+    a gap that is wrong by the difference between the cottage's own width and height. Placed so the
+    two readings straddle the 60 ft rule - the unrotated read passes and the true one fails."""
+    # At rot=90 the body's drawn half-height is 23 (its 46 ft length now runs N-S), so its lower
+    # edge is y=493; the cottage's is 14 read correctly and 9 read unrotated. y=564 therefore gives
+    # a TRUE gap of 57 ft - which must fire - and a mis-read gap of 62 ft, which would not. Any
+    # seat outside [562, 567) is read the same way by both and proves nothing; the first draft of
+    # this test used one, passed under the revert, and was worthless.
+    tight = _kiln_map(quarters=((500.0, 564.0),), rot=90.0)
+    assert "kiln_keeps_fire_gap" in f(tight)
 
 
 def test_wells_among_dwellings_counts_a_kiln_works_cottages():
