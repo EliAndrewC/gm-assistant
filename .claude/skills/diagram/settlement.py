@@ -1662,6 +1662,13 @@ class Settlement:
         "fire_towers",
         "storehouses",
         "merchant_estates",
+        # the KILN WORKS is a kept satellite too (GM 2026-07-27). It was excluded while it was a
+        # 28x18 ft mound whose caption was wider than it was - the note in presentation.md about
+        # Tango's frame being set by the words "tanning yard" is from that era. A works with its
+        # own housing is now wider than any caption of it, and a kiln clipped at the frame would
+        # read as "there is a kiln somewhere off that way", which is the one thing a satellite
+        # whose whole point is WHERE it stands must not read as.
+        "kilns",
     )
 
     def crop_city(self, margin: float = 35, west: float | None = None, north: float | None = None, east: float | None = None, south: float | None = None) -> None:
@@ -6010,19 +6017,141 @@ class Settlement:
         th_ = math.radians(rot)
         self._trade_record("farriers", x, y, aw_, sh_ + ah_, rot, label, lab_off=abs(aw_ / 2 * math.sin(th_)) + abs((sh_ + ah_) / 2 * math.cos(th_)))
 
-    def kiln(self, x: float, y: float, label: str = "tile kiln") -> None:
-        """A TILE/POTTERY KILN at the town's periphery - fire law and smoke pushed kilns OUTSIDE
-        the walls (city_kiln_outside_walls; the tannery, the other nuisance trade banished to the
-        edge, is a drawn feature too - see s.tanning_yard). A low earthen mound kiln with its
-        stoke mouth and a smoke wisp. Records M['kilns']."""
-        rx_, ry_ = self.px(28) / 2, self.px(18) / 2
-        g = [f'<g transform="translate({x:.0f},{y:.0f})">']
-        g.append(f'<ellipse cx="0" cy="0" rx="{rx_:.1f}" ry="{ry_:.1f}" fill="#B08968" stroke="#5A4326" stroke-width="1.5"/>')
-        g.append(f'<rect x="{-rx_ - 2.2:.1f}" y="-1.6" width="3.4" height="3.2" fill="#4A3318"/>')  # the stoke mouth
-        g.append(f'<path d="M {rx_ * 0.4:.1f} {-ry_ - 1.5:.1f} q 2 -3 0.5 -6" fill="none" stroke="#9A9A92" stroke-width="1.1" opacity="0.75"/>')  # smoke
+    def kiln(self, x: float, y: float, rot: float = 0.0, cottages: int = 2, label: str = "kiln") -> None:
+        """A KILN WORKS at the settlement's periphery: the kiln itself, the throwing and drying
+        shed, the clay pit, the fuel stack, its own well, and the two or three cottages of the
+        households that work it. `rot` lays the kiln's UPSLOPE axis along local +x, so the stoke
+        mouth is at local -x and the chimney at local +x.
+
+        Historical grounding (the "why" - see settlements/urban-features.md "KILN WORKS", full
+        record in research/urban-features.md). Two GM questions on 2026-07-27 drove the whole
+        feature: *"would whoever works the kiln also live next to it?"* and *"why is it
+        specifically a tile kiln and not just a kiln?"*
+
+          - IT IS A KILN, NOT A TILE KILN. The old default caption was never argued for anywhere,
+            and the volume reasoning behind it runs the WRONG WAY. Tile demand is lumpy and
+            project-driven: a tiled roof lasts generations, and in a county seat tile reaches only
+            the temple halls, the gates, the governor's compound and a few rich merchants - the
+            rest is thatch and shingle. Pottery demand is CONTINUOUS: every household breaks and
+            replaces bowls, pots and jars on a steady cycle, which is exactly why potsherds are
+            the most reliable thing in an archaeological layer. The map's own brewery makes it
+            worse - fermentation vessels and big storage jars are heavy and cheap per pound, so
+            they are made near where they are used rather than freighted in. Per YEAR a seat this
+            size burns more clay into vessels than into roof tiles. One works firing mixed loads
+            is the honest drawing: coarse tile and coarse domestic ware share a clay source, an
+            operator and a low firing. Fine stoneware needs its own hotter, longer firing and is a
+            PROVINCE's specialty, not every county seat's. A map that knows what a particular
+            works fires says so in its own `label`.
+          - THE WORKERS LIVE HERE, which is why this is a works and not a lone glyph. A firing runs
+            for DAYS, stoked in shifts around the clock until the ware is done and then sealed to
+            cool - nobody walks back into town at dusk in the middle of one. And the kiln stands at
+            the CLAY, not at the customer: siting follows the clay pit, the fuel, and a slope to
+            build the chambers into, which pulls digging, weathering, throwing, drying and firing
+            out to one spot together. CHINA FIRST: Song/Ming kiln districts were worked by
+            registered kiln households living at their kilns, Jingdezhen being a whole city grown
+            around them. Japan agrees - Seto, Tokoname, Bizen, Imado on Edo's fringe, Awataguchi
+            and Kiyomizu at Kyoto's edge are kiln VILLAGES and kiln quarters, not commuter shops.
+          - BANISHMENT IS ABOUT THE CITY, NOT THE OPERATOR. Fire law and smoke put the kiln outside
+            the wall (city_kiln_outside_walls), but that is about keeping the risk out of the dense
+            blocks; it says nothing against the households whose trade it is. They stand off the
+            kiln by the same fire gap anyone else would (kiln_keeps_fire_gap).
+          - A CHAMBERED CLIMBING KILN, NOT A MOUND. The glyph this replaces was a low earthen
+            mound, which is a CHARCOAL or lime kiln's shape and read as one. A tile or pottery kiln
+            in this culture is a long chambered tunnel built into a slope - firebox low, chambers
+            climbing, chimney high - and that silhouette also carries the siting implication the
+            mound hid: the works needs rising ground.
+          - THE TOWN'S POTTERS ARE NOT MISSING. Only the FIRING is banished. A crockery dealer or a
+            potter's shopfront inside the walls is an ordinary shophouse and stays in the generic
+            shop rows with the tofu maker and the cooper - see the NULL results under "TRADE WORKS".
+
+        Sizes are TRUE feet at the map's grain, pitched against the pool's other bulk works (the
+        charcoal yard's 88x58, the brewery's 96 ft hall). The recorded FOOTPRINT is the whole
+        tamped works ground rather than a `parts` list: unlike a ward gate, every part of this
+        feature shares one set of permissions and stands on one patch of ground, so the yard rect
+        is the honest extent and keeps the overlap matrix conservative.
+
+        Records M['kilns'] with `body` (the kiln itself, world coords, which kiln_keeps_fire_gap
+        measures from) and `quarters` (the works' own cottages). The cottages are recorded INSIDE
+        this record and deliberately NOT in M['houses']: every dwelling rule in the gate - well
+        reach, ward classification, the burakumin standoff - is written about the settlement's own
+        housing stock, and a satellite works' two cottages would be adjudicated by rules that were
+        never about them."""
+        f, g = self.px, [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        yw_, yh_ = f(140), f(120)
+        th_ = math.radians(rot)
+
+        def _world(lx: float, ly: float) -> tuple[float, float]:
+            """Local (feet-derived px) offset -> world px, through this works' own rotation."""
+            return x + lx * math.cos(th_) - ly * math.sin(th_), y + lx * math.sin(th_) + ly * math.cos(th_)
+
+        g.append(
+            f'<rect x="{-yw_ / 2:.1f}" y="{-yh_ / 2:.1f}" width="{yw_:.1f}" height="{yh_:.1f}" rx="1.5" fill="#E0D2AC" fill-opacity="0.75" stroke="#B99F72" stroke-width="0.9"/>'
+        )  # the tamped works ground, the same ground-plane convention the charcoal/dye/tanning yards use
+        # (A slope band behind the kiln was tried and cut: at city grain it read as a stray tab off
+        # the kiln's shoulder rather than as ground. The CHAMBERED FORM already says "built up a
+        # slope" - that is the whole difference between this and the mound it replaces.)
+        # THE KILN: firebox at the low (-x) end, four chambers climbing, chimney at the high end
+        bw_, bh_ = f(46), f(16)
+        bcx_, bcy_ = f(6), -f(40)
+        g.append(f'<rect x="{bcx_ - bw_ / 2:.1f}" y="{bcy_ - bh_ / 2:.1f}" width="{bw_:.1f}" height="{bh_:.1f}" rx="2" fill="#B08968" stroke="#5A4326" stroke-width="1.6"/>')
+        for ci_ in range(4):  # the chamber divisions - a noborigama read from above is a row of joined chambers, not a dome
+            g.append(
+                f'<line x1="{bcx_ - bw_ / 2 + f(6) + ci_ * f(9):.1f}" y1="{bcy_ - bh_ / 2 + 0.8:.1f}" x2="{bcx_ - bw_ / 2 + f(6) + ci_ * f(9):.1f}" y2="{bcy_ + bh_ / 2 - 0.8:.1f}" stroke="#5A4326" stroke-width="0.9" opacity="0.8"/>'
+            )
+        g.append(f'<rect x="{bcx_ - bw_ / 2 - 2.2:.1f}" y="{bcy_ - 1.6:.1f}" width="3.4" height="3.2" fill="#4A3318"/>')  # the stoke mouth, at the firebox end
+        g.append(f'<rect x="{bcx_ + bw_ / 2 - 2.6:.1f}" y="{bcy_ - bh_ / 2 - 2.6:.1f}" width="3.2" height="3.2" fill="#5A4326"/>')  # the chimney, at the top of the climb
+        g.append(f'<path d="M {bcx_ + bw_ / 2 - 1:.1f} {bcy_ - bh_ / 2 - 3:.1f} q 2 -3.5 0.5 -7" fill="none" stroke="#9A9A92" stroke-width="1.1" opacity="0.75"/>')  # smoke
+        # THE FUEL STACK, at the stoke end where the stoker wants it (a multi-day firing eats wood
+        # continuously, so the stack is working stock, not a store set safely apart)
+        for wi_ in range(4):
+            g.append(f'<rect x="{-f(42) + wi_ * f(5):.1f}" y="{-f(46):.1f}" width="{f(3.4):.1f}" height="{f(12):.1f}" rx="1" fill="#8C7047" stroke="#5A4326" stroke-width="0.7"/>')
+        # THE THROWING AND DRYING SHED - open-sided, the ware standing on boards out of the sun
+        sw_, sh_ = f(32), f(18)
+        scx_, scy_ = -f(46), f(4)
+        g.append(f'<rect x="{scx_ - sw_ / 2:.1f}" y="{scy_ - sh_ / 2:.1f}" width="{sw_:.1f}" height="{sh_:.1f}" rx="1" fill="#C9A57A" stroke="#6B4F2A" stroke-width="1.6"/>')
+        g.append(f'<line x1="{scx_ - sw_ / 2 + 2:.1f}" y1="{scy_:.1f}" x2="{scx_ + sw_ / 2 - 2:.1f}" y2="{scy_:.1f}" stroke="#6B4F2A" stroke-width="0.8" opacity="0.7"/>')  # the ridge
+        for pi_ in range(4):  # drying ware on its boards
+            g.append(f'<circle cx="{scx_ - sw_ / 2 + f(6) + pi_ * f(7):.1f}" cy="{scy_ + f(5):.1f}" r="{max(0.9, f(2)):.1f}" fill="none" stroke="#6B4F2A" stroke-width="0.7" opacity="0.85"/>')
+        # THE CLAY PIT - dug open ground, dashed like the charcoal yard's apron because it is a
+        # worked hole rather than a roofed room. The works stands at its clay; this is the reason.
+        pw_, ph_ = f(30), f(24)
+        pcx_, pcy_ = f(48), f(10)
+        g.append(
+            f'<rect x="{pcx_ - pw_ / 2:.1f}" y="{pcy_ - ph_ / 2:.1f}" width="{pw_:.1f}" height="{ph_:.1f}" rx="2" fill="#A8895C" fill-opacity="0.65" stroke="#7A5F35" stroke-width="0.9" stroke-dasharray="3,2"/>'
+        )
+        # ... with the WORKED FLOOR sunk inside it. The first draft drew two curved dig-faces here
+        # and the pair read as barrel staves at city grain - a dashed ring around a darker floor is
+        # what says "hole" at every scale this engine draws.
+        g.append(
+            f'<rect x="{pcx_ - pw_ / 2 + f(5):.1f}" y="{pcy_ - ph_ / 2 + f(4):.1f}" width="{pw_ - f(10):.1f}" height="{ph_ - f(8):.1f}" rx="1.5" fill="#8A6E42" fill-opacity="0.85" stroke="#6B5330" stroke-width="0.8"/>'
+        )
+        # THE OPEN DRYING GROUND between the shed and the pit: green ware and unfired tile stand out
+        # in the air for days before they will take a firing at all, so this ground is working stock,
+        # not slack (it is also what the fire gap's open middle would otherwise read as).
+        for gi_ in range(3):
+            g.append(f'<rect x="{f(0) + gi_ * f(9):.1f}" y="{f(2):.1f}" width="{f(6):.1f}" height="{f(11):.1f}" rx="0.8" fill="none" stroke="#8A7350" stroke-width="0.8" opacity="0.85"/>')
+        # THE COTTAGES, along the works' low edge, a clear fire gap off the kiln (kiln_keeps_fire_gap)
+        n_ = max(1, min(3, cottages))
+        hw2_, hh2_ = f(28), f(18)
+        cxs_ = {1: (0.0,), 2: (-f(22), f(22)), 3: (-f(40), 0.0, f(40))}[n_]
+        quarters = []
+        for hx_ in cxs_:
+            hy_ = f(46)
+            g.append(f'<rect x="{hx_ - hw2_ / 2:.1f}" y="{hy_ - hh2_ / 2:.1f}" width="{hw2_:.1f}" height="{hh2_:.1f}" rx="1" fill="#D8C49A" stroke="#5A4326" stroke-width="1.5"/>')
+            g.append(f'<line x1="{hx_ - hw2_ / 2 + 1.5:.1f}" y1="{hy_:.1f}" x2="{hx_ + hw2_ / 2 - 1.5:.1f}" y2="{hy_:.1f}" stroke="#5A4326" stroke-width="0.8" opacity="0.7"/>')  # the ridge
+            qx_, qy_ = _world(hx_, hy_)
+            quarters.append([round(qx_, 1), round(qy_, 1), round(hw2_, 1), round(hh2_, 1)])
         g.append('</g>')
         self.add(''.join(g))
-        self._trade_record("kilns", x, y, rx_ * 2, ry_ * 2, 0.0, label)
+        # THE WORKS' OWN WELL, between the shed and the cottages. Clay cannot be weathered, wedged
+        # or thrown without water, so this is a premises fixture like the brewery's - and private
+        # for the same reason, so it never counts toward the settlement's public idobata.
+        wx_, wy_ = _world(f(2), f(24))
+        self.well(wx_, wy_, private=True)
+        self._trade_record("kilns", x, y, yw_, yh_, rot, label)
+        bx_, by_ = _world(bcx_, bcy_)
+        self.M["kilns"][-1]["body"] = [round(bx_, 1), round(by_, 1), round(bw_, 1), round(bh_, 1), round(rot, 1)]
+        self.M["kilns"][-1]["quarters"] = quarters
 
     def charcoal_yard(self, x: float, y: float, rot: float = 0.0, sheds: int = 2, label: str = "charcoal yard") -> None:
         """A CHARCOAL WHOLESALER's yard (sumi-don'ya) - the fuel store of a charcoal district.
