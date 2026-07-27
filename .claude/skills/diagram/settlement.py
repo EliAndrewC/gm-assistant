@@ -5476,6 +5476,72 @@ class Settlement:
             self.label(x, y - hh - 11 if label_above else y + hh + 11, label, 8, italic=True, color="#7A5A30")
         return z
 
+    def label_blockers(self, skip_key: str | None = None) -> list[tuple[float, float, float, float]]:
+        """Every axis-aligned box a caption must miss: any manifest list of dicts carrying w/h, plus
+        every caption already placed.
+
+        DERIVED, never hand-listed. This was a list of nine keys and it fell behind exactly the way
+        the CAPTION and KEEP-CLEAR registries did before they became registries (CLAUDE.md, "the
+        KEEP-CLEAR CONTRACT"): `dye_yards` was never in it, so when a reflow put Minami\'s punishment
+        ground beside the dye works the probe reported a clear box and the gate reported a caption on
+        a dye works (2026-07-27). A probe that cannot see a feature looks exactly like a probe that
+        passes. Nothing here needs to know WHICH lists exist, so a new feature is covered the day it
+        is drawn; `skip_key` drops the captioned feature\'s own glyph.
+
+        ROTATION-AWARE, because `labels_clear_of_other_buildings` tests each building\'s AABB and a
+        rotated shopfront\'s AABB is much larger than its w/h - probing the unrotated rect passes here
+        and still fails the gate."""
+        boxes: list[tuple[float, float, float, float]] = []
+        for key, recs in self.M.items():
+            if key == skip_key or not isinstance(recs, list):
+                continue
+            for o in recs:
+                if not (isinstance(o, dict) and all(isinstance(o.get(f), (int, float)) for f in ("x", "y", "w", "h"))):
+                    continue
+                a = math.radians(o.get("rot", 0) or 0)
+                ca, sa = math.cos(a), math.sin(a)
+                hw2, hh2 = o["w"] / 2, o["h"] / 2
+                cs = ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))
+                xs = [o["x"] + dx * ca - dy * sa for dx, dy in cs]
+                ys = [o["y"] + dx * sa + dy * ca for dx, dy in cs]
+                boxes.append((min(xs), min(ys), max(xs), max(ys)))
+        boxes += [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
+        return boxes
+
+    def label_caption_hw(self, label: str, size: float) -> float:
+        """A caption\'s half-width AS RECORDED. `_record_label` writes len(text) * size * 0.55, and
+        that is what `labels_clear_of_other_buildings` tests - so probing the PIL-measured glyph box
+        (~2px narrower per side at caption size) is the same class of bug as a hand-written victim
+        list: the probe reports clear and the gate reports a collision on the 2px it could not see
+        (Minami, 2026-07-27). Placement and its check read the SAME geometry."""
+        return len(label) * size * 0.55 / 2
+
+    def label_seat_clear(self, lx: float, ly: float, tw: float, size: float = 9.0, boxes: list[tuple[float, float, float, float]] | None = None) -> bool:
+        """Is a caption box centred at (lx, ly) clear of every blocker? `boxes` lets a caller that
+        probes many seats build the blocker list once."""
+        bx = self.label_blockers() if boxes is None else boxes
+        b = (lx - tw, ly - size * 0.8, lx + tw, ly + size * 0.25)
+        return not any(b[0] < x1 and x0 < b[2] and b[1] < y1 and y0 < b[3] for x0, y0, x1, y1 in bx)
+
+    def clear_label_seat(self, x: float, y: float, w: float, h: float, label: str, size: float = 9.0, skip_key: str | None = None) -> Pt | None:
+        """A caption seat for a verge-hugging feature: below, above, then left and right, walking
+        OUTWARD, first clear box wins; None when nothing is clear.
+
+        A feature that hugs the frontage puts its default below-label ON that frontage - not bad luck
+        but what "hugging the frontage" means, and it fired on all three maps that first used this
+        probe. SIXTEEN rings, not nine: these features are sited at the BUSIEST node by definition, so
+        the ground around them is the most crowded on the map, and nine ran out on Minami - at which
+        point the caption fell back to its default seat, on top of three dwellings. A probe that gives
+        up silently is worse than no probe, so callers must handle None rather than inherit a seat."""
+        tw = self.label_caption_hw(label, size)
+        boxes = self.label_blockers(skip_key)
+        for ring in range(16):
+            d = ring * 14
+            for lx, ly in ((x, y + h / 2 + 11 + d), (x, y - h / 2 - 9 - d), (x - tw - w / 2 - 6 - d, y + 3), (x + tw + w / 2 + 6 + d, y + 3)):
+                if self.label_seat_clear(lx, ly, tw, size, boxes):
+                    return (lx, ly)
+        return None
+
     def place_kosatsuba(self, label: str = "notice board") -> Pt | None:
         """AUTO-SITE the settlement kosatsuba on a lane/road verge at the busiest clear node -
         the village/hamlet tiers' procedural sibling of the town/city hand placement (GM
@@ -5521,7 +5587,9 @@ class Settlement:
             # candidate list does not carry at all - see way_beds)
             return all(seg_dist(x, y, bp[k], bp[k + 1]) >= bhw + h / 2 + 3 for bp, bhw in beds for k in range(len(bp) - 1))
 
-        best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
+        tw_lab = self.label_caption_hw(label, 8.0) if label else 0.0  # the caption half-width the seat must also hold, as RECORDED
+        kb_boxes = self.label_blockers("kosatsuba")  # built once: the probe tests many seats against the same map
+        cands: list[tuple[int, float, float, float, float, int | None]] = []  # (busy, score, x, y, rot, label_above|None)
         for pts, _rw in routes:
             for i in range(len(pts) - 1):
                 (ax, ay), (bx, by) = pts[i], pts[i + 1]
@@ -5541,14 +5609,29 @@ class Settlement:
                             x, y = mx + ux * off * side, my + uy * off * side
                             if off_every_bed(x, y) and self._fits(x, y, w, h, corridors=False):
                                 busy = sum(1 for sx, sy in spots if math.hypot(x - sx, y - sy) < 260)
-                                score = busy * 10 - off / 3  # busiest node first, verge-hugging tiebreak
-                                if best is None or score > best[0]:
-                                    best = (score, x, y, rot)
+                                # THE CAPTION IS PART OF THE SEAT (GM 2026-07-27). The glyph is 11 px
+                                # and fits almost anywhere; its caption does not, and the busiest
+                                # frontage is exactly where there is least room for one - so a siter
+                                # that hunts for ground big enough to hold BOTH walks away from the
+                                # traffic and out to the quiet end of the road, which is how Ubame's
+                                # board came to stand across the bridge from its own town.
+                                lab = 0 if self.label_seat_clear(x, y + h / 2 + 11, tw_lab, 8.0, kb_boxes) else (1 if self.label_seat_clear(x, y - h / 2 - 11, tw_lab, 8.0, kb_boxes) else None)
+                                cands.append((busy, busy * 10 - off / 3, x, y, rot, lab))
                             off += 5.0
-        if best is None:
+        if not cands:
             return None
-        _, x, y, rot = best
-        self.kosatsuba(x, y, rot, label=label)
+        # ON THE TRAFFIC IS THE RULE; A FITTING CAPTION IS ONLY THE PREFERENCE WITHIN IT. Scoring the
+        # caption as a flat bonus large enough to outrank traffic was tried first and re-committed the
+        # original sin at one remove: where no seat on a tight village frontage has a clear caption,
+        # EVERY caption-clear seat is out in the fields, so all three village boards walked off the
+        # frontage and their captions ran off the cropped frame. Open ground for a caption is abundant
+        # exactly where nobody is - the same trap as open verge for the board. So the busiest node
+        # sets a floor (60% of the best count available), and the caption chooses only among the seats
+        # that already stand on the traffic. A board with nowhere to put its caption is still placed,
+        # so labels_clear_of_other_buildings reports it rather than the siter hiding it.
+        floor = 0.6 * max(c[0] for c in cands)
+        _b, _s, x, y, rot, lab = max((c for c in cands if c[0] >= floor), key=lambda c: (c[5] is not None, c[1]))
+        self.kosatsuba(x, y, rot, label=label, label_above=bool(lab))
         return (x, y)
 
     def place_punishment_spot(self, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:
@@ -5614,58 +5697,7 @@ class Settlement:
             # A verge-hugging feature's DEFAULT below-label lands on the frontage it hugs - that is
             # not bad luck, it is what "hugging the frontage" means, and it fired on all three maps.
             # So probe the label too: below, above, then left/right, first clear box wins.
-            # THE RECORDED BOX, not a measured one. `_record_label` writes a box of
-            # len(text) * size * 0.55 wide and -size*0.8 .. +size*0.25 tall, and that is what
-            # labels_clear_of_other_buildings tests - so probing the PIL-measured glyph box (which runs
-            # ~2px narrower per side at this size) is the same class of bug as a hand-written victim
-            # list: the probe reports clear and the gate reports a collision on the 2px it could not
-            # see (Minami's punishment ground, 2026-07-27). Placement and its check read the same
-            # geometry (CLAUDE.md, "Placement and its check must read the SAME manifest source").
-            tw = len(label) * 9 * 0.55 / 2
-            th = 9 * 0.25
-            # ROTATION-AWARE boxes: labels_clear_of_other_buildings tests each building's axis-aligned
-            # bounding box, and a rotated shopfront's AABB is much larger than its w/h - probing the
-            # unrotated rect passed here and still failed the gate.
-            boxes = []
-            # EVERY w/h-bearing feature on the map, derived rather than hand-listed. This was a list of
-            # nine keys, and it fell behind exactly the way the CAPTION and KEEP-CLEAR registries did
-            # before they were made registries (CLAUDE.md, "the KEEP-CLEAR CONTRACT"): `dye_yards` was
-            # never in it, so when a reflow put Minami's punishment ground beside the dye works the
-            # probe reported a clear box and `labels_clear_of_other_buildings` reported a caption on a
-            # dye works (2026-07-27). A probe that cannot see a feature looks exactly like a probe that
-            # passes. Nothing here needs to know WHICH lists exist - any manifest list of dicts carrying
-            # w/h is a footprint a caption can bury - so a new feature is covered the day it is drawn.
-            # `punishment_spots` is skipped because this feature's own glyph is the thing being captioned.
-            for key, _recs in self.M.items():
-                if key == "punishment_spots" or not isinstance(_recs, list):
-                    continue
-                for o in _recs:
-                    if not (isinstance(o, dict) and isinstance(o.get("w"), (int, float)) and isinstance(o.get("h"), (int, float))):
-                        continue
-                    a = math.radians(o.get("rot", 0) or 0)
-                    ca, sa = math.cos(a), math.sin(a)
-                    hw2, hh2 = o["w"] / 2, o["h"] / 2
-                    xs = [o["x"] + dx * ca - dy * sa for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
-                    ys = [o["y"] + dx * sa + dy * ca for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
-                    boxes.append((min(xs), min(ys), max(xs), max(ys)))
-            labs = [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
-            # Walk outward: the near bands are dense frontage, so keep looking. SIXTEEN rings, not nine
-            # (2026-07-27): this feature is sited at the BUSIEST node by definition, so the ground around
-            # it is the most crowded on the map, and nine rings ran out on Minami - at which point
-            # label_xy stayed None and the caption fell back to the default seat, on top of three
-            # dwellings. A probe that gives up silently is worse than no probe.
-            cands = []
-            for ring in range(0, 16):
-                d = ring * 14
-                cands += [(x, y + h / 2 + 11 + d), (x, y - h / 2 - 9 - d), (x - tw - w / 2 - 6 - d, y + 3), (x + tw + w / 2 + 6 + d, y + 3)]
-            for lx, ly in cands:
-                box = (lx - tw, ly - 9 * 0.8, lx + tw, ly + th)
-                if any(box[0] < bx1 and bx0 < box[2] and box[1] < by1 and by0 < box[3] for bx0, by0, bx1, by1 in boxes):
-                    continue
-                if any(box[0] < l2 and l0 < box[2] and box[1] < l3 and l1 < box[3] for l0, l1, l2, l3 in labs):
-                    continue
-                label_xy = (lx, ly)
-                break
+            label_xy = self.clear_label_seat(x, y, w, h, label, skip_key="punishment_spots")
         self.punishment_spot(x, y, rot, label=label, label_xy=label_xy)
         return (x, y)
 
