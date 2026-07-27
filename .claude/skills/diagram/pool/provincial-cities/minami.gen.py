@@ -247,9 +247,9 @@ _LBL_DONE = 0
 def reserve_caption_ground(pad=14):
     """Reserve, as a CORRIDOR, the ground under every caption emitted since the last call.
 
-    A block poly is not enough on its own. The urban packs centre-test block_polys (_fits ->
+    A block poly is not enough on its own. The urban packs center-test block_polys (_fits ->
     _in_blocked looks at the candidate's CENTER only, see the skill CLAUDE.md DRAW ORDER note), so a
-    wide roof whose centre clears the band still comes to rest with half of itself under the text -
+    wide roof whose center clears the band still comes to rest with half of itself under the text -
     which is exactly what labels_clear_of_other_buildings kept firing on. A corridor is
     distance-tested, so it keeps whole FOOTPRINTS off. Call it at each point where a phase has
     finished drawing captioned features and before the next phase packs houses around them; the
@@ -404,7 +404,7 @@ def precinct(x, y, fortune, torii, w=TW, h=TH, primary=False, graveyard=False, l
     _cmid = (_cy0 + _cy1) / 2
     s.block_polys.append([(_cx0 - 12, _cmid - 16), (_cx1 + 12, _cmid - 16), (_cx1 + 12, _cmid + 16), (_cx0 - 12, _cmid + 16)])
     s.corridors.append(([(_cx0 - 4, _cmid), (_cx1 + 4, _cmid)], (_cy1 - _cy0) + 12))
-    # the caption's own ground, reserved BOTH ways: a block poly (which the packs centre-test) and
+    # the caption's own ground, reserved BOTH ways: a block poly (which the packs center-test) and
     # a corridor (which the fills honor). "Temple of Fukurokujin" is a wide box, so the band is
     # generous - labels_clear_of_other_buildings does not forgive a roof under the text.
 
