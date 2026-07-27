@@ -240,8 +240,16 @@ s.tanning_yard(1992, 2066, rot=67.1, pits=12, water="stream")
 # keep-out ring: tanning_yard_clear_of_dwellings wants 120 ft (40px at this scale) clear of every
 # ordinary house, and the trade-record block only reserves the footprint + caption - so the SE farm
 # rings packed a farmhouse 100 ft away. Blocked BEFORE the fields run, the same guard Hoshizora puts
-# round its crematory. Radius 46px: 40 for the rule + a farmhouse half-footprint, since blocks test centers.
-s.block_polys.append([(1992 + 46 * math.cos(a), 2066 + 46 * math.sin(a)) for a in [i * math.pi / 6 for i in range(12)]])
+# round its crematory.
+# RADIUS 66px, was 46 (2026-07-27). The old figure was derived against a check that measured
+# CENTER to center, so it reserved 40 px from the yard's CENTER plus a farmhouse half-footprint
+# and duly delivered a 25 px (76 ft) wall-to-wall gap against a 40 px (120 ft) rule. A block poly
+# keeps house CENTERS out, so the radius owes the rule its 40 px PLUS both half-extents - the
+# yard's ~13 px along the bearing and the farmhouse's ~7.5 - and a little for rotation. Moving the
+# yard instead was tried first and is wrong: it is a crop driver (this seat is the one that pulls
+# the frame 180 px south to catch fse1's intake), and a 40 px nudge detached a west channel from
+# the map edge - channel_field_anchored[7]. Reserve the ground; do not move the feature.
+s.block_polys.append([(1992 + 66 * math.cos(a), 2066 + 66 * math.sin(a)) for a in [i * math.pi / 6 for i in range(12)]])
 # the TANNING YARD (GM 2026-07-24) on the MOAT OUTFALL, below the SE estates. Tango is the awkward
 # case: it is a dry seat whose burakumin live IN-wall (the siege need), and the moat feeder enters
 # at the clean NW rim - so the only honest water for a tannery is the outfall stream leaving the
