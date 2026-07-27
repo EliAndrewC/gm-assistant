@@ -68,6 +68,7 @@ s = Settlement(3200, 2700, seed=61)
 # quietly building the city wrong; the shortfall it found was real, but the fix belongs in the space
 # budget and therefore in the WALL (the skill's own doctrine: if the capacity report wants a resize,
 # fix the budget model, not the map).
+HOUSEHOLD_RESIDENTS = 5  # check_village.HOUSEHOLD - one dwelling houses a household of five
 LAY_POP = 2360
 TEMPLE_PRECINCTS = 8
 MONK_PER_PRECINCT = 6
@@ -117,11 +118,17 @@ BUDGET = plan_city(
             BudgetLine(
                 "laneway excess over the flat circulation allowance",
                 1,
-                13_000.0,
-                "citybudget allows a flat 7% of interior for circulation (43,675 px^2 here) and Minami draws more, because eight precincts sited by TRADE across the commoner quarters all have to be reached: the ring, street and roji BEDS alone measure 56,936 px^2. Only that measured excess is charged, and conservatively - it counts neither the trunk road's in-wall run nor any frontage standoff band. This is real ground under real lanes, unlike a caption band, which is why it belongs in the space budget and the wall follows it",
+                34_000.0,
+                "citybudget allows a flat 7% of interior for circulation and Minami draws far more, because eight precincts sited by TRADE across the commoner quarters all have to be reached: the ring, street and roji BEDS measure 56,936 px^2 against the 43,675 allowed, and the trunk road's in-wall run adds ~21,000 more. Charged in full now, at ~34,000: the conservative 13,000 (beds only) left the map unable to seat its declared 520 dwellings AS TERRACES - a measurement of the free ground at that ring found only 23,808 px^2 of it in contiguous runs, nearly all inside the gated samurai ward where commoners do not belong. This is real ground under real lanes, unlike a caption band, which is why it belongs in the space budget and the wall follows it",
             ),
         ),
-        aspect=0.93,
+        # A CIRCULAR PLAN, and the river is why. The west flank is bounded by the Hayakawa and the
+        # wharf suburb on its bank, which must stay OUTSIDE the rampart - at aspect 0.93 the west wall
+        # had closed to 3px of the quay, so the city could not grow westward at all. Raising the aspect
+        # spends the same interior on a rounder ring: rx falls 471 -> 462 (the wall steps BACK off the
+        # bank, giving the wharf 30px) while ry rises 438 -> 462 into open country north and south.
+        # A river city grows along its valley, not into its own landing.
+        aspect=1.00,
         nring=20,
     ),
     canvas=(3200, 2700),
@@ -157,8 +164,40 @@ def _ring_rel(x, y):
 # (they land 6px and 3px past it), and the north segment had to come ~6px south of its old line so
 # it clears Bishamon's torii avenue by 14px - a fence is a continuous barrier and an arch is a
 # freestanding gateway, so an arch may never stand in one.
+CROSS_H = [(1120, 1150), (1670, 1150)]  # the northern E-W street, crossing the spine
+MER_V = [(1200, 1090), (1200, 1330)]  # NW N-S, foot on the road
+LAB_V = [(1600, 1078), (1600, 1150)]  # NE N-S, foot on the road
+MAIN_E = [(1110, 1450), (1700, 1450)]  # the southern E-W street, piercing the ward fence at a kido
+SW_V = [(1200, 1330), (1200, 1570)]  # SW N-S, head on the road
+EAST_ST = [(1400, 1330), (1720, 1330)]  # the ward approach, piercing the fence at a kido
+WARD_V = [(1650, 1330), (1650, 1450)]  # inside the ward, EAST_ST down to MAIN_E
+
 WARD_FENCE = [_ring_rel(1829, 1293), _ring_rel(1420, 1312), _ring_rel(1420, 1666), _ring_rel(1460, 1725)]
-KIDO_SPOTS = [_ring_rel(1420, 1330), _ring_rel(1420, 1450), _ring_rel(1798, 1294), _ring_rel(1443, 1700)]
+
+
+def _fence_x_way(way):
+    """Where a way CROSSES the ward fence, or None.
+
+    A KIDO IS CENTERED ON THE ROAD IT BARS (GM 2026-07-26) - a gate that is merely near its street is
+    a gate people walk around. Scaled guesses drift: when the ring was re-derived the fence's y scale
+    went to 1.155 while MAIN_E stayed at y1450, which put one kido 19px off the street it was supposed
+    to bar and dropped city_samurai_quarter_gated to a single gate. Solving the intersection cannot
+    drift, however the ring moves."""
+    for (ax, ay), (bx, by) in zip(WARD_FENCE, WARD_FENCE[1:]):
+        for (cx_, cy_), (dx_, dy_) in zip(way, way[1:]):
+            den = (bx - ax) * (dy_ - cy_) - (by - ay) * (dx_ - cx_)
+            if abs(den) < 1e-9:
+                continue
+            t = ((cx_ - ax) * (dy_ - cy_) - (cy_ - ay) * (dx_ - cx_)) / den
+            u = ((cx_ - ax) * (by - ay) - (cy_ - ay) * (bx - ax)) / den
+            if 0.0 <= t <= 1.0 and 0.0 <= u <= 1.0:
+                return (round(ax + t * (bx - ax)), round(ay + t * (by - ay)))
+    return None
+
+
+# two kido on the commoner streets that pierce the fence, SOLVED onto each crossing, plus one at each
+# fence end where the ring road crosses it (those ride the fence itself, so they scale with it)
+KIDO_SPOTS = [p for p in (_fence_x_way(EAST_ST), _fence_x_way(MAIN_E), _ring_rel(1798, 1294), _ring_rel(1443, 1700)) if p]
 
 s.city_wall(WALL, gates=[NGATE, WGATE], guard_east=[NGATE], water_gates=[WGATE_PT], ring_inset=22)
 
@@ -199,7 +238,7 @@ def label_ground(x, y, halfw=54, halfh=13):
     s.block_polys.append([(x - halfw, y - halfh), (x + halfw, y - halfh), (x + halfw, y + halfh), (x - halfw, y + halfh)])
 
 
-for _lx, _ly2, _hw in ((1560, 1216, 64), (1150, 1348, 56), (1214, 1470, 42), (1668, 1314, 60), (1362, 1136, 32), (1424, 1359, 30), (1120, 1613, 34), (1256, 1669, 86)):
+for _lx, _ly2, _hw in ((1560, 1216, 64), (1150, 1348, 56), (1214, 1470, 42), (1668, 1314, 60), (1362, 1136, 32), (1398, 1359, 30), (1058, 1563, 34), (1256, 1669, 86)):
     label_ground(_lx, _ly2, _hw)
 
 _LBL_DONE = 0
@@ -231,14 +270,19 @@ s.drum_tower(1366, 1386)  # the bell-and-drum tower at the SW corner of the cent
 
 # ---- TRADE WORKS, placed early so every later pack flows around them.
 s.brewery(1466, 1198)
-s.dye_yard(1120, 1596)  # on the in-wall cargo canal, north of the dock basin
+s.dye_yard(1058, 1546)  # on the in-wall cargo canal, north of the dock basin
 s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
-s.oil_press(1548, 1300)
+# THE LOG BOOM, in the water off the yard. Fox timber comes DOWN the Hayakawa in rafts and has to be
+# held until it is pulled out, and the holding pen is the one piece of river furniture specific to
+# the trade - without it a timber city reads like any other river town. Moored ALONG the current
+# (rot ~89, the river's own slight eastward lean going south), never across it: a boom strung over
+# the channel would dam the river it works. Caption on the far bank so it does not sit on the water.
+s.log_boom(827, 1420, rot=89, length=100, label_xy=(762, 1392))
+s.oil_press(1606, 1268)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
-s.bathhouses([(1416, 1180), (1250, 1400)])
+s.bathhouses([(1416, 1180), (1250, 1424)])
 s.kiln(640, 1180)  # OUTSIDE the walls on the far bank
-s.tanning_yard(866, 1700, rot=90, pits=12, water="stream")  # east bank, DOWNSTREAM of dock, dyer and moat outfall
-s.bridge(818, 1332, 4, RIVER_W + 26, 15)
+s.tanning_yard(866, 1840, rot=90, pits=12, water="stream")  # DOWNSTREAM of the moat outfall on the east bank: the re-derived ring pushed the moat to y1816, and a tanning yard's tamped ground must stay dry (pits below the waterline are just more stream)
 
 # ---- the cargo canal: the moat's downstream corner -> water gate -> dock basin. ONE mouth on the
 # river: the canal communicates with the MOAT and the moat's own outfall junction is the single
@@ -286,13 +330,6 @@ def alleys(lst):
 # ====================================================================== the street skeleton
 # Every free end lands ON the ring bed (a clean T) rather than a sliver short of it, and every
 # street meets another - one connected network wired to the through-road.
-CROSS_H = [(1120, 1150), (1670, 1150)]  # the northern E-W street, crossing the spine
-MER_V = [(1200, 1090), (1200, 1330)]  # NW N-S, foot on the road
-LAB_V = [(1600, 1078), (1600, 1150)]  # NE N-S, foot on the road
-MAIN_E = [(1110, 1450), (1700, 1450)]  # the southern E-W street, piercing the ward fence at a kido
-SW_V = [(1200, 1330), (1200, 1570)]  # SW N-S, head on the road
-EAST_ST = [(1400, 1330), (1720, 1330)]  # the ward approach, piercing the fence at a kido
-WARD_V = [(1650, 1330), (1650, 1450)]  # inside the ward, EAST_ST down to MAIN_E
 grid([CROSS_H, MAIN_E], width_ft=22)
 CROSS_FRONT = True
 grid([MER_V, LAB_V, SW_V, EAST_ST, WARD_V])
@@ -327,7 +364,7 @@ ALLEYS = [
     [(1372, 1596), (1372, _ring_y(1372))],
     [(1544, 1592), (1544, _ring_y(1544))],
     [(1756, 1470), (1756, _ring_y(1756))],
-    [(1300, _ring_y(1300, south=False)), (1300, 1046)],
+    [(1300, _ring_y(1300, south=False)), (1300, 1018)],
     [(1002, 1330), (1002, 1436)],
 ]
 alleys(ALLEYS)
@@ -338,7 +375,8 @@ for _al in ALLEYS:
     s.block_polys.append([(min(_ax0, _ax1) - _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, min(_ay0, _ay1) - 8), (max(_ax0, _ax1) + _apad, max(_ay0, _ay1) + 8), (min(_ax0, _ax1) - _apad, max(_ay0, _ay1) + 8)])
 
 for _wbox in ((1230, 1580, 1330, 1650), (1290, 1650, 1390, 1710), (1400, 1030, 1500, 1090), (1520, 1200, 1630, 1280), (1596, 1010, 1690, 1070), (1030, 1420, 1130, 1480),
-              (1090, 1480, 1190, 1545), (1500, 950, 1600, 1010), (1310, 950, 1410, 1010), (1090, 1396, 1180, 1452), (958, 1412, 1030, 1500), (1010, 1500, 1100, 1560)):
+              (1090, 1480, 1190, 1545), (1500, 950, 1600, 1010), (1310, 950, 1410, 1010), (1090, 1396, 1180, 1452), (958, 1412, 1030, 1500), (1010, 1500, 1100, 1560),
+              (1290, 1630, 1400, 1720), (1600, 1080, 1710, 1180), (1360, 1700, 1460, 1780), (1556, 1140, 1648, 1206)):
     _ws = s.open_seat(_wbox, 18, 18, well=True)
     if _ws:
         s.well(*_ws)
@@ -369,7 +407,7 @@ for sx, sy in [(1240, 1258), (1258, 1288), (1224, 1290)]:
     s.small_shrine(sx, sy)
 
 # --- W: BENTEN by the dock - the water fortune, and the temple that lends against a wedding
-precinct(1082, 1512, "Benten", [(1082, 1548)])
+precinct(1082, 1512, "Benten", [(1082, 1548)], label_below=False)
 
 # --- N-CENTRAL: INARI, the largest of the eight. The Fox clan's own fortune - rice and foxes - and
 # the temple that keeps the Inari paddy reserve whose harvest Inari shrines buy Empire-wide.
@@ -467,7 +505,7 @@ s.label(1560, 1216, "laborer neighborhoods", 10, italic=True, color="#5A4326")
 # ====================================================================== NW: merchants + the dock
 s.fire_tower(1362, 1120, label="fire tower")
 
-_n_est = s.merchant_estates([(1330, 1372, "north"), (1256, 1104, "east"), (1210, 1620, "east")])
+_n_est = s.merchant_estates([(1268, 1372, "north"), (1256, 1104, "east"), (1210, 1620, "east")])
 _ML_SPOTS = [(1344, 1380), (1268, 1104)][_n_est - 1 :]
 s.frontage([(1040, 1330), (1390, 1330)], (["merchant"] * 5 + ["shop"]) * 18, skip=ROAD, width=s.lw(26), spacing=19, rows=2, rowgap=2, jitter=1, setback=s.px(46))
 front([MER_V], (["merchant"] * 3 + ["shop"]) * 14, spacing=19, rows=2)
@@ -480,6 +518,8 @@ for _y0 in range(1300, 1330, 28):
     s.rowpack((1044, _y0, 1382, _y0 + 24), _mer, court_every=3, eave_ft=2)
 for _y0 in range(1150, 1320, 50):
     s.rowpack((956, _y0, 1408, _y0 + 42), _mer, court_every=3, eave_ft=2)
+for _y0 in range(1092, 1140, 24):
+    s.rowpack((1046, _y0, 1240, _y0 + 22), _mer, court_every=3, eave_ft=2)
 for _y0 in range(1175, 1320, 50):
     s.rowpack((956, _y0, 1408, _y0 + 40), _mer, court_every=3, eave_ft=2)
 for _y0 in range(1170, 1310, 25):
@@ -530,7 +570,7 @@ s.frontage(NMARKET_LINE, ["shop"] * 6, skip=ROAD, width=s.lw(22), spacing=17, ro
 s.label(1236, 790, "gate market", 9, italic=True, color="#5A4326")
 
 # samurai country estates: dispersed walled compounds NORTHEAST of the city, toward Otosan Uchi.
-EST = [(1960, 1010, 76, 48, "west", (2050, 1030)), (2170, 880, 84, 56, "south", (2240, 900)), (2340, 1100, 94, 62, "west", (2400, 1130))]
+EST = [(1990, 1006, 76, 48, "west", (2080, 1026)), (2170, 880, 84, 56, "south", (2240, 900)), (2340, 1100, 94, 62, "west", (2400, 1130))]
 for ex, ey, ew, eh, gd, (_lx, _ly) in EST:
     s.manor(ex, ey, ew, eh, "", gate_dir=gd)
 s.label(2010, 1070, "samurai estates", 10, italic=True, color="#3A352C")
@@ -802,11 +842,11 @@ top_up("laborer_large", NE_Q, 18)
 top_up("laborer_large", SW_Q, 24)
 # then each caste to its budgets.md target across every quarter that can hold it
 for _kind, _regions, _target, _ck in (
-    ("samurai", (SE_Q,), 52, ("samurai", "samurai_large")),
-    ("merchant_house", (NW_Q, SW_Q), 112, _MERCH),
+    ("samurai", (SE_Q,), 40, ("samurai", "samurai_large")),
+    ("merchant_house", (NW_Q, SW_Q), 94, _MERCH),
     ("burakumin", (SW_Q,), 26, ("burakumin",)),
-    ("laborer", (NE_Q, SW_Q, NW_Q), 188, _LAB),
-    ("servant", (NW_Q, NE_Q, SW_Q, SE_Q), 94, ("servant",)),
+    ("laborer", (NE_Q, SW_Q, NW_Q), 150, _LAB),
+    ("servant", (NW_Q, NE_Q, SW_Q, SE_Q), 76, ("servant",)),
 ):
     for _region in _regions:
         if sum(1 for b in s.M["buildings"] if b["kind"] in _ck) >= _target:
@@ -832,18 +872,73 @@ s.pack(SE_Q, ["servant"] * 90, step=11, face_streets="fill")
 # whole-interior sweeps: the per-quarter regions leave ground stranded at their seams, and the
 # budget promises 520 dwellings, so the last passes are limited by the ground and nothing else.
 ALL_Q = (1032, 980, 1800, 1690)
-top_up("merchant_house", ALL_Q, 112, count_kinds=_MERCH)
-top_up("laborer", ALL_Q, 188, count_kinds=_LAB)
-top_up("servant", ALL_Q, 94)
-top_up("samurai", SE_Q, 52, count_kinds=("samurai", "samurai_large"))
+top_up("merchant_house", ALL_Q, 94, count_kinds=_MERCH)
+top_up("laborer", ALL_Q, 150, count_kinds=_LAB)
+top_up("servant", ALL_Q, 76)
+top_up("samurai", SE_Q, 40, count_kinds=("samurai", "samurai_large"))
 top_up("burakumin", SW_Q, 26)
 for _pass in range(3):
     for _rg in (NW_Q, SW_Q, NE_Q, ALL_Q):
-        top_up("merchant_house", _rg, 112, count_kinds=_MERCH)
+        top_up("merchant_house", _rg, 94, count_kinds=_MERCH)
     for _rg in (NE_Q, NW_Q, SW_Q, SE_Q, ALL_Q):
-        top_up("laborer", _rg, 188, count_kinds=_LAB)
+        top_up("laborer", _rg, 150, count_kinds=_LAB)
     for _rg in (NW_Q, NE_Q, SW_Q, SE_Q, ALL_Q):
-        top_up("servant", _rg, 94)
+        top_up("servant", _rg, 76)
+
+# ====================================================================== EXACTLY the declared figure
+# population_consistent_with_housing allows NO band any more (GM 2026-07-26): a declared population is
+# a promise about what the map CONTAINS, so the arithmetic has to close exactly - POP / HOUSEHOLD
+# dwellings, not "within 7%". This drives the count to the target and never past it: each pass asks a
+# caste for exactly the shortfall, and top_up stops the moment that caste's tally reaches the figure
+# asked, so it cannot overshoot. Order matters - the castes with the smallest footprint go first,
+# because they are the ones that still fit once the quarters are full. If the ground genuinely cannot
+# take them the loop stalls and the CHECK fails, which is the correct outcome: the answer is a bigger
+# wall from the budget, never a smaller declared figure.
+TARGET_DWELLINGS = POP // HOUSEHOLD_RESIDENTS
+
+
+def fill_exactly(target):
+    order = (
+        ("servant", ALL_Q, ("servant",)),
+        ("laborer", ALL_Q, _LAB),
+        ("merchant_house", ALL_Q, _MERCH),
+        ("burakumin", SW_Q, ("burakumin",)),
+        ("samurai", SE_Q, ("samurai", "samurai_large")),
+    )
+    # count what the CHECK counts (its dwelling set includes monk_house); Minami's DWELL happens to
+    # match, but stating it here keeps the three cities' fills identical
+    _CHECKED = ("laborer", "laborer_large", "servant", "burakumin", "samurai", "samurai_large", "merchant", "merchant_house", "merchant_large", "monk_house")
+
+    def _dw_all():
+        return sum(1 for b in s.M["buildings"] if b["kind"] in _CHECKED)
+
+    # RESPECT THE CASTE CEILINGS. Filling smallest-footprint-first is what makes the last seats
+    # findable, but unchecked it pushes one caste past its +/-30% band (Tango's servants went to 159
+    # against a 156 ceiling). Each caste is asked for no more than its ceiling; the loop then moves to
+    # the next. The ceiling counts what city_caste_counts_in_band counts - walled estates and manors
+    # included - so the two cannot disagree.
+    _FRAC = {"servant": 0.20, "laborer": 0.40, "merchant_house": 0.25, "burakumin": 0.05, "samurai": 0.10}
+    _EXTRA = {"merchant_house": len(s.M.get("merchant_estates", []) or []), "samurai": len(s.M.get("manors", []) or [])}
+    for _ in range(30):
+        if _dw_all() >= target:
+            return
+        moved = False
+        for _k, _rg, _ck in order:
+            short = target - _dw_all()
+            if short <= 0:
+                break
+            _have = sum(1 for b in s.M["buildings"] if b["kind"] in _ck)
+            _ceil = int(1.3 * _FRAC[_k] * target) - _EXTRA.get(_k, 0)
+            if _have >= _ceil:
+                continue
+            _n0 = _dw_all()
+            top_up(_k, _rg, min(_have + short, _ceil), count_kinds=_ck)
+            moved = moved or _dw_all() > _n0
+        if not moved:
+            return  # the ground is full - the gate says so, loudly
+
+
+fill_exactly(TARGET_DWELLINGS)
 
 for _mx, _my in _ML_SPOTS:
     s.building(_mx, _my, *s._dims("merchant_large"), "merchant_large")
@@ -866,7 +961,7 @@ s.title("Minami")
 
 # ===== THE OFFICIAL NOTICE BOARDS - a city draws the SET: the principal board at the central
 # market node plus one on every main gate's approach. Only ONE carries the label.
-s.kosatsuba(1424, 1348, rot=90)
+s.kosatsuba(1398, 1348, rot=90)
 s.kosatsuba(1384, 974, rot=78, label=None)  # the north gate's board, on the road verge inside
 s.kosatsuba(1016, 1348, rot=0, label=None)  # the river gate's board
 

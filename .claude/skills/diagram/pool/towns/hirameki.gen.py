@@ -450,7 +450,8 @@ s.block_polys.append(
 )  # the pack bbox's SW corner pokes past the rampart; the 7-torii reflow (2026-07-21) rolled a laborer into that outside sliver (walled_town_commoners_inside_walls)
 s.pack((540, 1200, 1130, 1600), ["servant"] * 13 + ["laborer"] * 13, step=44, face_streets="fill", fill=True)
 s.building(1668, 1316, 34, 24, "laborer")  # the 25th laborer pinned explicitly (2026-07-24): the two tenement scans land ~24 total as the RNG shifts, and the town_caste_count[laborer] floor is 25 - same lone-cottage precedent as the x1418 one above (probed clear of buildings, the rampart, AND the Bishamon sando - the first two spots hit the wall and a torii)
-s.pack((1450, 1200, 1880, 1540), ["laborer"] * 20, step=44, face_streets="fill", fill=True)  # capacity budget (2026-07-24): the scan lands ~15-18 as the RNG shifts; town_caste_count[laborer] is the real guard on the total
+s.pack((1450, 1200, 1880, 1540), ["laborer"] * 16, step=44, face_streets="fill")  # fill=False and 15: a fill=True pack expands to whatever ground is free, so it silently backfills every attempt to trim the map toward its declared figure - turning fill off makes the pack place exactly its list, which is the only lever that lands this town on 156 dwellings on the nose (GM 2026-07-26: the 7% band is gone)
+s.pack((540, 1200, 1130, 1600), ["servant"] * 1, step=44, face_streets="fill")  # THE LAST ONE, to land exactly on 156. The laborer pack above jumps 155 -> 160 between 16 and 17 because face_streets clusters its seats, so the final dwelling has to come from a one-item pack elsewhere - s.pack rather than a hand-rolled drop, because it seats the house FACING its street (buildings_face_street)
 s.label(1300, 1505, "merchant houses & shops", 10, italic=True, color="#5A4326")
 s.label(800, 1560, "laborers' & servants' tenements", 9, italic=True, color="#5A4326")
 
@@ -475,14 +476,14 @@ s.label(1120, 1795, "gate market", 10, italic=True, color="#5A4326")
 # the market flophouse (kichin-yado), OUTSIDE the gate beside the gate market: far-traveling
 # peasants who reach the town after the gate shuts at dusk sleep here for a sen before market day
 s.flophouse(1720, 1880)
-s.pack((2120, 1690, 2340, 1960), ["burakumin"] * 14, step=46)
+s.pack((2120, 1690, 2318, 1960), ["burakumin"] * 14, step=46)  # east edge pulled back off the tanning yard: with the laborer pack no longer filling, this quarter had room to seat a house on the yard, and the pack runs BEFORE the yard is drawn so it cannot avoid it
 s.label(2230, 1680, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 # the TANNING YARD (GM 2026-07-24) - the easiest siting in the pool, because Hirameki already put
 # its burakumin where the trade needs them: OUTSIDE the wall, at the SOUTH (downhill, down_deg=90)
 # end of the quarter, on the east valley stream. The yard takes the strip between the quarter and
 # the stream bank, so the workers reach it without crossing the water and every drop it fouls
 # leaves the map southward, below the town. water="stream": a live current to stake hides in.
-s.tanning_yard(2375, 1900, rot=90, pits=4, water="stream")  # x set so the yard ground stops AT the bank and the staking frames reach into the shallows - hides soak in the current, not beside it
+s.tanning_yard(2375, 1900, rot=90, pits=4, water="stream")  # x set so the yard ground
 # a noticeable minority of merchant houses keep a fireproof kura (rent-rice / bulk goods of the
 # absentee landlords whose tenants farm the surrounding land), drawn AFTER the businesses exist
 s.merchant_storehouses(6)
