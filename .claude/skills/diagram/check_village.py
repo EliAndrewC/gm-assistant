@@ -605,10 +605,10 @@ _MATRIX_OUTSTANDING: dict[str, dict[tuple[str, str], int]] = {
     # 2026-07-26 final: the matrix found 11 defects across 6 maps on its first pool run, and ALL
     # ELEVEN are now fixed. What is left belongs to another session.
     #
-    # NOT OURS - Minami is a work in progress in the 016 session (GM: leave it alone). Recorded so
-    # our gate stays green without touching their map. The matrix found these on a map it had never
-    # seen and was never tuned against, which is the whole feature working as intended.
-    "Minami": {("dry_plots", "manors"): 2, ("field_ditches", "manors"): 2, ("alleys", "religious"): 1, ("alleys", "shrines"): 1, ("drum_towers", "merchant_estates"): 1},
+    # (Minami's five were recorded here while it was another session's work in progress; all five are
+    # fixed and the entry is gone. A line left here after its defect is fixed does not just rot - it
+    # TOLERATES that many real defects on that map for ever after, which is why the guard below now
+    # fails on one.)
 }
 
 
@@ -2905,6 +2905,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         "features_do_not_overlap",
         not _mx_bad,
         f"overlapping feature(s) whose classes forbid it: {[(a, b, x, y) for a, b, x, y in _mx_bad[:4]]} - the overlap MATRIX decides every pair from one classification (OVERLAP_CLASS + the policy above), so this is not a missing per-pair rule. Either the drawing is wrong, or the pair genuinely may overlap and needs a permission WITH ITS REASON in _MATRIX_PERMISSIVE / _MATRIX_SAME_KEY_OK / _MATRIX_ALLOWED_PAIRS / _MATRIX_ALLOWED_KEYS",
+    )
+    # ...and the ratchet on the ratchet. An _MATRIX_OUTSTANDING line is WORK OWED, so once the defect
+    # it records is fixed the line does not merely rot - it goes on TOLERATING that many real
+    # overlaps of that pair on that map for ever, which is exactly the hole a debt register is
+    # supposed to close. (Minami's five outstanding pairs were fixed by the 016 session while the
+    # entry recording them stayed behind, so the map could have silently regressed on any of them.)
+    # Same rule, and same reason, as waivers_are_live.
+    _mx_stale = sorted(pair for pair, allow in _mx_known.items() if len(_mx_seen.get(pair, [])) < allow)
+    check(
+        "matrix_debts_still_owed",
+        not _mx_stale,
+        f"_MATRIX_OUTSTANDING still records {_mx_stale} for {_mx_name!r}, but the map no longer draws that many - the debt is PAID. Delete the line: left there it tolerates that many real overlaps of the pair for ever, which is the opposite of what a debt register is for",
     )
     # the ratchet: a drawn geometric key nobody classified
     # DERIVED from the manifest, not from a hand list - a ratchet that enumerates its own keys is

@@ -4,7 +4,8 @@ Mode B provincial city, 1 px = 3 ft, walled, `wall_defense="peaceful"`, river po
 Hayakawa, Fox clan (Nanke lineage), population **2,600**. Feature `specs/016-minami-provincial-city`.
 
 `ALL CHECKS PASSED`; `check_village.py pool/provincial-cities/minami.json --capacity` reads
-**SIZED_AND_PACKED**, 503 dwellings placed in-wall against a 520 target.
+**SIZED_AND_PACKED**, and the map draws **exactly 520** dwellings against its 520 target - the
+population check allows NO band (see below).
 
 ## What this map is the worked example of
 
@@ -28,14 +29,18 @@ the wrong direction: the declared figure is the spec's (FR-010), and if the encl
 then the enclosure is what is wrong. The skill's own doctrine says as much - if the capacity report
 wants a resize, fix the budget model, not the map.
 
-So `LAY_POP` is 2,360 and the ring comes from `plan_city` again (FR-011): **431x400 -> 471x438**,
-interior 533k -> 629k px^2. Two budget corrections paid for it, both measured off this map:
+So `LAY_POP` is 2,360 and the ring comes from `plan_city` again (FR-011): **431x400 -> a CIRCULAR
+462x462**, interior 533k -> 660k px^2. The circle is forced by the river: at aspect 0.93 the west
+wall had closed to 3px of the wharf, so the city could not grow westward at all, and raising the
+aspect spends the same interior on a rounder ring - rx FALLS (the wall steps back off the bank) while
+ry rises into open country. A river city grows along its valley, not into its own landing. Two budget
+corrections paid for the extra ground, both measured off this map:
 
 - **`temple_precinct_px2` 3,400 -> 11,600.** 3,400 priced the walled compound alone (~0.70 acre) and
   left out everything else a precinct plants in the fabric, which is what a wall has to enclose:
   hall compound block ~5,125, torii approach and its stand-clear ~1,720, caption band ~4,000,
   wayside shrines ~1,790. **The halls did not grow; only the accounting did.**
-- **A `laneway excess` extras line, 13,000 px^2.** `citybudget` allows a flat 7% of interior for
+- **A `laneway excess` extras line, 34,000 px^2.** `citybudget` allows a flat 7% of interior for
   circulation (43,675 here) and Minami draws more, because eight precincts sited by trade all have to
   be reached: the ring, street and roji BEDS alone measure 56,936. Only that measured excess is
   charged, and conservatively - it counts neither the trunk road's in-wall run nor any frontage
@@ -45,6 +50,16 @@ interior 533k -> 629k px^2. Two budget corrections paid for it, both measured of
 ~12% packing shortfall as a budget line; it is gone because the shortfall was never the wall (see
 below). And a caption band must never drive the wall size - that would inflate a to-scale plan for a
 cartographic reason, which is the one thing a to-scale mode may not do. Captions are MOVED instead.
+
+## The declared population is EXACT (GM 2026-07-27)
+
+`population_consistent_with_housing` used to allow 7%. That band is gone - `population_tol` defaults
+to `0.0` - so this map draws 520 dwellings on the nose, not "about 520". The gen ends with
+`fill_exactly()`, which asks one caste at a time for precisely the shortfall (top_up stops the moment
+that caste's tally reaches the figure asked, so it cannot overshoot), smallest footprints first.
+Two traps it has to survive, both commented at the call site: **count what the CHECK counts** (the
+local `DWELL` tuple, and a city with an agricultural district also counts in-wall farmhouses), and
+**respect the caste CEILINGS**, or the total closes while a caste leaves its band.
 
 ## The five things that cost the most to learn
 
@@ -69,8 +84,9 @@ cartographic reason, which is the one thing a to-scale mode may not do. Captions
    (`city_rows_max_two_deep`).
 
 3. **`city_row_housing_touches` cannot be won by adding rows** - they raise numerator and
-   denominator alike. Trimming the top_up fill TARGETS is the lever (208/104/130 -> 188/94/112, each
-   still clear of its caste-band floor).
+   denominator alike; the lever is trimming the top_up fill TARGETS, since a fill can never touch.
+   The per-caste targets now sit at their band FLOORS and `fill_exactly()` closes the total, which
+   keeps the ratio high and the figure exact at the same time.
 
 4. **Wells must be seated BEFORE the terraces close.** By the time the fine passes run, `open_seat`
    reports the ground genuinely full and six tight `place_wells` passes added zero wells. The extra
