@@ -77,8 +77,13 @@ push_cmd() {
   base=$(git rev-parse origin/main)
   before=$(git rev-parse HEAD)
   ours=$(git diff --name-only "$base"...HEAD | sort -u)
-  # pull+push as ONE locked unit: no other session can slip a push into the gap (CLAUDE.md step 2)
-  flock "$LOCK" sh -c 'git pull --no-rebase origin main && git push origin main'
+  # pull+push as ONE locked unit: no other session can slip a push into the gap (CLAUDE.md step 2).
+  # HEAD:main, NOT main (GM 2026-07-27): `git push origin main` pushes the local REF NAMED main and
+  # ignores what is checked out, so a session on any other branch silently pushed a stale ref and
+  # got "! [rejected] main -> main (non-fast-forward)" while `git rev-list --count origin/main..HEAD`
+  # reported it 4 ahead and 0 behind - every diagnostic says fast-forward and the error names a ref
+  # you never touched. `HEAD:main` pushes what you actually committed.
+  flock "$LOCK" sh -c 'git pull --no-rebase origin main && git push origin HEAD:main'
   theirs=$(git diff --name-only "$before"..HEAD | sort -u)
   date > "$ROOT/.git/sync-with-main.stamp"  # post-push the clone is at main's tip = synced by definition
   overlap=$(comm -12 <(printf '%s\n' "$ours") <(printf '%s\n' "$theirs"))
