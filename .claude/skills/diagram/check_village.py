@@ -310,6 +310,13 @@ _LABEL_GROUP = {
     # dense-city building), so it fell outside the classification ratchet - which iterates the
     # overlap registry - and a caption on a wellhead was invisible. Found by settlement-review 2026-07-26.
     "wells": "well",
+    # a TORII ARCH, likewise (GM 2026-07-27: an arch must "never be covered by the 'temple of X'
+    # label"). Its group word appears in no caption any map draws, so NOTHING may cover an arch -
+    # correct, because a sando's whole legibility is the ROW it makes, and a caption laid across it
+    # breaks the row into unrelated marks. The commonest offender was the hall's OWN caption, which
+    # wants the same ground the approach does. See the torii branch in the victim builder: an arch is
+    # recorded as a bare [x, y, z] triple, so the registry loop cannot pick it up on its own.
+    "torii": "torii",
 }
 # `buildings` is the one key whose group is not fixed: each record carries its own `kind`, and _grp
 # folds those kinds into groups (samurai_large -> samurai, and so on).
@@ -5216,6 +5223,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     # would classify it and still check nothing, because the builder filtered on "w".
                     _vr = float(r_["vr"])
                     vics.append((_lg, (r_["x"] - _vr, r_["y"] - _vr, r_["x"] + _vr, r_["y"] + _vr)))
+        # A TORII is recorded as a bare [x, y, z] triple, not a dict, so the loop above skipped it even
+        # once it was classified - the same trap the wellhead's `vr` branch documents, one shape further
+        # out. Its drawn extent is the true-scale glyph box (torii_halfbox), which settlement._torii and
+        # the frame checks read too.
+        _tzh, _tzu, _tzd = torii_halfbox(float(M.get("meta", {}).get("ftpx", 1) or 1))
+        for _tv in M.get("torii", []):
+            vics.append((_LABEL_GROUP["torii"], (_tv[0] - _tzh, _tv[1] - _tzu, _tv[0] + _tzh, _tv[1] + _tzd)))
 
         def _label_allows(txt: str) -> set[str]:
             t = txt.lower()
@@ -12044,6 +12058,48 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"hall(s) whose avenue strings its arches too far apart (x, y, worst gap ft): {_wide[:4]} - an avenue's arches "
             f"stand ~20 ft apart and never more than two rail-spans (32 ft); further apart they read as isolated gates, "
             f"not one approach (settlements.md 'Torii'). Author the avenue's LINE and let shrine_hall set the pitch.",
+        )
+
+        # ...AND THE AVENUE STARTS AT ITS HALL (GM 2026-07-27): "the distance from the front of the
+        # temple should be the same as the distance between each torii arch". WHY: fixing the STRIDE
+        # (above) left the other half of the same defect standing. An avenue could be perfectly spaced
+        # at 20 ft and still be authored yards from the temple it serves - Tango's Bishamon sando stood
+        # 139 ft off, three arches up a street on the far side of a flophouse, and Nagahara's Ebisu
+        # avenue began 120 ft south of its hall with the caption and two rows of houses in between.
+        # Neither read as that temple's approach; they read as red marks near some other building. So
+        # the gap from the hall's FOOTPRINT to the nearest arch is measured against the avenue's OWN
+        # pitch, and settlement._avenue_at_threshold seats it there exactly - the gen authors the
+        # LINE, the engine owns the count, the stride AND the threshold.
+        #
+        # An UPPER bound, not an equality, and the asymmetry is deliberate. The village path (the
+        # civic-shrine roll and the gens' own s.shrine + _torii runs) seats its arches at 0.6-0.9 of
+        # its 30 ft stride, which the GM approved as canon on 2026-07-22 - and that day's rule,
+        # shrine_avenue_fronts_the_hall, already owns the LOWER bound ("the innermost arch sits at the
+        # hall's threshold, not set out with a gap"). This one owns the upper, so the two meet without
+        # either forcing cosmetic churn on maps the GM has already signed off.
+        #
+        # A single arch has no pitch of its own, so it is measured against the engine's standard stride
+        # (TORII_PITCH_FT, 20 ft) - the same number _avenue_at_threshold seats it at. torii_outlier
+        # halls are exempt here as they are from the count and pitch rules: a designated donation-row
+        # site is not a 1/3/7 sando and is not measured like one.
+        _THRESH_SLACK_FT = 4.0  # rounding + the sub-foot drift a shortened run leaves behind
+        _marooned = []
+        for r in _proper:
+            _ts = _tarch[id(r)]
+            if r.get("torii_outlier") or not _ts:
+                continue
+            _near = min(_ts, key=lambda t: pt_to_rect(t[0], t[1], r))
+            _gap = pt_to_rect(_near[0], _near[1], r) * _ft
+            _pitch = min(math.hypot(a[0] - _near[0], a[1] - _near[1]) for a in _ts if a is not _near) * _ft if len(_ts) > 1 else 20.0
+            if _gap > _pitch + _THRESH_SLACK_FT:
+                _marooned.append((round(r["x"]), round(r["y"]), round(_gap), round(_pitch)))
+        check(
+            "torii_avenue_meets_the_hall",
+            not _marooned,
+            f"hall(s) whose sando starts too far out (x, y, gap to the hall ft, pitch ft): {_marooned[:4]} - the "
+            f"innermost arch stands one PITCH off the hall's front, so the gap to the temple matches the gap between "
+            f"arches; further out the avenue reads as gates belonging to nothing. Author the avenue's LINE and let "
+            f"shrine_hall seat the threshold (settlement._avenue_at_threshold).",
         )
 
     if M.get("pond"):

@@ -1136,6 +1136,49 @@ def test_shrine_clear_of_grove_trees_uses_the_canopy_radius_not_the_nominal_clum
     assert "shrine_clear_of_grove_trees" in f(M)
 
 
+def test_torii_avenue_meets_the_hall_fires_on_a_sando_authored_away_from_its_temple():
+    # GM 2026-07-27: the arches were spaced right and the whole run stood yards from the temple.
+    # Here the hall's front edge is y540 and the avenue starts at y640 - 300 real ft out - while its
+    # own arches stand 60 ft apart. An approach that does not reach its hall is not an approach.
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "religious": [{"kind": "temple", "label": "T", "x": 500, "y": 500, "w": 100, "h": 80, "torii_count": 3}],
+        "torii": [[500, 640, 1], [500, 660, 1], [500, 680, 1]],
+    }
+    assert "torii_avenue_meets_the_hall" in f(M)
+
+
+def test_torii_avenue_meets_the_hall_passes_when_the_gap_matches_the_pitch():
+    # the same avenue seated one pitch off the hall's front (y540 + 20px) is exactly the rule
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "religious": [{"kind": "temple", "label": "T", "x": 500, "y": 500, "w": 100, "h": 80, "torii_count": 3}],
+        "torii": [[500, 560, 1], [500, 580, 1], [500, 600, 1]],
+    }
+    assert "torii_avenue_meets_the_hall" not in f(M)
+
+
+def test_torii_avenue_meets_the_hall_spares_the_villages_tighter_threshold():
+    # an UPPER bound only: the village path seats its arches at 0.6-0.9 of its 30 ft stride, which
+    # shrine_avenue_fronts_the_hall (GM 2026-07-22) already governs from the other side. The two
+    # rules meet without either forcing churn on maps the GM has signed off.
+    M = {
+        "meta": {"scale": "village", "ftpx": 2},
+        "religious": [{"kind": "shrine", "x": 500, "y": 500, "w": 30, "h": 20, "torii_count": 3}],
+        "torii": [[500, 519, 1], [500, 534, 1], [500, 549, 1]],
+    }
+    assert "torii_avenue_meets_the_hall" not in f(M)
+
+
+def test_labels_clear_of_other_buildings_fires_on_a_caption_over_a_torii_arch():
+    # GM 2026-07-27: an arch is "never covered by the 'temple of X' label" - and the hall's OWN
+    # caption was the commonest offender, since caption and sando both want the ground at the front.
+    # A torii is a bare [x, y, z] triple, so it needed its own branch in the victim builder; before
+    # that it was classified and still checked nothing.
+    M = {"meta": {"scale": "city", "ftpx": 3}, "labels": [[480, 552, 620, 566, 5, "Temple of Bishamon"]], "torii": [[500, 560, 1]]}
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
 def test_torii_clear_of_grove_trees_fires_when_a_clump_covers_the_arch():
     # a fengshui-grove tree clump sitting on a torii arch reads as the arch buried in the wood
     M = {"meta": {"scale": "village"}, "torii": [[500, 500, 1]], "village_groves": [{"role": "water_mouth", "r": 14, "clumps": [[505, 504]]}]}
