@@ -4720,6 +4720,36 @@ def test_remote_shrine_among_the_houses_is_exempt():
     assert "remote_shrine_has_own_well" not in f(M)
 
 
+def test_wells_clear_of_paddies_fires_on_a_well_in_the_fan():
+    # GM 2026-07-27: "wells on dry crops are okay, but not in rice paddies, surely". A paddy is a
+    # puddled, bunded basin held under standing water - a wellhead drawn in one stands in the water
+    # it is an alternative to. Nothing saw it before: _well_ground_clear refused a stream, channel,
+    # ditch, canal, pond and DRY plot but never a wet one, and the overlap matrix classes `fields`
+    # PADDY_RECONSTRUCTED (permissive) because a plot polygon is not stored. The real instance is
+    # frozen in pool/regressions/ (Tango's well laid against a drawn basin of the fe1 fan).
+    basin = [[600, 600], [900, 600], [900, 900], [600, 900]]
+    paddy = {"name": "f1", "kind": "paddy", "outline": [[400, 400], [900, 400], [900, 900], [400, 900]], "bbox": [400, 400, 900, 900], "plot_polys": [basin]}
+    inside = manifest(fields=[paddy], wells=[well(750, 750)], houses=[house(750, 950)])
+    assert "wells_clear_of_paddies" in f(inside)
+    outside = manifest(fields=[paddy], wells=[well(750, 990)], houses=[house(750, 950)])
+    assert "wells_clear_of_paddies" not in f(outside)
+    # the DRAWN head may not lap a basin either - the same strictness as the dry-plot rule
+    grazing = manifest(fields=[paddy], wells=[well(750, 594, vr=12)], houses=[house(750, 950)])
+    assert "wells_clear_of_paddies" in f(grazing)
+    # ...but the fan's unplanted RIM SLACK stays legal: inside the smoothed envelope, clear of every
+    # drawn basin. That margin is where farm_wells seats the well of a steading boxed in by crop, and
+    # reading the envelope as water instead is what left Tango's east pair with no seat at all
+    slack = manifest(fields=[paddy], wells=[well(450, 450)], houses=[house(450, 950)])
+    assert "wells_clear_of_paddies" not in f(slack)
+    # a field recording NO drawn basins falls back to its outline, so the rural tiers - which record
+    # none - are not silently exempt from a rule the cities are held to
+    unplotted = manifest(fields=[{k: v for k, v in paddy.items() if k != "plot_polys"}], wells=[well(450, 450)], houses=[house(450, 950)])
+    assert "wells_clear_of_paddies" in f(unplotted)
+    # ...and a DRY plot is expressly allowed: this rule is about standing water, not about crops
+    dry = manifest(dry_plots=[{"poly": [[400, 400], [900, 400], [900, 900], [400, 900]], "crop": "barley"}], wells=[well(650, 650)], houses=[house(650, 940)])
+    assert "wells_clear_of_paddies" not in f(dry)
+
+
 def test_wells_among_dwellings_fires_on_a_stray_well():
     # a well far out in open country, no house beside it
     assert "wells_among_dwellings" in f(_rural("village", [(300, 300)], [(900, 900)]))
@@ -9697,3 +9727,42 @@ def test_burakumin_quarter_segregated_passes_across_a_real_seam():
     # The control for the ratchet entry: 60 ft of open ground between the walls is the rule met.
     M = manifest(meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000}, buildings=[bldg(500, 500, kind="burakumin", w=38, h=26), bldg(500 + 19 + 17 + 61, 500, kind="laborer", w=34, h=24)])
     assert "burakumin_quarter_segregated" not in f(M)
+
+
+# --- city_ward_fence_joins_wall_not_crosses (a neighborhood wall ENDS at the rampart) -----------
+def _ward_wall(boundary, **extra):
+    """A ward fence against the square WALL enclosure, with the engine's recorded stroke widths."""
+    return manifest(wall=WALL, wall_stroke=11.0, wards=[{"boundary": boundary, "stroke": 5.0}], **extra)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_fires_on_an_end_poking_through():
+    # the fence runs up to the north rampart (y50) and out the far side by 10px
+    M = _ward_wall([[500, 400], [500, 40]])
+    assert "city_ward_fence_joins_wall_not_crosses" in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_clear_when_the_end_lands_on_the_centerline():
+    # ending ON the wall line is the JOIN: the 2.5px linecap tip stays inside the 5.5px rampart band
+    M = _ward_wall([[500, 400], [500, 50]])
+    assert "city_ward_fence_joins_wall_not_crosses" not in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_reads_the_INK_not_the_vertex():
+    # the Minami shape, and the reason the defect shipped green: the end vertex sits only 4px
+    # outside the wall - well inside city_ward_fence_meets_wall's 10px tolerance, so THAT check
+    # passes - but the fence's round linecap inks 2.5px further, putting 1px of palisade past the
+    # rampart's 5.5px half-width. Testing the recorded coordinate alone would see nothing here.
+    M = _ward_wall([[500, 400], [500, 46]])
+    assert "city_ward_fence_meets_wall" not in f(M)
+    assert "city_ward_fence_joins_wall_not_crosses" in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_fires_on_a_crossing_mid_run():
+    # both ENDS are inside; the fence dives out through the north rampart and back mid-run
+    M = _ward_wall([[400, 400], [500, 20], [600, 400]])
+    assert "city_ward_fence_joins_wall_not_crosses" in f(M)
+
+
+def test_city_ward_fence_joins_wall_not_crosses_ignores_a_degenerate_boundary():
+    M = _ward_wall([[500, 400]])
+    assert "city_ward_fence_joins_wall_not_crosses" not in f(M)

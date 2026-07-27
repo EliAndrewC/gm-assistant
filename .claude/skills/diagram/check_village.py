@@ -41,7 +41,9 @@ from settlement import (
     lane_runs,
     lane_through_gate,
     moat_current_at,
+    paddy_wet_rings,
     rail_quad,
+    ring_touches,
     sat_overlap,
     torii_wall_conflicts,
     trough_quad,
@@ -4441,6 +4443,63 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"straight stub - which renders as two wall sections overlapping instead of one bent wall (settlement.ward)",
         )
 
+    # JOIN, DON'T INTERSECT - the WALL member of a family the ways and the watercourses already had
+    # (GM 2026-07-27, on Minami: "the neighborhood walls stick out the other side of the city walls").
+    # Where two linear features meet, one of them ENDS at the junction: a lane terminates at the
+    # through-lane it reaches rather than poking a stub out the far side
+    # (city_streets_no_intersection_stub, city_streets_meet_through_lanes), and a watercourse joins at
+    # a T or a Y rather than crossing (water_channels_join_not_cross, channels_join_water_not_cross).
+    # A neighborhood (ward) fence meeting the city rampart is the same junction and was the one member
+    # of the family nobody had stated: the fence ENDS at the wall, because the wall is what seals it -
+    # a palisade continuing out through the rampart into the fields encloses nothing and reads as two
+    # walls crossing at an intersection.
+    #
+    # city_ward_fence_meets_wall is the mirror rule (the UNDERSHOOT - a gap the commoners walk around)
+    # and deliberately allows ~10px of slop in EITHER direction, which is why this defect shipped
+    # green: Minami's two fence ends sat 4.2 and 4.9px OUTSIDE the wall ring, well inside that
+    # tolerance. The overshoot has to be measured against the DRAWN ink instead, and it is small
+    # numbers all the way down - the rampart's stroke covers only its own half-width (11/2 = 5.5px),
+    # while the fence is stroked with a ROUND LINECAP that inks half a stroke-width (5/2 = 2.5px) past
+    # its last recorded vertex. So 4.9 + 2.5 = 7.4px of fence against 5.5px of wall left a ~2px tan
+    # nub outside the rampart - at a city's 1px = 3ft, about 6ft of palisade standing in the moat
+    # berm. Both widths come from the engine's own records (M['wall_stroke'], the ward's 'stroke') so
+    # placement and check read the same source; the literals are the fallback for manifests written
+    # before those records existed.
+    if _wall_ring:
+        _wall_half = float(M.get("wall_stroke", 11.0)) / 2
+        _poke = []
+        for wd in M.get("wards", []):
+            _bnd = [(p[0], p[1]) for p in wd.get("boundary", [])]
+            if len(_bnd) < 2:
+                continue
+            _cap = float(wd.get("stroke", 5.0)) / 2  # the round linecap inks this far past the tip
+            # probe every vertex; the two ENDS are pushed out by the cap radius along their own
+            # terminal segment, so what is tested is the ink, not the recorded coordinate. Interior
+            # vertices are probed bare - a fence that dives out through the rampart and back mid-run
+            # is the same crossing, just further from the end.
+            _probes: list[tuple[float, float]] = []
+            for _vi, (_vx, _vy) in enumerate(_bnd):
+                _in = _bnd[1] if _vi == 0 else _bnd[-2] if _vi == len(_bnd) - 1 else None
+                if _in is None:
+                    _probes.append((_vx, _vy))
+                    continue
+                _dx, _dy = _vx - _in[0], _vy - _in[1]
+                _dl = math.hypot(_dx, _dy) or 1.0
+                _probes.append((_vx + _dx / _dl * _cap, _vy + _dy / _dl * _cap))
+            for _tx, _ty in _probes:
+                _out = min(seg_dist(_tx, _ty, _ring[_i], _ring[_i + 1]) for _i in range(len(_ring) - 1)) - _wall_half
+                if _out > 0 and not point_in_poly(_tx, _ty, _wrng):
+                    _poke.append((round(_tx), round(_ty), round(_out, 1)))
+        check(
+            "city_ward_fence_joins_wall_not_crosses",
+            not _poke,
+            f"neighborhood (ward) fence ink OUTSIDE the city wall (x, y, px past the rampart's outer face): {_poke[:4]} - "
+            f"a ward fence JOINS the rampart, it does not cross it: the fence ENDS where the wall seals it, so no part of "
+            f"the palisade may stick out the far side into the berm. Same rule the lanes and the watercourses follow "
+            f"(city_streets_no_intersection_stub, water_channels_join_not_cross). Snap the fence's end vertex onto the "
+            f"wall centerline - s.ward does this automatically, so a hit here means the end was placed out of its reach",
+        )
+
     # A walled COMPOUND (mausoleum / manor) whose wall sits ALONG a neighborhood (ward) fence must
     # YIELD that wall to the fence: the fence is re-stamped on top and IS that side of the compound,
     # so there is no doubled, clashing parallel wall (s.mausoleum / s.manor do this automatically and
@@ -5413,6 +5472,37 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not stray,
             f"well(s) standing in open ground with no building within ~95px - a well serves the households around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}",
         )
+
+        # AND NOT IN A RICE PADDY (GM 2026-07-27: "wells on dry crops are okay, but not in rice
+        # paddies, surely"). A paddy is a puddled, bunded basin held under standing water through the
+        # growing season: a wellhead drawn in one is standing in the water it is supposed to be an
+        # alternative to, and a shaft sunk there takes the field's own surface water. Dry crops are
+        # a different matter and stay allowed - a hatake plot is worked ground you can walk on.
+        #
+        # THE GAP THIS CLOSES, which was wider than it looked. `_well_ground_clear` already refused a
+        # stream, channel, ditch, canal, pond and DRY plot, its docstring saying "you do not dig one
+        # in the middle of a crop plot" - the wet plots, where it matters most, were simply never
+        # added. Nor could the overlap matrix catch it: `fields` is classed PADDY_RECONSTRUCTED, i.e.
+        # permissive, because a plot's polygon is not stored and its rebuilt extent is too
+        # approximate to accuse anything with. So this is one of the "precise paddy checks" that
+        # class defers to. It reads `paddy_wet_rings` - the DRAWN basins where a field records them,
+        # the outline where it does not - which is the same water the SITER reads, so the two cannot
+        # disagree; that helper carries the why of both halves. Note what the drawn-basin reading
+        # deliberately still ALLOWS: the fan's unplanted rim slack, inside the smoothed envelope but
+        # clear of every basin, which is legitimate margin ground and is where a boxed-in steading's
+        # well goes. Strictness matches the dry-plot rule exactly - the DRAWN head may not lap water.
+        wet_rings = paddy_wet_rings(M)
+        if wet_rings:
+            in_paddy = []
+            for wl in all_wells:
+                vr_w = float(wl.get("vr") or wl.get("r") or 8.0)
+                if any(ring_touches(wl["x"], wl["y"], vr_w, ring) for ring in wet_rings):
+                    in_paddy.append((round(wl["x"]), round(wl["y"])))
+            check(
+                "wells_clear_of_paddies",
+                not in_paddy,
+                f"wellhead(s) at {in_paddy[:4]} standing in a rice paddy - a paddy is flooded and bunded, so a well cannot be sunk in one (a DRY plot is different and is allowed, and so is the fan's unplanted rim slack); move the head onto the dooryard/margin ground it serves",
+            )
 
         # THE WELL IS A LOCATION MARKER under the stroke convention (GM ruling 2026-07-21): a real
         # curb is ~3-4 ft (sub-glyph at every scale), so the wellhead marks the well's TO-SCALE

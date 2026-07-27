@@ -313,6 +313,23 @@ def test_clear_label_seat_walks_out_and_gives_up_when_nothing_is_clear():
     assert not s.label_seat_clear(500, 517, 26.0)
 
 
+def test_a_wellhead_is_refused_in_the_paddy_water_and_allowed_on_the_rim():
+    # the PLACEMENT half of wells_clear_of_paddies - both halves read paddy_wet_rings, so the siter
+    # and the check cannot disagree about where the water is (the same-source doctrine)
+    s = _town()
+    basin = [[600, 600], [900, 600], [900, 900], [600, 900]]
+    s.M["fields"] = [{"name": "f1", "kind": "paddy", "outline": [[400, 400], [900, 400], [900, 900], [400, 900]], "plot_polys": [basin]}]
+    assert not s._well_ground_clear(750, 750)  # in the water
+    assert not s._well_ground_clear(750, 594)  # the drawn head laps a basin's edge
+    assert s._well_ground_clear(450, 450)  # the fan's unplanted rim slack, inside the envelope
+    s.M["fields"][0]["plot_polys"] = [[[0, 0], [1, 1]]]  # a field drawing no real basins...
+    assert not s._well_ground_clear(450, 450)  # ...falls back to its outline, as the rural tiers do
+    s.M["fields"][0]["outline"] = [[0, 0]]  # and one drawing nothing at all contributes no water
+    assert s._well_ground_clear(450, 450)
+    s.M["fields"][0]["kind"] = "dry"  # a DRY field is not this rule's business
+    assert s._well_ground_clear(750, 750)
+
+
 def test_stroke_quads_makes_one_quad_per_segment():
     qs = settlement.stroke_quads([(0, 0), (100, 0), (100, 100)], 5.0)
     assert len(qs) == 2 and all(len(q) == 4 for q in qs)
@@ -5291,3 +5308,47 @@ def test_theater_stage_caption_clears_the_rotated_ground():
         assert text == "theater stage"
         assert tuple(round(v) for v in bx) == box, f"rot={rot}: caption boxed against the wrong extent"
         assert tuple(round(v) for v in hi) == hint, f"rot={rot}: caption hinted at the wrong seat"
+
+
+# --- a neighborhood wall JOINS the city wall (GM 2026-07-27, Minami) ----------------------------
+def _walled(gates=()):
+    s = Settlement(1000, 1000, seed=1)
+    s.city_wall([(200, 200), (800, 200), (800, 800), (200, 800)], gates=gates)
+    return s
+
+
+def test_ward_fence_end_snaps_onto_the_wall_ALONG_ITS_OWN_AXIS():
+    # GM 2026-07-27: "the neighborhood walls stick out the other side of the city walls". The end is
+    # placed 20px past the north rampart (y200) on an OBLIQUE run, which is what separates the two
+    # candidate fixes: trimming back along the fence's own terminal segment lands at x=556.8, while
+    # a perpendicular snap to the nearest point on the wall would land at x=560 and kink the last
+    # stretch off the line the gen drew. Same rule city_streets_meet_through_lanes states for a lane.
+    s = _walled()
+    s.ward("samurai", [(500, 560), (560, 180)], gates=[])
+    end = s.M["wards"][-1]["boundary"][-1]
+    assert end == pytest.approx([556.8, 200.0], abs=0.1)
+    assert s.M["wards"][-1]["stroke"] == 5.0 and s.M["wall_stroke"] == 11.0
+
+
+def test_ward_fence_end_parallel_to_the_wall_falls_back_to_the_nearest_point():
+    # a terminal segment running ALONG the rampart never crosses it, so there is no axis to extend
+    # down - the honest answer is the foot of the perpendicular
+    s = _walled()
+    s.ward("samurai", [(400, 206), (600, 206)], gates=[])
+    bnd = s.M["wards"][-1]["boundary"]
+    assert bnd[0] == pytest.approx([400.0, 200.0], abs=0.1)
+    assert bnd[-1] == pytest.approx([600.0, 200.0], abs=0.1)
+
+
+def test_ward_fence_end_far_from_the_wall_is_left_exactly_where_the_gen_put_it():
+    # an end nowhere near the rampart is not a junction at all but a fence that FAILS to reach it -
+    # city_ward_fence_meets_wall's defect to report. Dragging it silently would hide that.
+    s = _walled()
+    s.ward("samurai", [(500, 700), (500, 400)], gates=[])
+    assert s.M["wards"][-1]["boundary"][-1] == [500.0, 400.0]
+
+
+def test_ward_fence_without_a_city_wall_is_left_alone():
+    s = Settlement(1000, 1000, seed=1)
+    s.ward("samurai", [(500, 700), (500, 400)], gates=[])
+    assert s.M["wards"][-1]["boundary"] == [[500.0, 700.0], [500.0, 400.0]]
