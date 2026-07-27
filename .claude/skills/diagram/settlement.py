@@ -7740,7 +7740,9 @@ class Settlement:
         fine - over-clearing by a few px reads the same)."""
         self._clear_ground(x, y, w, h, extra)
 
-    def cemetery(self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool | None = None) -> None:
+    def cemetery(
+        self, cx: float, cy: float, w: float, h: float, rot: float = 0, label: Any = None, label_above: bool = False, parish: bool = True, organic: bool | None = None, label_xy: Pt | None = None
+    ) -> None:
         """A BURIAL GROUND - rows of grave markers (sotoba / stone stelae) with a couple of taller
         memorial stupas. Every settlement above a hamlet buries its dead: a Buddhist danka PARISH
         ground sits in a TEMPLE / MONASTERY precinct (death is the Buddhist clergy's business), while
@@ -7796,7 +7798,10 @@ class Settlement:
         self._clear_ground(cx, cy, w, h, 30)  # the tended grave collar - scrub trimmed back off the markers (the waste around it stays scrubby)
         if label:
             ly = cy - h / 2 - 8 if label_above else cy + h / 2 + 14
-            self.label(cx, ly, label, 11, italic=True, color="#6B5A3C")
+            # label_xy slides the caption ALONG the plot it names (it must still hug it) - a parish
+            # graveyard often sits shoulder to shoulder with its temple, and the two captions can meet
+            _lx, _ly = label_xy if label_xy else (cx, ly)
+            self.label(_lx, _ly, label, 11, italic=True, color="#6B5A3C")
 
     def _ward_fence_cap(self, a: Any, b: Any, tol: float = 16) -> int | None:
         """If the axis-aligned wall segment a-b runs ALONG a neighborhood (ward) fence, re-stamp the
@@ -8061,7 +8066,7 @@ class Settlement:
             # (kiln, tanning yard), whose small glyphs the default below-label can land on
             self.label(cx, cy - hh - 8 if label_above else cy + hh + 13, label, 11, italic=True, color="#6B5A3C")
 
-    def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone") -> None:
+    def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone", label_xy: Pt | None = None) -> None:
         """A DOSOJIN (sae no kami) stone at the settlement's ritual boundary - where the road leaves
         clean ground. Usually a paired male-female figure carved on one stone.
 
@@ -8088,7 +8093,10 @@ class Settlement:
         self.M["boundary_markers"].append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "vw": round(vw, 1), "vh": round(vh, 1), "rot": round(rot, 1), "label": label})
         self.placed.append((x, y, vw, vh))
         if label:
-            self.label(x, y + hh + 10, label, 8, italic=True, color="#6B5A3C")
+            # the default below-seat lands on the road the stone stands beside, which at a city gate
+            # is the gate throat itself - label_xy hands it to open ground (Nagahara's east gate)
+            _lx, _ly = label_xy if label_xy else (x, y + hh + 10)
+            self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C")
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary") -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
@@ -8849,7 +8857,25 @@ class Settlement:
         ring = list(pts) + [pts[0]]
         # the rampart renders in the WALL layer (over the ground lanes - a street running into the wall
         # passes UNDER it) with a GENUINE gap at each gate, so the road shows through the opening
-        dd = self._gapped_ring(ring, gates, 38, water_gates=water_gates)
+        # TRUE SCALE for the gate THROAT (GM 2026-07-27, closing bookend on Minami). The 2026-07-22
+        # pass converted the gate furniture's FOOTPRINTS to real feet but left the OFFSETS that
+        # POSITION them as fixed pixels, so at a city's 1 px = 3 ft everything stood three times too
+        # far apart: the wall opened a 2*38 = 76 px = 228 ft hole, the piers stood +-35 px = +-105 ft
+        # apart, and the guard buildings were set back from a "26" roadway that was really 78 ft wide.
+        # A 228 ft opening is not a gate - no leaf spans it, it cannot be shut, and it forces none of
+        # the single file an inspection barrier exists to create. On the render it read as a plain
+        # breach in the rampart, which is what sent us looking; every check still passed, because the
+        # posts existed, flanked the road symmetrically and cleared the moat. Anchors, China first: a
+        # Ming provincial city's gate tunnel runs ~13-23 ft clear (Nanjing Zhonghua ~23 ft, Xi'an
+        # ~20 ft), and an Edo castle-town koraimon is narrower again. The trunk road entering is 26 ft,
+        # and a gate NARROWS its road rather than widening for it, so the throat passes the road and no
+        # more. Sizes in FEET through px(), so a town at 1 px = 1 ft is unaffected.
+        gate_clear, pier_ft = 30.0, 15.0  # clear opening; masonry pier across (matches the pier footprint below)
+        gate_gap = self.px(gate_clear) / 2 + self.px(pier_ft)  # HALF the wall opening: the clear throat plus one pier each side
+        pier_off = self.px(gate_clear) / 2 + self.px(pier_ft) / 2  # pier centre, inner face landing on the jamb
+        # A cargo canal is wider than a road - Minami's is 36 ft - and a Suzhou-pattern shuimen sets its
+        # arch INTO the wall with a pier to either side, so the opening is the canal plus ~12 ft a side.
+        dd = self._gapped_ring(ring, gates, gate_gap, water_gates=water_gates, water_gap=self.px(60.0) / 2)
         self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add_wall(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
         cx = sum(p[0] for p in pts) / len(pts)
@@ -8887,8 +8913,8 @@ class Settlement:
             _rl = math.hypot(_rox, _roy) or 1.0
             _rox, _roy = _rox / _rl, _roy / _rl  # unit radial OUTWARD
             for _side in (-1, 1):
-                _pcx = gx + _tx * 35 * _side - _rox * 10.5  # offset along the wall, shifted inward so
-                _pcy = gy + _ty * 35 * _side - _roy * 10.5  # the post projects ~5px out / ~26px in
+                _pcx = gx + _tx * pier_off * _side - _rox * self.px(31.5)  # offset along the wall, shifted inward so
+                _pcy = gy + _ty * pier_off * _side - _roy * self.px(31.5)  # the post projects ~5 ft out / ~78 ft in
                 _pw, _ph = self.px(15), self.px(24)  # TRUE SCALE (was 14x31 px = ~42x93 ft): a gate masonry pier ~15 ft across x ~24 ft along the opening
                 self.add_wall(
                     f'<g transform="translate({_pcx:.1f},{_pcy:.1f}) rotate({tang[g_idx]:.1f})"><rect x="{-_pw / 2:.1f}" y="{-_ph / 2:.1f}" width="{_pw:.1f}" height="{_ph:.1f}" fill="{wc}"/></g>'
@@ -8910,7 +8936,10 @@ class Settlement:
             # the road at the gate, the road passing between them.
             g_east = any(abs(gx - ex) < 2 and abs(gy - ey) < 2 for (ex, ey) in guard_east)
             gh_west = not g_east  # guard house on the WEST flank by default; guard_east flips it east (inspection takes the other verge)
-            road_half = self.M.get("road_width", 26) / 2  # city_wall runs before s.road, so this is the Imperial-road default
+            # px(26): city_wall runs before s.road, so this falls back to the Imperial-road default -
+            # which is a width in FEET and must be converted, or a city sets its guard buildings back
+            # from a roadway three times wider than the one that will actually be drawn (GM 2026-07-27).
+            road_half = self.M.get("road_width", self.px(26)) / 2
             # TRUE SCALE (GM 2026-07-22, was fixed-pixel 66x44 / 60x44 = ~198x132 / 180x132 ft at 3 ft/px -
             # a guardhouse drawn bigger than a temple): footprints in REAL FEET via px(). A gate guard duty
             # room is a small 1-3 bay building (~34x20 ft, upper end of the 15-35 ft attested range); a gate

@@ -174,7 +174,8 @@ s.drum_tower(1500, 1362)
 # early so every later pack/frontage flows around them. Nagahara is a RIVER PORT (meta
 # river_port=True): it keeps ALL of them, including the riverside lumber yard at the wharf.
 s.brewery(1568, 1075)  # NE quarter, clear of the x1605 street - the town's largest commercial building
-s.dye_yard(1855, 1428)  # on the in-wall cargo canal, west of the dock basin
+s.dye_yard(1855, 1416)  # on the in-wall cargo canal, west of the dock basin; pulled 26 px north so its
+# auto-caption clears the dock at (1809,1455) - a collision invisible until `docks` was classified for labels (2026-07-27)
 s.lumber_yard(1994, 1456)  # the wharf's zaimokuya on the dry tongue between the moat outflow and the river (grid-scanned: ~20px clear of every waterline, still within the bank's reach) - lumber_yard_clear_of_water: stacks stand on DRY ground; the landing is the jetty's job
 s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street, west of Bishamon's graveyard (its old 1130,1180 seat sat under the Temple of Bishamon caption)
 s.pawnshop(1620, 1240)  # NE merchant quarter
@@ -1021,7 +1022,10 @@ s.ossuary(2290, 1650)
 # better (it is more closely aligned with the outcast side than the old one), and the crop is
 # tighter for free. crop_not_held_open_by_one_feature does not catch this: it hunts a LONE outlier
 # (gap > 3x its own size) and here the outermost pair was the ground and its own caption.
-s.boundary_marker(1952, 1308)  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
+# label_xy: the default below-seat put the caption across the gate throat. That was invisible while the
+# throat was 228 ft wide (GM 2026-07-27, settlements/cities/defenses.md) - the piers stood so far apart
+# the text fell in the gap between them; at the true 30 ft opening the caption sits ON a gatepost.
+s.boundary_marker(1952, 1308, label_xy=(1952, 1291))  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
 s.execution_ground(2244, 1502, rot=8, label_above=True)  # the default below-label lands on the tile kiln at (2210,1520)
 
 

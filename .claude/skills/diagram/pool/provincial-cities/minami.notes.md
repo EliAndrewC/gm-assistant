@@ -131,3 +131,41 @@ but was live, PID 107349). During that window the generator LOOKED nondeterminis
 source hash, different manifest - because the source was changing between runs. It is deterministic:
 identical source gives byte-identical output, verified. Before inheriting a clone, check
 `ps -eo pid,etime,cmd | grep claude`.
+
+## What the closing bookend and the independent review found (2026-07-27)
+
+`check_village` was green the whole time. Both passes below looked at the RENDER.
+
+- **The gate was a breach, not a gate.** Every city in the pool opened a `2 x 38` px hole with piers
+  `+-35` px apart - **228 ft** of opening, **210 ft** between the piers, against a 26 ft trunk road.
+  The 2026-07-22 to-scale pass had converted the gate furniture's FOOTPRINTS to real feet and left
+  the OFFSETS that position them as fixed pixels; `road_half` spent a `road_width` default that is a
+  width in FEET as PIXELS. Now 30 ft clear with 15 ft piers, water gate 60 ft, all through `px()`.
+  Deliberately NO new check - see `settlements/cities/defenses.md` for why one could not catch it.
+- **Five caption collisions**, four invisible to `no_label_overlaps`: its 2 px horizontal slack is
+  sized for estimation error, and both the bold-serif and italic faces put ink outside the measured
+  box. `oil press` x `Temple of Bishamon` (0.7 px), `Temple of Daikoku` x `graveyard` (a 2.0 px gap
+  that reads run-on), `punishment ground` and `dojo` both through the ward kido's guard post, and
+  `boundary stone` through a gate-market stall.
+- **`kido` and `docks` were unclassified for labels.** The ratchet iterates the overlap registry and
+  `matrix_extents` SKIPS the permissive classes, so every `FIXTURE` key is unreachable by it - the
+  identical hole `wells` fell through a day earlier. Classifying `docks` immediately caught a real
+  pre-existing collision on Nagahara (`dye works` over its dock). Six FIXTURE keys are still
+  unclassified, written down as knowingly open in `check_village.py`.
+- **The dock basin had no caption at all** and reads as an ornamental pond. Now "cargo basin".
+
+### Still wrong, recorded rather than fixed
+
+- **The three country estates are invisible** - one painted over by a paddy (draw order: the compound
+  is emitted ~121k SVG characters before the plot that covers it), two outside the rendered view. The
+  caption names three and points at none, and the caste band counts all three. Both fixes reflow the
+  rural belt, and `farmsteads()` on the city path spaces house-to-house without measuring the ANNEX
+  envelope, so any reflow drops a pair whose garden overlaps a neighbor's shed by a fraction of a
+  pixel. The fix that holds is the packer's annex clearance. Full reasoning at the `EST` block.
+- **The timber and charcoal ground is drawn as a livestock pen.** `s.animal_ground(...)` records into
+  `stable_yards` with troughs, hitching rails and dung heaps - so the map's declared economic
+  centerpiece, 3.7 acres and an 18,100 px^2 budget line, is indistinguishable from the north gate's
+  marshalling yard. Needs a `timber_yard` glyph (log ricks, sawpit, charcoal godowns) on the same
+  deferred `flush_stable_yards` path, plus the charcoal kiln the docstring promises and the map lacks.
+- **The budget charges two gate marshalling grounds and one is drawn** (4,536 px^2 of wall bought for
+  ground that is not there).
