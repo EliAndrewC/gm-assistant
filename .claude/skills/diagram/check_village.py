@@ -961,7 +961,7 @@ def edge_gap(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
 
     Centers remain correct for CLASSIFICATION ("which ward is this in" - a building belongs to one
     ward, not 0.6 of one), for ASSOCIATION/REACH whose tolerance dwarfs the footprints, and for
-    PREFILTERS. See the dev-loop doc, "Centres, footprints, and aggregates"."""
+    PREFILTERS. See the dev-loop doc, "Centers, footprints, and aggregates"."""
     da, db = _gap_disc(a), _gap_disc(b)
     if da is not None and db is not None:
         return max(0.0, math.hypot(da[0] - db[0], da[1] - db[1]) - da[2] - db[2])
@@ -2846,19 +2846,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     _fr_stables = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
 
     def _fr_poly(o_: dict[str, Any]) -> list[tuple[float, float]]:
-        hw_, hh_ = o_["w"] / 2, o_["h"] / 2
-        th_ = math.radians(o_.get("rot") or 0.0)
-        c_, s_ = math.cos(th_), math.sin(th_)
-        return [(o_["x"] + dx_ * c_ - dy_ * s_, o_["y"] + dx_ * s_ + dy_ * c_) for dx_, dy_ in ((-hw_, -hh_), (hw_, -hh_), (hw_, hh_), (-hw_, hh_))]
+        return rect_corners(_struct_rect(o_))
 
-    def _fr_gap(p_: list[tuple[float, float]], q_: list[tuple[float, float]]) -> float:
-        """Exact clear distance between two (possibly rotated) footprints; negative if they touch.
-        Rotation-EXACT on purpose: the half-diagonal approximation the overlap checks use is fine
-        for "do these collide" but would demand ~28 extra feet of gap around a rotated stables and
-        push the forge absurdly far off its own yard."""
-        if sat_overlap(p_, q_):
-            return -1.0
-        return min(seg_dist(vx_, vy_, r_[i_], r_[(i_ + 1) % 4]) for a_, r_ in ((p_, q_), (q_, p_)) for vx_, vy_ in a_ for i_ in range(4))
+    # `_fr_gap` is gone: it was feature 016's own exact footprint-gap helper, written before
+    # `edge_gap` existed and doing the same job by the same method. Two correct helpers for one
+    # question is how the three WRONG conventions got started, so the call sites now use edge_gap
+    # and take records rather than pre-built corner lists (GM, 2026-07-27). The only behavioral
+    # difference is that an overlap now reads 0.0 instead of -1.0, which every call site - all of
+    # them `< some_positive_gap` - treats identically.
 
     _fr_orphan = [(round(f_["x"]), round(f_["y"])) for f_ in _fr_all if not _fr_stables or min(math.hypot(f_["x"] - b_["x"], f_["y"] - b_["y"]) for b_ in _fr_stables) > 250.0 / _fr_ftpx]
     check(
@@ -2868,8 +2863,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     )
     _fr_tight = []
     for _fr in _fr_all:
-        _frp = _fr_poly(_fr)
-        if any(_fr_gap(_frp, _fr_poly(_fo)) < 6.0 / _fr_ftpx for _frk in _OVERLAP_STRUCTS + ("manors", "religious") if _frk != "farriers" for _fo in M.get(_frk, []) or []):
+        if any(edge_gap(_fr, _fo) < 6.0 / _fr_ftpx for _frk in _OVERLAP_STRUCTS + ("manors", "religious") if _frk != "farriers" for _fo in M.get(_frk, []) or []):
             _fr_tight.append((round(_fr["x"]), round(_fr["y"])))
     check(
         "farrier_keeps_fire_gap",
@@ -3059,8 +3053,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # that is its entire reason for existing.
     _cy_tight = []
     for _cy in _cy_all:
-        _cyp = _fr_poly(_cy)
-        _cy_near = [_o for _o in solid_structs(M, "manors", "religious", exclude=("charcoal_yards",)) if _fr_gap(_cyp, _fr_poly(_o)) < 30.0 / _cd_ftpx]
+        _cy_near = [_o for _o in solid_structs(M, "manors", "religious", exclude=("charcoal_yards",)) if edge_gap(_cy, _o) < 30.0 / _cd_ftpx]
         if _cy_near:
             _cy_tight.append((round(_cy["x"]), round(_cy["y"])))
     check(
@@ -3093,8 +3086,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # a fuel stack, but somebody is standing at it).
         _rf_close = []
         for _rf2 in _rf_all:
-            _rfp = _fr_poly(_rf2)
-            if any(_fr_gap(_rfp, _fr_poly(_h)) < 60.0 / _cd_ftpx for _h in _rf_homes):
+            if any(edge_gap(_rf2, _h) < 60.0 / _cd_ftpx for _h in _rf_homes):
                 _rf_close.append((round(_rf2["x"]), round(_rf2["y"])))
         check(
             "refining_forge_stands_off_dwellings",
@@ -9564,11 +9556,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # 120 ft (town_has_cremation_ground) - the established project figure for "a nuisance
             # kept off the houses" - rather than a fresh invented number.
             _ty_burxy = {(round(b["x"], 2), round(b["y"], 2)) for b in _ty_bur}
-            _ty_dwell = [(h["x"], h["y"]) for h in (M.get("houses") or [])]
-            _ty_dwell += [(b["x"], b["y"]) for b in (M.get("buildings") or []) if b.get("kind") not in ("shop", "stables", "barn") and (round(b["x"], 2), round(b["y"], 2)) not in _ty_burxy]
+            _ty_dwell = list(M.get("houses") or [])
+            _ty_dwell += [b for b in (M.get("buildings") or []) if b.get("kind") not in ("shop", "stables", "barn") and (round(b["x"], 2), round(b["y"], 2)) not in _ty_burxy]
             _ty_close = []
             for t_ in _ty_yards:
-                _ty_near = min((math.hypot(t_["x"] - dx_, t_["y"] - dy_) for dx_, dy_ in _ty_dwell), default=1e9)
+                # WALL TO WALL. This kept its center-to-center form through the 2026-07-27 sweep
+                # because that sweep grepped for two `["x"]` in one call and this compared a record
+                # against an unpacked (x, y) tuple - so the audit's own method had the same shape of
+                # blind spot as the bug it was hunting. Tango's yard read 150 ft and stood 76.
+                _ty_near = min((edge_gap(t_, h_) for h_ in _ty_dwell), default=1e9)
                 if _ty_near < _ty_px(120.0):
                     _ty_close.append((round(t_["x"]), round(t_["y"]), round(_ty_near * _ty_ftpx)))
             check(
