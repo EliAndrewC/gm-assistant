@@ -1152,6 +1152,49 @@ def test_shrine_clear_of_grove_trees_uses_the_canopy_radius_not_the_nominal_clum
     assert "shrine_clear_of_grove_trees" in f(M)
 
 
+def test_torii_avenue_meets_the_hall_fires_on_a_sando_authored_away_from_its_temple():
+    # GM 2026-07-27: the arches were spaced right and the whole run stood yards from the temple.
+    # Here the hall's front edge is y540 and the avenue starts at y640 - 300 real ft out - while its
+    # own arches stand 60 ft apart. An approach that does not reach its hall is not an approach.
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "religious": [{"kind": "temple", "label": "T", "x": 500, "y": 500, "w": 100, "h": 80, "torii_count": 3}],
+        "torii": [[500, 640, 1], [500, 660, 1], [500, 680, 1]],
+    }
+    assert "torii_avenue_meets_the_hall" in f(M)
+
+
+def test_torii_avenue_meets_the_hall_passes_when_the_gap_matches_the_pitch():
+    # the same avenue seated one pitch off the hall's front (y540 + 20px) is exactly the rule
+    M = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "religious": [{"kind": "temple", "label": "T", "x": 500, "y": 500, "w": 100, "h": 80, "torii_count": 3}],
+        "torii": [[500, 560, 1], [500, 580, 1], [500, 600, 1]],
+    }
+    assert "torii_avenue_meets_the_hall" not in f(M)
+
+
+def test_torii_avenue_meets_the_hall_spares_the_villages_tighter_threshold():
+    # an UPPER bound only: the village path seats its arches at 0.6-0.9 of its 30 ft stride, which
+    # shrine_avenue_fronts_the_hall (GM 2026-07-22) already governs from the other side. The two
+    # rules meet without either forcing churn on maps the GM has signed off.
+    M = {
+        "meta": {"scale": "village", "ftpx": 2},
+        "religious": [{"kind": "shrine", "x": 500, "y": 500, "w": 30, "h": 20, "torii_count": 3}],
+        "torii": [[500, 519, 1], [500, 534, 1], [500, 549, 1]],
+    }
+    assert "torii_avenue_meets_the_hall" not in f(M)
+
+
+def test_labels_clear_of_other_buildings_fires_on_a_caption_over_a_torii_arch():
+    # GM 2026-07-27: an arch is "never covered by the 'temple of X' label" - and the hall's OWN
+    # caption was the commonest offender, since caption and sando both want the ground at the front.
+    # A torii is a bare [x, y, z] triple, so it needed its own branch in the victim builder; before
+    # that it was classified and still checked nothing.
+    M = {"meta": {"scale": "city", "ftpx": 3}, "labels": [[480, 552, 620, 566, 5, "Temple of Bishamon"]], "torii": [[500, 560, 1]]}
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
 def test_torii_clear_of_grove_trees_fires_when_a_clump_covers_the_arch():
     # a fengshui-grove tree clump sitting on a torii arch reads as the arch buried in the wood
     M = {"meta": {"scale": "village"}, "torii": [[500, 500, 1]], "village_groves": [{"role": "water_mouth", "r": 14, "clumps": [[505, 504]]}]}
@@ -2716,6 +2759,53 @@ def test_kido_clear_of_buildings_fires_when_a_row_house_sits_under_the_guard_box
 def test_kido_clear_of_buildings_passes_when_the_gate_ground_is_open():
     M = _fort_city(kido=[{"x": 400, "y": 500, "horizontal": False, "bbox": [385, 480, 415, 520]}], buildings=[{"x": 390, "y": 560, "w": 20, "h": 14, "rot": 0, "kind": "samurai"}])
     assert "kido_clear_of_buildings" not in f(M)
+
+
+# ---- the ward gate's FULL DRAWN FOOTPRINT in the overlap matrix (GM 2026-07-27) ----
+# "in general we always want overlap checks to use full footprints". A kido carries no w/h, so
+# matrix_extents skipped it silently and the gate was invisible to every matrix check in BOTH
+# directions - a notice board came to rest on Nagahara's guard box with the gate green.
+def _gate_parts(x=400, y=500):
+    """A ward gate's recorded geometry: the roofed bar on the fence line, the guard box beside it."""
+    roof = [[x - 15, y - 7], [x + 15, y - 7], [x + 15, y + 7], [x - 15, y + 7]]
+    guard = [[x - 30, y + 12], [x - 15, y + 12], [x - 15, y + 28], [x - 30, y + 28]]
+    return {"x": x, "y": y, "rot": 0, "bbox": [x - 30, y - 7, x + 15, y + 28], "guard": guard, "parts": [roof, guard]}
+
+
+def test_matrix_extracts_a_ward_gates_parts_and_splits_off_the_guard_box():
+    got = [k for k, *_ in check_village.matrix_extents({"meta": {"scale": "city"}, "kido": [_gate_parts()]})]
+    assert sorted(got) == ["kido", "kido_guard_box"]
+    # a gate that records no `guard` degrades to all-gateway rather than crashing, and a degenerate
+    # part (fewer than 3 corners) is skipped
+    bare = {"x": 400, "y": 500, "rot": 0, "parts": [[[380, 490], [420, 490], [420, 510], [380, 510]], [[1, 1], [2, 2]]]}
+    assert [k for k, *_ in check_village.matrix_extents({"meta": {"scale": "city"}, "kido": [bare]})] == ["kido"]
+
+
+def test_the_parts_of_one_gate_do_not_accuse_each_other():
+    # every part shares one object id, so the annex-on-its-own-parent test spares the glyph's pieces
+    assert not [v for v in check_village.matrix_violations({"meta": {"scale": "city"}, "kido": [_gate_parts()]}) if "kido" in (v[0], v[1])]
+
+
+def test_guard_box_on_the_ward_fence_is_a_defect_though_the_gateway_on_it_is_not():
+    # GM 2026-07-27: "ward gates seem to sometimes overlap with neighborhood walls". The GATEWAY
+    # stands on the fence - the gate IS the opening. The guard box is a building on the verge and
+    # rides no such permission, so a fence drawn through it is a defect.
+    thru_gateway = {"meta": {"scale": "city"}, "kido": [_gate_parts()], "wards": [{"name": "samurai", "boundary": [[400, 300], [400, 700]]}]}
+    assert not [v for v in check_village.matrix_violations(thru_gateway) if "kido_guard_box" in (v[0], v[1])]
+    thru_box = {"meta": {"scale": "city"}, "kido": [_gate_parts()], "wards": [{"name": "samurai", "boundary": [[300, 520], [700, 520]]}]}
+    assert [v for v in check_village.matrix_violations(thru_box) if "kido_guard_box" in (v[0], v[1])]
+    assert "features_do_not_overlap" in f(thru_box)
+
+
+def test_matrix_sees_the_multi_road_list_and_a_flower_beds_outline():
+    # `roads` (the multi-road list) and `flower_fields` (which stores its ring as `outline`, not
+    # `poly`) were the other two classified-but-never-extracted keys found by the same audit
+    on_road = {"meta": {"scale": "city"}, "roads": [{"pts": [[300, 500], [700, 500]], "w": 26}], "buildings": [bldg(500, 500, kind="merchant_house")]}
+    assert ("roads", "buildings") in {(a, b) for a, b, _, _ in check_village.matrix_violations(on_road)} or ("buildings", "roads") in {
+        (a, b) for a, b, _, _ in check_village.matrix_violations(on_road)
+    }
+    bed = {"meta": {"scale": "city"}, "flower_fields": [{"kind": "chrysanthemum", "outline": [[400, 400], [600, 400], [600, 600], [400, 600]]}], "buildings": [bldg(500, 500, kind="merchant_house")]}
+    assert [v for v in check_village.matrix_violations(bed) if "flower_fields" in (v[0], v[1])]
 
 
 def test_kido_clear_of_wall_towers_fires_when_a_ward_gate_hugs_a_tower():
@@ -5711,6 +5801,35 @@ def test_kosatsuba_routeless_map_skips_the_siting_check():
     # no road/street recorded: presence still gates, the siting check stays quiet
     fails = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 900)]})
     assert "kosatsuba_by_the_road" not in fails
+    # ... and so does the ORIENTATION check: with no route in the band there is nothing to face
+    assert "kosatsuba_faces_the_road" not in fails
+    marooned = f({"meta": {"scale": "town"}, "kosatsuba": [dict(_kosatsuba(500, 900), rot=90)], "road": [[0, 500], [1000, 500]]})
+    assert "kosatsuba_by_the_road" in marooned and "kosatsuba_faces_the_road" not in marooned
+
+
+def test_kosatsuba_faces_the_road_fires_when_edge_on():
+    # GM 2026-07-27: a kosatsu is a BROADSIDE signboard - stood across the road it fronts, its
+    # face goes edge-on to the traffic the siting check fought for, and both the presence and
+    # distance checks stay green. The glyph's long axis IS the face, so rot = the road's bearing.
+    road = [[0, 500], [1000, 500]]
+    across = f({"meta": {"scale": "town"}, "kosatsuba": [dict(_kosatsuba(500, 530), rot=90)], "road": road})
+    assert "kosatsuba_by_the_road" not in across and "kosatsuba_faces_the_road" in across
+    along = f({"meta": {"scale": "town"}, "kosatsuba": [dict(_kosatsuba(500, 530), rot=0)], "road": road})
+    assert "kosatsuba_faces_the_road" not in along
+    # a board on a BEND takes the bend's bearing, so a few degrees off its nearest segment is fine
+    assert "kosatsuba_faces_the_road" not in f({"meta": {"scale": "town"}, "kosatsuba": [dict(_kosatsuba(500, 530), rot=18)], "road": road})
+
+
+def test_kosatsuba_at_a_junction_may_face_either_way():
+    # ANY route segment inside the siting band counts, not merely the nearest: a board at a
+    # crossing legitimately fronts one of the two ways that meet there (the real case -
+    # Nagahara's north-ward board sits nearer a cross street than the ward street it fronts)
+    M = {
+        "meta": {"scale": "town"},
+        "kosatsuba": [dict(_kosatsuba(500, 480), rot=90)],
+        "town_streets": [{"pts": [[0, 500], [1000, 500]], "w": 28}, {"pts": [[540, 0], [540, 1000]], "w": 28}],
+    }
+    assert "kosatsuba_faces_the_road" not in f(M)
 
 
 def test_city_has_kosatsuba_fires_when_absent():
