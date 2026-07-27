@@ -4986,6 +4986,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"merchant"}  # a street/road label runs along its frontage, so it may clip the storefronts it lines
             if "drum/bell" in t or t.strip() == "tower":  # the two-line zhonggulou caption (GM 2026-07-24)
                 return {"drum tower"}
+            if "theater stage" in t:
+                # A theater stage is TEMPLE FURNITURE - `theater_stage`'s own docstring sites it in a
+                # temple/monastery precinct, and `theater_stage_by_temple` enforces that. So its
+                # caption is inside a precinct wherever it sits, and the halls are the only things
+                # near enough to caption it against. Same shape as "samurai" -> {"samurai", "estate"}:
+                # the label may cover the enclosure its subject belongs to, not just its own glyph.
+                return {"temple"}
             # A CAPTION MAY ALWAYS COVER THE THING IT NAMES, derived rather than hand-listed: the
             # _LABEL_GROUP registry's group names ARE the caption words ("brewery", "martial hall",
             # "execution ground"), so a new feature earns this permission by being classified, with
