@@ -219,12 +219,21 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
     stands on. They are the GAPS BETWEEN the west-edge buildings, shaped by the fabric. Dropping
     them instead lands the sheet at 21% bare against a 20% allowance. Recorded in the gen so the
     finding is not "fixed" again by the next reader.
-  - **DEFERRED to the GM, a convention question rather than a defect**: the Mode A magistracy sheet
-    draws a notice board and a roofed bounty board outside the south gate; the town sheet draws that
-    ground bare. Mode B draws manors as an envelope plus a gate gap (Hoshizora identical), so it is
-    not contradicting so much as declining to draw compound furniture - but this furniture stands
-    OUTSIDE the wall, on ground the town sheet does depict, and one board carries the campaign's
-    bounty. Answering it for Ubame alone would put it out of step with the other towns.
+  - **REPORTED AS AN ERROR, WITHDRAWN - the GM ruled it a convention, 2026-07-27.** The reviewer read
+    the Mode A magistracy sheet's two gate boards (one carrying the `100 koku - the hermit Shoda`
+    bounty), absent from the town sheet, as the two artifacts contradicting each other. They do not.
+    **The manor is a GLYPH and always a box**, a simplification rather than a scale reduction: the
+    Mode B footprint need not match the Mode A sheet in shape or size, features the sheet draws
+    OUTSIDE the walls need not appear, and the glyph is PRESUMED to contain everything the detailed
+    drawing shows. Nothing is drawn at Ubame's gate and nothing should be. The rule is now written
+    into `settlement.py`'s `manor()` docstring, `settlements/towns.md`, and `settlement-review.md`
+    itself - the agent had been told a disagreement was an error and the Mode A sheet authoritative,
+    which is what manufactured this finding.
+
+    This also retires round 1's manor resizing as a NON-fix. The 250 x 180 -> 290 x 200 change was
+    made to match the Mode A envelope; under the convention it was never required. It is harmless
+    and stands, but the reasoning recorded for it - "two artifacts of one place must contradict
+    nothing" - was wrong about extent, and `towns.md` has been corrected.
   - **CONFIRMED and left alone**: the pareidolia fix on the forge holds (no face); the windbreak is a
     belt, not a blob; the manor agrees with its Mode A sheet at 290 x 200 with its east wall ON the
     line; both nuisance axes diverge and every nuisance is on its correct one; the trunk road is
