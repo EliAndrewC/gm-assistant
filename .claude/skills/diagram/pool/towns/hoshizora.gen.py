@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from settlement import Settlement  # noqa: E402
 from waterfields import build_comb  # noqa: E402
 
-s = Settlement(2000, 1300, seed=386)
+s = Settlement(2000, 1300, seed=390)
 # EXCEPTION to the default 2-monasteries-per-town rule: Hoshizora is a quiet interior county
 # seat in a historically uncontested area, and really has only the ONE town monastery (to
 # Bishamon). Declared explicitly via monastery_fortunes so the gate knows it is intentional.
@@ -263,7 +263,7 @@ for lx, ly in [(1328, 235), (740, 298), (1445, 745)]:
 s.building(1625, 1000, *s._dims("laborer"), "laborer")
 # laborers' and servants' housing, set back off the road behind the shopfronts (NW and SE)
 s.pack((680, 190, 1150, 395), ["laborer"] * 11, step=40)  # laborers at the budgets.md band floor (25 total with the SE pack + the 3 masters) so the depicted farmer cohort stays the plurality
-s.pack((1165, 700, 1600, 925), ["servant"] * 16 + ["laborer"] * 14, step=40, fill=True)
+s.pack((1165, 700, 1600, 925), ["servant"] * 16 + ["laborer"] * 14, step=40, fill=True, footpaths=3)
 s.label(1010, 224, "laborers' dwellings", 10, italic=True, color="#5A4326")  # the set-back is self-evident on the map (annotations explain the unusual, not the universal)
 
 # ---- the segregated burakumin neighborhood (NE edge). Set back a full 74+ ft behind the
@@ -271,6 +271,9 @@ s.label(1010, 224, "laborers' dwellings", 10, italic=True, color="#5A4326")  # t
 # behind a shop as row housing that must lie parallel, and this quarter is its own cluster,
 # not part of the shopfront rows. (Shifted up ~80px from its old spot so the NE pocket comb
 # below it has room for its head.)
+# No footpath in the burakumin quarter: deepening its bbox to pay for the corridor moved the
+# quarter itself and broke burakumin_quarter_segregated, and without the extra depth the
+# corridor costs half its households. A quarter this size fronts open ground already.
 s.pack((1725, 395, 2005, 600), ["burakumin"] * 16, step=42, fill=True)
 s.label(1855, 382, "burakumin neighborhood", 11, italic=True, color="#6B4F2A")
 

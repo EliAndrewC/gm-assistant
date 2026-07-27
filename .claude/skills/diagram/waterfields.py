@@ -322,6 +322,27 @@ def _pip(x: float, y: float, poly: Poly) -> bool:
     return inside
 
 
+# A paddy plot's minimum THICKNESS (inradius proxy 2A/P) as a fraction of `plot_across`.
+# MEASURED across the pool 2026-07-27 (do not adjust this from intuition - these are the numbers):
+# a healthy plot's median thickness runs 0.25-0.39 of plot_across, and every fan has a tail running
+# down to 0.000. The value is pinned to the defect it was derived from: Ubame's west comb has
+# exactly EIGHT plots under 0.16, which is precisely the "~8 thin triangular slivers radiating from
+# the collector vertex" a reviewer counted by eye on the render - an independent corroboration, from
+# pixels, of a threshold picked from geometry.
+#
+# NOTE the cost, because it is not uniform: sparse town fans shed 7-8 cells, but a dense city fan can
+# shed 15 of 62 (~24%) where its p25 already sits near 0.16. Every map still passes the gate,
+# paddy_fan_gapless included, so the fans still read as covered - but a city fan is the place to LOOK
+# if this is ever retuned, and the gate is not the eye.
+_TOE_MIN_THICKNESS = 0.16
+
+
+def _poly_perim(poly: Poly) -> float:
+    """Perimeter of a closed polygon - the denominator of the 2A/P thickness proxy."""
+    n = len(poly)
+    return sum(math.hypot(poly[(i + 1) % n][0] - poly[i][0], poly[(i + 1) % n][1] - poly[i][1]) for i in range(n))
+
+
 def _poly_area(poly: Poly) -> float:
     s = 0.0
     for i in range(len(poly)):
@@ -754,6 +775,23 @@ def build_comb(
     # the 2 ft/px tuning grain, and an unconditional pass would re-roll their RNG streams.
     if grain != 1.0:
         _fill_wedges(R, F, plots, envelope, grain, channels, plot_across, row_step, a_pts, dpts)
+    # THE FAN'S TOE IS A HEADLAND, NOT A ROW OF FAKE BASINS (settlement-review 2026-07-26; GM
+    # 2026-07-27). Where the fan narrows to its collector vertex, the carve and the wedge filler
+    # both emit cells that taper to a point - Ubame's west comb ended in ~8 acute triangles
+    # radiating from the vertex, and Hoshizora shows the same. A paddy is a LEVEL BASIN: it is
+    # bunded and holds standing water to a uniform depth, so a sliver that acute cannot be leveled
+    # or bunded at any sane cost, and real fan and terrace systems end in a headland or simply
+    # leave the odd corner unpaddied rather than pretend. Dropping them is also visually free: the
+    # fan carries a base floor under the plots (`comb_base_fill`, enforced by paddy_fan_has_floor),
+    # so the ground reads as the fan's own toe rather than as a hole.
+    #
+    # The test is the inradius proxy 2*Area/Perimeter - a THICKNESS, not an area, because an acute
+    # sliver can carry a respectable area while being too narrow anywhere to hold water. Scaled to
+    # `plot_across` so it means the same thing at every grain.
+    _thin = [q for q in plots if _poly_perim(q["poly"]) <= 0 or 2 * _poly_area(q["poly"]) / _poly_perim(q["poly"]) < _TOE_MIN_THICKNESS * plot_across]
+    if _thin:
+        _drop = {id(q) for q in _thin}
+        plots[:] = [q for q in plots if id(q) not in _drop]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and

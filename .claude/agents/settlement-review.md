@@ -92,6 +92,12 @@ containment or count - never form. For each such feature, state the intended for
 - A street network should read as **blocks fronting streets**; a field system as a **water-ordered
   grain**, not a random quilt.
 - A precinct (temple, funerary, market) should read as **one composed group**, not adjacent items.
+- **Do NOT report a windbreak belt's BEARING.** The belt must sit on the windward SIDE and must
+  nestle against the cluster - both automated, both worth checking by eye if they look off. Its
+  compass ANGLE is not a rule: measured across the whole pool (2026-07-27), the approved belts run
+  33-49 degrees off the ideal across-wind axis, and the belt once reported as wrong-facing (Ubame)
+  was 31 degrees off - better aligned than every approved map but two. A belt follows the cluster's
+  windward fringe; the wind chooses the side, not the bearing. See `settlements/towns.md`.
 
 ### Agreement with a Mode A sheet of the same place
 
