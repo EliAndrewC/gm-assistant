@@ -6124,7 +6124,7 @@ class Settlement:
         th_ = math.radians(rot)
         self._trade_record("farriers", x, y, aw_, sh_ + ah_, rot, label, lab_off=abs(aw_ / 2 * math.sin(th_)) + abs((sh_ + ah_) / 2 * math.cos(th_)))
 
-    def kiln(self, x: float, y: float, rot: float = 0.0, cottages: int = 2, label: str = "kiln") -> None:
+    def kiln(self, x: float, y: float, rot: float = 0.0, cottages: int = 2, label: str = "kiln works") -> None:
         """A KILN WORKS at the settlement's periphery: the kiln itself, the throwing and drying
         shed, the clay pit, the fuel stack, its own well, and the two or three cottages of the
         households that work it. `rot` lays the kiln's UPSLOPE axis along local +x, so the stoke
