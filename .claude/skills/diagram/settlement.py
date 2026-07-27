@@ -3713,6 +3713,50 @@ class Settlement:
             }
         )
 
+    _WARD_STROKE = 5.0  # the fence's drawn width; recorded so check_village measures the ink, not the vertex
+
+    def _ward_ends_on_wall(self, boundary: Poly, reach: float = 24.0) -> Poly:
+        """JOIN, DON'T INTERSECT: snap each ward-fence END onto the city rampart's centerline.
+
+        The placement half of the rule `city_ward_fence_joins_wall_not_crosses` gates (GM 2026-07-27,
+        on Minami: "the neighborhood walls stick out the other side of the city walls"). A ward fence
+        ENDS at the wall - the rampart is what seals the ward, so a palisade continuing out through it
+        into the berm encloses nothing and draws as two walls crossing at an intersection. This is the
+        wall member of the family the ways and the watercourses already had: a lane terminates at the
+        through-lane it meets rather than poking a stub out the far side, and a watercourse joins at a
+        T or a Y rather than crossing.
+
+        A gen hand-places the fence's ends, and getting one onto the wall line by eye is hopeless -
+        Minami's were 4.2-4.9px outside, Tango's 2.9-4.0px, none of it visible in a gen and all of it
+        inside `city_ward_fence_meets_wall`'s 10px tolerance. So the engine puts them there instead:
+        the end is EXTENDED (or trimmed) ALONG ITS OWN TERMINAL SEGMENT to where that line crosses the
+        wall ring - the same "extend along its own axis, never diagonally to the nearest point" rule
+        `city_streets_meet_through_lanes` states for a lane meeting a through-lane, because a
+        perpendicular snap would swing the last stretch of fence off the line the gen drew. Where the
+        terminal segment runs parallel to the wall and never meets it, the nearest point on the ring is
+        the honest fallback. An end further than `reach` from the wall is left exactly as placed: that
+        is not a junction at all but a fence that fails to reach the rampart, which is
+        `city_ward_fence_meets_wall`'s defect to report, and silently dragging it 200px would hide it.
+        """
+        wall = self.M.get("wall")
+        if not wall or len(boundary) < 2:
+            return boundary
+        ring: Poly = [(x, y) for x, y in wall]
+        ring = ring + [ring[0]]
+        out = list(boundary)
+        for idx, inward in ((0, 1), (len(out) - 1, len(out) - 2)):
+            end, prev = out[idx], out[inward]
+            near = min((seg_closest(end[0], end[1], ring[i], ring[i + 1]) for i in range(len(ring) - 1)), key=lambda c: math.hypot(c[0] - end[0], c[1] - end[1]))
+            if math.hypot(near[0] - end[0], near[1] - end[1]) > reach:
+                continue  # not an abutting end - city_ward_fence_meets_wall reports that gap
+            dx, dy = end[0] - prev[0], end[1] - prev[1]
+            dl = math.hypot(dx, dy) or 1.0
+            far = (end[0] + dx / dl * reach, end[1] + dy / dl * reach)
+            back = (end[0] - dx / dl * reach, end[1] - dy / dl * reach)
+            hits = [ip for i in range(len(ring) - 1) if segments_cross(back, far, ring[i], ring[i + 1]) and (ip := seg_intersect(back, far, ring[i], ring[i + 1])) is not None]
+            out[idx] = min(hits, key=lambda p: math.hypot(p[0] - end[0], p[1] - end[1])) if hits else near
+        return out
+
     def ward(self, name: str, boundary: Any, gates: Any) -> None:
         """An internal WARD boundary - a light earthwork/palisade fence (NOT a city rampart) that
         SEALS a quarter (the samurai/government ward) off the commoner streets, so its kido gates
@@ -3726,8 +3770,9 @@ class Settlement:
         TANGENT (never an axis-aligned stamp on a slanted run). Its guard box stands on the
         WARD-INTERIOR flank (the gate watch belongs to the ward it seals), nudged clear of the
         roadbed by s.kido. Records M['wards']."""
+        boundary = self._ward_ends_on_wall([(p[0], p[1]) for p in boundary])
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in boundary)
-        fz = self.add(f'<path d="{dd}" fill="none" stroke="#9C8A5E" stroke-width="5" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
+        fz = self.add(f'<path d="{dd}" fill="none" stroke="#9C8A5E" stroke-width="{self._WARD_STROKE:g}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add(f'<path d="{dd}" fill="none" stroke="#4A3A22" stroke-width="1.3" stroke-dasharray="2,7" opacity="0.85"/>')  # palisade
         self.corridors.append((boundary, 11))  # buildings keep off the fence line
         # the fence ends ABUT the city wall: lay a short wall-stroke CAP over each end so the rampart
@@ -3772,7 +3817,10 @@ class Settlement:
                     dd_cap = "M" + " L".join(f"{x:.0f},{y:.0f}" for x, y in cappts)
                     cz = self.add(f'<path d="{dd_cap}" fill="none" stroke="#3A352C" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>')
                     caps.append({"x": round(px, 1), "y": round(py, 1), "z": cz, "pts": [[x, y] for x, y in cappts]})
-        self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "wall_caps": caps})
+        # "stroke" is the fence's DRAWN width: the palisade is stroked with a round linecap, so its ink
+        # runs half of this past the last recorded vertex, and city_ward_fence_joins_wall_not_crosses
+        # has to test that tip rather than the coordinate to see an overshoot through the rampart
+        self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "stroke": self._WARD_STROKE, "wall_caps": caps})
         for gate in gates:
             gx, gy = gate[0], gate[1]
             grot, gside = self.kido_seat(gx, gy, boundary)  # square to the lane it bars (the fence only where no lane runs through); guard box toward the ward interior
@@ -6133,7 +6181,7 @@ class Settlement:
         th_ = math.radians(rot)
         self._trade_record("farriers", x, y, aw_, sh_ + ah_, rot, label, lab_off=abs(aw_ / 2 * math.sin(th_)) + abs((sh_ + ah_) / 2 * math.cos(th_)))
 
-    def kiln(self, x: float, y: float, rot: float = 0.0, cottages: int = 2, label: str = "kiln") -> None:
+    def kiln(self, x: float, y: float, rot: float = 0.0, cottages: int = 2, label: str = "kiln works") -> None:
         """A KILN WORKS at the settlement's periphery: the kiln itself, the throwing and drying
         shed, the clay pit, the fuel stack, its own well, and the two or three cottages of the
         households that work it. `rot` lays the kiln's UPSLOPE axis along local +x, so the stoke
@@ -9359,7 +9407,10 @@ class Settlement:
         # A cargo canal is wider than a road - Minami's is 36 ft - and a Suzhou-pattern shuimen sets its
         # arch INTO the wall with a pier to either side, so the opening is the canal plus ~12 ft a side.
         dd = self._gapped_ring(ring, gates, gate_gap, water_gates=water_gates, water_gap=self.px(60.0) / 2)
-        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>')
+        # the rampart's drawn width is RECORDED, because city_ward_fence_joins_wall_not_crosses judges
+        # a ward fence's overshoot against this band - placement and check reading the same source
+        ww = self.M["wall_stroke"] = 11.0
+        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="{ww:g}" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add_wall(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
         cx = sum(p[0] for p in pts) / len(pts)
         cy = sum(p[1] for p in pts) / len(pts)
@@ -10531,7 +10582,8 @@ class Settlement:
         # the rampart renders in the WALL layer (over the ground lanes - a street running into it passes
         # UNDER it), with a genuine gap at the gate so the road shows through the opening
         dd = self._gapped_ring(pts, [gate] if gate else [], 36, closed=False)
-        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>')
+        ww = self.M["wall_stroke"] = 10.0  # recorded for the same reason as the city rampart's (see city_wall)
+        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="{ww:g}" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add_wall(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
         if gate:
             gx, gy = gate
