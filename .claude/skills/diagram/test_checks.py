@@ -9346,6 +9346,31 @@ def _ratchet_shed(dx):
     return manifest(meta={"scale": "village", "ftpx": 1}, houses=[house(500, 500)], farm_sheds=[{"x": 500 + dx, "y": 500, "w": 20, "h": 14, "rot": 0}])
 
 
+def _ratchet_tannery(dx):
+    return manifest(
+        meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000},
+        tanning_yards=[{"x": 500, "y": 500, "w": 58, "h": 41, "rot": 0, "pits": 8, "water": "stream"}],
+        houses=[house(500 + dx, 500)],
+        buildings=[bldg(300, 300, kind="burakumin")],
+    )
+
+
+def _ratchet_charcoal(dx):
+    return manifest(
+        meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000, "charcoal_district": True},
+        charcoal_yards=[{"x": 500, "y": 500, "w": 70, "h": 50, "rot": 0, "sheds": 2, "apron": [480, 540, 40, 30]}],
+        buildings=[bldg(500 + dx, 500, kind="merchant")],
+    )
+
+
+def _ratchet_forge(dx):
+    return manifest(
+        meta={"scale": "town", "ftpx": 1, "W": 2000, "H": 2000, "iron_district": True},
+        refining_forges=[{"x": 500, "y": 500, "w": 46, "h": 30, "rot": 0}],
+        houses=[house(500 + dx, 500)],
+    )
+
+
 _GAP_RATCHET = (
     # (check, build, offset, must_fire, why this offset is the disagreement point)
     ("execution_ground_outside_the_settlement", _ratchet_execution_ground, 121, True, "centers 121 px apart clears the 120 px rule; the two walls are only 68 px apart"),
@@ -9354,6 +9379,12 @@ _GAP_RATCHET = (
     ("execution_ground_clear_of_the_dead", _ratchet_dead, 460, False, "410 px of true daylight, which the old max(w,h)/2 radius scored as 330 and wrongly failed"),
     ("wells_among_dwellings", _ratchet_well, 190, True, "158 px from the hall's wall - the half-diagonal of a 200x40 hall scored it as 88 and wrongly passed"),
     ("farm_sheds_attached", _ratchet_shed, 48, True, "15 px of daylight is not 'attached'; two half-diagonals scored it as 48 against a 49 px threshold"),
+    # The trade works. The first two were already exact (feature 016 wrote its own footprint helper);
+    # the tannery was NOT, and the 2026-07-27 sweep missed it because its center test compared a
+    # record against an unpacked tuple. All three are pinned now so none can drift back.
+    ("tanning_yard_clear_of_dwellings", _ratchet_tannery, 121, True, "a 58 px wide yard 121 px from a house CENTER stands 69 px from its wall, against a 120 ft rule"),
+    ("charcoal_yard_keeps_fire_gap", _ratchet_charcoal, 31, True, "31 px between centers is under a 70 px yard's own half-width - the walls overlap"),
+    ("refining_forge_stands_off_dwellings", _ratchet_forge, 61, True, "61 px between centers leaves 15 px of daylight against a 60 ft standoff"),
 )
 
 
