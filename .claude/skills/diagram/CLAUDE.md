@@ -400,6 +400,19 @@ Two rules, and the second is the one that is easy to half-do:
 than structural on purpose: the failure mode is unbounded work, and the correct-vs-broken margin is
 a fraction of a second against effectively forever.
 
+## An unusual settlement earns an ANNOTATED EXEMPTION - it does not get the rule relaxed
+
+When a map cannot meet a rule because the SETTLEMENT is unusual (not because it is hard to tune),
+declare `s.meta(check_exemptions={"check_name": "why this one is different"})`. The check then reports
+`EXEMPT` rather than `PASS`, a thin reason is refused, and an exemption that has stopped excusing
+anything FIRES so it gets deleted. Full rule and the Hirameki case in
+[`settlements.md`](settlements.md), "When a settlement is genuinely unusual".
+
+The process lesson attached to it (GM 2026-07-27) is worth more than the mechanism: **lock the rules
+in against ORDINARY settlements first**, then let the unusual ones earn exemptions. Tango and
+Hirameki were both drawn early and both are odd, so the defaults kept getting bent to fit the
+exceptions instead of the other way round.
+
 ## Batch the rendered-map inspection
 
 Reading a map means: render -> crop the region(s) of interest -> Read the PNG. The turn-latency

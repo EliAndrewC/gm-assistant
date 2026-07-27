@@ -2311,7 +2311,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     EX0, EY0, EX1, EY1 = (_vw[0], _vw[1], _vw[0] + _vw[2], _vw[1] + _vw[3]) if _vw else (0, 0, Wd, Hd)
     fails: list[str] = []
 
+    # ANNOTATED EXEMPTIONS (GM 2026-07-27). A settlement can be genuinely unusual, and a rule that is
+    # right for every ordinary map can be wrong for it: Hirameki is a town that stood UNWALLED and was
+    # then walled in haste mid-war when it changed hands, so its rampart was thrown around the town
+    # that was already there rather than sized to a population budget. Such a map may switch a named
+    # check off - but only WITH ITS REASON, recorded in the manifest, so the exemption travels with the
+    # map instead of hiding in a tolerance. Three properties make this safe to have:
+    #   * an exempted check reports EXEMPT, never PASS, so it can never read as the rule having held;
+    #   * a reason must be a real sentence (exemption_reasons_given), not a shrug;
+    #   * an exemption whose check would PASS anyway is STALE and fires (exemptions_still_needed) -
+    #     the same ratchet as a stale label_ground entry, which reserved a seat its caption had left.
+    # The GM's framing, worth keeping: start with ordinary settlements and lock the rules in against
+    # them; the unusual ones then earn their exemptions explicitly instead of bending the defaults.
+    _exempt: dict[str, str] = dict(meta.get("check_exemptions") or {})
+    _exempt_fired: set[str] = set()
+
     def check(name: str, ok: Any, detail: str = "") -> None:
+        if not ok and name in _exempt:
+            _exempt_fired.add(name)
+            if verbose:
+                print(f"EXEMPT {name}  -> {_exempt[name]}")
+            return
         if verbose:
             print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
         if not ok:
@@ -12411,6 +12431,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
     if verbose:
         print(f"\n{len(fails)} failing check(s): {fails}" if fails else "\nALL CHECKS PASSED")
+    # the two guards that keep an exemption honest (see check() above)
+    _xmpt_thin = sorted(k for k, why in _exempt.items() if len(str(why).strip()) < 60)
+    check(
+        "exemption_reasons_given",
+        not _xmpt_thin,
+        f"check exemption(s) {_xmpt_thin} carry no real reason - an exemption is a claim that this settlement is UNUSUAL, so it has to say how. Write the sentence a future reader needs in order to decide whether it still applies",
+    )
+    _xmpt_stale = sorted(set(_exempt) - _exempt_fired)
+    check(
+        "exemptions_still_needed",
+        not _xmpt_stale,
+        f"check exemption(s) {_xmpt_stale} are STALE - the check passes on its own now, so the exemption is excusing nothing and only hides the rule from the next map that breaks it. Delete them",
+    )
     return fails
 
 

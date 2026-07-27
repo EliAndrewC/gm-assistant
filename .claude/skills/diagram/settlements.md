@@ -153,6 +153,46 @@ The generator emits a manifest the validator asserts against; it must pass befor
 
    **STANDING REQUIREMENT - capture every "bad" map as a regression fixture.** 100% line coverage does NOT prove a check has teeth: a check whose condition is silently always-true still runs its `check(...)` line on every passing map, so coverage stays green while the check is dead. The cure is a manifest that actually *trips* it. So: **whenever you add OR refine a check - or you eyeball a generated map and find a flaw the gate let through - save the manifest of that bad map into `pool/regressions/<name>.json` with a `_regression` block** (`{"fires": ["the_check_that_should_catch_it"], "source": "..."}`), then make the check catch it. The maps we generate while iterating toward one we're happy with are exactly this corpus: each "oh, that one wasn't good enough" is a free, real negative fixture - don't throw it away, drop its `.json` (manifest only; the PNG re-renders from it) into `pool/regressions/`. `test_regressions.py` globs the directory, so a new file is picked up with no wiring. The backfill of the existing in-test fixtures into this corpus was produced by `make_regressions.py` (re-run it to regenerate the auto-captured set); going forward the discipline needs no tooling - just save the manifest. Note the corpus currently pins the ~80 checks that have a negative fixture; the remaining checks are still only exercised on their PASS path (real maps), so prefer adding a captured failure for any check you touch that lacks one.
 
+## When a settlement is genuinely unusual: ANNOTATED EXEMPTIONS, never a relaxed rule
+
+Some settlements are not ordinary, and a rule that is right for every planned seat can be wrong for
+one of them. **Hirameki** is the case that motivated this (GM, 2026-07-27): it stood UNWALLED and was
+walled in HASTE during the Lion/Crane war, after it changed hands, so its rampart was thrown around
+the town that was already there rather than sized to a population budget. It also gives ground inside
+the walls to a symbolic chrysanthemum field, and omits the burakumin quarter for logistical reasons -
+both costing dwellings a planned town would have housed. It cannot land on `population / HOUSEHOLD`
+exactly, and forcing it there by hand only distorted it.
+
+Such a map may switch a named check off - **with its reason, in the manifest**:
+
+```python
+s.meta(
+    check_exemptions={
+        "population_consistent_with_housing": "why THIS settlement is unusual, in a sentence a future reader can judge",
+    },
+    ...
+)
+```
+
+Three properties make this safe to have, and all three are tested:
+
+- **An exempted check reports `EXEMPT`, never `PASS`.** It can never read as the rule having held.
+- **The reason must be a real sentence** (`exemption_reasons_given`), not a shrug. It is the only thing
+  a future reader has to decide whether the exemption still applies.
+- **A stale exemption FIRES** (`exemptions_still_needed`). If the check passes on its own now, the
+  exemption is excusing nothing and merely hides the rule from the next map that breaks it - the same
+  ratchet as a stale `label_ground` entry, which reserved the seat its caption had already left.
+
+**What this is NOT.** It is not a tolerance. The rule stays exact for every other settlement; the
+exemption travels with the one map that earned it, and it is visible on that map rather than buried
+in a knob. Reach for it only when the settlement's PREMISE conflicts with the rule - not when a map
+is merely hard to tune.
+
+**And the process lesson behind it, which is the more valuable half** (GM, 2026-07-27): *lock the
+rules in against ORDINARY settlements first.* Tango and Hirameki were both drawn early and both are
+unusual, so for a long time the defaults were being bent to fit the exceptions. Build the normal
+cases until the rules are settled, then let the unusual ones earn annotated exemptions.
+
 ## Historical grounding: the "why" behind the realism checks
 
 **Requirement (project rule, restated here):** whenever historical research drives a check, a generation rule, or a magic number, record the *reasoning* here next to the rule - not just the rule. The check is the "what"; this section is the "why," so a future reader (or a future us, after the research has fallen out of memory / context) can revisit a decision without redoing the legwork. Source citations are optional; the reasoning is mandatory. Each entry: what the research found, the decision it drove, and any deliberate departure from literal scale (we draw small features oversized for legibility - see "Core principle: roughly to scale" in [`SKILL.md`](SKILL.md) - but keep *relative* sizes roughly honest).
