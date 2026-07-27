@@ -5376,6 +5376,42 @@ class Settlement:
             self.label(x, y - hh - 11 if label_above else y + hh + 11, label, 8, italic=True, color="#7A5A30")
         return z
 
+    def label_seat_clear(self, lx: float, ly: float, tw: float, th: float = 5.0) -> bool:
+        """Is a caption box centred at (lx, ly) clear of every building and every caption already
+        placed? The test `labels_clear_of_other_buildings` applies, asked before drawing.
+
+        ROTATION-AWARE, because that check tests each building's AXIS-ALIGNED bounding box and a
+        rotated shopfront's AABB is much larger than its w/h - probing the unrotated rect passes
+        here and still fails the gate."""
+        for key in ("buildings", "houses", "flophouses", "religious", "manors", "storehouses", "merchant_estates", "ministries", "gate_structs"):
+            # every key listed holds w/h-bearing dicts - the same assumption check_village's `_bb`
+            # makes about the same registries - so no guard is needed here
+            for o in self.M.get(key) or []:
+                a = math.radians(o.get("rot", 0) or 0)
+                ca, sa = math.cos(a), math.sin(a)
+                hw2, hh2 = o["w"] / 2, o["h"] / 2
+                cs = ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))
+                xs = [o["x"] + dx * ca - dy * sa for dx, dy in cs]
+                ys = [o["y"] + dx * sa + dy * ca for dx, dy in cs]
+                if lx - tw < max(xs) and min(xs) < lx + tw and ly - 7.2 < max(ys) and min(ys) < ly + th:
+                    return False
+        return not any(lx - tw < lb[2] and lb[0] < lx + tw and ly - 7.2 < lb[3] and lb[1] < ly + th for lb in self.M["labels"] if len(lb) > 3)
+
+    def clear_label_seat(self, x: float, y: float, w: float, h: float, label: str, size: float = 9.0) -> Pt | None:
+        """A caption seat for a verge-hugging feature: below, above, then left and right, walking
+        OUTWARD, first clear box wins; None when nothing within ~8 rings is clear.
+
+        A feature that hugs the frontage puts its default below-label ON that frontage - not bad
+        luck but what "hugging the frontage" means, and it fired on all three maps that first used
+        the punishment ground's probe."""
+        tw = self._text_width(label, size) / 2 + 2
+        for ring in range(9):  # walk outward: the near bands are dense frontage, so keep looking
+            d = ring * 14
+            for lx, ly in ((x, y + h / 2 + 11 + d), (x, y - h / 2 - 9 - d), (x - tw - w / 2 - 6 - d, y + 3), (x + tw + w / 2 + 6 + d, y + 3)):
+                if self.label_seat_clear(lx, ly, tw):
+                    return (lx, ly)
+        return None
+
     def place_kosatsuba(self, label: str = "notice board") -> Pt | None:
         """AUTO-SITE the settlement kosatsuba on a lane/road verge at the busiest clear node -
         the village/hamlet tiers' procedural sibling of the town/city hand placement (GM
@@ -5421,7 +5457,8 @@ class Settlement:
             # candidate list does not carry at all - see way_beds)
             return all(seg_dist(x, y, bp[k], bp[k + 1]) >= bhw + h / 2 + 3 for bp, bhw in beds for k in range(len(bp) - 1))
 
-        best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
+        tw_lab = self._text_width(label, 8) / 2 + 2 if label else 0.0  # the caption half-width the seat must also hold
+        best: tuple[float, float, float, float, bool] | None = None  # (score, x, y, rot, label_above)
         for pts, _rw in routes:
             for i in range(len(pts) - 1):
                 (ax, ay), (bx, by) = pts[i], pts[i + 1]
@@ -5441,14 +5478,26 @@ class Settlement:
                             x, y = mx + ux * off * side, my + uy * off * side
                             if off_every_bed(x, y) and self._fits(x, y, w, h, corridors=False):
                                 busy = sum(1 for sx, sy in spots if math.hypot(x - sx, y - sy) < 260)
-                                score = busy * 10 - off / 3  # busiest node first, verge-hugging tiebreak
+                                # THE CAPTION IS PART OF THE SEAT (GM 2026-07-27). The glyph is 11
+                                # px and fits almost anywhere; its caption does not, and the busiest
+                                # frontage is exactly where there is least room for one - so a siter
+                                # that hunts for ground big enough to hold BOTH walks away from the
+                                # traffic and out to the quiet end of the road, which is how Ubame's
+                                # board ended up across the bridge. Score it instead: a seat whose
+                                # caption fits (below by default, above where the gate structure or
+                                # a shopfront takes the lower band) outranks any seat whose caption
+                                # does not, and among those the busiest wins. The bonus dwarfs the
+                                # traffic term rather than replacing it, so a board with nowhere to
+                                # put its caption is still placed and the label check still reports.
+                                lab = 0 if self.label_seat_clear(x, y + h / 2 + 11, tw_lab) else (1 if self.label_seat_clear(x, y - h / 2 - 11, tw_lab) else None)
+                                score = busy * 10 - off / 3 + (0 if lab is None else 1000)
                                 if best is None or score > best[0]:
-                                    best = (score, x, y, rot)
+                                    best = (score, x, y, rot, bool(lab))
                             off += 5.0
         if best is None:
             return None
-        _, x, y, rot = best
-        self.kosatsuba(x, y, rot, label=label)
+        _, x, y, rot, above = best
+        self.kosatsuba(x, y, rot, label=label, label_above=above)
         return (x, y)
 
     def place_punishment_spot(self, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:
@@ -5514,35 +5563,7 @@ class Settlement:
             # A verge-hugging feature's DEFAULT below-label lands on the frontage it hugs - that is
             # not bad luck, it is what "hugging the frontage" means, and it fired on all three maps.
             # So probe the label too: below, above, then left/right, first clear box wins.
-            tw = self._text_width(label, 9) / 2 + 2
-            th = 5.0
-            # ROTATION-AWARE boxes: labels_clear_of_other_buildings tests each building's axis-aligned
-            # bounding box, and a rotated shopfront's AABB is much larger than its w/h - probing the
-            # unrotated rect passed here and still failed the gate.
-            boxes = []
-            for key in ("buildings", "houses", "flophouses", "religious", "manors", "storehouses", "merchant_estates", "ministries", "gate_structs"):
-                # every key listed above holds w/h-bearing dicts - the same assumption
-                # check_village's `_bb` makes about the same registries - so no guard is needed here
-                for o in self.M.get(key) or []:
-                    a = math.radians(o.get("rot", 0) or 0)
-                    ca, sa = math.cos(a), math.sin(a)
-                    hw2, hh2 = o["w"] / 2, o["h"] / 2
-                    xs = [o["x"] + dx * ca - dy * sa for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
-                    ys = [o["y"] + dx * sa + dy * ca for dx, dy in ((-hw2, -hh2), (hw2, -hh2), (hw2, hh2), (-hw2, hh2))]
-                    boxes.append((min(xs), min(ys), max(xs), max(ys)))
-            labs = [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
-            cands = []
-            for ring in range(0, 9):  # walk outward: the near bands are dense frontage, so keep looking
-                d = ring * 14
-                cands += [(x, y + h / 2 + 11 + d), (x, y - h / 2 - 9 - d), (x - tw - w / 2 - 6 - d, y + 3), (x + tw + w / 2 + 6 + d, y + 3)]
-            for lx, ly in cands:
-                box = (lx - tw, ly - 7.2, lx + tw, ly + th)
-                if any(box[0] < bx1 and bx0 < box[2] and box[1] < by1 and by0 < box[3] for bx0, by0, bx1, by1 in boxes):
-                    continue
-                if any(box[0] < l2 and l0 < box[2] and box[1] < l3 and l1 < box[3] for l0, l1, l2, l3 in labs):
-                    continue
-                label_xy = (lx, ly)
-                break
+            label_xy = self.clear_label_seat(x, y, w, h, label)
         self.punishment_spot(x, y, rot, label=label, label_xy=label_xy)
         return (x, y)
 

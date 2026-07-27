@@ -153,6 +153,42 @@ The counts are gated; the **geography** is not. Judge:
 - **Does the settlement's declared economy appear on its own map?** A place whose canon names a trade
   should show it.
 
+### Traffic-sited features: is it standing where the feet actually are?
+
+A handful of features are sited by ONE variable - **foot traffic**. The state's notice board, the
+punishment ground, the gate market, the theater stage, a public well: each exists to be met by
+whoever passes, so its whole value is the number of people who walk past it.
+
+The automated gate cannot judge this and never will. What it can test is **proximity to a way** - a
+board within ~60 real ft of a road passes - and *every point along a road satisfies that equally*,
+including the empty stretch beyond the last house, the approach outside the settlement, and the
+frontage of a compound that deliberately sits where nobody goes. So "by the road" is a check that is
+silent on the very thing the feature is for, and a traffic-sited feature can be parked in a quiet
+corner with the gate fully green. That is the gap you are here to close.
+
+For **each** traffic-sited feature, judge the position against the map's own busiest ground:
+
+- **Where does this settlement's traffic actually concentrate?** Name it first, from the drawing: the
+  packed shop/inn frontage, a crossroads, the market, a bridgehead, a gate throat, the well the
+  quarter draws from. A road is not traffic - a road *with the town built along it* is.
+- **Is the feature ON that ground, or merely on the same road some distance away?** Count the
+  dwellings and businesses within ~200-300 real ft of the feature, then count them at the busiest
+  stretch of the same way. A feature sitting at a small fraction of the available count is
+  misplaced, however impeccable its clearances.
+- **Beware the outward end.** The characteristic failure is a feature that drifted along the road
+  PAST the built-up frontage - out by the manor, the temple, the boundary marker, the point where
+  the road leaves town - because that is where open verge is easiest to find. Open verge is
+  abundant exactly where nobody is; a siting probe that rewards "fits" rather than "is passed"
+  walks straight to the town's edge. Ask what made this spot available, and be suspicious when the
+  answer is "there was room".
+- **The authority edge is the fewest feet, not the most.** A magistrate's manor, a monastery
+  precinct, a government compound sits at the settlement edge by design. Anything defaulted to
+  their frontage has been sited by administrative convenience, which is the exact inversion of the
+  rule - the state's standing law is posted at the people, not at the office.
+- **Read the drawing, not the intent.** A gen comment saying a feature is "auto-sited at the busiest
+  node" proves nothing: the siter may have been handed a candidate list that does not contain the
+  busy ground, or may have fallen through to a fallback. Judge the pixels.
+
 ### Does this read as a PLACE? (the twin detector)
 
 Compare against the other pool maps of the same tier. Name at least **three structural facts** that
@@ -208,6 +244,12 @@ FEATURE-OR-SLACK SWEEP (every named open area and every ground-cover polygon):
 - <area>: justification <place-based reason + rough size> -> FEATURE ok | CHECK-SHAPED (flag)
 - ...
 
+TRAFFIC-SITING SWEEP (every feature that exists to be PASSED - notice board, punishment ground,
+gate market, theater stage, public wells):
+- this map's busiest ground is <where, and what makes it busy>
+- <each feature>: sited at <where, in words> -> <n> dwellings/businesses within ~250 ft, against
+  <n> at the busiest stretch of the same way -> ON THE TRAFFIC ok | QUIET CORNER (error)
+
 NUISANCE-AXIS SWEEP:
 - declared wind (windward=) -> downwind is <dir>; declared water (water_flow/down_deg) -> downstream is <dir>
 - <each nuisance feature>: needs <downwind|downstream> -> sited <dir> -> ok | WRONG AXIS (error)
@@ -246,6 +288,30 @@ have; that is the process working, not a failure.
 *(Populated by the Subagent-check TDD procedure in `docs/spec-kit-and-reviews.md`: a rule is added
 here in GENERAL form, run against the unfixed artifact, and only once it FIRES is the specific
 instance recorded below. An example here means the rule demonstrably has teeth.)*
+
+**Traffic-siting rule, 2026-07-27 - Ubame (unwalled town), added in general form and run against the
+unfixed map. RED then GREEN.** The GM's report was "the notice board in Ubame does not look
+well-placed; I'd expect it to be in a higher-traffic area", with the observation that no mathematical
+rule can say what counts as foot traffic - so the rule was written as a judgment check here rather
+than as a gate check.
+
+- **TRAFFIC SITING - the board at the quiet end (CAUGHT, error #1 of the run).** The kosatsuba stood
+  at (1622,522): across the bridge, on the far bank of the valley stream from the entire town, ~120
+  ft past the east end of the shop rows and ~400 ft from the magistracy's own gate. **8** structures
+  within 250 ft, exactly **1** within 150, against **23** at the high street's busiest stretch. The
+  agent named the mechanism as well as the fact: the gen walked four candidate rects taking the
+  first that FIT, the first three failed, and it fell through to the eastern APPROACH - and the
+  `assert` could not catch it because it only tested that SOME seat was found. Note what stayed
+  green throughout: `kosatsuba_by_the_road` passes anywhere on a road, including the stretch past
+  the last house, so the automated check is silent on the only thing the feature is for.
+- **Why the map had drifted there, which is the transferable part.** The board's glyph is 11 px and
+  fits almost anywhere; its CAPTION does not, and the busiest frontage is exactly where there is
+  least room for one. A siter hunting ground big enough to hold both walks away from the traffic by
+  construction. Fixed at the root: `place_kosatsuba` now scores the caption as part of the seat, so
+  a seat whose caption fits outranks one whose caption does not, and among those the busiest wins.
+  Ubame's board went from 8 structures within 250 ft to 16, on the frontage, gate green. **Expect
+  this shape again** - any feature whose label is much larger than its glyph will drift toward empty
+  ground, and the emptiness is the defect.
 
 **Founding run, 2026-07-26 - Ubame (unwalled town), run against a map with two defects deliberately
 re-planted and the full gate GREEN throughout.** Both planted defects were caught, and four more
