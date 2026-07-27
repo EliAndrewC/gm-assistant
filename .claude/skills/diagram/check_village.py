@@ -3106,6 +3106,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     #     ~6 ft   farrier from a stall range   sparks from an ATTENDED open forge onto hay
     #      30 ft  charcoal yard from anything  a stack that self-heats UNATTENDED
     #      60 ft  refining forge from homes    a live worked fire under forced blast, + noise/smoke
+    #      60 ft  kiln from anything           a days-long ATTENDED firing (see "THE KILN WORKS")
     #     120 ft  crematory / tanning yard     putrefaction and smoke carried on the air
     #
     # NOTE THE SCOPING ASYMMETRY, which is deliberate. The two PRESENCE checks are gated on an
@@ -3192,6 +3193,59 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not _rf_upwind,
                 f"refining forge(s) UPWIND of the housing at {_rf_upwind[:3]} - the prevailing wind is declared {_rf_wind}, so the forge's smoke must be carried away from the dwellings, not over them; put it on the downwind side of the settlement's center of housing",
             )
+
+    # ===== THE KILN WORKS (GM 2026-07-27; grounding in settlements/urban-features.md "KILN WORKS",
+    # research record in research/urban-features.md). The GM's two questions - "would whoever works
+    # the kiln also live next to it?" and "why is it specifically a tile kiln?" - turned a lone
+    # mound glyph into a works. The short answers the checks below enforce:
+    #
+    #   - THE WORKERS LIVE AT THE KILN. A firing runs for DAYS, stoked in shifts round the clock,
+    #     and the works stands at its CLAY rather than at its customers, so digging, weathering,
+    #     throwing, drying and firing all happen at one spot. China first: Song/Ming kiln districts
+    #     were worked by registered kiln households living at their kilns (Jingdezhen is a city
+    #     grown around them); Japan corroborates with Seto, Tokoname, Imado, Awataguchi.
+    #   - THE HOUSING IS NOT BANISHED WITH THE WORK. Fire law puts the kiln outside the wall
+    #     (city_kiln_outside_walls) to keep the risk out of the dense blocks; it says nothing
+    #     against the households whose trade it is. They keep the ordinary fire gap, no more.
+    #
+    # THE 60 FT RUNG on the separation ladder above is deliberate rather than new. A firing is a
+    # very large fire, but an ATTENDED one - somebody is stoking it, which is the whole reason it
+    # runs in shifts - so it sits with the refining forge (a live worked fire) and not with the
+    # unattended charcoal stack at 30 ft or the nuisance figures at 120 ft, where a smell carried
+    # on air is the hazard. Duration here does the work the forced blast does there.
+    #
+    # SCOPED ON THE FEATURE, NOT THE SCALE, like the charcoal-district siting checks and for the
+    # same reason: a kiln drawn on any map is validated, whatever it declares.
+    _kn_all = M.get("kilns", [])
+    _kn_ftpx = float(meta.get("ftpx") or 1.0)
+    if _kn_all:
+        _kn_homeless = [(round(_kn["x"]), round(_kn["y"])) for _kn in _kn_all if not _kn.get("quarters")]
+        check(
+            "kiln_works_houses_its_workers",
+            not _kn_homeless,
+            f"kiln(s) with no quarters recorded at {_kn_homeless[:3]} - a kiln is not premises somebody commutes to: a firing is stoked in shifts for days on end and the works stands at its clay, so the households that work it LIVE there. Draw the works, not a lone kiln (s.kiln records `quarters`); settlements/urban-features.md 'KILN WORKS'",
+        )
+        # The gap is measured from the KILN BODY, not from the works' bounding ground - the whole
+        # point of a works is that its own cottages stand inside that ground, so a bounding-rect
+        # test could only ever measure the fire gap to somebody else's house. A record with no
+        # `body` FAILS rather than skipping: an unmeasurable rule that reports nothing looks
+        # exactly like a rule that passed (this file's standing hazard).
+        _kn_tight = []
+        for _kn in _kn_all:
+            _kn_b = _kn.get("body")
+            if not _kn_b:
+                _kn_tight.append((round(_kn["x"]), round(_kn["y"])))
+                continue
+            _kn_rec = {"x": _kn_b[0], "y": _kn_b[1], "w": _kn_b[2], "h": _kn_b[3], "rot": _kn_b[4]}
+            _kn_near = [{"x": _q[0], "y": _q[1], "w": _q[2], "h": _q[3]} for _q in _kn.get("quarters", [])]
+            _kn_near += solid_structs(M, "manors", "religious", exclude=("kilns",))
+            if any(edge_gap(_kn_rec, _kn_o) < 60.0 / _kn_ftpx for _kn_o in _kn_near):
+                _kn_tight.append((round(_kn["x"]), round(_kn["y"])))
+        check(
+            "kiln_keeps_fire_gap",
+            not _kn_tight,
+            f"kiln(s) crowding a dwelling or a neighboring structure at {_kn_tight[:3]} - a firing is a very large fire burning for days, so the kiln stands >= ~60 real ft clear of every footprint INCLUDING its own workers' cottages (the attended-fire rung of the separation ladder, with the refining forge; a record carrying no `body` fails here because the gap cannot be measured at all)",
+        )
 
     # TROUGH RECTS DRAW ON OPEN GROUND - the cluster's drawn BOX must not clip any structure (GM
     # 2026-07-23, after Tango's caravan cluster hugged its well on a near-vertical ray and the
@@ -5344,6 +5398,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     all_wells = M.get("wells", [])
     if all_wells:
         dwell_all = M.get("buildings", []) + M.get("houses", []) + M.get("religious", [])
+        # A KILN WORKS' cottages are dwellings, and its well stands among THEM (GM 2026-07-27).
+        # They are recorded inside the works' own record rather than in M["houses"] - see s.kiln
+        # for why - so a check that reads only the settlement's housing stock would call the works'
+        # own well stray. Read them here rather than exempting private wells: the rule's teeth are
+        # for a well out in open country, and this one is genuinely among the houses it serves.
+        dwell_all = dwell_all + [{"x": _q[0], "y": _q[1], "w": _q[2], "h": _q[3]} for _k in M.get("kilns", []) for _q in _k.get("quarters", [])]
         stray = [
             (round(wl["x"]), round(wl["y"])) for wl in all_wells if dwell_all and not any(within_edge_gap(wl, b, 95) for b in dwell_all)
         ]  # the TRUE gap to the served building's edge (fair to a large hall); the half-diagonal this used
@@ -11314,7 +11374,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             check(
                 "city_kiln_outside_walls",
                 bool(_tw_kilns) and all(not inwall(k_["x"], k_["y"]) for k_ in _tw_kilns),
-                f"{len(_tw_kilns)} kiln(s), all outside the walls: {all(not inwall(k_['x'], k_['y']) for k_ in _tw_kilns) if _tw_kilns else False} - a city keeps a tile/pottery kiln at its periphery, and fire law + smoke put every kiln strictly OUTSIDE the walls (s.kiln)",
+                f"{len(_tw_kilns)} kiln(s), all outside the walls: {all(not inwall(k_['x'], k_['y']) for k_ in _tw_kilns) if _tw_kilns else False} - a city keeps a kiln works at its periphery, and fire law + smoke put every kiln strictly OUTSIDE the walls (s.kiln). Its WORKERS' cottages go outside with it, which is a fact about where the clay and the days-long firing are, not a banishment - see kiln_works_houses_its_workers",
             )
             if meta.get("river_port"):
                 _tw_lys = M.get("lumber_yards", [])
