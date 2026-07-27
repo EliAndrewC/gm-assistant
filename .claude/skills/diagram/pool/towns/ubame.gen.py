@@ -463,13 +463,18 @@ s.village_grove([(1180, 640), (1300, 660), (1285, 780), (1165, 762)], role="cops
 # gate: this manor sits at the settlement EDGE by design, which is where the fewest feet pass.
 # The punishment ground carries no board of its own - the crime rides on the cangue, and the
 # standing law is already posted a few paces off.
-_kb = None
-for _krect in ((980, 640, 1330, 720), (600, 720, 980, 800), (1450, 470, 1700, 545), (240, 840, 620, 920)):
-    _kb = s.open_seat(_krect, 96, 44)
-    if _kb:
-        break
-assert _kb, "no road verge with room for the notice board and its caption"
-s.kosatsuba(_kb[0], _kb[1], rot=-14)
+# THE BOARD IS AUTO-SITED, and now actually is (GM 2026-07-27). It used to walk a list of four
+# candidate rects and take the first that FIT, which is a different question from the one the
+# institution asks: the first three failed and it fell through to (1450,470,1700,545) - the eastern
+# APPROACH - so the board ended up across the bridge on the far bank from the whole town, ~120 ft
+# past the east end of the shop rows, with 8 structures within 250 ft against 23 on the high street.
+# The `assert` could not catch it because it only tested that SOME seat was found, and
+# kosatsuba_by_the_road could not either: every point on a road is equally "by the road", including
+# the stretch past the last house. `place_kosatsuba` asks the right question instead - it scores
+# verge spots by the dwellings within ~260 px - which is what the paragraph above always claimed
+# this map did. Caught by the settlement-review agent's traffic-siting sweep.
+_kb = s.place_kosatsuba()
+assert _kb, "no road verge on the frontage with room for the notice board"
 s.place_punishment_spot()
 
 s.title("Ubame")
