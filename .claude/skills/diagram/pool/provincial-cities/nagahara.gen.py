@@ -1334,7 +1334,16 @@ s.kosatsuba(1492, 954, rot=72, label=None)  # nudged 10px up the wall (2026-07-2
 # bend where the through-road turns east IS the market corner - the city's
 # Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the
 # crossroads - unlabeled, the east-avenue board already carries the set's one label.
-s.kosatsuba(1448, 1392, rot=90, label=None)  # 21px clear of the ward fence's x1469 leg AND 11px off the y1403 street: a board hugs a ROADSIDE, not a fence (the ward fence became a matrix BARRIER, 2026-07-26, and kosatsuba_by_the_road wants it within ~20px of a way)
+# 11px off the y1403 street: a board hugs a ROADSIDE, not a fence (the ward fence became a matrix
+# BARRIER, 2026-07-26, and kosatsuba_by_the_road wants it within ~20px of a way). rot=0 SQUARES it to
+# that street - the way it actually fronts, the yamen approach at x1480 being 32px off, outside the
+# siting band (was rot=90, edge-on to its own traffic; GM 2026-07-27, kosatsuba_faces_the_road, the
+# pre-fix manifest frozen in pool/regressions/). SOUTH verge, not north: the y1392 seat it used to
+# take was inside the x1441-1457 / y1381-1396 GUARD BOX of the kido at (1469,1403) - the gate glyph
+# draws roof + posts + guard box but records only its center in M['kido'], so the overlap matrix
+# cannot see the box and a hand-placed board on top of it gates green (found while squaring the
+# board, 2026-07-27). The south verge is the same street, the same 11px, and clear of the glyph.
+s.kosatsuba(1448, 1414, rot=0, label=None)
 
 # ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone at the town's
 # busiest public point (feature 015; settlements.md "Punishment spot"). A DISPLAY installation:

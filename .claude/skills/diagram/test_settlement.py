@@ -282,6 +282,43 @@ def test_kido_guard_box_takes_the_far_flank_when_the_near_one_is_blocked():
     assert sum(c[1] for c in k["guard"]) / 4 > 450  # it crossed to the other side of its own gateway (local +x, which the 90deg bar puts SOUTH)
 
 
+def test_kido_guard_box_stands_clear_of_its_own_ward_fence():
+    # GM 2026-07-27: "ward gates seem to sometimes overlap with neighborhood walls". The GATEWAY
+    # stands on the fence - it IS the opening - but the guard box is a building on the verge, and
+    # an oblique crossing used to cut straight through it (2 of the pool's 14 gates). SAT against
+    # the stroked fence, not corner distances: a line through a 15x16 box's middle leaves every
+    # corner ~8px clear, so the corner test the lane beds use reported it clear.
+    fence = [(300, 300), (600, 600)]
+    s = Settlement(1000, 1000, seed=1)
+    s.street([(100, 450), (900, 450)])
+    s.ward("slant", fence, gates=[(450, 450)])
+    box = [(c[0], c[1]) for c in s.M["kido"][-1]["guard"]]
+    assert not any(settlement.sat_overlap(box, q) for q in settlement.stroke_quads(fence, 4.0))
+    # and the RESERVATION agrees with the drawn glyph, which is why the fence goes in explicitly:
+    # at reservation time s.ward has not run, so M['wards'] is still empty
+    s2 = Settlement(1000, 1000, seed=1)
+    s2.street([(100, 450), (900, 450)])
+    res = s2.kido_reservation(450, 450, fence, margin=0.0)
+    assert (min(p[0] for p in res), min(p[1] for p in res)) == pytest.approx(tuple(s.M["kido"][-1]["bbox"][:2]), abs=0.2)
+
+
+def test_stroke_quads_makes_one_quad_per_segment():
+    qs = settlement.stroke_quads([(0, 0), (100, 0), (100, 100)], 5.0)
+    assert len(qs) == 2 and all(len(q) == 4 for q in qs)
+    assert settlement.stroke_quads([(0, 0)], 5.0) == []
+    assert settlement.stroke_quads([(7, 7), (7, 7)], 5.0)  # a degenerate segment still yields a quad rather than dividing by zero
+
+
+def test_way_beds_carries_the_lane_network_lane_runs_does_not():
+    # the AVOIDANCE list for a verge-hugging feature: lane_runs' roads/streets/alleys/ring road
+    # PLUS the village lane network. Each siter used to build its own partial list, which is how a
+    # punishment ground came to clip an alley (reported by another session, Tango 2026-07-27).
+    M = {"road": [[0, 100], [500, 100]], "alleys": [{"pts": [[0, 300], [500, 300]], "w": 6}], "lane": [[0, 500], [500, 500]], "lanes": [{"pts": [[0, 700], [500, 700]], "w": 8}]}
+    beds = settlement.way_beds(M)
+    assert len(beds) == 4 and len(settlement.lane_runs(M)) == 2
+    assert sorted(round(b[0][0][1]) for b in beds) == [100, 300, 500, 700]
+
+
 def test_seg_closest_degenerate_segment():
     assert settlement.seg_closest(0, 0, (5, 5), (5, 5)) == (5, 5)
 
