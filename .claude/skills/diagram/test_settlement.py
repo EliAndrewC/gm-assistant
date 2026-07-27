@@ -5054,7 +5054,10 @@ def test_kiln_draws_a_works_and_records_its_body_and_its_quarters():
     s = _town()
     s.kiln(400, 400)
     k = s.M["kilns"][0]
-    assert (k["w"], k["h"]) == (140.0, 120.0) and k["label"] == "kiln"  # the caption no longer says "tile"
+    # The caption says "kiln works", not "tile kiln" and not a bare "kiln" (GM 2026-07-27): the
+    # feature is the kiln PLUS its drying shed, clay pit, fuel stack, well and its workers' cottages,
+    # so naming it after one building inside it under-describes what the reader is looking at.
+    assert (k["w"], k["h"]) == (140.0, 120.0) and k["label"] == "kiln works"
     assert len(k["body"]) == 5 and (k["body"][2], k["body"][3]) == (46.0, 16.0)
     assert len(k["quarters"]) == 2  # the default works houses two households
     # the cottages stand a clear fire gap BELOW the kiln body, which is the whole point of the
