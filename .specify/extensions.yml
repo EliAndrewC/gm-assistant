@@ -12,12 +12,20 @@ hooks:
     description: Initialize Git repository before constitution setup
     condition: null
   before_specify:
+  # DISABLED (GM 2026-07-27). This project does not use feature branches, spec-kit work included -
+  # every session already works in an isolated clone under .clones/, so a branch adds a second axis
+  # of isolation that buys nothing and breaks things (see the HEAD:main note in sync-with-main.sh).
+  # This hook is the ONLY thing that creates one: the core create-new-feature.sh has no --no-branch
+  # flag and checks out unconditionally, but nothing else calls it. Downstream commands still need
+  # to know which feature is active - `export SPECIFY_FEATURE=NNN-slug`, which common.sh
+  # get_current_branch() returns AHEAD of asking git, so check_feature_branch() in setup-plan.sh
+  # and setup-tasks.sh is satisfied while you sit on main.
   - extension: git
     command: speckit.git.feature
-    enabled: true
+    enabled: false
     optional: false
     prompt: Execute speckit.git.feature?
-    description: Create feature branch before specification
+    description: Create feature branch before specification (DISABLED - this project stays on main)
     condition: null
   before_clarify:
   - extension: git
