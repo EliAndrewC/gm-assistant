@@ -9148,3 +9148,30 @@ def test_matrix_reads_drawn_extents_not_envelopes():
     M = _mx_map(commons=[{"x": 500, "y": 500, "w": 400, "h": 400, "rot": 0, "role": "grazing", "poly": [[300, 300], [700, 300], [700, 700], [300, 700]]}], houses=[house(500, 500)])
     assert "features_do_not_overlap" not in f(M)
     assert not [e for e in check_village.matrix_extents(M) if e[0] == "commons"]
+
+
+def test_matrix_survives_geometry_far_off_the_canvas():
+    """A stray vertex must not make the overlap matrix allocate the world.
+
+    `GridIndex.add` inserts under every cell an item's bbox touches, so ONE feature reaching far
+    off-map costs a dict entry per 120 px in BOTH axes. The `city_geometry_within_canvas` fixture
+    plants a wall vertex at 9,000,000 on a 3,200 px canvas - once `wall` was classified as a solid,
+    that became ~5.6 BILLION cells and gigabytes of RAM, and the run had to be killed by hand
+    (2026-07-26). The index box is now clamped to the canvas on BOTH insert and query - clamping
+    only the insert leaves the query walking exactly the same cells.
+
+    Timed rather than asserted structurally on purpose: the failure mode is unbounded work, and the
+    margin here is enormous (well under a second when correct, effectively forever when not), so it
+    is not a flaky threshold.
+    """
+    import time
+
+    M = manifest(meta={"scale": "city", "ftpx": 3, "W": 3200, "H": 2700, "name": "Nowhere"})
+    M["wall"] = [[100, 100], [3000, 100], [9000000, 9000000], [100, 2600], [100, 100]]
+    # The stray wall vertex still yields quads that REACH the canvas, so it only exercises the
+    # clamp. The second house is wholly off-map and exercises the skip on both the insert and the
+    # query side - a feature nothing on the canvas can meet is not the overlap matrix's business.
+    M["houses"] = [house(500, 500), house(50000, 50000)]
+    t0 = time.time()
+    check_village.matrix_violations(M)
+    assert time.time() - t0 < 5.0, "the overlap matrix is walking cells for off-canvas geometry again - clamp the index box on BOTH insert and query"
