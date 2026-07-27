@@ -9364,12 +9364,71 @@ class Settlement:
         self.M.setdefault("jetties", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "z": z})
         return z
 
+    def log_boom(self, x: float, y: float, rot: float = 0.0, length: float | None = None, label: str | None = "log boom", label_xy: Pt | None = None) -> int:
+        """A LOG BOOM - a cabled chain of floating logs corralling rafted timber against the bank,
+        with the loose stock riding inside it, at a river port whose main trade is TIMBER.
+
+        WHY THIS EXISTS (GM 2026-07-26). A timber city drawn with only a lumber yard and jetties gets
+        the same river vocabulary as any other river town: the yard says "someone sells wood", not
+        "this is a timber river". Logs came DOWN the water loose or rafted and had to be held at the
+        mill or yard until they were pulled out, and the holding pen is the boom - a chain of logs
+        cabled end to end, the one piece of river furniture that is specific to the trade. Minami is
+        where it matters: l7r.md has Fox charcoal burners outnumbering farmers and "significantly
+        more" timber going downriver than the ~10,000 koku/yr moved by cart, so the boom is not
+        decoration but the largest working thing on the city's water.
+
+        Drawn in the TOP layer OVER the water, like a jetty or a bridge deck - it floats, so its
+        overlap with the river is the whole point (OVERLAP_CLASS FIXTURE, _OVERLAP_EXEMPT). `rot` is
+        the boom's bearing, which should follow the current rather than cross it: a boom is moored
+        ALONG the bank, because one strung across the channel would dam the river it works.
+        Records M['log_booms']."""
+        if length is None:
+            length = self.px(330)
+        hl = length / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        # the loose stock riding inside the pen, drawn first so the chain reads as holding it in
+        for ox, oy, olen in ((-0.34, 0.30, 0.20), (-0.06, 0.38, 0.16), (0.20, 0.31, 0.22), (0.44, 0.40, 0.15), (-0.20, 0.46, 0.17)):
+            lx0, lx1 = -hl + length * (0.5 + ox), -hl + length * (0.5 + ox + olen)
+            ly = 5.6 + oy * 7.0
+            g.append(f'<line x1="{lx0:.1f}" y1="{ly:.1f}" x2="{lx1:.1f}" y2="{ly:.1f}" stroke="#7A5B33" stroke-width="2.6" stroke-linecap="round" opacity="0.85"/>')
+        # the CHAIN: logs cabled end to end, each a stubby round-ended timber, with the cable through
+        seg = max(9.0, length / 12.0)
+        g.append(f'<line x1="{-hl:.1f}" y1="0" x2="{hl:.1f}" y2="0" stroke="#4A3A22" stroke-width="0.8" opacity="0.8"/>')
+        pos = -hl
+        while pos < hl - 1:
+            end = min(pos + seg * 0.82, hl)
+            g.append(f'<line x1="{pos:.1f}" y1="0" x2="{end:.1f}" y2="0" stroke="#8A6B42" stroke-width="4.2" stroke-linecap="round"/>')
+            g.append(f'<line x1="{pos:.1f}" y1="0" x2="{end:.1f}" y2="0" stroke="#59431F" stroke-width="0.7" opacity="0.55"/>')
+            pos += seg
+        g.append('</g>')
+        z = self.add_top(''.join(g))
+        th = math.radians(rot)
+        w_ = abs(math.cos(th)) * length + abs(math.sin(th)) * 14.0
+        h_ = abs(math.sin(th)) * length + abs(math.cos(th)) * 14.0
+        self.M.setdefault("log_booms", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "w": round(w_, 1), "h": round(h_, 1), "z": z})
+        if label:
+            lx, ly = label_xy if label_xy else (x, y + h_ / 2 + 12)
+            self.label(lx, ly, label, 9, italic=True, color="#5A4326")
+        return z
+
     def bridge(self, x: float, y: float, rot: float, span: float, deck_w: float) -> int:
         """A timber BRIDGE carrying a road (or town street) over a watercourse - a stream, an
         irrigation channel, or the city moat at a gate. Centered on the crossing (x, y); the deck
         runs along `rot` (the road's bearing, degrees) for `span` px (long enough to reach both
         banks) and is `deck_w` wide (the carried road's width). Drawn on the TOP layer so it sits
         ABOVE the water and the roadbed. Records M['bridges']."""
+        # ONE DECK PER CROSSING, enforced HERE so every caller is covered (GM 2026-07-26): the
+        # road-crossing pass in bridges(), the plank pass in channel_footbridges(), and any gen that
+        # hand-places a deck for a crossing one of those also finds. Minami carried two decks over the
+        # Hayakawa 3px apart, and honda/hoshigaoka/kikuta each carried two footplanks at the SAME
+        # point - a way that crosses a stream where a channel joins it is one bridge on the ground.
+        # None of it was caught because bridges were invisible to the overlap matrix (FIXTURE was a
+        # blanket permission); bridges x bridges is a violation now. Tolerance scales with the deck so
+        # two genuinely distinct footplanks a few px apart still both draw.
+        _btol = max(4.0, min(12.0, span * 0.5))
+        for _b in self.M.get("bridges", []):
+            if math.hypot(_b["x"] - x, _b["y"] - y) <= _btol:
+                return int(_b["z"])
         hl, hw = span / 2, deck_w / 2
         g = [f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-hl:.1f}" y="{-hw:.1f}" width="{span:.1f}" height="{deck_w:.1f}" rx="2" fill="#B68D5A" stroke="#5A3F1E" stroke-width="1.6"/>')  # the planked timber deck

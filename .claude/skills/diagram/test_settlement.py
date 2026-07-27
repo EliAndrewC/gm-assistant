@@ -1601,6 +1601,66 @@ def test_bridges_spans_a_lane_where_it_crosses_a_canal():
     assert abs(s.M["bridges"][0]["x"] - 300) < 2 and abs(s.M["bridges"][0]["y"] - 300) < 2
 
 
+def test_place_punishment_spot_probes_for_a_clear_caption_seat():
+    """The display board's caption gets its own probe, because a verge-hugging feature's default
+    below-label lands on the frontage it hugs - which is what 'hugging the frontage' means."""
+    s = _crop_settlement()
+    s.street([(200, 300), (800, 300)], width=10)
+    # a shopfront row along the south verge, so the caption's DEFAULT seat below the board is taken
+    # and the probe has to walk outward to a clear one
+    for _bx in range(210, 800, 30):
+        s.building(_bx, 322, 26, 16, "shop")
+    # ...and existing CAPTIONS strung along the verge bands, so the probe also has to reject seats
+    # that are clear of every building but would bury another label
+    for _ly in range(240, 390, 9):
+        for _lx in range(210, 820, 55):
+            s.label(_lx, _ly, "riverside quarter", 9)
+    spot = s.place_punishment_spot()
+    assert spot is not None and s.M["punishment_spots"]
+    cap = next(lb for lb in s.M["labels"] if len(lb) > 5 and lb[5] == "punishment ground")
+    # the real property: wherever the probe put it, the caption sits on NO shopfront
+    for b in s.M["buildings"]:
+        bx0, by0 = b["x"] - b["w"] / 2, b["y"] - b["h"] / 2
+        bx1, by1 = b["x"] + b["w"] / 2, b["y"] + b["h"] / 2
+        assert not (cap[0] < bx1 and bx0 < cap[2] and cap[1] < by1 and by0 < cap[3]), f"caption on {b['kind']} at ({b['x']}, {b['y']})"
+
+
+def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
+    s = _crop_settlement()
+    z = s.log_boom(400, 300, rot=90)
+    b = s.M["log_booms"][0]
+    assert b["z"] == z and b["len"] == round(s.px(330), 1)  # the default pen, ~330 real ft of chained logs
+    # moored ALONG the current (rot 90), so its recorded box is TALL, not wide - the matrix reads this
+    assert b["h"] > b["w"] and abs(b["h"] - b["len"]) < 1.0
+
+
+def test_log_boom_labels_below_itself_unless_told_otherwise():
+    s = _crop_settlement()
+    s.log_boom(400, 300, rot=0, length=90, label="log boom")
+    assert any(len(lb) > 5 and lb[5] == "log boom" for lb in s.M["labels"])
+    s2 = _crop_settlement()
+    s2.log_boom(400, 300, rot=0, length=90, label=None)
+    assert not any(len(lb) > 5 and lb[5] == "log boom" for lb in s2.M["labels"])
+
+
+def test_bridge_refuses_a_second_deck_on_a_crossing_that_already_has_one():
+    """ONE DECK PER CROSSING - the guard lives in bridge() so every caller is covered.
+
+    Minami shipped two decks over the Hayakawa 3px apart (a hand-placed one plus the automatic pass),
+    and honda/hoshigaoka/kikuta each carried two footplanks at the SAME point. None was caught because
+    bridges were invisible to the overlap matrix."""
+    s = _crop_settlement()
+    z1 = s.bridge(300, 300, 0, 60, 12)
+    z2 = s.bridge(303, 301, 0, 60, 12)  # the same crossing, a few px off
+    assert len(s.M["bridges"]) == 1 and z2 == z1  # returns the standing deck rather than drawing a second
+    # ...but two genuinely distinct footplanks a few px apart still both draw (the tolerance scales
+    # with the deck, so a narrow plank keeps a narrow exclusion)
+    s2 = _crop_settlement()
+    s2.bridge(300, 300, 0, 8, 2)
+    s2.bridge(306, 300, 0, 8, 2)
+    assert len(s2.M["bridges"]) == 2
+
+
 def test_channel_footbridges_plank_each_long_ditch_perpendicular():
     s = _crop_settlement()
     s.M["fields"] = [{"outline": [[50, 120], [850, 120], [850, 280], [50, 280]]}]  # paddy straddling the y=200 ditch (both banks cultivated)
