@@ -70,12 +70,12 @@ s.meta(
     # attempt moved a caste out of its band, put a farmhouse in the scrub, or was silently backfilled
     # by a fill=True pack (removing one samurai from a no-fill pack raised the total by one).
     #
-    # This is an EXEMPTION, not a relaxation: the check still runs and reports EXEMPT, the rule stays
-    # exact for every other settlement, and exemptions_still_needed deletes this the day the map meets
-    # its figure on its own. The GM's retrospective is worth keeping with it - lock the rules in
+    # This is a WAIVER, not a relaxation: the check still runs and reports WAIVE, the rule stays exact
+    # for every other settlement, and waivers_are_live deletes this the day the map meets its figure on
+    # its own. The GM's retrospective is worth keeping with it - lock the rules in
     # against ORDINARY settlements first, and let the unusual ones earn annotated exemptions, rather
     # than bending the defaults to fit the exceptions.
-    check_exemptions={
+    waivers={
         "population_consistent_with_housing": "Hirameki was an unwalled town walled in haste mid-war after changing hands, so its rampart was thrown around the existing town rather than sized to a population budget; it also gives ground inside the walls to a symbolic chrysanthemum field and omits the burakumin quarter for logistical reasons, so its dwelling count cannot land on population/HOUSEHOLD exactly (GM 2026-07-27)",
     },
     water_flow=90,  # DRAINAGE BEARING: where this landscape sends its water (0=E, 90=S)
