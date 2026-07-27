@@ -508,18 +508,20 @@ s.village_grove([(1600, 620), (1740, 645), (1735, 935), (1620, 925)], role="cops
 # Meiji-and-later institution. The kura on the manor, headman, and merchant houses carry the
 # fire story here. WHY: settlements.md "Fire towers".
 
-# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the state's standing law on the Imperial Road
-# frontage (GM 2026-07-24, from the town deep audit; settlements.md "Notice board"). Sited on
-# the road verge where the manor's north-gate approach meets the highway - the SW arrival
-# stretch shared by the flophouse, theater ground, and monastery approach - because the packed
-# merchant frontage upstream has no clear verge (the manifest probe found none; the built
-# street is honestly FULL). The Takayama jinya-mae pattern: the board is ROAD-sited (the
-# traffic criterion; kosatsuba_by_the_road), and the seat of authority happens to front the
-# same road - distinct from the manor's own Mode A gate board, which posts verdicts and
-# bounties for those who come to court. Aligned to the road (rot=-30), placed LAST on a
-# probed-clear verge like the fire furniture (clear of the manor's ROTATED corner - the -30
-# tilt swings it up to y~980, which sank the first spot at (500, 968)).
-s.kosatsuba(400, 930, rot=-30)
+# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - AUTO-SITED on the traffic (settlements.md
+# "Notice board"). It used to be hand-placed at (400,930), the SW arrival stretch shared by the
+# flophouse, theater ground and monastery approach, on the reasoning that the packed merchant
+# frontage upstream had no clear verge and the arrival stretch was the honest second best. The
+# measurement says otherwise: that seat had THREE structures within 250 ft against a peak of 30
+# elsewhere on this map - a tenth of the available traffic, and a worse ratio than the Ubame
+# board the GM caught by eye (GM 2026-07-27, "fix both of them"). What actually had no verge
+# was not the frontage but a seat that could hold the board AND its caption, which is a
+# different question and the reason boards drift out of town at all. place_kosatsuba now scores
+# the caption as part of the seat under a hard traffic floor, so the frontage is reachable.
+# Still NOT the manor gate: that compound has its own Mode A board for verdicts and bounties,
+# and it sits where the fewest feet pass.
+_kb = s.place_kosatsuba()
+assert _kb, "no frontage verge with room for the notice board"
 
 # ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone on the same
 # SW arrival stretch (feature 015; settlements.md "Punishment spot"). Its governing variable is

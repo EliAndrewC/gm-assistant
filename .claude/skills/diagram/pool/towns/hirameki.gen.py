@@ -464,13 +464,15 @@ s.label(800, 1560, "laborers' & servants' tenements", 9, italic=True, color="#5A
 
 # ---- OUTSIDE: the gate market (fixed above, before the street frontage), the segregated
 # burakumin neighborhood, farm rings
-# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - the state's standing law on the main street
-# JUST INSIDE the front gate (GM 2026-07-24, from the town deep audit; settlements.md "Notice
-# board"): every arrival passes it, gate-market traffic included. East verge, aligned to the
-# street (rot=90), on a probed-clear seam a block up from the gate (the first spot at y1690
-# hung the label over the gate structs). NOT at the manor gate up the hill - the manor's own
-# board (Mode A) posts verdicts and bounties for those who come to court.
-s.kosatsuba(1330, 1630, rot=90)
+# ===== THE OFFICIAL NOTICE BOARD (kosatsuba) - AUTO-SITED on the traffic (settlements.md
+# "Notice board"). It used to be hand-placed at (1330,1630), on the main street just inside the
+# front gate, on the reasoning that every arrival passes it. Arrivals do - but the town does
+# not: that seat had 10 structures within 250 ft against a peak of 29 further up the same
+# street, i.e. a third of the traffic on offer, and the board is for the people who live here
+# rather than for the ones coming through (GM 2026-07-27). NOT at the manor gate up the hill -
+# the manor's own Mode A board posts verdicts and bounties for those who come to court.
+_kb = s.place_kosatsuba()
+assert _kb, "no frontage verge with room for the notice board"
 
 # ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone at the town's
 # busiest public point (feature 015; settlements.md "Punishment spot"). A DISPLAY installation:

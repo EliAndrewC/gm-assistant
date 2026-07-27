@@ -160,6 +160,7 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
 - **Feature work** (new sections of the webapp, new skills, new generators, the upcoming Python backend) → invoke `/speckit-specify` and follow through plan → tasks → implement. The Constitution Check section in `.specify/templates/plan-template.md` is the gate that enforces the constitution at plan-time; skipping spec-kit on feature work means skipping that gate.
 - **Tweaks and iteration** (CSS adjustments, wording fixes, regenerating one item, fixing one bug) → just do the work directly. The constitution still applies, but the formal spec/plan/tasks flow is overkill.
 - **Ambiguous cases** → ask before chain-firing `/speckit-specify`.
+- **NO FEATURE BRANCHES - spec-kit work included** (GM 2026-07-27). Isolation already comes from the session clone; a branch on top of it is a second axis that buys nothing and broke the stop-work ritual for a whole session. Branch creation is off (`.specify/extensions.yml`, `before_specify`, `enabled: false`) and [`scripts/no-branch-hooks.sh`](scripts/no-branch-hooks.sh) blocks a hand-rolled `git checkout -b` (escape hatch: `NO_BRANCH_OK` in the command, with a reason). Spec-kit still needs to know which feature is active: **`export SPECIFY_FEATURE=NNN-slug`**, which `common.sh`'s `get_current_branch()` returns ahead of asking git, so `check_feature_branch()` in `setup-plan.sh` / `setup-tasks.sh` is satisfied with no branch at all.
 
 **Verification before reporting "done"** (per Principle VI of the constitution):
 
@@ -194,6 +195,7 @@ Package-specific timings and skill-specific lessons live in that skill's dev-loo
 - **Stop-work ritual, EVERY time you stop** (task done, milestone, or pausing for GM input): commit in the clone, then run [`scripts/sync-with-main.sh`](scripts/sync-with-main.sh) `done` from inside it (locked pull+push, then render-sync). **Never `git push --force`** - it is the one thing that overwrites other sessions' work.
 - **Main is the integration point, never a workspace.** The ONLY thing a session runs in main's tree is render-sync. No generators, no tests, no writes. Read-only commands are fine.
 - **Git ownership:** the session does all commits/merges/push-back-to-main; the GM's only git job is the GitHub push/pull from main. Never commit or push against `/host-l7r-repo`.
+- **Commit on `main` inside the clone** - never on a branch. `sync-with-main.sh` pushes `HEAD:main`, so what you committed is what lands.
 - Hooks enforce all of this ([`scripts/clone-sync-hooks.sh`](scripts/clone-sync-hooks.sh)): the forbidden name, name-routing to another session's clone, a live-session claim, and a clean-but-stale HEAD. A dirty tree is never blocked - mid-task work is sacred. **If a hook blocks you, the full spec and every failure mode is in [`docs/session-clones.md`](docs/session-clones.md).**
 - **Gotcha:** keep `pytest`/`ripgrep` scoped to the working dir - they do not read `.gitignore`, so a repo-root run double-collects every clone.
 

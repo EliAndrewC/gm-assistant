@@ -4081,7 +4081,7 @@ def test_city_kiln_outside_walls_fires_on_an_intramural_kiln():
         "meta": {"scale": "city", "W": 1000, "H": 1000, "ftpx": 3, "walled": True},
         "wall": [[100, 100], [900, 100], [900, 900], [100, 900]],
         "gates": [[500, 100]],
-        "kilns": [{"x": 500, "y": 500, "w": 9.3, "h": 6, "rot": 0, "label": "tile kiln"}],
+        "kilns": [{"x": 500, "y": 500, "w": 46.7, "h": 40, "rot": 0, "label": "kiln"}],
     }
     assert "city_kiln_outside_walls" in f(M)
 
@@ -9117,6 +9117,75 @@ def test_refining_forge_downwind_reads_the_maps_own_windward_declaration():
 def test_refining_forge_downwind_abstains_when_the_map_has_no_dwellings():
     """Nothing to smoke over, nothing to judge - the rule must not divide by an empty centroid."""
     assert "refining_forge_downwind" not in f(_forge_map(60, 60, ()))
+
+
+def _kiln_map(quarters=((500.0, 570.0),), body=(500.0, 470.0), ftpx=1, **over):
+    """A town carrying one kiln WORKS at (500, 500): a 140x120 ft ground, the 46x16 ft kiln body
+    at `body`, and a 28x18 ft cottage at each of `quarters`."""
+    M = manifest(meta={"scale": "town", "ftpx": ftpx, "W": 1000, "H": 1000})
+    rec = {"x": 500.0, "y": 500.0, "w": 140.0, "h": 120.0, "rot": 0.0, "label": "kiln", "quarters": [[qx, qy, 28.0, 18.0] for qx, qy in quarters]}
+    if body is not None:
+        rec["body"] = [body[0], body[1], 46.0, 16.0, 0.0]
+    M["kilns"] = [rec]
+    M.update(over)
+    return M
+
+
+def test_kiln_works_houses_its_workers_fires_on_a_lone_kiln():
+    """The GM's question, 2026-07-27: "would whoever works the kiln also live next to it?" Yes, for
+    three independent reasons - a firing is stoked in shifts for DAYS, the works stands at its CLAY
+    rather than at its customers, and the trade was organized in kiln households living at their
+    kilns (Song/Ming kiln districts first, Seto/Tokoname/Imado corroborating). So a kiln drawn as a
+    lone glyph is recording a place nobody could work."""
+    assert "kiln_works_houses_its_workers" in f(_kiln_map(quarters=()))
+    assert "kiln_works_houses_its_workers" not in f(_kiln_map())
+
+
+def test_kiln_keeps_fire_gap_fires_on_a_cottage_against_the_kiln():
+    """The housing is not banished with the work, but it does keep the ordinary gap. 60 real ft is
+    the ATTENDED-fire rung of the separation ladder, shared with the refining forge: a firing is a
+    very large fire, but somebody is stoking it, so it does not belong with the UNATTENDED charcoal
+    stack at 30 ft nor with the 120 ft figures that defend against a smell carried on air."""
+    # kiln body bottom edge is at 470 + 8; cottage half-height is 9
+    tight = _kiln_map(quarters=((500.0, 470 + 8 + 20 + 9),))
+    clear = _kiln_map(quarters=((500.0, 470 + 8 + 70 + 9),))
+    assert "kiln_keeps_fire_gap" in f(tight)
+    assert "kiln_keeps_fire_gap" not in f(clear)
+
+
+def test_kiln_keeps_fire_gap_also_measures_the_settlements_own_structures():
+    """Not just the works' own cottages - the gap is owed to every footprint on the map. A works
+    whose own quarters stand clear but which crowds a neighbor's house is the same hazard."""
+    assert "kiln_keeps_fire_gap" in f(_kiln_map(houses=[house(500, 470 - 8 - 20 - 9)]))
+    assert "kiln_keeps_fire_gap" not in f(_kiln_map(houses=[house(500, 470 - 8 - 70 - 9)]))
+
+
+def test_kiln_keeps_fire_gap_fails_a_record_that_cannot_be_measured():
+    """A record with no `body` FAILS rather than skipping. This file's standing hazard is that a
+    check which never runs looks exactly like a check that passes - and a kiln whose body is not
+    recorded is precisely a fire gap nobody can measure, which is the worse of the two states."""
+    assert "kiln_keeps_fire_gap" in f(_kiln_map(body=None))
+
+
+def test_kiln_keeps_fire_gap_measures_in_REAL_feet_not_pixels():
+    """The threshold converts through meta.ftpx, so 60 ft means the same distance at every tier
+    rather than silently becoming 180 ft on a 3 ft/px city sheet."""
+    M = _kiln_map(quarters=((500.0, 470 + 8 + 20 + 9),), ftpx=3)  # the same PIXEL gap is now 60 real ft
+    assert "kiln_keeps_fire_gap" not in f(M)
+
+
+def test_wells_among_dwellings_counts_a_kiln_works_cottages():
+    """The works' well stands among the houses it serves - they are simply recorded inside the kiln
+    record rather than in M["houses"] (see s.kiln: every dwelling rule in the gate is written about
+    the settlement's own housing stock, and a satellite works' cottages would be adjudicated by
+    rules that were never about them). A check reading only that stock would call this well stray."""
+    # a distant house so the map HAS a housing stock - the check deliberately abstains on a map
+    # with no dwellings at all, which would make the negative half pass for the wrong reason
+    M = _kiln_map(quarters=((500.0, 570.0),), houses=[house(100, 100)])
+    M["wells"] = [well(500, 550)]
+    assert "wells_among_dwellings" not in f(M)
+    M["kilns"][0]["quarters"] = []
+    assert "wells_among_dwellings" in f(M)
 
 
 def test_the_new_trade_works_are_classified_in_both_registries():

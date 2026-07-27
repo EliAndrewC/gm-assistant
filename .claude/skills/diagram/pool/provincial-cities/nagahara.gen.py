@@ -180,7 +180,7 @@ s.lumber_yard(1994, 1456)  # the wharf's zaimokuya on the dry tongue between the
 s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street, west of Bishamon's graveyard (its old 1130,1180 seat sat under the Temple of Bishamon caption)
 s.pawnshop(1620, 1240)  # NE merchant quarter
 s.bathhouses([(1836, 1230), (1368, 1270)])  # population-band roll (seed 47 -> 2): seat 1 at the NE warren's east edge (clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata), seat 2 in the NW monzen west of the theater
-s.kiln(2210, 1520)  # tile kiln OUTSIDE the walls on the far bank, south of the bridge road
+s.kiln(2242, 1584)  # the KILN WORKS OUTSIDE the walls on the far bank, river clay at the works' own door. SOUTH of the execution ground rather than beside it: the works grew from a 28x18 ft mound into a 140x120 ft ground with its own cottages (GM 2026-07-27), and the old seat put the potters' houses on the execution ground
 # the TANNING YARD (GM 2026-07-24) on the Hayakawa's WEST bank, south of the wall - the textbook
 # siting, and the reason the SE burakumin quarter sits where it does. It is downstream of
 # EVERYTHING the city puts in the water: below the moat's outflow junction (y~1521), below the
@@ -1026,7 +1026,7 @@ s.ossuary(2290, 1650)
 # throat was 228 ft wide (GM 2026-07-27, settlements/cities/defenses.md) - the piers stood so far apart
 # the text fell in the gap between them; at the true 30 ft opening the caption sits ON a gatepost.
 s.boundary_marker(1952, 1308, label_xy=(1952, 1291))  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
-s.execution_ground(2244, 1502, rot=8, label_above=True)  # the default below-label lands on the tile kiln at (2210,1520)
+s.execution_ground(2244, 1502, rot=8, label_above=True)  # the default below-label lands on the kiln works, which sits directly south at (2242,1584)
 
 
 s.bridges()

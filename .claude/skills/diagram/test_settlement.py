@@ -4762,7 +4762,7 @@ def test_execution_ground_is_sized_and_screened_by_tier():
 
 def test_execution_ground_label_can_flip_above_the_ground():
     # The ground shares the outskirts with the polluting trades, whose small glyphs the default
-    # below-label can land on (Nagahara's tile kiln).
+    # below-label can land on (Nagahara's kiln works).
     s = _town()
     s.execution_ground(500, 500, label_above=True)
     lb = [line for line in s.M["labels"] if len(line) > 5 and line[5] == "execution ground"][0]
@@ -5044,6 +5044,56 @@ def test_charcoal_yard_records_its_sheds_and_its_cooling_apron():
     assert a["sheds"] == 2 and b["sheds"] == 1
     assert len(a["apron"]) == 4 and a["w"] == 88 and a["h"] == 58
     assert a["label"] == "charcoal yard" and a["rot"] == -17.0
+
+
+def test_kiln_draws_a_works_and_records_its_body_and_its_quarters():
+    """A kiln is a WORKS, not a lone glyph (GM 2026-07-27): the kiln itself, the throwing shed, the
+    clay pit, the fuel stack, its own private well, and the cottages of the households that work
+    it. `body` and `quarters` are part of the record's contract - kiln_keeps_fire_gap measures from
+    the body, and a record with neither is a rule nobody can apply."""
+    s = _town()
+    s.kiln(400, 400)
+    k = s.M["kilns"][0]
+    assert (k["w"], k["h"]) == (140.0, 120.0) and k["label"] == "kiln"  # the caption no longer says "tile"
+    assert len(k["body"]) == 5 and (k["body"][2], k["body"][3]) == (46.0, 16.0)
+    assert len(k["quarters"]) == 2  # the default works houses two households
+    # the cottages stand a clear fire gap BELOW the kiln body, which is the whole point of the
+    # works' otherwise empty middle
+    assert min(q[1] for q in k["quarters"]) - (k["body"][1] + 8) >= 60
+
+
+def test_kiln_cottage_count_is_clamped_to_the_one_to_three_band():
+    """Two or three households is the works we draw; a real kiln district could be a dozen, and
+    that liberty is recorded in research/urban-features.md rather than taken silently here."""
+    s = _town()
+    s.kiln(300, 300, cottages=0)
+    s.kiln(700, 300, cottages=9)
+    assert len(s.M["kilns"][0]["quarters"]) == 1
+    assert len(s.M["kilns"][1]["quarters"]) == 3
+
+
+def test_kiln_rotation_carries_the_body_and_the_quarters_with_it():
+    """`rot` lays the kiln's upslope axis along local +x, so a rotated works must report rotated
+    world coordinates for both - a body recorded in the unrotated frame would be measured against
+    neighbors it does not actually stand near."""
+    a, b = _town(), _town()
+    a.kiln(500, 500)
+    b.kiln(500, 500, rot=90)
+    ka, kb = a.M["kilns"][0], b.M["kilns"][0]
+    assert ka["body"][1] < 500 and abs(ka["body"][0] - 500) < 40  # unrotated: the kiln sits ABOVE center
+    assert kb["body"][0] > 500 and abs(kb["body"][1] - 500) < 40  # rotated 90: it swings to the RIGHT
+    assert kb["body"][4] == 90.0
+
+
+def test_kiln_keeps_its_own_private_well():
+    """Clay cannot be weathered, wedged or thrown without water, so the well is a premises fixture
+    like the brewery's - and private for the same reason, so it never counts toward the
+    settlement's public idobata."""
+    s = _town()
+    before = len(s.M.get("wells", []))
+    s.kiln(400, 400)
+    added = s.M["wells"][before:]
+    assert len(added) == 1 and added[0].get("private") is True
 
 
 def test_refining_forge_records_its_two_hearths():
