@@ -159,7 +159,7 @@ s.quarter(_clip_h(_NW, 1211, False), "residential")
 # the label names the IMPERIAL road - placed OUTSIDE the north gate; inside the walls the same
 # roadway is a city street (a city, not Imperial, responsibility), so the label must sit beyond a gate
 IMPROAD = [(1602, 595), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 2290)]  # ends past the widened frame; the south tail reaches 2290 because the tannery, which must sit below BOTH outfall taps, pulls the crop ~180px south
-s.road(IMPROAD, label="Imperial Road", label_xy=(1704, 790))
+s.road(IMPROAD, label="Imperial Road", label_xy=(1678, 745))  # hint moved N of the execution ground (2026-07-27): at y790 the ladder slid the caption WEST along the road and into the execution ground's own caption
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)  # a moat vertex on the NW
 s.stream(
     [(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66), frm={"kind": "offmap"}, to={"kind": "moat"}
@@ -702,6 +702,20 @@ s.ministry(
 # the city THEATER STAGE - in the Temple of Benten's precinct, EAST of it, its viewing ground
 # opening west toward the hall (the troupe/festival venue belonging to the temple)
 s.theater_stage(1448, 1503, w=s.px(190), h=s.px(132), rot=90, label="theater stage")
+# ...and RESERVE the strip its caption takes, WEST of the viewing ground. place_caption is DEFERRED
+# to finish(), so (a) the box cannot be read back here the way minami's reserve_caption_ground reads
+# its halls', and (b) the standoff ladder seats the caption against a map that is already full - it
+# takes the least-bad spot rather than a clear one, which is how a merchant_house ended up under the
+# text when the 2026-07-27 threshold work reflowed this quarter. The strip has to be reserved BEFORE
+# the merchant fabric goes in; top_up's exact sweep honors block_polys through s._in_blocked.
+# The strip runs from Benten's own ground east to the viewing ground, so the ladder has room on
+# EITHER side of Benten's arch (which now stands one pitch off the hall's east face, in the middle of
+# this strip); a caption over the Benten hall itself is legitimate - a theater stage is temple
+# furniture, so `theater stage` is a caption the temple group allows.
+# It spans the ground's full DEPTH as well as its width, because the ladder slides a caption along
+# its subject's long side - here vertically - so the seats that clear Benten's arch are the slid ones
+# above and below it, and reserving only the arch's own band leaves exactly those occupied.
+s.block_polys.append([(1330, 1468), (1432, 1468), (1432, 1538), (1330, 1538)])
 # Benten's + Daikoku's intramural TEMPLE GRAVEYARDS (danka parish grounds)
 s.cemetery(1224, 1503, 46, 34, label="graveyard")  # nudged off the SW ring road (city_graveyard_clear_of_ring_road) - still in Benten's precinct
 s.cemetery(1393, 1668, 56, 40, label="graveyard")  # nudged off the S ring road - still in Daikoku's precinct
