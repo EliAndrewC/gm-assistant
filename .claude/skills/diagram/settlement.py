@@ -5589,7 +5589,7 @@ class Settlement:
 
         tw_lab = self.label_caption_hw(label, 8.0) if label else 0.0  # the caption half-width the seat must also hold, as RECORDED
         kb_boxes = self.label_blockers("kosatsuba")  # built once: the probe tests many seats against the same map
-        best: tuple[float, float, float, float, bool] | None = None  # (score, x, y, rot, label_above)
+        cands: list[tuple[int, float, float, float, float, int | None]] = []  # (busy, score, x, y, rot, label_above|None)
         for pts, _rw in routes:
             for i in range(len(pts) - 1):
                 (ax, ay), (bx, by) = pts[i], pts[i + 1]
@@ -5609,26 +5609,29 @@ class Settlement:
                             x, y = mx + ux * off * side, my + uy * off * side
                             if off_every_bed(x, y) and self._fits(x, y, w, h, corridors=False):
                                 busy = sum(1 for sx, sy in spots if math.hypot(x - sx, y - sy) < 260)
-                                # THE CAPTION IS PART OF THE SEAT (GM 2026-07-27). The glyph is 11
-                                # px and fits almost anywhere; its caption does not, and the busiest
+                                # THE CAPTION IS PART OF THE SEAT (GM 2026-07-27). The glyph is 11 px
+                                # and fits almost anywhere; its caption does not, and the busiest
                                 # frontage is exactly where there is least room for one - so a siter
                                 # that hunts for ground big enough to hold BOTH walks away from the
                                 # traffic and out to the quiet end of the road, which is how Ubame's
-                                # board ended up across the bridge. Score it instead: a seat whose
-                                # caption fits (below by default, above where the gate structure or
-                                # a shopfront takes the lower band) outranks any seat whose caption
-                                # does not, and among those the busiest wins. The bonus dwarfs the
-                                # traffic term rather than replacing it, so a board with nowhere to
-                                # put its caption is still placed and the label check still reports.
+                                # board came to stand across the bridge from its own town.
                                 lab = 0 if self.label_seat_clear(x, y + h / 2 + 11, tw_lab, 8.0, kb_boxes) else (1 if self.label_seat_clear(x, y - h / 2 - 11, tw_lab, 8.0, kb_boxes) else None)
-                                score = busy * 10 - off / 3 + (0 if lab is None else 1000)
-                                if best is None or score > best[0]:
-                                    best = (score, x, y, rot, bool(lab))
+                                cands.append((busy, busy * 10 - off / 3, x, y, rot, lab))
                             off += 5.0
-        if best is None:
+        if not cands:
             return None
-        _, x, y, rot, above = best
-        self.kosatsuba(x, y, rot, label=label, label_above=above)
+        # ON THE TRAFFIC IS THE RULE; A FITTING CAPTION IS ONLY THE PREFERENCE WITHIN IT. Scoring the
+        # caption as a flat bonus large enough to outrank traffic was tried first and re-committed the
+        # original sin at one remove: where no seat on a tight village frontage has a clear caption,
+        # EVERY caption-clear seat is out in the fields, so all three village boards walked off the
+        # frontage and their captions ran off the cropped frame. Open ground for a caption is abundant
+        # exactly where nobody is - the same trap as open verge for the board. So the busiest node
+        # sets a floor (60% of the best count available), and the caption chooses only among the seats
+        # that already stand on the traffic. A board with nowhere to put its caption is still placed,
+        # so labels_clear_of_other_buildings reports it rather than the siter hiding it.
+        floor = 0.6 * max(c[0] for c in cands)
+        _b, _s, x, y, rot, lab = max((c for c in cands if c[0] >= floor), key=lambda c: (c[5] is not None, c[1]))
+        self.kosatsuba(x, y, rot, label=label, label_above=bool(lab))
         return (x, y)
 
     def place_punishment_spot(self, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:
