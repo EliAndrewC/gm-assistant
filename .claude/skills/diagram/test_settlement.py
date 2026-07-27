@@ -5055,11 +5055,11 @@ def test_merchant_storehouse_is_never_drawn_across_a_neighbor():
 
 def test_region_blocked_catches_a_keepout_against_a_cell_EDGE():
     """The bug this exists to stop: a keep-out sitting against the middle of a cell EDGE touches
-    neither the centre nor any corner, so centre-plus-corner sampling passes it. That is how a
+    neither the center nor any corner, so center-plus-corner sampling passes it. That is how a
     wellhead ended up 1 px inside a hatake plot with every sample point clear."""
     cell = [(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]
     assert not settlement.region_blocked(cell, [], [], [], [])
-    # a small circle hugging the middle of the LEFT edge - no corner is near it, the centre is 50 away
+    # a small circle hugging the middle of the LEFT edge - no corner is near it, the center is 50 away
     assert settlement.region_blocked(cell, [], [(-4.0, 50.0, 6.0)], [], [])
     assert not settlement.region_blocked(cell, [], [(-40.0, 50.0, 6.0)], [], [])
     assert settlement.region_blocked(cell, [(-4.0, 50.0, 6.0)], [], [], [])  # same, as a pond
@@ -5089,14 +5089,14 @@ def test_point_quad_dist_is_zero_inside_and_grows_outside():
     assert 2.9 < settlement.point_quad_dist(-3, 5, cell) < 3.1
 
 
-def test_hard_polys_footprint_test_refuses_what_the_centre_test_allowed():
-    """The split that fixes centre-vs-footprint: `hard_polys` (crop, pond, bog, a field's own
-    ditches) is tested against the WHOLE footprint, while `block_polys` keeps the centre test its
+def test_hard_polys_footprint_test_refuses_what_the_center_test_allowed():
+    """The split that fixes center-vs-footprint: `hard_polys` (crop, pond, bog, a field's own
+    ditches) is tested against the WHOLE footprint, while `block_polys` keeps the center test its
     soft reservations - caption bands, aprons, fence standoffs - were tuned for."""
     s = _town()
     plot = [(500.0, 500.0), (600.0, 500.0), (600.0, 600.0), (500.0, 600.0)]
     s.block_polys.append(plot)
-    assert s._fits(490, 550, 46, 28)  # centre (490) is outside the plot, so the centre test allows it...
+    assert s._fits(490, 550, 46, 28)  # center (490) is outside the plot, so the center test allows it...
     s.hard_polys.append(plot)
     assert not s._fits(490, 550, 46, 28)  # ...but the footprint runs to 513, well inside it
     assert s._fits(300, 300, 46, 28)  # well clear, still fine

@@ -207,7 +207,7 @@ invisible. On Ubame the wind is the default NW monsoon (downwind = SE) while the
     read as a judgment); "grazing" -> "hayfields & grazing" on a pasture drawn full of hay bales;
     the stale "~14 shops / ~5 servants" comment now records the drawn 9 and 9 as the honest counts.
     The inn caption's first seat was boxed against the UNROTATED footprint and duly landed 3 px on
-    the inn's own corner - the centre-vs-footprint family again, this time in a caption box.
+    the inn's own corner - the center-vs-footprint family again, this time in a caption box.
   - **APPLIED, gen**: the four eastern commons became ONE frontier strip. They had drawn as stacked
     tuft blocks with bare aisles between them; the ground's real reason is the ox-team standing
     ground for sealed charcoal loads, and a strip is its true form. Merging RAISED cover (~116k px
