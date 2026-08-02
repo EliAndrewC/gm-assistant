@@ -271,7 +271,7 @@ s.drum_tower(1366, 1386)  # the bell-and-drum tower at the SW corner of the cent
 # ---- TRADE WORKS, placed early so every later pack flows around them.
 s.brewery(1466, 1198)
 s.dye_yard(1058, 1546)  # on the in-wall cargo canal, north of the dock basin
-s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
+s.lumber_yard(872, 1445, label_xy=(886, 1466))  # the zaimokuya on the dry strip below the wharf, clear of the water but hard against its bank frontage - ~40 ft of haul ground between the yard's west edge and the log boom's mooring line, so pen and yard read as ONE works (settlement-review 2026-08-02: at 130 ft of untouched bank they read as two unrelated features). Caption hand-seated east so its box clears the pen's bank edge (it grazed by under a pixel from the default seat)
 # THE LOG BOOM, a shore-fast holding pen off the yard (research/urban-features.md "The log boom").
 # Fox timber comes DOWN the Hayakawa in rafts and has to be held until it is pulled out; the pen is
 # the yard's waterside holding ground, anchored to the EAST bank at both ends with the raft-mats
@@ -280,8 +280,10 @@ s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clea
 # obstructing navigation, and the full-span catch boom belongs at the Fox gorge mouth upstream
 # (off-map lore), never at the port. Bank on the pen's local +y side: rot 268.6 turns +y east,
 # matching the bank's own lean (the centerline runs at 88.6 here). Caption on the yard side, on
-# the dry strip between bank and zaimokuya.
-s.log_boom(837.4, 1445, rot=268.6, length=100, label_xy=(868, 1502))
+# the dry strip between bank and zaimokuya. Pen head held ~15 px (45 ft) below the last wharf
+# jetty (deck edge y~1391) so the jetty keeps a working berth and does not read as bolted to the
+# boom (settlement-review 2026-08-02).
+s.log_boom(837.7, 1458, rot=268.6, length=100, label_xy=(868, 1515))
 s.oil_press(1622, 1268)  # +16 east of the obvious seat: its auto-caption otherwise runs into the Temple of Bishamon's (they cleared by 0.7 px, under no_label_overlaps' 2 px estimation slack, and read as touching)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
 s.bathhouses([(1416, 1180), (1250, 1424)])

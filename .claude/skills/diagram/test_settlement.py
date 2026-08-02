@@ -1827,6 +1827,20 @@ def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     assert b["w"] == b["len"] and b["h"] == b["pen_w"] and b["rot"] == 90.0
 
 
+def test_trade_works_caption_hand_seat_moves_the_label_and_its_band():
+    # label_xy on a trade glyph seats the caption (and its reserved band) at the given spot -
+    # the punishment_spot/kosatsuba remedy for a collision the placement probe cannot see
+    # (Minami's lumber-yard caption grazed the log-boom pen by under a pixel, 2026-08-02)
+    s = _crop_settlement()
+    s.lumber_yard(400, 300, label_xy=(470, 340))
+    lab = next(lb for lb in s.M["labels"] if len(lb) > 5 and lb[5] == "lumber yard")
+    assert abs((lab[0] + lab[2]) / 2 - 470) < 1.0 and lab[1] < 340 < lab[3]
+    s2 = _crop_settlement()
+    s2.lumber_yard(400, 300)  # default seat: below the footprint
+    lab2 = next(lb for lb in s2.M["labels"] if len(lb) > 5 and lb[5] == "lumber yard")
+    assert abs((lab2[0] + lab2[2]) / 2 - 400) < 1.0 and lab2[1] > 300
+
+
 def test_log_boom_labels_below_itself_unless_told_otherwise():
     s = _crop_settlement()
     s.log_boom(400, 300, rot=0, length=90, label="log boom")
