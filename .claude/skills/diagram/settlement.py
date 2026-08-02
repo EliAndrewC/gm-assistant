@@ -1455,7 +1455,9 @@ class Settlement:
         #                    ORDER: a scatter only skips clearings that exist when it runs, so a cover whose
         #                    seq <= a clearing's seq drew before the clearing was registered and may have
         #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
-        self._pwr_cache: tuple[tuple[int, int], list[tuple[Poly, tuple[float, float, float, float]]]] | None = None  # _well_ground_clear's memo of (paddy_wet_rings, per-ring bbox), fingerprint-invalidated
+        self._wgc_cache: tuple[Any, ...] | None = (
+            None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each with a bbox prefilter), fingerprint-invalidated
+        )
         self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
@@ -4038,50 +4040,63 @@ class Settlement:
         Placement predicted everything else about a well site - lanes, compounds, the bound, its
         neighbors - but never the water or the crop, so the overlap matrix (feature 017) found four
         wells standing in ditches, a channel and a hatake plot across three maps. Tested against the
-        DRAWN head (`_well_vr`), because what a reader sees is ink on ink."""
+        DRAWN head (`_well_vr`), because what a reader sees is ink on ink.
+
+        The wet-crop leg is the placement half of `wells_clear_of_paddies` (GM 2026-07-27: "wells
+        on dry crops are okay, but not in rice paddies, surely") - a paddy is a puddled, bunded
+        basin held under standing water, so a head sunk there stands in the water it is an
+        alternative to. Both halves read `paddy_wet_rings` (see it for why the DRAWN basins, not
+        the smoothed envelope, are the water), and the same strictness as the dry-plot rule
+        applies: the drawn head may not lap the crop.
+
+        MEMOIZED with per-item bbox PREFILTERS (prefilter family: they prune, they never decide -
+        same verdicts as the bare scans). This method runs once per CANDIDATE seat: place_wells
+        alone probes ~133k candidates on Minami, and farm_wells' fallback ~2,700 per boxed-in
+        steading, so re-scanning ~580 watercourse segments, every dry plot, and 927 paddy basins
+        per candidate turned a ~5s gen into a >45-minute grind (2026-08-02, profiled: 95M
+        seg_dist calls, ~90% of gen wall time). The memo is invalidated by a cheap fingerprint
+        (record and point counts of everything scanned); the wells are placed long after the
+        terrain is drawn, so the geometry is stable across the whole placement pass."""
         vr = self._well_vr() if vr is None else vr
-        for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
-            for rec in self.M.get(key, []) or []:
-                pts = rec.get("poly") or rec.get("pts")
-                if not pts:
-                    continue  # pragma: no cover - defensive: every watercourse carries a path
-                lim = float(rec.get("w") or dw) / 2 + vr
-                if any(seg_dist(cx, cy, pts[i], pts[i + 1]) < lim for i in range(len(pts) - 1)):
-                    return False
+        fields = self.M.get("fields") or []
+        recs = {key: self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")}
+        fp = (
+            len(fields),
+            sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields),
+            tuple(len(rs) for rs in recs.values()),
+            sum(len(rec.get("poly") or rec.get("pts") or ()) for rs in recs.values() for rec in rs),
+        )
+        if self._wgc_cache is None or self._wgc_cache[0] != fp:
+            water = []
+            for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
+                for rec in recs[key]:
+                    pts = rec.get("poly") or rec.get("pts")
+                    if not pts:
+                        continue  # pragma: no cover - defensive: every watercourse carries a path
+                    hw = float(rec.get("w") or dw) / 2
+                    for i in range(len(pts) - 1):
+                        (ax, ay), (bx, by) = pts[i], pts[i + 1]
+                        water.append((hw, min(ax, bx), min(ay, by), max(ax, bx), max(ay, by), (ax, ay), (bx, by)))
+            dry = []
+            for dp in recs["dry_plots"]:
+                poly = dp.get("poly")
+                if not poly:
+                    continue  # pragma: no cover - defensive: every dry plot carries an outline
+                dry.append((poly, (min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly))))
+            wet = [(r, (min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r))) for r in paddy_wet_rings(self.M)]
+            self._wgc_cache = (fp, water, dry, wet)
+        _, water, dry, wet = self._wgc_cache
+        for hw, sx0, sy0, sx1, sy1, pa, pb in water:
+            lim = hw + vr
+            if sx0 - lim <= cx <= sx1 + lim and sy0 - lim <= cy <= sy1 + lim and seg_dist(cx, cy, pa, pb) < lim:
+                return False
         pond = self.M.get("pond")
         if pond and ((cx - pond[0]) ** 2) / ((pond[2] + vr) ** 2) + ((cy - pond[1]) ** 2) / ((pond[3] + vr) ** 2) < 1.0:
             return False
-        for dp in self.M.get("dry_plots", []) or []:
-            poly = dp.get("poly")
-            if not poly:
-                continue  # pragma: no cover - defensive: every dry plot carries an outline
-            if point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly))):
+        for poly, (bx0, by0, bx1, by1) in dry:
+            if bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and (point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly)))):
                 return False
-        # AND THE WET ONES, which is where it actually matters (GM 2026-07-27: "wells on dry crops
-        # are okay, but not in rice paddies, surely"). The line above says "you do not dig one in the
-        # middle of a crop plot" and covered only the DRY plots; a paddy is a puddled, bunded basin
-        # held under standing water, so a head sunk there stands in the water it is an alternative
-        # to. Nothing else caught it either - the overlap matrix classes `fields` permissive because
-        # a plot's polygon is not stored - so this is the placement half of `wells_clear_of_paddies`,
-        # and both halves read `paddy_wet_rings` (see it for why the DRAWN basins, not the smoothed
-        # envelope, are the water). Same strictness as the dry-plot rule: the drawn head may not lap
-        # the crop.
-        # MEMOIZED, with a bbox PREFILTER (it prunes, it never decides - same verdict as the bare
-        # scan). This method runs once per CANDIDATE seat, and farm_wells' fallback probes ~2,700
-        # candidates per boxed-in steading - on Minami (927 drawn paddy basins) rebuilding every
-        # ring from JSON per candidate turned a ~5s gen into a >45-minute grind (2026-08-02). The
-        # fingerprint (field count + total recorded points) changes whenever a gen draws more
-        # paddies; wells are placed long after the fields, so the rings are stable across the
-        # whole placement pass.
-        fields = self.M.get("fields") or []
-        fp = (len(fields), sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields))
-        if self._pwr_cache is None or self._pwr_cache[0] != fp:
-            rings = paddy_wet_rings(self.M)
-            self._pwr_cache = (fp, [(r, (min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r))) for r in rings])
-        return not any(
-            bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring)
-            for ring, (bx0, by0, bx1, by1) in self._pwr_cache[1]
-        )
+        return not any(bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring) for ring, (bx0, by0, bx1, by1) in wet)
 
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
@@ -10078,50 +10093,96 @@ class Settlement:
         self.M.setdefault("jetties", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "z": z})
         return z
 
-    def log_boom(self, x: float, y: float, rot: float = 0.0, length: float | None = None, label: str | None = "log boom", label_xy: Pt | None = None) -> int:
-        """A LOG BOOM - a cabled chain of floating logs corralling rafted timber against the bank,
-        with the loose stock riding inside it, at a river port whose main trade is TIMBER.
+    def log_boom(self, x: float, y: float, rot: float = 0.0, length: float | None = None, width: float | None = None, label: str | None = "log boom", label_xy: Pt | None = None) -> int:
+        """A LOG BOOM - a shore-fast holding pen for rafted timber at a river port whose main trade
+        is TIMBER: a cabled chain of floating logs anchored to the bank at both ends, enclosing a
+        strip of water packed with raft-mats between the chain and the shore.
 
         WHY THIS EXISTS (GM 2026-07-26). A timber city drawn with only a lumber yard and jetties gets
         the same river vocabulary as any other river town: the yard says "someone sells wood", not
         "this is a timber river". Logs came DOWN the water loose or rafted and had to be held at the
-        mill or yard until they were pulled out, and the holding pen is the boom - a chain of logs
-        cabled end to end, the one piece of river furniture that is specific to the trade. Minami is
-        where it matters: l7r.md has Fox charcoal burners outnumbering farmers and "significantly
-        more" timber going downriver than the ~10,000 koku/yr moved by cart, so the boom is not
-        decoration but the largest working thing on the city's water.
+        mill or yard until they were pulled out, and the holding pen is the boom - the one piece of
+        river furniture that is specific to the trade. Minami is where it matters: l7r.md has Fox
+        charcoal burners outnumbering farmers and "significantly more" timber going downriver than
+        the ~10,000 koku/yr moved by cart, so the boom is not decoration but the largest working
+        thing on the city's water.
 
-        Drawn in the TOP layer OVER the water, like a jetty or a bridge deck - it floats, so its
-        overlap with the river is the whole point (OVERLAP_CLASS FIXTURE, _OVERLAP_EXEMPT). `rot` is
-        the boom's bearing, which should follow the current rather than cross it: a boom is moored
-        ALONG the bank, because one strung across the channel would dam the river it works.
-        Records M['log_booms']."""
+        WHY IT IS A PEN AGAINST THE BANK, NOT A LINE IN THE STREAM (GM 2026-08-02, "it just looks
+        like a bunch of logs in the middle of the river"; the research is in
+        research/urban-features.md, "The log boom"). A boom is a floating FENCE - anchored to
+        nothing it holds nothing. Attested booms anchor to fixed ground (bank abutments, stone-
+        filled cribs, driven piles) and run ALONG a navigated river, the pen between chain and
+        shore, with the fairway kept clear by law; only a loose-log CATCH boom on an unnavigated
+        reach ever spans the water (the Kiso tsunaba at the gorge mouth), and that is upstream
+        lore, not port furniture. And the held stock is MASS - attested pens are measured in
+        thousands of logs packed edge to edge - so the pen draws as a near-solid mat of raft
+        strips, never scattered sticks.
+
+        Local frame: `length` runs along the bank (local x), the pen is `width` across (local y,
+        default ~40 real ft - about a third of a 120 ft channel), and THE BANK LIES ON THE LOCAL
+        +y SIDE - orient `rot` so +y faces the shore. The chain draws on the -y (offshore) edge,
+        short end-booms close the pen, mooring posts sit at the bank corners and pile clusters at
+        the chain. The checks (log_boom_moored_to_the_bank / log_boom_leaves_the_fairway /
+        log_boom_serves_the_lumber_yard) derive the pen quad from the recorded x/y/rot/len/pen_w
+        under this same convention. Drawn in the TOP layer OVER the water, like a jetty deck - it
+        floats, so overlapping the river is the whole point (OVERLAP_CLASS FIXTURE,
+        _OVERLAP_EXEMPT). Records M['log_booms']."""
         if length is None:
             length = self.px(330)
-        hl = length / 2
+        if width is None:
+            width = self.px(40)
+        hl, hp = length / 2, width / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
-        # the loose stock riding inside the pen, drawn first so the chain reads as holding it in
-        for ox, oy, olen in ((-0.34, 0.30, 0.20), (-0.06, 0.38, 0.16), (0.20, 0.31, 0.22), (0.44, 0.40, 0.15), (-0.20, 0.46, 0.17)):
-            lx0, lx1 = -hl + length * (0.5 + ox), -hl + length * (0.5 + ox + olen)
-            ly = 5.6 + oy * 7.0
-            g.append(f'<line x1="{lx0:.1f}" y1="{ly:.1f}" x2="{lx1:.1f}" y2="{ly:.1f}" stroke="#7A5B33" stroke-width="2.6" stroke-linecap="round" opacity="0.85"/>')
-        # the CHAIN: logs cabled end to end, each a stubby round-ended timber, with the cable through
-        seg = max(9.0, length / 12.0)
-        g.append(f'<line x1="{-hl:.1f}" y1="0" x2="{hl:.1f}" y2="0" stroke="#4A3A22" stroke-width="0.8" opacity="0.8"/>')
-        pos = -hl
-        while pos < hl - 1:
-            end = min(pos + seg * 0.82, hl)
-            g.append(f'<line x1="{pos:.1f}" y1="0" x2="{end:.1f}" y2="0" stroke="#8A6B42" stroke-width="4.2" stroke-linecap="round"/>')
-            g.append(f'<line x1="{pos:.1f}" y1="0" x2="{end:.1f}" y2="0" stroke="#59431F" stroke-width="0.7" opacity="0.55"/>')
-            pos += seg
+        # the held stock first, so the chain reads as holding it in: raft-mats packed nearly solid
+        # between chain and shore (sparse sticks read as debris - the attested pens hold thousands)
+        n_rows = max(4, round((width - 3.2) / 1.7) + 1)
+        for r in range(n_rows):
+            ry = -hp + 1.6 + r * (width - 3.2) / max(1, n_rows - 1)
+            pos = -hl + 2.6 + 1.7 * ((r * 7) % 3)
+            while pos < hl - 3.6:
+                run = 13.0 + 4.5 * math.sin(r * 3.1 + pos * 0.13)
+                end = min(pos + run, hl - 2.6)
+                tone = "#7A5B33" if (r + int(pos)) % 2 else "#85643B"
+                g.append(f'<line x1="{pos:.1f}" y1="{ry:.1f}" x2="{end:.1f}" y2="{ry:.1f}" stroke="{tone}" stroke-width="2.1" stroke-linecap="round" opacity="0.92"/>')
+                pos = end + 1.3
+
+        # the pen fence: logs cabled end to end (stubby round-ended timbers over a cable line),
+        # along the offshore edge and closing both short ends back to the bank
+        def chain(x0: float, y0: float, x1: float, y1: float) -> None:
+            n_seg = max(2, int(math.hypot(x1 - x0, y1 - y0) / 9.0))
+            g.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="#4A3A22" stroke-width="0.8" opacity="0.8"/>')
+            for i in range(n_seg):
+                t0, t1 = (i + 0.06) / n_seg, (i + 0.88) / n_seg
+                g.append(
+                    f'<line x1="{x0 + (x1 - x0) * t0:.1f}" y1="{y0 + (y1 - y0) * t0:.1f}" x2="{x0 + (x1 - x0) * t1:.1f}" y2="{y0 + (y1 - y0) * t1:.1f}" stroke="#8A6B42" stroke-width="4.2" stroke-linecap="round"/>'
+                )
+                g.append(
+                    f'<line x1="{x0 + (x1 - x0) * t0:.1f}" y1="{y0 + (y1 - y0) * t0:.1f}" x2="{x0 + (x1 - x0) * t1:.1f}" y2="{y0 + (y1 - y0) * t1:.1f}" stroke="#59431F" stroke-width="0.7" opacity="0.55"/>'
+                )
+
+        chain(-hl, -hp, hl, -hp)
+        chain(-hl, hp, -hl, -hp)
+        chain(hl, hp, hl, -hp)
+        # anchorage - a floating fence is only as strong as its fixed ground: mooring posts at the
+        # bank corners, pile clusters at the chain's corners and mid-run
+        for cx_, cy_ in ((-hl, hp), (hl, hp)):
+            g.append(f'<circle cx="{cx_:.1f}" cy="{cy_:.1f}" r="1.8" fill="#4A3A22"/>')
+        for cx_ in (-hl, 0.0, hl):
+            for dx_, dy_ in ((-1.6, 0.0), (1.4, -1.0), (0.6, 1.4)):
+                g.append(f'<circle cx="{cx_ + dx_:.1f}" cy="{-hp + dy_:.1f}" r="1.1" fill="#59431F"/>')
         g.append('</g>')
         z = self.add_top(''.join(g))
-        th = math.radians(rot)
-        w_ = abs(math.cos(th)) * length + abs(math.sin(th)) * 14.0
-        h_ = abs(math.sin(th)) * length + abs(math.cos(th)) * 14.0
-        self.M.setdefault("log_booms", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "w": round(w_, 1), "h": round(h_, 1), "z": z})
+        # record TRUE unrotated dims (w = along-bank length, h = pen width) with rot, exactly as a
+        # building does - the matrix extractor rotates x/w/h records by `rot` itself, so recording a
+        # rotation-FOLDED bounding box here double-rotates into a phantom footprint (that phantom
+        # put the pen "on" Minami's lumber yard 42px away, 2026-08-02)
+        self.M.setdefault("log_booms", []).append(
+            {"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "pen_w": round(width, 1), "w": round(length, 1), "h": round(width, 1), "z": z}
+        )
         if label:
-            lx, ly = label_xy if label_xy else (x, y + h_ / 2 + 12)
+            th = math.radians(rot)
+            aabb_h = abs(math.sin(th)) * length + abs(math.cos(th)) * width
+            lx, ly = label_xy if label_xy else (x, y + aabb_h / 2 + 12)
             self.label(lx, ly, label, 9, italic=True, color="#5A4326")
         return z
 

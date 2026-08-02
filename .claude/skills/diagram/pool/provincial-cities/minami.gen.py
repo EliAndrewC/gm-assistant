@@ -272,12 +272,16 @@ s.drum_tower(1366, 1386)  # the bell-and-drum tower at the SW corner of the cent
 s.brewery(1466, 1198)
 s.dye_yard(1058, 1546)  # on the in-wall cargo canal, north of the dock basin
 s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
-# THE LOG BOOM, in the water off the yard. Fox timber comes DOWN the Hayakawa in rafts and has to be
-# held until it is pulled out, and the holding pen is the one piece of river furniture specific to
-# the trade - without it a timber city reads like any other river town. Moored ALONG the current
-# (rot ~89, the river's own slight eastward lean going south), never across it: a boom strung over
-# the channel would dam the river it works. Caption on the far bank so it does not sit on the water.
-s.log_boom(827, 1420, rot=89, length=100, label_xy=(762, 1392))
+# THE LOG BOOM, a shore-fast holding pen off the yard (research/urban-features.md "The log boom").
+# Fox timber comes DOWN the Hayakawa in rafts and has to be held until it is pulled out; the pen is
+# the yard's waterside holding ground, anchored to the EAST bank at both ends with the raft-mats
+# packed between chain and shore. It hugs the yard's own bank and takes a third of the 120 ft
+# channel, leaving the fairway clear for the wharf traffic upstream - booms were barred from
+# obstructing navigation, and the full-span catch boom belongs at the Fox gorge mouth upstream
+# (off-map lore), never at the port. Bank on the pen's local +y side: rot 268.6 turns +y east,
+# matching the bank's own lean (the centerline runs at 88.6 here). Caption on the yard side, on
+# the dry strip between bank and zaimokuya.
+s.log_boom(837.4, 1445, rot=268.6, length=100, label_xy=(868, 1502))
 s.oil_press(1622, 1268)  # +16 east of the obvious seat: its auto-caption otherwise runs into the Temple of Bishamon's (they cleared by 0.7 px, under no_label_overlaps' 2 px estimation slack, and read as touching)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
 s.bathhouses([(1416, 1180), (1250, 1424)])

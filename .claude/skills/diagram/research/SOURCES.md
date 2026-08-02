@@ -200,6 +200,54 @@ Tricycle, "Temple Wives of Japan"
 
 *Used for:* the bomori institution and eldest-son succession
 
+### `nishikori-tsunaba`
+
+Kotobank, Nishikori tsunaba site entry; Yaotsu town history pages (yaotsu-mall.com)
+
+*Used for:* the full-river rope catch at the gorge mouth; ~300,000 logs/yr; the autumn-to-spring season; the 138-official timber magistracy; 1340s origin
+
+### `kiso-unzaihou`
+
+Rinya-cho (Japan Forestry Agency), Kiso-style felling and transport method pages
+
+*Used for:* the kanagashi loose-log drive handing off to rafts at the tsunaba; three-man raft crews; onward transport to the Nagoya and bay-port storage yards
+
+### `susquehanna-boom`
+
+Wikipedia, Susquehanna Boom; PA Conservation Heritage; Lumber Heritage Region
+
+*Used for:* seven miles of boom ALONG one side of the river; ~350-400 stone-filled cribs 22 ft high; 300 million board feet held at once; ~40 million logs lifetime
+
+### `stcroix-boom-nps`
+
+NPS, "The St. Croix Boom"
+
+*Used for:* lengthwise division into log channels and holding pens beside a maintained navigation channel; the hinged sheer boom; navigation lawsuits and negligence rulings
+
+### `hudson-big-boom`
+
+New York Almanack, "The Big Boom: Old Hudson River Chain Recalls Logging History"
+
+*Used for:* boom construction - hewn timbers bolted raftwise, chained end to end over friction rollers to bank abutments; the 1859 break that scattered logs 40 miles
+
+### `kiba-koto`
+
+the tokyo files, "the kiba of Koto-ku"; Hiroshige print notes (Adachi / Brooklyn Museum)
+
+*Used for:* Edo's off-river timber district of canals and storage ponds; floating storage preserving timber; rafts poled in canals
+
+### `shangxinhe-gazetteer`
+
+Jiangsu provincial gazetteer site on Shangxinhe; Wikipedia/Baidu, Shangxinhe
+
+*Used for:* Nanjing's ~9 km side-channel timber market; rafts moored in mass along the banks; the Qing-peak "constantly sufficient through all seasons" trade
+
+### `timber-rafting-wiki`
+
+Wikipedia, Timber rafting
+
+*Used for:* rafting vs driving as distinct systems; raft dimensions across traditions (Rhine rafts to hundreds of meters, thousands of logs)
+
 ## Setting canon
 
 `l7r.md` and `budgets.md` (the GM's own notes) are cited inline by filename rather than keyed here - they are canon rather than research, and an entry resting on them carries the `setting-canon` evidence class.
