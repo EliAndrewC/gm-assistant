@@ -9766,3 +9766,42 @@ def test_city_ward_fence_joins_wall_not_crosses_fires_on_a_crossing_mid_run():
 def test_city_ward_fence_joins_wall_not_crosses_ignores_a_degenerate_boundary():
     M = _ward_wall([[500, 400]])
     assert "city_ward_fence_joins_wall_not_crosses" not in f(M)
+
+
+# --- angled-building captions (GM 2026-08-02): tilted label records carry the tilt at [7] -------
+def test_no_label_overlaps_judges_tilted_pairs_by_their_quads():
+    # two captions along the same -30 deg lane: their AABBs cross massively, their glyph runs lie
+    # parallel 14px apart - the box test would false-flag what the reader sees as two clean lines
+    M = {"meta": {}, "labels": [[100, 100, 200, 110, 1, "a", None, -30.0], [100, 114, 200, 124, 2, "b", None, -30.0]]}
+    assert "no_label_overlaps" not in f(M)
+
+
+def test_no_label_overlaps_fires_when_tilted_glyphs_actually_cross():
+    M = {"meta": {}, "labels": [[100, 100, 200, 110, 1, "a", None, -30.0], [100, 102, 200, 112, 2, "b", None, -30.0]]}
+    assert "no_label_overlaps" in f(M)
+
+
+def test_labels_clear_of_other_buildings_reads_the_tilted_quad():
+    # the pre-tilt box [0..3] laps the merchant, but the -30 deg glyph run swings clear below it -
+    # judged by its box the caption would false-flag; judged by its true quad it is clean
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000}, buildings=[bldg(120, 106, kind="merchant", w=20, h=16)])
+    M["labels"] = [[100, 100, 240, 112, 1, "stray caption", None, -30.0]]
+    assert "labels_clear_of_other_buildings" not in f(M)
+    M["labels"] = [[100, 100, 240, 112, 1, "stray caption"]]  # the same record level DOES lap it
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
+def test_labels_within_image_uses_the_tilted_reach():
+    lvl = [100, 20, 240, 32, 1, "near the top edge"]
+    assert "labels_within_image" not in f({"meta": {}, "labels": [lvl]})
+    # tilted -30, the run's high end pokes past the frame the level box sat inside
+    assert "labels_within_image" in f({"meta": {}, "labels": [[*lvl[:6], None, -30.0]]})
+
+
+def test_label_hugs_its_referent_measures_the_tilted_quad():
+    # the tilted run's low corner dips to ~4px off the subject box - hugging - where its own
+    # pre-tilt box floats 38px above the subject
+    hug = [100, 100, 240, 112, 1, "gate market", [90, 150, 150, 190], -30.0]
+    assert "label_hugs_its_referent" not in f({"meta": {}, "labels": [hug]})
+    adrift = [100, 100, 240, 112, 1, "gate market", [600, 600, 700, 650], -30.0]
+    assert "label_hugs_its_referent" in f({"meta": {}, "labels": [adrift]})
