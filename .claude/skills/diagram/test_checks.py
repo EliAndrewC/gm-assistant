@@ -5901,6 +5901,43 @@ def test_kosatsuba_by_the_road_fires_when_marooned():
     assert "kosatsuba_by_the_road" in f(M)
 
 
+def test_kosatsuba_on_a_main_way_fires_on_a_side_lane_board():
+    # GM 2026-08-02 (Ubame): the board sat a legal 49 ft off a side lane while the high street
+    # ran 200 ft away. Where the map declares a way hierarchy, only a MAIN way seats the board -
+    # the side lane satisfies the old distance check, which is exactly why this check exists.
+    M = {
+        "meta": {"scale": "town"},
+        "kosatsuba": [_kosatsuba(500, 830)],
+        "road": [[0, 500], [1000, 500]],
+        "lanes": [{"pts": [[0, 800], [1000, 800]], "w": 5}],
+    }
+    fails = f(M)
+    assert "kosatsuba_by_the_road" not in fails
+    assert "kosatsuba_on_a_main_way" in fails
+    on_road = f({**M, "kosatsuba": [_kosatsuba(500, 530)]})
+    assert "kosatsuba_on_a_main_way" not in on_road
+
+
+def test_kosatsuba_on_a_main_way_reads_the_main_street_flag():
+    # a main: True town street is a main way; an unflagged one is a side street
+    main_st = {"pts": [[0, 500], [1000, 500]], "w": 28, "main": True}
+    side_st = {"pts": [[0, 800], [1000, 800]], "w": 22, "main": False}
+    on_side = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 830)], "town_streets": [main_st, side_st]})
+    assert "kosatsuba_on_a_main_way" in on_side
+    on_main = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "town_streets": [main_st, side_st]})
+    assert "kosatsuba_on_a_main_way" not in on_main
+
+
+def test_kosatsuba_on_a_main_way_exempts_maps_with_no_declared_hierarchy():
+    # a village whose network is all lanes (and a town whose streets are all unflagged) has no
+    # main/side distinction to violate - the check would be unsatisfiable there, so the
+    # busiest-node scoring in place_kosatsuba stands in for "main" instead
+    lanes_only = f({"meta": {"scale": "village", "ftpx": 2}, "kosatsuba": [_kosatsuba(500, 512)], "lanes": [{"pts": [[0, 500], [1000, 500]], "w": 5}]})
+    assert "kosatsuba_on_a_main_way" not in lanes_only
+    unflagged = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "town_streets": [{"pts": [[0, 500], [1000, 500]], "w": 28}]})
+    assert "kosatsuba_on_a_main_way" not in unflagged
+
+
 def test_town_kosatsuba_opt_out():
     # a suppressed or backwater seat may omit it
     assert "town_has_kosatsuba" not in f({"meta": {"scale": "town", "kosatsuba": False}})

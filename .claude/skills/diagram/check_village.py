@@ -9243,6 +9243,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if kbs and routes_kb:
             far_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in routes_kb for k in range(len(r) - 1)) > lim_kb]
             check("kosatsuba_by_the_road", not far_kb, f"notice board(s) at {far_kb} stand more than ~60 real ft from every road/main street - a kosatsu is read where people pass")
+            # ON A MAIN WAY, not merely ON A WAY (GM 2026-08-02, from Ubame: the board stood a
+            # legal 49 ft off a side lane while the high street - the road, 23 structures on
+            # its frontage - ran 200 ft away; "it should be along the main road, in order to
+            # be more noticed"). The kosatsu is the state talking at everyone who passes, and
+            # on a map with a way HIERARCHY "everyone" walks the main way: every `roads` entry
+            # is a major road by construction (road() draws Imperial trunks and their like)
+            # and a `main: True` town street is the gate-to-yamen avenue - so where a map
+            # declares either, the board must stand in the siting band of one of THOSE, and a
+            # side street or lane within 60 ft satisfies kosatsuba_by_the_road while still
+            # burying the institution. Maps whose network is undifferentiated (village/hamlet
+            # lane webs, towns with no flagged main street) declare no hierarchy to violate
+            # and are exempt - there place_kosatsuba's busiest-node scoring stands in for
+            # "main". DELIBERATELY narrower than the punishment ground's siting (GM
+            # 2026-08-02: "other map features like punishment grounds don't always need to be
+            # along a main road, but a notice board must be" - the ground is a display for
+            # locals who already know where justice is done; the board must AMBUSH the eye).
+            mains_kb = ([r["pts"] for r in M.get("roads") or []] or ([M["road"]] if M.get("road") else [])) + [st["pts"] for st in M.get("town_streets", []) if st.get("main")]
+            if mains_kb:
+                off_main_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in mains_kb for k in range(len(r) - 1)) > lim_kb]
+                check(
+                    "kosatsuba_on_a_main_way",
+                    not off_main_kb,
+                    f"notice board(s) at {off_main_kb} stand off every MAIN way - the board is posted to be noticed, so it goes on the main street/road (a road, or a main: True town street), never a side street or lane (GM 2026-08-02)",
+                )
             # ORIENTATION, the other half of siting (GM 2026-07-27, catching Nagahara's third
             # board). A kosatsu is a BROADSIDE signboard: a 7x3 ft face under a little roof,
             # read by someone walking past without leaving the road. Standing it PERPENDICULAR
