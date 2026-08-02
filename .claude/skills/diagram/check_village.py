@@ -1010,6 +1010,21 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
 
+def kiln_quarters(k: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """A kiln works' own cottages as footprint records, ROTATION INCLUDED.
+
+    One helper rather than two call sites unpacking the list by index, because they had already
+    drifted apart once in spirit: `kiln_keeps_fire_gap` and `wells_among_dwellings` both rebuilt the
+    record inline and both dropped the rotation, so a works drawn at rot=270 was adjudicated as a
+    box at the right place with the wrong orientation (Tango's 69 ft fire gap measured 62 ft). Same
+    lesson as `solid_structs` one level down: a record that two checks unpack by hand is a record
+    that will be unpacked differently by the third.
+
+    A record with only four elements predates the rotation and is read as rot=0 - which is what
+    every kiln works was before the maps started passing `rot` on 2026-07-27."""
+    return [{"x": q[0], "y": q[1], "w": q[2], "h": q[3], "rot": (q[4] if len(q) > 4 else 0.0)} for q in k.get("quarters", []) or []]
+
+
 def edge_gap(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
     """The TRUE gap in px between two rotated footprints - the distance you could measure on the
     ground between the nearest points of two buildings. 0.0 if they overlap or touch.
@@ -3241,7 +3256,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 _kn_tight.append((round(_kn["x"]), round(_kn["y"])))
                 continue
             _kn_rec = {"x": _kn_b[0], "y": _kn_b[1], "w": _kn_b[2], "h": _kn_b[3], "rot": _kn_b[4]}
-            _kn_near = [{"x": _q[0], "y": _q[1], "w": _q[2], "h": _q[3]} for _q in _kn.get("quarters", [])]
+            _kn_near = kiln_quarters(_kn)
             _kn_near += solid_structs(M, "manors", "religious", exclude=("kilns",))
             if any(edge_gap(_kn_rec, _kn_o) < 60.0 / _kn_ftpx for _kn_o in _kn_near):
                 _kn_tight.append((round(_kn["x"]), round(_kn["y"])))
@@ -5479,7 +5494,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # for why - so a check that reads only the settlement's housing stock would call the works'
         # own well stray. Read them here rather than exempting private wells: the rule's teeth are
         # for a well out in open country, and this one is genuinely among the houses it serves.
-        dwell_all = dwell_all + [{"x": _q[0], "y": _q[1], "w": _q[2], "h": _q[3]} for _k in M.get("kilns", []) for _q in _k.get("quarters", [])]
+        dwell_all = dwell_all + [_q for _k in M.get("kilns", []) for _q in kiln_quarters(_k)]
         stray = [
             (round(wl["x"]), round(wl["y"])) for wl in all_wells if dwell_all and not any(within_edge_gap(wl, b, 95) for b in dwell_all)
         ]  # the TRUE gap to the served building's edge (fair to a large hall); the half-diagonal this used
