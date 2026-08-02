@@ -69,6 +69,15 @@ passes by putting `POLL_OK` in the command with a note saying what it waits for.
 the batching hook: "background the final gate" was already written down here, and the session
 followed it and then blocked on the gate anyway.
 
+**And keep the backgrounded command simple enough that its EXIT CODE is real.** Run it as
+`cd <dir> && make done > <log> 2>&1` and nothing more. A wrapper ending in `; echo EXIT=$?` makes the
+SHELL exit 0 no matter what make did, so the harness notifies "exit code 0" for a gate that FAILED -
+which happened on 2026-07-27: the paddy-well gate was reported green, its log's own last line was
+`EXIT=2`, and the three failures it hid were pointing at a real design error in the new rule rather
+than a slip. The log's tail is the authority; the notification is a summary of the wrapper. Put the
+`cd` inside the same command too - a timed-out call can leave the shell's cwd somewhere else, and the
+next `make done` then runs where there is no Makefile (or, worse, somewhere it should not).
+
 ## Before the gate, run the WHOLE affected test file - not a `-k` subset
 
 That same profile paid an extra gate round trip (98s plus two turns) for a failure a local run would

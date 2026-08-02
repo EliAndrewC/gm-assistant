@@ -168,6 +168,47 @@ def seg_dist(px: float, py: float, a: Pt, b: Pt) -> float:
     return math.hypot(px - cx, py - cy)
 
 
+def ring_touches(cx: float, cy: float, r: float, ring: Poly) -> bool:
+    """Does a disc of radius r at (cx, cy) lap this ring - inside it, or within r of an edge?"""
+    return point_in_poly(cx, cy, ring) or any(seg_dist(cx, cy, ring[i], ring[(i + 1) % len(ring)]) < r for i in range(len(ring)))
+
+
+def paddy_wet_rings(M: Manifest) -> list[Poly]:
+    """The rings that are a paddy field's WATER - the ground a wellhead may not stand in.
+
+    `Settlement._well_ground_clear` (placement) and `wells_clear_of_paddies` (the verdict) both read
+    this ONE function, so the siter and the check cannot disagree about where the water is - the trap
+    recorded in this skill's CLAUDE.md under "Placement and its check must read the SAME manifest
+    source".
+
+    PREFER THE DRAWN PLOTS. `plot_polys` holds the individual bunded basins as they are drawn, so it
+    is the ink a reader sees, and reading it leaves the fan's unplanted RIM SLACK available - which
+    matters, because the smoothed `outline` is an ENVELOPE claiming more ground than the crop fills,
+    and that margin is exactly where `farm_wells` seats the well of a steading boxed in by crop (see
+    its fallback, and the two tests that pin it). Treating the envelope as water refuses legitimate
+    margin, and on Tango's east fan it left a steading with no legal seat anywhere.
+
+    FALL BACK TO THE OUTLINE where a field records no plots, rather than skipping that field. Only
+    the three provincial cities record `plot_polys` today; all 23 rural paddy fields in the pool
+    record just an outline, so a plots-only rule would silently never run on a single hamlet,
+    village or town - and a check that never runs looks exactly like a check that passes (same
+    CLAUDE.md). Where the plots are not recorded the fan is drawn as one wet body anyway, so its
+    outline IS the edge of the water. The fallback costs nothing today: swept across the pool, no
+    well on any map stands inside a paddy outline."""
+    rings: list[Poly] = []
+    for fl in M.get("fields") or []:
+        if fl.get("kind") != "paddy":
+            continue
+        drawn = [r for r in ([(float(p[0]), float(p[1])) for p in q] for q in (fl.get("plot_polys") or [])) if len(r) > 2]
+        if drawn:
+            rings.extend(drawn)
+            continue
+        ring = [(float(p[0]), float(p[1])) for p in (fl.get("outline") or [])]
+        if len(ring) > 2:
+            rings.append(ring)
+    return rings
+
+
 # ---- the travelled ways, and the gate that bars one ------------------------------------------
 # A kido is a gate ACROSS A WAY, so what it squares to is the way, not the fence it hangs in (GM
 # 2026-07-26). These helpers are the single definition of "a road runs through here", shared by
@@ -3672,6 +3713,50 @@ class Settlement:
             }
         )
 
+    _WARD_STROKE = 5.0  # the fence's drawn width; recorded so check_village measures the ink, not the vertex
+
+    def _ward_ends_on_wall(self, boundary: Poly, reach: float = 24.0) -> Poly:
+        """JOIN, DON'T INTERSECT: snap each ward-fence END onto the city rampart's centerline.
+
+        The placement half of the rule `city_ward_fence_joins_wall_not_crosses` gates (GM 2026-07-27,
+        on Minami: "the neighborhood walls stick out the other side of the city walls"). A ward fence
+        ENDS at the wall - the rampart is what seals the ward, so a palisade continuing out through it
+        into the berm encloses nothing and draws as two walls crossing at an intersection. This is the
+        wall member of the family the ways and the watercourses already had: a lane terminates at the
+        through-lane it meets rather than poking a stub out the far side, and a watercourse joins at a
+        T or a Y rather than crossing.
+
+        A gen hand-places the fence's ends, and getting one onto the wall line by eye is hopeless -
+        Minami's were 4.2-4.9px outside, Tango's 2.9-4.0px, none of it visible in a gen and all of it
+        inside `city_ward_fence_meets_wall`'s 10px tolerance. So the engine puts them there instead:
+        the end is EXTENDED (or trimmed) ALONG ITS OWN TERMINAL SEGMENT to where that line crosses the
+        wall ring - the same "extend along its own axis, never diagonally to the nearest point" rule
+        `city_streets_meet_through_lanes` states for a lane meeting a through-lane, because a
+        perpendicular snap would swing the last stretch of fence off the line the gen drew. Where the
+        terminal segment runs parallel to the wall and never meets it, the nearest point on the ring is
+        the honest fallback. An end further than `reach` from the wall is left exactly as placed: that
+        is not a junction at all but a fence that fails to reach the rampart, which is
+        `city_ward_fence_meets_wall`'s defect to report, and silently dragging it 200px would hide it.
+        """
+        wall = self.M.get("wall")
+        if not wall or len(boundary) < 2:
+            return boundary
+        ring: Poly = [(x, y) for x, y in wall]
+        ring = ring + [ring[0]]
+        out = list(boundary)
+        for idx, inward in ((0, 1), (len(out) - 1, len(out) - 2)):
+            end, prev = out[idx], out[inward]
+            near = min((seg_closest(end[0], end[1], ring[i], ring[i + 1]) for i in range(len(ring) - 1)), key=lambda c: math.hypot(c[0] - end[0], c[1] - end[1]))
+            if math.hypot(near[0] - end[0], near[1] - end[1]) > reach:
+                continue  # not an abutting end - city_ward_fence_meets_wall reports that gap
+            dx, dy = end[0] - prev[0], end[1] - prev[1]
+            dl = math.hypot(dx, dy) or 1.0
+            far = (end[0] + dx / dl * reach, end[1] + dy / dl * reach)
+            back = (end[0] - dx / dl * reach, end[1] - dy / dl * reach)
+            hits = [ip for i in range(len(ring) - 1) if segments_cross(back, far, ring[i], ring[i + 1]) and (ip := seg_intersect(back, far, ring[i], ring[i + 1])) is not None]
+            out[idx] = min(hits, key=lambda p: math.hypot(p[0] - end[0], p[1] - end[1])) if hits else near
+        return out
+
     def ward(self, name: str, boundary: Any, gates: Any) -> None:
         """An internal WARD boundary - a light earthwork/palisade fence (NOT a city rampart) that
         SEALS a quarter (the samurai/government ward) off the commoner streets, so its kido gates
@@ -3685,8 +3770,9 @@ class Settlement:
         TANGENT (never an axis-aligned stamp on a slanted run). Its guard box stands on the
         WARD-INTERIOR flank (the gate watch belongs to the ward it seals), nudged clear of the
         roadbed by s.kido. Records M['wards']."""
+        boundary = self._ward_ends_on_wall([(p[0], p[1]) for p in boundary])
         dd = 'M' + ' L'.join(f'{x},{y}' for x, y in boundary)
-        fz = self.add(f'<path d="{dd}" fill="none" stroke="#9C8A5E" stroke-width="5" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
+        fz = self.add(f'<path d="{dd}" fill="none" stroke="#9C8A5E" stroke-width="{self._WARD_STROKE:g}" opacity="0.9" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add(f'<path d="{dd}" fill="none" stroke="#4A3A22" stroke-width="1.3" stroke-dasharray="2,7" opacity="0.85"/>')  # palisade
         self.corridors.append((boundary, 11))  # buildings keep off the fence line
         # the fence ends ABUT the city wall: lay a short wall-stroke CAP over each end so the rampart
@@ -3731,7 +3817,10 @@ class Settlement:
                     dd_cap = "M" + " L".join(f"{x:.0f},{y:.0f}" for x, y in cappts)
                     cz = self.add(f'<path d="{dd_cap}" fill="none" stroke="#3A352C" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>')
                     caps.append({"x": round(px, 1), "y": round(py, 1), "z": cz, "pts": [[x, y] for x, y in cappts]})
-        self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "wall_caps": caps})
+        # "stroke" is the fence's DRAWN width: the palisade is stroked with a round linecap, so its ink
+        # runs half of this past the last recorded vertex, and city_ward_fence_joins_wall_not_crosses
+        # has to test that tip rather than the coordinate to see an overshoot through the rampart
+        self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "stroke": self._WARD_STROKE, "wall_caps": caps})
         for gate in gates:
             gx, gy = gate[0], gate[1]
             grot, gside = self.kido_seat(gx, gy, boundary)  # square to the lane it bars (the fence only where no lane runs through); guard box toward the ward interior
@@ -3914,7 +4003,16 @@ class Settlement:
                 continue  # pragma: no cover - defensive: every dry plot carries an outline
             if point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly))):
                 return False
-        return True
+        # AND THE WET ONES, which is where it actually matters (GM 2026-07-27: "wells on dry crops
+        # are okay, but not in rice paddies, surely"). The line above says "you do not dig one in the
+        # middle of a crop plot" and covered only the DRY plots; a paddy is a puddled, bunded basin
+        # held under standing water, so a head sunk there stands in the water it is an alternative
+        # to. Nothing else caught it either - the overlap matrix classes `fields` permissive because
+        # a plot's polygon is not stored - so this is the placement half of `wells_clear_of_paddies`,
+        # and both halves read `paddy_wet_rings` (see it for why the DRAWN basins, not the smoothed
+        # envelope, are the water). Same strictness as the dry-plot rule: the drawn head may not lap
+        # the crop.
+        return not any(ring_touches(cx, cy, vr, ring) for ring in paddy_wet_rings(self.M))
 
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
@@ -4185,6 +4283,13 @@ class Settlement:
             # well-less: any dwelling with no well within `spacing` gets one dropped in a clear spot beside it.
             for b in dwell:
                 if all((b["x"] - wx) ** 2 + (b["y"] - wy) ** 2 > spacing * spacing for wx, wy in out):
+                    # SIX SEATS, deliberately not a wider walk (tried 2026-07-27 and reverted): a
+                    # 64-candidate ring walk does find a seat for a dwelling boxed in by refused
+                    # ground, but on a CITY it also seats wells the block-interior rule rejects -
+                    # over a ministry, on a lane - because `_fits` and `_well_ground_clear` are not
+                    # the whole of what a city well must satisfy. A dwelling this cannot reach is
+                    # better reported by farm_wells_within_reach and hand-seeded with `well_at`,
+                    # which is what the gens already do for cramped quarters.
                     for ox, oy in ((0, near * 0.6), (near * 0.6, 0), (-near * 0.6, 0), (0, -near * 0.6), (near * 0.45, near * 0.45), (-near * 0.45, near * 0.45)):
                         cx, cy = b["x"] + ox, b["y"] + oy
                         if not self._in_scrub_cover(cx, cy) and self._well_ground_clear(cx, cy) and self._fits(cx, cy, probe, probe):
@@ -9315,7 +9420,10 @@ class Settlement:
         # A cargo canal is wider than a road - Minami's is 36 ft - and a Suzhou-pattern shuimen sets its
         # arch INTO the wall with a pier to either side, so the opening is the canal plus ~12 ft a side.
         dd = self._gapped_ring(ring, gates, gate_gap, water_gates=water_gates, water_gap=self.px(60.0) / 2)
-        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>')
+        # the rampart's drawn width is RECORDED, because city_ward_fence_joins_wall_not_crosses judges
+        # a ward fence's overshoot against this band - placement and check reading the same source
+        ww = self.M["wall_stroke"] = 11.0
+        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="{ww:g}" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add_wall(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
         cx = sum(p[0] for p in pts) / len(pts)
         cy = sum(p[1] for p in pts) / len(pts)
@@ -9935,15 +10043,28 @@ class Settlement:
         return z
 
     def bridges(self) -> int:
-        """Auto-span every place a road or town street CROSSES a watercourse with a s.bridge(),
-        oriented along the road. Call AFTER all roads/streets AND all water (streams, channels,
-        the moat) are placed - a watercourse added later would leave an unbridged crossing (which
-        the `roads_bridge_water` check then flags). Returns the number of bridges drawn. Historically
-        a walled city's approach road crossed the moat on a bridge at each gate, and a country road
-        crossed a stream on a timber bridge."""
+        """Auto-span every place a way CROSSES a watercourse with a s.bridge(), oriented ALONG the
+        way. Call AFTER all ways (road, ring road, streets, lanes) AND all water (streams, channels,
+        the cargo canal, the moat) are placed - a watercourse added later would leave an unbridged
+        crossing (which the `roads_bridge_water` check then flags). Returns the number of bridges
+        drawn. Historically a walled city's approach road crossed the moat on a bridge at each gate,
+        and a country road crossed a stream on a timber bridge.
+
+        SOLVE THE CROSSING, NEVER EYEBALL IT (GM 2026-07-27, Minami's cargo-basin bridge). A deck
+        hand-placed at design coordinates goes crooked and slides off its crossing the moment the
+        geometry around it is re-derived: Minami's canal bridge sat 17 px east of where the ring
+        road actually met the canal and 39 deg off its bearing, so the road simply ran through the
+        water beside it (Nagahara's was 15 px / 24 deg off, the same way). Both were hand-placed
+        because this pass could not SEE the crossing - the RING ROAD was not a carried way here and
+        the cargo CANAL was not a watercourse - so both are scanned now, and the checks
+        `roads_bridge_water` + `bridges_align_with_their_way` re-derive the same crossings from the
+        manifest. Anything this pass finds is aligned by construction; hand-place a deck only for a
+        crossing this pass genuinely cannot see, and expect the alignment check to test it."""
         carried: list[Any] = []
         if self.M.get("road"):
             carried.append((self.M["road"], self.M.get("road_width", 26)))
+        if self.M.get("ring_road"):  # the in-wall ring crosses the cargo canal / an in-wall watercourse like any other way
+            carried.append((self.M["ring_road"], self.M.get("ring_road_width", 8)))
         for st in self.M.get("town_streets", []):
             carried.append((st["pts"], st["w"]))
         for ln in self.M.get("lanes", []):  # a village LANE/path crosses a canal on a plank footbridge
@@ -9952,9 +10073,12 @@ class Settlement:
         for s in self.M.get("streams", []):
             waters.append((s["poly"], s.get("w", 9)))
         for c in self.M.get("channels", []):
-            waters.append((c["poly"], 4.2))
+            if c.get("drawn", True):  # an UNDRAWN channel is a buried conduit (topo_channel): nothing on the ground to bridge
+                waters.append((c["poly"], c.get("w", 4.2)))
         for d in self.M.get("field_ditches", []):  # the irrigation canals a village path must bridge to reach the paddy
             waters.append((d["poly"], d.get("w", 4.2)))
+        for cn in self.M.get("canals", []):  # the navigable cargo canal - the widest thing a city way crosses short of the moat
+            waters.append((cn["poly"], cn.get("w", 12)))
         if self.M.get("moat"):
             waters.append((self.M["moat"], self.M.get("moat_width", 22)))
         n = 0
@@ -10487,7 +10611,8 @@ class Settlement:
         # the rampart renders in the WALL layer (over the ground lanes - a street running into it passes
         # UNDER it), with a genuine gap at the gate so the road shows through the opening
         dd = self._gapped_ring(pts, [gate] if gate else [], 36, closed=False)
-        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>')
+        ww = self.M["wall_stroke"] = 10.0  # recorded for the same reason as the city rampart's (see city_wall)
+        self.M["wall_z"] = self.add_wall(f'<path d="{dd}" fill="none" stroke="{wc}" stroke-width="{ww:g}" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add_wall(f'<path d="{dd}" fill="none" stroke="#6B5A3A" stroke-width="3" stroke-linejoin="round" opacity="0.5"/>')
         if gate:
             gx, gy = gate
