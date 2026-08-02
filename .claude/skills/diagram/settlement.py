@@ -1455,6 +1455,7 @@ class Settlement:
         #                    ORDER: a scatter only skips clearings that exist when it runs, so a cover whose
         #                    seq <= a clearing's seq drew before the clearing was registered and may have
         #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
+        self._pwr_cache: tuple[tuple[int, int], list[tuple[Poly, tuple[float, float, float, float]]]] | None = None  # _well_ground_clear's memo of (paddy_wet_rings, per-ring bbox), fingerprint-invalidated
         self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
@@ -4065,7 +4066,22 @@ class Settlement:
         # and both halves read `paddy_wet_rings` (see it for why the DRAWN basins, not the smoothed
         # envelope, are the water). Same strictness as the dry-plot rule: the drawn head may not lap
         # the crop.
-        return not any(ring_touches(cx, cy, vr, ring) for ring in paddy_wet_rings(self.M))
+        # MEMOIZED, with a bbox PREFILTER (it prunes, it never decides - same verdict as the bare
+        # scan). This method runs once per CANDIDATE seat, and farm_wells' fallback probes ~2,700
+        # candidates per boxed-in steading - on Minami (927 drawn paddy basins) rebuilding every
+        # ring from JSON per candidate turned a ~5s gen into a >45-minute grind (2026-08-02). The
+        # fingerprint (field count + total recorded points) changes whenever a gen draws more
+        # paddies; wells are placed long after the fields, so the rings are stable across the
+        # whole placement pass.
+        fields = self.M.get("fields") or []
+        fp = (len(fields), sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields))
+        if self._pwr_cache is None or self._pwr_cache[0] != fp:
+            rings = paddy_wet_rings(self.M)
+            self._pwr_cache = (fp, [(r, (min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r))) for r in rings])
+        return not any(
+            bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring)
+            for ring, (bx0, by0, bx1, by1) in self._pwr_cache[1]
+        )
 
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
