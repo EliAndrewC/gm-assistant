@@ -38,6 +38,8 @@ from settlement import (
     crop_boxes,
     forest_frame_span,
     kido_bar_deg,
+    label_aabb,
+    label_quad,
     lane_runs,
     lane_through_gate,
     moat_current_at,
@@ -4337,7 +4339,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if M.get("road") is not None and M.get("road_z") is not None:
         road_layers.append((M["road"], M["road_z"], M.get("road_width", 26) / 2))
     road_layers += [(st["pts"], st["z"], st["w"] / 2) for st in M.get("town_streets", []) if "z" in st]
-    overlays = [("label", lab[:4], lab[4]) for lab in M.get("labels", []) if len(lab) > 4]
+    overlays = [("label", label_aabb(lab), lab[4]) for lab in M.get("labels", []) if len(lab) > 4]
     overlays += [("gatehouse", (gs["x"] - gs["w"] / 2, gs["y"] - gs["h"] / 2, gs["x"] + gs["w"] / 2, gs["y"] + gs["h"] / 2), gs["z"]) for gs in M.get("gate_structs", []) if "z" in gs]
 
     def line_hits_box(poly: Poly, box: tuple[float, float, float, float], pad: float) -> bool:
@@ -5122,15 +5124,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
     # no two body labels overlap (the title block is excluded by the generator)
     labels = M.get("labels", [])
+
     # An overlap is real when the bboxes cross by more than the estimation slack. The horizontal slack
     # is small (a >2px x-overlap means the glyphs actually touch); the vertical slack stays larger (~4px)
     # to absorb the descender allowance in the y-bbox, so two cleanly-separated STACKED labels whose boxes
     # merely kiss (e.g. Tango's "Mausoleum" / "Ministry of Works") are not falsely flagged.
+    def _lb_shrunk(L: Sequence[Any]) -> list[tuple[float, float]]:
+        # a TILTED pair is judged by the true drawn quads (SAT), with the same estimation slack
+        # the box test subtracts (2px x, 4px y) taken off each record in ITS OWN frame before
+        # rotating - so the tilted verdict is the box verdict's geometry, rotated
+        return label_quad([L[0] + 1.0, L[1] + 2.0, L[2] - 1.0, L[3] - 2.0, *L[4:]])
+
     ov = [
         (i, j)
         for i in range(len(labels))
         for j in range(i + 1, len(labels))
-        if min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 2 and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4
+        if (
+            sat_overlap(_lb_shrunk(labels[i]), _lb_shrunk(labels[j]))
+            if len(labels[i]) > 7 or len(labels[j]) > 7
+            else min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 2 and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4
+        )
     ]
     check("no_label_overlaps", not ov, f"{len(ov)} overlapping label pair(s)")
 
@@ -5149,8 +5162,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     for L in labels:
         if len(L) < 7 or not L[6]:
             continue
-        lab_size = (L[3] - L[1]) / 1.05  # the recorded box is ascent (0.8) + descender (0.25) tall
-        lab_gap = box_gap(L[:4], L[6])
+        lab_size = (L[3] - L[1]) / 1.05  # the recorded box is ascent (0.8) + descender (0.25) tall (elements [0..3] stay the pre-tilt box, so this holds for tilted records too)
+        # a TILTED caption's gap is measured from its true drawn quad (poly_gap, the rotated
+        # sibling of box_gap - same measure, same 0-at-touch convention)
+        lab_gap = poly_gap(label_quad(L), [(L[6][0], L[6][1]), (L[6][2], L[6][1]), (L[6][2], L[6][3]), (L[6][0], L[6][3])]) if len(L) > 7 else box_gap(L[:4], L[6])
         if lab_gap > LABEL_AIR_CAP * lab_size:
             adrift.append(f"{L[5]!r} {lab_gap:.0f}px from its subject (cap {LABEL_AIR_CAP * lab_size:.0f}px)")
     check(
@@ -5210,7 +5225,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # placed LABELS too: a title placard over a feature label erases it (caught 2026-07-23 on the
             # Tango content crop - the placard landed on the 'pauper ossuary mound' label)
             for lb2 in M.get("labels", []):
-                if not (tb[2] < lb2[0] or tb[0] > lb2[2] or tb[3] < lb2[1] or tb[1] > lb2[3]):
+                _lb2 = label_aabb(lb2)  # a tilted caption's reach is its rotated AABB
+                if not (tb[2] < _lb2[0] or tb[0] > _lb2[2] or tb[3] < _lb2[1] or tb[1] > _lb2[3]):
                     thit.append(f"label:{lb2[5]}")
                     break
         check(
@@ -5439,10 +5455,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if len(L) <= 5:
                 continue
             allow = _label_allows(L[5])
+            _lq = label_quad(L) if len(L) > 7 else None  # a TILTED caption is judged by its true drawn quad, not the pre-tilt box
             for g, (x0, y0, x1, y1) in vics:
                 if g in allow:
                     continue
-                if L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
+                if sat_overlap(_lq, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]) if _lq else (L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]):
                     mislabel.append(f"{L[5]!r} over a {g}")
                     break
         check(
@@ -5457,7 +5474,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # must sit inside the frame. The frame is the cropped view (a city map crops tight to the walls,
     # so its EX/EY bounds are the viewBox) or, uncropped, the full canvas. The title is placed directly
     # (not recorded in M["labels"]) and sits inside the frame by construction.
-    off_img = [L[5] if len(L) > 5 else "label" for L in labels if L[0] < EX0 - 1 or L[1] < EY0 - 1 or L[2] > EX1 + 1 or L[3] > EY1 + 1]
+    off_img = [L[5] if len(L) > 5 else "label" for L in labels for _la in (label_aabb(L),) if _la[0] < EX0 - 1 or _la[1] < EY0 - 1 or _la[2] > EX1 + 1 or _la[3] > EY1 + 1]
     check(
         "labels_within_image",
         not off_img,
@@ -10410,8 +10427,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         for L in M.get("labels", []):
             if len(L) <= 5 or L[5] not in civic_names:
                 continue
+            _la = label_aabb(L)  # tilted captions reach their rotated AABB
             for n, (x0, y0, x1, y1) in civic:
-                if n != L[5] and L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
+                if n != L[5] and _la[0] < x1 and x0 < _la[2] and _la[1] < y1 and y0 < _la[3]:
                     cross.append(f"{L[5]!r} over {n!r}")
         check("city_civic_label_on_its_own_building", not cross, f"a civic building's label sits on a DIFFERENT civic building (not the one it names): {sorted(set(cross))}")
 
