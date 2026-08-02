@@ -14,12 +14,20 @@ round-trips.
 ## Gate and sweep timings (the motivating-artifact loop, concretely)
 
 The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
-numbers. A single map's regen + gate is ~1-7s:
+numbers. A single map's regen + gate is ~1-7s - EXCEPT Minami, whose gen is ~45s (measured
+2026-08-02), dominated by well placement over its 927 drawn paddy basins and ~580 watercourse
+segments. It had silently become a **45+ minute** grind when the paddy-well rule landed
+(`_well_ground_clear` re-scanned all of that per candidate seat, ~133k candidates); the memoized
+static geometry + bbox prefilters in `_well_ground_clear` bought back the rest. If a gen ever
+"hangs", suspect a per-candidate scan of static geometry FIRST and profile before bisecting - a
+timeout-based bisect probe cannot distinguish "broken" from "slow", and one burned an hour here
+concluding an innocent commit was the regression:
 
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
 
 The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
-it - is **~80 seconds**. (Measured 2026-07-25: it had drifted to 112-215s across six runs, well past
+it - is **~133 seconds** (re-measured 2026-08-02; Minami's ~45s gen, above, is a third of it).
+(Measured 2026-07-25: it had drifted to 112-215s across six runs, well past
 the "~1 minute" this file used to claim from 2026-07-20; indexing the two worst checks that same day
 brought it back to 77s. Re-measure and update this number when it drifts again - a stale figure here
 is what makes a session mis-plan its loop.) So run the red/green loop against the ONE map

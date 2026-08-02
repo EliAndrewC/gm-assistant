@@ -11966,6 +11966,80 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"wharf jetties floating off the bank: {floats[:3]} - a jetty's landward end must touch the river's near bank, running out into the water from there, not float mid-stream",
                 )
 
+            # (3) THE LOG BOOM IS A SHORE-FAST PEN, NOT STICKS IN THE STREAM (GM 2026-08-02, "it
+            # just looks like a bunch of logs in the middle of the river"; the research is in
+            # research/urban-features.md "The log boom"). A boom is a floating fence - anchored to
+            # nothing it holds nothing. Attested booms anchor to the bank and run ALONG a navigated
+            # river, the pen between chain and shore (Susquehanna: seven miles along one side;
+            # St. Croix: log channels beside a navigation channel kept clear by statute); only a
+            # loose-log CATCH boom on an unnavigated reach ever spans the water (the Kiso tsunaba
+            # at the gorge mouth), never a port's holding pen. GAP-VERDICT family: both rules below
+            # measure the pen's DERIVED CORNERS (x/y/rot/len/pen_w, the same local frame the glyph
+            # draws - bank on local +y) against the river's stroked centerline; a center measure
+            # would condemn the good bank-hugging pen and pass the mid-stream chain (see the test
+            # pair). pen_w defaults to the ~14px the pre-2026-08 chain glyph drew.
+            booms_c = M.get("log_booms", [])
+            if booms_c and river_c:
+                rpb = river_c["pts"]
+                rhwb = river_c["w"] / 2
+
+                def boom_off(px_: float, py_: float) -> tuple[float, float, float]:
+                    # a corner's offset from the river centerline: (dx, dy, distance)
+                    k = min(range(len(rpb) - 1), key=lambda i: seg_dist(px_, py_, rpb[i], rpb[i + 1]))
+                    fx, fy = seg_closest(px_, py_, rpb[k], rpb[k + 1])
+                    return px_ - fx, py_ - fy, math.hypot(px_ - fx, py_ - fy)
+
+                adrift_lb, damming_lb = [], []
+                for bo in booms_c:
+                    thb = math.radians(float(bo.get("rot", 0.0)))
+                    cthb, sthb = math.cos(thb), math.sin(thb)
+                    hlb, hpb = float(bo["len"]) / 2, float(bo.get("pen_w", 14.0)) / 2
+                    quadb = [(bo["x"] + lx * cthb - ly * sthb, bo["y"] + lx * sthb + ly * cthb) for lx, ly in ((-hlb, hpb), (hlb, hpb), (hlb, -hpb), (-hlb, -hpb))]  # bank-side pair first
+                    # the shoreward normal, from the bank-side edge's midpoint
+                    bmx, bmy = (quadb[0][0] + quadb[1][0]) / 2, (quadb[0][1] + quadb[1][1]) / 2
+                    box_, boy_, bod_ = boom_off(bmx, bmy)
+                    nxb, nyb = (box_ / bod_, boy_ / bod_) if bod_ > 0.5 else (0.0, 0.0)
+                    # moored_lb: both bank corners ride ON the bank line (centerline + half-width),
+                    # shoreward, within ~5px - the pen holds timber between chain and bank
+                    moored_lb = bod_ > 0.5
+                    for qx_lb, qy_lb in quadb[:2]:
+                        qdx_lb, qdy_lb, qd_lb = boom_off(qx_lb, qy_lb)
+                        if abs(qd_lb - rhwb) > 5.0 or qdx_lb * nxb + qdy_lb * nyb <= 0:
+                            moored_lb = False
+                    if not moored_lb:
+                        adrift_lb.append([round(bo["x"]), round(bo["y"])])
+                    # the fairway is judged even for an adrift boom - the two defects are
+                    # independent (the pre-fix Minami chain was both), and the shoreward normal
+                    # still points at the boom's own nearest side
+                    # fairway: no corner reaches deeper than 40% of the channel off its own bank,
+                    # so a clear majority of the width stays open to the wharf traffic
+                    for qx_lb, qy_lb in quadb:
+                        qdx_lb, qdy_lb, qd_lb = boom_off(qx_lb, qy_lb)
+                        if rhwb - (qdx_lb * nxb + qdy_lb * nyb) > 0.8 * rhwb:
+                            damming_lb.append([round(bo["x"]), round(bo["y"])])
+                            break
+                check(
+                    "log_boom_moored_to_the_bank",
+                    not adrift_lb,
+                    f"log boom(s) adrift_lb off the bank: {adrift_lb[:3]} - a boom is a floating fence anchored to fixed ground; its bank edge (local +y) must ride ON the shore line so the pen holds timber between chain and bank, not a chain loose in mid-stream",
+                )
+                check(
+                    "log_boom_leaves_the_fairway",
+                    not damming_lb,
+                    f"log boom(s) crowding the channel: {damming_lb[:3]} - a holding pen takes at most ~40% of the river's width off its own bank; booms were barred from obstructing navigation, and the full-span catch boom belongs on an unnavigated reach upstream, not at the port",
+                )
+                # association family (center, deliberately - the ~120px block-scale tolerance
+                # dwarfs both footprints): the pen is the timber trade's waterside holding
+                # ground, so it rides off the lumber yard's own frontage
+                yards_b = M.get("lumber_yards", [])
+                if yards_b:
+                    stray_b = [[round(bo["x"]), round(bo["y"])] for bo in booms_c if min(math.hypot(bo["x"] - yd["x"], bo["y"] - yd["y"]) for yd in yards_b) > 120.0]
+                    check(
+                        "log_boom_serves_the_lumber_yard",
+                        not stray_b,
+                        f"log boom(s) far from any lumber yard: {stray_b[:3]} - boom and zaimokuya are one works; moor the pen off the yard's own bank frontage",
+                    )
+
             # the street network must be CONNECTED - one coherent grid wired to the Imperial
             # road, not isolated stubs (ported from the town "no street to nowhere" thinking).
             streets = M.get("town_streets", [])

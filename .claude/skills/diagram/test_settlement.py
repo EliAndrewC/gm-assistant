@@ -1820,8 +1820,11 @@ def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     z = s.log_boom(400, 300, rot=90)
     b = s.M["log_booms"][0]
     assert b["z"] == z and b["len"] == round(s.px(330), 1)  # the default pen, ~330 real ft of chained logs
-    # moored ALONG the current (rot 90), so its recorded box is TALL, not wide - the matrix reads this
-    assert b["h"] > b["w"] and abs(b["h"] - b["len"]) < 1.0
+    assert b["pen_w"] == round(s.px(40), 1)  # ~40 real ft of held water between chain and shore
+    # the record carries TRUE unrotated dims + rot, like a building - the matrix extractor rotates
+    # x/w/h by rot itself, so a rotation-folded box here would double-rotate into a phantom
+    # footprint (which is exactly how the first pen landed "on" Minami's lumber yard 42px away)
+    assert b["w"] == b["len"] and b["h"] == b["pen_w"] and b["rot"] == 90.0
 
 
 def test_log_boom_labels_below_itself_unless_told_otherwise():
