@@ -470,6 +470,34 @@ def test_place_kosatsuba_reads_road_and_lane_routes_and_skips_degenerate_segment
     assert len(s.M["kosatsuba"]) == 1
 
 
+def test_place_kosatsuba_samples_only_the_main_way_when_one_is_declared():
+    # GM 2026-08-02 (Ubame): the board goes ALONG the main road, never a side street - even
+    # when the side lane's node is busier. With a road on the map, the lane's verges are not
+    # candidates at all, so the board lands in the road's siting band despite every house
+    # standing by the lane.
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="T", scale="town", ftpx=1)
+    s.M["road"] = [[100, 300], [900, 300]]
+    s.M["lane"] = [[100, 700], [900, 700]]
+    for i in range(6):
+        s.M["houses"].append({"x": 300.0 + 60 * i, "y": 760.0, "w": 30, "h": 20, "kind": "plain", "rot": 0})
+        s.placed.append((300.0 + 60 * i, 760.0, 30, 20))
+    assert s.place_kosatsuba() is not None
+    assert abs(s.M["kosatsuba"][0]["y"] - 300) <= 60  # the road's band, not the busy lane's
+
+
+def test_kosatsuba_label_xy_hand_seats_the_caption():
+    # both caption bands can be taken at a junction seat (Nagahara's market bend: drum tower
+    # in the below band, the ward gate's glyph + caption stack in the above band) - label_xy
+    # is the explicit hand seat, the same escape the punishment ground carries
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="T", scale="town", ftpx=1)
+    s.kosatsuba(500, 500, rot=0, label_xy=(560, 488))
+    lab = s.M["labels"][-1]
+    assert lab[5] == "notice board"
+    assert abs((lab[0] + lab[2]) / 2 - 560) < 2  # seated at the hand x, not the default below-seat
+
+
 def test_place_kosatsuba_opt_out_and_no_routes():
     # meta(kosatsuba=False) is the suppressed/backwater opt-out; with no routes at all there
     # is no verge to site on - both return None and place nothing
