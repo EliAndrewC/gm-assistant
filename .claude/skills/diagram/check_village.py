@@ -41,7 +41,9 @@ from settlement import (
     lane_runs,
     lane_through_gate,
     moat_current_at,
+    paddy_wet_rings,
     rail_quad,
+    ring_touches,
     sat_overlap,
     torii_wall_conflicts,
     trough_quad,
@@ -494,8 +496,8 @@ _MATRIX_PERMISSIVE = {
 # genuine adjacency the sweep surfaces should be added here with its reason, not pre-permitted.
 _FIXTURE_MOUNTS: dict[str, frozenset[str]] = {
     "bridges": frozenset(
-        {"WATER", "WAY", "wall"}
-    ),  # spans the water to carry the way over it - and a bridge on a moated approach lands ON the rampart at its water gate, which is the crossing the wall is pierced for
+        {"WATER", "WAY", "wall", "water_gates"}
+    ),  # spans the water to carry the way over it - and a bridge on a moated approach lands ON the rampart at its water gate, which is the crossing the wall is pierced for. `water_gates` was added 2026-07-27 with Nagahara's ring-road canal deck: the ring runs a fixed inset inside the rampart, so where a cargo canal enters through a shuimen the ring necessarily crosses it a few paces INSIDE the arch (Nagahara 39 real ft), and the gate structure's own apron and the deck share that ground - the Suzhou pattern, where the wall road crosses each canal on a bridge at the water gate. Shortening the deck does not separate them (checked: even a bare-abutment span still lands inside the gate footprint), which is what says this is an adjacency rather than a drawing error
     "docks": frozenset({"WATER", "WAY"}),  # a landing stands at the waterline, reached from the quay
     "jetties": frozenset({"WATER"}),  # planked mooring fingers run out OVER the river
     "log_booms": frozenset({"WATER"}),  # a cabled log pen floats ON the river it holds timber in
@@ -4456,6 +4458,63 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"straight stub - which renders as two wall sections overlapping instead of one bent wall (settlement.ward)",
         )
 
+    # JOIN, DON'T INTERSECT - the WALL member of a family the ways and the watercourses already had
+    # (GM 2026-07-27, on Minami: "the neighborhood walls stick out the other side of the city walls").
+    # Where two linear features meet, one of them ENDS at the junction: a lane terminates at the
+    # through-lane it reaches rather than poking a stub out the far side
+    # (city_streets_no_intersection_stub, city_streets_meet_through_lanes), and a watercourse joins at
+    # a T or a Y rather than crossing (water_channels_join_not_cross, channels_join_water_not_cross).
+    # A neighborhood (ward) fence meeting the city rampart is the same junction and was the one member
+    # of the family nobody had stated: the fence ENDS at the wall, because the wall is what seals it -
+    # a palisade continuing out through the rampart into the fields encloses nothing and reads as two
+    # walls crossing at an intersection.
+    #
+    # city_ward_fence_meets_wall is the mirror rule (the UNDERSHOOT - a gap the commoners walk around)
+    # and deliberately allows ~10px of slop in EITHER direction, which is why this defect shipped
+    # green: Minami's two fence ends sat 4.2 and 4.9px OUTSIDE the wall ring, well inside that
+    # tolerance. The overshoot has to be measured against the DRAWN ink instead, and it is small
+    # numbers all the way down - the rampart's stroke covers only its own half-width (11/2 = 5.5px),
+    # while the fence is stroked with a ROUND LINECAP that inks half a stroke-width (5/2 = 2.5px) past
+    # its last recorded vertex. So 4.9 + 2.5 = 7.4px of fence against 5.5px of wall left a ~2px tan
+    # nub outside the rampart - at a city's 1px = 3ft, about 6ft of palisade standing in the moat
+    # berm. Both widths come from the engine's own records (M['wall_stroke'], the ward's 'stroke') so
+    # placement and check read the same source; the literals are the fallback for manifests written
+    # before those records existed.
+    if _wall_ring:
+        _wall_half = float(M.get("wall_stroke", 11.0)) / 2
+        _poke = []
+        for wd in M.get("wards", []):
+            _bnd = [(p[0], p[1]) for p in wd.get("boundary", [])]
+            if len(_bnd) < 2:
+                continue
+            _cap = float(wd.get("stroke", 5.0)) / 2  # the round linecap inks this far past the tip
+            # probe every vertex; the two ENDS are pushed out by the cap radius along their own
+            # terminal segment, so what is tested is the ink, not the recorded coordinate. Interior
+            # vertices are probed bare - a fence that dives out through the rampart and back mid-run
+            # is the same crossing, just further from the end.
+            _probes: list[tuple[float, float]] = []
+            for _vi, (_vx, _vy) in enumerate(_bnd):
+                _in = _bnd[1] if _vi == 0 else _bnd[-2] if _vi == len(_bnd) - 1 else None
+                if _in is None:
+                    _probes.append((_vx, _vy))
+                    continue
+                _dx, _dy = _vx - _in[0], _vy - _in[1]
+                _dl = math.hypot(_dx, _dy) or 1.0
+                _probes.append((_vx + _dx / _dl * _cap, _vy + _dy / _dl * _cap))
+            for _tx, _ty in _probes:
+                _out = min(seg_dist(_tx, _ty, _ring[_i], _ring[_i + 1]) for _i in range(len(_ring) - 1)) - _wall_half
+                if _out > 0 and not point_in_poly(_tx, _ty, _wrng):
+                    _poke.append((round(_tx), round(_ty), round(_out, 1)))
+        check(
+            "city_ward_fence_joins_wall_not_crosses",
+            not _poke,
+            f"neighborhood (ward) fence ink OUTSIDE the city wall (x, y, px past the rampart's outer face): {_poke[:4]} - "
+            f"a ward fence JOINS the rampart, it does not cross it: the fence ENDS where the wall seals it, so no part of "
+            f"the palisade may stick out the far side into the berm. Same rule the lanes and the watercourses follow "
+            f"(city_streets_no_intersection_stub, water_channels_join_not_cross). Snap the fence's end vertex onto the "
+            f"wall centerline - s.ward does this automatically, so a hit here means the end was placed out of its reach",
+        )
+
     # A walled COMPOUND (mausoleum / manor) whose wall sits ALONG a neighborhood (ward) fence must
     # YIELD that wall to the fence: the fence is re-stamped on top and IS that side of the compound,
     # so there is no doubled, clashing parallel wall (s.mausoleum / s.manor do this automatically and
@@ -5428,6 +5487,37 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not stray,
             f"well(s) standing in open ground with no building within ~95px - a well serves the households around it and must sit AMONG them, not out in the fields/countryside: {stray[:4]}",
         )
+
+        # AND NOT IN A RICE PADDY (GM 2026-07-27: "wells on dry crops are okay, but not in rice
+        # paddies, surely"). A paddy is a puddled, bunded basin held under standing water through the
+        # growing season: a wellhead drawn in one is standing in the water it is supposed to be an
+        # alternative to, and a shaft sunk there takes the field's own surface water. Dry crops are
+        # a different matter and stay allowed - a hatake plot is worked ground you can walk on.
+        #
+        # THE GAP THIS CLOSES, which was wider than it looked. `_well_ground_clear` already refused a
+        # stream, channel, ditch, canal, pond and DRY plot, its docstring saying "you do not dig one
+        # in the middle of a crop plot" - the wet plots, where it matters most, were simply never
+        # added. Nor could the overlap matrix catch it: `fields` is classed PADDY_RECONSTRUCTED, i.e.
+        # permissive, because a plot's polygon is not stored and its rebuilt extent is too
+        # approximate to accuse anything with. So this is one of the "precise paddy checks" that
+        # class defers to. It reads `paddy_wet_rings` - the DRAWN basins where a field records them,
+        # the outline where it does not - which is the same water the SITER reads, so the two cannot
+        # disagree; that helper carries the why of both halves. Note what the drawn-basin reading
+        # deliberately still ALLOWS: the fan's unplanted rim slack, inside the smoothed envelope but
+        # clear of every basin, which is legitimate margin ground and is where a boxed-in steading's
+        # well goes. Strictness matches the dry-plot rule exactly - the DRAWN head may not lap water.
+        wet_rings = paddy_wet_rings(M)
+        if wet_rings:
+            in_paddy = []
+            for wl in all_wells:
+                vr_w = float(wl.get("vr") or wl.get("r") or 8.0)
+                if any(ring_touches(wl["x"], wl["y"], vr_w, ring) for ring in wet_rings):
+                    in_paddy.append((round(wl["x"]), round(wl["y"])))
+            check(
+                "wells_clear_of_paddies",
+                not in_paddy,
+                f"wellhead(s) at {in_paddy[:4]} standing in a rice paddy - a paddy is flooded and bunded, so a well cannot be sunk in one (a DRY plot is different and is allowed, and so is the fan's unplanted rim slack); move the head onto the dooryard/margin ground it serves",
+            )
 
         # THE WELL IS A LOCATION MARKER under the stroke convention (GM ruling 2026-07-21): a real
         # curb is ~3-4 ft (sub-glyph at every scale), so the wellhead marks the well's TO-SCALE
@@ -7340,15 +7430,32 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"the pond overlaps rice paddy field(s) {sorted(set(wet_paddy))} - a pond sits BESIDE the crop (a reservoir above it or a tameike below it), joined by a channel, never over the planted paddy",
         )
 
-    # WHERE A ROAD (or town street) CROSSES A WATERCOURSE, a bridge must carry it over - a road does
-    # not simply run through open water. Crossings are road/street segments intersecting a stream, an
-    # irrigation channel, or the city moat (a walled city's approach road crosses the moat at each
-    # gate). Every such crossing must have a recorded bridge near the intersection point. (A road that
-    # merely runs ALONGSIDE water, never intersecting it, needs no bridge - only true crossings count.)
+    # WHERE A WAY CROSSES A WATERCOURSE, a bridge must carry it over - a way does not simply run
+    # through open water. Crossings are road / RING ROAD / street / lane segments intersecting a
+    # stream, an irrigation channel, a field ditch, the navigable cargo canal, or the city moat (a
+    # walled city's approach road crosses the moat at each gate). Every such crossing must have a
+    # recorded bridge near the intersection point. (A way merely running ALONGSIDE water, never
+    # intersecting it, needs no bridge - only true crossings count.)
+    #
+    # The way and water sets here MIRROR settlement.bridges(), which draws from the same two lists -
+    # they must stay in step or the engine places decks the gate does not ask for, or (worse) the
+    # gate stays silent about a crossing the engine never saw. The ring road and the cargo canal were
+    # missing from BOTH until 2026-07-27, which is why Minami's and Nagahara's canal crossings were
+    # hand-placed and both went crooked (see bridges_align_with_their_way, below).
+    #
+    # An UNDRAWN channel (`drawn: False`, from topo_channel) is a buried conduit recorded for water
+    # topology only - there is no seam on the ground, so a way crossing its line crosses nothing and
+    # needs no deck. Tango's ring road runs over three of them.
     bridges = M.get("bridges", [])
-    waters_b = [s["poly"] for s in M.get("streams", [])] + [c["poly"] for c in M.get("channels", [])] + [d["poly"] for d in M.get("field_ditches", [])] + ([M["moat"]] if M.get("moat") else [])
-    carried_b = ([road] if road else []) + [st["pts"] for st in M.get("town_streets", [])] + [ln["pts"] for ln in M.get("lanes", [])]
-    unbridged = []
+    waters_b = (
+        [s["poly"] for s in M.get("streams", [])]
+        + [c["poly"] for c in M.get("channels", []) if c.get("drawn", True)]
+        + [d["poly"] for d in M.get("field_ditches", [])]
+        + [c["poly"] for c in M.get("canals", [])]
+        + ([M["moat"]] if M.get("moat") else [])
+    )
+    carried_b = ([road] if road else []) + ([M["ring_road"]] if M.get("ring_road") else []) + [st["pts"] for st in M.get("town_streets", [])] + [ln["pts"] for ln in M.get("lanes", [])]
+    xings_b = []  # (point, way heading in degrees) for every way x water crossing on the map
     for rpts in carried_b:
         for i in range(len(rpts) - 1):
             ra, rb = rpts[i], rpts[i + 1]
@@ -7356,9 +7463,49 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 for j in range(len(wpts) - 1):
                     if segments_cross(ra, rb, wpts[j], wpts[j + 1]):
                         p = seg_intersect(ra, rb, wpts[j], wpts[j + 1])
-                        if p is not None and not any(math.hypot(b["x"] - p[0], b["y"] - p[1]) <= 40 for b in bridges):
-                            unbridged.append((round(p[0]), round(p[1])))
+                        if p is not None:
+                            xings_b.append((p, math.degrees(math.atan2(rb[1] - ra[1], rb[0] - ra[0]))))
+    unbridged = [(round(p[0]), round(p[1])) for p, _ in xings_b if not any(math.hypot(b["x"] - p[0], b["y"] - p[1]) <= 40 for b in bridges)]
     check("roads_bridge_water", not unbridged, f"a road/street crosses water with no bridge at {sorted(set(unbridged))} - carry it over (call s.bridges() after laying all roads and water)")
+
+    # A BRIDGE MUST LIE ON ITS CROSSING AND RUN ALONG THE WAY IT CARRIES (GM 2026-07-27, Minami's
+    # cargo-basin bridge). The rule above only asks that SOME deck be within 40px of each crossing,
+    # which a deck sitting beside the crossing at a wrong angle satisfies - and the eye reads that as
+    # the road running straight through the water with a crooked plank next to it, which is exactly
+    # what the GM saw. So each carried deck is paired with the nearest crossing and must sit ON it
+    # (within BRIDGE_SEAT_TOL) and share its bearing (within BRIDGE_ROT_TOL, mod 180 - a deck has no
+    # forward direction). EVIDENCE for the tolerances: every deck s.bridges() solves lands 0.0-1.0 px
+    # and 0.0-1.0 deg off its crossing (rounding only), while the two hand-placed canal decks were
+    # 17px/39deg (Minami) and 15px/24deg (Nagahara) off - two orders of magnitude adrift, so a tight
+    # tolerance separates them cleanly with room to spare.
+    #
+    # A deck with NO crossing under it at all fails the same check: it carries nothing, so either the
+    # way or the watercourse it was drawn for is not in the manifest.
+    #
+    # STANDALONE plank footbridges (`foot`) are exempt: no way carries them, they cross the ditch
+    # PERPENDICULAR by construction, and their own rules are long_ditches_have_a_footbridge /
+    # footbridges_reach_useful_ground.
+    BRIDGE_SEAT_TOL, BRIDGE_ROT_TOL = 8.0, 8.0
+    crooked = []
+    for b in bridges:
+        if b.get("foot"):
+            continue
+        near_x = min(xings_b, key=lambda pv: math.hypot(pv[0][0] - b["x"], pv[0][1] - b["y"]), default=None)
+        if near_x is None:
+            crooked.append(f"({round(b['x'])},{round(b['y'])}) carries no way over any water")
+            continue
+        (px_, py_), heading = near_x
+        seat_off = math.hypot(px_ - b["x"], py_ - b["y"])
+        deck_skew = abs((b.get("rot", 0.0) - heading + 90) % 180 - 90)
+        if seat_off > BRIDGE_SEAT_TOL:
+            crooked.append(f"({round(b['x'])},{round(b['y'])}) sits {seat_off:.0f}px off its crossing at ({round(px_)},{round(py_)})")
+        elif deck_skew > BRIDGE_ROT_TOL:
+            crooked.append(f"({round(b['x'])},{round(b['y'])}) is rot {b.get('rot', 0.0):.0f} but its way bears {heading:.0f} ({deck_skew:.0f} deg askew)")
+    check(
+        "bridges_align_with_their_way",
+        not crooked,
+        f"{len(crooked)} bridge(s) not seated on the crossing they carry: {crooked[:3]} - a deck lies ON the intersection and runs ALONG the way, or the way runs through the water beside it; solve it with s.bridges() instead of hand-placing coordinates",
+    )
 
     # STANDALONE plank FOOTBRIDGES on the irrigation ditches (opt-in via meta.field_footbridges): field-workers
     # cross a ditch on a plank while walking the bunds, so any long ditch stretch carries at least one plank
