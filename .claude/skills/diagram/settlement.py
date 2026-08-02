@@ -5589,7 +5589,7 @@ class Settlement:
             self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
         return z
 
-    def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board", label_above: bool = False) -> int:
+    def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board", label_above: bool = False, label_xy: Pt | None = None) -> int:
         """The KOSATSUBA - the settlement's official notice board: a small roofed frame posting
         the state's STANDING LAW (edicts, porter/packhorse rate tables, ban lists). Sited at the
         most TRAFFICKED public point - the highway frontage, the main street by the gate, a
@@ -5636,8 +5636,19 @@ class Settlement:
         self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
         if label:
             # label_above: for a board standing just inside a gate, the default below-label
-            # would hang over the gate structure (labels_clear_of_other_buildings)
-            self.label(x, y - hh - 11 if label_above else y + hh + 11, label, 8, italic=True, color="#7A5A30")
+            # would hang over the gate structure (labels_clear_of_other_buildings).
+            # label_xy: a HAND seat for the caption when BOTH bands are taken - the forcing
+            # case was Nagahara's principal board at the market-bend junction, where the
+            # below band holds the drum tower, the above band abuts the samurai ward gate's
+            # glyph and its caption (settlement-review 2026-08-02: the two stacked captions
+            # read as one label on the gate), and the clear ground is diagonal, east along
+            # the road edge. Same escape the punishment ground and execution ground carry
+            # (label_xy there) and for the same reason: a deferred/derived seat cannot be
+            # probed from a gen, so the last resort is an explicit one. Direct-labeled, so
+            # label_hugs_its_referent does not govern it - keep a hand seat close enough to
+            # read as the board's own.
+            lx, ly = label_xy if label_xy else (x, y - hh - 11 if label_above else y + hh + 11)
+            self.label(lx, ly, label, 8, italic=True, color="#7A5A30")
         return z
 
     def label_blockers(self, skip_key: str | None = None) -> list[tuple[float, float, float, float]]:
@@ -5714,10 +5725,12 @@ class Settlement:
         headman, or a hamlet's senior farmer answering to the village headman - and officials
         also read notices aloud, so even a 50-inhabitant hamlet's board works). Deterministic:
         draws NO RNG, so calling it inside `roll_village` cannot perturb a rolled map's seed
-        stream. Reads the SAME manifest route fields the validator's siting check reads
-        (`M['road']` + `M['lane']` + `M['lanes']` - the dev-loop same-source doctrine) and
-        probes candidate verge spots with `_fits`, scoring for the most dwellings within ~260
-        px (siting is a TRAFFIC decision - the state talks at everyone who passes) while
+        stream. Reads the SAME manifest route fields the validator's siting checks read (the
+        dev-loop same-source doctrine): MAIN ways only (`roads`/`M['road']` + `main: True`
+        town streets - kosatsuba_on_a_main_way, GM 2026-08-02) when the map declares any,
+        else the whole network (`M['lane']` + `M['lanes']` + `town_streets`), and probes
+        candidate verge spots with `_fits`, scoring for the most dwellings within ~260 px
+        (siting is a TRAFFIC decision - the state talks at everyone who passes) while
         hugging the verge. Call AFTER the lanes, homesteads, and wells and BEFORE the crop, so
         the frame contains the board. No-op under meta(kosatsuba=False); returns the spot, or
         None when no verge inside the validator's ~60-real-ft siting band fits (the
@@ -5731,20 +5744,29 @@ class Settlement:
         w = max(self.px(12), KOSATSUBA_MARKER_MIN_PX)
         h = w * 5 / 12
         # (pts, tread width) per route; road/lane manifest fields carry no width, so assume
-        # a generous tread for the bed-avoidance test below
+        # a generous tread for the bed-avoidance test below.
+        # MAIN WAYS ONLY, where the map declares any (GM 2026-08-02, from Ubame: the siter put
+        # the board a legal 49 ft off a side lane while the high street ran 200 ft away - "it
+        # should be along the main road, in order to be more noticed"). The candidate tiers
+        # mirror kosatsuba_on_a_main_way exactly (the same-source doctrine): every road and
+        # every main: True town street is a MAIN way, and when the map has at least one, ONLY
+        # main-way verges are sampled - a side lane's busiest node is still a side lane, so
+        # scoring must never see it. A map with no declared hierarchy (village/hamlet lane
+        # webs, towns whose streets are all unflagged) falls back to the whole network, where
+        # the busiest-node scoring below stands in for "main". The fallback still needs TOWN
+        # STREETS TOO: this probe was written for the lane/lanes tiers, and the omission was
+        # invisible until Hirameki - no road, no lanes, all town_streets - gave it not one
+        # candidate seat and it returned None (GM 2026-07-27).
         routes: list[tuple[list[Pt], float]] = []
         if self.M.get("road"):
             routes.append(([(p[0], p[1]) for p in self.M["road"]], 18.0))
-        if self.M.get("lane"):
-            routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
-        routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
-        # TOWN STREETS TOO - the same source `kosatsuba_by_the_road` reads (the dev-loop
-        # same-source doctrine). This probe was written for the village/hamlet tiers, where the
-        # network is `lane`/`lanes`, and the omission was invisible while the towns hand-placed
-        # their boards. The moment Hirameki switched to the auto-siter it surfaced as a hard
-        # stop: that town has NO road and NO lanes at all - its whole network is town_streets -
-        # so the probe had not one candidate seat to consider and returned None (GM 2026-07-27).
-        routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [])
+        routes.extend(([(p[0], p[1]) for p in r["pts"]], 18.0) for r in (self.M.get("roads") or [])[1:])
+        routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [] if st.get("main"))
+        if not routes:
+            if self.M.get("lane"):
+                routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
+            routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
+            routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [])
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
 
         beds = way_beds(self.M)  # EVERY way bed, not just the routes candidates were sampled from
