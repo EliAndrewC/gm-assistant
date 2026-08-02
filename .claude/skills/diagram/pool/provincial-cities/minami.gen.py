@@ -764,7 +764,7 @@ s.cremation_ground(604, 1800)
 s.ossuary(596, 1614)
 
 s.boundary_marker(658, 1354, label_xy=(620, 1366))  # ON the west road verge, where the road leaves clean ground (seat from site_justice.py); caption pulled west off a gate-market stall at (682.7,1359.2)
-s.execution_ground(556, 1378, rot=6, label_above=True)
+s.execution_ground(556, 1378, rot=6)  # caption BELOW (clear waste ground): angled captions (GM 2026-08-02) tilt this caption 6 deg with its ground, and from the above-seat its right end dipped into the boundary stone's caption band (no_label_overlaps)
 
 s.bridges()
 s.farmsteads()

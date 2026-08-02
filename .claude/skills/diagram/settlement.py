@@ -393,6 +393,58 @@ def sat_overlap(p: Sequence[Sequence[float]], q: Sequence[Sequence[float]]) -> b
     return True
 
 
+def label_tilt(rot: float) -> float:
+    """The angle a caption takes to lie ALIGNED with the feature it names when that feature is
+    drawn at `rot` degrees (GM 2026-08-02: an angled building's label carries the building's own
+    tilt - "caravan inn" runs along its rot=-16 inn, not as level text beside a diagonal glyph).
+    Folded mod 90 into [-45, 45): the text aligns with whichever of the building's two edge
+    families lies nearer the horizontal, so a caption never tilts past 45 degrees (legibility),
+    and a SQUARE-rotated building (0/90/180/270) keeps its level caption EXACTLY as before - the
+    fold is what keeps every level caption in the pool byte-stable. Rounded to 0.1 degree (the
+    grain the glyph transforms use); float noise under half that grain snaps level."""
+    t = (rot + 45.0) % 90.0 - 45.0
+    return 0.0 if abs(t) < 0.05 else round(t, 1)
+
+
+def label_quad(L: Sequence[Any]) -> Poly:
+    """The drawn corner ring of a recorded label. Elements [0..3] are the caption's UNROTATED box
+    (what `_record_label` has always written); a TILTED caption (element [7], degrees - see
+    `label_tilt`) is that box rotated about its own center, exactly the SVG transform `label()`
+    emits, so a check reads the true glyph run straight off the record. A level record returns
+    its plain corners."""
+    x0, y0, x1, y1 = float(L[0]), float(L[1]), float(L[2]), float(L[3])
+    cs: Poly = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    t = float(L[7]) if len(L) > 7 and L[7] else 0.0
+    if not t:
+        return cs
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    ca, sa = math.cos(math.radians(t)), math.sin(math.radians(t))
+    return [(cx + (qx - cx) * ca - (qy - cy) * sa, cy + (qx - cx) * sa + (qy - cy) * ca) for qx, qy in cs]
+
+
+def label_aabb(L: Sequence[Any]) -> tuple[float, float, float, float]:
+    """A recorded label's axis-aligned bounds - what the CONTAINMENT consumers (frame clipping,
+    the crop's must-include list, blocker lists, the title search) test. Identical to elements
+    [0..3] for a level record; for a tilted one it is the rotated quad's AABB - the honest
+    'ground this text can reach'."""
+    q = label_quad(L)
+    xs, ys = [p[0] for p in q], [p[1] for p in q]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def tilt_caption_seat(x: float, y: float, rot: float, tilt: float, half_w: float, half_h: float, gap: float, above: bool = False) -> Pt:
+    """Where a caption hangs off a TILTED footprint: the standard 'centered under the lower edge'
+    seat every glyph uses, computed in the footprint's own frame and rotated with it (`above`
+    flips to the upper edge). Which local half-extent lies perpendicular to the caption's
+    baseline depends on which edge family `label_tilt` folded onto - a rot=150 works reads along
+    its LONG side (half_h below the baseline) where a rot=102 yard reads along its SHORT one
+    (half_w) - so both halves are passed and the fold decides."""
+    perp = half_h if round((rot - tilt) / 90.0) % 2 == 0 else half_w
+    a = math.radians(tilt)
+    d = (perp + gap) * (-1.0 if above else 1.0)
+    return (x - math.sin(a) * d, y + math.cos(a) * d)
+
+
 # --- STABLE-YARD GLYPH EXTENTS: wells, trough clusters, hitching rails ------------------------
 # These three MUST NOT OVERLAP ONE ANOTHER (GM 2026-07-25). The motivating defect was Nagahara's
 # flophouse yard, which drew a hitching rail straight ACROSS a wellhead and then stacked the trough
@@ -1290,8 +1342,9 @@ def crop_boxes(M: Any, city: bool, ftpx: float, W: float, H: float) -> list[tupl
                 add(o, k, i)
         for mp_ in M.get("moat") or []:  # the city itself (moat encloses the wall)
             out.append((mp_[0], mp_[0], mp_[1], mp_[1], "moat"))
-        for i, lb in enumerate(M.get("labels", [])):  # placed label boxes: [x0, y0, x1, y1, z, text]
-            out.append((lb[0], lb[2], lb[1], lb[3], f"label {lb[5]!r}" if len(lb) > 5 else f"labels[{i}]"))
+        for i, lb in enumerate(M.get("labels", [])):  # placed label boxes: [x0, y0, x1, y1, z, text(, ref, tilt)] - label_aabb reads tilted records too
+            _la = label_aabb(lb)
+            out.append((_la[0], _la[2], _la[1], _la[3], f"label {lb[5]!r}" if len(lb) > 5 else f"labels[{i}]"))
         return out
     for k in Settlement._CROP_HARD:
         for i, o in enumerate(M.get(k, [])):
@@ -4964,14 +5017,18 @@ class Settlement:
         blk = [absol(-hw - m, -hh - m), absol(hw + m, -hh - m), absol(hw + m, hh + m), absol(-hw - m, hh + m)]
         self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in blk])
         ys = [c[1] for c in corners]
+        _t = label_tilt(rot)
         if label:
             # the caption hangs above the walls by default; `label_xy` moves it when something
             # legitimately occupies that band - a ROTATED manor swings its corner up into the
             # text, and a punishment ground sited at the gate (which is where it belongs) sits
-            # under it (GM 2026-07-26, Hoshizora). Same escape as s.martial_hall.
-            self.label(*(label_xy or (x, min(ys) - 12)), label, 14, weight="bold")
+            # under it (GM 2026-07-26, Hoshizora). Same escape as s.martial_hall. A DIAGONAL
+            # compound's caption tilts with it (label_tilt), at the hand seat or the default.
+            _seat = label_xy or (tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 12, above=True) if _t else (x, min(ys) - 12))
+            self.label(*_seat, label, 14, weight="bold", rot=_t)
         if sublabel:
-            self.label(x, max(ys) + 18, sublabel, 9, italic=True)
+            _s2 = tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 18) if _t else (x, max(ys) + 18)
+            self.label(*_s2, sublabel, 9, italic=True, rot=_t)
 
     def _estate_wall_clear(self, x: float, y: float, w: float, h: float, marg: float = 2.5) -> bool:
         """Whether a walled compound's PERIMETER at (x,y,w,h) stays off recorded water (canals,
@@ -5558,7 +5615,7 @@ class Settlement:
             _a = math.radians(rot)
             _rx = abs(hw * math.cos(_a)) + abs(hh * math.sin(_a))
             _ry = abs(hw * math.sin(_a)) + abs(hh * math.cos(_a))
-            self.place_caption(label, (cx - _rx, cy - _ry, cx + _rx, cy + _ry), 11, italic=True, hint=(cx, cy + _ry + 16))
+            self.place_caption(label, (cx - _rx, cy - _ry, cx + _rx, cy + _ry), 11, italic=True, hint=(cx, cy + _ry + 16), rot=rot)
 
     def fire_tower(self, x: float, y: float, tw: float | None = None, rot: float = 0.0, label: str = "fire tower") -> int:
         """A HINOMI-YAGURA (fire-watch tower): a tall, slender braced-timber tower with a lookout
@@ -5586,7 +5643,9 @@ class Settlement:
         bm = 16
         self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
         if label:
-            self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
+            _t = label_tilt(rot)
+            _lx, _ly = tilt_caption_seat(x, y, rot, _t, h, h, 14) if _t else (x, y + h + 14)
+            self.label(_lx, _ly, label, 9, italic=True, color="#7A5A30", rot=_t)
         return z
 
     def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board", label_above: bool = False, label_xy: Pt | None = None) -> int:
@@ -5646,9 +5705,17 @@ class Settlement:
             # (label_xy there) and for the same reason: a deferred/derived seat cannot be
             # probed from a gen, so the last resort is an explicit one. Direct-labeled, so
             # label_hugs_its_referent does not govern it - keep a hand seat close enough to
-            # read as the board's own.
-            lx, ly = label_xy if label_xy else (x, y - hh - 11 if label_above else y + hh + 11)
-            self.label(lx, ly, label, 8, italic=True, color="#7A5A30")
+            # read as the board's own. A hand seat keeps its SPOT but the text still tilts
+            # with a diagonal board (angled captions, GM 2026-08-02) - same merge as
+            # punishment_spot's label_xy.
+            _t = label_tilt(rot)
+            if label_xy:
+                _lx, _ly = label_xy
+            elif _t:
+                _lx, _ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 11, above=label_above)
+            else:
+                _lx, _ly = (x, y - hh - 11) if label_above else (x, y + hh + 11)
+            self.label(_lx, _ly, label, 8, italic=True, color="#7A5A30", rot=_t)
         return z
 
     def label_blockers(self, skip_key: str | None = None) -> list[tuple[float, float, float, float]]:
@@ -5680,7 +5747,7 @@ class Settlement:
                 xs = [o["x"] + dx * ca - dy * sa for dx, dy in cs]
                 ys = [o["y"] + dx * sa + dy * ca for dx, dy in cs]
                 boxes.append((min(xs), min(ys), max(xs), max(ys)))
-        boxes += [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
+        boxes += [label_aabb(lb) for lb in self.M["labels"] if len(lb) > 3]  # AABB: a tilted caption blocks the ground its rotated run can reach
         return boxes
 
     def label_caption_hw(self, label: str, size: float) -> float:
@@ -5691,11 +5758,15 @@ class Settlement:
         (Minami, 2026-07-27). Placement and its check read the SAME geometry."""
         return len(label) * size * 0.55 / 2
 
-    def label_seat_clear(self, lx: float, ly: float, tw: float, size: float = 9.0, boxes: list[tuple[float, float, float, float]] | None = None) -> bool:
-        """Is a caption box centred at (lx, ly) clear of every blocker? `boxes` lets a caller that
-        probes many seats build the blocker list once."""
+    def label_seat_clear(self, lx: float, ly: float, tw: float, size: float = 9.0, boxes: list[tuple[float, float, float, float]] | None = None, tilt: float = 0.0) -> bool:
+        """Is a caption box centered at (lx, ly) clear of every blocker? `boxes` lets a caller that
+        probes many seats build the blocker list once. A TILTED caption probes its rotated AABB -
+        conservative against these axis-aligned blockers, so the probe stays at least as strict as
+        the quad the gate tests."""
         bx = self.label_blockers() if boxes is None else boxes
-        b = (lx - tw, ly - size * 0.8, lx + tw, ly + size * 0.25)
+        b: tuple[float, float, float, float] = (lx - tw, ly - size * 0.8, lx + tw, ly + size * 0.25)
+        if tilt:
+            b = label_aabb([*b, 0, "", None, tilt])
         return not any(b[0] < x1 and x0 < b[2] and b[1] < y1 and y0 < b[3] for x0, y0, x1, y1 in bx)
 
     def clear_label_seat(self, x: float, y: float, w: float, h: float, label: str, size: float = 9.0, skip_key: str | None = None) -> Pt | None:
@@ -5968,7 +6039,18 @@ class Settlement:
         # left an off-map channel anchor stranded INSIDE the frame (channel_field_anchored). Those
         # captions already clear their own footprints, so the churn would buy nothing.
         eh_ = h / 2 if lab_off is None else lab_off
-        if label:
+        tilt_ = label_tilt(rot)
+        if label and tilt_:
+            # A DIAGONAL works captions ALONG ITS OWN TILT (label_tilt, GM 2026-08-02): the caption
+            # hangs off the ROTATED lower edge - the local half-extent is exact there, so the
+            # square-rotation `lab_off` escape does not apply - and the reserved band under the
+            # text rotates with it, guarding the ground the tilted glyph run actually covers.
+            bw_ = max(hw, 2.9 * len(label) + 10)
+            lx_, ly_ = tilt_caption_seat(x, y, rot, tilt_, w / 2, h / 2, 11)
+            ca_, sa_ = math.cos(math.radians(tilt_)), math.sin(math.radians(tilt_))
+            self.block_polys.append([(lx_ + dx * ca_ - dy * sa_, ly_ + dx * sa_ + dy * ca_) for dx, dy in ((-bw_, -11.0), (bw_, -11.0), (bw_, 15.0), (-bw_, 15.0))])
+            self.label(lx_, ly_, label, 9, italic=True, color="#5A4326", rot=tilt_)
+        elif label:
             # the band anchors at the RAW footprint edge - the caption box starts ~edge+6, so
             # anchoring at the margin-inflated hh left its top half unguarded (the bathhouse
             # caption's merchant_house graze, 2026-07-24). +10 width slack because rowpack tests
@@ -8539,8 +8621,14 @@ class Settlement:
             # the label outright (the paddy_field convention), for the case Hoshizora hit, where the
             # only clear VERGE for the ground sits directly under the manor's own label box and the
             # only clear TEXT band is a little further down, between that label and the manor itself.
-            lx, ly = label_xy if label_xy else (x, y - hh - 9 if label_above else y + hh + 11)
-            self.label(lx, ly, label, 9, italic=True, color="#6B5A3C")
+            _t = label_tilt(rot)
+            if label_xy:
+                lx, ly = label_xy
+            elif _t:
+                lx, ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 9 if label_above else 11, above=label_above)
+            else:
+                lx, ly = (x, y - hh - 9) if label_above else (x, y + hh + 11)
+            self.label(lx, ly, label, 9, italic=True, color="#6B5A3C", rot=_t)
 
     def execution_ground(self, cx: float, cy: float, rot: float = 0.0, screened: bool | None = None, label: str | None = "execution ground", label_above: bool = False) -> None:
         """The EXECUTION GROUND (keijou) - bare waste ground on the road past the settlement's
@@ -8624,7 +8712,9 @@ class Settlement:
         if label:
             # label_above: the ground shares the settlement's outskirts with the polluting trades
             # (kiln, tanning yard), whose small glyphs the default below-label can land on
-            self.label(cx, cy - hh - 8 if label_above else cy + hh + 13, label, 11, italic=True, color="#6B5A3C")
+            _t = label_tilt(rot)
+            _lx, _ly = tilt_caption_seat(cx, cy, rot, _t, hw, hh, 8 if label_above else 13, above=label_above) if _t else ((cx, cy - hh - 8) if label_above else (cx, cy + hh + 13))
+            self.label(_lx, _ly, label, 11, italic=True, color="#6B5A3C", rot=_t)
 
     def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone", label_xy: Pt | None = None) -> None:
         """A DOSOJIN (sae no kami) stone at the settlement's ritual boundary - where the road leaves
@@ -8655,8 +8745,9 @@ class Settlement:
         if label:
             # the default below-seat lands on the road the stone stands beside, which at a city gate
             # is the gate throat itself - label_xy hands it to open ground (Nagahara's east gate)
-            _lx, _ly = label_xy if label_xy else (x, y + hh + 10)
-            self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C")
+            _t = label_tilt(rot)
+            _lx, _ly = label_xy if label_xy else (tilt_caption_seat(x, y, rot, _t, hw, hh, 10) if _t else (x, y + hh + 10))
+            self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C", rot=_t)
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary") -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
@@ -10416,7 +10507,7 @@ class Settlement:
         w = len(text) * size * 0.55
         return (lx - w / 2, ly - size * 0.8, lx + w / 2, ly + size * 0.25)
 
-    def _best_label_spot(self, box: Sequence[float], text: str, size: float, hint: Pt | None = None, slides: Sequence[float] = (0.0,), axis: Pt | None = None) -> Pt:
+    def _best_label_spot(self, box: Sequence[float], text: str, size: float, hint: Pt | None = None, slides: Sequence[float] = (0.0,), axis: Pt | None = None, tilt: float = 0.0) -> Pt:
         """The NEAREST seat for a caption naming the feature that occupies `box` which covers
         nothing - walking the standoff ladder (see LABEL_MIN_AIR above) outward from the subject,
         nearest clear seat wins. When nothing is clear inside the ladder's reach, the least-covered
@@ -10450,6 +10541,11 @@ class Settlement:
         x0, y0, x1, y1 = box[0], box[1], box[2], box[3]
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         hw, hh = len(text) * size * 0.55 / 2, size * 0.525  # the drawn box's half-extents (see _label_box)
+        if tilt:
+            # a TILTED caption seats by its rotated AABB - conservative against every axis-aligned
+            # obstacle here, so the ladder stays at least as strict as the quad the gate measures
+            _tca, _tsa = abs(math.cos(math.radians(tilt))), abs(math.sin(math.radians(tilt)))
+            hw, hh = hw * _tca + hh * _tsa, hw * _tsa + hh * _tca
         sl = list(dict.fromkeys([0.0, *slides]))
         if axis is not None:  # perpendicular to the subject, sliding along it
             dirs = [((-axis[1], axis[0]), axis), ((axis[1], -axis[0]), axis)]
@@ -10457,7 +10553,7 @@ class Settlement:
             tall = (y1 - y0) > (x1 - x0)
             ends: list[tuple[Pt, Pt]] = [((0.0, 1.0), (0.0, 0.0)), ((0.0, -1.0), (0.0, 0.0))] if tall else [((1.0, 0.0), (0.0, 0.0)), ((-1.0, 0.0), (0.0, 0.0))]
             dirs = ([((1.0, 0.0), (0.0, 1.0)), ((-1.0, 0.0), (0.0, 1.0))] if tall else [((0.0, 1.0), (1.0, 0.0)), ((0.0, -1.0), (1.0, 0.0))]) + ends
-        placed_labels = [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
+        placed_labels = [label_aabb(lb) for lb in self.M["labels"] if len(lb) > 3]
         if self.M.get("title"):  # the title placard is a label too, and captions now seat AFTER it
             placed_labels.append(tuple(self.M["title"]["bbox"]))
         view = self.M["meta"].get("view")  # set by the crop; absent until then (and on uncropped maps)
@@ -10475,9 +10571,11 @@ class Settlement:
             clear: list[tuple[float, float, float, int, Pt]] = []
             for i, (lx, ly) in enumerate(cands):
                 lb = self._label_box(lx, ly, text, size)
+                if tilt:
+                    lb = label_aabb([*lb, 0, text, None, tilt])
                 if view and (lb[0] < view[0] or lb[1] < view[1] or lb[2] > view[0] + view[2] or lb[3] > view[1] + view[3]):
                     continue
-                hits = self._label_hits(lx, ly, text, size, pad=0.0, linepad=0.0) + sum(1 for o in placed_labels if box_gap(lb, o) < 3)
+                hits = self._label_hits(lx, ly, text, size, pad=0.0, linepad=0.0, tilt=tilt) + sum(1 for o in placed_labels if box_gap(lb, o) < 3)
                 gap = box_gap(lb, box)
                 if not hits:
                     # NEAREST wins within the rung; ties go to the LEAST CROWDED seat, then the
@@ -10507,6 +10605,7 @@ class Settlement:
         color: str = "#5A4326",
         hint: Pt | None = None,
         slides: Sequence[float] | None = None,
+        rot: float = 0.0,
     ) -> None:
         """Caption the feature occupying `box`, seated by the standoff ladder - use this instead of
         a hand-picked `s.label(x, y, ...)` whenever the caption names a specific feature (a market
@@ -10534,9 +10633,11 @@ class Settlement:
             # near flank was the road caption, 30px further up the same stall row.
             span = max(box[2] - box[0], box[3] - box[1])
             slides = (0.0, span * 0.25, -span * 0.25, span * 0.4, -span * 0.4)
-        self._captions.append((text, tuple(float(v) for v in box), size, italic, weight, color, hint, tuple(slides)))
+        # `rot` is the SUBJECT's rotation: a caption naming a diagonal feature tilts with it
+        # (label_tilt; GM 2026-08-02, angled-building labels), seated by its rotated AABB.
+        self._captions.append((text, tuple(float(v) for v in box), size, italic, weight, color, hint, tuple(slides), label_tilt(rot)))
 
-    def _label_hits(self, lx: float, ly: float, text: str, size: float, pad: float = 4.0, linepad: float = 6.0) -> int:
+    def _label_hits(self, lx: float, ly: float, text: str, size: float, pad: float = 4.0, linepad: float = 6.0, tilt: float = 0.0) -> int:
         """How many already-placed footprints (buildings/houses + homestead groves) a label at
         (lx, ly) would cover. The cheap scorer behind auto label placement: prefer a label spot
         in EMPTY ground; when every spot overlaps something, take the least (GM label doctrine,
@@ -10553,6 +10654,9 @@ class Settlement:
         writes (0.31/char here against 0.275), which is the slack that keeps glyphs off a
         neighbor's edge."""
         hw, hh = len(text) * size * 0.31 + pad, size * 0.75 + pad
+        if tilt:  # a tilted caption scores by its rotated AABB (conservative; the gate tests the true quad)
+            _ca, _sa = abs(math.cos(math.radians(tilt))), abs(math.sin(math.radians(tilt)))
+            hw, hh = hw * _ca + hh * _sa, hw * _sa + hh * _ca
         n = 0
         for px, py, pw, ph in self.placed:
             if abs(px - lx) < hw + pw / 2 and abs(py - ly) < hh + ph / 2:
@@ -12281,30 +12385,58 @@ class Settlement:
                 self._nbig -= 1
 
     # ---- annotation
-    def _record_label(self, x: float, y: float, text: str, size: float, anchor: str, z: int, ref: Sequence[float] | None = None) -> None:
+    def _record_label(self, x: float, y: float, text: str, size: float, anchor: str, z: int, ref: Sequence[float] | None = None, rot: float = 0.0) -> None:
         w = len(text) * size * 0.55  # rough serif advance; slightly generous so near-misses flag
         x0 = x - w / 2 if anchor == "middle" else (x - w if anchor == "end" else x)
         # record the TEXT (element [5]) too, so the gate can verify a zone/neighborhood label actually
         # sits with the cluster it names (same side of the wall, among its buildings)
         rec: list[Any] = [round(x0, 1), round(y - size * 0.8, 1), round(x0 + w, 1), round(y + size * 0.25, 1), z, text]
-        if ref is not None:
+        if ref is not None or rot:
             # element [6]: the box of the ONE feature this caption names, recorded only by the
             # standoff-ladder path (`place_caption` / the road label). A district caption names an
             # AREA, not a thing, so it carries no referent and `label_hugs_its_referent` skips it.
-            rec.append([round(float(v), 1) for v in ref])
+            # (Recorded as null when only a tilt follows - the elements are positional.)
+            rec.append([round(float(v), 1) for v in ref] if ref is not None else None)
+        if rot:
+            # element [7]: the caption's TILT in degrees (see label_tilt) - present ONLY when
+            # nonzero, so every level caption's record stays byte-identical to the pre-tilt
+            # format (the 695-manifest regression corpus reads unchanged). Elements [0..3] stay
+            # the UNROTATED box; label_quad / label_aabb derive the drawn geometry from it.
+            rec.append(rot)
         self.M["labels"].append(rec)
 
     def label(
-        self, x: float, y: float, text: str, size: float = 12, anchor: str = "middle", italic: bool = False, weight: str = "normal", color: str = "#2D2A24", ref: Sequence[float] | None = None
+        self,
+        x: float,
+        y: float,
+        text: str,
+        size: float = 12,
+        anchor: str = "middle",
+        italic: bool = False,
+        weight: str = "normal",
+        color: str = "#2D2A24",
+        ref: Sequence[float] | None = None,
+        rot: float = 0.0,
     ) -> None:
         esc = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         st = ' font-style="italic"' if italic else ''
+        # `rot` is a FEATURE rotation; label_tilt folds it to the caption's tilt (0 for any square
+        # rotation, so nothing changes for level callers). A tilted caption rotates about its
+        # recorded box's CENTER, so label_quad reads the drawn glyph run straight off the record
+        # (GM 2026-08-02, angled-building labels).
+        tilt = label_tilt(rot)
+        if tilt:
+            w_ = len(text) * size * 0.55
+            x0_ = x - w_ / 2 if anchor == "middle" else (x - w_ if anchor == "end" else x)
+            tr = f' transform="rotate({tilt:.1f} {x0_ + w_ / 2:.1f} {y - size * 0.275:.1f})"'
+        else:
+            tr = ''
         # labels live in the topmost LABEL layer so nothing - not a road, not a wall, not a kido or torii
         # - ever paints over the text (a label must always be fully readable)
         z = self.add_label(
-            f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" font-weight="{weight}"{st} fill="{color}" paint-order="stroke" stroke="{LAND}" stroke-width="3">{esc}</text>'
+            f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" font-weight="{weight}"{st}{tr} fill="{color}" paint-order="stroke" stroke="{LAND}" stroke-width="3">{esc}</text>'
         )
-        self._record_label(x, y, text, size, anchor, z, ref)
+        self._record_label(x, y, text, size, anchor, z, ref, tilt)
 
     def _text_width(self, s: str, fs: float) -> float:
         """Measured pixel width of bold `s` at font-size `fs` in the RENDER font (DejaVu Serif Bold -
@@ -12496,9 +12628,9 @@ class Settlement:
         # road caption, which goes last because it has by far the most room to move: its subject is
         # a whole road segment with a wide slide set, where a market row's caption has one short
         # stretch of frontage to sit against. Most-constrained-first; the road yields.
-        for _tx, _bx, _sz, _it, _wt, _co, _hi, _sl in self._captions:
-            _lx, _ly = self._best_label_spot(_bx, _tx, _sz, hint=_hi, slides=_sl)
-            self.label(_lx, _ly, _tx, _sz, italic=_it, weight=_wt, color=_co, ref=_bx)
+        for _tx, _bx, _sz, _it, _wt, _co, _hi, _sl, _ro in self._captions:
+            _lx, _ly = self._best_label_spot(_bx, _tx, _sz, hint=_hi, slides=_sl, tilt=_ro)
+            self.label(_lx, _ly, _tx, _sz, italic=_it, weight=_wt, color=_co, ref=_bx, rot=_ro)
         self._captions = []
         if getattr(self, "_road_label", None):
             text, lx, ly = self._road_label

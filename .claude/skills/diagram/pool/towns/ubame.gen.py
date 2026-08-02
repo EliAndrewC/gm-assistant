@@ -111,7 +111,9 @@ s.border_line([(BORDER_X, -60), (BORDER_X, 1560)], label="the Fox border", label
 # ---- terrain: the ubame-oak stand on the NE high ground (the charcoal country, whose kilns are off
 # among the stands), and grazing on the dry upper margin west
 s.forest_patch([(1560, -60), (2260, -60), (2260, 95), (2100, 122), (1880, 108), (1700, 60), (1600, 20)], label="ubame oak", label_xy=(1810, 40))
-s.pasture([(-60, -60), (900, -60), (1000, 130), (820, 265), (300, 300), (-60, 210)], label="hayfields & grazing", label_xy=(430, 140))  # the polygon is full of hay bales; "grazing" alone restated the green and left ~30 bales unexplained (settlement-review). Hoshizora captions the identical glyph the same way.
+s.pasture(
+    [(-60, -60), (900, -60), (1000, 130), (820, 265), (300, 300), (-60, 210)], label="hayfields & grazing", label_xy=(430, 140)
+)  # the polygon is full of hay bales; "grazing" alone restated the green and left ~30 bales unexplained (settlement-review). Hoshizora captions the identical glyph the same way.
 
 # ---- the trunk road (UNLABELED - not an Imperial road): in from the Fox border at the east, past
 # the magistracy's south gate, then WSW across the map and off the west edge toward Shiro Daika
@@ -240,7 +242,9 @@ topo_channel([_outA, ((_outA[0] + POND[0]) / 2, (_outA[1] + POND[1]) / 2 + 14), 
 # pool/magistracies/ubame-magistracy.svg. gate_dir="south": that sheet gives the compound a
 # ceremonial south face to the county town and a frontier east face, and the south gate opens onto
 # the trunk road running past it.
-s.manor(BORDER_X - 145, 240, 290, 200, "Magistrate's Manor", gate_dir="south", label_xy=(1958, 112))  # 290x200 ft = the envelope on pool/magistracies/ubame-magistracy.svg; centered so the east wall stands ON the border
+s.manor(
+    BORDER_X - 145, 240, 290, 200, "Magistrate's Manor", gate_dir="south", label_xy=(1958, 112)
+)  # 290x200 ft = the envelope on pool/magistracies/ubame-magistracy.svg; centered so the east wall stands ON the border
 
 # ---- the two monasteries: Scorpion's patron fortunes, Benten and Jurojin
 s.shrine_hall(430, 1180, "Monastery of Benten", w=132, h=86, kind="monastery", primary=True, torii=[(430, 1272), (430, 1302)], label_below=True)
@@ -291,7 +295,9 @@ s.block_polys.append([(1740, 700), (1975, 700), (1975, 905), (1740, 905)])
 # marginal bank ground. rot follows the BANK's own bearing there (the yard is a working frontage, so
 # its water side must lie along the water, not square to the map). Its 120 ft stench keep-out is
 # registered BEFORE the farm rings, so the steadings pack around it instead of crowding it.
-s.tanning_yard(1395, 1300, rot=102, pits=4, water="stream", lab_off=36)  # lab_off: at rot=102 the yard's drawn extent is 33px, so the default h/2 caption sat inside its own boundary stroke and read as "tanning-yard" struck through
+s.tanning_yard(
+    1395, 1300, rot=102, pits=4, water="stream", lab_off=36
+)  # lab_off: at rot=102 the yard's drawn extent is 33px, so the default h/2 caption sat inside its own boundary stroke and read as "tanning-yard" struck through
 s.block_polys.append([(1395 + 155 * math.cos(a), 1300 + 155 * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]])
 
 # ---- urban core: the businesses front the trunk road (the high street), each facing the roadbed;
@@ -301,7 +307,9 @@ s.block_polys.append([(1395 + 155 * math.cos(a), 1300 + 155 * math.sin(a)) for a
 # which found 6 against the stated ~14) and 9 servants. A target is not a promise the ground can keep.
 ROAD_CORE = [(1500, 490), (1180, 573), (860, 655), (540, 740), (260, 820)]
 s.frontage(ROAD_CORE, (["merchant"] * 2 + ["shop"]) * 16, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
-s.label(840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326")  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it)
+s.label(
+    840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326"
+)  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it)
 s.merchant_residences(3)
 # the ~3 MASTER (rich) laborers get larger dwellings at the edge of the warren
 for lx, ly in [(268, 1060), (700, 1030), (960, 405)]:
@@ -391,7 +399,7 @@ s.inn(170, 768, rot=-16)
 # The inn is drawn as a plain block like any merchant house, so without a caption it is invisible AS
 # an inn - and the flophouse beside it is labeled, which made the omission read as a judgment that
 # the flophouse mattered more (settlement-review). Seated by the standoff ladder, not by hand.
-s.place_caption("caravan inn", (131, 735, 209, 801))  # the ROTATED extent (rot=-16), not the raw 66x48 footprint:
+s.place_caption("caravan inn", (131, 735, 209, 801), rot=-16)  # the ROTATED extent (rot=-16), not the raw 66x48 footprint:
 # seated against the unrotated box the ladder put the caption 3 px onto the inn's own corner. Give a caption the
 # extent the feature is DRAWN at, or it is cleared against a building that is not the one on the page.
 s.stables(112, 686, rot=-16)
