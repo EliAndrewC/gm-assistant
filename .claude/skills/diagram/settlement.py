@@ -6050,8 +6050,15 @@ class Settlement:
     # repertoire, not his footprint; only where horses CONCENTRATE does farriery earn its own
     # premises, which is what s.farrier draws.
 
-    def _trade_record(self, key: str, x: float, y: float, w: float, h: float, rot: float, label: str, bm: float = 10.0, lab_off: float | None = None) -> None:
-        """Record + block one trade-works footprint (shared tail of the trade glyph methods)."""
+    def _trade_record(self, key: str, x: float, y: float, w: float, h: float, rot: float, label: str, bm: float = 10.0, lab_off: float | None = None, label_xy: Pt | None = None) -> None:
+        """Record + block one trade-works footprint (shared tail of the trade glyph methods).
+
+        `label_xy` hand-seats the caption (and its reserved band) when the default below-the-
+        footprint seat collides with a neighbor the placement probe cannot see - the known
+        label-probe limit (this skill's CLAUDE.md): a label box exists only at draw time, so a
+        collision with an already-drawn TOP-layer fixture (Minami's lumber-yard caption grazing
+        the log-boom pen by under a pixel, 2026-08-02) surfaces only at the gate, and the hand
+        seat is the same remedy punishment_spot and the kosatsuba use."""
         self.M.setdefault(key, []).append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "rot": round(rot, 1), "label": label})
         self.placed.append((x, y, w, h))
         hw, hh = w / 2 + bm, h / 2 + bm
@@ -6087,8 +6094,13 @@ class Settlement:
             # caption's merchant_house graze, 2026-07-24). +10 width slack because rowpack tests
             # corners but pack/place_wells test centers only (settlement init comment ~line 642).
             bw_ = max(hw, 2.9 * len(label) + 10)
-            self.block_polys.append([(x - bw_, y + eh_), (x + bw_, y + eh_), (x + bw_, y + eh_ + 26), (x - bw_, y + eh_ + 26)])
-            self.label(x, y + eh_ + 11, label, 9, italic=True, color="#5A4326")
+            if label_xy is not None:
+                lx_, ly_ = label_xy
+                self.block_polys.append([(lx_ - bw_, ly_ - 11.0), (lx_ + bw_, ly_ - 11.0), (lx_ + bw_, ly_ + 15.0), (lx_ - bw_, ly_ + 15.0)])
+                self.label(lx_, ly_, label, 9, italic=True, color="#5A4326")
+            else:
+                self.block_polys.append([(x - bw_, y + eh_), (x + bw_, y + eh_), (x + bw_, y + eh_ + 26), (x - bw_, y + eh_ + 26)])
+                self.label(x, y + eh_ + 11, label, 9, italic=True, color="#5A4326")
 
     def brewery(self, x: float, y: float, rot: float = 0.0, label: str = "brewery") -> None:
         """A SAKE/MISO/SOY BREWERY compound - the biggest trade premises in a provincial seat
@@ -6151,7 +6163,7 @@ class Settlement:
         self.add(''.join(g))
         self._trade_record("dye_yards", x, y, yw_, yh_, rot, label)
 
-    def lumber_yard(self, x: float, y: float, rot: float = 0.0, label: str = "lumber yard") -> None:
+    def lumber_yard(self, x: float, y: float, rot: float = 0.0, label: str = "lumber yard", label_xy: Pt | None = None) -> None:
         """A riverside LUMBER YARD (zaimokuya) - stacked timber + a river landing; stock moves by
         water at scale, so this is a RIVER-PORT feature only (city_river_port_has_lumber_yard;
         a landlocked city has none - the GM's Tango/Nagahara split). Small office + stack rows.
@@ -6165,7 +6177,7 @@ class Settlement:
                 g.append(f'<line x1="{ox_ - 4.6:.1f}" y1="{oy_ + li_ * 1.5 - 2.2:.1f}" x2="{ox_ + 4.6:.1f}" y2="{oy_ + li_ * 1.5 - 2.2:.1f}" stroke="#8A6B42" stroke-width="1.1"/>')
         g.append('</g>')
         self.add(''.join(g))
-        self._trade_record("lumber_yards", x, y, yw_, yh_, rot, label)
+        self._trade_record("lumber_yards", x, y, yw_, yh_, rot, label, label_xy=label_xy)
 
     def oil_press(self, x: float, y: float, rot: float = 0.0, label: str = "oil press") -> None:
         """An OIL PRESSER's barn (aburaya / youfang): the wedge-and-beam press is a massive timber

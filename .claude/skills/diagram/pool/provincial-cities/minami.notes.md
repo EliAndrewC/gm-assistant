@@ -169,3 +169,22 @@ identical source gives byte-identical output, verified. Before inheriting a clon
   deferred `flush_stable_yards` path, plus the charcoal kiln the docstring promises and the map lacks.
 - **The budget charges two gate marshalling grounds and one is drawn** (4,536 px^2 of wall bought for
   ground that is not there).
+
+### 2026-08-02 - the log boom redesigned from a mid-stream chain to a shore-fast pen
+
+The GM's finding on the first drawn boom: "it just looks like a bunch of logs in the middle of
+the river." The research pass behind the fix is recorded in `research/urban-features.md` ("The
+log boom"); the short form: a boom is a floating fence - anchored to nothing it holds nothing -
+and attested booms anchor to the bank and run ALONG a navigated river, the pen between chain and
+shore, with the fairway kept clear by law. The redrawn glyph is a pen: chain on the offshore
+edge, end-booms closing to the east bank, mooring posts and pile clusters, raft-mats packed
+near-solid, ~40 ft of held water = a third of the 120 ft channel. Three checks now hold it
+(`log_boom_moored_to_the_bank`, `log_boom_leaves_the_fairway`,
+`log_boom_serves_the_lumber_yard`), and the pre-fix capture is frozen in `pool/regressions/`.
+**The full-span catch boom is deliberately absent**: that form (the Kiso *tsunaba* - a rope bank
+to bank catching the loose-log drive) belongs at the Fox gorge mouth upstream on an unnavigated
+reach, where loose logs become the rafts that arrive here - it is off-map lore, not port
+furniture, and Minami's river carries wharf/dock/canal traffic that a spanning boom would dam.
+Post-review adjustments (settlement-review 2026-08-02): pen head held ~45 ft below the last
+wharf jetty so the jetty keeps its berth, and the zaimokuya slid to its bank frontage so pen and
+yard read as one works across ~40 ft of haul ground.
