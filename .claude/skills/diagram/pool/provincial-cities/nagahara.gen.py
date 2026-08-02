@@ -180,7 +180,7 @@ s.lumber_yard(1994, 1456)  # the wharf's zaimokuya on the dry tongue between the
 s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street, west of Bishamon's graveyard (its old 1130,1180 seat sat under the Temple of Bishamon caption)
 s.pawnshop(1620, 1240)  # NE merchant quarter
 s.bathhouses([(1836, 1230), (1368, 1270)])  # population-band roll (seed 47 -> 2): seat 1 at the NE warren's east edge (clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata), seat 2 in the NW monzen west of the theater
-s.kiln(2242, 1584)  # the KILN WORKS OUTSIDE the walls on the far bank, river clay at the works' own door. SOUTH of the execution ground rather than beside it: the works grew from a 28x18 ft mound into a 140x120 ft ground with its own cottages (GM 2026-07-27), and the old seat put the potters' houses on the execution ground
+s.kiln(2160, 1608, rot=270)  # the KILN WORKS OUTSIDE the walls on the far bank, ON THE RIVERBANK - which is what makes 'river clay at the works' own door' true rather than a claim the drawing contradicted. Two earlier seats were wrong: (2210,1520) put the potters' houses on the execution ground, and (2242,1584) made the works the middle link of a five-item chain of exiled things (execution ground -> works -> ossuary -> burial ground -> cremation ground), which reads as potters billeted among the dead (settlement-review 2026-07-27). Now 260 ft clear of every funerary feature, off that axis, and the frame is unchanged. rot=270 lays the climb due NORTH, uphill against meta water_flow=89.7
 # the TANNING YARD (GM 2026-07-24) on the Hayakawa's WEST bank, south of the wall - the textbook
 # siting, and the reason the SE burakumin quarter sits where it does. It is downstream of
 # EVERYTHING the city puts in the water: below the moat's outflow junction (y~1521), below the
@@ -1027,7 +1027,7 @@ s.ossuary(2290, 1650)
 # throat was 228 ft wide (GM 2026-07-27, settlements/cities/defenses.md) - the piers stood so far apart
 # the text fell in the gap between them; at the true 30 ft opening the caption sits ON a gatepost.
 s.boundary_marker(1952, 1308, label_xy=(1952, 1291))  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
-s.execution_ground(2244, 1502, rot=8, label_above=True)  # the default below-label lands on the kiln works, which sits directly south at (2242,1584)
+s.execution_ground(2244, 1502, rot=8)  # below-label restored 2026-07-27: label_above dated from when the kiln stood at (2210,1520), and with the works moved to the riverbank the below-seat clears it by 117 ft while the ABOVE seat put the caption's corner 12 ft from the trunk road's centerline - inside its bed, which labels_clear_of_other_buildings does not test (settlement-review)
 
 
 s.bridges()

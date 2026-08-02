@@ -6439,7 +6439,15 @@ class Settlement:
             g.append(f'<rect x="{hx_ - hw2_ / 2:.1f}" y="{hy_ - hh2_ / 2:.1f}" width="{hw2_:.1f}" height="{hh2_:.1f}" rx="1" fill="#D8C49A" stroke="#5A4326" stroke-width="1.5"/>')
             g.append(f'<line x1="{hx_ - hw2_ / 2 + 1.5:.1f}" y1="{hy_:.1f}" x2="{hx_ + hw2_ / 2 - 1.5:.1f}" y2="{hy_:.1f}" stroke="#5A4326" stroke-width="0.8" opacity="0.7"/>')  # the ridge
             qx_, qy_ = _world(hx_, hy_)
-            quarters.append([round(qx_, 1), round(qy_, 1), round(hw2_, 1), round(hh2_, 1)])
+            # [x, y, w, h, ROT] - the rotation is the 5th element and is not optional decoration.
+            # A cottage is drawn inside the works' rotated group, so a record without it describes a
+            # box at the right place with the wrong ORIENTATION, and every consumer reads the wrong
+            # footprint: kiln_keeps_fire_gap measured Tango's 69 ft gap as 62 ft, and
+            # wells_among_dwellings tests the works' own well against a mis-oriented cottage. Latent
+            # until 2026-07-27, when the maps started passing `rot` so the kiln climbs its slope -
+            # every works before that was rot=0, where the bug is invisible. (Older records with
+            # only four elements still read as rot=0, which is what they were.)
+            quarters.append([round(qx_, 1), round(qy_, 1), round(hw2_, 1), round(hh2_, 1), round(rot, 1)])
         g.append('</g>')
         self.add(''.join(g))
         # THE WORKS' OWN WELL, between the shed and the cottages. Clay cannot be weathered, wedged
@@ -6447,7 +6455,12 @@ class Settlement:
         # for the same reason, so it never counts toward the settlement's public idobata.
         wx_, wy_ = _world(f(2), f(24))
         self.well(wx_, wy_, private=True)
-        self._trade_record("kilns", x, y, yw_, yh_, rot, label)
+        # A ROTATED works must report its rotated half-height, or the caption anchors at the raw h/2
+        # and lands inside the record's own bbox - labels_clear_of_other_buildings then reports
+        # "'kiln works' over a kiln works". Same fix the rot=150 Hoshizora farrier needed; see
+        # _trade_record's `lab_off` note. Live from 2026-07-27, when the maps started passing `rot`
+        # so the kiln climbs its slope instead of pointing east on every sheet.
+        self._trade_record("kilns", x, y, yw_, yh_, rot, label, lab_off=abs(yw_ / 2 * math.sin(th_)) + abs(yh_ / 2 * math.cos(th_)))
         bx_, by_ = _world(bcx_, bcy_)
         self.M["kilns"][-1]["body"] = [round(bx_, 1), round(by_, 1), round(bw_, 1), round(bh_, 1), round(rot, 1)]
         self.M["kilns"][-1]["quarters"] = quarters
