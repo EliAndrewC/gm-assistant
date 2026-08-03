@@ -51,16 +51,25 @@ GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*", "*.gen.py")) if
 # in PROCESS CPU time, not wall time, so parallel pytest workers contending for cores cannot fire
 # it. A map that legitimately outgrows its budget gets a bigger entry here WITH the reason, the
 # same discipline as a check waiver.
-GEN_TIME_BUDGET_S = 30.0  # default: an ordinary map measures 1-7s CPU today
+# CALIBRATE AGAINST THE GATE, NOT A SOLO RUN. These asserts fire inside `make done`, i.e. under
+# `pytest -n auto` (22 workers here), and a gen's own CPU TIME inflates 2-4x there through cache
+# and memory-bandwidth contention - process CPU time is immune to WAITING for a core, not to
+# needing more cycles for the same work. Budgets tuned on solo timings duly went off on their
+# first gate run (kikuta: 10.9s solo, 36.2s under the gate, against a 30s budget). So each entry
+# is ~4x its SOLO measurement, which is roughly 1.5x its worst observed under-gate time. That is
+# still a tight enough net for what this guard is for: the regression it exists to catch ran ~250x
+# over budget, not 20% over.
+GEN_TIME_BUDGET_S = 45.0  # default: an ordinary map measures 1-7s solo, comfortably under even inflated
 GEN_TIME_BUDGETS = {
-    # The guard's FIRST run (2026-08-03) flagged nagahara and kikuta against the 30s default; both
-    # were profiled before any budget moved (the message's own discipline), and tango measured at
-    # a 22%-margin near-miss got an entry rather than a flake. Every entry is ~3x its measured
-    # cost, and the mechanism is recorded so the next reader can tell "known heavy" from "new bug".
-    "minami": 120.0,  # ~54s CPU measured 2026-08-03 (was ~42s on 2026-08-02; the ward-residents rule added a third merchant strip, a wider sweep window and an open_seat probe pass): well placement over 927 paddy basins + ~580 watercourse segs (post-memoization; it was 45+ min before)
-    "nagahara": 100.0,  # ~37s CPU measured 2026-08-03: same city well-placement family as minami (676 recorded basins, 67 wells)
-    "tango": 70.0,  # ~24s CPU measured 2026-08-03: same family again (1,043 basins, 88 wells) - under the default but too close to trust
-    "kikuta": 90.0,  # ~35s CPU measured 2026-08-03, profiled: ~70% is hinterland()'s marsh/commons ground-cover scatter (edge_dist over the wetland polys), long-standing (26.9s at a95d8eb a week prior), plus the paddy-well outline fallback now scanning village paddies too
+    # Solo CPU seconds noted per entry, measured 2026-08-03 AFTER the optimization pass this
+    # guard's first run prompted (the on_crop bbox hoist, the ground-cover prefilters, the
+    # well-siting PointGrid). The before/after is the record worth keeping - every one of these
+    # roughly halved - but the BUDGET is calibrated for the gate.
+    "minami": 150.0,  # ~41s solo (54s before the pass): well placement over 927 paddy basins + ~580 watercourse segs, now indexed. Its residue is the placement scans - _near_corridor and _in_blocked - not the well geometry
+    "nagahara": 80.0,  # ~18s solo (37s before): same city well-placement family (676 basins, 67 wells)
+    "tango": 70.0,  # ~16s solo (24s before): same family (1,043 basins, 88 wells), plus farm_wells' on_crop fallback, whose per-candidate bbox rebuild was the pass's first find
+    "kikuta": 60.0,  # ~11s solo (35s before): ~70% was hinterland()'s marsh/commons scatter, the prefilters' biggest single win
+    "hoshizora": 70.0,  # ~15s solo: the largest TOWN and the only non-city that needs an entry - ground-cover scatter over a big hinterland
 }
 
 
