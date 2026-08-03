@@ -28,34 +28,40 @@ concluding an innocent commit was the regression:
 The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
 it - is **~133 seconds** (re-measured 2026-08-02; Minami's ~45s gen, above, is a third of it).
 Since 2026-08-03 the sweep ENFORCES a per-gen CPU budget (`GEN_TIME_BUDGETS` in
-`test_villages.py`, default 30s) so the next silent 45-minute-class perf regression fails loudly
-by name instead of being waited out; `DIAGRAM_ALLOW_SLOW_GENS=1` overrides once you are certain
-perf is fine, and a legitimately-outgrown map gets a bigger budget entry WITH its reason.
+`test_villages.py`) so the next silent 45-minute-class perf regression fails loudly by name instead
+of being waited out; `DIAGRAM_ALLOW_SLOW_GENS=1` overrides once you are certain perf is fine, and a
+legitimately-outgrown map gets a bigger budget entry WITH its reason.
 
-**KNOWN FLAKE: that budget fires spuriously when ANOTHER SESSION is running its own gate.** The
-guard's comment says process CPU time means "parallel pytest workers contending for cores cannot
-fire it". Measured on 2026-08-03, that is not true: `process_time` counts every cycle the thread is
-ON a CPU, including cycles lost to SMT-sibling and scheduler contention, and `-n auto` runs 22
-workers. Three consecutive sweeps failed on three DIFFERENT maps, each of which measures far under
-budget when run alone - hoshizora **12.4s alone / 35.7s in the suite (2.9x)**, kuwabata **16.8s /
-36.4s (2.2x)**, enokida **19.9s / 31.9s (1.6x)**, and minami **~54s / 154.8s** - so which map trips
-depends on what else is on the box, not on the code. **Diagnose it in one step:** re-run the named
-gen ALONE (`DIAGRAM_SKIP_RENDER=1 python3 -c "import time,runpy; t=time.process_time();
+**A GEN'S CPU TIME INFLATES 2-4x INSIDE THE GATE, so budgets are calibrated against the GATE, never
+a solo run** (`test_villages.py` says this at the table; both halves of it were found the same day,
+independently, by two sessions whose gates were slowing each other down). `process_time` is immune
+to WAITING for a core but not to needing more cycles for the same work, and `-n auto` runs 22
+workers here. Measured pairs, solo vs under-gate: hoshizora **12.4s / 35.7s**, kuwabata **16.8s /
+36.4s**, enokida **19.9s / 31.9s**, kikuta **10.9s / 36.2s**, minami **~54s / 154.8s**. Which map
+trips therefore depends on what else is on the box, so **diagnose before touching anything**: re-run
+the named gen ALONE (`DIAGRAM_SKIP_RENDER=1 python3 -c "import time,runpy; t=time.process_time();
 runpy.run_path('pool/<t>/<m>.gen.py', run_name='__main__'); print(time.process_time()-t)"`). Far
-under budget alone = contention; use `DIAGRAM_ALLOW_SLOW_GENS=1` for that run and change nothing.
+under budget alone means contention, not a regression.
 
-Two obvious fixes were TRIED AND REVERTED the same day - do not spend the afternoon again:
+The resolution, and one dead end worth not re-walking:
 
-- **Raising the tripped map's budget.** It "works" once and then hides the very thing the guard
-  exists to catch: a budget inflated to absorb 3x noise cannot see a 3x regression.
-- **Calibrating the budget** by timing a fixed workload in the same worker and scaling by the
-  inflation it measures. The proxy has to stall the same way the gen does, and no cheap loop does:
-  a tight arithmetic loop is L1-resident (it inflated 1.56x under a 20-way load in a controlled
-  test, but read 1.0x during the real sweep, while minami inflated 2.9x), and a DRAM-striding walk
-  is already latency-bound so it does not inflate at all (0.95x under the same load). A point
-  sample after the gen also cannot represent the contention DURING it. Making this robust needs a
-  real design (a serial re-measure on failure, or a load-aware skip that still reports loudly), not
-  a proxy constant.
+- **What the guard does now:** each entry is ~4x its SOLO measurement (~1.5x its worst observed
+  under-gate time), which still nets the class of bug this exists for - the motivating regression
+  ran ~250x over budget, not 20% over. An optimization pass the guard's first run prompted (the
+  `on_crop` bbox hoist, ground-cover prefilters, a well-siting `PointGrid`) roughly halved every
+  heavy gen, so the budgets sit on faster code too.
+- **Do NOT try to auto-calibrate** by timing a proxy workload in the worker and scaling by the
+  inflation it reports. The proxy has to stall the way a gen does and no cheap loop does: a tight
+  arithmetic loop is L1-resident (1.56x under a controlled 20-way load, but 1.0x during a real
+  sweep in which minami inflated 2.9x), while a DRAM-striding walk is already latency-bound and does
+  not inflate at all (0.95x). A point sample after the gen cannot represent contention during it
+  either. Tried and reverted 2026-08-03.
+- **The override must not silence the guard's own self-test.** `DIAGRAM_ALLOW_SLOW_GENS=1` is
+  documented for whole-sweep use, and it used to silence the budget for
+  `test_slow_gen_budget_fires_and_the_override_silences_it` as well - so the one test proving the
+  guard has teeth failed exactly when a session followed the advice, making the escape hatch a
+  guaranteed red gate. The test now clears the variable for itself. Any future env-driven escape
+  hatch needs the same treatment.
 (Measured 2026-07-25: it had drifted to 112-215s across six runs, well past
 the "~1 minute" this file used to claim from 2026-07-20; indexing the two worst checks that same day
 brought it back to 77s. Re-measure and update this number when it drifts again - a stale figure here
