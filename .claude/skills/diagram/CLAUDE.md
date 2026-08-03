@@ -27,6 +27,10 @@ concluding an innocent commit was the regression:
 
 The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
 it - is **~133 seconds** (re-measured 2026-08-02; Minami's ~45s gen, above, is a third of it).
+Since 2026-08-03 the sweep ENFORCES a per-gen CPU budget (`GEN_TIME_BUDGETS` in
+`test_villages.py`, default 30s) so the next silent 45-minute-class perf regression fails loudly
+by name instead of being waited out; `DIAGRAM_ALLOW_SLOW_GENS=1` overrides once you are certain
+perf is fine, and a legitimately-outgrown map gets a bigger budget entry WITH its reason.
 (Measured 2026-07-25: it had drifted to 112-215s across six runs, well past
 the "~1 minute" this file used to claim from 2026-07-20; indexing the two worst checks that same day
 brought it back to 77s. Re-measure and update this number when it drifts again - a stale figure here

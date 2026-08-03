@@ -17,6 +17,7 @@ import json
 import os
 import runpy
 import sys
+import time
 
 import pytest
 
@@ -40,6 +41,28 @@ def _is_village_gen(gen):
 
 GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*", "*.gen.py")) if _is_village_gen(g))
 
+# HOW LONG A GEN IS ALLOWED TO TAKE (CPU seconds). WHY (GM 2026-08-03, right after the incident
+# that motivates it): Minami's gen silently became a 45+ MINUTE grind when the paddy-well rule
+# landed - `_well_ground_clear` re-scanned all 927 drawn basins and ~580 watercourse segments per
+# candidate seat - and nothing failed; sessions just waited it out (or timed out and misdiagnosed,
+# see CLAUDE.md "Gate and sweep timings"). A budget turns "mysteriously slow" into a loud, early,
+# NAMED failure. Budgets are deliberately generous (~3x the measured cost) so they never flake:
+# the target is the pathological per-candidate-scan class of regression, not a 20% drift. Measured
+# in PROCESS CPU time, not wall time, so parallel pytest workers contending for cores cannot fire
+# it. A map that legitimately outgrows its budget gets a bigger entry here WITH the reason, the
+# same discipline as a check waiver.
+GEN_TIME_BUDGET_S = 30.0  # default: an ordinary map measures 1-7s CPU today
+GEN_TIME_BUDGETS = {
+    # The guard's FIRST run (2026-08-03) flagged nagahara and kikuta against the 30s default; both
+    # were profiled before any budget moved (the message's own discipline), and tango measured at
+    # a 22%-margin near-miss got an entry rather than a flake. Every entry is ~3x its measured
+    # cost, and the mechanism is recorded so the next reader can tell "known heavy" from "new bug".
+    "minami": 120.0,  # ~42s CPU measured 2026-08-02: well placement over 927 paddy basins + ~580 watercourse segs (post-memoization; it was 45+ min before)
+    "nagahara": 100.0,  # ~37s CPU measured 2026-08-03: same city well-placement family as minami (676 recorded basins, 67 wells)
+    "tango": 70.0,  # ~24s CPU measured 2026-08-03: same family again (1,043 basins, 88 wells) - under the default but too close to trust
+    "kikuta": 90.0,  # ~35s CPU measured 2026-08-03, profiled: ~70% is hinterland()'s marsh/commons ground-cover scatter (edge_dist over the wetland polys), long-standing (26.9s at a95d8eb a week prior), plus the paddy-well outline fallback now scanning village paddies too
+}
+
 
 def _regen_and_gate(gen):
     """Run a village generator, then its gate; return True if every check passes.
@@ -47,10 +70,22 @@ def _regen_and_gate(gen):
     The gate reads the JSON manifest, never the PNG, so DIAGRAM_SKIP_RENDER skips the resvg
     raster - cheap since the resvg switch, but still pure waste in the test loop."""
     os.environ["DIAGRAM_SKIP_RENDER"] = "1"
+    t0 = time.process_time()
     try:
         runpy.run_path(gen, run_name="__main__")
     finally:
         del os.environ["DIAGRAM_SKIP_RENDER"]
+    cpu_s = time.process_time() - t0
+    name = os.path.basename(gen)[: -len(".gen.py")]
+    budget = GEN_TIME_BUDGETS.get(name, GEN_TIME_BUDGET_S)
+    assert cpu_s <= budget or os.environ.get("DIAGRAM_ALLOW_SLOW_GENS") == "1", (
+        f"{name}.gen.py took {cpu_s:.1f}s CPU against a {budget:.0f}s budget - it is a SURPRISE that this gen "
+        f"takes so long, and the last time one did (Minami, 2026-08-02) it was a 45-minute perf bug that "
+        f"nothing flagged. Please consider whether a perf regression landed (the known shape: re-scanning "
+        f"static geometry per candidate seat - see CLAUDE.md 'Gate and sweep timings') before anything else. "
+        f"If you are CERTAIN perf is fine, rerun with DIAGRAM_ALLOW_SLOW_GENS=1, and raise this map's entry "
+        f"in GEN_TIME_BUDGETS with the reason recorded beside it."
+    )
     manifest = gen[: -len(".gen.py")] + ".json"
     assert os.path.exists(manifest), f"{os.path.basename(gen)} produced no manifest"
     return check_village.main(manifest) == 0
@@ -58,6 +93,21 @@ def _regen_and_gate(gen):
 
 def test_at_least_one_village_exists():
     assert GENERATORS, "no *.gen.py village generators found in pool/"
+
+
+def test_slow_gen_budget_fires_and_the_override_silences_it(tmp_path, monkeypatch):
+    # the guard must be SHOWN to fire (a check that never fires looks exactly like a check that
+    # passes): a CPU-burning fake gen against a near-zero budget trips the surprise message, and
+    # the documented override lets it through (to then fail on the missing manifest instead,
+    # proving the budget assert itself was silenced)
+    gen = tmp_path / "snail.gen.py"
+    gen.write_text("import time\nt0 = time.process_time()\nwhile time.process_time() - t0 < 0.05:\n    pass\n")
+    monkeypatch.setitem(GEN_TIME_BUDGETS, "snail", 0.001)
+    with pytest.raises(AssertionError, match="SURPRISE"):
+        _regen_and_gate(str(gen))
+    monkeypatch.setenv("DIAGRAM_ALLOW_SLOW_GENS", "1")
+    with pytest.raises(AssertionError, match="produced no manifest"):
+        _regen_and_gate(str(gen))
 
 
 def _channels_under_plots(svgpath):
