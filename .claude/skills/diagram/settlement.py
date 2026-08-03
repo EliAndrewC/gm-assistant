@@ -4254,15 +4254,22 @@ class Settlement:
         vr = self._well_vr() if vr is None else vr
         fields = self.M.get("fields") or []
         recs = {key: self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")}
-        # THE KEY MUST BE CHEAPER THAN THE SCAN IT GUARDS. The first version of this fingerprint
-        # summed the POINTS of every plot ring and every watercourse - 123M calls on Minami, the
-        # single hottest thing in that gen (profiled 2026-08-03), so the cache key cost more than
-        # the linear scan it was introduced to avoid. It counts RECORDS now: ~12 len() calls
-        # instead of ~1,000. That detects a new field, a field gaining plots, and a new watercourse
-        # or dry plot - every way this engine actually grows the geometry, because a record's ring
-        # is built once and appended, never edited afterward. (If that ever changes - a gen
-        # extending a drawn polyline in place - this key goes stale silently, so extend it then.)
-        fp = (len(fields), tuple(len(fl.get("plot_polys") or ()) for fl in fields), tuple(len(rs) for rs in recs.values()))
+        # THIS KEY IS EXPENSIVE ON PURPOSE - DO NOT "OPTIMIZE" IT TO RECORD COUNTS. It counts every
+        # POINT of every plot ring, outline and watercourse, which is ~1,000 len() calls per
+        # candidate seat (123M over Minami's gen, ~15% of it), and that is genuinely tempting to
+        # cut. It was cut, on 2026-08-03, to per-record counts - and
+        # test_a_wellhead_is_refused_in_the_paddy_water_and_allowed_on_the_rim failed within the
+        # hour: that test REPLACES a field's plot_polys with a different SAME-LENGTH list, so every
+        # record count is unchanged while the water moved, and the stale grids cleared a wellhead
+        # standing in a paddy. Any cheaper key needs to be content-sensitive (a hash of the
+        # coordinates, or an explicit version bump from whatever mutates the geometry) - record
+        # counts, list lengths and object identity all miss an in-place replacement.
+        fp = (
+            len(fields),
+            sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields),
+            tuple(len(rs) for rs in recs.values()),
+            sum(len(rec.get("poly") or rec.get("pts") or ()) for rs in recs.values() for rec in rs),
+        )
         if self._wgc_cache is None or self._wgc_cache[0] != fp:
             water = []
             for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
