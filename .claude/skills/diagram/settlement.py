@@ -4254,12 +4254,15 @@ class Settlement:
         vr = self._well_vr() if vr is None else vr
         fields = self.M.get("fields") or []
         recs = {key: self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")}
-        fp = (
-            len(fields),
-            sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields),
-            tuple(len(rs) for rs in recs.values()),
-            sum(len(rec.get("poly") or rec.get("pts") or ()) for rs in recs.values() for rec in rs),
-        )
+        # THE KEY MUST BE CHEAPER THAN THE SCAN IT GUARDS. The first version of this fingerprint
+        # summed the POINTS of every plot ring and every watercourse - 123M calls on Minami, the
+        # single hottest thing in that gen (profiled 2026-08-03), so the cache key cost more than
+        # the linear scan it was introduced to avoid. It counts RECORDS now: ~12 len() calls
+        # instead of ~1,000. That detects a new field, a field gaining plots, and a new watercourse
+        # or dry plot - every way this engine actually grows the geometry, because a record's ring
+        # is built once and appended, never edited afterward. (If that ever changes - a gen
+        # extending a drawn polyline in place - this key goes stale silently, so extend it then.)
+        fp = (len(fields), tuple(len(fl.get("plot_polys") or ()) for fl in fields), tuple(len(rs) for rs in recs.values()))
         if self._wgc_cache is None or self._wgc_cache[0] != fp:
             water = []
             for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
