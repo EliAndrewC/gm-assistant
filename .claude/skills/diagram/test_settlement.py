@@ -1827,6 +1827,70 @@ def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     assert b["w"] == b["len"] and b["h"] == b["pen_w"] and b["rot"] == 90.0
 
 
+_IDX_POLY = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)]
+
+
+def test_indexed_overrides_every_mutating_list_method():
+    """Every way a list's CONTENT can change must bump the version, or an index cached against it
+    goes stale silently - the exact failure that cost this engine two silent bugs in one day
+    (a stale `placed` index, a stale well-geometry fingerprint).
+
+    The mutator set is discovered by INTROSPECTION rather than hand-listed, so a future Python
+    adding a mutating list method fails this test instead of opening a hole nobody notices.
+    """
+    non_mutating = {"copy", "__reversed__", "__init__", "__new__", "__class_getitem__", "__getitem__"}
+    candidates = (set(dir(list)) - set(dir(tuple))) - non_mutating
+    ops = {
+        "append": lambda r: r.append(_IDX_POLY),
+        "extend": lambda r: r.extend([_IDX_POLY]),
+        "insert": lambda r: r.insert(0, _IDX_POLY),
+        "remove": lambda r: r.remove(_IDX_POLY),
+        "pop": lambda r: r.pop(),
+        "clear": lambda r: r.clear(),
+        "sort": lambda r: r.sort(),
+        "reverse": lambda r: r.reverse(),
+        "__setitem__": lambda r: r.__setitem__(0, _IDX_POLY),
+        "__delitem__": lambda r: r.__delitem__(0),
+        "__iadd__": lambda r: r.__iadd__([_IDX_POLY]),
+        "__imul__": lambda r: r.__imul__(2),
+    }
+    assert set(ops) == candidates, f"the mutator table is out of step with list's API: {set(ops) ^ candidates}"
+    for name, op in ops.items():
+        assert name in settlement.Indexed.__dict__, f"Indexed does not override {name}"
+        reg = settlement.Indexed([_IDX_POLY])
+        before = reg.version
+        op(reg)
+        assert reg.version > before, f"{name} changed the list without bumping the version"
+
+
+def test_a_keepout_index_sees_a_registry_mutated_after_its_first_query():
+    """The behavioral half of the same rule, at the level a map would notice: query, MUTATE, query
+    again. A stale index answers the second query from the first query's world - which is how
+    Minami and Nagahara lost every garden on 2026-08-03 - so this walks a point in and out of a
+    keep-out by appending and clearing."""
+    s = _crop_settlement()
+    box = [(480.0, 480.0), (520.0, 480.0), (520.0, 520.0), (480.0, 520.0)]
+    assert not s._in_blocked(500, 500)  # builds and caches the index over an empty registry
+    s.block_polys.append(box)
+    assert s._in_blocked(500, 500), "the index did not see an appended keep-out"
+    s.block_polys.clear()
+    assert not s._in_blocked(500, 500), "the index did not see the registry emptied"
+    # and a corridor, the other indexed registry
+    assert not s._near_corridor(300, 300)
+    s.corridors.append(([(200.0, 300.0), (400.0, 300.0)], 20.0))
+    assert s._near_corridor(300, 300), "the corridor index did not see an appended corridor"
+
+
+def test_indexed_grid_falls_back_when_a_registry_is_rebound_to_a_plain_list():
+    # farm_wells swaps field_polys out and back; anything rebinding a registry to a PLAIN list must
+    # still get correct answers, just uncached - the fallback that makes this safe to adopt
+    s = _crop_settlement()
+    s.block_polys = [[(480.0, 480.0), (520.0, 480.0), (520.0, 520.0), (480.0, 520.0)]]
+    assert not isinstance(s.block_polys, settlement.Indexed)
+    assert s._in_blocked(500, 500)
+    assert not s._in_blocked(300, 300)
+
+
 def test_point_grid_never_omits_an_item_a_linear_scan_would_find():
     """The one property every PointGrid caller's exactness rests on: `near` may return extra items
     (or an item twice), but it must never OMIT one whose box comes within `pad` of the query.

@@ -14,23 +14,43 @@ round-trips.
 ## Gate and sweep timings (the motivating-artifact loop, concretely)
 
 The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
-numbers. A single map's regen + gate is ~1-7s - EXCEPT Minami, whose gen is ~45s (measured
-2026-08-02), dominated by well placement over its 927 drawn paddy basins and ~580 watercourse
-segments. It had silently become a **45+ minute** grind when the paddy-well rule landed
-(`_well_ground_clear` re-scanned all of that per candidate seat, ~133k candidates); the memoized
-static geometry + bbox prefilters in `_well_ground_clear` bought back the rest. If a gen ever
-"hangs", suspect a per-candidate scan of static geometry FIRST and profile before bisecting - a
-timeout-based bisect probe cannot distinguish "broken" from "slow", and one burned an hour here
-concluding an innocent commit was the regression:
+numbers. A single map's regen + gate is ~1-7s; the heavy maps, after the 2026-08-03 optimization
+pass, are Minami ~30s, Nagahara ~14s, Tango ~13s, Kikuta and Hoshizora ~11s (solo CPU):
 
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
 
 The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
-it - is **~133 seconds** (re-measured 2026-08-02; Minami's ~45s gen, above, is a third of it).
+it - is **~120 seconds** (measured 2026-08-03, down from ~230s before that pass).
+
+**The one performance bug this engine keeps growing, and how to find it.** Every slow gen ever
+profiled here has had the same shape: *a per-candidate scan of geometry that does not change during
+the scan*. Minami silently became a **45+ minute** grind that way when the paddy-well rule landed
+(`_well_ground_clear` rebuilt all 927 drawn basins per candidate seat, ~133k seats). The 2026-08-03
+sweep then found four more instances, all in code that looked perfectly reasonable: `on_crop`
+re-deriving every plot's bbox per seat, the ground-cover scatters testing every field/block polygon
+per scatter POINT, `_near_corridor` walking every corridor segment, `_in_blocked` visiting every
+keep-out. Together they were over half of the pool's runtime. The cures, in order of preference:
+hoist the invariant out of the loop; add a bbox prefilter (`boxed_polys`/`boxed_hit`); index it
+(`PointGrid`). Never coarsen - see "When a check is slow, INDEX it" below.
+
+**If a gen ever "hangs", suspect that shape FIRST and profile before bisecting.** A timeout-based
+bisect probe cannot distinguish "broken" from "slow", and one burned an hour here concluding an
+innocent commit was the regression.
+
+**And beware the CACHE you add to fix it** - two of the three staleness bugs in this file's history
+came from the cure, not the disease (see `Indexed`, `_wgc_cache` and the comment in `_fits`). A
+cache key built from lengths, record counts or object identity is a GUESS about content; `placed`
+gets rebound to a filtered copy, and a field's `plot_polys` gets replaced with a same-length list,
+and both guesses were wrong within a day. Prefer a registry that versions itself (`Indexed`), and
+make sure the key is cheaper than the scan it guards - one fingerprint here cost more than the scan
+it replaced.
+
 Since 2026-08-03 the sweep ENFORCES a per-gen CPU budget (`GEN_TIME_BUDGETS` in
-`test_villages.py`) so the next silent 45-minute-class perf regression fails loudly by name instead
-of being waited out; `DIAGRAM_ALLOW_SLOW_GENS=1` overrides once you are certain perf is fine, and a
-legitimately-outgrown map gets a bigger budget entry WITH its reason.
+`test_villages.py`) so the next silent 45-minute-class regression fails loudly by name instead of
+being waited out; `DIAGRAM_ALLOW_SLOW_GENS=1` overrides once you are certain perf is fine, and a
+legitimately-outgrown map gets a bigger budget entry WITH its reason. **Budgets are calibrated
+against the GATE, not a solo run** - under `pytest -n auto` a gen's own CPU time inflates 2-4x
+through cache contention, which is why each entry is ~4x its recorded solo measurement.
 
 **A GEN'S CPU TIME INFLATES 2-4x INSIDE THE GATE, so budgets are calibrated against the GATE, never
 a solo run** (`test_villages.py` says this at the table; both halves of it were found the same day,

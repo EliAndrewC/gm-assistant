@@ -65,11 +65,11 @@ GEN_TIME_BUDGETS = {
     # guard's first run prompted (the on_crop bbox hoist, the ground-cover prefilters, the
     # well-siting PointGrid). The before/after is the record worth keeping - every one of these
     # roughly halved - but the BUDGET is calibrated for the gate.
-    "minami": 150.0,  # ~41s solo (54s before the pass): well placement over 927 paddy basins + ~580 watercourse segs, now indexed. Its residue is the placement scans - _near_corridor and _in_blocked - not the well geometry
-    "nagahara": 80.0,  # ~18s solo (37s before): same city well-placement family (676 basins, 67 wells)
-    "tango": 70.0,  # ~16s solo (24s before): same family (1,043 basins, 88 wells), plus farm_wells' on_crop fallback, whose per-candidate bbox rebuild was the pass's first find
-    "kikuta": 60.0,  # ~11s solo (35s before): ~70% was hinterland()'s marsh/commons scatter, the prefilters' biggest single win
-    "hoshizora": 70.0,  # ~15s solo: the largest TOWN and the only non-city that needs an entry - ground-cover scatter over a big hinterland
+    "minami": 120.0,  # ~30s solo (54s before the pass): the biggest map - well placement over 927 paddy basins, and the placement scans over its accreting block polys, both indexed now
+    "nagahara": 60.0,  # ~14s solo (37s before): same city families (676 basins, 67 wells)
+    "tango": 55.0,  # ~13s solo (24s before): same again (1,043 basins, 88 wells), plus farm_wells' on_crop fallback, whose per-candidate bbox rebuild was the pass's first find
+    "kikuta": 50.0,  # ~11s solo (35s before): ~70% was hinterland()'s marsh/commons scatter, the ground-cover prefilters' biggest single win
+    "hoshizora": 50.0,  # ~11s solo (15s before): the largest TOWN, the only non-city needing an entry - ground-cover scatter over a big hinterland
 }
 
 

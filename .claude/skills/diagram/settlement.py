@@ -25,7 +25,7 @@ import subprocess
 import sys
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from typing import Any, cast
+from typing import Any, SupportsIndex, cast
 
 Pt = tuple[float, float]  # an (x, y) point in map pixels
 Poly = list[Pt]  # a polyline / polygon as a list of points
@@ -709,6 +709,102 @@ def boxed_seg_hit(px: float, py: float, segs: Any) -> bool:
     """Is (px, py) within its clearance of any pre-boxed corridor segment? Prefilter family exactly
     as `boxed_hit` - and the same shape `_near_corridor` already uses on the placement side."""
     return any(bx0 <= px <= bx1 and by0 <= py <= by1 and seg_dist(px, py, a, b) < hw for a, b, hw, bx0, by0, bx1, by1 in segs)
+
+
+class Indexed(list):  # type: ignore[type-arg]
+    """A no-build registry that carries a VERSION, so an index built from it can be invalidated by
+    the data itself rather than by a guess about the data.
+
+    WHY NOT A CACHE KEY. Two attempts in this engine at "is my cached index still valid?" failed,
+    both SILENTLY, both on 2026-08-03: an incremental index over `placed` missed the two sites that
+    REBIND it to a filtered copy (Minami and Nagahara lost every garden), and a record-count
+    fingerprint for the well grids missed an in-place replacement of a same-LENGTH ring (a wellhead
+    cleared to stand in a paddy). Length, object identity and record counts are all guesses about
+    CONTENT. A version the list bumps itself is not a guess - mutating is the only way content
+    changes, and every mutator bumps.
+
+    The cache lives on the list too (`cache`), keyed by consumer, so an index physically cannot be
+    read against a different list than it was built from. That covers the one non-append pattern in
+    the engine: `farm_wells` swaps `field_polys` for an empty list and swaps the ORIGINAL OBJECT
+    back, which an identity- or length-keyed cache gets wrong and this cannot.
+
+    `test_indexed_overrides_every_mutating_list_method` is the ratchet: it enumerates `list`'s
+    mutators by introspection and fails if one is not overridden here, so a Python version adding a
+    mutating method cannot open a silent staleness hole."""
+
+    __slots__ = ("cache", "version")
+
+    def __init__(self, *args: Any) -> None:
+        super().__init__(*args)
+        self.version = 0
+        self.cache: dict[str, tuple[int, Any]] = {}
+
+    def _bump(self) -> None:
+        self.version += 1
+
+    def append(self, item: Any) -> None:
+        self._bump()
+        super().append(item)
+
+    def extend(self, items: Any) -> None:
+        self._bump()
+        super().extend(items)
+
+    def insert(self, i: SupportsIndex, item: Any) -> None:
+        self._bump()
+        super().insert(i, item)
+
+    def remove(self, item: Any) -> None:
+        self._bump()
+        super().remove(item)
+
+    def pop(self, i: SupportsIndex = -1) -> Any:
+        self._bump()
+        return super().pop(i)
+
+    def clear(self) -> None:
+        self._bump()
+        super().clear()
+
+    def sort(self, **kw: Any) -> None:
+        self._bump()
+        super().sort(**kw)
+
+    def reverse(self) -> None:
+        self._bump()
+        super().reverse()
+
+    def __setitem__(self, i: Any, v: Any) -> None:
+        self._bump()
+        super().__setitem__(i, v)
+
+    def __delitem__(self, i: Any) -> None:
+        self._bump()
+        super().__delitem__(i)
+
+    def __iadd__(self, other: Any) -> Any:  # type: ignore[misc]  # same as __imul__ below: mypy checks this against list.__add__, which an in-place op on a subclass cannot satisfy; the override exists so `reg += xs` bumps the version
+        self._bump()
+        return super().__iadd__(other)
+
+    def __imul__(self, n: Any) -> Any:  # type: ignore[misc]  # mypy compares __imul__ against list.__mul__, which cannot hold for an in-place op on a subclass; the override exists so `reg *= n` still bumps the version rather than silently invalidating an index
+        self._bump()
+        return super().__imul__(n)
+
+
+def indexed_grid(lst: Any, key: str, build: Callable[[Any], PointGrid]) -> PointGrid:
+    """The PointGrid `build` makes from `lst`, cached ON `lst` under `key` until `lst` mutates.
+
+    A plain list (one a caller rebound out from under us) is handled by simply building fresh every
+    time: slower, never wrong. That fallback is the whole reason this is safe to use on registries
+    whose mutation pattern might change later."""
+    if not isinstance(lst, Indexed):
+        return build(lst)
+    hit = lst.cache.get(key)
+    if hit is not None and hit[0] == lst.version:
+        return cast(PointGrid, hit[1])
+    grid = build(lst)
+    lst.cache[key] = (lst.version, grid)
+    return grid
 
 
 class PointGrid:
@@ -1605,13 +1701,13 @@ class Settlement:
         self.grove_rects: list[Any] = []  # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
         #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
         self._pending_farmsteads: list[Any] = []  # farmhouses awaiting their threshing yard (drawn by farmsteads())
-        self.corridors: list[Any] = []  # polylines houses must avoid
+        self.corridors: list[Any] = Indexed()  # polylines houses must avoid (Indexed: _near_corridor keeps a spatial index on it)
         self._samurai_ward_interiors: list[Poly] = []  # closed samurai-ward region(s), cached by s.ward - s.building refuses WARD_BARRED_KINDS inside them
         self.bound: Any = None  # optional bounding polygon: placement stays inside it (city wall)
         self.view: Any = None  # optional (ox,oy,w,h) viewBox crop - render/checks treat it as the map edge
-        self.field_polys: list[Any] = []  # smoothed outlines used for blocking
+        self.field_polys: list[Any] = Indexed()  # smoothed outlines used for blocking (Indexed: _in_blocked keeps a spatial index on it)
         self.ellipses: list[Any] = []  # (cx, cy, rx, ry) hill/pond/manor - block houses
-        self.block_polys: list[Any] = []  # arbitrary no-build polygons (e.g. forest)
+        self.block_polys: list[Any] = Indexed()  # arbitrary no-build polygons (e.g. forest) (Indexed: _in_blocked keeps a spatial index on it)
         # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its center.
         # `block_polys` deliberately mixes two different things - hard ground (crop, pond, bog) and
         # SOFT reservations (caption bands, civic aprons, fence standoffs) that a footprint routinely
@@ -1640,7 +1736,7 @@ class Settlement:
         self._wgc_cache: tuple[Any, ...] | None = (
             None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each a PointGrid), fingerprint-invalidated
         )
-        self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
+        self.dry_polys: list[Any] = Indexed()  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build (Indexed: _in_blocked)
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
         #                           2026-07); these get an edge margin in _in_blocked + a rect test for groves
@@ -4427,7 +4523,7 @@ class Settlement:
                     return any(bx0 <= x2 <= bx1 and by0 <= y2 <= by1 and point_in_poly(x2, y2, cp2) for cp2, bx0, by0, bx1, by1 in boxed)
 
                 save = self.field_polys
-                self.field_polys = []
+                self.field_polys = Indexed()  # Indexed, not [] - so the suspended pass keeps its own index (and the ORIGINAL object, restored below, keeps the one it already built)
                 try:
                     for h in cl:
                         # a nearest-first GRID scan, not rings: the clear ground here is pinholes
@@ -11183,34 +11279,52 @@ class Settlement:
         # bbox pre-filter (cached, same idea as _rect_hits): a point outside a polygon's bbox - expanded by
         # the 14px field set-back - can neither be inside it nor within 14px of an edge, so skip the O(vertices)
         # point_in_poly / edge_dist. Matters for the one big field envelope and a city's many block polys.
-        for poly, (bx0, by0, bx1, by1) in zip(self.field_polys, self._poly_bboxes(self.field_polys), strict=False):
-            if x < bx0 - 14 or x > bx1 + 14 or y < by0 - 14 or y > by1 + 14:
-                continue
+        # INDEXED (2026-08-03), replacing a bbox prefilter that still VISITED every polygon: 419k
+        # calls and 12.9s of self time on Minami, whose block_polys accretes one entry per placed
+        # homestead. Each grid's boxes carry that registry's own pad, so a zero-pad query is exact
+        # and the tests below are the same ones, in the same order.
+        for poly, *_ in self._keepout_index(self.field_polys, "field_keepout", 14.0).near(x, y):
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < 14:
                 return True
-        for poly, (bx0, by0, bx1, by1) in zip(self.block_polys, self._poly_bboxes(self.block_polys), strict=False):
-            if x < bx0 or x > bx1 or y < by0 or y > by1:
-                continue
+        for poly, *_ in self._keepout_index(self.block_polys, "block_keepout", 0.0).near(x, y):
             if point_in_poly(x, y, poly):
                 return True
-        for poly, (bx0, by0, bx1, by1) in zip(self.dry_polys, self._poly_bboxes(self.dry_polys), strict=False):
-            if x < bx0 - 12 or x > bx1 + 12 or y < by0 - 12 or y > by1 + 12:
-                continue
+        for poly, *_ in self._keepout_index(self.dry_polys, "dry_keepout", 12.0).near(x, y):
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < 12:
                 return True  # dry plots are cropland: a building's whole footprint stays off them
         return any(math.hypot((x - cx) / (rx + 12), (y - cy) / (ry + 12)) < 1.0 for cx, cy, rx, ry in self.ellipses)
 
     def _near_corridor(self, x: float, y: float, skip: Any = None) -> bool:
-        for poly, clearance in self.corridors:
-            if poly is skip:  # a frontage row may sit against the street it fronts
-                continue
-            for k in range(len(poly) - 1):
-                a, b = poly[k], poly[k + 1]  # skip a segment whose bbox+clearance can't reach (x,y)
-                if x < min(a[0], b[0]) - clearance or x > max(a[0], b[0]) + clearance or y < min(a[1], b[1]) - clearance or y > max(a[1], b[1]) + clearance:
-                    continue
-                if seg_dist(x, y, a, b) < clearance:
-                    return True
-        return False
+        # INDEXED (2026-08-03). This walked every segment of every corridor per candidate seat -
+        # 230k calls and 22.6s of self time on Minami, the biggest single cost left in that gen
+        # after the well grids. The per-segment bbox test below is unchanged; the grid only decides
+        # which segments are worth testing, and each segment's box already carries its clearance,
+        # so a zero-pad query is exact. `skip` still works: the index carries each segment's parent
+        # polyline, so a frontage row can sit against the street it fronts.
+        return any(poly is not skip and seg_dist(x, y, a, b) < clearance for poly, a, b, clearance, *_ in self._corridor_index().near(x, y))
+
+    def _corridor_index(self) -> PointGrid:
+        def build(lst: Any) -> PointGrid:
+            grid = PointGrid()
+            grid.extend(
+                (poly, poly[k], poly[k + 1], cl, min(poly[k][0], poly[k + 1][0]) - cl, min(poly[k][1], poly[k + 1][1]) - cl, max(poly[k][0], poly[k + 1][0]) + cl, max(poly[k][1], poly[k + 1][1]) + cl)
+                for poly, cl in lst
+                for k in range(len(poly) - 1)
+            )
+            return grid
+
+        return indexed_grid(self.corridors, "corridor_segs", build)
+
+    def _keepout_index(self, polys: Any, key: str, pad: float) -> PointGrid:
+        """The no-build polygons of `polys` indexed by their bbox, expanded by `pad` so a zero-pad
+        query is exact for a rule that also tests `edge_dist(...) < pad`."""
+
+        def build(lst: Any) -> PointGrid:
+            grid = PointGrid()
+            grid.extend(boxed_polys(lst, pad))
+            return grid
+
+        return indexed_grid(polys, key, build)
 
     def _hard_ground(self) -> list[Any]:
         """Every HARD no-build polygon, read from the MANIFEST plus anything a gen registered by hand.
