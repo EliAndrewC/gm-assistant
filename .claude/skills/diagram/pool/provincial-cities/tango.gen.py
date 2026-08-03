@@ -990,7 +990,16 @@ s.label(2180, 1745, "samurai estates", 10, italic=True, color="#3A352C")  # tuck
 MOAT_FARMS = [
     ("fw1", (1074, 1200), 175, 73, 190, (160, 210), (95, 125), (0.35, 0.7)),
     ("fw2", (1155, 1632), 172, 74, 190, (145, 190), (85, 115), (0.4, 0.75)),
-    ("fs1", (1328, 1805), 105, 75, 170, (125, 165), (85, 115), (0.4, 0.78)),
+    (
+        "fs1",
+        (1328, 1805),
+        105,
+        75,
+        215,
+        (125, 165),
+        (85, 115),
+        (0.4, 0.78),
+    ),  # fall 170->215 (2026-08-03): the toe crosses the view bottom, an honest slice instead of a 7.4-ac enclosed fan (enclosed_fan_at_least_hamlet_grade)
     # MORE REAL COMBS around the moat ring (GM 2026-07-23: the near-moat spaces are fed by combs -
     # sluice, canal delta, flooded plots, dry hem, farmhouses - NEVER the square nrp basins, rejected
     # as "not looking like any rice paddy in any village"). PLACEMENT LESSON (same date): a comb's
@@ -1060,9 +1069,15 @@ s.ring(('poly', ENV_FE2), 18, 40, ["plain"])
 # the sluice sits above the cropped frame, so the comb's head shows only its canals entering the
 # view; the fall is capped so the drain stays clear of the moat's north rim, and the collector
 # EMPTIES INTO THE MOAT (the city's storm drain - the north field's runoff feeds the ring)
-_netn, ENV_FN1, _cn = comb_field("fn1", (1878, 610), 90, 76, 90, (140, 180), (80, 110), (0.4, 0.8), avoid=(MOAT,))
+# keep fn1's ring farms 120 real ft off the execution ground at (1686,770) (kegare,
+# execution_ground_outside_the_settlement) - the same pre-ring reserve hoshizora puts around its
+# crematory. Registered BEFORE the fan's rings run; the raised fan re-rolled them into the gap.
+s.block_polys.append([(1686 + 95 * math.cos(a), 770 + 95 * math.sin(a)) for a in [i * math.pi / 12 for i in range(-6, 7)]])  # EAST half-disc r=95 (the 40px footprint gap + both half-extents): blocks only the fn1-ring approach - a full disc unseated the north gate market's shop row west of the ground (city_has_gate_market)
+_netn, ENV_FN1, _cn = comb_field(
+    "fn1", (1878, 552), 90, 76, 90, (140, 180), (80, 110), (0.4, 0.8), avoid=(MOAT,)
+)  # sluice raised 610->552 (2026-08-03): the envelope now genuinely CROSSES the view top, so the fan reads as the off-frame slice this block always described (enclosed_fan_at_least_hamlet_grade)
 _pn = plot_centroid(_netn, lambda cs: min(cs, key=lambda c: c[1]))  # a head plot, nearest the off-map source
-topo_channel([(1878, 604), (1878, 610), _pn], {"kind": "offmap"}, {"kind": "field", "name": "fn1"})
+topo_channel([(1878, 546), (1878, 552), _pn], {"kind": "offmap"}, {"kind": "field", "name": "fn1"})
 _drn = next(c["pts"] for c in _netn["channels"] if c["role"] == "drain")
 _dfx, _dfy = _drn[-1]
 _mne = moat_swept_tap(
@@ -1080,9 +1095,13 @@ s.ring(('poly', ENV_FN1), 22, 40, ["plain"])
 # source side), falling S-slightly-W with a SHALLOW field_fall so the fan stops above the moat's
 # NW rim curve (rim y863 at x1400); its drain empties into the moat like fn1's (the storm-drain
 # pattern). Clear of the N flophouse (x1509) and the N gate market (x1557+).
-_netn2, ENV_FN2, _cn2 = comb_field("fn2", (1300, 610), 100, 86, 90, (120, 160), (70, 100), (0.4, 0.8), avoid=(MOAT,))
-_pn2 = plot_centroid(_netn2, lambda cs: min(cs, key=lambda c: c[1]))  # a head plot, nearest the off-map source
-topo_channel([(1300, 604), (1300, 610), _pn2], {"kind": "offmap"}, {"kind": "field", "name": "fn2"})
+_netn2, ENV_FN2, _cn2 = comb_field(
+    "fn2", (1300, 552), 100, 86, 90, (120, 160), (70, 100), (0.4, 0.8), avoid=(MOAT,)
+)  # sluice raised 610->552 with fn1 (2026-08-03): the twin crosses the view top too - both north fans are honest slices now
+_pn2 = plot_centroid(
+    _netn2, lambda cs: min(cs, key=lambda c: (c[0] - 1300) ** 2 + (c[1] - 700) ** 2)
+)  # a head-side plot safely INSIDE the outline: with the sluice raised, the topmost plot's centroid can sit outside the drawn envelope (channel_field_anchored[fn2], 2026-08-03)
+topo_channel([(1300, 546), (1300, 552), _pn2], {"kind": "offmap"}, {"kind": "field", "name": "fn2"})
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
 _mnw2 = moat_swept_tap(

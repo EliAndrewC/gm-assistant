@@ -2476,6 +2476,35 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"later placement stays out from under it)",
         )
 
+    _fanft = float(meta.get("ftpx") or 1)
+    # FARMS REACH THEIR FIELDS (GM 2026-08-02: hoshizora's lone farmhouse across the Imperial Road,
+    # alone inside the merchant block). Every farmstead with cultivated ground in reach must be able to
+    # walk to SOME of it without crossing a ROAD: if every reachable field/dry plot lies across a road,
+    # the steading is on the wrong side of the highway. ROADS only - streams are crossed by footbridges
+    # (the NW-bank pattern is deliberate) and lanes/streets are village grain. FAMILY: association/
+    # reach, deliberately center-based (the question is which side of the highway the steading lives
+    # on, not a clearance); reach = 500 real ft, generous enough that the pool's true farm belts all
+    # qualify (calibrated pool-wide 2026-08-03: exactly one house fires, the motivating defect).
+    _rdpls = [r.get("pts") or [] for r in (M.get("roads") or [])]
+    _rdpls = [r for r in _rdpls if len(r) >= 2]
+    if _rdpls and M.get("houses"):
+        _cverts = [(p[0], p[1]) for _ff in M.get("fields", []) if _ff.get("kind") == "paddy" for p in _ff["outline"]]
+        _cverts += [(p[0], p[1]) for _dp in M.get("dry_plots", []) for p in _dp["poly"]]
+        _reach = 500.0 / _fanft
+        _sever = []
+        for _hh in M["houses"]:
+            # _svnear, not _near: gate() is one huge scope and `_near` is already bound (tuple) far below - the documented mypy name-collision gotcha
+            _svnear = [(vx, vy) for vx, vy in _cverts if (vx - _hh["x"]) ** 2 + (vy - _hh["y"]) ** 2 <= _reach * _reach]
+            if _svnear and all(any(segments_cross((_hh["x"], _hh["y"]), _vv, _rp[i], _rp[i + 1]) for _rp in _rdpls for i in range(len(_rp) - 1)) for _vv in _svnear):
+                _sever.append((round(_hh["x"]), round(_hh["y"])))
+        check(
+            "farmsteads_reach_their_fields_unsevered",
+            not _sever,
+            f"farmstead(s) severed from every reachable field by a road: {_sever} - a farmhouse lives on "
+            f"its fields' side of the highway (settlement.ring drops severed candidates; hand seats must "
+            f"honor the same rule)",
+        )
+
     # Every HARD feature the frame is meant to CONTAIN must actually lie INSIDE the rendered window. A deferred
     # feature placed AFTER crop_to_content - a set-apart back-slope graveyard, an outlying shrine, the wells -
     # can land outside the tight frame and be silently CLIPPED (caught the Ueda west graveyard, which the crop

@@ -5498,3 +5498,15 @@ def test_label_seat_clear_probes_the_tilted_reach():
     tw = s.label_caption_hw("a long caption here", 9)
     assert s.label_seat_clear(300, 300, tw, 9)  # the level box clears under the house
     assert not s.label_seat_clear(300, 300, tw, 9, tilt=-30.0)  # the tilted reach swings up into it
+
+
+def test_ring_drops_candidates_severed_from_their_field_by_a_road():
+    # a road along the fan's south flank: ring candidates ACROSS it can never reach the field
+    # (hoshizora's south-of-road farmhouse), so they are dropped rather than seated
+    s = _town()
+    s.road([(-50, 620), (1050, 620)])
+    s.paddy_field((200, 200, 600, 600), "", "f", amp=20)
+    s.ring(("poly", s.field_polys[0]), 40, 60, ["plain"])
+    s.farmsteads()
+    assert s.M["houses"]  # the near side seats normally
+    assert all(h["y"] < 620 for h in s.M["houses"])

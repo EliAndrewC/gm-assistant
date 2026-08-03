@@ -9893,3 +9893,19 @@ def test_label_hugs_its_referent_measures_the_tilted_quad():
     assert "label_hugs_its_referent" not in f({"meta": {}, "labels": [hug]})
     adrift = [100, 100, 240, 112, 1, "gate market", [600, 600, 700, 650], -30.0]
     assert "label_hugs_its_referent" in f({"meta": {}, "labels": [adrift]})
+
+
+def test_farmsteads_reach_their_fields_unsevered_fires_across_a_road():
+    # every reachable field vertex lies across the road from the house -> severed (hoshizora's
+    # lone south-of-road farmhouse inside the merchant block, GM 2026-08-02)
+    field = {"name": "f1", "kind": "paddy", "bbox": [300, 550, 450, 650], "outline": [[300, 550], [450, 550], [450, 650], [300, 650]]}
+    M = {
+        "meta": {"scale": "town", "ftpx": 1, "W": 1000, "H": 1000},
+        "fields": [field],
+        "roads": [{"pts": [[0, 675], [1000, 675]], "w": 26}],
+        "houses": [house(500, 700)],
+    }
+    assert "farmsteads_reach_their_fields_unsevered" in f(M)
+    # a second field on the house's own side of the road un-severs it
+    M["fields"].append({"name": "f2", "kind": "paddy", "bbox": [600, 700, 750, 800], "outline": [[600, 700], [750, 700], [750, 800], [600, 800]]})
+    assert "farmsteads_reach_their_fields_unsevered" not in f(M)
