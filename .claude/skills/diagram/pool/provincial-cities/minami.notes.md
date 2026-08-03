@@ -106,7 +106,7 @@ local `DWELL` tuple, and a city with an agricultural district also counts in-wal
   commoner's `C_PACKED` 690, and the quarter also carries the yamen, six ministries, the mausoleum,
   the martial hall and two dojos. Chasing density there fights the budget. Live-in domestics DO
   stand inside the ward - but as their household's RANGE, never as rows or scattered cottages
-  (`city_ward_servants_housed_as_ranges`, 2026-08-03): 41 ranges, each bound to and abutting the
+  (`city_ward_servants_housed_as_ranges`, 2026-08-03): 33 ranges, each bound to and abutting the
   samurai house it serves. What went wrong in 2026-07 was terracing servants at commoner density;
   what went wrong in the 2026-08-02 pass was letting the packs refill the evicted commoners'
   ground with detached servant cottages, which read as MORE commoner fabric, not less. Do not
@@ -261,3 +261,18 @@ by more samurai households (44 + 6 large, against a caste ceiling of 64) each br
 plus a final `open_seat` probe for the last seat - the lattice sweeps in `fill_exactly` scan a
 fixed 5x6 px grid and cannot see an off-lattice gap, which is what left the map one dwelling
 short.
+
+Settlement-review of the range pass (2026-08-03) returned **ship** and drove four engine fixes,
+all applied before this manifest: the range glyph now scales its corner radius, stroke and ridge
+off its THIN dimension (at 5 px depth the fixed values made it a pill - "a rail or kerb"); the
+length floor rose from 2.3x to 3.0x depth, so the shortest range is 45 ft rather than 35; both
+flanks are tried at full frontage before any shortened seat, since a short stub on a rotated house
+reads as a tool; and a seat is refused if anything touches it more closely than its own host (one
+range had bound to the wrong-looking house). Minami settles at **33 ranges** - 27 at full
+frontage, minimum aspect 3.03, zero mis-bound - and Nagahara at 21.
+
+**Still open, recorded rather than fixed:** three ranges sit alone on an off-axis host and can
+still read as an implement rather than a household; and the ward's south block (x1560-1700,
+y1650-1690) is still two courses of party-walled samurai houses, the one stretch carrying commoner
+grain inside the fence - the reviewer's suggestion is to give that `rowpack` a real per-house gap,
+which would also free flanks for the five households there that have no range.

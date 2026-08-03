@@ -712,7 +712,8 @@ s.label(
     1426, 1534, "samurai neighborhood", 10, italic=True, color="#3A352C"
 )  # E of the governor's mansion among the ward's samurai (x1426: the label box's W edge must clear the mansion's E edge at x~1365), clear of the burakumin rows to the S
 s.ward("samurai", WARD_FENCE, gates=[(1469, 1330), (1469, 1403), (1062, 1311), (1234, 1660)])  # 2 street kido + 2 ring-road kido; each aligns to its fence run (the SW ring-road kido sits on the ~159deg slant) and hangs its guard box ward-side - s.ward computes both
-s.label(1433, 1317, "samurai ward gate", 9, italic=True, color="#5A4326")  # inside the ward by the E-fence kido, off the merchant frontage
+# (No "samurai ward gate" caption: a gate is not labeled - the no-obvious-labels rule covers gates,
+# entrances and always-true directions. Dropped 2026-08-03 after settlement-review caught it.)
 
 # ====================================================================== N + NE: the LABORER quarter
 # one big contiguous block E of the spine, laced with a street grid wired to the N-gate spine;

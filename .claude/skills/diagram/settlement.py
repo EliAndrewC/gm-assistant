@@ -1016,6 +1016,21 @@ def rot_rect(cx: float, cy: float, w: float, h: float, deg: float = 0.0) -> Poly
     return [(cx + dx * c - dy * sn, cy + dx * sn + dy * c) for dx, dy in ((-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2))]
 
 
+def poly_gap(p: Poly, q: Poly) -> float:
+    """The true gap in px between two convex quads - 0.0 if they overlap or touch.
+
+    For two non-intersecting convex polygons the closest approach always involves a vertex of one
+    and an edge of the other, so the four vertex-to-edge minima are exact, not an approximation."""
+    if rects_overlap(p, q):
+        return 0.0
+    best = 1e18
+    for a, b in ((p, q), (q, p)):
+        for vx, vy in a:
+            for i in range(len(b)):
+                best = min(best, seg_dist(vx, vy, b[i], b[(i + 1) % len(b)]))
+    return best
+
+
 def rects_overlap(p: Poly, q: Poly) -> bool:
     """Separating-axis overlap for two convex quads (corner lists)."""
     for poly in (p, q):
@@ -5565,8 +5580,20 @@ class Settlement:
         x0, y0 = -w / 2, -h / 2
         dash = ' stroke-dasharray="5,3"' if kind == "burakumin" else ''
         g = [f'<g transform="translate({cx:.0f},{cy:.0f}) rotate({rot:.0f})">']
-        g.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w}" height="{h}" rx="2" fill="{fill}" stroke="{edge}" stroke-width="1.6"{dash}/>')
-        g.append(f'<line x1="{-w * 0.30:.1f}" y1="0" x2="{w * 0.30:.1f}" y2="0" stroke="{edge}" stroke-width="0.8" opacity="0.6"/>')
+        # THE COSMETICS SCALE WITH THE THIN DIMENSION (settlement-review 2026-08-03). The fixed
+        # rx=2 / stroke=1.6 / 0.60-length ridge were tuned on a squarish house and become absurd on
+        # a LONG THIN footprint: at the servant range's 5 px depth the rounding is 40% of the depth
+        # and the stroke 32% of it, so the fill is nearly eaten and the glyph reads as a pill - a
+        # rail or a kerb, the sheet's vocabulary for small gray fixtures - rather than as a long
+        # roof. A long rectangle with a full-length ridge reads as a nagaya; a capsule with a
+        # center dash does not. Keyed off min(w, h), so every squarish building on every existing
+        # map is untouched (min(w,h)/4 >= 2 and min(w,h)*0.22 >= 1.6 for anything 8 px or thicker).
+        thin = min(w, h)
+        rx = min(2.0, thin / 4.0)
+        sw = min(1.6, thin * 0.22)
+        ridge = 0.30 if max(w, h) < 2.5 * thin else 0.45  # half-extent: a range gets a ridge down its length, not a dash in its middle
+        g.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w}" height="{h}" rx="{rx:.2f}" fill="{fill}" stroke="{edge}" stroke-width="{sw:.2f}"{dash}/>')
+        g.append(f'<line x1="{-w * ridge:.1f}" y1="0" x2="{w * ridge:.1f}" y2="0" stroke="{edge}" stroke-width="0.8" opacity="0.6"/>')
         if kind in ("shop", "merchant"):
             # a BUSINESS: a striped awning along the street frontage + a hanging sign, so
             # commerce reads as visually distinct from plain housing.
@@ -5730,14 +5757,23 @@ class Settlement:
             # frontage. A household with no seat at all simply has no separate servant dwelling -
             # which is itself attested: below ~100-300 koku the domestics slept in nando off the
             # master's kitchen, with no building of their own.
-            _lens = (b["w"], b["w"] * 0.78, b["w"] * 0.62)  # a nagayamon need not span the whole frontage; shorten before giving up
+            _lens = (b["w"], b["w"] * 0.78)  # a nagayamon need not span the whole frontage; shorten before giving up
+            # SEAT ORDER, and it is a LEGIBILITY rule as much as a historical one
+            # (settlement-review 2026-08-03). A single appendage stuck to one corner of a ROTATED
+            # box stops reading as a plot and starts reading as an implement - the reviewer read
+            # four of these as a paintbrush and a meat cleaver before reading them as households.
+            # So: take both flanks at full length first (a house with ranges to either side reads
+            # as a frontage, not a handle), and for the two-range senior house prefer the SAME
+            # side, giving a doubled range rather than one flank plus one rear stub.
             seats = [(sd, ln, False) for ln in _lens for sd in (1, -1)]
             seats += [(sd, ln, True) for ln in _lens for sd in (1, -1)]
             for side, length, rear in seats:
                 if want <= 0:
                     break
-                if length < 2.3 * depth:
-                    continue  # below this it stops reading as a range and starts reading as a cottage
+                if length < 3.0 * depth:
+                    continue  # below ~3x depth it stops reading as a range and starts reading as a blob (settlement-review
+                    # 2026-08-03 found the 2.3x floor's 35x15 ft seats doing exactly that). A household with no seat this
+                    # long simply goes without, which the docstring already justifies.
                 rrot = (b.get("rot", 0.0) + 180.0) if rear else b.get("rot", 0.0)  # a rear range turns its door away from the house
                 if rear:
                     off = b["h"] / 2 + depth / 2 + 0.6  # tucked behind the back wall, like the merchant kura
@@ -5770,6 +5806,9 @@ class Settlement:
                 fat = rot_rect(ox, oy, length + 2 * self._OFFICE_STANDOFF, depth + 2 * self._OFFICE_STANDOFF, rrot)
                 if any(rects_overlap(fat, rot_rect(o["x"], o["y"], o["w"], o["h"], o.get("rot", 0))) for o in self._office_records()):
                     continue
+                _hostgap = min(poly_gap(quad, rot_rect(b["x"], b["y"], b["w"], b["h"], b.get("rot", 0))), 1e9)
+                if any(poly_gap(quad, rot_rect(o["x"], o["y"], o["w"], o.get("h", o["w"]), o.get("rot", 0))) < _hostgap for o in self.M["buildings"] if o is not b):
+                    continue  # it must read as ITS OWN household's range: nothing may touch it more closely than its host
                 if self._blocks_any_door(quad):
                     continue  # a range is service accommodation on the household's own ground, never a wall across a neighbor's entrance
                 if not self._door_is_clear(ox, oy, length, depth, rrot, skip=b):

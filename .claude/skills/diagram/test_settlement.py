@@ -5717,3 +5717,33 @@ def test_servant_ranges_skips_a_house_too_narrow_to_carry_a_range():
     s = _ward_city_with_samurai()
     s.building(600, 600, 8, 6, "samurai", 0.0)
     assert s.servant_ranges() == 0
+
+
+def test_poly_gap_measures_true_clearance_and_zero_on_overlap():
+    # the exact vertex-to-edge minimum, and 0.0 the moment two quads intersect - the measurement
+    # servant_ranges uses to refuse a seat that touches a non-host more closely than its own host
+    a = settlement.rot_rect(0, 0, 10, 10, 0)
+    assert settlement.poly_gap(a, settlement.rot_rect(20, 0, 10, 10, 0)) == pytest.approx(10.0)
+    assert settlement.poly_gap(a, settlement.rot_rect(10, 0, 10, 10, 0)) == pytest.approx(0.0)  # touching
+    assert settlement.poly_gap(a, settlement.rot_rect(5, 0, 10, 10, 0)) == 0.0  # overlapping
+
+
+def test_door_is_clear_rejects_a_blocked_doorway():
+    s = _ward_city_with_samurai()
+    s.building(600, 608, 20, 10, "monk_house", 0.0)  # squarely across the doorway of the seat below
+    assert not s._door_is_clear(600, 600, 20, 6, 0.0)
+    assert s._door_is_clear(600, 400, 20, 6, 0.0)  # same footprint, open ground ahead
+
+
+def test_servant_ranges_refuses_a_seat_whose_own_door_is_blocked():
+    # the range is a dwelling too: its own entrance has to open onto something
+    probe = _ward_city_with_samurai((600, 600, "samurai", 0.0))
+    probe.servant_ranges()
+    seat = next(b for b in probe.M["buildings"] if b["kind"] == "servant")
+    s = _ward_city_with_samurai((600, 600, "samurai", 0.0))
+    # 1.2 px clear of the range - further than its 0.6 px gap to its own host, so the nearest-host
+    # rule does not refuse it first, yet inside the ~2.3 px band the door check samples
+    s.building(seat["x"], seat["y"] + seat["h"] / 2 + 3.2, seat["w"], 4, "monk_house", 0.0)
+    s.servant_ranges()
+    seated = [(round(b["x"], 1), round(b["y"], 1)) for b in s.M["buildings"] if b["kind"] == "servant"]
+    assert (round(seat["x"], 1), round(seat["y"], 1)) not in seated  # that seat is refused; another flank may still serve
