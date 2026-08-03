@@ -1827,6 +1827,36 @@ def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     assert b["w"] == b["len"] and b["h"] == b["pen_w"] and b["rot"] == 90.0
 
 
+def test_boxed_prefilters_agree_exactly_with_the_bare_scan():
+    """The bbox PRUNES, the exact test DECIDES - so the prefiltered answer must equal the naive
+    one at EVERY point, especially in the near-edge band the pad exists for.
+
+    This is the ratchet behind "the pool regenerates byte-identical" (2026-08-03): the tempting
+    way to speed a scatter up is to COARSEN it - a tighter pad, a bbox-only answer, fewer sample
+    points - and the loss would show up not here but as silently-moved ground cover on some map
+    nobody re-renders for a month. Coarsening fails this test instead.
+    """
+    polys = [
+        [(100.0, 100.0), (200.0, 100.0), (200.0, 180.0), (100.0, 180.0)],
+        [(220.0, 40.0), (300.0, 90.0), (250.0, 160.0)],  # a triangle: bbox and shape differ a lot
+    ]
+    corr = [([(0.0, 0.0), (400.0, 300.0)], 9.0), ([(50.0, 250.0), (350.0, 250.0)], 4.0)]
+    boxed0, boxed10 = settlement.boxed_polys(polys), settlement.boxed_polys(polys, 10.0)
+    segs = settlement.boxed_segs(corr)
+    rng = random.Random(7)
+    hits = 0
+    for _ in range(4000):
+        px, py = rng.uniform(-20, 420), rng.uniform(-20, 320)
+        naive_in = any(settlement.point_in_poly(px, py, p) for p in polys)
+        naive_pad = any(settlement.point_in_poly(px, py, p) or settlement.edge_dist(px, py, p) < 10.0 for p in polys)
+        naive_seg = any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corr)
+        assert settlement.boxed_hit(px, py, boxed0) == naive_in, (px, py)
+        assert settlement.boxed_hit(px, py, boxed10, 10.0) == naive_pad, (px, py)
+        assert settlement.boxed_seg_hit(px, py, segs) == naive_seg, (px, py)
+        hits += naive_in or naive_pad or naive_seg
+    assert 200 < hits < 3800, f"the sample must straddle both answers to have teeth, got {hits}/4000"
+
+
 def test_trade_works_caption_hand_seat_moves_the_label_and_its_band():
     # label_xy on a trade glyph seats the caption (and its reserved band) at the given spot -
     # the punishment_spot/kosatsuba remedy for a collision the placement probe cannot see
