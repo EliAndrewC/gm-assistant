@@ -4285,12 +4285,20 @@ class Settlement:
                 for frec in self.M.get("fields", []):
                     crop += [[(q[0], q[1]) for q in p2] for p2 in frec.get("plot_polys", [])]
 
-                def on_crop(x2: float, y2: float, crop: list[list[tuple[float, float]]] = crop) -> bool:  # bound as a default: the closure lives one loop iteration (B023)
-                    m2 = 14.0
-                    for cp2 in crop:
-                        if min(q[0] for q in cp2) - m2 <= x2 <= max(q[0] for q in cp2) + m2 and min(q[1] for q in cp2) - m2 <= y2 <= max(q[1] for q in cp2) + m2 and point_in_poly(x2, y2, cp2):
-                            return True
-                    return False
+                # Each plot's bbox (14 ft margin baked in) computed ONCE. PREFILTER family: the box
+                # prunes, point_in_poly still decides, so verdicts are unchanged - proven by the
+                # pool regenerating byte-identical. It used to be inline in the loop below, so every
+                # candidate seat re-derived all ~1,000 plots' boxes from their vertices: 22.5M min()
+                # + 17.2M max() calls, ~40% of Tango's gen (profiled 2026-08-03). Same disease as
+                # the 45-minute well bug - static geometry re-scanned per candidate.
+                crop_boxed: list[tuple[list[tuple[float, float]], float, float, float, float]] = [
+                    (cp2, min(q[0] for q in cp2) - 14.0, min(q[1] for q in cp2) - 14.0, max(q[0] for q in cp2) + 14.0, max(q[1] for q in cp2) + 14.0) for cp2 in crop
+                ]
+
+                def on_crop(
+                    x2: float, y2: float, boxed: list[tuple[list[tuple[float, float]], float, float, float, float]] = crop_boxed
+                ) -> bool:  # bound as a default: the closure lives one loop iteration (B023)
+                    return any(bx0 <= x2 <= bx1 and by0 <= y2 <= by1 and point_in_poly(x2, y2, cp2) for cp2, bx0, by0, bx1, by1 in boxed)
 
                 save = self.field_polys
                 self.field_polys = []
