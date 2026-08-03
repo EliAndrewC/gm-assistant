@@ -12468,8 +12468,25 @@ class Settlement:
     def ring(self, shape: Any, n: int, gap: float, kinds: Any, max_big: int = 4) -> None:
         """Ring a field with houses. shape: bbox tuple, or ('poly', smoothed_outline)."""
         cand = self._perim_poly(shape[1], n, gap) if isinstance(shape, tuple) and shape and shape[0] == 'poly' else self._perim_bbox(shape, n, gap)
+        # A ring farm must REACH the field it rings without crossing a ROAD (drives
+        # farmsteads_reach_their_fields_unsevered; hoshizora's lone south-of-road farmhouse inside
+        # the merchant block, GM 2026-08-02). ROADS only - a stream is crossed by footbridges (the
+        # NW-bank farms are deliberate) and lanes/streets are village grain. FAMILY: association/
+        # reach, deliberately center-based - the question is which side of the highway the steading
+        # lives on, not a clearance. Reads the same M["roads"] record as the check. The severed
+        # test runs AFTER random.choice below, so maps with no severed candidates keep an
+        # identical RNG stream and re-roll nothing.
+        outline = shape[1] if isinstance(shape, tuple) and shape and shape[0] == 'poly' else [(shape[0], shape[1]), (shape[2], shape[1]), (shape[2], shape[3]), (shape[0], shape[3])]
+        ring_roads = [r["pts"] for r in self.M.get("roads", [])]
+
+        def _severed(hx: float, hy: float) -> bool:
+            px, py = min(outline, key=lambda p: (p[0] - hx) ** 2 + (p[1] - hy) ** 2)
+            return any(segments_cross((hx, hy), (px, py), rp[i], rp[i + 1]) for rp in ring_roads for i in range(len(rp) - 1))
+
         for x, y in cand:
             k = random.choice(kinds)
+            if ring_roads and _severed(x, y):
+                continue
             if k == "big":
                 if self._nbig >= max_big:
                     k = "plain"
