@@ -154,6 +154,76 @@ def point_in_poly(px: float, py: float, poly: Poly) -> bool:
     return inside
 
 
+# Urban building kinds a SAMURAI WARD refuses (Settlement.ward / Settlement.building): the commoner
+# dwellings and commerce the fence exists to keep out (GM 2026-08-02, on Minami: laborer houses in
+# the middle of the samurai neighborhood, on the samurai side of the fence). servant is deliberately
+# absent - samurai households' live-in domestics lodge inside the ward, and the city gens interleave
+# them on purpose. So is monk_house: a temple may legitimately stand inside the ward (Tango's
+# Bishamon precinct - the warrior fortune beside the garrison quarter) and its clergy row belongs
+# with its temple, held to it by the temple-neighborhood checks.
+WARD_BARRED_KINDS = frozenset({"laborer", "laborer_large", "merchant", "merchant_house", "merchant_large", "burakumin", "shop", "inn"})
+
+
+def ward_interior(fence: Poly, wall: Poly) -> Poly | None:
+    """Close a ward FENCE polyline against the city wall ring: the ward's interior polygon.
+
+    The fence's two ends abut the rampart (city_ward_fence_meets_wall holds that), so the fence
+    plus the wall arc between its ends encloses the ward. Two arcs qualify; the ward is the
+    SMALLER enclosed region - a ward is a quarter carved off the city, never the larger half
+    (all three pool cities measure 21-25% of the walled area). Returns None when there is
+    nothing to close (no wall ring / a degenerate fence) - callers skip rather than guess.
+    check_village re-derives this independently for city_samurai_ward_residents_only: the check
+    must not trust the engine's arithmetic."""
+    if len(wall) < 3 or len(fence) < 2:
+        return None
+    # ARC-LENGTH closure, not nearest-VERTEX closure: a fence end abuts the rampart mid-EDGE, so
+    # walking vertex indices from "the nearest vertex" can skip (or wrongly include) the vertex on
+    # the far side of the junction, and the resulting polygon self-intersects - a bowtie, whose
+    # shoelace area under-measures by cancellation and steals the smaller-area vote (caught by the
+    # square-wall unit test). Projecting each end onto the ring and collecting the vertices whose
+    # arc position lies strictly between the two junctions, in traversal order, yields a SIMPLE
+    # polygon for both candidate closures, so the smaller-area rule is sound.
+    ring = list(wall) + [wall[0]]
+    arcs = [0.0]
+    for i in range(len(ring) - 1):
+        arcs.append(arcs[-1] + math.hypot(ring[i + 1][0] - ring[i][0], ring[i + 1][1] - ring[i][1]))
+    perim = arcs[-1]
+    if perim <= 0:
+        return None
+
+    def project(p: Pt) -> float:
+        best: tuple[float, float] | None = None
+        for i in range(len(ring) - 1):
+            ax, ay = ring[i]
+            bx, by = ring[i + 1]
+            dx, dy = bx - ax, by - ay
+            length2 = dx * dx + dy * dy
+            t = 0.0 if length2 == 0 else max(0.0, min(1.0, ((p[0] - ax) * dx + (p[1] - ay) * dy) / length2))
+            qx, qy = ax + t * dx, ay + t * dy
+            d = (p[0] - qx) ** 2 + (p[1] - qy) ** 2
+            if best is None or d < best[0]:
+                best = (d, arcs[i] + t * math.sqrt(length2))
+        return 0.0 if best is None else best[1]
+
+    def area(poly: Poly) -> float:
+        a = 0.0
+        for i in range(len(poly)):
+            x1, y1 = poly[i]
+            x2, y2 = poly[(i + 1) % len(poly)]
+            a += x1 * y2 - x2 * y1
+        return abs(a) / 2
+
+    t0, t1 = project(fence[-1]), project(fence[0])
+    fwd_span = (t1 - t0) % perim
+    fwd = sorted(((arcs[i] - t0) % perim, wall[i]) for i in range(len(wall)))
+    arc_fwd = [v for o, v in fwd if 1e-6 < o < fwd_span - 1e-6]
+    back = sorted(((t0 - arcs[i]) % perim, wall[i]) for i in range(len(wall)))
+    arc_back = [v for o, v in back if 1e-6 < o < (perim - fwd_span) - 1e-6]
+    pa = list(fence) + arc_fwd
+    pb = list(fence) + arc_back
+    return pa if area(pa) <= area(pb) else pb
+
+
 def seg_closest(px: float, py: float, a: Pt, b: Pt) -> Pt:
     ax, ay, bx, by = a[0], a[1], b[0], b[1]
     dx, dy = bx - ax, by - ay
@@ -1425,6 +1495,7 @@ class Settlement:
         #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
         self._pending_farmsteads: list[Any] = []  # farmhouses awaiting their threshing yard (drawn by farmsteads())
         self.corridors: list[Any] = []  # polylines houses must avoid
+        self._samurai_ward_interiors: list[Poly] = []  # closed samurai-ward region(s), cached by s.ward - s.building refuses WARD_BARRED_KINDS inside them
         self.bound: Any = None  # optional bounding polygon: placement stays inside it (city wall)
         self.view: Any = None  # optional (ox,oy,w,h) viewBox crop - render/checks treat it as the map edge
         self.field_polys: list[Any] = []  # smoothed outlines used for blocking
@@ -3877,6 +3948,18 @@ class Settlement:
         # runs half of this past the last recorded vertex, and city_ward_fence_joins_wall_not_crosses
         # has to test that tip rather than the coordinate to see an overshoot through the rampart
         self.M.setdefault("wards", []).append({"name": name, "boundary": [[round(x, 1), round(y, 1)] for x, y in boundary], "z": fz, "stroke": self._WARD_STROKE, "wall_caps": caps})
+        # THE FENCE SEALS COMMONERS OUT, so from this moment s.building refuses their dwellings and
+        # shops inside it (WARD_BARRED_KINDS; GM 2026-08-02, Minami). ORDERING-CRITICAL: only
+        # placements AFTER s.ward are guarded - a commoner already standing inside when the fence
+        # goes up is a gen-ordering bug (hoist s.ward ahead of every commoner pack), and it fails
+        # LOUDLY here rather than shipping and waiting for the gate to notice.
+        if name == "samurai":
+            interior = ward_interior([(p[0], p[1]) for p in boundary], [(p[0], p[1]) for p in (wall or [])])
+            if interior:
+                self._samurai_ward_interiors.append(interior)
+                early = [(b["kind"], round(b["x"]), round(b["y"])) for b in self.M.get("buildings", []) if b["kind"] in WARD_BARRED_KINDS and point_in_poly(b["x"], b["y"], interior)]
+                if early:
+                    raise ValueError(f"commoner building(s) already inside the {name} ward when its fence was declared - hoist s.ward ahead of the commoner packs: {early[:8]}")
         for gate in gates:
             gx, gy = gate[0], gate[1]
             grot, gside = self.kido_seat(gx, gy, boundary)  # square to the lane it bars (the fence only where no lane runs through); guard box toward the ward interior
@@ -5227,9 +5310,19 @@ class Settlement:
         "burakumin": ('#BCB29C', '#7A7058', 38, 26),
     }
 
-    def building(self, cx: float, cy: float, w: float, h: float, kind: str = "shop", rot: float = 0) -> None:
+    def building(self, cx: float, cy: float, w: float, h: float, kind: str = "shop", rot: float = 0) -> bool:
         """An urban building (shophouse, laborer dwelling, samurai house, etc.) -
-        boxier than a farmhouse, oriented to the street not the sun. Blocks placement."""
+        boxier than a farmhouse, oriented to the street not the sun. Blocks placement.
+
+        Returns False - and places NOTHING - for a commoner dwelling/business (WARD_BARRED_KINDS)
+        whose center lies inside a declared samurai ward (GM 2026-08-02, on Minami: 2 laborer
+        houses and a merchant row inside the ward fence, leaked in by whole-interior top-up sweeps
+        whose rectangles overlap the ward). The refusal lives HERE, at the one seat every pack,
+        frontage and gen-side top-up funnels through, rather than in each gen's region arithmetic -
+        a refused candidate simply seats elsewhere on a later pass. Gated by
+        city_samurai_ward_residents_only."""
+        if kind in WARD_BARRED_KINDS and any(point_in_poly(cx, cy, rg) for rg in self._samurai_ward_interiors):
+            return False
         fill, edge = self.URBAN.get(kind, self.URBAN["shop"])[:2]
         x0, y0 = -w / 2, -h / 2
         dash = ' stroke-dasharray="5,3"' if kind == "burakumin" else ''
@@ -5266,6 +5359,7 @@ class Settlement:
         self.add(''.join(g))
         self.M["buildings"].append({"x": cx, "y": cy, "w": w, "h": h, "kind": kind, "rot": rot})
         self.placed.append((cx, cy, w, h))
+        return True
 
     def _dims(self, kind: str) -> tuple[float, float]:
         w, h = self.URBAN.get(kind, self.URBAN["shop"])[2:]
@@ -5274,8 +5368,7 @@ class Settlement:
     def try_building(self, cx: float, cy: float, kind: str, rot: float = 0) -> bool:
         w, h = self._dims(kind)
         if self._fits(cx, cy, w, h):
-            self.building(cx, cy, w, h, kind, rot)
-            return True
+            return self.building(cx, cy, w, h, kind, rot)
         return False
 
     def _face_street_rot(self, x: float, y: float) -> tuple[float | None, float]:
@@ -5422,11 +5515,12 @@ class Settlement:
                 if x + bw > x1:
                     break
                 cx, cy = x + bw / 2, ytop + bh / 2
-                if rect_ok(cx, cy, bw, bh):
-                    # pair-facing doctrine: first row of each pair faces UP (door at its top
-                    # edge, onto the walkable gap above), second faces DOWN - backs meet
-                    # across the eave gap, every door opens outward onto roji/court ground
-                    self.building(cx, cy, bw, bh, kind, 180 if row % 2 == 0 else 0)
+                # pair-facing doctrine: first row of each pair faces UP (door at its top
+                # edge, onto the walkable gap above), second faces DOWN - backs meet
+                # across the eave gap, every door opens outward onto roji/court ground.
+                # building() may REFUSE the seat (a commoner unit inside a samurai ward) -
+                # the terrace then breaks there and the scan steps past, same as an obstacle.
+                if rect_ok(cx, cy, bw, bh) and self.building(cx, cy, bw, bh, kind, 180 if row % 2 == 0 else 0):
                     n += 1
                     idx += 1
                     rowmax = max(rowmax, bh)
@@ -11117,10 +11211,11 @@ class Settlement:
                     w, h = self._dims(kind)
                     off = depth + h / 2
                     bx, by = x + nx * off, y + ny * off
-                    if self._fits(bx, by, w, h, skip=skip):
-                        # rear rows flip 180: back-to-back with the row ahead, door onto the
-                        # back lane - never into the front row's rear wall
-                        self.building(bx, by, w, h, kind, base_rot + (180 if ri % 2 else 0) + random.uniform(-jitter, jitter))
+                    # rear rows flip 180: back-to-back with the row ahead, door onto the
+                    # back lane - never into the front row's rear wall. building() may REFUSE
+                    # the seat (a commoner unit inside a samurai ward); the station then ends
+                    # its rows there, exactly as an unfit seat does.
+                    if self._fits(bx, by, w, h, skip=skip) and self.building(bx, by, w, h, kind, base_rot + (180 if ri % 2 else 0) + random.uniform(-jitter, jitter)):
                         row.append((bx - w / 2, by - h / 2, bx + w / 2, by + h / 2))
                         items.pop(0)
                         placed += 1

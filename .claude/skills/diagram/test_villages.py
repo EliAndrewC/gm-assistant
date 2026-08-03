@@ -57,7 +57,7 @@ GEN_TIME_BUDGETS = {
     # were profiled before any budget moved (the message's own discipline), and tango measured at
     # a 22%-margin near-miss got an entry rather than a flake. Every entry is ~3x its measured
     # cost, and the mechanism is recorded so the next reader can tell "known heavy" from "new bug".
-    "minami": 120.0,  # ~42s CPU measured 2026-08-02: well placement over 927 paddy basins + ~580 watercourse segs (post-memoization; it was 45+ min before)
+    "minami": 120.0,  # ~54s CPU measured 2026-08-03 (was ~42s on 2026-08-02; the ward-residents rule added a third merchant strip, a wider sweep window and an open_seat probe pass): well placement over 927 paddy basins + ~580 watercourse segs (post-memoization; it was 45+ min before)
     "nagahara": 100.0,  # ~37s CPU measured 2026-08-03: same city well-placement family as minami (676 recorded basins, 67 wells)
     "tango": 70.0,  # ~24s CPU measured 2026-08-03: same family again (1,043 basins, 88 wells) - under the default but too close to trust
     "kikuta": 90.0,  # ~35s CPU measured 2026-08-03, profiled: ~70% is hinterland()'s marsh/commons ground-cover scatter (edge_dist over the wetland polys), long-standing (26.9s at a95d8eb a week prior), plus the paddy-well outline fallback now scanning village paddies too

@@ -275,3 +275,75 @@ Wikipedia, Timber rafting
 ## Setting canon
 
 `l7r.md` and `budgets.md` (the GM's own notes) are cited inline by filename rather than keyed here - they are canon rather than research, and an entry resting on them carries the `setting-canon` evidence class.
+
+### `jta-nagayamon`
+
+Japan Tourism Agency multilingual commentary database, Nagaya-mon (H30-00651)
+
+*Used for:* the nagayamon as a perimeter retainer range with a gate cut through it; its contents (gatekeeper's room, chugen room, stable, storeroom); lookout windows
+
+### `jta-ashigaru-kaga`
+
+Japan Tourism Agency multilingual commentary database, Ashigaru Residences / Samurai Ranks in the Kaga Domain (H30-00660, H30-00647)
+
+*Used for:* ashigaru kumi-yashiki on the town fringe; 165/230 m2 hedged plots with gardens, flagged as unusual for Japan; enclosure by rank (wall / fence / hedge)
+
+### `fukui-bushi-jutaku`
+
+Fukui Prefectural Archives exhibit, the housing of Fukui-domain samurai (Matsudaira Bunko)
+
+*Used for:* the plot-size ladder by stipend (1,000-1,700 tsubo karo down to 66-96 tsubo clerks); the Suginuma 1839 plan whose street-facing buildings are named as the servants' nagaya
+
+### `matsue-bukeyashiki`
+
+Matsue Buke Yashiki (Shiomi Nawate), museum building documentation
+
+*Used for:* a middle-rank residence with its nagayamon on the street; room program including servants' service rooms
+
+### `hikone-ashigaru`
+
+Hikone ashigaru kumi-yashiki documentation (hikone-bunkaisan.net)
+
+*Used for:* ashigaru housing as the town's outermost defensive ring; 5 x 10 ken plots; kumi living together along numbered stretches of one street
+
+### `shibata-ashigaru-nagaya`
+
+Shibata ashigaru-nagaya (1842, Important Cultural Property), Hoppou Bunka museum documentation
+
+*Used for:* the default TERRACED form of low-retainer housing - 8 households under one roof, 24 x 3.5 ken, 9 tsubo per household
+
+### `bukeyashiki-wiki`
+
+Japanese Wikipedia, 武家屋敷
+
+*Used for:* the buke-yashiki plot program and the perimeter nagaya; setback and enclosure conventions
+
+### `buke-hokonin-wiki`
+
+Japanese Wikipedia, 武家奉公人
+
+*Used for:* live-in domestic service on annual contracts (degawari), hiring out of the merchant quarter through brokers; chugen as shared-room staff on call
+
+### `neixiang-yamen`
+
+Neixiang county yamen (内乡县衙), Henan - site documentation and plan descriptions
+
+*Used for:* the three-axis yamen plan; the clerks' lodging (吏舍) on the west line; the runners' duty courtyard; banfang as improvised sheds against the wall
+
+### `pingyao-yamen`
+
+Pingyao county yamen (平遥县衙), Shanxi - site documentation
+
+*Used for:* the 1619 gongxiefang clerk lodging built behind the west office range; yamen footprint (~200 x 100 m)
+
+### `daozuofang`
+
+倒座房 / 北京四合院 (Chinese Wikipedia and vernacular-architecture summaries)
+
+*Used for:* servants' quarters in the street-fronting south row whose blank back wall is the compound's street face; rear service row; wings house family, not servants
+
+### `pingjiang-tu`
+
+Pingjiang tu (平江图), the 1229 stone-carved plan of Suzhou, and its scholarship
+
+*Used for:* post-Song wards as name plaques rather than enclosures; plot DEPTH as the class marker in an elite quarter
