@@ -35,8 +35,8 @@ def f(M):
     return set(check_village.gate(M, verbose=False))
 
 
-def bldg(x, y, kind="merchant", rot=0, w=40, h=28):
-    return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "kind": kind}
+def bldg(x, y, kind="merchant", rot=0, w=40, h=28, **kw):
+    return {"x": x, "y": y, "w": w, "h": h, "rot": rot, "kind": kind, **kw}
 
 
 # ---- the matrix debt register rots loudly ------------------------------------------------------
@@ -9943,3 +9943,44 @@ def test_farmsteads_reach_their_fields_unsevered_fires_across_a_road():
     # a second field on the house's own side of the road un-severs it
     M["fields"].append({"name": "f2", "kind": "paddy", "bbox": [600, 700, 750, 800], "outline": [[600, 700], [750, 700], [750, 800], [600, 800]]})
     assert "farmsteads_reach_their_fields_unsevered" not in f(M)
+
+
+def _ward_servant_city(*bldgs):
+    M = _ward_residents_city(*bldgs)
+    M["buildings"] = list(bldgs)
+    return M
+
+
+def test_city_ward_servants_housed_as_ranges_fires_on_a_freestanding_cottage():
+    # the GM 2026-08-02 defect: barring the commoner kinds handed their ground to the servant
+    # packs, and a detached servant cottage inside the fence reads as the fabric the fence excludes
+    M = _ward_servant_city(bldg(600, 600, kind="samurai", w=19, h=13), bldg(700, 700, kind="servant", w=10, h=7))
+    assert "city_ward_servants_housed_as_ranges" in f(M)
+
+
+def test_city_ward_servants_housed_as_ranges_fires_when_detached_from_its_named_host():
+    # it names a host, but stands 40px off it - service accommodation that serves nothing
+    M = _ward_servant_city(bldg(600, 600, kind="samurai", w=19, h=13), bldg(700, 600, kind="servant", w=19, h=5, of=[600, 600]))
+    assert "city_ward_servants_housed_as_ranges" in f(M)
+
+
+def test_city_ward_servants_housed_as_ranges_fires_on_a_range_drawn_as_a_cottage():
+    # abutting its host, but square - the nagaya read comes from the PROPORTION, not the position
+    M = _ward_servant_city(bldg(600, 600, kind="samurai", w=19, h=13), bldg(613, 600, kind="servant", w=7, h=7, of=[600, 600]))
+    assert "city_ward_servants_housed_as_ranges" in f(M)
+
+
+def test_city_ward_servants_housed_as_ranges_passes_an_attached_range():
+    # the shipped arrangement: a 19x5 range abutting its master's flank, flush with the frontage
+    M = _ward_servant_city(bldg(600, 600, kind="samurai", w=19, h=13), bldg(619.6, 604, kind="servant", w=19, h=5, of=[600, 600]))
+    assert "city_ward_servants_housed_as_ranges" not in f(M)
+    # ...and a servant OUTSIDE the fence is none of this check's business
+    M2 = _ward_servant_city(bldg(600, 600, kind="samurai", w=19, h=13), bldg(200, 200, kind="servant", w=10, h=7))
+    assert "city_ward_servants_housed_as_ranges" not in f(M2)
+
+
+def test_city_ward_servants_housed_as_ranges_skips_a_ward_that_cannot_be_closed():
+    # a degenerate fence yields no interior polygon - nothing to adjudicate servants against
+    M = _ward_servant_city(bldg(600, 600, kind="samurai", w=19, h=13), bldg(700, 700, kind="servant", w=10, h=7))
+    M["wards"] = [{"name": "samurai", "boundary": [[400, 945]], "stroke": 5.0}]
+    assert "city_ward_servants_housed_as_ranges" not in f(M)

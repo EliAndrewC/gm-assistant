@@ -502,7 +502,7 @@ for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
 # the ward's west flank, its east flank below the martial hall, and the NE pocket.
 s.block_polys.append([(1454, 1484), (1492, 1484), (1492, 1606), (1454, 1606)])
 s.rowpack((1440, 1470, 1494, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
-s.rowpack((1664, 1528, 1714, 1642), ["servant"] * 150, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring - ALL servant: this band is INSIDE the ward fence, and the ward holds samurai households and their domestics only (the old 4:1 laborer interleave put 2 laborer houses on the samurai side of the fence - GM 2026-08-02, city_samurai_ward_residents_only; s.ward at the line below now fails loudly on exactly that)
+s.rowpack((1664, 1528, 1714, 1642), ["samurai"] * 40, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring. SAMURAI, not the old servant/laborer terrace: the ward houses its domestics as each household's own nagaya RANGE (s.servant_ranges, below), so a servant terrace here is exactly the commoner-reading fabric the fence exists to exclude (GM 2026-08-02; city_ward_servants_housed_as_ranges)
 s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
 s.pack((1452, 1312, 1836, 1716), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
 s.label(1668, 1314, "samurai neighborhood", 10, italic=True, color="#3A352C")
@@ -591,7 +591,7 @@ for _y0 in range(1475, 1700, 26):
 _mh_w, _mh_h = s._dims("merchant_house")
 _extra_mh = 0
 for _rect in ((1004, 1462, 1404, 1512), (1044, 1620, 1390, 1748), (996, 1150, 1050, 1320), (1620, 1150, 1800, 1290)):
-    while _extra_mh < 4:
+    while _extra_mh < 7:
         _seat = s.open_seat(_rect, _mh_w, _mh_h)
         if not _seat:
             break
@@ -947,7 +947,19 @@ s.pack(NE_Q, (["laborer"] * 4 + ["servant"]) * 60, step=13, face_streets="fill")
 s.pack(NW_Q, (["merchant_house"] * 4 + ["merchant"]) * 55, step=13, face_streets="fill")
 s.pack(SW_Q, (["laborer"] * 3 + ["servant"] * 2 + ["burakumin"]) * 55, step=13, face_streets="fill")
 s.pack(SE_Q, (["samurai"] * 3 + ["samurai_large"]) * 30, step=12, face_streets="fill")
-s.pack(SE_Q, ["servant"] * 90, step=11, face_streets="fill")
+# THE WARD'S SERVANT HOUSING - each household's own nagaya, not a servant quarter. Runs here, with
+# every ward samurai house finally placed and s.ward long since drawn, and BEFORE fill_exactly, so
+# the exact-population pass can top the servant count up in the commoner quarters afterwards.
+# (The old `s.pack(SE_Q, ["servant"] * 90)` stood here; the engine now refuses a freestanding
+# servant inside a ward outright, so it would place nothing.)
+# HOUSEHOLDS FIRST, then their ranges - in that order, and never the reverse. The ward was the
+# city's emptiest quarter (0.48 dwellings/1000px^2 against the SW's 1.66) and the samurai cohort
+# sits well inside its band, so the honest way to close the exact-population figure is MORE SAMURAI
+# HOUSEHOLDS here, each arriving with its own servant range, rather than commoner fill the fence
+# exists to keep out. The ranges go LAST because a house seated after them can come to rest across
+# a range's doorway - top_up only clears its OWN door, not its neighbors'.
+top_up("samurai", SE_Q, 64, count_kinds=("samurai", "samurai_large"))  # 64 = the caste ceiling (1.3 x 10% x 520) less the three extramural estates
+s.servant_ranges()
 
 # whole-interior sweeps: the per-quarter regions leave ground stranded at their seams, and the
 # budget promises 520 dwellings, so the last passes are limited by the ground and nothing else.
@@ -1030,6 +1042,21 @@ fill_exactly(TARGET_DWELLINGS)
 
 for _mx, _my in _ML_SPOTS:
     s.building(_mx, _my, *s._dims("merchant_large"), "merchant_large")
+
+# THE LAST SEATS, asked from the engine rather than from a grid. fill_exactly scans on a fixed
+# 5x6 px lattice, so a gap that is real but off-lattice is invisible to it - and after the ward
+# stopped taking commoner fill, the map came to rest ONE dwelling under its declared 520. open_seat
+# asks _fits itself at the finest step and returns the best clear seat, which is how the well
+# passes already find ground the sweeps miss (skill CLAUDE.md, "Ask the ENGINE where a feature
+# fits"). Smallest kind first, because at this point only a small footprint can still land.
+_sv_w, _sv_h = s._dims("servant")
+for _rect in (SW_Q, NE_Q, NW_Q, WIDE_Q, ALL_Q):
+    while _dwell_count() < TARGET_DWELLINGS:
+        _seat = s.open_seat(_rect, _sv_w, _sv_h)
+        if not _seat or not s.building(_seat[0], _seat[1], _sv_w, _sv_h, "servant", 0.0):
+            break
+    if _dwell_count() >= TARGET_DWELLINGS:
+        break
 
 # FINE global well pass: after every dwelling is placed, drop wells into the nearest clear COURT.
 s.place_wells((1424, 968, 1730, 1250), spacing=42, near=48)

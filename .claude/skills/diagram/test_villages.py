@@ -60,6 +60,8 @@ GEN_TIME_BUDGETS = {
     "minami": 120.0,  # ~54s CPU measured 2026-08-03 (was ~42s on 2026-08-02; the ward-residents rule added a third merchant strip, a wider sweep window and an open_seat probe pass): well placement over 927 paddy basins + ~580 watercourse segs (post-memoization; it was 45+ min before)
     "nagahara": 100.0,  # ~37s CPU measured 2026-08-03: same city well-placement family as minami (676 recorded basins, 67 wells)
     "tango": 70.0,  # ~24s CPU measured 2026-08-03: same family again (1,043 basins, 88 wells) - under the default but too close to trust
+    "kuwabata": 60.0,  # ~16s CPU measured 2026-08-03 standalone; it read 30.5s against the 30s default under a full 22-worker parallel run, which is contention, not a regression (this hamlet has no ward and no city machinery)
+    "enokida": 60.0,  # ~18s CPU measured 2026-08-03 standalone, same story - both sit close enough to the default that a loaded box tips them over
     "kikuta": 90.0,  # ~35s CPU measured 2026-08-03, profiled: ~70% is hinterland()'s marsh/commons ground-cover scatter (edge_dist over the wetland polys), long-standing (26.9s at a95d8eb a week prior), plus the paddy-well outline fallback now scanning village paddies too
 }
 
