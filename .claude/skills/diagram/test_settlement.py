@@ -5352,3 +5352,31 @@ def test_ward_fence_without_a_city_wall_is_left_alone():
     s = Settlement(1000, 1000, seed=1)
     s.ward("samurai", [(500, 700), (500, 400)], gates=[])
     assert s.M["wards"][-1]["boundary"] == [[500.0, 700.0], [500.0, 400.0]]
+
+
+def test_building_refuses_commoners_inside_a_declared_samurai_ward():
+    # GM 2026-08-02 (Minami): whole-interior top-up sweeps seated laborers and a merchant row
+    # inside the ward fence. Once s.ward has run, the engine refuses those seats at s.building
+    # itself - the one chokepoint every pack, frontage and gen-side top-up funnels through.
+    s = Settlement(1000, 1000, seed=1)
+    s.M["wall"] = [[200, 200], [800, 200], [800, 800], [200, 800]]
+    s.ward("samurai", [(400, 795), (400, 400), (795, 400)], gates=[])
+    assert s.building(600, 600, 16, 11, "laborer") is False
+    assert all(b["kind"] != "laborer" for b in s.M["buildings"])
+    assert s.building(600, 600, 16, 11, "samurai") is True  # a resident seats normally
+    assert s.building(250, 250, 16, 11, "laborer") is True  # outside the fence - unaffected
+
+
+def test_ward_interior_returns_none_on_a_zero_perimeter_wall():
+    # a "ring" of coincident points has zero perimeter - nothing to walk an arc along
+    assert settlement.ward_interior([(400, 945), (400, 400)], [(7, 7), (7, 7), (7, 7)]) is None
+
+
+def test_ward_fails_loudly_on_a_commoner_already_inside():
+    # the ordering guard: a commoner standing inside when the fence goes up means the gen ran a
+    # commoner pack before s.ward - fail at gen time, not at the gate
+    s = Settlement(1000, 1000, seed=1)
+    s.M["wall"] = [[200, 200], [800, 200], [800, 800], [200, 800]]
+    s.building(600, 600, 16, 11, "merchant")
+    with pytest.raises(ValueError, match="already inside the samurai ward"):
+        s.ward("samurai", [(400, 795), (400, 400), (795, 400)], gates=[])
