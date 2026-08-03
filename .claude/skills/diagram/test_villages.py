@@ -103,6 +103,13 @@ def test_slow_gen_budget_fires_and_the_override_silences_it(tmp_path, monkeypatc
     gen = tmp_path / "snail.gen.py"
     gen.write_text("import time\nt0 = time.process_time()\nwhile time.process_time() - t0 < 0.05:\n    pass\n")
     monkeypatch.setitem(GEN_TIME_BUDGETS, "snail", 0.001)
+    # OWN THE ENVIRONMENT, do not inherit it (2026-08-03): the override is documented for
+    # WHOLE-SWEEP use ("rerun with DIAGRAM_ALLOW_SLOW_GENS=1"), and a session that follows that
+    # advice silenced the budget for this test too - so the one test proving the guard still has
+    # teeth failed precisely when someone used the guard as designed, turning the escape hatch into
+    # a guaranteed red gate. The fire-half must be measured with the override OFF regardless of how
+    # the sweep was invoked.
+    monkeypatch.delenv("DIAGRAM_ALLOW_SLOW_GENS", raising=False)
     with pytest.raises(AssertionError, match="SURPRISE"):
         _regen_and_gate(str(gen))
     monkeypatch.setenv("DIAGRAM_ALLOW_SLOW_GENS", "1")
