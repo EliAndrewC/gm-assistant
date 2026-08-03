@@ -9856,6 +9856,40 @@ def test_city_ward_fence_joins_wall_not_crosses_ignores_a_degenerate_boundary():
     assert "city_ward_fence_joins_wall_not_crosses" not in f(M)
 
 
+def _ward_residents_city(*bldgs):
+    # a samurai ward carved off the SE corner of the square wall; interior = (400..950, 400..950).
+    # The residents-only check lives in the walled-CITY block, so the meta must say so.
+    M = manifest(wall=WALL, wall_stroke=11.0, gates=[[500, 50], [500, 950]], wards=[{"name": "samurai", "boundary": [[400, 945], [400, 400], [945, 400]], "stroke": 5.0}], buildings=list(bldgs))
+    M["meta"].update(scale="city", walled=True)
+    return M
+
+
+def test_city_samurai_ward_residents_only_fires_on_commoners_inside_the_ward():
+    # the Minami defect (GM 2026-08-02) in synthetic form: commoner dwellings/commerce standing
+    # on the samurai side of the ward fence
+    for kind in ("laborer", "merchant_house", "shop", "burakumin"):
+        assert "city_samurai_ward_residents_only" in f(_ward_residents_city(bldg(600, 600, kind=kind)))
+
+
+def test_city_samurai_ward_residents_only_passes_residents_and_outsiders():
+    # samurai + their live-in servant inside; a laborer OUTSIDE the fence; a monk_house inside
+    # (a temple's clergy row may stand in the ward - Tango's Bishamon precinct)
+    M = _ward_residents_city(bldg(600, 600, kind="samurai"), bldg(620, 660, kind="servant"), bldg(200, 200, kind="laborer"), bldg(700, 700, kind="monk_house"))
+    assert "city_samurai_ward_residents_only" not in f(M)
+
+
+def test_city_samurai_ward_residents_only_skips_unnamed_wards_and_degenerate_geometry():
+    # legacy ward records carry no name - nothing to adjudicate against
+    M = manifest(wall=WALL, wall_stroke=11.0, gates=[[500, 50], [500, 950]], wards=[{"boundary": [[400, 945], [400, 400], [945, 400]], "stroke": 5.0}], buildings=[bldg(600, 600, kind="laborer")])
+    M["meta"].update(scale="city", walled=True)
+    assert "city_samurai_ward_residents_only" not in f(M)
+    # and a fence/wall too degenerate to close yields no interior at all
+    assert check_village._ward_interior([[400, 400]], WALL) is None
+    assert check_village._ward_interior([[400, 945], [400, 400]], []) is None
+    # a "ring" of coincident points has zero perimeter - nothing to walk an arc along
+    assert check_village._ward_interior([[400, 945], [400, 400]], [[7, 7], [7, 7], [7, 7]]) is None
+
+
 # --- angled-building captions (GM 2026-08-02): tilted label records carry the tilt at [7] -------
 def test_no_label_overlaps_judges_tilted_pairs_by_their_quads():
     # two captions along the same -30 deg lane: their AABBs cross massively, their glyph runs lie
