@@ -1827,6 +1827,122 @@ def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     assert b["w"] == b["len"] and b["h"] == b["pen_w"] and b["rot"] == 90.0
 
 
+_IDX_POLY = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)]
+
+
+def test_indexed_overrides_every_mutating_list_method():
+    """Every way a list's CONTENT can change must bump the version, or an index cached against it
+    goes stale silently - the exact failure that cost this engine two silent bugs in one day
+    (a stale `placed` index, a stale well-geometry fingerprint).
+
+    The mutator set is discovered by INTROSPECTION rather than hand-listed, so a future Python
+    adding a mutating list method fails this test instead of opening a hole nobody notices.
+    """
+    non_mutating = {"copy", "__reversed__", "__init__", "__new__", "__class_getitem__", "__getitem__"}
+    candidates = (set(dir(list)) - set(dir(tuple))) - non_mutating
+    ops = {
+        "append": lambda r: r.append(_IDX_POLY),
+        "extend": lambda r: r.extend([_IDX_POLY]),
+        "insert": lambda r: r.insert(0, _IDX_POLY),
+        "remove": lambda r: r.remove(_IDX_POLY),
+        "pop": lambda r: r.pop(),
+        "clear": lambda r: r.clear(),
+        "sort": lambda r: r.sort(),
+        "reverse": lambda r: r.reverse(),
+        "__setitem__": lambda r: r.__setitem__(0, _IDX_POLY),
+        "__delitem__": lambda r: r.__delitem__(0),
+        "__iadd__": lambda r: r.__iadd__([_IDX_POLY]),
+        "__imul__": lambda r: r.__imul__(2),
+    }
+    assert set(ops) == candidates, f"the mutator table is out of step with list's API: {set(ops) ^ candidates}"
+    for name, op in ops.items():
+        assert name in settlement.Indexed.__dict__, f"Indexed does not override {name}"
+        reg = settlement.Indexed([_IDX_POLY])
+        before = reg.version
+        op(reg)
+        assert reg.version > before, f"{name} changed the list without bumping the version"
+
+
+def test_a_keepout_index_sees_a_registry_mutated_after_its_first_query():
+    """The behavioral half of the same rule, at the level a map would notice: query, MUTATE, query
+    again. A stale index answers the second query from the first query's world - which is how
+    Minami and Nagahara lost every garden on 2026-08-03 - so this walks a point in and out of a
+    keep-out by appending and clearing."""
+    s = _crop_settlement()
+    box = [(480.0, 480.0), (520.0, 480.0), (520.0, 520.0), (480.0, 520.0)]
+    assert not s._in_blocked(500, 500)  # builds and caches the index over an empty registry
+    s.block_polys.append(box)
+    assert s._in_blocked(500, 500), "the index did not see an appended keep-out"
+    s.block_polys.clear()
+    assert not s._in_blocked(500, 500), "the index did not see the registry emptied"
+    # and a corridor, the other indexed registry
+    assert not s._near_corridor(300, 300)
+    s.corridors.append(([(200.0, 300.0), (400.0, 300.0)], 20.0))
+    assert s._near_corridor(300, 300), "the corridor index did not see an appended corridor"
+
+
+def test_indexed_grid_falls_back_when_a_registry_is_rebound_to_a_plain_list():
+    # farm_wells swaps field_polys out and back; anything rebinding a registry to a PLAIN list must
+    # still get correct answers, just uncached - the fallback that makes this safe to adopt
+    s = _crop_settlement()
+    s.block_polys = [[(480.0, 480.0), (520.0, 480.0), (520.0, 520.0), (480.0, 520.0)]]
+    assert not isinstance(s.block_polys, settlement.Indexed)
+    assert s._in_blocked(500, 500)
+    assert not s._in_blocked(300, 300)
+
+
+def test_point_grid_never_omits_an_item_a_linear_scan_would_find():
+    """The one property every PointGrid caller's exactness rests on: `near` may return extra items
+    (or an item twice), but it must never OMIT one whose box comes within `pad` of the query.
+
+    Includes the OVERSIZED path - a wildly-spanning box, which is what a negative fixture's
+    9,000,000px vertex looks like - because that clamp is the difference between a cheap query and
+    the gigabytes-of-RAM incident recorded in this skill's CLAUDE.md.
+    """
+    rng = random.Random(11)
+    items = [(f"i{k}", *(lambda a, b, w, h: (a, b, a + w, b + h))(rng.uniform(0, 900), rng.uniform(0, 900), rng.uniform(1, 300), rng.uniform(1, 300))) for k in range(120)]
+    items.append(("huge", -9_000_000.0, -9_000_000.0, 9_000_000.0, 9_000_000.0))  # the clamp case
+    grid = settlement.PointGrid()
+    grid.extend(items)
+    assert grid.n == len(items) and grid.oversized, "the wild box must be filed as oversized, not as billions of cells"
+    for pad in (0.0, 5.0, 140.0):  # 140 > cell, so the query spans several cells
+        for _ in range(400):
+            px, py = rng.uniform(-100, 1000), rng.uniform(-100, 1000)
+            want = {it[0] for it in items if it[1] - pad <= px <= it[3] + pad and it[2] - pad <= py <= it[4] + pad}
+            got = {it[0] for it in grid.near(px, py, pad)}
+            assert want <= got, f"grid OMITTED {want - got} at ({px:.1f}, {py:.1f}) pad={pad}"
+
+
+def test_boxed_prefilters_agree_exactly_with_the_bare_scan():
+    """The bbox PRUNES, the exact test DECIDES - so the prefiltered answer must equal the naive
+    one at EVERY point, especially in the near-edge band the pad exists for.
+
+    This is the ratchet behind "the pool regenerates byte-identical" (2026-08-03): the tempting
+    way to speed a scatter up is to COARSEN it - a tighter pad, a bbox-only answer, fewer sample
+    points - and the loss would show up not here but as silently-moved ground cover on some map
+    nobody re-renders for a month. Coarsening fails this test instead.
+    """
+    polys = [
+        [(100.0, 100.0), (200.0, 100.0), (200.0, 180.0), (100.0, 180.0)],
+        [(220.0, 40.0), (300.0, 90.0), (250.0, 160.0)],  # a triangle: bbox and shape differ a lot
+    ]
+    corr = [([(0.0, 0.0), (400.0, 300.0)], 9.0), ([(50.0, 250.0), (350.0, 250.0)], 4.0)]
+    boxed0, boxed10 = settlement.boxed_polys(polys), settlement.boxed_polys(polys, 10.0)
+    segs = settlement.boxed_segs(corr)
+    rng = random.Random(7)
+    hits = 0
+    for _ in range(4000):
+        px, py = rng.uniform(-20, 420), rng.uniform(-20, 320)
+        naive_in = any(settlement.point_in_poly(px, py, p) for p in polys)
+        naive_pad = any(settlement.point_in_poly(px, py, p) or settlement.edge_dist(px, py, p) < 10.0 for p in polys)
+        naive_seg = any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corr)
+        assert settlement.boxed_hit(px, py, boxed0) == naive_in, (px, py)
+        assert settlement.boxed_hit(px, py, boxed10, 10.0) == naive_pad, (px, py)
+        assert settlement.boxed_seg_hit(px, py, segs) == naive_seg, (px, py)
+        hits += naive_in or naive_pad or naive_seg
+    assert 200 < hits < 3800, f"the sample must straddle both answers to have teeth, got {hits}/4000"
+
+
 def test_trade_works_caption_hand_seat_moves_the_label_and_its_band():
     # label_xy on a trade glyph seats the caption (and its reserved band) at the given spot -
     # the punishment_spot/kosatsuba remedy for a collision the placement probe cannot see
