@@ -1827,6 +1827,28 @@ def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     assert b["w"] == b["len"] and b["h"] == b["pen_w"] and b["rot"] == 90.0
 
 
+def test_point_grid_never_omits_an_item_a_linear_scan_would_find():
+    """The one property every PointGrid caller's exactness rests on: `near` may return extra items
+    (or an item twice), but it must never OMIT one whose box comes within `pad` of the query.
+
+    Includes the OVERSIZED path - a wildly-spanning box, which is what a negative fixture's
+    9,000,000px vertex looks like - because that clamp is the difference between a cheap query and
+    the gigabytes-of-RAM incident recorded in this skill's CLAUDE.md.
+    """
+    rng = random.Random(11)
+    items = [(f"i{k}", *(lambda a, b, w, h: (a, b, a + w, b + h))(rng.uniform(0, 900), rng.uniform(0, 900), rng.uniform(1, 300), rng.uniform(1, 300))) for k in range(120)]
+    items.append(("huge", -9_000_000.0, -9_000_000.0, 9_000_000.0, 9_000_000.0))  # the clamp case
+    grid = settlement.PointGrid()
+    grid.extend(items)
+    assert grid.n == len(items) and grid.oversized, "the wild box must be filed as oversized, not as billions of cells"
+    for pad in (0.0, 5.0, 140.0):  # 140 > cell, so the query spans several cells
+        for _ in range(400):
+            px, py = rng.uniform(-100, 1000), rng.uniform(-100, 1000)
+            want = {it[0] for it in items if it[1] - pad <= px <= it[3] + pad and it[2] - pad <= py <= it[4] + pad}
+            got = {it[0] for it in grid.near(px, py, pad)}
+            assert want <= got, f"grid OMITTED {want - got} at ({px:.1f}, {py:.1f}) pad={pad}"
+
+
 def test_boxed_prefilters_agree_exactly_with_the_bare_scan():
     """The bbox PRUNES, the exact test DECIDES - so the prefiltered answer must equal the naive
     one at EVERY point, especially in the near-edge band the pad exists for.

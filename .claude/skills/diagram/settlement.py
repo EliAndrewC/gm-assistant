@@ -711,6 +711,71 @@ def boxed_seg_hit(px: float, py: float, segs: Any) -> bool:
     return any(bx0 <= px <= bx1 and by0 <= py <= by1 and seg_dist(px, py, a, b) < hw for a, b, hw, bx0, by0, bx1, by1 in segs)
 
 
+class PointGrid:
+    """A uniform-grid spatial index for POINT queries against many static extents.
+
+    PREFILTER family, like `boxed_hit` one level up: the grid narrows the CANDIDATE LIST, the
+    caller's exact test still DECIDES, so verdicts match a linear scan exactly - which is what lets
+    the pool regenerate byte-identical when a caller switches over.
+
+    WHY IT EXISTS. A bbox prefilter drops the cost per item but still visits EVERY item, and some
+    of this engine's per-candidate scans are long: Minami's well siting probes ~133k seats against
+    ~580 watercourse segments plus 927 paddy rings (~123M box comparisons, 74% of that gen), and
+    `_fits` measures every candidate against every building already standing. `check_village.py`
+    solved exactly this on the CHECKING side with `GridIndex` (whole-pool gate 34.1s -> 11.8s); the
+    GENERATOR side had no equivalent until 2026-08-03.
+
+    Items are `(payload..., x0, y0, x1, y1)` - the box is the LAST FOUR fields, the shape
+    `boxed_polys` and `boxed_segs` already produce. Filing is INCREMENTAL (`extend` appends), which
+    is exact for an append-only registry like `Settlement.placed`, so a growing list is indexed as
+    it grows instead of rebuilt.
+
+    A GRID BOX IS A COST, SO IT IS CLAMPED - the lesson recorded in this skill's CLAUDE.md, learned
+    when a negative fixture's 9,000,000px vertex asked the checker's index for ~5.6 billion cells
+    and the gate ate gigabytes. An item spanning more than `_MAX_SPAN` cells on either axis is
+    filed as OVERSIZED and returned by every query. That makes a wild coordinate cheap rather than
+    unbounded, and it cannot change a verdict: an oversized item is simply never pruned."""
+
+    __slots__ = ("buckets", "cell", "n", "oversized")
+    _MAX_SPAN = 64  # cells per axis before an item is oversized (64 * 128px = 8,192px - wider than any canvas we draw)
+
+    def __init__(self, cell: float = 128.0) -> None:
+        self.cell = cell
+        self.buckets: dict[tuple[int, int], list[Any]] = {}
+        self.oversized: list[Any] = []
+        self.n = 0  # items filed so far - an append-only source hands in only the tail
+
+    def extend(self, items: Any) -> None:
+        c = self.cell
+        for item in items:
+            self.n += 1
+            i0, j0 = int(item[-4] // c), int(item[-3] // c)
+            i1, j1 = int(item[-2] // c), int(item[-1] // c)
+            if i1 - i0 > self._MAX_SPAN or j1 - j0 > self._MAX_SPAN:
+                self.oversized.append(item)
+                continue
+            for i in range(i0, i1 + 1):
+                for j in range(j0, j1 + 1):
+                    self.buckets.setdefault((i, j), []).append(item)
+
+    def near(self, px: float, py: float, pad: float = 0.0) -> Any:
+        """Every filed item whose box comes within `pad` of (px, py) - plus, harmlessly, some that
+        do not, and possibly the same item twice (an item spanning several queried cells). It never
+        OMITS one that does, which is the only property the callers' exactness rests on."""
+        c = self.cell
+        i0, j0 = int((px - pad) // c), int((py - pad) // c)
+        i1, j1 = int((px + pad) // c), int((py + pad) // c)
+        if i0 == i1 and j0 == j1 and not self.oversized:  # the common case - one cell, no copy
+            return self.buckets.get((i0, j0)) or ()
+        out: list[Any] = list(self.oversized)
+        for i in range(i0, i1 + 1):
+            for j in range(j0, j1 + 1):
+                bucket = self.buckets.get((i, j))
+                if bucket:
+                    out.extend(bucket)
+        return out
+
+
 # A village runs ~200-500 inhabitants, averaging ~350 (budgets.md). The spread is deliberately NOT a bell
 # curve - the tails are only modestly rarer than the mode - so a generated village varies widely in size while
 # still clustering on 350. Households = population / 5 (the "dwellings x5" rule). Weights sum to 100.
@@ -1573,7 +1638,7 @@ class Settlement:
         #                    seq <= a clearing's seq drew before the clearing was registered and may have
         #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
         self._wgc_cache: tuple[Any, ...] | None = (
-            None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each with a bbox prefilter), fingerprint-invalidated
+            None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each a PointGrid), fingerprint-invalidated
         )
         self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
@@ -4205,27 +4270,32 @@ class Settlement:
                     hw = float(rec.get("w") or dw) / 2
                     for i in range(len(pts) - 1):
                         (ax, ay), (bx, by) = pts[i], pts[i + 1]
-                        water.append((hw, min(ax, bx), min(ay, by), max(ax, bx), max(ay, by), (ax, ay), (bx, by)))
+                        # box carries the course's own half-width, so a query pads by vr alone
+                        water.append((hw, (ax, ay), (bx, by), min(ax, bx) - hw, min(ay, by) - hw, max(ax, bx) + hw, max(ay, by) + hw))
             dry = []
             for dp in recs["dry_plots"]:
                 poly = dp.get("poly")
                 if not poly:
                     continue  # pragma: no cover - defensive: every dry plot carries an outline
-                dry.append((poly, (min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly))))
-            wet = [(r, (min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r))) for r in paddy_wet_rings(self.M)]
-            self._wgc_cache = (fp, water, dry, wet)
-        _, water, dry, wet = self._wgc_cache
-        for hw, sx0, sy0, sx1, sy1, pa, pb in water:
-            lim = hw + vr
-            if sx0 - lim <= cx <= sx1 + lim and sy0 - lim <= cy <= sy1 + lim and seg_dist(cx, cy, pa, pb) < lim:
+                dry.append((poly, min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly)))
+            wet = [(r, min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r)) for r in paddy_wet_rings(self.M)]
+            # INDEXED, not merely boxed: the bbox prefilter alone still visited all ~1,500 items per
+            # candidate seat (~123M comparisons on Minami, 2026-08-03). See PointGrid.
+            grids = PointGrid(), PointGrid(), PointGrid()
+            for grid, items in zip(grids, (water, dry, wet), strict=True):
+                grid.extend(items)
+            self._wgc_cache = (fp, *grids)
+        _, water_g, dry_g, wet_g = self._wgc_cache
+        for hw, pa, pb, bx0, by0, bx1, by1 in water_g.near(cx, cy, vr):
+            if bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and seg_dist(cx, cy, pa, pb) < hw + vr:
                 return False
         pond = self.M.get("pond")
         if pond and ((cx - pond[0]) ** 2) / ((pond[2] + vr) ** 2) + ((cy - pond[1]) ** 2) / ((pond[3] + vr) ** 2) < 1.0:
             return False
-        for poly, (bx0, by0, bx1, by1) in dry:
+        for poly, bx0, by0, bx1, by1 in dry_g.near(cx, cy, vr):
             if bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and (point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly)))):
                 return False
-        return not any(bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring) for ring, (bx0, by0, bx1, by1) in wet)
+        return not any(bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring) for ring, bx0, by0, bx1, by1 in wet_g.near(cx, cy, vr))
 
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
@@ -11198,6 +11268,17 @@ class Settlement:
             return False
         if not self._hard_clear(x, y, w, h):
             return False
+        # DELIBERATELY NOT INDEXED, though it is the obvious next candidate (2026-08-03). These two
+        # scans are O(placed) per candidate seat - 38M hypot() calls on Nagahara - and a PointGrid
+        # over `placed` measured ~10-15% off a city gen. It was written, and reverted: an
+        # incremental index needs an append-only source, and `placed` is NOT one. Two sites REBIND
+        # it to a shorter filtered list (search this file for "lift own reservation" and "drop the
+        # un-appurtenanced farmhouse"), which left the index holding phantom buildings - Minami and
+        # Nagahara lost every garden and farm shed, and the pool caught it in one regen. Any future
+        # attempt must key its cache on something CONTENT-sensitive (the `_wgc_cache` fingerprint is
+        # the model), not on length or list identity, because a filter-rebind changes both in ways a
+        # cheap check can miss. The smaller win did not justify a stale-index trap in a registry
+        # twenty-odd call sites mutate.
         r = math.hypot(w, h) / 2
         for px, py, pw, ph in self.placed:
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:
