@@ -25,7 +25,7 @@ import subprocess
 import sys
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from typing import Any, cast
+from typing import Any, SupportsIndex, cast
 
 Pt = tuple[float, float]  # an (x, y) point in map pixels
 Poly = list[Pt]  # a polyline / polygon as a list of points
@@ -663,6 +663,213 @@ def seg_intersect(a: Pt, b: Pt, c: Pt, d: Pt) -> Pt | None:
 
 def edge_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
+
+
+def boxed_polys(polys: Any, pad: float = 0.0) -> list[tuple[Poly, float, float, float, float]]:
+    """Each polygon paired with its bounding box, expanded by `pad`, computed ONCE. Feed the result
+    to `boxed_hit` - which is where the why is written down."""
+    out: list[tuple[Poly, float, float, float, float]] = []
+    for poly in polys:
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        out.append((poly, min(xs) - pad, min(ys) - pad, max(xs) + pad, max(ys) + pad))
+    return out
+
+
+def boxed_hit(px: float, py: float, boxed: Any, edge_pad: float = 0.0) -> bool:
+    """Is (px, py) inside any pre-boxed polygon - or within `edge_pad` of one's edge?
+
+    PREFILTER family (this skill's CLAUDE.md, "Centers, footprints, and aggregates"): the bbox
+    PRUNES, the exact `point_in_poly` / `edge_dist` still DECIDES. The verdict is therefore
+    identical to a bare scan, which is what lets the whole pool regenerate byte-identical when a
+    caller switches over - and is why this is a prefilter rather than the forbidden "coarsen it"
+    (CLAUDE.md, "When a check is slow, INDEX it - do not coarsen it").
+
+    WHY IT EXISTS: the ground-cover scatters test every field poly, block poly and clearing PER
+    SCATTER POINT, and a marshy village pushes hundreds of thousands of points through them -
+    Kikuta burned 24.6M `point_in_poly` calls, 93% of its whole gen (profiled 2026-08-03). The
+    PLACEMENT path had had this treatment for months (`_in_blocked`, via `_poly_bboxes`); the
+    scatter path never got it. Build the boxes with the SAME pad you pass as `edge_pad`, or the
+    prefilter can reject a point the edge test would have wanted."""
+    return any(bx0 <= px <= bx1 and by0 <= py <= by1 and (point_in_poly(px, py, poly) or (edge_pad > 0 and edge_dist(px, py, poly) < edge_pad)) for poly, bx0, by0, bx1, by1 in boxed)
+
+
+def boxed_segs(corridors: Any) -> list[tuple[Pt, Pt, float, float, float, float, float]]:
+    """Every corridor segment with its clearance-expanded bbox, flattened and computed ONCE - the
+    polyline companion of `boxed_polys`. Feed to `boxed_seg_hit`."""
+    out: list[tuple[Pt, Pt, float, float, float, float, float]] = []
+    for pl, hw in corridors:
+        for i in range(len(pl) - 1):
+            a, b = pl[i], pl[i + 1]
+            out.append((a, b, hw, min(a[0], b[0]) - hw, min(a[1], b[1]) - hw, max(a[0], b[0]) + hw, max(a[1], b[1]) + hw))
+    return out
+
+
+def boxed_seg_hit(px: float, py: float, segs: Any) -> bool:
+    """Is (px, py) within its clearance of any pre-boxed corridor segment? Prefilter family exactly
+    as `boxed_hit` - and the same shape `_near_corridor` already uses on the placement side."""
+    return any(bx0 <= px <= bx1 and by0 <= py <= by1 and seg_dist(px, py, a, b) < hw for a, b, hw, bx0, by0, bx1, by1 in segs)
+
+
+class Indexed(list):  # type: ignore[type-arg]
+    """A no-build registry that carries a VERSION, so an index built from it can be invalidated by
+    the data itself rather than by a guess about the data.
+
+    WHY NOT A CACHE KEY. Two attempts in this engine at "is my cached index still valid?" failed,
+    both SILENTLY, both on 2026-08-03: an incremental index over `placed` missed the two sites that
+    REBIND it to a filtered copy (Minami and Nagahara lost every garden), and a record-count
+    fingerprint for the well grids missed an in-place replacement of a same-LENGTH ring (a wellhead
+    cleared to stand in a paddy). Length, object identity and record counts are all guesses about
+    CONTENT. A version the list bumps itself is not a guess - mutating is the only way content
+    changes, and every mutator bumps.
+
+    The cache lives on the list too (`cache`), keyed by consumer, so an index physically cannot be
+    read against a different list than it was built from. That covers the one non-append pattern in
+    the engine: `farm_wells` swaps `field_polys` for an empty list and swaps the ORIGINAL OBJECT
+    back, which an identity- or length-keyed cache gets wrong and this cannot.
+
+    `test_indexed_overrides_every_mutating_list_method` is the ratchet: it enumerates `list`'s
+    mutators by introspection and fails if one is not overridden here, so a Python version adding a
+    mutating method cannot open a silent staleness hole."""
+
+    __slots__ = ("cache", "version")
+
+    def __init__(self, *args: Any) -> None:
+        super().__init__(*args)
+        self.version = 0
+        self.cache: dict[str, tuple[int, Any]] = {}
+
+    def _bump(self) -> None:
+        self.version += 1
+
+    def append(self, item: Any) -> None:
+        self._bump()
+        super().append(item)
+
+    def extend(self, items: Any) -> None:
+        self._bump()
+        super().extend(items)
+
+    def insert(self, i: SupportsIndex, item: Any) -> None:
+        self._bump()
+        super().insert(i, item)
+
+    def remove(self, item: Any) -> None:
+        self._bump()
+        super().remove(item)
+
+    def pop(self, i: SupportsIndex = -1) -> Any:
+        self._bump()
+        return super().pop(i)
+
+    def clear(self) -> None:
+        self._bump()
+        super().clear()
+
+    def sort(self, **kw: Any) -> None:
+        self._bump()
+        super().sort(**kw)
+
+    def reverse(self) -> None:
+        self._bump()
+        super().reverse()
+
+    def __setitem__(self, i: Any, v: Any) -> None:
+        self._bump()
+        super().__setitem__(i, v)
+
+    def __delitem__(self, i: Any) -> None:
+        self._bump()
+        super().__delitem__(i)
+
+    def __iadd__(self, other: Any) -> Any:  # type: ignore[misc]  # same as __imul__ below: mypy checks this against list.__add__, which an in-place op on a subclass cannot satisfy; the override exists so `reg += xs` bumps the version
+        self._bump()
+        return super().__iadd__(other)
+
+    def __imul__(self, n: Any) -> Any:  # type: ignore[misc]  # mypy compares __imul__ against list.__mul__, which cannot hold for an in-place op on a subclass; the override exists so `reg *= n` still bumps the version rather than silently invalidating an index
+        self._bump()
+        return super().__imul__(n)
+
+
+def indexed_grid(lst: Any, key: str, build: Callable[[Any], PointGrid]) -> PointGrid:
+    """The PointGrid `build` makes from `lst`, cached ON `lst` under `key` until `lst` mutates.
+
+    A plain list (one a caller rebound out from under us) is handled by simply building fresh every
+    time: slower, never wrong. That fallback is the whole reason this is safe to use on registries
+    whose mutation pattern might change later."""
+    if not isinstance(lst, Indexed):
+        return build(lst)
+    hit = lst.cache.get(key)
+    if hit is not None and hit[0] == lst.version:
+        return cast(PointGrid, hit[1])
+    grid = build(lst)
+    lst.cache[key] = (lst.version, grid)
+    return grid
+
+
+class PointGrid:
+    """A uniform-grid spatial index for POINT queries against many static extents.
+
+    PREFILTER family, like `boxed_hit` one level up: the grid narrows the CANDIDATE LIST, the
+    caller's exact test still DECIDES, so verdicts match a linear scan exactly - which is what lets
+    the pool regenerate byte-identical when a caller switches over.
+
+    WHY IT EXISTS. A bbox prefilter drops the cost per item but still visits EVERY item, and some
+    of this engine's per-candidate scans are long: Minami's well siting probes ~133k seats against
+    ~580 watercourse segments plus 927 paddy rings (~123M box comparisons, 74% of that gen), and
+    `_fits` measures every candidate against every building already standing. `check_village.py`
+    solved exactly this on the CHECKING side with `GridIndex` (whole-pool gate 34.1s -> 11.8s); the
+    GENERATOR side had no equivalent until 2026-08-03.
+
+    Items are `(payload..., x0, y0, x1, y1)` - the box is the LAST FOUR fields, the shape
+    `boxed_polys` and `boxed_segs` already produce. Filing is INCREMENTAL (`extend` appends), which
+    is exact for an append-only registry like `Settlement.placed`, so a growing list is indexed as
+    it grows instead of rebuilt.
+
+    A GRID BOX IS A COST, SO IT IS CLAMPED - the lesson recorded in this skill's CLAUDE.md, learned
+    when a negative fixture's 9,000,000px vertex asked the checker's index for ~5.6 billion cells
+    and the gate ate gigabytes. An item spanning more than `_MAX_SPAN` cells on either axis is
+    filed as OVERSIZED and returned by every query. That makes a wild coordinate cheap rather than
+    unbounded, and it cannot change a verdict: an oversized item is simply never pruned."""
+
+    __slots__ = ("buckets", "cell", "n", "oversized")
+    _MAX_SPAN = 64  # cells per axis before an item is oversized (64 * 128px = 8,192px - wider than any canvas we draw)
+
+    def __init__(self, cell: float = 128.0) -> None:
+        self.cell = cell
+        self.buckets: dict[tuple[int, int], list[Any]] = {}
+        self.oversized: list[Any] = []
+        self.n = 0  # items filed so far - an append-only source hands in only the tail
+
+    def extend(self, items: Any) -> None:
+        c = self.cell
+        for item in items:
+            self.n += 1
+            i0, j0 = int(item[-4] // c), int(item[-3] // c)
+            i1, j1 = int(item[-2] // c), int(item[-1] // c)
+            if i1 - i0 > self._MAX_SPAN or j1 - j0 > self._MAX_SPAN:
+                self.oversized.append(item)
+                continue
+            for i in range(i0, i1 + 1):
+                for j in range(j0, j1 + 1):
+                    self.buckets.setdefault((i, j), []).append(item)
+
+    def near(self, px: float, py: float, pad: float = 0.0) -> Any:
+        """Every filed item whose box comes within `pad` of (px, py) - plus, harmlessly, some that
+        do not, and possibly the same item twice (an item spanning several queried cells). It never
+        OMITS one that does, which is the only property the callers' exactness rests on."""
+        c = self.cell
+        i0, j0 = int((px - pad) // c), int((py - pad) // c)
+        i1, j1 = int((px + pad) // c), int((py + pad) // c)
+        if i0 == i1 and j0 == j1 and not self.oversized:  # the common case - one cell, no copy
+            return self.buckets.get((i0, j0)) or ()
+        out: list[Any] = list(self.oversized)
+        for i in range(i0, i1 + 1):
+            for j in range(j0, j1 + 1):
+                bucket = self.buckets.get((i, j))
+                if bucket:
+                    out.extend(bucket)
+        return out
 
 
 # A village runs ~200-500 inhabitants, averaging ~350 (budgets.md). The spread is deliberately NOT a bell
@@ -1494,13 +1701,13 @@ class Settlement:
         self.grove_rects: list[Any] = []  # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
         #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
         self._pending_farmsteads: list[Any] = []  # farmhouses awaiting their threshing yard (drawn by farmsteads())
-        self.corridors: list[Any] = []  # polylines houses must avoid
+        self.corridors: list[Any] = Indexed()  # polylines houses must avoid (Indexed: _near_corridor keeps a spatial index on it)
         self._samurai_ward_interiors: list[Poly] = []  # closed samurai-ward region(s), cached by s.ward - s.building refuses WARD_BARRED_KINDS inside them
         self.bound: Any = None  # optional bounding polygon: placement stays inside it (city wall)
         self.view: Any = None  # optional (ox,oy,w,h) viewBox crop - render/checks treat it as the map edge
-        self.field_polys: list[Any] = []  # smoothed outlines used for blocking
+        self.field_polys: list[Any] = Indexed()  # smoothed outlines used for blocking (Indexed: _in_blocked keeps a spatial index on it)
         self.ellipses: list[Any] = []  # (cx, cy, rx, ry) hill/pond/manor - block houses
-        self.block_polys: list[Any] = []  # arbitrary no-build polygons (e.g. forest)
+        self.block_polys: list[Any] = Indexed()  # arbitrary no-build polygons (e.g. forest) (Indexed: _in_blocked keeps a spatial index on it)
         # HARD no-build ground, tested against a candidate's whole FOOTPRINT rather than its center.
         # `block_polys` deliberately mixes two different things - hard ground (crop, pond, bog) and
         # SOFT reservations (caption bands, civic aprons, fence standoffs) that a footprint routinely
@@ -1527,9 +1734,9 @@ class Settlement:
         #                    seq <= a clearing's seq drew before the clearing was registered and may have
         #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
         self._wgc_cache: tuple[Any, ...] | None = (
-            None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each with a bbox prefilter), fingerprint-invalidated
+            None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each a PointGrid), fingerprint-invalidated
         )
-        self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
+        self.dry_polys: list[Any] = Indexed()  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build (Indexed: _in_blocked)
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
         #                           2026-07); these get an edge margin in _in_blocked + a rect test for groves
@@ -4143,6 +4350,16 @@ class Settlement:
         vr = self._well_vr() if vr is None else vr
         fields = self.M.get("fields") or []
         recs = {key: self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")}
+        # THIS KEY IS EXPENSIVE ON PURPOSE - DO NOT "OPTIMIZE" IT TO RECORD COUNTS. It counts every
+        # POINT of every plot ring, outline and watercourse, which is ~1,000 len() calls per
+        # candidate seat (123M over Minami's gen, ~15% of it), and that is genuinely tempting to
+        # cut. It was cut, on 2026-08-03, to per-record counts - and
+        # test_a_wellhead_is_refused_in_the_paddy_water_and_allowed_on_the_rim failed within the
+        # hour: that test REPLACES a field's plot_polys with a different SAME-LENGTH list, so every
+        # record count is unchanged while the water moved, and the stale grids cleared a wellhead
+        # standing in a paddy. Any cheaper key needs to be content-sensitive (a hash of the
+        # coordinates, or an explicit version bump from whatever mutates the geometry) - record
+        # counts, list lengths and object identity all miss an in-place replacement.
         fp = (
             len(fields),
             sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields),
@@ -4159,27 +4376,32 @@ class Settlement:
                     hw = float(rec.get("w") or dw) / 2
                     for i in range(len(pts) - 1):
                         (ax, ay), (bx, by) = pts[i], pts[i + 1]
-                        water.append((hw, min(ax, bx), min(ay, by), max(ax, bx), max(ay, by), (ax, ay), (bx, by)))
+                        # box carries the course's own half-width, so a query pads by vr alone
+                        water.append((hw, (ax, ay), (bx, by), min(ax, bx) - hw, min(ay, by) - hw, max(ax, bx) + hw, max(ay, by) + hw))
             dry = []
             for dp in recs["dry_plots"]:
                 poly = dp.get("poly")
                 if not poly:
                     continue  # pragma: no cover - defensive: every dry plot carries an outline
-                dry.append((poly, (min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly))))
-            wet = [(r, (min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r))) for r in paddy_wet_rings(self.M)]
-            self._wgc_cache = (fp, water, dry, wet)
-        _, water, dry, wet = self._wgc_cache
-        for hw, sx0, sy0, sx1, sy1, pa, pb in water:
-            lim = hw + vr
-            if sx0 - lim <= cx <= sx1 + lim and sy0 - lim <= cy <= sy1 + lim and seg_dist(cx, cy, pa, pb) < lim:
+                dry.append((poly, min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly)))
+            wet = [(r, min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r)) for r in paddy_wet_rings(self.M)]
+            # INDEXED, not merely boxed: the bbox prefilter alone still visited all ~1,500 items per
+            # candidate seat (~123M comparisons on Minami, 2026-08-03). See PointGrid.
+            grids = PointGrid(), PointGrid(), PointGrid()
+            for grid, items in zip(grids, (water, dry, wet), strict=True):
+                grid.extend(items)
+            self._wgc_cache = (fp, *grids)
+        _, water_g, dry_g, wet_g = self._wgc_cache
+        for hw, pa, pb, bx0, by0, bx1, by1 in water_g.near(cx, cy, vr):
+            if bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and seg_dist(cx, cy, pa, pb) < hw + vr:
                 return False
         pond = self.M.get("pond")
         if pond and ((cx - pond[0]) ** 2) / ((pond[2] + vr) ** 2) + ((cy - pond[1]) ** 2) / ((pond[3] + vr) ** 2) < 1.0:
             return False
-        for poly, (bx0, by0, bx1, by1) in dry:
+        for poly, bx0, by0, bx1, by1 in dry_g.near(cx, cy, vr):
             if bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and (point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly)))):
                 return False
-        return not any(bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring) for ring, (bx0, by0, bx1, by1) in wet)
+        return not any(bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring) for ring, bx0, by0, bx1, by1 in wet_g.near(cx, cy, vr))
 
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
@@ -4285,15 +4507,23 @@ class Settlement:
                 for frec in self.M.get("fields", []):
                     crop += [[(q[0], q[1]) for q in p2] for p2 in frec.get("plot_polys", [])]
 
-                def on_crop(x2: float, y2: float, crop: list[list[tuple[float, float]]] = crop) -> bool:  # bound as a default: the closure lives one loop iteration (B023)
-                    m2 = 14.0
-                    for cp2 in crop:
-                        if min(q[0] for q in cp2) - m2 <= x2 <= max(q[0] for q in cp2) + m2 and min(q[1] for q in cp2) - m2 <= y2 <= max(q[1] for q in cp2) + m2 and point_in_poly(x2, y2, cp2):
-                            return True
-                    return False
+                # Each plot's bbox (14 ft margin baked in) computed ONCE. PREFILTER family: the box
+                # prunes, point_in_poly still decides, so verdicts are unchanged - proven by the
+                # pool regenerating byte-identical. It used to be inline in the loop below, so every
+                # candidate seat re-derived all ~1,000 plots' boxes from their vertices: 22.5M min()
+                # + 17.2M max() calls, ~40% of Tango's gen (profiled 2026-08-03). Same disease as
+                # the 45-minute well bug - static geometry re-scanned per candidate.
+                crop_boxed: list[tuple[list[tuple[float, float]], float, float, float, float]] = [
+                    (cp2, min(q[0] for q in cp2) - 14.0, min(q[1] for q in cp2) - 14.0, max(q[0] for q in cp2) + 14.0, max(q[1] for q in cp2) + 14.0) for cp2 in crop
+                ]
+
+                def on_crop(
+                    x2: float, y2: float, boxed: list[tuple[list[tuple[float, float]], float, float, float, float]] = crop_boxed
+                ) -> bool:  # bound as a default: the closure lives one loop iteration (B023)
+                    return any(bx0 <= x2 <= bx1 and by0 <= y2 <= by1 and point_in_poly(x2, y2, cp2) for cp2, bx0, by0, bx1, by1 in boxed)
 
                 save = self.field_polys
-                self.field_polys = []
+                self.field_polys = Indexed()  # Indexed, not [] - so the suspended pass keeps its own index (and the ORIGINAL object, restored below, keeps the one it already built)
                 try:
                     for h in cl:
                         # a nearest-first GRID scan, not rings: the clear ground here is pinholes
@@ -7988,27 +8218,27 @@ class Settlement:
         corridors = self._corridor_buffers(
             3 * bs
         )  # lanes AND town streets AND the road: every trodden/maintained tread stays bare (the old skip knew only lanes, so scrub drew on the Imperial Road bed - GM 2026-07-21, Hoshizora)
+        # PRE-BOX every static keep-out ONCE (see boxed_hit): _sparse below runs per SCATTER POINT,
+        # and these lists do not change while a region scatters
+        fld_b, blk_b = boxed_polys(self.field_polys), boxed_polys(self.block_polys)
+        clr_b, avd_b, cor_b = boxed_polys(self.clearings), boxed_polys(avoid), boxed_segs(corridors)
 
         def _sparse(
             px: float, py: float, drop: float
         ) -> bool:  # skip a scatter point outside the poly, on a field/corridor/water, in the urban halo, in a keep-out, or (probabilistically) near the edge
             if (
                 not point_in_poly(px, py, poly)
-                or any(point_in_poly(px, py, ff) for ff in self.field_polys)
-                or any(
-                    any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors
-                )  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
+                or boxed_hit(px, py, fld_b)
+                or boxed_seg_hit(px, py, cor_b)  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
                 or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
                 or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
                 or any(
                     x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects
                 )  # ... and OUT of the urban-clearance halo: the swept/trodden ground around every structure, not just its footprint
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
-                or any(
-                    point_in_poly(px, py, b) for b in self.block_polys
-                )  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
-                or any(point_in_poly(px, py, c) for c in self.clearings)  # ... and off the swept sacred/funerary verge (tended precinct, sando, grave collar)
-                or any(point_in_poly(px, py, a) for a in avoid)
+                or boxed_hit(px, py, blk_b)  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
+                or boxed_hit(px, py, clr_b)  # ... and off the swept sacred/funerary verge (tended precinct, sando, grave collar)
+                or boxed_hit(px, py, avd_b)
             ):  # ... and OUT of any keep-out (the hamlet cluster stays clear of cover)
                 return True
             ed = edge_dist(px, py, poly)
@@ -8112,20 +8342,24 @@ class Settlement:
         pond = self.M.get("pond")
         halo_rects, halo_circles = self._urban_keepouts((x0, y0, x1, y1))  # the urban-clearance halo (see _urban_keepouts): reeds no more belong in a dooryard than scrub does
         corridors = self._corridor_buffers(3 * bs)  # every trodden tread (lane/street/road), not just lanes
+        # PRE-BOX every static keep-out ONCE (see boxed_hit) - the field boxes carry the SAME 10px
+        # pad as the edge test below, so the prefilter can never reject a point that test wanted
+        fld_b, blk_b = boxed_polys(self.field_polys, 10.0), boxed_polys(self.block_polys)
+        clr_b, avd_b, cor_b = boxed_polys(self.clearings), boxed_polys(avoid), boxed_segs(corridors)
 
         def _sparse(
             px: float, py: float, drop: float
         ) -> bool:  # skip a point outside the poly, IN a paddy / ON the pond / on a corridor/building / in the urban halo / in a keep-out, or (probabilistically) near the edge
             if (
                 not point_in_poly(px, py, poly)
-                or any(point_in_poly(px, py, ff) or edge_dist(px, py, ff) < 10 for ff in self.field_polys)
-                or any(any(seg_dist(px, py, pl[i], pl[i + 1]) < hw for i in range(len(pl) - 1)) for pl, hw in corridors)  # a causeway/path/road through the marsh stays bare, not reeded over
+                or boxed_hit(px, py, fld_b, 10.0)
+                or boxed_seg_hit(px, py, cor_b)  # a causeway/path/road through the marsh stays bare, not reeded over
                 or self._on_watercourse(px, py)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # ... and OUT of the urban-clearance halo (the swept/trodden ground around every structure)
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
-                or any(point_in_poly(px, py, b) for b in self.block_polys)  # ... and OFF any building/shrine/torii footprint
-                or any(point_in_poly(px, py, c) for c in self.clearings)  # ... and off the swept sacred/funerary verge
-                or any(point_in_poly(px, py, a) for a in avoid)
+                or boxed_hit(px, py, blk_b)  # ... and OFF any building/shrine/torii footprint
+                or boxed_hit(px, py, clr_b)  # ... and off the swept sacred/funerary verge
+                or boxed_hit(px, py, avd_b)
             ):  # ... and OUT of any keep-out
                 return True
             if pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 < 1.0:
@@ -11233,34 +11467,52 @@ class Settlement:
         # bbox pre-filter (cached, same idea as _rect_hits): a point outside a polygon's bbox - expanded by
         # the 14px field set-back - can neither be inside it nor within 14px of an edge, so skip the O(vertices)
         # point_in_poly / edge_dist. Matters for the one big field envelope and a city's many block polys.
-        for poly, (bx0, by0, bx1, by1) in zip(self.field_polys, self._poly_bboxes(self.field_polys), strict=False):
-            if x < bx0 - 14 or x > bx1 + 14 or y < by0 - 14 or y > by1 + 14:
-                continue
+        # INDEXED (2026-08-03), replacing a bbox prefilter that still VISITED every polygon: 419k
+        # calls and 12.9s of self time on Minami, whose block_polys accretes one entry per placed
+        # homestead. Each grid's boxes carry that registry's own pad, so a zero-pad query is exact
+        # and the tests below are the same ones, in the same order.
+        for poly, *_ in self._keepout_index(self.field_polys, "field_keepout", 14.0).near(x, y):
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < 14:
                 return True
-        for poly, (bx0, by0, bx1, by1) in zip(self.block_polys, self._poly_bboxes(self.block_polys), strict=False):
-            if x < bx0 or x > bx1 or y < by0 or y > by1:
-                continue
+        for poly, *_ in self._keepout_index(self.block_polys, "block_keepout", 0.0).near(x, y):
             if point_in_poly(x, y, poly):
                 return True
-        for poly, (bx0, by0, bx1, by1) in zip(self.dry_polys, self._poly_bboxes(self.dry_polys), strict=False):
-            if x < bx0 - 12 or x > bx1 + 12 or y < by0 - 12 or y > by1 + 12:
-                continue
+        for poly, *_ in self._keepout_index(self.dry_polys, "dry_keepout", 12.0).near(x, y):
             if point_in_poly(x, y, poly) or edge_dist(x, y, poly) < 12:
                 return True  # dry plots are cropland: a building's whole footprint stays off them
         return any(math.hypot((x - cx) / (rx + 12), (y - cy) / (ry + 12)) < 1.0 for cx, cy, rx, ry in self.ellipses)
 
     def _near_corridor(self, x: float, y: float, skip: Any = None) -> bool:
-        for poly, clearance in self.corridors:
-            if poly is skip:  # a frontage row may sit against the street it fronts
-                continue
-            for k in range(len(poly) - 1):
-                a, b = poly[k], poly[k + 1]  # skip a segment whose bbox+clearance can't reach (x,y)
-                if x < min(a[0], b[0]) - clearance or x > max(a[0], b[0]) + clearance or y < min(a[1], b[1]) - clearance or y > max(a[1], b[1]) + clearance:
-                    continue
-                if seg_dist(x, y, a, b) < clearance:
-                    return True
-        return False
+        # INDEXED (2026-08-03). This walked every segment of every corridor per candidate seat -
+        # 230k calls and 22.6s of self time on Minami, the biggest single cost left in that gen
+        # after the well grids. The per-segment bbox test below is unchanged; the grid only decides
+        # which segments are worth testing, and each segment's box already carries its clearance,
+        # so a zero-pad query is exact. `skip` still works: the index carries each segment's parent
+        # polyline, so a frontage row can sit against the street it fronts.
+        return any(poly is not skip and seg_dist(x, y, a, b) < clearance for poly, a, b, clearance, *_ in self._corridor_index().near(x, y))
+
+    def _corridor_index(self) -> PointGrid:
+        def build(lst: Any) -> PointGrid:
+            grid = PointGrid()
+            grid.extend(
+                (poly, poly[k], poly[k + 1], cl, min(poly[k][0], poly[k + 1][0]) - cl, min(poly[k][1], poly[k + 1][1]) - cl, max(poly[k][0], poly[k + 1][0]) + cl, max(poly[k][1], poly[k + 1][1]) + cl)
+                for poly, cl in lst
+                for k in range(len(poly) - 1)
+            )
+            return grid
+
+        return indexed_grid(self.corridors, "corridor_segs", build)
+
+    def _keepout_index(self, polys: Any, key: str, pad: float) -> PointGrid:
+        """The no-build polygons of `polys` indexed by their bbox, expanded by `pad` so a zero-pad
+        query is exact for a rule that also tests `edge_dist(...) < pad`."""
+
+        def build(lst: Any) -> PointGrid:
+            grid = PointGrid()
+            grid.extend(boxed_polys(lst, pad))
+            return grid
+
+        return indexed_grid(polys, key, build)
 
     def _hard_ground(self) -> list[Any]:
         """Every HARD no-build polygon, read from the MANIFEST plus anything a gen registered by hand.
@@ -11328,6 +11580,17 @@ class Settlement:
             return False
         if not self._hard_clear(x, y, w, h):
             return False
+        # DELIBERATELY NOT INDEXED, though it is the obvious next candidate (2026-08-03). These two
+        # scans are O(placed) per candidate seat - 38M hypot() calls on Nagahara - and a PointGrid
+        # over `placed` measured ~10-15% off a city gen. It was written, and reverted: an
+        # incremental index needs an append-only source, and `placed` is NOT one. Two sites REBIND
+        # it to a shorter filtered list (search this file for "lift own reservation" and "drop the
+        # un-appurtenanced farmhouse"), which left the index holding phantom buildings - Minami and
+        # Nagahara lost every garden and farm shed, and the pool caught it in one regen. Any future
+        # attempt must key its cache on something CONTENT-sensitive (the `_wgc_cache` fingerprint is
+        # the model), not on length or list identity, because a filter-rebind changes both in ways a
+        # cheap check can miss. The smaller win did not justify a stale-index trap in a registry
+        # twenty-odd call sites mutate.
         r = math.hypot(w, h) / 2
         for px, py, pw, ph in self.placed:
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:

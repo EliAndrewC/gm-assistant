@@ -51,18 +51,25 @@ GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*", "*.gen.py")) if
 # in PROCESS CPU time, not wall time, so parallel pytest workers contending for cores cannot fire
 # it. A map that legitimately outgrows its budget gets a bigger entry here WITH the reason, the
 # same discipline as a check waiver.
-GEN_TIME_BUDGET_S = 30.0  # default: an ordinary map measures 1-7s CPU today
+# CALIBRATE AGAINST THE GATE, NOT A SOLO RUN. These asserts fire inside `make done`, i.e. under
+# `pytest -n auto` (22 workers here), and a gen's own CPU TIME inflates 2-4x there through cache
+# and memory-bandwidth contention - process CPU time is immune to WAITING for a core, not to
+# needing more cycles for the same work. Budgets tuned on solo timings duly went off on their
+# first gate run (kikuta: 10.9s solo, 36.2s under the gate, against a 30s budget). So each entry
+# is ~4x its SOLO measurement, which is roughly 1.5x its worst observed under-gate time. That is
+# still a tight enough net for what this guard is for: the regression it exists to catch ran ~250x
+# over budget, not 20% over.
+GEN_TIME_BUDGET_S = 45.0  # default: an ordinary map measures 1-7s solo, comfortably under even inflated
 GEN_TIME_BUDGETS = {
-    # The guard's FIRST run (2026-08-03) flagged nagahara and kikuta against the 30s default; both
-    # were profiled before any budget moved (the message's own discipline), and tango measured at
-    # a 22%-margin near-miss got an entry rather than a flake. Every entry is ~3x its measured
-    # cost, and the mechanism is recorded so the next reader can tell "known heavy" from "new bug".
-    "minami": 120.0,  # ~54s CPU measured 2026-08-03 (was ~42s on 2026-08-02; the ward-residents rule added a third merchant strip, a wider sweep window and an open_seat probe pass): well placement over 927 paddy basins + ~580 watercourse segs (post-memoization; it was 45+ min before)
-    "nagahara": 100.0,  # ~37s CPU measured 2026-08-03: same city well-placement family as minami (676 recorded basins, 67 wells)
-    "tango": 70.0,  # ~24s CPU measured 2026-08-03: same family again (1,043 basins, 88 wells) - under the default but too close to trust
-    "kuwabata": 60.0,  # ~16s CPU measured 2026-08-03 standalone; it read 30.5s against the 30s default under a full 22-worker parallel run, which is contention, not a regression (this hamlet has no ward and no city machinery)
-    "enokida": 60.0,  # ~18s CPU measured 2026-08-03 standalone, same story - both sit close enough to the default that a loaded box tips them over
-    "kikuta": 90.0,  # ~35s CPU measured 2026-08-03, profiled: ~70% is hinterland()'s marsh/commons ground-cover scatter (edge_dist over the wetland polys), long-standing (26.9s at a95d8eb a week prior), plus the paddy-well outline fallback now scanning village paddies too
+    # Solo CPU seconds noted per entry, measured 2026-08-03 AFTER the optimization pass this
+    # guard's first run prompted (the on_crop bbox hoist, the ground-cover prefilters, the
+    # well-siting PointGrid). The before/after is the record worth keeping - every one of these
+    # roughly halved - but the BUDGET is calibrated for the gate.
+    "minami": 120.0,  # ~30s solo (54s before the pass): the biggest map - well placement over 927 paddy basins, and the placement scans over its accreting block polys, both indexed now
+    "nagahara": 60.0,  # ~14s solo (37s before): same city families (676 basins, 67 wells)
+    "tango": 55.0,  # ~13s solo (24s before): same again (1,043 basins, 88 wells), plus farm_wells' on_crop fallback, whose per-candidate bbox rebuild was the pass's first find
+    "kikuta": 50.0,  # ~11s solo (35s before): ~70% was hinterland()'s marsh/commons scatter, the ground-cover prefilters' biggest single win
+    "hoshizora": 50.0,  # ~11s solo (15s before): the largest TOWN, the only non-city needing an entry - ground-cover scatter over a big hinterland
 }
 
 
@@ -105,6 +112,13 @@ def test_slow_gen_budget_fires_and_the_override_silences_it(tmp_path, monkeypatc
     gen = tmp_path / "snail.gen.py"
     gen.write_text("import time\nt0 = time.process_time()\nwhile time.process_time() - t0 < 0.05:\n    pass\n")
     monkeypatch.setitem(GEN_TIME_BUDGETS, "snail", 0.001)
+    # OWN THE ENVIRONMENT, do not inherit it (2026-08-03): the override is documented for
+    # WHOLE-SWEEP use ("rerun with DIAGRAM_ALLOW_SLOW_GENS=1"), and a session that follows that
+    # advice silenced the budget for this test too - so the one test proving the guard still has
+    # teeth failed precisely when someone used the guard as designed, turning the escape hatch into
+    # a guaranteed red gate. The fire-half must be measured with the override OFF regardless of how
+    # the sweep was invoked.
+    monkeypatch.delenv("DIAGRAM_ALLOW_SLOW_GENS", raising=False)
     with pytest.raises(AssertionError, match="SURPRISE"):
         _regen_and_gate(str(gen))
     monkeypatch.setenv("DIAGRAM_ALLOW_SLOW_GENS", "1")
