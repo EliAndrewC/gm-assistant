@@ -271,17 +271,23 @@ s.drum_tower(1366, 1386)  # the bell-and-drum tower at the SW corner of the cent
 # ---- TRADE WORKS, placed early so every later pack flows around them.
 s.brewery(1466, 1198)
 s.dye_yard(1058, 1546)  # on the in-wall cargo canal, north of the dock basin
-s.lumber_yard(902, 1436)  # the zaimokuya on the dry strip below the wharf, clear of the water
-# THE LOG BOOM, in the water off the yard. Fox timber comes DOWN the Hayakawa in rafts and has to be
-# held until it is pulled out, and the holding pen is the one piece of river furniture specific to
-# the trade - without it a timber city reads like any other river town. Moored ALONG the current
-# (rot ~89, the river's own slight eastward lean going south), never across it: a boom strung over
-# the channel would dam the river it works. Caption on the far bank so it does not sit on the water.
-s.log_boom(827, 1420, rot=89, length=100, label_xy=(762, 1392))
+s.lumber_yard(872, 1445, label_xy=(886, 1466))  # the zaimokuya on the dry strip below the wharf, clear of the water but hard against its bank frontage - ~40 ft of haul ground between the yard's west edge and the log boom's mooring line, so pen and yard read as ONE works (settlement-review 2026-08-02: at 130 ft of untouched bank they read as two unrelated features). Caption hand-seated east so its box clears the pen's bank edge (it grazed by under a pixel from the default seat)
+# THE LOG BOOM, a shore-fast holding pen off the yard (research/urban-features.md "The log boom").
+# Fox timber comes DOWN the Hayakawa in rafts and has to be held until it is pulled out; the pen is
+# the yard's waterside holding ground, anchored to the EAST bank at both ends with the raft-mats
+# packed between chain and shore. It hugs the yard's own bank and takes a third of the 120 ft
+# channel, leaving the fairway clear for the wharf traffic upstream - booms were barred from
+# obstructing navigation, and the full-span catch boom belongs at the Fox gorge mouth upstream
+# (off-map lore), never at the port. Bank on the pen's local +y side: rot 268.6 turns +y east,
+# matching the bank's own lean (the centerline runs at 88.6 here). Caption on the yard side, on
+# the dry strip between bank and zaimokuya. Pen head held ~15 px (45 ft) below the last wharf
+# jetty (deck edge y~1391) so the jetty keeps a working berth and does not read as bolted to the
+# boom (settlement-review 2026-08-02).
+s.log_boom(837.7, 1458, rot=268.6, length=100, label_xy=(868, 1515))
 s.oil_press(1622, 1268)  # +16 east of the obvious seat: its auto-caption otherwise runs into the Temple of Bishamon's (they cleared by 0.7 px, under no_label_overlaps' 2 px estimation slack, and read as touching)
 s.pawnshop(1290, 1300)  # NW merchant quarter, by the lending temples
 s.bathhouses([(1416, 1180), (1250, 1424)])
-s.kiln(640, 1180)  # the KILN WORKS OUTSIDE the walls on the far bank
+s.kiln(640, 1180, rot=270)  # the KILN WORKS OUTSIDE the walls on the far bank - siting confirmed sound by settlement-review 2026-07-27 (a quarter mile clear of every funerary feature, and on the far side of the trunk road from the execution ground), so only the climb bearing changed. rot=270 lays it due NORTH, uphill against meta water_flow=90
 s.tanning_yard(866, 1840, rot=90, pits=12, water="stream")  # DOWNSTREAM of the moat outfall on the east bank: the re-derived ring pushed the moat to y1816, and a tanning yard's tamped ground must stay dry (pits below the waterline are just more stream)
 
 # ---- the cargo canal: the moat's downstream corner -> water gate -> dock basin. ONE mouth on the
@@ -591,7 +597,15 @@ for _rect in ((1004, 1462, 1404, 1512), (1044, 1620, 1390, 1748), (996, 1150, 10
             break
         s.building(_seat[0], _seat[1], _mh_w, _mh_h, "merchant_house")
         _extra_mh += 1
-s.label(1214, 1532, "burakumin", 10, italic=True, color="#6B4F2A")  # moved south with its fabric - the y1462-1506 band is the third merchant strip now
+# Moved south with its fabric - the y1462-1506 band is the third merchant strip now. It sits 6px
+# under "Temple of Daikoku" and settlement-review (2026-08-02) read that as the temple's subtitle;
+# no ink touches, so only the eye catches it. It STAYS, and the reason is measured rather than
+# assumed: a sweep of every 2px seat in the quarter (x1120-1380, y1532-1640) against the recorded
+# 50x10 caption box finds ZERO clear of the wells and rows at even 2px - 26 households and their
+# idobata saturate the ground - so every seat that breaks the stack leaves the fabric the caption
+# must name (city_labels_placed_with_subject). The two captions differ in weight, color and slant,
+# which is what carries them apart. Re-siting this needs the QUARTER to open up, not a nudge.
+s.label(1214, 1532, "burakumin", 10, italic=True, color="#6B4F2A")
 # THE TIMBER AND CHARCOAL WORKING GROUND - the declared budget line, DRAWN as its kind rather than
 # left as ambient slack: beaten earth with stacking rails, in the SE of the burakumin quarter where
 # the raft cargo comes up from the landing.
@@ -789,7 +803,7 @@ s.cremation_ground(604, 1800)
 s.ossuary(596, 1614)
 
 s.boundary_marker(658, 1354, label_xy=(620, 1366))  # ON the west road verge, where the road leaves clean ground (seat from site_justice.py); caption pulled west off a gate-market stall at (682.7,1359.2)
-s.execution_ground(556, 1378, rot=6, label_above=True)
+s.execution_ground(556, 1378, rot=6)  # caption BELOW (clear waste ground): angled captions (GM 2026-08-02) tilt this caption 6 deg with its ground, and from the above-seat its right end dipped into the boundary stone's caption band (no_label_overlaps)
 
 s.bridges()
 s.farmsteads()

@@ -38,6 +38,8 @@ from settlement import (
     crop_boxes,
     forest_frame_span,
     kido_bar_deg,
+    label_aabb,
+    label_quad,
     lane_runs,
     lane_through_gate,
     moat_current_at,
@@ -1006,6 +1008,21 @@ def poly_dist(px: float, py: float, poly: Poly) -> float:
     if point_in_poly(px, py, poly):
         return 0.0
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
+
+
+def kiln_quarters(k: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """A kiln works' own cottages as footprint records, ROTATION INCLUDED.
+
+    One helper rather than two call sites unpacking the list by index, because they had already
+    drifted apart once in spirit: `kiln_keeps_fire_gap` and `wells_among_dwellings` both rebuilt the
+    record inline and both dropped the rotation, so a works drawn at rot=270 was adjudicated as a
+    box at the right place with the wrong orientation (Tango's 69 ft fire gap measured 62 ft). Same
+    lesson as `solid_structs` one level down: a record that two checks unpack by hand is a record
+    that will be unpacked differently by the third.
+
+    A record with only four elements predates the rotation and is read as rot=0 - which is what
+    every kiln works was before the maps started passing `rot` on 2026-07-27."""
+    return [{"x": q[0], "y": q[1], "w": q[2], "h": q[3], "rot": (q[4] if len(q) > 4 else 0.0)} for q in k.get("quarters", []) or []]
 
 
 def edge_gap(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
@@ -3298,7 +3315,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 _kn_tight.append((round(_kn["x"]), round(_kn["y"])))
                 continue
             _kn_rec = {"x": _kn_b[0], "y": _kn_b[1], "w": _kn_b[2], "h": _kn_b[3], "rot": _kn_b[4]}
-            _kn_near = [{"x": _q[0], "y": _q[1], "w": _q[2], "h": _q[3]} for _q in _kn.get("quarters", [])]
+            _kn_near = kiln_quarters(_kn)
             _kn_near += solid_structs(M, "manors", "religious", exclude=("kilns",))
             if any(edge_gap(_kn_rec, _kn_o) < 60.0 / _kn_ftpx for _kn_o in _kn_near):
                 _kn_tight.append((round(_kn["x"]), round(_kn["y"])))
@@ -4381,7 +4398,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     if M.get("road") is not None and M.get("road_z") is not None:
         road_layers.append((M["road"], M["road_z"], M.get("road_width", 26) / 2))
     road_layers += [(st["pts"], st["z"], st["w"] / 2) for st in M.get("town_streets", []) if "z" in st]
-    overlays = [("label", lab[:4], lab[4]) for lab in M.get("labels", []) if len(lab) > 4]
+    overlays = [("label", label_aabb(lab), lab[4]) for lab in M.get("labels", []) if len(lab) > 4]
     overlays += [("gatehouse", (gs["x"] - gs["w"] / 2, gs["y"] - gs["h"] / 2, gs["x"] + gs["w"] / 2, gs["y"] + gs["h"] / 2), gs["z"]) for gs in M.get("gate_structs", []) if "z" in gs]
 
     def line_hits_box(poly: Poly, box: tuple[float, float, float, float], pad: float) -> bool:
@@ -5166,15 +5183,26 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
 
     # no two body labels overlap (the title block is excluded by the generator)
     labels = M.get("labels", [])
+
     # An overlap is real when the bboxes cross by more than the estimation slack. The horizontal slack
     # is small (a >2px x-overlap means the glyphs actually touch); the vertical slack stays larger (~4px)
     # to absorb the descender allowance in the y-bbox, so two cleanly-separated STACKED labels whose boxes
     # merely kiss (e.g. Tango's "Mausoleum" / "Ministry of Works") are not falsely flagged.
+    def _lb_shrunk(L: Sequence[Any]) -> list[tuple[float, float]]:
+        # a TILTED pair is judged by the true drawn quads (SAT), with the same estimation slack
+        # the box test subtracts (2px x, 4px y) taken off each record in ITS OWN frame before
+        # rotating - so the tilted verdict is the box verdict's geometry, rotated
+        return label_quad([L[0] + 1.0, L[1] + 2.0, L[2] - 1.0, L[3] - 2.0, *L[4:]])
+
     ov = [
         (i, j)
         for i in range(len(labels))
         for j in range(i + 1, len(labels))
-        if min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 2 and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4
+        if (
+            sat_overlap(_lb_shrunk(labels[i]), _lb_shrunk(labels[j]))
+            if len(labels[i]) > 7 or len(labels[j]) > 7
+            else min(labels[i][2], labels[j][2]) - max(labels[i][0], labels[j][0]) > 2 and min(labels[i][3], labels[j][3]) - max(labels[i][1], labels[j][1]) > 4
+        )
     ]
     check("no_label_overlaps", not ov, f"{len(ov)} overlapping label pair(s)")
 
@@ -5193,8 +5221,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     for L in labels:
         if len(L) < 7 or not L[6]:
             continue
-        lab_size = (L[3] - L[1]) / 1.05  # the recorded box is ascent (0.8) + descender (0.25) tall
-        lab_gap = box_gap(L[:4], L[6])
+        lab_size = (L[3] - L[1]) / 1.05  # the recorded box is ascent (0.8) + descender (0.25) tall (elements [0..3] stay the pre-tilt box, so this holds for tilted records too)
+        # a TILTED caption's gap is measured from its true drawn quad (poly_gap, the rotated
+        # sibling of box_gap - same measure, same 0-at-touch convention)
+        lab_gap = poly_gap(label_quad(L), [(L[6][0], L[6][1]), (L[6][2], L[6][1]), (L[6][2], L[6][3]), (L[6][0], L[6][3])]) if len(L) > 7 else box_gap(L[:4], L[6])
         if lab_gap > LABEL_AIR_CAP * lab_size:
             adrift.append(f"{L[5]!r} {lab_gap:.0f}px from its subject (cap {LABEL_AIR_CAP * lab_size:.0f}px)")
     check(
@@ -5254,7 +5284,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # placed LABELS too: a title placard over a feature label erases it (caught 2026-07-23 on the
             # Tango content crop - the placard landed on the 'pauper ossuary mound' label)
             for lb2 in M.get("labels", []):
-                if not (tb[2] < lb2[0] or tb[0] > lb2[2] or tb[3] < lb2[1] or tb[1] > lb2[3]):
+                _lb2 = label_aabb(lb2)  # a tilted caption's reach is its rotated AABB
+                if not (tb[2] < _lb2[0] or tb[0] > _lb2[2] or tb[3] < _lb2[1] or tb[1] > _lb2[3]):
                     thit.append(f"label:{lb2[5]}")
                     break
         check(
@@ -5483,10 +5514,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if len(L) <= 5:
                 continue
             allow = _label_allows(L[5])
+            _lq = label_quad(L) if len(L) > 7 else None  # a TILTED caption is judged by its true drawn quad, not the pre-tilt box
             for g, (x0, y0, x1, y1) in vics:
                 if g in allow:
                     continue
-                if L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
+                if sat_overlap(_lq, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]) if _lq else (L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]):
                     mislabel.append(f"{L[5]!r} over a {g}")
                     break
         check(
@@ -5501,7 +5533,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # must sit inside the frame. The frame is the cropped view (a city map crops tight to the walls,
     # so its EX/EY bounds are the viewBox) or, uncropped, the full canvas. The title is placed directly
     # (not recorded in M["labels"]) and sits inside the frame by construction.
-    off_img = [L[5] if len(L) > 5 else "label" for L in labels if L[0] < EX0 - 1 or L[1] < EY0 - 1 or L[2] > EX1 + 1 or L[3] > EY1 + 1]
+    off_img = [L[5] if len(L) > 5 else "label" for L in labels for _la in (label_aabb(L),) if _la[0] < EX0 - 1 or _la[1] < EY0 - 1 or _la[2] > EX1 + 1 or _la[3] > EY1 + 1]
     check(
         "labels_within_image",
         not off_img,
@@ -5521,7 +5553,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # for why - so a check that reads only the settlement's housing stock would call the works'
         # own well stray. Read them here rather than exempting private wells: the rule's teeth are
         # for a well out in open country, and this one is genuinely among the houses it serves.
-        dwell_all = dwell_all + [{"x": _q[0], "y": _q[1], "w": _q[2], "h": _q[3]} for _k in M.get("kilns", []) for _q in _k.get("quarters", [])]
+        dwell_all = dwell_all + [_q for _k in M.get("kilns", []) for _q in kiln_quarters(_k)]
         stray = [
             (round(wl["x"]), round(wl["y"])) for wl in all_wells if dwell_all and not any(within_edge_gap(wl, b, 95) for b in dwell_all)
         ]  # the TRUE gap to the served building's edge (fair to a large hall); the half-diagonal this used
@@ -9285,6 +9317,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if kbs and routes_kb:
             far_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in routes_kb for k in range(len(r) - 1)) > lim_kb]
             check("kosatsuba_by_the_road", not far_kb, f"notice board(s) at {far_kb} stand more than ~60 real ft from every road/main street - a kosatsu is read where people pass")
+            # ON A MAIN WAY, not merely ON A WAY (GM 2026-08-02, from Ubame: the board stood a
+            # legal 49 ft off a side lane while the high street - the road, 23 structures on
+            # its frontage - ran 200 ft away; "it should be along the main road, in order to
+            # be more noticed"). The kosatsu is the state talking at everyone who passes, and
+            # on a map with a way HIERARCHY "everyone" walks the main way: every `roads` entry
+            # is a major road by construction (road() draws Imperial trunks and their like)
+            # and a `main: True` town street is the gate-to-yamen avenue - so where a map
+            # declares either, the board must stand in the siting band of one of THOSE, and a
+            # side street or lane within 60 ft satisfies kosatsuba_by_the_road while still
+            # burying the institution. Maps whose network is undifferentiated (village/hamlet
+            # lane webs, towns with no flagged main street) declare no hierarchy to violate
+            # and are exempt - there place_kosatsuba's busiest-node scoring stands in for
+            # "main". DELIBERATELY narrower than the punishment ground's siting (GM
+            # 2026-08-02: "other map features like punishment grounds don't always need to be
+            # along a main road, but a notice board must be" - the ground is a display for
+            # locals who already know where justice is done; the board must AMBUSH the eye).
+            mains_kb = ([r["pts"] for r in M.get("roads") or []] or ([M["road"]] if M.get("road") else [])) + [st["pts"] for st in M.get("town_streets", []) if st.get("main")]
+            if mains_kb:
+                off_main_kb = [(round(b["x"]), round(b["y"])) for b in kbs if min(seg_dist(b["x"], b["y"], r[k], r[k + 1]) for r in mains_kb for k in range(len(r) - 1)) > lim_kb]
+                check(
+                    "kosatsuba_on_a_main_way",
+                    not off_main_kb,
+                    f"notice board(s) at {off_main_kb} stand off every MAIN way - the board is posted to be noticed, so it goes on the main street/road (a road, or a main: True town street), never a side street or lane (GM 2026-08-02)",
+                )
             # ORIENTATION, the other half of siting (GM 2026-07-27, catching Nagahara's third
             # board). A kosatsu is a BROADSIDE signboard: a 7x3 ft face under a little roof,
             # read by someone walking past without leaving the road. Standing it PERPENDICULAR
@@ -10430,8 +10486,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         for L in M.get("labels", []):
             if len(L) <= 5 or L[5] not in civic_names:
                 continue
+            _la = label_aabb(L)  # tilted captions reach their rotated AABB
             for n, (x0, y0, x1, y1) in civic:
-                if n != L[5] and L[0] < x1 and x0 < L[2] and L[1] < y1 and y0 < L[3]:
+                if n != L[5] and _la[0] < x1 and x0 < _la[2] and _la[1] < y1 and y0 < _la[3]:
                     cross.append(f"{L[5]!r} over {n!r}")
         check("city_civic_label_on_its_own_building", not cross, f"a civic building's label sits on a DIFFERENT civic building (not the one it names): {sorted(set(cross))}")
 
@@ -12010,6 +12067,80 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     not floats,
                     f"wharf jetties floating off the bank: {floats[:3]} - a jetty's landward end must touch the river's near bank, running out into the water from there, not float mid-stream",
                 )
+
+            # (3) THE LOG BOOM IS A SHORE-FAST PEN, NOT STICKS IN THE STREAM (GM 2026-08-02, "it
+            # just looks like a bunch of logs in the middle of the river"; the research is in
+            # research/urban-features.md "The log boom"). A boom is a floating fence - anchored to
+            # nothing it holds nothing. Attested booms anchor to the bank and run ALONG a navigated
+            # river, the pen between chain and shore (Susquehanna: seven miles along one side;
+            # St. Croix: log channels beside a navigation channel kept clear by statute); only a
+            # loose-log CATCH boom on an unnavigated reach ever spans the water (the Kiso tsunaba
+            # at the gorge mouth), never a port's holding pen. GAP-VERDICT family: both rules below
+            # measure the pen's DERIVED CORNERS (x/y/rot/len/pen_w, the same local frame the glyph
+            # draws - bank on local +y) against the river's stroked centerline; a center measure
+            # would condemn the good bank-hugging pen and pass the mid-stream chain (see the test
+            # pair). pen_w defaults to the ~14px the pre-2026-08 chain glyph drew.
+            booms_c = M.get("log_booms", [])
+            if booms_c and river_c:
+                rpb = river_c["pts"]
+                rhwb = river_c["w"] / 2
+
+                def boom_off(px_: float, py_: float) -> tuple[float, float, float]:
+                    # a corner's offset from the river centerline: (dx, dy, distance)
+                    k = min(range(len(rpb) - 1), key=lambda i: seg_dist(px_, py_, rpb[i], rpb[i + 1]))
+                    fx, fy = seg_closest(px_, py_, rpb[k], rpb[k + 1])
+                    return px_ - fx, py_ - fy, math.hypot(px_ - fx, py_ - fy)
+
+                adrift_lb, damming_lb = [], []
+                for bo in booms_c:
+                    thb = math.radians(float(bo.get("rot", 0.0)))
+                    cthb, sthb = math.cos(thb), math.sin(thb)
+                    hlb, hpb = float(bo["len"]) / 2, float(bo.get("pen_w", 14.0)) / 2
+                    quadb = [(bo["x"] + lx * cthb - ly * sthb, bo["y"] + lx * sthb + ly * cthb) for lx, ly in ((-hlb, hpb), (hlb, hpb), (hlb, -hpb), (-hlb, -hpb))]  # bank-side pair first
+                    # the shoreward normal, from the bank-side edge's midpoint
+                    bmx, bmy = (quadb[0][0] + quadb[1][0]) / 2, (quadb[0][1] + quadb[1][1]) / 2
+                    box_, boy_, bod_ = boom_off(bmx, bmy)
+                    nxb, nyb = (box_ / bod_, boy_ / bod_) if bod_ > 0.5 else (0.0, 0.0)
+                    # moored_lb: both bank corners ride ON the bank line (centerline + half-width),
+                    # shoreward, within ~5px - the pen holds timber between chain and bank
+                    moored_lb = bod_ > 0.5
+                    for qx_lb, qy_lb in quadb[:2]:
+                        qdx_lb, qdy_lb, qd_lb = boom_off(qx_lb, qy_lb)
+                        if abs(qd_lb - rhwb) > 5.0 or qdx_lb * nxb + qdy_lb * nyb <= 0:
+                            moored_lb = False
+                    if not moored_lb:
+                        adrift_lb.append([round(bo["x"]), round(bo["y"])])
+                    # the fairway is judged even for an adrift boom - the two defects are
+                    # independent (the pre-fix Minami chain was both), and the shoreward normal
+                    # still points at the boom's own nearest side
+                    # fairway: no corner reaches deeper than 40% of the channel off its own bank,
+                    # so a clear majority of the width stays open to the wharf traffic
+                    for qx_lb, qy_lb in quadb:
+                        qdx_lb, qdy_lb, qd_lb = boom_off(qx_lb, qy_lb)
+                        if rhwb - (qdx_lb * nxb + qdy_lb * nyb) > 0.8 * rhwb:
+                            damming_lb.append([round(bo["x"]), round(bo["y"])])
+                            break
+                check(
+                    "log_boom_moored_to_the_bank",
+                    not adrift_lb,
+                    f"log boom(s) adrift_lb off the bank: {adrift_lb[:3]} - a boom is a floating fence anchored to fixed ground; its bank edge (local +y) must ride ON the shore line so the pen holds timber between chain and bank, not a chain loose in mid-stream",
+                )
+                check(
+                    "log_boom_leaves_the_fairway",
+                    not damming_lb,
+                    f"log boom(s) crowding the channel: {damming_lb[:3]} - a holding pen takes at most ~40% of the river's width off its own bank; booms were barred from obstructing navigation, and the full-span catch boom belongs on an unnavigated reach upstream, not at the port",
+                )
+                # association family (center, deliberately - the ~120px block-scale tolerance
+                # dwarfs both footprints): the pen is the timber trade's waterside holding
+                # ground, so it rides off the lumber yard's own frontage
+                yards_b = M.get("lumber_yards", [])
+                if yards_b:
+                    stray_b = [[round(bo["x"]), round(bo["y"])] for bo in booms_c if min(math.hypot(bo["x"] - yd["x"], bo["y"] - yd["y"]) for yd in yards_b) > 120.0]
+                    check(
+                        "log_boom_serves_the_lumber_yard",
+                        not stray_b,
+                        f"log boom(s) far from any lumber yard: {stray_b[:3]} - boom and zaimokuya are one works; moor the pen off the yard's own bank frontage",
+                    )
 
             # the street network must be CONNECTED - one coherent grid wired to the Imperial
             # road, not isolated stubs (ported from the town "no street to nowhere" thinking).

@@ -224,11 +224,11 @@ s.shrine_hall(215, 800, "Monastery of Bishamon", w=132, h=86, kind="monastery", 
 # wall runs PARALLEL to the Imperial Road, which crosses NW-to-NE just past this SW edge; the gate
 # (north side) opens onto that road. The tilted footprint reshuffles the dense town's seeded packs,
 # which is why this map's seed (386) was chosen - it lands the depicted population back on its mark.
-s.manor(
-    500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30, label_xy=(462, 964)
-)  # caption shifted 38px WEST (2026-07-26): the punishment ground is sited at the manor gate BY DESIGN, and the
-# default centered caption grazed its swung corner. The ground is where it has to be (punishment_spot_by_the_traffic),
-# so the label moves. Only visible once labels_clear_of_other_buildings read the registry instead of a hand list
+s.manor(500, 1120, 250, 180, "Magistrate's Manor", gate_dir="north", rot=-30)  # The 2026-07-26 hand seat (label_xy=(462, 964), 38px west) existed because the HORIZONTAL caption
+# grazed the compound's swung corner. Angled captions (GM 2026-08-02) retired it: the caption now
+# tilts -30 with the compound and the default seat hangs 12px above the ROTATED north wall, where a
+# corner cannot swing into text that swings with it - and the hand seat, kept, collided with the
+# punishment ground's equally-tilted caption (no_label_overlaps caught the pair).
 
 # the market flophouse (kichin-yado) just off the road on the SW approach, where peasants
 # traveling in for market day arrive - they sleep on straw for a sen a night. (Nudged west of
@@ -463,7 +463,7 @@ for _frg in ((680, 190, 1150, 395), (1165, 700, 1600, 925), (1725, 395, 2005, 60
         if not _fst:
             break
         s.building(_fst[0], _fst[1], _fw, _fh, "laborer", 0)
-s.farm_wells()   # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
+s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
 
 
 # communal WELLS among the FINAL dwellings (placed after farmsteads so they sit among the houses)
@@ -542,14 +542,14 @@ assert _kb, "no frontage verge with room for the notice board"
 # put the ground's label straight over it.)
 _ps = s.open_seat((300, 840, 800, 1010), s.px(30), s.px(12))
 assert _ps, "no clear verge for the punishment ground on the highway frontage"
-# The probe returns ONE seat here - (552,944), the single clear verge on the stretch - and it sits
-# directly under the manor's own label box (x 431-569, y 956-971), so the default below-label
-# collided with it and the above-label landed on a merchant. The GROUND is right, so the LABEL moves:
-# label_xy puts it up-and-left of the ground, the nearest text band that is clear of every feature
-# AND every other label. (Two things this cost, worth not repeating: steering the probe with
-# clear_of only pushed the ground off the traffic, which is the one thing this feature cannot be;
-# and the obvious band below the manor's label is NOT free - the manor is drawn rot=-30, so its
-# swung corner reaches up to y~980, well above the y=1030 its axis-aligned box suggests.)
+# The probe returns ONE seat here - (552,944), the single clear verge on the stretch, tight
+# against the merchant frontage it serves. The hand seat (label_xy=(518, 926), 2026-07-26) SURVIVES
+# the angled-captions change (GM 2026-08-02) while the manor's did not: the caption now tilts -30
+# with the ground, and from this up-and-left seat its rotated run stays clear of everything - where
+# both tilted DEFAULT seats fail (below lands on the fronting merchant row; above swings the text's
+# right tip into the rot=146 merchant at (598,919)). (Still true and worth not repeating: steering
+# the probe with clear_of only pushed the ground off the traffic, which is the one thing this
+# feature cannot be.)
 s.punishment_spot(*_ps, rot=-30, label_xy=(518, 926))
 
 # ===== NEAR-RING FARMLAND at the MEDIUM tier (feature 013) =====

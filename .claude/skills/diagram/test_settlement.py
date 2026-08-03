@@ -470,6 +470,34 @@ def test_place_kosatsuba_reads_road_and_lane_routes_and_skips_degenerate_segment
     assert len(s.M["kosatsuba"]) == 1
 
 
+def test_place_kosatsuba_samples_only_the_main_way_when_one_is_declared():
+    # GM 2026-08-02 (Ubame): the board goes ALONG the main road, never a side street - even
+    # when the side lane's node is busier. With a road on the map, the lane's verges are not
+    # candidates at all, so the board lands in the road's siting band despite every house
+    # standing by the lane.
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="T", scale="town", ftpx=1)
+    s.M["road"] = [[100, 300], [900, 300]]
+    s.M["lane"] = [[100, 700], [900, 700]]
+    for i in range(6):
+        s.M["houses"].append({"x": 300.0 + 60 * i, "y": 760.0, "w": 30, "h": 20, "kind": "plain", "rot": 0})
+        s.placed.append((300.0 + 60 * i, 760.0, 30, 20))
+    assert s.place_kosatsuba() is not None
+    assert abs(s.M["kosatsuba"][0]["y"] - 300) <= 60  # the road's band, not the busy lane's
+
+
+def test_kosatsuba_label_xy_hand_seats_the_caption():
+    # both caption bands can be taken at a junction seat (Nagahara's market bend: drum tower
+    # in the below band, the ward gate's glyph + caption stack in the above band) - label_xy
+    # is the explicit hand seat, the same escape the punishment ground carries
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="T", scale="town", ftpx=1)
+    s.kosatsuba(500, 500, rot=0, label_xy=(560, 488))
+    lab = s.M["labels"][-1]
+    assert lab[5] == "notice board"
+    assert abs((lab[0] + lab[2]) / 2 - 560) < 2  # seated at the hand x, not the default below-seat
+
+
 def test_place_kosatsuba_opt_out_and_no_routes():
     # meta(kosatsuba=False) is the suppressed/backwater opt-out; with no routes at all there
     # is no verge to site on - both return None and place nothing
@@ -1792,8 +1820,25 @@ def test_log_boom_defaults_to_a_full_holding_pen_and_records_its_box():
     z = s.log_boom(400, 300, rot=90)
     b = s.M["log_booms"][0]
     assert b["z"] == z and b["len"] == round(s.px(330), 1)  # the default pen, ~330 real ft of chained logs
-    # moored ALONG the current (rot 90), so its recorded box is TALL, not wide - the matrix reads this
-    assert b["h"] > b["w"] and abs(b["h"] - b["len"]) < 1.0
+    assert b["pen_w"] == round(s.px(40), 1)  # ~40 real ft of held water between chain and shore
+    # the record carries TRUE unrotated dims + rot, like a building - the matrix extractor rotates
+    # x/w/h by rot itself, so a rotation-folded box here would double-rotate into a phantom
+    # footprint (which is exactly how the first pen landed "on" Minami's lumber yard 42px away)
+    assert b["w"] == b["len"] and b["h"] == b["pen_w"] and b["rot"] == 90.0
+
+
+def test_trade_works_caption_hand_seat_moves_the_label_and_its_band():
+    # label_xy on a trade glyph seats the caption (and its reserved band) at the given spot -
+    # the punishment_spot/kosatsuba remedy for a collision the placement probe cannot see
+    # (Minami's lumber-yard caption grazed the log-boom pen by under a pixel, 2026-08-02)
+    s = _crop_settlement()
+    s.lumber_yard(400, 300, label_xy=(470, 340))
+    lab = next(lb for lb in s.M["labels"] if len(lb) > 5 and lb[5] == "lumber yard")
+    assert abs((lab[0] + lab[2]) / 2 - 470) < 1.0 and lab[1] < 340 < lab[3]
+    s2 = _crop_settlement()
+    s2.lumber_yard(400, 300)  # default seat: below the footprint
+    lab2 = next(lb for lb in s2.M["labels"] if len(lb) > 5 and lb[5] == "lumber yard")
+    assert abs((lab2[0] + lab2[2]) / 2 - 400) < 1.0 and lab2[1] > 300
 
 
 def test_log_boom_labels_below_itself_unless_told_otherwise():
@@ -5304,10 +5349,11 @@ def test_theater_stage_caption_clears_the_rotated_ground():
         s = _town()
         s.theater_stage(500, 400, 120, 84, rot=rot, label="theater stage")
         assert len(s._captions) == 1, "the stage caption must be queued for the standoff ladder"
-        text, bx, _sz, _it, _wt, _co, hi, _sl = s._captions[0]
+        text, bx, _sz, _it, _wt, _co, hi, _sl, _ro = s._captions[0]
         assert text == "theater stage"
         assert tuple(round(v) for v in bx) == box, f"rot={rot}: caption boxed against the wrong extent"
         assert tuple(round(v) for v in hi) == hint, f"rot={rot}: caption hinted at the wrong seat"
+        assert _ro == 0.0, f"rot={rot}: both are square rotations, so the caption stays level"
 
 
 # --- a neighborhood wall JOINS the city wall (GM 2026-07-27, Minami) ----------------------------
@@ -5380,3 +5426,103 @@ def test_ward_fails_loudly_on_a_commoner_already_inside():
     s.building(600, 600, 16, 11, "merchant")
     with pytest.raises(ValueError, match="already inside the samurai ward"):
         s.ward("samurai", [(400, 795), (400, 400), (795, 400)], gates=[])
+
+
+# ---- angled-building captions (GM 2026-08-02): a label tilts with the feature it names ----------
+def test_label_tilt_folds_to_the_nearest_horizontal_edge_family():
+    assert [settlement.label_tilt(r) for r in (0, 90, 180, 270, -90)] == [0.0] * 5
+    assert settlement.label_tilt(-16) == -16.0
+    assert settlement.label_tilt(150) == -30.0  # the Hoshizora forge: reads along its long side
+    assert settlement.label_tilt(102) == 12.0  # the Ubame tanning yard: the other edge family
+    assert settlement.label_tilt(67.1) == -22.9  # the Tango tanning yard
+    assert settlement.label_tilt(-104) == -14.0
+    assert settlement.label_tilt(90.02) == 0.0  # float noise snaps level
+
+
+def test_label_quad_and_aabb_rotate_the_record_about_its_center():
+    lvl = [0.0, 0.0, 100.0, 10.0, 1, "x"]
+    assert settlement.label_quad(lvl) == [(0.0, 0.0), (100.0, 0.0), (100.0, 10.0), (0.0, 10.0)]
+    assert settlement.label_aabb([*lvl, None]) == (0.0, 0.0, 100.0, 10.0)  # a ref-carrying level record reads the same
+    tl = [*lvl, None, 30.0]
+    q = settlement.label_quad(tl)
+    c30, s30 = math.cos(math.radians(30)), math.sin(math.radians(30))
+    assert q[0] == pytest.approx((50 - 50 * c30 + 5 * s30, 5 - 50 * s30 - 5 * c30))
+    a = settlement.label_aabb(tl)
+    assert a[3] - a[1] > 10 and a[2] - a[0] < 100  # taller and narrower, as a tilted run must be
+
+
+def test_tilt_caption_seat_picks_the_perpendicular_half_extent_by_fold_family():
+    a = math.radians(-30.0)
+    # rot=150 folds to -30 with the footprint's LOCAL h perpendicular to the baseline
+    assert settlement.tilt_caption_seat(0, 0, 150, -30.0, 50, 10, 11) == pytest.approx((-math.sin(a) * 21, math.cos(a) * 21))
+    # rot=102 folds to 12: the other family - the local w lies perpendicular
+    b = math.radians(12.0)
+    assert settlement.tilt_caption_seat(0, 0, 102, 12.0, 50, 10, 11) == pytest.approx((-math.sin(b) * 61, math.cos(b) * 61))
+    # above=True mirrors the seat to the upper edge
+    assert settlement.tilt_caption_seat(0, 0, 150, -30.0, 50, 10, 11, above=True) == pytest.approx((math.sin(a) * 21, -math.cos(a) * 21))
+
+
+def test_label_rot_emits_a_center_rotation_and_appends_the_tilt():
+    s = _town()
+    s.label(500, 500, "tilted", 9, rot=150)  # a caller passes the FEATURE rotation; label() folds it
+    L = s.M["labels"][-1]
+    assert len(L) == 8 and L[6] is None and L[7] == -30.0
+    assert any('transform="rotate(-30.0' in t for t in s.toplabels)
+    s.label(500, 550, "level", 9, rot=90)  # a square rotation folds level: record format unchanged
+    assert len(s.M["labels"][-1]) == 6
+
+
+def test_trade_caption_tilts_and_rotates_its_reserved_band():
+    s = _town()
+    s.brewery(500, 500, rot=150)
+    L = s.M["labels"][-1]
+    assert L[5] == "brewery" and len(L) == 8 and L[7] == -30.0
+    # the caption hangs off the ROTATED lower edge - the seat swings off plumb with the tilt
+    assert (L[0] + L[2]) / 2 > 500 and (L[1] + L[3]) / 2 > 500
+    band = s.block_polys[-1]
+    assert band[0][1] != band[1][1]  # the reserved caption band rotated with it
+    s2 = _town()
+    s2.brewery(500, 500, rot=90)
+    assert len(s2.M["labels"][-1]) == 6  # square rotation: the level path, byte-identical record
+
+
+def test_compound_and_marker_captions_tilt_with_their_glyphs():
+    s = _town()
+    s.manor(500, 300, 120, 90, "Manor", sublabel="the bench", rot=-30)
+    recs = {L[5]: L for L in s.M["labels"]}
+    assert recs["Manor"][7] == -30.0 and recs["the bench"][7] == -30.0
+    s.kosatsuba(200, 700, rot=-29)
+    assert s.M["labels"][-1][7] == -29.0
+    s.fire_tower(800, 700, rot=150)
+    assert s.M["labels"][-1][7] == -30.0
+    s.boundary_marker(850, 200, rot=-16)
+    assert s.M["labels"][-1][7] == -16.0
+
+
+def test_punishment_and_execution_captions_tilt_and_keep_their_escapes():
+    s = _town()
+    s.punishment_spot(500, 500, rot=150)  # the tilted default seat
+    assert s.M["labels"][-1][7] == -30.0
+    s2 = _town()
+    s2.punishment_spot(500, 500, rot=150, label_xy=(430, 470))  # a hand seat keeps its spot, tilted
+    L2 = s2.M["labels"][-1]
+    assert L2[7] == -30.0 and (L2[0] + L2[2]) / 2 == pytest.approx(430)
+    s3 = _town()
+    s3.execution_ground(500, 500, rot=164, label_above=True)
+    assert s3.M["labels"][-1][7] == -16.0
+
+
+def test_place_caption_rot_threads_through_finish(tmp_path):
+    s = _town()
+    s.place_caption("caravan inn", (100, 100, 180, 160), rot=-16)
+    s.finish(str(tmp_path / "t"), render=False)
+    L = next(x for x in s.M["labels"] if x[5] == "caravan inn")
+    assert len(L) == 8 and L[7] == -16.0 and L[6] == [100.0, 100.0, 180.0, 160.0]
+
+
+def test_label_seat_clear_probes_the_tilted_reach():
+    s = _town()
+    s.M["houses"].append({"x": 300, "y": 262, "w": 40, "h": 24})
+    tw = s.label_caption_hw("a long caption here", 9)
+    assert s.label_seat_clear(300, 300, tw, 9)  # the level box clears under the house
+    assert not s.label_seat_clear(300, 300, tw, 9, tilt=-30.0)  # the tilted reach swings up into it

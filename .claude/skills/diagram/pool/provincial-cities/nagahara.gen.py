@@ -180,7 +180,7 @@ s.lumber_yard(1994, 1456)  # the wharf's zaimokuya on the dry tongue between the
 s.oil_press(1118, 1268, rot=0)  # west edge below the temple-neighborhood street, west of Bishamon's graveyard (its old 1130,1180 seat sat under the Temple of Bishamon caption)
 s.pawnshop(1620, 1240)  # NE merchant quarter
 s.bathhouses([(1836, 1230), (1368, 1270)])  # population-band roll (seed 47 -> 2): seat 1 at the NE warren's east edge (clear of the SE district's well-grid candidates - a block there swamped the (1654,1637) idobata), seat 2 in the NW monzen west of the theater
-s.kiln(2242, 1584)  # the KILN WORKS OUTSIDE the walls on the far bank, river clay at the works' own door. SOUTH of the execution ground rather than beside it: the works grew from a 28x18 ft mound into a 140x120 ft ground with its own cottages (GM 2026-07-27), and the old seat put the potters' houses on the execution ground
+s.kiln(2160, 1608, rot=270)  # the KILN WORKS OUTSIDE the walls on the far bank, ON THE RIVERBANK - which is what makes 'river clay at the works' own door' true rather than a claim the drawing contradicted. Two earlier seats were wrong: (2210,1520) put the potters' houses on the execution ground, and (2242,1584) made the works the middle link of a five-item chain of exiled things (execution ground -> works -> ossuary -> burial ground -> cremation ground), which reads as potters billeted among the dead (settlement-review 2026-07-27). Now 260 ft clear of every funerary feature, off that axis, and the frame is unchanged. rot=270 lays the climb due NORTH, uphill against meta water_flow=89.7
 # the TANNING YARD (GM 2026-07-24) on the Hayakawa's WEST bank, south of the wall - the textbook
 # siting, and the reason the SE burakumin quarter sits where it does. It is downstream of
 # EVERYTHING the city puts in the water: below the moat's outflow junction (y~1521), below the
@@ -1027,7 +1027,7 @@ s.ossuary(2290, 1650)
 # throat was 228 ft wide (GM 2026-07-27, settlements/cities/defenses.md) - the piers stood so far apart
 # the text fell in the gap between them; at the true 30 ft opening the caption sits ON a gatepost.
 s.boundary_marker(1952, 1308, label_xy=(1952, 1291))  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
-s.execution_ground(2244, 1502, rot=8, label_above=True)  # the default below-label lands on the kiln works, which sits directly south at (2242,1584)
+s.execution_ground(2244, 1502, rot=8)  # below-label restored 2026-07-27: label_above dated from when the kiln stood at (2210,1520), and with the works moved to the riverbank the below-seat clears it by 117 ft while the ABOVE seat put the caption's corner 12 ft from the trunk road's centerline - inside its bed, which labels_clear_of_other_buildings does not test (settlement-review)
 
 
 s.bridges()
@@ -1326,29 +1326,42 @@ s.title("Nagahara")
 # every main gate's approach corridor (Edo: the Nihonbashi high-board + per-gate boards;
 # city_has_kosatsuba floors the count at gates + 1). Only ONE board carries the label -
 # whichever has room for it (GM: no particular board; the same one-label convention as the
-# fire towers and gate markets). Here that is the east-gate approach avenue board, west
-# verge, well inside the gate - placed LAST on a probed-clear verge NORTH of the caravan
-# stable's animal yard (spot history: 33px inside the north gate stood on the gate structs;
-# the next sat inside the stable yard's trough disc - stable_yards are DISCS (x, y, r),
-# which rect-only probes miss). It also covers the river gate's corridor.
-s.kosatsuba(1773, 1149, rot=90)  # the LABELED representative (one-label convention)
+# fire towers and gate markets). Here that is the east gate's board, on the THROUGH-ROAD's
+# north verge ~65px inside the gate (rot=0, the road's bearing), past the gate structs and
+# the inspection stations. ON THE ROAD, not the parallel ward avenue it used to sit on
+# (1773,1149, kept in the manifest history): every board goes on a MAIN way - GM 2026-08-02,
+# kosatsuba_on_a_main_way, "along the main road, in order to be more noticed" - and this
+# city's one main way is the road itself, which runs through both gates and the market bend,
+# so all three boards now hug its verges. (Earlier spot history, kept because the traps
+# recur: 33px inside the north gate stood on the gate structs; another seat sat inside the
+# caravan stable yard's trough disc - stable_yards are DISCS (x, y, r), which rect-only
+# probes miss.)
+s.kosatsuba(1874, 1317, rot=0, label=None)  # UNLABELED: at this seat the below-caption lands
+# in the east gate's 'guard / inspection stations' band at y1323-1332 (the band that forced
+# the north board's 2026-07-25 nudge) and the above-caption lands on a laborer house, so the
+# set's one label rides the market-bend principal instead ("whichever board has room for it";
+# an unlabeled board also fits the tight gate verges a labeled one cannot - urban-features.md)
 # ...the north road gate's board, UNLABELED, 51px inside the gate on the road verge,
 # aligned to the road's local ~72 deg bearing.
 s.kosatsuba(1492, 954, rot=72, label=None)  # nudged 10px up the wall (2026-07-25): the martial-hall budget line grew the derived ring 3px, the N-quarter pack reflowed, and a laborer_large came to rest under the board's old y961 seat. y951 then overshot into the gate's 'guard / inspection stations' caption band (y940-950), which only surfaced when the label check started reading the registry - y957 is the gap between the two
 # ...and the PRINCIPAL board at the central crossroads (GM 2026-07-24, the 3rd board: the
 # bend where the through-road turns east IS the market corner - the city's
-# Nihonbashi-equivalent node), on the yamen-approach street's west verge just south of the
-# crossroads - unlabeled, the east-avenue board already carries the set's one label.
-# 11px off the y1403 street: a board hugs a ROADSIDE, not a fence (the ward fence became a matrix
-# BARRIER, 2026-07-26, and kosatsuba_by_the_road wants it within ~20px of a way). rot=0 SQUARES it to
-# that street - the way it actually fronts, the yamen approach at x1480 being 32px off, outside the
-# siting band (was rot=90, edge-on to its own traffic; GM 2026-07-27, kosatsuba_faces_the_road, the
-# pre-fix manifest frozen in pool/regressions/). SOUTH verge, not north: the y1392 seat it used to
-# take was inside the x1441-1457 / y1381-1396 GUARD BOX of the kido at (1469,1403) - the gate glyph
-# draws roof + posts + guard box but records only its center in M['kido'], so the overlap matrix
-# cannot see the box and a hand-placed board on top of it gates green (found while squaring the
-# board, 2026-07-27). The south verge is the same street, the same 11px, and clear of the glyph.
-s.kosatsuba(1448, 1414, rot=0, label=None)
+# Nihonbashi-equivalent node), on the ROAD's south verge just east of the bend - unlabeled,
+# the east-gate board already carries the set's one label. On the road itself, not the
+# yamen-approach street it used to hug at (1448,1414) (GM 2026-08-02,
+# kosatsuba_on_a_main_way: the board goes along the main road, never a side street - and
+# the y1403 street, 11px off which the old seat gated green for a month, is a side street).
+# The bend seat also finally matches this comment's own claim: the market corner IS the
+# road's corner. rot=0 squares the face to the eastbound leg it fronts
+# (kosatsuba_faces_the_road; the old edge-on and guard-box seats are in the 2026-07-27
+# history above and in pool/regressions/).
+s.kosatsuba(1492, 1341, rot=0, label_xy=(1530, 1329))  # carries the set's one LABEL - the
+# gate verges had no caption room (see the east board above). HAND-SEATED caption: the
+# below band holds the drum tower at (1500,1362); the above band at this x abutted the
+# samurai ward gate glyph and stacked under its caption, reading as one label on the gate
+# (settlement-review, 2026-08-02) - so the caption sits east along the road's north edge,
+# left edge clear of the gate glyph, close over its own bar. Both verges east of the bend
+# are solid shop frontage (probed 1495-1640), so the BOARD could not slide instead.
 
 # ===== THE PUNISHMENT GROUND - the cangue frame, flogging post, and kneeling stone at the town's
 # busiest public point (feature 015; settlements.md "Punishment spot"). A DISPLAY installation:
