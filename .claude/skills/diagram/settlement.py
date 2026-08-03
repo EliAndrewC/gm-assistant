@@ -10160,16 +10160,21 @@ class Settlement:
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         # the held stock first, so the chain reads as holding it in: raft-mats packed nearly solid
         # between chain and shore (sparse sticks read as debris - the attested pens hold thousands)
-        n_rows = max(4, round((width - 3.2) / 1.7) + 1)
+        # each strip is drawn as an OUTLINED log - a dark underlay a hair wider than the lighter
+        # log tone over it - so the dark rims and butt gaps resolve into individual timbers to the
+        # eye (GM 2026-08-03: the first solid mat read as one brown mass, "hard to pick out
+        # individual logs"); runs kept short (~18-36 real ft) for the same reason
+        n_rows = max(4, round((width - 3.2) / 2.05) + 1)
         for r in range(n_rows):
             ry = -hp + 1.6 + r * (width - 3.2) / max(1, n_rows - 1)
             pos = -hl + 2.6 + 1.7 * ((r * 7) % 3)
             while pos < hl - 3.6:
-                run = 13.0 + 4.5 * math.sin(r * 3.1 + pos * 0.13)
+                run = 9.0 + 3.0 * math.sin(r * 3.1 + pos * 0.13)
                 end = min(pos + run, hl - 2.6)
                 tone = "#7A5B33" if (r + int(pos)) % 2 else "#85643B"
-                g.append(f'<line x1="{pos:.1f}" y1="{ry:.1f}" x2="{end:.1f}" y2="{ry:.1f}" stroke="{tone}" stroke-width="2.1" stroke-linecap="round" opacity="0.92"/>')
-                pos = end + 1.3
+                g.append(f'<line x1="{pos:.1f}" y1="{ry:.1f}" x2="{end:.1f}" y2="{ry:.1f}" stroke="#4A3A22" stroke-width="2.0" stroke-linecap="round" opacity="0.9"/>')
+                g.append(f'<line x1="{pos + 0.4:.1f}" y1="{ry:.1f}" x2="{end - 0.4:.1f}" y2="{ry:.1f}" stroke="{tone}" stroke-width="1.2" stroke-linecap="round" opacity="0.95"/>')
+                pos = end + 1.5
 
         # the pen fence: logs cabled end to end (stubby round-ended timbers over a cable line),
         # along the offshore edge and closing both short ends back to the bank
