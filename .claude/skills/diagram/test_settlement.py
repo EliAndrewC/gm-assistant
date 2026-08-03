@@ -5538,3 +5538,66 @@ def test_ring_drops_candidates_severed_from_their_field_by_a_road():
     s.farmsteads()
     assert s.M["houses"]  # the near side seats normally
     assert all(h["y"] < 620 for h in s.M["houses"])
+
+
+def _ward_city_with_samurai(*houses):
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="W", scale="city", ftpx=3)
+    s.M["wall"] = [[200, 200], [800, 200], [800, 800], [200, 800]]
+    for x, y, kind, rot in houses:
+        s.building(x, y, *s._dims(kind), kind, rot)
+    s.ward("samurai", [(400, 795), (400, 400), (795, 400)], gates=[])
+    return s
+
+
+def test_servant_ranges_attach_to_their_own_household():
+    # GM 2026-08-02: a ward servant is its household's nagaya, drawn along its master's frontage
+    s = _ward_city_with_samurai((600, 600, "samurai", 0.0), (600, 700, "samurai_large", 0.0))
+    n = s.servant_ranges()
+    assert n == 3  # one range for the junior house, two for the senior (budgets.md)
+    ranges = [b for b in s.M["buildings"] if b["kind"] == "servant"]
+    assert len(ranges) == 3
+    for r in ranges:
+        assert r["of"] in ([600.0, 600.0], [600.0, 700.0])
+        assert r["w"] > 2.2 * r["h"]  # a RANGE, not a cottage - the proportion carries the read
+        assert r["h"] == pytest.approx(s.px(s.SERVANT_RANGE_DEPTH_FT))
+
+
+def test_servant_ranges_is_a_noop_without_a_ward():
+    s = Settlement(1000, 1000, seed=1)
+    s.meta(name="W", scale="city", ftpx=3)
+    s.building(600, 600, *s._dims("samurai"), "samurai", 0.0)
+    assert s.servant_ranges() == 0
+
+
+def test_building_refuses_a_freestanding_servant_inside_the_ward():
+    # barring the commoner kinds alone just handed their ground to the servant packs
+    s = _ward_city_with_samurai((600, 600, "samurai", 0.0))
+    assert s.building(700, 700, 10, 7, "servant") is False
+    assert s.building(150, 150, 10, 7, "servant") is True  # outside the fence, unaffected
+
+
+def test_servant_ranges_keeps_every_range_inside_the_fence():
+    # a house hard against the ward fence must not be ranged out through it
+    s = _ward_city_with_samurai((412, 600, "samurai", 0.0))
+    s.servant_ranges()
+    for r in [b for b in s.M["buildings"] if b["kind"] == "servant"]:
+        assert settlement.point_in_poly(r["x"], r["y"], s._samurai_ward_interiors[0])
+        assert min(settlement.seg_dist(r["x"], r["y"], (400, 795), (400, 400)), settlement.seg_dist(r["x"], r["y"], (400, 400), (795, 400))) > s._WARD_STROKE
+
+
+def test_servant_ranges_is_idempotent():
+    # it may be re-run after a late household top-up; nobody gets a second range over quota
+    s = _ward_city_with_samurai((600, 600, "samurai", 0.0), (600, 700, "samurai_large", 0.0))
+    first = s.servant_ranges()
+    assert first == 3
+    assert s.servant_ranges() == 0
+    assert sum(1 for b in s.M["buildings"] if b["kind"] == "servant") == 3
+
+
+def test_servant_ranges_skips_a_house_too_narrow_to_carry_a_range():
+    # below ~2.3x the range depth it stops reading as a range and starts reading as a cottage,
+    # so the household simply gets none - its servants sleep under the master's roof
+    s = _ward_city_with_samurai()
+    s.building(600, 600, 8, 6, "samurai", 0.0)
+    assert s.servant_ranges() == 0

@@ -105,11 +105,12 @@ local `DWELL` tuple, and a city with an agricultural district also counts in-wal
 - **The SE ward is CORRECTLY low-density.** Samurai plots are `C_SPACED` 2,480 px^2 against a
   commoner's `C_PACKED` 690, and the quarter also carries the yamen, six ministries, the mausoleum,
   the martial hall and two dojos. Chasing density there fights the budget. Live-in domestics DO
-  stand inside the ward (the `city_samurai_ward_residents_only` check admits kind `servant`
-  explicitly, and ~33 servant houses stand there now) - what went wrong in 2026-07 was terracing
-  them at commoner-style density/counts, which starved both samurai checks. Servant rows inside
-  the ward are correct fabric; do not strip them out. (Corrected 2026-08-02 after settlement-review
-  flagged this line as contradicting the drawing.)
+  stand inside the ward - but as their household's RANGE, never as rows or scattered cottages
+  (`city_ward_servants_housed_as_ranges`, 2026-08-03): 41 ranges, each bound to and abutting the
+  samurai house it serves. What went wrong in 2026-07 was terracing servants at commoner density;
+  what went wrong in the 2026-08-02 pass was letting the packs refill the evicted commoners'
+  ground with detached servant cottages, which read as MORE commoner fabric, not less. Do not
+  re-introduce either: a servant inside the fence is drawn by `s.servant_ranges()` or not at all.
 - **A gate market straddles its road.** `s.frontage` seats a rank on EACH side of its line ~15px
   out; the ranks are 31px apart and the band that is both clear of the roadbed and inside the 28px
   fronting rule is only 14 wide, so no offset puts both ranks in it. Putting the line ON the road
@@ -238,3 +239,25 @@ furniture, and Minami's river carries wharf/dock/canal traffic that a spanning b
 Post-review adjustments (settlement-review 2026-08-02): pen head held ~45 ft below the last
 wharf jetty so the jetty keeps its berth, and the zaimokuya slid to its bank frontage so pen and
 yard read as one works across ~40 ft of haul ground.
+
+### 2026-08-03 - the ward's servants are its households' ranges
+
+The first ward fix removed the barred commoner kinds and the packs immediately refilled the same
+ground with servant cottages - 33 of them, only 7 within 30 ft of any samurai house, 9 beyond
+100 ft, 14 ranked in a column against the inside of the west fence. The GM's read: *"I swear I'm
+seeing way MORE commoner houses in the samurai neighborhood now!"* - and the count agreed, 33
+small commoner-looking glyphs against 26 before, because a servant glyph is a laborer glyph with
+a 4 ft trim and one shade of tan.
+
+Researched properly (both traditions, `research/cities/government.md`): servants are drawn as
+WALLS, not houses. The ward now houses them as `s.servant_ranges()` - 41 ranges, every one bound
+to and abutting its own household, 15 ft deep and 35-82 ft long, serving 39 of the ward's 46
+samurai households; the rest have no room, which is itself attested. Gated by
+`city_ward_servants_housed_as_ranges`; the pre-fix manifest is frozen in `pool/regressions/`.
+
+Two knock-ons worth knowing. The east-flank band below the martial hall is SAMURAI now, not the
+old servant terrace. And with commoner fill barred from the ward, the exact-520 figure is closed
+by more samurai households (44 + 6 large, against a caste ceiling of 64) each bringing its range,
+plus a final `open_seat` probe for the last seat - the lattice sweeps in `fill_exactly` scan a
+fixed 5x6 px grid and cannot see an off-lattice gap, which is what left the map one dwelling
+short.

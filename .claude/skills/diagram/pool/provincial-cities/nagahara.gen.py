@@ -1314,6 +1314,12 @@ for _wb2 in ((1440, 1690, 1526, 1752), (1520, 1690, 1606, 1752), (1436, 1586, 15
         break
 
 
+# The ward's servant housing - each household's own nagaya range, not a servant quarter or a
+# scatter of cottages (GM 2026-08-02; city_ward_servants_housed_as_ranges). AFTER every ward
+# samurai house is placed and after s.ward; BEFORE the exact-population fill, which then settles
+# the commoner quarters around whatever the ward absorbed.
+s.servant_ranges()
+
 fill_exactly(3000 // 5)
 
 s.crop_city(west=100)  # the aggressive default (35px past the kept satellites: N gate market, far-bank

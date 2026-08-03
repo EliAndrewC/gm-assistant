@@ -11424,6 +11424,47 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 for b in M.get("buildings", []):
                     if region and b.get("kind") in barred and point_in_poly(b["x"], b["y"], region):
                         commoner_in.append((b["kind"], round(b["x"]), round(b["y"])))
+            # ...and the residents who ARE admitted must be housed the way the ward houses them.
+            # A samurai household's domestics lived in the perimeter nagaya that forms the plot's
+            # street boundary, in the nagayamon gate rooms, or in nando off the kitchen - never in
+            # a freestanding house in the buke-chi; a Chinese elite compound puts them in the
+            # daozuofang, the south row whose blank back IS the street wall. Ranks of small uniform
+            # dwellings are real, but they are ashigaru kumi-yashiki on the town FRINGE. So every
+            # servant inside the fence must carry `of` (its master's house), ABUT that house, and
+            # be a RANGE rather than a cottage. GM 2026-08-02, after the barred kinds were evicted
+            # and the packs refilled the same ground with servants: "I swear I'm seeing way MORE
+            # commoner houses in the samurai neighborhood now!" - the servant glyph is a laborer
+            # glyph with a 4 ft trim, so detached-and-ranked reads as exactly what the fence
+            # excludes. The COUNT is canon and is not what this polices (budgets.md: 72 of a
+            # provincial city's 120 servant families are attached to its 60 samurai households);
+            # the ARRANGEMENT is. Research: research/cities/government.md.
+            loose_servants = []
+            for wd in wards:
+                if wd.get("name") != "samurai":
+                    continue
+                region = _ward_interior(wd["boundary"], w)
+                if not region:
+                    continue
+                hosts = {(round(b["x"], 1), round(b["y"], 1)): b for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large")}
+                for b in M.get("buildings", []):
+                    if b.get("kind") != "servant" or "w" not in b or not point_in_poly(b["x"], b["y"], region):
+                        continue
+                    of = b.get("of")
+                    host = hosts.get((round(of[0], 1), round(of[1], 1))) if of else None
+                    if host is None:
+                        loose_servants.append((round(b["x"]), round(b["y"]), "freestanding - no samurai household"))
+                    elif edge_gap(b, host) > 2.5:
+                        loose_servants.append((round(b["x"]), round(b["y"]), f"detached from its household by {edge_gap(b, host):.0f}px"))
+                    elif max(b["w"], b["h"]) < 2.2 * min(b["w"], b["h"]):
+                        loose_servants.append((round(b["x"]), round(b["y"]), "drawn as a cottage, not a range"))
+            check(
+                "city_ward_servants_housed_as_ranges",
+                not loose_servants,
+                f"servant dwelling(s) inside the samurai ward not drawn as their household's RANGE: {loose_servants[:6]} - a samurai household's "
+                f"domestics live in the nagaya along its own frontage, not in a freestanding cottage among the compounds (which reads as the very "
+                f"commoner fabric the fence excludes); place them with s.servant_ranges() AFTER the ward's samurai houses, and put any genuinely "
+                f"ranked small housing outside the fence, where ashigaru kumi-yashiki belong",
+            )
             check(
                 "city_samurai_ward_residents_only",
                 not commoner_in,
