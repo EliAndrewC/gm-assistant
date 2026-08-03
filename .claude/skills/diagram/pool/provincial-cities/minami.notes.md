@@ -104,8 +104,12 @@ local `DWELL` tuple, and a city with an agricultural district also counts in-wal
   packs around it.
 - **The SE ward is CORRECTLY low-density.** Samurai plots are `C_SPACED` 2,480 px^2 against a
   commoner's `C_PACKED` 690, and the quarter also carries the yamen, six ministries, the mausoleum,
-  the martial hall and two dojos. Chasing density there fights the budget. Servants do not belong
-  inside a gated ward either - terracing them there starved both samurai checks.
+  the martial hall and two dojos. Chasing density there fights the budget. Live-in domestics DO
+  stand inside the ward (the `city_samurai_ward_residents_only` check admits kind `servant`
+  explicitly, and ~33 servant houses stand there now) - what went wrong in 2026-07 was terracing
+  them at commoner-style density/counts, which starved both samurai checks. Servant rows inside
+  the ward are correct fabric; do not strip them out. (Corrected 2026-08-02 after settlement-review
+  flagged this line as contradicting the drawing.)
 - **A gate market straddles its road.** `s.frontage` seats a rank on EACH side of its line ~15px
   out; the ranks are 31px apart and the band that is both clear of the roadbed and inside the 28px
   fronting rule is only 14 wide, so no offset puts both ranks in it. Putting the line ON the road
@@ -169,3 +173,42 @@ identical source gives byte-identical output, verified. Before inheriting a clon
   deferred `flush_stable_yards` path, plus the charcoal kiln the docstring promises and the map lacks.
 - **The budget charges two gate marshalling grounds and one is drawn** (4,536 px^2 of wall bought for
   ground that is not there).
+
+### 2026-08-02 - the ward holds only its own residents
+
+The GM caught a laborer house in the middle of the samurai neighborhood and two more laborer
+households by the ministries - all on the samurai side of the ward fence - and measurement found
+the full damage: 2 laborer houses plus 9 merchant houses (8 in a column hugging the inside of the
+west fence) inside the ward. Two distinct leaks: the east-flank rowpack interleaved `laborer`
+1-in-5 into the ward's servant housing, and the whole-interior top-up sweeps (`ALL_Q`,
+`fill_exactly`) scan rectangles that overlap the ward. Both are closed at the ENGINE now -
+`s.building` refuses `WARD_BARRED_KINDS` inside a declared samurai ward, and `s.ward` fails
+loudly on a commoner already standing inside - and gated by `city_samurai_ward_residents_only`
+(the pre-fix manifest is frozen in `pool/regressions/`).
+
+Re-seating the displaced merchants took the caste band to its floor: a THIRD merchant terrace
+strip below MAIN_E (y1462-1506, toward the cargo basin - river-trade ground), a widened `WIDE_Q`
+sweep window (the old `ALL_Q` never scanned the south band or the river-gate strip), and a final
+`open_seat` probe pass. The merchant cohort now sits at exactly 91 against the ~91 band floor, so
+the NEXT feature that costs a merchant seat trips `city_caste_counts_in_band` again - the honest
+fix then is more merchant ground (or the bigger wall), never a softer band. Knock-ons: the
+`burakumin` zone label moved south with its fabric to (1214, 1532), and Daikoku's graveyard
+caption sits ON its own plot at (1358, 1544) - the third strip took its old above-the-plot seat,
+and a label may cover the thing it names (martial-hall precedent).
+
+Settlement-review (2026-08-02, post-ward-fix) verdict: ship. Three pre-existing items it
+surfaced, recorded here rather than fixed in this pass:
+
+- **Five of 26 burakumin households sit inside the merchant district**, hundreds of feet north of
+  the labeled quarter (e.g. 1224,1366; 1089,1390; 1054,1414) - invisible on the render because the
+  burakumin glyph is a laborer glyph. Pre-existing (the prior committed manifest had six), but it
+  is the same defect class as the ward leak one caste down. The right shape of fix is the
+  `WARD_BARRED_KINDS` mechanism: constrain burakumin seats (top_up / fill_exactly / open_seat) to
+  the declared quarter the way `s.building` now bars commoners from the ward.
+- **Four samurai houses stand outside the ward fence in the commoner fabric** (samurai_large at
+  1177,1433 and 1367,1467; samurai at 1329,1436 and 1329,1464). Defensible in principle - not
+  every retainer lives behind the fence - but nothing declares the intent, so it reads as fill
+  overflow. Annotate or re-seat on the next regen.
+- **The "burakumin" label stacks under the "Temple of Daikoku" caption** (recorded boxes overlap
+  2.2 px vertically; no drawn ink touches) and can parse as a subtitle of the temple. A nudge west
+  or south on the next regen breaks the stack.

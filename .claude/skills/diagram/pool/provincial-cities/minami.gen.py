@@ -447,7 +447,7 @@ precinct(1268, 1490, "Daikoku", [(1268, 1532)], graveyard=True)
 # parishes, and burial ground is constrained by suitable LAND rather than by foundation count.
 s.cemetery(1232, 1042, 46, 32, label="graveyard")  # Inari's
 s.cemetery(1046, 1246, 42, 30, label="graveyard", label_above=True)  # Ebisu's
-s.cemetery(1358, 1540, 42, 30, label="graveyard", label_above=True, label_xy=(1372, 1514))  # Daikoku's; caption slid east
+s.cemetery(1358, 1540, 42, 30, label="graveyard", label_above=True, label_xy=(1358, 1544))  # Daikoku's; caption ON its own plot - the third merchant strip (y1462-1506) took the ground the old above-the-plot seat needed, and every off-plot seat here lands on the packed mixed rows (a label may cover the thing it names; martial-hall precedent)
 # along its own plot - centered it cleared the Temple of Daikoku caption by 2.0 px, which passes the AABB
 # check and still reads as touching, because an italic's ink leans outside the box the check measures.
 # Below-seat is not the answer here: the ground under this plot is solid burakumin/laborer terrace.
@@ -496,7 +496,7 @@ for _y0, _x1 in ((1322, 1824), (1596, 1760), (1650, 1734)):
 # the ward's west flank, its east flank below the martial hall, and the NE pocket.
 s.block_polys.append([(1454, 1484), (1492, 1484), (1492, 1606), (1454, 1606)])
 s.rowpack((1440, 1470, 1494, 1608), ["samurai"] * 16, court_every=4, eave_ft=2)  # west flank, between the ward fence and the yamen wall
-s.rowpack((1664, 1528, 1714, 1642), (["servant"] * 4 + ["laborer"]) * 30, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring
+s.rowpack((1664, 1528, 1714, 1642), ["servant"] * 150, court_every=5, eave_ft=2)  # east flank, below the martial hall and inside the ring - ALL servant: this band is INSIDE the ward fence, and the ward holds samurai households and their domestics only (the old 4:1 laborer interleave put 2 laborer houses on the samurai side of the fence - GM 2026-08-02, city_samurai_ward_residents_only; s.ward at the line below now fails loudly on exactly that)
 s.rowpack((1682, 1446, 1784, 1502), ["samurai"] * 14, court_every=4, eave_ft=2)  # the NE pocket by the ministries - retainers, not domestics (y0 clear of the Ministry of Justice apron)
 s.pack((1452, 1312, 1836, 1716), (["samurai"] * 3 + ["samurai_large"]) * 120, step=11, face_streets="fill")
 s.label(1668, 1314, "samurai neighborhood", 10, italic=True, color="#3A352C")
@@ -554,19 +554,44 @@ s.label(1150, 1348, "merchant district", 10, italic=True, color="#5A4326")
 
 # ====================================================================== SW: burakumin + timber ground
 s.fire_tower(1150, 1400, label=None)
-front([SW_V], (["merchant"] + ["burakumin"] + ["laborer"]) * 18, spacing=19, rows=2)
+front([SW_V], (["merchant"] * 2 + ["burakumin"] + ["laborer"]) * 14, spacing=19, rows=2)  # merchant share up one notch (GM 2026-08-02): the ward-fix left the merchant cohort 1 below its band floor and the laborers ~40 above theirs - street commerce on the cargo-basin road is the natural place for the trade
 s.place_wells((1020, 1360, 1390, 1680), spacing=54)
 _sw = ["merchant_house"] * 225
+# THREE merchant strips, not two (GM 2026-08-02): closing the samurai ward to commoners
+# (city_samurai_ward_residents_only) took back the ~9 seats the old sweeps had wrongly found
+# inside the fence, and the scatter passes could not find merchant-sized daylight anywhere else -
+# the cohort stalled at 82 against the ~91 band floor. The third strip runs the merchant terrace
+# one band further toward the cargo basin (river-trade ground - the right side of town for
+# commerce), and the mixed laborer/servant/burakumin strips start below it; the small kinds have
+# band slack and re-seat themselves through the census top-ups.
 for _y0 in range(1344, 1448, 52):
     s.rowpack((1004, _y0, 1404, _y0 + 44), _sw, court_every=4, eave_ft=2)
+# the third strip sits BELOW the MAIN_E street corridor at y1450 (a band straddling the roadbed
+# seats nothing - the corridor refuses every row), on the ground the mixed strips used to take
+s.rowpack((1004, 1462, 1404, 1506), _sw, court_every=4, eave_ft=2)
 _sw2 = (["laborer"] * 2 + ["servant"] * 2 + ["burakumin"]) * 45
-for _y0 in range(1462, 1748, 52):
+for _y0 in range(1514, 1748, 52):
     s.rowpack((1004, _y0, 1404, _y0 + 44), _sw2, court_every=4, eave_ft=2)
 for _y0 in range(1488, 1700, 52):
     s.rowpack((1022, _y0, 1396, _y0 + 42), _sw2, court_every=4, eave_ft=2)
 for _y0 in range(1475, 1700, 26):
     s.rowpack((1022, _y0, 1396, _y0 + 22), _sw2, court_every=4, eave_ft=2)
-s.label(1214, 1470, "burakumin", 10, italic=True, color="#6B4F2A")
+# THE LAST MERCHANT SEATS, ASKED FROM THE ENGINE (GM 2026-08-02): closing the ward to commoners
+# cost the cohort its ~9 wrongly-inside seats, and the strips + widened sweeps recover all but a
+# few - the band floor (~91 of 520) kept missing by 1-4 across regenerations. open_seat honors
+# every corridor/reservation _fits knows (skill CLAUDE.md "Ask the ENGINE where a feature fits"),
+# so these seats are real; the rects are commercial ground - the strip band, the cargo-basin
+# approach, the river-gate strip, and the theater pocket.
+_mh_w, _mh_h = s._dims("merchant_house")
+_extra_mh = 0
+for _rect in ((1004, 1462, 1404, 1512), (1044, 1620, 1390, 1748), (996, 1150, 1050, 1320), (1620, 1150, 1800, 1290)):
+    while _extra_mh < 4:
+        _seat = s.open_seat(_rect, _mh_w, _mh_h)
+        if not _seat:
+            break
+        s.building(_seat[0], _seat[1], _mh_w, _mh_h, "merchant_house")
+        _extra_mh += 1
+s.label(1214, 1532, "burakumin", 10, italic=True, color="#6B4F2A")  # moved south with its fabric - the y1462-1506 band is the third merchant strip now
 # THE TIMBER AND CHARCOAL WORKING GROUND - the declared budget line, DRAWN as its kind rather than
 # left as ambient slack: beaten earth with stacking rails, in the SE of the burakumin quarter where
 # the raft cargo comes up from the landing.
@@ -913,13 +938,21 @@ s.pack(SE_Q, ["servant"] * 90, step=11, face_streets="fill")
 # whole-interior sweeps: the per-quarter regions leave ground stranded at their seams, and the
 # budget promises 520 dwellings, so the last passes are limited by the ground and nothing else.
 ALL_Q = (1032, 980, 1800, 1690)
+# The ward is closed to commoners now (city_samurai_ward_residents_only), which cost the merchant
+# cohort the ~9 seats the old sweeps had WRONGLY found inside the fence - and ALL_Q stops at
+# y=1690 / x=1032, so the south band inside the ring and the river-gate strip were never scanned
+# for replacement seats. MERCHANTS FIRST into that wider window, ahead of the laborer/servant
+# sweeps: the small kinds seat almost anywhere, the big merchant footprint is the one that runs
+# out of ground (post-ward-fix it stalled at 81 of the ~91 band floor).
+WIDE_Q = (962, 980, 1836, 1758)
+top_up("merchant_house", WIDE_Q, 94, count_kinds=_MERCH)
 top_up("merchant_house", ALL_Q, 94, count_kinds=_MERCH)
 top_up("laborer", ALL_Q, 150, count_kinds=_LAB)
 top_up("servant", ALL_Q, 76)
 top_up("samurai", SE_Q, 40, count_kinds=("samurai", "samurai_large"))
 top_up("burakumin", SW_Q, 26)
 for _pass in range(3):
-    for _rg in (NW_Q, SW_Q, NE_Q, ALL_Q):
+    for _rg in (NW_Q, SW_Q, NE_Q, ALL_Q, WIDE_Q):
         top_up("merchant_house", _rg, 94, count_kinds=_MERCH)
     for _rg in (NE_Q, NW_Q, SW_Q, SE_Q, ALL_Q):
         top_up("laborer", _rg, 150, count_kinds=_LAB)
@@ -942,7 +975,7 @@ def fill_exactly(target):
     order = (
         ("servant", ALL_Q, ("servant",)),
         ("laborer", ALL_Q, _LAB),
-        ("merchant_house", ALL_Q, _MERCH),
+        ("merchant_house", WIDE_Q, _MERCH),
         ("burakumin", SW_Q, ("burakumin",)),
         ("samurai", SE_Q, ("samurai", "samurai_large")),
     )
@@ -993,8 +1026,9 @@ s.place_wells((1020, 1020, 1382, 1300), spacing=46, near=48)
 s.place_wells((1020, 1370, 1382, 1670), spacing=46, near=48)
 for _wr in ((1030, 1000, 1390, 1320), (1420, 990, 1800, 1300), (1030, 1340, 1390, 1690), (1010, 1400, 1130, 1520), (1260, 1440, 1380, 1620), (1370, 1000, 1490, 1110), (1040, 1420, 1180, 1560), (1240, 1500, 1380, 1640), (1400, 1010, 1520, 1120), (1280, 1220, 1380, 1310), (1090, 1470, 1200, 1560), (1210, 1610, 1320, 1700), (1380, 1020, 1480, 1100), (1300, 1230, 1400, 1320), (1020, 1420, 1120, 1500), (1240, 1520, 1340, 1610), (1220, 1620, 1330, 1700), (1390, 1030, 1470, 1090)):
     s.place_wells(_wr, spacing=38, near=46)
-for _wr in ((1100, 1200, 1400, 1320), (1200, 1350, 1400, 1450), (1220, 1500, 1400, 1620), (1440, 1180, 1560, 1270), (1080, 1220, 1240, 1320), (1260, 1220, 1400, 1320)):
+for _wr in ((1100, 1200, 1400, 1320), (1200, 1350, 1400, 1450), (1440, 1180, 1560, 1270), (1080, 1220, 1240, 1320), (1260, 1220, 1400, 1320)):
     s.place_wells(_wr, spacing=34, near=44)
+s.place_wells((1220, 1500, 1400, 1620), spacing=30, near=44)  # the SE-of-burakumin pocket: the ward-fix reshuffle pushed its (1378,1572) head to 27-29 households, over the 26 ceiling - tighter spacing seats a second head
 s.place_wells((1540, 1000, 1700, 1100), spacing=30, near=42)  # the north laborer terraces outgrew the (1605,1047) head
 
 s.crop_city(margin=30, west=70)

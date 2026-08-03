@@ -19,12 +19,23 @@ numbers. A single map's regen + gate is ~1-7s:
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
 
 The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
-it - is **~80 seconds**. (Measured 2026-07-25: it had drifted to 112-215s across six runs, well past
-the "~1 minute" this file used to claim from 2026-07-20; indexing the two worst checks that same day
-brought it back to 77s. Re-measure and update this number when it drifts again - a stale figure here
-is what makes a session mis-plan its loop.) So run the red/green loop against the ONE map
-(or fixture) that shows the defect, where cycles are near-free, and reserve the full sweep for AFTER
-that map is green. The sweep is MANDATORY, though, whenever shared engine code changed
+it - is **~13.5 minutes** (measured 2026-08-02, twice, `-n auto` on 22 cores). It was ~80s on
+2026-07-25; the whole difference is ONE map. **Minami's gen alone runs ~10 minutes**, timed
+standalone and confirmed at HEAD as well as against changes, so it is not a regression from any one
+feature - it is the long pole the parallel suite cannot get under, and everything else finishes
+well before it. Re-measure and update this number when it drifts again; a stale figure here is what
+makes a session mis-plan its loop.
+
+**So "iterate on the ONE map" has an exception, and it is the city you are most likely to be
+iterating on.** For every other map the regen+gate loop really is 1-7s and near-free. For Minami it
+is ~10 minutes, which changes the loop: get the change RIGHT on paper first (or prove it on a
+synthetic fixture / another city), batch several fixes into one regeneration rather than testing
+them one at a time, and background the run. A session that iterated Minami one-fix-per-regen on
+2026-08-02 spent ~50 minutes of wall clock on five sequential regenerations. If you find yourself
+about to start the sixth, stop and ask whether the remaining fixes can go in together.
+
+Otherwise the rule stands: run the red/green loop against the ONE map (or fixture) that shows the
+defect, and reserve the full sweep for AFTER that map is green. The sweep is MANDATORY, though, whenever shared engine code changed
 (`settlement.py`, `check_village.py`, `waterfields.py`): every pool map is a downstream artifact of
 the engine, so the sweep is what proves "no other map regressed" instead of hoping it.
 Anti-patterns on record: the scale-bar feature used the full suite as its FIRST check of an engine

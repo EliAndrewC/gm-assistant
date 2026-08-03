@@ -1504,6 +1504,65 @@ def water_setback(width: float) -> float:
     return max(75, min(140, 5.0 * width))
 
 
+def _ward_interior(fence: Any, wall: Any) -> Any:
+    """Close a samurai-ward FENCE polyline against the city wall ring: the ward's interior polygon.
+
+    The fence's ends abut the rampart (city_ward_fence_meets_wall holds that), so the fence plus
+    the wall arc between its ends encloses the ward. Two arcs qualify; the ward is the SMALLER
+    enclosed region - a ward is a quarter carved off the city, never the larger half (all three
+    pool cities measure 21-25% of the walled area). None when there is nothing to close (no wall
+    ring / a degenerate fence) - the caller skips rather than guesses. Deliberately independent of
+    settlement.ward_interior: the check must not trust the arithmetic of the engine it grades."""
+    if not wall or len(wall) < 3 or not fence or len(fence) < 2:
+        return None
+    # ARC-LENGTH closure, not nearest-VERTEX closure: a fence end abuts the rampart mid-EDGE, so
+    # walking vertex indices from "the nearest vertex" can skip (or wrongly include) the vertex on
+    # the far side of the junction, and the resulting polygon self-intersects - a bowtie, whose
+    # shoelace area under-measures by cancellation and steals the smaller-area vote (caught by the
+    # square-wall unit test). Projecting each end onto the ring and collecting the vertices whose
+    # arc position lies strictly between the two junctions, in traversal order, yields a SIMPLE
+    # polygon for both candidate closures, so the smaller-area rule is sound.
+    ring = list(wall) + [wall[0]]
+    arcs = [0.0]
+    for i in range(len(ring) - 1):
+        arcs.append(arcs[-1] + math.hypot(ring[i + 1][0] - ring[i][0], ring[i + 1][1] - ring[i][1]))
+    perim = arcs[-1]
+    if perim <= 0:
+        return None
+
+    def project(p: Any) -> float:
+        best: tuple[float, float] | None = None
+        for i in range(len(ring) - 1):
+            ax, ay = ring[i]
+            bx, by = ring[i + 1]
+            dx, dy = bx - ax, by - ay
+            length2 = dx * dx + dy * dy
+            t = 0.0 if length2 == 0 else max(0.0, min(1.0, ((p[0] - ax) * dx + (p[1] - ay) * dy) / length2))
+            qx, qy = ax + t * dx, ay + t * dy
+            d = (p[0] - qx) ** 2 + (p[1] - qy) ** 2
+            if best is None or d < best[0]:
+                best = (d, arcs[i] + t * math.sqrt(length2))
+        return 0.0 if best is None else best[1]
+
+    def area(poly: Any) -> float:
+        a = 0.0
+        for i in range(len(poly)):
+            x1, y1 = poly[i]
+            x2, y2 = poly[(i + 1) % len(poly)]
+            a += x1 * y2 - x2 * y1
+        return abs(a) / 2
+
+    t0, t1 = project(fence[-1]), project(fence[0])
+    fwd_span = (t1 - t0) % perim
+    fwd = sorted(((arcs[i] - t0) % perim, wall[i]) for i in range(len(wall)))
+    arc_fwd = [v for o, v in fwd if 1e-6 < o < fwd_span - 1e-6]
+    back = sorted(((t0 - arcs[i]) % perim, wall[i]) for i in range(len(wall)))
+    arc_back = [v for o, v in back if 1e-6 < o < (perim - fwd_span) - 1e-6]
+    pa = list(fence) + arc_fwd
+    pb = list(fence) + arc_back
+    return pa if area(pa) <= area(pb) else pb
+
+
 def edge_dist(px: float, py: float, poly: Poly) -> float:
     return min(seg_dist(px, py, poly[i], poly[(i + 1) % len(poly)]) for i in range(len(poly)))
 
@@ -11255,6 +11314,34 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 "city_ward_fence_meets_wall",
                 not fence_gap,
                 f"ward-fence end(s) not abutting SOLID city wall (commoners could walk around the fence end): {fence_gap} - extend the fence to solid rampart, clear of any gate opening",
+            )
+            # THE FENCE SEALS COMMONERS OUT - so nobody it seals out may LIVE inside it (GM
+            # 2026-08-02, on Minami: 2 laborer houses in the middle of the samurai neighborhood
+            # and a merchant row hugging the inside of the west fence, leaked in by whole-interior
+            # top-up sweeps whose rectangles overlap the ward). Historical grounding: an Edo-era
+            # jokamachi zoned samurai and chonin ground apart as a matter of LAW (bukechi vs
+            # chonin-chi), and a Chinese provincial seat likewise kept commerce off the yamen
+            # quarter - a laborer terrace between two samurai houses inside the palisade is not
+            # variety, it contradicts the fence around it. Only samurai dwellings, their live-in
+            # domestics (servant - the gens interleave them deliberately) and government ground
+            # belong inside. monk_house is deliberately NOT barred: a temple may stand inside the
+            # ward (Tango's Bishamon precinct - the warrior fortune beside the garrison quarter)
+            # and its clergy row belongs with its temple, held there by the temple-neighborhood
+            # checks. Classification family: CENTER-tested on purpose (a building belongs to ONE
+            # ward; see "Centers, footprints, and aggregates" in the skill CLAUDE.md).
+            barred = ("laborer", "laborer_large", "merchant", "merchant_house", "merchant_large", "burakumin", "shop", "inn")
+            commoner_in = []
+            for wd in wards:
+                if wd.get("name") != "samurai":
+                    continue
+                region = _ward_interior(wd["boundary"], w)
+                for b in M.get("buildings", []):
+                    if region and b.get("kind") in barred and point_in_poly(b["x"], b["y"], region):
+                        commoner_in.append((b["kind"], round(b["x"]), round(b["y"])))
+            check(
+                "city_samurai_ward_residents_only",
+                not commoner_in,
+                f"commoner dwelling(s)/commerce INSIDE the samurai ward fence: {commoner_in[:8]} - the ward exists to seal the samurai/government quarter off the commoners; only samurai houses, their live-in servants and government ground belong inside (s.building refuses these seats once s.ward has run - hoist s.ward ahead of the commoner packs and re-seat the leaked households outside the fence)",
             )
             # the ward FENCE runs in OPEN ground - it must not pass THROUGH a building, a mausoleum, or
             # another ward's fence (GM, 2026-07). The packs keep off the fence via s.ward's corridor, but
