@@ -463,6 +463,58 @@ def sat_overlap(p: Sequence[Sequence[float]], q: Sequence[Sequence[float]]) -> b
     return True
 
 
+def label_tilt(rot: float) -> float:
+    """The angle a caption takes to lie ALIGNED with the feature it names when that feature is
+    drawn at `rot` degrees (GM 2026-08-02: an angled building's label carries the building's own
+    tilt - "caravan inn" runs along its rot=-16 inn, not as level text beside a diagonal glyph).
+    Folded mod 90 into [-45, 45): the text aligns with whichever of the building's two edge
+    families lies nearer the horizontal, so a caption never tilts past 45 degrees (legibility),
+    and a SQUARE-rotated building (0/90/180/270) keeps its level caption EXACTLY as before - the
+    fold is what keeps every level caption in the pool byte-stable. Rounded to 0.1 degree (the
+    grain the glyph transforms use); float noise under half that grain snaps level."""
+    t = (rot + 45.0) % 90.0 - 45.0
+    return 0.0 if abs(t) < 0.05 else round(t, 1)
+
+
+def label_quad(L: Sequence[Any]) -> Poly:
+    """The drawn corner ring of a recorded label. Elements [0..3] are the caption's UNROTATED box
+    (what `_record_label` has always written); a TILTED caption (element [7], degrees - see
+    `label_tilt`) is that box rotated about its own center, exactly the SVG transform `label()`
+    emits, so a check reads the true glyph run straight off the record. A level record returns
+    its plain corners."""
+    x0, y0, x1, y1 = float(L[0]), float(L[1]), float(L[2]), float(L[3])
+    cs: Poly = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    t = float(L[7]) if len(L) > 7 and L[7] else 0.0
+    if not t:
+        return cs
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    ca, sa = math.cos(math.radians(t)), math.sin(math.radians(t))
+    return [(cx + (qx - cx) * ca - (qy - cy) * sa, cy + (qx - cx) * sa + (qy - cy) * ca) for qx, qy in cs]
+
+
+def label_aabb(L: Sequence[Any]) -> tuple[float, float, float, float]:
+    """A recorded label's axis-aligned bounds - what the CONTAINMENT consumers (frame clipping,
+    the crop's must-include list, blocker lists, the title search) test. Identical to elements
+    [0..3] for a level record; for a tilted one it is the rotated quad's AABB - the honest
+    'ground this text can reach'."""
+    q = label_quad(L)
+    xs, ys = [p[0] for p in q], [p[1] for p in q]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def tilt_caption_seat(x: float, y: float, rot: float, tilt: float, half_w: float, half_h: float, gap: float, above: bool = False) -> Pt:
+    """Where a caption hangs off a TILTED footprint: the standard 'centered under the lower edge'
+    seat every glyph uses, computed in the footprint's own frame and rotated with it (`above`
+    flips to the upper edge). Which local half-extent lies perpendicular to the caption's
+    baseline depends on which edge family `label_tilt` folded onto - a rot=150 works reads along
+    its LONG side (half_h below the baseline) where a rot=102 yard reads along its SHORT one
+    (half_w) - so both halves are passed and the fold decides."""
+    perp = half_h if round((rot - tilt) / 90.0) % 2 == 0 else half_w
+    a = math.radians(tilt)
+    d = (perp + gap) * (-1.0 if above else 1.0)
+    return (x - math.sin(a) * d, y + math.cos(a) * d)
+
+
 # --- STABLE-YARD GLYPH EXTENTS: wells, trough clusters, hitching rails ------------------------
 # These three MUST NOT OVERLAP ONE ANOTHER (GM 2026-07-25). The motivating defect was Nagahara's
 # flophouse yard, which drew a hitching rail straight ACROSS a wellhead and then stacked the trough
@@ -1360,8 +1412,9 @@ def crop_boxes(M: Any, city: bool, ftpx: float, W: float, H: float) -> list[tupl
                 add(o, k, i)
         for mp_ in M.get("moat") or []:  # the city itself (moat encloses the wall)
             out.append((mp_[0], mp_[0], mp_[1], mp_[1], "moat"))
-        for i, lb in enumerate(M.get("labels", [])):  # placed label boxes: [x0, y0, x1, y1, z, text]
-            out.append((lb[0], lb[2], lb[1], lb[3], f"label {lb[5]!r}" if len(lb) > 5 else f"labels[{i}]"))
+        for i, lb in enumerate(M.get("labels", [])):  # placed label boxes: [x0, y0, x1, y1, z, text(, ref, tilt)] - label_aabb reads tilted records too
+            _la = label_aabb(lb)
+            out.append((_la[0], _la[2], _la[1], _la[3], f"label {lb[5]!r}" if len(lb) > 5 else f"labels[{i}]"))
         return out
     for k in Settlement._CROP_HARD:
         for i, o in enumerate(M.get(k, [])):
@@ -1473,6 +1526,9 @@ class Settlement:
         #                    ORDER: a scatter only skips clearings that exist when it runs, so a cover whose
         #                    seq <= a clearing's seq drew before the clearing was registered and may have
         #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
+        self._wgc_cache: tuple[Any, ...] | None = (
+            None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each with a bbox prefilter), fingerprint-invalidated
+        )
         self.dry_polys: list[Any] = []  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
@@ -4067,35 +4123,63 @@ class Settlement:
         Placement predicted everything else about a well site - lanes, compounds, the bound, its
         neighbors - but never the water or the crop, so the overlap matrix (feature 017) found four
         wells standing in ditches, a channel and a hatake plot across three maps. Tested against the
-        DRAWN head (`_well_vr`), because what a reader sees is ink on ink."""
+        DRAWN head (`_well_vr`), because what a reader sees is ink on ink.
+
+        The wet-crop leg is the placement half of `wells_clear_of_paddies` (GM 2026-07-27: "wells
+        on dry crops are okay, but not in rice paddies, surely") - a paddy is a puddled, bunded
+        basin held under standing water, so a head sunk there stands in the water it is an
+        alternative to. Both halves read `paddy_wet_rings` (see it for why the DRAWN basins, not
+        the smoothed envelope, are the water), and the same strictness as the dry-plot rule
+        applies: the drawn head may not lap the crop.
+
+        MEMOIZED with per-item bbox PREFILTERS (prefilter family: they prune, they never decide -
+        same verdicts as the bare scans). This method runs once per CANDIDATE seat: place_wells
+        alone probes ~133k candidates on Minami, and farm_wells' fallback ~2,700 per boxed-in
+        steading, so re-scanning ~580 watercourse segments, every dry plot, and 927 paddy basins
+        per candidate turned a ~5s gen into a >45-minute grind (2026-08-02, profiled: 95M
+        seg_dist calls, ~90% of gen wall time). The memo is invalidated by a cheap fingerprint
+        (record and point counts of everything scanned); the wells are placed long after the
+        terrain is drawn, so the geometry is stable across the whole placement pass."""
         vr = self._well_vr() if vr is None else vr
-        for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
-            for rec in self.M.get(key, []) or []:
-                pts = rec.get("poly") or rec.get("pts")
-                if not pts:
-                    continue  # pragma: no cover - defensive: every watercourse carries a path
-                lim = float(rec.get("w") or dw) / 2 + vr
-                if any(seg_dist(cx, cy, pts[i], pts[i + 1]) < lim for i in range(len(pts) - 1)):
-                    return False
+        fields = self.M.get("fields") or []
+        recs = {key: self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")}
+        fp = (
+            len(fields),
+            sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields),
+            tuple(len(rs) for rs in recs.values()),
+            sum(len(rec.get("poly") or rec.get("pts") or ()) for rs in recs.values() for rec in rs),
+        )
+        if self._wgc_cache is None or self._wgc_cache[0] != fp:
+            water = []
+            for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
+                for rec in recs[key]:
+                    pts = rec.get("poly") or rec.get("pts")
+                    if not pts:
+                        continue  # pragma: no cover - defensive: every watercourse carries a path
+                    hw = float(rec.get("w") or dw) / 2
+                    for i in range(len(pts) - 1):
+                        (ax, ay), (bx, by) = pts[i], pts[i + 1]
+                        water.append((hw, min(ax, bx), min(ay, by), max(ax, bx), max(ay, by), (ax, ay), (bx, by)))
+            dry = []
+            for dp in recs["dry_plots"]:
+                poly = dp.get("poly")
+                if not poly:
+                    continue  # pragma: no cover - defensive: every dry plot carries an outline
+                dry.append((poly, (min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly))))
+            wet = [(r, (min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r))) for r in paddy_wet_rings(self.M)]
+            self._wgc_cache = (fp, water, dry, wet)
+        _, water, dry, wet = self._wgc_cache
+        for hw, sx0, sy0, sx1, sy1, pa, pb in water:
+            lim = hw + vr
+            if sx0 - lim <= cx <= sx1 + lim and sy0 - lim <= cy <= sy1 + lim and seg_dist(cx, cy, pa, pb) < lim:
+                return False
         pond = self.M.get("pond")
         if pond and ((cx - pond[0]) ** 2) / ((pond[2] + vr) ** 2) + ((cy - pond[1]) ** 2) / ((pond[3] + vr) ** 2) < 1.0:
             return False
-        for dp in self.M.get("dry_plots", []) or []:
-            poly = dp.get("poly")
-            if not poly:
-                continue  # pragma: no cover - defensive: every dry plot carries an outline
-            if point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly))):
+        for poly, (bx0, by0, bx1, by1) in dry:
+            if bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and (point_in_poly(cx, cy, poly) or any(seg_dist(cx, cy, poly[i], poly[(i + 1) % len(poly)]) < vr for i in range(len(poly)))):
                 return False
-        # AND THE WET ONES, which is where it actually matters (GM 2026-07-27: "wells on dry crops
-        # are okay, but not in rice paddies, surely"). The line above says "you do not dig one in the
-        # middle of a crop plot" and covered only the DRY plots; a paddy is a puddled, bunded basin
-        # held under standing water, so a head sunk there stands in the water it is an alternative
-        # to. Nothing else caught it either - the overlap matrix classes `fields` permissive because
-        # a plot's polygon is not stored - so this is the placement half of `wells_clear_of_paddies`,
-        # and both halves read `paddy_wet_rings` (see it for why the DRAWN basins, not the smoothed
-        # envelope, are the water). Same strictness as the dry-plot rule: the drawn head may not lap
-        # the crop.
-        return not any(ring_touches(cx, cy, vr, ring) for ring in paddy_wet_rings(self.M))
+        return not any(bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and ring_touches(cx, cy, vr, ring) for ring, (bx0, by0, bx1, by1) in wet)
 
     def _well_vr(self) -> float:
         """The well-house ROOF square's half-size - a wellhead's full DRAWN extent (see well()).
@@ -5047,14 +5131,18 @@ class Settlement:
         blk = [absol(-hw - m, -hh - m), absol(hw + m, -hh - m), absol(hw + m, hh + m), absol(-hw - m, hh + m)]
         self.block_polys.append([(round(px, 1), round(py, 1)) for px, py in blk])
         ys = [c[1] for c in corners]
+        _t = label_tilt(rot)
         if label:
             # the caption hangs above the walls by default; `label_xy` moves it when something
             # legitimately occupies that band - a ROTATED manor swings its corner up into the
             # text, and a punishment ground sited at the gate (which is where it belongs) sits
-            # under it (GM 2026-07-26, Hoshizora). Same escape as s.martial_hall.
-            self.label(*(label_xy or (x, min(ys) - 12)), label, 14, weight="bold")
+            # under it (GM 2026-07-26, Hoshizora). Same escape as s.martial_hall. A DIAGONAL
+            # compound's caption tilts with it (label_tilt), at the hand seat or the default.
+            _seat = label_xy or (tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 12, above=True) if _t else (x, min(ys) - 12))
+            self.label(*_seat, label, 14, weight="bold", rot=_t)
         if sublabel:
-            self.label(x, max(ys) + 18, sublabel, 9, italic=True)
+            _s2 = tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 18) if _t else (x, max(ys) + 18)
+            self.label(*_s2, sublabel, 9, italic=True, rot=_t)
 
     def _estate_wall_clear(self, x: float, y: float, w: float, h: float, marg: float = 2.5) -> bool:
         """Whether a walled compound's PERIMETER at (x,y,w,h) stays off recorded water (canals,
@@ -5652,7 +5740,7 @@ class Settlement:
             _a = math.radians(rot)
             _rx = abs(hw * math.cos(_a)) + abs(hh * math.sin(_a))
             _ry = abs(hw * math.sin(_a)) + abs(hh * math.cos(_a))
-            self.place_caption(label, (cx - _rx, cy - _ry, cx + _rx, cy + _ry), 11, italic=True, hint=(cx, cy + _ry + 16))
+            self.place_caption(label, (cx - _rx, cy - _ry, cx + _rx, cy + _ry), 11, italic=True, hint=(cx, cy + _ry + 16), rot=rot)
 
     def fire_tower(self, x: float, y: float, tw: float | None = None, rot: float = 0.0, label: str = "fire tower") -> int:
         """A HINOMI-YAGURA (fire-watch tower): a tall, slender braced-timber tower with a lookout
@@ -5680,10 +5768,12 @@ class Settlement:
         bm = 16
         self.block_polys.append([(x - h - bm, y - h - bm), (x + h + bm, y - h - bm), (x + h + bm, y + h + bm), (x - h - bm, y + h + bm)])
         if label:
-            self.label(x, y + h + 14, label, 9, italic=True, color="#7A5A30")
+            _t = label_tilt(rot)
+            _lx, _ly = tilt_caption_seat(x, y, rot, _t, h, h, 14) if _t else (x, y + h + 14)
+            self.label(_lx, _ly, label, 9, italic=True, color="#7A5A30", rot=_t)
         return z
 
-    def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board", label_above: bool = False) -> int:
+    def kosatsuba(self, x: float, y: float, rot: float = 0.0, label: str = "notice board", label_above: bool = False, label_xy: Pt | None = None) -> int:
         """The KOSATSUBA - the settlement's official notice board: a small roofed frame posting
         the state's STANDING LAW (edicts, porter/packhorse rate tables, ban lists). Sited at the
         most TRAFFICKED public point - the highway frontage, the main street by the gate, a
@@ -5730,8 +5820,27 @@ class Settlement:
         self.block_polys.append([(x - hw - bm, y - hh - bm), (x + hw + bm, y - hh - bm), (x + hw + bm, y + hh + bm), (x - hw - bm, y + hh + bm)])
         if label:
             # label_above: for a board standing just inside a gate, the default below-label
-            # would hang over the gate structure (labels_clear_of_other_buildings)
-            self.label(x, y - hh - 11 if label_above else y + hh + 11, label, 8, italic=True, color="#7A5A30")
+            # would hang over the gate structure (labels_clear_of_other_buildings).
+            # label_xy: a HAND seat for the caption when BOTH bands are taken - the forcing
+            # case was Nagahara's principal board at the market-bend junction, where the
+            # below band holds the drum tower, the above band abuts the samurai ward gate's
+            # glyph and its caption (settlement-review 2026-08-02: the two stacked captions
+            # read as one label on the gate), and the clear ground is diagonal, east along
+            # the road edge. Same escape the punishment ground and execution ground carry
+            # (label_xy there) and for the same reason: a deferred/derived seat cannot be
+            # probed from a gen, so the last resort is an explicit one. Direct-labeled, so
+            # label_hugs_its_referent does not govern it - keep a hand seat close enough to
+            # read as the board's own. A hand seat keeps its SPOT but the text still tilts
+            # with a diagonal board (angled captions, GM 2026-08-02) - same merge as
+            # punishment_spot's label_xy.
+            _t = label_tilt(rot)
+            if label_xy:
+                _lx, _ly = label_xy
+            elif _t:
+                _lx, _ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 11, above=label_above)
+            else:
+                _lx, _ly = (x, y - hh - 11) if label_above else (x, y + hh + 11)
+            self.label(_lx, _ly, label, 8, italic=True, color="#7A5A30", rot=_t)
         return z
 
     def label_blockers(self, skip_key: str | None = None) -> list[tuple[float, float, float, float]]:
@@ -5763,7 +5872,7 @@ class Settlement:
                 xs = [o["x"] + dx * ca - dy * sa for dx, dy in cs]
                 ys = [o["y"] + dx * sa + dy * ca for dx, dy in cs]
                 boxes.append((min(xs), min(ys), max(xs), max(ys)))
-        boxes += [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
+        boxes += [label_aabb(lb) for lb in self.M["labels"] if len(lb) > 3]  # AABB: a tilted caption blocks the ground its rotated run can reach
         return boxes
 
     def label_caption_hw(self, label: str, size: float) -> float:
@@ -5774,11 +5883,15 @@ class Settlement:
         (Minami, 2026-07-27). Placement and its check read the SAME geometry."""
         return len(label) * size * 0.55 / 2
 
-    def label_seat_clear(self, lx: float, ly: float, tw: float, size: float = 9.0, boxes: list[tuple[float, float, float, float]] | None = None) -> bool:
-        """Is a caption box centred at (lx, ly) clear of every blocker? `boxes` lets a caller that
-        probes many seats build the blocker list once."""
+    def label_seat_clear(self, lx: float, ly: float, tw: float, size: float = 9.0, boxes: list[tuple[float, float, float, float]] | None = None, tilt: float = 0.0) -> bool:
+        """Is a caption box centered at (lx, ly) clear of every blocker? `boxes` lets a caller that
+        probes many seats build the blocker list once. A TILTED caption probes its rotated AABB -
+        conservative against these axis-aligned blockers, so the probe stays at least as strict as
+        the quad the gate tests."""
         bx = self.label_blockers() if boxes is None else boxes
-        b = (lx - tw, ly - size * 0.8, lx + tw, ly + size * 0.25)
+        b: tuple[float, float, float, float] = (lx - tw, ly - size * 0.8, lx + tw, ly + size * 0.25)
+        if tilt:
+            b = label_aabb([*b, 0, "", None, tilt])
         return not any(b[0] < x1 and x0 < b[2] and b[1] < y1 and y0 < b[3] for x0, y0, x1, y1 in bx)
 
     def clear_label_seat(self, x: float, y: float, w: float, h: float, label: str, size: float = 9.0, skip_key: str | None = None) -> Pt | None:
@@ -5808,10 +5921,12 @@ class Settlement:
         headman, or a hamlet's senior farmer answering to the village headman - and officials
         also read notices aloud, so even a 50-inhabitant hamlet's board works). Deterministic:
         draws NO RNG, so calling it inside `roll_village` cannot perturb a rolled map's seed
-        stream. Reads the SAME manifest route fields the validator's siting check reads
-        (`M['road']` + `M['lane']` + `M['lanes']` - the dev-loop same-source doctrine) and
-        probes candidate verge spots with `_fits`, scoring for the most dwellings within ~260
-        px (siting is a TRAFFIC decision - the state talks at everyone who passes) while
+        stream. Reads the SAME manifest route fields the validator's siting checks read (the
+        dev-loop same-source doctrine): MAIN ways only (`roads`/`M['road']` + `main: True`
+        town streets - kosatsuba_on_a_main_way, GM 2026-08-02) when the map declares any,
+        else the whole network (`M['lane']` + `M['lanes']` + `town_streets`), and probes
+        candidate verge spots with `_fits`, scoring for the most dwellings within ~260 px
+        (siting is a TRAFFIC decision - the state talks at everyone who passes) while
         hugging the verge. Call AFTER the lanes, homesteads, and wells and BEFORE the crop, so
         the frame contains the board. No-op under meta(kosatsuba=False); returns the spot, or
         None when no verge inside the validator's ~60-real-ft siting band fits (the
@@ -5825,20 +5940,29 @@ class Settlement:
         w = max(self.px(12), KOSATSUBA_MARKER_MIN_PX)
         h = w * 5 / 12
         # (pts, tread width) per route; road/lane manifest fields carry no width, so assume
-        # a generous tread for the bed-avoidance test below
+        # a generous tread for the bed-avoidance test below.
+        # MAIN WAYS ONLY, where the map declares any (GM 2026-08-02, from Ubame: the siter put
+        # the board a legal 49 ft off a side lane while the high street ran 200 ft away - "it
+        # should be along the main road, in order to be more noticed"). The candidate tiers
+        # mirror kosatsuba_on_a_main_way exactly (the same-source doctrine): every road and
+        # every main: True town street is a MAIN way, and when the map has at least one, ONLY
+        # main-way verges are sampled - a side lane's busiest node is still a side lane, so
+        # scoring must never see it. A map with no declared hierarchy (village/hamlet lane
+        # webs, towns whose streets are all unflagged) falls back to the whole network, where
+        # the busiest-node scoring below stands in for "main". The fallback still needs TOWN
+        # STREETS TOO: this probe was written for the lane/lanes tiers, and the omission was
+        # invisible until Hirameki - no road, no lanes, all town_streets - gave it not one
+        # candidate seat and it returned None (GM 2026-07-27).
         routes: list[tuple[list[Pt], float]] = []
         if self.M.get("road"):
             routes.append(([(p[0], p[1]) for p in self.M["road"]], 18.0))
-        if self.M.get("lane"):
-            routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
-        routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
-        # TOWN STREETS TOO - the same source `kosatsuba_by_the_road` reads (the dev-loop
-        # same-source doctrine). This probe was written for the village/hamlet tiers, where the
-        # network is `lane`/`lanes`, and the omission was invisible while the towns hand-placed
-        # their boards. The moment Hirameki switched to the auto-siter it surfaced as a hard
-        # stop: that town has NO road and NO lanes at all - its whole network is town_streets -
-        # so the probe had not one candidate seat to consider and returned None (GM 2026-07-27).
-        routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [])
+        routes.extend(([(p[0], p[1]) for p in r["pts"]], 18.0) for r in (self.M.get("roads") or [])[1:])
+        routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [] if st.get("main"))
+        if not routes:
+            if self.M.get("lane"):
+                routes.append(([(p[0], p[1]) for p in self.M["lane"]], 8.0))
+            routes.extend(([(p[0], p[1]) for p in ln["pts"]], float(ln.get("w", 8))) for ln in self.M.get("lanes") or [])
+            routes.extend(([(p[0], p[1]) for p in st["pts"]], float(st.get("w", 18))) for st in self.M.get("town_streets") or [])
         spots = [(b["x"], b["y"]) for b in self.M["houses"]] + [(b["x"], b["y"]) for b in self.M["buildings"]]
 
         beds = way_beds(self.M)  # EVERY way bed, not just the routes candidates were sampled from
@@ -6020,8 +6144,15 @@ class Settlement:
     # repertoire, not his footprint; only where horses CONCENTRATE does farriery earn its own
     # premises, which is what s.farrier draws.
 
-    def _trade_record(self, key: str, x: float, y: float, w: float, h: float, rot: float, label: str, bm: float = 10.0, lab_off: float | None = None) -> None:
-        """Record + block one trade-works footprint (shared tail of the trade glyph methods)."""
+    def _trade_record(self, key: str, x: float, y: float, w: float, h: float, rot: float, label: str, bm: float = 10.0, lab_off: float | None = None, label_xy: Pt | None = None) -> None:
+        """Record + block one trade-works footprint (shared tail of the trade glyph methods).
+
+        `label_xy` hand-seats the caption (and its reserved band) when the default below-the-
+        footprint seat collides with a neighbor the placement probe cannot see - the known
+        label-probe limit (this skill's CLAUDE.md): a label box exists only at draw time, so a
+        collision with an already-drawn TOP-layer fixture (Minami's lumber-yard caption grazing
+        the log-boom pen by under a pixel, 2026-08-02) surfaces only at the gate, and the hand
+        seat is the same remedy punishment_spot and the kosatsuba use."""
         self.M.setdefault(key, []).append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "rot": round(rot, 1), "label": label})
         self.placed.append((x, y, w, h))
         hw, hh = w / 2 + bm, h / 2 + bm
@@ -6040,14 +6171,30 @@ class Settlement:
         # left an off-map channel anchor stranded INSIDE the frame (channel_field_anchored). Those
         # captions already clear their own footprints, so the churn would buy nothing.
         eh_ = h / 2 if lab_off is None else lab_off
-        if label:
+        tilt_ = label_tilt(rot)
+        if label and tilt_:
+            # A DIAGONAL works captions ALONG ITS OWN TILT (label_tilt, GM 2026-08-02): the caption
+            # hangs off the ROTATED lower edge - the local half-extent is exact there, so the
+            # square-rotation `lab_off` escape does not apply - and the reserved band under the
+            # text rotates with it, guarding the ground the tilted glyph run actually covers.
+            bw_ = max(hw, 2.9 * len(label) + 10)
+            lx_, ly_ = tilt_caption_seat(x, y, rot, tilt_, w / 2, h / 2, 11)
+            ca_, sa_ = math.cos(math.radians(tilt_)), math.sin(math.radians(tilt_))
+            self.block_polys.append([(lx_ + dx * ca_ - dy * sa_, ly_ + dx * sa_ + dy * ca_) for dx, dy in ((-bw_, -11.0), (bw_, -11.0), (bw_, 15.0), (-bw_, 15.0))])
+            self.label(lx_, ly_, label, 9, italic=True, color="#5A4326", rot=tilt_)
+        elif label:
             # the band anchors at the RAW footprint edge - the caption box starts ~edge+6, so
             # anchoring at the margin-inflated hh left its top half unguarded (the bathhouse
             # caption's merchant_house graze, 2026-07-24). +10 width slack because rowpack tests
             # corners but pack/place_wells test centers only (settlement init comment ~line 642).
             bw_ = max(hw, 2.9 * len(label) + 10)
-            self.block_polys.append([(x - bw_, y + eh_), (x + bw_, y + eh_), (x + bw_, y + eh_ + 26), (x - bw_, y + eh_ + 26)])
-            self.label(x, y + eh_ + 11, label, 9, italic=True, color="#5A4326")
+            if label_xy is not None:
+                lx_, ly_ = label_xy
+                self.block_polys.append([(lx_ - bw_, ly_ - 11.0), (lx_ + bw_, ly_ - 11.0), (lx_ + bw_, ly_ + 15.0), (lx_ - bw_, ly_ + 15.0)])
+                self.label(lx_, ly_, label, 9, italic=True, color="#5A4326")
+            else:
+                self.block_polys.append([(x - bw_, y + eh_), (x + bw_, y + eh_), (x + bw_, y + eh_ + 26), (x - bw_, y + eh_ + 26)])
+                self.label(x, y + eh_ + 11, label, 9, italic=True, color="#5A4326")
 
     def brewery(self, x: float, y: float, rot: float = 0.0, label: str = "brewery") -> None:
         """A SAKE/MISO/SOY BREWERY compound - the biggest trade premises in a provincial seat
@@ -6110,7 +6257,7 @@ class Settlement:
         self.add(''.join(g))
         self._trade_record("dye_yards", x, y, yw_, yh_, rot, label)
 
-    def lumber_yard(self, x: float, y: float, rot: float = 0.0, label: str = "lumber yard") -> None:
+    def lumber_yard(self, x: float, y: float, rot: float = 0.0, label: str = "lumber yard", label_xy: Pt | None = None) -> None:
         """A riverside LUMBER YARD (zaimokuya) - stacked timber + a river landing; stock moves by
         water at scale, so this is a RIVER-PORT feature only (city_river_port_has_lumber_yard;
         a landlocked city has none - the GM's Tango/Nagahara split). Small office + stack rows.
@@ -6124,7 +6271,7 @@ class Settlement:
                 g.append(f'<line x1="{ox_ - 4.6:.1f}" y1="{oy_ + li_ * 1.5 - 2.2:.1f}" x2="{ox_ + 4.6:.1f}" y2="{oy_ + li_ * 1.5 - 2.2:.1f}" stroke="#8A6B42" stroke-width="1.1"/>')
         g.append('</g>')
         self.add(''.join(g))
-        self._trade_record("lumber_yards", x, y, yw_, yh_, rot, label)
+        self._trade_record("lumber_yards", x, y, yw_, yh_, rot, label, label_xy=label_xy)
 
     def oil_press(self, x: float, y: float, rot: float = 0.0, label: str = "oil press") -> None:
         """An OIL PRESSER's barn (aburaya / youfang): the wedge-and-beam press is a massive timber
@@ -6398,7 +6545,15 @@ class Settlement:
             g.append(f'<rect x="{hx_ - hw2_ / 2:.1f}" y="{hy_ - hh2_ / 2:.1f}" width="{hw2_:.1f}" height="{hh2_:.1f}" rx="1" fill="#D8C49A" stroke="#5A4326" stroke-width="1.5"/>')
             g.append(f'<line x1="{hx_ - hw2_ / 2 + 1.5:.1f}" y1="{hy_:.1f}" x2="{hx_ + hw2_ / 2 - 1.5:.1f}" y2="{hy_:.1f}" stroke="#5A4326" stroke-width="0.8" opacity="0.7"/>')  # the ridge
             qx_, qy_ = _world(hx_, hy_)
-            quarters.append([round(qx_, 1), round(qy_, 1), round(hw2_, 1), round(hh2_, 1)])
+            # [x, y, w, h, ROT] - the rotation is the 5th element and is not optional decoration.
+            # A cottage is drawn inside the works' rotated group, so a record without it describes a
+            # box at the right place with the wrong ORIENTATION, and every consumer reads the wrong
+            # footprint: kiln_keeps_fire_gap measured Tango's 69 ft gap as 62 ft, and
+            # wells_among_dwellings tests the works' own well against a mis-oriented cottage. Latent
+            # until 2026-07-27, when the maps started passing `rot` so the kiln climbs its slope -
+            # every works before that was rot=0, where the bug is invisible. (Older records with
+            # only four elements still read as rot=0, which is what they were.)
+            quarters.append([round(qx_, 1), round(qy_, 1), round(hw2_, 1), round(hh2_, 1), round(rot, 1)])
         g.append('</g>')
         self.add(''.join(g))
         # THE WORKS' OWN WELL, between the shed and the cottages. Clay cannot be weathered, wedged
@@ -6406,7 +6561,12 @@ class Settlement:
         # for the same reason, so it never counts toward the settlement's public idobata.
         wx_, wy_ = _world(f(2), f(24))
         self.well(wx_, wy_, private=True)
-        self._trade_record("kilns", x, y, yw_, yh_, rot, label)
+        # A ROTATED works must report its rotated half-height, or the caption anchors at the raw h/2
+        # and lands inside the record's own bbox - labels_clear_of_other_buildings then reports
+        # "'kiln works' over a kiln works". Same fix the rot=150 Hoshizora farrier needed; see
+        # _trade_record's `lab_off` note. Live from 2026-07-27, when the maps started passing `rot`
+        # so the kiln climbs its slope instead of pointing east on every sheet.
+        self._trade_record("kilns", x, y, yw_, yh_, rot, label, lab_off=abs(yw_ / 2 * math.sin(th_)) + abs(yh_ / 2 * math.cos(th_)))
         bx_, by_ = _world(bcx_, bcy_)
         self.M["kilns"][-1]["body"] = [round(bx_, 1), round(by_, 1), round(bw_, 1), round(bh_, 1), round(rot, 1)]
         self.M["kilns"][-1]["quarters"] = quarters
@@ -8598,8 +8758,14 @@ class Settlement:
             # the label outright (the paddy_field convention), for the case Hoshizora hit, where the
             # only clear VERGE for the ground sits directly under the manor's own label box and the
             # only clear TEXT band is a little further down, between that label and the manor itself.
-            lx, ly = label_xy if label_xy else (x, y - hh - 9 if label_above else y + hh + 11)
-            self.label(lx, ly, label, 9, italic=True, color="#6B5A3C")
+            _t = label_tilt(rot)
+            if label_xy:
+                lx, ly = label_xy
+            elif _t:
+                lx, ly = tilt_caption_seat(x, y, rot, _t, hw, hh, 9 if label_above else 11, above=label_above)
+            else:
+                lx, ly = (x, y - hh - 9) if label_above else (x, y + hh + 11)
+            self.label(lx, ly, label, 9, italic=True, color="#6B5A3C", rot=_t)
 
     def execution_ground(self, cx: float, cy: float, rot: float = 0.0, screened: bool | None = None, label: str | None = "execution ground", label_above: bool = False) -> None:
         """The EXECUTION GROUND (keijou) - bare waste ground on the road past the settlement's
@@ -8683,7 +8849,9 @@ class Settlement:
         if label:
             # label_above: the ground shares the settlement's outskirts with the polluting trades
             # (kiln, tanning yard), whose small glyphs the default below-label can land on
-            self.label(cx, cy - hh - 8 if label_above else cy + hh + 13, label, 11, italic=True, color="#6B5A3C")
+            _t = label_tilt(rot)
+            _lx, _ly = tilt_caption_seat(cx, cy, rot, _t, hw, hh, 8 if label_above else 13, above=label_above) if _t else ((cx, cy - hh - 8) if label_above else (cx, cy + hh + 13))
+            self.label(_lx, _ly, label, 11, italic=True, color="#6B5A3C", rot=_t)
 
     def boundary_marker(self, x: float, y: float, rot: float = 0.0, label: str | None = "boundary stone", label_xy: Pt | None = None) -> None:
         """A DOSOJIN (sae no kami) stone at the settlement's ritual boundary - where the road leaves
@@ -8714,8 +8882,9 @@ class Settlement:
         if label:
             # the default below-seat lands on the road the stone stands beside, which at a city gate
             # is the gate throat itself - label_xy hands it to open ground (Nagahara's east gate)
-            _lx, _ly = label_xy if label_xy else (x, y + hh + 10)
-            self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C")
+            _t = label_tilt(rot)
+            _lx, _ly = label_xy if label_xy else (tilt_caption_seat(x, y, rot, _t, hw, hh, 10) if _t else (x, y + hh + 10))
+            self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C", rot=_t)
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary") -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
@@ -10043,50 +10212,101 @@ class Settlement:
         self.M.setdefault("jetties", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "z": z})
         return z
 
-    def log_boom(self, x: float, y: float, rot: float = 0.0, length: float | None = None, label: str | None = "log boom", label_xy: Pt | None = None) -> int:
-        """A LOG BOOM - a cabled chain of floating logs corralling rafted timber against the bank,
-        with the loose stock riding inside it, at a river port whose main trade is TIMBER.
+    def log_boom(self, x: float, y: float, rot: float = 0.0, length: float | None = None, width: float | None = None, label: str | None = "log boom", label_xy: Pt | None = None) -> int:
+        """A LOG BOOM - a shore-fast holding pen for rafted timber at a river port whose main trade
+        is TIMBER: a cabled chain of floating logs anchored to the bank at both ends, enclosing a
+        strip of water packed with raft-mats between the chain and the shore.
 
         WHY THIS EXISTS (GM 2026-07-26). A timber city drawn with only a lumber yard and jetties gets
         the same river vocabulary as any other river town: the yard says "someone sells wood", not
         "this is a timber river". Logs came DOWN the water loose or rafted and had to be held at the
-        mill or yard until they were pulled out, and the holding pen is the boom - a chain of logs
-        cabled end to end, the one piece of river furniture that is specific to the trade. Minami is
-        where it matters: l7r.md has Fox charcoal burners outnumbering farmers and "significantly
-        more" timber going downriver than the ~10,000 koku/yr moved by cart, so the boom is not
-        decoration but the largest working thing on the city's water.
+        mill or yard until they were pulled out, and the holding pen is the boom - the one piece of
+        river furniture that is specific to the trade. Minami is where it matters: l7r.md has Fox
+        charcoal burners outnumbering farmers and "significantly more" timber going downriver than
+        the ~10,000 koku/yr moved by cart, so the boom is not decoration but the largest working
+        thing on the city's water.
 
-        Drawn in the TOP layer OVER the water, like a jetty or a bridge deck - it floats, so its
-        overlap with the river is the whole point (OVERLAP_CLASS FIXTURE, _OVERLAP_EXEMPT). `rot` is
-        the boom's bearing, which should follow the current rather than cross it: a boom is moored
-        ALONG the bank, because one strung across the channel would dam the river it works.
-        Records M['log_booms']."""
+        WHY IT IS A PEN AGAINST THE BANK, NOT A LINE IN THE STREAM (GM 2026-08-02, "it just looks
+        like a bunch of logs in the middle of the river"; the research is in
+        research/urban-features.md, "The log boom"). A boom is a floating FENCE - anchored to
+        nothing it holds nothing. Attested booms anchor to fixed ground (bank abutments, stone-
+        filled cribs, driven piles) and run ALONG a navigated river, the pen between chain and
+        shore, with the fairway kept clear by law; only a loose-log CATCH boom on an unnavigated
+        reach ever spans the water (the Kiso tsunaba at the gorge mouth), and that is upstream
+        lore, not port furniture. And the held stock is MASS - attested pens are measured in
+        thousands of logs packed edge to edge - so the pen draws as a near-solid mat of raft
+        strips, never scattered sticks.
+
+        Local frame: `length` runs along the bank (local x), the pen is `width` across (local y,
+        default ~40 real ft - about a third of a 120 ft channel), and THE BANK LIES ON THE LOCAL
+        +y SIDE - orient `rot` so +y faces the shore. The chain draws on the -y (offshore) edge,
+        short end-booms close the pen, mooring posts sit at the bank corners and pile clusters at
+        the chain. The checks (log_boom_moored_to_the_bank / log_boom_leaves_the_fairway /
+        log_boom_serves_the_lumber_yard) derive the pen quad from the recorded x/y/rot/len/pen_w
+        under this same convention. Drawn in the TOP layer OVER the water, like a jetty deck - it
+        floats, so overlapping the river is the whole point (OVERLAP_CLASS FIXTURE,
+        _OVERLAP_EXEMPT). Records M['log_booms']."""
         if length is None:
             length = self.px(330)
-        hl = length / 2
+        if width is None:
+            width = self.px(40)
+        hl, hp = length / 2, width / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
-        # the loose stock riding inside the pen, drawn first so the chain reads as holding it in
-        for ox, oy, olen in ((-0.34, 0.30, 0.20), (-0.06, 0.38, 0.16), (0.20, 0.31, 0.22), (0.44, 0.40, 0.15), (-0.20, 0.46, 0.17)):
-            lx0, lx1 = -hl + length * (0.5 + ox), -hl + length * (0.5 + ox + olen)
-            ly = 5.6 + oy * 7.0
-            g.append(f'<line x1="{lx0:.1f}" y1="{ly:.1f}" x2="{lx1:.1f}" y2="{ly:.1f}" stroke="#7A5B33" stroke-width="2.6" stroke-linecap="round" opacity="0.85"/>')
-        # the CHAIN: logs cabled end to end, each a stubby round-ended timber, with the cable through
-        seg = max(9.0, length / 12.0)
-        g.append(f'<line x1="{-hl:.1f}" y1="0" x2="{hl:.1f}" y2="0" stroke="#4A3A22" stroke-width="0.8" opacity="0.8"/>')
-        pos = -hl
-        while pos < hl - 1:
-            end = min(pos + seg * 0.82, hl)
-            g.append(f'<line x1="{pos:.1f}" y1="0" x2="{end:.1f}" y2="0" stroke="#8A6B42" stroke-width="4.2" stroke-linecap="round"/>')
-            g.append(f'<line x1="{pos:.1f}" y1="0" x2="{end:.1f}" y2="0" stroke="#59431F" stroke-width="0.7" opacity="0.55"/>')
-            pos += seg
+        # the held stock first, so the chain reads as holding it in: raft-mats packed nearly solid
+        # between chain and shore (sparse sticks read as debris - the attested pens hold thousands)
+        # each strip is drawn as an OUTLINED log - a dark underlay a hair wider than the lighter
+        # log tone over it - so the dark rims and butt gaps resolve into individual timbers to the
+        # eye (GM 2026-08-03: the first solid mat read as one brown mass, "hard to pick out
+        # individual logs"); runs kept short (~18-36 real ft) for the same reason
+        n_rows = max(4, round((width - 3.2) / 2.05) + 1)
+        for r in range(n_rows):
+            ry = -hp + 1.6 + r * (width - 3.2) / max(1, n_rows - 1)
+            pos = -hl + 2.6 + 1.7 * ((r * 7) % 3)
+            while pos < hl - 3.6:
+                run = 9.0 + 3.0 * math.sin(r * 3.1 + pos * 0.13)
+                end = min(pos + run, hl - 2.6)
+                tone = "#7A5B33" if (r + int(pos)) % 2 else "#85643B"
+                g.append(f'<line x1="{pos:.1f}" y1="{ry:.1f}" x2="{end:.1f}" y2="{ry:.1f}" stroke="#4A3A22" stroke-width="2.0" stroke-linecap="round" opacity="0.9"/>')
+                g.append(f'<line x1="{pos + 0.4:.1f}" y1="{ry:.1f}" x2="{end - 0.4:.1f}" y2="{ry:.1f}" stroke="{tone}" stroke-width="1.2" stroke-linecap="round" opacity="0.95"/>')
+                pos = end + 1.5
+
+        # the pen fence: logs cabled end to end (stubby round-ended timbers over a cable line),
+        # along the offshore edge and closing both short ends back to the bank
+        def chain(x0: float, y0: float, x1: float, y1: float) -> None:
+            n_seg = max(2, int(math.hypot(x1 - x0, y1 - y0) / 9.0))
+            g.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="#4A3A22" stroke-width="0.8" opacity="0.8"/>')
+            for i in range(n_seg):
+                t0, t1 = (i + 0.06) / n_seg, (i + 0.88) / n_seg
+                g.append(
+                    f'<line x1="{x0 + (x1 - x0) * t0:.1f}" y1="{y0 + (y1 - y0) * t0:.1f}" x2="{x0 + (x1 - x0) * t1:.1f}" y2="{y0 + (y1 - y0) * t1:.1f}" stroke="#8A6B42" stroke-width="4.2" stroke-linecap="round"/>'
+                )
+                g.append(
+                    f'<line x1="{x0 + (x1 - x0) * t0:.1f}" y1="{y0 + (y1 - y0) * t0:.1f}" x2="{x0 + (x1 - x0) * t1:.1f}" y2="{y0 + (y1 - y0) * t1:.1f}" stroke="#59431F" stroke-width="0.7" opacity="0.55"/>'
+                )
+
+        chain(-hl, -hp, hl, -hp)
+        chain(-hl, hp, -hl, -hp)
+        chain(hl, hp, hl, -hp)
+        # anchorage - a floating fence is only as strong as its fixed ground: mooring posts at the
+        # bank corners, pile clusters at the chain's corners and mid-run
+        for cx_, cy_ in ((-hl, hp), (hl, hp)):
+            g.append(f'<circle cx="{cx_:.1f}" cy="{cy_:.1f}" r="1.8" fill="#4A3A22"/>')
+        for cx_ in (-hl, 0.0, hl):
+            for dx_, dy_ in ((-1.6, 0.0), (1.4, -1.0), (0.6, 1.4)):
+                g.append(f'<circle cx="{cx_ + dx_:.1f}" cy="{-hp + dy_:.1f}" r="1.1" fill="#59431F"/>')
         g.append('</g>')
         z = self.add_top(''.join(g))
-        th = math.radians(rot)
-        w_ = abs(math.cos(th)) * length + abs(math.sin(th)) * 14.0
-        h_ = abs(math.sin(th)) * length + abs(math.cos(th)) * 14.0
-        self.M.setdefault("log_booms", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "w": round(w_, 1), "h": round(h_, 1), "z": z})
+        # record TRUE unrotated dims (w = along-bank length, h = pen width) with rot, exactly as a
+        # building does - the matrix extractor rotates x/w/h records by `rot` itself, so recording a
+        # rotation-FOLDED bounding box here double-rotates into a phantom footprint (that phantom
+        # put the pen "on" Minami's lumber yard 42px away, 2026-08-02)
+        self.M.setdefault("log_booms", []).append(
+            {"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "len": round(length, 1), "pen_w": round(width, 1), "w": round(length, 1), "h": round(width, 1), "z": z}
+        )
         if label:
-            lx, ly = label_xy if label_xy else (x, y + h_ / 2 + 12)
+            th = math.radians(rot)
+            aabb_h = abs(math.sin(th)) * length + abs(math.cos(th)) * width
+            lx, ly = label_xy if label_xy else (x, y + aabb_h / 2 + 12)
             self.label(lx, ly, label, 9, italic=True, color="#5A4326")
         return z
 
@@ -10475,7 +10695,7 @@ class Settlement:
         w = len(text) * size * 0.55
         return (lx - w / 2, ly - size * 0.8, lx + w / 2, ly + size * 0.25)
 
-    def _best_label_spot(self, box: Sequence[float], text: str, size: float, hint: Pt | None = None, slides: Sequence[float] = (0.0,), axis: Pt | None = None) -> Pt:
+    def _best_label_spot(self, box: Sequence[float], text: str, size: float, hint: Pt | None = None, slides: Sequence[float] = (0.0,), axis: Pt | None = None, tilt: float = 0.0) -> Pt:
         """The NEAREST seat for a caption naming the feature that occupies `box` which covers
         nothing - walking the standoff ladder (see LABEL_MIN_AIR above) outward from the subject,
         nearest clear seat wins. When nothing is clear inside the ladder's reach, the least-covered
@@ -10509,6 +10729,11 @@ class Settlement:
         x0, y0, x1, y1 = box[0], box[1], box[2], box[3]
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         hw, hh = len(text) * size * 0.55 / 2, size * 0.525  # the drawn box's half-extents (see _label_box)
+        if tilt:
+            # a TILTED caption seats by its rotated AABB - conservative against every axis-aligned
+            # obstacle here, so the ladder stays at least as strict as the quad the gate measures
+            _tca, _tsa = abs(math.cos(math.radians(tilt))), abs(math.sin(math.radians(tilt)))
+            hw, hh = hw * _tca + hh * _tsa, hw * _tsa + hh * _tca
         sl = list(dict.fromkeys([0.0, *slides]))
         if axis is not None:  # perpendicular to the subject, sliding along it
             dirs = [((-axis[1], axis[0]), axis), ((axis[1], -axis[0]), axis)]
@@ -10516,7 +10741,7 @@ class Settlement:
             tall = (y1 - y0) > (x1 - x0)
             ends: list[tuple[Pt, Pt]] = [((0.0, 1.0), (0.0, 0.0)), ((0.0, -1.0), (0.0, 0.0))] if tall else [((1.0, 0.0), (0.0, 0.0)), ((-1.0, 0.0), (0.0, 0.0))]
             dirs = ([((1.0, 0.0), (0.0, 1.0)), ((-1.0, 0.0), (0.0, 1.0))] if tall else [((0.0, 1.0), (1.0, 0.0)), ((0.0, -1.0), (1.0, 0.0))]) + ends
-        placed_labels = [(lb[0], lb[1], lb[2], lb[3]) for lb in self.M["labels"] if len(lb) > 3]
+        placed_labels = [label_aabb(lb) for lb in self.M["labels"] if len(lb) > 3]
         if self.M.get("title"):  # the title placard is a label too, and captions now seat AFTER it
             placed_labels.append(tuple(self.M["title"]["bbox"]))
         view = self.M["meta"].get("view")  # set by the crop; absent until then (and on uncropped maps)
@@ -10534,9 +10759,11 @@ class Settlement:
             clear: list[tuple[float, float, float, int, Pt]] = []
             for i, (lx, ly) in enumerate(cands):
                 lb = self._label_box(lx, ly, text, size)
+                if tilt:
+                    lb = label_aabb([*lb, 0, text, None, tilt])
                 if view and (lb[0] < view[0] or lb[1] < view[1] or lb[2] > view[0] + view[2] or lb[3] > view[1] + view[3]):
                     continue
-                hits = self._label_hits(lx, ly, text, size, pad=0.0, linepad=0.0) + sum(1 for o in placed_labels if box_gap(lb, o) < 3)
+                hits = self._label_hits(lx, ly, text, size, pad=0.0, linepad=0.0, tilt=tilt) + sum(1 for o in placed_labels if box_gap(lb, o) < 3)
                 gap = box_gap(lb, box)
                 if not hits:
                     # NEAREST wins within the rung; ties go to the LEAST CROWDED seat, then the
@@ -10566,6 +10793,7 @@ class Settlement:
         color: str = "#5A4326",
         hint: Pt | None = None,
         slides: Sequence[float] | None = None,
+        rot: float = 0.0,
     ) -> None:
         """Caption the feature occupying `box`, seated by the standoff ladder - use this instead of
         a hand-picked `s.label(x, y, ...)` whenever the caption names a specific feature (a market
@@ -10593,9 +10821,11 @@ class Settlement:
             # near flank was the road caption, 30px further up the same stall row.
             span = max(box[2] - box[0], box[3] - box[1])
             slides = (0.0, span * 0.25, -span * 0.25, span * 0.4, -span * 0.4)
-        self._captions.append((text, tuple(float(v) for v in box), size, italic, weight, color, hint, tuple(slides)))
+        # `rot` is the SUBJECT's rotation: a caption naming a diagonal feature tilts with it
+        # (label_tilt; GM 2026-08-02, angled-building labels), seated by its rotated AABB.
+        self._captions.append((text, tuple(float(v) for v in box), size, italic, weight, color, hint, tuple(slides), label_tilt(rot)))
 
-    def _label_hits(self, lx: float, ly: float, text: str, size: float, pad: float = 4.0, linepad: float = 6.0) -> int:
+    def _label_hits(self, lx: float, ly: float, text: str, size: float, pad: float = 4.0, linepad: float = 6.0, tilt: float = 0.0) -> int:
         """How many already-placed footprints (buildings/houses + homestead groves) a label at
         (lx, ly) would cover. The cheap scorer behind auto label placement: prefer a label spot
         in EMPTY ground; when every spot overlaps something, take the least (GM label doctrine,
@@ -10612,6 +10842,9 @@ class Settlement:
         writes (0.31/char here against 0.275), which is the slack that keeps glyphs off a
         neighbor's edge."""
         hw, hh = len(text) * size * 0.31 + pad, size * 0.75 + pad
+        if tilt:  # a tilted caption scores by its rotated AABB (conservative; the gate tests the true quad)
+            _ca, _sa = abs(math.cos(math.radians(tilt))), abs(math.sin(math.radians(tilt)))
+            hw, hh = hw * _ca + hh * _sa, hw * _sa + hh * _ca
         n = 0
         for px, py, pw, ph in self.placed:
             if abs(px - lx) < hw + pw / 2 and abs(py - ly) < hh + ph / 2:
@@ -12341,30 +12574,58 @@ class Settlement:
                 self._nbig -= 1
 
     # ---- annotation
-    def _record_label(self, x: float, y: float, text: str, size: float, anchor: str, z: int, ref: Sequence[float] | None = None) -> None:
+    def _record_label(self, x: float, y: float, text: str, size: float, anchor: str, z: int, ref: Sequence[float] | None = None, rot: float = 0.0) -> None:
         w = len(text) * size * 0.55  # rough serif advance; slightly generous so near-misses flag
         x0 = x - w / 2 if anchor == "middle" else (x - w if anchor == "end" else x)
         # record the TEXT (element [5]) too, so the gate can verify a zone/neighborhood label actually
         # sits with the cluster it names (same side of the wall, among its buildings)
         rec: list[Any] = [round(x0, 1), round(y - size * 0.8, 1), round(x0 + w, 1), round(y + size * 0.25, 1), z, text]
-        if ref is not None:
+        if ref is not None or rot:
             # element [6]: the box of the ONE feature this caption names, recorded only by the
             # standoff-ladder path (`place_caption` / the road label). A district caption names an
             # AREA, not a thing, so it carries no referent and `label_hugs_its_referent` skips it.
-            rec.append([round(float(v), 1) for v in ref])
+            # (Recorded as null when only a tilt follows - the elements are positional.)
+            rec.append([round(float(v), 1) for v in ref] if ref is not None else None)
+        if rot:
+            # element [7]: the caption's TILT in degrees (see label_tilt) - present ONLY when
+            # nonzero, so every level caption's record stays byte-identical to the pre-tilt
+            # format (the 695-manifest regression corpus reads unchanged). Elements [0..3] stay
+            # the UNROTATED box; label_quad / label_aabb derive the drawn geometry from it.
+            rec.append(rot)
         self.M["labels"].append(rec)
 
     def label(
-        self, x: float, y: float, text: str, size: float = 12, anchor: str = "middle", italic: bool = False, weight: str = "normal", color: str = "#2D2A24", ref: Sequence[float] | None = None
+        self,
+        x: float,
+        y: float,
+        text: str,
+        size: float = 12,
+        anchor: str = "middle",
+        italic: bool = False,
+        weight: str = "normal",
+        color: str = "#2D2A24",
+        ref: Sequence[float] | None = None,
+        rot: float = 0.0,
     ) -> None:
         esc = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         st = ' font-style="italic"' if italic else ''
+        # `rot` is a FEATURE rotation; label_tilt folds it to the caption's tilt (0 for any square
+        # rotation, so nothing changes for level callers). A tilted caption rotates about its
+        # recorded box's CENTER, so label_quad reads the drawn glyph run straight off the record
+        # (GM 2026-08-02, angled-building labels).
+        tilt = label_tilt(rot)
+        if tilt:
+            w_ = len(text) * size * 0.55
+            x0_ = x - w_ / 2 if anchor == "middle" else (x - w_ if anchor == "end" else x)
+            tr = f' transform="rotate({tilt:.1f} {x0_ + w_ / 2:.1f} {y - size * 0.275:.1f})"'
+        else:
+            tr = ''
         # labels live in the topmost LABEL layer so nothing - not a road, not a wall, not a kido or torii
         # - ever paints over the text (a label must always be fully readable)
         z = self.add_label(
-            f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" font-weight="{weight}"{st} fill="{color}" paint-order="stroke" stroke="{LAND}" stroke-width="3">{esc}</text>'
+            f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" font-weight="{weight}"{st}{tr} fill="{color}" paint-order="stroke" stroke="{LAND}" stroke-width="3">{esc}</text>'
         )
-        self._record_label(x, y, text, size, anchor, z, ref)
+        self._record_label(x, y, text, size, anchor, z, ref, tilt)
 
     def _text_width(self, s: str, fs: float) -> float:
         """Measured pixel width of bold `s` at font-size `fs` in the RENDER font (DejaVu Serif Bold -
@@ -12556,9 +12817,9 @@ class Settlement:
         # road caption, which goes last because it has by far the most room to move: its subject is
         # a whole road segment with a wide slide set, where a market row's caption has one short
         # stretch of frontage to sit against. Most-constrained-first; the road yields.
-        for _tx, _bx, _sz, _it, _wt, _co, _hi, _sl in self._captions:
-            _lx, _ly = self._best_label_spot(_bx, _tx, _sz, hint=_hi, slides=_sl)
-            self.label(_lx, _ly, _tx, _sz, italic=_it, weight=_wt, color=_co, ref=_bx)
+        for _tx, _bx, _sz, _it, _wt, _co, _hi, _sl, _ro in self._captions:
+            _lx, _ly = self._best_label_spot(_bx, _tx, _sz, hint=_hi, slides=_sl, tilt=_ro)
+            self.label(_lx, _ly, _tx, _sz, italic=_it, weight=_wt, color=_co, ref=_bx, rot=_ro)
         self._captions = []
         if getattr(self, "_road_label", None):
             text, lx, ly = self._road_label

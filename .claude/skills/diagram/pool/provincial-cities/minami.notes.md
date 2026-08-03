@@ -210,5 +210,31 @@ surfaced, recorded here rather than fixed in this pass:
   every retainer lives behind the fence - but nothing declares the intent, so it reads as fill
   overflow. Annotate or re-seat on the next regen.
 - **The "burakumin" label stacks under the "Temple of Daikoku" caption** (recorded boxes overlap
-  2.2 px vertically; no drawn ink touches) and can parse as a subtitle of the temple. A nudge west
-  or south on the next regen breaks the stack.
+  2.2 px vertically; no drawn ink touches) and can parse as a subtitle of the temple. The review
+  suggested a nudge west or south; MEASUREMENT REFUTES THAT and the label stays where it is. A
+  sweep of every 2 px seat in the quarter (x1120-1380, y1532-1640) against the recorded 50x10
+  caption box finds **zero** clear of the wells and rows at even 2 px of margin - 26 households
+  and their idobata saturate the ground - so every seat that breaks the stack leaves the fabric
+  the caption must name (`city_labels_placed_with_subject`). Weight, color and slant are what
+  carry the two captions apart. Re-siting needs the QUARTER to open up, not a nudge. (Two probe
+  attempts also re-learned the skill's own lesson the hard way: the first missed WELLS entirely,
+  because they record `r`/`vr` rather than `w`/`h`, and the seat it proposed failed the gate on a
+  wellhead. A probe must measure what the check measures.)
+### 2026-08-02 - the log boom redesigned from a mid-stream chain to a shore-fast pen
+
+The GM's finding on the first drawn boom: "it just looks like a bunch of logs in the middle of
+the river." The research pass behind the fix is recorded in `research/urban-features.md` ("The
+log boom"); the short form: a boom is a floating fence - anchored to nothing it holds nothing -
+and attested booms anchor to the bank and run ALONG a navigated river, the pen between chain and
+shore, with the fairway kept clear by law. The redrawn glyph is a pen: chain on the offshore
+edge, end-booms closing to the east bank, mooring posts and pile clusters, raft-mats packed
+near-solid, ~40 ft of held water = a third of the 120 ft channel. Three checks now hold it
+(`log_boom_moored_to_the_bank`, `log_boom_leaves_the_fairway`,
+`log_boom_serves_the_lumber_yard`), and the pre-fix capture is frozen in `pool/regressions/`.
+**The full-span catch boom is deliberately absent**: that form (the Kiso *tsunaba* - a rope bank
+to bank catching the loose-log drive) belongs at the Fox gorge mouth upstream on an unnavigated
+reach, where loose logs become the rafts that arrive here - it is off-map lore, not port
+furniture, and Minami's river carries wharf/dock/canal traffic that a spanning boom would dam.
+Post-review adjustments (settlement-review 2026-08-02): pen head held ~45 ft below the last
+wharf jetty so the jetty keeps its berth, and the zaimokuya slid to its bank frontage so pen and
+yard read as one works across ~40 ft of haul ground.

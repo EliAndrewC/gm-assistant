@@ -81,7 +81,15 @@ s.meta(
             "Quarter northwest and works south is therefore forced by two rules meeting, not by an unconsidered placement."
         )
     },
-    name="Tango", scale="city", walled=True, agricultural_district=True, population=3000, ftpx=3, wall_defense="siege", clan="Crane", capital_dir="southeast"
+    name="Tango",
+    scale="city",
+    walled=True,
+    agricultural_district=True,
+    population=3000,
+    ftpx=3,
+    wall_defense="siege",
+    clan="Crane",
+    capital_dir="southeast",
 )  # Crane city -> Benten + Daikoku; estates toward Otosan Uchi (SE)   # ~600 dwellings x5; the shops/civic/government buildings are EXTRA, not housing. ftpx=3: the GM's provincial-city scale, 1px=3ft -> bscale 1/3 (a 46ft farmhouse = 15px)
 
 # ---- feature 009: the SPACE BUDGET the wall answers to. Tango predates budget-first sizing and
@@ -158,8 +166,16 @@ s.quarter(_clip_h(_NW, 1211, False), "residential")
 # ---- the Imperial road (N-S spine, off both edges, through both gates), the moat-feeder, gates
 # the label names the IMPERIAL road - placed OUTSIDE the north gate; inside the walls the same
 # roadway is a city street (a city, not Imperial, responsibility), so the label must sit beyond a gate
-IMPROAD = [(1602, 595), (1602, CY - RY), (1602, 1328), (1602, CY + RY), (1602, 2290)]  # ends past the widened frame; the south tail reaches 2290 because the tannery, which must sit below BOTH outfall taps, pulls the crop ~180px south
-s.road(IMPROAD, label="Imperial Road", label_xy=(1678, 745))  # hint moved N of the execution ground (2026-07-27): at y790 the ladder slid the caption WEST along the road and into the execution ground's own caption
+IMPROAD = [
+    (1602, 595),
+    (1602, CY - RY),
+    (1602, 1328),
+    (1602, CY + RY),
+    (1602, 2290),
+]  # ends past the widened frame; the south tail reaches 2290 because the tannery, which must sit below BOTH outfall taps, pulls the crop ~180px south
+s.road(
+    IMPROAD, label="Imperial Road", label_xy=(1678, 745)
+)  # hint moved N of the execution ground (2026-07-27): at y790 the ladder slid the caption WEST along the road and into the execution ground's own caption
 _mnw = min(MOAT, key=lambda p: (p[0] - 1247) ** 2 + (p[1] - 993) ** 2)  # a moat vertex on the NW
 s.stream(
     [(799, 553), (922, 704), (1034, 841), (_mnw[0], _mnw[1])], width=s.px(66), frm={"kind": "offmap"}, to={"kind": "moat"}
@@ -178,7 +194,9 @@ s.stream(
 # absorb a live stream); see settlements.md's moat-water bullet. Threads S between the Imperial road
 # (x1602) and the westernmost samurai estate (x~2061), off the S edge.
 _mse = min(MOAT, key=lambda p: (p[0] - 1879) ** 2 + (p[1] - 1732) ** 2)  # a moat vertex on the SE (low) rim
-s.stream([(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122), (2072, 2245)], width=s.px(66), frm={"kind": "moat"}, to={"kind": "offmap"})  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
+s.stream(
+    [(_mse[0], _mse[1]), (1936, 1880), (1995, 2020), (2038, 2122), (2072, 2245)], width=s.px(66), frm={"kind": "moat"}, to={"kind": "offmap"}
+)  # outfall: moat -> off-map SE, as wide as the feeder (conservation of flow); tail off the widened frame
 s.moat_flow(_mnw, _mse)  # the closed ring flushes NW (feeder) -> SE (outfall), running BOTH ways round
 
 # the WARD GATES' ground is reserved before anything builds: each kido + its guard box holds a
@@ -219,12 +237,18 @@ s.stables(1574, 1687, rot=90)
 # trades whose premises outgrow the shop glyph, placed BEFORE the frontages/packs so the quarters
 # flow around them. Tango is LANDLOCKED: no lumber yard (timber moves by water at scale), but the
 # dyer stays - dyeing needs rinsing water (here the NW pond), not bulk transport.
-s.brewery(1560, 1000)  # on the agri district's open ground east of the pond (brewers site on WATER - same logic as the dyer next door; the packed SW quarter had no clean 120x60 ft ground: the compound's center-tested block kept colliding with pack edge-reach)
+s.brewery(
+    1560, 1000
+)  # on the agri district's open ground east of the pond (brewers site on WATER - same logic as the dyer next door; the packed SW quarter had no clean 120x60 ft ground: the compound's center-tested block kept colliding with pack edge-reach)
 s.dye_yard(1497, 1012)  # on the NW pond's south bank (rinsing + vat water)
 s.oil_press(1852, 1062)  # NE quarter, mid-band clear of the y1145 street and the x1990 alley (fire-conscious, toward the edge)
 s.pawnshop(1755, 1325)  # NE merchant_house band (the explicit merchant_large pair owns the 1508,1395 ground)
-s.bathhouses([(1680, 1310), (1232, 1160)])  # population-band roll (seed 162 -> 2): seat 1 on the merchant_house band by the road market (sited OUTSIDE the NE pre-pack well grid's box - a block in the warren swallowed well candidates and swamped the (1864,1226) idobata), seat 2 in the west merchant homes
-s.kiln(2282, 830)  # the KILN WORKS OUTSIDE the east wall, east of the common burial ground (2160-2250) and south of the ossuary (fire law + smoke). Its potters' cottages stand with it: the clay and the days-long firing are both out here
+s.bathhouses(
+    [(1680, 1310), (1232, 1160)]
+)  # population-band roll (seed 162 -> 2): seat 1 on the merchant_house band by the road market (sited OUTSIDE the NE pre-pack well grid's box - a block in the warren swallowed well candidates and swamped the (1864,1226) idobata), seat 2 in the west merchant homes
+s.kiln(
+    2332, 744, rot=250
+)  # the KILN WORKS OUTSIDE the east wall (fire law + smoke). NORTHEAST of the funerary complex, not beside it: at the first seat the works ground stood 26 ft off the common burial ground and a cottage 60 ft off it, which housed the potters against the graveyard fence and contradicted this feature's own doctrine - they are not hinin and their siting has nothing to do with the tanning yard's (settlement-review 2026-07-27). Now 257 ft clear of every funerary feature. rot=250 lays the kiln's climb NNW, i.e. UPHILL: meta water_flow=70 puts the fall SSE, and a noborigama cannot climb across its own slope
 # the TANNING YARD (GM 2026-07-25) on the moat outfall, BELOW every intake. The outfall is not a
 # waste channel - it is an irrigation supply: fs3 taps it at (1936,1880) and fse1 at (1995,2020)
 # (GM 2026-07-23). A yard below the estates would sit above fse1's tap and foul the SE paddies,
@@ -845,9 +869,7 @@ for (mx, my), name in zip(MIN_POS, MINS, strict=True):
 # Bishamon (the warrior fortune) in the samurai quarter SW corner, off the grid (no street
 # runs up to it at this tight scale, so it needs no torii avenue); new hall in a former
 # samurai compound - keeps NO burial ground
-s.shrine_hall(
-    1671, 1663, "Temple of Bishamon", w=s.px(200), h=s.px(140), kind="temple", graveyard=False, label_below=True, torii=[(1602, 1610), (1602, 1572), (1602, 1534)]
-)
+s.shrine_hall(1671, 1663, "Temple of Bishamon", w=s.px(200), h=s.px(140), kind="temple", graveyard=False, label_below=True, torii=[(1602, 1610), (1602, 1572), (1602, 1534)])
 # Bishamon's adepts (GM 2026-07-24; kind renders as a laborer house): the only clear pocket in
 # the ward's SE corner is the strip between the caption band (bottom ~y1712), the S-gate guard
 # furniture on the diagonal road (top ~y1734), and the ring-road corridor east of x1725 - too
@@ -1012,6 +1034,7 @@ for nm, tap, dd, sd, ff, ca, cb, oa in MOAT_FARMS:
     s.ring(
         ('poly', _env), 14, 78, ["plain"]
     )  # an outer ring band past the widened dry hems (2026-07-21): the village-depth quilts claim the near margin, so without it fw1's visible sliver seats no farmhouses (outside_fields_farmhouse_density)
+
 # fe2 - the band the old upper-E estate vacated (GM 2026-07-23 paddy-first: "I can definitely see
 # putting another rice paddy in the middle of where the 3 samurai estates are"). Moat-fed like fe1,
 # falling east off-frame; dry_keepout holds its hem quilt off the ONE remaining estate below it.
@@ -1042,7 +1065,9 @@ _pn = plot_centroid(_netn, lambda cs: min(cs, key=lambda c: c[1]))  # a head plo
 topo_channel([(1878, 604), (1878, 610), _pn], {"kind": "offmap"}, {"kind": "field", "name": "fn1"})
 _drn = next(c["pts"] for c in _netn["channels"] if c["role"] == "drain")
 _dfx, _dfy = _drn[-1]
-_mne = moat_swept_tap(MOAT, s.M["moat_flow"]["inlet"], s.M["moat_flow"]["outlet"], (_dfx, _dfy), min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2), arriving=True)  # the moat rim S of the outfall (west of the funerary ground)
+_mne = moat_swept_tap(
+    MOAT, s.M["moat_flow"]["inlet"], s.M["moat_flow"]["outlet"], (_dfx, _dfy), min(MOAT, key=lambda p: (p[0] - _dfx) ** 2 + (p[1] - _dfy - 90) ** 2), arriving=True
+)  # the moat rim S of the outfall (west of the funerary ground)
 topo_channel([(_dfx, _dfy), (_mne[0], _mne[1])], {"kind": "drain", "name": "fn1"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx, _dfy, rot=math.degrees(math.atan2(_mne[1] - _dfy, _mne[0] - _dfx)) + 90)  # the outfall gate where the field drain hands off to the culvert
 s.ring(('poly', ENV_FN1), 28, 15, ["plain"])
@@ -1060,7 +1085,9 @@ _pn2 = plot_centroid(_netn2, lambda cs: min(cs, key=lambda c: c[1]))  # a head p
 topo_channel([(1300, 604), (1300, 610), _pn2], {"kind": "offmap"}, {"kind": "field", "name": "fn2"})
 _drn2 = next(c["pts"] for c in _netn2["channels"] if c["role"] == "drain")
 _dfx2, _dfy2 = _drn2[-1]
-_mnw2 = moat_swept_tap(MOAT, s.M["moat_flow"]["inlet"], s.M["moat_flow"]["outlet"], (_dfx2, _dfy2), min(MOAT, key=lambda p: (p[0] - _dfx2) ** 2 + (p[1] - _dfy2 - 90) ** 2), arriving=True)  # the moat rim S of the outfall
+_mnw2 = moat_swept_tap(
+    MOAT, s.M["moat_flow"]["inlet"], s.M["moat_flow"]["outlet"], (_dfx2, _dfy2), min(MOAT, key=lambda p: (p[0] - _dfx2) ** 2 + (p[1] - _dfy2 - 90) ** 2), arriving=True
+)  # the moat rim S of the outfall
 topo_channel([(_dfx2, _dfy2), (_mnw2[0], _mnw2[1])], {"kind": "drain", "name": "fn2"}, {"kind": "moat"}, draw_w=4.0, col="#9CB4C8")  # the culvert mouth merges into the moat water
 s.sluice_gate(_dfx2, _dfy2, rot=math.degrees(math.atan2(_mnw2[1] - _dfy2, _mnw2[0] - _dfx2)) + 90)  # the outfall gate at the drain -> culvert handoff
 s.ring(('poly', ENV_FN2), 28, 15, ["plain"])
@@ -1389,6 +1416,7 @@ s.place_wells(
     (1176, 993, 1561, 1226), spacing=56, near=88, coverage=False
 )  # FINE grid (the district is laced with field margins + channel corridors), each well gated to sit AMONG homes (near=88), coverage=False so the near-gate stays district-scoped (the global coverage pass would drop wells beside the samurai compounds)
 
+
 # ====================================================================== EXACTLY the declared figure
 # population_consistent_with_housing allows NO band any more (GM 2026-07-26): a declared population is
 # a promise about what the map CONTAINS, so the arithmetic has to close exactly - population /
@@ -1465,9 +1493,19 @@ for _bxT in range(int(_tgx0), int(_tgx1), 78):
             s.well(*_wsT)
 
 
-s.crop_city(west=100)  # the aggressive default (35px past the kept satellites); the WEST keeps a 100px farm
+s.crop_city(west=100, south=20)  # the aggressive default (35px past the kept satellites); the WEST keeps a 100px farm
 # band (no satellite anchors that flank and the GM called its framing perfect). The gate markets (N/S)
 # and funerary+estates (E) are the true frame drivers.
+# SOUTH margin 20 (not the default 35) keeps the frame the map has always had (bottom edge y~2122).
+# The south driver is the tanning yard's caption (declared crop_outlier_ok below), and angled
+# captions (GM 2026-08-02) tilt it -23 deg with its rot=67 yard - the rotated run's AABB reaches
+# ~11px lower, so under the default margin the frame grew 15px and fs1's underground conduit
+# (whose off-map end is authored inside the 32px anchor tolerance of THIS edge) stranded 42px
+# inside the taller frame. The tilted caption still clears the edge by the full 20px margin
+# (labels_within_image), and every attempt to chase the taller frame instead was worse: extending
+# the conduit at its topo_channel call lengthens its no-build corridor and reflows the whole
+# southeast pack, and patching only the record breaks the end-coincidence that
+# drain_flows_downhill reads the discharge from.
 s.title("Tango")
 
 # ===== THE OFFICIAL NOTICE BOARDS (kosatsuba) - a city draws the SET (GM 2026-07-24,

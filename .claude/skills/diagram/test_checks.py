@@ -2704,6 +2704,33 @@ def test_city_wharf_jetties_on_bank_fires_when_floating_and_passes_on_the_bank()
     assert "city_wharf_jetties_on_bank" not in f(ok)
 
 
+def test_log_boom_checks_fire_on_the_mid_stream_chain_and_pass_on_a_bank_pen():
+    # GM 2026-08-02 (Minami): "it just looks like a bunch of logs in the middle of the river."
+    # The pre-fix boom floated mid-channel - adrift AND crowding the fairway (the real capture is
+    # frozen in pool/regressions/). The redesigned pen hugs the near bank (bank on local +y; rot 90
+    # turns +y toward the west shore), takes a third of the channel, and leaves the fairway clear.
+    river = {"pts": [[900, 100], [900, 900]], "w": 40}  # centerline x900, banks x880/x920
+    fire = _fort_city(river=river, log_booms=[{"x": 900, "y": 500, "rot": 90, "len": 100}])  # pre-2026-08 record shape: no pen_w
+    hits = f(fire)
+    assert "log_boom_moored_to_the_bank" in hits and "log_boom_leaves_the_fairway" in hits
+    ok = _fort_city(river=river, log_booms=[{"x": 886.6, "y": 500, "rot": 90, "len": 100, "pen_w": 13.3}])
+    hits2 = f(ok)
+    assert "log_boom_moored_to_the_bank" not in hits2 and "log_boom_leaves_the_fairway" not in hits2
+    # teeth against a center-collapse: the ok pen's CENTER sits 13.4px off the centerline (a center
+    # measure would read it 6.7px off the bank line and condemn it) while the fire chain's center is
+    # exactly ON the centerline - only the derived corners judge both correctly
+
+
+def test_log_boom_serves_the_lumber_yard_ties_pen_to_yard():
+    # boom and zaimokuya are one works: the pen is the yard's waterside holding ground
+    river = {"pts": [[900, 100], [900, 900]], "w": 40}
+    pen = [{"x": 886.6, "y": 500, "rot": 90, "len": 100, "pen_w": 13.3}]
+    near = _fort_city(river=river, log_booms=pen, lumber_yards=[{"x": 940, "y": 520, "w": 30, "h": 20, "rot": 0, "label": "lumber yard"}])
+    assert "log_boom_serves_the_lumber_yard" not in f(near)
+    far = _fort_city(river=river, log_booms=pen, lumber_yards=[{"x": 400, "y": 400, "w": 30, "h": 20, "rot": 0, "label": "lumber yard"}])
+    assert "log_boom_serves_the_lumber_yard" in f(far)
+
+
 def test_funerary_clear_of_fields_fires_when_a_cremation_ground_sits_on_a_field():
     # GM 2026-07 (Nagahara): a cremation ground on the far-bank comb's crop + ditch
     field = [{"name": "fe1", "kind": "paddy", "outline": [[300, 300], [700, 300], [700, 700], [300, 700]], "bbox": [300, 300, 700, 700]}]
@@ -5899,6 +5926,43 @@ def test_kosatsuba_by_the_road_fires_when_marooned():
     # a board deep in the back blocks defeats the institution (road branch of the routes)
     M = {"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 900)], "road": [[0, 500], [1000, 500]]}
     assert "kosatsuba_by_the_road" in f(M)
+
+
+def test_kosatsuba_on_a_main_way_fires_on_a_side_lane_board():
+    # GM 2026-08-02 (Ubame): the board sat a legal 49 ft off a side lane while the high street
+    # ran 200 ft away. Where the map declares a way hierarchy, only a MAIN way seats the board -
+    # the side lane satisfies the old distance check, which is exactly why this check exists.
+    M = {
+        "meta": {"scale": "town"},
+        "kosatsuba": [_kosatsuba(500, 830)],
+        "road": [[0, 500], [1000, 500]],
+        "lanes": [{"pts": [[0, 800], [1000, 800]], "w": 5}],
+    }
+    fails = f(M)
+    assert "kosatsuba_by_the_road" not in fails
+    assert "kosatsuba_on_a_main_way" in fails
+    on_road = f({**M, "kosatsuba": [_kosatsuba(500, 530)]})
+    assert "kosatsuba_on_a_main_way" not in on_road
+
+
+def test_kosatsuba_on_a_main_way_reads_the_main_street_flag():
+    # a main: True town street is a main way; an unflagged one is a side street
+    main_st = {"pts": [[0, 500], [1000, 500]], "w": 28, "main": True}
+    side_st = {"pts": [[0, 800], [1000, 800]], "w": 22, "main": False}
+    on_side = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 830)], "town_streets": [main_st, side_st]})
+    assert "kosatsuba_on_a_main_way" in on_side
+    on_main = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "town_streets": [main_st, side_st]})
+    assert "kosatsuba_on_a_main_way" not in on_main
+
+
+def test_kosatsuba_on_a_main_way_exempts_maps_with_no_declared_hierarchy():
+    # a village whose network is all lanes (and a town whose streets are all unflagged) has no
+    # main/side distinction to violate - the check would be unsatisfiable there, so the
+    # busiest-node scoring in place_kosatsuba stands in for "main" instead
+    lanes_only = f({"meta": {"scale": "village", "ftpx": 2}, "kosatsuba": [_kosatsuba(500, 512)], "lanes": [{"pts": [[0, 500], [1000, 500]], "w": 5}]})
+    assert "kosatsuba_on_a_main_way" not in lanes_only
+    unflagged = f({"meta": {"scale": "town"}, "kosatsuba": [_kosatsuba(500, 530)], "town_streets": [{"pts": [[0, 500], [1000, 500]], "w": 28}]})
+    assert "kosatsuba_on_a_main_way" not in unflagged
 
 
 def test_town_kosatsuba_opt_out():
@@ -9228,13 +9292,13 @@ def test_refining_forge_downwind_abstains_when_the_map_has_no_dwellings():
     assert "refining_forge_downwind" not in f(_forge_map(60, 60, ()))
 
 
-def _kiln_map(quarters=((500.0, 570.0),), body=(500.0, 470.0), ftpx=1, **over):
+def _kiln_map(quarters=((500.0, 570.0),), body=(500.0, 470.0), ftpx=1, rot=0.0, **over):
     """A town carrying one kiln WORKS at (500, 500): a 140x120 ft ground, the 46x16 ft kiln body
     at `body`, and a 28x18 ft cottage at each of `quarters`."""
     M = manifest(meta={"scale": "town", "ftpx": ftpx, "W": 1000, "H": 1000})
-    rec = {"x": 500.0, "y": 500.0, "w": 140.0, "h": 120.0, "rot": 0.0, "label": "kiln", "quarters": [[qx, qy, 28.0, 18.0] for qx, qy in quarters]}
+    rec = {"x": 500.0, "y": 500.0, "w": 140.0, "h": 120.0, "rot": rot, "label": "kiln works", "quarters": [[qx, qy, 28.0, 18.0, rot] for qx, qy in quarters]}
     if body is not None:
-        rec["body"] = [body[0], body[1], 46.0, 16.0, 0.0]
+        rec["body"] = [body[0], body[1], 46.0, 16.0, rot]
     M["kilns"] = [rec]
     M.update(over)
     return M
@@ -9281,6 +9345,30 @@ def test_kiln_keeps_fire_gap_measures_in_REAL_feet_not_pixels():
     rather than silently becoming 180 ft on a 3 ft/px city sheet."""
     M = _kiln_map(quarters=((500.0, 470 + 8 + 20 + 9),), ftpx=3)  # the same PIXEL gap is now 60 real ft
     assert "kiln_keeps_fire_gap" not in f(M)
+
+
+def test_kiln_quarters_carry_the_works_ROTATION():
+    """A cottage is drawn inside the works' rotated group, so a record without the rotation puts a
+    box at the right place with the wrong ORIENTATION. Both consumers read the same helper, and a
+    four-element record predates the field and is read as rot=0 - which is what it was."""
+    rotated = _kiln_map(rot=90.0)
+    assert check_village.kiln_quarters(rotated["kilns"][0])[0]["rot"] == 90.0
+    legacy = {"quarters": [[10.0, 20.0, 28.0, 18.0]]}  # a pre-2026-07-27 record, four elements
+    assert check_village.kiln_quarters(legacy)[0]["rot"] == 0.0
+    assert check_village.kiln_quarters({}) == []
+
+
+def test_kiln_keeps_fire_gap_is_measured_on_the_ROTATED_cottage():
+    """The bug this guards: with the cottage recorded unrotated, a works turned on its side reports
+    a gap that is wrong by the difference between the cottage's own width and height. Placed so the
+    two readings straddle the 60 ft rule - the unrotated read passes and the true one fails."""
+    # At rot=90 the body's drawn half-height is 23 (its 46 ft length now runs N-S), so its lower
+    # edge is y=493; the cottage's is 14 read correctly and 9 read unrotated. y=564 therefore gives
+    # a TRUE gap of 57 ft - which must fire - and a mis-read gap of 62 ft, which would not. Any
+    # seat outside [562, 567) is read the same way by both and proves nothing; the first draft of
+    # this test used one, passed under the revert, and was worthless.
+    tight = _kiln_map(quarters=((500.0, 564.0),), rot=90.0)
+    assert "kiln_keeps_fire_gap" in f(tight)
 
 
 def test_wells_among_dwellings_counts_a_kiln_works_cottages():
@@ -9800,3 +9888,42 @@ def test_city_samurai_ward_residents_only_skips_unnamed_wards_and_degenerate_geo
     assert check_village._ward_interior([[400, 945], [400, 400]], []) is None
     # a "ring" of coincident points has zero perimeter - nothing to walk an arc along
     assert check_village._ward_interior([[400, 945], [400, 400]], [[7, 7], [7, 7], [7, 7]]) is None
+
+
+# --- angled-building captions (GM 2026-08-02): tilted label records carry the tilt at [7] -------
+def test_no_label_overlaps_judges_tilted_pairs_by_their_quads():
+    # two captions along the same -30 deg lane: their AABBs cross massively, their glyph runs lie
+    # parallel 14px apart - the box test would false-flag what the reader sees as two clean lines
+    M = {"meta": {}, "labels": [[100, 100, 200, 110, 1, "a", None, -30.0], [100, 114, 200, 124, 2, "b", None, -30.0]]}
+    assert "no_label_overlaps" not in f(M)
+
+
+def test_no_label_overlaps_fires_when_tilted_glyphs_actually_cross():
+    M = {"meta": {}, "labels": [[100, 100, 200, 110, 1, "a", None, -30.0], [100, 102, 200, 112, 2, "b", None, -30.0]]}
+    assert "no_label_overlaps" in f(M)
+
+
+def test_labels_clear_of_other_buildings_reads_the_tilted_quad():
+    # the pre-tilt box [0..3] laps the merchant, but the -30 deg glyph run swings clear below it -
+    # judged by its box the caption would false-flag; judged by its true quad it is clean
+    M = manifest(meta={"scale": "town", "ftpx": 1, "W": 1000, "H": 1000}, buildings=[bldg(120, 106, kind="merchant", w=20, h=16)])
+    M["labels"] = [[100, 100, 240, 112, 1, "stray caption", None, -30.0]]
+    assert "labels_clear_of_other_buildings" not in f(M)
+    M["labels"] = [[100, 100, 240, 112, 1, "stray caption"]]  # the same record level DOES lap it
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
+def test_labels_within_image_uses_the_tilted_reach():
+    lvl = [100, 20, 240, 32, 1, "near the top edge"]
+    assert "labels_within_image" not in f({"meta": {}, "labels": [lvl]})
+    # tilted -30, the run's high end pokes past the frame the level box sat inside
+    assert "labels_within_image" in f({"meta": {}, "labels": [[*lvl[:6], None, -30.0]]})
+
+
+def test_label_hugs_its_referent_measures_the_tilted_quad():
+    # the tilted run's low corner dips to ~4px off the subject box - hugging - where its own
+    # pre-tilt box floats 38px above the subject
+    hug = [100, 100, 240, 112, 1, "gate market", [90, 150, 150, 190], -30.0]
+    assert "label_hugs_its_referent" not in f({"meta": {}, "labels": [hug]})
+    adrift = [100, 100, 240, 112, 1, "gate market", [600, 600, 700, 650], -30.0]
+    assert "label_hugs_its_referent" in f({"meta": {}, "labels": [adrift]})
