@@ -1858,9 +1858,15 @@ def test_indexed_overrides_every_mutating_list_method():
     for name, op in ops.items():
         assert name in settlement.Indexed.__dict__, f"Indexed does not override {name}"
         reg = settlement.Indexed([_IDX_POLY])
-        before = reg.version
+        before, before_appends = reg.version, reg.appends
         op(reg)
         assert reg.version > before, f"{name} changed the list without bumping the version"
+        # `indexed_grid` extends a cached index instead of rebuilding it when version and appends
+        # moved together, i.e. when every change was an append. That inference is only sound if
+        # `appends` counts APPENDS AND NOTHING ELSE - a non-appending mutator that bumped it would
+        # let a stale index survive a removal, which is the 2026-08-03 `placed` bug exactly.
+        grew = name in {"append", "extend", "__iadd__", "__imul__", "insert"}
+        assert (reg.appends > before_appends) == (name in {"append", "extend"}), f"{name} must {'' if grew else 'not '}bump appends"
 
 
 def test_a_keepout_index_sees_a_registry_mutated_after_its_first_query():

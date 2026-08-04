@@ -733,21 +733,24 @@ class Indexed(list):  # type: ignore[type-arg]
     mutators by introspection and fails if one is not overridden here, so a Python version adding a
     mutating method cannot open a silent staleness hole."""
 
-    __slots__ = ("cache", "version")
+    __slots__ = ("appends", "cache", "version")
 
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
         self.version = 0
-        self.cache: dict[str, tuple[int, Any]] = {}
+        self.appends = 0  # bumped ONLY by append/extend - see indexed_grid for why that distinction pays
+        self.cache: dict[str, tuple[int, int, int, Any]] = {}
 
     def _bump(self) -> None:
         self.version += 1
 
     def append(self, item: Any) -> None:
+        self.appends += 1
         self._bump()
         super().append(item)
 
     def extend(self, items: Any) -> None:
+        self.appends += 1
         self._bump()
         super().extend(items)
 
@@ -792,7 +795,7 @@ class Indexed(list):  # type: ignore[type-arg]
         return super().__imul__(n)
 
 
-def indexed_grid(lst: Any, key: str, build: Callable[[Any], PointGrid]) -> PointGrid:
+def indexed_grid(lst: Any, key: str, build: Callable[[Any], PointGrid], add: Callable[[PointGrid, Any], None] | None = None) -> PointGrid:
     """The PointGrid `build` makes from `lst`, cached ON `lst` under `key` until `lst` mutates.
 
     A plain list (one a caller rebound out from under us) is handled by simply building fresh every
@@ -801,11 +804,22 @@ def indexed_grid(lst: Any, key: str, build: Callable[[Any], PointGrid]) -> Point
     if not isinstance(lst, Indexed):
         return build(lst)
     hit = lst.cache.get(key)
-    if hit is not None and hit[0] == lst.version:
-        return cast(PointGrid, hit[1])
-    grid = build(lst)
-    lst.cache[key] = (lst.version, grid)
-    return grid
+    if hit is not None:
+        version, appends, count, grid = hit
+        if version == lst.version:
+            return cast(PointGrid, grid)
+        # EVERY change since was an append (the version moved exactly as far as the append counter),
+        # so the index is not stale - it is merely SHORT, and appending to a grid is exact. This is
+        # what keeps an accreting registry cheap: `placed` grows ~1,000 times per city map with
+        # queries interleaved, and rebuilding all of it per append would cost more than the scan
+        # being replaced.
+        if add is not None and lst.version - version == lst.appends - appends:
+            add(cast(PointGrid, grid), lst[count:])
+            lst.cache[key] = (lst.version, lst.appends, len(lst), grid)
+            return cast(PointGrid, grid)
+    fresh = build(lst)
+    lst.cache[key] = (lst.version, lst.appends, len(lst), fresh)
+    return fresh
 
 
 class PointGrid:
@@ -1713,8 +1727,8 @@ class Settlement:
         # out. Before adding to any of them, or changing when a feature is drawn relative to them,
         # read the "DRAW ORDER" section of this skill's CLAUDE.md and settle the sequence first -
         # ordering bugs surface far from the code that causes them.
-        self.placed: list[Any] = []  # (x, y, w, h)
-        self.grove_rects: list[Any] = []  # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
+        self.placed: list[Any] = Indexed()  # (x, y, w, h) - Indexed: _fits keeps a reach index on it, and the two filter-rebinds below stay Indexed so the index cannot go stale
+        self.grove_rects: list[Any] = Indexed()  # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
         #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
         self._pending_farmsteads: list[Any] = []  # farmhouses awaiting their threshing yard (drawn by farmsteads())
         self.corridors: list[Any] = Indexed()  # polylines houses must avoid (Indexed: _near_corridor keeps a spatial index on it)
@@ -11663,22 +11677,40 @@ class Settlement:
             return False
         if not self._hard_clear(x, y, w, h):
             return False
-        # DELIBERATELY NOT INDEXED, though it is the obvious next candidate (2026-08-03). These two
-        # scans are O(placed) per candidate seat - 38M hypot() calls on Nagahara - and a PointGrid
-        # over `placed` measured ~10-15% off a city gen. It was written, and reverted: an
-        # incremental index needs an append-only source, and `placed` is NOT one. Two sites REBIND
-        # it to a shorter filtered list (search this file for "lift own reservation" and "drop the
-        # un-appurtenanced farmhouse"), which left the index holding phantom buildings - Minami and
-        # Nagahara lost every garden and farm shed, and the pool caught it in one regen. Any future
-        # attempt must key its cache on something CONTENT-sensitive (the frozen_terrain scope is
-        # the model), not on length or list identity, because a filter-rebind changes both in ways a
-        # cheap check can miss. The smaller win did not justify a stale-index trap in a registry
-        # twenty-odd call sites mutate.
+        # INDEXED (2026-08-04), and the history is worth the paragraph. These two scans are
+        # O(placed) per candidate seat - 58M hypot() calls on Minami - and indexing them was tried
+        # on 2026-08-03 and REVERTED: an incremental index assumed `placed` was append-only, two
+        # sites rebind it to a shorter filtered list (search for "lift own reservation" and "drop
+        # the un-appurtenanced farmhouse"), and the stale index cost Minami and Nagahara every
+        # garden and farm shed. What makes it safe now is `Indexed`, which was built for that
+        # lesson: the registry versions ITSELF and carries its own index, so a rebind cannot be
+        # missed - the filtered copies below are Indexed too, and each starts with an empty cache.
         r = math.hypot(w, h) / 2
-        for px, py, pw, ph in self.placed:
+        for px, py, pw, ph, *_ in self._reach_index(self.placed, "placed_reach").near(x, y, r):
             if math.hypot(x - px, y - py) < r + math.hypot(pw, ph) / 2 + 4:
                 return False
-        return all(math.hypot(x - gx, y - gy) >= r + math.hypot(gw, gh) / 2 + 4 for gx, gy, gw, gh in self.grove_rects)
+        return all(math.hypot(x - gx, y - gy) >= r + math.hypot(gw, gh) / 2 + 4 for gx, gy, gw, gh, *_ in self._reach_index(self.grove_rects, "grove_reach").near(x, y, r))
+
+    @staticmethod
+    def _reach_boxed(entries: Any) -> Iterator[Any]:
+        """(x, y, w, h) footprints boxed by their COLLISION REACH - the half-diagonal `_fits`
+        measures against, plus its 4px. Boxing by reach means a query pads by the CANDIDATE's own
+        radius alone: anything that could collide has the query point inside its reach box widened
+        by r, so it shares a cell with the query span and is never pruned away."""
+        for px, py, pw, ph in entries:
+            rr = math.hypot(pw, ph) / 2 + 4
+            yield (px, py, pw, ph, px - rr, py - rr, px + rr, py + rr)
+
+    def _reach_index(self, registry: Any, key: str) -> PointGrid:
+        def build(lst: Any) -> PointGrid:
+            grid = PointGrid()
+            grid.extend(self._reach_boxed(lst))
+            return grid
+
+        def add(grid: PointGrid, tail: Any) -> None:
+            grid.extend(self._reach_boxed(tail))
+
+        return indexed_grid(registry, key, build, add)
 
     def frontage(
         self,
@@ -12862,7 +12894,9 @@ class Settlement:
         least displacement; falls back to a yard+garden-only spot if no grove-room is reachable nearby. Updates
         rec's position + reservation. Returns (yard_spot, garden_spot), or None if even yard+garden won't fit."""
         x0, y0, w, h = rec["x"], rec["y"], rec["w"], rec["h"]
-        self.placed = [p for p in self.placed if p != (x0, y0, w, h)]  # lift own reservation while searching
+        self.placed = Indexed(
+            p for p in self.placed if p != (x0, y0, w, h)
+        )  # lift own reservation while searching (Indexed, not a plain list - a rebind must not silently drop _fits' index into the uncached fallback)
         best: Any = None  # (has_grove_room, -displacement, cx, cy, spot)
         for nx, ny in self._farmstead_nudges():
             cx, cy = x0 + nx, y0 + ny
@@ -13020,7 +13054,7 @@ class Settlement:
             spot = self._solve_homestead(rec)  # shift the homestead to fit yard+garden+grove-room
             if spot is None:
                 fp = (rec["x"], rec["y"], rec["w"], rec["h"])
-                self.placed = [p for p in self.placed if p != fp]  # drop the un-appurtenanced farmhouse (rare)
+                self.placed = Indexed(p for p in self.placed if p != fp)  # drop the un-appurtenanced farmhouse (rare); Indexed for the same reason as the lift above
                 continue
             yard_spot, garden_spot = spot
             self._attach_garden(rec["x"], rec["y"], [garden_spot])  # legacy farms keep ONE bed (multi-bed split is nucleated)
