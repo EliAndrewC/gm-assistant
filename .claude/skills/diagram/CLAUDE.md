@@ -14,13 +14,17 @@ round-trips.
 ## Gate and sweep timings (the motivating-artifact loop, concretely)
 
 The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
-numbers. A single map's regen + gate is ~1-7s; the heavy maps, after the 2026-08-03 optimization
-pass, are Minami ~30s, Nagahara ~14s, Tango ~13s, Kikuta and Hoshizora ~11s (solo CPU):
+numbers. A single map's regen + gate is ~1-7s; the heavy maps, after two optimization passes
+(2026-08-03 and 2026-08-04), are Minami ~22s and Nagahara / Tango / Kikuta / Hoshizora ~10s solo
+CPU - down from 54s / 37s / 24s / 35s / 15s before them:
 
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
 
 The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
-it - is **~120 seconds** (measured 2026-08-03, down from ~230s before that pass).
+it - is **~2 to 2.5 minutes**. Do not read that number as the score for a perf change: it also
+carries every unit test (2,500+ and growing) and whatever rules other sessions added this week, so
+it drifts upward for reasons unrelated to generator speed. **Score a perf change by A/B-ing the
+ONE map against HEAD**, which is how both passes were measured.
 
 **The one performance bug this engine keeps growing, and how to find it.** Every slow gen ever
 profiled here has had the same shape: *a per-candidate scan of geometry that does not change during
@@ -31,7 +35,17 @@ re-deriving every plot's bbox per seat, the ground-cover scatters testing every 
 per scatter POINT, `_near_corridor` walking every corridor segment, `_in_blocked` visiting every
 keep-out. Together they were over half of the pool's runtime. The cures, in order of preference:
 hoist the invariant out of the loop; add a bbox prefilter (`boxed_polys`/`boxed_hit`); index it
-(`PointGrid`). Never coarsen - see "When a check is slow, INDEX it" below.
+(`PointGrid`, or `Indexed` where the registry is mutated as you go). Never coarsen - see "When a
+check is slow, INDEX it" below. The second pass (2026-08-04) found four more of the same shape:
+the well memo's own FINGERPRINT (now a `frozen_terrain` scope, which asserts the invariant instead
+of guessing it), `_fits` measuring every standing building, the ground-cover keep-outs, and a city
+gen testing each candidate against every label on the map.
+
+**And trust the A/B, not the profile's seconds.** cProfile charges its per-call overhead to
+whatever has the most calls, which is exactly these tight inner loops - it valued the ground-cover
+grid at 3-4s where the A/B measured 1.1s, and the well fingerprint at ~8s where the A/B measured
+6.4s. Use the profile to find WHERE the time is; use `git stash` and two timed runs to find out
+whether you actually saved any.
 
 **If a gen ever "hangs", suspect that shape FIRST and profile before bisecting.** A timeout-based
 bisect probe cannot distinguish "broken" from "slow", and one burned an hour here concluding an
