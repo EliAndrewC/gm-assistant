@@ -44,32 +44,30 @@ GENERATORS = sorted(g for g in glob.glob(os.path.join(POOL, "*", "*.gen.py")) if
 # HOW LONG A GEN IS ALLOWED TO TAKE (CPU seconds). WHY (GM 2026-08-03, right after the incident
 # that motivates it): Minami's gen silently became a 45+ MINUTE grind when the paddy-well rule
 # landed - `_well_ground_clear` re-scanned all 927 drawn basins and ~580 watercourse segments per
-# candidate seat - and nothing failed; sessions just waited it out (or timed out and misdiagnosed,
-# see CLAUDE.md "Gate and sweep timings"). A budget turns "mysteriously slow" into a loud, early,
-# NAMED failure. Budgets are deliberately generous (~3x the measured cost) so they never flake:
-# the target is the pathological per-candidate-scan class of regression, not a 20% drift. Measured
-# in PROCESS CPU time, not wall time, so parallel pytest workers contending for cores cannot fire
-# it. A map that legitimately outgrows its budget gets a bigger entry here WITH the reason, the
-# same discipline as a check waiver.
+# candidate seat - and nothing failed; sessions just waited it out, or timed out and misdiagnosed
+# it (see CLAUDE.md "Gate and sweep timings"). A budget turns "mysteriously slow" into a loud,
+# early, NAMED failure. It is aimed at that pathological class - a per-candidate scan of static
+# geometry, which this engine keeps regrowing - not at 20% drift, so another session adding a
+# legitimate rule should never have to argue with it.
+#
 # CALIBRATE AGAINST THE GATE, NOT A SOLO RUN. These asserts fire inside `make done`, i.e. under
-# `pytest -n auto` (22 workers here), and a gen's own CPU TIME inflates 2-4x there through cache
-# and memory-bandwidth contention - process CPU time is immune to WAITING for a core, not to
-# needing more cycles for the same work. Budgets tuned on solo timings duly went off on their
-# first gate run (kikuta: 10.9s solo, 36.2s under the gate, against a 30s budget). So each entry
-# is ~4x its SOLO measurement, which is roughly 1.5x its worst observed under-gate time. That is
-# still a tight enough net for what this guard is for: the regression it exists to catch ran ~250x
-# over budget, not 20% over.
+# `pytest -n auto` (22 workers here), where a gen's own CPU TIME inflates 2-4x through cache and
+# memory-bandwidth contention - process CPU time is immune to WAITING for a core, not to needing
+# more cycles for the same work. Budgets tuned on solo timings duly went off on their first gate
+# run (kikuta: 10.9s solo, 36.2s under the gate, against a 30s budget). So each entry is ~4x its
+# SOLO measurement, i.e. roughly 1.5x its worst observed under-gate time. A map that legitimately
+# outgrows its entry gets a bigger one WITH the reason recorded, the same discipline as a waiver.
 GEN_TIME_BUDGET_S = 45.0  # default: an ordinary map measures 1-7s solo, comfortably under even inflated
 GEN_TIME_BUDGETS = {
-    # Solo CPU seconds noted per entry, measured 2026-08-03 AFTER the optimization pass this
-    # guard's first run prompted (the on_crop bbox hoist, the ground-cover prefilters, the
-    # well-siting PointGrid). The before/after is the record worth keeping - every one of these
-    # roughly halved - but the BUDGET is calibrated for the gate.
-    "minami": 120.0,  # ~30s solo (54s before the pass): the biggest map - well placement over 927 paddy basins, and the placement scans over its accreting block polys, both indexed now
-    "nagahara": 60.0,  # ~14s solo (37s before): same city families (676 basins, 67 wells)
-    "tango": 55.0,  # ~13s solo (24s before): same again (1,043 basins, 88 wells), plus farm_wells' on_crop fallback, whose per-candidate bbox rebuild was the pass's first find
-    "kikuta": 50.0,  # ~11s solo (35s before): ~70% was hinterland()'s marsh/commons scatter, the ground-cover prefilters' biggest single win
-    "hoshizora": 50.0,  # ~11s solo (15s before): the largest TOWN, the only non-city needing an entry - ground-cover scatter over a big hinterland
+    # Solo CPU seconds noted per entry, re-measured 2026-08-04 after the second optimization pass
+    # (the frozen_terrain well scope, the _fits reach index, the ground-cover grids, and Minami's
+    # own label index). Every heavy map has roughly halved AGAIN - the five that need an entry are
+    # now within 2x of each other where they used to span 15s to 54s.
+    "minami": 90.0,  # ~22s solo (54s two passes ago): the biggest map, and the only one that still needs real headroom
+    "nagahara": 50.0,  # ~9s solo (37s)
+    "tango": 50.0,  # ~10s solo (24s)
+    "kikuta": 50.0,  # ~10s solo (35s): its ground-cover scatter, the pass's first big find
+    "hoshizora": 50.0,  # ~10s solo (15s)
 }
 
 
