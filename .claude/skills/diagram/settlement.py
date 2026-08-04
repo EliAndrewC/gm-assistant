@@ -822,6 +822,16 @@ def indexed_grid(lst: Any, key: str, build: Callable[[Any], PointGrid], add: Cal
     return fresh
 
 
+def boxed_grid(boxed: Any) -> PointGrid:
+    """A PointGrid over already-boxed items, for a caller that builds its keep-outs ONCE per region
+    and then queries them per scatter point. `boxed_hit`/`boxed_seg_hit` accept the narrowed list
+    `near` returns, so switching a linear prefilter to an index is a two-line change at the call
+    site and the exact tests underneath are untouched."""
+    grid = PointGrid()
+    grid.extend(boxed)
+    return grid
+
+
 class PointGrid:
     """A uniform-grid spatial index for POINT queries against many static extents.
 
@@ -8317,25 +8327,29 @@ class Settlement:
         )  # lanes AND town streets AND the road: every trodden/maintained tread stays bare (the old skip knew only lanes, so scrub drew on the Imperial Road bed - GM 2026-07-21, Hoshizora)
         # PRE-BOX every static keep-out ONCE (see boxed_hit): _sparse below runs per SCATTER POINT,
         # and these lists do not change while a region scatters
-        fld_b, blk_b = boxed_polys(self.field_polys), boxed_polys(self.block_polys)
-        clr_b, avd_b, cor_b = boxed_polys(self.clearings), boxed_polys(avoid), boxed_segs(corridors)
+        # INDEXED (2026-08-04): boxing alone dropped the cost per keep-out but still VISITED every
+        # one per scatter point - 948k boxed_hit calls iterating 25M items on Kikuta, whose gen was
+        # still 81% ground cover. The grids narrow each point to its own cell; the exact tests below
+        # are the same ones, run on what `near` returns.
+        fld_b, blk_b = boxed_grid(boxed_polys(self.field_polys)), boxed_grid(boxed_polys(self.block_polys))
+        clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
 
         def _sparse(
             px: float, py: float, drop: float
         ) -> bool:  # skip a scatter point outside the poly, on a field/corridor/water, in the urban halo, in a keep-out, or (probabilistically) near the edge
             if (
                 not point_in_poly(px, py, poly)
-                or boxed_hit(px, py, fld_b)
-                or boxed_seg_hit(px, py, cor_b)  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
+                or boxed_hit(px, py, fld_b.near(px, py))
+                or boxed_seg_hit(px, py, cor_b.near(px, py))  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
                 or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
                 or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
                 or any(
                     x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects
                 )  # ... and OUT of the urban-clearance halo: the swept/trodden ground around every structure, not just its footprint
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
-                or boxed_hit(px, py, blk_b)  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
-                or boxed_hit(px, py, clr_b)  # ... and off the swept sacred/funerary verge (tended precinct, sando, grave collar)
-                or boxed_hit(px, py, avd_b)
+                or boxed_hit(px, py, blk_b.near(px, py))  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
+                or boxed_hit(px, py, clr_b.near(px, py))  # ... and off the swept sacred/funerary verge (tended precinct, sando, grave collar)
+                or boxed_hit(px, py, avd_b.near(px, py))
             ):  # ... and OUT of any keep-out (the hamlet cluster stays clear of cover)
                 return True
             ed = edge_dist(px, py, poly)
@@ -8441,22 +8455,22 @@ class Settlement:
         corridors = self._corridor_buffers(3 * bs)  # every trodden tread (lane/street/road), not just lanes
         # PRE-BOX every static keep-out ONCE (see boxed_hit) - the field boxes carry the SAME 10px
         # pad as the edge test below, so the prefilter can never reject a point that test wanted
-        fld_b, blk_b = boxed_polys(self.field_polys, 10.0), boxed_polys(self.block_polys)
-        clr_b, avd_b, cor_b = boxed_polys(self.clearings), boxed_polys(avoid), boxed_segs(corridors)
+        fld_b, blk_b = boxed_grid(boxed_polys(self.field_polys, 10.0)), boxed_grid(boxed_polys(self.block_polys))
+        clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
 
         def _sparse(
             px: float, py: float, drop: float
         ) -> bool:  # skip a point outside the poly, IN a paddy / ON the pond / on a corridor/building / in the urban halo / in a keep-out, or (probabilistically) near the edge
             if (
                 not point_in_poly(px, py, poly)
-                or boxed_hit(px, py, fld_b, 10.0)
-                or boxed_seg_hit(px, py, cor_b)  # a causeway/path/road through the marsh stays bare, not reeded over
+                or boxed_hit(px, py, fld_b.near(px, py), 10.0)
+                or boxed_seg_hit(px, py, cor_b.near(px, py))  # a causeway/path/road through the marsh stays bare, not reeded over
                 or self._on_watercourse(px, py)  # ... and OFF a stream/channel bed (reeds fringe water, they do not float on it)
                 or any(x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects)  # ... and OUT of the urban-clearance halo (the swept/trodden ground around every structure)
                 or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
-                or boxed_hit(px, py, blk_b)  # ... and OFF any building/shrine/torii footprint
-                or boxed_hit(px, py, clr_b)  # ... and off the swept sacred/funerary verge
-                or boxed_hit(px, py, avd_b)
+                or boxed_hit(px, py, blk_b.near(px, py))  # ... and OFF any building/shrine/torii footprint
+                or boxed_hit(px, py, clr_b.near(px, py))  # ... and off the swept sacred/funerary verge
+                or boxed_hit(px, py, avd_b.near(px, py))
             ):  # ... and OUT of any keep-out
                 return True
             if pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 < 1.0:
