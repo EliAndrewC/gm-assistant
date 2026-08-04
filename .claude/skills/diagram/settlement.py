@@ -15,6 +15,7 @@ here. Those declarations are echoed into manifest["meta"] so the validator can
 adapt its checks per village instead of assuming one village's specifics.
 """
 
+import contextlib
 import hashlib
 import json
 import math
@@ -1748,9 +1749,8 @@ class Settlement:
         #                    ORDER: a scatter only skips clearings that exist when it runs, so a cover whose
         #                    seq <= a clearing's seq drew before the clearing was registered and may have
         #                    dotted scrub/reeds over the swept ground (fix: s.reserve_clearing FIRST).
-        self._wgc_cache: tuple[Any, ...] | None = (
-            None  # _well_ground_clear's memo of the static geometry it scans per candidate (watercourse segs, dry plots, paddy rings - each a PointGrid), fingerprint-invalidated
-        )
+        self._frozen_wells: tuple[tuple[PointGrid, PointGrid, PointGrid], Any] | None = None  # the well index while a frozen_terrain scope is open
+        self._frozen_depth = 0
         self.dry_polys: list[Any] = Indexed()  # dry crop plots (comb hems, vegetable tracts): FOOTPRINT-aware no-build (Indexed: _in_blocked)
         #                           cropland - block_polys test only a candidate's CENTER, which let a house
         #                           centered just off a hem strip stand half its footprint on the crop (GM,
@@ -4338,6 +4338,85 @@ class Settlement:
         bm = 16
         self.block_polys.append([(x0 - bm, y0 - bm), (x + w / 2 + bm, y0 - bm), (x + w / 2 + bm, y + h / 2 + bm + 16), (x0 - bm, y + h / 2 + bm + 16)])
 
+    def _build_well_index(self) -> tuple[PointGrid, PointGrid, PointGrid]:
+        """The three grids `_well_ground_clear` queries - watercourse segments, dry plots, paddy
+        wet rings - each item boxed so a query pads by the wellhead radius alone."""
+        recs = {key: self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")}
+        water = []
+        for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
+            for rec in recs[key]:
+                pts = rec.get("poly") or rec.get("pts")
+                if not pts:
+                    continue  # pragma: no cover - defensive: every watercourse carries a path
+                hw = float(rec.get("w") or dw) / 2
+                for i in range(len(pts) - 1):
+                    (ax, ay), (bx, by) = pts[i], pts[i + 1]
+                    # box carries the course's own half-width, so a query pads by vr alone
+                    water.append((hw, (ax, ay), (bx, by), min(ax, bx) - hw, min(ay, by) - hw, max(ax, bx) + hw, max(ay, by) + hw))
+        dry = []
+        for dp in recs["dry_plots"]:
+            poly = dp.get("poly")
+            if not poly:
+                continue  # pragma: no cover - defensive: every dry plot carries an outline
+            dry.append((poly, min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly)))
+        wet = [(r, min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r)) for r in paddy_wet_rings(self.M)]
+        grids = PointGrid(), PointGrid(), PointGrid()
+        for grid, items in zip(grids, (water, dry, wet), strict=True):
+            grid.extend(items)
+        return grids
+
+    def _terrain_fingerprint(self) -> Any:
+        """Every point count of the geometry `_build_well_index` reads. Expensive on purpose - it
+        runs TWICE PER PASS (see `frozen_terrain`), not once per candidate seat."""
+        fields = self.M.get("fields") or []
+        recs = [self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")]
+        return (
+            len(fields),
+            sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields),
+            tuple(len(rs) for rs in recs),
+            sum(len(rec.get("poly") or rec.get("pts") or ()) for rs in recs for rec in rs),
+        )
+
+    @contextlib.contextmanager
+    def frozen_terrain(self) -> Iterator[None]:
+        """Declare that the water and crop geometry will not change for the duration, so the well
+        index can be built ONCE instead of revalidated per candidate seat.
+
+        WHY A SCOPE AND NOT A CACHE KEY. This started as a memo guarded by a fingerprint, and the
+        fingerprint became the single hottest thing in Minami's gen: counting the points of 927
+        rings on each of ~133k seats cost more than the scan it replaced (156M len() calls,
+        ~8s of a 30s gen). Making the key CHEAPER was tried and was wrong - record counts miss an
+        in-place same-length replacement, and a wellhead duly cleared to stand in a paddy. The way
+        out is to stop guessing: a well pass does not move rivers or fields, so it states that, and
+        the index is simply valid for the pass.
+
+        THE ASSERTION IS THE POINT. On exit the terrain fingerprint is recomputed and compared, so
+        a future change that DOES mutate terrain inside a pass fails loudly here instead of quietly
+        siting wells against stale water. That costs two fingerprints per pass instead of 133k.
+        Outside a pass the index is built per call - correct, and irrelevantly slow at the handful
+        of hand-seeded `well_at` calls a gen makes. Nesting is refcounted, so a pass may call
+        another."""
+        if self._frozen_wells is None:
+            self._frozen_wells = (self._build_well_index(), self._terrain_fingerprint())
+            self._frozen_depth = 0
+        self._frozen_depth += 1
+        try:
+            yield
+        finally:
+            self._frozen_depth -= 1
+            if self._frozen_depth == 0:
+                held = self._frozen_wells
+                self._frozen_wells = None
+                assert held is not None and held[1] == self._terrain_fingerprint(), (
+                    "the water/crop geometry CHANGED inside a frozen_terrain scope, so wells in this pass were "
+                    "sited against a stale index. Either move the terrain change out of the pass, or drop the "
+                    "freeze around it - do not widen this assertion."
+                )
+
+    def _well_index(self) -> tuple[PointGrid, PointGrid, PointGrid]:
+        frozen = self._frozen_wells
+        return frozen[0] if frozen is not None else self._build_well_index()
+
     def _well_ground_clear(self, cx: float, cy: float, vr: float | None = None) -> bool:
         """Is this ground fit to sink a WELLHEAD in? You do not dig a well in a watercourse, and you
         do not dig one in the middle of a crop plot.
@@ -4354,8 +4433,8 @@ class Settlement:
         the smoothed envelope, are the water), and the same strictness as the dry-plot rule
         applies: the drawn head may not lap the crop.
 
-        MEMOIZED with per-item bbox PREFILTERS (prefilter family: they prune, they never decide -
-        same verdicts as the bare scans). This method runs once per CANDIDATE seat: place_wells
+        INDEXED, and the index is built ONCE PER PASS rather than validated per call - see
+        `frozen_terrain`. This method runs once per CANDIDATE seat: place_wells
         alone probes ~133k candidates on Minami, and farm_wells' fallback ~2,700 per boxed-in
         steading, so re-scanning ~580 watercourse segments, every dry plot, and 927 paddy basins
         per candidate turned a ~5s gen into a >45-minute grind (2026-08-02, profiled: 95M
@@ -4363,50 +4442,7 @@ class Settlement:
         (record and point counts of everything scanned); the wells are placed long after the
         terrain is drawn, so the geometry is stable across the whole placement pass."""
         vr = self._well_vr() if vr is None else vr
-        fields = self.M.get("fields") or []
-        recs = {key: self.M.get(key, []) or [] for key in ("streams", "channels", "field_ditches", "canals", "dry_plots")}
-        # THIS KEY IS EXPENSIVE ON PURPOSE - DO NOT "OPTIMIZE" IT TO RECORD COUNTS. It counts every
-        # POINT of every plot ring, outline and watercourse, which is ~1,000 len() calls per
-        # candidate seat (123M over Minami's gen, ~15% of it), and that is genuinely tempting to
-        # cut. It was cut, on 2026-08-03, to per-record counts - and
-        # test_a_wellhead_is_refused_in_the_paddy_water_and_allowed_on_the_rim failed within the
-        # hour: that test REPLACES a field's plot_polys with a different SAME-LENGTH list, so every
-        # record count is unchanged while the water moved, and the stale grids cleared a wellhead
-        # standing in a paddy. Any cheaper key needs to be content-sensitive (a hash of the
-        # coordinates, or an explicit version bump from whatever mutates the geometry) - record
-        # counts, list lengths and object identity all miss an in-place replacement.
-        fp = (
-            len(fields),
-            sum(len(p) for fl in fields for p in (fl.get("plot_polys") or [])) + sum(len(fl.get("outline") or []) for fl in fields),
-            tuple(len(rs) for rs in recs.values()),
-            sum(len(rec.get("poly") or rec.get("pts") or ()) for rs in recs.values() for rec in rs),
-        )
-        if self._wgc_cache is None or self._wgc_cache[0] != fp:
-            water = []
-            for key, dw in (("streams", 9.0), ("channels", 2.5), ("field_ditches", 1.5), ("canals", 14.0)):
-                for rec in recs[key]:
-                    pts = rec.get("poly") or rec.get("pts")
-                    if not pts:
-                        continue  # pragma: no cover - defensive: every watercourse carries a path
-                    hw = float(rec.get("w") or dw) / 2
-                    for i in range(len(pts) - 1):
-                        (ax, ay), (bx, by) = pts[i], pts[i + 1]
-                        # box carries the course's own half-width, so a query pads by vr alone
-                        water.append((hw, (ax, ay), (bx, by), min(ax, bx) - hw, min(ay, by) - hw, max(ax, bx) + hw, max(ay, by) + hw))
-            dry = []
-            for dp in recs["dry_plots"]:
-                poly = dp.get("poly")
-                if not poly:
-                    continue  # pragma: no cover - defensive: every dry plot carries an outline
-                dry.append((poly, min(q[0] for q in poly), min(q[1] for q in poly), max(q[0] for q in poly), max(q[1] for q in poly)))
-            wet = [(r, min(q[0] for q in r), min(q[1] for q in r), max(q[0] for q in r), max(q[1] for q in r)) for r in paddy_wet_rings(self.M)]
-            # INDEXED, not merely boxed: the bbox prefilter alone still visited all ~1,500 items per
-            # candidate seat (~123M comparisons on Minami, 2026-08-03). See PointGrid.
-            grids = PointGrid(), PointGrid(), PointGrid()
-            for grid, items in zip(grids, (water, dry, wet), strict=True):
-                grid.extend(items)
-            self._wgc_cache = (fp, *grids)
-        _, water_g, dry_g, wet_g = self._wgc_cache
+        water_g, dry_g, wet_g = self._well_index()
         for hw, pa, pb, bx0, by0, bx1, by1 in water_g.near(cx, cy, vr):
             if bx0 - vr <= cx <= bx1 + vr and by0 - vr <= cy <= by1 + vr and seg_dist(cx, cy, pa, pb) < hw + vr:
                 return False
@@ -4470,6 +4506,10 @@ class Settlement:
         farm belt is already covered (Hoshizora) is byte-identical with or without the call.
         Greedy cluster cover: seat a well near the densest uncovered cluster's centroid via
         well_at's clear-spot test, repeat. Gated by farm_wells_within_reach."""
+        with self.frozen_terrain():  # as place_wells: the farm belt does not move rivers while it sinks wells
+            return self._farm_wells(reach_ft, edge_ft)
+
+    def _farm_wells(self, reach_ft: float, edge_ft: float) -> int:
         reach = self.px(reach_ft)
         edge = self.px(edge_ft)
         vx, vy, vw, vh = self.view if self.view else (0, 0, self.W, self.H)
@@ -4663,6 +4703,10 @@ class Settlement:
         placed (x, y) list. Pass coverage=False to keep `near` as a PER-CANDIDATE gate only - the
         coverage pass sweeps ALL dwellings map-wide, which a district-scoped call must not do (it
         would drop wells beside the samurai compounds, which keep no public wells)."""
+        with self.frozen_terrain():  # one well index for the whole scatter, not one revalidation per candidate seat
+            return self._place_wells(bbox, spacing, r, near, coverage)
+
+    def _place_wells(self, bbox: Any, spacing: float, r: float, near: Any, coverage: bool) -> list[Pt]:
         x0, y0, x1, y1 = bbox
         probe = 2 * r + 14  # a modest footprint => wells sit in the courtyards, not crammed on a lane
         d = spacing * 0.26
@@ -11626,7 +11670,7 @@ class Settlement:
         # it to a shorter filtered list (search this file for "lift own reservation" and "drop the
         # un-appurtenanced farmhouse"), which left the index holding phantom buildings - Minami and
         # Nagahara lost every garden and farm shed, and the pool caught it in one regen. Any future
-        # attempt must key its cache on something CONTENT-sensitive (the `_wgc_cache` fingerprint is
+        # attempt must key its cache on something CONTENT-sensitive (the frozen_terrain scope is
         # the model), not on length or list identity, because a filter-rebind changes both in ways a
         # cheap check can miss. The smaller win did not justify a stale-index trap in a registry
         # twenty-odd call sites mutate.
