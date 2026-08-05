@@ -2695,6 +2695,37 @@ def test_city_moat_junction_angles_fires_on_square_tees_and_passes_when_tilted()
     assert "city_moat_junction_angles" not in f(tilted)  # inlet tilted upstream, outlet swept downstream
 
 
+def test_city_caste_shift_must_be_declared_documented_and_live():
+    """GM 2026-08-05, on Minami: Fox temples hold much of the commerce that merchant houses conduct
+    in other clans' cities, so its merchant households run about a third under the budgets.md share
+    while the population is unchanged. The generic +/-30% band cannot tell that from drift - Minami
+    was passing at a ratio of exactly 0.700, one household from a failure whose message would have
+    said "mix is off" and taught the reader nothing. So the shift is DECLARED, with the same three
+    obligations a waiver carries: it widens the band, it must give a real reason, and it must
+    describe something that is actually happening.
+    """
+
+    def city(merchants, **extra):
+        buildings = [
+            {"x": 300 + 3 * i, "y": 300 + 3 * j, "w": 10, "h": 8, "rot": 0, "kind": kind}
+            for j, (kind, n) in enumerate((("laborer", 40), ("servant", 20), ("merchant_house", merchants), ("samurai", 10), ("burakumin", 5)))
+            for i in range(n)
+        ]
+        M = _fort_city(buildings=buildings)
+        M["meta"].update({"population": 500, **extra})  # 100 households -> merchant target 25
+        return M
+
+    why = (
+        "Fox temples hold much of the commerce that merchant houses conduct in other clans' cities, so merchant "
+        "households run under the budgets.md share and hereditary temple families stand in their place."
+    )
+    assert "city_caste_counts_in_band" in f(city(15))  # 0.60 of target, undeclared - ordinary drift, fails
+    assert "city_caste_counts_in_band" not in f(city(15, caste_shifts={"merchant": why}))  # ... declared, allowed
+    assert "city_caste_counts_in_band" in f(city(9, caste_shifts={"merchant": why}))  # 0.36 - past even the declared band
+    assert "city_caste_shifts_are_live" in f(city(25, caste_shifts={"merchant": why}))  # on target: the declaration is stale
+    assert "city_caste_shifts_are_documented" in f(city(15, caste_shifts={"merchant": "by design"}))
+
+
 def test_city_wharf_jetties_on_bank_fires_when_floating_and_passes_on_the_bank():
     # a jetty is a finger from the near bank into the water, not a bar floating mid-stream
     river = {"pts": [[900, 100], [900, 900]], "w": 40}  # centerline x900, near (city) bank x880

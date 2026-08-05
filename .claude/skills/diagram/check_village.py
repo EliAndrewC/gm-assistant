@@ -10381,16 +10381,43 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             }
             frac = {"laborer": 0.40, "servant": 0.20, "merchant": 0.25, "samurai": 0.10, "burakumin": 0.05}
             hh = cpop / HOUSEHOLD
-            off = []
+            # A DECLARED CASTE SHIFT (GM 2026-08-05, on Minami's merchants). The generic +/-30% band
+            # is a drift guard, and a clan whose economy genuinely differs will sit against its edge
+            # for a REASON rather than by drift: Fox temples hold much of the commerce other clans
+            # leave to merchants, so Minami's merchant households are fewer and its temple families
+            # more. That map was passing at a ratio of exactly 0.700 - one household from a failure
+            # whose message would have said "mix is off" and taught the reader nothing.
+            # So a shift is DECLARED, the same discipline as a waiver: meta(caste_shifts={caste:
+            # reason}) widens that caste's band to +/-45%, and the two meta-checks below keep the
+            # hatch honest - the reason must be real prose, and the shift must actually be happening.
+            shifts = meta.get("caste_shifts") or {}
+            off, stale = [], []
             for ck, fr in frac.items():
                 tgt = fr * hh
-                if not (0.70 * tgt <= caste[ck] <= 1.30 * tgt):
-                    off.append(f"{ck} {caste[ck]} (want ~{round(tgt)})")
+                ratio = caste[ck] / tgt if tgt else 1.0
+                lo, hi = (0.55, 1.45) if ck in shifts else (0.70, 1.30)
+                if not (lo <= ratio <= hi):
+                    off.append(f"{ck} {caste[ck]} (want ~{round(tgt)}{', declared shift' if ck in shifts else ''})")
+                elif ck in shifts and 0.80 <= ratio <= 1.20:
+                    stale.append(f"{ck} sits at {ratio:.2f} of target")
             check(
                 "city_caste_counts_in_band",
                 not off,
                 f"city caste mix is off the budgets.md targets - each caste should be within +/-30% of "
-                f"~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of {round(hh)} households: {off}",
+                f"~40% laborer / 20% servant / 25% merchant / 10% samurai / 5% burakumin of {round(hh)} households: {off}"
+                f" - if a caste is deliberately shifted by this clan's economy, declare it with meta(caste_shifts=...) and its reason",
+            )
+            check(
+                "city_caste_shifts_are_documented",
+                all(isinstance(v, str) and len(v.strip()) >= 60 for v in shifts.values()),
+                "a declared caste shift must carry 60+ characters of actual REASON (what about this clan's economy moves "
+                f"these households), not True or 'by design': {[k for k, v in shifts.items() if not (isinstance(v, str) and len(v.strip()) >= 60)]}",
+            )
+            check(
+                "city_caste_shifts_are_live",
+                not stale,
+                f"declared caste shift(s) that are not actually happening: {stale} - a shift within 20% of target is "
+                f"ordinary drift, so the declaration is stale and must be dropped rather than left to widen a band nobody needs widened",
             )
         # MERCHANT HOUSING is varied and roomy, UNLIKE the uniform, jammed laborer warren. Behind the
         # storefronts the homes mix sizes by wealth band (budgets.md: very rich -> walled ESTATES, rich

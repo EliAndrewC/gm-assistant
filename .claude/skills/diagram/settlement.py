@@ -6173,8 +6173,7 @@ class Settlement:
             self._shortfall("pack", bbox, n, items)
         return n
 
-    @staticmethod
-    def _shortfall(fn: str, where: Any, placed: int, left: list[Any]) -> None:
+    def _shortfall(self, fn: str, where: Any, placed: int, left: list[Any]) -> None:
         """A placement helper SILENTLY dropping what does not fit is how authored-vs-landed
         drift happens (the 2026-07-24 town audit: Hirameki's gate market authored 12
         businesses, landed 4, and nothing said so - the "no silent caps" principle applied
@@ -6186,6 +6185,22 @@ class Settlement:
             want = placed + len(left)
             kinds = ", ".join(f"{k} x{c}" for k, c in Counter(left).items())
             print(f"{fn.upper()} SHORTFALL at {where}: placed {placed}/{want} (dropped {kinds})")
+            # ...and RECORD it (GM 2026-08-05: "we definitely want that to be visible"). Printing
+            # alone sends the one number that measures authored-vs-landed drift to a terminal
+            # nobody keeps: a map shipping 88 of its 118 merchant households read exactly like one
+            # that met its budget, and the only reason it was ever noticed was a perf investigation.
+            # Recorded, it is reviewable after the fact and gateable in future. Deliberately NO
+            # geometry key names (x/pts/poly/outline/boundary) - this is a diagnostic, not a drawn
+            # feature, and every_feature_classified_for_overlap keys off exactly those names.
+            self.M.setdefault("shortfalls", []).append(
+                {
+                    "by": fn,
+                    "at": [round(float(v), 1) for v in (where if not isinstance(where[0], (list, tuple)) else [c for p in where for c in p])],
+                    "placed": placed,
+                    "wanted": want,
+                    "dropped": kinds,
+                }
+            )
 
     def pasture(self, shape: Any, label: Any = None, amp: float = 40, label_xy: Any = None) -> None:
         """Hayfield / grazing land (pastureland, around the barns) - open grass with
