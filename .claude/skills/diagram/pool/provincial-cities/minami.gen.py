@@ -91,6 +91,20 @@ s.meta(
     capital_dir="northeast",
     temple_fortunes=["Benten", "Bishamon", "Daikoku", "Ebisu", "Fukurokujin", "Hotei", "Inari", "Jurojin"],
     temple_exception="fox_structure",
+    # THE FOX TRADE, declared rather than tolerated (GM 2026-08-05). Minami's merchant households
+    # run ~30% under the budgets.md share, and that is doctrine, not drift: the eight precincts hold
+    # much of the commerce that merchant houses conduct in other clans' cities, and the households
+    # that would have been merchants are the 48 hereditary temple families instead. The city's
+    # POPULATION is unchanged - 472 lay families + 48 temple families = 520 dwellings = 2,600
+    # residents - which is what makes the trade legitimate rather than a shortfall.
+    caste_shifts={
+        "merchant": (
+            "Fox temples hold much of the commerce that merchant houses conduct in other clans' cities - the eight "
+            "precincts lend, warehouse and broker the timber trade - so merchant households run about a third under "
+            "the budgets.md share and the 48 hereditary temple families stand in their place. The city's population "
+            "is unchanged at 2,600; only the caste that houses it moves."
+        )
+    },
 )
 
 BUDGET = plan_city(
