@@ -425,3 +425,33 @@ Qing Beijing street-fence coverage (Dashilan street history; Beijing city fortif
 Jokamachi surveys (Grokipedia; Nakasendo Way, *Castle Towns*)
 
 *Used for:* chonin wards forming narrow strips that SEPARATE different groups of samurai, sited along the major thoroughfares; separation within the buke-chi being per-compound ("larger compounds separated by walls and gates") rather than a district palisade; chonin plots smaller per family and tightly aligned along the streets
+
+### `edo-josui`
+
+Tokyo Waterworks Historical Museum; Tokyo Metropolitan Waterworks, Tamagawa Josui pages; Tamagawa Aqueduct (Wikipedia); IHCSA Cafe, *Tamagawa Josui: Edo's Precious Waterworks*
+
+*Used for:* the two-part josui - ~43 km of OPEN cut "excavated without timbering" from Hamura to the Yotsuya gate, then ~67 km of BURIED stone (sekihi) and wooden (mokuhi) pipe inside the city feeding 3,600+ draw-wells and cisterns; ship's carpenters as the trade that laid the wooden pipe
+
+### `kanda-kakehi`
+
+Tokyo Metropolitan Library, *Ochanomizu Aqueduct, Kanda Service Water Supply Flume*; Nippon.com on Suidobashi; Tokyo Waterworks Historical Museum (Kanda Aqueduct stone pipe)
+
+*Used for:* the kakehi (懸樋) carrying the Kanda Josui over the Kanda River at Ochanomizu as an open flume on a bridge; Suidobashi ("aqueduct bridge") named for it; Hiroshige's depiction - the attested above-ground crossing
+
+### `osaka-kurayashiki`
+
+Dojima Rice Exchange (JPX/ODEX); Japanese Wiki Corpus, *Daimyogashi*; rice-broker surveys
+
+*Used for:* kurayashiki as the daimyo's warehouse-residence AT THE MARKET (Osaka, Nakanoshima, 110+ at the early-1800s peak) where tax rice was auctioned against rice bills - i.e. the SELLING end, not the domain capital
+
+### `asakusa-kuramae`
+
+Asakusa / Kuramae district histories; *Rice broker* (Wikipedia)
+
+*Used for:* the shogunate's own riverside rice granaries on the Sumida; Kuramae (蔵前) "before the storehouses" as the brokers' district; fudasashi warehousing, converting and lending against stipend rice, and their wealth seeding the neighboring entertainment district
+
+### `kuramai`
+
+Britannica, *kuramai*; koku-system surveys
+
+*Used for:* peasants paying tax rice up to the DOMAIN granary, from which samurai stipends were paid - the collecting-and-disbursing role of a castle town as distinct from the market

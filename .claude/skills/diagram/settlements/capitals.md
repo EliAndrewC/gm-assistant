@@ -127,13 +127,30 @@ Everything per-gate (gate market, outside flophouse, caravan cluster, kosatsuba,
 
 The wells do not go away: 2,472 households at the provincial rate of 1 per 10-20 households still puts ~160-240 draw-points across the commoner quarters, and the existing `city_neighborhoods_have_wells` / `city_well_density_sufficient` / `city_wells_in_block_interiors` family carries over unchanged.
 
-**Still to research before this is drawable** - the FORM, which is not obvious and matters a lot on a map: a *josui* was largely a **buried** conduit feeding open draw-basins, so what is actually visible may be only the intake works, the approach outside the wall, and the basins. If most of it is underground, the aqueduct is a small number of legible fixtures rather than a line across the map, and the budget line changes accordingly.
+**The form is settled** ([research](../research/cities/capitals.md#the-aqueduct-is-open-outside-the-wall-and-buried-inside-it---and-the-boundary-is-the-gate)): the historical system is **open outside the wall and buried inside it, with the city GATE as the boundary**. That gives the GM's above-ground preference most of the interesting length, honestly:
+
+1. the **intake works** on the river;
+2. the **open approach canal** running to the wall (Edo's ran 43 km as a plain earth cut);
+3. a ***kakehi*** - an open flume carried across a watercourse on a bridge - where the geography needs one. This is the most striking element in the system and fully attested: Edo's Suidōbashi, "aqueduct bridge," is named for it and Hiroshige drew it;
+4. its **terminus at a gate**.
+
+**NO ARCADES.** There is no East Asian arcaded aqueduct - the vocabulary is gravity canal at grade, buried pipe, and a flume bridge only where water must be crossed. Arches are the one form the possibility space excludes.
+
+Inside the wall the conduit is honestly buried, and is represented by what a resident actually sees: **its draw-points**. So the in-wall aqueduct reads as a distinguishable aqueduct-fed draw-basin among the ordinary wells, not as a fake surface channel.
 
 ## Wharf and the tax-rice warehouses
 
-**Wanted (GM 2026-08-08).** The whole domain's tax rice - six provinces' worth - lands at the capital, and Shiro Daika sits on a NE-SW river. With the castle holding the siege stock (above), the wharf carries **transhipment**: a dock basin, jetties, and a *kurayashiki* warehouse district on the water.
+**Wanted (GM 2026-08-08), and the research changes its shape** ([research](../research/cities/capitals.md#the-wharf-is-the-collecting-end-and-kurayashiki-is-the-wrong-word-for-it)).
 
-Nagahara already supplies most of the vocabulary (`s.dock`, `s.jetty`, `s.canal`, `s.water_gate`) - see [`cities/river-cities.md`](cities/river-cities.md). What is new is the SCALE of the kura district and the question of where the **Emperor's local granaries** sit, which the Imperial Magistrate oversees separately from the domain's own stores. Both need a research pass before the budget prices them.
+**Do NOT call this a *kurayashiki* district** - an earlier draft of this file did, and it was wrong twice. A kurayashiki is a daimyo's warehouse-residence **at the market** (Osaka, 110+ of them at peak), where tax rice was *sold*. A domain capital is the **collecting-and-disbursing** end: rice comes up from the six provinces into the **domain granary**, most goes straight back out as samurai stipends (*kuramai*), and the surplus ships downriver.
+
+The model is **Asakusa Okura / Kuramae** - the ruler's own riverside granaries, with the district in front of them named "before the storehouses." That yields a chain of three features linked by one mechanism, which is what will make this waterfront read as a real place:
+
+    river wharf -> the domain granary -> the brokers' row in front of it -> the entertainment district next door
+
+Nagahara supplies most of the vocabulary already (`s.dock`, `s.jetty`, `s.canal`, `s.water_gate`) - see [`cities/river-cities.md`](cities/river-cities.md). The castle keeps the siege stock (above), so the waterfront carries the working rice.
+
+**Two things to settle before building it**, both flagged in the research rather than invented here: whether the brokers' row is a **merchant** street or a **Ministry of Retainers** annex (budgets.md gives the rice/coin arbitrage to the ministry, not to chonin brokers, which weakens the Edo chain from broker wealth to the entertainment district); and where the **Emperor's separate granaries** sit, which no source settles.
 
 ## Settled defaults
 
