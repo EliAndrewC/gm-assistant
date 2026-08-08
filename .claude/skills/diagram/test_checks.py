@@ -10100,3 +10100,58 @@ def test_city_ward_servants_housed_as_ranges_skips_a_ward_that_cannot_be_closed(
     M = _ward_servant_city(bldg(600, 600, kind="samurai", w=19, h=13), bldg(700, 700, kind="servant", w=10, h=7))
     M["wards"] = [{"name": "samurai", "boundary": [[400, 945]], "stroke": 5.0}]
     assert "city_ward_servants_housed_as_ranges" not in f(M)
+
+
+# ---- the DOMAIN-CAPITAL tier is sized budget-first too (feature 018) --------------------------
+
+
+def _capital_manifest(interior_frac=1.0, budget=True, scale="capital"):
+    """A capital manifest whose wall encloses `interior_frac` of its declared required interior.
+    The wall is a square of the right area, which is all either check reads."""
+    required = 1_000_000.0
+    side = math.sqrt(required * interior_frac)
+    M = manifest(meta={"scale": scale, "ftpx": 3, "W": 4000, "H": 4000}, wall=[[0, 0], [side, 0], [side, side], [0, side]])
+    if budget:
+        M["meta"]["budget"] = {"required_interior_px2": required}
+    return M
+
+
+@pytest.mark.parametrize(
+    "frac,fires",
+    [
+        (1.00, False),  # exactly on budget
+        (1.07, False),  # inside the +8% tolerance
+        (0.96, False),  # inside the -5% tolerance
+        (1.20, True),  # over-enclosed: the empty-space defect
+        (0.80, True),  # the wall cannot hold the program
+    ],
+)
+def test_capital_wall_matches_budget_fires_only_outside_the_declared_tolerances(frac, fires):
+    fired = "capital_wall_matches_budget" in check_village.gate(_capital_manifest(interior_frac=frac))
+    assert fired is fires
+
+
+def test_capital_wall_matches_budget_reuses_the_provincial_tolerances():
+    """Inherited deliberately - they are pinned by the shipped-Tango / rejected-Nagahara pair, and
+    nothing about a capital argues for different slack."""
+    assert check_village.BUDGET_TOL_OVER == 0.08
+    assert check_village.BUDGET_TOL_UNDER == 0.05
+
+
+def test_a_capital_that_declares_no_budget_FAILS_rather_than_skipping_the_conformance_check():
+    """The FR-015 ratchet. Without it the map would skip capital_wall_matches_budget entirely and
+    show green - and a check that never RUNS looks exactly like a check that passes."""
+    failures = check_village.gate(_capital_manifest(budget=False))
+    assert "capital_declares_a_budget" in failures
+    assert "capital_wall_matches_budget" not in failures  # it has nothing to compare against
+
+
+def test_a_capital_that_declares_a_budget_passes_the_ratchet():
+    assert "capital_declares_a_budget" not in check_village.gate(_capital_manifest())
+
+
+@pytest.mark.parametrize("scale", ["village", "town", "city"])
+def test_neither_capital_check_runs_on_any_other_scale(scale):
+    failures = check_village.gate(_capital_manifest(budget=False, scale=scale))
+    assert "capital_declares_a_budget" not in failures
+    assert "capital_wall_matches_budget" not in failures

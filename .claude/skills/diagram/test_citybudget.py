@@ -16,7 +16,7 @@ import pytest
 
 import check_village
 import citybudget
-from citybudget import BudgetLine, CityProgram, budget_to_manifest, derive_wall, format_budget, plan_city
+from citybudget import BudgetLine, CityProgram, budget_to_manifest, derive_wall, format_budget, plan_capital, plan_city
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -334,3 +334,243 @@ def test_cli_reports_errors_on_stderr_with_exit_1(capsys):
     rc = citybudget.main(["--plan", "--population", "99"])
     assert rc == 1
     assert "2000" in capsys.readouterr().err
+
+
+# ---- THE DOMAIN-CAPITAL TIER (feature 018) ---------------------------------------------------
+#
+# A capital gets a PARALLEL entry point, not a widened band, so the provincial path above runs no
+# new branches. These tests therefore also guard a negative: nothing here may move a shipped city.
+
+
+def _cap(**kw):
+    return citybudget.CapitalProgram(**kw)
+
+
+def test_the_new_ground_costs_sit_in_their_documented_ranges_and_order():
+    """A walled compound costs more ground than a detached house, which costs more than a terrace.
+
+    The one relationship that looks wrong and is not: C_TERRACE sits just BELOW C_PACKED. That is
+    because C_PACKED is the caste-WEIGHTED average of the packed castes and is pulled up by
+    merchant houses (~200 px^2 footprint, against a laborer's ~99), so a bare laborer row house is
+    only ~550 gross. A retainer terrace is roomier than a laborer's row and tighter than the
+    merchant-inflated average - and it is already generous against the historical anchor, since
+    Shibata's ashigaru-nagaya gave each household 378 sq ft to our laborer row's 891.
+    """
+    assert 3_500.0 <= citybudget.C_YASHIKI <= 5_000.0
+    assert 500.0 <= citybudget.C_TERRACE <= 900.0
+    assert citybudget.C_YASHIKI > citybudget.C_SPACED > citybudget.C_TERRACE
+    assert 500.0 < citybudget.C_TERRACE < citybudget.C_PACKED
+
+
+def test_the_capital_caste_table_matches_budgets_md_and_sums_to_the_declared_population():
+    fam = citybudget.CAPITAL_FAMILIES
+    assert fam == {"servants": 480, "laborers": 960, "merchants": 600, "burakumin": 120, "samurai": 312}
+    assert "farmers" not in fam  # a capital walls its farmland out
+    assert sum(fam.values()) * citybudget.HOUSEHOLD == citybudget.CAPITAL_POP
+
+
+def test_the_rank_bands_sum_to_the_working_cohort_and_invert_the_provincial_mix():
+    """budgets.md's capital column is 70% senior / 30% junior - the INVERSE of a provincial
+    city's 27/73 - so walled compounds are the majority texture, not a minority."""
+    bands = citybudget.CAPITAL_RANK_BANDS
+    working = sum(sum(v) for v in bands.values())
+    assert working == 800
+    senior = (sum(bands["yashiki"]) + sum(bands["detached"])) / working
+    assert senior == pytest.approx(0.70, abs=0.01)
+    assert sum(bands["terrace"]) / working == pytest.approx(0.30, abs=0.01)
+
+
+def test_a_capital_houses_more_of_its_samurai_in_wall_than_a_provincial_city():
+    assert citybudget.CAPITAL_SAMURAI_INWALL_FRAC > citybudget.SAMURAI_INWALL_FRAC
+
+
+@pytest.mark.parametrize("pop", [8_999, 16_001, 3_000, 40_000])
+def test_population_outside_the_capital_band_is_rejected(pop):
+    with pytest.raises(ValueError, match="domain-capital band"):
+        _cap(population=pop)
+
+
+def test_the_samurai_cohort_splits_in_wall_then_by_rank_band_and_the_three_sum_exactly():
+    b = plan_capital(_cap())
+    t = b.dwelling_target
+    assert t["samurai_inwall"] == round(citybudget.CAPITAL_FAMILIES["samurai"] * citybudget.CAPITAL_SAMURAI_INWALL_FRAC)
+    assert t["samurai_yashiki"] + t["samurai_detached"] + t["samurai_terrace"] == t["samurai_inwall"]
+    assert t["dwellings"] == citybudget.CAPITAL_POP / citybudget.HOUSEHOLD
+
+
+def test_capital_lines_sum_exactly_to_the_required_interior():
+    b = plan_capital(_cap(river=True))
+    assert sum(ln.area_px2 for ln in b.lines) == pytest.approx(b.required_interior_px2, abs=1e-6)
+
+
+def test_capital_circulation_is_the_declared_fraction_of_the_interior_not_of_the_subtotal():
+    b = plan_capital(_cap())
+    circ = _line(b, "circulation (trunk + ring road + streets + alleys)")
+    assert circ.area_px2 == pytest.approx(b.required_interior_px2 * citybudget.CIRC_FRAC, abs=1e-6)
+
+
+def test_every_capital_line_carries_a_label_and_a_basis():
+    for ln in plan_capital(_cap(river=True)).lines:
+        assert ln.label.strip()
+        assert ln.basis.strip()
+
+
+def test_the_castle_is_its_own_line_and_the_samurai_are_three_separate_housing_lines():
+    """US2 AS-2: the report must not hide the castle in a civic total, nor flatten the rank bands."""
+    labels = [ln.label for ln in plan_capital(_cap()).lines]
+    assert any(lb.startswith("the castle") for lb in labels)
+    assert sum(1 for lb in labels if "in-wall (Rank" in lb) == 3
+
+
+def test_the_canonical_capital_fits_the_standard_canvas():
+    """SC-002: adopting the tier forces no canvas change."""
+    b = plan_capital(_cap(river=True), canvas=(3200, 2700))
+    assert 2 * (b.wall.rx + citybudget.WALL_MARGIN_PX) <= 3200
+    assert 2 * (b.wall.ry + citybudget.WALL_MARGIN_PX) <= 2700
+
+
+def test_a_capital_wall_too_large_for_its_canvas_fails_loudly_with_the_numbers():
+    with pytest.raises(ValueError, match="never clamp the wall"):
+        plan_capital(_cap(river=True), canvas=(1200, 1000))
+
+
+# ---- the shipped capital program is PINNED the day it lands ---------------------------------
+#
+# Same discipline the provincial tier earned the hard way: CAPITAL_CIVIC_PROGRAM's third field is
+# a ROW TOTAL, not a per-unit cost, and reading it the other way is how feature 016 nearly doubled
+# every city's temple ground. These literals are deliberately hard-coded - a test that derives its
+# expectation from the code it guards cannot catch a drift - and they also pin LINE ORDER, which
+# is manifest bytes.
+
+_CAPITAL_LINES_AS_SHIPPED = [
+    ("packed row housing (laborer/servant/merchant/burakumin)", 2160, 1_490_400.0),
+    ("the castle (enceinte: baileys + moats; interior implied)", 1, 598_000.0),
+    ("samurai walled yashiki in-wall (Ranks 8-12)", 53, 219_950.0),
+    ("samurai detached houses in-wall (Ranks 5-7)", 133, 329_840.0),
+    ("retainer terraces in-wall (Ranks 1-4)", 79, 52_140.0),
+    ("six domain ministries + government ward", 6, 16_000.0),
+    ("House Chancellery (the domain's 5-10 lineage representatives)", 1, 2_000.0),
+    ("Imperial Magistrate's compound (foreign; houses its own 12 households)", 1, 8_000.0),
+    ("the Emperor's granaries", 1, 3_000.0),
+    ("domain school (hanko)", 1, 4_000.0),
+    ("domain granary + wharf brokers' row", None, 12_000.0),
+    ("domain martial hall + rolled private dojos", None, 4_400.0),
+    ("aqueduct in-wall works (the conduit itself is buried)", None, 500.0),
+    ("minor civic (theaters, flophouses, funerary, inspection, kura)", None, 30_000.0),
+    ("shops, inns, stables", 60, 13_400.0),
+    ("bell-and-drum tower (sounds the kido curfew)", 1, 250.0),
+    ("brewery compounds", 2, 1_600.0),
+    ("trade works (dye yards, oil presses, pawn courts, bathhouses, farriers)", None, 3_000.0),
+    ("sovereign temple precincts", 2, 32_500.0),
+    ("adept-monk houses by the temple precincts", 5, 3_450.0),
+    ("cargo canal + dock basin", 1, 5_800.0),
+    ("circulation (trunk + ring road + streets + alleys)", None, 213_028.064516),
+]
+
+
+def test_the_shipped_capital_program_prices_and_orders_exactly_as_recorded():
+    b = plan_capital(_cap(river=True), canvas=(3200, 2700))
+    assert [(ln.label, ln.count, pytest.approx(ln.area_px2, abs=1e-6)) for ln in b.lines] == _CAPITAL_LINES_AS_SHIPPED
+    assert b.required_interior_px2 == pytest.approx(3_043_258.064516, abs=1e-6)
+    assert b.wall.rx == pytest.approx(1029.050610, abs=1e-6)
+    assert b.wall.ry == pytest.approx(957.017067, abs=1e-6)
+
+
+def test_the_capital_civic_rows_are_row_totals_not_per_unit_costs():
+    """The six domain ministries are one row TOTAL for all six, exactly as the provincial six are."""
+    row = next(r for r in citybudget.CAPITAL_CIVIC_PROGRAM if r[0].startswith("six domain ministries"))
+    assert row[1] == 6
+    ministries = _line(plan_capital(_cap()), row[0])
+    assert ministries.area_px2 == pytest.approx(row[2], abs=1e-6)
+
+
+# ---- the variant knobs are validated at DECLARATION time (US3) --------------------------------
+
+
+@pytest.mark.parametrize(
+    "kw,match",
+    [
+        ({"castle_seat": "edge"}, "requires river=True"),
+        ({"castle_seat": "keep"}, "is not one of"),
+        ({"imperial_granary_seat": "castle"}, "is not one of"),
+        ({"castle_px2": 40_000.0}, "outside the documented band"),
+        ({"castle_px2": 9_000_000.0}, "outside the documented band"),
+        ({"agricultural_district": True}, "no agricultural district"),
+        ({"aspect": 0.0}, "aspect must be in"),
+    ],
+)
+def test_an_illegal_capital_declaration_is_refused_when_it_is_constructed(kw, match):
+    with pytest.raises(ValueError, match=match):
+        _cap(**kw)
+
+
+@pytest.mark.parametrize(
+    "kw",
+    [
+        {"castle_seat": "edge", "river": True},
+        {"castle_seat": "ring"},
+        {"castle_seat": "ring", "river": True},
+        {"imperial_granary_seat": "wharf"},
+        {"imperial_granary_seat": "magistrate"},
+    ],
+)
+def test_a_legal_capital_declaration_is_accepted(kw):
+    assert plan_capital(_cap(**kw)).wall.rx > 0
+
+
+def test_a_declared_castle_reprices_the_wall_and_records_its_hectares_in_the_basis():
+    small = plan_capital(_cap(castle_px2=citybudget.CASTLE_PX2))
+    grand = plan_capital(_cap(castle_px2=citybudget.CASTLE_PX2 * 3))
+    assert grand.wall.rx > small.wall.rx
+    assert "ha" in _line(grand, "the castle (enceinte: baileys + moats; interior implied)").basis
+
+
+def test_the_capital_manifest_round_trips_as_plain_json_and_adds_no_new_top_level_keys():
+    """budget_to_manifest's SHAPE is manifest bytes - a new key would dirty every shipped city."""
+    cap = json.loads(json.dumps(budget_to_manifest(plan_capital(_cap(river=True)))))
+    prov = json.loads(json.dumps(budget_to_manifest(plan_city(_prog()))))
+    assert set(cap) == set(prov)
+    assert cap["dwelling_target"]["samurai_yashiki"] == 53
+
+
+def test_capital_costs_convert_from_the_3ftpx_calibration_to_other_scales():
+    at3 = plan_capital(_cap()).required_interior_px2
+    at6 = plan_capital(_cap(ftpx=6)).required_interior_px2
+    assert at6 == pytest.approx(at3 / 4, rel=1e-9)
+
+
+def test_the_capital_report_prints_every_line_with_its_basis_and_the_wall():
+    text = format_budget(plan_capital(_cap(river=True)))
+    assert "SPACE BUDGET - population 12360" in text
+    for ln in plan_capital(_cap(river=True)).lines:
+        assert ln.label in text
+    assert "derived wall" in text
+
+
+# ---- the CLI grows a --tier, and the provincial default is untouched -------------------------
+
+
+def test_cli_plans_a_capital_when_asked(capsys):
+    assert citybudget.main(["--plan", "--tier", "capital", "--population", "12360", "--river"]) == 0
+    out = capsys.readouterr().out
+    assert "the castle" in out and "retainer terraces" in out
+
+
+def test_cli_defaults_to_the_provincial_tier(capsys):
+    assert citybudget.main(["--plan", "--population", "3000"]) == 0
+    assert "governor's mansion" in capsys.readouterr().out
+
+
+def test_cli_refuses_an_agricultural_district_at_capital_tier_rather_than_ignoring_it(capsys):
+    assert citybudget.main(["--plan", "--tier", "capital", "--population", "12360", "--agri"]) == 1
+    assert "walls its farms out" in capsys.readouterr().err
+
+
+def test_cli_reports_a_capital_band_error_on_stderr(capsys):
+    assert citybudget.main(["--plan", "--tier", "capital", "--population", "3000"]) == 1
+    assert "domain-capital band" in capsys.readouterr().err
+
+
+def test_cli_accepts_the_capital_knobs(capsys):
+    assert citybudget.main(["--plan", "--tier", "capital", "--population", "12360", "--river", "--castle-seat", "edge", "--granary-seat", "wharf"]) == 0
+    assert "seat=edge" in capsys.readouterr().out
