@@ -63,7 +63,7 @@ GEN_TIME_BUDGETS = {
     # (the frozen_terrain well scope, the _fits reach index, the ground-cover grids, and Minami's
     # own label index). Every heavy map has roughly halved AGAIN - the five that need an entry are
     # now within 2x of each other where they used to span 15s to 54s.
-    "minami": 90.0,  # ~22s solo (54s two passes ago): the biggest map, and the only one that still needs real headroom
+    "minami": 60.0,  # ~14.5s solo (21s before the top-up seat memo, 54s three passes ago): the biggest map, and the only one that still needs real headroom
     "nagahara": 50.0,  # ~9s solo (37s)
     "tango": 50.0,  # ~10s solo (24s)
     "kikuta": 50.0,  # ~10s solo (35s): its ground-cover scatter, the pass's first big find
