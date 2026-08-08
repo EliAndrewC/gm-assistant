@@ -158,6 +158,33 @@ def test_no_recorded_deps_falls_back_to_the_coarse_whole_engine_key(tmp_path, mo
     assert gencache.compute_key(str(gen), None) != before, "with no dep set every engine byte counts"
 
 
+def test_a_second_gen_in_the_same_process_records_its_own_full_dep_set(tmp_path, monkeypatch):
+    """`sys.monitoring`'s DISABLE is permanent per code object, and that is what makes capture free
+    - but without `restart_events()` the SECOND map traced in one process records only what the
+    first did not already touch. A whole-pool sweep gave map #1 473 deps and nagahara 3, leaving it
+    keyed on so little that almost any engine change would still have read as a hit.
+
+    The unit tests could not catch this: each builds a FRESH engine module whose code objects were
+    never disabled. It took an end-to-end "change one algorithm and see what regenerates" sweep, so
+    the lesson gets pinned here where it is cheap to re-check.
+    """
+    eng, gen1, out1 = _fixture(tmp_path)
+    mod = eng.stem
+    out2 = tmp_path / "toy2.json"
+    gen2 = tmp_path / "toy2.gen.py"
+    gen2.write_text(textwrap.dedent(_GEN).format(here=str(tmp_path), out=str(out2), mod=mod))
+    _with_engine(monkeypatch, tmp_path, eng)
+    first = gencache.run_and_record(str(gen1))
+    second = gencache.run_and_record(str(gen2))
+    quals = {q for _, q in second["functions"]}
+    assert "used" in quals and "Thing.method" in quals, f"the second gen recorded only {quals} - DISABLE leaked across runs"
+    # every real FUNCTION the first run saw must be seen again; module and class BODIES
+    # legitimately are not, because a second import of an already-imported module does not
+    # re-execute them (and both are covered by the module-level hash anyway)
+    bodies = {"<module>", "Thing"}
+    assert {q for _, q in first["functions"]} - bodies <= quals, (first["functions"], sorted(quals))
+
+
 def test_the_gate_never_reads_the_cache():
     """The property that makes the whole thing safe to adopt: `make done` regenerates from scratch,
     so a stale entry can mislead an interactive look but can never put a wrong map past the gate.

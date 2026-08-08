@@ -183,6 +183,16 @@ def run_and_record(gen: str) -> dict[str, Any]:
     try:
         mon.register_callback(tool, mon.events.PY_START, on_start)
         mon.set_events(tool, mon.events.PY_START)
+        # RE-ENABLE every location this tool disabled earlier IN THIS PROCESS. `on_start` returns
+        # DISABLE so each code object reports once - which is what makes capture free - but that
+        # disable is permanent per code object, so a second gen in the same process recorded only
+        # the functions the FIRST one had not already touched. A whole-pool sweep therefore gave
+        # map #1 a full dep set (473 functions) and everyone after it almost nothing (nagahara: 3),
+        # leaving those maps keyed on so little that nearly any engine change would still read as a
+        # hit. Found 2026-08-08 by the GM's end-to-end "change one algorithm and see what
+        # regenerates" test - exactly the check the unit tests could not make, since each of them
+        # traces a fresh module whose code objects had never been disabled.
+        mon.restart_events()
         try:
             runpy.run_path(gen, run_name="__main__")
         finally:
