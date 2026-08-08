@@ -8,7 +8,7 @@ PASS=0; FAIL=0
 
 setup() {  # fresh state dir + fast thresholds so the tests do not sleep for real
   STATE_DIR=$(mktemp -d)
-  export BATCH_STATE_DIR="$STATE_DIR" BATCH_THRESHOLD=3 BATCH_CHEAP_MS=2000 BATCH_SAME_TURN_MS=300
+  export BATCH_STATE_DIR="$STATE_DIR" BATCH_THRESHOLD=3 BATCH_WINDOW=6 BATCH_CHEAP_MS=2000 BATCH_SAME_TURN_MS=300
 }
 teardown() { rm -rf "$STATE_DIR"; }
 ev() { printf '{"session_id":"t1","tool_name":"%s"}' "$1"; }
@@ -48,7 +48,7 @@ serial_turn; check "next call allowed (no deadlock)" ok $?
 serial_turn; check "and the one after that" ok $?
 teardown
 
-echo "3. a BATCHED turn resets the streak (the behavior we want is rewarded)"
+echo "3. a batched turn is never interrupted below the threshold"
 # NOTE the semantics this pins down: PreToolUse must decide on the FIRST call of a turn, when it
 # cannot yet know whether a second call is coming in the same message. So a batch that begins
 # exactly at the threshold has its first call blocked - the model re-sends the batch and it goes
@@ -63,30 +63,43 @@ batched_turn() {  # two calls in one turn; echoes the rc of each
   "$HOOK" posttool <<<"$(ev Grep)" >/dev/null 2>&1
   echo "$r1 $r2"
 }
-serial_turn; serial_turn                       # streak 2, still under the threshold of 3
+serial_turn; serial_turn                       # window "11", under the threshold of 3
 read -r r1 r2 <<<"$(batched_turn)"
 check "batch below the threshold is never interrupted (call 1)" ok "$r1"
 check "batch below the threshold is never interrupted (call 2)" ok "$r2"
-serial_turn; serial_turn; serial_turn; check "streak was reset by the batch" ok $?
-read -r r1 r2 <<<"$(batched_turn)"             # now AT the threshold: first call trips the block
-check "at the threshold the batch's first call is blocked (this is what prompts batching)" blocked "$r1"
-read -r r1 r2 <<<"$(batched_turn)"             # the model re-sends it
-check "re-sent batch goes through (call 1)" ok "$r1"
-check "re-sent batch goes through (call 2)" ok "$r2"
-serial_turn; check "and the streak is clear afterwards" ok $?
 teardown
 
-echo "4. a SLOW call resets the streak (real work is not recon)"
+echo "4. THE REGRESSION: one batched turn no longer absolves the serial run around it"
+# The 2026-08-08 finding, and the reason the streak became a window. Under the old CONSECUTIVE
+# counter the batch below reset the count to zero, so the two serial turns after it sat at 2 and
+# never tripped - which is how a session made 147 single-call round trips out of 162 and was
+# blocked twice. In a rolling window the batch is one '0' among the last six and the serial turns
+# on either side of it still count.
 setup
-serial_turn; serial_turn; serial_turn
-sleep 0.35
-"$HOOK" pretool <<<"$(ev Bash)" 2>/dev/null
-sleep 2.1                                      # > CHEAP_MS: this was real work
-"$HOOK" posttool <<<"$(ev Bash)" >/dev/null 2>&1
-serial_turn; check "streak reset by the slow call" ok $?
+serial_turn; serial_turn                       # window "11"
+read -r r1 r2 <<<"$(batched_turn)"             # window "110"
+check "the batch itself is allowed" ok "$r1"
+serial_turn; check "serial turn after the batch allowed (window '1101')" ok $?
+serial_turn; check "BLOCKED - the batch did not erase the serial turns around it" blocked $?
+grep -q "of the last" /tmp/bt.err && { echo "  ok    block message reports the window"; PASS=$((PASS+1)); } || { echo "  FAIL  block message does not report the window"; FAIL=$((FAIL+1)); }
 teardown
 
-echo "5. sessions are independent"
+echo "5. a SLOW call is real work, not a batchable turn"
+setup
+serial_turn; serial_turn                       # window "11"
+slow_turn() { sleep 0.35; "$HOOK" pretool <<<"$(ev Bash)" 2>/tmp/bt.err || return $?; sleep 2.1; "$HOOK" posttool <<<"$(ev Bash)" >/dev/null 2>&1; }
+slow_turn; check "the slow turn itself is allowed" ok $?   # window "110"
+serial_turn; check "serial turn after it allowed" ok $?
+serial_turn; check "BLOCKED at 3 serial turns inside the window" blocked $?
+teardown
+
+echo "6. a window of nothing but real work never blocks"
+setup
+slow_turn; slow_turn; slow_turn; slow_turn; slow_turn; slow_turn; slow_turn
+slow_turn; check "7 slow turns, no block" ok $?
+teardown
+
+echo "7. sessions are independent"
 setup
 serial_turn; serial_turn; serial_turn
 sleep 0.35

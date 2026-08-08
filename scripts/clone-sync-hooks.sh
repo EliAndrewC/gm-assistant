@@ -176,7 +176,27 @@ case $MODE in
     ;;
   prompt)
     sid=$(field session_id)
-    [ -n "$sid" ] && [ -f "$MAPDIR/$sid" ] || exit 0  # no known clone yet - silent (the pretool backstop covers the first edit)
+    [ -n "$sid" ] || exit 0
+    if [ ! -f "$MAPDIR/$sid" ]; then
+      # NO CLONE CLAIMED YET - normally this session's FIRST prompt. Say RIGHT HERE whether it can
+      # even have a workspace, because the pretool backstop only speaks at the first EDIT, which is
+      # far too late: on 2026-08-08 a session did 4.7 minutes of recon, worked out its whole plan,
+      # and only then discovered it had no resolvable name - so the GM's /rename was 4.6 minutes of
+      # dead wall-clock instead of something that could have overlapped the recon. Announcing it at
+      # turn 1 makes the rename concurrent with the analysis rather than a barrier in front of it.
+      # ONCE PER SESSION (the marker file): a read-only session must not be nagged every prompt.
+      notice="$MAPDIR/$sid.name-notice"
+      if [ ! -f "$notice" ]; then
+        mkdir -p "$MAPDIR"; : > "$notice"
+        canon=$(canonical_clone "$sid")
+        if [ -z "$canon" ]; then
+          echo "clone-sync: this session's name does not resolve (no entry for it under $SESSIONS_DIR), so it has NO valid clone name. Read-only work is fine. If you are going to modify this repo, ask the GM to /rename the session NOW - before the recon, not after it."
+        elif [ "$(basename "$canon")" = "gm-assistant" ]; then
+          echo "clone-sync: this session resolves to the FORBIDDEN '.clones/gm-assistant' (unnamed or auto-derived). Read-only work is fine. If you are going to modify this repo, ask the GM to /rename the session NOW - before the recon, not after it."
+        fi
+      fi
+      exit 0
+    fi
     clone=$(cat "$MAPDIR/$sid")
     [ -d "$clone/.git" ] || exit 0
     if [ -n "$(git -C "$clone" status --porcelain 2>/dev/null)" ]; then
