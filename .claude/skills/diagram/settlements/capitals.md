@@ -63,7 +63,16 @@ A future automated cross-check (a Mode A sheet's own footprints projected onto t
 
 `castle_px2` is a **declared program line**, defaulting to ~598,000 px^2 (~50 ha) with a documented 50-230 ha band - and that ground is spent whether or not anything is drawn on it, because the budget prices the WORKS, not their contents.
 
-**Open (GM):** a castle's *bailey walls* (the honmaru / ninomaru / sannomaru divisions) and its *masugata* dogleg gate approaches are themselves **walls**, not buildings - so the literal "blank except for the walls" rule would admit them, and they are what makes a 50 ha enclosure read as a castle rather than as one enormous empty box. But they are also exactly what a Mode A sheet would fix precisely, so they carry the same sync risk the rule exists to avoid. **Ask before drawing them**; the safe default is the outer enceinte, its moat and its gates alone.
+**DECIDED, PROVISIONALLY (GM 2026-08-08): draw them, then look.** The *bailey walls* (honmaru / ninomaru / sannomaru divisions), the *masugata* dogleg gate approaches and the inner moats ARE drawn, even though everything they enclose stays blank.
+
+The GM's reasoning is that the tradeoff genuinely differs here from a manor's: *"anything inside those outer walls needs to match up on the eventual diagram... but maybe that's okay here because the tradeoff is different, so let's try adding the bailey walls and masugata dogleg gate approaches and whatnot and then see how that looks, and we can remove them if needed."*
+
+Two things follow, and both matter:
+
+- **This is a WALLS-ONLY relaxation, not a crack in the blank rule.** Walls, moats and gate approaches may be drawn; **no building may**. The tenshu and goten stay off the map. The sync surface a wall creates is a line the Mode A sheet must also draw, which is far smaller than a building's position, orientation and footprint.
+- **It is provisional and has an explicit test.** It is drawn to be JUDGED on the render: does a 50 ha enclosure read as a castle without them (in which case remove them and take the smaller sync surface), or as one enormous empty box (in which case keep them)? Record the verdict here when the first Shiro Daika render is reviewed - and if they stay, note that the castle's Mode A sheet inherits their geometry as a constraint.
+
+**Build order consequence:** the castle glyph is the FIRST thing feature 019 builds, ahead of the city fabric, precisely so this call can be judged off an early render rather than at the end of a long build.
 
 ### The inventory: what is INSIDE (never drawn on the city map) vs OUTSIDE (must be)
 
