@@ -62,7 +62,7 @@ The cases where the castle sits on a flank rather than in the middle are the cas
 
 ## A median castle is ~85% of an entire provincial city
 
-**Grounds:** `castle_px2` and its default; the capital's derived wall size
+**Grounds:** `citybudget.CASTLE_PX2` / `CASTLE_HA_MIN` / `CASTLE_HA_MAX` and the castle budget line - **SHIPPED in feature 018**
 
 **Evidence:** attested (two anchors), interpolated (the median pick between them)
 
@@ -205,7 +205,7 @@ Inside the wall the system is honestly buried, and it is represented by what a r
 
 ## Per-household ground costs for the two housing types the budget model has never seen
 
-**Grounds:** the proposed `C_YASHIKI` and `C_TERRACE` rows in `citybudget.py`
+**Grounds:** `citybudget.C_YASHIKI`, `citybudget.C_TERRACE`, `CAPITAL_RANK_BANDS`, `CAPITAL_SAMURAI_INWALL_FRAC` - **SHIPPED in feature 018**, and both constants remain PROVISIONAL pending re-derivation against the first drawn capital
 
 **Evidence:** attested (both size anchors), interpolated (the gross-up ratios, measured from the pool)
 
