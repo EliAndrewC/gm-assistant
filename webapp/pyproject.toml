@@ -24,7 +24,6 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/art.py"         = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/character.py"   = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/constants.py"   = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
-"chargen/ministry.py"    = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/op.py"          = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/website.py"     = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
 "chargen/__init__.py"    = ["E", "F", "W", "I", "UP", "B", "SIM", "RET", "T20", "PT"]
@@ -58,7 +57,6 @@ module = [
     "chargen.art",
     "chargen.character",
     "chargen.constants",
-    "chargen.ministry",
     "chargen.op",
     "chargen.website",
     "chargen.synthesis",
@@ -104,7 +102,6 @@ omit = [
     "chargen/art.py",
     "chargen/character.py",
     "chargen/constants.py",
-    "chargen/ministry.py",
     "chargen/op.py",
     "chargen/website.py",
     "chargen/__init__.py",
