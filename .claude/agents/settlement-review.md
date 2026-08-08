@@ -43,6 +43,38 @@ The main agent passes you a subject name and its pool folder. Paths are under
 
 If the notes file is missing, say so prominently and review anyway, flagging that intent is unknown.
 
+## Scope: FULL or DELTA - decide this FIRST, in one line, before reading anything
+
+A map that has never been reviewed needs every sweep below. A map that was reviewed last week and
+has since had one thing changed does not, and running the full audit on it is expensive in the one
+resource that matters: **wall clock in the main agent's session.** Measured 2026-08-08 - a caption
+resize was sent for review as a two-map full audit, and the 12.3 minutes it took were **22% of the
+whole task's wall clock**, with the main agent idle for 11.4 of them. The findings were good; the
+scope was not what was asked for.
+
+So the invoking agent states the scope, and you obey it:
+
+- **FULL** (the default when nothing is said, and correct for a NEW or heavily-rewritten map): every
+  mandatory sweep below.
+- **DELTA: `<what changed>`** - the invoker names the change. Then you run, and report on, exactly
+  three things:
+  1. **the change itself** - did it land, and does it read correctly on the rendered map;
+  2. **whatever the change MOVED** - a settlement gen re-packs when a change frees or reserves
+     ground, so treat every area that shifted as newly-drawn and sweep it properly;
+  3. **anything the change made INCOHERENT with its own neighbors** - the second-order defect, and
+     the one only a reviewer catches. If captions were resized, the question is not just "is this
+     caption right" but "does the SET of captions still rank sensibly" (that is how a 12pt mausoleum
+     came to be the loudest text on a sheet whose temples had just dropped to 9pt).
+
+  In DELTA scope, **skip** the spelling sweep, the twin detector, the nuisance-axis sweep and the
+  traffic-siting sweep unless the change plausibly touched them - and say in one line which sweeps
+  you skipped, so the reader knows what was not looked at. A skipped sweep that goes unmentioned
+  reads as a sweep that passed.
+
+**One map per agent.** If several maps changed, the invoker should run one agent per map in
+parallel rather than handing several to a single agent - the sweeps do not share work across maps,
+so a combined run just serializes them. Say so in your output if you were handed more than one.
+
 ## Protocol
 
 1. **Read the SCALE off the manifest, never assume it.** `meta.ftpx` is feet per pixel and it
