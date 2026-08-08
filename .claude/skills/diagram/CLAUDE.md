@@ -252,6 +252,34 @@ seat both hand-picked batches had missed, first try. Reach for it on any "this p
 X" - and note the DRAW ORDER caveat: it can only see what has been drawn so far, so call it where
 the feature belongs, not earlier.
 
+## Ask the GEN who placed it - do not grep for the caller
+
+The other half of the same lesson. `open_seat` answers "where does this fit?"; **[`why_placed.py`](why_placed.py)** answers *"who put this here?"* and *"what refused to put anything here?"* - the two questions you actually have when a map comes out wrong.
+
+    python3 why_placed.py pool/provincial-cities/nagahara.gen.py --at 1102.6,1429.5
+    python3 why_placed.py pool/provincial-cities/nagahara.gen.py --refused 1102.6,1429.5 --radius 12
+
+`--at` prints every manifest record appended within the radius **with its call chain** - the gen
+line to go and look at, and the engine method under it that chose the spot. `--refused` prints how
+many `_fits` candidates were tested there, how many were refused, and **which sub-test said no**,
+counted by cause.
+
+WHY IT EXISTS (2026-08-08): a manifest record carries geometry and nothing about its provenance, and
+~200 engine methods can append one. Chasing a single servant house that was abutting a ministry cost
+about ten sequential greps through `settlement.py` and the gen - `top_up`, then `servant_ranges`,
+then the apron block polys, then `_fits` - and none of them answered it. A throwaway monkeypatch over
+`M["buildings"]` answered it first try, in one run. This is that, made permanent.
+
+**It OBSERVES, it never restates.** The refusal cause is read off the real `_in_blocked` /
+`_near_corridor` / `_hard_clear` as they return; when `_fits` refuses and none of those did, it says
+so in exactly those words rather than guessing which of the remaining clauses it was. Same discipline
+as `site_justice.py` asking the gate instead of re-implementing it - a diagnostic that re-derives a
+rule drifts from it and then tells you the wrong thing with total confidence.
+
+Two notes worth having: `--refused` reporting **"no candidate was ever tested here"** is a different
+finding from a refusal - the ground is UNVISITED, so look at the region the placer was given, not at
+the keep-outs. And a `--at` miss usually just wants a bigger `--radius`: a re-pack moves things.
+
 ## Siting a feature with interacting rules: adjudicate against the GATE, never a re-statement of it
 
 `open_seat` (above) answers "does this fit here?" - geometry only. When a feature's placement is
