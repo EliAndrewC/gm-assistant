@@ -308,8 +308,8 @@ s.block_polys.append([(1395 + 155 * math.cos(a), 1300 + 155 * math.sin(a)) for a
 ROAD_CORE = [(1500, 490), (1180, 573), (860, 655), (540, 740), (260, 820)]
 s.frontage(ROAD_CORE, (["merchant"] * 2 + ["shop"]) * 16, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
 s.label(
-    840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326"
-)  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it)
+    840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326", rot=s.frontage_rot, linear=True
+)  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it); tilted ALONG the frontage it names, like the shopfronts under it (GM 2026-08-08)
 s.merchant_residences(3)
 # the ~3 MASTER (rich) laborers get larger dwellings at the edge of the warren
 for lx, ly in [(268, 1060), (700, 1030), (960, 405)]:
