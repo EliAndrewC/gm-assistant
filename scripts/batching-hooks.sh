@@ -41,6 +41,11 @@ STATE_DIR=${BATCH_STATE_DIR:-/tmp/claude-batching}
 # tool call (this hook runs hundreds of times per session - it must be effectively free).
 json_str() { printf '%s' "$INPUT" | grep -o "\"$1\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed 's/.*:[[:space:]]*"//; s/"$//'; }
 now_ms() { echo $(($(date +%s%N) / 1000000)); }
+# A BACKGROUNDED call is never recon. It returns to the model in milliseconds, so the duration test
+# reads it as the cheapest kind of turn - but launching the gate with run_in_background is exactly
+# the behavior the loop rules ASK for, and the first version of this window duly blocked one
+# (2026-08-08, minutes after shipping). Boolean field, so it needs its own matcher.
+is_background() { printf '%s' "$INPUT" | grep -q '"run_in_background"[[:space:]]*:[[:space:]]*true'; }
 
 SID=$(json_str session_id); SID=${SID:-nosession}
 TOOL=$(json_str tool_name); TOOL=${TOOL:-unknown}
@@ -65,8 +70,9 @@ case "$MODE" in
     else
       CALLS=1
     fi
+    BG=0; if is_background; then BG=1; fi
     N=$(serial_turns)
-    if [ "$CALLS" -eq 1 ] && [ "$N" -ge "$THRESHOLD" ]; then
+    if [ "$CALLS" -eq 1 ] && [ "$BG" -eq 0 ] && [ "$N" -ge "$THRESHOLD" ]; then
       printf '%s %s %s\n' "$NOW" "$CALLS" "" > "$STATE"   # clear the window: no deadlock, one block per THRESHOLD
       echo "BLOCKED: $N of the last ${#HIST} turns EACH made a single quick read-only call - $N model round trips (~$((N * 9))s) for a few seconds of actual work. These reads/greps do not depend on each other; send them TOGETHER. Put every remaining lookup you already know you need into ONE message as parallel tool calls (or fold several greps into a single Bash command). Then continue. (CLAUDE.md 'Batch the rendered-map inspection' / 'Batch into fewer, bigger turns'. Measured 2026-08-08: 147 of 162 round trips made a single call - 22.7 minutes of latency for 4.0 minutes of work. This hook re-arms after another $THRESHOLD serial turns.)" >&2
       exit 2
@@ -77,7 +83,7 @@ case "$MODE" in
     # serial turn instead of recording itself (caught by test 4, 2026-08-08). Provisional '0' -
     # posttool promotes it to '1' only if the turn really was one quick call.
     if [ "$CALLS" -eq 1 ]; then
-      HIST="${HIST}0"
+      HIST="${HIST}0"     # provisional; a backgrounded call is left at '0' by posttool
       if [ "${#HIST}" -gt "$WINDOW" ]; then HIST=${HIST: -$WINDOW}; fi
     fi
     printf '%s %s %s\n' "$NOW" "$CALLS" "$HIST" > "$STATE"
@@ -87,7 +93,7 @@ case "$MODE" in
     # call in the same turn rewrites that entry to '0', because the turn turned out to be batched.
     # (Appending per CALL instead would let one 3-call turn flush the whole window with zeros.)
     DUR=$((NOW - LAST_PRE))
-    if [ "$CALLS" -le 1 ] && [ "$DUR" -lt "$CHEAP_MS" ]; then
+    if [ "$CALLS" -le 1 ] && [ "$DUR" -lt "$CHEAP_MS" ] && ! is_background; then
       HIST="${HIST%?}1"               # one call and it was quick: a batchable turn
     else
       HIST="${HIST%?}0"               # batched (the behavior we want) or real work
