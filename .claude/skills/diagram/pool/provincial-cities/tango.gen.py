@@ -849,10 +849,10 @@ for _wc in [
 # are a separate Mode A diagram) - with the five other ministries LINING the government avenue
 # (Rites is apart, in the SW temple neighborhood), and the samurai neighborhood around them
 grid([[(1927, 1455), (1927, 1582)]])  # the government avenue's E leg, wrapping the yamen
-s.governor_mansion(1793, 1547, s.px(436), s.px(366), "", gate_dir="west")  # ~1.4 ha - modest for a provincial yamen, still the grandest compound by far
-s.label(
-    1793, 1552, "Governor's Mansion", 14, weight="bold"
-)  # label CENTERED IN the compound (its interior is deliberately blank - a separate Mode A diagram): the manor default puts the caption above the walls, where its reserved box was eating a full housing row the leak-fix re-seat needs (2026-07-20)
+s.governor_mansion(1793, 1547, s.px(436), s.px(366), "Governor's Mansion", gate_dir="west")  # ~1.4 ha - modest for a provincial yamen, still the grandest compound by far
+# (the caption used to be hand-seated here, centered in the compound because the manor default put
+# it above the walls where its reserved box ate a full housing row - governor_mansion does that for
+# every city now, 2026-08-08)
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War", "Ministry of Works", "Ministry of Justice"]
 MIN_POS = [
     (1655, 1394),
