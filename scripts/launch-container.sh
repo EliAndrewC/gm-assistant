@@ -81,11 +81,14 @@
 #
 # Usage:
 #   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
-#                       [--no-apt] [--fresh] [--help]
+#                       [--no-apt] [--no-update] [--fresh] [--help]
 #
 # A fresh launch first runs `podman pull` for the latest image; --no-pull skips
-# that (offline, or to save time), as --no-apt skips the package install.
-# Attaching to a running container never pulls and never installs.
+# that (offline, or to save time), as --no-apt skips the package install and
+# --no-update skips the in-container `claude update`. It also leaves
+# `claude --dangerously-skip-permissions` in the shell history, so the first
+# thing you do in the new container is Up-Enter.
+# Attaching to a running container never pulls, installs, or updates.
 # --no-claude skips mounting the host ~/.claude.json and ~/.claude/ - use it on a
 # shared/work machine so the container does NOT inherit that host's default Claude
 # account (you log in fresh inside instead, on your own account). Point at a
@@ -113,6 +116,7 @@ FRESH=0
 MOUNT_CLAUDE=1
 PULL=1
 APT=1
+UPDATE=1
 CLAUDE_SRC="${CLAUDE_SRC:-$HOME}"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -121,6 +125,7 @@ while [ $# -gt 0 ]; do
     --no-claude) MOUNT_CLAUDE=0; shift ;;
     --no-pull) PULL=0; shift ;;
     --no-apt) APT=0; shift ;;
+    --no-update) UPDATE=0; shift ;;
     --fresh) FRESH=1; shift ;;
     -h|--help) show_help ;;
     *) die "unknown option: $1 (try --help)" ;;
@@ -430,5 +435,42 @@ EOF
 echo "   capture -> plughw:${capture%,*},${capture#*,}   playback -> plughw:${playback%,*},${playback#*,}"
 PROVISION_ALSA
 fi
+
+# ---- Claude Code update (fresh containers only) ----
+#
+# The image ships whatever `claude` build was current when it was published, and
+# that binary lives in the CONTAINER's own ~/.local/bin - not in the mounted
+# ~/.claude - so it does not persist, and every fresh container starts over from
+# the image's version. `podman pull` above cannot fix that either: it refreshes
+# the image, which is only rebuilt occasionally. So update in place instead.
+#
+# Runs as the container's default user (agent), NOT `--user root` like the apt
+# step: ~/.local/bin belongs to agent, and as root the update would install into
+# root's home where nothing looks for it. Best-effort by design, same as apt - an
+# offline host should cost you a warning, not the shell.
+if [ "$UPDATE" -eq 1 ]; then
+  echo ">> updating Claude Code"
+  podman exec "$NAME" bash -c '
+    PATH="$HOME/.local/bin:$PATH"
+    command -v claude >/dev/null 2>&1 || { echo "   no claude on PATH; skipping"; exit 0; }
+    claude update' \
+    || echo ">> warning: claude update failed (offline?); using the image's version." >&2
+else
+  echo ">> --no-update: not updating Claude Code."
+fi
+
+# ---- seed bash history (fresh containers only) ----
+#
+# The first command in a new container is nearly always Claude Code with
+# permission prompts off, so pre-load it: an interactive bash reads $HISTFILE at
+# startup, so writing the line here makes it the most recent history entry and
+# Up-Enter runs it. Must be the LAST provisioning step so nothing lands after it.
+#
+# Written as the container's default user (agent), because a root-owned
+# ~/.bash_history would silently stop every later shell from saving its history.
+HISTORY_SEED='claude --dangerously-skip-permissions'
+echo ">> seeding bash history with: $HISTORY_SEED"
+podman exec "$NAME" bash -c 'printf "%s\n" "$1" >> "$HOME/.bash_history"' _ "$HISTORY_SEED" \
+  || echo ">> warning: could not seed bash history; type the command by hand." >&2
 
 exec podman exec -it "$NAME" bash
