@@ -124,8 +124,139 @@ CIRC_FRAC = 0.07
 # feature-006 reserve cap (20%) and the historical 25-30% open-reserve norm (research.md B).
 AGRI_FRAC = 0.15
 
-# Canonical provincial-city population band (budgets.md); capitals are a future tier.
+# Canonical provincial-city population band (budgets.md). The CAPITAL tier has its own band and
+# its own entry point (`plan_capital`) rather than widening this one - see the capital block below.
 POP_MIN, POP_MAX = 2000, 4000
+
+# ---- the DOMAIN-CAPITAL tier (feature 018, specs/018-capital-space-budget) ------------------
+#
+# A capital gets a PARALLEL entry point rather than a widened band, so the provincial path below
+# executes zero new branches and its byte-identity is structural rather than merely tested. The
+# tiers also differ in inventory STRUCTURE - three samurai housing types against one, a castle
+# line, no agricultural district - so a shared function would be mostly branching anyway.
+# Every number here is settled and recorded in settlements/capitals.md + research/cities/capitals.md.
+
+#: Canonical capital population: the settled 12,000 of budgets.md's Capital city table plus the
+#: ~360 relocated non-working samurai (the schooling-and-retirement cohort). The ~45 foreign
+#: Imperial samurai are NOT in this figure - they are housed inside the Imperial Magistrate's
+#: compound, which is a civic line rather than a housing line.
+CAPITAL_POP = 12_360
+CAPITAL_POP_MIN, CAPITAL_POP_MAX = 9_000, 16_000
+
+#: Households by caste - ABSOLUTE counts from budgets.md's Capital city table, not fractions of
+#: population, because the capital carries a cohort (the +72 relocated samurai families) that sits
+#: outside the settled 12,000 breakdown. Sums to 2,472 = CAPITAL_POP / HOUSEHOLD exactly.
+CAPITAL_FAMILIES: dict[str, int] = {"servants": 480, "laborers": 960, "merchants": 600, "burakumin": 120, "samurai": 312}
+
+#: The samurai rank bands, stored as the RAW per-rank counts from budgets.md's "Samurai rank
+#: distribution" capital column (800 working) so the split stays traceable to a published table
+#: rather than being three magic percentages. Upper = Ranks 8-12, middle = 5-7, junior = 1-4.
+#: The resulting 20 / 50 / 30 is the INVERSE of a provincial city's mix (27% senior / 73% junior):
+#: a capital posting is prestigious even when the job is menial, and the capital absorbs the
+#: rank-by-association cohort. So walled compounds are the MAJORITY texture here, not a minority.
+CAPITAL_RANK_BANDS: dict[str, tuple[int, ...]] = {
+    "yashiki": (1, 8, 7, 25, 119),  # R12, R11, R10, R9, R8 -> walled compounds
+    "detached": (127, 134, 142),  # R7, R6, R5 -> detached houses
+    "terrace": (103, 72, 47, 15),  # R4, R3, R2, R1 -> retainer terraces
+}
+
+#: Share of samurai families living INSIDE the wall. Higher than the provincial 2/3 because
+#: proximity to the daimyo's court is the point of a capital posting, and the walled yashiki
+#: removes the cramped-lot push that sends a provincial city's wealthiest samurai to country
+#: estates. GM-approved 2026-08-08, and an ESTIMATE - a first candidate for re-derivation against
+#: the first drawn capital.
+CAPITAL_SAMURAI_INWALL_FRAC = 0.85
+
+# GROSS ground cost for the two dwelling types the provincial model has never seen. Both are
+# PROVISIONAL by design and must be re-derived against the first drawn capital, exactly as
+# C_PACKED / C_SPACED were back-predicted from Tango.
+#
+# C_YASHIKI - a walled samurai compound inside the wall. Anchor: the Fukui archive's Suginuma
+# plan (a 1,000-koku retainer, 1839), a 28 x 32.5 ken plot = ~167 x 194 ft = 3,600 px^2 at
+# 3 ft/px, plus ~1.15x for street margin. A walled PLOT already contains its own yard - the wall
+# IS the boundary - so it carries far less shared-margin overhead than a detached house in an
+# open lot, which is why the gross-up is 1.15x and not the 7.5x C_SPACED takes. Sanity: 1.7x an
+# ordinary in-wall samurai house, 1.3x a drawn merchant-estate court, under the ~1-acre country
+# manor.
+C_YASHIKI = 4_150.0
+# C_TERRACE - a retainer terrace unit for a junior (Rank 1-4) samurai household. Bracketed by
+# Shibata's ICP ashigaru-nagaya (8 households, 143 x 21 ft, 18 ft frontage each = 378 sq ft) below
+# and the detached samurai house (2,322 sq ft drawn) above. THE SOFTEST NUMBER IN THIS MODULE:
+# both ends are measured, but its position between them is a judgment. NOT "ashigaru" housing -
+# in Rokugan ashigaru are PEASANTS living in villages (budgets.md), so that institution does not
+# exist at this tier; this houses the junior samurai the historical kumi-yashiki would have held.
+# It sits just BELOW C_PACKED, which looks wrong and is not: C_PACKED is the caste-WEIGHTED
+# average of the packed castes and is pulled up by merchant houses (~200 px^2 footprint against a
+# laborer's ~99), so a bare laborer row house is only ~550 gross. A retainer terrace is roomier
+# than a laborer's row and tighter than the merchant-inflated average - and already generous
+# against the anchor, which gave each nagaya household 378 sq ft to our laborer row's 891.
+C_TERRACE = 660.0
+
+#: px^2 per hectare at the 3 ft/px calibration scale (1 ha = 107,639 sq ft / 9 sq ft per px^2).
+HECTARE_PX2 = 11_959.9
+#: The castle's declared ground. Default ~50 ha - the HIROSAKI anchor (a 47,000-koku daimyo's
+#: whole enceinte, every bailey plus all three moats), which is the MODEST end on purpose. The
+#: band runs to Himeji's 233 ha. NOTE this is the enceinte, not the keep: Hirosaki's tenshu is
+#: ~0.6 ha, 1.2% of the works, so a model that priced "the keep" would undersize this by two
+#: orders of magnitude. It is DECLARED rather than derived because its governing variable is the
+#: daimyo's rank, not the town's population.
+CASTLE_PX2 = 598_000.0
+CASTLE_HA_MIN, CASTLE_HA_MAX = 50.0, 230.0
+
+#: A SOVEREIGN temple - the head house of a domain-wide Order, with a Grand Abbot and 50+ monks
+#: (l7r.md) - against a provincial precinct's 8,125 px^2.
+SOVEREIGN_PRECINCT_PX2 = 16_250.0
+
+#: The two variant knobs. Neither has a privileged default; the dataclass needs one, that is all.
+CASTLE_SEATS = ("ring", "edge")
+IMPERIAL_GRANARY_SEATS = ("magistrate", "wharf")
+
+#: The capital's fixed civic program. SAME ROW-TOTAL CONVENTION as CIVIC_PROGRAM: every third
+#: field is the ROW TOTAL, not a per-unit cost. Reading it as per-unit is how feature 016 nearly
+#: doubled every city's temple ground, which is why this table has its own pinned test.
+#: The castle and the sovereign temples are deliberately NOT here - both are knob-driven declared
+#: lines, so they reprice when declared rather than being frozen into a program floor.
+CAPITAL_CIVIC_PROGRAM: tuple[tuple[str, int | None, float], ...] = (
+    # The six DOMAIN ministries sit OUTSIDE the castle, flanking the ote-suji approach avenue -
+    # both traditions converge on this at exactly this tier (Beijing's Six Ministries lined the
+    # Corridor of a Thousand Steps outside Chengtianmen; a jokamachi's offices spilled out of the
+    # ninomaru as they grew). So they are priced against CITY ground, not castle ground. Roughly
+    # 2x the provincial six, whose ministers are three ranks junior.
+    ("six domain ministries + government ward", 6, 16_000.0),
+    ("House Chancellery (the domain's 5-10 lineage representatives)", 1, 2_000.0),
+    # Foreign sovereign ground, and it houses its own ~12 households - which is why those families
+    # are absent from CAPITAL_FAMILIES. budgets.md funds its "manor maintenance, grounds, stable,
+    # fortified walls, ceremonial halls" at 700 koku/yr.
+    ("Imperial Magistrate's compound (foreign; houses its own 12 households)", 1, 8_000.0),
+    # Separate from the domain's stores and OUTSIDE the castle, because they face a different
+    # threat: an invading neighbor would not attack the Emperor's granaries, so they need
+    # protection from brigands rather than besiegers and a stout wall suffices (GM 2026-08-08).
+    ("the Emperor's granaries", 1, 3_000.0),
+    ("domain school (hanko)", 1, 4_000.0),
+    # The capital is the COLLECTING-and-disbursing end of the rice trade, not the selling end -
+    # rice comes up from the six provinces, most goes straight back out as stipends (kuramai), and
+    # the surplus ships downriver. Modeled on Asakusa Okura / Kuramae, with a MERCHANT brokers' row
+    # in front of the granary (GM 2026-08-08: budgets.md's ministry arbitrage line covers the
+    # PAYING of stipends only; the contracts and lending made merchants rich, as the fudasashi).
+    ("domain granary + wharf brokers' row", None, 12_000.0),
+    # One state hall plus the SAME 1-per-200-samurai private roll a provincial city uses (~7-8 at
+    # ~1,560 resident samurai). The capital's distinctive institution is the domain school above,
+    # not a richer private tail - the machi-dojo boom was a million-person-city event.
+    ("domain martial hall + rolled private dojos", None, 4_400.0),
+    # The josui conduit is BURIED inside the wall (the open cut and the kakehi crossing are both
+    # extramural), so it consumes almost no interior ground - this line is its works, not its
+    # length. Pricing a surface channel across the interior would have inflated the wall.
+    ("aqueduct in-wall works (the conduit itself is buried)", None, 500.0),
+    ("minor civic (theaters, flophouses, funerary, inspection, kura)", None, 30_000.0),
+    ("shops, inns, stables", 60, 13_400.0),
+    # It now has a documented job: it sounds the curfew the machi kido enforce.
+    ("bell-and-drum tower (sounds the kido curfew)", 1, 250.0),
+    ("brewery compounds", 2, 1_600.0),
+    ("trade works (dye yards, oil presses, pawn courts, bathhouses, farriers)", None, 3_000.0),
+)
+
+#: One in-wall water feature, at capital scale - twice the provincial figure.
+CAPITAL_WATER_AREA = 5_800.0
 
 # Clearance the wall needs to the canvas edge: moat gap (24) + moat (~22) + gate furniture,
 # towers, labels and the crop margin - measured from both shipped gens' view margins.
@@ -163,6 +294,63 @@ class CityProgram:
 
 
 @dataclass(frozen=True)
+class CapitalProgram:
+    """A domain capital's declaration, made BEFORE anything is drawn (feature 018).
+
+    Parallel to CityProgram rather than derived from it: a capital is not a kind of provincial
+    city, and keeping the two apart is what guarantees the provincial path runs no new branches.
+
+    Every illegal combination raises HERE, in __post_init__, so a caller can never hold a program
+    that plan_capital would reject - and every raise names the offending value AND the legal
+    alternatives.
+    """
+
+    population: int = CAPITAL_POP
+    ftpx: int = CAL_FTPX
+    river: bool = False
+    #: ALWAYS False. Present only so the shared budget_to_manifest needs no tier branch - a
+    #: capital walls its farms out (GM 2026-08-08). Validated rather than merely defaulted, so a
+    #: caller cannot set it and get a silently mis-priced wall.
+    agricultural_district: bool = False
+    aspect: float = 0.93
+    nring: int = 20
+    castle_seat: str = "ring"
+    castle_px2: float = CASTLE_PX2
+    imperial_granary_seat: str = "magistrate"
+    temple_precincts: int = 2
+    temple_precinct_px2: float = SOVEREIGN_PRECINCT_PX2
+    monk_houses_per_precinct: float = 2.5
+    extras: tuple[BudgetLine, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        if not CAPITAL_POP_MIN <= self.population <= CAPITAL_POP_MAX:
+            raise ValueError(f"population {self.population} outside the domain-capital band [{CAPITAL_POP_MIN}, {CAPITAL_POP_MAX}] (budgets.md capital tier; a provincial city uses plan_city)")
+        if self.castle_seat not in CASTLE_SEATS:
+            raise ValueError(f"castle_seat {self.castle_seat!r} is not one of {CASTLE_SEATS}")
+        # Every attested edge castle is a river or sea castle - Okayama diverted a branch of the
+        # Asahi to moat its NE flank, Kitsuki sits on a promontory between two river mouths. On a
+        # dry edge the castle's own works are not a stretch of the city's defense, so it is not a
+        # variant but a weak wall.
+        if self.castle_seat == "edge" and not self.river:
+            raise ValueError("castle_seat='edge' requires river=True - an edge castle's own outer moat FORMS that stretch of the city's defense, so a dry edge is a weak wall rather than a variant")
+        if self.imperial_granary_seat not in IMPERIAL_GRANARY_SEATS:
+            raise ValueError(
+                f"imperial_granary_seat {self.imperial_granary_seat!r} is not one of {IMPERIAL_GRANARY_SEATS} (neither is privileged - Hirosaki-style beside the overseeing magistrate, or on the water where grain moves)"
+            )
+        ha = self.castle_px2 / HECTARE_PX2
+        if not CASTLE_HA_MIN <= ha <= CASTLE_HA_MAX:
+            raise ValueError(
+                f"castle_px2 {self.castle_px2:.0f} is {ha:.1f} ha, outside the documented band [{CASTLE_HA_MIN}, {CASTLE_HA_MAX}] ha (Hirosaki ~50 ha to Himeji ~233 ha) - a castle this far off is a program error, not a wall"
+            )
+        if self.agricultural_district:
+            raise ValueError(
+                "a domain capital has no agricultural district - the wall encloses all its inhabitants and no farmland (GM 2026-08-08); the field exists only so the shared serializer needs no tier branch"
+            )
+        if not 0.0 < self.aspect <= 1.0:
+            raise ValueError(f"aspect must be in (0, 1] (RY/RX of a near-round ring), got {self.aspect}")
+
+
+@dataclass(frozen=True)
 class WallSpec:
     """The derived wall: a closed ellipse N-gon (research.md Decision 4: both shipped cities are
     full rings - even river-bank Nagahara; the river never enters the walls)."""
@@ -177,7 +365,10 @@ class WallSpec:
 
 @dataclass(frozen=True)
 class CityBudget:
-    program: CityProgram
+    #: Either tier's program. budget_to_manifest and format_budget touch only the fields BOTH
+    #: types carry (population, ftpx, river, agricultural_district), so neither needs a tier
+    #: branch - which is the whole reason CapitalProgram carries agricultural_district at all.
+    program: CityProgram | CapitalProgram
     lines: tuple[BudgetLine, ...]
     required_interior_px2: float
     wall: WallSpec
@@ -291,6 +482,115 @@ def plan_city(program: CityProgram, canvas: tuple[float, float] | None = None) -
     return CityBudget(program=program, lines=tuple(lines), required_interior_px2=required, wall=wall, dwelling_target=target)
 
 
+def plan_capital(program: CapitalProgram, canvas: tuple[float, float] | None = None) -> CityBudget:
+    """Compute a DOMAIN CAPITAL's space budget and derive its wall - BEFORE anything is placed.
+
+    Deterministic and pure, and the sibling of plan_city rather than a mode of it. A capital's
+    wall cannot be predicted from population the way a provincial city's nearly can: a median
+    castle alone is ~85% of an entire provincial city's interior, so the castle is a DECLARED
+    line and the samurai cohort is priced by RANK BAND rather than as one undifferentiated group.
+    """
+    pop = program.population
+    k = (CAL_FTPX / program.ftpx) ** 2  # constants are calibrated at 3 ft/px
+
+    packed_n = sum(CAPITAL_FAMILIES[c] for c in PACKED_CASTES)
+    samurai_inwall = round(CAPITAL_FAMILIES["samurai"] * CAPITAL_SAMURAI_INWALL_FRAC)
+    # Split the in-wall cohort by rank band. Shares are DERIVED from the raw rank-table counts, so
+    # the split is traceable to budgets.md rather than being three magic percentages; the last
+    # band takes the remainder so the three always sum to samurai_inwall exactly.
+    working = sum(sum(v) for v in CAPITAL_RANK_BANDS.values())
+    n_yashiki = round(samurai_inwall * sum(CAPITAL_RANK_BANDS["yashiki"]) / working)
+    n_detached = round(samurai_inwall * sum(CAPITAL_RANK_BANDS["detached"]) / working)
+    n_terrace = samurai_inwall - n_yashiki - n_detached
+
+    lines: list[BudgetLine] = [
+        BudgetLine(
+            "packed row housing (laborer/servant/merchant/burakumin)",
+            packed_n,
+            packed_n * C_PACKED * k,
+            f"{packed_n} families x C_PACKED {C_PACKED:.0f} px^2 gross (Tango-measured rows + eaves + roji)",
+        ),
+        BudgetLine(
+            "the castle (enceinte: baileys + moats; interior implied)",
+            1,
+            program.castle_px2 * k,
+            f"declared {program.castle_px2 / HECTARE_PX2:.0f} ha, seat={program.castle_seat} - Hirosaki ~50 ha to Himeji ~233 ha; the ENCEINTE, not the keep (a tenshu is ~1.2% of the works)",
+        ),
+        BudgetLine(
+            "samurai walled yashiki in-wall (Ranks 8-12)",
+            n_yashiki,
+            n_yashiki * C_YASHIKI * k,
+            f"upper rank band x C_YASHIKI {C_YASHIKI:.0f} px^2 gross (Fukui Suginuma plan, a 1,000-koku plot + street margin)",
+        ),
+        BudgetLine(
+            "samurai detached houses in-wall (Ranks 5-7)",
+            n_detached,
+            n_detached * C_SPACED * k,
+            f"middle rank band x C_SPACED {C_SPACED:.0f} px^2 gross (Tango samurai-ward measurement)",
+        ),
+        BudgetLine(
+            "retainer terraces in-wall (Ranks 1-4)",
+            n_terrace,
+            n_terrace * C_TERRACE * k,
+            f"junior rank band x C_TERRACE {C_TERRACE:.0f} px^2 gross (Shibata ashigaru-nagaya floor, detached house ceiling) - NOT ashigaru, who are peasants in Rokugan",
+        ),
+    ]
+    for label, count, area in CAPITAL_CIVIC_PROGRAM:
+        lines.append(BudgetLine(label, count, area * k, "capital civic program floor - a seat carries its full mandatory program regardless of population"))
+    n_temples = program.temple_precincts
+    lines.append(
+        BudgetLine(
+            "sovereign temple precincts",
+            n_temples,
+            n_temples * program.temple_precinct_px2 * k,
+            f"{n_temples} sovereign precinct(s) x {program.temple_precinct_px2:.0f} px^2 - the head house of a domain-wide Order, with a Grand Abbot and 50+ monks (l7r.md)",
+        )
+    )
+    n_monk_houses = round(n_temples * program.monk_houses_per_precinct)
+    lines.append(
+        BudgetLine(
+            "adept-monk houses by the temple precincts",
+            n_monk_houses,
+            n_monk_houses * C_PACKED * k,
+            f"{n_temples} precinct(s) x {program.monk_houses_per_precinct:g} adept-monk households at C_PACKED gross (clergy live outside the lay caste table)",
+        )
+    )
+    water_label = "cargo canal + dock basin" if program.river else "pond"
+    lines.append(BudgetLine(water_label, 1, CAPITAL_WATER_AREA * k, "one in-wall water feature at capital scale (twice the provincial figure)"))
+    lines.extend(program.extras)
+
+    fixed = sum(ln.area_px2 for ln in lines)
+    required = fixed / (1.0 - CIRC_FRAC)
+    lines.append(
+        BudgetLine(
+            "circulation (trunk + ring road + streets + alleys)",
+            None,
+            required * CIRC_FRAC,
+            f"{CIRC_FRAC:.0%} of interior at drawn widths - the provincial measurement reused, since no capital has been drawn to calibrate against",
+        )
+    )
+
+    wall = derive_wall(required, aspect=program.aspect, nring=program.nring)
+    if canvas is not None:
+        need_w, need_h = 2 * (wall.rx + WALL_MARGIN_PX), 2 * (wall.ry + WALL_MARGIN_PX)
+        if need_w > canvas[0] or need_h > canvas[1]:
+            raise ValueError(
+                f"derived wall {wall.rx:.0f}x{wall.ry:.0f} needs {need_w:.0f}x{need_h:.0f} px incl. the {WALL_MARGIN_PX:.0f} px moat/margin clearance but the canvas is {canvas[0]:.0f}x{canvas[1]:.0f} - enlarge the canvas or trim the program; never clamp the wall"
+            )
+
+    families = dict(CAPITAL_FAMILIES)
+    target: dict[str, object] = {
+        "families": families,
+        "packed": packed_n,
+        "samurai_inwall": samurai_inwall,
+        "samurai_yashiki": n_yashiki,
+        "samurai_detached": n_detached,
+        "samurai_terrace": n_terrace,
+        "dwellings": round(pop / HOUSEHOLD),
+    }
+    return CityBudget(program=program, lines=tuple(lines), required_interior_px2=required, wall=wall, dwelling_target=target)
+
+
 def budget_to_manifest(budget: CityBudget) -> dict[str, object]:
     """JSON-serializable dict for `s.meta(budget=...)` - the promise the checks hold the map to."""
     return {
@@ -327,11 +627,14 @@ def format_budget(budget: CityBudget) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     """CLI: `python3 citybudget.py --plan --population 3000 [--river] [--agri] [--canvas WxH]`."""
-    ap = argparse.ArgumentParser(description="Budget-first city wall sizing (feature 009)")
+    ap = argparse.ArgumentParser(description="Budget-first city wall sizing (features 009, 018)")
     ap.add_argument("--plan", action="store_true", help="print the itemized budget + derived wall")
     ap.add_argument("--population", type=int, required=True)
+    ap.add_argument("--tier", choices=("provincial", "capital"), default="provincial", help="settlement tier (default: provincial, so every existing invocation is unchanged)")
     ap.add_argument("--river", action="store_true")
-    ap.add_argument("--agri", action="store_true", help="in-wall agricultural district (Tango-style)")
+    ap.add_argument("--agri", action="store_true", help="in-wall agricultural district (Tango-style; provincial tier only)")
+    ap.add_argument("--castle-seat", choices=CASTLE_SEATS, default="ring", help="capital only: where the castle sits ('edge' requires --river)")
+    ap.add_argument("--granary-seat", choices=IMPERIAL_GRANARY_SEATS, default="magistrate", help="capital only: where the Emperor's granaries sit")
     ap.add_argument("--aspect", type=float, default=0.93)
     ap.add_argument("--nring", type=int, default=20)
     ap.add_argument("--canvas", type=str, default=None, help="WxH px, e.g. 3200x2700")
@@ -341,6 +644,17 @@ def main(argv: list[str] | None = None) -> int:
         cw, ch = args.canvas.lower().split("x")
         canvas = (float(cw), float(ch))
     try:
+        if args.tier == "capital":
+            # Refuse rather than silently ignore: dropping a flag the GM typed is how a wrong wall
+            # gets trusted.
+            if args.agri:
+                raise ValueError("--agri is not available at capital tier - a domain capital walls its farms out, enclosing all its inhabitants and no farmland (GM 2026-08-08)")
+            budget = plan_capital(
+                CapitalProgram(population=args.population, river=args.river, castle_seat=args.castle_seat, imperial_granary_seat=args.granary_seat, aspect=args.aspect, nring=args.nring),
+                canvas=canvas,
+            )
+            print(format_budget(budget))
+            return 0
         budget = plan_city(CityProgram(population=args.population, river=args.river, agricultural_district=args.agri, aspect=args.aspect, nring=args.nring), canvas=canvas)
     except ValueError as e:
         import sys
