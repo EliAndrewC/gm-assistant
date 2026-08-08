@@ -477,6 +477,28 @@ def label_tilt(rot: float) -> float:
     return 0.0 if abs(t) < 0.05 else round(t, 1)
 
 
+def linear_tilt(rot: float) -> float:
+    """The caption tilt for a LINEAR subject - a road, a street, a row of shopfronts laid along
+    one (GM 2026-08-08: Hoshizora's "Imperial Road" and "merchant houses & shops" read level
+    beside a roadbed running at -27 degrees). A line has ONE axis, not a building's two edge
+    families, so this CLAMPS where `label_tilt` FOLDS, and the two must never be swapped:
+
+    - The angle is normalized to [-90, 90) - a bearing and its reverse describe the same line,
+      so a road stored SW-to-NE and the same road stored NE-to-SW caption identically.
+    - Past 45 degrees the caption goes LEVEL rather than tilting. That is the GM's own rule for
+      a north-south road ("it is reasonable to have the label still read left-to-right"), and it
+      generalizes: text steeper than 45 degrees is hard to read, and unlike a building there is
+      no second edge family to fall back on - a near-vertical road's cross direction is not an
+      axis of anything drawn. Folding a 72-degree road (Nagahara's Imperial approach) to -18
+      would tilt the caption to match NOTHING on the map, which is worse than level.
+
+    The 45-degree cutoff is therefore a discontinuity by design: a 44-degree road tilts, a
+    46-degree one does not. It never shows WITHIN a map (a caption names one stretch of one
+    road), and legibility is the thing being protected at the boundary either way."""
+    t = (rot + 90.0) % 180.0 - 90.0  # (-90, 90]: a line has no direction, only an axis
+    return 0.0 if abs(t) < 0.05 or abs(t) > 45.0 else round(t, 1)
+
+
 def label_quad(L: Sequence[Any]) -> Poly:
     """The drawn corner ring of a recorded label. Elements [0..3] are the caption's UNROTATED box
     (what `_record_label` has always written); a TILTED caption (element [7], degrees - see
@@ -1708,6 +1730,7 @@ class Settlement:
         self.top: list[str] = []  # deferred TOP layer (gate furniture, torii, kido) - over roads/buildings
         self.toplabels: list[str] = []  # deferred LABEL layer - the very last thing drawn, so TEXT is never
         #                           covered by anything (a label must always be fully readable)
+        self.frontage_rot: float = 0.0  # the LAST frontage() row's street axis in degrees (see frontage)
         self.frontage_box: tuple[float, float, float, float] | None = None  # extent of the LAST frontage() row,
         #                           for place_caption (see frontage's note)
         self._captions: list[tuple[Any, ...]] = []  # deferred place_caption() seats - flushed in finish()
@@ -11320,11 +11343,20 @@ class Settlement:
         x0, y0, x1, y1 = box[0], box[1], box[2], box[3]
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         hw, hh = len(text) * size * 0.55 / 2, size * 0.525  # the drawn box's half-extents (see _label_box)
-        if tilt:
-            # a TILTED caption seats by its rotated AABB - conservative against every axis-aligned
-            # obstacle here, so the ladder stays at least as strict as the quad the gate measures
-            _tca, _tsa = abs(math.cos(math.radians(tilt))), abs(math.sin(math.radians(tilt)))
-            hw, hh = hw * _tca + hh * _tsa, hw * _tsa + hh * _tca
+        # How far the caption reaches in the direction it is being pushed - its SUPPORT along that
+        # direction, taken in the caption's own frame. At tilt 0 this is exactly the old
+        # `abs(dx) * hw + abs(dy) * hh`, so every level caption in the pool seats byte-identically.
+        # For a tilted one it is the distance that matters and nothing more: a road caption pushed
+        # PERPENDICULAR to a road it runs along reaches by its 9px half-THICKNESS, where the
+        # rotated AABB this replaces claimed ~30px - most of the caption's own length, measured in
+        # the one direction the caption does not extend. That inflated standoff (plus the same
+        # AABB in `_label_hits`) is what held "Imperial Road" 64px off Hoshizora's roadbed with
+        # bare ground between; the quad is exact in every direction (GM 2026-08-08).
+        _tca, _tsa = math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
+
+        def support(dx: float, dy: float) -> float:
+            return hw * abs(dx * _tca + dy * _tsa) + hh * abs(-dx * _tsa + dy * _tca)
+
         sl = list(dict.fromkeys([0.0, *slides]))
         if axis is not None:  # perpendicular to the subject, sliding along it
             dirs = [((-axis[1], axis[0]), axis), ((axis[1], -axis[0]), axis)]
@@ -11335,6 +11367,13 @@ class Settlement:
         placed_labels = [label_aabb(lb) for lb in self.M["labels"] if len(lb) > 3]
         if self.M.get("title"):  # the title placard is a label too, and captions now seat AFTER it
             placed_labels.append(tuple(self.M["title"]["bbox"]))
+        # A TILTED candidate measures its neighbors and its SUBJECT on the true quads, for the same
+        # reason `_label_hits` does: an AABB standoff to a diagonal subject is the caption's own
+        # length, not its thickness, so the ladder reads a seat lying snugly along the roadway as
+        # tens of px adrift and climbs the rungs away from it. Level candidates keep the exact box
+        # arithmetic they have always used, so no shipped caption reflows for this.
+        neighbor_quads: list[Poly] = [[(o[0], o[1]), (o[2], o[1]), (o[2], o[3]), (o[0], o[3])] for o in placed_labels] if tilt else []
+        subject_quad: Poly = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
         view = self.M["meta"].get("view")  # set by the crop; absent until then (and on uncropped maps)
         best: tuple[tuple[int, float], Pt] | None = None
         for ring in range(LABEL_AIR_RINGS):
@@ -11344,18 +11383,21 @@ class Settlement:
                 for (dx, dy), (ux, uy) in dirs:
                     if s and not (ux or uy):
                         continue  # an END direction is only ever taken unslid
-                    reach = abs(dx) * (x1 - x0) / 2 + abs(dy) * (y1 - y0) / 2 + air + abs(dx) * hw + abs(dy) * hh
+                    reach = abs(dx) * (x1 - x0) / 2 + abs(dy) * (y1 - y0) / 2 + air + support(dx, dy)
                     # ...and the baseline sits 0.275*size below the box center it just computed
                     cands.append((cx + ux * s + dx * reach, cy + uy * s + dy * reach + size * 0.275))
             clear: list[tuple[float, float, float, int, Pt]] = []
             for i, (lx, ly) in enumerate(cands):
                 lb = self._label_box(lx, ly, text, size)
+                lq: Poly = label_quad([*lb, 0, text, None, tilt])  # the DRAWN glyph run (== lb's corners at tilt 0)
                 if tilt:
-                    lb = label_aabb([*lb, 0, text, None, tilt])
+                    lb = label_aabb([*lb, 0, text, None, tilt])  # containment (the frame) is still an AABB question
                 if view and (lb[0] < view[0] or lb[1] < view[1] or lb[2] > view[0] + view[2] or lb[3] > view[1] + view[3]):
                     continue
-                hits = self._label_hits(lx, ly, text, size, pad=0.0, linepad=0.0, tilt=tilt) + sum(1 for o in placed_labels if box_gap(lb, o) < 3)
-                gap = box_gap(lb, box)
+                hits = self._label_hits(lx, ly, text, size, pad=0.0, linepad=0.0, tilt=tilt) + (
+                    sum(1 for o in neighbor_quads if poly_gap(lq, o) < 3) if tilt else sum(1 for o in placed_labels if box_gap(lb, o) < 3)
+                )
+                gap = poly_gap(lq, subject_quad) if tilt else box_gap(lb, box)
                 if not hits:
                     # NEAREST wins within the rung; ties go to the LEAST CROWDED seat, then the
                     # hint, then declaration order. The crowding term is what keeps a caption
@@ -11365,7 +11407,7 @@ class Settlement:
                     # standoff, and the east one lands beside "execution ground" - which is how
                     # the caption read as naming the execution ground in the first place. Capped
                     # at 150px so a far-from-everything seat does not out-vote the hint.
-                    crowd = min((box_gap(lb, o) for o in placed_labels), default=150.0)
+                    crowd = min((poly_gap(lq, o) for o in neighbor_quads), default=150.0) if tilt else min((box_gap(lb, o) for o in placed_labels), default=150.0)
                     clear.append((gap, -min(crowd, 150.0), math.hypot(lx - hint[0], ly - hint[1]) if hint else 0.0, i, (lx, ly)))
                 elif best is None or (hits, gap) < best[0]:
                     best = ((hits, gap), (lx, ly))
@@ -11433,18 +11475,53 @@ class Settlement:
         writes (0.31/char here against 0.275), which is the slack that keeps glyphs off a
         neighbor's edge."""
         hw, hh = len(text) * size * 0.31 + pad, size * 0.75 + pad
-        if tilt:  # a tilted caption scores by its rotated AABB (conservative; the gate tests the true quad)
-            _ca, _sa = abs(math.cos(math.radians(tilt))), abs(math.sin(math.radians(tilt)))
-            hw, hh = hw * _ca + hh * _sa, hw * _sa + hh * _ca
+        corners: Poly = [(lx - hw, ly - hh), (lx + hw, ly - hh), (lx + hw, ly + hh), (lx - hw, ly + hh)]
+        quad: Poly | None = None
+        if tilt:
+            # A TILTED caption scores against its TRUE rotated quad; the rotated AABB survives only
+            # as a PREFILTER - it prunes, it never decides (this skill's CLAUDE.md, "When a check
+            # is slow, INDEX it - do not coarsen it"). Deciding on that AABB was the first cut of
+            # the linear captions and it made them look impossible: for a 97px "Imperial Road" at
+            # -26.6deg the AABB is 3.3x the text's real thickness, so the one seat a road caption
+            # wants - lying ALONG the roadway, in the lane between roadbed and shopfront setback -
+            # scored as blocked and the ladder walked out to 63px of bare ground (GM 2026-08-08).
+            _ca, _sa = math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
+            quad = [(lx + (qx - lx) * _ca - (qy - ly) * _sa, ly + (qx - lx) * _sa + (qy - ly) * _ca) for qx, qy in corners]
+            corners = quad
+            hw, hh = hw * abs(_ca) + hh * abs(_sa), hw * abs(_sa) + hh * abs(_ca)
+        probes: Poly = [*corners, (lx, ly)]  # the LINE tests below sample the DRAWN corners + center
+        # ...and a ROTATED obstacle is measured on the same extent the GATE gives it:
+        # `labels_clear_of_other_buildings` boxes each victim with its rotated corners' AABB, which
+        # is wider than both the record's axis-aligned w/h and the drawn quad. A probe must measure
+        # the box the CHECK will measure (this skill's CLAUDE.md) - and this one did not, so the
+        # moment the caption's own reach became honest, Ubame's "caravan inn" seated in the corner
+        # slack of the rot=-16 stables and the gate caught what the probe had waved through. Built
+        # only for a TILTED caption, so no level caption's score moves.
+        rot_hw: dict[tuple[float, float], tuple[float, float]] = {}
+        if tilt:
+            for _b in self.M.get("buildings", []):
+                if _b.get("rot"):
+                    _bc, _bs = abs(math.cos(math.radians(_b["rot"]))), abs(math.sin(math.radians(_b["rot"])))
+                    rot_hw[(_b["x"], _b["y"])] = (_b["w"] * _bc + _b["h"] * _bs, _b["w"] * _bs + _b["h"] * _bc)
+
+        def covers(bx: float, by: float, bw: float, bh: float) -> bool:
+            """Does the caption cover this rect? The AABB test - which IS the exact test at tilt 0,
+            so every level caption in the pool scores byte-identically - prefilters; a tilted
+            caption then decides on its real quad."""
+            bw, bh = rot_hw.get((bx, by), (bw, bh))
+            if not (abs(bx - lx) < hw + bw / 2 and abs(by - ly) < hh + bh / 2):
+                return False
+            return quad is None or sat_overlap(quad, [(bx - bw / 2, by - bh / 2), (bx + bw / 2, by - bh / 2), (bx + bw / 2, by + bh / 2), (bx - bw / 2, by + bh / 2)])
+
         n = 0
         for px, py, pw, ph in self.placed:
-            if abs(px - lx) < hw + pw / 2 and abs(py - ly) < hh + ph / 2:
+            if covers(px, py, pw, ph):
                 n += 1
         for gx, gy, gw, gh in self.grove_rects:
-            if abs(gx - lx) < hw + gw / 2 and abs(gy - ly) < hh + gh / 2:
+            if covers(gx, gy, gw, gh):
                 n += 1
         for gs in self.M.get("gate_structs", []) + self.M.get("wall_towers", []):
-            if abs(gs["x"] - lx) < hw + gs["w"] / 2 and abs(gs["y"] - ly) < hh + gs["h"] / 2:
+            if covers(gs["x"], gs["y"], gs["w"], gs["h"]):
                 n += 1
         # TORII ARCHES count too (GM 2026-07-27: an arch is "never covered by the 'temple of X'
         # label"). Without this the standoff ladder is blind to a sando - it cannot avoid what it
@@ -11452,7 +11529,9 @@ class Settlement:
         # Benten's arch the moment _avenue_at_threshold brought it in to the hall.
         _txh, _tyu, _tyd = torii_halfbox(self.ftpx)
         for _t in self.M.get("torii", []):
-            if abs(_t[0] - lx) < hw + _txh and _t[1] - _tyu < ly + hh and ly - hh < _t[1] + _tyd:
+            # the arch's box is asymmetric about its anchor (uprights below, lintel above), so it
+            # is re-centered here rather than passed as a half-extent - identical arithmetic
+            if covers(_t[0], _t[1] + (_tyd - _tyu) / 2, 2 * _txh, _tyu + _tyd):
                 n += 1
         # ...and WELLHEADS, for the same reason: a well is a caption victim in check_village's
         # _LABEL_GROUP (a drawn glyph a caption can bury) but has no w/h, so it is in none of the
@@ -11460,7 +11539,7 @@ class Settlement:
         # caption came to sit on one. Its drawn extent is the marker radius `vr`.
         for _w in self.M.get("wells", []):
             _vr = float(_w.get("vr") or _w.get("r") or 0)
-            if abs(_w["x"] - lx) < hw + _vr and abs(_w["y"] - ly) < hh + _vr:
+            if covers(_w["x"], _w["y"], 2 * _vr, 2 * _vr):
                 n += 1
         # the LINE features a label must not straddle: the rampart, the moat, the road itself,
         # and open water - tested as stroke-vs-label-box distance on the box's corner/center points
@@ -11476,7 +11555,7 @@ class Settlement:
         for pts, half in lines:
             hit = False
             for k in range(len(pts) - 1):
-                for qx, qy in ((lx - hw, ly - hh), (lx + hw, ly - hh), (lx + hw, ly + hh), (lx - hw, ly + hh), (lx, ly)):
+                for qx, qy in probes:
                     px2, py2 = seg_closest(qx, qy, pts[k], pts[k + 1])
                     if abs(px2 - lx) < hw + half and abs(py2 - ly) < hh + half and math.hypot(px2 - qx, py2 - qy) < half + linepad:
                         n += 1
@@ -11866,6 +11945,17 @@ class Settlement:
         # subject when the row is later re-laid (which is exactly what happened to Tango's two
         # "gate market" captions). Cleared when nothing was placed, so a stale box can never be read.
         self.frontage_box = (min(b[0] for b in row), min(b[1] for b in row), max(b[2] for b in row), max(b[3] for b in row)) if row else None
+        # ...and the row's AXIS, for a caption that names the RUN rather than one shopfront
+        # (`s.label(..., rot=s.frontage_rot, linear=True)`; GM 2026-08-08, "merchant houses &
+        # shops" set level over storefronts that each tilt to a -27deg road). A frontage row has no
+        # rotation of its own - it IS the street it fronts - so the axis is the street's tangent at
+        # the run's arc-length midpoint, read from the street rather than hand-copied off it, which
+        # is the same reason `frontage_box` exists. `linear`, because a row of shopfronts is a LINE.
+        if row:
+            tan_ = at(total / 2)
+            self.frontage_rot = math.degrees(math.atan2(tan_[3], tan_[2]))
+        else:
+            self.frontage_rot = 0.0
         if not fill:
             self._shortfall("frontage", (street[0], street[-1]), placed, items)
         return placed
@@ -13263,14 +13353,20 @@ class Settlement:
         color: str = "#2D2A24",
         ref: Sequence[float] | None = None,
         rot: float = 0.0,
+        linear: bool = False,
     ) -> None:
         esc = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         st = ' font-style="italic"' if italic else ''
-        # `rot` is a FEATURE rotation; label_tilt folds it to the caption's tilt (0 for any square
-        # rotation, so nothing changes for level callers). A tilted caption rotates about its
-        # recorded box's CENTER, so label_quad reads the drawn glyph run straight off the record
-        # (GM 2026-08-02, angled-building labels).
-        tilt = label_tilt(rot)
+        # `rot` is the SUBJECT's rotation; the fold turns it into the caption's tilt (0 for any
+        # square rotation, so nothing changes for level callers). A tilted caption rotates about
+        # its recorded box's CENTER, so label_quad reads the drawn glyph run straight off the
+        # record (GM 2026-08-02, angled-building labels).
+        #
+        # `linear=True` says the subject is a LINE, not a box - a road, a street, a frontage row
+        # laid along one - and takes `linear_tilt`'s CLAMP instead of `label_tilt`'s FOLD (GM
+        # 2026-08-08). The two are not interchangeable: the fold would send a 72-degree road's
+        # caption to -18 degrees, an angle nothing on the map is drawn at.
+        tilt = linear_tilt(rot) if linear else label_tilt(rot)
         if tilt:
             w_ = len(text) * size * 0.55
             x0_ = x - w_ / 2 if anchor == "middle" else (x - w_ if anchor == "end" else x)
@@ -13498,21 +13594,35 @@ class Settlement:
             px_, py_ = seg_closest(lx, ly, (ax_, ay_), (bx_, by_))
             seg_ = math.hypot(bx_ - ax_, by_ - ay_) or 1.0
             axis_ = ((bx_ - ax_) / seg_, (by_ - ay_) / seg_)
+            # ...and the caption RUNS ALONG that tangent (GM 2026-08-08): "Imperial Road" set level
+            # beside Hoshizora's -27deg roadbed named the road the way a caption beside a diagonal
+            # building named the building - which is the defect the 2026-08-02 tilt fixed for
+            # glyphs and stopped short of fixing for the linear features. A road is a LINE, so this
+            # takes linear_tilt's clamp, NOT label_tilt's fold: past 45deg the caption goes level
+            # (the GM's own north-south convention), where the fold would tilt it to the road's
+            # cross direction, which is an axis of nothing. Tango (due N-S) and Nagahara (72deg)
+            # therefore stay exactly as they were; only genuinely diagonal roads move.
+            tilt_ = linear_tilt(math.degrees(math.atan2(axis_[1], axis_[0])))
             box = (px_ - half, py_ - half, px_ + half, py_ + half)
-            lx, ly = self._best_label_spot(box, text, 12, hint=(lx, ly), slides=(-45.0, 45.0, 90.0, -90.0), axis=axis_)
+            lx, ly = self._best_label_spot(box, text, 12, hint=(lx, ly), slides=(-45.0, 45.0, 90.0, -90.0), axis=axis_, tilt=tilt_)
             # RE-SEAT the recorded subject on the roadway beside where the caption actually landed.
             # `label_hugs_its_referent` measures an axis-aligned gap between two recorded boxes, so a
             # cross-section pinned at the ANCHOR reads the along-road distance as drift once the
             # ladder slides the caption - Tango measured 45px for a caption sitting 29px off the
             # roadway. Boxing the roadway nearest the caption's own box makes the recorded gap the
             # clearance a reader sees, at any road angle.
+            # A TILTED caption re-seats on the quad it actually DRAWS, not its pre-tilt box - the
+            # recorded gap has to be the clearance a reader sees. At tilt 0 label_quad returns that
+            # box corner-for-corner in the same order, so every level road's referent is unchanged.
             lb_ = self._label_box(lx, ly, text, 12)
+            qs_ = label_quad([*lb_, 0, text, None, tilt_])
+            cq_ = ((qs_[0][0] + qs_[2][0]) / 2, (qs_[0][1] + qs_[2][1]) / 2)
             px_, py_ = min(
-                (seg_closest(qx, qy, (ax_, ay_), (bx_, by_)) for qx, qy in ((lb_[0], lb_[1]), (lb_[2], lb_[1]), (lb_[2], lb_[3]), (lb_[0], lb_[3]), ((lb_[0] + lb_[2]) / 2, (lb_[1] + lb_[3]) / 2))),
-                key=lambda c: min(math.hypot(c[0] - qx, c[1] - qy) for qx, qy in ((lb_[0], lb_[1]), (lb_[2], lb_[1]), (lb_[2], lb_[3]), (lb_[0], lb_[3]))),
+                (seg_closest(qx, qy, (ax_, ay_), (bx_, by_)) for qx, qy in (*qs_, cq_)),
+                key=lambda c: min(math.hypot(c[0] - qx, c[1] - qy) for qx, qy in qs_),
             )
             box = (px_ - half, py_ - half, px_ + half, py_ + half)
-            self.label(lx, ly, text, 12, italic=True, weight="bold", color="#5A4326", ref=box)
+            self.label(lx, ly, text, 12, italic=True, weight="bold", color="#5A4326", ref=box, rot=tilt_, linear=True)
             self.M["road_label"] = [lx, ly]
             self._road_label = None
         splices: list[Any] = []  # (placeholder_idx, block) - spliced high-index-first below
