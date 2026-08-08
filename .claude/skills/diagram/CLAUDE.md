@@ -14,16 +14,16 @@ round-trips.
 ## Gate and sweep timings (the motivating-artifact loop, concretely)
 
 The root "iterate on the motivating artifact, sweep once at the end" rule has these diagram
-numbers. A single map's regen + gate is ~1-7s; the heavy maps, after two optimization passes
-(2026-08-03 and 2026-08-04), are Minami ~22s and Nagahara / Tango / Kikuta / Hoshizora ~10s solo
-CPU - down from 54s / 37s / 24s / 35s / 15s before them:
+numbers. A single map's regen + gate is ~1-7s; the heavy maps, after three optimization passes
+(2026-08-03, 2026-08-04 and the 2026-08-08 seat memo), are Minami ~14.5s and Nagahara / Tango /
+Kikuta / Hoshizora ~10s solo CPU - down from 54s / 37s / 24s / 35s / 15s before them:
 
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
 
 **...or let the CACHE skip the work entirely** (2026-08-08). `regen.py` regenerates a map only if
 something that map depends on actually changed, and prints `CACHED` or `REGENERATED` every time:
 
-    python3 regen.py pool/provincial-cities/minami.gen.py    # 22.5s cold, 1.1s cached
+    python3 regen.py pool/provincial-cities/minami.gen.py    # ~15s cold, 1.1s cached
     python3 regen.py pool/*/*.gen.py                         # the whole pool
     python3 regen.py --no-cache pool/towns/ubame.gen.py      # force the work
 
@@ -83,6 +83,33 @@ check is slow, INDEX it" below. The second pass (2026-08-04) found four more of 
 the well memo's own FINGERPRINT (now a `frozen_terrain` scope, which asserts the invariant instead
 of guessing it), `_fits` measuring every standing building, the ground-cover keep-outs, and a city
 gen testing each candidate against every label on the map.
+
+**The SECOND shape, found once the first was exhausted (2026-08-08): the same scan run again over
+ground that has not changed.** Minami's dwelling `top_up` evaluated **511,519 candidate positions**
+- effectively its whole runtime - and **64.6% of them were RE-visits of a seat an earlier pass had
+already refused at the same tightness**, because the caller sweeps each caste's regions three times
+over and again in `fill_exactly`, always on the same fixed 5x6 px lattice. `settlement.SeatMemo`
+remembers refusals across calls: **21.0s -> 14.5s, and every manifest byte-identical**, because a
+refusal only turns into a placement if an obstacle DISAPPEARS and nothing in a top-up phase removes
+one. Three things about it are worth carrying to the next instance of this shape:
+
+- **The memo ASSERTS the invariant instead of assuming it** (`sync()`), the same discipline
+  `frozen_terrain` applies to the well memo. A registry that is rebound, truncated, or changed by
+  anything but an append clears the memo - so a future gen that frees ground loses the SPEEDUP, not
+  a hundred houses. That failure direction is the whole design.
+- **Byte-identity is the oracle here, and it is a stronger one than the brief expected.** A memo
+  that only skips work is output-preserving by construction, so any drift in a manifest is a
+  soundness bug and not a judgment call - which is why this needed no `settlement-review` pass.
+- **Measure the re-visit share PER GEN before wiring it in.** The same memo was fitted to Nagahara
+  and Tango and made both SLOWER (9.56 -> 10.29s, 9.71 -> 10.19s): their re-visit shares are 3.1%
+  and 0.0%, so every candidate paid the probe and almost none saved a test. Minami is the outlier
+  because the Fox eight-temple doctrine leaves its packs unable to seat anything and its merchant
+  target unmeetable. Below roughly a third re-visits, this is a pessimization.
+
+Two levers deliberately NOT taken, so they are not re-derived: an `ok()`-level memo (that test is
+pad-independent, so it is re-run once per pass) would spare 33,810 of the remaining 181,085
+evaluations, but they are the CHEAPEST ones - and capping the unmeetable caste targets, which the
+memo has already made nearly free. Both were measured, both are worth well under a second.
 
 **And trust the A/B, not the profile's seconds.** cProfile charges its per-call overhead to
 whatever has the most calls, which is exactly these tight inner loops - it valued the ground-cover

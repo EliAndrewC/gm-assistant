@@ -5881,3 +5881,90 @@ def test_sharp_corners_skips_a_duplicate_vertex_instead_of_counting_it():
     # zero-length and gets skipped too. So a ring carrying duplicates under-reports its corners,
     # which is exactly why `build_comb` merges them away instead of leaning on this guard.
     assert settlement._sharp_corners([*square, (0.0, 10.0)]) == 3
+
+
+# ---------------------------------------------------------------- SeatMemo (the top-up refusal memo)
+# Its whole value rests on ONE property: a seat refused once stays refused, because the registries
+# the scan reads only ever grow. These tests hold both halves - that it remembers while the map
+# only grows, and that it FORGETS the moment anything could have freed ground. Getting the second
+# half wrong is silent under-population, which is the failure this engine has already paid for
+# twice (see the Indexed docstring), so each way the invariant can break gets its own case.
+
+
+def _memo_city():
+    s = _town()
+    s.M.setdefault("buildings", [])
+    return s, settlement.SeatMemo(s)
+
+
+def test_seat_memo_remembers_a_refusal_across_syncs_while_the_map_only_grows():
+    s, memo = _memo_city()
+    memo.level("laborer", 10, 6, 7).add((100.0, 200.0))
+    s.placed.append((1.0, 2.0, 3.0, 4.0))  # an append is exactly what a top-up does between calls
+    s.M["buildings"].append({"x": 1, "y": 2, "w": 3, "h": 4, "kind": "laborer"})
+    memo.sync()
+    assert (100.0, 200.0) in memo.level("laborer", 10, 6, 7)
+
+
+def test_seat_memo_keys_the_refusal_to_the_kind_footprint_and_tightness():
+    # a refusal at one padding says nothing about a looser pass, and a refusal for one kind says
+    # nothing about a smaller one - conflating them would silently under-populate a later caste
+    _s, memo = _memo_city()
+    memo.level("laborer", 10, 6, 7).add((100.0, 200.0))
+    assert (100.0, 200.0) not in memo.level("laborer", 10, 6, 4)
+    assert (100.0, 200.0) not in memo.level("servant", 10, 6, 7)
+    assert (100.0, 200.0) not in memo.level("laborer", 8, 6, 7)  # same kind, re-dimensioned
+
+
+def test_seat_memo_forgets_when_an_indexed_registry_changes_by_anything_but_an_append():
+    # the case the Indexed docstring exists for: a same-length in-place replacement changes CONTENT
+    # while identity and length say nothing happened. `version` moving further than `appends` is
+    # what catches it.
+    s, memo = _memo_city()
+    s.block_polys.append([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)])
+    memo.sync()
+    memo.level("laborer", 10, 6, 7).add((100.0, 200.0))
+    s.block_polys[0] = [(5.0, 5.0), (6.0, 5.0), (6.0, 6.0)]
+    memo.sync()
+    assert (100.0, 200.0) not in memo.level("laborer", 10, 6, 7)
+
+
+def test_seat_memo_forgets_when_a_registry_is_rebound_or_truncated():
+    # `placed` is rebound to a filtered copy in two places in this engine, and that is precisely
+    # what defeated the previous attempt at an incremental index over it
+    s, memo = _memo_city()
+    memo.level("laborer", 10, 6, 7).add((100.0, 200.0))
+    s.placed = settlement.Indexed()
+    memo.sync()
+    assert (100.0, 200.0) not in memo.level("laborer", 10, 6, 7)
+
+    s2, memo2 = _memo_city()
+    s2.M["buildings"].append({"x": 1, "y": 2, "w": 3, "h": 4, "kind": "laborer"})
+    memo2.sync()
+    memo2.level("laborer", 10, 6, 7).add((100.0, 200.0))
+    s2.M["buildings"].clear()  # a plain list has only identity + length as a witness; length is enough here
+    memo2.sync()
+    assert (100.0, 200.0) not in memo2.level("laborer", 10, 6, 7)
+
+
+def test_seat_memo_forgets_when_a_registry_disappears_altogether():
+    s, memo = _memo_city()
+    s.M["scratch"] = []
+    memo.sync()
+    memo.level("laborer", 10, 6, 7).add((100.0, 200.0))
+    del s.M["scratch"]
+    memo.sync()
+    assert (100.0, 200.0) not in memo.level("laborer", 10, 6, 7)
+
+
+def test_seat_memo_tolerates_bound_being_SET_but_not_unset():
+    # None -> a ring only ADDS a constraint (Minami restores s.bound mid-top-up, which must not
+    # cost the memo); the reverse frees every seat outside the ring and must clear it
+    s, memo = _memo_city()
+    memo.level("laborer", 10, 6, 7).add((100.0, 200.0))
+    s.bound = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)]
+    memo.sync()
+    assert (100.0, 200.0) in memo.level("laborer", 10, 6, 7)
+    s.bound = None
+    memo.sync()
+    assert (100.0, 200.0) not in memo.level("laborer", 10, 6, 7)

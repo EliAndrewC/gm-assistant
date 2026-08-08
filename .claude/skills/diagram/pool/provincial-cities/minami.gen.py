@@ -924,7 +924,17 @@ s.farm_wells()
 
 
 # ====================================================================== the dwelling top-up
+# REFUSALS ARE REMEMBERED ACROSS CALLS (2026-08-08). The sweep below is run over the same ground
+# many times over - each caste's regions three times, then again by fill_exactly - on a fixed 5x6
+# px lattice, so 64.6% of this gen's 511,519 candidate evaluations were re-refusals of a seat an
+# earlier pass had already refused. SeatMemo (settlement.py) skips those, and asserts the
+# append-only invariant that makes skipping them sound rather than assuming it. Output-preserving:
+# the manifest is byte-identical across the change.
+_SEATS = settlement.SeatMemo(s)
+
+
 def top_up(kind, region, need, count_kinds=None):
+    _SEATS.sync()
     kinds = set(count_kinds or (kind,))
     have = sum(1 for b in s.M["buildings"] if b["kind"] in kinds)
     w_, h_ = s._dims(kind)
@@ -995,13 +1005,20 @@ def top_up(kind, region, need, count_kinds=None):
 
     x0, y0, x1, y1 = region
     for pad in (7, 4, "exact", "tight"):
+        # the refusal set for THIS kind at THIS tightness, hoisted out of the scan. The key names
+        # the footprint as well as the kind, so it cannot outlive a re-dimensioned kind.
+        dead = _SEATS.level(kind, w_, h_, pad)
         gy = y0
         while gy <= y1 and have < need:
             gx = x0
             while gx <= x1 and have < need:
-                if ok(gx, gy) and (exact_clear(gx, gy, 2.4 if pad == "tight" else 3.0) if pad in ("exact", "tight") else s._fits(gx, gy, w_ + pad, h_ + pad)):
-                    orot = next((r_ for r_ in (0.0, 180.0) if door_clear(gx, gy, r_)), None)
-                    if orot is not None:
+                if (gx, gy) not in dead:
+                    orot = None
+                    if ok(gx, gy) and (exact_clear(gx, gy, 2.4 if pad == "tight" else 3.0) if pad in ("exact", "tight") else s._fits(gx, gy, w_ + pad, h_ + pad)):
+                        orot = next((r_ for r_ in (0.0, 180.0) if door_clear(gx, gy, r_)), None)
+                    if orot is None:
+                        dead.add((gx, gy))
+                    else:
                         s.building(gx, gy, w_, h_, kind, orot)
                         have += 1
                 gx += 5
