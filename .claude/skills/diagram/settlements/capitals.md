@@ -150,7 +150,9 @@ The model is **Asakusa Okura / Kuramae** - the ruler's own riverside granaries, 
 
 Nagahara supplies most of the vocabulary already (`s.dock`, `s.jetty`, `s.canal`, `s.water_gate`) - see [`cities/river-cities.md`](cities/river-cities.md). The castle keeps the siege stock (above), so the waterfront carries the working rice.
 
-**Two things to settle before building it**, both flagged in the research rather than invented here: whether the brokers' row is a **merchant** street or a **Ministry of Retainers** annex (budgets.md gives the rice/coin arbitrage to the ministry, not to chonin brokers, which weakens the Edo chain from broker wealth to the entertainment district); and where the **Emperor's separate granaries** sit, which no source settles.
+**The brokers' row is MERCHANT** (GM 2026-08-08), so draw it as merchant frontage with the wealth band skewed high - not state violet. budgets.md's "rice/coin arbitrage" line for the Ministry of Retainers covers **the paying of stipends only** (denomination, the rice-versus-coin split, payment-day logistics); the contracts, clearinghouse business and lending sit outside it, and the merchant class has grown rich on them exactly as the *fudasashi* did. So the Edo chain holds and the entertainment district belongs beside the granary because **the brokers' money is what builds the theaters**. [Research](../research/cities/capitals.md#the-brokers-row-is-merchant-and-the-ministrys-cut-is-narrower-than-it-looks) - and note the general reading it establishes: a ministry line prices the ministry's own administrative function, not the whole trade it touches.
+
+**The Emperor's granaries are SEPARATE and OUTSIDE the castle** (GM 2026-08-08), because they face a different threat: an invading neighbor would not attack the Emperor's stores, so they need protection from **brigands, not besiegers**. A stout wall and a watch suffice, and there is no reason to spend castle ground on them. Their seat is a **tunable knob**, both options being real answers: `meta(imperial_granary_seat="magistrate")` puts them beside the Imperial Magistrate's compound (the official who oversees them is right there), `"wharf"` puts them on the water (grain moves by boat). Neither is a strong default - like the castle seat, it is a genuine either/or that gives two capitals different skeletons for a documented reason.
 
 ## Settled defaults
 
@@ -173,10 +175,22 @@ Note the pool's defense tiers after this: `peaceful` (Minami), `siege` (Tango, N
 
 - **Lineage names** for the cosmopolitan-lineage compounds (5-6, per `l7r.md`'s chancellery size).
 - **Perf.** ~2,472 dwellings against Minami's 541. `_fits` is spatially indexed so per-seat cost is roughly flat, but `fill_exactly` and the `SeatMemo` re-visit dynamics are unmeasured at this volume. Budget a perf pass and a `GEN_TIME_BUDGETS` entry.
-- **Per-household ground costs at capital scale** - the budget model has no row for a walled yashiki or a retainer terrace, and without both the derived wall is wrong in the hardest direction to notice.
-- **Aqueduct FORM** (how much of a *josui* is visible), and the **wharf / kurayashiki** program including where the Emperor's granaries sit - both flagged in their sections above.
+- **`SAMURAI_INWALL_FRAC` for a capital.** 2/3 at provincial tier; a capital should run higher (proximity to the court is the point of the posting, and the walled yashiki is what keeps the senior cohort in-wall). ~0.85 is an estimate, and it moves ~40 households of the priciest housing type.
 - **Gate count**, and which gate is the *ote* on the ceremonial axis (it interacts with the river and the Imperial road).
 - **Whether the tight-crop-to-the-wall convention survives** four gate-suburbs at this scale.
 - **The provincial-tier ward question** raised by the ward research - separate from this tier, and not to be fixed in passing.
 
-**Resolved since the first draft:** ward structure (researched, recommendation above), clan character (labels only), the granary and armory (inside the castle, not drawn), the aqueduct (yes, in addition to wells), and the "ashigaru terrace" error (corrected to retainer terraces).
+**Resolved since the first draft:** ward structure (researched, recommendation above), clan character (labels only), the granary and armory (inside the castle, not drawn), the aqueduct (yes, plus its form), the "ashigaru terrace" error (corrected to retainer terraces), the brokers' row (merchant), the Emperor's granaries (separate, knob-sited), and the per-household ground costs (below).
+
+## Per-household ground costs (proposed `citybudget.py` rows)
+
+Full derivation and confidence: [research](../research/cities/capitals.md#per-household-ground-costs-for-the-two-housing-types-the-budget-model-has-never-seen). The model prices only `C_PACKED` (690) and `C_SPACED` (2,480); a capital needs two more.
+
+| new row | value | anchor |
+|---|---|---|
+| `C_YASHIKI` (walled samurai compound, in-wall) | **~4,150 px^2** | the Fukui **Suginuma plan**, a 1,000-koku retainer's 28 x 32.5 ken plot (~167 x 194 ft = 3,600 px^2), plus ~1.15x street margin |
+| `C_TERRACE` (retainer terrace, Rank 1-4) | **~660 px^2** | Shibata's ICP *ashigaru-nagaya* (8 households, 143 x 21 ft, 18 ft frontage each) as the floor, the detached samurai house as the ceiling |
+
+Gross-up ratios measured from the three shipped cities: **5.6x** drawn footprint for packed rows, **7.5x** for detached samurai houses. `C_TERRACE` is the softer of the two new numbers - bracketed at both ends by real measurements, but its position between them is a judgment. **Re-derive both against the first capital's drawn map**, exactly as `C_PACKED`/`C_SPACED` were back-predicted from Tango.
+
+**What they make the wall:** required interior ~**3.2M px^2**, derived ring ~**rx 1,056 / ry 982 px** - about 1.2 x 1.1 miles across, a ~3.6 mile circuit. Two knock-ons: **the existing 3,200 x 2,700 canvas still fits it** (needs ~2,412 x 2,264 with moat and margin), and **`plan_city` will refuse a capital outright** - `POP_MIN, POP_MAX = 2000, 4000` raises rather than clamps, so the tier needs its own band and caste table rather than a widened provincial one.
