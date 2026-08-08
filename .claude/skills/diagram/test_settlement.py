@@ -10,6 +10,7 @@ settlement.py to 100%.
     python3 -m pytest test_settlement.py -q
 """
 
+import json
 import math
 import os
 import random
@@ -565,7 +566,16 @@ def test_tree_stand_canopy_is_deferred_and_never_drawn_over_a_building_or_well()
     wl = s.M["wells"][-1]
     for i in range(0, len(crowns), 3):
         x, y, r = crowns[i], crowns[i + 1], crowns[i + 2]
-        assert not (abs(x - b["x"]) < b["w"] / 2 + r and abs(y - b["y"]) < b["h"] / 2 + r)
+        # CIRCLE vs RECT, the same rounded-corner measure `_crown_covers` and the gate's
+        # structures_clear_of_trees use - NOT the naive AABB this line used to carry. The AABB
+        # includes the four CORNER squares a circle cannot reach, so it called a crown sitting
+        # diagonally off a corner an overlap: (562.5, 573.7) r=8.7 against a 60x40 building at
+        # (600, 600) is 7.5 x 6.3 px clear of the nearest corner, i.e. 9.8 px away from a crown
+        # that reaches 8.7. It only ever passed because no crown had landed in a corner diagonal
+        # before the 2026-08-08 re-roll put one there (test geometry stricter than the rule it
+        # guards is a false alarm waiting for a re-roll).
+        dx, dy = max(abs(x - b["x"]) - b["w"] / 2, 0.0), max(abs(y - b["y"]) - b["h"] / 2, 0.0)
+        assert dx * dx + dy * dy >= r * r
         assert math.hypot(x - wl["x"], y - wl["y"]) >= r + wl.get("vr", wl["r"])
     n = len(crowns)
     s.flush_tree_stands()  # idempotent - the queue is drained
@@ -2721,6 +2731,65 @@ def test_kura_side_flips_to_the_north_wall_when_the_west_is_taken():
     assert s._kura_side(rec, 44.0, 29.0) == "N"
     s.M["gardens"].append({"x": 300.0, "y": 300 - 0.60 * 29, "w": 10.0, "h": 10.0})  # ...and one on the back wall too
     assert s._kura_side(rec, 44.0, 29.0) == "W"
+
+
+def test_scope_seed_depends_only_on_seed_name_and_key():
+    # It must NOT depend on the process (hashlib, not the salted built-in hash()) nor on anything
+    # drawn before it - that independence is the whole mechanism.
+    a = settlement.scope_seed(23, "pack", (100, 200, 300, 400))
+    random.random()
+    assert settlement.scope_seed(23, "pack", (100, 200, 300, 400)) == a
+    assert settlement.scope_seed(24, "pack", (100, 200, 300, 400)) != a  # the map seed matters
+    assert settlement.scope_seed(23, "rowpack", (100, 200, 300, 400)) != a  # the scope name matters
+    assert settlement.scope_seed(23, "pack", (100, 200, 300, 401)) != a  # the key matters
+    assert settlement.scope_seed(23, "pack", (100.04, 200, 300, 400)) == a  # ...but not below 0.1 px
+
+
+def test_rng_scope_is_isolated_from_before_and_restores_after():
+    def draw(perturb):
+        s = Settlement(600, 500, seed=5)  # a FRESH map: the per-key counter starts at 0 in both runs
+        for _ in range(perturb):
+            random.random()  # an upstream change consuming extra draws
+        with s.rng_scope("t", 1, 2):
+            inside = [random.random() for _ in range(3)]
+        return inside, random.random()
+
+    a_in, a_after = draw(0)
+    b_in, b_after = draw(1)
+    assert a_in == b_in  # the scope cannot see what happened before it
+    assert a_after != b_after  # ...and the outer stream is genuinely restored, not re-seeded
+
+
+def test_rng_scope_gives_repeat_calls_on_one_key_their_own_numbers():
+    # Two packs over the same ground must not draw the same "random" numbers, or they twin.
+    s = Settlement(600, 500, seed=5)
+    with s.rng_scope("pack", 0, 0, 10, 10):
+        first = [random.random() for _ in range(3)]
+    with s.rng_scope("pack", 0, 0, 10, 10):
+        second = [random.random() for _ in range(3)]
+    assert first != second
+    other = Settlement(600, 500, seed=5)
+    with other.rng_scope("pack", 0, 0, 10, 10):
+        assert [random.random() for _ in range(3)] == first  # ...but a fresh map reproduces them
+
+
+def test_a_farmstead_belt_is_immune_to_an_upstream_change_in_draw_count():
+    # THE RATCHET for the whole positional-randomness discipline (GM 2026-08-08). A caption resize
+    # in a city's temple quarter re-rolled farmland 700 px away and dropped a farm shed on a garden,
+    # because a farmhouse's rake and its storehouse were STREAM draws: consume one more random
+    # number anywhere upstream and every homestead in the map re-rolled. They are position-seeded
+    # now (the convention _hjit's own docstring describes), so this holds.
+    def belt(perturb):
+        s = _town()
+        for _ in range(perturb):
+            random.random()
+        for x in (400, 500, 600, 700, 800):
+            s.try_place(x, 500, "plain")
+        s.farmsteads()
+        return {k: json.dumps(s.M[k], sort_keys=True) for k in ("houses", "gardens", "threshing_yards", "farm_sheds")}
+
+    a, b = belt(0), belt(1)
+    assert a == b, f"an upstream draw re-rolled: {[k for k in a if a[k] != b[k]]}"
 
 
 def test_crop_to_content_includes_forest_clamped_to_canvas():

@@ -252,6 +252,53 @@ seat both hand-picked batches had missed, first try. Reach for it on any "this p
 X" - and note the DRAW ORDER caveat: it can only see what has been drawn so far, so call it where
 the feature belongs, not earlier.
 
+## RANDOMNESS IS POSITIONAL OR SCOPED - never "wherever the stream happens to be"
+
+The rule, and it governs every new draw you add: **a feature's randomness must depend on the feature,
+not on how much randomness the map has drawn before it.** Two mechanisms, and one of them fits every
+case.
+
+- **A per-feature attribute** - a house's rake, its wall colour, whether it has a kura, which kind a
+  ring seat gets - comes from **`self._hjit(x, y, salt)`**, which is a deterministic hash of the
+  position. Its docstring has said why since it was written: "so it never ripples other placement or
+  household counts". Pick an unused salt (1.0, 2.0, 3.0, 7.0, 11.0, 13.0, 21.0, 22.0 and 0.7/1.3/2.1
+  are taken; `_quad` owns 71.0+).
+- **A phase or a region** - a pack's seat jitter, a pasture's outline, a grove's crowns, a well grid,
+  a ring's candidate seats - runs inside **`with self.rng_scope(name, *key)`**, whose stream is a hash
+  of (map seed, name, key) and which restores the outer stream on the way out. Key it on the thing
+  that identifies the instance: the bbox, the street run, the base polygon. Repeat calls on one key
+  get their own numbers via a per-key counter, so two packs over the same ground do not twin.
+
+**WHY (GM 2026-08-08), measured.** Everything drew from one global stream, so any change that altered
+the NUMBER of draws made before a phase re-rolled that phase however unrelated it was. Injecting ONE
+extra draw at the top of a gen and diffing every manifest key:
+
+| tier | before | after |
+|---|---|---|
+| hamlet, village | 2 of 63-69 keys | **0 - isolated** |
+| town, city | 12-15 of 71-101 keys | see below |
+
+The cost was not theoretical. A caption resize in a city's temple quarter dropped a farm shed on a
+garden **700 px away**, and the session that fixed it spent most of its time on maps it had not
+meant to touch. Debugging a map you did not change is the expensive kind of work.
+
+**HOW TO FIND THE NEXT ONE, because the method matters more than the list.** Run a gen twice - once
+normally, once with one extra `random.random()` injected at `meta()` - and diff. Two probes, in this
+order:
+
+1. **Record-level**: for each manifest key, the first index whose record differs, and which FIELDS
+   differ. `fields=['rot']` on the same x/y is an ATTRIBUTE drift (positional fix). A different x/y
+   is a SEAT drift (scope the placer).
+2. **Draw-site level**: wrap the `random` module functions to log the calling `file:line`, and find
+   the first index where the two SEQUENCES disagree. That names the culprit exactly.
+
+Use (1) first. Once the scopes are in, (2) starts reporting *consequences* - a grove whose crowns
+differ because the buildings around it moved - and will send you chasing the wrong thing.
+
+**Every one of these changes re-rolls the whole pool once**, so batch them: convert everything you
+intend to, THEN regenerate and fix the fallout in one pass. Fixing fallout between conversions is
+work you will throw away, because the next conversion produces a different fallout set.
+
 ## Ask the GEN who placed it - do not grep for the caller
 
 The other half of the same lesson. `open_seat` answers "where does this fit?"; **[`why_placed.py`](why_placed.py)** answers *"who put this here?"* and *"what refused to put anything here?"* - the two questions you actually have when a map comes out wrong.
