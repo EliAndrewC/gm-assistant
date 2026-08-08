@@ -344,13 +344,34 @@ reservations - caption bands, civic aprons, fence standoffs - that a footprint r
 by a few px, and tightening those cost Nagahara a well and pushed Hoshizora's punishment ground off
 its street. The split is the fix; the conflation was the bug.
 
-**2. Circumscribed-circle collision (OVER-restrictive -> wasted ground).** Against `placed` and
-`grove_rects`, `_fits` still uses half-diagonal circles, not real footprints. For a 46x28 house that
-is r=26.9 against a true half-width of 23, so two such houses are forced >=57.8 px apart center to
-center where true touching is 28. It never permits a real overlap - it just wastes up to ~2x the
-spacing, which is a real cause of "the packer says the ground is full" when it is not. Replacing it
-with a SAT footprint test would relax spacing on every dense map and re-roll their populations, so
-it is a deliberate, separately-verified change, not a drive-by.
+**2. Circumscribed-circle collision (OVER-restrictive -> wasted ground, and LOAD-BEARING).** Against
+`placed` and `grove_rects`, `_fits` still uses half-diagonal circles, not real footprints. For a
+46x28 house that is r=26.9 against a true half-width of 23, so two such houses are forced >=57.8 px
+apart center to center where true touching is 28. It never permits a real overlap - it just wastes
+up to ~2x the spacing, which is a real cause of "the packer says the ground is full" when it is not.
+
+**The waste is real and large - measured on Tango, 2026-08-08.** A wrapper that computed the
+diagnostic beside the real verdict (so the map generated was the real one) over 71,860 `_fits`
+calls: **38.7% of all refusals come from the circle clause**, and **767 seats are refused by nothing
+but the approximation** - a **+57.6%** increase in the pool of legal seats the placers see. That is
+per-CALL, not per-building: it means far more choice for every scan, not 57% more houses.
+
+**But do NOT swap it for a footprint test on its own.** Tried the same day: replacing the circles
+with an exact axis-aligned box gap takes Tango's gate from clean to FIVE failures, two of them
+genuine overlaps (`features_do_not_overlap`, `no_structure_overlaps`), plus a fire tower standing on
+a wellhead and a well inside a building. The reason is that a circumscribed circle is
+**rotation-invariant**, and that is exactly what has been absorbing item 3 below: houses are drawn
+at +/-5 deg and buildings at 90/180 deg, where `w` and `h` swap outright, so an axis-aligned test on
+the PLACEMENT dimensions is simply wrong for them. It was partly covering item 1 too - with tighter
+packing, buildings landed on wells whose `block_polys` reservation is only center-tested.
+
+**So item 2 is blocked on item 3, not on the cost of re-baselining** - which is what this entry used
+to say, and it was the wrong diagnosis. The circles are not conservative padding; they are the
+mechanism masking the rotation mismatch, and removing them converts a documented inefficiency into
+shipped overlaps. The order is: fix **item 3** so the placer tests the rotated footprint it will
+actually DRAW, then item 2 becomes a real `sat_overlap` on real corner quads, and only then does the
+pool re-roll. Budget for that re-roll: the naive swap alone already moves Tango +21 houses (+8%),
++20 buildings (+3.2%) and +23 wells (+25%).
 
 **3. Placement tests a DIFFERENT footprint than the one drawn (still open).** `_fits` is called with
 a farmhouse's BASE rect, but the drawn steading can exceed it - a wealth render scale, an attached
