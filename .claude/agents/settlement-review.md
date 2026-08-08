@@ -132,6 +132,21 @@ artifacts, so if you skip that nobody catches it.
   is an error. A map that draws an Imperial road and does NOT label it is also an error.
 - **Terms must mean what they say** - a term asserting a quantity, rate or relationship must match
   the setting's actual arrangements.
+- **A caption must be ALIGNED with the thing it names.** Text set square to the page beside a
+  subject drawn at an angle reads as naming whatever it happens to lie next to, not the subject.
+  Go through every string on the sheet and ask what it names and what angle that subject is drawn
+  at. Three cases, and only the first two are defects:
+  - The subject is a **rotated glyph** (a tilted inn, works, compound, execution ground): the
+    caption carries the glyph's own tilt.
+  - The subject is a **LINE or a run along one** - a road, a street, a row of shopfronts, a wall
+    line, a field belt: the caption runs ALONG it. The one exception is the steep case: a subject
+    within 45 degrees of vertical keeps a LEVEL caption, because text steeper than that is hard to
+    read and a near-vertical line has no shallower axis to align with. So level text beside a
+    north-south road is correct and level text beside a diagonal one is a defect.
+  - The subject is an **area whose fabric is level** (a district of axis-aligned houses, a
+    rectangular quarter) or a **point fixture** (a boundary stone, a wellhead): a level caption is
+    correct and tilting it would align it with nothing. Tilt follows the subject's axis; it is
+    never decoration.
 
 ### Feature or slack? (open ground and ground cover)
 
