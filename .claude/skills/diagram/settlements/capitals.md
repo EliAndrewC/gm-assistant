@@ -47,11 +47,49 @@ Rough expectation, to be REPLACED by `plan_city`'s output: interior ~3.6M px^2, 
 
 ## The castle
 
-Drawn as an **enceinte, not as a keep**. At 3 ft/px a tenshu footprint is just another building box (Hirosaki's is ~0.6 ha, **1.2%** of its castle), so what makes a castle read as a castle is its works: concentric baileys as walled open ground, *masugata* dogleg gate approaches, the batter of the ishigaki, its own moat. The tenshu and *goten* footprints are marked; everything else is implied, exactly as the governor's mansion and the magistrate's manor imply their interiors, and a separate Mode A sheet follows later.
+Drawn as an **enceinte, and BLANK INSIDE** - walls and moat only, exactly as a governor's mansion and a magistrate's manor are drawn (GM 2026-08-08). **No building of any kind is placed inside it on the city map** - not the tenshu, not the goten, not the granary or the armory.
 
-**The granary and the armory are INSIDE the castle and are NOT drawn** (GM 2026-08-08). They are real and they are in the works, but they belong to the castle's own Mode A sheet, exactly as a magistrate's manor and a governor's mansion keep their interiors off the settlement map. This is the general rule for anything inside the enceinte: **the only things marked are the works themselves plus the tenshu and goten footprints.** It also settles where the domain's siege stock lives, and leaves the wharf kura (below) to carry the transhipment story.
+### WHY blank: the sync argument (general doctrine, not a castle rule)
 
-`castle_px2` is a **declared program line**, defaulting to ~598,000 px^2 (~50 ha) with a documented 50-230 ha band.
+The GM's reasoning generalizes to every compound this project draws as an implied interior, so it belongs here as doctrine:
+
+> *"I plan to also show a separate diagram for them. And if we fill in any details at all on the map, then the diagram will need to match and be kept in sync with the map, which will add a layer of difficulty... I'd rather nothing be shown than the WRONG thing be shown."*
+
+Any interior detail on the settlement map becomes a **constraint on the Mode A sheet** that must later be drawn to match it - and a constraint nothing enforces, so the two drift silently and the map ends up asserting something the compound plan contradicts. An empty compound asserts nothing and can never be wrong. **The cost of the blank is legibility; the cost of the detail is a contradiction nobody catches.** The blank wins until a real sync mechanism exists.
+
+A future automated cross-check (a Mode A sheet's own footprints projected onto the Mode B compound) would let this relax, and the GM wants that eventually. Until then: **walls only**.
+
+### What that leaves, and the one open question
+
+`castle_px2` is a **declared program line**, defaulting to ~598,000 px^2 (~50 ha) with a documented 50-230 ha band - and that ground is spent whether or not anything is drawn on it, because the budget prices the WORKS, not their contents.
+
+**Open (GM):** a castle's *bailey walls* (the honmaru / ninomaru / sannomaru divisions) and its *masugata* dogleg gate approaches are themselves **walls**, not buildings - so the literal "blank except for the walls" rule would admit them, and they are what makes a 50 ha enclosure read as a castle rather than as one enormous empty box. But they are also exactly what a Mode A sheet would fix precisely, so they carry the same sync risk the rule exists to avoid. **Ask before drawing them**; the safe default is the outer enceinte, its moat and its gates alone.
+
+### The inventory: what is INSIDE (never drawn on the city map) vs OUTSIDE (must be)
+
+This is the list the GM asked for - the point of the blank is that we still know what it contains.
+
+| INSIDE the castle - implied, drawn only on its own Mode A sheet | OUTSIDE - drawn in the city like any other feature |
+|---|---|
+| the **tenshu** (keep) | the **six domain ministries** + government ward, on the ote-suji avenue |
+| the **goten** - the daimyo's residence and audience halls | the **House Chancellery** |
+| the **domain granary, SIEGE stock** | the **domain granary, STIPEND rice + transhipment**, at the wharf |
+| the **armory** | the **brokers' row** (merchant) beside that granary |
+| the **treasury** | the **Imperial Magistrate's compound** (foreign sovereign ground) |
+| the **castle guard's barracks** (the daimyo's own retinue) | the **Emperor's granaries** (`imperial_granary_seat`: magistrate or wharf) |
+| the daimyo's **stables** and **private gardens** | the **domain school** (*hanko*) |
+| the castle's **wells and cisterns** | the **state martial hall** + rolled private dojos |
+| | the **8 lineage compounds** (daika, the ninth, IS the castle) |
+| | the **2 sovereign temples** + the teramachi rim |
+| | the **wharf**, dock, jetties, quay frontage, towpath |
+| | the **aqueduct**: intake, open canal and kakehi outside; draw-basins inside |
+| | all **samurai districts** - walled yashiki, detached houses, retainer terraces |
+| | all **commoner machi**, markets, the road ribbon, entertainment district |
+| | the **bell-and-drum tower**, fire towers, public wells |
+| | **burakumin quarters**, tanning yards, the execution ground |
+| | **gate furniture**, gate markets, flophouses, caravan clusters |
+
+**The one that matters most**: the domain's rice appears TWICE, in two places, for two reasons - siege stock inside the castle, working stipend-and-transhipment rice at the wharf. Drawing only one of them would misrepresent how the domain actually holds its grain.
 
 **Two seats, and they are not symmetric:**
 
@@ -204,10 +242,12 @@ That yields a compound hierarchy the map can draw at four visibly different size
 |---|---|---|
 | **the castle** | **daika** (19) | the ruling lineage's seat IS the castle - it needs no separate yashiki |
 | 4 grand chancellery yashiki | **hazama** (16), **utsuro** (15), **tokiwa** (14), **anzu** (12) | cosmopolitan chancellors, seated in the capital; the largest walled compounds after the castle |
-| 1 smaller emissary residence | **kurogi** (11) | on the Chancellery but PROVINCIAL - its ancestral seat is in Moriguchi, so what stands in the capital is a representative's townhouse, not a family seat |
+| 1 smaller lineage estate | **kurogi** (11) | on the Chancellery and PROVINCIAL. **The chancellor still lives in the capital and still holds a lineage estate** (GM 2026-08-08) - a Chancellery seat is held in person. It is smaller only because it houses FEWER LINEAGE MEMBERS: most of the kurogi live out in Moriguchi province, around their own provincial city |
 | 3 modest houses | **yodo** (5), **nio** (4), **seki** (4) | below the Chancellery threshold, so smaller holdings |
 
-**Draw them labeled.** Nine named compounds graded by real weights is what will make this read as *Shiro Daika* rather than as a generic capital - and the kurogi anomaly (a chancellor whose capital presence is deliberately modest) is the kind of specific that a generic city cannot fake.
+**Draw them labeled.** Eight named compounds graded by real weights (the ninth, daika, is the castle) is what will make this read as *Shiro Daika* rather than as a generic capital - and the kurogi case, a full chancellor on a visibly smaller plot because his people are elsewhere, is the kind of specific a generic city cannot fake.
+
+**The size tracks HOUSEHOLDS HOUSED, not rank.** That is the rule the kurogi correction establishes: every chancellor is present in person, so a compound's footprint reads how many of that lineage live in the capital, not how important its head is. A provincial lineage is therefore small-but-grand rather than absent.
 
 Note the pool's defense tiers after this: `peaceful` (Minami), `siege` (Tango, Nagahara, Shiro Daika). **The DEFAULT tier, `garrison`, still has no worked example anywhere.**
 
