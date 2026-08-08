@@ -65,15 +65,19 @@
 # directory (where the sibling l7r notes repo lives) at /host-l7r-repo, wherever
 # the tree is checked out (/home/eli/l7r/<repo>, /data/dev/l7r/<repo>, ...).
 #
-# Audio: the container gets the host's sound devices (--device /dev/snd) plus
-# alsa-utils, so Claude Code's /voice can record. Without the device nodes voice
-# fails in a confusing way rather than an obvious one: /proc is NOT namespaced,
-# so /proc/asound/cards shows the host's mic and voice's availability probe
-# passes - then the actual capture floods the terminal with "cannot find card
-# '0'" / "Unknown PCM default" from ALSA. This is raw ALSA access, bypassing the
-# host's PulseAudio/PipeWire; that daemon suspends idle capture devices, so the
-# mic is normally free, but a host app actively recording (a Zoom call) can make
-# it "busy" until it lets go.
+# Audio: the container gets the host's sound devices (--device /dev/snd, when
+# the host has any), alsa-utils, and a generated /etc/asound.conf pointing
+# ALSA's "default" at the detected mic and speaker - so Claude Code's /voice can
+# record. All three are needed, and each missing piece fails differently:
+#   * no device nodes -> /proc is NOT namespaced, so /proc/asound/cards shows
+#     the host's mic and voice's availability probe passes; then the capture
+#     floods the terminal with "cannot find card '0'" / "Unknown PCM default".
+#   * devices but no asound.conf -> "audio open error: No such file or
+#     directory", because stock ALSA aims "default" at hw:0,0 (see the
+#     generation step near the bottom of this script for why that's wrong).
+# This is raw ALSA access, bypassing the host's PulseAudio/PipeWire; that daemon
+# suspends idle capture devices, so the mic is normally free, but a host app
+# actively recording (a Zoom call) can make it "busy" until it lets go.
 #
 # Usage:
 #   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
@@ -217,14 +221,22 @@ RUN_ARGS=(
   --workdir "$WORKDIR"
   --memory "$MEMORY" --memory-swap "$MEMORY"
   --volume "${REPO_ROOT}:${WORKDIR}:Z"
-  # Host sound devices, so Claude Code's /voice can record (see "Audio" above).
-  # Access comes from the uidmap: container uid 1000 IS the invoking user, and
-  # /dev/snd/* carries a logind ACL granting the seat user rw. keep-groups is
-  # the belt-and-braces case where a host instead grants it via the `audio`
-  # group - rootless podman drops supplementary groups without it.
-  --device /dev/snd
-  --group-add keep-groups
 )
+
+# Host sound devices, so Claude Code's /voice can record (see "Audio" above).
+# Access comes from the uidmap: container uid 1000 IS the invoking user, and
+# /dev/snd/* carries a logind ACL granting the seat user rw - verified by
+# reading the nodes from inside, where they show up as nobody:nogroup with a
+# trailing '+' (the ACL) and are still readable/writable. Conditional because
+# `--device` on a missing path is a hard `podman run` failure: a host with no
+# sound card at all (headless server, minimal VM) must still get a container.
+AUDIO=0
+if [ -d /dev/snd ]; then
+  RUN_ARGS+=( --device /dev/snd )
+  AUDIO=1
+else
+  echo ">> note: no /dev/snd on this host; container gets no audio (voice input won't work)."
+fi
 
 # Host Claude Code config, mounted so auth, settings, skills, and per-project
 # memory persist across container recreations. The host paths are created if
@@ -346,6 +358,77 @@ if [ "$APT" -eq 1 ]; then
   fi
 else
   echo ">> --no-apt: not installing packages."
+fi
+
+# ---- ALSA default device (fresh containers only) ----
+#
+# Passing /dev/snd through is necessary but NOT sufficient. ALSA's built-in
+# "default" PCM is hw:0,0, and on plenty of modern cards device 0 is not a
+# capture device at all - this laptop's SOF/soundwire card puts the mic on 0,4
+# and the speaker on 0,2, with 0,3 being an amp-feedback loopback. So `arecord`
+# with no -D, which is exactly what Claude Code's voice probe and its bundled
+# libasound recorder use, dies with "audio open error: No such file or
+# directory" even though `arecord -D plughw:0,4` records perfectly. It never
+# bites on the host because PulseAudio/PipeWire ships an asound.conf aiming
+# default at the sound server, which knows the right device.
+#
+# So generate one. Device numbers are DETECTED, not hardcoded: /proc/asound/pcm
+# is readable in the container (that path is not namespaced) and names each
+# device, so prefer a capture device that looks like a mic over a feedback or
+# loopback, and a playback device that looks like speakers over HDMI. `plug`
+# wraps both so voice's 16 kHz mono is resampled to whatever the hardware
+# demands. Runs even under --no-apt: the native recorder links libasound
+# directly and needs this whether or not alsa-utils is installed.
+if [ "$AUDIO" -eq 1 ]; then
+  echo ">> configuring ALSA default device"
+  podman exec -i --user root "$NAME" bash -s <<'PROVISION_ALSA' || \
+    echo ">> warning: could not configure ALSA default; /voice may fail to open the mic." >&2
+set -eu
+[ -r /proc/asound/pcm ] || { echo "no /proc/asound/pcm; skipping" >&2; exit 0; }
+
+# Emit "card,device" for the best match in one direction, or nothing.
+pick() {
+  awk -F: -v want="$1" -v prefer="$2" -v avoid="$3" '
+    BEGIN { best = -1 }
+    {
+      has = 0
+      for (i = 4; i <= NF; i++) if ($i ~ want) has = 1
+      if (!has) next
+      split($1, a, "-"); nm = tolower($2)
+      score = 1
+      if (avoid  != "" && nm ~ avoid)  score = 0
+      if (prefer != "" && nm ~ prefer) score = 2
+      if (score > best) { best = score; res = (a[1] + 0) "," (a[2] + 0) }
+    }
+    END { if (best >= 0) print res }
+  ' /proc/asound/pcm
+}
+
+capture=$(pick capture 'mic' 'feedback|loopback|monitor')
+playback=$(pick playback 'speaker|analog|headphone' 'hdmi')
+
+if [ -z "$capture" ]; then
+  echo "no capture device found in /proc/asound/pcm; leaving ALSA default alone" >&2
+  exit 0
+fi
+[ -n "$playback" ] || playback="$capture"
+
+cat > /etc/asound.conf <<EOF
+# Generated by launch-container.sh. ALSA's stock default is hw:0,0, which is
+# not a capture device on every card; these were detected from
+# /proc/asound/pcm at container-create time.
+pcm.!default {
+    type asym
+    playback.pcm "plughw:${playback%,*},${playback#*,}"
+    capture.pcm "plughw:${capture%,*},${capture#*,}"
+}
+ctl.!default {
+    type hw
+    card ${capture%,*}
+}
+EOF
+echo "   capture -> plughw:${capture%,*},${capture#*,}   playback -> plughw:${playback%,*},${playback#*,}"
+PROVISION_ALSA
 fi
 
 exec podman exec -it "$NAME" bash
