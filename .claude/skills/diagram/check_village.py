@@ -3625,6 +3625,38 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 ),
             )
 
+    # THE CAPITAL TIER IS SIZED BUDGET-FIRST TOO (feature 018, specs/018-capital-space-budget).
+    # The sibling of city_wall_matches_budget above, at the SAME tolerances - inherited
+    # deliberately rather than re-derived, because they are pinned by the shipped-Tango /
+    # rejected-Nagahara pair and nothing about a capital argues for different slack.
+    if scale == "capital":
+        cap_bud = meta.get("budget")
+        # THE RATCHET (FR-015). A rule gated on an optional declaration is optional in practice:
+        # three separate times in this engine's history a check silently never RAN while the gate
+        # stayed green, because the map declared nothing. So a capital that declares no budget
+        # FAILS here rather than skipping its conformance check. Model: settlement_declares_a_land_fall.
+        check(
+            "capital_declares_a_budget",
+            bool(cap_bud),
+            "no space budget declared - a capital is sized budget-first: compute citybudget.plan_capital(program), take the wall from budget.wall, and record s.meta(budget=budget_to_manifest(budget)). "
+            "Without it capital_wall_matches_budget has nothing to compare against and would SKIP, which looks exactly like passing (specs/018-capital-space-budget)",
+        )
+        if cap_bud and M.get("wall"):
+            cap_measured = poly_area(M["wall"])
+            cap_req = float(cap_bud["required_interior_px2"])
+            cap_over = cap_measured > cap_req * (1 + BUDGET_TOL_OVER)
+            cap_under = cap_measured < cap_req * (1 - BUDGET_TOL_UNDER)
+            check(
+                "capital_wall_matches_budget",
+                not (cap_over or cap_under),
+                f"the wall encloses {cap_measured:.0f} px^2 vs the budget's required {cap_req:.0f} ({cap_measured / cap_req - 1:+.1%}, tolerance +{BUDGET_TOL_OVER:.0%}/-{BUDGET_TOL_UNDER:.0%}) - "
+                + (
+                    "unjustified open ground (the empty-space defect): shrink the wall to the budget, or declare+draw the extra ground as extras lines"
+                    if cap_over
+                    else "the wall cannot hold the program: enlarge to the budget, or trim the program"
+                ),
+            )
+
     # DOORS OPEN OUTWARD; ROWS STACK AT MOST TWO DEEP (GM, 2026-07-18). An urban building's door
     # glyph sits on its local +h/2 side (rotated by `rot` - settlement.building), so the door's
     # world direction derives from the manifest alone. A door must open onto WALKABLE ground

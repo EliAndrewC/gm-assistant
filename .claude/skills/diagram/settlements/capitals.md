@@ -4,7 +4,13 @@
 
 **Load this file when:** the subject is a domain capital.
 
-> **STATUS: DESIGN RECORD, NOT YET IMPLEMENTED.** No `scale="capital"` exists in `settlement.py` or `check_village.py`, no capital is in the pool, and nothing below is gated. This file records what the tier WILL be, and every decision in it is settled with the GM (2026-08-08) and grounded in [`../research/cities/capitals.md`](../research/cities/capitals.md). Implementation goes through spec-kit as feature work, per the root [`CLAUDE.md`](../../../../CLAUDE.md).
+> **STATUS: the BUDGET half is SHIPPED (feature 018); the DRAWN half is not.**
+>
+> **Shipped and gated**: the space budget and the tier's declared knobs - `citybudget.CapitalProgram` / `plan_capital`, the capital caste table and rank split, `C_YASHIKI` / `C_TERRACE`, `castle_px2`, `castle_seat`, `imperial_granary_seat`, the `--tier capital` CLI, and the two validator checks `capital_declares_a_budget` + `capital_wall_matches_budget`. See [`specs/018-capital-space-budget/`](../../../../specs/018-capital-space-budget/).
+>
+> **NOT yet built**: every DRAWN feature. There is no castle glyph, no aqueduct, no wharf or brokers' row, no kido mesh, no rank-graded samurai districts or retainer terraces on a map, no capital-scale check block beyond the two above, and no capital in the pool. Those are feature 019, and the sections below describing them are still a design record.
+>
+> Every decision here is settled with the GM (2026-08-08) and grounded in [`../research/cities/capitals.md`](../research/cities/capitals.md).
 
 **Research:** the historical basis for every rule here - what was found, the decision it drove, and every disclosed departure - is in [`../research/cities/capitals.md`](../research/cities/capitals.md). Load it when you are CHANGING a rule or questioning one, not to follow it.
 
