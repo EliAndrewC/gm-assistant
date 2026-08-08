@@ -418,6 +418,25 @@ LABEL_AIR_CAP = 3.0  # x font size - how far a placed caption may END UP from it
 #                      so 29px IS the nearest clear ground, and a cap that failed it would be
 #                      demanding a placement no map can make).
 
+# A CAPTION IS SIZED BY ITS GLYPH, NOT BY THE INSTITUTION'S IMPORTANCE (GM 2026-08-08). Both of
+# these used to be set by rank - a temple and a governor outrank a ministry office, so their
+# captions were bigger - and on the rendered maps that read as a mistake rather than a hierarchy:
+# a city temple hall is 96-140 real ft and a ministry office is 114-140, the same size class, yet
+# "Temple of Benten" at 13pt was set 44% larger per character than "Ministry of Rites" standing a
+# few hundred px away - so the temple neighborhood read as shouting rather than as ranked. The rank
+# still shows, in COLOR (temple red, ministry violet) and in weight, which is where it belongs.
+HALL_CAPTION_FS = 9.0  # every religious hall's caption - city temple, town monastery, village
+#                        shrine - at the ministry's size. The village case has the same defect and
+#                        the same cure: Kikuta's 88x60 ft "Shrine to Benten" was set at the same
+#                        13pt beside 9-11pt neighbors on a map whose other glyphs are half the
+#                        size. Read by `_hall_caption_y` too, which must measure the box
+#                        `shrine_hall` will actually draw.
+GOVERNOR_CAPTION_FS = 11.0  # the yamen's caption, ~20% down from the manor default of 14 so it
+#                             fits INSIDE the empty court with air on both sides: at 11pt
+#                             "Governor's Mansion" measures 123px in the render font against the
+#                             145px-wide mansions of Tango and Nagahara, i.e. ~11px (~33 real ft)
+#                             off each wall. At 14 it measured 157px and would not fit at all.
+
 
 def segments_cross(a: Pt, b: Pt, c: Pt, d: Pt) -> bool:
     def ccw(p: Pt, q: Pt, r: Pt) -> bool:
@@ -1176,6 +1195,17 @@ def poly_gap(p: Poly, q: Poly) -> float:
             for i in range(len(b)):
                 best = min(best, seg_dist(vx, vy, b[i], b[(i + 1) % len(b)]))
     return best
+
+
+def _aabb_gap(p: Poly, q: Poly) -> float:
+    """The gap between two quads' AXIS-ALIGNED bounds - 0 where the bounds meet or overlap.
+
+    Deliberately the coarse measure, because it is the one `city_government_offices_dont_abut`
+    uses: that check reads AABBs, so a placement probe that guards the same standoff has to read
+    AABBs too or the two disagree exactly where a feature is drawn at an angle."""
+    ax0, ay0, ax1, ay1 = min(x for x, _ in p), min(y for _, y in p), max(x for x, _ in p), max(y for _, y in p)
+    bx0, by0, bx1, by1 = min(x for x, _ in q), min(y for _, y in q), max(x for x, _ in q), max(y for _, y in q)
+    return math.hypot(max(0.0, ax0 - bx1, bx0 - ax1), max(0.0, ay0 - by1, by0 - ay1))
 
 
 def rects_overlap(p: Poly, q: Poly) -> bool:
@@ -5140,13 +5170,13 @@ class Settlement:
         want, alt = (below, above) if label_below else (above, below)
         if not seats:
             return want
-        lhw = len(label) * 13 * 0.55 / 2  # _record_label's box for a size-13 caption, half-width
+        lhw = len(label) * HALL_CAPTION_FS * 0.55 / 2  # _record_label's box for a hall caption, half-width
         txh, tyu, tyd = torii_halfbox(self.ftpx)
         # past the far end of the sando, on whichever side the avenue actually runs
         beyond = max(ty + tyd for _, ty in seats) + 22 if sum(ty for _, ty in seats) / len(seats) > y else min(ty - tyu for _, ty in seats) - 10
 
         def fouled(ly: float) -> bool:
-            top, bot = ly - 13 * 0.8, ly + 13 * 0.25  # ...and its vertical extent
+            top, bot = ly - HALL_CAPTION_FS * 0.8, ly + HALL_CAPTION_FS * 0.25  # ...and its vertical extent
             return any(abs(tx - x) < lhw + txh and top < ty + tyd and ty - tyu < bot for tx, ty in seats)
 
         return next((ly for ly in (want, beyond, alt) if not fouled(ly)), want)
@@ -5356,7 +5386,7 @@ class Settlement:
         self.block_polys.append([(x - w / 2 - bm, y - h / 2 - bm), (x + w / 2 + bm, y - h / 2 - bm), (x + w / 2 + bm, y + h / 2 + bm), (x - w / 2 - bm, y + h / 2 + bm)])
         self._clear_ground(x, y, w, h, 58)  # the swept shrine precinct - scrub kept off the tended keidai (the grove, if any, is separate)
         if label:
-            self.label(x, self._hall_caption_y(x, y, w, h, label, label_below, seats_t), label, 13, weight="bold", color=edge)
+            self.label(x, self._hall_caption_y(x, y, w, h, label, label_below, seats_t), label, HALL_CAPTION_FS, weight="bold", color=edge)
             # RESERVE the caption's own ground (GM 2026-07-27). Every gen that draws a hall had been
             # hand-writing a block_poly under its caption - Tango's Benten and Nagahara's Bishamon each
             # carry one, re-seated by hand every time the hall moved - and the moment _hall_caption_y
@@ -6057,8 +6087,15 @@ class Settlement:
                 # (`city_government_offices_dont_abut`), so they are tested against an inflated range.
                 if any(rects_overlap(quad, rot_rect(o["x"], o["y"], o["w"], o.get("h", o["w"]), o.get("rot", 0))) for o in self._solid_records() if o is not b):
                     continue
-                fat = rot_rect(ox, oy, length + 2 * self._OFFICE_STANDOFF, depth + 2 * self._OFFICE_STANDOFF, rrot)
-                if any(rects_overlap(fat, rot_rect(o["x"], o["y"], o["w"], o["h"], o.get("rot", 0))) for o in self._office_records()):
+                # THE OFFICE STANDOFF, MEASURED THE WAY THE CHECK MEASURES IT - AABB to AABB.
+                # `city_government_offices_dont_abut` compares axis-aligned BOUNDS, while this
+                # probe used to inflate the range's ROTATED rect and test that: for a range drawn
+                # at its host's frontage angle the two disagree by up to the difference between its
+                # half-depth and its half-diagonal, so Nagahara seated a -109 deg servant range
+                # 13.96px off the Ministry of Works - clear on the probe's measure, abutting on the
+                # gate's (2026-08-08). Same rule as the punishment-ground caption probe: a probe
+                # must measure the box the CHECK will measure (skill CLAUDE.md).
+                if any(_aabb_gap(quad, rot_rect(o["x"], o["y"], o["w"], o["h"], o.get("rot", 0))) < self._OFFICE_STANDOFF for o in self._office_records()):
                     continue
                 _hostgap = min(poly_gap(quad, rot_rect(b["x"], b["y"], b["w"], b["h"], b.get("rot", 0))), 1e9)
                 if any(poly_gap(quad, rot_rect(o["x"], o["y"], o["w"], o.get("h", o["w"]), o.get("rot", 0))) < _hostgap for o in self.M["buildings"] if o is not b):
@@ -6749,6 +6786,20 @@ class Settlement:
         self.kosatsuba(x, y, rot, label=label, label_above=bool(lab))
         return (x, y)
 
+    def _under_a_caption(self, x: float, y: float, w: float, h: float, rot: float = 0.0, pad: float = 2.0) -> bool:
+        """Whether a footprint at (x, y, w, h, rot) would land under a caption ALREADY on the map.
+
+        A label may cover only the thing it labels (`labels_clear_of_other_buildings`), and a
+        feature sited LATE can walk under a caption placed early: Minami's punishment ground
+        auto-sited onto the burakumin quarter's caption when a reflow moved the busiest traffic
+        node 24px north (2026-08-08). The existing probe cannot catch this - it seats the
+        feature's OWN caption clear of the buildings, and this is the offense the other way
+        round, the feature walking under someone else's caption. Reads `label_aabb`, the same
+        geometry the check reads, per the same-source doctrine."""
+        hw = (abs(w * math.cos(math.radians(rot))) + abs(h * math.sin(math.radians(rot)))) / 2 + pad
+        hh = (abs(w * math.sin(math.radians(rot))) + abs(h * math.cos(math.radians(rot)))) / 2 + pad
+        return any(x - hw < a1 and a0 < x + hw and y - hh < b1 and b0 < y + hh for a0, b0, a1, b1 in (label_aabb(L) for L in self.M.get("labels", [])))
+
     def place_punishment_spot(self, label: str | None = "punishment ground", label_xy: Pt | None = None) -> Pt | None:
         """AUTO-SITE the punishment ground on a street verge at the busiest clear node - the notice
         board's sibling, and for the same reason: both institutions are sited by FOOT TRAFFIC, so
@@ -6784,6 +6835,14 @@ class Settlement:
             return all(seg_dist(x, y, bp[k], bp[k + 1]) >= bhw + h / 2 + 3 for bp, bhw in beds for k in range(len(bp) - 1))
 
         best: tuple[float, float, float, float] | None = None  # (score, x, y, rot)
+        # ...and the best seat that is ALSO out from under the captions already on the map. A
+        # PREFERENCE, not a filter (2026-08-08): landing under someone else's caption is a real
+        # defect - Minami's ground auto-sited onto the burakumin quarter's label when a reflow moved
+        # the busiest node 24px north - but it is the caption's problem to solve, and refusing the
+        # seat outright would let a densely-captioned quarter drive the whole probe to None, i.e.
+        # turn "the label wants moving" into "the city has no punishment ground at all". So: take a
+        # clear seat when one exists at any score, and fall back to the busiest seat when none does.
+        best_clear: tuple[float, float, float, float] | None = None
         for pts, _rw in routes:
             for i in range(len(pts) - 1):
                 (ax, ay), (bx, by) = pts[i], pts[i + 1]
@@ -6804,7 +6863,10 @@ class Settlement:
                                 score = busy * 10 - off / 3
                                 if best is None or score > best[0]:
                                     best = (score, x, y, rot)
+                                if not self._under_a_caption(x, y, w, h, rot) and (best_clear is None or score > best_clear[0]):
+                                    best_clear = (score, x, y, rot)
                             off += 5.0
+        best = best_clear or best
         if best is None:
             return None
         _, x, y, rot = best
@@ -11285,9 +11347,23 @@ class Settlement:
     def governor_mansion(self, x: float, y: float, w: float = 320, h: float = 210, label: str = "Governor's Mansion", gate_dir: str = "west") -> Any:
         """The provincial governor's walled mansion - a large compound, grander than a county
         magistrate's manor. Reuses the manor glyph (walls + gate + empty court; the interior is
-        a separate Mode A diagram) and moves the record to M['governor_mansion']."""
-        self.manor(x, y, w, h, label, gate_dir=gate_dir, gate_ft=18.0)  # a yamen's formal gatehouse passes ~18 real ft
+        a separate Mode A diagram) and moves the record to M['governor_mansion'].
+
+        THE CAPTION GOES INSIDE THE COURT, not above the walls like a manor's (GM 2026-08-08).
+        The court is deliberately blank - its buildings are a separate Mode A sheet - so it is the
+        one patch of guaranteed clear ground on a packed city map, while the band above the walls
+        is prime housing: Tango's gen had already worked this out by hand and said so in a comment
+        (its reserved caption box "was eating a full housing row"), and Nagahara and Minami took
+        the manor default and hung the caption over their samurai quarters. Doing it here makes
+        the three cities agree and leaves no hand seat to re-place every time the yamen moves.
+        The size is GOVERNOR_CAPTION_FS, which is what makes the caption fit between the walls."""
+        self.manor(x, y, w, h, "", gate_dir=gate_dir, gate_ft=18.0)  # a yamen's formal gatehouse passes ~18 real ft; caption below, not manor's
         self.M["governor_mansion"] = self.M["manors"].pop()  # not an outside samurai estate
+        self.M["governor_mansion"]["label"] = label
+        if label:
+            # ~0.36 x the font size below the compound's center puts the glyphs' OPTICAL middle on
+            # it (a baseline sits under the x-height, so centering the baseline rides high).
+            self.label(x, y + GOVERNOR_CAPTION_FS * 0.36, label, GOVERNOR_CAPTION_FS, weight="bold")
         return self.M["governor_mansion"]
 
     def ministry(self, x: float, y: float, name: str, w: Any = None, h: Any = None, label_below: bool | None = None) -> None:
@@ -13368,6 +13444,35 @@ class Settlement:
                         break
                 dy += step
 
+    def _kura_side(self, rec: dict[str, Any], w: float, h: float) -> str:
+        """Which wall a LEGACY farmstead's kura stands against - "W" (the dispersed-farm default in
+        `house()`) or "N" (the shaded back wall a nucleated farm uses).
+
+        WHY THIS IS DECIDED AT DRAW TIME (Minami 2026-08-08, a farm shed drawn on a neighbor's
+        garden). A legacy farmhouse reserves only its own base rect, while the west kura is drawn
+        reaching 0.30 x the house's width PAST that rect - the standing "placement tests a
+        different footprint than the one drawn" debt (dev-loop CLAUDE.md, CENTER vs FOOTPRINT item
+        3). The nucleated bundle answers it by RESERVING the kura's ground; the legacy path cannot,
+        because it places one house at a time against ground whose gardens and yards are not drawn
+        yet. But by the flush every appurtenance IS drawn, so the side can simply be CHOSEN here,
+        with no placement change and so no reflow of the belt. If both walls are fouled the west
+        stands and the overlap matrix reports it - the engine does not get to hide a homestead with
+        no room for its own storehouse."""
+        th = math.radians(rec.get("rot", 0))
+        ca, sa = math.cos(th), math.sin(th)
+        # the two kura footprints, in the house's local frame - MUST match house()'s _sox/_soy/_ssw/_ssh
+        sides = {"W": (-0.64 * w, 0.0, 0.32 * w, 0.56 * h), "N": (0.0, -0.60 * h, 0.46 * w, 0.30 * h)}
+        # every DRAWN appurtenance of every farmstead, this one's included: the check does not care
+        # whose garden a kura laps, and a house's own bed is as much a collision as a neighbor's
+        near = [o for k in ("gardens", "threshing_yards", "farm_sheds", "byres") for o in (self.M.get(k) or []) if abs(o["x"] - rec["x"]) < 3 * w and abs(o["y"] - rec["y"]) < 3 * w]
+        near += [o for o in self.M.get("houses") or [] if o is not rec and abs(o["x"] - rec["x"]) < 3 * w and abs(o["y"] - rec["y"]) < 3 * w]
+        for side, (ox, oy, kw, kh) in sides.items():
+            kx, ky = rec["x"] + ox * ca - oy * sa, rec["y"] + ox * sa + oy * ca
+            khw, khh = (abs(kw * ca) + abs(kh * sa)) / 2, (abs(kw * sa) + abs(kh * ca)) / 2
+            if not any(abs(kx - o["x"]) < khw + o["w"] / 2 and abs(ky - o["y"]) < khh + o["h"] / 2 for o in near):
+                return side
+        return "W"
+
     def _farmsteads_legacy(self) -> int:
         """Draw every deferred farmhouse WITH its threshing/drying YARD (south/front apron) AND its dooryard
         kitchen GARDEN (a sunny side, preferring the east) - both were universal to a farmstead, so every
@@ -13384,13 +13489,25 @@ class Settlement:
             yard_spot, garden_spot = spot
             self._attach_garden(rec["x"], rec["y"], [garden_spot])  # legacy farms keep ONE bed (multi-bed split is nucleated)
             self._attach_yard(rec["x"], rec["y"], yard_spot)
+            survivors.append(rec)
+        # SECOND PASS FOR THE HOUSES THEMSELVES, so every yard and garden on the belt is drawn and
+        # recorded before the first roof goes down (2026-08-08). It buys two things and costs no
+        # geometry - `house()` only DRAWS, the footprint was reserved back in `_try_place_legacy`:
+        # `_kura_side` can see the neighbors it has to dodge (in one pass it saw only the farmsteads
+        # flushed before it, and Minami's kura duly landed on a garden drawn two houses later), and
+        # a roof now paints over EVERY garden it abuts rather than only the ones already down -
+        # which is the "draw garden + yard then the house so the house wins any abutment" rule this
+        # loop always intended, applied across the belt instead of per homestead.
+        for rec in survivors:
             # DRAW the house at its WEALTH size - a modest +/-~10% on the rendered glyph only. The manifest keeps
             # w,h at the BASE footprint (what the reservation, the yard/garden, and the overlap checks use, so
             # the variation never causes a drop or a shed/garden clash); the `wealth` factor records the render
             # scale and the grove (below) scales with it.
             wf = rec["wealth"]
-            self.house(rec["x"], rec["y"], rec["w"] * wf, rec["h"] * wf, rec["kind"], rec["rot"], shed=rec["shed"])
-            survivors.append(rec)
+            side = self._kura_side(rec, rec["w"] * wf, rec["h"] * wf) if rec["shed"] else "W"
+            if rec["shed"]:
+                rec["shed_side"] = side
+            self.house(rec["x"], rec["y"], rec["w"] * wf, rec["h"] * wf, rec["kind"], rec["rot"], shed=rec["shed"], shed_side=side)
         self.M["houses"] = [h for h in self.M["houses"] if h.get("on_dike")] + survivors  # dike-top houses (dike_top_houses) are not pending farmsteads - keep them
         # SECOND PASS - the windward homestead groves (yashikirin). Run AFTER every farmhouse + its yard +
         # garden is placed, so a grove (an optional flourish) can NEVER block a neighbor's MANDATORY yard/

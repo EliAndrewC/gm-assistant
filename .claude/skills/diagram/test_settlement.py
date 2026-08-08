@@ -2661,6 +2661,68 @@ def test_ministry_auto_label_side_prefers_empty_ground():
     assert (lab[1] + lab[3]) / 2 > 510  # the label went BELOW, into the open ground
 
 
+def _caption_size(lab: list) -> float:
+    # _record_label's box is len(text) * size * 0.55 wide, so the drawn size reads straight back
+    # off the record - and reading it that way is the point: these tests pin what the MAP shows.
+    return round((lab[2] - lab[0]) / (len(lab[5]) * 0.55), 1)  # 1dp: the record itself is rounded to 0.1px
+
+
+def test_a_hall_caption_is_the_same_size_as_a_ministry_caption():
+    # GM 2026-08-08: a caption is sized by its GLYPH, not by the institution's rank. A city temple
+    # hall and a ministry office are the same size class of building (96-140 ft against 114-140),
+    # so their captions match; the temple's greater standing shows in red and bold, not in points.
+    s = Settlement(1400, 1400, seed=5)
+    s.meta(name="C", scale="city", ftpx=3)
+    s.shrine_hall(400, 400, "Temple of Benten", w=s.px(130), h=s.px(84), kind="temple")
+    s.ministry(900, 400, "Ministry of Rites")
+    temple = next(lb for lb in s.M["labels"] if lb[5] == "Temple of Benten")
+    ministry = next(lb for lb in s.M["labels"] if lb[5] == "Ministry of Rites")
+    assert _caption_size(temple) == _caption_size(ministry) == settlement.HALL_CAPTION_FS
+    # per CHARACTER the two now advance identically - the defect was a temple caption ~44% wider
+    # per character than the ministry caption standing 500px away from it
+    assert (temple[2] - temple[0]) / len(temple[5]) == pytest.approx((ministry[2] - ministry[0]) / len(ministry[5]), abs=0.01)
+
+
+def test_governor_mansion_caption_sits_inside_its_walls():
+    # GM 2026-08-08. The court is drawn blank on purpose (its buildings are a separate Mode A
+    # sheet), so it is guaranteed clear ground on a packed city map, and the band above the walls
+    # is prime housing. The caption goes inside, small enough to clear both walls.
+    s = Settlement(1400, 1400, seed=6)
+    s.meta(name="C", scale="city", ftpx=3)
+    s.governor_mansion(700, 700, s.px(436), s.px(366), "Governor's Mansion", gate_dir="west")
+    gov = s.M["governor_mansion"]
+    assert gov["label"] == "Governor's Mansion"  # the record keeps the name manor() was not given
+    lab = next(lb for lb in s.M["labels"] if lb[5] == "Governor's Mansion")
+    assert _caption_size(lab) == settlement.GOVERNOR_CAPTION_FS
+    assert lab[0] > 700 - gov["w"] / 2 and lab[2] < 700 + gov["w"] / 2  # clear of BOTH walls
+    assert lab[1] > 700 - gov["h"] / 2 and lab[3] < 700 + gov["h"] / 2  # and inside, not above
+    assert len([lb for lb in s.M["labels"] if lb[5] == "Governor's Mansion"]) == 1  # manor drew none
+
+
+def test_governor_mansion_can_be_left_unlabeled():
+    s = Settlement(1400, 1400, seed=7)
+    s.meta(name="C", scale="city", ftpx=3)
+    s.governor_mansion(700, 700, s.px(436), s.px(366), "", gate_dir="west")
+    assert s.M["governor_mansion"]["label"] == ""
+    assert not s.M["labels"]
+
+
+def test_kura_side_flips_to_the_north_wall_when_the_west_is_taken():
+    # A legacy farmstead reserves its base rect but DRAWS its west kura past it, so the side is
+    # chosen at flush time against the neighbors actually on the ground (Minami 2026-08-08, a farm
+    # shed drawn on a garden). West by default, north when the west is taken - and when BOTH are
+    # taken the west stands, so the overlap matrix reports a homestead with no room for its kura
+    # rather than the engine hiding it.
+    s = Settlement(600, 600, seed=1)
+    s.meta(name="V", scale="village", ftpx=2)
+    rec = {"x": 300.0, "y": 300.0, "w": 44.0, "h": 29.0, "rot": 0.0, "shed": True}
+    assert s._kura_side(rec, 44.0, 29.0) == "W"
+    s.M["gardens"].append({"x": 300 - 0.64 * 44, "y": 300.0, "w": 10.0, "h": 10.0})  # a neighbor's bed on the west wall
+    assert s._kura_side(rec, 44.0, 29.0) == "N"
+    s.M["gardens"].append({"x": 300.0, "y": 300 - 0.60 * 29, "w": 10.0, "h": 10.0})  # ...and one on the back wall too
+    assert s._kura_side(rec, 44.0, 29.0) == "W"
+
+
 def test_crop_to_content_includes_forest_clamped_to_canvas():
     # the forest is a big EDGE feature recorded as a POINT-LIST (not dicts). On the axis it FACES, the crop
     # frames it CLAMPED to the canvas so the view never opens past the edge (an edge feature must REACH the
