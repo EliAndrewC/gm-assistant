@@ -1210,7 +1210,9 @@ s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge 
 # THE EAST-FAN PAIR carried a HAND-SEATED WELL here (`s.well(2208, 1284)`, GM 2026-07-27) until
 # 2026-08-08. It is gone because its premise expired, and the removal is worth the paragraph.
 #
-# The two steadings at (2210,1300) and (2174,1287) stand hard against the fe1 paddy fan, and the
+# The two steadings - (2205.6,1308.9) and (2161.1,1298.0), the manifest's own coordinates; every
+# earlier version of this comment cited them 27 and 40 ft off, which is its own small joke given
+# what the paragraph is about - stand hard against the fe1 paddy fan, and the
 # well that used to serve them stood INSIDE it - legal until wells_clear_of_paddies, because
 # _well_ground_clear refused a stream, ditch, canal, pond and DRY plot but never a wet one ("wells
 # on dry crops are okay, but not in rice paddies, surely"). When that rule read the fan's smoothed
