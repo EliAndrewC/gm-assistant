@@ -310,14 +310,20 @@ s.frontage(ROAD_CORE, (["merchant"] * 2 + ["shop"]) * 16, width=26, setback=16, 
 s.label(
     840, 512, "merchant houses & shops", 11, italic=True, color="#5A4326", rot=s.frontage_rot, linear=True
 )  # seat computed clear of every wellhead (settlement-review round 2: the caption was burying one, and `wells` was in neither label registry so nothing saw it); tilted ALONG the frontage it names, like the shopfronts under it (GM 2026-08-08)
-s.merchant_residences(3)
+s.merchant_residences(3, depth_margin=24)  # 24, not the default 14 (2026-08-08): the RNG-scope re-roll moved a
+# shopfront into the band a residence's door opens onto, and a merchant house faces open ground
+# (city_house_doors_unblocked). Setting the homes a step deeper behind the shop band clears it.
 # the ~3 MASTER (rich) laborers get larger dwellings at the edge of the warren
 for lx, ly in [(268, 1060), (700, 1030), (960, 405)]:
     s.building(lx, ly, *s._dims("laborer_large"), "laborer_large")
 # the laborers' and servants' warren, set FURTHER back than the merchant residences with a clear
 # radial gap between the two bands (merchant_residences_behind_businesses)
-s.pack((300, 960, 860, 1180), ["laborer"] * 16 + ["servant"] * 12, step=40, fill=True, footpaths=3)  # bbox widened to pay for the footpath corridor
-s.pack((520, 300, 1230, 470), ["laborer"] * 12 + ["servant"] * 8, step=40, fill=True, footpaths=3)  # ditto
+s.pack((300, 960, 860, 1180), ["laborer"] * 13 + ["servant"] * 10, step=40, footpaths=3)  # bbox widened to pay for the footpath corridor.
+# fill=True DROPPED and the counts made explicit 2026-08-08: a fill pack takes whatever ground is
+# free, so when the RNG-scope re-roll packed the quarter a little tighter the town went 7 dwellings
+# over its declared 590 (population_consistent_with_housing). An explicit count is what the sibling
+# laborer pack in hirameki already uses, and for the same reason recorded there.
+s.pack((520, 300, 1230, 470), ["laborer"] * 10 + ["servant"] * 7, step=40, footpaths=3)  # ditto (explicit counts, same reason as above)
 s.label(520, 942, "laborers' dwellings", 10, italic=True, color="#5A4326")
 
 # ---- the segregated burakumin quarter, at the low southwest - the downstream corner, which is also
@@ -361,7 +367,11 @@ s.block_polys.append([(880, 600), (1560, 435), (1600, 600), (930, 762)])
 s.block_polys.append([(BORDER_X - 34, -60), (2260, -60), (2260, 1560), (BORDER_X - 34, 1560)])
 
 # ---- farmhouses: the farmer majority, ringed several-deep around the comb envelopes
-for bb, rings in ((("poly", ENV_A), [(48, 14), (42, 40), (34, 66), (26, 92)]), (("poly", ENV_B), [(26, 14), (22, 40), (18, 66)])):
+# Ring attempts trimmed 2026-08-08 alongside the commoner packs above: the ring seats its
+# candidates in their own RNG scope now and the new jitter fits 5 more homesteads than these
+# counts were tuned against. Attempts, not placements - the homestead solve drops the marginal
+# ones either way, which is why this needed a real cut rather than a nudge.
+for bb, rings in ((("poly", ENV_A), [(40, 14), (36, 40), (30, 66), (22, 92)]), (("poly", ENV_B), [(22, 14), (19, 40), (16, 66)])):
     for n, gap in rings:
         s.ring(bb, n, gap, ["plain"])
 
@@ -407,6 +417,10 @@ s.stables(112, 686, rot=-16)
 s.farmsteads()
 s.farm_wells()
 
+_jw = s.open_seat((1150, 200, 1330, 280), 14, 14, well=True)  # the Jurojin monastery stands >150px from any
+# house after the 2026-08-08 ring trim, so it is a REMOTE hall and keeps its own well (remote_shrine_has_own_well)
+if _jw:
+    s.well(*_jw)
 s.place_wells((60, 30, 2140, 1470), spacing=210, near=82)
 
 # NEAR-RING FARMLAND. A county seat sits in the middle of its best land and the near ring is worked
@@ -446,7 +460,7 @@ s.commons([(1900, 450), (2104, 462), (2096, 1112), (1908, 1100)], role="grazing"
 s.commons([(1600, 0), (1850, 10), (1842, 200), (1608, 190)], role="grazing")
 s.commons([(150, 300), (330, 310), (322, 580), (158, 570)], role="grazing")
 s.commons([(900, 1200), (1150, 1210), (1142, 1400), (908, 1390)], role="grazing")
-s.commons([(680, 1160), (900, 1169), (893, 1340), (687, 1331)], role="grazing")
+s.commons([(680, 1160), (830, 1166), (824, 1340), (687, 1331)], role="grazing")  # E edge pulled in 70px 2026-08-08: the re-roll moved a wellhead to (849,1197), inside the old corner (scrub_clear_of_urban_fabric)
 s.commons([(1160, 1360), (1440, 1369), (1433, 1500), (1167, 1491)], role="grazing")
 s.commons([(960, 0), (1120, 9), (1113, 240), (967, 231)], role="grazing")
 s.commons([(1120, 1080), (1400, 1089), (1393, 1220), (1127, 1211)], role="grazing")

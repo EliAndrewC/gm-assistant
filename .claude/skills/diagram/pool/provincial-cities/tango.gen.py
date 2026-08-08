@@ -636,7 +636,7 @@ for wx, wy in [
 front([BUR_ST[0]], ["shop"] * 5, spacing=42, rows=1)
 s.rowpack((1198, 1233, 1582, 1273), (["burakumin"] + ["servant"]) * 18, court_every=3)
 s.rowpack((1198, 1298, 1582, 1338), (["burakumin"] + ["servant"]) * 18, court_every=3)
-s.label(1450, 1263, "burakumin", 10, italic=True, color="#6B4F2A")
+s.label(1450, 1285, "burakumin", 10, italic=True, color="#6B4F2A")  # dropped 22px 2026-08-08: the re-roll seated a wellhead under the old seat (labels_clear_of_other_buildings)
 
 # ====================================================================== NE: laborers
 # one E-W street (to a clean ring-road junction) + one N-S; shops + the wealthier "master"
@@ -723,7 +723,7 @@ s.shrine_hall(
     1343, 1501, "Temple of Benten", w=s.px(130), h=s.px(84), kind="temple", primary=True, label_below=True, torii=[(1390, 1501)]
 )  # ONE in the open E forecourt between hall and theater stage (torii_count_canonical: 1/3/7). The W quarter street is unusable for gates: the graveyard's kegare radius covers its middle and the ring-road corridor its S end
 s.block_polys.append(
-    [(1272, 1510), (1410, 1510), (1410, 1550), (1272, 1550)]
+    [(1258, 1502), (1424, 1502), (1424, 1560), (1258, 1560)]  # widened 2026-08-08: block_polys is CENTRE-tested, so a merchant seated just outside the old band still lapped the caption with a rotated corner after the RNG-scope re-roll
 )  # reserve the 'Temple of Benten' label ground so the merchant pack does not land under it (band re-seated up when the hall went true-size, 2026-07-21: the label tracks the smaller hall's bottom edge)
 s.shrine_hall(
     1424, 1616, "Temple of Daikoku", w=s.px(130), h=s.px(84), kind="temple", torii=[(1481, 1616)]

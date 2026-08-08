@@ -529,7 +529,9 @@ s.cemetery(
 # the rows were laid seated only 29 of the 48 the Fox clergy program calls for.
 TEMPLE_FAMILY_SEATS = [(1104, 1176), (1366, 1170), (1064, 1428), (1372, 1090), (1470, 1132), (1728, 1156), (1560, 1170), (1200, 1548)]
 for _tx, _ty in TEMPLE_FAMILY_SEATS:
-    s.pack((_tx - 48, _ty - 30, _tx + 48, _ty + 38), ["monk_house"] * MONK_PER_PRECINCT, step=13)
+    s.pack((_tx - 60, _ty - 36, _tx + 60, _ty + 46), ["monk_house"] * MONK_PER_PRECINCT, step=13)  # bbox widened 2026-08-08:
+    # the RNG-scope re-roll left the Ebisu precinct with a single monk house inside the old 96x68 box, and a
+    # temple complex keeps 2-3 of them (city_temples_have_monk_housing). Still a precinct-sized pocket.
 
 # ====================================================================== SE: the governor's ward
 s.governor_mansion(1570, 1545, s.px(525), s.px(300), "Governor's Mansion", gate_dir="north")

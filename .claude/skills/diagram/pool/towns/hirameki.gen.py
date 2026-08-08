@@ -457,7 +457,7 @@ s.block_polys.append(
 )  # the pack bbox's SW corner pokes past the rampart; the 7-torii reflow (2026-07-21) rolled a laborer into that outside sliver (walled_town_commoners_inside_walls)
 s.pack((540, 1200, 1130, 1600), ["servant"] * 13 + ["laborer"] * 13, step=44, face_streets="fill", fill=True)
 s.building(1668, 1316, 34, 24, "laborer")  # the 25th laborer pinned explicitly (2026-07-24): the two tenement scans land ~24 total as the RNG shifts, and the town_caste_count[laborer] floor is 25 - same lone-cottage precedent as the x1418 one above (probed clear of buildings, the rampart, AND the Bishamon sando - the first two spots hit the wall and a torii)
-s.pack((1450, 1200, 1880, 1540), ["laborer"] * 16, step=44, face_streets="fill")  # fill=False and 15: a fill=True pack expands to whatever ground is free, so it silently backfills every attempt to trim the map toward its declared figure - turning fill off makes the pack place exactly its list, which is the only lever that lands this town on 156 dwellings on the nose (GM 2026-07-26: the 7% band is gone)
+s.pack((1450, 1200, 1880, 1540), ["laborer"] * 11, step=44, face_streets="fill")  # fill=False and 15: a fill=True pack expands to whatever ground is free, so it silently backfills every attempt to trim the map toward its declared figure - turning fill off makes the pack place exactly its list, which is the only lever that lands this town on 156 dwellings on the nose (GM 2026-07-26: the 7% band is gone)
 s.pack((540, 1200, 1130, 1600), ["servant"] * 1, step=44, face_streets="fill")  # THE LAST ONE, to land exactly on 156. The laborer pack above jumps 155 -> 160 between 16 and 17 because face_streets clusters its seats, so the final dwelling has to come from a one-item pack elsewhere - s.pack rather than a hand-rolled drop, because it seats the house FACING its street (buildings_face_street)
 s.label(1300, 1505, "merchant houses & shops", 10, italic=True, color="#5A4326")
 s.label(800, 1560, "laborers' & servants' tenements", 9, italic=True, color="#5A4326")
@@ -529,11 +529,15 @@ s.block_polys.append([(2100 + 132 * math.cos(a), 1513 + 132 * math.sin(a)) for a
 # ---- farmhouses: ringed around the comb envelopes, densely (outside_fields_farmhouse_density
 # wants ~village density along each shown edge; many attempts get dropped by the homestead solve)
 for bb, rings in (
-    (('poly', ENV_W1), [(15, 12), (12, 52), (9, 96)]),
-    (('poly', ENV_W2), [(13, 12), (10, 52)]),
-    (('poly', ENV_E1), [(15, 12), (12, 52), (9, 96)]),
-    (('poly', ENV_E2), [(11, 12), (9, 52), (7, 96)]),
-    (('poly', ENV_S1), [(14, 12), (12, 52), (9, 96)]),
+    # Inner-ring attempts trimmed 2 apiece 2026-08-08: the ring's candidate seats are drawn in
+    # their own RNG scope now, and the new jitter fits 5 more homesteads than the counts below were
+    # tuned against - which put the town 14 dwellings over its declared 780 (population_consistent_
+    # with_housing). Attempts, not placements: the homestead solve still drops roughly half.
+    (('poly', ENV_W1), [(13, 12), (12, 52), (9, 96)]),
+    (('poly', ENV_W2), [(11, 12), (10, 52)]),
+    (('poly', ENV_E1), [(13, 12), (12, 52), (9, 96)]),
+    (('poly', ENV_E2), [(9, 12), (9, 52), (7, 96)]),
+    (('poly', ENV_S1), [(12, 12), (12, 52), (9, 96)]),
 ):
     for n, gap in rings:
         s.ring(bb, n, gap, ["plain"])

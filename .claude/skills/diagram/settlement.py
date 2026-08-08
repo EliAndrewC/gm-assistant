@@ -1294,6 +1294,22 @@ def _always_typed(value: Any, context: Mapping[str, Any]) -> bool:
     return True
 
 
+def scope_seed(seed: int, name: str, key: Sequence[Any]) -> int:
+    """A stable sub-seed for one RNG SCOPE - derived from (map seed, scope name, scope key) and
+    nothing else, so it cannot depend on how much randomness the rest of the map has drawn.
+
+    SHA-256 for the same reason `knob_rng` uses it: Python's `hash()` is salted per process, so a
+    map keyed off it would redraw differently on every run. Float keys are rounded to 0.1 px - the
+    manifest's own precision - so a key derived from geometry is stable against representation
+    noise while still changing when the geometry genuinely moves."""
+
+    def fmt(v: Any) -> str:
+        return f"{round(float(v), 1):.1f}" if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v)
+
+    payload = f"{seed}\x00{name}\x00" + "\x00".join(fmt(v) for v in key)
+    return int.from_bytes(hashlib.sha256(payload.encode()).digest()[:8], "big")
+
+
 def knob_rng(seed: int, knob_name: str) -> random.Random:
     """A per-knob INDEPENDENT, deterministic RNG. Derives a stable sub-seed from (map seed, knob
     name) with SHA-256 - Python's built-in hash() is salted per process (PYTHONHASHSEED), so it
@@ -1894,6 +1910,7 @@ class Settlement:
         self.grove_rects: list[Any] = Indexed()  # (x, y, w, h) homestead-grove arms - kept OUT of `placed` so adjacent groves
         #                           may MERGE (abut) where houses cluster; `_fits` still steers wells off them
         self._pending_farmsteads: list[Any] = []  # farmhouses awaiting their threshing yard (drawn by farmsteads())
+        self._rng_scope_n: dict[tuple[Any, ...], int] = {}  # per-key call counter for rng_scope (see its docstring)
         self.corridors: list[Any] = Indexed()  # polylines houses must avoid (Indexed: _near_corridor keeps a spatial index on it)
         self._samurai_ward_interiors: list[Poly] = []  # closed samurai-ward region(s), cached by s.ward - s.building refuses WARD_BARRED_KINDS inside them
         self.bound: Any = None  # optional bounding polygon: placement stays inside it (city wall)
@@ -2134,6 +2151,38 @@ class Settlement:
         val = resolve_knob(name, self.seed, self.knob_context(), self.knob_pins, do_roll=do_roll)
         self._resolved_knobs[name] = val
         return val
+
+    @contextlib.contextmanager
+    def rng_scope(self, name: str, *key: Any) -> Iterator[None]:
+        """Run a block against an RNG stream that depends ONLY on (map seed, name, key) - never on
+        how much randomness the map has drawn so far - and restore the outer stream on the way out.
+
+        WHY (GM 2026-08-08). Everything in this engine drew from one global stream, so any change
+        that altered the NUMBER of draws made before a phase re-rolled that phase, however unrelated.
+        Measured on a caption-resize: one extra draw at the top of a gen left a hamlet's manifest
+        alone in 61 of 63 keys, but moved 12 of a provincial city's 101 - houses, wells, gardens,
+        groves, buildings, 11,058 tree crowns - and one of the collisions that fell out of it was a
+        farm shed on a garden 700 px from the nearest thing that had changed. Debugging a map you did
+        not touch is the expensive kind of work; this makes the blast radius the thing you edited.
+
+        It is a SEEDED generalization of an idiom already in this file: `forest()` and a dozen others
+        already save and restore the stream so their decorative draws do not shift later placement.
+        Save/restore alone protects everything AFTER the block; re-seeding on entry protects the
+        block itself from everything BEFORE it. Both halves are needed for a scope to be isolated.
+
+        The key is what makes two calls distinct: pass the region rect (or whatever identifies this
+        instance) and repeated calls on the SAME key get a per-key sequence number, so a second pack
+        over the same ground does not redraw the first one's numbers. That sequence is per-key, so
+        adding a pack in one quarter cannot renumber another quarter's."""
+        k = (name, *key)
+        n = self._rng_scope_n.get(k, 0)
+        self._rng_scope_n[k] = n + 1
+        st = random.getstate()
+        random.seed(scope_seed(self.seed, name, (*key, n)))
+        try:
+            yield
+        finally:
+            random.setstate(st)
 
     def px(self, ft: float) -> float:
         """A real-world size in FEET -> drawn pixels at this map's declared scale (meta ftpx)."""
@@ -4712,7 +4761,8 @@ class Settlement:
         farm belt is already covered (Hoshizora) is byte-identical with or without the call.
         Greedy cluster cover: seat a well near the densest uncovered cluster's centroid via
         well_at's clear-spot test, repeat. Gated by farm_wells_within_reach."""
-        with self.frozen_terrain():  # as place_wells: the farm belt does not move rivers while it sinks wells
+        # SCOPED (2026-08-08): the rural well pass, keyed as one phase like farmsteads().
+        with self.rng_scope("farm_wells", "belt"), self.frozen_terrain():  # as place_wells: the farm belt does not move rivers while it sinks wells
             return self._farm_wells(reach_ft, edge_ft)
 
     def _farm_wells(self, reach_ft: float, edge_ft: float) -> int:
@@ -4939,7 +4989,8 @@ class Settlement:
         placed (x, y) list. Pass coverage=False to keep `near` as a PER-CANDIDATE gate only - the
         coverage pass sweeps ALL dwellings map-wide, which a district-scoped call must not do (it
         would drop wells beside the samurai compounds, which keep no public wells)."""
-        with self.frozen_terrain():  # one well index for the whole scatter, not one revalidation per candidate seat
+        # SCOPED (2026-08-08): well siting jitters over a grid; keyed on the bbox it covers.
+        with self.rng_scope("place_wells", *bbox), self.frozen_terrain():  # one well index for the whole scatter, not one revalidation per candidate seat
             return self._place_wells(bbox, spacing, r, near, coverage)
 
     def _place_wells(self, bbox: Any, spacing: float, r: float, near: Any, coverage: bool) -> list[Pt]:
@@ -6197,97 +6248,99 @@ class Settlement:
         historically honest). Dwelling sizes come from URBAN kinds via bscale, with mild
         per-house jitter so the terrace reads grown-up-over-time, not stamped.
         Returns the number placed."""
-        x0, y0, x1, y1 = bbox
-        items = list(items)
-        n0 = len(self.placed)  # obstacle snapshot: everything placed BEFORE this call
-        court_px, eave_px = self.px(court_ft), max(self.px(eave_ft), 1.2)
-        roji_px = max(self.px(12), 4.5)  # the walkable between-pairs lane: >= ~12 real ft, floored for legibility (vs the ~7 ft door-clear line the checks enforce)
-        # linework the rows must respect: tight against alleys (roji), a frontage band off
-        # streets/roads (the shop rows own that ground)
-        lines = [(al["pts"], al.get("w", 10) / 2 + max(self.px(3), 2.5)) for al in self.M.get("alleys", [])]  # 2.5 >= the overlap gate's +2 margin
-        lines += [(st["pts"], st.get("w", 18) / 2 + self.px(28)) for st in self.M.get("town_streets", [])]
-        if self.M.get("road"):
-            lines.append((self.M["road"], self.M.get("road_width", 26) / 2 + self.px(28)))
-        if self.M.get("ring_road"):
-            lines.append((self.M["ring_road"], self.M.get("ring_road_width", 7) / 2 + max(self.px(3), 2.5)))
+        # SCOPED (2026-08-08) - see pack(): same stream jitter, same cascade, same bbox key.
+        with self.rng_scope("rowpack", *bbox):
+            x0, y0, x1, y1 = bbox
+            items = list(items)
+            n0 = len(self.placed)  # obstacle snapshot: everything placed BEFORE this call
+            court_px, eave_px = self.px(court_ft), max(self.px(eave_ft), 1.2)
+            roji_px = max(self.px(12), 4.5)  # the walkable between-pairs lane: >= ~12 real ft, floored for legibility (vs the ~7 ft door-clear line the checks enforce)
+            # linework the rows must respect: tight against alleys (roji), a frontage band off
+            # streets/roads (the shop rows own that ground)
+            lines = [(al["pts"], al.get("w", 10) / 2 + max(self.px(3), 2.5)) for al in self.M.get("alleys", [])]  # 2.5 >= the overlap gate's +2 margin
+            lines += [(st["pts"], st.get("w", 18) / 2 + self.px(28)) for st in self.M.get("town_streets", [])]
+            if self.M.get("road"):
+                lines.append((self.M["road"], self.M.get("road_width", 26) / 2 + self.px(28)))
+            if self.M.get("ring_road"):
+                lines.append((self.M["ring_road"], self.M.get("ring_road_width", 7) / 2 + max(self.px(3), 2.5)))
 
-        def seg_hits_rect(a: Any, b: Any, rx0: float, ry0: float, rx1: float, ry1: float) -> bool:
-            # slab-clip the segment against the rect (exact for axis-aligned rects)
-            (ax, ay), (bx, by) = a, b
-            dx, dy = bx - ax, by - ay
-            t0, t1 = 0.0, 1.0
-            for p, q in ((-dx, ax - rx0), (dx, rx1 - ax), (-dy, ay - ry0), (dy, ry1 - ay)):
-                if p == 0:
-                    if q < 0:
-                        return False
-                else:
-                    t = q / p
-                    if p < 0:
-                        if t > t1:
+            def seg_hits_rect(a: Any, b: Any, rx0: float, ry0: float, rx1: float, ry1: float) -> bool:
+                # slab-clip the segment against the rect (exact for axis-aligned rects)
+                (ax, ay), (bx, by) = a, b
+                dx, dy = bx - ax, by - ay
+                t0, t1 = 0.0, 1.0
+                for p, q in ((-dx, ax - rx0), (dx, rx1 - ax), (-dy, ay - ry0), (dy, ry1 - ay)):
+                    if p == 0:
+                        if q < 0:
                             return False
-                        t0 = max(t0, t)
                     else:
-                        if t < t0:
-                            return False
-                        t1 = min(t1, t)
-            return True
+                        t = q / p
+                        if p < 0:
+                            if t > t1:
+                                return False
+                            t0 = max(t0, t)
+                        else:
+                            if t < t0:
+                                return False
+                            t1 = min(t1, t)
+                return True
 
-        def rect_ok(cx: float, cy: float, w: float, h: float) -> bool:
-            corners = [(cx - w / 2, cy - h / 2), (cx + w / 2, cy - h / 2), (cx + w / 2, cy + h / 2), (cx - w / 2, cy + h / 2)]
-            for px_, py_ in corners + [(cx, cy)]:
-                if px_ < 55 or px_ > self.W - 55 or py_ < 88 or py_ > self.H - 26:
-                    return False
-                if self.bound and not point_in_poly(px_, py_, self.bound):
-                    return False
-                if self._in_blocked(px_, py_):
-                    return False
-            for pts, half in lines:  # exact rect-vs-polyline clearance (a corner
-                ex0, ey0 = cx - w / 2 - half, cy - h / 2 - half  # sample would miss a lane crossing
-                ex1, ey1 = cx + w / 2 + half, cy + h / 2 + half  # between two corners)
-                for k in range(len(pts) - 1):
-                    if seg_hits_rect(pts[k], pts[k + 1], ex0, ey0, ex1, ey1):
+            def rect_ok(cx: float, cy: float, w: float, h: float) -> bool:
+                corners = [(cx - w / 2, cy - h / 2), (cx + w / 2, cy - h / 2), (cx + w / 2, cy + h / 2), (cx - w / 2, cy + h / 2)]
+                for px_, py_ in corners + [(cx, cy)]:
+                    if px_ < 55 or px_ > self.W - 55 or py_ < 88 or py_ > self.H - 26:
                         return False
-            r = math.hypot(w, h) / 2
-            return all(math.hypot(cx - ox, cy - oy) >= r + math.hypot(ow, oh) / 2 + 1 for ox, oy, ow, oh in self.placed[:n0])
+                    if self.bound and not point_in_poly(px_, py_, self.bound):
+                        return False
+                    if self._in_blocked(px_, py_):
+                        return False
+                for pts, half in lines:  # exact rect-vs-polyline clearance (a corner
+                    ex0, ey0 = cx - w / 2 - half, cy - h / 2 - half  # sample would miss a lane crossing
+                    ex1, ey1 = cx + w / 2 + half, cy + h / 2 + half  # between two corners)
+                    for k in range(len(pts) - 1):
+                        if seg_hits_rect(pts[k], pts[k + 1], ex0, ey0, ex1, ey1):
+                            return False
+                r = math.hypot(w, h) / 2
+                return all(math.hypot(cx - ox, cy - oy) >= r + math.hypot(ow, oh) / 2 + 1 for ox, oy, ow, oh in self.placed[:n0])
 
-        n, idx, row = 0, 0, 0
-        ytop = y0
-        while items and idx < len(items):
-            rowmax = 0.0
-            x = x0 + self._hjit(x0, ytop, 0.7) * 4  # ragged row starts (not a stamped grid)
-            while x < x1 and idx < len(items):
-                kind = items[idx]
-                bw, bh = self._dims(kind)
-                bw *= 0.94 + self._hjit(x, ytop, 1.3) * 0.24  # grown-over-time variation, still touching
-                bh *= 0.95 + self._hjit(x, ytop, 2.1) * 0.15
-                if x + bw > x1:
-                    break
-                cx, cy = x + bw / 2, ytop + bh / 2
-                # pair-facing doctrine: first row of each pair faces UP (door at its top
-                # edge, onto the walkable gap above), second faces DOWN - backs meet
-                # across the eave gap, every door opens outward onto roji/court ground.
-                # building() may REFUSE the seat (a commoner unit inside a samurai ward) -
-                # the terrace then breaks there and the scan steps past, same as an obstacle.
-                if rect_ok(cx, cy, bw, bh) and self.building(cx, cy, bw, bh, kind, 180 if row % 2 == 0 else 0):
-                    n += 1
-                    idx += 1
-                    rowmax = max(rowmax, bh)
-                    x += bw + seam  # party wall: the next unit starts AT this one's gable
+            n, idx, row = 0, 0, 0
+            ytop = y0
+            while items and idx < len(items):
+                rowmax = 0.0
+                x = x0 + self._hjit(x0, ytop, 0.7) * 4  # ragged row starts (not a stamped grid)
+                while x < x1 and idx < len(items):
+                    kind = items[idx]
+                    bw, bh = self._dims(kind)
+                    bw *= 0.94 + self._hjit(x, ytop, 1.3) * 0.24  # grown-over-time variation, still touching
+                    bh *= 0.95 + self._hjit(x, ytop, 2.1) * 0.15
+                    if x + bw > x1:
+                        break
+                    cx, cy = x + bw / 2, ytop + bh / 2
+                    # pair-facing doctrine: first row of each pair faces UP (door at its top
+                    # edge, onto the walkable gap above), second faces DOWN - backs meet
+                    # across the eave gap, every door opens outward onto roji/court ground.
+                    # building() may REFUSE the seat (a commoner unit inside a samurai ward) -
+                    # the terrace then breaks there and the scan steps past, same as an obstacle.
+                    if rect_ok(cx, cy, bw, bh) and self.building(cx, cy, bw, bh, kind, 180 if row % 2 == 0 else 0):
+                        n += 1
+                        idx += 1
+                        rowmax = max(rowmax, bh)
+                        x += bw + seam  # party wall: the next unit starts AT this one's gable
+                    else:
+                        x += 5  # an obstacle breaks the terrace; scan past it
+                if rowmax == 0.0:
+                    rowmax = self._dims("laborer")[1]  # an entirely-blocked row still advances
+                row += 1
+                if row % 2 == 1:
+                    gap = eave_px  # inside a pair: the back-to-back eave/drainage gap
+                elif (row // 2) % max(1, round(court_every / 2)) == 0:
+                    gap = court_px  # a full idobata court every ~court_every rows
                 else:
-                    x += 5  # an obstacle breaks the terrace; scan past it
-            if rowmax == 0.0:
-                rowmax = self._dims("laborer")[1]  # an entirely-blocked row still advances
-            row += 1
-            if row % 2 == 1:
-                gap = eave_px  # inside a pair: the back-to-back eave/drainage gap
-            elif (row // 2) % max(1, round(court_every / 2)) == 0:
-                gap = court_px  # a full idobata court every ~court_every rows
-            else:
-                gap = roji_px  # between pairs: a walkable roji so both pair-fronts have entrance ground
-            ytop += rowmax + gap
-            if ytop + self._dims("laborer")[1] > y1:
-                break
-        return n
+                    gap = roji_px  # between pairs: a walkable roji so both pair-fronts have entrance ground
+                ytop += rowmax + gap
+                if ytop + self._dims("laborer")[1] > y1:
+                    break
+            return n
 
     def pack(self, bbox: Any, items: Any, rot: float = 0, step: float = 46, face_streets: Any = False, fill: bool = False, footpaths: int = 0) -> int:
         """Densely fill a district bbox with a list of building kinds (one building
@@ -6313,88 +6366,96 @@ class Settlement:
         (a ~30px no-build band), so a district that was exactly full may need a slightly
         bigger bbox. Default 0 keeps every existing map bit-identical - no corridor, and
         no RNG draw that could shift a single downstream spot."""
-        x0, y0, x1, y1 = bbox
-        items = list(items)
-        n = 0
-        gy = y0 + step / 2
-        if footpaths:
-            # Lay the paths BEFORE the scan, so `_fits` refuses any spot on the tread and the
-            # clearance is true by construction. The first design reserved every Nth GRID ROW
-            # instead, which was depth-dependent and therefore useless here: under the exact-
-            # population rule these quarters are only two or three rows deep, so the reserved row
-            # was never reached and the pack drew no path at all. Spacing off the bbox rather than
-            # off the row counter makes the paths independent of how many houses are requested.
-            _spacing = footpaths * step
-            _py = y0 + _spacing
-            while _py < y1 - step * 0.5:
-                # TRIM THE PATH TO GROUND THAT IS ACTUALLY FREE. A corridor only refuses spots taken
-                # AFTER it exists, so anything already standing - a district bbox routinely overlaps
-                # the road frontage placed earlier in the gen - is immune to it and the tread would be
-                # drawn straight through a shopfront. So walk the span, keep the longest clear run,
-                # and emit only if enough of it survives to read as a path rather than a stub.
-                # Clearance is scaled to the STEP because `_near_corridor` tests a building's CENTER:
-                # at a flat 15 a house sat 15px off the tread and put its footprint through it (the
-                # centre-vs-footprint family again - see the skill CLAUDE.md).
-                _clr = max(20.0, step * 0.62)
-                _run: list[float] = []
-                _best: list[float] = []
-                _px = x0 + 4
-                while _px <= x1 - 4:
-                    if self._fits(_px, _py, step * 0.5, step * 0.5, corridors=False):
-                        _run.append(_px)
-                    else:
-                        if len(_run) > len(_best):
-                            _best = _run
-                        _run = []
-                    _px += 10
-                if len(_run) > len(_best):
-                    _best = _run
-                if _best and (_best[-1] - _best[0]) >= 0.4 * (x1 - x0):
-                    self.lane([(_best[0], _py), (_best[-1], _py)], width=5, clearance=_clr, worn=True)
-                _py += _spacing
-        while gy < y1 and items:
-            gx = x0 + step / 2
-            while gx < x1 and items:
-                jx, jy = random.uniform(-step * 0.28, step * 0.28), random.uniform(-step * 0.28, step * 0.28)
-                if face_streets:
-                    fr, fd = self._face_street_rot(gx + jx, gy + jy)
-                    if face_streets == "core":
-                        if fr is not None and fd <= 76:
-                            gx += step  # leave the street-facing band for shop frontage; dwellings pack the INTERIOR
+        # SCOPED (2026-08-08). The per-seat jitter below is a stream draw, so any upstream change
+        # that consumed a different number of random numbers moved every building this pack seats -
+        # and one moved building cascades into the gardens, groves, wells and crowns around it. This
+        # was the first divergence left in a town once the pasture outline was scoped. Keyed on the
+        # BBOX with rng_scope's per-key counter, so a quarter re-rolls when you move THAT quarter,
+        # a second pack over the same ground still draws its own numbers, and adding a pack in one
+        # quarter cannot renumber another.
+        with self.rng_scope("pack", *bbox):
+            x0, y0, x1, y1 = bbox
+            items = list(items)
+            n = 0
+            gy = y0 + step / 2
+            if footpaths:
+                # Lay the paths BEFORE the scan, so `_fits` refuses any spot on the tread and the
+                # clearance is true by construction. The first design reserved every Nth GRID ROW
+                # instead, which was depth-dependent and therefore useless here: under the exact-
+                # population rule these quarters are only two or three rows deep, so the reserved row
+                # was never reached and the pack drew no path at all. Spacing off the bbox rather than
+                # off the row counter makes the paths independent of how many houses are requested.
+                _spacing = footpaths * step
+                _py = y0 + _spacing
+                while _py < y1 - step * 0.5:
+                    # TRIM THE PATH TO GROUND THAT IS ACTUALLY FREE. A corridor only refuses spots taken
+                    # AFTER it exists, so anything already standing - a district bbox routinely overlaps
+                    # the road frontage placed earlier in the gen - is immune to it and the tread would be
+                    # drawn straight through a shopfront. So walk the span, keep the longest clear run,
+                    # and emit only if enough of it survives to read as a path rather than a stub.
+                    # Clearance is scaled to the STEP because `_near_corridor` tests a building's CENTER:
+                    # at a flat 15 a house sat 15px off the tread and put its footprint through it (the
+                    # centre-vs-footprint family again - see the skill CLAUDE.md).
+                    _clr = max(20.0, step * 0.62)
+                    _run: list[float] = []
+                    _best: list[float] = []
+                    _px = x0 + 4
+                    while _px <= x1 - 4:
+                        if self._fits(_px, _py, step * 0.5, step * 0.5, corridors=False):
+                            _run.append(_px)
+                        else:
+                            if len(_run) > len(_best):
+                                _best = _run
+                            _run = []
+                        _px += 10
+                    if len(_run) > len(_best):
+                        _best = _run
+                    if _best and (_best[-1] - _best[0]) >= 0.4 * (x1 - x0):
+                        self.lane([(_best[0], _py), (_best[-1], _py)], width=5, clearance=_clr, worn=True)
+                    _py += _spacing
+            while gy < y1 and items:
+                gx = x0 + step / 2
+                while gx < x1 and items:
+                    jx, jy = random.uniform(-step * 0.28, step * 0.28), random.uniform(-step * 0.28, step * 0.28)
+                    if face_streets:
+                        fr, fd = self._face_street_rot(gx + jx, gy + jy)
+                        if face_streets == "core":
+                            if fr is not None and fd <= 76:
+                                gx += step  # leave the street-facing band for shop frontage; dwellings pack the INTERIOR
+                                continue
+                            r = rot + random.uniform(-6, 6)  # ONLY the deep block core, set back behind the frontage line
+                        elif fr is not None and fd <= 92:
+                            r = fr + random.uniform(-4, 4)  # near a street: face it
+                        elif face_streets == "fill":
+                            r = rot + random.uniform(-6, 6)  # deep block core (e.g. tenement housing)
+                        else:
+                            gx += step  # businesses only line the frontage
                             continue
-                        r = rot + random.uniform(-6, 6)  # ONLY the deep block core, set back behind the frontage line
-                    elif fr is not None and fd <= 92:
-                        r = fr + random.uniform(-4, 4)  # near a street: face it
-                    elif face_streets == "fill":
-                        r = rot + random.uniform(-6, 6)  # deep block core (e.g. tenement housing)
                     else:
-                        gx += step  # businesses only line the frontage
-                        continue
-                else:
-                    r = rot + random.uniform(-6, 6)
-                # a scattered (non-street-facing) house still needs an UNBLOCKED door: keep the
-                # street-facing rotation when one was chosen, else pick the cardinal whose door
-                # side opens onto clear ground (doctrine 2026-07-18; skip a spot walled on all 4).
-                # RNG-NEUTRAL by construction: the prefer order starts at the pack's own base
-                # rotation and the already-drawn jitter is REUSED (no extra random draws), so a
-                # map whose scatter never actually blocks a door regenerates bit-identically to
-                # the pre-doctrine engine - the doctrine only perturbs the spots it must.
-                if not (face_streets and fr is not None and fd <= 92):
-                    w_, h_ = self._dims(items[0])
-                    base = (round(rot / 90) * 90) % 360
-                    orot = self.open_face_rot(gx + jx, gy + jy, w_, h_, prefer=(base, (base + 180) % 360, (base + 270) % 360, (base + 90) % 360))
-                    if orot is None:
-                        gx += step
-                        continue
-                    r = orot + (r - rot)
-                if self.try_building(gx + jx, gy + jy, items[0], r):
-                    items.pop(0)
-                    n += 1
-                gx += step
-            gy += step
-        if not fill:
-            self._shortfall("pack", bbox, n, items)
-        return n
+                        r = rot + random.uniform(-6, 6)
+                    # a scattered (non-street-facing) house still needs an UNBLOCKED door: keep the
+                    # street-facing rotation when one was chosen, else pick the cardinal whose door
+                    # side opens onto clear ground (doctrine 2026-07-18; skip a spot walled on all 4).
+                    # RNG-NEUTRAL by construction: the prefer order starts at the pack's own base
+                    # rotation and the already-drawn jitter is REUSED (no extra random draws), so a
+                    # map whose scatter never actually blocks a door regenerates bit-identically to
+                    # the pre-doctrine engine - the doctrine only perturbs the spots it must.
+                    if not (face_streets and fr is not None and fd <= 92):
+                        w_, h_ = self._dims(items[0])
+                        base = (round(rot / 90) * 90) % 360
+                        orot = self.open_face_rot(gx + jx, gy + jy, w_, h_, prefer=(base, (base + 180) % 360, (base + 270) % 360, (base + 90) % 360))
+                        if orot is None:
+                            gx += step
+                            continue
+                        r = orot + (r - rot)
+                    if self.try_building(gx + jx, gy + jy, items[0], r):
+                        items.pop(0)
+                        n += 1
+                    gx += step
+                gy += step
+            if not fill:
+                self._shortfall("pack", bbox, n, items)
+            return n
 
     def _shortfall(self, fn: str, where: Any, placed: int, left: list[Any]) -> None:
         """A placement helper SILENTLY dropping what does not fit is how authored-vs-landed
@@ -6428,35 +6489,41 @@ class Settlement:
     def pasture(self, shape: Any, label: Any = None, amp: float = 40, label_xy: Any = None) -> None:
         """Hayfield / grazing land (pastureland, around the barns) - open grass with
         the odd hay bale, distinct from the cultivated paddy fields. Blocks placement."""
-        outline = organic_bbox(shape, amp) if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape) else organic_poly(shape, amp)
-        sm = smooth_points(outline)
-        d = smooth_closed(outline)
-        cid = self._cid('past')
-        self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
-        self.add(f'<path d="{d}" fill="#C8CF92" stroke="#9CA86A" stroke-width="2" stroke-dasharray="7,5"/>')
-        xs, ys = [p[0] for p in sm], [p[1] for p in sm]
-        st = random.getstate()
-        random.seed(15)
-        self.add(f'<g clip-path="url(#{cid})">')
-        yy = min(ys) + 14
-        while yy < max(ys):
-            xx = min(xs) + 14
-            while xx < max(xs):
-                tx, ty = xx + random.uniform(-7, 7), yy + random.uniform(-7, 7)
-                if point_in_poly(tx, ty, sm):
-                    if random.random() < 0.10:
-                        self.add(f'<rect x="{tx - 6:.0f}" y="{ty - 4:.0f}" width="12" height="8" rx="3" fill="#D8C47E" stroke="#A98E54" stroke-width="0.7"/>')
-                    else:
-                        self.add(f'<path d="M{tx - 3:.0f},{ty + 2:.0f} L{tx:.0f},{ty - 4:.0f} L{tx + 3:.0f},{ty + 2:.0f}" fill="none" stroke="#8FA05E" stroke-width="0.8"/>')
-                xx += 26
-            yy += 24
-        self.add('</g>')
-        random.setstate(st)
-        self.block_polys.append(sm)
-        self.M.setdefault("pastures", []).append([[round(p[0], 1), round(p[1], 1)] for p in sm])
-        if label:
-            lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
-            self.label(lx, ly, label, 12, italic=True, color="#5C6B3A")
+        # SCOPED (2026-08-08): the pasture OUTLINE is stream-drawn (organic_bbox), and the fill
+        # block below re-seeds only itself - so an upstream change reshaped the paddock, which
+        # moved which sample points land inside it, which changed the draw sequence for
+        # everything after. It was the FIRST divergence in a town, at draw #70 of 24,615.
+        # Keyed on the shape, so a pasture re-rolls when the GM moves it and never otherwise.
+        with self.rng_scope("pasture", *(shape if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape) else (len(shape), shape[0][0], shape[0][1]))):
+            outline = organic_bbox(shape, amp) if len(shape) == 4 and all(isinstance(v, (int, float)) for v in shape) else organic_poly(shape, amp)
+            sm = smooth_points(outline)
+            d = smooth_closed(outline)
+            cid = self._cid('past')
+            self.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+            self.add(f'<path d="{d}" fill="#C8CF92" stroke="#9CA86A" stroke-width="2" stroke-dasharray="7,5"/>')
+            xs, ys = [p[0] for p in sm], [p[1] for p in sm]
+            st = random.getstate()
+            random.seed(15)
+            self.add(f'<g clip-path="url(#{cid})">')
+            yy = min(ys) + 14
+            while yy < max(ys):
+                xx = min(xs) + 14
+                while xx < max(xs):
+                    tx, ty = xx + random.uniform(-7, 7), yy + random.uniform(-7, 7)
+                    if point_in_poly(tx, ty, sm):
+                        if random.random() < 0.10:
+                            self.add(f'<rect x="{tx - 6:.0f}" y="{ty - 4:.0f}" width="12" height="8" rx="3" fill="#D8C47E" stroke="#A98E54" stroke-width="0.7"/>')
+                        else:
+                            self.add(f'<path d="M{tx - 3:.0f},{ty + 2:.0f} L{tx:.0f},{ty - 4:.0f} L{tx + 3:.0f},{ty + 2:.0f}" fill="none" stroke="#8FA05E" stroke-width="0.8"/>')
+                    xx += 26
+                yy += 24
+            self.add('</g>')
+            random.setstate(st)
+            self.block_polys.append(sm)
+            self.M.setdefault("pastures", []).append([[round(p[0], 1), round(p[1], 1)] for p in sm])
+            if label:
+                lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
+                self.label(lx, ly, label, 12, italic=True, color="#5C6B3A")
 
     def theater_stage(self, cx: float, cy: float, w: Any = None, h: Any = None, rot: float = 0, label: Any = None) -> None:
         """A public THEATER STAGE: a roofed raised stage facing an open viewing ground - the troupe-and-
@@ -8022,56 +8089,58 @@ class Settlement:
         + fruit broadleaf with NO conifer (the leafy bamboo/fruit greenery scattered among village houses).
         Distinct from the big s.forest area feature and the striped kitchen-garden bed. Species and placement
         are seeded by position (stable across regenerations). Canopy count scales with footprint area."""
-        bs = self.bscale / 0.82  # render scale relative to the town grain
-        st = random.getstate()
-        random.seed(int(abs(cx) * 5 + abs(cy) * 3 + round(w)))
-        n = max(5, min(28, round(w * h / (bs * bs * 48))))  # ~ one crown per ~48 px^2 at 2 ft/px (a ~5 m crown); ~40 across the 6:1 L-grove
-        b_th, c_th = (0.20, 0.58) if mix == "windbreak" else (0.45, 0.45)  # dooryard = bamboo + fruit, no conifer
-        items: list[Any] = []
-        for _ in range(n):
-            px = random.uniform(-w / 2 + 2, w / 2 - 2)
-            py = random.uniform(-h / 2 + 2, h / 2 - 2)
-            roll = random.random()
-            kind = "bamboo" if roll < b_th else ("conifer" if roll < c_th else "broadleaf")
-            size = random.uniform(1.25, 1.7) if random.random() < 0.25 else random.uniform(0.72, 1.05)  # a few emergent crowns over many small
-            items.append((px, py, kind, size))
-        # ORDER-SENSITIVE: this reads M, so it can only avoid structures that ALREADY EXIST when the
-        # grove is drawn. That is why the yashikirin arms draw after their farmstead's house and why
-        # village_grove() is called late in a gen (see "DRAW ORDER" in CLAUDE.md before moving either).
-        # NO CROWN ON A ROOF OR A WELLHEAD (GM 2026-07-25). A yashikirin belt is drawn hard against the
-        # house it shelters and a village copse threads between the dwellings, so the stand is filtered
-        # tree-by-tree rather than pushed back as a whole: it THINS where it would cover a building and
-        # keeps its shape everywhere else. Crown centers below are relative to (cx, cy); keep-outs absolute.
-        krect, kcirc = self._canopy_keepouts((cx - w / 2 - 9 * bs, cy - h / 2 - 9 * bs, cx + w / 2 + 9 * bs, cy + h / 2 + 9 * bs))
-        drawn: list[tuple[float, float, float]] = []
-        g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
-        # Draw back-to-front so the stand layers with depth. Each CROWN is one tree at real size (~5-6 m; a few
-        # emergents larger) - that is the to-scale reading, and it is unchanged. We deliberately DROP two kinds
-        # of detail that cost ~half the stand's SVG elements without buying scale accuracy: the per-tree trunk
-        # (hidden under the closed canopy anyway), and the 6-culm bamboo clump - a real *take* is DOZENS of
-        # culms, so any handful is already symbolic, and one compact culm+top reads the same. See the foliage
-        # comparison (the 'to scale, compact bamboo' option) for the before/after; groves stay to scale, the
-        # SVG + rsvg raster roughly halve.
-        for px, py, kind, s in sorted(items, key=lambda t: t[1]):
-            if kind == "bamboo":  # one compact culm + leafy top (symbolic, was 6)
-                if self._crown_covers(cx + px, cy + py - 4 * bs, 3.0 * bs, krect, kcirc, self.CANOPY_PAD):
+        # SCOPED (2026-08-08): a homestead grove's crowns are decoration keyed to the grove itself.
+        with self.rng_scope("grove", cx, cy, w, h):
+            bs = self.bscale / 0.82  # render scale relative to the town grain
+            st = random.getstate()
+            random.seed(int(abs(cx) * 5 + abs(cy) * 3 + round(w)))
+            n = max(5, min(28, round(w * h / (bs * bs * 48))))  # ~ one crown per ~48 px^2 at 2 ft/px (a ~5 m crown); ~40 across the 6:1 L-grove
+            b_th, c_th = (0.20, 0.58) if mix == "windbreak" else (0.45, 0.45)  # dooryard = bamboo + fruit, no conifer
+            items: list[Any] = []
+            for _ in range(n):
+                px = random.uniform(-w / 2 + 2, w / 2 - 2)
+                py = random.uniform(-h / 2 + 2, h / 2 - 2)
+                roll = random.random()
+                kind = "bamboo" if roll < b_th else ("conifer" if roll < c_th else "broadleaf")
+                size = random.uniform(1.25, 1.7) if random.random() < 0.25 else random.uniform(0.72, 1.05)  # a few emergent crowns over many small
+                items.append((px, py, kind, size))
+            # ORDER-SENSITIVE: this reads M, so it can only avoid structures that ALREADY EXIST when the
+            # grove is drawn. That is why the yashikirin arms draw after their farmstead's house and why
+            # village_grove() is called late in a gen (see "DRAW ORDER" in CLAUDE.md before moving either).
+            # NO CROWN ON A ROOF OR A WELLHEAD (GM 2026-07-25). A yashikirin belt is drawn hard against the
+            # house it shelters and a village copse threads between the dwellings, so the stand is filtered
+            # tree-by-tree rather than pushed back as a whole: it THINS where it would cover a building and
+            # keeps its shape everywhere else. Crown centers below are relative to (cx, cy); keep-outs absolute.
+            krect, kcirc = self._canopy_keepouts((cx - w / 2 - 9 * bs, cy - h / 2 - 9 * bs, cx + w / 2 + 9 * bs, cy + h / 2 + 9 * bs))
+            drawn: list[tuple[float, float, float]] = []
+            g = [f'<g transform="translate({cx:.0f},{cy:.0f})">']
+            # Draw back-to-front so the stand layers with depth. Each CROWN is one tree at real size (~5-6 m; a few
+            # emergents larger) - that is the to-scale reading, and it is unchanged. We deliberately DROP two kinds
+            # of detail that cost ~half the stand's SVG elements without buying scale accuracy: the per-tree trunk
+            # (hidden under the closed canopy anyway), and the 6-culm bamboo clump - a real *take* is DOZENS of
+            # culms, so any handful is already symbolic, and one compact culm+top reads the same. See the foliage
+            # comparison (the 'to scale, compact bamboo' option) for the before/after; groves stay to scale, the
+            # SVG + rsvg raster roughly halve.
+            for px, py, kind, s in sorted(items, key=lambda t: t[1]):
+                if kind == "bamboo":  # one compact culm + leafy top (symbolic, was 6)
+                    if self._crown_covers(cx + px, cy + py - 4 * bs, 3.0 * bs, krect, kcirc, self.CANOPY_PAD):
+                        continue
+                    drawn.append((cx + px, cy + py - 4 * bs, 3.0 * bs))
+                    g.append(f'<line x1="{px:.1f}" y1="{py + 4 * bs:.1f}" x2="{px:.1f}" y2="{py - 4 * bs:.1f}" stroke="#88A646" stroke-width="{1.4 * bs:.2f}"/>')
+                    g.append(f'<circle cx="{px:.1f}" cy="{py - 4 * bs:.1f}" r="{3.0 * bs:.1f}" fill="#BBD06A"/>')
                     continue
-                drawn.append((cx + px, cy + py - 4 * bs, 3.0 * bs))
-                g.append(f'<line x1="{px:.1f}" y1="{py + 4 * bs:.1f}" x2="{px:.1f}" y2="{py - 4 * bs:.1f}" stroke="#88A646" stroke-width="{1.4 * bs:.2f}"/>')
-                g.append(f'<circle cx="{px:.1f}" cy="{py - 4 * bs:.1f}" r="{3.0 * bs:.1f}" fill="#BBD06A"/>')
-                continue
-            rr = (4.6 if kind == "conifer" else 4.0) * s * bs  # one crown = one tree, sized to a real ~5-6 m canopy
-            col = "#496733" if kind == "conifer" else random.choice(["#7C9A4E", "#6E8B43"])
-            if self._crown_covers(cx + px, cy + py - 3 * bs, rr, krect, kcirc, self.CANOPY_PAD):
-                continue
-            drawn.append((cx + px, cy + py - 3 * bs, rr))
-            g.append(f'<circle cx="{px:.1f}" cy="{py - 3 * bs:.1f}" r="{rr:.1f}" fill="{col}" stroke="#3C5526" stroke-width="0.8"/>')
-            if kind == "conifer":
-                g.append(f'<circle cx="{px:.1f}" cy="{py - 3 * bs:.1f}" r="{rr * 0.4:.1f}" fill="#364D22" opacity="0.55"/>')  # dense dark apex
-        g.append('</g>')
-        self.add(''.join(g))
-        self._record_crowns(drawn)
-        random.setstate(st)
+                rr = (4.6 if kind == "conifer" else 4.0) * s * bs  # one crown = one tree, sized to a real ~5-6 m canopy
+                col = "#496733" if kind == "conifer" else random.choice(["#7C9A4E", "#6E8B43"])
+                if self._crown_covers(cx + px, cy + py - 3 * bs, rr, krect, kcirc, self.CANOPY_PAD):
+                    continue
+                drawn.append((cx + px, cy + py - 3 * bs, rr))
+                g.append(f'<circle cx="{px:.1f}" cy="{py - 3 * bs:.1f}" r="{rr:.1f}" fill="{col}" stroke="#3C5526" stroke-width="0.8"/>')
+                if kind == "conifer":
+                    g.append(f'<circle cx="{px:.1f}" cy="{py - 3 * bs:.1f}" r="{rr * 0.4:.1f}" fill="#364D22" opacity="0.55"/>')  # dense dark apex
+            g.append('</g>')
+            self.add(''.join(g))
+            self._record_crowns(drawn)
+            random.setstate(st)
 
     def village_grove(self, poly: Any, role: str = "windbreak", dense: bool = True) -> int:
         """A COMMUNAL village grove - the Chinese *fengshui* forest (风水林). Unlike the per-house *yashikirin*,
@@ -8617,115 +8686,117 @@ class Settlement:
         also carried the graves + dry hill-crops): settlements.md 'Village windbreak' / back-slope land use. Recorded
         in M['commons']. `role` picks the glyph (woodland / pasture / commons); `avoid` is a list of KEEP-OUT
         polygons (e.g. the hamlet cluster) the scatter stays out of, so ground-cover never creeps onto them."""
-        xs = [p[0] for p in poly]
-        ys = [p[1] for p in poly]
-        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
-        bs = self.bscale
-        area = (x1 - x0) * (y1 - y0)
-        st = random.getstate()
-        random.seed(int(abs(x0) * 7 + abs(y0) * 3 + round(x1 - x0)))
-        feather = 42 * bs  # scrub THINS toward the boundary (a soft, ragged edge, not a hard line)
+        # SCOPED (2026-08-08): the tuft/brush scatter is decoration keyed to the common it fills.
+        with self.rng_scope("commons", len(poly), poly[0][0], poly[0][1]):
+            xs = [p[0] for p in poly]
+            ys = [p[1] for p in poly]
+            x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+            bs = self.bscale
+            area = (x1 - x0) * (y1 - y0)
+            st = random.getstate()
+            random.seed(int(abs(x0) * 7 + abs(y0) * 3 + round(x1 - x0)))
+            feather = 42 * bs  # scrub THINS toward the boundary (a soft, ragged edge, not a hard line)
 
-        pond = self.M.get("pond")
-        halo_rects, halo_circles = self._urban_keepouts((x0, y0, x1, y1))  # the urban-clearance halo (see _urban_keepouts)
-        corridors = self._corridor_buffers(
-            3 * bs
-        )  # lanes AND town streets AND the road: every trodden/maintained tread stays bare (the old skip knew only lanes, so scrub drew on the Imperial Road bed - GM 2026-07-21, Hoshizora)
-        # PRE-BOX every static keep-out ONCE (see boxed_hit): _sparse below runs per SCATTER POINT,
-        # and these lists do not change while a region scatters
-        # INDEXED (2026-08-04): boxing alone dropped the cost per keep-out but still VISITED every
-        # one per scatter point - 948k boxed_hit calls iterating 25M items on Kikuta, whose gen was
-        # still 81% ground cover. The grids narrow each point to its own cell; the exact tests below
-        # are the same ones, run on what `near` returns.
-        fld_b, blk_b = boxed_grid(boxed_polys(self.field_polys)), boxed_grid(boxed_polys(self.block_polys))
-        clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
+            pond = self.M.get("pond")
+            halo_rects, halo_circles = self._urban_keepouts((x0, y0, x1, y1))  # the urban-clearance halo (see _urban_keepouts)
+            corridors = self._corridor_buffers(
+                3 * bs
+            )  # lanes AND town streets AND the road: every trodden/maintained tread stays bare (the old skip knew only lanes, so scrub drew on the Imperial Road bed - GM 2026-07-21, Hoshizora)
+            # PRE-BOX every static keep-out ONCE (see boxed_hit): _sparse below runs per SCATTER POINT,
+            # and these lists do not change while a region scatters
+            # INDEXED (2026-08-04): boxing alone dropped the cost per keep-out but still VISITED every
+            # one per scatter point - 948k boxed_hit calls iterating 25M items on Kikuta, whose gen was
+            # still 81% ground cover. The grids narrow each point to its own cell; the exact tests below
+            # are the same ones, run on what `near` returns.
+            fld_b, blk_b = boxed_grid(boxed_polys(self.field_polys)), boxed_grid(boxed_polys(self.block_polys))
+            clr_b, avd_b, cor_b = boxed_grid(boxed_polys(self.clearings)), boxed_grid(boxed_polys(avoid)), boxed_grid(boxed_segs(corridors))
 
-        def _sparse(
-            px: float, py: float, drop: float
-        ) -> bool:  # skip a scatter point outside the poly, on a field/corridor/water, in the urban halo, in a keep-out, or (probabilistically) near the edge
-            if (
-                not point_in_poly(px, py, poly)
-                or boxed_hit(px, py, fld_b.near(px, py))
-                or boxed_seg_hit(px, py, cor_b.near(px, py))  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
-                or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
-                or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
-                or any(
-                    x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects
-                )  # ... and OUT of the urban-clearance halo: the swept/trodden ground around every structure, not just its footprint
-                or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
-                or boxed_hit(px, py, blk_b.near(px, py))  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
-                or boxed_hit(px, py, clr_b.near(px, py))  # ... and off the swept sacred/funerary verge (tended precinct, sando, grave collar)
-                or boxed_hit(px, py, avd_b.near(px, py))
-            ):  # ... and OUT of any keep-out (the hamlet cluster stays clear of cover)
-                return True
-            ed = edge_dist(px, py, poly)
-            return ed < feather and random.random() > (ed / feather) ** drop
+            def _sparse(
+                px: float, py: float, drop: float
+            ) -> bool:  # skip a scatter point outside the poly, on a field/corridor/water, in the urban halo, in a keep-out, or (probabilistically) near the edge
+                if (
+                    not point_in_poly(px, py, poly)
+                    or boxed_hit(px, py, fld_b.near(px, py))
+                    or boxed_seg_hit(px, py, cor_b.near(px, py))  # keep scrub off every trodden tread (lane/street/road) so no path reads overgrown
+                    or self._on_watercourse(px, py)  # ... and OFF the pond + streams/channels (scrub never draws over open water)
+                    or (pond and ((px - pond[0]) / pond[2]) ** 2 + ((py - pond[1]) / pond[3]) ** 2 <= 1.0)
+                    or any(
+                        x0r <= px <= x1r and y0r <= py <= y1r for x0r, y0r, x1r, y1r in halo_rects
+                    )  # ... and OUT of the urban-clearance halo: the swept/trodden ground around every structure, not just its footprint
+                    or any((px - hx) ** 2 + (py - hy) ** 2 <= hr * hr for hx, hy, hr in halo_circles)  # ... and clear of every wellhead's trodden apron
+                    or boxed_hit(px, py, blk_b.near(px, py))  # ... and OFF any building/shrine/torii footprint (a commons that OVERLAPS the shrine must not scatter scrub over the hall + arch)
+                    or boxed_hit(px, py, clr_b.near(px, py))  # ... and off the swept sacred/funerary verge (tended precinct, sando, grave collar)
+                    or boxed_hit(px, py, avd_b.near(px, py))
+                ):  # ... and OUT of any keep-out (the hamlet cluster stays clear of cover)
+                    return True
+                ed = edge_dist(px, py, poly)
+                return ed < feather and random.random() > (ed / feather) ** drop
 
-        # NO solid fill: a filled polygon always has a crisp geometric EDGE (that read as a rhombus). Each land
-        # type is defined PURELY by its feathered scatter, which thins to nothing at the margin - so the ground
-        # has no boundary at all, just its cover petering out onto the open slope. THREE distinct looks so land
-        # types read apart at a glance (the GM's rule - grass and woods must NOT look the same):
-        #   role="woodland"  -> a COPPICE WOOD: individual, spaced tree CROWNS, an OPEN canopy (gaps show) - the
-        #                       upland/ridge wood the hamlet coppices. Clearly TREES, but lighter and more open
-        #                       than the dense DARK closed-canopy fengshui village grove (they stay distinct too).
-        #   role="pasture"   -> OPEN GRAZING GRASS: grass tufts + the odd brush dot, NO trees at all - reads as
-        #                       open pasture, unmistakably NOT woodland.
-        #   role="commons"/"grazing" (default) -> the cut-over fuel/fodder scrub: grass + a FEW scraggly pines.
-        # SVG-size: the grass BLADES are ~98% of a to-scale map's <line> elements and all share ONE constant
-        # style, so they go in a bucket emitted ONCE inside a styled <g> (bare coords per line), not one full
-        # stroke=...stroke-width=... string each - ~30% off the file, content-lossless (same lines, grouped),
-        # render is visually identical (only the z-order of overlapping scrub texture shifts, in the margins;
-        # the fields/buildings are pixel-identical). The sparse dots/pines keep their inline styles.
-        g: list[str] = []
-        blades: list[str] = []
-        if role == "woodland":
-            for _ in range(int(area / (540 * bs * bs))):  # spaced crowns: an OPEN coppice canopy, gaps showing
-                cx, cy = random.uniform(x0, x1), random.uniform(y0, y1)
-                if _sparse(cx, cy, 0.6):
-                    continue
-                r = random.uniform(6.5, 11.5) * bs
-                col = random.choice(("#6E8B4A", "#7C9856", "#87A45C"))
-                g.append(f'<ellipse cx="{cx:.1f}" cy="{cy + 2 * bs:.1f}" rx="{r:.1f}" ry="{r * 0.72:.1f}" fill="#59703E" fill-opacity="0.30"/>')  # soft ground shadow
-                g.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{col}" stroke="#4C6234" stroke-width="0.7"/>')  # the crown
-                g.append(f'<circle cx="{cx - r * 0.32:.1f}" cy="{cy - r * 0.32:.1f}" r="{r * 0.42:.1f}" fill="#A6BA79" fill-opacity="0.55"/>')  # sun highlight
-        else:
-            for _ in range(int(area / (74 * bs * bs))):  # coarse grass tufts + the odd low brush dot
-                gx, gy = random.uniform(x0, x1), random.uniform(y0, y1)
-                if _sparse(gx, gy, 0.7):
-                    continue
-                if random.random() < 0.14:  # a low brush dot
-                    g.append(f'<circle cx="{gx:.1f}" cy="{gy:.1f}" r="{random.uniform(1.5, 2.4) * bs:.1f}" fill="#94A063" fill-opacity="0.85"/>')
-                else:  # a grass tuft: a few short diverging blades (bucketed - see the note at `blades`)
-                    for _ in range(3):
-                        a, bl = random.uniform(-0.45, 0.45), random.uniform(2.4, 4.2) * bs
-                        blades.append(f'<line x1="{gx:.1f}" y1="{gy:.1f}" x2="{gx + math.sin(a) * bl:.1f}" y2="{gy - math.cos(a) * bl:.1f}"/>')
-            if role != "pasture":  # the SCRAGGLY pines belong to cut-over scrub, NOT to open pasture
-                for _ in range(max(2, int(area / (6000 * bs * bs)))):  # a few SCRAGGLY hill pines (sparse, individual, open)
-                    px, py = random.uniform(x0 + 6, x1 - 6), random.uniform(y0 + 6, y1 - 6)
-                    if _sparse(px, py, 0.5):
+            # NO solid fill: a filled polygon always has a crisp geometric EDGE (that read as a rhombus). Each land
+            # type is defined PURELY by its feathered scatter, which thins to nothing at the margin - so the ground
+            # has no boundary at all, just its cover petering out onto the open slope. THREE distinct looks so land
+            # types read apart at a glance (the GM's rule - grass and woods must NOT look the same):
+            #   role="woodland"  -> a COPPICE WOOD: individual, spaced tree CROWNS, an OPEN canopy (gaps show) - the
+            #                       upland/ridge wood the hamlet coppices. Clearly TREES, but lighter and more open
+            #                       than the dense DARK closed-canopy fengshui village grove (they stay distinct too).
+            #   role="pasture"   -> OPEN GRAZING GRASS: grass tufts + the odd brush dot, NO trees at all - reads as
+            #                       open pasture, unmistakably NOT woodland.
+            #   role="commons"/"grazing" (default) -> the cut-over fuel/fodder scrub: grass + a FEW scraggly pines.
+            # SVG-size: the grass BLADES are ~98% of a to-scale map's <line> elements and all share ONE constant
+            # style, so they go in a bucket emitted ONCE inside a styled <g> (bare coords per line), not one full
+            # stroke=...stroke-width=... string each - ~30% off the file, content-lossless (same lines, grouped),
+            # render is visually identical (only the z-order of overlapping scrub texture shifts, in the margins;
+            # the fields/buildings are pixel-identical). The sparse dots/pines keep their inline styles.
+            g: list[str] = []
+            blades: list[str] = []
+            if role == "woodland":
+                for _ in range(int(area / (540 * bs * bs))):  # spaced crowns: an OPEN coppice canopy, gaps showing
+                    cx, cy = random.uniform(x0, x1), random.uniform(y0, y1)
+                    if _sparse(cx, cy, 0.6):
                         continue
-                    th = random.uniform(9, 14) * bs
-                    g.append(f'<line x1="{px:.1f}" y1="{py:.1f}" x2="{px:.1f}" y2="{py - th:.1f}" stroke="#7A6A48" stroke-width="{1.1 * bs:.1f}"/>')  # thin trunk
-                    for k in range(3):  # sparse open branches - a scraggly wind-cropped pine, NOT a dense crown
-                        ly, sp = py - th * (0.45 + 0.25 * k), (3.6 - k) * bs
-                        g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px - sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
-                        g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px + sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
-        self.add(f'<g stroke="#A7A860" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
-        self.add(''.join(g))
-        random.setstate(st)
-        self._cover_n += 1
-        self.M["commons"].append(
-            {
-                "x": round((x0 + x1) / 2, 1),
-                "y": round((y0 + y1) / 2, 1),
-                "w": round(x1 - x0, 1),
-                "h": round(y1 - y0, 1),
-                "rot": 0,
-                "role": role,
-                "seq": self._cover_n,
-                "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
-            }
-        )
+                    r = random.uniform(6.5, 11.5) * bs
+                    col = random.choice(("#6E8B4A", "#7C9856", "#87A45C"))
+                    g.append(f'<ellipse cx="{cx:.1f}" cy="{cy + 2 * bs:.1f}" rx="{r:.1f}" ry="{r * 0.72:.1f}" fill="#59703E" fill-opacity="0.30"/>')  # soft ground shadow
+                    g.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{col}" stroke="#4C6234" stroke-width="0.7"/>')  # the crown
+                    g.append(f'<circle cx="{cx - r * 0.32:.1f}" cy="{cy - r * 0.32:.1f}" r="{r * 0.42:.1f}" fill="#A6BA79" fill-opacity="0.55"/>')  # sun highlight
+            else:
+                for _ in range(int(area / (74 * bs * bs))):  # coarse grass tufts + the odd low brush dot
+                    gx, gy = random.uniform(x0, x1), random.uniform(y0, y1)
+                    if _sparse(gx, gy, 0.7):
+                        continue
+                    if random.random() < 0.14:  # a low brush dot
+                        g.append(f'<circle cx="{gx:.1f}" cy="{gy:.1f}" r="{random.uniform(1.5, 2.4) * bs:.1f}" fill="#94A063" fill-opacity="0.85"/>')
+                    else:  # a grass tuft: a few short diverging blades (bucketed - see the note at `blades`)
+                        for _ in range(3):
+                            a, bl = random.uniform(-0.45, 0.45), random.uniform(2.4, 4.2) * bs
+                            blades.append(f'<line x1="{gx:.1f}" y1="{gy:.1f}" x2="{gx + math.sin(a) * bl:.1f}" y2="{gy - math.cos(a) * bl:.1f}"/>')
+                if role != "pasture":  # the SCRAGGLY pines belong to cut-over scrub, NOT to open pasture
+                    for _ in range(max(2, int(area / (6000 * bs * bs)))):  # a few SCRAGGLY hill pines (sparse, individual, open)
+                        px, py = random.uniform(x0 + 6, x1 - 6), random.uniform(y0 + 6, y1 - 6)
+                        if _sparse(px, py, 0.5):
+                            continue
+                        th = random.uniform(9, 14) * bs
+                        g.append(f'<line x1="{px:.1f}" y1="{py:.1f}" x2="{px:.1f}" y2="{py - th:.1f}" stroke="#7A6A48" stroke-width="{1.1 * bs:.1f}"/>')  # thin trunk
+                        for k in range(3):  # sparse open branches - a scraggly wind-cropped pine, NOT a dense crown
+                            ly, sp = py - th * (0.45 + 0.25 * k), (3.6 - k) * bs
+                            g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px - sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
+                            g.append(f'<line x1="{px:.1f}" y1="{ly:.1f}" x2="{px + sp:.1f}" y2="{ly + 2 * bs:.1f}" stroke="#6E8452" stroke-width="{1.0 * bs:.1f}"/>')
+            self.add(f'<g stroke="#A7A860" stroke-width="0.8">{"".join(blades)}</g>')  # bucketed blades (empty group when none - harmless)
+            self.add(''.join(g))
+            random.setstate(st)
+            self._cover_n += 1
+            self.M["commons"].append(
+                {
+                    "x": round((x0 + x1) / 2, 1),
+                    "y": round((y0 + y1) / 2, 1),
+                    "w": round(x1 - x0, 1),
+                    "h": round(y1 - y0, 1),
+                    "rot": 0,
+                    "role": role,
+                    "seq": self._cover_n,
+                    "poly": [[round(px, 1), round(py, 1)] for px, py in poly],
+                }
+            )
 
     def marsh(self, poly: Any, role: str = "toe", avoid: Any = ()) -> None:
         """REED MARSH / WET MEADOW - wet reed ground drawn WET and SPARSE, FEATHERED to nothing at the margin like
@@ -11815,21 +11886,25 @@ class Settlement:
         """A bounded copse (organic polygon), as opposed to forest() which fills to the canvas edge.
         Same stand of INDIVIDUAL TREES (see _tree_stand), just a closed one - so it is framed whole,
         because unlike a canvas-filling wood its SHAPE is the feature. Blocks houses; deterministic."""
-        outline = organic_poly(base, 22)
-        sm = smooth_points(outline)
-        xs = [p[0] for p in sm]
-        ys = [p[1] for p in sm]
-        # the litter floor shrinks toward the copse's center by a crown's width, so its edge sits
-        # under the canopy (see _tree_stand: the crowns are what the copse's outline is made of)
-        ccx, ccy = sum(xs) / len(xs), sum(ys) / len(ys)
-        apo = min(math.hypot(x - ccx, y - ccy) for x, y in sm)
-        k = max(0.35, 1 - self.px(self.CANOPY_R_FT) / max(apo, 1.0))
-        self._tree_stand(sm, seed=12, floor=[(ccx + (x - ccx) * k, ccy + (y - ccy) * k) for x, y in sm])
-        self.block_polys.append(sm)
-        self.M["forest_patches"].append([[round(x, 1), round(y, 1)] for x, y in sm])
-        if label:
-            lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
-            self.label(lx, ly, label, 12, italic=True, weight="bold", color="#3E5631")
+        # SCOPED (2026-08-08): the copse OUTLINE is stream-drawn (organic_poly), and its SHAPE is the
+        # feature - so an upstream change reshaped the wood and moved every tree in it. Keyed on the
+        # base polygon the GM placed it on, which is the thing that should decide how it looks.
+        with self.rng_scope("forest_patch", len(base), base[0][0], base[0][1]):
+            outline = organic_poly(base, 22)
+            sm = smooth_points(outline)
+            xs = [p[0] for p in sm]
+            ys = [p[1] for p in sm]
+            # the litter floor shrinks toward the copse's center by a crown's width, so its edge sits
+            # under the canopy (see _tree_stand: the crowns are what the copse's outline is made of)
+            ccx, ccy = sum(xs) / len(xs), sum(ys) / len(ys)
+            apo = min(math.hypot(x - ccx, y - ccy) for x, y in sm)
+            k = max(0.35, 1 - self.px(self.CANOPY_R_FT) / max(apo, 1.0))
+            self._tree_stand(sm, seed=12, floor=[(ccx + (x - ccx) * k, ccy + (y - ccy) * k) for x, y in sm])
+            self.block_polys.append(sm)
+            self.M["forest_patches"].append([[round(x, 1), round(y, 1)] for x, y in sm])
+            if label:
+                lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
+                self.label(lx, ly, label, 12, italic=True, weight="bold", color="#3E5631")
 
     def wall(self, pts: Any, gate: Any = None, label: Any = None, guardtower: bool = True) -> None:
         """An irregular town rampart (thick polyline; may be an open arc anchored to a
@@ -11914,8 +11989,12 @@ class Settlement:
 
     # ---- houses
     def house(self, cx: float, cy: float, w: float, h: float, kind: str = "plain", rot: float = 0, shed: bool = False, shed_side: str = "W") -> None:
+        # POSITION-SEEDED (2026-08-08). A house's wall colour is a property of the house, and this
+        # was the single most-executed stream draw in the engine - one per house, on every map - so
+        # it moved the whole sequence for everything drawn afterwards.
+        _plain = ('#C6AC76', '#BEA26C', '#C2A672', '#B89A62')
         pal = {
-            "plain": (random.choice(['#C6AC76', '#BEA26C', '#C2A672', '#B89A62']), '#A98C58', '#5A4326'),
+            "plain": (_plain[int(self._hjit(cx, cy, 13.0) * len(_plain))], '#A98C58', '#5A4326'),
             "big": ('#CFAB64', '#B08C4C', '#4E3A1E'),
             "abandoned": ('#B4AC96', '#9A917A', '#7A7058'),
         }
@@ -12128,81 +12207,86 @@ class Settlement:
         interior, the real ura-dana pattern). Sits against the fronted street (skips that
         street's own corridor - pass skip=<registered poly> when fronting a sub-stretch of a
         longer road) but respects walls, other streets, fields, and collisions."""
-        skip = skip if skip is not None else street
-        items = list(items)
-        seg = [math.hypot(street[i + 1][0] - street[i][0], street[i + 1][1] - street[i][1]) for i in range(len(street) - 1)]
-        total = sum(seg)
-        sh = width / 2
+        # SCOPED (2026-08-08): the per-building rot jitter below was the LAST root cause of a town
+        # re-rolling. Its seats were already stable once pack was scoped, but a different rake gives a
+        # different footprint, which changes what fits beside it - and the cascade ran through every
+        # house, well, garden and crown on the map. Keyed on the street run it fronts.
+        with self.rng_scope("frontage", len(street), street[0][0], street[0][1], street[-1][0], street[-1][1]):
+            skip = skip if skip is not None else street
+            items = list(items)
+            seg = [math.hypot(street[i + 1][0] - street[i][0], street[i + 1][1] - street[i][1]) for i in range(len(street) - 1)]
+            total = sum(seg)
+            sh = width / 2
 
-        def at(d: float) -> tuple[float, float, float, float]:
-            acc: float = 0
-            for i, sl in enumerate(seg):
-                if sl and acc + sl >= d:
-                    f = (d - acc) / sl
-                    return (
-                        street[i][0] + (street[i + 1][0] - street[i][0]) * f,
-                        street[i][1] + (street[i + 1][1] - street[i][1]) * f,
-                        (street[i + 1][0] - street[i][0]) / sl,
-                        (street[i + 1][1] - street[i][1]) / sl,
-                    )
-                acc += sl
-            i = len(seg) - 1  # pragma: no cover
-            sl = seg[i] or 1  # pragma: no cover
-            return (
-                street[-1][0],
-                street[-1][1],
-                (street[-1][0] - street[-2][0]) / sl,  # pragma: no cover
-                (street[-1][1] - street[-2][1]) / sl,
-            )  # defensive: while-guard keeps d < total, so a segment always matches
+            def at(d: float) -> tuple[float, float, float, float]:
+                acc: float = 0
+                for i, sl in enumerate(seg):
+                    if sl and acc + sl >= d:
+                        f = (d - acc) / sl
+                        return (
+                            street[i][0] + (street[i + 1][0] - street[i][0]) * f,
+                            street[i][1] + (street[i + 1][1] - street[i][1]) * f,
+                            (street[i + 1][0] - street[i][0]) / sl,
+                            (street[i + 1][1] - street[i][1]) / sl,
+                        )
+                    acc += sl
+                i = len(seg) - 1  # pragma: no cover
+                sl = seg[i] or 1  # pragma: no cover
+                return (
+                    street[-1][0],
+                    street[-1][1],
+                    (street[-1][0] - street[-2][0]) / sl,  # pragma: no cover
+                    (street[-1][1] - street[-2][1]) / sl,
+                )  # defensive: while-guard keeps d < total, so a segment always matches
 
-        placed = 0
-        row: list[tuple[float, float, float, float]] = []
-        d = spacing * 0.55
-        sides = [1, -1] if both else [1]
-        while d < total and items:
-            x, y, tx, ty = at(d)
-            for s in sides:
-                nx, ny = -ty * s, tx * s  # outward normal (street -> building)
-                base_rot = math.degrees(math.atan2(nx, -ny))  # frontage faces the street
-                depth = sh + setback
-                for ri in range(rows):
-                    if not items:
-                        break
-                    kind = items[0]
-                    w, h = self._dims(kind)
-                    off = depth + h / 2
-                    bx, by = x + nx * off, y + ny * off
-                    # rear rows flip 180: back-to-back with the row ahead, door onto the
-                    # back lane - never into the front row's rear wall. building() may REFUSE
-                    # the seat (a commoner unit inside a samurai ward); the station then ends
-                    # its rows there, exactly as an unfit seat does.
-                    if self._fits(bx, by, w, h, skip=skip) and self.building(bx, by, w, h, kind, base_rot + (180 if ri % 2 else 0) + random.uniform(-jitter, jitter)):
-                        row.append((bx - w / 2, by - h / 2, bx + w / 2, by + h / 2))
-                        items.pop(0)
-                        placed += 1
-                        depth = off + h / 2 + rowgap  # next row sits behind this one
-                    else:
-                        break
-            d += spacing
-        # the row's own extent, for `place_caption` - a market row is captioned as ONE feature, and
-        # asking the gen script to hand-copy the bounding numbers is how a caption drifts off its
-        # subject when the row is later re-laid (which is exactly what happened to Tango's two
-        # "gate market" captions). Cleared when nothing was placed, so a stale box can never be read.
-        self.frontage_box = (min(b[0] for b in row), min(b[1] for b in row), max(b[2] for b in row), max(b[3] for b in row)) if row else None
-        # ...and the row's AXIS, for a caption that names the RUN rather than one shopfront
-        # (`s.label(..., rot=s.frontage_rot, linear=True)`; GM 2026-08-08, "merchant houses &
-        # shops" set level over storefronts that each tilt to a -27deg road). A frontage row has no
-        # rotation of its own - it IS the street it fronts - so the axis is the street's tangent at
-        # the run's arc-length midpoint, read from the street rather than hand-copied off it, which
-        # is the same reason `frontage_box` exists. `linear`, because a row of shopfronts is a LINE.
-        if row:
-            tan_ = at(total / 2)
-            self.frontage_rot = math.degrees(math.atan2(tan_[3], tan_[2]))
-        else:
-            self.frontage_rot = 0.0
-        if not fill:
-            self._shortfall("frontage", (street[0], street[-1]), placed, items)
-        return placed
+            placed = 0
+            row: list[tuple[float, float, float, float]] = []
+            d = spacing * 0.55
+            sides = [1, -1] if both else [1]
+            while d < total and items:
+                x, y, tx, ty = at(d)
+                for s in sides:
+                    nx, ny = -ty * s, tx * s  # outward normal (street -> building)
+                    base_rot = math.degrees(math.atan2(nx, -ny))  # frontage faces the street
+                    depth = sh + setback
+                    for ri in range(rows):
+                        if not items:
+                            break
+                        kind = items[0]
+                        w, h = self._dims(kind)
+                        off = depth + h / 2
+                        bx, by = x + nx * off, y + ny * off
+                        # rear rows flip 180: back-to-back with the row ahead, door onto the
+                        # back lane - never into the front row's rear wall. building() may REFUSE
+                        # the seat (a commoner unit inside a samurai ward); the station then ends
+                        # its rows there, exactly as an unfit seat does.
+                        if self._fits(bx, by, w, h, skip=skip) and self.building(bx, by, w, h, kind, base_rot + (180 if ri % 2 else 0) + random.uniform(-jitter, jitter)):
+                            row.append((bx - w / 2, by - h / 2, bx + w / 2, by + h / 2))
+                            items.pop(0)
+                            placed += 1
+                            depth = off + h / 2 + rowgap  # next row sits behind this one
+                        else:
+                            break
+                d += spacing
+            # the row's own extent, for `place_caption` - a market row is captioned as ONE feature, and
+            # asking the gen script to hand-copy the bounding numbers is how a caption drifts off its
+            # subject when the row is later re-laid (which is exactly what happened to Tango's two
+            # "gate market" captions). Cleared when nothing was placed, so a stale box can never be read.
+            self.frontage_box = (min(b[0] for b in row), min(b[1] for b in row), max(b[2] for b in row), max(b[3] for b in row)) if row else None
+            # ...and the row's AXIS, for a caption that names the RUN rather than one shopfront
+            # (`s.label(..., rot=s.frontage_rot, linear=True)`; GM 2026-08-08, "merchant houses &
+            # shops" set level over storefronts that each tilt to a -27deg road). A frontage row has no
+            # rotation of its own - it IS the street it fronts - so the axis is the street's tangent at
+            # the run's arc-length midpoint, read from the street rather than hand-copied off it, which
+            # is the same reason `frontage_box` exists. `linear`, because a row of shopfronts is a LINE.
+            if row:
+                tan_ = at(total / 2)
+                self.frontage_rot = math.degrees(math.atan2(tan_[3], tan_[2]))
+            else:
+                self.frontage_rot = 0.0
+            if not fill:
+                self._shortfall("frontage", (street[0], street[-1]), placed, items)
+            return placed
 
     @staticmethod
     def _hjit(x: float, y: float, salt: float) -> float:
@@ -12258,7 +12342,10 @@ class Settlement:
             if not self._fits(x, y, w, h):
                 return False
             self.placed.append((x, y, w, h))
-            rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": random.uniform(-5, 5), "role": role, "shed": False, "wealth": 1.0}
+            # POSITION-SEEDED, not a stream draw (2026-08-08): a farmhouse's rake is a property of
+            # the house, not of how many houses preceded it. See _hjit - "so it never ripples other
+            # placement or household counts" - which is the convention this line was missing.
+            rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": self._hjit(x, y, 11.0) * 10.0 - 5.0, "role": role, "shed": False, "wealth": 1.0}
             self.M["houses"].append(rec)
             self._pending_farmsteads.append(rec)
             return True
@@ -12300,7 +12387,19 @@ class Settlement:
             return False
         cx, cy, geom = spot
         self.placed.append(geom["bbox"])  # reserve the whole homestead footprint as one rect
-        rec = {"x": cx, "y": cy, "w": hw, "h": hh, "kind": kind, "rot": random.uniform(-5, 5), "role": role, "shed": _shed, "shed_side": "N", "wealth": wf, "geom": geom}
+        rec = {
+            "x": cx,
+            "y": cy,
+            "w": hw,
+            "h": hh,
+            "kind": kind,
+            "rot": self._hjit(cx, cy, 11.0) * 10.0 - 5.0,
+            "role": role,
+            "shed": _shed,
+            "shed_side": "N",
+            "wealth": wf,
+            "geom": geom,
+        }  # rot position-seeded, like _shed above
         self.M["houses"].append(rec)
         self._pending_farmsteads.append(rec)
         return True
@@ -12317,8 +12416,12 @@ class Settlement:
         w, h = bw * self.bscale, bh * self.bscale
         if not self._fits(x, y, w, h):
             return False
-        rot = random.uniform(-5, 5)
-        shed = random.random() < 0.3
+        # BOTH position-seeded (2026-08-08). The bundle path already rolled its kura off _hjit at
+        # the same 3.0 salt; this path drew from the stream, so an upstream change that consumed one
+        # extra random number silently re-rolled every legacy farmhouse's rake AND which of them had
+        # a storehouse - measured as the entire manifest drift of a hamlet (2 keys of 63).
+        rot = self._hjit(x, y, 11.0) * 10.0 - 5.0
+        shed = self._hjit(x, y, 3.0) < 0.3
         self.placed.append((x, y, w, h))
         rec = {"x": x, "y": y, "w": w, "h": h, "kind": kind, "rot": rot, "role": role, "shed": shed, "wealth": wf}
         self.M["houses"].append(rec)
@@ -13325,9 +13428,12 @@ class Settlement:
     def farmsteads(self) -> int:
         """Draw every farmstead. The to-scale tiers (villages/hamlets/towns) draw the reserved homestead
         BUNDLES; cities use the shipped house-first path. Call LAST in the gen so every obstacle is known. Returns the farmhouse count."""
-        if self._toscale():
-            return self._farmsteads_bundle()
-        return self._farmsteads_legacy()
+        with self.rng_scope("farmsteads"):
+            # ONE scope for the whole rural flush: yards, gardens, groves and kura sides are one
+            # phase, and splitting them would only make a change to one perturb the others.
+            if self._toscale():
+                return self._farmsteads_bundle()
+            return self._farmsteads_legacy()
 
     def _farmsteads_bundle(self) -> int:
         """Draw every reserved homestead bundle: grove (back) -> yard -> garden -> house (on top). The hard
@@ -13577,35 +13683,46 @@ class Settlement:
 
     def ring(self, shape: Any, n: int, gap: float, kinds: Any, max_big: int = 4) -> None:
         """Ring a field with houses. shape: bbox tuple, or ('poly', smoothed_outline)."""
-        cand = self._perim_poly(shape[1], n, gap) if isinstance(shape, tuple) and shape and shape[0] == 'poly' else self._perim_bbox(shape, n, gap)
-        # A ring farm must REACH the field it rings without crossing a ROAD (drives
-        # farmsteads_reach_their_fields_unsevered; hoshizora's lone south-of-road farmhouse inside
-        # the merchant block, GM 2026-08-02). ROADS only - a stream is crossed by footbridges (the
-        # NW-bank farms are deliberate) and lanes/streets are village grain. FAMILY: association/
-        # reach, deliberately center-based - the question is which side of the highway the steading
-        # lives on, not a clearance. Reads the same M["roads"] record as the check. The severed
-        # test runs AFTER random.choice below, so maps with no severed candidates keep an
-        # identical RNG stream and re-roll nothing.
-        outline = shape[1] if isinstance(shape, tuple) and shape and shape[0] == 'poly' else [(shape[0], shape[1]), (shape[2], shape[1]), (shape[2], shape[3]), (shape[0], shape[3])]
-        ring_roads = [r["pts"] for r in self.M.get("roads", [])]
+        # SCOPED (2026-08-08): _perim_bbox / _perim_poly jitter the ring's candidate SEATS from the
+        # stream, so an upstream change moved every farmhouse a town rings its fields with - and the
+        # yards, gardens, sheds and groves that hang off them. Keyed on the shape being ringed.
+        with self.rng_scope("ring", *(shape[1][0] if isinstance(shape, tuple) and shape and shape[0] == "poly" else shape)):
+            cand = self._perim_poly(shape[1], n, gap) if isinstance(shape, tuple) and shape and shape[0] == 'poly' else self._perim_bbox(shape, n, gap)
+            # A ring farm must REACH the field it rings without crossing a ROAD (drives
+            # farmsteads_reach_their_fields_unsevered; hoshizora's lone south-of-road farmhouse inside
+            # the merchant block, GM 2026-08-02). ROADS only - a stream is crossed by footbridges (the
+            # NW-bank farms are deliberate) and lanes/streets are village grain. FAMILY: association/
+            # reach, deliberately center-based - the question is which side of the highway the steading
+            # lives on, not a clearance. Reads the same M["roads"] record as the check.
+            outline = shape[1] if isinstance(shape, tuple) and shape and shape[0] == 'poly' else [(shape[0], shape[1]), (shape[2], shape[1]), (shape[2], shape[3]), (shape[0], shape[3])]
+            ring_roads = [r["pts"] for r in self.M.get("roads", [])]
 
-        def _severed(hx: float, hy: float) -> bool:
-            px, py = min(outline, key=lambda p: (p[0] - hx) ** 2 + (p[1] - hy) ** 2)
-            return any(segments_cross((hx, hy), (px, py), rp[i], rp[i + 1]) for rp in ring_roads for i in range(len(rp) - 1))
+            def _severed(hx: float, hy: float) -> bool:
+                px, py = min(outline, key=lambda p: (p[0] - hx) ** 2 + (p[1] - hy) ** 2)
+                return any(segments_cross((hx, hy), (px, py), rp[i], rp[i + 1]) for rp in ring_roads for i in range(len(rp) - 1))
 
-        for x, y in cand:
-            k = random.choice(kinds)
-            if ring_roads and _severed(x, y):
-                continue
-            if k == "big":
-                if self._nbig >= max_big:
-                    k = "plain"
-                else:
-                    self._nbig += 1
-            if not self.try_place(x, y, k) and k == "big":
-                self._nbig -= 1
+            for x, y in cand:
+                # POSITION-SEEDED, not a stream draw (2026-08-08). This one line was the whole reason a
+                # town re-rolled when something unrelated changed upstream: the kind decides the
+                # footprint, the footprint decides whether the homestead fits, and one different fit
+                # cascades into every house, garden, yard, grove, well and tree crown on the map (13 of
+                # hoshizora's 71 manifest keys, from ONE extra random draw at the top of the gen). Drawn
+                # off the position, the ring is a function of where the field is, full stop. The ordering
+                # note that used to sit above - keep the severed test AFTER this draw so the stream stays
+                # identical - is moot now and has been deleted rather than maintained.
+                k = kinds[int(self._hjit(x, y, 7.0) * len(kinds))]
+                if ring_roads and _severed(x, y):
+                    continue
+                if k == "big":
+                    if self._nbig >= max_big:
+                        k = "plain"
+                    else:
+                        self._nbig += 1
+                if not self.try_place(x, y, k) and k == "big":
+                    self._nbig -= 1
 
-    # ---- annotation
+        # ---- annotation
+
     def _record_label(self, x: float, y: float, text: str, size: float, anchor: str, z: int, ref: Sequence[float] | None = None, rot: float = 0.0) -> None:
         w = len(text) * size * 0.55  # rough serif advance; slightly generous so near-misses flag
         x0 = x - w / 2 if anchor == "middle" else (x - w if anchor == "end" else x)

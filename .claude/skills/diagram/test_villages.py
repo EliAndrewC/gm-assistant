@@ -71,6 +71,49 @@ GEN_TIME_BUDGETS = {
 }
 
 
+def test_a_map_is_immune_to_an_upstream_change_in_the_number_of_random_draws():
+    """THE RATCHET for positional/scoped randomness (GM 2026-08-08).
+
+    Generate one map twice - the second time with ONE extra `random.random()` consumed at `meta()`,
+    which is what any upstream change that draws differently amounts to - and demand a byte-identical
+    manifest. Before the discipline landed this moved 13 of a town's 71 manifest keys, including
+    houses, wells, gardens, groves and 2,754 tree crowns; the visible cost was a farm shed drawn on a
+    garden 700 px from anything that had changed.
+
+    A TOWN is the subject because it exercises both mechanisms at once: position-seeded attributes
+    (a house's rake, its wall colour, its kura) and scoped phases (ring, pack, frontage, pasture,
+    grove, wells, farmsteads). Hamlets pass on the attributes alone, so they would not hold the line.
+    """
+    import random
+
+    import settlement
+
+    gen = os.path.join(os.path.dirname(__file__), "pool", "towns", "hoshizora.gen.py")
+
+    def once(perturb):
+        orig = settlement.Settlement.meta
+
+        def patched(self, *a, **kw):
+            r = orig(self, *a, **kw)
+            for _ in range(perturb):
+                random.random()
+            return r
+
+        settlement.Settlement.meta = patched
+        os.environ["DIAGRAM_SKIP_RENDER"] = "1"
+        try:
+            runpy.run_path(gen, run_name="__main__")
+        finally:
+            settlement.Settlement.meta = orig
+            del os.environ["DIAGRAM_SKIP_RENDER"]
+        with open(gen[: -len(".gen.py")] + ".json") as fh:
+            return fh.read()
+
+    clean = once(0)
+    assert once(1) == clean, "an upstream change in the number of random draws re-rolled the map - see CLAUDE.md 'RANDOMNESS IS POSITIONAL OR SCOPED'"
+    assert once(0) == clean  # ...and leave the committed manifest as the unperturbed run wrote it
+
+
 def _regen_and_gate(gen):
     """Run a village generator, then its gate; return True if every check passes.
     Runs the generator IN-PROCESS (not as a subprocess) so coverage measures settlement.py.
