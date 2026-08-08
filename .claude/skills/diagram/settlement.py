@@ -1623,6 +1623,16 @@ PUNISHMENT_SPOT_FT = (30.0, 12.0)  # the cangue frame + post + kneeling stone, t
 BOUNDARY_MARKER_FT = 3.0  # a real roadside dosojin stone (drawn as a marker - see BOUNDARY_MARKER_MIN_PX)
 
 
+#: The scales that draw as a WALLED URBAN RING at the city grain. A domain capital is a bigger
+#: city, not a different kind of thing: it wants the same execution-ground sizing, the same
+#: in-wall grove suppression, the same street widths and the same walled-ring paddy handling. So
+#: the tier predicates are WIDENED rather than forked (feature 019) - the opposite of what
+#: citybudget does for the BUDGET, and for the opposite reason: there a shared path risked
+#: repricing shipped cities, here the shared behavior is simply the correct behavior and
+#: duplicating it would fork the drawing vocabulary.
+CITY_TIER_SCALES = ("city", "capital")
+
+
 def execution_ground_ft(scale: str) -> tuple[float, float]:
     """Tier footprint of an execution ground in REAL FEET, scaled down from the Suzugamori anchor
     (74 x 16.2 m serving Edo) by execution volume - see settlements.md "Execution ground".
@@ -1630,7 +1640,7 @@ def execution_ground_ft(scale: str) -> tuple[float, float]:
     SHARED DATA, deliberately: Settlement.execution_ground draws from this, and site_justice.py
     sizes its trial placements from it, so a tool proposing a seat can never disagree with the
     engine about how big the thing it is seating actually is."""
-    return (100.0, 60.0) if scale == "city" else (60.0, 60.0)
+    return (100.0, 60.0) if scale in CITY_TIER_SCALES else (60.0, 60.0)
 
 
 BOUNDARY_MARKER_MIN_PX = 7.0
@@ -3162,7 +3172,7 @@ class Settlement:
     _PADDY_GRAVE_KINDS = ("valley_paddy", "contour_terraces", "ribbon_valley")
 
     def _paddy_features(self, net: dict[str, Any]) -> None:
-        if self.M.get("meta", {}).get("scale") in ("town", "city"):
+        if self.M.get("meta", {}).get("scale") in ("town", *CITY_TIER_SCALES):
             # the in-field flourishes (low-pocket pond, rock outcrop, rare grave island) are VILLAGE-scale
             # features from the feature-012 archetype matrix. On a town/city map the combs are a SLICE of
             # county farmland, and at the 1 ft/px grain the glyphs read literally - the GM read the grave
@@ -9049,7 +9059,7 @@ class Settlement:
         pond = self.M.get("pond")
         hill = self.M.get("hill")
         wall = self.M.get("wall")
-        walled_city = self.M.get("meta", {}).get("scale") == "city" and wall is not None and len(wall) >= 3
+        walled_city = self.M.get("meta", {}).get("scale") in CITY_TIER_SCALES and wall is not None and len(wall) >= 3
         grove_polys = [
             g["poly"] for g in self.M.get("village_groves", []) if g.get("poly") and len(g["poly"]) >= 3
         ]  # keep cropland off the windbreak/copse belts (a grove is committed non-arable cover; call this AFTER the groves)
@@ -9175,7 +9185,7 @@ class Settlement:
         pond = self.M.get("pond")
         hill = self.M.get("hill")
         wall = self.M.get("wall")
-        walled_city = self.M.get("meta", {}).get("scale") == "city" and wall is not None and len(wall) >= 3
+        walled_city = self.M.get("meta", {}).get("scale") in CITY_TIER_SCALES and wall is not None and len(wall) >= 3
         streams = [s["poly"] for s in self.M.get("streams", []) if s.get("poly") and len(s["poly"]) >= 2]
         moat = self.M.get("moat")  # a city moat is a reservoir: paddy CAN be moat-fed via a short intake channel
         moat_feed = bool(walled_city and moat and len(moat) >= 3)
@@ -9580,7 +9590,7 @@ class Settlement:
         # 30-80 real ft for a village/town, ~80-160 ft for a provincial city (even metropolitan
         # Edo's Yoyogi crematory was only ~180 ft square); the pyre platform ~15x10 ft. The old
         # glyph was FIXED-PIXEL (116x80px) and silently tripled at city scale.
-        across = 130.0 if self.M["meta"].get("scale") == "city" else 75.0
+        across = 130.0 if self.M["meta"].get("scale") in CITY_TIER_SCALES else 75.0
         crx, cry = max(self.px(across) / 2, 14.0), max(self.px(across * 0.7) / 2, 10.0)
         self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{crx:.1f}" ry="{cry:.1f}" fill="#C9BCA0" stroke="#8C7A56" stroke-width="1.5" opacity="0.85"/>')  # cleared scorched ground
         self.add(f'<ellipse cx="{cx}" cy="{cy}" rx="{crx * 0.58:.1f}" ry="{cry * 0.55:.1f}" fill="#9A8A6A" opacity="0.5"/>')  # the burned center
@@ -9717,7 +9727,7 @@ class Settlement:
 
         Records M['execution_grounds']; reserves ground. Call beside the funerary cluster (phase 4),
         before the hinterland scrub and village_grove, so no crown is drawn onto it."""
-        city = self.M["meta"].get("scale") == "city"
+        city = self.M["meta"].get("scale") in CITY_TIER_SCALES
         _gwft, _ghft = execution_ground_ft("city" if city else "town")
         gw, gh = self.px(_gwft), self.px(_ghft)
         if screened is None:
@@ -10022,7 +10032,7 @@ class Settlement:
         # the working YARD is CITY-scope for now (its disk radius + furniture are calibrated for city
         # ftpx=3): a town's single caravan stables keeps its plain open ground until the yard is made
         # scale-aware. `yard=False` also suppresses it.
-        if yard and self.M.get("meta", {}).get("scale") == "city":
+        if yard and self.M.get("meta", {}).get("scale") in CITY_TIER_SCALES:
             # QUEUED, not drawn (GM 2026-07-24): the yard scatter keeps its furniture off every
             # way and footprint it can SEE, but a stables placed early could not see the streets
             # drawn after it - so a heap landed on a later street (Nagahara wharf yard). Yards now
@@ -13628,7 +13638,7 @@ class Settlement:
         # windward side is boxed in goes without. Returns the farmhouse count.
         meta = self.M["meta"]
         wall: Any = self.M.get("wall")
-        inwall_off = bool(wall) and meta.get("scale") == "city" and not meta.get("inwall_groves", False)
+        inwall_off = bool(wall) and meta.get("scale") in CITY_TIER_SCALES and not meta.get("inwall_groves", False)
         for rec in survivors:
             if inwall_off and point_in_poly(rec["x"], rec["y"], wall):
                 continue
