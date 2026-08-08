@@ -334,9 +334,28 @@ s.block_polys.append([(1665, 335), (2065, 335), (2065, 660), (1665, 660)])
 # back through Hoshizora. water="ditch" (not a live stream): an irrigation drain has no current to
 # stake hides in, so this yard ponds its own soak through a gated intake cut. Placed BEFORE the farm
 # rings so they pack around its block - it lands in the gap between the field toe and the forest.
-# rot=90 lays the yard's water side due EAST, square onto the ditch, in the free pocket between the
-# field's toe and the forest edge - the one piece of ground here that is neither cropped nor wooded.
-s.tanning_yard(1948, 882, rot=90, pits=4, water="ditch")  # off the hoshizora-ne paddy corner and its drain ditch (tanning_yard_clear_of_water/_fields); the intake cut still reaches the channel
+# rot=43 IS THE DRAIN'S OWN BEARING here, not a right angle off the map: the yard's long axis runs
+# WITH the ditch and its water side (local -y) faces NE onto the bank, so the whole pit rank shares
+# the edge of water. It was rot=90 (map-square) until 2026-08-08, which passed
+# tanning_yard_square_to_its_water only because the drain's short off-map SINK STUB runs 83 deg past
+# the yard's east side - so the check's "square to ANY course in reach" clause was satisfied by a 95
+# ft tail while the yard sat 47 deg askew to the 175 ft reach it actually works. Green gate, wrong
+# picture. Seat found by sweeping (along-bank t, perpendicular offset) against gate() rather than by
+# eye, and 38 ft off the drain centerline is a ONE-STEP band with a different wall on each side:
+# under it the yard laps the drain's off-map SINK STUB, which passes just southeast of this seat
+# (no_structure_on_channel at 26-34 ft, plus clear_of_water and an overlap at 26); over it the farm
+# ring's nearest steading closes inside the 120 ft standoff (tanning_yard_clear_of_dwellings at 42).
+# So the yard sits further off its bank than Nagahara's or Ubame's do, and that is forced rather
+# than sloppy - which is exactly why the intake cut has to MEASURE its way to the water (the engine's
+# _intake_reach) instead of trusting the old fixed 11 ft, per settlement-review 2026-08-08.
+s.tanning_yard(1934, 868, rot=43, pits=4, water="ditch")  # off the hoshizora-ne paddy corner and its drain ditch (tanning_yard_clear_of_water/_fields); the intake cut now MEASURES its way to the drain (_intake_reach) instead of assuming the old fixed 11 ft reached it
+# ...and RESERVE the standoff, the way ubame.gen.py already does for its yard. Without this the yard
+# only occupies `placed`, which buys a half-diagonal of clearance (~36 ft), and the farm ring then
+# seats a farmhouse at 107 ft - inside the 120 ft `tanning_yard_clear_of_dwellings` demands. 155 is
+# derived, not copied: 120 ft standoff + the yard's own 35.5 ft half-diagonal, so the ring holds in
+# the worst rotation. Must come BEFORE the farm rings (it is a bundle-FOOTPRINT keep-out via
+# _rect_blocked), which is why it sits here rather than with the other reservations.
+s.block_polys.append([(1934 + 155 * math.cos(a), 868 + 155 * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]])
 
 # ---- the EXECUTION GROUND, on the Imperial Road where it leaves the county NE (feature 015;
 # settlements.md "Execution ground"). Sited by the road and by the direction pollution runs, not by

@@ -7319,6 +7319,41 @@ class Settlement:
             self.label(lx_, ly_, label, 12, italic=True, color="#6B2A18")
         self.M.setdefault("borders", []).append({"poly": poly, "label": label})
 
+    def _intake_reach(self, x: float, y: float, rot: float, edge: float) -> float | None:
+        """Distance in PX from a works' water-edge midpoint, straight out along its own outward
+        normal (local -y at `rot`, `edge` px from the center), to the first DRAWN watercourse
+        CENTERLINE the ray crosses - or None if it crosses none.
+
+        Two deliberate choices, both of which a future reader will otherwise want to "fix":
+
+        - **Measured against DRAWN geometry** (`drawn_channels` pts, `streams` poly), never the
+          recorded topology polylines the checks read. This decides where INK goes, and the two
+          diverge wherever a mouth was snapped onto open water (see `channel`'s docstring) - a cut
+          drawn to a recorded centerline can stop short of the stroke the reader actually sees.
+          On Hoshizora the recorded and drawn answers differ by 16 px, which is the whole defect.
+        - **To the CENTERLINE, not the near bank.** A mouth that reaches the middle of the stroke
+          merges into it the way a confluence does; one stopped at the computed edge butts against
+          it and still reads as a separate object, because the bank has a stroke of its own and
+          the widths taper (`w0`/`w1`) along the course.
+
+        Ray-vs-segment, exact: no marching, so the answer does not depend on a step size."""
+        ca, sa = math.cos(math.radians(rot)), math.sin(math.radians(rot))
+        px_, py_ = x + edge * sa, y - edge * ca  # local (0, -edge) in world coords
+        dx_, dy_ = sa, -ca  # local (0, -1): straight out of the water side
+        best: float | None = None
+        for pts in [d["pts"] for d in self.M.get("drawn_channels") or []] + [d["poly"] for d in self.M.get("streams") or [] if d.get("poly")]:
+            for i in range(len(pts) - 1):
+                ax_, ay_ = pts[i][0], pts[i][1]
+                ex_, ey_ = pts[i + 1][0] - ax_, pts[i + 1][1] - ay_
+                den = dx_ * ey_ - dy_ * ex_
+                if abs(den) < 1e-12:
+                    continue  # the ray runs parallel to this reach and never crosses it
+                t = ((ax_ - px_) * ey_ - (ay_ - py_) * ex_) / den
+                s = ((py_ - ay_) * dx_ - (px_ - ax_) * dy_) / den  # = ((P-A) x D) / (E x D); E x D is -den, hence the flipped numerator
+                if t > 0 and 0.0 <= s <= 1.0 and (best is None or t < best):
+                    best = t  # ahead of the yard (t > 0) and within this segment's span, not its infinite line
+        return best
+
     def tanning_yard(self, x: float, y: float, rot: float = 0.0, pits: int = 4, water: str = "stream", label: str = "tanning yard", lab_off: float | None = None) -> None:
         """A TANNING YARD - the burakumin trade, and the one that decides where their quarter sits.
 
@@ -7385,8 +7420,16 @@ class Settlement:
         if water == "ditch":
             # a GATED INTAKE cut: a yard on an irrigation drain cannot stake hides in a current, so
             # it ponds its own water - the cut runs off the yard's water side to the ditch bank.
+            # ITS LENGTH IS DERIVED, not fixed (settlement-review 2026-08-08). It was a flat px(11),
+            # which reaches only while the yard happens to abut its bank and stops SHORT the moment
+            # it does not: Hoshizora's yard, re-seated 15 ft off the drain so its ground could stay
+            # clear of the water AND of the paddy, left the cut 4 ft of bare ground short of the
+            # stroke, reading as a blue tab pinned to the yard rather than as a cut feeding it. The
+            # gate never saw it - nothing checks that a cut ARRIVES, only that the yard is on water.
+            cut_ = self._intake_reach(x, y, rot, yh_ / 2)
+            cut_ = self.px(11) if cut_ is None or not (self.px(6) <= cut_ <= self.px(40)) else cut_
             cw_ = self.px(5)
-            g.append(f'<rect x="{-cw_ / 2:.1f}" y="{-yh_ / 2 - self.px(11):.1f}" width="{cw_:.1f}" height="{self.px(11):.1f}" fill="#9CB4C8" stroke="#5C7488" stroke-width="0.7"/>')
+            g.append(f'<rect x="{-cw_ / 2:.1f}" y="{-yh_ / 2 - cut_:.1f}" width="{cw_:.1f}" height="{cut_:.1f}" fill="#9CB4C8" stroke="#5C7488" stroke-width="0.7"/>')
             g.append(f'<line x1="{-cw_:.1f}" y1="{-yh_ / 2 - self.px(4):.1f}" x2="{cw_:.1f}" y2="{-yh_ / 2 - self.px(4):.1f}" stroke="#4A3318" stroke-width="1.4"/>')  # the sluice gate
         else:
             # STAKING FRAMES out in the shallows - raw hides pegged into the current to soften and
