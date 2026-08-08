@@ -77,7 +77,14 @@ for bx, by in [(1180, 140), (1420, 110), (1560, 185)]:
 
 # ---- the Imperial Road (SW -> NE spine), running off both edges
 ROAD = [(-162, 1306), (140, 1130), (620, 850), (1100, 580), (1560, 350), (1900, 170), (2209, 6)]
-s.road(ROAD, label="Imperial Road")
+# label_xy hints the NE approach, past the last of the shopfronts (GM 2026-08-08). The caption now
+# runs ALONG the roadbed rather than square to the page, and a caption lying along a road needs a
+# stretch of roadside that is actually bare: the default anchor is the road's MIDPOINT, which here
+# is the middle of the town core, lined two rows deep on both flanks - so the ladder could only get
+# 47px out, past the storefronts, and `label_hugs_its_referent` rightly called that adrift. Naming a
+# road where the road is clear is the cartographer's answer, not a bigger cap. The anchor is a HINT:
+# which flank and where along the road, never the distance (see _best_label_spot).
+s.road(ROAD, label="Imperial Road", label_xy=(1760, 195))
 
 # ---- WATER + FARMLAND: water-first combs (see docstring). The stream runs NE -> SW between
 # the hay upland (NW) and the farm wedge (SE), roughly parallel to the road, off the west edge.
@@ -249,7 +256,7 @@ s.label(1200, 1058, "barns", 10, italic=True)
 # laborers' and servants' housing sits back off the road, behind the shopfronts.
 ROAD_CORE = [(470, 945), (760, 760), (1060, 600), (1360, 450), (1700, 278)]
 s.frontage(ROAD_CORE, (["merchant"] * 3 + ["shop"]) * 11, width=26, setback=16, spacing=48, rows=2, skip=ROAD, fill=True)
-s.label(972, 586, "merchant houses & shops", 11, italic=True, color="#5A4326")
+s.label(972, 586, "merchant houses & shops", 11, italic=True, color="#5A4326", rot=s.frontage_rot, linear=True)  # runs ALONG the frontage it names: the shopfronts each tilt to the diagonal Imperial Road, so the caption over them does too (GM 2026-08-08)
 # a MINORITY of the wealthy keep larger RESIDENCES (budgets.md town wealth tiers): a few VERY-RICH / RICH
 # merchants in big homes DIRECTLY BEHIND the storefronts (the merchant family lives over/behind its own
 # shop), ahead of the laborer warren set further back. Derived from the ACTUAL shop positions (not fixed

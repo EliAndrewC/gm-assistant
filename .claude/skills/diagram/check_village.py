@@ -42,6 +42,7 @@ from settlement import (
     label_quad,
     lane_runs,
     lane_through_gate,
+    linear_tilt,
     moat_current_at,
     paddy_wet_rings,
     rail_quad,
@@ -5261,6 +5262,37 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         not adrift,
         f"caption(s) floating too far from the feature they name - the standoff ladder could not seat them near their subject, so move the subject or caption it by hand: {sorted(adrift)}",
     )
+
+    # A caption naming a LINEAR feature must RUN ALONG it (GM 2026-08-08). The 2026-08-02 tilt
+    # fixed this for building glyphs and stopped at them, so "Imperial Road" still sat level beside
+    # Hoshizora's -27deg roadbed - level text against a diagonal subject, which is the same reason
+    # a level caption beside a rot=-16 inn read wrong. The ROAD caption is the linear case the gate
+    # can hold: the engine seats it itself, so there is no hand-placed anchor to excuse.
+    #
+    # `linear_tilt` is the SHARED definition, imported rather than restated (placement and its
+    # check read the same source - this skill's CLAUDE.md). That matters most for the part that
+    # looks like an exception: a road steeper than 45deg keeps a LEVEL caption (the GM's
+    # north-south convention - there is no second edge family to align with, so tilting would
+    # match nothing drawn), and because the clamp lives in one function the check demands level
+    # there rather than being silent about it. Tango (due N-S) and Nagahara (72deg) are gated as
+    # firmly as Hoshizora, they just expect 0.
+    rlab, rdpts = M.get("road_label"), M.get("road")
+    if rlab and rdpts and len(rdpts) > 1:
+        rl0, rl1 = float(rlab[0]), float(rlab[1])  # bound out of the lambda: narrowing does not reach inside one
+        si = min(range(len(rdpts) - 1), key=lambda i: seg_dist(rl0, rl1, rdpts[i], rdpts[i + 1]))
+        want_tilt = linear_tilt(math.degrees(math.atan2(rdpts[si + 1][1] - rdpts[si][1], rdpts[si + 1][0] - rdpts[si][0])))
+        # The caption's own record, found by POSITION: `road_label` is the anchor the engine drew
+        # at, so the record is the one whose UNROTATED box centers on that anchor's x and straddles
+        # its baseline. Matching that way rather than by text keeps the check independent of what
+        # the road is called (and of a map that captions two roads).
+        rrec = [L for L in labels if len(L) > 5 and abs((L[0] + L[2]) / 2 - rlab[0]) < 1.5 and L[1] <= rlab[1] <= L[3]]
+        got_tilt = (float(rrec[0][7]) if len(rrec[0]) > 7 and rrec[0][7] else 0.0) if rrec else None
+        check(
+            "road_label_tilts_with_the_roadway",
+            got_tilt is not None and abs(got_tilt - want_tilt) <= 1.0,
+            f"the road caption is drawn at {got_tilt}deg where the roadway beside it runs at {want_tilt}deg - "
+            f"a caption naming a road runs ALONG the road (a roadway steeper than 45deg keeps a level caption; see settlement.linear_tilt)",
+        )
 
     # the TITLE (the map's place name) must sit over BLANK space, not on a building / field / water / grove -
     # the reader has to be able to read it. The generator searches for a clear box (crop_to_content first, so the

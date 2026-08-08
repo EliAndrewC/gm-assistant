@@ -2274,6 +2274,40 @@ def test_label_hugs_its_referent_skips_a_caption_with_no_subject():
     assert "label_hugs_its_referent" not in f(M)
 
 
+# ---- a caption naming a LINEAR feature runs ALONG it (GM 2026-08-08) --------------------------
+# The label records below carry the road caption's own shape: a box centered on `road_label`'s x
+# and straddling its baseline, which is how the check finds the record without matching on text.
+def _road_map(road, tilt=None):
+    lab = [1157.0, 122.0, 1243.0, 134.6, 1, "Imperial Road", [1187, 87, 1213, 113]]
+    M = {"meta": {}, "road": road, "road_label": [1200, 130], "labels": [lab if tilt is None else [*lab, tilt]]}
+    return M
+
+
+def test_road_label_tilts_with_the_roadway_fires_on_level_text_beside_a_diagonal_road():
+    # the motivating map: Hoshizora's "Imperial Road" set square to the page beside a -26.6deg roadbed
+    assert "road_label_tilts_with_the_roadway" in f(_road_map([[1000, 1000], [1400, 800]]))
+
+
+def test_road_label_tilts_with_the_roadway_passes_a_caption_running_along_the_road():
+    assert "road_label_tilts_with_the_roadway" not in f(_road_map([[1000, 1000], [1400, 800]], tilt=-26.6))
+
+
+def test_road_label_stays_LEVEL_on_a_north_south_road():
+    # the GM's own convention, and the reason linear_tilt clamps rather than folds: past 45deg the
+    # caption reads left-to-right, so LEVEL is what passes here and a tilt is what fires
+    assert "road_label_tilts_with_the_roadway" not in f(_road_map([[1200, 800], [1200, 1200]]))
+    assert "road_label_tilts_with_the_roadway" in f(_road_map([[1200, 800], [1200, 1200]], tilt=-26.6))
+
+
+def test_road_label_tilts_with_the_roadway_fires_when_no_caption_was_drawn():
+    # a recorded road_label with no label record behind it is a caption that never reached the
+    # sheet - the check reports rather than silently skipping (a check that never runs looks
+    # exactly like a check that passes)
+    M = _road_map([[1000, 1000], [1400, 800]])
+    M["labels"] = []
+    assert "road_label_tilts_with_the_roadway" in f(M)
+
+
 def test_title_clear_of_features_passes_over_blank_space():
     M = {"meta": {"scale": "village"}, "houses": [{"x": 300, "y": 300, "w": 60, "h": 40, "rot": 0, "kind": "plain"}], "title": {"name": "V", "bbox": [800, 50, 900, 90]}}
     assert "title_clear_of_features" not in f(M)
