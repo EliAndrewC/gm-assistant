@@ -347,3 +347,63 @@ Pingyao county yamen (平遥县衙), Shanxi - site documentation
 Pingjiang tu (平江图), the 1229 stone-carved plan of Suzhou, and its scholarship
 
 *Used for:* post-Song wards as name plaques rather than enclosures; plot DEPTH as the class marker in an elite quarter
+
+### `jokamachi-wiki-corpus`
+
+Japanese Wiki Corpus, *Jokamachi* (translation of the ja.wikipedia article)
+
+*Used for:* the castle at the town's center; concentric rank-graded zoning (Sange / Kamiyashiki-cho for samurai, Ban-cho / Teppo-cho for ashigaru); occupational machi (Gofuku-machi, Kaji-machi); teramachi at the outer rim as part of the city defenses; main roads routed past the castle's front "to indicate the glory of the ruler"; sogamae total enclosure (Odawara, Osaka)
+
+### `hirosaki-castle`
+
+Hirosaki Castle (Wikipedia; Hirosaki Park official site)
+
+*Used for:* castle enceinte ~50 ha / 123 acres including moats, at a 47,000-koku daimyo; the tenshu itself ~0.6 ha - the anchor for the median capital's `castle_px2` and for "the keep is not the castle"
+
+### `himeji-castle`
+
+Himeji Castle (Wikipedia)
+
+*Used for:* the grand end of the castle band - 233 ha / 576 acres total enceinte, 4,200 m circumference, 107 ha inside the middle moat; moat dimensions (avg 20 m, max 34.5 m, depth ~2.7 m)
+
+### `hikone-castle-town`
+
+Nakasendo Way, *The Story of Hikone Castle Town*
+
+*Used for:* the 1695 census figure of 15,371 townspeople in 53 wards at a 300,000-koku domain - the population anchor showing a Rokugani capital is a Hikone-scale market town carrying far fewer samurai
+
+### `okayama-castle`
+
+Okayama Castle site and visitor documentation
+
+*Used for:* Ukita Hideie diverting a branch of the Asahi River as the moat on the castle's northeastern flank - an attested edge castle
+
+### `kitsuki-castle`
+
+Kitsuki castle town coverage (Japan Today; JNTO)
+
+*Used for:* the castle on a promontory between the Yasaka and Takayama river mouths at Morie Bay, samurai quarters and temples on the surrounding hills - the second attested edge castle
+
+### `beijing-imperial-city`
+
+Imperial City, Beijing (Wikipedia)
+
+*Used for:* the Six Ministries' offices flanking the Corridor of a Thousand Steps outside Chengtianmen - the bureaucracy on the ceremonial avenue OUTSIDE the palace walls
+
+### `liufang-yamen`
+
+Qing local-government scholarship on the 六房三班 organization; Pingyao county yamen documentation
+
+*Used for:* the six fang as ROOMS (side halls flanking the yamen courtyards) rather than separate buildings at county scale; ~300 rooms across Pingyao's courts
+
+### `nagoya-castle`
+
+Nagoya Castle (Grokipedia; site documentation)
+
+*Used for:* the Sannomaru Oyakata mansions in the third bailey; the goten as the administrative and residential center as distinct from the defensive tenshu
+
+### `matsumoto-goten`
+
+Matsumoto Castle official site, Honmaru/Ninomaru Goten pages
+
+*Used for:* the county office and town office being moved OUT of the castle into Rokku town when the ninomaru proved too small, and the daimyo/headman conference hall to Agetsuchi town
