@@ -209,6 +209,62 @@ def test_a_gen_that_exits_NONZERO_still_fails_loudly(tmp_path, monkeypatch):
         gencache.run_and_record(str(gen))
 
 
+def test_the_environment_is_part_of_the_key(tmp_path, monkeypatch):
+    """A container rebuild changes the interpreter or the renderer, and both change what a map
+    comes out as - the PIL layout-engine incident already rewrote 16 manifests with no code change
+    behind it. All three environment inputs are asserted here rather than trusted, because none of
+    them is exercised by an ordinary run: they only move when the box underneath you does."""
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    deps = gencache.run_and_record(str(gen))
+    before = gencache.compute_key(str(gen), deps)
+    monkeypatch.setattr(gencache, "_renderer_version", lambda: "resvg 9.9.9")
+    assert gencache.compute_key(str(gen), deps) != before, "a new renderer must invalidate - it draws the PNG"
+    monkeypatch.setattr(gencache, "_renderer_version", lambda: "pinned")
+    monkeypatch.setattr(sys, "version", "3.99.0 (fake)")
+    assert gencache.compute_key(str(gen), deps) != before, "a new interpreter must invalidate"
+    monkeypatch.undo()
+    _with_engine(monkeypatch, tmp_path, eng)
+    monkeypatch.setattr(gencache, "FORMAT_VERSION", "99")
+    assert gencache.compute_key(str(gen), deps) != before, "bumping FORMAT_VERSION must invalidate every entry"
+
+
+def test_an_entry_is_written_atomically_and_declared_valid_last(tmp_path, monkeypatch):
+    """Concurrency safety, asserted as the two properties it rests on rather than by racing threads
+    and hoping to hit the window.
+
+    (1) Nothing is written in place - every artifact lands via a temp file and os.replace - so a
+    reader mid-write sees the old bytes or the new bytes, never half a file. (2) meta.json, the
+    only thing `load` trusts, is written LAST, so an entry is never declared valid before the
+    artifacts it describes exist. Together those mean a concurrent reader either misses (no meta,
+    or a stale key) or hits on a complete, self-consistent entry."""
+    eng, gen, out = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    deps = gencache.run_and_record(str(gen))
+
+    order: list[str] = []
+    real_replace = os.replace
+
+    def spy_replace(src, dst, *a, **k):
+        order.append(os.path.basename(str(dst)))
+        return real_replace(src, dst, *a, **k)
+
+    real_write = Path.write_bytes
+
+    def no_direct_write(self, data):  # any write must go to a .tmp path, never to the live name
+        assert ".tmp" in self.name, f"{self.name} was written in place - a reader could see it half-made"
+        return real_write(self, data)
+
+    monkeypatch.setattr(os, "replace", spy_replace)
+    monkeypatch.setattr(Path, "write_bytes", no_direct_write)
+    gencache.store(str(gen), deps)
+    monkeypatch.undo()
+
+    assert order, "store wrote nothing"
+    assert order[-1] == "meta.json", f"meta.json must be published LAST, got order {order}"
+    assert "toy.json" in order
+
+
 def test_the_gate_never_reads_the_cache():
     """The property that makes the whole thing safe to adopt: `make done` regenerates from scratch,
     so a stale entry can mislead an interactive look but can never put a wrong map past the gate.

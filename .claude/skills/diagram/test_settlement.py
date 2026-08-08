@@ -5605,6 +5605,73 @@ def test_label_tilt_folds_to_the_nearest_horizontal_edge_family():
     assert settlement.label_tilt(90.02) == 0.0  # float noise snaps level
 
 
+def test_linear_tilt_clamps_where_label_tilt_folds():
+    # A LINE has one axis, not a box's two edge families (GM 2026-08-08). Past 45deg a linear
+    # caption goes LEVEL - the GM's north-south convention - where the fold would swing it onto a
+    # cross direction nothing is drawn at. The pair below is the whole distinction.
+    assert settlement.linear_tilt(0) == 0.0
+    assert settlement.linear_tilt(-26.6) == -26.6  # Hoshizora's Imperial Road
+    assert settlement.linear_tilt(153.4) == -26.6  # ...the same line stored the other way round
+    assert settlement.linear_tilt(90) == 0.0  # due north-south: the caption still reads left-to-right
+    assert settlement.linear_tilt(72) == 0.0  # Nagahara's approach - too steep to tilt with
+    assert settlement.label_tilt(72) == -18.0  # ...which is exactly what a BOX subject wants, and would be wrong here
+    assert settlement.linear_tilt(45) == 45.0  # the cutoff is inclusive
+    assert settlement.linear_tilt(45.1) == 0.0
+    assert settlement.linear_tilt(180.02) == 0.0  # float noise snaps level
+
+
+def test_label_takes_the_linear_clamp_only_when_the_subject_is_a_line():
+    s = _town()
+    s.label(500, 500, "Imperial Road", 12, rot=-26.6, linear=True)
+    s.label(500, 600, "Imperial Road", 12, rot=72, linear=True)  # a near north-south road
+    s.label(500, 700, "tanning yard", 9, rot=72)  # ...the same angle on a BOX subject
+    recs = s.M["labels"]
+    assert recs[0][7] == -26.6
+    assert len(recs[1]) == 6  # level: no element [7], so the record keeps the exact pre-tilt format
+    assert recs[2][7] == -18.0  # the fold, which is what a rotated building wants and a road does not
+
+
+def test_frontage_records_the_row_axis_for_a_caption_that_names_the_run():
+    # `s.frontage_rot` is the street's own tangent, so a gen captions the run with
+    # `rot=s.frontage_rot, linear=True` instead of hand-copying the angle (which is how a caption
+    # drifts off its subject when the row is later re-laid - the same reason frontage_box exists)
+    s = _town()
+    s.frontage([(100, 700), (700, 400)], (["merchant"] * 3 + ["shop"]) * 3, spacing=48)
+    assert s.frontage_rot == pytest.approx(-26.565, abs=0.01)
+
+
+def test_frontage_rot_clears_when_the_row_places_nothing():
+    s = _town()
+    s.frontage([(100, 700), (700, 400)], ["merchant"] * 4, spacing=48)
+    assert s.frontage_rot != 0.0
+    s.frontage([(10, 10), (12, 10)], ["merchant"], fill=True)  # a 2px street hosts nothing
+    assert s.frontage_box is None and s.frontage_rot == 0.0  # ...so a stale axis can never be read
+
+
+def test_label_ladder_seats_a_tilted_caption_by_its_THICKNESS_not_its_rotated_aabb():
+    # The defect this pins (GM 2026-08-08): probing the rotated AABB made a diagonal caption reach
+    # by most of its own LENGTH in the one direction it does not extend, so "Imperial Road" seated
+    # 64px off a clear roadbed. The support is exact in every direction, so a tilted caption tucks
+    # in at the same LABEL_MIN_AIR a level one gets.
+    s = _ladder_map()
+    box = (400.0, 480.0, 600.0, 520.0)
+    seat = s._best_label_spot(box, "Imperial Road", 12, tilt=-26.6)
+    quad = settlement.label_quad([*s._label_box(*seat, "Imperial Road", 12), 0, "Imperial Road", None, -26.6])
+    corners = [(box[0], box[1]), (box[2], box[1]), (box[2], box[3]), (box[0], box[3])]
+    assert settlement.poly_gap(quad, corners) < settlement.LABEL_MIN_AIR + 1
+
+
+def test_label_hits_measures_a_rotated_neighbor_the_way_the_gate_does():
+    # `labels_clear_of_other_buildings` boxes a victim by its ROTATED corners' AABB, which is wider
+    # than the record's axis-aligned w/h. The probe has to agree, or it waves through exactly what
+    # the gate then catches - which is what put Ubame's "caravan inn" in a rot=-16 stables' corner
+    # slack the moment the caption's own reach became honest.
+    s = _town()
+    s.building(300, 300, 92, 44, "stables", rot=-16)
+    assert s._label_hits(300, 344, "caravan inn", 9, pad=0.0, linepad=0.0) == 0  # clear of the axis-aligned 92x44...
+    assert s._label_hits(300, 344, "caravan inn", 9, pad=0.0, linepad=0.0, tilt=-16) >= 1  # ...inside the rotated AABB the gate reads
+
+
 def test_label_quad_and_aabb_rotate_the_record_about_its_center():
     lvl = [0.0, 0.0, 100.0, 10.0, 1, "x"]
     assert settlement.label_quad(lvl) == [(0.0, 0.0), (100.0, 0.0), (100.0, 10.0), (0.0, 10.0)]
