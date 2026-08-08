@@ -1207,24 +1207,35 @@ s.animal_ground(1705, 952, r=80, label="caravan ground")
 # draw the farmhouses, each with its threshing/drying yard (universal); LAST so every obstacle is known
 s.farmsteads()
 s.farm_wells()  # farm-belt wells: no farmstead >500 real ft from one, map-edge steadings exempt (farm_wells_within_reach)
-# THE EAST-FAN PAIR, seated by hand (GM 2026-07-27). The two steadings at (2210,1300) and
-# (2174,1287) stand hard against the fe1 paddy fan, and the well that used to serve them stood
-# INSIDE it - legal until wells_clear_of_paddies, because _well_ground_clear refused a stream,
-# ditch, canal, pond and DRY plot but never a wet one ("wells on dry crops are okay, but not in
-# rice paddies, surely"). With the fan's drawn basins refused, farm_wells has nowhere left to put
-# their well: delete the seat below and farm_wells_within_reach fires on exactly this pair.
-# THE WATER IS NOT THE WHOLE REASON, though, and the comment here used to say it was - back when
-# the rule read the fan's smoothed OUTLINE, a probe found 150 of 168 ring seats refused as water.
-# The rule reads the DRAWN basins now (see `paddy_wet_rings`), and re-probing 336 ring seats around
-# the pair post-hoc puts only 27% in water; farm_wells still seats nothing because its own scan
-# tries just six dooryard offsets and every one is refused.
-# So this is `s.well` rather than `s.well_at`, deliberately. `_fits` measures clearance with
-# CIRCUMSCRIBED CIRCLES (skill CLAUDE.md, "CENTER vs FOOTPRINT", item 2: over-restrictive by up to
-# ~41% on a square, wasting up to 2x the true spacing) - so it refuses this seat while every
-# real-footprint check accepts it. Adjudicated rather than asserted: a trial manifest with a well
-# here CURES farm_wells_within_reach and adds no new failure, and the same held for the two
-# neighboring seats tried. A hand seat needs that evidence, which is why it is recorded here.
-s.well(2208, 1284)
+# THE EAST-FAN PAIR carried a HAND-SEATED WELL here (`s.well(2208, 1284)`, GM 2026-07-27) until
+# 2026-08-08. It is gone because its premise expired, and the removal is worth the paragraph.
+#
+# The two steadings at (2210,1300) and (2174,1287) stand hard against the fe1 paddy fan, and the
+# well that used to serve them stood INSIDE it - legal until wells_clear_of_paddies, because
+# _well_ground_clear refused a stream, ditch, canal, pond and DRY plot but never a wet one ("wells
+# on dry crops are okay, but not in rice paddies, surely"). When that rule read the fan's smoothed
+# OUTLINE, the fan's unplanted rim slack counted as water too and the pair genuinely had nowhere
+# legal to drink: a probe found 150 of 168 ring seats refused. The hand seat was correct THEN.
+#
+# It stopped being needed when the rule moved to the DRAWN basins (`paddy_wet_rings`), which handed
+# the rim slack back. Nobody re-tested the premise, so the seat and its rationale outlived the
+# problem by two weeks. Re-measured 2026-08-08 at the moment farm_wells returns: both steadings come
+# out COVERED on farm_wells' own wells, at 450 ft and 354 ft against the 500 ft reach. Removing the
+# seat and regenerating leaves farm_wells_within_reach PASSING and the whole gate output byte-
+# identical to the version that had it. The well was doing nothing but standing there.
+#
+# The rationale it carried was wrong twice over, which is the lesson worth keeping. It blamed
+# `_fits`' circumscribed circles (skill CLAUDE.md, "CENTER vs FOOTPRINT", item 2) for leaving the
+# pair dry; an attribution probe over the 8,065 seats that could cover both steadings put the circle
+# clause at 5.7% of refusals here, well behind paddy water (26.9%), corridors (23.2%), dry plots
+# (16.5%) and block polys (14.5%).
+# It also described farm_wells as trying "six dooryard offsets", which is not what the code does -
+# it walks 8 rings of 8-24 points per steading and then a ~2,700-point 6px lattice.
+#
+# THE RULE THIS LEAVES BEHIND: a hand seat is adjudicated against the gate at the moment it is
+# written, and that adjudication is a snapshot, not a standing fact. When you change the rule a
+# hand seat was working around, delete the seat and re-run the gate before assuming it is still
+# load-bearing.
 
 # ===== FIRE DEFENSE: watch-towers =====
 # ONE AMID EACH major commoner quarter, on the cleared seams the dense city leaves - placed
