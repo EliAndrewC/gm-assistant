@@ -9492,7 +9492,12 @@ class Settlement:
         self.block_polys.append([(x0 - m, y0 - m), (x1 + m, y0 - m), (x1 + m, y1 + m), (x0 - m, y1 + m)])
         if label:
             ly = y1 + 14 if label_below else y0 - 12
-            self.label(cx, ly, label, 12, weight="bold", italic=True, color="#3A352C")
+            # HALL_CAPTION_FS, not a rank size: a clan crypt's glyph is a hall-class walled compound
+            # (Minami's is 132x96 real ft against a temple hall's 130x84), so it takes the hall's
+            # caption. At its old 12pt it came out the LOUDEST body text on a city sheet once the
+            # temple halls dropped to 9 - above the governor's yamen at 11, whose compound is 525x300
+            # ft - which is the size-by-rank ladder the whole change exists to remove.
+            self.label(cx, ly, label, HALL_CAPTION_FS, weight="bold", italic=True, color="#3A352C")
 
     def cremation_ground(self, cx: float, cy: float, label: str = "cremation ground", label_above: bool = False) -> None:
         """The CREMATORY (kasoba) - where the dead are burned before their bones are interred. Smoke, fire

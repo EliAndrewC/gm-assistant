@@ -533,7 +533,13 @@ for _tx, _ty in TEMPLE_FAMILY_SEATS:
 
 # ====================================================================== SE: the governor's ward
 s.governor_mansion(1570, 1545, s.px(525), s.px(300), "Governor's Mansion", gate_dir="north")
-s.block_polys.append([(1462, 1462), (1678, 1462), (1678, 1500), (1462, 1500)])
+# (an undocumented 216x38 block band used to sit here, spanning the mansion's width +20px and
+# stopping 5px short of the north wall - the reservation for the caption the manor default hung
+# ABOVE the walls. governor_mansion() seats that caption inside the court now, so the band was
+# holding 1.7 acres of gate frontage blank for text that is no longer there: the settlement-review
+# found 8 structures in that band against Nagahara's 17, with this street's own frontage record
+# showing 30 samurai houses asked for and 5 seated. Removed 2026-08-08; the indexed civic apron
+# below already covers the yamen's real standoff.)
 MINS = ["Ministry of Revenue", "Ministry of Retainers", "Ministry of War", "Ministry of Works", "Ministry of Justice", "Ministry of Rites"]
 MIN_POS = [(1490, 1358), (1600, 1358), (1710, 1358), (1524, 1414), (1694, 1414), (1175, 1096)]
 for (mx, my), name in zip(MIN_POS, MINS, strict=True):
