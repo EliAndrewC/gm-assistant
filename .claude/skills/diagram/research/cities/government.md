@@ -12,11 +12,17 @@ Every entry: what the research found, the decision it drove, and any deliberate 
 
 **Grounds:** `city_has_martial_hall`, the rolled private-dojo count
 
-**Evidence:** attested, corroborated, setting-canon
+**Evidence:** attested, corroborated, setting-canon - **plus one `reconstruction` that used to be mis-classed as a finding; see "What the research did NOT find" below**
 
 **Sources:** not recorded - the finding is in the prose below; add a key to `SOURCES.md` when it is re-consulted
 
 **What the research found.** The standalone dojo with a resident sensei and enrolled students is an urban institution in both anchor cultures. In Edo Japan formal martial instruction lived in the **castle town**: the domain school (*hanko*) and its martial hall (*bugeijo*) were built in castle towns for the domain's own retainers, and by late Edo nearly every one of the ~260 domains had one. Private commercial halls - *machi-dojo*, run by low-income bushi and eventually by commoners teaching for a living - are a **late phenomenon and a metropolitan one**: the boom runs roughly 1830-1860 and its famous examples (the Three Great Dojo of Edo; Chiba Shusaku's Genbukan claimed ~3,600 disciples over its life) sit in a city of a million. The Chinese anchor is starker: military examinations were held at county and prefectural level and candidates prepared at schools, but there was no dense network of private martial academies at a county seat - drill happened at garrison grounds.
+
+**What the research did NOT find, corrected 2026-08-08.** The rule file used to state a decision of "roughly one martial establishment per ~100 resident samurai" in the same voice as the paragraph above, and the GM caught it: *"I don't know where the 1 per resident samurai number came from since I don't recall that offhand, so do you know whether there's a historical basis for that?"* **There is none.** That ratio was worked forward from budgets.md's samurai counts and then sanity-checked against the tier ladder - honest arithmetic, but a `reconstruction` sitting inside an `attested` entry with no marker saying so, which is precisely how an unsourced number acquires the authority of a finding.
+
+The attested content is narrower and supports a different shape: **one state institution per castle town** (the *hanko* pattern, which is a program item rather than a count that scales) and a **deliberately thin private tail** (because the *machi-dojo* boom needed a metropolis). The shipped generator already rolled 1-per-200 for the private halls, so nothing drawn was ever wrong - but the ~1-per-100 read was the only argument for enriching that tail at the capital tier, and it does not survive being asked for its source. The capital therefore keeps the 1-per-200 roll and gains the domain school instead ([`../../settlements/capitals.md`](../../settlements/capitals.md)).
+
+**The transferable lesson:** an entry's `**Evidence:**` line classes the entry as a whole, so a single reconstructed NUMBER can ride inside an otherwise attested finding undetected. When an entry mixes classes, say which sentence is which - the way this one now does.
 
 ## Servant housing in the samurai ward - servants are drawn as WALLS, not as houses
 
