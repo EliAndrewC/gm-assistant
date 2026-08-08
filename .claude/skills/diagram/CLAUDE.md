@@ -20,6 +20,33 @@ CPU - down from 54s / 37s / 24s / 35s / 15s before them:
 
     DIAGRAM_SKIP_RENDER=1 python3 pool/<type>/<map>.gen.py && python3 check_village.py pool/<type>/<map>.json
 
+**...or let the CACHE skip the work entirely** (2026-08-08). `regen.py` regenerates a map only if
+something that map depends on actually changed, and prints `CACHED` or `REGENERATED` every time:
+
+    python3 regen.py pool/provincial-cities/minami.gen.py    # 22.5s cold, 1.1s cached
+    python3 regen.py pool/*/*.gen.py                         # the whole pool
+    python3 regen.py --no-cache pool/towns/ubame.gen.py      # force the work
+
+The key covers the gen's bytes, the MODULE-LEVEL source of every engine module, the source of
+every function that map actually EXECUTED, every non-source file the run opened, and the
+interpreter/renderer versions - so an edit to any of the ~200 `settlement.py` functions Minami
+never runs leaves Minami cached, while an edit to one it does run, or to any module-level constant,
+does not. `gencache.py`'s docstring carries the soundness argument; `test_gencache.py` is the
+demonstration, and every test there that asserts a HIT also regenerates and compares bytes, because
+"the key did not move" proves nothing on its own.
+
+**The cache is NEVER the source of truth.** `test_villages.py` - the gate - calls the gens directly
+and always regenerates, so a stale entry could mislead an interactive look but can never put a wrong
+map past `make done`. `test_the_gate_never_reads_the_cache` holds that line; do not route the gate
+through `regen.py` to make the sweep faster.
+
+**THE TRAP, which cost three wrong conclusions in one session.** A miss REBUILDS the entry against
+whatever the sources say at that moment. So if you edit a file, regenerate (correctly a miss), then
+`git checkout` the edit away, the next run is a *legitimate* miss - the stored entry was built
+against code that no longer exists. Testing "does an edit to X invalidate?" therefore needs the
+baseline re-established (run until you see `CACHED`) before each trial, or the previous trial's
+cleanup produces the miss and you conclude the cache is broken when it is working perfectly.
+
 The full pool sweep - `make done`, which runs `test_villages.py` to regenerate EVERY map and gate
 it - is **~2 to 2.5 minutes**. Do not read that number as the score for a perf change: it also
 carries every unit test (2,500+ and growing) and whatever rules other sessions added this week, so
