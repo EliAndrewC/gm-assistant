@@ -278,6 +278,28 @@ Where that compound goes is a **tunable knob**, because both plausible sitings a
 
 Proposed as `meta(imperial_granary_seat="magistrate" | "wharf")`, with neither as a strong default. This is the same shape as the castle-seat knob: a genuine either/or that gives two capitals different skeletons for a documented reason rather than a die roll.
 
+## A river gets a TOWPATH, not a road - and they are not the same feature
+
+**Grounds:** the riverside way at a river capital; the wharf district's landward edge
+
+**Evidence:** attested, corroborated (by opposite reasoning in the two traditions)
+
+**Sources:** `shaoxing-towpath`, `edo-river-transport`
+
+The GM asked (2026-08-08) whether a road would run along the river, or whether the river replaces it. **Three different features get confused under "riverside road", and only two of them belong.**
+
+**1. A trunk road paralleling the river: NO.** Water carried bulk far more cheaply than any cart, so a highway shadowing a navigable river is redundant - the river IS that route, and the road network exists to reach what the water does not. Japan makes the point at its sharpest: roads there did not follow rivers, and at the Oi-kawa on the Tokaido **bridges and ferries were deliberately PROHIBITED** so the river would serve as a checkpoint delaying an invader. A road meets a river to cross it, not to accompany it.
+
+**2. A TOWPATH on one bank: YES - and this is the real riverside way.** The Chinese ***qiandao*** (纤道) is ancient and substantial: Shaoxing's, on the Eastern Zhejiang Canal, dates to **815 CE** and runs **over 40 km**; Marco Polo saw barges hauled along it by teams of horses. Its form is worth knowing because it is not road-shaped - it comes in two kinds, one on the bank as expected, and one built **out in the water parallel to the bank**, slab stones laid on stone piers about half a metre above the surface.
+
+**What determines it**: upstream haulage. A towpath exists *because* of the boats, not instead of them - downstream traffic drifts, upstream traffic is pulled. So it **supplements** water transport, which is exactly the GM's intuition, and it is narrow, single-bank, and goes only where the boats go.
+
+**3. A quay street inside the city (河岸, *kashi*): YES, but it is wharf frontage, not a route.** It serves the dock, the granary and the brokers' row; it belongs to the wharf district and is already in that program.
+
+**The decision.** A river capital draws a **towpath** on the wharf's own bank - a narrow hauling path, drawn distinctly from a road (no roadbed, no dashed lane centerline), running to the wharf and no further - plus the quay frontage inside the wall. It does **not** draw a trunk road paralleling the river. The domain's overland roads leave in the directions the water does not serve, which for Shiro Daika is exactly what the GM's road list already says: east to the Fox lands and southwest into the domain, with the Imperial road running north-south.
+
+**A drawable option held in reserve**: the piers-in-the-water towpath is a striking, genuinely attested form. It is not the default - the bank-side path is the common case - but it is available for a capital whose bank is too steep or too built-up to carry one.
+
 ## The ministries sit OUTSIDE the castle, flanking the approach avenue
 
 **Grounds:** the government ward and the ote-suji avenue; the six `s.ministry` compounds at capital scale

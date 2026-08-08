@@ -175,6 +175,40 @@ The Daika domain is a **Bayushi vassal house of the Scorpion**, already establis
 - **A river runs NE -> SW** (consistent with Ubame's NE-high land fall), so it is a **river city**, and `cities/river-cities.md` applies in full.
 - **`castle_seat="ring"`** - the default, and no new wall geometry (Nagahara is already a river city with a closed ring).
 
+### Shiro Daika's roads and gates (GM 2026-08-08)
+
+Confirmed against the campaign map (Shiro Daika sits in Daika's red territory west of the Kitsune Mori, with Shiro Kyo to the northwest):
+
+| Way | Bearing | Goes to |
+|---|---|---|
+| **Imperial road** | enters the **SOUTH gate**, runs N-S through the city | south into the domain; beyond the north gate it bends **northwest toward Shiro Kyo** |
+| domain trunk road | **east** | Fox lands / the Kitsune Mori - the same charcoal road [`pool/towns/ubame.gen.py`](../pool/towns/ubame.gen.py) draws running "west toward Shiro Daika" |
+| domain trunk road | **southwest** | the heart of the Daika domain |
+
+So **four gates**: south (Imperial), north (Imperial), east, southwest. Only the Imperial road is labeled.
+
+**The river gets a TOWPATH, not a road** (GM asked 2026-08-08 whether a riverside road would supplement or be replaced by the water; [research](../research/cities/capitals.md#a-river-gets-a-towpath-not-a-road---and-they-are-not-the-same-feature)). Water carried bulk far more cheaply than carts, so a trunk road shadowing a navigable river is redundant - Japan made the point at its sharpest by PROHIBITING bridges and ferries at the Oi-kawa so the river would work as a checkpoint. What is real is the Chinese *qiandao* (纤道) **towpath**: Shaoxing's dates to 815 CE and runs 40+ km, and Marco Polo saw barges hauled along it by teams of horses. It exists *because* of the boats - upstream haulage - so it supplements water transport exactly as the GM guessed. Draw it narrow, on the wharf's own bank, distinct from a road (no roadbed, no lane centerline), running to the wharf and no further; plus the quay frontage (*kashi*) inside the wall, which belongs to the wharf district. Do NOT draw a trunk road paralleling the river.
+
+**This settles the *ote*.** The jokamachi rule is that the main road passes the castle's FRONT "to indicate the glory of the ruler", and the Imperial road connects at the south gate - so **the castle's ote-mon faces SOUTH**, and the ceremonial avenue with its flanking ministries runs south from the castle to that gate. That avenue is the map's compositional axis.
+
+### Shiro Daika's lineage compounds (GM 2026-08-08)
+
+The Daika house carries **nine** lineages - more than usual (Reiji has 7, Kitsune and Kyo 5) - and they are already in the chargen config (`webapp/development-defaults.ini`, `[house][[daika]]`), whose weights are percentages of the domain's samurai. Two config facts do all the work, so **none of this is invented**:
+
+- `l7r.md`: a lineage at **>= 10% of the domain** usually holds a Chancellery seat. That gives exactly **six chancellors** - daika 19, hazama 16, utsuro 15, tokiwa 14, anzu 12, kurogi 11 - and leaves **yodo 5, nio 4, seki 4** off it, with correspondingly smaller holdings.
+- `[provincial_lineages][[daika]]` marks **kurogi = Moriguchi province**, and the configspec states that a lineage with no entry is **cosmopolitan (capital-based)**. So kurogi is Daika's one **dynasty/provincial** lineage - its seat is out in Moriguchi (the province Ubame county sits in), not here.
+
+That yields a compound hierarchy the map can draw at four visibly different sizes, with the size tracking a published number rather than a guess:
+
+| Compound | Lineage | Character |
+|---|---|---|
+| **the castle** | **daika** (19) | the ruling lineage's seat IS the castle - it needs no separate yashiki |
+| 4 grand chancellery yashiki | **hazama** (16), **utsuro** (15), **tokiwa** (14), **anzu** (12) | cosmopolitan chancellors, seated in the capital; the largest walled compounds after the castle |
+| 1 smaller emissary residence | **kurogi** (11) | on the Chancellery but PROVINCIAL - its ancestral seat is in Moriguchi, so what stands in the capital is a representative's townhouse, not a family seat |
+| 3 modest houses | **yodo** (5), **nio** (4), **seki** (4) | below the Chancellery threshold, so smaller holdings |
+
+**Draw them labeled.** Nine named compounds graded by real weights is what will make this read as *Shiro Daika* rather than as a generic capital - and the kurogi anomaly (a chancellor whose capital presence is deliberately modest) is the kind of specific that a generic city cannot fake.
+
 Note the pool's defense tiers after this: `peaceful` (Minami), `siege` (Tango, Nagahara, Shiro Daika). **The DEFAULT tier, `garrison`, still has no worked example anywhere.**
 
 ## Open, still to settle
