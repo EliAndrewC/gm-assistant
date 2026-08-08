@@ -1,8 +1,8 @@
 """Regression tests for the chargen view layer.
 
-Background: ``chargen/templates/index.html`` and ``ministry.html`` inline
-the full config dict into the page via ``{{ config|tojson }}`` so the
-frontend JavaScript can build dropdowns from it. Before the fix being
+Background: ``chargen/templates/index.html`` inlines the full config dict
+into the page via ``{{ config|tojson }}`` so the frontend JavaScript can
+build dropdowns from it. Before the fix being
 guarded here, that included every section ConfigObj had merged in from
 ``development-secrets.ini`` - Gemini API key, Discord OAuth client secret,
 Obsidian Portal session cookie, the ``[auth]`` HMAC key, and the
@@ -89,10 +89,6 @@ class TestRenderedHTMLDoesNotLeakSecrets:
     def index_html(self) -> str:
         return _render('index')
 
-    @pytest.fixture
-    def ministry_html(self) -> str:
-        return _render('ministry')
-
     @pytest.mark.parametrize('section', _EXPECTED_SECRET_SECTIONS)
     def test_secret_section_key_absent_from_index(self, section: str, index_html: str) -> None:
         # The tojson serialization writes each section name as a quoted
@@ -100,14 +96,6 @@ class TestRenderedHTMLDoesNotLeakSecrets:
         # matching incidental occurrences of the bare word in markup.
         assert f'"{section}"' not in index_html, (
             f'secret section {section!r} appears in rendered index.html'
-        )
-
-    @pytest.mark.parametrize('section', _EXPECTED_SECRET_SECTIONS)
-    def test_secret_section_key_absent_from_ministry(
-        self, section: str, ministry_html: str
-    ) -> None:
-        assert f'"{section}"' not in ministry_html, (
-            f'secret section {section!r} appears in rendered ministry.html'
         )
 
     def test_no_live_secret_value_appears_in_index(self, index_html: str) -> None:
@@ -122,14 +110,6 @@ class TestRenderedHTMLDoesNotLeakSecrets:
                 assert value not in index_html, (
                     'a live secret value from development-secrets.ini '
                     'appears in the rendered index.html'
-                )
-
-    def test_no_live_secret_value_appears_in_ministry(self, ministry_html: str) -> None:
-        for value in _live_secret_values():
-            if len(value) >= 12:
-                assert value not in ministry_html, (
-                    'a live secret value from development-secrets.ini '
-                    'appears in the rendered ministry.html'
                 )
 
     def test_template_still_has_non_secret_dropdown_data(self, index_html: str) -> None:

@@ -413,8 +413,8 @@ class Samurai(Character):
 
         Ranks whose default designator is itself "Magistrate" (ranks 3-4)
         default to the magistrate posting even with no explicit `post`, so a
-        random or roster-generated samurai at those ranks is tagged the same as
-        one picked via the dropdown.
+        randomly generated samurai at those ranks is tagged the same as one
+        picked via the dropdown.
         """
         designator = config['ranks']['Samurai'].get(str(self.base_rank), '')
         if self.post == 'unposted':

@@ -71,8 +71,7 @@ def test_every_ministry_is_accepted(ministry: str) -> None:
 @pytest.mark.parametrize('base_rank', [3, 4])
 def test_magistrate_default_ranks(base_rank: int) -> None:
     # Ranks 3 and 4 default to the Magistrate posting (designator is
-    # "Magistrate"), even with no explicit post - e.g. random or roster
-    # generation.
+    # "Magistrate"), even with no explicit post - e.g. random generation.
     tags = _tags(base_rank=base_rank)
     assert 'Magistrate' in tags
     assert 'Ministry of Justice' in tags

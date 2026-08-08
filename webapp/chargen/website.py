@@ -10,7 +10,6 @@ import cherrypy
 
 from chargen import config, op, art, constants as c
 from chargen.character import Character
-from chargen import ministry
 from chargen import synthesis
 from chargen import opcache
 
@@ -337,131 +336,6 @@ class Root:
                 'context_count': context_count,
             }
         return {'ok': True, 'backstory': backstory, 'error': None, 'context_count': context_count}
-
-    @cherrypy.expose
-    def ministry(self):
-        """Bulk ministry generator page."""
-        return (
-            jinja_env.get_template('ministry.html')
-            .render(
-                {
-                    'config': _safe_config_for_frontend(),
-                    'current_user': _l7r_current_user(),
-                }
-            )
-            .encode('UTF-8')
-        )
-
-    @ajax
-    def ministry_generate(self, base_rank: str, clan='', family='', house=''):
-        """
-        Generate 6 ministers for bulk ministry creation.
-        Returns a list of 6 character dicts.
-        """
-        roster = ministry.generate_ministry_roster(
-            rank=int(base_rank), clan=clan or None, family=family or None, house=house or None
-        )
-        return {'characters': roster}
-
-    @ajax
-    def ministry_upload_bulk(self, **kwargs):
-        """
-        Upload multiple characters in sequence.
-        Expects JSON POST with 'characters' array.
-        Returns status for each character.
-        """
-        if cherrypy.request.method == 'POST':
-            body = cherrypy.request.body.read()
-            data = json.loads(body)
-        else:
-            data = kwargs
-
-        characters = data.get('characters', [])
-        results = []
-
-        for char_data in characters:
-            try:
-                name = char_data.get('name', '')
-                summary = char_data.get('summary', '')
-                public = char_data.get('public', '')
-                private = char_data.get('private', '')
-                tags = char_data.get('tags', [])
-                if isinstance(tags, str):
-                    tags = list(filter(bool, map(str.strip, tags.split(','))))
-                image_data = char_data.get('image_data', '')
-
-                image_embed = ''
-                avatar_upload_id = ''
-                file_id = ''
-                headshot_crop = char_data.get('headshot_crop', None)
-                if image_data:
-                    try:
-                        image_bytes = base64.b64decode(image_data)
-                        safe_name = re.sub(r'[^a-zA-Z0-9]', '', name.replace(' ', ''))
-                        filename = f'{safe_name}.png'
-
-                        # Create headshot crop for avatar if crop coordinates provided
-                        if headshot_crop:
-                            headshot_bytes = art.crop_headshot(
-                                image_bytes,
-                                int(headshot_crop['x']),
-                                int(headshot_crop['y']),
-                                int(headshot_crop['width']),
-                                int(headshot_crop['height']),
-                            )
-                        else:
-                            headshot_bytes = image_bytes
-
-                        # Upload headshot as avatar (for character thumbnail)
-                        avatar_info = op.upload_avatar(headshot_bytes, filename)
-                        avatar_upload_id = str(avatar_info.get('id', ''))
-
-                        # Upload full image as file (for bio embed)
-                        file_info = op.upload_image(image_bytes, filename)
-                        file_id = str(file_info.get('id') or '')
-                        if file_id:
-                            image_embed = (
-                                f'[[File:{file_id} | class=media-item-align-none | {filename}]]'
-                            )
-                    except Exception as e:
-                        cherrypy.log(f'Failed to upload image for {name}: {e}')
-                        # Continue without image
-
-                response = op.create_character(
-                    name,
-                    summary=summary,
-                    tags=tags,
-                    description=public,
-                    bio=image_embed,
-                    gm_info=private,
-                    avatar_upload_id=avatar_upload_id,
-                )
-
-                slug = name.lower().replace(' ', '-')
-                results.append(
-                    {
-                        'success': True,
-                        'name': name,
-                        'slug': slug,
-                        'view_url': config['campaign_url'] + '/characters/' + slug,
-                        'edit_url': config['campaign_url'] + '/characters/' + slug + '/edit',
-                        # Asset IDs exposed so callers can clean up orphaned
-                        # uploads (the OAuth API can delete characters but
-                        # not files/avatars - those need the cookie path).
-                        'avatar_upload_id': avatar_upload_id,
-                        'file_id': file_id,
-                        'error': None,
-                    }
-                )
-            except Exception as e:
-                cherrypy.log(
-                    f'Failed to upload {char_data.get("name", "unknown")}: {e}\n{traceback.format_exc()}'
-                )
-                results.append(
-                    {'success': False, 'name': char_data.get('name', 'Unknown'), 'error': str(e)}
-                )
-
-        return {'results': results}
 
 
 cherrypy.tree.mount(Root(), '/')
