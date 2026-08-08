@@ -232,9 +232,27 @@ def load(gen: str) -> bool:
 
 
 def store(gen: str, deps: dict[str, Any]) -> None:
+    """Write an entry so that a CONCURRENT reader never sees a half-made one.
+
+    Two things make this safe. Every file lands by write-to-temp-then-os.replace, which is atomic
+    within a filesystem, so a reader sees the old bytes or the new bytes and never a partial file.
+    And meta.json - the thing `load` trusts - is written LAST, so an entry is only ever declared
+    valid after the artifacts it describes are fully in place.
+
+    A `.gencache` is per-CLONE (it lives beside the engine), so the concurrent writers to worry
+    about are two runs inside one working tree, not two sessions. Those necessarily generate from
+    the same sources, and generation is deterministic, so their artifacts are byte-identical and
+    interleaving them cannot produce a mismatched entry. The atomicity here is what keeps that
+    argument true even while a file is mid-copy."""
     entry = _entry_dir(gen)
     os.makedirs(entry, exist_ok=True)
+
+    def place(data: bytes, dest: str) -> None:
+        tmp = f"{dest}.tmp{os.getpid()}"
+        Path(tmp).write_bytes(data)
+        os.replace(tmp, dest)  # atomic: a reader sees old or new, never half
+
     for out in _outputs(gen):
         if os.path.isfile(out):
-            shutil.copy2(out, os.path.join(entry, os.path.basename(out)))
-    Path(os.path.join(entry, "meta.json")).write_text(json.dumps({"key": compute_key(gen, deps), "deps": deps}))
+            place(Path(out).read_bytes(), os.path.join(entry, os.path.basename(out)))
+    place(json.dumps({"key": compute_key(gen, deps), "deps": deps}).encode(), os.path.join(entry, "meta.json"))
