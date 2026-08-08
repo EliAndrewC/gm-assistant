@@ -407,3 +407,21 @@ Nagoya Castle (Grokipedia; site documentation)
 Matsumoto Castle official site, Honmaru/Ninomaru Goten pages
 
 *Used for:* the county office and town office being moved OUT of the castle into Rokku town when the ninomaru proved too small, and the daimyo/headman conference hall to Agetsuchi town
+
+### `edo-machi-kido`
+
+Edopedia (edoflourishing), *machi - towns and villages*; Edo nagaya/roji coverage
+
+*Used for:* the machi-level kido barring each town block (open ~4 am to ~10 pm); the finer roji-kido / nagaya-kido on each tenement lane (locked ~6 pm to ~6 am, keys with the nagaya owner or trusted neighbors); block-level collective responsibility for the gate
+
+### `qing-zhalan`
+
+Qing Beijing street-fence coverage (Dashilan street history; Beijing city fortifications; imperial-curfew reporting)
+
+*Used for:* zhalan (栅栏) palings closing each street at night, and Dashilan named for its gate; the curfew that backs them - dusk drum at 8 pm, dawn bell at 4 am, 40 lashes for being abroad 9 pm to 3 am (50 in the capital), barricaded sentry points on the thoroughfares each evening
+
+### `jokamachi-zoning`
+
+Jokamachi surveys (Grokipedia; Nakasendo Way, *Castle Towns*)
+
+*Used for:* chonin wards forming narrow strips that SEPARATE different groups of samurai, sited along the major thoroughfares; separation within the buke-chi being per-compound ("larger compounds separated by walls and gates") rather than a district palisade; chonin plots smaller per family and tightly aligned along the streets

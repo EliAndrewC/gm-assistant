@@ -43,6 +43,8 @@ Rough expectation, to be REPLACED by `plan_city`'s output: interior ~3.6M px^2, 
 
 Drawn as an **enceinte, not as a keep**. At 3 ft/px a tenshu footprint is just another building box (Hirosaki's is ~0.6 ha, **1.2%** of its castle), so what makes a castle read as a castle is its works: concentric baileys as walled open ground, *masugata* dogleg gate approaches, the batter of the ishigaki, its own moat. The tenshu and *goten* footprints are marked; everything else is implied, exactly as the governor's mansion and the magistrate's manor imply their interiors, and a separate Mode A sheet follows later.
 
+**The granary and the armory are INSIDE the castle and are NOT drawn** (GM 2026-08-08). They are real and they are in the works, but they belong to the castle's own Mode A sheet, exactly as a magistrate's manor and a governor's mansion keep their interiors off the settlement map. This is the general rule for anything inside the enceinte: **the only things marked are the works themselves plus the tenshu and goten footprints.** It also settles where the domain's siege stock lives, and leaves the wharf kura (below) to carry the transhipment story.
+
 `castle_px2` is a **declared program line**, defaulting to ~598,000 px^2 (~50 ha) with a documented 50-230 ha band.
 
 **Two seats, and they are not symmetric:**
@@ -72,14 +74,31 @@ The **domain school** sits on the same avenue.
 8. **A Witch Hunter's office** - rolled/optional (Hantei ordered one per capital; some orders were later rescinded).
 9. **Trade-named machi** - *Kaji-machi*, *Gofuku-machi* and the like, from the attested occupational segregation. Cheap to draw, high payoff.
 
+## Ward structure: a MESH of night-barred gates, not walled quarters
+
+**Recommendation, pending the GM's decision** - this is the research pass the GM asked for before any decision on how many walls the city has. Full finding: [research](../research/cities/capitals.md#neither-tradition-walls-its-wards-the-answer-is-a-mesh-of-night-barred-gates).
+
+Both traditions reach the same institution independently, and it is not enclosure. Edo barred every **machi** block with a **kido** (open ~4 am to ~10 pm) and every tenement lane with its own **roji-kido** (locked ~6 pm to ~6 am, keys with the nagaya owner or trusted neighbors), the block collectively responsible for its own gate. Qing Beijing, having torn down the Tang *fang* walls in the Song, closed each street at night with **zhalan** palings - the street Dashilan (大栅栏, "Big Palings") is named for its gate - backed by a real curfew (dusk drum at 8 pm, dawn bell at 4 am, 40 lashes for being abroad at night).
+
+So, at capital scale:
+
+1. **No continuous ward fence.** Kido at the block and lane mouths instead - the glyph `s.kido` already draws, at far higher count and a different placement rule. **No new vocabulary.**
+2. **SEVERAL samurai districts, interleaved with commoner strips** along the major thoroughfares (the attested jokamachi pattern), not one contiguous sealed quarter.
+3. **The walled compound does the sealing** - which is exactly what the inverted no-manor-inside-the-wall rule below provides.
+4. **The bell-and-drum tower gets a documented job**: it sounds the curfew the kido enforce.
+
+**Flagged, not acted on:** this research says the provincial tier's continuous palisade (`city_samurai_ward_sealed` and family) is more than history supports there either. That is a separate question for the provincial tier - three shipped cities depend on those checks, and the capital can adopt the mesh without any of them changing.
+
 ## Placements that change
 
 - **Teramachi rim.** Temples belt the inner face of the rampart as part of the defenses, rather than gathering in one quarter ([research](../research/cities/capitals.md#both-traditions-nest-a-walled-citadel-in-the-seat-so-a-centered-castle-is-the-median-form)).
-- **Rank-graded samurai rings.** The ward stops being one homogeneous quarter: senior retainers against the castle, then bushi, then an **ashigaru band** of uniform barracks rows. `cities/government.md` currently parks *kumi-yashiki* rows as belonging "on the town FRINGE, not inside the fence" - the capital is the tier where they exist.
+- **Rank-graded samurai districts.** Proximity to the castle tracks rank, and the districts are several rather than one - see the ward section above.
+- **Retainer terraces.** Modest terraced housing for the capital's **~94 junior (Rank 1-4) samurai households** - castle guards, household retainers of the daimyo's retinue, junior officials in training. **NOT "ashigaru" anything** (GM 2026-08-08): in Rokugan ashigaru are **peasants**, not samurai, and l7r.md puts them in the villages as rural militia, so a capital has no ashigaru quarter at all. The historical *kumi-yashiki* housed the lowest *samurai*, which is the slot the retainer terrace fills.
 
 ## Rules that INVERT
 
 - **`city_samurai_housing_varied` bans `s.manor(...)` inside the wall ring** - in a provincial city the only walled samurai compound is the governor's. Backwards here: karo, councilors and chancellors live in walled yashiki INSIDE the wall, and that is both the defining texture of a castle town and the mechanism for the lineage compounds above.
+- **The senior/junior housing mix inverts** ([research](../research/cities/capitals.md#the-capitals-samurai-are-senior-heavy-which-inverts-the-provincial-housing-mix)). budgets.md's rank table puts the capital at **70% senior (R5+) / 30% junior**, against the provincial city's **27% / 73%** - a capital posting is prestigious even when the job is menial, and the capital absorbs the rank-by-association cohort. So large houses and walled yashiki are the MAJORITY of the samurai fabric here (~218 senior against ~94 junior households of ~312), where `city_samurai_housing_varied` wants senior houses to be a minority. **The retainer terraces are the minority texture, not the dominant one.**
 - **`city_has_governor_mansion` / `city_governor_mansion_large`** - a capital has no governor.
 
 ## Counts that multiply
@@ -102,10 +121,25 @@ Everything per-gate (gate market, outside flophouse, caravan cluster, kosatsuba,
 
 **The capital keeps the same 1-per-200-samurai private-dojo roll as a provincial city** (~7-8 halls at ~1,560 resident samurai). What it gains is not more private halls but the **domain school**, and that is the historically grounded distinction: the *hanko* and its *bugeijo* were built in **castle towns**, and private *machi-dojo* are a late, metropolitan phenomenon. See [`cities/government.md`](cities/government.md), "Historical grounding: martial training", which now separates what is attested from what was extrapolated.
 
+## Water: an AQUEDUCT, in addition to the wells
+
+**Decided (GM 2026-08-08): a capital carries an aqueduct system on top of its wells** - larger cities outgrow what wells alone can supply, and the great castle towns built conduits for exactly this reason (Edo's Kanda and Tamagawa *josui*, Odawara's *sosui*).
+
+The wells do not go away: 2,472 households at the provincial rate of 1 per 10-20 households still puts ~160-240 draw-points across the commoner quarters, and the existing `city_neighborhoods_have_wells` / `city_well_density_sufficient` / `city_wells_in_block_interiors` family carries over unchanged.
+
+**Still to research before this is drawable** - the FORM, which is not obvious and matters a lot on a map: a *josui* was largely a **buried** conduit feeding open draw-basins, so what is actually visible may be only the intake works, the approach outside the wall, and the basins. If most of it is underground, the aqueduct is a small number of legible fixtures rather than a line across the map, and the budget line changes accordingly.
+
+## Wharf and the tax-rice warehouses
+
+**Wanted (GM 2026-08-08).** The whole domain's tax rice - six provinces' worth - lands at the capital, and Shiro Daika sits on a NE-SW river. With the castle holding the siege stock (above), the wharf carries **transhipment**: a dock basin, jetties, and a *kurayashiki* warehouse district on the water.
+
+Nagahara already supplies most of the vocabulary (`s.dock`, `s.jetty`, `s.canal`, `s.water_gate`) - see [`cities/river-cities.md`](cities/river-cities.md). What is new is the SCALE of the kura district and the question of where the **Emperor's local granaries** sit, which the Imperial Magistrate oversees separately from the domain's own stores. Both need a research pass before the budget prices them.
+
 ## Settled defaults
 
 - **No agricultural district.** A capital walls its farms out; the wall encloses all 12,360 inhabitants and no farmland.
 - **The Imperial road always runs through**, so the commercial ribbon rule always applies ([`cities/fabric.md`](cities/fabric.md)).
+- **Clan identity changes LABELS ONLY** (GM 2026-08-08). Scorpion, Crab or Crane, "all clans fundamentally have the same needs and the same shared material reality" - so the tier's layout, program and proportions are clan-independent, and what varies is dedications, names and the occasional individual city's character. Do not build clan-specific layout rules.
 
 ## The first worked example: Shiro Daika (planned)
 
@@ -122,4 +156,10 @@ Note the pool's defense tiers after this: `peaceful` (Minami), `siege` (Tango, N
 
 - **Lineage names** for the cosmopolitan-lineage compounds (5-6, per `l7r.md`'s chancellery size).
 - **Perf.** ~2,472 dwellings against Minami's 541. `_fits` is spatially indexed so per-seat cost is roughly flat, but `fill_exactly` and the `SeatMemo` re-visit dynamics are unmeasured at this volume. Budget a perf pass and a `GEN_TIME_BUDGETS` entry.
-- Everything in the "what still needs research" list the GM and I are working through - water supply for 12,000, the wharf/kurayashiki district, extramural suburbs, ward structure.
+- **Per-household ground costs at capital scale** - the budget model has no row for a walled yashiki or a retainer terrace, and without both the derived wall is wrong in the hardest direction to notice.
+- **Aqueduct FORM** (how much of a *josui* is visible), and the **wharf / kurayashiki** program including where the Emperor's granaries sit - both flagged in their sections above.
+- **Gate count**, and which gate is the *ote* on the ceremonial axis (it interacts with the river and the Imperial road).
+- **Whether the tight-crop-to-the-wall convention survives** four gate-suburbs at this scale.
+- **The provincial-tier ward question** raised by the ward research - separate from this tier, and not to be fixed in passing.
+
+**Resolved since the first draft:** ward structure (researched, recommendation above), clan character (labels only), the granary and armory (inside the castle, not drawn), the aqueduct (yes, in addition to wells), and the "ashigaru terrace" error (corrected to retainer terraces).

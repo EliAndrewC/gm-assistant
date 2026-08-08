@@ -99,6 +99,59 @@ That is exactly the "deliberately restrained echo" `l7r.md` claims - historical 
 
 Hikone's **53 wards** is also the anchor for how many named machi a capital carries.
 
+## NEITHER tradition walls its wards: the answer is a MESH of night-barred gates
+
+**Grounds:** the capital's ward structure - pending the GM's decision, this entry is the research they asked for before one is made
+
+**Evidence:** attested, corroborated (independently, in both traditions)
+
+**Sources:** `edo-machi-kido`, `qing-zhalan`, `jokamachi-zoning`, `pingjiang-tu`
+
+The GM's instinct (2026-08-08) was that one large sealed samurai neighborhood is probably wrong and many smaller wards more likely, and asked for real research before deciding. **The research says the instinct is right about the first half and the second half is still not quite the shape of it.** What both traditions actually have is not smaller *enclosures* but a **dense mesh of small gates barred at night**, hung across street and lane mouths, with no continuous fence at all.
+
+**Japan (Edo).** Every **machi** (町) block was closed by a **kido**, open from about 4 in the morning until about 10 at night. Below that, every *nagaya* tenement row and every *roji* lane had its own **roji-kido / nagaya-kido**, locked at roughly 6 pm and reopened around 6 am, with the keys held by the nagaya owner or by trusted neighbors. The system was self-governing - the block was collectively responsible for its own gate - and it is credited with much of Edo's night-time public order.
+
+**China (Ming/Qing).** The Tang walled-ward (*fang*) system was torn down by the Song, and post-Song wards survive only as **name plaques rather than enclosures** (`pingjiang-tu`). What replaced them is the same answer Edo reached: Qing Beijing built **zhalan** (栅栏, palings) closing each street at night against thieves - the commercial street **Dashilan** (大栅栏, "Big Palings") is named for its gate and still carries the name. It was backed by a real curfew: the dusk drum at 8 pm and the dawn bell at 4 am, 40 lashes for being abroad between 9 pm and 3 am (50 in the capital), and barricaded sentry points set up along the major thoroughfares every evening.
+
+**Two traditions, no contact, same institution.** That is the strongest corroboration in this file.
+
+**And the samurai quarter is not ONE quarter.** The jokamachi pattern was for **chonin to live in wards forming narrow strips that SEPARATE different groups of samurai**, those strips running along the major thoroughfares where their trades were most useful to everyone. Within the *buke-chi*, the separation that exists is **per-compound** - "larger compounds separated by walls and gates" - not a district palisade. So a castle town has *several* samurai districts interleaved with commercial strips, each samurai plot walled in its own right.
+
+**What this implies for the tier (recommendation, not yet a decision).**
+
+1. **No continuous ward fence at capital scale.** Replace it with kido at the block and lane mouths - which is the glyph `s.kido` already draws, at a far higher count and a different placement rule. No new vocabulary.
+2. **Several samurai districts, separated by commoner strips on the thoroughfares** - not one contiguous sealed quarter.
+3. **The walled compound does the sealing**, which dovetails with [the inverted no-manor-inside-the-wall rule](../../settlements/capitals.md#rules-that-invert): a capital's senior retainers live in walled yashiki, and those walls ARE the boundary that a fence was standing in for.
+4. **The bell-and-drum tower acquires a documented job.** We already draw one ([`../../settlements/urban-features.md`](../../settlements/urban-features.md)); the curfew above is what it is FOR - it sounds the hour the gates close and the hour they open.
+
+**The honest tension, flagged rather than buried.** The provincial tier currently seals its samurai/government quarter with a continuous palisade (`city_samurai_ward_sealed` and its whole family of checks), justified in [`../../settlements/cities/government.md`](../../settlements/cities/government.md) by the same observation that the Tang *fang* system does not apply. This research says the continuous fence is more than history supports even there. **That is a question for the provincial tier, not a defect to fix in passing** - three shipped cities depend on those checks, and the capital can adopt the mesh without the provincial maps changing at all. Raise it with the GM separately.
+
+## The capital's samurai are SENIOR-heavy, which INVERTS the provincial housing mix
+
+**Grounds:** the capital's samurai housing variation; the (corrected) retainer-terrace expectation
+
+**Evidence:** setting-canon
+
+**Sources:** budgets.md, "Samurai rank distribution"
+
+Working the capital column of budgets.md's rank table, against the provincial column:
+
+| | R5+ (senior) | R1-4 (junior) |
+|---|---|---|
+| **Capital** (800 working) | 563 - **70%** | 237 - **30%** |
+| **Provincial city** (225 working) | 61 - **27%** | 164 - **73%** |
+
+**The mix does not scale, it inverts.** budgets.md says so in words too - the capital "is staffed with the senior cohort," and "low-rank samurai compose a lower proportion of retainers in the capital than in the provinces" - because a capital posting is prestigious even when the job is menial, and because the capital absorbs the rank-by-association cohort (the Doctrine of Three Steps puts the daimyo's kin at Rank 9+ holding no office at all).
+
+**The consequence for the map.** `city_samurai_housing_varied` wants a MINORITY of large senior houses among many small junior ones, which is right for a provincial city at 27% senior. At capital scale that flips: roughly **~218 senior against ~94 junior households** of the ~312 total, so large houses and walled yashiki are the MAJORITY of the samurai fabric and the small houses are the minority.
+
+**This is also what corrects a modeling error made on 2026-08-08** and caught by the GM. The first draft of the capital program expected "ashigaru terraces" - dense uniform rows of low-rank warrior housing, on the historical *kumi-yashiki* pattern. That was wrong twice over:
+
+- **Wrong caste.** budgets.md is explicit that **in Rokugan ashigaru are PEASANTS, not samurai** - "the original L5R usage, which departs from historical Japan, where ashigaru formed the lowest stratum of the samurai class." The historical *kumi-yashiki* housed the lowest *samurai*, so the institution has no Rokugani counterpart under that name.
+- **Wrong place, and wrong quantity.** l7r.md puts ashigaru in the villages - about 10% of farmers, licensed or unlicensed, trained by the county magistrate. They are rural peasant militia, not a resident urban caste, so a capital has no ashigaru quarter to draw. And the slot they would have filled is the one the rank table shows is *smallest* here, not largest.
+
+What genuinely occupies that structural position is a **retainer terrace**: modest housing for the capital's ~94 junior (Rank 1-4) samurai households - castle guards, household retainers of the daimyo's retinue, and junior officials in training. A real feature, correctly named, and a minority texture rather than a dominant one.
+
 ## The ministries sit OUTSIDE the castle, flanking the approach avenue
 
 **Grounds:** the government ward and the ote-suji avenue; the six `s.ministry` compounds at capital scale
