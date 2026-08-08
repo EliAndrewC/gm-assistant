@@ -4794,6 +4794,50 @@ def test_tanning_yard_two_row_layout_and_ditch_intake():
     assert '#9CB4C8' in svg  # the gated intake cut (ditch variant), not staking frames
 
 
+def test_intake_cut_is_lengthened_to_REACH_the_drawn_bank():
+    # settlement-review 2026-08-08: the cut was a flat px(11), so a yard seated a little off its
+    # ditch (Hoshizora, re-rotated onto the drain) drew a stub that stopped 4 ft short of the water
+    # and read as a tab pinned to the yard. Nothing in the gate sees this - tanning_yard_on_water
+    # asks whether the YARD is near a bank, never whether the CUT arrives - so the rule lives here.
+    s = _town()
+    s.field_channel([(340, 340), (460, 340)], "#9CB4C8", 2.0, 2.0)  # a drawn ditch 40px out from the yard's water edge
+    s.tanning_yard(400, 400, rot=0, pits=4, water="ditch")
+    svg = "".join(s.out)
+    # yard is 41 tall, so its water edge sits at y=-20.5 local; the ditch centerline is 39.5 further
+    assert 'height="39.5"' in svg and 'y="-60.0"' in svg  # the cut spans edge -> centerline, not a fixed 11
+    assert s._intake_reach(400, 400, 0.0, 20.5) == pytest.approx(39.5)
+
+
+def test_intake_reach_ignores_water_that_is_parallel_behind_or_beside_the_ray():
+    # The three rejections, each of which would otherwise hand back a bogus length: a reach the ray
+    # runs ALONG (no crossing), one BEHIND the yard (t < 0 - the yard's back, not its water side),
+    # and one whose infinite line the ray meets but whose SEGMENT it misses (s outside [0, 1]).
+    s = _town()
+    s.field_channel([(300, 340), (500, 340)], "#9CB4C8", 2.0, 2.0)  # crossed: the honest answer
+    s.field_channel([(300, 500), (500, 500)], "#9CB4C8", 2.0, 2.0)  # behind the yard (its water side faces -y)
+    s.field_channel([(600, 200), (700, 200)], "#9CB4C8", 2.0, 2.0)  # off to the side: the ray misses the span
+    s.field_channel([(400, 100), (400, 300)], "#9CB4C8", 2.0, 2.0)  # parallel to the ray, dead ahead, never crossed
+    assert s._intake_reach(400, 400, 0.0, 20.5) == pytest.approx(39.5)  # the first CROSSING, none of the rest
+
+
+def test_intake_cut_falls_back_to_its_stock_length_with_no_water_ahead():
+    # A yard with nothing drawn in front of it (a fixture, or a bank that curves away) draws exactly
+    # what it always did rather than a zero-length or runaway cut.
+    s = _town()
+    assert s._intake_reach(400, 400, 0.0, 20.5) is None
+    s.tanning_yard(400, 400, rot=0, pits=4, water="ditch")
+    assert 'height="11.0"' in "".join(s.out)
+
+
+def test_intake_cut_refuses_a_reach_outside_the_sane_band():
+    # Clamp, not stretch: water 300px out is not this yard's water, and a cut drawn to it would be a
+    # 300px blue spear across the map. Out-of-band falls back to the stock length like the None case.
+    s = _town()
+    s.field_channel([(300, 90), (500, 90)], "#9CB4C8", 2.0, 2.0)  # ~290px ahead, far past the px(40) ceiling
+    s.tanning_yard(400, 400, rot=0, pits=4, water="ditch")
+    assert 'height="11.0"' in "".join(s.out)
+
+
 def test_tanning_yard_stream_variant_draws_staking_frames():
     s = _town()
     s.tanning_yard(400, 400, pits=4, water="stream")
