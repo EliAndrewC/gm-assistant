@@ -37,7 +37,7 @@ The main agent passes you a subject name and its pool folder. Paths are under
 - `pool/<type>/<subject>.png` - the rendered map. **Read it as an image. This is what the GM sees.**
 - `pool/<type>/<subject>.json` - the manifest: every feature's real recorded geometry
 - `pool/<type>/<subject>.gen.py` - the spec, its docstring, and the author's reasoning in comments
-- `pool/<type>/<subject>.notes.md` - design notes and the **Review log** of settled/overruled findings, if present
+- `pool/<type>/<subject>.notes.md` - design notes and the **Review log** of settled/overruled findings. **Every pool subject has one** since 2026-08-08, so a MISSING notes file is itself a finding, not a normal state. Read its "Settled by the GM" section first and do not re-raise anything in it
 - `settlements.md` + the `settlements/` topic files the subject calls for (`towns.md`, `cities.md`, `urban-features.md`, `water.md`, `fields.md`, `homesteads.md`, `vegetation.md`, `religion-and-death.md`)
 - `SKILL.md` - shared conventions: labeling rules, the to-scale doctrine, the stroke convention
 

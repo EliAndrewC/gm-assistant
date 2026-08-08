@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Yatsuda (谷津田) - a RIBBON-VALLEY hamlet (feature 005 US4 field_archetype='ribbon_valley').
 
-A second field-GEOMETRY archetype: a rectilinear block of large regular paddies on flat reclaimed LOW
-ground, an orthogonal ditch grid inside a perimeter dike (China-first: the wei-tian 圩田 polders of the
-lower-Yangtze lake plains - the planned, surveyed opposite of the organic valley comb). Water enters the
-high corner, a perimeter feeder supplies the grid, and it drains to the low corner; the village lines the
-dry perimeter dike on the east side.
+A field-GEOMETRY archetype for CONFINED valley ground: the paddy is a RIBBON that meanders down a narrow
+valley floor (build_ribbon, terrain="narrow_valley"), taking the valley's own shape because there is room
+for neither an organic fan nor a surveyed grid. Water enters at the valley head and runs down the ribbon to
+its foot; the hamlet takes what dry flank is left beside it.
+
+(Corrected 2026-08-08: this paragraph previously described Enokida's POLDER - a rectilinear block inside a
+perimeter dike - which this map has never been. The declared archetype and the build_ribbon call were always
+the ribbon valley; only the prose was wrong, and a reviewer reading it judged the map against the wrong
+archetype.)
 """
 
 import os

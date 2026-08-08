@@ -210,7 +210,7 @@ Each map is a set of paired files in its folder (`<type>/` for a settlement, `ma
 
 - `<subject>.svg` - the drawing. **Mode A: this IS the source** (hand-authored, tracked). **Mode B: this is DERIVED** from the `.gen.py` + `.json`.
 - `<subject>.png` - the raster render (always derived)
-- `<subject>.notes.md` - Mode A design notes: intent, knob settings, deliberate choices, review log; the second source for the `building-review` gate (see [`buildings.md`](buildings.md))
+- `<subject>.notes.md` - design notes: intent, knob settings, deliberate choices, review log; the second source for the `building-review` / `settlement-review` gates (see [`buildings.md`](buildings.md)). **EVERY pool subject carries one, Mode A and Mode B alike** - the 17 Mode B maps that had none got them on 2026-08-08, reconstructed from their gen docstrings and comments. A map without one is a defect, not a style: intent that lives only in gen comments means a future session cannot tell a deliberate oddity from a regression, which is exactly what a `settlement-review` pass reported when it met a map with no notes file
 - `<subject>.gen.py` - Mode B parametric generator
 - `<subject>.json` - Mode B manifest consumed by `check_village.py`
 
