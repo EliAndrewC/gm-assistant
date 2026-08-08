@@ -455,3 +455,15 @@ Asakusa / Kuramae district histories; *Rice broker* (Wikipedia)
 Britannica, *kuramai*; koku-system surveys
 
 *Used for:* peasants paying tax rice up to the DOMAIN granary, from which samurai stipends were paid - the collecting-and-disbursing role of a castle town as distinct from the market
+
+### `shaoxing-towpath`
+
+Shaoxing ancient towpath coverage (CGTN; Shanghai Daily); Grand Canal surveys
+
+*Used for:* the qiandao (纤道) towpath as the real riverside way - Shaoxing's dating to 815 CE and running 40+ km on the Eastern Zhejiang Canal, barges hauled by horse teams (Marco Polo), and its two forms: bank-side, and slab stones on stone piers standing ~0.5 m above the water parallel to the bank
+
+### `edo-river-transport`
+
+IDE "Japanese Experience" archive on Edo distribution; Nakasendo Way, *River and Sea Transport*; Oi-kawa crossing histories
+
+*Used for:* river transport carrying the tribute rice with a cargo role equivalent to the roads' military/administrative one; Japan's short fast rivers preventing an extensive inland waterway network; and roads NOT following rivers - bridges and ferries prohibited at the Oi-kawa on the Tokaido so the river served as a checkpoint
