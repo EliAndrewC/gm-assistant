@@ -17,7 +17,9 @@
 #       - the host's ~/.claude.json and ~/.claude/ into /home/agent so Claude
 #         Code auth, config, skills, and memory persist across containers
 #       - any extra host mounts the repo declares (see below)
-#     and publishing the ports the repo declares.
+#     publishing the ports the repo declares, passing the host's sound devices
+#     through (see "Audio" below), and apt-installing the packages the repo
+#     declares via container-apt.
 #
 # Because the container name is derived per repo (<prefix>-<repo-dir-name>),
 # "already running" only ever matches the SAME repo: launching from gm-assistant
@@ -38,6 +40,15 @@
 #   <!-- container-ports: 8080:8080 8091:8090 -->
 #   <!-- container-mounts: ..:/host-l7r-repo -->
 #   <!-- container-workdir: /gm-assistant -->
+#   <!-- container-apt: libmagic1 antiword libcairo2 -->
+#
+# container-apt (optional) lists apt packages installed as root on a FRESH
+# launch, on top of the baseline the script always installs (see "Audio").
+# Attaching to an existing container installs nothing, so a changed list takes
+# effect on the next --fresh. It is best-effort: a failed update/install warns
+# and still drops you into the shell (you may just be offline). Skip it for a
+# launch with --no-apt. This is for SYSTEM packages only - language-level deps
+# (pip, npm, playwright browsers) stay in the repo's own setup docs.
 #
 # container-workdir (optional, default /workspace) is where the repo is mounted
 # and the shell starts. Give each repo a DISTINCT path (e.g. /gm-assistant,
@@ -54,12 +65,23 @@
 # directory (where the sibling l7r notes repo lives) at /host-l7r-repo, wherever
 # the tree is checked out (/home/eli/l7r/<repo>, /data/dev/l7r/<repo>, ...).
 #
+# Audio: the container gets the host's sound devices (--device /dev/snd) plus
+# alsa-utils, so Claude Code's /voice can record. Without the device nodes voice
+# fails in a confusing way rather than an obvious one: /proc is NOT namespaced,
+# so /proc/asound/cards shows the host's mic and voice's availability probe
+# passes - then the actual capture floods the terminal with "cannot find card
+# '0'" / "Unknown PCM default" from ALSA. This is raw ALSA access, bypassing the
+# host's PulseAudio/PipeWire; that daemon suspends idle capture devices, so the
+# mic is normally free, but a host app actively recording (a Zoom call) can make
+# it "busy" until it lets go.
+#
 # Usage:
 #   launch-container.sh [--name NAME] [--no-ports] [--no-claude] [--no-pull]
-#                       [--fresh] [--help]
+#                       [--no-apt] [--fresh] [--help]
 #
 # A fresh launch first runs `podman pull` for the latest image; --no-pull skips
-# that (offline, or to save time). Attaching to a running container never pulls.
+# that (offline, or to save time), as --no-apt skips the package install.
+# Attaching to a running container never pulls and never installs.
 # --no-claude skips mounting the host ~/.claude.json and ~/.claude/ - use it on a
 # shared/work machine so the container does NOT inherit that host's default Claude
 # account (you log in fresh inside instead, on your own account). Point at a
@@ -86,6 +108,7 @@ PUBLISH_PORTS=1
 FRESH=0
 MOUNT_CLAUDE=1
 PULL=1
+APT=1
 CLAUDE_SRC="${CLAUDE_SRC:-$HOME}"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -93,6 +116,7 @@ while [ $# -gt 0 ]; do
     --no-ports) PUBLISH_PORTS=0; shift ;;
     --no-claude) MOUNT_CLAUDE=0; shift ;;
     --no-pull) PULL=0; shift ;;
+    --no-apt) APT=0; shift ;;
     --fresh) FRESH=1; shift ;;
     -h|--help) show_help ;;
     *) die "unknown option: $1 (try --help)" ;;
@@ -193,6 +217,13 @@ RUN_ARGS=(
   --workdir "$WORKDIR"
   --memory "$MEMORY" --memory-swap "$MEMORY"
   --volume "${REPO_ROOT}:${WORKDIR}:Z"
+  # Host sound devices, so Claude Code's /voice can record (see "Audio" above).
+  # Access comes from the uidmap: container uid 1000 IS the invoking user, and
+  # /dev/snd/* carries a logind ACL granting the seat user rw. keep-groups is
+  # the belt-and-braces case where a host instead grants it via the `audio`
+  # group - rootless podman drops supplementary groups without it.
+  --device /dev/snd
+  --group-add keep-groups
 )
 
 # Host Claude Code config, mounted so auth, settings, skills, and per-project
@@ -290,4 +321,31 @@ fi
 # Teardown is explicit: --fresh or `podman rm -f`.
 echo ">> starting '$NAME' detached (workdir $WORKDIR) from $IMAGE"
 podman run "${RUN_ARGS[@]}" "$IMAGE" sleep infinity >/dev/null
+
+# ---- system packages (fresh containers only) ----
+#
+# Baseline alsa-utils gives /voice a working `arecord` (its first-choice
+# recorder after the bundled native one, and the way to debug the mic by hand:
+# `arecord -l`), plus whatever the repo declares via container-apt. Runs as
+# container root rather than `sudo` inside the agent user, so it does not
+# depend on the image keeping passwordless sudo. `apt-get update` first because
+# a freshly pulled image can carry a stale index. Best-effort by design: a
+# broken install should not cost you the shell, so it warns and continues.
+if [ "$APT" -eq 1 ]; then
+  PACKAGES=(alsa-utils)
+  while IFS= read -r pkg; do
+    [ -n "$pkg" ] || continue
+    PACKAGES+=( "$pkg" )
+  done < <(read_directive container-apt)
+  echo ">> installing packages: ${PACKAGES[*]}"
+  if ! podman exec --user root --env DEBIAN_FRONTEND=noninteractive "$NAME" \
+       bash -c 'apt-get update -qq && apt-get install -y -qq --no-install-recommends "$@"' \
+       _ "${PACKAGES[@]}"; then
+    echo ">> warning: package install failed (offline? stale mirror?); continuing." >&2
+    echo "   Retry by hand inside the container with: sudo apt-get install -y ${PACKAGES[*]}" >&2
+  fi
+else
+  echo ">> --no-apt: not installing packages."
+fi
+
 exec podman exec -it "$NAME" bash
