@@ -152,6 +152,57 @@ Working the capital column of budgets.md's rank table, against the provincial co
 
 What genuinely occupies that structural position is a **retainer terrace**: modest housing for the capital's ~94 junior (Rank 1-4) samurai households - castle guards, household retainers of the daimyo's retinue, and junior officials in training. A real feature, correctly named, and a minority texture rather than a dominant one.
 
+## The aqueduct is OPEN outside the wall and BURIED inside it - and the boundary is the gate
+
+**Grounds:** the capital's aqueduct; the retained well network
+
+**Evidence:** attested
+
+**Sources:** `edo-josui`, `kanda-kakehi`
+
+The GM's preference (2026-08-08) is for an above-ground aqueduct where the history allows one, because it makes a better map - but asked for the possibility space first. **The space is real and generous, and it has a sharp boundary in a surprising place.**
+
+The Edo *josui* is two systems with the **city gate** between them:
+
+- **OUTSIDE, an open channel.** The Tamagawa Josui runs ~43 km from Hamura to the Yotsuya Gate (*Yotsuya Okido*) as an open cut "excavated without timbering" - an earth canal, entirely above ground, terminating AT a gate of the city.
+- **CROSSING a watercourse, an open flume on a bridge - the *kakehi* (懸樋).** Where the Kanda Josui had to cross the Kanda River at Ochanomizu it was carried over on a flume; the bridge downstream is called **Suidōbashi**, "aqueduct bridge," for exactly that reason, and Hiroshige drew the crossing in *Famous Places of the Eastern Capital: Ochanomizu*. This is the single most visually striking element in the whole system and it is fully attested.
+- **INSIDE, buried conduit.** Within the city the water runs in **stone (*sekihi*) and wooden (*mokuhi*) pipes laid underground** - ~67 km of them in Edo - feeding **over 3,600 draw-wells** (*jōsui ido*) and cisterns from which residents drew as they needed. The wooden pipe work was specialist enough that ship's carpenters were the trade that laid it.
+
+**No arcades.** There is no East Asian equivalent of the Roman arcaded aqueduct. The vocabulary is: gravity canal at grade, buried pipe, and a flume bridge only where a watercourse must be crossed. **Do not draw arches** - that is the one form the possibility space excludes.
+
+**Why the inside is buried** (inference, not attested): a dense wooden city needs its street surface, and open water threaded through the fabric is both an obstruction and a contamination problem. The boundary is functional, not arbitrary.
+
+**The decision.** Draw it above ground wherever history put it above ground - which is most of its interesting length, and all of its drama:
+
+1. the **intake works** on the river,
+2. the **open approach canal** running to the wall,
+3. a ***kakehi* flume** where it crosses a watercourse, if the geography gives us one,
+4. its **terminus at a gate**.
+
+Inside the wall the system is honestly buried, and it is represented by what a resident would actually see: **its draw-points**. Those are wells, which we already draw - so the recommendation is a distinguishable aqueduct-fed draw-basin rather than a fake surface channel. The existing well network does not go away; the aqueduct is laid on top of it.
+
+## The wharf is the COLLECTING end, and "kurayashiki" is the wrong word for it
+
+**Grounds:** the wharf and tax-rice warehouse district; the domain granary
+
+**Evidence:** attested, with one flagged divergence from setting canon
+
+**Sources:** `osaka-kurayashiki`, `asakusa-kuramae`, `kuramai`
+
+**The correction first, because it was in our own draft.** A ***kurayashiki*** (蔵屋敷) is a daimyo's warehouse-and-residence **at the market** - Osaka, around Nakanoshima, more than 110 of them at the early-1800s peak - where tax rice was auctioned to brokers against tradeable rice bills. By 1700 virtually every western daimyo shipped tax rice there. **That is the SELLING end, and a domain capital is not it.** Calling Shiro Daika's waterfront a kurayashiki district would be wrong twice: wrong word, and wrong economic role.
+
+**What a domain capital actually holds.** Peasants pay tax rice up to the **domain granary**, and the domain pays its samurai their stipends out of it (***kuramai***, the rice stipend). So the capital is the **collecting-and-disbursing** end: rice arrives from the provinces, most of it goes straight back out as stipends, and the surplus ships downriver to the market.
+
+**The model to copy is Asakusa Okura / Kuramae.** The shogunate's own rice granaries stood on the Sumida, and the district in front of them is literally named **Kuramae** (蔵前), "before the storehouses." There sat the ***fudasashi*** - brokers who warehoused stipend rice for a fee, converted it to cash, and lent against it, becoming rich enough that the theaters and geisha houses of neighboring Asakusa grew up on their money.
+
+**That gives the capital a chain of three features linked by one mechanism**, which is the sort of thing that makes a map read as a real place:
+
+    river wharf -> the domain granary -> the brokers' row in front of it -> the entertainment district next door
+
+**The flagged divergence, which is the GM's call and not mine to invent.** In Edo the arbitrage between rice and coin made *chonin* brokers rich. In L7R, budgets.md hands that income to the **Ministry of Retainers** - "~1,600 (rice/coin arbitrage on capital stipend throughput of ~28,000)" - a samurai ministry, not a merchant street. So our brokers' row may be a ministry annex rather than a commercial quarter, and if it is, the Edo causal chain from broker wealth to the entertainment district weakens. The two can coexist (the ministry takes the denomination cut; merchant brokers still trade), but which one the map depicts changes what is drawn there. **Ask before building it.**
+
+**The Emperor's granaries are separate**, and their siting is an inference. budgets.md gives the Imperial Magistrate a ~450-koku line for "local Imperial granary supervision," with "separate granary staff, materials, and operations," so they are distinct stores under a foreign authority - but nothing in the sources says where a capital would put them. Adjacent to the Imperial Magistrate's compound, or with their own water access, are both plausible; pick one and record it as a choice rather than a finding.
+
 ## The ministries sit OUTSIDE the castle, flanking the approach avenue
 
 **Grounds:** the government ward and the ote-suji avenue; the six `s.ministry` compounds at capital scale
