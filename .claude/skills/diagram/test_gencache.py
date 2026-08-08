@@ -18,6 +18,8 @@ import sys
 import textwrap
 from pathlib import Path
 
+import pytest
+
 import gencache
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -183,6 +185,28 @@ def test_a_second_gen_in_the_same_process_records_its_own_full_dep_set(tmp_path,
     # re-execute them (and both are covered by the module-level hash anyway)
     bodies = {"<module>", "Thing"}
     assert {q for _, q in first["functions"]} - bodies <= quals, (first["functions"], sorted(quals))
+
+
+def test_a_gen_that_ends_by_exiting_does_not_kill_the_sweep(tmp_path, monkeypatch):
+    """Every Mode A gen ends `raise SystemExit(main())` - a normal successful return for a script,
+    but `runpy` runs it in THIS interpreter, so it used to propagate straight out of regen.py and
+    stop the batch dead at exit 0. `regen.py pool/*/*.gen.py` did the nine hamlets, hit the first
+    magistracy, and reported success having skipped every town, village and city (2026-08-08)."""
+    eng, gen, out = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    gen.write_text(gen.read_text() + "\nraise SystemExit(0)\n")
+    deps = gencache.run_and_record(str(gen))  # must RETURN, not raise
+    assert out.read_text() == "7"  # ...and the gen still ran to completion
+    assert deps["functions"], "the dep capture must survive the exit too"
+
+
+def test_a_gen_that_exits_NONZERO_still_fails_loudly(tmp_path, monkeypatch):
+    # the other direction: a real failure must not be swallowed by the tolerance above
+    eng, gen, _ = _fixture(tmp_path)
+    _with_engine(monkeypatch, tmp_path, eng)
+    gen.write_text(gen.read_text() + "\nraise SystemExit(2)\n")
+    with pytest.raises(SystemExit):
+        gencache.run_and_record(str(gen))
 
 
 def test_the_gate_never_reads_the_cache():

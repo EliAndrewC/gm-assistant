@@ -51,7 +51,7 @@ from settlement import (
     trough_quad,
     wellhead_quad,
 )
-from waterfields import hem_on_paddy
+from waterfields import drain_bank_clearance, hem_on_paddy, polyline_cum
 
 _assert_not_main_tree(__file__)  # standalone gate runs must also happen in a session clone, never in main (CLAUDE.md "Session clones"; settlement's own import-time guard backstops this)
 
@@ -8844,6 +8844,62 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "drain_runs_cross_slope",
             not crossy,
             f"a drain runs too nearly WITH the slope (only {crossy[:3]} deg off the fall) - a collector must run roughly PERPENDICULAR to the flow (along the contour) to gather every column's runoff",
+        )
+
+        # A PADDY'S LOW BUND IS THE COLLECTOR'S BANK - IT IS NEVER DRAWN THROUGH THE DITCH (GM
+        # 2026-08-08, on Hoshizora: "the dark brown earthen bunds appear to overlap with the
+        # drainage ditch instead of aligning with it ... I would expect the earthen bunds bordering
+        # the ditch to be at the same angle as it"). A paddy is a level basin whose lowest side is
+        # the ditch's top-of-bank: the two ABUT. They cannot interpenetrate, because the bund is
+        # what holds the water in and the ditch is what takes it away, so a bund drawn across the
+        # collector is a basin with its wall in the drain.
+        #
+        # The defect it caught was geometric, not a stray plot. `_carve`'s hem pass laid its quads
+        # on the CONTOUR - one constant fall for the top edge, one for the bottom - while the
+        # collector is fitted as f = a + b*u and so runs at atan(b) to the contour (b is clamped to
+        # 0.35, i.e. up to ~19 deg). Every hem bund therefore started above the ditch and ended
+        # below it, and on Hoshizora the hem WAS the drain-side edge (14 of the west fan's 31
+        # plots, against 4 from the closing rank), so the whole field met its ditch as a sawtooth
+        # with brown ticks poking out into bare ground.
+        #
+        # ANGLE is how it reads, but angle is the wrong thing to test: a correct straight bund laid
+        # against a deliberately-wandering ditch sits a few degrees off its local segment (~9 deg on
+        # Hoshizora's NE pocket), and a contour-laid bund on a gently-fitted drain is only ~3 deg
+        # off - the two bands overlap, so an angle threshold would have to be either toothless or
+        # wrong. What is unambiguous is POSITION, so that is what this measures: no vertex of a
+        # drain-side plot may lie inside the collector's DRAWN stroke (which tapers, hence the
+        # per-point width) or past its centerline. Vertices whose nearest point on the collector is
+        # one of its two ENDS are skipped - ground beyond the drain's span is not governed by it.
+        # The predicate is `drain_bank_clearance`, imported from the engine and NOT restated here -
+        # it is the same call `hem_to_bank` makes when it lays a bund, so the placer and the gate
+        # cannot drift into disagreeing about which side of a ditch a point is on. `_pb`-prefixed
+        # locals: gate() is one huge scope and short geometry names are bound several times in it.
+        thru: list[list[int]] = []
+        for _pb_fld in fields:
+            _pb_hem = _pb_fld.get("drain_hem") or []
+            _pb_drn = next((x for x in M.get("field_ditches", []) if x.get("role") == "drain" and x.get("field") == _pb_fld.get("name") and len(x.get("poly") or []) >= 2), None)
+            if not _pb_hem or _pb_drn is None:
+                continue
+            _pb_dv = _ditch_dv(_pb_drn)
+            if _pb_dv is None:
+                continue
+            _pb_dl = [(float(p[0]), float(p[1])) for p in _pb_drn["poly"]]
+            _pb_cum = polyline_cum(_pb_dl)
+            _pb_w0 = float(_pb_drn.get("w", 2.0))
+            _pb_w1 = float(_pb_drn.get("w_tail", _pb_w0))
+            for _pb_ring in _pb_hem:
+                for _pb_q in _pb_ring:
+                    _pb_gap, _pb_need, _pb_lean, _pb_past = drain_bank_clearance((_pb_q[0], _pb_q[1]), _pb_dl, _pb_dv, _pb_w0, _pb_w1, _pb_cum)
+                    # 0.15px of float slack. A bund laid exactly ON the bank is recorded to 1dp
+                    # (up to ~0.07px of perpendicular error) and reaches the bank through a fall
+                    # interpolation, so an exactly-compliant edge must not read as a breach. The
+                    # defect this exists for runs 2-8px, so the slack costs it nothing.
+                    if not _pb_past and _pb_lean >= 0.2 and _pb_gap < _pb_need - 0.15:
+                        thru.append([round(_pb_q[0]), round(_pb_q[1])])
+        check(
+            "paddy_bunds_clear_the_collector",
+            not thru,
+            f"{len(thru)} paddy bund vertex/vertices {thru[:4]} are drawn INSIDE the drainage collector's stroke or past its centerline - a paddy's low bund IS the ditch's bank, so the field must hem onto the collector (bunds running WITH it), never across it",
         )
 
     # A drainage brook LEAVES the collector as a smooth BEND, not a hard right-angle corner - a contour

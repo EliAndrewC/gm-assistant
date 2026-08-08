@@ -5797,3 +5797,20 @@ def test_servant_ranges_refuses_a_seat_whose_own_door_is_blocked():
     s.servant_ranges()
     seated = [(round(b["x"], 1), round(b["y"], 1)) for b in s.M["buildings"] if b["kind"] == "servant"]
     assert (round(seat["x"], 1), round(seat["y"], 1)) not in seated  # that seat is refused; another flank may still serve
+
+
+def test_sharp_corners_skips_a_duplicate_vertex_instead_of_counting_it():
+    """A repeated vertex turns through no angle at all, so it is neither a hard corner nor an eased
+    one - counting it either way would misreport the parcel-fabric shape the manifest records.
+
+    Pinned by a test rather than by a generator accident: the comb used to emit quads with a
+    collapsed 4th vertex at the fan's corner, which is what exercised this branch. `build_comb` now
+    merges those away (a triangle is recorded as a triangle), so nothing in the pool reaches it -
+    but the other field engines' rings can still carry one, and the guard is still right."""
+    square = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)]
+    assert settlement._sharp_corners(square) == 4
+    # The same square with its last vertex repeated. The repeat is NOT counted as a fifth corner -
+    # and note it costs the corner it duplicates as well, since that vertex's outgoing edge is now
+    # zero-length and gets skipped too. So a ring carrying duplicates under-reports its corners,
+    # which is exactly why `build_comb` merges them away instead of leaning on this guard.
+    assert settlement._sharp_corners([*square, (0.0, 10.0)]) == 3
