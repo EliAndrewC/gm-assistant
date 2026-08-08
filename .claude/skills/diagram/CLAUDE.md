@@ -40,6 +40,14 @@ and always regenerates, so a stale entry could mislead an interactive look but c
 map past `make done`. `test_the_gate_never_reads_the_cache` holds that line; do not route the gate
 through `regen.py` to make the sweep faster.
 
+**AUDIT IT when you change the cache, or how generation is driven:** `python3 cache_audit.py`
+(~10 min, or `--all` for the whole pool). It perturbs a random numeric literal inside a
+`settlement.py` function, sweeps the pool WITH the cache and again with `--no-cache`, and demands
+byte-identical artifacts - so it tests the only property anyone cares about without ever looking at
+the key, and cannot share the key's blind spots. Verified to have teeth: sabotaging `compute_key`
+to return a constant makes it report STALE artifacts on the first mutation. This is deliberately
+NOT in `make done` (minutes, and the gate already regenerates from scratch).
+
 **THE TRAP, which cost three wrong conclusions in one session.** A miss REBUILDS the entry against
 whatever the sources say at that moment. So if you edit a file, regenerate (correctly a miss), then
 `git checkout` the edit away, the next run is a *legitimate* miss - the stored entry was built
