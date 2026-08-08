@@ -13245,7 +13245,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # two levels because the rule works on two levels. PER PARCEL, >=12 vertices: a ruled quad has
         # 4, and no amount of easing gets a genuinely hand-drawn outline down near that. ACROSS THE
         # FABRIC, a mean of <=2.5 square corners per parcel: corner reach is drawn from a wide spread
-        # precisely so that SOME corners stay square (the one behind a neighbour's bund never gets
+        # precisely so that SOME corners stay square (the one behind a neighbor's bund never gets
         # walked), so no per-parcel corner rule can be right - but a field where nothing has eased
         # scores the full 4.0, and both pool polders sit at ~1.4, so the threshold is clear of both.
         # A polder recording the pre-fix 4-element parcel format fails rather than passing by omission.

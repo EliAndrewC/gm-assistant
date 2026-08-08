@@ -1439,7 +1439,7 @@ def _sharp_corners(poly: Sequence[Pt]) -> int:
     """How many vertices of a closed outline turn through more than 60 degrees - i.e. how many corners
     are still essentially square. A ruled quad scores 4. Counting them, rather than taking the SHARPEST
     turn, is what survives the rule getting more honest: once corner reach is drawn from a wide spread
-    some corners legitimately stay near-square (the one behind a neighbour's bund never gets walked),
+    some corners legitimately stay near-square (the one behind a neighbor's bund never gets walked),
     so a max is a statistic about the single least-rounded corner on the parcel and says nothing about
     the parcel. The count does: it separates 'a few corners never rounded' from 'nothing rounded'."""
     n = len(poly)
@@ -1691,7 +1691,7 @@ KIDO_TOWER_KEEPCLEAR = 62.0
 
 def wall_tower_spacing_px(scale_px_per_ft: float, tier: str) -> float:
     """Max mural-tower spacing (px) that satisfies a wall_defense tier: the arrow range for a >=2 tier
-    (so a point at any tower has a neighbour within range), or twice it for the >=1 Xi'an tier. Unknown
+    (so a point at any tower has a neighbor within range), or twice it for the >=1 Xi'an tier. Unknown
     tiers fall back to 'garrison' (the moderate middle). `scale_px_per_ft` is 1/ftpx."""
     rng_ft, mincov = WALL_DEFENSE.get(tier, WALL_DEFENSE["garrison"])
     return (rng_ft if mincov == 2 else 2 * rng_ft) * scale_px_per_ft
@@ -3438,7 +3438,7 @@ class Settlement:
             # flows DOWNHILL through it - so each pond gets TWO gates: a FEEDER from an uphill point on the creek
             # network (water runs down INTO the pond at its uphill corner) and a separate DRAIN to a downhill
             # point (water runs down OUT of it at its downhill corner). Each connects to the nearest channel OR
-            # neighbour pond that lies in the right fall direction, so the whole dike-pond net runs in series
+            # neighbor pond that lies in the right fall direction, so the whole dike-pond net runs in series
             # down the slope from the high intake to the low outfall. Drawn as `<line>` culverts (the channel
             # z-order audit ignores them). Validated by dikeponds_fed_and_drained; see settlements.md.
             dd = float(self.M["meta"].get("down_deg", 90))
@@ -10756,7 +10756,7 @@ class Settlement:
         # gate, so the 130px gate-vertex filter alone misses them - city_gate_towers_clear_of_gate_furniture)
         gate_furn = [(gs["x"], gs["y"]) for gs in self.M.get("gate_structs", []) if gs.get("kind") in ("guardhouse", "inspection")]
         tier = self.M["meta"].get("wall_defense", "garrison")
-        max_spacing = wall_tower_spacing_px(1.0 / self.ftpx, tier) * 0.85  # margin so a slide off a kido does not push a neighbour gap past the range
+        max_spacing = wall_tower_spacing_px(1.0 / self.ftpx, tier) * 0.85  # margin so a slide off a kido does not push a neighbor gap past the range
         perim = self._wall_perimeter(pts)
         placed_tw = list(gate_towers)  # every tower placed so far (min-separation + coverage anchors)
 
