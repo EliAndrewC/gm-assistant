@@ -28,7 +28,7 @@ LOCAL random.Random(seed) so field generation never ripples other features' plac
 
 import math
 import random
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 Pt = tuple[float, float]  # an (x, y) point in map pixels
@@ -222,6 +222,15 @@ DRY_CROPS = {
 DF = 30.0  # fall step of the lockstep march (px)
 GAP = 26.0  # threads never pinch closer than this - a plot must fit between them
 
+# THE COLLECTOR'S DRAWN WIDTH at its head and at its outfall (both x grain). The akusui GATHERS the
+# plots' tail-water as it crosses the low side, so it is the mirror of the supply taper - the long
+# note at the `role: "drain"` channel append carries the hydraulic-vs-maintenance argument for 1.5.
+# Named, rather than written twice, because `_drain_bank` has to know the same two numbers: the
+# paddies' bottom bunds are laid against the ditch's EDGE, and an edge nothing can compute is an
+# edge the carve draws straight through.
+DRAIN_W_HEAD = 1.5
+DRAIN_W_TAIL = 6.0
+
 
 class _Frame:
     """Contour/fall frame for an arbitrary downhill screen angle."""
@@ -309,6 +318,138 @@ def _seg_x(a: Pt, b: Pt, c: Pt, d: Pt) -> Pt | None:
     return None
 
 
+def _drain_bank(F: _Frame, dpts: Poly, g: float) -> Callable[[float], float]:
+    """Return `bank(u)`: how far ABOVE the collector's centerline, IN FALL, a paddy bund must stop.
+
+    A paddy's low bund IS the collector's top-of-bank - the two touch - so the drawn bund line
+    belongs at the EDGE of the ditch's stroke, never on its centerline. Until 2026-08-08 the carve
+    held off by a flat `2 * g` everywhere, which is INSIDE the stroke over most of the collector's
+    run (it widens `DRAIN_W_HEAD * g` -> `DRAIN_W_TAIL * g` downstream, so the half-width alone
+    reaches `3 * g`): the field's bottom bunds were drawn under the blue ditch with the paddy fill
+    poking out the far side. That is half of the GM's "the earthen bunds overlap with the drainage
+    ditch" on Hoshizora - the other half was the HEM PASS laying its quads on the contour, fixed
+    there.
+
+    Two conversions, both cheap and both wrong to skip:
+
+      - the ditch TAPERS, so the clearance has to taper with it. A constant is either inside the
+        stroke at the outfall or a visible bare stripe at the head, and which one you get depends
+        on the map's grain, which is the worst way for a number to be wrong.
+      - fall is not perpendicular distance. The collector is fitted as `f = a + b*u`, i.e. it runs
+        at atan(b) to the contour, so holding off by `c` perpendicular costs `c * hypot(1, b)` of
+        FALL. The fit clamps `b` to <= 0.35, so this is <= 6% - small, but free to be exact.
+
+    The extra `0.75 * g` is half the drawn bund stroke (`aze_w`, ~1.5 real ft), so the bund and the
+    ditch ABUT at the bank rather than overlapping by half a line width."""
+    uf = [F.to_uf(*p) for p in dpts]
+    us = [q[0] for q in uf]
+    u_lo, u_hi = min(us), max(us)
+    span = (u_hi - u_lo) or 1.0
+    # The fall->perpendicular conversion is taken from the LOCAL segment, not from a head-to-outfall
+    # fit: the collector wanders, and the gate measures a bund against the segment it actually
+    # stands on (`drain_bank_clearance`). A global slope disagrees with that by a few percent, which
+    # is a fraction of a pixel - and a fraction of a pixel is exactly enough to make a bund the
+    # engine laid ON the bank read as a bund inside the ditch.
+    segs = []
+    for i in range(len(uf) - 1):
+        du = uf[i + 1][0] - uf[i][0]
+        segs.append((min(uf[i][0], uf[i + 1][0]), max(uf[i][0], uf[i + 1][0]), math.hypot(1.0, abs((uf[i + 1][1] - uf[i][1]) / du) if du else 0.0)))
+
+    def bank(u: float) -> float:
+        t = max(0.0, min(1.0, (u - u_lo) / span))
+        half = (DRAIN_W_HEAD + (DRAIN_W_TAIL - DRAIN_W_HEAD) * t) * g / 2
+        slope = next((s for lo, hi, s in segs if lo <= u <= hi), segs[0][2] if u <= u_lo else segs[-1][2])
+        return (half + BANK_MARGIN * g) * slope
+
+    return bank
+
+
+BANK_MARGIN = 0.75  # half a drawn bund stroke (aze_w is ~1.5 real ft), so bund and ditch ABUT rather than overlap
+
+
+def polyline_cum(pts: Poly) -> list[float]:
+    """Cumulative arc length at each vertex - hoisted so a caller testing many points against one
+    collector pays for it once."""
+    cum = [0.0]
+    for i in range(len(pts) - 1):
+        cum.append(cum[-1] + math.dist(pts[i], pts[i + 1]))
+    return cum
+
+
+def drain_bank_clearance(q: Pt, dpts: Poly, dv: Pt, w0: float, w1: float, cum: list[float]) -> tuple[float, float, float, bool]:
+    """How one point stands against a drainage collector: `(gap, need, lean, past)`.
+
+    - `gap` - SIGNED perpendicular offset from the nearest segment, positive on the FIELD's side of
+      the ditch (the side the fall comes from), negative once the point is across the centerline.
+    - `need` - the bank: half the collector's DRAWN width at that point (it tapers `w0` -> `w1`
+      along its length) plus `BANK_MARGIN`, so a bund's own stroke abuts the ditch's rather than
+      overlapping it.
+    - `lean` - how much clearance one unit of UP-FALL travel buys. It is ~0 for a collector running
+      with the fall, where "lift it up-fall" is not a move that helps.
+    - `past` - the point projects beyond the collector's head or tail. That ground drains somewhere
+      else (the next fan, the map edge), so this collector does not govern it.
+
+    ONE predicate, shared by the generator (`hem_to_bank`) and by the gate
+    (`paddy_bunds_clear_the_collector`), because a placer and a checker that classify the same
+    ground from two separate formulas drift apart - the trap the diagram CLAUDE.md records under
+    'Placement and its check must read the SAME manifest source'."""
+    off, cx, cy, arc, past, nrm = 1e9, 0.0, 0.0, 0.0, False, (0.0, 0.0)
+    for i in range(len(dpts) - 1):
+        ax, ay = dpts[i]
+        vx, vy = dpts[i + 1][0] - ax, dpts[i + 1][1] - ay
+        t = ((q[0] - ax) * vx + (q[1] - ay) * vy) / ((vx * vx + vy * vy) or 1.0)
+        tc = max(0.0, min(1.0, t))
+        sx, sy = ax + tc * vx, ay + tc * vy
+        d = math.hypot(q[0] - sx, q[1] - sy)
+        if d < off:
+            off, cx, cy = d, sx, sy
+            arc = cum[i] + tc * math.hypot(vx, vy)
+            past = (i == 0 and t < 0.0) or (i == len(dpts) - 2 and t > 1.0)
+            nl = math.hypot(vx, vy) or 1.0
+            nx, ny = -vy / nl, vx / nl
+            nrm = (nx, ny) if nx * dv[0] + ny * dv[1] < 0 else (-nx, -ny)  # points UP-fall, off the ditch
+    gap = (q[0] - cx) * nrm[0] + (q[1] - cy) * nrm[1]
+    need = (w0 + (w1 - w0) * arc / (cum[-1] or 1.0)) / 2 + BANK_MARGIN
+    return gap, need, -(dv[0] * nrm[0] + dv[1] * nrm[1]), past
+
+
+def hem_to_bank(ring: Poly, dpts: Poly, down_deg: float, w0: float, w1: float) -> Poly:
+    """Lift any vertex of `ring` that lies inside the collector's drawn stroke - or past its
+    centerline - up-fall onto the ditch's BANK. Returns a new ring; vertices already clear are
+    returned untouched.
+
+    `build_comb` needs none of this: it hems onto the bank BY CONSTRUCTION (see `_drain_bank`). The
+    other three field engines lay their parcels against a drain they build afterwards, so they have
+    no such handle, and the check that caught the comb's defect caught the same class in all three
+    (2026-08-08). Each was a different flavor of the one error:
+
+      - TERRACES: the last terrace's toe is a WIGGLY contour (amp + phase) while the collector along
+        the foot is a STRAIGHT descending line, so the two cross. Tanada's toe bund - the thick
+        retaining lip, drawn separately from the plots - ran ~8 px below the ditch, which is the
+        defect at its most visible: a retaining wall standing in the drain.
+      - RIBBON: the bands end exactly AT the foot, i.e. on the drain's centerline (measured offset
+        0.00 px on every flagged vertex), so the field's bottom bund is drawn under the ditch.
+      - POLDER: the collector IS the polder's bottom side, so the parcels front it directly and
+        float error alone put a vertex a half-pixel past.
+
+    This is a terminal pass rather than a construction change in three engines, and that is a
+    deliberate trade: it enforces one physical invariant (a basin's wall cannot stand in the ditch)
+    on geometry those engines have finished with, in the same spirit as the comb's own terminal
+    thin-plot drop. The move is along the FALL, so a lifted vertex slides up its own column and the
+    parcel keeps its shape."""
+    dv = (math.cos(math.radians(down_deg)), math.sin(math.radians(down_deg)))
+    cum = polyline_cum(dpts)
+    out: Poly = []
+    for q in ring:
+        gap, need, lean, past = drain_bank_clearance(q, dpts, dv, w0, w1, cum)
+        if past or gap >= need or lean < 0.2:  # clear, off the collector's span, or a drain running WITH the fall
+            out.append(q)
+            continue
+        shift = (need - gap) / lean
+        out.append((round(q[0] - dv[0] * shift, 1), round(q[1] - dv[1] * shift, 1)))
+    return out
+
+
 def _pip(x: float, y: float, poly: Poly) -> bool:
     n = len(poly)
     inside = False
@@ -343,13 +484,20 @@ def _poly_perim(poly: Poly) -> float:
     return sum(math.hypot(poly[(i + 1) % n][0] - poly[i][0], poly[(i + 1) % n][1] - poly[i][1]) for i in range(n))
 
 
-def _poly_area(poly: Poly) -> float:
+def _signed_area(poly: Poly) -> float:
+    """Shoelace WITH its sign - the sign is the diagnosis. Every basin the carve lays comes out
+    positively wound; one that comes back negative has had its two boundaries cross, so what is
+    drawn is a bowtie, not a field. See the inverted-toe drop in `build_comb`."""
     s = 0.0
     for i in range(len(poly)):
         x0, y0 = poly[i]
         x1, y1 = poly[(i + 1) % len(poly)]
         s += x0 * y1 - x1 * y0
-    return abs(s) / 2
+    return s / 2
+
+
+def _poly_area(poly: Poly) -> float:
+    return abs(_signed_area(poly))
 
 
 def hem_on_paddy(quad: Poly, paddy_outline: Poly) -> bool:
@@ -663,7 +811,7 @@ def build_comb(
     # side slopes, i.e. ~1.5 ft across the top. Below that it is not a maintained ditch at all, it is the
     # seasonal furrow a farmer re-cuts at each drawdown. So the hydraulic floor and the maintenance floor
     # meet exactly at the finest ditch the supply side already draws, and the drain starts there.
-    channels.append({"pts": dpts, "w": 1.5 * grain, "w_tail": 6.0 * grain, "role": "drain"})
+    channels.append({"pts": dpts, "w": DRAIN_W_HEAD * grain, "w_tail": DRAIN_W_TAIL * grain, "role": "drain"})
 
     # the akusui does NOT just stop: it empties at its outfall into a natural valley BROOK that
     # carries the water off the map downhill (reused by the next village downstream / rejoining the
@@ -693,6 +841,7 @@ def build_comb(
             if not (12 < p[0] < W - 12 and 12 < p[1] < H - 12):
                 break  # ran off the map edge = the runoff sink
 
+    drain_bank = _drain_bank(F, dpts, grain)  # the ditch's own edge, the one line the field may not cross
     for t in threads:  # clip every thread to the drain
         clipped = [t.pts[0]]
         for i in range(len(t.pts) - 1):
@@ -703,7 +852,15 @@ def build_comb(
                 if hit:
                     break
             if hit:
-                clipped.append(hit)
+                # a thread ENDS AT THE COLLECTOR'S BANK, not on its centerline. `bnd` hands the
+                # clipped endpoint back as a plot-boundary point for any fall at or below it, so a
+                # clip on the centerline plants a paddy corner in the water - Ubame's west fan had
+                # exactly one, 0.25px off the line, and it was the last thing standing between the
+                # comb and a clean hem (2026-08-08). The dug PREFIX is unaffected: `ditch_f` stops
+                # a couple of hundred px above this point, so the drawn blue never reaches the clip.
+                hu = F.to_uf(*hit)[0]
+                hf = _f_at_u(F, dpts, hu)
+                clipped.append(hit if hf is None else F.to_xy(hu, hf - drain_bank(hu)))
                 break
             clipped.append(b)
         t.pts = clipped
@@ -762,9 +919,31 @@ def build_comb(
             # narrow end so the gen draws it dwindling, not a blunt constant-width stub that stops dead.
             channels.append({"pts": pre, "w": (5.6 if t is bc else 4.0) * grain, "w_tail": 1.5 * grain, "role": "branch"})
 
-    plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step, grain, seed)
+    plots = _carve(R, F, threads, a_pts, dpts, W, H, plot_across, row_step, grain, seed, drain_bank)
 
     envelope = [p for p in a_pts] + [p for p in threads[-1].pts] + list(reversed(dpts)) + list(reversed(threads[0].pts))
+
+    # A BASIN IS SIMPLE AND POSITIVELY WOUND (settlement-review, 2026-08-08). At the fan's corner
+    # the outer thread has been clipped at the collector, so `bnd` hands the same clamped point back
+    # for every fall below it and the sector the carve is still opening no longer exists. Most of
+    # what comes out there is harmless - a quad with a collapsed 4th vertex, i.e. a real triangular
+    # toe parcel, which is an ordinary thing for a paddy that ran out of ground on one side. But one
+    # comes out INVERTED, its winding flipped because the two boundaries crossed: on Hoshizora that
+    # was a 143 ft needle, 25 ft at the base, carrying the FLOODED tint, and it read as a wedge of
+    # standing water at the head of the ditch. A paddy that turned inside out is not a paddy at any
+    # size, so it is dropped rather than measured - the thickness test further down cannot catch it,
+    # because a bowtie can be respectably thick. The collapsed vertices are merged away first, so a
+    # triangle is recorded as a triangle rather than as a quad with a 0.4px edge.
+    #
+    # THIS RUNS BEFORE THE WEDGE FILLER, and that ordering is load-bearing: a bowtie still COVERS
+    # ground, so dropping one leaves a hole the filler has to plant. Run after it instead and
+    # `paddy_fan_gapless` fires on the two city fans (nagahara fs1 8/297 bare, minami fs1 14/492).
+    for pl in plots:
+        _ring = pl["poly"]
+        _merged = [q for i, q in enumerate(_ring) if math.dist(q, _ring[i - 1]) > 1.0]
+        if len(_merged) >= 3:
+            pl["poly"] = _merged
+    plots[:] = [pl for pl in plots if _signed_area(pl["poly"]) > 0]
 
     # WEDGE FILLER (coarse grains only): even with the thresholds grain-scaled, the carve
     # leaves awkward slivers where ditch threads diverge or the closing geometry misses - and
@@ -792,6 +971,18 @@ def build_comb(
     if _thin:
         _drop = {id(q) for q in _thin}
         plots[:] = [q for q in plots if id(q) not in _drop]
+    # THE INVARIANT, held uniformly across all four field engines: no basin's wall stands in the
+    # ditch. The comb hems onto the bank BY CONSTRUCTION (see `_drain_bank`), so this pass is a
+    # no-op on all but one vertex in the whole pool - and that one is worth naming, because it says
+    # what the pass is really for. At Ubame's west corner the boundary thread is clipped at the
+    # collector's HEAD, so `bnd` hands back the same clamped point for every fall below it and the
+    # sector's closing quads come out inverted; an INTERIOR sub-bund of that degenerate sector then
+    # interpolates to within 0.3px of the ditch. The real answer there is for the carve to stop
+    # opening a sector whose boundary has already collapsed onto the drain, which is a change to the
+    # carve's sector geometry and not to this rule - so until that is done, the corner is held to
+    # the invariant here rather than left standing in the water.
+    for pl in plots:
+        pl["poly"] = hem_to_bank(pl["poly"], dpts, down_deg, DRAIN_W_HEAD * grain, DRAIN_W_TAIL * grain)
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560  # 1px=2ft -> 4 sq ft/px^2
 
     # DRY FIELDS (hatake) on the uncommanded upslope margin above the supply canal, and
@@ -1012,6 +1203,7 @@ def _carve(
     row_step: tuple[float, float],
     g: float = 1.0,
     seed: int = 0,
+    bank: Callable[[float], float] | None = None,
 ) -> list[dict[str, Any]]:
     """Carve paddy plots between adjacent threads. Above a thread's takeoff the boundary
     falls back to its parent path (canal / parent ditch); below its end, to the DRAIN - so
@@ -1019,23 +1211,62 @@ def _carve(
     past either. Rows step down the fall, each one wandering on its own (see `rphase` below)."""
     plots: list[dict[str, Any]] = []
     _RW = random.Random(seed ^ 0x12005)  # the row-wander stream, separate so the canal skeleton is unmoved
+    # Every drain-side stop in this function measures off `bank(u)` - the ditch's own EDGE at that
+    # point - rather than a flat constant, so the field hems onto the collector's BANK instead of
+    # onto (and through) its drawn stroke. See `_drain_bank`. The fallback keeps `_carve` callable
+    # on its own in a test without a collector width to hand.
+    bank_at: Callable[[float], float] = bank if bank is not None else (lambda _u: 2.0 * g)
 
     def bnd(t: _Thread, f: float) -> Pt:
         if f < t.f0 and t.fallback is not None:
             fb = t.fallback
             return _at_f(F, fb if isinstance(fb, list) else fb.pts, f)
         if f > F.to_uf(*t.pts[-1])[1]:
-            return _at_f(F, dpts, f)
+            # past its own end a boundary follows the COLLECTOR - and it follows the collector's
+            # BANK, not its centerline. Without the offset the fan's side corner is planted exactly
+            # on the drain head (Hoshizora's west fan did, by 1.6px) and the sector's outermost bund
+            # is drawn inside the ditch it is supposed to stop at.
+            pd = _at_f(F, dpts, f)
+            ud, fdp = F.to_uf(*pd)
+            return F.to_xy(ud, fdp - bank_at(ud))
         return _at_f(F, t.pts, f)
 
     a_us = [F.to_uf(*p)[0] for p in a_pts]
     a_ulo, a_uhi = min(a_us), max(a_us)
 
     def spills_drain(pq: Pt) -> bool:
-        """Below the collector - strict per-vertex (no plot may poke past the drain)."""
+        """Below the collector's BANK - strict per-vertex (no plot may poke into the drain)."""
         u, f = F.to_uf(*pq)
         fd = _f_at_u(F, dpts, u)
-        return fd is not None and f > fd - 3 * g
+        return fd is not None and f > fd - bank_at(u)
+
+    def bank_chord(u0: float, u1: float, fd_default: float | None = None) -> tuple[float, float] | None:
+        """End falls of a STRAIGHT bund spanning u0..u1 that clears the collector's bank the whole way.
+
+        A paddy basin has straight sides - it cannot chase the ditch's wander, and the collector
+        wanders by design (its nodes carry +-6px of jitter at a 120-170px spacing, so successive
+        segments differ by a few degrees). A bund pinned only at its two ends therefore cuts the
+        corner at every bend and lands in the water: that is the last residue of the drain-crossing
+        bunds, worth ~9 deg and one crossed segment on Hoshizora's NE pocket after the hem pass was
+        squared up. So take the bank fall at each end, walk the drain's own vertices in between, and
+        push the whole line up by whatever the chord falls short - the bund follows the HIGHEST
+        point of the bank across its own span, which is also what a farmer laying a straight bund
+        against a crooked ditch would do."""
+        f0, f1 = _f_at_u(F, dpts, u0), _f_at_u(F, dpts, u1)
+        f0 = fd_default if f0 is None else f0
+        f1 = fd_default if f1 is None else f1
+        if f0 is None or f1 is None:
+            return None
+        f0, f1 = f0 - bank_at(u0), f1 - bank_at(u1)
+        du = u1 - u0
+        if du:
+            for dpt in dpts:
+                uk, fk = F.to_uf(*dpt)
+                if min(u0, u1) < uk < max(u0, u1):
+                    lift = (f0 + (f1 - f0) * (uk - u0) / du) - (fk - bank_at(uk))
+                    if lift > 0:
+                        f0, f1 = f0 - lift, f1 - lift
+        return f0, f1
 
     def above_canal(quad: Poly) -> bool:
         """Upslope of the supply canal - judged by the CENTROID, not the top vertices: a
@@ -1211,8 +1442,9 @@ def _carve(
             return fd
 
         for j in range(n):
-            fb0 = drain_meet(j) - 2 * g
-            fb1 = drain_meet(j + 1) - 2 * g
+            fm0, fm1 = drain_meet(j), drain_meet(j + 1)  # where each sub-bund reaches the collector...
+            fb0 = fm0 - bank_at(F.to_uf(*edge(fm0, j, n))[0])  # ...held off to its BANK there
+            fb1 = fm1 - bank_at(F.to_uf(*edge(fm1, j + 1, n))[0])
             depth = max(fb0, fb1) - ftop
             if depth < 6 * g:
                 continue
@@ -1225,13 +1457,13 @@ def _carve(
                 quad = [edge(fa0, j, n), edge(fa1, j + 1, n), edge(fz1, j + 1, n), edge(fz0, j, n)]
                 abuts = li == nlev - 1
                 if abuts:
-                    # snap the bottom vertices exactly onto the collector (drain fall at
-                    # their OWN u) so the field edge lies on the ditch
-                    for bi in (2, 3):
-                        u_ = F.to_uf(*quad[bi])[0]
-                        fdv = _f_at_u(F, dpts, u_)
-                        if fdv is not None:
-                            quad[bi] = F.to_xy(u_, fdv - 2 * g)
+                    # snap the bottom edge onto the collector's BANK so the field edge lies along
+                    # the ditch - as ONE straight bund clearing the whole span (bank_chord), not
+                    # two independently-snapped vertices, which cut the corner at every bend
+                    u3, u2 = F.to_uf(*quad[3])[0], F.to_uf(*quad[2])[0]
+                    ch = bank_chord(u3, u2)
+                    if ch is not None:
+                        quad[3], quad[2] = F.to_xy(u3, ch[0]), F.to_xy(u2, ch[1])
                 if math.dist(quad[0], quad[1]) < 8 * g:
                     continue
                 if any(pq[0] < 8 or pq[0] > W - 8 or pq[1] > H - 8 or pq[1] < 8 for pq in quad):
@@ -1263,7 +1495,7 @@ def _carve(
             mx = da[0] + s * (db[0] - da[0])
             my = da[1] + s * (db[1] - da[1])
             u, fdr = F.to_uf(mx, my)
-            just_in = F.to_xy(u, fdr - 6)  # 6px up-fall, on the field side
+            just_in = F.to_xy(u, fdr - bank_at(u) - 4)  # just up-fall of the bank, on the field side
             if not (10 < just_in[0] < W - 10 and 10 < just_in[1] < H - 10):
                 continue
             if inside_any(*just_in):
@@ -1278,11 +1510,30 @@ def _carve(
             if top is None:
                 continue  # no field above (tail/outside)
             uu, uv = u - 13, u + 13
-            levels = max(1, round((fdr - 2 - top) / 38))  # tile tall gaps into ~row plots
+            # A HEM PLOT RUNS WITH THE DITCH, NOT ACROSS IT (GM 2026-08-08: "I would expect the
+            # earthen bunds bordering the ditch to be at the same angle as it"). These quads used
+            # to be laid on the CONTOUR - one constant fall for the top edge and one for the
+            # bottom - while the collector is fitted as f = a + b*u and so runs at atan(b) to the
+            # contour (b <= 0.35, i.e. up to ~19 deg). Over the 26px u-span of one hem quad that is
+            # ~9px of fall, which is several times the ditch's own width: every hem bund therefore
+            # STARTED above the drain and ENDED below it, crossing the blue line and leaving a
+            # brown tick poking out into bare ground. On Hoshizora the hem covers almost the whole
+            # drain-side edge (14 of 31 plots there vs 4 from the closing rank), so this WAS the
+            # field's edge - the sawtooth the GM saw. Sampling the drain at uu and uv separately
+            # and running BOTH edges parallel to what it does between them costs one extra lookup
+            # and makes the field hem onto the collector as one clean line.
+            hem_ch = bank_chord(uu, uv, fdr)
+            if hem_ch is None:  # pragma: no cover - fdr is a real fall, so both ends always resolve
+                continue
+            b0, b1 = hem_ch
+            depth = (b0 + b1) / 2 - top
+            if depth < 6 * g:
+                continue  # the bank already reaches the field edge - nothing to hem
+            levels = max(1, round(depth / 38))  # tile tall gaps into ~row plots
             for li in range(levels):
-                fa = top + (fdr - 2 - top) * li / levels
-                fz = top + (fdr - 2 - top) * (li + 1) / levels
-                quad = [F.to_xy(uu, fa), F.to_xy(uv, fa), F.to_xy(uv, fz), F.to_xy(uu, fz)]
+                fa0, fa1 = b0 - depth * (levels - li) / levels, b1 - depth * (levels - li) / levels
+                fz0, fz1 = b0 - depth * (levels - li - 1) / levels, b1 - depth * (levels - li - 1) / levels
+                quad = [F.to_xy(uu, fa0), F.to_xy(uv, fa1), F.to_xy(uv, fz1), F.to_xy(uu, fz0)]
                 plots.append({"poly": [(round(q[0], 1), round(q[1], 1)) for q in quad], "fill": R.choice(RICE_GREENS)})
     return plots
 
@@ -1520,6 +1771,13 @@ def build_terraces(
         {"pts": drain_pts, "role": "drain", "w": 1.5, "w_tail": 5.0},  # gathers fe -> fw: a THREAD at its head (see build_comb's drain), full at the low-flank outfall
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]  # straight downhill off-map
+    # the toe stops at the ditch's BANK: the last terrace's low edge is a WIGGLY contour and the
+    # collector along the foot is a STRAIGHT descending line, so they cross unless held apart. The
+    # retaining LIP goes through the same pass - it is the thick brown line a reader actually sees,
+    # and on Tanada it was the one standing in the drain (see `hem_to_bank`).
+    for p in plots:
+        p["poly"] = hem_to_bank(p["poly"], drain_pts, down_deg, 1.5, 5.0)
+    bund_lines = [hem_to_bank(bl, drain_pts, down_deg, 1.5, 5.0) for bl in bund_lines]
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
     round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {
@@ -2038,6 +2296,10 @@ def build_ribbon(
         },  # gathers across the foot into the outfall at its FAR end (drain_pts runs near flank -> center -> far flank -> downhill stub, and the brook leaves from that stub), so the taper is monotone like every other collector: a thread where it starts, full where it discharges. (An older comment here claimed the outfall was central and the width therefore constant - the geometry above says otherwise.)
     ]
     brook = [drain_pts[-1], (round(drain_pts[-1][0] + dx * 300, 1), round(drain_pts[-1][1] + dy * 300, 1))]
+    # the ribbon's bands end AT the foot, i.e. on the cross-drain's centerline - so its bottom bund
+    # was drawn under the ditch. Hold the last band off to the bank (see `hem_to_bank`).
+    for p in plots:
+        p["poly"] = hem_to_bank(p["poly"], drain_pts, down_deg, 1.5, 5.0)
     acres = sum(_poly_area(p["poly"]) for p in plots) * 4 / 43560
     round_channel_joints(channels)  # earthen water turns on a swept bend, not a mitred corner
     return {

@@ -1173,7 +1173,9 @@ s.label(1523, 1407, "road market", 9, italic=True, color="#5A4326")
 s.cemetery(
     2205, 871, 90, 64, parish=False, label="common burial ground"
 )  # parish=False -> ORGANIC Japan-style plot (settlements.md 'shape of the common ground'). Back inboard for the content crop (2026-07-23 second pass): the funerary anchors the frame, so it sits just past the fields, not at the old wide frame's edge
-s.cremation_ground(2205, 978)
+s.cremation_ground(2205, 978, label_above=True)  # caption ABOVE the glyph: below it, the east end of the
+# default seat laps a public well at (2253.6, 997.1) - the well moved there when the paddy carve was
+# corrected (2026-08-08) and nothing else in this pocket has room to give (labels_clear_of_other_buildings)
 s.ossuary(2215, 760)
 
 # ---- the EXECUTION GROUND and its boundary stone (feature 015; settlements.md "Execution ground").

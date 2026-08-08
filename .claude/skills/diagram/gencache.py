@@ -194,7 +194,20 @@ def run_and_record(gen: str) -> dict[str, Any]:
         # traces a fresh module whose code objects had never been disabled.
         mon.restart_events()
         try:
-            runpy.run_path(gen, run_name="__main__")
+            try:
+                runpy.run_path(gen, run_name="__main__")
+            except SystemExit as ex:
+                # A GEN MAY FINISH BY EXITING, and in-process that would take the whole sweep with
+                # it. Every Mode A gen ends `raise SystemExit(main())`, which is a normal successful
+                # return for a script - but `runpy` runs it in THIS interpreter, so the exception
+                # propagated out of regen.py and the batch stopped, silently, reporting exit 0. On
+                # 2026-08-08 `python3 regen.py pool/*/*.gen.py` - the whole-pool invocation this
+                # file's docstring recommends - therefore rebuilt the nine hamlets, hit the first
+                # magistracy, and quit before a single town, village or city, looking for all the
+                # world like it had done the lot. A non-zero code is a real failure and still
+                # raises; zero (or None) is just how a script says it is done.
+                if ex.code:
+                    raise
         finally:
             mon.set_events(tool, 0)
             mon.register_callback(tool, mon.events.PY_START, None)

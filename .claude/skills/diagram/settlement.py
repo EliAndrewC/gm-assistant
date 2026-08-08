@@ -2865,7 +2865,36 @@ class Settlement:
             cr = [vx * pdy - vy * pdx for vx, vy in p["poly"]]
             pcx, pcy = _centroid(p["poly"])
             pdims.append([round(max(al) - min(al), 1), round(max(cr) - min(cr), 1), round(pcx, 1), round(pcy, 1), len(p["poly"]), _sharp_corners(p["poly"])])
-        _fld: dict[str, Any] = {"name": name, "kind": "paddy", "outline": env, "bbox": [min(exs), min(eys), max(exs), max(eys)], "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)], "plots": pdims}
+        # THE BUNDS ALONG THE COLLECTOR, recorded so the gate can actually see them (2026-08-08).
+        # `pdims` above is extents-and-a-centroid: it cannot express "this bund is drawn ACROSS the
+        # drainage ditch", which is precisely the defect the GM caught on Hoshizora - the hem plots
+        # were laid on the contour while the collector runs at up to ~19 deg to it, so every hem
+        # bund started above the ditch and ended below it. `paddy_bunds_clear_the_collector` needs
+        # the real outlines to judge that, so the SMALL SET of plots that actually border this fan's
+        # drain carries its polygon into the manifest - a dozen-odd rings per fan, not a second copy
+        # of the field. Band is generous (a plot merely NEAR the ditch is cheap to record and a plot
+        # the band misses is invisible to the check, which is the failure that matters).
+        _dch = next((c for c in net["channels"] if c["role"] == "drain" and len(c["pts"]) >= 2), None)
+        _hem_rings: list[list[list[float]]] = []
+        if _dch is not None:
+            _dpp = _dch["pts"]
+            _band = 30.0 + max(_dch["w"], _dch.get("w_tail", _dch["w"]))
+            _dx0, _dy0 = min(q[0] for q in _dpp) - _band, min(q[1] for q in _dpp) - _band
+            _dx1, _dy1 = max(q[0] for q in _dpp) + _band, max(q[1] for q in _dpp) + _band
+            for p in net["plots"]:
+                if any(_dx0 <= vx <= _dx1 and _dy0 <= vy <= _dy1 for vx, vy in p["poly"]) and any(
+                    min(seg_dist(vx, vy, _dpp[i], _dpp[i + 1]) for i in range(len(_dpp) - 1)) <= _band for vx, vy in p["poly"]
+                ):
+                    _hem_rings.append([[round(vx, 1), round(vy, 1)] for vx, vy in p["poly"]])
+        _fld: dict[str, Any] = {
+            "name": name,
+            "kind": "paddy",
+            "outline": env,
+            "bbox": [min(exs), min(eys), max(exs), max(eys)],
+            "vis_bbox": [min(pvx), min(pvy), max(pvx), max(pvy)],
+            "plots": pdims,
+            "drain_hem": _hem_rings,
+        }
         if net.get("down_deg") is not None:
             _fld["down_deg"] = net["down_deg"]  # this fan's LOCAL fall (see build_comb)
         self.M["fields"].append(_fld)

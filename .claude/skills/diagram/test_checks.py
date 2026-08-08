@@ -471,6 +471,57 @@ def test_drain_runs_cross_slope_passes_for_a_contour_collector():
     assert "drain_runs_cross_slope" not in f(_drain([[300, 700], [700, 300]]))
 
 
+# ---- paddy_bunds_clear_the_collector: a paddy's low bund is the ditch's BANK, never drawn
+# through it (GM 2026-08-08, Hoshizora). down_deg=45 -> fall is SE, and the collector below runs
+# along the contour on the line x + y = 1000, so a vertex with x + y > 1000 is past its centerline.
+def _hem_M(ring, name="f", **fld):
+    return {
+        "meta": {"scale": "village", "down_deg": 45, "W": 1200, "H": 1200},
+        "fields": [{**_field(name, 200, 200, 900, 900), "drain_hem": [ring], **fld}],
+        "field_ditches": [{"poly": [[300, 700], [700, 300]], "role": "drain", "field": name, "w": 1.5, "w_tail": 6.0}],
+    }
+
+
+def test_paddy_bunds_clear_the_collector_fires_on_a_bund_drawn_across_the_ditch():
+    # a basin straddling the collector: two vertices above the line, two below it - the contour-laid
+    # hem plot the GM caught, whose bottom bund starts on one bank and ends on the other
+    assert "paddy_bunds_clear_the_collector" in f(_hem_M([[480, 480], [520, 440], [560, 480], [520, 520]]))
+
+
+def test_paddy_bunds_clear_the_collector_fires_on_a_bund_inside_the_ditchs_stroke():
+    # entirely on the field side of the centerline, but the lower edge sits ~1px off it - inside the
+    # collector's DRAWN stroke, which reaches 6px wide at the outfall. This is the half of the defect
+    # a centerline test alone would miss.
+    assert "paddy_bunds_clear_the_collector" in f(_hem_M([[440, 440], [480, 400], [520, 479], [480, 519]]))
+
+
+def test_paddy_bunds_clear_the_collector_passes_when_the_field_hems_onto_the_bank():
+    # the same basin held off to the bank: every vertex is well up-fall of the ditch
+    assert "paddy_bunds_clear_the_collector" not in f(_hem_M([[440, 440], [480, 400], [500, 460], [460, 500]]))
+
+
+def test_paddy_bunds_clear_the_collector_skips_ground_past_the_collectors_ends():
+    # downhill of the drain's LINE but off the tail of the drain itself (every vertex projects past
+    # its far end) - the collector does not reach this ground, so it hems onto something else
+    assert "paddy_bunds_clear_the_collector" not in f(_hem_M([[760, 240], [800, 280], [760, 320], [720, 280]]))
+
+
+def test_paddy_bunds_clear_the_collector_skips_a_field_with_no_recorded_hem():
+    # a non-comb paddy records no drain_hem: nothing to judge (and no silent pass claimed for it)
+    M = _hem_M([[480, 480], [520, 440], [560, 480], [520, 520]])
+    M["fields"][0].pop("drain_hem")
+    assert "paddy_bunds_clear_the_collector" not in f(M)
+
+
+def test_paddy_bunds_clear_the_collector_skips_a_hem_whose_field_declares_no_fall():
+    # the block runs (another field declares a fall) but THIS field's drain has no fall to judge by,
+    # so "which side is downhill" is unanswerable - settlement_declares_a_land_fall is what catches that
+    M = _hem_M([[480, 480], [520, 440], [560, 480], [520, 520]])
+    del M["meta"]["down_deg"]
+    M["fields"].append({**_field("other", 100, 100, 200, 200), "down_deg": 45})
+    assert "paddy_bunds_clear_the_collector" not in f(M)
+
+
 def test_drain_flows_downhill_skips_non_drain_ditches():
     # a SUPPLY (main) ditch is not a collector - the drainage-direction check ignores it (only 'drain' role)
     M = {"meta": {"down_deg": 45}, "field_ditches": [{"poly": [[100, 100], [200, 200]], "role": "main", "field": "f"}, {"poly": [[300, 300], [700, 700]], "role": "drain", "field": "f"}]}

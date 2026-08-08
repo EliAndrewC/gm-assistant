@@ -118,3 +118,47 @@ The cost is not uniform: sparse town fans shed 7-8 cells, but a dense city fan c
 (~24%) where its p25 already sits near the threshold. Every map still passes the gate,
 `paddy_fan_gapless` included - but a city fan is the place to LOOK if this is ever retuned, because
 the gate is not the eye.
+
+### The field hems onto the collector's BANK - bunds run WITH the ditch, never across it
+
+The GM, 2026-08-08, on Hoshizora: *"the dark brown earthen bunds appear to overlap with the drainage
+ditch instead of aligning with it. I would expect the earthen bunds bordering the ditch to be at the
+same angle as it."* He was reading a real construction error, not a stray plot.
+
+**The physical fact the drawing has to honor.** A paddy's lowest bund IS the collector's
+top-of-bank. The two abut and cannot interpenetrate: the bund is what holds the water in, the ditch
+is what takes it away, so a bund drawn across the collector is a basin with its wall in the drain.
+That makes the field's drain-side edge a single line running WITH the ditch, with the column bunds
+meeting it end-on at the fall angle - which is exactly the read the GM expected and did not get.
+
+**Two independent causes, both in `_carve`.**
+
+- **The hem pass laid its quads on the CONTOUR.** The collector is fitted as `f = a + b*u` and so
+  runs at `atan(b)` to the contour, with `b` clamped to 0.35 - up to ~19 degrees. The hem quads took
+  one constant fall for their top edge and one for their bottom, so across a 26 px quad the bund
+  drifted ~9 px relative to the ditch: it started above the collector and ended below it, every
+  time. On Hoshizora's west fan the hem covered almost the whole drain-side edge (14 of 31 plots,
+  against 4 from the closing rank), so this WAS the field's edge - the sawtooth, with brown ticks
+  poking out into bare ground. The hem now samples the drain at both of its own u-bounds and runs
+  both edges parallel to what the ditch does between them.
+- **The drain set-back was a flat `2 * g`,** blind to the fact that the collector WIDENS downstream
+  (`DRAIN_W_HEAD * g` -> `DRAIN_W_TAIL * g`, so half-width alone reaches `3 * g`). Even a
+  correctly-angled bund was therefore drawn inside the ditch's stroke over the lower half of its
+  run. `_drain_bank(F, dpts, g)` replaces it: half the ditch's DRAWN width at that point, plus half
+  a bund stroke so the two abut rather than overlap, converted from perpendicular into fall.
+
+**And one residue worth knowing about.** The collector's polyline wanders on purpose (+-6 px of node
+jitter at 120-170 px spacing), so successive segments differ by a few degrees. A paddy basin has
+STRAIGHT sides and cannot chase that; a bund pinned only at its two ends cuts the corner at every
+bend and lands in the water. `bank_chord` therefore lifts a bund to clear the highest point of the
+bank across its own span - which is also what a farmer laying a straight bund against a crooked
+ditch would do. The visible consequence is that a bund can sit a few degrees off its LOCAL drain
+segment (~9 degrees on Hoshizora's NE pocket) while still clearing it everywhere. That is correct,
+and it is why `paddy_bunds_clear_the_collector` tests POSITION rather than angle: a correct straight
+bund and a contour-laid one on a gently-fitted drain occupy the same angle band, so an angle
+threshold would have to be either toothless or wrong.
+
+The check reads a new per-field `drain_hem` record (the outlines of just the plots bordering that
+fan's drain, a dozen-odd rings) because the manifest's `plots` entry is extents-and-a-centroid and
+cannot express "this bund is drawn across the ditch". The pre-fix manifest is frozen as
+`pool/regressions/paddy_bunds_drawn_across_the_drainage_ditch_hoshizora.json`.
