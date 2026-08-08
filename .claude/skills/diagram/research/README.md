@@ -8,6 +8,7 @@
 |---|---|
 | [`archetypes.md`](archetypes.md) | [`../settlements/archetypes.md`](../settlements/archetypes.md) |
 | [`buildings.md`](buildings.md) | [`../buildings.md`](../buildings.md) |
+| [`cities/capitals.md`](cities/capitals.md) | [`../settlements/capitals.md`](../settlements/capitals.md) |
 | [`cities/defenses.md`](cities/defenses.md) | [`../settlements/cities/defenses.md`](../settlements/cities/defenses.md) |
 | [`cities/fabric.md`](cities/fabric.md) | [`../settlements/cities/fabric.md`](../settlements/cities/fabric.md) |
 | [`cities/government.md`](cities/government.md) | [`../settlements/cities/government.md`](../settlements/cities/government.md) |
