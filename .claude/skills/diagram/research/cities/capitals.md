@@ -203,6 +203,81 @@ Inside the wall the system is honestly buried, and it is represented by what a r
 
 **The Emperor's granaries are separate**, and their siting is an inference. budgets.md gives the Imperial Magistrate a ~450-koku line for "local Imperial granary supervision," with "separate granary staff, materials, and operations," so they are distinct stores under a foreign authority - but nothing in the sources says where a capital would put them. Adjacent to the Imperial Magistrate's compound, or with their own water access, are both plausible; pick one and record it as a choice rather than a finding.
 
+## Per-household ground costs for the two housing types the budget model has never seen
+
+**Grounds:** the proposed `C_YASHIKI` and `C_TERRACE` rows in `citybudget.py`
+
+**Evidence:** attested (both size anchors), interpolated (the gross-up ratios, measured from the pool)
+
+**Sources:** `fukui-bushi-jutaku`, `shibata-ashigaru-nagaya`, `matsue-bukeyashiki` - all three already cited by [`government.md`](government.md)
+
+`citybudget.py` prices exactly two kinds of dwelling: `C_PACKED` (690 px^2 gross, a row house) and `C_SPACED` (2,480, a detached samurai house). A capital adds two more, and without rows for both the derived wall is wrong in the direction hardest to notice.
+
+**The gross-up ratios, measured from the three shipped cities** (drawn footprint -> the model's gross cost, which is footprint plus its share of eaves, roji and margins):
+
+| | measured drawn footprint | model gross | ratio |
+|---|---|---|---|
+| packed row (caste-weighted) | 124 px^2 | `C_PACKED` 690 | **5.6x** |
+| samurai house (75/25 junior/senior) | 330 px^2 | `C_SPACED` 2,480 | **7.5x** |
+
+The spaced ratio is the higher one, which is the model working correctly: a detached house in a yard wastes more ground per roof than a party-wall terrace.
+
+**`C_YASHIKI` - the walled samurai compound inside the wall.** The anchor is already in our own research: the Fukui archive's **Suginuma plan** (a 1,000-koku retainer, 1839) is a **28 x 32.5 ken plot = ~167 x 194 ft**, which at 3 ft/px is **3,600 px^2**. That is a PLOT, so it already contains its own yard - the walled perimeter IS the boundary, so it carries far less shared-margin overhead than a detached house. Applying only a modest ~1.15x for street margin:
+
+    C_YASHIKI ~= 4,150 px^2
+
+Sanity checks against things we already draw: 1.7x an ordinary in-wall samurai house's gross (right for a chancellor against a bushi), 1.3x the drawn merchant-estate court (2,852 px^2, 0.59 acre - right for a chancellor against a very rich merchant), and comfortably under the extramural country manor (~4,900 px^2, ~1 acre), which has land a city plot does not.
+
+**`C_TERRACE` - the retainer terrace.** The anchor is likewise ours already: Shibata's ICP *ashigaru-nagaya* is **8 households under one roof, 143 x 21 ft, 18 ft of frontage each** = 378 sq ft per household = **42 px^2**. But that is the *lowest* stratum, and our retainer terrace houses **Rank 1-4 samurai** - poor, but a band reaching 16 koku at the top. It should therefore sit above the historical ashigaru unit and below the detached samurai house (2,322 sq ft drawn, which matches the Matsue mid-rank residence's ~220 m^2 almost exactly). Taking ~110 px^2 drawn (~990 sq ft, just above our laborer row house at 891) at a row-housing gross-up:
+
+    C_TERRACE ~= 660 px^2
+
+**Confidence, stated honestly.** Both SIZE anchors are attested and measured. The two DERIVED constants are interpolations, and **`C_TERRACE` is the softer of the two** - it is bracketed by real numbers at both ends but its position between them is a judgment. `C_YASHIKI` rests directly on a measured plan and is firmer. Both should be re-derived against the first capital's drawn map, exactly as `C_PACKED`/`C_SPACED` were back-predicted from Tango.
+
+**What it makes the wall.** Pricing the capital inventory with these rows - 2,160 packed households, a samurai cohort split by rank into ~60 walled yashiki / ~160 detached / ~94 terraced, the ~598,000 px^2 castle, ~180,000 of expanded civic program, and the 7% circulation fraction - gives a required interior of **~3.2M px^2** and a derived ring of about **rx 1,056 / ry 982 px**: roughly **1.2 x 1.1 miles across, a ~3.6 mile circuit**. Two consequences worth knowing before the feature starts:
+
+- **The existing 3,200 x 2,700 canvas still fits it** (it needs ~2,412 x 2,264 including the moat-and-margin clearance), so no canvas change is required.
+- **`plan_city` will refuse it outright.** `POP_MIN, POP_MAX = 2000, 4000` raises rather than clamping - correctly, since it says capitals are a future tier - so the capital tier needs its own band and its own caste table, not a widened provincial one.
+
+**One knob this exposes.** `SAMURAI_INWALL_FRAC` is 2/3 for a provincial city, the rest holding extramural estates they commute in from. A capital should run HIGHER - proximity to the daimyo's court is the whole point of the posting, and the walled yashiki is what makes staying in-wall attractive to exactly the senior cohort that would otherwise build outside. ~0.85 is my estimate; it is a guess, and it moves ~40 households of the priciest housing type, so it is worth the GM's eye.
+
+## The brokers' row is MERCHANT, and the ministry's cut is narrower than it looks
+
+**Grounds:** the wharf brokers' row; the entertainment district's siting
+
+**Evidence:** setting-canon (GM ruling), corroborated by the Edo pattern
+
+**Sources:** `asakusa-kuramae`, budgets.md "Domain ministry budgets"
+
+**GM ruling, 2026-08-08.** The brokers' row is a **merchant** quarter, not a Ministry of Retainers annex - and the reason is a distinction the budget line does not spell out on its face.
+
+budgets.md credits the Ministry of Retainers with "~1,600 (rice/coin arbitrage on capital stipend throughput of ~28,000)." **That figure covers the PAYING of stipends only** - the denomination decisions, the rice-versus-coin split, the payment-day logistics that the ministry administers. It is not a general franchise over rice finance. Everything else - the contracts, the clearinghouse business, the lending against next year's stipend, the arbitrage a samurai household does on its own account - sits outside it, and **the merchant class has grown rich on that in Rokugan exactly as the *fudasashi* did in Edo.**
+
+So the Edo causal chain survives intact, and with it the reason the entertainment district belongs beside the granary: **the brokers' money is what builds the theaters.** Draw the row as merchant frontage - shops and merchant houses, with the wealth band skewed high - not as state violet.
+
+**Why this matters beyond one row of buildings.** It resolves an apparent conflict between setting canon and the historical model without weakening either, and the resolution is a general one: *a ministry line item in budgets.md prices the ministry's own administrative function, not the whole economic activity that function touches.* Read another ministry's "informal income" line the same way before concluding that a trade is state-run.
+
+## The Emperor's granaries are separate, because they face a different THREAT
+
+**Grounds:** `imperial_granary_seat` (proposed knob); the Imperial Magistrate's compound
+
+**Evidence:** setting-canon (GM ruling), reconstruction (the siting)
+
+**Sources:** budgets.md "Imperial magistrates and their staff"
+
+**GM ruling, 2026-08-08**, and the reasoning is a threat model rather than a plan:
+
+> The Emperor's granaries do not need to be as guarded as the daimyo's, because an invading neighbor would be unlikely to attack the Emperor's granaries. They need protection from brigands, not from besiegers.
+
+That single distinction settles what was otherwise an arbitrary placement. The daimyo's siege stock has to be inside the castle because a siege is exactly what it is for; the Emperor's stores face **theft, not investment**, so a stout wall and a watch is sufficient and there is no reason to spend castle ground on them. **They therefore sit outside the castle, as their own modest walled compound.**
+
+Where that compound goes is a **tunable knob**, because both plausible sitings are real answers and different cities will have made different choices:
+
+- **beside the Imperial Magistrate's compound** - the official who oversees them is right there, which is the administratively obvious arrangement; or
+- **on the water** - granaries want the wharf, since grain arrives and leaves by boat.
+
+Proposed as `meta(imperial_granary_seat="magistrate" | "wharf")`, with neither as a strong default. This is the same shape as the castle-seat knob: a genuine either/or that gives two capitals different skeletons for a documented reason rather than a die roll.
+
 ## The ministries sit OUTSIDE the castle, flanking the approach avenue
 
 **Grounds:** the government ward and the ote-suji avenue; the six `s.ministry` compounds at capital scale

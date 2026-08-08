@@ -99,6 +99,23 @@ slow_turn; slow_turn; slow_turn; slow_turn; slow_turn; slow_turn; slow_turn
 slow_turn; check "7 slow turns, no block" ok $?
 teardown
 
+echo "8. a BACKGROUNDED call is never counted as recon, and is never blocked"
+# Found in use, minutes after the window shipped: `make done` launched with run_in_background
+# returns to the model in milliseconds, so the duration test reads the cheapest possible turn -
+# and the hook blocked the one thing the loop rules most want you to do.
+setup
+bg_turn() { sleep 0.35; "$HOOK" pretool <<<'{"session_id":"t1","tool_name":"Bash","tool_input":{"command":"make done","run_in_background":true}}' 2>/tmp/bt.err; local rc=$?; [ $rc -ne 0 ] && return $rc; "$HOOK" posttool <<<'{"session_id":"t1","tool_name":"Bash","tool_input":{"command":"make done","run_in_background":true}}' >/dev/null 2>&1; return 0; }
+serial_turn; serial_turn; serial_turn          # window "111" - the very next serial call blocks
+bg_turn; check "the backgrounded launch is NOT blocked, even standing at the threshold" ok $?
+serial_turn; check "a real serial call right after it still blocks" blocked $?
+teardown
+setup
+bg_turn; bg_turn; bg_turn; bg_turn; bg_turn; check "a run of backgrounded launches never blocks" ok $?
+teardown
+# NOTE what this does NOT claim: a backgrounded turn is still a TURN, so it ages the window like any
+# other. Five of them push a serial turn out of a window of six, which is correct - the window asks
+# "how much of my RECENT work was one-call recon", and work you did five turns ago is not recent.
+
 echo "7. sessions are independent"
 setup
 serial_turn; serial_turn; serial_turn
