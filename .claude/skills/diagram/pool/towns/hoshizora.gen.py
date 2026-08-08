@@ -388,11 +388,19 @@ s.execution_ground(1930, 227, rot=-28)
 # threshing yard (some get dropped). Dense rings so the shown field edges read WORKED
 # (outside_fields_farmhouse_density wants ~village density along the on-map edge).
 # A THIN band between the diagonal shopfront at (670,764) and the field behind it. The bundle solve
-# reserves a farmstead's yard as well as its house, but it measures a neighbour's UNROTATED dims, and
+# reserves a farmstead's yard as well as its house, but it measures a neighbor's UNROTATED dims, and
 # this shop is drawn at -35 deg - so after the RNG-scope re-roll a ring yard tucked in against a corner
 # the solve could not see (harvest_yards_clear_of_structures). Kept deliberately thin: an 80x72 pocket
 # was tried first and simply displaced the homestead into a worse collision.
 s.block_polys.append([(640, 741), (714, 741), (714, 753), (640, 753)])
+# THE WINDBREAK BELT IS RESERVED GROUND, from here on. The gen already carried a note about a
+# 'reflowed well [that] sat under the canopy' at the belt's bottom edge; the 2026-08-08 RNG re-roll
+# put one squarely in its MIDDLE (227,197 -> 113,197), and since the clump filter clears a halo
+# around every structure, the belt drew as two lobes with a bare notch - 49 clumps where it had 67.
+# Growing the polygon to buy the ratio back was tried and is the wrong shape of fix: it widens the
+# outline while the middle stays eaten. Reserving the belt keeps wells AND ring farmsteads off it,
+# which restores the clumps instead of paying for them on the west margin.
+s.block_polys.append([(12, 165), (95, 148), (185, 158), (240, 175), (250, 240), (245, 318), (180, 334), (95, 314), (14, 304)])
 for bb, rings in ((('poly', ENV_A), [(48, 14), (42, 40), (34, 66), (28, 92), (22, 118), (16, 144)]), (('poly', ENV_E), [(28, 14), (24, 40), (20, 66), (16, 92)])):
     for n, gap in rings:
         s.ring(bb, n, gap, ["plain"])
@@ -526,10 +534,7 @@ s.commons([(80, 1180), (235, 1190), (230, 1298), (90, 1298)], role="grazing")  #
 # along the top-left upland margin OUTSIDE the farm rows (clumps auto-skip any house/yard/
 # garden, so the belt must lie on genuinely open ground to actually render)
 s.village_grove(
-    # Grown 9% about its centroid 2026-08-08: the RNG-scope re-roll fits 4 more farmhouses (44 -> 48),
-    # and the back-village windbreak has to SCALE with the cluster it shelters - 0.36 of roof area
-    # against the 0.40 floor (village_windbreak_scales_with_cluster). Same belt, wider.
-    [(0, 158), (90, 140), (188, 151), (248, 169), (259, 240), (254, 325), (183, 342), (90, 321), (2, 310)], role="windbreak"
+    [(12, 165), (95, 148), (185, 158), (240, 175), (250, 240), (245, 318), (180, 334), (95, 314), (14, 304)], role="windbreak"
 )  # bottom edge pulled up: a reflowed well sat under the canopy
 # ...and the leafy scatter: bamboo + dooryard fruit filling the OPEN gaps through the whole
 # farm belt (clumps skip every house/yard/garden/paddy, settling into the bare ground between

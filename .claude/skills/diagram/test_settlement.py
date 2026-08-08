@@ -2140,14 +2140,14 @@ def test_garden_fits_rejects_a_spot_outside_the_bound():
     assert s._garden_fits(700, 500, 24, 16, 500, 500, yard) is False  # x=700 is outside the bound
 
 
-def test_yard_fits_skips_own_house_and_rejects_a_neighbour():
+def test_yard_fits_skips_own_house_and_rejects_a_neighbor():
     s = Settlement(1000, 1000, seed=1)
     s.placed.append((500, 500, 40, 28))  # the OWN house footprint -> the loop skips it
     s.placed.append((520, 540, 40, 28))  # a neighbor where the yard would land -> rejected
     assert s._yard_fits(520, 540, 32, 20, 500, 500) is False
 
 
-def test_garden_fits_skips_own_house_and_rejects_a_neighbour():
+def test_garden_fits_skips_own_house_and_rejects_a_neighbor():
     s = Settlement(1000, 1000, seed=1)
     s.placed.append((500, 500, 40, 28))  # the OWN house footprint -> the loop skips it
     s.placed.append((545, 500, 40, 28))  # a neighbor where the garden would land -> rejected
@@ -3565,7 +3565,7 @@ def test_bund_junctions_pile_earth_only_where_bunds_actually_cross():
     b2 = len(s2.out)
     s2.bund_junctions(grid_plots, "j-paddies")
     assert "".join(s2.out[b2:]) == drawn
-    # SEPARATED parcels (the polder carve: every parcel inset off its neighbours) share no corner at all
+    # SEPARATED parcels (the polder carve: every parcel inset off its neighbors) share no corner at all
     inset_plots = [
         {"poly": [(p["poly"][0][0] + 2, p["poly"][0][1] + 2), (p["poly"][0][0] + 38, p["poly"][0][1] + 2), (p["poly"][0][0] + 38, p["poly"][0][1] + 38), (p["poly"][0][0] + 2, p["poly"][0][1] + 38)]}
         for p in grid_plots
@@ -4521,7 +4521,7 @@ def test_build_polder_mosaic_knob():
 
 
 def test_apply_land_use_leaves_a_lone_pond_ungated():
-    # a dike-pond with NO adjacent canal (<46 px) and NO neighbour pond within reach (<52 px) gets no sluice -
+    # a dike-pond with NO adjacent canal (<46 px) and NO neighbor pond within reach (<52 px) gets no sluice -
     # the defensive cap that stops a lone basin drawing a giant culvert across bare ground to a distant pond.
     s = Settlement(2000, 2000, seed=1)
     s.meta(field_archetype="mulberry_dike_fishpond")
@@ -4533,7 +4533,7 @@ def test_apply_land_use_leaves_a_lone_pond_ungated():
         "channels": [{"pts": [(1900, 100), (1950, 150)]}],  # a canal far from BOTH ponds
     }
     s.apply_land_use(net, "mulberry_fishpond", random.Random(1), fraction=1.0, eligible="all")
-    assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbour near
+    assert s.M.get("dikepond_sluices") == []  # both basins ungated: no canal near, no neighbor near
 
 
 def test_apply_land_use_reanchor_leaves_a_placeholder_slot():
