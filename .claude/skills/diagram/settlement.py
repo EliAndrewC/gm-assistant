@@ -4686,6 +4686,36 @@ class Settlement:
         well must yield, not the commons."""
         if self._in_scrub_cover(x, y) or not self._well_ground_clear(x, y):
             return False
+        # THE 30x30 IS A FIXED-PIXEL CONSTANT IN A SCALE-AWARE FAMILY, AND IT NO LONGER MEANS ONE
+        # THING (measured 2026-08-08). `2 * r + 14` is 30px for the default r=8 REGARDLESS of ftpx,
+        # while the head this reserves ground for is `_well_vr()` = px(12.376), which DOES scale. So
+        # the ratio of reserved ground to drawn glyph is exactly ftpx, and every pool map disagrees:
+        #
+        #     ftpx=1  hamlets, towns   head 24.8px   reservation 30px   1.21x   (~30 real ft)
+        #     ftpx=2  villages         head 12.4px   reservation 30px   2.42x   (~60 real ft)
+        #     ftpx=3  cities           head  8.0px   reservation 30px   3.75x   (~90 real ft)
+        #
+        # Same ~24.8 ft well-house, three different answers: the placer demands 30 real ft of
+        # standing room around it on a hamlet and 90 real ft on a city. The constant was DERIVED at
+        # 1px=1ft, where it is a sensible ~2.6px margin a side, and was never re-derived when the
+        # scale ladder added the 2 ft and 3 ft tiers - the exact trap `well()`'s own glyph comment
+        # warns about ("fixed pixels would make it look right in the dense city but far too small
+        # beside a village/town's larger houses"), running the other way.
+        #
+        # IT IS NOT A DELIBERATE DRAWING APRON, though the intent behind `_place_wells`' "modest
+        # footprint" comment reads like one. An apron would be RESERVED as well as demanded, and it
+        # is not: `well()` registers only `(x, y, 2 * vroof, 2 * vroof)` in `placed`, so on a city
+        # map this asks 30px of clearance at placement and then occupies 8px, and later features
+        # pack right up to the head. Over-restrictive going in, under-reserving once in - which is
+        # skill CLAUDE.md's item 3 ("placement tests a DIFFERENT footprint than the one drawn")
+        # wearing a different hat, not a fourth kind of defect.
+        #
+        # COST, for whoever fixes it: on Tango, testing the TRUE drawn head instead of this box
+        # accepts ~5x the ground the box does around a boxed-in steading (157 seats vs 32 in the
+        # east-fan sweep), and wells are 131 of the 767 seats that whole gen loses to geometry
+        # error. LEFT AS IS deliberately - changing it re-seats wells on every map in the pool and
+        # re-rolls the packs that flow around them, so it belongs with the item 2/item 3 pass and
+        # its re-baseline, not in a drive-by. See `_place_wells`, which computes the same box.
         if self._fits(x, y, 2 * r + 14, 2 * r + 14):
             self.well(x, y, r, shrine=shrine)
             return True
@@ -4784,7 +4814,11 @@ class Settlement:
 
     def _place_wells(self, bbox: Any, spacing: float, r: float, near: Any, coverage: bool) -> list[Pt]:
         x0, y0, x1, y1 = bbox
-        probe = 2 * r + 14  # a modest footprint => wells sit in the courtyards, not crammed on a lane
+        # a modest footprint => wells sit in the courtyards, not crammed on a lane. The SAME box
+        # `well_at` computes, and it carries the same caveat: 30px is fixed while the drawn head
+        # scales with ftpx, so this reserves 1.21x the glyph on a hamlet and 3.75x on a city. Read
+        # the note in `well_at` before touching it - the two must move together.
+        probe = 2 * r + 14
         d = spacing * 0.26
         offsets = [(0, 0), (d, d), (-d, -d), (d, -d), (-d, d)]
         # `near`: only place a well that has a DWELLING within `near` px - a well serves the households
