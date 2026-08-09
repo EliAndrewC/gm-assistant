@@ -7982,6 +7982,39 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"{len(crooked)} bridge(s) not seated on the crossing they carry: {crooked[:3]} - a deck lies ON the intersection and runs ALONG the way, or the way runs through the water beside it; solve it with s.bridges() instead of hand-placing coordinates",
     )
 
+    # A DECK FULLY CROSSES ITS WATER (GM 2026-08-09): both ends of the deck-line reach past the
+    # crossed watercourse's edge onto dry ground. roads_bridge_water is satisfied by ANY deck
+    # within 40px of the crossing and the alignment rule by seat and bearing alone, so a deck
+    # SHORTER than its water passed both - the capital's hand-placed towpath plank stopped
+    # mid-channel and read as a bridge hanging over the water. An oblique crossing needs the
+    # longer span this implies (span >= width / sin(crossing angle) + landings); s.bridges()
+    # computes that itself, so this rule is chiefly the hand-placed deck's gate. The crossed
+    # water is the WIDEST watercourse under the deck's seat, from the same shared source both
+    # bridging sides read; footprint family: gap VERDICT, measured on the deck-line's real ends.
+    b_short = []
+    for b in M.get("bridges", []):
+        b_th = math.radians(b.get("rot", 0.0))
+        b_ux, b_uy = math.cos(b_th), math.sin(b_th)
+        b_ends = [(b["x"] - b_ux * b["span"] / 2, b["y"] - b_uy * b["span"] / 2), (b["x"] + b_ux * b["span"] / 2, b["y"] + b_uy * b["span"] / 2)]
+        b_crossed: Any = None
+        b_cw = 0.0
+        for b_pts, b_wid in bridge_crossed_waters(M):
+            b_d = min(seg_dist(b["x"], b["y"], b_pts[i], b_pts[i + 1]) for i in range(len(b_pts) - 1))
+            if b_d <= b_wid / 2 + 2 and b_wid > b_cw:
+                b_crossed, b_cw = b_pts, b_wid
+        if b_crossed is None:
+            continue  # a deck seated on no water is bridges_align_with_their_way's business
+        for b_e in b_ends:
+            if min(seg_dist(b_e[0], b_e[1], b_crossed[i], b_crossed[i + 1]) for i in range(len(b_crossed) - 1)) < b_cw / 2 - 1.5:
+                b_short.append(f"({round(b['x'])},{round(b['y'])}) span {b['span']:.0f} on ~{b_cw:.0f}px water")
+                break
+    check(
+        "bridges_span_their_water",
+        not b_short,
+        f"deck(s) that do not fully cross their water - an end stops at or short of the bank, so the bridge reads half-connected: {sorted(set(b_short))[:4]}; "
+        f"lengthen the span (an oblique crossing needs width/sin(angle) plus landings) or let s.bridges() size it",
+    )
+
     # STANDALONE plank FOOTBRIDGES on the irrigation ditches (opt-in via meta.field_footbridges): field-workers
     # cross a ditch on a plank while walking the bunds, so any long ditch stretch carries at least one plank
     # about midway (these are NOT lane crossings - no path leads to them). Fires if a long ditch has none near it.
@@ -12988,6 +13021,59 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "torii_count_canonical",
             not _bad_torii,
             f"hall(s) with a non-numerological torii count (x, y, n): {_bad_torii[:4]} - every shrine/monastery/temple carries exactly 1, 3, or 7 torii (7 is numerologically potent in Rokugan; see settlements.md 'Torii'), or is explicitly marked shrine_hall(torii_outlier=True)",
+        )
+        # A HALL BY A MAJOR WAY FACES ITS TORII TOWARD *A* WAY (GM 2026-08-09): the sando exists
+        # so an approacher passes beneath the arches on the way IN - that is what a monzen
+        # ("before the gate") district is before. When a shrine/monastery/temple stands within
+        # reach of a road or city street, its avenue must face SOME way it can serve - the major
+        # way itself, or the hall's own approach lane (a temple legitimately fronts its monzen
+        # lane while a bigger street passes behind: Minami's eight trade-sited precincts and
+        # Nagahara's temple lane are exactly that, which is why the first cut of this rule -
+        # "face the NEAREST major way" - fired on four correct Minami halls). Arches facing no
+        # way at all put the gateway behind the temple, which is the defect that named the rule
+        # (the capital's Jurojin marched its avenue away from the kagi-no-te road into empty
+        # ground). ASSOCIATION/bearing family: hall-center to arch-centroid vs hall-center to
+        # each way's closest point, 60 deg tolerance, ~180px reach; no major way in reach ->
+        # skip, a hall in open fabric faces where it will.
+        _tf_major: list[Any] = ([M["road"]] if M.get("road") else []) + [_tfr["pts"] for _tfr in M.get("roads", [])] + [_tfs["pts"] for _tfs in M.get("town_streets", [])]
+        _tf_all: list[Any] = _tf_major + [_tfl["pts"] for _tfl in M.get("lanes", [])]
+        _tf_bad = []
+        for _tfh in _proper:
+            _tfa = _tarch[id(_tfh)]
+            if not _tfa:
+                continue
+            # a DOORSTEP arch is not an avenue: a hall's 1-2 modest-entrance arches stand at its
+            # own threshold and face the way the HALL faces (south, by building convention) -
+            # only a sando that actually marches somewhere has a direction worth policing
+            # (Minami's Benten and Daikoku each keep one arch 18px off the south face; firing
+            # on those was the rule mistaking a door for a road)
+            if max(math.hypot(t[0] - _tfh["x"], t[1] - _tfh["y"]) for t in _tfa) < 45:
+                continue
+            _tf_reach = min((seg_dist(_tfh["x"], _tfh["y"], _tfw[_tfi], _tfw[_tfi + 1]) for _tfw in _tf_major for _tfi in range(len(_tfw) - 1)), default=1e9)
+            if _tf_reach > 180:
+                continue
+            _tfax = sum(t[0] for t in _tfa) / len(_tfa) - _tfh["x"]
+            _tfay = sum(t[1] for t in _tfa) / len(_tfa) - _tfh["y"]
+            _tfna = math.hypot(_tfax, _tfay) or 1.0
+            _tf_served = False
+            for _tfw in _tf_all:
+                for _tfi in range(len(_tfw) - 1):
+                    _tfc = seg_closest(_tfh["x"], _tfh["y"], _tfw[_tfi], _tfw[_tfi + 1])
+                    _tfwx, _tfwy = _tfc[0] - _tfh["x"], _tfc[1] - _tfh["y"]
+                    _tfnb = math.hypot(_tfwx, _tfwy)
+                    if _tfnb > 180 or _tfnb < 1e-6:
+                        continue
+                    if (_tfax * _tfwx + _tfay * _tfwy) / (_tfna * _tfnb) >= 0.5:
+                        _tf_served = True
+                        break
+                if _tf_served:
+                    break
+            if not _tf_served:
+                _tf_bad.append((round(_tfh["x"]), round(_tfh["y"])))
+        check(
+            "temple_torii_face_the_street",
+            not _tf_bad,
+            f"hall(s) whose torii avenue faces no way it could serve (x, y): {_tf_bad[:4]} - an approacher passes beneath the arches on the way in, so the sando stands between the hall and a street or its own approach lane",
         )
         # DRAWN COUNT MATCHES THE ROLL (GM 2026-07-23, the full re-roll): shrine_hall rolls each
         # hall's count on the tier's TORII_WEIGHTS column (or takes the torii_count= pin) and records

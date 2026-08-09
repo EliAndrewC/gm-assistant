@@ -5046,6 +5046,45 @@ def test_roads_bridge_water_fires_on_an_unbridged_way_over_a_castle_moat():
     assert "roads_bridge_water" not in f(M)
 
 
+def test_temple_torii_face_the_street():
+    """A temple within reach of a major way faces its torii avenue TOWARD it (GM 2026-08-09) -
+    the sando exists so an approacher passes beneath the arches on the way in; arches on the
+    far side put the gateway behind the temple (the capital's Jurojin marched its avenue away
+    from the kagi-no-te road). No way in reach -> the hall faces where it will."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "road": [[100, 400], [900, 400]],
+        "religious": [{"kind": "temple", "label": "T", "x": 500, "y": 500, "w": 50, "h": 33, "torii_count": 2}],
+        "torii": [[500, 560, 1], [500, 590, 1]],  # arches marching AWAY from the road
+    }
+    assert "temple_torii_face_the_street" in f(M)
+    M["torii"] = [[500, 445, 1], [500, 420, 1]]  # between hall and road - an approacher passes under
+    assert "temple_torii_face_the_street" not in f(M)
+    M["road"] = [[100, 60], [900, 60]]  # the way moves out of reach - the rule skips, it does not guess
+    M["torii"] = [[500, 560, 1], [500, 590, 1]]
+    assert "temple_torii_face_the_street" not in f(M)
+
+
+def test_bridges_span_their_water_fires_on_a_short_deck():
+    """A deck must FULLY cross its water - both ends past the bank onto dry ground (GM
+    2026-08-09: the towpath's hand-placed plank stopped mid-channel and read as a bridge
+    hanging over the water). roads_bridge_water is satisfied by ANY deck within 40px, so a
+    stub deck passes it - this rule is what catches the stub."""
+    M = _bridge_map([{"x": 500, "y": 500, "rot": 0, "span": 4, "w": 26}])  # a 4px stub deck on a 9px stream
+    assert "bridges_span_their_water" in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 0, "span": 37, "w": 26}]
+    assert "bridges_span_their_water" not in f(M)
+
+
+def test_bridges_span_their_water_fires_on_an_oblique_underspan():
+    """An OBLIQUE crossing needs a longer deck - the span that clears a perpendicular crossing
+    leaves both ends in the water when the way meets the channel at a slant."""
+    M = _bridge_map([{"x": 500, "y": 500, "rot": 45, "span": 8, "w": 6}])
+    assert "bridges_span_their_water" in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 45, "span": 20, "w": 6}]
+    assert "bridges_span_their_water" not in f(M)
+
+
 # --- a bridge must lie ON its crossing and run ALONG the way it carries ---
 def _skew_bridge_map(**kw):
     # the E-W road crosses the N-S stream at (500, 500); the deck under test is `bridges[0]`
