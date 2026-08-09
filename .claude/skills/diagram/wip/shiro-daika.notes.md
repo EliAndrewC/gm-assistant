@@ -84,3 +84,7 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   it does not borrow the domain quay 200 ft downstream. The ote-suji was re-cut from 96 ft (a
   raw-pixel unit slip) to the researched 45 ft - Edo's own Honcho-dori class - with the
   ministry files pulled in to corridor setback; research/cities/capitals.md, "Street widths".
+  A full dimensional audit followed (research/cities/capitals.md, "Dimensional audit"): every
+  drawn family checked against its anchor at 3 ft/px; all hold except the hanko, enlarged from
+  0.33 ha (the bottom of the attested band) to ~1 ha - mid-band between Choshu's first
+  Meirinkan and Aizu's Nisshinkan, per the schooling-magnet doctrine.

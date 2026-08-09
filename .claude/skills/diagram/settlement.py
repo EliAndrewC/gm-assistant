@@ -11936,7 +11936,7 @@ class Settlement:
         self.block_polys.append([(lx_ - bw_, by_), (lx_ + bw_, by_), (lx_ + bw_, by_ + 26), (lx_ - bw_, by_ + 26)])
         self.label(lx_, ly_, label, 9, italic=True, color="#463653")
 
-    def hanko(self, x: float, y: float, rot: float = 0.0, label: str = "Domain School", label_below: bool | None = None, label_xy: Pt | None = None) -> None:
+    def hanko(self, x: float, y: float, rot: float = 0.0, label: str = "Domain School", label_below: bool | None = None, label_xy: Pt | None = None, w_ft: float = 400, h_ft: float = 260) -> None:
         """THE DOMAIN SCHOOL (hanko) - the capital's state school, and the parent institution of
         the provincial martial hall (GM asked 2026-08-09 which glyph the school takes; the answer
         is both-in-one, because that is what a hanko WAS).
@@ -11951,14 +11951,19 @@ class Settlement:
         martial-hall vocabulary - state violet, hall + kamiza, archery lane - plus the civil
         lecture hall that outranks them.
 
-        REAL FEET: compound 240 x 150 ft; civil lecture hall 76 x 44 ft (the LARGER wing - a
-        hanko is first a school of letters); bugeijo 60 x 36 ft with kamiza and plank grain (the
-        provincial hall's own 120-tatami floor); a 100 ft archery lane with azuchi along the
-        south band (the kyudo 92 ft shot, as the martial hall keeps); the rest circulation.
-        Records M['martial_halls'] with kind='hanko' - the same family the checks read - and
-        blocks placement with the government-office apron."""
+        REAL FEET (GM size audit 2026-08-09): compound 400 x 260 ft = ~1 ha (~3,000 tsubo) -
+        the attested hanko band runs from Choshu's FIRST Meirinkan at 940 tsubo (0.31 ha, 1718)
+        to Aizu's Nisshinkan at 2.65 ha and the rebuilt Meirinkan's 5 ha, so ~1 ha is a solid
+        mid-band school for a ~200k-koku-class domain whose capital is the schooling magnet
+        (capitals.md) without claiming Nisshinkan's fame. Inside: civil lecture hall 76 x 44 ft
+        (the LARGER wing - a hanko is first a school of letters); bugeijo 60 x 36 ft with kamiza
+        and plank grain (the provincial hall's own 120-tatami floor); a 100 ft archery lane with
+        azuchi along the south band (the kyudo 92 ft shot); the rest courts and circulation -
+        a school's ground is mostly yard, exactly like a yamen's. Records M['martial_halls']
+        with kind='hanko' - the same family the checks read - and blocks placement with the
+        government-office apron."""
         f = self.px
-        cw, ch = f(240) / 2, f(150) / 2
+        cw, ch = f(w_ft) / 2, f(h_ft) / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-cw:.1f}" y="{-ch:.1f}" width="{cw * 2:.1f}" height="{ch * 2:.1f}" rx="2" fill="#E7E1EC" stroke="#463653" stroke-width="1.7"/>')
         ly0, ly1 = ch - f(38), ch - f(12)  # the archery lane band along the south side
@@ -11975,9 +11980,9 @@ class Settlement:
         g.append("</g>")
         self.add("".join(g))
         self.M.setdefault("martial_halls", []).append(
-            {"x": round(x, 1), "y": round(y, 1), "w": round(f(240), 1), "h": round(f(150), 1), "rot": round(rot, 1), "label": label, "range_ft": round((lx1 - lx0) * self.ftpx, 1), "kind": "hanko"}
+            {"x": round(x, 1), "y": round(y, 1), "w": round(f(w_ft), 1), "h": round(f(h_ft), 1), "rot": round(rot, 1), "label": label, "range_ft": round((lx1 - lx0) * self.ftpx, 1), "kind": "hanko"}
         )
-        self.placed.append((x, y, f(240), f(150)))
+        self.placed.append((x, y, f(w_ft), f(h_ft)))
         bm = max(30 * self.bscale, 26)  # a government school keeps the full office apron, unlike the packed-ward hall
         self.block_polys.append([(x - cw - bm, y - ch - bm), (x + cw + bm, y - ch - bm), (x + cw + bm, y + ch + bm), (x - cw - bm, y + ch + bm)])
         if label_below is None:

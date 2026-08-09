@@ -506,3 +506,34 @@ they front the avenue like a corridor instead of floating beside a runway.
 
 **The transferable rule:** pass `s.lw(real_ft)` to every way's width, never raw pixels - the
 default's docstring already cites its source, and any hand width should be able to as well.
+
+## Dimensional audit of the drawn capital (GM-prompted, 2026-08-09)
+
+**The question**: are the ministries, lineage estates, walls, river and the rest realistically
+sized? Every drawn family converted at 3 ft/px and checked against its anchor. One feature
+failed and was fixed; the rest hold.
+
+| feature | drawn | anchor | verdict |
+|---|---|---|---|
+| wall ring | 6,174 x 5,742 ft (1.17 x 1.09 mi, ~3.6 mi circuit) | the 018 budget's own prediction (~1.2 x 1.1 mi), Hikone-anchored | HOLDS - the budget is the anchor |
+| castle | 2,550 x 2,100 ft = 49.7 ha | the declared castle_px2 line, researched band 50-230 ha | HOLDS (low end = median form) |
+| city moat 66 ft / castle moat 80 ft | | researched in `castle()`: a castle moat outranks the city's ~66 ft | HOLDS |
+| river | 120 ft | `river()`'s researched default ("a serious provincial river") | HOLDS |
+| ministries | 224 x 148 ft each | the provincial research (`cities/government.md`) - "a capital does not get a bigger yamen" (018) | HOLDS |
+| grand lineage estates | 1.29-1.61 ha | Edo kami-yashiki of small daimyo: ~2,500-7,000 tsubo (0.8-2.3 ha) | HOLDS, mid-band |
+| kurogi estate | 0.76 ha (~2,300 tsubo) | upper-hatamoto class - a chancellor housing few | HOLDS |
+| modest lineage houses | 0.32-0.37 ha (~970-1,120 tsubo) | the Suginuma 1,000-koku plot (0.30 ha) - C_YASHIKI's own anchor | HOLDS, dead on |
+| Imperial Magistrate | 300 x 225 ft = 0.63 ha | Ubame's county magistracy manor (360 x 216 ft = 0.72 ha); ~68 staff + family | HOLDS - same institutional class |
+| sovereign temple halls | 150 x 100 ft | the shrine_hall guard's researched kondo ceiling (largest real main halls ~150-190 ft) | HOLDS |
+| granary kura | 60 x 36 ft per store | the town granary research (58 x 34 family) | HOLDS |
+| ote-suji 45 ft / roads 26 ft / ring 20 ft / brokers' lane 24 ft | | Honcho-dori / Tokaido / patrol-lane conventions | HOLDS (see "Street widths") |
+| towpath 8 ft | | Shaoxing's stone qiandao ~5-6.5 ft; ours carries horse teams | HOLDS, upper band |
+| aqueduct cut 10 ft | | josui earth cuts ~1-3 ken (6-18 ft) | HOLDS, mid-band |
+| moat feeder leat 48 ft | | Tango's 66 ft feeder; moat-class water | HOLDS |
+| jetties 60-66 ft | | Nagahara's wharf convention | HOLDS |
+| **hanko** | **was 240 x 150 ft = 0.33 ha** | attested band: Choshu's FIRST Meirinkan 940 tsubo (0.31 ha, 1718) -> Nisshinkan 2.65 ha -> rebuilt Meirinkan ~5 ha | **FAILED - bottom of the band** for a schooling-magnet capital of a ~200k-koku-class domain; **fixed to 400 x 260 ft (~1 ha, ~3,000 tsubo)** - mid-band, half Nisshinkan, without claiming its fame |
+
+**The method note worth keeping**: most sizes held because they were INHERITED from already-
+researched anchors (the budget, the provincial ministry, C_YASHIKI, the glyph guards). The two
+that failed at this tier - the ote-suji and the hanko - were both NEW hand-set numbers with no
+anchor cited at the point of use. A size that cannot cite its anchor is the one to audit first.

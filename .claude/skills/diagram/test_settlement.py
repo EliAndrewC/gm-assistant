@@ -6280,7 +6280,7 @@ def test_hanko_records_into_the_martial_halls_family():
     s.hanko(700, 700)
     mh = s.M["martial_halls"][0]
     assert mh["kind"] == "hanko" and mh["label"] == "Domain School"
-    assert mh["w"] == 80.0 and mh["h"] == 50.0  # 240 x 150 ft at 3 ft/px
+    assert mh["w"] == 133.3 and mh["h"] == 86.7  # 400 x 260 ft (~1 ha) at 3 ft/px - mid-band vs Meirinkan/Nisshinkan
     assert mh["range_ft"] == 100.0  # the kyudo lane, same as the provincial hall
 
 
