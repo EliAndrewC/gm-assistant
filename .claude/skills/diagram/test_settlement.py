@@ -6423,3 +6423,12 @@ def test_terrace_draws_one_roof_with_party_wall_seams():
     assert r["units"] == 6 and abs(r["w"] - 6 * 18.0) < 0.1 and abs(r["h"] - 21.0) < 0.1
     assert s.top[-1].count("<line") == 5  # 5 party walls divide 6 cells
     assert any(abs(p[0] - 500) < 0.1 and abs(p[2] - r["w"]) < 0.1 for p in s.placed)
+
+
+def test_quarter_accepts_the_capital_zones():
+    """021: "castle" and "samurai" are legal quarter zones (capital vocabulary) - the citadel
+    and the senior bands tile the interior without entering the residential density body."""
+    s = _crop_settlement()
+    s.quarter([(100, 100), (400, 100), (400, 400), (100, 400)], "castle")
+    s.quarter([(400, 100), (700, 100), (700, 400), (400, 400)], "samurai")
+    assert [q["zone"] for q in s.M["quarters"]] == ["castle", "samurai"]
