@@ -5083,6 +5083,19 @@ def test_temple_torii_face_the_street():
     assert "temple_torii_face_the_street" not in f(M)
 
 
+def test_gate_roads_join_the_ring_fires_on_a_stub_and_passes_when_joined():
+    """A gate's road must JOIN the ring road, not stop on the sill (GM 2026-08-09: the
+    capital's side-gate trunk roads STARTED at the gate point, so the gate opened onto 90 ft
+    of bare ground inside the wall). A way joins by a vertex near the ring or by crossing it."""
+    ring = [[130, 130], [870, 130], [870, 870], [130, 870], [130, 130]]
+    M = {"meta": {"scale": "city"}, "ring_road": ring, "gates": [[500, 100]], "roads": [{"pts": [[50, 50], [60, 60]], "w": 8}, {"pts": [[500, 100], [500, 0]], "w": 26}]}
+    assert "gate_roads_join_the_ring" in f(M)  # the road runs outward only - a stub on the sill
+    M["roads"][1]["pts"] = [[500, 134], [500, 100], [500, 0]]  # extended inward, vertex on the ring
+    assert "gate_roads_join_the_ring" not in f(M)
+    M["roads"][1]["pts"] = [[500, 200], [500, 0]]  # or the way CROSSES the ring outright
+    assert "gate_roads_join_the_ring" not in f(M)
+
+
 def test_bridges_span_their_water_fires_on_a_short_deck():
     """A deck must FULLY cross its water - both ends past the bank onto dry ground (GM
     2026-08-09: the towpath's hand-placed plank stopped mid-channel and read as a bridge
@@ -5095,12 +5108,26 @@ def test_bridges_span_their_water_fires_on_a_short_deck():
 
 
 def test_bridges_span_their_water_fires_on_an_oblique_underspan():
-    """An OBLIQUE crossing needs a longer deck - the span that clears a perpendicular crossing
-    leaves both ends in the water when the way meets the channel at a slant."""
+    """An OBLIQUE crossing needs a longer deck - and the verdict is on the deck's CORNERS (GM
+    2026-08-09): a span whose centerline ends cleared the banks still left a corner sitting AT
+    the water's edge, structurally impossible for an abutment that must stand back from scour.
+    A carried deck's corners need >= 6 ft of dry landing (the drawn LANDING_FT is 10)."""
     M = _bridge_map([{"x": 500, "y": 500, "rot": 45, "span": 8, "w": 6}])
     assert "bridges_span_their_water" in f(M)
-    M["bridges"] = [{"x": 500, "y": 500, "rot": 45, "span": 20, "w": 6}]
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 45, "span": 20, "w": 6}]  # ends clear, corners do not
+    assert "bridges_span_their_water" in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 45, "span": 38, "w": 6}]
     assert "bridges_span_their_water" not in f(M)
+
+
+def test_footplanks_keep_their_short_abutment_but_a_flush_plank_fires():
+    """A standalone footplank's SHORT abutment stands (GM 2026-07-22: PLANK_ABUTMENT, ~3px of
+    bank rest per side) - so its floor is 2 ft, not the carried deck's 6 - but a plank whose
+    corner sits at the water's edge still fires."""
+    M = _bridge_map([{"x": 500, "y": 500, "rot": 0, "span": 15, "w": 2, "foot": True}])
+    assert "bridges_span_their_water" not in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 0, "span": 10, "w": 2, "foot": True}]
+    assert "bridges_span_their_water" in f(M)
 
 
 # --- a bridge must lie ON its crossing and run ALONG the way it carries ---

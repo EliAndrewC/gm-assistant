@@ -8042,20 +8042,53 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"(s.water_gate + city_wall(water_gates=[...])); route the crossing leg through the gate along the wall's normal",
         )
 
-    # A DECK FULLY CROSSES ITS WATER (GM 2026-08-09): both ends of the deck-line reach past the
-    # crossed watercourse's edge onto dry ground. roads_bridge_water is satisfied by ANY deck
-    # within 40px of the crossing and the alignment rule by seat and bearing alone, so a deck
-    # SHORTER than its water passed both - the capital's hand-placed towpath plank stopped
-    # mid-channel and read as a bridge hanging over the water. An oblique crossing needs the
-    # longer span this implies (span >= width / sin(crossing angle) + landings); s.bridges()
-    # computes that itself, so this rule is chiefly the hand-placed deck's gate. The crossed
-    # water is the WIDEST watercourse under the deck's seat, from the same shared source both
-    # bridging sides read; footprint family: gap VERDICT, measured on the deck-line's real ends.
+    # EVERY GATE'S ROAD JOINS THE RING ROAD (GM 2026-08-09, the capital's side gates: both
+    # trunk-road polylines STARTED at the gate point on the wall, so the road reached the gate
+    # from outside while inside the gate opened onto 90 ft of bare ground 30px short of the
+    # ring - a door to nowhere, and invisible because no check watched gate-to-ring
+    # connectivity. A walled city's gate traffic distributes along the ring, so SOME way (the
+    # Imperial road, a trunk road, or a street) must pass the gate AND meet the ring - by a
+    # vertex near it or by crossing it outright.
+    if meta.get("scale") in ("city", "capital") and M.get("ring_road") and M.get("gates"):
+        gr_ring = M["ring_road"]
+        gr_ways = ([M["road"]] if M.get("road") else []) + [r["pts"] for r in M.get("roads", [])] + [s["pts"] for s in M.get("town_streets", [])]
+        gr_bad = []
+        for gr_g in M["gates"]:
+            gr_x, gr_y = gr_g[0], gr_g[1]
+            gr_ok = False
+            for gr_pts in gr_ways:
+                if min(seg_dist(gr_x, gr_y, gr_pts[i], gr_pts[i + 1]) for i in range(len(gr_pts) - 1)) > 8:
+                    continue  # this way does not serve this gate
+                if any(seg_dist(gr_pts[i][0], gr_pts[i][1], gr_ring[j], gr_ring[j + 1]) <= 8 for i in range(len(gr_pts)) for j in range(len(gr_ring) - 1)) or any(
+                    segments_cross(tuple(gr_pts[i]), tuple(gr_pts[i + 1]), tuple(gr_ring[j]), tuple(gr_ring[j + 1])) for i in range(len(gr_pts) - 1) for j in range(len(gr_ring) - 1)
+                ):
+                    gr_ok = True
+                    break
+            if not gr_ok:
+                gr_bad.append((round(gr_x), round(gr_y)))
+        check(
+            "gate_roads_join_the_ring",
+            not gr_bad,
+            f"gate(s) whose way stops short of the ring road (x, y): {gr_bad[:4]} - a gate's road must JOIN the ring (extend the polyline ~30px inward to the ring's inset), not stop on the sill",
+        )
+
+    # A DECK LANDS PAST ITS BANKS (GM 2026-08-09, tightened from ends-reach-the-edge): every
+    # CORNER of the deck clears the crossed water's edge onto dry ground. The ends-based rule
+    # let an oblique deck pass with a corner sitting exactly AT the water's edge (the capital's
+    # east deck landed 0.0 ft), which reads structurally impossible - a real abutment sill sits
+    # BACK from the channel edge so scour cannot undercut the bearing (settlement.LANDING_FT
+    # holds the research). s.bridges() draws LANDING_FT (10 real ft) of landing per side; the
+    # floor here is 6 ft so local water curvature under a deck does not flap the gate. A
+    # standalone FOOTPLANK keeps its deliberately short PLANK_ABUTMENT (GM 2026-07-22) and is
+    # floored at 2 ft. Real feet, converted via meta.ftpx. The crossed water is the WIDEST
+    # watercourse under the deck's seat, from the same shared source both bridging sides read;
+    # footprint family: gap VERDICT, measured on the deck's four real corners.
+    b_ftpx = float(meta.get("ftpx", 1) or 1)
     b_short = []
     for b in M.get("bridges", []):
         b_th = math.radians(b.get("rot", 0.0))
         b_ux, b_uy = math.cos(b_th), math.sin(b_th)
-        b_ends = [(b["x"] - b_ux * b["span"] / 2, b["y"] - b_uy * b["span"] / 2), (b["x"] + b_ux * b["span"] / 2, b["y"] + b_uy * b["span"] / 2)]
+        b_hl, b_hw = b["span"] / 2, b["w"] / 2
         b_crossed: Any = None
         b_cw = 0.0
         for b_pts, b_wid in bridge_crossed_waters(M):
@@ -8064,15 +8097,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 b_crossed, b_cw = b_pts, b_wid
         if b_crossed is None:
             continue  # a deck seated on no water is bridges_align_with_their_way's business
-        for b_e in b_ends:
-            if min(seg_dist(b_e[0], b_e[1], b_crossed[i], b_crossed[i + 1]) for i in range(len(b_crossed) - 1)) < b_cw / 2 - 1.5:
+        b_floor = (2.0 if b.get("foot") else 6.0) / b_ftpx
+        for b_su, b_sv in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
+            b_cx = b["x"] + b_su * b_ux * b_hl - b_sv * b_uy * b_hw
+            b_cy = b["y"] + b_su * b_uy * b_hl + b_sv * b_ux * b_hw
+            if min(seg_dist(b_cx, b_cy, b_crossed[i], b_crossed[i + 1]) for i in range(len(b_crossed) - 1)) < b_cw / 2 + b_floor:
                 b_short.append(f"({round(b['x'])},{round(b['y'])}) span {b['span']:.0f} on ~{b_cw:.0f}px water")
                 break
     check(
         "bridges_span_their_water",
         not b_short,
-        f"deck(s) that do not fully cross their water - an end stops at or short of the bank, so the bridge reads half-connected: {sorted(set(b_short))[:4]}; "
-        f"lengthen the span (an oblique crossing needs width/sin(angle) plus landings) or let s.bridges() size it",
+        f"deck(s) with a corner at or short of dry ground past the bank - the abutment would stand in the water: {sorted(set(b_short))[:4]}; "
+        f"an oblique crossing needs (width + deck_w*|cos|)/sin plus a landing each side; let s.bridges() size it, or lengthen the hand-placed span",
     )
 
     # STANDALONE plank FOOTBRIDGES on the irrigation ditches (opt-in via meta.field_footbridges): field-workers

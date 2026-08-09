@@ -129,14 +129,14 @@ s.road(
 # the same road is Imperial on BOTH sides of the city (GM 2026-08-09) - the run toward Shiro
 # Kyo carries its own caption, tilted along the branch per the linear rule
 s.label(1170, 66, "Imperial Road", 11, italic=True, color="#6E5B38", rot=195, linear=True)
-s.road([(EGATE[0], EGATE[1]), (2820, 1130), (3200, 1040)])  # east, to the Fox lands
+s.road([(2397, 1200), (EGATE[0], EGATE[1]), (2820, 1130), (3200, 1040)])  # east, to the Fox lands - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
 # the karamete approach is the STRAIGHT CONTINUATION of the north gate's street (GM 2026-08-09:
 # the first cut hung it off the diagonal mid-slope and the two beds read as overlapping roads):
 # city gate -> due south -> the castle's rear gate, dead-ending at its moat and tower exactly as
 # a castle-town street aimed at the works should, while the Imperial through-road leaves the
 # street at the (1400, 300) junction and bends west around the castle front (the kagi-no-te).
 s.road([(1400, 300), (1400, 520)])  # stops at the karamete tower's foot, as the ote-suji stops at the ote-mon's
-s.road([(SWGATE[0], SWGATE[1]), (300, 2010), (0, 2170)])  # southwest, into the domain
+s.road([(594, 1745), (SWGATE[0], SWGATE[1]), (300, 2010), (0, 2170)])  # southwest, into the domain - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
 
 # ---- THE OTE-SUJI (feature 020): the ceremonial avenue from the castle's front gate south to the
 # Imperial road at the kagi-no-te bend. Drawn as a road (M["roads"]) so the shared crossing source
@@ -178,12 +178,12 @@ s.stream([FEED_TAP, (2870, 875), (2650, 880), (MOAT[4][0], MOAT[4][1])], frm={"k
 # junction the local water direction is ambiguous, so the correctly-across board read as a
 # coincidentally axis-aligned bar; astride the clear run, across-the-channel explains itself)
 s.sluice_gate(
-    3050, 848, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3098, 828), span=26
+    3050, 848, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3040, 818), span=26
 )  # the intake board - the frame spans BANK TO BANK (posts on the abutments, the operator walks the crossbeam)
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
 s.stream([DRAIN_OUT, (2065, 2180), (2062, 2325)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
 s.sluice_gate(
-    2048, 2060, rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1980, 2040), span=26
+    2029.1, 2028.6, rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(2014, 2046), span=26
 )  # the outfall board, bank to bank like the intake
 s.moat_flow(MOAT[4], MOAT[8])
 
@@ -202,8 +202,10 @@ s.aqueduct([(2983, 989), (2790, 1063), (2620, 1125), (2510, 1168)])
 # the two ends carry the words the glyphs cannot (GM 2026-08-09): the river end is the INTAKE
 # WEIR (the Hamura form - a barrier angled across part of the stream, shouldering water into
 # the cut), and the gate end is the SETTLING BASIN, where silt drops before the buried mains
-s.label(2925, 966, "intake weir", 9, italic=True, color="#5E7A8A")
-s.label(2564, 1148, "settling basin", 9, italic=True, color="#5E7A8A")
+# All three aqueduct words share the duct's bearing and the same ~20px uphill offset from the
+# channel line (GM 2026-08-09: the end labels were level while "aqueduct" lay along the cut).
+s.label(2952, 979, "intake weir", 9, italic=True, color="#5E7A8A", rot=160, linear=True, full_tilt=True)
+s.label(2531, 1139, "settling basin", 9, italic=True, color="#5E7A8A", rot=160, linear=True, full_tilt=True)
 s.label(2725, 1066, "aqueduct", 10, italic=True, color="#5E7A8A", rot=160, linear=True, full_tilt=True)
 
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
@@ -213,7 +215,9 @@ s.label(2725, 1066, "aqueduct", 10, italic=True, color="#5E7A8A", rot=160, linea
 # river), and LABELED - the haulage path cannot explain itself at fit zoom
 s.towpath([(1774, 2681), (1924, 2481), (2074, 2281), (2216, 2103), (2292, 1990)])
 s.label(2130, 2172, "towpath", 10, italic=True, color="#8A7050", rot=-53, linear=True, full_tilt=True)
-s.bridge(2063, 2296, -53.1, 48, 4)  # the towpath's plank over the drain - span sized for the OBLIQUE crossing (22px water / sin ~36 deg + landings), per bridges_span_their_water
+s.bridge(
+    2063, 2296, -53.1, 52, 4
+)  # the towpath's plank over the drain - the OBLIQUE span (22px water / sin ~36 deg) plus a visible ~2px bank rest each side (a plank's short abutment, not a carried deck's LANDING_FT)
 s.M["bridges"][-1]["foot"] = True  # a footplank on the haulage path, not a road deck
 
 # ---- carry every way over the water it crosses. AFTER all roads and water, as bridges() requires:

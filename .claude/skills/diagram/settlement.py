@@ -68,6 +68,14 @@ RICE_GREENS = ['#A6C398', '#A2C094', '#A9C69C']  # rice at ONE stage - near-iden
 # exists so field-workers can cross to the FIELD, so both banks must reach ground worth crossing to.
 PLANK_ABUTMENT = 6.0  # deck = local ditch width + this SHORT abutment (GM 2026-07-22: was 15, far too long for a footplank)
 PLANK_BANK_REACH = 11.0  # px past the abutment where a bank opens onto the terrain it lands on
+LANDING_FT = 10.0  # a CARRIED deck runs this many REAL feet of deck onto dry ground past each
+# bank (GM 2026-08-09). Researched: a bridge does not stop at the water's edge - the girder
+# bears on an abutment sill set BACK from the channel edge, both because scour (the current
+# undercutting the bank) must never reach the bearing and because the seat itself needs
+# bearing length - so a modest timber bridge lands ~5-15 ft of deck past the water on each
+# side; 10 ft is mid-band. REAL feet (convert by self.ftpx when drawing), unlike
+# PLANK_ABUTMENT above, which is px and deliberately short: a dobashi footplank simply rests
+# its ends on the bank (GM 2026-07-22), so footplanks do NOT take this landing.
 PLANK_VILLAGE_REACH = 55.0  # a bank within this of a dwelling reaches the VILLAGE (a place worth crossing to)
 
 
@@ -11539,7 +11547,19 @@ class Settlement:
                             # seg_intersect always returns a point here
                             p = cast(Pt, seg_intersect(ra, rb, wa, wb))
                             rot = math.degrees(math.atan2(rb[1] - ra[1], rb[0] - ra[0]))
-                            self.bridge(p[0], p[1], rot, ww + max(28, rw), rw)  # span reaches both banks + abutments
+                            # The span SOLVES the oblique crossing (GM 2026-08-09: the old flat
+                            # +28px slack was eaten by obliquity and left deck CORNERS at the
+                            # water's edge). Along the deck the water is ww/sin wide, the deck's
+                            # own width adds rw*|cos|/sin before a corner clears the bank, and
+                            # past that every corner runs LANDING_FT of real feet onto dry
+                            # ground (see the constant for the research). sin is clamped:
+                            # segments_cross guarantees a genuine crossing, but a near-parallel
+                            # graze would otherwise ask for an absurd deck.
+                            _rl = math.hypot(rb[0] - ra[0], rb[1] - ra[1]) or 1.0
+                            _wl = math.hypot(wb[0] - wa[0], wb[1] - wa[1]) or 1.0
+                            _cs = ((rb[0] - ra[0]) * (wb[0] - wa[0]) + (rb[1] - ra[1]) * (wb[1] - wa[1])) / (_rl * _wl)
+                            _sn = max(math.sqrt(max(0.0, 1.0 - _cs * _cs)), 0.25)
+                            self.bridge(p[0], p[1], rot, (ww + rw * abs(_cs)) / _sn + 2 * LANDING_FT / self.ftpx, rw)
                             n += 1
         return n
 

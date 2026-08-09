@@ -822,3 +822,39 @@ commercial hub, and the warehouse rows, brokers, and markets belong on the bank 
 wharf-chain doctrine already plans exactly this (wharf -> domain granary -> brokers' row ->
 entertainment district), so the grain-only look is the ground layer's emptiness, not the
 design.
+
+## How often is a sluice OPEN? The duty cycle, and why one glyph suffices
+
+**The question** (GM 2026-08-09): were sluices closed by default and opened only when more
+water was needed, or did something else set the schedule? This decides whether the map needs
+separate open and closed glyphs.
+
+**The moat pair runs THROTTLED, not open-or-shut.** A wet moat loses water continuously to
+seepage and evaporation, and standing water goes foul - which is why this map declares
+through-flow at all (feeder in at the east leat, around the ring, out at the southwest). So
+the resting state of BOTH boards is partly raised: a small steady trickle in, the same
+trickle out, and the operator's normal work is TRIMMING the opening a few inches, not
+opening or closing the gate. Neither board sits fully open or fully shut in ordinary times.
+
+**What moves a board is an EVENT, not a schedule:**
+
+- **River in spate** - the intake winds DOWN hard: storm water carries the silt load that
+  chokes a leat, and the moat must not surge.
+- **Drought** - the outfall shuts to hold what the ring has.
+- **Dredging and repair** - the one time the pair works fully opposed: intake shut, outfall
+  full open, and the ring draws down for the spade men. Moats silt and were periodically
+  dredged; this is the maintenance drawdown.
+- **Siege** - both shut, holding maximum water.
+
+**Irrigation sluices are the scheduled kind** - the field gates on the village and city maps
+DO run a calendar: open through the growing season under the village's rotation of water
+rights (drought tightens the rotation table), shut for winter. The distinction is the JOB:
+a supply gate holds a LEVEL (trim continuously), a field gate delivers an ALLOTMENT (open on
+your day, shut on your neighbor's).
+
+**Consequence for the glyph: one closed-board form, with the word, is the honest drawing.**
+At rest neither moat gate is "open" or "closed" - both are throttled a few inches, and a
+partly-raised board is sub-pixel at 3 ft/px. Separate open/closed glyphs would assert a
+binary state the real duty cycle does not have; the state worth showing on a map is an
+EVENT (a drawdown, a siege), which is a caption's job on the day it matters, not a
+permanent glyph.
