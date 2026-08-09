@@ -39,6 +39,19 @@ Commercially a capital is "just a larger version of a provincial city" (`l7r.md`
 
 Wealth bands that drive glyph variety: **48** very-rich merchant households (vs 12), 72 rich merchants, 120 master laborers.
 
+## Wall and compound geometry: rectangles, not circles
+
+**Small compounds AND large enclosures are both rectilinear in the anchor traditions** (GM asked
+2026-08-09; [research](../research/cities/capitals.md#wall-geometry-rectangles-and-terrain-loops---the-circle-is-the-form-both-anchors-decline)).
+China walls every tier square by cosmology (round heaven, SQUARE earth - Kaogongji's ideal
+capital, and the built record from Pingyao to Beijing agrees); Japan builds angular terrain-fit
+baileys inside and an organic sogamae loop around the town. Neither goes circular as walls grow -
+the attested round walls (Shanghai 1553, the Hakka tulou) are speed-and-economy or communal-clan
+forms, not seats of rank. So: **the castle enceinte and every government compound stay
+rectangular**; a round keep would be European grammar. The pool's ~elliptical city rings are a
+disclosed house style (closest to the sogamae loop), kept deliberately - reshaping shipped maps
+is a GM call.
+
 ## Scale and the wall
 
 **`ftpx=3`, unchanged from the provincial tier**, and the render width rises instead (~4,600-4,800 px, vs 2,600). Dropping to 4 or 5 ft/px would shrink every glyph with `bscale = 1/ftpx` - a 34x24 ft laborer house becomes 6.8x4.8 px - and the to-scale doctrine forbids rescuing that by drawing things bigger. Keeping the grain also keeps a merchant house the same size on every map in the pool, which is what lets a capital be compared to a provincial city by eye. `render_png` already takes the width; `DIAGRAM_PNG_WIDTH` already exists.

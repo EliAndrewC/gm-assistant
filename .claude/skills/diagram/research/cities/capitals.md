@@ -323,3 +323,62 @@ The GM asked (2026-08-08) whether a road would run along the river, or whether t
 The **domain school** sits on the same avenue: the *hanko* was built in the castle town for the domain's own retainers, so it belongs with the government it serves.
 
 **The retroactive confirmation.** This also explains why our county town is right to hold its whole administration inside the magistrate's manor rather than drawing six offices: at that scale China genuinely has no separate offices, only rooms. The tier ladder - rooms in a manor, then compounds around a yamen, then compounds on a ceremonial avenue - is the same institution growing, not three unrelated conventions.
+
+## Wall geometry: rectangles and terrain loops - the circle is the form BOTH anchors decline
+
+**The question that prompted this** (GM 2026-08-09): should the castle enceinte - and by
+extension the governor's mansion - be rectangular or rounder? The working assumption was: small
+compounds (magistrate manors, governor mansions, country estates) rectangular; large enclosures
+(provincial-city walls, capital walls, castle walls) more circular.
+
+**The finding: the assumption holds for small compounds and INVERTS for large walls.** In both
+anchor traditions, enclosures stay rectilinear or go terrain-irregular as they grow. They never
+become circular BY DESIGN - a bigger wall in East Asia is a bigger rectangle or a longer terrain
+loop, not a rounder ring.
+
+- **China: square at EVERY tier, by cosmology and by formwork.** The Kaogongji's ideal capital
+  is a square, three gates a side, nine crossing streets, the palace at the center - and the
+  cosmology behind it is explicit: **round heaven, SQUARE earth**, so a wall (a thing of the
+  earth) takes Earth's shape. The built record follows the ideal from county seat to imperial
+  capital - Chang'an, Ming Beijing, Xi'an, Pingyao, Suzhou are all rectangles - so the shape is
+  RANK-INDEPENDENT: a bigger administrative seat gets a bigger rectangle, never a rounder one.
+  Deviation comes from TERRAIN, not from size: Nanjing's 35 km Ming circuit bends around its
+  lakes, hills and river frontage, and is "circular" only in the closed-circuit sense of the
+  word. The yamen and every government compound inside are strictly rectangular and axial.
+- **Japan: angular masonry inside, a terrain loop outside.** A castle's nawabari adapts its
+  baileys to the ground (the rinkaku/teikaku/renkaku taxonomies are all polygonal-irregular),
+  the ishigaki runs in straight revetted segments with hard corners carrying yagura, and a
+  tenshu's base is rectangular. The plains castles our capital resembles (Nagoya, Osaka, Nijo)
+  approach clean rectangles. The town's own enclosure, the sogamae, is the OTHER shape: Odawara's
+  9 km circuit runs from Mount Hachiman to the sea in a horseshoe - an organic terrain-following
+  loop, neither square nor circle.
+- **The military logic, and why East Asia never needed the circle.** A corner is the weak point
+  of a curtain (dead ground at the angle, a miner's favorite target), and Europe cured that by
+  CURVING - round flanking towers, shell keeps, and the organic ovals of medieval town walls.
+  East Asia cured the same problem by FLANKING instead: Chinese walls carry mamian ("horse-face")
+  bastions and corner towers on straight curtains, Japanese walls carry corner yagura and
+  masugata gate courts - because hangtu rammed-earth formwork and ishigaki masonry both want
+  straight runs, and the cosmology wanted the square anyway. Same problem, different cure, and
+  the cure is why big East Asian walls stay angular.
+- **The attested circles, and why neither is our case.** Shanghai's 1553 county wall was
+  genuinely round - thrown up in one season against the wokou pirate raids, and a circle
+  encloses the most area per foot of wall, so the round wall is the SPEED-AND-ECONOMY form, not
+  a prestige form. The Hakka tulou are round communal fortress-HOUSES (a clan under one roof,
+  wedge apartments with no hierarchy and no weak corner) - and even tulou are as commonly
+  rectangular. Both are emergency/communal forms from the empire's margins; neither is how a
+  daimyo's seat or a governor's city announces itself.
+
+**Decisions:**
+
+1. **The castle enceinte stays RECTANGULAR** - the drawn form is confirmed, not merely kept. A
+   round keep would be reading European castle grammar into an East Asian map.
+2. **Every government compound stays rectangular** - yamen, magistrate manors, governor
+   mansions, lineage yashiki, country estates. The GM's working assumption for small compounds
+   was correct, and nothing changes.
+3. **Our city walls draw as ~elliptical polygon rings** (Tango, Nagahara, Minami, Shiro Daika) -
+   now recorded as a disclosed HOUSE STYLE rather than a researched form. Of the attested
+   shapes it sits closest to the Japanese sogamae terrain loop (an organic closed circuit), and
+   furthest from the Chinese square. If a future map wants the China-first form, the grounded
+   options are the rectangle (flat open ground) or an irregular terrain-following loop (river or
+   hill ground) - not a truer circle. Reshaping the four shipped cities would re-roll the pool
+   and is a GM decision to make deliberately, not a drift to make silently.
