@@ -4,13 +4,15 @@
 
 **Load this file when:** the subject is a domain capital.
 
-> **STATUS: the BUDGET half is SHIPPED (feature 018); the DRAWN half is not.**
+> **STATUS: the budget (018) and the SKELETON + castle (019) are shipped; the FABRIC is not.**
 >
-> **Shipped and gated**: the space budget and the tier's declared knobs - `citybudget.CapitalProgram` / `plan_capital`, the capital caste table and rank split, `C_YASHIKI` / `C_TERRACE`, `castle_px2`, `castle_seat`, `imperial_granary_seat`, the `--tier capital` CLI, and the two validator checks `capital_declares_a_budget` + `capital_wall_matches_budget`. See [`specs/018-capital-space-budget/`](../../../../specs/018-capital-space-budget/).
+> **Shipped and gated**: the space budget and tier knobs (`citybudget.CapitalProgram` / `plan_capital`, the caste table and rank split, `C_YASHIKI` / `C_TERRACE`, `castle_px2`, `castle_seat`, `imperial_granary_seat`, `--tier capital`, `capital_declares_a_budget` + `capital_wall_matches_budget`); the tier's drawing predicates (`CITY_TIER_SCALES`); and **`Settlement.castle`** - the enceinte, its moat and gates, blank inside. See [`specs/018-capital-space-budget/`](../../../../specs/018-capital-space-budget/) and [`specs/019-capital-skeleton-castle/`](../../../../specs/019-capital-skeleton-castle/).
 >
-> **NOT yet built**: every DRAWN feature. There is no castle glyph, no aqueduct, no wharf or brokers' row, no kido mesh, no rank-graded samurai districts or retainer terraces on a map, no capital-scale check block beyond the two above, and no capital in the pool. Those are feature 019, and the sections below describing them are still a design record.
+> **NOT yet built (feature 020, the FABRIC)**: all housing (rank-graded samurai districts, walled yashiki, retainer terraces, commoner machi), the eight lineage compounds, the sovereign temples and teramachi rim, the wharf with its granary/brokers' row/towpath, the aqueduct, the kido mesh, and the rest of the capital check block.
 >
-> Every decision here is settled with the GM (2026-08-08) and grounded in [`../research/cities/capitals.md`](../research/cities/capitals.md).
+> **The worked map is a DRAFT parked outside `pool/`** at [`wip/shiro-daika.gen.py`](../wip/shiro-daika.gen.py), because `test_villages.py` sweeps `pool/*/*.gen.py` and a map that is not green would turn `make done` red for every session. It fails exactly one check - `imperial_road_town_has_farrier` - and that failure is CORRECT: the map has no relay stables because it has no fabric. **Do not fix it by drawing the farrier**; that was tried and cascaded (forge -> stables -> wells), which is the engine correctly refusing to call a half-populated city coherent. Feature 020 makes it green and moves it into `pool/capitals/`.
+>
+> Every decision here is settled with the GM (2026-08-08/09) and grounded in [`../research/cities/capitals.md`](../research/cities/capitals.md).
 
 **Research:** the historical basis for every rule here - what was found, the decision it drove, and every disclosed departure - is in [`../research/cities/capitals.md`](../research/cities/capitals.md). Load it when you are CHANGING a rule or questioning one, not to follow it.
 
@@ -63,15 +65,20 @@ A future automated cross-check (a Mode A sheet's own footprints projected onto t
 
 `castle_px2` is a **declared program line**, defaulting to ~598,000 px^2 (~50 ha) with a documented 50-230 ha band - and that ground is spent whether or not anything is drawn on it, because the budget prices the WORKS, not their contents.
 
-**DECIDED, PROVISIONALLY (GM 2026-08-08): draw them, then look.** The *bailey walls* (honmaru / ninomaru / sannomaru divisions), the *masugata* dogleg gate approaches and the inner moats ARE drawn, even though everything they enclose stays blank.
+**DECIDED AND ANSWERED - the experiment ran, and the walls are OUT (2026-08-09).**
 
-The GM's reasoning is that the tradeoff genuinely differs here from a manor's: *"anything inside those outer walls needs to match up on the eventual diagram... but maybe that's okay here because the tradeoff is different, so let's try adding the bailey walls and masugata dogleg gate approaches and whatnot and then see how that looks, and we can remove them if needed."*
+The GM authorized one attempt ("let's make one attempt and if it doesn't work then we'll just remove them"). Two renders were made and the answer is no.
 
-Two things follow, and both matter:
+- **Attempt 1** drew the wards CONCENTRIC and axis-shared. It read as a **bullseye** - a target symbol, not a fortress.
+- **Attempt 2** fixed the obvious errors: the wards were OFFSET toward the far side from the ote-mon (so an attacker crosses the whole works under fire), the wall weights were graded, and the masugata was enlarged until it was actually visible. A real improvement, and **still nested rectangles**.
 
-- **This is a WALLS-ONLY relaxation, not a crack in the blank rule.** Walls, moats and gate approaches may be drawn; **no building may**. The tenshu and goten stay off the map. The sync surface a wall creates is a line the Mode A sheet must also draw, which is far smaller than a building's position, orientation and footprint.
-- **It is provisional and has an explicit test.** It is drawn to be JUDGED on the render: does a 50 ha enclosure read as a castle without them (in which case remove them and take the smaller sync surface), or as one enormous empty box (in which case keep them)? Record the verdict here when the first Shiro Daika render is reviewed - and if they stay, note that the castle's Mode A sheet inherits their geometry as a constraint.
+**The finding, which is what generalizes: rectangles inside rectangles read as ABSTRACTION however they are arranged.** What makes a castle read as a castle is irregular ward outlines, substantial water *between* the wards, and corner yagura - and none of those survive being drawn walls-only at 3 ft/px. So the internal works bought nothing and cost a Mode A sync surface, and the blank rule wins on its own terms rather than by argument.
 
+**`Settlement.castle(baileys=...)` therefore defaults to False.** The knob stays, because the finding is about THIS drawing vocabulary rather than a law - a future castle with irregular wards could revisit it.
+
+**One thing DID survive the experiment**: the **ishigaki doubling** on the outer enceinte - a battered stone rampart drawn as a doubled line reads as mass where a single stroke reads as a fence. That is the OUTER wall, so it adds no sync surface the wall did not already have. It is kept.
+
+**A caveat on the verdict's strength, stated because it matters for feature 020**: the blank castle was judged inside a blank city, where everything reads as empty. Once the fabric lands and the castle is the one large walled thing at the heart of a dense map, it will read considerably better than it does now. If it still reads as a void THEN, that is the point to revisit - not now.
 **Build order consequence:** the castle glyph is the FIRST thing feature 019 builds, ahead of the city fabric, precisely so this call can be judged off an early render rather than at the end of a long build.
 
 ### The inventory: what is INSIDE (never drawn on the city map) vs OUTSIDE (must be)

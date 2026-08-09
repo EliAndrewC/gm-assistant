@@ -47,3 +47,10 @@ __pycache__
 # Generated org chart - rebuild with `webapp/orgchart.py --format png` rather than tracking it.
 webapp/orgchart.png
 top_up-improvement.md
+
+# DRAFT maps parked outside pool/ (see .claude/skills/diagram/wip/README.md): a map that is not
+# yet green cannot live in pool/, because test_villages.py sweeps pool/*/*.gen.py and would turn
+# `make done` red for every session. Its derived render is ignored exactly like a pool render.
+.claude/skills/diagram/wip/*.svg
+.claude/skills/diagram/wip/*.png
+.claude/skills/diagram/wip/*.json

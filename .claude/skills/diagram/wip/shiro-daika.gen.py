@@ -38,7 +38,13 @@ import math
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Walk UP to the engine rather than counting directories: this map lives in wip/ while it is a
+# draft and moves to pool/capitals/ when feature 020 makes it green, and a hard-coded depth
+# breaks on exactly that move.
+_D = os.path.dirname(os.path.abspath(__file__))
+while not os.path.exists(os.path.join(_D, "settlement.py")):
+    _D = os.path.dirname(_D)
+sys.path.insert(0, _D)
 from citybudget import CapitalProgram, budget_to_manifest, plan_capital  # noqa: E402
 from settlement import Settlement  # noqa: E402
 
