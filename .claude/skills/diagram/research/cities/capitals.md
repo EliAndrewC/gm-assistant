@@ -483,3 +483,26 @@ defenses. The rim is the settled 018 decision (settlements/capitals.md, "Placeme
 change") - recorded here at full length because the question deserved the reasoning, not a
 pointer. If the GM prefers a gathered temple quarter anyway, that is a one-session re-seat and
 the checks do not currently care - say the word.
+
+## Street widths: the ote-suji is a grand street, not an imperial boulevard
+
+**The question** (GM 2026-08-09): is the width of the avenue into the castle realistic? "It
+looks huge."
+
+It was huge, for two stacked reasons. The honest one first: the engine's convention is REAL
+FEET through `lw()` - `s.road`'s default is `lw(26)`, 26 ft, the Tokaido's own width - and the
+first draft passed the ote-suji `width=32` in raw PIXELS, which at 3 ft/px drew a 96 ft
+boulevard, nearly 4x the Imperial highway beside it. A unit slip, not a decision.
+
+The researched band, once the units are honest: Edo's post-Meireki street plan - the SHOGUN'S
+million-person capital - made Honcho-dori 13.8 m (~45 ft) and Nihonbashi-dori 18.2 m (~60 ft),
+and those were its grandest ordinary avenues; the wider hirokoji were firebreaks, not streets.
+The truly vast processional ways (Heian-kyo's 84 m Suzaku-oji, Chang'an's ~150 m Suzaku Avenue)
+are the ancient CONTINENTAL-capital form - the Chinese cosmological city - and no jokamachi
+ever built one. So a domain capital's ceremonial approach sits at the Honcho class: **45 ft**,
+half again the 26 ft highway it meets - grander by proportion, not by absurdity. The map now
+draws exactly that (`width=s.lw(45)`), with the ministry files pulled in to a ~21 ft setback so
+they front the avenue like a corridor instead of floating beside a runway.
+
+**The transferable rule:** pass `s.lw(real_ft)` to every way's width, never raw pixels - the
+default's docstring already cites its source, and any hand width should be able to as well.
