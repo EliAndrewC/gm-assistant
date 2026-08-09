@@ -2828,20 +2828,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # the target by spilling houses into the fields while the interior sat half-empty - the exact
         # leak that passed the broken Nagahara (525 in-wall + 35 spilled = 560 ~ target).
         _wall = M.get("wall")
-        if scale in ("city", "capital") and _wall:
-            urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], _wall))
+        if scale == "capital":
+            # the capital's declared figure covers the WHOLE cohort - in-wall fabric plus the
+            # legitimate suburbs (the kashi wharf suburb and the guan-xiang gate wards, the
+            # lawful outside categories city_commoner_dwellings_inside_walls names). WHERE an
+            # out-wall dwelling may stand is that check's business; the census counts every
+            # household the map draws. Cities keep the strict in-wall count (the Tango rule).
+            urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS)
             # a terrace range is ONE roof over `units` households (021) - count the units
+            urban += sum(int(_t6.get("units", 0)) for _t6 in M.get("terraces", []))
+            # the yashiki band's walled compounds ARE dwellings (Ranks 8-12 households),
+            # recorded as manors rather than buildings; membership via the declared districts
+            _yp6 = [d6["poly"] for d6 in M.get("districts", []) if d6.get("rank_band") == "yashiki"]
+            urban += sum(1 for m6 in M.get("manors", []) if any(point_in_poly(m6["x"], m6["y"], p6) for p6 in _yp6))
+        elif scale == "city" and _wall:
+            urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], _wall))
             urban += sum(int(_t6.get("units", 0)) for _t6 in M.get("terraces", []) if point_in_poly(_t6["x"], _t6["y"], _wall))
-            if scale == "capital":
-                # the yashiki band's walled compounds ARE dwellings (Ranks 8-12 households),
-                # recorded as manors rather than buildings; band membership comes from the
-                # declared districts. And the out-wall 15% of the samurai cohort
-                # (CAPITAL_SAMURAI_INWALL_FRAC) counts too: the capital's declared figure
-                # covers the whole cohort (families sums exactly to dwellings in the budget),
-                # unlike a provincial city's estate samurai, whom the Tango rule counts rural.
-                _yp6 = [d6["poly"] for d6 in M.get("districts", []) if d6.get("rank_band") == "yashiki"]
-                urban += sum(1 for m6 in M.get("manors", []) if any(point_in_poly(m6["x"], m6["y"], p6) for p6 in _yp6))
-                urban += sum(1 for b6 in M.get("buildings", []) if str(b6.get("kind", "")).startswith("samurai") and not point_in_poly(b6["x"], b6["y"], _wall))
         else:
             urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS)
             urban += sum(int(_t6.get("units", 0)) for _t6 in M.get("terraces", []))
@@ -2896,7 +2898,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         outside_com = [
             (round(b["x"]), round(b["y"]))
             for b in M.get("buildings", [])
-            if b.get("kind") in COMMONER_KINDS and not point_in_poly(b["x"], b["y"], wall_p) and not any(math.hypot(b["x"] - _wx, b["y"] - _wy) <= 300 for _wx, _wy in _wf_pts)
+            if b.get("kind") in COMMONER_KINDS
+            and not point_in_poly(b["x"], b["y"], wall_p)
+            and not any(math.hypot(b["x"] - _wx, b["y"] - _wy) <= 300 for _wx, _wy in _wf_pts)
+            # ...and the guan-xiang gate wards: commoner rows strung along the approach road
+            # within reach of a gate are the OTHER lawful outside category (021 research)
+            and not any(math.hypot(b["x"] - g9[0], b["y"] - g9[1]) <= 280 for g9 in M.get("gates", []))
         ]
         check(
             "city_commoner_dwellings_inside_walls",
@@ -2935,6 +2942,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if quarters:
             interior_area = poly_area(wall_p)
             dwell_pts = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], wall_p)]
+            if scale == "capital":
+                # capital fabric counts its OTHER dwelling forms (021, same arithmetic as the
+                # population check): yashiki-band manors are households, and a terrace range is
+                # `units` households at one seat - without them the samurai quarters read empty
+                # to the density rule while being fully built.
+                _yq = [d9["poly"] for d9 in M.get("districts", []) if d9.get("rank_band") == "yashiki"]
+                dwell_pts += [(m9["x"], m9["y"]) for m9 in M.get("manors", []) if any(point_in_poly(m9["x"], m9["y"], p9) for p9 in _yq)]
+                for t9 in M.get("terraces", []):
+                    dwell_pts += [(t9["x"], t9["y"])] * int(t9.get("units", 0))
             _civic = (
                 M.get("ministries", [])
                 + M.get("religious", [])
@@ -4569,7 +4585,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # housing packs DEEP, but no GIANT cluster may be cut off from circulation: a big block of
         # dwellings with no street OR alley anywhere near it has no way in or out. Deep blocks must
         # be laced with gravel alleys (s.alley) so every dwelling is reachable.
-        acc = [s["pts"] for s in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [a["pts"] for a in M.get("alleys", [])]
+        acc = (
+            [s["pts"] for s in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r9["pts"] for r9 in M.get("roads", [])] + [a["pts"] for a in M.get("alleys", [])]
+        )  # trunk roads serve their roadside wards (the guan-xiang suburbs string along them)
 
         def cut_off(b: dict[str, Any]) -> bool:
             return not any(seg_dist(b["x"], b["y"], ln[i], ln[i + 1]) < 95 for ln in acc for i in range(len(ln) - 1))

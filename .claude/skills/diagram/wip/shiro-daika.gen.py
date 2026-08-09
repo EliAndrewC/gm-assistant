@@ -365,7 +365,7 @@ BROKER_LANE = [(2410, 1730), (2300, 1890), (2215, 2020)]
 s.street(BROKER_LANE, width=s.lw(15))
 _CITY_BOUND = s.bound
 s.bound = [[2020, 1560], [2560, 1560], [2560, 2140], [2020, 2140]]
-s.frontage(BROKER_LANE, (["merchant", "merchant", "shop"] * 4), width=8, spacing=19, rows=1, jitter=1, setback=s.px(14))
+s.frontage(BROKER_LANE, (["merchant", "merchant", "shop"] * 4), width=8, spacing=19, rows=1, jitter=1, setback=14)
 s.bound = _CITY_BOUND
 
 # ---- BUDGET RECONCILIATION (feature 021, T002 - BEFORE any pack runs). From the recorded
@@ -454,19 +454,158 @@ for _i, _y in enumerate((1330, 1405, 1480)):
 for _i, _x in enumerate((1600, 1680)):  # x=1780 died on the x=1800 street
     _yashiki(_x, 1330, "south", _i + 2)
 
+# ---- T009: RETAINER TERRACES (79 units target; 10 ranges of 8). The kumi-yashiki go where
+# junior samurai serve: flanking the karamete approach (the castle guard), and inside each
+# working gate (the gate watch). Placed BEFORE the machi packs so the rows flow around them.
+s.district("karamete terraces", "terrace", [(1340, 290), (1460, 290), (1460, 440), (1340, 440)], rank_band="terrace")
+for _ty in (352, 420):  # the left file starts lower - the NW diagonal road passes y~308 here
+    s.terrace(1372, _ty, units=8, rot=90)
+for _ty in (334, 399):
+    s.terrace(1428, _ty, units=8, rot=90)
+s.district("east gate terraces", "terrace", [(2225, 1130), (2290, 1130), (2290, 1270), (2225, 1270)], rank_band="terrace")
+s.terrace(2255, 1148, units=8)
+s.terrace(2255, 1252, units=8)
+s.district("south gate terraces", "terrace", [(1325, 2050), (1475, 2050), (1475, 2120), (1325, 2120)], rank_band="terrace")
+s.terrace(1352, 2085, units=8, rot=90)
+s.terrace(1448, 2085, units=8, rot=90)
+s.district("southwest gate terraces", "terrace", [(730, 1800), (790, 1800), (790, 1855), (730, 1855)], rank_band="terrace")
+s.terrace(760, 1815, units=8)  # x=760: the wall/ring curve at this latitude runs x~635/678, so the ranges stand inside the patrol road
+s.terrace(760, 1840, units=8)
+
+# alleys BEFORE the packs (each reserves its corridor; no block core sits >95px from a way)
+s.alley([(640, 1408), (640, 1552)])  # the D5/west mid-band pocket (x=640: clear of the (700,1420) compound)
+s.alley([(2495, 1070), (2640, 1070)])  # the east gate ward (its road runs ~y1170)
+s.alley([(2385, 1690), (2520, 1520)])  # the wharf's upstream bank boxes
+s.alley([(2500, 1255), (2640, 1255)])  # the east approach samurai seats
+for _ax, _ay1 in ((700, 1845), (795, 1935), (910, 2010), (1180, 2095), (1300, 2095)):
+    s.alley([(_ax, 1585), (_ax, _ay1)])  # each column stops short of the ring's southwest curve
+s.alley([(1565, 1415), (1565, 2095)])  # runs up past the kagi to serve the magistracy flank
+for _ax in (1655, 1690, 2000):  # east columns clear the hanko (x1415-1549) and the (1905,1715) compound
+    s.alley([(_ax, 1585), (_ax, 2095)])
+s.alley([(2200, 760), (2200, 1290)])
+s.alley([(2300, 805), (2300, 1290)])  # both start below the NE wall's tower course
+s.alley([(2260, 1270), (2260, 1590)])
+
+# ---- T008: DETACHED SAMURAI (133 target) - the middle band, rowpacked at the loose samurai
+# court pitch (the Tango idiom, which is what C_SPACED was measured from).
+_SAM = ["samurai"] * 4 + ["samurai_large"]
+s.district("moat-south detached band", "detached", [(615, 1268), (1145, 1268), (1145, 1370), (615, 1370)], rank_band="detached")
+s.rowpack((620, 1275, 1140, 1362), _SAM * 10, court_every=8)
+s.district("magistracy detached flank", "detached", [(1555, 1400), (1860, 1400), (1860, 1560), (1555, 1560)], rank_band="detached")
+s.rowpack((1560, 1408, 1660, 1555), _SAM * 4, court_every=8)
+s.rowpack((1808, 1408, 1852, 1555), _SAM * 2, court_every=8)
+s.district("west detached pocket", "detached", [(470, 1400), (790, 1400), (790, 1745), (470, 1745)], rank_band="detached")
+s.district("civic west detached", "detached", [(855, 1400), (1145, 1400), (1145, 1560), (855, 1560)], rank_band="detached")
+s.district("east street detached", "detached", [(2140, 1250), (2385, 1250), (2385, 1425), (2140, 1425)], rank_band="detached")
+s.rowpack((605, 1408, 785, 1555), _SAM * 5, court_every=8)
+s.rowpack((475, 1440, 595, 1740), _SAM * 6, court_every=8)
+s.rowpack((860, 1408, 1140, 1555), _SAM * 5, court_every=8)
+s.rowpack((2145, 1255, 2380, 1420), _SAM * 4, court_every=8)
+
+# ---- T010: THE COMMONER MACHI (2,160 packed target: 960 laborer / 480 servant / 600
+# merchant / 120 burakumin). Burakumin strips seat FIRST at the settlement edge (the two
+# in-wall quarters of the counts table); the big machi packs then flow around them and
+# around every standing compound, temple, precinct reservation and street.
+s.district("southwest machi", "machi", [(615, 1575), (1395, 1575), (1395, 2110), (615, 2110)], rank_band=None)
+s.district("southeast machi", "machi", [(1405, 1575), (2120, 1575), (2120, 2110), (1405, 2110)], rank_band=None)
+s.district("east gate machi", "machi", [(2145, 635), (2405, 635), (2405, 1310), (2145, 1310)], rank_band=None)
+s.district("east street machi", "machi", [(2140, 1420), (2385, 1420), (2385, 1620), (2140, 1620)], rank_band=None)
+s.district("west rim machi", "machi", [(430, 750), (590, 750), (590, 1445), (430, 1445)], rank_band=None)
+s.frontage([(620, 1770), (2180, 1770)], ["merchant", "merchant", "shop"] * 30, width=8, spacing=20, setback=14)
+s.frontage([(900, 2005), (1900, 2005)], ["merchant", "shop"] * 15, width=8, spacing=20, setback=14)
+s.frontage([(1040, 1290), (1040, 2070)], ["merchant"] * 20, width=8, spacing=21, setback=14)
+s.frontage([(1800, 1710), (1800, 2050)], ["merchant"] * 10, width=8, spacing=21, setback=14)
+s.rowpack((810, 1880, 990, 1990), (["burakumin"] * 3 + ["servant"]) * 27, court_every=3)
+s.rowpack((1810, 1880, 1950, 1990), (["burakumin"] * 3 + ["servant"]) * 27, court_every=3)
+# T011 first: the adept-monk houses by the two sovereign precincts (budget: 2.5/precinct) -
+# seated BEFORE the big packs so the precinct-adjacent ground is theirs
+s.rowpack((1700, 1585, 1780, 1660), ["monk_house"] * 3, court_every=3)
+s.rowpack((1020, 1585, 1100, 1660), ["monk_house"] * 2, court_every=3)
+_MIX = ["laborer", "laborer", "servant", "merchant_house"]  # interior rows; the BUSINESS merchants front the streets via s.frontage
+s.rowpack((560, 1580, 1385, 2125), _MIX * 330, court_every=4)
+s.rowpack((1415, 1580, 1930, 2125), _MIX * 260, court_every=4)
+s.rowpack((2000, 1580, 2115, 2125), _MIX * 100, court_every=4)
+s.rowpack((2150, 755, 2400, 1310), (["laborer", "merchant_house"]) * 200, court_every=4)
+s.rowpack((2145, 1425, 2330, 1615), _MIX * 26, court_every=4)
+s.rowpack((1740, 1295, 1852, 1385), _MIX * 8, court_every=4)
+s.alley([(530, 770), (530, 1430)])  # the rim's access is an ALLEY (block-core way; it counts for reachability)
+s.rowpack((442, 760, 505, 1155), _MIX * 9, court_every=4)
+s.rowpack((442, 1250, 505, 1435), _MIX * 5, court_every=4)  # resumes south of the Temple of Daikoku (501,1200)
+s.rowpack((548, 760, 588, 1435), _MIX * 14, court_every=4)
+
+
+# ---- the SUBURBS (021): a capital houses part of its packed cohort OUTSIDE the wall - the
+# kashi wharf suburb (its brokers and warehouse folk live at the landing) and the guan-xiang
+# gate wards on the approach roads, both the lawful outside categories the commoner rule
+# names. The packs honor s.bound, so each suburb temporarily owns its own bound box.
+_CITY_BOUND2 = s.bound
+# the wharf suburb: bank-aligned boxes between the MOAT's outer edge and the river, stepping
+# down the diagonal shore with the broker street (the first cut boxed the whole quay and
+# packed rows onto the moat band)
+s.bound = [[2100, 1560], [2600, 1560], [2600, 2140], [2100, 2140]]
+s.rowpack((2370, 1630, 2480, 1715), ["merchant_house", "laborer", "laborer"] * 8, court_every=4)
+s.rowpack((2300, 1725, 2430, 1810), ["merchant_house", "laborer", "laborer"] * 14, court_every=4)
+s.rowpack((2240, 1815, 2370, 1900), ["merchant_house", "laborer", "laborer"] * 14, court_every=4)
+s.rowpack((2180, 1905, 2300, 2000), ["laborer", "laborer", "servant"] * 12, court_every=4)
+s.rowpack((2130, 2000, 2250, 2070), ["laborer", "servant"] * 12, court_every=4)
+s.rowpack((2430, 1565, 2555, 1645), ["merchant_house", "laborer"] * 8, court_every=4)
+s.rowpack((2490, 1495, 2610, 1560), ["merchant_house", "laborer"] * 6, court_every=4)
+s.rowpack((2080, 2075, 2210, 2135), ["laborer", "servant"] * 7, court_every=4)
+# the gate wards, each hugging its approach road inside the guan-xiang reach
+s.bound = [[1290, 2225], [1510, 2225], [1510, 2400], [1290, 2400]]
+s.rowpack((1305, 2235, 1390, 2395), ["laborer", "merchant_house", "servant"] * 20, court_every=4)  # ends inside the guan-xiang reach; the Imperial Road caption keeps its seat below
+s.rowpack((1412, 2235, 1495, 2340), ["laborer", "merchant_house", "servant"] * 16, court_every=4)
+s.bound = [[2480, 1000], [2630, 1000], [2630, 1135], [2480, 1135]]
+s.rowpack(
+    (2495, 1012, 2615, 1128), ["laborer", "merchant_house"] * 20 + ["laborer"], court_every=4
+)  # NOTE: the census closes EXACTLY at 2,472 (12,360/5); adjust ONE item here if fabric upstream moves
+
+s.bound = [[1300, 55], [1505, 55], [1505, 200], [1300, 200]]
+s.rowpack((1408, 88, 1492, 192), ["laborer", "merchant_house"] * 8, court_every=4)  # the N gate ward, on the Shiro Kyo road
+s.rowpack((1310, 95, 1392, 192), ["laborer", "merchant_house"] * 9, court_every=4)
+# (no SW gate ward: the moat band and the diagonal approach road leave no clean ground
+# within the guan-xiang reach - its households ride the S ward and the wharf instead)
+s.bound = _CITY_BOUND2
+
+
+# the suburbs are DISTRICTS like any fabric (the band-target check counts by district)
+s.district("wharf suburb", "machi", [(2080, 1480), (2620, 1480), (2620, 2145), (2080, 2145)], rank_band=None)
+s.district("south gate ward", "machi", [(1290, 2225), (1510, 2225), (1510, 2345), (1290, 2345)], rank_band=None)
+s.district("east gate ward", "machi", [(2480, 1000), (2630, 1000), (2630, 1110), (2480, 1110)], rank_band=None)
+s.district("north gate ward", "machi", [(1395, 55), (1505, 55), (1505, 200), (1395, 200)], rank_band=None)
+
+# ---- the OUT-WALL SAMURAI (the budget's other 47: CAPITAL_SAMURAI_INWALL_FRAC leaves 15%
+# of the cohort in country seats on the approaches - the Tango out-wall precedent; they
+# count in the census but belong to NO rank district, so the in-wall band targets stand)
+_CB3 = s.bound
+s.bound = [[1420, 2350], [1580, 2350], [1580, 2470], [1420, 2470]]
+s.rowpack((1428, 2360, 1494, 2465), _SAM * 4, court_every=8)  # east of the road, inside its 95px reach; the caption keeps the west seat
+s.bound = [[2480, 1230], [2660, 1230], [2660, 1340], [2480, 1340]]
+s.rowpack((2495, 1240, 2645, 1330), _SAM * 5, court_every=8)
+s.bound = [[1180, 2350], [1270, 2350], [1270, 2460], [1180, 2460]]
+s.rowpack((1190, 2360, 1262, 2455), _SAM * 2, court_every=8)
+s.bound = _CB3
+
+
 # ---- declared quarters (feature 020 re-zone): the CIVIC quarter is the ground the government
 # actually occupies - the ote-suji band south of the ote-mon, ministries to chancellery - not a
 # wedge picked before the castle was placed. The four interior wedges split at the kagi-no-te
 # junction, where the avenue meets the through-road, and carry no zone stronger than "mixed"
 # until feature 021 packs them. Quarters are declarative overlays, so the civic band riding over
 # the wedge seams is intentional.
+# 021 re-zone: a capital's quarters follow its FABRIC, not compass wedges - the old wedges
+# averaged the castle moat into machi density and could never read right. Zones "castle"
+# and "samurai" are exempt from the residential density body by the checks' own zone
+# filter (senior compounds at C_YASHIKI are ~0.24 dwellings/1000px^2, legitimately under
+# the machi floor); the south "mixed" wedge is where the density band bites.
+s.quarter([(949, 504), (1851, 504), (1851, 1256), (949, 1256)], "castle")
+s.quarter([(1082, 290), (1400, 243), (1718, 290), (2005, 426), (1851, 504), (949, 504)], "samurai")  # north band
+s.quarter([(1851, 504), (2005, 426), (2246, 608), (2378, 904), (2429, 1200), (2378, 1496), (2160, 1390), (1855, 1390), (1851, 1256)], "samurai")  # east band + gate machi rim
+s.quarter([(949, 504), (795, 426), (568, 637), (422, 904), (371, 1200), (422, 1496), (560, 1390), (1150, 1390), (1150, 1290), (949, 1256)], "samurai")  # west band
+s.quarter([(1315, 1290), (1560, 1290), (1560, 1720), (1315, 1720)], "civic")  # the government band proper
 s.quarter(
-    [(1315, 1290), (1560, 1290), (1560, 1720), (1315, 1720)], "civic"
-)  # 021: tightened to the ground the ministries + hanko actually hold (the old wide band read 85% open and overlapped the wedges past the tiling tolerance)
-s.quarter([(OTE_X, KAGI_Y), (CX, 243), (WALL[3][0], WALL[3][1]), (WALL[5][0], WALL[5][1])], "mixed")  # NE
-s.quarter([(OTE_X, KAGI_Y), (WALL[5][0], WALL[5][1]), (WALL[8][0], WALL[8][1]), (CX, WALL[10][1])], "mixed")  # SE
-s.quarter([(OTE_X, KAGI_Y), (CX, WALL[10][1]), (WALL[13][0], WALL[13][1]), (WALL[15][0], WALL[15][1])], "mixed")  # SW
-s.quarter([(OTE_X, KAGI_Y), (WALL[15][0], WALL[15][1]), (WALL[18][0], WALL[18][1]), (CX, 243)], "mixed")  # NW
+    [(422, 1496), (568, 1763), (795, 1974), (1082, 2110), (1400, 2157), (1718, 2110), (2005, 1974), (2246, 1792), (2378, 1496), (2160, 1390), (1150, 1390), (560, 1390)], "mixed"
+)  # the machi south
 
 # the wharf works and the aqueduct now anchor the frame's east; a modest uniform margin still
 # shows each road running off the edge, and the south side carries the Imperial road caption,

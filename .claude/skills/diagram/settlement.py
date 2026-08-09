@@ -4528,7 +4528,12 @@ class Settlement:
             self.kido(gx, gy, rot=grot, guard_side=gside)
         self._assert_walls_clear_of_torii(f"the {name} ward fence")  # a fence laid across a standing arch (Nagahara 2026-07-25)
 
-    _QUARTER_ZONES = ("residential", "civic", "mixed", "reserve")
+    _QUARTER_ZONES = ("residential", "civic", "mixed", "reserve", "castle", "samurai")
+    # "castle" and "samurai" are CAPITAL vocabulary (feature 021): the citadel's own ground and
+    # the senior-compound bands. Both are deliberately outside the residential density body
+    # (a C_YASHIKI compound is ~0.24 dwellings/1000px^2, legitimately under the machi floor)
+    # and outside the civic-openness and reserve-cap rules; the tiling check counts them like
+    # any quarter, so the interior stays fully declared.
     _RESERVE_KINDS = ("drill_ground", "garden", "agricultural_district")
 
     def quarter(self, poly: Any, zone: str, kind: Any = None, label: Any = None) -> None:
