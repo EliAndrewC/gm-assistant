@@ -10568,3 +10568,44 @@ def test_capital_no_road_parallels_river_passes_a_bridged_crossing():
     M["roads"] = [{"pts": [[900, 500], [1400, 500]], "w": 26}]  # ACROSS the river, not along it
     M["bridges"] = [{"x": 1200, "y": 500, "rot": 0, "span": 68, "w": 26}]
     assert "capital_no_road_parallels_river" not in f(M)
+
+
+# ---- feature 021: the capital housing layer ---------------------------------------------------
+
+
+def test_capital_districts_declared_fires_when_fabric_stands_undeclared():
+    """Once dwellings stand, the capital records which district each pack filled (T003) - the
+    rank-gradient check's ground truth. The bare 020 state (no fabric) stays legal."""
+    M = _capital_manifest()
+    assert "capital_districts_declared" not in f(M)  # no fabric yet - legal
+    M["houses"] = [house(500, 500)]
+    assert "capital_districts_declared" in f(M)
+    M["districts"] = [{"name": "east machi", "kind": "machi", "poly": [[0, 0], [1000, 0], [1000, 1000], [0, 1000]]}]
+    assert "capital_districts_declared" not in f(M)
+
+
+def test_capital_rank_gradient_fires_on_an_inverted_band():
+    """The jokamachi law (research 021 item 1): walled yashiki nearest the castle, retainer
+    terraces at the band edge. Red: the yashiki band's members sit BEYOND the terrace band's."""
+    M = _capital_manifest()
+    M["castles"] = [{"x": 200, "y": 200, "w": 100, "h": 80}]
+    M["districts"] = [
+        {"name": "west bank", "kind": "yashiki", "rank_band": "yashiki", "poly": [[700, 100], [900, 100], [900, 300], [700, 300]]},
+        {"name": "castle foot", "kind": "terrace", "rank_band": "terrace", "poly": [[250, 100], [450, 100], [450, 300], [250, 300]]},
+    ]
+    M["manors"] = [{"x": 800, "y": 200, "w": 60, "h": 40, "label": "Hazama Estate"}]
+    M["terraces"] = [{"x": 300, "y": 200, "w": 36, "h": 7, "rot": 0, "units": 5, "z": 1}]
+    assert "capital_rank_gradient" in f(M)
+    M["districts"][0]["poly"], M["districts"][1]["poly"] = M["districts"][1]["poly"], M["districts"][0]["poly"]
+    M["manors"][0]["x"], M["terraces"][0]["x"] = 300, 800
+    assert "capital_rank_gradient" not in f(M)
+
+
+def test_terraces_are_ranges_fires_on_a_single_unit():
+    """A one-unit terrace is a detached house miscoded (T005) - the range record models one
+    roof over several household cells."""
+    M = _capital_manifest()
+    M["terraces"] = [{"x": 500, "y": 500, "w": 6, "h": 7, "rot": 0, "units": 1, "z": 1}]
+    assert "terraces_are_ranges" in f(M)
+    M["terraces"][0]["units"] = 6
+    assert "terraces_are_ranges" not in f(M)

@@ -15,7 +15,7 @@ is final; XII closing bookend + stop-work ritual last.
 
 ## Phase 1: Setup
 
-- [ ] T001 Sync the clone (`git pull origin main` in `/gm-assistant/.clones/diagram-city`),
+- [X] T001 Sync the clone (`git pull origin main` in `/gm-assistant/.clones/diagram-city`),
       regenerate the baseline (`DIAGRAM_SKIP_RENDER=1 python3 wip/shiro-daika.gen.py &&
       python3 check_village.py wip/shiro-daika.json`), and confirm the 020 baseline state:
       exactly `imperial_road_town_has_farrier` failing. Record the solo gen time as the perf
@@ -23,19 +23,19 @@ is final; XII closing bookend + stop-work ritual last.
 
 ## Phase 2: Foundational (blocking all stories)
 
-- [ ] T002 Budget reconciliation BEFORE packing: from `wip/shiro-daika.json`'s recorded
+- [X] T002 Budget reconciliation BEFORE packing: from `wip/shiro-daika.json`'s recorded
       budget block, extract the four band targets (`samurai_yashiki`, `samurai_detached`,
       `samurai_terrace`, `packed`) and compute drawable ground per intended district region
       (interior minus 020 reservations, via a scratchpad script reading the manifest).
       Record the reconciliation (targets vs ground, and any capped target WITH its reason)
       as a comment block in `wip/shiro-daika.gen.py` where the targets are consumed. The
       unmeetable-target grind is the known failure this task exists to prevent.
-- [ ] T003 Districts vocabulary, test-first: red-green tests in `test_checks.py` for
+- [X] T003 Districts vocabulary, test-first: red-green tests in `test_checks.py` for
       `capital_districts_declared` (packs ran, no `districts` records -> fires) and in
       `test_settlement.py` for `s.districts(...)` region records; then implement the record
       in `settlement.py` and the check in `check_village.py`; classify the new `districts`
       key (overlap-EXEMPT region with reason, label-exempt) per the keep-clear contract.
-- [ ] T004 [P] Rank-gradient rule, test-first: red-green test in `test_checks.py` for
+- [X] T004 [P] Rank-gradient rule, test-first: red-green test in `test_checks.py` for
       `capital_rank_gradient` (a yashiki-band compound seated beyond the terrace band's mean
       castle distance on a constructed manifest -> fires; the gradient-ordered manifest ->
       passes); implement in `check_village.py` (classification family, centers, per

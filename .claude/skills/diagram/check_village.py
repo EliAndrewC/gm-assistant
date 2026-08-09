@@ -180,6 +180,7 @@ def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, An
 # sets, forcing whoever adds it to declare its overlap behavior rather than silently skipping it.
 _OVERLAP_STRUCTS = (
     "houses",
+    "terraces",
     "buildings",
     "flophouses",
     "cemeteries",
@@ -271,6 +272,7 @@ _OVERLAP_EXEMPT = {
     "log_booms": "a cabled chain of floating logs holding rafted timber against the bank - it FLOATS on the river, so overlapping the water is the whole point, exactly as a jetty deck does",
     "field_ditches": "in-field irrigation ditches (main/laterals/drain) - water lines drawn ON the paddy, validated by water_channels_obtuse_turns + field_ditches_terminate, not solid structures",
     "village_groves": "the COMMUNAL fengshui windbreak (back-village belt / water-mouth cluster / bamboo copses) - vegetation drawn LAST in open ground at the cluster margins; a copse may abut a house, validated by the village_windbreak_* checks",
+    "districts": "declarative fabric districts (feature 021), the quarter overlay's sibling - named pack regions validated by capital_districts_declared / capital_rank_gradient, never drawn",
     "quarters": "declarative zoning overlays (feature 006), not solid structures - they intentionally contain buildings and are validated by the city_quarters_* / per-quarter density checks",
     "mills": "a water mill (水磨) focal feature drawn BESIDE its watercourse with the wheel dipping into the drain/stream - an intentional water-adjacency like a bridge/jetty; reserved in open ground (self.placed) so it does not overlap dwellings",
     "field_ponds": "feature 012: a low-pocket pond sunk INTO one paddy plot, the field tiling around it - drawn ON the paddy like field_ditches, validated by paddy_features_match_archetype",
@@ -294,6 +296,7 @@ _OVERLAP_EXEMPT = {
 # permission is derived rather than hand-listed too (see _label_allows).
 _LABEL_GROUP = {
     "granaries": "granary",
+    "terraces": "terrace",
     "flophouses": "flophouse",
     "log_booms": "log boom",
     "religious": "temple",
@@ -362,6 +365,7 @@ _LABEL_GROUP = {
 # folds those kinds into groups (samurai_large -> samurai, and so on).
 _LABEL_BY_KIND = ("buildings",)
 _LABEL_EXEMPT = {
+    "districts": "a declared district is a REGION overlay like a quarter - it draws nothing, so there is nothing under it for a caption to bury",
     "borders": "a jurisdictional line has no footprint to protect - there is nothing under it to be buried by a caption, and its own caption is drawn in the top layer so no ground feature can paint over it",
     "byres": "a draft-ox byre is an ANNEX abutting its own farmhouse (draft_byres places it against the wall), so it shares the house's ground and any caption cleared for the house is cleared for it",
 }
@@ -386,6 +390,7 @@ OVERLAP_CLASS: dict[str, str] = {
         k: "SOLID"
         for k in (
             "houses",
+            "terraces",
             "buildings",
             "flophouses",
             "manors",
@@ -457,6 +462,7 @@ OVERLAP_CLASS: dict[str, str] = {
     # --- PERMISSIVE CLASSES (never tested; each row below records WHY) ---------------------------
     **{k: "COVER" for k in ("commons", "pastures", "marsh", "marshes")},
     "quarters": "OVERLAY",
+    "districts": "OVERLAY",
     # A WARD IS NOT A QUARTER. A quarter is a zoning word; a ward is a walled enclosure whose FENCE
     # is a physical barrier everything except its own kido must stand clear of. Classed OVERLAY it was
     # never extracted, which is why a guard station, a notice board and an oil press all came to rest
@@ -8040,6 +8046,67 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not _wg_bad,
             f"watercourse(s) running UNDER the rampart away from any water gate (x, y): {sorted(set(_wg_bad))[:4]} - water passes a wall only through its shuimen gap "
             f"(s.water_gate + city_wall(water_gates=[...])); route the crossing leg through the gate along the wall's normal",
+        )
+
+    # ---- feature 021: the capital housing layer -------------------------------------------
+    # FABRIC DECLARES ITS DISTRICTS (T003): once dwellings stand, the capital records which
+    # named district each pack filled - the districts are the rank-gradient check's ground
+    # truth and the reader's map of intent. The bare 020 state (no fabric) stays legal, so
+    # this is a declaration-existence rule on the HOUSED capital only ("a check that never
+    # RUNS looks exactly like a check that passes").
+    if meta.get("scale") == "capital" and (M.get("houses") or M.get("terraces")):
+        check(
+            "capital_districts_declared",
+            bool(M.get("districts")),
+            "housing stands but no districts are declared - s.district(name, kind, poly, rank_band=...) per pack region; capital_rank_gradient reads them",
+        )
+
+    # RANK GRADES WITH DISTANCE FROM THE CASTLE (T004; research 021 item 1): the jokamachi
+    # law - senior walled yashiki nearest the castle, detached houses next, retainer
+    # terraces at the band edge. Footprint family: CLASSIFICATION (members assigned by
+    # center to the band district containing them) + an ordering on band MEAN distances;
+    # 12px slack absorbs band-boundary geometry. Bands without members are skipped, so a
+    # mid-build map stays legal.
+    if meta.get("scale") == "capital" and M.get("castles") and M.get("districts"):
+        cg_cx, cg_cy = M["castles"][0]["x"], M["castles"][0]["y"]
+        cg_members = [(m["x"], m["y"]) for m in M.get("manors", [])] + [(h4["x"], h4["y"]) for h4 in M.get("houses", [])] + [(t4["x"], t4["y"]) for t4 in M.get("terraces", [])]
+        cg_bands: dict[str, list[float]] = {}
+        for cg_d in M["districts"]:
+            cg_b = cg_d.get("rank_band")
+            if not cg_b:
+                continue
+            for cg_x, cg_y in cg_members:
+                if point_in_poly(cg_x, cg_y, cg_d["poly"]):
+                    cg_bands.setdefault(cg_b, []).append(math.hypot(cg_x - cg_cx, cg_y - cg_cy))
+        cg_bad = []
+        cg_order = ["yashiki", "detached", "terrace"]
+        # EVERY ordered pair, not only adjacent ones: with the middle band empty (a mid-build
+        # map) adjacent-only left yashiki-vs-terrace uncompared and the inversion invisible -
+        # caught by this check's own red test before it ever gated a map.
+        for cg_i in range(len(cg_order)):
+            for cg_j in range(cg_i + 1, len(cg_order)):
+                cg_a, cg_c = cg_order[cg_i], cg_order[cg_j]
+                if not (cg_bands.get(cg_a) and cg_bands.get(cg_c)):
+                    continue
+                cg_ma = sum(cg_bands[cg_a]) / len(cg_bands[cg_a])
+                cg_mc = sum(cg_bands[cg_c]) / len(cg_bands[cg_c])
+                if cg_ma > cg_mc + 12:
+                    cg_bad.append(f"{cg_a} (mean {cg_ma:.0f}px from the castle) sits beyond {cg_c} (mean {cg_mc:.0f}px)")
+        check(
+            "capital_rank_gradient",
+            not cg_bad,
+            f"rank bands out of order from the castle: {cg_bad} - the jokamachi law grades proximity by rank (yashiki nearest, then detached, then terraces)",
+        )
+
+    # A TERRACE IS A RANGE (T005): the record models ONE roof over several household cells;
+    # a single-cell "terrace" is a detached house miscoded, and would double-count against
+    # the band targets. Runs wherever the record appears.
+    if M.get("terraces"):
+        tr_bad = [(round(t5["x"]), round(t5["y"])) for t5 in M["terraces"] if int(t5.get("units", 0)) < 2]
+        check(
+            "terraces_are_ranges",
+            not tr_bad,
+            f"terrace range(s) with fewer than 2 units at {tr_bad[:4]} - a one-unit terrace is a detached house; use the house vocabulary",
         )
 
     # EVERY GATE'S ROAD JOINS THE RING ROAD (GM 2026-08-09, the capital's side gates: both

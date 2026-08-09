@@ -6399,3 +6399,27 @@ def test_granary_append_records_a_list_for_a_capital_with_two_granaries():
     assert len(s.M["granaries"]) == 5  # one record per store, so the matrix can see each
     assert {r["label"] for r in s.M["granaries"]} == {"domain granary", "Imperial granaries"}
     assert all("w" in r and "h" in r for r in s.M["granaries"])
+
+
+# ---- feature 021: districts + retainer terraces -----------------------------------------------
+
+
+def test_district_records_a_named_region():
+    """s.district is a declarative overlay like quarter(): records only, draws nothing (T003)."""
+    s = _crop_settlement()
+    s.district("east machi", "machi", [(100, 100), (400, 100), (400, 400), (100, 400)])
+    s.district("castle foot", "terrace", [(500, 100), (700, 100), (700, 300), (500, 300)], rank_band="terrace")
+    d = s.M["districts"]
+    assert [r["name"] for r in d] == ["east machi", "castle foot"]
+    assert "rank_band" not in d[0] and d[1]["rank_band"] == "terrace"
+
+
+def test_terrace_draws_one_roof_with_party_wall_seams():
+    """The kumi-yashiki range (research 021 item 2): units x 18 ft frontage, 21 ft deep, one
+    record for the whole roof, party-wall seams BETWEEN cells (units-1 of them)."""
+    s = _crop_settlement()
+    s.terrace(500, 500, units=6)
+    r = s.M["terraces"][0]
+    assert r["units"] == 6 and abs(r["w"] - 6 * 18.0) < 0.1 and abs(r["h"] - 21.0) < 0.1
+    assert s.top[-1].count("<line") == 5  # 5 party walls divide 6 cells
+    assert any(abs(p[0] - 500) < 0.1 and abs(p[2] - r["w"]) < 0.1 for p in s.placed)
