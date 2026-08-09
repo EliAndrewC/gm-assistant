@@ -10653,10 +10653,11 @@ def test_capital_population_counts_yashiki_manors_and_outwall_samurai():
         {"x": 1500, "y": 900, "w": 12, "h": 9, "kind": "laborer", "rot": 0},
     ]
     M["terraces"] = [{"x": 400, "y": 700, "w": 36, "h": 7, "rot": 0, "units": 2, "z": 1}]
-    # in-wall: 2 manors + 1 samurai + 1 laborer + 2 terrace units = 6; +1 OUT-wall samurai = 7
-    # dwellings = 35 people; the out-wall laborer never counts. Declared 30 -> off by a house:
-    assert "population_consistent_with_housing" in f(M)
-    M["meta"]["population"] = 35  # ...and 35 closes the arithmetic exactly
+    # the capital census counts the WHOLE cohort, suburbs included: 2 manors + 2 samurai +
+    # 2 laborers + 2 terrace units = 8 dwellings = 40 people (WHERE the out-wall pair may
+    # stand is city_commoner_dwellings_inside_walls' business, not the census's):
+    assert "population_consistent_with_housing" in f(M)  # declared 30 - off by two houses
+    M["meta"]["population"] = 40  # ...and 40 closes the arithmetic exactly
     assert "population_consistent_with_housing" not in f(M)
 
 
