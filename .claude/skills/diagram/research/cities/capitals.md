@@ -613,3 +613,113 @@ karamete-mon NORTH, with its own (smaller) gate tower and its own deck over the 
 and a rear approach road runs from the gate to a T on the Imperial road's run toward the north
 city gate - the GM's own suggested connection, and the historically right one. The ote-suji
 remains the ceremonial front; the karamete approach is the working back door.
+
+## The moat RING and the river-flank moat are both real - and the wall's distance to the bank decides
+
+**The question** (GM 2026-08-09): Minami and Nagahara's moats do not fully encircle - they are
+open arcs whose ends meet the river, the river itself completing the circuit. The capital's
+moat fully encircles AND connects to the river through leats. Is that intentional? Are both
+valid? Which one is the researched form?
+
+**Both are researched forms, from the two anchor traditions, and neither city type is wrong:**
+
+- **The complete ring is the CHINESE standard.** Xi'an's moat is a complete artificial ring -
+  14.6 km encircling the wall entirely - fed from the region's water system by engineered
+  connections; Pingyao carries a complete circuit while the city stands NEAR the Fen, not on
+  it; Beijing's moats ringed each wall circuit, fed by the Tonghui/Jade Spring works. The
+  Chinese city habitually stands OFF its river and rings itself with engineered water.
+- **The river-as-flank is the JAPANESE riverside form.** A jokamachi ON a bank spent the river
+  as one side of its defenses (Edo's Sumidagawa, Osaka's northern rivers), and its moat runs
+  as an arc closing onto the river at both ends - which is exactly the Minami/Nagahara form,
+  researched when those maps were drawn.
+- **What decides between them is whether the RAMPART reaches the bank.** A wall on the bank
+  gets the river for free and digs only the landward arc; a wall standing back must close its
+  own circuit, and connects to the river (if at all) by sluiced leats for supply and flushing.
+
+**The decision**: Shiro Daika's rampart deliberately stands ~200 px off the bank - the wharf
+suburb, the two granary complexes and the towpath OWN the waterfront, and a rampart on the
+bank would have consumed the working shore the capital exists to use. So the capital takes
+the Chinese complete-ring form with sluiced feeder and drain leats, and the provincial river
+cities correctly keep their Japanese river-flank form: the difference is the two traditions
+showing through two different sitings, not an inconsistency. A future capital drawn ON its
+bank (castle_seat="edge" already anticipates one) would take the river-flank form instead.
+
+## Temple approaches face their street, and the modest temples have PATRONS
+
+**Two GM findings in one pass (2026-08-09).**
+
+**The sando rule.** A torii avenue exists so an approacher passes beneath the arches on the way
+IN - that is what a *monzen* ("before the gate") district is named for - so a hall within reach
+of a road or city street stands its avenue BETWEEN itself and the way. The capital's Jurojin
+had marched its avenue away from the kagi-no-te road, gateway behind the temple; now a general
+rule (`temple_torii_face_the_street`, all tiers: shrines, monasteries, temples) judges the
+arch-centroid's bearing against the nearest major way and fires on a far-side avenue. Halls
+with no way in reach face where they will - 021's streets will bring more of them under the
+rule.
+
+**The patron-temple reading, adopted as doctrine.** The GM read the Temple of Hotei standing
+beside the Tokiwa Estate as TOKIWA'S temple - financed by the lineage out of a family
+connection to the fortune or its monks - and that reading is historically exact: an Edo-period
+house of standing maintained its own *bodaiji* (mortuary/patron temple; the Tokugawa kept
+Zojoji and Kan'eiji, and han retainer families kept theirs in the castle town's temple
+districts), and *ujidera* - clan temples - are older than the castle towns themselves. So the
+capital's religious geography is now DELIBERATE at three levels, not one:
+
+1. The two SOVEREIGN temples (Benten, Jurojin) are domain institutions flanking the government
+   axis, and each grows its own monzen temple-neighborhood when 021's fabric lands - a capital
+   has temple neighborhoodS, plural, one per great house, never a single temple quarter.
+2. The modest rim halls are PATRON temples: each reads as kept by the lineage or ward nearest
+   it - Hotei by Tokiwa is the worked example, and 021 should let the others pair likewise
+   (Bishamon near Hazama, Daikoku near Anzu) where the geometry already suggests it.
+3. The rim placement itself remains the defensive teramachi finding (recorded above).
+
+Honesty note, per the record-the-why rule: the Hotei-Tokiwa adjacency was seat geometry, not
+planning - the GM's eye found the story in it, and the doctrine above makes it canon rather
+than accident. The best worldbuilding this map has produced was noticed, not designed.
+
+## Which districts get INTERNAL walls - and the fang ward as the Lion variant
+
+**The question** (GM 2026-08-09): at capital scale, are the temple neighborhoods walled, or
+just neighborhoods? Which district types take internal walls at all - and can this be a
+tunable knob, given the Lion's canonical taste for walling their districts?
+
+**The period default has ONE answer, already half-recorded in the ward-mesh research above:
+NOTHING is district-walled.** Both anchors, at our period, run open streets barred at night -
+Edo's kido and roji-kido, Qing Beijing's zhalan palings - and the security architecture is:
+
+- **Samurai districts** (several, interleaved with commoner strips - the GM's memory is right):
+  NOT walled as districts. The sealing is done by each yashiki's OWN wall - a samurai quarter
+  at this tier is a street of private fortifications, not a fortified street. (The provincial
+  tier's continuous sealed-ward palisade remains the recorded outlier, flagged in the mesh
+  research as more than history supports even there.)
+- **Temple neighborhoods**: the PRECINCT is walled - every temple compound is its own
+  enclosure, and a teramachi row reads as a defensive line precisely because compound wall
+  adjoins compound wall - but the monzen neighborhood around a great temple is ordinary open
+  machi: shops, inns and stalls on the approach, barred at night by kido like any block, never
+  by a district wall. A walled monzen would strangle the commerce it exists for.
+- **The castle and the walled compounds** (yashiki, magistracy, merchant estates) are the only
+  interior walls the period draws, plus the rampart itself.
+
+**The walled ward IS real - one dynasty earlier, and that is the knob.** Tang Chang'an ran 108
+lifang: residential wards behind their own perimeter walls, gates opened and closed by
+appointed officials to morning and evening drumrolls, markets confined and curfews enforced.
+The Song ended it from below - residents knocked down the ward walls to open street-front
+shops, and the open commercial city (Kaifeng, Hangzhou) replaced the compartmented one. So the
+two forms are not invention vs history; they are TWO PERIODS of history, and a clan that keeps
+its cities compartmented is running the OLDER imperial system on purpose.
+
+**The decision - a tunable knob, defaults per the research:**
+
+- `ward_style="mesh"` (DEFAULT, all clans): the kido/zhalan mesh the research recommends -
+  open streets, night-barred blocks, yashiki walls doing the sealing. This is the Song/Ming +
+  Edo consensus and what Shiro Daika will draw in 021.
+- `ward_style="fang"` (the LION variant, and any deliberately archaic/martial administration):
+  district perimeter walls with gated openings and a curfew drum - the Tang lifang kept alive
+  as martial philosophy and administrative practice, which is exactly the Lion's canonical
+  character. A fang-style city compartmentalizes samurai districts AND great-temple monzen
+  alike; it trades commerce for control, visibly.
+
+Variation within researched bounds is the skill's standing doctrine (the village/town/farm
+archetypes exist for the same reason); this knob extends it to urban administration. 021
+implements the mesh; the fang variant waits for the first Lion city, exactly as the edge
+castle waits for its first riverside capital.

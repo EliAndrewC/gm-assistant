@@ -197,7 +197,7 @@ s.label(2725, 1066, "aqueduct", 10, italic=True, color="#5E7A8A", rot=160, linea
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
 # upstream haulage is the whole reason it exists - and ending at the wharf, no further.
 s.towpath([(1774, 2681), (1924, 2481), (2074, 2281), (2216, 2103), (2262, 2042)])
-s.bridge(2063, 2296, -53.1, 30, 4)  # the towpath's plank over the moat drain's mouth - a towpath bridged every side drain it met
+s.bridge(2063, 2296, -53.1, 48, 4)  # the towpath's plank over the drain - span sized for the OBLIQUE crossing (22px water / sin ~36 deg + landings), per bridges_span_their_water
 s.M["bridges"][-1]["foot"] = True  # a footplank on the haulage path, not a road deck
 
 # ---- carry every way over the water it crosses. AFTER all roads and water, as bridges() requires:
@@ -268,7 +268,9 @@ lineage_manor(1660, 385, 70, 54, "seki", "south")
 # Nagahara's donation-row stride): the per-temple roll gave the primary a 3-arch stub while its
 # co-sovereign rolled 7, which read the declared hierarchy inverted (settlement-review 2026-08-09).
 s.shrine_hall(1850, 1620, "Temple of Benten", w=s.px(150), h=s.px(100), kind="temple", primary=True, torii=[(1850, 1700), (1850, 1820)], torii_count=7)
-s.shrine_hall(950, 1620, "Temple of Jurojin", w=s.px(150), h=s.px(100), kind="temple", torii=[(950, 1700), (950, 1760)])
+# Jurojin's sando faces NORTH, toward the kagi-no-te road it serves (temple_torii_face_the_street,
+# GM 2026-08-09 - the first cut marched the avenue away from the road, gateway behind the temple)
+s.shrine_hall(950, 1620, "Temple of Jurojin", w=s.px(150), h=s.px(100), kind="temple", torii=[(950, 1583), (950, 1547)])
 # THE PRECINCT IS RESERVED EVEN THOUGH ONLY THE HALL IS DRAWN (settlement-review 2026-08-09): a
 # sovereign temple is a HEAD HOUSE - abbot's residence, order administration, library, the monks
 # living inside the precinct (capitals.md, "a different program, not a scaled precinct") - and

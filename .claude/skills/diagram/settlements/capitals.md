@@ -165,6 +165,8 @@ So, at capital scale:
 
 **Flagged, not acted on:** this research says the provincial tier's continuous palisade (`city_samurai_ward_sealed` and family) is more than history supports there either. That is a separate question for the provincial tier - three shipped cities depend on those checks, and the capital can adopt the mesh without any of them changing.
 
+**Nothing else is district-walled either** (GM asked 2026-08-09; [research](../research/cities/capitals.md#which-districts-get-internal-walls---and-the-fang-ward-as-the-lion-variant)): the samurai districts seal by each yashiki's OWN wall, and a great temple's monzen neighborhood is open commercial machi (the PRECINCT is walled; the neighborhood never is). The exception is a KNOB: `ward_style="mesh"` (default - the Song/Ming + Edo consensus) vs `ward_style="fang"` (the Tang lifang kept alive: district perimeter walls, gated, curfew-drummed - the LION's canonical form, for the first Lion city). 021 implements the mesh.
+
 ## Placements that change
 
 - **Teramachi rim.** Temples belt the inner face of the rampart as part of the defenses, rather than gathering in one quarter ([research](../research/cities/capitals.md#both-traditions-nest-a-walled-citadel-in-the-seat-so-a-centered-castle-is-the-median-form)).
@@ -196,6 +198,16 @@ Everything per-gate (gate market, outside flophouse, caravan cluster, kosatsuba,
 ## Martial training: the private-dojo roll does NOT change at this tier
 
 **The capital keeps the same 1-per-200-samurai private-dojo roll as a provincial city** (~7-8 halls at ~1,560 resident samurai). What it gains is not more private halls but the **domain school**, and that is the historically grounded distinction: the *hanko* and its *bugeijo* were built in **castle towns**, and private *machi-dojo* are a late, metropolitan phenomenon. See [`cities/government.md`](cities/government.md), "Historical grounding: martial training", which now separates what is attested from what was extrapolated.
+
+## The moat: a complete RING with sluiced leats (the Chinese form)
+
+A capital whose rampart stands OFF its bank closes its own moat circuit and connects to the
+river by sluiced feeder/drain leats - the Chinese standard (Xi'an's complete 14.6 km ring;
+[research](../research/cities/capitals.md#the-moat-ring-and-the-river-flank-moat-are-both-real---and-the-walls-distance-to-the-bank-decides)).
+The provincial river cities' open-arc moats closing onto the river (Minami, Nagahara) are the
+JAPANESE riverside form and stay correct for walls ON the bank; a future edge-castle capital
+would take that form too. Every deck fully crosses its water (`bridges_span_their_water` - the
+oblique-crossing span rule).
 
 ## Water: an AQUEDUCT, in addition to the wells
 

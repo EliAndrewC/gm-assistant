@@ -111,4 +111,10 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   the beds read as overlapping roads - now city gate -> due south -> rear gate, with the
   through-road leaving at the junction), and the aqueduct's bank lines darkened/widened as a
   GLYPH CONVENTION (masonry brown, ~2 px reveal per side - the wellhead-vr precedent; true-scale
-  berms would vanish at 3 ft/px).
+  berms would vanish at 3 ft/px). A further pass: the moat-form question researched and
+  settled (research: "The moat RING and the river-flank moat are both real") - the complete
+  ring + sluiced leats is the Chinese standard (Xi'an's 14.6 km full circuit) and correct for
+  a rampart standing off its bank; Minami/Nagahara's river-flank arcs stay correct for walls
+  ON the bank. And the GM's half-bridge catch became a general rule: bridges_span_their_water
+  demands both deck ends past the crossed water's edge (the oblique-crossing span rule), with
+  the towpath plank re-sized to comply.
