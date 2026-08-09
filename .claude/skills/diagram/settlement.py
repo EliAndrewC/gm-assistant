@@ -11108,7 +11108,7 @@ class Settlement:
         self.block_polys.append([(x - 18 - bm, y - 11 - bm), (x + 18 + bm, y - 11 - bm), (x + 18 + bm, y + 11 + bm), (x - 18 - bm, y + 11 + bm)])
         return z
 
-    def sluice_gate(self, x: float, y: float, rot: float = 0.0) -> int:
+    def sluice_gate(self, x: float, y: float, rot: float = 0.0, label: str | None = None, label_xy: Pt | None = None) -> int:
         """A field-channel SLUICE GATE (the intake/outfall control board the comb doctrine's "sluice-fed
         head-race" always implied but no map drew - GM 2026-07-23, the mouths-are-confluences pass): two
         timber posts flanking the channel and a lifted board between them. Drawn wherever a channel
@@ -11126,6 +11126,11 @@ class Settlement:
         g.append('</g>')
         z = self.add_top(''.join(g))
         self.M.setdefault("sluice_gates", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "z": z})
+        if label:
+            # a sluice reads as a bare black bar at fit zoom (GM 2026-08-09) - most of a real
+            # gate IS in the water, so the word does the explaining, not the drawing
+            lx_, ly_ = label_xy if label_xy else (x, y - 13)
+            self.label(lx_, ly_, label, 9, italic=True, color="#3A352C")
         return z
 
     def inwall_drain_outfall(self, drain_pts: Any, moat_bias: Pt = (0.0, 0.0), field_name: str = "") -> list[Pt]:

@@ -6236,6 +6236,24 @@ def test_towpath_records_a_list_and_draws_no_roadbed_or_centerline():
     assert not s.M.get("roads") and not s.M.get("road")
 
 
+def test_sluice_gate_label_names_the_black_bar():
+    """The bare sluice glyph reads as a floating black bar at fit zoom (GM 2026-08-09) - most
+    of a real gate is in the water, so the word does the explaining; label only when asked, so
+    every existing map is byte-identical."""
+    s1 = _cap020()
+    n0 = len(s1.M.get("labels", []))
+    s1.sluice_gate(500, 500, rot=30)
+    assert len(s1.M.get("labels", [])) == n0  # unlabeled by default
+    s2 = _cap020()
+    s2.sluice_gate(500, 500, rot=30, label="sluice gate")
+    lab2 = [L for L in s2.M["labels"] if len(L) > 5 and L[5] == "sluice gate"]
+    assert len(lab2) == 1
+    s3 = _cap020()
+    s3.sluice_gate(500, 500, rot=30, label="sluice gate", label_xy=(540, 480))
+    lab3 = [L for L in s3.M["labels"] if len(L) > 5 and L[5] == "sluice gate"]
+    assert len(lab3) == 1 and abs((lab3[0][0] + lab3[0][2]) / 2 - 540) < 2  # seated at the hand point
+
+
 def test_towpath_reserves_its_ground():
     s = _cap020()
     n_corr = len(s.corridors)

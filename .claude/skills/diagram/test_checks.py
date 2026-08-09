@@ -5046,6 +5046,24 @@ def test_roads_bridge_water_fires_on_an_unbridged_way_over_a_castle_moat():
     assert "roads_bridge_water" not in f(M)
 
 
+def test_watercourse_crosses_wall_at_water_gate():
+    """A watercourse pierces a rampart ONLY at a water gate (GM 2026-08-09: Nagahara's canal had
+    drifted 40px off its gate and ran under the wall - an index-anchored moat vertex moved in a
+    past re-roll and nothing compared the crossing to the gap). The doctrine was already written
+    in inwall_drain_outfall's docstring; this is its check."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "wall": [[300, 300], [700, 300], [700, 700], [300, 700]],
+        "water_gates": [{"x": 700, "y": 500, "w": 36, "h": 22, "rot": 0, "z": 1}],
+        "canals": [{"poly": [[900, 500], [650, 500]], "w": 12}],  # through the gate
+    }
+    assert "watercourse_crosses_wall_at_water_gate" not in f(M)
+    M["canals"] = [{"poly": [[900, 560], [650, 560]], "w": 12}]  # under the wall, 60px off the gate
+    assert "watercourse_crosses_wall_at_water_gate" in f(M)
+    M["canals"] = [{"poly": [[900, 560], [650, 560]], "w": 12, "drawn": False}]  # a buried culvert pierces nothing
+    assert "watercourse_crosses_wall_at_water_gate" not in f(M)
+
+
 def test_temple_torii_face_the_street():
     """A temple within reach of a major way faces its torii avenue TOWARD it (GM 2026-08-09) -
     the sando exists so an approacher passes beneath the arches on the way in; arches on the

@@ -90,3 +90,14 @@ carrying the dead over water suits the geography of the afterlife anyway.
   block, where every other hall caption on the two city sheets sits 37-58 ft off its hall; and the
   **two visible samurai estates stand as empty boxes in a featureless plain** with the "samurai
   estates" caption 460 ft below the nearest of them. Both predate the RNG work and neither is fixed.
+
+## 2026-08-09 - the canal had drifted under the rampart
+
+The GM's eye: the cargo canal ran beneath the wall instead of through its shuimen. The canal's
+east end anchors to MOAT[1] - a vertex BY INDEX - and a past ring re-derivation moved it,
+sliding the approach leg 40px off the water gate with every check green: placement and the
+wall's gap shared no source, and nothing compared the crossing to the gate. Fixed by entering
+the gate along the wall's normal (an added waypoint outside), and the rule is now general:
+`watercourse_crosses_wall_at_water_gate` fires on any drawn watercourse piercing a rampart
+away from a water gate. The drifted manifest is frozen in
+pool/regressions/canal_under_the_wall_fires_on_the_pre_fix_nagahara.json.

@@ -128,4 +128,7 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   internal-walls question settled (research: "Which districts get INTERNAL walls"): NOTHING is
   district-walled at this tier by default - yashiki walls seal the samurai streets, monzen
   neighborhoods stay open, precincts alone are walled - with ward_style="fang" (the Tang
-  lifang) recorded as the Lion-variant knob. Documentation only; 021 draws the kido mesh.
+  lifang) recorded as the Lion-variant knob. Documentation only; 021 draws the kido mesh. The two moat
+  sluices now carry "sluice gate" labels (GM: the bare glyph read as a floating black bar -
+  most of a real gate is in the water, so the word explains what the drawing cannot;
+  sluice_gate(label=...) added engine-wide).
