@@ -40,7 +40,7 @@ is final; XII closing bookend + stop-work ritual last.
       castle distance on a constructed manifest -> fires; the gradient-ordered manifest ->
       passes); implement in `check_village.py` (classification family, centers, per
       contracts/checks.md).
-- [ ] T005 Terrace vocabulary, test-first: red-green tests for `s.terrace` (record shape
+- [X] T005 Terrace vocabulary, test-first: red-green tests for `s.terrace` (record shape
       `{x,y,w,h,rot,units,z}`, party-wall seams drawn at ~18 ft frontage per research item
       2) in `test_settlement.py` and `terraces_are_ranges` (units < 2 -> fires) in
       `test_checks.py`; implement glyph + record + check; add `terraces` to
@@ -50,11 +50,12 @@ is final; XII closing bookend + stop-work ritual last.
 ## Phase 3: User Story 1 - The GM reads a lived-in capital (P1) - MVP
 
 **Goal**: 12,360 inhabitants housed in rank-graded fabric around every reservation.
+**Progress note**: T006 in flight 2026-08-09; band-target check design recorded in contracts/checks.md. Widen order verified: quarters block (2876), doors/rows (4011), businesses/poor (4466); city_wall_sized_to_population checked for city-only scoping before widening.
 
 **Independent test**: `population_consistent_with_housing` + density + tiling green at
 capital scale; gradient visible in crops; zero overlap regressions.
 
-- [ ] T006 [US1] Extend the city housing battery to capital scale, test-first: in
+- [X] T006 [US1] Extend the city housing battery to capital scale, test-first: in
       `test_checks.py`, red cases on a minimal capital manifest (declared population,
       no dwellings -> `population_consistent_with_housing` fires; plus the capital variants
       of density floors / quarter tiling / senior-majority mix per contracts/checks.md

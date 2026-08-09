@@ -2817,7 +2817,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # population is DWELLINGS x ~5, NEVER total buildings: a town/city's shops, government
     # offices, flophouses, kura and gate furniture house no one, so counting them as housing
     # would inflate the population. Farmhouses + urban dwellings are the only residences.
-    if scale in ("town", "city") and meta.get("population"):
+    if scale in ("town", "city", "capital") and meta.get("population"):
         # a CITY's declared population (~3,000) is its URBAN castes ONLY - servants, laborers, merchants,
         # burakumin, samurai (budgets.md caste tables list ZERO farmers for a city). FARMERS do not count
         # at all: not the surrounding villagers, and not even the unusual IN-WALL agricultural district's
@@ -2828,10 +2828,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # the target by spilling houses into the fields while the interior sat half-empty - the exact
         # leak that passed the broken Nagahara (525 in-wall + 35 spilled = 560 ~ target).
         _wall = M.get("wall")
-        if scale == "city" and _wall:
+        if scale in ("city", "capital") and _wall:
             urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS and point_in_poly(b["x"], b["y"], _wall))
+            # a terrace range is ONE roof over `units` households (021) - count the units
+            urban += sum(int(_t6.get("units", 0)) for _t6 in M.get("terraces", []) if point_in_poly(_t6["x"], _t6["y"], _wall))
+            if scale == "capital":
+                # the yashiki band's walled compounds ARE dwellings (Ranks 8-12 households),
+                # recorded as manors rather than buildings; band membership comes from the
+                # declared districts. And the out-wall 15% of the samurai cohort
+                # (CAPITAL_SAMURAI_INWALL_FRAC) counts too: the capital's declared figure
+                # covers the whole cohort (families sums exactly to dwellings in the budget),
+                # unlike a provincial city's estate samurai, whom the Tango rule counts rural.
+                _yp6 = [d6["poly"] for d6 in M.get("districts", []) if d6.get("rank_band") == "yashiki"]
+                urban += sum(1 for m6 in M.get("manors", []) if any(point_in_poly(m6["x"], m6["y"], p6) for p6 in _yp6))
+                urban += sum(1 for b6 in M.get("buildings", []) if str(b6.get("kind", "")).startswith("samurai") and not point_in_poly(b6["x"], b6["y"], _wall))
         else:
             urban = sum(1 for b in M.get("buildings", []) if b.get("kind") in DWELLING_KINDS)
+            urban += sum(int(_t6.get("units", 0)) for _t6 in M.get("terraces", []))
         if scale == "city" and meta.get("agricultural_district") and M.get("wall"):
             # the unusual agricultural-district city (Tango's canon deviation) HOUSES its in-wall
             # farmers: they are walled residents and count toward the declared figure - the
@@ -2839,7 +2852,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # Surrounding (extramural) farmhouses still do not count.
             inwall_farms = sum(1 for h in houses if point_in_poly(h["x"], h["y"], M["wall"]))
             dwellings = urban + inwall_farms
-        elif scale == "city":
+        elif scale in ("city", "capital"):
             dwellings = urban
         else:
             dwellings = len(houses) + urban
@@ -2870,7 +2883,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # So ANY commoner DWELLING outside the wall is the anomaly (it defeats the wall and has no
     # economic anchor); hard-zero. Samurai are exempt (their country seats are a legitimate
     # extramural category); shops are businesses, not dwellings, so they are not in COMMONER_KINDS.
-    if scale == "city" and M.get("wall"):
+    if scale in ("city", "capital") and M.get("wall"):
         wall_p = M["wall"]
         outside_com = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in COMMONER_KINDS and not point_in_poly(b["x"], b["y"], wall_p)]
         check(
@@ -4005,7 +4018,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # Separations in real feet: an eave/drainage gap is ~3-6 ft (drainage, not an entrance), a
     # walkable roji/court is >= ~10 ft; DOOR_CLEAR_FT = 7 sits cleanly between them at every
     # map scale (ftpx converts to drawn px).
-    if scale in ("town", "city"):
+    if scale in ("town", "city", "capital"):
         door_clear = DOOR_CLEAR_FT / meta.get("ftpx", 1)
         subj = [b for b in M.get("buildings", []) if "w" in b]
         blockers = subj + [h for h in M.get("houses", []) if "w" in h]
@@ -4460,7 +4473,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # ALMOST all shops front a street (commerce wants the street); POOR housing (laborer/burakumin)
     # mostly packs the block INTERIOR, reached by alleys, not the paved street frontage. (The towns
     # set the template: businesses on the frontage via s.frontage, dwellings interior via s.pack.)
-    if scale in ("town", "city"):
+    if scale in ("town", "city", "capital"):
         st_lines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
 
         def on_a_street(b: dict[str, Any]) -> bool:
@@ -8096,6 +8109,40 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             "capital_rank_gradient",
             not cg_bad,
             f"rank bands out of order from the castle: {cg_bad} - the jokamachi law grades proximity by rank (yashiki nearest, then detached, then terraces)",
+        )
+
+    # THE FABRIC HITS THE BUDGET'S BAND TARGETS (T006): the 018 budget is the housing
+    # authority, so each band's drawn count lands on its dwelling_target - yashiki compounds
+    # and detached samurai houses by record count, terraces by their UNIT count (one roof,
+    # `units` households), packed rows by dwelling-kind buildings in the machi-family
+    # districts. Tolerance max(2, 5%) absorbs seat jitter without permitting a quietly-short
+    # band (the Minami sign-off lesson, applied at band granularity).
+    cb_tgt = (meta.get("budget") or {}).get("dwelling_target")
+    if meta.get("scale") == "capital" and cb_tgt and M.get("districts"):
+
+        def cb_in(kinds: set[str]) -> list[Any]:
+            return [d6["poly"] for d6 in M["districts"] if d6.get("rank_band") in kinds or d6.get("kind") in kinds]
+
+        cb_pairs = [
+            ("samurai_yashiki", sum(1 for m6 in M.get("manors", []) if any(point_in_poly(m6["x"], m6["y"], p6) for p6 in cb_in({"yashiki"})))),
+            ("samurai_detached", sum(1 for b6 in M.get("buildings", []) if str(b6.get("kind", "")).startswith("samurai") and any(point_in_poly(b6["x"], b6["y"], p6) for p6 in cb_in({"detached"})))),
+            ("samurai_terrace", sum(int(t6.get("units", 0)) for t6 in M.get("terraces", []) if any(point_in_poly(t6["x"], t6["y"], p6) for p6 in cb_in({"terrace"})))),
+            (
+                "packed",
+                sum(
+                    1
+                    for b6 in M.get("buildings", [])
+                    if b6.get("kind") in DWELLING_KINDS
+                    and not str(b6.get("kind", "")).startswith("samurai")
+                    and any(point_in_poly(b6["x"], b6["y"], p6) for p6 in cb_in({"machi", "monzen", "entertainment"}))
+                ),
+            ),
+        ]
+        cb_bad = [f"{cb_k}: drawn {cb_n} vs target {int(cb_tgt.get(cb_k, 0))}" for cb_k, cb_n in cb_pairs if abs(cb_n - int(cb_tgt.get(cb_k, 0))) > max(2, round(0.05 * int(cb_tgt.get(cb_k, 0))))]
+        check(
+            "capital_housing_matches_band_targets",
+            not cb_bad,
+            f"band(s) off the budget's dwelling_target: {cb_bad} - the 018 budget is the housing authority; seat the shortfall (or fix the district declaration hiding it)",
         )
 
     # A TERRACE IS A RANGE (T005): the record models ONE roof over several household cells;
