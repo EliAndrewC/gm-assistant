@@ -147,4 +147,9 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   building-dense - Nisshinkan's halls, dorms, pond, observatory - so a faithful interior is a
   dozen buildings and belongs to its Mode A sheet; the two-hall sketch was neither honest nor
   blank), its caption moving inside; and the aqueduct's two ends carry their words - "intake
-  weir" at the river (the Hamura form) and "settling basin" at the gate.
+  weir" at the river (the Hamura form) and "settling basin" at the gate. The GM's internal-dock
+  question was then researched and answered with NO map change (research: "The internal dock
+  and the bank quay"): the water-gate/dock-basin form the sibling cities draw belongs to still
+  at-grade water, a live towpath river takes the kashi bank quay this map draws, and the
+  grain-only look of the landing is the ground layer's emptiness - 021's brokers' row and
+  warehouse frontage land on the bank top per the wharf-chain doctrine.
