@@ -6263,6 +6263,18 @@ def test_manor_ink_parameter_marks_foreign_sovereign_ground():
     assert 'stroke="#274D3D"' in "".join(s2.out[n0:])
 
 
+def test_full_tilt_lays_a_row_caption_along_the_row():
+    """GM 2026-08-09: linear subjects may carry the FULL tilt (linear_tilt_full), past the
+    45-degree go-level clamp the road captions keep - a -54 deg granary row's caption lies
+    along the row, and a bearing and its reverse caption identically."""
+    assert settlement.linear_tilt_full(-54) == -54.0
+    assert settlement.linear_tilt_full(126) == -54.0
+    assert settlement.linear_tilt_full(0) == 0.0
+    s = _cap020()
+    s.granary(700, 700, n=3, w=20, h=12, gap=8, label="domain granaries", append=True, rot=-54)
+    assert "rotate(-54" in "".join(s.out)  # the caption carries the row's own angle
+
+
 def test_granary_rot_turns_the_row_and_records_rotated_stores():
     """A riverside complex stands parallel to the bank it loads from (GM 2026-08-09) - the row
     turns as a unit and every store records the rotation, so the matrix tests real corners."""

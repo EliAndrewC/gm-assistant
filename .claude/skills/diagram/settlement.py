@@ -496,6 +496,18 @@ def label_tilt(rot: float) -> float:
     return 0.0 if abs(t) < 0.05 else round(t, 1)
 
 
+def linear_tilt_full(rot: float) -> float:
+    """The GM's 2026-08-09 EXTENSION of the linear-caption rule: a LINE subject's caption may
+    carry its FULL tilt, past linear_tilt's 45-degree go-level clamp - the cartographic
+    along-feature convention (a river's name lies along the river at whatever bearing the river
+    runs). Opt-in per call site (label(full_tilt=True)): the clamp stays the default, so every
+    existing road caption in the pool - including Hoshizora's level "Imperial Road", the ruling
+    that set the clamp - is byte-identical. Normalized to [-90, 90) so a bearing and its reverse
+    caption identically and the text never renders upside down."""
+    t = (rot + 90.0) % 180.0 - 90.0
+    return round(t, 1) if abs(t) >= 0.05 else 0.0
+
+
 def linear_tilt(rot: float) -> float:
     """The caption tilt for a LINEAR subject - a road, a street, a row of shopfronts laid along
     one (GM 2026-08-08: Hoshizora's "Imperial Road" and "merchant houses & shops" read level
@@ -9921,11 +9933,11 @@ class Settlement:
         if label:
             if rot:
                 loff = h / 2 + 12  # seat the caption off the row's upslope flank, clear of the turned roofs
-                # the caption carries the row's own tilt (the GM's angled-label rule) - and a
-                # granary row is a LINE subject, so it takes linear_tilt's clamp, not label_tilt's
-                # fold: the fold would send this -54 deg row's caption to +36, perpendicular text
-                # lying ACROSS the kura (label()'s own docstring has the 2026-08-08 ruling)
-                self.label(x + gsa * loff, y - gca * loff, label, 11, italic=True, color="#6B5A3C", rot=rot, linear=True)
+                # the caption lies ALONG the row at its full tilt (GM 2026-08-09: linear
+                # subjects may carry the whole angle - linear_tilt_full - where the old clamp
+                # would have gone level past 45 deg, and label_tilt's building fold would have
+                # laid perpendicular text ACROSS the kura)
+                self.label(x + gsa * loff, y - gca * loff, label, 11, italic=True, color="#6B5A3C", rot=rot, linear=True, full_tilt=True)
             else:
                 self.label(x, y - h / 2 - 10, label, 11, italic=True, color="#6B5A3C")
         return stores
@@ -14186,6 +14198,7 @@ class Settlement:
         ref: Sequence[float] | None = None,
         rot: float = 0.0,
         linear: bool = False,
+        full_tilt: bool = False,
     ) -> None:
         esc = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         st = ' font-style="italic"' if italic else ''
@@ -14198,7 +14211,9 @@ class Settlement:
         # laid along one - and takes `linear_tilt`'s CLAMP instead of `label_tilt`'s FOLD (GM
         # 2026-08-08). The two are not interchangeable: the fold would send a 72-degree road's
         # caption to -18 degrees, an angle nothing on the map is drawn at.
-        tilt = linear_tilt(rot) if linear else label_tilt(rot)
+        # `full_tilt=True` (linear subjects only) takes linear_tilt_full's unclamped angle - the
+        # GM's 2026-08-09 extension for along-row captions like the wharf granary rows
+        tilt = (linear_tilt_full(rot) if full_tilt else linear_tilt(rot)) if linear else label_tilt(rot)
         if tilt:
             w_ = len(text) * size * 0.55
             x0_ = x - w_ / 2 if anchor == "middle" else (x - w_ if anchor == "end" else x)

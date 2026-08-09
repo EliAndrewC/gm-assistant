@@ -145,22 +145,24 @@ s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=s.lw(45))  # starts just south of
 # and castle sharing the name is the jokamachi reality (settlement-review, 2026-08-09).
 s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south")
 
-# ---- the moat CIRCULATES, and its water is DRAWN (GM 2026-08-09, twice). Minami and Nagahara
-# back onto their rivers, so their moat FEET are the junction; the stand-off closed ring's
-# sibling is TANGO, whose ring takes moat-width feeder and outfall channels - the first cut here
-# used a 48 ft thread instead, and tapped the river at its CLOSEST approach (southeast), which
-# is hydrologically backwards: the land falls NE -> SW, so water entering at the low southeast
-# corner cannot circulate up the east arc and the whole northern ring is a dead arm. The GM's
-# eye caught it. Now: a moat-width (66 ft, Tango's own) sluiced feeder taps the river's HIGH
-# upstream reach and feeds the ring's northeast arc, the water runs BOTH ways round descending
-# the whole way, and the drain leaves the low southwest arc for the fields (attested use).
-FEED_TAP = (2933, 1064)  # ON the river's west bank, upstream - HIGHER ground than the moat's NE arc
-s.stream([FEED_TAP, (2700, 850), (2450, 700), (MOAT[3][0], MOAT[3][1])], frm={"kind": "river"}, to={"kind": "moat"}, width=s.px(66))
-s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(850 - FEED_TAP[1], 2700 - FEED_TAP[0])) + 90)  # the intake board at the river tap, square across the leat
-DRAIN_OUT = (MOAT[12][0], MOAT[12][1])
-s.stream([DRAIN_OUT, (640, 2140), (460, 2330), (200, 2560), (60, 2690)], frm={"kind": "moat"}, to={"kind": "offmap"}, width=s.px(66))
-s.sluice_gate(DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2140 - DRAIN_OUT[1], 640 - DRAIN_OUT[0])) + 90)  # the outfall board where the drain leaves the ring
-s.moat_flow(MOAT[3], MOAT[12])
+# ---- the moat CIRCULATES river-to-river, every drawn drop moving NE -> SW (GM 2026-08-09,
+# third cut - the second still ran its last leg up-screen). Like Minami and Nagahara the moat
+# now connects to the river at BOTH ends; their moat feet touch the bank directly, this
+# stand-off ring reaches it through two moat-width (66 ft, Tango's gauge) sluiced leats:
+#   - the FEEDER taps the river's upper reach (downstream of the aqueduct's intake) and runs
+#     monotonically down-map to the ring's east arc - every segment moves west and south, the
+#     declared water_flow=135 bearing;
+#   - the DRAIN leaves the ring's southeast arc and rejoins the river just below its bend,
+#     approaching swept DOWNSTREAM, and the river there is genuinely lower ground than the arc.
+# The towpath crosses the drain's mouth on a plank deck - a real towpath bridged every side
+# drain it met, or the haulage teams could not pass.
+FEED_TAP = (3080, 843)  # the river's west bank - upstream of the city, downstream of the aqueduct intake
+s.stream([FEED_TAP, (2870, 875), (2650, 880), (MOAT[4][0], MOAT[4][1])], frm={"kind": "river"}, to={"kind": "moat"}, width=s.px(66))
+s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90)  # the intake board at the river tap
+DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
+s.stream([DRAIN_OUT, (2065, 2180), (2062, 2325)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
+s.sluice_gate(DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90)  # the outfall board where the drain leaves the ring
+s.moat_flow(MOAT[4], MOAT[8])
 
 # ---- THE AQUEDUCT (feature 020): intake on the river upstream of the east road's crossing, an
 # open cut at grade swinging around the northeast quarter OUTSIDE the moat, terminating at the
@@ -168,7 +170,13 @@ s.moat_flow(MOAT[3], MOAT[12])
 # outside the wall, buried inside it, the GATE as the boundary - the route crosses no
 # watercourse, so no kakehi flume is needed. The land falls NE -> SW, so the cut runs from the
 # high northeast down toward the gate, roughly along the contour like Edo's Kanda josui.
-s.aqueduct([(3123, 779), (2820, 610), (2350, 405), (1800, 215), (1560, 182), (NGATE[0] + 24, NGATE[1] - 55)])
+# ...and the cut now visibly REACHES the city (GM 2026-08-09: "the aqueduct appears to be
+# connected to literally nothing"): its last leg crosses the city moat on a KAKEHI - the open
+# flume carried over on a bridge that Edo's Suidobashi is named for - and the terminal basin
+# stands at the rampart's foot beside the north gate, where the buried in-wall pipe begins.
+s.aqueduct([(3123, 779), (2820, 610), (2350, 405), (1800, 215), (1560, 182), (1442, 198), (1425, 231)])
+s.bridge(1433, 214, math.degrees(math.atan2(231 - 198, 1425 - 1442)), 34, 5.5)  # the kakehi deck over the moat
+s.M["bridges"][-1]["foot"] = True  # carries the FLUME, not a road - exempt from the road-deck alignment pairing, like a standalone footplank
 # the one thing the drawing cannot say (settlement-review 2026-08-09): at fit zoom the open cut
 # can read as a natural brook spilling into the moat, so the intake carries the word
 s.label(2975, 668, "aqueduct", 10, italic=True, color="#5E7A8A")
@@ -176,6 +184,8 @@ s.label(2975, 668, "aqueduct", 10, italic=True, color="#5E7A8A")
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
 # upstream haulage is the whole reason it exists - and ending at the wharf, no further.
 s.towpath([(1774, 2681), (1924, 2481), (2074, 2281), (2216, 2103), (2262, 2042)])
+s.bridge(2063, 2296, -53.1, 30, 4)  # the towpath's plank over the moat drain's mouth - a towpath bridged every side drain it met
+s.M["bridges"][-1]["foot"] = True  # a footplank on the haulage path, not a road deck
 
 # ---- carry every way over the water it crosses. AFTER all roads and water, as bridges() requires:
 # the south/east/southwest/north gates' moat crossings, the east road over the RIVER, and the
