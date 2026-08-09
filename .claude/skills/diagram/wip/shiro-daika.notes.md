@@ -87,4 +87,9 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   A full dimensional audit followed (research/cities/capitals.md, "Dimensional audit"): every
   drawn family checked against its anchor at 3 ft/px; all hold except the hanko, enlarged from
   0.33 ha (the bottom of the attested band) to ~1 ha - mid-band between Choshu's first
-  Meirinkan and Aizu's Nisshinkan, per the schooling-magnet doctrine.
+  Meirinkan and Aizu's Nisshinkan, per the schooling-magnet doctrine. The moat plumbing was
+  then corrected on the GM's eye: the feeder had tapped the river at its CLOSEST (southeast,
+  downhill) approach with a 48 ft thread - the northern ring would have been a dead arm; it now
+  taps the HIGH upstream reach at Tango's own moat-width 66 ft and feeds the northeast arc, so
+  the water descends both ways round. Granary captions now carry their rows' tilt (the
+  angled-label rule; granary() passes rot through to label()).

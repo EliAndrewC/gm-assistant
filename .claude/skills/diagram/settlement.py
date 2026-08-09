@@ -9921,7 +9921,11 @@ class Settlement:
         if label:
             if rot:
                 loff = h / 2 + 12  # seat the caption off the row's upslope flank, clear of the turned roofs
-                self.label(x + gsa * loff, y - gca * loff, label, 11, italic=True, color="#6B5A3C")
+                # the caption carries the row's own tilt (the GM's angled-label rule) - and a
+                # granary row is a LINE subject, so it takes linear_tilt's clamp, not label_tilt's
+                # fold: the fold would send this -54 deg row's caption to +36, perpendicular text
+                # lying ACROSS the kura (label()'s own docstring has the 2026-08-08 ruling)
+                self.label(x + gsa * loff, y - gca * loff, label, 11, italic=True, color="#6B5A3C", rot=rot, linear=True)
             else:
                 self.label(x, y - h / 2 - 10, label, 11, italic=True, color="#6B5A3C")
         return stores
