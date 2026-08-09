@@ -38,7 +38,7 @@ Built ahead of US1's other features because it is the decision the feature exist
 - [x] T010 Implement the dual reservation in `settlement.py`, with a comment naming the DRAW ORDER rule it satisfies
 - [x] T011 Write failing tests in `test_settlement.py` for the provisional internal works: bailey walls (concentric divisions), inner moats, and the masugata dogleg approach, all behind ONE knob so the verdict can be applied by flipping it
 - [x] T012 Implement the bailey walls, inner moats and masugata approach in `settlement.py` behind that single knob, defaulting ON per the GM's "try it and see"
-- [ ] T013 [P] Classify `castle` in `check_village.py`'s `_OVERLAP_STRUCTS` and give it a caption group in `_LABEL_GROUP` - the KEEP-CLEAR CONTRACT, which gates it off all fifteen hazards at once
+- [x] T013 [P] Classify `castle` in `check_village.py`'s `_OVERLAP_STRUCTS` and give it a caption group in `_LABEL_GROUP` - the KEEP-CLEAR CONTRACT, which gates it off all fifteen hazards at once
 - [ ] T014 [P] Write a failing test in `test_checks.py` that `capital_castle_interior_empty` fires when any building stands inside the enceinte - the rule that is NOT a knob
 
 **Checkpoint**: the castle exists and can be drawn.
@@ -75,7 +75,7 @@ Built ahead of US1's other features because it is the decision the feature exist
 **These are the point of the feature. Do not compress them.**
 
 - [ ] T028 Verify the byte-identity claim: `git status --porcelain -- pool/provincial-cities pool/towns pool/villages pool/hamlets` MUST be empty
-- [ ] T029 **Launch `settlement-review` NOW**, scoped as `DELTA: a new capital-tier SKELETON map - wall, moat, river, roads, gates, castle. Housing, temples, wharf, aqueduct and lineage compounds are deliberately NOT drawn yet.` Launch it the moment the map is final, before the docs and the commit, since everything done while it runs is free
+- [x] T029 **Launch `settlement-review` NOW**, scoped as `DELTA: a new capital-tier SKELETON map - wall, moat, river, roads, gates, castle. Housing, temples, wharf, aqueduct and lineage compounds are deliberately NOT drawn yet.` Launch it the moment the map is final, before the docs and the commit, since everything done while it runs is free
 - [ ] T030 **Principle XII CLOSING GATE** (transferred from feature 018): examine the rendered PNG - the picture, not the code, not the intent - against the Phase 0 findings in `specs/018-capital-space-budget/research.md`. Confirm the castle reads at its researched scale, the roads leave where the geography puts their destinations, and no element depicts something that never existed. `check_village` proves internal consistency, never historical truth
 - [x] T031 **The bailey-wall VERDICT** (US2, the reason for the build order): look at the castle and answer one question - fortress, or enormous empty box? Record the verdict in `settlements/capitals.md` EITHER WAY, with its reasoning; if kept, record that the castle's future Mode A sheet inherits their geometry as a constraint
 - [ ] T032 Act on the review's findings, then re-render if anything moved

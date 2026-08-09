@@ -8359,6 +8359,8 @@ class Settlement:
         "farriers",
         "martial_halls",
         "dojos",
+        "castles",  # a walled compound like a manor - its court is blank by doctrine, not open ground
+        "castle_towers",  # yagura are roofed buildings
     )
     _CANOPY_STRUCT_KEYS = _HALO_STRUCT_KEYS + _CANOPY_EXTRA_KEYS + _CANOPY_ROOFED_KEYS
 
