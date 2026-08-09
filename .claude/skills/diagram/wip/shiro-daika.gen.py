@@ -129,8 +129,14 @@ s.road([(SWGATE[0], SWGATE[1]), (300, 2010), (0, 2170)])  # southwest, into the 
 # ---- THE OTE-SUJI (feature 020): the ceremonial avenue from the castle's front gate south to the
 # Imperial road at the kagi-no-te bend. Drawn as a road (M["roads"]) so the shared crossing source
 # carries it over the castle moat, and UNLABELED - only the Imperial road is named.
+# 45 REAL FEET (GM 2026-08-09, "it looks huge"): the first draft passed width=32 raw PIXELS -
+# 96 ft at this scale, nearly 4x the Imperial highway - where the engine's convention is real
+# feet through lw() (the road default is lw(26), the Tokaido's width). The honest ceremonial
+# band is Edo's own grand avenues: Honcho-dori 13.8 m (~45 ft), Nihonbashi-dori 18.2 m (~60 ft)
+# - and that is the SHOGUN'S capital, so a domain capital's ote-suji takes the Honcho class:
+# 45 ft, still half again the 26 ft highway it meets. research/cities/capitals.md, "Street widths".
 OTE_X = 1400
-s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=32)  # starts just south of the ote-mon's gate tower
+s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=s.lw(45))  # starts just south of the ote-mon's gate tower
 
 # ---- THE CASTLE. North of center so the ceremonial approach has room to run south to the gate;
 # ote-mon SOUTH, per the jokamachi rule that the main road passes the castle's front. Blank inside.
@@ -182,16 +188,17 @@ s.bridges()
 # offices spilled out of the ninomaru into the town (settlements/capitals.md, "The government
 # ward"). Default ministry compound: 224x148 ft, the researched provincial size - a domain
 # ministry is the same bureau of clerks and archives at a bigger desk.
+# the files sit a ~21 ft setback off the avenue's edge - corridor frontage, not detached blocks
 for i, nm in enumerate(("Rites", "Revenue", "Retainers")):
-    s.ministry(1330, 1330 + 85 * i, f"Ministry of {nm}")
+    s.ministry(1348, 1330 + 85 * i, f"Ministry of {nm}")
 for i, nm in enumerate(("War", "Works", "Justice")):
-    s.ministry(1470, 1330 + 85 * i, f"Ministry of {nm}")
+    s.ministry(1452, 1330 + 85 * i, f"Ministry of {nm}")
 # NO House Chancellery compound (GM 2026-08-09, researched): the council of lineage
 # representatives meets IN the castle - Edo's Hyojosho and Roju sat within Edo castle, China's
 # Grand Secretariat inside the palace. Executive ministries out, the ruler's council in; the
 # chamber is part of the castle's implied goten. The DOMAIN SCHOOL is the hanko - a school of
 # letters with a martial wing - so it takes the martial-hall vocabulary, not a ministry box.
-s.hanko(1470, 1650)
+s.hanko(1458, 1650)
 
 # ---- THE IMPERIAL MAGISTRATE'S COMPOUND (feature 020): FOREIGN SOVEREIGN GROUND - ~56 staff plus
 # family, funded at 700 koku/yr for "manor maintenance, grounds, stable, fortified walls,

@@ -81,4 +81,6 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   temples are the castle-town pattern; the two sovereign temples ARE the "two main"), offered
   as a re-seat if the GM prefers a gathered quarter. Follow-up: the Imperial granaries gained
   their OWN jetty - the Emperor's grain moves by boat (that is what the "wharf" seat means), so
-  it does not borrow the domain quay 200 ft downstream.
+  it does not borrow the domain quay 200 ft downstream. The ote-suji was re-cut from 96 ft (a
+  raw-pixel unit slip) to the researched 45 ft - Edo's own Honcho-dori class - with the
+  ministry files pulled in to corridor setback; research/cities/capitals.md, "Street widths".
