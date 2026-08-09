@@ -90,6 +90,12 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   Meirinkan and Aizu's Nisshinkan, per the schooling-magnet doctrine. The moat plumbing was
   then corrected on the GM's eye: the feeder had tapped the river at its CLOSEST (southeast,
   downhill) approach with a 48 ft thread - the northern ring would have been a dead arm; it now
-  taps the HIGH upstream reach at Tango's own moat-width 66 ft and feeds the northeast arc, so
-  the water descends both ways round. Granary captions now carry their rows' tilt (the
-  angled-label rule; granary() passes rot through to label()).
+  taps the HIGH upstream reach at Tango's own moat-width 66 ft. A second GM pass settled the
+  FINAL form: river-to-river like the sibling cities - the feeder runs monotonically down-map
+  (every segment west and south, the declared bearing) into the EAST arc, and the drain leaves
+  the southeast arc and rejoins the river below its bend, swept downstream, with the towpath
+  crossing its mouth on a plank deck. The aqueduct now visibly REACHES the city: its last leg
+  crosses the moat on a kakehi flume-deck (the Suidobashi form) and the terminal basin stands
+  at the rampart's foot beside the north gate. And the angled-label rule gained the GM's
+  full-tilt extension (linear_tilt_full, opt-in): the granary captions lie ALONG their -54 deg
+  rows, past the 45-degree go-level clamp road captions keep.

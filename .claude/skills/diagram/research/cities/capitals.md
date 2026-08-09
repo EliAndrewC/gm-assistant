@@ -422,11 +422,17 @@ the river at its CLOSEST approach (southeast). Closest is not upstream: with the
 NE -> SW, water entering at the low southeast corner cannot climb the east arc, so the whole
 northern ring would have been a dead arm. And the thread read nothing like the pool's own
 precedent - TANGO, the other stand-off closed ring, takes moat-width (66 ft) feeder and outfall
-channels, so the moat reads as flowing through. The corrected form: a 66 ft sluiced feeder taps
-the river's HIGH upstream reach and feeds the ring's northeast arc, the water descends BOTH
-ways round the circuit, and the 66 ft drain leaves the low southwest arc for the fields - moat
-water irrigating the land below is attested use, and river -> moat -> fields runs downhill the
-whole way. The
+channels, so the moat reads as flowing through. The second cut still ran its
+last leg up-screen, and the GM caught that too. The SETTLED form is river-to-river, the loop
+the sibling cities close at their moat feet: a 66 ft sluiced feeder taps the river's upper
+reach (downstream of the aqueduct's intake) and runs monotonically down-map - every segment
+west and south, the declared NE -> SW bearing - into the ring's east arc, and the 66 ft drain
+leaves the southeast arc and rejoins the river just below its bend, approaching swept
+DOWNSTREAM, onto ground the planar fall genuinely puts below the arc. The towpath crosses the
+drain's mouth on a plank deck, as a real towpath bridged every side drain it met. The lesson
+worth the two failed cuts: on a map whose water declares a bearing, a connection is judged by
+the EYE at the bearing's grain - a leat that is net-downhill but runs a leg up-screen reads
+wrong, and the fix is monotonic geometry, not an elevation argument. The
 gate learned one rule for this: a stream may ROOT on the trunk river (`stream_runs_off_edge`'s
 river-tap clause) - the river is itself edge-sourced, so a leat rooted on it has a real source.
 
@@ -455,7 +461,10 @@ dribbling into the moat. The fix is the historical furniture: a TERMINAL BASIN (
 the gate end, the settling tank where the open cut hands off to the buried pipe - Edo's josui
 ended in exactly such tanks. The glyph now draws it, standing clear of the moat. (Any real
 josui also spilled surplus somewhere, and the moat is where a surplus WOULD go - but the drawing
-should say "supply enters here", not "stream joins moat".)
+should say "supply enters here", not "stream joins moat".) A later GM pass ("connected to
+literally nothing") finished the thought: the cut now CROSSES the moat on a kakehi - the
+flume-on-a-bridge Edo's Suidobashi is named for - and the terminal basin stands at the
+rampart's foot beside the north gate, so the supply visibly reaches the city it serves.
 
 ## The domain school is the hanko: a school of letters WITH the martial wing
 
