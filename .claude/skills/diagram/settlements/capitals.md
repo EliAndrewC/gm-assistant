@@ -91,6 +91,8 @@ The GM authorized one attempt ("let's make one attempt and if it doesn't work th
 
 **One thing DID survive the experiment**: the **ishigaki doubling** on the outer enceinte - a battered stone rampart drawn as a doubled line reads as mass where a single stroke reads as a fence. That is the OUTER wall, so it adds no sync surface the wall did not already have. It is kept.
 
+**The enceinte opens TWO gates** (GM 2026-08-09, researched): the south **ote-mon** on the ceremonial approach, and the north **karamete-mon** - the rear/sortie gate every castle kept, a size down in tower, with its own deck over the castle moat and a rear approach road to the Imperial road (`castle(karamete_dir=...)`; [research](../research/cities/capitals.md#a-castle-has-two-gates-gm-2026-08-09-the-ote-mon--karamete-mon-pair)).
+
 **A caveat on the verdict's strength, stated because it matters for feature 020**: the blank castle was judged inside a blank city, where everything reads as empty. Once the fabric lands and the castle is the one large walled thing at the heart of a dense map, it will read considerably better than it does now. If it still reads as a void THEN, that is the point to revisit - not now.
 **Build order consequence:** the castle glyph is the FIRST thing feature 019 builds, ahead of the city fabric, precisely so this call can be judged off an early render rather than at the end of a long build.
 
