@@ -2885,7 +2885,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # extramural category); shops are businesses, not dwellings, so they are not in COMMONER_KINDS.
     if scale in ("city", "capital") and M.get("wall"):
         wall_p = M["wall"]
-        outside_com = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in COMMONER_KINDS and not point_in_poly(b["x"], b["y"], wall_p)]
+        # THE WHARF SUBURB IS THE EXEMPTION THE MESSAGE ALWAYS PROMISED (021): a bank-quay city
+        # (the kashi form - Shiro Daika) keeps its landing OUTSIDE the wall, and the kashi's own
+        # brokers and warehouse folk live at the landing; a commoner dwelling within reach of the
+        # wharf works (a jetty, the quay granary rows) IS that suburb. Cities whose wharf is an
+        # in-wall dock basin (Minami, Nagahara) have no extramural commoners, so nothing changes
+        # for them. 300px =~ the drawn wharf suburb's own extent.
+        _wf_pts = [(j8["x"], j8["y"]) if isinstance(j8, dict) else (j8[0], j8[1]) for j8 in M.get("jetties", [])]
+        _wf_pts += [(g8["x"], g8["y"]) for g8 in M.get("granaries", []) if isinstance(g8, dict) and "x" in g8]
+        outside_com = [
+            (round(b["x"]), round(b["y"]))
+            for b in M.get("buildings", [])
+            if b.get("kind") in COMMONER_KINDS and not point_in_poly(b["x"], b["y"], wall_p) and not any(math.hypot(b["x"] - _wx, b["y"] - _wy) <= 300 for _wx, _wy in _wf_pts)
+        ]
         check(
             "city_commoner_dwellings_inside_walls",
             len(outside_com) <= EXTRAMURAL_COMMONER_MAX,
@@ -3018,9 +3030,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     continue
                 built = sum(r["w"] * r["h"] for r in civic_rects if point_in_poly(r["x"], r["y"], qpoly))
                 open_share = 1 - min(built / qarea, 1.0)
-                if open_share > CIVIC_OPEN_TOL:
+                # A CAPITAL'S civic band is CEREMONIAL ground (research 021): Beijing's Corridor
+                # of a Thousand Steps was a vast open axis flanked by files of offices, and the
+                # jokamachi ote-suji keeps the same breadth with its 14px office standoffs - so
+                # the capital tolerates 90% open where a provincial yamen precinct keeps 70%.
+                _civ_tol = 0.90 if scale == "capital" else CIVIC_OPEN_TOL
+                if open_share > _civ_tol:
                     nm = q.get("name") or "civic quarter"
-                    open_civic.append((nm, f"{open_share:.0%} open > {CIVIC_OPEN_TOL:.0%}; holds little civic building"))
+                    open_civic.append((nm, f"{open_share:.0%} open > {_civ_tol:.0%}; holds little civic building"))
             check(
                 "city_civic_quarter_not_mostly_open",
                 not open_civic,
