@@ -139,10 +139,21 @@ s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=32)  # starts just south of the o
 # and castle sharing the name is the jokamachi reality (settlement-review, 2026-08-09).
 s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south")
 
-# ---- the moat CIRCULATES: a closed ring has no upstream end, so the gen names where its water
-# enters and where it leaves. The land falls NE -> SW (water_flow=135), so it is fed on the
-# northeast arc and drains from the southwest one.
-s.moat_flow(MOAT[2], MOAT[12])
+# ---- the moat CIRCULATES, and its water is DRAWN, not implied (GM 2026-08-09: "why is the moat
+# not simply connected to the river as we have for cities like Minami and Nagahara?"). Those two
+# back onto their river, so their moat FEET are the connection; this ring stands ~200px off the
+# bank, so the connection is a pair of engineered leats, which is what a stand-off moat
+# historically had: a sluiced FEEDER from the river at the ring's closest upstream approach
+# (southeast), and a DRAIN off the low southwest arc - moat water ran on to irrigate the fields
+# below, which is attested use. The land falls NE -> SW (water_flow=135), so river -> moat ->
+# fields runs downhill the whole way.
+FEED_TAP = (2584, 1588)  # on the river's west bank, upstream of the wharf
+s.stream([FEED_TAP, (2430, 1680), (MOAT[7][0], MOAT[7][1])], frm={"kind": "river"}, to={"kind": "moat"}, width=s.px(48))
+s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(1680 - FEED_TAP[1], 2430 - FEED_TAP[0])) + 90)  # the intake board at the river tap
+DRAIN_OUT = (MOAT[12][0], MOAT[12][1])
+s.stream([DRAIN_OUT, (640, 2140), (460, 2330), (200, 2560), (60, 2690)], frm={"kind": "moat"}, to={"kind": "offmap"}, width=s.px(48))
+s.sluice_gate(DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2140 - DRAIN_OUT[1], 640 - DRAIN_OUT[0])) + 90)  # the outfall board where the drain leaves the ring
+s.moat_flow(MOAT[7], MOAT[12])
 
 # ---- THE AQUEDUCT (feature 020): intake on the river upstream of the east road's crossing, an
 # open cut at grade swinging around the northeast quarter OUTSIDE the moat, terminating at the
@@ -150,7 +161,7 @@ s.moat_flow(MOAT[2], MOAT[12])
 # outside the wall, buried inside it, the GATE as the boundary - the route crosses no
 # watercourse, so no kakehi flume is needed. The land falls NE -> SW, so the cut runs from the
 # high northeast down toward the gate, roughly along the contour like Edo's Kanda josui.
-s.aqueduct([(3123, 779), (2820, 610), (2350, 405), (1800, 215), (1560, 182), (NGATE[0] + 20, NGATE[1] - 38)])
+s.aqueduct([(3123, 779), (2820, 610), (2350, 405), (1800, 215), (1560, 182), (NGATE[0] + 24, NGATE[1] - 55)])
 # the one thing the drawing cannot say (settlement-review 2026-08-09): at fit zoom the open cut
 # can read as a natural brook spilling into the moat, so the intake carries the word
 s.label(2975, 668, "aqueduct", 10, italic=True, color="#5E7A8A")
@@ -175,10 +186,12 @@ for i, nm in enumerate(("Rites", "Revenue", "Retainers")):
     s.ministry(1330, 1330 + 85 * i, f"Ministry of {nm}")
 for i, nm in enumerate(("War", "Works", "Justice")):
     s.ministry(1470, 1330 + 85 * i, f"Ministry of {nm}")
-# The chancellery is a council hall for the domain's lineage representatives, the school is the
-# hanko - government both, so they take the ministry glyph and the state violet, slightly smaller.
-s.ministry(1330, 1650, "House Chancellery", w=s.px(200), h=s.px(132))
-s.ministry(1470, 1650, "Domain School", w=s.px(200), h=s.px(132))
+# NO House Chancellery compound (GM 2026-08-09, researched): the council of lineage
+# representatives meets IN the castle - Edo's Hyojosho and Roju sat within Edo castle, China's
+# Grand Secretariat inside the palace. Executive ministries out, the ruler's council in; the
+# chamber is part of the castle's implied goten. The DOMAIN SCHOOL is the hanko - a school of
+# letters with a martial wing - so it takes the martial-hall vocabulary, not a ministry box.
+s.hanko(1470, 1650)
 
 # ---- THE IMPERIAL MAGISTRATE'S COMPOUND (feature 020): FOREIGN SOVEREIGN GROUND - ~56 staff plus
 # family, funded at 700 koku/yr for "manor maintenance, grounds, stable, fortified walls,
@@ -203,8 +216,11 @@ def lineage_manor(x: float, y: float, w: float, h: float, name: str, gate_dir: s
 lineage_manor(2075, 700, 158, 122, "hazama", "west")
 lineage_manor(2075, 975, 152, 118, "utsuro", "west")
 # the west pair stands WEST of the Imperial road's kagi-no-te leg (x=800) - the strip between
-# that leg and the castle moat is too narrow for a grand estate
-lineage_manor(665, 700, 148, 115, "tokiwa", "east")
+# that leg and the castle moat is too narrow for a grand estate. Tokiwa sits in the narrowing
+# band between the ring road and the leg, trimmed a size so its corner clears the patrol road
+# (ring_road_kept_clear runs at this tier since 2026-08-09; the grand band still steps >= 1.5x
+# over kurogi's estate)
+lineage_manor(700, 700, 140, 112, "tokiwa", "east")
 lineage_manor(665, 975, 140, 110, "anzu", "east")
 lineage_manor(2040, 1330, 108, 84, "kurogi", "west")
 # the modest row sits south of the road's diagonal run to the north gate
@@ -261,11 +277,15 @@ rim_temple(17.5, "Temple of Hotei")
 # grain moves on.
 s.jetty(2384, 1875, rot=36, length=22)  # rooted on the west bank, running out into the stream
 s.jetty(2276, 2028, rot=36, length=22)
-s.dock(2325, 1935, 44, 32)  # the basin cut into the bank between the jetties
-# the moat-to-river band is ~190px at the wharf's latitude and widens downstream, so the two
-# granary complexes step along the bank rather than sharing one row
-s.granary(2210, 1920, n=4, w=20, h=12, gap=8, label="domain granary", append=True)
-s.granary(2455, 1660, n=3, w=20, h=12, gap=8, label="Imperial granary", append=True)
+# NO dock basin: the rectangular canal-head cut is Nagahara's in-city vocabulary and read as a
+# floating blue square against this diagonal bank (GM 2026-08-09) - a riverside wharf is jetties
+# and quay, not a basin. The granary rows stand ON the wharf, turned PARALLEL to the bank they
+# load from, a cart's width off the water; captions plural, one per complex. These are the
+# STAGING/working stores - the strategic siege stock is inside the castle, implied, and it would
+# indeed be foolish to keep the domain's main reserve outside the walls.
+BANK_ROT = -54  # the river passes the wharf at ~126 deg; the rows lie along it
+s.granary(2321, 1914, n=4, w=20, h=12, gap=8, label="domain granaries", append=True, rot=BANK_ROT)
+s.granary(2453, 1733, n=3, w=20, h=12, gap=8, label="Imperial granaries", append=True, rot=BANK_ROT)
 # the brokers' lane runs shore-parallel between the granaries and the quay; its frontage is the
 # brokers' row. The wharf suburb is OUTSIDE the ring-road bound the urban packs honor, so the
 # frontage places against the suburb's own ground and the bound is restored after.

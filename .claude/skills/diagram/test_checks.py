@@ -10209,11 +10209,11 @@ def test_neither_capital_check_runs_on_any_other_scale(scale):
 
 _CAP_GOV_CHECKS = (
     "capital_has_six_ministries",
-    "capital_has_house_chancellery",
+    "capital_chancellery_meets_in_the_castle",
     "capital_has_domain_school",
     "capital_castle_has_approach_avenue",
     "capital_ministries_front_the_avenue",
-    "capital_chancellery_and_school_on_the_axis",
+    "capital_school_on_the_axis",
     "capital_government_offices_dont_abut",
     "capital_declares_lineages",
     "capital_lineage_compounds_labeled",
@@ -10237,7 +10237,6 @@ def _cap_gov():
         mins.append({"x": 435, "y": 400 + 100 * i, "w": 75, "h": 50, "name": f"Ministry of {nm}"})
     for i, nm in enumerate(("War", "Works", "Justice")):
         mins.append({"x": 565, "y": 400 + 100 * i, "w": 75, "h": 50, "name": f"Ministry of {nm}"})
-    mins.append({"x": 435, "y": 800, "w": 70, "h": 48, "name": "House Chancellery"})
     mins.append({"x": 565, "y": 800, "w": 70, "h": 48, "name": "Domain School"})
     M["ministries"] = mins
 
@@ -10260,12 +10259,40 @@ def test_capital_has_six_ministries_fires_when_one_is_missing():
     assert "capital_has_six_ministries" in f(M)
 
 
-def test_capital_chancellery_and_school_checks_fire_when_absent():
+def test_capital_school_check_fires_when_absent():
     M = _cap_gov()
     M["ministries"] = [m for m in M["ministries"] if m["name"].startswith("Ministry of")]
+    assert "capital_has_domain_school" in f(M)
+
+
+def test_capital_chancellery_fires_when_a_compound_is_drawn():
+    """The council of lineage representatives meets IN the castle (GM 2026-08-09, researched:
+    Edo's Hyojosho/Roju within the castle, China's Grand Secretariat inside the palace) - a
+    chancellery compound outside is the defect, not the requirement."""
+    M = _cap_gov()
+    M["ministries"].append({"x": 435, "y": 800, "w": 70, "h": 48, "name": "House Chancellery"})
+    assert "capital_chancellery_meets_in_the_castle" in f(M)
+
+
+def test_capital_domain_school_may_be_the_hanko_record():
+    M = _cap_gov()
+    M["ministries"] = [m for m in M["ministries"] if m["name"] != "Domain School"]
+    M["martial_halls"] = [{"x": 565, "y": 800, "w": 80, "h": 50, "rot": 0, "label": "Domain School", "range_ft": 100, "kind": "hanko"}]
     fails = f(M)
-    assert "capital_has_house_chancellery" in fails
-    assert "capital_has_domain_school" in fails
+    assert "capital_has_domain_school" not in fails
+    assert "capital_school_on_the_axis" not in fails
+
+
+def test_ring_road_kept_clear_fires_on_a_manor_and_runs_at_capital_scale():
+    """Two stacked gaps (GM 2026-08-09, 'estates should not overlap with the ring-road'): manors
+    are overlap TARGETS, so the registry-driven victim list never included them - and the whole
+    check lived under scale=="city", so a capital never ran it at all. Four lineage estates stood
+    on the capital's patrol road with a green gate."""
+    M = _cap_gov()
+    M["ring_road"] = [[100, 500], [900, 500]]
+    M["ring_road_width"] = 15
+    M["manors"][0]["x"], M["manors"][0]["y"] = 500, 500  # squarely on the patrol road
+    assert "ring_road_kept_clear" in f(M)
 
 
 def test_capital_castle_approach_fires_when_no_way_leaves_the_castle_gate():
@@ -10284,11 +10311,11 @@ def test_capital_ministries_front_the_avenue_fires_on_a_strayed_ministry():
     assert "capital_ministries_front_the_avenue" in f(M)
 
 
-def test_capital_chancellery_on_the_axis_fires_when_it_strays():
+def test_capital_school_on_the_axis_fires_when_it_strays():
     M = _cap_gov()
-    ch = next(m for m in M["ministries"] if m["name"] == "House Chancellery")
-    ch["x"] = 200  # far off the avenue's extended line
-    assert "capital_chancellery_and_school_on_the_axis" in f(M)
+    sc = next(m for m in M["ministries"] if m["name"] == "Domain School")
+    sc["x"] = 200  # far off the avenue's extended line
+    assert "capital_school_on_the_axis" in f(M)
 
 
 def test_capital_government_offices_dont_abut_fires_on_touching_offices():
@@ -10415,6 +10442,31 @@ def test_religious_matches_scale_capital_takes_temples():
     M["religious"] = [{"kind": "temple", "label": "Temple of Benten", "x": 500, "y": 500, "w": 50, "h": 33, "torii_count": 1}]
     M["torii"] = [[500, 560, 1]]
     assert "religious_matches_scale" not in f(M)
+
+
+def test_a_plural_granaries_caption_may_cover_its_own_stores():
+    """'domain granaries' does not CONTAIN the group word 'granary', so the derived
+    caption-permission rule alone could not permit the plural captions the wharf complexes
+    carry - the synonym branch does (GM 2026-08-09, the singular/plural label question).
+    Tested at CITY scale because labels_clear_of_other_buildings runs in the town/city block;
+    the control proves the granaries pair is actually judged, not skipped."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "granaries": [{"x": 550, "y": 560, "w": 40, "h": 24, "rot": 0, "label": "domain granaries"}],
+        "labels": [[480, 550, 640, 566, 5, "domain granaries"]],
+    }
+    assert "labels_clear_of_other_buildings" not in f(M)
+    M["labels"] = [[480, 550, 640, 566, 5, "flophouse row"]]  # a foreign caption on the stores still fires
+    assert "labels_clear_of_other_buildings" in f(M)
+
+
+def test_stream_runs_off_edge_accepts_a_trunk_river_tap():
+    """A sluiced moat feeder taps the trunk river (feature 020's capital) - the river is itself
+    edge-sourced, so a stream rooted on it inherits a real source the way an edge end does."""
+    M = _cap_water()
+    M["moat"] = [[900, 100], [900, 900]]
+    M["streams"].append({"poly": [[1180, 300], [1000, 350], [905, 400]], "frm": {"kind": "river"}, "to": {"kind": "moat"}, "w": 16})
+    assert "stream_runs_off_edge[1]" not in f(M)
 
 
 def test_capital_no_road_parallels_river_passes_a_bridged_crossing():
