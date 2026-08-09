@@ -10658,3 +10658,35 @@ def test_capital_population_counts_yashiki_manors_and_outwall_samurai():
     assert "population_consistent_with_housing" in f(M)
     M["meta"]["population"] = 35  # ...and 35 closes the arithmetic exactly
     assert "population_consistent_with_housing" not in f(M)
+
+
+def test_capital_civic_quarter_tolerates_ceremonial_breadth():
+    """Research 021: the Corridor of a Thousand Steps is a vast open axis flanked by office
+    files - a capital's civic band legitimately runs to 90% open where a provincial yamen
+    precinct keeps 70%. Same manifest, city fires, capital does not."""
+    base = {
+        "wall": [[0, 0], [1000, 0], [1000, 1000], [0, 1000]],
+        "quarters": [
+            {"poly": [[100, 100], [400, 100], [400, 500], [100, 500]], "zone": "civic", "name": "civic quarter"},
+            {"poly": [[400, 100], [900, 100], [900, 900], [100, 900], [100, 500], [400, 500]], "zone": "mixed"},
+        ],
+        "ministries": [{"x": 250, "y": 300, "w": 100, "h": 170, "name": "Ministry of Rites"}],  # ~14% built - clear of the capital tolerance, inside the city one
+    }
+    Mc = _capital_manifest()
+    Mc.update({k: v for k, v in base.items()})
+    assert "city_civic_quarter_not_mostly_open" not in f(Mc)
+    Mp = _capital_manifest(scale="city")
+    Mp.update({k: v for k, v in base.items()})
+    assert "city_civic_quarter_not_mostly_open" in f(Mp)
+
+
+def test_commoner_dwellings_at_the_wharf_suburb_are_exempt():
+    """021, the kashi form: a bank-quay city keeps its landing OUTSIDE the wall and the
+    brokers/warehouse folk live at it - a commoner dwelling within ~300px of the wharf works
+    (jetty, dock, quay granaries) is the wharf suburb, not a defect. Beyond that reach the
+    hard-zero rule stands."""
+    M = _capital_manifest()
+    M["buildings"] = [{"x": 1500, "y": 500, "w": 12, "h": 9, "kind": "merchant", "rot": 0}]
+    assert "city_commoner_dwellings_inside_walls" in f(M)  # extramural, no wharf near
+    M["jetties"] = [{"x": 1520, "y": 560, "rot": 0, "len": 13, "z": 1}]
+    assert "city_commoner_dwellings_inside_walls" not in f(M)  # the same house IS the quay suburb

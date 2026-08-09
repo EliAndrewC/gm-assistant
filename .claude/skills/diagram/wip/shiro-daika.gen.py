@@ -360,7 +360,9 @@ s.granary(2465, 1741, n=3, w=20, h=12, gap=8, label="Imperial granaries", append
 # brokers' row. The wharf suburb is OUTSIDE the ring-road bound the urban packs honor, so the
 # frontage places against the suburb's own ground and the bound is restored after.
 BROKER_LANE = [(2410, 1730), (2300, 1890), (2215, 2020)]
-s.lane(BROKER_LANE, width=8)
+# a STREET, not a lane (021): the kashi quay street is real machi frontage - the brokers'
+# row and warehouse fronts must satisfy businesses_front_streets like any other shops
+s.street(BROKER_LANE, width=s.lw(15))
 _CITY_BOUND = s.bound
 s.bound = [[2020, 1560], [2560, 1560], [2560, 2140], [2020, 2140]]
 s.frontage(BROKER_LANE, (["merchant", "merchant", "shop"] * 4), width=8, spacing=19, rows=1, jitter=1, setback=s.px(14))
@@ -377,13 +379,90 @@ s.bound = _CITY_BOUND
 # pack that cannot seat its target is a siting bug to fix, not a target to trim (the
 # Minami unmeetable-target lesson runs the OTHER way here, by design of the 018 budget).
 
+# ===================== FEATURE 021: THE HOUSING FABRIC =====================
+# DRAW ORDER: streets first (packs front them), then the walled yashiki band around the
+# castle (each compound reserves its own ground), then detached / terraces / machi packs.
+
+# ---- the machi STREET MESH (south half; the ote-suji, Imperial road and ring road are the
+# spines already). Ordinary streets 15 real ft, the market cross main at 18 (Honcho-dori
+# class stays the ote-suji's alone). Ends meet the ring road for circulation; the E-W pair
+# at y=1350 stops clear of the government band (no street across the ministry fronts).
+s.street([(620, 1770), (2180, 1770)], width=s.lw(18), main=True)  # ends short of the rampart's tower line
+s.street([(900, 2005), (1900, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
+s.street([(1040, 1256), (1040, 2080)], width=s.lw(15))  # x=1040 clears the Temple of Inari's hall (~x992)
+s.street([(1800, 1300), (1800, 1540)], width=s.lw(15))  # stops at the Benten precinct's reserved ground
+s.street([(1800, 1700), (1800, 2060)], width=s.lw(15))  # ...and resumes south of it (a precinct blocks a street; the walls are the dead end)
+s.street([(2130, 1250), (2130, 1620)], width=s.lw(15))  # east of Kurogi (x1986-2094), stopping clear of the Temple of Ebisu (2127,1686)
+s.street([(800, 1450), (800, 1930)], width=s.lw(15))
+s.street([(460, 1375), (1240, 1375)], width=s.lw(15))  # y=1375: under the west band tail, over the kagi leg
+s.street([(1560, 1390), (2340, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
+
+# ---- the YASHIKI BAND (T007): 53 walled compounds of Ranks 8-12 wrap the castle N / E / W
+# per the jokamachi law (rank = proximity to the court). The EIGHT lineage estates already
+# stand in this band and count among the 53, so 45 anonymous compounds join them:
+# 18 north (+ yodo/nio/seki = 21), 14 east (+ hazama/utsuro/kurogi = 17), 13 west
+# (+ tokiwa/anzu = 15). Each fronts a band lane by its south/east/west gate; sizes jitter
+# around the C_YASHIKI footprint (~60 x 50 px at 3 ft/px).
+s.district("north yashiki band", "yashiki", [(1100, 268), (2010, 268), (2010, 505), (1100, 505)], rank_band="yashiki")
+s.district("east yashiki band", "yashiki", [(1855, 555), (2165, 555), (2165, 1760), (1855, 1760)], rank_band="yashiki")
+s.district("west yashiki band", "yashiki", [(590, 555), (945, 555), (945, 1460), (590, 1460)], rank_band="yashiki")
+s.district("ote west yashiki flank", "yashiki", [(1150, 1290), (1315, 1290), (1315, 1540), (1150, 1540)], rank_band="yashiki")
+s.district("ote east yashiki flank", "yashiki", [(1560, 1290), (1855, 1290), (1855, 1390), (1560, 1390)], rank_band="yashiki")
+s.lane([(1140, 475), (1870, 475)], width=7)
+s.lane([(1990, 560), (1990, 1240)], width=7)  # stops ABOVE Kurogi's west wall (x1986)
+s.lane([(1965, 1270), (1965, 1740)], width=7)  # the southern leg, west of Kurogi + the Benten precinct
+s.lane([(790, 560), (790, 1350)], width=7)
+s.lane([(1205, 1300), (1205, 1520)], width=7)  # the ote west flank's own lane
+
+_YJ = ((2, -2), (-4, 2), (4, 4), (-2, -4), (0, 2), (3, -3))  # deterministic size jitter, no stream draw
+
+
+def _yashiki(x: float, y: float, gate_dir: str, i: int) -> None:
+    _w = 60 + _YJ[i % 6][0]
+    _h = 50 + _YJ[i % 6][1]
+    s.manor(x, y, _w, _h, None, gate_dir=gate_dir)
+
+
+# north band: ONE row sharing the estates' line (gates south onto the y=475 lane). The
+# wall and ring slant hard across y~270-450 here (vertices at (1082,290)/(1718,290) with
+# the ring 30 inside), and the NW diagonal road owns the band's west half - both ate the
+# planned second row, so the band runs east of the karamete corridor's flanks only.
+for _i, _x in enumerate((1250, 1325, 1760, 1830)):
+    _yashiki(_x, 430, "south", _i + 3)
+# east band: a west file on the band lane (starting BELOW the Temple of Bishamon's ground
+# at (1928,531)), a south file flanking the lane's lower leg around the reserved Benten
+# precinct (~x1785-1915, y1570-1670), and east-side compounds in the lineage-estate gaps
+for _i, _y in enumerate((673, 751, 829, 907, 985, 1063, 1141, 1219)):
+    _yashiki(1925, _y, "east", _i)
+for _i, _y in enumerate((1300, 1490, 1715)):
+    _yashiki(1905, _y, "east", _i + 2)
+for _i, _y in enumerate((1490, 1565)):
+    _yashiki(2040, _y, "west", _i + 1)
+for _i, _y in enumerate((595, 850, 1120, 1195)):
+    _yashiki(2075, _y, "west", _i + 2)
+# west band: an east file facing the lane, plus west-side compounds in the estate gaps
+# (the file's head stays clear of the Temple of Hotei at (764,615))
+for _i, _y in enumerate((592, 666, 740, 814, 888, 962, 1036, 1110, 1184, 1258)):
+    _yashiki(860, _y, "west", _i + 1)
+for _i, _y in enumerate((850, 1090, 1165, 1240, 1315, 1420)):  # the y=595 head slot died on the ring corridor + the Temple of Hotei
+    _yashiki(700, _y, "east", _i + 4)
+# the ote flanks: senior households as near the government band as the standoffs allow -
+# a west file on its own lane, and a north file whose gates open south onto the threaded
+# y=1390 street between Kurogi's walls and the Imperial Magistracy
+for _i, _y in enumerate((1330, 1405, 1480)):
+    _yashiki(1255, _y, "west", _i + 1)
+for _i, _x in enumerate((1600, 1680)):  # x=1780 died on the x=1800 street
+    _yashiki(_x, 1330, "south", _i + 2)
+
 # ---- declared quarters (feature 020 re-zone): the CIVIC quarter is the ground the government
 # actually occupies - the ote-suji band south of the ote-mon, ministries to chancellery - not a
 # wedge picked before the castle was placed. The four interior wedges split at the kagi-no-te
 # junction, where the avenue meets the through-road, and carry no zone stronger than "mixed"
 # until feature 021 packs them. Quarters are declarative overlays, so the civic band riding over
 # the wedge seams is intentional.
-s.quarter([(1240, 1279), (1560, 1279), (1560, 1732), (1240, 1732)], "civic")
+s.quarter(
+    [(1315, 1290), (1560, 1290), (1560, 1720), (1315, 1720)], "civic"
+)  # 021: tightened to the ground the ministries + hanko actually hold (the old wide band read 85% open and overlapped the wedges past the tiling tolerance)
 s.quarter([(OTE_X, KAGI_Y), (CX, 243), (WALL[3][0], WALL[3][1]), (WALL[5][0], WALL[5][1])], "mixed")  # NE
 s.quarter([(OTE_X, KAGI_Y), (WALL[5][0], WALL[5][1]), (WALL[8][0], WALL[8][1]), (CX, WALL[10][1])], "mixed")  # SE
 s.quarter([(OTE_X, KAGI_Y), (CX, WALL[10][1]), (WALL[13][0], WALL[13][1]), (WALL[15][0], WALL[15][1])], "mixed")  # SW
