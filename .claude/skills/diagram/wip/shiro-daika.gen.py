@@ -277,6 +277,10 @@ rim_temple(17.5, "Temple of Hotei")
 # grain moves on.
 s.jetty(2384, 1875, rot=36, length=22)  # rooted on the west bank, running out into the stream
 s.jetty(2276, 2028, rot=36, length=22)
+# the Emperor's complex gets its OWN landing (GM 2026-08-09: its grain moves by boat - that is
+# the whole reason imperial_granary_seat="wharf" - so it does not borrow the domain quay 200 ft
+# downstream; separate stores, separate barges, separate tally)
+s.jetty(2498, 1724, rot=36, length=20)
 # NO dock basin: the rectangular canal-head cut is Nagahara's in-city vocabulary and read as a
 # floating blue square against this diagonal bank (GM 2026-08-09) - a riverside wharf is jetties
 # and quay, not a basin. The granary rows stand ON the wharf, turned PARALLEL to the bank they
