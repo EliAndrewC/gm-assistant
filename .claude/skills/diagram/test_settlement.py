@@ -6191,3 +6191,86 @@ def test_a_castle_caption_can_be_hand_seated():
     s_def, _ = _castle_map(label="Keep")
     s_hand, _ = _castle_map(label="Keep", label_xy=(1150, 1050))
     assert s_def.M["labels"][-1] != s_hand.M["labels"][-1]
+
+
+# ---- feature 020: the capital's ground-reserving layer ----------------------------------------
+
+
+def _cap020():
+    s = settlement.Settlement(1400, 1400, seed=9)
+    s.meta(name="C", scale="capital", ftpx=3, walled=True)
+    return s
+
+
+def test_towpath_records_a_list_and_draws_no_roadbed_or_centerline():
+    """A towpath is NOT a road (research/cities/capitals.md, 'A river gets a TOWPATH, not a
+    road'): no roadbed fill, no dashed centerline, one hairline at the linework floor."""
+    s = _cap020()
+    n0 = len(s.out)
+    s.towpath([(100, 1300), (400, 1000), (700, 800)])
+    frag = "".join(s.out[n0:])
+    assert isinstance(s.M["towpaths"], list) and len(s.M["towpaths"]) == 1
+    rec = s.M["towpaths"][0]
+    assert rec["pts"][0] == [100, 1300] and rec["pts"][-1] == [700, 800]
+    assert "stroke-dasharray" not in frag  # no dashed centerline - it is not a road
+    assert frag.count("<path") == 1  # ONE hairline stroke, no roadbed under it
+    assert rec["w"] <= 4.0  # a beaten path, not a carriageway
+    # and it never touches the road records - a towpath must not read as road plumbing
+    assert not s.M.get("roads") and not s.M.get("road")
+
+
+def test_towpath_reserves_its_ground():
+    s = _cap020()
+    n_corr = len(s.corridors)
+    s.towpath([(100, 1300), (700, 800)])
+    assert len(s.corridors) == n_corr + 1  # later packs keep off the bank
+
+
+def test_aqueduct_records_intake_channel_and_terminus():
+    s = _cap020()
+    s.aqueduct([(1300, 200), (900, 150), (500, 120)])
+    assert isinstance(s.M["aqueducts"], list) and len(s.M["aqueducts"]) == 1
+    rec = s.M["aqueducts"][0]
+    assert rec["poly"][0] == [1300, 200] and rec["intake"] == [1300, 200]
+    assert rec["to"] == [500, 120]
+    assert rec["w"] > 0
+
+
+def test_aqueduct_draws_no_arcade():
+    """NO ARCADED AQUEDUCT EXISTS in either anchor tradition (research/cities/capitals.md): the
+    vocabulary is a gravity canal at grade, a buried pipe, and a flume bridge only where water
+    crosses water. Every path in the glyph is straight cuts - no arch curves anywhere."""
+    s = _cap020()
+    n0 = len(s.out)
+    s.aqueduct([(1300, 200), (900, 150), (500, 120)])
+    frag = "".join(s.out[n0:])
+    for d in re.findall(r'd="([^"]+)"', frag):
+        cmds = set(re.findall(r"[A-Za-z]", d))
+        assert cmds <= {"M", "L"}, f"curve commands {cmds - {'M', 'L'}} in the aqueduct glyph - an arch has no business here"
+
+
+def test_manor_ink_parameter_marks_foreign_sovereign_ground():
+    """The Imperial Magistrate's compound is foreign sovereign ground and must not read as another
+    domain office: the manor form, in its own ink (settlements/capitals.md, 'Compounds with no
+    provincial equivalent')."""
+    s1 = _cap020()
+    s1.manor(700, 700, 240, 180, "Imperial Magistrate's Compound", gate_dir="west")
+    assert "ink" not in s1.M["manors"][0]  # the default stays byte-identical for every old map
+    s2 = _cap020()
+    n0 = len(s2.out)
+    s2.manor(700, 700, 240, 180, "Imperial Magistrate's Compound", gate_dir="west", ink="#274D3D")
+    assert s2.M["manors"][0]["ink"] == "#274D3D"
+    assert 'stroke="#274D3D"' in "".join(s2.out[n0:])
+
+
+def test_granary_append_records_a_list_for_a_capital_with_two_granaries():
+    """A capital holds its grain in TWO places for two reasons (the domain's working rice at the
+    wharf, the Emperor's stores beside it) - the legacy single M['granary'] dict cannot carry
+    both, so append=True records each store into the M['granaries'] LIST instead."""
+    s = _cap020()
+    s.granary(400, 400, n=3, w=20, h=12, gap=8, label="domain granary", append=True)
+    s.granary(800, 300, n=2, w=20, h=12, gap=8, label="Imperial granaries", append=True)
+    assert "granary" not in s.M  # the legacy dict is untouched
+    assert len(s.M["granaries"]) == 5  # one record per store, so the matrix can see each
+    assert {r["label"] for r in s.M["granaries"]} == {"domain granary", "Imperial granaries"}
+    assert all("w" in r and "h" in r for r in s.M["granaries"])

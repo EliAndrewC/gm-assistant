@@ -6,37 +6,39 @@ session in the repo, not just the one working on it. A draft therefore waits her
 green, then moves into its tier's pool directory. (Same precedent as Minami's map draft, which
 was parked out of `pool/` while its temple-budget knobs landed first.)
 
-## `shiro-daika.gen.py` - the domain capital, feature 019
+## `shiro-daika.gen.py` - the domain capital, features 019 + 020
 
-A SKELETON: wall, moat, river, ways, gates and the castle. It renders, and its castle answered
-the question it was built to answer (see `settlements/capitals.md`, the bailey-wall verdict).
+The SKELETON (019: wall, moat, river, ways, gates, castle) plus the GROUND-RESERVING LAYER
+(020): the government ward on the ote-suji, the Imperial Magistrate's compound, the eight
+lineage compounds, the sovereign temples and the teramachi rim, the wharf with its two granary
+complexes and brokers' row, the towpath, and the aqueduct. Everything that must be sited BEFORE
+housing is now on the map and reserves its ground; feature 021's packs flow around it.
 
 **It fails exactly one check, and the failure is correct**: `imperial_road_town_has_farrier`. A
 settlement on the Imperial road keeps a shoeing forge at its relay stables, and this one has no
-stables because it has no fabric at all yet.
+stables because it has no housing fabric yet.
 
 **Do not fix that by drawing the farrier.** That was tried: the forge then wanted its stables
 (`farrier_serves_a_stables`), which then wanted wells (`wells_sized_to_buildings`). Each fix
 pulled in the next, which is the engine correctly refusing to call a half-populated city
-coherent. Feature 020 draws the fabric and the check passes on its own; until then this map is a
-draft, not a pool member.
+coherent. Feature 021 draws the housing and the check passes on its own; until then this map is
+a draft, not a pool member.
 
+**Both findings the 019 review carried into 020 are CLEARED (2026-08-09):**
 
-## Findings carried into feature 020 (settlement-review, 2026-08-09)
+1. **The blind bridging** - fixed at the root: the carried-ways and crossed-waters sets are now
+   derived ONCE (`settlement.bridge_carried_ways` / `bridge_crossed_waters`) and consumed by
+   both `bridges()` and `roads_bridge_water`, so the old silent symmetry (two hand-kept lists
+   that agreed and were both wrong) cannot recur by re-adding keys on one side. All six
+   crossings are decked, including the east road over the river and the ote-suji over the
+   castle's own moat; the aqueduct is in the same shared source, so any future way over it
+   demands a deck automatically.
+2. **The civic quarter re-zoned** - civic is now the ground the government actually occupies
+   (the ote-suji band south of the ote-mon, ministries through chancellery); the four interior
+   wedges split at the kagi-no-te junction and stay "mixed" until 021 packs them.
 
-Two defects the review found that are NOT fixed here, because both are fabric-era work:
-
-1. **Four of six way-over-water crossings have no bridge, and the CHECK is blind the same way.**
-   `settlement.bridges()` carries `M["road"]` (the single Imperial polyline) but never `M["roads"]`,
-   and its water list omits both `M["river"]` and the castle's own moat. `roads_bridge_water`
-   mirrors those omissions exactly - so placement and check agree, and both are wrong. A sharp
-   illustration of the "placement and its check must read the SAME source" rule guaranteeing
-   AGREEMENT, not correctness. Unbridged: the east and southwest trunk roads over the city moat,
-   and the east road over the river (off-crop, but real geometry).
-2. **The declared civic quarter is in the wrong wedge.** `quarters[0]` marks NE "civic" and calls it
-   the castle's ground, but the castle straddles all four wedges, and `capitals.md` puts the
-   ministries OUTSIDE the ote-mon flanking the ote-suji - which, with the gate facing south, is the
-   SOUTHERN wedges. Feature 020's packs zone against these, so settle it before packing.
-
-Also at 020: this subject needs a `.notes.md` with a Review log before it moves into
-`pool/capitals/` - every pool subject has one.
+**Feature 021 still owes**: all housing, the public wells + the aqueduct's in-wall draw-basins,
+fire towers, the kido mesh, the entertainment district beside the brokers' row, the relay
+stables + farrier, the population fill and the rest of the capital check block - plus a
+`.notes.md` with a Review log before the map moves into `pool/capitals/` (every pool subject
+has one).
