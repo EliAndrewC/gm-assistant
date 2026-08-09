@@ -174,10 +174,12 @@ s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south", karamete_dir=
 # drain it met, or the haulage teams could not pass.
 FEED_TAP = (3080, 843)  # the river's west bank - upstream of the city, downstream of the aqueduct intake
 s.stream([FEED_TAP, (2870, 875), (2650, 880), (MOAT[4][0], MOAT[4][1])], frm={"kind": "river"}, to={"kind": "moat"}, width=s.px(66))
-s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90)  # the intake board at the river tap
+s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3128, 826))  # the intake board at the river tap
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
 s.stream([DRAIN_OUT, (2065, 2180), (2062, 2325)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
-s.sluice_gate(DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90)  # the outfall board where the drain leaves the ring
+s.sluice_gate(
+    DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1975, 2004)
+)  # the outfall board where the drain leaves the ring
 s.moat_flow(MOAT[4], MOAT[8])
 
 # ---- THE AQUEDUCT (feature 020; rebuilt to the researched josui form, GM 2026-08-09). What

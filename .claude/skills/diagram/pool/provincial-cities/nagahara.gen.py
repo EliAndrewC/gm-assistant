@@ -198,7 +198,12 @@ s.bridge(2071, 1332, 4, RIVER_W + 26, 15)  # the Hayakawa bridge carries the thr
 # moat's outfall-arm corner (MOAT[1], the SE bend the arm springs from; self-correcting if the
 # wall ever resizes) and the moat carries boats the last reach to the river. Gated by
 # city_canal_shares_moat_mouth; see settlements.md river-cities "one mouth on the river, not two".
-CANAL = [MOAT[1], (1907, 1460), (1830, 1455)]  # east end ON the moat corner (the handoff confluence); west end reaches INTO the dock basin (feeds it, like a street reaching the road)
+# The approach leg enters the shuimen along the WALL'S NORMAL through the gate (GM 2026-08-09:
+# the old direct MOAT[1]->gate leg crossed the rampart 40px south of the gap - MOAT[1] is a
+# vertex BY INDEX, a past ring re-derivation moved it, and nothing compared the crossing to the
+# gate until watercourse_crosses_wall_at_water_gate; the drifted manifest is frozen in
+# pool/regressions/canal_under_the_wall_fires_on_the_pre_fix_nagahara.json)
+CANAL = [MOAT[1], (1946, 1482), (1907, 1460), (1830, 1455)]  # east end ON the moat corner (the handoff confluence); west end reaches INTO the dock basin (feeds it, like a street reaching the road)
 s.canal(CANAL)
 s.water_gate(1907, 1460, rot=8)
 s.dock(1809, 1455, 54, 34)

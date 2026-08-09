@@ -7982,6 +7982,39 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         f"{len(crooked)} bridge(s) not seated on the crossing they carry: {crooked[:3]} - a deck lies ON the intersection and runs ALONG the way, or the way runs through the water beside it; solve it with s.bridges() instead of hand-placing coordinates",
     )
 
+    # A WATERCOURSE PIERCES A RAMPART ONLY AT A WATER GATE (GM 2026-08-09). Nagahara's cargo
+    # canal anchored its east end to a moat vertex BY INDEX; a past ring re-derivation moved the
+    # vertex, the approach leg slid 40px off the shuimen gap, and the canal shipped running
+    # UNDER the wall - placement and the wall's gap had no shared source and nothing compared
+    # the crossing to the gate. The doctrine was already prose (inwall_drain_outfall: "never
+    # draw a ditch running through the city wall"); this makes it a check for every DRAWN
+    # canal/channel/stream against a closed rampart. Buried conduits (drawn=False) pierce
+    # nothing; the moat is the ring outside and never crosses.
+    _wg_wall = M.get("wall") or []
+    if len(_wg_wall) >= 3:
+        _wg_gates = M.get("water_gates", [])
+        _wg_bad = []
+        _wg_ring = list(_wg_wall) + [_wg_wall[0]]
+        _wg_courses = [c3["poly"] for c3 in M.get("canals", []) if c3.get("drawn", True)]
+        _wg_courses += [c3["poly"] for c3 in M.get("channels", []) if c3.get("drawn", True)]
+        _wg_courses += [c3["poly"] for c3 in M.get("streams", [])]
+        for _wg_p in _wg_courses:
+            for _wg_i in range(len(_wg_p) - 1):
+                for _wg_j in range(len(_wg_ring) - 1):
+                    if not segments_cross(_wg_p[_wg_i], _wg_p[_wg_i + 1], _wg_ring[_wg_j], _wg_ring[_wg_j + 1]):
+                        continue  # seg_intersect alone is the INFINITE-line answer - the guard bounds it
+                    _wg_x = seg_intersect(_wg_p[_wg_i], _wg_p[_wg_i + 1], _wg_ring[_wg_j], _wg_ring[_wg_j + 1])
+                    if _wg_x is None:
+                        continue  # pragma: no cover - crossing segments are never parallel; defensive only
+                    if min((math.hypot(_wg_x[0] - g3["x"], _wg_x[1] - g3["y"]) for g3 in _wg_gates), default=1e9) > 16:
+                        _wg_bad.append((round(_wg_x[0]), round(_wg_x[1])))
+        check(
+            "watercourse_crosses_wall_at_water_gate",
+            not _wg_bad,
+            f"watercourse(s) running UNDER the rampart away from any water gate (x, y): {sorted(set(_wg_bad))[:4]} - water passes a wall only through its shuimen gap "
+            f"(s.water_gate + city_wall(water_gates=[...])); route the crossing leg through the gate along the wall's normal",
+        )
+
     # A DECK FULLY CROSSES ITS WATER (GM 2026-08-09): both ends of the deck-line reach past the
     # crossed watercourse's edge onto dry ground. roads_bridge_water is satisfied by ANY deck
     # within 40px of the crossing and the alignment rule by seat and bearing alone, so a deck
