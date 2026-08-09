@@ -20,3 +20,23 @@ stables because it has no fabric at all yet.
 pulled in the next, which is the engine correctly refusing to call a half-populated city
 coherent. Feature 020 draws the fabric and the check passes on its own; until then this map is a
 draft, not a pool member.
+
+
+## Findings carried into feature 020 (settlement-review, 2026-08-09)
+
+Two defects the review found that are NOT fixed here, because both are fabric-era work:
+
+1. **Four of six way-over-water crossings have no bridge, and the CHECK is blind the same way.**
+   `settlement.bridges()` carries `M["road"]` (the single Imperial polyline) but never `M["roads"]`,
+   and its water list omits both `M["river"]` and the castle's own moat. `roads_bridge_water`
+   mirrors those omissions exactly - so placement and check agree, and both are wrong. A sharp
+   illustration of the "placement and its check must read the SAME source" rule guaranteeing
+   AGREEMENT, not correctness. Unbridged: the east and southwest trunk roads over the city moat,
+   and the east road over the river (off-crop, but real geometry).
+2. **The declared civic quarter is in the wrong wedge.** `quarters[0]` marks NE "civic" and calls it
+   the castle's ground, but the castle straddles all four wedges, and `capitals.md` puts the
+   ministries OUTSIDE the ote-mon flanking the ote-suji - which, with the gate facing south, is the
+   SOUTHERN wedges. Feature 020's packs zone against these, so settle it before packing.
+
+Also at 020: this subject needs a `.notes.md` with a Review log before it moves into
+`pool/capitals/` - every pool subject has one.
