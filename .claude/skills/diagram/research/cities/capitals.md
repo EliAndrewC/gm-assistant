@@ -416,10 +416,17 @@ even the sea (Takamatsu's moat is seawater and its fish are ocean fish; Imabari'
 with springs rising inside the moat itself) - and moat water was USED: drawn for irrigation,
 managed for flood control, boated for commerce. Minami and Nagahara back onto their rivers, so
 their moat FEET are the connection and nothing extra needs drawing. Shiro Daika's ring stands
-~200 px off its bank, so the connection is a pair of engineered leats, now drawn: a sluiced
-FEEDER tapping the river at the ring's closest upstream approach (southeast), and a DRAIN off
-the low southwest arc running to the fields - moat water irrigating the land below is attested
-use, and the land falls NE -> SW, so river -> moat -> fields runs downhill the whole way. The
+~200 px off its bank, so the connection is a pair of engineered channels, now drawn - and the
+first cut got them WRONG twice, which the GM's eye caught: a 48 ft thread of a leat, tapping
+the river at its CLOSEST approach (southeast). Closest is not upstream: with the land falling
+NE -> SW, water entering at the low southeast corner cannot climb the east arc, so the whole
+northern ring would have been a dead arm. And the thread read nothing like the pool's own
+precedent - TANGO, the other stand-off closed ring, takes moat-width (66 ft) feeder and outfall
+channels, so the moat reads as flowing through. The corrected form: a 66 ft sluiced feeder taps
+the river's HIGH upstream reach and feeds the ring's northeast arc, the water descends BOTH
+ways round the circuit, and the 66 ft drain leaves the low southwest arc for the fields - moat
+water irrigating the land below is attested use, and river -> moat -> fields runs downhill the
+whole way. The
 gate learned one rule for this: a stream may ROOT on the trunk river (`stream_runs_off_edge`'s
 river-tap clause) - the river is itself edge-sourced, so a leat rooted on it has a real source.
 

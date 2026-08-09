@@ -145,21 +145,22 @@ s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=s.lw(45))  # starts just south of
 # and castle sharing the name is the jokamachi reality (settlement-review, 2026-08-09).
 s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south")
 
-# ---- the moat CIRCULATES, and its water is DRAWN, not implied (GM 2026-08-09: "why is the moat
-# not simply connected to the river as we have for cities like Minami and Nagahara?"). Those two
-# back onto their river, so their moat FEET are the connection; this ring stands ~200px off the
-# bank, so the connection is a pair of engineered leats, which is what a stand-off moat
-# historically had: a sluiced FEEDER from the river at the ring's closest upstream approach
-# (southeast), and a DRAIN off the low southwest arc - moat water ran on to irrigate the fields
-# below, which is attested use. The land falls NE -> SW (water_flow=135), so river -> moat ->
-# fields runs downhill the whole way.
-FEED_TAP = (2584, 1588)  # on the river's west bank, upstream of the wharf
-s.stream([FEED_TAP, (2430, 1680), (MOAT[7][0], MOAT[7][1])], frm={"kind": "river"}, to={"kind": "moat"}, width=s.px(48))
-s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(1680 - FEED_TAP[1], 2430 - FEED_TAP[0])) + 90)  # the intake board at the river tap
+# ---- the moat CIRCULATES, and its water is DRAWN (GM 2026-08-09, twice). Minami and Nagahara
+# back onto their rivers, so their moat FEET are the junction; the stand-off closed ring's
+# sibling is TANGO, whose ring takes moat-width feeder and outfall channels - the first cut here
+# used a 48 ft thread instead, and tapped the river at its CLOSEST approach (southeast), which
+# is hydrologically backwards: the land falls NE -> SW, so water entering at the low southeast
+# corner cannot circulate up the east arc and the whole northern ring is a dead arm. The GM's
+# eye caught it. Now: a moat-width (66 ft, Tango's own) sluiced feeder taps the river's HIGH
+# upstream reach and feeds the ring's northeast arc, the water runs BOTH ways round descending
+# the whole way, and the drain leaves the low southwest arc for the fields (attested use).
+FEED_TAP = (2933, 1064)  # ON the river's west bank, upstream - HIGHER ground than the moat's NE arc
+s.stream([FEED_TAP, (2700, 850), (2450, 700), (MOAT[3][0], MOAT[3][1])], frm={"kind": "river"}, to={"kind": "moat"}, width=s.px(66))
+s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(850 - FEED_TAP[1], 2700 - FEED_TAP[0])) + 90)  # the intake board at the river tap, square across the leat
 DRAIN_OUT = (MOAT[12][0], MOAT[12][1])
-s.stream([DRAIN_OUT, (640, 2140), (460, 2330), (200, 2560), (60, 2690)], frm={"kind": "moat"}, to={"kind": "offmap"}, width=s.px(48))
+s.stream([DRAIN_OUT, (640, 2140), (460, 2330), (200, 2560), (60, 2690)], frm={"kind": "moat"}, to={"kind": "offmap"}, width=s.px(66))
 s.sluice_gate(DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2140 - DRAIN_OUT[1], 640 - DRAIN_OUT[0])) + 90)  # the outfall board where the drain leaves the ring
-s.moat_flow(MOAT[7], MOAT[12])
+s.moat_flow(MOAT[3], MOAT[12])
 
 # ---- THE AQUEDUCT (feature 020): intake on the river upstream of the east road's crossing, an
 # open cut at grade swinging around the northeast quarter OUTSIDE the moat, terminating at the
