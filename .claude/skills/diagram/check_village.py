@@ -35,6 +35,8 @@ from settlement import (
     WALL_DEFENSE,
     _assert_not_main_tree,
     box_gap,
+    bridge_carried_ways,
+    bridge_crossed_waters,
     crop_boxes,
     forest_frame_span,
     kido_bar_deg,
@@ -7631,14 +7633,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # topology only - there is no seam on the ground, so a way crossing its line crosses nothing and
     # needs no deck. Tango's ring road runs over three of them.
     bridges = M.get("bridges", [])
-    waters_b = (
-        [s["poly"] for s in M.get("streams", [])]
-        + [c["poly"] for c in M.get("channels", []) if c.get("drawn", True)]
-        + [d["poly"] for d in M.get("field_ditches", [])]
-        + [c["poly"] for c in M.get("canals", [])]
-        + ([M["moat"]] if M.get("moat") else [])
-    )
-    carried_b = ([road] if road else []) + ([M["ring_road"]] if M.get("ring_road") else []) + [st["pts"] for st in M.get("town_streets", [])] + [ln["pts"] for ln in M.get("lanes", [])]
+    # ONE SOURCE, shared with settlement.bridges() (feature 020). These sets used to be built
+    # separately here and in the generator, and both omitted M["roads"], the river and a castle's
+    # own moat - so the two agreed perfectly and were both wrong, leaving four of six crossings on
+    # the first capital unbridged with a green gate. "Placement and its check read the SAME source"
+    # guarantees they cannot DISAGREE; it does not make either correct, so they now read one
+    # function rather than two lists that happen to match.
+    waters_b = [w for w, _ in bridge_crossed_waters(M)]
+    carried_b = [c for c, _ in bridge_carried_ways(M)]
     xings_b = []  # (point, way heading in degrees) for every way x water crossing on the map
     for rpts in carried_b:
         for i in range(len(rpts) - 1):
