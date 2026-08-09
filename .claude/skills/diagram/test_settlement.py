@@ -6263,6 +6263,27 @@ def test_manor_ink_parameter_marks_foreign_sovereign_ground():
     assert 'stroke="#274D3D"' in "".join(s2.out[n0:])
 
 
+def test_granary_rot_turns_the_row_and_records_rotated_stores():
+    """A riverside complex stands parallel to the bank it loads from (GM 2026-08-09) - the row
+    turns as a unit and every store records the rotation, so the matrix tests real corners."""
+    s = _cap020()
+    s.granary(700, 700, n=3, w=20, h=12, gap=8, label="domain granaries", append=True, rot=-54)
+    recs = s.M["granaries"]
+    assert len(recs) == 3 and all(r["rot"] == -54 for r in recs)
+    assert recs[0]["x"] != recs[1]["x"] and recs[0]["y"] != recs[1]["y"]  # the row marches along the turned axis
+
+
+def test_hanko_records_into_the_martial_halls_family():
+    """The domain school is the hanko - a school of letters WITH the martial wing - so it draws
+    with the martial-hall vocabulary and records into the same family the checks read."""
+    s = _cap020()
+    s.hanko(700, 700)
+    mh = s.M["martial_halls"][0]
+    assert mh["kind"] == "hanko" and mh["label"] == "Domain School"
+    assert mh["w"] == 80.0 and mh["h"] == 50.0  # 240 x 150 ft at 3 ft/px
+    assert mh["range_ft"] == 100.0  # the kyudo lane, same as the provincial hall
+
+
 def test_granary_append_records_a_list_for_a_capital_with_two_granaries():
     """A capital holds its grain in TWO places for two reasons (the domain's working rice at the
     wharf, the Emperor's stores beside it) - the legacy single M['granary'] dict cannot carry

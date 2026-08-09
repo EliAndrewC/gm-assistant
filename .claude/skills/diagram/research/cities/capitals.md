@@ -382,3 +382,104 @@ loop, not a rounder ring.
    options are the rectangle (flat open ground) or an irregular terrain-following loop (river or
    hill ground) - not a truer circle. Reshaping the four shipped cities would re-roll the pool
    and is a GM decision to make deliberately, not a drift to make silently.
+
+## The chancellery meets IN the castle - executive out, council in
+
+**The question** (GM 2026-08-09): would the House Chancellery actually have its own meeting
+building outside the castle? The GM's working assumption was that chancellery meetings happen in
+the castle itself - and feature 020 had drawn a chancellery compound on the government avenue.
+
+**The GM's assumption is right, and both anchors agree.** In Edo, the Hyojosho (the supreme
+judicial council of the Roju and commissioners) sat WITHIN Edo castle, and the Roju - the
+shogunate's governing council - worked from the castle's own offices; a daimyo's karo council
+met in the goten's audience halls. In China the Grand Secretariat (neige), the emperor's
+council-of-state, sat INSIDE the palace precinct, while the Six Ministries stood outside on the
+approach. The split both traditions converge on is clean: **the EXECUTIVE bureaus (clerks,
+archives, public business) stand outside the works; the ruler's COUNCIL meets beside the ruler,
+inside.** A deliberative body of 5-10 lineage representatives generates no street traffic and
+holds no archives of its own - it is a chamber, not a compound.
+
+**Decision:** the House Chancellery compound came OFF the map; the council chamber is part of
+the castle's implied goten (never drawn, per the blank-castle doctrine). The check inverted with
+it: `capital_chancellery_meets_in_the_castle` now fires if a chancellery compound is drawn
+outside. The inventory table in `settlements/capitals.md` moves the chancellery inside.
+
+## Moat water: drawn connections outside, standing water inside - and yes, it scums
+
+**The questions** (GM 2026-08-09): does the inner (castle) moat need to connect to anything?
+How is the water kept in, and kept from stagnating? And why was the CITY moat not simply
+connected to the river, as Minami's and Nagahara's are?
+
+**The city moat: river-fed flow-through, and the connection is drawn.** Japanese wet moats
+filled from whatever water stood nearest - rivers and streams most commonly, wetlands and lakes,
+even the sea (Takamatsu's moat is seawater and its fish are ocean fish; Imabari's mixes tidewater
+with springs rising inside the moat itself) - and moat water was USED: drawn for irrigation,
+managed for flood control, boated for commerce. Minami and Nagahara back onto their rivers, so
+their moat FEET are the connection and nothing extra needs drawing. Shiro Daika's ring stands
+~200 px off its bank, so the connection is a pair of engineered leats, now drawn: a sluiced
+FEEDER tapping the river at the ring's closest upstream approach (southeast), and a DRAIN off
+the low southwest arc running to the fields - moat water irrigating the land below is attested
+use, and the land falls NE -> SW, so river -> moat -> fields runs downhill the whole way. The
+gate learned one rule for this: a stream may ROOT on the trunk river (`stream_runs_off_edge`'s
+river-tap clause) - the river is itself edge-sourced, so a leat rooted on it has a real source.
+
+**The castle's inner moat: standing water, and that is period-accurate.** An inner moat dug
+below the water table holds groundwater and rain; springs rising in the moat bed (Imabari's do)
+keep some circulation, and hillside castles sectioned their moats with low dams into stepped
+pools. There is no underground aqueduct feeding it - a besieged castle wants water that cannot
+be cut off, which is exactly what groundwater is. Keeping it IN is the easy half (the moat floor
+sits below the table; earthen moats hold water the way any pond does). Keeping it CLEAN mostly
+did not happen: duckweed, algae and pond scum on a quiet moat are the historical look - Edo's
+surviving moats bloom green to this day - managed only by occasional dredging (the same sarae a
+canal got) and by the carp everyone kept in them. So the inner moat connects to NOTHING, and a
+GM describing it as still, green-skinned water with fat carp under the lilies is being accurate,
+not unflattering. Nothing to draw; recorded so nobody "fixes" it later.
+
+## The aqueduct supplies the CITY - the moat spill was a drawing artifact
+
+**The question** (GM 2026-08-09): the aqueduct exists because a capital outgrows its wells, but
+the drawn cut appeared to feed the city moat instead of supplying the city. Which is it?
+
+It supplies the city - the confusion was the terminus rendering, not the design. The system is
+Edo's: OPEN cut outside the wall, BURIED pipe inside it, the GATE as the boundary; what a
+resident sees inside is the draw-basins (feature 021's, with the wells). The open cut therefore
+ENDS at the gate by design, and the first rendering just stopped there - which read as a brook
+dribbling into the moat. The fix is the historical furniture: a TERMINAL BASIN (head-tank) at
+the gate end, the settling tank where the open cut hands off to the buried pipe - Edo's josui
+ended in exactly such tanks. The glyph now draws it, standing clear of the moat. (Any real
+josui also spilled surplus somewhere, and the moat is where a surplus WOULD go - but the drawing
+should say "supply enters here", not "stream joins moat".)
+
+## The domain school is the hanko: a school of letters WITH the martial wing
+
+**The question** (GM 2026-08-09): is the "Domain School" an office-like building (ministry
+glyph) or the capital equivalent of the provincial martial hall?
+
+Both, because that is what a hanko WAS: a school of LETTERS first, with a martial wing
+(bugeijo) on the same grounds - Aizu's Nisshinkan, Mito's Kodokan and Kagoshima's Zoshikan all
+pair lecture halls with fencing floors and an archery range. The provincial "martial hall" this
+engine already draws is exactly that martial wing at the tier below (cities/government.md); the
+capital shows the whole institution. **Decision:** a dedicated `s.hanko` glyph - the
+martial-hall vocabulary (state violet, dojo hall with kamiza, archery lane with azuchi) plus
+the larger civil lecture hall - recorded in `M['martial_halls']` with `kind='hanko'`, replacing
+the ministry box the first draft used.
+
+## Why the temples belt the wall instead of clustering in a temple quarter
+
+**The question** (GM 2026-08-09): why seven temples strewn through the city rather than two
+main temples plus smaller ones in a temple neighborhood?
+
+The structure IS "two main + the rest" - the two sovereign temples (Benten, Jurojin) are the
+capital's great complexes, flanking the government axis at equal offsets, and the five modest
+halls are the "everything else." What differs from the provincial pattern is WHERE the rest
+stand: belted along the rampart's inner face as a teramachi rim, not gathered into one
+neighborhood. That is the attested CASTLE-TOWN pattern, and it is defensive: a jokamachi
+deliberately placed its temple districts along the perimeter and the approaches, because temple
+precincts are the town's only large walled compounds outside the castle - each one a ready-made
+strongpoint and muster ground covering a stretch of wall, and their graveyards and groves a
+firebreak. A provincial city clusters its temples into a lane (Nagahara's temple neighborhood)
+because it has only a few and they serve street life; a capital has enough to spend them on the
+defenses. The rim is the settled 018 decision (settlements/capitals.md, "Placements that
+change") - recorded here at full length because the question deserved the reasoning, not a
+pointer. If the GM prefers a gathered temple quarter anyway, that is a one-session re-seat and
+the checks do not currently care - say the word.

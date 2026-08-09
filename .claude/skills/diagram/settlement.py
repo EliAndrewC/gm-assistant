@@ -9877,7 +9877,7 @@ class Settlement:
             _lx, _ly = label_xy if label_xy else (tilt_caption_seat(x, y, rot, _t, hw, hh, 10) if _t else (x, y + hh + 10))
             self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C", rot=_t)
 
-    def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary", append: bool = False) -> list[Any]:
+    def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary", append: bool = False, rot: float = 0.0) -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
         town, where grain from many counties is gathered and forwarded up the kick-up chain.
         White-walled with a dark hip roof. Opt-in (meta(granary=True)): a standard county seat
@@ -9887,11 +9887,27 @@ class Settlement:
         dict untouched: a capital holds its grain in TWO places for two reasons (the domain's
         working stipend rice at the wharf, the Emperor's stores beside it - and the siege stock
         inside the castle, never drawn), and a second call on the dict would silently clobber the
-        first. Per-store records, so the overlap matrix can see each one (feature 019's lesson)."""
+        first. Per-store records, so the overlap matrix can see each one (feature 019's lesson).
+        `rot` turns the whole row (degrees) so a riverside complex can stand parallel to its bank
+        (GM 2026-08-09: the wharf granaries belong ON the wharf, aligned with the water they
+        serve); the rot=0 path is byte-identical to the old drawing for every existing map."""
         stores: list[Any] = []
+        ga = math.radians(rot)
+        gca, gsa = math.cos(ga), math.sin(ga)
         x0 = x - (n * w + (n - 1) * gap) / 2
         for i in range(n):
             cx = x0 + i * (w + gap) + w / 2
+            if rot:
+                rcx, rcy = x + (cx - x) * gca, y + (cx - x) * gsa  # the store's seat along the turned row axis
+                gg_ = [f'<g transform="translate({rcx:.1f},{rcy:.1f}) rotate({rot:.1f})">']
+                gg_.append(f'<rect x="{-w / 2:.0f}" y="{-h / 2:.0f}" width="{w}" height="{h}" rx="2" fill="#E8E0CE" stroke="#6B5A3C" stroke-width="2"/>')
+                gg_.append(f'<rect x="{-w / 2:.0f}" y="{-h / 2:.0f}" width="{w}" height="9" fill="#5A4A30"/>')
+                gg_.append(f'<line x1="0" y1="{-h / 2 + 9:.0f}" x2="0" y2="{h / 2:.0f}" stroke="#6B5A3C" stroke-width="0.7"/>')
+                gg_.append("</g>")
+                self.add("".join(gg_))
+                stores.append({"x": round(rcx, 1), "y": round(rcy, 1), "w": w, "h": h, "rot": rot})
+                self.block_polys.append([(round(qx, 1), round(qy, 1)) for qx, qy in rot_rect(rcx, rcy, w + 60, h + 60, rot)])
+                continue
             self.add(f'<rect x="{cx - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="{h}" rx="2" fill="#E8E0CE" stroke="#6B5A3C" stroke-width="2"/>')
             self.add(f'<rect x="{cx - w / 2:.0f}" y="{y - h / 2:.0f}" width="{w}" height="9" fill="#5A4A30"/>')  # dark fireproof hip roof
             self.add(f'<line x1="{cx:.0f}" y1="{y - h / 2 + 9:.0f}" x2="{cx:.0f}" y2="{y + h / 2:.0f}" stroke="#6B5A3C" stroke-width="0.7"/>')
@@ -9903,7 +9919,11 @@ class Settlement:
         else:
             self.M["granary"] = {"x": x, "y": y, "n": n, "stores": stores, "label": label}
         if label:
-            self.label(x, y - h / 2 - 10, label, 11, italic=True, color="#6B5A3C")
+            if rot:
+                loff = h / 2 + 12  # seat the caption off the row's upslope flank, clear of the turned roofs
+                self.label(x + gsa * loff, y - gca * loff, label, 11, italic=True, color="#6B5A3C")
+            else:
+                self.label(x, y - h / 2 - 10, label, 11, italic=True, color="#6B5A3C")
         return stores
 
     def merchant_storehouses(self, count: int = 6, kw: Any = None, kh: Any = None) -> int:
@@ -11240,6 +11260,16 @@ class Settlement:
         g.append(f'<line x1="0" y1="{-span:.1f}" x2="0" y2="{span:.1f}" stroke="#6B5A3C" stroke-width="1.6"/>')
         g.append("</g>")
         self.add("".join(g))
+        # the TERMINAL BASIN at the gate end: the settling tank where the open cut ends and the
+        # buried in-wall pipe begins (Edo's josui ended in exactly such head-tanks). Without it
+        # the cut just stops - or worse, reads as a brook spilling into the moat (GM 2026-08-09).
+        tb = max(self.px(16), 5.0)
+        ta = math.degrees(math.atan2(pts[-1][1] - pts[-2][1], pts[-1][0] - pts[-2][0]))
+        self.add(
+            f'<g transform="translate({pts[-1][0]:.1f},{pts[-1][1]:.1f}) rotate({ta:.1f})">'
+            f'<rect x="{-tb / 4:.1f}" y="{-tb / 2:.1f}" width="{tb:.1f}" height="{tb:.1f}" rx="1" fill="#9CB4C8" stroke="#6B5A3C" stroke-width="1.4"/>'
+            f"</g>"
+        )
         self.M.setdefault("aqueducts", []).append(
             {
                 "poly": [[round(px_, 1), round(py_, 1)] for px_, py_ in pts],
@@ -11905,6 +11935,58 @@ class Settlement:
         by_ = ly_ - 11 if label_xy else (y + ch if label_below else y - ch - 26)
         self.block_polys.append([(lx_ - bw_, by_), (lx_ + bw_, by_), (lx_ + bw_, by_ + 26), (lx_ - bw_, by_ + 26)])
         self.label(lx_, ly_, label, 9, italic=True, color="#463653")
+
+    def hanko(self, x: float, y: float, rot: float = 0.0, label: str = "Domain School", label_below: bool | None = None, label_xy: Pt | None = None) -> None:
+        """THE DOMAIN SCHOOL (hanko) - the capital's state school, and the parent institution of
+        the provincial martial hall (GM asked 2026-08-09 which glyph the school takes; the answer
+        is both-in-one, because that is what a hanko WAS).
+
+        WHY THIS GLYPH AND NOT A MINISTRY BOX. The hanko is not a bureau of clerks - it is the
+        school samurai families across the domain send their children to, and the historical
+        hanko was a school of LETTERS with a martial wing (bugeijo) on the same grounds: Aizu's
+        Nisshinkan, Mito's Kodokan and Kagoshima's Zoshikan all pair lecture halls with fencing
+        floors and a shooting range. The provincial martial hall this engine already draws IS
+        that martial wing at the tier below (cities/government.md, "Historical grounding: martial
+        training"); the capital shows the whole institution. So the compound takes the
+        martial-hall vocabulary - state violet, hall + kamiza, archery lane - plus the civil
+        lecture hall that outranks them.
+
+        REAL FEET: compound 240 x 150 ft; civil lecture hall 76 x 44 ft (the LARGER wing - a
+        hanko is first a school of letters); bugeijo 60 x 36 ft with kamiza and plank grain (the
+        provincial hall's own 120-tatami floor); a 100 ft archery lane with azuchi along the
+        south band (the kyudo 92 ft shot, as the martial hall keeps); the rest circulation.
+        Records M['martial_halls'] with kind='hanko' - the same family the checks read - and
+        blocks placement with the government-office apron."""
+        f = self.px
+        cw, ch = f(240) / 2, f(150) / 2
+        g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-cw:.1f}" y="{-ch:.1f}" width="{cw * 2:.1f}" height="{ch * 2:.1f}" rx="2" fill="#E7E1EC" stroke="#463653" stroke-width="1.7"/>')
+        ly0, ly1 = ch - f(38), ch - f(12)  # the archery lane band along the south side
+        lx0, lx1 = -cw + f(10), -cw + f(110)
+        g.append(f'<rect x="{lx0:.1f}" y="{ly0:.1f}" width="{lx1 - lx0:.1f}" height="{ly1 - ly0:.1f}" fill="#E3D9BE" stroke="#B9A57C" stroke-width="0.8"/>')
+        g.append(f'<line x1="{lx0 + f(6):.1f}" y1="{ly0:.1f}" x2="{lx0 + f(6):.1f}" y2="{ly1:.1f}" stroke="#8A7448" stroke-width="0.8"/>')  # the shooting line
+        g.append(f'<rect x="{lx1:.1f}" y="{ly0:.1f}" width="{f(10):.1f}" height="{ly1 - ly0:.1f}" rx="1" fill="#A98C58" stroke="#6B5228" stroke-width="1.1"/>')  # the azuchi butt
+        g.append(f'<rect x="{-cw + f(8):.1f}" y="{-ch + f(8):.1f}" width="{f(76):.1f}" height="{f(44):.1f}" rx="1.5" fill="#CDBBD6" stroke="#463653" stroke-width="1.6"/>')  # the civil lecture hall
+        for pi in range(1, 4):
+            gy_ = -ch + f(8) + f(44) * pi / 4
+            g.append(f'<line x1="{-cw + f(9):.1f}" y1="{gy_:.1f}" x2="{-cw + f(83):.1f}" y2="{gy_:.1f}" stroke="#463653" stroke-width="0.55" opacity="0.5"/>')
+        self._dojo_hall(g, f(18), -ch + f(8), f(60), f(36), "#CDBBD6", "#463653", "#6A4A78")  # the bugeijo, kamiza and all
+        self._keiko_gear(g, (f(20), f(2)), [(f(40), f(2)), (f(52), f(2))], "#463653")
+        g.append("</g>")
+        self.add("".join(g))
+        self.M.setdefault("martial_halls", []).append(
+            {"x": round(x, 1), "y": round(y, 1), "w": round(f(240), 1), "h": round(f(150), 1), "rot": round(rot, 1), "label": label, "range_ft": round((lx1 - lx0) * self.ftpx, 1), "kind": "hanko"}
+        )
+        self.placed.append((x, y, f(240), f(150)))
+        bm = max(30 * self.bscale, 26)  # a government school keeps the full office apron, unlike the packed-ward hall
+        self.block_polys.append([(x - cw - bm, y - ch - bm), (x + cw + bm, y - ch - bm), (x + cw + bm, y + ch + bm), (x - cw - bm, y + ch + bm)])
+        if label_below is None:
+            label_below = self._label_hits(x, y - ch - 9, label, 9) > self._label_hits(x, y + ch + 11, label, 9)
+        hlx, hly = label_xy if label_xy else (x, y + ch + 11 if label_below else y - ch - 9)
+        hbw = max(cw + bm, 2.9 * len(label) + 10)
+        hby = hly - 11 if label_xy else (y + ch if label_below else y - ch - 26)
+        self.block_polys.append([(hlx - hbw, hby), (hlx + hbw, hby), (hlx + hbw, hby + 26), (hlx - hbw, hby + 26)])
+        self.label(hlx, hly, label, 9, italic=True, color="#463653")
 
     def dojo(self, x: float, y: float, rot: float = 0.0, label: str = "dojo") -> None:
         """A PRIVATE DOJO (machi-dojo) in the samurai quarter.

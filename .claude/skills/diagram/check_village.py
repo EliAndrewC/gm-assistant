@@ -785,6 +785,52 @@ _MX_FIXTURE_BOX: dict[str, Any] = {
 _MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0, "roads": 26.0, "towpaths": 2.4, "aqueducts": 4.0}
 
 
+def check_ring_road_clear(M: Mapping[str, Any], check: Any) -> None:
+    """THE RING ROAD IS A CLEAR PATROL ROAD - it must run clear of EVERY solid footprint and of
+    fields. The gate guard houses / inspection stations / towers DO sit along it (wall furniture -
+    `gate_structs` and `wall_towers` are overlap TARGETS and EXEMPT respectively, so the registry
+    leaves them out), and a ward fence may cross it only at a gated kido. Overlap = the ring's BED
+    passes through a footprint. Reads the REGISTRY, never a hand list (GM 2026-07-25).
+
+    FACTORED OUT of the scale=="city" block (GM 2026-08-09, 'estates should not overlap with the
+    ring-road'): a CAPITAL has a ring road too, and this check living only under scale=="city"
+    meant four lineage estates could stand on the capital's patrol road with a green gate - the
+    check never RAN there, which looks exactly like passing. Two gaps stacked: the scope, and the
+    victim list - `manors` and `religious` are overlap TARGETS (protected FROM structs by the
+    matrix), but nothing about being a target keeps a compound off the patrol road, so both ride
+    along here explicitly."""
+    ring_rd = M.get("ring_road")
+    if not ring_rd:
+        return
+    rbed = (M.get("ring_road_width", 15) - 6) / 2
+
+    def _rfoot(it: dict[str, Any]) -> list[tuple[float, float]]:
+        if "rot" in it:
+            return rect_corners(it)
+        rhw, rhh = it["w"] / 2, it["h"] / 2
+        return [(it["x"] - rhw, it["y"] - rhh), (it["x"] + rhw, it["y"] - rhh), (it["x"] + rhw, it["y"] + rhh), (it["x"] - rhw, it["y"] + rhh)]
+
+    # ...except an official NOTICE BOARD inside a GATE PRECINCT. A kosatsuba is street furniture,
+    # not a compound: a ~12x5 ft post-and-roof board that must stand within ~60 real ft of a road
+    # where people pass (kosatsuba_by_the_road), which at a gate means the same crowded verge the
+    # guard house, inspection station and towers already line. Scoped to the precinct on purpose -
+    # a board out on an open stretch of patrol lane is still a defect.
+    rr_gates = [g for g in (M.get("gates") or [])] + ([M["gate"]] if M.get("gate") else [])
+
+    def _rr_exempt(it: dict[str, Any]) -> bool:
+        return it.get("label") in (None, "notice board") and "vw" in it and any(math.hypot(it["x"] - g[0], it["y"] - g[1]) < 130 for g in rr_gates)
+
+    on_ring = [
+        it.get("name") or it.get("label") or it.get("kind") or "compound" for it in solid_structs(M, "religious", "manors") if footprint_on_line(_rfoot(it), ring_rd, rbed) and not _rr_exempt(it)
+    ]
+    on_ring += ["field:" + f["name"] for f in M.get("fields", []) if footprint_on_line(f["outline"], ring_rd, rbed)]
+    check(
+        "ring_road_kept_clear",
+        not on_ring,
+        f"the ring road must run CLEAR of buildings/civic compounds/fields (only the gate guard houses, inspection stations, towers and gated ward fences may sit on it): {sorted(set(on_ring))}",
+    )
+
+
 def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, float]], Any, Any]]:
     """Every DRAWN extent as (key, polygon, own_id, parent_id).
 
@@ -3710,18 +3756,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             not cap_missing,
             f"missing domain ministries: {cap_missing} - the six domain ministries stand outside the castle flanking the ote-suji (s.ministry(...))",
         )
+        # NO House Chancellery compound: the council of lineage representatives meets IN the
+        # castle (GM 2026-08-09, researched: Edo's Hyojosho and the Roju council sat within Edo
+        # castle, and China's Grand Secretariat sat inside the palace - the split both anchors
+        # agree on is EXECUTIVE ministries out, the ruler's COUNCIL in). A chancellery compound
+        # outside is therefore a defect, not a requirement; the council chamber is part of the
+        # castle's implied goten. research/cities/capitals.md, "The chancellery meets IN the castle".
         cap_chanc = [mi for mi in cap_mins if "chancellery" in (mi.get("name") or "").lower()]
         check(
-            "capital_has_house_chancellery",
-            len(cap_chanc) == 1,
-            f"{len(cap_chanc)} House Chancellery record(s), expected exactly 1 - the council hall of the domain's lineage representatives, on the government axis",
+            "capital_chancellery_meets_in_the_castle",
+            not cap_chanc,
+            f"{len(cap_chanc)} House Chancellery compound(s) drawn outside the castle - the council meets in the goten (implied, never drawn); only the executive ministries stand outside",
         )
-        cap_school = [mi for mi in cap_mins if any(wd in (mi.get("name") or "").lower() for wd in ("school", "hanko"))]
+        cap_school = [mi for mi in cap_mins if any(wd in (mi.get("name") or "").lower() for wd in ("school", "hanko"))] + [
+            mh for mh in M.get("martial_halls", []) if mh.get("kind") == "hanko" or any(wd in (mh.get("label") or "").lower() for wd in ("school", "hanko"))
+        ]
         check(
             "capital_has_domain_school",
             len(cap_school) == 1,
-            f"{len(cap_school)} domain school record(s), expected exactly 1 - the hanko is why samurai families across the domain send their children here",
+            f"{len(cap_school)} domain school record(s), expected exactly 1 - the hanko is why samurai families across the domain send their children here (s.hanko)",
         )
+        check_ring_road_clear(M, check)  # the capital's patrol road is as real as a city's (GM 2026-08-09)
         # The approach avenue: the way that leaves the castle's front gate. Membership questions
         # below are judged center-to-line with tolerances that dwarf the footprints - the
         # ASSOCIATION/reach family (CLAUDE.md, "Centers, footprints, and aggregates").
@@ -3753,18 +3808,18 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     not cap_far,
                     f"ministries not fronting the ote-suji: {cap_far} - all six flank the approach avenue (Beijing's corridor pattern); none sits off in the fabric",
                 )
-            if cap_chanc and cap_school:
+            if cap_school:
                 (cap_ax, cap_ay), (cap_bx, cap_by) = cap_apts[0], cap_apts[-1]
                 cap_alen = math.hypot(cap_bx - cap_ax, cap_by - cap_ay) or 1.0
                 cap_off = []
-                for mi in cap_chanc + cap_school:
+                for mi in cap_school:
                     cap_dl = abs((cap_bx - cap_ax) * (cap_ay - mi["y"]) - (cap_ax - mi["x"]) * (cap_by - cap_ay)) / cap_alen
                     if cap_dl > max(mi["w"], mi["h"]) / 2 + cap_aw / 2 + 45:
-                        cap_off.append(mi.get("name"))
+                        cap_off.append(mi.get("name") or mi.get("label"))
                 check(
-                    "capital_chancellery_and_school_on_the_axis",
+                    "capital_school_on_the_axis",
                     not cap_off,
-                    f"off the government axis: {cap_off} - the House Chancellery and the domain school stand on the ote-suji's LINE, continuing the ward past the through-road",
+                    f"off the government axis: {cap_off} - the domain school stands on the ote-suji's LINE, continuing the ward past the through-road",
                 )
         # A government office stands in its own ground - the provincial rule restated at this
         # tier, because the scale=="city" block does not run here and a capital has no governor's
@@ -5814,6 +5869,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"flophouse"}
             if "ministry" in t:
                 return {"ministry"}
+            if "granar" in t:  # "domain granaries" / "Imperial granaries": the plural does not CONTAIN the group word "granary", so the derived rule alone cannot permit it
+                return {"granary"}
             if "governor" in t or "mansion" in t:
                 return {"governor"}
             if "manor" in t or "magistrate" in t:
@@ -8910,8 +8967,19 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 for i in range(len(dp) - 1)
             )
 
-        ok = all(at_edge(e) or in_pond(e) or at_moat(e) or at_drain(e) or in_field(e) or at_ditch(e) for e in (e0, e1)) and (at_edge(e0) or at_edge(e1))
-        check(f"stream_runs_off_edge[{idx}]", ok, f"stream {idx} ends {e0},{e1} must run off the edge (one end may be a pond, the moat, the field drain, or the field head)")
+        def at_river(p: Pt) -> bool:
+            # a sluiced moat FEEDER taps the trunk river (feature 020's capital: the ring stands
+            # ~200px off the bank, so the connection Minami/Nagahara get from their moat feet is
+            # drawn as a short leat instead). The river is itself edge-sourced, so a stream rooted
+            # on it inherits a real source the way an edge end does.
+            riv_ = M.get("river")
+            rp_ = (riv_ or {}).get("pts") or (riv_ or {}).get("poly")
+            if not rp_:
+                return False
+            return any(seg_dist(p[0], p[1], rp_[i], rp_[i + 1]) <= (riv_ or {}).get("w", 40) / 2 + 12 for i in range(len(rp_) - 1))
+
+        ok = all(at_edge(e) or in_pond(e) or at_moat(e) or at_drain(e) or in_field(e) or at_ditch(e) or at_river(e) for e in (e0, e1)) and (at_edge(e0) or at_edge(e1) or at_river(e0) or at_river(e1))
+        check(f"stream_runs_off_edge[{idx}]", ok, f"stream {idx} ends {e0},{e1} must run off the edge (one end may be a pond, the moat, the field drain, the field head, or a trunk-river tap)")
 
     # WATER SOURCES COME FROM THE MAP EDGE: a pond does not generate water, so any brook FEEDING it (a
     # stream with one end in the pond) must ORIGINATE off-map - it flows in from the edge, not out of
@@ -11439,7 +11507,6 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # classified and correctly cleared of all thirteen no_structure_on_* hazards, sat squarely on
             # Tango's ring road with the gate green because nobody had. See solid_structs' docstring.
             if ring_rd:
-                rbed = (M.get("ring_road_width", 15) - 6) / 2
 
                 def _foot(it: dict[str, Any]) -> list[tuple[float, float]]:
                     return rect_corners(it) if "rot" in it else rect_corners_xywh(it, 0)
@@ -11450,20 +11517,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # same crowded verge the guard house, inspection station and towers already line. Scoped
                 # to the precinct on purpose - a board out on an open stretch of patrol lane is still a
                 # defect. Radius matches the barbican keep-out city_wall_tower_coverage uses.
-                _kb_gates = [g for g in (M.get("gates") or [])] + ([M["gate"]] if M.get("gate") else [])
-
-                def _ring_exempt(it: dict[str, Any]) -> bool:
-                    return it.get("label") in (None, "notice board") and "vw" in it and any(math.hypot(it["x"] - g[0], it["y"] - g[1]) < 130 for g in _kb_gates)
-
-                on_ring = [
-                    it.get("name") or it.get("label") or it.get("kind") or "compound" for it in solid_structs(M, "religious") if footprint_on_line(_foot(it), ring_rd, rbed) and not _ring_exempt(it)
-                ]
-                on_ring += ["field:" + f["name"] for f in fields if footprint_on_line(f["outline"], ring_rd, rbed)]
-                check(
-                    "ring_road_kept_clear",
-                    not on_ring,
-                    f"the ring road must run CLEAR of buildings/civic compounds/fields (only the gate guard houses, inspection stations, towers and gated ward fences may sit on it): {sorted(set(on_ring))}",
-                )
+                check_ring_road_clear(M, check)  # factored to module level so the CAPITAL scope runs it too (GM 2026-08-09)
                 # ...and the BURIAL grounds keep off the ring road's FULL drawn width (GM, 2026-07-23:
                 # Tango's two intramural graveyards sat squarely ON the drawn ring road and the gate
                 # waved them through). WHY a second, stricter check: ring_road_kept_clear's bed is

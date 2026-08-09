@@ -65,3 +65,18 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   arches; this notes file created. Deferred to 021, per the review: keep the strip behind the
   teramachi rim lean, declare a wind bearing before nuisance trades land, close the
   `graveyard: true` claims when precincts are drawn, and one deliberate caption-loudness pass.
+- **2026-08-09, GM pass (nine questions)**: the House Chancellery compound REMOVED - the
+  council meets in the castle (researched: Hyojosho/Roju in Edo castle, Grand Secretariat in
+  the palace; check inverted to `capital_chancellery_meets_in_the_castle`). The moat's water
+  drawn: sluiced river FEEDER at the southeast approach, DRAIN off the southwest arc to the
+  fields (the castle's inner moat stays standing groundwater, scum and carp included - that is
+  period-accurate and recorded). The aqueduct terminus gained its TERMINAL BASIN so the supply
+  no longer reads as a brook feeding the moat. The Domain School redrawn as `s.hanko` (letters
+  + bugeijo, not a ministry box). The dock basin removed (in-city canal vocabulary, wrong on a
+  diagonal riverbank); granary rows turned BANK-PARALLEL onto the wharf via granary(rot=...),
+  captions pluralized ("domain granaries" / "Imperial granaries" - staging/working stores; the
+  siege reserve stays in the castle, implied). Tokiwa re-seated off the patrol road, and the
+  ring_road_kept_clear check factored to run at capital scale WITH manors in its victim list -
+  the two stacked gaps the GM's quibble exposed. Teramachi rim explained (defensive perimeter
+  temples are the castle-town pattern; the two sovereign temples ARE the "two main"), offered
+  as a re-seat if the GM prefers a gathered quarter.

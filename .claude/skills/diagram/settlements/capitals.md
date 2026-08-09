@@ -101,13 +101,14 @@ This is the list the GM asked for - the point of the blank is that we still know
 | INSIDE the castle - implied, drawn only on its own Mode A sheet | OUTSIDE - drawn in the city like any other feature |
 |---|---|
 | the **tenshu** (keep) | the **six domain ministries** + government ward, on the ote-suji avenue |
-| the **goten** - the daimyo's residence and audience halls | the **House Chancellery** |
-| the **domain granary, SIEGE stock** | the **domain granary, STIPEND rice + transhipment**, at the wharf |
+| the **goten** - the daimyo's residence and audience halls | the **domain school** (*hanko*, `s.hanko` - letters + the bugeijo wing) |
+| the **House Chancellery's council chamber**, in the goten (GM 2026-08-09, researched: Edo's Hyojosho/Roju sat within the castle, China's Grand Secretariat inside the palace - executive bureaus out, the ruler's COUNCIL in; `capital_chancellery_meets_in_the_castle` fires on a compound drawn outside) | the **domain granary, STIPEND rice + transhipment**, at the wharf - the working/STAGING stores; the strategic reserve never leaves the castle |
+| the **domain granary, SIEGE stock** | |
 | the **armory** | the **brokers' row** (merchant) beside that granary |
 | the **treasury** | the **Imperial Magistrate's compound** (foreign sovereign ground) |
 | the **castle guard's barracks** (the daimyo's own retinue) | the **Emperor's granaries** (`imperial_granary_seat`: magistrate or wharf) |
-| the daimyo's **stables** and **private gardens** | the **domain school** (*hanko*) |
-| the castle's **wells and cisterns** | the **state martial hall** + rolled private dojos |
+| the daimyo's **stables** and **private gardens** | the rolled **private dojos** (021 fabric; the state martial hall IS the hanko's bugeijo wing at this tier) |
+| the castle's **wells and cisterns** | |
 | | the **8 lineage compounds** (daika, the ninth, IS the castle) |
 | | the **2 sovereign temples** + the teramachi rim |
 | | the **wharf**, dock, jetties, quay frontage, towpath |
@@ -139,9 +140,9 @@ The **domain school** sits on the same avenue.
 
 1. **The Imperial Magistrate's compound** - ~56 staff plus ~12 family; `budgets.md` funds "manor maintenance, grounds, stable, fortified walls, ceremonial halls" at 700 koku/yr. **Foreign sovereign ground**, and it should read as such - its own ink, the way state violet marks the martial hall.
 2. **The Emperor's local granaries**, which that magistrate oversees - distinct from the domain's own granary complex, itself new (the capital is where the domain's tax rice lands).
-3. **The House Chancellery** - a council hall for the domain's 5-10 lineage representatives.
+3. **The House Chancellery** - the council of the domain's 5-10 lineage representatives. **It meets IN the castle** (GM 2026-08-09, researched - Edo's Hyojosho/Roju sat within the castle, China's Grand Secretariat inside the palace; executive bureaus out, the ruler's council in), so it is a chamber in the goten, NOT a compound on the avenue; `capital_chancellery_meets_in_the_castle` fires if one is drawn outside.
 4. **Cosmopolitan lineage compounds.** `l7r.md`: cosmopolitan lineages are "based in their domain's capital." Named, labeled walled yashiki in the samurai ward. This is the tier's best flavor feature - it is what makes a capital read as a SPECIFIC domain's seat rather than a generic large city.
-5. **The domain school** - the *hanko*, the reason samurai families across the domain send children here.
+5. **The domain school** - the *hanko*, the reason samurai families across the domain send children here. Drawn with `s.hanko` (GM asked 2026-08-09 which glyph): a school of LETTERS with the martial wing on the same grounds - the martial-hall vocabulary plus the larger civil lecture hall - because that is what a hanko was (Nisshinkan, Kodokan, Zoshikan). Records into `M['martial_halls']` with `kind='hanko'`.
 6. **Inkyo retirement housing**, temple-adjacent, for the relocated elders.
 7. **Sovereign temples with Grand Abbots.** `l7r.md`: "the Temple of Bishamon refers to the sovereign temple in the domain capital"; "every domain capital has at least two grand abbots." Head house of the domain's whole Order - abbot's residence, order administration, library. A different program, not a scaled precinct.
 8. **A Witch Hunter's office** - rolled/optional (Hantei ordered one per capital; some orders were later rescinded).
