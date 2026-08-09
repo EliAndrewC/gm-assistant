@@ -366,6 +366,17 @@ s.bound = [[2020, 1560], [2560, 1560], [2560, 2140], [2020, 2140]]
 s.frontage(BROKER_LANE, (["merchant", "merchant", "shop"] * 4), width=8, spacing=19, rows=1, jitter=1, setback=s.px(14))
 s.bound = _CITY_BOUND
 
+# ---- BUDGET RECONCILIATION (feature 021, T002 - BEFORE any pack runs). From the recorded
+# budget block: band targets yashiki 53 / detached 133 / terrace 79 (ranges of ~8 cells ->
+# ~10 ranges) / packed 2,160 families; 2,472 dwellings total, of which ~2,430 in-wall and
+# ~42-47 samurai households out-wall (SAMURAI_INWALL_FRAC) in the gate suburbs. Ground:
+# wall interior 3,043,172 px^2 == the budget's required 3,043,258 px^2 (the wall IS the
+# budget's output); standing 019/020 structures 736,580 px^2 (castle 598,000 dominant);
+# housing gross need 2,092,330 px^2 + remaining civic ~65,000 px^2 against ~2,306,600 px^2
+# free = ~5% slack. NO TARGET IS CAPPED - the packs aim at the full band numbers, and a
+# pack that cannot seat its target is a siting bug to fix, not a target to trim (the
+# Minami unmeetable-target lesson runs the OTHER way here, by design of the 018 budget).
+
 # ---- declared quarters (feature 020 re-zone): the CIVIC quarter is the ground the government
 # actually occupies - the ote-suji band south of the ote-mon, ministries to chancellery - not a
 # wedge picked before the castle was placed. The four interior wedges split at the kagi-no-te

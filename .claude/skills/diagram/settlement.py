@@ -8459,6 +8459,7 @@ class Settlement:
     # with the offending key by name if a new feature is in neither this nor _CANOPY_OPEN_AIR_KEYS.
     # The TEST is the ratchet; the tuple is just the data.
     _CANOPY_ROOFED_KEYS = (
+        "terraces",  # a retainer terrace is one continuous roof over its household cells
         "granaries",  # the capital's wharf granaries - kura rows, roofed like the town's dict-recorded one
         "mausoleums",
         "fire_towers",
@@ -9924,6 +9925,39 @@ class Settlement:
             _t = label_tilt(rot)
             _lx, _ly = label_xy if label_xy else (tilt_caption_seat(x, y, rot, _t, hw, hh, 10) if _t else (x, y + hh + 10))
             self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C", rot=_t)
+
+    def district(self, name: str, kind: str, poly: Any, rank_band: str | None = None) -> None:
+        """A declared fabric DISTRICT (feature 021): a named placement region for the housing
+        packs and the ground truth for capital_rank_gradient. A declarative overlay like
+        quarter() - draws nothing and reserves nothing; the packs it names do the drawing.
+        Records M['districts'] {name, kind, poly, rank_band?}; kinds: yashiki, detached,
+        terrace, machi, monzen, entertainment."""
+        rec: dict[str, Any] = {"name": name, "kind": kind, "poly": [list(p) for p in poly]}
+        if rank_band is not None:
+            rec["rank_band"] = rank_band
+        self.M.setdefault("districts", []).append(rec)
+
+    def terrace(self, x: float, y: float, units: int = 6, rot: float = 0.0, frontage_ft: float = 18.0, depth_ft: float = 21.0) -> int:
+        """A RETAINER TERRACE range (feature 021): ONE roof over `units` single-file household
+        cells divided by party walls - the kumi-yashiki/nagaya form. Research (021 item 2):
+        cells of 4.5-8 tatami behind an earth-floored entry, ~18 ft frontage each, ~21 ft
+        deep (Shibata's 8-cell 143 x 21 ft range is the anchor); detached cottages were the
+        Kanazawa EXCEPTION, so the glyph is a continuous roof with drawn seams, not houses at
+        row pitch. In Rokugan these house junior SAMURAI (Ranks 1-4) - ashigaru are peasants
+        and have no capital quarter (GM 2026-08-08). Records M['terraces']
+        {x, y, w, h, rot, units, z}; classified SOLID in the keep-clear contract."""
+        w, h = units * frontage_ft / self.ftpx, depth_ft / self.ftpx
+        g = [f'<g transform="translate({x:.1f},{y:.1f}) rotate({rot:.1f})">']
+        g.append(f'<rect x="{-w / 2:.1f}" y="{-h / 2:.1f}" width="{w:.1f}" height="{h:.1f}" rx="1.5" fill="#C9B892" stroke="#6E5B3A" stroke-width="1.4"/>')
+        step = w / units
+        for i in range(1, units):
+            sx = -w / 2 + i * step
+            g.append(f'<line x1="{sx:.1f}" y1="{-h / 2:.1f}" x2="{sx:.1f}" y2="{h / 2:.1f}" stroke="#6E5B3A" stroke-width="0.9" opacity="0.8"/>')
+        g.append("</g>")
+        z = self.add_top("".join(g))
+        self.M.setdefault("terraces", []).append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "rot": round(rot, 1), "units": units, "z": z})
+        self.placed.append((x, y, w, h))
+        return z
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary", append: bool = False, rot: float = 0.0) -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
