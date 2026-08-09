@@ -117,4 +117,15 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   a rampart standing off its bank; Minami/Nagahara's river-flank arcs stay correct for walls
   ON the bank. And the GM's half-bridge catch became a general rule: bridges_span_their_water
   demands both deck ends past the crossed water's edge (the oblique-crossing span rule), with
-  the towpath plank re-sized to comply.
+  the towpath plank re-sized to comply. Then the temple pass: Jurojin's sando turned to
+  face the kagi-no-te road and the general rule added (temple_torii_face_the_street, all
+  tiers, with its two pool-taught refinements: a hall may face its own monzen lane, and a
+  doorstep entrance arch is not an avenue); the GM's patron-temple reading ADOPTED as doctrine
+  (research: "Temple approaches face their street, and the modest temples have PATRONS") -
+  Hotei beside Tokiwa is Tokiwa's bodaiji, and the sovereign temples each grow their own
+  monzen neighborhood in 021. The ote-suji's 45 ft over the Imperial road's 26 ft re-confirmed
+  deliberate (the Honcho-dori research; the Imperial road matches every other map). And the
+  internal-walls question settled (research: "Which districts get INTERNAL walls"): NOTHING is
+  district-walled at this tier by default - yashiki walls seal the samurai streets, monzen
+  neighborhoods stay open, precincts alone are walled - with ward_style="fang" (the Tang
+  lifang) recorded as the Lion-variant knob. Documentation only; 021 draws the kido mesh.
