@@ -11452,6 +11452,149 @@ class Settlement:
             self.label(x, y + GOVERNOR_CAPTION_FS * 0.36, label, GOVERNOR_CAPTION_FS, weight="bold")
         return self.M["governor_mansion"]
 
+    # ---- the DAIMYO'S CASTLE (feature 019) ---------------------------------------------------
+
+    def castle(
+        self,
+        x: float,
+        y: float,
+        w: float,
+        h: float,
+        label: str = "Castle",
+        gate_dir: str = "south",
+        moat_gap: float | None = None,
+        moat_width: float | None = None,
+        baileys: bool = True,
+        bailey_fracs: tuple[float, ...] = (0.64, 0.34),
+        label_xy: Pt | None = None,
+    ) -> Any:
+        """A domain capital's castle, drawn as an ENCEINTE and BLANK INSIDE.
+
+        THE INTERIOR IS EMPTY AND THAT IS NOT A SIMPLIFICATION TO BE FIXED LATER (GM 2026-08-08).
+        No building may ever be drawn in here - not the tenshu, not the goten, not the granary or
+        the armory - because the castle is the subject of its own Mode A sheet, and ANY interior
+        detail on this map becomes a constraint that sheet must later match, with nothing enforcing
+        the match. The two would drift silently and the map would end up asserting something the
+        compound plan contradicts. In the GM's words: "I'd rather nothing be shown than the WRONG
+        thing be shown." An empty court asserts nothing and can never be wrong. The same doctrine
+        governs `manor` and `governor_mansion`; see settlements/capitals.md, "WHY blank".
+
+        WHAT IS DRAWN, AND WHY THE KEEP IS NOT AMONG IT. A castle reads as a castle from its WORKS,
+        never from its keep: at a capital's 3 ft/px a tenshu footprint is just another building box
+        (Hirosaki's is ~0.6 ha - 1.2% of its castle), so drawing it would be both illegible and a
+        sync liability. What carries the read is the enceinte, its moat, the bailey divisions and
+        the dogleg gate approach.
+
+        BAILEYS AND MASUGATA ARE PROVISIONAL (`baileys=`, GM 2026-08-08: "let's try adding the
+        bailey walls and masugata dogleg gate approaches and whatnot and then see how that looks,
+        and we can remove them if needed"). They are WALLS, not buildings, so they sit inside the
+        blank rule - a wall's sync surface is one line the Mode A sheet must also draw, against a
+        building's position, orientation AND footprint. The single knob exists so the GM's verdict
+        can be applied by flipping it rather than by unpicking the glyph.
+
+        `bailey_fracs` are the inner enclosures as a fraction of the enceinte, outermost first
+        (default: ninomaru at 0.64, honmaru at 0.34). Each bailey's gate turns 90 degrees from its
+        parent's, which IS the dogleg: an attacker through the ote-mon must turn twice under fire
+        rather than run straight at the keep. A `masugata` box stands outside the main gate - the
+        square barbican that makes the first of those turns.
+
+        RESERVES ITS GROUND IN BOTH REGISTRIES, deliberately (see CLAUDE.md, "DRAW ORDER" and
+        "CENTER vs FOOTPRINT"): `block_polys` is CENTER-tested by the urban packs, `placed` is
+        distance-tested. An enclosure this size - roughly 85% of an entire provincial city - has to
+        stop a wide building hanging half its roof over the rampart, and only the second registry
+        does that. Records M['castle']."""
+        hw, hh = w / 2, h / 2
+        wall = "#2D2A24"
+        gap = self.px(60) if moat_gap is None else moat_gap  # a castle moat stands ~60 ft off the wall foot
+        mw = self.px(80) if moat_width is None else moat_width  # ~80 ft: wider than the city's own ~66 ft moat
+        ww = max(self.px(6), 3.0)  # an ishigaki rampart is far heavier than a manor's ~2 ft dobei
+        gg = max(self.px(22) / 2, 3.0)  # the ote-mon passes ~22 real ft - a formal castle gate
+        gp = max(self.px(4), 3.0)
+
+        def ring(rx: float, ry: float) -> list[Pt]:
+            return [(x - rx, y - ry), (x + rx, y - ry), (x + rx, y + ry), (x - rx, y + ry)]
+
+        # 1. THE MOAT, routed through the shared water groups so a feeder merges into it cleanly
+        mo = ring(hw + gap, hh + gap)
+        dd = "M" + " L".join(f"{px:.1f},{py:.1f}" for px, py in mo) + " Z"
+        self._water(
+            f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{mw:.0f}" stroke-linejoin="round"/>',
+            {},
+            sheen=f'<path d="{dd}" fill="none" stroke="#B6CAD8" stroke-width="{mw * 0.4:.0f}" stroke-linejoin="round"/>',
+        )
+
+        def walled_rect(rx: float, ry: float, gdir: str) -> Pt:
+            """One enclosure: four wall runs with a gap in the `gdir` side. Returns the gate center."""
+            sides = {
+                "north": ((x - rx, y - ry), (x + rx, y - ry), (x, y - ry)),
+                "south": ((x - rx, y + ry), (x + rx, y + ry), (x, y + ry)),
+                "west": ((x - rx, y - ry), (x - rx, y + ry), (x - rx, y)),
+                "east": ((x + rx, y - ry), (x + rx, y + ry), (x + rx, y)),
+            }
+            for name, (pa, pb, (gx, gy)) in sides.items():
+                if name != gdir:
+                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                elif name in ("west", "east"):
+                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pa[0]:.0f}" y2="{gy - gg:.1f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                    self.add_wall(f'<line x1="{pb[0]:.0f}" y1="{gy + gg:.1f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                    for py in (gy - gg, gy + gg):
+                        self.add_wall(f'<rect x="{gx - gp / 2:.1f}" y="{py - gp / 2:.1f}" width="{gp:.1f}" height="{gp:.1f}" fill="{wall}"/>')
+                else:
+                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{gx - gg:.1f}" y2="{pa[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                    self.add_wall(f'<line x1="{gx + gg:.1f}" y1="{pb[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                    for px_ in (gx - gg, gx + gg):
+                        self.add_wall(f'<rect x="{px_ - gp / 2:.1f}" y="{gy - gp / 2:.1f}" width="{gp:.1f}" height="{gp:.1f}" fill="{wall}"/>')
+            return sides[gdir][2]
+
+        # 2. the court ground, then the enceinte. The fill goes down first so the walls sit on it.
+        self.add(f'<rect x="{x - hw:.0f}" y="{y - hh:.0f}" width="{w:.0f}" height="{h:.0f}" fill="#E3D6B2"/>')
+        gate = walled_rect(hw, hh, gate_dir)
+
+        # 3. THE BAILEYS - provisional. Each gate turns 90 degrees from its parent's: the dogleg.
+        turn = {"south": "east", "east": "north", "north": "west", "west": "south"}
+        rings: list[list[Pt]] = []
+        gates: list[Pt] = [(round(gate[0], 1), round(gate[1], 1))]
+        if baileys:
+            gdir = gate_dir
+            for frac in bailey_fracs:
+                gdir = turn[gdir]
+                rings.append(ring(hw * frac, hh * frac))
+                gates.append(tuple(round(v, 1) for v in walled_rect(hw * frac, hh * frac, gdir)))  # type: ignore[arg-type]
+            # 4. the INNER moat, hugging the honmaru - the last line of water
+            inner = ring(hw * bailey_fracs[-1] + gap * 0.45, hh * bailey_fracs[-1] + gap * 0.45)
+            idd = "M" + " L".join(f"{px:.1f},{py:.1f}" for px, py in inner) + " Z"
+            self._water(f'<path d="{idd}" fill="none" stroke="#9CB4C8" stroke-width="{mw * 0.55:.0f}" stroke-linejoin="round"/>', {})
+            # 5. THE MASUGATA - the square barbican outside the ote-mon that makes the first turn
+            ux, uy = {"south": (0.0, 1.0), "north": (0.0, -1.0), "east": (1.0, 0.0), "west": (-1.0, 0.0)}[gate_dir]
+            bx, by = gate[0] + ux * gap * 0.5, gate[1] + uy * gap * 0.5
+            bs = gg * 2.4
+            self.add_wall(f'<rect x="{bx - bs:.1f}" y="{by - bs:.1f}" width="{bs * 2:.1f}" height="{bs * 2:.1f}" fill="none" stroke="{wall}" stroke-width="{ww * 0.8:.1f}"/>')
+
+        self.M["castle"] = {
+            "x": x,
+            "y": y,
+            "w": w,
+            "h": h,
+            "label": label,
+            "gate": list(gate),
+            "gate_dir": gate_dir,
+            "gates": [list(g) for g in gates],
+            "moat": [[round(px, 1), round(py, 1)] for px, py in mo],
+            "moat_width": round(mw, 1),
+            "baileys": [[[round(px, 1), round(py, 1)] for px, py in r] for r in rings],
+            "wall_w": round(ww, 2),
+            "gate_w": round(2 * gg, 2),
+        }
+        # BOTH registries - see the docstring. The reservation covers the MOAT too: nothing builds
+        # on the water, and the packs must flow around the whole works rather than the wall alone.
+        m = gap + mw / 2 + max(36 * self.bscale, 26)
+        self.block_polys.append([(x - hw - m, y - hh - m), (x + hw + m, y - hh - m), (x + hw + m, y + hh + m), (x - hw - m, y + hh + m)])
+        self.placed.append((x, y, w + 2 * m, h + 2 * m))
+        if label:
+            lx, ly = label_xy if label_xy else (x, y)
+            self.label(lx, ly, label, GOVERNOR_CAPTION_FS + 2, weight="bold")
+        return self.M["castle"]
+
     def ministry(self, x: float, y: float, name: str, w: Any = None, h: Any = None, label_below: bool | None = None) -> None:
         """A provincial ministry office (one of the SIX). Records to M['ministries'] with its
         `name`; exactly one city-wide must be the Ministry of Rites (sited in the temple
