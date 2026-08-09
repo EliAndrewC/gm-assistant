@@ -6123,7 +6123,7 @@ def test_a_capital_declares_its_scale_and_takes_the_city_building_grain():
 @pytest.mark.parametrize("gate_dir", ["south", "north", "east", "west"])
 def test_the_castle_records_its_works_and_puts_its_gate_on_the_named_side(gate_dir):
     s, rec = _castle_map(gate_dir=gate_dir)
-    assert s.M["castle"] is rec
+    assert s.M["castles"][0] is rec
     assert rec["gate_dir"] == gate_dir
     gx, gy = rec["gate"]
     if gate_dir in ("north", "south"):

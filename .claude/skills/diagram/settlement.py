@@ -11571,6 +11571,21 @@ class Settlement:
         self.add(f'<rect x="{x - hw + inb:.0f}" y="{y - hh + inb:.0f}" width="{w - 2 * inb:.0f}" height="{h - 2 * inb:.0f}" fill="none" stroke="{wall}" stroke-width="{ww * 0.32:.1f}" opacity="0.5"/>')
         gate = walled_rect(x, y, hw, hh, gate_dir)
 
+        # CORNER YAGURA. The city rampart carries a mural tower every bowshot; a castle drawn with a
+        # bare unarticulated line therefore asserts that the daimyo's fortress is the WEAKER work,
+        # which is the biggest single reason a blank enceinte reads as a picture frame rather than a
+        # fortress (settlement-review, 2026-08-09). These are OUTER-wall furniture, in exactly the
+        # position the ishigaki doubling occupies: they add no Mode A sync surface the wall did not
+        # already have, which is why they survive the bailey verdict that removed the internal works.
+        yw, yh = self.px(62), self.px(40)
+        for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+            tx, ty = x + sx * (hw - yw / 2), y + sy * (hh - yh / 2)
+            self.add_wall(f'<rect x="{tx - yw / 2:.1f}" y="{ty - yh / 2:.1f}" width="{yw:.1f}" height="{yh:.1f}" fill="#B9A882" stroke="{wall}" stroke-width="{ww * 0.6:.1f}"/>')
+            self.M.setdefault("castle_towers", []).append({"x": round(tx, 1), "y": round(ty, 1), "w": round(yw, 1), "h": round(yh, 1), "kind": "yagura"})
+        gtw, gth = self.px(88), self.px(52)
+        self.add_wall(f'<rect x="{gate[0] - gtw / 2:.1f}" y="{gate[1] - gth / 2:.1f}" width="{gtw:.1f}" height="{gth:.1f}" fill="#B9A882" stroke="{wall}" stroke-width="{ww * 0.75:.1f}"/>')
+        self.M.setdefault("castle_towers", []).append({"x": round(gate[0], 1), "y": round(gate[1], 1), "w": round(gtw, 1), "h": round(gth, 1), "kind": "gate_tower"})
+
         # 3. THE BAILEYS - provisional, and OFFSET rather than concentric, which is the entire
         # difference between a castle and a bullseye. The first cut drew them centered and
         # axis-shared and it read as a target symbol; real wards are asymmetric, and the honmaru
@@ -11612,7 +11627,12 @@ class Settlement:
                 a_, b_ = bc[i], bc[(i + 1) % 4]
                 self.add_wall(f'<line x1="{a_[0]:.0f}" y1="{a_[1]:.0f}" x2="{b_[0]:.0f}" y2="{b_[1]:.0f}" stroke="{wall}" stroke-width="{ww * 0.85:.1f}"/>')
 
-        self.M["castle"] = {
+        # RECORDED AS A LIST, not a bare dict. `every_feature_classified_for_overlap` enumerates
+        # manifest keys whose value is a non-empty LIST of dicts, so a dict-shaped record is skipped
+        # silently - which left the largest structure this project draws invisible to the overlap
+        # matrix, to solid_structs(), and to every hazard row. That is how the Imperial road came to
+        # run straight through this castle with a green gate (settlement-review, 2026-08-09).
+        rec = {
             "x": x,
             "y": y,
             "w": w,
@@ -11635,7 +11655,8 @@ class Settlement:
         if label:
             lx, ly = label_xy if label_xy else (x, y)
             self.label(lx, ly, label, GOVERNOR_CAPTION_FS + 2, weight="bold")
-        return self.M["castle"]
+        self.M.setdefault("castles", []).append(rec)
+        return rec
 
     def ministry(self, x: float, y: float, name: str, w: Any = None, h: Any = None, label_below: bool | None = None) -> None:
         """A provincial ministry office (one of the SIX). Records to M['ministries'] with its

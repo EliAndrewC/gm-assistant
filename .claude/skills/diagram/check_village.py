@@ -213,6 +213,12 @@ _OVERLAP_STRUCTS = (
     # any other civic/private premises, so they overlap nothing
     "martial_halls",
     "dojos",
+    # the domain capital's castle (feature 019). Recorded as a LIST precisely so this registry can
+    # see it: the first cut recorded a bare dict, which this check enumerates past in silence, and
+    # the Imperial road duly ran straight through the largest structure on the map with a green
+    # gate. Its towers are outer-wall furniture and are solid in their own right.
+    "castles",
+    "castle_towers",
 )
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
@@ -304,6 +310,8 @@ _LABEL_GROUP = {
     "refining_forges": "refining forge",
     "drum_towers": "drum tower",
     "martial_halls": "martial hall",
+    "castles": "castle",
+    "castle_towers": "castle",
     "dojos": "dojo",
     "fire_towers": "fire tower",
     "kosatsuba": "notice board",
@@ -384,6 +392,10 @@ OVERLAP_CLASS: dict[str, str] = {
             "drum_towers",
             "martial_halls",
             "dojos",
+            # the castle and its outer-wall towers (feature 019). SOLID like any other walled
+            # compound: nothing may be built on the works, and no way may run through them.
+            "castles",
+            "castle_towers",
             "kosatsuba",
             "punishment_spots",
             "execution_grounds",
@@ -551,6 +563,9 @@ _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
         ): "a way or a watercourse passes THROUGH the rampart at its gate or water gate - that opening is the point of a gate, and no_structure_on_wall still governs anything BUILT on the rampart"
         for w in ("road", "roads", "town_streets", "alleys", "lanes", "canals", "channels", "streams", "moat")
     },
+    frozenset(
+        {"castles", "castle_towers"}
+    ): "a yagura STANDS ON the rampart it defends - a corner tower projecting from the enceinte IS the form of the thing, exactly as a mural tower sits on the city wall. The castle's works may still not be built on by anything else: both keys stay SOLID against every other feature, and the ways are held off by the same matrix that caught the Imperial road running through this castle in the first place",
     **{frozenset({"torii", w}): "a torii STANDS OVER its approach - an arch spanning the sando is the whole form of the thing" for w in ("road", "roads", "town_streets", "alleys", "lanes")},
     frozenset({"religious", "shrines"}): "shrine_hall records one hall under BOTH keys - these are the same object, not two",
     frozenset(
