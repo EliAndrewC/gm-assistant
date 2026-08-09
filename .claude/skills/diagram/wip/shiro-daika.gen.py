@@ -94,7 +94,22 @@ s.bound = [list(p) for p in RING]
 # ---- THE WAYS. The Imperial road runs south gate -> north gate and bends NORTHWEST beyond it
 # toward Shiro Kyo; its label sits OUTSIDE the wall, because inside the rampart the same roadway
 # is a city street the city maintains, not an Imperial responsibility.
-s.road([(SGATE[0], 2700), (SGATE[0], SGATE[1]), (NGATE[0], NGATE[1]), (1310, 150), (980, 0)], label="Imperial Road", label_xy=(SGATE[0] + 150, 2330))
+# THE KAGI-NO-TE. The first cut ran this road dead straight from gate to gate at x=1400 - and the
+# castle stands on x=1400, so the roadbed crossed its moat, entered the ote-mon, ran 2,100 ft
+# through the blank court and pierced the north rampart where there IS no gate. Invisible on the
+# render only because the court fill is drawn over it (settlement-review, 2026-08-09).
+#
+# The fix is the historically right one rather than a nudge: the jokamachi rule is that the main
+# road passes the castle's FRONT, not through it, and a castle town deliberately bends its highway
+# rather than offering a mile-long straight run at the daimyo's gate - that bend is the kagi-no-te.
+# So the road comes north to the castle's south front, turns west past it, and comes back to the
+# north gate. The ote-suji stub from the front to the ote-mon is feature 020's, with the government
+# avenue the ministries line.
+s.road(
+    [(SGATE[0], 2700), (SGATE[0], SGATE[1]), (SGATE[0], 1420), (800, 1420), (800, 470), (NGATE[0], NGATE[1]), (1310, 150), (980, 0)],
+    label="Imperial Road",
+    label_xy=(SGATE[0] + 150, 2330),
+)
 s.road([(EGATE[0], EGATE[1]), (2820, 1130), (3200, 1040)])  # east, to the Fox lands
 s.road([(SWGATE[0], SWGATE[1]), (300, 2010), (0, 2170)])  # southwest, into the domain
 
