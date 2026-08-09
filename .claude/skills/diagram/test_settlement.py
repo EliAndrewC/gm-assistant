@@ -6252,6 +6252,10 @@ def test_sluice_gate_label_names_the_black_bar():
     s3.sluice_gate(500, 500, rot=30, label="sluice gate", label_xy=(540, 480))
     lab3 = [L for L in s3.M["labels"] if len(L) > 5 and L[5] == "sluice gate"]
     assert len(lab3) == 1 and abs((lab3[0][0] + lab3[0][2]) / 2 - 540) < 2  # seated at the hand point
+    s4 = _cap020()
+    n4 = len(s4.top)
+    s4.sluice_gate(500, 500, span=26)  # a 66 ft leat: the frame spans bank to bank
+    assert 'x="-13.0"' in "".join(s4.top[n4:])  # the posts stand on the abutments, not mid-water
 
 
 def test_towpath_reserves_its_ground():
@@ -6315,12 +6319,13 @@ def test_manor_label_inside_fits_the_court():
     walls - and a small estate gets a smaller face rather than an overflowing one."""
     s = _cap020()
     s.manor(700, 700, 150, 118, "Hazama Estate", label_inside=True)
-    box = next(L for L in s.M["labels"] if len(L) > 5 and L[5] == "Hazama Estate")
-    assert box[0] > 625 and box[2] < 775 and box[1] > 641 and box[3] < 759  # fully inside the court
+    lines = [L for L in s.M["labels"] if len(L) > 5 and L[5] in ("Hazama", "Estate")]
+    assert len(lines) == 2  # split over two lines so the face runs bigger (GM 2026-08-09)
+    for box in lines:
+        assert box[0] > 625 and box[2] < 775 and box[1] > 641 and box[3] < 759  # fully inside the court
     s2 = _cap020()
-    s2.manor(700, 700, 70, 54, "Seki Estate", label_inside=True)
-    box2 = next(L for L in s2.M["labels"] if len(L) > 5 and L[5] == "Seki Estate")
-    assert box2[2] - box2[0] <= 60  # the face shrinks to the smaller court
+    s2.manor(700, 700, 70, 54, "Lone", label_inside=True)  # a one-word label keeps the single line
+    assert any(len(L) > 5 and L[5] == "Lone" for L in s2.M["labels"])
 
 
 def test_ministry_label_inside_stacks_two_lines_on_the_glyph():
@@ -6356,7 +6361,12 @@ def test_hanko_records_into_the_martial_halls_family():
     mh = s.M["martial_halls"][0]
     assert mh["kind"] == "hanko" and mh["label"] == "Domain School"
     assert mh["w"] == 133.3 and mh["h"] == 86.7  # 400 x 260 ft (~1 ha) at 3 ft/px - mid-band vs Meirinkan/Nisshinkan
-    assert mh["range_ft"] == 100.0  # the kyudo lane, same as the provincial hall
+    assert "range_ft" not in mh  # the court is BLANK (sync doctrine) - a dense real hanko belongs to its Mode A sheet
+    caption = [L for L in s.M["labels"] if len(L) > 5 and L[5] in ("Domain", "School")]
+    assert len(caption) == 2  # the two-line caption sits inside the court, like an estate's
+    s2 = _cap020()
+    s2.hanko(700, 700, label="Hanko")  # a one-word name keeps the single line
+    assert any(len(L) > 5 and L[5] == "Hanko" for L in s2.M["labels"])
 
 
 def test_granary_append_records_a_list_for_a_capital_with_two_granaries():
