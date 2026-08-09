@@ -773,3 +773,52 @@ ON the glyph in near-black, two stacked lines ("Ministry of" over the department
 estate rule applied to the state offices, affordable at 224 x 148 ft drawn at 3 ft/px. A
 provincial city's identical compound is drawn in a tighter fabric, so its caption stays
 BESIDE the box, exactly as shipped.
+
+## The internal dock and the bank quay: the WATER decides which a city gets
+
+**The question** (GM 2026-08-09): Nagahara and Minami let barges float INTO the city - water
+gate, dock basin. Shiro Daika unloads everything at a riverbank quay, and so far only grain.
+Would a city of this size have an internal dock? Is not drawing one unusual, or did some
+cities have them and some not?
+
+**Both forms are THE standard form - of two different kinds of water.** Which one a city gets
+reads off its river, not off its size or rank.
+
+**China first.** Canal-country cities let the boats in: Suzhou's Pan Gate is the paired
+land-and-water gate - one arch for the road, one for the barges - opening the wall between
+the Grand Canal, the moat, and the internal canal grid. That is exactly the form the two
+sibling cities already draw (their gens call it the Suzhou pattern: canal communicates with
+the moat, the moat's river junction is the single navigation mouth). But it belongs to FLAT
+DELTA ground where the water stands at grade and near-still - in canal country the canal is
+the street grid. A Chinese city on a live river keeps its wharf ON the bank instead: boats
+moor along the shore and the goods go up the landing into a bankside commercial district.
+
+**Japan drew the same split and named both halves.** The *funairi-bori* (boat-entry canal) is
+the internal-dock form - Edo dug nine of them, Nagoya cut the Horikawa from the castle to the
+sea, Matsue and Yanagawa are laced with them - and every example sits on coastal, delta, or
+lakeside ground with still or tidal water. The river towns' form is the *kashi* (bank
+landing): a public quay on the riverbank, often specialized by cargo (rice kashi, timber
+kashi, salt kashi), with the warehouses, wholesalers, and markets growing along the top of
+the bank. Kawagoe's whole prosperity ran through its Shingashi-river landings and it never
+dug a canal into town.
+
+**Why a live river refuses the basin.** (1) Current and seasonal stage: a still-water basin
+cut into a flowing bank silts its mouth shut and floods on the rise. (2) A towpath river is a
+HAULED river - barges are dragged upstream along the bank, which is bank work; a basin serves
+boats that arrive under pole or sail on still water. (3) At a siege-grade wall the moat is a
+military work: Nagahara and Minami's moats communicate with their rivers at grade, so a barge
+slips river -> moat -> canal through the water gate, but Shiro Daika's ring stands off the
+bank behind two SLUICED leats whose whole job is to control the level. Opening that plumbing
+to navigation would surrender the control that makes the wet moat work.
+
+**Verdict: not an omission, and not a size threshold.** Still, at-grade water (delta, lake,
+canal country) gets the water gate + dock basin; a live current past the wall gets the kashi
+quay + towpath. Shiro Daika's diagonal towpath reach takes the second, correctly - this is
+the research behind the earlier drafting call that removed the dock basin ("in-city canal
+vocabulary, wrong on a diagonal riverbank"), which was made on form and now has its why.
+
+**What the quay still owes (feature 021).** A kashi was never only grain - the landing IS the
+commercial hub, and the warehouse rows, brokers, and markets belong on the bank top. The
+wharf-chain doctrine already plans exactly this (wharf -> domain granary -> brokers' row ->
+entertainment district), so the grain-only look is the ground layer's emptiness, not the
+design.
