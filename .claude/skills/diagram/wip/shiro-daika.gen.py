@@ -174,12 +174,13 @@ s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south", karamete_dir=
 # drain it met, or the haulage teams could not pass.
 FEED_TAP = (3080, 843)  # the river's west bank - upstream of the city, downstream of the aqueduct intake
 s.stream([FEED_TAP, (2870, 875), (2650, 880), (MOAT[4][0], MOAT[4][1])], frm={"kind": "river"}, to={"kind": "moat"}, width=s.px(66))
-s.sluice_gate(FEED_TAP[0], FEED_TAP[1], rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3128, 826))  # the intake board at the river tap
+# the boards sit a few steps DOWN their channel runs, not at the junctions (GM 2026-08-09: at a
+# junction the local water direction is ambiguous, so the correctly-across board read as a
+# coincidentally axis-aligned bar; astride the clear run, across-the-channel explains itself)
+s.sluice_gate(3050, 848, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3098, 828))  # the intake board, astride the feeder's run
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
 s.stream([DRAIN_OUT, (2065, 2180), (2062, 2325)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
-s.sluice_gate(
-    DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1975, 2004)
-)  # the outfall board where the drain leaves the ring
+s.sluice_gate(2048, 2060, rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1980, 2040))  # the outfall board, astride the drain's run
 s.moat_flow(MOAT[4], MOAT[8])
 
 # ---- THE AQUEDUCT (feature 020; rebuilt to the researched josui form, GM 2026-08-09). What
@@ -198,7 +199,11 @@ s.label(2725, 1066, "aqueduct", 10, italic=True, color="#5E7A8A", rot=160, linea
 
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
 # upstream haulage is the whole reason it exists - and ending at the wharf, no further.
-s.towpath([(1774, 2681), (1924, 2481), (2074, 2281), (2216, 2103), (2262, 2042)])
+# ...ending AT the quay by the downstream landing stage (GM 2026-08-09: the old end stopped
+# short of the jetty and hugged the waterline, reading as a line that dissolves into the
+# river), and LABELED - the haulage path cannot explain itself at fit zoom
+s.towpath([(1774, 2681), (1924, 2481), (2074, 2281), (2216, 2103), (2292, 1990)])
+s.label(2130, 2172, "towpath", 10, italic=True, color="#8A7050", rot=-53, linear=True, full_tilt=True)
 s.bridge(2063, 2296, -53.1, 48, 4)  # the towpath's plank over the drain - span sized for the OBLIQUE crossing (22px water / sin ~36 deg + landings), per bridges_span_their_water
 s.M["bridges"][-1]["foot"] = True  # a footplank on the haulage path, not a road deck
 
@@ -214,11 +219,13 @@ s.bridges()
 # offices spilled out of the ninomaru into the town (settlements/capitals.md, "The government
 # ward"). Default ministry compound: 224x148 ft, the researched provincial size - a domain
 # ministry is the same bureau of clerks and archives at a bigger desk.
-# the files sit a ~21 ft setback off the avenue's edge - corridor frontage, not detached blocks
+# the files sit a ~21 ft setback off the avenue's edge - corridor frontage, not detached
+# blocks; captions ON the glyphs (the estate rule applied to state offices, GM 2026-08-09 -
+# a provincial city's smaller compounds keep theirs beside)
 for i, nm in enumerate(("Rites", "Revenue", "Retainers")):
-    s.ministry(1348, 1330 + 85 * i, f"Ministry of {nm}")
+    s.ministry(1348, 1330 + 85 * i, f"Ministry of {nm}", label_inside=True)
 for i, nm in enumerate(("War", "Works", "Justice")):
-    s.ministry(1452, 1330 + 85 * i, f"Ministry of {nm}")
+    s.ministry(1452, 1330 + 85 * i, f"Ministry of {nm}", label_inside=True)
 # NO House Chancellery compound (GM 2026-08-09, researched): the council of lineage
 # representatives meets IN the castle - Edo's Hyojosho and Roju sat within Edo castle, China's
 # Grand Secretariat inside the palace. Executive ministries out, the ruler's council in; the
@@ -233,7 +240,8 @@ s.hanko(1482, 1658)  # ~1 ha compound (size audit 2026-08-09) - shifted east so 
 # beside.
 # captioned as the INSTITUTION, not the officeholder (settlement-review 2026-08-09; Ubame's
 # sibling is "Magistrate's Manor" and capitals.md says "the Imperial Magistrate's compound")
-s.manor(1720, 1445, 100, 75, "Imperial Magistrate's Compound", gate_dir="west", ink="#274D3D")
+# "Imperial Magistracy" - the institution, shortened so the caption fits INSIDE the court
+s.manor(1720, 1445, 100, 75, "Imperial Magistracy", gate_dir="west", ink="#274D3D", label_inside=True)
 
 
 # ---- THE LINEAGE COMPOUNDS (feature 020): eight named walled yashiki in the samurai ground,
@@ -242,7 +250,9 @@ s.manor(1720, 1445, 100, 75, "Imperial Magistrate's Compound", gate_dir="west", 
 # Moriguchi - takes a visibly smaller estate near the east gate; the three modest houses hold the
 # band north of the castle. daika, the ninth, IS the castle.
 def lineage_manor(x: float, y: float, w: float, h: float, name: str, gate_dir: str) -> None:
-    s.manor(x, y, w, h, f"{name.title()} Estate", gate_dir=gate_dir)
+    # label INSIDE the blank court (GM 2026-08-09: the estate's contents live on its own Mode A
+    # sheet, so the empty court is the label's ground - like a governor's mansion caption)
+    s.manor(x, y, w, h, f"{name.title()} Estate", gate_dir=gate_dir, label_inside=True)
     s.M["manors"][-1]["lineage"] = name  # the field capital_lineage_compounds_labeled reads
 
 
@@ -310,21 +320,29 @@ rim_temple(17.5, "Temple of Hotei")
 # The EMPEROR'S granaries stand apart upstream (imperial_granary_seat="wharf"): a different
 # threat model - brigands, not besiegers - so a stout row outside the castle, near the water the
 # grain moves on.
-s.jetty(2384, 1875, rot=36, length=22)  # rooted on the west bank, running out into the stream
-s.jetty(2276, 2028, rot=36, length=22)
+# JETTIES ARE LANDING STAGES, NOT CAUSEWAYS (GM 2026-08-09: at 66 ft they reached past
+# mid-river). A stage runs a boat-length into the stream and no further - the fairway stays
+# clear by law (the log-boom research) - so ~39 ft into a 120 ft river, a third of the channel.
+# One stage per granary complex end: barges tie up AT the kura frontage and unload straight in.
+s.jetty(2384, 1875, rot=36, length=13)  # the domain row's upstream stage
+s.jetty(2302, 1982, rot=36, length=13)  # ...and its downstream one, just past the row's end
 # the Emperor's complex gets its OWN landing (GM 2026-08-09: its grain moves by boat - that is
 # the whole reason imperial_granary_seat="wharf" - so it does not borrow the domain quay 200 ft
 # downstream; separate stores, separate barges, separate tally)
-s.jetty(2498, 1724, rot=36, length=20)
+s.jetty(2498, 1724, rot=36, length=13)
 # NO dock basin: the rectangular canal-head cut is Nagahara's in-city vocabulary and read as a
 # floating blue square against this diagonal bank (GM 2026-08-09) - a riverside wharf is jetties
 # and quay, not a basin. The granary rows stand ON the wharf, turned PARALLEL to the bank they
 # load from, a cart's width off the water; captions plural, one per complex. These are the
 # STAGING/working stores - the strategic siege stock is inside the castle, implied, and it would
 # indeed be foolish to keep the domain's main reserve outside the walls.
+# ...and the kura stand AT the quay (GM 2026-08-09: the first seat held them ~84 ft back "for
+# flood", but the Kuramae anchor unloads barges STRAIGHT into the stores - the flood answer is
+# the kura's own raised floor and the stone revetment, not distance; a granary you must
+# porter sacks to has lost the wharf's whole point)
 BANK_ROT = -54  # the river passes the wharf at ~126 deg; the rows lie along it
-s.granary(2321, 1914, n=4, w=20, h=12, gap=8, label="domain granaries", append=True, rot=BANK_ROT)
-s.granary(2453, 1733, n=3, w=20, h=12, gap=8, label="Imperial granaries", append=True, rot=BANK_ROT)
+s.granary(2333, 1922, n=4, w=20, h=12, gap=8, label="domain granaries", append=True, rot=BANK_ROT)
+s.granary(2465, 1741, n=3, w=20, h=12, gap=8, label="Imperial granaries", append=True, rot=BANK_ROT)
 # the brokers' lane runs shore-parallel between the granaries and the quay; its frontage is the
 # brokers' row. The wharf suburb is OUTSIDE the ring-road bound the urban packs honor, so the
 # frontage places against the suburb's own ground and the bound is restored after.

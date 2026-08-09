@@ -723,3 +723,53 @@ Variation within researched bounds is the skill's standing doctrine (the village
 archetypes exist for the same reason); this knob extends it to urban administration. 021
 implements the mesh; the fang variant waits for the first Lion city, exactly as the edge
 castle waits for its first riverside capital.
+
+## The sluice's lifting frame, the quay-side kura, and the boat-length jetty (GM battery, 2026-08-09)
+
+**How a sluice was operated.** The GM's inference is right on both counts: the gates control
+the moat's exchange with the river (holding its level in drought, shutting the intake in
+flood), and they were worked by a real MECHANISM. A hi / suimon board rides in grooves in its
+posts and is lifted BY HAND on small gates - by a windlass on larger ones - from a timber
+CROSSBEAM spanning the posts above the water; the operator stands on the beam walkway or the
+bank abutment. That above-water frame is exactly the visible part, so the glyph now draws it
+(crossbeam + windlass drum) at the glyph floor - the wells' vr convention, since a true-scale
+~2 ft drum would be under a pixel. The board's ANGLE stays across the channel it blocks
+(engineering, not coincidence); the boards were also moved a few steps down their channel runs
+off the junctions, where "across the channel" is unambiguous to the eye.
+
+**Kura stand AT the quay.** The first seat held the granary rows ~84 ft inland "for flood",
+and the GM caught it: the Kuramae anchor unloads barges STRAIGHT into the stores - the flood
+answer is the kura's own raised floor and the stone revetment, not distance. The rows now
+stand a quay's width off the water, and a porter never carries a sack further than the door.
+
+**A jetty is a landing stage, not a causeway.** At 66 ft the drawn stages reached past the
+middle of the 120 ft river; the fairway is kept clear by law (the log-boom research), so a
+stage runs about a boat-length - ~39 ft here, a third of the channel - and the wharf keeps one
+stage per granary-complex end rather than a picket line of piers.
+
+## Ministry offices: six equal compounds, the SAME size the province builds - on purpose
+
+**The questions** (GM 2026-08-09): are the capital's ministries larger than the provincial
+ones, and was the size researched? Why are all six identical - peer standing, or oversight?
+
+**They are NOT larger, and that is the recorded 018 decision, not an accident.** The 224 x
+148 ft compound is the researched provincial footprint (`cities/government.md`), and the
+civic-program research settled the tier rule: administrative ground grows by INSTITUTIONS
+ADDED, not by swelling the buildings - "a capital does not get a bigger yamen; it gets a
+castle, a chancellery, and a foreign magistrate." A ministry at any tier is a bureau of clerks
+and archives; the domain tier's extra weight lands in the new compounds (the hanko, the
+magistracy, the granary complexes), not in taller filing rooms.
+
+**All six equal is the GM's own rank-law reading, adopted as the recorded rationale**: the six
+ministers are peers at the same rank as a matter of law, so their offices take peer form -
+and Beijing's Six Ministries lined the Corridor of a Thousand Steps as comparable compounds.
+A city where one ministry visibly outbuilds its peers would be SAYING something (a War
+ministry swollen by a border command, a Revenue ministry fat on a boom) - real story material,
+but a declared exception for a specific city, never the default. Same doctrine as the waiver
+rule: the default states the law; a deviation carries its reason in writing.
+
+**The caption convention splits by tier** (GM 2026-08-09): the capital's ministry captions sit
+ON the glyph in near-black, two stacked lines ("Ministry of" over the department name) - the
+estate rule applied to the state offices, affordable at 224 x 148 ft drawn at 3 ft/px. A
+provincial city's identical compound is drawn in a tighter fabric, so its caption stays
+BESIDE the box, exactly as shipped.

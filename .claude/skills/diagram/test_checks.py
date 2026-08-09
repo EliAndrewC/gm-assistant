@@ -10434,6 +10434,16 @@ def test_capital_aqueduct_with_no_recorded_channel_is_skipped():
     assert "capital_aqueduct_terminates_at_a_gate" not in f(M)
 
 
+def test_capital_estate_labels_inside_fires_on_an_outside_caption():
+    """A city estate's caption lives INSIDE its blank court (GM 2026-08-09) - hung outside it
+    sits where 021's fabric must flow."""
+    M = _cap_gov()
+    M["labels"] = [[80, 120, 220, 136, 5, "Hazama Estate"]]  # above the walls, the old convention
+    assert "capital_estate_labels_inside" in f(M)
+    M["labels"] = [[110, 195, 190, 209, 5, "Hazama Estate"]]  # within the court
+    assert "capital_estate_labels_inside" not in f(M)
+
+
 def test_capital_lineage_bands_visibly_distinct_fires_on_a_band_size_collision():
     M = _cap_gov()
     kurogi = next(m for m in M["manors"] if m["lineage"] == "kurogi")

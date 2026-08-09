@@ -131,4 +131,12 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   lifang) recorded as the Lion-variant knob. Documentation only; 021 draws the kido mesh. The two moat
   sluices now carry "sluice gate" labels (GM: the bare glyph read as a floating black bar -
   most of a real gate is in the water, so the word explains what the drawing cannot;
-  sluice_gate(label=...) added engine-wide).
+  sluice_gate(label=...) added engine-wide). Final GM battery of the day: estate captions moved INSIDE
+  their blank courts (manor(label_inside=True) + capital_estate_labels_inside; the magistrate
+  shortened to "Imperial Magistracy" to fit), the sluice glyph gained its lifting frame
+  (crossbeam + windlass, the operator's above-water structure, at the glyph floor) and both
+  boards slid off the junctions onto their channel runs, the granary rows moved to the QUAY
+  (Kuramae unloads straight into the kura - raised floors are the flood answer, not distance),
+  and the jetties shortened from causeway to landing-stage length (~39 ft, a third of the
+  channel, per the fairway law). research/cities/capitals.md, "The sluice's lifting frame, the
+  quay-side kura, and the boat-length jetty".
