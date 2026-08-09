@@ -406,7 +406,7 @@ def test_capital_lines_sum_exactly_to_the_required_interior():
 def test_capital_circulation_is_the_declared_fraction_of_the_interior_not_of_the_subtotal():
     b = plan_capital(_cap())
     circ = _line(b, "circulation (trunk + ring road + streets + alleys)")
-    assert circ.area_px2 == pytest.approx(b.required_interior_px2 * citybudget.CIRC_FRAC, abs=1e-6)
+    assert circ.area_px2 == pytest.approx(b.required_interior_px2 * citybudget.CIRC_FRAC_CAPITAL, abs=1e-6)  # the CAPITAL fraction (021): measured trunk fabric ~20%, not the provincial 7%
 
 
 def test_every_capital_line_carries_a_label_and_a_basis():
@@ -443,37 +443,38 @@ def test_a_capital_wall_too_large_for_its_canvas_fails_loudly_with_the_numbers()
 # is manifest bytes.
 
 _CAPITAL_LINES_AS_SHIPPED = [
-    ("packed row housing (laborer/servant/merchant/burakumin)", 2160, 1_490_400.0),
-    ("the castle (enceinte: baileys + moats; interior implied)", 1, 598_000.0),
-    ("samurai walled yashiki in-wall (Ranks 8-12)", 53, 219_950.0),
-    ("samurai detached houses in-wall (Ranks 5-7)", 133, 329_840.0),
-    ("retainer terraces in-wall (Ranks 1-4)", 79, 52_140.0),
-    ("six domain ministries + government ward", 6, 16_000.0),
-    ("House Chancellery (the domain's 5-10 lineage representatives)", 1, 2_000.0),
-    ("Imperial Magistrate's compound (foreign; houses its own 12 households)", 1, 8_000.0),
-    ("the Emperor's granaries", 1, 3_000.0),
-    ("domain school (hanko)", 1, 4_000.0),
-    ("domain granary + wharf brokers' row", None, 12_000.0),
-    ("domain martial hall + rolled private dojos", None, 4_400.0),
-    ("aqueduct in-wall works (the conduit itself is buried)", None, 500.0),
-    ("minor civic (theaters, flophouses, funerary, inspection, kura)", None, 30_000.0),
-    ("shops, inns, stables", 60, 13_400.0),
-    ("bell-and-drum tower (sounds the kido curfew)", 1, 250.0),
-    ("brewery compounds", 2, 1_600.0),
-    ("trade works (dye yards, oil presses, pawn courts, bathhouses, farriers)", None, 3_000.0),
-    ("sovereign temple precincts", 2, 32_500.0),
-    ("adept-monk houses by the temple precincts", 5, 3_450.0),
-    ("cargo canal + dock basin", 1, 5_800.0),
-    ("circulation (trunk + ring road + streets + alleys)", None, 213_028.064516),
+    ('packed row housing IN-WALL (laborer/servant/merchant/burakumin)', 1512, pytest.approx(1043280.0, abs=1e-6)),
+    ('packed row housing SUBURBAN (kashi wharf belt + guan-xiang gate wards)', 648, pytest.approx(0.0, abs=1e-6)),
+    ('the castle (enceinte: baileys + moats; interior implied)', 1, pytest.approx(598000.0, abs=1e-6)),
+    ('samurai walled yashiki in-wall (Ranks 8-12)', 53, pytest.approx(219950.0, abs=1e-6)),
+    ('samurai detached houses in-wall (Ranks 5-7)', 133, pytest.approx(329840.0, abs=1e-6)),
+    ('retainer terraces in-wall (Ranks 1-4)', 79, pytest.approx(52140.0, abs=1e-6)),
+    ('six domain ministries + government ward', 6, pytest.approx(16000.0, abs=1e-6)),
+    ("House Chancellery (the domain's 5-10 lineage representatives)", 1, pytest.approx(2000.0, abs=1e-6)),
+    ("Imperial Magistrate's compound (foreign; houses its own 12 households)", 1, pytest.approx(8000.0, abs=1e-6)),
+    ("the Emperor's granaries", 1, pytest.approx(3000.0, abs=1e-6)),
+    ('domain school (hanko)', 1, pytest.approx(4000.0, abs=1e-6)),
+    ("domain granary + wharf brokers' row", None, pytest.approx(12000.0, abs=1e-6)),
+    ('domain martial hall + rolled private dojos', None, pytest.approx(4400.0, abs=1e-6)),
+    ('aqueduct in-wall works (the conduit itself is buried)', None, pytest.approx(500.0, abs=1e-6)),
+    ('minor civic (theaters, flophouses, funerary, inspection, kura)', None, pytest.approx(30000.0, abs=1e-6)),
+    ('shops, inns, stables', 60, pytest.approx(13400.0, abs=1e-6)),
+    ('bell-and-drum tower (sounds the kido curfew)', 1, pytest.approx(250.0, abs=1e-6)),
+    ('brewery compounds', 2, pytest.approx(1600.0, abs=1e-6)),
+    ('trade works (dye yards, oil presses, pawn courts, bathhouses, farriers)', None, pytest.approx(3000.0, abs=1e-6)),
+    ('sovereign temple precincts', 2, pytest.approx(32500.0, abs=1e-6)),
+    ('adept-monk houses by the temple precincts', 5, pytest.approx(3450.0, abs=1e-6)),
+    ('cargo canal + dock basin', 1, pytest.approx(5800.0, abs=1e-6)),
+    ('circulation (trunk + ring road + streets + alleys)', None, pytest.approx(595777.5, abs=1e-6)),
 ]
 
 
 def test_the_shipped_capital_program_prices_and_orders_exactly_as_recorded():
     b = plan_capital(_cap(river=True), canvas=(3200, 2700))
     assert [(ln.label, ln.count, pytest.approx(ln.area_px2, abs=1e-6)) for ln in b.lines] == _CAPITAL_LINES_AS_SHIPPED
-    assert b.required_interior_px2 == pytest.approx(3_043_258.064516, abs=1e-6)
-    assert b.wall.rx == pytest.approx(1029.050610, abs=1e-6)
-    assert b.wall.ry == pytest.approx(957.017067, abs=1e-6)
+    assert b.required_interior_px2 == pytest.approx(2978887.5, abs=1e-6)  # corrected model (021): suburb_packed_frac 0.30 + CIRC_FRAC_CAPITAL 0.20
+    assert b.wall.rx == pytest.approx(1018.1092769012085, abs=1e-6)  # the MODEL minimum; the drawn map PINS the 018 as-built 1029x957 ellipse, +2.2% over this, inside the wall check's tolerance
+    assert b.wall.ry == pytest.approx(946.841627518124, abs=1e-6)
 
 
 def test_the_capital_civic_rows_are_row_totals_not_per_unit_costs():
@@ -497,6 +498,7 @@ def test_the_capital_civic_rows_are_row_totals_not_per_unit_costs():
         ({"castle_px2": 9_000_000.0}, "outside the documented band"),
         ({"agricultural_district": True}, "no agricultural district"),
         ({"aspect": 0.0}, "aspect must be in"),
+        ({"suburb_packed_frac": 0.9}, "outside"),
     ],
 )
 def test_an_illegal_capital_declaration_is_refused_when_it_is_constructed(kw, match):

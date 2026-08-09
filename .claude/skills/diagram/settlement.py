@@ -1587,6 +1587,9 @@ def roll_torii_count(scale: str, rng: random.Random) -> int:
 
 
 MERCHANT_ESTATE_WEIGHTS: dict[str, tuple[tuple[int, float], ...]] = {
+    # CAPITAL (021, the counts table): 48 rich families against the provincial 12 - the
+    # walled-estate privilege lands on ~4-8 of them, weighted to the middle of that band
+    "capital": ((4, 0.15), (5, 0.25), (6, 0.3), (7, 0.2), (8, 0.1)),
     # WALLED MERCHANT COMPOUND COUNT DISTRIBUTION (GM 2026-07-23). A gated compound is a PRIVILEGE
     # that must be explicitly GRANTED to a merchant family, not a purchase: this mirrors the
     # Edo-period system of individually granted merchant rights and privileges - an audience with
@@ -1780,6 +1783,38 @@ def bridge_crossed_waters(M: Any) -> list[tuple[Any, float]]:
     for aq in M.get("aqueducts", []):  # an open supply cut is a seam on the ground like any channel
         waters.append((aq["poly"], aq.get("w", 8)))
     return waters
+
+
+def machi_mouths(M: Any) -> list[tuple[float, float]]:
+    """Every point where a town street ENTERS a machi-kind district - the ward mouths the kido
+    mesh bars at night (research 021 item 6: Edo's machi-kido, Qing's zhalan; ward_style
+    "mesh" has NO ward walls - the block's own gate closes its mouth). THE SINGLE SOURCE for
+    both the placer (Settlement.kido_mesh) and the validator (kido_close_the_machi_mouths),
+    same doctrine as bridge_carried_ways. Out-wall suburb districts are skipped: the gate
+    wards live outside the curfew mesh (their bar is the city gate itself). Mouths within
+    40px collapse to one (a street grazing a district corner is one entry, not two)."""
+    wall = M.get("wall")
+    out: list[tuple[float, float]] = []
+    for d in M.get("districts", []):
+        if d.get("kind") != "machi":
+            continue
+        poly = d["poly"]
+        if wall:
+            cx = sum(p[0] for p in poly) / len(poly)
+            cy = sum(p[1] for p in poly) / len(poly)
+            if not point_in_poly(cx, cy, wall):
+                continue
+        ring = [tuple(p) for p in poly] + [tuple(poly[0])]
+        for st in M.get("town_streets", []):
+            pts = st["pts"]
+            for i in range(len(pts) - 1):
+                for j in range(len(ring) - 1):
+                    if not segments_cross(tuple(pts[i]), tuple(pts[i + 1]), ring[j], ring[j + 1]):
+                        continue
+                    xpt = seg_intersect(tuple(pts[i]), tuple(pts[i + 1]), ring[j], ring[j + 1])
+                    if xpt is not None and not any(math.hypot(xpt[0] - ox, xpt[1] - oy) < 40 for ox, oy in out):
+                        out.append((xpt[0], xpt[1]))
+    return out
 
 
 def moat_current_at(ring: Any, inlet: Pt, outlet: Pt, pt: Pt) -> tuple[float, float] | None:
@@ -4340,6 +4375,30 @@ class Settlement:
         x1, y1 = max(c[0] for c in cs) + margin, max(c[1] for c in cs) + margin
         return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
 
+    def kido_mesh(self) -> int:
+        """Bar every machi mouth with a kido (research 021 item 6: the ward MESH - Edo's
+        machi-kido and Qing's zhalan; no ward walls, the block's own gate closes at night).
+        Reads the SAME machi_mouths source the validator reads, so the two sides cannot
+        disagree. Call AFTER streets + districts are declared and BEFORE the packs (each
+        kido reserves its ground). The bar runs ACROSS its street. Returns the count."""
+        n = 0
+        for mx, my in machi_mouths(self.M):
+            best, bd = 0.0, 1e9
+            for st in self.M.get("town_streets", []):
+                pts = st["pts"]
+                for i in range(len(pts) - 1):
+                    d = seg_dist(mx, my, tuple(pts[i]), tuple(pts[i + 1]))
+                    if d < bd:
+                        bd = d
+                        best = math.degrees(math.atan2(pts[i + 1][1] - pts[i][1], pts[i + 1][0] - pts[i][0]))
+            # reserve the gate + guard-box ground BEFORE the packs run (a kido drawn
+            # without a reservation had rows seated against its guard box)
+            self.block_polys.append([(mx - 30, my - 30), (mx + 30, my - 30), (mx + 30, my + 30), (mx - 30, my + 30)])
+            self.placed.append((mx, my, 48, 48))  # the guard box hangs W/N of the bar; the frontage rows now GAP the mouths, so the reserve only needs the gate's own ground
+            self.kido(mx, my, rot=best + 90)
+            n += 1
+        return n
+
     def kido(self, x: float, y: float, horizontal: bool = True, sw: float | None = None, rot: float | None = None, guard_side: int | None = None) -> None:
         """A kido - a wooden WARD GATE barring a street at a quarter boundary, manned and shut at
         night to keep the samurai quarter apart from the commoners. A small city seals its wards
@@ -4808,7 +4867,7 @@ class Settlement:
         (wellhead_quad / wells_troughs_rails_clear_of_each_other)."""
         return self.px(12.376) if self._toscale() else 11.9 * self.bscale
 
-    def well(self, x: float, y: float, r: float = 8, shrine: bool = False, private: bool = False) -> None:
+    def well(self, x: float, y: float, r: float = 8, shrine: bool = False, private: bool = False, kind: str | None = None) -> None:
         """A public NEIGHBORHOOD WELL (井戸) - a stone curb under an open-sided well-house roof, the
         shared draw-point and social hub (the idobata, where a tenement block's gossip happened). One
         served a courtyard / cluster of ~10-20 households. SMALLER than a house and sits in a block
@@ -4831,9 +4890,12 @@ class Settlement:
         )  # the well-house roof, light so the curb reads through
         self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb:.1f}" fill="#9AA1A4" stroke="#43403A" stroke-width="1.1"/>')  # stone curb
         self.add(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{vcurb * 0.47:.1f}" fill="#2E4C58"/>')  # dark water in the shaft
-        self.M["wells"].append(
-            {"x": round(x, 1), "y": round(y, 1), "r": r, "vr": round(vroof, 1), "shrine": shrine, "private": private}
-        )  # shrine=True marks an ablution (temizu) well - wells_sized_to_population counts only the communal household draw-wells
+        _wrec: dict[str, Any] = {"x": round(x, 1), "y": round(y, 1), "r": r, "vr": round(vroof, 1), "shrine": shrine, "private": private}
+        if kind is not None:
+            # a josui-ido CISTERN-WELL taps the buried aqueduct main (research 021 item 4);
+            # recorded only when declared, so every existing manifest stays byte-identical
+            _wrec["kind"] = kind
+        self.M["wells"].append(_wrec)  # shrine=True marks an ablution (temizu) well - wells_sized_to_population counts only the communal household draw-wells
         # reserve only a TIGHT courtyard around the small wellhead (not a whole house-plot): houses ring
         # it closely, as in a real tenement court, so a well costs roughly its own footprint, not several
         # dwellings. (`r` stays the recorded clearance radius the checks use; the reserved block is small.)
@@ -5068,7 +5130,7 @@ class Settlement:
                     return True
         return False
 
-    def place_wells(self, bbox: Any, spacing: float, r: float = 8, near: Any = None, coverage: bool = True) -> list[Pt]:
+    def place_wells(self, bbox: Any, spacing: float, r: float = 8, near: Any = None, coverage: bool = True, kind: str | None = None) -> list[Pt]:
         """Scatter neighborhood wells across a residential bbox on a grid at ~`spacing` px, keeping
         each in a block INTERIOR: a candidate is dropped if it falls on a lane corridor, outside the
         city bound, on an existing compound (temple/estate/pond), or too near another well (all via
@@ -5081,9 +5143,9 @@ class Settlement:
         would drop wells beside the samurai compounds, which keep no public wells)."""
         # SCOPED (2026-08-08): well siting jitters over a grid; keyed on the bbox it covers.
         with self.rng_scope("place_wells", *bbox), self.frozen_terrain():  # one well index for the whole scatter, not one revalidation per candidate seat
-            return self._place_wells(bbox, spacing, r, near, coverage)
+            return self._place_wells(bbox, spacing, r, near, coverage, kind)
 
-    def _place_wells(self, bbox: Any, spacing: float, r: float, near: Any, coverage: bool) -> list[Pt]:
+    def _place_wells(self, bbox: Any, spacing: float, r: float, near: Any, coverage: bool, kind: str | None = None) -> list[Pt]:
         x0, y0, x1, y1 = bbox
         # a modest footprint => wells sit in the courtyards, not crammed on a lane. The SAME box
         # `well_at` computes, and it carries the same caveat: 30px is fixed while the drawn head
@@ -5110,7 +5172,7 @@ class Settlement:
                         and self._fits(cx, cy, probe, probe)
                         and (dwell is None or any((b["x"] - cx) ** 2 + (b["y"] - cy) ** 2 < near * near for b in dwell))
                     ):
-                        self.well(cx, cy, r)
+                        self.well(cx, cy, r, kind=kind)
                         out.append((cx, cy))
                         break
                 xx += spacing

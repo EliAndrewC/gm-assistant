@@ -45,6 +45,7 @@ from settlement import (
     lane_runs,
     lane_through_gate,
     linear_tilt,
+    machi_mouths,
     moat_current_at,
     paddy_wet_rings,
     rail_quad,
@@ -2894,6 +2895,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # in-wall dock basin (Minami, Nagahara) have no extramural commoners, so nothing changes
         # for them. 300px =~ the drawn wharf suburb's own extent.
         _wf_pts = [(j8["x"], j8["y"]) if isinstance(j8, dict) else (j8[0], j8[1]) for j8 in M.get("jetties", [])]
+        for _tp8 in M.get("towpaths", []):
+            _wf_pts += [tuple(p8) for p8 in _tp8.get("poly", _tp8.get("pts", []))]  # the haulage shore is wharf ground - its porters' rows are the suburb too
         _wf_pts += [(g8["x"], g8["y"]) for g8 in M.get("granaries", []) if isinstance(g8, dict) and "x" in g8]
         outside_com = [
             (round(b["x"]), round(b["y"]))
@@ -2903,7 +2906,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             and not any(math.hypot(b["x"] - _wx, b["y"] - _wy) <= 300 for _wx, _wy in _wf_pts)
             # ...and the guan-xiang gate wards: commoner rows strung along the approach road
             # within reach of a gate are the OTHER lawful outside category (021 research)
-            and not any(math.hypot(b["x"] - g9[0], b["y"] - g9[1]) <= 280 for g9 in M.get("gates", []))
+            # the guan-xiang wards were LINEAR - Chinese gate suburbs strung up to a li
+            # (~1,800 ft) along the approach; 1,500 real ft is the adopted reach (research 021)
+            and not any(math.hypot(b["x"] - g9[0], b["y"] - g9[1]) <= 1500.0 / float(meta.get("ftpx", 1) or 1) for g9 in M.get("gates", []))
         ]
         check(
             "city_commoner_dwellings_inside_walls",
@@ -8191,6 +8196,53 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"terrace range(s) with fewer than 2 units at {tr_bad[:4]} - a one-unit terrace is a detached house; use the house vocabulary",
         )
 
+    # A JOSUI-IDO SITS ON THE BURIED MAIN (research 021 item 4): from the settling basin at
+    # the gate the mokuhi trunk mains run under the WAYS and the laterals under the roji -
+    # Edo branched its pipes under the tenement alleys to the josui-ido courts - so a
+    # cistern-well stands within the band (900 real ft of the terminus; the DISCLOSED
+    # calibrated liberty - Edo's mains ran kilometers, a young domain system serves its two
+    # gate-quarter blocks) and within 30px of some way. A dug draw-well (no kind) is untouched.
+    cw21 = [w21 for w21 in M.get("wells", []) if isinstance(w21, dict) and w21.get("kind") == "cistern"]
+    if cw21:
+        cw_aq = M.get("aqueducts", [])
+        cw_bad = []
+        if not cw_aq:
+            cw_bad = [(round(w21["x"]), round(w21["y"]), "no aqueduct to tap") for w21 in cw21]
+        else:
+            cw_to = cw_aq[0].get("to")
+            cw_reach = 900.0 / float(meta.get("ftpx", 1) or 1)
+            # the mains run under the WAYS from the gate - streets, and the trunk road that
+            # enters it (the east quarter's only paved way is the gate road itself)
+            cw_sts = (
+                [st21["pts"] for st21 in M.get("town_streets", [])]
+                + ([M["road"]] if M.get("road") else [])
+                + [r21["pts"] for r21 in M.get("roads", [])]
+                + [al21["pts"] for al21 in M.get("alleys", [])]
+            )
+            for w21 in cw21:
+                if math.hypot(w21["x"] - cw_to[0], w21["y"] - cw_to[1]) > cw_reach:
+                    cw_bad.append((round(w21["x"]), round(w21["y"]), "beyond the main's ~600 ft reach"))
+                elif not any(seg_dist(w21["x"], w21["y"], tuple(p21[i21]), tuple(p21[i21 + 1])) <= 30 for p21 in cw_sts for i21 in range(len(p21) - 1)):
+                    cw_bad.append((round(w21["x"]), round(w21["y"]), "off the street the main runs under"))
+        check(
+            "cistern_wells_in_service_band",
+            not cw_bad,
+            f"josui-ido out of the service band: {cw_bad[:4]} - a cistern-well taps the buried main under a STREET within ~600 real ft of the settling basin (s.place_wells(kind='cistern'))",
+        )
+
+    # THE KIDO MESH BARS THE MACHI MOUTHS (research 021 item 6): every street mouth into an
+    # in-wall machi district carries its night-barred kido. The mouths come from settlement.
+    # machi_mouths - the SAME source the placer reads - so placement and validation cannot
+    # disagree (the bridge_carried_ways doctrine).
+    if meta.get("scale") == "capital" and M.get("districts"):
+        km_kido = [(k21["x"], k21["y"]) if isinstance(k21, dict) else (k21[0], k21[1]) for k21 in M.get("kido", [])]
+        km_bad = [(round(kmx), round(kmy)) for kmx, kmy in machi_mouths(M) if not any(math.hypot(kmx - kkx, kmy - kky) <= 70 for kkx, kky in km_kido)]
+        check(
+            "kido_close_the_machi_mouths",
+            not km_bad,
+            f"machi street mouth(s) with no kido within 70px: {km_bad[:4]} - the ward MESH bars every block mouth at night (s.kido_mesh(); ward_style='mesh')",
+        )
+
     # EVERY GATE'S ROAD JOINS THE RING ROAD (GM 2026-08-09, the capital's side gates: both
     # trunk-road polylines STARTED at the gate point on the wall, so the road reached the gate
     # from outside while inside the gate opened onto 90 ft of bare ground 30px short of the
@@ -10942,7 +10994,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"on-water reach - a yard at a confluence may follow either - within 15 deg",
             )
 
-    if scale == "city":
+    if scale in ("city", "capital"):  # 021: the urban battery (wells, gate furniture, business fabric) binds the capital too
         # A PROVINCIAL CITY (budgets.md: ~2,000-4,000, avg ~3,000; 600 households - servants 120,
         # laborers 240, merchants 150, burakumin 30, samurai 60; ZERO in-city farmers). Placing
         # all 600 is unreadable, so the map shows REPRESENTATIVE neighborhoods and these checks
@@ -10951,7 +11003,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         for b in M.get("buildings", []):
             bk[b.get("kind")] = bk.get(b.get("kind"), 0) + 1
         # every provincial city's interior carries the provincial government:
-        check("city_has_governor_mansion", bool(M.get("governor_mansion")), "a provincial city must have the governor's mansion (s.governor_mansion(...))")
+        if scale == "city":
+            # a CAPITAL has no governor - the daimyo's court IS the government (020 doctrine,
+            # "Rules that INVERT"); the castle carries what the mansion carries provincially
+            check("city_has_governor_mansion", bool(M.get("governor_mansion")), "a provincial city must have the governor's mansion (s.governor_mansion(...))")
         mins = M.get("ministries", [])
         check("city_has_six_ministries", len(mins) == 6, f"{len(mins)} provincial ministry offices, expected exactly 6 (s.ministry(...))")
         rites = [m for m in mins if "rites" in (m.get("name") or "").lower()]
@@ -10964,7 +11019,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # of that expected household count, so it is a real quarter, not a token cluster of a few.
         samurai_h = [b for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large")]
         pop = meta.get("population", 0)
-        if pop:
+        if pop and scale == "city":
+            # CITY-ONLY: at the capital the samurai cohort is majority-HOUSED IN OTHER FORMS
+            # (walled yashiki recorded as manors, retainer terraces as unit ranges), and
+            # capital_housing_matches_band_targets pins every band to the budget - a detached
+            # house count floor would just re-litigate that with the wrong denominator.
             need = round(0.65 * (0.10 * pop / HOUSEHOLD))
             check(
                 "city_samurai_housing_sufficient",
@@ -10990,6 +11049,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if slarge or ssmall:
             w = M.get("wall") or []
             in_est = [m for m in M.get("manors", []) if len(w) >= 3 and point_in_poly(m["x"], m["y"], w)]
+            if scale == "capital":
+                # INVERTED at the capital (020 doctrine): karo and chancellors live in walled
+                # yashiki INSIDE the wall - that is the defining jokamachi texture - and the
+                # senior-heavy mix is policed by capital_housing_matches_band_targets instead
+                in_est = []
             check(
                 "city_samurai_housing_varied",
                 len(slarge) >= 3 and len(ssmall) > len(slarge) and not in_est,
@@ -11026,7 +11090,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"of the provincial school, where the province's youth are schooled and the officer cohort drills; the "
             f"hanko's bugeijo, built in castle towns for the domain's own retainers - a county town has none)",
         )
-        _mhshort = [(round(mh_["x"]), round(mh_["y"]), mh_.get("range_ft", 0)) for mh_ in _mhalls if mh_.get("range_ft", 0) < DOJO_RANGE_FT]
+        # the HANKO's court is deliberately BLANK (synced doctrine, GM 2026-08-09: a real
+        # hanko is building-dense, so its faithful interior - bugeijo and archery lane
+        # included - lives on its Mode A sheet); only provincially-drawn halls owe the lane
+        _mhshort = [(round(mh_["x"]), round(mh_["y"]), mh_.get("range_ft", 0)) for mh_ in _mhalls if mh_.get("kind") != "hanko" and mh_.get("range_ft", 0) < DOJO_RANGE_FT]
         check(
             "city_martial_hall_has_archery_range",
             not _mhshort,
@@ -11210,7 +11277,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     f"merchant homes are not more SPREAD OUT than the laborers (median neighbor gap {mh:.0f}px vs laborer {lh:.0f}px; want >= 1.3x) - "
                     f"give merchant houses more room between them; the laborer warren is the dense, uniform contrast",
                 )
-        check("city_has_outside_farmland", bool([f for f in fields if runs_off_edge(f["outline"])]), "a city has extensive farmland outside its walls - at least one field must run off the map edge")
+        if scale == "city":
+            # a CAPITAL is fed BY THE RIVER, not its outskirts - the whole wharf/granary
+            # doctrine (stipend rice arrives from the six provinces by boat; the frame shows
+            # that supply chain: wharf, granaries, towpath). A provincial city's identity IS
+            # its farm country, so the comb stays mandatory there. (021; capitals.md)
+            check(
+                "city_has_outside_farmland", bool([f for f in fields if runs_off_edge(f["outline"])]), "a city has extensive farmland outside its walls - at least one field must run off the map edge"
+            )
         # civic amenities ported up from the town tier (a city is a bigger version of the same):
         check(
             "city_has_merchant_storehouses",
@@ -11247,11 +11321,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # drifted onto the "Ministry of Works" office). This catches that finer case: a label that names
         # a civic building (a ministry by name, the governor's yamen, a named temple) must not overlap
         # any OTHER named civic building.
-        civic = [(mi["name"], _bb(mi)) for mi in M.get("ministries", []) if mi.get("name")]
+        def _bbc(it9: dict[str, Any]) -> tuple[float, float, float, float]:
+            # local bbox helper: the _bb at the labels battery is defined in a branch a
+            # minimal capital manifest never enters (found when the urban battery widened)
+            return (it9["x"] - it9["w"] / 2, it9["y"] - it9["h"] / 2, it9["x"] + it9["w"] / 2, it9["y"] + it9["h"] / 2)
+
+        civic = [(mi["name"], _bbc(mi)) for mi in M.get("ministries", []) if mi.get("name")]
         _gv = M.get("governor_mansion")
         if _gv and _gv.get("label"):
-            civic.append((_gv["label"], _bb(_gv)))
-        civic += [(r["label"], _bb(r)) for r in M.get("religious", []) if r.get("label") and r.get("kind") == "temple"]
+            civic.append((_gv["label"], _bbc(_gv)))
+        civic += [(r["label"], _bbc(r)) for r in M.get("religious", []) if r.get("label") and r.get("kind") == "temple"]
         civic_names = {n for n, _ in civic}
         cross = []
         for L in M.get("labels", []):
@@ -11278,8 +11357,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         others = solid_structs(M, "religious", "merchant_estates", exclude=("cemeteries", "mausoleums", "cremation_grounds", "ossuaries"))
 
         def _edge_gap(a: dict[str, Any], b: dict[str, Any]) -> float:
-            ax0, ay0, ax1, ay1 = _bb(a)
-            bx0, by0, bx1, by1 = _bb(b)
+            ax0, ay0, ax1, ay1 = _bbc(a)
+            bx0, by0, bx1, by1 = _bbc(b)
             return math.hypot(max(0.0, ax0 - bx1, bx0 - ax1), max(0.0, ay0 - by1, by0 - ay1))
 
         abut = []

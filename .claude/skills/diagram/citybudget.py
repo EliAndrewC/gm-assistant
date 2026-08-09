@@ -118,6 +118,13 @@ WATER_AREA = 2_900.0
 # ground (research.md B - itself triangulated, not measured), and our sparse end is consistent
 # with the deep-block, alley-warren doctrine - so the MAP-calibrated figure wins.
 CIRC_FRAC = 0.07
+#: The CAPITAL's circulation + trunk-fabric overhead (021, measured from the drawn first
+#: capital): a capital carries a street MESH, band lanes, block alleys, the ote-suji /
+#: kagi / karamete system and forty-odd compound keep-out halos - measured at ~20% of the
+#: interior against the provincial 7%. Recorded with the suburb share below; the two
+#: corrections nearly cancel, which is why Shiro Daika's as-built rampart lands within the
+#: wall check's tolerance of the corrected minimum.
+CIRC_FRAC_CAPITAL = 0.20
 
 # A Tango-style in-wall agricultural district, as a fraction of the interior. Measured: Tango's
 # declared agri reserve is 103,577 px^2 of a 689k interior = 15.0%; also comfortably inside the
@@ -320,9 +327,18 @@ class CapitalProgram:
     temple_precincts: int = 2
     temple_precinct_px2: float = SOVEREIGN_PRECINCT_PX2
     monk_houses_per_precinct: float = 2.5
+    #: The share of the PACKED cohort housed OUTSIDE the rampart (021 research): the kashi
+    #: wharf belt and the guan-xiang gate wards. China-first: Suzhou's Changmen suburb
+    #: out-traded the walled interior; the jokamachi machi-chi sprawled outside the moat
+    #: lines. The wall is sized to the CEREMONIAL city; the commercial spill is the suburbs'.
+    suburb_packed_frac: float = 0.30
     extras: tuple[BudgetLine, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
+        if not 0.0 <= self.suburb_packed_frac <= 0.5:
+            raise ValueError(
+                f"suburb_packed_frac {self.suburb_packed_frac} outside [0, 0.5] - the research band: a capital houses SOME packed cohort outside (guan-xiang / kashi belt), but the majority stays in-wall"
+            )
         if not CAPITAL_POP_MIN <= self.population <= CAPITAL_POP_MAX:
             raise ValueError(f"population {self.population} outside the domain-capital band [{CAPITAL_POP_MIN}, {CAPITAL_POP_MAX}] (budgets.md capital tier; a provincial city uses plan_city)")
         if self.castle_seat not in CASTLE_SEATS:
@@ -505,10 +521,16 @@ def plan_capital(program: CapitalProgram, canvas: tuple[float, float] | None = N
 
     lines: list[BudgetLine] = [
         BudgetLine(
-            "packed row housing (laborer/servant/merchant/burakumin)",
-            packed_n,
-            packed_n * C_PACKED * k,
-            f"{packed_n} families x C_PACKED {C_PACKED:.0f} px^2 gross (Tango-measured rows + eaves + roji)",
+            "packed row housing IN-WALL (laborer/servant/merchant/burakumin)",
+            round(packed_n * (1 - program.suburb_packed_frac)),
+            packed_n * (1 - program.suburb_packed_frac) * C_PACKED * k,
+            f"~{1 - program.suburb_packed_frac:.0%} of {packed_n} families x C_PACKED {C_PACKED:.0f} px^2 gross (Tango-measured rows + eaves + roji)",
+        ),
+        BudgetLine(
+            "packed row housing SUBURBAN (kashi wharf belt + guan-xiang gate wards)",
+            round(packed_n * program.suburb_packed_frac),
+            0.0,
+            "ground OUTSIDE the rampart - excluded from the interior the wall must hold (021 research: Changmen / machi-chi; the drawn suburbs carry these families)",
         ),
         BudgetLine(
             "the castle (enceinte: baileys + moats; interior implied)",
@@ -560,13 +582,13 @@ def plan_capital(program: CapitalProgram, canvas: tuple[float, float] | None = N
     lines.extend(program.extras)
 
     fixed = sum(ln.area_px2 for ln in lines)
-    required = fixed / (1.0 - CIRC_FRAC)
+    required = fixed / (1.0 - CIRC_FRAC_CAPITAL)
     lines.append(
         BudgetLine(
             "circulation (trunk + ring road + streets + alleys)",
             None,
-            required * CIRC_FRAC,
-            f"{CIRC_FRAC:.0%} of interior at drawn widths - the provincial measurement reused, since no capital has been drawn to calibrate against",
+            required * CIRC_FRAC_CAPITAL,
+            f"{CIRC_FRAC_CAPITAL:.0%} of interior at drawn widths - MEASURED from the drawn first capital (street mesh, band lanes, alleys, compound halos), against the provincial 7%",
         )
     )
 
@@ -587,6 +609,7 @@ def plan_capital(program: CapitalProgram, canvas: tuple[float, float] | None = N
         "samurai_detached": n_detached,
         "samurai_terrace": n_terrace,
         "dwellings": round(pop / HOUSEHOLD),
+        "packed_suburb": round(packed_n * program.suburb_packed_frac),
     }
     return CityBudget(program=program, lines=tuple(lines), required_interior_px2=required, wall=wall, dwelling_target=target)
 

@@ -61,22 +61,22 @@ capital scale; gradient visible in crops; zero overlap regressions.
       of density floors / quarter tiling / senior-majority mix per contracts/checks.md
       "extended" list); implement the scale extensions in `check_village.py`. The empty
       02x-state capital manifest becomes the frozen red fixture in `pool/regressions/`.
-- [ ] T007 [US1] Yashiki band: seat the walled-compound district regions
+- [X] T007 [US1] Yashiki band: seat the walled-compound district regions
       (`s.districts`) nearest the castle/government ward in `wip/shiro-daika.gen.py` and
       pack the yashiki-band compounds (manor-based, in-wall - the inverted rule) to the
       reconciled target; iterate with `check_village.py` + batched crops.
-- [ ] T008 [US1] Detached band: pack detached samurai houses (C_SPACED texture) in the
+- [X] T008 [US1] Detached band: pack detached samurai houses (C_SPACED texture) in the
       middle band of `wip/shiro-daika.gen.py`; gradient check green so far.
-- [ ] T009 [US1] Terrace band: pack retainer terraces (`s.terrace` ranges) at the band edge
+- [X] T009 [US1] Terrace band: pack retainer terraces (`s.terrace` ranges) at the band edge
       in `wip/shiro-daika.gen.py`; confirm `terraces_are_ranges` + gradient green.
-- [ ] T010 [US1] Commoner machi: pack the machi row fabric (row doctrine at 3 ft/px:
+- [X] T010 [US1] Commoner machi: pack the machi row fabric (row doctrine at 3 ft/px:
       rows touch, roji as features, businesses front streets, poor housing interior)
       including the TWO burakumin-quarter housing regions (segregation battery green;
       tanning yards themselves deferred to T021 behind the wind gate) in
       `wip/shiro-daika.gen.py`.
-- [ ] T011 [US1] Monk houses: seat the ~5 adept-monk households by the two precincts per
+- [X] T011 [US1] Monk houses: seat the ~5 adept-monk households by the two precincts per
       the budget line in `wip/shiro-daika.gen.py`.
-- [ ] T012 [US1] US1 gate-on-the-map: full capital check battery green except the known
+- [X] T012 [US1] US1 gate-on-the-map: full capital check battery green except the known
       remaining (farrier + any not-yet-implemented 021 rules); batched crop review of all
       four bands; freeze any motivating-defect manifest found along the way into
       `pool/regressions/` with its `_regression` block.

@@ -10691,3 +10691,33 @@ def test_commoner_dwellings_at_the_wharf_suburb_are_exempt():
     assert "city_commoner_dwellings_inside_walls" in f(M)  # extramural, no wharf near
     M["jetties"] = [{"x": 1520, "y": 560, "rot": 0, "len": 13, "z": 1}]
     assert "city_commoner_dwellings_inside_walls" not in f(M)  # the same house IS the quay suburb
+
+
+def test_cistern_wells_sit_on_the_buried_main():
+    """Research 021 item 4: josui-ido tap the mokuhi mains that run UNDER THE STREETS from
+    the settling basin at the gate - so a cistern-well stands within the band (~600 real ft
+    of the terminus, the disclosed calibrated liberty) and beside a street. A dug draw-well
+    (no kind) is untouched."""
+    M = _capital_manifest()
+    M["aqueducts"] = [{"poly": [[900, 100], [700, 300]], "w": 8, "intake": [900, 100], "to": [700, 300]}]
+    M["town_streets"] = [{"pts": [[700, 300], [700, 700]], "w": 5}]
+    M["wells"] = [{"x": 705, "y": 420, "r": 8, "vr": 6, "shrine": False, "private": False, "kind": "cistern"}]
+    assert "cistern_wells_in_service_band" not in f(M)  # on the street, 120px from the basin
+    M["wells"][0]["x"], M["wells"][0]["y"] = 705, 620  # 320px out - beyond the main's reach
+    assert "cistern_wells_in_service_band" in f(M)
+    M["wells"][0]["x"], M["wells"][0]["y"] = 760, 380  # in reach but 55px off any street
+    assert "cistern_wells_in_service_band" in f(M)
+    M["wells"][0].pop("kind")  # a dug draw-well may stand anywhere wells stand
+    assert "cistern_wells_in_service_band" not in f(M)
+
+
+def test_kido_close_the_machi_mouths():
+    """Research 021 item 6 (the ward MESH): every street mouth into a machi district gets its
+    night-barred kido; a mouth without one fires. The mouths come from the SAME shared source
+    the placer uses (settlement.machi_mouths), so the two sides cannot disagree."""
+    M = _capital_manifest()
+    M["districts"] = [{"name": "east machi", "kind": "machi", "poly": [[300, 300], [700, 300], [700, 700], [300, 700]]}]
+    M["town_streets"] = [{"pts": [[100, 500], [900, 500]], "w": 5}]  # crosses at (300,500) and (700,500)
+    assert "kido_close_the_machi_mouths" in f(M)  # two mouths, no kido
+    M["kido"] = [{"x": 312, "y": 500, "parts": [], "guard": None}, {"x": 688, "y": 500, "parts": [], "guard": None}]
+    assert "kido_close_the_machi_mouths" not in f(M)
