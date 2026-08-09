@@ -221,6 +221,10 @@ _OVERLAP_STRUCTS = (
     # gate. Its towers are outer-wall furniture and are solid in their own right.
     "castles",
     "castle_towers",
+    # the capital's wharf granaries (feature 020): per-STORE records precisely so this registry
+    # and the extractor see each kura - the legacy town M['granary'] is a bare dict special-cased
+    # in solid_structs, which is the record shape feature 019 proved invisible.
+    "granaries",
 )
 # `shrines` duplicates the primary religious halls (shrine_hall records both), so it rides along with
 # `religious`; both are halls that structs must AVOID, gated by no_structure_on_religious.
@@ -244,7 +248,9 @@ _OVERLAP_LINEAR = (
     "canals",
     "roads",
     "crescent_ponds",
-)  # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers; crescent_ponds = the fengshui 半月塘 focal pond, reserved as a placement keep-out so the cluster packs around it)
+    "towpaths",
+    "aqueducts",
+)  # linear / area features structs avoid (canals = the cargo canal; roads = the multi-road list, same ground the single M['road'] covers; crescent_ponds = the fengshui 半月塘 focal pond, reserved as a placement keep-out so the cluster packs around it; towpaths = the riverbank haulage path and aqueducts = the open supply cut, both feature 020 - ground a structure must keep off)
 _OVERLAP_EXEMPT = {
     "drawn_channels": "z-order record of the drawn field-channel strokes (post-clip geometry + stroke widths w0/w1 + bedz), not a placement feature: the strokes duplicate the field_ditches/channels ground the structs already avoid, and their mouths deliberately touch the pond/moat/stream they join (pond_fill_covers_channel_mouths and water_channels_join_not_cross read this record - it is the only source that says what was actually stroked, and how wide)",
     "storehouses": "merchant kura drawn as an annex deliberately abutting its shop",
@@ -287,6 +293,7 @@ _OVERLAP_EXEMPT = {
 # NAME to be allowed to cover the feature - and because the group name is the caption word, that
 # permission is derived rather than hand-listed too (see _label_allows).
 _LABEL_GROUP = {
+    "granaries": "granary",
     "flophouses": "flophouse",
     "log_booms": "log boom",
     "religious": "temple",
@@ -415,6 +422,8 @@ OVERLAP_CLASS: dict[str, str] = {
             "tanning_yards",
             "charcoal_yards",
             "refining_forges",
+            # the capital's wharf granaries (feature 020) - kura rows, one record per store
+            "granaries",
         )
     },
     # A ward gate's GUARD BOX is a small building on the verge beside the gateway, not part of the
@@ -437,8 +446,12 @@ OVERLAP_CLASS: dict[str, str] = {
     # harvest_yards_clear_of_paddies, structures_clear_of_dry_plots, streams_avoid_fields,
     # tanning_yard_clear_of_fields and fields_clear_of_road all test real geometry.
     "fields": "PADDY_RECONSTRUCTED",
-    **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond", "moat")},
-    **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes")},
+    # `aqueducts` is WATER (feature 020): the open supply cut is a seam on the ground exactly like
+    # a channel, and the shared crossing source (bridge_crossed_waters) already demands a deck of
+    # any way over it. `towpaths` is a WAY: a beaten path things keep off, however unlike a road
+    # it is drawn.
+    **{k: "WATER" for k in ("streams", "channels", "field_ditches", "canals", "pond", "moat", "aqueducts")},
+    **{k: "WAY" for k in ("road", "roads", "town_streets", "alleys", "lanes", "towpaths")},
     # ANNEX - belongs to a named parent and abuts IT (and nothing else)
     **{k: "ANNEX" for k in ("gardens", "threshing_yards", "farm_sheds", "storehouses", "byres")},
     # --- PERMISSIVE CLASSES (never tested; each row below records WHY) ---------------------------
@@ -579,6 +592,12 @@ _MATRIX_ALLOWED_KEYS: dict[frozenset[str], str] = {
     frozenset(
         {"gate_structs", "wall_towers"}
     ): "a city gate's own TOWER is recorded under both keys - identical x/y/w/h/rot, the same object rather than two (verified on Minami: tower(1323,902) w17h10 appears in each list). The same duplicate-record case as religious x shrines",
+    frozenset(
+        {"castles", "bridges"}
+    ): "a deck carries the approach avenue over the castle's OWN moat - the moat ring is part of the castles record, so the deck that the shared crossing source (feature 020) DEMANDS there necessarily overlaps it. The deck lies on the water, not the works; the ways themselves are still held off the castle by the matrix that caught the Imperial road running through it",
+    frozenset(
+        {"castle_towers", "bridges"}
+    ): "the ote-mon's moat deck lands at the gate tower's foot - a castle bridge ENDS at its gate, so the deck's landing margin may kiss the tower footprint, exactly as a city gate's bridge lands in its gate complex",
     frozenset(
         {"channels", "dry_plots"}
     ): "a supply canal hugs the fan's HIGH DRY MARGIN by design (the comb doctrine), and the dry hem IS that margin - a plot may be crossed by the irrigation that serves it. A NATURAL watercourse is a different matter and stays forbidden: dry_plots x streams is the defect this whole feature was opened for",
@@ -763,7 +782,7 @@ _MX_FIXTURE_BOX: dict[str, Any] = {
     "jetties": lambda o: (float(o["len"]), 6.4),  # the planked finger, at the width the glyph draws
     "sluice_gates": lambda o: (11.0, 11.0),  # the board and its cheeks - a small square control structure
 }
-_MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0, "roads": 26.0}
+_MX_LINE_W = {"streams": 9.0, "channels": 2.5, "field_ditches": 1.5, "canals": 14.0, "town_streets": 20.0, "alleys": 6.0, "lanes": 6.0, "roads": 26.0, "towpaths": 2.4, "aqueducts": 4.0}
 
 
 def matrix_extents(M: Mapping[str, Any]) -> list[tuple[str, list[tuple[float, float]], Any, Any]]:
@@ -3674,6 +3693,218 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 ),
             )
 
+        # ---- feature 020: the ground-reserving layer ------------------------------------------
+        # THE GOVERNMENT WARD. Both anchor traditions put the domain ministries OUTSIDE the
+        # castle, flanking the ceremonial approach: Beijing's Six Ministries lined the Corridor of
+        # a Thousand Steps outside Chengtianmen, and a jokamachi's offices spilled out of the
+        # ninomaru into the town as they grew. So a capital shows its six ministries fronting the
+        # ote-suji - the avenue from the castle's front gate to the through-road - with the House
+        # Chancellery and the domain school on the same axis (settlements/capitals.md, "The
+        # government ward"; the research trail is research/cities/capitals.md).
+        CAP_SIX = ("Rites", "Revenue", "Retainers", "War", "Works", "Justice")
+        cap_mins = M.get("ministries", [])
+        cap_by_name = {(mi.get("name") or ""): mi for mi in cap_mins}
+        cap_missing = [f"Ministry of {cap_nm}" for cap_nm in CAP_SIX if f"Ministry of {cap_nm}" not in cap_by_name]
+        check(
+            "capital_has_six_ministries",
+            not cap_missing,
+            f"missing domain ministries: {cap_missing} - the six domain ministries stand outside the castle flanking the ote-suji (s.ministry(...))",
+        )
+        cap_chanc = [mi for mi in cap_mins if "chancellery" in (mi.get("name") or "").lower()]
+        check(
+            "capital_has_house_chancellery",
+            len(cap_chanc) == 1,
+            f"{len(cap_chanc)} House Chancellery record(s), expected exactly 1 - the council hall of the domain's lineage representatives, on the government axis",
+        )
+        cap_school = [mi for mi in cap_mins if any(wd in (mi.get("name") or "").lower() for wd in ("school", "hanko"))]
+        check(
+            "capital_has_domain_school",
+            len(cap_school) == 1,
+            f"{len(cap_school)} domain school record(s), expected exactly 1 - the hanko is why samurai families across the domain send their children here",
+        )
+        # The approach avenue: the way that leaves the castle's front gate. Membership questions
+        # below are judged center-to-line with tolerances that dwarf the footprints - the
+        # ASSOCIATION/reach family (CLAUDE.md, "Centers, footprints, and aggregates").
+        cap_ways = ([(M["road"], M.get("road_width") or 26.0)] if M.get("road") else []) + [(r["pts"], r.get("w", 26.0)) for r in M.get("roads", [])]
+        cap_avenue = None
+        for cca in M.get("castles", []):
+            ccg = cca.get("gate")
+            if not ccg:
+                continue
+            for cpts, cwid in cap_ways:
+                if min(math.hypot(cpts[0][0] - ccg[0], cpts[0][1] - ccg[1]), math.hypot(cpts[-1][0] - ccg[0], cpts[-1][1] - ccg[1])) < 60:
+                    cap_avenue = (cpts, cwid)
+        check(
+            "capital_castle_has_approach_avenue",
+            cap_avenue is not None,
+            "no way starts at the castle's front gate - the ote-suji runs from the ote-mon to the through-road (the jokamachi rule: the main road passes the castle's FRONT, 'to indicate the glory of the ruler')",
+        )
+        if cap_avenue is not None:
+            cap_apts, cap_aw = cap_avenue
+            if not cap_missing:
+                cap_far = []
+                for cap_nm in CAP_SIX:
+                    mi = cap_by_name[f"Ministry of {cap_nm}"]
+                    cap_d = min(seg_dist(mi["x"], mi["y"], cap_apts[i], cap_apts[i + 1]) for i in range(len(cap_apts) - 1))
+                    if cap_d > max(mi["w"], mi["h"]) / 2 + cap_aw / 2 + 45:
+                        cap_far.append(f"Ministry of {cap_nm}")
+                check(
+                    "capital_ministries_front_the_avenue",
+                    not cap_far,
+                    f"ministries not fronting the ote-suji: {cap_far} - all six flank the approach avenue (Beijing's corridor pattern); none sits off in the fabric",
+                )
+            if cap_chanc and cap_school:
+                (cap_ax, cap_ay), (cap_bx, cap_by) = cap_apts[0], cap_apts[-1]
+                cap_alen = math.hypot(cap_bx - cap_ax, cap_by - cap_ay) or 1.0
+                cap_off = []
+                for mi in cap_chanc + cap_school:
+                    cap_dl = abs((cap_bx - cap_ax) * (cap_ay - mi["y"]) - (cap_ax - mi["x"]) * (cap_by - cap_ay)) / cap_alen
+                    if cap_dl > max(mi["w"], mi["h"]) / 2 + cap_aw / 2 + 45:
+                        cap_off.append(mi.get("name"))
+                check(
+                    "capital_chancellery_and_school_on_the_axis",
+                    not cap_off,
+                    f"off the government axis: {cap_off} - the House Chancellery and the domain school stand on the ote-suji's LINE, continuing the ward past the through-road",
+                )
+        # A government office stands in its own ground - the provincial rule restated at this
+        # tier, because the scale=="city" block does not run here and a capital has no governor's
+        # yamen. Same 14px standoff, same funerary exclusion (a clan crypt against a bureau is a
+        # real adjacency), same registry-driven victim list.
+        CAP_OFFICE_GAP = 14
+        cap_others = solid_structs(M, "religious", "merchant_estates", exclude=("cemeteries", "mausoleums", "cremation_grounds", "ossuaries"))
+        cap_abut = []
+        for mi in cap_mins:
+            for cst in cap_others:
+                if cst is mi or "w" not in cst or "h" not in cst or "x" not in cst:
+                    continue
+                cap_gx = max(0.0, (mi["x"] - mi["w"] / 2) - (cst["x"] + cst["w"] / 2), (cst["x"] - cst["w"] / 2) - (mi["x"] + mi["w"] / 2))
+                cap_gy = max(0.0, (mi["y"] - mi["h"] / 2) - (cst["y"] + cst["h"] / 2), (cst["y"] - cst["h"] / 2) - (mi["y"] + mi["h"] / 2))
+                if math.hypot(cap_gx, cap_gy) < CAP_OFFICE_GAP:
+                    cap_abut.append(f"{mi.get('name') or 'a ministry'!r} abuts {(cst.get('name') or cst.get('label') or cst.get('kind') or 'a building')!r}")
+        check(
+            "capital_government_offices_dont_abut",
+            not cap_abut,
+            f"government office(s) abutting another structure ({CAP_OFFICE_GAP}px standoff): {sorted(set(cap_abut))}",
+        )
+        # THE LINEAGE COMPOUNDS are what make a capital read as a SPECIFIC domain's seat: named
+        # walled yashiki whose size tracks how many of each lineage actually LIVE here - never the
+        # rank of its head (the kurogi rule: a full chancellor on a visibly smaller plot because
+        # his people are out in his province). The ruling lineage gets NO compound - its seat IS
+        # the castle. settlements/capitals.md, "Shiro Daika's lineage compounds".
+        cap_lin = meta.get("lineages") or {}
+        cap_ruling = meta.get("ruling_lineage")
+        # The FR-015 ratchet again: without the declaration every lineage check below SKIPS while
+        # showing green, so the missing declaration is itself the failure.
+        check(
+            "capital_declares_lineages",
+            bool(cap_lin) and bool(cap_ruling),
+            "meta(lineages={name: band}, ruling_lineage=...) not declared - bands are 'grand'/'estate'/'house', tracking the chargen household weights; without it the lineage checks have nothing to verify",
+        )
+        if cap_lin and cap_ruling:
+            cap_lm: dict[str, list[Any]] = {}
+            for cmn in M.get("manors", []):
+                if cmn.get("lineage"):
+                    cap_lm.setdefault(cmn["lineage"], []).append(cmn)
+            cap_lbad = []
+            for cln in cap_lin:
+                if cln == cap_ruling:
+                    continue
+                cap_recs = cap_lm.get(cln, [])
+                if len(cap_recs) != 1:
+                    cap_lbad.append(f"{cln}: {len(cap_recs)} compound(s)")
+                elif cln.lower() not in (cap_recs[0].get("label") or "").lower():
+                    cap_lbad.append(f"{cln}: compound unlabeled")
+            check(
+                "capital_lineage_compounds_labeled",
+                not cap_lbad,
+                f"lineage compounds missing or unlabeled: {cap_lbad} - every declared lineage but the ruling one holds exactly one NAMED walled yashiki",
+            )
+            check(
+                "capital_ruling_lineage_seat_is_the_castle",
+                cap_ruling not in cap_lm,
+                f"the ruling {cap_ruling!r} lineage has its own compound - its seat IS the castle, and a separate yashiki double-counts it",
+            )
+            # Bands must be VISIBLY distinct, not merely numerically different (SC-002): each
+            # band's smallest footprint stands a clear step above the next band's largest. 1.5x
+            # in area is ~1.22x linear - the point where two walled boxes read as different SIZES
+            # at a glance rather than as drawing variation.
+            CAP_BAND_ORDER = ("grand", "estate", "house")
+            CAP_BAND_STEP = 1.5
+            cap_areas: dict[str, list[float]] = {}
+            for cln, cband in cap_lin.items():
+                for cap_rec in cap_lm.get(cln, []):
+                    cap_areas.setdefault(cband, []).append(cap_rec["w"] * cap_rec["h"])
+            cap_weak = []
+            for cap_hi, cap_lo in zip(CAP_BAND_ORDER, CAP_BAND_ORDER[1:], strict=False):
+                if cap_areas.get(cap_hi) and cap_areas.get(cap_lo) and min(cap_areas[cap_hi]) < CAP_BAND_STEP * max(cap_areas[cap_lo]):
+                    cap_weak.append(f"{cap_hi} (min {min(cap_areas[cap_hi]):.0f} px^2) vs {cap_lo} (max {max(cap_areas[cap_lo]):.0f} px^2)")
+            check(
+                "capital_lineage_bands_visibly_distinct",
+                not cap_weak,
+                f"adjacent size bands are not visibly distinct (want >= {CAP_BAND_STEP}x area steps): {cap_weak}",
+            )
+        # A RIVER GETS A TOWPATH, NOT A ROAD (GM 2026-08-08; research/cities/capitals.md): water
+        # carried bulk far more cheaply than carts, so a trunk road shadowing a navigable river is
+        # redundant - a way may CROSS the river (bridged), never run along its bank. Judged
+        # centerline-to-centerline (ASSOCIATION family: the band dwarfs both widths, and the
+        # question is "does this way live on the bank", not a clearance).
+        cap_riv = M.get("river")
+        if isinstance(cap_riv, dict) and (cap_riv.get("pts") or cap_riv.get("poly")):
+            cap_rpts = cap_riv.get("pts") or cap_riv["poly"]
+            CAP_BANK = cap_riv.get("w", 40) / 2 + 45  # inside this band a way is ON the bank
+            CAP_RUN = 280  # px of contiguous bank-riding; a perpendicular (bridged) crossing stays in-band far less
+            cap_shadow = []
+            for cpts, _cwid in cap_ways:
+                cap_best = cap_run = 0.0
+                for i in range(len(cpts) - 1):
+                    cap_sx, cap_sy = cpts[i]
+                    cap_ex, cap_ey = cpts[i + 1]
+                    cap_slen = math.hypot(cap_ex - cap_sx, cap_ey - cap_sy)
+                    cap_steps = max(1, int(cap_slen / 20))
+                    for cap_k in range(cap_steps):
+                        cap_t = (cap_k + 0.5) / cap_steps
+                        cap_qx, cap_qy = cap_sx + (cap_ex - cap_sx) * cap_t, cap_sy + (cap_ey - cap_sy) * cap_t
+                        cap_dm = min(seg_dist(cap_qx, cap_qy, cap_rpts[j], cap_rpts[j + 1]) for j in range(len(cap_rpts) - 1))
+                        if cap_dm < CAP_BANK:
+                            cap_run += cap_slen / cap_steps
+                            cap_best = max(cap_best, cap_run)
+                        else:
+                            cap_run = 0.0
+                if cap_best > CAP_RUN:
+                    cap_shadow.append(f"a way rides the bank for {cap_best:.0f}px")
+            check(
+                "capital_no_road_parallels_river",
+                not cap_shadow,
+                f"{cap_shadow} - no trunk road parallels a navigable river; the bank carries a towpath (s.towpath), and the roads leave in the directions the water does not serve",
+            )
+        # THE AQUEDUCT (GM 2026-08-08): a capital outgrows what wells alone can supply, so it
+        # carries a supply channel - open OUTSIDE the wall, buried inside, the GATE as the
+        # boundary (Edo's josui, Odawara's sosui; research/cities/capitals.md).
+        cap_aqs = M.get("aqueducts", [])
+        check(
+            "capital_has_aqueduct",
+            bool(cap_aqs),
+            "no aqueduct - draw s.aqueduct(...) from a river intake to a city gate; the wells stay (the conduit supplements them, it does not replace them)",
+        )
+        cap_gates = M.get("gates") or []
+        for cap_aq in cap_aqs:
+            cap_apoly = cap_aq.get("poly") or []
+            if not cap_apoly:
+                continue
+            cap_tx, cap_ty = cap_apoly[-1]
+            check(
+                "capital_aqueduct_terminates_at_a_gate",
+                any(math.hypot(cgx - cap_tx, cgy - cap_ty) < 90 for cgx, cgy in cap_gates),
+                f"aqueduct terminus ({cap_tx:.0f},{cap_ty:.0f}) is at no city gate - the gate is the open/buried boundary; past it the conduit is buried and only its draw-basins show",
+            )
+            cap_wallp = M.get("wall") or []
+            cap_ain = [p for p in cap_apoly if len(cap_wallp) >= 3 and point_in_poly(p[0], p[1], cap_wallp)]
+            check(
+                "capital_aqueduct_stays_outside_the_wall",
+                not cap_ain,
+                f"aqueduct has {len(cap_ain)} vertex/vertices inside the wall - no open watercourse threads the walled interior (inside, the conduit is honestly buried; its draw-basins are the visible part)",
+            )
+
     # DOORS OPEN OUTWARD; ROWS STACK AT MOST TWO DEEP (GM, 2026-07-18). An urban building's door
     # glyph sits on its local +h/2 side (rotated by `rot` - settlement.building), so the door's
     # world direction derives from the manifest alone. A door must open onto WALKABLE ground
@@ -5147,7 +5378,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # religious building by settlement scale: hamlet none, village shrine, town
     # monastery, city temple
     # WHY (the Shinto/Buddhist split + scale: shrine -> monastery -> temple): settlements.md "Historical grounding"
-    expected_rel = {"hamlet": None, "village": "shrine", "town": "monastery", "city": "temple"}.get(scale)
+    # a capital is the city tier at 4x scale - temples, same as a provincial city (feature 020)
+    expected_rel = {"hamlet": None, "village": "shrine", "town": "monastery", "city": "temple", "capital": "temple"}.get(scale)
     rel_kinds = set(r["kind"] for r in M.get("religious", [])) - {"small_shrine"}  # small wayside shrines are auxiliary, allowed alongside the scale's main religious building
     if expected_rel is None:
         check("religious_matches_scale", not rel_kinds, f"a {scale} should have no religious building (found {rel_kinds or 'none'})")

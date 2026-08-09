@@ -4998,6 +4998,54 @@ def test_roads_bridge_water_ignores_an_undrawn_conduit_channel():
     assert "roads_bridge_water" in f(M)
 
 
+def test_roads_bridge_water_fires_on_an_unbridged_trunk_road_over_the_city_moat():
+    """M["roads"] - every trunk road but the Imperial one - crossing the MOAT. Both the drawer and
+    the checker omitted the roads list until feature 020 factored the carried-ways and
+    crossed-waters sets into ONE shared source (settlement.bridge_carried_ways /
+    bridge_crossed_waters): the two agreed perfectly and were both wrong, and four of six
+    crossings on the first capital were unbridged with a green gate."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "roads": [{"pts": [[100, 500], [900, 500]], "w": 26}],
+        "moat": [[500, 100], [500, 900]],
+        "moat_width": 22,
+        "bridges": [],
+    }
+    assert "roads_bridge_water" in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 0, "span": 50, "w": 26}]
+    assert "roads_bridge_water" not in f(M)
+
+
+def test_roads_bridge_water_fires_on_an_unbridged_road_over_the_river():
+    """The trunk RIVER, in the shape s.river() actually records: a streams entry plus the
+    M['river'] dict carrying 'pts' (not 'poly' - the shared source reads both). A road crossing
+    a river was never bridged anywhere in the pool before feature 020."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "road": [[100, 500], [900, 500]],
+        "river": {"pts": [[500, 100], [500, 900]], "w": 40},
+        "streams": [{"poly": [[500, 100], [500, 900]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "w": 40}],
+        "bridges": [],
+    }
+    assert "roads_bridge_water" in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 0, "span": 68, "w": 26}]
+    assert "roads_bridge_water" not in f(M)
+
+
+def test_roads_bridge_water_fires_on_an_unbridged_way_over_a_castle_moat():
+    """A castle's OWN moat is water like any other - the capital's ceremonial avenue crosses it
+    at the ote-mon, and that crossing was invisible to both sides until the shared source."""
+    M = {
+        "meta": {"scale": "city", "W": 1000, "H": 1000},
+        "roads": [{"pts": [[100, 500], [900, 500]], "w": 30}],
+        "castles": [{"x": 500, "y": 250, "w": 120, "h": 90, "rot": 0, "gate": [500, 295], "moat": [[500, 420], [500, 900]], "moat_width": 26, "label": "Castle"}],
+        "bridges": [],
+    }
+    assert "roads_bridge_water" in f(M)
+    M["bridges"] = [{"x": 500, "y": 500, "rot": 0, "span": 54, "w": 30}]
+    assert "roads_bridge_water" not in f(M)
+
+
 # --- a bridge must lie ON its crossing and run ALONG the way it carries ---
 def _skew_bridge_map(**kw):
     # the E-W road crosses the N-S stream at (500, 500); the deck under test is `bridges[0]`
@@ -10155,3 +10203,222 @@ def test_neither_capital_check_runs_on_any_other_scale(scale):
     failures = check_village.gate(_capital_manifest(budget=False, scale=scale))
     assert "capital_declares_a_budget" not in failures
     assert "capital_wall_matches_budget" not in failures
+
+
+# ---- feature 020: the capital's ground-reserving layer ----------------------------------------
+
+_CAP_GOV_CHECKS = (
+    "capital_has_six_ministries",
+    "capital_has_house_chancellery",
+    "capital_has_domain_school",
+    "capital_castle_has_approach_avenue",
+    "capital_ministries_front_the_avenue",
+    "capital_chancellery_and_school_on_the_axis",
+    "capital_government_offices_dont_abut",
+    "capital_declares_lineages",
+    "capital_lineage_compounds_labeled",
+    "capital_ruling_lineage_seat_is_the_castle",
+    "capital_lineage_bands_visibly_distinct",
+)
+
+
+def _cap_gov():
+    """A capital with a castle, its approach avenue, a full government ward and four lineage
+    compounds - everything the feature-020 government checks read. The 1000x1000 square wall
+    comes from _capital_manifest; the avenue runs from the castle's south gate to the trunk road."""
+    M = _capital_manifest()
+    M["meta"]["lineages"] = {"hazama": "grand", "utsuro": "grand", "kurogi": "estate", "yodo": "house"}
+    M["meta"]["ruling_lineage"] = "daika"
+    M["gates"] = [[500, 1000], [0, 500]]
+    M["castles"] = [{"x": 500, "y": 250, "w": 220, "h": 160, "rot": 0, "gate": [500, 330], "label": "Castle"}]
+    M["roads"] = [{"pts": [[500, 340], [500, 700]], "w": 30}, {"pts": [[500, 700], [500, 1000]], "w": 26}]
+    mins = []
+    for i, nm in enumerate(("Rites", "Revenue", "Retainers")):
+        mins.append({"x": 435, "y": 400 + 100 * i, "w": 75, "h": 50, "name": f"Ministry of {nm}"})
+    for i, nm in enumerate(("War", "Works", "Justice")):
+        mins.append({"x": 565, "y": 400 + 100 * i, "w": 75, "h": 50, "name": f"Ministry of {nm}"})
+    mins.append({"x": 435, "y": 800, "w": 70, "h": 48, "name": "House Chancellery"})
+    mins.append({"x": 565, "y": 800, "w": 70, "h": 48, "name": "Domain School"})
+    M["ministries"] = mins
+
+    def _lin(x, y, w, h, name):
+        return {"x": x, "y": y, "w": w, "h": h, "rot": 0, "label": f"{name.title()} Estate", "lineage": name, "gate": [x, y + h / 2], "gate_dir": "south", "ward_walls": [], "gate_w": 8, "wall_w": 2}
+
+    M["manors"] = [_lin(150, 200, 150, 118, "hazama"), _lin(850, 200, 145, 115, "utsuro"), _lin(150, 450, 110, 85, "kurogi"), _lin(850, 450, 75, 60, "yodo")]
+    return M
+
+
+def test_capital_government_ward_checks_pass_on_the_full_fixture():
+    fails = f(_cap_gov())
+    for c in _CAP_GOV_CHECKS:
+        assert c not in fails, c
+
+
+def test_capital_has_six_ministries_fires_when_one_is_missing():
+    M = _cap_gov()
+    M["ministries"] = [m for m in M["ministries"] if m["name"] != "Ministry of War"]
+    assert "capital_has_six_ministries" in f(M)
+
+
+def test_capital_chancellery_and_school_checks_fire_when_absent():
+    M = _cap_gov()
+    M["ministries"] = [m for m in M["ministries"] if m["name"].startswith("Ministry of")]
+    fails = f(M)
+    assert "capital_has_house_chancellery" in fails
+    assert "capital_has_domain_school" in fails
+
+
+def test_capital_castle_approach_fires_when_no_way_leaves_the_castle_gate():
+    M = _cap_gov()
+    M["roads"] = [{"pts": [[500, 700], [500, 1000]], "w": 26}]
+    fails = f(M)
+    assert "capital_castle_has_approach_avenue" in fails
+    # ...and the checks that need the avenue SKIP rather than crash or misfire
+    assert "capital_ministries_front_the_avenue" not in fails
+
+
+def test_capital_ministries_front_the_avenue_fires_on_a_strayed_ministry():
+    M = _cap_gov()
+    war = next(m for m in M["ministries"] if m["name"] == "Ministry of War")
+    war["x"], war["y"] = 850, 700  # off in the samurai ground, nowhere near the ote-suji
+    assert "capital_ministries_front_the_avenue" in f(M)
+
+
+def test_capital_chancellery_on_the_axis_fires_when_it_strays():
+    M = _cap_gov()
+    ch = next(m for m in M["ministries"] if m["name"] == "House Chancellery")
+    ch["x"] = 200  # far off the avenue's extended line
+    assert "capital_chancellery_and_school_on_the_axis" in f(M)
+
+
+def test_capital_government_offices_dont_abut_fires_on_touching_offices():
+    M = _cap_gov()
+    works = next(m for m in M["ministries"] if m["name"] == "Ministry of Works")
+    works["y"] = 455  # 5px above War's footprint - inside the 14px standoff
+    assert "capital_government_offices_dont_abut" in f(M)
+
+
+def test_capital_declares_lineages_fires_when_the_declaration_is_missing():
+    """The FR-015 ratchet again: without the declaration every lineage check would SKIP while
+    showing green, so the missing declaration is itself the failure."""
+    M = _cap_gov()
+    del M["meta"]["lineages"]
+    fails = f(M)
+    assert "capital_declares_lineages" in fails
+    assert "capital_lineage_compounds_labeled" not in fails
+    assert "capital_lineage_bands_visibly_distinct" not in fails
+
+
+def test_capital_lineage_compounds_labeled_fires_on_a_missing_lineage():
+    M = _cap_gov()
+    M["manors"] = [m for m in M["manors"] if m.get("lineage") != "kurogi"]
+    assert "capital_lineage_compounds_labeled" in f(M)
+
+
+def test_capital_lineage_compounds_labeled_fires_on_an_unlabeled_compound():
+    M = _cap_gov()
+    M["manors"][0]["label"] = ""  # the compound stands but nothing names it
+    assert "capital_lineage_compounds_labeled" in f(M)
+
+
+def test_capital_ruling_lineage_gets_no_compound():
+    M = _cap_gov()
+    M["manors"][3]["lineage"] = "daika"
+    M["manors"][3]["label"] = "Daika Estate"
+    assert "capital_ruling_lineage_seat_is_the_castle" in f(M)
+
+
+def test_capital_castle_without_a_gate_record_is_skipped_by_the_avenue_scan():
+    M = _cap_gov()
+    del M["castles"][0]["gate"]
+    assert "capital_castle_has_approach_avenue" in f(M)  # no gate to anchor an avenue on
+
+
+def test_capital_ruling_lineage_may_be_declared_in_the_band_map():
+    """A gen may declare all nine lineages with bands, the ruling one among them - it is skipped
+    rather than demanded a compound (its seat is the castle)."""
+    M = _cap_gov()
+    M["meta"]["lineages"] = {**M["meta"]["lineages"], "daika": "grand"}
+    fails = f(M)
+    assert "capital_lineage_compounds_labeled" not in fails
+    assert "capital_ruling_lineage_seat_is_the_castle" not in fails
+
+
+def test_capital_aqueduct_with_no_recorded_channel_is_skipped():
+    M = _cap_water()
+    M["aqueducts"] = [{"poly": [], "w": 8}]  # an empty channel - nothing to judge
+    assert "capital_aqueduct_terminates_at_a_gate" not in f(M)
+
+
+def test_capital_lineage_bands_visibly_distinct_fires_on_a_band_size_collision():
+    M = _cap_gov()
+    kurogi = next(m for m in M["manors"] if m["lineage"] == "kurogi")
+    kurogi["w"], kurogi["h"] = 145, 114  # numerically below the grand band, visually identical
+    assert "capital_lineage_bands_visibly_distinct" in f(M)
+
+
+def _cap_water():
+    """A capital with a river past its east flank, an aqueduct from an upstream intake to the
+    east gate, and no road on the bank - the feature-020 waterfront checks' fixture."""
+    M = _capital_manifest()
+    M["gates"] = [[1000, 500]]
+    M["river"] = {"pts": [[1200, 0], [1200, 1000]], "w": 40}
+    M["streams"] = [{"poly": [[1200, 0], [1200, 1000]], "frm": {"kind": "offmap"}, "to": {"kind": "offmap"}, "w": 40}]
+    M["aqueducts"] = [{"poly": [[1175, 200], [1100, 300], [1030, 480]], "w": 8, "intake": [1175, 200], "to": [1030, 480]}]
+    return M
+
+
+def test_capital_waterfront_checks_pass_on_the_fixture():
+    fails = f(_cap_water())
+    for c in ("capital_has_aqueduct", "capital_aqueduct_terminates_at_a_gate", "capital_aqueduct_stays_outside_the_wall", "capital_no_road_parallels_river"):
+        assert c not in fails, c
+
+
+def test_capital_has_aqueduct_fires_when_absent():
+    M = _cap_water()
+    M["aqueducts"] = []
+    assert "capital_has_aqueduct" in f(M)
+
+
+def test_capital_aqueduct_terminates_at_a_gate_fires_far_from_any_gate():
+    M = _cap_water()
+    M["aqueducts"][0]["poly"][-1] = [1030, 800]
+    assert "capital_aqueduct_terminates_at_a_gate" in f(M)
+
+
+def test_capital_aqueduct_stays_outside_the_wall_fires_on_an_interior_channel():
+    M = _cap_water()
+    M["aqueducts"][0]["poly"].append([500, 500])  # an open cut through the walled interior
+    assert "capital_aqueduct_stays_outside_the_wall" in f(M)
+
+
+def test_capital_no_road_parallels_river_fires_on_a_shadowing_road():
+    M = _cap_water()
+    M["roads"] = [{"pts": [[1180, 0], [1180, 1000]], "w": 26}]  # a trunk road hugging the bank end to end
+    assert "capital_no_road_parallels_river" in f(M)
+
+
+def test_matrix_extracts_the_feature_020_linear_keys():
+    """A record with no extents is invisible to every matrix check in both directions - feature
+    019's blindness. The towpath records 'pts' and the aqueduct 'poly'; both must extract as
+    STROKES via _MX_LINE_W (the aqueduct's open polyline must NOT fall through to the area-ring
+    branch, which closes it into a sliver polygon)."""
+    M = {"meta": {"scale": "capital"}, "towpaths": [{"pts": [[0, 0], [100, 0]], "w": 2.4}], "aqueducts": [{"poly": [[0, 50], [100, 50]], "w": 4.0, "intake": [0, 50], "to": [100, 50]}]}
+    ks = [k for k, *_ in check_village.matrix_extents(M)]
+    assert ks.count("towpaths") == 1 and ks.count("aqueducts") == 1
+
+
+def test_religious_matches_scale_capital_takes_temples():
+    """A capital is the city tier at 4x - temples, same as a provincial city. The scale map did
+    not know 'capital' and demanded NO religious building at all (feature 020)."""
+    M = _capital_manifest()
+    M["religious"] = [{"kind": "temple", "label": "Temple of Benten", "x": 500, "y": 500, "w": 50, "h": 33, "torii_count": 1}]
+    M["torii"] = [[500, 560, 1]]
+    assert "religious_matches_scale" not in f(M)
+
+
+def test_capital_no_road_parallels_river_passes_a_bridged_crossing():
+    M = _cap_water()
+    M["roads"] = [{"pts": [[900, 500], [1400, 500]], "w": 26}]  # ACROSS the river, not along it
+    M["bridges"] = [{"x": 1200, "y": 500, "rot": 0, "span": 68, "w": 26}]
+    assert "capital_no_road_parallels_river" not in f(M)

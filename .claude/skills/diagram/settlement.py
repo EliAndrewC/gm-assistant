@@ -1749,11 +1749,16 @@ def bridge_crossed_waters(M: Any) -> list[tuple[Any, float]]:
     if M.get("moat"):
         waters.append((M["moat"], M.get("moat_width", 22)))
     riv = M.get("river")  # the trunk river - a road crossing one was NEVER bridged, anywhere in the pool
-    if isinstance(riv, dict) and riv.get("poly"):
-        waters.append((riv["poly"], riv.get("w", 40)))
+    # s.river records "pts" (the "poly" spelling never occurs in a real manifest, so a branch
+    # reading only it is a check that never runs). The river also rides in M["streams"], so this
+    # entry can duplicate that one - harmless, because bridge() keeps one deck per crossing.
+    if isinstance(riv, dict) and (riv.get("pts") or riv.get("poly")):
+        waters.append((riv.get("pts") or riv["poly"], riv.get("w", 40)))
     for c2 in M.get("castles", []):  # a castle's OWN moat is water like any other
         if c2.get("moat"):
             waters.append((c2["moat"], c2.get("moat_width", 26)))
+    for aq in M.get("aqueducts", []):  # an open supply cut is a seam on the ground like any channel
+        waters.append((aq["poly"], aq.get("w", 8)))
     return waters
 
 
@@ -5676,7 +5681,9 @@ class Settlement:
             lx, ly = label_xy if label_xy else (min(xs) + (self.W - min(xs)) / 2, (min(ys) + max(ys)) / 2)
             self.label(lx, ly, label, 14, italic=True, weight="bold", color="#22301A")
 
-    def manor(self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0, gate_ft: float = 12.0, label_xy: Pt | None = None) -> None:
+    def manor(
+        self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0, gate_ft: float = 12.0, label_xy: Pt | None = None, ink: str | None = None
+    ) -> None:
         """A walled samurai compound (e.g. a magistrate's manor / hunting lodge) shown
         as a feature on a settlement map: ONLY the walls + gate + empty court. The
         interior is deliberately not drawn here - it is the subject of its own Mode A
@@ -5699,9 +5706,13 @@ class Settlement:
         the wall draws ~2 ft thick (true-width-or-floored at 2px), and the gate posts are
         ~2 ft squares (floored ~3px). The blank court is DELIBERATE - the interior is the
         subject of its own Mode A diagram when the PCs visit; the wall + gate carry the
-        realism, so they are the parts that must be honest. Records gate_w/wall_w (px)."""
+        realism, so they are the parts that must be honest. Records gate_w/wall_w (px).
+        `ink` recolors the walls and gate (recorded in the manifest): feature 020 uses it for the
+        Imperial Magistrate's compound, which is FOREIGN SOVEREIGN ground and must not read as
+        another domain office - the manor form, in its own ink, the way state violet marks the
+        ministries (settlements/capitals.md, "Compounds with no provincial equivalent")."""
         hw, hh = w / 2, h / 2
-        wall = '#2D2A24'
+        wall = ink or '#2D2A24'
         gg = max(self.px(gate_ft) / 2, 2.0)  # gate HALF-gap: real feet, floored so the opening stays visible
         ww = max(self.px(2), 2.0)  # wall thickness: ~2 ft dobei, 2px cartographic floor
         gp = max(self.px(2), 3.0)  # gate post: ~2 ft square, floored for visibility
@@ -5764,6 +5775,8 @@ class Settlement:
                 "wall_w": round(ww, 2),
             }
         )
+        if ink is not None:
+            self.M["manors"][-1]["ink"] = ink  # only when passed, so every old manifest stays byte-identical
         self._assert_walls_clear_of_torii("the manor wall")
         m = max(
             36 * self.bscale, 26
@@ -8398,6 +8411,7 @@ class Settlement:
     # with the offending key by name if a new feature is in neither this nor _CANOPY_OPEN_AIR_KEYS.
     # The TEST is the ratchet; the tuple is just the data.
     _CANOPY_ROOFED_KEYS = (
+        "granaries",  # the capital's wharf granaries - kura rows, roofed like the town's dict-recorded one
         "mausoleums",
         "fire_towers",
         "drum_towers",
@@ -9863,12 +9877,17 @@ class Settlement:
             _lx, _ly = label_xy if label_xy else (tilt_caption_seat(x, y, rot, _t, hw, hh, 10) if _t else (x, y + hh + 10))
             self.label(_lx, _ly, label, 8, italic=True, color="#6B5A3C", rot=_t)
 
-    def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary") -> list[Any]:
+    def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary", append: bool = False) -> list[Any]:
         """A short row of fireproof storehouses (kura) - the tax-rice granary of a rice-TRANSIT
         town, where grain from many counties is gathered and forwarded up the kick-up chain.
         White-walled with a dark hip roof. Opt-in (meta(granary=True)): a standard county seat
         keeps its grain inside the magistrate's yamen, so it is NOT drawn separately. Records to
-        M['granary'] (gated by town_has_granary) and blocks houses, like the manor."""
+        M['granary'] (gated by town_has_granary) and blocks houses, like the manor.
+        append=True records each store into the M['granaries'] LIST instead and leaves the legacy
+        dict untouched: a capital holds its grain in TWO places for two reasons (the domain's
+        working stipend rice at the wharf, the Emperor's stores beside it - and the siege stock
+        inside the castle, never drawn), and a second call on the dict would silently clobber the
+        first. Per-store records, so the overlap matrix can see each one (feature 019's lesson)."""
         stores: list[Any] = []
         x0 = x - (n * w + (n - 1) * gap) / 2
         for i in range(n):
@@ -9879,7 +9898,10 @@ class Settlement:
             stores.append({"x": cx, "y": y, "w": w, "h": h, "rot": 0})
             bm = 30  # block a RECT + a building-half margin so dwellings keep clear, like the manor
             self.block_polys.append([(cx - w / 2 - bm, y - h / 2 - bm), (cx + w / 2 + bm, y - h / 2 - bm), (cx + w / 2 + bm, y + h / 2 + bm), (cx - w / 2 - bm, y + h / 2 + bm)])
-        self.M["granary"] = {"x": x, "y": y, "n": n, "stores": stores, "label": label}
+        if append:
+            self.M.setdefault("granaries", []).extend({**st, "label": label} for st in stores)
+        else:
+            self.M["granary"] = {"x": x, "y": y, "n": n, "stores": stores, "label": label}
         if label:
             self.label(x, y - h / 2 - 10, label, 11, italic=True, color="#6B5A3C")
         return stores
@@ -11159,6 +11181,74 @@ class Settlement:
         )
         self.corridors.append(([(x, y) for x, y in pts], width / 2 + 16))
         return width
+
+    def towpath(self, pts: Any, width: float | None = None) -> None:
+        """A TOWPATH (the Chinese qiandao) - the beaten haulage path on a navigated river's bank.
+
+        WHY IT EXISTS, AND WHY IT IS NOT A ROAD (GM 2026-08-08; research/cities/capitals.md, "A
+        river gets a TOWPATH, not a road"). Water carried bulk far more cheaply than carts, so no
+        trunk road shadows a navigable river - the roads leave in the directions the water does
+        not serve (capital_no_road_parallels_river holds that line). What the bank carries is the
+        path the haulage teams walk when boats must be pulled UPSTREAM: Shaoxing's qiandao dates
+        to 815 CE and runs 40+ km, and Marco Polo saw barges hauled along it by teams of horses.
+        It exists BECAUSE of the boats - upstream haulage - so it SUPPLEMENTS water transport
+        rather than competing with it, and it runs to the wharf it serves and no further.
+
+        Drawn deliberately UNLIKE a road: no roadbed fill, no dashed centerline, one hairline at
+        the linework floor. Records M['towpaths'] (a list) and reserves a narrow corridor so the
+        packs keep off the bank."""
+        if width is None:
+            width = max(self.px(8), 2.4)  # an 8 ft beaten path, floored at the linework floor
+        dd = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        self.add(f'<path d="{dd}" fill="none" stroke="#A9885A" stroke-width="{width:.1f}" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>')
+        self.M.setdefault("towpaths", []).append({"pts": [[round(px_, 1), round(py_, 1)] for px_, py_ in pts], "w": round(width, 2)})
+        self.corridors.append(([(px_, py_) for px_, py_ in pts], width / 2 + 8))
+
+    def aqueduct(self, pts: Any, width: float | None = None) -> None:
+        """The capital's water-supply channel: intake works on the river, an OPEN cut at grade
+        outside the wall, terminating at a city gate - and buried beyond it.
+
+        THE FORM IS SETTLED AND THE NEGATIVE IS EXPLICIT (GM 2026-08-08; research/cities/
+        capitals.md, "The aqueduct is open outside the wall and buried inside it"). The East
+        Asian vocabulary is Edo's Kanda and Tamagawa josui and Odawara's sosui: a gravity canal
+        in a plain earth cut (the Kanda ran 43 km at grade), a buried pipe inside the town, and -
+        only where water must CROSS water - a kakehi flume carried over on a bridge (Edo's
+        Suidobashi, "aqueduct bridge", is named for one; none is needed where the route crosses
+        nothing). NO ARCADED AQUEDUCT EXISTS in either anchor tradition: arches are the one form
+        the possibility space excludes, so this glyph draws straight cuts only and takes no
+        arcade parameter. Past the gate nothing is drawn - the in-wall conduit is honestly
+        buried, and what a resident sees of it is its draw-basins (feature 021's, with the
+        wells).
+
+        `pts[0]` is the INTAKE on the river, drawn with the sluice vocabulary (paired head-posts
+        and a lifted board) so it reads as engineered water rather than a stray stream. Records
+        M['aqueducts'] (a list, with intake and terminus); the shared crossing source
+        (bridge_crossed_waters) reads it, so any way crossing the cut demands a deck like any
+        other watercourse."""
+        if width is None:
+            width = max(self.px(10), 3.0)  # a ~10 ft supply cut - far below the 36 ft cargo canal
+        dd = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        # the spoil banks first, then the water on top: a narrow cut reads from its earthwork edges
+        self.add(f'<path d="{dd}" fill="none" stroke="#C2B183" stroke-width="{width + 3:.1f}" stroke-linejoin="round" stroke-linecap="round"/>')
+        self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width:.1f}" stroke-linejoin="round" stroke-linecap="round"/>')
+        ia = math.degrees(math.atan2(pts[1][1] - pts[0][1], pts[1][0] - pts[0][0]))
+        hp = max(self.px(3), 2.0)  # head-post ~3 ft square
+        span = width / 2 + hp + 1
+        g = [f'<g transform="translate({pts[0][0]:.1f},{pts[0][1]:.1f}) rotate({ia:.1f})">']
+        for sy in (-span, span - hp):
+            g.append(f'<rect x="{-hp / 2:.1f}" y="{sy:.1f}" width="{hp:.1f}" height="{hp:.1f}" fill="#6B5A3C"/>')
+        g.append(f'<line x1="0" y1="{-span:.1f}" x2="0" y2="{span:.1f}" stroke="#6B5A3C" stroke-width="1.6"/>')
+        g.append("</g>")
+        self.add("".join(g))
+        self.M.setdefault("aqueducts", []).append(
+            {
+                "poly": [[round(px_, 1), round(py_, 1)] for px_, py_ in pts],
+                "w": round(width, 2),
+                "intake": [round(pts[0][0], 1), round(pts[0][1], 1)],
+                "to": [round(pts[-1][0], 1), round(pts[-1][1], 1)],
+            }
+        )
+        self.corridors.append(([(px_, py_) for px_, py_ in pts], width / 2 + 10))
 
     def dock(self, cx: float, cy: float, w: float, h: float) -> Pt:
         """An in-city DOCK BASIN at the head of the cargo canal - a rectangular cut of open water

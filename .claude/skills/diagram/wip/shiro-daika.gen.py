@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Shiro Daika - the DOMAIN CAPITAL of the Daika house (diagram skill, Mode B, 1px = 3ft).
 
-THIS MAP IS A SKELETON, AND THAT IS THE INCREMENT, NOT A DEFECT (feature 019). It draws the
-wall, the moat, the river, the ways, the gates and the CASTLE, and stops there. Everything that
-fills a city - the rank-graded samurai districts, the commoner machi, the eight lineage
-compounds, the two sovereign temples and the teramachi rim, the wharf with its granary and
-brokers' row, the aqueduct, the kido mesh - is feature 020. The interior is meant to look empty
-at this stage; the castle was built FIRST so the GM could judge its provisional bailey walls off
-an early render rather than at the end of a long build.
+SKELETON (feature 019) + THE GROUND-RESERVING LAYER (feature 020). The map now carries the wall,
+the moat, the river, the ways, the gates, the CASTLE - and every compound and public work that
+must be sited BEFORE housing: the government ward on the ote-suji, the Imperial Magistrate's
+compound, the eight lineage compounds, the two sovereign temples and the teramachi rim, the
+wharf with its granaries and brokers' row, the towpath, and the aqueduct. All housing (the
+rank-graded samurai districts, retainer terraces, commoner machi), the public wells, the fire
+towers and the kido mesh are feature 021's - the packs flow around the ground reserved here.
 
 THE HOUSE. Daika is a Bayushi vassal house of the SCORPION, seated here; Ubame county (see
 pool/towns/ubame.gen.py) is one of its county seats, out in Moriguchi province, and the charcoal
 road that leaves Ubame westward arrives at this city's EAST gate. Scorpion patron fortunes are
-Benten and Jurojin, so the two sovereign temples will be theirs (feature 020).
+Benten and Jurojin, so the two sovereign temples are theirs.
 
 THE WAYS (GM 2026-08-08, confirmed against the campaign map). The IMPERIAL ROAD enters at the
 SOUTH gate, runs north through the city, and beyond the north gate bends NORTHWEST toward Shiro
@@ -23,15 +23,20 @@ ordinary road's course is already visible.
 THE RIVER runs NORTHEAST -> SOUTHWEST past the city's southeast flank and off both edges. NO
 TRUNK ROAD RUNS ALONGSIDE IT: water carried bulk far more cheaply than carts, so a highway
 shadowing a navigable river is redundant, and the roads leave in the directions the water does
-not serve. What belongs on the bank is a TOWPATH (the Chinese qiandao - upstream haulage, so it
-supplements the boats rather than replacing them), and that is feature 020's, with the wharf it
-serves. See research/cities/capitals.md, "A river gets a TOWPATH, not a road".
+not serve. The bank carries the TOWPATH (the Chinese qiandao - upstream haulage, so it
+supplements the boats rather than replacing them), running to the wharf and no further. See
+research/cities/capitals.md, "A river gets a TOWPATH, not a road".
 
 THE CASTLE sits in the ring (castle_seat="ring" - both traditions nest their citadel, so it is
 the median form), north of center, with its OTE-MON FACING SOUTH onto the ceremonial approach
 that runs down to the Imperial road's south gate. That is the jokamachi rule: the main road
 passes the castle's FRONT, "to indicate the glory of the ruler". Its interior is BLANK and stays
 blank - see Settlement.castle's docstring for the sync argument.
+
+THE GRAIN IS IN TWO PLACES FOR TWO REASONS (settlements/capitals.md): the siege stock is inside
+the castle (implied, never drawn); the working stipend-and-transhipment rice is the domain
+granary at the wharf. The EMPEROR'S granaries are separate again - they face brigands, not
+besiegers - and this map exercises imperial_granary_seat="wharf" (grain moves by boat).
 """
 
 import math
@@ -39,7 +44,7 @@ import os
 import sys
 
 # Walk UP to the engine rather than counting directories: this map lives in wip/ while it is a
-# draft and moves to pool/capitals/ when feature 020 makes it green, and a hard-coded depth
+# draft and moves to pool/capitals/ when feature 021 makes it green, and a hard-coded depth
 # breaks on exactly that move.
 _D = os.path.dirname(os.path.abspath(__file__))
 while not os.path.exists(os.path.join(_D, "settlement.py")):
@@ -60,10 +65,17 @@ s.meta(
     imperial_road=True,
     clan="Scorpion",
     capital_dir="northwest",  # Shiro Kyo, and the Imperial road beyond it
-    # A SKELETON has no fabric, so the four gates' furniture is the only thing out near the wall
-    # and each station reads as an outlier holding the frame open. That is the skeleton showing
-    # through, not a siting error - feature 020 fills the interior and they cease to be outliers.
-    crop_outlier_ok="The four gates' inspection stations are the only features outside an empty interior at the SKELETON stage (feature 019 draws no fabric); feature 020 fills the quarters and they cease to be outliers.",
+    # THE LINEAGE DECLARATION (feature 020). Bands track HOUSEHOLDS HOUSED, never the rank of the
+    # head: the chargen weights ([house][[daika]]) give six chancellors (daika 19, hazama 16,
+    # utsuro 15, tokiwa 14, anzu 12, kurogi 11) and three below the threshold (yodo 5, nio 4,
+    # seki 4). kurogi is PROVINCIAL (seated in Moriguchi), so its chancellor keeps a capital
+    # estate that is visibly smaller - most of the kurogi live around their own provincial city.
+    # The ruling daika lineage has NO compound: its seat IS the castle.
+    lineages={"hazama": "grand", "utsuro": "grand", "tokiwa": "grand", "anzu": "grand", "kurogi": "estate", "yodo": "house", "nio": "house", "seki": "house"},
+    ruling_lineage="daika",
+    # The gates' furniture, the wharf works, the towpath and the aqueduct are the only features
+    # outside the rampart until feature 021 fills the interior - the frame reads sparse, not wrong.
+    crop_outlier_ok="Outside the rampart the map carries only the gate furniture, the wharf works, the towpath and the aqueduct until feature 021 fills the interior; sparse outliers at this stage are the build order showing through, not a siting error.",
 )
 
 # ---- BUDGET-FIRST (feature 018): the wall is an OUTPUT of the declared program, never a guess.
@@ -103,41 +115,185 @@ s.bound = [list(p) for p in RING]
 # road passes the castle's FRONT, not through it, and a castle town deliberately bends its highway
 # rather than offering a mile-long straight run at the daimyo's gate - that bend is the kagi-no-te.
 # So the road comes north to the castle's south front, turns west past it, and comes back to the
-# north gate. The ote-suji stub from the front to the ote-mon is feature 020's, with the government
-# avenue the ministries line.
+# north gate. The bend sits at y=1560 (feature 020 moved it south from 1420) so the ote-suji stub
+# is long enough to carry three ministry compounds a side with the 14px office standoffs.
+KAGI_Y = 1560
 s.road(
-    [(SGATE[0], 2700), (SGATE[0], SGATE[1]), (SGATE[0], 1420), (800, 1420), (800, 470), (NGATE[0], NGATE[1]), (1310, 150), (980, 0)],
+    [(SGATE[0], 2700), (SGATE[0], SGATE[1]), (SGATE[0], KAGI_Y), (800, KAGI_Y), (800, 470), (NGATE[0], NGATE[1]), (1310, 150), (980, 0)],
     label="Imperial Road",
     label_xy=(SGATE[0] + 150, 2330),
 )
 s.road([(EGATE[0], EGATE[1]), (2820, 1130), (3200, 1040)])  # east, to the Fox lands
 s.road([(SWGATE[0], SWGATE[1]), (300, 2010), (0, 2170)])  # southwest, into the domain
 
+# ---- THE OTE-SUJI (feature 020): the ceremonial avenue from the castle's front gate south to the
+# Imperial road at the kagi-no-te bend. Drawn as a road (M["roads"]) so the shared crossing source
+# carries it over the castle moat, and UNLABELED - only the Imperial road is named.
+OTE_X = 1400
+s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=32)  # starts just south of the ote-mon's gate tower
+
 # ---- THE CASTLE. North of center so the ceremonial approach has room to run south to the gate;
 # ote-mon SOUTH, per the jokamachi rule that the main road passes the castle's front. Blank inside.
-s.castle(CX, 880, 850, 700, label="Shiro Daika Castle", gate_dir="south")
+# the caption is "Shiro Daika" PLAIN: shiro already means castle, so "Shiro Daika Castle" reads
+# "Castle Daika Castle" - the Mount-Fujiyama construction Constitution XI exists to catch. Town
+# and castle sharing the name is the jokamachi reality (settlement-review, 2026-08-09).
+s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south")
 
 # ---- the moat CIRCULATES: a closed ring has no upstream end, so the gen names where its water
 # enters and where it leaves. The land falls NE -> SW (water_flow=135), so it is fed on the
 # northeast arc and drains from the southwest one.
 s.moat_flow(MOAT[2], MOAT[12])
 
-# ---- carry every way over the water it crosses. AFTER all roads and water, as bridges() requires.
+# ---- THE AQUEDUCT (feature 020): intake on the river upstream of the east road's crossing, an
+# open cut at grade swinging around the northeast quarter OUTSIDE the moat, terminating at the
+# north gate's east side (the moat takes any spillover, as a real josui terminus did). Open
+# outside the wall, buried inside it, the GATE as the boundary - the route crosses no
+# watercourse, so no kakehi flume is needed. The land falls NE -> SW, so the cut runs from the
+# high northeast down toward the gate, roughly along the contour like Edo's Kanda josui.
+s.aqueduct([(3123, 779), (2820, 610), (2350, 405), (1800, 215), (1560, 182), (NGATE[0] + 20, NGATE[1] - 38)])
+# the one thing the drawing cannot say (settlement-review 2026-08-09): at fit zoom the open cut
+# can read as a natural brook spilling into the moat, so the intake carries the word
+s.label(2975, 668, "aqueduct", 10, italic=True, color="#5E7A8A")
+
+# ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
+# upstream haulage is the whole reason it exists - and ending at the wharf, no further.
+s.towpath([(1774, 2681), (1924, 2481), (2074, 2281), (2216, 2103), (2262, 2042)])
+
+# ---- carry every way over the water it crosses. AFTER all roads and water, as bridges() requires:
+# the south/east/southwest/north gates' moat crossings, the east road over the RIVER, and the
+# ote-suji over the castle's own moat all take decks from the one shared source (feature 020).
 s.bridges()
 
-# (the Imperial-road farrier and its relay stables belong to feature 020's fabric - see below)
+# ---- THE GOVERNMENT WARD (feature 020): the six domain ministries flanking the ote-suji in two
+# files of three, the House Chancellery and the domain school continuing the same axis south of
+# the kagi-no-te bend. Both anchor traditions converge on exactly this form - Beijing's Six
+# Ministries lined the Corridor of a Thousand Steps outside Chengtianmen, and a jokamachi's
+# offices spilled out of the ninomaru into the town (settlements/capitals.md, "The government
+# ward"). Default ministry compound: 224x148 ft, the researched provincial size - a domain
+# ministry is the same bureau of clerks and archives at a bigger desk.
+for i, nm in enumerate(("Rites", "Revenue", "Retainers")):
+    s.ministry(1330, 1330 + 85 * i, f"Ministry of {nm}")
+for i, nm in enumerate(("War", "Works", "Justice")):
+    s.ministry(1470, 1330 + 85 * i, f"Ministry of {nm}")
+# The chancellery is a council hall for the domain's lineage representatives, the school is the
+# hanko - government both, so they take the ministry glyph and the state violet, slightly smaller.
+s.ministry(1330, 1650, "House Chancellery", w=s.px(200), h=s.px(132))
+s.ministry(1470, 1650, "Domain School", w=s.px(200), h=s.px(132))
 
-# ---- declared quarters: the interior tiled into zoned wedges split at the crossroads. At the
-# skeleton stage these carry no housing - they are what feature 020's packs will fill.
-s.quarter([(CX, CY), (CX, 243), (WALL[3][0], WALL[3][1]), (WALL[5][0], WALL[5][1])], "civic")  # NE: the castle's own ground
-s.quarter([(CX, CY), (WALL[5][0], WALL[5][1]), (WALL[8][0], WALL[8][1]), (CX, WALL[10][1])], "mixed")  # SE
-s.quarter([(CX, CY), (CX, WALL[10][1]), (WALL[13][0], WALL[13][1]), (WALL[15][0], WALL[15][1])], "mixed")  # SW
-s.quarter([(CX, CY), (WALL[15][0], WALL[15][1]), (WALL[18][0], WALL[18][1]), (CX, 243)], "mixed")  # NW
+# ---- THE IMPERIAL MAGISTRATE'S COMPOUND (feature 020): FOREIGN SOVEREIGN GROUND - ~56 staff plus
+# family, funded at 700 koku/yr for "manor maintenance, grounds, stable, fortified walls,
+# ceremonial halls" (budgets.md). The manor form in its OWN ink, deep jade against the ministries'
+# state violet, so it reads as not-of-the-domain; gate west, facing the government ward it works
+# beside.
+# captioned as the INSTITUTION, not the officeholder (settlement-review 2026-08-09; Ubame's
+# sibling is "Magistrate's Manor" and capitals.md says "the Imperial Magistrate's compound")
+s.manor(1720, 1445, 100, 75, "Imperial Magistrate's Compound", gate_dir="west", ink="#274D3D")
 
-# a SKELETON has no satellite features (gate markets, flophouses) to anchor the frame, so the
-# aggressive 35px default would crop hard to the moat and leave the ways as stubs. A modest
-# uniform margin shows each road running off the edge, and the south side carries the Imperial
-# road caption, which finish() seats AFTER the crop and so cannot widen it itself.
-s.crop_city(margin=140, south=240)
+
+# ---- THE LINEAGE COMPOUNDS (feature 020): eight named walled yashiki in the samurai ground,
+# graded by households housed. The four grand chancellery estates flank the castle east and west
+# (closest to the court = highest standing); kurogi - a full chancellor whose people live out in
+# Moriguchi - takes a visibly smaller estate near the east gate; the three modest houses hold the
+# band north of the castle. daika, the ninth, IS the castle.
+def lineage_manor(x: float, y: float, w: float, h: float, name: str, gate_dir: str) -> None:
+    s.manor(x, y, w, h, f"{name.title()} Estate", gate_dir=gate_dir)
+    s.M["manors"][-1]["lineage"] = name  # the field capital_lineage_compounds_labeled reads
+
+
+lineage_manor(2075, 700, 158, 122, "hazama", "west")
+lineage_manor(2075, 975, 152, 118, "utsuro", "west")
+# the west pair stands WEST of the Imperial road's kagi-no-te leg (x=800) - the strip between
+# that leg and the castle moat is too narrow for a grand estate
+lineage_manor(665, 700, 148, 115, "tokiwa", "east")
+lineage_manor(665, 975, 140, 110, "anzu", "east")
+lineage_manor(2040, 1330, 108, 84, "kurogi", "west")
+# the modest row sits south of the road's diagonal run to the north gate
+lineage_manor(1170, 400, 76, 58, "yodo", "south")
+lineage_manor(1420, 390, 72, 56, "nio", "south")
+lineage_manor(1660, 385, 70, 54, "seki", "south")
+
+# ---- THE SOVEREIGN TEMPLES + THE TERAMACHI RIM (feature 020). Two sovereign temples with grand
+# abbots - the head houses of domain-wide orders, dedicated to the Scorpion patrons Benten and
+# Jurojin - stand in the fabric; the remaining temples BELT the inner face of the rampart as the
+# teramachi rim, part of the defenses, rather than gathering in one quarter
+# (settlements/capitals.md, "Placements that change").
+# Benten, the PRIMARY sovereign temple, is pinned to the full 7-arch avenue (torii_count=7,
+# Nagahara's donation-row stride): the per-temple roll gave the primary a 3-arch stub while its
+# co-sovereign rolled 7, which read the declared hierarchy inverted (settlement-review 2026-08-09).
+s.shrine_hall(1850, 1620, "Temple of Benten", w=s.px(150), h=s.px(100), kind="temple", primary=True, torii=[(1850, 1700), (1850, 1820)], torii_count=7)
+s.shrine_hall(950, 1620, "Temple of Jurojin", w=s.px(150), h=s.px(100), kind="temple", torii=[(950, 1700), (950, 1760)])
+# THE PRECINCT IS RESERVED EVEN THOUGH ONLY THE HALL IS DRAWN (settlement-review 2026-08-09): a
+# sovereign temple is a HEAD HOUSE - abbot's residence, order administration, library, the monks
+# living inside the precinct (capitals.md, "a different program, not a scaled precinct") - and
+# this is the ground-reserving feature, so the complex's ~390x300 ft ground is held NOW and
+# feature 021 draws it. Both registries, like the castle: block_polys is center-tested by the
+# packs, placed is distance-tested and stops a wide building overhanging the precinct.
+for _tpx, _tpy in ((1850, 1620), (950, 1620)):
+    s.block_polys.append([(_tpx - 65, _tpy - 50), (_tpx + 65, _tpy - 50), (_tpx + 65, _tpy + 50), (_tpx - 65, _tpy + 50)])
+    s.placed.append((_tpx, _tpy, 130, 100))
+
+
+def rim_temple(idx: float, name: str) -> None:
+    """A modest teramachi hall on the rampart's inner face, ~130px inside the wall ellipse -
+    inside the ring road's patrol strip, spaced off the gates and the government axis. Each
+    hall's torii approach marches INWARD, toward the city it serves - the rim faces the fabric,
+    its back to the defenses."""
+    a = -math.pi / 2 + 2 * math.pi * idx / NRING
+    tx, ty = round(CX + (RX - 130) * math.cos(a)), round(CY + (RY - 130) * math.sin(a))
+    ux, uy = -math.cos(a), -math.sin(a)
+    s.shrine_hall(tx, ty, name, w=s.px(96), h=s.px(64), kind="temple", torii=[(tx + ux * 45, ty + uy * 45), (tx + ux * 95, ty + uy * 95)])
+
+
+rim_temple(2, "Temple of Bishamon")
+rim_temple(7, "Temple of Ebisu")
+rim_temple(11.5, "Temple of Inari")
+rim_temple(15, "Temple of Daikoku")
+rim_temple(17.5, "Temple of Hotei")
+
+# ---- THE WHARF (feature 020): the collecting-and-disbursing end of the domain's rice, on the
+# river outside the southeast arc - the Asakusa Okura / Kuramae model, a working chain from river
+# to store: jetties and a dock basin at the bank, the DOMAIN granary behind the quay (stipend rice
+# in, surplus shipping out), the brokers' row fronting the lane before it (MERCHANT, not state -
+# the fudasashi pattern: the contracts and lending sit outside the Ministry of Retainers' narrow
+# stipend function, and the brokers' money is what will build the theaters next door in 021).
+# The EMPEROR'S granaries stand apart upstream (imperial_granary_seat="wharf"): a different
+# threat model - brigands, not besiegers - so a stout row outside the castle, near the water the
+# grain moves on.
+s.jetty(2384, 1875, rot=36, length=22)  # rooted on the west bank, running out into the stream
+s.jetty(2276, 2028, rot=36, length=22)
+s.dock(2325, 1935, 44, 32)  # the basin cut into the bank between the jetties
+# the moat-to-river band is ~190px at the wharf's latitude and widens downstream, so the two
+# granary complexes step along the bank rather than sharing one row
+s.granary(2210, 1920, n=4, w=20, h=12, gap=8, label="domain granary", append=True)
+s.granary(2455, 1660, n=3, w=20, h=12, gap=8, label="Imperial granary", append=True)
+# the brokers' lane runs shore-parallel between the granaries and the quay; its frontage is the
+# brokers' row. The wharf suburb is OUTSIDE the ring-road bound the urban packs honor, so the
+# frontage places against the suburb's own ground and the bound is restored after.
+BROKER_LANE = [(2410, 1730), (2300, 1890), (2215, 2020)]
+s.lane(BROKER_LANE, width=8)
+_CITY_BOUND = s.bound
+s.bound = [[2020, 1560], [2560, 1560], [2560, 2140], [2020, 2140]]
+s.frontage(BROKER_LANE, (["merchant", "merchant", "shop"] * 4), width=8, spacing=19, rows=1, jitter=1, setback=s.px(14))
+s.bound = _CITY_BOUND
+
+# ---- declared quarters (feature 020 re-zone): the CIVIC quarter is the ground the government
+# actually occupies - the ote-suji band south of the ote-mon, ministries to chancellery - not a
+# wedge picked before the castle was placed. The four interior wedges split at the kagi-no-te
+# junction, where the avenue meets the through-road, and carry no zone stronger than "mixed"
+# until feature 021 packs them. Quarters are declarative overlays, so the civic band riding over
+# the wedge seams is intentional.
+s.quarter([(1240, 1279), (1560, 1279), (1560, 1732), (1240, 1732)], "civic")
+s.quarter([(OTE_X, KAGI_Y), (CX, 243), (WALL[3][0], WALL[3][1]), (WALL[5][0], WALL[5][1])], "mixed")  # NE
+s.quarter([(OTE_X, KAGI_Y), (WALL[5][0], WALL[5][1]), (WALL[8][0], WALL[8][1]), (CX, WALL[10][1])], "mixed")  # SE
+s.quarter([(OTE_X, KAGI_Y), (CX, WALL[10][1]), (WALL[13][0], WALL[13][1]), (WALL[15][0], WALL[15][1])], "mixed")  # SW
+s.quarter([(OTE_X, KAGI_Y), (WALL[15][0], WALL[15][1]), (WALL[18][0], WALL[18][1]), (CX, 243)], "mixed")  # NW
+
+# the wharf works and the aqueduct now anchor the frame's east; a modest uniform margin still
+# shows each road running off the edge, and the south side carries the Imperial road caption,
+# which finish() seats AFTER the crop and so cannot widen it itself. The EAST margin is wide on
+# purpose: the aqueduct's intake works on the river (~x3140) are the part of the system a reader
+# traces first (spec 020, User Story 3), and the default crop cut them - plus the east road's
+# river bridge - clean off the sheet.
+s.crop_city(margin=140, south=240, east=700)
 s.title("Shiro Daika")
 s.finish(os.path.splitext(os.path.abspath(__file__))[0].replace(".gen", ""), png_width=4600)
