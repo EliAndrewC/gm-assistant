@@ -118,12 +118,24 @@ s.bound = [list(p) for p in RING]
 # north gate. The bend sits at y=1560 (feature 020 moved it south from 1420) so the ote-suji stub
 # is long enough to carry three ministry compounds a side with the 14px office standoffs.
 KAGI_Y = 1560
+# ...with straight STUBS through the north gate (GM 2026-08-09: the old geometry bent AT the
+# gate point, so the roadbed rode along the rampart stroke): the diagonal legs meet a short
+# perpendicular run on each side of the gate, and the bed passes clean through the gap.
 s.road(
-    [(SGATE[0], 2700), (SGATE[0], SGATE[1]), (SGATE[0], KAGI_Y), (800, KAGI_Y), (800, 470), (NGATE[0], NGATE[1]), (1310, 150), (980, 0)],
+    [(SGATE[0], 2700), (SGATE[0], SGATE[1]), (SGATE[0], KAGI_Y), (800, KAGI_Y), (800, 470), (1400, 300), (NGATE[0], NGATE[1]), (1400, 140), (1180, 55), (980, 0)],
     label="Imperial Road",
     label_xy=(SGATE[0] + 150, 2330),
 )
+# the same road is Imperial on BOTH sides of the city (GM 2026-08-09) - the run toward Shiro
+# Kyo carries its own caption, tilted along the branch per the linear rule
+s.label(1170, 66, "Imperial Road", 11, italic=True, color="#6E5B38", rot=195, linear=True)
 s.road([(EGATE[0], EGATE[1]), (2820, 1130), (3200, 1040)])  # east, to the Fox lands
+# the karamete approach is the STRAIGHT CONTINUATION of the north gate's street (GM 2026-08-09:
+# the first cut hung it off the diagonal mid-slope and the two beds read as overlapping roads):
+# city gate -> due south -> the castle's rear gate, dead-ending at its moat and tower exactly as
+# a castle-town street aimed at the works should, while the Imperial through-road leaves the
+# street at the (1400, 300) junction and bends west around the castle front (the kagi-no-te).
+s.road([(1400, 300), (1400, 520)])  # stops at the karamete tower's foot, as the ote-suji stops at the ote-mon's
 s.road([(SWGATE[0], SWGATE[1]), (300, 2010), (0, 2170)])  # southwest, into the domain
 
 # ---- THE OTE-SUJI (feature 020): the ceremonial avenue from the castle's front gate south to the
@@ -143,7 +155,11 @@ s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=s.lw(45))  # starts just south of
 # the caption is "Shiro Daika" PLAIN: shiro already means castle, so "Shiro Daika Castle" reads
 # "Castle Daika Castle" - the Mount-Fujiyama construction Constitution XI exists to catch. Town
 # and castle sharing the name is the jokamachi reality (settlement-review, 2026-08-09).
-s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south")
+# TWO GATES (GM 2026-08-09, researched): the ote-mon fronts south onto the ceremonial
+# approach; the karamete-mon - the rear gate every castle kept, the sortie gate - opens north,
+# its approach road bridging the castle's own moat to join the Imperial road's run to the
+# city's north gate. research/cities/capitals.md, "A castle has TWO gates".
+s.castle(CX, 880, 850, 700, label="Shiro Daika", gate_dir="south", karamete_dir="north")
 
 # ---- the moat CIRCULATES river-to-river, every drawn drop moving NE -> SW (GM 2026-08-09,
 # third cut - the second still ran its last leg up-screen). Like Minami and Nagahara the moat
@@ -164,22 +180,19 @@ s.stream([DRAIN_OUT, (2065, 2180), (2062, 2325)], frm={"kind": "moat"}, to={"kin
 s.sluice_gate(DRAIN_OUT[0], DRAIN_OUT[1], rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90)  # the outfall board where the drain leaves the ring
 s.moat_flow(MOAT[4], MOAT[8])
 
-# ---- THE AQUEDUCT (feature 020): intake on the river upstream of the east road's crossing, an
-# open cut at grade swinging around the northeast quarter OUTSIDE the moat, terminating at the
-# north gate's east side (the moat takes any spillover, as a real josui terminus did). Open
-# outside the wall, buried inside it, the GATE as the boundary - the route crosses no
-# watercourse, so no kakehi flume is needed. The land falls NE -> SW, so the cut runs from the
-# high northeast down toward the gate, roughly along the contour like Edo's Kanda josui.
-# ...and the cut now visibly REACHES the city (GM 2026-08-09: "the aqueduct appears to be
-# connected to literally nothing"): its last leg crosses the city moat on a KAKEHI - the open
-# flume carried over on a bridge that Edo's Suidobashi is named for - and the terminal basin
-# stands at the rampart's foot beside the north gate, where the buried in-wall pipe begins.
-s.aqueduct([(3123, 779), (2820, 610), (2350, 405), (1800, 215), (1560, 182), (1442, 198), (1425, 231)])
-s.bridge(1433, 214, math.degrees(math.atan2(231 - 198, 1425 - 1442)), 34, 5.5)  # the kakehi deck over the moat
-s.M["bridges"][-1]["foot"] = True  # carries the FLUME, not a road - exempt from the road-deck alignment pairing, like a standalone footplank
-# the one thing the drawing cannot say (settlement-review 2026-08-09): at fit zoom the open cut
-# can read as a natural brook spilling into the moat, so the intake carries the word
-s.label(2975, 668, "aqueduct", 10, italic=True, color="#5E7A8A")
+# ---- THE AQUEDUCT (feature 020; rebuilt to the researched josui form, GM 2026-08-09). What
+# the research says a josui IS (research/cities/capitals.md, "How a josui actually ran"): an
+# intake WEIR on the river peeling off at a SHALLOW DOWNSTREAM angle (Hamura's nagewatashi
+# weir); an OPEN earth cut - open-topped, hence water-blue between spoil banks - falling
+# gently and continuously (Tamagawa: 92 m over 43 km, never a climb); a terminus at the city
+# gate's waterworks head (Yotsuya Okido), the settling tank on the moat's OUTER bank; and
+# BURIED wooden mains (mokuhi) beyond it, feeding cistern-wells (josui-ido) the residents
+# bucket from - feature 021's, with the wells. The first draft ran the cut up-screen around
+# the whole northeast and crossed the moat on a flume; the corrected route peels off
+# downstream and falls straight to the EAST gate - short and direct because the river is
+# near, where the real ones wound only to HOLD their gradient across long country.
+s.aqueduct([(2983, 989), (2790, 1063), (2620, 1125), (2510, 1168)])
+s.label(2725, 1066, "aqueduct", 10, italic=True, color="#5E7A8A", rot=160, linear=True, full_tilt=True)
 
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
 # upstream haulage is the whole reason it exists - and ending at the wharf, no further.
@@ -242,8 +255,8 @@ lineage_manor(700, 700, 140, 112, "tokiwa", "east")
 lineage_manor(665, 975, 140, 110, "anzu", "east")
 lineage_manor(2040, 1330, 108, 84, "kurogi", "west")
 # the modest row sits south of the road's diagonal run to the north gate
-lineage_manor(1170, 400, 76, 58, "yodo", "south")
-lineage_manor(1420, 390, 72, 56, "nio", "south")
+lineage_manor(1150, 425, 76, 58, "yodo", "south")  # below the flattened diagonal to the north gate
+lineage_manor(1520, 390, 72, 56, "nio", "south")  # east of the karamete approach road
 lineage_manor(1660, 385, 70, 54, "seki", "south")
 
 # ---- THE SOVEREIGN TEMPLES + THE TERAMACHI RIM (feature 020). Two sovereign temples with grand

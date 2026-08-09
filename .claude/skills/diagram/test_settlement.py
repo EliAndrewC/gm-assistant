@@ -6180,6 +6180,23 @@ def test_the_baileys_are_OFFSET_and_their_gates_dogleg(gate_dir):
         assert not (abs(a[0] - b[0]) < 1.0 and abs(a[1] - b[1]) < 1.0)
 
 
+def test_castle_karamete_records_a_rear_gate_and_second_tower():
+    """The ote-mon / karamete-mon pair is the standard castle gate program (GM 2026-08-09,
+    researched - rear gate opposite the front, the sortie gate); karamete_dir opens it, a size
+    down in tower, and the record carries it only when asked - every existing castle is
+    byte-identical."""
+    s_one, rec_one = _castle_map()
+    assert "karamete" not in rec_one
+    assert sum(1 for t in s_one.M["castle_towers"] if t["kind"] == "gate_tower") == 1
+    s_two, rec_two = _castle_map(karamete_dir="north")
+    assert rec_two["karamete_dir"] == "north"
+    assert rec_two["karamete"][1] < rec_two["y"]  # the rear gate opens on the north wall
+    assert sum(1 for t in s_two.M["castle_towers"] if t["kind"] == "gate_tower") == 2
+    s_east, rec_east = _castle_map(karamete_dir="east")
+    east_tower = s_east.M["castle_towers"][-1]
+    assert east_tower["w"] < east_tower["h"]  # the rear tower turns with its wall on an east/west gate
+
+
 def test_a_castle_caption_is_placed_only_when_a_label_is_given():
     s_none, _ = _castle_map(label="")
     s_lab, _ = _castle_map(label="Keep")

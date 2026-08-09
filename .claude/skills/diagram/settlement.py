@@ -11264,8 +11264,13 @@ class Settlement:
         if width is None:
             width = max(self.px(10), 3.0)  # a ~10 ft supply cut - far below the 36 ft cargo canal
         dd = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-        # the spoil banks first, then the water on top: a narrow cut reads from its earthwork edges
-        self.add(f'<path d="{dd}" fill="none" stroke="#C2B183" stroke-width="{width + 3:.1f}" stroke-linejoin="round" stroke-linecap="round"/>')
+        # the bank lines first, then the water on top: a narrow cut reads from its earthwork
+        # edges. GLYPH CONVENTION, not scale (GM 2026-08-09): the true berms of a 10 ft cut
+        # would draw ~1 px of pale tan and vanish, so the banks render DARKER and WIDER than
+        # life - masonry brown, ~2 px of reveal per side - exactly as a wellhead draws at `vr`
+        # over its true `r`. The to-scale rule governs the WATER (the feature); the banks are
+        # the glyph's legibility furniture.
+        self.add(f'<path d="{dd}" fill="none" stroke="#7A6A48" stroke-width="{width + 4.4:.1f}" stroke-linejoin="round" stroke-linecap="round"/>')
         self.add(f'<path d="{dd}" fill="none" stroke="#9CB4C8" stroke-width="{width:.1f}" stroke-linejoin="round" stroke-linecap="round"/>')
         ia = math.degrees(math.atan2(pts[1][1] - pts[0][1], pts[1][0] - pts[0][0]))
         hp = max(self.px(3), 2.0)  # head-post ~3 ft square
@@ -11636,6 +11641,7 @@ class Settlement:
         baileys: bool = False,
         bailey_fracs: tuple[float, ...] = (0.64, 0.34),
         label_xy: Pt | None = None,
+        karamete_dir: str | None = None,
     ) -> Any:
         """A domain capital's castle, drawn as an ENCEINTE and BLANK INSIDE.
 
@@ -11705,13 +11711,15 @@ class Settlement:
             sheen=f'<path d="{dd}" fill="none" stroke="#B6CAD8" stroke-width="{mw * 0.4:.0f}" stroke-linejoin="round"/>',
         )
 
-        def walled_rect(cx: float, cy: float, rx: float, ry: float, gdir: str, weight: float = 1.0) -> Pt:
-            """One enclosure: four wall runs with a gap in the `gdir` side. Returns the gate center.
+        def walled_rect(cx: float, cy: float, rx: float, ry: float, gdir: str, weight: float = 1.0, gdir2: str | None = None) -> Pt:
+            """One enclosure: four wall runs with a gap in the `gdir` side (and in `gdir2`, when
+            the enclosure keeps a rear gate). Returns the main gate center.
 
             Takes its own CENTER, because a castle's wards are OFFSET rather than concentric - see
             the bailey block below for why that is the whole difference between a fortress and a
             bullseye."""
             sw = ww * weight
+            open_dirs = {gdir} | ({gdir2} if gdir2 else set())
             sides = {
                 "north": ((cx - rx, cy - ry), (cx + rx, cy - ry), (cx, cy - ry)),
                 "south": ((cx - rx, cy + ry), (cx + rx, cy + ry), (cx, cy + ry)),
@@ -11719,7 +11727,7 @@ class Settlement:
                 "east": ((cx + rx, cy - ry), (cx + rx, cy + ry), (cx + rx, cy)),
             }
             for name, (pa, pb, (gx, gy)) in sides.items():
-                if name != gdir:
+                if name not in open_dirs:
                     self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{sw:.1f}"/>')
                 elif name in ("west", "east"):
                     self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pa[0]:.0f}" y2="{gy - gg:.1f}" stroke="{wall}" stroke-width="{sw:.1f}"/>')
@@ -11738,7 +11746,7 @@ class Settlement:
         self.add(f'<rect x="{x - hw:.0f}" y="{y - hh:.0f}" width="{w:.0f}" height="{h:.0f}" fill="#E3D6B2"/>')
         inb = ww * 1.9
         self.add(f'<rect x="{x - hw + inb:.0f}" y="{y - hh + inb:.0f}" width="{w - 2 * inb:.0f}" height="{h - 2 * inb:.0f}" fill="none" stroke="{wall}" stroke-width="{ww * 0.32:.1f}" opacity="0.5"/>')
-        gate = walled_rect(x, y, hw, hh, gate_dir)
+        gate = walled_rect(x, y, hw, hh, gate_dir, gdir2=karamete_dir)
 
         # CORNER YAGURA. The city rampart carries a mural tower every bowshot; a castle drawn with a
         # bare unarticulated line therefore asserts that the daimyo's fortress is the WEAKER work,
@@ -11754,6 +11762,19 @@ class Settlement:
         gtw, gth = self.px(88), self.px(52)
         self.add_wall(f'<rect x="{gate[0] - gtw / 2:.1f}" y="{gate[1] - gth / 2:.1f}" width="{gtw:.1f}" height="{gth:.1f}" fill="#B9A882" stroke="{wall}" stroke-width="{ww * 0.75:.1f}"/>')
         self.M.setdefault("castle_towers", []).append({"x": round(gate[0], 1), "y": round(gate[1], 1), "w": round(gtw, 1), "h": round(gth, 1), "kind": "gate_tower"})
+        # THE KARAMETE-MON (GM 2026-08-09, researched): the ote-mon/karamete-mon pair is the
+        # STANDARD gate program - main gate south by aspect divination, rear gate opposite - and
+        # the pairing is military doctrine: the garrison sorties from the rear gate to trap an
+        # attacker held at the front. Its tower draws a size down from the ote-mon's, as a rear
+        # gate should. research/cities/capitals.md, "A castle has TWO gates".
+        karamete: Pt | None = None
+        if karamete_dir:
+            karamete = {"north": (x, y - hh), "south": (x, y + hh), "west": (x - hw, y), "east": (x + hw, y)}[karamete_dir]
+            ktw, kth = self.px(64), self.px(40)
+            if karamete_dir in ("west", "east"):
+                ktw, kth = kth, ktw
+            self.add_wall(f'<rect x="{karamete[0] - ktw / 2:.1f}" y="{karamete[1] - kth / 2:.1f}" width="{ktw:.1f}" height="{kth:.1f}" fill="#B9A882" stroke="{wall}" stroke-width="{ww * 0.75:.1f}"/>')
+            self.M.setdefault("castle_towers", []).append({"x": round(karamete[0], 1), "y": round(karamete[1], 1), "w": round(ktw, 1), "h": round(kth, 1), "kind": "gate_tower"})
 
         # 3. THE BAILEYS - provisional, and OFFSET rather than concentric, which is the entire
         # difference between a castle and a bullseye. The first cut drew them centered and
@@ -11816,6 +11837,9 @@ class Settlement:
             "wall_w": round(ww, 2),
             "gate_w": round(2 * gg, 2),
         }
+        if karamete is not None:
+            rec["karamete"] = [round(karamete[0], 1), round(karamete[1], 1)]
+            rec["karamete_dir"] = karamete_dir
         # BOTH registries - see the docstring. The reservation covers the MOAT too: nothing builds
         # on the water, and the packs must flow around the whole works rather than the wall alone.
         m = gap + mw / 2 + max(36 * self.bscale, 26)

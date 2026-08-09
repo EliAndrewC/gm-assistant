@@ -98,4 +98,17 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   crosses the moat on a kakehi flume-deck (the Suidobashi form) and the terminal basin stands
   at the rampart's foot beside the north gate. And the angled-label rule gained the GM's
   full-tilt extension (linear_tilt_full, opt-in): the granary captions lie ALONG their -54 deg
-  rows, past the 45-degree go-level clamp road captions keep.
+  rows, past the 45-degree go-level clamp road captions keep. A further GM battery rebuilt the
+  AQUEDUCT to the researched josui form (research: "How a josui actually ran") - shallow
+  downstream peel off the river, short direct fall to the EAST gate, Okido-style terminal
+  basin, no kakehi (nothing to cross), 021's draw-basins specified as josui-ido cistern-wells -
+  and gave the castle its KARAMETE-MON (research: "A castle has TWO gates"): rear north gate,
+  smaller tower, own moat deck, approach road T-ing onto the Imperial road, whose north-gate
+  passage was also straightened onto perpendicular stubs (the bed rode the rampart stroke) and
+  now carries a second "Imperial Road" caption on the Shiro Kyo branch. Yodo and Nio re-seated
+  clear of the new ways. Two follow-ups the GM's eye caught: the karamete approach straightened
+  into the CONTINUATION of the north gate's street (the first cut hung it off the diagonal and
+  the beds read as overlapping roads - now city gate -> due south -> rear gate, with the
+  through-road leaving at the junction), and the aqueduct's bank lines darkened/widened as a
+  GLYPH CONVENTION (masonry brown, ~2 px reveal per side - the wellhead-vr precedent; true-scale
+  berms would vanish at 3 ft/px).

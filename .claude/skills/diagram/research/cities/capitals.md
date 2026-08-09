@@ -462,9 +462,8 @@ the gate end, the settling tank where the open cut hands off to the buried pipe 
 ended in exactly such tanks. The glyph now draws it, standing clear of the moat. (Any real
 josui also spilled surplus somewhere, and the moat is where a surplus WOULD go - but the drawing
 should say "supply enters here", not "stream joins moat".) A later GM pass ("connected to
-literally nothing") finished the thought: the cut now CROSSES the moat on a kakehi - the
-flume-on-a-bridge Edo's Suidobashi is named for - and the terminal basin stands at the
-rampart's foot beside the north gate, so the supply visibly reaches the city it serves.
+literally nothing") forced the full research below, which retired both the roundabout route
+AND the flume - see "How a josui actually ran".
 
 ## The domain school is the hanko: a school of letters WITH the martial wing
 
@@ -553,3 +552,64 @@ failed and was fixed; the rest hold.
 researched anchors (the budget, the provincial ministry, C_YASHIKI, the glyph guards). The two
 that failed at this tier - the ote-suji and the hanko - were both NEW hand-set numbers with no
 anchor cited at the point of use. A size that cannot cite its anchor is the one to audit first.
+
+
+## How a josui actually ran (GM 2026-08-09: intake, route, terminus, and what it fed)
+
+**The questions**: why does the aqueduct have a bridge? Why is it blue - is it open-topped? It
+leaves the river at the wrong angle, then wanders. Where did real ones start, what direction
+did they run, where did they end, and what did they feed into at the city - basins? wells?
+Above or below ground inside?
+
+**The Edo system, which is our anchor, answers every one of them:**
+
+- **Where it starts**: at an intake WEIR on a river, far upstream - the Tamagawa Josui's
+  nagewatashi weir at Hamura is 43 km from the city - or at an upland spring pond (the Kanda
+  Josui rises from Inokashira). The take-off peels away at a SHALLOW DOWNSTREAM angle: a
+  diversion swallows moving water; a perpendicular tee fights it.
+- **How it runs**: as an OPEN EARTH CUT - open-topped, which is why water-blue between spoil
+  banks is the correct rendering - falling gently and CONTINUOUSLY: 92 m of drop over 43 km,
+  about 21 cm per 100 m, and never a climb. The famous winding of real josui is
+  GRADIENT-HOLDING across long country, not wandering; where the source is near, the cut runs
+  direct. Enclosed masonry appears nowhere outside the city, so there is no stone-colored run
+  to draw.
+- **The bridge**: a kakehi flume exists ONLY where the channel must cross another watercourse -
+  Edo's Suidobashi ("aqueduct bridge") is named for the Kanda's crossing of its river. A route
+  that crosses nothing carries no bridge, which is why ours no longer has one.
+- **Where it ends**: at the city gate's waterworks head - the Tamagawa terminates at Yotsuya
+  OKIDO, the "great wooden gate," where the open cut hands into a settling tank on the city's
+  threshold. Our terminal basin at the east gate's approach is exactly that form.
+- **Inside the city**: UNDERGROUND, entirely - ~67 km of buried wooden mains (mokuhi, caulked
+  by ship-carpenters) and stone conduits running beneath the streets, feeding **3,600+
+  josui-ido**: cistern-wells, two-thirds sunk below grade, that residents bucket from exactly
+  like groundwater wells. The "wells" of Edo's row-house courtyards WERE the aqueduct's taps.
+  Surplus discharged to the moats and rivers.
+
+**The decisions, applied to the map**: the intake moved downstream of the moat feeder's tap
+and now peels off at ~35 degrees with the current; the cut falls short and DIRECT to the east
+gate (the river is near - only long-haul josui wind), every segment moving down the declared
+NE -> SW bearing; the kakehi is gone (nothing to cross); the terminal basin stands
+Okido-fashion on the moat's outer bank at the east gate approach; and feature 021's
+draw-basins are hereby specified as JOSUI-IDO - cistern-wells on the buried mains,
+indistinguishable in use from the groundwater wells beside them, which is precisely why the
+in-wall system draws as draw-points and not as channels.
+
+## A castle has TWO gates (GM 2026-08-09: the ote-mon / karamete-mon pair)
+
+**The question**: would an interior capital castle keep a single gate, or several, with more
+than one bridge over its own moat? Multiple would be preferred - if realistic.
+
+**It is more than realistic; it is the standard program.** The main gate is the **ote-mon**
+("great hand"), facing SOUTH by aspect divination (hojutsu / onmyodo) - which our castle
+already does. The rear gate is the **karamete-mon** ("binding hand"), typically opposite - and
+the pair is military doctrine, not convenience: during a siege the garrison SORTIES from the
+rear gate to fall on attackers held at the front. Large castles carried more gates still -
+Edo's inner and outer moats were crossed by 36 - each opening bridged over the moat it
+pierced, so multiple bridges over a castle's own moat are the attested norm, not an
+extravagance.
+
+**The decision**: `Settlement.castle` now takes `karamete_dir`; Shiro Daika's castle opens its
+karamete-mon NORTH, with its own (smaller) gate tower and its own deck over the castle moat,
+and a rear approach road runs from the gate to a T on the Imperial road's run toward the north
+city gate - the GM's own suggested connection, and the historically right one. The ote-suji
+remains the ceremonial front; the karamete approach is the working back door.
