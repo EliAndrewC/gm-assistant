@@ -1707,6 +1707,56 @@ def wall_tower_spacing_px(scale_px_per_ft: float, tier: str) -> float:
     return (rng_ft if mincov == 2 else 2 * rng_ft) * scale_px_per_ft
 
 
+def bridge_carried_ways(M: Any) -> list[tuple[Any, float]]:
+    """Every WAY a bridge may have to carry, as (points, width). THE SINGLE SOURCE for both sides.
+
+    WHY THIS IS A SHARED FUNCTION AND NOT TWO MATCHING LISTS (feature 020). The generator's
+    `bridges()` and the validator's `roads_bridge_water` used to build these sets separately, and
+    both omitted the same three things - `M["roads"]` (every road but the Imperial one), the river,
+    and a castle's own moat. So they agreed perfectly and were both wrong, and four of six crossings
+    on the first capital were unbridged with a green gate. The skill's rule that "placement and its
+    check must read the SAME manifest source" is what guarantees they cannot disagree; this is the
+    case that shows it guarantees AGREEMENT, not CORRECTNESS. Re-adding the missing keys on both
+    sides would have reproduced exactly the same silent symmetry the next time a key was added, so
+    the sets are derived ONCE, here, and consumed by both."""
+    carried: list[tuple[Any, float]] = []
+    if M.get("road"):
+        carried.append((M["road"], M.get("road_width", 26)))
+    for rd in M.get("roads", []):  # every OTHER trunk road - the omission that left two gates unbridged
+        carried.append((rd["pts"], rd.get("w", 26)))
+    if M.get("ring_road"):
+        carried.append((M["ring_road"], M.get("ring_road_width", 8)))
+    for st in M.get("town_streets", []):
+        carried.append((st["pts"], st["w"]))
+    for ln in M.get("lanes", []):
+        carried.append((ln["pts"], ln.get("w", 6)))
+    return carried
+
+
+def bridge_crossed_waters(M: Any) -> list[tuple[Any, float]]:
+    """Every WATERCOURSE a way may have to be carried over, as (points, width). See
+    `bridge_carried_ways` for why both sides read this one function."""
+    waters: list[tuple[Any, float]] = []
+    for s in M.get("streams", []):
+        waters.append((s["poly"], s.get("w", 9)))
+    for c in M.get("channels", []):
+        if c.get("drawn", True):  # an UNDRAWN channel is a buried conduit - no seam on the ground to bridge
+            waters.append((c["poly"], c.get("w", 4.2)))
+    for d in M.get("field_ditches", []):
+        waters.append((d["poly"], d.get("w", 4.2)))
+    for cn in M.get("canals", []):
+        waters.append((cn["poly"], cn.get("w", 12)))
+    if M.get("moat"):
+        waters.append((M["moat"], M.get("moat_width", 22)))
+    riv = M.get("river")  # the trunk river - a road crossing one was NEVER bridged, anywhere in the pool
+    if isinstance(riv, dict) and riv.get("poly"):
+        waters.append((riv["poly"], riv.get("w", 40)))
+    for c2 in M.get("castles", []):  # a castle's OWN moat is water like any other
+        if c2.get("moat"):
+            waters.append((c2["moat"], c2.get("moat_width", 26)))
+    return waters
+
+
 def moat_current_at(ring: Any, inlet: Pt, outlet: Pt, pt: Pt) -> tuple[float, float] | None:
     """The moat's flow direction at `pt`: the ring tangent pointing the way water travels toward the
     outlet along the arc `pt` sits on.
@@ -11288,27 +11338,8 @@ class Settlement:
         `roads_bridge_water` + `bridges_align_with_their_way` re-derive the same crossings from the
         manifest. Anything this pass finds is aligned by construction; hand-place a deck only for a
         crossing this pass genuinely cannot see, and expect the alignment check to test it."""
-        carried: list[Any] = []
-        if self.M.get("road"):
-            carried.append((self.M["road"], self.M.get("road_width", 26)))
-        if self.M.get("ring_road"):  # the in-wall ring crosses the cargo canal / an in-wall watercourse like any other way
-            carried.append((self.M["ring_road"], self.M.get("ring_road_width", 8)))
-        for st in self.M.get("town_streets", []):
-            carried.append((st["pts"], st["w"]))
-        for ln in self.M.get("lanes", []):  # a village LANE/path crosses a canal on a plank footbridge
-            carried.append((ln["pts"], ln.get("w", 6)))
-        waters: list[Any] = []
-        for s in self.M.get("streams", []):
-            waters.append((s["poly"], s.get("w", 9)))
-        for c in self.M.get("channels", []):
-            if c.get("drawn", True):  # an UNDRAWN channel is a buried conduit (topo_channel): nothing on the ground to bridge
-                waters.append((c["poly"], c.get("w", 4.2)))
-        for d in self.M.get("field_ditches", []):  # the irrigation canals a village path must bridge to reach the paddy
-            waters.append((d["poly"], d.get("w", 4.2)))
-        for cn in self.M.get("canals", []):  # the navigable cargo canal - the widest thing a city way crosses short of the moat
-            waters.append((cn["poly"], cn.get("w", 12)))
-        if self.M.get("moat"):
-            waters.append((self.M["moat"], self.M.get("moat_width", 22)))
+        carried = bridge_carried_ways(self.M)
+        waters = bridge_crossed_waters(self.M)
         n = 0
         for rpts, rw in carried:
             for i in range(len(rpts) - 1):
