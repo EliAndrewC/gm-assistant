@@ -198,7 +198,7 @@ for i, nm in enumerate(("War", "Works", "Justice")):
 # Grand Secretariat inside the palace. Executive ministries out, the ruler's council in; the
 # chamber is part of the castle's implied goten. The DOMAIN SCHOOL is the hanko - a school of
 # letters with a martial wing - so it takes the martial-hall vocabulary, not a ministry box.
-s.hanko(1458, 1650)
+s.hanko(1482, 1658)  # ~1 ha compound (size audit 2026-08-09) - shifted east so its wall clears the road
 
 # ---- THE IMPERIAL MAGISTRATE'S COMPOUND (feature 020): FOREIGN SOVEREIGN GROUND - ~56 staff plus
 # family, funded at 700 koku/yr for "manor maintenance, grounds, stable, fortified walls,
