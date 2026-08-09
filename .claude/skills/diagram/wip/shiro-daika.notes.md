@@ -79,4 +79,6 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   ring_road_kept_clear check factored to run at capital scale WITH manors in its victim list -
   the two stacked gaps the GM's quibble exposed. Teramachi rim explained (defensive perimeter
   temples are the castle-town pattern; the two sovereign temples ARE the "two main"), offered
-  as a re-seat if the GM prefers a gathered quarter.
+  as a re-seat if the GM prefers a gathered quarter. Follow-up: the Imperial granaries gained
+  their OWN jetty - the Emperor's grain moves by boat (that is what the "wharf" seat means), so
+  it does not borrow the domain quay 200 ft downstream.
