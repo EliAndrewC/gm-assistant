@@ -184,3 +184,37 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   dredging: intake shut + outfall full open; siege: both shut), while field sluices are the
   scheduled kind (growing-season rotation of water rights). One closed-board glyph therefore
   stays the honest drawing; no open-variant needed. Nothing else blocks feature 021.
+
+## Feature 021 mid-build state (2026-08-09, checkpoint)
+
+US1+US2+suburbs+trade-works fabric stands; census 2,235 of 2,472 (compounds displaced rows;
+re-close from suburbs after residuals). The unjammed urban battery's REMAINING residuals,
+each understood:
+
+- imperial_road_through: road must end past the CROPPED view (meta.view!) both ends - N end
+  extended to (940,-60); S end needs y > view-bottom (crop south=240 -> extend road S past
+  ~2745).
+- streets_connected 2 groups: in-wall filter landed; find the second group (likely the
+  y1375+x800 pair joined only to the RING - wire one of them to a road-touching street).
+- ministries_front_a_street: include road/roads pts in its street set at capital (the
+  ote-suji IS the avenue).
+- monk housing/shrines: monk rowpacks beside rim temples seated 0? (verify vs 'near' radius);
+  shrines seated? re-check; shrine seats (612,1282),(762,1452),(882,1722).
+- gate_market gates [1,3] (E, SW) still thin: more out-wall "merchant" kind near those gates.
+- caravan facilities: verify per-gate inn/stables/flop counts within 340 in-wall.
+- flophouse_in_humble_quarter: gate exemption landed; the (1180,2050) flop still flagged? check.
+- terraces x flophouses overlap: the (1470,372) flop vs karamete terraces - reseat flop.
+- stable_yard furniture on road/wall: the caravan stables' rails - nudge stables.
+- merchant estate (1080,1736/1760) gate into building + estate overlapping building: reseat/redir.
+- streets_have_buildings/larger_streets_lined: bare stretches (the y1375 west arm, x2130,
+  y1390) - trim street extents or front them.
+- streets_clear_of_wall 2 + moat 1: the x2000 alley (actual line differs - find by grep
+  '2000, 1585'); one more crossing way.
+- wells: density (add wells in flagged cores), 3 unreached dwellings, block-interior strays.
+- caste band: burakumin short (~90 vs >=87 ok now? re-check merchants after kind swaps).
+- singles: no_structure_on_manor/road/stream/street residues - locate via the ways-locator.
+- city_no_large_empty_space 59k = the Benten precinct - resolves when T017 draws interiors.
+- THEN: census re-close exact (suburb knobs + one-item trim), T017-T019 (US3), wind checks
+  red-green tests (T020 tests not yet written!), T024 perf/budget entry, T025 captions,
+  T026 ship+sweep, T027 FULL review, T028 XII bookend, T029 docs (record-the-why for every
+  scale-gate/inversion made this feature), T030 ritual.
