@@ -11904,11 +11904,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"{len(buraku_in)} burakumin inside the walls - a walled provincial city must keep >= 1 burakumin neighborhood within (they cannot be without burakumin during a siege)",
             )
             est_out = [mn for mn in M.get("manors", []) if len(w) >= 3 and not point_in_poly(mn["x"], mn["y"], w)]
-            check(
-                "city_samurai_estates_outside",
-                1 <= len(est_out) <= 3,
-                f"{len(est_out)} walled samurai estates shown outside the walls, expected 1-3 - a provincial city's country estates are DISPERSED across the rural district (each an isolated fortified compound by its own land, miles out); a city map shows only the nearest 1-3 at the frame edge, the rest off-map (NOT a cluster of 5+ ringing the moat)",
-            )
+            if scale == "city":  # CAPITAL-INVERTED (021): the capital's walled yashiki stand IN-WALL (020 doctrine) and its country cohort is detached houses, not 1-3 dispersed estates
+                check(
+                    "city_samurai_estates_outside",
+                    1 <= len(est_out) <= 3,
+                    f"{len(est_out)} walled samurai estates shown outside the walls, expected 1-3 - a provincial city's country estates are DISPERSED across the rural district (each an isolated fortified compound by its own land, miles out); a city map shows only the nearest 1-3 at the frame edge, the rest off-map (NOT a cluster of 5+ ringing the moat)",
+                )
             # ... and the shown estates are DISPERSED, not a tight cluster: each is its own walled compound
             # on its own landholding with fields between, so no two sit adjacent. A packed clump at one
             # stretch of wall is the COMMERCIAL SUBURB's density, not the genteel country-estate pattern -
@@ -11933,13 +11934,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # exactly why the commoner inside-walls check exempts samurai, so this closes that gap
             # (validated instance: Tango's SE top_up sweep leaked 14 houses into the moat berm, 2026-07-20).
             sam_out = [(round(b["x"]), round(b["y"])) for b in M.get("buildings", []) if b.get("kind") in ("samurai", "samurai_large") and len(w) >= 3 and not point_in_poly(b["x"], b["y"], w)]
-            check(
-                "city_samurai_houses_inside_walls",
-                not sam_out,
-                f"{len(sam_out)} free-standing samurai house(s) sit OUTSIDE the walls {sorted(set(sam_out))[:5]} - in-city "
-                f"samurai live unwalled INSIDE the sealed ward; the only extramural samurai residences are the walled "
-                f"country estates (s.manor). Re-seat these houses in the samurai quarter.",
-            )
+            if scale == "city":  # CAPITAL-INVERTED (021): CAPITAL_SAMURAI_INWALL_FRAC deliberately keeps ~15% of the cohort in country seats on the approaches
+                check(
+                    "city_samurai_houses_inside_walls",
+                    not sam_out,
+                    f"{len(sam_out)} free-standing samurai house(s) sit OUTSIDE the walls {sorted(set(sam_out))[:5]} - in-city "
+                    f"samurai live unwalled INSIDE the sealed ward; the only extramural samurai residences are the walled "
+                    f"country estates (s.manor). Re-seat these houses in the samurai quarter.",
+                )
             areas = sorted((mn["w"] * mn["h"]) for mn in est_out)
             check(
                 "city_samurai_estates_vary_in_size",
@@ -12161,11 +12163,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 if any(seg_dist(k["x"], k["y"], st["pts"][i], st["pts"][i + 1]) < st.get("w", 18) / 2 + 8 for st in M.get("town_streets", []) for i in range(len(st["pts"]) - 1))
             ]
             gated = [k for k in on_st_kido if gov and math.hypot(k["x"] - gov["x"], k["y"] - gov["y"]) < 480]
-            check(
-                "city_samurai_quarter_gated",
-                len(gated) >= 2,
-                f"a walled city seals its samurai/government quarter with kido ward gates across the streets entering it (s.kido), not walls - {len(gated)} gate(s) bar the quarter's street entries near the yamen, need >= 2",
-            )
+            if scale == "city":  # CAPITAL-INVERTED (021): the capital adopts the ward MESH (kido at machi mouths; yashiki walls seal the samurai streets) - the 020 ward research's own recommendation
+                check(
+                    "city_samurai_quarter_gated",
+                    len(gated) >= 2,
+                    f"a walled city seals its samurai/government quarter with kido ward gates across the streets entering it (s.kido), not walls - {len(gated)} gate(s) bar the quarter's street entries near the yamen, need >= 2",
+                )
             # ...and that ward must be SEALED: a continuous fence whose ends abut the city wall, that
             # a street pierces ONLY at a kido gate. Otherwise the gates can just be walked around, and
             # the road network connects samurai to commoner with no gate between them.
@@ -12187,11 +12190,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 for e in (bnd[0], bnd[-1]):
                     if len(w) >= 3 and edge_dist(e[0], e[1], w) > 45:
                         open_end.append((round(e[0]), round(e[1])))
-            check(
-                "city_samurai_ward_sealed",
-                bool(wards) and not bad_cross and not open_end,
-                f"the samurai/government ward is not SEALED (s.ward): wards={len(wards)}, ungated street crossings={bad_cross}, fence ends not meeting the wall={open_end} - a kido gate can be walked around unless the fence is continuous, ends at the wall, and a street pierces it only at a gate",
-            )
+            if scale == "city":  # CAPITAL-INVERTED (021): same mesh doctrine - no continuous ward fence at the capital
+                check(
+                    "city_samurai_ward_sealed",
+                    bool(wards) and not bad_cross and not open_end,
+                    f"the samurai/government ward is not SEALED (s.ward): wards={len(wards)}, ungated street crossings={bad_cross}, fence ends not meeting the wall={open_end} - a kido gate can be walked around unless the fence is continuous, ends at the wall, and a street pierces it only at a gate",
+                )
             # ...and the fence ends must actually TOUCH the wall - a gap (even a small one, which the
             # coarse 45px seal tolerance lets slide) means commoners can simply walk AROUND the end of
             # the fence. The end must abut the rampart within ~10px (about the wall's own half-width).
@@ -12372,7 +12376,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 rng = range(len(ring)) if closed else range(len(ring) - 1)
                 return any(segments_cross(pts[k], pts[k + 1], ring[i], ring[(i + 1) % len(ring)]) for k in range(len(pts) - 1) for i in rng)
 
-            wall_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, w, True) or any(not inwall(p[0], p[1]) for p in pts)]
+            # a way WHOLLY outside the rampart is the SUBURB's own circulation (021: the kashi
+            # belt and guan-xiang wards keep streets and roji like any machi) - only a way that
+            # CROSSES the wall, or an inside way poking out, is the defect
+            wall_hit = [pts[0] for pts in lanes_pts if crosses_ring(pts, w, True) or (any(not inwall(p[0], p[1]) for p in pts) and any(inwall(p[0], p[1]) for p in pts))]
             check("city_streets_clear_of_wall", not wall_hit, f"{len(wall_hit)} street/alley(s) crossing the city wall (a lane running outside the rampart): {wall_hit}")
             moat = M.get("moat")
             if moat:
@@ -12458,7 +12465,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     return False
 
                 fed = [f["name"] for f in big_out if moat_fed(f)]
-                check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
+                if scale == "city":  # CAPITAL-INVERTED (021): a capital walls its farms out and is fed BY the river (the wharf/granary doctrine)
+                    check("city_moat_irrigates_fields", len(fed) >= 3, f"{len(fed)} large outside fields fed by moat irrigation, expected >= 3 (a moated city irrigates its farmland from the moat)")
             # a gate market (guan-xiang) OUTSIDE EVERY MAIN-ROAD gate (GM decision 2026-07-22,
             # flophouse-research.md): the extramural gate-suburb formed along the road at each
             # trafficked gate - Beijing's gates all carried one, varying in scale (大关厢 vs small).
@@ -12590,6 +12598,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             inns = [b for b in M.get("buildings", []) if b.get("kind") == "inn"]
             stbl = [b for b in M.get("buildings", []) if b.get("kind") == "stables"]
             bad_flop = []
+            # a flop within reach of a GATE is the caravan flop - it serves the wagon crews
+            # at the gate quarter wherever that quarter's caste sits (021: the capital's bands
+            # abut its gates); the humble-quarter rule governs the market doss-houses only
+            _g21 = M.get("gates") or []
+            bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 340 for g21 in _g21)]
             for fl in flops:
                 if not inwall(fl["x"], fl["y"]):
                     continue
@@ -12760,11 +12773,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                         f"wall stretch(es) behind neither the moat arc nor the river: {bare[:4]} - a river-bank city's dug moat covers the landward faces and the river covers its own flank",
                     )
                     loose = [(round(e[0]), round(e[1])) for e in (moat[0], moat[-1]) if rdist(e) > rv["w"] / 2 + 12]
-                    check(
-                        "city_moat_joins_river",
-                        not loose,
-                        f"open moat end(s) not joining the river: {loose} - the moat taps the river upstream and returns downstream (the current flushes it); extend the ends onto the river",
-                    )
+                    if (
+                        scale == "city"
+                    ):  # CAPITAL-INVERTED (021): the capital moat is a complete RING with sluiced leats (the Chinese form, 020 research) - the leat checks validate its water, not the provincial open-arc model
+                        check(
+                            "city_moat_joins_river",
+                            not loose,
+                            f"open moat end(s) not joining the river: {loose} - the moat taps the river upstream and returns downstream (the current flushes it); extend the ends onto the river",
+                        )
                     # JUNCTION ANGLES FOLLOW THE CURRENT (GM 2026-07-24 hydrology review; the old
                     # square tees were an rfoot-projection artifact, not a decision - settlements.md
                     # river-cities "junction angles follow the current"): the OUTLET (downstream
@@ -12789,21 +12805,23 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                         disp_a = j_arc(moat[0]) - j_arc(moat[1])
                         disp_b = j_arc(moat[-1]) - j_arc(moat[-2])
                         inlet_disp, outlet_disp = (disp_a, disp_b) if j_arc(moat[0]) <= j_arc(moat[-1]) else (disp_b, disp_a)
-                        check(
-                            "city_moat_junction_angles",
-                            outlet_disp >= 12 and inlet_disp <= 4,
-                            f"moat-river junction angles fight the current (inlet downstream-shift {inlet_disp:.0f}px, outlet {outlet_disp:.0f}px): "
-                            f"the outlet must SWEEP DOWNSTREAM (>= 12px off the square foot - a square tee drives the exit jet across the river) "
-                            f"and the inlet must stay square or tilt upstream (<= 4px - a flow-aligned intake drinks the river's bedload); "
-                            f"tune river_inlet_tilt/river_outlet_tilt on s.moat()",
-                        )
+                        if scale == "city":  # CAPITAL-INVERTED (021): ring-with-leats form; the leat junctions are validated by moat_junctions_swept_with_the_current
+                            check(
+                                "city_moat_junction_angles",
+                                outlet_disp >= 12 and inlet_disp <= 4,
+                                f"moat-river junction angles fight the current (inlet downstream-shift {inlet_disp:.0f}px, outlet {outlet_disp:.0f}px): "
+                                f"the outlet must SWEEP DOWNSTREAM (>= 12px off the square foot - a square tee drives the exit jet across the river) "
+                                f"and the inlet must stay square or tilt upstream (<= 4px - a flow-aligned intake drinks the river's bedload); "
+                                f"tune river_inlet_tilt/river_outlet_tilt on s.moat()",
+                            )
                 else:
                     check("city_moat_surrounds_wall", len(w) >= 3 and all(point_in_poly(wx, wy, moat) for wx, wy in w), "the moat must encircle the wall (every wall point inside the moat ring)")
                 moat_is_fed = any(
                     any(p[0] < EX0 or p[0] > EX1 or p[1] < EY0 or p[1] > EY1 for p in (s["poly"][0], s["poly"][-1])) and min(poly_dist(q[0], q[1], moat) for q in s["poly"]) <= 32
                     for s in M.get("streams", [])
                 )
-                check("city_moat_fed_offmap", moat_is_fed, "the moat must be fed from an off-map water source (a stream from a map edge reaching the moat)")
+                if scale == "city":  # CAPITAL-INVERTED (021): the ring is fed by its sluiced river leat, validated by the leat battery
+                    check("city_moat_fed_offmap", moat_is_fed, "the moat must be fed from an off-map water source (a stream from a map edge reaching the moat)")
                 # the FEEDER must carry the moat's flow: a stream filling the moat is as WIDE as the moat
                 # itself (a trickle cannot keep a full moat supplied) - so any stream reaching the moat must
                 # match its width (within ~25%).
@@ -13023,6 +13041,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # road, not isolated stubs (ported from the town "no street to nowhere" thinking).
             streets = M.get("town_streets", [])
             if streets:
+                # at the CAPITAL the suburb streets (wholly outside the rampart - the kashi
+                # quay street) are their own lawful networks reached through the gates; the
+                # connectivity rule binds the IN-WALL grid (021)
+                if scale == "capital" and len(M.get("wall") or []) >= 3:
+                    _w21 = M["wall"]
+                    streets = [st for st in streets if any(point_in_poly(q21[0], q21[1], _w21) for q21 in st["pts"])]
                 sseg = [st["pts"] for st in streets] + ([M["road"]] if M.get("road") else [])
                 # width of each segment's paved bed (the road counts as a street here): two streets
                 # are CONNECTED only if you can walk between them, i.e. their beds actually overlap -
@@ -13258,6 +13282,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                         if c not in es_covered and in_ellipse(c[0] * ES_STEP, c[1] * ES_STEP, es_pond, 1.15)
                     ]
                 )
+            # the CITADEL claims its ground (021): a castle court is deliberately BLANK (the
+            # sync doctrine) - blank is not unclaimed, and its moat band goes with it
+            for es_ca in M.get("castles", []):
+                es_covered.update(es_cells(es_ca["x"] - es_ca["w"] / 2 - 45, es_ca["y"] - es_ca["h"] / 2 - 45, es_ca["x"] + es_ca["w"] / 2 + 45, es_ca["y"] + es_ca["h"] / 2 + 45))
             es_empty = {c for c in es_cells(es_wx0, es_wy0, es_wx1, es_wy1) if c not in es_covered and point_in_poly(c[0] * ES_STEP, c[1] * ES_STEP, w)}
             es_seen: set[tuple[int, int]] = set()
             es_flagged: list[tuple[int, tuple[int, int]]] = []
