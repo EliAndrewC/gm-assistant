@@ -5818,11 +5818,18 @@ class Settlement:
             if label_inside:
                 # A CITY estate's caption lives INSIDE the walls (GM 2026-08-09): the court is
                 # BLANK by doctrine - its contents belong to the Mode A sheet - so the empty
-                # court is the label's natural ground, exactly as a governor's mansion carries
-                # its own name. Sized to ~82% of the court's width so it clears walls and gate,
-                # capped at the outside caption's 14, floored at 6.5 for legibility.
-                _fs = max(6.5, min(14.0, (w * 0.82) / (max(len(str(label)), 1) * 0.55)))
-                self.label(x, y, label, _fs, weight="bold", rot=_t)
+                # court is the label's natural ground. SPLIT over two lines (GM, same day) so
+                # the face runs bigger: the width constraint binds per-line, and "Nio" over
+                # "Estate" carries an 11 where the one-line form managed an 8.
+                _words = str(label).split()
+                if len(_words) >= 2:
+                    _top, _bot = " ".join(_words[:-1]), _words[-1]
+                    _fs = max(7.0, min(11.0, (w * 0.8) / (max(len(_top), len(_bot), 1) * 0.55)))
+                    self.label(x, y - h * 0.12, _top, _fs, weight="bold", rot=_t)
+                    self.label(x, y + h * 0.16, _bot, _fs, weight="bold", rot=_t)
+                else:
+                    _fs = max(6.5, min(14.0, (w * 0.82) / (max(len(str(label)), 1) * 0.55)))
+                    self.label(x, y, label, _fs, weight="bold", rot=_t)
             else:
                 _seat = label_xy or (tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 12, above=True) if _t else (x, min(ys) - 12))
                 self.label(*_seat, label, 14, weight="bold", rot=_t)
@@ -11129,7 +11136,7 @@ class Settlement:
         self.block_polys.append([(x - 18 - bm, y - 11 - bm), (x + 18 + bm, y - 11 - bm), (x + 18 + bm, y + 11 + bm), (x - 18 - bm, y + 11 + bm)])
         return z
 
-    def sluice_gate(self, x: float, y: float, rot: float = 0.0, label: str | None = None, label_xy: Pt | None = None) -> int:
+    def sluice_gate(self, x: float, y: float, rot: float = 0.0, label: str | None = None, label_xy: Pt | None = None, span: float | None = None) -> int:
         """A field-channel SLUICE GATE (the intake/outfall control board the comb doctrine's "sluice-fed
         head-race" always implied but no map drew - GM 2026-07-23, the mouths-are-confluences pass): two
         timber posts flanking the channel and a lifted board between them. Drawn wherever a channel
@@ -11140,16 +11147,22 @@ class Settlement:
         structure with wing posts at the village/city grains. Top layer, above the water. Records
         M['sluice_gates'] for `channel_gates_at_water_junctions`."""
         wc = '#3A352C'
+        # `span` stretches the frame ACROSS its channel so the posts stand on the BANKS (GM
+        # 2026-08-09: on the capital's 66 ft leats the default field-channel frame floated
+        # mid-water, reading as detached - a real frame spans abutment to abutment, and the
+        # operator walks the crossbeam). Default None keeps the original field-channel geometry
+        # byte-identical for every existing map.
+        _sk = 1.0 if span is None else max(1.0, span / 10.8)
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
-        g.append(f'<rect x="-4.6" y="-1.4" width="9.2" height="2.8" fill="#8A7050" stroke="{wc}" stroke-width="1.0"/>')  # the lifted board
-        g.append(f'<rect x="-5.4" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')  # posts
-        g.append(f'<rect x="3.4" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')
+        g.append(f'<rect x="{-4.6 * _sk:.1f}" y="-1.4" width="{9.2 * _sk:.1f}" height="2.8" fill="#8A7050" stroke="{wc}" stroke-width="1.0"/>')  # the lifted board
+        g.append(f'<rect x="{-5.4 * _sk:.1f}" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')  # posts, ON the banks when span is given
+        g.append(f'<rect x="{5.4 * _sk - 2.0:.1f}" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')
         # THE LIFTING FRAME (GM 2026-08-09, researched): a hi/suimon board was raised by hand -
         # or by windlass on the larger gates - from a timber crossbeam spanning the posts ABOVE
         # the water, the operator standing on the beam walkway or the bank abutment. The beam
         # and its windlass drum are real above-water structure, drawn at the glyph floor (the
         # wells' vr convention): the crossbeam bridges the posts and the drum sits at its center.
-        g.append(f'<line x1="-4.4" y1="-3.1" x2="4.4" y2="-3.1" stroke="{wc}" stroke-width="1.2"/>')  # the crossbeam walkway
+        g.append(f'<line x1="{-4.4 * _sk:.1f}" y1="-3.1" x2="{4.4 * _sk:.1f}" y2="-3.1" stroke="{wc}" stroke-width="1.2"/>')  # the crossbeam walkway
         g.append(f'<rect x="-1.1" y="-4.2" width="2.2" height="2.2" fill="#B0905E" stroke="{wc}" stroke-width="0.8"/>')  # the windlass drum
         g.append('</g>')
         z = self.add_top(''.join(g))
@@ -12053,32 +12066,27 @@ class Settlement:
         cw, ch = f(w_ft) / 2, f(h_ft) / 2
         g = [f'<g transform="translate({x:.0f},{y:.0f}) rotate({rot:.1f})">']
         g.append(f'<rect x="{-cw:.1f}" y="{-ch:.1f}" width="{cw * 2:.1f}" height="{ch * 2:.1f}" rx="2" fill="#E7E1EC" stroke="#463653" stroke-width="1.7"/>')
-        ly0, ly1 = ch - f(38), ch - f(12)  # the archery lane band along the south side
-        lx0, lx1 = -cw + f(10), -cw + f(110)
-        g.append(f'<rect x="{lx0:.1f}" y="{ly0:.1f}" width="{lx1 - lx0:.1f}" height="{ly1 - ly0:.1f}" fill="#E3D9BE" stroke="#B9A57C" stroke-width="0.8"/>')
-        g.append(f'<line x1="{lx0 + f(6):.1f}" y1="{ly0:.1f}" x2="{lx0 + f(6):.1f}" y2="{ly1:.1f}" stroke="#8A7448" stroke-width="0.8"/>')  # the shooting line
-        g.append(f'<rect x="{lx1:.1f}" y="{ly0:.1f}" width="{f(10):.1f}" height="{ly1 - ly0:.1f}" rx="1" fill="#A98C58" stroke="#6B5228" stroke-width="1.1"/>')  # the azuchi butt
-        g.append(f'<rect x="{-cw + f(8):.1f}" y="{-ch + f(8):.1f}" width="{f(76):.1f}" height="{f(44):.1f}" rx="1.5" fill="#CDBBD6" stroke="#463653" stroke-width="1.6"/>')  # the civil lecture hall
-        for pi in range(1, 4):
-            gy_ = -ch + f(8) + f(44) * pi / 4
-            g.append(f'<line x1="{-cw + f(9):.1f}" y1="{gy_:.1f}" x2="{-cw + f(83):.1f}" y2="{gy_:.1f}" stroke="#463653" stroke-width="0.55" opacity="0.5"/>')
-        self._dojo_hall(g, f(18), -ch + f(8), f(60), f(36), "#CDBBD6", "#463653", "#6A4A78")  # the bugeijo, kamiza and all
-        self._keiko_gear(g, (f(20), f(2)), [(f(40), f(2)), (f(52), f(2))], "#463653")
+        # INTERIOR BLANK (GM 2026-08-09): a real hanko is building-DENSE - Aizu's Nisshinkan
+        # packed lecture halls, dormitories, a swimming pond and an observatory into 2.6 ha -
+        # so a faithful interior is a dozen buildings, and that belongs to the school's own
+        # Mode A sheet. The earlier two-hall-and-lane sketch was neither honest nor blank; the
+        # same sync doctrine as the castle and the estates applies (nothing shown beats the
+        # wrong thing shown), and the caption moves inside the court like an estate's.
         g.append("</g>")
         self.add("".join(g))
-        self.M.setdefault("martial_halls", []).append(
-            {"x": round(x, 1), "y": round(y, 1), "w": round(f(w_ft), 1), "h": round(f(h_ft), 1), "rot": round(rot, 1), "label": label, "range_ft": round((lx1 - lx0) * self.ftpx, 1), "kind": "hanko"}
-        )
+        self.M.setdefault("martial_halls", []).append({"x": round(x, 1), "y": round(y, 1), "w": round(f(w_ft), 1), "h": round(f(h_ft), 1), "rot": round(rot, 1), "label": label, "kind": "hanko"})
         self.placed.append((x, y, f(w_ft), f(h_ft)))
         bm = max(30 * self.bscale, 26)  # a government school keeps the full office apron, unlike the packed-ward hall
         self.block_polys.append([(x - cw - bm, y - ch - bm), (x + cw + bm, y - ch - bm), (x + cw + bm, y + ch + bm), (x - cw - bm, y + ch + bm)])
-        if label_below is None:
-            label_below = self._label_hits(x, y - ch - 9, label, 9) > self._label_hits(x, y + ch + 11, label, 9)
-        hlx, hly = label_xy if label_xy else (x, y + ch + 11 if label_below else y - ch - 9)
-        hbw = max(cw + bm, 2.9 * len(label) + 10)
-        hby = hly - 11 if label_xy else (y + ch if label_below else y - ch - 26)
-        self.block_polys.append([(hlx - hbw, hby), (hlx + hbw, hby), (hlx + hbw, hby + 26), (hlx - hbw, hby + 26)])
-        self.label(hlx, hly, label, 9, italic=True, color="#463653")
+        # the caption sits INSIDE the blank court, two lines, like an estate's
+        _hw2 = str(label).split()
+        if len(_hw2) >= 2:
+            _htop, _hbot = " ".join(_hw2[:-1]), _hw2[-1]
+            _hfs = max(7.0, min(12.0, (cw * 2 * 0.8) / (max(len(_htop), len(_hbot), 1) * 0.55)))
+            self.label(x, y - ch * 0.22, _htop, _hfs, weight="bold", color="#463653")
+            self.label(x, y + ch * 0.30, _hbot, _hfs, weight="bold", color="#463653")
+        else:
+            self.label(x, y, label, 10, weight="bold", color="#463653")
 
     def dojo(self, x: float, y: float, rot: float = 0.0, label: str = "dojo") -> None:
         """A PRIVATE DOJO (machi-dojo) in the samurai quarter.

@@ -177,10 +177,14 @@ s.stream([FEED_TAP, (2870, 875), (2650, 880), (MOAT[4][0], MOAT[4][1])], frm={"k
 # the boards sit a few steps DOWN their channel runs, not at the junctions (GM 2026-08-09: at a
 # junction the local water direction is ambiguous, so the correctly-across board read as a
 # coincidentally axis-aligned bar; astride the clear run, across-the-channel explains itself)
-s.sluice_gate(3050, 848, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3098, 828))  # the intake board, astride the feeder's run
+s.sluice_gate(
+    3050, 848, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3098, 828), span=26
+)  # the intake board - the frame spans BANK TO BANK (posts on the abutments, the operator walks the crossbeam)
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
 s.stream([DRAIN_OUT, (2065, 2180), (2062, 2325)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
-s.sluice_gate(2048, 2060, rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1980, 2040))  # the outfall board, astride the drain's run
+s.sluice_gate(
+    2048, 2060, rot=math.degrees(math.atan2(2180 - DRAIN_OUT[1], 2065 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1980, 2040), span=26
+)  # the outfall board, bank to bank like the intake
 s.moat_flow(MOAT[4], MOAT[8])
 
 # ---- THE AQUEDUCT (feature 020; rebuilt to the researched josui form, GM 2026-08-09). What
@@ -195,6 +199,11 @@ s.moat_flow(MOAT[4], MOAT[8])
 # downstream and falls straight to the EAST gate - short and direct because the river is
 # near, where the real ones wound only to HOLD their gradient across long country.
 s.aqueduct([(2983, 989), (2790, 1063), (2620, 1125), (2510, 1168)])
+# the two ends carry the words the glyphs cannot (GM 2026-08-09): the river end is the INTAKE
+# WEIR (the Hamura form - a barrier angled across part of the stream, shouldering water into
+# the cut), and the gate end is the SETTLING BASIN, where silt drops before the buried mains
+s.label(2925, 966, "intake weir", 9, italic=True, color="#5E7A8A")
+s.label(2564, 1148, "settling basin", 9, italic=True, color="#5E7A8A")
 s.label(2725, 1066, "aqueduct", 10, italic=True, color="#5E7A8A", rot=160, linear=True, full_tilt=True)
 
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -

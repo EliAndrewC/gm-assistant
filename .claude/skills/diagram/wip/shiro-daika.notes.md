@@ -139,4 +139,12 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   (Kuramae unloads straight into the kura - raised floors are the flood answer, not distance),
   and the jetties shortened from causeway to landing-stage length (~39 ft, a third of the
   channel, per the fairway law). research/cities/capitals.md, "The sluice's lifting frame, the
-  quay-side kura, and the boat-length jetty".
+  quay-side kura, and the boat-length jetty". Follow-ups on the GM's next look: the sluice frames now SPAN their
+  channels bank-to-bank (sluice_gate span=; the fixed field-channel frame floated mid-water on
+  a 66 ft leat and read as detached - research: the operator walks the crossbeam and winds the
+  windlass, neither of ours denotes open/closed); the estate captions split over two lines for
+  a bigger face; the HANKO's court went BLANK per the sync doctrine (a real hanko is
+  building-dense - Nisshinkan's halls, dorms, pond, observatory - so a faithful interior is a
+  dozen buildings and belongs to its Mode A sheet; the two-hall sketch was neither honest nor
+  blank), its caption moving inside; and the aqueduct's two ends carry their words - "intake
+  weir" at the river (the Hamura form) and "settling basin" at the gate.
