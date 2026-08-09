@@ -135,7 +135,7 @@ KAGI_Y = 1560
 # gate point, so the roadbed rode along the rampart stroke): the diagonal legs meet a short
 # perpendicular run on each side of the gate, and the bed passes clean through the gap.
 s.road(
-    [(SGATE[0], 2700), (SGATE[0], SGATE[1]), (SGATE[0], KAGI_Y), (800, KAGI_Y), (800, 470), (1400, 300), (NGATE[0], NGATE[1]), (1400, 140), (1180, 55), (940, -60)],
+    [(SGATE[0], 2745), (SGATE[0], SGATE[1]), (SGATE[0], KAGI_Y), (800, KAGI_Y), (800, 470), (1400, 300), (NGATE[0], NGATE[1]), (1400, 140), (1180, 55), (940, -60)],
     label="Imperial Road",
     label_xy=(SGATE[0] + 150, 2330),
 )
@@ -407,7 +407,7 @@ s.street([(1800, 1300), (1800, 1540)], width=s.lw(15))  # stops at the Benten pr
 s.street([(1800, 1700), (1800, 2060)], width=s.lw(15))  # ...and resumes south of it (a precinct blocks a street; the walls are the dead end)
 s.street([(2130, 1250), (2130, 1620)], width=s.lw(15))  # east of Kurogi (x1986-2094), stopping clear of the Temple of Ebisu (2127,1686)
 s.street([(800, 1372), (800, 1930)], width=s.lw(15))  # meets the y=1375 street
-s.street([(392, 1375), (1240, 1375)], width=s.lw(15))  # west end lands ON the ring  # y=1375: under the west band tail, over the kagi leg
+s.street([(408, 1375), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
 s.street([(1560, 1390), (2340, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
 
 # ---- the YASHIKI BAND (T007): 53 walled compounds of Ranks 8-12 wrap the castle N / E / W
@@ -494,8 +494,9 @@ s.alley([(530, 770), (530, 1430)])  # the west rim's spine (early: wells must no
 for _ax, _ay1 in ((740, 1880), (880, 1945), (1180, 2095), (1300, 2095)):
     s.alley([(_ax, 1585), (_ax, _ay1)])  # each column stops short of the ring's southwest curve
 s.alley([(1565, 1415), (1565, 2095)])  # runs up past the kagi to serve the magistracy flank
-for _ax in (1655, 1690, 2000):  # east columns clear the hanko (x1415-1549) and the (1905,1715) compound
+for _ax in (1655, 1690):  # east columns clear the hanko (x1415-1549) and the (1905,1715) compound
     s.alley([(_ax, 1585), (_ax, 2095)])
+s.alley([(2000, 1585), (2000, 1950)])  # stops inside the wall's south curve
 s.alley([(2200, 760), (2200, 1290)])
 s.alley([(2300, 805), (2300, 1290)])  # both start below the NE wall's tower course
 s.alley([(2260, 1290), (2260, 1590)])
@@ -531,7 +532,7 @@ s.district("entertainment quarter", "entertainment", [(2000, 1620), (2115, 1620)
 s.flophouse(1330, 2205)
 s.flophouse(2740, 960)
 s.flophouse(1325, 160)
-s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "north"), (1080, 1760, "east"), (1240, 1898, "east"), (1180, 1725, "east"), (1650, 1700, "south"), (1120, 1930, "north")])
+s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "north"), (1080, 1768, "south"), (1240, 1898, "east"), (1180, 1725, "east"), (1650, 1700, "south"), (1120, 1930, "north")])
 # ---- the TRADE WORKS + GATE CARAVAN PROGRAM (the urban battery's full demand; all
 # compounds seated BEFORE the packs). Nuisance trades take the lee-and-downstream arc
 # (wind_from="northwest"): the dyer and both tanneries stand on the moat DRAIN south of
@@ -539,12 +540,14 @@ s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "no
 # monk housing beside each rim temple + the teramachi cluster's wayside shrines
 s.rowpack((1955, 545, 1992, 588), ["monk_house"] * 2, court_every=3)
 s.rowpack((2145, 1730, 2185, 1772), ["monk_house"] * 2, court_every=3)
-s.rowpack((1015, 1898, 1056, 1942), ["monk_house"] * 2, court_every=3)
+s.rowpack((1002, 1884, 1068, 1952), ["monk_house"] * 3, court_every=3)
 s.rowpack((545, 1155, 586, 1200), ["monk_house"] * 2, court_every=3)
-s.rowpack((795, 640, 836, 684), ["monk_house"] * 2, court_every=3)
+s.rowpack((698, 568, 742, 610), ["monk_house"] * 2, court_every=3)  # west of the Hotei hall, under the ring curve
 s.small_shrine(612, 1282)
 s.small_shrine(762, 1452)
 s.small_shrine(882, 1722)
+s.small_shrine(700, 1522)
+s.small_shrine(560, 982)
 s.brewery(1130, 1700)
 s.brewery(1690, 1935)
 s.oil_press(1000, 1690)
@@ -554,22 +557,24 @@ s.dye_yard(2035, 2210)
 s.tanning_yard(2020, 2262, water="stream")
 s.tanning_yard(2110, 2292, water="stream")
 s.kiln(600, 2260)
-s.flophouse(1180, 2050)  # the in-wall doss-house, laborer sector
+s.flophouse(1180, 1875)  # the in-wall doss-house, deep in the laborer core
 s.flophouse(452, 1978)  # outside the SW gate
 # caravan facilities just inside each gate: inn + big stables (open ground kept by their
 # own reserves; the packs flow around)
-s.inn(1322, 318)
+s.inn(1265, 345)
 s.stables(1560, 442)
 s.inn(2340, 1252)
 s.stables(2345, 1128)
+s.block_polys.append([(2290, 1075), (2400, 1075), (2400, 1185), (2290, 1185)])
+s.placed.append((2345, 1128, 115, 115))  # the caravan yard keeps OPEN ground for the animals
 s.inn(1330, 2062)
 s.stables(1470, 2062)
 s.flophouse(1470, 372)
-s.flophouse(2280, 1150)
-s.flophouse(1250, 2062)
+s.flophouse(2305, 1085)
+s.flophouse(1345, 2098)
 s.flophouse(745, 1700)
 s.inn(695, 1712)
-s.stables(700, 1772)
+s.stables(688, 1832)
 # ---- T016: the kido MESH, before the packs (each gate reserves its ground; the mouths
 # derive from the declared districts + streets via the shared machi_mouths source)
 s.kido_mesh()
@@ -616,6 +621,8 @@ s.rowpack((1860, 470, 1950, 650), _SAM * 7, court_every=8)  # the moat-corner po
 # merchant / 120 burakumin). Burakumin strips seat FIRST at the settlement edge (the two
 # in-wall quarters of the counts table); the big machi packs then flow around them and
 # around every standing compound, temple, precinct reservation and street.
+s.frontage([(1400, 1600), (1400, 2090)], ["merchant", "shop"] * 16, width=8, spacing=22, setback=14)  # the Imperial road's in-machi commerce
+s.frontage([(830, 1560), (1350, 1560)], ["merchant", "shop"] * 10, width=8, spacing=22, setback=14)  # the kagi leg
 s.frontage([(620, 1770), (1355, 1770)], ["merchant", "merchant", "shop"] * 13, width=8, spacing=20, setback=14)
 s.frontage([(1455, 1770), (2085, 1770)], ["merchant", "merchant", "shop"] * 12, width=8, spacing=20, setback=14)  # gap at the x=1405 kido mouth
 s.frontage([(900, 2005), (1355, 2005)], ["merchant", "shop"] * 8, width=8, spacing=20, setback=14)
@@ -735,7 +742,7 @@ s.rowpack((1205, 2330, 1295, 2630), ["laborer", "servant", "merchant_house"] * 2
 s.rowpack((1505, 2245, 1595, 2630), ["laborer", "servant"] * 14, court_every=6)
 s.bound = [[2480, 1000], [2930, 1000], [2930, 1160], [2480, 1160]]
 s.rowpack(
-    (2495, 1012, 2615, 1128), ["laborer", "merchant_house"] * 20 + ["laborer"], court_every=6
+    (2495, 1012, 2615, 1128), ["laborer", "merchant"] * 20 + ["laborer"], court_every=6
 )  # NOTE: the census closes EXACTLY at 2,472 (12,360/5); adjust ONE item here if fabric upstream moves
 s.rowpack((2640, 1030, 2800, 1108), ["laborer", "merchant_house"] * 12, court_every=6)  # the east ribbon, along the Fox-lands road
 s.rowpack((2645, 1170, 2810, 1235), ["laborer", "merchant_house"] * 10, court_every=6)
@@ -762,7 +769,7 @@ s.rowpack((1440, 25, 1770, 82), ["laborer", "servant"] * 14, court_every=6)
 s.rowpack((1440, 112, 1770, 195), ["laborer", "merchant_house"] * 14, court_every=6)
 s.rowpack((1010, 110, 1175, 195), ["laborer", "servant"] * 12, court_every=6)
 s.bound = [[320, 1930], [520, 1930], [520, 2060], [320, 2060]]
-s.rowpack((330, 2020, 430, 2058), ["laborer", "merchant"] * 8, court_every=6)  # wholly BELOW the diagonal approach road (its bed crosses y1955-2010 here)
+s.rowpack((330, 2020, 430, 2058), ["laborer", "merchant"] * 12, court_every=6)  # wholly BELOW the diagonal approach road (its bed crosses y1955-2010 here)
 s.rowpack((340, 1745, 430, 1830), ["laborer", "servant"] * 8, court_every=6)  # the road's NE-side pocket, clear of the moat band
 s.bound = [[255, 1450], [410, 1450], [410, 1720], [255, 1720]]
 s.rowpack((255, 1470, 370, 1700), ["laborer", "servant"] * 12, court_every=6)  # outside-wall west rows within the SW gate's linear reach

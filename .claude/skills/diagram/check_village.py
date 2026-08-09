@@ -4512,7 +4512,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # mostly packs the block INTERIOR, reached by alleys, not the paved street frontage. (The towns
     # set the template: businesses on the frontage via s.frontage, dwellings interior via s.pack.)
     if scale in ("town", "city", "capital"):
-        st_lines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else [])
+        st_lines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r22["pts"] for r22 in M.get("roads", [])]  # trunk roads carry frontage too (021: the guan-xiang wards string their shops along them)
 
         def on_a_street(b: dict[str, Any]) -> bool:
             # 85 REAL FEET of a street centerline (converted at the declared scale): the fixed
@@ -12147,7 +12147,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # a planned city's government offices FRONT its streets - the yamen sits where the main
             # streets cross and the bureaus line the avenues around it (Chinese official street /
             # jokamachi grid), so every ministry must sit on a street, not float mid-block
-            st_pts = [st["pts"] for st in M.get("town_streets", [])]
+            st_pts = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r23["pts"] for r23 in M.get("roads", [])]  # the ote-suji IS the avenue (021: capital ministries front the road)
             no_front = [m.get("name") for m in M.get("ministries", []) if not any(seg_dist(m["x"], m["y"], sp[i], sp[i + 1]) < 85 for sp in st_pts for i in range(len(sp) - 1))]
             check(
                 "city_ministries_front_a_street",
