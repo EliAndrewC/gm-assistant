@@ -1801,6 +1801,25 @@ def test_bridges_carries_the_ring_road_over_the_cargo_canal_but_not_over_a_burie
     assert deck["rot"] == 0 and deck["w"] == 7  # ALONG the ring road, and as wide as the way it carries
 
 
+def test_bridges_solves_the_oblique_span_and_lands_every_corner():
+    """The span solves the crossing angle exactly (GM 2026-08-09: the old flat +28px slack was
+    eaten by obliquity and left deck corners AT the water's edge): along the deck the water is
+    w/sin wide, the deck's own width adds rw*|cos|/sin before a corner clears, and past that
+    each side runs LANDING_FT (10 real ft) of dry landing."""
+    s = _crop_settlement()
+    s.lane([(100, 500), (900, 500)], width=6, worn=True)
+    s.M["field_ditches"] = [{"poly": [[300, 700], [700, 300]], "w": 10}]  # crosses the lane at 45 deg
+    assert s.bridges() == 1
+    c45 = math.cos(math.radians(45))
+    exp = (10 + 6 * c45) / c45 + 20.0  # sin 45 == cos 45; + 2 * LANDING_FT at ftpx 1
+    assert abs(s.M["bridges"][0]["span"] - exp) < 0.6
+    s2 = _crop_settlement()
+    s2.lane([(100, 300), (500, 300)], width=6, worn=True)
+    s2.M["field_ditches"] = [{"poly": [[300, 150], [300, 450]], "w": 5}]
+    assert s2.bridges() == 1
+    assert abs(s2.M["bridges"][0]["span"] - 25.0) < 0.1  # perpendicular: water + two 10 ft landings, nothing more
+
+
 def test_place_punishment_spot_probes_for_a_clear_caption_seat():
     """The display board's caption gets its own probe, because a verge-hugging feature's default
     below-label lands on the frontage it hugs - which is what 'hugging the frontage' means."""

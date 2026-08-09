@@ -152,4 +152,35 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   and the bank quay"): the water-gate/dock-basin form the sibling cities draw belongs to still
   at-grade water, a live towpath river takes the kashi bank quay this map draws, and the
   grain-only look of the landing is the ground layer's emptiness - 021's brokers' row and
-  warehouse frontage land on the bank top per the wharf-chain doctrine.
+  warehouse frontage land on the bank top per the wharf-chain doctrine. Next battery: bridge
+  decks now LAND - the GM's corner-at-the-water's-edge catch became engine and check law
+  (research in settlements/ways.md: the abutment sill stands BACK from the channel edge so
+  scour cannot undercut the bearing, so a carried deck runs LANDING_FT = 10 real ft of deck
+  onto dry ground per side; bridges() solves the oblique span exactly, where the old flat
+  +28px slack had left the east river deck landing 0.0 ft at its worst corner; the check
+  measures the deck's FOUR REAL CORNERS with a 6 ft floor, footplanks floored at 2 ft with
+  their deliberately short abutment kept per GM 2026-07-22; the pre-fix manifest is frozen as
+  the flush-corner regression fixture). The towpath plank gained a visible ~2px bank rest.
+  The three aqueduct words now share the duct's bearing and ~20px offset ("intake weir" and
+  "settling basin" had been level while "aqueduct" lay along the cut), both sluice labels sit
+  beside their glyphs (the drain's had drifted 71px out while the feeder's sat adjacent), and
+  the drain sluice was reseated ON its leg's centerline - it sat 11px west of the channel.
+  The GM's open/closed question: NEITHER glyph denotes state - both draw the same
+  closed-board form, so there is no state difference for a label to explain. The engine-wide
+  deck re-size was independently reviewed (settlement-review DELTA, 2026-08-09): kikuta
+  confirmed a proven no-op (footplank-only sheet), Minami's three resized carried decks all
+  pass - every span re-derives to the decimal and the oblique canal deck's corners clear
+  their banks in pixels; one out-of-scope nitpick recorded (two plank-styled glyphs on
+  Minami's east bank near (843,1312)/(843,1420) that can read as bridges over nothing -
+  pre-existing, not deck records). Pre-021 sweep (GM asked what else must land first): the
+  side-gate stub roads were the one defect - both the EAST and SOUTHWEST trunk roads STARTED
+  at the gate point on the wall, so each gate opened onto 90 ft of bare ground 30px short of
+  the ring road; both now run their first leg inside the gate to join the ring, and the rule
+  is law at city+capital scale (gate_roads_join_the_ring, with the pre-fix manifest frozen as
+  a regression fixture - no check had watched gate-to-ring connectivity, so it shipped green).
+  The sluice DUTY CYCLE is researched and recorded (research: "How often is a sluice OPEN?"):
+  the moat pair rests THROTTLED - a trickle in at the east, out at the southwest, trimmed not
+  toggled - and a board moves for EVENTS (spate: intake hard down; drought: outfall shut;
+  dredging: intake shut + outfall full open; siege: both shut), while field sluices are the
+  scheduled kind (growing-season rotation of water rights). One closed-board glyph therefore
+  stays the honest drawing; no open-variant needed. Nothing else blocks feature 021.
