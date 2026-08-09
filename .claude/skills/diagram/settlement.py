@@ -11464,7 +11464,7 @@ class Settlement:
         gate_dir: str = "south",
         moat_gap: float | None = None,
         moat_width: float | None = None,
-        baileys: bool = True,
+        baileys: bool = False,
         bailey_fracs: tuple[float, ...] = (0.64, 0.34),
         label_xy: Pt | None = None,
     ) -> Any:
@@ -11485,12 +11485,25 @@ class Settlement:
         sync liability. What carries the read is the enceinte, its moat, the bailey divisions and
         the dogleg gate approach.
 
-        BAILEYS AND MASUGATA ARE PROVISIONAL (`baileys=`, GM 2026-08-08: "let's try adding the
-        bailey walls and masugata dogleg gate approaches and whatnot and then see how that looks,
-        and we can remove them if needed"). They are WALLS, not buildings, so they sit inside the
-        blank rule - a wall's sync surface is one line the Mode A sheet must also draw, against a
-        building's position, orientation AND footprint. The single knob exists so the GM's verdict
-        can be applied by flipping it rather than by unpicking the glyph.
+        BAILEYS AND MASUGATA ARE OFF BY DEFAULT - the GM's experiment was RUN AND ANSWERED
+        (`baileys=`, GM 2026-08-08: "let's try adding the bailey walls and masugata dogleg gate
+        approaches and whatnot and then see how that looks, and we can remove them if needed").
+
+        THE VERDICT, from two rendered attempts: they do not make a 50 ha enclosure read as a
+        castle, and the reason generalizes. The first cut drew the wards CONCENTRIC and it read as
+        a bullseye. The second offset them toward the far side from the ote-mon, varied the wall
+        weights and enlarged the masugata until it was visible - a real improvement, and still
+        nested rectangles. **Rectangles inside rectangles read as ABSTRACTION however they are
+        arranged**: what makes a castle read is irregular ward outlines, substantial water between
+        the wards, and corner yagura, none of which survive being drawn walls-only at 3 ft/px.
+        So the internal works buy nothing and cost a Mode A sync surface, and the blank rule wins
+        on its own terms. The knob stays because the finding is about THIS drawing vocabulary, not
+        a law - a future castle with irregular wards could revisit it.
+
+        What DID survive the experiment is the ISHIGAKI DOUBLING on the outer enceinte (below):
+        a battered stone rampart drawn as a doubled line reads as mass where a single stroke reads
+        as a fence. That is the outer wall, so it adds no sync surface the wall did not already
+        have.
 
         `bailey_fracs` are the inner enclosures as a fraction of the enceinte, outermost first
         (default: ninomaru at 0.64, honmaru at 0.34). Each bailey's gate turns 90 degrees from its
@@ -11523,52 +11536,81 @@ class Settlement:
             sheen=f'<path d="{dd}" fill="none" stroke="#B6CAD8" stroke-width="{mw * 0.4:.0f}" stroke-linejoin="round"/>',
         )
 
-        def walled_rect(rx: float, ry: float, gdir: str) -> Pt:
-            """One enclosure: four wall runs with a gap in the `gdir` side. Returns the gate center."""
+        def walled_rect(cx: float, cy: float, rx: float, ry: float, gdir: str, weight: float = 1.0) -> Pt:
+            """One enclosure: four wall runs with a gap in the `gdir` side. Returns the gate center.
+
+            Takes its own CENTER, because a castle's wards are OFFSET rather than concentric - see
+            the bailey block below for why that is the whole difference between a fortress and a
+            bullseye."""
+            sw = ww * weight
             sides = {
-                "north": ((x - rx, y - ry), (x + rx, y - ry), (x, y - ry)),
-                "south": ((x - rx, y + ry), (x + rx, y + ry), (x, y + ry)),
-                "west": ((x - rx, y - ry), (x - rx, y + ry), (x - rx, y)),
-                "east": ((x + rx, y - ry), (x + rx, y + ry), (x + rx, y)),
+                "north": ((cx - rx, cy - ry), (cx + rx, cy - ry), (cx, cy - ry)),
+                "south": ((cx - rx, cy + ry), (cx + rx, cy + ry), (cx, cy + ry)),
+                "west": ((cx - rx, cy - ry), (cx - rx, cy + ry), (cx - rx, cy)),
+                "east": ((cx + rx, cy - ry), (cx + rx, cy + ry), (cx + rx, cy)),
             }
             for name, (pa, pb, (gx, gy)) in sides.items():
                 if name != gdir:
-                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{sw:.1f}"/>')
                 elif name in ("west", "east"):
-                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pa[0]:.0f}" y2="{gy - gg:.1f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
-                    self.add_wall(f'<line x1="{pb[0]:.0f}" y1="{gy + gg:.1f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{pa[0]:.0f}" y2="{gy - gg:.1f}" stroke="{wall}" stroke-width="{sw:.1f}"/>')
+                    self.add_wall(f'<line x1="{pb[0]:.0f}" y1="{gy + gg:.1f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{sw:.1f}"/>')
                     for py in (gy - gg, gy + gg):
                         self.add_wall(f'<rect x="{gx - gp / 2:.1f}" y="{py - gp / 2:.1f}" width="{gp:.1f}" height="{gp:.1f}" fill="{wall}"/>')
                 else:
-                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{gx - gg:.1f}" y2="{pa[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
-                    self.add_wall(f'<line x1="{gx + gg:.1f}" y1="{pb[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{ww:.1f}"/>')
+                    self.add_wall(f'<line x1="{pa[0]:.0f}" y1="{pa[1]:.0f}" x2="{gx - gg:.1f}" y2="{pa[1]:.0f}" stroke="{wall}" stroke-width="{sw:.1f}"/>')
+                    self.add_wall(f'<line x1="{gx + gg:.1f}" y1="{pb[1]:.0f}" x2="{pb[0]:.0f}" y2="{pb[1]:.0f}" stroke="{wall}" stroke-width="{sw:.1f}"/>')
                     for px_ in (gx - gg, gx + gg):
                         self.add_wall(f'<rect x="{px_ - gp / 2:.1f}" y="{gy - gp / 2:.1f}" width="{gp:.1f}" height="{gp:.1f}" fill="{wall}"/>')
             return sides[gdir][2]
 
-        # 2. the court ground, then the enceinte. The fill goes down first so the walls sit on it.
+        # 2. the court ground, then the enceinte. The ISHIGAKI draws as a DOUBLED line - a battered
+        # stone rampart reads as mass, where a single stroke reads as a fence.
         self.add(f'<rect x="{x - hw:.0f}" y="{y - hh:.0f}" width="{w:.0f}" height="{h:.0f}" fill="#E3D6B2"/>')
-        gate = walled_rect(hw, hh, gate_dir)
+        inb = ww * 1.9
+        self.add(f'<rect x="{x - hw + inb:.0f}" y="{y - hh + inb:.0f}" width="{w - 2 * inb:.0f}" height="{h - 2 * inb:.0f}" fill="none" stroke="{wall}" stroke-width="{ww * 0.32:.1f}" opacity="0.5"/>')
+        gate = walled_rect(x, y, hw, hh, gate_dir)
 
-        # 3. THE BAILEYS - provisional. Each gate turns 90 degrees from its parent's: the dogleg.
+        # 3. THE BAILEYS - provisional, and OFFSET rather than concentric, which is the entire
+        # difference between a castle and a bullseye. The first cut drew them centered and
+        # axis-shared and it read as a target symbol; real wards are asymmetric, and the honmaru
+        # sits at the FAR side from the ote-mon so an attacker crosses the whole works under fire.
+        # Each ward's gate also turns off its parent's, so the route doglegs at every wall.
         turn = {"south": "east", "east": "north", "north": "west", "west": "south"}
+        away = {"south": (0.0, -1.0), "north": (0.0, 1.0), "east": (-1.0, 0.0), "west": (1.0, 0.0)}[gate_dir]
         rings: list[list[Pt]] = []
         gates: list[Pt] = [(round(gate[0], 1), round(gate[1], 1))]
+        cx_, cy_, prx, pry = x, y, hw, hh
         if baileys:
             gdir = gate_dir
-            for frac in bailey_fracs:
+            for k, frac in enumerate(bailey_fracs):
                 gdir = turn[gdir]
-                rings.append(ring(hw * frac, hh * frac))
-                gates.append(tuple(round(v, 1) for v in walled_rect(hw * frac, hh * frac, gdir)))  # type: ignore[arg-type]
-            # 4. the INNER moat, hugging the honmaru - the last line of water
-            inner = ring(hw * bailey_fracs[-1] + gap * 0.45, hh * bailey_fracs[-1] + gap * 0.45)
+                rx_, ry_ = hw * frac, hh * frac
+                jog = 0.13 * (1 if k % 2 == 0 else -1)
+                cx_ = x + away[0] * (prx - rx_) * 0.72 + (jog * hw if away[0] == 0 else 0.0)
+                cy_ = y + away[1] * (pry - ry_) * 0.72 + (jog * hh if away[1] == 0 else 0.0)
+                rings.append([(cx_ - rx_, cy_ - ry_), (cx_ + rx_, cy_ - ry_), (cx_ + rx_, cy_ + ry_), (cx_ - rx_, cy_ + ry_)])
+                g_ = walled_rect(cx_, cy_, rx_, ry_, gdir, weight=0.85 if k == 0 else 0.72)
+                gates.append((round(g_[0], 1), round(g_[1], 1)))
+                prx, pry = rx_, ry_
+            # 4. the INNER moat, hugging the honmaru at its own offset center
+            ir = gap * 0.42
+            inner = [(cx_ - prx - ir, cy_ - pry - ir), (cx_ + prx + ir, cy_ - pry - ir), (cx_ + prx + ir, cy_ + pry + ir), (cx_ - prx - ir, cy_ + pry + ir)]
             idd = "M" + " L".join(f"{px:.1f},{py:.1f}" for px, py in inner) + " Z"
-            self._water(f'<path d="{idd}" fill="none" stroke="#9CB4C8" stroke-width="{mw * 0.55:.0f}" stroke-linejoin="round"/>', {})
-            # 5. THE MASUGATA - the square barbican outside the ote-mon that makes the first turn
+            self._water(f'<path d="{idd}" fill="none" stroke="#9CB4C8" stroke-width="{mw * 0.5:.0f}" stroke-linejoin="round"/>', {})
+            # 5. THE MASUGATA - the square barbican that makes the first turn. Sized to READ: the
+            # first cut was ~2.4 gate-widths and vanished at map scale, which is the same mistake as
+            # drawing a keep footprint - a feature nobody can see is not a feature.
             ux, uy = {"south": (0.0, 1.0), "north": (0.0, -1.0), "east": (1.0, 0.0), "west": (-1.0, 0.0)}[gate_dir]
-            bx, by = gate[0] + ux * gap * 0.5, gate[1] + uy * gap * 0.5
-            bs = gg * 2.4
-            self.add_wall(f'<rect x="{bx - bs:.1f}" y="{by - bs:.1f}" width="{bs * 2:.1f}" height="{bs * 2:.1f}" fill="none" stroke="{wall}" stroke-width="{ww * 0.8:.1f}"/>')
+            bs = gg * 4.2
+            bx, by = gate[0] + ux * bs, gate[1] + uy * bs
+            bc = [(bx - bs, by - bs), (bx + bs, by - bs), (bx + bs, by + bs), (bx - bs, by + bs)]
+            open_side = 1 if ux == 0 else 0  # one flank stays open: the way out turns ACROSS the approach
+            for i in range(4):
+                if i == open_side:
+                    continue
+                a_, b_ = bc[i], bc[(i + 1) % 4]
+                self.add_wall(f'<line x1="{a_[0]:.0f}" y1="{a_[1]:.0f}" x2="{b_[0]:.0f}" y2="{b_[1]:.0f}" stroke="{wall}" stroke-width="{ww * 0.85:.1f}"/>')
 
         self.M["castle"] = {
             "x": x,

@@ -6099,3 +6099,95 @@ def test_seat_memo_tolerates_bound_being_SET_but_not_unset():
     s.bound = None
     memo.sync()
     assert (100.0, 200.0) not in memo.level("laborer", 10, 6, 7)
+
+
+# ---- THE DAIMYO'S CASTLE (feature 019) -------------------------------------------------------
+#
+# The castle is drawn WALLS-ONLY with a deliberately empty court, so the tests that matter most
+# are the negative ones: nothing may be recorded as a building inside it, ever.
+
+
+def _castle_map(**kw):
+    s = settlement.Settlement(3200, 2700, seed=3)
+    s.meta(name="Cap", scale="capital", ftpx=3, walled=True)
+    rec = s.castle(1600, 1300, 850, 700, **kw)
+    return s, rec
+
+
+def test_a_capital_declares_its_scale_and_takes_the_city_building_grain():
+    s, _ = _castle_map()
+    assert s.M["meta"]["scale"] == "capital"
+    assert s.bscale == pytest.approx(1 / 3)
+
+
+@pytest.mark.parametrize("gate_dir", ["south", "north", "east", "west"])
+def test_the_castle_records_its_works_and_puts_its_gate_on_the_named_side(gate_dir):
+    s, rec = _castle_map(gate_dir=gate_dir)
+    assert s.M["castle"] is rec
+    assert rec["gate_dir"] == gate_dir
+    gx, gy = rec["gate"]
+    if gate_dir in ("north", "south"):
+        assert gx == pytest.approx(1600)
+        assert gy == pytest.approx(1300 + (350 if gate_dir == "south" else -350))
+    else:
+        assert gy == pytest.approx(1300)
+        assert gx == pytest.approx(1600 + (425 if gate_dir == "east" else -425))
+    assert len(rec["moat"]) == 4 and rec["moat_width"] > 0
+
+
+@pytest.mark.parametrize("gate_dir", ["south", "north", "east", "west"])
+def test_NOTHING_is_ever_recorded_inside_the_castle(gate_dir):
+    """The rule that is not a knob. The court is the subject of a separate Mode A sheet, and any
+    building drawn here would become a constraint that sheet must silently match."""
+    s, _ = _castle_map(gate_dir=gate_dir, baileys=True)
+    for key in ("buildings", "houses", "manors", "religious", "ministries"):
+        assert not s.M.get(key), f"the castle put something in M[{key!r}] - the court must stay empty"
+
+
+def test_the_castle_reserves_its_ground_in_BOTH_registries():
+    """block_polys is CENTER-tested by the urban packs; placed is distance-tested. An enclosure
+    this size has to stop a wide building hanging half its roof over the rampart, and only the
+    second registry does that - so the castle registers in both (CLAUDE.md, CENTER vs FOOTPRINT)."""
+    s, rec = _castle_map()
+    assert len(s.block_polys) == 1
+    assert len(s.placed) == 1
+    px, py, pw, ph = s.placed[0]
+    assert pw > rec["w"] and ph > rec["h"]  # the reservation covers the moat, not just the wall
+    xs = [p[0] for p in s.block_polys[0]]
+    assert min(xs) < rec["x"] - rec["w"] / 2 and max(xs) > rec["x"] + rec["w"] / 2
+
+
+def test_without_baileys_the_castle_is_one_enclosure():
+    _, rec = _castle_map(baileys=False)
+    assert rec["baileys"] == []
+    assert len(rec["gates"]) == 1
+
+
+@pytest.mark.parametrize("gate_dir", ["south", "north", "east", "west"])
+def test_the_baileys_are_OFFSET_and_their_gates_dogleg(gate_dir):
+    """The provisional internal works (default OFF - see the glyph's docstring for the verdict).
+    Two properties matter if they are ever switched back on: the wards are NOT concentric, and
+    each ward's gate turns off its parent's, so the route in bends at every wall."""
+    _, rec = _castle_map(gate_dir=gate_dir, baileys=True)
+    assert len(rec["baileys"]) == 2
+    assert len(rec["gates"]) == 3
+    for ring in rec["baileys"]:
+        cx = sum(p[0] for p in ring) / 4
+        cy = sum(p[1] for p in ring) / 4
+        assert (abs(cx - rec["x"]) > 1.0) or (abs(cy - rec["y"]) > 1.0), "a ward sits concentric - that reads as a bullseye"
+    # each successive gate lies on a different axis from the one before it
+    for a, b in zip(rec["gates"], rec["gates"][1:], strict=False):
+        assert not (abs(a[0] - b[0]) < 1.0 and abs(a[1] - b[1]) < 1.0)
+
+
+def test_a_castle_caption_is_placed_only_when_a_label_is_given():
+    s_none, _ = _castle_map(label="")
+    s_lab, _ = _castle_map(label="Keep")
+    assert len(s_lab.M.get("labels", [])) == len(s_none.M.get("labels", [])) + 1
+
+
+def test_a_castle_caption_can_be_hand_seated():
+    """label_xy moves the caption off the court's center - the same escape s.martial_hall keeps."""
+    s_def, _ = _castle_map(label="Keep")
+    s_hand, _ = _castle_map(label="Keep", label_xy=(1150, 1050))
+    assert s_def.M["labels"][-1] != s_hand.M["labels"][-1]
