@@ -10609,3 +10609,52 @@ def test_terraces_are_ranges_fires_on_a_single_unit():
     assert "terraces_are_ranges" in f(M)
     M["terraces"][0]["units"] = 6
     assert "terraces_are_ranges" not in f(M)
+
+
+def test_population_consistency_runs_at_capital_and_counts_terrace_units():
+    """T006: the housing battery binds the capital too - and a terrace range houses `units`
+    households under its one roof, so units count as dwellings toward the declared figure."""
+    M = _capital_manifest()
+    M["meta"]["population"] = 100
+    assert "population_consistent_with_housing" in f(M)  # zero dwellings vs 100 declared
+    M["terraces"] = [
+        {"x": 300, "y": 300, "w": 108, "h": 7, "rot": 0, "units": 10, "z": 1},
+        {"x": 600, "y": 300, "w": 108, "h": 7, "rot": 0, "units": 10, "z": 1},
+    ]
+    M["districts"] = [{"name": "castle foot", "kind": "terrace", "rank_band": "terrace", "poly": [[0, 0], [1000, 0], [1000, 1000], [0, 1000]]}]
+    assert "population_consistent_with_housing" not in f(M)  # 20 units x 5 = 100
+
+
+def test_capital_housing_matches_band_targets_fires_on_a_band_shortfall():
+    """T006: the 018 budget is the housing authority - each band's drawn count lands on its
+    dwelling_target (max(2, 5%) tolerance), so a quietly-short band fires by name."""
+    M = _capital_manifest()
+    M["meta"]["budget"]["dwelling_target"] = {"samurai_yashiki": 5, "samurai_detached": 0, "samurai_terrace": 0, "packed": 0, "dwellings": 5}
+    M["districts"] = [{"name": "castle foot", "kind": "yashiki", "rank_band": "yashiki", "poly": [[0, 0], [1000, 0], [1000, 1000], [0, 1000]]}]
+    M["manors"] = [{"x": 300, "y": 300, "w": 60, "h": 40, "label": "Hazama Estate"}]
+    assert "capital_housing_matches_band_targets" in f(M)  # 1 drawn vs 5
+    M["manors"] += [{"x": 300 + 80 * i, "y": 500, "w": 60, "h": 40, "label": "Estate"} for i in range(4)]
+    assert "capital_housing_matches_band_targets" not in f(M)
+
+
+def test_capital_population_counts_yashiki_manors_and_outwall_samurai():
+    """T006 arithmetic: the capital's declared figure covers the WHOLE cohort - yashiki-band
+    households are manors (not buildings), and the out-wall 15% of the samurai cohort
+    (CAPITAL_SAMURAI_INWALL_FRAC) are the capital's people too, unlike a provincial city's
+    estate samurai (the Tango rule counts those rural)."""
+    M = _capital_manifest()
+    M["meta"]["population"] = 30
+    M["districts"] = [{"name": "castle foot", "kind": "yashiki", "rank_band": "yashiki", "poly": [[0, 0], [1000, 0], [1000, 1000], [0, 1000]]}]
+    M["manors"] = [{"x": 300, "y": 300, "w": 60, "h": 40, "label": "Hazama Estate"}, {"x": 500, "y": 300, "w": 60, "h": 40, "label": "Utsuro Estate"}]
+    M["buildings"] = [
+        {"x": 700, "y": 700, "w": 15, "h": 10, "kind": "samurai", "rot": 0},
+        {"x": 1500, "y": 500, "w": 15, "h": 10, "kind": "samurai", "rot": 0},
+        {"x": 720, "y": 740, "w": 12, "h": 9, "kind": "laborer", "rot": 0},
+        {"x": 1500, "y": 900, "w": 12, "h": 9, "kind": "laborer", "rot": 0},
+    ]
+    M["terraces"] = [{"x": 400, "y": 700, "w": 36, "h": 7, "rot": 0, "units": 2, "z": 1}]
+    # in-wall: 2 manors + 1 samurai + 1 laborer + 2 terrace units = 6; +1 OUT-wall samurai = 7
+    # dwellings = 35 people; the out-wall laborer never counts. Declared 30 -> off by a house:
+    assert "population_consistent_with_housing" in f(M)
+    M["meta"]["population"] = 35  # ...and 35 closes the arithmetic exactly
+    assert "population_consistent_with_housing" not in f(M)
