@@ -5694,7 +5694,19 @@ class Settlement:
             self.label(lx, ly, label, 14, italic=True, weight="bold", color="#22301A")
 
     def manor(
-        self, x: float, y: float, w: float, h: float, label: Any, sublabel: str = "", gate_dir: str = "south", rot: float = 0, gate_ft: float = 12.0, label_xy: Pt | None = None, ink: str | None = None
+        self,
+        x: float,
+        y: float,
+        w: float,
+        h: float,
+        label: Any,
+        sublabel: str = "",
+        gate_dir: str = "south",
+        rot: float = 0,
+        gate_ft: float = 12.0,
+        label_xy: Pt | None = None,
+        ink: str | None = None,
+        label_inside: bool = False,
     ) -> None:
         """A walled samurai compound (e.g. a magistrate's manor / hunting lodge) shown
         as a feature on a settlement map: ONLY the walls + gate + empty court. The
@@ -5803,8 +5815,17 @@ class Settlement:
             # text, and a punishment ground sited at the gate (which is where it belongs) sits
             # under it (GM 2026-07-26, Hoshizora). Same escape as s.martial_hall. A DIAGONAL
             # compound's caption tilts with it (label_tilt), at the hand seat or the default.
-            _seat = label_xy or (tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 12, above=True) if _t else (x, min(ys) - 12))
-            self.label(*_seat, label, 14, weight="bold", rot=_t)
+            if label_inside:
+                # A CITY estate's caption lives INSIDE the walls (GM 2026-08-09): the court is
+                # BLANK by doctrine - its contents belong to the Mode A sheet - so the empty
+                # court is the label's natural ground, exactly as a governor's mansion carries
+                # its own name. Sized to ~82% of the court's width so it clears walls and gate,
+                # capped at the outside caption's 14, floored at 6.5 for legibility.
+                _fs = max(6.5, min(14.0, (w * 0.82) / (max(len(str(label)), 1) * 0.55)))
+                self.label(x, y, label, _fs, weight="bold", rot=_t)
+            else:
+                _seat = label_xy or (tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 12, above=True) if _t else (x, min(ys) - 12))
+                self.label(*_seat, label, 14, weight="bold", rot=_t)
         if sublabel:
             _s2 = tilt_caption_seat(x, y, rot, _t, w / 2, h / 2, 18) if _t else (x, max(ys) + 18)
             self.label(*_s2, sublabel, 9, italic=True, rot=_t)
@@ -11123,6 +11144,13 @@ class Settlement:
         g.append(f'<rect x="-4.6" y="-1.4" width="9.2" height="2.8" fill="#8A7050" stroke="{wc}" stroke-width="1.0"/>')  # the lifted board
         g.append(f'<rect x="-5.4" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')  # posts
         g.append(f'<rect x="3.4" y="-2.0" width="2.0" height="4.0" fill="{wc}"/>')
+        # THE LIFTING FRAME (GM 2026-08-09, researched): a hi/suimon board was raised by hand -
+        # or by windlass on the larger gates - from a timber crossbeam spanning the posts ABOVE
+        # the water, the operator standing on the beam walkway or the bank abutment. The beam
+        # and its windlass drum are real above-water structure, drawn at the glyph floor (the
+        # wells' vr convention): the crossbeam bridges the posts and the drum sits at its center.
+        g.append(f'<line x1="-4.4" y1="-3.1" x2="4.4" y2="-3.1" stroke="{wc}" stroke-width="1.2"/>')  # the crossbeam walkway
+        g.append(f'<rect x="-1.1" y="-4.2" width="2.2" height="2.2" fill="#B0905E" stroke="{wc}" stroke-width="0.8"/>')  # the windlass drum
         g.append('</g>')
         z = self.add_top(''.join(g))
         self.M.setdefault("sluice_gates", []).append({"x": round(x, 1), "y": round(y, 1), "rot": round(rot, 1), "z": z})
@@ -11856,7 +11884,7 @@ class Settlement:
         self.M.setdefault("castles", []).append(rec)
         return rec
 
-    def ministry(self, x: float, y: float, name: str, w: Any = None, h: Any = None, label_below: bool | None = None) -> None:
+    def ministry(self, x: float, y: float, name: str, w: Any = None, h: Any = None, label_below: bool | None = None, label_inside: bool = False) -> None:
         """A provincial ministry office (one of the SIX). Records to M['ministries'] with its
         `name`; exactly one city-wide must be the Ministry of Rites (sited in the temple
         neighborhood). Official violet roof so it reads apart from housing/commerce."""
@@ -11869,9 +11897,23 @@ class Settlement:
         self.placed.append((x, y, w, h))
         bm = max(30 * self.bscale, 26)  # a building-half margin at the map's grain, floored so a dwelling's corner keeps the 14px office-abut clearance
         self.block_polys.append([(x - w / 2 - bm, y - h / 2 - bm), (x + w / 2 + bm, y - h / 2 - bm), (x + w / 2 + bm, y + h / 2 + bm), (x - w / 2 - bm, y + h / 2 + bm)])
-        if label_below is None:
-            label_below = self._label_hits(x, y - h / 2 - 9, name, 9) > self._label_hits(x, y + h / 2 + 11, name, 9)
-        self.label(x, y + h / 2 + 11 if label_below else y - h / 2 - 9, name, 9, italic=True, color="#463653")
+        if label_inside:
+            # THE CAPITAL'S MINISTRY CAPTIONS SIT ON THE GLYPH (GM 2026-08-09) - the estate rule
+            # applied to the state offices: the capital's 224x148 ft compound has the room, where
+            # a provincial city's tighter fabric keeps the caption beside the box. Two stacked
+            # lines, because "Ministry of Retainers" cannot fit the width in one: the shared
+            # "Ministry of" runs small above the department's own name. Near-black for
+            # legibility on the violet, per the GM.
+            dept = name.removeprefix("Ministry of ").strip()
+            if dept != name:
+                self.label(x, y - h * 0.10, "Ministry of", 6.5, italic=True, color="#2D2A24")
+                self.label(x, y + h * 0.18, dept, max(7.0, min(9.5, (w * 0.8) / (max(len(dept), 1) * 0.55))), weight="bold", color="#2D2A24")
+            else:
+                self.label(x, y + h * 0.05, name, max(6.5, min(9.0, (w * 0.8) / (max(len(name), 1) * 0.55))), weight="bold", color="#2D2A24")
+        else:
+            if label_below is None:
+                label_below = self._label_hits(x, y - h / 2 - 9, name, 9) > self._label_hits(x, y + h / 2 + 11, name, 9)
+            self.label(x, y + h / 2 + 11 if label_below else y - h / 2 - 9, name, 9, italic=True, color="#463653")
 
     # ---- martial training: the state hall and the private dojos (GM 2026-07-25) ---------------
     # A DOJO IS A CITY INSTITUTION. The county tier draws a practice ground and no dojo at all

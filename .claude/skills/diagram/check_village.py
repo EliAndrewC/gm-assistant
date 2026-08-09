@@ -3898,6 +3898,33 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 not cap_weak,
                 f"adjacent size bands are not visibly distinct (want >= {CAP_BAND_STEP}x area steps): {cap_weak}",
             )
+        # A CITY ESTATE'S CAPTION LIVES INSIDE ITS WALLS (GM 2026-08-09): the court is blank by
+        # doctrine (its contents belong to the Mode A sheet), so the empty court is the label's
+        # ground - a caption hung outside sits where 021's fabric must flow. Judged on the
+        # recorded label box vs the compound footprint; a manor whose caption is recorded
+        # elsewhere on the sheet fires, a manor with no matching caption record is skipped
+        # (label() always records, so that never happens on a generated map).
+        cap_lbl_out = []
+        for cmn2 in M.get("manors", []):
+            if not cmn2.get("label"):
+                continue
+            for cap_L in M.get("labels", []):
+                if (
+                    len(cap_L) > 5
+                    and cap_L[5] == cmn2["label"]
+                    and not (
+                        cmn2["x"] - cmn2["w"] / 2 - 1 <= cap_L[0]
+                        and cap_L[2] <= cmn2["x"] + cmn2["w"] / 2 + 1
+                        and cmn2["y"] - cmn2["h"] / 2 - 1 <= cap_L[1]
+                        and cap_L[3] <= cmn2["y"] + cmn2["h"] / 2 + 1
+                    )
+                ):
+                    cap_lbl_out.append(cmn2["label"])
+        check(
+            "capital_estate_labels_inside",
+            not cap_lbl_out,
+            f"estate caption(s) outside their own walls: {sorted(set(cap_lbl_out))[:4]} - a city estate's court is blank by doctrine, so the caption lives INSIDE it (manor(label_inside=True)), sized to clear the walls",
+        )
         # A RIVER GETS A TOWPATH, NOT A ROAD (GM 2026-08-08; research/cities/capitals.md): water
         # carried bulk far more cheaply than carts, so a trunk road shadowing a navigable river is
         # redundant - a way may CROSS the river (bridged), never run along its bank. Judged
@@ -5873,7 +5900,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 return {"granary"}
             if "governor" in t or "mansion" in t:
                 return {"governor"}
-            if "manor" in t or "magistrate" in t:
+            if "manor" in t or "magistra" in t:  # magistrate AND magistracy - the institution naming (GM 2026-08-09)
                 return {"estate"}
             if any(w in t for w in ("temple", "shrine", "monastery", "chapel")):
                 return {"temple"}

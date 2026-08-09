@@ -6310,6 +6310,34 @@ def test_full_tilt_lays_a_row_caption_along_the_row():
     assert "rotate(-54" in "".join(s.out)  # the caption carries the row's own angle
 
 
+def test_manor_label_inside_fits_the_court():
+    """A city estate's caption lives INSIDE the blank court (GM 2026-08-09), sized to clear the
+    walls - and a small estate gets a smaller face rather than an overflowing one."""
+    s = _cap020()
+    s.manor(700, 700, 150, 118, "Hazama Estate", label_inside=True)
+    box = next(L for L in s.M["labels"] if len(L) > 5 and L[5] == "Hazama Estate")
+    assert box[0] > 625 and box[2] < 775 and box[1] > 641 and box[3] < 759  # fully inside the court
+    s2 = _cap020()
+    s2.manor(700, 700, 70, 54, "Seki Estate", label_inside=True)
+    box2 = next(L for L in s2.M["labels"] if len(L) > 5 and L[5] == "Seki Estate")
+    assert box2[2] - box2[0] <= 60  # the face shrinks to the smaller court
+
+
+def test_ministry_label_inside_stacks_two_lines_on_the_glyph():
+    """The capital's ministry captions sit ON the glyph (GM 2026-08-09) - the estate rule
+    applied to the state offices, two stacked lines because the long names cannot fit the
+    width in one; a provincial city keeps its beside-captions (smaller compounds)."""
+    s = _cap020()
+    s.ministry(700, 700, "Ministry of Retainers", label_inside=True)
+    recs = [L for L in s.M["labels"] if len(L) > 5 and L[5] in ("Ministry of", "Retainers")]
+    assert len(recs) == 2
+    for box2 in recs:
+        assert box2[0] > 662 and box2[2] < 738 and box2[1] > 675 and box2[3] < 725  # on the glyph
+    s2 = _cap020()
+    s2.ministry(700, 700, "Records Hall", label_inside=True)  # a non-"Ministry of" office keeps one line
+    assert any(len(L) > 5 and L[5] == "Records Hall" for L in s2.M["labels"])
+
+
 def test_granary_rot_turns_the_row_and_records_rotated_stores():
     """A riverside complex stands parallel to the bank it loads from (GM 2026-08-09) - the row
     turns as a unit and every store records the rotation, so the matrix tests real corners."""
