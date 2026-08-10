@@ -994,3 +994,69 @@ rules are counting different things: the research's "burial grounds" are the com
 grounds (parish + extramural common), while our cemeteries key also holds each temple's own
 precinct plot. A capital therefore shows more cemetery records than the band, legitimately, and
 the band is not applied at capital scale.
+
+## How far outside the wall does the funerary ground sit? (research, GM question 2026-08-10)
+
+The GM's objection: the capital's common burial ground, cremation ground and pauper's ossuary
+sat 909-1,260 real ft outside the wall, which "makes the map harder to read," and they asked for
+the distance only if research supports it. **It does not.** The number had been picked, never
+researched, and the record says the constraints are satisfied far closer.
+
+**What actually set the distance was LAND QUALITY and the ROAD, not a setback.** The only
+explicit siting criterion anywhere in the record is Chinese and says nothing about distance: Cai
+Jing's edict of **1104**, which established a **louzeyuan** (public pauper cemetery) in every
+prefecture and county, directs officials to 擇高曠不毛之地 - "choose high, open, **barren**
+ground." The observed spread across Zhejiang county gazetteers is one to ten li (~1,800-18,100
+ft), and that spread is not a rule being obeyed: it is where each county's first patch of
+worthless ground happened to lie. A capital whose bad ground begins 300 ft past the moat is fully
+compliant. The second driver is that a corpse is carried on foot: every attested site straddles a
+highway at a gate - Kozukappara on the Ōshū/Nikkō Kaidō, Suzugamori on the Tōkaidō, Rendaino at
+the head of Senbon-dōri, Toribeno at the Rokudō crossroads.
+
+**Ritual pollution is a BINARY, not a gradient.** The requirement is *outside*, full stop, and
+Kyoto proves it: Injō-ji (Senbon Enmadō), the gate-temple "at the entrance of Rendaino," stands
+essentially ON Hideyoshi's Odoi rampart line and is explicitly described as marking the boundary
+between the worlds of the living and the dead. The Rokudō crossroads does the same job for
+Toribeno at ~1,334 ft. Pollution buys zero extra feet past the wall.
+
+**Fire buys almost nothing either, and this is the finding that settles it.** Edo cremated its
+dead on open pyres **inside the city, in temple precincts** - a cluster of kasō-dera at Senju -
+for 250 years, in the most flammable city on earth, through the Meireki fire that killed 100,000.
+The crematoria were never moved for fire. They were finally proposed for relocation past the
+shubiki line in **May 1873**, and the reason on the record is the **stench**, not sparks. The
+real practice was CONTAINMENT, not distance: a stone hearth inside a walled kasoba (Varanasi
+burns ~100 open pyres a day wedged into its densest quarter, solved by a stone platform and a
+river). Modern code for exactly this fire size - a bonfire, not a wildfire front - is **50 ft**
+(IFC §307.4.2 / NFPA 1). Wildfire ember-spotting figures do not apply: those come from crown
+fires lofting brands from a gigawatt plume, and even there firebrands need a genuine fire FRONT
+to spot past ~60 m. **A wet moat ends the fire argument at its outer face.**
+
+**The three features belong together, and tighter than we drew them.** At Edo's north gate one
+patch astride one road holds the Kozukappara execution and burial ground, Enmei-ji at **287 ft**,
+Ekō-in at **258 ft** (which maintains the site's muen-zuka - the literal pauper's mound), and
+Jōkan-ji the "throw-in temple" at 1,527 ft. Kyoto's Toribeno and Rendaino were each ONE field
+doing all three jobs - exposure, cremation and burial - entered through one gate-temple. The
+Chinese louzeyuan is a walled compound with a resident caretaker monk, and Chinese cremation was
+institutionally a Buddhist-temple business, so the crematory sat at the temple that ran the
+pauper ground.
+
+**The shape of the mistake we were making.** In every attested case the funerary complex's
+ENTRANCE is at or just past the wall and the field extends *outward* for another 1,000-4,000 ft.
+Drawing a small compact feature at 900-1,260 ft draws what history puts at the FAR end and puts
+it at the NEAR end - which is exactly why it read unmotivated.
+
+**The numbers, encoded in `funerary_ground_within_reach`:**
+
+| quantity | value | why |
+|---|---|---|
+| near edge, minimum | 150 ft past the moat's outer face | clears moat, glacis and verge so it reads unambiguously outside; triple the 50 ft bonfire setback |
+| near edge, typical | 250-600 ft | brackets Rendaino's gate-temple (~0-300 ft) and sits well inside Toribeno's (1,334 ft at a city 25x our size) |
+| near edge, MAX (capital) | 900 ft | every physical constraint is satisfied far inside it - pollution at 0, fire at 50-100, smoke at a few hundred - so 900 is generous, not stingy |
+| near edge, MAX (provincial city) | 750 ft | these constraints barely scale with population; a smaller built edge should read tighter, not looser |
+| cluster tightness | the three within ~600 ft of each other | Kozukappara to Enmei-ji 287 ft, to Ekō-in 258 ft |
+| pyre to nearest combustible | >= 100 ft clear, or >= 50 ft across water | IFC bonfire 50 ft doubled for a hotter, longer fire; the moat waiver is the Manikarnika argument |
+
+Sources: the 1104 louzeyuan edict (Chinese Wikipedia; 史学月刊 on Song 漏泽园); Andrew Bernstein,
+"Fire and Earth: The Forging of Modern Cremation in Meiji Japan," JJRS 27/3-4 (2000), for the
+1873 shubiki proposal and the stench rationale; Kozukappara, Suzugamori, Jōkan-ji and Injō-ji
+coordinates measured against the Odoi line; IFC §307 / NFPA 1 for the bonfire setback.
