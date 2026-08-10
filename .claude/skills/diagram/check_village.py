@@ -11389,7 +11389,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # commoners and share the same wells, so they ride along. A dwelling too far from any well is
             # a neighborhood the water network forgot.
             REACH = 290
-            COMMON = {"laborer", "laborer_large", "burakumin", "merchant", "merchant_house", "merchant_large", "monk_house"}
+            # monk_house is NOT here (021): a temple's monk houses draw from the temple's own
+            # well inside the precinct (the monastery provisions its own community - the same
+            # reason samurai compounds are exempt), so a monk file in a well-less pocket beside
+            # its temple is correct, not a forgotten neighborhood.
+            COMMON = {"laborer", "laborer_large", "burakumin", "merchant", "merchant_house", "merchant_large"}
             dry = [
                 (round(b["x"]), round(b["y"]))
                 for b in M.get("buildings", [])

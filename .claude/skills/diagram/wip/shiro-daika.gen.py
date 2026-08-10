@@ -401,11 +401,11 @@ s.bound = _CITY_BOUND
 # class stays the ote-suji's alone). Ends meet the ring road for circulation; the E-W pair
 # at y=1350 stops clear of the government band (no street across the ministry fronts).
 s.street([(620, 1770), (2180, 1770)], width=s.lw(18), main=True)  # ends short of the rampart's tower line
-s.street([(900, 2005), (1799, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
+s.street([(985, 2005), (1799, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
 s.street([(1040, 1256), (1040, 2057)], width=s.lw(15))  # x=1040 clears the Temple of Inari's hall (~x992)
 s.street([(1800, 1300), (1800, 1540)], width=s.lw(15))  # stops at the Benten precinct's reserved ground
 s.street([(1800, 1700), (1800, 2038)], width=s.lw(15))  # ...and resumes south of it (a precinct blocks a street; the walls are the dead end)
-s.street([(2130, 1250), (2130, 1620)], width=s.lw(15))  # east of Kurogi (x1986-2094), stopping clear of the Temple of Ebisu (2127,1686)
+s.street([(2130, 1250), (2130, 1620), (2185, 1668), (2180, 1770)], width=s.lw(15))  # east of Kurogi; bends EAST around the Temple of Ebisu (2127,1686) to tie the NE grid into the y=1770 main street (021: streets_connected)
 s.street([(800, 1372), (800, 1938)], width=s.lw(15))  # meets the y=1375 street
 s.street([(431, 1375), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
 s.street([(1560, 1390), (2367, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
@@ -534,14 +534,14 @@ s.district("entertainment quarter", "entertainment", [(2000, 1620), (2115, 1620)
 s.flophouse(1330, 2205)
 s.flophouse(2740, 960)
 s.flophouse(1325, 160)
-s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "north"), (1080, 1768, "south"), (1240, 1898, "east"), (1260, 1816, "east"), (1650, 1700, "south"), (1120, 1930, "north")])
+s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "north"), (1080, 1768, "south"), (1240, 1898, "east"), (1188, 1816, "west"), (1650, 1700, "south"), (1120, 1930, "north")])
 # ---- the TRADE WORKS + GATE CARAVAN PROGRAM (the urban battery's full demand; all
 # compounds seated BEFORE the packs). Nuisance trades take the lee-and-downstream arc
 # (wind_from="northwest"): the dyer and both tanneries stand on the moat DRAIN south of
 # the wharf, the kiln smokes outside the southwest wall.
 # monk housing beside each rim temple + the teramachi cluster's wayside shrines
 s.rowpack((1955, 545, 1992, 588), ["monk_house"] * 2, court_every=3)
-s.rowpack((2145, 1730, 2185, 1772), ["monk_house"] * 2, court_every=3)
+s.rowpack((2108, 1712, 2150, 1768), ["monk_house"] * 2, court_every=3)  # tucked between Ebisu and the connector's kido crossing
 s.rowpack((1002, 1884, 1068, 1952), ["monk_house"] * 3, court_every=3)
 s.rowpack((545, 1155, 586, 1200), ["monk_house"] * 2, court_every=3)
 s.rowpack((698, 568, 742, 610), ["monk_house"] * 2, court_every=3)  # west of the Hotei hall, under the ring curve
@@ -613,6 +613,8 @@ s.place_wells((640, 530, 770, 615), spacing=70, coverage=False)  # the NW monk-h
 s.place_wells((1080, 1820, 1300, 2050), spacing=52, coverage=False)  # the doss pocket's dense rows
 s.place_wells((442, 1250, 588, 1435), spacing=55, coverage=False)
 s.place_wells((2140, 1560, 2280, 1650), spacing=60, coverage=False)
+s.place_wells((1420, 1770, 1520, 1870), spacing=60, coverage=False)
+s.place_wells((1870, 1855, 1980, 1950), spacing=55, coverage=False)
 s.place_wells((1750, 1290, 1930, 1420), spacing=60, coverage=False)  # the thread-street pocket by Kurogi
 s.place_wells((700, 1800, 1000, 2050), spacing=72, coverage=False)
 s.place_wells((1500, 1800, 1900, 2100), spacing=72, coverage=False)
@@ -656,7 +658,7 @@ s.frontage([(900, 2005), (1355, 2005)], ["merchant", "shop"] * 8, width=8, spaci
 s.frontage([(1455, 2005), (1900, 2005)], ["merchant", "shop"] * 8, width=8, spacing=20, setback=14)
 s.frontage([(1040, 1640), (1040, 2070)], ["merchant"] * 12, width=8, spacing=21, setback=14)  # starts below the x=1040 machi mouth
 s.frontage([(1800, 1710), (1800, 2050)], ["merchant"] * 10, width=8, spacing=21, setback=14)
-s.rowpack((790, 1850, 1010, 2005), (["burakumin"] * 4 + ["servant"]) * 34, court_every=3)
+s.rowpack((782, 1842, 1018, 2012), (["burakumin"] * 4 + ["servant"]) * 38, court_every=3)
 s.rowpack((1795, 1852, 1985, 2010), (["burakumin"] * 4 + ["servant"]) * 38, court_every=3)
 # T011 first: the adept-monk houses by the two sovereign precincts (budget: 2.5/precinct) -
 # seated BEFORE the big packs so the precinct-adjacent ground is theirs
