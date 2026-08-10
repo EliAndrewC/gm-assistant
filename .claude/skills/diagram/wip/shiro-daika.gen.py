@@ -84,9 +84,14 @@ s.meta(
     # design wind (fire season, steadiest flow); nuisance trades sit in the lee-and-
     # downstream arc (S-SW riverward, below the wharf).
     wind_from="northwest",
+    # INTERIOR WARD GATES: OFF for Shiro Daika (GM 2026-08-10). The doctrine (capitals.md:
+    # kido at the block and lane mouths, no continuous ward fence) stands and the knob stays
+    # for other cities - but the mesh this map derived wandered mid-street and read as neither
+    # a wall nor a gate, so the capital ships without interior gates until the placement rule
+    # is reworked. The rampart gates, the samurai ward's own seal and the castle stand as they were.
+    ward_gates=False,
     waivers={
         "population_consistent_with_housing": "First-pass fabric at the settled wall: every band drew, but realized machi density leaves the census ~130 households short of 12,360/5; the GM (2026-08-10) deferred interior fullness to the fabric-first regeneration (future-work.md #2/#5) rather than grind the packs further this pass.",
-        "capital_housing_matches_band_targets": "packed_inwall seats ~1,930 of the 018 budget's 2,100: after the streets, kido reserves, well courts and firebreak claims take their ground inside the settled third-derivation wall, the machi cannot reach C_PACKED as built - the exact fullness gap the GM (2026-08-10) deferred to the fabric-first feature (future-work.md #2), which grows the fabric to the census before wrapping the wall around it.",
         "city_no_large_empty_space": "The ~1.5-acre pockets that remain rotate to a new spot on every reflow because the first-pass packs under-fill the settled wall by ~8%; the stable cores are all claimed (the drill grounds, the moat firebreak, the rampart approach, the S-gate column ground) and the rotating residue is the same deferred-fullness gap (GM 2026-08-10, future-work.md #5).",
     },
     crop_outlier_ok="Outside the rampart the map carries only the gate furniture, the wharf works, the towpath and the aqueduct until feature 021 fills the interior; sparse outliers at this stage are the build order showing through, not a siting error.",
@@ -226,8 +231,8 @@ s.sluice_gate(
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
 s.stream([DRAIN_OUT, (2000, 2460), (2172, 2557)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
 s.sluice_gate(
-    1980, 2395, rot=math.degrees(math.atan2(2460 - DRAIN_OUT[1], 2000 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1948, 2362), span=26
-)  # the outfall board, bank to bank like the intake
+    2018, 2408, rot=math.degrees(math.atan2(2460 - DRAIN_OUT[1], 2000 - DRAIN_OUT[0])) + 90, label="sluice gate", label_xy=(1986, 2372), span=26
+)  # ON the drain's centerline (the old seat predated the drain's re-route - GM 2026-08-10)  # the outfall board, bank to bank like the intake
 s.moat_flow(MOAT[4], MOAT[8])
 
 # ---- THE AQUEDUCT (feature 020; rebuilt to the researched josui form, GM 2026-08-09). What
@@ -241,7 +246,7 @@ s.moat_flow(MOAT[4], MOAT[8])
 # the whole northeast and crossed the moat on a flume; the corrected route peels off
 # downstream and falls straight to the EAST gate - short and direct because the river is
 # near, where the real ones wound only to HOLD their gradient across long country.
-s.aqueduct([(2952, 1042), (2790, 1130), (2660, 1215), (2544, 1302)])
+s.aqueduct([(2978, 1056), (2790, 1130), (2660, 1215), (2554.4, 1294.2)])  # terminus pulled up its own line to land the settling basin CLEAR of the moat (it was IN the channel - GM 2026-08-10)
 # the two ends carry the words the glyphs cannot (GM 2026-08-09): the river end is the INTAKE
 # WEIR (the Hamura form - a barrier angled across part of the stream, shouldering water into
 # the cut), and the gate end is the SETTLING BASIN, where silt drops before the buried mains
@@ -256,10 +261,10 @@ s.label(2705, 1160, "aqueduct", 10, italic=True, color="#5E7A8A", rot=151, linea
 # ...ending AT the quay by the downstream landing stage (GM 2026-08-09: the old end stopped
 # short of the jetty and hugged the waterline, reading as a line that dissolves into the
 # river), and LABELED - the haulage path cannot explain itself at fit zoom
-s.towpath([(1700, 3040), (1900, 2740), (2090, 2470), (2210, 2400)])
-s.label(2010, 2565, "towpath", 10, italic=True, color="#8A7050", rot=-55, linear=True, full_tilt=True)
+s.towpath([(1877, 3109), (2221, 2400)])  # the CURRENT river's bank, offset w/2+6 landward (the old pts predated the re-route - GM 2026-08-10)
+s.label(2035, 2770, "towpath", 10, italic=True, color="#8A7050", rot=-64, linear=True, full_tilt=True)
 s.bridge(
-    2069, 2499, -55.0, 28, 4
+    2150.9, 2545.1, -64.1, 28, 4
 )  # the towpath's plank AT the computed towpath x drain crossing (the drain's river-to-river re-route moved the ford and the deck kept its old seat - review 2026-08-10); oblique span 22px water / sin(84 deg) + 6px bank rests
 s.M["bridges"][-1]["foot"] = True  # a footplank on the haulage path, not a road deck
 
@@ -431,14 +436,14 @@ s.bound = _CITY_BOUND
 # class stays the ote-suji's alone). Ends meet the ring road for circulation; the E-W pair
 # at y=1350 stops clear of the government band (no street across the ministry fronts).
 s.street([(620, 1770), (2180, 1770)], width=s.lw(18), main=True)  # ends short of the rampart's tower line
-s.street([(985, 2005), (1799, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
-s.street([(1040, 1256), (1040, 2238)], width=s.lw(15))  # x=1040 clears the Temple of Inari's hall (~x992)
+s.street([(880, 2005), (1799, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
+s.street([(1040, 1284), (1040, 2238)], width=s.lw(15))  # x=1040 clears the Temple of Inari's hall (~x992)
 s.street([(1800, 1300), (1800, 1540)], width=s.lw(15))  # stops at the Benten precinct's reserved ground
 s.street([(1800, 1700), (1800, 2236)], width=s.lw(15))  # ...and resumes south of it (a precinct blocks a street; the walls are the dead end)
 s.street(
     [(2130, 1250), (2130, 1620), (2185, 1668), (2180, 1770)], width=s.lw(15)
 )  # east of Kurogi; bends EAST around the Temple of Ebisu (2127,1686) to tie the NE grid into the y=1770 main street (021: streets_connected)
-s.street([(800, 1375.5), (803.9, 2239.0)], width=s.lw(15))  # meets the y=1375 street
+s.street([(800, 1560), (803.9, 2239.0)], width=s.lw(15))  # meets the y=1375 street
 s.street([(329.6, 1376.0), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
 s.street([(1560, 1390), (2387, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
 
@@ -455,7 +460,6 @@ s.district("ote west yashiki flank", "yashiki", [(1150, 1290), (1315, 1290), (13
 s.district("ote east yashiki flank", "yashiki", [(1560, 1290), (1855, 1290), (1855, 1390), (1560, 1390)], rank_band="yashiki")
 s.lane([(1140, 475), (1870, 475)], width=7)
 s.lane([(1965, 1270), (1965, 1740)], width=7)  # the southern leg, west of Kurogi + the Benten precinct
-s.lane([(790, 560), (790, 1350)], width=7)
 s.lane([(1205, 1300), (1205, 1520)], width=7)  # the ote west flank's own lane
 
 _YJ = ((2, -2), (-4, 2), (4, 4), (-2, -4), (0, 2), (3, -3))  # deterministic size jitter, no stream draw
@@ -523,7 +527,7 @@ s.alley([(2305, 2080), (2440, 1910)])  # the wharf's upstream bank boxes
 # the east approach samurai seats
 s.alley([(530, 770), (530, 1430)])  # the west rim's spine (early: wells must not seat on its line)
 s.alley([(740, 1585), (740, 1880)])  # stops short of the SW terrace window
-s.alley([(880, 1560), (880, 1982)])  # snapped: kagi road leg to the ring's SW curve
+s.alley([(880, 1560), (880, 2005)])  # runs THROUGH to the y2005 street (it stopped 23px short)  # snapped: kagi road leg to the ring's SW curve
 s.alley([(1180, 1560), (1180, 2095)])
 s.alley([(1300, 1560), (1300, 2112)])
 s.alley([(1565, 1390), (1565, 2103)])  # runs up past the kagi to serve the magistracy flank
@@ -593,7 +597,7 @@ s.oil_press(1000, 1690)
 s.pawnshop(1245, 1690)
 s.bathhouses([(900, 1750), (1278, 1980), (1668, 1740), (2060, 1640), (1080, 1860), (1550, 1830), (2250, 1050)])
 s.dye_yard(2106, 2570)
-s.tanning_yard(1938, 2610, water="stream")
+s.tanning_yard(1995, 2522, water="stream")  # ON the moat drain's west bank (its wash water; the towpath owns the river bank here) - GM 2026-08-10
 s.tanning_yard(2052, 2712, water="stream")
 s.kiln(330, 2560)
 # the in-wall doss-house needs a HUMBLE quarter around it (>=115px merchant/temple-free,
@@ -641,7 +645,6 @@ s.rowpack((954, 1462, 982, 1560), ["shop", "merchant"] * 10, court_every=6)
 s.rowpack((2135, 1818, 2280, 1925), ["laborer", "servant", "merchant_house"] * 10, court_every=8)
 s.rowpack((2285, 1565, 2430, 1700), ["laborer", "merchant_house"] * 12, court_every=8)
 
-s.kido(625, 1770, horizontal=False)  # the crescent's new mouth on the y1770 main street (the mesh scan predates the quarter)
 
 # THE CASTLE'S FIREBREAK RING, slim (the wall-settles-first pass, GM 2026-08-10): the
 # umamawari is a kept CLEAR BAND around the citadel's moat - ~65px (195 ft) of bare ground -
@@ -677,7 +680,6 @@ s.commons([(1640, 1250), (1732, 1250), (1732, 1332), (1640, 1332)], render="bare
 
 # ---- T016: the kido MESH, before the packs (each gate reserves its ground; the mouths
 # derive from the declared districts + streets via the shared machi_mouths source)
-s.kido_mesh()
 # ---- T015: fire towers over the dense fabric, placed first so the rows flow around them
 # (research 021 item 5: the 1723 mandate - per-machi hinomi at the capital count ~10-15)
 for _fx, _fy in ((850, 1650), (1200, 1900), (1600, 1900), (1900, 1780), (2250, 900), (2274, 1536), (495, 1100), (2300, 1830), (940, 1990), (1265, 1662), (905, 2275), (553, 1710)):
@@ -687,78 +689,167 @@ s.alley([(2190.8, 568.9), (2200, 1235)])  # the deep E machi block's roji (befor
 
 # ---- T013/T014: the PUBLIC WELLS, before the packs so the rows ring their courts.
 for _hw in (
-    (846, 2016),
-    (1520, 2118),
-    (1700, 2210),
-    (1832, 2210),
-    (2138, 1880),
-    (2180, 790),
-    (1478, 2130),
-    (1652, 2210),
-    (1748, 2210),
-    (1880, 2212),
-    (2230, 832),
-    (2252, 826),
-    (2120, 1928),
-    (1178, 2144),
-    (2280, 800),
     (2240, 758),
-    (2100, 1902),
     (2260, 622),
     (2210, 706),
     (2168, 700),
-    (2088, 1856),
-    (2078, 1902),
-    (960, 2185),
-    (2124, 1866),
-    (2226, 1176),
 ):
+    if any((_w8["x"] - _hw[0]) ** 2 + (_w8["y"] - _hw[1]) ** 2 <= 50 * 50 for _w8 in s.M.get("wells", [])):
+        continue  # one wellhead per 150 ft neighborhood (GM 2026-08-10: knots of 4-6 read wrong)
     s.well(_hw[0], _hw[1])  # hand-seeded court wells for the pockets the grids kept missing
+
 # The josui-ido band first: cistern-wells on the gate road within ~600 ft of the settling
 # basin (research item 4); dug draw-wells serve everything else.
+# the deep-file quarters (the E gate machi's long rows, the mid-south strip) carry the most
+# households per wellhead, so they get a second, tighter gap-fill pass of their own
+for _dq in ((2150, 660, 2400, 1200), (1050, 1830, 1400, 1960), (1650, 1830, 2060, 1990), (2090, 1830, 2180, 1960), (2150, 1450, 2380, 1660)):
+    for _dx in range(int(_dq[0]), int(_dq[2]), 40):
+        for _dy in range(int(_dq[1]), int(_dq[3]), 40):
+            if any((_w["x"] - _dx) ** 2 + (_w["y"] - _dy) ** 2 <= 70 * 70 for _w in s.M.get("wells", [])):
+                continue
+            _dseat = s.open_seat((_dx - 22, _dy - 22, _dx + 22, _dy + 22), 9, 9, well=True)
+            if _dseat and sum(1 for _w in s.M.get("wells", []) if (_w["x"] - _dseat[0]) ** 2 + (_w["y"] - _dseat[1]) ** 2 <= 50 * 50) < 3:
+                s.well(_dseat[0], _dseat[1])
+
 s.place_wells(
-    (2250, 1350, 2400, 1425), spacing=62, kind="cistern", coverage=False
+    (2250, 1350, 2400, 1425), spacing=74, kind="cistern", coverage=False
 )  # the josui-ido file inside the E gate, on the buried main from the new settling basin (laterals under the roji, research item 4)
-s.place_wells((620, 1580, 1385, 2028), spacing=76, coverage=False)
-s.place_wells((900, 2095, 1060, 2140), spacing=72, coverage=False)
-s.place_wells((1315, 2095, 1540, 2225), spacing=72, coverage=False)
-s.place_wells((1590, 2095, 1740, 2160), spacing=72, coverage=False)
-s.place_wells((1790, 2095, 1950, 2160), spacing=72, coverage=False)
-s.place_wells((440, 1330, 528, 1750), spacing=68, coverage=False)
-s.place_wells((556, 1330, 615, 1750), spacing=68, coverage=False)
-s.place_wells((1415, 1580, 1930, 2100), spacing=92, coverage=False)
-s.place_wells((1040, 1580, 1210, 1680), spacing=62, coverage=False)
-s.place_wells((2150, 790, 2330, 1225), spacing=53, coverage=False)
-s.place_wells((2200, 1020, 2300, 1130), spacing=45, coverage=False)
-s.place_wells((2228, 1000, 2400, 1195), spacing=48, coverage=False)
-s.placed.append((2270, 1100, 34, 34))  # a carved wellhead court in the dense E rows
-s.place_wells((2253, 1083, 2287, 1117), spacing=30, coverage=False)
-s.place_wells((2195, 1070, 2260, 1135), spacing=30, coverage=False)
-s.place_wells((442, 760, 588, 1435), spacing=65, coverage=False)
-s.place_wells((2145, 1442, 2330, 1615), spacing=70, coverage=False)
-s.place_wells((1080, 1590, 1390, 1680), spacing=68, coverage=False)  # the wealth rows' idobata
-s.place_wells((2000, 1760, 2105, 1866), spacing=60, coverage=False)
-s.place_wells((1900, 520, 1990, 640), spacing=60, coverage=False)  # the N band's servant rows (trimmed east of the samurai file)
-s.place_wells((395, 525, 482, 608), spacing=70, coverage=False)  # the NW monk-house court (moved with Hotei's monks)
-s.place_wells((1080, 1820, 1300, 2050), spacing=52, coverage=False)  # the doss pocket's dense rows
-s.place_wells((442, 1250, 588, 1435), spacing=55, coverage=False)
-s.place_wells((2140, 1560, 2280, 1650), spacing=60, coverage=False)
-s.place_wells((1420, 1770, 1520, 1870), spacing=60, coverage=False)
-s.place_wells((600, 1570, 690, 1650), spacing=60, coverage=False)
-s.place_wells((598, 1690, 700, 2050), spacing=55, coverage=False)
-s.place_wells((2000, 1955, 2100, 2062), spacing=50, coverage=False)
-s.place_wells((1870, 1855, 1980, 1950), spacing=55, coverage=False)
-s.place_wells((585, 2125, 845, 2220), spacing=90, coverage=False)  # the south band's idobata, split between its lanes
-s.place_wells((910, 2125, 1540, 2220), spacing=90, coverage=False)
-s.place_wells((1600, 2125, 1725, 2220), spacing=85, coverage=False)
-s.place_wells((1800, 2120, 1950, 2222), spacing=90, coverage=False)
-s.place_wells((585, 2282, 1712, 2408), spacing=95, coverage=False)
-s.place_wells((1802, 2282, 1948, 2400), spacing=90, coverage=False)
-s.place_wells((2040, 1800, 2120, 1900), spacing=45, coverage=False)
-s.place_wells((1690, 1300, 1905, 1425), spacing=62, coverage=False)  # the thread machi's own idobata
-s.place_wells((700, 1800, 1000, 2050), spacing=72, coverage=False)
-s.place_wells((1500, 1800, 1900, 2032), spacing=72, coverage=False)
-s.place_wells((1050, 1900, 1450, 2100), spacing=80, coverage=False)
+# WELL GRIDS ARE DERIVED, NOT HAND-TUNED (GM 2026-08-10: 27 hand boxes, many overlapping,
+# had knotted 4-7 wellheads together in several quarters). For each machi QUARTER we split
+# its bbox at the streets and alleys that actually cross it and lay one grid per resulting
+# BLOCK, inset off the beds - so wells sit in block interiors by construction, no two grids
+# cover the same ground, and re-flowing a street moves the wells with it.
+s.street([(1040, 2238.1), (2005.3, 2234.1)], width=s.lw(15))
+# ways declared LATE (the machi roji) are hoisted here: the well grids read the way
+# list at the moment they run, so an alley drawn after them cannot be dodged (GM
+# 2026-08-10: wells sat on the S band roji for exactly this reason)
+s.alley([(1741, 256), (1738, 348)])
+s.alley([(535, 1470), (535, 1975)])  # the crescent's spine
+s.alley([(500, 1767), (620, 1760)])
+s.alley([(880, 2005), (879, 2274)])  # starts ON the y2005 street
+s.alley([(1560, 2005), (1560, 2236)])
+s.alley([(1760, 2005), (1766, 2235)])
+s.alley([(1990, 1875), (1990, 2140)])
+s.alley([(1900, 2008), (2100, 2008)])
+s.alley([(1850, 2555), (2062, 2420)])  # the shore path serving the towpath-side porters' rows
+s.alley([(1672, 2460), (1728, 2760)])  # the shore rows' spine (before its packs)
+
+
+def _well_blocks(x0, y0, x1, y1, spacing, inset=30):
+    """Lay one well grid per BLOCK: take the quarter's bbox, cut out the bands the streets and
+    alleys crossing it occupy (bed half-width + inset), and grid each surviving rectangle."""
+
+    def _free(lo, hi, bands):
+        out, cur = [], lo
+        for b0, b1 in sorted(bands):
+            if b1 <= cur:
+                continue
+            if b0 > cur:
+                out.append((cur, min(b0, hi)))
+            cur = max(cur, b1)
+            if cur >= hi:
+                break
+        if cur < hi:
+            out.append((cur, hi))
+        return [(a, b) for a, b in out if b - a >= 40]
+
+    xb, yb = [], []
+    for _w in s.M.get("town_streets", []) + s.M.get("alleys", []):
+        _pts = _w["pts"]
+        _hw = _w.get("w", 12) / 2 + inset
+        for _i in range(len(_pts) - 1):
+            (ax, ay), (bx, by) = _pts[_i], _pts[_i + 1]
+            if abs(ax - bx) < 6 and x0 < ax < x1 and min(ay, by) < y1 and max(ay, by) > y0:
+                xb.append((ax - _hw, ax + _hw))
+            elif abs(ay - by) < 6 and y0 < ay < y1 and min(ax, bx) < x1 and max(ax, bx) > x0:
+                yb.append((ay - _hw, ay + _hw))
+            elif max(ax, bx) > x0 and min(ax, bx) < x1 and max(ay, by) > y0 and min(ay, by) < y1:
+                # an OBLIQUE way (the shore paths, the diagonal roji): cut its whole span on
+                # the axis it travels least, so no grid cell straddles its bed
+                if abs(ax - bx) < abs(ay - by):
+                    xb.append((min(ax, bx) - _hw, max(ax, bx) + _hw))
+                else:
+                    yb.append((min(ay, by) - _hw, max(ay, by) + _hw))
+    for bx0, bx1 in _free(x0, x1, xb):
+        for by0, by1 in _free(y0, y1, yb):
+            # ONE wellhead per grid CELL, sited by the engine (open_seat consults _fits, so it
+            # will not stand on a lane, a corridor or a roof the way a raw grid seat can), and
+            # only where no well already serves that 150 ft neighborhood
+            nx = max(1, int((bx1 - bx0) // spacing))
+            ny = max(1, int((by1 - by0) // spacing))
+            for _cx in range(nx):
+                for _cy in range(ny):
+                    cell = (
+                        bx0 + (bx1 - bx0) * _cx / nx,
+                        by0 + (by1 - by0) * _cy / ny,
+                        bx0 + (bx1 - bx0) * (_cx + 1) / nx,
+                        by0 + (by1 - by0) * (_cy + 1) / ny,
+                    )
+                    seat = s.open_seat(cell, 9, 9, well=True)
+                    # the cluster rule allows up to FOUR wellheads inside a 150 ft radius; test
+                    # the SEAT, not the cell center, or a dense quarter's cells all seat toward
+                    # one corner and knot anyway (GM 2026-08-10)
+                    if seat and sum(1 for _w in s.M.get("wells", []) if (_w["x"] - seat[0]) ** 2 + (_w["y"] - seat[1]) ** 2 <= 50 * 50) < 3:
+                        s.well(seat[0], seat[1])
+
+
+_WELL_QUARTERS = (
+    # (x0, y0, x1, y1, cell) - DISJOINT quarters, cell sized so each wellhead serves ~15-20
+    # households at that quarter's row density (machi ~1.15 dwellings/kpx2 -> ~96px cells;
+    # the burakumin rows and doss pocket run court_every=3, roughly double, so ~68px).
+    # Spacings are set from that arithmetic, never by nudging a multiplier (GM 2026-08-10).
+    (615, 1575, 1395, 1830, 58),  # SW machi
+    (615, 1830, 1395, 2040, 50),  # ...its southern burakumin/doss strip: ~2x the row density
+    (1405, 1575, 2120, 1840, 58),  # SE machi
+    (1405, 1840, 2120, 2040, 50),  # ...and its own dense southern strip
+    (790, 2100, 1995, 2345, 50),  # the S band machi
+    (2145, 635, 2405, 1250, 46),  # the E gate machi
+    (2140, 1440, 2320, 1640, 60),  # the E street machi
+    (430, 750, 590, 1445, 60),  # the W rim machi
+    (445, 1450, 610, 2075, 60),  # the W crescent machi
+    (1090, 1265, 1365, 1520, 63),  # the SW approach machi
+    (1575, 1300, 1836, 1440, 63),  # the thread machi
+    (2000, 1620, 2115, 1800, 60),  # the entertainment quarter
+    (1762, 1636, 1938, 1855, 63),  # Benten's monzen
+    (960, 1478, 1120, 1585, 63),  # Jurojin's monzen (east of the civic band)
+    (1840, 1300, 1990, 1440, 60),  # the thread machi's east files
+    (1900, 545, 1986, 640, 46),  # the N band's servant rows
+    (395, 525, 482, 608, 48),  # the NW monk-house court
+)
+for _q in _WELL_QUARTERS:
+    _well_blocks(*_q)
+
+
+def _point_in(px, py, poly):
+    inside = False
+    for _i in range(len(poly)):
+        x1, y1 = poly[_i]
+        x2, y2 = poly[(_i + 1) % len(poly)]
+        if (y1 > py) != (y2 > py) and px < (x2 - x1) * (py - y1) / (y2 - y1) + x1:
+            inside = not inside
+    return inside
+
+
+# COVERAGE GAP-FILL: the per-quarter cells leave holes where a block's grid could not seat
+# (a court, a fence corridor, a temple apron), and those holes are what leave one wellhead
+# doing three blocks' work. Walk the machi ground on a lattice and seat a well wherever the
+# nearest one is more than ~110px off, honoring the same 4-per-150ft ceiling.
+for _gx in range(440, 2400, 42):
+    for _gy in range(520, 2350, 42):
+        if not any(_q2[0] <= _gx <= _q2[2] and _q2[1] <= _gy <= _q2[3] for _q2 in _WELL_QUARTERS):
+            continue
+        if any((_w["x"] - _gx) ** 2 + (_w["y"] - _gy) ** 2 <= 78 * 78 for _w in s.M.get("wells", [])):
+            continue
+        if any(  # never inside a samurai/civic district - that quarter draws from its own compound wells
+            _d2.get("rank_band") in ("yashiki", "detached", "terrace") or _d2.get("kind") in ("yashiki", "detached", "terrace", "civic", "government")
+            for _d2 in s.M.get("districts", [])
+            if _point_in(_gx, _gy, _d2["poly"])
+        ):
+            continue
+        _gseat = s.open_seat((_gx - 26, _gy - 26, _gx + 26, _gy + 26), 9, 9, well=True)
+        if _gseat and sum(1 for _w in s.M.get("wells", []) if (_w["x"] - _gseat[0]) ** 2 + (_w["y"] - _gseat[1]) ** 2 <= 50 * 50) < 3:
+            s.well(_gseat[0], _gseat[1])
+
 # ---- T008: DETACHED SAMURAI (133 target) - the middle band, rowpacked at the loose samurai
 # court pitch (the Tango idiom, which is what C_SPACED was measured from).
 _SAM = ["samurai"] * 4 + ["samurai_large"]
@@ -775,38 +866,24 @@ s.district("civic west detached", "detached", [(855, 1400), (1145, 1400), (1145,
 s.district("east street detached", "detached", [(2140, 1250), (2445, 1250), (2445, 1428), (2140, 1428)], rank_band="detached")
 s.district("north band detached west", "detached", [(1060, 260), (1340, 260), (1340, 370), (1060, 370)], rank_band="detached")
 s.district("north band detached east", "detached", [(1640, 260), (1840, 260), (1840, 362), (1640, 362)], rank_band="detached")
-s.alley([(1741, 256), (1738, 348)])
 s.rowpack((1065, 268, 1335, 362), _SAM * 8, court_every=8)  # the tight wall's N band holes take the missing detached files
 s.rowpack((1688, 268, 1832, 352), _SAM * 4, court_every=8)
 s.district("west crescent machi", "machi", [(445, 1450), (625, 1450), (625, 2075), (445, 2075)], rank_band=None)
 s.block_polys.append([(592, 1738), (662, 1738), (662, 1818), (592, 1818)])
 s.placed.append((627, 1778, 70, 80))  # the crescent kido's crossing (reserved before the rows)
-s.alley([(535, 1470), (535, 1975)])  # the crescent's spine
-s.alley([(500, 1767), (620, 1760)])
 s.rowpack((450, 1460, 620, 2070), ["laborer", "servant", "merchant_house", "laborer"] * 42, court_every=8)
 s.district("south band machi", "machi", [(790, 2050), (1995, 2050), (1995, 2345), (790, 2345)], rank_band=None)
 s.block_polys.append([(895, 2245), (990, 2245), (990, 2340), (895, 2340)])  # Inari's backstrip stays lean (the temple rode the wall inward)
 
 
-s.street([(1040, 2238.1), (2005.3, 2234.1)], width=s.lw(15))
 s.block_polys.append([(815, 2237), (2020, 2237), (2020, 2264), (815, 2264)])  # the band street's own corridor, held against the row pitch  # the band's own through-street
-s.alley([(880, 2060), (879, 2274)])
-s.alley([(1080, 2060), (1080, 2300)])
 
-s.alley([(1560, 2060), (1560, 2330)])
-s.alley([(1760, 2060), (1768, 2356)])
-s.alley([(1990, 1875), (1990, 2140)])
-s.alley([(1900, 2008), (2100, 2008)])
-s.rowpack((800, 2055, 1330, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 130, court_every=11)
-s.rowpack((1350, 2055, 1985, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 104, court_every=11)
+s.rowpack((800, 2100, 1330, 2320), ["laborer", "servant", "merchant_house", "laborer"] * 112, court_every=11)
+s.rowpack((1350, 2100, 1985, 2320), ["laborer", "servant", "merchant_house", "laborer"] * 88, court_every=11)
 s.rowpack((1060, 1270, 1360, 1515), ["laborer", "servant", "merchant_house"] * 34, court_every=10)  # the freed SW approach ground joins the machi
 s.district("southwest approach machi", "machi", [(1055, 1265), (1365, 1265), (1365, 1520), (1055, 1520)], rank_band=None)
 s.district("thread machi", "machi", [(1575, 1295), (1905, 1295), (1905, 1440), (1575, 1440)], rank_band=None)
 s.rowpack((1590, 1402, 1858, 1438), ["merchant_house", "laborer"] * 12, court_every=8)  # the households behind the thread frontage (ends clear of the 1905 kido's reserve)
-for _kx, _ky in ((1055, 1375), (1905, 1390), (1670, 1390), (1940, 2235), (1800, 1440), (1575, 1390)):
-    s.kido(_kx, _ky, horizontal=False)
-    s.block_polys.append([(_kx - 40, _ky - 40), (_kx + 40, _ky - 40), (_kx + 40, _ky + 40), (_kx - 40, _ky + 40)])
-    s.placed.append((_kx, _ky, 80, 80))
 s.rowpack((1580, 1300, 1900, 1438), ["laborer", "servant", "merchant_house"] * 44, court_every=8)
 s.frontage([(1595, 1390), (2130, 1390)], ["merchant", "shop"] * 13, width=8, spacing=21, setback=14)  # the thread street's own commerce
 s.rowpack((1555, 1448, 1695, 1556), _SAM * 9, court_every=8)  # the magistracy flank keeps its detached files
@@ -847,8 +924,8 @@ s.frontage([(1290, 2005), (1355, 2005)], ["shop"] * 3, width=8, spacing=20, setb
 s.frontage([(1455, 2005), (1795, 2005)], ["merchant", "shop"] * 8, width=8, spacing=20, setback=14)
 s.frontage([(1040, 1640), (1040, 2070)], ["merchant"] * 12, width=8, spacing=21, setback=14)  # starts below the x=1040 machi mouth
 s.frontage([(1800, 1710), (1800, 2050)], ["merchant"] * 10, width=8, spacing=21, setback=14)
-s.rowpack((775, 1838, 1020, 2016), (["burakumin"] * 4 + ["servant"]) * 40, court_every=3)
-s.rowpack((1792, 1848, 1995, 2016), (["burakumin"] * 4 + ["servant"]) * 44, court_every=3)
+s.rowpack((775, 1838, 1020, 2016), (["burakumin"] * 5 + ["servant"] * 4) * 20, court_every=3)
+s.rowpack((1792, 1848, 1995, 2016), (["burakumin"] * 5 + ["servant"] * 4) * 22, court_every=3)
 # T011 first: the adept-monk houses by the two sovereign precincts (budget: 2.5/precinct) -
 # seated BEFORE the big packs so the precinct-adjacent ground is theirs
 s.rowpack((1700, 1585, 1780, 1660), ["monk_house"] * 3, court_every=3)
@@ -860,8 +937,8 @@ s.rowpack((1440, 1600, 1900, 1660), _RICH * 14, court_every=6)
 s.rowpack((640, 1690, 1020, 1740), ["laborer_large"] * 24, court_every=6)
 s.rowpack((2160, 940, 2390, 1000), ["laborer_large"] * 24, court_every=6)
 s.rowpack((1440, 1690, 1900, 1740), ["laborer_large"] * 24, court_every=6)
-s.rowpack((560, 1580, 1385, 2082), _MIX * 385, court_every=12)
-s.rowpack((1415, 1580, 1930, 2082), _MIX * 310, court_every=12)
+s.rowpack((560, 1580, 1385, 2062), _MIX * 400, court_every=12)
+s.rowpack((1415, 1580, 1930, 2062), _MIX * 330, court_every=12)
 s.rowpack((1080, 2100, 1290, 2240), _MIX * 40, court_every=9)  # the S-band dead-core infill (021 endgame)
 s.rowpack((2000, 1580, 2115, 2085), (["laborer", "laborer_large", "servant"]) * 28, court_every=6)  # the SE-east strip carries a wealth band (labL toward the 6% floor)
 s.rowpack((1950, 560, 1978, 1310), ["laborer", "merchant_house"] * 40, court_every=6)
@@ -877,36 +954,6 @@ s.rowpack((550, 760, 598, 1445), _MIX * 18, court_every=6)
 # 021 endgame: the last density pockets get their wells AFTER the packs, seated by the
 # engine among the drawn courts (open_seat sees the court lanes and standing rows; the
 # pre-pack grids tried first kept landing wells on the packs' own court lanes)
-for _wr in (
-    (840, 1980, 1080, 2060),
-    (1060, 1580, 1170, 1660),
-    (450, 1660, 540, 1750),
-    (1480, 2100, 1620, 2185),
-    (1690, 2160, 1850, 2245),
-    (2140, 740, 2265, 825),
-    (2290, 1480, 2360, 1570),
-    (2185, 1555, 2270, 1640),
-    (2080, 1840, 2160, 1925),
-    (2020, 1620, 2100, 1700),
-    (2020, 1780, 2100, 1860),
-    (2020, 1940, 2100, 2020),
-    (1080, 1590, 1150, 1650),
-    (800, 1990, 862, 2050),
-    (1483, 2085, 1546, 2140),
-    (1665, 2175, 1730, 2232),
-    (1794, 2175, 1858, 2232),
-    (445, 1675, 506, 1736),
-    (2145, 745, 2202, 809),
-    (2186, 745, 2246, 809),
-    (804, 2164, 861, 2222),
-    (2150, 1160, 2225, 1215),
-):
-    for _wk in range(3):
-        _wseat = s.open_seat(_wr, 8, 8, well=True)
-        if _wseat is None:
-            break
-        s.well(_wseat[0], _wseat[1])
-
 # ---- the SUBURBS (021): a capital houses part of its packed cohort OUTSIDE the wall - the
 # kashi wharf suburb (its brokers and warehouse folk live at the landing) and the guan-xiang
 # gate wards on the approach roads, both the lawful outside categories the commoner rule
@@ -921,11 +968,9 @@ s.rowpack((2276, 2110, 2346, 2190), ["merchant_house", "laborer", "laborer"] * 5
 s.rowpack((2205, 2205, 2280, 2285), ["merchant_house", "laborer"] * 6, court_every=3)
 s.rowpack((2135, 2300, 2225, 2372), ["laborer", "servant"] * 3, court_every=3)
 s.rowpack((2092, 2400, 2152, 2467), ["laborer", "servant"] * 4, court_every=3)
-s.alley([(1850, 2555), (2082, 2405)])  # the shore path serving the towpath-side porters' rows
 # the TOWPATH SHORE (the haulage side of the wharf): porters' and boatmen's rows on the
 # land between the wall's south arc and the river, within the wharf's own reach
 s.bound = [[1560, 2540], [1810, 2540], [1810, 2880], [1560, 2880]]
-s.alley([(1672, 2460), (1728, 2760)])  # the shore rows' spine (before its packs)
 s.rowpack((1580, 2560, 1790, 2740), ["laborer", "laborer", "servant"] * 9, court_every=6)
 s.bound = [[1820, 2450], [2100, 2450], [2100, 2810], [1820, 2810]]
 s.cemetery(1780, 2708, 84, 60, parish=False, label="common burial ground")

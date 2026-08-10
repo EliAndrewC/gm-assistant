@@ -2946,8 +2946,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # in-wall dock basin (Minami, Nagahara) have no extramural commoners, so nothing changes
         # for them. 300px =~ the drawn wharf suburb's own extent.
         _wf_pts = [(j8["x"], j8["y"]) if isinstance(j8, dict) else (j8[0], j8[1]) for j8 in M.get("jetties", [])]
+        _wf_segs = []  # the haulage shore is wharf ground - its porters' rows are the suburb too;
+        # measured to towpath SEGMENTS, not vertices (a 2-point towpath left its mid-run porters
+        # "outside" when the vertices were 350px apart - the point-vs-footprint trap, again)
         for _tp8 in M.get("towpaths", []):
-            _wf_pts += [tuple(p8) for p8 in _tp8.get("poly", _tp8.get("pts", []))]  # the haulage shore is wharf ground - its porters' rows are the suburb too
+            _tp8p = _tp8.get("poly", _tp8.get("pts", []))
+            _wf_segs += [(_tp8p[i8], _tp8p[i8 + 1]) for i8 in range(len(_tp8p) - 1)]
         _wf_pts += [(g8["x"], g8["y"]) for g8 in M.get("granaries", []) if isinstance(g8, dict) and "x" in g8]
         outside_com = [
             (round(b["x"]), round(b["y"]))
@@ -2955,6 +2959,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if b.get("kind") in COMMONER_KINDS
             and not point_in_poly(b["x"], b["y"], wall_p)
             and not any(math.hypot(b["x"] - _wx, b["y"] - _wy) <= 300 for _wx, _wy in _wf_pts)
+            and not any(seg_dist(b["x"], b["y"], _sa8, _sb8) <= 300 for _sa8, _sb8 in _wf_segs)
             # ...and the guan-xiang gate wards: commoner rows strung along the approach road
             # within reach of a gate are the OTHER lawful outside category (021 research)
             # the guan-xiang wards were LINEAR - Chinese gate suburbs strung up to a li
@@ -8444,7 +8449,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # in-wall machi district carries its night-barred kido. The mouths come from settlement.
     # machi_mouths - the SAME source the placer reads - so placement and validation cannot
     # disagree (the bridge_carried_ways doctrine).
-    if meta.get("scale") == "capital" and M.get("districts"):
+    # ...and the mesh is a KNOB, not a law (GM 2026-08-10): interior ward gates may be right
+    # for one city and wrong for the next, so meta(ward_gates=False) turns the whole doctrine
+    # off for a map that does not use them. It is an explicit declaration, never an absence -
+    # a map that simply forgot its kido still fails.
+    if meta.get("scale") == "capital" and M.get("districts") and meta.get("ward_gates", True):
         km_kido = [(k21["x"], k21["y"]) if isinstance(k21, dict) else (k21[0], k21[1]) for k21 in M.get("kido", [])]
         km_bad = [(round(kmx), round(kmy)) for kmx, kmy in machi_mouths(M) if not any(math.hypot(kmx - kkx, kmy - kky) <= 70 for kkx, kky in km_kido)]
         check(
@@ -8521,6 +8530,187 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
     # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
     # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    # PUBLIC WELLS DO NOT KNOT UP (GM 2026-08-10: "several places with 4-6 wells clustered
+    # right next to each other... not how wells are positioned on any other map"). A public
+    # well serves a neighborhood, so wellheads spread out - and the whole pool agrees: every
+    # settled map from hamlet to provincial city maxes at FOUR wells inside a 150 real-ft
+    # radius (measured across all 14, 2026-08-10), while the capital's density-chasing had
+    # piled up NINE. The failure mode is accretion - each new well is added to fix a local
+    # household count, none is added against the wells already there - so the rule is a
+    # neighborhood CAP, not a pairwise spacing floor (a tight PAIR at a big junction is fine).
+    wk_ws = [w9 for w9 in M.get("wells", []) if isinstance(w9, dict)]
+    if len(wk_ws) >= 5:
+        wk_r = 150.0 / float(meta.get("ftpx", 1) or 1)
+        wk_bad = []
+        for w9 in wk_ws:
+            wk_n = sum(1 for o9 in wk_ws if (w9["x"] - o9["x"]) ** 2 + (w9["y"] - o9["y"]) ** 2 <= wk_r * wk_r)
+            if wk_n > 4:
+                wk_bad.append((round(w9["x"]), round(w9["y"]), wk_n))
+        check(
+            "wells_not_clustered",
+            not wk_bad,
+            f"well knot(s) - more than 4 public wells inside a 150 ft radius (x, y, count): {sorted(set(wk_bad))[:4]} - a wellhead serves a NEIGHBORHOOD, so they spread; this is accretion from chasing a local household count. Widen the grid spacing over that quarter instead of stacking wells, and gate any top-up on there being no well already within the radius",
+        )
+
+    # A WAY DOES NOT RUN INSIDE A ROAD'S BED (GM 2026-08-10: a service lane sat fully inside
+    # the Imperial road's kagi leg - two ways drawn where one exists on the ground). Sampled
+    # run-length of any lane/street/alley inside a road's half-width; short crossings pass.
+    rb_roads = ([{"pts": M["road"], "w": M.get("road_width", 26)}] if M.get("road") else []) + [r9 if isinstance(r9, dict) else {"pts": r9, "w": 20} for r9 in M.get("roads", [])]
+    rb_bad = []
+    for rb_kind, rb_list in (("street", M.get("town_streets", [])), ("alley", M.get("alleys", [])), ("lane", M.get("lanes", []))):
+        for rb_w in rb_list:
+            rb_pts = rb_w["pts"] if isinstance(rb_w, dict) else rb_w
+            rb_run = 0.0
+            for i9 in range(len(rb_pts) - 1):
+                a9, b9 = rb_pts[i9], rb_pts[i9 + 1]
+                seg_len9 = math.hypot(b9[0] - a9[0], b9[1] - a9[1])
+                steps9 = max(1, int(seg_len9 // 15))
+                for j9 in range(steps9 + 1):
+                    t9 = j9 / steps9
+                    x9, y9 = a9[0] + (b9[0] - a9[0]) * t9, a9[1] + (b9[1] - a9[1]) * t9
+                    inside9 = any(min(seg_dist(x9, y9, rp9["pts"][k9], rp9["pts"][k9 + 1]) for k9 in range(len(rp9["pts"]) - 1)) < rp9["w"] / 2 for rp9 in rb_roads if len(rp9["pts"]) >= 2)
+                    rb_run = rb_run + 15 if inside9 else 0.0
+                    if rb_run > 45:
+                        rb_bad.append((rb_kind, round(rb_pts[0][0]), round(rb_pts[0][1])))
+                        break
+                if rb_run > 45:
+                    break
+            # (per-way: first offense reports, rest of the way skipped)
+    check(
+        "ways_not_inside_road_beds",
+        not rb_bad,
+        f"way(s) running INSIDE a road's paved bed for 45+px: {sorted(set(rb_bad))[:4]} - two ways drawn where the ground has one; delete the duplicate (the road itself serves the frontage), or move the lane clear of the bed",
+    )
+
+    # A STREET REACHES THE NEIGHBOR IT POINTS AT (GM 2026-08-10: several street ends stopped
+    # a visible gap short of a crossing street - past the near-miss check's 30px cap but well
+    # inside "obviously meant to join"). An END whose direction of travel points (align > 0.6)
+    # at another street's bed within 65px must reach it.
+    sr_sts = M.get("town_streets", [])
+    sr_bad = []
+    # alley ENDS answer to the same rule - the S band's roji visibly dangled short of (and
+    # past) the band street they aim at (GM 2026-08-10, the render's most repeated defect)
+    sr_enders = [(st9, st9.get("w", 18) / 2) for st9 in sr_sts] + [(al9, al9.get("w", 10) / 2) for al9 in M.get("alleys", [])]
+    for st9, sr_myhw in sr_enders:
+        for E9, nb9 in ((st9["pts"][0], st9["pts"][1]), (st9["pts"][-1], st9["pts"][-2])):
+            sr_best: tuple[float, float, Pt] = (1e9, 0.0, (0.0, 0.0))
+            for ot9 in sr_sts:
+                if ot9 is st9:
+                    continue
+                for k9 in range(len(ot9["pts"]) - 1):
+                    d9 = seg_dist(E9[0], E9[1], ot9["pts"][k9], ot9["pts"][k9 + 1])
+                    if d9 < sr_best[0]:
+                        cp9c = seg_closest(E9[0], E9[1], ot9["pts"][k9], ot9["pts"][k9 + 1])
+                        sr_best = (d9, ot9.get("w", 18) / 2, (float(cp9c[0]), float(cp9c[1])))
+            if sr_best[0] >= 1e9:
+                continue
+            d9, otw9, cp9 = sr_best
+            gap9 = d9 - sr_myhw - otw9
+            if not (2 < gap9 and d9 < 65):
+                continue
+            dl9 = math.hypot(E9[0] - nb9[0], E9[1] - nb9[1]) or 1.0
+            gd9 = math.hypot(cp9[0] - E9[0], cp9[1] - E9[1]) or 1.0
+            align9 = ((E9[0] - nb9[0]) / dl9) * ((cp9[0] - E9[0]) / gd9) + ((E9[1] - nb9[1]) / dl9) * ((cp9[1] - E9[1]) / gd9)
+            if align9 > 0.6:
+                sr_bad.append((round(E9[0]), round(E9[1]), round(d9)))
+    check(
+        "city_streets_reach_their_neighbors",
+        not sr_bad,
+        f"street end(s) stopping a visible gap short of the street they point at (x, y, px): {sorted(set(sr_bad))[:4]} - extend the end to the exact junction (compute the segment intersection), or turn/shorten it so it clearly is not aiming there",
+    )
+
+    # WAYS CLEAR OF THE CASTLE'S OWN MOAT (GM 2026-08-10: a city street started 6px off the
+    # castle moat's channel line - the CITY moat battery never read the castle record).
+    cm_bad = []
+    for cs9 in M.get("castles", []):
+        cm9 = cs9.get("moat")
+        if not cm9 or len(cm9) < 3:
+            continue
+        cmw9 = float(cs9.get("moat_width", 22))
+        for cm_kind, cm_list, cm_defw in (("street", M.get("town_streets", []), 18), ("alley", M.get("alleys", []), 10), ("lane", M.get("lanes", []), 10)):
+            for cw9 in cm_list:
+                cw_pts = cw9["pts"] if isinstance(cw9, dict) else cw9
+                cw_w = cw9.get("w", cm_defw) if isinstance(cw9, dict) else cm_defw
+                for p9 in cw_pts:
+                    d9 = min(seg_dist(p9[0], p9[1], cm9[k9], cm9[(k9 + 1) % len(cm9)]) for k9 in range(len(cm9)))
+                    if d9 < cmw9 / 2 + cw_w / 2:
+                        cm_bad.append((cm_kind, round(p9[0]), round(p9[1])))
+                        break
+    check(
+        "ways_clear_of_castle_moat",
+        not cm_bad,
+        f"way vertex(es) in the castle moat's channel: {sorted(set(cm_bad))[:4]} - the keep's moat is water like any other; start/route the way clear of the channel band (only the castle's own gate bridges cross it)",
+    )
+
+    # WATER-SERVICE FURNITURE SITS ON ITS WATER (GM 2026-08-10, four features caught beached
+    # on the shipped first pass: the river's course was re-routed during the wall re-derivation
+    # and the shore furniture kept its old seats). A towpath EXISTS to walk the hauling line
+    # along the bank; a sluice gate regulates a flow it must stand in; an aqueduct taps its
+    # river at the intake and its settling basin lands on DRY ground (one ended in the moat);
+    # a tannery needs its wash water at the door. All measured to real watercourse geometry,
+    # so a re-routed channel drags its furniture red instead of leaving it beached - the
+    # placement fix is always: recompute the seat from the CURRENT water polyline, never keep
+    # a coordinate that predates a re-route.
+    wsf_waters = [(w9["poly"], float(w9.get("w", 9))) for w9 in M.get("streams", [])] + [(cn9["poly"], float(cn9.get("w", 12))) for cn9 in M.get("canals", [])]
+
+    def wsf_bank(x9: float, y9: float) -> float:
+        """Distance past the nearest watercourse's bank (<=0 means on/over the water)."""
+        best = 1e9
+        for wp9, ww9 in wsf_waters:
+            d9 = min(seg_dist(x9, y9, wp9[i9], wp9[i9 + 1]) for i9 in range(len(wp9) - 1))
+            best = min(best, d9 - ww9 / 2)
+        return best
+
+    if wsf_waters:
+        tow_bad = []
+        for tp9 in M.get("towpaths", []):
+            for p9 in tp9.get("pts", tp9.get("poly", [])):
+                d9 = wsf_bank(p9[0], p9[1])
+                if d9 > 30 or d9 < -6:
+                    tow_bad.append((round(p9[0]), round(p9[1]), round(d9)))
+        check(
+            "towpath_hugs_the_bank",
+            not tow_bad,
+            f"towpath vertex(es) off the river bank (px past the bank, want -6..30): {tow_bad[:4]} - a towpath IS the hauling line's bank walk, so it runs alongside the water for its whole length; re-derive the polyline by offsetting the CURRENT river centerline ~(w/2+10) landward, never keep pre-re-route coordinates",
+        )
+        sl_waters = wsf_waters + ([(M["moat"], float(M.get("moat_width", 22)))] if M.get("moat") else [])
+        sl_bad = []
+        for sg9 in M.get("sluice_gates", []):
+            d9 = min(min(seg_dist(sg9["x"], sg9["y"], wp9[i9], wp9[i9 + 1]) for i9 in range(len(wp9) - 1)) - ww9 / 2 for wp9, ww9 in sl_waters)
+            if d9 > 6:
+                sl_bad.append((round(sg9["x"]), round(sg9["y"]), round(d9)))
+        check(
+            "sluice_gates_on_water",
+            not sl_bad,
+            f"sluice gate(s) standing on dry ground (px past the nearest bank): {sl_bad[:4]} - a sluice regulates a flow it must stand IN; re-seat it on the current watercourse centerline (snap to the nearest polyline point), never keep a seat that predates a re-route",
+        )
+        aq_bad = []
+        for aq9 in M.get("aqueducts", []):
+            ap9 = aq9.get("poly", [])
+            if len(ap9) >= 2:
+                d9 = wsf_bank(ap9[0][0], ap9[0][1])
+                if d9 > 10:
+                    aq_bad.append(("intake", round(ap9[0][0]), round(ap9[0][1]), round(d9)))
+                if M.get("moat"):
+                    mo9 = min(seg_dist(ap9[-1][0], ap9[-1][1], M["moat"][i9], M["moat"][i9 + 1]) for i9 in range(len(M["moat"]) - 1))
+                    if mo9 < float(M.get("moat_width", 22)) / 2 + 8:
+                        aq_bad.append(("terminus-in-moat", round(ap9[-1][0]), round(ap9[-1][1]), round(mo9)))
+        check(
+            "aqueduct_taps_water_lands_dry",
+            not aq_bad,
+            f"aqueduct end(s) mis-seated: {aq_bad[:4]} - the intake taps the river (within ~10px of the bank) and the terminus/settling basin lands on DRY ground clear of the moat; trim or extend the polyline against the CURRENT water and moat geometry",
+        )
+        ty_bad = []
+        for ty9 in M.get("tanning_yards", []):
+            d9 = wsf_bank(ty9["x"], ty9["y"])
+            if d9 > 55:
+                ty_bad.append((round(ty9["x"]), round(ty9["y"]), round(d9)))
+        check(
+            "tanning_yards_on_water",
+            not ty_bad,
+            f"tanning yard(s) beached (px past the nearest bank, want <= 55): {ty_bad[:4]} - tanning is a WASH trade, the yard stands at its water; re-seat on the current bank (downwind/downstream arc still applies)",
+        )
+
     check(
         "bridges_seat_on_water",
         not b_dry,
@@ -11637,12 +11827,28 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # in the dense laborer warren are swamped - so this bounds the per-well share. (The nearest-well
             # split over-counts a little where two wells are nearly equidistant, so the ceiling sits a touch
             # above the historical 20.)
+            #
+            # BURAKUMIN HOUSEHOLDS ARE COUNTED AT A HIGHER CEILING, and that is a finding, not a
+            # fudge (GM 2026-08-10, from the capital's well knots). An outcast quarter packed at
+            # roughly twice the machi's row density cannot reach 1-per-20 without putting five to
+            # seven wellheads inside one 150 ft radius - which is not how any settled map looks,
+            # because it is not how the ground worked: hinin quarters were the LAST to be served
+            # by communal water, drew from the river, the ditch, or a single shared well, and
+            # their under-provision is part of what made them outcast ground. So they carry their
+            # own ceiling rather than forcing wells the quarter would never have had. A quarter
+            # whose burakumin rows are ALSO dry still fails city_neighborhoods_have_wells - the
+            # reach rule is not relaxed, only the density share.
             MAX_PER_WELL = 26
-            hh = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in (COMMON | {"servant"}) and inw(b["x"], b["y"])]
+            MAX_PER_WELL_OUTCAST = 60
+            hh = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") in (COMMON | {"servant"}) and b.get("kind") != "burakumin" and inw(b["x"], b["y"])]
+            hh_out = [(b["x"], b["y"]) for b in M.get("buildings", []) if b.get("kind") == "burakumin" and inw(b["x"], b["y"])]
             served = [0] * len(wells)
             for hx, hy in hh:
                 served[min(range(len(wells)), key=lambda i: math.hypot(hx - wells[i]["x"], hy - wells[i]["y"]))] += 1
-            swamped = [(round(wells[i]["x"]), round(wells[i]["y"]), c) for i, c in enumerate(served) if c > MAX_PER_WELL]
+            served_out = [0] * len(wells)
+            for hx, hy in hh_out:
+                served_out[min(range(len(wells)), key=lambda i: math.hypot(hx - wells[i]["x"], hy - wells[i]["y"]))] += 1
+            swamped = [(round(wells[i]["x"]), round(wells[i]["y"]), c + served_out[i]) for i, c in enumerate(served) if c > MAX_PER_WELL or c + served_out[i] > MAX_PER_WELL_OUTCAST]
             # WHY (~1 communal well per 10-20 households - the premodern courtyard-well norm): settlements.md "Historical grounding"
             check(
                 "city_well_density_sufficient",
