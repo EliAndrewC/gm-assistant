@@ -263,6 +263,8 @@ s.label(2705, 1160, "aqueduct", 10, italic=True, color="#5E7A8A", rot=151, linea
 # river), and LABELED - the haulage path cannot explain itself at fit zoom
 s.towpath([(1877, 3109), (2221, 2400)])  # the CURRENT river's bank, offset w/2+6 landward (the old pts predated the re-route - GM 2026-08-10)
 s.label(2035, 2770, "towpath", 10, italic=True, color="#8A7050", rot=-64, linear=True, full_tilt=True)
+s.bridge(2000.2, 2459.3, -32.5, 49, 4)  # the wharf shore path's plank over the moat drain (GM 2026-08-10: no way stands in water without a deck)
+s.M["bridges"][-1]["foot"] = True
 s.bridge(
     2150.9, 2545.1, -64.1, 28, 4
 )  # the towpath's plank AT the computed towpath x drain crossing (the drain's river-to-river re-route moved the ford and the deck kept its old seat - review 2026-08-10); oblique span 22px water / sin(84 deg) + 6px bank rests

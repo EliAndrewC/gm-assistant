@@ -11017,3 +11017,41 @@ def test_map_frame_hugs_its_content():
         "buildings": [{"x": 20, "y": 20, "w": 8, "h": 6, "rot": 0, "kind": "laborer"}, {"x": 880, "y": 400, "w": 8, "h": 6, "rot": 0, "kind": "laborer"}],
     }
     assert "map_frame_hugs_its_content" in f(loose)
+
+
+def test_ways_cross_water_on_a_deck():
+    """GM 2026-08-10: "roads should not overlap with water without a bridge present." Unlike
+    roads_bridge_water this reads EVERY drawn way (alleys and lanes included) and tests bed
+    OVERLAP, not centerline crossing - the capital's shore path lay in the moat drain with no
+    plank and the crossing rule never saw it."""
+    base = {"meta": {"scale": "city", "ftpx": 3}, "streams": [{"poly": [[0, 500], [1000, 500]], "w": 20}]}
+    assert "ways_cross_water_on_a_deck" in f({**base, "alleys": [{"pts": [[400, 300], [400, 700]], "w": 10}]})
+    decked = {**base, "alleys": [{"pts": [[400, 300], [400, 700]], "w": 10}], "bridges": [{"x": 400, "y": 500, "rot": 90, "span": 34, "w": 10}]}
+    assert "ways_cross_water_on_a_deck" not in f(decked)
+    assert "ways_cross_water_on_a_deck" not in f({**base, "alleys": [{"pts": [[400, 300], [400, 460]], "w": 10}]})
+
+
+def test_new_2026_08_10_check_edge_cases():
+    """Degenerate shapes the GM-review checks must survive, and the wall-reach clause that keeps
+    a works on the near farm ground legal: a one-point way, a compound with an unknown gate
+    side, a malformed yard record, and a kiln 900 ft from the wall with no road under it."""
+    water = {"meta": {"scale": "city", "ftpx": 3}, "streams": [{"poly": [[0, 500], [1000, 500]], "w": 20}]}
+    # a one-vertex way has no segment to sample - it must not raise, and must not fire
+    assert "ways_cross_water_on_a_deck" not in f({**water, "alleys": [{"pts": [[400, 500]], "w": 10}]})
+    # gate_dir the mapping does not know, and a yard record with no x
+    odd = {
+        "meta": {"scale": "city", "ftpx": 3},
+        "manors": [{"x": 500, "y": 500, "w": 100, "h": 80, "rot": 0, "gate_dir": "northeast", "label": "Odd Estate"}],
+        "stable_yards": [{"x": 500, "y": 900, "r": 40, "of": [500, 900], "troughs": 1, "rails": [], "troughs_at": [500, 900]}],
+    }
+    assert "animal_yards_clear_of_compound_gates" not in f(odd)
+    # the wall-reach clause: a works on the near farm ground, no road under it, is tethered
+    near = {
+        "meta": {"scale": "city", "walled": True, "W": 3000, "H": 3000, "ftpx": 3},
+        "wall": WALLSQ,
+        "gates": [[500, 200], [500, 800]],
+        "kilns": [{"x": 500, "y": 1000, "w": 30, "h": 20, "rot": 0}],
+    }
+    assert "extramural_features_tethered" not in f(near)  # 200px past the wall = 600 ft
+    far = {**near, "kilns": [{"x": 500, "y": 1400, "w": 30, "h": 20, "rot": 0}]}
+    assert "extramural_features_tethered" in f(far)  # 600px = 1,800 ft, past the attested band

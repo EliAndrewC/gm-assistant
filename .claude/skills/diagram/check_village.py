@@ -1964,6 +1964,8 @@ def lane_near_misses(M: Manifest, maxgap: float = 80.0, eps: float = 4.0, align:
 
     hits = []
     for i, pi in enumerate(lanes):
+        if len(pi) < 2:
+            continue  # a one-vertex way has no direction of travel (degenerate input, 2026-08-10)
         for E, nb in ((pi[0], pi[1]), (pi[-1], pi[-2])):
             if rd and to_lane(E, rd)[1] < 30:  # bed-overlaps the wide road
                 continue
@@ -8542,6 +8544,53 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
     # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
     # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    # NO WAY STANDS IN WATER WITHOUT A DECK (GM 2026-08-10: "roads should not overlap with water
+    # without a bridge present"). `roads_bridge_water` already demands a deck wherever a CARRIED
+    # way's centerline CROSSES a watercourse's centerline - but it reads only the ways
+    # bridge_carried_ways names (the trunk roads, streets and the ring), and it tests crossings
+    # rather than OVERLAP. So an alley whose bed laps a stream's bed, or a way that runs into the
+    # water and stops, sails past it: the capital's wharf shore path lay in the moat drain for
+    # 40 px with no plank. This one samples EVERY drawn way against every watercourse using both
+    # BEDS' widths - the question a reader asks of the picture is whether the paving and the water
+    # occupy the same ground, not whether two abstract centerlines intersect.
+    wd_waters = [(w9["poly"], float(w9.get("w", 9))) for w9 in M.get("streams", [])] + [(cn9["poly"], float(cn9.get("w", 12))) for cn9 in M.get("canals", [])]
+    if M.get("moat"):
+        wd_waters.append((list(M["moat"]) + [M["moat"][0]], float(M.get("moat_width", 22))))
+    for cs9 in M.get("castles", []):
+        if cs9.get("moat"):
+            wd_waters.append((list(cs9["moat"]) + [cs9["moat"][0]], float(cs9.get("moat_width", 22))))
+    if wd_waters:
+        wd_ways = ([("road", M["road"], float(M.get("road_width", 26)))] if M.get("road") else []) + [
+            ("road", r9["pts"] if isinstance(r9, dict) else r9, float(r9.get("w", 20)) if isinstance(r9, dict) else 20.0) for r9 in M.get("roads", [])
+        ]
+        wd_ways += [("street", s9["pts"], float(s9.get("w", 18))) for s9 in M.get("town_streets", [])]
+        wd_ways += [("alley", a9["pts"], float(a9.get("w", 10))) for a9 in M.get("alleys", [])]
+        wd_ways += [("lane", l9["pts"] if isinstance(l9, dict) else l9, float(l9.get("w", 8)) if isinstance(l9, dict) else 8.0) for l9 in M.get("lanes", [])]
+        if M.get("ring_road"):
+            wd_ways.append(("ring road", list(M["ring_road"]) + [M["ring_road"][0]], float(M.get("ring_road_width", 15))))
+        wd_bridges = M.get("bridges", [])
+        wd_bad = []
+        for wd_kind, wd_pts, wd_w in wd_ways:
+            if len(wd_pts) < 2:
+                continue
+            for i9 in range(len(wd_pts) - 1):
+                a9p, b9p = wd_pts[i9], wd_pts[i9 + 1]
+                wd_len = math.hypot(b9p[0] - a9p[0], b9p[1] - a9p[1])
+                for k9 in range(max(1, int(wd_len // 8)) + 1):
+                    t9 = k9 / max(1, int(wd_len // 8))
+                    x9, y9 = a9p[0] + (b9p[0] - a9p[0]) * t9, a9p[1] + (b9p[1] - a9p[1]) * t9
+                    for wp9, ww9 in wd_waters:
+                        if min(seg_dist(x9, y9, wp9[j9], wp9[j9 + 1]) for j9 in range(len(wp9) - 1)) < ww9 / 2 + wd_w / 2 - 3:
+                            if not any(math.hypot(b9["x"] - x9, b9["y"] - y9) <= max(46.0, float(b9.get("span", 30))) for b9 in wd_bridges):
+                                wd_bad.append((wd_kind, round(x9), round(y9)))
+                            break
+        check(
+            "ways_cross_water_on_a_deck",
+            not wd_bad,
+            f"way(s) standing in water with no deck under them: {sorted(set(wd_bad))[:4]} - paving and water cannot share ground; "
+            f"carry the way over on a bridge (s.bridges() after all ways and water, or a hand plank at the computed crossing), or route it clear of the bank",
+        )
+
     # A CAPITAL'S TRADES SCALE - IN FOUR DIFFERENT WAYS (GM question 2026-08-10, researched;
     # the WHY, with sources, is in research/cities/capitals.md "Do a capital's trades and
     # funerary program scale from a provincial city's?"). Nothing here is "same as a city":
@@ -8648,9 +8697,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         if ay_g is None:
             continue
         for ay_key in ("stable_yards", "byres", "animal_grounds"):
-            for ay_y in M.get(ay_key, []):
-                if not isinstance(ay_y, dict) or "x" not in ay_y:
-                    continue
+            for ay_y in M.get(ay_key, []):  # every yard key holds records, never raw polygons
                 ay_r = float(ay_y.get("r", 0) or max(ay_y.get("w", 0), ay_y.get("h", 0)) / 2)
                 if math.hypot(ay_y["x"] - ay_g[0], ay_y["y"] - ay_g[1]) - ay_r < ay_reach:
                     ay_bad.append((ay_key, round(ay_y["x"]), round(ay_y["y"]), ay_c.get("label") or "a walled compound"))
@@ -8686,6 +8733,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 if xm_wharf and min(math.hypot(xm_f["x"] - wx, xm_f["y"] - wy) for wx, wy in xm_wharf) <= 300:
                     continue
                 if xm_roads and min(min(seg_dist(xm_f["x"], xm_f["y"], rp[i9], rp[i9 + 1]) for i9 in range(len(rp) - 1)) for rp in xm_roads if len(rp) >= 2) <= xm_road_reach:
+                    continue
+                # ...or simply CLOSE TO THE WALL it serves. A works on the near farm ground is
+                # tethered by the city's own edge even with no road under it - which is where
+                # every shipped map's nuisance works actually sits: 225-1,382 ft from the wall
+                # across Tango, Minami, Nagahara and the capital (measured 2026-08-10). The kiln
+                # that prompted this rule stood at 1,563 ft with nothing around it, so the band
+                # is drawn from the attested spread rather than picked.
+                if min(seg_dist(xm_f["x"], xm_f["y"], xm_wall[i9], xm_wall[(i9 + 1) % len(xm_wall)]) for i9 in range(len(xm_wall))) <= 1450.0 / xm_ftpx:
                     continue
                 xm_bad.append((xm_key, round(xm_f["x"]), round(xm_f["y"])))
         check(
@@ -8786,6 +8841,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # past) the band street they aim at (GM 2026-08-10, the render's most repeated defect)
     sr_enders = [(st9, st9.get("w", 18) / 2) for st9 in sr_sts] + [(al9, al9.get("w", 10) / 2) for al9 in M.get("alleys", [])]
     for st9, sr_myhw in sr_enders:
+        if len(st9.get("pts") or []) < 2:
+            continue  # a one-vertex way has no direction of travel to aim with
         for E9, nb9 in ((st9["pts"][0], st9["pts"][1]), (st9["pts"][-1], st9["pts"][-2])):
             sr_best: tuple[float, float, Pt] = (1e9, 0.0, (0.0, 0.0))
             for ot9 in sr_sts:
@@ -8845,7 +8902,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # so a re-routed channel drags its furniture red instead of leaving it beached - the
     # placement fix is always: recompute the seat from the CURRENT water polyline, never keep
     # a coordinate that predates a re-route.
-    wsf_waters = [(w9["poly"], float(w9.get("w", 9))) for w9 in M.get("streams", [])] + [(cn9["poly"], float(cn9.get("w", 12))) for cn9 in M.get("canals", [])]
+    # every WATERCOURSE counts, irrigation channels included - a sluice on a field ditch is the
+    # commonest form of the feature, and omitting channels read three shipped maps as "dry"
+    wsf_waters = (
+        [(w9["poly"], float(w9.get("w", 9))) for w9 in M.get("streams", [])]
+        + [(cn9["poly"], float(cn9.get("w", 12))) for cn9 in M.get("canals", [])]
+        + [(ch9["poly"], float(ch9.get("w", 2.5))) for ch9 in M.get("channels", []) if ch9.get("poly")]
+    )
 
     def wsf_bank(x9: float, y9: float) -> float:
         """Distance past the nearest watercourse's bank (<=0 means on/over the water)."""
