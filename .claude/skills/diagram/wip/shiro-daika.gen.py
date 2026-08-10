@@ -601,11 +601,11 @@ s.oil_press(1000, 1690)
 s.pawnshop(1245, 1690)
 s.pawnshop(1874, 1786)  # the second commercial quarter's pawnshop (Edo ran one per ~400 residents; two drawn, the rest implied in the rows)
 s.bathhouses([(900, 1750), (1278, 1980), (1668, 1740), (2060, 1640), (1080, 1860), (1550, 1830), (2250, 1050)])
-s.dye_yard(2149, 2497)
-s.dye_yard(2210, 2578)  # ...the dyers' row (Konya-machi): contiguous lots up the drain's west bank
-s.dye_yard(2098, 2468)
-s.tanning_yard(1995, 2522, water="stream")  # ON the moat drain's west bank (its wash water; the towpath owns the river bank here) - GM 2026-08-10
-s.tanning_yard(2062, 2560, water="stream")  # the pair shares the drain's downstream bank
+s.dye_yard(2114.8, 2493.8, rot=29.4)
+s.dye_yard(2049.9, 2403.7, rot=108.9)  # ...the dyers' row (Konya-machi): contiguous lots up the drain's west bank
+s.dye_yard(2051.4, 2458.0, rot=29.4)
+s.tanning_yard(2000.3, 2491.2, rot=29.4, water="stream")  # ON the moat drain's west bank (its wash water; the towpath owns the river bank here) - GM 2026-08-10
+s.tanning_yard(2060.1, 2524.9, rot=29.4, water="stream")  # the pair shares the drain's downstream bank
 s.kiln(268, 2166)
 s.kiln(
     176, 2196
