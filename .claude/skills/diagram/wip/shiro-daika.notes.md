@@ -217,3 +217,44 @@ check gap, bell-drum tower, precinct walls, cistern kind/glyph, mirror precincts
 T024, captions T025, T026 pool move + full sweep, T028 XII, T029 record-the-why docs
 (the THREE wall derivations + the slack law + extramural ruling), T030 ritual. Keep
 appending pain points to future-work.md per the GM's standing instruction.
+
+## FIRST PASS SHIPPED GREEN (2026-08-10, session diagram-city)
+
+Gate: **0 FAIL** with three DOCUMENTED waivers, all one phenomenon - the first-pass fabric
+under-fills the settled wall (~8% packed shortfall, ~130 census households, rotating ~1.5 ac
+pockets) - which the GM deferred on 2026-08-10 to the fabric-first feature (future-work.md #2/#5).
+Pre-waiver failing state frozen as
+`pool/regressions/capital_fullness_deferral_fires_on_the_first_pass_shiro_daika.json` (fires all 3).
+
+Everything else was fixed FOR REAL. The lessons that cost the most, so the next capital does not
+re-pay them:
+
+- **Street ends must be EXACT ring/junction intersections.** Snapping computed 1-decimal
+  intersection points (segment vs polyline) killed the whole stub/near-miss/meet-through family in
+  one pass; dist-N offsets flicker because street half-widths are feet-derived and tiny. When the
+  band street's east end was later re-snapped, its SLOPE changed and every vertical street's end
+  had to be re-derived - re-snap dependents in the same pass.
+- **Well grids and packs form a circular dependency; the winning order:** hand alleys -> well
+  grids split into inter-alley boxes (a band-wide box lands wells ON the hand alleys) -> packs
+  (rows ring the pre-placed wells) -> engine-sited top-ups via `open_seat(w=8, h=8, well=True)`
+  for the residual density pockets. A hand well at a coordinate a pack has already filled lands
+  "on a building" forever (deterministic jitter - respacing barely moves it).
+- **Well-court keep-outs EAT pack seats.** Three overlapping density-chasing boxes (spacing
+  36/40/44) had silently halved the east machi's density (0.67/kpx2 vs 1.1+ elsewhere) - that WAS
+  the packed_inwall deficit. Measure per-district density (dwellings per kpx2 across `districts`)
+  before blaming the packer; the table names the sick district instantly.
+- **The x1990 "band lane" ran through Hazama and Utsuro estates** (lineage_manor seat-scans made
+  it look fine until a reflow) - deleted; the E machi got proper roji instead (pre-wells so the
+  grid dodges them; ends snapped to the ring).
+- **Gate-ward dwelling packs from the pre-ruling design were still in the gen but seating ZERO** -
+  deleted as dead code; the drawn map already honored the wharf-only ruling (all extramural
+  dwellings in the kashi/towpath belt, suburb band green at 60).
+- **Claims are the tool for ground that is genuinely open by design** (drill grounds, moat
+  firebreak, rampart approach, the S-gate column ground where the Imperial road crosses the band
+  street) - `commons(..., render="bare")` claims it blank and the commons-frontage exemption
+  clears the lined/bare-street checks. But a claim on PACK ground costs seats, and the empty-pocket
+  population ROTATES on every reflow - claim the stable cores, waive the rotating residue.
+
+Remaining before pool/ graduation (T026+): fold the queued review items (kosatsuba etc., above),
+caption-loudness pass, perf A/B + GEN_TIME_BUDGETS entry, full sweep via make done, XII bookend,
+then the move.

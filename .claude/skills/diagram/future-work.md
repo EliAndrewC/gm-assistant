@@ -59,3 +59,19 @@ first pass; **wall-to-fabric fullness is the headline requirement of the fabric-
 feature (#2)**. Cosmetic option noted: a faint ground tint for kept commons (between blank
 and scrub). When fabric-first is specced, start from this map's slack profile as the
 motivating example.
+
+### 2026-08-10 addendum: the first pass SHIPPED against #5
+
+Shiro Daika went out green with three waivers (packed_inwall ~1,930/2,100, census ~130 short,
+rotating ~1.5 ac pockets) - the deferred-fullness gap made concrete. Fixture:
+`pool/regressions/capital_fullness_deferral_fires_on_the_first_pass_shiro_daika.json`. Two fresh
+data points for the fabric-first design:
+
+- Realized machi density is bounded by the SERVICE fabric, not the packer: streets + kido
+  reserves + well courts + hand roji took ~8% of C_PACKED at the settled wall. A fabric-first
+  pass must budget service ground per district (wells per ~20 households, roji per 95 px reach)
+  BEFORE deriving the wall, or the same gap reappears.
+- The endgame grind was dominated by cross-coupled reflows: every well/claim/alley edit re-rolls
+  neighboring packs, so single-defect fixes rotate the defect population instead of shrinking it
+  (three "dead cores" moved five times). Fabric-first should place service features and packs in
+  one deterministic order per district, so a local edit stays local.
