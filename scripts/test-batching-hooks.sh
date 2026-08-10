@@ -38,6 +38,8 @@ serial_turn; check "turn 2 allowed" ok $?
 serial_turn; check "turn 3 allowed" ok $?
 serial_turn; check "turn 4 BLOCKED (streak hit 3)" blocked $?
 grep -q "send them TOGETHER" /tmp/bt.err && { echo "  ok    block message says what to do"; PASS=$((PASS+1)); } || { echo "  FAIL  block message unhelpful"; FAIL=$((FAIL+1)); }
+grep -q "patch MISS" /tmp/bt.err && { echo "  ok    block message carries the retry-patch fold tip"; PASS=$((PASS+1)); } || { echo "  FAIL  no retry-patch tip in the message"; FAIL=$((FAIL+1)); }
+grep -q "pad with no-op" /tmp/bt.err && { echo "  ok    block message forbids padding the window"; PASS=$((PASS+1)); } || { echo "  FAIL  no anti-padding tip in the message"; FAIL=$((FAIL+1)); }
 teardown
 
 echo "2. it never deadlocks: the call right after a block is allowed through"
@@ -122,6 +124,49 @@ serial_turn; serial_turn; serial_turn
 sleep 0.35
 "$HOOK" pretool <<<'{"session_id":"other","tool_name":"Read"}' 2>/dev/null
 check "a different session is unaffected" ok $?
+teardown
+
+bash_turn() {  # one Bash turn with the given command string (plain chars only)
+  sleep 0.35
+  printf '{"session_id":"t1","tool_name":"Bash","tool_input":{"command":"%s"}}' "$1" | "$HOOK" pretool 2>/tmp/bt.err
+  local rc=$?
+  [ $rc -ne 0 ] && return $rc
+  printf '{"session_id":"t1","tool_name":"Bash","tool_input":{"command":"%s"}}' "$1" | "$HOOK" posttool >/dev/null 2>&1
+  return 0
+}
+
+echo "9. only a recon-SHAPED call is ever blocked (GM 2026-08-10)"
+# The 021 profile: 49 of 52 blocks landed on heredoc patch scripts or already-folded commands.
+# The batching opportunity is BEHIND a substantive call - blocking it just re-sends it verbatim.
+setup
+serial_turn; serial_turn; serial_turn          # window "111" - bar is armed
+bash_turn "python3 - <<PYEOF_INNER"; check "a heredoc patch script passes at the armed bar" ok $?
+bash_turn "grep -n foo x.py && sed -n 1,4p y.py"; check "an &&-fold (the requested batching) passes" ok $?
+bash_turn "python3 -m pytest test_checks.py -q"; check "a test run passes" ok $?
+sleep 0.35
+printf '{"session_id":"t1","tool_name":"Edit","tool_input":{"file_path":"x.py"}}' | "$HOOK" pretool 2>/tmp/bt.err
+check "an Edit (real work) passes" ok $?
+printf '{"session_id":"t1","tool_name":"Edit","tool_input":{"file_path":"x.py"}}' | "$HOOK" posttool >/dev/null 2>&1
+bash_turn "grep -n foo settlement.py"; check "a naked single grep IS blocked" blocked $?
+teardown
+
+echo "10. after a block the bar re-arms HIGHER (3 -> 6), so a grind session is not blocked forever"
+setup
+serial_turn; serial_turn; serial_turn
+serial_turn; check "first block at 3" blocked $?
+serial_turn; serial_turn; serial_turn          # window "111" again
+serial_turn; check "NOT re-blocked at 3 - the bar doubled (would have re-fired pre-backoff)" ok $?
+serial_turn; serial_turn                       # window "111111": the whole window is serial
+serial_turn; check "re-blocked only at the full window of 6" blocked $?
+teardown
+
+echo "11. the raised bar DECAYS back to the threshold as turns batch"
+setup
+serial_turn; serial_turn; serial_turn
+serial_turn; check "block raises the bar to 6" blocked $?
+slow_turn; slow_turn; slow_turn                # three real-work turns: bar decays 6 -> 5 -> 4 -> 3
+serial_turn; serial_turn; serial_turn          # window "000111"
+serial_turn; check "blocked at 3 again - the bar decayed home" blocked $?
 teardown
 
 echo
