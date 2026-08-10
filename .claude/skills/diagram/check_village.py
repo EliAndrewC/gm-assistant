@@ -8182,6 +8182,30 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"rank bands out of order from the castle: {cg_bad} - the jokamachi law grades proximity by rank (yashiki nearest, then detached, then terraces)",
         )
 
+    # THE WALL SETTLES FIRST (GM process rule, 2026-08-10): fine iteration on a capital is
+    # forbidden until the interior's OPEN share is inside the band, because every fine
+    # adjustment is downstream of the wall and a wall re-derivation invalidates them all.
+    # Measured the day the rule was made: 41% of the walled interior stood as claimed-open
+    # commons after two wall sizings, and hours of junction/well/kido tuning had been spent
+    # against a rampart that was about to move. Claimed-open ground (commons of any role)
+    # inside the wall must stay under ~15% of the interior - beyond that, the wall is
+    # oversized for its fabric: RE-DERIVE RX/RY (citybudget) before touching anything else.
+    if meta.get("scale") == "capital" and len(M.get("wall") or []) >= 3:
+        _sl_wall = M["wall"]
+        _sl_interior = _poly_area(_sl_wall)
+        _sl_open = 0.0
+        for _sl_c in M.get("commons", []) or []:
+            _sl_p = _sl_c.get("poly") or []
+            if len(_sl_p) >= 3 and point_in_poly(sum(q[0] for q in _sl_p) / len(_sl_p), sum(q[1] for q in _sl_p) / len(_sl_p), _sl_wall):
+                _sl_open += _poly_area(_sl_p)
+        check(
+            "capital_interior_slack_in_band",
+            _sl_open <= 0.15 * _sl_interior,
+            f"THE WALL IS OVERSIZED FOR ITS FABRIC: {_sl_open / _sl_interior:.0%} of the walled interior is claimed-open ground "
+            f"({_sl_open:,.0f} of {_sl_interior:,.0f} px^2; the band is <= 15%). Do NOT fine-tune anything against this rampart - "
+            f"re-derive RX/RY from the fabric's real density (citybudget) and re-lay the rim FIRST (the wall settles before fine "
+            f"iteration; every junction/well/kido adjustment made now dies with the resize).",
+        )
     # SOVEREIGN PRECINCT INTERIORS (T017, research item 7): once a precinct reservation is
     # DECLARED (M['precincts'], the 021 engine path), its head-house program must actually be
     # drawn - >= 5 halls, every one fully inside the reserved rect (a dormitory overhanging the

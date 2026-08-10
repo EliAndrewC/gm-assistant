@@ -10855,3 +10855,14 @@ def test_capital_packed_overflow_names_the_wall_resize_cure(capsys):
     check_village.gate(M, verbose=True)
     out = capsys.readouterr().out
     assert "CANNOT WORK WITHOUT RESIZING THE WALL" in out
+
+
+def test_capital_interior_slack_in_band():
+    """The wall-settles-first rule (GM 2026-08-10): claimed-open ground beyond 15% of the
+    interior names the wall oversized and demands re-derivation BEFORE fine iteration."""
+    M = _capital_manifest()
+    M["commons"] = [{"poly": [[100, 100], [700, 100], [700, 700], [100, 700]], "role": "pasture", "x": 400, "y": 400, "w": 600, "h": 600}]
+    r = f(M)
+    assert "capital_interior_slack_in_band" in r  # 36% of a 1M interior
+    M["commons"][0]["poly"] = [[100, 100], [400, 100], [400, 400], [100, 400]]  # 9%
+    assert "capital_interior_slack_in_band" not in f(M)
