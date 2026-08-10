@@ -6713,14 +6713,19 @@ class Settlement:
                 lx, ly = label_xy if label_xy else ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
                 self.label(lx, ly, label, 12, italic=True, color="#5C6B3A")
 
-    def theater_stage(self, cx: float, cy: float, w: Any = None, h: Any = None, rot: float = 0, label: Any = None) -> None:
+    def theater_stage(self, cx: float, cy: float, w: Any = None, h: Any = None, rot: float = 0, label: Any = None, kind: str = "monzen") -> None:
         """A public THEATER STAGE: a roofed raised stage facing an open viewing ground - the troupe-and-
         festival venue of a Rokugani town/city (the East Asian analog of a Greco-Roman amphitheater: a
         temple OPERA STAGE / shrine NOH-kagura stage). It belongs to a temple/monastery precinct, the
         audience gathering in the open ground between the stage and the hall. (cx,cy) is the center of the
         w x h viewing ground; the roofed stage sits at the -y (north) end facing +y into it; `rot` turns the
-        whole feature (point it so the ground opens toward the temple). Records M['theater_stage']; reserves
-        its footprint so packing avoids it."""
+        whole feature (point it so the ground opens toward the temple). Records M['theater_stage'] - a LIST
+        since 2026-08-10: the singleton dict write meant a second stage clobbered the first, so Shiro
+        Daika's labeled entertainment-quarter theater existed as ink only, invisible to the overlap
+        matrix in both directions (settlement-review). `kind` says which siting doctrine the stage owes:
+        "monzen" (default) is a temple/shrine performance stage and must sit at its hall;
+        "machi" is a commercial quarter theater and sits in the fabric. Reserves its footprint so
+        packing avoids it."""
         if w is None:
             w, h = self.px(150), self.px(105)  # stage + viewing ground ~150x105 ft (town-calibrated)
         hw, hh = w / 2, h / 2
@@ -6742,7 +6747,7 @@ class Settlement:
         g.append(f'<rect x="{-sw / 2:.0f}" y="{sy + sh - 2.5:.0f}" width="{sw:.0f}" height="2.5" fill="#5A3F1E" opacity="0.6"/>')  # stage-front lip onto the ground
         g.append('</g>')
         self.add(''.join(g))
-        self.M["theater_stage"] = {"x": cx, "y": cy, "w": w, "h": h, "rot": rot}
+        self.M.setdefault("theater_stage", []).append({"x": cx, "y": cy, "w": w, "h": h, "rot": rot, "kind": kind})
         R = math.hypot(hw, hh) + sh * 0.5  # rotation-safe covering radius (stage + ground)
         self.ellipses.append((cx, cy, R, R))
         if label:
@@ -8888,7 +8893,16 @@ class Settlement:
             xs0 = [q[0] for q in poly]
             ys0 = [q[1] for q in poly]
             self.M.setdefault("commons", []).append(
-                {"x": round(sum(xs0) / len(xs0), 1), "y": round(sum(ys0) / len(ys0), 1), "w": round(max(xs0) - min(xs0), 1), "h": round(max(ys0) - min(ys0), 1), "rot": 0, "role": role, "seq": len(self.M.get("commons", [])) + 1, "poly": [list(q) for q in poly]}
+                {
+                    "x": round(sum(xs0) / len(xs0), 1),
+                    "y": round(sum(ys0) / len(ys0), 1),
+                    "w": round(max(xs0) - min(xs0), 1),
+                    "h": round(max(ys0) - min(ys0), 1),
+                    "rot": 0,
+                    "role": role,
+                    "seq": len(self.M.get("commons", [])) + 1,
+                    "poly": [list(q) for q in poly],
+                }
             )
             return
         with self.rng_scope("commons", len(poly), poly[0][0], poly[0][1]):

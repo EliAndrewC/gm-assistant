@@ -148,7 +148,22 @@ KAGI_Y = 1560
 # gate point, so the roadbed rode along the rampart stroke): the diagonal legs meet a short
 # perpendicular run on each side of the gate, and the bed passes clean through the gap.
 s.road(
-    [(SGATE[0], 3095), (SGATE[0], SGATE[1]), (1400, KAGI_Y), (800, KAGI_Y), (800, 470), (1400, 300), (NGATE[0], NGATE[1]), (1400, 110), (1200, 92), (1040, 108), (860, 150), (660, 110), (500, 20), (460, -60)],
+    [
+        (SGATE[0], 3095),
+        (SGATE[0], SGATE[1]),
+        (1400, KAGI_Y),
+        (800, KAGI_Y),
+        (800, 470),
+        (1400, 300),
+        (NGATE[0], NGATE[1]),
+        (1400, 110),
+        (1200, 92),
+        (1040, 108),
+        (860, 150),
+        (660, 110),
+        (500, 20),
+        (460, -60),
+    ],
     label="Imperial Road",
     label_xy=(SGATE[0] + 145, 2820),
 )
@@ -185,7 +200,9 @@ s.road([(OTE_X, 1240), (OTE_X, KAGI_Y)], width=s.lw(45))  # starts just south of
 # approach; the karamete-mon - the rear gate every castle kept, the sortie gate - opens north,
 # its approach road bridging the castle's own moat to join the Imperial road's run to the
 # city's north gate. research/cities/capitals.md, "A castle has TWO gates".
-s.castle(1400, 880, 850, 700, label="Shiro Daika", gate_dir="south", karamete_dir="north")  # the castle keeps ITS axis (x=1400) - the resized wall re-centered SW, and the honmaru sits NE-of-center (the castle-at-the-back pattern); everything castle-anchored (ote-suji, ministries, karamete) reads from this axis, not from CX
+s.castle(
+    1400, 880, 850, 700, label="Shiro Daika", gate_dir="south", karamete_dir="north"
+)  # the castle keeps ITS axis (x=1400) - the resized wall re-centered SW, and the honmaru sits NE-of-center (the castle-at-the-back pattern); everything castle-anchored (ote-suji, ministries, karamete) reads from this axis, not from CX
 
 # ---- the moat CIRCULATES river-to-river, every drawn drop moving NE -> SW (GM 2026-08-09,
 # third cut - the second still ran its last leg up-screen). Like Minami and Nagahara the moat
@@ -242,8 +259,8 @@ s.label(2705, 1160, "aqueduct", 10, italic=True, color="#5E7A8A", rot=151, linea
 s.towpath([(1700, 3040), (1900, 2740), (2090, 2470), (2210, 2400)])
 s.label(2010, 2565, "towpath", 10, italic=True, color="#8A7050", rot=-55, linear=True, full_tilt=True)
 s.bridge(
-    2148, 2478, -55.0, 52, 4
-)  # the towpath's plank over the drain - the OBLIQUE span (22px water / sin ~36 deg) plus a visible ~2px bank rest each side (a plank's short abutment, not a carried deck's LANDING_FT)
+    2069, 2499, -55.0, 28, 4
+)  # the towpath's plank AT the computed towpath x drain crossing (the drain's river-to-river re-route moved the ford and the deck kept its old seat - review 2026-08-10); oblique span 22px water / sin(84 deg) + 6px bank rests
 s.M["bridges"][-1]["foot"] = True  # a footplank on the haulage path, not a road deck
 
 # ---- carry every way over the water it crosses. AFTER all roads and water, as bridges() requires:
@@ -445,8 +462,8 @@ _YJ = ((2, -2), (-4, 2), (4, 4), (-2, -4), (0, 2), (3, -3))  # deterministic siz
 
 
 def _yashiki(x: float, y: float, gate_dir: str, i: int) -> None:
-    _w = 60 + _YJ[i % 6][0]
-    _h = 50 + _YJ[i % 6][1]
+    _w = 60 + _YJ[i % 6][0] + round(2 * s._hjit(x, y, 31.0)) - 1  # survey jitter: 42 plots in 6 exact
+    _h = 50 + _YJ[i % 6][1] + round(2 * s._hjit(x, y, 32.0)) - 1  # size classes read stamped (review 2026-08-10)
     s.manor(x, y, _w, _h, None, gate_dir=gate_dir)
 
 
@@ -501,9 +518,9 @@ s.terrace(775, 1828, units=8, rot=90)
 
 # alleys BEFORE the packs (each reserves its corridor; no block core sits >95px from a way)
 s.alley([(640, 1375), (640, 1552)])  # the D5/west mid-band pocket (x=640: clear of the (700,1420) compound)
-  # the east gate ward (its road runs ~y1170)
+# the east gate ward (its road runs ~y1170)
 s.alley([(2305, 2080), (2440, 1910)])  # the wharf's upstream bank boxes
-  # the east approach samurai seats
+# the east approach samurai seats
 s.alley([(530, 770), (530, 1430)])  # the west rim's spine (early: wells must not seat on its line)
 s.alley([(740, 1585), (740, 1880)])  # stops short of the SW terrace window
 s.alley([(880, 1560), (880, 1982)])  # snapped: kagi road leg to the ring's SW curve
@@ -546,7 +563,7 @@ for _dj in s.M.get("dojos", []):
     _djx, _djy = _dj["x"], _dj["y"]
     s.block_polys.append([(_djx - 40, _djy - 40), (_djx + 40, _djy - 40), (_djx + 40, _djy + 40), (_djx - 40, _djy + 40)])
     s.placed.append((_djx, _djy, 64, 64))  # a dojo compound reserves its ground before the packs (the engine glyph alone did not)
-s.theater_stage(2060, 1700, w=66, h=48, label="theater")  # the entertainment quarter beside the wharf gate (the brokers' money builds the theaters)
+s.theater_stage(2060, 1700, w=66, h=48, label="theater", kind="machi")  # the entertainment quarter beside the wharf gate (the brokers' money builds the theaters)
 s.theater_stage(1740, 1695, w=64, h=46, rot=-120, label=None)  # opens toward the Benten hall (its temple)
 s.district("entertainment quarter", "entertainment", [(2000, 1620), (2115, 1620), (2115, 1800), (2000, 1800)], rank_band=None)
 # market-day flophouses at the working gates, seated BEFORE the packs (the first seats
@@ -669,11 +686,39 @@ s.alley([(2115, 640), (2255, 640)])  # east of the x2075 yashiki file; ends insi
 s.alley([(2190.8, 568.9), (2200, 1235)])  # the deep E machi block's roji (before the wells, so the well grid dodges them)
 
 # ---- T013/T014: the PUBLIC WELLS, before the packs so the rows ring their courts.
-for _hw in ((846, 2016), (1520, 2118), (1700, 2210), (1832, 2210), (2138, 1880), (2180, 790), (1478, 2130), (1652, 2210), (1748, 2210), (1880, 2212), (2230, 832), (2252, 826), (2120, 1928), (1178, 2144), (2280, 800), (2240, 758), (2100, 1902), (2260, 622), (2210, 706), (2168, 700), (2088, 1856), (2078, 1902), (960, 2185), (2124, 1866), (2226, 1176)):
+for _hw in (
+    (846, 2016),
+    (1520, 2118),
+    (1700, 2210),
+    (1832, 2210),
+    (2138, 1880),
+    (2180, 790),
+    (1478, 2130),
+    (1652, 2210),
+    (1748, 2210),
+    (1880, 2212),
+    (2230, 832),
+    (2252, 826),
+    (2120, 1928),
+    (1178, 2144),
+    (2280, 800),
+    (2240, 758),
+    (2100, 1902),
+    (2260, 622),
+    (2210, 706),
+    (2168, 700),
+    (2088, 1856),
+    (2078, 1902),
+    (960, 2185),
+    (2124, 1866),
+    (2226, 1176),
+):
     s.well(_hw[0], _hw[1])  # hand-seeded court wells for the pockets the grids kept missing
 # The josui-ido band first: cistern-wells on the gate road within ~600 ft of the settling
 # basin (research item 4); dug draw-wells serve everything else.
-s.place_wells((2250, 1350, 2400, 1425), spacing=62, kind="cistern", coverage=False)  # the josui-ido file inside the E gate, on the buried main from the new settling basin (laterals under the roji, research item 4)
+s.place_wells(
+    (2250, 1350, 2400, 1425), spacing=62, kind="cistern", coverage=False
+)  # the josui-ido file inside the E gate, on the buried main from the new settling basin (laterals under the roji, research item 4)
 s.place_wells((620, 1580, 1385, 2028), spacing=76, coverage=False)
 s.place_wells((900, 2095, 1060, 2140), spacing=72, coverage=False)
 s.place_wells((1315, 2095, 1540, 2225), spacing=72, coverage=False)
@@ -833,14 +878,28 @@ s.rowpack((550, 760, 598, 1445), _MIX * 18, court_every=6)
 # engine among the drawn courts (open_seat sees the court lanes and standing rows; the
 # pre-pack grids tried first kept landing wells on the packs' own court lanes)
 for _wr in (
-    (840, 1980, 1080, 2060), (1060, 1580, 1170, 1660), (450, 1660, 540, 1750),
-    (1480, 2100, 1620, 2185), (1690, 2160, 1850, 2245), (2140, 740, 2265, 825),
-    (2290, 1480, 2360, 1570), (2185, 1555, 2270, 1640), (2080, 1840, 2160, 1925),
-    (2020, 1620, 2100, 1700), (2020, 1780, 2100, 1860), (2020, 1940, 2100, 2020),
-    (1080, 1590, 1150, 1650), (800, 1990, 862, 2050), 
-    (1483, 2085, 1546, 2140), (1665, 2175, 1730, 2232), (1794, 2175, 1858, 2232),
-    (445, 1675, 506, 1736), (2145, 745, 2202, 809), (2186, 745, 2246, 809),
-    (804, 2164, 861, 2222), (2150, 1160, 2225, 1215),
+    (840, 1980, 1080, 2060),
+    (1060, 1580, 1170, 1660),
+    (450, 1660, 540, 1750),
+    (1480, 2100, 1620, 2185),
+    (1690, 2160, 1850, 2245),
+    (2140, 740, 2265, 825),
+    (2290, 1480, 2360, 1570),
+    (2185, 1555, 2270, 1640),
+    (2080, 1840, 2160, 1925),
+    (2020, 1620, 2100, 1700),
+    (2020, 1780, 2100, 1860),
+    (2020, 1940, 2100, 2020),
+    (1080, 1590, 1150, 1650),
+    (800, 1990, 862, 2050),
+    (1483, 2085, 1546, 2140),
+    (1665, 2175, 1730, 2232),
+    (1794, 2175, 1858, 2232),
+    (445, 1675, 506, 1736),
+    (2145, 745, 2202, 809),
+    (2186, 745, 2246, 809),
+    (804, 2164, 861, 2222),
+    (2150, 1160, 2225, 1215),
 ):
     for _wk in range(3):
         _wseat = s.open_seat(_wr, 8, 8, well=True)
@@ -869,7 +928,7 @@ s.bound = [[1560, 2540], [1810, 2540], [1810, 2880], [1560, 2880]]
 s.alley([(1672, 2460), (1728, 2760)])  # the shore rows' spine (before its packs)
 s.rowpack((1580, 2560, 1790, 2740), ["laborer", "laborer", "servant"] * 9, court_every=6)
 s.bound = [[1820, 2450], [2100, 2450], [2100, 2810], [1820, 2810]]
-s.cemetery(1780, 2708, 84, 60, parish=False, label="common ground")
+s.cemetery(1780, 2708, 84, 60, parish=False, label="common burial ground")
 s.rowpack((1850, 2492, 2024, 2740), ["laborer", "servant"] * 12, court_every=6)
 # the gate wards, each hugging its approach road inside the guan-xiang reach
 s.placed.append((1204, 2561, 22, 18))
