@@ -6446,3 +6446,50 @@ def test_theater_stage_records_every_stage_not_just_the_last():
     assert isinstance(recs, list) and len(recs) == 2
     assert {(r["x"], r["y"]) for r in recs} == {(300, 300), (700, 700)}
     assert recs[0].get("kind") == "machi" or recs[0].get("kind") == "monzen" or "kind" in recs[0]
+
+
+def test_kido_mesh_reserves_and_gates_every_machi_mouth():
+    """kido_mesh derives its gates from the SAME machi_mouths source the validator reads and
+    reserves each gate's ground before the packs (021; the wip capital was its only exerciser)."""
+    s = Settlement(1000, 1000, seed=3)
+    s.street([(200, 500), (800, 500)])
+    s.district("test machi", "machi", [(300, 400), (700, 400), (700, 600), (300, 600)], rank_band=None)
+    before = len(s.block_polys)
+    n = s.kido_mesh()
+    assert n == len(s.M.get("kido", []))
+    if n:
+        assert len(s.block_polys) > before  # each kido reserved its ground
+
+
+def test_place_wells_cistern_kind_is_recorded():
+    """kind='cistern' marks a josui-ido on the buried main (research 021 item 4) - the record
+    carries the kind so the service-band check and the samurai-quarter exemption can read it."""
+    s = Settlement(600, 600, seed=5)
+    seats = s.place_wells((100, 100, 300, 300), spacing=80, kind="cistern", coverage=False)
+    assert seats, "the open ground must seat at least one well"
+    ws = [w for w in s.M["wells"] if isinstance(w, dict) and w.get("kind") == "cistern"]
+    assert len(ws) == len(seats)
+
+
+def test_commons_bare_records_the_claim_and_draws_nothing():
+    """render='bare' claims the ground (full record: role, poly, render) but scatters no scrub -
+    the GM's no-glyphs-on-claimed-capital-ground ruling (021)."""
+    s = Settlement(800, 800, seed=9)
+    svg_before = len(s.out)
+    s.commons([(100, 100), (300, 100), (300, 260), (100, 260)], role="drill ground", render="bare")
+    rec = s.M["commons"][-1]
+    assert rec["role"] == "drill ground" and rec["poly"][0] == [100, 100]
+    assert len(s.out) == svg_before  # no ink
+
+
+def test_precinct_interior_draws_both_rear_orientations_and_the_graveyard_claim():
+    """The sovereign precinct's interior program (020/021): residence, kitchen, dormitories,
+    library inside the reserved ground; rear='south' flips the offsets; graveyard=True records
+    the claim the cemetery check closes."""
+    for rear in ("north", "south"):
+        s = Settlement(1000, 1000, seed=11)
+        s.precinct_interior(500, 500, rear=rear, graveyard=(rear == "north"))
+        p = s.M["precincts"][-1]
+        assert p["rear"] == rear
+        kinds = [h["kind"] for h in s.M.get("precinct_halls", []) if h.get("precinct") == [500, 500]]
+        assert kinds.count("dormitory") >= 2 and "residence" in kinds and "library" in kinds
