@@ -8606,7 +8606,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 continue
             d9, otw9, cp9 = sr_best
             gap9 = d9 - sr_myhw - otw9
-            if not (2 < gap9 and d9 < 65):
+            if not (gap9 > 2 and d9 < 65):
                 continue
             dl9 = math.hypot(E9[0] - nb9[0], E9[1] - nb9[1]) or 1.0
             gd9 = math.hypot(cp9[0] - E9[0], cp9[1] - E9[1]) or 1.0
