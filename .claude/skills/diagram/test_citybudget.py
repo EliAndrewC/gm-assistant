@@ -443,7 +443,7 @@ def test_a_capital_wall_too_large_for_its_canvas_fails_loudly_with_the_numbers()
 # is manifest bytes.
 
 _CAPITAL_LINES_AS_SHIPPED = [
-    ('packed row housing IN-WALL (laborer/servant/merchant/burakumin)', 1512, pytest.approx(1043280.0, abs=1e-6)),
+    ('packed row housing IN-WALL (laborer/servant/merchant/burakumin)', 1512, pytest.approx(2041200.0, abs=1e-6)),
     ('packed row housing SUBURBAN (kashi wharf belt + guan-xiang gate wards)', 648, pytest.approx(0.0, abs=1e-6)),
     ('the castle (enceinte: baileys + moats; interior implied)', 1, pytest.approx(598000.0, abs=1e-6)),
     ('samurai walled yashiki in-wall (Ranks 8-12)', 53, pytest.approx(219950.0, abs=1e-6)),
@@ -465,7 +465,7 @@ _CAPITAL_LINES_AS_SHIPPED = [
     ('sovereign temple precincts', 2, pytest.approx(32500.0, abs=1e-6)),
     ('adept-monk houses by the temple precincts', 5, pytest.approx(3450.0, abs=1e-6)),
     ('cargo canal + dock basin', 1, pytest.approx(5800.0, abs=1e-6)),
-    ('circulation (trunk + ring road + streets + alleys)', None, pytest.approx(595777.5, abs=1e-6)),
+    ('circulation (trunk + ring road + streets + alleys)', None, pytest.approx(845257.5, abs=1e-6)),
 ]
 
 

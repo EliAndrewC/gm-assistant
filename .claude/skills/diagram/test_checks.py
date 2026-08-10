@@ -10808,3 +10808,50 @@ def test_businesses_on_street_measured_from_bed_edge():
     assert "businesses_front_streets" not in f(M)
     M["buildings"] = [{"kind": "shop", "x": 620, "y": 400, "w": 8, "h": 6}]  # 120px out: interior
     assert "businesses_front_streets" in f(M)
+
+
+def test_capital_packed_band_is_validated_as_two_bands_not_one_total():
+    """The wall-resize lesson (GM 2026-08-10): a correct TOTAL must not hide an in-wall
+    shortfall spilled into the suburbs - and that specific combination names its own cure."""
+    M = _capital_manifest()
+    M["meta"]["budget"]["dwelling_target"] = {"packed": 100, "packed_suburb": 30, "samurai_yashiki": 0, "samurai_detached": 0, "samurai_terrace": 0}
+    M["districts"] = [
+        {"name": "in machi", "kind": "machi", "poly": [[100, 100], [900, 100], [900, 900], [100, 900]]},
+        {"name": "out ward", "kind": "machi", "poly": [[1200, 100], [1600, 100], [1600, 900], [1200, 900]]},
+    ]
+
+    def _pk(n, x0):
+        return [{"kind": "laborer", "x": x0 + 14 * (i % 20), "y": 120 + 14 * (i // 20), "w": 10, "h": 7} for i in range(n)]
+
+    M["buildings"] = _pk(70, 120) + _pk(30, 1220)  # 70 in-wall + 30 suburban = the budget's split
+    r = f(M)
+    assert "capital_housing_matches_band_targets" not in r
+    M["buildings"] = _pk(40, 120) + _pk(60, 1220)  # total still 100 - but the wall cannot hold its band
+    import check_village
+
+    msgs = {}
+    real_check = None
+    fails = f(M)
+    assert "capital_housing_matches_band_targets" in fails
+
+
+def test_capital_packed_overflow_names_the_wall_resize_cure(capsys):
+    """The in-wall-short + suburb-over combination must say, in so many words, that the wall
+    must be resized - not merely that a band is off (the error message is the institutional
+    memory here)."""
+    M = _capital_manifest()
+    M["meta"]["budget"]["dwelling_target"] = {"packed": 100, "packed_suburb": 30, "samurai_yashiki": 0, "samurai_detached": 0, "samurai_terrace": 0}
+    M["districts"] = [
+        {"name": "in machi", "kind": "machi", "poly": [[100, 100], [900, 100], [900, 900], [100, 900]]},
+        {"name": "out ward", "kind": "machi", "poly": [[1200, 100], [1600, 100], [1600, 900], [1200, 900]]},
+    ]
+
+    def _pk(n, x0):
+        return [{"kind": "laborer", "x": x0 + 14 * (i % 20), "y": 120 + 14 * (i // 20), "w": 10, "h": 7} for i in range(n)]
+
+    M["buildings"] = _pk(40, 120) + _pk(60, 1220)
+    import check_village
+
+    check_village.gate(M, verbose=True)
+    out = capsys.readouterr().out
+    assert "CANNOT WORK WITHOUT RESIZING THE WALL" in out

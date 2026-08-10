@@ -51,6 +51,20 @@ SAMURAI_INWALL_FRAC = 2.0 / 3.0
 C_PACKED = 690.0
 C_SPACED = 2480.0
 
+# A CAPITAL's packed quarter is NOT a provincial city's packed quarter (021, measured on the
+# drawn Shiro Daika after the GM caught 57% of the cohort standing outside the walls). Tango's
+# C_PACKED (690) prices lean rows + eaves + roji; the capital pattern embeds merchant estates,
+# trade works, private dojos, theater stages, the doss pocket, kido courts and wellhead courts
+# INSIDE its commoner quarters, and its legibility floors sit at 3 ft/px - so the as-built
+# in-wall machi ground came to 1,367 px^2/family (1,290,514 px^2 of machi-family districts
+# holding 944 packed dwellings). Sizing the wall with 690 therefore under-builds the rampart
+# by ~40% of interior area, and the shortfall has nowhere to go but unlawful suburbs.
+# 1,350 = that measurement rounded ~1% down, acknowledging that a sliver of the measured
+# ground (estates, works) is separately priced in the civic/estate lines. If a future capital's
+# fabric misses this constant too, RESIZE THE WALL from the measured density - never spill the
+# difference outside (the split band-target check now fails loudly on exactly that).
+C_PACKED_CAPITAL = 1350.0
+
 # The fixed civic program - a FLOOR, not per-capita (a pop-2,000 seat still carries the full
 # mandatory program: governor's yamen, 6 ministries, temples, theater, gate furniture...).
 # Itemized at Tango's measured compound footprints (research.md A) so program changes reprice
@@ -523,8 +537,8 @@ def plan_capital(program: CapitalProgram, canvas: tuple[float, float] | None = N
         BudgetLine(
             "packed row housing IN-WALL (laborer/servant/merchant/burakumin)",
             round(packed_n * (1 - program.suburb_packed_frac)),
-            packed_n * (1 - program.suburb_packed_frac) * C_PACKED * k,
-            f"~{1 - program.suburb_packed_frac:.0%} of {packed_n} families x C_PACKED {C_PACKED:.0f} px^2 gross (Tango-measured rows + eaves + roji)",
+            packed_n * (1 - program.suburb_packed_frac) * C_PACKED_CAPITAL * k,
+            f"~{1 - program.suburb_packed_frac:.0%} of {packed_n} families x C_PACKED_CAPITAL {C_PACKED_CAPITAL:.0f} px^2 gross (Shiro-Daika-measured: the capital machi embeds estates/works/dojos in its quarters)",
         ),
         BudgetLine(
             "packed row housing SUBURBAN (kashi wharf belt + guan-xiang gate wards)",

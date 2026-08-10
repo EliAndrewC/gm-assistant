@@ -2562,6 +2562,15 @@ WAIVER_MIN_REASON = 60
 WAIVER_META_CHECKS = frozenset({"waivers_are_documented", "waivers_are_live"})
 
 
+def _poly_area(p9: Any) -> float:
+    a9 = 0.0
+    for i9 in range(len(p9)):
+        x19, y19 = p9[i9]
+        x29, y29 = p9[(i9 + 1) % len(p9)]
+        a9 += x19 * y29 - x29 * y19
+    return abs(a9) / 2
+
+
 def gate(M: Manifest, verbose: bool = True) -> list[str]:
     """Run every check over a manifest dict M and return the list of FAILED check names.
     verbose prints the PASS/FAIL lines. Pass a synthetic M to unit-test a single check.
@@ -8278,27 +8287,54 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         def cb_in(kinds: set[str]) -> list[Any]:
             return [d6["poly"] for d6 in M["districts"] if d6.get("rank_band") in kinds or d6.get("kind") in kinds]
 
+        # the packed cohort is validated as TWO bands, in-wall and suburban, never as one total
+        # (the wall-resize lesson, GM 2026-08-10): validating only the total let a wall sized
+        # with a provincial density constant silently spill 57% of the cohort into suburbs
+        # against a researched 30% share - the one number that would have caught it
+        # (packed_suburb) was computed, recorded in the budget, and never enforced.
+        _cb_wall = M.get("wall") or []
+        _cb_inw = (lambda x9, y9: point_in_poly(x9, y9, _cb_wall)) if len(_cb_wall) >= 3 else (lambda x9, y9: True)
+        _cb_packed = [
+            b6
+            for b6 in M.get("buildings", [])
+            if b6.get("kind") in DWELLING_KINDS and not str(b6.get("kind", "")).startswith("samurai") and any(point_in_poly(b6["x"], b6["y"], p6) for p6 in cb_in({"machi", "monzen", "entertainment"}))
+        ]
+        _cb_pin = sum(1 for b6 in _cb_packed if _cb_inw(b6["x"], b6["y"]))
+        _cb_pout = len(_cb_packed) - _cb_pin
+        _cb_tin = int(cb_tgt.get("packed", 0)) - int(cb_tgt.get("packed_suburb", 0))
         cb_pairs = [
             ("samurai_yashiki", sum(1 for m6 in M.get("manors", []) if any(point_in_poly(m6["x"], m6["y"], p6) for p6 in cb_in({"yashiki"})))),
             ("samurai_detached", sum(1 for b6 in M.get("buildings", []) if str(b6.get("kind", "")).startswith("samurai") and any(point_in_poly(b6["x"], b6["y"], p6) for p6 in cb_in({"detached"})))),
             ("samurai_terrace", sum(int(t6.get("units", 0)) for t6 in M.get("terraces", []) if any(point_in_poly(t6["x"], t6["y"], p6) for p6 in cb_in({"terrace"})))),
-            (
-                "packed",
-                sum(
-                    1
-                    for b6 in M.get("buildings", [])
-                    if b6.get("kind") in DWELLING_KINDS
-                    and not str(b6.get("kind", "")).startswith("samurai")
-                    and any(point_in_poly(b6["x"], b6["y"], p6) for p6 in cb_in({"machi", "monzen", "entertainment"}))
-                ),
-            ),
         ]
         cb_bad = [f"{cb_k}: drawn {cb_n} vs target {int(cb_tgt.get(cb_k, 0))}" for cb_k, cb_n in cb_pairs if abs(cb_n - int(cb_tgt.get(cb_k, 0))) > max(2, round(0.05 * int(cb_tgt.get(cb_k, 0))))]
-        check(
-            "capital_housing_matches_band_targets",
-            not cb_bad,
-            f"band(s) off the budget's dwelling_target: {cb_bad} - the 018 budget is the housing authority; seat the shortfall (or fix the district declaration hiding it)",
-        )
+        if abs(_cb_pin - _cb_tin) > max(2, round(0.05 * _cb_tin)):
+            cb_bad.append(f"packed_inwall: drawn {_cb_pin} vs target {_cb_tin}")
+        _cb_tout = int(cb_tgt.get("packed_suburb", 0))
+        if abs(_cb_pout - _cb_tout) > max(2, round(0.05 * _cb_tout)):
+            cb_bad.append(f"packed_suburb: drawn {_cb_pout} vs target {_cb_tout}")
+        # the SPECIFIC failure that motivated the split gets its own unmissable diagnosis: when
+        # the in-wall band is short AND the suburbs are over, no amount of seat-jiggling can fix
+        # it - the wall itself is undersized for the fabric's real density.
+        cb_msg = f"band(s) off the budget's dwelling_target: {cb_bad} - the 018 budget is the housing authority; seat the shortfall (or fix the district declaration hiding it)"
+        if _cb_pin < _cb_tin - max(2, round(0.05 * _cb_tin)) and _cb_pout > _cb_tout + max(2, round(0.05 * _cb_tout)):
+            _cb_dens = None
+            _cb_marea = sum(
+                _poly_area(d6["poly"])
+                for d6 in M.get("districts", [])
+                if (d6.get("rank_band") in ("machi", "monzen", "entertainment") or d6.get("kind") in ("machi", "monzen", "entertainment"))
+                and _cb_inw(sum(q6[0] for q6 in d6["poly"]) / len(d6["poly"]), sum(q6[1] for q6 in d6["poly"]) / len(d6["poly"]))
+            )
+            if _cb_pin:
+                _cb_dens = _cb_marea / _cb_pin
+            cb_msg = (
+                f"THIS CANNOT WORK WITHOUT RESIZING THE WALL: the in-wall packed band is short ({_cb_pin} vs {_cb_tin}) while the suburbs are over "
+                f"({_cb_pout} vs {_cb_tout}) - the rampart as drawn cannot hold the in-wall cohort at the fabric's real density"
+                + (f" (as-built ~{_cb_dens:.0f} px^2/family across {_cb_marea:,.0f} px^2 of in-wall machi ground)" if _cb_dens else "")
+                + ". Do NOT keep seating the overflow outside: re-derive required_interior from the measured density (C_PACKED_CAPITAL in citybudget.py), "
+                "re-pin RX/RY, and re-lay the rim. Spilling the shortfall into suburbs is how a 57%-extramural capital shipped past a total-only check (GM 2026-08-10)."
+            )
+        check("capital_housing_matches_band_targets", not cb_bad, cb_msg)
 
     # A TERRACE IS A RANGE (T005): the record models ONE roof over several household cells;
     # a single-cell "terrace" is a detached house miscoded, and would double-count against
