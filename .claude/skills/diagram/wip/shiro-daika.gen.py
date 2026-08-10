@@ -410,14 +410,14 @@ s.bound = _CITY_BOUND
 # at y=1350 stops clear of the government band (no street across the ministry fronts).
 s.street([(620, 1770), (2180, 1770)], width=s.lw(18), main=True)  # ends short of the rampart's tower line
 s.street([(985, 2005), (1799, 2005)], width=s.lw(15))  # dropped south of the Temple of Inari's hall (992,1937)
-s.street([(1040, 1256), (1040, 2250)], width=s.lw(15))  # x=1040 clears the Temple of Inari's hall (~x992)
+s.street([(1040, 1256), (1040, 2246)], width=s.lw(15))  # x=1040 clears the Temple of Inari's hall (~x992)
 s.street([(1800, 1300), (1800, 1540)], width=s.lw(15))  # stops at the Benten precinct's reserved ground
-s.street([(1800, 1700), (1800, 2250)], width=s.lw(15))  # ...and resumes south of it (a precinct blocks a street; the walls are the dead end)
+s.street([(1800, 1700), (1800, 2236)], width=s.lw(15))  # ...and resumes south of it (a precinct blocks a street; the walls are the dead end)
 s.street(
     [(2130, 1250), (2130, 1620), (2185, 1668), (2180, 1770)], width=s.lw(15)
 )  # east of Kurogi; bends EAST around the Temple of Ebisu (2127,1686) to tie the NE grid into the y=1770 main street (021: streets_connected)
-s.street([(800, 1372), (800, 2249)], width=s.lw(15))  # meets the y=1375 street
-s.street([(338, 1375), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
+s.street([(800, 1372), (803.0, 2238.5)], width=s.lw(15))  # meets the y=1375 street
+s.street([(329.6, 1376.0), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
 s.street([(1560, 1390), (2387, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
 
 # ---- the YASHIKI BAND (T007): 53 walled compounds of Ranks 8-12 wrap the castle N / E / W
@@ -556,7 +556,7 @@ s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "no
 # (wind_from="northwest"): the dyer and both tanneries stand on the moat DRAIN south of
 # the wharf, the kiln smokes outside the southwest wall.
 # monk housing beside each rim temple + the teramachi cluster's wayside shrines
-s.rowpack((2009, 447, 2059, 495), ["monk_house"] * 2, court_every=3)  # Bishamon's adepts NE of the hall, against the ring verge
+s.rowpack((2028, 462, 2080, 508), ["monk_house"] * 2, court_every=3)  # Bishamon's adepts NE of the hall, against the ring verge's adepts NE of the hall, against the ring verge
 s.rowpack((2174, 1939, 2216, 1995), ["monk_house"] * 2, court_every=3)  # tucked between Ebisu and the connector's kido crossing
 s.rowpack((990, 2166, 1042, 2226), ["monk_house"] * 3, court_every=3)
 s.rowpack((464, 1268, 505, 1313), ["monk_house"] * 2, court_every=3)
@@ -646,7 +646,7 @@ for _fx, _fy in ((850, 1650), (1200, 1900), (1600, 1900), (1900, 1780), (2250, 9
 # The josui-ido band first: cistern-wells on the gate road within ~600 ft of the settling
 # basin (research item 4); dug draw-wells serve everything else.
 s.place_wells((2250, 1350, 2400, 1425), spacing=62, kind="cistern", coverage=False)  # the josui-ido file inside the E gate, on the buried main from the new settling basin (laterals under the roji, research item 4)
-s.place_wells((620, 1580, 1385, 2100), spacing=92, coverage=False)
+s.place_wells((620, 1580, 1385, 2058), spacing=92, coverage=False)
 s.place_wells((1415, 1580, 1930, 2100), spacing=92, coverage=False)
 s.place_wells((2000, 1580, 2115, 2100), spacing=95, coverage=False)
 s.place_wells((2150, 755, 2300, 1240), spacing=58, coverage=False)
@@ -659,7 +659,7 @@ s.place_wells((2195, 1070, 2260, 1135), spacing=30, coverage=False)
 s.place_wells((442, 760, 588, 1435), spacing=65, coverage=False)
 s.place_wells((2145, 1442, 2330, 1615), spacing=70, coverage=False)
 s.place_wells((1080, 1590, 1390, 1680), spacing=68, coverage=False)  # the wealth rows' idobata
-s.place_wells((2000, 1760, 2110, 1880), spacing=60, coverage=False)
+s.place_wells((2000, 1760, 2105, 1866), spacing=60, coverage=False)
 s.place_wells((1900, 520, 1990, 640), spacing=60, coverage=False)  # the N band's servant rows (trimmed east of the samurai file)
 s.place_wells((395, 525, 482, 608), spacing=70, coverage=False)  # the NW monk-house court (moved with Hotei's monks)
 s.place_wells((1080, 1820, 1300, 2050), spacing=52, coverage=False)  # the doss pocket's dense rows
@@ -679,7 +679,7 @@ s.place_wells((1802, 2282, 1948, 2400), spacing=90, coverage=False)
 s.place_wells((2040, 1800, 2120, 1900), spacing=45, coverage=False)
 s.place_wells((1690, 1300, 1905, 1425), spacing=62, coverage=False)  # the thread machi's own idobata
 s.place_wells((700, 1800, 1000, 2050), spacing=72, coverage=False)
-s.place_wells((1500, 1800, 1900, 2100), spacing=72, coverage=False)
+s.place_wells((1500, 1800, 1900, 2032), spacing=72, coverage=False)
 s.place_wells((1050, 1900, 1450, 2100), spacing=80, coverage=False)
 # ---- T008: DETACHED SAMURAI (133 target) - the middle band, rowpacked at the loose samurai
 # court pitch (the Tango idiom, which is what C_SPACED was measured from).
@@ -697,26 +697,26 @@ s.district("civic west detached", "detached", [(855, 1400), (1145, 1400), (1145,
 s.district("east street detached", "detached", [(2140, 1250), (2445, 1250), (2445, 1428), (2140, 1428)], rank_band="detached")
 s.district("north band detached west", "detached", [(1060, 260), (1340, 260), (1340, 370), (1060, 370)], rank_band="detached")
 s.district("north band detached east", "detached", [(1640, 260), (1840, 260), (1840, 362), (1640, 362)], rank_band="detached")
-s.alley([(1739, 259), (1738, 348)])
+s.alley([(1741, 256), (1738, 348)])
 s.rowpack((1065, 268, 1335, 362), _SAM * 8, court_every=8)  # the tight wall's N band holes take the missing detached files
 s.rowpack((1688, 268, 1832, 352), _SAM * 4, court_every=8)
 s.district("west crescent machi", "machi", [(445, 1450), (625, 1450), (625, 2075), (445, 2075)], rank_band=None)
 s.block_polys.append([(592, 1738), (662, 1738), (662, 1818), (592, 1818)])
 s.placed.append((627, 1778, 70, 80))  # the crescent kido's crossing (reserved before the rows)
 s.alley([(535, 1470), (535, 1975)])  # the crescent's spine
-s.alley([(436, 1769), (620, 1760)])
+s.alley([(432, 1771), (620, 1760)])
 s.rowpack((450, 1460, 620, 2070), ["laborer", "servant", "merchant_house", "laborer"] * 42, court_every=8)
 s.district("south band machi", "machi", [(790, 2050), (1995, 2050), (1995, 2345), (790, 2345)], rank_band=None)
 s.block_polys.append([(895, 2245), (990, 2245), (990, 2340), (895, 2340)])  # Inari's backstrip stays lean (the temple rode the wall inward)
 
 
-s.street([(798, 2250), (2015, 2238)], width=s.lw(15))
+s.street([(798, 2250), (2005.3, 2234.1)], width=s.lw(15))
 s.block_polys.append([(815, 2237), (2020, 2237), (2020, 2264), (815, 2264)])  # the band street's own corridor, held against the row pitch  # the band's own through-street
-s.alley([(880, 2060), (881, 2271)])
+s.alley([(880, 2060), (879, 2274)])
 s.alley([(1080, 2060), (1080, 2330)])
 
 s.alley([(1560, 2060), (1560, 2330)])
-s.alley([(1760, 2060), (1766, 2352)])
+s.alley([(1760, 2060), (1768, 2356)])
 s.alley([(1990, 1875), (1990, 2140)])
 s.alley([(1900, 2008), (2100, 2008)])
 s.rowpack((800, 2055, 1330, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 116, court_every=8)
