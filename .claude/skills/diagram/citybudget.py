@@ -60,10 +60,10 @@ C_SPACED = 2480.0
 # INSIDE; only the wharf hamlet lives out - see research/cities/capitals.md, "How much of a
 # capital lives OUTSIDE the walls") pushed the in-wall cohort to 2,100 households, which the
 # standing wall absorbs only by packing TIGHTER: rim bands converted to quarters, tighter
-# courts, works' halos trimmed. 1,075 is that packed-tight target - between Tango's 690 and
+# courts, works' halos trimmed. 950 is that packed-tight target - between Tango's 690 and
 # the sprawling first draw - and the drawn fabric must MEET it (the split band check fails
 # with the resize-the-wall diagnosis if it cannot).
-C_PACKED_CAPITAL = 1075.0
+C_PACKED_CAPITAL = 950.0
 
 # The fixed civic program - a FLOOR, not per-capita (a pop-2,000 seat still carries the full
 # mandatory program: governor's yamen, 6 ministries, temples, theater, gate furniture...).
@@ -138,7 +138,7 @@ CIRC_FRAC = 0.07
 #: interior against the provincial 7%. Recorded with the suburb share below; the two
 #: corrections nearly cancel, which is why Shiro Daika's as-built rampart lands within the
 #: wall check's tolerance of the corrected minimum.
-CIRC_FRAC_CAPITAL = 0.20
+CIRC_FRAC_CAPITAL = 0.15  # re-declared for the PACKED-TIGHT capital (GM 2026-08-10, wall-settles-first pass): the 0.20 was measured on the sprawling first draw; a tight fabric carries less trunk share, and the slack check (<=15% open) holds the result honest
 
 # A Tango-style in-wall agricultural district, as a fraction of the interior. Measured: Tango's
 # declared agri reserve is 103,577 px^2 of a 689k interior = 15.0%; also comfortably inside the
