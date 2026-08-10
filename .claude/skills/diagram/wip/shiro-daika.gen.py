@@ -760,8 +760,8 @@ s.alley([(1560, 2005), (1560, 2236)])
 s.alley([(1760, 2005), (1766, 2235)])
 s.alley([(1990, 1875), (1990, 2140)])
 s.alley([(1900, 2008), (2100, 2008)])
-s.alley([(1850, 2555), (2062, 2420)])  # the shore path serving the towpath-side porters' rows
-s.alley([(1672, 2460), (1728, 2760)])  # the shore rows' spine (before its packs)
+# the shore path serving the towpath-side porters' rows
+# the shore rows' spine (before its packs)
 
 
 def _well_blocks(x0, y0, x1, y1, spacing, inset=30):
@@ -1005,8 +1005,13 @@ s.rowpack((2135, 2300, 2225, 2372), ["laborer", "servant"] * 3, court_every=3)
 s.rowpack((2092, 2400, 2152, 2467), ["laborer", "servant"] * 4, court_every=3)
 # the TOWPATH SHORE (the haulage side of the wharf): porters' and boatmen's rows on the
 # land between the wall's south arc and the river, within the wharf's own reach
-s.bound = [[1560, 2540], [1810, 2540], [1810, 2880], [1560, 2880]]
-s.rowpack((1580, 2560, 1790, 2740), ["laborer", "laborer", "servant"] * 9, court_every=6)
+s.bound = [[2080, 2310], [2175, 2310], [2175, 2465], [2080, 2465]]
+s.granary(
+    2196, 2430, n=3, w=22, h=14, gap=9, label="brokers' warehouses", append=True, rot=-64.1
+)  # the row lies along the river's LOCAL bearing here (115.9 deg), not the wharf's upstream one  # the merchants' own bulk store on the quay - the wharf chain's missing link (GM 2026-08-10)
+s.rowpack(
+    (2086, 2306, 2158, 2470), ["laborer", "laborer", "servant"] * 11, court_every=6
+)  # box densely verified clear of moat, wall, river and drain  # the porters' rows, landward of the warehouses they load
 s.bound = [[1820, 2450], [2100, 2450], [2100, 2810], [1820, 2810]]
 s.cemetery(1640, 2680, 84, 60, parish=False, label="common burial ground")
 # THE FULL FUNERARY GEOGRAPHY (GM 2026-08-10: "I don't see a cremation ground or pauper's
@@ -1018,7 +1023,7 @@ s.cemetery(1640, 2680, 84, 60, parish=False, label="common burial ground")
 # mausoleum INSIDE, by the government quarter, a walled crypt precinct.
 s.cremation_ground(1748, 2668)
 s.ossuary(1572, 2718)
-s.rowpack((1850, 2492, 2024, 2740), ["laborer", "servant"] * 12, court_every=6)
+s.rowpack((2184, 2300, 2262, 2478), ["laborer", "servant"] * 15, court_every=6)  # ...and the boatmen's rows, the other side of the porters' block
 # the gate wards, each hugging its approach road inside the guan-xiang reach
 s.placed.append((1204, 2561, 22, 18))
 s.placed.append((1204, 2585, 22, 18))

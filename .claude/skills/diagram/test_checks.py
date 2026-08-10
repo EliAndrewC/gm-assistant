@@ -11141,3 +11141,15 @@ def test_funerary_ground_within_reach_and_one_complex():
     assert "funerary_ground_within_reach" in f(far)  # 500px past the wall = 1,500 ft
     split = {**near, "cremation_grounds": [{"x": 1400, "y": 900, "w": 40, "h": 30, "rot": 0}]}
     assert "funerary_complex_is_one_ground" in f(split)
+
+
+def test_extramural_housing_serves_its_work():
+    """GM 2026-08-10: worker housing outside the wall exists to put hands next to the quay, the
+    granaries or the gate market - "the whole point of those houses being outside the city
+    instead of inside of it is that those are the housing for the workers who work those
+    facilities." A row across the channel from all of it is a suburb with no reason."""
+    base = {"meta": {"scale": "city", "walled": True, "W": 3000, "H": 3000, "ftpx": 3}, "wall": WALLSQ, "gates": [[500, 200]], "granaries": [{"x": 500, "y": 1000, "w": 20, "h": 12, "rot": 0}]}
+    beside = {**base, "buildings": [{"x": 520 + 12 * i, "y": 1040, "w": 10, "h": 7, "rot": 0, "kind": "laborer"} for i in range(6)]}
+    assert "extramural_housing_serves_its_work" not in f(beside)
+    across = {**base, "buildings": [{"x": 1800 + 12 * i, "y": 2200, "w": 10, "h": 7, "rot": 0, "kind": "laborer"} for i in range(6)]}
+    assert "extramural_housing_serves_its_work" in f(across)

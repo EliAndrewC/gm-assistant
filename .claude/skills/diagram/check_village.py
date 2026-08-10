@@ -8664,6 +8664,40 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"naming the defenses; move the label off the wall band (label_xy), keeping it beside the feature it names",
         )
 
+    # WORKER HOUSING SITS WITH THE WORK (GM 2026-08-10: "I would expect the housing for those
+    # facilities to be close to those businesses and granaries... since the whole point of those
+    # houses being outside the city instead of inside of it is that those are the housing for
+    # the workers who work those facilities"). An extramural dwelling exists BECAUSE something
+    # outside needs hands on it - the quay, the granaries, the gate market's inns and stables.
+    # A row across the channel from all of it is a suburb with no reason, and the ruling that
+    # allowed extramural housing at all (2026-08-10, the wharf hamlet) was granted on exactly
+    # that basis. Measured to the nearest workplace, not to the wall.
+    if URBAN and len(M.get("wall") or []) >= 3:
+        eh_wall = M["wall"]
+        eh_ftpx = float(meta.get("ftpx", 1) or 1)
+        eh_work = [
+            (w9["x"], w9["y"])
+            for k9 in ("granaries", "jetties", "storehouses", "stables", "inns", "kilns", "dye_yards", "tanning_yards", "lumber_yards")
+            for w9 in M.get(k9, [])
+            if isinstance(w9, dict) and "x" in w9
+        ]
+        eh_work += [(s9["x"], s9["y"]) for s9 in M.get("buildings", []) if s9.get("kind") in ("shop", "merchant", "inn", "stables")]
+        if eh_work:
+            eh_reach = 400.0 / eh_ftpx
+            eh_bad = []
+            for b9 in M.get("buildings", []):
+                if b9.get("kind") not in DWELLING_KINDS or point_in_poly(b9["x"], b9["y"], eh_wall):
+                    continue
+                if min(math.hypot(b9["x"] - wx9, b9["y"] - wy9) for wx9, wy9 in eh_work) > eh_reach:
+                    eh_bad.append((round(b9["x"]), round(b9["y"])))
+            check(
+                "extramural_housing_serves_its_work",
+                len(eh_bad) <= 2,
+                f"{len(eh_bad)} extramural dwelling(s) more than 400 ft from any workplace, e.g. {sorted(set(eh_bad))[:3]} - housing outside "
+                f"the wall exists to put hands next to the quay, the granaries or the gate market; move the rows to the works they serve "
+                f"(or the households belong inside the wall)",
+            )
+
     # THE FUNERARY GROUND STARTS AT THE WALL AND RUNS OUTWARD (GM 2026-08-10, researched; the
     # why and the sources are in research/cities/capitals.md "How far outside the wall does the
     # funerary ground sit?"). Nothing in the record holds it far off: ritual pollution is a
