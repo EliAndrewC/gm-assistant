@@ -21,6 +21,7 @@ section; such checks below carry a brief `# WHY:` pointer to it. (Project policy
 rules record their why next to the rule - see CLAUDE.md "Generation Behavior".)
 """
 
+import collections
 import json
 import math
 import sys
@@ -2608,6 +2609,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     meta = M.get("meta", {})
     scale = meta.get("scale", "village")
     houses, fields = M["houses"], M["fields"]
+    # A CAPITAL IS A CITY PLUS A CASTLE (GM 2026-08-10). Every urban rule used to test
+    # `scale == "city"` exactly, so the capital tier - added later - silently skipped 74 of
+    # them, the funerary program among them (no cremation ground, no ossuary, no mausoleum on
+    # a city of 12,400). URBAN is the "walled town of any size" predicate; the handful of rules
+    # that are genuinely about a PROVINCIAL city (its wall budget, its governor's mansion - a
+    # capital has a castle and its own budget check) keep testing `scale == "city"`.
+    URBAN = scale in ("city", "capital")
     field_by = {f["name"]: f for f in fields}
     Wd, Hd = meta.get("W", 1820), meta.get("H", 1180)
     # the "map edge" is the rendered window: the cropped view if one is set (city maps crop tight
@@ -3140,6 +3148,10 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # target. TOO_SMALL / TOO_BIG are WALL faults (resize by the suggested scale); UNDERPACKED means
     # the wall is right but the placement is sparse (densify - population_consistent catches that
     # separately). See settlements.md "Sizing the wall to the population".
+    # ...CITY ONLY: a capital's wall is an OUTPUT of plan_capital (capital_wall_matches_budget +
+    # capital_interior_slack_in_band judge it against the declared program, castle included), and
+    # this generic capacity model does not know a castle takes ~40% of the interior - it reads the
+    # keep's ground as residential-capable and demands the wall shrink (GM 2026-08-10).
     if scale == "city" and meta.get("population"):
         cap = city_capacity(M)
         if cap:
@@ -3711,7 +3723,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # point on the wall CURTAIN must have >= the tier's min-count of towers within the tier's arrow range;
     # the gate OPENING itself is exempt (a defended chokepoint with its own gate tower + guard, not open
     # curtain). Both mural and gate towers count. See settlements.md 'Historical grounding'.
-    if scale == "city" and M.get("wall"):
+    if URBAN and M.get("wall"):
         _wall = M["wall"]
         _tier = meta.get("wall_defense", "garrison")
         _rng_ft, _mincov = WALL_DEFENSE.get(_tier, WALL_DEFENSE["garrison"])
@@ -3796,7 +3808,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"is a remediation-seat artifact, not a defensive choice (gate/water-gate flanking pairs are exempt)",
             )
 
-    if scale == "city" and meta.get("walled") and M.get("wall"):
+    if URBAN and meta.get("walled") and M.get("wall"):
         bud = meta.get("budget")
         if not bud:
             check(
@@ -4283,7 +4295,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     crem_bad = []
     for cg in M.get("cremation_grounds", []):
         long_ft = max(cg["w"], cg["h"]) * _fftpx
-        crem_cap = CREMATION_FT_MAX_CITY if scale == "city" else CREMATION_FT_MAX_TOWN
+        crem_cap = CREMATION_FT_MAX_CITY if scale in ("city", "capital") else CREMATION_FT_MAX_TOWN  # a capital cremates a city's dead (GM 2026-08-10)
         if not CREMATION_FT_MIN <= long_ft <= crem_cap:
             crem_bad.append((round(cg["x"]), round(cg["y"]), f"{long_ft:.0f} ft across vs [{CREMATION_FT_MIN:.0f},{crem_cap:.0f}]"))
     if M.get("cremation_grounds"):
@@ -7094,7 +7106,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # keeps death-pollution (kegare) at arm's length, so no grave site sits hard against a shrine. A
     # CITY additionally shows 2-4 graveyards split inside/outside the walls, the ruling clan's walled
     # MAUSOLEUM by the samurai quarter, an extramural CREMATION GROUND, and a pauper OSSUARY beside it.
-    if scale in ("village", "town", "city"):
+    if scale in ("village", "town", "city", "capital"):  # a capital buries its dead too (GM 2026-08-10: the whole block was city-and-below)
         cems = M.get("cemeteries", [])
         maus = M.get("mausoleums", [])
         crem = M.get("cremation_grounds", [])
@@ -7357,7 +7369,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 f"monastery(ies) with no graveyard in their precinct: {unserved_t[:3]} - a town monastery keeps the parish (danka) burial ground unless it opts out (graveyard=False)",
             )
 
-        if scale == "city":
+        if URBAN:
             # every temple that CAN host a graveyard has one in its precinct (graveyard=False opts out)
             needy = [r for r in temples if r.get("graveyard", True)]
             unserved = [r.get("label", (round(r["x"]), round(r["y"]))) for r in needy if not any(math.hypot(c["x"] - r["x"], c["y"] - r["y"]) < 230 for c in cems)]
@@ -8530,6 +8542,48 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
     # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
     # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    # A CAPITAL'S TRADES SCALE - IN FOUR DIFFERENT WAYS (GM question 2026-08-10, researched;
+    # the WHY, with sources, is in research/cities/capitals.md "Do a capital's trades and
+    # funerary program scale from a provincial city's?"). Nothing here is "same as a city":
+    #   LINEAR (multiply, same size): bathhouses at Edo's attested 1-per-2,000 sento ratio;
+    #     pawnshops at 1-per-400 (drawn representatively - 2-3 with their pledge-kura courts,
+    #     the rest implied in the shop rows); fire towers, linear in AREA on a fixed watch
+    #     radius (Kaifeng posted one every 300 paces from 1023).
+    #   SUBLINEAR (works consolidate): kilns cluster into a quarter beside each other, not
+    #     scattered; ONE cremation ground however big the city (Edo ran a million residents'
+    #     cremation through a handful of temple kasoba).
+    #   SUPERLINEAR (capital-only): permanent theater - Kaifeng's 50+ goulan against a
+    #     provincial town's touring stage - and the domain school.
+    #   FIXED (one per SEAT): the pauper's ossuary, by Song edict of 1104 (a louzeyuan in every
+    #     prefecture and county, regardless of size), and the primary mausoleum.
+    # INFERENCE, flagged: the kiln count of 2, the dyers'-row lot count, the oil-press band.
+    if scale == "capital" and meta.get("population"):
+        tc_pop = float(meta["population"])
+        tc_bldg = collections.Counter(b.get("kind") for b in M.get("buildings", []))
+        tc_have = {
+            "bathhouses": len(M.get("bathhouses", [])) + tc_bldg.get("bathhouse", 0),
+            "pawnshops": len(M.get("pawnshops", [])) + tc_bldg.get("pawnshop", 0),
+            "breweries": len(M.get("breweries", [])) + tc_bldg.get("brewery", 0),
+            "kilns": len(M.get("kilns", [])),
+            "dye_yards": len(M.get("dye_yards", [])),
+            "fire_towers": len(M.get("fire_towers", [])),
+        }
+        tc_want = {
+            "bathhouses": (max(3, round(tc_pop / 2400)), "Edo's 523 sento per 1.1M - LINEAR, same size, more of them"),
+            "pawnshops": (2, "Edo's 1-per-400 drawn representatively: 2-3 with pledge-kura courts, the rest implied in the rows"),
+            "breweries": (2, "capacity is linear but brewing scaled by adding houses, not by doubling the hall (Takayama's 56 licensed brewers were mostly shopfronts)"),
+            "kilns": (2, "a kiln is a QUARTER - the capital's second works stands beside the first, sharing the clay pit and fuel road (INFERENCE: the count of 2; the cluster form is attested)"),
+            "dye_yards": (3, "a castle town lays out a Konya-machi: 3-5 contiguous dyer lots on one downstream bank, not one bigger yard (INFERENCE: the lot count)"),
+            "fire_towers": (max(6, round(tc_pop / 1200)), "a fixed watch radius over a bigger built area (Kaifeng: a tower every 300 paces)"),
+        }
+        tc_bad = [f"{k}: {tc_have[k]} vs >= {v[0]} ({v[1]})" for k, v in tc_want.items() if tc_have[k] < v[0]]
+        check(
+            "capital_trade_counts_scaled",
+            not tc_bad,
+            f"capital trade counts below the researched floor: {tc_bad[:3]} - a capital is not a provincial city with a bigger wall; "
+            f"see research/cities/capitals.md for which trades multiply, which consolidate, and which are capital-only",
+        )
+
     # THE FRAME HUGS THE CONTENT (GM 2026-08-10: "it doesn't look like we're doing [cropping] on
     # the south or east sides, especially the south"). A crop override outlives the feature it
     # was added for - Shiro Daika carried south=240/east=700 from a layout three re-lays old -

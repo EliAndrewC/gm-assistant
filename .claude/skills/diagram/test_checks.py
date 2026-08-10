@@ -10751,7 +10751,7 @@ def test_precinct_graveyard_claims_closed():
     M["precinct_halls"] = [{"x": 456 + i, "y": 462, "w": 4, "h": 4, "kind": k, "precinct": [500, 500]} for i, k in enumerate(("residence", "kitchen", "dormitory", "dormitory", "library"))]
     M["religious"] = [{"kind": "temple", "x": 500, "y": 500, "w": 50, "h": 33, "label": "Temple of Benten", "graveyard": True}]
     assert "precinct_graveyard_claims_closed" in f(M)
-    M["cemeteries"] = [{"x": 544, "y": 464, "w": 24, "h": 16, "parish": True}]
+    M["cemeteries"] = [{"x": 544, "y": 464, "w": 24, "h": 16, "rot": 0, "parish": True}]  # rot: the capital now runs the funerary block (GM 2026-08-10)
     assert "precinct_graveyard_claims_closed" not in f(M)
 
 
