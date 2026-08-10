@@ -517,7 +517,7 @@ s.alley([(2260, 1290), (2260, 1590)])
 # the band checks read them; a mesh run before the declarations bars nothing)
 s.district("southwest machi", "machi", [(552, 1570), (1395, 1570), (1395, 2110), (552, 2110)], rank_band=None)
 s.district("southeast machi", "machi", [(1405, 1575), (2120, 1575), (2120, 2110), (1405, 2110)], rank_band=None)
-s.district("east gate machi", "machi", [(2145, 635), (2405, 635), (2405, 1310), (2145, 1310)], rank_band=None)
+s.district("east gate machi", "machi", [(1940, 550), (2405, 550), (2405, 1310), (1940, 1310)], rank_band=None)
 s.district("east street machi", "machi", [(2140, 1420), (2385, 1420), (2385, 1725), (2140, 1725)], rank_band=None)
 s.district("west rim machi", "machi", [(430, 750), (590, 750), (590, 1445), (430, 1445)], rank_band=None)
 s.district("Benten monzen", "monzen", [(1762, 1636), (1938, 1636), (1938, 1855), (1762, 1855)], rank_band=None)
@@ -580,7 +580,7 @@ s.kiln(330, 2560)
 # everywhere, so carve a laborer-only pocket and seat the doss at its heart
 s.placed.append((1153, 2284, 46, 334))  # hold the doss seat before the rows fill in
 s.placed.append((1837, 1352, 34, 24))  # keep the SE pasture verge clear (a lone well-less seat kept landing here)
-s.rowpack((1045, 1920, 1305, 2040), ["laborer_large"] * 4 + ["laborer"] * 12)
+s.rowpack((1045, 1920, 1305, 2040), ["laborer_large"] * 4 + ["laborer"] * 26)
 s.flophouse(1153, 2284)  # the in-wall doss-house, deep in the laborer core
 s.flophouse(386, 2204)  # outside the SW gate
 # caravan facilities just inside each gate: inn + big stables (open ground kept by their
@@ -717,8 +717,13 @@ s.alley([(1080, 2060), (1080, 2330)])
 
 s.alley([(1560, 2060), (1560, 2330)])
 s.alley([(1760, 2060), (1760, 2320)])
-s.rowpack((800, 2055, 1330, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 88, court_every=8)
-s.rowpack((1350, 2055, 1985, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 82, court_every=8)  # the S band's cleared ground inside the new arc
+s.rowpack((800, 2055, 1330, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 96, court_every=8)
+s.rowpack((1350, 2055, 1985, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 82, court_every=8)
+s.rowpack((1060, 1270, 1360, 1515), ["laborer", "servant", "merchant_house"] * 26, court_every=8)  # the freed SW approach ground joins the machi
+s.district("southwest approach machi", "machi", [(1055, 1265), (1365, 1265), (1365, 1520), (1055, 1520)], rank_band=None)
+s.district("thread machi", "machi", [(1670, 1295), (1905, 1295), (1905, 1565), (1670, 1565)], rank_band=None)
+s.rowpack((1680, 1300, 1900, 1450), ["laborer", "servant", "merchant_house"] * 20, court_every=8)
+s.rowpack((1495, 1468, 1895, 1560), ["laborer", "merchant_house"] * 18, court_every=8)  # the S band's cleared ground inside the new arc
 s.rowpack((628, 1326, 772, 1362), _SAM * 3, court_every=8)
 s.rowpack((628, 1390, 772, 1424), _SAM * 3, court_every=8)
 s.rowpack((605, 1408, 785, 1555), _SAM * 5, court_every=8)
@@ -736,7 +741,7 @@ s.rowpack((1860, 470, 1950, 650), _SAM * 7, court_every=8)  # the moat-corner po
 s.district("southwest machi", "machi", [(615, 1575), (1395, 1575), (1395, 2110), (615, 2110)], rank_band=None)
 s.district("southeast machi", "machi", [(1405, 1575), (2120, 1575), (2120, 2110), (1405, 2110)], rank_band=None)
 s.district("east gate machi", "machi", [(2145, 635), (2405, 635), (2405, 1310), (2145, 1310)], rank_band=None)
-s.district("east street machi", "machi", [(2140, 1420), (2385, 1420), (2385, 1620), (2140, 1620)], rank_band=None)
+s.district("east street machi", "machi", [(2140, 1420), (2440, 1420), (2440, 1660), (2140, 1660)], rank_band=None)
 s.district("west rim machi", "machi", [(430, 750), (590, 750), (590, 1445), (430, 1445)], rank_band=None)
 s.frontage([(1400, 1600), (1400, 2090)], ["merchant", "shop"] * 16, width=8, spacing=22, setback=14)  # the Imperial road's in-machi commerce
 s.frontage([(830, 1560), (1350, 1560)], ["merchant", "shop"] * 10, width=8, spacing=22, setback=14)  # the kagi leg
@@ -763,7 +768,7 @@ s.rowpack((1440, 1690, 1900, 1740), ["laborer_large"] * 24, court_every=6)
 s.rowpack((560, 1580, 1385, 2082), _MIX * 372, court_every=9)
 s.rowpack((1415, 1580, 1930, 2082), _MIX * 296, court_every=9)
 s.rowpack((2000, 1580, 2115, 2085), (["laborer", "laborer_large", "servant"]) * 28, court_every=6)  # the SE-east strip carries a wealth band (labL toward the 6% floor)
-s.rowpack((2150, 755, 2400, 1310), (["laborer", "merchant_house"]) * 205, court_every=6)
+s.rowpack((1950, 560, 2400, 1310), (["laborer", "merchant_house"]) * 320, court_every=6)
 s.rowpack((2145, 1425, 2330, 1615), _MIX * 26, court_every=6)
 s.rowpack((2150, 1625, 2255, 1715), _MIX * 8, court_every=6)
 s.rowpack((1740, 1295, 1852, 1385), _MIX * 8, court_every=6)
