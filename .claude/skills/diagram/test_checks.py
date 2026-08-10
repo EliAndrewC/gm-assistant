@@ -10992,3 +10992,13 @@ def test_extramural_features_tethered_and_gate_markets_start_at_their_gate():
     assert "gate_markets_start_at_their_gate" in f({**base, "buildings": shops_far})
     shops_at = [{"x": 500 + 20 * i, "y": 130, "w": 10, "h": 8, "rot": 0, "kind": "shop"} for i in range(4)]
     assert "gate_markets_start_at_their_gate" not in f({**base, "buildings": shops_at})
+
+
+def test_animal_yards_clear_of_compound_gates():
+    """GM 2026-08-10: no samurai wants dung piles at their front door. Measured to the GATE
+    POINT, so a yard behind the compound's back wall is ordinary city ground."""
+    manor = {"x": 500, "y": 500, "w": 100, "h": 80, "rot": 0, "gate_dir": "south", "label": "Test Estate"}
+    at_gate = {"meta": {"scale": "city", "ftpx": 3}, "manors": [manor], "stable_yards": [{"x": 500, "y": 580, "r": 40, "of": [500, 580], "troughs": 1, "rails": []}]}
+    assert "animal_yards_clear_of_compound_gates" in f(at_gate)
+    behind = {"meta": {"scale": "city", "ftpx": 3}, "manors": [manor], "stable_yards": [{"x": 500, "y": 380, "r": 40, "of": [500, 380], "troughs": 1, "rails": []}]}
+    assert "animal_yards_clear_of_compound_gates" not in f(behind)

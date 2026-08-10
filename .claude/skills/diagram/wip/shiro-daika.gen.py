@@ -475,7 +475,7 @@ def _yashiki(x: float, y: float, gate_dir: str, i: int) -> None:
 # wall and ring slant hard across y~270-450 here (vertices at (1082,290)/(1718,290) with
 # the ring 30 inside), and the NW diagonal road owns the band's west half - both ate the
 # planned second row, so the band runs east of the karamete corridor's flanks only.
-for _i, _x in enumerate((1250, 1325, 1760, 1830)):
+for _i, _x in enumerate((1250, 1760, 1830, 1900)):  # x1325 went to the N caravan yard; the band keeps its count on the east end (GM 2026-08-10)
     _yashiki(_x, 430, "south", _i + 3)
 # east band: a west file on the band lane (starting BELOW the Temple of Bishamon's ground
 # at (1928,531)), a south file flanking the lane's lower leg around the reserved Benten
@@ -611,9 +611,22 @@ s.flophouse(386, 2204)  # outside the SW gate
 # caravan facilities just inside each gate: inn + big stables (open ground kept by their
 # own reserves; the packs flow around)
 s.inn(1330, 300)
-s.stables(1520, 442)
-s.placed.append((1520, 442, 100, 96))  # the N caravan yard
-s.well(1562, 486)  # the yard's own trough water, pre-seeded (the dig path predates placed-reserves)
+# the N caravan yard: beside its inn but OFF every estate's gate approach (GM 2026-08-10).
+# The band between the ring road and the estate row is corridor-bound, so the engine picks
+# the best clear seat in the wider gate quarter and the inn/flophouse keep it company.
+# the N caravan yard stands OUTSIDE the gate with the market it feeds (GM 2026-08-10: it was
+# on the Nio/Seki estates' gate approach, and the in-wall band between ring road and estate
+# row is corridor-bound). Caravans halt outside the gate anyway - that is where the toll,
+# the flophouses and the fodder are - so the yard joins the guan-xiang strip.
+# the N caravan yard stays INSIDE the gate (city_gate_caravan_facilities: the inn, stables and
+# flophouse serve arriving traffic within the walls) but OFF every estate's gate approach - the
+# north band's compounds all gate SOUTH onto the y475 lane, so the yard takes the band's west
+# end, past Yodo, where no compound faces it (GM 2026-08-10)
+_ESTATE_GATES = [(1150, 454), (1250, 453), (1520, 418), (1660, 412), (1760, 453), (1830, 454)]
+_yardseat = s.open_seat((1430, 225, 1560, 330), 100, 96, footprint=False, clear_of=_ESTATE_GATES) or (1470, 262)
+s.stables(_yardseat[0], _yardseat[1])
+s.placed.append((_yardseat[0], _yardseat[1], 100, 96))  # the N caravan yard - beside its inn at (1330,300), off the estate gates (GM 2026-08-10)
+s.well(_yardseat[0] + 46, _yardseat[1] - 40)  # the yard's own trough water, pre-seeded (the dig path predates placed-reserves)
 s.block_polys.append([(1505, 308), (1615, 308), (1615, 416), (1505, 416)])
 s.placed.append((1560, 362, 112, 32))  # N caravan yard (uniform doctrine: every gate stables keeps open ground)
 s.inn(2437, 1413)

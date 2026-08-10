@@ -8530,6 +8530,44 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
     # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
     # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    # NO DUNG AT A SAMURAI'S FRONT DOOR (GM 2026-08-10: "cattle yards should NOT go directly in
+    # front of the gates of samurai estates. No samurai wants literal piles of dung outside
+    # their front door. I'd expect that oxen yard to be next to the caravan inn anyway.")
+    # A stable/ox yard is a working animal ground - straw, dung, flies, noise - and the ONE
+    # place it may not stand is the approach a walled compound's gate opens onto. The rule
+    # measures to the GATE POINT (gate_dir names the side), not the compound's center, because
+    # the offense is the approach, not the neighborhood: a yard behind an estate's back wall
+    # is ordinary city ground. Yards belong with the traffic they serve - the caravan inn and
+    # its relay stables - which is where every other yard on this map already sits.
+    ay_bad = []
+    ay_reach = 240.0 / float(meta.get("ftpx", 1) or 1)  # 240 real ft of clear approach
+    for ay_c in M.get("manors", []) + M.get("merchant_estates", []):
+        ay_gd = ay_c.get("gate_dir")
+        if not ay_gd:
+            continue
+        ay_w, ay_h = ay_c.get("w", 0), ay_c.get("h", 0)
+        ay_g = {
+            "west": (ay_c["x"] - ay_w / 2, ay_c["y"]),
+            "east": (ay_c["x"] + ay_w / 2, ay_c["y"]),
+            "north": (ay_c["x"], ay_c["y"] - ay_h / 2),
+            "south": (ay_c["x"], ay_c["y"] + ay_h / 2),
+        }.get(ay_gd)
+        if ay_g is None:
+            continue
+        for ay_key in ("stable_yards", "byres", "animal_grounds"):
+            for ay_y in M.get(ay_key, []):
+                if not isinstance(ay_y, dict) or "x" not in ay_y:
+                    continue
+                ay_r = float(ay_y.get("r", 0) or max(ay_y.get("w", 0), ay_y.get("h", 0)) / 2)
+                if math.hypot(ay_y["x"] - ay_g[0], ay_y["y"] - ay_g[1]) - ay_r < ay_reach:
+                    ay_bad.append((ay_key, round(ay_y["x"]), round(ay_y["y"]), ay_c.get("label") or "a walled compound"))
+    check(
+        "animal_yards_clear_of_compound_gates",
+        not ay_bad,
+        f"animal yard(s) standing on a walled compound's gate approach: {sorted(set(ay_bad))[:4]} - straw, dung and flies do not "
+        f"belong at a samurai's front door; move the yard to the caravan inn and relay stables it serves, or behind the compound's back wall",
+    )
+
     # EXTRAMURAL FEATURES STAY TETHERED TO THE CITY (GM 2026-08-10: "the kiln works is wayyyyy
     # out in the middle of nowhere... the gate markets look pretty far from the actual gates").
     # Everything outside a wall belongs to something: a gate's market strings along its
