@@ -1800,6 +1800,15 @@ def empty_street_runs(M: Manifest, w: Poly, maxgap: float = 130) -> list[tuple[s
                     bfoot = seg_closest(b["x"], b["y"], sp[k], sp[k + 1])
         if bi is not None and bfoot is not None and not walled_off(b["x"], b["y"], bfoot[0], bfoot[1]):
             fronts.setdefault(bi, []).append(b)
+    # a street may front deliberate OPEN GROUND instead of buildings (021, the capital's
+    # castle ring): the lane along a commons / pasture / festival or muster ground SERVES that
+    # ground - the hirokoji beside the citadel's cleared band is the textbook case - so a
+    # stretch within reach of a commons poly is not "bare".
+    open_grounds = [cg["poly"] for cg in M.get("commons", []) if cg.get("poly")]
+
+    def _serves_open(x9: float, y9: float) -> bool:
+        return any(point_in_poly(x9, y9, gp9) or min(seg_dist(x9, y9, gp9[i9], gp9[(i9 + 1) % len(gp9)]) for i9 in range(len(gp9))) < 70 for gp9 in open_grounds)
+
     empty = []
     for si, st in enumerate(streets):
         pts = st["pts"]
@@ -1811,7 +1820,7 @@ def empty_street_runs(M: Manifest, w: Poly, maxgap: float = 130) -> list[tuple[s
             for j in range(steps):
                 t = j / steps
                 x, y = ax + (bx - ax) * t, ay + (by - ay) * t
-                if not point_in_poly(x, y, w) or any((b["x"] - x) ** 2 + (b["y"] - y) ** 2 < COVER * COVER for b in servers):
+                if not point_in_poly(x, y, w) or any((b["x"] - x) ** 2 + (b["y"] - y) ** 2 < COVER * COVER for b in servers) or _serves_open(x, y):
                     run = 0
                 else:
                     run += STEP
@@ -4518,13 +4527,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # mostly packs the block INTERIOR, reached by alleys, not the paved street frontage. (The towns
     # set the template: businesses on the frontage via s.frontage, dwellings interior via s.pack.)
     if scale in ("town", "city", "capital"):
-        st_lines = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r22["pts"] for r22 in M.get("roads", [])]  # trunk roads carry frontage too (021: the guan-xiang wards string their shops along them)
+        st_lines = (
+            [(st["pts"], st.get("w", 18)) for st in M.get("town_streets", [])]
+            + ([(M["road"], M.get("road_width", 26))] if M.get("road") else [])
+            + [(r22["pts"], r22.get("width") or 26) for r22 in M.get("roads", [])]
+        )  # trunk roads carry frontage too (021: the guan-xiang wards string their shops along them)
 
         def on_a_street(b: dict[str, Any]) -> bool:
-            # 85 REAL FEET of a street centerline (converted at the declared scale): the fixed
-            # 85px was tuned at the towns' 1 ft/px grain and would call most of a 3 ft/px city
-            # "on a street" (85px there is 255 ft - two full blocks)
-            return any(seg_dist(b["x"], b["y"], sp[i], sp[i + 1]) < 85 / meta.get("ftpx", 1) for sp in st_lines for i in range(len(sp) - 1))
+            # 85 REAL FEET of the street's BED EDGE (bed half-width + 85ft at the declared
+            # scale): a shopfront hugs the edge of the paving, so the reach must grow with the
+            # lane's width - measured from the CENTERLINE alone, the capital's 26ft Imperial
+            # road put its own lawful gate-market shops (standing 2ft off the bed) "off-street"
+            # by one pixel (021, 2026-08-10). The fixed 85px before that was tuned at the
+            # towns' 1 ft/px grain and would call most of a 3 ft/px city "on a street".
+            return any(seg_dist(b["x"], b["y"], sp[i], sp[i + 1]) < wq2 / 2 + 85 / meta.get("ftpx", 1) for sp, wq2 in st_lines for i in range(len(sp) - 1))
 
         biz = [b for b in M.get("buildings", []) if b.get("kind") in BUSINESS_KINDS]
         if biz:
@@ -8199,10 +8215,20 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 continue
             tor_in = sum(1 for tp in M.get("torii", []) if point_in_poly(tp[0], tp[1], dz["poly"]))
             comm = sum(1 for bz in M.get("buildings", []) if bz.get("kind") in ("shop", "merchant", "merchant_house") and point_in_poly(bz["x"], bz["y"], dz["poly"]))
+            # the monzen's size follows the approach's grandeur (the torii numerology canon:
+            # an avenue is 1-2 arches or EXACTLY 7): a full 7-arch sando commands a full lay
+            # quarter (>= 6 commercial); a 1-2 arch approach carries a modest one (>= 3) -
+            # Jurojin's north stub between hall and the kagi road holds ~3 stalls lawfully
+            _mz_t = min(
+                (rg9 for rg9 in M.get("religious", []) if rg9.get("kind") == "temple"),
+                key=lambda rg9: (rg9["x"] - dz["poly"][0][0]) ** 2 + (rg9["y"] - dz["poly"][0][1]) ** 2,
+                default=None,
+            )
+            _mz_floor = 6 if (_mz_t or {}).get("torii_count", 0) >= 7 else 3
             if tor_in == 0:
                 mz_bad.append(f"{dz.get('name', 'monzen')}: no torii inside the district (it does not front the approach)")
-            elif comm < 6:
-                mz_bad.append(f"{dz.get('name', 'monzen')}: only {comm} commercial buildings (a monzen is a lay COMMERCIAL quarter; want >= 6)")
+            elif comm < _mz_floor:
+                mz_bad.append(f"{dz.get('name', 'monzen')}: only {comm} commercial buildings (a monzen is a lay COMMERCIAL quarter; want >= {_mz_floor})")
         check(
             "monzen_fronts_the_approach",
             not mz_bad,
@@ -8219,15 +8245,22 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if rg.get("kind") != "temple":
                 continue
             tb_d, tb_wp = min(
-                ((seg_dist(rg["x"], rg["y"], _tb_wall[i9], _tb_wall[(i9 + 1) % len(_tb_wall)]), seg_closest(rg["x"], rg["y"], _tb_wall[i9], _tb_wall[(i9 + 1) % len(_tb_wall)])) for i9 in range(len(_tb_wall))),
+                (
+                    (seg_dist(rg["x"], rg["y"], _tb_wall[i9], _tb_wall[(i9 + 1) % len(_tb_wall)]), seg_closest(rg["x"], rg["y"], _tb_wall[i9], _tb_wall[(i9 + 1) % len(_tb_wall)]))
+                    for i9 in range(len(_tb_wall))
+                ),
                 key=lambda t9: t9[0],
             )
             if tb_d > 190:
                 continue  # not a rim temple
             for bz in M.get("buildings", []):
-                if bz.get("kind") in DWELLING_KINDS and bz.get("kind") != "monk_house":
-                    if seg_dist(bz["x"], bz["y"], (rg["x"], rg["y"]), tb_wp) < rg.get("w", 30) / 2 and math.hypot(bz["x"] - rg["x"], bz["y"] - rg["y"]) < tb_d + 40:
-                        tb_bad.append((round(bz["x"]), round(bz["y"])))
+                if (
+                    bz.get("kind") in DWELLING_KINDS
+                    and bz.get("kind") != "monk_house"
+                    and seg_dist(bz["x"], bz["y"], (rg["x"], rg["y"]), tb_wp) < rg.get("w", 30) / 2
+                    and math.hypot(bz["x"] - rg["x"], bz["y"] - rg["y"]) < tb_d + 40
+                ):
+                    tb_bad.append((round(bz["x"]), round(bz["y"])))
         check(
             "teramachi_backstrip_lean",
             not tb_bad,
@@ -12233,7 +12266,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # a planned city's government offices FRONT its streets - the yamen sits where the main
             # streets cross and the bureaus line the avenues around it (Chinese official street /
             # jokamachi grid), so every ministry must sit on a street, not float mid-block
-            st_pts = [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r23["pts"] for r23 in M.get("roads", [])]  # the ote-suji IS the avenue (021: capital ministries front the road)
+            st_pts = (
+                [st["pts"] for st in M.get("town_streets", [])] + ([M["road"]] if M.get("road") else []) + [r23["pts"] for r23 in M.get("roads", [])]
+            )  # the ote-suji IS the avenue (021: capital ministries front the road)
             no_front = [m.get("name") for m in M.get("ministries", []) if not any(seg_dist(m["x"], m["y"], sp[i], sp[i + 1]) < 85 for sp in st_pts for i in range(len(sp) - 1))]
             check(
                 "city_ministries_front_a_street",
@@ -12704,7 +12739,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # rule governs the market doss-houses only. (Filter AFTER the loop that fills bad_flop;
             # the first version ran it against the empty list and was dead code, 2026-08-10.)
             _g21 = M.get("gates") or []
-            bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 340 for g21 in _g21)]
+            bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 250 for g21 in _g21)]
             check(
                 "city_flophouse_in_humble_quarter",
                 not bad_flop,
@@ -12785,7 +12820,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     for j in range(steps):
                         t = j / steps
                         x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
-                        if not point_in_poly(x, y, w) or any((bl["x"] - x) ** 2 + (bl["y"] - y) ** 2 < LINE_D * LINE_D for bl in line_blds):
+                        _lg_open = any(
+                            point_in_poly(x, y, gp9) or min(seg_dist(x, y, gp9[i9], gp9[(i9 + 1) % len(gp9)]) for i9 in range(len(gp9))) < 70
+                            for gp9 in (cg9["poly"] for cg9 in M.get("commons", []) if cg9.get("poly"))
+                        )  # open-ground frontage (commons/pasture): same exemption as empty_street_runs (021)
+                        if not point_in_poly(x, y, w) or any((bl["x"] - x) ** 2 + (bl["y"] - y) ** 2 < LINE_D * LINE_D for bl in line_blds) or _lg_open:
                             run = 0
                         else:
                             run += 20

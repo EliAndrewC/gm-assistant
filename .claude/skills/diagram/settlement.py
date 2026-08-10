@@ -8526,6 +8526,7 @@ class Settlement:
     # with the offending key by name if a new feature is in neither this nor _CANOPY_OPEN_AIR_KEYS.
     # The TEST is the ratchet; the tuple is just the data.
     _CANOPY_ROOFED_KEYS = (
+        "precinct_halls",  # the sovereign precinct program - roofed halls (021)
         "terraces",  # a retainer terrace is one continuous roof over its household cells
         "granaries",  # the capital's wharf granaries - kura rows, roofed like the town's dict-recorded one
         "mausoleums",
@@ -9639,8 +9640,14 @@ class Settlement:
         sgn = -1.0 if rear == "north" else 1.0  # rear-edge offsets flip with the sando side
         ye = y + sgn * h / 2
         # (dx, dy-from-rear-edge, w-ft, h-ft, kind) - hand-set so nothing clips the 150x100 ft hall
-        prog = [(-44, 12, 48, 30, "residence"), (-45, 30, 36, 24, "kitchen"), (-8, 10, 57, 21, "dormitory"),
-                (14, 22, 57, 21, "dormitory"), (52, None, 33, 24, "library"), (-54, None, 42, 27, "administration")]
+        prog = [
+            (-44, 12, 48, 30, "residence"),
+            (-45, 30, 36, 24, "kitchen"),
+            (-8, 10, 57, 21, "dormitory"),
+            (14, 22, 57, 21, "dormitory"),
+            (52, None, 33, 24, "library"),
+            (-54, None, 42, 27, "administration"),
+        ]
         g = []
         for dx, dy, wf, hf, kind in prog:
             bw, bh = wf / self.ftpx, hf / self.ftpx

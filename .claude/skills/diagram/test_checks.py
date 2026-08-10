@@ -10781,3 +10781,30 @@ def test_teramachi_backstrip_lean():
     assert "teramachi_backstrip_lean" in f(M)
     M["buildings"][-1]["kind"] = "monk_house"
     assert "teramachi_backstrip_lean" not in f(M)
+
+
+def test_streets_may_front_open_ground():
+    """021: a street along a commons (the castle's cleared ring, a festival ground) serves that
+    ground - it is not a bare stretch. Without the commons the same street fires."""
+    M = _capital_manifest(scale="city")
+    M["meta"]["walled"] = True  # the urban battery (where both street checks live) binds walled cities
+    M["buildings"] = [b for b in M.get("buildings", []) if not 700 < b["y"] < 1100]  # bare band for the test street
+    M["town_streets"] = (M.get("town_streets") or []) + [{"pts": [[300, 900], [900, 900]], "w": 15}]
+    r = f(M)
+    fired = "city_streets_have_buildings" in r or "city_larger_streets_lined" in r
+    assert fired  # a long street with nothing fronting it
+    M["commons"] = [{"poly": [[300, 820], [900, 820], [900, 880], [300, 880]], "role": "pasture", "x": 600, "y": 850, "w": 600, "h": 60}]
+    r = f(M)
+    assert "city_streets_have_buildings" not in r and "city_larger_streets_lined" not in r
+
+
+def test_businesses_on_street_measured_from_bed_edge():
+    """021: the on-street reach is bed half-width + 85 real ft - a shop hugging a wide trunk
+    road's paving edge is ON the street; one two blocks out is not."""
+    M = _capital_manifest(scale="city")
+    M["road"] = [[500, 0], [500, 1000]]
+    M["road_width"] = 26
+    M["buildings"] = [{"kind": "shop", "x": 530, "y": 400, "w": 8, "h": 6}]  # 30px out: edge-hugging
+    assert "businesses_front_streets" not in f(M)
+    M["buildings"] = [{"kind": "shop", "x": 620, "y": 400, "w": 8, "h": 6}]  # 120px out: interior
+    assert "businesses_front_streets" in f(M)
