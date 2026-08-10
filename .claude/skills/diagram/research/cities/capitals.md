@@ -889,3 +889,19 @@ wall absorbs by converting the claimed-open rim bands to quarters and packing ti
 C_PACKED_CAPITAL re-derives to ~1,105 px^2/family (between Tango's 690 and the first
 capital draw's 1,367). A DENSER capital is also the historically better read: a fortified
 seat trades openness for the rampart's protection.
+
+### The out-wall SAMURAI are a different budget line from the ruled wharf hamlet (2026-08-10)
+
+The settlement-review of the shipped first pass read the extramural ruling ("wharf-hamlet-only,
+~60 packed households") against the ~47 samurai the budget seats outside
+(`CAPITAL_SAMURAI_INWALL_FRAC` leaves 15% of the cohort in country seats on the approaches, the
+Tango out-wall precedent) and flagged them as disagreeing. They do not: the ruling governs the
+PACKED COMMONER cohort (the "few hundred AT MOST" conversation was about laborer/servant/merchant
+households), while the out-wall samurai are landed retainers whose seats are on the approaches by
+budget design - they count in the census and belong to no in-wall rank district. Both claims stand.
+
+What the review is RIGHT about is the drawn FORM: the first pass seats those samurai as tight
+rowpack blocks (machi-form fabric), where a country seat is a detached compound with ground. The
+re-forming is deferred with the rest of the fabric work - logged in `future-work.md` (#2) as part
+of the fabric-first regeneration, which should draw approach-road country seats as spaced walled
+compounds, not rows.

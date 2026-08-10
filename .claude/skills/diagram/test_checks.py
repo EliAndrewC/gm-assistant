@@ -10889,3 +10889,23 @@ def test_bridges_seat_on_water_fires_on_a_dry_deck():
     assert "bridges_seat_on_water" not in f(M)  # this deck IS on its stream
     M["bridges"] = [{"x": 800, "y": 200, "rot": 0, "span": 37, "w": 26, "foot": True}]  # far from every water
     assert "bridges_seat_on_water" in f(M)
+
+
+def test_monzen_floor_fires_on_too_few_commercial_buildings():
+    """A monzen with its torii but a bare handful of shops is not doing a monzen's job - the
+    elif branch of monzen_fronts_the_approach (coverage: the no-torii branch had a test, the
+    too-few-commerce branch did not)."""
+    M = _capital_manifest()
+    M["precincts"] = [{"x": 500, "y": 500, "w": 130, "h": 100, "rear": "north", "graveyard": False}]
+    M["precinct_halls"] = [{"x": 456 + i, "y": 462, "w": 4, "h": 4, "kind": k, "precinct": [500, 500]} for i, k in enumerate(("residence", "kitchen", "dormitory", "dormitory", "library"))]
+    M["torii"] = [(500, 580), (500, 620)]
+    M["districts"] = (M.get("districts") or []) + [{"name": "thin monzen", "kind": "monzen", "poly": [[430, 560], [570, 560], [570, 650], [430, 650]]}]
+    M["buildings"] = M.get("buildings", []) + [{"x": 460, "y": 600, "w": 8, "h": 6, "kind": "shop", "rot": 0}]  # torii inside, but ONE shop
+    assert "monzen_fronts_the_approach" in f(M)
+
+
+def test_cistern_wells_with_no_aqueduct_fire():
+    """A josui-ido cistern-well claims to draw on a buried main - with NO aqueduct on the map
+    there is nothing to tap (coverage: the no-aqueduct branch)."""
+    M = {"meta": {"scale": "town"}, "wells": [{"x": 500, "y": 500, "kind": "cistern"}]}
+    assert any("cistern" in c for c in f(M)), "the no-aqueduct cistern must fail the josui-ido rule"
