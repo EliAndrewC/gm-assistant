@@ -414,7 +414,7 @@ s.street(
 )  # east of Kurogi; bends EAST around the Temple of Ebisu (2127,1686) to tie the NE grid into the y=1770 main street (021: streets_connected)
 s.street([(800, 1372), (800, 1938)], width=s.lw(15))  # meets the y=1375 street
 s.street([(372, 1375), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
-s.street([(1560, 1390), (2424, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
+s.street([(1560, 1390), (2394, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
 
 # ---- the YASHIKI BAND (T007): 53 walled compounds of Ranks 8-12 wrap the castle N / E / W
 # per the jokamachi law (rank = proximity to the court). The EIGHT lineage estates already
@@ -506,7 +506,7 @@ s.alley([(1655, 1585), (1655, 2090)])  # east columns clear the hanko (x1415-154
 # x1690 alley dropped: it ran through the (1690,1935) brewery; x1655 and the x1800 street cover the cores
 s.alley([(2000, 1585), (2000, 1938)])  # stops inside the wall's south curve
 s.alley([(2200, 760), (2200, 1290)])
-s.alley([(2300, 874), (2300, 1290)])  # both start below the NE wall's tower course
+s.alley([(2300, 886), (2300, 1290)])  # both start below the NE wall's tower course
 s.alley([(2260, 1290), (2260, 1590)])
 
 # the machi + suburb DISTRICTS, declared before the mesh and the packs (kido_mesh and
@@ -582,7 +582,9 @@ s.flophouse(165, 2247)  # outside the SW gate
 # caravan facilities just inside each gate: inn + big stables (open ground kept by their
 # own reserves; the packs flow around)
 s.inn(1170, 300)
-s.stables(1400, 362)
+s.stables(1462, 408)
+s.placed.append((1462, 408, 100, 96))  # the N caravan yard
+s.well(1516, 452)  # the yard's own trough water, pre-seeded (the dig path predates placed-reserves)
 s.block_polys.append([(1345, 308), (1455, 308), (1455, 416), (1345, 416)])
 s.placed.append((1400, 362, -48, 32))  # N caravan yard (uniform doctrine: every gate stables keeps open ground)
 s.inn(2336, 1392)
@@ -590,7 +592,7 @@ s.stables(2341, 1268)
 s.block_polys.append([(2286, 1215), (2396, 1215), (2396, 1325), (2286, 1325)])
 s.placed.append((2341, 1268, 111, 255))  # the caravan yard keeps OPEN ground for the animals
 s.inn(1170, 2422)
-s.stables(1310, 2422)
+s.stables(1352, 2492)
 s.block_polys.append([(1255, 2368), (1365, 2368), (1365, 2476), (1255, 2476)])
 s.placed.append((1310, 2422, -48, 472))  # S caravan yard: open ground for the animals (crowd rule)
 s.well(1348, 2452)  # the yard's public well - pre-seeded so the stables' own-well dig path (which predates placed-reserves) stays idle
@@ -599,7 +601,7 @@ s.flophouse(2336, 1370)
 s.flophouse(1210, 2395)
 s.flophouse(411, 1957)
 s.inn(408, 1981)
-s.stables(355, 1993)
+s.stables(452, 1958)
 s.block_polys.append([(300, 1939), (410, 1939), (410, 2047), (300, 2047)])
 s.placed.append((355, 1993, -175, 381))  # SW caravan yard (uniform doctrine)
 s.street([(1850, 1688), (1850, 1852)], width=s.lw(10))  # the Benten sando's monzen lane (the hall faces its own lane - capitals.md)
@@ -653,18 +655,18 @@ s.place_wells((2145, 1425, 2330, 1615), spacing=70, coverage=False)
 s.place_wells((1080, 1590, 1390, 1680), spacing=68, coverage=False)  # the wealth rows' idobata
 s.place_wells((2000, 1760, 2110, 1880), spacing=60, coverage=False)
 s.place_wells((1900, 520, 1990, 640), spacing=60, coverage=False)  # the N band's servant rows (trimmed east of the samurai file)
-s.place_wells((640, 530, 770, 615), spacing=70, coverage=False)  # the NW monk-house court
+s.place_wells((395, 525, 482, 608), spacing=70, coverage=False)  # the NW monk-house court (moved with Hotei's monks)
 s.place_wells((1080, 1820, 1300, 2050), spacing=52, coverage=False)  # the doss pocket's dense rows
 s.place_wells((442, 1250, 588, 1435), spacing=55, coverage=False)
 s.place_wells((2140, 1560, 2280, 1650), spacing=60, coverage=False)
 s.place_wells((1420, 1770, 1520, 1870), spacing=60, coverage=False)
 s.place_wells((600, 1570, 690, 1650), spacing=60, coverage=False)
+s.place_wells((598, 1690, 700, 2050), spacing=55, coverage=False)
+s.place_wells((2000, 1955, 2100, 2062), spacing=50, coverage=False)
 s.place_wells((1870, 1855, 1980, 1950), spacing=55, coverage=False)
 s.place_wells((1750, 1290, 1930, 1420), spacing=60, coverage=False)  # the thread-street pocket by Kurogi
 s.place_wells((700, 1800, 1000, 2050), spacing=72, coverage=False)
 s.place_wells((1500, 1800, 1900, 2100), spacing=72, coverage=False)
-s.place_wells((2200, 1700, 2450, 2050), spacing=95, coverage=False)
-s.place_wells((1210, 2280, 1590, 2600), spacing=95, coverage=False)
 s.place_wells((1050, 1900, 1450, 2100), spacing=80, coverage=False)
 # ---- T008: DETACHED SAMURAI (133 target) - the middle band, rowpacked at the loose samurai
 # court pitch (the Tango idiom, which is what C_SPACED was measured from).
@@ -682,11 +684,17 @@ s.district("civic west detached", "detached", [(855, 1400), (1145, 1400), (1145,
 s.district("east street detached", "detached", [(2140, 1250), (2385, 1250), (2385, 1425), (2140, 1425)], rank_band="detached")
 s.district("west band detached", "detached", [(300, 740), (445, 740), (445, 1400), (300, 1400)], rank_band="detached")
 s.alley([(372, 760), (372, 1380)])  # the west files' service lane
-s.rowpack((305, 770, 440, 1020), _SAM * 3, court_every=8)  # the resized wall's new west band: detached files
-s.rowpack((305, 1160, 440, 1300), _SAM * 2, court_every=8)
+s.rowpack((305, 770, 440, 1060), _SAM * 4, court_every=8)  # the resized wall's new west band: detached files
+s.rowpack((305, 1160, 440, 1360), _SAM * 4, court_every=8)
 s.commons([(95, 600), (295, 600), (295, 2020), (95, 2020)], role="pasture")  # the west umamawari: the ring's grazing + drill ground continues around the new wall
+s.district("west crescent north", "machi", [(448, 620), (600, 620), (600, 1440), (448, 1440)], rank_band=None)
+s.alley([(525, 640), (525, 1430)])
+s.rowpack((452, 630, 598, 1430), ["laborer", "servant", "merchant_house"] * 20, court_every=6)
 s.animal_ground(190, 1240, r=64, label="horse ground")
-s.commons([(450, 1460), (620, 1460), (620, 2040), (450, 2040)], role="pasture")
+s.district("west crescent machi", "machi", [(445, 1450), (625, 1450), (625, 2075), (445, 2075)], rank_band=None)
+s.alley([(535, 1470), (535, 2060)])  # the crescent's spine
+s.alley([(455, 1760), (620, 1760)])
+s.rowpack((450, 1460, 620, 2070), ["laborer", "servant", "merchant_house", "laborer"] * 24, court_every=6)
 s.commons([(560, 2100), (1420, 2100), (1420, 2445), (560, 2445)], role="pasture")  # the S band's cleared ground inside the new arc
 s.commons([(1450, 2100), (1985, 2100), (1985, 2430), (1450, 2430)], role="pasture")
 s.commons([(95, 415), (660, 415), (660, 600), (95, 600)], role="pasture")  # the NW ring ground
@@ -779,6 +787,8 @@ s.rowpack((1850, 2470, 2050, 2620), ["laborer", "servant"] * 16, court_every=6)
 s.rowpack((1850, 2645, 1898, 2745), ["laborer", "servant"] * 5, court_every=6)  # west of the towpath's bend (the path runs x~1940 at this latitude)
 s.rowpack((2080, 2265, 2210, 2325), ["laborer", "servant"] * 7, court_every=6)
 # the gate wards, each hugging its approach road inside the guan-xiang reach
+s.placed.append((1204, 2561, 22, 18))
+s.placed.append((1204, 2585, 22, 18))
 s.bound = [[1035, 2600], [1610, 2600], [1610, 3035], [1035, 3035]]
 s.rowpack((1460, 2620, 1600, 2980), ["laborer", "servant", "merchant_house"] * 14, court_every=6)  # the ribbon's east file on the reach's far side
 s.rowpack((1145, 2700, 1230, 2830), ["laborer", "merchant_house", "servant"] * 16, court_every=6)  # starts below the Imperial Road caption's west seat, ends inside the reach
@@ -797,7 +807,7 @@ s.rowpack(
 s.rowpack((2640, 1170, 2800, 1248), ["laborer", "merchant_house"] * 12, court_every=6)  # the east ribbon, along the Fox-lands road
 s.rowpack((2645, 1310, 2810, 1375), ["laborer", "merchant_house"] * 10, court_every=6)
 s.rowpack((2480, 1350, 2630, 1390), ["laborer", "merchant_house"] * 8, court_every=6)
-s.rowpack((2825, 1195, 2878, 1260), ["laborer", "merchant_house"] * 8, court_every=6)
+s.rowpack((2830, 1290, 2882, 1352), ["laborer", "merchant_house"] * 6, court_every=6)
 s.rowpack((1005, 212, 1175, 244), ["laborer", "servant"] * 10, court_every=6)
 s.bound = [[2450, 780], [2730, 780], [2730, 1140], [2450, 1140]]
 s.alley([(2480, 860), (2460, 1280)])  # down to the gate road, west of the aqueduct's cut
@@ -812,6 +822,8 @@ s.bound = [[1140, 80], [1345, 80], [1345, 162], [1140, 162]]
 s.rowpack((1265, -35, 1332, 28), ["laborer", "merchant_house"] * 5, court_every=6)  # the N gate ward, on the Shiro Kyo road
 s.rowpack((1265, 52, 1332, 92), ["laborer", "merchant_house"] * 6, court_every=6)  # ...split around the y=100 ribbon alley
 s.rowpack((1150, 35, 1212, 92), ["laborer", "merchant"] * 9, court_every=6)  # the road-side rows carry open shopfront homes (they count into the gate market)
+s.placed.append((932, 142, 22, 18))
+s.placed.append((948, 90, 22, 18))  # the N market's scan-seated shops hold their ground before the ward rows
 s.bound = [[700, 60], [1200, 60], [1200, 210], [700, 210]]
 s.rowpack((760, 92, 1010, 160), ["laborer", "merchant_house", "servant"] * 12, court_every=6)  # strung along the road under the wall's falling north face
 s.rowpack((1290, 95, 1470, 158), ["laborer", "merchant_house"] * 9, court_every=6)
