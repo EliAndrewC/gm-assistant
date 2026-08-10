@@ -258,3 +258,75 @@ re-pay them:
 Remaining before pool/ graduation (T026+): fold the queued review items (kosatsuba etc., above),
 caption-loudness pass, perf A/B + GEN_TIME_BUDGETS entry, full sweep via make done, XII bookend,
 then the move.
+
+## THE GM's RENDER REVIEW (2026-08-10) - eleven defects, twelve new checks
+
+The GM read the shipped first pass and listed everything wrong with it. Every item got a CHECK
+first (red against the shipped map), then the fix - the standing order for this round. The
+checks, and the lesson each one encodes:
+
+**Water furniture had been left behind by a re-route.** The river's course moved during the wall
+re-derivation and four features kept their old seats: the towpath ran 113-215px inland, a sluice
+gate stood 245px from any water, the aqueduct's settling basin ended IN the moat, and one of two
+tanning yards was beached 189px from its wash water. `towpath_hugs_the_bank`,
+`sluice_gates_on_water`, `aqueduct_taps_water_lands_dry` and `tanning_yards_on_water` measure to
+the CURRENT watercourse geometry, so a re-route now drags its furniture red instead of leaving it
+stranded. **The general rule: a feature defined by a relationship to moving geometry must be
+DERIVED from that geometry, never pinned to a coordinate that was correct once.**
+
+**Street topology.** A service lane ran the full length of the Imperial road's kagi leg -
+two ways drawn where the ground has one (`ways_not_inside_road_beds`); several street and alley
+ends stopped a visible gap short of a street they pointed straight at, past the 30px near-miss
+cap but plainly meant to join (`city_streets_reach_their_neighbors`, which also reads ALLEY ends);
+and a street started 6px inside the castle moat's channel because the whole moat battery read
+only the CITY moat, never the castle record (`ways_clear_of_castle_moat`).
+
+**Wells: the accretion trap, and the fix that generalizes.** 27 hand-tuned `place_wells` boxes had
+grown one at a time, each added to fix a local household count with no reference to the wells
+already there - nine wellheads inside one 150 ft radius where every other pool map maxes at FOUR
+(`wells_not_clustered` measures exactly that, scale-normalized). The cure was structural, not
+positional: `_well_blocks()` takes a quarter's bbox, cuts out the bands its own streets and alleys
+occupy, and grids each surviving BLOCK, siting each wellhead with `open_seat` (which consults
+`_fits`) and refusing any seat with 3+ wells already inside the radius; a coverage gap-fill then
+walks the machi ground and seats a well wherever the nearest is >78px off. **Three lessons worth
+carrying: (1) derive the grid from the ways instead of hand-placing boxes, and a street reflow
+moves the wells with it; (2) the gen reads the way list AT THE MOMENT IT RUNS, so every hand alley
+and street had to be hoisted above the well block - a way declared later cannot be dodged; (3)
+well courts are keep-outs, so wells and packed houses trade ground - the packed band swung 1,893
+to 2,377 as the well count moved, and both have to be tuned together.**
+
+**Everything outside the wall belongs to something.** The kiln works stood 600px out in open
+field and the N gate market's nearest stall was 225px down the road.
+`extramural_features_tethered` requires an outside feature to be within 900 ft of a gate, on a
+road it hauls on, or at the wharf; `gate_markets_start_at_their_gate` puts the market's head at
+the gate mouth (with a moat allowance - stalls cannot stand on the crossing).
+
+**No dung at a samurai's front door.** A caravan yard sat 24px off the Nio Estate's gate.
+`animal_yards_clear_of_compound_gates` measures to the GATE POINT (`gate_dir` names the side), so
+a yard behind the back wall is ordinary city ground while the approach is protected.
+
+**The frame carried dead margin** on the south and east because `crop_city(south=240, east=700)`
+overrides outlived the layout they were added for. `map_frame_hugs_its_content` demands real drawn
+content within 400 ft of every edge. **A per-side crop override is a liability the moment the map
+is re-laid.**
+
+**THE BIG ONE: the capital-tier check gap.** The GM asked "I don't see a cremation ground or
+pauper's burial mound at all" and "I also don't see a mausoleum" - and the reason was systemic.
+Every urban rule tested `scale == "city"` EXACTLY, and the capital tier, added later, inherited
+nothing: **74 non-farm checks ran on a provincial city and were silently skipped on the capital**,
+the entire funerary block among them. `URBAN = scale in ("city", "capital")` now covers both, with
+the handful of genuinely city-specific rules (the wall-capacity model, which does not know a
+castle eats 40% of the interior) left city-only and commented. A check that never runs looks
+exactly like a check that passes - this is the third instance in this skill's history, and the
+first to be found by the GM's eye rather than by a diagnostic.
+
+**Interior ward gates are a KNOB, not a law** (GM): `meta(ward_gates=False)` turns the kido mesh
+doctrine off for a map that does not use them, and Shiro Daika ships without them until the
+placement rule is reworked. The declaration is explicit - a map that simply FORGOT its kido still
+fails.
+
+**The research question** ("would there be the same number and size of kiln works in a capital as
+in a provincial city?") is answered in research/cities/capitals.md and encoded in
+`capital_trade_counts_scaled`: four scaling classes, not one. Bathhouses and pawnshops multiply
+at attested per-capita ratios; kilns and cremation grounds consolidate; theater and the domain
+school are capital-only; the pauper's ground is fixed at one per seat by Song edict.
