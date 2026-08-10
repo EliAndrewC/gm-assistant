@@ -11066,3 +11066,15 @@ def test_sluice_gates_centered_on_their_channel():
     assert "sluice_gates_centered_on_their_channel" not in f(on)
     off = {**on, "sluice_gates": [{"x": 500, "y": 516, "rot": 90}]}  # 16px off a 22px channel
     assert "sluice_gates_centered_on_their_channel" in f(off)
+
+
+def test_frontage_shops_face_their_way():
+    """GM 2026-08-10: one shop in the north gate market's row faced away from the road while its
+    four neighbors faced it. A storefront IS its street face."""
+    base = {"meta": {"scale": "city", "ftpx": 3}, "roads": [{"pts": [[0, 100], [1000, 100]], "w": 20}]}
+    facing = {**base, "buildings": [{"x": 500, "y": 140, "w": 12, "h": 9, "rot": 180, "kind": "shop"}]}
+    assert "frontage_shops_face_their_way" not in f(facing)
+    away = {**base, "buildings": [{"x": 500, "y": 140, "w": 12, "h": 9, "rot": 0, "kind": "shop"}]}
+    assert "frontage_shops_face_their_way" in f(away)
+    interior = {**base, "buildings": [{"x": 500, "y": 400, "w": 12, "h": 9, "rot": 0, "kind": "shop"}]}
+    assert "frontage_shops_face_their_way" not in f(interior)

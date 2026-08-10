@@ -246,7 +246,7 @@ s.moat_flow(MOAT[4], MOAT[8])
 # the whole northeast and crossed the moat on a flume; the corrected route peels off
 # downstream and falls straight to the EAST gate - short and direct because the river is
 # near, where the real ones wound only to HOLD their gradient across long country.
-s.aqueduct([(2978, 1056), (2790, 1130), (2660, 1215), (2554.4, 1294.2)])  # terminus pulled up its own line to land the settling basin CLEAR of the moat (it was IN the channel - GM 2026-08-10)
+s.aqueduct([(2962.4, 1047.9), (2790, 1130), (2660, 1215), (2554.4, 1294.2)])  # terminus pulled up its own line to land the settling basin CLEAR of the moat (it was IN the channel - GM 2026-08-10)
 # the two ends carry the words the glyphs cannot (GM 2026-08-09): the river end is the INTAKE
 # WEIR (the Hamura form - a barrier angled across part of the stream, shouldering water into
 # the cut), and the gate end is the SETTLING BASIN, where silt drops before the buried mains
@@ -660,8 +660,8 @@ s.placed.append((576, 1950, 46, 338))  # SW caravan yard (uniform doctrine)
 s.street([(1850, 1688), (1850, 1852)], width=s.lw(10))  # the Benten sando's monzen lane (the hall faces its own lane - capitals.md)
 s.street([(950, 1482), (950, 1560)], width=s.lw(10))  # the Jurojin sando's monzen lane
 s.frontage([(950, 1492), (950, 1550)], ["shop"] * 4, width=6, spacing=26, setback=9)  # the sando's own stalls
-s.rowpack((1808, 1700, 1844, 1845), ["merchant", "shop"] * 9, court_every=6)  # Benten monzen, west of the sando
-s.rowpack((1856, 1700, 1892, 1845), ["shop", "merchant"] * 9, court_every=6)  # ...and east of it
+s.frontage([(1850, 1700), (1850, 1845)], ["merchant", "shop"] * 5, width=8, spacing=16, setback=-26, jitter=1)  # Benten monzen, west of the sando - frontage orients each seat to the way
+s.frontage([(1850, 1845), (1850, 1700)], ["shop", "merchant"] * 5, width=8, spacing=16, setback=-26, jitter=1)  # ...and east of it (the reversed run puts the file on the far side, still facing in)
 s.rowpack((918, 1462, 946, 1560), ["merchant", "shop"] * 10, court_every=6)  # Jurojin monzen flanks its north sando
 s.rowpack((954, 1462, 982, 1560), ["shop", "merchant"] * 10, court_every=6)
 
@@ -1040,10 +1040,10 @@ s.bound = [[280, 1830], [700, 1830], [700, 2210], [280, 2210]]
 s.frontage([(650, 1885), (502, 1989), (320, 2105)], ["shop"] * 9, width=8, spacing=26, setback=20, jitter=1)  # SW gate market, on the road itself
 s.bound = [[1310, 2470], [1490, 2470], [1490, 2860], [1310, 2860]]
 s.frontage([(1400, 2487), (1400, 2830)], ["shop"] * 13, width=8, spacing=24, setback=20, jitter=1)  # S gate market, down the Imperial road
-s.bound = [[830, 55], [1240, 55], [1240, 205], [830, 205]]
+s.bound = [[830, 40], [1420, 40], [1420, 215], [830, 215]]  # the box must reach the GATE (x1400) or the strip's head is refused - the market has to start at the mouth (GM 2026-08-10)
 s.frontage([(1400, 120), (1200, 92), (1000, 116)], ["shop"] * 13, width=8, spacing=24, setback=16, jitter=1)
 s.frontage(
-    [(1390, 152), (1210, 128), (1030, 150)], ["shop", "merchant"] * 4, width=8, spacing=26, setback=-16, jitter=1
+    [(1030, 150), (1210, 128), (1390, 152)], ["shop", "merchant"] * 7, width=8, spacing=22, setback=16, jitter=1
 )  # the strip's inner file, between road and moat bank  # N gate market: the strip STARTS at the gate mouth and runs west along the road (GM 2026-08-10)
 s.bound = [[2430, 1200], [2830, 1200], [2830, 1400], [2430, 1400]]
 s.frontage([(2545, 1306), (2800, 1247)], ["shop"] * 9, width=8, spacing=32, setback=20, jitter=1)  # E gate market on the Fox-lands road
