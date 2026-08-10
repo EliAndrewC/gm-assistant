@@ -10909,3 +10909,68 @@ def test_cistern_wells_with_no_aqueduct_fire():
     there is nothing to tap (coverage: the no-aqueduct branch)."""
     M = {"meta": {"scale": "town"}, "wells": [{"x": 500, "y": 500, "kind": "cistern"}]}
     assert any("cistern" in c for c in f(M)), "the no-aqueduct cistern must fail the josui-ido rule"
+
+
+def _water_map(**kw):
+    M = {"meta": {"scale": "town"}, "streams": [{"poly": [[0, 500], [1000, 500]], "w": 20}]}
+    M.update(kw)
+    return M
+
+
+def test_towpath_hugs_the_bank():
+    """GM 2026-08-10: the river was re-routed and the towpath kept its old seat, running 100+px
+    inland. A towpath is the hauling line's bank walk - every vertex stays on the bank."""
+    assert "towpath_hugs_the_bank" not in f(_water_map(towpaths=[{"pts": [[100, 522], [900, 524]], "w": 3}]))
+    assert "towpath_hugs_the_bank" in f(_water_map(towpaths=[{"pts": [[100, 522], [900, 640]], "w": 3}]))
+
+
+def test_sluice_gates_on_water():
+    """A sluice regulates a flow it must stand in - one stood 245px from any water after the
+    re-route (GM 2026-08-10)."""
+    assert "sluice_gates_on_water" not in f(_water_map(sluice_gates=[{"x": 500, "y": 508, "rot": 0}]))
+    assert "sluice_gates_on_water" in f(_water_map(sluice_gates=[{"x": 500, "y": 700, "rot": 0}]))
+
+
+def test_aqueduct_taps_water_lands_dry():
+    """The intake must touch its river; the terminus (settling basin) must land clear of the
+    moat - the capital's ended IN the moat (GM 2026-08-10)."""
+    ok = _water_map(aqueducts=[{"poly": [[500, 512], [700, 300]], "w": 3}])
+    assert "aqueduct_taps_water_lands_dry" not in f(ok)
+    dry_intake = _water_map(aqueducts=[{"poly": [[500, 460], [700, 300]], "w": 3}])
+    assert "aqueduct_taps_water_lands_dry" in f(dry_intake)
+    in_moat = _water_map(aqueducts=[{"poly": [[500, 512], [700, 255]], "w": 3}], moat=[[600, 250], [800, 250], [800, 350], [600, 350]], moat_width=22)  # terminus lands in the moat channel itself
+    assert "aqueduct_taps_water_lands_dry" in f(in_moat)
+
+
+def test_tanning_yards_on_water():
+    """Tanning is a wash trade - the yard stands at its water; one of two yards was beached
+    189px inland (GM 2026-08-10)."""
+    assert "tanning_yards_on_water" not in f(_water_map(tanning_yards=[{"x": 500, "y": 550, "w": 26, "h": 17, "rot": 0, "kind": "tanning yard"}]))
+    assert "tanning_yards_on_water" in f(_water_map(tanning_yards=[{"x": 500, "y": 720, "w": 26, "h": 17, "rot": 0, "kind": "tanning yard"}]))
+
+
+def test_wells_not_clustered():
+    """GM 2026-08-10: the capital had knots of 4-6 wellheads together, unlike every other pool
+    map (all max at 4 inside a 150 ft radius). Accretion from chasing a local household count."""
+    spread = {"meta": {"scale": "city", "ftpx": 3}, "wells": [{"x": 100 + 200 * i, "y": 100, "kind": None} for i in range(6)]}
+    assert "wells_not_clustered" not in f(spread)
+    knot = {"meta": {"scale": "city", "ftpx": 3}, "wells": [{"x": 500 + 9 * i, "y": 500 + 7 * i, "kind": None} for i in range(6)]}
+    assert "wells_not_clustered" in f(knot)
+
+
+def test_well_density_uses_a_higher_ceiling_for_outcast_rows():
+    """GM 2026-08-10: a burakumin quarter at ~2x machi density cannot reach 1-per-20 without
+    knotting 5-7 wellheads in one 150 ft radius. Historically those quarters were the last
+    served by communal water, so they carry their own ceiling - but the REACH rule still binds."""
+    base = {"meta": {"scale": "city", "walled": True, "W": 2000, "H": 2000, "ftpx": 3}, "wall": WALLSQ, "gates": [[500, 200], [500, 800]]}
+    well = [{"x": 500, "y": 500, "kind": None}]
+    outcast = {**base, "wells": well, "buildings": [{"x": 480 + (i % 8) * 6, "y": 480 + (i // 8) * 6, "w": 8, "h": 6, "rot": 0, "kind": "burakumin"} for i in range(40)]}
+    assert "city_well_density_sufficient" not in f(outcast)
+    machi = {**base, "wells": well, "buildings": [{"x": 480 + (i % 8) * 6, "y": 480 + (i // 8) * 6, "w": 8, "h": 6, "rot": 0, "kind": "laborer"} for i in range(40)]}
+    assert "city_well_density_sufficient" in f(machi)
+    far = {
+        **base,
+        "wells": well,
+        "buildings": [{"x": 740 + (i % 8) * 6, "y": 740 + (i // 8) * 6, "w": 8, "h": 6, "rot": 0, "kind": "burakumin"} for i in range(40)],
+    }  # inside the wall, 340px+ from the only well
+    assert "city_neighborhoods_have_wells" in f(far)  # the reach rule still binds on outcast rows
