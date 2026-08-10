@@ -858,3 +858,34 @@ partly-raised board is sub-pixel at 3 ft/px. Separate open/closed glyphs would a
 binary state the real duty cycle does not have; the state worth showing on a map is an
 EVENT (a drawdown, a siege), which is a caption's job on the day it matters, not a
 permanent glyph.
+
+
+## How much of a capital lives OUTSIDE the walls (SETTLED, GM ruling 2026-08-10)
+
+The question went through three answers in one feature, and the trail matters more than the
+number:
+
+1. **First draw: 57% extramural** - no decision at all. The wall was sized with a provincial
+   density constant, the in-wall fabric could not hold its cohort, and the overflow was seated
+   in ever-growing gate suburbs. The split was computed, recorded, and never enforced. Caught
+   by the GM from the render.
+2. **First correction: 30%** (`suburb_packed_frac = 0.30`) - an over-reading. The research
+   behind it (Kaifeng, Suzhou's Changmen, the 大关厢 guan-xiang belts) describes SONG/MING
+   COMMERCIAL cities, where centuries of peace let commerce sprawl past ramparts that no
+   longer mattered militarily. Shiro Daika is not that: it is a SIEGE-BUILT castle seat on the
+   Crab border. Applying the commercial-era share to a fortified seat put ~1,800 inhabitants
+   outside a wall that exists precisely because they are supposed to be inside it.
+3. **The ruling: ~2.8% extramural (60 of 2,160 packed households, ~300 inhabitants).** The
+   wharf working hamlet only - the brokers', boatmen's and porters' households that must
+   live at the water they work (the kashi belt the GM approved from the start), plus the
+   towpath shore. The guan-xiang gate markets REMAIN but are COMMERCE-ONLY: shop rows, inns,
+   flophouses and caravan yards are structures serving travelers, not resident households.
+   (Japan corroborates by silence: jokamachi were mostly unwalled, so "extramural housing"
+   was not even a category; where Japan DID wall - Odawara's sogamae - the point was to bring
+   the town INSIDE.)
+
+**Knock-on effect**: in-wall packed housing rises to 2,100 households, which the standing
+wall absorbs by converting the claimed-open rim bands to quarters and packing tighter -
+C_PACKED_CAPITAL re-derives to ~1,105 px^2/family (between Tango's 690 and the first
+capital draw's 1,367). A DENSER capital is also the historically better read: a fortified
+seat trades openness for the rampart's protection.
