@@ -53,7 +53,7 @@ sys.path.insert(0, _D)
 from citybudget import CapitalProgram, budget_to_manifest, plan_capital  # noqa: E402
 from settlement import Settlement  # noqa: E402
 
-s = Settlement(3200, 2700, seed=61)
+s = Settlement(3200, 3050, seed=61)
 s.meta(
     water_flow=135,  # DRAINAGE BEARING: the land falls NE -> SW, the way the river runs (0=E, 90=S)
     name="Shiro Daika",
@@ -90,15 +90,19 @@ s.meta(
 # ---- BUDGET-FIRST (feature 018): the wall is an OUTPUT of the declared program, never a guess.
 # A capital cannot be sized from population the way a provincial city nearly can - a median castle
 # alone is ~85% of an entire provincial city's interior.
-BUDGET = plan_capital(CapitalProgram(population=12_360, river=True, castle_seat="ring", imperial_granary_seat="wharf"), canvas=(3200, 2700))
+BUDGET = plan_capital(CapitalProgram(population=12_360, river=True, castle_seat="ring", imperial_granary_seat="wharf"), canvas=(3200, 3050))
 s.meta(budget=budget_to_manifest(BUDGET))
 
-CX, CY = 1400, 1200
-# the AS-BUILT rampart, PINNED (021): the corrected budget model (suburb_packed_frac +
-# CIRC_FRAC_CAPITAL, both research-grounded) derives a minimum interior ~2% under the 018
-# ellipse - inside capital_wall_matches_budget's tolerance - and 3.6 miles of standing
-# rampart does not move for a model residual.
-RX, RY = 1029, 957
+CX, CY = 1240, 1340
+# the RESIZED rampart (021, GM 2026-08-10): the first wall was sized with Tango's C_PACKED
+# (690 px2/family) and the capital's as-built machi delivers ~1,367 - so 57% of the packed
+# cohort ended up outside the walls against the researched 30% suburb share. The budget now
+# prices the in-wall packed line with C_PACKED_CAPITAL (1350, measured on this map's own
+# fabric), required interior 4.23M px2, and this ellipse encloses it at ~+2%. The center
+# moved SW (the castle now sits NE-of-center, the honmaru-at-the-back pattern) because the
+# east is pinned by the river and the west by the canvas; the river's mid-course shifts
+# ~140px east to keep the ~200px wall-to-river band the wharf chain needs.
+RX, RY = 1185, 1177
 NRING = 20
 WALL = [(round(CX + RX * math.cos(-math.pi / 2 + 2 * math.pi * i / NRING)), round(CY + RY * math.sin(-math.pi / 2 + 2 * math.pi * i / NRING))) for i in range(NRING)]
 NGATE, EGATE, SGATE, SWGATE = WALL[0], WALL[5], WALL[10], WALL[13]
@@ -107,7 +111,7 @@ NGATE, EGATE, SGATE, SWGATE = WALL[0], WALL[5], WALL[10], WALL[13]
 # the convention every junction-angle rule keys on.
 # Held ~200px off the moat at its closest approach: the ring is 1,055x983 px of pushed-out wall,
 # and the first cut ran the river straight through the southeast arc.
-RIVER = [(3200, 700), (2900, 1150), (2500, 1750), (2100, 2300), (1800, 2700)]
+RIVER = [(3200, 640), (2960, 1100), (2640, 1720), (2260, 2380), (1980, 2900)]
 s.river(RIVER)
 
 # ---- the rampart and its four gates, then the moat and the patrol road inside it
@@ -135,21 +139,21 @@ KAGI_Y = 1560
 # gate point, so the roadbed rode along the rampart stroke): the diagonal legs meet a short
 # perpendicular run on each side of the gate, and the bed passes clean through the gap.
 s.road(
-    [(SGATE[0], 2745), (SGATE[0], SGATE[1]), (SGATE[0], KAGI_Y), (800, KAGI_Y), (800, 470), (1400, 300), (NGATE[0], NGATE[1]), (1400, 140), (1180, 55), (940, -60)],
+    [(SGATE[0], 3095), (SGATE[0], SGATE[1]), (SGATE[0], 2450), (1400, 2375), (1400, KAGI_Y), (800, KAGI_Y), (800, 470), (1240, 300), (NGATE[0], NGATE[1]), (1240, 60), (1080, 5), (940, -60)],
     label="Imperial Road",
     label_xy=(SGATE[0] + 150, 2330),
 )
 # the same road is Imperial on BOTH sides of the city (GM 2026-08-09) - the run toward Shiro
 # Kyo carries its own caption, tilted along the branch per the linear rule
 s.label(1170, 66, "Imperial Road", 11, italic=True, color="#6E5B38", rot=195, linear=True)
-s.road([(2397, 1200), (EGATE[0], EGATE[1]), (2820, 1130), (3200, 1040)])  # east, to the Fox lands - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
+s.road([(2300, 1340), (EGATE[0], EGATE[1]), (2820, 1270), (3200, 1180)])  # east, to the Fox lands - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
 # the karamete approach is the STRAIGHT CONTINUATION of the north gate's street (GM 2026-08-09:
 # the first cut hung it off the diagonal mid-slope and the two beds read as overlapping roads):
 # city gate -> due south -> the castle's rear gate, dead-ending at its moat and tower exactly as
 # a castle-town street aimed at the works should, while the Imperial through-road leaves the
 # street at the (1400, 300) junction and bends west around the castle front (the kagi-no-te).
 s.road([(1400, 300), (1400, 520)])  # stops at the karamete tower's foot, as the ote-suji stops at the ote-mon's
-s.road([(594, 1745), (SWGATE[0], SWGATE[1]), (300, 2010), (0, 2170)])  # southwest, into the domain - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
+s.road([(470, 1905), (SWGATE[0], SWGATE[1]), (140, 2180), (0, 2260)])  # southwest, into the domain - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
 
 # ---- THE OTE-SUJI (feature 020): the ceremonial avenue from the castle's front gate south to the
 # Imperial road at the kagi-no-te bend. Drawn as a road (M["roads"]) so the shared crossing source
