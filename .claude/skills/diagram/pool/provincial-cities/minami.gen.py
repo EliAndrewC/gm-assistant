@@ -701,7 +701,7 @@ s.label(1214, 1532, "burakumin", 10, italic=True, color="#6B4F2A")
 # THE TIMBER AND CHARCOAL WORKING GROUND - the declared budget line, DRAWN as its kind rather than
 # left as ambient slack: beaten earth with stacking rails, in the SE of the burakumin quarter where
 # the raft cargo comes up from the landing.
-s.animal_ground(1256, 1672, r=76, label="timber + charcoal ground")
+s.animal_ground(1256, 1830, r=76, label="timber + charcoal ground")  # clear of the compound gate at (1241,1620) - no dung/charcoal at a front door (GM 2026-08-10)
 
 # ====================================================================== OUTSIDE the walls
 s.bound = None

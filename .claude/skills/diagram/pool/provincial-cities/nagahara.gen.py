@@ -524,7 +524,7 @@ s.fire_tower(
 # Bishamon/theater seam serves the whole mid-block - 30+ unique dwellings over ~160px easily
 # earns its length. Drawn BEFORE the packs so the terrace rows flow around it; the end stays
 # >46px above the temple lane (a dead-end roji, not a near-miss junction).
-alleys([[(1250, 990), (1250, 1160)]])
+alleys([[(1250, 990), (1250, 1216)]])
 s.block_polys.append(
     [(1246, 1054), (1338, 1054), (1338, 1078), (1246, 1078)]
 )  # the 'theater stage' label's ground (a theater label may cover no building at all; the theater's own stand-clear circle only shields its middle)
@@ -830,7 +830,7 @@ _mer = (
 _MER_COURT = 4  # 3->4: one more terrace row per block; the fine near=48 well passes still find the remaining courts
 # west strip (1567-1733) lacks a street - lace an alley (BEFORE the packs) so the houses aren't cut off
 alleys(
-    [[(1604, 1380), (1604, 1656)]]
+    [[(1604, 1402), (1604, 1664)]]
 )  # ONE continuous roji (the old three segments left open mouths at the row-band boundaries where a top_up house corner could clip an alley end); top pulled >46px clear of the main road (centerline y1330, so the top must start at y>=1377 - the road-frontage rows fill the ground between, blocking any lanes-should-meet reading)
 # coarse well courts AFTER the alleys (no wellhead on the x1617 lanes) and BEFORE the packs; tight
 # spacing so the merchant warren is not left with over-burdened wells

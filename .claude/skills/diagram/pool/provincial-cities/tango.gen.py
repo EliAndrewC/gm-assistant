@@ -778,7 +778,7 @@ front(SW_ST, (["merchant"] * 3 + ["shop"]) * 12, width_ft=18, spacing=19, rows=2
 s.merchant_storehouses(8)
 # the merchants' HOMES: terraces in the north band (between the burakumin lane and the avenue,
 # prime central ground) and the mid-block cores; the WEST enclave keeps its spread
-alleys([[(1308, 1346), (1308, 1454)]])  # reaches the avenue bed; the x1480 through-street serves the band's east half
+alleys([[(1308, 1364), (1308, 1454)]])  # reaches the avenue bed; the x1480 through-street serves the band's east half
 # WALLED COMPOUND COUNT IS ROLLED, 1-3 per city (GM 2026-07-23): a gated compound is a GRANTED
 # privilege, not a purchase - see MERCHANT_ESTATE_WEIGHTS (settlement.py) for the Edo-privileges
 # reasoning and merchant_estates_match_roll for the gate. The unwalled very-rich homes below stay
