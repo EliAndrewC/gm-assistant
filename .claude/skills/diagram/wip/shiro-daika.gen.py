@@ -654,7 +654,7 @@ s.placed.append((2270, 1100, 34, 34))  # a carved wellhead court in the dense E 
 s.place_wells((2253, 1083, 2287, 1117), spacing=30, coverage=False)
 s.place_wells((2195, 1070, 2260, 1135), spacing=30, coverage=False)
 s.place_wells((442, 760, 588, 1435), spacing=65, coverage=False)
-s.place_wells((2145, 1425, 2330, 1615), spacing=70, coverage=False)
+s.place_wells((2145, 1442, 2330, 1615), spacing=70, coverage=False)
 s.place_wells((1080, 1590, 1390, 1680), spacing=68, coverage=False)  # the wealth rows' idobata
 s.place_wells((2000, 1760, 2110, 1880), spacing=60, coverage=False)
 s.place_wells((1900, 520, 1990, 640), spacing=60, coverage=False)  # the N band's servant rows (trimmed east of the samurai file)
@@ -679,24 +679,17 @@ s.place_wells((1050, 1900, 1450, 2100), spacing=80, coverage=False)
 # ---- T008: DETACHED SAMURAI (133 target) - the middle band, rowpacked at the loose samurai
 # court pitch (the Tango idiom, which is what C_SPACED was measured from).
 _SAM = ["samurai"] * 4 + ["samurai_large"]
-s.district("moat-south detached band", "detached", [(615, 1268), (1145, 1268), (1145, 1370), (615, 1370)], rank_band="detached")
+s.district("moat-south detached band", "detached", [(615, 1268), (1145, 1268), (1145, 1392), (615, 1392)], rank_band="detached")
 s.rowpack((620, 1275, 1140, 1362), _SAM * 11, court_every=8)
 s.rowpack((1150, 1275, 1240, 1362), _SAM * 4, court_every=8)
 s.rowpack((1470, 285, 1730, 415), _SAM * 8, court_every=8)  # the karamete-east shelf inside the ring curve
 s.rowpack((900, 348, 1072, 386), _SAM * 5, court_every=8)  # the NW shelf between the ring and the diagonal road
-s.district("magistracy detached flank", "detached", [(1555, 1400), (1860, 1400), (1860, 1560), (1555, 1560)], rank_band="detached")
+s.district("magistracy detached flank", "detached", [(1555, 1290), (1865, 1290), (1865, 1560), (1555, 1560)], rank_band="detached")
 s.rowpack((1560, 1408, 1660, 1555), _SAM * 4, court_every=8)
 s.rowpack((1808, 1408, 1852, 1555), _SAM * 2, court_every=8)
 s.district("west detached pocket", "detached", [(470, 1400), (790, 1400), (790, 1745), (470, 1745)], rank_band="detached")
 s.district("civic west detached", "detached", [(855, 1400), (1145, 1400), (1145, 1560), (855, 1560)], rank_band="detached")
-s.district("east street detached", "detached", [(2140, 1250), (2385, 1250), (2385, 1425), (2140, 1425)], rank_band="detached")
-s.district("west band detached", "detached", [(438, 620), (618, 620), (618, 1445), (438, 1445)], rank_band="detached")
-s.alley([(430, 950), (430, 1330)])  # the west files' service lane
-s.rowpack((445, 940, 556, 1140), _SAM * 4, court_every=8)  # the resized wall's new west band: detached files
-s.rowpack((445, 1170, 556, 1340), _SAM * 3, court_every=8)
-s.alley([(540, 650), (540, 1420)])
-s.rowpack((520, 640, 610, 890), _SAM * 6, court_every=8)
-s.rowpack((462, 900, 610, 1430), _SAM * 10, court_every=8)
+s.district("east street detached", "detached", [(2140, 1250), (2445, 1250), (2445, 1428), (2140, 1428)], rank_band="detached")
 s.district("west crescent machi", "machi", [(445, 1450), (625, 1450), (625, 2075), (445, 2075)], rank_band=None)
 s.block_polys.append([(592, 1738), (662, 1738), (662, 1818), (592, 1818)])
 s.placed.append((627, 1778, 70, 80))  # the crescent kido's crossing (reserved before the rows)
@@ -717,21 +710,22 @@ s.rowpack((800, 2055, 1330, 2335), ["laborer", "servant", "merchant_house", "lab
 s.rowpack((1350, 2055, 1985, 2335), ["laborer", "servant", "merchant_house", "laborer"] * 82, court_every=8)
 s.rowpack((1060, 1270, 1360, 1515), ["laborer", "servant", "merchant_house"] * 26, court_every=8)  # the freed SW approach ground joins the machi
 s.district("southwest approach machi", "machi", [(1055, 1265), (1365, 1265), (1365, 1520), (1055, 1520)], rank_band=None)
-s.district("thread machi", "machi", [(1670, 1295), (1905, 1295), (1905, 1565), (1670, 1565)], rank_band=None)
+s.district("thread machi", "machi", [(1670, 1295), (1905, 1295), (1905, 1440), (1670, 1440)], rank_band=None)
 for _kx, _ky in ((1055, 1375), (1905, 1390), (1670, 1390)):
     s.kido(_kx, _ky, horizontal=False)
     s.block_polys.append([(_kx - 40, _ky - 40), (_kx + 40, _ky - 40), (_kx + 40, _ky + 40), (_kx - 40, _ky + 40)])
     s.placed.append((_kx, _ky, 80, 80))
 s.rowpack((1680, 1300, 1900, 1450), ["laborer", "servant", "merchant_house"] * 20, court_every=8)
-s.rowpack((1495, 1468, 1895, 1560), ["laborer", "merchant_house"] * 18, court_every=8)  # the S band's cleared ground inside the new arc
+s.rowpack((1560, 1455, 1860, 1552), _SAM * 10, court_every=8)  # the magistracy flank keeps its detached files
+s.rowpack((1565, 1300, 1660, 1435), _SAM * 6, court_every=8)  # the S band's cleared ground inside the new arc
 s.rowpack((628, 1326, 772, 1362), _SAM * 3, court_every=8)
 s.rowpack((628, 1390, 772, 1424), _SAM * 3, court_every=8)
 s.rowpack((605, 1408, 785, 1555), _SAM * 5, court_every=8)
 s.rowpack((475, 1440, 595, 1740), _SAM * 7, court_every=8)
-s.rowpack((860, 1408, 1140, 1462), _SAM * 6, court_every=8)  # ends above the Jurojin monzen (021)
-s.rowpack((640, 1272, 1140, 1366), _SAM * 14, court_every=8)  # the moat-south detached band fills its declared ground
+s.rowpack((860, 1408, 1140, 1462), _SAM * 8, court_every=8)  # ends above the Jurojin monzen (021)
+s.rowpack((640, 1298, 1140, 1390), _SAM * 20, court_every=8)  # the moat-south detached band fills its declared ground
 s.rowpack((1188, 1596, 1224, 1714), _SAM * 3, court_every=8)  # the dojo's own file (a hall stands among the samurai it serves)
-s.rowpack((2145, 1255, 2380, 1425), _SAM * 8, court_every=8)
+s.rowpack((2145, 1255, 2420, 1415), _SAM * 17, court_every=8)
 s.rowpack((1860, 470, 1950, 650), _SAM * 7, court_every=8)  # the moat-corner pocket (east of the moat, west of the band lane)
 
 # ---- T010: THE COMMONER MACHI (2,160 packed target: 960 laborer / 480 servant / 600
@@ -790,8 +784,9 @@ _CITY_BOUND2 = s.bound
 # down the diagonal shore with the broker street (the first cut boxed the whole quay and
 # packed rows onto the moat band)
 s.bound = [[2020, 1950], [2520, 1950], [2520, 2530], [2020, 2530]]
-s.rowpack((2290, 2020, 2400, 2105), ["merchant_house", "laborer", "laborer", "laborer"] * 5, court_every=3)
-s.rowpack((2220, 2115, 2350, 2200), ["merchant_house", "laborer", "laborer", "laborer"] * 5, court_every=3)
+s.rowpack((2330, 2062, 2440, 2148), ["merchant_house", "laborer", "laborer", "laborer"] * 5, court_every=3)
+s.rowpack((2262, 2158, 2392, 2242), ["merchant_house", "laborer", "laborer", "laborer"] * 5, court_every=3)
+s.rowpack((2150, 2230, 2260, 2310), ["merchant_house", "laborer"] * 6, court_every=3)
 s.alley([(1850, 2555), (2060, 2420)])  # the shore path serving the towpath-side porters' rows
 # the TOWPATH SHORE (the haulage side of the wharf): porters' and boatmen's rows on the
 # land between the wall's south arc and the river, within the wharf's own reach

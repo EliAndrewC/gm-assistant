@@ -185,88 +185,35 @@ relay stables until there is fabric. Do not fix that by drawing the farrier; the
   scheduled kind (growing-season rotation of water rights). One closed-board glyph therefore
   stays the honest drawing; no open-variant needed. Nothing else blocks feature 021.
 
-## Feature 021: WALL RESIZE IN PROGRESS (GM decision 2026-08-10)
+## Feature 021: THE SETTLED WALL - endgame grind (state 2026-08-10, late)
 
-The GM caught it from the render: 57% of the packed cohort (1,238 of 2,182) stood OUTSIDE the
-walls vs the researched 30% (648). Root cause: the wall was sized with Tango's C_PACKED (690
-px2/family) but the capital's as-built machi delivers 1,367 px2/family (measured: 1,290,514
-px2 of in-wall machi-family districts holding 944 packed) - the capital pattern embeds
-estates/works/dojos/pockets in its commoner quarters. The in-wall shortfall (944 vs 1,512)
-was visible mid-build and was spilled into suburbs instead of triggering a wall recompute,
-because the band check validated only the packed TOTAL.
+**Geometry (FINAL, GM-approved option A):** RX,RY = 1110,1150 at CX,CY = (1400,1313) - the
+castle axis; straight Imperial road through both gates. Gates: N (1400,163), E (2510,1313),
+S (1400,2463), SW (502,1989). Canvas (3200,3050). River (shifted course) stays. The THREE
+STRUCTURAL LAWS ARE GREEN and must stay green: capital_interior_slack_in_band (<=15%
+claimed-open, wall-settles-first), capital_wall_matches_budget (C_PACKED_CAPITAL 950,
+CIRC 0.15, suburb 60/2160 - the GM's wharf-hamlet-only extramural ruling, all recorded in
+research/cities/capitals.md + citybudget.py), and the packed split (in-wall 2100 / suburb 60).
 
-**The fix (approved):**
-1. citybudget: C_PACKED_CAPITAL = 1350 (measured 1,367, ~1% down for separately-priced
-   embedded compounds), used by plan_capital's in-wall packed line. Required interior
-   2,978,888 -> 4,226,288 px2 (+42% area).
-2. NEW WALL: RX,RY = 1185,1177 at CX,CY = 1325,1420 (pin ~+2%). Edges: W 140, E 2510
-   (wharf band compresses ~80px toward the river), N 243 (unchanged), S 2597.
-   Canvas (3200,2700) -> (3200,3050); view EY1 -> ~3000.
-   Gates: N (1325,243), E (2510,1420), S (1325,2597), SW (366,2112).
-   Old interior is contained in the new wall to within ~15px everywhere (checked NE tight spot).
-3. Split band check: packed_inwall (1512) and packed_suburb (648) validated SEPARATELY,
-   tol max(2,5%); the in-wall-short + suburb-over combination emits the explicit
-   "this cannot possibly work without resizing the wall" diagnosis with the as-built density.
-   Pre-resize manifest frozen at pool/regressions/capital_packed_split_fires_on_the_pre_resize_shiro_daika.json.
-4. Re-lay: interior fabric KEEPS its coordinates (old interior within new wall); wall/moat/
-   ring/rim-temples/gates recompute from params; roads re-anchor to new gates (the ote-suji
-   gains a masugata jog: S gate is at x1325, castle axis x1400); terraces re-seat at the new
-   gates; the NEW in-wall bands (west ~140-370, south ~2110-2590) take machi districts+packs
-   to reach 1512 in-wall; suburbs thin to ~648 (drop the pocket-finder wings first - they
-   were the overflow: S-wing (905-1296,2130-2290), far-west strip (150,1520,240,1990),
-   west-approach extensions, deep-north (905,135,1160,238) etc); wharf band shifts ~80 east.
-5. FOLD IN the FULL settlement-review findings (2026-08-10, ran against the pre-resize map;
-   all transfer since the interior keeps its coordinates):
-   ERRORS: (a) no kosatsuba / punishment ground / execution ground - and NO check demanding
-   them runs at scale="capital" (silent tier gap): draw all three (site_justice.py for the
-   execution ground) AND extend the city checks to the capital tier; (b) bell-and-drum tower
-   budgeted (250 px2 line) but never drawn - draw it commanding the kido mesh; (c) sovereign
-   precincts must be WALLED (capitals.md: "the PRECINCT is walled; the neighborhood never
-   is") - precinct_interior gains an enclosure so the x1800 dead-end street stops at a wall;
-   (d) open-ground claims must not lap standing buildings (muster ground covered by two
-   manors; six pasture polys contain dwellings) - shrink polys to genuinely open ground when
-   re-laying the ring; (e) cistern wells: well() silently DROPS kind="cistern" from the
-   record, only one seated in the band, glyph identical to an ordinary well - record the
-   kind, draw a basin variant, check the band seats >= 2.
-   QUESTIONABLE to address: role-differentiated ground rendering (festival/muster trodden
-   bare, pasture with rails/fence, vs the current uniform scrub speckle); caption "common
-   ground" -> "common burial ground"; flophouse (1455,380) in the N samurai arc - drop it
-   (N gate already has an outside flop); cremation ground absent - add one (siblings have
-   1); precinct interiors are mirror-identical - jitter the program per precinct via
-   rng_scope; NE riverside rows (~2478-2668, 848-930) float without a way - lane or thin.
-   CAPTION CUTS (review Q2): flophouse 9 -> ~4: drop (1370,2035), (2340,1230) [E-gate text
-   pile], (698,1688), and 2-3 outside-gate duplicates keeping the S exemplar + doss pocket.
-   NITPICKS: dedupe the duplicate district records (SE/E-gate/west-rim machi appear twice;
-   SW machi + east street machi reuse one name for two polys); far-bank tanning yard wants a
-   plank; parish graveyard glyph at min size reads as jars (defer/glyph note); the second
-   "horse ground" label vanished with the castle-west removal (fine - one remains).
-   CONFIRMED by review (do not re-litigate): terraces read distinctly; wharf chain is the
-   map's best passage; rank grading legible; no twins; torii numerology holds everywhere.
-6. Then re-grind to green (snap scripts rerun) and resume ship phase (perf, captions,
-   settlement-review re-run, XII bookend, T029 docs, pool move, ritual).
-## Feature 021 state: GATE GREEN (2026-08-10)
+**Where the grind stands:** ~24 singles. Bands: packed_inwall PASSES at 2100-scale when the
+freed ring zones are packed (E machi extended to (1940,550,2405,1310) etc). detached stuck
+~103/133: the moat-south band pack (640,1272,1140,1382) leaves most of its box UNVISITED
+(why_placed says unvisited, not refused - investigate rowpack's early rows against the
+castle-moat margin; workaround: widen east-street detached (2145,1255,2420,1415) and the
+west pocket instead). suburb 55/60. census 2381/2472 - close LAST via one pack.
 
-**0 FAILs, 1,734/1,734 tests, census exactly 2,472.** All of US1-US3 shipped. Remaining
-ship tasks: T024 perf + GEN_TIME_BUDGETS, T025 captions, T022 wharf-labels verify, T026
-pool/capitals/ move + full byte-identity sweep, T027 FULL settlement-review, T028 XII
-bookend, T029 record-the-why docs, T030 ritual. tasks.md checkboxes to mark.
+**Beware (hard-won today):** the W band is layered - the ORIGINAL west-rim machi
+(430-590 x 750-1445, packs at lines ~779) is the real fabric; my crescent-machi south
+(445-625 x 1450-2075) is kept; every other W addition was deleted. Wall W face curves hard:
+x=500 at y640, 290 at y1300, 557 at y2060 - anything west of the face line clips. The SE
+kido pair (2120,1770)/(2182,1725) needs its reserves BEFORE every machi pack (order bug,
+fixed by putting them in the east-street district declaration block). Quay rows: river at
+x~2295-2340 at y2270-2300 - packs east of that drown.
 
-**Check-law decisions made this session (each needs its T029 why-writeup):**
-- businesses on-street reach = street BED EDGE + 85 real ft (was centerline+85: called
-  edge-hugging shops on the 26ft road off-street by 1px).
-- monzen commercial floor scales with the avenue: 7-arch sando >= 6, 1-2 arch >= 3.
-- monk_house out of the wells COMMON set (temple's own well).
-- humble-quarter gate exemption radius 340 -> 250 (filter now AFTER the loop - it was
-  dead code against the empty list).
-- teramachi_backstrip_lean, precinct_interiors_within_reservation,
-  precinct_graveyard_claims_closed, monzen_fronts_the_approach: new checks, red-green.
-- empty_street_runs + larger_streets_lined: a stretch fronting a commons poly (<70px)
-  serves that ground (the hirokoji case).
-- terrace() reserves its ROTATED bbox; precinct_halls in canopy keep-outs + overlap+label
-  registries; precincts OVERLAY.
-
-**Map decisions:** castle perimeter = pasture commons ring (umamawari/firebreak); Benten
-east flank = festival ground; ote front = hirokoji pasture; castle-west horse grounds were
-REMOVED (they sat on the citadel's own moat - the castle record is 850x700 at (1400,880));
-Jurojin monzen strings along the kagi road; y2005 shopfronts split around the doss pocket;
-the S-wing/far-west trims carry the exact census (adjust THERE first if fabric moves).
+**Remaining after green:** exact census (2472, tol 0), lint+full test files, bare-ground
+render check, re-run FULL settlement-review (the old review's findings partially stale now),
+N-market/flop caption cuts + review errors (kosatsuba/punishment/execution + capital-tier
+check gap, bell-drum tower, precinct walls, cistern kind/glyph, mirror precincts), perf
+T024, captions T025, T026 pool move + full sweep, T028 XII, T029 record-the-why docs
+(the THREE wall derivations + the slack law + extramural ruling), T030 ritual. Keep
+appending pain points to future-work.md per the GM's standing instruction.
