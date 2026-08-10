@@ -8590,6 +8590,77 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"angle is derived geometry, not a constant that survives a re-route)",
         )
 
+    # A CAPTION SITS BY WHAT IT NAMES (GM 2026-08-10: "the aqueduct labels are no longer
+    # correctly placed - the settling basin one is not even really next to the actual feature,
+    # it is on top of the city walls, and the intake weir label is way far away from the actual
+    # thing it is labeling"). `labels_clear_of_other_buildings` stops a caption COVERING the
+    # wrong thing; nothing stopped one drifting away from the RIGHT thing. Point-feature
+    # captions (the water furniture, the works) are checked against the feature their text
+    # names, because those are the ones a standoff ladder can push far from their subject.
+    lb_named: list[tuple[str, list[tuple[float, float]]]] = []
+    for lb_key, lb_word in (("sluice_gates", "sluice"), ("aqueducts", "aqueduct"), ("kilns", "kiln"), ("dye_yards", "dye"), ("tanning_yards", "tanning")):
+        lb_pts = [(f9["x"], f9["y"]) for f9 in M.get(lb_key, []) if isinstance(f9, dict) and "x" in f9]
+        if lb_key == "aqueducts":  # a LINE's caption may sit anywhere along it, so sample the run
+            for a9 in M.get("aqueducts", []):
+                for i9 in range(len(a9.get("poly", [])) - 1):
+                    p1_9, p2_9 = a9["poly"][i9], a9["poly"][i9 + 1]
+                    for t9 in range(0, 11):
+                        lb_pts.append((p1_9[0] + (p2_9[0] - p1_9[0]) * t9 / 10, p1_9[1] + (p2_9[1] - p1_9[1]) * t9 / 10))
+        if lb_pts:
+            lb_named.append((lb_word, lb_pts))
+    if lb_named:
+        lb_extra = {"aqueduct": ("intake", "weir", "basin", "settling")}
+        lb_bad = []
+        for lb in M.get("labels", []):
+            if not isinstance(lb, (list, tuple)) or len(lb) < 6:
+                continue
+            lb_text = str(lb[5]).lower()
+            lb_cx, lb_cy = (float(lb[0]) + float(lb[2])) / 2, (float(lb[1]) + float(lb[3])) / 2
+            for lb_word, lb_pts in lb_named:
+                if lb_word in lb_text or any(w9 in lb_text for w9 in lb_extra.get(lb_word, ())):
+                    lb_d = min(math.hypot(lb_cx - px9, lb_cy - py9) for px9, py9 in lb_pts)
+                    if lb_d > 90:  # 270 real ft at city grain - past that a caption reads as naming its neighbor
+                        lb_bad.append((str(lb[5]), round(lb_cx), round(lb_cy), round(lb_d)))
+                    break
+        check(
+            "captions_sit_by_their_feature",
+            not lb_bad,
+            f"caption(s) far from the feature they name (text, x, y, px): {lb_bad[:3]} - a caption that has drifted off its subject "
+            f"names whatever it lands on instead; give it an explicit label_xy at the feature, or shorten the standoff ladder",
+        )
+
+    # ...AND NOT ON THE RAMPART (GM 2026-08-10: the settling-basin caption "is on top of the
+    # city walls"). A caption laid across the wall or the moat reads as naming the defenses,
+    # and the wall's own ink swallows the text. The label battery protects FOOTPRINTS from
+    # captions; the wall is a polyline, so nothing covered it.
+    cw_lines = []
+    if len(M.get("wall") or []) >= 3:
+        cw_lines.append((list(M["wall"]) + [M["wall"][0]], 9.0))
+    if M.get("moat"):
+        cw_lines.append((list(M["moat"]) + [M["moat"][0]], float(M.get("moat_width", 22)) / 2))
+    if cw_lines:
+        cw_bad = []
+        for lb in M.get("labels", []):
+            if not isinstance(lb, (list, tuple)) or len(lb) < 6:
+                continue
+            cw_quad = [(float(lb[0]), float(lb[1])), (float(lb[2]), float(lb[1])), (float(lb[2]), float(lb[3])), (float(lb[0]), float(lb[3]))]
+            for cw_pts, cw_hw in cw_lines:
+                # corners AND edges: a caption box wider than the wall's band straddles the line
+                # with every corner clear of it, which a corner-only test calls fine (the same
+                # point-vs-footprint trap the skill has paid for before)
+                cw_hit = any(seg_dist(qx9, qy9, cw_pts[i9], cw_pts[i9 + 1]) < cw_hw for qx9, qy9 in cw_quad for i9 in range(len(cw_pts) - 1)) or any(
+                    segments_cross(cw_quad[e9], cw_quad[(e9 + 1) % 4], cw_pts[i9], cw_pts[i9 + 1]) for e9 in range(4) for i9 in range(len(cw_pts) - 1)
+                )
+                if cw_hit:
+                    cw_bad.append((str(lb[5]), round((float(lb[0]) + float(lb[2])) / 2), round((float(lb[1]) + float(lb[3])) / 2)))
+                    break
+        check(
+            "captions_clear_of_the_defenses",
+            not cw_bad,
+            f"caption(s) lying across the wall or moat: {cw_bad[:3]} - the rampart's ink swallows the text and the caption reads as "
+            f"naming the defenses; move the label off the wall band (label_xy), keeping it beside the feature it names",
+        )
+
     # A SHOP FACES THE WAY IT FRONTS (GM 2026-08-10: "at the northern gate market there is a row
     # of several merchant shops, and then just one of those shops is oriented facing away from
     # the road"). A storefront IS its street face - the noren, the counter and the goods are on

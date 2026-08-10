@@ -11080,3 +11080,18 @@ def test_frontage_shops_face_their_way():
     assert "frontage_shops_face_their_way" in f(away)
     interior = {**base, "buildings": [{"x": 500, "y": 400, "w": 12, "h": 9, "rot": 0, "kind": "shop"}]}
     assert "frontage_shops_face_their_way" not in f(interior)
+
+
+def test_captions_sit_by_their_feature_and_clear_the_defenses():
+    """GM 2026-08-10: the settling-basin caption sat ON the city wall and the intake-weir caption
+    far from its weir. One rule keeps a caption BY what it names; the other keeps it off the
+    rampart, whose ink swallows the text and which the caption would otherwise appear to name."""
+    base = {"meta": {"scale": "city", "ftpx": 3}, "streams": [{"poly": [[0, 500], [1000, 500]], "w": 20}]}
+    near = {**base, "sluice_gates": [{"x": 500, "y": 500, "rot": 0}], "labels": [[470, 470, 540, 480, 1, "sluice gate"]]}
+    assert "captions_sit_by_their_feature" not in f(near)
+    far = {**base, "sluice_gates": [{"x": 500, "y": 500, "rot": 0}], "labels": [[900, 200, 970, 210, 1, "sluice gate"]]}
+    assert "captions_sit_by_their_feature" in f(far)
+    on_wall = {"meta": {"scale": "city", "ftpx": 3}, "wall": WALLSQ, "labels": [[770, 470, 830, 480, 1, "settling basin"]]}  # straddles the x=800 wall face
+    assert "captions_clear_of_the_defenses" in f(on_wall)
+    off_wall = {"meta": {"scale": "city", "ftpx": 3}, "wall": WALLSQ, "labels": [[600, 470, 680, 480, 1, "settling basin"]]}
+    assert "captions_clear_of_the_defenses" not in f(off_wall)

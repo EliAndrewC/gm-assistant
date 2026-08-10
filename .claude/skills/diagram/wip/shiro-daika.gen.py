@@ -253,7 +253,7 @@ s.aqueduct([(2962.4, 1047.9), (2790, 1130), (2660, 1215), (2554.4, 1294.2)])  # 
 # All three aqueduct words share the duct's bearing and the same ~20px uphill offset from the
 # channel line (GM 2026-08-09: the end labels were level while "aqueduct" lay along the cut).
 s.label(2965, 985, "intake weir", 9, italic=True, color="#5E7A8A", rot=151, linear=True, full_tilt=True)
-s.label(2500, 1255, "settling basin", 9, italic=True, color="#5E7A8A", rot=151, linear=True, full_tilt=True)
+s.label(2612, 1196, "settling basin", 9, italic=True, color="#5E7A8A", rot=-33, linear=True, full_tilt=True)  # beside the terminus, clear of the rampart band (GM 2026-08-10)
 s.label(2705, 1160, "aqueduct", 10, italic=True, color="#5E7A8A", rot=151, linear=True, full_tilt=True)
 
 # ---- THE TOWPATH (feature 020): on the wharf's own (west) bank, coming up from downstream -
@@ -576,7 +576,7 @@ s.theater_stage(1740, 1695, w=64, h=46, rot=-120, label=None)  # opens toward th
 s.district("entertainment quarter", "entertainment", [(2000, 1620), (2115, 1620), (2115, 1800), (2000, 1800)], rank_band=None)
 # market-day flophouses at the working gates, seated BEFORE the packs (the first seats
 # landed on the moat band and the Shiro Kyo roadbed once the suburbs grew around them)
-s.flophouse(1330, 2511)
+s.flophouse(1290, 2560)  # far enough out that its caption clears the moat band (GM 2026-08-10)
 s.flophouse(2700, 1310)  # on the E gate road's south verge, inside the market's own strip
 s.flophouse(1325, 80)
 s.merchant_estates([(1330, 1830, "east"), (950, 1700, "south"), (1550, 1950, "north"), (1080, 1768, "south"), (1240, 1898, "east"), (1188, 1816, "west"), (1650, 1700, "south"), (1120, 1930, "north")])

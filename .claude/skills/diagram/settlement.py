@@ -11039,9 +11039,16 @@ class Settlement:
             # old label was centered on the inspection station and painted over the guard house)
             _rix, _riy = cx - gx, cy - gy
             _rl = math.hypot(_rix, _riy) or 1.0
-            _lx = gx + _rix / _rl * (ring_inset + self.px(50))
-            _ly = gy + _riy / _rl * (ring_inset + self.px(50))
             _ltext = "guard / inspection stations"
+            # The push must clear the label's OWN extent along the radial, not just the ring
+            # inset: this caption is ~134px wide, so a gate whose radial runs along x had the
+            # box straddling the rampart however far the CENTER was pushed (GM 2026-08-10, the
+            # capital's east and southwest gates - captions_clear_of_the_defenses).
+            _lhw0 = len(_ltext) * 9 * 0.55 / 2
+            _lhh0 = 9 * 0.8
+            _reach = ring_inset + self.px(50) + abs(_rix / _rl) * _lhw0 + abs(_riy / _rl) * _lhh0 + 6
+            _lx = gx + _rix / _rl * _reach
+            _ly = gy + _riy / _rl * _reach
             self.label(_lx, _ly, _ltext, 9, italic=True, color="#5A4326")
             # RESERVE the label's ground so no later pack lands a building under the text. city_wall runs
             # BEFORE the quarters pack, so the label cannot be auto-placed AROUND the buildings the way a
