@@ -10870,13 +10870,15 @@ def test_theater_stage_checks_run_per_stage_and_kind_gates_the_temple_rules():
     check, but only a MONZEN (temple) stage owes temple adjacency - a machi-kind stage is the
     entertainment quarter's commercial theater and sits in the fabric, not at a hall."""
     far_machi = {"x": 500, "y": 500, "w": 190, "h": 120, "rot": 0, "kind": "machi"}
-    M = {"meta": {"scale": "town"}, "theater_stage": [far_machi], "religious": [{"x": 1200, "y": 1200, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]}
-    assert "theater_stage_by_temple" not in f(M)
+    hall = [{"x": 1200, "y": 1200, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]
+    # EVERY stage owes its temple: the `machi` kind was briefly exempted on the research finding
+    # that a capital's entertainment district is commercial, and the GM (2026-08-10) ruled the
+    # older setting rule governs - a stage belongs to a hall whoever pays for the troupe.
+    assert "theater_stage_by_temple" in f({"meta": {"scale": "town"}, "theater_stage": [far_machi], "religious": hall})
     far_monzen = dict(far_machi, kind="monzen")
-    M["theater_stage"] = [far_monzen]
-    assert "theater_stage_by_temple" in f(M)
-    M["theater_stage"] = [far_machi, far_monzen]  # the monzen offender still fires beside a legal machi stage
-    assert "theater_stage_by_temple" in f(M)
+    assert "theater_stage_by_temple" in f({"meta": {"scale": "town"}, "theater_stage": [far_monzen], "religious": hall})
+    near = {"x": 1160, "y": 1080, "w": 190, "h": 120, "rot": 0, "kind": "machi"}
+    assert "theater_stage_by_temple" not in f({"meta": {"scale": "town"}, "theater_stage": [near], "religious": hall})
 
 
 def test_bridges_seat_on_water_fires_on_a_dry_deck():
