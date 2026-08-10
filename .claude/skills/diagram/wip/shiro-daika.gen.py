@@ -646,7 +646,7 @@ s.placed.append((2426, 1241, 196, 228))  # the caravan yard keeps OPEN ground fo
 s.inn(1330, 2368)
 s.stables(1512, 2392)
 s.block_polys.append([(1415, 2314), (1525, 2314), (1525, 2422), (1415, 2422)])
-s.placed.append((1470, 2368, 112, 418))  # S caravan yard: open ground for the animals (crowd rule)
+s.placed.append((1470, 2312, 112, 300))  # S caravan yard: open ground for the animals (crowd rule) - the reserve STOPS at the rampart (it used to run 114px past it and hold the gate market's ground)
 s.well(1458, 2416)  # the yard's public well - pre-seeded so the stables' own-well dig path (which predates placed-reserves) stays idle
 s.flophouse(1455, 300)
 s.flophouse(2421, 1343)
@@ -656,7 +656,7 @@ s.inn(629, 1938)
 s.stables(673, 1915)
 s.well(700, 1940)  # pre-seeded: the yard's own-well dig path was putting one on the SW gate road
 s.block_polys.append([(521, 1896), (631, 1896), (631, 2004), (521, 2004)])
-s.placed.append((576, 1950, 46, 338))  # SW caravan yard (uniform doctrine)
+s.placed.append((690, 1912, 150, 130))  # the SW yard's animal ground, east of the stables where the crescent rows press  # SW caravan yard (uniform doctrine) - likewise kept inside the wall
 s.street([(1850, 1688), (1850, 1852)], width=s.lw(10))  # the Benten sando's monzen lane (the hall faces its own lane - capitals.md)
 s.street([(950, 1482), (950, 1560)], width=s.lw(10))  # the Jurojin sando's monzen lane
 s.frontage([(950, 1492), (950, 1550)], ["shop"] * 4, width=6, spacing=26, setback=9)  # the sando's own stalls
@@ -835,7 +835,7 @@ _WELL_QUARTERS = (
     (2145, 635, 2405, 1250, 46),  # the E gate machi
     (2140, 1440, 2320, 1640, 60),  # the E street machi
     (430, 750, 590, 1445, 60),  # the W rim machi
-    (445, 1450, 610, 2075, 52),  # the W crescent machi
+    (445, 1450, 610, 2075, 48),  # the W crescent machi
     (1090, 1265, 1365, 1520, 63),  # the SW approach machi
     (1575, 1300, 1836, 1440, 63),  # the thread machi
     (2000, 1620, 2115, 1800, 60),  # the entertainment quarter
@@ -1044,14 +1044,18 @@ _SWB = s.bound
 s.bound = [[220, 1990], [505, 1990], [505, 2430], [220, 2430]]
 _MKB = s.bound
 _MKB = s.bound
-s.bound = [[280, 1830], [700, 1830], [700, 2210], [280, 2210]]
-s.frontage([(650, 1885), (502, 1989), (320, 2105)], ["shop"] * 9, width=8, spacing=26, setback=20, jitter=1)  # SW gate market, on the road itself
-s.bound = [[1310, 2470], [1490, 2470], [1490, 2860], [1310, 2860]]
-s.frontage([(1400, 2487), (1400, 2830)], ["shop"] * 13, width=8, spacing=24, setback=20, jitter=1)  # S gate market, down the Imperial road
-s.bound = [[830, 40], [1420, 40], [1420, 215], [830, 215]]  # the box must reach the GATE (x1400) or the strip's head is refused - the market has to start at the mouth (GM 2026-08-10)
-s.frontage([(1400, 120), (1200, 92), (1000, 116)], ["shop"] * 13, width=8, spacing=24, setback=16, jitter=1)
+s.bound = [[250, 1830], [700, 1830], [700, 2210], [250, 2210]]
+s.frontage([(478, 2006), (320, 2105), (180, 2160)], ["shop"] * 9, width=8, spacing=24, setback=18, jitter=1)  # SW gate market, on the road itself
+s.bound = [[1300, 2500], [1500, 2500], [1500, 2860], [1300, 2860]]
+s.frontage([(1400, 2512), (1400, 2830)], ["shop"] * 13, width=8, spacing=22, setback=18, jitter=1)  # S gate market, down the Imperial road
+s.bound = [[830, 40], [1500, 40], [1500, 215], [830, 215]]  # the box must reach the GATE (x1400) or the strip's head is refused - the market has to start at the mouth (GM 2026-08-10)
+s.frontage([(1400, 120), (1200, 92), (1000, 116)], ["shop"] * 12, width=8, spacing=22, setback=16, jitter=1)
+# the strip HEAD: the only ground within 200 ft of the N gate that clears the moat band,
+# the road corridor and the gate tower is the pocket east of the road's turn, so the
+# market crowds in there and strings west from it (GM 2026-08-10, probed not guessed)
+s.frontage([(1408, 104), (1470, 140)], ["shop", "merchant"] * 2, width=8, spacing=20, setback=24, jitter=1)
 s.frontage(
-    [(1030, 150), (1210, 128), (1390, 152)], ["shop", "merchant"] * 7, width=8, spacing=22, setback=16, jitter=1
+    [(1030, 150), (1210, 128), (1390, 152)], ["shop", "merchant"] * 7, width=8, spacing=22, setback=26, jitter=1
 )  # the strip's inner file, between road and moat bank  # N gate market: the strip STARTS at the gate mouth and runs west along the road (GM 2026-08-10)
 s.bound = [[2430, 1200], [2830, 1200], [2830, 1400], [2430, 1400]]
 s.frontage([(2545, 1306), (2800, 1247)], ["shop"] * 9, width=8, spacing=32, setback=20, jitter=1)  # E gate market on the Fox-lands road

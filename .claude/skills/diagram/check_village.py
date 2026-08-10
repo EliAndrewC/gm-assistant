@@ -9141,23 +9141,14 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                 # a MOAT pushes the head of the strip out by its own width plus the bridge's
                 # landing - stalls cannot stand on the crossing - so the allowance grows by the
                 # moat band where one runs past this gate (the capital's N gate, 2026-08-10)
-                # The pool's attested spread is 157-273 ft from the gate (Tango, Minami,
-                # Nagahara). A moated gate adds the ground the market CANNOT occupy: the moat
-                # band, the bridge's deck and landings, and the gate's own furniture apron -
-                # measured from the map rather than assumed, so a gate with more works in front
-                # of it earns more room and a bare gate earns none (GM 2026-08-10).
-                gm_allow = 280.0 / xm_ftpx
-                gm_blocked = 0.0
-                if M.get("moat"):
-                    gm_md = min(seg_dist(gm_g[0], gm_g[1], M["moat"][i9], M["moat"][(i9 + 1) % len(M["moat"])]) for i9 in range(len(M["moat"])))
-                    if gm_md <= float(M.get("moat_width", 22)) * 2:
-                        gm_blocked = gm_md + float(M.get("moat_width", 22)) / 2
-                for gm_k in ("bridges", "gate_structs", "inspection_stations"):
-                    for gm_f in M.get(gm_k, []):  # gate furniture is always recorded, never a bare polygon
-                        gm_fd = math.hypot(gm_f["x"] - gm_g[0], gm_f["y"] - gm_g[1])
-                        if gm_fd < 120:
-                            gm_blocked = max(gm_blocked, gm_fd + max(float(gm_f.get("w", 0)), float(gm_f.get("h", 0)), float(gm_f.get("span", 0))) / 2)
-                gm_allow += gm_blocked
+                # THE POOL'S OWN SPREAD IS THE WHOLE ANSWER (GM 2026-08-10, twice): the nearest
+                # stall sits 157-273 ft from the gate at Tango, Minami and Nagahara - and those
+                # are walled, moated cities with the same gate program, bridge and guard works.
+                # So the moat and the furniture are ALREADY inside that figure, and the first
+                # cut's mistake was adding them again on top: a 260 ft blocked band plus a
+                # 280 ft market allowance let the capital's markets start 540 ft out, which is
+                # exactly the 300-ish feet the GM was still seeing. One flat band, no addition.
+                gm_allow = 300.0 / xm_ftpx
                 if gm_near > gm_allow:
                     gm_bad.append((round(gm_g[0]), round(gm_g[1]), round(gm_near)))
         check(
