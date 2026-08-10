@@ -11055,3 +11055,14 @@ def test_new_2026_08_10_check_edge_cases():
     assert "extramural_features_tethered" not in f(near)  # 200px past the wall = 600 ft
     far = {**near, "kilns": [{"x": 500, "y": 1400, "w": 30, "h": 20, "rot": 0}]}
     assert "extramural_features_tethered" in f(far)  # 600px = 1,800 ft, past the attested band
+
+
+def test_sluice_gates_centered_on_their_channel():
+    """GM 2026-08-10, after the SAME defect recurred: a sluice gate's frame spans BANK TO BANK,
+    so its center must sit on the channel's CENTERLINE - not merely inside the water's band.
+    The old rule measured to the bank, so a gate two-thirds of a half-width off-center passed
+    while reading as detached from the water it gates."""
+    on = {"meta": {"scale": "city", "ftpx": 3}, "streams": [{"poly": [[0, 500], [1000, 500]], "w": 22}], "sluice_gates": [{"x": 500, "y": 501, "rot": 90}]}
+    assert "sluice_gates_centered_on_their_channel" not in f(on)
+    off = {**on, "sluice_gates": [{"x": 500, "y": 516, "rot": 90}]}  # 16px off a 22px channel
+    assert "sluice_gates_centered_on_their_channel" in f(off)

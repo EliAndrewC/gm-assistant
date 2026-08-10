@@ -175,14 +175,14 @@ s.road(
 # the same road is Imperial on BOTH sides of the city (GM 2026-08-09) - the run toward Shiro
 # Kyo carries its own caption, tilted along the branch per the linear rule
 s.label(1170, 66, "Imperial Road", 11, italic=True, color="#6E5B38", rot=195, linear=True)
-s.road([(2385, 1313), (EGATE[0], EGATE[1]), (2820, 1240), (3200, 1150)])  # east, to the Fox lands - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
+s.road([(2387, 1390), (2385, 1313), (EGATE[0], EGATE[1]), (2820, 1240), (3200, 1150)])  # east, to the Fox lands - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
 # the karamete approach is the STRAIGHT CONTINUATION of the north gate's street (GM 2026-08-09:
 # the first cut hung it off the diagonal mid-slope and the two beds read as overlapping roads):
 # city gate -> due south -> the castle's rear gate, dead-ending at its moat and tower exactly as
 # a castle-town street aimed at the works should, while the Imperial through-road leaves the
 # street at the (1400, 300) junction and bends west around the castle front (the kagi-no-te).
 s.road([(1400, 300), (1400, 520)])  # stops at the karamete tower's foot, as the ote-suji stops at the ote-mon's
-s.road([(680, 1862), (SWGATE[0], SWGATE[1]), (300, 2120), (0, 2200)])  # southwest, into the domain - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
+s.road([(636, 1772), (664, 1844), (SWGATE[0], SWGATE[1]), (300, 2120), (0, 2200)])  # southwest, into the domain - the first leg runs INSIDE the gate to join the ring road (gate_roads_join_the_ring)
 
 # ---- THE OTE-SUJI (feature 020): the ceremonial avenue from the castle's front gate south to the
 # Imperial road at the kagi-no-te bend. Drawn as a road (M["roads"]) so the shared crossing source
@@ -226,7 +226,7 @@ s.stream([FEED_TAP, (2870, 875), (2650, 880), (MOAT[4][0], MOAT[4][1])], frm={"k
 # junction the local water direction is ambiguous, so the correctly-across board read as a
 # coincidentally axis-aligned bar; astride the clear run, across-the-channel explains itself)
 s.sluice_gate(
-    3050, 848, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3040, 818), span=26
+    3051, 863.8, rot=math.degrees(math.atan2(875 - FEED_TAP[1], 2870 - FEED_TAP[0])) + 90, label="sluice gate", label_xy=(3040, 818), span=26
 )  # the intake board - the frame spans BANK TO BANK (posts on the abutments, the operator walks the crossbeam)
 DRAIN_OUT = (MOAT[8][0], MOAT[8][1])
 s.stream([DRAIN_OUT, (2000, 2460), (2172, 2557)], frm={"kind": "moat"}, to={"kind": "river"}, width=s.px(66))
@@ -387,12 +387,12 @@ rim_temple(17.5, "Temple of Hotei")
 # mid-river). A stage runs a boat-length into the stream and no further - the fairway stays
 # clear by law (the log-boom research) - so ~39 ft into a 120 ft river, a third of the channel.
 # One stage per granary complex end: barges tie up AT the kura frontage and unload straight in.
-s.jetty(2303, 2265, rot=30, length=13)  # the domain row's upstream stage
-s.jetty(2236, 2381, rot=30, length=13)  # ...and its downstream one, just past the row's end
+s.jetty(2303, 2265, rot=29.9, length=13)  # the domain row's upstream stage
+s.jetty(2236, 2381, rot=25.9, length=13)  # this stage stands on the bend below the row - its own bearing, not the row's  # ...and its downstream one, just past the row's end
 # the Emperor's complex gets its OWN landing (GM 2026-08-09: its grain moves by boat - that is
 # the whole reason imperial_granary_seat="wharf" - so it does not borrow the domain quay 200 ft
 # downstream; separate stores, separate barges, separate tally)
-s.jetty(2405, 2089, rot=30, length=13)
+s.jetty(2405, 2089, rot=29.9, length=13)
 # NO dock basin: the rectangular canal-head cut is Nagahara's in-city vocabulary and read as a
 # floating blue square against this diagonal bank (GM 2026-08-09) - a riverside wharf is jetties
 # and quay, not a basin. The granary rows stand ON the wharf, turned PARALLEL to the bank they
@@ -403,7 +403,9 @@ s.jetty(2405, 2089, rot=30, length=13)
 # flood", but the Kuramae anchor unloads barges STRAIGHT into the stores - the flood answer is
 # the kura's own raised floor and the stone revetment, not distance; a granary you must
 # porter sacks to has lost the wharf's whole point)
-BANK_ROT = -54  # the river passes the wharf at ~126 deg; the rows lie along it
+BANK_ROT = -60.1  # DERIVED from the river's current bearing at the wharf (119.9 deg): the
+# rows lie ALONG the bank. Recompute this when the course moves - the first draw was cut to
+# a -54 constant and stayed there when the channel shifted (GM 2026-08-10).
 s.granary(2253, 2312, n=4, w=20, h=12, gap=8, label="domain granaries", append=True, rot=BANK_ROT)
 s.granary(2368, 2121, n=3, w=20, h=12, gap=8, label="Imperial granaries", append=True, rot=BANK_ROT)  # a cart's width UP the bank - the row's ends were lapping the river's stroke
 # the brokers' lane runs shore-parallel between the granaries and the quay; its frontage is the
@@ -519,7 +521,7 @@ s.district("south gate terraces", "terrace", [(1325, 2050), (1475, 2050), (1475,
 s.terrace(1352, 2085, units=8, rot=90)
 s.terrace(1448, 2085, units=8, rot=90)
 s.district("southwest gate terraces", "terrace", [(730, 1800), (790, 1800), (790, 1855), (730, 1855)], rank_band="terrace")
-s.terrace(755, 1828, units=8, rot=90)  # vertical ranges: the only window between the x=740 alley and the x=800 street
+s.terrace(762, 1828, units=8, rot=90)  # vertical ranges: the only window between the x=740 alley and the x=800 street
 s.terrace(775, 1828, units=8, rot=90)
 
 # alleys BEFORE the packs (each reserves its corridor; no block core sits >95px from a way)
@@ -569,7 +571,7 @@ for _dj in s.M.get("dojos", []):
     _djx, _djy = _dj["x"], _dj["y"]
     s.block_polys.append([(_djx - 40, _djy - 40), (_djx + 40, _djy - 40), (_djx + 40, _djy + 40), (_djx - 40, _djy + 40)])
     s.placed.append((_djx, _djy, 64, 64))  # a dojo compound reserves its ground before the packs (the engine glyph alone did not)
-s.theater_stage(2060, 1700, w=66, h=48, label="theater", kind="machi")  # the entertainment quarter beside the wharf gate (the brokers' money builds the theaters)
+s.theater_stage(2062, 1712, w=66, h=48, label="theater", kind="machi", rot=127)  # the entertainment quarter beside the wharf gate (the brokers' money builds the theaters)
 s.theater_stage(1740, 1695, w=64, h=46, rot=-120, label=None)  # opens toward the Benten hall (its temple)
 s.district("entertainment quarter", "entertainment", [(2000, 1620), (2115, 1620), (2115, 1800), (2000, 1800)], rank_band=None)
 # market-day flophouses at the working gates, seated BEFORE the packs (the first seats
@@ -649,7 +651,7 @@ s.well(1458, 2416)  # the yard's public well - pre-seeded so the stables' own-we
 s.flophouse(1455, 300)
 s.flophouse(2421, 1343)
 s.flophouse(1370, 2341)
-s.flophouse(610, 1876)
+s.flophouse(586, 1856)  # INSIDE the SW gate with its inn and stables (city_gate_caravan_facilities); seat computed clear of wall, ring, road and every solid
 s.inn(629, 1938)
 s.stables(673, 1915)
 s.well(700, 1940)  # pre-seeded: the yard's own-well dig path was putting one on the SW gate road
@@ -878,9 +880,9 @@ for _gx in range(440, 2400, 42):
 # court pitch (the Tango idiom, which is what C_SPACED was measured from).
 _SAM = ["samurai"] * 4 + ["samurai_large"]
 s.district("moat-south detached band", "detached", [(615, 1268), (1145, 1268), (1145, 1392), (615, 1392)], rank_band="detached")
-s.rowpack((620, 1275, 1140, 1362), _SAM * 11, court_every=8)
+s.rowpack((620, 1275, 1140, 1362), _SAM * 15, court_every=8)
 s.rowpack((1150, 1275, 1240, 1362), _SAM * 4, court_every=8)
-s.rowpack((1470, 285, 1730, 415), _SAM * 8, court_every=8)  # the karamete-east shelf inside the ring curve
+s.rowpack((1470, 285, 1730, 415), _SAM * 12, court_every=8)  # the karamete-east shelf inside the ring curve
 s.rowpack((900, 348, 1072, 386), _SAM * 5, court_every=8)  # the NW shelf between the ring and the diagonal road
 s.district("magistracy detached flank", "detached", [(1555, 1290), (1865, 1290), (1865, 1560), (1555, 1560)], rank_band="detached")
 s.rowpack((1560, 1408, 1660, 1555), _SAM * 4, court_every=8)
@@ -890,7 +892,13 @@ s.district("civic west detached", "detached", [(855, 1400), (1145, 1400), (1145,
 s.district("east street detached", "detached", [(2140, 1250), (2445, 1250), (2445, 1428), (2140, 1428)], rank_band="detached")
 s.district("north band detached west", "detached", [(1060, 260), (1340, 260), (1340, 370), (1060, 370)], rank_band="detached")
 s.district("north band detached east", "detached", [(1640, 260), (1840, 260), (1840, 362), (1640, 362)], rank_band="detached")
-s.rowpack((1065, 268, 1335, 362), _SAM * 8, court_every=8)  # the tight wall's N band holes take the missing detached files
+s.rowpack((1062, 266, 1335, 368), _SAM * 10, court_every=8)
+s.rowpack((1852, 266, 1962, 372), _SAM * 8, court_every=8)
+s.rowpack((930, 452, 1075, 548), _SAM * 8, court_every=8)  # officials' houses on the karamete's west shelf
+s.rowpack((700, 430, 830, 520), _SAM * 6, court_every=8)  # ...and its west neighbor
+s.rowpack(
+    (1770, 520, 1910, 610), _SAM * 6, court_every=8
+)  # the Bishamon ward's officials' file  # the N band's east shelf: officials' houses, in no rank district  # the tight wall's N band holes take the missing detached files
 s.rowpack((1688, 268, 1832, 352), _SAM * 4, court_every=8)
 s.district("west crescent machi", "machi", [(445, 1450), (625, 1450), (625, 2075), (445, 2075)], rank_band=None)
 s.block_polys.append([(592, 1738), (662, 1738), (662, 1818), (592, 1818)])
@@ -910,16 +918,16 @@ s.district("thread machi", "machi", [(1575, 1295), (1905, 1295), (1905, 1440), (
 s.rowpack((1590, 1402, 1858, 1438), ["merchant_house", "laborer"] * 12, court_every=8)  # the households behind the thread frontage (ends clear of the 1905 kido's reserve)
 s.rowpack((1580, 1300, 1900, 1438), ["laborer", "servant", "merchant_house"] * 44, court_every=8)
 s.frontage([(1595, 1390), (2130, 1390)], ["merchant", "shop"] * 13, width=8, spacing=21, setback=14)  # the thread street's own commerce
-s.rowpack((1555, 1448, 1695, 1556), _SAM * 9, court_every=8)  # the magistracy flank keeps its detached files
+s.rowpack((1552, 1448, 1700, 1558), _SAM * 11, court_every=8)  # the magistracy flank keeps its detached files
 s.district("east rim detached", "detached", [(2245, 1660), (2405, 1660), (2405, 1800), (2245, 1800)], rank_band="detached")
 s.rowpack((2250, 1665, 2335, 1795), _SAM * 4, court_every=8)
 s.rowpack((1565, 1300, 1660, 1435), _SAM * 6, court_every=8)  # the S band's cleared ground inside the new arc
 s.rowpack((628, 1326, 772, 1362), _SAM * 3, court_every=8)
 s.rowpack((628, 1390, 772, 1424), _SAM * 3, court_every=8)
-s.rowpack((605, 1408, 785, 1555), _SAM * 5, court_every=8)
+s.rowpack((604, 1406, 790, 1556), _SAM * 8, court_every=8)
 s.rowpack((475, 1440, 595, 1740), _SAM * 7, court_every=8)
 s.rowpack((860, 1408, 1140, 1462), _SAM * 8, court_every=8)  # ends above the Jurojin monzen (021)
-s.rowpack((640, 1298, 1085, 1390), _SAM * 20, court_every=8)  # the moat-south detached band fills its declared ground
+s.rowpack((652, 1302, 1040, 1386), _SAM * 16, court_every=8)  # the moat-south detached band fills its declared ground
 s.rowpack((1188, 1596, 1224, 1714), _SAM * 3, court_every=8)  # the dojo's own file (a hall stands among the samurai it serves)
 s.rowpack((2145, 1255, 2420, 1415), _SAM * 17, court_every=8)
 s.rowpack((1860, 470, 1950, 650), _SAM * 7, court_every=8)  # the moat-corner pocket (east of the moat, west of the band lane)
@@ -1052,13 +1060,19 @@ s.bound = _CITY_BOUND2
 # ---- the OUT-WALL SAMURAI (the budget's other 47: CAPITAL_SAMURAI_INWALL_FRAC leaves 15%
 # of the cohort in country seats on the approaches - the Tango out-wall precedent; they
 # count in the census but belong to NO rank district, so the in-wall band targets stand)
+# A COUNTRY SEAT IS A WALLED COMPOUND, NOT A ROW (GM 2026-08-10, and the settlement-review
+# said the same of the first pass): the budget's out-wall samurai are landed retainers on the
+# approaches, so they take walled estates with their own ground - the machi-form rowpacks that
+# stood here read as suburb tenements with samurai labels, and left 24 free-standing samurai
+# houses outside the walls where city_samurai_houses_inside_walls rightly wants none.
 _CB3 = s.bound
-s.bound = [[1420, 2350], [1580, 2350], [1580, 2470], [1420, 2470]]
-s.rowpack((1428, 2360, 1494, 2465), _SAM * 4, court_every=8)  # east of the road, inside its 95px reach; the caption keeps the west seat
-s.bound = [[2540, 1330], [2700, 1330], [2700, 1440], [2540, 1440]]
-s.rowpack((2548, 1338, 2692, 1432), _SAM * 5, court_every=8)  # south of the E gate road - the aqueduct's cut owns the north side
-s.bound = [[1180, 2350], [1270, 2350], [1270, 2460], [1180, 2460]]
-s.rowpack((1190, 2360, 1262, 2455), _SAM * 2, court_every=8)
+# ...and they stand on the NORTHWEST approach, the road to Otosan Uchi: an out-wall estate
+# faces the capital (city_estates_toward_capital), and the three vary in size the way three
+# lineages' seats would. Seats computed clear of wall, moat, roads and every standing solid.
+s.bound = [[120, 60], [700, 60], [700, 520], [120, 520]]
+s.manor(260, 140, 118, 92, None, gate_dir="east")
+s.manor(200, 360, 96, 74, None, gate_dir="east")
+s.manor(460, 240, 78, 62, None, gate_dir="south")
 s.bound = _CB3
 
 
