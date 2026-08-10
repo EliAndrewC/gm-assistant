@@ -1032,7 +1032,7 @@ s.ossuary(2290, 1650)
 # label_xy: the default below-seat put the caption across the gate throat. That was invisible while the
 # throat was 228 ft wide (GM 2026-07-27, settlements/cities/defenses.md) - the piers stood so far apart
 # the text fell in the gap between them; at the true 30 ft opening the caption sits ON a gatepost.
-s.boundary_marker(1952, 1308, label_xy=(1952, 1291))  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
+s.boundary_marker(1952, 1308, label_xy=(2018, 1291))  # caption east of the rampart band - the stone keeps its verge (GM 2026-08-10)  # ON the road verge east of the bridge - the stone marks where the ROAD leaves clean ground, so it has to stand on it
 s.execution_ground(2244, 1502, rot=8)  # below-label restored 2026-07-27: label_above dated from when the kiln stood at (2210,1520), and with the works moved to the riverbank the below-seat clears it by 117 ft while the ABOVE seat put the caption's corner 12 ft from the trunk road's centerline - inside its bed, which labels_clear_of_other_buildings does not test (settlement-review)
 
 

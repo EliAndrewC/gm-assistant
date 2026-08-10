@@ -759,7 +759,7 @@ for sx, sy in [
     (1501, 1622),
 ]:  # (1265,1610) -> (1272,1570) 2026-07-21: the old seat sat against the SW wall tower (religious_clear_of_ring_and_towers, GM catch)   # all four INSIDE the temple neighborhood, clustered AWAY from the theater stage (its facing check measures the nearest religious feature - keep Benten nearest) - the S-gate pocket is the furniture's ground
     s.small_shrine(sx, sy)
-s.label(1247, 1562, "temple neighborhood", 9, italic=True, color="#6B2A18")  # below the graveyard/Benten label row (no_label_overlaps, 2026-07-23 wide-frame reflow)
+s.label(1286, 1556, "temple neighborhood", 9, italic=True, color="#6B2A18")  # inside the quarter and clear of the rampart band (GM 2026-08-10)  # below the graveyard/Benten label row (no_label_overlaps, 2026-07-23 wide-frame reflow)
 s.block_polys.append(
     [(1204, 1534), (1306, 1534), (1306, 1554), (1204, 1554)]
 )  # the district label's own ground (true-size halls freed this band, and the SW frontage packed a merchant under the text, 2026-07-21)

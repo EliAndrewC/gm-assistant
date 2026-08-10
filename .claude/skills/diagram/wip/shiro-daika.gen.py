@@ -704,6 +704,9 @@ s.commons([(1640, 1250), (1732, 1250), (1732, 1332), (1640, 1332)], render="bare
 _mseat = s.open_seat((1240, 1420, 1720, 1560), 62, 46) or (1466, 1530)
 s.mausoleum(_mseat[0], _mseat[1], 58, 42, label="Ancestral Mausoleum", gate_dir="south")
 
+s.frontage([(1210, 2210), (1580, 2210)], ["shop", "merchant", "laborer"] * 5, width=8, spacing=25, setback=18, jitter=1)  # the band street's north face - it had 1,140 ft bare on both sides
+s.frontage([(1580, 2262), (1210, 2262)], ["laborer", "servant", "merchant_house"] * 5, width=8, spacing=25, setback=18, jitter=1)  # ...and its south face
+
 # ---- T016: the kido MESH, before the packs (each gate reserves its ground; the mouths
 # derive from the declared districts + streets via the shared machi_mouths source)
 # ---- T015: fire towers over the dense fabric, placed first so the rows flow around them
@@ -1111,6 +1114,8 @@ s.quarter(
 # purpose: the aqueduct's intake works on the river (~x3140) are the part of the system a reader
 # traces first (spec 020, User Story 3), and the default crop cut them - plus the east road's
 # river bridge - clean off the sheet.
-s.crop_city(margin=90)  # the south=240/east=700 overrides padded dead margin onto both flanks (GM 2026-08-10); the aggressive default frames the real content
+s.crop_city(
+    margin=36
+)  # ~110 real ft of edge (GM 2026-08-10: 400 ft of empty margin was too much)  # the south=240/east=700 overrides padded dead margin onto both flanks (GM 2026-08-10); the aggressive default frames the real content
 s.title("Shiro Daika")
 s.finish(os.path.splitext(os.path.abspath(__file__))[0].replace(".gen", ""), png_width=4600)
