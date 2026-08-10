@@ -139,7 +139,7 @@ KAGI_Y = 1560
 # gate point, so the roadbed rode along the rampart stroke): the diagonal legs meet a short
 # perpendicular run on each side of the gate, and the bed passes clean through the gap.
 s.road(
-    [(SGATE[0], 3095), (SGATE[0], SGATE[1]), (SGATE[0], 2450), (1400, 2375), (1400, KAGI_Y), (800, KAGI_Y), (800, 470), (1240, 300), (NGATE[0], NGATE[1]), (1200, 110), (1040, 92), (860, 140), (620, 250), (330, 240), (40, 130)],
+    [(SGATE[0], 3095), (SGATE[0], SGATE[1]), (SGATE[0], 2450), (1400, 2375), (1400, KAGI_Y), (800, KAGI_Y), (800, 470), (1240, 300), (NGATE[0], NGATE[1]), (1200, 110), (1040, 92), (860, 140), (660, 110), (500, 20), (460, -60)],
     label="Imperial Road",
     label_xy=(SGATE[0] + 145, 2820),
 )
@@ -286,7 +286,7 @@ def lineage_manor(x: float, y: float, w: float, h: float, name: str, gate_dir: s
     s.M["manors"][-1]["lineage"] = name  # the field capital_lineage_compounds_labeled reads
 
 
-lineage_manor(2075, 700, 158, 122, "hazama", "west")
+lineage_manor(2035, 720, 158, 122, "hazama", "west")
 lineage_manor(2075, 975, 152, 118, "utsuro", "west")
 # the west pair stands WEST of the Imperial road's kagi-no-te leg (x=800) - the strip between
 # that leg and the castle moat is too narrow for a grand estate. Tokiwa sits in the narrowing
@@ -413,8 +413,8 @@ s.street(
     [(2130, 1250), (2130, 1620), (2185, 1668), (2180, 1770)], width=s.lw(15)
 )  # east of Kurogi; bends EAST around the Temple of Ebisu (2127,1686) to tie the NE grid into the y=1770 main street (021: streets_connected)
 s.street([(800, 1372), (800, 1938)], width=s.lw(15))  # meets the y=1375 street
-s.street([(431, 1375), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
-s.street([(1560, 1390), (2367, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
+s.street([(372, 1375), (1240, 1375)], width=s.lw(15))  # west end lands on the ring's inner edge  # y=1375: under the west band tail, over the kagi leg
+s.street([(1560, 1390), (2424, 1390)], width=s.lw(15))  # threaded between Kurogi's south wall (y1372) and the Imperial Magistracy's north wall (y1407)
 
 # ---- the YASHIKI BAND (T007): 53 walled compounds of Ranks 8-12 wrap the castle N / E / W
 # per the jokamachi law (rank = proximity to the court). The EIGHT lineage estates already
@@ -457,7 +457,7 @@ for _i, _y in enumerate((1300, 1490, 1715)):
     _yashiki(1905, _y, "east", _i + 2)
 for _i, _y in enumerate((1490, 1565)):
     _yashiki(2040, _y, "west", _i + 1)
-for _i, _y in enumerate((595, 850, 1120, 1195)):
+for _i, _y in enumerate((628, 850, 1120, 1195)):  # 628: the file's head clears the resized ring and Hazama's court
     _yashiki(2075, _y, "west", _i + 2)
 # west band: an east file facing the lane, plus west-side compounds in the estate gaps
 # (the file's head stays clear of the Temple of Hotei at (764,615))
@@ -593,7 +593,7 @@ s.inn(1170, 2422)
 s.stables(1310, 2422)
 s.block_polys.append([(1255, 2368), (1365, 2368), (1365, 2476), (1255, 2476)])
 s.placed.append((1310, 2422, -48, 472))  # S caravan yard: open ground for the animals (crowd rule)
-s.well(1342, 2392)  # the yard's public well - pre-seeded so the stables' own-well dig path (which predates placed-reserves) stays idle
+s.well(1348, 2452)  # the yard's public well - pre-seeded so the stables' own-well dig path (which predates placed-reserves) stays idle
 s.flophouse(1295, 300)
 s.flophouse(2336, 1370)
 s.flophouse(1210, 2395)
@@ -687,7 +687,9 @@ s.rowpack((305, 1160, 440, 1300), _SAM * 2, court_every=8)
 s.commons([(95, 600), (295, 600), (295, 2020), (95, 2020)], role="pasture")  # the west umamawari: the ring's grazing + drill ground continues around the new wall
 s.animal_ground(190, 1240, r=64, label="horse ground")
 s.commons([(450, 1460), (620, 1460), (620, 2040), (450, 2040)], role="pasture")
-s.commons([(1450, 2160, ), (1900, 2160), (1900, 2420), (1450, 2420)], role="pasture")  # the S band's cleared ground inside the new arc
+s.commons([(560, 2100), (1420, 2100), (1420, 2445), (560, 2445)], role="pasture")  # the S band's cleared ground inside the new arc
+s.commons([(1450, 2100), (1985, 2100), (1985, 2430), (1450, 2430)], role="pasture")
+s.commons([(95, 415), (660, 415), (660, 600), (95, 600)], role="pasture")  # the NW ring ground
 s.rowpack((628, 1326, 772, 1362), _SAM * 3, court_every=8)
 s.rowpack((628, 1390, 772, 1424), _SAM * 3, court_every=8)
 s.rowpack((605, 1408, 785, 1555), _SAM * 5, court_every=8)
@@ -781,11 +783,11 @@ s.bound = [[1035, 2600], [1610, 2600], [1610, 3035], [1035, 3035]]
 s.rowpack((1460, 2620, 1600, 2980), ["laborer", "servant", "merchant_house"] * 14, court_every=6)  # the ribbon's east file on the reach's far side
 s.rowpack((1145, 2700, 1230, 2830), ["laborer", "merchant_house", "servant"] * 16, court_every=6)  # starts below the Imperial Road caption's west seat, ends inside the reach
 s.rowpack((1252, 2610, 1335, 2715), ["laborer", "merchant_house", "servant"] * 16, court_every=6)
-s.rowpack((1145, 2780, 1230, 3015), ["laborer", "merchant_house", "servant"] * 26, court_every=6)  # the ribbon ward: guan-xiang suburbs string LINEARLY down the approach (research 021)
-s.rowpack((1252, 2850, 1335, 3015), ["laborer", "servant"] * 18, court_every=6)
+s.rowpack((1145, 2780, 1230, 3015), ["laborer", "merchant_house", "servant"] * 16, court_every=6)  # the ribbon ward: guan-xiang suburbs string LINEARLY down the approach (research 021)
+s.rowpack((1252, 2850, 1335, 3015), ["laborer", "servant"] * 14, court_every=6)
 s.alley([(1090, 2780), (1090, 3005)])  # starts below the relay yard  # the ribbon's side alleys - guan-xiang wards ran DEEP as well as long
 s.alley([(1390, 2615), (1390, 3005)])
-s.rowpack((1045, 2705, 1135, 3005), ["laborer", "servant", "merchant_house"] * 22, court_every=6)  # starts below the Imperial Road caption's seat
+s.rowpack((1045, 2705, 1135, 3005), ["laborer", "servant", "merchant_house"] * 13, court_every=6)  # starts below the Imperial Road caption's seat
 # (the x1205-1295 head block stays open: the relay yard takes it)
 s.rowpack((1345, 2620, 1435, 3005), ["laborer", "servant"] * 14, court_every=6)
 s.bound = [[2480, 1140], [2930, 1140], [2930, 1300], [2480, 1300]]
@@ -836,15 +838,15 @@ s.bound = _MKB
 s.bound = [[1100, 2420], [1240, 2420], [1240, 2810], [1100, 2810]]
 _MKB2 = s.bound
 s.bound = [[1150, 2530], [1330, 2530], [1330, 2925], [1150, 2925]]
-s.frontage([(1240, 2545), (1240, 2905)], ["shop"] * 12, width=8, spacing=25, setback=20, jitter=1)  # S gate market
+s.frontage([(1240, 2545), (1240, 2905)], ["shop"] * 14, width=8, spacing=22, setback=20, jitter=1)  # S gate market
 s.bound = [[830, 80], [1230, 80], [1230, 190], [830, 190]]
-s.frontage([(1200, 110), (1040, 92)], ["shop"] * 6, width=8, spacing=24, setback=18, jitter=1)  # N gate market, along the road under the wall
+s.frontage([(1200, 110), (1040, 92)], ["shop"] * 8, width=8, spacing=19, setback=18, jitter=1)  # N gate market, along the road under the wall
 s.frontage([(1020, 94), (872, 136)], ["shop"] * 5, width=8, spacing=26, setback=18, jitter=1)
+s.building(932, 142, *s._dims("shop"), "shop")
+s.building(948, 90, *s._dims("shop"), "shop")
+s.building(1204, 2561, *s._dims("shop"), "shop")
+s.building(1204, 2585, *s._dims("shop"), "shop")  # scan-seated: the N/S markets each sat one shop short of the floor
 s.bound = _MKB2  # S gate market, down the Imperial road
-s.bound = [[940, 290], [1240, 290], [1240, 490], [940, 490]]
-s.frontage([(1240, 152), (1240, 62)], ["shop"] * 6, width=8, spacing=18, setback=22, jitter=1)  # N gate market
-s.building(794, 272, *s._dims("shop"), "shop")
-s.building(818, 284, *s._dims("shop"), "shop")  # scan-seated: the N approach chokes frontage seats between moat band and ward rows  # ...continuing along the Shiro Kyo diagonal
 s.bound = [[2210, 1320], [2600, 1320], [2600, 1465], [2210, 1465]]
 s.frontage([(2225, 1446), (2582, 1382)], ["shop"] * 9, width=8, spacing=36, setback=20, jitter=1)  # E gate market on the Fox-lands road
 s.bound = _SWB  # guan-xiang shops strung along the SW approach road

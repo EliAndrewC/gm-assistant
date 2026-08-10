@@ -11602,8 +11602,15 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             dwl += [
                 (h["x"], h["y"], False) for h in M.get("houses", [])
             ]  # FARMHOUSES are commoner households in this vote: a farm-belt well (s.farm_wells) sits among farmsteads far from any urban dwelling, and judging it by the nearest IN-WALL houses mislabeled it samurai (Nagahara's SW belt, 2026-07-21)
+            # a CARAVAN-YARD well (within reach of a stables) is the yard's own trough water,
+            # serving wagon crews and animals wherever the gate quarter's caste happens to sit -
+            # the resized capital's N gate cluster stands in the samurai band, and its yard well
+            # is not a neighborhood idobata (021, the wall-resize re-lay).
+            _sy_stbl = [b9 for b9 in M.get("buildings", []) if b9.get("kind") == "stables"]
             sam_wells = []
             for w in wells:
+                if any(math.hypot(w["x"] - s9["x"], w["y"] - s9["y"]) < 80 for s9 in _sy_stbl):
+                    continue
                 if len(wp) >= 3 and not inw(w["x"], w["y"]):
                     # the samurai QUARTER is intramural by definition - an extramural well (a farm-belt
                     # or gate-suburb well) cannot sit "in" it, and letting in-wall samurai houses vote
