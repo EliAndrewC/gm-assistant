@@ -10023,7 +10023,11 @@ class Settlement:
         g.append("</g>")
         z = self.add_top("".join(g))
         self.M.setdefault("terraces", []).append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "rot": round(rot, 1), "units": units, "z": z})
-        self.placed.append((x, y, w, h))
+        # reserve the AXIS-ALIGNED BBOX of the rotated range, not the unrotated w x h: a rot=90
+        # file reserves a wide/short phantom otherwise, and place_wells seated a wellhead ON the
+        # Shiro Daika gate terraces through exactly that gap (found 2026-08-10, feature 021)
+        ta = math.radians(rot)
+        self.placed.append((x, y, abs(w * math.cos(ta)) + abs(h * math.sin(ta)), abs(w * math.sin(ta)) + abs(h * math.cos(ta))))
         return z
 
     def granary(self, x: float, y: float, n: int = 3, w: float = 58, h: float = 34, gap: float = 14, label: str = "granary", append: bool = False, rot: float = 0.0) -> list[Any]:

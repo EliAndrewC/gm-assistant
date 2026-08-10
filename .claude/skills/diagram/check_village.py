@@ -12601,8 +12601,6 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # a flop within reach of a GATE is the caravan flop - it serves the wagon crews
             # at the gate quarter wherever that quarter's caste sits (021: the capital's bands
             # abut its gates); the humble-quarter rule governs the market doss-houses only
-            _g21 = M.get("gates") or []
-            bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 340 for g21 in _g21)]
             for fl in flops:
                 if not inwall(fl["x"], fl["y"]):
                     continue
@@ -12614,6 +12612,13 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
                     bad_flop.append((round(fl["x"]), round(fl["y"]), "next to a temple/merchant/samurai"))
                 elif any(math.hypot(b["x"] - fl["x"], b["y"] - fl["y"]) < 150 for b in bura):
                     bad_flop.append((round(fl["x"]), round(fl["y"]), "in/next to the burakumin quarter"))
+            # a flop within reach of a GATE is the caravan flop even if its inn/stables pair sits
+            # slightly past 170px - it serves the wagon crews at the gate quarter wherever that
+            # quarter's caste sits (021: the capital's bands abut its gates); the humble-quarter
+            # rule governs the market doss-houses only. (Filter AFTER the loop that fills bad_flop;
+            # the first version ran it against the empty list and was dead code, 2026-08-10.)
+            _g21 = M.get("gates") or []
+            bad_flop = [bf for bf in bad_flop if not any(math.hypot(bf[0] - g21[0], bf[1] - g21[1]) <= 340 for g21 in _g21)]
             check(
                 "city_flophouse_in_humble_quarter",
                 not bad_flop,
