@@ -8869,7 +8869,7 @@ class Settlement:
         self.M["meta"].setdefault("settlement_form", "dike_top")
         return n_placed
 
-    def commons(self, poly: Any, role: str = "commons", avoid: Any = ()) -> None:
+    def commons(self, poly: Any, role: str = "commons", avoid: Any = (), render: str = "scrub") -> None:
         """FUEL-AND-FODDER COMMONS - the degraded open grazing/scrub on the far (upslope / windward) side,
         BEYOND the fengshui back-grove: coarse grass, low brush, and a FEW scattered SCRAGGLY pines, kept
         cropped bare by constant firewood + grass gathering. Deliberately drawn OPEN and SPARSE on drier,
@@ -8880,6 +8880,17 @@ class Settlement:
         in M['commons']. `role` picks the glyph (woodland / pasture / commons); `avoid` is a list of KEEP-OUT
         polygons (e.g. the hamlet cluster) the scatter stays out of, so ground-cover never creeps onto them."""
         # SCOPED (2026-08-08): the tuft/brush scatter is decoration keyed to the common it fills.
+        if render == "bare":
+            # CLAIMED but UNDRAWN ground (GM 2026-08-10, on the capital's ring bands reading as
+            # weeds): the record still claims the ground for the empty-space detector and names
+            # its role, but nothing is scattered - kept working ground reads as clean parchment,
+            # not scrub. The default stays "scrub" so every village commons is byte-identical.
+            xs0 = [q[0] for q in poly]
+            ys0 = [q[1] for q in poly]
+            self.M.setdefault("commons", []).append(
+                {"x": round(sum(xs0) / len(xs0), 1), "y": round(sum(ys0) / len(ys0), 1), "w": round(max(xs0) - min(xs0), 1), "h": round(max(ys0) - min(ys0), 1), "rot": 0, "role": role, "seq": len(self.M.get("commons", [])) + 1, "poly": [list(q) for q in poly]}
+            )
+            return
         with self.rng_scope("commons", len(poly), poly[0][0], poly[0][1]):
             xs = [p[0] for p in poly]
             ys = [p[1] for p in poly]

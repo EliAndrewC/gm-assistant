@@ -443,8 +443,8 @@ def test_a_capital_wall_too_large_for_its_canvas_fails_loudly_with_the_numbers()
 # is manifest bytes.
 
 _CAPITAL_LINES_AS_SHIPPED = [
-    ('packed row housing IN-WALL (laborer/servant/merchant/burakumin)', 1512, pytest.approx(2041200.0, abs=1e-6)),
-    ('packed row housing SUBURBAN (kashi wharf belt + guan-xiang gate wards)', 648, pytest.approx(0.0, abs=1e-6)),
+    ('packed row housing IN-WALL (laborer/servant/merchant/burakumin)', 2100, pytest.approx(2257500.0, abs=1e-6)),
+    ('packed row housing SUBURBAN (kashi wharf belt + guan-xiang gate wards)', 60, pytest.approx(0.0, abs=1e-6)),
     ('the castle (enceinte: baileys + moats; interior implied)', 1, pytest.approx(598000.0, abs=1e-6)),
     ('samurai walled yashiki in-wall (Ranks 8-12)', 53, pytest.approx(219950.0, abs=1e-6)),
     ('samurai detached houses in-wall (Ranks 5-7)', 133, pytest.approx(329840.0, abs=1e-6)),
@@ -465,16 +465,16 @@ _CAPITAL_LINES_AS_SHIPPED = [
     ('sovereign temple precincts', 2, pytest.approx(32500.0, abs=1e-6)),
     ('adept-monk houses by the temple precincts', 5, pytest.approx(3450.0, abs=1e-6)),
     ('cargo canal + dock basin', 1, pytest.approx(5800.0, abs=1e-6)),
-    ('circulation (trunk + ring road + streets + alleys)', None, pytest.approx(845257.5, abs=1e-6)),
+    ('circulation (trunk + ring road + streets + alleys)', None, pytest.approx(899332.5, abs=1e-6)),
 ]
 
 
 def test_the_shipped_capital_program_prices_and_orders_exactly_as_recorded():
     b = plan_capital(_cap(river=True), canvas=(3200, 2700))
     assert [(ln.label, ln.count, pytest.approx(ln.area_px2, abs=1e-6)) for ln in b.lines] == _CAPITAL_LINES_AS_SHIPPED
-    assert b.required_interior_px2 == pytest.approx(4226287.5, abs=1e-6)  # 021 corrected model + C_PACKED_CAPITAL 1350 (the wall-resize lesson: Tango's 690 under-built the rampart ~40%)
-    assert b.wall.rx == pytest.approx(1212.6818073409283, abs=1e-6)  # the MODEL minimum; the drawn map PINS 1185x1177 at (1325,1420), inside the wall check's tolerance
-    assert b.wall.ry == pytest.approx(1127.7940808270635, abs=1e-6)
+    assert b.required_interior_px2 == pytest.approx(4496662.5, abs=1e-6)  # C_PACKED_CAPITAL 1075 + the wharf-hamlet-only extramural ruling (GM 2026-08-10)
+    assert b.wall.rx == pytest.approx(1250.8709018538832, abs=1e-6)  # model minimum; the drawn 1185x1177 stands within tolerance
+    assert b.wall.ry == pytest.approx(1163.3099387241114, abs=1e-6)
 
 
 def test_the_capital_civic_rows_are_row_totals_not_per_unit_costs():

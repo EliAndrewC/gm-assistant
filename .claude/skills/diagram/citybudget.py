@@ -51,19 +51,19 @@ SAMURAI_INWALL_FRAC = 2.0 / 3.0
 C_PACKED = 690.0
 C_SPACED = 2480.0
 
-# A CAPITAL's packed quarter is NOT a provincial city's packed quarter (021, measured on the
-# drawn Shiro Daika after the GM caught 57% of the cohort standing outside the walls). Tango's
-# C_PACKED (690) prices lean rows + eaves + roji; the capital pattern embeds merchant estates,
-# trade works, private dojos, theater stages, the doss pocket, kido courts and wellhead courts
-# INSIDE its commoner quarters, and its legibility floors sit at 3 ft/px - so the as-built
-# in-wall machi ground came to 1,367 px^2/family (1,290,514 px^2 of machi-family districts
-# holding 944 packed dwellings). Sizing the wall with 690 therefore under-builds the rampart
-# by ~40% of interior area, and the shortfall has nowhere to go but unlawful suburbs.
-# 1,350 = that measurement rounded ~1% down, acknowledging that a sliver of the measured
-# ground (estates, works) is separately priced in the civic/estate lines. If a future capital's
-# fabric misses this constant too, RESIZE THE WALL from the measured density - never spill the
-# difference outside (the split band-target check now fails loudly on exactly that).
-C_PACKED_CAPITAL = 1350.0
+# A CAPITAL's packed quarter is NOT a provincial city's packed quarter - and its density is
+# a DECISION, not just a measurement (021, two GM rulings on 2026-08-10). The first capital
+# draw delivered 1,367 px^2/family (estates/works/dojos embedded in the quarters, generous
+# courts); pricing the wall from Tango's lean 690 under-built the rampart ~40% and spilled
+# 57% of the cohort into unlawful suburbs. The constant was first corrected to the measured
+# 1,350 - and then the GM's EXTRAMURAL RULING (a siege-built capital keeps its commoners
+# INSIDE; only the wharf hamlet lives out - see research/cities/capitals.md, "How much of a
+# capital lives OUTSIDE the walls") pushed the in-wall cohort to 2,100 households, which the
+# standing wall absorbs only by packing TIGHTER: rim bands converted to quarters, tighter
+# courts, works' halos trimmed. 1,075 is that packed-tight target - between Tango's 690 and
+# the sprawling first draw - and the drawn fabric must MEET it (the split band check fails
+# with the resize-the-wall diagnosis if it cannot).
+C_PACKED_CAPITAL = 1075.0
 
 # The fixed civic program - a FLOOR, not per-capita (a pop-2,000 seat still carries the full
 # mandatory program: governor's yamen, 6 ministries, temples, theater, gate furniture...).
@@ -345,7 +345,7 @@ class CapitalProgram:
     #: wharf belt and the guan-xiang gate wards. China-first: Suzhou's Changmen suburb
     #: out-traded the walled interior; the jokamachi machi-chi sprawled outside the moat
     #: lines. The wall is sized to the CEREMONIAL city; the commercial spill is the suburbs'.
-    suburb_packed_frac: float = 0.30
+    suburb_packed_frac: float = 60 / 2160  # the GM's extramural ruling (2026-08-10): the wharf hamlet ONLY (~60 households, ~300 inhabitants, ~2.8%); gate markets are commerce, not housing
     extras: tuple[BudgetLine, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
