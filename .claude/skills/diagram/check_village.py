@@ -180,6 +180,7 @@ def largest_empty_gap(poly: Poly, pts: Sequence[Pt], occupied: list[dict[str, An
 # `every_feature_classified_for_overlap` check fires when a NEW feature key appears in none of these
 # sets, forcing whoever adds it to declare its overlap behavior rather than silently skipping it.
 _OVERLAP_STRUCTS = (
+    "theater_stage",  # a LIST since 2026-08-10 (dict manifests normalized at gate entry)
     "houses",
     "terraces",
     "precinct_halls",
@@ -298,6 +299,7 @@ _OVERLAP_EXEMPT = {
 # NAME to be allowed to cover the feature - and because the group name is the caption word, that
 # permission is derived rather than hand-listed too (see _label_allows).
 _LABEL_GROUP = {
+    "theater_stage": "theater",
     "granaries": "granary",
     "terraces": "terrace",
     "flophouses": "flophouse",
@@ -1367,9 +1369,44 @@ def check_theater_stage(M: Manifest, check: Check) -> None:
     (2) `theater_stage_by_temple` - ADJACENT to a religious hall (center within ~260px of the nearest one).
     (3) `theater_stage_faces_temple` - its viewing ground OPENS TOWARD that hall (the stage faces it). The
         glyph's open side is local +y, so after `rot` it points (-sin, cos); that aligns with the hall."""
-    ts = M.get("theater_stage")
-    if not ts:
+    ts_raw = M.get("theater_stage")
+    # LIST since 2026-08-10 (the singleton write clobbered a second stage); old manifests carry a dict
+    ts_all = ts_raw if isinstance(ts_raw, list) else ([ts_raw] if ts_raw else [])
+    if not ts_all:
         return
+    ts_hits: list[str] = []
+    ts_far: list[str] = []
+    ts_back: list[str] = []
+    for ts in ts_all:
+        _theater_one_stage(M, ts, ts_hits, ts_far, ts_back)
+    check(
+        "theater_stage_clear",
+        not ts_hits,
+        f"theater stage footprint(s) overlap {sorted(set(ts_hits))[:6]} - the stage and its viewing ground "
+        f"must sit in CLEAR ground, touching nothing (no wall, moat, road, street/alley, watercourse, "
+        f"building, compound, grave, field, or pond)",
+    )
+    if M.get("religious"):
+        check(
+            "theater_stage_by_temple",
+            not ts_far,
+            f"monzen theater stage(s) far from every temple/monastery: {ts_far[:3]} (want <= 260px) - a temple/shrine "
+            f"performance stage sits ADJACENT to a religious hall with the viewing ground between them "
+            f"(a commercial quarter theater takes kind='machi' and owes no hall)",
+        )
+        check(
+            "theater_stage_faces_temple",
+            not ts_back,
+            f"monzen theater stage(s) whose viewing ground does not OPEN toward the temple: {ts_back[:3]} (alignment "
+            f"want >= 0.5) - the stage faces the hall with the audience between; set `rot` so the ground opens "
+            f"toward the temple (the stage's back is the side AWAY from the audience)",
+        )
+
+
+def _theater_one_stage(M: Manifest, ts: dict[str, Any], ts_hits: list[str], ts_far: list[str], ts_back: list[str]) -> None:
+    """One stage's share of check_theater_stage: clear-ground hits for every stage; the temple
+    adjacency/facing verdicts only for a MONZEN (temple) stage - kind='machi' is the commercial
+    quarter theater and sits in the fabric, not at a hall."""
     # (1) CLEAR: build the full footprint (the viewing ground PLUS the roofed stage straddling its north edge)
     w, h = ts["w"], ts["h"]
     sh = h * 0.26
@@ -1397,7 +1434,7 @@ def check_theater_stage(M: Manifest, check: Check) -> None:
             hits.append(nm)
     granary = M.get("granary")  # solid features (buildings, compounds, graves)
     solids = (
-        [s for k in _OVERLAP_STRUCTS for s in M.get(k, [])]
+        [s for k in _OVERLAP_STRUCTS if k != "theater_stage" for s in M.get(k, [])]  # a stage is not its own obstacle; stage-vs-stage is the generic matrix's business now
         + M.get("manors", [])
         + M.get("religious", [])
         + M.get("shrines", [])
@@ -1426,36 +1463,21 @@ def check_theater_stage(M: Manifest, check: Check) -> None:
         or any(((px - pond[0]) / (pond[2] + 6)) ** 2 + ((py - pond[1]) / (pond[3] + 6)) ** 2 <= 1.0 for px, py in sc)
     ):
         hits.append("the pond")
-    check(
-        "theater_stage_clear",
-        not hits,
-        f"the theater stage footprint overlaps {sorted(set(hits))[:6]} - the stage and its viewing ground "
-        f"must sit in CLEAR ground, touching nothing (no wall, moat, road, street/alley, watercourse, "
-        f"building, compound, grave, field, or pond)",
-    )
+    ts_hits += hits
     halls = M.get("religious", [])
-    if not halls:
+    if not halls or ts.get("kind") == "machi":
         return
     nearest = min(halls, key=lambda h: math.hypot(ts["x"] - h["x"], ts["y"] - h["y"]))
     near = math.hypot(ts["x"] - nearest["x"], ts["y"] - nearest["y"])
-    check(
-        "theater_stage_by_temple",
-        near <= 260,
-        f"the theater stage sits {round(near)}px from the nearest temple/monastery (want <= 260) - it is a "
-        f"temple/shrine performance stage, so site it ADJACENT to a religious hall with the viewing ground between them",
-    )
+    if near > 260:
+        ts_far.append(f"({round(ts['x'])},{round(ts['y'])}) {round(near)}px out")
     th = math.radians(ts.get("rot", 0))
     ox, oy = -math.sin(th), math.cos(th)  # the viewing ground's open direction (toward the audience/temple)
     dx, dy = nearest["x"] - ts["x"], nearest["y"] - ts["y"]
     d = math.hypot(dx, dy) or 1.0
     facing = (ox * dx + oy * dy) / d
-    check(
-        "theater_stage_faces_temple",
-        facing >= 0.5,
-        f"the theater stage's viewing ground does not OPEN toward its temple (alignment {facing:.2f}, want "
-        f">= 0.5) - the stage faces the hall with the audience between, so set its `rot` so the ground opens "
-        f"toward the temple (the stage's back is the side AWAY from the audience)",
-    )
+    if facing < 0.5:
+        ts_back.append(f"({round(ts['x'])},{round(ts['y'])}) alignment {facing:.2f}")
 
 
 def check_fire_features(M: Manifest, check: Check) -> None:
@@ -2365,9 +2387,9 @@ def city_capacity(M: Manifest, step: float = 8, grid_step: float | None = None) 
         + M.get("docks", [])
     )
     civic_r = _rects(civic)
-    ts = M.get("theater_stage")
-    if ts:
-        civic_r.append(rect_corners({"x": ts["x"], "y": ts["y"], "w": ts["w"], "h": ts["h"] * 1.3, "rot": ts.get("rot", 0)}))
+    ts9_raw = M.get("theater_stage")
+    for ts9 in ts9_raw if isinstance(ts9_raw, list) else ([ts9_raw] if ts9_raw else []):
+        civic_r.append(rect_corners({"x": ts9["x"], "y": ts9["y"], "w": ts9["w"], "h": ts9["h"] * 1.3, "rot": ts9.get("rot", 0)}))
     field_polys = [f["outline"] for f in M.get("fields", []) if point_in_poly((f["bbox"][0] + f["bbox"][2]) / 2, (f["bbox"][1] + f["bbox"][3]) / 2, wall)]
     field_polys += [dp["poly"] for dp in M.get("dry_plots", []) if point_in_poly(dp["poly"][0][0], dp["poly"][0][1], wall)]
     water = ([(M["moat"], M.get("moat_width", 22) / 2)] if M.get("moat") else []) + [(cc["poly"], cc.get("w", 12) / 2) for cc in M.get("canals", [])]
@@ -2578,6 +2600,11 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     WAIVER_MIN_REASON above for the rules that keep that hatch from rotting."""
     # tolerate sparse synthetic manifests (unit tests build only the keys a check needs)
     M = {**DEFAULT_MANIFEST, **M}
+    # pre-2026-08-10 manifests stored ONE stage as a bare dict (and the second stage of a
+    # two-stage map clobbered the first - the Shiro Daika review catch); DEFAULT_MANIFEST's
+    # placeholder is None. Normalized here so every check and the overlap registry read one shape.
+    _ts_norm = M.get("theater_stage")
+    M["theater_stage"] = [_ts_norm] if isinstance(_ts_norm, dict) else (_ts_norm or [])
     meta = M.get("meta", {})
     scale = meta.get("scale", "village")
     houses, fields = M["houses"], M["fields"]
@@ -8317,19 +8344,27 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # against a researched 30% share - the one number that would have caught it
         # (packed_suburb) was computed, recorded in the budget, and never enforced.
         _cb_wall = M.get("wall") or []
-        _cb_inw = (lambda x9, y9: point_in_poly(x9, y9, _cb_wall)) if len(_cb_wall) >= 3 else (lambda x9, y9: True)
+
+        def _cb_inw(x9: float, y9: float) -> bool:
+            return bool(point_in_poly(x9, y9, _cb_wall)) if len(_cb_wall) >= 3 else True
+
         _cb_packed = [
             b6
             for b6 in M.get("buildings", [])
-            if b6.get("kind") in DWELLING_KINDS and not str(b6.get("kind", "")).startswith("samurai") and any(point_in_poly(b6["x"], b6["y"], p6) for p6 in cb_in({"machi", "monzen", "entertainment"}))
+            if b6.get("kind") in DWELLING_KINDS
+            and not str(b6.get("kind", "")).startswith("samurai")
+            and any(bool(point_in_poly(b6["x"], b6["y"], p6)) for p6 in cb_in({"machi", "monzen", "entertainment"}))
         ]
         _cb_pin = sum(1 for b6 in _cb_packed if _cb_inw(b6["x"], b6["y"]))
         _cb_pout = len(_cb_packed) - _cb_pin
         _cb_tin = int(cb_tgt.get("packed", 0)) - int(cb_tgt.get("packed_suburb", 0))
         cb_pairs = [
-            ("samurai_yashiki", sum(1 for m6 in M.get("manors", []) if any(point_in_poly(m6["x"], m6["y"], p6) for p6 in cb_in({"yashiki"})))),
-            ("samurai_detached", sum(1 for b6 in M.get("buildings", []) if str(b6.get("kind", "")).startswith("samurai") and any(point_in_poly(b6["x"], b6["y"], p6) for p6 in cb_in({"detached"})))),
-            ("samurai_terrace", sum(int(t6.get("units", 0)) for t6 in M.get("terraces", []) if any(point_in_poly(t6["x"], t6["y"], p6) for p6 in cb_in({"terrace"})))),
+            ("samurai_yashiki", sum(1 for m6 in M.get("manors", []) if any(bool(point_in_poly(m6["x"], m6["y"], p6)) for p6 in cb_in({"yashiki"})))),
+            (
+                "samurai_detached",
+                sum(1 for b6 in M.get("buildings", []) if str(b6.get("kind", "")).startswith("samurai") and any(bool(point_in_poly(b6["x"], b6["y"], p6)) for p6 in cb_in({"detached"}))),
+            ),
+            ("samurai_terrace", sum(int(t6.get("units", 0)) for t6 in M.get("terraces", []) if any(bool(point_in_poly(t6["x"], t6["y"], p6)) for p6 in cb_in({"terrace"})))),
         ]
         cb_bad = [f"{cb_k}: drawn {cb_n} vs target {int(cb_tgt.get(cb_k, 0))}" for cb_k, cb_n in cb_pairs if abs(cb_n - int(cb_tgt.get(cb_k, 0))) > max(2, round(0.05 * int(cb_tgt.get(cb_k, 0))))]
         if abs(_cb_pin - _cb_tin) > max(2, round(0.05 * _cb_tin)):
@@ -8461,6 +8496,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # footprint family: gap VERDICT, measured on the deck's four real corners.
     b_ftpx = float(meta.get("ftpx", 1) or 1)
     b_short = []
+    b_dry: list[str] = []
     for b in M.get("bridges", []):
         b_th = math.radians(b.get("rot", 0.0))
         b_ux, b_uy = math.cos(b_th), math.sin(b_th)
@@ -8472,7 +8508,8 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if b_d <= b_wid / 2 + 2 and b_wid > b_cw:
                 b_crossed, b_cw = b_pts, b_wid
         if b_crossed is None:
-            continue  # a deck seated on no water is bridges_align_with_their_way's business
+            b_dry.append(f"({round(b['x'])},{round(b['y'])}) span {b['span']:.0f}")
+            continue  # no water under the seat: bridges_seat_on_water fires below; the span rule has nothing to measure
         b_floor = (2.0 if b.get("foot") else 6.0) / b_ftpx
         for b_su, b_sv in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
             b_cx = b["x"] + b_su * b_ux * b_hl - b_sv * b_uy * b_hw
@@ -8480,6 +8517,16 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             if min(seg_dist(b_cx, b_cy, b_crossed[i], b_crossed[i + 1]) for i in range(len(b_crossed) - 1)) < b_cw / 2 + b_floor:
                 b_short.append(f"({round(b['x'])},{round(b['y'])}) span {b['span']:.0f} on ~{b_cw:.0f}px water")
                 break
+    # A DECK MUST SIT ON WATER AT ALL (settlement-review 2026-08-10): Shiro Daika's towpath
+    # plank kept its seat when the drain's re-route moved the ford, and it lay on bare bank for
+    # a whole feature - bridges_span_their_water silently skipped it (nothing to measure) and no
+    # other rule owned the case. A check that never runs looks exactly like a check that passes.
+    check(
+        "bridges_seat_on_water",
+        not b_dry,
+        f"deck(s) seated on NO watercourse: {sorted(set(b_dry))[:4]} - the way's crossing moved and the deck kept "
+        f"its old seat; recompute the way x water segment intersection and re-seat the deck there (or delete it)",
+    )
     check(
         "bridges_span_their_water",
         not b_short,
@@ -10173,7 +10220,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         # every town has a THEATER STAGE unless meta(theater_stage=False); for a walled town
         # it sits INSIDE the walls unless meta(theater_stage="outside")
         ts_meta = meta.get("theater_stage", True)
-        amph = M.get("theater_stage")
+        amph_raw = M.get("theater_stage")
+        amph_all = amph_raw if isinstance(amph_raw, list) else ([amph_raw] if amph_raw else [])
+        amph = max(amph_all, key=lambda a9: a9.get("w", 0)) if amph_all else None
         if ts_meta is not False:
             check("town_has_theater_stage", bool(amph), "a town must have a theater stage (set meta(theater_stage=False) to omit)")
         if amph and meta.get("walled") and ts_meta != "outside":
@@ -10687,9 +10736,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             for ff in M.get("flower_fields", []):
                 occ += [(p[0], p[1]) for p in ff["outline"][::3]]
             occ += [(r["x"], r["y"]) for r in M.get("religious", [])] + [(mn["x"], mn["y"]) for mn in M.get("manors", [])]
-            amph = M.get("theater_stage")
-            if amph:
-                occ.append((amph["x"], amph["y"]))
+            amph_raw2 = M.get("theater_stage")
+            amph_all2 = amph_raw2 if isinstance(amph_raw2, list) else ([amph_raw2] if amph_raw2 else [])
+            occ += [(a8["x"], a8["y"]) for a8 in amph_all2]
             hill = M.get("hill")
 
             def occ_dist(x: float, y: float) -> float:
@@ -11471,7 +11520,9 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         check_theater_stage(M, check)
         # a CITY theater stage is bigger than a town's (towns run a viewing ground ~150 wide) - a provincial
         # city draws a larger crowd, so its viewing ground is wider (>= 185, the city baseline)
-        amph = M.get("theater_stage")
+        amph_raw3 = M.get("theater_stage")
+        amph_all3 = amph_raw3 if isinstance(amph_raw3, list) else ([amph_raw3] if amph_raw3 else [])
+        amph = max(amph_all3, key=lambda a8: a8.get("w", 0)) if amph_all3 else None
         if amph:
             # compared in REAL FEET via the declared scale (meta ftpx, default 1): a town's stage
             # is ~150 ft wide, so a provincial city's must be >= 185 ft - the old 185px threshold
@@ -13380,7 +13431,7 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             # wall-protected premium, would not have been left bare.
             ES_STEP, ES_MARGIN, ES_MIN = 32, 20.0, 4000
             es_rects: list[tuple[float, float, float, float]] = []
-            es_singles = [es_s for es_s in (M.get("governor_mansion"), M.get("theater_stage")) if es_s]
+            es_singles = [es_s for es_s in [M.get("governor_mansion"), *(M.get("theater_stage") or [])] if isinstance(es_s, dict)]
             for es_grp in [
                 M.get(es_k, []) or []
                 for es_k in (

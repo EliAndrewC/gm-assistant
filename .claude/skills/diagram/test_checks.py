@@ -10827,10 +10827,7 @@ def test_capital_packed_band_is_validated_as_two_bands_not_one_total():
     r = f(M)
     assert "capital_housing_matches_band_targets" not in r
     M["buildings"] = _pk(40, 120) + _pk(60, 1220)  # total still 100 - but the wall cannot hold its band
-    import check_village
 
-    msgs = {}
-    real_check = None
     fails = f(M)
     assert "capital_housing_matches_band_targets" in fails
 
@@ -10866,3 +10863,29 @@ def test_capital_interior_slack_in_band():
     assert "capital_interior_slack_in_band" in r  # 36% of a 1M interior
     M["commons"][0]["poly"] = [[100, 100], [400, 100], [400, 400], [100, 400]]  # 9%
     assert "capital_interior_slack_in_band" not in f(M)
+
+
+def test_theater_stage_checks_run_per_stage_and_kind_gates_the_temple_rules():
+    """List-shaped theater_stage (the post-clobber-fix record): every stage gets the clear
+    check, but only a MONZEN (temple) stage owes temple adjacency - a machi-kind stage is the
+    entertainment quarter's commercial theater and sits in the fabric, not at a hall."""
+    far_machi = {"x": 500, "y": 500, "w": 190, "h": 120, "rot": 0, "kind": "machi"}
+    M = {"meta": {"scale": "town"}, "theater_stage": [far_machi], "religious": [{"x": 1200, "y": 1200, "w": 132, "h": 86, "rot": 0, "kind": "monastery"}]}
+    assert "theater_stage_by_temple" not in f(M)
+    far_monzen = dict(far_machi, kind="monzen")
+    M["theater_stage"] = [far_monzen]
+    assert "theater_stage_by_temple" in f(M)
+    M["theater_stage"] = [far_machi, far_monzen]  # the monzen offender still fires beside a legal machi stage
+    assert "theater_stage_by_temple" in f(M)
+
+
+def test_bridges_seat_on_water_fires_on_a_dry_deck():
+    """A deck seated on NO water at all - the floating towpath plank (settlement-review
+    2026-08-10): the drain's re-route moved the ford and the deck kept its old seat, and
+    bridges_span_their_water silently skipped it (no crossed water -> continue), so a plank
+    lying on bare bank shipped green. A check that never runs looks exactly like a check that
+    passes."""
+    M = _bridge_map([{"x": 500, "y": 500, "rot": 0, "span": 37, "w": 26}])
+    assert "bridges_seat_on_water" not in f(M)  # this deck IS on its stream
+    M["bridges"] = [{"x": 800, "y": 200, "rot": 0, "span": 37, "w": 26, "foot": True}]  # far from every water
+    assert "bridges_seat_on_water" in f(M)

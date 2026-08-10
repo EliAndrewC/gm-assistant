@@ -6432,3 +6432,17 @@ def test_quarter_accepts_the_capital_zones():
     s.quarter([(100, 100), (400, 100), (400, 400), (100, 400)], "castle")
     s.quarter([(400, 100), (700, 100), (700, 400), (400, 400)], "samurai")
     assert [q["zone"] for q in s.M["quarters"]] == ["castle", "samurai"]
+
+
+def test_theater_stage_records_every_stage_not_just_the_last():
+    """TWO theater stages on one map (a temple stage AND an entertainment-quarter theater -
+    Shiro Daika's design) must BOTH reach the manifest. The singleton dict write meant the
+    second call clobbered the first: the labeled quarter stage existed as ink only, invisible
+    to the overlap matrix in both directions (settlement-review, 2026-08-10)."""
+    s = Settlement(1000, 1000, seed=7)
+    s.theater_stage(300, 300, w=66, h=48, label=None)
+    s.theater_stage(700, 700, w=64, h=46, rot=-120, kind="monzen", label=None)
+    recs = s.M["theater_stage"]
+    assert isinstance(recs, list) and len(recs) == 2
+    assert {(r["x"], r["y"]) for r in recs} == {(300, 300), (700, 700)}
+    assert recs[0].get("kind") == "machi" or recs[0].get("kind") == "monzen" or "kind" in recs[0]
