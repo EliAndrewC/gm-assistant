@@ -8633,31 +8633,31 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
     # city walls"). A caption laid across the wall or the moat reads as naming the defenses,
     # and the wall's own ink swallows the text. The label battery protects FOOTPRINTS from
     # captions; the wall is a polyline, so nothing covered it.
-    cw_lines = []
+    cd_lines = []
     if len(M.get("wall") or []) >= 3:
-        cw_lines.append((list(M["wall"]) + [M["wall"][0]], 9.0))
+        cd_lines.append((list(M["wall"]) + [M["wall"][0]], 9.0))
     if M.get("moat"):
-        cw_lines.append((list(M["moat"]) + [M["moat"][0]], float(M.get("moat_width", 22)) / 2))
-    if cw_lines:
-        cw_bad = []
+        cd_lines.append((list(M["moat"]) + [M["moat"][0]], float(M.get("moat_width", 22)) / 2))
+    if cd_lines:
+        cd_bad = []
         for lb in M.get("labels", []):
             if not isinstance(lb, (list, tuple)) or len(lb) < 6:
                 continue
-            cw_quad = [(float(lb[0]), float(lb[1])), (float(lb[2]), float(lb[1])), (float(lb[2]), float(lb[3])), (float(lb[0]), float(lb[3]))]
-            for cw_pts, cw_hw in cw_lines:
+            cd_quad = [(float(lb[0]), float(lb[1])), (float(lb[2]), float(lb[1])), (float(lb[2]), float(lb[3])), (float(lb[0]), float(lb[3]))]
+            for cd_pts, cd_hw in cd_lines:
                 # corners AND edges: a caption box wider than the wall's band straddles the line
                 # with every corner clear of it, which a corner-only test calls fine (the same
                 # point-vs-footprint trap the skill has paid for before)
-                cw_hit = any(seg_dist(qx9, qy9, cw_pts[i9], cw_pts[i9 + 1]) < cw_hw for qx9, qy9 in cw_quad for i9 in range(len(cw_pts) - 1)) or any(
-                    segments_cross(cw_quad[e9], cw_quad[(e9 + 1) % 4], cw_pts[i9], cw_pts[i9 + 1]) for e9 in range(4) for i9 in range(len(cw_pts) - 1)
+                cd_hit = any(seg_dist(qx9, qy9, cd_pts[i9], cd_pts[i9 + 1]) < cd_hw for qx9, qy9 in cd_quad for i9 in range(len(cd_pts) - 1)) or any(
+                    segments_cross(cd_quad[e9], cd_quad[(e9 + 1) % 4], cd_pts[i9], cd_pts[i9 + 1]) for e9 in range(4) for i9 in range(len(cd_pts) - 1)
                 )
-                if cw_hit:
-                    cw_bad.append((str(lb[5]), round((float(lb[0]) + float(lb[2])) / 2), round((float(lb[1]) + float(lb[3])) / 2)))
+                if cd_hit:
+                    cd_bad.append((str(lb[5]), round((float(lb[0]) + float(lb[2])) / 2), round((float(lb[1]) + float(lb[3])) / 2)))
                     break
         check(
             "captions_clear_of_the_defenses",
-            not cw_bad,
-            f"caption(s) lying across the wall or moat: {cw_bad[:3]} - the rampart's ink swallows the text and the caption reads as "
+            not cd_bad,
+            f"caption(s) lying across the wall or moat: {cd_bad[:3]} - the rampart's ink swallows the text and the caption reads as "
             f"naming the defenses; move the label off the wall band (label_xy), keeping it beside the feature it names",
         )
 
