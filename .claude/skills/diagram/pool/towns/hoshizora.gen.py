@@ -359,7 +359,7 @@ s.block_polys.append([(1665, 335), (2065, 335), (2065, 660), (1665, 660)])
 # So the yard sits further off its bank than Nagahara's or Ubame's do, and that is forced rather
 # than sloppy - which is exactly why the intake cut has to MEASURE its way to the water (the engine's
 # _intake_reach) instead of trusting the old fixed 11 ft, per settlement-review 2026-08-08.
-s.tanning_yard(1934, 868, rot=43, pits=4, water="ditch")  # off the hoshizora-ne paddy corner and its drain ditch (tanning_yard_clear_of_water/_fields); the intake cut now MEASURES its way to the drain (_intake_reach) instead of assuming the old fixed 11 ft reached it
+s.tanning_yard(1934, 868, rot=43, pits=4, water="ditch")  # off the hoshizora-ne paddy corner and its drain ditch (tanning_yard_clear_of_water/_fields); the intake cut now MEASURES its way to the drain (_intake_reach) instead of assuming the old fixed 11 ft reached it  # off the hoshizora-ne paddy corner and its drain ditch (tanning_yard_clear_of_water/_fields); the intake cut now MEASURES its way to the drain (_intake_reach) instead of assuming the old fixed 11 ft reached it
 # ...and RESERVE the standoff, the way ubame.gen.py already does for its yard. Without this the yard
 # only occupies `placed`, which buys a half-diagonal of clearance (~36 ft), and the farm ring then
 # seats a farmhouse at 107 ft - inside the 120 ft `tanning_yard_clear_of_dwellings` demands. 155 is

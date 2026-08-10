@@ -1008,7 +1008,7 @@ s.rowpack((2092, 2400, 2152, 2467), ["laborer", "servant"] * 4, court_every=3)
 s.bound = [[1560, 2540], [1810, 2540], [1810, 2880], [1560, 2880]]
 s.rowpack((1580, 2560, 1790, 2740), ["laborer", "laborer", "servant"] * 9, court_every=6)
 s.bound = [[1820, 2450], [2100, 2450], [2100, 2810], [1820, 2810]]
-s.cemetery(1780, 2708, 84, 60, parish=False, label="common burial ground")
+s.cemetery(1640, 2680, 84, 60, parish=False, label="common burial ground")
 # THE FULL FUNERARY GEOGRAPHY (GM 2026-08-10: "I don't see a cremation ground or pauper's
 # burial mound at all... I also don't see a mausoleum"). The whole funerary block was gated on
 # scale in (village, town, city) and the capital tier skipped it - a city of 12,400 with no
@@ -1016,8 +1016,8 @@ s.cemetery(1780, 2708, 84, 60, parish=False, label="common burial ground")
 # follow: the crematory OUTSIDE the walls beyond a gate (smoke and pollution), the pauper
 # ossuary beside it, both by the common burial ground on the way out; the clan's ancestral
 # mausoleum INSIDE, by the government quarter, a walled crypt precinct.
-s.cremation_ground(1848, 2790)
-s.ossuary(1770, 2828)
+s.cremation_ground(1748, 2668)
+s.ossuary(1572, 2718)
 s.rowpack((1850, 2492, 2024, 2740), ["laborer", "servant"] * 12, court_every=6)
 # the gate wards, each hugging its approach road inside the guan-xiang reach
 s.placed.append((1204, 2561, 22, 18))

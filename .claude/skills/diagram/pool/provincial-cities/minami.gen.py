@@ -299,7 +299,7 @@ s.drum_tower(1366, 1386)  # the bell-and-drum tower at the SW corner of the cent
 
 # ---- TRADE WORKS, placed early so every later pack flows around them.
 s.brewery(1466, 1198)
-s.dye_yard(1058, 1546)  # on the in-wall cargo canal, north of the dock basin
+s.dye_yard(1058, 1546, rot=6.3)  # on the in-wall cargo canal, north of the dock basin
 s.lumber_yard(
     872, 1445, label_xy=(886, 1466)
 )  # the zaimokuya on the dry strip below the wharf, clear of the water but hard against its bank frontage - ~40 ft of haul ground between the yard's west edge and the log boom's mooring line, so pen and yard read as ONE works (settlement-review 2026-08-02: at 130 ft of untouched bank they read as two unrelated features). Caption hand-seated east so its box clears the pen's bank edge (it grazed by under a pixel from the default seat)

@@ -8664,6 +8664,54 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
             f"naming the defenses; move the label off the wall band (label_xy), keeping it beside the feature it names",
         )
 
+    # THE FUNERARY GROUND STARTS AT THE WALL AND RUNS OUTWARD (GM 2026-08-10, researched; the
+    # why and the sources are in research/cities/capitals.md "How far outside the wall does the
+    # funerary ground sit?"). Nothing in the record holds it far off: ritual pollution is a
+    # BINARY satisfied by being outside at all (Kyoto's Injo-ji stood ON the Odoi rampart and
+    # marked the boundary of the living), fire is worth 50 ft by code and was never a siting
+    # driver at all (Edo cremated on open pyres inside its own temple precincts for 250 years
+    # and moved them in 1873 for the STENCH), and what actually set the distance was worthless
+    # ground on the road out of the gate. In every attested case the complex's ENTRANCE is at or
+    # just past the wall and the field runs outward - so a compact feature at 900+ ft is drawing
+    # the FAR end of a historical site at its NEAR end, which is what made the capital's read
+    # unmotivated.
+    if URBAN and len(M.get("wall") or []) >= 3:
+        fg_wall = M["wall"]
+        fg_ftpx = float(meta.get("ftpx", 1) or 1)
+        fg_max = (900.0 / fg_ftpx) if scale == "capital" else 1e9  # GM 2026-08-10 scoped the cap to capitals; the provincial spread is recorded, not enforced
+        fg_min = 150.0 / fg_ftpx
+        fg_sites = [(k9, f9) for k9 in ("cemeteries", "cremation_grounds", "ossuaries") for f9 in M.get(k9, []) if isinstance(f9, dict) and "x" in f9]
+        fg_out = [(k9, f9) for k9, f9 in fg_sites if not point_in_poly(f9["x"], f9["y"], fg_wall)]
+        fg_bad = []
+        for fg_k, fg_f in fg_out:
+            fg_d = min(seg_dist(fg_f["x"], fg_f["y"], fg_wall[i9], fg_wall[(i9 + 1) % len(fg_wall)]) for i9 in range(len(fg_wall)))
+            fg_edge = fg_d - max(float(fg_f.get("w", 0)), float(fg_f.get("h", 0))) / 2  # the NEAR edge, not the centre
+            if fg_edge > fg_max or fg_edge < fg_min:
+                fg_bad.append((fg_k, round(fg_f["x"]), round(fg_f["y"]), round(fg_edge * fg_ftpx)))
+        check(
+            "funerary_ground_within_reach",
+            not fg_bad,
+            f"funerary feature(s) at the wrong reach (key, x, y, ft from the wall; want {round(fg_min * fg_ftpx)}-{round(fg_max * fg_ftpx)}): {fg_bad[:4]} - "
+            f"the complex BEGINS just past the wall on the road out of a gate and runs outward; nothing holds it further off "
+            f"(pollution is satisfied by being outside at all, and a pyre's codified setback is 50 ft)",
+        )
+        # ...and the three sit as ONE complex: Edo's north gate held burial ground, crematory and
+        # pauper mound within ~290 ft of each other, entered through one gate-temple.
+        fg_crem = [f9 for k9, f9 in fg_out if k9 == "cremation_grounds"]
+        fg_oss = [f9 for k9, f9 in fg_out if k9 == "ossuaries"]
+        fg_cem = [f9 for k9, f9 in fg_out if k9 == "cemeteries"]
+        if fg_crem and fg_cem:
+            fg_split = []
+            for fg_f in fg_crem + fg_oss:
+                if min(math.hypot(fg_f["x"] - c9["x"], fg_f["y"] - c9["y"]) for c9 in fg_cem) > 600.0 / fg_ftpx:
+                    fg_split.append((round(fg_f["x"]), round(fg_f["y"])))
+            check(
+                "funerary_complex_is_one_ground",
+                not fg_split,
+                f"crematory/ossuary standing apart from the burial ground it serves: {fg_split[:3]} - the three are ONE complex on one "
+                f"outbound road (Kozukappara held all three within ~290 ft); draw them together with the marker temple at the near end",
+            )
+
     # A STREET EARNS ITS LENGTH ON BOTH SIDES (GM 2026-08-10: "several city streets extend out
     # into empty space with nothing on either side of them and also not leading to anywhere...
     # this is essentially a road to nowhere check"). `city_streets_have_buildings` measures ONE
@@ -9272,12 +9320,12 @@ def gate(M: Manifest, verbose: bool = True) -> list[str]:
         ty_bad = []
         for ty9 in M.get("tanning_yards", []):
             d9 = wsf_bank(ty9["x"], ty9["y"])
-            if d9 > 30:  # ~90 real ft: the yard's own working ground, not a field between it and the water
+            if d9 * float(meta.get("ftpx", 1) or 1) > 90.0:  # 90 real ft - the yard's own working ground, not a field between it and the water (the pool sits at 18-48 ft)
                 ty_bad.append((round(ty9["x"]), round(ty9["y"]), round(d9)))
         check(
             "tanning_yards_on_water",
             not ty_bad,
-            f"tanning yard(s) off their water (px past the nearest bank, want <= 30): {ty_bad[:4]} - tanning is a WASH trade: the yard stands AT the bank it draws from and drains to, its long side along the water (downwind/downstream arc still applies)",
+            f"tanning yard(s) off their water (px past the nearest bank, want <= 90 real ft): {ty_bad[:4]} - tanning is a WASH trade: the yard stands AT the bank it draws from and drains to, its long side along the water (downwind/downstream arc still applies)",
         )
 
     check(

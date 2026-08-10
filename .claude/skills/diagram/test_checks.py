@@ -11125,3 +11125,19 @@ def test_new_checks_skip_degenerate_records():
     legacy = {"meta": {"scale": "city", "ftpx": 3}, "wall": WALLSQ, "sluice_gates": [{"x": 500, "y": 500, "rot": 0}], "labels": [[760, 470, 840, 480, 7]]}
     assert "captions_sit_by_their_feature" not in f(legacy)
     assert "captions_clear_of_the_defenses" not in f(legacy)
+
+
+def test_funerary_ground_within_reach_and_one_complex():
+    """GM 2026-08-10, researched: nothing in the record holds the funerary ground far off the
+    wall - ritual pollution is satisfied by being outside at all (Kyoto's Injo-ji stood ON the
+    Odoi rampart), a pyre's codified setback is 50 ft, and what set the distance was worthless
+    ground on the road out. The complex BEGINS just past the wall and runs outward, and the
+    three features are ONE ground (Kozukappara held all three within ~290 ft)."""
+    base = {"meta": {"scale": "capital", "walled": True, "W": 4000, "H": 4000, "ftpx": 3}, "wall": WALLSQ, "gates": [[500, 200]]}
+    near = {**base, "cemeteries": [{"x": 500, "y": 900, "w": 60, "h": 40, "rot": 0}], "cremation_grounds": [{"x": 560, "y": 940, "w": 40, "h": 30, "rot": 0}]}
+    assert "funerary_ground_within_reach" not in f(near)
+    assert "funerary_complex_is_one_ground" not in f(near)
+    far = {**base, "cemeteries": [{"x": 500, "y": 1300, "w": 60, "h": 40, "rot": 0}]}
+    assert "funerary_ground_within_reach" in f(far)  # 500px past the wall = 1,500 ft
+    split = {**near, "cremation_grounds": [{"x": 1400, "y": 900, "w": 40, "h": 30, "rot": 0}]}
+    assert "funerary_complex_is_one_ground" in f(split)
